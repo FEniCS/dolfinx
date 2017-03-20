@@ -96,12 +96,6 @@ def test_errornorm_L2(f_2,v_high):
     assert numpy.isclose(errornorm(const, v_high, norm_type="L2", degree_rise=3), numpy.sqrt(22)/6)
 
 @skip_in_parallel
-def test_errornorm_L2(f_2,v_high):
-    const = Expression("1", degree=1)
-    v_high.interpolate(f_2)
-    assert numpy.isclose(errornorm(const, v_high, norm_type="L2", degree_rise=3), numpy.sqrt(22)/6)
-
-@skip_in_parallel
 def test_errornorm_H1(f, f_2, v_high):
     v_high.interpolate(f_2)
     assert numpy.isclose(errornorm(f, v_high, norm_type="H1", degree_rise=3), numpy.sqrt(37./36+5*numpy.pi**2/4))
