@@ -197,11 +197,13 @@ def parse_doxygen_xml_and_generate_rst_and_swig(xml_dir, api_gen_dir, swig_dir, 
         kd = sd.setdefault(member.kind, {})
         kd[member.name] = member
     
-    # Make sure we output an empty docstrings.i file in all subdirs of dolfin/swig
-    # to enable dolfin to build without doxygen being present
     if create_subdir_groups_if_missing:
-        for subdir in os.listdir(swig_dir):
-            path = os.path.join(swig_dir, subdir)
+        # Create empty docstrings.i files in all relevvant subdirs of
+        # dolfin/swig to enable builds without doxygen being present
+        mydir =  os.path.dirname(os.path.abspath(__file__))
+        dolfin_dir = os.path.abspath(os.path.join(mydir, '..', 'dolfin'))
+        for subdir in os.listdir(dolfin_dir):
+            path = os.path.join(dolfin_dir, subdir)
             if not os.path.isdir(path):
                 continue
             all_members.setdefault(subdir, {})
@@ -220,4 +222,13 @@ def parse_doxygen_xml_and_generate_rst_and_swig(xml_dir, api_gen_dir, swig_dir, 
 
 
 if __name__ == '__main__':
-    parse_doxygen_xml_and_generate_rst_and_swig(DOXYGEN_XML_DIR, API_GEN_DIR, SWIG_DIR, SWIG_FILE, '', MOCK_PY)
+    swig_dir = SWIG_DIR
+    allow_empty_xml = False
+    
+    if '--no-swig' in sys.argv:
+        swig_dir = None
+    if '--allow-empty-xml' in sys.argv:
+        allow_empty_xml = True
+    
+    parse_doxygen_xml_and_generate_rst_and_swig(DOXYGEN_XML_DIR, API_GEN_DIR, swig_dir,
+                                                SWIG_FILE, '', MOCK_PY, allow_empty_xml)

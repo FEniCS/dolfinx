@@ -20,17 +20,19 @@ def generate_docstrings(top_destdir):
                                               os.pardir))
 
     print('--------------------------------------------')
-    print('Running doxygen to generate docstrings:')
+    print('Running doxygen to read docstrings from C++:')
+    sys.stdout.flush() # doxygen writes to stderr and mangles output order
 
     # Get doc directory and run doxygen there
     doc_dir = os.path.join(dolfin_dir, 'doc')
     xml_dir = os.path.join(dolfin_dir, 'doc', 'doxygen', 'xml')
     allow_empty_xml = False
     try:
-        subprocess.call('doxygen', cwd=doc_dir)
+        subprocess.call(['doxygen'], cwd=doc_dir)
     except OSError as e:
         print('ERROR: could not run doxygen:', e)
         allow_empty_xml = True
+    print('DONE parsing C++ with doxygen')
 
     top_destdir = top_destdir or dolfin_dir
     abs_destdir = top_destdir if os.path.isabs(top_destdir) else os.path.join(dolfin_dir, top_destdir)

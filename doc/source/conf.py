@@ -11,25 +11,39 @@
 #
 # All configuration values have a default; values that are commented out
 # serve to show the default.
+from __future__ import print_function
 import subprocess
 import sys
 import os
 
-ONLY_SPHINX = os.environ.get('ONLY_SPHINX', False)
-run_doxygen = not ONLY_SPHINX
 
-if run_doxygen:
-    # Doxygen handling in parent directory
-    current_dir = os.getcwd()
-    os.chdir("../")
+def run_doxygen():
+    print('--------------------------------------------')
+    print('Running doxygen to read docstrings from C++:')
+    sys.stdout.flush() # doxygen writes to stderr and mangles output order
 
     # Run doxygen on C++ sources, generates XML output for us to convert into Sphinx and SWIG formats.
-    subprocess.call('doxygen', shell=True)
-    
-    # Convert doxygen XML output to *.rst files per subdirectory and make SWIG docstrings.i
-    subprocess.call(["python", "./generate_api_rst.py"])
+    allow_empty_xml = False
+    try:        
+        subprocess.call(['doxygen'], cwd='..')
+    except OSError as e:
+        print('ERROR: could not run doxygen:', e)
+        allow_empty_xml = True
 
-    os.chdir(current_dir)
+    print('DONE parsing C++ with doxygen')
+    print('--------------------------------------------')
+    print('Generating Sphinx API docs from doxygen')
+
+    # Convert doxygen XML output to *.rst files per subdirectory and make SWIG docstrings.i
+    cmd = ['python', './generate_api_rst.py', '--no-swig']
+    if allow_empty_xml:
+        cmd.append('--allow-empty-xml')
+    subprocess.call(cmd, cwd='..')
+
+    print('DONE generating API docs')
+    print('--------------------------------------------')
+run_doxygen()
+
 
 # We can't compile the swig generated headers on RTD.  Instead, we generate the python part as usual,
 # and then mock the cpp objects by importing a generated module full of stubs that looks enough like
@@ -38,6 +52,7 @@ if os.path.isfile('../mock_cpp_modules.py'):
     sys.path.insert(0, '../')
     sys.path.insert(0, '../../site_packages')
     import mock_cpp_modules
+
 
 # TODO: Copy site-packages/dolfin to tmp-dolfin/
 # Run cmake/scripts/generate-generate-swig-interface.py with output to tmp-swig/
