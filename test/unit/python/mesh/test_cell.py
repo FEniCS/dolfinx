@@ -26,7 +26,7 @@ import pytest
 import numpy
 from dolfin import *
 
-from dolfin_utils.test import skip_in_parallel, skip_in_release
+from dolfin_utils.test import skip_in_parallel, skip_in_release, skip_in_serial
 
 
 @skip_in_parallel
@@ -74,3 +74,13 @@ def test_issue_568():
     # Should work after initializing the connectivity
     mesh.init(2, 1)
     cell.facet_area(0)
+
+
+@skip_in_serial
+def test_volume_quadrilateral():
+
+    mesh = UnitQuadMesh(mpi_comm_world(), 1, 1)
+    cell = Cell(mesh, 0)
+    # TODO: Add same test for R^3
+    
+    assert cell.volume() == 1.0
