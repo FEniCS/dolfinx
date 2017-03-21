@@ -17,6 +17,7 @@
 //
 
 #include <algorithm>
+#include <cmath>
 #include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
 #include "Cell.h"
@@ -118,28 +119,24 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
   const Point p2 = geometry.point(vertices[2]);
   const Point p3 = geometry.point(vertices[3]);
 
-  if (geometry.dim() == 2)
+  if (geometry.dim() == 2 || geometry.dim() == 3)
   {
-    const Point c = (p0 - p2).cross(p1 - p3);
+    if (geometry.dim() == 3)
+    {
+      // Vertices are coplanar if det(p1-p0 | p3-p0 | p2-p0) is zero
+      const double copl = (p1[0] - p0[0])*((p2[2] - p0[2])*(p3[1] - p0[1]) - (p2[1] - p0[1])*(p3[2] - p0[2]))
+        +(p1[1] - p0[1])*((p2[0] - p0[0])*(p3[2] - p0[2]) - (p2[2] - p0[2])*(p3[0] - p0[0]))
+        +(p1[2] - p0[2])*((p2[1] - p0[1])*(p3[0] - p0[0]) - (p2[0] - p0[0])*(p3[1] - p0[1]));
+      // Check for coplanarity
+      if (std::abs(copl) > DOLFIN_EPS)
+      {
+        dolfin_error("QuadrilateralCell.cpp",
+                     "compute volume of quadrilateral",
+                     "Vertices of the quadrilateral are not coplanar");
+      }
+    }
+    const Point c = (p0 - p3).cross(p1 - p2);
     return 0.5 * c.norm();
-  }
-  else if (geometry.dim() == 3)
-  {
-    // vertices are coplanar if det(p1-p0 | p2-p0 | p3-p0) is zero
-    const double copl = (p1[0] - p0[0])*( (p2[1] - p0[1])*(p3[2] - p0[2]) - (p2[2] - p0[2])*(p3[1] - p0[1]) )
-                       -(p1[1] - p0[1])*( (p2[0] - p0[0])*(p3[2] - p0[2]) + (p2[2] - p0[2])*(p3[0] - p0[0]) )
-                       +(p1[2] - p0[2])*( (p2[0] - p0[0])*(p3[1] - p0[1]) - (p2[1] - p0[1])*(p3[0] - p0[0]) );
-    if (copl < DOLFIN_EPS) // check coplanarity
-    {
-      const Point c = (p0 - p2).cross(p1 - p3);
-      return 0.5 * c.norm();
-    }
-    else
-    {
-      dolfin_error("QuadrilateralCell.cpp",
-                   "compute volume of quadrilateral",
-                   "Vertices of the quadrilateral are not coplanar");
-    }
   }
   else
   {
