@@ -127,18 +127,18 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
   {
     // vertices are coplanar if det(p1-p0 | p2-p0 | p3-p0) is zero
     const double copl = (p1[0] - p0[0])*( (p2[1] - p0[1])*(p3[2] - p0[2]) - (p2[2] - p0[2])*(p3[1] - p0[1]) )
-                      -(p1[1] - p0[1])*( (p2[0] - p0[0])*(p3[2] - p0[2]) + (p2[2] - p0[2])*(p3[0] - p0[0]) )
-                      +(p1[2] - p0[2])*( (p2[0] - p0[0])*(p3[1] - p0[1]) - (p2[1] - p0[1])*(p3[0] - p0[0]) );
+                       -(p1[1] - p0[1])*( (p2[0] - p0[0])*(p3[2] - p0[2]) + (p2[2] - p0[2])*(p3[0] - p0[0]) )
+                       +(p1[2] - p0[2])*( (p2[0] - p0[0])*(p3[1] - p0[1]) - (p2[1] - p0[1])*(p3[0] - p0[0]) );
     if (copl < DOLFIN_EPS) // check coplanarity
     {
-         const Point c = (p0 - p2).cross(p1 - p3);
-         return 0.5 * c.norm();
+      const Point c = (p0 - p2).cross(p1 - p3);
+      return 0.5 * c.norm();
     }
     else
     {
-          dolfin_error("QuadrilateralCell.cpp",
-                       "compute volume of quadrilateral",
-                       "Vertices of the quadrilateral are not coplanar");
+      dolfin_error("QuadrilateralCell.cpp",
+                   "compute volume of quadrilateral",
+                   "Vertices of the quadrilateral are not coplanar");
     }
   }
   else
