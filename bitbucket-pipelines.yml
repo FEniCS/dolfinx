@@ -17,7 +17,7 @@ pipelines:
           - source /usr/local/share/dolfin/dolfin.conf
           - make run_quicktest
   custom:  # Pipelines that are triggered manually
-    full-test
+    full-test:
       - step:
          script:
            - pip3 install git+https://bitbucket.org/fenics-project/fiat.git@master
