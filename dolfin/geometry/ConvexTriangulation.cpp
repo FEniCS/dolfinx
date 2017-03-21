@@ -39,7 +39,11 @@ namespace
       if (p0.x() != p1.x())
 	return p0.x() < p1.x();
 
-      return p0.y() < p1.y();
+
+      if (p0.y() != p1.y())
+        return p0.y() < p1.y();
+
+      return p0.z() < p1.z();
     }
   };
 
@@ -375,6 +379,15 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
         {
 	  if (checked.emplace(std::make_tuple(i, j, k)).second)
 	  {
+            // Test for the special case where i, j, k are collinear
+            {
+              const Point ij = points[j] - points[i];
+              const Point ik = points[k] - points[i];
+              if ( -(std::abs( (ij/ij.norm() ).dot(ik/ik.norm()))-1)  < DOLFIN_EPS)
+                continue;
+            }
+
+
 	    // Check whether all other points are on one side of this
 	    // (i,j,k) facet, i.e. we're on the convex
 	    // hull. Initialize as true for the case of only three
@@ -398,20 +411,22 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 		// Save point index if we find coplanar points
 		if (orientation == 0)
 		  coplanar.push_back(m);
-
-		if (first)
-		{
-		  previous_orientation = orientation;
-		  first = false;
-		}
-		else
-		{
-		  // Sign change: triangle is not on convex hull
-		  if (previous_orientation * orientation < 0)
-		  {
-		    on_convex_hull = false;
-		    break;
-		  }
+                else
+                {
+                  if (first)
+                  {
+                    previous_orientation = orientation;
+                    first = false;
+                  }
+                  else
+                  {
+                    // Sign change: triangle is not on convex hull
+                    if (previous_orientation * orientation < 0)
+                    {
+                      on_convex_hull = false;
+                      // break;
+                    }
+                  }
 		}
 	      }
 	    }
@@ -425,6 +440,15 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 					    points[j],
 					    points[k],
 					    polyhedroncenter };
+
+                #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
+                if (cgal_tet_is_degenerate(cand))
+                  dolfin::dolfin_error("ConvexTriangulation.cpp",
+                                       "triangulation 3d points",
+                                       "tet is degenerate");
+
+                #endif
+
 		// FIXME: Here we could include if determinant is sufficiently large
                 //for (auto p : cand)
                 //  std::cout << " " << p;
@@ -455,7 +479,7 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 
 		// Calculate and store angles
 		std::vector<std::pair<double, std::size_t>> order;
-		for (std::size_t m = 1; m < coplanar.size(); ++m)
+		for (std::size_t m = 0; m < coplanar.size(); ++m)
 		{
 		  const Point v = points[coplanar[m]] - pointscenter;
 		  const double frac = ref.dot(v) / v.norm();
@@ -477,21 +501,79 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 		// Sort angles
 		std::sort(order.begin(), order.end());
 
+                // Scan for a point which is not colinear with two other
+                // consecutive points (as this will introduce a degenerate triangle)
+
+                int ref_index = -1;
+                bool is_colinear = false;
+                do {
+                  is_colinear = false;
+                  ref_index++;
+                  const Point ref = points[ coplanar[ order[ ref_index].second ]];
+                  for (std::size_t i = 1; i < coplanar.size()-1; i++)
+                  {
+                    const Point p1 = points[ coplanar[ order[ (ref_index+i)%coplanar.size()].second]];
+                    const Point p2 = points[ coplanar[ order[ (ref_index+i+1)%coplanar.size()].second]];
+                    const Point a = p1-ref;
+                    const Point b = p2-ref;
+                    const double cos_angle = (a/a.norm()).dot(b/b.norm());
+
+                    if (-(std::abs(cos_angle) - 1.0) < DOLFIN_EPS )
+                    {
+                      is_colinear = true;
+                      break;
+                    }
+                  }
+                } while (is_colinear);
+
 		// Tessellate
-		for (std::size_t m = 0; m < coplanar.size() - 2; ++m)
+		for (std::size_t m = 1; m < coplanar.size() - 1; ++m)
 		{
-		  std::vector<Point> cand = { points[coplanar[0]],
-					      points[coplanar[order[m].second]],
-					      points[coplanar[order[m + 1].second]],
+                  const std::size_t p1_index = (ref_index + m)%coplanar.size();
+                  const std::size_t p2_index = (p1_index+1)%coplanar.size();
+
+		  std::vector<Point> cand = { points[coplanar[order[ref_index].second]],
+					      points[coplanar[order[p1_index].second]],
+					      points[coplanar[order[p2_index].second]],
 					      polyhedroncenter };
 		  // FIXME: Possibly only include if tet is large enough
                   //for (auto p : cand)
                   //  std::cout << " " << p;
                   //std::cout << std::endl;
-		  triangulation.push_back(cand);
+                  triangulation.push_back(cand);
+
+#ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
+                  if (cgal_tet_is_degenerate(cand))
+                  {
+                    dolfin::dolfin_error("ConvexTriangulation.cpp:544",
+                                         "triangulation 3d points",
+                                         "tet is degenerate");
+                  }
+
+                  if (cgal_triangulation_overlap(triangulation))
+                  {
+                    dolfin::dolfin_error("ConvexTriangulation.cpp:544",
+                                         "triangulation 3d points",
+                                         "now triangulation overlaps");
+                  }
+#endif
+
 		}
-	      }
-	    }
+
+                std::sort(coplanar.begin(), coplanar.end());
+
+                for (int i = 0; i < coplanar.size()-2; i++)
+                {
+                  for (int j = i+1; j < coplanar.size()-1; j++)
+                  {
+                    for (int k = j+1; k < coplanar.size(); k++)
+                    {
+                      checked.emplace( std::make_tuple(coplanar[i], coplanar[j], coplanar[k]) );
+                    }
+                  }
+                }
+	      } // end coplanar.size() > 3
+	    } // end on_convexhull
 	  }
 	}
       }
@@ -713,11 +795,16 @@ ConvexTriangulation::triangulate_graham_scan_3d(std::vector<Point> pm)
 
   #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
 
+  if (cgal_triangulation_has_degenerate(triangulation))
+    dolfin::dolfin_error("ConvexTriangulation.cpp",
+                         "verify convex triangulation",
+                         "triangulation contains degenerate tetrahedron");
+
   if (cgal_triangulation_overlap(triangulation))
   {
     dolfin::dolfin_error("ConvexTriangulation.cpp",
-                         "verifying convex triangulation",
-                         "tets overlap");
+                         "verify convex triangulation",
+                         "tetrahedrons overlap");
   }
 
 

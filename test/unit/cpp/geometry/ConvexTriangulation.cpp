@@ -18,7 +18,7 @@
 // First added:  2017-03-17
 // Last changed: 2012-03-20
 //
-// Unit tests for the mesh library
+// Unit tests for convex triangulation
 
 #include <dolfin.h>
 #include <gtest/gtest.h>
@@ -53,6 +53,42 @@ TEST(ConvexTriangulationTest, testFailingCase)
     Point(0.61, 0.525, 0.1),
     Point(0.46, 0.6, 0.100000000000000006) };
 
+
+  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+
+  // TOOD: Test that no triangles are degenerate and do not overlap
+}
+
+TEST(ConvexTriangulationTest, testFailingCase2)
+{
+  std::vector<Point> input {
+    Point(0.7, 0.6, 0.5),
+    Point(0.7, 0.1, 0.1),
+    Point(0.8, 0, 0),
+    Point (0.1, 0.1, 0.1),
+    Point(0.16, 0.1, 0.1),
+    Point(0.592, 0.1, 0.1),
+    Point (0.16, 0.1, 0.14),
+    Point (0.52, 0.1, 0.38),
+    Point (0.7, 0.1, 0.38)
+  };
+
+  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+
+  // TOOD: Test that no triangles are degenerate and do not overlap
+}
+
+TEST(ConvexTriangulationTest, testFailingCase3)
+{
+  std::vector<Point> input {
+    Point (0.495926, 0.512037, 0.144444),
+    Point (0.376482, 0.519121, 0.284321),
+    Point (0.386541, 0.599783, 0.0609262),
+    Point (0.388086, 0.60059, 0.0607155),
+    Point (0.7, 0.6, 0.5),
+    Point (0.504965, 0.504965, 0.0447775),
+    Point (0.833333, 0.833333, 0)
+  };
 
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
