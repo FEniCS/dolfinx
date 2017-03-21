@@ -1,0 +1,33 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: quay.io/fenicsproject/dev-env:latest
+    working_directory: ~/
+    steps:
+      - checkout
+      - run:
+          name: Install FIAT
+          command: pip3 install git+https://bitbucket.org/fenics-project/fiat.git@master
+      - run:
+          name: Install UFL
+          command: pip3 install git+https://bitbucket.org/fenics-project/ufl.git@master
+      - run:
+          name: Install Dijitso
+          command: pip3 install git+https://bitbucket.org/fenics-project/dijitso.git@master
+      - run:
+          name: Install Instant
+          command: pip3 install git+https://bitbucket.org/fenics-project/instant.git@master
+      - run:
+          name: Install FFC
+          command: pip3 install git+https://bitbucket.org/fenics-project/ffc.git@master
+
+      - run:
+          name: Configure
+          command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DDOLFIN_ENABLE_TESTING=ON
+      - run:
+          name: Build
+          command: make install
+      - run:
+          name: Run tests
+          command: source /usr/local/share/dolfin/dolfin.conf && make run_quicktest
