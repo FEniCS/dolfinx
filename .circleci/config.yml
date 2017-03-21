@@ -3,7 +3,6 @@ jobs:
   build:
     docker:
       - image: quay.io/fenicsproject/dev-env:latest
-    working_directory: ~/
     steps:
       - checkout
       - run:
