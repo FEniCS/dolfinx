@@ -26,7 +26,7 @@ import pytest
 import numpy
 from dolfin import *
 
-from dolfin_utils.test import skip_in_parallel, skip_in_release, skip_in_serial
+from dolfin_utils.test import skip_in_parallel, skip_in_release
 
 
 @skip_in_parallel
@@ -76,7 +76,7 @@ def test_issue_568():
     cell.facet_area(0)
 
 
-@skip_in_serial
+@skip_in_parallel
 def test_volume_quadrilateral():
 
     mesh = UnitQuadMesh(mpi_comm_world(), 1, 1)
