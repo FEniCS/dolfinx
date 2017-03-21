@@ -84,8 +84,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
 //-----------------------------------------------------------------------------
 std::size_t DistributedMeshTools::number_entities(
   const Mesh& mesh,
-  const std::map<unsigned int, std::pair<unsigned int,
-  unsigned int>>& slave_entities,
+  const std::map<unsigned int, std::pair<unsigned int, unsigned int>>& slave_entities,
   std::vector<std::int64_t>& global_entity_indices,
   std::map<std::int32_t, std::set<unsigned int>>& shared_entities,
   std::size_t d)

@@ -43,7 +43,10 @@ namespace dolfin
 
   public:
 
+    /// Sparse or dense layout
     enum class Sparsity : bool { SPARSE = true, DENSE = false };
+
+    /// Ghosted or unghosted layout
     enum class Ghosts : bool { GHOSTED = true, UNGHOSTED = false };
 
     /// Create empty tensor layout

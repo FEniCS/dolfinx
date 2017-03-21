@@ -2,7 +2,9 @@
 Contributing
 ============
 
-This page provides guidance on how to contribute to DOLFIN.
+This page provides guidance on how to contribute to DOLFIN. For information
+about how to get involved and how to get in touch with the developers, see
+our `community page <https://fenicsproject.org/community/>`_.
 
 
 Adding a demo
@@ -55,3 +57,4 @@ Make a pull request
    demo to be considered for addition to DOLFIN. Add the
    ``demo_foo-bar.py.rst`` file to the repository, but do not add the
    ``demo_foo-bar.py`` file.
+

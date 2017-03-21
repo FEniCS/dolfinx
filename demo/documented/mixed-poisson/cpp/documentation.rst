@@ -5,8 +5,6 @@
 Mixed formulation for Poisson equation
 ======================================
 
-.. include:: ../common.txt
-
 Implementation
 --------------
 

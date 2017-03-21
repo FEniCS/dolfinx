@@ -49,15 +49,14 @@ namespace dolfin
     /// given global vertex indices.
     static std::size_t number_entities(
       const Mesh& mesh,
-      const std::map<unsigned int, std::pair<unsigned int,
-      unsigned int> >& slave_entities,
+      const std::map<unsigned int, std::pair<unsigned int, unsigned int>>& slave_entities,
       std::vector<std::int64_t>& global_entity_indices,
-      std::map<std::int32_t, std::set<unsigned int> >& shared_entities,
+      std::map<std::int32_t, std::set<unsigned int>>& shared_entities,
       std::size_t d);
 
-    // Compute number of cells connected to each facet
-    // (globally). Facets on internal boundaries will be connected to
-    // two cells (with the cells residing on neighboring processes)
+    /// Compute number of cells connected to each facet
+    /// (globally). Facets on internal boundaries will be connected to
+    /// two cells (with the cells residing on neighboring processes)
     static void init_facet_cell_connections(Mesh& mesh);
 
     /// Find processes that own or share mesh entities (using entity

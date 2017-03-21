@@ -235,7 +235,7 @@ DECLARE_MESHFUNCTION(bool, Bool)
 %{
 from six import string_types
 
-_doc_string = MeshFunctionInt.__doc__
+_doc_string = MeshFunctionInt.__doc__ or ''
 _doc_string += """
   *Arguments*
     tp (str)
@@ -352,7 +352,7 @@ DECLARE_MESHVALUECOLLECTION(bool, Bool)
 %{
 from six import string_types
 
-_meshvaluecollection_doc_string = MeshValueCollectionInt.__doc__
+_meshvaluecollection_doc_string = MeshValueCollectionInt.__doc__  or ''
 _meshvaluecollection_doc_string += """
   *Arguments*
       tp (str)

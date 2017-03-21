@@ -30,12 +30,12 @@
 
 namespace dolfin
 {
-  /// MeshGeometry stores the geometry imposed on a mesh. Currently,
-  /// the geometry is represented by the set of coordinates for the
-  /// vertices of a mesh, but other representations are possible.
-
   class Function;
 
+  /// MeshGeometry stores the geometry imposed on a mesh.
+
+  /// Currently, the geometry is represented by the set of coordinates for the
+  /// vertices of a mesh, but other representations are possible.
   class MeshGeometry
   {
   public:
@@ -81,12 +81,14 @@ namespace dolfin
       return coordinates.size()/_dim;
     }
 
+    /// Get vertex coordinates
     const double* vertex_coordinates(std::size_t point_index)
     {
       dolfin_assert(point_index < num_vertices());
       return &coordinates[point_index*_dim];
     }
 
+    /// Get vertex coordinates
     const double* point_coordinates(std::size_t point_index)
     {
       dolfin_assert(point_index*_dim < coordinates.size());

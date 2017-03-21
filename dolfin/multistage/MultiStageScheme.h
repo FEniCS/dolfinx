@@ -30,15 +30,13 @@
 
 namespace dolfin
 {
-
-  /// This class is a place holder for forms and solutions for a
-  /// multi-stage Butcher tableau based method
-
   // Forward declarations
   class Form;
   class Function;
   class DirichletBC;
   class Constant;
+
+  /// Place-holder for forms and solutions for a multi-stage Butcher tableau based method
 
   class MultiStageScheme : public Variable
   {
@@ -94,8 +92,8 @@ namespace dolfin
     /// Return true if the whole scheme is implicit
     bool implicit() const;
 
-    // Return a distinct jacobian index for a given stage if negative the
-    // stage is explicit and hence no jacobian needed.
+    /// Return a distinct jacobian index for a given stage if negative the
+    /// stage is explicit and hence no jacobian needed.
     int jacobian_index(unsigned int stage) const;
 
     /// Return informal string representation (pretty-print)

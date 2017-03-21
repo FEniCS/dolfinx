@@ -30,6 +30,8 @@ namespace dolfin
   // Forward declarations
   class Cell;
 
+  /// Quadrature on simplices
+
   class SimplexQuadrature
   {
   public:
@@ -138,4 +140,3 @@ namespace dolfin
 }
 
 #endif
-

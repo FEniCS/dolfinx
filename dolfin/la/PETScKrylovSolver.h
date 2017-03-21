@@ -176,7 +176,10 @@ namespace dolfin
     std::string parameter_type() const
     { return "krylov_solver"; }
 
+    /// Set the DM
     void set_dm(DM dm);
+
+    /// Activate/deactivate DM
     void set_dm_active(bool val);
 
     friend class PETScSNESSolver;
