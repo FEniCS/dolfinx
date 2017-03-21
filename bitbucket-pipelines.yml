@@ -16,8 +16,24 @@ pipelines:
           - make install
           - source /usr/local/share/dolfin/dolfin.conf
           - make run_quicktest
-branches:
-  next:
+  custom:  # Pipelines that are triggered manually
+    full-test
+      - step:
+         script:
+           - pip3 install git+https://bitbucket.org/fenics-project/fiat.git@master
+           - pip3 install git+https://bitbucket.org/fenics-project/ufl.git@master
+           - pip3 install git+https://bitbucket.org/fenics-project/dijitso.git@master
+           - pip3 install git+https://bitbucket.org/fenics-project/instant.git@master
+           - pip3 install git+https://bitbucket.org/fenics-project/ffc.git@master
+           - mkdir -p build
+           - cd build
+           - cmake .. -DCMAKE_BUILD_TYPE=Debug -DDOLFIN_ENABLE_TESTING=ON
+           - make
+           - make install
+           - source /usr/local/share/dolfin/dolfin.conf
+           - make runtests
+  branches:
+    next:
       - step:
         script:
           - pip3 install git+https://bitbucket.org/fenics-project/fiat.git@next
