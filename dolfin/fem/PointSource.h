@@ -19,6 +19,8 @@
 #define __POINT_SOURCE_H
 
 #include <memory>
+#include <utility>
+#include <vector>
 #include <dolfin/geometry/Point.h>
 
 namespace dolfin
@@ -26,8 +28,9 @@ namespace dolfin
 
   // Forward declarations
   class FunctionSpace;
-  class GenericVector;
   class GenericMatrix;
+  class GenericVector;
+  class Mesh;
 
   /// This class provides an easy mechanism for adding a point
   /// quantities (Dirac delta function) to variational problems. The
@@ -35,6 +38,8 @@ namespace dolfin
   /// product with the (scalar) Dirac delta function to be well
   /// defined. For each of the constructors, Points passed to
   /// PointSource will be copied.
+  ///
+  /// Note: the interface to this class will likely change.
 
   class PointSource
   {
