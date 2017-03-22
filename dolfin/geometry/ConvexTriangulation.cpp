@@ -362,7 +362,7 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
   else
   {
     // Construct tetrahedra using facet points and a center point
-    Point polyhedroncenter = points[0];
+    Point polyhedroncenter(0,0,0);
     for (const Point& p: points)
       polyhedroncenter += p;
     polyhedroncenter /= points.size();
