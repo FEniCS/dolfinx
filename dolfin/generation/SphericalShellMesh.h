@@ -25,6 +25,8 @@
 namespace dolfin
 {
 
+  /// Spherical shell approximation, icosahedral mesh, with degree=1 or degree=2
+
   class SphericalShellMesh : public Mesh
   {
   public:

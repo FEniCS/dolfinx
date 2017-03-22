@@ -55,21 +55,17 @@ namespace dolfin
 
     /// Compute squared distance to given point.
     ///
-    /// *Arguments*
-    ///     point (_Point_)
+    /// @param     point (_Point_)
     ///         The point.
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         The squared distance to the point.
     double squared_distance(const Point& point) const;
 
     /// Compute distance to given point.
     ///
-    /// *Arguments*
-    ///     point (_Point_)
+    /// @param     point (_Point_)
     ///         The point.
-    /// *Returns*
-    ///     double
+    /// @return     double
     ///         The distance to the point.
     double distance(const Point& point) const
     {
@@ -93,9 +89,11 @@ namespace dolfin
   {
   public:
 
+    /// Constructor on Mesh
     FacetFunction(std::shared_ptr<const Mesh> mesh)
       : MeshFunction<T>(mesh, mesh->topology().dim() - 1) {}
 
+    /// Constructor on Mesh and value
     FacetFunction(std::shared_ptr<const Mesh> mesh, const T& value)
       : MeshFunction<T>(mesh, mesh->topology().dim() - 1, value) {}
 

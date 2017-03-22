@@ -36,7 +36,7 @@ namespace dolfin
 
   /// This class defines the interface for definition of subdomains.
   /// Alternatively, subdomains may be defined by a _Mesh_ and a
-  /// _MeshFunction_ <std::size_t> over the mesh.
+  /// MeshFunction<std::size_t> over the mesh.
 
   class SubDomain
   {
@@ -44,8 +44,7 @@ namespace dolfin
 
     /// Constructor
     ///
-    /// *Arguments*
-    ///     map_tol (double)
+    /// @param map_tol (double)
     ///         The tolerance used when identifying mapped points using
     ///         the function SubDomain::map.
     SubDomain(const double map_tol=1.0e-10);
@@ -55,31 +54,27 @@ namespace dolfin
 
     /// Return true for points inside the subdomain
     ///
-    /// *Arguments*
-    ///     x (_Array_ <double>)
+    /// @param    x (Array<double>)
     ///         The coordinates of the point.
-    ///     on_boundary (bool)
+    /// @param   on_boundary (bool)
     ///         True for points on the boundary.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return    bool
     ///         True for points inside the subdomain.
     virtual bool inside(const Array<double>& x, bool on_boundary) const;
 
     /// Map coordinate x in domain H to coordinate y in domain G (used for
     /// periodic boundary conditions)
     ///
-    /// *Arguments*
-    ///     x (_Array_ <double>)
+    /// @param   x (Array<double>)
     ///         The coordinates in domain H.
-    ///     y (_Array_ <double>)
+    /// @param    y (Array<double>)
     ///         The coordinates in domain G.
     virtual void map(const Array<double>& x, Array<double>& y) const;
 
     /// Snap coordinate to boundary of subdomain
     ///
-    /// *Arguments*
-    ///     x (_Array_ <double>)
+    /// @param x (Array<double>)
     ///         The coordinates.
     virtual void snap(Array<double>& x) const {}
 
@@ -87,12 +82,11 @@ namespace dolfin
 
     /// Set subdomain markers (std::size_t) on cells for given subdomain number
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param    mesh (_Mesh_)
     ///         The mesh to be marked.
-    ///     sub_domain (std::size_t)
+    /// @param    sub_domain (std::size_t)
     ///         The subdomain number.
-    ///     check_midpoint (bool)
+    /// @param    check_midpoint (bool)
     ///         Flag for whether midpoint of cell should be checked (default).
     void mark_cells(Mesh& mesh,
                     std::size_t sub_domain,
@@ -100,12 +94,11 @@ namespace dolfin
 
     /// Set subdomain markers (std::size_t) on facets for given subdomain number
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param    mesh (_Mesh_)
     ///         The mesh to be marked.
-    ///     sub_domain (std::size_t)
+    /// @param    sub_domain (std::size_t)
     ///         The subdomain number.
-    ///     check_midpoint (bool)
+    /// @param    check_midpoint (bool)
     ///         Flag for whether midpoint of cell should be checked (default).
     void mark_facets(Mesh& mesh,
                      std::size_t sub_domain,
@@ -114,14 +107,13 @@ namespace dolfin
     /// Set subdomain markers (std::size_t) for given topological dimension
     /// and subdomain number
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param    mesh (_Mesh_)
     ///         The mesh to be marked.
-    ///     dim (std::size_t)
+    /// @param    dim (std::size_t)
     ///         The topological dimension of entities to be marked.
-    ///     sub_domain (std::size_t)
+    /// @param    sub_domain (std::size_t)
     ///         The subdomain number.
-    ///     check_midpoint (bool)
+    /// @param    check_midpoint (bool)
     ///         Flag for whether midpoint of cell should be checked (default).
     void mark(Mesh& mesh,
               std::size_t dim,
@@ -132,12 +124,11 @@ namespace dolfin
 
     /// Set subdomain markers (std::size_t) for given subdomain number
     ///
-    /// *Arguments*
-    ///     sub_domains (_MeshFunction_ <std::size_t>)
+    /// @param    sub_domains (MeshFunction<std::size_t>)
     ///         The subdomain markers.
-    ///     sub_domain (std::size_t)
+    /// @param    sub_domain (std::size_t)
     ///         The subdomain number.
-    ///     check_midpoint (bool)
+    /// @param    check_midpoint (bool)
     ///         Flag for whether midpoint of cell should be checked (default).
     void mark(MeshFunction<std::size_t>& sub_domains,
               std::size_t sub_domain,
@@ -145,12 +136,11 @@ namespace dolfin
 
     /// Set subdomain markers (int) for given subdomain number
     ///
-    /// *Arguments*
-    ///     sub_domains (_MeshFunction_ <int>)
+    /// @param    sub_domains (MeshFunction<int>)
     ///         The subdomain markers.
-    ///     sub_domain (int)
+    /// @param    sub_domain (int)
     ///         The subdomain number.
-    ///     check_midpoint (bool)
+    /// @param    check_midpoint (bool)
     ///         Flag for whether midpoint of cell should be checked (default).
     void mark(MeshFunction<int>& sub_domains,
               int sub_domain,
@@ -158,12 +148,11 @@ namespace dolfin
 
     /// Set subdomain markers (double) for given subdomain number
     ///
-    /// *Arguments*
-    ///     sub_domains (_MeshFunction_ <double>)
+    /// @param    sub_domains (MeshFunction<double>)
     ///         The subdomain markers.
-    ///     sub_domain (double)
+    /// @param    sub_domain (double)
     ///         The subdomain number.
-    ///     check_midpoint (bool)
+    /// @param    check_midpoint (bool)
     ///         Flag for whether midpoint of cell should be checked (default).
     void mark(MeshFunction<double>& sub_domains,
               double sub_domain,
@@ -171,12 +160,11 @@ namespace dolfin
 
     /// Set subdomain markers (bool) for given subdomain
     ///
-    /// *Arguments*
-    ///     sub_domains (_MeshFunction_ <bool>)
+    /// @param    sub_domains (MeshFunction<bool>)
     ///         The subdomain markers.
-    ///     sub_domain (bool)
+    /// @param    sub_domain (bool)
     ///         The subdomain number.
-    ///     check_midpoint (bool)
+    /// @param   check_midpoint (bool)
     ///         Flag for whether midpoint of cell should be checked (default).
     void mark(MeshFunction<bool>& sub_domains,
               bool sub_domain,
@@ -186,14 +174,13 @@ namespace dolfin
 
     /// Set subdomain markers (std::size_t) for given subdomain number
     ///
-    /// *Arguments*
-    ///     sub_domains (_MeshValueCollection_ <std::size_t>)
+    /// @param    sub_domains (MeshValueCollection<std::size_t>)
     ///         The subdomain markers.
-    ///     sub_domain (std::size_t)
+    /// @param    sub_domain (std::size_t)
     ///         The subdomain number.
-    ///     mesh (_Mesh_)
+    /// @param    mesh (_Mesh_)
     ///         The mesh.
-    ///     check_midpoint (bool)
+    /// @param    check_midpoint (bool)
     ///         Flag for whether midpoint of cell should be checked (default).
     void mark(MeshValueCollection<std::size_t>& sub_domains,
               std::size_t sub_domain,
@@ -202,12 +189,13 @@ namespace dolfin
 
     /// Set subdomain markers (int) for given subdomain number
     ///
-    /// *Arguments*
-    ///     sub_domains (_MeshValueCollection_ <int>)
+    /// @param    sub_domains (MeshValueCollection<int>)
     ///         The subdomain markers
-    ///     sub_domain (int)
+    /// @param    sub_domain (int)
     ///         The subdomain number
-    ///     check_midpoint (bool)
+    /// @param  mesh (Mesh)
+    ///         The mesh.
+    /// @param    check_midpoint (bool)
     ///         Flag for whether midpoint of cell should be checked (default).
     void mark(MeshValueCollection<int>& sub_domains,
               int sub_domain,
@@ -216,12 +204,13 @@ namespace dolfin
 
     /// Set subdomain markers (double) for given subdomain number
     ///
-    /// *Arguments*
-    ///     sub_domains (_MeshValueCollection_ <double>)
+    /// @param    sub_domains (MeshValueCollection<double>)
     ///         The subdomain markers.
-    ///     sub_domain (double)
+    /// @param    sub_domain (double)
     ///         The subdomain number
-    ///     check_midpoint (bool)
+    /// @param  mesh (Mesh)
+    ///         The mesh.
+    /// @param    check_midpoint (bool)
     ///         Flag for whether midpoint of cell should be checked (default).
     void mark(MeshValueCollection<double>& sub_domains,
               double sub_domain,
@@ -230,12 +219,13 @@ namespace dolfin
 
     /// Set subdomain markers (bool) for given subdomain
     ///
-    /// *Arguments*
-    ///     sub_domains (_MeshValueCollection_ <bool>)
+    /// @param     sub_domains (MeshValueCollection<bool>)
     ///         The subdomain markers
-    ///     sub_domain (bool)
+    /// @param    sub_domain (bool)
     ///         The subdomain number
-    ///     check_midpoint (bool)
+    /// @param  mesh (Mesh)
+    ///         The mesh.
+    /// @param    check_midpoint (bool)
     ///         Flag for whether midpoint of cell should be checked (default).
     void mark(MeshValueCollection<bool>& sub_domains,
               bool sub_domain,
@@ -244,15 +234,13 @@ namespace dolfin
 
     /// Return geometric dimension
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return    std::size_t
     ///         The geometric dimension.
     std::size_t geometric_dimension() const;
 
     /// Return tolerance uses to find matching point via map function
     ///
-    /// *Returns*
-    ///     double
+    /// @return    double
     ///         The tolerance.
     const double map_tolerance;
 

@@ -52,8 +52,10 @@ namespace dolfin
   {
   public:
 
+    /// Tpetra operator type
     typedef Tpetra::Operator<double, int, dolfin::la_index,
                              TpetraVector::node_type> op_type;
+    /// Belos problem type
     typedef Belos::LinearProblem<double, TpetraVector::vector_type,
                                  op_type> problem_type;
 
@@ -76,10 +78,6 @@ namespace dolfin
     void set_operators(std::shared_ptr<const GenericLinearOperator> A,
                        std::shared_ptr<const GenericLinearOperator> P);
 
-    /// Set null space of the operator (matrix). This is used to solve
-    /// singular systems
-    //    void set_nullspace(const VectorSpaceBasis& nullspace);
-
     /// Get operator (matrix)
     const TpetraMatrix& get_operator() const;
 
@@ -92,9 +90,6 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
-
-    /// Return Belos pointer
-    //    Teuchos::RCP<Belos::SolverManager<>> solver_manager() const;
 
     /// Return a list of available solver methods
     static std::map<std::string, std::string> methods();

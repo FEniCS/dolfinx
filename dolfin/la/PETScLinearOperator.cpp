@@ -34,9 +34,10 @@
 
 using namespace dolfin;
 
-// Callback function for PETSc mult function
+
 namespace dolfin
 {
+  /// Callback function for PETSc mult function
   int usermult(Mat A, Vec x, Vec y)
   {
     // Wrap PETSc Vec as dolfin::PETScVector

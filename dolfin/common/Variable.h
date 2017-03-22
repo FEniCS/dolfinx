@@ -70,7 +70,7 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
-    // Parameters
+    /// Parameters
     Parameters parameters;
 
   private:

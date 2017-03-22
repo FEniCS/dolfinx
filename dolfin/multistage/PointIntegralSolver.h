@@ -30,15 +30,15 @@
 
 namespace dolfin
 {
-
-  /// This class is a time integrator for general Runge Kutta forms,
-  /// which only includes Point integrals with piecewise linear test
-  /// functions. Such problems are disconnected at the vertices and
-  /// can therefore be solved locally.
-
   // Forward declarations
   class MultiStageScheme;
   class UFC;
+
+  /// This class is a time integrator for general Runge Kutta forms
+
+  /// It only includes Point integrals with piecewise linear test
+  /// functions. Such problems are disconnected at the vertices and
+  /// can therefore be solved locally.
 
   class PointIntegralSolver : public Variable
   {
@@ -91,13 +91,13 @@ namespace dolfin
       return p;
     }
 
-    // Reset newton solver
+    /// Reset newton solver
     void reset_newton_solver();
 
-    // Reset stage solutions
+    /// Reset stage solutions
     void reset_stage_solutions();
 
-    // Return number of computations of jacobian
+    /// Return number of computations of jacobian
     std::size_t num_jacobian_computations() const
     { return _num_jacobian_computations; }
 

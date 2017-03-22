@@ -11,10 +11,54 @@
 #
 # All configuration values have a default; values that are commented out
 # serve to show the default.
-
+from __future__ import print_function
+import subprocess
 import sys
 import os
 
+
+def run_doxygen():
+    print('--------------------------------------------')
+    print('Running doxygen to read docstrings from C++:')
+    sys.stdout.flush() # doxygen writes to stderr and mangles output order
+
+    # Run doxygen on C++ sources, generates XML output for us to convert into Sphinx and SWIG formats.
+    allow_empty_xml = False
+    try:        
+        subprocess.call(['doxygen'], cwd='..')
+    except OSError as e:
+        print('ERROR: could not run doxygen:', e)
+        allow_empty_xml = True
+
+    print('DONE parsing C++ with doxygen')
+    print('--------------------------------------------')
+    print('Generating Sphinx API docs from doxygen')
+
+    # Convert doxygen XML output to *.rst files per subdirectory and make SWIG docstrings.i
+    cmd = ['python', './generate_api_rst.py', '--no-swig']
+    if allow_empty_xml:
+        cmd.append('--allow-empty-xml')
+    subprocess.call(cmd, cwd='..')
+
+    print('DONE generating API docs')
+    print('--------------------------------------------')
+run_doxygen()
+
+
+# We can't compile the swig generated headers on RTD.  Instead, we generate the python part as usual,
+# and then mock the cpp objects by importing a generated module full of stubs that looks enough like
+# what the C++ SWIG modules will look like.
+if os.path.isfile('../mock_cpp_modules.py'):
+    sys.path.insert(0, '../')
+    sys.path.insert(0, '../../site_packages')
+    import mock_cpp_modules
+
+
+# TODO: Copy site-packages/dolfin to tmp-dolfin/
+# Run cmake/scripts/generate-generate-swig-interface.py with output to tmp-swig/
+# Run swig in every directory tmp-swig/modules/*
+# Copy generated tmp-swig/modules/*/*.py to tmp-dolfin/cpp/
+# Now it should be possible to import dolfin and let Sphinx do its magic on the docstrings.
 
 sys.path.append(os.getcwd())
 import rstprocess
@@ -25,7 +69,8 @@ rstprocess.process()
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+# sys.path.insert(0, os.path.abspath('.'))
+
 
 # -- General configuration ------------------------------------------------
 
@@ -39,7 +84,8 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-]
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -367,8 +413,7 @@ epub_exclude_files = ['search.html']
 # Hack to support avoid renaming download files with same names coming
 # from different directories (CMakeLists.txt, Makefile etc)
 
-# From Tormod Landet - see
-# https://github.com/sphinx-doc/sphinx/issues/2720)
+# Fix add_file, see https://github.com/sphinx-doc/sphinx/issues/2720
 from sphinx.util import FilenameUniqDict
 from os import path
 def add_file(self, docname, newfile):
@@ -385,7 +430,8 @@ def add_file(self, docname, newfile):
     return uniquename
 FilenameUniqDict.add_file = add_file
 
-# Hack to support sub-directories within the download directory
+# Hack to support sub-directories within the _download directory
+# see https://github.com/sphinx-doc/sphinx/issues/2720
 from sphinx.builders.html import StandaloneHTMLBuilder, ensuredir, copyfile
 from docutils.utils import relative_path
 from sphinx.util.console import brown
@@ -395,10 +441,10 @@ def copy_download_files(self):
     # copy downloadable files
     if self.env.dlfiles:
         ensuredir(path.join(self.outdir, '_downloads'))
-        for src in self.status_iterator(self.env.dlfiles,  # self.app.status_iterator in master ...
-                                        'copying downloadable files... ',
-                                        brown, len(self.env.dlfiles),
-                                        stringify_func=to_relpath):
+        for src in self.app.status_iterator(self.env.dlfiles,
+                                            'copying downloadable files... ',
+                                            brown, len(self.env.dlfiles),
+                                            stringify_func=to_relpath):
             dest = self.env.dlfiles[src][1]
             subdirs, filename = os.path.split(dest)
             if subdirs:
@@ -410,3 +456,24 @@ def copy_download_files(self):
                 self.warn('cannot copy downloadable file %r: %s' %
                           (path.join(self.srcdir, src), err))
 StandaloneHTMLBuilder.copy_download_files = copy_download_files
+
+# Hack to support sub-directories within the _images directory
+# see https://github.com/sphinx-doc/sphinx/issues/2720
+def copy_image_files(self):
+    # type: () -> None
+    # copy image files
+    if self.images:
+        ensuredir(path.join(self.outdir, self.imagedir))
+        for src in self.app.status_iterator(self.images, 'copying images... ',
+                                            brown, len(self.images)):
+            dest = self.images[src]
+            subdirs, filename = os.path.split(dest)
+            if subdirs:
+                ensuredir(path.join(self.outdir, self.imagedir, subdirs))
+            try:
+                copyfile(path.join(self.srcdir, src),
+                         path.join(self.outdir, self.imagedir, dest))
+            except Exception as err:
+                logger.warning('cannot copy image file %r: %s', path.join(self.srcdir, src), err)
+StandaloneHTMLBuilder.copy_image_files = copy_image_files
+

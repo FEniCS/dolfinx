@@ -30,6 +30,8 @@
 namespace dolfin
 {
 
+  /// Default linear algebra factory based on global parameter "linear_algebra_backend"
+
   class DefaultFactory : public GenericLinearAlgebraFactory
   {
 
