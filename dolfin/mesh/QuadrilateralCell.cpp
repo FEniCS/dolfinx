@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <Eigen/Dense>
 #include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
 #include "Cell.h"
