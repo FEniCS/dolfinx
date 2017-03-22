@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for PointSources"""
 
 # Copyright (C) 2016 Ettie Unwin
