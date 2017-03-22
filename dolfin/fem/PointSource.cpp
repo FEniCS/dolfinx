@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2011-04-13
-// Last changed: 2014-03-25
 
 #include <limits>
 #include <memory>
@@ -38,17 +35,14 @@
 using namespace dolfin;
 //-----------------------------------------------------------------------------
 PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
-                         const Point& p,
-                         double magnitude)
+                         const Point& p, double magnitude)
   : _function_space0(V)
 {
-  // Checking meshes exist
-  dolfin_assert(_function_space0->mesh());
-
   // Puts point and magniude data into a vector
   std::vector<std::pair<Point, double>> sources = {{p, magnitude}};
 
   // Distribute sources
+  dolfin_assert(_function_space0->mesh());
   const Mesh& mesh0 = *_function_space0->mesh();
   distribute_sources(mesh0, sources);
 
@@ -57,7 +51,7 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
-			  const std::vector<std::pair<const Point*, double> > sources)
+                         const std::vector<std::pair<const Point*, double>> sources)
   : _function_space0(V)
 {
   // Checking meshes exist
@@ -99,25 +93,24 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
 }
 //----------------------------------------------------------------------------
 PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
-			  std::shared_ptr<const FunctionSpace> V1,
-			  const std::vector<std::pair<const Point*, double> > sources)
+                         std::shared_ptr<const FunctionSpace> V1,
+                         const std::vector<std::pair<const Point*, double>> sources)
   : _function_space0(V0), _function_space1(V1)
 {
-  // Checking meshes exist
-  dolfin_assert(_function_space0->mesh());
-  dolfin_assert(_function_space1->mesh());
+  // Check that function spaces are supported
+  dolfin_assert(V0);
+  dolfin_assert(V1);
+  check_space_supported(*V0);
+  check_space_supported(*V1);
 
   // Copy point and magnitude data
   std::vector<std::pair<Point, double>> source_copy;
   for (auto& p : sources)
     source_copy.push_back({*(p.first), p.second});
 
+  dolfin_assert(_function_space0->mesh());
   const Mesh& mesh0 = *_function_space0->mesh();
   distribute_sources(mesh0, source_copy);
-
-  // Check that function spaces are supported
-  check_space_supported(*V0);
-  check_space_supported(*V1);
 }
 //-----------------------------------------------------------------------------
 PointSource::~PointSource()
@@ -125,7 +118,8 @@ PointSource::~PointSource()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Point, double>>& sources)
+void PointSource::distribute_sources(const Mesh& mesh,
+                                     const std::vector<std::pair<Point, double>>& sources)
 {
   // Take a list of points, and assign to correct process
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -135,7 +129,7 @@ void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Poi
   std::vector<double> remote_points;
   for (auto & s : sources)
   {
-    Point& p = s.first;
+    const Point& p = s.first;
     double magnitude = s.second;
 
     unsigned int cell_index = tree->compute_first_entity_collision(p);
@@ -150,8 +144,8 @@ void PointSource::distribute_sources(const Mesh& mesh, std::vector<std::pair<Poi
   }
 
   // Send all non-local points out to all other processes
-  const unsigned int mpi_size = MPI::size(mpi_comm);
-  const unsigned int mpi_rank = MPI::rank(mpi_comm);
+  const int mpi_size = MPI::size(mpi_comm);
+  const int mpi_rank = MPI::rank(mpi_comm);
   std::vector<std::vector<double>> remote_points_all(mpi_size);
   MPI::all_gather(mpi_comm, remote_points, remote_points_all);
 
@@ -222,9 +216,6 @@ void PointSource::apply(GenericVector& b)
   log(PROGRESS, "Applying point source to right-hand side vector.");
 
   dolfin_assert(_function_space0->mesh());
-  dolfin_assert(_function_space0->element());
-  dolfin_assert(_function_space0->dofmap());
-
   const Mesh& mesh = *_function_space0->mesh();
   const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
   unsigned int cell_index;
@@ -234,6 +225,7 @@ void PointSource::apply(GenericVector& b)
   ufc::cell ufc_cell;
 
   // Variables for evaluating basis
+  dolfin_assert(_function_space0->element());
   const std::size_t rank = _function_space0->element()->value_rank();
   std::size_t size_basis = 1;
   for (std::size_t i = 0; i < rank; ++i)
@@ -274,11 +266,13 @@ void PointSource::apply(GenericVector& b)
     }
 
     // Compute local-to-global mapping
+    dolfin_assert(_function_space0->dofmap());
     dofs = _function_space0->dofmap()->cell_dofs(cell.index());
 
     // Add values to vector
     b.add_local(values.data(), dofs_per_cell, dofs.data());
   }
+
   b.apply("add");
 }
 //-----------------------------------------------------------------------------
@@ -288,8 +282,7 @@ void PointSource::apply(GenericMatrix& A)
   dolfin_assert(_function_space0);
 
   if (!_function_space1)
-    _function_space1=_function_space0;
-
+    _function_space1 = _function_space0;
   dolfin_assert(_function_space1);
 
   // Currently only works if V0 and V1 are the same
@@ -334,7 +327,7 @@ void PointSource::apply(GenericMatrix& A)
   std::size_t dofs_per_cell0 = V0->element()->space_dimension()/num_sub_spaces;
   std::size_t dofs_per_cell1 = V1->element()->space_dimension()/num_sub_spaces;
 
-  //Calculates size of basis
+  // Calculates size of basis
   size_basis = 1;
   for (std::size_t i = 0; i < rank; ++i)
     size_basis *= V0->element()->value_dimension(i);
@@ -354,15 +347,17 @@ void PointSource::apply(GenericMatrix& A)
   // Runs some checks on vector or mixed function spaces
   if (num_sub_spaces > 1)
   {
-    for (std::size_t n=0; n<num_sub_spaces; ++n)
+    for (std::size_t n = 0; n < num_sub_spaces; ++n)
     {
-      // Doesn't work for mixed function spaces with different elements.
+      // Doesn't work for mixed function spaces with different
+      // elements.
       if (V0->sub(0)->element()->signature() != V0->sub(n)->element()->signature())
       {
 	dolfin_error("PointSource.cpp",
 		     "apply point source to matrix",
 		     "The mixed elements are not the same. Not currently implemented");
       }
+
       if (V0->sub(n)->element()->num_sub_elements() > 1)
       {
 	dolfin_error("PointSource.cpp",
@@ -392,6 +387,7 @@ void PointSource::apply(GenericMatrix& A)
                                     p.coordinates(),
                                     coordinate_dofs.data(),
                                     ufc_cell.orientation);
+
       for (std::size_t j = 0; j < dofs_per_cell0; ++j)
       {
         V1->element()->evaluate_basis(j, basis1.data(),
@@ -413,20 +409,19 @@ void PointSource::apply(GenericMatrix& A)
     // If scalar function space, values = values_sub
     if (num_sub_spaces < 2)
       values = values_sub;
-    // If vector function space with repeated sub spaces,
-    // calculates the values_sub for a sub space and then manipulates
-    // values matrix for all sub_spaces.
+    // If vector function space with repeated sub spaces, calculates
+    // the values_sub for a sub space and then manipulates values
+    // matrix for all sub_spaces.
     else
     {
-      int ii;
-      int jj;
-      for (std::size_t k=0; k<num_sub_spaces; ++k)
+      int ii, jj;
+      for (std::size_t k = 0; k < num_sub_spaces; ++k)
       {
         ii = 0;
-        for (std::size_t i=k*dofs_per_cell0; i<dofs_per_cell0*(k+1); ++i)
+        for (std::size_t i = k*dofs_per_cell0; i < dofs_per_cell0*(k + 1); ++i)
         {
           jj = 0;
-          for (std::size_t j=k*dofs_per_cell1; j<dofs_per_cell1*(k+1); ++j)
+          for (std::size_t j = k*dofs_per_cell1; j < dofs_per_cell1*(k + 1); ++j)
           {
             values[i][j] = values_sub[ii][jj];
             jj += 1;
@@ -445,6 +440,7 @@ void PointSource::apply(GenericMatrix& A)
                 dofs_per_cell0*num_sub_spaces, dofs0.data(),
                 dofs_per_cell1*num_sub_spaces, dofs1.data());
   }
+
   A.apply("add");
 }
 //-----------------------------------------------------------------------------
