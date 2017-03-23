@@ -133,10 +133,10 @@ void PointSource::distribute_sources(const Mesh& mesh,
     double magnitude = s.second;
 
     unsigned int cell_index = tree->compute_first_entity_collision(p);
-
     if (cell_index == std::numeric_limits<unsigned int>::max())
     {
-      remote_points.insert(remote_points.end(), p.coordinates(), p.coordinates() + 3);
+      remote_points.insert(remote_points.end(), p.coordinates(),
+                           p.coordinates() + 3);
       remote_points.push_back(magnitude);
     }
     else
@@ -165,17 +165,17 @@ void PointSource::distribute_sources(const Mesh& mesh,
   }
 
   // Send out the results of the search to all processes
-  const unsigned int npoints = point_count.size();
   std::vector<std::vector<int>> point_count_all(mpi_size);
   MPI::all_gather(mpi_comm, point_count, point_count_all);
 
   // Check the point exists on some process, and prioritise lower rank
-  for (unsigned int i = 0; i != npoints; ++i)
+  for (std::size_t i = 0; i < point_count.size(); ++i)
   {
     bool found = false;
-    for (unsigned int j = 0; j != mpi_size; ++j)
+    for (int j = 0; j < mpi_size; ++j)
     {
-      // Clear higher ranked 'finds' if already found on a lower rank process
+      // Clear higher ranked 'finds' if already found on a lower rank
+      // process
       if (found)
         point_count_all[j][i] = 0;
 
@@ -218,7 +218,6 @@ void PointSource::apply(GenericVector& b)
   dolfin_assert(_function_space0->mesh());
   const Mesh& mesh = *_function_space0->mesh();
   const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
-  unsigned int cell_index;
 
   // Variables for cell information
   std::vector<double> coordinate_dofs;
@@ -243,7 +242,7 @@ void PointSource::apply(GenericVector& b)
     Point& p = s.first;
     double magnitude = s.second;
 
-    cell_index = tree->compute_first_entity_collision(p);
+    unsigned int cell_index = tree->compute_first_entity_collision(p);
 
     // Create cell
     Cell cell(mesh, static_cast<std::size_t>(cell_index));
