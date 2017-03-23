@@ -27,20 +27,36 @@ namespace dolfin
   // Forward declarations
   class FunctionSpace;
   class GenericVector;
+  class GenericMatrix;
 
   /// This class provides an easy mechanism for adding a point source
   /// (Dirac delta function) to the right-hand side vector in a
   /// variational problem. The associated function space must be
   /// scalar in order for the inner product with the (scalar) Dirac
-  /// delta function to be well defined.
+  /// delta function to be well defined. For each of the constructors,
+  /// Points passed to PointSource will be copied.
 
   class PointSource
   {
   public:
-
     /// Create point source at given point of given magnitude
     PointSource(std::shared_ptr<const FunctionSpace> V, const Point& p,
                 double magnitude=1.0);
+
+    /// Create point sources at given points of given magnitudes
+    PointSource(std::shared_ptr<const FunctionSpace> V,
+	        const std::vector<std::pair<const Point*, double> > sources);
+
+    /// Create point source at given point of given magnitude
+    PointSource(std::shared_ptr<const FunctionSpace> V0,
+                std::shared_ptr<const FunctionSpace> V1,
+                const Point& p,
+                double magnitude=1.0);
+
+    /// Create point sources at given points of given magnitudes
+    PointSource(std::shared_ptr<const FunctionSpace> V0,
+		std::shared_ptr<const FunctionSpace> V1,
+	        const std::vector<std::pair<const Point*, double> > sources);
 
     /// Destructor
     ~PointSource();
@@ -48,19 +64,23 @@ namespace dolfin
     /// Apply (add) point source to right-hand side vector
     void apply(GenericVector& b);
 
+    /// Apply (add) point source to matrix
+    void apply(GenericMatrix& A);
+
   private:
+
+    // Collective MPI method to distribute sources to correct processes
+    void distribute_sources(const Mesh& mesh, std::vector<std::pair<Point, double>>& sources);
 
     // Check that function space is scalar
     void check_space_supported(const FunctionSpace& V);
 
     // The function space
-    std::shared_ptr<const FunctionSpace> _function_space;
+    std::shared_ptr<const FunctionSpace> _function_space0;
+    std::shared_ptr<const FunctionSpace> _function_space1;
 
-    // The point
-    Point _p;
-
-    // Magnitude
-    double _magnitude;
+    // Source term - pair of points and magnitude
+    std::vector<std::pair<Point, double> > _sources;
 
   };
 
