@@ -9,7 +9,7 @@ jobs:
           name: Git LFS (install Git Large File Storage)
           command: |
             mkdir -p ~/.ssh
-            ssh-keyscan -H  git@bitbucket.org >> ~/.ssh/known_hosts
+            ssh-keyscan -H bitbucket.org >> ~/.ssh/known_hosts
             ssh git@bitbucket.org git-lfs-authenticate "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}" download
             git lfs pull
       - checkout
