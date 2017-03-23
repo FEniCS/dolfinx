@@ -8,6 +8,7 @@ jobs:
       - run:
           name: Git LFS (install Git Large File Storage)
           command: |
+            rm -rf ~/.ssh
             mkdir -p ~/.ssh
             ssh-keyscan -H bitbucket.org >> ~/.ssh/known_hosts
             echo "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
