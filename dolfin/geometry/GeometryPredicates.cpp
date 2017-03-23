@@ -1,4 +1,4 @@
-// Copyright (C) 2016 Anders Logg, August Johansson and Benjamin Kehlet
+// Copyright (C) 2016-2017 Anders Logg, August Johansson and Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -138,3 +138,60 @@ bool GeometryPredicates::is_finite(const std::vector<double>& simplex)
   return true;
 }
 //-----------------------------------------------------------------------------
+bool GeometryPredicates::convex_hull_is_degenerate(const std::vector<Point>& points,
+                                                   std::size_t gdim)
+{
+  // Points are assumed to be unique
+
+  if (points.size() < gdim+1)
+    return true;
+
+  if (gdim == 2)
+  {
+
+    // FIXME!
+    return false;
+  }
+  else if (gdim == 3)
+  {
+    int i = 0, j = 1, k = 2;
+    bool found = false;
+
+    // Find three point which are not collinear
+    for (; i < points.size(); i++)
+    {
+      for (j = i+1; j < points.size(); j++)
+      {
+        for (k = j+1; k < points.size(); k++)
+        {
+          const Point ij = points[j] - points[i];
+          const Point ik = points[k] - points[i];
+          if ( -(std::abs( (ij/ij.norm() ).dot(ik/ik.norm()))-1)  > DOLFIN_EPS)
+          {
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+      if (found)
+        break;
+    }
+
+    // All points are collinear
+    if (!found)
+      return false;
+
+
+    for (int l = 0; l < points.size();  l++)
+    {
+      if (l == i || l == j || l == k)
+        continue;
+
+      if (orient3d(points[i], points[j], points[k], points[l]) == 0)
+        return true;
+    }
+
+    return false;
+  }
+}

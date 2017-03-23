@@ -1114,13 +1114,17 @@ void MultiMesh::_inclusion_exclusion_overlap
 		  = IntersectionConstruction::intersection(initial_simplex,
 							   previous_simplex,
 							   gdim);
-                const Polyhedron intersection
-		  = ConvexTriangulation::triangulate(intersection_points,
-						     gdim,
-						     tdim);
 
-		if (intersection.size())
-		{
+                if (!GeometryPredicates::convex_hull_is_degenerate(intersection_points,
+                                                                   gdim))
+                {
+
+                  const Polyhedron intersection
+                    = ConvexTriangulation::triangulate(intersection_points,
+                                                       gdim,
+                                                       tdim);
+                  dolfin_assert(intersection.size());
+
 		  // To save all intersections as a single
 		  // polyhedron, we don't call this a polyhedron
 		  // yet, but rather a std::vector<Simplex> since we

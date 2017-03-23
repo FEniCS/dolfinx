@@ -1,4 +1,4 @@
-// Copyright (C) 2016 Anders Logg, August Johansson and Benjamin Kehlet
+// Copyright (C) 2016-2017 Anders Logg, August Johansson and Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -57,6 +57,9 @@ namespace dolfin
 
     /// Check whether simplex is finite (not Inf or NaN)
     static bool is_finite(const std::vector<double>& simplex);
+
+    static bool convex_hull_is_degenerate(const std::vector<Point>& p,
+                                          std::size_t gdim);
 
   private:
 
