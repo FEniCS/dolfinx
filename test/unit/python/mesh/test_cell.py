@@ -76,10 +76,9 @@ def test_issue_568():
     cell.facet_area(0)
 
 
-@skip_in_parallel
 def test_volume_quadrilateral():
 
-    mesh = UnitQuadMesh(mpi_comm_world(), 1, 1)
+    mesh = UnitQuadMesh(mpi_comm_self(), 1, 1)
     cell = Cell(mesh, 0)
     # TODO: Add same test for R^3
     
