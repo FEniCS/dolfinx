@@ -5,7 +5,9 @@ jobs:
       - image: quay.io/fenicsproject/dev-env:latest
     working_directory: /home/fenics/working
     steps:
-      - add_ssh_keys
+      - run:
+          name: Clone DOLFIN
+          command: git clone https://bitbucket.org/fenics-project/dolfin.git
       - checkout
       - run:
           name: Install FIAT
