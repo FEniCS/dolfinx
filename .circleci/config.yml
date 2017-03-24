@@ -9,7 +9,7 @@ jobs:
           name: Add Bitbucket key
           command: |
             mkdir -p ~/.ssh
-            ssh-keyscan -H bitbucket.org. >> ~/.ssh/known_hosts
+            ssh-keyscan -H bitbucket.org >> ~/.ssh/known_hosts
             #ssh git@github.com git-lfs-authenticate "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}" download
       - run:
           name: Clone DOLFIN
