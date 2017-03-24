@@ -6,8 +6,14 @@ jobs:
     working_directory: /home/fenics/working
     steps:
       - run:
+          name: Add Bitbucket key
+          command: |
+            mkdir -p ~/.ssh
+            ssh-keyscan -H bitbucket.org. >> ~/.ssh/known_hosts
+            #ssh git@github.com git-lfs-authenticate "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}" download
+      - run:
           name: Clone DOLFIN
-          command: echo $PWD && git clone $CIRCLE_REPOSITORY_URL .
+          command: echo $PWD echo $&& git clone $CIRCLE_REPOSITORY_URL .
           #command: echo $PWD && git clone https://bitbucket.org/fenics-project/dolfin.git .
       - checkout
       - run:
