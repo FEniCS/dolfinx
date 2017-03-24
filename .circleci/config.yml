@@ -8,7 +8,6 @@ jobs:
       - run:
           name: Clone DOLFIN
           command: echo $PWD && git clone https://bitbucket.org/fenics-project/dolfin.git .
-
       - checkout
       - run:
           name: Install FIAT
@@ -27,11 +26,11 @@ jobs:
           command: pip3 install git+https://bitbucket.org/fenics-project/ffc.git@master
 
       - run:
-          name: Configure
+          name: Configure DOLFIN
           command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DDOLFIN_ENABLE_TESTING=ON
       - run:
           name: Build
-          command: make install
+          command: cd build && make install
       - run:
           name: Run tests
-          command: source /usr/local/share/dolfin/dolfin.conf && make run_quicktest
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_quicktest
