@@ -7,7 +7,8 @@ jobs:
     steps:
       - run:
           name: Clone DOLFIN
-          command: echo $PWD && git clone https://bitbucket.org/fenics-project/dolfin.git .
+          command: echo $PWD && git clone $CIRCLE_REPOSITORY_URL .
+          #command: echo $PWD && git clone https://bitbucket.org/fenics-project/dolfin.git .
       - checkout
       - run:
           name: Install FIAT
