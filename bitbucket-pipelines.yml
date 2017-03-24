@@ -41,7 +41,7 @@ pipelines:
             - pip3 install git+https://bitbucket.org/fenics-project/instant.git@master
             - pip3 install git+https://bitbucket.org/fenics-project/ffc.git@master
             - echo ${BITBUCKET_REPO_SLUG}
-            - git lfs pull ${BITBUCKET_REPO_SLUG}
+            - git lfs pull
             - mkdir -p build
             - cd build
             - cmake .. -DCMAKE_BUILD_TYPE=Debug -DDOLFIN_ENABLE_TESTING=ON
