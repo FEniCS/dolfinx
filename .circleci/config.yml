@@ -5,16 +5,9 @@ jobs:
       - image: quay.io/fenicsproject/dev-env:latest
     working_directory: /home/fenics/working
     steps:
-      #- run:
-      #    name: Add Bitbucket key
-      #    command: |
-      #      mkdir -p ~/.ssh
-      #      ssh-keyscan -H bitbucket.org >> ~/.ssh/known_hosts
-      #      #ssh git@github.com git-lfs-authenticate "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}" download
       - run:
           name: Clone DOLFIN
           command: echo $PWD echo $&& git clone https://bitbucket.org/"${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}".git .
-          #command: echo $PWD && git clone https://bitbucket.org/fenics-project/dolfin.git .
       - checkout
       - run:
           name: Install FIAT
@@ -31,12 +24,11 @@ jobs:
       - run:
           name: Install FFC
           command: pip3 install git+https://bitbucket.org/fenics-project/ffc.git@master
-
       - run:
           name: Configure DOLFIN
           command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DDOLFIN_ENABLE_TESTING=ON
       - run:
-          name: Build
+          name: Build DOLFIN
           command: cd build && make install
       - run:
           name: Run Python unit tests
