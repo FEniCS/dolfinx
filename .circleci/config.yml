@@ -13,7 +13,7 @@ jobs:
       #      #ssh git@github.com git-lfs-authenticate "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}" download
       - run:
           name: Clone DOLFIN
-          command: echo $PWD echo $&& git clone https://"${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}".git .
+          command: echo $PWD echo $&& git clone https://bitbucket.org/"${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}".git .
           #command: echo $PWD && git clone https://bitbucket.org/fenics-project/dolfin.git .
       - checkout
       - run:
