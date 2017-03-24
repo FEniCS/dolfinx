@@ -40,6 +40,8 @@ namespace dolfin
   class MeshData;
   class MeshDomains;
 
+  /// I/O of XML representation of a Mesh
+
   class XMLMesh
   {
   public:
@@ -70,7 +72,7 @@ namespace dolfin
 
     // FIXME: This is hack for domain data support via XML in
     // parallel.
-    // Read domain data in LocalMeshData.
+    /// Read domain data in LocalMeshData.
     static void read_domain_data(LocalMeshData& mesh_data,
                                  const pugi::xml_node mesh_node);
 

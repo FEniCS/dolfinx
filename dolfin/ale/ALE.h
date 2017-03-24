@@ -46,14 +46,12 @@ namespace dolfin
     /// Move coordinates of mesh according to new boundary coordinates.
     /// Works only for affine meshes.
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param mesh (_Mesh_)
     ///         The affine mesh to move.
-    ///     boundary (_BoundaryMesh_)
+    /// @param new_boundary (_BoundaryMesh_)
     ///         An affine mesh containing just the boundary cells.
     ///
-    /// *Returns*
-    ///     MeshDisplacement
+    /// @return MeshDisplacement
     ///         Displacement encapsulated in Expression subclass
     ///         MeshDisplacement.
     static std::shared_ptr<MeshDisplacement>
@@ -62,14 +60,12 @@ namespace dolfin
     /// Move coordinates of mesh according to adjacent mesh with
     /// common global vertices. Works only for affine meshes.
     //
-    /// *Arguments*
-    ///     mesh0 (_Mesh_)
+    /// @param mesh0 (_Mesh_)
     ///         The affine mesh to move.
-    ///     mesh1 (_Mesh_)
+    /// @param mesh1 (_Mesh_)
     ///         The affine mesh to be fit.
     ///
-    /// *Returns*
-    ///     MeshDisplacement
+    /// @return MeshDisplacement
     ///         Displacement encapsulated in Expression subclass
     static std::shared_ptr<MeshDisplacement> move(std::shared_ptr<Mesh> mesh0,
                                                   const Mesh& mesh1);
@@ -81,19 +77,17 @@ namespace dolfin
     ///       as there is no way of constructing function space for
     ///       position unless supplied as an argument.
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param mesh (_Mesh_)
     ///         The affine mesh to move.
-    ///     displacement (_GenericFunction_)
+    /// @param displacement (_GenericFunction_)
     ///         A vectorial generic function.
     static void move(Mesh& mesh, const GenericFunction& displacement);
 
     /// Move coordinates of mesh according to displacement function.
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param mesh (_Mesh_)
     ///         The mesh to move.
-    ///     displacement (_Function_)
+    /// @param displacement (_Function_)
     ///         A vectorial Lagrange function of matching degree.
     static void move(Mesh& mesh, const Function& displacement);
 

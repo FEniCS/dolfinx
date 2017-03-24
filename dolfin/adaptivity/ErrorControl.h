@@ -53,24 +53,23 @@ namespace dolfin
 
     /// Create error control object
     ///
-    /// *Arguments*
-    ///     a_star (_Form_)
+    /// @param a_star (_Form_)
     ///        the bilinear form for the dual problem
-    ///     L_star (_Form_)
+    /// @param L_star (_Form_)
     ///        the linear form for the dual problem
-    ///     residual (_Form_)
+    /// @param residual (_Form_)
     ///        a functional for the residual (error estimate)
-    ///     a_R_T (_Form_)
+    /// @param a_R_T (_Form_)
     ///        the bilinear form for the strong cell residual problem
-    ///     L_R_T (_Form_)
+    /// @param L_R_T (_Form_)
     ///        the linear form for the strong cell residual problem
-    ///     a_R_dT (_Form_)
+    /// @param a_R_dT (_Form_)
     ///        the bilinear form for the strong facet residual problem
-    ///     L_R_dT (_Form_)
+    /// @param L_R_dT (_Form_)
     ///        the linear form for the strong facet residual problem
-    ///     eta_T (_Form_)
+    /// @param eta_T (_Form_)
     ///        a linear form over DG_0 for error indicators
-    ///     is_linear (bool)
+    /// @param is_linear (bool)
     ///        true iff primal problem is linear
     ErrorControl(std::shared_ptr<Form> a_star,
                  std::shared_ptr<Form> L_star,
@@ -85,7 +84,7 @@ namespace dolfin
     /// Destructor.
     ~ErrorControl() {}
 
-    /// Default parameter values:
+    /// Default parameter values
     static Parameters default_parameters()
     {
       Parameters p("error_control");
@@ -104,26 +103,23 @@ namespace dolfin
     /// evaluating the weak residual at an approximation to the dual
     /// solution.
     ///
-    /// *Arguments*
-    ///     u (_Function_)
+    /// @param    u (_Function_)
     ///        the primal approximation
     ///
-    ///     bcs (std::vector<_DirichletBC_>)
+    /// @param   bcs (std::vector<_DirichletBC_>)
     ///         the primal boundary conditions
     ///
-    /// *Returns*
-    ///     double
+    /// @return    double
     ///         error estimate
     double estimate_error(const Function& u,
            const std::vector<std::shared_ptr<const DirichletBC> > bcs);
 
     /// Compute error indicators
     ///
-    /// *Arguments*
-    ///     indicators (_MeshFunction_ <double>)
+    /// @param    indicators (MeshFunction<double>)
     ///         the error indicators (to be computed)
     ///
-    ///     u (_Function_)
+    /// @param    u (_Function_)
     ///         the primal approximation
     void compute_indicators(MeshFunction<double>& indicators,
                             const Function& u);
@@ -131,14 +127,13 @@ namespace dolfin
     /// Compute strong representation (strong cell and facet
     /// residuals) of the weak residual.
     ///
-    /// *Arguments*
-    ///     R_T (_Function_)
+    /// @param    R_T (_Function_)
     ///         the strong cell residual (to be computed)
     ///
-    ///     R_dT (_SpecialFacetFunction_)
+    /// @param    R_dT (_SpecialFacetFunction_)
     ///         the strong facet residual (to be computed)
     ///
-    ///     u (_Function_)
+    /// @param    u (_Function_)
     ///         the primal approximation
     void residual_representation(Function& R_T,
                                  SpecialFacetFunction& R_dT,
@@ -147,25 +142,23 @@ namespace dolfin
     /// Compute representation for the strong cell residual
     /// from the weak residual
     ///
-    /// *Arguments*
-    ///     R_T (_Function_)
+    /// @param    R_T (_Function_)
     ///         the strong cell residual (to be computed)
     ///
-    ///     u (_Function_)
+    /// @param   u (_Function_)
     ///         the primal approximation
     void compute_cell_residual(Function& R_T, const Function& u);
 
     /// Compute representation for the strong facet residual from the
     /// weak residual and the strong cell residual
     ///
-    /// *Arguments*
-    ///     R_dT (_SpecialFacetFunction_)
+    /// @param    R_dT (_SpecialFacetFunction_)
     ///         the strong facet residual (to be computed)
     ///
-    ///     u (_Function_)
+    /// @param    u (_Function_)
     ///         the primal approximation
     ///
-    ///     R_T (_Function_)
+    /// @param    R_T (_Function_)
     ///         the strong cell residual
     void compute_facet_residual(SpecialFacetFunction& R_dT,
                                 const Function& u,
@@ -175,22 +168,20 @@ namespace dolfin
     /// problem and dual boundary conditions given by homogenized primal
     /// boundary conditions.
     ///
-    /// *Arguments*
-    ///     z (_Function_)
+    /// @param    z (_Function_)
     ///         the dual approximation (to be computed)
     ///
-    ///     bcs (std::vector<_DirichletBC_>)
+    /// @param   bcs (std::vector<DirichletBC>)
     ///         the primal boundary conditions
     void compute_dual(Function& z,
          const std::vector<std::shared_ptr<const DirichletBC> > bcs);
 
     /// Compute extrapolation with boundary conditions
     ///
-    /// *Arguments*
-    ///     z (_Function_)
+    /// @param   z (_Function_)
     ///         the extrapolated function (to be computed)
     ///
-    ///     bcs (std::vector<_DirichletBC_>)
+    /// @param    bcs (std::vector<_DirichletBC_>)
     ///         the dual boundary conditions
     void compute_extrapolation(const Function& z,
          const std::vector<std::shared_ptr<const DirichletBC> > bcs);

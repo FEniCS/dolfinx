@@ -168,7 +168,7 @@ namespace dolfin
     Type _cell_type;
     Type _facet_type;
 
-    // Sort vertices based on global entity indices
+    /// Sort vertices based on global entity indices
     static void sort_entities(std::size_t num_vertices,
                       unsigned int* vertices,
                       const std::vector<std::int64_t>& local_to_global_vertex_indices);

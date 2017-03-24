@@ -158,8 +158,8 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   add_feature_info(${OPTION_NAME} ${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}.")
 endforeach()
 
-# Python version
-option(DOLFIN_USE_PYTHON3 "Use Python 3." OFF)
+# Default Python version
+option(DOLFIN_USE_PYTHON3 "Use Python 3." ON)
 
 #------------------------------------------------------------------------------
 # General compiler defintions

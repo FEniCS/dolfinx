@@ -90,10 +90,10 @@ namespace dolfin
   // FIXME: This is very peculiar code. Why is there are shared_ptr
   // version when the function does not return an object?
 
-  // Plot multimesh
+  /// Plot multimesh
   void plot(const MultiMesh& multimesh);
 
-  // Plot multimesh (shared_ptr version)
+  /// Plot multimesh (shared_ptr version)
   void plot(std::shared_ptr<const MultiMesh> multimesh);
 
 

@@ -41,6 +41,8 @@
 namespace dolfin
 {
 
+  /// I/O of XML representation of MeshFunction
+
   class XMLMeshFunction
   {
   public:

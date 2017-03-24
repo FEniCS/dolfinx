@@ -31,6 +31,8 @@
 namespace dolfin
 {
 
+  /// Tpetra linear algebra factory
+
   class TpetraFactory : public GenericLinearAlgebraFactory
   {
   public:

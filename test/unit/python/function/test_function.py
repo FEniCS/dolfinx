@@ -23,7 +23,7 @@ import pytest
 from dolfin import *
 import ufl
 
-from dolfin_utils.test import *
+from dolfin_utils.test import skip_in_parallel, pushpop_parameters, fixture
 
 
 @fixture
@@ -105,8 +105,8 @@ def test_assign(V, W):
         assert uu.vector().sum() == u1.vector().sum()
 
         # Test complex assignment
-        expr = 3*u-4*u1-0.1*4*u*4+u2+3*u0/3./0.5
-        expr_scalar = 3-4*3-0.1*4*4+4.+3*2./3./0.5
+        expr = 3*u - 4*u1 - 0.1*4*u*4 + u2 + 3*u0/3./0.5
+        expr_scalar = 3 - 4*3 - 0.1*4*4+4. + 3*2./3./0.5
         uu.assign(expr)
         assert (round(uu.vector().sum() -
                       float(expr_scalar*uu.vector().size()), 7) == 0)
@@ -133,7 +133,7 @@ def test_assign(V, W):
                       float(expr_scalar*u.vector().size()), 7) == 0)
 
         # Test zero assignment
-        u.assign(-u2/2+2*u1-u1/0.5+u2*0.5)
+        u.assign(-u2/2 + 2*u1 - u1/0.5 + u2*0.5)
         assert round(u.vector().sum() - 0.0, 7) == 0
 
         # Test errounious assignments
@@ -182,16 +182,16 @@ def test_axpy(V, W):
         assert (round(u.vector().sum() -
                       float(expr_scalar*u.vector().size()), 7) == 0)
 
-        axpy = axpy*3
+        axpy = axpy*3.0
         u.assign(axpy)
-        expr_scalar *= 3
+        expr_scalar *= 3.0
 
         assert (round(u.vector().sum() -
                       float(expr_scalar*u.vector().size()), 7) == 0)
 
-        axpy0 = axpy/5
+        axpy0 = axpy/5.0
         u.assign(axpy0)
-        expr_scalar0 = expr_scalar/5
+        expr_scalar0 = expr_scalar/5.0
 
         assert (round(u.vector().sum() -
                       float(expr_scalar0*u.vector().size()), 7) == 0)
@@ -217,7 +217,7 @@ def test_axpy(V, W):
         assert (round(u.vector().sum() -
                       float(expr_scalar1*u.vector().size()), 7) == 0)
 
-        axpy1 = axpy0-u2
+        axpy1 = axpy0 - u2
         u.assign(axpy1)
         expr_scalar1 = expr_scalar0 - 4.0
 
@@ -247,8 +247,8 @@ def test_call(R, V, W, mesh):
     u1.interpolate(e0)
     u2.interpolate(e1)
 
-    p0 = (Vertex(mesh, 0).point() + Vertex(mesh, 1).point())/2
-    x0 = (mesh.coordinates()[0] + mesh.coordinates()[1])/2
+    p0 = (Vertex(mesh, 0).point() + Vertex(mesh, 1).point())/2.0
+    x0 = (mesh.coordinates()[0] + mesh.coordinates()[1])/2.0
     x1 = tuple(x0)
 
     assert round(u0(*x1) - u0(x0), 7) == 0
@@ -338,7 +338,7 @@ def test_interpolation_jit_rank0(V):
 
 
 @skip_in_parallel
-def test_extrapolation(V):
+def test_extrapolation(V, pushpop_parameters):
     original_parameters = parameters["allow_extrapolation"]
 
     f0 = Function(V)
@@ -387,8 +387,6 @@ def test_extrapolation(V):
     assert f2.get_allow_extrapolation() is True
     f2.set_allow_extrapolation(False)
     assert f2.get_allow_extrapolation() is False
-
-    parameters["allow_extrapolation"] = original_parameters
 
 
 def test_interpolation_jit_rank1(W):

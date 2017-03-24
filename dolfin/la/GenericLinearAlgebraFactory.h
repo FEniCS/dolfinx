@@ -42,6 +42,8 @@ namespace dolfin
   class GenericVector;
   class TensorLayout;
 
+  /// Base class for LinearAlgebra factories
+
   class GenericLinearAlgebraFactory
   {
   public:

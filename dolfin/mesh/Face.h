@@ -66,9 +66,11 @@ namespace dolfin
   {
   public:
 
+    /// Constructor on Mesh
     FaceFunction(std::shared_ptr<const Mesh> mesh)
       : MeshFunction<T>(mesh, 2) {}
 
+    /// Constructor on Mesh and value
     FaceFunction(std::shared_ptr<const Mesh> mesh, const T& value)
       : MeshFunction<T>(mesh, 2, value) {}
 
