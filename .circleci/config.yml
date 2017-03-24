@@ -7,7 +7,7 @@ jobs:
     steps:
       - run:
           name: Clone DOLFIN
-          command: echo $PWD echo $&& git clone https://bitbucket.org/"${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}".git .
+          command: git lfs clone https://bitbucket.org/"${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}".git .
       - checkout
       - run:
           name: Install FIAT
