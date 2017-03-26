@@ -24,11 +24,9 @@
 //-----------------------------------------------------------------------------
 %extend dolfin::FunctionAXPY {
 %pythoncode %{
-# self.__truediv__(value) <==> self / value
-#
-# Workaround for SWIG < 3.0.9. Newer SWIG generates __truediv__
-# and rewrites this definition after the class definition
-__truediv__ = lambda self, value: self.__div__(value)
+def __truediv__(self, value):
+    """Return self/value for scalar value"""
+    return _function.FunctionAXPY___div__(self, value)
 %}
 }
 

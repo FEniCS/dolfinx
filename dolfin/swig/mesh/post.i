@@ -34,21 +34,20 @@
 //-----------------------------------------------------------------------------
 %extend dolfin::Point {
 %pythoncode %{
+# SWIG does not generate a good wrapper for operator*(double, const Point&)
 def __rmul__(self, value):
     """Return value*self for scalar value"""
     return self.__mul__(value)
 
-# self.__truediv__(value) <==> self / value
-#
-# Workaround for SWIG < 3.0.9. Newer SWIG generates __truediv__
-# and rewrites this definition after the class definition
-__truediv__ = lambda self, value: self.__div__(value)
+# Workaround for SWIG < 3.0.9
+def __truediv__(self, value):
+    """Return self/value for scalar value"""
+    return _mesh.Point___div__(self, value)
 
-# self.__itruediv__(value) <==> self /= value
-#
-# Workaround for SWIG < 3.0.9. Newer SWIG generates __itruediv__
-# and rewrites this definition after the class definition
-__itruediv__ = lambda self, value: self.__idiv__(value)
+# Workaround for SWIG < 3.0.9
+def __itruediv__(self, value):
+    """Return self /= value for scalar value"""
+    return _mesh.Point___idiv__(self, value)
 %}
 }
 
