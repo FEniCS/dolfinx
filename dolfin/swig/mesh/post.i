@@ -30,17 +30,25 @@
 //=============================================================================
 
 //-----------------------------------------------------------------------------
-// Extend Point for Python 3
+// Extend Point
 //-----------------------------------------------------------------------------
 %extend dolfin::Point {
 %pythoncode %{
-try:
-    # Workaround for SWIG < 3.0.9
-    __truediv__ = __div__
-    __itruediv__ = __idiv__
-except NameError:
-    # SWIG >= 3.0.9
-    pass
+def __rmul__(self, value):
+    """Return value*self for scalar value"""
+    return self.__mul__(value)
+
+# self.__truediv__(value) <==> self / value
+#
+# Workaround for SWIG < 3.0.9. Newer SWIG generates __truediv__
+# and rewrites this definition after the class definition
+__truediv__ = lambda self, value: self.__div__(value)
+
+# self.__itruediv__(value) <==> self /= value
+#
+# Workaround for SWIG < 3.0.9. Newer SWIG generates __itruediv__
+# and rewrites this definition after the class definition
+__itruediv__ = lambda self, value: self.__idiv__(value)
 %}
 }
 

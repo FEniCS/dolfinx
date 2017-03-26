@@ -35,6 +35,12 @@
 %ignore dolfin::LocalMeshData::Topology;
 
 //-----------------------------------------------------------------------------
+// SWIG does not seem to generate useful code for non-member operators
+//-----------------------------------------------------------------------------
+%ignore dolfin::operator*(double, const Point&);
+%ignore dolfin::operator<<(std::ostream&, const Point&);
+
+//-----------------------------------------------------------------------------
 // Return NumPy arrays for Mesh::cells() and Mesh::coordinates()
 //-----------------------------------------------------------------------------
 %extend dolfin::Mesh {

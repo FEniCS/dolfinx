@@ -22,10 +22,13 @@
 //-----------------------------------------------------------------------------
 // Extend FunctionAXPY
 //-----------------------------------------------------------------------------
-%extend dolfin::FunctionAXPY
-{
+%extend dolfin::FunctionAXPY {
 %pythoncode %{
-__truediv__ = __div__
+# self.__truediv__(value) <==> self / value
+#
+# Workaround for SWIG < 3.0.9. Newer SWIG generates __truediv__
+# and rewrites this definition after the class definition
+__truediv__ = lambda self, value: self.__div__(value)
 %}
 }
 

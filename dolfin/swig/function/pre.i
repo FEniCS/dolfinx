@@ -48,13 +48,9 @@
 %ignore dolfin::FunctionSpace::collapse() const;
 
 //-----------------------------------------------------------------------------
-// Modifying the interface of Function
+// Modifying the interface of FunctionAXPY
 //-----------------------------------------------------------------------------
-%ignore dolfin::FunctionAXPY::pair;
-%rename(__add__) dolfin::FunctionAXPY::operator+;
-%rename(__sub__) dolfin::FunctionAXPY::operator-;
-%rename(__mul__) dolfin::FunctionAXPY::operator*;
-%rename(__div__) dolfin::FunctionAXPY::operator/;
+%ignore dolfin::FunctionAXPY::pairs;
 
 //-----------------------------------------------------------------------------
 // Rename [] for SpecialFacetFunction -> _sub
