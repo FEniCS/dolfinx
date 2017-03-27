@@ -526,16 +526,51 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
                   }
                 } while (is_colinear);
 
-		// Tessellate
-		for (std::size_t m = 1; m < coplanar.size() - 1; ++m)
-		{
-                  const std::size_t p1_index = (ref_index + m)%coplanar.size();
-                  const std::size_t p2_index = (p1_index+1)%coplanar.size();
+                // Do ear cut
+                while (order.size() > 2)
+                {
+                  double cos_max_angle = 1.;
+                  std::size_t index_max_angle;
 
-		  std::vector<Point> cand = { points[coplanar[order[ref_index].second]],
-					      points[coplanar[order[p1_index].second]],
-					      points[coplanar[order[p2_index].second]],
-					      polyhedroncenter };
+                  for (int i = 0; i < order.size(); i++)
+                  {
+                    const Point p0 = points[coplanar[order[i].second]];
+                    const Point p1 = points[coplanar[order[(i+1)%order.size()].second]];
+                    const Point p2 = points[coplanar[order[(i+2)%order.size()].second]];
+                    const Point v0 = p1-p0;
+                    const Point v1 = p2-p1;
+
+                    const double cos_angle = (v0/v0.norm()).dot(v1/v1.norm());
+                    if (cos_angle < cos_max_angle)
+                    {
+                      cos_max_angle = cos_angle;
+                      index_max_angle = i;
+                    }
+                  }
+
+                  std::vector<Point> cand = {  points[coplanar[order[i].second]],
+                                               points[coplanar[order[(i+1)%order.size()].second]],
+                                               points[coplanar[order[(i+2)%order.size()].second]] };
+
+                  // Suboptimal to erase from vector, but sizes are small som ok for now.
+                  std::vector<std::pair<double, std::size_t>>::iterator
+                    it = order.begin() + (index_max_angle+1)%order.size();
+
+                  order.erase(it);
+
+
+
+
+		// Tessellate
+		// for (std::size_t m = 1; m < coplanar.size() - 1; ++m)
+		// {
+                //   const std::size_t p1_index = (ref_index + m)%coplanar.size();
+                //   const std::size_t p2_index = (p1_index+1)%coplanar.size();
+
+		//   std::vector<Point> cand = { points[coplanar[order[ref_index].second]],
+		// 			      points[coplanar[order[p1_index].second]],
+		// 			      points[coplanar[order[p2_index].second]],
+		// 			      polyhedroncenter };
 		  // FIXME: Possibly only include if tet is large enough
                   //for (auto p : cand)
                   //  std::cout << " " << p;
@@ -557,7 +592,6 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
                                          "now triangulation overlaps");
                   }
 #endif
-
 		}
 
                 std::sort(coplanar.begin(), coplanar.end());
