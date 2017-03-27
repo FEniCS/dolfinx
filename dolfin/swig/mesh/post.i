@@ -30,28 +30,6 @@
 //=============================================================================
 
 //-----------------------------------------------------------------------------
-// Extend Point
-//-----------------------------------------------------------------------------
-%extend dolfin::Point {
-%pythoncode %{
-# SWIG does not generate a good wrapper for operator*(double, const Point&)
-def __rmul__(self, value):
-    """Return value*self for scalar value"""
-    return self.__mul__(value)
-
-# Workaround for SWIG < 3.0.9
-def __truediv__(self, value):
-    """Return self/value for scalar value"""
-    return _mesh.Point___div__(self, value)
-
-# Workaround for SWIG < 3.0.9
-def __itruediv__(self, value):
-    """Return self /= value for scalar value"""
-    return _mesh.Point___idiv__(self, value)
-%}
-}
-
-//-----------------------------------------------------------------------------
 // Extend mesh entity iterators to work as Python iterators
 //-----------------------------------------------------------------------------
 %extend dolfin::MeshEntityIterator {

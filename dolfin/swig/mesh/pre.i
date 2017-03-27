@@ -40,6 +40,21 @@
 %ignore dolfin::operator*(double, const Point&);
 %ignore dolfin::operator<<(std::ostream&, const Point&);
 
+%rename(__mul__) dolfin::Point::operator*;
+%rename(__rmul__) dolfin::Point::operator*;
+
+// Workaround for SWIG < 3.0.9
+%rename(__truediv__) dolfin::Point::operator/;
+%#if PY_MAJOR_VERSION >= 3
+%rename(__div__) dolfin::Point::operator/;
+%#endif
+
+// Workaround for SWIG < 3.0.9
+%rename(__itruediv__) dolfin::Point::operator/=;
+%#if PY_MAJOR_VERSION >= 3
+%rename(__idiv__) dolfin::Point::operator/=;
+%#endif
+
 //-----------------------------------------------------------------------------
 // Return NumPy arrays for Mesh::cells() and Mesh::coordinates()
 //-----------------------------------------------------------------------------

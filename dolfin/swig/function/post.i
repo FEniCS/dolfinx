@@ -20,17 +20,6 @@
 // Last changed: 2012-11-30
 
 //-----------------------------------------------------------------------------
-// Extend FunctionAXPY
-//-----------------------------------------------------------------------------
-%extend dolfin::FunctionAXPY {
-%pythoncode %{
-def __truediv__(self, value):
-    """Return self/value for scalar value"""
-    return _function.FunctionAXPY___div__(self, value)
-%}
-}
-
-//-----------------------------------------------------------------------------
 // Extend FunctionSpace so one can check if a Function is in a FunctionSpace
 //-----------------------------------------------------------------------------
 %extend dolfin::FunctionSpace {

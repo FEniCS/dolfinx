@@ -51,6 +51,11 @@
 // Modifying the interface of FunctionAXPY
 //-----------------------------------------------------------------------------
 %ignore dolfin::FunctionAXPY::pairs;
+// Workaround for SWIG < 3.0.9
+%rename(__truediv__) dolfin::FunctionAXPY::operator/;
+%#if PY_MAJOR_VERSION >= 3
+%rename(__div__) dolfin::FunctionAXPY::operator/;
+%#endif
 
 //-----------------------------------------------------------------------------
 // Rename [] for SpecialFacetFunction -> _sub
