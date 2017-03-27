@@ -51,11 +51,17 @@
 // Modifying the interface of FunctionAXPY
 //-----------------------------------------------------------------------------
 %ignore dolfin::FunctionAXPY::pairs;
-// Workaround for SWIG < 3.0.9
+
+//-----------------------------------------------------------------------------
+// Add FunctionAXPY.__truediv__ (workaround for SWIG < 3.0.9)
+//-----------------------------------------------------------------------------
+%feature("shadow") dolfin::FunctionAXPY::operator/ %{
+def __truediv__(self, value):
+    """self.__truediv__(value) <==> self/value"""
+    return $action(self, value)
+__div__ = __truediv__
+%};
 %rename(__truediv__) dolfin::FunctionAXPY::operator/;
-%#if PY_MAJOR_VERSION >= 3
-%rename(__div__) dolfin::FunctionAXPY::operator/;
-%#endif
 
 //-----------------------------------------------------------------------------
 // Rename [] for SpecialFacetFunction -> _sub

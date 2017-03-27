@@ -40,20 +40,40 @@
 %ignore dolfin::operator*(double, const Point&);
 %ignore dolfin::operator<<(std::ostream&, const Point&);
 
+//-----------------------------------------------------------------------------
+// Extend Point with __rmul__ (multiplication by scalar from left)
+//-----------------------------------------------------------------------------
+%feature("shadow") dolfin::Point::operator* %{
+def __mul__(self, value):
+    """self.__mul__(value) <==> self*value"""
+    return $action(self, value)
+__rmul__ = __mul__
+%};
 %rename(__mul__) dolfin::Point::operator*;
-%rename(__rmul__) dolfin::Point::operator*;
 
-// Workaround for SWIG < 3.0.9
+//-----------------------------------------------------------------------------
+// Add Point.__truediv__ (workaround for SWIG < 3.0.9)
+//-----------------------------------------------------------------------------
+%feature("shadow") dolfin::Point::operator/ %{
+def __truediv__(self, value):
+    """self.__truediv__(value) <==> self/value"""
+    return $action(self, value)
+__div__ = __truediv__
+%};
 %rename(__truediv__) dolfin::Point::operator/;
-%#if PY_MAJOR_VERSION >= 3
-%rename(__div__) dolfin::Point::operator/;
-%#endif
 
-// Workaround for SWIG < 3.0.9
+//-----------------------------------------------------------------------------
+// Add Point.__itruediv__ (workaround for SWIG < 3.0.9)
+//-----------------------------------------------------------------------------
+%delobject dolfin::Point::operator/=;
+%newobject dolfin::Point::operator/=;
+%feature("shadow") dolfin::Point::operator/= %{
+def __itruediv__(self, value):
+    """self.__itruediv__(value) <==> self /= value"""
+    return $action(self, value)
+__idiv__ = __itruediv__
+%};
 %rename(__itruediv__) dolfin::Point::operator/=;
-%#if PY_MAJOR_VERSION >= 3
-%rename(__idiv__) dolfin::Point::operator/=;
-%#endif
 
 //-----------------------------------------------------------------------------
 // Return NumPy arrays for Mesh::cells() and Mesh::coordinates()
