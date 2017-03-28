@@ -771,7 +771,12 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ../dolfin
+# FEniCS note:
+# The env variable FFC_PATH_FOR_DOXYGEN is defined in the Sphinx conf.py, but
+# it is not needed for generating SWIG doctrings, only when making Sphinx docs
+# so in a normal dolfin build it is undefined (which is fine)
+
+INPUT                  = ../dolfin $(FFC_PATH_FOR_DOXYGEN)
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
