@@ -37,7 +37,7 @@ def get_short_path(hpp_file_name):
     """
     path_components = hpp_file_name.split(os.sep)
     
-    if 'dolfin' in hpp_file_name:
+    if 'dolfin' in path_components:
         # dolfin header files
         path_components_rev = path_components[::-1]
         idx = path_components_rev.index('dolfin')
