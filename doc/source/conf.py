@@ -20,6 +20,7 @@ import os
 def run_doxygen():
     print('--------------------------------------------')
     print('Running doxygen to read docstrings from C++:')
+    print('Doxygen version: ', end='')
     sys.stdout.flush() # doxygen writes to stderr and mangles output order
     
     # Help doxygen find UFC
@@ -31,7 +32,8 @@ def run_doxygen():
     
     # Run doxygen on C++ sources, generates XML output for us to convert into Sphinx and SWIG formats.
     allow_empty_xml = False
-    try:        
+    try:
+        subprocess.call(['doxygen', '--version'], cwd='..')
         subprocess.call(['doxygen'], cwd='..')
     except OSError as e:
         print('ERROR: could not run doxygen:', e)

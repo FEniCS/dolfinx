@@ -730,7 +730,13 @@ def read_doxygen_xml_files(xml_directory, namespace_names, verbose=True):
             continue
         
         path = os.path.join(xml_directory, xml_file_name)
-        root = ET.parse(path).getroot()
+        try:
+            root = ET.parse(path).getroot()
+        except Exception as e:
+            print('ERROR parsing doxygen xml document', path)
+            print(e)
+            continue
+        
         compounds = root.findall('compounddef')
         for c in compounds:
             kind = c.attrib['kind']
@@ -747,13 +753,19 @@ def read_doxygen_xml_files(xml_directory, namespace_names, verbose=True):
             namespace.add(item)
             
             if verbose: print(end='.')
-    if verbose: print('DONE\nParsing namespace files:', end='')
+    if verbose: print('DONE\nParsing namespace files:')
     
     # Loop through other elements in the namespaces
     for namespace in root_namespace.subspaces.values():
         file_name = 'namespace%s.xml' % namespace.name
         path = os.path.join(xml_directory, file_name)
-        root = ET.parse(path).getroot()
+        try:
+            root = ET.parse(path).getroot()
+        except Exception as e:
+            print('ERROR parsing doxygen xml document', path)
+            print(e)
+            continue
+        
         compound = get_single_element(root, 'compounddef')
         sections = compound.findall('sectiondef')
         for s in sections:
@@ -762,7 +774,8 @@ def read_doxygen_xml_files(xml_directory, namespace_names, verbose=True):
                 name = get_single_element(m, 'name').text
                 kind = m.attrib['kind']
                 item = NamespaceMember.from_memberdef(m, name, kind, xml_file_name, namespace)
-                namespace.add(item)            
+                namespace.add(item)
+        if verbose: print(' - ', namespace.name)  
     if verbose: print('Done parsing files')
     
     return root_namespace.subspaces
