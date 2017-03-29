@@ -21,7 +21,14 @@ def run_doxygen():
     print('--------------------------------------------')
     print('Running doxygen to read docstrings from C++:')
     sys.stdout.flush() # doxygen writes to stderr and mangles output order
-
+    
+    # Help doxygen find UFC
+    try:
+        import ffc
+        os.environ['FFC_PATH_FOR_DOXYGEN'] = ffc.get_include_path()
+    except:
+        pass
+    
     # Run doxygen on C++ sources, generates XML output for us to convert into Sphinx and SWIG formats.
     allow_empty_xml = False
     try:        
