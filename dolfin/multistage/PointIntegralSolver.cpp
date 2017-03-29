@@ -223,8 +223,6 @@ void PointIntegralSolver::step(double dt)
                                              _local_to_global_dofs.data());
   }
 
-  MPI::barrier(_scheme->solution()->function_space()->mesh()->mpi_comm());
-
   Timer timer_apply("PointIntegralSolver::apply");
   for (unsigned int stage=0; stage<_num_stages; stage++)
     _scheme->stage_solutions()[stage]->vector()->apply("insert");
