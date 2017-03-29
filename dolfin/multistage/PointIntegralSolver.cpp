@@ -136,6 +136,8 @@ void PointIntegralSolver::step(double dt)
   auto petsc_vec = as_type<PETScVector>(_scheme->solution()->vector());
   PetscErrorCode ierr = VecSetOption(petsc_vec->vec(), VEC_IGNORE_OFF_PROC_ENTRIES, PETSC_TRUE);
   if (ierr != 0) petsc_vec->petsc_error(ierr, __FILE__, "VecSetOption");
+  try
+  {
 #endif
 
   // Iterate over vertices
@@ -234,9 +236,14 @@ void PointIntegralSolver::step(double dt)
   *_scheme->t() = t0 + dt;
 
 #ifdef HAS_PETSC
-  // Remove performance optimisation flag
-  ierr = VecSetOption(petsc_vec->vec(), VEC_IGNORE_OFF_PROC_ENTRIES, PETSC_FALSE);
-  if (ierr != 0) petsc_vec->petsc_error(ierr, __FILE__, "VecSetOption");
+  }
+  catch (std::exception &e)
+  {
+    // Remove performance optimisation flag
+    ierr = VecSetOption(petsc_vec->vec(), VEC_IGNORE_OFF_PROC_ENTRIES, PETSC_FALSE);
+    if (ierr != 0) petsc_vec->petsc_error(ierr, __FILE__, "VecSetOption");
+    throw;
+  }
 #endif
 
   timer.stop();
