@@ -241,6 +241,11 @@ double NewtonSolver::residual() const
   return _residual;
 }
 //-----------------------------------------------------------------------------
+double NewtonSolver::residual0() const
+{
+  return _residual0;
+}
+//-----------------------------------------------------------------------------
 double NewtonSolver::relative_residual() const
 {
   return _residual/_residual0;
