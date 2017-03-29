@@ -1,3 +1,5 @@
 mock
-ffc
-
+git+https://bitbucket.org/fenics-project/fiat.git@master
+git+https://bitbucket.org/fenics-project/ufl.git@master
+git+https://bitbucket.org/fenics-project/dijitso.git@master
+git+https://bitbucket.org/fenics-project/ffc.git@master
