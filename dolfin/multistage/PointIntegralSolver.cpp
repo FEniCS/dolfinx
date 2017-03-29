@@ -134,7 +134,8 @@ void PointIntegralSolver::step(double dt)
 // during assembly.
 #ifdef HAS_PETSC
   auto petsc_vec = as_type<PETScVector>(_scheme->solution()->vector());
-  VecSetOption(petsc_vec->vec(), VEC_IGNORE_OFF_PROC_ENTRIES, PETSC_TRUE);
+  PetscErrorCode ierr = VecSetOption(petsc_vec->vec(), VEC_IGNORE_OFF_PROC_ENTRIES, PETSC_TRUE);
+  if (ierr != 0) petsc_vec->petsc_error(ierr, __FILE__, "VecSetOption");
 #endif
 
   // Iterate over vertices
@@ -220,6 +221,8 @@ void PointIntegralSolver::step(double dt)
                                              _local_to_global_dofs.data());
   }
 
+  MPI::barrier(_scheme->solution()->function_space()->mesh()->mpi_comm());
+
   Timer timer_apply("PointIntegralSolver::apply");
   for (unsigned int stage=0; stage<_num_stages; stage++)
     _scheme->stage_solutions()[stage]->vector()->apply("insert");
@@ -232,7 +235,8 @@ void PointIntegralSolver::step(double dt)
 
 #ifdef HAS_PETSC
   // Remove performance optimisation flag
-  VecSetOption(petsc_vec->vec(), VEC_IGNORE_OFF_PROC_ENTRIES, PETSC_FALSE);
+  ierr = VecSetOption(petsc_vec->vec(), VEC_IGNORE_OFF_PROC_ENTRIES, PETSC_FALSE);
+  if (ierr != 0) petsc_vec->petsc_error(ierr, __FILE__, "VecSetOption");
 #endif
 
   timer.stop();
