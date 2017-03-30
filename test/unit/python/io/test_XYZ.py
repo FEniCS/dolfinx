@@ -17,10 +17,13 @@
 
 import pytest
 import numpy as np
-from dolfin import *
-import os
 import six
+
+import os
+
+from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture, tempdir
+
 
 @skip_in_parallel
 def test_save_2d_scalar(tempdir):
@@ -31,24 +34,24 @@ def test_save_2d_scalar(tempdir):
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = Function(V)
     u.interpolate(Constant(1.0))
-    
+
     # Save results multiple times for append test case
     N = 10
     for i in six.moves.range(N):
         file << u
-    
+
     # Load name of datafile, stored in main file (usually scalar2D******.xyz)
     with open(filename, 'r') as fl:
         data_filenames = fl.readlines()
-        
+
     # Check if there are really N lines in main file
     assert len(data_filenames) == N
-    
+
     for data_filename in data_filenames:
-    
+
         # Load saved file as np array
         data_filename = data_filename.replace('\n', '')
         loaded_file = np.loadtxt(os.path.join(tempdir, data_filename))
-        
+
         # Check if the loaded function is everywhere == 1.
         assert (loaded_file[:, 2] == 1.).all()
