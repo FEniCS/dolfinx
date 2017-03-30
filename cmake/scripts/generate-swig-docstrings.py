@@ -33,8 +33,8 @@ def generate_docstrings(top_destdir):
     if doxyver is None:
         print('--------------------------------------------')
         print('WARNING: Missing doxygen, producing dummy docstrings')
-        from dummy_docstrings import generate_dummpy_docstrings
-        generate_dummpy_docstrings(top_destdir)
+        from dummy_docstrings import generate_dummy_docstrings
+        generate_dummy_docstrings(top_destdir)
         return
     
     # Get top DOLFIN directory.

@@ -116,7 +116,7 @@ def write_docstrings(output_file, module, header, docs, classnames):
             output_file.write(docstring % func_name)
 
 
-def generate_dummpy_docstrings(top_destdir):
+def generate_dummy_docstrings(top_destdir):
     """
     Generate docstring files for each module
     """
@@ -150,4 +150,4 @@ def generate_dummpy_docstrings(top_destdir):
 
 if __name__ == "__main__":
     dest_dir = sys.argv[1] if len(sys.argv) > 2 else ""
-    generate_docstrings(dest_dir)
+    generate_dummy_docstrings(dest_dir)
