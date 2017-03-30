@@ -19,6 +19,7 @@ import pytest
 import numpy as np
 from dolfin import *
 import os
+import six
 from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 
 @skip_in_parallel
@@ -32,13 +33,16 @@ def test_save_2d_scalar(tempdir):
     u.interpolate(Constant(1.0))
     
     # Save results multiple times for append test case
-    file << u
-    file << u
-    file << u
+    N = 10
+    for i in six.moves.range(N):
+        file << u
     
     # Load name of datafile, stored in main file (usually scalar2D******.xyz)
     with open(filename, 'r') as fl:
         data_filenames = fl.readlines()
+        
+    # Check if there are really N lines in main file
+    assert len(data_filenames) == N
     
     for data_filename in data_filenames:
     
