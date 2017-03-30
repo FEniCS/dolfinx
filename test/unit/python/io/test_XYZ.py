@@ -25,14 +25,26 @@ from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 def test_save_2d_scalar(tempdir):
 
     mesh = UnitSquareMesh(16, 16)
-    name = "scalar2D"
-    file = File(os.path.join(tempdir, name + ".xyz"))
+    filename = os.path.join(tempdir, "scalar2D.xyz")
+    file = File(filename)
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = Function(V)
     u.interpolate(Constant(1.0))
+    
+    # Save results multiple times for append test case
+    file << u
+    file << u
     file << u
     
-    # Load saved file as np array
-    loaded_file = np.loadtxt(os.path.join(tempdir, name + "000000.xyz"))
-    # Check if the loaded function is everywhere == 1.
-    assert (loaded_file[:, 2] == 1.).all()
+    # Load name of datafile, stored in main file (usually scalar2D******.xyz)
+    with open(filename, 'r') as fl:
+        data_filenames = fl.readlines()
+    
+    for data_filename in data_filenames:
+    
+        # Load saved file as np array
+        data_filename = data_filename.replace('\n', '')
+        loaded_file = np.loadtxt(os.path.join(tempdir, data_filename))
+        
+        # Check if the loaded function is everywhere == 1.
+        assert (loaded_file[:, 2] == 1.).all()
