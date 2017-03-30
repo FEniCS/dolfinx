@@ -1,10 +1,15 @@
 """
 Generate SWIG docstrings when doxygen is not installed
  
-Due to different behaviour in SWIG's generated Python modules depending
-on docstrings being generated or not we have this script, based on the
-previous docstring generation which uses the dolfin_utils C++ parser
-and produces dummy docstrings for SWIG if doxygen is not installed. 
+SWIG generates different Python modules depending on SWIG docstrings
+being present. See dolfin issue 
+
+ https://bitbucket.org/fenics-project/dolfin/issues/834/
+    swig-generates-different-code-when-having
+    
+This script is based on dolfin's previous docstring generation script
+and uses the dolfin_utils C++ parser and produces dummy docstrings.
+It can be removed when SWIG no longer has this strange behaviour.
 
 We currently (spring 2017) use a SWIG docstring generation process based
 on running the doxygen C++ documentation tool. This gives us a more
