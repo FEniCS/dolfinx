@@ -10,17 +10,41 @@ import sys
 import subprocess
 
 
+def get_doxygen_version():
+    """
+    Test for presence of doxygen
+    
+    Returns None if doxygen is not present, else a string containing
+    the doxygen version
+    """
+    try:
+        ver = subprocess.check_output(['doxygen', '--version'])
+    except Exception:
+        return None
+    return ver.decode('utf8', 'replace').strip()
+
+
 def generate_docstrings(top_destdir):
     """
     Generate docstring files for each module
     """
+    doxyver = get_doxygen_version()
+    
+    if doxyver is None:
+        print('--------------------------------------------')
+        print('WARNING: Missing doxygen, producing dummy docstrings')
+        from dummy_docstrings import generate_dummpy_docstrings
+        generate_dummpy_docstrings(top_destdir)
+        return
+    
     # Get top DOLFIN directory.
     script_dir = os.path.dirname(os.path.abspath(__file__))
     dolfin_dir = os.path.abspath(os.path.join(script_dir, os.pardir,
                                               os.pardir))
-
+    
     print('--------------------------------------------')
     print('Running doxygen to read docstrings from C++:')
+    print('Doxygen version:', doxyver)
     sys.stdout.flush() # doxygen writes to stderr and mangles output order
 
     # Get doc directory and run doxygen there
