@@ -1,5 +1,4 @@
-#!/usr/bin/env py.test
-
+# Copyright (C) 2017 Michal Habera
 #
 # This file is part of DOLFIN.
 #
@@ -26,15 +25,14 @@ from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 def test_save_2d_scalar(tempdir):
 
     mesh = UnitSquareMesh(16, 16)
-    file = File(os.path.join(tempdir, "scalar2D.xyz"))
+    name = "scalar2D"
+    file = File(os.path.join(tempdir, name + ".xyz"))
     V = FunctionSpace(mesh, "Lagrange", 1)
     u = Function(V)
     u.interpolate(Constant(1.0))
     file << u
     
-    # load saved file as np array
-    loaded_file = np.loadtxt(os.path.join(tempdir, "scalar2D000000.xyz"))
-    # check if the loaded function is everywhere == 1.
+    # Load saved file as np array
+    loaded_file = np.loadtxt(os.path.join(tempdir, name + "000000.xyz"))
+    # Check if the loaded function is everywhere == 1.
     assert (loaded_file[:, 2] == 1.).all()
-    
-    del file
