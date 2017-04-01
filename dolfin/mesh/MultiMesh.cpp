@@ -143,6 +143,7 @@ MultiMesh::quadrature_rules_cut_cells(std::size_t part,
                                       unsigned int cell_index) const
 {
   auto q = quadrature_rules_cut_cells(part);
+  dolfin_assert(cell_index < this->part(part)->num_cells());
   return q[cell_index];
 }
 //-----------------------------------------------------------------------------
@@ -154,10 +155,11 @@ const std::map<unsigned int, std::vector<quadrature_rule>>&
 }
 //-----------------------------------------------------------------------------
 const std::vector<quadrature_rule>
-  MultiMesh::quadrature_rules_overlap(std::size_t part, 
+  MultiMesh::quadrature_rules_overlap(std::size_t part,
                                       unsigned int cell_index) const
 {
   auto q = quadrature_rules_overlap(part);
+  dolfin_assert(cell_index < this->part(part)->num_cells());
   return q[cell_index];
 }
 //-----------------------------------------------------------------------------
@@ -173,6 +175,7 @@ MultiMesh::quadrature_rules_interface(std::size_t part,
 				      unsigned int cell_index) const
 {
   auto q = quadrature_rules_interface(part);
+  dolfin_assert(cell_index < this->part(part)->num_cells());
   return q[cell_index];
 }
 //-----------------------------------------------------------------------------
