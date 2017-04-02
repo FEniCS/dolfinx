@@ -36,7 +36,7 @@ def compute_area_using_quadrature(multimesh):
         part_area = 0
 
         qr = multimesh.quadrature_rule_interface(part)
-        for cell, cell_qr in qr.iteritems():
+        for cell, cell_qr in qr.items():
             weights = cell_qr[1]
             part_area += sum(weights)
  
