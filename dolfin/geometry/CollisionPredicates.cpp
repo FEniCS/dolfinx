@@ -116,10 +116,10 @@ bool CollisionPredicates::collides(const MeshEntity& entity_0,
 
   // Pick correct specialized implementation
   if (d0 == 1 && d1 == 1)
-    return collides_segment_segment(g0.point(v0[0])[0],
-				    g0.point(v0[1])[0],
-				    g1.point(v1[0])[0],
-				    g1.point(v1[1])[0],
+    return collides_segment_segment(g0.point(v0[0]),
+				    g0.point(v0[1]),
+				    g1.point(v1[0]),
+				    g1.point(v1[1]),
 				    gdim);
 
   if (d0 == 1 && d1 == 2)
