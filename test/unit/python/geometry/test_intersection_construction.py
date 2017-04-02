@@ -200,7 +200,7 @@ def test_triangle_triangle_2d() :
 							             Point(0.5, 0.4060889538943557),
 							             Point(.5, .5))
     for p in res:
-        print p[0],p[1]
+        print(p[0],p[1])
 
     assert len(res) == 2
 
