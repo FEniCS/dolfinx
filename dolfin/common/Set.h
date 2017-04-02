@@ -37,7 +37,9 @@ namespace dolfin
   {
   public:
 
+    /// Iterator
     typedef typename std::vector<T>::iterator iterator;
+    /// Const iterator
     typedef typename std::vector<T>::const_iterator const_iterator;
 
     /// Create empty set
@@ -84,9 +86,11 @@ namespace dolfin
       }
     }
 
+    /// Iterator to start of Set
     const_iterator begin() const
     { return _x.begin(); }
 
+    /// Iterator to beyond end of Set
     const_iterator end() const
     { return _x.end(); }
 

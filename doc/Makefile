@@ -50,6 +50,8 @@ help:
 .PHONY: clean
 clean:
 	rm -rf $(BUILDDIR)/*
+	rm -rf doxygen/*
+	rm -rf generated_rst_files/*
 
 .PHONY: html
 html:

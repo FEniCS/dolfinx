@@ -28,6 +28,7 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/la/PETScObject.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/parameter/Parameters.h>
 
@@ -41,16 +42,15 @@ namespace dolfin
   /// PETSc's SNES interface. It includes line search and trust region
   /// techniques for globalising the convergence of the nonlinear
   /// iteration.
-
   class PETScSNESSolver : public PETScObject
   {
   public:
 
     /// Create SNES solver
-    explicit PETScSNESSolver(MPI_Comm comm);
+    explicit PETScSNESSolver(MPI_Comm comm, std::string nls_type="default");
 
-    /// Create SNES solver for a particular method
-    PETScSNESSolver(std::string nls_type="default");
+    /// Create SNES solver on MPI_COMM_WORLD
+    explicit PETScSNESSolver(std::string nls_type="default");
 
     /// Destructor
     virtual ~PETScSNESSolver();
@@ -116,6 +116,7 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
+    /// Parameters
     Parameters parameters;
 
     /// Return PETSc SNES pointer
@@ -172,6 +173,12 @@ namespace dolfin
 
     // Check if the problem is a variational inequality
     bool is_vi() const;
+
+    // Jacobian matrix
+    PETScMatrix _matJ;
+
+    // Jacobian preconditioner matrix
+    PETScMatrix _matP;
 
     // Upper and lower bounds for bound-constrained solvers
     std::shared_ptr<const PETScVector> lb;

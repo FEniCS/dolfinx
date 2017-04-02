@@ -24,6 +24,7 @@
 
 import numpy as np
 from dolfin import *
+from dolfin_utils.test import skip_in_parallel
 import pytest
 
 
@@ -35,7 +36,7 @@ def test_compiled_subdomains():
         CompiledSubDomain("a", a="1")
 
     def wrongParameterNames():
-        CompiledSubDomain("long", str=1.0)
+        CompiledSubDomain("foo", bar=1.0)
 
     with pytest.raises(RuntimeError):
         noDefaultValues()
@@ -43,6 +44,14 @@ def test_compiled_subdomains():
         wrongDefaultType()
     with pytest.raises(RuntimeError):
         wrongParameterNames()
+
+
+@skip_in_parallel
+def test_compiled_subdomains_compilation_failure():
+    def invalidCppCode():
+        CompiledSubDomain("/")
+    with pytest.raises(RuntimeError):
+        invalidCppCode()
 
 
 def test_creation_and_marking():

@@ -39,54 +39,50 @@ namespace dolfin
   {
   public:
 
-    /// *Arguments*
-    ///     p0 (_Point_)
+    /// @param    p0 (_Point_)
     ///         First point.
-    ///     p1 (_Point_)
+    /// @param    p1 (_Point_)
     ///         Second point.
-    ///     nx (double)
+    /// @param    nx (double)
     ///         Number of cells in :math:`x`-direction.
-    ///     ny (double)
+    /// @param    ny (double)
     ///         Number of cells in :math:`y`-direction.
-    ///     diagonal (string)
+    /// @param    diagonal (string)
     ///         Direction of diagonals: "left", "right", "left/right", "crossed"
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         // Mesh with 8 cells in each direction on the
     ///         // set [-1,2] x [-1,2]
     ///         Point p0(-1, -1);
     ///         Point p1(2, 2);
     ///         RectangleMesh mesh(p0, p1, 8, 8);
-    ///
+    /// @endcode
     RectangleMesh(const Point& p0, const Point& p1,
                   std::size_t nx, std::size_t ny,
                   std::string diagonal="right");
 
-    /// *Arguments*
-    ///     comm (MPI_Comm)
+    /// @param    comm (MPI_Comm)
     ///         MPI communicator
-    ///     p0 (_Point_)
+    /// @param    p0 (_Point_)
     ///         First point.
-    ///     p1 (_Point_)
+    /// @param    p1 (_Point_)
     ///         Second point.
-    ///     nx (double)
+    /// @param    nx (double)
     ///         Number of cells in :math:`x`-direction.
-    ///     ny (double)
+    /// @param    ny (double)
     ///         Number of cells in :math:`y`-direction.
-    ///     diagonal (string)
+    /// @param    diagonal (string)
     ///         Direction of diagonals: "left", "right", "left/right", "crossed"
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         // Mesh with 8 cells in each direction on the
     ///         // set [-1,2] x [-1,2]
     ///         Point p0(-1, -1);
     ///         Point p1(2, 2);
     ///         RectangleMesh mesh(MPI_COMM_WORLD, p0, p1, 8, 8);
-    ///
+    /// @endcode
     RectangleMesh(MPI_Comm comm,
                   const Point& p0, const Point& p1,
                   std::size_t nx, std::size_t ny,

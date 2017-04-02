@@ -33,12 +33,19 @@ namespace dolfin
   public:
 
     /// Refine mesh based on cell markers
+    /// @param refined_mesh (_Mesh_)
+    /// @param mesh (const _Mesh_)
+    /// @param cell_markers (const MeshFunction<bool>)
+    /// @param redistribute (bool)
     static void refine(Mesh& refined_mesh,
                        const Mesh& mesh,
                        const MeshFunction<bool>& cell_markers,
                        bool redistribute=false);
 
     /// Refine mesh uniformly
+    /// @param refined_mesh (_Mesh_)
+    /// @param mesh (const _Mesh_)
+    /// @param redistribute (bool)
     static void refine(Mesh& refined_mesh,
                        const Mesh& mesh,
                        bool redistribute=false);

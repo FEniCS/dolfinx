@@ -75,15 +75,19 @@ namespace dolfin
     T& operator[] (std::size_t i)
     { dolfin_assert(i < _size); return _x[i]; }
 
+    /// Pointer to start of array
     T* begin()
     { return &_x[0]; }
 
+    /// Pointer to start of array (const)
     const T* begin() const
     { return &_x[0]; }
 
+    /// Pointer to beyond end of array
     T* end()
     { return &_x[_size]; }
 
+    /// Pointer to beyond end of array (const)
     const T* end() const
     { return &_x[_size]; }
 

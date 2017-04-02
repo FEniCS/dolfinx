@@ -43,40 +43,35 @@ namespace dolfin
     /// Create a uniform finite element _Mesh_ over the unit cube
     /// [0,1] x [0,1] x [0,1].
     ///
-    /// *Arguments*
-    ///     nx (std::size_t)
+    /// @param    nx (std::size_t)
     ///         Number of cells in :math:`x` direction.
-    ///     ny (std::size_t)
+    /// @param    ny (std::size_t)
     ///         Number of cells in :math:`y` direction.
-    ///     nz (std::size_t)
+    /// @param    nz (std::size_t)
     ///         Number of cells in :math:`z` direction.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         UnitCubeMesh mesh(32, 32, 32);
-    ///
+    /// @endcode
     UnitCubeMesh(std::size_t nx, std::size_t ny, std::size_t nz)
       : UnitCubeMesh(MPI_COMM_WORLD, nx, ny, nz) {}
 
     /// Create a uniform finite element _Mesh_ over the unit cube
     /// [0,1] x [0,1] x [0,1].
     ///
-    /// *Arguments*
-    ///     comm (MPI_Comm)
+    /// @param    comm (MPI_Comm)
     ///         MPI communicator
-    ///     nx (std::size_t)
+    /// @param    nx (std::size_t)
     ///         Number of cells in :math:`x` direction.
-    ///     ny (std::size_t)
+    /// @param    ny (std::size_t)
     ///         Number of cells in :math:`y` direction.
-    ///     nz (std::size_t)
+    /// @param    nz (std::size_t)
     ///         Number of cells in :math:`z` direction.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
+    /// @code{.cpp}
     ///         UnitCubeMesh mesh(MPI_COMM_WORLD, 32, 32, 32);
-    ///
+    /// @endcode
     UnitCubeMesh(MPI_Comm comm, std::size_t nx, std::size_t ny, std::size_t nz)
       : BoxMesh(comm, Point(0.0, 0.0, 0.0), Point(1.0, 1.0, 1.0), nx, ny, nz) {}
 

@@ -35,6 +35,47 @@
 %ignore dolfin::LocalMeshData::Topology;
 
 //-----------------------------------------------------------------------------
+// SWIG does not seem to generate useful code for non-member operators
+//-----------------------------------------------------------------------------
+%ignore dolfin::operator*(double, const Point&);
+%ignore dolfin::operator<<(std::ostream&, const Point&);
+
+//-----------------------------------------------------------------------------
+// Extend Point with __rmul__ (multiplication by scalar from left)
+//-----------------------------------------------------------------------------
+%feature("shadow") dolfin::Point::operator* %{
+def __mul__(self, value):
+    """self.__mul__(value) <==> self*value"""
+    return $action(self, value)
+__rmul__ = __mul__
+%};
+%rename(__mul__) dolfin::Point::operator*;
+
+//-----------------------------------------------------------------------------
+// Add Point.__truediv__ (workaround for SWIG < 3.0.9)
+//-----------------------------------------------------------------------------
+%feature("shadow") dolfin::Point::operator/ %{
+def __truediv__(self, value):
+    """self.__truediv__(value) <==> self/value"""
+    return $action(self, value)
+__div__ = __truediv__
+%};
+%rename(__truediv__) dolfin::Point::operator/;
+
+//-----------------------------------------------------------------------------
+// Add Point.__itruediv__ (workaround for SWIG < 3.0.9)
+//-----------------------------------------------------------------------------
+%delobject dolfin::Point::operator/=;
+%newobject dolfin::Point::operator/=;
+%feature("shadow") dolfin::Point::operator/= %{
+def __itruediv__(self, value):
+    """self.__itruediv__(value) <==> self /= value"""
+    return $action(self, value)
+__idiv__ = __itruediv__
+%};
+%rename(__itruediv__) dolfin::Point::operator/=;
+
+//-----------------------------------------------------------------------------
 // Return NumPy arrays for Mesh::cells() and Mesh::coordinates()
 //-----------------------------------------------------------------------------
 %extend dolfin::Mesh {
@@ -79,6 +120,28 @@ ALL_VALUES(dolfin::MeshFunction<double>, double)
 ALL_VALUES(dolfin::MeshFunction<int>, int)
 ALL_VALUES(dolfin::MeshFunction<bool>, bool)
 ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
+
+//-----------------------------------------------------------------------------
+// Make C++ typename available as MeshFunctionFoo.cpp_value_type()
+//-----------------------------------------------------------------------------
+%define CPP_VALUE_TYPE(name, TYPE_NAME)
+%extend name {
+%pythoncode
+%{
+    @staticmethod
+    def cpp_value_type():
+        return #TYPE_NAME
+%}
+}
+%enddef
+
+//-----------------------------------------------------------------------------
+// Run the macros
+//-----------------------------------------------------------------------------
+CPP_VALUE_TYPE(dolfin::MeshFunction<double>, double)
+CPP_VALUE_TYPE(dolfin::MeshFunction<int>, int)
+CPP_VALUE_TYPE(dolfin::MeshFunction<bool>, bool)
+CPP_VALUE_TYPE(dolfin::MeshFunction<std::size_t>, std::size_t)
 
 //-----------------------------------------------------------------------------
 // Ignore methods that is superseded by extended versions

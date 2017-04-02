@@ -50,6 +50,7 @@ namespace dolfin
     /// Destructor
     virtual ~PETScUserPreconditioner();
 
+    /// Set up
     static void setup(const KSP ksp, PETScUserPreconditioner& pc);
 
     /// Solve linear system approximately for given right-hand side b
@@ -57,6 +58,7 @@ namespace dolfin
 
   protected:
 
+    /// PETSc PC object
     PC petscpc;
 
   private:

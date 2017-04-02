@@ -463,7 +463,7 @@ def test_ghost_mode_handling(pushpop_parameters):
         A, b = Matrix(), Vector()
         with pytest.raises(RuntimeError) as excinfo:
             assembler.assemble(A, b)
-        assert "Incorrect mesh ghost mode" in excinfo.value.message
+        assert "Incorrect mesh ghost mode" in repr(excinfo.value)
 
     # Ghosted meshes work everytime
     parameters["ghost_mode"] = "shared_vertex"

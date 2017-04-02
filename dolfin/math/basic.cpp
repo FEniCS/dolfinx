@@ -31,7 +31,8 @@ using namespace dolfin;
 
 namespace dolfin
 {
-  // Seed only first time
+  /// Flag to determine whether to reseed dolfin::rand().
+  /// Normally on first call.
   bool rand_seeded = false;
 }
 

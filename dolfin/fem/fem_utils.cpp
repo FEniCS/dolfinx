@@ -291,6 +291,7 @@ Mesh dolfin::create_mesh(Function& coordinates)
   // FIXME: Share this code with Mesh assignment operaror; a need
   //        to duplicate its code here is not maintainable
   // Assign all data except geometry
+
   mesh1._topology = mesh0._topology;
   mesh1._domains = mesh0._domains;
   mesh1._data = mesh0._data;
@@ -309,15 +310,15 @@ Mesh dolfin::create_mesh(Function& coordinates)
   static_cast<Hierarchical<Mesh>>(mesh1) = mesh0;
 
   // Prepare a new geometry
-  mesh1._geometry.init(mesh0._geometry.dim(),
+  mesh1.geometry().init(mesh0.geometry().dim(),
     coordinates.function_space()->element()->ufc_element()->degree());
-  std::vector<std::size_t> num_entities(mesh0._topology.dim() + 1);
-  for (std::size_t dim = 0; dim <= mesh0._topology.dim(); ++dim)
-    num_entities[dim] = mesh0._topology.size(dim);
-  mesh1._geometry.init_entities(num_entities);
+  std::vector<std::size_t> num_entities(mesh0.topology().dim() + 1);
+  for (std::size_t dim = 0; dim <= mesh0.topology().dim(); ++dim)
+    num_entities[dim] = mesh0.topology().size(dim);
+  mesh1.geometry().init_entities(num_entities);
 
   // Assign coordinates
-  set_coordinates(mesh1._geometry, coordinates);
+  set_coordinates(mesh1.geometry(), coordinates);
 
   return mesh1;
 }

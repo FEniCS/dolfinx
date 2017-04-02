@@ -66,7 +66,7 @@ namespace dolfin
     explicit PETScMatrix(MPI_Comm comm);
 
     /// Create a wrapper around a PETSc Mat pointer. The Mat object
-    /// should have been created, e.g. via PETSc MatrCreate.
+    /// should have been created, e.g. via PETSc MatCreate.
     explicit PETScMatrix(Mat A);
 
     /// Copy constructor
@@ -120,8 +120,9 @@ namespace dolfin
     /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
-    /// *Arguments*
-    ///     dim (std::size_t)
+    /// @param z (GenericVector&)
+    ///         Vector to initialise
+    /// @param  dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
     virtual void init_vector(GenericVector& z, std::size_t dim) const
     { PETScBaseMatrix::init_vector(z, dim); }

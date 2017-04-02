@@ -30,11 +30,13 @@
 namespace dolfin
 {
 
+  /// I/O of XML representation of a MeshValueCollection
+
   class XMLMeshValueCollection
   {
   public:
 
-    // Read mesh value collection from XML file
+    /// Read mesh value collection from XML file
     template <typename T>
     static void read(MeshValueCollection<T>& mesh_value_collection,
                      const std::string type,

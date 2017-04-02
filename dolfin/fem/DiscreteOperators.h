@@ -26,6 +26,8 @@ namespace dolfin
   class FunctionSpace;
   class GenericMatrix;
 
+  /// Discrete gradient operators providing derivatives of functions
+
   /// This class computes discrete gradient operators (matrices) that
   /// map derivatives of finite element functions into other finite
   /// element spaces. An example of where discrete gradient operators
@@ -40,10 +42,17 @@ namespace dolfin
   {
   public:
 
-    /// Build the discrete gradient operator A that takes a w \in H^1
-    /// (P1, nodal Lagrange) to v \in H(curl) (lowest order Nedelec),
+    /// Build the discrete gradient operator A that takes a \f$w \in H^1\f$
+    /// (P1, nodal Lagrange) to \f$v \in H(curl)\f$ (lowest order Nedelec),
     /// i.e. v = Aw. V0 is the H(curl) space, and V1 is the P1
     /// Lagrange space.
+    ///
+    /// @param[in] V0 (FunctionSpace&)
+    ///  H(curl) space
+    /// @param[in] V1 (FunctionSpace&)
+    ///  P1 Lagrange space
+    ///
+    /// @return GenericMatrix
     static std::shared_ptr<GenericMatrix>
       build_gradient(const FunctionSpace& V0, const FunctionSpace& V1);
 

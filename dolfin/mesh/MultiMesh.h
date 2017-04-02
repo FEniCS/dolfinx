@@ -39,7 +39,7 @@ namespace dolfin
   class BoundaryMesh;
   class BoundingBoxTree;
 
-  // Typedefs
+  /// Typedefs
   typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
   typedef std::vector<Point> Simplex;
   typedef std::vector<Simplex> Polyhedron;
