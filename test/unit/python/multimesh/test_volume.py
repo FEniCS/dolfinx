@@ -62,7 +62,7 @@ def compute_volume_using_quadrature(multimesh):
 
         # Volume of cut cells
         for cut_cell in multimesh.cut_cells(part):
-            cut_cell_qr = multimesh.quadrature_rule_cut_cells(part, cut_cell)
+            cut_cell_qr = multimesh.quadrature_rules_cut_cells(part, cut_cell)
             if cut_cell_qr:
                 part_volume += sum(cut_cell_qr[1])
 
