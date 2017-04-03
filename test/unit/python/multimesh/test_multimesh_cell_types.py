@@ -53,7 +53,7 @@ def test_cut_cell_has_quadrature(multimesh):
     # Test that every cut cell has a nontrivial interface quadrature rule
     for part in range(multimesh.num_parts()):
         for cell in multimesh.cut_cells(part):
-            assert multimesh.quadrature_rule_interface(part, cell)
+            assert multimesh.quadrature_rules_interface(part, cell)
 
 
 @skip_in_parallel

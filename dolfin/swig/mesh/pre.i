@@ -307,10 +307,6 @@ SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(quadrature_rule qr)
   npy_intp n0 = qr.first.size();
   npy_intp n1 = qr.second.size();
 
-  // return None if there are no quadrature points
-  if (n0 == 0)
-    return Py_None;  
-
   PyArrayObject *x0 = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &n0, NPY_DOUBLE));
   PyArrayObject *x1 = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &n1, NPY_DOUBLE));
 
@@ -329,13 +325,13 @@ SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(quadrature_rule qr)
 SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(std::vector<quadrature_rule> qr_vector)
 {
   // Typemap function for std::vec<quadrature_rule>
-  quadrature_rule qr;
-  for (quadrature_rule qr_j : qr_vector)
+  PyObject * result = PyList_New(qr_vector.size());
+  for (std::size_t j = 0; j < qr_vector.size(); j++)
   {
-    qr.first.insert(qr.first.end(), qr_j.first.begin(), qr_j.first.end());
-    qr.second.insert(qr.second.end(), qr_j.second.begin(), qr_j.second.end());
+     PyObject * py_qr_j = convert_dolfin_quadrature_rule(qr_vector[j]);
+     PyList_SetItem(result, j, py_qr_j);
   }
-  return convert_dolfin_quadrature_rule(qr); 
+  return result;
 }
 }
 // Force fragments to be instantiated
@@ -348,10 +344,10 @@ SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(std::vector<quadratur
 
 %extend dolfin::MultiMesh
 {
-PyObject* quadrature_rule_##cell_type(std::size_t part)
+PyObject* quadrature_rules_##cell_type(std::size_t part)
 {
   PyObject* ret = PyDict_New();
-  auto qr_map = ($self)->quadrature_rule_##cell_type (part);
+  auto qr_map = ($self)->quadrature_rules_##cell_type (part);
   
   for (auto it = qr_map.begin(); it != qr_map.end(); it++)
   {
@@ -364,15 +360,15 @@ PyObject* quadrature_rule_##cell_type(std::size_t part)
   }
   return ret;
 }
-PyObject* quadrature_rule_##cell_type(std::size_t part, unsigned int cell)
+PyObject* quadrature_rules_##cell_type(std::size_t part, unsigned int cell)
 {
-  auto qr_map = ($self)->quadrature_rule_##cell_type(part);
+  auto qr_map = ($self)->quadrature_rules_##cell_type(part);
   auto qr = qr_map[cell];
   return convert_dolfin_quadrature_rule(qr);
 }
 }
-%ignore dolfin::MultiMesh::quadrature_rule_##cell_type;
-dolfin::MultiMesh::quadrature_rule_##cell_type(std::size_t part);
+%ignore dolfin::MultiMesh::quadrature_rules_##cell_type;
+dolfin::MultiMesh::quadrature_rules_##cell_type(std::size_t part);
 
 
 %enddef

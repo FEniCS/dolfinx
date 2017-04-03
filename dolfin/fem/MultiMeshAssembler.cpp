@@ -203,7 +203,7 @@ void MultiMeshAssembler::_assemble_cut_cells(GenericTensor& A,
 
     // Get cut cells and quadrature rules
     const std::vector<unsigned int>& cut_cells = multimesh->cut_cells(part);
-    const auto& quadrature_rules = multimesh->quadrature_rule_cut_cells(part);
+    const auto& quadrature_rules = multimesh->quadrature_rules_cut_cells(part);
 
     // Iterate over cut cells
     for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
@@ -319,7 +319,7 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
     if (!integral) continue;
 
     // Get quadrature rules
-    const auto& quadrature_rules = multimesh->quadrature_rule_interface(part);
+    const auto& quadrature_rules = multimesh->quadrature_rules_interface(part);
 
     // Get collision map
     const auto& cmap = multimesh->collision_map_cut_cells(part);
@@ -489,7 +489,7 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
     if (!integral) continue;
 
     // Get quadrature rules
-    const auto& quadrature_rules = multimesh->quadrature_rule_overlap(part);
+    const auto& quadrature_rules = multimesh->quadrature_rules_overlap(part);
 
     // Get collision map
     const auto& cmap = multimesh->collision_map_cut_cells(part);
