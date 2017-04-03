@@ -60,9 +60,11 @@ namespace dolfin
 
   public:
 
-    // Tpetra typedefs with default values
+    /// Matrix type (scalar, local index, global index)
     typedef Tpetra::CrsMatrix<double, int, dolfin::la_index> matrix_type;
+    /// Graph type (local index, global index)
     typedef Tpetra::CrsGraph<int, dolfin::la_index> graph_type;
+    /// Map type (local index, global index)
     typedef Tpetra::Map<int, dolfin::la_index> map_type;
 
     /// Create empty matrix
@@ -115,8 +117,9 @@ namespace dolfin
     /// product y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
-    /// *Arguments*
-    ///     dim (std::size_t)
+    /// @param z (GenericVector&)
+    ///         Vector to initialise
+    /// @param dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
     virtual void init_vector(GenericVector& z, std::size_t dim) const;
 
@@ -208,12 +211,15 @@ namespace dolfin
     /// Assignment operator
     const TpetraMatrix& operator= (const TpetraMatrix& A);
 
+    /// Return Teuchos reference counted pointer to raw matrix
     Teuchos::RCP<matrix_type> mat()
     { return _matA; }
 
+    /// Return Teuchos reference counted pointer to raw matrix (const)
     Teuchos::RCP<const matrix_type> mat() const
     { return _matA; }
 
+    /// Print out a graph, for debugging
     static void graphdump(const Teuchos::RCP<const graph_type> graph);
 
   private:

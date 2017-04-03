@@ -30,7 +30,7 @@
 namespace dolfin
 {
 
-  // FIXME: Temporary fix
+  /// FIXME: Temporary fix
   typedef Form TensorProductForm;
 
   // Forward declarations

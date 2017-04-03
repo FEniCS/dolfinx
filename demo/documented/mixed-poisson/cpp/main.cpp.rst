@@ -100,8 +100,6 @@ follows:
     :scale: 75
     :align: center
 
-.. todo:: Fix the links to images
-
 
 Implementation
 --------------

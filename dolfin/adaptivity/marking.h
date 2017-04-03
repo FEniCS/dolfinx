@@ -31,17 +31,16 @@ namespace dolfin
 
   /// Mark cells based on indicators and given marking strategy
   ///
-  /// *Arguments*
-  ///     markers (_MeshFunction_ <bool>)
+  /// @param    markers (MeshFunction<bool>)
   ///         the cell markers (to be computed)
   ///
-  ///     indicators (_MeshFunction_ <double>)
+  /// @param    indicators (MeshFunction<double>)
   ///         error indicators (one per cell)
   ///
-  ///     strategy (std::string)
+  /// @param    strategy (std::string)
   ///         the marking strategy
   ///
-  ///     fraction (double)
+  /// @param    fraction (double)
   ///         the marking fraction
   void mark(MeshFunction<bool>& markers,
             const dolfin::MeshFunction<double>& indicators,
@@ -50,14 +49,13 @@ namespace dolfin
 
   /// Mark cells using Dorfler marking
   ///
-  /// *Arguments*
-  ///     markers (_MeshFunction_ <bool>)
+  /// @param    markers (MeshFunction<bool>)
   ///         the cell markers (to be computed)
   ///
-  ///     indicators (_MeshFunction_ <double>)
+  /// @param    indicators (MeshFunction<double>)
   ///         error indicators (one per cell)
   ///
-  ///     fraction (double)
+  /// @param    fraction (double)
   ///         the marking fraction
   void dorfler_mark(MeshFunction<bool>& markers,
                     const dolfin::MeshFunction<double>& indicators,

@@ -38,6 +38,8 @@
 namespace dolfin
 {
 
+  /// Handling of error messages, logging and informational display
+
   class Logger
   {
   public:

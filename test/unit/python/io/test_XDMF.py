@@ -29,7 +29,8 @@ data_types = (('int', int), ('size_t', int), ('double', float), ('bool', bool))
 
 def invalid_config(encoding):
     return (not has_hdf5() and encoding == XDMFFile.Encoding_HDF5) \
-        or (encoding == XDMFFile.Encoding_ASCII and MPI.size(mpi_comm_world()) > 1)
+        or (encoding == XDMFFile.Encoding_ASCII and MPI.size(mpi_comm_world()) > 1) \
+        or (not has_hdf5_parallel() and MPI.size(mpi_comm_world()) > 1)
 
 
 @pytest.mark.parametrize("encoding", encodings)

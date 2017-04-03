@@ -40,6 +40,13 @@ namespace dolfin
   public:
 
     /// Refine mesh based on cell markers
+    /// @param refined_mesh
+    ///     New Mesh
+    /// @param mesh
+    ///     Input Mesh
+    /// @param cell_markers
+    ///     Markers of MeshEntities to split (typically Cells)
+    ///
     static void refine(Mesh& refined_mesh,
                        const Mesh& mesh,
                        const MeshFunction<bool>& cell_markers);

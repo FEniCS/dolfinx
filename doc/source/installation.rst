@@ -8,6 +8,10 @@ Installation
 Quick start
 ===========
 
+You probably want to read the `FEniCS download and installation web page
+<https://fenicsproject.org/download/>`_ if you just want to get FEniCS 
+installed as quickly and effortlessly as possible.
+
 
 Building from source
 ====================

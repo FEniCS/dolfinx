@@ -36,6 +36,8 @@ namespace dolfin
   /// Forward declarations
   class GenericVector;
 
+  /// Block vector
+
   class BlockVector
   {
   public:

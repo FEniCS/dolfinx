@@ -53,34 +53,46 @@ namespace dolfin
   ///
   /// Parameters may be added as follows:
   ///
+  /// @code{.cpp}
   ///   Parameters p("my_parameters");
   ///   p.add("relative_tolerance",  1e-15);
   ///   p.add("absolute_tolerance",  1e-15);
   ///   p.add("gmres_restart",       30);
   ///   p.add("monitor_convergence", false);
+  /// @endcode
   ///
   /// Parameters may be changed as follows:
   ///
+  /// @code{.cpp}
   ///   p["gmres_restart"] = 50;
+  /// @endcode
   ///
   /// Parameter values may be retrieved as follows:
   ///
+  /// @code{.cpp}
   ///   int gmres_restart = p["gmres_restart"];
+  /// @endcode
   ///
   /// Parameter sets may be nested as follows:
   ///
+  /// @code{.cpp}
   ///   Parameters q("nested_parameters");
   ///   p.add(q);
+  /// @endcode
   ///
   /// Nested parameters may then be accessed by
   ///
+  /// @code{.cpp}
   ///   p("nested_parameters")["..."]
+  /// @endcode
   ///
   /// Parameters may be nested at arbitrary depths.
   ///
   /// Parameters may be parsed from the command-line as follows:
   ///
+  /// @code{.cpp}
   ///   p.parse(argc, argv);
+  /// @endcode
   ///
   /// Note: spaces in parameter keys are not allowed (to simplify
   /// usage from command-line).
@@ -216,10 +228,10 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    // Return pointer to parameter for given key and 0 if not found
+    /// Return pointer to parameter for given key and 0 if not found
     Parameter* find_parameter(std::string key) const;
 
-    // Return pointer to parameter set for given key and 0 if not found
+    /// Return pointer to parameter set for given key and 0 if not found
     Parameters* find_parameter_set(std::string key) const;
 
 
@@ -255,6 +267,8 @@ namespace dolfin
 
   };
 
+  // Template specialisations
+#ifndef DOXYGEN_IGNORE
   // Specialised templated for unset parameters
   template<> inline void Parameters::add<std::size_t>(std::string key)
   { _parameters[key] = new IntParameter(key); }
@@ -299,7 +313,8 @@ namespace dolfin
   template<> inline void Parameters::add<bool>(std::string key)
   { _parameters[key] = new BoolParameter(key); }
 
-  // Default empty parameters
+#endif
+  /// Default empty parameters
   extern Parameters empty_parameters;
 
 }

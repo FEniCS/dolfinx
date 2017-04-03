@@ -43,10 +43,9 @@ namespace dolfin
 
     /// Assemble tensor from given form
     ///
-    /// *Arguments*
-    ///     A (_GenericTensor_)
+    /// @param     A (_GenericTensor_)
     ///         The tensor to assemble.
-    ///     a (_Form_)
+    /// @param     a (_Form_)
     ///         The form to assemble the tensor from.
     void assemble(GenericTensor& A, const MultiMeshForm& a);
 

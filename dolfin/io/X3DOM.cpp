@@ -381,7 +381,7 @@ pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
 
   // Set attributes for x3dom script node
   x3d_script_node.append_attribute("type") = "text/javascript";
-  x3d_script_node.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
+  x3d_script_node.append_attribute("src") = "https://www.x3dom.org/download/x3dom.js";
 
   // add jquery script node
   pugi::xml_node jquery_script_node = head_node.append_child("script");
@@ -408,7 +408,7 @@ pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
   // Set attributes for x3dom link node
   x3d_link_node.append_attribute("rel") = "stylesheet";
   x3d_link_node.append_attribute("type") = "text/css";
-  x3d_link_node.append_attribute("href") = "http://www.x3dom.org/download/x3dom.css";
+  x3d_link_node.append_attribute("href") = "https://www.x3dom.org/download/x3dom.css";
 
   // Add link node for support
   pugi::xml_node support_link_node = head_node.append_child("link");
