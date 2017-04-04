@@ -82,7 +82,7 @@ def build_multimesh(num_parts,
             s += " Rotation {:.1f} degrees.".format(phi)
 
         if is_interior:
-            print s
+            print(s)
             multimesh.add(mesh)
 
     multimesh.build(order)
@@ -112,8 +112,8 @@ if __name__ == "__main__":
 
     vol_dolfin = multimesh.compute_volume()
 
-    print "Computed volume (quadrature): {}".format(vol_dolfin)
-    print "Computed volume (assemble):   {}".format(vol)
-    print "Error (quadrature): {}".format(abs(1-vol_dolfin))
-    print "Error (assemble):   {}".format(abs(1-vol))
+    print("Computed volume (quadrature): {}".format(vol_dolfin))
+    print("Computed volume (assemble):   {}".format(vol))
+    print("Error (quadrature): {}".format(abs(1-vol_dolfin)))
+    print("Error (assemble):   {}".format(abs(1-vol)))
     assert abs(vol-1) < 10e-10
