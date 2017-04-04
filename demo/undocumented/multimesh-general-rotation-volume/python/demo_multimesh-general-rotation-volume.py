@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
     for num_meshes in range(args.max_num_meshes):
 
-        print "Testing with {} meshes.".format(num_meshes)
+        print("Testing with {} meshes.".format(num_meshes))
 
         # Build multimesh
         multimesh = test_volume_2d_rot(num_meshes)
@@ -67,6 +67,6 @@ if __name__ == "__main__":
         dX = dx(domain=multimesh) + dC(domain=multimesh)
         vol = assemble_multimesh(1*dX)
 
-        print "Computed volume: {}.".format(vol)
-        print "Error: {}.".format(abs(100-vol))
+        print("Computed volume: {}.".format(vol))
+        print("Error: {}.".format(abs(100-vol)))
         assert abs(vol-100) < 10e-10
