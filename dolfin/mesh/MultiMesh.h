@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2017-02-09
+// Last changed: 2017-04-10
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -38,6 +38,7 @@ namespace dolfin
   class Mesh;
   class BoundaryMesh;
   class BoundingBoxTree;
+  class SimplexQuadrature;
 
   /// Typedefs
   typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
@@ -341,16 +342,20 @@ namespace dolfin
     {
       Parameters p("multimesh");
 
-      p.add("quadrature_order", 1);
+      //p.add("quadrature_order", 1);
+      p.add("compress_volume_quadrature", false);
+      p.add("compress_interface_quadrature", false);
 
       return p;
     }
 
     //--- The functions below are mainly useful for testing/debugging ---
 
-    /// Compute total volume of multimesh by summing up quadrature weights.
-    /// If the volume of the domain mesh is known, this is a good test to
-    /// verify that the mesh-mesh intersections and quadrature are correct.
+    /// Compute total interface area or the total volume of multimesh
+    /// by summing up quadrature weights.  If the area or volume of
+    /// the domain mesh is known, this is a good test to verify that
+    /// the mesh-mesh intersections and quadrature are correct.
+    double compute_area() const;
     double compute_volume() const;
 
     /// Create matplotlib string to plot 2D multimesh (small meshes only)
@@ -523,6 +528,7 @@ namespace dolfin
     // Add quadrature rule for simplices in polyhedron. Returns the
     // number of points generated for each simplex.
     std::size_t _add_quadrature_rule(quadrature_rule& qr,
+				     const SimplexQuadrature& sq,
 				     const Simplex& simplex,
 				     std::size_t gdim,
 				     std::size_t quadrature_order,
@@ -547,6 +553,7 @@ namespace dolfin
     // Inclusion-exclusion for overlap
     void _inclusion_exclusion_overlap
       (std::vector<quadrature_rule>& qr,
+       const SimplexQuadrature& sq,
        const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
        std::size_t tdim,
        std::size_t gdim,
@@ -556,6 +563,7 @@ namespace dolfin
     void _inclusion_exclusion_interface
       (quadrature_rule& qr,
        std::vector<double>& normals,
+       const SimplexQuadrature& sq,
        const Simplex& Eij,
        const Point& facet_normal,
        const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polygons,
@@ -570,6 +578,11 @@ namespace dolfin
     // Impose consistency of _cut_cells, so that only the cells with
     // a nontrivial interface quadrature rule are classified as cut.
     void _impose_cut_cell_consistency();
+    
+    // Remove quadrature rule if the sum of the weights is less than a
+    // tolerance
+    static void remove_quadrature_rule(quadrature_rule& qr,
+				       double tolerance);
   };
 
 
