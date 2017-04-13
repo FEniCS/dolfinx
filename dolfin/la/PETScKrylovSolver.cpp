@@ -307,7 +307,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   if (x.empty())
   {
     A.init_vector(x, 1);
-    this->set_nonzero_guess(false);
+    x.zero();
   }
 
   // FIXME: Solve using matrix-free matrices fails if no user provided
@@ -389,8 +389,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 void PETScKrylovSolver::set_nonzero_guess(bool nonzero_guess)
 {
   dolfin_assert(_ksp);
-  const PetscBool _nonero_guess = nonzero_guess ? PETSC_TRUE : PETSC_FALSE;
-  PetscErrorCode ierr = KSPSetInitialGuessNonzero(_ksp, _nonero_guess);
+  const PetscBool _nonzero_guess = nonzero_guess ? PETSC_TRUE : PETSC_FALSE;
+  PetscErrorCode ierr = KSPSetInitialGuessNonzero(_ksp, _nonzero_guess);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetIntialGuessNonzero");
 }
 //-----------------------------------------------------------------------------
