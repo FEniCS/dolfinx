@@ -54,8 +54,7 @@
     def __getitem__(self, i):
         "Get i-th coordinate. Only accept integer, or full slice."
         if i == slice(None):
-            # TODO: Chris, put here array if you change it back
-            return self.coordinates()
+            return self.array()
         else:
             return self._getitem(self._check_index(i))
 
