@@ -28,6 +28,7 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/la/PETScObject.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/parameter/Parameters.h>
 
@@ -115,6 +116,7 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
+    /// Parameters
     Parameters parameters;
 
     /// Return PETSc SNES pointer
@@ -171,6 +173,12 @@ namespace dolfin
 
     // Check if the problem is a variational inequality
     bool is_vi() const;
+
+    // Jacobian matrix
+    PETScMatrix _matJ;
+
+    // Jacobian preconditioner matrix
+    PETScMatrix _matP;
 
     // Upper and lower bounds for bound-constrained solvers
     std::shared_ptr<const PETScVector> lb;

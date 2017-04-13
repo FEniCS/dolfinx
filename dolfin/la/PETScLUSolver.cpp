@@ -14,21 +14,15 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Garth N. Wells 2009-2010
-// Modified by Niclas Jansson 2009
-// Modified by Fredrik Valdmanis 2011
-//
-// First added:  2005
-// Last changed: 2011-11-11
 
 #ifdef HAS_PETSC
 
+#include <petscpc.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
-#include <dolfin/common/MPI.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "LUSolver.h"
 #include "PETScMatrix.h"
@@ -105,20 +99,20 @@ Parameters PETScLUSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(MPI_Comm comm, std::string method)
-  :  PETScLUSolver(comm, NULL, method)
+  :  PETScLUSolver(comm, nullptr, method)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(std::string method)
-  : PETScLUSolver(MPI_COMM_WORLD, NULL, method)
+  : PETScLUSolver(MPI_COMM_WORLD, nullptr, method)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(MPI_Comm comm,
                              std::shared_ptr<const PETScMatrix> A,
-                             std::string method) : _ksp(NULL), _matA(A)
+                             std::string method) : _ksp(nullptr), _matA(A)
 {
   // Check dimensions
   if (A)
@@ -295,30 +289,6 @@ std::size_t PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   return solve(x, b);
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve_transpose(GenericVector& x,
-                                           const GenericVector& b)
-{
-return solve(x, b, true);
-}
-//-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve_transpose(const GenericLinearOperator& A,
-                                           GenericVector& x,
-                                           const GenericVector& b)
-{
-  return solve_transpose(as_type<const PETScMatrix>(require_matrix(A)),
-                         as_type<PETScVector>(x),
-                         as_type<const PETScVector>(b));
-}
-//-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve_transpose(const PETScMatrix& A,
-                                           PETScVector& x,
-                                           const PETScVector& b)
-{
-  std::shared_ptr<const PETScMatrix> _matA(&A, NoDeleter());
-  set_operator(_matA);
-  return solve_transpose(x, b);
-}
-//-----------------------------------------------------------------------------
 void PETScLUSolver::set_options_prefix(std::string options_prefix)
 {
   dolfin_assert(_ksp);
@@ -329,7 +299,7 @@ void PETScLUSolver::set_options_prefix(std::string options_prefix)
 std::string PETScLUSolver::get_options_prefix() const
 {
   dolfin_assert(_ksp);
-  const char* prefix = NULL;
+  const char* prefix = nullptr;
   KSPGetOptionsPrefix(_ksp, &prefix);
   return std::string(prefix);
 }
@@ -436,7 +406,7 @@ const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
       dolfin_error("PETScLUSolver.cpp",
                    "solve linear system using PETSc LU solver",
                    "No suitable solver for parallel LU found. Consider configuring PETSc with MUMPS or SuperLU_dist");
-      #endif
+#endif
     }
     #endif
   }

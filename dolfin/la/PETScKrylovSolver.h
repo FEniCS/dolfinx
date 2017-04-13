@@ -176,7 +176,10 @@ namespace dolfin
     std::string parameter_type() const
     { return "krylov_solver"; }
 
+    /// Set the DM
     void set_dm(DM dm);
+
+    /// Activate/deactivate DM
     void set_dm_active(bool val);
 
     friend class PETScSNESSolver;
@@ -218,12 +221,6 @@ namespace dolfin
 
     // Preconditioner
     std::shared_ptr<PETScPreconditioner> _preconditioner;
-
-    // Operator (the matrix)
-    std::shared_ptr<const PETScBaseMatrix> _matA;
-
-    // Matrix used to construct the preconditioner
-    std::shared_ptr<const PETScBaseMatrix> _matP;
 
     bool preconditioner_set;
 

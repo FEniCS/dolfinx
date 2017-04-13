@@ -44,44 +44,40 @@ namespace dolfin
     /// Create a uniform finite element _Mesh_ over the unit square
     /// [0,1] x [0,1].
     ///
-    /// *Arguments*
-    ///     nx (std::size_t)
+    /// @param    nx (std::size_t)
     ///         Number of cells in horizontal direction.
-    ///     ny (std::size_t)
+    /// @param    ny (std::size_t)
     ///         Number of cells in vertical direction.
-    ///     diagonal (std::string)
+    /// @param    diagonal (std::string)
     ///         Optional argument: A std::string indicating
     ///         the direction of the diagonals.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         UnitSquareMesh mesh1(32, 32);
     ///         UnitSquareMesh mesh2(32, 32, "crossed");
-    ///
+    /// @endcode
     UnitSquareMesh(std::size_t nx, std::size_t ny, std::string diagonal="right")
       : UnitSquareMesh(MPI_COMM_WORLD, nx, ny, diagonal) {}
 
     /// Create a uniform finite element _Mesh_ over the unit square
     /// [0,1] x [0,1].
     ///
-    /// *Arguments*
-    ///     comm (MPI_Comm)
+    /// @param    comm (MPI_Comm)
     ///         MPI communicator
-    ///     nx (std::size_t)
+    /// @param    nx (std::size_t)
     ///         Number of cells in horizontal direction.
-    ///     ny (std::size_t)
+    /// @param    ny (std::size_t)
     ///         Number of cells in vertical direction.
-    ///     diagonal (std::string)
+    /// @param    diagonal (std::string)
     ///         Optional argument: A std::string indicating
     ///         the direction of the diagonals.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
+    /// @code{.cpp}
     ///
     ///         UnitSquareMesh mesh1(MPI_COMM_WORLD, 32, 32);
     ///         UnitSquareMesh mesh2(MPI_COMM_WORLD, 32, 32, "crossed");
-    ///
+    /// @endcode
     UnitSquareMesh(MPI_Comm comm, std::size_t nx, std::size_t ny,
                    std::string diagonal="right")
       : RectangleMesh(comm, Point(0.0, 0.0), Point(1.0, 1.0), nx, ny, diagonal) {}

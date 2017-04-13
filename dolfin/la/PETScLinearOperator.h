@@ -35,11 +35,12 @@ namespace dolfin
 
   class PETScVector;
 
-  // This is the PETSc version of the _GenericLinearOperator_
-  // (matrix-free) interface for the solution of linear systems
-  // defined in terms of the action (matrix-vector product) of a
-  // linear operator.
+  /// PETSc version of the GenericLinearOperator
 
+  /// Matrix-free interface for the solution of linear systems
+  /// defined in terms of the action (matrix-vector product) of a
+  /// linear operator.
+  ///
   class PETScLinearOperator : public PETScBaseMatrix,
     public GenericLinearOperator
   {

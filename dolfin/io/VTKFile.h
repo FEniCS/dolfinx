@@ -38,7 +38,8 @@ namespace pugi
 namespace dolfin
 {
 
-  /// This class supports the output of meshes and functions in VTK
+  /// Output of meshes and functions in VTK format
+
   /// XML format for visualisation purposes. It is not suitable to
   /// checkpointing as it may decimate some data.
 
@@ -46,24 +47,69 @@ namespace dolfin
   {
   public:
 
+    /// Create VTK file
     VTKFile(const std::string filename, std::string encoding);
     ~VTKFile();
 
+    /// Output mesh
     void operator<< (const Mesh& mesh);
+
+    /// Output MeshFunction<bool>
+    ///
+    /// @param meshfunction
     void operator<< (const MeshFunction<bool>& meshfunction);
+
+    /// Output MeshFunction<std::size_t>
+    ///
+    /// @param meshfunction
     void operator<< (const MeshFunction<std::size_t>& meshfunction);
+
+    /// Output MeshFunction<int>
+    ///
+    /// @param meshfunction
     void operator<< (const MeshFunction<int>& meshfunction);
+
+    /// Output MeshFunction<double>
+    ///
+    /// @param meshfunction
     void operator<< (const MeshFunction<double>& meshfunction);
+
+    /// Output Function
+    /// @param u (Function)
     void operator<< (const Function& u);
+
+    /// Output Mesh and timestep
+    /// @param mesh
+    ///   Mesh and time
     void operator<< (const std::pair<const Mesh*, double> mesh);
+
+    /// Output MeshFunction and timestep
+    /// @param f
+    ///   MeshFunction and time
     void operator<< (const std::pair<const MeshFunction<int>*, double> f);
+
+    /// Output MeshFunction and timestep
+    /// @param f
+    ///   MeshFunction and time
     void
       operator<< (const std::pair<const MeshFunction<std::size_t>*, double> f);
+
+    /// Output MeshFunction and timestep
+    /// @param f
+    ///   MeshFunction and time
     void operator<< (const std::pair<const MeshFunction<double>*, double> f);
+
+    /// Output MeshFunction and timestep
+    /// @param f
+    ///   MeshFunction and time
     void operator<< (const std::pair<const MeshFunction<bool>*, double> f);
+
+    /// Output Function and timestep
+    /// @param u
+    ///   Function and time
     void operator<< (const std::pair<const Function*, double> u);
 
-  protected:
+  private:
 
     void write_function(const Function& u, double time);
 

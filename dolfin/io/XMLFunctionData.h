@@ -34,6 +34,8 @@ namespace dolfin
 
   class Function;
 
+  /// I/O for XML representation of Function
+
   class XMLFunctionData
   {
   public:

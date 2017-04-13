@@ -39,7 +39,7 @@ namespace dolfin
     /// Constructor
     MultiMeshDofMap();
 
-    // Copy constructor
+    /// Copy constructor
     MultiMeshDofMap(const MultiMeshDofMap& dofmap);
 
     /// Destructor

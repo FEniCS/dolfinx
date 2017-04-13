@@ -158,8 +158,8 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   add_feature_info(${OPTION_NAME} ${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}.")
 endforeach()
 
-# Python version
-option(DOLFIN_USE_PYTHON3 "Use Python 3." OFF)
+# Default Python version
+option(DOLFIN_USE_PYTHON3 "Use Python 3." ON)
 
 #------------------------------------------------------------------------------
 # General compiler defintions
@@ -535,19 +535,6 @@ if (DOLFIN_ENABLE_HDF5)
   set_package_properties(HDF5 PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
     URL "https://www.hdfgroup.org/HDF5")
-
-  # Check that HDF5 has parallel support
-  if (HDF5_FOUND)
-    if (DOLFIN_ENABLE_MPI)
-      if (NOT (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL))
-        message(STATUS "HDF5 has been found, but is missing parallel support. It will not be enabled.")
-        set(HDF5_FOUND false)
-      endif()
-    else()
-      message(STATUS "HDF5 has been found, but MPI support is missing. It will not be enabled.")
-      set(HDF5_FOUND false)
-    endif()
-  endif()
 endif()
 
 # Check for Trilinos and the requires Trilinos packages
@@ -901,7 +888,7 @@ if (PYTHONINTERP_FOUND)
   message(STATUS "")
   message(STATUS "Generating demo source files from reStructuredText")
   message(STATUS "--------------------------------------------------")
-  file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst" "*.ufl.rst")
+  file(GLOB_RECURSE demo_rst_files "demo/*.py.rst" "demo/*.cpp.rst" "demo/*.ufl.rst")
   foreach(rst_file ${demo_rst_files})
     execute_process(COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
       WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
@@ -937,20 +924,6 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
     message(FATAL_ERROR "Generation of form files failed: \n${FORM_GENERATION_OUTPUT}")
   endif()
   set(COPY_DEMO_TEST_DEMO_DATA TRUE)
-endif()
-
-#------------------------------------------------------------------------------
-# Generate demo files from rst
-
-if (PYTHONINTERP_FOUND)
-  message(STATUS "")
-  message(STATUS "Generating demo source files")
-  message(STATUS "--------------------------------------------------")
-  file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
-  foreach(rst_file ${demo_rst_files})
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
-      WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-  endforeach()
 endif()
 
 #------------------------------------------------------------------------------
@@ -1021,7 +994,7 @@ endif()
 # create a target to build source files from .cpp.rst and .py.rst
 # files (using pylit)
 if (PYTHONINTERP_FOUND)
-  file(GLOB_RECURSE rst_files "*.py.rst" "*.cpp.rst")
+  file(GLOB_RECURSE demo_rst_files "demo/*.py.rst" "demo/*.cpp.rst" "demo/*.ufl.rst")
   add_custom_target(demos_source)
   foreach(rst_file ${rst_files})
     add_custom_command(TARGET demos_source PRE_BUILD

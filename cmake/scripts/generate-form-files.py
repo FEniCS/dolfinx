@@ -22,33 +22,31 @@ import os
 import ffc
 
 # Forms that need special options
-use_error = [
-    "AdaptivePoisson.ufl",
-    "AdaptiveNavierStokes.ufl",
-    ]
+use_error = ["AdaptivePoisson.ufl",
+             "AdaptiveNavierStokes.ufl",
+]
 
-use_representation = {
-    "HyperElasticity.ufl": "uflacs",
-    "CahnHilliard2D.ufl": "uflacs",
-    "CahnHilliard3D.ufl": "uflacs",
-    }
+use_representation = {"HyperElasticity.ufl": "uflacs",
+                      "CahnHilliard2D.ufl": "uflacs",
+                      "CahnHilliard3D.ufl": "uflacs",
+}
 
-use_split = [
-    "Poisson2D_1.ufl",
-    "Poisson2D_2.ufl",
-    "Poisson2D_3.ufl",
-    "Poisson2D_4.ufl",
-    "Poisson2D_5.ufl",
-    "Poisson3D_1.ufl",
-    "Poisson3D_2.ufl",
-    "Poisson3D_3.ufl",
-    "Poisson3D_4.ufl",
-    "Poisson3D_5.ufl",
-    "CahnHilliard2D.ufl",
-    "CahnHilliard3D.ufl",
-    ]
+use_split = ["Poisson2D_1.ufl",
+             "Poisson2D_2.ufl",
+             "Poisson2D_3.ufl",
+             "Poisson2D_4.ufl",
+             "Poisson2D_5.ufl",
+             "Poisson3D_1.ufl",
+             "Poisson3D_2.ufl",
+             "Poisson3D_3.ufl",
+             "Poisson3D_4.ufl",
+             "Poisson3D_5.ufl",
+             "CahnHilliard2D.ufl",
+             "CahnHilliard3D.ufl",
+]
 
-# Forms for which we don't want to generate functions for evaluating the basis
+# Forms for which we don't want to generate functions for evaluating
+# the basis
 skip_basis = ["Poisson2D_5.ufl", "Poisson3D_4.ufl"]
 
 # Directories to scan

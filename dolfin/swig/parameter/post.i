@@ -209,7 +209,7 @@ def __setitem__(self, key, value):
     if isinstance(value,bool):
         par._assign_bool(value)
     elif value is None:
-        pass
+        par.reset()
     else:
         par._assign(value)
 

@@ -42,25 +42,37 @@ namespace dolfin
   public:
 
     /// Create equation a == L
+    /// @param[in] a (Form)
+    ///  Form representing the LHS
+    /// @param[in] L (Form)
+    ///  Form representing the RHS
     Equation(std::shared_ptr<const Form> a,
              std::shared_ptr<const Form> L);
 
     /// Create equation F == 0
+    /// @param[in] F (Form)
+    /// @param[in] rhs (int)
     Equation(std::shared_ptr<const Form> F, int rhs);
 
     /// Destructor
     ~Equation();
 
     /// Check whether equation is linear
+    /// @return bool
     bool is_linear() const;
 
     /// Return form for left-hand side
+    /// @return Form
+    /// LHS form
     std::shared_ptr<const Form> lhs() const;
 
     /// Return form for right-hand side
+    /// @return Form
+    /// RHS form
     std::shared_ptr<const Form> rhs() const;
 
     /// Return value for right-hand side
+    /// @return int
     int rhs_int() const;
 
   private:

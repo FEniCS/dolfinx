@@ -48,6 +48,10 @@ swigimportinfo.py
 
 # Documentation
 docstrings.i
+generated_rst_files
+mock_cpp_modules.py
+doxygen
+doc/source/demos
 
 # Configuration files
 dolfin.conf

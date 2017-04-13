@@ -174,9 +174,13 @@ def test_overload_and_call_back(V, mesh):
     e1 = F1(mesh, degree=2)
     e2 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
 
-    s0 = norm(interpolate(e0, V))
-    s1 = norm(interpolate(e1, V))
-    s2 = norm(interpolate(e2, V))
+    u0 = interpolate(e0, V)
+    u1 = interpolate(e1, V)
+    u2 = interpolate(e2, V)
+
+    s0 = norm(u0)
+    s1 = norm(u1)
+    s2 = norm(u2)
 
     ref = 0.36557637568519191
     assert round(s0 - ref, 7) == 0
@@ -378,8 +382,12 @@ def test_wrong_sub_classing():
         wrongParameterNames1()
 
 
-@skip_in_parallel
 def test_fail_expression_compilation():
+    # Compilation failure only happens on one process,
+    # and involves a barrier to let the compilation finish
+    # before the other processes loads from disk.
+    # This tests that a failure can be caught without deadlock.
+
     def invalidCppExpression():
         Expression("/", degree=0)
 

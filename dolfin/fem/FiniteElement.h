@@ -37,6 +37,8 @@ namespace dolfin
   public:
 
     /// Create finite element from UFC finite element (data may be shared)
+    /// @param element (ufc::finite_element)
+    ///  UFC finite element
     FiniteElement(std::shared_ptr<const ufc::finite_element> element);
 
     /// Destructor
@@ -45,6 +47,7 @@ namespace dolfin
     //--- Direct wrappers for ufc::finite_element ---
 
     /// Return a string identifying the finite element
+    /// @return std::string
     std::string signature() const
     {
       dolfin_assert(_ufc_element);
@@ -52,20 +55,23 @@ namespace dolfin
     }
 
     /// Return the cell shape
+    /// @return ufc::shape
     ufc::shape cell_shape() const
     {
       dolfin_assert(_ufc_element);
       return _ufc_element->cell_shape();
     }
 
-    // Return the topological dimension of the cell shape
+    /// Return the topological dimension of the cell shape
+    /// @return std::size_t
     std::size_t topological_dimension() const
     {
       dolfin_assert(_ufc_element);
       return _ufc_element->topological_dimension();
     }
 
-    // Return the geometric dimension of the cell shape
+    /// Return the geometric dimension of the cell shape
+    /// @return unsigned int
     virtual unsigned int geometric_dimension() const
     {
       dolfin_assert(_ufc_element);
@@ -73,6 +79,7 @@ namespace dolfin
     }
 
     /// Return the dimension of the finite element function space
+    /// @return std::size_t
     std::size_t space_dimension() const
     {
       dolfin_assert(_ufc_element);
@@ -167,6 +174,11 @@ namespace dolfin
     }
 
     /// Interpolate vertex values from dof values
+    /// @param vertex_values (double*)
+    /// @param coefficients (double*)
+    /// @param coordinate_dofs (const double*)
+    /// @param cell_orientation (int)
+    /// @param cell (ufc::cell&)
     void interpolate_vertex_values(double* vertex_values,
                                    double* coefficients,
                                    const double* coordinate_dofs,
@@ -181,18 +193,19 @@ namespace dolfin
 
     /// Tabulate the coordinates of all dofs on an element
     ///
-    /// *Arguments*
-    ///     coordinates (boost::multi_array<double, 2>)
+    /// @param[in,out]    coordinates (boost::multi_array<double, 2>)
     ///         The coordinates of all dofs on a cell.
-    ///     coordinate_dofs (std::vector<double>)
+    /// @param[in]    coordinate_dofs (std::vector<double>)
     ///         The cell coordinates
-    ///     cell (Cell)
+    /// @param[in]    cell (Cell)
     ///         The cell.
     void tabulate_dof_coordinates(boost::multi_array<double, 2>& coordinates,
                                   const std::vector<double>& coordinate_dofs,
                                   const Cell& cell) const;
 
     /// Return the number of sub elements (for a mixed element)
+    /// @return std::size_t
+    ///   number of sub-elements
     std::size_t num_sub_elements() const
     {
       dolfin_assert(_ufc_element);

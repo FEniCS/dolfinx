@@ -29,6 +29,8 @@ namespace dolfin
   class MeshRelation;
   template <typename T> class MeshFunction;
 
+  /// Experimental implementation of a list of Meshes as a hierarchy
+
   class MeshHierarchy
   {
   public:
