@@ -139,6 +139,16 @@ namespace dolfin
     const double* coordinates() const
     { return _x.data(); }
 
+    /// Return copy of coordinate array
+    ///
+    /// *Returns*
+    ///     list of double
+    ///         The coordinates.
+    std::array<double, 3> array() const
+    {
+      return _x;
+    }
+
     /// Compute sum of two points
     /// @param p (Point)
     /// @return Point
