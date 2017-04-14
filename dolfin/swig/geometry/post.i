@@ -66,12 +66,12 @@
         else:
             self._setitem(self._check_index(i), value)
 
-    from numpy import uintp
+    from numpy import uintp as _uintp
 
     def _check_index(self, i):
         "Check index is convertible to uintp and in range(2)"
         try:
-            i = self.uintp(i)
+            i = self._uintp(i)
         except TypeError:
             raise TypeError("Point indexing only supported for "
                             "integers and full slices")
