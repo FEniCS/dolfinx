@@ -181,17 +181,12 @@ def write_mock_modules(namespace_members, mock_py_module):
 
 
 def parse_doxygen_xml_and_generate_rst_and_swig(xml_dir, api_gen_dir, swig_dir, swig_file_name,
-                                                swig_header='', mock_py_module='', allow_empty_xml=False):
+                                                swig_header='', mock_py_module=''):
     # Read doxygen XML files and split namespace members into
     # groups based on subdir and kind (class, function, enum etc)
     create_subdir_groups_if_missing = False
     if os.path.isdir(xml_dir):
-        namespaces = parse_doxygen.read_doxygen_xml_files(xml_dir, ['dolfin', 'ufc'])
-    elif allow_empty_xml:
-        # Create empty Namespace objects
-        namespaces = {'dolfin': parse_doxygen.Namespace('dolfin'),
-                      'ufc': parse_doxygen.Namespace('ufc')} 
-        create_subdir_groups_if_missing = True 
+        namespaces = parse_doxygen.read_doxygen_xml_files(xml_dir, ['dolfin', 'ufc']) 
     else:
         raise OSError('Missing doxygen XML directory %r' % xml_dir)
     
@@ -204,17 +199,6 @@ def parse_doxygen_xml_and_generate_rst_and_swig(xml_dir, api_gen_dir, swig_dir, 
         sd = all_members.setdefault(subdir, {})
         kd = sd.setdefault(member.kind, {})
         kd[member.name] = member
-    
-    if create_subdir_groups_if_missing:
-        # Create empty docstrings.i files in all relevvant subdirs of
-        # dolfin/swig to enable builds without doxygen being present
-        mydir =  os.path.dirname(os.path.abspath(__file__))
-        dolfin_dir = os.path.abspath(os.path.join(mydir, '..', 'dolfin'))
-        for subdir in os.listdir(dolfin_dir):
-            path = os.path.join(dolfin_dir, subdir)
-            if not os.path.isdir(path):
-                continue
-            all_members.setdefault(subdir, {})
     
     # Generate Sphinx RST files and SWIG interface files
     for subdir, subdir_members in sorted(all_members.items()):
@@ -243,8 +227,6 @@ if __name__ == '__main__':
     
     if '--no-swig' in sys.argv:
         swig_dir = None
-    if '--allow-empty-xml' in sys.argv:
-        allow_empty_xml = True
     
     parse_doxygen_xml_and_generate_rst_and_swig(DOXYGEN_XML_DIR, API_GEN_DIR, swig_dir,
-                                                SWIG_FILE, '', MOCK_PY, allow_empty_xml)
+                                                SWIG_FILE, '', MOCK_PY)
