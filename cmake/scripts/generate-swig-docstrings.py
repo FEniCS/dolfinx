@@ -51,7 +51,7 @@ def generate_docstrings(top_destdir):
     if doxyver is None:
         print('--------------------------------------------')
         print('WARNING: Missing doxygen, producing dummy docstrings')
-        generate_dummy_docstrings(top_destdir)
+        generate_dummy_docstrings(top_destdir, reason='Missing doxygen')
         return
     
     # Get top DOLFIN directory.
@@ -63,8 +63,10 @@ def generate_docstrings(top_destdir):
     print('Running doxygen to read docstrings from C++:')
     print('Doxygen version:', doxyver)
     
+    dummy_reason = ''
     if str(doxyver) in PROBLEMATIC_DOXYGEN_VERSIONS:
         print('WARNING: this doxygen version has known problems with dolfin')
+        dummy_reason = 'Buggy doxygen version %s. ' % doxyver
     
     sys.stdout.flush() # doxygen writes to stderr and mangles output order
     
@@ -103,15 +105,20 @@ def generate_docstrings(top_destdir):
     print('--------------------------------------------')
     print('Generating python docstrings in directory')
     print('  swig_dir = %s' % swig_dir)
-
+    
     # Extract documentation and generate docstrings
-    parse_doxygen_xml_and_generate_rst_and_swig(xml_dir=xml_dir,
-                                                api_gen_dir=None,
-                                                swig_dir=swig_dir,
-                                                swig_file_name="docstrings.i",
-                                                swig_header=copyright_info)
+    if os.path.isdir(xml_dir):
+        parse_doxygen_xml_and_generate_rst_and_swig(xml_dir=xml_dir,
+                                                    api_gen_dir=None,
+                                                    swig_dir=swig_dir,
+                                                    swig_file_name="docstrings.i",
+                                                    swig_header=copyright_info)
+    else:
+        # Doxygen crashed before generating any XML
+        dummy_reason += 'Doxygen did not generate any XML files. '
     
     # Check that all files have been generated
+    # Doxygen may have crashed halfway through generating the XML
     all_files_generated = True
     for file_name in required_swig_files:
         if not os.path.isfile(file_name):
@@ -125,7 +132,8 @@ def generate_docstrings(top_destdir):
     if not all_files_generated:
         print('--------------------------------------------')
         print('WARNING: Something went wrong, producing dummy docstrings')
-        generate_dummy_docstrings(top_destdir)
+        dummy_reason += 'Missing generated files. Did doxygen crash?'
+        generate_dummy_docstrings(top_destdir, reason=dummy_reason)
     
     print('DONE generating docstrings')
     print('--------------------------------------------')

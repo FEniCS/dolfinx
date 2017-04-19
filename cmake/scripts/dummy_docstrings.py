@@ -59,7 +59,7 @@ sys.path.append(doc_dir)
 
 from dolfin_utils.documentation import extract_doc_representation
 
-docstring = '%%feature("docstring")  %s "\nDummy docstring. Missing doxygen\n";\n\n'
+docstring = '%%feature("docstring")  %s "\nDummy docstring. Reason: %s\n";\n\n'
 
 
 def get_function_name(signature):
@@ -98,7 +98,7 @@ def group_overloaded_functions(docs):
     return new_docs
 
 
-def write_docstrings(output_file, module, header, docs, classnames):
+def write_docstrings(output_file, module, header, docs, classnames, reason='Missing doxygen'):
     """Write docstrings from a header file."""
 
     output_file.write("// Documentation extracted from: (module=%s, header=%s)\n" % (module, header))
@@ -107,7 +107,7 @@ def write_docstrings(output_file, module, header, docs, classnames):
     for (classname, parent, comment, func_docs, order) in documentation:
         # Create class documentation (if any) and write.
         if classname is not None and comment is not None:
-            output_file.write(docstring % ("dolfin::%s" % classname))
+            output_file.write(docstring % ("dolfin::%s" % classname, reason))
         # Handle functions in the correct order (according to definition in the
         # header file).
         for name in order:
@@ -118,10 +118,10 @@ def write_docstrings(output_file, module, header, docs, classnames):
             functions = func_docs[name]
             if not functions:
                 continue
-            output_file.write(docstring % func_name)
+            output_file.write(docstring % (func_name, reason))
 
 
-def generate_dummy_docstrings(top_destdir):
+def generate_dummy_docstrings(top_destdir, reason='Missing doxygen'):
     """
     Generate docstring files for each module
     """
@@ -148,7 +148,7 @@ def generate_dummy_docstrings(top_destdir):
 
         print("  Writing ", outpath)
         for header, docs in documentation[module]:
-            write_docstrings(output_file, module, header, docs, classnames)
+            write_docstrings(output_file, module, header, docs, classnames, reason)
 
         output_file.close()
 
