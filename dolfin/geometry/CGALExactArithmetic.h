@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2017-02-09
+// Last changed: 2017-03-01
 //
 // Developer note:
 //
@@ -86,16 +86,11 @@ namespace dolfin
 
     else if (s.size() == 3)
     {
-      return std::abs(dolfin::orient2d(s[0].coordinates(),
-			       s[1].coordinates(),
-			       s[2].coordinates())) / 2;
+      return std::abs(dolfin::orient2d(s[0], s[1], s[2])) / 2;
     }
     else if (s.size() == 4)
     {
-      return std::abs(orient3d(s[0].coordinates(),
-			       s[1].coordinates(),
-			       s[2].coordinates(),
-			       s[3].coordinates())) / 6;
+      return std::abs(orient3d(s[0], s[1], s[2], s[3])) / 6;
     }
     else {
 
@@ -151,7 +146,6 @@ namespace dolfin
       pointscenter += points[m];
     pointscenter /= points.size();
 
-
     // Reference
     Point ref = points[0] - pointscenter;
 
@@ -159,9 +153,7 @@ namespace dolfin
     std::vector<std::pair<double, std::size_t>> order;
     for (std::size_t m = 1; m < points.size(); ++m)
     {
-      const double A = dolfin::orient2d(pointscenter.coordinates(),
-                                        const_cast<double*>(points[0].coordinates()),
-                                        const_cast<double*>(points[m].coordinates()));
+      const double A = dolfin::orient2d(pointscenter, points[0], points[m]);
       const Point s = points[m] - pointscenter;
       double alpha = std::atan2(A, s.dot(ref));
       if (alpha < 0)
@@ -539,7 +531,9 @@ namespace
   inline bool is_degenerate_3d(const dolfin::Point& a,
 			       const dolfin::Point& b)
   {
+    dolfin_debug("check");
     const Segment_3 s(convert_to_cgal_3d(a), convert_to_cgal_3d(b));
+    dolfin_debug("check");
     return s.is_degenerate();
   }
   //-----------------------------------------------------------------------------
@@ -661,9 +655,7 @@ namespace
     std::vector<std::pair<double, std::size_t>> order;
     for (std::size_t m = 1; m < points.size(); ++m)
     {
-      const double A = dolfin::orient2d(pointscenter.coordinates(),
-                                        const_cast<double*>(points[0].coordinates()),
-                                        const_cast<double*>(points[m].coordinates()));
+      const double A = dolfin::orient2d(pointscenter, points[0], points[m]);
       const Point s = points[m] - pointscenter;
       double alpha = std::atan2(A, s.dot(ref));
       if (alpha < 0)
@@ -811,25 +803,25 @@ namespace dolfin
 			      convert_to_cgal_3d(q0, q1, q2));
   }
   //-----------------------------------------------------------------------------
-  inline bool cgal_collides_tetrahedron_point(const Point& p0,
-					      const Point& p1,
-					      const Point& p2,
-					      const Point& p3,
-					      const Point& q0)
+  inline bool cgal_collides_tetrahedron_point_3d(const Point& p0,
+                                                 const Point& p1,
+                                                 const Point& p2,
+                                                 const Point& p3,
+                                                 const Point& q0)
   {
     const Tetrahedron_3 tet = convert_to_cgal_3d(p0, p1, p2, p3);
     return !tet.has_on_unbounded_side(convert_to_cgal_3d(q0));
   }
   //-----------------------------------------------------------------------------
-  inline bool cgal_collides_tetrahedron_segment(const Point& p0,
-						const Point& p1,
-						const Point& p2,
-						const Point& p3,
-						const Point& q0,
-						const Point& q1)
+  inline bool cgal_collides_tetrahedron_segment_3d(const Point& p0,
+                                                   const Point& p1,
+                                                   const Point& p2,
+                                                   const Point& p3,
+                                                   const Point& q0,
+                                                   const Point& q1)
   {
-    if (cgal_collides_tetrahedron_point(p0, p1, p2, p3, q0) or
-	cgal_collides_tetrahedron_point(p0, p1, p2, p3, q1))
+    if (cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, q0) or
+	cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, q1))
       return true;
 
     if (cgal_collides_triangle_segment_3d(p0, p1, p2, q0, q1) or
@@ -841,36 +833,36 @@ namespace dolfin
     return false;
   }
   //-----------------------------------------------------------------------------
-  inline bool cgal_collides_tetrahedron_triangle(const Point& p0,
-						 const Point& p1,
-						 const Point& p2,
-						 const Point& p3,
-						 const Point& q0,
-						 const Point& q1,
-						 const Point& q2)
+  inline bool cgal_collides_tetrahedron_triangle_3d(const Point& p0,
+                                                    const Point& p1,
+                                                    const Point& p2,
+                                                    const Point& p3,
+                                                    const Point& q0,
+                                                    const Point& q1,
+                                                    const Point& q2)
   {
     return CGAL::do_intersect(convert_to_cgal_3d(p0, p1, p2, p3),
 			      convert_to_cgal_3d(q0, q1, q2));
   }
   //-----------------------------------------------------------------------------
-  inline bool cgal_collides_tetrahedron_tetrahedron(const Point& p0,
-						    const Point& p1,
-						    const Point& p2,
-						    const Point& p3,
-						    const Point& q0,
-						    const Point& q1,
-						    const Point& q2,
-						    const Point& q3)
+  inline bool cgal_collides_tetrahedron_tetrahedron_3d(const Point& p0,
+                                                       const Point& p1,
+                                                       const Point& p2,
+                                                       const Point& p3,
+                                                       const Point& q0,
+                                                       const Point& q1,
+                                                       const Point& q2,
+                                                       const Point& q3)
   {
     // Check volume collisions
-    if (cgal_collides_tetrahedron_point(p0, p1, p2, p3, q0)) return true;
-    if (cgal_collides_tetrahedron_point(p0, p1, p2, p3, q1)) return true;
-    if (cgal_collides_tetrahedron_point(p0, p1, p2, p3, q2)) return true;
-    if (cgal_collides_tetrahedron_point(p0, p1, p2, p3, q3)) return true;
-    if (cgal_collides_tetrahedron_point(q0, q1, q2, q3, p0)) return true;
-    if (cgal_collides_tetrahedron_point(q0, q1, q2, q3, p1)) return true;
-    if (cgal_collides_tetrahedron_point(q0, q1, q2, q3, p2)) return true;
-    if (cgal_collides_tetrahedron_point(q0, q1, q2, q3, p3)) return true;
+    if (cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, q0)) return true;
+    if (cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, q1)) return true;
+    if (cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, q2)) return true;
+    if (cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, q3)) return true;
+    if (cgal_collides_tetrahedron_point_3d(q0, q1, q2, q3, p0)) return true;
+    if (cgal_collides_tetrahedron_point_3d(q0, q1, q2, q3, p1)) return true;
+    if (cgal_collides_tetrahedron_point_3d(q0, q1, q2, q3, p2)) return true;
+    if (cgal_collides_tetrahedron_point_3d(q0, q1, q2, q3, p3)) return true;
 
     Polyhedron_3 tet_a;
     tet_a.make_tetrahedron(convert_to_cgal_3d(p0),
@@ -1493,33 +1485,47 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   inline bool cgal_is_degenerate_2d(const std::vector<Point>& s)
   {
+    if (s.size() < 2 or s.size() > 3)
+    {
+      info("Degenerate 2D simplex with %d vertices.", s.size());
+      return true;
+    }
+
     switch (s.size())
     {
-    case 1: return true;
     case 2: return is_degenerate_2d(s[0], s[1]);
     case 3: return is_degenerate_2d(s[0], s[1], s[2]);
-    default:
-      dolfin_error("CGALExactArithmetic.h",
-		   "cgal_is_degenerate_2d",
-		   "Only implemented for simplices of tdim 0, 1 and 2");
     }
-    return false;
+
+    // Shouldn't get here
+    dolfin_error("CGALExactArithmetic.h",
+                 "call cgal_is_degenerate_2d",
+                 "Only implemented for simplices of tdim 0, 1 and 2, not tdim = %d", s.size() - 1);
+
+    return true;
   }
   //-----------------------------------------------------------------------------
   inline bool cgal_is_degenerate_3d(const std::vector<Point>& s)
   {
+    if (s.size() < 2 or s.size() > 4)
+    {
+      info("Degenerate 3D simplex with %d vertices.", s.size());
+      return true;
+    }
+
     switch (s.size())
     {
-    case 1: return true;
     case 2: return is_degenerate_3d(s[0], s[1]);
     case 3: return is_degenerate_3d(s[0], s[1], s[2]);
     case 4: return is_degenerate_3d(s[0], s[1], s[2], s[3]);
-    default:
-      dolfin_error("CGALExactArithmetic.h",
-		   "cgal_is_degenerate_3d",
-		   "Only implemented for simplices of tdim 0, 1, 2 and 3");
     }
-    return false;
+
+    // Shouldn't get here
+    dolfin_error("CGALExactArithmetic.h",
+                 "call cgal_is_degenerate_3d",
+                 "Only implemented for simplices of tdim 0, 1, 2 and 3, not tdim = %d", s.size() - 1);
+
+    return true;
   }
   //-----------------------------------------------------------------------------
 

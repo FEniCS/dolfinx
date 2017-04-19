@@ -16,8 +16,9 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-11-21
-// Last changed: 2017-01-24
+// Last changed: 2017-03-01
 
+#include <cmath>
 #include "GeometryPredicates.h"
 #include "predicates.h"
 
@@ -25,7 +26,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 bool GeometryPredicates::is_degenerate(const std::vector<Point>& simplex,
-					std::size_t gdim)
+                                       std::size_t gdim)
 {
   switch (gdim)
   {
@@ -48,65 +49,92 @@ namespace
     return a.x() == b.x() && a.y() == b.y() && a.z() == b.z();
   }
 }
+//-----------------------------------------------------------------------------
 bool GeometryPredicates::_is_degenerate_2d(std::vector<Point> simplex)
 {
-  bool is_degenerate = false;
+  if (simplex.size() < 2 or simplex.size() > 3)
+  {
+    info("Degenerate 2D simplex with %d vertices.", simplex.size());
+    return true;
+  }
 
   switch (simplex.size())
   {
-  case 0:
-    // FIXME: Is this correct? Is "nothing" degenerate?
-    is_degenerate = true;
-    break;
-  case 1:
-    /// FIXME: Is this correct? Can a point be degenerate?
-    is_degenerate = true;
-    break;
-  case 2:
-    {
-      is_degenerate = (simplex[0] == simplex[1]);
-      // FIXME: verify with orient2d
-      // double r[2] = { dolfin::rand(), dolfin::rand() };
-      // is_degenerate = orient2d(s[0].coordinates(), s[1].coordinates(), r) == 0;
-
-      // // FIXME: compare with ==
-      // dolfin_assert(is_degenerate == (s[0] == s[1]));
-
-      break;
-    }
-  case 3:
-    is_degenerate = orient2d(simplex[0].coordinates(),
-			     simplex[1].coordinates(),
-			     simplex[2].coordinates()) == 0;
-    break;
-  default:
-    dolfin_error("GeometryPredicates.cpp",
-		 "_is_degenerate_2d",
-		 "Only implemented for simplices of tdim 0, 1 and 2");
+  case 2: return simplex[0] == simplex[1];
+  case 3: return orient2d(simplex[0], simplex[1], simplex[2]) == 0;
   }
 
-  return is_degenerate;
+  // Shouldn't get here
+  dolfin_error("CGALExactArithmetic.h",
+               "call _is_degenerate_2d",
+               "Only implemented for simplices of tdim 0, 1 and 2, not tdim = %d",
+               simplex.size() - 1);
+
+  return true;
 }
 //------------------------------------------------------------------------------
 bool GeometryPredicates::_is_degenerate_3d(std::vector<Point> simplex)
 {
-  bool is_degenerate = false;
+  if (simplex.size() < 2 or simplex.size() > 4)
+  {
+    info("Degenerate 3D simplex with %d vertices.", simplex.size());
+    return true;
+  }
 
   switch (simplex.size())
   {
-  case 4:
-    is_degenerate = orient3d(simplex[0].coordinates(),
-			     simplex[1].coordinates(),
-			     simplex[2].coordinates(),
-			     simplex[3].coordinates()) == 0;
-    break;
-  default:
-    dolfin_error("GeometryPredicates.cpp",
-		 "_is_degenerate_3d",
-		 "Only implemented for simplices of tdim 3");
+  case 2: return simplex[0] == simplex[1];
+  case 3:
+    {
+      const double ayz[2] = {simplex[0].y(), simplex[0].z()};
+      const double byz[2] = {simplex[1].y(), simplex[1].z()};
+      const double cyz[2] = {simplex[2].y(), simplex[2].z()};
+      if (_orient2d(ayz, byz, cyz) != 0.)
+	return false;
+
+      const double azx[2] = {simplex[0].z(), simplex[0].x()};
+      const double bzx[2] = {simplex[1].z(), simplex[1].x()};
+      const double czx[2] = {simplex[2].z(), simplex[2].x()};
+      if (_orient2d(azx, bzx, czx) != 0.)
+	return false;
+
+      const double axy[2] = {simplex[0].x(), simplex[0].y()};
+      const double bxy[2] = {simplex[1].x(), simplex[1].y()};
+      const double cxy[2] = {simplex[2].x(), simplex[2].y()};
+      if (_orient2d(axy, bxy, cxy) != 0.)
+	return false;
+
+      return true;
+    }
+  case 4: return orient3d(simplex[0], simplex[1], simplex[2], simplex[3]) == 0;
   }
 
-  return is_degenerate;
-}
+  // Shouldn't get here
+  dolfin_error("CGALExactArithmetic.h",
+               "call _is_degenerate_3d",
+               "Only implemented for simplices of tdim 0, 1, 2 and 3, not tdim = %d",
+               simplex.size() - 1);
 
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool GeometryPredicates::is_finite(const std::vector<Point>& simplex)
+{
+  for (auto p : simplex)
+  {
+    if (!std::isfinite(p.x())) return false;
+    if (!std::isfinite(p.y())) return false;
+    if (!std::isfinite(p.z())) return false;
+  }
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool GeometryPredicates::is_finite(const std::vector<double>& simplex)
+{
+  for (double p : simplex)
+  {
+    if (!std::isfinite(p)) return false;
+  }
+  return true;
+}
 //-----------------------------------------------------------------------------

@@ -31,6 +31,8 @@ namespace dolfin
 
   class Table;
 
+  /// Output of XML representation of DOLFIN Table
+
   class XMLTable
   {
   public:

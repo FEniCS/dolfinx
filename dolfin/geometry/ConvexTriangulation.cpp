@@ -16,17 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-02-09
+// Last changed: 2017-03-14
 
-#include "ConvexTriangulation.h"
-#include "predicates.h"
 #include <algorithm>
 #include <tuple>
 #include <set>
-
-#ifdef augustdebug
-#include "dolfin_simplex_tools.h"
-#endif
+#include "predicates.h"
+#include "GeometryPredicates.h"
+#include "ConvexTriangulation.h"
 
 //-----------------------------------------------------------------------------
 namespace
@@ -114,15 +111,9 @@ ConvexTriangulation::triangulate(std::vector<Point> p,
 
     if (unique_p.size() > 2)
     {
-#ifdef augustdebug
-      std::cout << __FUNCTION__<<std::endl;
-      for (const Point p: unique_p)
-	std::cout << tools::plot(p);
-      std::cout << std::endl;
-#endif
       dolfin_error("ConvexTriangulation.cpp",
                    "triangulate convex polyhedron",
-                   "a convex polyhedron of topological dimension 1 can not have more then 2 points");
+                   "a convex polyhedron of topological dimension 1 can not have more than 2 points");
     }
 
     std::vector<std::vector<Point>> t;
@@ -138,6 +129,8 @@ ConvexTriangulation::triangulate(std::vector<Point> p,
 std::vector<std::vector<Point>>
 ConvexTriangulation::_triangulate_graham_scan_2d(std::vector<Point> input_points)
 {
+  dolfin_assert(GeometryPredicates::is_finite(input_points));
+
   // Make sure the input points are unique
   std::vector<Point> points = unique_points(input_points, DOLFIN_EPS);
 
@@ -166,9 +159,7 @@ ConvexTriangulation::_triangulate_graham_scan_2d(std::vector<Point> input_points
   std::vector<std::pair<double, std::size_t>> order;
   for (std::size_t m = 1; m < points.size(); ++m)
   {
-    const double A = orient2d(pointscenter.coordinates(),
-			      points[0].coordinates(),
-			      points[m].coordinates());
+    const double A = orient2d(pointscenter, points[0], points[m]);
     const Point s = points[m] - pointscenter;
     double alpha = std::atan2(A, s.dot(ref));
     if (alpha < 0)
@@ -196,6 +187,8 @@ std::vector<std::vector<Point>>
 ConvexTriangulation::_triangulate_bowyer_watson(std::vector<Point> input_points,
 					       std::size_t gdim)
 {
+  dolfin_assert(GeometryPredicates::is_finite(input_points));
+
   // Delaunay triangulation using Bowyer-Watson
   // https://en.wikipedia.org/wiki/Bowyer%E2%80%93Watson_algorithm
 
@@ -327,6 +320,12 @@ ConvexTriangulation::_triangulate_bowyer_watson(std::vector<Point> input_points,
 std::vector<std::vector<Point>>
 ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points)
 {
+  dolfin_assert(GeometryPredicates::is_finite(input_points));
+
+  //std::cout << "Input to 3D Graham scan:" << std::endl;
+  //for (auto p : input_points)
+  //  std::cout << p << std::endl;
+
   const double coplanar_tol = 1000*DOLFIN_EPS_LARGE;
 
   // Make sure the input points are unique. We assume this has
@@ -337,7 +336,8 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 
   if (points.size() < 4)
   {
-    return triangulation; // empty
+    // Empty
+    return triangulation;
   }
   else if (points.size() == 4)
   {
@@ -381,10 +381,10 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 	    {
 	      if (m != i and m != j and m != k)
 	      {
-		const double orientation = orient3d(points[i].coordinates(),
-						    points[j].coordinates(),
-						    points[k].coordinates(),
-						    points[m].coordinates());
+		const double orientation = orient3d(points[i],
+						    points[j],
+						    points[k],
+						    points[m]);
 		// Save point index if we find coplanar points
 		if (orientation == 0)
 		  coplanar.push_back(m);
@@ -416,6 +416,9 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 					    points[k],
 					    polyhedroncenter };
 		// FIXME: Here we could include if determinant is sufficiently large
+                //for (auto p : cand)
+                //  std::cout << " " << p;
+                //std::cout << std::endl;
 		triangulation.push_back(cand);
 	      }
 	      else // At least four coplanar points
@@ -472,12 +475,14 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
 					      points[coplanar[order[m + 1].second]],
 					      polyhedroncenter };
 		  // FIXME: Possibly only include if tet is large enough
+                  //for (auto p : cand)
+                  //  std::cout << " " << p;
+                  //std::cout << std::endl;
 		  triangulation.push_back(cand);
 		}
 	      }
 	    }
 	  }
-
 	}
       }
     }
@@ -684,9 +689,9 @@ Point ConvexTriangulation::cross_product(Point a,
   double axy[2] = {a.x(), a.y()};
   double bxy[2] = {b.x(), b.y()};
   double cxy[2] = {c.x(), c.y()};
-  Point p(orient2d(ayz, byz, cyz),
-   	  orient2d(azx, bzx, czx),
-	  orient2d(axy, bxy, cxy));
+  Point p(_orient2d(ayz, byz, cyz),
+   	  _orient2d(azx, bzx, czx),
+	  _orient2d(axy, bxy, cxy));
   return p;
 }
 //-----------------------------------------------------------------------------

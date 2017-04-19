@@ -25,7 +25,6 @@ set(HEADERS
   MultiMeshForm.h
   NonlinearVariationalProblem.h
   NonlinearVariationalSolver.h
-  OpenMpAssembler.h
   PETScDMCollection.h
   PointSource.h
   solve.h
@@ -58,7 +57,6 @@ set(SOURCES
   MultiMeshForm.cpp
   NonlinearVariationalProblem.cpp
   NonlinearVariationalSolver.cpp
-  OpenMpAssembler.cpp
   PointSource.cpp
   PETScDMCollection.cpp
   solve.cpp

@@ -33,6 +33,7 @@ namespace dolfin
   class NoDeleter
   {
   public:
+    /// Do nothing
     void operator() (const void *) {}
   };
 

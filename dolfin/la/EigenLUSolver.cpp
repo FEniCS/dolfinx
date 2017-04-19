@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2015-02-03
-
 
 #include <dolfin/common/types.h>
 #include <Eigen/SparseLU>
@@ -155,23 +152,17 @@ const GenericLinearOperator& EigenLUSolver::get_operator() const
 //-----------------------------------------------------------------------------
 std::size_t EigenLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  return solve(x, b, false);
-}
-//-----------------------------------------------------------------------------
-std::size_t EigenLUSolver::solve(GenericVector& x, const GenericVector& b,
-                                 bool transpose)
-{
   if (_method == "sparselu")
   {
     Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::ColMajor>,
                     Eigen::COLAMDOrdering<int>> solver;
-    call_solver(solver, x, b, transpose);
+    call_solver(solver, x, b);
   }
   else if (_method == "cholesky")
   {
     Eigen::SimplicialLDLT<Eigen::SparseMatrix<double, Eigen::ColMajor>,
                           Eigen::Lower> solver;
-    call_solver(solver, x, b, transpose);
+    call_solver(solver, x, b);
   }
 #ifdef HAS_CHOLMOD
   else if (_method == "cholmod")
@@ -179,35 +170,35 @@ std::size_t EigenLUSolver::solve(GenericVector& x, const GenericVector& b,
     Eigen::CholmodDecomposition<Eigen::SparseMatrix<double, Eigen::ColMajor>,
                                 Eigen::Lower> solver;
     solver.setMode(Eigen::CholmodLDLt);
-    call_solver(solver, x, b, transpose);
+    call_solver(solver, x, b);
   }
 #endif
 #ifdef EIGEN_PASTIX_SUPPORT
   else if (_method == "pastix")
   {
     Eigen::PastixLU<Eigen::SparseMatrix<double, Eigen::ColMajor>> solver;
-    call_solver(solver, x, b, transpose);
+    call_solver(solver, x, b);
   }
 #endif
 #ifdef EIGEN_PARDISO_SUPPORT
   else if (_method == "pardiso")
   {
     Eigen::PardisoLU<Eigen::SparseMatrix<double, Eigen::ColMajor>> solver;
-    call_solver(solver, x, b, transpose);
+    call_solver(solver, x, b);
   }
 #endif
 #ifdef EIGEN_SUPERLU_SUPPORT
   else if (_method == "superlu")
   {
     Eigen::SuperLU<Eigen::SparseMatrix<double, Eigen::ColMajor>> solver;
-    call_solver(solver, x, b, transpose);
+    call_solver(solver, x, b);
   }
 #endif
 #ifdef HAS_UMFPACK
   else if (_method == "umfpack")
   {
     Eigen::UmfPackLU<Eigen::SparseMatrix<double, Eigen::ColMajor>> solver;
-    call_solver(solver, x, b, transpose);
+    call_solver(solver, x, b);
   }
 #endif
   else
@@ -219,7 +210,7 @@ std::size_t EigenLUSolver::solve(GenericVector& x, const GenericVector& b,
 //-----------------------------------------------------------------------------
 template <typename Solver>
 void EigenLUSolver::call_solver(Solver& solver, GenericVector& x,
-                                const GenericVector& b, bool transpose)
+                                const GenericVector& b)
 {
   const std::string timer_title = "Eigen LU solver (" + _method + ")";
   Timer timer(timer_title);
@@ -243,16 +234,11 @@ void EigenLUSolver::call_solver(Solver& solver, GenericVector& x,
     _matA->init_vector(x, 1);
 
   // Copy to format suitable for solver
-  // FIXME: remove this if possible
   // Eigen wants ColMajor matrices for solver
-
-  typename Solver::MatrixType _A;
-  if (transpose)
-    _A = _matA->mat().transpose();
-  else
-    _A = _matA->mat();
-
   // FIXME: Do we want this? It could affect re-assembly performance
+  typename Solver::MatrixType _A;
+  _A = _matA->mat();
+
   // Compress matrix
   // Most solvers require a compressed matrix
   _A.makeCompressed();
@@ -292,30 +278,6 @@ std::size_t EigenLUSolver::solve(const EigenMatrix& A, EigenVector& x,
   std::shared_ptr<const EigenMatrix> Atmp(&A, NoDeleter());
   set_operator(Atmp);
   return solve(x, b);
-}
-//-----------------------------------------------------------------------------
-std::size_t EigenLUSolver::solve_transpose(GenericVector& x,
-                                           const GenericVector& b)
-{
-  return solve(x, b, true);
-}
-//-----------------------------------------------------------------------------
-std::size_t EigenLUSolver::solve_transpose(const GenericLinearOperator& A,
-                                           GenericVector& x,
-                                           const GenericVector& b)
-{
-  return solve_transpose(as_type<const EigenMatrix>(require_matrix(A)),
-                         as_type<EigenVector>(x),
-                         as_type<const EigenVector>(b));
-}
-//-----------------------------------------------------------------------------
-std::size_t EigenLUSolver::solve_transpose(const EigenMatrix& A,
-                                           EigenVector& x,
-                                           const EigenVector& b)
-{
-  std::shared_ptr<const EigenMatrix> _matA(&A, NoDeleter());
-  set_operator(_matA);
-  return solve_transpose(x, b);
 }
 //-----------------------------------------------------------------------------
 std::string EigenLUSolver::str(bool verbose) const

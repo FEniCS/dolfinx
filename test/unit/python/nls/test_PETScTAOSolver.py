@@ -106,6 +106,7 @@ def test_tao_linear_bound_solver(backend):
     solver.parameters["report"] = True
 
     solver.solve(TestProblem(), u.vector(), lb.vector(), ub.vector())
+    solver.solve(TestProblem(), u.vector(), lb.vector(), ub.vector())
 
     # Verify that energy(u) = Ly
     assert round(assemble(energy) - Ly, 4) == 0

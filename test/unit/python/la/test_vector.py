@@ -57,18 +57,6 @@ any_backend = set_parameters_fixture("linear_algebra_backend", any_backends)
 
 class TestVectorForAnyBackend:
 
-    @pytest.fixture(autouse=True)
-    def assemble_vectors(self):
-        mesh = UnitSquareMesh(7, 4)
-
-        V = FunctionSpace(mesh, "Lagrange", 2)
-        W = FunctionSpace(mesh, "Lagrange", 1)
-
-        v = TestFunction(V)
-        t = TestFunction(W)
-
-        return assemble(v*dx), assemble(t*dx)
-
     def test_create_empty_vector(self, any_backend):
         v0 = Vector()
         info(v0)
