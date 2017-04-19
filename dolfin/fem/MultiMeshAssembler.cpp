@@ -284,11 +284,11 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
   const std::size_t form_rank = a.rank();
 
   // Get multimesh coefficients
-  // These are updated in this assembly loop
+  // These are updated in within this assembly loop
   std::map<std::size_t, std::shared_ptr<const MultiMeshFunction> >
     multimesh_coefficients = a.multimesh_coefficients();
 
-  // Get the part-independent coefficents
+  // Identify the coefficents that are not MultiMeshFunction
   // These will be updated by UFC
   // It is assumed that the coefficents are the same for all parts
   std::vector<bool> ufc_enabled_coefficients;
@@ -384,7 +384,7 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
         const Cell& cell_1 = cut_cell;
 
         // Update to current pair of cells
-        // Let UFC update the non-multimesh coefficients
+        // Let UFC update the coefficients that are not MultiMeshFunction
         cell_0.get_cell_data(ufc_cell[0], 0);
         cell_1.get_cell_data(ufc_cell[1], 0);
         cell_0.get_coordinate_dofs(coordinate_dofs[0]);
@@ -410,16 +410,14 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
           coefficient->restrict(w_1, element,
                                 part_1, cell_1, coordinate_dofs[1].data(), ufc_cell[1]);
         }
+
         // Collect vertex coordinates
         macro_coordinate_dofs.resize(coordinate_dofs[0].size() +
                                      coordinate_dofs[0].size());
-        std::copy(coordinate_dofs[0].begin(),
-                  coordinate_dofs[0].end(),
+        std::copy(coordinate_dofs[0].begin(), coordinate_dofs[0].end(),
                   macro_coordinate_dofs.begin());
-        std::copy(coordinate_dofs[1].begin(),
-                  coordinate_dofs[1].end(),
-                  macro_coordinate_dofs.begin()
-                  + coordinate_dofs[0].size());
+        std::copy(coordinate_dofs[1].begin(), coordinate_dofs[1].end(),
+                  macro_coordinate_dofs.begin() + coordinate_dofs[0].size());
 
         // Tabulate dofs for each dimension on macro element
         for (std::size_t i = 0; i < form_rank; i++)
@@ -494,7 +492,7 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
   std::map<std::size_t, std::shared_ptr<const MultiMeshFunction> >
     multimesh_coefficients = a.multimesh_coefficients();
 
-  // Get the part-independent coefficents
+  // Identify the coefficients that are not MultiMeshFunction
   // These will be updated by UFC
   // It is assumed that the coefficents are the same for all parts
   std::vector<bool> ufc_enabled_coefficients;
@@ -585,7 +583,7 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
         const Cell& cell_1 = cut_cell;
 
         // Update to current pair of cells
-        // Let UFC update the non-multimesh coefficients
+        // Let UFC update the coefficients that are not MultiMeshFunction
         cell_0.get_cell_data(ufc_cell[0], 0);
         cell_1.get_cell_data(ufc_cell[1], 0);
         cell_0.get_coordinate_dofs(coordinate_dofs[0]);
@@ -615,11 +613,9 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
         // Collect vertex coordinates
         macro_coordinate_dofs.resize(coordinate_dofs[0].size() +
                                      coordinate_dofs[0].size());
-        std::copy(coordinate_dofs[0].begin(),
-                  coordinate_dofs[0].end(),
+        std::copy(coordinate_dofs[0].begin(), coordinate_dofs[0].end(),
                   macro_coordinate_dofs.begin());
-        std::copy(coordinate_dofs[1].begin(),
-                  coordinate_dofs[1].end(),
+        std::copy(coordinate_dofs[1].begin(), coordinate_dofs[1].end(),
                   macro_coordinate_dofs.begin() + coordinate_dofs[0].size());
 
         // Tabulate dofs for each dimension on macro element
