@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2017-04-09
+// Last changed: 2017-04-20
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -314,6 +314,9 @@ SimplexQuadrature::compress(std::pair<std::vector<double>, std::vector<double>>&
     // We cannot improve this rule. Return empty vector
     return std::vector<std::size_t>();
   }
+
+  log(PROGRESS, "Compressing %d quadrature points down to %d",
+      qr.second.size(), N_compressed_min);
 
   // Copy the input qr since we'll overwrite the input
   const std::pair<std::vector<double>, std::vector<double>> qr_input = qr;

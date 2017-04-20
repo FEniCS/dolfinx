@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2017-04-19
-# Last changed: 2017-04-19
+# Last changed: 2017-04-20
 #
 # This demo program creates random meshes and checks that the
 # compression of the volume and interface quadrature rules yields the
@@ -27,10 +27,10 @@ import numpy
 from dolfin import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--num_parts', type=int, help='number of meshes', default=4)
+parser.add_argument('--num_parts', type=int, help='number of meshes', default=5)
 parser.add_argument('--N_x', type=int, help='number of mesh divisions (mesh size)', default=1, required=False)
-parser.add_argument('--order', type=int, help='quadrature rule order', default=1, required=False)
-#parser.add_argument('--seed', type=numpy.uint32, help='numpy.random seed', default=1, required=False)
+parser.add_argument('--order', type=int, help='quadrature rule order', default=5, required=False)
+parser.add_argument('--seed', type=int, help='numpy.random seed', default=1, required=False)
 args = parser.parse_args()
 
 
@@ -46,8 +46,7 @@ def build_multimesh(compress_volume, compress_interface):
     multimesh.add(mesh)
 
     # Set seed
-    #numpy.random.seed(multimesh.num_parts())
-    #numpy.random.seed(seed)
+    numpy.random.seed(args.seed)
 
     # Add num_parts-1 random sized and rotated rectangular meshes
     while (multimesh.num_parts() < args.num_parts):
@@ -82,6 +81,8 @@ def volume_area(multimesh):
     return volume, area
 
 if __name__ == "__main__":
+
+    # set_log_level(DBG)
 
     multimesh = build_multimesh(False, False)
     volume, area = volume_area(multimesh)
@@ -119,4 +120,4 @@ if __name__ == "__main__":
         print(" Strange behavior: area changed when compressing volume")
         errors = True
 
-    #assert(not errors)
+    assert(not errors)

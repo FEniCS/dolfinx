@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-04-13
+// Last changed: 2017-04-20
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -709,10 +709,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       {
       	for (std::size_t i = 0; i < overlap_qr.size(); ++i)
         {
-    	  //const std::size_t sz = overlap_qr[i].second.size();
       	  SimplexQuadrature::compress(overlap_qr[i], gdim, quadrature_order);
-	  // if (sz > qr.second.size())
-	  //   cout<<__FUNCTION__<<" compress " << sz<<' '<<qr.second.size()<<'\n';
         }
       }
 
@@ -762,10 +759,7 @@ void MultiMesh::_build_quadrature_rules_cut_cells(std::size_t quadrature_order)
       if (parameters["compress_volume_quadrature"])
       {
       	// Compress
-      	//const std::size_t sz = qr.second.size();
       	SimplexQuadrature::compress(qr, gdim, quadrature_order);
-      	// if (sz > qr.second.size())
-      	//   cout<<__FUNCTION__<<" compress " << sz<<' '<<qr.second.size()<<'\n';
       }
 
       // Store quadrature rule for cut cell
@@ -954,8 +948,6 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 	      // TODO: Investigate if we should compress here or below
 	      if (parameters["compress_interface_quadrature"])
 	      {
-		const std::size_t sz = interface_qr[local_cutting_cell_j_index].second.size();
-
 		const std::vector<std::size_t> indices
 		  = SimplexQuadrature::compress(interface_qr[local_cutting_cell_j_index], gdim, quadrature_order);
 
@@ -967,7 +959,6 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		    for (std::size_t d = 0; d < gdim; ++d)
 		      normals[gdim*j + d] = interface_normals[local_cutting_cell_j_index][gdim*indices[j] + d];
 		  interface_normals[local_cutting_cell_j_index] = normals;
-		  // std::cout<<__FUNCTION__<<" compress " << sz<<' '<<indices.size() << std::endl;
 		}
 	      }
 	    }
