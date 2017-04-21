@@ -265,6 +265,15 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
                            max_iters, max_residual_evals);
   if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetTolerances");
 
+  // Following set from options call requires Mat type to be set (at least
+  // when PETSC_USE_DEBUG) and we don't have any better way
+  if (_matJ.empty())
+  {
+    ierr = FormJacobian(_snes, _snes_ctx.x->vec(),
+                        _matJ.mat(), _matP.mat(), &_snes_ctx);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "PETScSNESSolver::FormJacobian");
+  }
+
   // Set some options
   ierr = SNESSetFromOptions(_snes);
   if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetFromOptions");
