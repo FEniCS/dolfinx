@@ -179,7 +179,7 @@ double QuadrilateralCell::normal(const Cell& cell, std::size_t facet, std::size_
 }
 //-----------------------------------------------------------------------------
 Point QuadrilateralCell::normal(const Cell& cell, std::size_t facet) const
-{ 
+{
 
   // Make sure we have facets
   cell.mesh().init(2, 1);
