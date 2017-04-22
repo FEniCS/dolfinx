@@ -127,7 +127,12 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
 set(SWIG_MODULE_${SWIG_MODULE_NAME}_EXTRA_DEPS copy_swig_files ${DOLFIN_SWIG_DEPENDENCIES})
 
 # Tell CMake to run SWIG on module.i and to link against libdolfin
-swig_add_library(${SWIG_MODULE_NAME} LANGUAGE python SOURCES module.i)
+if (CMAKE_VERSION VERSION_LESS "3.8")
+  swig_add_module(${SWIG_MODULE_NAME} python module.i)
+else()
+  swig_add_library(${SWIG_MODULE_NAME} LANGUAGE python SOURCES module.i)
+endif()
+
 swig_link_libraries(${SWIG_MODULE_NAME} dolfin ${PYTHON_LIBRARIES})
 
 # Install Python targets and .py files
