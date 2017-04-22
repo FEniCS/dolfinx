@@ -56,8 +56,10 @@ namespace dolfin
     /// the second finest level, etc.
     DM get_dm(int i);
 
-    // These are test/debugging functions that will be removed
+    /// These are test/debugging functions that will be removed
     void check_ref_count() const;
+
+    /// Debugging use - to be removed
     void reset(int i);
 
     /// Create the interpolation matrix from the coarse to the fine

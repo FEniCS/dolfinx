@@ -7,8 +7,6 @@ A simple eigenvalue solver
 We recommend that you are familiar with the demo for the Poisson equation
 before looking at this demo.
 
-.. include:: ../common.txt
-
 If you want a more complex problem, we suggest that you look at the
 other eigenvalue demo.
 

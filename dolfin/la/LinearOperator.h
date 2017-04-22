@@ -36,7 +36,7 @@ namespace dolfin
   /// To define a linear operator, users need to inherit from this
   /// class and overload the function mult(x, y) which defines the
   /// action of the matrix on the vector x as y = Ax.
-
+  ///
   class LinearOperator : public GenericLinearOperator
   {
   public:
@@ -44,8 +44,8 @@ namespace dolfin
     /// Create linear operator
     LinearOperator();
 
-    // Create linear operator to match parallel layout of vectors
-    // x and y for product y = Ax.
+    /// Create linear operator to match parallel layout of vectors
+    /// x and y for product y = Ax.
     LinearOperator(const GenericVector& x, const GenericVector& y);
 
     /// Destructor

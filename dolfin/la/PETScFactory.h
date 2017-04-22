@@ -38,6 +38,8 @@
 namespace dolfin
 {
 
+  /// PETSc linear algebra factory
+
   class PETScFactory : public GenericLinearAlgebraFactory
   {
   public:

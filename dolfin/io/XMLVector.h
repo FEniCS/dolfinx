@@ -35,19 +35,21 @@ namespace dolfin
   class FunctionSpace;
   class GenericVector;
 
+  /// I/O of XML representation of GenericVector
+
   class XMLVector
   {
   public:
 
-    // Read XML vector. Vector must have correct size.
+    /// Read XML vector. Vector must have correct size.
     static void read(GenericVector& x, const pugi::xml_node xml_dolfin);
 
-    // Read XML vector in Array
+    /// Read XML vector in Array
     static void read(std::vector<double>& x,
                      std::vector<dolfin::la_index>& indices,
                      const pugi::xml_node xml_dolfin);
 
-    // Read XML vector size
+    /// Read XML vector size
     static std::size_t read_size(const pugi::xml_node xml_dolfin);
 
     /// Write the XML file

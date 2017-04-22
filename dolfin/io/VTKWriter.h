@@ -32,20 +32,22 @@ namespace dolfin
   class Function;
   class Mesh;
 
+  /// Write VTK Mesh representation
+
   class VTKWriter
   {
   public:
 
-    // Mesh writer
+    /// Mesh writer
     static void write_mesh(const Mesh& mesh, std::size_t cell_dim,
                            std::string file,
                            bool binary, bool compress);
 
-    // Cell data writer
+    /// Cell data writer
     static void write_cell_data(const Function& u, std::string file,
                                 bool binary, bool compress);
 
-    // Form (compressed) base64 encoded string for VTK
+    /// Form (compressed) base64 encoded string for VTK
     template<typename T>
     static std::string encode_stream(const std::vector<T>& data,
                                      bool compress);

@@ -26,6 +26,8 @@
 namespace dolfin
 {
 
+    /// A unit disc mesh in 2D or 3D geometry
+
   class UnitDiscMesh : public Mesh
   {
   public:

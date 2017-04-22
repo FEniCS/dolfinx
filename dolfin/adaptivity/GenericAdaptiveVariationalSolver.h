@@ -137,10 +137,10 @@ namespace dolfin
 
   protected:
 
-    // The goal functional
+    /// The goal functional
     std::shared_ptr<Form> goal;
 
-    // Error control object
+    /// Error control object
     std::shared_ptr<ErrorControl> control;
 
     // A list of adaptive data

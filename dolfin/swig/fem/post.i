@@ -26,13 +26,11 @@
 // modules has been loaded.
 // ===========================================================================
 
-
+// ---------------------------------------------------------------------------
+// Extend PETScDMCollection using petsc4py
+// ---------------------------------------------------------------------------
 #ifdef HAS_PETSC
 #ifdef HAS_PETSC4PY
-// Override default .dm() calls.
-// These are wrapped up by petsc4py typemaps so that
-// we see a petsc4py object on the python side.
-
 %feature("docstring") dolfin::PETScDMCollection::get_dm "Return petsc4py representation of PETSc DM";
 %extend dolfin::PETScDMCollection
 {
@@ -63,7 +61,6 @@
         return self._cell_dofs(i)
 %}
 }
-
 
 //-----------------------------------------------------------------------------
 // Extend Function so f.function_space() return a dolfin.FunctionSpace

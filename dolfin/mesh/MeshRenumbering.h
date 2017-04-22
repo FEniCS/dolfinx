@@ -43,13 +43,11 @@ namespace dolfin
     /// assumed that the mesh has already been colored and that only
     /// cell-vertex connectivity exists as part of the mesh.
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param  mesh (Mesh)
     ///         Mesh to be renumbered.
-    ///     coloring (_std::vector<std::size_t>_)
+    /// @param  coloring (std::vector<std::size_t>)
     ///         Mesh coloring type.
-    /// *Returns*
-    ///     _Mesh_
+    /// @return Mesh
     static Mesh renumber_by_color(const Mesh& mesh,
                                   std::vector<std::size_t> coloring);
 
