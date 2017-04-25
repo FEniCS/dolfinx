@@ -250,7 +250,15 @@ void PETScKrylovSolver::set_operators(const PETScBaseMatrix& A,
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  return solve(as_type<PETScVector>(x), as_type<const PETScVector>(b));
+  return solve(as_type<PETScVector>(x), as_type<const PETScVector>(b),
+               false);
+}
+//-----------------------------------------------------------------------------
+std::size_t PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b,
+                                     bool transpose)
+{
+  return solve(as_type<PETScVector>(x), as_type<const PETScVector>(b),
+               transpose);
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::solve(const GenericLinearOperator& A,
@@ -260,7 +268,8 @@ std::size_t PETScKrylovSolver::solve(const GenericLinearOperator& A,
                 as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
+std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
+                                     bool transpose)
 {
   Timer timer("PETSc Krylov solver");
 
@@ -363,8 +372,16 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Solve system
-  ierr =  KSPSolve(_ksp, b.vec(), x.vec());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
+  if (!transpose)
+  {
+    ierr =  KSPSolve(_ksp, b.vec(), x.vec());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
+  }
+  else
+  {
+    ierr =  KSPSolveTranspose(_ksp, b.vec(), x.vec());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
+  }
 
   // Update ghost values in solution vector
   x.update_ghost_values();

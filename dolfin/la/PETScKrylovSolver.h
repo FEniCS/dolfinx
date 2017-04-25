@@ -121,7 +121,14 @@ namespace dolfin
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    std::size_t solve(PETScVector& x, const PETScVector& b);
+    /// (A^t x = b if transpose is true)
+    std::size_t solve(GenericVector& x, const GenericVector& b,
+                      bool transpose);
+
+    /// Solve linear system Ax = b and return number of iterations
+    /// (A^t x = b if transpose is true)
+    std::size_t solve(PETScVector& x, const PETScVector& b,
+                      bool transpose=false);
 
     /// Solve linear system Ax = b and return number of iterations
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
