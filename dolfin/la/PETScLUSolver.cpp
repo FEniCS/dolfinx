@@ -59,14 +59,12 @@ namespace
       {MATSOLVERPETSC,        true} };
 
   //---------------------------------------------------------------------------
-  /*
   bool solver_has_cholesky(const MatSolverPackage package)
   {
     auto it = methods_cholesky.find(package);
     dolfin_assert(it != methods_cholesky.end());
     return it->second;
   }
-  */
   //---------------------------------------------------------------------------
   const std::map<std::string, std::string> methods_descr
   = { {"default", "default LU solver"},
@@ -140,7 +138,10 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm,
                              std::shared_ptr<const PETScMatrix> A,
                              std::string method) : _solver(comm)
 {
-  // Check dimensions
+  PetscErrorCode ierr;
+
+  // Check dimensions, and check for symmetry
+  PetscBool is_symmetric = PETSC_FALSE;
   if (A)
   {
     if (A->size(0) != A->size(1))
@@ -149,15 +150,21 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm,
                    "create PETSc LU solver",
                    "Cannot LU factorize non-square PETSc matrix");
     }
+
+    dolfin_assert(A->mat());
+    PetscBool symm_is_set = PETSC_FALSE;
+    ierr = MatIsSymmetricKnown(A->mat(), &symm_is_set, &is_symmetric);
+    if (ierr != 0) PETScObject::petsc_error(ierr, __FILE__, "MatIsSymmetricKnown");
   }
 
   // Set parameter values
   parameters = default_parameters();
 
+  // Select solver package
+  const MatSolverPackage solver_package = select_solver(comm, method);
+
   // Get KSP pointer
   KSP ksp = _solver.ksp();
-
-  PetscErrorCode ierr;
 
   // Make solver preconditioner only
   ierr = KSPSetType(ksp, KSPPREONLY);
@@ -168,12 +175,17 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm,
   ierr = KSPGetPC(ksp, &pc);
   if (ierr != 0) PETScObject::petsc_error(ierr, __FILE__, "KSPGetPC");
 
-  // Set PC to LU
-  ierr = PCSetType(pc, PCLU);
-  if (ierr != 0) PETScObject::petsc_error(ierr, __FILE__, "PCSetType");
-
-  // Select solver package
-  const MatSolverPackage solver_package = select_solver(comm, method);
+  // Set PC type to LU or PCCHOLESKY (depending on matrix symmetry)
+  if (is_symmetric == PETSC_TRUE and solver_has_cholesky(solver_package))
+  {
+    ierr = PCSetType(pc, PCCHOLESKY);
+    if (ierr != 0) PETScObject::petsc_error(ierr, __FILE__, "PCSetType");
+  }
+  else
+  {
+    ierr = PCSetType(pc, PCLU);
+    if (ierr != 0) PETScObject::petsc_error(ierr, __FILE__, "PCSetType");
+  }
 
   // Set LU solver package
   ierr = PCFactorSetMatSolverPackage(pc, solver_package);
@@ -220,6 +232,7 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
                                  bool transpose)
 {
   // FIXME: This should really go in PETScKrylovSolver
+
   const bool report = parameters["report"].is_set() ? parameters["report"] : false;
   if (report && dolfin::MPI::rank(mpi_comm()) == 0)
   {
@@ -256,7 +269,6 @@ std::size_t PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
     log(PROGRESS,"Solving linear system of size %ld x %ld (PETSc LU solver, %s).",
         A.size(0), A.size(1), solver_type);
   }
-
 
   return _solver.solve(A, x, b);
 }
