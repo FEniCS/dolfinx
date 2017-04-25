@@ -67,13 +67,14 @@ namespace dolfin
     void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
     /// Set operator (matrix)
-    void set_operator(std::shared_ptr<const PETScMatrix> A);
+    void set_operator(const PETScMatrix& A);
 
     /// Solve linear system Ax = b
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b (A^t x = b if transpose is true)
-    std::size_t solve(GenericVector& x, const GenericVector& b, bool transpose);
+    std::size_t solve(GenericVector& x, const GenericVector& b,
+                      bool transpose);
 
     /// Solve linear system Ax = b
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
@@ -118,7 +119,6 @@ namespace dolfin
     // FIXME: Remove
     // Available LU solvers
     static std::map<std::string, const MatSolverPackage> lumethods;
-
 
     // Select LU solver type
     static const MatSolverPackage select_solver(MPI_Comm comm,

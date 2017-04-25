@@ -223,12 +223,29 @@ PETScKrylovSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_operator(const PETScBaseMatrix& A)
+{
+  set_operators(A, A);
+}
+//-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operators(
   std::shared_ptr<const GenericLinearOperator> A,
   std::shared_ptr<const GenericLinearOperator> P)
 {
-  _set_operators(as_type<const PETScBaseMatrix>(A),
-                 as_type<const PETScBaseMatrix>(P));
+  set_operators(*as_type<const PETScBaseMatrix>(A),
+                *as_type<const PETScBaseMatrix>(P));
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_operators(const PETScBaseMatrix& A,
+                                      const PETScBaseMatrix& P)
+{
+  dolfin_assert(A.mat());
+  dolfin_assert(P.mat());
+  dolfin_assert(_ksp);
+
+  PetscErrorCode ierr;
+  ierr = KSPSetOperators(_ksp, A.mat(), P.mat());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
@@ -585,24 +602,6 @@ PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type(std::string norm)
                  "Unknown norm type \"%s\"", norm.c_str());
     return norm_type::none;
   }
-}
-//-----------------------------------------------------------------------------
-void PETScKrylovSolver::_set_operator(std::shared_ptr<const PETScBaseMatrix> A)
-{
-  _set_operators(A, A);
-}
-//-----------------------------------------------------------------------------
-void
-PETScKrylovSolver::_set_operators(std::shared_ptr<const PETScBaseMatrix> A,
-                                  std::shared_ptr<const PETScBaseMatrix> P)
-{
-  dolfin_assert(A->mat());
-  dolfin_assert(P->mat());
-  dolfin_assert(_ksp);
-
-  PetscErrorCode ierr;
-  ierr = KSPSetOperators(_ksp, A->mat(), P->mat());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::_solve(const PETScBaseMatrix& A, PETScVector& x,

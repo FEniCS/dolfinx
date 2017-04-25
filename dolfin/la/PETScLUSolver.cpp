@@ -217,8 +217,7 @@ PETScLUSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
   _solver.set_operator(A);
 }
 //-----------------------------------------------------------------------------
-void
-PETScLUSolver::set_operator(std::shared_ptr<const PETScMatrix> A)
+void PETScLUSolver::set_operator(const PETScMatrix& A)
 {
   _solver.set_operator(A);
 }
@@ -262,15 +261,8 @@ std::size_t PETScLUSolver::solve(const GenericLinearOperator& A,
 std::size_t PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
                                  const PETScVector& b)
 {
-  const bool report = parameters["report"].is_set() ? parameters["report"] : false;
-  if (report && dolfin::MPI::rank(mpi_comm()) == 0)
-  {
-    const MatSolverPackage solver_type = get_solver_package_type(_solver.ksp());
-    log(PROGRESS,"Solving linear system of size %ld x %ld (PETSc LU solver, %s).",
-        A.size(0), A.size(1), solver_type);
-  }
-
-  return _solver.solve(A, x, b);
+  _solver.set_operators(A, A);
+  return solve(x, b);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_options_prefix(std::string options_prefix)

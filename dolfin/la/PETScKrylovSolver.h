@@ -104,9 +104,18 @@ namespace dolfin
     /// Set operator (matrix)
     void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
+    /// Set operator (PETScMatrix). This memory-safe as PETSc will
+    /// increase the reference count to the underlying PETSc object.
+    void set_operator(const PETScBaseMatrix& A);
+
     /// Set operator (matrix) and preconditioner matrix
     void set_operators(std::shared_ptr<const GenericLinearOperator> A,
                        std::shared_ptr<const GenericLinearOperator> P);
+
+    /// Set operator and preconditioner matrix (PETScMatrix). This
+    /// memory-safe as PETSc will increase the reference count to the
+    /// underlying PETSc object.
+    void set_operators(const PETScBaseMatrix& A, const PETScBaseMatrix& P);
 
     /// Solve linear system Ax = b and return number of iterations
     std::size_t solve(GenericVector& x, const GenericVector& b);
@@ -189,13 +198,6 @@ namespace dolfin
 
     // Return norm_type enum for norm string
     static PETScKrylovSolver::norm_type get_norm_type(std::string norm);
-
-    // Set operator (matrix)
-    void _set_operator(std::shared_ptr<const PETScBaseMatrix> A);
-
-    // Set operator (matrix) and preconditioner matrix
-    void _set_operators(std::shared_ptr<const PETScBaseMatrix> A,
-                        std::shared_ptr<const PETScBaseMatrix> P);
 
     // Solve linear system Ax = b and return number of iterations
     std::size_t _solve(const PETScBaseMatrix& A, PETScVector& x,
