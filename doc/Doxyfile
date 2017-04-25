@@ -743,7 +743,7 @@ WARN_NO_PARAMDOC       = NO
 # a warning is encountered.
 # The default value is: NO.
 
-WARN_AS_ERROR          = YES
+WARN_AS_ERROR          = NO
 
 # The WARN_FORMAT tag determines the format of the warning messages that doxygen
 # can produce. The string should contain the $file, $line, and $text tags, which
@@ -771,7 +771,12 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ../dolfin
+# FEniCS note:
+# The env variable FFC_PATH_FOR_DOXYGEN is defined in the Sphinx conf.py, but
+# it is not needed for generating SWIG doctrings, only when making Sphinx docs
+# so in a normal dolfin build it is undefined (which is fine)
+
+INPUT                  = ../dolfin $(FFC_PATH_FOR_DOXYGEN)
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

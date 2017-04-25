@@ -28,5 +28,5 @@ location in the dolfin source tree
    apis/api_parameter
    apis/api_plot
    apis/api_refinement
-
+   apis/api_ufc
 

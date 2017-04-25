@@ -303,13 +303,6 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     set_tolerances(rtol, atol, dtol, max_it);
   }
 
-  // Initialize solution vector, if necessary
-  if (x.empty())
-  {
-    A.init_vector(x, 1);
-    this->set_nonzero_guess(false);
-  }
-
   // FIXME: Solve using matrix-free matrices fails if no user provided
   //        Prec is provided
   // Set preconditioner if necessary
@@ -331,6 +324,18 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     const std::string convergence_norm_type
       = this->parameters["convergence_norm_type"];
     set_norm_type(get_norm_type(convergence_norm_type));
+  }
+
+  // Initialize solution vector, if necessary
+  if (x.empty())
+  {
+    A.init_vector(x, 1);
+    // Zero the vector unless PETSc does it for us
+    PetscBool nonzero_guess;
+    ierr = KSPGetInitialGuessNonzero(_ksp, &nonzero_guess);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetInitialGuessNonzero");
+    if (nonzero_guess)
+      x.zero();
   }
 
   // Solve linear system
@@ -364,7 +369,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     ierr = KSPGetResidualNorm(_ksp, &rnorm);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetResidualNorm");
     const char *reason_str = KSPConvergedReasons[reason];
-    bool error_on_nonconvergence = this->parameters["error_on_nonconvergence"].is_set() ? this->parameters["error_on_nonconvergence"] : false;
+    bool error_on_nonconvergence = this->parameters["error_on_nonconvergence"].is_set() ? this->parameters["error_on_nonconvergence"] : true;
     if (error_on_nonconvergence)
     {
       dolfin_error("PETScKrylovSolver.cpp",
@@ -389,8 +394,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 void PETScKrylovSolver::set_nonzero_guess(bool nonzero_guess)
 {
   dolfin_assert(_ksp);
-  const PetscBool _nonero_guess = nonzero_guess ? PETSC_TRUE : PETSC_FALSE;
-  PetscErrorCode ierr = KSPSetInitialGuessNonzero(_ksp, _nonero_guess);
+  const PetscBool _nonzero_guess = nonzero_guess ? PETSC_TRUE : PETSC_FALSE;
+  PetscErrorCode ierr = KSPSetInitialGuessNonzero(_ksp, _nonzero_guess);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetIntialGuessNonzero");
 }
 //-----------------------------------------------------------------------------

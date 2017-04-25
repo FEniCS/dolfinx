@@ -72,6 +72,8 @@ if not _is_interactive():
     def _new_excepthook(*args):
         import sys
         sys.__excepthook__(*args)
+        sys.stdout.flush()
+        sys.stderr.flush()
         dolfin_terminate()
     sys.excepthook = _new_excepthook
     del _new_excepthook

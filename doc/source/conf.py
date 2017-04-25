@@ -20,24 +20,29 @@ import os
 def run_doxygen():
     print('--------------------------------------------')
     print('Running doxygen to read docstrings from C++:')
+    print('Doxygen version: ', end='')
     sys.stdout.flush() # doxygen writes to stderr and mangles output order
-
+    
+    # Help doxygen find UFC
+    try:
+        import ffc
+        os.environ['FFC_PATH_FOR_DOXYGEN'] = ffc.get_include_path()
+    except:
+        pass
+    
     # Run doxygen on C++ sources, generates XML output for us to convert into Sphinx and SWIG formats.
-    allow_empty_xml = False
-    try:        
+    try:
+        subprocess.call(['doxygen', '--version'], cwd='..')
         subprocess.call(['doxygen'], cwd='..')
     except OSError as e:
         print('ERROR: could not run doxygen:', e)
-        allow_empty_xml = True
-
+    
     print('DONE parsing C++ with doxygen')
     print('--------------------------------------------')
     print('Generating Sphinx API docs from doxygen')
 
     # Convert doxygen XML output to *.rst files per subdirectory and make SWIG docstrings.i
     cmd = ['python', './generate_api_rst.py', '--no-swig']
-    if allow_empty_xml:
-        cmd.append('--allow-empty-xml')
     subprocess.call(cmd, cwd='..')
 
     print('DONE generating API docs')

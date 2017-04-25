@@ -88,6 +88,11 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
   // Initialize domains
   mesh._domains.init(tdim);
 
+  // Clear cached ordering state so that mesh.order() is always
+  // triggered on close(true) or mesh is considered unordered
+  // after close(false)
+  mesh._ordered = false;
+
   // Initialize temporary storage for local cell data
   _vertices = std::vector<std::size_t>(mesh.type().num_vertices(tdim), 0);
 }

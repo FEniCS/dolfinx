@@ -36,9 +36,15 @@ def get_short_path(hpp_file_name):
         /path/to/dolfin/subdir/a_header.h
     """
     path_components = hpp_file_name.split(os.sep)
-    path_components_rev = path_components[::-1]
-    idx = path_components_rev.index('dolfin')
-    short_path = path_components_rev[:idx + 1]
+    
+    if 'dolfin' in path_components:
+        # dolfin header files
+        path_components_rev = path_components[::-1]
+        idx = path_components_rev.index('dolfin')
+        short_path = path_components_rev[:idx + 1]
+    else:
+        # ufc header files
+        short_path = path_components[-1:]
     return os.sep.join(short_path[::-1])
 
 
@@ -175,15 +181,12 @@ def write_mock_modules(namespace_members, mock_py_module):
 
 
 def parse_doxygen_xml_and_generate_rst_and_swig(xml_dir, api_gen_dir, swig_dir, swig_file_name,
-                                                swig_header='', mock_py_module='', allow_empty_xml=False):
+                                                swig_header='', mock_py_module=''):
     # Read doxygen XML files and split namespace members into
     # groups based on subdir and kind (class, function, enum etc)
     create_subdir_groups_if_missing = False
     if os.path.isdir(xml_dir):
-        namespaces = parse_doxygen.read_doxygen_xml_files(xml_dir, ['dolfin'])
-    elif allow_empty_xml:
-        namespaces = {'dolfin': parse_doxygen.Namespace('dolfin')} 
-        create_subdir_groups_if_missing = True 
+        namespaces = parse_doxygen.read_doxygen_xml_files(xml_dir, ['dolfin', 'ufc']) 
     else:
         raise OSError('Missing doxygen XML directory %r' % xml_dir)
     
@@ -197,17 +200,6 @@ def parse_doxygen_xml_and_generate_rst_and_swig(xml_dir, api_gen_dir, swig_dir, 
         kd = sd.setdefault(member.kind, {})
         kd[member.name] = member
     
-    if create_subdir_groups_if_missing:
-        # Create empty docstrings.i files in all relevvant subdirs of
-        # dolfin/swig to enable builds without doxygen being present
-        mydir =  os.path.dirname(os.path.abspath(__file__))
-        dolfin_dir = os.path.abspath(os.path.join(mydir, '..', 'dolfin'))
-        for subdir in os.listdir(dolfin_dir):
-            path = os.path.join(dolfin_dir, subdir)
-            if not os.path.isdir(path):
-                continue
-            all_members.setdefault(subdir, {})
-    
     # Generate Sphinx RST files and SWIG interface files
     for subdir, subdir_members in sorted(all_members.items()):
         if subdir:
@@ -215,6 +207,14 @@ def parse_doxygen_xml_and_generate_rst_and_swig(xml_dir, api_gen_dir, swig_dir, 
                 write_rst(subdir, subdir_members, api_gen_dir)
             if swig_dir:
                 write_swig(subdir, subdir_members, swig_dir, swig_file_name, swig_header)
+    
+    # Write UFC documenttation, no SWIG for UFC, only RST
+    if api_gen_dir:
+        ufc_members = {}
+        for member in namespaces['ufc'].members.values():
+            kd = ufc_members.setdefault(member.kind, {})
+            kd[member.name] = member
+        write_rst('ufc', ufc_members, api_gen_dir)
     
     # Generate a mock Python module
     if mock_py_module:
@@ -227,8 +227,6 @@ if __name__ == '__main__':
     
     if '--no-swig' in sys.argv:
         swig_dir = None
-    if '--allow-empty-xml' in sys.argv:
-        allow_empty_xml = True
     
     parse_doxygen_xml_and_generate_rst_and_swig(DOXYGEN_XML_DIR, API_GEN_DIR, swig_dir,
-                                                SWIG_FILE, '', MOCK_PY, allow_empty_xml)
+                                                SWIG_FILE, '', MOCK_PY)
