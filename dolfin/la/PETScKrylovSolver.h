@@ -104,7 +104,7 @@ namespace dolfin
     /// Set operator (matrix)
     void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
-    /// Set operator (PETScMatrix). This memory-safe as PETSc will
+    /// Set operator (PETScMatrix). This is memory-safe as PETSc will
     /// increase the reference count to the underlying PETSc object.
     void set_operator(const PETScBaseMatrix& A);
 
@@ -112,9 +112,9 @@ namespace dolfin
     void set_operators(std::shared_ptr<const GenericLinearOperator> A,
                        std::shared_ptr<const GenericLinearOperator> P);
 
-    /// Set operator and preconditioner matrix (PETScMatrix). This
+    /// Set operator and preconditioner matrix (PETScMatrix). This is
     /// memory-safe as PETSc will increase the reference count to the
-    /// underlying PETSc object.
+    /// underlying PETSc objects.
     void set_operators(const PETScBaseMatrix& A, const PETScBaseMatrix& P);
 
     /// Solve linear system Ax = b and return number of iterations
