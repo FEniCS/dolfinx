@@ -224,7 +224,7 @@ class TestMatrixForAnyBackend:
         # https://bitbucket.org/petsc/petsc/commits/a21198abcdd10db88d217ac122e897fcbe3179cd)
         if self.backend[0:5] == "PETSc" and has_petsc4py():
             from petsc4py import PETSc:
-            if PETSc.Sys.getVersion() is not (3, 7, 6):
+            if PETSc.Sys.getVersion() != (3, 7, 6):
                 A, B = self.assemble_matrices(use_backend=use_backend)
                 with pytest.raises(RuntimeError):
                     A.ident_zeros()
