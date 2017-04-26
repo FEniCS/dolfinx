@@ -1,0 +1,15 @@
+# - Python variables
+#
+# This file has been automatically generated.
+
+# Python include directories
+set(DOLFIN_PYTHON_INCLUDE_DIRS "@NUMPY_INCLUDE_DIR@;@PYTHON_INCLUDE_DIRS@")
+
+# Python definitions
+set(DOLFIN_PYTHON_DEFINITIONS "@DOLFIN_PYTHON_DEFINITIONS@")
+
+# Python libraries
+set(DOLFIN_PYTHON_LIBRARIES "@PYTHON_LIBRARIES@")
+
+# Python executable
+set(DOLFIN_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
