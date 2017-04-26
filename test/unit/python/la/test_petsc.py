@@ -1,9 +1,9 @@
-#!/usr/bin/env py.test
-
 """Unit tests for parts of the PETSc interface not tested via the
-GenericFoo interface"""
+GenericFoo interface
 
-# Copyright (C) 2015 Garth N. Wells
+"""
+
+# Copyright (C) 2015-2017 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -21,9 +21,12 @@ GenericFoo interface"""
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function
-import pytest
-from dolfin import *
-from dolfin_utils.test import skip_if_not_PETSc, skip_in_parallel, pushpop_parameters
+from dolfin import (PETScVector, PETScMatrix, PETScLUSolver,
+                    PETScKrylovSolver, UnitSquareMesh, TrialFunction,
+                    TestFunction, mpi_comm_self, mpi_comm_world,
+                    FunctionSpace, assemble, Constant, dx, parameters)
+from dolfin_utils.test import (skip_if_not_PETSc,
+                               skip_if_not_petsc4py, pushpop_parameters)
 
 
 @skip_if_not_PETSc
@@ -41,13 +44,17 @@ def test_vector():
 
 @skip_if_not_PETSc
 def test_krylov_solver_norm_type():
-    "Check setting of norm type used in testing for convergence by PETScKrylovSolver"
+    """Check setting of norm type used in testing for convergence by
+    PETScKrylovSolver
+
+    """
 
     norm_type = (PETScKrylovSolver.norm_type_default_norm,
                  PETScKrylovSolver.norm_type_natural,
                  PETScKrylovSolver.norm_type_preconditioned,
                  PETScKrylovSolver.norm_type_none,
                  PETScKrylovSolver.norm_type_unpreconditioned)
+
     for norm in norm_type:
         # Solve a system of equations
         mesh = UnitSquareMesh(4, 4)
@@ -91,7 +98,7 @@ def test_krylov_solver_options_prefix(pushpop_parameters):
     V = FunctionSpace(mesh, "Lagrange", 1)
     u, v = TrialFunction(V), TestFunction(V)
     a, L = u*v*dx, Constant(1.0)*v*dx
-    A,b  = assemble(a), assemble(L)
+    A, b = assemble(a), assemble(L)
     solver.set_operator(A)
     solver.solve(b.copy(), b)
 
@@ -111,7 +118,7 @@ def test_options_prefix(pushpop_parameters):
         A.set_options_prefix(prefix)
 
         # Get prefix (should be empty since vector has been initialised)
-        #assert not A.get_options_prefix()
+        # assert not A.get_options_prefix()
 
         # Initialise vector
         init_function(A)
@@ -120,8 +127,8 @@ def test_options_prefix(pushpop_parameters):
         assert A.get_options_prefix() == prefix
 
         # Try changing prefix post-intialisation (should throw error)
-        #with pytest.raises(RuntimeError):
-        #    A.set_options_prefix("test")
+        # with pytest.raises(RuntimeError):
+        #     A.set_options_prefix("test")
 
     # Test vector
     def init_vector(x):
@@ -142,15 +149,56 @@ def test_options_prefix(pushpop_parameters):
     # FooSetFromOptions calls in the solver wrapers
 
     # Test solvers
-    #def init_solver(A, solver):
-    #    A = PETScMatrix()
-    #    init_matrix(A)
-    #    solver.set_operator(A)
+    # def init_solver(A, solver):
+    #     A = PETScMatrix()
+    #     init_matrix(A)
+    #     solver.set_operator(A)
 
     # Test Krylov solver
-    #solver = PETScKrylovSolver()
-    #run_test(solver, init_solver)
+    # solver = PETScKrylovSolver()
+    # run_test(solver, init_solver)
 
     # Test KY solver
-    #solver = PETScLUSolver()
-    #run_test(solver, init_solver)
+    # solver = PETScLUSolver()
+    # run_test(solver, init_solver)
+
+
+@skip_if_not_petsc4py
+def test_lu_cholesky():
+    """Test that PETScLUSolver selects LU or Cholesky solver based on
+    symmetry of matrix operator.
+
+    """
+
+    from petsc4py import PETSc
+
+    mesh = UnitSquareMesh(mpi_comm_world(), 12, 12)
+    V = FunctionSpace(mesh, "Lagrange", 1)
+    u, v = TrialFunction(V), TestFunction(V)
+    A = PETScMatrix(mesh.mpi_comm())
+    assemble(Constant(1.0)*u*v*dx, tensor=A)
+
+    # Check that solver type is LU
+    solver = PETScLUSolver(mesh.mpi_comm(), A, "petsc")
+    pc_type = solver.ksp().getPC().getType()
+    assert pc_type == "lu"
+
+    # Set symmetry flag
+    A.mat().setOption(PETSc.Mat.Option.SYMMETRIC, True)
+
+    # Check symmetry flags
+    symm = A.mat().isSymmetricKnown()
+    assert symm[0] == True
+    assert symm[1] == True
+
+    # Check that solver type is Cholesky since matrix has now been
+    # marked as symmetric
+    solver = PETScLUSolver(mesh.mpi_comm(), A, "petsc")
+    pc_type = solver.ksp().getPC().getType()
+    assert pc_type == "cholesky"
+
+    # Re-assemble, which resets symmetry flag
+    assemble(Constant(1.0)*u*v*dx, tensor=A)
+    solver = PETScLUSolver(mesh.mpi_comm(), A, "petsc")
+    pc_type = solver.ksp().getPC().getType()
+    assert pc_type == "lu"

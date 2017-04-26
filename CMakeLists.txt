@@ -158,8 +158,8 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   add_feature_info(${OPTION_NAME} ${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}.")
 endforeach()
 
-# Python version
-option(DOLFIN_USE_PYTHON3 "Use Python 3." OFF)
+# Default Python version
+option(DOLFIN_USE_PYTHON3 "Use Python 3." ON)
 
 #------------------------------------------------------------------------------
 # General compiler defintions
@@ -318,12 +318,11 @@ find_package(Boost 1.48 QUIET REQUIRED)
 # Boost or CMake. Ubuntu 16.04 requires linking DOLFIN programs with
 # filesystem, whereas Ubuntu 16.10 and macOS (Homebrew) do not.
 if (Boost_VERSION VERSION_LESS 106100)
-  set(DOLFIN_BOOST_COMPONENTS_PUBLIC filesystem)
-  set(DOLFIN_BOOST_COMPONENTS_PRIVATE program_options iostreams timer)
+  set(DOLFIN_BOOST_COMPONENTS_PUBLIC filesystem timer)
+  set(DOLFIN_BOOST_COMPONENTS_PRIVATE program_options iostreams)
 else()
-  set(DOLFIN_BOOST_COMPONENTS_PUBLIC)
-  set(DOLFIN_BOOST_COMPONENTS_PRIVATE filesystem program_options iostreams
-    timer)
+  set(DOLFIN_BOOST_COMPONENTS_PUBLIC timer)
+  set(DOLFIN_BOOST_COMPONENTS_PRIVATE filesystem program_options iostreams)
 endif()
 
 # Find required Boost libraries
@@ -536,25 +535,12 @@ if (DOLFIN_ENABLE_HDF5)
   set_package_properties(HDF5 PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
     URL "https://www.hdfgroup.org/HDF5")
-
-  # Check that HDF5 has parallel support
-  if (HDF5_FOUND)
-    if (DOLFIN_ENABLE_MPI)
-      if (NOT (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL))
-        message(STATUS "HDF5 has been found, but is missing parallel support. It will not be enabled.")
-        set(HDF5_FOUND false)
-      endif()
-    else()
-      message(STATUS "HDF5 has been found, but MPI support is missing. It will not be enabled.")
-      set(HDF5_FOUND false)
-    endif()
-  endif()
 endif()
 
 # Check for Trilinos and the requires Trilinos packages
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
-  find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR}
+  find_package(Trilinos QUIET PATHS ${TRILINOS_DIR} ${Trilinos_DIR}
     $ENV{TRILINOS_DIR})
   set(DOLFIN_TRILINOS_PACKAGES "Tpetra;Zoltan;MueLu;Amesos2;Ifpack2;Belos")
 
@@ -647,7 +633,7 @@ endif()
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
   # Find all modules
-  find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
+  find_package(VTK QUIET HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
   set_package_properties(VTK PROPERTIES TYPE OPTIONAL
     DESCRIPTION "The Visualization Toolkit - A high level 3D visualization library"
     URL "https://www.vtk.org"
@@ -898,17 +884,19 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
 #------------------------------------------------------------------------------
 # Generate demo files from rst
 
-message(STATUS "")
-message(STATUS "Generating demo source files from reStructuredText")
-message(STATUS "--------------------------------------------------")
-file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst" "*.ufl.rst")
-foreach(rst_file ${demo_rst_files})
-  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-  #add_custom_command(TARGET demos_source PRE_BUILD
-  #  COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
-  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-endforeach()
+if (PYTHONINTERP_FOUND)
+  message(STATUS "")
+  message(STATUS "Generating demo source files from reStructuredText")
+  message(STATUS "--------------------------------------------------")
+  file(GLOB_RECURSE demo_rst_files "demo/*.py.rst" "demo/*.cpp.rst" "demo/*.ufl.rst")
+  foreach(rst_file ${demo_rst_files})
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+      WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+    #add_custom_command(TARGET demos_source PRE_BUILD
+    #  COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+    #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+  endforeach()
+endif()
 
 #------------------------------------------------------------------------------
 # Generate form files for tests, bench, demos and DOLFIN if not exists
@@ -937,18 +925,6 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
   endif()
   set(COPY_DEMO_TEST_DEMO_DATA TRUE)
 endif()
-
-#------------------------------------------------------------------------------
-# Generate demo files from rst
-
-message(STATUS "")
-message(STATUS "Generating demo source files")
-message(STATUS "--------------------------------------------------")
-file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
-foreach(rst_file ${demo_rst_files})
-  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-endforeach()
 
 #------------------------------------------------------------------------------
 # Generate CMakeLists.txt files for bench and demos if not existing
@@ -1017,13 +993,15 @@ endif()
 # Add taget to build .py demo files from Python rst input files, and
 # create a target to build source files from .cpp.rst and .py.rst
 # files (using pylit)
-file(GLOB_RECURSE rst_files "*.py.rst" "*.cpp.rst")
-add_custom_target(demos_source)
-foreach(rst_file ${rst_files})
-  add_custom_command(TARGET demos_source PRE_BUILD
-    COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-endforeach()
+if (PYTHONINTERP_FOUND)
+  file(GLOB_RECURSE demo_rst_files "demo/*.py.rst" "demo/*.cpp.rst" "demo/*.ufl.rst")
+  add_custom_target(demos_source)
+  foreach(rst_file ${rst_files})
+    add_custom_command(TARGET demos_source PRE_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+  endforeach()
+endif()
 
 # Add target "demo" for building the demos
 add_custom_target(demo
@@ -1154,20 +1132,20 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "run_unittests_py" for running Python unit tests
   add_custom_target(run_unittests_py
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-s"
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
   # Add target "run_unittests_py_mpi" for running Python unit tests with mpi
   add_custom_target(run_unittests_py_mpi
-    COMMAND ${MPIEXEC} "-np" "3" "./mpipipe.sh" ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-s"
+    COMMAND ${MPIEXEC} "-np" "3" "./mpipipe.sh" ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
   # Add target "run_quicktest" for running only Python unit tests not
   # marked as 'slow'
   add_custom_target(run_quicktest
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-s" "-k" "'not" "slow'"
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-k" "'not" "slow'"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 

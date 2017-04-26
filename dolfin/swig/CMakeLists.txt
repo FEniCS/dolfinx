@@ -32,7 +32,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STR
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${CLANG_FLAGS}")
 endif()
 
-# Set common include directoris
+# Set common include directories
 include_directories(${NUMPY_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS} ${CMAKE_BINARY_DIR})
 
 # Set add PYTHON defines
@@ -87,14 +87,7 @@ add_custom_target(generate_swig_docstrings
   COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings.py ${CMAKE_BINARY_DIR}
   WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
   COMMENT "Generating SWIG docstring files from C++ headers"
-  )
-
-# Target to generate swig docstring files with debug
-add_custom_target(generate_swig_docstrings_with_debug
-  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings.py ${CMAKE_BINARY_DIR} DEBUG
-  WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
-  COMMENT "Generating SWIG docstring files from C++ headers (DEBUG modus)"
-  )
+)
 
 # Iterate over the combined modules and add each as a target
 foreach(COMBINED_MODULE_DIR ${COMBINED_MODULES})

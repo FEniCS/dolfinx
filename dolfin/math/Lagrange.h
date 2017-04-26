@@ -58,30 +58,44 @@ namespace dolfin
     Lagrange(const Lagrange& p);
 
     /// Specify point
+    /// @param i (std::size_t)
+    /// @param x (double)
     void set(std::size_t i, double x);
 
     /// Return number of points
+    /// @return std::size_t
     std::size_t size() const;
 
     /// Return degree
+    /// @return std::size_t
     std::size_t degree() const;
 
     /// Return point
+    /// @param i (std::size_t)
     double point(std::size_t i) const;
 
     /// Return value of polynomial i at given point x
+    /// @param i (std::size_t)
+    /// @param x (double)
     double operator() (std::size_t i, double x);
 
     /// Return value of polynomial i at given point x
+    /// @param i (std::size_t)
+    /// @param x (double)
     double eval(std::size_t i, double x);
 
     /// Return derivate of polynomial i at given point x
+    /// @param i (std::size_t)
+    /// @param x (double)
     double ddx(std::size_t i, double x);
 
     /// Return derivative q (a constant) of polynomial
+    /// @param i (std::size_t)
     double dqdx(std::size_t i);
 
     /// Return informal string representation (pretty-print)
+    /// @param verbose (bool)
+    ///   Verbosity of output string
     std::string str(bool verbose) const;
 
   private:

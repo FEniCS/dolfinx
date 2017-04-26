@@ -283,26 +283,23 @@ std::size_t BelosKrylovSolver::_solve(TpetraVector& x, const TpetraVector& b)
   const std::size_t num_iterations = _solver->getNumIters();
   if (result == Belos::Converged)
   {
-    log(PROGRESS, "Belos Krylov Solver converged in %d iterations.",
+    log(PROGRESS, "Belos Krylov Solver converged in %d iterations",
         num_iterations);
   }
-    else
+  else
   {
-    if (parameters["error_on_nonconvergence"].is_set())
+    bool error_on_nonconvergence = parameters["error_on_nonconvergence"].is_set() ? parameters["error_on_nonconvergence"] : true;
+    if (error_on_nonconvergence)
     {
-      bool error_non_converge = parameters["error_on_nonconvergence"];
-      if (error_non_converge)
-      {
-        dolfin_error("BelosKrylovSolver.cpp",
-                     "solve linear system using Belos Krylov solver",
-                     "Solution failed to converge in %d iterations",
-                     num_iterations);
-      }
-      else
-      {
-        log(PROGRESS, "Belos Krylov Solver did not converge in %d iterations.",
-            num_iterations);
-      }
+      dolfin_error("BelosKrylovSolver.cpp",
+                   "solve linear system using Belos Krylov solver",
+                   "Solution failed to converge in %d iterations",
+                   num_iterations);
+    }
+    else
+    {
+      warning("Belos Krylov Solver did not converge in %i iterations",
+              num_iterations);
     }
   }
 

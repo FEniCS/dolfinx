@@ -41,7 +41,6 @@
 #include "Form.h"
 #include "UFC.h"
 #include "FiniteElement.h"
-#include "OpenMpAssembler.h"
 #include "AssemblerBase.h"
 #include "Assembler.h"
 
@@ -55,20 +54,6 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
   // cells, exterior and interior facets.
-
-  // Check whether we should call the multi-core assembler
-  #ifdef HAS_OPENMP
-  const std::size_t num_threads = parameters["num_threads"];
-  if (num_threads > 0)
-  {
-    OpenMpAssembler assembler;
-    assembler.add_values = add_values;
-    assembler.finalize_tensor = finalize_tensor;
-    assembler.keep_diagonal = keep_diagonal;
-    assembler.assemble(A, a);
-    return;
-  }
-  #endif
 
   // Get cell domains
   std::shared_ptr<const MeshFunction<std::size_t>>
@@ -326,6 +311,11 @@ void Assembler::assemble_interior_facets(
   // Extract mesh and coefficients
   dolfin_assert(a.mesh());
   const Mesh& mesh = *(a.mesh());
+
+  // Sanity check of ghost mode (proper check in AssemblerBase::check)
+  dolfin_assert(mesh.ghost_mode() == "shared_vertex"
+                || mesh.ghost_mode() == "shared_facet"
+                || MPI::size(mesh.mpi_comm()) == 1);
 
   // MPI rank
   const int my_mpi_rank = MPI::rank(mesh.mpi_comm());

@@ -31,6 +31,10 @@
 #include "dolfin/log/log.h"
 #include "pugixml.hpp"
 
+
+// NOTE: Do not include this file in any header files. Otherwise, it
+//       will expose Boost in the DOLFIN public interface.
+
 namespace pugi
 {
   class xml_node;
@@ -39,11 +43,13 @@ namespace pugi
 namespace dolfin
 {
 
+  /// I/O of array data in XML format
+
   class XMLArray
   {
   public:
 
-    // Read XML vector. Vector must have correct size.
+    /// Read XML vector. Vector must have correct size.
     template<typename T>
     static void read(std::vector<T>& x, const pugi::xml_node xml_dolfin);
 

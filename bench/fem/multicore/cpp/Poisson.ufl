@@ -1,8 +1,0 @@
-# Standard Poisson bilinear form
-
-element = FiniteElement("Lagrange", tetrahedron, 1)
-
-u = TrialFunction(element)
-v = TestFunction(element)
-
-a = inner(grad(u), grad(v))*dx

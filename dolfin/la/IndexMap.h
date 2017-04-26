@@ -36,6 +36,7 @@ namespace dolfin
   {
   public:
 
+    /// MapSize (ALL = all local indices, OWNED = owned local indices, UNOWNED = unowned local indices, GLOBAL = total indices globally)
     enum class MapSize : int32_t { ALL = 0,
                                    OWNED = 1,
                                    UNOWNED = 2,

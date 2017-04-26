@@ -152,6 +152,7 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<int>)
 IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<std::size_t> )
 IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<double> )
 IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<bool>)
+IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Point)
 
 //-----------------------------------------------------------------------------
 // In typemap for std::pair<TYPE,TYPE>

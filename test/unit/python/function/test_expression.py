@@ -25,6 +25,7 @@ import pytest
 from dolfin import *
 from math import sin, cos, exp, tan
 from numpy import array, zeros, float_
+import numpy as np
 
 from dolfin_utils.test import fixture, skip_in_parallel
 
@@ -173,9 +174,13 @@ def test_overload_and_call_back(V, mesh):
     e1 = F1(mesh, degree=2)
     e2 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
 
-    s0 = norm(interpolate(e0, V))
-    s1 = norm(interpolate(e1, V))
-    s2 = norm(interpolate(e2, V))
+    u0 = interpolate(e0, V)
+    u1 = interpolate(e1, V)
+    u2 = interpolate(e2, V)
+
+    s0 = norm(u0)
+    s1 = norm(u1)
+    s2 = norm(u2)
 
     ref = 0.36557637568519191
     assert round(s0 - ref, 7) == 0
@@ -207,6 +212,76 @@ def test_wrong_eval():
             f(zeros(3), values=zeros(4))
         with pytest.raises(TypeError):
             f(zeros(4), values=zeros(3))
+
+
+def test_vector_valued_expression_member_function(mesh):
+    V = FunctionSpace(mesh,'CG',1)
+    W = VectorFunctionSpace(mesh,'CG',1, dim=3)
+    fs = [
+        Expression(("1", "2", "3"), degree=1),
+        Constant((1, 2, 3)),
+        interpolate(Constant((1, 2, 3)), W),
+    ]
+    for f in fs:
+        u = Expression("f[0] + f[1] + f[2]", f=f, degree=1)
+        v = interpolate(u, V)
+        assert np.allclose(v.vector().array(), 6.0)
+        for g in fs:
+            u.f = g
+            v = interpolate(u, V)
+            assert np.allclose(v.vector().array(), 6.0)
+
+
+@skip_in_parallel
+def test_meshfunction_expression():
+    mesh = UnitSquareMesh(1, 1)
+    V = FunctionSpace(mesh, "DG", 0)
+
+    c = CellFunctionSizet(mesh)
+    c[0] = 2
+    c[1] = 3
+    e = Expression("(double)c", c=c, degree=0)
+    e.c = c
+
+    h = interpolate(e, V)
+    v = h.vector()
+    assert v[0] == float(c[0])
+    assert v[1] == float(c[1])
+
+    a = MeshFunctionDouble(mesh, 2)
+    a[0] = 2.0
+    a[1] = 4.0
+    e = Expression("a", a=a, degree=0)
+    e.a = a
+
+    h = interpolate(e, V)
+    v = h.vector()
+    assert v[0] == float(a[0])
+    assert v[1] == float(a[1])
+
+    f = Function(V)
+    f.vector()[:] = 2.0
+    g = Constant(3.0)
+    e = Expression("a*(c == 2 ? f: g)", a=1.0, c=c, f=f, g=g, degree=0)
+    e.a = 5.0
+    e.c = c
+    e.f = f
+    e.g = g
+
+    h = interpolate(e, V)
+    v = h.vector()
+    assert v[0] == 5.0 * 2.0
+    assert v[1] == 5.0 * 3.0
+
+    w = Constant((0.0, 1.0, 2.0, 3.0, 4.0, 5.0))
+    e = Expression("w[c]", w=w, c=c, degree=0)
+    e.w = w
+    e.c = c
+
+    h = interpolate(e, V)
+    v = h.vector()
+    assert v[0] == float(c[0])
+    assert v[1] == float(c[1])
 
 
 def test_no_write_to_const_array():
@@ -280,7 +355,7 @@ def test_wrong_sub_classing():
         Expression("a", a="1", degree=1)
 
     def wrongParameterNames0():
-        Expression("long", str=1.0, degree=1)
+        Expression("foo", bar=1.0, degree=1)
 
     def wrongParameterNames1():
         Expression("user_parameters", user_parameters=1.0, degree=1)
@@ -305,6 +380,19 @@ def test_wrong_sub_classing():
         wrongParameterNames0()
     with pytest.raises(RuntimeError):
         wrongParameterNames1()
+
+
+def test_fail_expression_compilation():
+    # Compilation failure only happens on one process,
+    # and involves a barrier to let the compilation finish
+    # before the other processes loads from disk.
+    # This tests that a failure can be caught without deadlock.
+
+    def invalidCppExpression():
+        Expression("/", degree=0)
+
+    with pytest.raises(RuntimeError):
+        invalidCppExpression()
 
 
 def test_element_instantiation():
@@ -389,6 +477,17 @@ def test_name_space_usage(mesh):
     assert round(assemble(e0*dx(mesh)) - assemble(e1*dx(mesh)), 7) == 0
 
 
+def test_expression_self_assignment(mesh, V):
+    tc = Constant(2.0)
+    te = Expression("value", value=tc, degree=0)
+    e2 = Expression("t", t=te, degree=0)
+
+    # Test self assignment
+    e2.t = e2
+    with pytest.raises(RuntimeError):
+        e2(0, 0)
+
+
 def test_generic_function_attributes(mesh, V):
     tc = Constant(2.0)
     te = Expression("value", value=tc, degree=0)
@@ -433,19 +532,14 @@ def test_generic_function_attributes(mesh, V):
 
     # Test wrong kwargs
     with pytest.raises(TypeError):
-        Expression("t", t=Constant((1, 0)), degree=0)
+        Expression("t", t=mesh, degree=0)
     with pytest.raises(TypeError):
-        Expression("t", t=Function(W), degree=0)
+        Expression("t", t=W, degree=0)
 
     # Test non-scalar GenericFunction
     f2 = Function(W)
     e2.t = f2
 
-    with pytest.raises(RuntimeError):
-        e2(0, 0)
-
-    # Test self assignment
-    e2.t = e2
     with pytest.raises(RuntimeError):
         e2(0, 0)
 

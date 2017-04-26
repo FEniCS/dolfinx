@@ -14,21 +14,13 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Ola Skavhaug 2008
-// Modified by Dag Lindbo 2008
-// Modified by Anders Logg 2008-2012
-// Modified by Kent-Andre Mardal 2008
-//
-// First added:  2007-07-03
-// Last changed: 2014-05-27
 
 #ifndef __LU_SOLVER_H
 #define __LU_SOLVER_H
 
 #include <string>
 #include <memory>
-#include "GenericLUSolver.h"
+#include "GenericLinearSolver.h"
 #include <dolfin/common/MPI.h>
 
 namespace dolfin
@@ -40,7 +32,7 @@ namespace dolfin
 
   /// LU solver for the built-in LA backends.
 
-  class LUSolver : public GenericLUSolver
+  class LUSolver : public GenericLinearSolver
   {
   public:
 
@@ -68,16 +60,9 @@ namespace dolfin
     /// Solve linear system Ax = b
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
-    /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(GenericVector& x, const GenericVector& b);
-
     /// Solve linear system
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                       const GenericVector& b);
-
-    /// Solve linear system
-    std::size_t solve_transpose(const GenericLinearOperator& A,
-                                GenericVector& x, const GenericVector& b);
 
     /// Default parameter values
     static Parameters default_parameters()

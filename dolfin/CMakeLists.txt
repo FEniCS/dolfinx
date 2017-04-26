@@ -79,6 +79,7 @@ list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${UFC_INCLUDE_DIRS})
 list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${EIGEN3_INCLUDE_DIR})
 
 # Boost
+target_link_libraries(dolfin PUBLIC Boost::boost)
 foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS_PUBLIC})
   target_link_libraries(dolfin PUBLIC "Boost::${BOOST_PACKAGE}")
 endforeach()
@@ -317,6 +318,8 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfigVersion.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake @ONLY)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake @ONLY)
+configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINPythonXY.cmake.in
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINPython${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}.cmake @ONLY)
 
 install(
   FILES
@@ -325,6 +328,7 @@ install(
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
   ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINPython${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}.cmake
   DESTINATION ${DOLFIN_SHARE_DIR}/cmake
   COMPONENT Development
   )

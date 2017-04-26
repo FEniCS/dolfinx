@@ -352,6 +352,7 @@ void Function::eval(Array<double>& values, const Array<double>& x,
     element.evaluate_basis(i, basis.data(), x.data(),
                            coordinate_dofs.data(),
                            ufc_cell.orientation);
+
     for (std::size_t j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
   }

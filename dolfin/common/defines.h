@@ -76,6 +76,9 @@ namespace dolfin
   /// Return true if DOLFIN is compiled with HDF5
   bool has_hdf5();
 
+  /// Return true if DOLFIN is compiled with Parallel HDF5
+  bool has_hdf5_parallel();
+
   /// Return true if DOLFIN is compiled with VTK
   bool has_vtk();
 

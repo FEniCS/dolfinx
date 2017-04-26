@@ -31,6 +31,8 @@
 namespace dolfin
 {
 
+  /// Tpetra linear algebra factory
+
   class TpetraFactory : public GenericLinearAlgebraFactory
   {
   public:
@@ -52,8 +54,8 @@ namespace dolfin
     create_linear_operator(MPI_Comm comm) const;
 
     /// Create LU solver
-    std::shared_ptr<GenericLUSolver> create_lu_solver(MPI_Comm comm,
-                                                      std::string method) const;
+    std::shared_ptr<GenericLinearSolver>
+    create_lu_solver(MPI_Comm comm, std::string method) const;
 
     /// Create Krylov solver
     std::shared_ptr<GenericLinearSolver>

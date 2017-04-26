@@ -40,24 +40,6 @@
 
 using namespace dolfin;
 
-namespace dolfin
-{
-  // Comparison operator for sorting based on global indices
-  class GlobalSort
-  {
-  public:
-
-    GlobalSort(const std::vector<std::int64_t>& local_to_global_vertex_indices)
-        : g(local_to_global_vertex_indices) {}
-
-    bool operator() (const std::size_t& l, const std::size_t& r)
-    { return g[l] < g[r]; }
-
-    const std::vector<std::int64_t>& g;
-
-  };
-}
-
 //-----------------------------------------------------------------------------
 CellType::CellType(Type cell_type, Type facet_type)
   : _cell_type(cell_type), _facet_type(facet_type)
@@ -299,6 +281,21 @@ void CellType::sort_entities(std::size_t num_vertices,
   // Two cases here, either sort vertices directly (when running in
   // serial) or sort based on the global indices (when running in
   // parallel)
+
+  // Comparison operator for sorting based on global indices
+  class GlobalSort
+  {
+  public:
+
+    GlobalSort(const std::vector<std::int64_t>& local_to_global_vertex_indices)
+        : g(local_to_global_vertex_indices) {}
+
+    bool operator() (const std::size_t& l, const std::size_t& r)
+    { return g[l] < g[r]; }
+
+    const std::vector<std::int64_t>& g;
+
+  };
 
   // Sort on global vertex indices
   GlobalSort global_sort(local_to_global_vertex_indices);

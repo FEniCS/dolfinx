@@ -65,7 +65,7 @@ namespace dolfin
     ///         The receiving function spaces
     ///     assigning_space (_FunctionSpace_)
     ///         The assigning function space
-    FunctionAssigner(std::vector<std::shared_ptr<const FunctionSpace> > receiving_spaces,
+    FunctionAssigner(std::vector<std::shared_ptr<const FunctionSpace>> receiving_spaces,
 		     std::shared_ptr<const FunctionSpace> assigning_space);
 
     /// Create a FunctionAssigner between several functions
@@ -81,7 +81,7 @@ namespace dolfin
     ///     assigning_spaces (std::vector<std::shared_ptr<_FunctionSpace_> >)
     ///         The assigning function spaces
     FunctionAssigner(std::shared_ptr<const FunctionSpace> receiving_space,
-		     std::vector<std::shared_ptr<const FunctionSpace> > assigning_spaces);
+		     std::vector<std::shared_ptr<const FunctionSpace>> assigning_spaces);
 
     /// Assign one function to another
     ///
@@ -102,7 +102,7 @@ namespace dolfin
     ///     assigning_funcs (std::vector<std::shared_ptr<_Function_> >)
     ///         The assigning functions
     void assign(std::shared_ptr<Function> receiving_func,
-		std::vector<std::shared_ptr<const Function> > assigning_funcs) const;
+		std::vector<std::shared_ptr<const Function>> assigning_funcs) const;
 
     /// Assign sub functions of a single mixed function to single
     /// receiving functions
@@ -112,7 +112,7 @@ namespace dolfin
     ///         The receiving functions
     ///     assigning_func (std::shared_ptr<_Function_>)
     ///         The assigning mixed function
-    void assign(std::vector<std::shared_ptr<Function> > receiving_funcs,
+    void assign(std::vector<std::shared_ptr<Function>> receiving_funcs,
 		std::shared_ptr<const Function> assigning_func) const;
 
     /// Destructor
@@ -129,8 +129,8 @@ namespace dolfin
   private:
 
     // Utility function to actually do the assignment
-    void _assign(std::vector<std::shared_ptr<Function> > receiving_funcs,
-	std::vector<std::shared_ptr<const Function> > assigning_funcs) const;
+    void _assign(std::vector<std::shared_ptr<Function>> receiving_funcs,
+	std::vector<std::shared_ptr<const Function>> assigning_funcs) const;
 
     // Check the compatibility of the meshes and return a reference to
     // the mesh
@@ -143,14 +143,14 @@ namespace dolfin
 	  const std::vector<std::shared_ptr<const FunctionSpace> >& assigning_spaces);
 
     // Shared pointers to the original FunctionSpaces
-    std::vector<std::shared_ptr<const FunctionSpace> > _receiving_spaces;
-    std::vector<std::shared_ptr<const FunctionSpace> > _assigning_spaces;
+    std::vector<std::shared_ptr<const FunctionSpace>> _receiving_spaces;
+    std::vector<std::shared_ptr<const FunctionSpace>> _assigning_spaces;
 
     // Indices for accessing values to receiving Functions
-    std::vector<std::vector<la_index> > _receiving_indices;
+    std::vector<std::vector<la_index>> _receiving_indices;
 
     // Indices for accessing values from assigning Functions
-    std::vector<std::vector<la_index> > _assigning_indices;
+    std::vector<std::vector<la_index>> _assigning_indices;
 
     // Vector for value transfer between assigning and receiving Function
     mutable std::vector<std::vector<double> > _transfer;

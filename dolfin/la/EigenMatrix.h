@@ -47,6 +47,7 @@ namespace dolfin
   {
   public:
 
+    /// Eigen Matrix type
     typedef Eigen::SparseMatrix<double, Eigen::RowMajor, int> eigen_matrix_type;
 
     /// Create empty matrix
@@ -104,9 +105,9 @@ namespace dolfin
 
     /// Initialise vector z to be compatible with the matrix-vector product
     /// y = Ax.
-    ///
-    /// *Arguments*
-    ///     dim (std::size_t)
+    /// @param z (GenericVector&)
+    ///         Vector to initialise
+    /// @param  dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
     virtual void init_vector(GenericVector& z, std::size_t dim) const;
 

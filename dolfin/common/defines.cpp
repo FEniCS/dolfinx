@@ -25,6 +25,10 @@
 #include <petscversion.h>
 #endif
 
+#ifdef HAS_HDF5
+#include <hdf5.h>
+#endif
+
 #include "types.h"
 #include "defines.h"
 
@@ -142,6 +146,15 @@ bool dolfin::has_zlib()
 bool dolfin::has_hdf5()
 {
 #ifdef HAS_HDF5
+  return true;
+#else
+  return false;
+#endif
+}
+//-----------------------------------------------------------------------------
+bool dolfin::has_hdf5_parallel()
+{
+#ifdef H5_HAVE_PARALLEL
   return true;
 #else
   return false;

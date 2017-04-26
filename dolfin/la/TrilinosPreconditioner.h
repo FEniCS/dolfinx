@@ -37,16 +37,18 @@ namespace dolfin
   {
   public:
 
+    /// Constructor
     TrilinosPreconditioner()
     {}
 
+    /// Destructor
     ~TrilinosPreconditioner()
     {}
 
-    // Set this preconditioner on a solver
+    /// Set this preconditioner on a solver
     virtual void set(BelosKrylovSolver& solver) = 0;
 
-    // Initialise this preconditioner with the operator P
+    /// Initialise this preconditioner with the operator P
     virtual void init(std::shared_ptr<const TpetraMatrix> P) = 0;
 
   };
