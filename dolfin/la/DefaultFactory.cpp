@@ -51,8 +51,8 @@ DefaultFactory::create_linear_operator(MPI_Comm comm) const
   return factory().create_linear_operator(comm);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericLUSolver>
-  DefaultFactory::create_lu_solver(MPI_Comm comm, std::string method) const
+std::shared_ptr<GenericLinearSolver>
+DefaultFactory::create_lu_solver(MPI_Comm comm, std::string method) const
 {
   return factory().create_lu_solver(comm, method);
 }

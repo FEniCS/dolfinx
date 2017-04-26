@@ -20,7 +20,7 @@
 
 #include <string>
 #include <memory>
-#include "GenericLUSolver.h"
+#include "GenericLinearSolver.h"
 #include <dolfin/common/MPI.h>
 
 namespace dolfin
@@ -32,7 +32,7 @@ namespace dolfin
 
   /// LU solver for the built-in LA backends.
 
-  class LUSolver : public GenericLUSolver
+  class LUSolver : public GenericLinearSolver
   {
   public:
 
