@@ -4,6 +4,9 @@ Change log
 dev
 ---
 
+- Refactor PETScLUSolver to use functionality from
+  PETScKrylovSolver. Simplify interface for solving transposed
+  systems. Fixes #815.
 - Switch default Python version to Python 3. Use
   `-DDOLFIN_USE_PYTHON3=off` to build with Python 2.
 - Remove redundant ``solve_transpose`` functions (use solve with bool

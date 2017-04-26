@@ -13,7 +13,6 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/VectorSpaceBasis.h>
 #include <dolfin/la/GenericLinearSolver.h>
-#include <dolfin/la/GenericLUSolver.h>
 
 #include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScObject.h>
