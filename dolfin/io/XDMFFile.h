@@ -91,6 +91,20 @@ namespace dolfin
     /// Destructor
     ~XDMFFile();
 
+    /// Close the file
+    ///
+    /// This closes any open HDF5 files. In ASCII mode the XML file is
+    /// closed each time it is written to or read from, so close() has
+    /// no effect.
+    ///
+    /// From Python you can also use XDMFFile as a context manager:
+    ///
+    ///     with XDMFFile(mpi_comm_world(), 'name.xdmf') as xdmf:
+    ///         xdmf.write(mesh)
+    ///
+    /// The file is automatically closed at the end of the with block
+    void close();
+
     /// Save a mesh to XDMF format, either using an associated HDF5
     /// file, or storing the data inline as XML Create function on
     /// given function space
@@ -115,6 +129,19 @@ namespace dolfin
     /// Save a Function with timestamp to XDMF file for visualisation,
     /// using an associated HDF5 file, or storing the data inline as
     /// XML.
+    ///
+    /// You can control the output with the following boolean
+    /// parameters on the XDMFFile class:
+    ///
+    /// * rewrite_function_mesh (default true):
+    ///   Controls whether the mesh will be rewritten every timestep.
+    ///   If the mesh does not change this can be turned off to create
+    ///   smaller files.
+    ///
+    /// * functions_share_mesh (default false):
+    ///   Controls whether all functions on a single time step share
+    ///   the same mesh. If true the files created will be smaller and
+    ///   also behave better in Paraview, at least in version 5.3.0
     ///
     /// @param    u (_Function_)
     ///         A function to save.
