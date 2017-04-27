@@ -16,6 +16,15 @@ dev
   (communicator should be passed via constructor)
 - Remove ``Function::operator[+-*/]`` to prevent memory corruption problems
   (does not affect Python interface)
+- Fix XDMF3 output of time series. The default output method is now to assume
+  that all functions have different meshes, and that the meshes change from
+  time step to time step. Two parameters control the output, one limits each
+  function to only one mesh for the whole time series, turn off the default
+  on parameter ``rewrite_function_mesh`` to enable this. You can also make
+  all functions share the same mesh and time series, which currently is better
+  supported in Paraview than the alternative, turn on ``functions_share_mesh``
+  for this. These two parameters can also be combined in case all functions
+  share the same mesh at all time steps. This creates minimal size files.
 - Add ``PETScSNESSolver`` and ``PETScTAOSolver`` constructor accepting
   both communicator and type
 - Expression("f[0]*f[1]", f=obj) notation now supported for non-scalar
