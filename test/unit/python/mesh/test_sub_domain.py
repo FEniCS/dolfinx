@@ -59,10 +59,18 @@ def test_creation_and_marking():
     class Left(SubDomain):
         def inside(self, x, on_boundary):
             return x[0] < DOLFIN_EPS
+            
+    class LeftOnBoundary(SubDomain):
+        def inside(self, x, on_boundary):
+            return x[0] < DOLFIN_EPS and on_boundary
 
     class Right(SubDomain):
         def inside(self, x, on_boundary):
             return x[0] > 1.0 - DOLFIN_EPS
+            
+    class RightOnBoundary(SubDomain):
+        def inside(self, x, on_boundary):
+            return x[0] > 1.0 - DOLFIN_EPS and on_boundary
 
     left_cpp = """
         class Left : public SubDomain
@@ -72,6 +80,18 @@ def test_creation_and_marking():
           virtual bool inside(const Array<double>& x, bool on_boundary) const
           {
             return x[0] < DOLFIN_EPS;
+          }
+        };
+    """
+    
+    left_on_boundary_cpp = """
+        class LeftOnBoundary : public SubDomain
+        {
+        public:
+
+          virtual bool inside(const Array<double>& x, bool on_boundary) const
+          {
+            return x[0] < DOLFIN_EPS and on_boundary;
           }
         };
     """
@@ -87,16 +107,37 @@ def test_creation_and_marking():
           }
         };
     """
+    
+    right_on_boundary_cpp = """
+        class RightOnBoundary : public SubDomain
+        {
+        public:
+
+          virtual bool inside(const Array<double>& x, bool on_boundary) const
+          {
+            return x[0] > 1.0 - DOLFIN_EPS and on_boundary;
+          }
+        };
+    """
 
     subdomain_pairs = [(Left(), Right()),
+                       (LeftOnBoundary(), RightOnBoundary()),
                        (AutoSubDomain(lambda x, on_boundary: x[0] < DOLFIN_EPS),
                         AutoSubDomain(lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS)),
+                       (AutoSubDomain(lambda x, on_boundary: x[0] < DOLFIN_EPS and on_boundary),
+                        AutoSubDomain(lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS and on_boundary)),
                        (CompiledSubDomain("near(x[0], a)", a=0.0),
                         CompiledSubDomain("near(x[0], a)", a=1.0)),
+                       (CompiledSubDomain("near(x[0], a) and on_boundary", a=0.0),
+                        CompiledSubDomain("near(x[0], a) and on_boundary", a=1.0)),
                        (CompiledSubDomain("near(x[0], 0.0)"),
                         CompiledSubDomain("near(x[0], 1.0)")),
+                       (CompiledSubDomain("near(x[0], 0.0) and on_boundary"),
+                        CompiledSubDomain("near(x[0], 1.0) and on_boundary")),
                        (CompiledSubDomain(left_cpp),
-                        CompiledSubDomain(right_cpp))]
+                        CompiledSubDomain(right_cpp)),
+                       (CompiledSubDomain(left_on_boundary_cpp),
+                        CompiledSubDomain(right_on_boundary_cpp))]
 
     empty = CompiledSubDomain("false")
     every = CompiledSubDomain("true")
