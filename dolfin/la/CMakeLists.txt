@@ -14,7 +14,6 @@ set(HEADERS
   GenericLinearAlgebraFactory.h
   GenericLinearOperator.h
   GenericLinearSolver.h
-  GenericLUSolver.h
   GenericMatrix.h
   GenericTensor.h
   GenericVector.h

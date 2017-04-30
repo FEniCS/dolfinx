@@ -74,9 +74,10 @@ namespace dolfin
     }
 
     /// Create LU solver
-    std::shared_ptr<GenericLUSolver> create_lu_solver(MPI_Comm comm, std::string method) const
+    std::shared_ptr<GenericLinearSolver>
+    create_lu_solver(MPI_Comm comm, std::string method) const
     {
-      return std::shared_ptr<GenericLUSolver>(new EigenLUSolver(method));
+      return std::make_shared<EigenLUSolver>(method);
     }
 
     /// Create Krylov solver
