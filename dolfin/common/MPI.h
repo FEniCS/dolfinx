@@ -96,6 +96,14 @@ namespace dolfin
                              std::vector<std::vector<T>>& in_values,
                              std::vector<std::vector<T>>& out_values);
 
+
+    /// Send in_values[p0] to process p0 and receive values from
+    /// all processes in out_values
+    template<typename T>
+      static void all_to_all(MPI_Comm comm,
+                             std::vector<std::vector<T>>& in_values,
+                             std::vector<T>& out_values);
+
     /// Broadcast vector of value from broadcaster to all processes
     template<typename T>
       static void broadcast(MPI_Comm comm, std::vector<T>& value,
@@ -330,6 +338,53 @@ namespace dolfin
     #else
     dolfin_assert(in_values.size() == 1);
     out_values = in_values;
+    #endif
+  }
+  //---------------------------------------------------------------------------
+  template<typename T>
+    void dolfin::MPI::all_to_all(MPI_Comm comm,
+                                 std::vector<std::vector<T>>& in_values,
+                                 std::vector<T>& out_values)
+  {
+    #ifdef HAS_MPI
+    const std::size_t comm_size = MPI::size(comm);
+
+    // Data size per destination
+    dolfin_assert(in_values.size() == comm_size);
+    std::vector<int> data_size_send(comm_size);
+    std::vector<int> data_offset_send(comm_size + 1, 0);
+    for (std::size_t p = 0; p < comm_size; ++p)
+    {
+      data_size_send[p] = in_values[p].size();
+      data_offset_send[p + 1] = data_offset_send[p] + data_size_send[p];
+    }
+
+    // Get received data sizes
+    std::vector<int> data_size_recv(comm_size);
+    MPI_Alltoall(data_size_send.data(), 1, mpi_type<int>(),
+                 data_size_recv.data(), 1, mpi_type<int>(),
+                 comm);
+
+    // Pack data and build receive offset
+    std::vector<int> data_offset_recv(comm_size + 1 ,0);
+    std::vector<T> data_send(data_offset_send[comm_size]);
+    for (std::size_t p = 0; p < comm_size; ++p)
+    {
+      data_offset_recv[p + 1] = data_offset_recv[p] + data_size_recv[p];
+      std::copy(in_values[p].begin(), in_values[p].end(),
+                data_send.begin() + data_offset_send[p]);
+    }
+
+    // Send/receive data
+    out_values.resize(data_offset_recv[comm_size]);
+    MPI_Alltoallv(data_send.data(), data_size_send.data(),
+                  data_offset_send.data(), mpi_type<T>(),
+                  out_values.data(), data_size_recv.data(),
+                  data_offset_recv.data(), mpi_type<T>(), comm);
+
+    #else
+    dolfin_assert(in_values.size() == 1);
+    out_values = in_values[0];
     #endif
   }
   //---------------------------------------------------------------------------

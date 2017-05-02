@@ -1032,7 +1032,6 @@ void MeshPartitioning::build_shared_vertices(MPI_Comm mpi_comm,
   }
 
   std::vector<std::vector<std::size_t>> send_sharing(mpi_size);
-  std::vector<std::vector<std::size_t>> recv_sharing(mpi_size);
   for (auto map_it = vertex_to_proc.begin(); map_it != vertex_to_proc.end(); ++map_it)
   {
     if (map_it->second.size() != 1)
@@ -1051,24 +1050,24 @@ void MeshPartitioning::build_shared_vertices(MPI_Comm mpi_comm,
     }
   }
 
+  // Receive as a flat array
+  std::vector<std::size_t> recv_sharing(mpi_size);
   MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
 
-  for (int p = 0; p < mpi_size; ++p)
+  for (auto q = recv_sharing.begin(); q != recv_sharing.end(); q += (*q + 2))
   {
-    for (auto q = recv_sharing[p].begin(); q != recv_sharing[p].end(); q += (*q + 2))
-    {
-      const std::size_t num_sharing = *q;
-      const std::size_t global_vertex_index = *(q + 1);
-      std::set<unsigned int> sharing_processes(q + 2, q + 2 + num_sharing);
+    const std::size_t num_sharing = *q;
+    const std::size_t global_vertex_index = *(q + 1);
+    std::set<unsigned int> sharing_processes(q + 2, q + 2 + num_sharing);
 
-      auto local_index_it = vertex_global_to_local.find(global_vertex_index);
-      dolfin_assert(local_index_it != vertex_global_to_local.end());
-      const unsigned int local_index = local_index_it->second;
-      dolfin_assert(shared_vertices_local.find(local_index)
-                    == shared_vertices_local.end());
-      shared_vertices_local.insert({local_index, sharing_processes});
-    }
+    auto local_index_it = vertex_global_to_local.find(global_vertex_index);
+    dolfin_assert(local_index_it != vertex_global_to_local.end());
+    const unsigned int local_index = local_index_it->second;
+    dolfin_assert(shared_vertices_local.find(local_index)
+                  == shared_vertices_local.end());
+    shared_vertices_local.insert({local_index, sharing_processes});
   }
+
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_local_mesh(Mesh& mesh,
