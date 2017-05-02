@@ -583,7 +583,7 @@ void MeshPartitioning::distribute_cell_layer(MPI_Comm mpi_comm,
     for (auto q = recv_i.begin(); q != recv_i.end(); q += num_cell_vertices + 1)
     {
       const std::size_t vertex_index = *(q + 1);
-      std::vector<std::int64_t> cell_set(1, i);
+      std::vector<std::int64_t> cell_set = {i};
       cell_set.insert(cell_set.end(), q, q + num_cell_vertices + 1);
 
       // Packing: [owner, cell_index, this_vertex, [other_vertices]]
