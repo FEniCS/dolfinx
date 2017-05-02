@@ -116,6 +116,50 @@ namespace dolfin
       return _function_space;
     }
 
+    /// Restrict function to local cell in given part (compute expansion coefficients w)
+    ///
+    /// *Arguments*
+    ///     w (list of doubles)
+    ///         Expansion coefficients.
+    ///     element (_FiniteElement_)
+    ///         The element.
+    ///     part (std::size_t)
+    ///         The mesh part
+    ///     dolfin_cell (_Cell_)
+    ///         The cell.
+    ///     ufc_cell (ufc::cell).
+    ///         The ufc::cell.
+    void restrict(double* w,
+                          const FiniteElement& element,
+                          std::size_t part,
+                          const Cell& dolfin_cell,
+                          const double* coordinate_dofs,
+                          const ufc::cell& ufc_cell) const;
+
+    /// Evaluate at given point in given cell in given part
+    ///
+    /// *Arguments*
+    ///     values (_Array_ <double>)
+    ///         The values at the point.
+    ///     x (_Array_ <double>)
+    ///         The coordinates of the point.
+    ///     cell (ufc::cell)
+    ///         The cell which contains the given point.
+    void eval(Array<double>& values, const Array<double>& x,
+                      std::size_t part,
+                      const ufc::cell& cell) const;
+
+    /// Evaluate at a given point
+    void eval(Array<double>& values, const Array<double>& x) const;
+
+    /// Restrict as UFC function (by calling eval)
+    void restrict_as_ufc_function(double* w,
+                                  const FiniteElement& element,
+                                  std::size_t part,
+                                  const Cell& dolfin_cell,
+                                  const double* coordinate_dofs,
+                                  const ufc::cell& ufc_cell) const;
+
   private:
 
     // Initialize vector
