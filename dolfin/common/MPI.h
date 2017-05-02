@@ -413,6 +413,30 @@ namespace dolfin
     out_values = in_values;
     #endif
   }
+
+  template<> inline
+    void dolfin::MPI::all_to_all(MPI_Comm comm,
+                                 std::vector<std::vector<bool>>& in_values,
+                                 std::vector<bool>& out_values)
+  {
+    #ifdef HAS_MPI
+    // Copy to short int
+    std::vector<std::vector<short int> > send(in_values.size());
+    for (std::size_t i = 0; i < in_values.size(); ++i)
+      send[i].assign(in_values[i].begin(), in_values[i].end());
+
+    // Communicate data
+    std::vector<short int> recv;
+    all_to_all(comm, send, recv);
+
+    // Copy back to bool
+    out_values.assign(recv.begin(), recv.end());
+    #else
+    dolfin_assert(in_values.size() == 1);
+    out_values = in_values[0];
+    #endif
+  }
+
 #endif
   //---------------------------------------------------------------------------
   template<typename T>
