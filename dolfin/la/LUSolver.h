@@ -76,6 +76,10 @@ namespace dolfin
       return p;
     }
 
+    /// Return parameter type: "krylov_solver" or "lu_solver"
+    std::string parameter_type() const
+    { return "lu_solver"; }
+
     /// Update solver parameters (pass parameters down to wrapped
     /// implementation)
     virtual void update_parameters(const Parameters& parameters)
