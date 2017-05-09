@@ -1,7 +1,7 @@
 Change log
 ==========
 
-2017.1.0 (unreleased)
+2017.1.0 (2017-05-09)
 ---------------------
 
 - Refactor PETScLUSolver to use functionality from
