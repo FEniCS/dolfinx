@@ -49,33 +49,14 @@ if (EXISTS ${DOLFIN_USE_FILE})
     set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
       "Choose the type of build, options are: Debug MinSizeRel Release RelWithDebInfo." FORCE)
   endif()
+endif()
 
-  # Do not throw error for 'multi-line comments' (these are typical in
-  # rst which includes LaTeX)
-  include(CheckCXXCompilerFlag)
-  CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
-  if (HAVE_NO_MULTLINE)
-    set(CMAKE_CXX_FLAGS "-Wno-comment ${CMAKE_CXX_FLAGS}")
-  endif()
-
-else()
-  # Compiler definitions
-  add_definitions(${DOLFIN_CXX_DEFINITIONS})
-
-  # Compiler flags
-  set(CMAKE_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
-
-  # Do not throw error for 'multi-line comments' (these are typical in
-  # rst which includes LaTeX)
-  include(CheckCXXCompilerFlag)
-  CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
-  if (HAVE_NO_MULTLINE)
-    set(CMAKE_CXX_FLAGS "-Wno-comment ${CMAKE_CXX_FLAGS}")
-  endif()
-
-  # Include directories
-  include_directories(${DOLFIN_INCLUDE_DIRS})
-  include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
+# Do not throw error for 'multi-line comments' (these are typical in
+# rst which includes LaTeX)
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
+if (HAVE_NO_MULTLINE)
+  set(CMAKE_CXX_FLAGS "-Wno-comment ${CMAKE_CXX_FLAGS}")
 endif()
 
 # Executable
@@ -86,8 +67,7 @@ endif()
 """
 
 executable_str = "add_executable(%s %s)"
-target_link_libraries_str = "target_link_libraries(%s "\
-                            "${DOLFIN_LIBRARIES})"
+target_link_libraries_str = "target_link_libraries(%s dolfin)"
 
 # Subdirectories
 sub_directories = ['demo', 'bench']
