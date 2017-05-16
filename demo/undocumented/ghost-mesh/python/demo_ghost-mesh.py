@@ -10,7 +10,7 @@ import six
 try:
     import matplotlib.pyplot as plt
     from matplotlib.collections import PolyCollection
-except ImortError:
+except ImportError:
     print("This demo requires matplotlib! Bye.")
     exit()
 
