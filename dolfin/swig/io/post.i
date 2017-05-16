@@ -112,6 +112,16 @@ def __exit__(self, type, value, traceback) :
 %}
 }
 
+%extend dolfin::XDMFFile {
+%pythoncode %{
+def __enter__(self) :
+    return self
+
+def __exit__(self, type, value, traceback) :
+    self.close()
+%}
+}
+
 %extend dolfin::X3DOMParameters
 {
 %pythoncode %{

@@ -49,7 +49,7 @@ void MeshOrdering::order(Mesh& mesh)
 
   // Iterate over all cells and order the mesh entities locally
   Progress p("Ordering mesh", mesh.num_cells());
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     cell->order(local_to_global_vertex_indices);
     p++;
@@ -69,7 +69,7 @@ bool MeshOrdering::ordered(const Mesh& mesh)
 
   // Check if all cells are ordered
   Progress p("Checking mesh ordering", mesh.num_cells());
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     if (!cell->ordered(local_to_global_vertex_indices))
       return false;

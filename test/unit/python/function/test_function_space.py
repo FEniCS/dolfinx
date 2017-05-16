@@ -26,6 +26,7 @@
 
 import pytest
 from dolfin import *
+from ufl.log import UFLException
 
 from dolfin_utils.test import fixture
 
@@ -219,3 +220,10 @@ function spaces."""
         # is triggered when comparing ufl expressions
         assert grad(v) == grad(v2)
         assert grad(v) != grad(v3)
+
+
+def test_cell_mismatch(mesh):
+    """Test that cell mismatch raises early enough from UFL"""
+    element = FiniteElement("P", triangle, 1)
+    with pytest.raises(UFLException):
+        FunctionSpace(mesh, element)

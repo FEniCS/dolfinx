@@ -37,7 +37,6 @@ namespace dolfin
 {
 
   class GenericLinearSolver;
-  class GenericLUSolver;
   class GenericMatrix;
   class GenericVector;
   class TensorLayout;
@@ -69,7 +68,7 @@ namespace dolfin
       create_linear_operator(MPI_Comm comm) const = 0;
 
     /// Create LU solver
-    virtual std::shared_ptr<GenericLUSolver>
+    virtual std::shared_ptr<GenericLinearSolver>
     create_lu_solver(MPI_Comm comm, std::string method) const = 0;
 
     /// Create Krylov solver

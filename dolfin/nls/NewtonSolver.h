@@ -102,6 +102,13 @@ namespace dolfin
     ///         Current residual.
     double residual() const;
 
+    /// Return initial residual
+    ///
+    /// *Returns*
+    ///     double
+    ///         Initial residual.
+    double residual0() const;
+
     /// Return current relative residual
     ///
     /// *Returns*

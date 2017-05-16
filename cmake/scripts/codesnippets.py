@@ -114,10 +114,10 @@ set(CMAKE_SWIG_FLAGS
 file(READ ${CMAKE_CURRENT_BINARY_DIR}/dependencies.txt DOLFIN_SWIG_DEPENDENCIES )
 
 # This prevents swig being run unnecessarily
-set_source_files_properties(module.i PROPERTIES SWIG_MODULE_NAME ${SWIG_MODULE_NAME})
+set_property(SOURCE module.i PROPERTY SWIG_MODULE_NAME ${SWIG_MODULE_NAME})
 
 # Tell CMake SWIG has generated a C++ file
-set_source_files_properties(module.i PROPERTIES CPLUSPLUS ON)
+set_property(SOURCE module.i PROPERTY CPLUSPLUS ON)
 
 # Generate SWIG files in
 set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
@@ -127,7 +127,12 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
 set(SWIG_MODULE_${SWIG_MODULE_NAME}_EXTRA_DEPS copy_swig_files ${DOLFIN_SWIG_DEPENDENCIES})
 
 # Tell CMake to run SWIG on module.i and to link against libdolfin
-swig_add_module(${SWIG_MODULE_NAME} python module.i)
+if (CMAKE_VERSION VERSION_LESS "3.8")
+  swig_add_module(${SWIG_MODULE_NAME} python module.i)
+else()
+  swig_add_library(${SWIG_MODULE_NAME} LANGUAGE python SOURCES module.i)
+endif()
+
 swig_link_libraries(${SWIG_MODULE_NAME} dolfin ${PYTHON_LIBRARIES})
 
 # Install Python targets and .py files
