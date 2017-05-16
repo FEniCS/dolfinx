@@ -80,12 +80,20 @@ namespace dolfin
     std::pair<std::size_t, bool> solve(NonlinearProblem& nonlinear_function,
                                        GenericVector& x);
 
-    /// Return Newton iteration number
+    /// Return current Newton iteration number
     ///
     /// *Returns*
     ///     std::size_t
     ///         The iteration number.
     std::size_t iteration() const;
+
+    /// Return number of Krylov iterations elapsed since
+    /// solve started
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         The number of iterations.
+    std::size_t krylov_iterations() const;
 
     /// Return current residual
     ///
@@ -93,6 +101,13 @@ namespace dolfin
     ///     double
     ///         Current residual.
     double residual() const;
+
+    /// Return initial residual
+    ///
+    /// *Returns*
+    ///     double
+    ///         Initial residual.
+    double residual0() const;
 
     /// Return current relative residual
     ///
@@ -171,7 +186,7 @@ namespace dolfin
     virtual void solver_setup(std::shared_ptr<const GenericMatrix> A,
                               std::shared_ptr<const GenericMatrix> P,
                               const NonlinearProblem& nonlinear_problem,
-                              std::size_t interation);
+                              std::size_t iteration);
 
     /// Update solution vector by computed Newton step. Default
     /// update is given by formula::
@@ -193,12 +208,15 @@ namespace dolfin
                                  const GenericVector& dx,
                                  double relaxation_parameter,
                                  const NonlinearProblem& nonlinear_problem,
-                                 std::size_t interation);
+                                 std::size_t iteration);
 
   private:
 
     // Current number of Newton iterations
     std::size_t _newton_iteration;
+
+    // Accumulated number of Krylov iterations since solve began
+    std::size_t _krylov_iterations;
 
     // Relaxation parameter
     double _relaxation_parameter;

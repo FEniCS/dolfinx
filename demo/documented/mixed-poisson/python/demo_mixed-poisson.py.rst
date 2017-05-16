@@ -153,7 +153,7 @@ test functions on this space. This can be done as follows ::
 
 In order to define the variational form, it only remains to define the
 source function :math:`f`. This is done just as for the :ref:`Poisson
-demo <demo_pde_poisson_python_documentation>`: ::
+demo <demo_poisson_equation>`: ::
 
     # Define source function
     f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)

@@ -22,6 +22,9 @@
 #include <cstdint>
 #include <dolfin/log/Table.h>
 
+/// This comment in in timing.h but I think it is providing
+/// a doxygen docstring for the whole dolfin namespace... FIXME.
+
 namespace dolfin
 {
   /// Parameter specifying whether to clear timing(s):

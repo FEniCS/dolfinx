@@ -48,13 +48,20 @@
 %ignore dolfin::FunctionSpace::collapse() const;
 
 //-----------------------------------------------------------------------------
-// Modifying the interface of Function
+// Modifying the interface of FunctionAXPY
 //-----------------------------------------------------------------------------
-%ignore dolfin::FunctionAXPY::pair;
-%rename(__add__) dolfin::FunctionAXPY::operator+;
-%rename(__sub__) dolfin::FunctionAXPY::operator-;
-%rename(__mul__) dolfin::FunctionAXPY::operator*;
-%rename(__div__) dolfin::FunctionAXPY::operator/;
+%ignore dolfin::FunctionAXPY::pairs;
+
+//-----------------------------------------------------------------------------
+// Add FunctionAXPY.__truediv__ (workaround for SWIG < 3.0.9)
+//-----------------------------------------------------------------------------
+%feature("shadow") dolfin::FunctionAXPY::operator/ %{
+def __truediv__(self, value):
+    """self.__truediv__(value) <==> self/value"""
+    return $action(self, value)
+__div__ = __truediv__
+%};
+%rename(__truediv__) dolfin::FunctionAXPY::operator/;
 
 //-----------------------------------------------------------------------------
 // Rename [] for SpecialFacetFunction -> _sub

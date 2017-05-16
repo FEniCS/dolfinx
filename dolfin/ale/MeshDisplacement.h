@@ -45,15 +45,13 @@ namespace dolfin
 
     /// Create MeshDisplacement of given mesh
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param   mesh (_Mesh_)
     ///         Mesh to be displacement defined on.
     explicit MeshDisplacement(std::shared_ptr<const Mesh> mesh);
 
     /// Copy constructor
     ///
-    /// *Arguments*
-    ///     mesh_displacement (_MeshDisplacement_)
+    /// @param    mesh_displacement (_MeshDisplacement_)
     ///         Object to be copied.
     MeshDisplacement(const MeshDisplacement& mesh_displacement);
 
@@ -63,26 +61,23 @@ namespace dolfin
     /// Extract subfunction
     /// In python available as MeshDisplacement.sub(i)
     ///
-    /// *Arguments*
-    ///     i (std::size_t)
+    /// @param i (std::size_t)
     ///         Index of subfunction.
     Function& operator[] (const std::size_t i);
 
     /// Extract subfunction. Const version
     ///
-    /// *Arguments*
-    ///     i (std::size_t)
+    /// @param i (std::size_t)
     ///         Index of subfunction.
     const Function& operator[] (const std::size_t i) const;
 
     /// Evaluate at given point in given cell.
     ///
-    /// *Arguments*
-    ///     values (_Array_ <double>)
+    /// @param    values (Array<double>)
     ///         The values at the point.
-    ///     x (_Array_ <double>)
+    /// @param    x (Array<double>)
     ///         The coordinates of the point.
-    ///     cell (ufc::cell)
+    /// @param    cell (ufc::cell)
     ///         The cell which contains the given point.
     virtual void eval(Array<double>& values,
 		      const Array<double>& x,
@@ -90,10 +85,9 @@ namespace dolfin
 
     /// Compute values at all mesh vertices.
     ///
-    /// *Arguments*
-    ///     vertex_values (_Array_ <double>)
+    /// @param vertex_values (Array<double>)
     ///         The values at all vertices.
-    ///     mesh (_Mesh_)
+    /// @param mesh (Mesh)
     ///         The mesh.
     virtual void compute_vertex_values(std::vector<double>& vertex_values,
                                        const Mesh& mesh) const;

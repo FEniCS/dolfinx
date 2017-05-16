@@ -88,6 +88,14 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
 
   // Open HDF5 file
   const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+#ifndef H5_HAVE_PARALLEL
+  if (mpi_io)
+  {
+    dolfin_error("HDF5File.cpp",
+                 "open HDF5 file",
+                 "HDF5 has not been compiled with support for MPI");
+  }
+#endif
   _hdf5_file_id = HDF5Interface::open_file(_mpi_comm, filename, file_mode,
                                           mpi_io);
   dolfin_assert(_hdf5_file_id > 0);

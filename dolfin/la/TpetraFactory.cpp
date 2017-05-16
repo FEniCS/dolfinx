@@ -60,7 +60,7 @@ TpetraFactory::create_linear_operator(MPI_Comm comm) const
   return A;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericLUSolver>
+std::shared_ptr<GenericLinearSolver>
 TpetraFactory::create_lu_solver(MPI_Comm comm, std::string method) const
 {
   return std::make_shared<Amesos2LUSolver>(method);

@@ -1,14 +1,35 @@
 Change log
 ==========
 
-dev
----
+2017.2.0 (unreleased)
+---------------------
 
+- Nothing changed yet
+
+2017.1.0 (2017-05-09)
+---------------------
+
+- Refactor PETScLUSolver to use functionality from
+  PETScKrylovSolver. Simplify interface for solving transposed
+  systems. Fixes #815.
+- Switch default Python version to Python 3. Use
+  `-DDOLFIN_USE_PYTHON3=off` to build with Python 2.
+- Remove redundant ``solve_transpose`` functions (use solve with bool
+  argument instead)
 - Remove OpenMpAsssmebler
 - Remove MPI communicator as argument in GenericVector::init functions
   (communicator should be passed via constructor)
 - Remove ``Function::operator[+-*/]`` to prevent memory corruption problems
   (does not affect Python interface)
+- Fix XDMF3 output of time series. The default output method is now to assume
+  that all functions have different meshes, and that the meshes change from
+  time step to time step. Two parameters control the output, one limits each
+  function to only one mesh for the whole time series, turn off the default
+  on parameter ``rewrite_function_mesh`` to enable this. You can also make
+  all functions share the same mesh and time series, which currently is better
+  supported in Paraview than the alternative, turn on ``functions_share_mesh``
+  for this. These two parameters can also be combined in case all functions
+  share the same mesh at all time steps. This creates minimal size files.
 - Add ``PETScSNESSolver`` and ``PETScTAOSolver`` constructor accepting
   both communicator and type
 - Expression("f[0]*f[1]", f=obj) notation now supported for non-scalar

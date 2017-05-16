@@ -39,6 +39,8 @@ namespace dolfin
   class Parameters;
   class Table;
 
+  /// Base class for file I/O objects
+
   class GenericFile
   {
   public:
@@ -111,9 +113,9 @@ namespace dolfin
     virtual void operator<< (const std::map<std::size_t, double>& map);
     virtual void operator<< (const std::map<std::size_t, std::vector<int>>& array_map);
     virtual void operator<< (const std::map<std::size_t,
-                             std::vector<std::size_t> >& array_map);
+                             std::vector<std::size_t>>& array_map);
     virtual void operator<< (const std::map<std::size_t,
-                             std::vector<double> >& array_map);
+                             std::vector<double>>& array_map);
 
     void _read();
     void _write(std::size_t process_number);

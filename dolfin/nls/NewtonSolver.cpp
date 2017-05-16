@@ -68,8 +68,8 @@ NewtonSolver::NewtonSolver(MPI_Comm comm,
                            std::shared_ptr<GenericLinearSolver> solver,
                            GenericLinearAlgebraFactory& factory)
   : Variable("Newton solver", "unnamed"), _newton_iteration(0),
-    _relaxation_parameter(1.0), _residual(0.0), _residual0(0.0),
-    _solver(solver), _matA(factory.create_matrix(comm)),
+    _krylov_iterations(0), _relaxation_parameter(1.0), _residual(0.0),
+    _residual0(0.0), _solver(solver), _matA(factory.create_matrix(comm)),
     _matP(factory.create_matrix(comm)), _dx(factory.create_vector(comm)),
     _b(factory.create_vector(comm)), _mpi_comm(comm)
 {
@@ -119,8 +119,8 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   _solver->update_parameters(parameters(_solver->parameter_type()));
 
   // Reset iteration counts
-  std::size_t krylov_iterations = 0;
   _newton_iteration = 0;
+  _krylov_iterations = 0;
 
   // Compute F(u)
   nonlinear_problem.form(*_matA, *_matP, *_b, x);
@@ -158,7 +158,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     // iterations
     if (!_dx->empty())
       _dx->zero();
-    krylov_iterations += _solver->solve(*_dx, *_b);
+    _krylov_iterations += _solver->solve(*_dx, *_b);
 
     // Update solution
     update_solution(x, *_dx, _relaxation_parameter,
@@ -198,7 +198,7 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     if (dolfin::MPI::rank(_mpi_comm) == 0)
     {
       info("Newton solver finished in %d iterations and %d linear solver iterations.",
-           _newton_iteration, krylov_iterations);
+           _newton_iteration, _krylov_iterations);
     }
   }
   else
@@ -231,9 +231,19 @@ std::size_t NewtonSolver::iteration() const
   return _newton_iteration;
 }
 //-----------------------------------------------------------------------------
+std::size_t NewtonSolver::krylov_iterations() const
+{
+  return _krylov_iterations;
+}
+//-----------------------------------------------------------------------------
 double NewtonSolver::residual() const
 {
   return _residual;
+}
+//-----------------------------------------------------------------------------
+double NewtonSolver::residual0() const
+{
+  return _residual0;
 }
 //-----------------------------------------------------------------------------
 double NewtonSolver::relative_residual() const

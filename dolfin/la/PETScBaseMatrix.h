@@ -76,8 +76,9 @@ namespace dolfin
     /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
-    /// *Arguments*
-    ///     dim (std::size_t)
+    /// @param z (GenericVector&)
+    ///         Vector to initialise
+    /// @param      dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
     void init_vector(GenericVector& z, std::size_t dim) const;
 

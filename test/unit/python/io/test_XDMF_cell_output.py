@@ -25,6 +25,7 @@ from dolfin_utils.test import *
 ghost_mode = set_parameters_fixture("ghost_mode", ["shared_vertex", "none"])
 
 @skip_if_not_HDF5
+@xfail_with_serial_hdf5_in_parallel
 def test_xdmf_cell_scalar_ghost(cd_tempdir, ghost_mode):
     n = 8
     mesh = UnitSquareMesh(n, n)
@@ -33,14 +34,12 @@ def test_xdmf_cell_scalar_ghost(cd_tempdir, ghost_mode):
     E = Expression("x[0]", degree=1)
     F.interpolate(E)
 
-    xdmf = XDMFFile(mesh.mpi_comm(), "dg0.xdmf")
-    xdmf.write(F)
-    del xdmf
-
-    hdf = HDF5File(mesh.mpi_comm(), "dg0.h5", "r")
-    vec = Vector()
-    hdf.read(vec, "/VisualisationVector/0", False)
-    del hdf
-
+    with XDMFFile(mesh.mpi_comm(), "dg0.xdmf") as xdmf:
+        xdmf.write(F)
+    
+    with HDF5File(mesh.mpi_comm(), "dg0.h5", "r") as hdf:
+        vec = Vector()
+        hdf.read(vec, "/VisualisationVector/0", False)
+    
     area = MPI.sum(mesh.mpi_comm(), sum(vec.array()))
     assert abs(n*n - area) < 1e-9

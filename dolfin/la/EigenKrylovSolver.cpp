@@ -366,7 +366,7 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
   const int num_iterations = solver.iterations();
 
   // Handle case that solver fails to converge
-  bool error_on_nonconvergence = parameters["error_on_nonconvergence"].is_set() ? parameters["error_on_nonconvergence"].is_set() : false;
+  bool error_on_nonconvergence = parameters["error_on_nonconvergence"].is_set() ? parameters["error_on_nonconvergence"] : true;
   if (solver.info() != Eigen::Success)
   {
     if (num_iterations >= solver.maxIterations())

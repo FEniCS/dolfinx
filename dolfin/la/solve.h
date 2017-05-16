@@ -58,7 +58,7 @@ namespace dolfin
   /// backend
   void list_krylov_solver_preconditioners();
 
-  // Return true if a specific linear algebra backend is supported
+  /// Return true if a specific linear algebra backend is supported
   bool has_linear_algebra_backend(std::string backend);
 
   /// Return true if LU method for the current linear algebra backend is

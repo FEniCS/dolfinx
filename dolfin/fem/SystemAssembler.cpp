@@ -560,7 +560,8 @@ void SystemAssembler::facet_wise_assembly(
     = exterior_facet_domains && !exterior_facet_domains->empty();
 
   // Indicator whether or not tensor is required
-  std::array<bool, 2> tensor_required_cell, tensor_required_facet;
+  std::array<bool, 2> tensor_required_cell = {{false, false}};
+  std::array<bool, 2> tensor_required_facet = {{false, false}};
 
   // Track whether or not cell contribution has been computed
   std::array<bool, 2> compute_cell_tensor = {{true, true}};

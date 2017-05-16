@@ -40,6 +40,8 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
 {
   // Set parallel access with communicator
   const hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
+
+#ifdef H5_HAVE_PARALLEL
   if (use_mpi_io)
   {
     #ifdef HAS_MPI
@@ -54,6 +56,7 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
                  "Cannot use MPI-IO output if DOLFIN is not configured with MPI");
     #endif
   }
+#endif
 
   hid_t file_id = HDF5_FAIL;
   if (mode == "w")
@@ -441,19 +444,23 @@ HDF5Interface::dataset_list(const hid_t hdf5_file_handle,
 void HDF5Interface::set_mpi_atomicity(const hid_t hdf5_file_handle,
                                       const bool atomic)
 {
+#ifdef H5_HAVE_PARALLEL
   herr_t status = H5Fset_mpi_atomicity(hdf5_file_handle, atomic);
   if (status == HDF5_FAIL) dolfin_error("HDF5Interface.cpp",
                                         "set MPI atomicity flag",
                                         "Setting the MPI atomicity flag failed");
+#endif
 }
 //-----------------------------------------------------------------------------
 bool HDF5Interface::get_mpi_atomicity(const hid_t hdf5_file_handle)
 {
-  hbool_t atomic;
+  hbool_t atomic = false;
+#ifdef H5_HAVE_PARALLEL
   herr_t status = H5Fget_mpi_atomicity(hdf5_file_handle, &atomic);
   if (status == HDF5_FAIL) dolfin_error("HDF5Interface.cpp",
                                         "get MPI atomicity flag",
                                         "Getting the MPI atomicity flag failed");
+#endif
   return (bool) atomic;
 }
 //-----------------------------------------------------------------------------

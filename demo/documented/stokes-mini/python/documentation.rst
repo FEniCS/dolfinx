@@ -42,17 +42,18 @@ following way:
 
 Next, we define a :py:class:`FunctionSpace
 <dolfin.functions.functionspace.FunctionSpace>` on Mini element
-``(P1 + B) * Q``. UFL object ``P1 + B`` stands for the vectorial
-Lagrange element of degree 1 enriched with the cubic Bubble.
-``(P1 + B) * Q`` defines the mixed element for velocity and pressure.
+``V * Q``. UFL object ``V = VectorElement(P1 + B)`` stands for
+the vectorial Lagrange element of degree 1 enriched with the cubic
+Bubble. ``V * Q`` defines the mixed element for velocity and pressure.
 
 .. code-block:: python
 
     # Build function spaces on Mini element
-    P1 = VectorElement("Lagrange", mesh.ufl_cell(), 1)
-    B = VectorElement("Bubble",   mesh.ufl_cell(), 3)
-    Q = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    W = FunctionSpace(mesh, (P1 + B) * Q)
+    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    B = FiniteElement("Bubble",   mesh.ufl_cell(), 3)
+    V = VectorElement(P1 + B)
+    Q = P1
+    W = FunctionSpace(mesh, V * Q)
 
 Now that we have our mixed function space and marked subdomains
 defining the boundaries, we define boundary conditions:

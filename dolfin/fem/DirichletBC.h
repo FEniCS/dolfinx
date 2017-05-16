@@ -55,16 +55,13 @@ namespace dolfin
   class SubDomain;
   template<typename T> class MeshFunction;
 
-  /// This class specifies the interface for setting (strong)
-  /// Dirichlet boundary conditions for partial differential
-  /// equations,
+  /// Interface for setting (strong) Dirichlet boundary conditions.
+
   ///
-  /// .. math::
+  ///     u = g on G,
   ///
-  ///     u = g \hbox{ on } G,
-  ///
-  /// where :math:`u` is the solution to be computed, :math:`g` is a function
-  /// and :math:`G` is a sub domain of the mesh.
+  /// where u is the solution to be computed, g is a function
+  /// and G is a sub domain of the mesh.
   ///
   /// A DirichletBC is specified by the function g, the function space
   /// (trial space) and boundary indicators on (a subset of) the mesh
@@ -123,25 +120,27 @@ namespace dolfin
   /// by some methods on a first apply(). This means that changing a
   /// supplied object (defining boundary subdomain) after first use may
   /// have no effect. But this is implementation and method specific.
+
   class DirichletBC : public Hierarchical<DirichletBC>, public Variable
   {
 
   public:
 
+    /// map type used by DirichletBC
     typedef std::unordered_map<std::size_t, double> Map;
 
     /// Create boundary condition for subdomain
     ///
-    /// *Arguments*
-    ///     V (_FunctionSpace_)
+    /// @param[in] V (FunctionSpace)
     ///         The function space
-    ///     g (_GenericFunction_)
+    /// @param[in] g (GenericFunction)
     ///         The value
-    ///     sub_domain (_SubDomain_)
+    /// @param[in] sub_domain (SubDomain)
     ///         The subdomain
-    ///     method (std::string)
+    /// @param[in] method (std::string)
     ///         Optional argument: A string specifying
     ///         the method to identify dofs
+    /// @param[in] check_midpoint (bool)
     DirichletBC(std::shared_ptr<const FunctionSpace> V,
                 std::shared_ptr<const GenericFunction> g,
                 std::shared_ptr<const SubDomain> sub_domain,
@@ -150,16 +149,15 @@ namespace dolfin
 
     /// Create boundary condition for subdomain specified by index
     ///
-    /// *Arguments*
-    ///     V (_FunctionSpace_)
+    /// @param[in] V (FunctionSpace)
     ///         The function space.
-    ///     g (_GenericFunction_)
+    /// @param[in] g (GenericFunction)
     ///         The value.
-    ///     sub_domains (_MeshFunction_ <std::size_t>)
+    /// @param[in] sub_domains (MeshFnunction<std::size_t>)
     ///         Subdomain markers
-    ///     sub_domain (std::size_t)
+    /// @param[in] sub_domain (std::size_t)
     ///         The subdomain index (number)
-    ///     method (std::string)
+    /// @param[in] method (std::string)
     ///         Optional argument: A string specifying the
     ///         method to identify dofs.
     DirichletBC(std::shared_ptr<const FunctionSpace> V,
@@ -171,14 +169,13 @@ namespace dolfin
     // TODO: Remove/deprecate this function
     /// Create boundary condition for boundary data included in the mesh
     ///
-    /// *Arguments*
-    ///     V (_FunctionSpace_)
+    /// @param[in] V (FunctionSpace)
     ///         The function space.
-    ///     g (_GenericFunction_)
+    /// @param[in]  g (GenericFunction)
     ///         The value.
-    ///     sub_domain (std::size_t)
+    /// @param[in] sub_domain (std::size_t)
     ///         The subdomain index (number)
-    ///     method (std::string)
+    /// @param[in] method (std::string)
     ///         Optional argument: A string specifying the
     ///         method to identify dofs.
     DirichletBC(std::shared_ptr<const FunctionSpace> V,
@@ -189,14 +186,13 @@ namespace dolfin
     /// Create boundary condition for subdomain by boundary markers
     /// (cells, local facet numbers)
     ///
-    /// *Arguments*
-    ///     V (_FunctionSpace_)
+    /// @param[in] V (FunctionSpace)
     ///         The function space.
-    ///     g (_GenericFunction_)
+    /// @param[in] g (GenericFunction)
     ///         The value.
-    ///     markers (std::vector<std::size_t>)
+    /// @param[in] markers (std::vector<std:size_t>&)
     ///         Subdomain markers (facet index local to process)
-    ///     method (std::string)
+    /// @param[in] method (std::string)
     ///         Optional argument: A string specifying the
     ///         method to identify dofs.
     DirichletBC(std::shared_ptr<const FunctionSpace> V,
@@ -206,8 +202,7 @@ namespace dolfin
 
     /// Copy constructor. Either cached DOF data are copied.
     ///
-    /// *Arguments*
-    ///     bc (_DirichletBC_)
+    /// @param[in] bc (DirichletBC&)
     ///         The object to be copied.
     DirichletBC(const DirichletBC& bc);
 
@@ -216,51 +211,45 @@ namespace dolfin
 
     /// Assignment operator. Either cached DOF data are assigned.
     ///
-    /// *Arguments*
-    ///     bc (_DirichletBC_)
+    /// @param[in] bc (DirichletBC)
     ///         Another DirichletBC object.
     const DirichletBC& operator= (const DirichletBC& bc);
 
     /// Apply boundary condition to a matrix
     ///
-    /// *Arguments*
-    ///     A (_GenericMatrix_)
+    /// @param[in,out] A (GenericMatrix)
     ///         The matrix to apply boundary condition to.
     void apply(GenericMatrix& A) const;
 
     /// Apply boundary condition to a vector
     ///
-    /// *Arguments*
-    ///     b (_GenericVector_)
+    /// @param[in,out] b (GenericVector)
     ///         The vector to apply boundary condition to.
     void apply(GenericVector& b) const;
 
     /// Apply boundary condition to a linear system
     ///
-    /// *Arguments*
-    ///     A (_GenericMatrix_)
+    /// @param[in,out] A (GenericMatrix)
     ///         The matrix to apply boundary condition to.
-    ///     b (_GenericVector_)
+    /// @param[in,out] b (GenericVector)
     ///         The vector to apply boundary condition to.
     void apply(GenericMatrix& A, GenericVector& b) const;
 
     /// Apply boundary condition to vectors for a nonlinear problem
     ///
-    /// *Arguments*
-    ///     b (_GenericVector_)
+    /// @param[in,out] b (GenericVector)
     ///         The vector to apply boundary conditions to.
-    ///     x (_GenericVector_)
+    /// @param[in] x (GenericVector)
     ///         Another vector (nonlinear problem).
     void apply(GenericVector& b, const GenericVector& x) const;
 
     /// Apply boundary condition to a linear system for a nonlinear problem
     ///
-    /// *Arguments*
-    ///     A (_GenericMatrix_)
+    /// @param[in,out] A (GenericMatrix)
     ///         The matrix to apply boundary conditions to.
-    ///     b (_GenericVector_)
+    /// @param[in,out] b (GenericVector)
     ///         The vector to apply boundary conditions to.
-    ///     x (_GenericVector_)
+    /// @param[in] x (GenericVector)
     ///         Another vector (nonlinear problem).
     void apply(GenericMatrix& A, GenericVector& b,
                const GenericVector& x) const;
@@ -271,8 +260,7 @@ namespace dolfin
     /// facet on the boundary. To ensure all local boundary dofs are marked,
     /// it is necessary to call gather() on the returned boundary values.
     ///
-    /// *Arguments*
-    ///     boundary_values (std::unordered_map<std::size_t, double>)
+    /// @param[in,out] boundary_values (Map&)
     ///         Map from dof to boundary value.
     void get_boundary_values(Map& boundary_values) const;
 
@@ -280,16 +268,14 @@ namespace dolfin
     /// "pointwise" is used, this is necessary to ensure all boundary dofs are
     /// marked on all processes.
     ///
-    /// *Arguments*
-    ///     boundary_values (std::unordered_map<std::size_t, double>)
+    /// @param[in,out] boundary_values (Map&)
     ///         Map from dof to boundary value.
     void gather(Map& boundary_values) const;
 
     /// Make rows of matrix associated with boundary condition zero,
     /// useful for non-diagonal matrices in a block matrix.
     ///
-    /// *Arguments*
-    ///     A (_GenericMatrix_)
+    /// @param[in,out] A (GenericMatrix&)
     ///         The matrix
     void zero(GenericMatrix& A) const;
 
@@ -297,50 +283,44 @@ namespace dolfin
     /// zero, and update a (right-hand side) vector to reflect the
     /// changes. Useful for non-diagonals.
     ///
-    /// *Arguments*
-    ///     A (_GenericMatrix_)
+    /// @param[in,out] A (GenericMatrix&)
     ///         The matrix
-    ///     b (_GenericVector_)
+    /// @param[in,out] b (GenericVector&)
     ///         The vector
-    ///     diag_val (double)
+    /// @param[in] diag_val (double)
     ///         This parameter would normally be -1, 0 or 1.
     void zero_columns(GenericMatrix& A, GenericVector& b,
                       double diag_val=0) const;
 
     /// Return boundary markers
     ///
-    /// *Returns*
-    ///     std::vector<std::pair<std::size_t, std::size_t>>
+    /// @return std::vector<std::size_t>&
     ///         Boundary markers (facets stored as pairs of cells and
     ///         local facet numbers).
     const std::vector<std::size_t>& markers() const;
 
     /// Return function space V
     ///
-    /// *Returns*
-    ///     _FunctionSpace_
+    /// @return FunctionSpace
     ///         The function space to which boundary conditions are applied.
     std::shared_ptr<const FunctionSpace> function_space() const
     { return _function_space; }
 
     /// Return boundary value g
     ///
-    /// *Returns*
-    ///     _GenericFunction_
+    /// @return GenericFunction
     ///         The boundary values.
     std::shared_ptr<const GenericFunction> value() const;
 
     /// Return shared pointer to subdomain
     ///
-    /// *Returns*
-    ///     _SubDomain_
+    /// @return SubDomain
     ///         Shared pointer to subdomain.
     std::shared_ptr<const SubDomain> user_sub_domain() const;
 
     /// Set value g for boundary condition, domain remains unchanged
     ///
-    /// *Arguments*
-    ///     g (_GenericFunction_)
+    /// @param[in] g (GenericFucntion)
     ///         The value.
     void set_value(std::shared_ptr<const GenericFunction> g);
 
@@ -349,13 +329,13 @@ namespace dolfin
 
     /// Return method used for computing Dirichlet dofs
     ///
-    /// *Returns*
-    ///     std::string
+    /// @return std::string
     ///         Method used for computing Dirichlet dofs ("topological",
     ///         "geometric" or "pointwise").
     std::string method() const;
 
     /// Default parameter values
+    /// @return Parameters
     static Parameters default_parameters()
     {
       Parameters p("dirichlet_bc");
