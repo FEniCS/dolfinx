@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-03-01
+// Last changed: 2017-03-15
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -128,25 +128,25 @@ namespace dolfin
     // [C] Compute collision by solving for intersection points (3)
     // [D] Delegate computation to [P] or [C] for subsimplices (7)
     //
-    // [P] intersection_point_point_1d               <-- needs review
-    // [P] intersection_point_point_2d               <-- needs review
-    // [P] intersection_point_point_3d               <-- needs review
-    // [P] intersection_segment_point_1d             <-- needs review
-    // [P] intersection_segment_point_2d             <-- needs review
-    // [P] intersection_segment_point_3d             <-- needs review
-    // [P] intersection_triangle_point_2d            <-- needs review
-    // [P] intersection_triangle_point_3d            <-- needs review
-    // [P] intersection_tetrahedron_point_3d         <-- needs review
-    // [D] intersection_segment_segment_1d           <-- needs review
-    // [C] intersection_segment_segment_2d           <-- needs review
+    // [P] intersection_point_point_1d
+    // [P] intersection_point_point_2d
+    // [P] intersection_point_point_3d
+    // [P] intersection_segment_point_1d
+    // [P] intersection_segment_point_2d
+    // [P] intersection_segment_point_3d
+    // [P] intersection_triangle_point_2d
+    // [P] intersection_triangle_point_3d
+    // [P] intersection_tetrahedron_point_3d
+    // [D] intersection_segment_segment_1d
+    // [C] intersection_segment_segment_2d
     // [C] intersection_segment_segment_3d           <-- not used/implemented
-    // [D] intersection_triangle_segment_2d          <-- needs review
+    // [D] intersection_triangle_segment_2d
     // [C] intersection_triangle_segment_3d          <-- needs review
-    // [D] intersection_tetrahedron_segment_3d       <-- needs review
-    // [D] intersection_triangle_triangle_2d         <-- needs review
-    // [D] intersection_triangle_triangle_3d         <-- needs review
-    // [D] intersection_tetrahedron_triangle_3d      <-- needs review
-    // [D] intersection_tetrahedron_tetrahedron_3d   <-- needs review
+    // [D] intersection_tetrahedron_segment_3d
+    // [D] intersection_triangle_triangle_2d
+    // [D] intersection_triangle_triangle_3d
+    // [D] intersection_tetrahedron_triangle_3d
+    // [D] intersection_tetrahedron_tetrahedron_3d
     //
     // Note that intersection_segment_segment_3d is not used/implemented.
     // In summary, this means that there are only two functions that require
@@ -224,18 +224,6 @@ namespace dolfin
                                     const Point& p1,
                                     const Point& q0,
                                     const Point& q1);
-
-    static std::vector<Point>
-    intersection_segment_segment_2d_old(const Point& p0,
-                                        const Point& p1,
-                                        const Point& q0,
-                                        const Point& q1);
-
-    static std::vector<Point>
-    intersection_segment_segment_2d_new(const Point& p0,
-                                        const Point& p1,
-                                        const Point& q0,
-                                        const Point& q1);
 
     /// Compute intersection of segment p0-p1 with segment q0-q1 (3D)
     static std::vector<Point>
