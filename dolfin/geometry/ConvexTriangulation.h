@@ -69,8 +69,6 @@ namespace dolfin
     _triangulate_bowyer_watson(std::vector<Point> p,
 			       std::size_t gdim);
 
-
-
     // Help class for Bowyer Watson
     struct Edge
     {
