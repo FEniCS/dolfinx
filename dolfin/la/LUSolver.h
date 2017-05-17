@@ -20,7 +20,7 @@
 
 #include <string>
 #include <memory>
-#include "GenericLUSolver.h"
+#include "GenericLinearSolver.h"
 #include <dolfin/common/MPI.h>
 
 namespace dolfin
@@ -32,7 +32,7 @@ namespace dolfin
 
   /// LU solver for the built-in LA backends.
 
-  class LUSolver : public GenericLUSolver
+  class LUSolver : public GenericLinearSolver
   {
   public:
 
@@ -75,6 +75,10 @@ namespace dolfin
       p.add("reuse_factorization", false);   // deprecated
       return p;
     }
+
+    /// Return parameter type: "krylov_solver" or "lu_solver"
+    std::string parameter_type() const
+    { return "lu_solver"; }
 
     /// Update solver parameters (pass parameters down to wrapped
     /// implementation)

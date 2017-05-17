@@ -136,11 +136,25 @@ def main():
        os.path.join(demodir, 'documented',   'maxwell-eigenvalues',        'cpp'),
        ]
 
+    # Check if we should run only Python tests, use for quick testing
+    if (len(sys.argv) == 2 and sys.argv[1] == "--only-python") or \
+       "DISABLE_CPP_TESTING" in os.environ:
+        only_python = True
+    else:
+        only_python = False
+
+    # Check if we should run only C++ tests
+    if (len(sys.argv) == 2 and sys.argv[1] == "--only-cpp") or \
+       "DISABLE_PYTHON_TESTING" in os.environ:
+        only_cpp = True
+    else:
+        only_cpp = False
+
     # Demos to run
     cppdemos = []
     pydemos = []
     for dpath, dnames, fnames in os.walk(demodir):
-        if os.path.basename(dpath) == 'cpp':
+        if os.path.basename(dpath) == 'cpp' and not only_python:
             if os.path.isfile(os.path.join(dpath, 'Makefile')):
                 cppdemos.append(dpath)
                 assert not dpath in not_implemented, \
@@ -148,7 +162,7 @@ def main():
             else:
                 assert dpath in not_implemented, \
                     "Non-existing demo '%s' not marked as not_implemented" % dpath
-        elif os.path.basename(dpath) == 'python':
+        elif os.path.basename(dpath) == 'python' and not only_cpp:
             tmp = dpath.split(os.path.sep)[-2]
             if os.path.isfile(os.path.join(dpath, 'demo_' + tmp + '.py')):
                 pydemos.append(dpath)
@@ -215,20 +229,6 @@ def main():
 
     failed = []
     timing = []
-
-    # Check if we should run only Python tests, use for quick testing
-    if (len(sys.argv) == 2 and sys.argv[1] == "--only-python") or \
-       "DISABLE_CPP_TESTING" in os.environ:
-        only_python = True
-    else:
-        only_python = False
-
-    # Check if we should run only C++ tests
-    if (len(sys.argv) == 2 and sys.argv[1] == "--only-cpp") or \
-       "DISABLE_PYTHON_TESTING" in os.environ:
-        only_cpp = True
-    else:
-        only_cpp = False
 
     # Check if we should skip C++ demos
     if only_python:

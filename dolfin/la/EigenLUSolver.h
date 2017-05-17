@@ -23,8 +23,7 @@
 
 #include <dolfin/common/types.h>
 #include <Eigen/Dense>
-
-#include "GenericLUSolver.h"
+#include "GenericLinearSolver.h"
 
 namespace dolfin
 {
@@ -37,7 +36,7 @@ namespace dolfin
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b.
 
-  class EigenLUSolver : public GenericLUSolver
+  class EigenLUSolver : public GenericLinearSolver
   {
   public:
 
@@ -79,6 +78,10 @@ namespace dolfin
 
     /// Default parameter values
     static Parameters default_parameters();
+
+    /// Return parameter type: "krylov_solver" or "lu_solver"
+    std::string parameter_type() const
+    { return "lu_solver"; }
 
   private:
 

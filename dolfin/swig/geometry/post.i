@@ -32,11 +32,51 @@
 //=============================================================================
 
 //-----------------------------------------------------------------------------
-// Extend Point interface with Python selectors
+// Extend Point with Python sequence interface
 //-----------------------------------------------------------------------------
-%feature("docstring") dolfin::Point::__getitem__ "Missing docstring";
-%feature("docstring") dolfin::Point::__setitem__ "Missing docstring";
 %extend dolfin::Point {
-  double __getitem__(int i) { return (*self)[i]; }
-  void __setitem__(int i, double val) { (*self)[i] = val; }
+  // Wrap operator[] (now without bound checks)
+  double _getitem(std::size_t i)
+  {
+    return (*self)[i];
+  }
+
+  void _setitem(std::size_t i, double val)
+  {
+    (*self)[i] = val;
+  }
+
+  // Implement type and bound checks assuming Point is 3D
+  %pythoncode %{
+    def __len__(self):
+        return 3
+
+    def __getitem__(self, i):
+        "Get i-th coordinate. Only accept integer, or full slice."
+        if i == slice(None):
+            return self.array()
+        else:
+            return self._getitem(self._check_index(i))
+
+    def __setitem__(self, i, value):
+        "Set i-th coordinate. Only accept integer, or full slice."
+        if i == slice(None):
+            for j, v in enumerate(value):
+                self[j] = v  # Range check in this call
+        else:
+            self._setitem(self._check_index(i), value)
+
+    from numpy import uintp as _uintp
+
+    def _check_index(self, i):
+        "Check index is convertible to uintp and in range(2)"
+        try:
+            i = self._uintp(i)
+        except TypeError:
+            raise TypeError("Point indexing only supported for "
+                            "integers and full slices")
+        if i > 2:
+            raise IndexError("Dimension of Point is always 3")
+        return i
+  %}
 }
