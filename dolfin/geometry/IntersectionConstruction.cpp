@@ -1,4 +1,4 @@
-// Copyright (C) 2014-2016 Anders Logg, August Johansson and Benjamin Kehlet
+// Copyright (C) 2014-2017 Anders Logg, August Johansson and Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //

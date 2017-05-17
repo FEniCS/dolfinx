@@ -43,8 +43,7 @@ namespace dolfin
     ///     order (std::size_t)
     ///         The order of convergence of the quadrature rule.
     ///
-    SimplexQuadrature(std::size_t tdim,
-		      std::size_t order);
+    SimplexQuadrature(std::size_t tdim, std::size_t order);
 
     /// Compute quadrature rule for cell.
     ///
@@ -60,7 +59,7 @@ namespace dolfin
     ///         corresponding array of quadrature weights.
     std::pair<std::vector<double>, std::vector<double>>
     compute_quadrature_rule(const Cell& cell,
-			    std::size_t order) const;
+			                std::size_t order) const;
 
     /// Compute quadrature rule for simplex.
     ///
@@ -80,8 +79,8 @@ namespace dolfin
     ///         corresponding array of quadrature weights.
     std::pair<std::vector<double>, std::vector<double>>
     compute_quadrature_rule(const std::vector<Point>& coordinates,
-			    std::size_t gdim,
-			    std::size_t order) const;
+			                std::size_t gdim,
+                            std::size_t order) const;
 
     /// Compute quadrature rule for interval.
     ///
@@ -99,8 +98,8 @@ namespace dolfin
     ///         corresponding array of quadrature weights.
     std::pair<std::vector<double>, std::vector<double>>
     compute_quadrature_rule_interval(const std::vector<Point>& coordinates,
-				     std::size_t gdim,
-				     std::size_t order) const;
+				                     std::size_t gdim, 
+                                     std::size_t order) const;
 
     /// Compute quadrature rule for triangle.
     ///
@@ -118,8 +117,8 @@ namespace dolfin
     ///         corresponding array of quadrature weights.
     std::pair<std::vector<double>, std::vector<double>>
     compute_quadrature_rule_triangle(const std::vector<Point>& coordinates,
-				     std::size_t gdim,
-				     std::size_t order) const;
+                                     std::size_t gdim,
+                                    std::size_t order) const;
 
     /// Compute quadrature rule for tetrahedron.
     ///
@@ -137,8 +136,8 @@ namespace dolfin
     ///         corresponding array of quadrature weights.
     std::pair<std::vector<double>, std::vector<double>>
     compute_quadrature_rule_tetrahedron(const std::vector<Point>& coordinates,
-					std::size_t gdim,
-					std::size_t order) const;
+					                    std::size_t gdim,
+					                   std::size_t order) const;
 
     /// Compress a quadrature rule using algorithms from
     ///     Compression of multivariate discrete measures and applications
@@ -160,8 +159,8 @@ namespace dolfin
     ///         if no compression was made)
     static std::vector<std::size_t>
     compress(std::pair<std::vector<double>, std::vector<double>>& qr,
-	     std::size_t gdim,
-	     std::size_t quadrature_order);
+	         std::size_t gdim,
+	         std::size_t quadrature_order);
 
   private:
 
@@ -169,7 +168,6 @@ namespace dolfin
     void setup_qr_reference_interval(std::size_t order);
     void setup_qr_reference_triangle(std::size_t order);
     void setup_qr_reference_tetrahedron(std::size_t order);
-
 
     // Utility function for computing a Vandermonde type matrix in a
     // Chebyshev basis
@@ -195,9 +193,14 @@ namespace dolfin
     choose(std::size_t n,
 	   std::size_t k);
 
+    // The following code has been copied from
+    //
+    // https://people.sc.fsu.edu/~jburkardt/cpp_src/triangle_dunavant_rule/triangle_dunavant_rule.cpp
+    //
+    // License: LGPL
+
     // Compute Duanvant quadrature rules for triangle
-    // Taken from
-    //  https://people.sc.fsu.edu/~jburkardt/cpp_src/triangle_dunavant_rule/triangle_dunavant_rule.cpp
+
     static void dunavant_rule(std::size_t order,
 			      std::vector<std::vector<double> >& p,
 			      std::vector<double>& w);
@@ -271,9 +274,14 @@ namespace dolfin
     static int i4_modp(int i, int j);
     static int i4_wrap(int ival, int ilo, int ihi);
 
-    // Compute Gauss-Legendre quadrature rules for line
-    // Taken from
+    // The following code has been copied from
+    //
     // https://people.sc.fsu.edu/~jburkardt/cpp_src/legendre_rule_fast/legendre_rule_fast.cpp
+    //
+    // License: LGPL
+
+    // Compute Gauss-Legendre quadrature rules for line
+
     static void legendre_compute_glr(std::size_t n,
 				     std::vector<double>& x,
 				     std::vector<double>& w);

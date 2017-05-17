@@ -52,7 +52,7 @@ namespace dolfin
     }
 
     /// Compute determinant of 3 x 3 matrix defined by vectors, ab, dc, ec
-    inline double determinan(const Point& ab, const Point& dc, const Point& ec)
+    inline double determinant(const Point& ab, const Point& dc, const Point& ec)
     {
       const double a = ab.x(), b = ab.y(), c = ab.z();
       const double d = dc.x(), e = dc.y(), f = dc.z();

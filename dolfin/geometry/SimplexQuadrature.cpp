@@ -28,8 +28,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SimplexQuadrature::SimplexQuadrature(std::size_t tdim,
-				     std::size_t order)
+SimplexQuadrature::SimplexQuadrature(std::size_t tdim, std::size_t order)
 {
   // Create and store quadrature rule for reference simplex
   switch (tdim)
@@ -106,8 +105,8 @@ std::pair<std::vector<double>, std::vector<double>>
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double>>
   SimplexQuadrature::compute_quadrature_rule_interval(const std::vector<Point>& coordinates,
-						      std::size_t gdim,
-						      std::size_t order) const
+						                                          std::size_t gdim,
+						                                          std::size_t order) const
 {
   log(PROGRESS, "Create quadrature rule using given interval coordinates");
 
@@ -176,8 +175,8 @@ std::pair<std::vector<double>, std::vector<double>>
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double>>
   SimplexQuadrature::compute_quadrature_rule_triangle(const std::vector<Point>& coordinates,
-						      std::size_t gdim,
-						      std::size_t order) const
+						                                          std::size_t gdim,
+						                                          std::size_t order) const
 {
   log(PROGRESS, "Create quadrature rule using given triangle coordinates");
 
@@ -243,8 +242,8 @@ std::pair<std::vector<double>, std::vector<double>>
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double>>
   SimplexQuadrature::compute_quadrature_rule_tetrahedron(const std::vector<Point>& coordinates,
-							 std::size_t gdim,
-							 std::size_t order) const
+							                                           std::size_t gdim,
+							                                           std::size_t order) const
 {
   log(PROGRESS, "Create quadrature rule using given tetrahedron coordinates");
 
@@ -300,8 +299,8 @@ std::pair<std::vector<double>, std::vector<double>>
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>
 SimplexQuadrature::compress(std::pair<std::vector<double>, std::vector<double>>& qr,
-			    std::size_t gdim,
-			    std::size_t quadrature_order)
+			                      std::size_t gdim,
+			                      std::size_t quadrature_order)
 {
   // Polynomial degree N that can be integrated exactly using the qr_base
   const std::size_t N = quadrature_order;
@@ -603,7 +602,6 @@ Eigen::MatrixXd SimplexQuadrature::Chebyshev_Vandermonde_matrix
 
   return V;
 }
-
 //-----------------------------------------------------------------------------
 std::vector<Eigen::VectorXd>
 SimplexQuadrature::Chebyshev_polynomial(const Eigen::VectorXd& x,
@@ -631,7 +629,6 @@ SimplexQuadrature::Chebyshev_polynomial(const Eigen::VectorXd& x,
 
   return T;
 }
-
 //-----------------------------------------------------------------------------
 std::vector<std::vector<std::size_t>>
 SimplexQuadrature::grlex(std::size_t gdim,
