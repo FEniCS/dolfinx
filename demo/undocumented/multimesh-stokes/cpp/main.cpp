@@ -21,11 +21,14 @@
 // This demo program solves the Stokes equations on a domain defined
 // by three overlapping and non-matching meshes.
 
+#include "boost/format.hpp"
 #include <dolfin.h>
 #include "MultiMeshStokes.h"
 
 using namespace dolfin;
+using namespace boost;
 using std::make_shared;
+
 
 // Value for inflow boundary condition for velocity
 class InflowValue : public Expression
@@ -131,40 +134,19 @@ int main(int argc, char* argv[])
   bc2->apply(*A, *b);
 
   // Compute solution
-  MultiMeshFunction w(W);
-  solve(*A, *w.vector(), *b);
+  auto w = make_shared<MultiMeshFunction>(W);
+  solve(*A, *w->vector(), *b);
 
-  // Extract solution components
-  Function& u0 = (*w.part(0))[0];
-  Function& u1 = (*w.part(1))[0];
-  Function& u2 = (*w.part(2))[0];
-  Function& p0 = (*w.part(0))[1];
-  Function& p1 = (*w.part(1))[1];
-  Function& p2 = (*w.part(2))[1];
-
-  // Save to file
-  File u0_file("u0.pvd");
-  File u1_file("u1.pvd");
-  File u2_file("u2.pvd");
-  File p0_file("p0.pvd");
-  File p1_file("p1.pvd");
-  File p2_file("p2.pvd");
-  u0_file << u0;
-  u1_file << u1;
-  u2_file << u2;
-  p0_file << p0;
-  p1_file << p1;
-  p2_file << p2;
-
-  // Plot solution
-  plot(W->multimesh());
-  plot(u0, "u_0");
-  plot(u1, "u_1");
-  plot(u2, "u_2");
-  plot(p0, "p_0");
-  plot(p1, "p_1");
-  plot(p2, "p_2");
-  interactive();
+  // Save solution parts and components to file
+  for (int part = 0; part < 3; part++)
+  {
+    XDMFFile ufile(str(format("output/u%1%.xdmf") % part));
+    XDMFFile pfile(str(format("output/p%1%.xdmf") % part));
+    ufile.write((*w->part(part))[0]);
+    pfile.write((*w->part(part))[1]);
+    ufile.close();
+    pfile.close();
+  }
 
   return 0;
 }

@@ -51,8 +51,6 @@ multimesh.add(mesh_1)
 multimesh.add(mesh_2)
 multimesh.build()
 
-# FIXME: Tensor algebra not supported for multimesh function spaces
-
 # Create function space
 P2 = VectorElement("Lagrange", triangle, 2)
 P1 = FiniteElement("Lagrange", triangle, 1)
@@ -137,31 +135,11 @@ bc2.apply(A, b)
 w = MultiMeshFunction(W)
 solve(A, w.vector(), b)
 
-# FIXME: w.part(i).split() not working for extracted parts
-# FIXME: since they are only dolfin::Functions
-
-# Extract solution components
-u0 = w.part(0).sub(0)
-u1 = w.part(1).sub(1)
-u2 = w.part(2).sub(0)
-p0 = w.part(0).sub(1)
-p1 = w.part(1).sub(0)
-p2 = w.part(2).sub(1)
-
-# Save to file
-File("u0.pvd") << u0
-File("u1.pvd") << u1
-File("u2.pvd") << u2
-File("p0.pvd") << p0
-File("p1.pvd") << p1
-File("p2.pvd") << p2
-
-# Plot solution
-plot(W.multimesh())
-plot(u0, title="u_0")
-plot(u1, title="u_1")
-plot(u2, title="u_2")
-plot(p0, title="p_0")
-plot(p1, title="p_1")
-plot(p2, title="p_2")
-interactive()
+# Save solution parts and components to file
+for part in range(3):
+    ufile = XDMFFile("output/u%d.xdmf" % part)
+    pfile = XDMFFile("output/p%d.xdmf" % part)
+    ufile.write(w.part(part).sub(0))
+    pfile.write(w.part(part).sub(1))
+    ufile.close()
+    pfile.close()
