@@ -75,12 +75,16 @@ std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i) const
   // Get view of function space for part
   std::shared_ptr<const FunctionSpace> V = _function_space->view(i);
 
-  // Insert into cache and return reference
-  std::shared_ptr<const Function> ui(new Function(V, _vector));
+  // Create and rename function for part
+  std::shared_ptr<Function> ui(new Function(V, _vector));
+  ui->rename(name(), label());
+  
+  // Insert into cache
   _function_parts[i] = ui;
 
   return _function_parts.find(i)->second;
 }
+//-----------------------------------------------------------------------------
 void MultiMeshFunction::assign_part(std::size_t i, const Function& v)
 {
   // Finding the relevant part of the global vector
