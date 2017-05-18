@@ -48,7 +48,7 @@ mark_as_advanced(AMD_INCLUDE_DIRS)
 find_library(AMD_LIBRARIES amd
   HINTS ${AMD_DIR}/lib $ENV{AMD_DIR}/lib ${PETSC_LIBRARY_DIRS} $ENV{PETSC_DIR}/lib
   DOC "The AMD library")
-mark_as_advanced(AMD_LIBRARY)
+mark_as_advanced(AMD_LIBRARIES)
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)

@@ -140,8 +140,9 @@ void PETScDMCollection::find_exterior_points(MPI_Comm mpi_comm,
      std::vector<double>& points)
 {
   dolfin_assert(send_indices.size()/data_size == send_points.size()/dim);
-  const boost::const_multi_array_ref<int, 2> send_indices_arr(send_indices.data(),
-                         boost::extents[send_indices.size()/data_size][data_size]);
+  const boost::const_multi_array_ref<int, 2>
+    send_indices_arr(send_indices.data(),
+                     boost::extents[send_indices.size()/data_size][data_size]);
 
   unsigned int mpi_rank = MPI::rank(mpi_comm);
   unsigned int mpi_size = MPI::size(mpi_comm);
@@ -155,8 +156,7 @@ void PETScDMCollection::find_exterior_points(MPI_Comm mpi_comm,
     num_recv_points += p.size();
   num_recv_points /= dim;
 
-  // Save distances and ids of nearest cells on this
-  // process
+  // Save distances and ids of nearest cells on this process
   std::vector<double> send_distance;
   std::vector<unsigned int> ids;
 
@@ -180,8 +180,8 @@ void PETScDMCollection::find_exterior_points(MPI_Comm mpi_comm,
   std::vector<double> recv_distance(num_recv_points*mpi_size);
   MPI::all_gather(mpi_comm, send_distance, recv_distance);
 
-  // Determine which process has closest cell for each
-  // point, and send the global indices to that process
+  // Determine which process has closest cell for each point, and send
+  // the global indices to that process
   int ct = 0;
   std::vector<std::vector<unsigned int>> send_global_indices(mpi_size);
 
@@ -256,8 +256,9 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
     coords_to_dofs = tabulate_coordinates_to_dofs(*fine_space);
 
-  // Global dimensions of the dofs and of the transfer matrix (M-by-N, where
-  // M is the fine space dimension, N is the coarse space dimension)
+  // Global dimensions of the dofs and of the transfer matrix (M-by-N,
+  // where M is the fine space dimension, N is the coarse space
+  // dimension)
   std::size_t M = fine_space->dim();
   std::size_t N = coarse_space->dim();
 
@@ -265,8 +266,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   std::size_t m = finemap->dofs().size();
   std::size_t n = coarsemap->dofs().size();
 
-  // Get finite element for the coarse space. This will be needed to evaluate
-  // the basis functions for each cell.
+  // Get finite element for the coarse space. This will be needed to
+  // evaluate the basis functions for each cell.
   std::shared_ptr<const FiniteElement> el = coarse_space->element();
 
   // Check that it is the same kind of element on each space.
@@ -296,25 +297,28 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
 
   // Number of dofs per cell for the finite element.
   std::size_t eldim = el->space_dimension();
+
   // Number of dofs associated with each fine point
   unsigned int data_size = 1;
   for (unsigned data_dim = 0; data_dim < el->value_rank(); data_dim++)
     data_size *= el->value_dimension(data_dim);
 
-  // The overall idea is: a fine point can be on a coarse cell in the current processor,
-  // on a coarse cell in a different processor, or outside the coarse domain.
-  // If the point is found on the processor, evaluate basis functions,
-  // if found elsewhere, use the other processor to evaluate basis functions,
-  // if not found at all, or if found in multiple processors,
-  // use compute_closest_entity on all processors and find
-  // which coarse cell is the closest entity to the fine point amongst all processors.
+  // The overall idea is: a fine point can be on a coarse cell in the
+  // current processor, on a coarse cell in a different processor, or
+  // outside the coarse domain.  If the point is found on the
+  // processor, evaluate basis functions, if found elsewhere, use the
+  // other processor to evaluate basis functions, if not found at all,
+  // or if found in multiple processors, use compute_closest_entity on
+  // all processors and find which coarse cell is the closest entity
+  // to the fine point amongst all processors.
 
 
   // found_ids[i] contains the coarse cell id for each fine point
   std::vector<std::size_t> found_ids;
   found_ids.reserve((std::size_t)M/mpi_size);
 
-  // found_points[dim*i:dim*(i + 1)] contain the coordinates of the fine point i
+  // found_points[dim*i:dim*(i + 1)] contain the coordinates of the
+  // fine point i
   std::vector<double> found_points;
   found_points.reserve((std::size_t)dim*M/mpi_size);
 
@@ -327,9 +331,10 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   std::vector<double> exterior_points;
   std::vector<int> exterior_global_indices;
 
-  // 1. Allocate all points on this process to "Bounding Boxes" based on the
-  // global BoundingBoxTree, and send them to those processes. Any points
-  // which fall outside the global BBTree are collected up separately.
+  // 1. Allocate all points on this process to "Bounding Boxes" based
+  // on the global BoundingBoxTree, and send them to those
+  // processes. Any points which fall outside the global BBTree are
+  // collected up separately.
 
   std::vector<std::vector<double>> send_found(mpi_size);
   std::vector<std::vector<int>> send_found_global_row_indices(mpi_size);
@@ -355,8 +360,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
     }
     else
     {
-      // Send points to candidate processes,
-      // also recording the processes they are sent to in proc_list
+      // Send points to candidate processes, also recording the
+      // processes they are sent to in proc_list
       proc_list.push_back(found_ranks.size());
       for (auto &rp : found_ranks)
       {
@@ -373,10 +378,10 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   std::vector<std::vector<double>> recv_found(mpi_size);
   MPI::all_to_all(mpi_comm, send_found, recv_found);
 
-  // 2. On remote process, find the Cell which the point lies inside, if any.
-  // Send back the result to the originating process. In the case that the point
-  // is found inside cells on more than one process, the originating process
-  // will arbitrate.
+  // 2. On remote process, find the Cell which the point lies inside,
+  // if any.  Send back the result to the originating process. In the
+  // case that the point is found inside cells on more than one
+  // process, the originating process will arbitrate.
   std::vector<std::vector<unsigned int>> send_ids(mpi_size);
   for (unsigned int p = 0; p < mpi_size; ++p)
   {
@@ -390,8 +395,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   std::vector<std::vector<unsigned int>> recv_ids(mpi_size);
   MPI::all_to_all(mpi_comm, send_ids, recv_ids);
 
-  // 3. Revisit original list of sent points in the same order as before. Now
-  // we also have the remote cell-id, if any.
+  // 3. Revisit original list of sent points in the same order as
+  // before. Now we also have the remote cell-id, if any.
   std::vector<int> count(mpi_size, 0);
   for (auto p = proc_list.begin(); p != proc_list.end(); p += (*p + 1))
   {
@@ -476,8 +481,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
     }
   }
 
-  // Find closest cells for points that lie outside the domain
-  // and add them to the lists
+  // Find closest cells for points that lie outside the domain and add
+  // them to the lists
   find_exterior_points(mpi_comm, treec, dim, data_size,
                        exterior_points,
                        exterior_global_indices,
@@ -487,16 +492,17 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
 
   // Now every processor should have the information needed to
   // assemble its portion of the matrix.  The ids of coarse cell owned
-  // by each processor are currently stored in found_ids
-  // and their respective global row indices are stored in global_row_indices.
+  // by each processor are currently stored in found_ids and their
+  // respective global row indices are stored in global_row_indices.
   // One last loop and we are ready to go!
 
   // m_owned is the number of rows the current processor needs to set
   // note that the processor might not own these rows
   const std::size_t m_owned = global_row_indices.size();
 
-  // Initialise row and column indices and values of the transfer matrix
-  std::vector<std::vector<int>> col_indices(m_owned, std::vector<int>(eldim));
+  // Initialise row and column indices and values of the transfer
+  // matrix
+  std::vector<std::vector<dolfin::la_index>> col_indices(m_owned, std::vector<dolfin::la_index>(eldim));
   std::vector<std::vector<double>> values(m_owned, std::vector<double>(eldim));
   std::vector<double> temp_values(eldim*data_size);
 
@@ -505,8 +511,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   std::vector<std::vector<dolfin::la_index>> send_dnnz(mpi_size);
   std::vector<std::vector<dolfin::la_index>> send_onnz(mpi_size);
 
-  // Initialise local to global dof maps (needed to allocate
-  // the entries of the transfer matrix with the correct global indices)
+  // Initialise local to global dof maps (needed to allocate the
+  // entries of the transfer matrix with the correct global indices)
   std::vector<std::size_t> coarse_local_to_global_dofs;
   coarsemap->tabulate_local_to_global_dofs(coarse_local_to_global_dofs);
 
@@ -526,8 +532,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
     coarse_cell.get_coordinate_dofs(coordinate_dofs);
     // Save cell information into the ufc cell
     coarse_cell.get_cell_data(ufc_cell);
-    // Evaluate the basis functions of the coarse cells
-    // at the fine point and store the values into temp_values
+    // Evaluate the basis functions of the coarse cells at the fine
+    // point and store the values into temp_values
     el->evaluate_basis_all(temp_values.data(),
                            curr_point.coordinates(),
                            coordinate_dofs.data(),
@@ -559,18 +565,18 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
           send_dnnz[p].push_back(global_fine_dof);
         else
           send_onnz[p].push_back(global_fine_dof);
-
       }
     }
   }
 
-  // Communicate off-process columns nnz, and flatten to get nnz per row
-  // we also keep track of the ownership range
+  // Communicate off-process columns nnz, and flatten to get nnz per
+  // row we also keep track of the ownership range
   std::size_t mbegin = finemap->ownership_range().first;
   std::size_t mend = finemap->ownership_range().second;
   std::vector<dolfin::la_index> recv_onnz;
   MPI::all_to_all(mpi_comm, send_onnz, recv_onnz);
-  std::vector<int> onnz(m, 0);
+
+  std::vector<dolfin::la_index> onnz(m, 0);
   for (const auto &q : recv_onnz)
   {
     dolfin_assert(q >= (dolfin::la_index)mbegin
@@ -581,7 +587,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   // Communicate on-process columns nnz, and flatten to get nnz per row
   std::vector<dolfin::la_index> recv_dnnz;
   MPI::all_to_all(mpi_comm, send_dnnz, recv_dnnz);
-  std::vector<int> dnnz(m, 0);
+  std::vector<dolfin::la_index> dnnz(m, 0);
   for (const auto &q : recv_dnnz)
   {
     dolfin_assert(q >= (dolfin::la_index)mbegin
@@ -599,7 +605,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   {
     ierr = MatSetType(I, MATMPIAIJ); CHKERRABORT(PETSC_COMM_WORLD, ierr);
     ierr = MatSetSizes(I, m, n, M, N); CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = MatMPIAIJSetPreallocation(I, PETSC_DEFAULT, dnnz.data(), PETSC_DEFAULT, onnz.data());
+    ierr = MatMPIAIJSetPreallocation(I, PETSC_DEFAULT, dnnz.data(),
+                                     PETSC_DEFAULT, onnz.data());
     CHKERRABORT(PETSC_COMM_WORLD, ierr);
   }
   else
@@ -614,7 +621,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   for (unsigned int fine_row = 0; fine_row < m_owned; ++fine_row)
   {
     PetscInt fine_dof = global_row_indices[fine_row];
-    ierr = MatSetValues(I, 1, &fine_dof, eldim, col_indices[fine_row].data(), values[fine_row].data(), INSERT_VALUES);
+    ierr = MatSetValues(I, 1, &fine_dof, eldim, col_indices[fine_row].data(),
+                        values[fine_row].data(), INSERT_VALUES);
     CHKERRABORT(PETSC_COMM_WORLD, ierr);
   }
 
@@ -622,7 +630,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   ierr = MatAssemblyBegin(I, MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_WORLD, ierr);
   ierr = MatAssemblyEnd(I, MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_WORLD, ierr);
 
-  // create shared pointer and return the pointer to the transfer matrix
+  // create shared pointer and return the pointer to the transfer
+  // matrix
   std::shared_ptr<PETScMatrix> ptr = std::make_shared<PETScMatrix>(I);
   ierr = MatDestroy(&I); CHKERRABORT(PETSC_COMM_WORLD, ierr);
   return ptr;
