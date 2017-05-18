@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-04-20
+// Last changed: 2017-05-18
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -50,37 +50,37 @@ MultiMesh::MultiMesh()
 MultiMesh::MultiMesh(std::vector<std::shared_ptr<const Mesh>> meshes,
                      std::size_t quadrature_order)
 {
+  // Set parameters
+  parameters = default_parameters();
+
   // Add and build
   for (auto mesh : meshes)
     add(mesh);
   build(quadrature_order);
-
-  // Set parameters
-  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
                      std::size_t quadrature_order)
 {
+  // Set parameters
+  parameters = default_parameters();
+
   // Add and build
   add(mesh_0);
   build(quadrature_order);
-
-  // Set parameters
-  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
                      std::shared_ptr<const Mesh> mesh_1,
                      std::size_t quadrature_order)
 {
+  // Set parameters
+  parameters = default_parameters();
+
   // Add and build
   add(mesh_0);
   add(mesh_1);
   build(quadrature_order);
-
-  // Set parameters
-  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
@@ -88,14 +88,14 @@ MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
                      std::shared_ptr<const Mesh> mesh_2,
                      std::size_t quadrature_order)
 {
+  // Set parameters
+  parameters = default_parameters();
+
   // Add and build
   add(mesh_0);
   add(mesh_1);
   add(mesh_2);
   build(quadrature_order);
-
-  // Set parameters
-  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 MultiMesh::~MultiMesh()
