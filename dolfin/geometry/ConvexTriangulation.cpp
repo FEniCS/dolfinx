@@ -367,7 +367,6 @@ ConvexTriangulation::_triangulate_graham_scan_3d(std::vector<Point> input_points
       {
         for (std::size_t k = j+1; k < points.size(); ++k)
         {
-<<<<<<< HEAD
 	  if (checked.emplace(std::make_tuple(i, j, k)).second)
 	  {
             // Test for the special case where i, j, k are collinear
