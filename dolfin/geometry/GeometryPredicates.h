@@ -18,8 +18,8 @@
 // First added:  2016-11-21
 // Last changed: 2017-02-22
 
-#ifndef __GEOMETRYPREDICATES_H
-#define __GEOMETRYPREDICATES_H
+#ifndef __GEOMETRY_PREDICATES_H
+#define __GEOMETRY_PREDICATES_H
 
 #include <vector>
 #include <dolfin/log/LogStream.h>

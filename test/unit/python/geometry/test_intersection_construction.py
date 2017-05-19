@@ -150,7 +150,7 @@ def test_triangulate_intersection_2d_3d():
     assert round(volume - exact_volume, 7) == 0, errorstring
 
 @skip_in_parallel
-#@pytest.mark.skipif(True, reason="Not implemented in 3D")
+@pytest.mark.skipif(True, reason="Missing swig typemap for call to ConvexTriangulation")
 def test_triangulate_intersection_3d():
 
     # Create two meshes of the unit cube
@@ -200,7 +200,7 @@ def test_triangle_triangle_2d() :
 							             Point(0.5, 0.4060889538943557),
 							             Point(.5, .5))
     for p in res:
-        print p[0],p[1]
+        print(p[0],p[1])
 
     assert len(res) == 2
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2014-2016 Anders Logg, August Johansson and Benjamin Kehlet
+// Copyright (C) 2014-2017 Anders Logg, August Johansson and Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-03-07
+// Last changed: 2017-03-14
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -312,121 +312,6 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
                                                           const Point& q0,
                                                           const Point& q1)
 {
-  //std::vector<Point> pold = intersection_segment_segment_2d_old(p0, p1, q0, q1);
-  std::vector<Point> pnew = intersection_segment_segment_2d_new(p0, p1, q0, q1);
-
-  /*
-  if (pold.size() != pnew.size())
-  {
-    cout << "size_old = " << pold.size() << endl;
-    cout << "size_new = " << pnew.size() << endl;
-    GeometryDebugging::plot({p0, p1}, {q0, q1});
-    GeometryDebugging::plot(pold);
-    GeometryDebugging::plot(pnew);
-  }
-  */
-
-  return pnew;
-}
-//-----------------------------------------------------------------------------
-std::vector<Point>
-IntersectionConstruction::intersection_segment_segment_2d_old(const Point& p0,
-                                                              const Point& p1,
-                                                              const Point& q0,
-                                                              const Point& q1)
-{
-  // The list of points (convex hull)
-  std::vector<Point> points;
-
-  // Add point intersections (2 + 2 = 4)
-  add(points, intersection_segment_point_2d(p0, p1, q0));
-  add(points, intersection_segment_point_2d(p0, p1, q1));
-  add(points, intersection_segment_point_2d(q0, q1, p0));
-  add(points, intersection_segment_point_2d(q0, q1, p1));
-
-  // If we found at least one point intersection we are done
-  if (points.size() > 0)
-    return unique(points);
-
-  // Compute orientation of segment end points wrt other segment
-  const double p0o = orient2d(q0, q1, p0);
-  const double p1o = orient2d(q0, q1, p1);
-  const double q0o = orient2d(p0, p1, q0);
-  const double q1o = orient2d(p0, p1, q1);
-
-  // Compute total orientation of segments wrt other segment
-  const double po = p0o*p1o;
-  const double qo = q0o*q1o;
-
-  // If both points are on the same side we are done. Note that if
-  // po = 0 or qo = 0, we should have found a point collision above,
-  // unless the two segments are only collinear but not colliding.
-  if (po >= 0. or qo >= 0.)
-    return std::vector<Point>();
-
-  // At this point, we know that both po < 0 and qo < 0 which means
-  // that we have an intersection and it is internal to both segments.
-  // This is the main case. The point is given by the formula
-  //
-  //   x = p0 + num / den * (p1 - p0)
-  //
-  // However, the computation may be unstable when the two segments
-  // are nearly collinear (when den is small) so special hanndling is
-  // needed when this happens. To improve the chance of the point
-  // ending up inside both segments, we swap the points so that the
-  // computation is based on the shortest segment.
-
-  // Compute intersection point based on shortest segment
-  double num = 0., den = 0.; Point x;
-  if (p0.squared_distance(p1) < q0.squared_distance(q1))
-  {
-    num = p0o;
-    den = (p1.x() - p0.x())*(q1.y() - q0.y())
-        - (p1.y() - p0.y())*(q1.x() - q0.x());
-    x = p0 + num / den * (p1 - p0);
-  }
-  else
-  {
-    num = q0o;
-    den = (q1.x() - q0.x())*(p1.y() - p0.y())
-        - (q1.y() - q0.y())*(p1.x() - p0.x());
-    x = q0 + num / den * (q1 - q0);
-  }
-
-  // Special case: almost collinear segments. Intersection is very
-  // hard to compute so just make sure we pick a sensible point which
-  // we know (almost) belongs to both segments.
-  if (std::abs(den*den) < DOLFIN_EPS_LARGE*std::abs(num))
-  {
-    // Compute major axis
-    const std::size_t major_axis = GeometryTools::major_axis_2d(p1 - p0);
-
-    // Sort the points along major axis
-    std::array<Point, 4> _points = {p0, p1, q0, q1};
-    std::sort(_points.begin(), _points.end(),
-              [major_axis](const Point& a, const Point& b)
-              { return a[major_axis] < b[major_axis]; });
-
-    // Compute midpoint
-    const Point x = 0.5*(_points[1] + _points[2]);
-
-    return std::vector<Point>(1, x);
-  }
-
-  return std::vector<Point>(1, x);
-}
-//-----------------------------------------------------------------------------
-std::vector<Point>
-IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
-                                                              const Point& p1,
-                                                              const Point& q0,
-                                                              const Point& q1)
-{
-  // FIXME: This version is not yet working for some reason... Make
-  // this version work and then remove the other implementation.  Note
-  // that this function is very similar to triangle_segment_3d so if a
-  // bug is found here, it is likely present also in that function.
-
   // We consider the following 4 cases for the segment q0-q1
   // relative to the line defined by the segment p0-p1:
   //
@@ -437,12 +322,12 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
   //
   // Case 1: (q0o == 0. and q1o != 0.) or (q0o != 0. and q1o == 0.)
   //
-  //   --> exactly one point in plane
+  //   --> exactly one point on line
   //   --> possible point intersection
   //
-  // Case 2: q0o = 0. and q10 = 0. [or unstable case]]
+  // Case 2: q0o = 0. and q10 = 0. [or unstable case]
   //
-  //   --> points in plane
+  //   --> both points on line
   //   --> project to 1D
   //
   // Case 3: qo = q0o*q1o < 0.
@@ -453,8 +338,8 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
   //
   // Note that the computation in Case 3 may be sensitive to rounding
   // errors if both points are almost on the line. If this happens
-  // we instead consider the points to be on the plane [Case 2] to
-  // obtain one or more sensible if points (if any).
+  // we instead consider the points to be on the line [Case 2] to
+  // obtain one or more sensible points (if any).
 
    // Compute orientation of segment end points wrt line
   const double q0o = orient2d(p0, p1, q0);
@@ -513,9 +398,14 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
   }
 
   // Case 3: points on different sides (main case)
+
+  // Compute quantities needed for intersection computation
   const double p0o = orient2d(q0, q1, p0);
   const double p1o = orient2d(q0, q1, p1);
   const double den = (q1.x() - q0.x())*v.y() - (q1.y() - q0.y())*v.x();
+
+  // Figure out which one of the four points we want to use
+  // as starting point for numerical robustness
   enum orientation { P0O, P1O, Q0O, Q1O };
   std::array<std::pair<double, orientation>, 4> oo
 		      = {{ { std::abs(p0o), P0O },
@@ -523,8 +413,9 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
 			   { std::abs(q0o), Q0O },
 			   { std::abs(q1o), Q1O } }};
   const auto it = std::min_element(oo.begin(), oo.end());
-  Point x;
 
+  // Compute the intersection point
+  Point x;
   switch (it->second)
   {
   case P0O:
@@ -532,10 +423,11 @@ IntersectionConstruction::intersection_segment_segment_2d_new(const Point& p0,
     x = p0 - p0o / den * v;
     break;
   case P1O:
-    // Flip sign because v = p1 - p0, and we want p0 - p1
+    // Flip sign because v = p1 - p0, but we want p0 - p1
     x = p1 - p1o / den * v;
     break;
   case Q0O:
+    // Default case
     x = q0 + q0o / den * (q1 - q0);
     break;
   case Q1O:
@@ -620,7 +512,7 @@ IntersectionConstruction::intersection_triangle_segment_3d(const Point& p0,
   // Note that the computation in Case 3 may be sensitive to rounding
   // errors if both points are almost in the plane. If this happens
   // we instead consider the points to be in the plane [Case 2] to
-  // obtain one or more sensible if points (if any).
+  // obtain one or more sensible points (if any).
 
   // Compute orientation of segment end points wrt plane
   const double q0o = orient3d(p0, p1, p2, q0);

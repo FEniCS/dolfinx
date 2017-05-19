@@ -105,6 +105,12 @@ namespace dolfin
     const double* const * macro_w() const
     { return macro_w_pointer.data(); }
 
+    /// Pointer to macro element coefficient data. Used to support UFC
+    /// interface. Non-const version.
+    double* * macro_w()
+    { return macro_w_pointer.data(); }
+
+
   private:
 
     // Finite elements for coefficients
@@ -288,18 +294,18 @@ namespace dolfin
       return default_overlap_integral.get();
     }
 
-    // Form
+    /// Form
     const ufc::form& form;
 
     // FIXME AL: Check which data is actually used and remove the rest
 
-    // Local tensor
+    /// Local tensor
     std::vector<double> A;
 
-    // Local tensor
+    /// Local tensor
     std::vector<double> A_facet;
 
-    // Local tensor for macro element
+    /// Local tensor for macro element
     std::vector<double> macro_A;
 
   private:

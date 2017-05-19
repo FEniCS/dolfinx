@@ -30,6 +30,8 @@
 namespace dolfin
 {
 
+  /// Base class for MeshEntityIterators
+
   template<class T>
   class MeshEntityIteratorBase
   {

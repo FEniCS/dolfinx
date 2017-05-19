@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-//
-// First added:  2015-02-03
 
 #ifndef __DOLFIN_EIGEN_LU_SOLVER_H
 #define __DOLFIN_EIGEN_LU_SOLVER_H
@@ -26,8 +23,7 @@
 
 #include <dolfin/common/types.h>
 #include <Eigen/Dense>
-
-#include "GenericLUSolver.h"
+#include "GenericLinearSolver.h"
 
 namespace dolfin
 {
@@ -40,7 +36,7 @@ namespace dolfin
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b.
 
-  class EigenLUSolver : public GenericLUSolver
+  class EigenLUSolver : public GenericLinearSolver
   {
   public:
 
@@ -67,27 +63,12 @@ namespace dolfin
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
-    std::size_t solve(GenericVector& x, const GenericVector& b,
-                      bool transpose);
-
-    /// Solve linear system Ax = b
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                       const GenericVector& b);
 
     /// Solve linear system Ax = b
     std::size_t solve(const EigenMatrix& A, EigenVector& x,
                       const EigenVector& b);
-
-    /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(GenericVector& x, const GenericVector& b);
-
-    /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(const GenericLinearOperator& A,
-                                GenericVector& x, const GenericVector& b);
-
-    /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(const EigenMatrix& A, EigenVector& x,
-                                const EigenVector& b);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -98,12 +79,15 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
+    /// Return parameter type: "krylov_solver" or "lu_solver"
+    std::string parameter_type() const
+    { return "lu_solver"; }
+
   private:
 
     // Call generic solve
     template <typename Solver>
-    void call_solver(Solver& solver, GenericVector& x, const GenericVector& b,
-                     bool transpose);
+    void call_solver(Solver& solver, GenericVector& x, const GenericVector& b);
 
     // Available LU solvers and descriptions
     static const std::map<std::string, std::string> _methods_descr;

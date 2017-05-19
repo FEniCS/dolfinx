@@ -35,6 +35,47 @@
 %ignore dolfin::LocalMeshData::Topology;
 
 //-----------------------------------------------------------------------------
+// SWIG does not seem to generate useful code for non-member operators
+//-----------------------------------------------------------------------------
+%ignore dolfin::operator*(double, const Point&);
+%ignore dolfin::operator<<(std::ostream&, const Point&);
+
+//-----------------------------------------------------------------------------
+// Extend Point with __rmul__ (multiplication by scalar from left)
+//-----------------------------------------------------------------------------
+%feature("shadow") dolfin::Point::operator* %{
+def __mul__(self, value):
+    """self.__mul__(value) <==> self*value"""
+    return $action(self, value)
+__rmul__ = __mul__
+%};
+%rename(__mul__) dolfin::Point::operator*;
+
+//-----------------------------------------------------------------------------
+// Add Point.__truediv__ (workaround for SWIG < 3.0.9)
+//-----------------------------------------------------------------------------
+%feature("shadow") dolfin::Point::operator/ %{
+def __truediv__(self, value):
+    """self.__truediv__(value) <==> self/value"""
+    return $action(self, value)
+__div__ = __truediv__
+%};
+%rename(__truediv__) dolfin::Point::operator/;
+
+//-----------------------------------------------------------------------------
+// Add Point.__itruediv__ (workaround for SWIG < 3.0.9)
+//-----------------------------------------------------------------------------
+%delobject dolfin::Point::operator/=;
+%newobject dolfin::Point::operator/=;
+%feature("shadow") dolfin::Point::operator/= %{
+def __itruediv__(self, value):
+    """self.__itruediv__(value) <==> self /= value"""
+    return $action(self, value)
+__idiv__ = __itruediv__
+%};
+%rename(__itruediv__) dolfin::Point::operator/=;
+
+//-----------------------------------------------------------------------------
 // Return NumPy arrays for Mesh::cells() and Mesh::coordinates()
 //-----------------------------------------------------------------------------
 %extend dolfin::Mesh {
@@ -79,6 +120,28 @@ ALL_VALUES(dolfin::MeshFunction<double>, double)
 ALL_VALUES(dolfin::MeshFunction<int>, int)
 ALL_VALUES(dolfin::MeshFunction<bool>, bool)
 ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
+
+//-----------------------------------------------------------------------------
+// Make C++ typename available as MeshFunctionFoo.cpp_value_type()
+//-----------------------------------------------------------------------------
+%define CPP_VALUE_TYPE(name, TYPE_NAME)
+%extend name {
+%pythoncode
+%{
+    @staticmethod
+    def cpp_value_type():
+        return #TYPE_NAME
+%}
+}
+%enddef
+
+//-----------------------------------------------------------------------------
+// Run the macros
+//-----------------------------------------------------------------------------
+CPP_VALUE_TYPE(dolfin::MeshFunction<double>, double)
+CPP_VALUE_TYPE(dolfin::MeshFunction<int>, int)
+CPP_VALUE_TYPE(dolfin::MeshFunction<bool>, bool)
+CPP_VALUE_TYPE(dolfin::MeshFunction<std::size_t>, std::size_t)
 
 //-----------------------------------------------------------------------------
 // Ignore methods that is superseded by extended versions
@@ -307,10 +370,6 @@ SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(quadrature_rule qr)
   npy_intp n0 = qr.first.size();
   npy_intp n1 = qr.second.size();
 
-  // return None if there are no quadrature points
-  if (n0 == 0)
-    return Py_None;  
-
   PyArrayObject *x0 = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &n0, NPY_DOUBLE));
   PyArrayObject *x1 = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &n1, NPY_DOUBLE));
 
@@ -329,13 +388,13 @@ SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(quadrature_rule qr)
 SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(std::vector<quadrature_rule> qr_vector)
 {
   // Typemap function for std::vec<quadrature_rule>
-  quadrature_rule qr;
-  for (quadrature_rule qr_j : qr_vector)
+  PyObject * result = PyList_New(qr_vector.size());
+  for (std::size_t j = 0; j < qr_vector.size(); j++)
   {
-    qr.first.insert(qr.first.end(), qr_j.first.begin(), qr_j.first.end());
-    qr.second.insert(qr.second.end(), qr_j.second.begin(), qr_j.second.end());
+     PyObject * py_qr_j = convert_dolfin_quadrature_rule(qr_vector[j]);
+     PyList_SetItem(result, j, py_qr_j);
   }
-  return convert_dolfin_quadrature_rule(qr); 
+  return result;
 }
 }
 // Force fragments to be instantiated
@@ -348,11 +407,10 @@ SWIGINTERNINLINE PyObject * convert_dolfin_quadrature_rule(std::vector<quadratur
 
 %extend dolfin::MultiMesh
 {
-PyObject* quadrature_rule_##cell_type(std::size_t part)
+PyObject* quadrature_rules_##cell_type(std::size_t part)
 {
   PyObject* ret = PyDict_New();
-    
-  auto qr_map = ($self)->quadrature_rule_##cell_type (part);
+  auto qr_map = ($self)->quadrature_rules_##cell_type (part);
   
   for (auto it = qr_map.begin(); it != qr_map.end(); it++)
   {
@@ -365,15 +423,15 @@ PyObject* quadrature_rule_##cell_type(std::size_t part)
   }
   return ret;
 }
-PyObject* quadrature_rule_##cell_type(std::size_t part, unsigned int cell)
+PyObject* quadrature_rules_##cell_type(std::size_t part, unsigned int cell)
 {
-  auto qr_map = ($self)->quadrature_rule_##cell_type(part); 
+  auto qr_map = ($self)->quadrature_rules_##cell_type(part);
   auto qr = qr_map[cell];
   return convert_dolfin_quadrature_rule(qr);
 }
 }
-%ignore dolfin::MultiMesh::quadrature_rule_##cell_type;
-dolfin::MultiMesh::quadrature_rule_##cell_type(std::size_t part);
+%ignore dolfin::MultiMesh::quadrature_rules_##cell_type;
+dolfin::MultiMesh::quadrature_rules_##cell_type(std::size_t part);
 
 
 %enddef

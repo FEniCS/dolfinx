@@ -50,11 +50,11 @@ any_backends = data_backends + no_data_backends
 
 # Fixtures setting up and resetting the global linear algebra backend
 # for a list of backends
-any_backend = set_parameters_fixture("linear_algebra_backend", any_backends, \
+any_backend = set_parameters_fixture("linear_algebra_backend", any_backends,
                                      lambda x: x[0])
-data_backend = set_parameters_fixture("linear_algebra_backend", data_backends, \
+data_backend = set_parameters_fixture("linear_algebra_backend", data_backends,
                                       lambda x: x[0])
-no_data_backend = set_parameters_fixture("linear_algebra_backend", \
+no_data_backend = set_parameters_fixture("linear_algebra_backend",
                                          no_data_backends, lambda x: x[0])
 
 # With and without explicit backend choice
@@ -82,8 +82,12 @@ class TestMatrixForAnyBackend:
         else:
             backend = None
 
+        # Build square matrix with some 'empty' diagonals
         A = assemble(a, backend=backend, keep_diagonal=keep_diagonal)
+
+        # Build non-square matrix
         B = assemble(b, backend=backend, keep_diagonal=keep_diagonal)
+
         return A, B
 
     def test_basic_la_operations(self, use_backend, any_backend):
@@ -217,12 +221,29 @@ class TestMatrixForAnyBackend:
 
         # Check that PETScMatrix::ident_zeros() rethrows PETSc error
         if self.backend[0:5] == "PETSc":
-            A, B = self.assemble_matrices(use_backend=use_backend)
-            with pytest.raises(RuntimeError):
-                A.ident_zeros()
+            try:
+                from petsc4py import PETSc
+            except ImportError:
+                # Can't detect PETSc version. Skip the test.
+                pass
+            else:
+                petsc_version = PETSc.Sys.getVersion()
+                if petsc_version[0:2] == (3, 7) and petsc_version[2] >= 6:
+                    # Skip the test. PETSc 3.7.(>=6) is doing the diagonal
+                    # check only in debug mode so that DOLFIN might not
+                    # rethrow the error. Fixed in
+                    # https://bitbucket.org/petsc/petsc/commits/a21198abcdd10db88d217ac122e897fcbe3179cd
+                    pass
+                else:
+                    # NOTE: Throw try-except-else,if blocks above and do the
+                    #       test everytime when PETSc requirement is bumped
+                    #       to 3.8
+                    A, B = self.assemble_matrices(use_backend=use_backend)
+                    with pytest.raises(RuntimeError):
+                        A.ident_zeros()
 
         # Assemble matrix A with diagonal entries
-        A, B = self.assemble_matrices(use_backend=use_backend, \
+        A, B = self.assemble_matrices(use_backend=use_backend,
                                       keep_diagonal=True)
 
         # Find zero rows
@@ -284,19 +305,19 @@ class TestMatrixForAnyBackend:
         w.vector()[:] -= b
         assert round(w.vector().norm("l2"), 14) == 0
 
-    #def test_create_from_sparsity_pattern(self):
+    # def test_create_from_sparsity_pattern(self):
 
-    #def test_size(self):
+    # def test_size(self):
 
-    #def test_local_range(self):
+    # def test_local_range(self):
 
-    #def test_zero(self):
+    # def test_zero(self):
 
-    #def test_apply(self):
+    # def test_apply(self):
 
-    #def test_str(self):
+    # def test_str(self):
 
-    #def test_resize(self):
+    # def test_resize(self):
 
 
     # Test the access of the raw data through pointers

@@ -55,7 +55,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(EPS eps) : _eps(eps)
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",
-                 "intialise SLEPcEigenSolver with SLEPc EPS object",
+                 "initialize SLEPcEigenSolver with SLEPc EPS object",
                  "SLEPc EPS must be initialised (EPSCreate) before wrapping");
   }
 

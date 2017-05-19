@@ -95,6 +95,7 @@ def test_tao_linear_bound_solver(backend):
 
     solver = TAOLinearBoundSolver("tron", "cg")
     solver.solve(A,xsol,b,xl,xu)
+    solver.solve(A,xsol,b,xl,xu)
 
     # Test that F(usol) = Ly
     assert round(assemble(F) - Ly, 4) == 0

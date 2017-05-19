@@ -29,6 +29,7 @@ namespace dolfin
 
   // Forward declarations
   class MultiMeshFunctionSpace;
+  class MultiMeshFunction;
   class MultiMesh;
   class Form;
 
@@ -60,47 +61,40 @@ namespace dolfin
     /// Return rank of form (bilinear form = 2, linear form = 1,
     /// functional = 0, etc)
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         The rank of the form.
     std::size_t rank() const;
 
     /// Return the number of forms (parts) of the MultiMesh form
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return     std::size_t
     ///         The number of forms (parts) of the MultiMesh form.
     std::size_t num_parts() const;
 
     /// Extract common multimesh from form
     ///
-    /// *Returns*
-    ///     _MultiMesh_
+    /// @return     _MultiMesh_
     ///         The mesh.
     std::shared_ptr<const MultiMesh> multimesh() const;
 
     /// Return form (part) number i
     ///
-    /// *Returns*
-    ///     _Form_
+    /// @return     _Form_
     ///         Form (part) number i.
     std::shared_ptr<const Form> part(std::size_t i) const;
 
     /// Return function space for given argument
     ///
-    /// *Arguments*
-    ///     i (std::size_t)
+    /// @param      i (std::size_t)
     ///         Index
     ///
-    /// *Returns*
-    ///     _MultiMeshFunctionSpace_
+    /// @return     _MultiMeshFunctionSpace_
     ///         Function space shared pointer.
     std::shared_ptr<const MultiMeshFunctionSpace> function_space(std::size_t i) const;
 
     /// Add form (shared pointer version)
     ///
-    /// *Arguments*
-    ///     form (_Form_)
+    /// @param     form (_Form_)
     ///         The form.
     void add(std::shared_ptr<const Form> form);
 
@@ -109,6 +103,19 @@ namespace dolfin
 
     /// Clear MultiMesh form
     void clear();
+
+    /// Set MultiMeshCoeeficient
+    void set_multimesh_coefficient(std::size_t i,
+                                   std::shared_ptr<const MultiMeshFunction> coefficient);
+
+    /// Get all MultiMesh Coefficients
+    std::map<std::size_t, std::shared_ptr<const MultiMeshFunction> > multimesh_coefficients() const;
+
+    /// Get one multimesh coefficient
+    std::shared_ptr<const MultiMeshFunction> multimesh_coefficient(std::size_t i) const;
+
+    /// get multimesh coefficient keys
+    std::vector<std::size_t> multimesh_coefficient_keys() const;
 
   private:
 
@@ -123,6 +130,10 @@ namespace dolfin
 
     // List of forms (one for each part)
     std::vector<std::shared_ptr<const Form>> _forms;
+
+    // Map of MultiMesh coefficents
+    std::map<std::size_t, std::shared_ptr<const MultiMeshFunction> > _multimesh_coefficients;
+
 
   };
 

@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.5)
 project(DOLFIN)
 set(DOLFIN_VERSION_RELEASE 0)
 set(DOLFIN_VERSION_MAJOR "2017")
-set(DOLFIN_VERSION_MINOR "1")
+set(DOLFIN_VERSION_MINOR "2")
 set(DOLFIN_VERSION_MICRO "0")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 if (NOT DOLFIN_VERSION_RELEASE)
@@ -160,8 +160,8 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   add_feature_info(${OPTION_NAME} ${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}.")
 endforeach()
 
-# Python version
-option(DOLFIN_USE_PYTHON3 "Use Python 3." OFF)
+# Default Python version
+option(DOLFIN_USE_PYTHON3 "Use Python 3." ON)
 
 #------------------------------------------------------------------------------
 # General compiler defintions
@@ -436,7 +436,7 @@ if (DOLFIN_ENABLE_PYTHON)
 endif()
 
 # Check for required package UFC
-find_package(UFC MODULE 2017.1)
+find_package(UFC MODULE 2017.2)
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified language for form-compilers (part of FFC)"
   URL "https://bitbucket.org/fenics-project/ffc")
@@ -538,19 +538,6 @@ if (DOLFIN_ENABLE_HDF5)
   set_package_properties(HDF5 PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
     URL "https://www.hdfgroup.org/HDF5")
-
-  # Check that HDF5 has parallel support
-  if (HDF5_FOUND)
-    if (DOLFIN_ENABLE_MPI)
-      if (NOT (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL))
-        message(STATUS "HDF5 has been found, but is missing parallel support. It will not be enabled.")
-        set(HDF5_FOUND false)
-      endif()
-    else()
-      message(STATUS "HDF5 has been found, but MPI support is missing. It will not be enabled.")
-      set(HDF5_FOUND false)
-    endif()
-  endif()
 endif()
 
 # Check for Trilinos and the requires Trilinos packages
@@ -908,17 +895,19 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
 #------------------------------------------------------------------------------
 # Generate demo files from rst
 
-message(STATUS "")
-message(STATUS "Generating demo source files from reStructuredText")
-message(STATUS "--------------------------------------------------")
-file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst" "*.ufl.rst")
-foreach(rst_file ${demo_rst_files})
-  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-  #add_custom_command(TARGET demos_source PRE_BUILD
-  #  COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
-  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-endforeach()
+if (PYTHONINTERP_FOUND)
+  message(STATUS "")
+  message(STATUS "Generating demo source files from reStructuredText")
+  message(STATUS "--------------------------------------------------")
+  file(GLOB_RECURSE demo_rst_files "demo/*.py.rst" "demo/*.cpp.rst" "demo/*.ufl.rst")
+  foreach(rst_file ${demo_rst_files})
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+      WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+    #add_custom_command(TARGET demos_source PRE_BUILD
+    #  COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+    #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+  endforeach()
+endif()
 
 #------------------------------------------------------------------------------
 # Generate form files for tests, bench, demos and DOLFIN if not exists
@@ -947,18 +936,6 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
   endif()
   set(COPY_DEMO_TEST_DEMO_DATA TRUE)
 endif()
-
-#------------------------------------------------------------------------------
-# Generate demo files from rst
-
-message(STATUS "")
-message(STATUS "Generating demo source files")
-message(STATUS "--------------------------------------------------")
-file(GLOB_RECURSE demo_rst_files "*.py.rst" "*.cpp.rst")
-foreach(rst_file ${demo_rst_files})
-  execute_process(COMMAND ./utils/pylit/pylit.py ${rst_file}
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-endforeach()
 
 #------------------------------------------------------------------------------
 # Generate CMakeLists.txt files for bench and demos if not existing
@@ -1027,13 +1004,15 @@ endif()
 # Add taget to build .py demo files from Python rst input files, and
 # create a target to build source files from .cpp.rst and .py.rst
 # files (using pylit)
-file(GLOB_RECURSE rst_files "*.py.rst" "*.cpp.rst")
-add_custom_target(demos_source)
-foreach(rst_file ${rst_files})
-  add_custom_command(TARGET demos_source PRE_BUILD
-    COMMAND COMMAND ./utils/pylit/pylit.py ${rst_file}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-endforeach()
+if (PYTHONINTERP_FOUND)
+  file(GLOB_RECURSE demo_rst_files "demo/*.py.rst" "demo/*.cpp.rst" "demo/*.ufl.rst")
+  add_custom_target(demos_source)
+  foreach(rst_file ${rst_files})
+    add_custom_command(TARGET demos_source PRE_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+  endforeach()
+endif()
 
 # Add target "demo" for building the demos
 add_custom_target(demo
@@ -1164,20 +1143,20 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "run_unittests_py" for running Python unit tests
   add_custom_target(run_unittests_py
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-s"
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
   # Add target "run_unittests_py_mpi" for running Python unit tests with mpi
   add_custom_target(run_unittests_py_mpi
-    COMMAND ${MPIEXEC} "-np" "3" "./mpipipe.sh" ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-s"
+    COMMAND ${MPIEXEC} "-np" "3" "./mpipipe.sh" ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 
   # Add target "run_quicktest" for running only Python unit tests not
   # marked as 'slow'
   add_custom_target(run_quicktest
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-s" "-k" "'not" "slow'"
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-k" "'not" "slow'"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
 

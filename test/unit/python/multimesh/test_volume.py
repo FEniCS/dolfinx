@@ -20,9 +20,10 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by August Johansson 2016
+# Modified by Simon Funke 2017
 #
 # First added:  2016-05-03
-# Last changed: 2016-11-16
+# Last changed: 2017-02-15
 
 from __future__ import print_function
 import pytest
@@ -37,11 +38,16 @@ def compute_volume(multimesh):
     # Create and evaluate volume functional
     v = TestFunction(V)
     M = v*dX
-    return sum(assemble(M).array())
+    v1 = sum(assemble(M).array())
 
-    # FIXME: This should work, shouldn't it?
-    # M = Constant(1.0)*dX(multimesh)
-    # return assemble(M)
+    # Alternative volume computation
+    dXmm = dx(domain=multimesh) + dC(domain=multimesh)
+    M = Constant(1.0)*dXmm
+    v2 = assemble_multimesh(M)
+
+    # FIXME: We should be able to tighten the tolerance here
+    assert abs(v1 - v2) < 100*DOLFIN_EPS_LARGE  
+    return v1
 
 def compute_volume_using_quadrature(multimesh):
     total_volume = 0
@@ -56,7 +62,7 @@ def compute_volume_using_quadrature(multimesh):
 
         # Volume of cut cells
         for cut_cell in multimesh.cut_cells(part):
-            cut_cell_qr = multimesh.quadrature_rule_cut_cells(part, cut_cell)
+            cut_cell_qr = multimesh.quadrature_rules_cut_cells(part, cut_cell)
             if cut_cell_qr:
                 part_volume += sum(cut_cell_qr[1])
 

@@ -76,7 +76,7 @@ void GeometryDebugging::plot(const std::vector<Point>& simplex)
 
   cout << "# Plot simplex" << endl;
   if (simplex.size() >= 3)
-    cout << "ax.plot_trisurf(" << simplex2string(simplex) << ")" << endl;
+  cout << "ax.plot_trisurf(" << simplex2string(simplex) << ")" << endl;
   else
     cout << "ax.plot(" << simplex2string(simplex) << ", marker='x')" << endl;
   cout << endl;
@@ -90,11 +90,11 @@ void GeometryDebugging::plot(const std::vector<Point>& simplex_0,
 
   cout << "# Plot simplex intersection" << endl;
   if (simplex_0.size() >= 3)
-    cout << "ax.plot_trisurf(" << simplex2string(simplex_0) << ", color='r')" << endl;
+  cout << "ax.plot_trisurf(" << simplex2string(simplex_0) << ", color='r')" << endl;
   else
     cout << "ax.plot(" << simplex2string(simplex_0) << ", marker='o', color='r')" << endl;
   if (simplex_1.size() >= 3)
-    cout << "ax.plot_trisurf(" << simplex2string(simplex_1) << ", color='b')" << endl;
+  cout << "ax.plot_trisurf(" << simplex2string(simplex_1) << ", color='b')" << endl;
   else
     cout << "ax.plot(" << simplex2string(simplex_1) << ", marker='o', color='b')" << endl;
   cout << endl;

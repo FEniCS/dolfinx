@@ -57,38 +57,32 @@ namespace dolfin
 
     /// Create an empty mesh value collection on a given mesh
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param    mesh (_Mesh_)
     ///         The mesh.
     explicit MeshValueCollection(std::shared_ptr<const Mesh> mesh);
 
     /// Create a mesh value collection from a MeshFunction
     ///
-    /// *Arguments*
-    ///     mesh_function (_MeshFunction_ <T>)
+    /// @param    mesh_function (MeshFunction<T>)
     ///         The mesh function for creating a MeshValueCollection.
     explicit MeshValueCollection(const MeshFunction<T>& mesh_function);
 
     /// Create a mesh value collection of entities of given dimension
     /// on a given mesh
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param    mesh (_Mesh_)
     ///         The mesh associated with the collection.
-    ///     dim (std::size_t)
+    /// @param    dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
     MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
     /// Create a mesh value collection from a file.
     ///
-    /// *Arguments*
-    ///     mesh (Mesh)
+    /// @param    mesh (Mesh)
     ///         A mesh associated with the collection. The mesh is used to
     ///         map collection values to the appropriate process.
-    ///     filename (std::string)
+    /// @param    filename (std::string)
     ///         The XML file name.
-    ///     dim (std::size_t)
-    ///         The mesh entity dimension for the mesh value collection.
     MeshValueCollection(std::shared_ptr<const Mesh> mesh, const std::string filename);
 
     /// Destructor
@@ -96,16 +90,14 @@ namespace dolfin
 
     /// Assignment operator
     ///
-    /// *Arguments*
-    ///     mesh_function (_MeshFunction_)
+    /// @param    mesh_function (_MeshFunction_)
     ///         A _MeshFunction_ object used to construct a
     ///         MeshValueCollection.
     MeshValueCollection<T>& operator=(const MeshFunction<T>& mesh_function);
 
     /// Assignment operator
     ///
-    /// *Arguments*
-    ///     mesh_value_collection (_MeshValueCollection_)
+    /// @param    mesh_value_collection (_MeshValueCollection_)
     ///         A _MeshValueCollection_ object used to construct a
     ///         MeshValueCollection.
     MeshValueCollection<T>&
@@ -113,10 +105,9 @@ namespace dolfin
 
     /// Initialise MeshValueCollection with mesh and dimension
     ///
-    /// *Arguments*
-    ///     mesh (_mesh))
+    /// @param    mesh (_mesh))
     ///         The mesh on which the value collection is defined
-    ///     dim (std::size_t)
+    /// @param    dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
     void init(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
@@ -124,52 +115,45 @@ namespace dolfin
     /// for reading MeshValueCollections as the dimension is not
     /// generally known at construction.
     ///
-    /// *Arguments*
-    ///     dim (std::size_t)
+    /// @param    dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
     void init(std::size_t dim);
 
     /// Return topological dimension
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return   std::size_t
     ///         The dimension.
     std::size_t dim() const;
 
     /// Return associated mesh
     ///
-    /// *Returns*
-    ///     _Mesh_
+    /// @return    _Mesh_
     ///         The mesh.
     std::shared_ptr<const Mesh> mesh() const;
 
     /// Return true if the subset is empty
     ///
-    /// *Returns*
-    ///     bool
+    /// @return   bool
     ///         True if the subset is empty.
     bool empty() const;
 
     /// Return size (number of entities in subset)
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return    std::size_t
     ///         The size.
     std::size_t size() const;
 
     /// Set marker value for given entity defined by a cell index and
     /// a local entity index
     ///
-    /// *Arguments*
-    ///     cell_index (std::size_t)
+    /// @param    cell_index (std::size_t)
     ///         The index of the cell.
-    ///     local_entity (std::size_t)
+    /// @param    local_entity (std::size_t)
     ///         The local index of the entity relative to the cell.
-    ///     marker_value (T)
+    /// @param    value (T)
     ///         The value of the marker.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return    bool
     ///         True is a new value is inserted, false if overwriting
     ///         an existing value.
     bool set_value(std::size_t cell_index, std::size_t local_entity,
@@ -177,16 +161,12 @@ namespace dolfin
 
     /// Set value for given entity index
     ///
-    /// *Arguments*
-    ///     entity_index (std::size_t)
+    /// @param    entity_index (std::size_t)
     ///         Index of the entity.
-    ///     value (T).
+    /// @param    value (T).
     ///         The value of the marker.
-    ///     mesh (_Mesh_)
-    ///         The mesh.
     ///
-    /// *Returns*
-    ///     bool
+    /// @return    bool
     ///         True is a new value is inserted, false if overwriting
     ///         an existing value.
     bool set_value(std::size_t entity_index, const T& value);
@@ -194,28 +174,24 @@ namespace dolfin
     /// Get marker value for given entity defined by a cell index and
     /// a local entity index
     ///
-    /// *Arguments*
-    ///     cell_index (std::size_t)
+    /// @param    cell_index (std::size_t)
     ///         The index of the cell.
-    ///     local_entity (std::size_t)
+    /// @param    local_entity (std::size_t)
     ///         The local index of the entity relative to the cell.
     ///
-    /// *Returns*
-    ///     marker_value (T)
+    /// @return    marker_value (T)
     ///         The value of the marker.
     T get_value(std::size_t cell_index, std::size_t local_entity);
 
     /// Get all values
     ///
-    /// *Returns*
-    ///     std::map<std::pair<std::size_t, std::size_t>, T>
+    /// @return    std::map<std::pair<std::size_t, std::size_t>, T>
     ///         A map from positions to values.
     std::map<std::pair<std::size_t, std::size_t>, T>& values();
 
     /// Get all values (const version)
     ///
-    /// *Returns*
-    ///     std::map<std::pair<std::size_t, std::size_t>, T>
+    /// @return    std::map<std::pair<std::size_t, std::size_t>, T>
     ///         A map from positions to values.
     const std::map<std::pair<std::size_t, std::size_t>, T>& values() const;
 
@@ -224,12 +200,10 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     ///
-    /// *Arguments*
-    ///     verbose (bool)
+    /// @param   verbose (bool)
     ///         Flag to turn on additional output.
     ///
-    /// *Returns*
-    ///     std::string
+    /// @return    std::string
     ///         An informal representation.
     std::string str(bool verbose) const;
 

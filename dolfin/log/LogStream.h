@@ -83,6 +83,7 @@ namespace dolfin
     /// Output for point (not subclass of Variable for efficiency)
     LogStream& operator<< (const Point& point);
 
+    /// Set precision
     void setprecision(std::streamsize n);
 
   private:

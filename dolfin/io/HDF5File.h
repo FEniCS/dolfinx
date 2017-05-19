@@ -100,21 +100,21 @@ namespace dolfin
     /// from that Vector
     void read(Function& u, const std::string name);
 
-    /// Read Mesh from file, using attribute data (e.g., cell type) stored
-    /// in the HDF5 file. Optionally re-use any partition data
+    /// Read Mesh from file, using attribute data (e.g., cell type)
+    /// stored in the HDF5 file. Optionally re-use any partition data
     /// in the file. This function requires all necessary data for
     /// constructing a Mesh to be present in the HDF5 file.
     void read(Mesh& mesh, const std::string data_path,
               bool use_partition_from_file) const;
 
-    /// Construct Mesh with paths to topology and geometry datasets, and
-    /// providing essential meta-data, e.g. geometric dimension and
-    /// cell type. If this data is available in the HDF5 file, it will
-    /// be checked for consistency. Set expected_num_global_cells to a
-    /// negative value if not known.
+    /// Construct Mesh with paths to topology and geometry datasets,
+    /// and providing essential meta-data, e.g. geometric dimension
+    /// and cell type. If this data is available in the HDF5 file, it
+    /// will be checked for consistency. Set expected_num_global_cells
+    /// to a negative value if not known.
     ///
     /// This function is typically called when using the XDMF format,
-    /// in which case the meta data has alreayd been read from an XML
+    /// in which case the meta data has already been read from an XML
     /// file
     void read(Mesh& input_mesh,
               const std::string topology_path,
@@ -209,32 +209,33 @@ namespace dolfin
 
     // Write a MeshValueCollection to file (old format)
     template <typename T>
-    void write_mesh_value_collection_old(
-                                     const MeshValueCollection<T>& mesh_values,
-                                     const std::string name);
+      void write_mesh_value_collection_old(
+        const MeshValueCollection<T>& mesh_values,
+        const std::string name);
 
-    // Write a MeshValueCollection to file (new version using vertex indices)
+    // Write a MeshValueCollection to file (new version using vertex
+    // indices)
     template <typename T>
-    void write_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
-                                     const std::string name);
+      void write_mesh_value_collection(const MeshValueCollection<T>& mesh_values,
+                                       const std::string name);
 
     // Read a MeshValueCollection from file
     template <typename T>
-    void read_mesh_value_collection(MeshValueCollection<T>& mesh_values,
-                                    const std::string name) const;
+      void read_mesh_value_collection(MeshValueCollection<T>& mesh_values,
+                                      const std::string name) const;
 
     // Read a MeshValueCollection (old format)
     template <typename T>
-    void read_mesh_value_collection_old(MeshValueCollection<T>& mesh_values,
-                                    const std::string name) const;
+      void read_mesh_value_collection_old(MeshValueCollection<T>& mesh_values,
+                                          const std::string name) const;
 
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
     template <typename T>
-    void write_data(const std::string dataset_name,
-                    const std::vector<T>& data,
-                    const std::vector<std::int64_t> global_size,
-                    bool use_mpi_io);
+      void write_data(const std::string dataset_name,
+                      const std::vector<T>& data,
+                      const std::vector<std::int64_t> global_size,
+                      bool use_mpi_io);
 
     // HDF5 file descriptor/handle
     hid_t _hdf5_file_id;

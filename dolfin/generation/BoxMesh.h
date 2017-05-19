@@ -46,27 +46,24 @@ namespace dolfin
     /// two points is not important in terms of minimum and maximum
     /// coordinates.
     ///
-    /// *Arguments*
-    ///     p0 (_Point_)
+    /// @param p0 (_Point_)
     ///         First point.
-    ///     p1 (_Point_)
+    /// @param p1 (_Point_)
     ///         Second point.
-    ///     nx (double)
-    ///         Number of cells in :math:`x`-direction.
-    ///     ny (double)
-    ///         Number of cells in :math:`y`-direction.
-    ///     nz (double)
-    ///         Number of cells in :math:`z`-direction.
+    /// @param nx (double)
+    ///         Number of cells in x-direction.
+    /// @param ny (double)
+    ///         Number of cells in y-direction.
+    /// @param nz (double)
+    ///         Number of cells in z-direction.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
+    /// @code{.cpp}
     ///         // Mesh with 8 cells in each direction on the
     ///         // set [-1,2] x [-1,2] x [-1,2].
     ///         Point p0(-1, -1, -1);
     ///         Point p1(2, 2, 2);
     ///         BoxMesh mesh(p0, p1, 8, 8, 8);
-    ///
+    /// @endcode
     BoxMesh(const Point& p0, const Point& p1,
             std::size_t nx, std::size_t ny, std::size_t nz);
 
@@ -75,29 +72,26 @@ namespace dolfin
     /// two points is not important in terms of minimum and maximum
     /// coordinates.
     ///
-    /// *Arguments*
-    ///     comm (MPI_Comm)
+    /// @param comm (MPI_Comm)
     ///         MPI communicator
-    ///     p0 (_Point_)
+    /// @param p0 (_Point_)
     ///         First point.
-    ///     p1 (_Point_)
+    /// @param p1 (_Point_)
     ///         Second point.
-    ///     nx (double)
-    ///         Number of cells in :math:`x`-direction.
-    ///     ny (double)
-    ///         Number of cells in :math:`y`-direction.
-    ///     nz (double)
-    ///         Number of cells in :math:`z`-direction.
+    /// @param nx (double)
+    ///         Number of cells in x-direction.
+    /// @param ny (double)
+    ///         Number of cells in y-direction.
+    /// @param nz (double)
+    ///         Number of cells in z-direction.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
+    /// @code{.cpp}
     ///         // Mesh with 8 cells in each direction on the
     ///         // set [-1,2] x [-1,2] x [-1,2].
     ///         Point p0(-1, -1, -1);
     ///         Point p1(2, 2, 2);
     ///         BoxMesh mesh(MPI_COMM_WORLD, p0, p1, 8, 8, 8);
-    ///
+    /// @endcode
     BoxMesh(MPI_Comm comm,
             const Point& p0, const Point& p1,
             std::size_t nx, std::size_t ny, std::size_t nz);

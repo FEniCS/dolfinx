@@ -1,4 +1,4 @@
-// Copyright (C) 2016 Anders Logg
+// Copyright (C) 2016-2017 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-05
-// Last changed: 2017-02-13
+// Last changed: 2017-05-17
 
 #ifndef __GEOMETRY_DEBUGGING_H
 #define __GEOMETRY_DEBUGGING_H
@@ -70,6 +70,8 @@ namespace dolfin
 
     /// Compact simplex to string conversion
     static std::string simplex2string(const std::vector<Point>& simplex);
+
+  private:
 
     // Check whether plotting has been initialized
     static bool _initialized;

@@ -30,21 +30,6 @@
 //=============================================================================
 
 //-----------------------------------------------------------------------------
-// Extend Point for Python 3
-//-----------------------------------------------------------------------------
-%extend dolfin::Point {
-%pythoncode %{
-try:
-    # Workaround for SWIG < 3.0.9
-    __truediv__ = __div__
-    __itruediv__ = __idiv__
-except NameError:
-    # SWIG >= 3.0.9
-    pass
-%}
-}
-
-//-----------------------------------------------------------------------------
 // Extend mesh entity iterators to work as Python iterators
 //-----------------------------------------------------------------------------
 %extend dolfin::MeshEntityIterator {
@@ -235,7 +220,7 @@ DECLARE_MESHFUNCTION(bool, Bool)
 %{
 from six import string_types
 
-_doc_string = MeshFunctionInt.__doc__
+_doc_string = MeshFunctionInt.__doc__ or ''
 _doc_string += """
   *Arguments*
     tp (str)
@@ -352,7 +337,7 @@ DECLARE_MESHVALUECOLLECTION(bool, Bool)
 %{
 from six import string_types
 
-_meshvaluecollection_doc_string = MeshValueCollectionInt.__doc__
+_meshvaluecollection_doc_string = MeshValueCollectionInt.__doc__  or ''
 _meshvaluecollection_doc_string += """
   *Arguments*
       tp (str)
@@ -513,6 +498,48 @@ def ufl_domain(self):
     return self._ufl_domain
 %}
 }
+
+//-----------------------------------------------------------------------------
+// Extend MultiMesh interface with some ufl_* methods
+//-----------------------------------------------------------------------------
+%extend dolfin::MultiMesh
+{
+%pythoncode
+%{
+def ufl_id(self):
+    "Returns an id that UFL can use to decide if two objects are the same."
+    return self.id()
+
+def mpi_comm(self):
+    return self.part(0).mpi_comm()
+
+def type(self):
+    return self.part(0).type()
+
+def ufl_cell(self):
+    """Returns the ufl cell of the mesh."""
+    import ufl
+    gdim = self.part(0).geometry().dim()
+    cellname = self.type().description(False)
+    return ufl.Cell(cellname, geometric_dimension=gdim)
+
+def ufl_coordinate_element(self):
+    "Return the finite element of the coordinate vector field of this domain."
+    import ufl
+    cell = self.ufl_cell()
+    degree = self.part(0).geometry().degree()
+    return ufl.VectorElement("Lagrange", cell, degree, dim=cell.geometric_dimension())
+
+def ufl_domain(self):
+    """Returns the ufl domain corresponding to the mesh."""
+    import ufl
+    # Cache object to avoid recreating it a lot
+    if not hasattr(self, "_ufl_domain"):
+        self._ufl_domain = ufl.Mesh(self.ufl_coordinate_element(), ufl_id=self.ufl_id(), cargo=self)
+    return self._ufl_domain
+%}
+}
+
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Hierarchical

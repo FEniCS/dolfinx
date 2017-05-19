@@ -22,6 +22,7 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/fem/MultiMeshDofMap.h>
+#include <dolfin/geometry/BoundingBoxTree.h>
 #include "Function.h"
 #include "FunctionSpace.h"
 #include "MultiMeshFunctionSpace.h"
@@ -74,11 +75,53 @@ std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i) const
   // Get view of function space for part
   std::shared_ptr<const FunctionSpace> V = _function_space->view(i);
 
-  // Insert into cache and return reference
-  std::shared_ptr<const Function> ui(new Function(V, _vector));
+  // Create and rename function for part
+  std::shared_ptr<Function> ui(new Function(V, _vector));
+  ui->rename(name(), label());
+  
+  // Insert into cache
   _function_parts[i] = ui;
 
   return _function_parts.find(i)->second;
+}
+//-----------------------------------------------------------------------------
+void MultiMeshFunction::assign_part(std::size_t i, const Function& v)
+{
+  // Finding the relevant part of the global vector
+  std::size_t start_idx = 0;
+  for (std::size_t j = 0; j < i; ++j)
+    {
+      start_idx += _function_space->part(j)->dim();
+    }
+  // Replacing old values with new ones
+  for (dolfin::la_index i = 0; i < (v.vector()->size()); ++i)
+      _vector->setitem(start_idx+i, v.vector()->getitem(i));
+}
+
+//-----------------------------------------------------------------------------
+std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i, bool deepcopy) const
+{
+  if (not deepcopy)
+    return part(i);
+
+  assert(i < _function_space->num_parts());
+
+  // Create output function
+  std::shared_ptr<const FunctionSpace> V = _function_space->part(i);
+  std::shared_ptr<Function> ui(new Function(V));
+
+  // Finding the relevant part of the global vector
+  std::size_t start_idx = 0;
+  for (std::size_t j = 0; j < i; ++j)
+    {
+      start_idx += _function_space->part(j)->dim();
+    }
+
+  // Copy values into output function
+  for (dolfin::la_index i = 0; i < (ui->vector()->size()); ++i)
+      ui->vector()->setitem(i, _vector->getitem(start_idx+i));
+
+  return ui;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericVector> MultiMeshFunction::vector()
@@ -144,6 +187,93 @@ void MultiMeshFunction::init_vector()
 
   // Set vector to zero
   _vector->zero();
+}
+//-----------------------------------------------------------------------------
+void MultiMeshFunction::restrict(double* w, const FiniteElement& element,
+                                 std::size_t part,
+                                 const Cell& dolfin_cell,
+                                 const double* coordinate_dofs,
+                                 const ufc::cell& ufc_cell) const
+{
+  dolfin_assert(w);
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->dofmap());
+  dolfin_assert(part < _function_space->num_parts());
+
+  // Check if we are restricting to an element of this function space
+  if (_function_space->part(part)->has_element(element)
+      && _function_space->part(part)->has_cell(dolfin_cell))
+  {
+    // Get dofmap for cell
+    const GenericDofMap& dofmap = *_function_space->dofmap()->part(part);
+    const ArrayView<const dolfin::la_index> dofs
+      = dofmap.cell_dofs(dolfin_cell.index());
+
+    // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
+    // Pick values from vector(s)
+    _vector->get_local(w, dofs.size(), dofs.data());
+  }
+  else
+  {
+    // Restrict as UFC function (by calling eval)
+    restrict_as_ufc_function(w, element, part, dolfin_cell, 
+                             coordinate_dofs, ufc_cell);
+  }
+}
+//-----------------------------------------------------------------------------
+void MultiMeshFunction::eval(Array<double>& values,
+                        const Array<double>& x,
+                        std::size_t part,
+                        const ufc::cell& ufc_cell) const
+{
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->multimesh());
+  const Mesh& mesh = *_function_space->multimesh()->part(part);
+
+  // Check if UFC cell comes from mesh, otherwise
+  // find the cell which contains the point
+  dolfin_assert(ufc_cell.mesh_identifier >= 0);
+  if (ufc_cell.mesh_identifier == (int) mesh.id())
+  {
+    const Cell cell(mesh, ufc_cell.index);
+    this->part(part)->eval(values, x, cell, ufc_cell);
+  }
+  else
+    this->part(part)->eval(values, x);
+}
+//-----------------------------------------------------------------------------
+void MultiMeshFunction::eval(Array<double>& values,
+                        const Array<double>& x) const
+{
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->multimesh());
+  const MultiMesh& multimesh = *_function_space->multimesh();
+
+  // Iterate over meshes from top to bottom
+  std::size_t part = multimesh.num_parts() - 1;
+  for (;part >= 0; part--)
+  {
+    // Stop if mesh contains point or if mesh number equals 0
+    if (multimesh.part(part)->bounding_box_tree()->collides_entity(Point(x)) or part == 0)
+    {
+      this->part(part)->eval(values, x);
+      break;
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void MultiMeshFunction::restrict_as_ufc_function(double* w,
+                                               const FiniteElement& element,
+                                               std::size_t part,
+                                               const Cell& dolfin_cell,
+                                               const double* coordinate_dofs,
+                                               const ufc::cell& ufc_cell) const
+{
+  dolfin_assert(w);
+
+  // Evaluate dofs to get the expansion coefficients
+  element.evaluate_dofs(w, *this->part(part), coordinate_dofs, ufc_cell.orientation,
+                        ufc_cell);
 }
 //-----------------------------------------------------------------------------
 void MultiMeshFunction::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,

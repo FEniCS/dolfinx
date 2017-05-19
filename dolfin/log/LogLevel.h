@@ -3,9 +3,8 @@
 
 namespace dolfin
 {
-  // These log levels match the levels in the Python 'logging' module
-  // (and adds trace/progress).
-
+  /// These log levels match the levels in the Python 'logging' module
+  /// (and adds trace/progress).
   enum LogLevel
   {
     CRITICAL  = 50, // errors that may lead to data corruption and suchlike

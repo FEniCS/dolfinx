@@ -36,6 +36,8 @@ namespace dolfin
 
   // FIXME: Need to test nested parameters and ranges in XML format
 
+  /// I/O of Parameters in XML format
+
   class XMLParameters
   {
   public:

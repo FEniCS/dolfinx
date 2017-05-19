@@ -327,15 +327,17 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfigVersion.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake @ONLY)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake @ONLY)
+configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINPythonXY.cmake.in
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINPython${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}.cmake @ONLY)
 
 install(
   FILES
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindPETSc.cmake
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
-  ${CMAKE_SOURCE_DIR}/cmake/modules/FindBoost.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
   ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINPython${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}.cmake
   DESTINATION ${DOLFIN_SHARE_DIR}/cmake
   COMPONENT Development
   )

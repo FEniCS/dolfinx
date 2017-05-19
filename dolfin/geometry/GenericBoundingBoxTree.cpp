@@ -125,10 +125,6 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
 
     info("Computed global bounding box tree with %d boxes.",
          _global_tree->num_bboxes());
-    // Print on rank 0
-    //    if(MPI::rank(mesh.mpi_comm()) == 0)
-    //      std::cout << _global_tree->str() << "\n";
-
   }
 }
 //-----------------------------------------------------------------------------
