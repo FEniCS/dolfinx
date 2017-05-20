@@ -8,6 +8,14 @@ This demo is implemented in a single Python file,
 :download:`demo_hyperelasticity.py`, which contains both the
 variational forms and the solver.
 
+
+Background
+----------
+
+See the section :ref:`hyperelasticity` for some mathematical
+background on this demo.
+
+
 Implementation
 --------------
 

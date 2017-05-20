@@ -221,9 +221,26 @@ class TestMatrixForAnyBackend:
 
         # Check that PETScMatrix::ident_zeros() rethrows PETSc error
         if self.backend[0:5] == "PETSc":
-            A, B = self.assemble_matrices(use_backend=use_backend)
-            with pytest.raises(RuntimeError):
-                A.ident_zeros()
+            try:
+                from petsc4py import PETSc
+            except ImportError:
+                # Can't detect PETSc version. Skip the test.
+                pass
+            else:
+                petsc_version = PETSc.Sys.getVersion()
+                if petsc_version[0:2] == (3, 7) and petsc_version[2] >= 6:
+                    # Skip the test. PETSc 3.7.(>=6) is doing the diagonal
+                    # check only in debug mode so that DOLFIN might not
+                    # rethrow the error. Fixed in
+                    # https://bitbucket.org/petsc/petsc/commits/a21198abcdd10db88d217ac122e897fcbe3179cd
+                    pass
+                else:
+                    # NOTE: Throw try-except-else,if blocks above and do the
+                    #       test everytime when PETSc requirement is bumped
+                    #       to 3.8
+                    A, B = self.assemble_matrices(use_backend=use_backend)
+                    with pytest.raises(RuntimeError):
+                        A.ident_zeros()
 
         # Assemble matrix A with diagonal entries
         A, B = self.assemble_matrices(use_backend=use_backend,

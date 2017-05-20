@@ -55,31 +55,27 @@ namespace dolfin
 
     /// Create vector-valued expression with given dimension.
     ///
-    /// *Arguments*
-    ///     dim (std::size_t)
-    ///         Dimension of the vector-valued expression.
+    /// @param dim (std::size_t)
+    ///     Dimension of the vector-valued expression.
     explicit Expression(std::size_t dim);
 
     /// Create matrix-valued expression with given dimensions.
     ///
-    /// *Arguments*
-    ///     dim0 (std::size_t)
+    /// @param dim0 (std::size_t)
     ///         Dimension (rows).
-    ///     dim1 (std::size_t)
+    /// @param dim1 (std::size_t)
     ///         Dimension (columns).
     Expression(std::size_t dim0, std::size_t dim1);
 
     /// Create tensor-valued expression with given shape.
     ///
-    /// *Arguments*
-    ///     value_shape (std::vector<std::size_t>)
+    /// @param value_shape (std::vector<std::size_t>)
     ///         Shape of expression.
     explicit Expression(std::vector<std::size_t> value_shape);
 
     /// Copy constructor
     ///
-    /// *Arguments*
-    ///     expression (_Expression_)
+    /// @param expression (Expression)
     ///         Object to be copied.
     Expression(const Expression& expression);
 
@@ -91,12 +87,11 @@ namespace dolfin
 
     /// Evaluate at given point in given cell.
     ///
-    /// *Arguments*
-    ///     values (_Array_ <double>)
+    /// @param    values (Array<double>)
     ///         The values at the point.
-    ///     x (_Array_ <double>)
+    /// @param    x (Array<double>)
     ///         The coordinates of the point.
-    ///     cell (ufc::cell)
+    /// @param    cell (ufc::cell)
     ///         The cell which contains the given point.
     virtual void eval(Array<double>& values,
                       const Array<double>& x,
@@ -104,41 +99,38 @@ namespace dolfin
 
     /// Evaluate at given point.
     ///
-    /// *Arguments*
-    ///     values (_Array_ <double>)
+    /// @param values (Array<double>)
     ///         The values at the point.
-    ///     x (_Array_ <double>)
+    /// @param x (Array<double>)
     ///         The coordinates of the point.
     virtual void eval(Array<double>& values, const Array<double>& x) const;
 
     /// Return value rank.
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return std::size_t
     ///         The value rank.
     virtual std::size_t value_rank() const;
 
     /// Return value dimension for given axis.
     ///
-    /// *Arguments*
-    ///     i (std::size_t)
+    /// @param i (std::size_t)
     ///         Integer denoting the axis to use.
     ///
-    /// *Returns*
-    ///     std::size_t
+    /// @return std::size_t
     ///         The value dimension (for the given axis).
     virtual std::size_t value_dimension(std::size_t i) const;
 
     /// Restrict function to local cell (compute expansion coefficients w).
     ///
-    /// *Arguments*
-    ///     w (list of doubles)
+    /// @param    w (list of doubles)
     ///         Expansion coefficients.
-    ///     element (_FiniteElement_)
+    /// @param    element (_FiniteElement_)
     ///         The element.
-    ///     dolfin_cell (_Cell_)
+    /// @param    dolfin_cell (_Cell_)
     ///         The cell.
-    ///     ufc_cell (ufc::cell)
+    /// @param  coordinate_dofs (double*)
+    ///         The coordinates
+    /// @param    ufc_cell (ufc::cell)
     ///         The ufc::cell.
     virtual void restrict(double* w,
                           const FiniteElement& element,
@@ -148,10 +140,9 @@ namespace dolfin
 
     /// Compute values at all mesh vertices.
     ///
-    /// *Arguments*
-    ///     vertex_values (_Array_ <double>)
+    /// @param    vertex_values (Array<double>)
     ///         The values at all vertices.
-    ///     mesh (_Mesh_)
+    /// @param    mesh (Mesh)
     ///         The mesh.
     virtual void compute_vertex_values(std::vector<double>& vertex_values,
                                        const Mesh& mesh) const;
@@ -159,8 +150,7 @@ namespace dolfin
     /// Return shared pointer to function space (NULL)
     /// Expression does not have a FunctionSpace
     ///
-    /// *Returns*
-    ///     _FunctionSpace_
+    /// @return FunctionSpace
     ///         Return the shared pointer.
     virtual std::shared_ptr<const FunctionSpace> function_space() const;
 

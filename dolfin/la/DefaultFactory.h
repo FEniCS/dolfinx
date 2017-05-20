@@ -30,6 +30,8 @@
 namespace dolfin
 {
 
+  /// Default linear algebra factory based on global parameter "linear_algebra_backend"
+
   class DefaultFactory : public GenericLinearAlgebraFactory
   {
 
@@ -57,12 +59,13 @@ namespace dolfin
       create_linear_operator(MPI_Comm comm) const;
 
     /// Create LU solver
-    virtual std::shared_ptr<dolfin::GenericLUSolver>
+    virtual std::shared_ptr<dolfin::GenericLinearSolver>
     create_lu_solver(MPI_Comm comm, std::string method) const;
 
     /// Create Krylov solver
     virtual std::shared_ptr<dolfin::GenericLinearSolver>
-    create_krylov_solver(MPI_Comm comm, std::string method, std::string preconditioner) const;
+    create_krylov_solver(MPI_Comm comm, std::string method,
+                         std::string preconditioner) const;
 
     /// Return a list of available LU solver methods
     std::map<std::string, std::string> lu_solver_methods() const;

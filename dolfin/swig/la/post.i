@@ -390,17 +390,8 @@ def la_index_dtype():
             return ret
         return NotImplemented
 
-    def __div__(self,other):
-        """x.__div__(y) <==> x/y"""
-        from numpy import isscalar
-        if isscalar(other):
-            ret = self.copy()
-            ret._scale(1.0 / other)
-            return ret
-        return NotImplemented
-
     def __truediv__(self,other):
-        """x.__div__(y) <==> x/y"""
+        """x.__truediv__(y) <==> x/y"""
         from numpy import isscalar
         if isscalar(other):
             ret = self.copy()
@@ -427,8 +418,8 @@ def la_index_dtype():
             return ret
         return NotImplemented
 
-    def __rdiv__(self, other):
-        """x.__rdiv__(y) <==> y/x"""
+    def __rtruediv__(self, other):
+        """x.__rtruediv__(y) <==> y/x"""
         return NotImplemented
 
     def __iadd__(self, other):
@@ -464,16 +455,8 @@ def la_index_dtype():
             return self
         return NotImplemented
 
-    def __idiv__(self, other):
-        """x.__idiv__(y) <==> x/y"""
-        from numpy import isscalar
-        if isscalar(other):
-            self._scale(1.0 / other)
-            return self
-        return NotImplemented
-
     def __itruediv__(self, other):
-        """x.__idiv__(y) <==> x/y"""
+        """x.__itruediv__(y) <==> x/y"""
         from numpy import isscalar
         if isscalar(other):
             self._scale(1.0 / other)
@@ -482,6 +465,13 @@ def la_index_dtype():
 
     def __iter__(self):
         return iter(self.array())
+
+    import sys
+    if sys.version_info[0] == 2:
+        __div__ = __truediv__
+        __rdiv__ = __rtruediv__
+        __idiv__ = __itruediv__
+    del sys
   %}
 }
 
@@ -712,17 +702,8 @@ def la_index_dtype():
             return result_vec.get_local()
         return NotImplemented
 
-    def __div__(self,other):
-        """x.__div__(y) <==> x/y"""
-        from numpy import isscalar
-        if isscalar(other):
-            ret = self.copy()
-            ret._scale(1.0/other)
-            return ret
-        return NotImplemented
-
     def __truediv__(self,other):
-        """x.__div__(y) <==> x/y"""
+        """x.__truediv__(y) <==> x/y"""
         from numpy import isscalar
         if isscalar(other):
             ret = self.copy()
@@ -749,8 +730,8 @@ def la_index_dtype():
             return ret
         return NotImplemented
 
-    def __rdiv__(self,other):
-        """x.__rdiv__(y) <==> y/x"""
+    def __rtruediv__(self,other):
+        """x.__rtruediv__(y) <==> y/x"""
         return NotImplemented
 
     def __iadd__(self,other):
@@ -775,22 +756,20 @@ def la_index_dtype():
             return self
         return NotImplemented
 
-    def __idiv__(self,other):
-        """x.__idiv__(y) <==> x/y"""
-        from numpy import isscalar
-        if isscalar(other):
-            self._scale(1.0 / other)
-            return self
-        return NotImplemented
-
     def __itruediv__(self,other):
-        """x.__idiv__(y) <==> x/y"""
+        """x.__itruediv__(y) <==> x/y"""
         from numpy import isscalar
         if isscalar(other):
             self._scale(1.0 / other)
             return self
         return NotImplemented
 
+    import sys
+    if sys.version_info[0] == 2:
+        __div__ = __truediv__
+        __rdiv__ = __rtruediv__
+        __idiv__ = __itruediv__
+    del sys
   %}
 }
 

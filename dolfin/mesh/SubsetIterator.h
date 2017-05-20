@@ -105,6 +105,7 @@ namespace dolfin
     bool end() const
     { return it == subset.end(); }
 
+    /// Beyond end iterator
     SubsetIterator end_iterator()
     {
       SubsetIterator sg(*this);

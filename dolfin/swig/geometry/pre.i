@@ -31,6 +31,7 @@
 //-----------------------------------------------------------------------------
 %ignore dolfin::Point::operator=;
 %ignore dolfin::Point::operator[];
+%ignore dolfin::Point::coordinates;
 
 //-----------------------------------------------------------------------------
 // Ignore reference (to FunctionSpaces) constructors of BoundingBoxTree

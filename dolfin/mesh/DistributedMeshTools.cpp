@@ -84,8 +84,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
 //-----------------------------------------------------------------------------
 std::size_t DistributedMeshTools::number_entities(
   const Mesh& mesh,
-  const std::map<unsigned int, std::pair<unsigned int,
-  unsigned int>>& slave_entities,
+  const std::map<unsigned int, std::pair<unsigned int, unsigned int>>& slave_entities,
   std::vector<std::int64_t>& global_entity_indices,
   std::map<std::int32_t, std::set<unsigned int>>& shared_entities,
   std::size_t d)
@@ -1230,9 +1229,9 @@ void DistributedMeshTools::reorder_values_by_global_indices(MPI_Comm mpi_comm,
 
   // Redistribute the values to the appropriate process - including
   // self All values are "in the air" at this point, so local vector
-  // can be cleared
-  std::vector<std::vector<std::size_t>> received_values0;
-  std::vector<std::vector<double>> received_values1;
+  // can be cleared. Receive into flat arrays.
+  std::vector<std::size_t> received_values0;
+  std::vector<double> received_values1;
   MPI::all_to_all(mpi_comm, values_to_send0, received_values0);
   MPI::all_to_all(mpi_comm, values_to_send1, received_values1);
 
@@ -1245,19 +1244,13 @@ void DistributedMeshTools::reorder_values_by_global_indices(MPI_Comm mpi_comm,
     new_vertex_array(values.data(),
                      boost::extents[range.second - range.first][width]);
 
-  for (std::size_t p = 0; p != received_values0.size(); ++p)
+  for (std::size_t j = 0; j != received_values0.size(); ++j)
   {
-    const std::vector<std::size_t>& received_global_data0
-      = received_values0[p];
-    const std::vector<double>& received_global_data1 = received_values1[p];
-    for (std::size_t j = 0; j != received_global_data0.size(); ++j)
-    {
-      const std::size_t global_i = received_global_data0[j];
-      dolfin_assert(global_i >= range.first && global_i < range.second);
-      std::copy(received_global_data1.begin() + j*width,
-                received_global_data1.begin() + (j + 1)*width,
-                new_vertex_array[global_i - range.first].begin());
-    }
+    const std::size_t global_i = received_values0[j];
+    dolfin_assert(global_i >= range.first && global_i < range.second);
+    std::copy(received_values1.begin() + j*width,
+              received_values1.begin() + (j + 1)*width,
+              new_vertex_array[global_i - range.first].begin());
   }
 }
 //-----------------------------------------------------------------------------

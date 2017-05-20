@@ -50,6 +50,8 @@ namespace dolfin
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
 
+  /// I/O of DOLFIN objects in XML format
+
   class XMLFile : public GenericFile
   {
   public:
@@ -62,73 +64,87 @@ namespace dolfin
 
     ~XMLFile();
 
-    // Mesh
+    /// Mesh input
     void operator>> (Mesh& input);
+    /// Mesh output
     void operator<< (const Mesh& output);
 
-    // Vector
+    /// Vector input
     void operator>> (GenericVector& input);
+    /// Vector input
     void read_vector(std::vector<double>& input,
                      std::vector<dolfin::la_index>& indices);
+    /// Vector output
     void operator<< (const GenericVector& output);
 
-    // Parameters
+    /// Parameters input
     void operator>> (Parameters& input);
+    /// Parameters output
     void operator<< (const Parameters& output);
 
-    // Table
+    /// Table input
     void operator>> (Table& input);
+    /// Table output
     void operator<< (const Table& output);
 
-    // Function data
+    /// Function data input
     void operator>>(Function& input);
+    /// Function data output
     void operator<<(const Function& output);
 
-    // MeshFunction (uint)
+    /// MeshFunction (uint) input
     void operator>> (MeshFunction<std::size_t>& input)
     { read_mesh_function(input, "uint"); }
+    /// MeshFunction (uint) output
     void operator<< (const MeshFunction<std::size_t>& output)
     { write_mesh_function(output, "uint"); }
 
-    // MeshFunction (int)
+    /// MeshFunction (int) input
     void operator>> (MeshFunction<int>& input)
     { read_mesh_function(input, "int"); }
+    /// MeshFunction (int) output
     void operator<< (const MeshFunction<int>& output)
     { write_mesh_function(output, "int"); }
 
-    // MeshFunction (double)
+    /// MeshFunction (double) input
     void operator>> (MeshFunction<double>& input)
     { read_mesh_function(input, "double"); }
+    /// MeshFunction (double) output
     void operator<< (const MeshFunction<double>& output)
     { write_mesh_function(output, "double"); }
 
-    // MeshFunction (bool)
+    /// MeshFunction (bool) input
     void operator>> (MeshFunction<bool>& input)
     { read_mesh_function(input, "bool"); }
+    /// MeshFunction (bool) output
     void operator<< (const MeshFunction<bool>& input)
     { write_mesh_function(input, "bool"); }
 
-    // MeshValueCollection (std::size_t)
+    /// MeshValueCollection (std::size_t) input
     void operator>> (MeshValueCollection<std::size_t>& input)
     { read_mesh_value_collection(input, "uint"); }
+    /// MeshValueCollection (std::size_t) output
     void operator<< (const MeshValueCollection<std::size_t>& output)
     { write_mesh_value_collection(output, "uint"); }
 
-    // MeshValueCollection (int)
+    /// MeshValueCollection (int) input
     void operator>> (MeshValueCollection<int>& input)
     { read_mesh_value_collection(input, "int"); }
+    /// MeshValueCollection (int) output
     void operator<< (const MeshValueCollection<int>& output)
     { write_mesh_value_collection(output, "int"); }
 
-    // MeshValueCollection (double)
+    /// MeshValueCollection (double) input
     void operator>> (MeshValueCollection<double>& input)
     { read_mesh_value_collection(input, "double"); }
+    /// MeshValueCollection (double) output
     void operator<< (const MeshValueCollection<double>& output)
     { write_mesh_value_collection(output, "double"); }
 
-    // MeshValueCollection (bool)
+    /// MeshValueCollection (bool) input
     void operator>> (MeshValueCollection<bool>& input)
     { read_mesh_value_collection(input, "bool"); }
+    /// MeshValueCollection (bool) output
     void operator<< (const MeshValueCollection<bool>& input)
     { write_mesh_value_collection(input, "bool"); }
 

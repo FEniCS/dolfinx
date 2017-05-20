@@ -11,103 +11,71 @@
 #
 # All configuration values have a default; values that are commented out
 # serve to show the default.
-
+from __future__ import print_function
+import subprocess
 import sys
 import os
 
 
-# Create demo CMakeLists.txt files
-current_dir = os.getcwd()
-os.chdir("../../")
-os.system('python ./cmake/scripts/generate-cmakefiles.py')
-os.chdir(current_dir)
+def run_doxygen():
+    print('--------------------------------------------')
+    print('Running doxygen to read docstrings from C++:')
+    print('Doxygen version: ', end='')
+    sys.stdout.flush() # doxygen writes to stderr and mangles output order
+    
+    # Help doxygen find UFC
+    try:
+        import ffc
+        os.environ['FFC_PATH_FOR_DOXYGEN'] = ffc.get_include_path()
+    except:
+        pass
+    
+    # Run doxygen on C++ sources, generates XML output for us to convert into Sphinx and SWIG formats.
+    try:
+        subprocess.call(['doxygen', '--version'], cwd='..')
+        subprocess.call(['doxygen'], cwd='..')
+    except OSError as e:
+        print('ERROR: could not run doxygen:', e)
+    
+    print('DONE parsing C++ with doxygen')
+    print('--------------------------------------------')
+    print('Generating Sphinx API docs from doxygen')
 
-# Copy demo files into doc directory
+    # Convert doxygen XML output to *.rst files per subdirectory and make SWIG docstrings.i
+    cmd = ['python', './generate_api_rst.py', '--no-swig']
+    subprocess.call(cmd, cwd='..')
 
-# Check that we can find pylint.py for converting foo.py.rst to foo.py
-pylit_parser = "../../utils/pylit/pylit.py"
-if os.path.isfile(pylit_parser):
-    pass
-else:
-    raise RuntimeError("Cannot find pylit.py")
+    print('DONE generating API docs')
+    print('--------------------------------------------')
+run_doxygen()
 
-import shutil
 
-# Directories to scan
-subdirs = ["../../demo"]
+# We can't compile the swig generated headers on RTD.  Instead, we generate the python part as usual,
+# and then mock the cpp objects by importing a generated module full of stubs that looks enough like
+# what the C++ SWIG modules will look like.
+if os.path.isfile('../mock_cpp_modules.py'):
+    sys.path.insert(0, '../')
+    sys.path.insert(0, '../../site_packages')
+    import mock_cpp_modules
 
-# Copy demo rst files into doc source tree, and generate .py files
-# from all .py.rst files
 
-# Create directory to copy demos into
-demo_dir = './demos'
-if not os.path.exists(demo_dir):
-    os.makedirs(demo_dir)
+# TODO: Copy site-packages/dolfin to tmp-dolfin/
+# Run cmake/scripts/generate-generate-swig-interface.py with output to tmp-swig/
+# Run swig in every directory tmp-swig/modules/*
+# Copy generated tmp-swig/modules/*/*.py to tmp-dolfin/cpp/
+# Now it should be possible to import dolfin and let Sphinx do its magic on the docstrings.
 
-topdir = os.getcwd()
-for subdir in subdirs:
-    for root, dirs, files in os.walk(subdir):
+sys.path.append(os.getcwd())
+import rstprocess
 
-        # Check for .py.rst files
-        #extensions = ['.py.rst', '.cpp.py']
-        rstfiles = [f for f in files if len(f) > 7 and (f[-7:] == ".py.rst" or
-                                                        f[-8:] == ".cpp.rst" or
-                                                        f[-8:] == ".ufl.rst")]
-        #print(files)
-        if len(rstfiles) == 0:
-            continue
-
-        # Check if we have Python or C++ code
-        cpp_files = [f for f in files if len(f) > 8 and (f[-8:] == ".cpp.rst" or f[-8:] == ".ufl.rst")]
-        py_files = [f for f in files if len(f) > 7 and f[-7:] == ".py.rst"]
-
-        if len(cpp_files) > 0 and len(py_files) > 0:
-            raise RuntimeError("Ooops, don't know how to handle directiries with C++ and Python demos")
-
-        # Copy files to doc directory, and run pylit on file if required
-        print("Converting rst files in in {} ...".format(root))
-        for f in files:
-            print(f)
-            if py_files:
-                # Copy files into documentation demo directory
-                shutil.copy(os.path.join(root, f), './demos/')
-
-                # If file is an rst file, run pylit on file
-                if f in rstfiles:
-                    command = pylit_parser + " " + './demos/' + f
-                    ret = os.system(command)
-                    if not ret == 0:
-                        raise RuntimeError("Unable to convert rst file to a .cpp/py ({})".format(f))
-            elif cpp_files:
-                # Trim cpp from path
-                demo_root = os.path.split(root)[0]
-
-                # Get demo name
-                demo_name = os.path.split(demo_root)[1]
-
-                # Copy files into documentation demo directory
-                print("Copy")
-                print(f)
-                print('./demos/' + demo_name)
-                demo_dir = './demos/' + demo_name + '/'
-                if not os.path.exists(demo_dir):
-                    os.makedirs(demo_dir)
-                shutil.copy(os.path.join(root, f), demo_dir)
-
-                # If file is an rst file, run pylit on file
-                if f in rstfiles:
-                    command = pylit_parser + " " + demo_dir + f
-                    ret = os.system(command)
-                    if not ret == 0:
-                        raise RuntimeError("Unable to convert rst file to a .cpp/py ({})".format(f))
-
-            else:
-                raise RuntimeError("Ooops")
+# Copy demo files into doc source tree and process with pylit
+rstprocess.process()
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+# sys.path.insert(0, os.path.abspath('.'))
+
 
 # -- General configuration ------------------------------------------------
 
@@ -121,7 +89,8 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-]
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -147,9 +116,9 @@ author = u'FEniCS Project'
 # built documents.
 #
 # The short X.Y version.
-version = u'2017.1.0.dev0'
+version = u'2017.2.0.dev0'
 # The full version, including alpha/beta/rc tags.
-release = u'2017.1.0.dev0'
+release = u'2017.2.0.dev0'
 
 # The language for content autogenerated by Sphinx. Refer to documentation
 # for a list of supported languages.
@@ -449,8 +418,7 @@ epub_exclude_files = ['search.html']
 # Hack to support avoid renaming download files with same names coming
 # from different directories (CMakeLists.txt, Makefile etc)
 
-# From Tormod Landet - see
-# https://github.com/sphinx-doc/sphinx/issues/2720)
+# Fix add_file, see https://github.com/sphinx-doc/sphinx/issues/2720
 from sphinx.util import FilenameUniqDict
 from os import path
 def add_file(self, docname, newfile):
@@ -467,7 +435,8 @@ def add_file(self, docname, newfile):
     return uniquename
 FilenameUniqDict.add_file = add_file
 
-# Hack to support sub-directories within the download directory
+# Hack to support sub-directories within the _download directory
+# see https://github.com/sphinx-doc/sphinx/issues/2720
 from sphinx.builders.html import StandaloneHTMLBuilder, ensuredir, copyfile
 from docutils.utils import relative_path
 from sphinx.util.console import brown
@@ -477,10 +446,10 @@ def copy_download_files(self):
     # copy downloadable files
     if self.env.dlfiles:
         ensuredir(path.join(self.outdir, '_downloads'))
-        for src in self.status_iterator(self.env.dlfiles,  # self.app.status_iterator in master ...
-                                        'copying downloadable files... ',
-                                        brown, len(self.env.dlfiles),
-                                        stringify_func=to_relpath):
+        for src in self.app.status_iterator(self.env.dlfiles,
+                                            'copying downloadable files... ',
+                                            brown, len(self.env.dlfiles),
+                                            stringify_func=to_relpath):
             dest = self.env.dlfiles[src][1]
             subdirs, filename = os.path.split(dest)
             if subdirs:
@@ -492,3 +461,24 @@ def copy_download_files(self):
                 self.warn('cannot copy downloadable file %r: %s' %
                           (path.join(self.srcdir, src), err))
 StandaloneHTMLBuilder.copy_download_files = copy_download_files
+
+# Hack to support sub-directories within the _images directory
+# see https://github.com/sphinx-doc/sphinx/issues/2720
+def copy_image_files(self):
+    # type: () -> None
+    # copy image files
+    if self.images:
+        ensuredir(path.join(self.outdir, self.imagedir))
+        for src in self.app.status_iterator(self.images, 'copying images... ',
+                                            brown, len(self.images)):
+            dest = self.images[src]
+            subdirs, filename = os.path.split(dest)
+            if subdirs:
+                ensuredir(path.join(self.outdir, self.imagedir, subdirs))
+            try:
+                copyfile(path.join(self.srcdir, src),
+                         path.join(self.outdir, self.imagedir, dest))
+            except Exception as err:
+                logger.warning('cannot copy image file %r: %s', path.join(self.srcdir, src), err)
+StandaloneHTMLBuilder.copy_image_files = copy_image_files
+

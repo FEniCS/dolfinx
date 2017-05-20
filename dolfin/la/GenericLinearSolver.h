@@ -88,14 +88,14 @@ namespace dolfin
     // user a more informative error message from solvers that don't
     // support matrix-free representation of linear operators.
 
-    // Down-cast GenericLinearOperator to GenericMatrix when an actual
-    // matrix is required, not only a linear operator. This is the
-    // const reference version of the down-cast.
+    /// Down-cast GenericLinearOperator to GenericMatrix when an actual
+    /// matrix is required, not only a linear operator. This is the
+    /// const reference version of the down-cast.
     static const GenericMatrix& require_matrix(const GenericLinearOperator& A);
 
-    // Down-cast GenericLinearOperator to GenericMatrix when an actual
-    // matrix is required, not only a linear operator. This is the
-    // const reference version of the down-cast.
+    /// Down-cast GenericLinearOperator to GenericMatrix when an actual
+    /// matrix is required, not only a linear operator. This is the
+    /// const reference version of the down-cast.
     static std::shared_ptr<const GenericMatrix>
       require_matrix(std::shared_ptr<const GenericLinearOperator> A);
 

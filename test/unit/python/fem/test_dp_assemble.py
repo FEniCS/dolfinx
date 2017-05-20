@@ -73,7 +73,6 @@ def _create_dp_problem(dim):
     return (u, uu), (v, vv), (U, UU), dPP, bc
 
 
-@use_gc_barrier
 def test_scalar_assemble(dim):
     eps = 1000*DOLFIN_EPS
 
@@ -90,7 +89,6 @@ def test_scalar_assemble(dim):
     assert abs(scalar_value-uu.vector().sum()) < eps
 
 
-@use_gc_barrier
 def test_vector_assemble(dim):
     eps = 1000*DOLFIN_EPS
 
@@ -108,7 +106,6 @@ def test_vector_assemble(dim):
     assert sum(np.absolute(vec.array() - uu.vector().array())) < eps
 
 
-@use_gc_barrier
 def test_matrix_assemble(dim):
     eps = 1000*DOLFIN_EPS
 

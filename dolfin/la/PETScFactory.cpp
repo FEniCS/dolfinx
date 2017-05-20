@@ -60,7 +60,7 @@ PETScFactory::create_linear_operator(MPI_Comm comm) const
   return std::make_shared<PETScLinearOperator>(comm);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericLUSolver>
+std::shared_ptr<GenericLinearSolver>
 PETScFactory::create_lu_solver(MPI_Comm comm, std::string method) const
 {
   return std::make_shared<PETScLUSolver>(comm, method);

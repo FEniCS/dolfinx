@@ -42,6 +42,14 @@ namespace dolfin
 
     /// Move coordinates of mesh according to new boundary coordinates
     /// and return the displacement
+    ///
+    /// @param mesh (Mesh)
+    ///   Mesh
+    /// @param new_boundary (BoundaryMesh)
+    ///   Boundary mesh
+    ///
+    /// @return MeshDisplacement
+    ///   Displacement
     static std::shared_ptr<MeshDisplacement>
       move(std::shared_ptr<Mesh> mesh, const BoundaryMesh& new_boundary);
 

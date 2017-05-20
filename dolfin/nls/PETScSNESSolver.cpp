@@ -265,6 +265,15 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
                            max_iters, max_residual_evals);
   if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetTolerances");
 
+  // Following set from options call requires Mat type to be set (at least
+  // when PETSC_USE_DEBUG) and we don't have any better way
+  if (_matJ.empty())
+  {
+    ierr = FormJacobian(_snes, _snes_ctx.x->vec(),
+                        _matJ.mat(), _matP.mat(), &_snes_ctx);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "PETScSNESSolver::FormJacobian");
+  }
+
   // Set some options
   ierr = SNESSetFromOptions(_snes);
   if (ierr != 0) petsc_error(ierr, __FILE__, "SNESSetFromOptions");
@@ -521,11 +530,11 @@ void PETScSNESSolver::set_linear_solver_parameters()
     }
   }
   else if (linear_solver == "lu"
-           || PETScLUSolver::_methods.count(linear_solver) != 0)
+           || PETScLUSolver::lumethods.count(linear_solver) != 0)
   {
     std::string lu_method;
-    if (PETScLUSolver::_methods.find(linear_solver)
-        != PETScLUSolver::_methods.end())
+    if (PETScLUSolver::lumethods.find(linear_solver)
+        != PETScLUSolver::lumethods.end())
     {
       lu_method = linear_solver;
     }
@@ -566,8 +575,8 @@ void PETScSNESSolver::set_linear_solver_parameters()
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
     ierr = PCSetType(pc, PCLU);
     if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
-    auto it = PETScLUSolver::_methods.find(lu_method);
-    dolfin_assert(it != PETScLUSolver::_methods.end());
+    auto it = PETScLUSolver::lumethods.find(lu_method);
+    dolfin_assert(it != PETScLUSolver::lumethods.end());
     ierr = PCFactorSetMatSolverPackage(pc, it->second);
     if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetMatSolverPackage");
   }
