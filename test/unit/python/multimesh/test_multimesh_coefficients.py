@@ -37,30 +37,30 @@ def test_dX_integral():
 @skip_in_parallel
 def test_dI_integral():
     f_dI0 = assemble_multimesh(f("-") * dI)
-    assert abs(f_dI0 - 2.0) < DOLFIN_EPS_LARGE
+    assert abs(f_dI0 - 4.0) < DOLFIN_EPS_LARGE
 
     f_dI1 = assemble_multimesh(f("+") * dI)
-    assert abs(f_dI1 - 4.0) < DOLFIN_EPS_LARGE
+    assert abs(f_dI1 - 2.0) < DOLFIN_EPS_LARGE
 
     fgh_dI0 = assemble_multimesh(f("-")*g("-")*h("-") * dI)
-    assert abs(fgh_dI0 - 1.0) < DOLFIN_EPS_LARGE
+    assert abs(fgh_dI0 - 3.0) < DOLFIN_EPS_LARGE
 
     fgh_dI1 = assemble_multimesh(f("+")*g("+")*h("+") * dI)
-    assert abs(fgh_dI1 - 3.0) < DOLFIN_EPS_LARGE
+    assert abs(fgh_dI1 - 1.0) < DOLFIN_EPS_LARGE
 
 
 @skip_in_parallel
 def test_dO_integral():
     f_dO0 = assemble_multimesh(f("-") * dO)
-    assert abs(f_dO0 - 0.25) < DOLFIN_EPS_LARGE
+    assert abs(f_dO0 - 0.50) < DOLFIN_EPS_LARGE
 
     f_dO1 = assemble_multimesh(f("+") * dO)
-    assert abs(f_dO1 - 0.50) < DOLFIN_EPS_LARGE
+    assert abs(f_dO1 - 0.25) < DOLFIN_EPS_LARGE
 
     fgh_dO0 = assemble_multimesh(f("-")*g("-")*h("-") * dO)
-    assert abs(fgh_dO0 - 0.125) < DOLFIN_EPS_LARGE
+    assert abs(fgh_dO0 - 0.375) < DOLFIN_EPS_LARGE
 
     fgh_dO1 = assemble_multimesh(f("+")*g("+")*h("+") * dO)
-    assert abs(fgh_dO1 - 0.375) < DOLFIN_EPS_LARGE
+    assert abs(fgh_dO1 - 0.125) < DOLFIN_EPS_LARGE
 
 
