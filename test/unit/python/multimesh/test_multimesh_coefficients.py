@@ -25,7 +25,7 @@ f.assign_part(1, interpolate(Constant(2.0), V1))
 h.assign_part(0, interpolate(Constant(1.0), V0))
 h.assign_part(1, interpolate(Constant(1.5), V1))
 
-@pytest.mark.skipif(True, reason="Multimesh coefficient implementation is not correct")
+
 @skip_in_parallel
 def test_dX_integral():
     f_dX = assemble_multimesh(f * dX)
@@ -34,7 +34,6 @@ def test_dX_integral():
     fgh_dX = assemble_multimesh(f*g*h * dX)
     assert abs(fgh_dX - 0.75) < DOLFIN_EPS_LARGE
 
-@pytest.mark.skipif(True, reason="Multimesh coefficient implementation is not correct")
 @skip_in_parallel
 def test_dI_integral():
     f_dI0 = assemble_multimesh(f("-") * dI)
@@ -49,7 +48,7 @@ def test_dI_integral():
     fgh_dI1 = assemble_multimesh(f("+")*g("+")*h("+") * dI)
     assert abs(fgh_dI1 - 3.0) < DOLFIN_EPS_LARGE
 
-@pytest.mark.skipif(True, reason="Multimesh coefficient implementation is not correct")
+
 @skip_in_parallel
 def test_dO_integral():
     f_dO0 = assemble_multimesh(f("-") * dO)
@@ -63,3 +62,5 @@ def test_dO_integral():
 
     fgh_dO1 = assemble_multimesh(f("+")*g("+")*h("+") * dO)
     assert abs(fgh_dO1 - 0.375) < DOLFIN_EPS_LARGE
+
+
