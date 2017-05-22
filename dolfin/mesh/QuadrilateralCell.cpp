@@ -135,8 +135,9 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
     m.row(1) << (p3 - p0)[0], (p3 - p0)[1], (p3 - p0)[2];
     m.row(2) << (p2 - p0)[0], (p2 - p0)[1], (p2 - p0)[2];
     const double copl = m.determinant();
+    const double h = std::min(1.0, std::pow((p0 - p3).norm(), 3)); // Scaling argument to catch non coplanarity for small cells (of order 1e-5 or smaller)
     // Check for coplanarity
-    if (std::abs(copl) > DOLFIN_EPS)
+    if (std::abs(copl) > h * DOLFIN_EPS)
     {
       dolfin_error("QuadrilateralCell.cpp",
                    "compute volume of quadrilateral",
