@@ -81,6 +81,10 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
+    /// Return parameter type: "krylov_solver" or "lu_solver"
+    std::string parameter_type() const
+    { return "lu_solver"; }
+
   private:
 
     void init_solver(std::string& method);

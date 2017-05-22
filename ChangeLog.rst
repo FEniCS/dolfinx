@@ -1,8 +1,13 @@
 Change log
 ==========
 
-dev
----
+2017.2.0 (unreleased)
+---------------------
+
+- Nothing changed yet
+
+2017.1.0 (2017-05-09)
+---------------------
 
 - Refactor PETScLUSolver to use functionality from
   PETScKrylovSolver. Simplify interface for solving transposed

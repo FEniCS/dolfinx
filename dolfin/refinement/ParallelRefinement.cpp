@@ -131,8 +131,8 @@ void ParallelRefinement::update_logical_edgefunction()
 {
   const std::size_t mpi_size = MPI::size(_mesh.mpi_comm());
 
-  // Send all shared edges marked for update
-  std::vector<std::vector<std::size_t>> received_values;
+  // Send all shared edges marked for update and receive from other processes
+  std::vector<std::size_t> received_values;
   MPI::all_to_all(_mesh.mpi_comm(), marked_for_update, received_values);
 
   // Clear marked_for_update vectors
@@ -140,13 +140,9 @@ void ParallelRefinement::update_logical_edgefunction()
 
   // Flatten received values and set EdgeFunction true at each index
   // received
-  for (auto const &local_indices: received_values)
-  {
-    for (auto const &local_index : local_indices)
-    {
+  for (auto const &local_index : received_values)
       marked_edges[local_index] = true;
-    }
-  }
+
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::create_new_vertices()
@@ -226,13 +222,13 @@ void ParallelRefinement::create_new_vertices()
   }
 
   // Send new vertex indices to remote processes and receive
-  std::vector<std::vector<std::size_t>> received_values(mpi_size);
+  std::vector<std::size_t> received_values;
   MPI::all_to_all(_mesh.mpi_comm(), values_to_send, received_values);
 
-  // Flatten and add received remote global vertex indices to map
-  for (auto const &p : received_values)
-    for (auto q = p.begin(); q != p.end(); q += 2)
-      (*local_edge_to_new_vertex)[*q] = *(q + 1);
+  // Add received remote global vertex indices to map
+  for (auto q = received_values.begin();
+       q != received_values.end(); q += 2)
+    (*local_edge_to_new_vertex)[*q] = *(q + 1);
 
   // Attach global indices to each vertex, old and new, and sort
   // them across processes into this order

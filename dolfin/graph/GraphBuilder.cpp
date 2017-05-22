@@ -446,32 +446,28 @@ std::int32_t GraphBuilder::compute_nonlocal_dual_graph(
   }
 
   // Send matches to other processes
-  MPI::all_to_all(mpi_comm, send_buffer, received_buffer);
+  std::vector<std::size_t> cell_list;
+  MPI::all_to_all(mpi_comm, send_buffer, cell_list);
 
   // Clear ghost vertices
   ghost_vertices.clear();
 
-  // Flatten received data and insert connected cells into local map
+  // Insert connected cells into local map
   std::int32_t num_nonlocal_edges = 0;
-  for (std::size_t p = 0; p < received_buffer.size(); ++p)
+  for (std::size_t i = 0; i < cell_list.size(); i += 2)
   {
-    const std::vector<std::size_t>& cell_list = received_buffer[p];
-    for (std::size_t i = 0; i < cell_list.size(); i += 2)
+    dolfin_assert((std::int64_t) cell_list[i] >= offset);
+    dolfin_assert((std::int64_t)  (cell_list[i] - offset)
+                  < (std::int64_t) local_graph.size());
+
+    auto& edges = local_graph[cell_list[i] - offset];
+    auto it = std::find(edges.begin(), edges.end(), cell_list[i + 1]);
+    if (it == local_graph[cell_list[i] - offset].end())
     {
-      dolfin_assert((std::int64_t) cell_list[i] >= offset);
-      dolfin_assert((std::int64_t)  (cell_list[i] - offset)
-                    < (std::int64_t) local_graph.size());
-
-      //local_graph[cell_list[i] - offset].insert(cell_list[i + 1]);
-      auto& edges = local_graph[cell_list[i] - offset];
-      auto it = std::find(edges.begin(), edges.end(), cell_list[i + 1]);
-      if (it == local_graph[cell_list[i] - offset].end())
-        edges.push_back(cell_list[i + 1]);
-
-      ghost_vertices.insert(cell_list[i + 1]);
+      edges.push_back(cell_list[i + 1]);
+      ++num_nonlocal_edges;
     }
-
-    ++num_nonlocal_edges;
+    ghost_vertices.insert(cell_list[i + 1]);
   }
 
   return num_nonlocal_edges;
