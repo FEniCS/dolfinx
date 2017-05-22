@@ -378,10 +378,10 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
           continue;
 
         // Create aliases for cells to simplify notation
-        const std::size_t& part_0 = cutting_part;
-        const std::size_t& part_1 = part;
-        const Cell& cell_0 = cutting_cell;
-        const Cell& cell_1 = cut_cell;
+        const std::size_t& part_1 = cutting_part;
+        const std::size_t& part_0 = part;
+        const Cell& cell_1 = cutting_cell;
+        const Cell& cell_0 = cut_cell;
 
         // Update to current pair of cells
         // Let UFC update the coefficients that are not MultiMeshFunction
@@ -577,10 +577,10 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
           continue;
 
         // Create aliases for cells to simplify notation
-        const std::size_t& part_0 = cutting_part;
-        const std::size_t& part_1 = part;
-        const Cell& cell_0 = cutting_cell;
-        const Cell& cell_1 = cut_cell;
+        const std::size_t& part_1 = cutting_part;
+        const std::size_t& part_0 = part;
+        const Cell& cell_1 = cutting_cell;
+        const Cell& cell_0 = cut_cell;
 
         // Update to current pair of cells
         // Let UFC update the coefficients that are not MultiMeshFunction
