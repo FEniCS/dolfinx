@@ -122,3 +122,26 @@ def test_volume_quadrilateralR3_2():
     cell = Cell(mesh, 0)
 
     assert cell.volume() == 1.0
+
+
+
+def test_volume_quadrilateral_coplanarity_check():
+
+    with pytest.raises(RuntimeError) as error:
+        mesh = Mesh()
+        editor = MeshEditor()
+        editor.open(mesh, "quadrilateral", 2, 3)
+        editor.init_vertices(4)
+        editor.init_cells(1)
+        # Unit square cell scaled down by 1e-20 and first vertice is distorted so that the vertices are clearly non coplanar
+        editor.add_vertex(0, Point(0.1 * 10**(-20), 0.5 * 10**(-20), 0.6 * 10**(-20)))
+        editor.add_vertex(1, Point(0.0, 1.0 * 10**(-20), 0.0))
+        editor.add_vertex(2, Point(0.0, 0.0, 1.0 * 10**(-20)))
+        editor.add_vertex(3, Point(0.0, 1.0 * 10**(-20), 1.0 * 10**(-20)))
+        editor.add_cell(0,numpy.array([0, 1, 2, 3],dtype=numpy.uintp))
+        editor.close()
+        mesh.init()
+        cell = Cell(mesh, 0)
+        volume = cell.volume()
+        
+    assert "are not coplanar" in str(error.value)
