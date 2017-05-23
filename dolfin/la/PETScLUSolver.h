@@ -110,6 +110,10 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
+    /// Return parameter type: "krylov_solver" or "lu_solver"
+    std::string parameter_type() const
+    { return "lu_solver"; }
+
     // FIXME: These should not be friend classes
     friend class PETScSNESSolver;
     friend class PETScTAOSolver;

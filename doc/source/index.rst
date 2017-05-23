@@ -13,8 +13,7 @@ Contents:
    api
    pyapi
    developer
-
-
+   ChangeLog
 
 Indices and tables
 ==================
