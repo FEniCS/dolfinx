@@ -133,11 +133,11 @@ def test_volume_quadrilateral_coplanarity_check():
         editor.open(mesh, "quadrilateral", 2, 3)
         editor.init_vertices(4)
         editor.init_cells(1)
-        # Unit square cell scaled down by 1e-20 and first vertice is distorted so that the vertices are clearly non coplanar
-        editor.add_vertex(0, Point(0.1 * 1e-20, 0.5 * 1e-20, 0.6 * 1e-20))
-        editor.add_vertex(1, Point(0.0, 1.0 * 1e-20, 0.0))
-        editor.add_vertex(2, Point(0.0, 0.0, 1.0 * 1e-20))
-        editor.add_vertex(3, Point(0.0, 1.0 * 1e-20, 1.0 * 1e-20))
+        # Unit square cell scaled down by 1e-20 and the first vertex is distorted so that the vertices are clearly non coplanar
+        editor.add_vertex(0, Point(1e-20, 5e-21, 6e-21))
+        editor.add_vertex(1, Point(0.0, 1e-20, 0.0))
+        editor.add_vertex(2, Point(0.0, 0.0, 1e-20))
+        editor.add_vertex(3, Point(0.0, 1e-20, 1e-20))
         editor.add_cell(0,numpy.array([0, 1, 2, 3],dtype=numpy.uintp))
         editor.close()
         mesh.init()
