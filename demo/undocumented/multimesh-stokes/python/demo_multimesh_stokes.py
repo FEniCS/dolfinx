@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2015-11-11
-# Last changed: 2015-11-24
+# Last changed: 2017-05-25
 #
 # This demo program solves the Stokes equations on a domain defined
 # by three overlapping and non-matching meshes.
@@ -71,7 +71,7 @@ n = FacetNormal(multimesh)
 h = 2.0*Circumradius(multimesh)
 
 # Parameters
-alpha = 4.0
+alpha = 10.0
 
 def tensor_jump(v, n):
     return outer(v('+'), n('+')) + outer(v('-'), n('-'))
