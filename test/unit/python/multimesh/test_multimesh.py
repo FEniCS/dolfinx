@@ -20,7 +20,7 @@
 #
 #
 # First added:  2016-06-11
-# Last changed: 2017-05-15
+# Last changed: 2017-05-28
 
 import pytest
 from dolfin import *
@@ -109,8 +109,8 @@ def exactsolution():
 @pytest.mark.slow
 @skip_in_parallel
 def test_multimesh_poisson():
-    # Developer's note: this test was implemented because of a broken
-    # multimesh coefficient implementation.
+    # This tests solves a Poisson problem on two meshes with u = x as
+    # exact solution
 
     # FIXME: This test is quite slow.
 
