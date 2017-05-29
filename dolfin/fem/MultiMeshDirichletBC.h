@@ -141,6 +141,12 @@ namespace dolfin
                GenericVector& b,
                const GenericVector& x) const;
 
+    /// Zero the rows in a matrix A corresponding to boundary dofs
+    ///
+    /// @param     A (_GenericMatrix_)
+    ///         The matrix to zero rows in.
+    void zero(GenericMatrix& A) const;
+
     /// Set value to 0.0
     void homogenize();
 

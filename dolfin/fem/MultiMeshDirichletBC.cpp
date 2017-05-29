@@ -257,6 +257,34 @@ void MultiMeshDirichletBC::apply(GenericMatrix& A,
   }
 }
 //-----------------------------------------------------------------------------
+void MultiMeshDirichletBC::zero(GenericMatrix& A) const
+{
+  // Check whether we have a list of boundary conditions, one for each
+  // part, or if we have a single boundary condition for a single
+  // part.
+
+  if (_sub_domain)
+  {
+    // Iterate over boundary conditions
+    for (std::size_t part = 0; part < _bcs.size(); part++)
+    {
+      // Set current part for subdomain wrapper
+      dolfin_assert(_sub_domain);
+      _sub_domain->set_current_part(part);
+
+      // Apply boundary condition for current part
+      _bcs[part]->zero(A);
+    }
+  }
+  else
+  {
+    dolfin_assert(_bcs.size() == 1);
+
+    // Apply the single boundary condition
+    _bcs[0]->zero(A);
+  }
+}
+//-----------------------------------------------------------------------------
 void MultiMeshDirichletBC::homogenize()
 {
   // Iterate over boundary conditions
