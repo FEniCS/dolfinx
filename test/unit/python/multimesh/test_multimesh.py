@@ -31,9 +31,9 @@ from dolfin_utils.test import fixture, skip_in_parallel
 
 @fixture
 def multimesh():
-    mesh_0 = RectangleMesh(Point(0,0), Point(1, 1), 40, 40)
+    mesh_0 = RectangleMesh(Point(0,0), Point(1, 1), 20, 20)
     mesh_1 = RectangleMesh(Point(numpy.pi/10,numpy.pi/9),
-                           Point(numpy.pi/8,numpy.pi/7),25,40)
+                           Point(numpy.pi/8,numpy.pi/7),5,8)
     multimesh = MultiMesh()
     multimesh.add(mesh_0)
     multimesh.add(mesh_1)
@@ -49,7 +49,6 @@ def V(multimesh):
 def V_high(multimesh):
     element = FiniteElement("Lagrange", triangle, 3)
     return MultiMeshFunctionSpace(multimesh, element)
-
 
 @fixture
 def f():
@@ -99,8 +98,6 @@ def test_errornorm_L2(f_2,v_high):
 def test_errornorm_H1(f, f_2, v_high):
     v_high.interpolate(f_2)
     assert numpy.isclose(errornorm(f, v_high, norm_type="H1", degree_rise=3), numpy.sqrt(37./36+5*numpy.pi**2/4))
-
-
 
 @fixture
 def exactsolution():
