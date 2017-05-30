@@ -698,12 +698,12 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 	_inclusion_exclusion_overlap(overlap_qr, sq, initial_polyhedra,
 				     tdim, gdim, quadrature_order);
 
-      // // Remove any near-trival quadrature rules
-      // // TODO: The tolerance here appears to work ok in 2D with few meshes
-      // // TODO: It might not be accurate in 3D or a large number of meshes
-      // const double tolerance = DOLFIN_EPS;// 2.0 * DOLFIN_EPS * cut_cell.volume() * num_cutting_cells;
-      // for (std::size_t i = 0; i < overlap_qr.size(); i++)
-      // 	remove_quadrature_rule(overlap_qr[i], tolerance);
+      // Remove any near-trival quadrature rules
+      // TODO: The tolerance here appears to work ok in 2D with few meshes
+      // TODO: It might not be accurate in 3D or a large number of meshes
+      const double tolerance = DOLFIN_EPS * cut_cell.volume();
+      for (std::size_t i = 0; i < overlap_qr.size(); i++)
+      	remove_quadrature_rule(overlap_qr[i], tolerance);
 
       if (parameters["compress_volume_quadrature"])
       {
@@ -940,17 +940,21 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		   tdim_interface, gdim, quadrature_order);
 	      }
 
-	      // // Remove any near-trival quadrature rules
-	      // // TODO: Investigate the tolerance
-	      // const double tolerance = DOLFIN_EPS;
-	      // remove_quadrature_rule(interface_qr[local_cutting_cell_j_index], tolerance);
+	      // Remove any near-trival quadrature rules
+	      // TODO: Investigate the tolerance
+              double cut_size;
+              if  (Eij.size() == 2)
+                cut_size = (Eij[1] - Eij[0]).norm();
+              else if (Eij.size() == 3)
+                cut_size = (Eij[1] - Eij[0]).cross(Eij[2] - Eij[0]).norm() / 2;
+              const double tolerance = DOLFIN_EPS * cut_size;
+	      remove_quadrature_rule(interface_qr[local_cutting_cell_j_index], tolerance);
 
 	      // TODO: Investigate if we should compress here or below
 	      if (parameters["compress_interface_quadrature"])
 	      {
 		const std::vector<std::size_t> indices
 		  = SimplexQuadrature::compress(interface_qr[local_cutting_cell_j_index], gdim, quadrature_order);
-
 		if (indices.size())
 		{
 		  // Reorder the normals
@@ -1615,9 +1619,22 @@ void MultiMesh::_impose_cut_cell_consistency()
 void MultiMesh::remove_quadrature_rule(quadrature_rule& qr,
 				       double tolerance)
 {
-  const double sum_of_weights = std::accumulate(qr.second.begin(),
-						qr.second.end(), 0.0);
-  if (std::abs(sum_of_weights) < tolerance)
+  //const double sum = std::accumulate(qr.second.begin(),
+  // 				       qr.second.end(), 0.0);
+
+  // Kahan summation to reduce roundoff errors
+  double sum = 0.0;
+  double c = 0.0;
+  double y;
+  double t;
+  for (auto w : qr.second)
+  {
+    y = w - c;
+    t = sum + y;
+    c = (t - sum) - y;
+    sum = t;
+  }
+  if (std::abs(sum) < tolerance)
   {
     qr.first.clear();
     qr.second.clear();
