@@ -157,9 +157,7 @@ HarmonicSmoothing::move(std::shared_ptr<Mesh> mesh,
   Vector b(*(*u)[0].vector());
 
   // Prepare solver
-  // NOTE: GMRES needs to be used until Eigen a4b7b6e or 8dcc4ed is widespread;
-  //       afterwards CG can be used again
-  KrylovSolver solver(mesh->mpi_comm(), "bicgstab", prec);
+  KrylovSolver solver(mesh->mpi_comm(), "cg", prec);
   solver.parameters["nonzero_initial_guess"] = true;
   solver.set_operator(A);
 
