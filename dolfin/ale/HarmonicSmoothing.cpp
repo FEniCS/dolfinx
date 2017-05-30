@@ -157,7 +157,7 @@ HarmonicSmoothing::move(std::shared_ptr<Mesh> mesh,
   Vector b(*(*u)[0].vector());
 
   // Prepare solver
-  KrylovSolver solver(mesh->mpi_comm(), "cg", prec);
+  KrylovSolver solver(mesh->mpi_comm(), "bicgstab", prec);
   solver.parameters["nonzero_initial_guess"] = true;
   solver.set_operator(A);
 
