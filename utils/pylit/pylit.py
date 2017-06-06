@@ -136,7 +136,7 @@ __docformat__ = 'restructuredtext'
 #
 # ::
 
-import os, sys
+import os, sys, io
 import re, optparse
 
 
@@ -1496,7 +1496,7 @@ def open_streams(infile = '-', outfile = '-', overwrite='update', **keyw):
     if infile == '-':
         in_stream = sys.stdin
     else:
-        in_stream = open(infile, 'r')
+        in_stream = io.open(infile, 'r', encoding='utf-8')
 
     if outfile == '-':
         out_stream = sys.stdout
@@ -1505,7 +1505,7 @@ def open_streams(infile = '-', outfile = '-', overwrite='update', **keyw):
     elif overwrite == 'update' and is_newer(outfile, infile):
         raise IOError((1, "Output file is newer than input file!", outfile))
     else:
-        out_stream = open(outfile, 'w')
+        out_stream = io.open(outfile, 'w', encoding='utf-8')
     return (in_stream, out_stream)
 
 # is_newer
