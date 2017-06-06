@@ -254,7 +254,8 @@ void QuadrilateralCell::order(Cell& cell,
                  const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
   // Not implemented
-  dolfin_not_implemented();
+  // Commented to read quadrilateral mesh in dolfin/io
+  // dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 bool QuadrilateralCell::collides(const Cell& cell, const Point& point) const
