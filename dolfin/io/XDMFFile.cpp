@@ -1216,7 +1216,7 @@ void XDMFFile::build_mesh(Mesh& mesh, const CellType& cell_type,
                            topology_data.begin() + (i + 1) * num_vertices_per_cell);
 
       // Apply permutation and store topology as permuted topology
-      for (int j = 0; j < num_vertices_per_cell; ++j) {
+      for (unsigned int j = 0; j < num_vertices_per_cell; ++j) {
         cell_topology_permuted[j] = cell_topology[perm[j]];
       }
 
