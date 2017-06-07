@@ -84,18 +84,19 @@ def test_volume_quadrilateralR2():
     assert cell.volume() == 1.0
 
 
-
-def test_volume_quadrilateralR3_1():
+@pytest.mark.parametrize('coordinates', [[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]], 
+    [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 1.0]]])
+def test_volume_quadrilateralR3():
 
     mesh = Mesh()
     editor = MeshEditor()
     editor.open(mesh, "quadrilateral", 2, 3)
     editor.init_vertices(4)
     editor.init_cells(1)
-    editor.add_vertex(0, Point(0.0, 0.0, 0.0))
-    editor.add_vertex(1, Point(1.0, 0.0, 0.0))
-    editor.add_vertex(2, Point(0.0, 1.0, 0.0))
-    editor.add_vertex(3, Point(1.0, 1.0, 0.0))
+    editor.add_vertex(0, Point(numpy.array(coordinates[0])))
+    editor.add_vertex(1, Point(numpy.array(coordinates[1])))
+    editor.add_vertex(2, Point(numpy.array(coordinates[2])))
+    editor.add_vertex(3, Point(numpy.array(coordinates[3])))
     editor.add_cell(0,numpy.array([0, 1, 2, 3],dtype=numpy.uintp))
     editor.close()
     mesh.init()
@@ -104,27 +105,7 @@ def test_volume_quadrilateralR3_1():
     assert cell.volume() == 1.0
 
 
-
-def test_volume_quadrilateralR3_2():
-
-    mesh = Mesh()
-    editor = MeshEditor()
-    editor.open(mesh, "quadrilateral", 2, 3)
-    editor.init_vertices(4)
-    editor.init_cells(1)
-    editor.add_vertex(0, Point(0.0, 0.0, 0.0))
-    editor.add_vertex(1, Point(0.0, 1.0, 0.0))
-    editor.add_vertex(2, Point(0.0, 0.0, 1.0))
-    editor.add_vertex(3, Point(0.0, 1.0, 1.0))
-    editor.add_cell(0,numpy.array([0, 1, 2, 3],dtype=numpy.uintp))
-    editor.close()
-    mesh.init()
-    cell = Cell(mesh, 0)
-
-    assert cell.volume() == 1.0
-
-
-
+@pytest.mark.parametrize('scale', [1e0, 1e-5, 1e-10, 1e-15, 1e-20, 1e-30])
 def test_volume_quadrilateral_coplanarity_check():
 
     with pytest.raises(RuntimeError) as error:
@@ -133,15 +114,15 @@ def test_volume_quadrilateral_coplanarity_check():
         editor.open(mesh, "quadrilateral", 2, 3)
         editor.init_vertices(4)
         editor.init_cells(1)
-        # Unit square cell scaled down by 1e-20 and the first vertex is distorted so that the vertices are clearly non coplanar
-        editor.add_vertex(0, Point(1e-20, 5e-21, 6e-21))
-        editor.add_vertex(1, Point(0.0, 1e-20, 0.0))
-        editor.add_vertex(2, Point(0.0, 0.0, 1e-20))
-        editor.add_vertex(3, Point(0.0, 1e-20, 1e-20))
+        # Unit square cell scaled down by 'scale' and the first vertex is distorted so that the vertices are clearly non coplanar
+        editor.add_vertex(0, Point(scale, 0.5 * scale, 0.6 * scale))
+        editor.add_vertex(1, Point(0.0, scale, 0.0))
+        editor.add_vertex(2, Point(0.0, 0.0, scale))
+        editor.add_vertex(3, Point(0.0, scale, scale))
         editor.add_cell(0,numpy.array([0, 1, 2, 3],dtype=numpy.uintp))
         editor.close()
         mesh.init()
         cell = Cell(mesh, 0)
         volume = cell.volume()
-        
+
     assert "are not coplanar" in str(error.value)
