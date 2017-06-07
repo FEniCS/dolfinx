@@ -126,16 +126,19 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
                  "compute volume of quadrilateral",
                  "Only know how to compute volume in R^2 or R^3");
   }
-  
+
+  const Point c = (p0 - p3).cross(p1 - p2);
+  const double volume 0.5 * c.norm();
+
   if (geometry.dim() == 3)
   {
     // Vertices are coplanar if det(p1-p0 | p3-p0 | p2-p0) is zero
-    Eigen::Matrix3d m;
+    Eigen::Matrix<long double, 3, 3> m;
     m.row(0) << (p1 - p0)[0], (p1 - p0)[1], (p1 - p0)[2];
     m.row(1) << (p3 - p0)[0], (p3 - p0)[1], (p3 - p0)[2];
     m.row(2) << (p2 - p0)[0], (p2 - p0)[1], (p2 - p0)[2];
     const double copl = m.determinant();
-    const double h = std::min(1.0, std::pow((p0 - p3).norm(), 3)); // Scaling argument to catch non coplanarity for small cells (of order 1e-5 or smaller)
+    const double h = std::min(1.0, std::pow(volume, 1.5)); // Scaling argument to catch non coplanarity for small cells (of order 1e-5 or smaller)
     // Check for coplanarity
     if (std::abs(copl) > h * DOLFIN_EPS)
     {
@@ -145,8 +148,7 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
     }
   }
 
-  const Point c = (p0 - p3).cross(p1 - p2);
-  return 0.5 * c.norm();
+  return volume;
 }
 //-----------------------------------------------------------------------------
 double QuadrilateralCell::circumradius(const MeshEntity& cell) const
