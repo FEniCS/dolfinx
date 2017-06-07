@@ -676,9 +676,9 @@ endif()
 # Check for geometry debgging
 if (DOLFIN_ENABLE_GEOMETRY_DEBUGGING)
   message(STATUS "Enabling geometry debugging")
-  find_package(CGAL)
-  find_package(GMP)
-  find_package(MPFR)
+  find_package(CGAL REQUIRED)
+  find_package(GMP REQUIRED)
+  find_package(MPFR REQUIRED)
 endif()
 
 #------------------------------------------------------------------------------
