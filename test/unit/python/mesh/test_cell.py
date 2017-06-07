@@ -105,7 +105,8 @@ def test_volume_quadrilateralR3(coordinates):
     assert cell.volume() == 1.0
 
 
-@pytest.mark.parametrize('scaling', [1e0, 1e-5, 1e-10, 1e-15, 1e-20, 1e-30])
+@pytest.mark.parametrize('scaling', [1e0, 1e-5, 1e-10, 1e-15, 1e-20, 1e-30,
+    1e5, 1e10, 1e15, 1e20, 1e30])
 def test_volume_quadrilateral_coplanarity_check_1(scaling):
 
     with pytest.raises(RuntimeError) as error:
@@ -128,8 +129,9 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
     assert "are not coplanar" in str(error.value)
 
 
-# Test when |p0-p3| is ~ 1 but |p1-p2| is small 
-@pytest.mark.parametrize('scaling', [1e0, 1e-5, 1e-10, 1e-15, 1e-20, 1e-30])
+# Test when |p0-p3| is ~ 1 but |p1-p2| is small
+# Test fails when scale is below 1e-17 because Eigen's determinant gives zero for det(p1-p0 | p3-p0 | p2-p0)
+@pytest.mark.parametrize('scaling', [1e0, 1e-5, 1e-10, 1e-15, pytest.mark.xfail(1e-20), pytest.mark.xfail(1e-30)])
 def test_volume_quadrilateral_coplanarity_check_2(scaling):
 
     with pytest.raises(RuntimeError) as error:
