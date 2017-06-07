@@ -86,7 +86,7 @@ def test_volume_quadrilateralR2():
 
 @pytest.mark.parametrize('coordinates', [[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]], 
     [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 1.0]]])
-def test_volume_quadrilateralR3():
+def test_volume_quadrilateralR3(coordinates):
 
     mesh = Mesh()
     editor = MeshEditor()
@@ -105,9 +105,8 @@ def test_volume_quadrilateralR3():
     assert cell.volume() == 1.0
 
 
-# Test when |p0-p3| is ~ 1 but |p1-p2| is small 
-@pytest.mark.parametrize('scale', [1e0, 1e-5, 1e-10, 1e-15, 1e-20, 1e-30])
-def test_volume_quadrilateral_coplanarity_check_1():
+@pytest.mark.parametrize('scaling', [1e0, 1e-5, 1e-10, 1e-15, 1e-20, 1e-30])
+def test_volume_quadrilateral_coplanarity_check_1(scaling):
 
     with pytest.raises(RuntimeError) as error:
         mesh = Mesh()
@@ -115,11 +114,11 @@ def test_volume_quadrilateral_coplanarity_check_1():
         editor.open(mesh, "quadrilateral", 2, 3)
         editor.init_vertices(4)
         editor.init_cells(1)
-        # Unit square cell scaled down by 'scale' and the first vertex is distorted so that the vertices are clearly non coplanar
-        editor.add_vertex(0, Point(1.0, 0.5, 0.6))
-        editor.add_vertex(1, Point(0.0, scale, 0.0))
-        editor.add_vertex(2, Point(0.0, 0.0, scale))
-        editor.add_vertex(3, Point(0.0, 1.0, 1.0))
+        # Unit square cell scaled down by 'scaling' and the first vertex is distorted so that the vertices are clearly non coplanar
+        editor.add_vertex(0, Point(scaling, 0.5 * scaling, 0.6 * scaling))
+        editor.add_vertex(1, Point(0.0, scaling, 0.0))
+        editor.add_vertex(2, Point(0.0, 0.0, scaling))
+        editor.add_vertex(3, Point(0.0, scaling, scaling))
         editor.add_cell(0,numpy.array([0, 1, 2, 3],dtype=numpy.uintp))
         editor.close()
         mesh.init()
@@ -129,8 +128,9 @@ def test_volume_quadrilateral_coplanarity_check_1():
     assert "are not coplanar" in str(error.value)
 
 
-@pytest.mark.parametrize('scale', [1e0, 1e-5, 1e-10, 1e-15, 1e-20, 1e-30])
-def test_volume_quadrilateral_coplanarity_check():
+# Test when |p0-p3| is ~ 1 but |p1-p2| is small 
+@pytest.mark.parametrize('scaling', [1e0, 1e-5, 1e-10, 1e-15, 1e-20, 1e-30])
+def test_volume_quadrilateral_coplanarity_check_2(scaling):
 
     with pytest.raises(RuntimeError) as error:
         mesh = Mesh()
@@ -138,11 +138,11 @@ def test_volume_quadrilateral_coplanarity_check():
         editor.open(mesh, "quadrilateral", 2, 3)
         editor.init_vertices(4)
         editor.init_cells(1)
-        # Unit square cell scaled down by 'scale' and the first vertex is distorted so that the vertices are clearly non coplanar
-        editor.add_vertex(0, Point(scale, 0.5 * scale, 0.6 * scale))
-        editor.add_vertex(1, Point(0.0, scale, 0.0))
-        editor.add_vertex(2, Point(0.0, 0.0, scale))
-        editor.add_vertex(3, Point(0.0, scale, scale))
+        # Unit square cell scaled down by 'scaling' and the first vertex is distorted so that the vertices are clearly non coplanar
+        editor.add_vertex(0, Point(1.0, 0.5, 0.6))
+        editor.add_vertex(1, Point(0.0, scaling, 0.0))
+        editor.add_vertex(2, Point(0.0, 0.0, scaling))
+        editor.add_vertex(3, Point(0.0, 1.0, 1.0))
         editor.add_cell(0,numpy.array([0, 1, 2, 3],dtype=numpy.uintp))
         editor.close()
         mesh.init()
