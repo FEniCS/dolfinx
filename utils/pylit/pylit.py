@@ -1731,7 +1731,10 @@ def main(args=sys.argv[1:], **defaults):
 
 # Convert and write to out_stream::
 
-    out_stream.write(str(converter))
+    if sys.version_info[0] == 2:
+        out_stream.write(unicode(converter))
+    else:
+        out_stream.write(str(converter))
 
     if out_stream is not sys.stdout:
         print("extract written to", out_stream.name)
