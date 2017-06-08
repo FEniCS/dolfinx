@@ -18,7 +18,7 @@
 # Recompile all ffc forms (use when FFC has been updated)
 # This script should be run from the top level directory.
 
-import os
+import os, sys
 
 # Directories to scan
 subdirs = ["demo"]
@@ -47,7 +47,7 @@ for subdir in subdirs:
         os.chdir(root)
         print("Converting rst files in in {} ...".format(root))
         for f in rstfiles:
-            command = parser + " " + os.path.abspath(f)
+            command = sys.executable + " " + parser + " " + os.path.abspath(f)
             #print("  " + command)
             ret = os.system(command)
             if not ret == 0:
