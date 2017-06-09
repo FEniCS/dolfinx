@@ -227,12 +227,11 @@ void PETScDMCollection::find_exterior_points(MPI_Comm mpi_comm,
   }
 
   // Send out global indices for the points provided by this process
-  std::vector<std::vector<unsigned int>> recv_global_indices(mpi_size);
+  std::vector<unsigned int> recv_global_indices;
   MPI::all_to_all(mpi_comm, send_global_indices, recv_global_indices);
 
-  for (auto &p : recv_global_indices)
-    indices.insert(indices.end(), p.begin(), p.end());
-
+  indices.insert(indices.end(), recv_global_indices.begin(),
+                 recv_global_indices.end());
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
@@ -574,30 +573,26 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   // row we also keep track of the ownership range
   std::size_t mbegin = finemap->ownership_range().first;
   std::size_t mend = finemap->ownership_range().second;
-  std::vector<std::vector<dolfin::la_index>> recv_onnz;
+  std::vector<dolfin::la_index> recv_onnz;
   MPI::all_to_all(mpi_comm, send_onnz, recv_onnz);
-  std::vector<dolfin::la_index> onnz(m, 0);
-  for (const auto &p : recv_onnz)
-    for (const auto &q : p)
-    {
-      dolfin_assert(q >= (dolfin::la_index)mbegin
-                    and q < (dolfin::la_index)mend);
-      ++onnz[q - mbegin];
-    }
 
-  // Communicate on-process columns nnz, and flatten to get nnz per
-  // row
-  std::vector<std::vector<dolfin::la_index>> recv_dnnz;
+  std::vector<dolfin::la_index> onnz(m, 0);
+  for (const auto &q : recv_onnz)
+  {
+    dolfin_assert(q >= (dolfin::la_index)mbegin
+                  and q < (dolfin::la_index)mend);
+    ++onnz[q - mbegin];
+  }
+
+  // Communicate on-process columns nnz, and flatten to get nnz per row
+  std::vector<dolfin::la_index> recv_dnnz;
   MPI::all_to_all(mpi_comm, send_dnnz, recv_dnnz);
   std::vector<dolfin::la_index> dnnz(m, 0);
-  for (const auto &p : recv_dnnz)
+  for (const auto &q : recv_dnnz)
   {
-    for (const auto &q : p)
-    {
-      dolfin_assert(q >= (dolfin::la_index)mbegin
-                    and q < (dolfin::la_index)mend);
-      ++dnnz[q - mbegin];
-    }
+    dolfin_assert(q >= (dolfin::la_index)mbegin
+                  and q < (dolfin::la_index)mend);
+    ++dnnz[q - mbegin];
   }
 
   // Initialise PETSc Mat and error code

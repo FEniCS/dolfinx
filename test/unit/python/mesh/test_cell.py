@@ -74,3 +74,51 @@ def test_issue_568():
     # Should work after initializing the connectivity
     mesh.init(2, 1)
     cell.facet_area(0)
+
+
+def test_volume_quadrilateralR2():
+
+    mesh = UnitQuadMesh(mpi_comm_self(), 1, 1)
+    cell = Cell(mesh, 0)
+    
+    assert cell.volume() == 1.0
+
+
+
+def test_volume_quadrilateralR3_1():
+
+    mesh = Mesh()
+    editor = MeshEditor()
+    editor.open(mesh, "quadrilateral", 2, 3)
+    editor.init_vertices(4)
+    editor.init_cells(1)
+    editor.add_vertex(0, Point(0.0, 0.0, 0.0))
+    editor.add_vertex(1, Point(1.0, 0.0, 0.0))
+    editor.add_vertex(2, Point(0.0, 1.0, 0.0))
+    editor.add_vertex(3, Point(1.0, 1.0, 0.0))
+    editor.add_cell(0,numpy.array([0, 1, 2, 3],dtype=numpy.uintp))
+    editor.close()
+    mesh.init()
+    cell = Cell(mesh, 0)
+
+    assert cell.volume() == 1.0
+
+
+
+def test_volume_quadrilateralR3_2():
+
+    mesh = Mesh()
+    editor = MeshEditor()
+    editor.open(mesh, "quadrilateral", 2, 3)
+    editor.init_vertices(4)
+    editor.init_cells(1)
+    editor.add_vertex(0, Point(0.0, 0.0, 0.0))
+    editor.add_vertex(1, Point(0.0, 1.0, 0.0))
+    editor.add_vertex(2, Point(0.0, 0.0, 1.0))
+    editor.add_vertex(3, Point(0.0, 1.0, 1.0))
+    editor.add_cell(0,numpy.array([0, 1, 2, 3],dtype=numpy.uintp))
+    editor.close()
+    mesh.init()
+    cell = Cell(mesh, 0)
+
+    assert cell.volume() == 1.0

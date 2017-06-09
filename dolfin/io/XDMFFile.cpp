@@ -272,7 +272,7 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
 
   // Look for existing time series grid node with Name == tg_name
   bool new_timegrid = false;
-  std::string time_step_str = std::to_string(time_step);
+  std::string time_step_str = boost::lexical_cast<std::string>(time_step);
   pugi::xml_node timegrid_node, mesh_node;
   timegrid_node = domain_node.find_child_by_attribute("Grid", "Name", tg_name.c_str());
 
@@ -294,7 +294,7 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
     timegrid_node.append_attribute("CollectionType") = "Temporal";
     new_timegrid = true;
   }
-  
+
   // Only add mesh grid node at this time step if no other function has
   // previously added it (and parameters["functions_share_mesh"] == true)
   if (!mesh_node)
@@ -318,7 +318,7 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
       dolfin_assert(reference);
       reference.append_attribute("xpointer") = xpointer.c_str();
     }
-    
+
     // Get the newly created mesh grid node
     mesh_node = timegrid_node.last_child();
     dolfin_assert(mesh_node);
