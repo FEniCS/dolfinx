@@ -116,6 +116,9 @@ namespace dolfin
     ///
     void write(const Mesh& mesh, Encoding encoding=Encoding::HDF5);
 
+    /// Experimental higher-order element support
+    void write_experimental(const Function& u, Encoding encoding);
+
     /// Save a Function to XDMF file for visualisation, using an
     /// associated HDF5 file, or storing the data inline as XML.
     ///
