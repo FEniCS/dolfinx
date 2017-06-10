@@ -144,10 +144,10 @@ solve(A, w.vector(), b)
 
 # Extract solution components
 u0 = w.part(0).sub(0)
-u1 = w.part(1).sub(1)
+u1 = w.part(1).sub(0)
 u2 = w.part(2).sub(0)
 p0 = w.part(0).sub(1)
-p1 = w.part(1).sub(0)
+p1 = w.part(1).sub(1)
 p2 = w.part(2).sub(1)
 
 # Save to file
