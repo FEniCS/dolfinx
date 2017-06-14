@@ -270,7 +270,7 @@ void QuadrilateralCell::order(Cell& cell,
                  const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
   // Not implemented
-  dolfin_not_implemented();
+  // FIXME - probably not appropriate for quad cells.
 }
 //-----------------------------------------------------------------------------
 bool QuadrilateralCell::collides(const Cell& cell, const Point& point) const
