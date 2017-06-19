@@ -22,7 +22,7 @@
 # Modified by August Johansson 2016
 #
 # First added:  2016-05-03
-# Last changed: 2016-11-16
+# Last changed: 2017-06-19
 
 
 from __future__ import print_function
@@ -31,6 +31,7 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
 
+@skip_in_parallel
 def test_issue_754():
     N = 3
     meshes = [UnitSquareMesh(2*N, 2*N),
