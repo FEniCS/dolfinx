@@ -521,48 +521,43 @@ void SparsityPattern::apply()
     }
 
     // Communicate non-local entries to other processes
-    std::vector<std::vector<std::size_t>> non_local_received;
+    std::vector<std::size_t> non_local_received;
     MPI::all_to_all(_mpi_comm, non_local_send, non_local_received);
 
     // Insert non-local entries received from other processes
-    for (std::size_t p = 0; p < num_processes; ++p)
+    dolfin_assert(non_local_received.size() % 2 == 0);
+
+    for (std::size_t i = 0; i < non_local_received.size(); i += 2)
     {
-      const std::vector<std::size_t>& non_local_received_p
-        = non_local_received[p];
-      dolfin_assert(non_local_received_p.size() % 2 == 0);
+      // Get global row and column
+      const dolfin::la_index I = non_local_received[i];
+      const dolfin::la_index J = non_local_received[i + 1];
 
-      for (std::size_t i = 0; i < non_local_received_p.size(); i += 2)
+      // Sanity check
+      if (I < local_range0.first
+          || I >= local_range0.second)
       {
-        // Get global row and column
-        const dolfin::la_index I = non_local_received_p[i];
-        const dolfin::la_index J = non_local_received_p[i + 1];
+        dolfin_error("SparsityPattern.cpp",
+                     "apply changes to sparsity pattern",
+                     "Received illegal sparsity pattern entry for row/column %d, not in range [%d, %d]",
+                     I, local_range0.first,
+                     local_range0.second);
+      }
 
-        // Sanity check
-        if (I < local_range0.first
-            || I >= local_range0.second)
-        {
-          dolfin_error("SparsityPattern.cpp",
-                       "apply changes to sparsity pattern",
-                       "Received illegal sparsity pattern entry for row/column %d, not in range [%d, %d]",
-                       I, local_range0.first,
-                       local_range0.second);
-        }
+      // Get local I index
+      const std::size_t i_index = I - offset0;
 
-        // Get local I index
-        const std::size_t i_index = I - offset0;
-
-        // Insert in diagonal or off-diagonal block
-        if (local_range1.first <= J &&
-            J < local_range1.second)
-        {
-          dolfin_assert(i_index < diagonal.size());
-          diagonal[i_index].insert(J);
-        }
-        else
-        {
-          dolfin_assert(i_index < off_diagonal.size());
-          off_diagonal[i_index].insert(J);
-        }
+      // Insert in diagonal or off-diagonal block
+      if (local_range1.first <= J &&
+          J < local_range1.second)
+      {
+        dolfin_assert(i_index < diagonal.size());
+        diagonal[i_index].insert(J);
+      }
+      else
+      {
+        dolfin_assert(i_index < off_diagonal.size());
+        off_diagonal[i_index].insert(J);
       }
     }
   }

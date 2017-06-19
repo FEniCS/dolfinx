@@ -249,7 +249,7 @@ void ParMETIS::partition(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
 
   // Do halo exchange of cell partition data
   std::vector<std::vector<std::int64_t>> send_cell_partition(num_processes);
-  std::vector<std::vector<std::int64_t>> recv_cell_partition(num_processes);
+  std::vector<std::int64_t> recv_cell_partition;
   for(const auto& hcell : halo_cell_to_remotes)
   {
     for(auto proc : hcell.second)
@@ -270,15 +270,9 @@ void ParMETIS::partition(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
   // Construct a map from all currently foreign cells to their new
   // partition number
   std::map<std::int64_t, std::int32_t> cell_ownership;
-  for (std::int32_t i = 0; i < num_processes; ++i)
+  for (auto p = recv_cell_partition.begin(); p != recv_cell_partition.end(); p += 2)
   {
-    std::vector<std::int64_t>& recv_data = recv_cell_partition[i];
-    for (std::size_t j = 0; j < recv_data.size(); j += 2)
-    {
-      const std::int64_t global_cell = recv_data[j];
-      const std::int32_t cell_owner = recv_data[j+1];
-      cell_ownership[global_cell] = cell_owner;
-    }
+    cell_ownership[*p] = *(p + 1);
   }
 
   // Generate mapping for where new boundary cells need to be sent
