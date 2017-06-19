@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-05-18
+// Last changed: 2017-06-19
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -1240,7 +1240,6 @@ void MultiMesh::_inclusion_exclusion_overlap
                     = ConvexTriangulation::triangulate(intersection_points,
                                                        gdim,
                                                        tdim);
-                  dolfin_assert(intersection.size());
 
 		  // To save all intersections as a single
 		  // polyhedron, we don't call this a polyhedron
