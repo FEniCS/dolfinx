@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-02-06
+// Last changed: 2017-06-20
 
 #ifndef __CONVEX_TRIANGULATION
 #define __CONVEX_TRIANGULATION
@@ -32,42 +32,55 @@ namespace dolfin
   {
   public:
 
-    // Tdim independent wrapper
+    /// Tdim independent wrapper
     static std::vector<std::vector<Point>>
-    triangulate(std::vector<Point> p,
+    triangulate(const std::vector<Point>& p,
                 std::size_t gdim,
                 std::size_t tdim);
 
-    // Triangulate using the Graham scan
+    /// Triangulate using the Graham scan 2D
     static std::vector<std::vector<Point>>
-    triangulate_graham_scan_2d(std::vector<Point> pm)
+    triangulate_graham_scan_2d(const std::vector<Point>& pm)
     {
       // return CHECK_CGAL(_triangulate_graham_scan_2d(pm),
       // 			cgal_triangulate_2d(pm));
       return _triangulate_graham_scan_2d(pm);
     }
 
+    /// Triangulate using Delaunay (Bowyer-Watson) 2D
     static std::vector<std::vector<Point>>
-      triangulate_graham_scan_3d(std::vector<Point> pm);
+    triangulate_delaunay_2d(const std::vector<Point>& pm)
+    {
+      // return CHECK_CGAL(_triangulate_delaunay_2d(pm),
+      // 			cgal_triangulate_delaunay_2d(pm));
+      return _triangulate_delaunay_2d(pm);
+    }
+
+    /// Triangulate using the Graham scan 3D
+    static std::vector<std::vector<Point>>
+    triangulate_graham_scan_3d(const std::vector<Point>& pm);
 
   private:
 
     // Implementation declarations
-    static std::vector<std::vector<Point>>
-    _triangulate_graham_scan_2d(std::vector<Point> pm);
 
-    static std::vector<std::vector<Point>>
-    _triangulate_graham_scan_3d(std::vector<Point> pm);
 
-    // Triangulate using Bowyer-Watson (Delaunay)
+    /// Implementation of Graham scan 2D
     static std::vector<std::vector<Point>>
-    _triangulate_bowyer_watson(std::vector<Point> p,
-			       std::size_t gdim);
+    _triangulate_graham_scan_2d(const std::vector<Point>& pm);
+
+    /// Implementation of Bowyer Watson Delaunay 2D
+    static std::vector<std::vector<Point>>
+    _triangulate_delaunay_2d(const std::vector<Point>& p);
+
+    /// Implementation of Graham scan 3D
+    static std::vector<std::vector<Point>>
+    _triangulate_graham_scan_3d(const std::vector<Point>& pm);
 
     // Help class for Bowyer Watson
     struct Edge
     {
-      Edge(const Point p0, const Point p1) : p0(p0), p1(p1) {}
+      Edge(const Point& p0, const Point& p1) : p0(p0), p1(p1) {}
       Edge(const Edge& e) : p0(e.p0), p1(e.p1) {}
       bool operator==(const Edge& e) const;
 
@@ -78,14 +91,14 @@ namespace dolfin
     // Help class for Bowyer Watson
     struct Triangle
     {
-      Triangle(const Point p0,
-	       const Point p1,
-	       const Point p2)
+      Triangle(const Point& p0,
+	       const Point& p1,
+	       const Point& p2)
 	: p0(p0), p1(p1), p2(p2),
 	  e0(p0, p1), e1(p1, p2), e2(p2, p0)
       {}
-      bool contains_vertex(const Point v) const;
-      bool circumcircle_contains(const Point v) const;
+      bool contains_vertex(const Point& v) const;
+      bool circumcircle_contains(const Point& v) const;
       bool operator==(const Triangle& t) const;
 
       Point p0;
@@ -99,9 +112,6 @@ namespace dolfin
     // Utility functions
     static std::vector<Point> unique_points(const std::vector<Point>& points,
 					    double tol);
-    static Point cross_product(Point a,
-			       Point b,
-			       Point c);
   };
 
 } // end namespace dolfin
