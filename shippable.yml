@@ -1,9 +1,9 @@
 build:
-pre_ci_boot:
+  pre_ci_boot:
     image_name: quay.io/fenicsproject/dev-env
     image_tag: latest
     pull: true
-ci:
+  ci:
     - apt-get -qq -y --no-install-recommends install cmake
     - pip3 install --upgrade pip
     - pip3 install git+https://bitbucket.org/fenics-project/fiat.git@master
