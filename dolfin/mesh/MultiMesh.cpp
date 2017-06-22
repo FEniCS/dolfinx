@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-06-19
+// Last changed: 2017-06-22
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -345,7 +345,8 @@ double MultiMesh::compute_volume() const
   return volume;
 }
 //-----------------------------------------------------------------------------
-std::string MultiMesh::plot_matplotlib(double delta_z) const
+std::string MultiMesh::plot_matplotlib(double delta_z,
+				       const std::string& filename) const
 {
   dolfin_assert(num_parts() > 0);
   dolfin_assert(part(0)->geometry().dim() == 2);
@@ -404,8 +405,9 @@ std::string MultiMesh::plot_matplotlib(double delta_z) const
   if (!do_3d)
   {
     ss << "    ax.axis('tight')\n"
-       << "    ax.axis('square')\n"
-       << "    plt.savefig('multimesh_" << num_parts()<< ".pdf')\n";
+       << "    ax.axis('square')\n";
+    if (!filename.empty())
+      ss << "    plt.savefig('" << filename << "')\n";
   }
   ss << "    plt.show()\n";
   return ss.str();

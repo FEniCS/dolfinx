@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2017-04-10
+// Last changed: 2017-06-22
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -359,7 +359,8 @@ namespace dolfin
     double compute_volume() const;
 
     /// Create matplotlib string to plot 2D multimesh (small meshes only)
-    std::string plot_matplotlib(double delta_z=1) const;
+    std::string plot_matplotlib(double delta_z=1,
+				const std::string& filename="") const;
 
 
   private:
@@ -578,7 +579,7 @@ namespace dolfin
     // Impose consistency of _cut_cells, so that only the cells with
     // a nontrivial interface quadrature rule are classified as cut.
     void _impose_cut_cell_consistency();
-    
+
     // Remove quadrature rule if the sum of the weights is less than a
     // tolerance
     static void remove_quadrature_rule(quadrature_rule& qr,
