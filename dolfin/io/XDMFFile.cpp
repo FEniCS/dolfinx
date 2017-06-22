@@ -272,7 +272,7 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
 
   // Look for existing time series grid node with Name == tg_name
   bool new_timegrid = false;
-  std::string time_step_str = std::to_string(time_step);
+  std::string time_step_str = boost::lexical_cast<std::string>(time_step);
   pugi::xml_node timegrid_node, mesh_node;
   timegrid_node = domain_node.find_child_by_attribute("Grid", "Name", tg_name.c_str());
 
@@ -294,7 +294,7 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
     timegrid_node.append_attribute("CollectionType") = "Temporal";
     new_timegrid = true;
   }
-  
+
   // Only add mesh grid node at this time step if no other function has
   // previously added it (and parameters["functions_share_mesh"] == true)
   if (!mesh_node)
@@ -318,7 +318,7 @@ void XDMFFile::write(const Function& u, double time_step, Encoding encoding)
       dolfin_assert(reference);
       reference.append_attribute("xpointer") = xpointer.c_str();
     }
-    
+
     // Get the newly created mesh grid node
     mesh_node = timegrid_node.last_child();
     dolfin_assert(mesh_node);
@@ -1203,13 +1203,24 @@ void XDMFFile::build_mesh(Mesh& mesh, const CellType& cell_type,
     mesh_editor.init_cells_global(num_cells, num_cells);
 
     // Prepare mesh editor for addition of cells, and add cell topology
-    const int num_points_per_cell = cell_type.num_vertices();
-    std::vector<std::size_t> cell_topology(num_points_per_cell);
-    for (std::int64_t i = 0; i < num_cells; ++i)
-    {
-      cell_topology.assign(topology_data.begin() +  i*num_points_per_cell,
-                           topology_data.begin() +  (i + 1)*num_points_per_cell);
-      mesh_editor.add_cell(i, cell_topology);
+    const size_t num_vertices_per_cell = cell_type.num_vertices();
+    std::vector<size_t> cell_topology(num_vertices_per_cell);
+    std::vector<size_t> cell_topology_permuted(num_vertices_per_cell);
+
+    // Load VTK permutation mapping specific to the cell type
+    const std::vector<std::int8_t> perm = cell_type.vtk_mapping();
+
+    // Iterate over each cell and read permuted topology
+    for (std::int64_t i = 0; i < num_cells; ++i) {
+      cell_topology.assign(topology_data.begin() + i * num_vertices_per_cell,
+                           topology_data.begin() + (i + 1) * num_vertices_per_cell);
+
+      // Apply permutation and store topology as permuted topology
+      for (unsigned int j = 0; j < num_vertices_per_cell; ++j) {
+        cell_topology_permuted[j] = cell_topology[perm[j]];
+      }
+
+      mesh_editor.add_cell(i, cell_topology_permuted);
     }
   }
 
@@ -1701,7 +1712,8 @@ XDMFFile::get_cell_type(const pugi::xml_node& topology_node)
     {"triangle", {"triangle", 1}},
     {"tri_6", {"triangle", 2}},
     {"tetrahedron", {"tetrahedron", 1}},
-    {"tet_10", {"tetrahedron", 2}}
+    {"tet_10", {"tetrahedron", 2}},
+    {"quadrilateral", {"quadrilateral", 1}}
   };
 
   // Convert XDMF cell type string to DOLFIN cell type string

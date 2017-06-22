@@ -17,7 +17,10 @@
 //
 
 #include <algorithm>
+#include <cmath>
+#include <Eigen/Dense>
 #include <dolfin/log/log.h>
+#include <dolfin/common/constants.h>
 #include "Cell.h"
 #include "MeshEditor.h"
 #include "MeshEntity.h"
@@ -117,19 +120,32 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
   const Point p2 = geometry.point(vertices[2]);
   const Point p3 = geometry.point(vertices[3]);
 
-  if (geometry.dim() == 2)
+  if (geometry.dim() != 2 && geometry.dim() != 3)
   {
-    const Point c = (p0 - p2).cross(p1 - p3);
-    return 0.5 * c.norm();
-  }
-  else
     dolfin_error("QuadrilateralCell.cpp",
                  "compute volume of quadrilateral",
-                 "Only know how to compute volume in R^2");
+                 "Only know how to compute volume in R^2 or R^3");
+  }
+  
+  if (geometry.dim() == 3)
+  {
+    // Vertices are coplanar if det(p1-p0 | p3-p0 | p2-p0) is zero
+    Eigen::Matrix3d m;
+    m.row(0) << (p1 - p0)[0], (p1 - p0)[1], (p1 - p0)[2];
+    m.row(1) << (p3 - p0)[0], (p3 - p0)[1], (p3 - p0)[2];
+    m.row(2) << (p2 - p0)[0], (p2 - p0)[1], (p2 - p0)[2];
+    const double copl = m.determinant();
+    // Check for coplanarity
+    if (std::abs(copl) > DOLFIN_EPS)
+    {
+      dolfin_error("QuadrilateralCell.cpp",
+                   "compute volume of quadrilateral",
+                   "Vertices of the quadrilateral are not coplanar");
+    }
+  }
 
-  // FIXME: could work in R^3 but need to check co-planarity
-
-  return 0.0;
+  const Point c = (p0 - p3).cross(p1 - p2);
+  return 0.5 * c.norm();
 }
 //-----------------------------------------------------------------------------
 double QuadrilateralCell::circumradius(const MeshEntity& cell) const
@@ -254,7 +270,7 @@ void QuadrilateralCell::order(Cell& cell,
                  const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
   // Not implemented
-  dolfin_not_implemented();
+  // FIXME - probably not appropriate for quad cells.
 }
 //-----------------------------------------------------------------------------
 bool QuadrilateralCell::collides(const Cell& cell, const Point& point) const

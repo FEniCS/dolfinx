@@ -509,24 +509,19 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
       new_shared_vertex_indices[p][i] += offset;
 
   // Send/receive new indices for shared vertices
-  std::vector<std::vector<std::size_t>> received_vertex_data;
+  std::vector<std::size_t> received_vertex_data;
   MPI::all_to_all(mesh.mpi_comm(), new_shared_vertex_indices,
                   received_vertex_data);
 
   // Set index for shared vertices that have been numbered by another
   // process
-  for (std::size_t p = 0; p < received_vertex_data.size(); ++p)
+  for (std::size_t i = 0; i < received_vertex_data.size(); i += 2)
   {
-    const std::vector<std::size_t>& received_vertex_data_p
-      = received_vertex_data[p];
-    for (std::size_t i = 0; i < received_vertex_data_p.size(); i += 2)
-    {
-      const unsigned int local_index = received_vertex_data_p[i];
-      const std::size_t recv_new_index = received_vertex_data_p[i + 1];
+    const unsigned int local_index = received_vertex_data[i];
+    const std::size_t recv_new_index = received_vertex_data[i + 1];
 
-      dolfin_assert(local_index < modified_vertex_indices_global.size());
-      modified_vertex_indices_global[local_index] = recv_new_index;
-    }
+    dolfin_assert(local_index < modified_vertex_indices_global.size());
+    modified_vertex_indices_global[local_index] = recv_new_index;
   }
 
   // Request master vertex index from master owner

@@ -58,6 +58,12 @@ void MeshEditor::open(Mesh& mesh, std::size_t tdim,
   case 3:
     open(mesh, CellType::tetrahedron, tdim, gdim, degree);
     break;
+  case 4:
+    open(mesh, CellType::quadrilateral, tdim, gdim, degree);
+    break;
+  case 5:
+    open(mesh, CellType::hexahedron, tdim, gdim, degree);
+    break;
   default:
     dolfin_error("MeshEditor.cpp",
                  "open mesh for editing",
@@ -108,6 +114,10 @@ void MeshEditor::open(Mesh& mesh, std::string type, std::size_t tdim,
     open(mesh, CellType::triangle, tdim, gdim, degree);
   else if (type == "tetrahedron")
     open(mesh, CellType::tetrahedron, tdim, gdim, degree);
+  else if (type == "quadrilateral")
+    open(mesh, CellType::quadrilateral, tdim, gdim, degree);
+  else if (type == "hexahedron")
+    open(mesh, CellType::hexahedron, tdim, gdim, degree);
   else
   {
     dolfin_error("MeshEditor.cpp",

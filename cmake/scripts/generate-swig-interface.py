@@ -23,6 +23,7 @@ import re
 import glob
 import time
 import sys
+import io
 
 
 # Add local site-packages to path,
@@ -212,7 +213,7 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
                     continue
 
                 # Read code
-                with open(header_file) as f:
+                with io.open(header_file, encoding="utf-8") as f:
                     code = f.read()
 
                 try:
