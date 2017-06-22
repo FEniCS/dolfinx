@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <tuple>
 #include <set>
+#include <iomanip>
 #include "predicates.h"
 #include "GeometryPredicates.h"
 #include "GeometryTools.h"
@@ -131,23 +132,46 @@ ConvexTriangulation::_triangulate_1d(const std::vector<Point>& p)
 
   if (unique_p.size() > 2)
   {
-    if (unique_p.size() == 3)
+    // Make sure the points are approximately collinear
+    bool collinear = true;
+    for (std::size_t i = 2; i < unique_p.size(); ++i)
     {
-      const double o = orient2d(unique_p[0],unique_p[1],unique_p[2]);
-      if (std::abs(o) < DOLFIN_EPS_LARGE)
+      const double o = orient2d(unique_p[0], unique_p[1], unique_p[i]);
+      if (std::abs(o) > DOLFIN_EPS_LARGE)
       {
-  	Point average = (unique_p[0] + unique_p[1] + unique_p[2]) / 3.0;
-  	std::vector<std::vector<Point>> t = {{ p }};
-  	return t;
+	collinear = false;
+	break;
       }
     }
+
+    dolfin_assert(collinear);
+
+    // Average
+    Point average(0.0, 0.0, 0.0);
+    for (const Point& q: unique_p)
+      average += q;
+    average /= unique_p.size();
+    std::vector<std::vector<Point>> t = {{ average }};
+    return t;
+
+
+    // if (unique_p.size() == 3)
+    // {
+    //   const double o = orient2d(unique_p[0],unique_p[1],unique_p[2]);
+    //   if (std::abs(o) < DOLFIN_EPS_LARGE)
+    //   {
+    // 	Point average = (unique_p[0] + unique_p[1] + unique_p[2]) / 3.0;
+    // 	std::vector<std::vector<Point>> t = {{ p }};
+    // 	return t;
+    //   }
+    // }
 
     // std::cout << __FUNCTION__<< " input:\n";
     // for (const Point pp: p)
     //   std::cout << pp[0]<<' '<<pp[1]<<'\n';
     // std::cout <<"unique:\n";
     // for (const Point pp: unique_p)
-    //   std::cout << pp[0]<<' '<<pp[1]<<'\n';
+    //   std::cout <<std::setprecision(15)<< pp[0]<<' '<<pp[1]<<'\n';
     // std::cout << "orient2d " << orient2d(unique_p[0],unique_p[1],unique_p[2])<<std::endl;
 
     dolfin_error("ConvexTriangulation.cpp",
