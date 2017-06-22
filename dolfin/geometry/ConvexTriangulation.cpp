@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-06-20
+// Last changed: 2017-06-22
 
 #include <algorithm>
 #include <tuple>
@@ -100,7 +100,11 @@ ConvexTriangulation::triangulate(const std::vector<Point>& p,
   if (p.empty())
     return std::vector<std::vector<Point>>();
 
-  if (tdim == 2 && gdim == 2)
+  if (tdim == 1)
+  {
+    return triangulate_1d(p);
+  }
+  else if (tdim == 2 && gdim == 2)
   {
     return triangulate_graham_scan_2d(p);
     //return triangulate_delaunay_2d(p);
@@ -110,26 +114,51 @@ ConvexTriangulation::triangulate(const std::vector<Point>& p,
     return triangulate_graham_scan_3d(p);
   }
 
-  if (tdim == 1)
-  {
-    const std::vector<Point> unique_p = unique_points(p, DOLFIN_EPS);
-
-    if (unique_p.size() > 2)
-    {
-      dolfin_error("ConvexTriangulation.cpp",
-                   "triangulate convex polyhedron",
-                   "a convex polyhedron of topological dimension 1 can not have more than 2 points");
-    }
-
-    std::vector<std::vector<Point>> t;
-    t.push_back(unique_p);
-    return t;
-  }
-
   dolfin_error("ConvexTriangulation.cpp",
                "triangulate convex polyhedron",
-               "triangulation of polyhedron of topological dimension %u and geometric dimension %u not implemented", tdim, gdim);
+               "Triangulation of polyhedron of topological dimension %u and geometric dimension %u not implemented", tdim, gdim);
 }
+//-----------------------------------------------------------------------------
+std::vector<std::vector<Point>>
+ConvexTriangulation::_triangulate_1d(const std::vector<Point>& p)
+{
+  // A convex polyhedron of topological dimension 1 can not have more
+  // than two points. If more, they must be collinear (more or
+  // less). This can happen due to tolerances in
+  // IntersectionConstruction::intersection_segment_segment_2d.
+
+  const std::vector<Point> unique_p = unique_points(p, DOLFIN_EPS);
+
+  if (unique_p.size() > 2)
+  {
+    if (unique_p.size() == 3)
+    {
+      const double o = orient2d(unique_p[0],unique_p[1],unique_p[2]);
+      if (std::abs(o) < DOLFIN_EPS_LARGE)
+      {
+	Point average = (unique_p[0] + unique_p[1] + unique_p[2]) / 3.0;
+	std::vector<std::vector<Point>> t = {{ p }};
+	return t;
+      }
+    }
+
+    // std::cout << __FUNCTION__<< " input:\n";
+    // for (const Point pp: p)
+    //   std::cout << pp[0]<<' '<<pp[1]<<'\n';
+    // std::cout <<"unique:\n";
+    // for (const Point pp: unique_p)
+    //   std::cout << pp[0]<<' '<<pp[1]<<'\n';
+    // std::cout << "orient2d " << orient2d(unique_p[0],unique_p[1],unique_p[2])<<std::endl;
+
+    dolfin_error("ConvexTriangulation.cpp",
+		 "triangulate convex polyhedron",
+		 "A convex polyhedron of topological dimension 1 can not have more than 2 points");
+  }
+
+  std::vector<std::vector<Point>> t = { unique_p };
+  return t;
+}
+
 //------------------------------------------------------------------------------
 std::vector<std::vector<Point>>
 ConvexTriangulation::_triangulate_graham_scan_2d(const std::vector<Point>& input_points)
