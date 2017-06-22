@@ -37,8 +37,8 @@ h = 2.0*Circumradius(triangle)
 h = (h('+') + h('-')) / 2
 
 # Parameters
-alpha = 4.0
-beta = 4.0
+alpha = 10.0
+beta = 10.0
 
 # Define bilinear form
 a = dot(grad(u), grad(v))*dX \
