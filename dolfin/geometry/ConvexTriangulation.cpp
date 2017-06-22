@@ -136,9 +136,9 @@ ConvexTriangulation::_triangulate_1d(const std::vector<Point>& p)
       const double o = orient2d(unique_p[0],unique_p[1],unique_p[2]);
       if (std::abs(o) < DOLFIN_EPS_LARGE)
       {
-	Point average = (unique_p[0] + unique_p[1] + unique_p[2]) / 3.0;
-	std::vector<std::vector<Point>> t = {{ p }};
-	return t;
+  	Point average = (unique_p[0] + unique_p[1] + unique_p[2]) / 3.0;
+  	std::vector<std::vector<Point>> t = {{ p }};
+  	return t;
       }
     }
 
@@ -151,8 +151,8 @@ ConvexTriangulation::_triangulate_1d(const std::vector<Point>& p)
     // std::cout << "orient2d " << orient2d(unique_p[0],unique_p[1],unique_p[2])<<std::endl;
 
     dolfin_error("ConvexTriangulation.cpp",
-		 "triangulate convex polyhedron",
-		 "A convex polyhedron of topological dimension 1 can not have more than 2 points");
+  		 "triangulate convex polyhedron",
+  		 "A convex polyhedron of topological dimension 1 can not have more than 2 points");
   }
 
   std::vector<std::vector<Point>> t = { unique_p };

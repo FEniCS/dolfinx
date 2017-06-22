@@ -42,7 +42,7 @@ namespace dolfin
     static std::vector<std::vector<Point>>
     triangulate_1d(const std::vector<Point>& pm)
     {
-      return _triangulate_graham_scan_2d(pm);
+      return _triangulate_1d(pm);
     }
 
     /// Triangulate using the Graham scan 2D
