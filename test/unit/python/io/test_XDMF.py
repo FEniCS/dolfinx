@@ -103,6 +103,20 @@ def test_save_1d_scalar(tempdir, encoding):
 
 
 @pytest.mark.parametrize("encoding", encodings)
+def test_save_and_checkpoint_1d_scalar_cg3(tempdir, encoding):
+    if invalid_config(encoding):
+        pytest.xfail("XDMF unsupported in current configuration")
+    filename = os.path.join(tempdir, "u1_checkpoint_{}.xdmf".format(encoding))
+    mesh = UnitSquareMesh(16, 16)
+    V = FunctionSpace(mesh, "Lagrange", 3)
+    u = Function(V)
+    u.vector()[:] = 1.0
+
+    with XDMFFile(mesh.mpi_comm(), filename) as file:
+        file.write_checkpoint(u, 0, encoding)
+        
+
+@pytest.mark.parametrize("encoding", encodings)
 def test_save_2d_scalar(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
