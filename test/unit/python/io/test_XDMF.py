@@ -81,6 +81,24 @@ def test_save_and_load_2d_mesh(tempdir, encoding):
 
 
 @pytest.mark.parametrize("encoding", encodings)
+def test_save_and_load_2d_quad_mesh(tempdir, encoding):
+    if invalid_config(encoding):
+        pytest.xfail("XDMF unsupported in current configuration")
+    filename = os.path.join(tempdir, "mesh_2D_quad.xdmf")
+    mesh = UnitQuadMesh(32, 32)
+
+    with XDMFFile(mesh.mpi_comm(), filename) as file:
+        file.write(mesh, encoding)
+
+    mesh2 = Mesh()
+    with XDMFFile(mpi_comm_world(), filename) as file:
+        file.read(mesh2)
+    assert mesh.size_global(0) == mesh2.size_global(0)
+    dim = mesh.topology().dim()
+    assert mesh.size_global(dim) == mesh2.size_global(dim)
+
+
+@pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_3d_mesh(tempdir, encoding):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")

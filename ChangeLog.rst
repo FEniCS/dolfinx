@@ -4,7 +4,8 @@ Change log
 2017.2.0 (unreleased)
 ---------------------
 
-- Nothing changed yet
+- Updates for `ufc::finite_element::evaluate_vertex_values` interface
+  change
 
 2017.1.0 (2017-05-09)
 ---------------------
