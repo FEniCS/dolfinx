@@ -127,6 +127,11 @@ def test_save_and_checkpoint_1d_scalar(tempdir, encoding, fe_degree, fe_family, 
     mesh = UnitIntervalMesh(32 + randint(0, 5))
     filename = os.path.join(tempdir, "u1_checkpoint.xdmf")
 
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
+
     FE = FiniteElement(fe_family, fe_shape, fe_degree)
     V = FunctionSpace(mesh, FE)
     u_in = Function(V)
@@ -158,6 +163,11 @@ def test_save_and_checkpoint_2d_scalar(tempdir, encoding, fe_degree, fe_family, 
 
     mesh = UnitSquareMesh(16 + randint(0, 5), 16 + randint(0, 5))
     filename = os.path.join(tempdir, "u2_checkpoint.xdmf")
+
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
 
     FE = FiniteElement(fe_family, fe_shape, fe_degree)
     V = FunctionSpace(mesh, FE)
@@ -191,6 +201,11 @@ def test_save_and_checkpoint_3d_scalar(tempdir, encoding, fe_degree, fe_family, 
     mesh = UnitCubeMesh(8 + randint(0, 3), 8 + randint(0, 3), 8 + randint(0, 3))
     filename = os.path.join(tempdir, "u3_checkpoint.xdmf")
 
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
+
     FE = FiniteElement(fe_family, fe_shape, fe_degree)
     V = FunctionSpace(mesh, FE)
     u_in = Function(V)
@@ -223,6 +238,11 @@ def test_save_and_checkpoint_2d_vector(tempdir, encoding, fe_degree, fe_family, 
     mesh = UnitSquareMesh(16 + randint(0, 5), 16 + randint(0, 5))
     filename = os.path.join(tempdir, "u2_checkpoint.xdmf")
 
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
+
     FE = VectorElement(fe_family, fe_shape, fe_degree)
     V = FunctionSpace(mesh, FE)
     u_in = Function(V)
@@ -240,6 +260,41 @@ def test_save_and_checkpoint_2d_vector(tempdir, encoding, fe_degree, fe_family, 
     result = u_in.vector() - u_out.vector()
     assert [near(x, 0.0) for x in result.array()]
 
+
+@pytest.mark.parametrize("encoding", encodings)
+def test_save_and_checkpoint_timeseries(tempdir, encoding):
+    if invalid_config(encoding):
+        pytest.xfail("XDMF unsupported in current configuration")
+
+    mesh = UnitSquareMesh(16 + randint(0, 5), 16 + randint(0, 5))
+    filename = os.path.join(tempdir, "u2_checkpoint.xdmf")
+
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
+
+    FE = FiniteElement("CG", "triangle", 2)
+    V = FunctionSpace(mesh, FE)
+
+    times = [0.5, 0.2, 0.1]
+    u_out = [None]*len(times)
+    u_in = [None]*len(times)
+
+    with XDMFFile(mesh.mpi_comm(), filename) as file:
+        for i, p in enumerate(times):
+            u_out[i] = interpolate(Expression("x[0]*p", p=p, degree=1), V)
+            u_out[i].rename("u_out", "u_out")
+            file.write_checkpoint(u_out[i], p, encoding)
+
+    with XDMFFile(mesh.mpi_comm(), filename) as file:
+        for i, p in enumerate(times):
+            u_in[i] = Function(V)
+            file.read_checkpoint(u_in[i], "u_out", i)
+
+    for i, p in enumerate(times):
+        result = u_in[i].vector() - u_out[i].vector()
+        assert all([near(x, 0.0) for x in result.array()])
 
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_2d_scalar(tempdir, encoding):
