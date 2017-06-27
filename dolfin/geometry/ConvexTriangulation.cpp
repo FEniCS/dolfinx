@@ -131,14 +131,6 @@ ConvexTriangulation::_triangulate_1d(const std::vector<Point>& p,
 
   const std::vector<Point> unique_p = unique_points(p, gdim, DOLFIN_EPS);
 
-  std::cout << __FUNCTION__<<" "<<p.size()<<' '<<unique_p.size() << std::endl;
-  for (const Point q: p)
-    std::cout << q[0]<<' '<<q[1]<<'\n';
-  std::cout <<"unique:\n";
-  for (const Point q: unique_p)
-    std::cout << q[0]<<' '<<q[1]<<'\n';
-
-
   if (unique_p.size() > 2)
   {
     // Make sure the points are approximately collinear
