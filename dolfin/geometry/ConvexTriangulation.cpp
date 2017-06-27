@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-06-22
+// Last changed: 2017-06-27
 
 #include <algorithm>
 #include <tuple>
@@ -103,7 +103,7 @@ ConvexTriangulation::triangulate(const std::vector<Point>& p,
 
   if (tdim == 1)
   {
-    return triangulate_1d(p);
+    return triangulate_1d(p, gdim);
   }
   else if (tdim == 2 && gdim == 2)
   {
@@ -121,14 +121,23 @@ ConvexTriangulation::triangulate(const std::vector<Point>& p,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<Point>>
-ConvexTriangulation::_triangulate_1d(const std::vector<Point>& p)
+ConvexTriangulation::_triangulate_1d(const std::vector<Point>& p,
+				     std::size_t gdim)
 {
   // A convex polyhedron of topological dimension 1 can not have more
   // than two points. If more, they must be collinear (more or
   // less). This can happen due to tolerances in
   // IntersectionConstruction::intersection_segment_segment_2d.
 
-  const std::vector<Point> unique_p = unique_points(p, DOLFIN_EPS);
+  const std::vector<Point> unique_p = unique_points(p, gdim, DOLFIN_EPS);
+
+  std::cout << __FUNCTION__<<" "<<p.size()<<' '<<unique_p.size() << std::endl;
+  for (const Point q: p)
+    std::cout << q[0]<<' '<<q[1]<<'\n';
+  std::cout <<"unique:\n";
+  for (const Point q: unique_p)
+    std::cout << q[0]<<' '<<q[1]<<'\n';
+
 
   if (unique_p.size() > 2)
   {
@@ -190,7 +199,8 @@ ConvexTriangulation::_triangulate_graham_scan_2d(const std::vector<Point>& input
   dolfin_assert(GeometryPredicates::is_finite(input_points));
 
   // Make sure the input points are unique
-  std::vector<Point> points = unique_points(input_points, DOLFIN_EPS);
+  const std::size_t gdim = 2;
+  std::vector<Point> points = unique_points(input_points, gdim, DOLFIN_EPS);
 
   if (points.size() < 3)
     return std::vector<std::vector<Point>>();
@@ -255,7 +265,7 @@ ConvexTriangulation::_triangulate_delaunay_2d(const std::vector<Point>& input_po
   const std::size_t gdim = 2;
 
   // Make sure the input points are unique
-  std::vector<Point> points = unique_points(input_points, DOLFIN_EPS);
+  std::vector<Point> points = unique_points(input_points, gdim, DOLFIN_EPS);
 
   if (points.size() < 3)
     return std::vector<std::vector<Point>>();
@@ -392,7 +402,8 @@ ConvexTriangulation::_triangulate_graham_scan_3d(const std::vector<Point>& input
 
   // Make sure the input points are unique. We assume this has
   // negligble effect on volume
-  std::vector<Point> points = unique_points(input_points, DOLFIN_EPS);
+  const std::size_t gdim = 3;
+  std::vector<Point> points = unique_points(input_points, gdim, DOLFIN_EPS);
 
   std::vector<std::vector<Point>> triangulation;
 
@@ -869,9 +880,10 @@ ConvexTriangulation::triangulate_graham_scan_3d(const std::vector<Point>& pm)
 //-----------------------------------------------------------------------------
 std::vector<Point>
 ConvexTriangulation::unique_points(const std::vector<Point>& input_points,
+				   std::size_t gdim,
 				   double tol)
 {
-  // Create a unique list of points in the sense that |p-q|^2 > tol
+  // Create a unique list of points in the sense that |p-q| > tol in each dimension
 
   std::vector<Point> points;
 
@@ -880,7 +892,15 @@ ConvexTriangulation::unique_points(const std::vector<Point>& input_points,
     bool unique = true;
     for (std::size_t j = i+1; j < input_points.size(); ++j)
     {
-      if ((input_points[i] - input_points[j]).squared_norm() <= tol)
+      std::size_t cnt = 0;
+      for (std::size_t d = 0; d < gdim; ++d)
+      {
+	if (std::abs(input_points[i][d] - input_points[j][d]) > tol)
+	{
+	  cnt++;
+	}
+      }
+      if (cnt == 0)
       {
 	unique = false;
 	break;

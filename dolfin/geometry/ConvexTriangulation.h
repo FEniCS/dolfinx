@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-06-22
+// Last changed: 2017-06-27
 
 #ifndef __CONVEX_TRIANGULATION
 #define __CONVEX_TRIANGULATION
@@ -40,9 +40,10 @@ namespace dolfin
 
     /// Triangulate 1D
     static std::vector<std::vector<Point>>
-    triangulate_1d(const std::vector<Point>& pm)
+    triangulate_1d(const std::vector<Point>& pm,
+		   std::size_t gdim)
     {
-      return _triangulate_1d(pm);
+      return _triangulate_1d(pm, gdim);
     }
 
     /// Triangulate using the Graham scan 2D
@@ -73,7 +74,8 @@ namespace dolfin
 
     /// Implementation of 1D triangulation
     static std::vector<std::vector<Point>>
-    _triangulate_1d(const std::vector<Point>& pm);
+    _triangulate_1d(const std::vector<Point>& pm,
+		    std::size_t gdim);
 
     /// Implementation of Graham scan 2D
     static std::vector<std::vector<Point>>
@@ -121,7 +123,9 @@ namespace dolfin
 
     // Utility functions
     static std::vector<Point> unique_points(const std::vector<Point>& points,
+					    std::size_t gdim,
 					    double tol);
+
   };
 
 } // end namespace dolfin
