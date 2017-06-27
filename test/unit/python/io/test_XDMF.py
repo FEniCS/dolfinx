@@ -17,6 +17,7 @@
 
 import pytest
 import os
+from random import randint
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 
@@ -26,12 +27,22 @@ encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)
 # Data types supported in templating
 data_types = (('int', int), ('size_t', int), ('double', float), ('bool', bool))
 
+# Finite elements tested
+fe_1d_shapes = ["interval"]
+fe_2d_shapes = ["triangle"]
+fe_3d_shapes = ["tetrahedron"]
+fe_families = ["CG", "DG"]
+fe_degrees = [0, 1, 3]
+
 
 def invalid_config(encoding):
     return (not has_hdf5() and encoding == XDMFFile.Encoding_HDF5) \
         or (encoding == XDMFFile.Encoding_ASCII and MPI.size(mpi_comm_world()) > 1) \
         or (not has_hdf5_parallel() and MPI.size(mpi_comm_world()) > 1)
 
+
+def invalid_fe(fe_family, fe_shape, fe_degree):
+    return (fe_family == "CG" and fe_degree == 0)
 
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_1d_mesh(tempdir, encoding):
@@ -103,18 +114,132 @@ def test_save_1d_scalar(tempdir, encoding):
 
 
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_and_checkpoint_1d_scalar_cg3(tempdir, encoding):
+@pytest.mark.parametrize("fe_degree", fe_degrees)
+@pytest.mark.parametrize("fe_family", fe_families)
+@pytest.mark.parametrize("fe_shape", fe_1d_shapes)
+def test_save_and_checkpoint_1d_scalar(tempdir, encoding, fe_degree, fe_family, fe_shape):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
-    filename = os.path.join(tempdir, "u1_checkpoint_{}.xdmf".format(encoding))
-    mesh = UnitSquareMesh(16, 16)
-    V = FunctionSpace(mesh, "Lagrange", 3)
-    u = Function(V)
-    u.vector()[:] = 1.0
+
+    if invalid_fe(fe_family, fe_shape, fe_degree):
+        pytest.skip("Trivial finite element")
+
+    mesh = UnitIntervalMesh(32 + randint(0, 5))
+    filename = os.path.join(tempdir, "u1_checkpoint.xdmf")
+
+    FE = FiniteElement(fe_family, fe_shape, fe_degree)
+    V = FunctionSpace(mesh, FE)
+    u_in = Function(V)
+    u_out = Function(V)
+
+    u_out.interpolate(Expression("x[0]", degree=1))
+    u_out.rename("u_out", "u_out")
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        file.write_checkpoint(u, 0, encoding)
-        
+        file.write_checkpoint(u_out, 0, encoding)
+
+    with XDMFFile(mesh.mpi_comm(), filename) as file:
+        file.read_checkpoint(u_in, "u_out", 0)
+
+    result = u_in.vector() - u_out.vector()
+    assert [near(x, 0.0) for x in result.array()]
+
+
+@pytest.mark.parametrize("encoding", encodings)
+@pytest.mark.parametrize("fe_degree", fe_degrees)
+@pytest.mark.parametrize("fe_family", fe_families)
+@pytest.mark.parametrize("fe_shape", fe_2d_shapes)
+def test_save_and_checkpoint_2d_scalar(tempdir, encoding, fe_degree, fe_family, fe_shape):
+    if invalid_config(encoding):
+        pytest.xfail("XDMF unsupported in current configuration")
+
+    if invalid_fe(fe_family, fe_shape, fe_degree):
+        pytest.skip("Trivial finite element")
+
+    mesh = UnitSquareMesh(16 + randint(0, 5), 16 + randint(0, 5))
+    filename = os.path.join(tempdir, "u2_checkpoint.xdmf")
+
+    FE = FiniteElement(fe_family, fe_shape, fe_degree)
+    V = FunctionSpace(mesh, FE)
+    u_in = Function(V)
+    u_out = Function(V)
+
+    u_out.interpolate(Expression("x[0]*x[1]", degree=2))
+    u_out.rename("u_out", "u_out")
+
+    with XDMFFile(mesh.mpi_comm(), filename) as file:
+        file.write_checkpoint(u_out, 0, encoding)
+
+    with XDMFFile(mesh.mpi_comm(), filename) as file:
+        file.read_checkpoint(u_in, "u_out", 0)
+
+    result = u_in.vector() - u_out.vector()
+    assert [near(x, 0.0) for x in result.array()]
+
+
+@pytest.mark.parametrize("encoding", encodings)
+@pytest.mark.parametrize("fe_degree", fe_degrees)
+@pytest.mark.parametrize("fe_family", fe_families)
+@pytest.mark.parametrize("fe_shape", fe_3d_shapes)
+def test_save_and_checkpoint_3d_scalar(tempdir, encoding, fe_degree, fe_family, fe_shape):
+    if invalid_config(encoding):
+        pytest.xfail("XDMF unsupported in current configuration")
+
+    if invalid_fe(fe_family, fe_shape, fe_degree):
+        pytest.skip("Trivial finite element")
+
+    mesh = UnitCubeMesh(8 + randint(0, 3), 8 + randint(0, 3), 8 + randint(0, 3))
+    filename = os.path.join(tempdir, "u3_checkpoint.xdmf")
+
+    FE = FiniteElement(fe_family, fe_shape, fe_degree)
+    V = FunctionSpace(mesh, FE)
+    u_in = Function(V)
+    u_out = Function(V)
+
+    u_out.interpolate(Expression("x[0]*x[1]*x[2]", degree=3))
+    u_out.rename("u_out", "u_out")
+
+    with XDMFFile(mesh.mpi_comm(), filename) as file:
+        file.write_checkpoint(u_out, 0, encoding)
+
+    with XDMFFile(mesh.mpi_comm(), filename) as file:
+        file.read_checkpoint(u_in, "u_out", 0)
+
+    result = u_in.vector() - u_out.vector()
+    assert [near(x, 0.0) for x in result.array()]
+
+
+@pytest.mark.parametrize("encoding", encodings)
+@pytest.mark.parametrize("fe_degree", fe_degrees)
+@pytest.mark.parametrize("fe_family", fe_families)
+@pytest.mark.parametrize("fe_shape", fe_2d_shapes)
+def test_save_and_checkpoint_2d_vector(tempdir, encoding, fe_degree, fe_family, fe_shape):
+    if invalid_config(encoding):
+        pytest.xfail("XDMF unsupported in current configuration")
+
+    if invalid_fe(fe_family, fe_shape, fe_degree):
+        pytest.skip("Trivial finite element")
+
+    mesh = UnitSquareMesh(16 + randint(0, 5), 16 + randint(0, 5))
+    filename = os.path.join(tempdir, "u2_checkpoint.xdmf")
+
+    FE = VectorElement(fe_family, fe_shape, fe_degree)
+    V = FunctionSpace(mesh, FE)
+    u_in = Function(V)
+    u_out = Function(V)
+
+    u_out.interpolate(Expression(("x[0]*x[1]", "x[0]"), degree=2))
+    u_out.rename("u_out", "u_out")
+
+    with XDMFFile(mesh.mpi_comm(), filename) as file:
+        file.write_checkpoint(u_out, 0, encoding)
+
+    with XDMFFile(mesh.mpi_comm(), filename) as file:
+        file.read_checkpoint(u_in, "u_out", 0)
+
+    result = u_in.vector() - u_out.vector()
+    assert [near(x, 0.0) for x in result.array()]
+
 
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_2d_scalar(tempdir, encoding):
