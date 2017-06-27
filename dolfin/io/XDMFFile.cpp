@@ -138,6 +138,9 @@ void XDMFFile::write_checkpoint(const Function& u,
 
   check_encoding(encoding);
 
+  log(LogLevel::PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
+      "time step %d.", u.name().c_str(), _filename.c_str(), time_step);
+
   // If XML file exists load it to member _xml_doc
   if (boost::filesystem::exists(_filename))
   {
@@ -1368,6 +1371,9 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
                                  size_t counter)
 {
 
+  log(LogLevel::PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
+      "counter %i.", func_name.c_str(), _filename.c_str(), counter);
+
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
   // of the HDF5 files(s) and the XDMF is not opened from its own directory)
   boost::filesystem::path xdmf_filename(_filename);
@@ -1391,7 +1397,7 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
   // Find grid with name equal to the name of function we're about
   // to save and given counter
   pugi::xml_node grid_node =
-      _xml_doc->select_node(("/Xdmf/Domain/Grid[@CollectionType='Temporal' and "
+      xml_doc.select_node(("/Xdmf/Domain/Grid[@CollectionType='Temporal' and "
           "@Name='" + func_name + "']/Grid[@Name='" + func_name + "_" +
           std::to_string(counter) +"']").c_str()).node();
 
@@ -1453,19 +1459,25 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
   std::vector<std::size_t>
       cells = get_dataset<std::size_t>(_mpi_comm, cells_dataitem, parent_path);
 
+  const std::vector<std::int64_t>
+      x_cell_dofs_shape = get_dataset_shape(cells_dataitem);
+
+  // Divide cells equally between processes
+  std::pair<std::size_t, std::size_t> cell_range
+      = MPI::local_range(_mpi_comm, x_cell_dofs_shape[0]);
+
   // Read number of dofs per cell
   std::vector<std::size_t> x_cell_dofs =
-      get_dataset<std::size_t>(_mpi_comm, x_cell_dofs_dataitem, parent_path);
+      get_dataset<std::size_t>(_mpi_comm, x_cell_dofs_dataitem, parent_path,
+                               std::make_pair(cell_range.first,
+                                              cell_range.second + 1));
 
   // Read cell dofmaps
   std::vector<dolfin::la_index> cell_dofs =
-      get_dataset<dolfin::la_index>(_mpi_comm, cell_dofs_dataitem, parent_path);
-
-  // Read function vector
-  std::vector<double>
-      vector = get_dataset<double>(_mpi_comm, vector_dataitem, parent_path);
-
-  GenericVector &x = *u.vector();
+      get_dataset<dolfin::la_index>(_mpi_comm, cell_dofs_dataitem,
+                                    parent_path,
+                                    std::make_pair(x_cell_dofs.front(),
+                                                   x_cell_dofs.back()));
 
   const std::vector<std::int64_t>
       vector_shape = get_dataset_shape(vector_dataitem);
@@ -1474,6 +1486,13 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
   // Divide vector between processes
   const std::pair<dolfin::la_index, dolfin::la_index>
       input_vector_range = MPI::local_range(_mpi_comm, num_global_dofs);
+
+  // Read function vector
+  std::vector<double>
+      vector = get_dataset<double>(_mpi_comm, vector_dataitem, parent_path,
+                                   input_vector_range);
+
+  GenericVector &x = *u.vector();
 
   HDF5Utility::get_local_vector_values(_mpi_comm,
                                        x,
@@ -2252,6 +2271,9 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
     // complicated by the XML Dimension attribute and the HDF5 storage
     // possibly having different shapes, e.g. the HDF5 storgae may be a
     // flat array.
+
+    // If range = {0, 0} then no range is supplied
+    // and we must determine the range
     if (range.first == 0 and range.second == 0) {
       if (shape_xml == shape_hdf5)
         range = MPI::local_range(comm, shape_hdf5[0]);
@@ -2277,7 +2299,6 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
                      "reading data from XDMF file",
                      "This combination of array shapes in XDMF and HDF5 not supported");
       }
-      info("Range is %ix%i", range.first, range.second);
     }
 
     // Retrieve data
