@@ -116,7 +116,19 @@ namespace dolfin
     ///
     void write(const Mesh &mesh, const Encoding encoding = default_encoding);
 
-    /// Experimental higher-order element support
+    /// Save a Function to XDMF file for checkpointing, using an
+    /// associated HDF5 file, or storing the data inline as XML.
+    ///
+    /// If the file where we would like to write exists, then
+    /// the function is appended to the file.
+    ///
+    /// @param    u (_Function_)
+    ///         A function to save.
+    /// @param    time_step (_double_)
+    ///         Time step. It is saved only in XDMF file.
+    /// @param    encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
     void write_checkpoint(const Function &u,
                             double time_step = 0.0,
                             const Encoding encoding = default_encoding);
@@ -277,7 +289,22 @@ namespace dolfin
     ///        Mesh to fill from XDMF file
     void read(Mesh& mesh) const;
 
-    /// Experimental higher-order element support
+    /// Read a function from the XDMF file. Supplied function must
+    /// come with dofmap and mesh.
+    ///
+    /// Functions saved as time-series must be addressed through
+    /// (integer) internal counter and function name. Function name
+    /// is a name of function that was saved. Counter stands for
+    /// the number of function from time-series, e.g. counter=0
+    /// refers to first saved function regardless of it's time-step value.
+    ///
+    /// @param    u (_Function_)
+    ///         A function to read.
+    /// @param    func_name (_string_)
+    ///         A name of a function to read.
+    /// @param    counter (_size_t_)
+    ///         Internal integer counter - used in time-series.
+    ///
     void read_checkpoint(Function& u, std::string func_name, size_t counter);
 
     /// Read first MeshFunction from file
@@ -386,6 +413,7 @@ namespace dolfin
                          hid_t h5_id, const Mesh& mesh,
                          const std::string path_prefix);
 
+    // Add function to a XML node
     static void add_function(MPI_Comm comm, pugi::xml_node &xml_node,
                              hid_t h5_id, std::string h5_path,
                              const Function &u, const Mesh &mesh);
