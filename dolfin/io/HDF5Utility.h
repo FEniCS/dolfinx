@@ -83,7 +83,7 @@ namespace dolfin
     /// in serial
     static void build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data);
 
-    static void get_local_vector_values(const MPI_Comm mpi_comm,
+    static void set_local_vector_values(const MPI_Comm mpi_comm,
                                         GenericVector &x,
                                         const Mesh &mesh,
                                         const std::vector<size_t> &cells,

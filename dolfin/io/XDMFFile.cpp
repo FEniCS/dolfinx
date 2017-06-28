@@ -1494,7 +1494,7 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
 
   GenericVector &x = *u.vector();
 
-  HDF5Utility::get_local_vector_values(_mpi_comm,
+  HDF5Utility::set_local_vector_values(_mpi_comm,
                                        x,
                                        mesh,
                                        cells,

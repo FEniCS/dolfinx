@@ -1069,7 +1069,7 @@ void HDF5File::read(Function& u, const std::string name)
   HDF5Interface::read_dataset(_hdf5_file_id, vector_dataset_name,
                               input_vector_range, input_values);
 
-  HDF5Utility::get_local_vector_values(_mpi_comm, x, mesh, input_cells,
+  HDF5Utility::set_local_vector_values(_mpi_comm, x, mesh, input_cells,
                                        input_cell_dofs, x_cell_dofs,
                                        input_values, input_vector_range, dofmap);
 
