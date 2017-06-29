@@ -32,7 +32,7 @@ def test_nasty_jit_caching_bug():
     # forms are different
 
     default_parameters = parameters["form_compiler"]["representation"]
-    for representation in ["tensor", "quadrature"]:
+    for representation in ["quadrature"]:
 
         parameters["form_compiler"]["representation"] = representation
 

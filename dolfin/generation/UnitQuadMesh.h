@@ -37,6 +37,9 @@ namespace dolfin
     /// work with anything else
     UnitQuadMesh(MPI_Comm comm, std::size_t nx, std::size_t ny);
 
+    UnitQuadMesh(std::size_t nx, std::size_t ny)
+        : UnitQuadMesh(MPI_COMM_WORLD, nx, ny){}
+
   };
 
 }

@@ -472,6 +472,9 @@ def la_index_dtype():
         __rdiv__ = __rtruediv__
         __idiv__ = __itruediv__
     del sys
+
+    # Prefer DOLFIN return type when operating on NumPy objects
+    __array_priority__ = 0
   %}
 }
 
