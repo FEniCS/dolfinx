@@ -882,7 +882,7 @@ ConvexTriangulation::unique_points(const std::vector<Point>& input_points,
   for (std::size_t i = 0; i < input_points.size(); ++i)
   {
     bool unique = true;
-    for (std::size_t j = i+1; unique and j < input_points.size(); ++j)
+    for (std::size_t j = i+1; j < input_points.size(); ++j)
     {
       std::size_t cnt = 0;
       for (std::size_t d = 0; d < gdim; ++d)
