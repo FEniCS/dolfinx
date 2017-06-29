@@ -33,7 +33,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/defines.h>
 #include <dolfin/common/utils.h>
-#include "dolfin/common/Timer.h"
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -176,24 +175,24 @@ void XDMFFile::write_checkpoint(const Function& u,
   // Open the HDF5 file if using HDF5 encoding (truncate)
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
-  if (encoding == Encoding::HDF5) {
+  if (encoding == Encoding::HDF5)
+  {
     if (truncate_hdf)
     {
       // We are writing for the first time, any HDF file must be overwritten
       _hdf5_file.reset(new HDF5File(_mpi_comm,
-                                    get_hdf5_filename(_filename), "w"));
-    }
-      else if (_hdf5_file)
+        get_hdf5_filename(_filename), "w"));
+    } else if (_hdf5_file)
     {
       // Pointer to HDF file is active, we are writing time series
       // or adding function with flush_output=false
-    }
-      else
+    } else
     {
       // Pointer is empty, we are writing time series
       // or adding function to already flushed file
-      _hdf5_file.reset(new HDF5File(_mpi_comm,
-                                    get_hdf5_filename(_filename), "a"));
+      _hdf5_file = std::unique_ptr<HDF5File>(_mpi_comm, get_hdf5_filename
+        (_filename), "a");
+
     }
 
     dolfin_assert(_hdf5_file);
