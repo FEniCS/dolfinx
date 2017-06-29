@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-06-27
+// Last changed: 2017-06-29
 
 #include <algorithm>
 #include <tuple>
@@ -882,22 +882,23 @@ ConvexTriangulation::unique_points(const std::vector<Point>& input_points,
   for (std::size_t i = 0; i < input_points.size(); ++i)
   {
     bool unique = true;
-    for (std::size_t j = i+1; j < input_points.size(); ++j)
+    for (std::size_t j = i+1; unique and j < input_points.size(); ++j)
     {
       std::size_t cnt = 0;
       for (std::size_t d = 0; d < gdim; ++d)
       {
-	if (std::abs(input_points[i][d] - input_points[j][d]) > tol)
-	{
-	  cnt++;
-	}
+      	if (std::abs(input_points[i][d] - input_points[j][d]) > tol)
+      	{
+      	  cnt++;
+      	}
       }
       if (cnt == 0)
       {
-	unique = false;
-	break;
+      	unique = false;
+      	break;
       }
     }
+
     if (unique)
       points.push_back(input_points[i]);
   }
