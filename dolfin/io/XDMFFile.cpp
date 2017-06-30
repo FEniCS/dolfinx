@@ -131,6 +131,7 @@ void XDMFFile::write(const Mesh& mesh, const Encoding encoding)
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_checkpoint(const Function& u,
+                                  std::string function_name,
                                   double time_step,
                                   const Encoding encoding)
 {
@@ -138,13 +139,13 @@ void XDMFFile::write_checkpoint(const Function& u,
   check_encoding(encoding);
 
   log(LogLevel::PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
-      "time step %d.", u.name().c_str(), _filename.c_str(), time_step);
+    "time step %d.", function_name.c_str(), _filename.c_str(), time_step);
 
   // If XML file exists load it to member _xml_doc
   if (boost::filesystem::exists(_filename))
   {
-    log(LogLevel::DBG, "Writing to an existing XDMF XML file \"%s\".",
-        _filename.c_str());
+    log(LogLevel::PROGRESS, "Writing to an existing XDMF XML file \"%s\".",
+      _filename.c_str());
 
     pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
     dolfin_assert(result);
@@ -157,7 +158,7 @@ void XDMFFile::write_checkpoint(const Function& u,
   if (_xml_doc->select_node("/Xdmf/Domain").node().empty())
   {
 
-    log(LogLevel::DBG, "Resetting XDMF XML file.");
+    log(LogLevel::PROGRESS, "Resetting XDMF XML file.");
 
     _xml_doc->reset();
 
@@ -170,6 +171,11 @@ void XDMFFile::write_checkpoint(const Function& u,
     dolfin_assert(domain_node);
 
     truncate_hdf = true;
+  }
+
+  if(truncate_hdf and boost::filesystem::exists(get_hdf5_filename(_filename)))
+  {
+    log(LogLevel::PROGRESS, "HDF file \"%s\" will be overwritten.");
   }
 
   // Open the HDF5 file if using HDF5 encoding (truncate)
@@ -190,9 +196,8 @@ void XDMFFile::write_checkpoint(const Function& u,
     {
       // Pointer is empty, we are writing time series
       // or adding function to already flushed file
-      _hdf5_file = std::unique_ptr<HDF5File>(_mpi_comm, get_hdf5_filename
-        (_filename), "a");
-
+      _hdf5_file = std::unique_ptr<HDF5File>(new HDF5File(_mpi_comm,
+        get_hdf5_filename(_filename), "a"));
     }
 
     dolfin_assert(_hdf5_file);
@@ -206,17 +211,17 @@ void XDMFFile::write_checkpoint(const Function& u,
   // Find temporal grid with name equal to the name of function we're about
   // to save
   pugi::xml_node func_temporal_grid_node =
-      _xml_doc->select_node(("/Xdmf/Domain/Grid[@CollectionType='Temporal' and "
-          "@Name='" + u.name() + "']").c_str()).node();
+    _xml_doc->select_node(("/Xdmf/Domain/Grid[@CollectionType='Temporal' and "
+      "@Name='" + function_name + "']").c_str()).node();
 
   // If there is no such temporal grid then create one
-  if(func_temporal_grid_node.empty())
+  if (func_temporal_grid_node.empty())
   {
     func_temporal_grid_node = _xml_doc->select_node
-        ("/Xdmf/Domain").node().append_child("Grid");
+      ("/Xdmf/Domain").node().append_child("Grid");
     func_temporal_grid_node.append_attribute("GridType") = "Collection";
     func_temporal_grid_node.append_attribute("CollectionType") = "Temporal";
-    func_temporal_grid_node.append_attribute("Name") = u.name().c_str();
+    func_temporal_grid_node.append_attribute("Name") = function_name.c_str();
   }
 
   //
@@ -224,15 +229,15 @@ void XDMFFile::write_checkpoint(const Function& u,
   //
 
   std::size_t counter = func_temporal_grid_node.select_nodes("Grid").size();
-  std::string function_time_name = u.name() + "_" + std::to_string(counter);
+  std::string function_time_name = function_name + "_" + std::to_string(counter);
 
-  const Mesh &mesh = *u.function_space()->mesh();
-  add_mesh(_mpi_comm, func_temporal_grid_node, h5_id, mesh, u.name() + "/" +
-      function_time_name);
+  const Mesh& mesh = *u.function_space()->mesh();
+  add_mesh(_mpi_comm, func_temporal_grid_node, h5_id, mesh, function_name + "/" +
+    function_time_name);
 
   // Get newly (by add_mesh) created Grid
   pugi::xml_node mesh_grid_node = func_temporal_grid_node.select_node
-      (("Grid[@Name='" + mesh.name() +"']").c_str()).node();
+    (("Grid[@Name='" + mesh.name() + "']").c_str()).node();
   dolfin_assert(mesh_grid_node);
 
   // Change it's name to {function_name}_{counter}
@@ -246,13 +251,12 @@ void XDMFFile::write_checkpoint(const Function& u,
   // Write function
   //
 
-  add_function(_mpi_comm, mesh_grid_node, h5_id, u.name() + "/" +
-      function_time_name, u, mesh);
+  add_function(_mpi_comm, mesh_grid_node, h5_id, function_name + "/" +
+    function_time_name, u, function_name, mesh);
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
-
 
 #ifdef HAS_HDF5
   // Close the HDF5 file if in "flush" mode
@@ -1121,7 +1125,8 @@ void XDMFFile::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
 //----------------------------------------------------------------------------
 void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node &xml_node,
                             hid_t h5_id, std::string h5_path,
-                            const Function &u, const Mesh &mesh)
+                            const Function &u, std::string function_name,
+                            const Mesh &mesh)
 {
 
   std::string
@@ -1151,7 +1156,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node &xml_node,
   // Create a name for the field and index data
   // incorporating the family and degree
   std::string
-      name = u.name() + "_" + element_family + std::to_string(element_degree);
+      name = function_name + "_" + element_family + std::to_string(element_degree);
 
   //
   // Prepare and save number of dofs per cell (x_cell_dofs) and
