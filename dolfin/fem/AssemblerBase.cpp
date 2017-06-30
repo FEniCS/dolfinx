@@ -104,11 +104,57 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     A.init(*tensor_layout);
     t1.stop();
 
+    // Insert zeros to dense rows in increasing order of column index
+    // to avoid CSR data reallocation when assembling in random order
+    // resulting in quadratic complexity; this has to be done before
+    // inserting to diagonal below
+    if (tensor_layout->sparsity_pattern())
+    {
+      // Tabulate indices of dense rows
+      const std::size_t primary_dim
+        = tensor_layout->sparsity_pattern()->primary_dim();
+      std::vector<std::size_t> global_dofs;
+      dofmaps[primary_dim]->tabulate_global_dofs(global_dofs);
+
+      if (global_dofs.size() > 0)
+      {
+        // Down cast tensor to matrix
+        dolfin_assert(A.rank() == 2);
+        GenericMatrix& _matA = A.down_cast<GenericMatrix>();
+
+        // Get local row range
+        const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
+        const IndexMap& index_map_0 = *dofmaps[primary_dim]->index_map();
+        const std::pair<std::size_t, std::size_t> row_range
+          = A.local_range(primary_dim);
+
+        // Set zeros in dense rows in order of increasing column index
+        const double block = 0.0;
+        for (std::size_t i: global_dofs)
+        {
+          const std::size_t I = index_map_0.local_to_global(i);
+          if (I >= row_range.first && I < row_range.second)
+          {
+            const dolfin::la_index _I = I;
+            for (std::size_t J = 0; J < _matA.size(primary_codim); J++)
+            {
+              const dolfin::la_index _J = J;
+              _matA.set(&block, 1, &_I, 1, &_J);
+            }
+          }
+        }
+
+        // Eventually wait with assembly flush for keep_diagonal
+        if (!keep_diagonal)
+          A.apply("flush");
+      }
+    }
+
     // Insert zeros on the diagonal as diagonal entries may be
     // prematurely optimised away by the linear algebra backend when
     // calling GenericMatrix::apply, e.g. PETSc does this then errors
     // when matrices have no diagonal entry inserted.
-    if (A.rank() == 2 && keep_diagonal)
+    if (keep_diagonal && A.rank() == 2)
     {
       // Down cast to GenericMatrix
       GenericMatrix& _matA = A.down_cast<GenericMatrix>();
@@ -117,11 +163,13 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
       const double block = 0.0;
       const std::pair<std::size_t, std::size_t> row_range = A.local_range(0);
       const std::size_t range = std::min(row_range.second, A.size(1));
+
       for (std::size_t i = row_range.first; i < range; i++)
       {
-        dolfin::la_index _i = i;
+        const dolfin::la_index _i = i;
         _matA.set(&block, 1, &_i, 1, &_i);
       }
+
       A.apply("flush");
     }
 

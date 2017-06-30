@@ -6,6 +6,9 @@ Change log
 
 - Updates for `ufc::finite_element::evaluate_vertex_values` interface
   change
+- Fix quadratic scaling in PETSc matrix allocation with global dofs;
+  assembly with ``Real`` space now exhibits linear scaling in number
+  of dofs
 
 2017.1.0 (2017-05-09)
 ---------------------
