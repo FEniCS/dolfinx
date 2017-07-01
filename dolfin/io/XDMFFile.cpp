@@ -3041,9 +3041,7 @@ void XDMFFile::check_function_name(std::string function_name)
   // We must check that supplied function name is the same on all processes
   // Very important for HDF file paths
   std::vector<std::string> function_names_received;
-
   MPI::all_gather(_mpi_comm, function_name, function_names_received);
-  dolfin_debug(container_to_string(function_names_received, "/", 8).c_str());
 
   for (std::string function_name_received : function_names_received)
   {

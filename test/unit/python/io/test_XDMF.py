@@ -17,7 +17,6 @@
 
 import pytest
 import os
-from random import randint
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 
