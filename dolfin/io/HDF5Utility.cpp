@@ -338,18 +338,18 @@ void HDF5Utility::build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data)
 }
 //-----------------------------------------------------------------------------
 void HDF5Utility::set_local_vector_values(const MPI_Comm mpi_comm,
-                                          GenericVector &x,
-                                          const Mesh &mesh,
-                                          const std::vector<size_t> &cells,
-                                          const std::vector<dolfin::la_index>
-                                          &cell_dofs,
-                                          const std::vector<std::size_t>
-                                          &x_cell_dofs,
-                                          std::vector<double> &vector,
-                                          const std::pair<dolfin::la_index,
-                                                          dolfin::la_index>
-                                          input_vector_range,
-                                          const GenericDofMap &dofmap)
+  GenericVector& x,
+  const Mesh& mesh,
+  const std::vector<size_t>& cells,
+  const std::vector<dolfin::la_index>
+  & cell_dofs,
+  const std::vector<std::size_t>
+  & x_cell_dofs,
+  std::vector<double>& vector,
+  const std::pair<dolfin::la_index,
+                  dolfin::la_index>
+  input_vector_range,
+  const GenericDofMap& dofmap)
 {
 
   // Calculate one (global cell, local_dof_index) to associate with
