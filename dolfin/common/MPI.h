@@ -156,6 +156,12 @@ namespace dolfin
       static void all_gather(MPI_Comm comm, const T in_value,
                              std::vector<T>& out_values);
 
+    /// Gather values, one primitive from each process (MPI_Allgather)
+    /// Specialization for std::string - functionality copied from
+    /// gather specialization for std::string
+    static void all_gather(MPI_Comm comm, const std::string& in_values,
+      std::vector<std::string>& out_values);
+
     /// Return global max value
     template<typename T> static T max(MPI_Comm comm, const T& value);
 
@@ -609,6 +615,45 @@ namespace dolfin
     out_values.clear();
     out_values.push_back(in_values);
     #endif
+  }
+  //---------------------------------------------------------------------------
+  inline void dolfin::MPI::all_gather(MPI_Comm comm,
+    const std::string& in_values,
+    std::vector<std::string>& out_values)
+  {
+  #ifdef HAS_MPI
+    const std::size_t comm_size = MPI::size(comm);
+
+    // Get data size on each process
+    std::vector<int> pcounts(comm_size);
+    int local_size = in_values.size();
+    MPI_Allgather(&local_size, 1, MPI_INT, pcounts.data(), 1, MPI_INT,
+      comm);
+
+    // Build offsets
+    std::vector<int> offsets(comm_size + 1, 0);
+    for (std::size_t i = 1; i <= comm_size; ++i)
+      offsets[i] = offsets[i - 1] + pcounts[i - 1];
+
+    // Gather
+    const std::size_t n = std::accumulate(pcounts.begin(), pcounts.end(), 0);
+    std::vector<char> _out(n);
+    MPI_Allgatherv(const_cast<char*>(in_values.data()), in_values.size(),
+      MPI_CHAR,
+      _out.data(), pcounts.data(), offsets.data(),
+      MPI_CHAR, comm);
+
+    // Rebuild
+    out_values.resize(comm_size);
+    for (std::size_t p = 0; p < comm_size; ++p)
+    {
+      out_values[p] = std::string(_out.begin() + offsets[p],
+        _out.begin() + offsets[p + 1]);
+    }
+  #else
+    out_values.clear();
+      out_values.push_back(in_values);
+  #endif
   }
   //-------------------------------------------------------------------------
   template<typename T>
