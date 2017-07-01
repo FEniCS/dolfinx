@@ -29,7 +29,6 @@
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include "pugixml.hpp"
-#include <mpi.h>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/defines.h>
