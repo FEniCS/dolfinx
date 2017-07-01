@@ -33,12 +33,18 @@ fe_2d_shapes = ["triangle"]
 fe_3d_shapes = ["tetrahedron"]
 fe_families = ["CG", "DG"]
 fe_degrees = [0, 1, 3]
+mesh_tdims = [1, 2, 3]
+mesh_ns = [4, 11]
 
 # Meshes tested
-meshes = []
-for n in [4, 8, 15]:
-    meshes.append(UnitIntervalMesh(n))
-    meshes.append(UnitSquareMesh(n, n))
+def mesh_factory(tdim, n):
+    if tdim == 1:
+        return UnitIntervalMesh(n)
+    elif tdim == 2:
+        return UnitSquareMesh(n, n)
+    elif tdim == 3:
+        return UnitCubeMesh(n, n, n)
+
 
 def invalid_config(encoding):
     return (not has_hdf5() and encoding == XDMFFile.Encoding_HDF5) \
@@ -139,8 +145,12 @@ def test_save_1d_scalar(tempdir, encoding):
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("fe_degree", fe_degrees)
 @pytest.mark.parametrize("fe_family", fe_families)
-@pytest.mark.parametrize("mesh", meshes)
-def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family, mesh):
+@pytest.mark.parametrize("mesh_tdim", mesh_tdims)
+@pytest.mark.parametrize("mesh_n", mesh_ns)
+def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
+                                    mesh_tdim, mesh_n):
+    set_log_level(DBG)
+
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
 
@@ -154,6 +164,7 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family, mes
     except OSError:
         pass
 
+    mesh = mesh_factory(mesh_tdim, mesh_n)
     FE = FiniteElement(fe_family, mesh.ufl_cell(), fe_degree)
     V = FunctionSpace(mesh, FE)
     u_in = Function(V)
@@ -174,8 +185,10 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family, mes
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("fe_degree", fe_degrees)
 @pytest.mark.parametrize("fe_family", fe_families)
-@pytest.mark.parametrize("mesh", meshes)
-def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family, mesh):
+@pytest.mark.parametrize("mesh_tdim", mesh_tdims)
+@pytest.mark.parametrize("mesh_n", mesh_ns)
+def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
+                                    mesh_tdim, mesh_n):
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
 
@@ -189,13 +202,14 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family, mes
     except OSError:
         pass
 
+    mesh = mesh_factory(mesh_tdim, mesh_n)
     FE = VectorElement(fe_family, mesh.ufl_cell(), fe_degree)
     V = FunctionSpace(mesh, FE)
     u_in = Function(V)
     u_out = Function(V)
 
     if mesh.geometry().dim() == 1:
-        pytest.skip("1D vector function is trivial")
+        u_out.interpolate(Expression(("x[0]", ), degree=1))
     elif mesh.geometry().dim() == 2:
         u_out.interpolate(Expression(("x[0]*x[1]", "x[0]"), degree=2))
     elif mesh.geometry().dim() == 3:
