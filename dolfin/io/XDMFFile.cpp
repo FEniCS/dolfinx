@@ -29,6 +29,7 @@
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include "pugixml.hpp"
+#include <mpi.h>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/defines.h>
@@ -137,9 +138,10 @@ void XDMFFile::write_checkpoint(const Function& u,
 {
 
   check_encoding(encoding);
+  check_function_name(function_name);
 
   log(LogLevel::PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
-    "time step %d.", function_name.c_str(), _filename.c_str(), time_step);
+    "time step %f.", function_name.c_str(), _filename.c_str(), time_step);
 
   // If XML file exists load it to member _xml_doc
   if (boost::filesystem::exists(_filename))
@@ -175,7 +177,8 @@ void XDMFFile::write_checkpoint(const Function& u,
 
   if(truncate_hdf and boost::filesystem::exists(get_hdf5_filename(_filename)))
   {
-    log(LogLevel::PROGRESS, "HDF file \"%s\" will be overwritten.");
+    log(LogLevel::PROGRESS, "HDF file \"%s\" will be overwritten.",
+      get_hdf5_filename(_filename).c_str());
   }
 
   // Open the HDF5 file if using HDF5 encoding (truncate)
@@ -222,6 +225,10 @@ void XDMFFile::write_checkpoint(const Function& u,
     func_temporal_grid_node.append_attribute("GridType") = "Collection";
     func_temporal_grid_node.append_attribute("CollectionType") = "Temporal";
     func_temporal_grid_node.append_attribute("Name") = function_name.c_str();
+  } else
+  {
+    log(LogLevel::PROGRESS, "Existing time grid for function \"%s\" found."
+      "Will be appended.");
   }
 
   //
@@ -256,12 +263,21 @@ void XDMFFile::write_checkpoint(const Function& u,
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm) == 0)
+  {
+    log(LogLevel::PROGRESS, "Saving XML file \"%s\" (only on rank = 0)",
+      _filename.c_str());
+
     _xml_doc->save_file(_filename.c_str(), "  ");
+  }
+
 
 #ifdef HAS_HDF5
   // Close the HDF5 file if in "flush" mode
   if (encoding == Encoding::HDF5 and parameters["flush_output"])
   {
+    log(LogLevel::PROGRESS, "Writing function in \"flush_output\" mode. HDF5 "
+      "file will be flushed (closed).");
+
     dolfin_assert(_hdf5_file);
     _hdf5_file.reset();
   }
@@ -1103,6 +1119,9 @@ void XDMFFile::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
                         hid_t h5_id, const Mesh& mesh,
                         const std::string path_prefix)
 {
+  log(LogLevel::PROGRESS, "Adding mesh to node \"%s\"", xml_node.path('/')
+    .c_str());
+
   // Add grid node and attributes
   pugi::xml_node grid_node = xml_node.append_child("Grid");
   dolfin_assert(grid_node);
@@ -1128,6 +1147,8 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node &xml_node,
                             const Function &u, std::string function_name,
                             const Mesh &mesh)
 {
+  log(LogLevel::PROGRESS, "Adding function to node \"%s\"", xml_node.path('/')
+    .c_str());
 
   std::string
       element_family = u.function_space()->element()->ufc_element()->family();
@@ -1375,8 +1396,10 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
                                  size_t counter)
 {
 
+  check_function_name(func_name);
+
   log(LogLevel::PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
-      "counter %i.", func_name.c_str(), _filename.c_str(), counter);
+    "counter %i.", func_name.c_str(), _filename.c_str(), counter);
 
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
   // of the HDF5 files(s) and the XDMF is not opened from its own directory)
@@ -3012,6 +3035,27 @@ void XDMFFile::check_encoding(Encoding encoding) const
                  "write XDMF file",
                  "ASCII format is not supported in parallel, use HDF5");
   }
+}
+//----------------------------------------------------------------------------
+void XDMFFile::check_function_name(std::string function_name)
+{
+  // We must check that supplied function name is the same on all processes
+  // Very important for HDF file paths
+  std::vector<std::string> function_names_received;
+
+  MPI::all_gather(_mpi_comm, function_name, function_names_received);
+  dolfin_debug(container_to_string(function_names_received, "/", 8).c_str());
+
+  for (std::string function_name_received : function_names_received)
+  {
+    if (function_name_received != function_names_received[0])
+    {
+      dolfin_error(__FILE__,
+        "write/read function to/from XDMF",
+        "Function name must be the same on all processes");
+    }
+  }
+
 }
 //-----------------------------------------------------------------------------
 std::string XDMFFile::vtk_cell_type_str(CellType::Type cell_type, int order)

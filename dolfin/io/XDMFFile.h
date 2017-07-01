@@ -124,13 +124,18 @@ namespace dolfin
     ///
     /// @param    u (_Function_)
     ///         A function to save.
+    /// @param    function_name (string)
+    ///         Name of the function used in XDMF XML and HDF file
+    ///         (if encoding = HDF). The string is used to fill value for XML
+    ///         attribute Name of Grid node. It is also used in HDF file in
+    ///         path to datasets. Must be the same on all processes in parallel.
     /// @param    time_step (_double_)
     ///         Time step. It is saved only in XDMF file.
     /// @param    encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
-    void write_checkpoint(const Function &u,
-                            std::string func_name,
+    void write_checkpoint(const Function& u,
+                            std::string function_name,
                             double time_step = 0.0,
                             Encoding encoding = default_encoding);
 
@@ -514,6 +519,9 @@ namespace dolfin
 
     // Check whether the requested encoding is supported
     void check_encoding(Encoding encoding) const;
+
+    // Check function names equality across processes
+    void check_function_name(std::string function_name);
 
     // Generate the XDMF format string based on the Encoding
     // enumeration
