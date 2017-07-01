@@ -1392,7 +1392,7 @@ void XDMFFile::read(Mesh& mesh) const
 }
 //----------------------------------------------------------------------------
 void XDMFFile::read_checkpoint(Function& u, std::string func_name,
-                                 size_t counter)
+                                 std::int64_t counter)
 {
 
   check_function_name(func_name);
@@ -1422,10 +1422,23 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
 
   // Find grid with name equal to the name of function we're about
   // to save and given counter
+
+  // If counter is negative then read with respect to last element, i.e.
+  // counter = -1 == last element, counter = -2 == one before last etc.
+  std::string selector;
+  if (counter < -1)
+  {
+    selector = "position()=last()" + std::to_string(counter + 1);
+  } else if (counter == -1) {
+    selector = "position()=last()";
+  } else {
+    selector = "@Name='" + func_name + "_" + std::to_string(counter) + "'";
+  }
+
   pugi::xml_node grid_node =
-      xml_doc.select_node(("/Xdmf/Domain/Grid[@CollectionType='Temporal' and "
-          "@Name='" + func_name + "']/Grid[@Name='" + func_name + "_" +
-          std::to_string(counter) +"']").c_str()).node();
+    xml_doc.select_node(("/Xdmf/Domain/Grid[@CollectionType='Temporal' and "
+        "@Name='" + func_name + "']/Grid[" + selector + "]").c_str())
+      .node();
 
   dolfin_assert(grid_node);
 

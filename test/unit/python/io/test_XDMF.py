@@ -258,6 +258,15 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
         result = u_in[i].vector() - u_out[i].vector()
         assert all([near(x, 0.0) for x in result.array()])
 
+    # test reading last
+    with XDMFFile(mesh.mpi_comm(), filename) as file:
+        u_in_last = Function(V)
+        file.read_checkpoint(u_in_last, "u_out", -1)
+
+    result = u_out[-1].vector() - u_in_last.vector()
+    assert all([near(x, 0.0) for x in result.array()])
+
+
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_2d_scalar(tempdir, encoding):
     if invalid_config(encoding):

@@ -130,7 +130,10 @@ namespace dolfin
     ///         attribute Name of Grid node. It is also used in HDF file in
     ///         path to datasets. Must be the same on all processes in parallel.
     /// @param    time_step (_double_)
-    ///         Time step. It is saved only in XDMF file.
+    ///         Time step. It is saved only in XDMF file. The function could
+    ///         be saved with the same time step several times. There is an
+    ///         internal "counter" value stored in XDMF which differentiates
+    ///         the same time steps.
     /// @param    encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
@@ -296,7 +299,7 @@ namespace dolfin
     void read(Mesh& mesh) const;
 
     /// Read a function from the XDMF file. Supplied function must
-    /// come with dofmap and mesh.
+    /// come with already initialized and compatible function space.
     ///
     /// Functions saved as time-series must be addressed through
     /// (integer) internal counter and function name. Function name
@@ -307,11 +310,16 @@ namespace dolfin
     /// @param    u (_Function_)
     ///         A function to read.
     /// @param    func_name (_string_)
-    ///         A name of a function to read.
+    ///         A name of a function to read. Must be the same on all processes
+    ///         in parallel.
     /// @param    counter (_size_t_)
-    ///         Internal integer counter - used in time-series.
+    ///         Internal integer counter - used in time-series. Default value
+    ///         is -1 which points to last saved function. Counter works same as
+    ///         python array position key, i.e. counter = -2 points to the
+    ///         function before the last one.
     ///
-    void read_checkpoint(Function& u, std::string func_name, size_t counter);
+    void read_checkpoint(Function& u, std::string func_name, std::int64_t
+    counter = -1);
 
     /// Read first MeshFunction from file
     /// @param meshfunction (_MeshFunction<bool>_)
