@@ -28,8 +28,11 @@ jobs:
           name: Configure DOLFIN
           command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DDOLFIN_ENABLE_TESTING=ON
       - run:
-          name: Build DOLFIN
+          name: Build DOLFIN and install
           command: cd build && make install
       - run:
-          name: Run Python unit tests
-          command: source /usr/local/share/dolfin/dolfin.conf && cd test/unit/python && python3 -m pytest .
+          name: Run unit tests
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_unittests
+      - run:
+          name: Run regressions tests
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && run_regressiontests
