@@ -81,6 +81,13 @@ namespace dolfin
     /// File encoding type
     enum class Encoding {HDF5, ASCII};
 
+    /// Default encoding type
+#ifdef HAS_HDF5
+    static const Encoding default_encoding = Encoding::HDF5;
+#else
+    static const Encoding default_encoding = Encoding::ASCII;
+#endif
+
     /// Constructor
     XDMFFile(const std::string filename)
       : XDMFFile(MPI_COMM_WORLD, filename) {}
@@ -138,9 +145,9 @@ namespace dolfin
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write_checkpoint(const Function& u,
-                            std::string function_name,
-                            double time_step = 0.0,
-                            Encoding encoding=default_encoding);
+                          std::string function_name,
+                          double time_step = 0.0,
+                          Encoding encoding=default_encoding);
 
     /// Save a Function to XDMF file for visualisation, using an
     /// associated HDF5 file, or storing the data inline as XML.
@@ -312,14 +319,14 @@ namespace dolfin
     /// @param    func_name (_string_)
     ///         A name of a function to read. Must be the same on all processes
     ///         in parallel.
-    /// @param    counter (_size_t_)
+    /// @param    counter (_int64_t_)
     ///         Internal integer counter - used in time-series. Default value
     ///         is -1 which points to last saved function. Counter works same as
     ///         python array position key, i.e. counter = -2 points to the
     ///         function before the last one.
     ///
     void read_checkpoint(Function& u, std::string func_name,
-                         std::int64_t counter = -1);
+                         std::int64_t counter=-1);
 
     /// Read first MeshFunction from file
     /// @param meshfunction (_MeshFunction<bool>_)
@@ -428,9 +435,9 @@ namespace dolfin
                          const std::string path_prefix);
 
     // Add function to a XML node
-    static void add_function(MPI_Comm comm, pugi::xml_node &xml_node,
+    static void add_function(MPI_Comm comm, pugi::xml_node& xml_node,
                              hid_t h5_id, std::string h5_path,
-                             const Function &u, std::string function_name,
+                             const Function& u, std::string function_name,
                              const Mesh& mesh);
 
     // Add set of points to XDMF xml_node and write data
@@ -552,12 +559,9 @@ namespace dolfin
     // MPI communicator
     MPI_Comm _mpi_comm;
 
-    // HDF5 data file
 #ifdef HAS_HDF5
+    // HDF5 data file
     std::unique_ptr<HDF5File> _hdf5_file;
-    static const Encoding default_encoding = Encoding::HDF5;
-#else
-    static const Encoding default_encoding = Encoding::ASCII;
 #endif
 
     // Cached filename
