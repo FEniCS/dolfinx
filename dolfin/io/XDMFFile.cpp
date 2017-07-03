@@ -145,7 +145,7 @@ void XDMFFile::write_checkpoint(const Function& u,
   // If XML file exists load it to member _xml_doc
   if (boost::filesystem::exists(_filename))
   {
-    log(LogLevel::PROGRESS, "Writing to an existing XDMF XML file \"%s\".",
+    log(LogLevel::WARNING, "Writing to an existing XDMF XML file \"%s\".",
       _filename.c_str());
 
     pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
@@ -159,7 +159,8 @@ void XDMFFile::write_checkpoint(const Function& u,
   if (_xml_doc->select_node("/Xdmf/Domain").node().empty())
   {
 
-    log(LogLevel::PROGRESS, "Resetting XDMF XML file.");
+    log(LogLevel::WARNING, "XML file \"%s\" will be erased.",
+      _filename.c_str());
 
     _xml_doc->reset();
 
@@ -176,7 +177,7 @@ void XDMFFile::write_checkpoint(const Function& u,
 
   if(truncate_hdf and boost::filesystem::exists(get_hdf5_filename(_filename)))
   {
-    log(LogLevel::PROGRESS, "HDF file \"%s\" will be overwritten.",
+    log(LogLevel::WARNING, "HDF file \"%s\" will be overwritten.",
       get_hdf5_filename(_filename).c_str());
   }
 
