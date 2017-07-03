@@ -16,12 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-06-29
+// Last changed: 2017-07-03
 
 #include <algorithm>
 #include <tuple>
 #include <set>
-#include <iomanip>
 #include "predicates.h"
 #include "GeometryPredicates.h"
 #include "GeometryTools.h"
