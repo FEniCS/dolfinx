@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-11-21
-// Last changed: 2017-02-22
+// Last changed: 2017-07-03
 
 #ifndef __GEOMETRY_PREDICATES_H
 #define __GEOMETRY_PREDICATES_H
@@ -64,8 +64,8 @@ namespace dolfin
   private:
 
     // Implementations of is_degenerate
-    static bool _is_degenerate_2d(std::vector<Point> simplex);
-    static bool _is_degenerate_3d(std::vector<Point> simplex);
+    static bool _is_degenerate_2d(const std::vector<Point>& simplex);
+    static bool _is_degenerate_3d(const std::vector<Point>& simplex);
 
   };
 

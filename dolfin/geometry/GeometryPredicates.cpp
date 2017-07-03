@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-11-21
-// Last changed: 2017-03-01
+// Last changed: 2017-07-03
 
 #include <cmath>
 #include "GeometryPredicates.h"
@@ -44,13 +44,13 @@ bool GeometryPredicates::is_degenerate(const std::vector<Point>& simplex,
 //-----------------------------------------------------------------------------
 namespace
 {
-  bool operator==(Point a, Point b)
+  bool operator==(const Point& a, const Point& b)
   {
     return a.x() == b.x() && a.y() == b.y() && a.z() == b.z();
   }
 }
 //-----------------------------------------------------------------------------
-bool GeometryPredicates::_is_degenerate_2d(std::vector<Point> simplex)
+bool GeometryPredicates::_is_degenerate_2d(const std::vector<Point>& simplex)
 {
   if (simplex.size() < 2 or simplex.size() > 3)
   {
@@ -73,7 +73,7 @@ bool GeometryPredicates::_is_degenerate_2d(std::vector<Point> simplex)
   return true;
 }
 //------------------------------------------------------------------------------
-bool GeometryPredicates::_is_degenerate_3d(std::vector<Point> simplex)
+bool GeometryPredicates::_is_degenerate_3d(const std::vector<Point>& simplex)
 {
   if (simplex.size() < 2 or simplex.size() > 4)
   {
@@ -195,3 +195,4 @@ bool GeometryPredicates::convex_hull_is_degenerate(const std::vector<Point>& poi
     return false;
   }
 }
+//-----------------------------------------------------------------------------
