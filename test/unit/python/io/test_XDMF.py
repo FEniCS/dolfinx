@@ -148,7 +148,6 @@ def test_save_1d_scalar(tempdir, encoding):
 @pytest.mark.parametrize("mesh_n", mesh_ns)
 def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
                                     mesh_tdim, mesh_n):
-    set_log_level(DBG)
 
     if invalid_config(encoding):
         pytest.xfail("XDMF unsupported in current configuration")
@@ -335,10 +334,10 @@ def test_save_3d_vector_series(tempdir, encoding):
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         u.vector()[:] = 1.0
         file.write(u, 0.1, encoding)
-    
+
         u.vector()[:] = 2.0
         file.write(u, 0.2, encoding)
-    
+
         u.vector()[:] = 3.0
         file.write(u, 0.3, encoding)
 

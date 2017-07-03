@@ -341,14 +341,10 @@ void HDF5Utility::set_local_vector_values(const MPI_Comm mpi_comm,
   GenericVector& x,
   const Mesh& mesh,
   const std::vector<size_t>& cells,
-  const std::vector<dolfin::la_index>
-  & cell_dofs,
-  const std::vector<std::size_t>
-  & x_cell_dofs,
+  const std::vector<dolfin::la_index>& cell_dofs,
+  const std::vector<std::size_t>& x_cell_dofs,
   std::vector<double>& vector,
-  const std::pair<dolfin::la_index,
-                  dolfin::la_index>
-  input_vector_range,
+  const std::pair<dolfin::la_index, dolfin::la_index> input_vector_range,
   const GenericDofMap& dofmap)
 {
 
@@ -394,7 +390,8 @@ void HDF5Utility::set_local_vector_values(const MPI_Comm mpi_comm,
     MPI::gather(mpi_comm, vector_range_second, all_vec_range);
     MPI::broadcast(mpi_comm, all_vec_range);
 
-    for (std::size_t i = 0; i != n_vector_vals; ++i) {
+    for (std::size_t i = 0; i != n_vector_vals; ++i)
+    {
       const std::size_t dest
           = std::upper_bound(all_vec_range.begin(), all_vec_range.end(),
                              global_dof[i]) - all_vec_range.begin();
@@ -409,7 +406,8 @@ void HDF5Utility::set_local_vector_values(const MPI_Comm mpi_comm,
   }
 
   std::vector<double> vector_values(vector_range.second - vector_range.first);
-  for (std::size_t i = 0; i != num_processes; ++i) {
+  for (std::size_t i = 0; i != num_processes; ++i)
+  {
     const std::vector<double> &rval = receive_values[i];
     const std::vector<dolfin::la_index> &rindex = receive_indices[i];
     dolfin_assert(rval.size() == rindex.size());

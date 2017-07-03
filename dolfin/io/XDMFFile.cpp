@@ -131,9 +131,9 @@ void XDMFFile::write(const Mesh& mesh, const Encoding encoding)
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_checkpoint(const Function& u,
-                                  std::string function_name,
-                                  double time_step,
-                                  const Encoding encoding)
+                                std::string function_name,
+                                double time_step,
+                                const Encoding encoding)
 {
 
   check_encoding(encoding);
@@ -190,11 +190,13 @@ void XDMFFile::write_checkpoint(const Function& u,
       // We are writing for the first time, any HDF file must be overwritten
       _hdf5_file.reset(new HDF5File(_mpi_comm,
         get_hdf5_filename(_filename), "w"));
-    } else if (_hdf5_file)
+    }
+    else if (_hdf5_file)
     {
       // Pointer to HDF file is active, we are writing time series
       // or adding function with flush_output=false
-    } else
+    }
+    else
     {
       // Pointer is empty, we are writing time series
       // or adding function to already flushed file
@@ -1154,6 +1156,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node &xml_node,
   std::size_t
       element_degree = u.function_space()->element()->ufc_element()->degree();
 
+  // Map of standard UFL family abbreviations for visualisation
   std::map<std::string, std::string> _family_abbr = {
       {"Lagrange", "CG"},
       {"Discontinuous Lagrange", "DG"},
@@ -1166,8 +1169,9 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node &xml_node,
 
   // Check that element is supported
   auto it = _family_abbr.find(element_family);
-  if (it == _family_abbr.end()) {
-    dolfin_error(__FILE__,
+  if (it == _family_abbr.end())
+  {
+    dolfin_error("XDMFFile.cpp",
                  "find element family",
                  "Element %s not yet supported", element_family.c_str());
   }
@@ -1184,7 +1188,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node &xml_node,
   //
 
   dolfin_assert(u.function_space()->dofmap());
-  const GenericDofMap &dofmap = *u.function_space()->dofmap();
+  const GenericDofMap& dofmap = *u.function_space()->dofmap();
 
   const std::size_t tdim = mesh.topology().dim();
   std::vector<dolfin::la_index> cell_dofs;
@@ -1392,7 +1396,7 @@ void XDMFFile::read(Mesh& mesh) const
 }
 //----------------------------------------------------------------------------
 void XDMFFile::read_checkpoint(Function& u, std::string func_name,
-                                 std::int64_t counter)
+                               std::int64_t counter)
 {
 
   check_function_name(func_name);
@@ -1405,7 +1409,8 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
   boost::filesystem::path xdmf_filename(_filename);
   const boost::filesystem::path parent_path = xdmf_filename.parent_path();
 
-  if (!boost::filesystem::exists(xdmf_filename)) {
+  if (!boost::filesystem::exists(xdmf_filename))
+  {
     dolfin_error("XDMFFile.cpp",
                  "open XDMF file",
                  "XDMF file \"%s\" does not exist", _filename.c_str());
@@ -1427,13 +1432,11 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
   // counter = -1 == last element, counter = -2 == one before last etc.
   std::string selector;
   if (counter < -1)
-  {
     selector = "position()=last()" + std::to_string(counter + 1);
-  } else if (counter == -1) {
+  else if (counter == -1)
     selector = "position()=last()";
-  } else {
+  else
     selector = "@Name='" + func_name + "_" + std::to_string(counter) + "'";
-  }
 
   pugi::xml_node grid_node =
     xml_doc.select_node(("/Xdmf/Domain/Grid[@CollectionType='Temporal' and "
@@ -2325,17 +2328,20 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
 
     // If range = {0, 0} then no range is supplied
     // and we must determine the range
-    if (range.first == 0 and range.second == 0) {
+    if (range.first == 0 and range.second == 0)
+    {
       if (shape_xml == shape_hdf5)
         range = MPI::local_range(comm, shape_hdf5[0]);
-      else if (!shape_xml.empty() and shape_hdf5.size() == 1) {
+      else if (!shape_xml.empty() and shape_hdf5.size() == 1)
+      {
         // Size of dims > 0
         std::int64_t d = 1;
         for (std::size_t i = 1; i < shape_xml.size(); ++i)
           d *= shape_xml[i];
 
         // Check for data size consistency
-        if (d * shape_xml[0] != shape_hdf5[0]) {
+        if (d * shape_xml[0] != shape_hdf5[0])
+        {
           dolfin_error("XDMFFile.cpp",
                        "reading data from XDMF file",
                        "Data size in XDMF/XML and size of HDF5 dataset are inconsistent");
@@ -2345,7 +2351,9 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
         range = MPI::local_range(comm, shape_xml[0]);
         range.first *= d;
         range.second *= d;
-      } else {
+      }
+      else
+      {
         dolfin_error("XDMFFile.cpp",
                      "reading data from XDMF file",
                      "This combination of array shapes in XDMF and HDF5 not supported");
@@ -3060,9 +3068,9 @@ void XDMFFile::check_function_name(std::string function_name)
   {
     if (function_name_received != function_names_received[0])
     {
-      dolfin_error(__FILE__,
-        "write/read function to/from XDMF",
-        "Function name must be the same on all processes");
+      dolfin_error("XDMFFile.cpp",
+                   "write/read function to/from XDMF",
+                   "Function name must be the same on all processes");
     }
   }
 
