@@ -35,4 +35,4 @@ jobs:
           command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_unittests
       - run:
           name: Run regressions tests
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && run_regressiontests
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests
