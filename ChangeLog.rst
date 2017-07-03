@@ -6,6 +6,8 @@ Change log
 
 - Updates for `ufc::finite_element::evaluate_vertex_values` interface
   change
+- Added new methods to XDMFFile (write_checkpoint, read_checkpoint)
+  to write and read (checkpoint) dolfin Function. 
 
 2017.1.0 (2017-05-09)
 ---------------------
