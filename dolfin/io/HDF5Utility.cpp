@@ -182,7 +182,8 @@ void HDF5Utility::get_global_dof(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::size_t, std::size_t>>
-HDF5Utility::cell_owners(const Mesh& mesh, const std::vector<std::size_t> cells)
+  HDF5Utility::cell_owners(const Mesh& mesh,
+                           const std::vector<std::size_t>& cells)
 {
   // MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -344,7 +345,7 @@ void HDF5Utility::set_local_vector_values(
   const std::vector<size_t>& cells,
   const std::vector<dolfin::la_index>& cell_dofs,
   const std::vector<std::size_t>& x_cell_dofs,
-  std::vector<double>& vector,
+  const std::vector<double>& vector,
   const std::pair<dolfin::la_index, dolfin::la_index> input_vector_range,
   const GenericDofMap& dofmap)
 {

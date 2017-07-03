@@ -71,8 +71,8 @@ namespace dolfin
 
     /// Get cell owners for an arbitrary set of cells.
     /// Returns (process, local index) pairs
-    static std::vector<std::pair<std::size_t, std::size_t> >
-      cell_owners(const Mesh&mesh, const std::vector<std::size_t> cells);
+    static std::vector<std::pair<std::size_t, std::size_t>>
+      cell_owners(const Mesh& mesh, const std::vector<std::size_t>& cells);
 
     /// Get mapping of cells in the assigned global range of the
     /// current process to remote process and remote local index.
@@ -92,8 +92,8 @@ namespace dolfin
       const std::vector<size_t>& cells,
       const std::vector<dolfin::la_index>& cell_dofs,
       const std::vector<std::size_t>& x_cell_dofs,
-      std::vector<double>& vector,
-      const std::pair<dolfin::la_index, dolfin::la_index> input_vector_range,
+      const std::vector<double>& vector,
+      std::pair<dolfin::la_index, dolfin::la_index> input_vector_range,
       const GenericDofMap& dofmap);
   };
 
