@@ -79,6 +79,11 @@ def test_assemble_area(v, multimesh):
     assert numpy.isclose(assemble_multimesh(v*dX), 1)
 
 @skip_in_parallel
+def test_assemble_exterior_facet(v, multimesh):
+    v.vector()[:] = 1
+    assert numpy.isclose(assemble_multimesh(v*ds), 4)
+
+@skip_in_parallel
 def test_interpolate(v_high,f):
     v_high.interpolate(f)
     assert numpy.isclose(assemble_multimesh(v_high*dX), 0)

@@ -27,6 +27,7 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/MultiMesh.h>
 #include <dolfin/function/MultiMeshFunction.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -62,6 +63,9 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   // Assemble over uncut cells
   _assemble_uncut_cells(A, a);
 
+  // Assemble over exterior facets
+  _assemble_uncut_exterior_facets(A, a);
+
   // Assemble over cut cells
   _assemble_cut_cells(A, a);
 
@@ -80,6 +84,103 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
     static_cast<GenericMatrix&>(A).ident_zeros();
 
   end();
+}
+//-----------------------------------------------------------------------------
+void MultiMeshAssembler::_assemble_uncut_exterior_facets(GenericTensor& A,
+                                               const MultiMeshForm& a)
+{
+  // FIXME: This implementation assumes that there is one background mesh
+  // that contains the entire exterior facet. 
+
+  // Get form rank
+  const std::size_t form_rank = a.rank();
+
+  // Extract multimesh
+  std::shared_ptr<const MultiMesh> multimesh = a.multimesh();
+
+  // Collect pointers to dof maps
+  std::vector<const MultiMeshDofMap*> dofmaps;
+  for (std::size_t i = 0; i < form_rank; i++)
+    dofmaps.push_back(a.function_space(i)->dofmap().get());
+
+  // Vector to hold dof map for a cell
+  std::vector<ArrayView<const dolfin::la_index>> dofs(form_rank);
+
+  // Initialize variables that will be reused throughout assembly
+  ufc::cell ufc_cell;
+  std::vector<double> coordinate_dofs;
+
+  // Assembly exterior uncut facets on mesh 0, the background mesh
+  int part = 0;
+
+  log(PROGRESS, "Assembling multimesh form over uncut facets on part %d.", part);
+
+  // Get form for current part
+  const Form& a_part = *a.part(part);
+
+  // Create data structure for local assembly data
+  UFC ufc_part(a_part);
+
+  // Extract mesh
+  dolfin_assert(a_part.mesh());
+  const Mesh& mesh_part = *(a_part.mesh());
+
+  // FIXME: Handle subdomains
+
+  // Exterior facet integral
+  const ufc::exterior_facet_integral* integral = ufc_part.default_exterior_facet_integral.get();
+
+  // Skip if we don't have a facet integral
+  if (!integral) return;
+
+  // Iterate over uncut cells
+  for (FacetIterator facet(mesh_part); !facet.end(); ++facet)
+  {
+
+    // Only consider exterior facets
+    if (!facet->exterior())
+    {
+      continue;
+    }
+
+    const std::size_t D = mesh_part.topology().dim();
+
+    // Get mesh cell to which mesh facet belongs (pick first, there is
+    // only one)
+    dolfin_assert(facet->num_entities(D) == 1);
+    Cell mesh_cell(mesh_part, facet->entities(D)[0]);
+
+    // Check that cell is not a ghost
+    dolfin_assert(!mesh_cell.is_ghost());
+
+    // Get local index of facet with respect to the cell
+    const std::size_t local_facet = mesh_cell.index(*facet);
+
+    // Update UFC cell
+    mesh_cell.get_cell_data(ufc_cell, local_facet);
+    mesh_cell.get_coordinate_dofs(coordinate_dofs);
+
+    // Update UFC object
+    ufc_part.update(mesh_cell, coordinate_dofs, ufc_cell,
+               integral->enabled_coefficients());
+
+    // Get local-to-global dof maps for cell
+    for (std::size_t i = 0; i < form_rank; ++i)
+    {
+      const auto dofmap = a.function_space(i)->dofmap()->part(part);
+      dofs[i] = dofmap->cell_dofs(mesh_cell.index());
+    }
+
+    // Tabulate cell tensor
+    integral->tabulate_tensor(ufc_part.A.data(),
+                              ufc_part.w(),
+                              coordinate_dofs.data(),
+                              local_facet,
+                              ufc_cell.orientation);
+
+    // Add entries to global tensor
+    A.add(ufc_part.A.data(), dofs);
+  }
 }
 //-----------------------------------------------------------------------------
 void MultiMeshAssembler::_assemble_uncut_cells(GenericTensor& A,
