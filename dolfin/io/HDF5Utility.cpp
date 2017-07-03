@@ -337,7 +337,8 @@ void HDF5Utility::build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data)
   editor.close();
 }
 //-----------------------------------------------------------------------------
-void HDF5Utility::set_local_vector_values(const MPI_Comm mpi_comm,
+void HDF5Utility::set_local_vector_values(
+  const MPI_Comm mpi_comm,
   GenericVector& x,
   const Mesh& mesh,
   const std::vector<size_t>& cells,
@@ -421,3 +422,4 @@ void HDF5Utility::set_local_vector_values(const MPI_Comm mpi_comm,
   x.set_local(vector_values);
   x.apply("insert");
 }
+//-----------------------------------------------------------------------------

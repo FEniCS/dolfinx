@@ -61,12 +61,13 @@ namespace dolfin
     /// as (process, local_cell_index, local_cell_dof_index)
     /// get the global_dof index from that location, and return it for all
     /// DOFs in the range of "vector_range"
-    static void get_global_dof(const MPI_Comm mpi_comm,
-         const std::vector<std::pair<std::size_t, std::size_t> >& cell_ownership,
-         const std::vector<std::size_t>& remote_local_dofi,
-         const std::pair<std::size_t, std::size_t> vector_range,
-         const GenericDofMap& dofmap,
-         std::vector<dolfin::la_index>& global_dof);
+    static void get_global_dof(
+      MPI_Comm mpi_comm,
+      const std::vector<std::pair<std::size_t, std::size_t>>& cell_ownership,
+      const std::vector<std::size_t>& remote_local_dofi,
+      std::pair<std::size_t, std::size_t> vector_range,
+      const GenericDofMap& dofmap,
+      std::vector<dolfin::la_index>& global_dof);
 
     /// Get cell owners for an arbitrary set of cells.
     /// Returns (process, local index) pairs
@@ -75,15 +76,17 @@ namespace dolfin
 
     /// Get mapping of cells in the assigned global range of the
     /// current process to remote process and remote local index.
-    static void cell_owners_in_range(std::vector<std::pair<std::size_t,
-                                     std::size_t> >& global_owner,
-                                     const Mesh& mesh);
+    static void cell_owners_in_range(
+      std::vector<std::pair<std::size_t, std::size_t>>& global_owner,
+      const Mesh& mesh);
 
     /// Convert LocalMeshData structure to a Mesh, used when running
     /// in serial
     static void build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data);
 
-    static void set_local_vector_values(const MPI_Comm mpi_comm,
+    /// Missing docstring
+    static void set_local_vector_values(
+      MPI_Comm mpi_comm,
       GenericVector& x,
       const Mesh& mesh,
       const std::vector<size_t>& cells,
