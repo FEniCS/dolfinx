@@ -81,6 +81,13 @@ namespace dolfin
     /// File encoding type
     enum class Encoding {HDF5, ASCII};
 
+    /// Default encoding type
+#ifdef HAS_HDF5
+    static const Encoding default_encoding = Encoding::HDF5;
+#else
+    static const Encoding default_encoding = Encoding::ASCII;
+#endif
+
     /// Constructor
     XDMFFile(const std::string filename)
       : XDMFFile(MPI_COMM_WORLD, filename) {}
@@ -552,12 +559,9 @@ namespace dolfin
     // MPI communicator
     MPI_Comm _mpi_comm;
 
-    // HDF5 data file
 #ifdef HAS_HDF5
+    // HDF5 data file
     std::unique_ptr<HDF5File> _hdf5_file;
-    static const Encoding default_encoding = Encoding::HDF5;
-#else
-    static const Encoding default_encoding = Encoding::ASCII;
 #endif
 
     // Cached filename
