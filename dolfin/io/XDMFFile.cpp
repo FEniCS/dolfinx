@@ -135,21 +135,26 @@ void XDMFFile::write_checkpoint(const Function& u,
                                 double time_step,
                                 const Encoding encoding)
 {
-
   check_encoding(encoding);
   check_function_name(function_name);
 
-  log(LogLevel::PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
-    "time step %f.", function_name.c_str(), _filename.c_str(), time_step);
+  log(PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
+      "time step %f.", function_name.c_str(), _filename.c_str(), time_step);
 
   // If XML file exists load it to member _xml_doc
   if (boost::filesystem::exists(_filename))
   {
-    log(LogLevel::WARNING, "Writing to an existing XDMF XML file \"%s\".",
-      _filename.c_str());
+    log(WARNING, "Appending to an existing XDMF XML file \"%s\".",
+        _filename.c_str());
 
     pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
     dolfin_assert(result);
+
+    if (_xml_doc->select_node("/Xdmf/Domain").node().empty())
+    {
+      log(WARNING, "File \"%s\" contains invalid XDMF. Writing new XDMF.",
+          _filename.c_str());
+    }
   }
 
   bool truncate_hdf = false;
@@ -158,10 +163,6 @@ void XDMFFile::write_checkpoint(const Function& u,
   // and create empty structure
   if (_xml_doc->select_node("/Xdmf/Domain").node().empty())
   {
-
-    log(LogLevel::WARNING, "XML file \"%s\" will be erased.",
-      _filename.c_str());
-
     _xml_doc->reset();
 
     // Prepare new XML structure
@@ -177,8 +178,8 @@ void XDMFFile::write_checkpoint(const Function& u,
 
   if (truncate_hdf and boost::filesystem::exists(get_hdf5_filename(_filename)))
   {
-    log(LogLevel::WARNING, "HDF file \"%s\" will be overwritten.",
-      get_hdf5_filename(_filename).c_str());
+    log(WARNING, "HDF file \"%s\" will be overwritten.",
+        get_hdf5_filename(_filename).c_str());
   }
 
   // Open the HDF5 file if using HDF5 encoding (truncate)
@@ -233,8 +234,9 @@ void XDMFFile::write_checkpoint(const Function& u,
   }
   else
   {
-    log(LogLevel::PROGRESS, "Existing time grid for function \"%s\" found."
-      "Will be appended.");
+    log(PROGRESS,
+        "XDMF time series for function \"%s\" not empty. Appending.",
+        function_name.c_str());
   }
 
   //
@@ -272,8 +274,8 @@ void XDMFFile::write_checkpoint(const Function& u,
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm) == 0)
   {
-    log(LogLevel::PROGRESS, "Saving XML file \"%s\" (only on rank = 0)",
-      _filename.c_str());
+    log(PROGRESS, "Saving XML file \"%s\" (only on rank = 0)",
+        _filename.c_str());
 
     _xml_doc->save_file(_filename.c_str(), "  ");
   }
@@ -282,8 +284,8 @@ void XDMFFile::write_checkpoint(const Function& u,
   // Close the HDF5 file if in "flush" mode
   if (encoding == Encoding::HDF5 and parameters["flush_output"])
   {
-    log(LogLevel::PROGRESS, "Writing function in \"flush_output\" mode. HDF5 "
-      "file will be flushed (closed).");
+    log(PROGRESS, "Writing function in \"flush_output\" mode. HDF5 "
+        "file will be flushed (closed).");
 
     dolfin_assert(_hdf5_file);
     _hdf5_file.reset();
@@ -1124,8 +1126,7 @@ void XDMFFile::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
                         hid_t h5_id, const Mesh& mesh,
                         const std::string path_prefix)
 {
-  log(LogLevel::PROGRESS, "Adding mesh to node \"%s\"", xml_node.path('/')
-    .c_str());
+  log(PROGRESS, "Adding mesh to node \"%s\"", xml_node.path('/').c_str());
 
   // Add grid node and attributes
   pugi::xml_node grid_node = xml_node.append_child("Grid");
@@ -1152,8 +1153,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
                             const Function& u, std::string function_name,
                             const Mesh& mesh)
 {
-  log(LogLevel::PROGRESS, "Adding function to node \"%s\"", xml_node.path('/')
-    .c_str());
+  log(PROGRESS, "Adding function to node \"%s\"", xml_node.path('/').c_str());
 
   std::string element_family
     = u.function_space()->element()->ufc_element()->family();
@@ -1402,11 +1402,10 @@ void XDMFFile::read(Mesh& mesh) const
 void XDMFFile::read_checkpoint(Function& u, std::string func_name,
                                std::int64_t counter)
 {
-
   check_function_name(func_name);
 
-  log(LogLevel::PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
-    "counter %i.", func_name.c_str(), _filename.c_str(), counter);
+  log(PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
+      "counter %i.", func_name.c_str(), _filename.c_str(), counter);
 
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
   // of the HDF5 files(s) and the XDMF is not opened from its own directory)
@@ -1882,7 +1881,7 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
                              const std::string number_type)
 {
 
-  log(LogLevel::DBG, "Adding data item to node %s", xml_node.path().c_str());
+  log(DBG, "Adding data item to node %s", xml_node.path().c_str());
 
   // Add DataItem node
   dolfin_assert(xml_node);
