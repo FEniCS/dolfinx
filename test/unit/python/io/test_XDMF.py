@@ -155,12 +155,6 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
         pytest.skip("Trivial finite element")
 
     filename = os.path.join(tempdir, "u1_checkpoint.xdmf")
-
-    try:
-        os.remove(filename)
-    except OSError:
-        pass
-
     mesh = mesh_factory(mesh_tdim, mesh_n)
     FE = FiniteElement(fe_family, mesh.ufl_cell(), fe_degree)
     V = FunctionSpace(mesh, FE)
@@ -193,12 +187,6 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
         pytest.skip("Trivial finite element")
 
     filename = os.path.join(tempdir, "u2_checkpoint.xdmf")
-
-    try:
-        os.remove(filename)
-    except OSError:
-        pass
-
     mesh = mesh_factory(mesh_tdim, mesh_n)
     FE = VectorElement(fe_family, mesh.ufl_cell(), fe_degree)
     V = FunctionSpace(mesh, FE)
@@ -229,12 +217,6 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
 
     mesh = UnitSquareMesh(16, 16)
     filename = os.path.join(tempdir, "u2_checkpoint.xdmf")
-
-    try:
-        os.remove(filename)
-    except OSError:
-        pass
-
     FE = FiniteElement("CG", mesh.ufl_cell(), 2)
     V = FunctionSpace(mesh, FE)
 
