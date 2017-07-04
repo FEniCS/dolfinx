@@ -1580,6 +1580,9 @@ void MultiMesh::_impose_cut_cell_consistency()
         // Add the cell to the vector of uncut cells
         log(PROGRESS, "Marking cell %d on part %d as uncut (no QR)", cell, part_id);
         _uncut_cells[part_id].push_back(cell);
+
+        // Clear collision map
+        _collision_maps_cut_cells[part_id][cell].clear();
       }
       return has_no_qr;
     };
