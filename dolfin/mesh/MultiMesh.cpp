@@ -121,11 +121,24 @@ MultiMesh::uncut_cells(std::size_t part) const
   return _uncut_cells[part];
 }
 //-----------------------------------------------------------------------------
-const std::vector<unsigned int>&
+const std::vector<unsigned int>
 MultiMesh::cut_cells(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
-  return _cut_cells[part];
+
+  // Extract keys from collision map
+  const std::map<unsigned int,std::vector<std::pair<std::size_t,unsigned int>>>&
+    cm = collision_map_cut_cells(part);
+
+  // Vector to store cut cell IDs
+  std::vector<unsigned int> _cut_cells;
+  _cut_cells.reserve(cm.size());
+
+  // Add cell ID if it has any collisions
+  for (const auto& it : cm)
+    if (it.second.size() > 0)
+      _cut_cells.push_back(it.first);
+  return _cut_cells;
 }
 //-----------------------------------------------------------------------------
 const std::vector<unsigned int>&
@@ -260,7 +273,6 @@ void MultiMesh::clear()
   _trees.clear();
   _boundary_trees.clear();
   _uncut_cells.clear();
-  _cut_cells.clear();
   _covered_cells.clear();
   _collision_maps_cut_cells.clear();
   _collision_maps_cut_cells_boundary.clear();
@@ -466,7 +478,6 @@ void MultiMesh::_build_collision_maps()
 
   // Clear collision maps
   _uncut_cells.clear();
-  _cut_cells.clear();
   _covered_cells.clear();
   _collision_maps_cut_cells.clear();
   _collision_maps_cut_cells_boundary.clear();
@@ -611,7 +622,7 @@ void MultiMesh::_build_collision_maps()
 
     // Store data for this mesh
     _uncut_cells.push_back(uncut_cells);
-    _cut_cells.push_back(cut_cells);
+    //_cut_cells.push_back(cut_cells);
     _covered_cells.push_back(covered_cells);
     _collision_maps_cut_cells.push_back(collision_map_cut_cells);
 
@@ -1562,8 +1573,7 @@ void MultiMesh::_impose_cut_cell_consistency()
   std::size_t num_cells_uncut = 0;
   for (std::size_t part = 0; part < num_parts(); part++)
   {
-    std::vector<unsigned int> new_cut_cells_part;
-    for (unsigned int cell : _cut_cells[part])
+    for (unsigned int cell : cut_cells(part))
     {
       // Decide if cell has quadrature points
       // TODO: Do this in _build_quadrature_rules_interface
@@ -1576,9 +1586,7 @@ void MultiMesh::_impose_cut_cell_consistency()
           break;
         }
       }
-      if (cell_has_quadrature_points)
-        new_cut_cells_part.push_back(cell);
-      else
+      if (!cell_has_quadrature_points)
       {
         // Decide if cell is overlapped or uncut
         // TODO: Implement decision to allow update before generating all the quadrature rules
@@ -1604,11 +1612,12 @@ void MultiMesh::_impose_cut_cell_consistency()
           _uncut_cells[part].push_back(cell);
           num_cells_uncut++;
         }
+
+        // Clear collision map
+        _collision_maps_cut_cells[part][cell].clear();
       }
     }
-    new_cut_cells.push_back(new_cut_cells_part);
   }
-  _cut_cells.swap(new_cut_cells);
   log(PROGRESS, "Identified %d cut cells as covered.", num_cells_covered);
   log(PROGRESS, "Identified %d cut cells as uncut.", num_cells_uncut);
 }

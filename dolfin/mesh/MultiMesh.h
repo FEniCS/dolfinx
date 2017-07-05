@@ -131,7 +131,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<unsigned int>
     ///         List of cut cell indices for given part
-    const std::vector<unsigned int>& cut_cells(std::size_t part) const;
+    const std::vector<unsigned int> cut_cells(std::size_t part) const;
 
     /// Return the list of covered cells for given part. The covered
     /// cells are defined as all cells that collide with the domain of
@@ -390,17 +390,6 @@ namespace dolfin
     //     i = the part (mesh) number
     //     j = the cell number (in the list of uncut cells)
     std::vector<std::vector<unsigned int> > _uncut_cells;
-
-    // Cell indices for all cut cells for all parts. Access data by
-    //
-    //     c = _cut_cells[i][j]
-    //
-    // where
-    //
-    //     c = cell index for a cut cell
-    //     i = the part (mesh) number
-    //     j = the cell number (in the list of cut cells)
-    std::vector<std::vector<unsigned int> > _cut_cells;
 
     // Cell indices for all covered cells for all parts. Access data by
     //
