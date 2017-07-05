@@ -44,7 +44,7 @@ BoxMesh::BoxMesh(const Point& p0, const Point& p1,
 BoxMesh::BoxMesh(MPI_Comm comm, const Point& p0, const Point& p1,
                  std::size_t nx, std::size_t ny, std::size_t nz) : Mesh(comm)
 {
-  build(*this, {p0, p1}, {nx, ny, nz});
+  build(*this, {{p0, p1}}, {{nx, ny, nz}});
 }
 //-----------------------------------------------------------------------------
 void BoxMesh::build(Mesh& mesh, const std::array<Point,2 >& p,

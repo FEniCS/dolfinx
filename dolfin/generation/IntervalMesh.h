@@ -47,7 +47,7 @@ namespace dolfin
     ///         auto mesh = IntervalMesh::create(25, {-1.0, 1.0});
     /// @endcode
     static Mesh create(std::size_t n, std::array<double, 2> x)
-    { return create(MPI_COMM_WORLD, x); }
+    { return create(MPI_COMM_WORLD, n, x); }
 
     /// Factory
     ///

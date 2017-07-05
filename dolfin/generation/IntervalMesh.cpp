@@ -35,7 +35,7 @@ IntervalMesh::IntervalMesh(std::size_t n, double a, double b)
 IntervalMesh::IntervalMesh(MPI_Comm comm, std::size_t n, double a, double b)
   : Mesh(comm)
 {
-  build(*this, n, {a, b});
+  build(*this, n, {{a, b}});
 }
 //-----------------------------------------------------------------------------
 void IntervalMesh::build(Mesh& mesh, std::size_t nx, std::array<double, 2> x)

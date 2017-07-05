@@ -53,7 +53,7 @@ namespace dolfin
     ///
     /// @param    comm (MPI_Comm)
     ///         MPI communicator
-    /// @param    nx (std::size_t)
+    /// @param    n (std::aray<std::size_t, 3>)
     ///         Number of cells in each direction.
     ///
     /// @code{.cpp}

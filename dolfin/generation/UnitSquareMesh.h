@@ -23,6 +23,7 @@
 #ifndef __UNIT_SQUARE_MESH_H
 #define __UNIT_SQUARE_MESH_H
 
+#include <array>
 #include <string>
 #include "RectangleMesh.h"
 
@@ -65,7 +66,6 @@ namespace dolfin
     ///         MPI communicator
     /// @param    n (std:::array<std::size_t, 2>)
     ///         Number of cells in each direction.
-    ///         Number of cells in vertical direction.
     /// @param    diagonal (std::string)
     ///         Optional argument: A std::string indicating
     ///         the direction of the diagonals.

@@ -37,7 +37,7 @@ namespace dolfin
     static Mesh create(MPI_Comm comm, std::size_t nx, std::size_t ny, std::size_t nz)
     {
       Mesh mesh(comm);
-      build(mesh, {nx, ny, nz});
+      build(mesh, {{nx, ny, nz}});
       return mesh;
     }
 

@@ -40,7 +40,7 @@ RectangleMesh::RectangleMesh(MPI_Comm comm,
                              std::size_t nx, std::size_t ny,
                              std::string diagonal) : Mesh(comm)
 {
-  build(*this, {p0, p1}, {nx, ny}, diagonal);
+  build(*this, {{p0, p1}}, {{nx, ny}}, diagonal);
 }
 //-----------------------------------------------------------------------------
 void RectangleMesh::build(Mesh& mesh, const std::array<Point, 2>& p,
