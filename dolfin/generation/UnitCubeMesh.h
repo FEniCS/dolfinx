@@ -60,7 +60,7 @@ namespace dolfin
     ///         auto mesh = UnitCubeMesh::create(MPI_COMM_WORLD, 32, 32, 32);
     /// @endcode
     static Mesh create(MPI_Comm comm, std::array<std::size_t, 3> n)
-    { return BoxMesh::create(comm, {Point(0.0, 0.0, 0.0), Point(1.0, 1.0, 1.0)}, n); }
+    { return BoxMesh::create(comm, {{Point(0.0, 0.0, 0.0), Point(1.0, 1.0, 1.0)}}, n); }
 
     /// Create a uniform finite element _Mesh_ over the unit cube
     /// [0,1] x [0,1] x [0,1].

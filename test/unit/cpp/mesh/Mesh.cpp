@@ -36,7 +36,7 @@ TEST(SimpleShapesTest, testUnitSquareMesh)
   ASSERT_EQ(mesh.num_cells(), (std::size_t) 70);
 
   // Create mesh of unit square
-  auto mesh1 =UnitSquareMesh::create({5, 7});
+  auto mesh1 = UnitSquareMesh::create({{5, 7}});
   ASSERT_EQ(mesh1.num_vertices(), (std::size_t) 48);
   ASSERT_EQ(mesh1.num_cells(), (std::size_t) 70);
 
@@ -50,7 +50,7 @@ TEST(SimpleShapesTest, testUnitCubeMesh)
   ASSERT_EQ(mesh.num_cells(), (std::size_t) 1890);
 
   // Create mesh of unit cube
-  auto mesh1 = UnitCubeMesh::create({5, 7, 9});
+  auto mesh1 = UnitCubeMesh::create({{5, 7, 9}});
   ASSERT_EQ(mesh1.num_vertices(), (std::size_t) 480);
   ASSERT_EQ(mesh1.num_cells(), (std::size_t) 1890);
 }

@@ -65,7 +65,7 @@ namespace dolfin
     ///         auto mesh = UnitIntervalMesh::create(MPI_COMM_WORLD, 25);
     /// @endcode
     static Mesh create(MPI_Comm comm, std::size_t n)
-    { return IntervalMesh::create(comm, n, {0.0, 1.0}); }
+    { return IntervalMesh::create(comm, n, {{0.0, 1.0}}); }
 
     /// Constructor
     ///
