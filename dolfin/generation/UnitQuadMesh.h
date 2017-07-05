@@ -26,8 +26,8 @@
 namespace dolfin
 {
 
-  /// NB: this code is experimental, just for testing, and will generally not
-  /// work with anything else
+  /// NB: this code is experimental, just for testing, and will
+  /// generally not work with anything else
 
   class UnitQuadMesh : public Mesh
   {

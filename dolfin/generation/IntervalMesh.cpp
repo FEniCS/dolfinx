@@ -14,12 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by N. Lopes, 2008.
-// Modified by Mikael Mortensen, 2014.
-//
-// First added:  2007-11-23
-// Last changed: 2014-02-17
 
 #include <cmath>
 #include "dolfin/common/constants.h"
@@ -32,26 +26,29 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IntervalMesh::IntervalMesh(std::size_t nx, double a, double b)
-  : IntervalMesh(MPI_COMM_WORLD, nx, a, b)
+IntervalMesh::IntervalMesh(std::size_t n, double a, double b)
+  : IntervalMesh(MPI_COMM_WORLD, n, a, b)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-IntervalMesh::IntervalMesh(MPI_Comm comm, std::size_t nx, double a, double b)
+IntervalMesh::IntervalMesh(MPI_Comm comm, std::size_t n, double a, double b)
   : Mesh(comm)
 {
-  build(nx, a, b);
+  build(*this, n, {a, b});
 }
 //-----------------------------------------------------------------------------
-void IntervalMesh::build(std::size_t nx, double a, double b)
+void IntervalMesh::build(Mesh& mesh, std::size_t nx, std::array<double, 2> x)
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver(this->mpi_comm()))
+  if (MPI::is_receiver(mesh.mpi_comm()))
   {
-    MeshPartitioning::build_distributed_mesh(*this);
+    MeshPartitioning::build_distributed_mesh(mesh);
     return;
   }
+
+  const double a = x[0];
+  const double b = x[1];
 
   if (std::abs(a - b) < DOLFIN_EPS)
   {
@@ -74,11 +71,11 @@ void IntervalMesh::build(std::size_t nx, double a, double b)
                  "Number of points on interval is (%d), it must be at least 1", nx);
   }
 
-  rename("mesh", "Mesh of the interval (a, b)");
+  mesh.rename("mesh", "Mesh of the interval (a, b)");
 
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(*this, CellType::interval, 1, 1);
+  editor.open(mesh, CellType::interval, 1, 1);
 
   // Create vertices and cells:
   editor.init_vertices_global((nx+1), (nx+1));
@@ -104,11 +101,9 @@ void IntervalMesh::build(std::size_t nx, double a, double b)
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(this->mpi_comm()))
+  if (MPI::is_broadcaster(mesh.mpi_comm()))
   {
-    std::cout << "Building mesh (dist 0a)" << std::endl;
-    MeshPartitioning::build_distributed_mesh(*this);
-    std::cout << "Building mesh (dist 1a)" << std::endl;
+    MeshPartitioning::build_distributed_mesh(mesh);
     return;
   }
 }

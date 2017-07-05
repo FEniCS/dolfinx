@@ -14,10 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Garth N. Wells 2007
-// Modified by Nuno Lopes 2008
-// Modified by Kristian B. Oelgaard 2009
 
 #include <cmath>
 #include <boost/multi_array.hpp>
@@ -44,17 +40,17 @@ RectangleMesh::RectangleMesh(MPI_Comm comm,
                              std::size_t nx, std::size_t ny,
                              std::string diagonal) : Mesh(comm)
 {
-  build(p0, p1, nx, ny, diagonal);
+  build(*this, {p0, p1}, {nx, ny}, diagonal);
 }
 //-----------------------------------------------------------------------------
-void RectangleMesh::build(const Point& p0, const Point& p1,
-                          std::size_t nx, std::size_t ny,
+void RectangleMesh::build(Mesh& mesh, const std::array<Point, 2>& p,
+                          std::array<std::size_t, 2> n,
                           std::string diagonal)
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver(this->mpi_comm()))
+  if (MPI::is_receiver(mesh.mpi_comm()))
   {
-    MeshPartitioning::build_distributed_mesh(*this);
+    MeshPartitioning::build_distributed_mesh(mesh);
     return;
   }
 
@@ -66,6 +62,12 @@ void RectangleMesh::build(const Point& p0, const Point& p1,
                  "create rectangle",
                  "Unknown mesh diagonal definition: allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\"");
   }
+
+  const Point& p0 = p[0];
+  const Point& p1 = p[1];
+
+  const std::size_t nx = n[0];
+  const std::size_t ny = n[1];
 
   // Extract minimum and maximum coordinates
   const double x0 = std::min(p0.x(), p1.x());
@@ -92,10 +94,11 @@ void RectangleMesh::build(const Point& p0, const Point& p1,
                  "Rectangle has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
   }
 
-  rename("mesh", "Mesh of the unit square (a,b) x (c,d)");
+  mesh.rename("mesh", "Mesh of the unit square (a,b) x (c,d)");
+
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(*this, CellType::triangle, 2, 2);
+  editor.open(mesh, CellType::triangle, 2, 2);
 
   // Create vertices and cells:
   if (diagonal == "crossed")
@@ -222,9 +225,9 @@ void RectangleMesh::build(const Point& p0, const Point& p1,
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(this->mpi_comm()))
+  if (MPI::is_broadcaster(mesh.mpi_comm()))
   {
-    MeshPartitioning::build_distributed_mesh(*this);
+    MeshPartitioning::build_distributed_mesh(mesh);
     return;
   }
 }
