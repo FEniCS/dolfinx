@@ -26,15 +26,24 @@
 namespace dolfin
 {
 
-  /// NB: this code is experimental, just for testing, and will generally not
-  /// work with anything else
-  class UnitHexMesh : public Mesh
+  /// NB: this code is experimental, just for testing, and will
+  /// generally not work with anything else
+  class UnitHexMesh
   {
   public:
 
     /// NB: this code is experimental, just for testing, and will generally not
     /// work with anything else
-    UnitHexMesh(MPI_Comm comm, std::size_t nx, std::size_t ny, std::size_t nz);
+    static Mesh create(MPI_Comm comm, std::size_t nx, std::size_t ny, std::size_t nz)
+    {
+      Mesh mesh(comm);
+      build(mesh, {nx, ny, nz});
+      return mesh;
+    }
+
+  private:
+
+    static void build(Mesh& mesh, std::array<std::size_t, 3>);
 
   };
 

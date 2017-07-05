@@ -134,7 +134,7 @@ boundary condition should be applied.
 
 Inside the ``main`` function, we begin by defining a mesh of the
 domain. As the unit square is a very standard domain, we can use a
-built-in mesh provided by the class :cpp:class:`UnitSquareMesh`. In
+built-in mesh provided by the :cpp:class:`UnitSquareMesh` factory. In
 order to create a mesh consisting of 32 x 32 squares with each square
 divided into two triangles, and the finite element space (specified in
 the form file) defined relative to this mesh, we do as follows
@@ -144,7 +144,7 @@ the form file) defined relative to this mesh, we do as follows
    int main()
    {
      // Create mesh and function space
-     auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
+     auto mesh = std::make_shared<Mesh>(UnitSquareMesh::create({32, 32}));
      auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created

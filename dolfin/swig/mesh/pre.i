@@ -34,8 +34,6 @@
 %ignore dolfin::LocalMeshData::Geometry;
 %ignore dolfin::LocalMeshData::Topology;
 
-%ignore dolfin::BoxMesh::create;
-
 //-----------------------------------------------------------------------------
 // SWIG does not seem to generate useful code for non-member operators
 //-----------------------------------------------------------------------------

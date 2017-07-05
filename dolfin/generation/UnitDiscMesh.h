@@ -28,14 +28,24 @@ namespace dolfin
 
     /// A unit disc mesh in 2D or 3D geometry
 
-  class UnitDiscMesh : public Mesh
+  class UnitDiscMesh
   {
   public:
 
     /// Create a unit disc mesh in 2D or 3D geometry with n steps, and
     /// given degree polynomial mesh
-    UnitDiscMesh(MPI_Comm comm, std::size_t n, std::size_t degree,
-                 std::size_t gdim);
+    static Mesh create(MPI_Comm comm, std::size_t n, std::size_t degree,
+                       std::size_t gdim)
+    {
+      Mesh mesh(comm);
+      build(mesh, n, degree, gdim);
+      return mesh;
+    }
+
+  private:
+
+    static void build(Mesh& mesh, std::size_t n, std::size_t degree,
+                      std::size_t gdim);
 
   };
 

@@ -18,6 +18,7 @@
 #ifndef __INTERVAL_MESH_H
 #define __INTERVAL_MESH_H
 
+#include <array>
 #include <cstddef>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
@@ -45,7 +46,8 @@ namespace dolfin
     ///         // Create a mesh of 25 cells in the interval [-1,1]
     ///         auto mesh = IntervalMesh::create(25, {-1.0, 1.0});
     /// @endcode
-    static Mesh create(std::size_t n, std::array<double, 2> x);
+    static Mesh create(std::size_t n, std::array<double, 2> x)
+    { return create(MPI_COMM_WORLD, x); }
 
     /// Factory
     ///

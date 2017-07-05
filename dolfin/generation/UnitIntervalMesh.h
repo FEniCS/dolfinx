@@ -40,6 +40,33 @@ namespace dolfin
   {
   public:
 
+    /// Factory
+    ///
+    /// @param    n (std::size_t)
+    ///         The number of cells.
+    ///
+    /// @code{.cpp}
+    ///         // Create a mesh of 25 cells in the interval [0,1]
+    ///         auto mesh = UnitIntervalMesh::create(25);
+    /// @endcode
+    static Mesh create(std::size_t n)
+    { return create(MPI_COMM_WORLD, n); }
+
+    /// Factory
+    ///
+    /// @param    comm (MPI_Comm)
+    ///         MPI communicator
+    /// @param    n (std::size_t)
+    ///         The number of cells.
+    ///
+    /// @code{.cpp}
+    ///
+    ///         // Create a mesh of 25 cells in the interval [0,1]
+    ///         auto mesh = UnitIntervalMesh::create(MPI_COMM_WORLD, 25);
+    /// @endcode
+    static Mesh create(MPI_Comm comm, std::size_t n)
+    { return IntervalMesh::create(comm, n, {0.0, 1.0}); }
+
     /// Constructor
     ///
     /// @param    nx (std::size_t)
