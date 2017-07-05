@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2009 Garth N. Wells
+// Copyright (C) 2005-2017 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -14,12 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Anders Logg 2006.
-// Modified by Niclas Jansson 2009.
-//
-// First added:  2005-07-05
-// Last changed: 2013-03-11
 
 #ifndef __VTK_FILE_H
 #define __VTK_FILE_H
@@ -37,6 +31,11 @@ namespace pugi
 
 namespace dolfin
 {
+
+  class Function;
+  class GenericFunction;
+  class Mesh;
+  template<typename T> class MeshFunction;
 
   /// Output of meshes and functions in VTK format
 

@@ -495,8 +495,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
     element.interpolate_vertex_values(cell_vertex_values.data(),
                                       coefficients.data(),
                                       coordinate_dofs.data(),
-                                      ufc_cell.orientation,
-                                      ufc_cell);
+                                      ufc_cell.orientation);
 
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
