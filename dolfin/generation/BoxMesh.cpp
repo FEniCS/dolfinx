@@ -44,20 +44,27 @@ BoxMesh::BoxMesh(const Point& p0, const Point& p1,
 BoxMesh::BoxMesh(MPI_Comm comm, const Point& p0, const Point& p1,
                  std::size_t nx, std::size_t ny, std::size_t nz) : Mesh(comm)
 {
-  build(p0, p1, nx, ny, nz);
+  build(*this, {p0, p1}, {nx, ny, nz});
 }
 //-----------------------------------------------------------------------------
-void BoxMesh::build(const Point& p0, const Point& p1,
-                    std::size_t nx, std::size_t ny, std::size_t nz)
+void BoxMesh::build(Mesh& mesh, const std::array<Point,2 >& p,
+                    std::array<std::size_t, 3> n)
 {
   Timer timer("Build BoxMesh");
 
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver(this->mpi_comm()))
+  if (MPI::is_receiver(mesh.mpi_comm()))
   {
-    MeshPartitioning::build_distributed_mesh(*this);
+    MeshPartitioning::build_distributed_mesh(mesh);
     return;
   }
+
+  // Extract data
+  const Point& p0 = p[0];
+  const Point& p1 = p[1];
+  std::size_t nx = n[0];
+  std::size_t ny = n[1];
+  std::size_t nz = n[2];
 
   // Extract minimum and maximum coordinates
   const double x0 = std::min(p0.x(), p1.x());
@@ -89,11 +96,11 @@ void BoxMesh::build(const Point& p0, const Point& p1,
                  "BoxMesh has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
   }
 
-  rename("mesh", "Mesh of the cuboid (a,b) x (c,d) x (e,f)");
+  mesh.rename("mesh", "Mesh of the cuboid (a,b) x (c,d) x (e,f)");
 
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(*this, CellType::tetrahedron, 3, 3);
+  editor.open(mesh, CellType::tetrahedron, 3, 3);
 
   // Storage for vertex coordinates
   std::vector<double> x(3);
@@ -155,9 +162,9 @@ void BoxMesh::build(const Point& p0, const Point& p1,
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(this->mpi_comm()))
+  if (MPI::is_broadcaster(mesh.mpi_comm()))
   {
-    MeshPartitioning::build_distributed_mesh(*this);
+    MeshPartitioning::build_distributed_mesh(mesh);
     return;
   }
 }
