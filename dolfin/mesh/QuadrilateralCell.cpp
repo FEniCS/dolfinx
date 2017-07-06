@@ -95,10 +95,10 @@ void QuadrilateralCell::create_entities(boost::multi_array<unsigned int, 2>& e,
   e.resize(boost::extents[4][2]);
 
   // Create the four edges
-  e[0][0] = v[0]; e[0][1] = v[2];
-  e[1][0] = v[1]; e[1][1] = v[3];
-  e[2][0] = v[0]; e[2][1] = v[1];
-  e[3][0] = v[2]; e[3][1] = v[3];
+  e[0][0] = v[0]; e[0][1] = v[1];
+  e[1][0] = v[2]; e[1][1] = v[3];
+  e[2][0] = v[0]; e[2][1] = v[2];
+  e[3][0] = v[1]; e[3][1] = v[3];
 }
 //-----------------------------------------------------------------------------
 double QuadrilateralCell::volume(const MeshEntity& cell) const
