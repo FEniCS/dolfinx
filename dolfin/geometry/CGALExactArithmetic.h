@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2017-03-01
+// Last changed: 2017-07-06
 //
 // Developer note:
 //
@@ -401,6 +401,7 @@ namespace dolfin
 #include <CGAL/intersections.h>
 #include <CGAL/intersection_of_Polyhedra_3.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Triangulation_2.h>
 
 namespace
 {
@@ -421,6 +422,7 @@ namespace
   typedef ExactKernel::Tetrahedron_3     Tetrahedron_3;
   typedef ExactKernel::Intersect_3       Intersect_3;
   typedef CGAL::Polyhedron_3<ExactKernel>      Polyhedron_3;
+  typedef CGAL::Triangulation_2<ExactKernel>   Triangulation_2;
 
   //---------------------------------------------------------------------------
   // CGAL utility functions
@@ -1098,7 +1100,7 @@ namespace dolfin
                      "Unexpected behavior");
       }
     }
-  
+
     return std::vector<Point>();
   }
   //-----------------------------------------------------------------------------
@@ -1186,11 +1188,11 @@ namespace dolfin
   {
     dolfin_assert(!is_degenerate_3d(p0, p1, p2));
     dolfin_assert(!is_degenerate_3d(q0, q1, q2));
-    
+
     const Triangle_3 T0 = convert_to_cgal_3d(p0, p1, p2);
     const Triangle_3 T1 = convert_to_cgal_3d(q0, q1, q2);
     std::vector<Point> intersection;
-    
+
     if (const auto ii = CGAL::intersection(T0, T1))
     {
       if (const Point_3* p = boost::get<Point_3>(&*ii))
@@ -1540,8 +1542,33 @@ namespace dolfin
 
     return false;
   }
+
+  //-----------------------------------------------------------------------------
+  inline std::vector<std::vector<Point> > cgal_triangulate_2d(const std::vector<Point>& points)
+  {
+    // Convert points
+    std::vector<Point_2> pcgal(points.size());
+    for (std::size_t i = 0; i < points.size(); ++i)
+      pcgal[i] = convert_to_cgal_2d(points[i]);
+
+    // Triangulate
+    Triangulation_2 tcgal;
+    tcgal.insert(pcgal.begin(), pcgal.end());
+
+    // Convert back
+    std::vector<std::vector<Point>> t;
+    for (Triangulation_2::Finite_faces_iterator fit = tcgal.finite_faces_begin(); fit != tcgal.finite_faces_end(); ++fit)
+    {
+      t.push_back({{ convert_from_cgal(tcgal.triangle(fit)[0]),
+      	      convert_from_cgal(tcgal.triangle(fit)[1]),
+      	      convert_from_cgal(tcgal.triangle(fit)[2]) }});
+    }
+
+    return t;
+  }
+  //-----------------------------------------------------------------------------
+
 }
 #endif
 
 #endif
-  
