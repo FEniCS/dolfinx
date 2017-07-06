@@ -630,7 +630,7 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
 def test_quadratic_mesh(tempdir, encoding):
     if invalid_config(encoding):
         pytest.skip("XDMF unsupported in current configuration")
-    mesh = UnitDiscMesh(mpi_comm_world(), 2, 2, 2)
+    mesh = UnitDiscMesh.create(mpi_comm_world(), 2, 2, 2)
     Q = FunctionSpace(mesh, "CG", 1)
     u = Function(Q)
     u.interpolate(Constant(1.0))
