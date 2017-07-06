@@ -23,6 +23,7 @@
 
 #include <vector>
 #include <ufc.h>
+#include <Eigen/Dense>
 #include <dolfin/common/Array.h>
 #include "GenericFunction.h"
 
@@ -83,7 +84,6 @@ namespace dolfin
     virtual ~Expression();
 
     //--- Implementation of GenericFunction interface ---
-    /// Note: The reimplementation of eval is needed for the Python interface.
 
     /// Evaluate at given point in given cell.
     ///
@@ -97,6 +97,18 @@ namespace dolfin
                       const Array<double>& x,
                       const ufc::cell& cell) const;
 
+    /// Evaluate at given point in given cell.
+    ///
+    /// @param    values (Eigen::Ref<Eigen::VectorXd>)
+    ///         The values at the point.
+    /// @param    x (Eigen::Ref<Eigen::VectorXd>)
+    ///         The coordinates of the point.
+    /// @param    cell (ufc::cell)
+    ///         The cell which contains the given point.
+    virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
+                      const Eigen::Ref<Eigen::VectorXd> x,
+                      const ufc::cell& cell) const;
+
     /// Evaluate at given point.
     ///
     /// @param values (Array<double>)
@@ -104,6 +116,15 @@ namespace dolfin
     /// @param x (Array<double>)
     ///         The coordinates of the point.
     virtual void eval(Array<double>& values, const Array<double>& x) const;
+
+    /// Evaluate at given point.
+    ///
+    /// @param values (Eigen::Ref<Eigen::VectorXd>)
+    ///         The values at the point.
+    /// @param x (Eigen::Ref<Eigen::VectorXd>)
+    ///         The coordinates of the point.
+    virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
+                      const Eigen::Ref<Eigen::VectorXd> x) const;
 
     /// Return value rank.
     ///

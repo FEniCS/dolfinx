@@ -68,11 +68,32 @@ void Expression::eval(Array<double>& values,
                       const Array<double>& x,
                       const ufc::cell& cell) const
 {
+  // Redirect to Eigen eval
+  Eigen::Map<Eigen::VectorXd> _values(values.data(), values.size());
+  const Eigen::Map<Eigen::VectorXd> _x(const_cast<double*>(x.data()), x.size());
+  eval(_values, _x, cell);
+}
+//-----------------------------------------------------------------------------
+void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
+                      const Eigen::Ref<Eigen::VectorXd> x,
+                      const ufc::cell& cell) const
+{
   // Redirect to simple eval
-  eval(values, x);
+  Array<double> _values(values.size(), values.data());
+  const Array<double> _x(x.size(), const_cast<double*>(x.data()));
+  eval(_values, _x);
 }
 //-----------------------------------------------------------------------------
 void Expression::eval(Array<double>& values, const Array<double>& x) const
+{
+  // Redirect to simple eval (Eigen version)
+  Eigen::Map<Eigen::VectorXd> _values(values.data(), values.size());
+  const Eigen::Map<Eigen::VectorXd> _x(const_cast<double*>(x.data()), x.size());
+  eval(_values, _x);
+}
+//-----------------------------------------------------------------------------
+void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
+                      const Eigen::Ref<Eigen::VectorXd> x) const
 {
   dolfin_error("Expression.cpp",
                "evaluate expression",
