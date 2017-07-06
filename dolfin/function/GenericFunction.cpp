@@ -52,6 +52,22 @@ void GenericFunction::eval(Array<double>& values, const Array<double>& x) const
                "Missing eval() function (must be overloaded)");
 }
 //-----------------------------------------------------------------------------
+void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
+                           const Eigen::Ref<Eigen::VectorXd> x,
+                           const ufc::cell& cell) const
+{
+  // Redirect to simple eval
+  eval(values, x);
+}
+//-----------------------------------------------------------------------------
+void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
+                           const Eigen::Ref<Eigen::VectorXd> x) const
+{
+  dolfin_error("GenericFunction.cpp",
+               "evaluate function (Eigen version)",
+               "Missing eval() function (must be overloaded)");
+}
+//-----------------------------------------------------------------------------
 double GenericFunction::operator() (double x) const
 {
   // Check that function is scalar

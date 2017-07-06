@@ -24,7 +24,7 @@
 #include <algorithm>
 #include <dolfin/log/log.h>
 #include <dolfin/log/Progress.h>
-#include <dolfin/common/Array.h>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/la/GenericTensor.h>
