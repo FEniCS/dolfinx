@@ -1081,11 +1081,6 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
   dolfin_assert(dqr.first.size() == gdim*dqr.second.size());
   const std::size_t num_points = dqr.second.size();
 
-  // Skip if sum of weights is too small
-  double wsum = 0.0;
-  for (std::size_t i = 0; i < num_points; i++)
-    wsum += std::abs(dqr.second[i]);
-
   // Append points and weights
   for (std::size_t i = 0; i < num_points; i++)
   {
