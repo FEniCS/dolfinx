@@ -1085,8 +1085,6 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
   double wsum = 0.0;
   for (std::size_t i = 0; i < num_points; i++)
     wsum += std::abs(dqr.second[i]);
-  if (wsum < DOLFIN_EPS)
-    return 0;
 
   // Append points and weights
   for (std::size_t i = 0; i < num_points; i++)
