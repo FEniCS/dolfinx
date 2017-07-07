@@ -151,8 +151,8 @@ void HDF5Utility::get_global_dof(
     const std::vector<std::size_t>& rdof = receive_cell_dofs[i];
     for (std::size_t j = 0; j < rdof.size(); j += 2)
     {
-      const ArrayView<const dolfin::la_index> dmap = dofmap.cell_dofs(rdof[j]);
-      dolfin_assert(rdof[j + 1] < dmap.size());
+      auto dmap = dofmap.cell_dofs(rdof[j]);
+      dolfin_assert(rdof[j + 1] < (std::size_t) dmap.size());
       const dolfin::la_index local_index = dmap[rdof[j + 1]];
       dolfin_assert(local_index >= 0);
       dolfin_assert((std::size_t)local_index < local_to_global_map.size());

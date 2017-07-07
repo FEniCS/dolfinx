@@ -168,7 +168,8 @@ void Assembler::assemble_cells(
     bool empty_dofmap = false;
     for (std::size_t i = 0; i < form_rank; ++i)
     {
-      dofs[i] = dofmaps[i]->cell_dofs(cell->index());
+      auto dmap = dofmaps[i]->cell_dofs(cell->index());
+      dofs[i] = ArrayView<const dolfin::la_index>(dmap.size(), dmap.data());
       empty_dofmap = empty_dofmap || dofs[i].size() == 0;
     }
 
@@ -277,7 +278,10 @@ void Assembler::assemble_exterior_facets(
 
     // Get local-to-global dof maps for cell
     for (std::size_t i = 0; i < form_rank; ++i)
-      dofs[i] = dofmaps[i]->cell_dofs(mesh_cell.index());
+    {
+      auto dmap = dofmaps[i]->cell_dofs(mesh_cell.index());
+      dofs[i].set(dmap.size(), dmap.data());
+    }
 
     // Tabulate exterior facet tensor
     integral->tabulate_tensor(ufc.A.data(),
@@ -400,10 +404,8 @@ void Assembler::assemble_interior_facets(
     for (std::size_t i = 0; i < form_rank; i++)
     {
       // Get dofs for each cell
-      const ArrayView<const dolfin::la_index> cell_dofs0
-        = dofmaps[i]->cell_dofs(cell0.index());
-      const ArrayView<const dolfin::la_index> cell_dofs1
-        = dofmaps[i]->cell_dofs(cell1.index());
+      auto cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
+      auto cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
 
       // Create space in macro dof vector
       macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
@@ -624,7 +626,8 @@ void Assembler::assemble_vertices(
     for (std::size_t i = 0; i < form_rank; ++i)
     {
       // Get local-to-global dof maps for cell
-      dofs[i] = dofmaps[i]->cell_dofs(mesh_cell.index());
+      auto dmap = dofmaps[i]->cell_dofs(mesh_cell.index());
+      dofs[i].set(dmap.size(), dmap.data());
 
       // Get local dofs of the local vertex
       dofmaps[i]->tabulate_entity_dofs(local_to_local_dofs[i], 0, local_vertex);

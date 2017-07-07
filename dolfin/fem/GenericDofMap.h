@@ -28,9 +28,8 @@
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+#include <Eigen/Dense>
 
-#include <dolfin/common/Array.h>
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/la/IndexMap.h>
@@ -108,8 +107,8 @@ namespace dolfin
     virtual const std::vector<int>& off_process_owner() const = 0;
 
     /// Local-to-global mapping of dofs on a cell
-    virtual ArrayView<const dolfin::la_index>
-    cell_dofs(std::size_t cell_index) const = 0;
+    virtual Eigen::Ref<const Eigen::Matrix<dolfin::la_index, Eigen::Dynamic, 1>>
+      cell_dofs(std::size_t cell_index) const = 0;
 
     /// Return the dof indices associated with entities of given dimension and entity indices
     virtual std::vector<dolfin::la_index>

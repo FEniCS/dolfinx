@@ -31,9 +31,9 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <Eigen/Dense>
 #include <ufc.h>
 
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include <dolfin/la/IndexMap.h>
 #include <dolfin/mesh/Cell.h>
@@ -196,14 +196,13 @@ namespace dolfin
     /// @param     cell_index (std::size_t)
     ///         The cell index.
     ///
-    /// @return     ArrayView<const dolfin::la_index>
-    ///         Local-to-global mapping of dofs.
-    ArrayView<const dolfin::la_index> cell_dofs(std::size_t cell_index) const
+    /// @return         ArrayView<const dolfin::la_index>
+    Eigen::Ref<const Eigen::Matrix<dolfin::la_index, Eigen::Dynamic, 1>>
+      cell_dofs(std::size_t cell_index) const
     {
       const std::size_t index = cell_index*_cell_dimension;
       dolfin_assert(index + _cell_dimension <= _dofmap.size());
-      return ArrayView<const dolfin::la_index>(_cell_dimension,
-                                               &_dofmap[index]);
+      return Eigen::Map<const Eigen::Matrix<dolfin::la_index, Eigen::Dynamic, 1>>(&_dofmap[index], _cell_dimension);
     }
 
     /// Return the dof indices associated with entities of given dimension and entity indices

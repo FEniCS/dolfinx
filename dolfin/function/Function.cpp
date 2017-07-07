@@ -421,8 +421,7 @@ void Function::restrict(double* w, const FiniteElement& element,
   {
     // Get dofmap for cell
     const GenericDofMap& dofmap = *_function_space->dofmap();
-    const ArrayView<const dolfin::la_index> dofs
-      = dofmap.cell_dofs(dolfin_cell.index());
+    auto dofs = dofmap.cell_dofs(dolfin_cell.index());
 
     // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
     // Pick values from vector(s)

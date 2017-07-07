@@ -1206,11 +1206,12 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   for (std::size_t i = 0; i != n_cells; ++i)
   {
     x_cell_dofs.push_back(cell_dofs.size());
-    const ArrayView<const dolfin::la_index> cell_dofs_i = dofmap.cell_dofs(i);
-    for (auto p = cell_dofs_i.begin(); p != cell_dofs_i.end(); ++p)
+    auto cell_dofs_i = dofmap.cell_dofs(i);
+    for (Eigen::Index j = 0; j < cell_dofs_i.size(); ++j)
     {
-      dolfin_assert(*p < (dolfin::la_index)local_to_global_map.size());
-      cell_dofs.push_back(local_to_global_map[*p]);
+      auto p = cell_dofs_i[j];
+      dolfin_assert(p < (dolfin::la_index) local_to_global_map.size());
+      cell_dofs.push_back(local_to_global_map[p]);
     }
   }
 
@@ -2834,8 +2835,7 @@ std::vector<double> XDMFFile::get_cell_data_values(const Function& u)
   for (CellIterator cell(*mesh); !cell.end(); ++cell)
   {
     // Tabulate dofs
-    const ArrayView<const dolfin::la_index> dofs
-      = dofmap->cell_dofs(cell->index());
+    auto dofs = dofmap->cell_dofs(cell->index());
     const std::size_t ndofs = dofmap->num_element_dofs(cell->index());
     dolfin_assert(ndofs == value_size);
     for (std::size_t i = 0; i < ndofs; ++i)
@@ -2951,8 +2951,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
     // P1
     for (CellIterator cell(*mesh); !cell.end(); ++cell)
     {
-      const ArrayView<const dolfin::la_index> dofs
-        = dofmap->cell_dofs(cell->index());
+      auto dofs = dofmap->cell_dofs(cell->index());
       std::size_t c = 0;
       for (std::size_t i = 0; i != value_size; ++i)
       {
@@ -2986,8 +2985,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
     // FIXME: a lot of duplication here
     for (CellIterator cell(*mesh); !cell.end(); ++cell)
     {
-      const ArrayView<const dolfin::la_index> dofs
-        = dofmap->cell_dofs(cell->index());
+      auto dofs = dofmap->cell_dofs(cell->index());
       std::size_t c = 0;
       for (std::size_t i = 0; i != value_size; ++i)
       {

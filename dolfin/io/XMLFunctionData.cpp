@@ -222,11 +222,10 @@ void XMLFunctionData::build_global_to_cell_dof(
     {
       const std::size_t local_cell_index = cell->index();
       const std::size_t global_cell_index = cell->global_index();
-      const ArrayView<const la_index>
-        cell_dofs = dofmap.cell_dofs(local_cell_index);
+      auto cell_dofs = dofmap.cell_dofs(local_cell_index);
 
       cell_dofs_global.resize(cell_dofs.size());
-      for(std::size_t i = 0; i < cell_dofs.size(); ++i)
+      for(Eigen::Index i = 0; i < cell_dofs.size(); ++i)
         cell_dofs_global[i] = local_to_global_dof[cell_dofs[i]];
 
       local_dofmap.push_back(global_cell_index);
@@ -244,9 +243,10 @@ void XMLFunctionData::build_global_to_cell_dof(
       const std::size_t local_cell_index = cell->index();
       local_dofmap.push_back(local_cell_index);
       local_dofmap.push_back(dofmap.cell_dofs(local_cell_index).size());
+
+      auto dmap = dofmap.cell_dofs(local_cell_index);
       local_dofmap.insert(local_dofmap.end(),
-                          dofmap.cell_dofs(local_cell_index).begin(),
-                          dofmap.cell_dofs(local_cell_index).end());
+                          dmap.data(), dmap.data() + dmap.size());
     }
   }
 
@@ -297,19 +297,17 @@ void XMLFunctionData::build_dof_map(std::vector<std::vector<la_index>>& dof_map,
     {
       const std::size_t local_cell_index = cell->index();
       const std::size_t global_cell_index = cell->global_index();
-      const ArrayView<const la_index>
-        cell_dofs = dofmap.cell_dofs(local_cell_index);
+      auto cell_dofs = dofmap.cell_dofs(local_cell_index);
       local_dofmap.push_back(global_cell_index);
       local_dofmap.push_back(cell_dofs.size());
 
       cell_dofs_global.resize(cell_dofs.size());
-      for(std::size_t i = 0; i <cell_dofs.size(); ++i)
+      for(Eigen::Index i = 0; i < cell_dofs.size(); ++i)
         cell_dofs_global[i] = local_to_global_dof[cell_dofs[i]];
 
       // Insert global dof indices
-      local_dofmap.insert(local_dofmap.end(),
-                          cell_dofs_global.begin(),
-                          cell_dofs_global.end());
+      local_dofmap.insert(local_dofmap.end(), cell_dofs_global.data(),
+                          cell_dofs_global.data() + cell_dofs_global.size());
     }
   }
   else
@@ -320,9 +318,10 @@ void XMLFunctionData::build_dof_map(std::vector<std::vector<la_index>>& dof_map,
       const std::size_t local_cell_index = cell->index();
       local_dofmap.push_back(local_cell_index);
       local_dofmap.push_back(dofmap.cell_dofs(local_cell_index).size());
+
+      auto dmap = dofmap.cell_dofs(local_cell_index);
       local_dofmap.insert(local_dofmap.end(),
-                          dofmap.cell_dofs(local_cell_index).begin(),
-                          dofmap.cell_dofs(local_cell_index).end());
+                          dmap.data(), dmap.data() + dmap.size());
     }
   }
 

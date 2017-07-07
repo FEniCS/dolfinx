@@ -102,12 +102,10 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
     dolfin_assert(vertex_found);
 
     // Get all cell dofs
-    const ArrayView<const dolfin::la_index> cell_dofs
-      = dofmap.cell_dofs(cell.index());
+    auto cell_dofs = dofmap.cell_dofs(cell.index());
 
     // Tabulate local to local map of dofs on local vertex
-    dofmap.tabulate_entity_dofs(
-                local_to_local_map,
+    dofmap.tabulate_entity_dofs(local_to_local_map,
 				0, local_vertex_ind);
 
     // Fill local dofs for the vertex
@@ -212,7 +210,6 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
       mesh.init(tdim, dim);
   }
 
-  ArrayView<const la_index> cell_dofs;
   std::vector<double> values;
   const unsigned int* global_entities;
   std::size_t xi, vi;
@@ -221,7 +218,7 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     // Get/prepare values and dofs on cell
-    cell_dofs = dofmap.cell_dofs(c->index());
+    auto cell_dofs = dofmap.cell_dofs(c->index());
     values.resize(cell_dofs.size());
     if (setting)
       v.get_local(values.data(), cell_dofs.size(), cell_dofs.data());
@@ -244,7 +241,7 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
           {
             // Compute indices
             xi = gdim*(offsets[dim][local_dof] + global_entities[local_entity])
-               + component;
+              + component;
             vi = local_to_local[dim][local_entity][gdim*local_dof + component];
 
             // Set one or other

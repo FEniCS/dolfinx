@@ -142,7 +142,8 @@ void MultiMeshAssembler::_assemble_uncut_cells(GenericTensor& A,
       for (std::size_t i = 0; i < form_rank; ++i)
       {
         const auto dofmap = a.function_space(i)->dofmap()->part(part);
-        dofs[i] = dofmap->cell_dofs(cell.index());
+        auto dmap = dofmap->cell_dofs(cell.index());
+        dofs[i].set(dmap.size(), dmap.data());
       }
 
       // Tabulate cell tensor
@@ -220,7 +221,8 @@ void MultiMeshAssembler::_assemble_cut_cells(GenericTensor& A,
       for (std::size_t i = 0; i < form_rank; ++i)
       {
         const auto dofmap = a.function_space(i)->dofmap()->part(part);
-        dofs[i] = dofmap->cell_dofs(cell.index());
+        auto dmap = dofmap->cell_dofs(cell.index());
+        dofs[i].set(dmap.size(), dmap.data());
       }
 
       // Get quadrature rule for cut cell
@@ -399,9 +401,9 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
           macro_dofs[i].resize(dofs_0.size() + dofs_1.size());
 
           // Copy cell dofs into macro dof vector
-          std::copy(dofs_0.begin(), dofs_0.end(),
+          std::copy(dofs_0.data(), dofs_0.data() + dofs_0.size(),
                     macro_dofs[i].begin());
-          std::copy(dofs_1.begin(), dofs_1.end(),
+          std::copy(dofs_1.data(), dofs_1.data() + dofs_1.size(),
                     macro_dofs[i].begin() + dofs_0.size());
 
           // Update array view
@@ -564,15 +566,14 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
           macro_dofs[i].resize(dofs_0.size() + dofs_1.size());
 
           // Copy cell dofs into macro dof vector
-          std::copy(dofs_0.begin(), dofs_0.end(),
+          std::copy(dofs_0.data(), dofs_0.data() + dofs_0.size(),
                     macro_dofs[i].begin());
-          std::copy(dofs_1.begin(), dofs_1.end(),
+          std::copy(dofs_1.data(), dofs_1.data() + dofs_1.size() ,
                     macro_dofs[i].begin() + dofs_0.size());
 
           // Update array view
-          macro_dof_ptrs[i]
-            = ArrayView<const dolfin::la_index>(macro_dofs[i].size(),
-                                                macro_dofs[i].data());
+          macro_dof_ptrs[i].set(macro_dofs[i].size(),
+                                macro_dofs[i].data());
         }
 
         // FIXME: Cell orientation not supported

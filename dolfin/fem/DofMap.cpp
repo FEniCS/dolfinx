@@ -116,12 +116,11 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   collapsed_map.clear();
   for (std::size_t i = 0; i < mesh.num_cells(); ++i)
   {
-    const ArrayView<const dolfin::la_index> view_cell_dofs
-      = dofmap_view.cell_dofs(i);
-    const ArrayView<const dolfin::la_index> cell_dofs = this->cell_dofs(i);
+    auto view_cell_dofs = dofmap_view.cell_dofs(i);
+    auto cell_dofs = this->cell_dofs(i);
     dolfin_assert(view_cell_dofs.size() == cell_dofs.size());
 
-    for (std::size_t j = 0; j < view_cell_dofs.size(); ++j)
+    for (Eigen::Index j = 0; j < view_cell_dofs.size(); ++j)
       collapsed_map[cell_dofs[j]] = view_cell_dofs[j];
   }
 }
@@ -583,9 +582,10 @@ void DofMap::set(GenericVector& x, double value) const
   std::vector<double> _value(_cell_dimension, value);
   for (std::size_t i = 0; i < num_cells; ++i)
   {
-    const ArrayView<const la_index> dofs = cell_dofs(i);
+    auto dofs = cell_dofs(i);
     x.set_local(_value.data(), dofs.size(), dofs.data());
   }
+
   x.apply("insert");
 }
 //-----------------------------------------------------------------------------
