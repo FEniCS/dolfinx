@@ -4,7 +4,10 @@ Change log
 2017.2.0 (unreleased)
 ---------------------
 
-- Nothing changed yet
+- Updates for ``ufc::finite_element::evaluate_vertex_values`` interface
+  change
+- Add new methods ``XDMFFile::write_checkpoint``, ``XDMFFile::read_checkpoint``
+  to write and read (checkpoint) functions
 
 2017.1.0 (2017-05-09)
 ---------------------

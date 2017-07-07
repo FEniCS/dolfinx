@@ -19,6 +19,7 @@
 #include <string>
 #include <sstream>
 #include <utility>
+#include <algorithm>
 #include "pugixml.hpp"
 
 #include <dolfin/common/MPI.h>
@@ -1237,6 +1238,9 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
                                           vertex_indices.find(index));
           local_topology.push_back(pos + offset);
         }
+
+        // Swap two last coord indices of a face to fix quadrilateral and hexahedral mesh visualisation
+        std::iter_swap(local_topology.end() - 2, local_topology.end() - 1);
 
         // Add -1 to denote end of entity
         local_topology.push_back(-1);
