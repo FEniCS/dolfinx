@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-07-03
+// Last changed: 2017-07-07
 
 #include <algorithm>
 #include <tuple>
@@ -58,40 +58,6 @@ namespace
 using namespace dolfin;
 
 //------------------------------------------------------------------------------
-bool ConvexTriangulation::Edge::operator==(const Edge& e) const
-{
-  return (p0 == e.p0 and p1 == e.p1) or
-    (p1 == e.p0 and p0 == e.p1);
-}
-//------------------------------------------------------------------------------
-bool ConvexTriangulation::Triangle::operator==(const Triangle& t) const
-{
-  return (p0 == t.p0 or p0 == t.p1 or p0 == t.p2) and
-    (p1 == t.p0 or p1 == t.p1 or p1 == t.p2) and
-    (p2 == t.p0 or p2 == t.p1 or p2 == t.p2);
-}
-//------------------------------------------------------------------------------
-bool ConvexTriangulation::Triangle::contains_vertex(const Point& v) const
-{
-  return p0 == v or p1 == v or p2 == v;
-}
-//------------------------------------------------------------------------------
-bool ConvexTriangulation::Triangle::circumcircle_contains(const Point& v) const
-{
-  const double ab = p0.squared_norm();
-  const double cd = p1.squared_norm();
-  const double ef = p2.squared_norm();
-
-  const double circum_x = (ab * (p2.y() - p1.y()) + cd * (p0.y() - p2.y()) + ef * (p1.y() - p0.y())) / (p0.x() * (p2.y() - p1.y()) + p1.x() * (p0.y() - p2.y()) + p2.x() * (p1.y() - p0.y())) / 2.;
-  const double circum_y = (ab * (p2.x() - p1.x()) + cd * (p0.x() - p2.x()) + ef * (p1.x() - p0.x())) / (p0.y() * (p2.x() - p1.x()) + p1.y() * (p0.x() - p2.x()) + p2.y() * (p1.x() - p0.x())) / 2.;
-
-  const Point c(circum_x, circum_y);
-  const double circum_radius = (p1 - c).norm();
-
-  const double dist = (v - c).norm();
-  return dist <= circum_radius;
-}
-//------------------------------------------------------------------------------
 std::vector<std::vector<Point>>
 ConvexTriangulation::triangulate(const std::vector<Point>& p,
                                  std::size_t gdim,
@@ -107,7 +73,6 @@ ConvexTriangulation::triangulate(const std::vector<Point>& p,
   else if (tdim == 2 && gdim == 2)
   {
     return triangulate_graham_scan_2d(p);
-    //return triangulate_delaunay_2d(p);
   }
   else if (tdim == 3 && gdim == 3)
   {
@@ -127,6 +92,13 @@ ConvexTriangulation::_triangulate_1d(const std::vector<Point>& p,
   // than two points. If more, they must be collinear (more or
   // less). This can happen due to tolerances in
   // IntersectionConstruction::intersection_segment_segment_2d.
+
+  if (gdim != 2)
+  {
+    dolfin_error("ConvexTriangulation.cpp",
+		 "triangulate topological 1d",
+		 "Function is only implemented for gdim = 2");
+  }
 
   const std::vector<Point> unique_p = unique_points(p, gdim, DOLFIN_EPS);
 
@@ -240,143 +212,6 @@ ConvexTriangulation::_triangulate_graham_scan_2d(const std::vector<Point>& input
     			  points[order[m + 1].second] }};
   }
 
-  return triangulation;
-}
-//-----------------------------------------------------------------------------
-std::vector<std::vector<Point>>
-ConvexTriangulation::_triangulate_delaunay_2d(const std::vector<Point>& input_points)
-{
-  // Delaunay triangulation using the Bowyer-Watson algorithm
-  // https://en.wikipedia.org/wiki/Bowyer%E2%80%93Watson_algorithm
-  // Implementation from
-  // https://github.com/Bl4ckb0ne/delaunay-triangulation/blob/master/delaunay.h
-  dolfin_assert(GeometryPredicates::is_finite(input_points));
-
-  // Only do 2D for now
-  const std::size_t gdim = 2;
-
-  // Make sure the input points are unique
-  std::vector<Point> points = unique_points(input_points, gdim, DOLFIN_EPS);
-
-  if (points.size() < 3)
-    return std::vector<std::vector<Point>>();
-
-  std::vector<std::vector<Point>> triangulation;
-
-  if (points.size() == 3)
-  {
-    triangulation.push_back(points);
-    return triangulation;
-  }
-
-  // Find point bounds
-  Point pmin = points[0];
-  Point pmax = points[0];
-
-  for (std::size_t i = 1; i < points.size(); ++i)
-  {
-    for (std::size_t d = 0; d < gdim; ++d)
-    {
-      pmin[d] = (pmin[d] > points[i][d]) ? pmin[d] : points[i][d];
-      pmax[d] = (pmax[d] < points[i][d]) ? pmax[d] : points[i][d];
-    }
-  }
-
-  // Find mid point
-  const Point pmid = (pmin + pmax) / 2.0;
-
-  // Find max bound
-  double dx;
-  for (std::size_t d = 0; d < gdim; ++d)
-    dx = std::max(dx, std::abs(pmin[d] - pmax[d]));
-
-  // Create super triangle containing all points
-  Point a;
-  a[0] = pmid[0] - 20*dx;
-  a[1] = pmid[1] - dx;
-  Point b;
-  b[0] = pmid[0];
-  b[1] = pmid[1] + 20*dx;
-  Point c;
-  c[0] = pmid[0] + 20*dx;
-  c[1] = pmid[1] - dx;
-
-  // Add the super triangle to the triangulation
-  std::vector<Triangle> triangles;
-  Triangle abc(a, b, c);
-  triangles.push_back(abc);
-
-  for (const Point p: points)
-  {
-    std::vector<Triangle> bad_triangles;
-    std::vector<Edge> polygon;
-
-    for (const Triangle t: triangles)
-    {
-      if (t.circumcircle_contains(p))
-      {
-        bad_triangles.push_back(t);
-        polygon.push_back(t.e0);
-        polygon.push_back(t.e1);
-        polygon.push_back(t.e2);
-      }
-    }
-
-    triangles.erase(std::remove_if(triangles.begin(), triangles.end(),
-				   [bad_triangles](const Triangle &t)
-				   {
-				     for (const Triangle& bt: bad_triangles)
-				       if (bt == t)
-					 return true;
-				     return false;
-				   }),
-		    triangles.end());
-
-    std::vector<Edge> bad_edges;
-
-    for (std::vector<Edge>::const_iterator e0 = polygon.begin(); e0 != polygon.end(); ++e0)
-      for (std::vector<Edge>::const_iterator e1 = polygon.begin(); e1 != polygon.end(); ++e1)
-      {
-	if (e0 == e1)
-	  continue;
-	if (*e0 == *e1)
-	{
-	  bad_edges.push_back(*e0);
-	  bad_edges.push_back(*e1);
-	}
-      }
-
-    polygon.erase(std::remove_if(polygon.begin(), polygon.end(),
-				 [bad_edges](const Edge& e)
-				 {
-				   for (const Edge& be: bad_edges)
-				     if (be == e)
-				       return true;
-				   return false;
-				 }),
-		  polygon.end());
-
-    for (const Edge e: polygon)
-    {
-      Triangle te(e.p0, e.p1, p);
-      triangles.push_back(te);
-    }
-  } // end loop over points
-
-  triangles.erase(std::remove_if(triangles.begin(), triangles.end(),
-				 [a, b, c](const Triangle& t)
-				 {
-				   return t.contains_vertex(a) or
-				     t.contains_vertex(b) or
-				     t.contains_vertex(c);
-				 }),
-		  end(triangles));
-
-  dolfin_assert(triangles.size());
-
-  triangulation.resize(triangles.size());
-  for (std::size_t i = 0; i < triangles.size(); ++i)
-    triangulation[i] = {{ triangles[i].p0, triangles[i].p1, triangles[i].p2 }};
   return triangulation;
 }
 //-----------------------------------------------------------------------------
