@@ -27,18 +27,20 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitTriangleMesh::UnitTriangleMesh() : Mesh()
+dolfin::Mesh UnitTriangleMesh::create()
 {
+  Mesh mesh(MPI_COMM_SELF);
+
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver(this->mpi_comm()))
+  if (MPI::is_receiver(mesh.mpi_comm()))
   {
-    MeshPartitioning::build_distributed_mesh(*this);
-    return;
+    MeshPartitioning::build_distributed_mesh(mesh);
+    return mesh;
   }
 
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(*this, CellType::triangle, 2, 2);
+  editor.open(mesh, CellType::triangle, 2, 2);
 
   // Create vertices
   editor.init_vertices_global(3, 3);
@@ -60,10 +62,12 @@ UnitTriangleMesh::UnitTriangleMesh() : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(this->mpi_comm()))
+  if (MPI::is_broadcaster(mesh.mpi_comm()))
   {
-    MeshPartitioning::build_distributed_mesh(*this);
-    return;
+    MeshPartitioning::build_distributed_mesh(mesh);
+    return mesh;
   }
+
+  return mesh;
 }
 //-----------------------------------------------------------------------------

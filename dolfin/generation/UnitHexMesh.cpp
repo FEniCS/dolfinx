@@ -27,18 +27,21 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitHexMesh::UnitHexMesh(MPI_Comm comm, std::size_t nx, std::size_t ny,
-                         std::size_t nz) : Mesh(comm)
+void UnitHexMesh::build(Mesh& mesh, std::array<std::size_t, 3> n)
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver(this->mpi_comm()))
+  if (MPI::is_receiver(mesh.mpi_comm()))
   {
-    MeshPartitioning::build_distributed_mesh(*this);
+    MeshPartitioning::build_distributed_mesh(mesh);
     return;
   }
 
+  const std::size_t nx = n[0];
+  const std::size_t ny = n[1];
+  const std::size_t nz = n[2];
+
   MeshEditor editor;
-  editor.open(*this, CellType::hexahedron, 3, 3);
+  editor.open(mesh, CellType::hexahedron, 3, 3);
 
   // Create vertices and cells:
   editor.init_vertices_global((nx + 1)*(ny + 1)*(nz + 1),
@@ -76,7 +79,9 @@ UnitHexMesh::UnitHexMesh(MPI_Comm comm, std::size_t nx, std::size_t ny,
   std::size_t cell = 0;
   std::vector<std::size_t> v(8);
   for (std::size_t iz = 0; iz < nz; iz++)
+  {
     for (std::size_t iy = 0; iy < ny; iy++)
+    {
       for (std::size_t ix = 0; ix < nx; ix++)
       {
         v[0] = (iz*(ny + 1) + iy)*(nx + 1) + ix;
@@ -90,17 +95,17 @@ UnitHexMesh::UnitHexMesh(MPI_Comm comm, std::size_t nx, std::size_t ny,
         editor.add_cell(cell, v);
         ++cell;
       }
+    }
+  }
 
   // Close mesh editor
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(this->mpi_comm()))
+  if (MPI::is_broadcaster(mesh.mpi_comm()))
   {
-    MeshPartitioning::build_distributed_mesh(*this);
+    MeshPartitioning::build_distributed_mesh(mesh);
     return;
   }
-
-
 }
 //-----------------------------------------------------------------------------
