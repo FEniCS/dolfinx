@@ -197,12 +197,12 @@ namespace dolfin
     ///         The cell index.
     ///
     /// @return         ArrayView<const dolfin::la_index>
-    Eigen::Ref<const Eigen::Matrix<dolfin::la_index, Eigen::Dynamic, 1>>
+    Eigen::Map<const Eigen::Array<dolfin::la_index, Eigen::Dynamic, 1>>
       cell_dofs(std::size_t cell_index) const
     {
       const std::size_t index = cell_index*_cell_dimension;
       dolfin_assert(index + _cell_dimension <= _dofmap.size());
-      return Eigen::Map<const Eigen::Matrix<dolfin::la_index, Eigen::Dynamic, 1>>(&_dofmap[index], _cell_dimension);
+      return Eigen::Map<const Eigen::Array<dolfin::la_index, Eigen::Dynamic, 1>>(&_dofmap[index], _cell_dimension);
     }
 
     /// Return the dof indices associated with entities of given dimension and entity indices

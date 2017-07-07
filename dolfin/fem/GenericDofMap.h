@@ -14,10 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Joachim B. Haga, 2012
-// Modified by Jan Blechta, 2013
-// Modified by Martin Alnes, 2015
 
 #ifndef __GENERIC_DOF_MAP_H
 #define __GENERIC_DOF_MAP_H
@@ -107,7 +103,7 @@ namespace dolfin
     virtual const std::vector<int>& off_process_owner() const = 0;
 
     /// Local-to-global mapping of dofs on a cell
-    virtual Eigen::Ref<const Eigen::Matrix<dolfin::la_index, Eigen::Dynamic, 1>>
+    virtual Eigen::Map<const Eigen::Array<dolfin::la_index, Eigen::Dynamic, 1>>
       cell_dofs(std::size_t cell_index) const = 0;
 
     /// Return the dof indices associated with entities of given dimension and entity indices
