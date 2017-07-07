@@ -34,6 +34,10 @@ namespace dolfin
 
     /// NB: this code is experimental, just for testing, and will generally not
     /// work with anything else
+    static Mesh create(std::size_t nx, std::size_t ny, std::size_t nz)
+    { return create(MPI_COMM_WORLD, nx, ny, nz); }
+
+    /// Create mesh
     static Mesh create(MPI_Comm comm, std::size_t nx, std::size_t ny, std::size_t nz)
     {
       Mesh mesh(comm);
