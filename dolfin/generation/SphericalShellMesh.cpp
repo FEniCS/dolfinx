@@ -25,16 +25,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SphericalShellMesh::SphericalShellMesh(MPI_Comm comm, std::size_t degree)
-  : Mesh(comm)
+void SphericalShellMesh::build(Mesh& mesh, std::size_t degree)
 {
-
   MeshEditor editor;
   const std::size_t tdim = 2;
   const std::size_t gdim = 3;
 
   dolfin_assert(degree > 0 and degree < 3);
-  editor.open(*this, tdim, gdim, degree);
+  editor.open(mesh, tdim, gdim, degree);
 
   editor.init_vertices_global(12, 12);
 
@@ -86,9 +84,9 @@ SphericalShellMesh::SphericalShellMesh(MPI_Comm comm, std::size_t degree)
     // and allocate space for the point coordinate data
     editor.init_entities();
 
-    for (EdgeIterator e(*this); !e.end(); ++e)
+    for (EdgeIterator e(mesh); !e.end(); ++e)
     {
-      Point v0 = Vertex(*this, e->entities(0)[0]).point();
+      Point v0 = Vertex(mesh, e->entities(0)[0]).point();
       Point pt = e->midpoint();
       pt *= v0.norm()/pt.norm();
 
