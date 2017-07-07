@@ -16,14 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-03-15
+// Last changed: 2017-07-07
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
 
 #include <vector>
 #include <dolfin/log/log.h>
-#include "CGALExactArithmetic.h"
 #include "Point.h"
 
 namespace dolfin
