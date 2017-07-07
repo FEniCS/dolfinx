@@ -32,11 +32,23 @@
 // modules has been loaded.
 // ===========================================================================
 
-%ignore dolfin::Expression::eval(Eigen::Ref<Eigen::VectorXd>, const Eigen::Ref<Eigen::VectorXd>,
+%ignore dolfin::Expression::eval(Eigen::Ref<Eigen::VectorXd>,
+                                 const Eigen::Ref<Eigen::VectorXd>,
                                  const ufc::cell&) const;
+%ignore dolfin::Expression::eval(Eigen::Ref<Eigen::VectorXd>,
+                                 const Eigen::Ref<Eigen::VectorXd>) const;
 
-%ignore dolfin::Expression::eval(Eigen::Ref<Eigen::VectorXd>, const Eigen::Ref<Eigen::VectorXd>) const;
+%ignore dolfin::Constant::eval(Eigen::Ref<Eigen::VectorXd>,
+                               const Eigen::Ref<Eigen::VectorXd>,
+                               const ufc::cell&) const;
+%ignore dolfin::Constant::eval(Eigen::Ref<Eigen::VectorXd>,
+                                 const Eigen::Ref<Eigen::VectorXd>) const;
 
+%ignore dolfin::GenericFunction::eval(Eigen::Ref<Eigen::VectorXd>,
+                                      const Eigen::Ref<Eigen::VectorXd>,
+                                      const ufc::cell&) const;
+%ignore dolfin::GenericFunction::eval(Eigen::Ref<Eigen::VectorXd>,
+                                      const Eigen::Ref<Eigen::VectorXd>) const;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Function
