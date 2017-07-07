@@ -21,13 +21,15 @@
 #
 # Modified by Anders Logg 2011
 
-from __future__ import print_function
+from __future__ import print_function, division
+
 import pytest
 import numpy
+import six
+from copy import copy
+
 from dolfin import *
-
 from dolfin_utils.test import *
-
 
 # TODO: Use the fixture setup from matrix in a shared conftest.py when
 #       we move tests to one flat folder.
@@ -398,3 +400,73 @@ class TestVectorForAnyBackend:
         v = as_backend_type(v)
         data = v.data()
         assert (data==array).all()
+
+
+    # xfail on TypeError
+    xfail_type = pytest.mark.xfail(strict=True, raises=TypeError)
+    if six.PY2:
+        xfail_type_py3 = lambda case: case  # Not failing with Py2
+    else:
+        xfail_type_py3 = pytest.mark.xfail(strict=True, raises=TypeError)
+
+    @pytest.mark.parametrize("operand",
+        [t(42) for t in six.integer_types] + [
+        42.0,
+        numpy.sin(1.0),
+        numpy.float(42.0),
+        numpy.float64(42.0),
+        numpy.float_(42.0),
+        numpy.int(42.0),
+        numpy.long(42.0),
+
+        # Cases where promotion to double doesn't work
+        xfail_type(numpy.float16(42.0)),
+        xfail_type(numpy.float32(42.0)),
+        xfail_type(numpy.float128(42.0)),
+        xfail_type(numpy.longfloat(42.0)),
+        xfail_type(numpy.int8(42.0)),
+        xfail_type(numpy.int16(42.0)),
+        xfail_type(numpy.int32(42.0)),
+        xfail_type(numpy.intc(42.0)),
+        xfail_type(numpy.longdouble(42.0)),
+
+        # Cases where promotion to double doesn't work on Py3
+        xfail_type_py3(numpy.int0(42.0)),
+        xfail_type_py3(numpy.int64(42.0)),
+        xfail_type_py3(numpy.int_(42.0)),
+        xfail_type_py3(numpy.longlong(42.0)),
+    ])
+
+    def test_vector_type_priority_with_numpy(self, any_backend, operand):
+        """Test that DOLFIN return types are prefered over
+        NumPy types for binary operations on NumPy objects"""
+
+        def _test_binary_ops(v, operand):
+            assert isinstance(v+operand, GenericVector)
+            assert isinstance(v-operand, GenericVector)
+            assert isinstance(v*operand, GenericVector)
+            assert isinstance(v/operand, GenericVector)
+            assert isinstance(operand+v, GenericVector)
+            assert isinstance(operand-v, GenericVector)
+            assert isinstance(operand*v, GenericVector)
+            assert isinstance(v+v, GenericVector)
+            assert isinstance(v-v, GenericVector)
+            assert isinstance(v*v, GenericVector)
+            v += v.copy(); assert isinstance(v, GenericVector)
+            v -= v.copy(); assert isinstance(v, GenericVector)
+            v *= v.copy(); assert isinstance(v, GenericVector)
+            v += operand; assert isinstance(v, GenericVector)
+            v -= operand; assert isinstance(v, GenericVector)
+            v *= operand; assert isinstance(v, GenericVector)
+            v /= operand; assert isinstance(v, GenericVector)
+            op = copy(operand); op += v; assert isinstance(op, GenericVector)
+            op = copy(operand); op -= v; assert isinstance(op, GenericVector)
+            op = copy(operand); op *= v; assert isinstance(op, GenericVector)
+
+        # Test with vector wrapper
+        v = Vector(mpi_comm_world(), 8)
+        _test_binary_ops(v, operand)
+
+        # Test with vector casted to backend type
+        v = as_backend_type(v)
+        _test_binary_ops(v, operand)

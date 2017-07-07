@@ -210,67 +210,63 @@ void DirichletBC::gather(Map& boundary_values) const
   }
 
   // Distribute the lists between neighbours
-  std::vector<std::vector<std::size_t>> received_bvc0;
-  std::vector<std::vector<double>> received_bvc1;
+  std::vector<std::size_t> received_bvc0;
+  std::vector<double> received_bvc1;
   MPI::all_to_all(mpi_comm, proc_map0, received_bvc0);
   MPI::all_to_all(mpi_comm, proc_map1, received_bvc1);
+  dolfin_assert(received_bvc0.size() == received_bvc1.size());
 
   const std::size_t n0 = dofmap.ownership_range().first;
   const std::size_t n1 = dofmap.ownership_range().second;
   const std::size_t owned_size = n1 - n0;
 
   // Reserve space
-  std::size_t num_dofs = boundary_values.size();
-  for (std::size_t p = 0; p < comm_size; ++p)
-    num_dofs += received_bvc0[p].size();
+  const std::size_t num_dofs = boundary_values.size() + received_bvc0.size();
   boundary_values.reserve(num_dofs);
 
   // Add the received boundary values to the local boundary values
-  for (std::size_t p = 0; p < comm_size; ++p)
+  std::vector<std::pair<std::size_t, double>> _vec(received_bvc0.size());
+  for (std::size_t i = 0; i < _vec.size(); ++i)
   {
-    dolfin_assert(received_bvc0[p].size() == received_bvc1[p].size());
-    std::vector<std::pair<std::size_t, double>> _vec(received_bvc0[p].size());
-    for (std::size_t i = 0; i < _vec.size(); ++i)
-    {
-      // Global dof index
-      _vec[i].first = received_bvc0[p][i];
+    // Global dof index
+    _vec[i].first = received_bvc0[i];
 
-      // Convert to local (process) dof index
-      if (_vec[i].first >= n0 && _vec[i].first < n1)
+    // Convert to local (process) dof index
+    if (_vec[i].first >= n0 && _vec[i].first < n1)
+    {
+      // Case 0: dof is owned by this process
+      _vec[i].first  = received_bvc0[i] - n0;
+    }
+    else
+    {
+      const std::imaxdiv_t div = std::imaxdiv(_vec[i].first, bs);
+      const std::size_t node = div.quot;
+      const int component = div.rem;
+      const std::vector<std::size_t>& local_to_global
+        = dofmap.index_map()->local_to_global_unowned();
+
+      // Case 1: dof is not owned by this process
+      auto it = std::find(local_to_global.begin(),
+                          local_to_global.end(),
+                          node);
+      if (it == local_to_global.end())
       {
-        // Case 0: dof is owned by this process
-        _vec[i].first  = received_bvc0[p][i] - n0;
+        // Throw error if dof is not in local map
+        dolfin_error("DirichletBC.cpp",
+                     "gather boundary values",
+                     "Cannot find dof in local_to_global_unowned array");
       }
       else
       {
-        const std::imaxdiv_t div = std::imaxdiv(_vec[i].first, bs);
-        const std::size_t node = div.quot;
-        const int component = div.rem;
-        const std::vector<std::size_t>& local_to_global
-          = dofmap.index_map()->local_to_global_unowned();
-
-        // Case 1: dof is not owned by this process
-        auto it = std::find(local_to_global.begin(),
-                            local_to_global.end(),
-                            node);
-        if (it == local_to_global.end())
-        {
-          // Throw error if dof is not in local map
-          dolfin_error("DirichletBC.cpp",
-                       "gather boundary values",
-                       "Cannot find dof in local_to_global_unowned array");
-        }
-        else
-        {
-          const std::size_t pos
-            = std::distance(local_to_global.begin(), it);
-          _vec[i].first = owned_size + bs*pos + component;
-        }
+        const std::size_t pos
+          = std::distance(local_to_global.begin(), it);
+        _vec[i].first = owned_size + bs*pos + component;
       }
-      _vec[i].second = received_bvc1[p][i];
     }
-    boundary_values.insert(_vec.begin(), _vec.end());
+    _vec[i].second = received_bvc1[i];
   }
+
+  boundary_values.insert(_vec.begin(), _vec.end());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::get_boundary_values(Map& boundary_values) const

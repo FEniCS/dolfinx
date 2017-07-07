@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2011 Anders Logg
+// Copyright (C) 2005-2017 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -14,15 +14,11 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Mikael Mortensen, 2014
-//
-// First added:  2005-12-02
-// Last changed: 2015-06-15
 
 #ifndef __RECTANGLE_MESH_H
 #define __RECTANGLE_MESH_H
 
+#include <array>
 #include <string>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
@@ -38,6 +34,51 @@ namespace dolfin
   class RectangleMesh : public Mesh
   {
   public:
+
+    /// @param    p (std::array<_Point_, 2>)
+    ///         Vertex points.
+    /// @param    n (std::array<std::size_t, 2>)
+    ///         Number of cells in each direction
+    /// @param    diagonal (string)
+    ///         Direction of diagonals: "left", "right", "left/right", "crossed"
+    ///
+    /// @code{.cpp}
+    ///
+    ///         // Mesh with 8 cells in each direction on the
+    ///         // set [-1,2] x [-1,2]
+    ///         Point p0(-1, -1);
+    ///         Point p1(2, 2);
+    ///         auto Mesh = RectangleMesh::create({p0, p1}, {8, 8});
+    /// @endcode
+    static Mesh create(const std::array<Point, 2>& p, std::array<std::size_t, 2> n,
+                       std::string diagonal="right")
+    { return create(MPI_COMM_WORLD, p, n); }
+
+
+    /// @param    comm (MPI_Comm)
+    ///         MPI communicator
+    /// @param    p (std::array<_Point_, 2>)
+    ///         Vertex points.
+    /// @param    n (std::array<std::size_t, 2>)
+    ///         Number of cells in each direction
+    /// @param    diagonal (string)
+    ///         Direction of diagonals: "left", "right", "left/right", "crossed"
+    ///
+    /// @code{.cpp}
+    ///
+    ///         // Mesh with 8 cells in each direction on the
+    ///         // set [-1,2] x [-1,2]
+    ///         Point p0(-1, -1);
+    ///         Point p1(2, 2);
+    ///         auto mesh = RectangleMesh::create(MPI_COMM_WORLD, {p0, p1}, {8, 8});
+    /// @endcode
+    static Mesh create(MPI_Comm comm, const std::array<Point, 2>& p,
+                       std::array<std::size_t, 2> n,
+                       std::string diagonal="right")
+    { Mesh mesh(comm);
+      build(mesh, p, n);
+      return mesh;
+    }
 
     /// @param    p0 (_Point_)
     ///         First point.
@@ -91,9 +132,9 @@ namespace dolfin
   private:
 
     // Build mesh
-    void build(const Point& p0, const Point& p1,
-               std::size_t nx, std::size_t ny,
-               std::string diagonal="right");
+    static void build(Mesh& mesh, const std::array<Point, 2>& p,
+                      std::array<std::size_t, 2> n,
+                      std::string diagonal="right");
 
   };
 

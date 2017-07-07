@@ -333,8 +333,7 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   URL "http://www.boost.org")
 
 # Check for required package Eigen3
-# NOTE: Check issue #468 when changing required Eigen version
-find_package(Eigen3 3.2.0 REQUIRED)
+find_package(Eigen3 3.2.8 REQUIRED)
 set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")

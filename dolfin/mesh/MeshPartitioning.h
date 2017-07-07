@@ -357,24 +357,22 @@ namespace dolfin
     }
 
     // Send/receive data
-    std::vector<std::vector<std::size_t>> received_data0;
-    std::vector<std::vector<T>> received_data1;
+    std::vector<std::size_t> received_data0;
+    std::vector<T> received_data1;
     MPI::all_to_all(mpi_comm, send_data0, received_data0);
     MPI::all_to_all(mpi_comm, send_data1, received_data1);
+    dolfin_assert(2*received_data1.size() == received_data0.size());
 
     // Add received data to mesh domain
-    for (std::size_t p = 0; p < num_processes; ++p)
+    for (std::size_t i = 0; i < received_data1.size(); ++i)
     {
-      dolfin_assert(2*received_data1[p].size() == received_data0[p].size());
-      for (std::size_t i = 0; i < received_data1[p].size(); ++i)
-      {
-        const std::size_t local_cell_entity = received_data0[p][2*i];
-        const std::size_t local_entity_index = received_data0[p][2*i + 1];
-        const T value = received_data1[p][i];
-        dolfin_assert(local_cell_entity < mesh.num_cells());
-        markers.set_value(local_cell_entity, local_entity_index, value);
-      }
+      const std::size_t local_cell_entity = received_data0[2*i];
+      const std::size_t local_entity_index = received_data0[2*i + 1];
+      const T value = received_data1[i];
+      dolfin_assert(local_cell_entity < mesh.num_cells());
+      markers.set_value(local_cell_entity, local_entity_index, value);
     }
+
   }
   //---------------------------------------------------------------------------
 

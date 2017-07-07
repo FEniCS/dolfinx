@@ -32,7 +32,7 @@ from dolfin_utils.test import skip_in_parallel, skip_in_release
 @skip_in_parallel
 def test_distance_interval():
 
-    mesh = UnitIntervalMesh(1)
+    mesh = UnitIntervalMesh.create(1)
     cell = Cell(mesh, 0)
 
     assert round(cell.distance(Point(-1.0)) - 1.0, 7) == 0
@@ -66,11 +66,59 @@ def test_distance_tetrahedron():
 def test_issue_568():
     mesh = UnitSquareMesh(4, 4)
     cell = Cell(mesh, 0)
-    
+
     # Should throw an error, not just segfault (only works in DEBUG mode!)
     with pytest.raises(RuntimeError):
         cell.facet_area(0)
-    
+
     # Should work after initializing the connectivity
     mesh.init(2, 1)
     cell.facet_area(0)
+
+
+def test_volume_quadrilateralR2():
+
+    mesh = UnitQuadMesh.create(mpi_comm_self(), 1, 1)
+    cell = Cell(mesh, 0)
+
+    assert cell.volume() == 1.0
+
+
+
+def test_volume_quadrilateralR3_1():
+
+    mesh = Mesh()
+    editor = MeshEditor()
+    editor.open(mesh, "quadrilateral", 2, 3)
+    editor.init_vertices(4)
+    editor.init_cells(1)
+    editor.add_vertex(0, Point(0.0, 0.0, 0.0))
+    editor.add_vertex(1, Point(1.0, 0.0, 0.0))
+    editor.add_vertex(2, Point(0.0, 1.0, 0.0))
+    editor.add_vertex(3, Point(1.0, 1.0, 0.0))
+    editor.add_cell(0,numpy.array([0, 1, 2, 3],dtype=numpy.uintp))
+    editor.close()
+    mesh.init()
+    cell = Cell(mesh, 0)
+
+    assert cell.volume() == 1.0
+
+
+
+def test_volume_quadrilateralR3_2():
+
+    mesh = Mesh()
+    editor = MeshEditor()
+    editor.open(mesh, "quadrilateral", 2, 3)
+    editor.init_vertices(4)
+    editor.init_cells(1)
+    editor.add_vertex(0, Point(0.0, 0.0, 0.0))
+    editor.add_vertex(1, Point(0.0, 1.0, 0.0))
+    editor.add_vertex(2, Point(0.0, 0.0, 1.0))
+    editor.add_vertex(3, Point(0.0, 1.0, 1.0))
+    editor.add_cell(0,numpy.array([0, 1, 2, 3],dtype=numpy.uintp))
+    editor.close()
+    mesh.init()
+    cell = Cell(mesh, 0)
+
+    assert cell.volume() == 1.0

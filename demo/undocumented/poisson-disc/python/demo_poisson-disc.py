@@ -43,7 +43,7 @@ def compute(nsteps, coordinate_degree, element_degree, gdim):
     print(nsteps)
     print(coordinate_degree)
     print(gdim)
-    mesh = UnitDiscMesh(mpi_comm_world(), nsteps, coordinate_degree, gdim)
+    mesh = UnitDiscMesh.create(mpi_comm_world(), nsteps, coordinate_degree, gdim)
     V = FunctionSpace(mesh, "Lagrange", element_degree)
 
     # Compute domain area and average h

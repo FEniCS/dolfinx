@@ -81,6 +81,13 @@ namespace dolfin
     /// File encoding type
     enum class Encoding {HDF5, ASCII};
 
+    /// Default encoding type
+#ifdef HAS_HDF5
+    static const Encoding default_encoding = Encoding::HDF5;
+#else
+    static const Encoding default_encoding = Encoding::ASCII;
+#endif
+
     /// Constructor
     XDMFFile(const std::string filename)
       : XDMFFile(MPI_COMM_WORLD, filename) {}
@@ -114,7 +121,33 @@ namespace dolfin
     /// @param    encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
-    void write(const Mesh& mesh, Encoding encoding=Encoding::HDF5);
+    void write(const Mesh& mesh, Encoding encoding=default_encoding);
+
+    /// Save a Function to XDMF file for checkpointing, using an
+    /// associated HDF5 file, or storing the data inline as XML.
+    ///
+    /// If the file where we would like to write exists, then
+    /// the function is appended to the file.
+    ///
+    /// @param    u (_Function_)
+    ///         A function to save.
+    /// @param    function_name (string)
+    ///         Name of the function used in XDMF XML and HDF file
+    ///         (if encoding = HDF). The string is used to fill value for XML
+    ///         attribute Name of Grid node. It is also used in HDF file in
+    ///         path to datasets. Must be the same on all processes in parallel.
+    /// @param    time_step (_double_)
+    ///         Time step. It is saved only in XDMF file. The function could
+    ///         be saved with the same time step several times. There is an
+    ///         internal "counter" value stored in XDMF which differentiates
+    ///         the same time steps.
+    /// @param    encoding (_Encoding_)
+    ///         Encoding to use: HDF5 or ASCII
+    ///
+    void write_checkpoint(const Function& u,
+                          std::string function_name,
+                          double time_step = 0.0,
+                          Encoding encoding=default_encoding);
 
     /// Save a Function to XDMF file for visualisation, using an
     /// associated HDF5 file, or storing the data inline as XML.
@@ -124,7 +157,7 @@ namespace dolfin
     /// @param    encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
-    void write(const Function& u, Encoding encoding=Encoding::HDF5);
+    void write(const Function& u, Encoding encoding=default_encoding);
 
     /// Save a Function with timestamp to XDMF file for visualisation,
     /// using an associated HDF5 file, or storing the data inline as
@@ -150,7 +183,8 @@ namespace dolfin
     /// @param   encoding (_Encoding_)
     ///         Encoding to use: HDF5 or ASCII
     ///
-    void write(const Function& u, double t, Encoding encoding=Encoding::HDF5);
+    void write(const Function& u, double t,
+               Encoding encoding=default_encoding);
 
     /// Save MeshFunction to file using an associated HDF5 file, or
     /// storing the data inline as XML.
@@ -161,7 +195,7 @@ namespace dolfin
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write(const MeshFunction<bool>& meshfunction,
-               Encoding encoding=Encoding::HDF5);
+               Encoding encoding=default_encoding);
 
     /// Save MeshFunction to file using an associated HDF5 file, or
     /// storing the data inline as XML.
@@ -172,7 +206,7 @@ namespace dolfin
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write(const MeshFunction<int>& meshfunction,
-               Encoding encoding=Encoding::HDF5);
+               Encoding encoding=default_encoding);
 
     /// Save MeshFunction to file using an associated HDF5 file, or
     /// storing the data inline as XML.
@@ -183,7 +217,7 @@ namespace dolfin
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write(const MeshFunction<std::size_t>& meshfunction,
-               Encoding encoding=Encoding::HDF5);
+               Encoding encoding=default_encoding);
 
     /// Save MeshFunction to file using an associated HDF5 file, or
     /// storing the data inline as XML.
@@ -194,7 +228,7 @@ namespace dolfin
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write(const MeshFunction<double>& meshfunction,
-               Encoding encoding=Encoding::HDF5);
+               Encoding encoding=default_encoding);
 
     /// Write out mesh value collection (subset) using an associated
     /// HDF5 file, or storing the data inline as XML.
@@ -205,7 +239,7 @@ namespace dolfin
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write(const MeshValueCollection<bool>& mvc,
-               Encoding encoding=Encoding::HDF5);
+               Encoding encoding=default_encoding);
 
     /// Write out mesh value collection (subset) using an associated
     /// HDF5 file, or storing the data inline as XML.
@@ -216,7 +250,7 @@ namespace dolfin
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write(const MeshValueCollection<int>& mvc,
-               Encoding encoding=Encoding::HDF5);
+               Encoding encoding=default_encoding);
 
     /// Write out mesh value collection (subset) using an associated
     /// HDF5 file, or storing the data inline as XML.
@@ -227,7 +261,7 @@ namespace dolfin
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write(const MeshValueCollection<std::size_t>& mvc,
-               Encoding encoding=Encoding::HDF5);
+               Encoding encoding=default_encoding);
 
     /// Write out mesh value collection (subset) using an associated
     /// HDF5 file, or storing the data inline as XML.
@@ -238,7 +272,7 @@ namespace dolfin
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write(const MeshValueCollection<double>& mvc,
-               Encoding encoding=Encoding::HDF5);
+               Encoding encoding=default_encoding);
 
     /// Save a cloud of points to file using an associated HDF5 file,
     /// or storing the data inline as XML.
@@ -249,7 +283,7 @@ namespace dolfin
     ///         Encoding to use: HDF5 or ASCII
     ///
     void write(const std::vector<Point>& points,
-               Encoding encoding=Encoding::HDF5);
+               Encoding encoding=default_encoding);
 
     /// Save a cloud of points, with scalar values using an associated
     /// HDF5 file, or storing the data inline as XML.
@@ -263,13 +297,36 @@ namespace dolfin
     ///
     void write(const std::vector<Point>& points,
                const std::vector<double>& values,
-               Encoding encoding=Encoding::HDF5);
+               Encoding encoding=default_encoding);
 
     /// Read in the first Mesh in XDMF file
     ///
     /// @param mesh (_Mesh_)
     ///        Mesh to fill from XDMF file
     void read(Mesh& mesh) const;
+
+    /// Read a function from the XDMF file. Supplied function must
+    /// come with already initialized and compatible function space.
+    ///
+    /// Functions saved as time-series must be addressed through
+    /// (integer) internal counter and function name. Function name
+    /// is a name of function that was saved. Counter stands for
+    /// the number of function from time-series, e.g. counter=0
+    /// refers to first saved function regardless of its time-step value.
+    ///
+    /// @param    u (_Function_)
+    ///         A function to read.
+    /// @param    func_name (_string_)
+    ///         A name of a function to read. Must be the same on all processes
+    ///         in parallel.
+    /// @param    counter (_int64_t_)
+    ///         Internal integer counter - used in time-series. Default value
+    ///         is -1 which points to last saved function. Counter works same as
+    ///         python array position key, i.e. counter = -2 points to the
+    ///         function before the last one.
+    ///
+    void read_checkpoint(Function& u, std::string func_name,
+                         std::int64_t counter=-1);
 
     /// Read first MeshFunction from file
     /// @param meshfunction (_MeshFunction<bool>_)
@@ -377,6 +434,12 @@ namespace dolfin
                          hid_t h5_id, const Mesh& mesh,
                          const std::string path_prefix);
 
+    // Add function to a XML node
+    static void add_function(MPI_Comm comm, pugi::xml_node& xml_node,
+                             hid_t h5_id, std::string h5_path,
+                             const Function& u, std::string function_name,
+                             const Mesh& mesh);
+
     // Add set of points to XDMF xml_node and write data
     static void add_points(MPI_Comm comm, pugi::xml_node& xml_node,
                            hid_t h5_id, const std::vector<Point>& points);
@@ -434,7 +497,8 @@ namespace dolfin
     template <typename T>
     static std::vector<T> get_dataset(MPI_Comm comm,
                                       const pugi::xml_node& dataset_node,
-                                      const boost::filesystem::path& parent_path);
+                                      const boost::filesystem::path& parent_path,
+                                      std::pair<std::int64_t, std::int64_t> range={0, 0});
 
     // Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem node
     static std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& dataitem_node);
@@ -471,6 +535,9 @@ namespace dolfin
     // Check whether the requested encoding is supported
     void check_encoding(Encoding encoding) const;
 
+    // Check function names equality across processes
+    void check_function_name(std::string function_name);
+
     // Generate the XDMF format string based on the Encoding
     // enumeration
     static std::string xdmf_format_str(Encoding encoding)
@@ -492,8 +559,8 @@ namespace dolfin
     // MPI communicator
     MPI_Comm _mpi_comm;
 
-    // HDF5 data file
 #ifdef HAS_HDF5
+    // HDF5 data file
     std::unique_ptr<HDF5File> _hdf5_file;
 #endif
 
