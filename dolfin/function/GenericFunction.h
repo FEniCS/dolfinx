@@ -67,11 +67,11 @@ namespace dolfin
     /// Return value dimension for given axis
     virtual std::size_t value_dimension(std::size_t i) const = 0;
 
-    /// Evaluate at given point in given cell
+    /// Evaluate at given point in given cell (deprecated)
     virtual void eval(Array<double>& values, const Array<double>& x,
                       const ufc::cell& cell) const;
 
-    /// Evaluate at given point in given cell
+    /// Evaluate at given point (deprecated)
     virtual void eval(Array<double>& values, const Array<double>& x) const;
 
     /// Evaluate at given point in given cell
@@ -138,7 +138,7 @@ namespace dolfin
     /// @param cell (ufc::cell&)
     virtual void evaluate(double* values,
                           const double* coordinates,
-                          const ufc::cell& cell) const;
+                          const ufc::cell& cell) const override;
 
     /// Pointer to FunctionSpace, if appropriate, otherwise NULL
     virtual std::shared_ptr<const FunctionSpace> function_space() const = 0;

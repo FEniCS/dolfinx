@@ -257,7 +257,7 @@ namespace dolfin
     /// *Returns*
     ///     std::size_t
     ///         The value rank.
-    virtual std::size_t value_rank() const;
+    virtual std::size_t value_rank() const override;
 
     /// Return value dimension for given axis
     ///
@@ -268,7 +268,7 @@ namespace dolfin
     /// *Returns*
     ///     std::size_t
     ///         The value dimension.
-    virtual std::size_t value_dimension(std::size_t i) const;
+    virtual std::size_t value_dimension(std::size_t i) const override;
 
     /// Evaluate at given point in given cell
     ///
@@ -279,7 +279,7 @@ namespace dolfin
     /// @param    cell (ufc::cell)
     ///         The cell which contains the given point.
     virtual void eval(Array<double>& values, const Array<double>& x,
-                      const ufc::cell& cell) const;
+                      const ufc::cell& cell) const override;
 
     /// Evaluate at given point in given cell
     ///
@@ -291,7 +291,7 @@ namespace dolfin
     ///         The cell which contains the given point.
     virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
                       const Eigen::Ref<Eigen::VectorXd> x,
-                      const ufc::cell& cell) const;
+                      const ufc::cell& cell) const override;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     ///
@@ -309,7 +309,7 @@ namespace dolfin
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
                           const double* coordinate_dofs,
-                          const ufc::cell& ufc_cell) const;
+                          const ufc::cell& ufc_cell) const override;
 
     /// Compute values at all mesh vertices
     ///
@@ -318,7 +318,7 @@ namespace dolfin
     /// @param    mesh (_Mesh_)
     ///         The mesh.
     virtual void compute_vertex_values(std::vector<double>& vertex_values,
-                                       const Mesh& mesh) const;
+                                       const Mesh& mesh) const override;
 
     /// Compute values at all mesh vertices
     ///
