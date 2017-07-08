@@ -130,8 +130,7 @@ std::vector<double> Constant::values() const
 void Constant::eval(Array<double>& values, const Array<double>& x) const
 {
   // Copy values
-  for (std::size_t j = 0; j < _values.size(); j++)
-    values[j] = _values[j];
+  std::copy(_values.begin(), _values.end(), values.data());
 }
 //-----------------------------------------------------------------------------
 void Constant::eval(Eigen::Ref<Eigen::VectorXd> values,
