@@ -222,9 +222,6 @@ namespace dolfin
     void eval(Eigen::Ref<Eigen::VectorXd> values,
               const Eigen::Ref<Eigen::VectorXd> x) const;
 
-    // Uncomment when switching SWIG -> pybind11. Cannot get SWIG to
-    // ignore this interface.
-    /*
     /// Evaluate function at given coordinates in given cell
     ///
     /// *Arguments*
@@ -238,8 +235,7 @@ namespace dolfin
     ///         The ufc::cell.
     void eval(Eigen::Ref<Eigen::VectorXd> values,
               const Eigen::Ref<Eigen::VectorXd> x,
-              const Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
-    */
+              const dolfin::Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
 
     /// Interpolate function (on possibly non-matching meshes)
     ///
