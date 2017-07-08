@@ -74,7 +74,6 @@ namespace dolfin
     /// Evaluate at given point in given cell
     virtual void eval(Array<double>& values, const Array<double>& x) const;
 
-    /*
     /// Evaluate at given point in given cell
     virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
                       const Eigen::Ref<Eigen::VectorXd> x,
@@ -83,7 +82,6 @@ namespace dolfin
     /// Evaluate at given point
     virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
                       const Eigen::Ref<Eigen::VectorXd> x) const;
-    */
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,

@@ -358,6 +358,25 @@ void Function::eval(Array<double>& values, const Array<double>& x,
   }
 }
 //-----------------------------------------------------------------------------
+void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
+                    const Eigen::Ref<Eigen::VectorXd> x) const
+{
+  Array<double> _values(values.size(), values.data());
+  const Array<double> _x(x.size(), const_cast<double*>(values.data()));
+  eval(_values, _x);
+}
+//-----------------------------------------------------------------------------
+/*
+void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
+                    const Eigen::Ref<Eigen::VectorXd> x,
+                    const Cell& dolfin_cell, const ufc::cell& ufc_cell) const
+{
+  Array<double> _values(values.size(), values.data());
+  const Array<double> _x(x.size(), const_cast<double*>(values.data()));
+  eval(_values, _x, dolfin_cell, ufc_cell);
+}
+*/
+//-----------------------------------------------------------------------------
 void Function::interpolate(const GenericFunction& v)
 {
   dolfin_assert(_vector);
@@ -386,8 +405,7 @@ std::size_t Function::value_dimension(std::size_t i) const
   return _function_space->element()->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Array<double>& values,
-                    const Array<double>& x,
+void Function::eval(Array<double>& values, const Array<double>& x,
                     const ufc::cell& ufc_cell) const
 {
   dolfin_assert(_function_space);
@@ -404,6 +422,15 @@ void Function::eval(Array<double>& values,
   }
   else
     eval(values, x);
+}
+//-----------------------------------------------------------------------------
+void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
+                    const Eigen::Ref<Eigen::VectorXd> x,
+                    const ufc::cell& ufc_cell) const
+{
+  Array<double> _values(values.size(), values.data());
+  Array<double> _x(x.size(), const_cast<double*>(values.data()));
+  eval(_values, _x, ufc_cell);
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(double* w, const FiniteElement& element,

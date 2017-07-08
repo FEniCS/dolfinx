@@ -32,22 +32,36 @@
 // modules has been loaded.
 // ===========================================================================
 
+
+%ignore dolfin::Function::eval(Eigen::Ref<Eigen::VectorXd>, const Eigen::Ref<Eigen::VectorXd>, const dolfin::Cell&, const ufc::cell&) const;
+%ignore dolfin::Function::eval(Eigen::Ref<Eigen::Matrix<double, Eigen::Dynamic, 1>>,
+                               const Eigen::Ref<Eigen::Matrix<double, Eigen::Dynamic, 1>>,
+                               const dolfin::Cell&, const ufc::cell&) const;
+
 %ignore dolfin::GenericFunction::eval(Eigen::Ref<Eigen::VectorXd>,
                                       const Eigen::Ref<Eigen::VectorXd>,
                                       const ufc::cell&) const;
 %ignore dolfin::GenericFunction::eval(Eigen::Ref<Eigen::VectorXd>,
                                       const Eigen::Ref<Eigen::VectorXd>) const;
+
+%ignore dolfin::Constant::eval(Eigen::Ref<Eigen::VectorXd>,
+                               const Eigen::Ref<Eigen::VectorXd>,
+                               const ufc::cell&) const;
+%ignore dolfin::Constant::eval(Eigen::Ref<Eigen::VectorXd>,
+                               const Eigen::Ref<Eigen::VectorXd>) const;
+
 %ignore dolfin::Expression::eval(Eigen::Ref<Eigen::VectorXd>,
                                  const Eigen::Ref<Eigen::VectorXd>,
                                  const ufc::cell&) const;
 %ignore dolfin::Expression::eval(Eigen::Ref<Eigen::VectorXd>,
                                  const Eigen::Ref<Eigen::VectorXd>) const;
 
-%ignore dolfin::Constant::eval(Eigen::Ref<Eigen::VectorXd>,
+
+%ignore dolfin::Function::eval(Eigen::Ref<Eigen::VectorXd>,
                                const Eigen::Ref<Eigen::VectorXd>,
                                const ufc::cell&) const;
-%ignore dolfin::Constant::eval(Eigen::Ref<Eigen::VectorXd>,
-                                 const Eigen::Ref<Eigen::VectorXd>) const;
+%ignore dolfin::Function::eval(Eigen::Ref<Eigen::VectorXd>,
+                               const Eigen::Ref<Eigen::VectorXd>) const;
 
 
 //-----------------------------------------------------------------------------

@@ -24,9 +24,11 @@
 #define __FUNCTION_H
 
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 #include <boost/ptr_container/ptr_map.hpp>
+#include <Eigen/Dense>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
@@ -43,7 +45,7 @@ namespace dolfin
 {
 
   // Forward declarations
-  class DirichletBC;
+  class Cell;
   class Expression;
   class FunctionSpace;
   class GenericVector;
@@ -211,6 +213,34 @@ namespace dolfin
     void eval(Array<double>& values, const Array<double>& x,
               const Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
 
+    /// Evaluate function at given coordinates
+    ///
+    /// @param    values (Eigen::Ref<Eigen::VectorXd> values)
+    ///         The values.
+    /// @param    x (Eigen::Ref<Eigen::VectorXd> x)
+    ///         The coordinates.
+    void eval(Eigen::Ref<Eigen::VectorXd> values,
+              const Eigen::Ref<Eigen::VectorXd> x) const;
+
+    // Uncomment when switching SWIG -> pybind11. Cannot get SWIG to
+    // ignore this interface.
+    /*
+    /// Evaluate function at given coordinates in given cell
+    ///
+    /// *Arguments*
+    /// @param    values (Eigen::Ref<Eigen::VectorXd>)
+    ///         The values.
+    /// @param    x (Eigen::Ref<Eigen::VectorXd>)
+    ///         The coordinates.
+    /// @param    dolfin_cell (_Cell_)
+    ///         The cell.
+    /// @param    ufc_cell (ufc::cell)
+    ///         The ufc::cell.
+    void eval(Eigen::Ref<Eigen::VectorXd> values,
+              const Eigen::Ref<Eigen::VectorXd> x,
+              const Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
+    */
+
     /// Interpolate function (on possibly non-matching meshes)
     ///
     /// @param    v (GenericFunction)
@@ -253,6 +283,18 @@ namespace dolfin
     /// @param    cell (ufc::cell)
     ///         The cell which contains the given point.
     virtual void eval(Array<double>& values, const Array<double>& x,
+                      const ufc::cell& cell) const;
+
+    /// Evaluate at given point in given cell
+    ///
+    /// @param    values (Eigen::Ref<Eigen::VectorXd>)
+    ///         The values at the point.
+    /// @param   x (Eigen::Ref<Eigen::VectorXd>
+    ///         The coordinates of the point.
+    /// @param    cell (ufc::cell)
+    ///         The cell which contains the given point.
+    virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
+                      const Eigen::Ref<Eigen::VectorXd> x,
                       const ufc::cell& cell) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)

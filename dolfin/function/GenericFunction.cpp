@@ -52,7 +52,6 @@ void GenericFunction::eval(Array<double>& values, const Array<double>& x) const
                "Missing eval() function (must be overloaded)");
 }
 //-----------------------------------------------------------------------------
-/*
 void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
                            const Eigen::Ref<Eigen::VectorXd> x,
                            const ufc::cell& cell) const
@@ -70,7 +69,6 @@ void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
                "evaluate function (Eigen version)",
                "Missing eval() function (must be overloaded)");
 }
-*/
 //-----------------------------------------------------------------------------
 double GenericFunction::operator() (double x) const
 {
