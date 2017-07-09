@@ -122,12 +122,12 @@ namespace dolfin
 
     //--- Implementation of Expression interface ---
 
-    void eval(Array<double>& values, const Array<double>& x) const;
+    void eval(Array<double>& values, const Array<double>& x) const override;
 
     void eval(Eigen::Ref<Eigen::VectorXd> values,
-              const Eigen::Ref<Eigen::VectorXd> x) const;
+              const Eigen::Ref<Eigen::VectorXd> x) const override;
 
-    virtual std::string str(bool verbose) const;
+    virtual std::string str(bool verbose) const override;
 
   private:
 

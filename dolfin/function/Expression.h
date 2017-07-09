@@ -85,7 +85,7 @@ namespace dolfin
 
     //--- Implementation of GenericFunction interface ---
 
-    /// Evaluate at given point in given cell.
+    /// Evaluate at given point in given cell (deprecated)
     ///
     /// @param    values (Array<double>)
     ///         The values at the point.
@@ -95,9 +95,9 @@ namespace dolfin
     ///         The cell which contains the given point.
     virtual void eval(Array<double>& values,
                       const Array<double>& x,
-                      const ufc::cell& cell) const;
+                      const ufc::cell& cell) const override;
 
-    /// Evaluate at given point in given cell.
+    /// Evaluate at given point in given cell
     ///
     /// @param    values (Eigen::Ref<Eigen::VectorXd>)
     ///         The values at the point.
@@ -107,15 +107,15 @@ namespace dolfin
     ///         The cell which contains the given point.
     virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
                       const Eigen::Ref<Eigen::VectorXd> x,
-                      const ufc::cell& cell) const;
+                      const ufc::cell& cell) const override;
 
-    /// Evaluate at given point.
+    /// Evaluate at given point (deprecated)
     ///
     /// @param values (Array<double>)
     ///         The values at the point.
     /// @param x (Array<double>)
     ///         The coordinates of the point.
-    virtual void eval(Array<double>& values, const Array<double>& x) const;
+    virtual void eval(Array<double>& values, const Array<double>& x) const override;
 
     /// Evaluate at given point.
     ///
@@ -124,13 +124,13 @@ namespace dolfin
     /// @param x (Eigen::Ref<Eigen::VectorXd>)
     ///         The coordinates of the point.
     virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
-                      const Eigen::Ref<Eigen::VectorXd> x) const;
+                      const Eigen::Ref<Eigen::VectorXd> x) const override;
 
     /// Return value rank.
     ///
     /// @return std::size_t
     ///         The value rank.
-    virtual std::size_t value_rank() const;
+    virtual std::size_t value_rank() const override;
 
     /// Return value dimension for given axis.
     ///
@@ -139,7 +139,7 @@ namespace dolfin
     ///
     /// @return std::size_t
     ///         The value dimension (for the given axis).
-    virtual std::size_t value_dimension(std::size_t i) const;
+    virtual std::size_t value_dimension(std::size_t i) const override;
 
     /// Restrict function to local cell (compute expansion coefficients w).
     ///
@@ -157,7 +157,7 @@ namespace dolfin
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
                           const double* coordinate_dofs,
-                          const ufc::cell& ufc_cell) const;
+                          const ufc::cell& ufc_cell) const override;
 
     /// Compute values at all mesh vertices.
     ///
@@ -166,14 +166,14 @@ namespace dolfin
     /// @param    mesh (Mesh)
     ///         The mesh.
     virtual void compute_vertex_values(std::vector<double>& vertex_values,
-                                       const Mesh& mesh) const;
+                                       const Mesh& mesh) const override;
 
     /// Return shared pointer to function space (NULL)
     /// Expression does not have a FunctionSpace
     ///
     /// @return FunctionSpace
     ///         Return the shared pointer.
-    virtual std::shared_ptr<const FunctionSpace> function_space() const;
+    virtual std::shared_ptr<const FunctionSpace> function_space() const override;
 
   protected:
 

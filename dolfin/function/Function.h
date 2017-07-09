@@ -153,7 +153,7 @@ namespace dolfin
     /// *Returns*
     ///     _FunctionSpace_
     ///         Return the shared pointer.
-    virtual std::shared_ptr<const FunctionSpace> function_space() const
+    virtual std::shared_ptr<const FunctionSpace> function_space() const override
     {
       dolfin_assert(_function_space);
       return _function_space;
@@ -197,7 +197,7 @@ namespace dolfin
     ///         The values.
     /// @param    x (Array<double>)
     ///         The coordinates.
-    void eval(Array<double>& values, const Array<double>& x) const;
+    void eval(Array<double>& values, const Array<double>& x) const override;
 
     /// Evaluate function at given coordinates in given cell
     ///
@@ -220,7 +220,7 @@ namespace dolfin
     /// @param    x (Eigen::Ref<Eigen::VectorXd> x)
     ///         The coordinates.
     void eval(Eigen::Ref<Eigen::VectorXd> values,
-              const Eigen::Ref<Eigen::VectorXd> x) const;
+              const Eigen::Ref<Eigen::VectorXd> x) const override;
 
     /// Evaluate function at given coordinates in given cell
     ///
