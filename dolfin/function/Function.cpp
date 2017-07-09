@@ -366,7 +366,6 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
   eval(_values, _x);
 }
 //-----------------------------------------------------------------------------
-/*
 void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
                     const Eigen::Ref<Eigen::VectorXd> x,
                     const Cell& dolfin_cell, const ufc::cell& ufc_cell) const
@@ -375,7 +374,6 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
   const Array<double> _x(x.size(), const_cast<double*>(values.data()));
   eval(_values, _x, dolfin_cell, ufc_cell);
 }
-*/
 //-----------------------------------------------------------------------------
 void Function::interpolate(const GenericFunction& v)
 {
