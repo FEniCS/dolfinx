@@ -77,12 +77,20 @@ namespace dolfin
     {
     public:
 
-      // Create a wrapper around a duplicate of comm
+      /// Duplicate communicator and warp duplicate
       Comm(MPI_Comm comm);
 
-      // Disable copy and assignment
-      Comm() = default;
-      void operator=(Comm const &comm) = delete;
+      // The disabling of the below is turned off because the SWIG
+      // docstring generator fails on it.
+
+      // Disable default constructor
+      //Comm() = default;
+
+      // Disable copy constructor
+      //Comm(const Comm& comm) = delete;
+
+      // Disable assignment operator
+      //void operator=(Comm const &comm) = delete;
 
       /// Destructor (frees wrapped communicator)
       ~Comm();
@@ -106,8 +114,6 @@ namespace dolfin
       // MPI communicator
       MPI_Comm _comm;
     };
-
-
 
     /// Return process rank for the communicator
     static unsigned int rank(MPI_Comm comm);
