@@ -146,7 +146,7 @@ void Logger::dolfin_error(std::string location,
 {
 
   if (mpi_rank < 0)
-    mpi_rank = MPI::rank(_mpi_comm);
+    mpi_rank = _mpi_comm.rank();
   std::string _mpi_rank = std::to_string(mpi_rank);
 
   std::stringstream s;
@@ -293,11 +293,11 @@ void Logger::list_timings(TimingClear clear, std::set<TimingType> type)
 {
   // Format and reduce to rank 0
   Table timings = this->timings(clear, type);
-  timings = MPI::avg(_mpi_comm, timings);
+  timings = MPI::avg(_mpi_comm.comm(), timings);
   const std::string str = timings.str(true);
 
   // Print just on rank 0
-  if (MPI::rank(_mpi_comm) == 0)
+  if (_mpi_comm.rank() == 0)
     log(str);
 
   // Print maximum memory usage if available
@@ -314,11 +314,11 @@ void Logger::dump_timings_to_xml(std::string filename, TimingClear clear)
   Table t = timings(clear,
     { TimingType::wall, TimingType::user, TimingType::system });
 
-  Table t_max = MPI::max(_mpi_comm, t);
-  Table t_min = MPI::min(_mpi_comm, t);
-  Table t_avg = MPI::avg(_mpi_comm, t);
+  Table t_max = MPI::max(_mpi_comm.comm(), t);
+  Table t_min = MPI::min(_mpi_comm.comm(), t);
+  Table t_avg = MPI::avg(_mpi_comm.comm(), t);
 
-  if (MPI::rank(_mpi_comm) == 0)
+  if (_mpi_comm.rank() == 0)
   {
     File f(MPI_COMM_SELF, filename);
     f << t_max;
@@ -439,7 +439,7 @@ void Logger::write(int log_level, std::string msg) const
   if (!_active || log_level < _log_level)
     return;
 
-  const std::size_t rank = MPI::rank(_mpi_comm);
+  const std::size_t rank = _mpi_comm.rank();
 
   // Check if we want output on root process only
   const bool std_out_all_processes = parameters["std_out_all_processes"];
@@ -447,7 +447,7 @@ void Logger::write(int log_level, std::string msg) const
     return;
 
   // Prefix with process number if running in parallel
-  if (MPI::size(_mpi_comm) > 1)
+  if (_mpi_comm.size() > 1)
   {
     std::stringstream prefix;
     prefix << "Process " << rank << ": ";

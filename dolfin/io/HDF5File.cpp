@@ -66,7 +66,7 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
   parameters.add("chunking", false);
 
   // Create directory, if required (create on rank 0)
-  if (MPI::rank(_mpi_comm) == 0)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
   {
     const boost::filesystem::path path(filename);
     if (path.has_parent_path()
@@ -84,10 +84,10 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
   }
 
   // Wait until directory has been created
-  MPI::barrier(_mpi_comm);
+  MPI::barrier(_mpi_comm.comm());
 
   // Open HDF5 file
-  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
 #ifndef H5_HAVE_PARALLEL
   if (mpi_io)
   {
@@ -96,8 +96,8 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
                  "HDF5 has not been compiled with support for MPI");
   }
 #endif
-  _hdf5_file_id = HDF5Interface::open_file(_mpi_comm, filename, file_mode,
-                                          mpi_io);
+  _hdf5_file_id = HDF5Interface::open_file(_mpi_comm.comm(), filename,
+                                           file_mode, mpi_io);
   dolfin_assert(_hdf5_file_id > 0);
 }
 //-----------------------------------------------------------------------------
@@ -127,7 +127,8 @@ void HDF5File::write(const std::vector<Point>& points,
   dolfin_assert(_hdf5_file_id > 0);
 
   // Get number of points (global)
-  std::size_t num_points_global = MPI::sum(_mpi_comm, points.size());
+  std::size_t num_points_global = MPI::sum(_mpi_comm.comm(),
+                                           points.size());
 
   // Pack data
   const std::size_t n = points.size();
@@ -141,15 +142,16 @@ void HDF5File::write(const std::vector<Point>& points,
   global_size[0] = num_points_global;
   global_size[1] = 3;
 
-  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   write_data(dataset_name, x, global_size, mpi_io);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const std::vector<double>& values,
                      const std::string dataset_name)
 {
-  std::vector<std::int64_t> global_size(1, MPI::sum(_mpi_comm, values.size()));
-  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+  std::vector<std::int64_t> global_size(1, MPI::sum(_mpi_comm.comm(),
+                                                    values.size()));
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   write_data(dataset_name, values, global_size, mpi_io);
 }
 //-----------------------------------------------------------------------------
@@ -166,15 +168,15 @@ void HDF5File::write(const GenericVector& x, const std::string dataset_name)
   std::pair<std::size_t, std::size_t> local_range = x.local_range();
   const bool chunking = parameters["chunking"];
   const std::vector<std::int64_t> global_size(1, x.size());
-  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   HDF5Interface::write_dataset(_hdf5_file_id, dataset_name, local_data,
                                local_range, global_size, mpi_io, chunking);
 
   // Add partitioning attribute to dataset
   std::vector<std::size_t> partitions;
   std::vector<std::size_t> local_range_first(1, local_range.first);
-  MPI::gather(_mpi_comm, local_range_first, partitions);
-  MPI::broadcast(_mpi_comm, partitions);
+  MPI::gather(_mpi_comm.comm(), local_range_first, partitions);
+  MPI::broadcast(_mpi_comm.comm(), partitions);
 
   HDF5Interface::add_attribute(_hdf5_file_id, dataset_name, "partition",
                                partitions);
@@ -221,7 +223,7 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
                                    partitions);
 
       // Check that number of MPI processes matches partitioning
-      if (MPI::size(_mpi_comm) != partitions.size())
+      if (MPI::size(_mpi_comm.comm()) != partitions.size())
       {
         dolfin_error("HDF5File.cpp",
                      "read vector from file",
@@ -232,7 +234,7 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
       partitions.push_back(data_shape[0]);
 
       // Initialise vector
-      const std::size_t process_num = MPI::rank(_mpi_comm);
+      const std::size_t process_num = MPI::rank(_mpi_comm.comm());
       const std::pair<std::size_t, std::size_t>
         local_range(partitions[process_num], partitions[process_num + 1]);
       x.init(local_range);
@@ -274,7 +276,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
 
-  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   dolfin_assert(_hdf5_file_id > 0);
 
   CellType::Type cell_type = mesh.type().entity_type(cell_dim);
@@ -299,7 +301,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 
     // Write coordinates out from each process
     std::vector<std::int64_t> global_size(2);
-    global_size[0] = MPI::sum(_mpi_comm, vertex_coords.size()/gdim);
+    global_size[0] = MPI::sum(_mpi_comm.comm(), vertex_coords.size()/gdim);
     global_size[1] = gdim;
     write_data(coord_dataset, vertex_coords, global_size, mpi_io);
   }
@@ -376,7 +378,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       // Drop duplicate topology for shared entities of less than mesh
       // dimension
 
-      const std::size_t mpi_rank = MPI::rank(_mpi_comm);
+      const std::size_t mpi_rank = MPI::rank(_mpi_comm.comm());
       const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
         = mesh.topology().shared_entities(cell_dim);
 
@@ -437,14 +439,14 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     // Write topology data
     const std::string topology_dataset =  name + "/topology";
     std::vector<std::int64_t> global_size(2);
-    global_size[0] = MPI::sum(_mpi_comm,
+    global_size[0] = MPI::sum(_mpi_comm.comm(),
                               topological_data.size()/num_cell_points);
     global_size[1] = num_cell_points;
 
     const std::int64_t num_cells
       = mpi_io ? mesh.size_global(cell_dim) : mesh.size(cell_dim);
     dolfin_assert(global_size[0] == num_cells);
-    const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+    const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
     write_data(topology_dataset, topological_data, global_size, mpi_io);
 
     // For cells, write the global cell index
@@ -455,7 +457,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       const auto& cell_index_ref = mesh.topology().global_indices(cell_dim);
       const std::vector<std::int64_t> cells(cell_index_ref.begin(),
             cell_index_ref.begin() + mesh.topology().ghost_offset(cell_dim));
-      const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+      const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
       write_data(cell_index_dataset, cells, global_size, mpi_io);
     }
 
@@ -466,12 +468,12 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     // Add partitioning attribute to dataset
     std::vector<std::size_t> partitions;
     const std::size_t topology_offset
-      = MPI::global_offset(_mpi_comm, topological_data.size()/(cell_dim + 1),
+      = MPI::global_offset(_mpi_comm.comm(), topological_data.size()/(cell_dim + 1),
                            true);
 
     std::vector<std::size_t> topology_offset_tmp(1, topology_offset);
-    MPI::gather(_mpi_comm, topology_offset_tmp, partitions);
-    MPI::broadcast(_mpi_comm, partitions);
+    MPI::gather(_mpi_comm.comm(), topology_offset_tmp, partitions);
+    MPI::broadcast(_mpi_comm.comm(), partitions);
     HDF5Interface::add_attribute(_hdf5_file_id, topology_dataset,
                                  "partition", partitions);
 
@@ -618,7 +620,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
 
   // Divide up cells ~equally between processes
   const std::pair<std::size_t, std::size_t> cell_range
-    = MPI::local_range(_mpi_comm, num_global_cells);
+    = MPI::local_range(_mpi_comm.comm(), num_global_cells);
   const std::size_t num_read_cells = cell_range.second - cell_range.first;
 
   // Read a block of cells
@@ -638,7 +640,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
 
   // Now send the read data to each process on the basis of the first
   // vertex of the entity, since we do not know the global_index
-  const std::size_t num_processes = MPI::size(_mpi_comm);
+  const std::size_t num_processes = MPI::size(_mpi_comm.comm());
   const std::size_t max_vertex = mesh->size_global(0);
 
   std::vector<std::vector<std::size_t>> send_topology(num_processes);
@@ -651,7 +653,8 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
 
     // Use first vertex to decide where to send this data
     const std::size_t send_to_process
-      = MPI::index_owner(_mpi_comm, cell_topology.front(), max_vertex);
+      = MPI::index_owner(_mpi_comm.comm(), cell_topology.front(),
+                         max_vertex);
 
     send_topology[send_to_process].insert(send_topology[send_to_process].end(),
                                           cell_topology.begin(),
@@ -661,15 +664,15 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
 
   std::vector<std::vector<std::size_t>> receive_topology(num_processes);
   std::vector<std::vector<T>> receive_values(num_processes);
-  MPI::all_to_all(_mpi_comm, send_topology, receive_topology);
-  MPI::all_to_all(_mpi_comm, send_values, receive_values);
+  MPI::all_to_all(_mpi_comm.comm(), send_topology, receive_topology);
+  MPI::all_to_all(_mpi_comm.comm(), send_values, receive_values);
 
   // Generate requests for data from remote processes, based on the
   // first vertex of the MeshEntities which belong on this process
   // Send our process number, and our local index, so it can come back
   // directly to the right place
   std::vector<std::vector<std::size_t>> send_requests(num_processes);
-  const std::size_t process_number = MPI::rank(_mpi_comm);
+  const std::size_t process_number = MPI::rank(_mpi_comm.comm());
   for (MeshEntityIterator cell(*mesh, cell_dim, "all"); !cell.end(); ++cell)
   {
     std::vector<std::size_t> cell_topology;
@@ -678,7 +681,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
     std::sort(cell_topology.begin(), cell_topology.end());
 
     // Use first vertex to decide where to send this request
-    std::size_t send_to_process = MPI::index_owner(_mpi_comm,
+    std::size_t send_to_process = MPI::index_owner(_mpi_comm.comm(),
                                                    cell_topology.front(),
                                                    max_vertex);
     // Map to this process and local index by appending to send data
@@ -690,7 +693,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   }
 
   std::vector<std::vector<std::size_t>> receive_requests(num_processes);
-  MPI::all_to_all(_mpi_comm, send_requests, receive_requests);
+  MPI::all_to_all(_mpi_comm.comm(), send_requests, receive_requests);
 
   // At this point, the data with its associated vertices is in
   // receive_values and receive_topology and the final destinations
@@ -739,8 +742,8 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
     }
   }
 
-  MPI::all_to_all(_mpi_comm, send_topology, receive_topology);
-  MPI::all_to_all(_mpi_comm, send_values, receive_values);
+  MPI::all_to_all(_mpi_comm.comm(), send_topology, receive_topology);
+  MPI::all_to_all(_mpi_comm.comm(), send_values, receive_values);
 
   // At this point, receive_topology should only list the local indices
   // and received values should have the appropriate values for each
@@ -773,7 +776,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   // Storage for output values
   std::vector<T> data_values;
 
-  if (cell_dim == mesh.topology().dim() || MPI::size(_mpi_comm) == 1)
+  if (cell_dim == mesh.topology().dim() || MPI::size(_mpi_comm.comm()) == 1)
   {
     // No duplicates - ignore ghost cells if present
     data_values.assign(meshfunction.values(),
@@ -786,7 +789,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
 
     // Drop duplicate data
     const std::size_t tdim = mesh.topology().dim();
-    const std::size_t mpi_rank = MPI::rank(_mpi_comm);
+    const std::size_t mpi_rank = MPI::rank(_mpi_comm.comm());
     const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
       = mesh.topology().shared_entities(cell_dim);
 
@@ -826,9 +829,9 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   }
 
   // Write values to HDF5
-  std::vector<std::int64_t> global_size(1, MPI::sum(_mpi_comm,
+  std::vector<std::int64_t> global_size(1, MPI::sum(_mpi_comm.comm(),
                                                     data_values.size()));
-  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   write_data(name + "/values", data_values, global_size, mpi_io);
 }
 //-----------------------------------------------------------------------------
@@ -908,19 +911,19 @@ void HDF5File::write(const Function& u, const std::string name)
   }
 
   // Add offset to CSR index to be seamless in parallel
-  std::size_t offset = MPI::global_offset(_mpi_comm, cell_dofs.size(), true);
+  std::size_t offset = MPI::global_offset(_mpi_comm.comm(), cell_dofs.size(), true);
   std::transform(x_cell_dofs.begin(),
                  x_cell_dofs.end(),
                  x_cell_dofs.begin(),
                  std::bind2nd(std::plus<std::size_t>(), offset));
 
-  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
 
   // Save DOFs on each cell
-  std::vector<std::int64_t> global_size(1, MPI::sum(_mpi_comm,
+  std::vector<std::int64_t> global_size(1, MPI::sum(_mpi_comm.comm(),
                                                     cell_dofs.size()));
   write_data(name + "/cell_dofs", cell_dofs, global_size, mpi_io);
-  if (MPI::rank(_mpi_comm) == MPI::size(_mpi_comm) - 1)
+  if (MPI::rank(_mpi_comm.comm()) == MPI::size(_mpi_comm.comm()) - 1)
     x_cell_dofs.push_back(global_size[0]);
   global_size[0] = mesh.size_global(tdim) + 1;
   write_data(name + "/x_cell_dofs", x_cell_dofs, global_size, mpi_io);
@@ -1036,7 +1039,7 @@ void HDF5File::read(Function& u, const std::string name)
 
   // Divide cells equally between processes
   const std::pair<std::size_t, std::size_t> cell_range
-    = MPI::local_range(_mpi_comm, num_global_cells);
+    = MPI::local_range(_mpi_comm.comm(), num_global_cells);
 
   // Read cells
   std::vector<std::size_t> input_cells;
@@ -1064,13 +1067,13 @@ void HDF5File::read(Function& u, const std::string name)
   const std::size_t num_global_dofs = vector_shape[0];
   dolfin_assert(num_global_dofs == x.size(0));
   const std::pair<dolfin::la_index, dolfin::la_index>
-    input_vector_range = MPI::local_range(_mpi_comm, vector_shape[0]);
+    input_vector_range = MPI::local_range(_mpi_comm.comm(), vector_shape[0]);
 
   std::vector<double> input_values;
   HDF5Interface::read_dataset(_hdf5_file_id, vector_dataset_name,
                               input_vector_range, input_values);
 
-  HDF5Utility::set_local_vector_values(_mpi_comm, x, mesh, input_cells,
+  HDF5Utility::set_local_vector_values(_mpi_comm.comm(), x, mesh, input_cells,
                                        input_cell_dofs, x_cell_dofs,
                                        input_values, input_vector_range, dofmap);
 
@@ -1175,10 +1178,10 @@ void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_va
     value_data.push_back(p.second);
   }
 
-  const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   std::vector<std::int64_t> global_size(2);
 
-  global_size[0] = MPI::sum(_mpi_comm, values.size());
+  global_size[0] = MPI::sum(_mpi_comm.comm(), values.size());
   global_size[1] = num_vertices_per_entity;
 
   write_data(name + "/topology", topology, global_size, mpi_io);
@@ -1213,13 +1216,13 @@ void HDF5File::write_mesh_value_collection_old(
     data_values.push_back(p->second);
   }
 
-  std::vector<std::int64_t> global_size(1, MPI::sum(_mpi_comm,
+  std::vector<std::int64_t> global_size(1, MPI::sum(_mpi_comm.comm(),
                                                    data_values.size()));
 
   // Only write if the global size is larger than 0
   if (global_size[0] > 0)
   {
-    const bool mpi_io = MPI::size(_mpi_comm) > 1 ? true : false;
+    const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
     write_data(name + "/values", data_values, global_size, mpi_io);
     write_data(name + "/entities", entities, global_size, mpi_io);
     write_data(name + "/cells", cells, global_size, mpi_io);
@@ -1288,7 +1291,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
 
   // Divide range between processes
   const std::pair<std::size_t, std::size_t> data_range
-    = MPI::local_range(_mpi_comm, values_shape[0]);
+    = MPI::local_range(_mpi_comm.comm(), values_shape[0]);
   const std::size_t local_size = data_range.second - data_range.first;
 
   // Read local range of values and entities
@@ -1309,7 +1312,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
   mesh->init(dim);
   std::size_t global_vertex_range = mesh->size_global(0);
   std::vector<std::size_t> v(num_verts_per_entity);
-  const std::size_t num_processes = MPI::size(_mpi_comm);
+  const std::size_t num_processes = MPI::size(_mpi_comm.comm());
 
   // Calculate map from entity vertices to {process, local index}
   std::map<std::vector<std::size_t>,
@@ -1329,14 +1332,14 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
       std::sort(v.begin(), v.end());
     }
 
-    std::size_t dest = MPI::index_owner(_mpi_comm,
+    std::size_t dest = MPI::index_owner(_mpi_comm.comm(),
                                         v[0], global_vertex_range);
     send_entities[dest].push_back(m->index());
     send_entities[dest].insert(send_entities[dest].end(),
                                v.begin(), v.end());
   }
 
-  MPI::all_to_all(_mpi_comm, send_entities, recv_entities);
+  MPI::all_to_all(_mpi_comm.comm(), send_entities, recv_entities);
 
   for (std::size_t i = 0; i != num_processes; ++i)
   {
@@ -1369,7 +1372,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
   {
     std::partial_sort_copy(it, it + num_verts_per_entity,
                            v.begin(), v.end());
-    std::size_t dest = MPI::index_owner(_mpi_comm,
+    std::size_t dest = MPI::index_owner(_mpi_comm.comm(),
                                         v[0], global_vertex_range);
     send_entities[dest].insert(send_entities[dest].end(),
                                v.begin(), v.end());
@@ -1377,8 +1380,8 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
     ++i;
   }
 
-  MPI::all_to_all(_mpi_comm, send_entities, recv_entities);
-  MPI::all_to_all(_mpi_comm, send_data, recv_data);
+  MPI::all_to_all(_mpi_comm.comm(), send_entities, recv_entities);
+  MPI::all_to_all(_mpi_comm.comm(), send_data, recv_data);
 
   // Reset send arrays
   send_data = std::vector<std::vector<T>>(num_processes);
@@ -1413,8 +1416,8 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
   }
 
   // Send to owning processes and set in MeshValueCollection
-  MPI::all_to_all(_mpi_comm, send_entities, recv_entities);
-  MPI::all_to_all(_mpi_comm, send_data, recv_data);
+  MPI::all_to_all(_mpi_comm.comm(), send_entities, recv_entities);
+  MPI::all_to_all(_mpi_comm.comm(), send_data, recv_data);
 
   for (std::size_t i = 0; i != num_processes; ++i)
   {
@@ -1556,7 +1559,7 @@ void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
 
     // Divide range between processes
     const std::pair<std::size_t, std::size_t> data_range
-      = MPI::local_range(_mpi_comm, values_shape[0]);
+      = MPI::local_range(_mpi_comm.comm(), values_shape[0]);
     const std::size_t local_size = data_range.second - data_range.first;
 
     // Read local range of values, entities and cells
@@ -1576,7 +1579,7 @@ void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
     std::vector<std::pair<std::size_t, std::size_t>> cell_ownership;
     cell_ownership = HDF5Utility::cell_owners(mesh, cells_data);
 
-    const std::size_t num_processes = MPI::size(_mpi_comm);
+    const std::size_t num_processes = MPI::size(_mpi_comm.comm());
     std::vector<std::vector<std::size_t>> send_entities(num_processes);
     std::vector<std::vector<std::size_t>> send_local(num_processes);
     std::vector<std::vector<T>> send_values(num_processes);
@@ -1591,9 +1594,9 @@ void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
     std::vector<std::vector<T>> recv_values(num_processes);
     std::vector<std::vector<std::size_t>> recv_entities(num_processes);
     std::vector<std::vector<std::size_t>> recv_local(num_processes);
-    MPI::all_to_all(_mpi_comm, send_entities, recv_entities);
-    MPI::all_to_all(_mpi_comm, send_local, recv_local);
-    MPI::all_to_all(_mpi_comm, send_values, recv_values);
+    MPI::all_to_all(_mpi_comm.comm(), send_entities, recv_entities);
+    MPI::all_to_all(_mpi_comm.comm(), send_local, recv_local);
+    MPI::all_to_all(_mpi_comm.comm(), send_values, recv_values);
 
     // Reference to actual map of MeshValueCollection
     std::map<std::pair<std::size_t, std::size_t>, T>& mvc_map
@@ -1691,7 +1694,7 @@ void HDF5File::read(Mesh& input_mesh,
   dolfin_assert(_hdf5_file_id > 0);
 
   // Create structure to store local mesh
-  LocalMeshData local_mesh_data(_mpi_comm);
+  LocalMeshData local_mesh_data(_mpi_comm.comm());
   local_mesh_data.geometry.dim = gdim;
 
   // --- Topology ---
@@ -1778,10 +1781,10 @@ void HDF5File::read(Mesh& input_mesh,
 
   // Check whether number of MPI processes matches partitioning, and
   // restore if possible
-  if (dolfin::MPI::size(_mpi_comm) == cell_partitions.size())
+  if (dolfin::MPI::size(_mpi_comm.comm()) == cell_partitions.size())
   {
     cell_partitions.push_back(num_global_cells);
-    const std::size_t proc = MPI::rank(_mpi_comm);
+    const std::size_t proc = MPI::rank(_mpi_comm.comm());
     cell_range = std::make_pair(cell_partitions[proc], cell_partitions[proc + 1]);
 
     // Restore partitioning if requested
@@ -1797,7 +1800,7 @@ void HDF5File::read(Mesh& input_mesh,
       warning("Could not use partition from file: wrong size");
 
     // Divide up cells approximately equally between processes
-    cell_range = MPI::local_range(_mpi_comm, num_global_cells);
+    cell_range = MPI::local_range(_mpi_comm.comm(), num_global_cells);
   }
 
   // Get number of cells to read on this process
@@ -1894,7 +1897,7 @@ void HDF5File::read(Mesh& input_mesh,
 
   // Divide point range into equal blocks for each process
   std::pair<std::size_t, std::size_t> vertex_range
-    = MPI::local_range(_mpi_comm, local_mesh_data.geometry.num_global_vertices);
+    = MPI::local_range(_mpi_comm.comm(), local_mesh_data.geometry.num_global_vertices);
   const std::size_t num_local_vertices
     = vertex_range.second - vertex_range.first;
 
@@ -1932,7 +1935,7 @@ void HDF5File::read(Mesh& input_mesh,
 
   // Build distributed mesh
   // FIXME: Why is the mesh built into HDF5Utility? This should be in the mesh code.
-  if (MPI::size(_mpi_comm) == 1)
+  if (MPI::size(_mpi_comm.comm()) == 1)
     HDF5Utility::build_local_mesh(input_mesh, local_mesh_data);
   else
   {

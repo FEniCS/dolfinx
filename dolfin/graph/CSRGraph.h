@@ -52,10 +52,10 @@ namespace dolfin
     {
     public:
 
-    /// Node object, listing a set of outgoing edges
-    node(const typename std::vector<T>::const_iterator& begin_it,
-         const typename std::vector<T>::const_iterator& end_it)
-      : begin_edge(begin_it), end_edge(end_it) {}
+      /// Node object, listing a set of outgoing edges
+      node(const typename std::vector<T>::const_iterator& begin_it,
+           const typename std::vector<T>::const_iterator& end_it)
+        : begin_edge(begin_it), end_edge(end_it) {}
 
       /// Iterator pointing to beginning of edges
       typename std::vector<T>::const_iterator begin() const
@@ -80,7 +80,7 @@ namespace dolfin
     };
 
     /// Empty CSR Graph
-    CSRGraph() : _node_offsets(1, 0) {}
+    CSRGraph() = delete;
 
     /// Create a CSR Graph from a collection of edges (X is a
     /// container some type, e.g. std::vector<unsigned int> or
@@ -110,8 +110,8 @@ namespace dolfin
     }
 
     /// Create a CSR Graph from ParMETIS style adjacency lists
-    CSRGraph(MPI_Comm mpi_comm, const T* xadj, const T* adjncy, std::size_t n)
-      : _mpi_comm(mpi_comm)
+    CSRGraph(MPI_Comm mpi_comm, const T* xadj, const T* adjncy,
+             std::size_t n) : _mpi_comm(mpi_comm)
     {
       _node_offsets.assign(xadj, xadj + n + 1);
       _edges.assign(adjncy, adjncy + xadj[n]);
@@ -133,8 +133,9 @@ namespace dolfin
     std::vector<T>& edges()
     { return _edges; }
 
-    /// Return CSRGraph::node object which provides begin() and end() iterators,
-    /// also size(), and random-access for the edges of node i.
+    /// Return CSRGraph::node object which provides begin() and end()
+    /// iterators, also size(), and random-access for the edges of
+    /// node i.
     const node operator[](std::size_t i) const
     {
       return node(_edges.begin() + _node_offsets[i],
@@ -186,7 +187,7 @@ namespace dolfin
     {
       // Communicate number of nodes between all processors
       const T num_nodes = size();
-      MPI::all_gather(_mpi_comm, num_nodes, _node_distribution);
+      MPI::all_gather(_mpi_comm.comm(), num_nodes, _node_distribution);
 
       _node_distribution.insert(_node_distribution.begin(), 0);
       for (std::size_t i = 1; i != _node_distribution.size(); ++i)
@@ -207,7 +208,7 @@ namespace dolfin
     std::vector<T> _node_distribution;
 
     // MPI communicator attached to graph
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
   };
 

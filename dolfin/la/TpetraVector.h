@@ -162,14 +162,14 @@ namespace dolfin
     virtual void add_local(const Array<double>& values);
 
     /// Gather entries (given by global indices) into local
-    /// (MPI_COMM_SELF) vector x. Provided x must be empty
-    /// or of correct dimension (same as provided indices).
-    /// This operation is collective
+    /// (MPI_COMM_SELF) vector x. Provided x must be empty or of
+    /// correct dimension (same as provided indices).  This operation
+    /// is collective
     virtual void gather(GenericVector& y,
                         const std::vector<dolfin::la_index>& indices) const;
 
-    /// Gather entries (given by global indices) into x.
-    /// This operation is collective
+    /// Gather entries (given by global indices) into x. This
+    /// operation is collective
     virtual void gather(std::vector<double>& x,
                         const std::vector<dolfin::la_index>& indices) const;
 
@@ -256,7 +256,7 @@ namespace dolfin
   private:
 
     // MPI Communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
     // Initialise Tpetra vector
     void _init(std::pair<std::int64_t, std::int64_t> range,

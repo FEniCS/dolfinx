@@ -54,12 +54,13 @@ EigenVector::EigenVector(MPI_Comm comm, std::size_t N)
 }
 //-----------------------------------------------------------------------------
 EigenVector::EigenVector(const EigenVector& x)
-  : _x(new Eigen::VectorXd(*(x._x))), _mpi_comm(x._mpi_comm)
+  : _x(new Eigen::VectorXd(*(x._x))), _mpi_comm(x._mpi_comm.comm())
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EigenVector::EigenVector(std::shared_ptr<Eigen::VectorXd> x) : _x(x)
+EigenVector::EigenVector(std::shared_ptr<Eigen::VectorXd> x)
+  : _x(x), _mpi_comm(MPI_COMM_SELF)
 {
   // Do nothing
 }

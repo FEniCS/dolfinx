@@ -74,7 +74,7 @@ namespace dolfin
 
     /// Return MPI communicator
     virtual MPI_Comm mpi_comm() const
-    { return _mpi_comm; }
+    { return _mpi_comm.comm(); }
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -304,7 +304,7 @@ namespace dolfin
     std::shared_ptr<Eigen::VectorXd> _x;
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
   };
 

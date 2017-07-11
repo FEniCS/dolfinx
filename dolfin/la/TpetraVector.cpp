@@ -44,7 +44,7 @@ TpetraVector::TpetraVector(MPI_Comm comm, std::size_t N) : _mpi_comm(comm)
   init(N);
 }
 //-----------------------------------------------------------------------------
-TpetraVector::TpetraVector(const TpetraVector& v) : _mpi_comm(v._mpi_comm)
+TpetraVector::TpetraVector(const TpetraVector& v) : _mpi_comm(v._mpi_comm.comm())
 {
   if (v._x.is_null())
     return;
@@ -109,7 +109,7 @@ void TpetraVector::apply(std::string mode)
 //-----------------------------------------------------------------------------
 MPI_Comm TpetraVector::mpi_comm() const
 {
-  return _mpi_comm;
+  return _mpi_comm.comm();
 }
 //-----------------------------------------------------------------------------
 std::string TpetraVector::str(bool verbose) const
@@ -133,7 +133,8 @@ std::shared_ptr<GenericVector> TpetraVector::copy() const
 //-----------------------------------------------------------------------------
 void TpetraVector::init(std::size_t N)
 {
-  const std::pair<std::int64_t, std::int64_t> range = MPI::local_range(_mpi_comm, N);
+  const std::pair<std::int64_t, std::int64_t> range
+    = MPI::local_range(_mpi_comm.comm(), N);
   std::vector<dolfin::la_index> local_to_global_map;
   _init(range, local_to_global_map);
 }
@@ -634,11 +635,12 @@ TpetraVector::_init(std::pair<std::int64_t, std::int64_t> local_range,
   }
 
   // Make a Trilinos version of the MPI Comm
-  Teuchos::RCP<const Teuchos::Comm<int>> _comm(new Teuchos::MpiComm<int>(_mpi_comm));
+  Teuchos::RCP<const Teuchos::Comm<int>>
+    _comm(new Teuchos::MpiComm<int>(_mpi_comm.comm()));
 
   // Mapping across processes
   std::size_t Nlocal = local_range.second - local_range.first;
-  std::size_t N = MPI::sum(_mpi_comm, Nlocal);
+  std::size_t N = MPI::sum(_mpi_comm.comm(), Nlocal);
 
   Teuchos::RCP<map_type> _map(new map_type(N, Nlocal, 0, _comm));
   Teuchos::RCP<map_type> _ghost_map;

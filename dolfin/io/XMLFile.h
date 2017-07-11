@@ -182,7 +182,7 @@ namespace dolfin
     std::shared_ptr<std::ostream> outstream;
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
   };
 

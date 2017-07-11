@@ -84,7 +84,7 @@ Mesh::Mesh(MPI_Comm comm, std::string filename)
   : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this), _ordered(false),
   _mpi_comm(comm), _ghost_mode("none")
 {
-  File file(_mpi_comm, filename);
+  File file(_mpi_comm.comm(), filename);
   file >> *this;
 }
 //-----------------------------------------------------------------------------
@@ -389,8 +389,8 @@ std::size_t Mesh::hash() const
   const std::size_t kg_local = _geometry.hash();
 
   // Compute global hash
-  const std::size_t kt = hash_global(_mpi_comm, kt_local);
-  const std::size_t kg = hash_global(_mpi_comm, kg_local);
+  const std::size_t kt = hash_global(_mpi_comm.comm(), kt_local);
+  const std::size_t kg = hash_global(_mpi_comm.comm(), kg_local);
 
   // Compute hash based on the Cantor pairing function
   return (kt + kg)*(kt + kg + 1)/2 + kg;

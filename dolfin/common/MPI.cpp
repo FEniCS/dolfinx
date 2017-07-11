@@ -27,8 +27,86 @@
 #include "SubSystemsManager.h"
 #include "MPI.h"
 
+//-----------------------------------------------------------------------------
+dolfin::MPI::Comm::Comm(MPI_Comm comm)
+{
 #ifdef HAS_MPI
+  // Make sure MPI has been initialised
+  SubSystemsManager::init_mpi();
 
+  // Duplicate communicator
+  if (comm != MPI_COMM_NULL)
+  {
+    int err = MPI_Comm_dup(comm, &_comm);
+    if (err != MPI_SUCCESS)
+    {
+      dolfin::error("Duplication of MPI communicator failed (MPI_Comm_dup");
+    }
+  }
+  else
+    _comm = MPI_COMM_NULL;
+#else
+  _comm = comm
+#endif
+}
+//-----------------------------------------------------------------------------
+dolfin::MPI::Comm::~Comm()
+{
+  #ifdef HAS_MPI
+  int err = 0;
+  if (_comm != MPI_COMM_NULL)
+    err = MPI_Comm_free(&_comm);
+
+  if (err != MPI_SUCCESS)
+  {
+    dolfin::error("Destruction of MPI communicator failed (MPI_Comm_free");
+  }
+#endif
+}
+//-----------------------------------------------------------------------------
+unsigned int dolfin::MPI::Comm::rank() const
+{
+  return dolfin::MPI::rank(_comm);
+}
+//-----------------------------------------------------------------------------
+unsigned int dolfin::MPI::Comm::size() const
+{
+  return dolfin::MPI::size(_comm);
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::Comm::reset(MPI_Comm comm)
+{
+  #ifdef HAS_MPI
+  if (_comm != MPI_COMM_NULL)
+  {
+    int err = 0;
+    if (_comm != MPI_COMM_NULL)
+      err = MPI_Comm_free(&_comm);
+
+    if (err != MPI_SUCCESS)
+    {
+      // Raise error
+    }
+  }
+
+  // Duplicate communicator
+  int err = MPI_Comm_dup(comm, &_comm);
+  if (err != MPI_SUCCESS)
+  {
+    // Raise error
+  }
+  #else
+  _comm = comm;
+  #endif
+}
+//-----------------------------------------------------------------------------
+MPI_Comm dolfin::MPI::Comm::comm() const
+{
+  return _comm;
+}
+//-----------------------------------------------------------------------------
+
+#ifdef HAS_MPI
 //-----------------------------------------------------------------------------
 dolfin::MPIInfo::MPIInfo()
 {
