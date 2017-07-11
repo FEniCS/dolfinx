@@ -83,7 +83,7 @@ def test_layout_and_pattern_interface(backend, mesh, element):
     t2 = TensorLayout(c, 0, TensorLayout.Sparsity_SPARSE)
     t2.init([i, i], TensorLayout.Ghosts_UNGHOSTED)
     s2 = t2.sparsity_pattern()
-    s2.init(c, [i, i])
+    s2.init([i, i])
     SparsityPatternBuilder.build(s2, m, [d, d],
                                  True, False, False, False,
                                  False, init=False)
