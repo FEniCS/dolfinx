@@ -95,6 +95,9 @@ namespace dolfin
       /// Destructor (frees wrapped communicator)
       ~Comm();
 
+      /// Free (destroy) communicator. Calls function 'MPI_Comm_free'.
+      void free();
+
       /// Duplicate communivator, and free any previously created
       /// communicator
       void reset(MPI_Comm comm);
