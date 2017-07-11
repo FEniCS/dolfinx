@@ -26,20 +26,21 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TensorLayout::TensorLayout(std::size_t pdim, Sparsity sparsity_pattern)
-  : primary_dim(pdim), _mpi_comm(MPI_COMM_NULL)
+TensorLayout::TensorLayout(MPI_Comm comm, std::size_t pdim,
+                           Sparsity sparsity_pattern)
+  : primary_dim(pdim), _mpi_comm(comm)
 {
   // Create empty sparsity pattern
   if (sparsity_pattern == TensorLayout::Sparsity::SPARSE)
     _sparsity_pattern = std::make_shared<SparsityPattern>(primary_dim);
 }
 //-----------------------------------------------------------------------------
-TensorLayout::TensorLayout(const MPI_Comm mpi_comm,
-             std::vector<std::shared_ptr<const IndexMap>> index_maps,
-             std::size_t pdim,
-             Sparsity sparsity_pattern,
-             Ghosts ghosted)
-  : primary_dim(pdim), _mpi_comm(mpi_comm), _index_maps(index_maps),
+TensorLayout::TensorLayout(MPI_Comm comm,
+                           std::vector<std::shared_ptr<const IndexMap>> index_maps,
+                           std::size_t pdim,
+                           Sparsity sparsity_pattern,
+                           Ghosts ghosted)
+  : primary_dim(pdim), _mpi_comm(comm), _index_maps(index_maps),
     _ghosted(ghosted)
 {
   if (sparsity_pattern == TensorLayout::Sparsity::SPARSE)
@@ -49,17 +50,14 @@ TensorLayout::TensorLayout(const MPI_Comm mpi_comm,
   dolfin_assert(!(_sparsity_pattern && index_maps.size() != 2));
 }
 //-----------------------------------------------------------------------------
-void TensorLayout::init(
-  const MPI_Comm mpi_comm,
-  const std::vector<std::shared_ptr<const IndexMap>> index_maps,
-  const Ghosts ghosted)
+void TensorLayout::init(const std::vector<std::shared_ptr<const IndexMap>> index_maps,
+                        const Ghosts ghosted)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(!(_sparsity_pattern && index_maps.size() != 2));
 
   // Store everything
   _index_maps = index_maps;
-  _mpi_comm.reset(mpi_comm);
   _ghosted = ghosted;
 }
 //-----------------------------------------------------------------------------

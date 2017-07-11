@@ -606,7 +606,7 @@ void MultiMeshAssembler::_init_global_tensor(GenericTensor& A,
 
   // Create layout for initializing tensor
   std::shared_ptr<TensorLayout> tensor_layout;
-  tensor_layout = A.factory().create_layout(a.rank());
+  tensor_layout = A.factory().create_layout(MPI_COMM_WORLD, a.rank());
   dolfin_assert(tensor_layout);
 
   // Get dimensions
@@ -621,8 +621,7 @@ void MultiMeshAssembler::_init_global_tensor(GenericTensor& A,
   }
 
   // Initialise tensor layout
-  tensor_layout->init(MPI_COMM_WORLD, index_maps,
-                      TensorLayout::Ghosts::UNGHOSTED);
+  tensor_layout->init(index_maps, TensorLayout::Ghosts::UNGHOSTED);
 
   // Build sparsity pattern if required
   if (tensor_layout->sparsity_pattern())

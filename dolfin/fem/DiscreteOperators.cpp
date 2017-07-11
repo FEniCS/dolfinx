@@ -85,7 +85,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
 
   // Create layout for initialising tensor
   std::shared_ptr<TensorLayout> tensor_layout;
-  tensor_layout = A->factory().create_layout(2);
+  tensor_layout = A->factory().create_layout(mesh.mpi_comm(), 2);
   dolfin_assert(tensor_layout);
 
   // Copy index maps from dofmaps
@@ -95,8 +95,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
     = { V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
 
   // Initialise tensor layout
-  tensor_layout->init(mesh.mpi_comm(), index_maps,
-                      TensorLayout::Ghosts::UNGHOSTED);
+  tensor_layout->init(index_maps, TensorLayout::Ghosts::UNGHOSTED);
 
   // Initialize edge -> vertex connections
   mesh.init(1, 0);

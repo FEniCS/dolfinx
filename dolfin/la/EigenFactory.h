@@ -56,13 +56,13 @@ namespace dolfin
     { return std::make_shared<EigenVector>(comm); }
 
     /// Create empty tensor layout
-    std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
+    std::shared_ptr<TensorLayout> create_layout(MPI_Comm comm,
+                                                std::size_t rank) const
     {
       TensorLayout::Sparsity sparsity = TensorLayout::Sparsity::DENSE;
       if (rank > 1)
         sparsity = TensorLayout::Sparsity::SPARSE;
-      std::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
-      return pattern;
+      return std::make_shared<TensorLayout>(comm, 0, sparsity);
     }
 
     /// Create empty linear operator
