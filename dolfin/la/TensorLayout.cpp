@@ -32,7 +32,7 @@ TensorLayout::TensorLayout(MPI_Comm comm, std::size_t pdim,
 {
   // Create empty sparsity pattern
   if (sparsity_pattern == TensorLayout::Sparsity::SPARSE)
-    _sparsity_pattern = std::make_shared<SparsityPattern>(primary_dim);
+    _sparsity_pattern = std::make_shared<SparsityPattern>(comm, primary_dim);
 }
 //-----------------------------------------------------------------------------
 TensorLayout::TensorLayout(MPI_Comm comm,
@@ -44,7 +44,7 @@ TensorLayout::TensorLayout(MPI_Comm comm,
     _ghosted(ghosted)
 {
   if (sparsity_pattern == TensorLayout::Sparsity::SPARSE)
-    _sparsity_pattern = std::make_shared<SparsityPattern>(primary_dim);
+    _sparsity_pattern = std::make_shared<SparsityPattern>(comm, primary_dim);
 
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(!(_sparsity_pattern && index_maps.size() != 2));

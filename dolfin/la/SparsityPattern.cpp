@@ -33,30 +33,25 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern(std::size_t primary_dim)
-  : _primary_dim(primary_dim), _mpi_comm(MPI_COMM_NULL)
+SparsityPattern::SparsityPattern(MPI_Comm comm, std::size_t primary_dim)
+  : _primary_dim(primary_dim), _mpi_comm(comm)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern(
-  const MPI_Comm mpi_comm,
+SparsityPattern::SparsityPattern(MPI_Comm comm,
   const std::vector<std::shared_ptr<const IndexMap>> index_maps,
   std::size_t primary_dim)
-  : _primary_dim(primary_dim), _mpi_comm(MPI_COMM_NULL)
+  : _primary_dim(primary_dim), _mpi_comm(comm)
 {
-  init(mpi_comm, index_maps);
+  init(index_maps);
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::init(
-  const MPI_Comm mpi_comm,
-  const std::vector<std::shared_ptr<const IndexMap>> index_maps)
+void SparsityPattern::init(const std::vector<std::shared_ptr<const IndexMap>> index_maps)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(index_maps.size() == 2);
 
-  // Duplicate communicator
-  _mpi_comm.reset(mpi_comm);
   _index_maps = index_maps;
 
   const std::size_t _primary_dim = primary_dim();

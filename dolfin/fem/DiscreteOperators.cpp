@@ -101,7 +101,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   mesh.init(1, 0);
 
   SparsityPattern& pattern = *tensor_layout->sparsity_pattern();
-  pattern.init(mesh.mpi_comm(), index_maps);
+  pattern.init(index_maps);
 
     // Build sparsity pattern
   if (tensor_layout->sparsity_pattern())
