@@ -55,7 +55,7 @@ bool VTKPlottableDirichletBC::is_compatible(const Variable &var) const
   }
 
   const FunctionSpace &V = *bc->function_space();
-  if (V.element()->value_rank() > 1 || V.element()->value_rank() != _bc->function_space()->element()->value_rank())
+  if (V.element()->value_rank() > 1 || V.element()->value_rank() != _bc.lock()->function_space()->element()->value_rank())
   {
     return false;
   }
@@ -74,9 +74,11 @@ void VTKPlottableDirichletBC::update(std::shared_ptr<const Variable> var,
   std::shared_ptr<const Function> func
     = std::dynamic_pointer_cast<const Function>(_function.lock());
 
-  dolfin_assert(_bc && func);
-  if (_bc->function_space() != func->function_space())
-    func.reset(new Function(_bc->function_space()));
+  auto bc = _bc.lock();
+
+  dolfin_assert(bc && func);
+  if (bc->function_space() != func->function_space())
+    func.reset(new Function(bc->function_space()));
 
   // We passed in the Function to begin with, so the const_case is safe
   GenericVector &vec = *const_cast<GenericVector*>(func->vector().get());
@@ -91,7 +93,7 @@ void VTKPlottableDirichletBC::update(std::shared_ptr<const Variable> var,
   vec.set_local(data);
 
   // Apply the BC
-  _bc->apply(vec);
+  bc->apply(vec);
 
   VTKPlottableGenericFunction::update(func, parameters, framecounter);
 }
