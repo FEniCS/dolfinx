@@ -39,9 +39,7 @@ dolfin::MPI::Comm::Comm(MPI_Comm comm)
   {
     int err = MPI_Comm_dup(comm, &_comm);
     if (err != MPI_SUCCESS)
-    {
       dolfin::error("Duplication of MPI communicator failed (MPI_Comm_dup");
-    }
   }
   else
     _comm = MPI_COMM_NULL;
@@ -52,15 +50,13 @@ dolfin::MPI::Comm::Comm(MPI_Comm comm)
 //-----------------------------------------------------------------------------
 dolfin::MPI::Comm::~Comm()
 {
-  #ifdef HAS_MPI
+#ifdef HAS_MPI
   int err = 0;
   if (_comm != MPI_COMM_NULL)
     err = MPI_Comm_free(&_comm);
 
   if (err != MPI_SUCCESS)
-  {
     dolfin::error("Destruction of MPI communicator failed (MPI_Comm_free");
-  }
 #endif
 }
 //-----------------------------------------------------------------------------
@@ -76,7 +72,7 @@ unsigned int dolfin::MPI::Comm::size() const
 //-----------------------------------------------------------------------------
 void dolfin::MPI::Comm::reset(MPI_Comm comm)
 {
-  #ifdef HAS_MPI
+#ifdef HAS_MPI
   if (_comm != MPI_COMM_NULL)
   {
     int err = 0;
@@ -95,9 +91,9 @@ void dolfin::MPI::Comm::reset(MPI_Comm comm)
   {
     // Raise error
   }
-  #else
+#else
   _comm = comm;
-  #endif
+#endif
 }
 //-----------------------------------------------------------------------------
 MPI_Comm dolfin::MPI::Comm::comm() const
