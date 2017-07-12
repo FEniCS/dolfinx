@@ -113,6 +113,5 @@ v2 = assemble(m2)
 print("\int u dx(1) = ", v2)
 
 # Plot solution and gradient
-plot(u, title="u")
-plot(grad(u), title="Projected grad(u)")
-interactive()
+plot(u, title="u", interactive=True)
+plot(grad(u), title="Projected grad(u)", interactive=True)

@@ -141,6 +141,3 @@ while t < T + DOLFIN_EPS:
     u0.assign(u1)
     t += dt
     print("t =", t)
-
-# Hold plot
-interactive()
