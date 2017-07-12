@@ -24,7 +24,7 @@ PETSc and SLEPc are available, and exit if not, as follows ::
 
     from dolfin import *
     # Test for PETSc and SLEPc
-  
+
     if not has_linear_algebra_backend("PETSc"):
         print("DOLFIN has not been configured with PETSc. Exiting.")
         exit()
@@ -98,5 +98,4 @@ eigenfunction can be manipulated as any other :py:class:`Function
     u.vector()[:] = rx
 
     # Plot eigenfunction
-    plot(u)
-    interactive()
+    plot(u, interactive=True)

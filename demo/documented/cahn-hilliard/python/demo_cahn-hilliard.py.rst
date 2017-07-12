@@ -339,8 +339,4 @@ written to file at every time step.
 Finally, the last computed solution for :math:`c` is plotted to the
 screen::
 
-    plot(u.split()[0])
-    interactive()
-
-The line ``interactive()`` holds the plot (waiting for a keyboard
-action).
+    plot(u.split()[0], interactive=True)

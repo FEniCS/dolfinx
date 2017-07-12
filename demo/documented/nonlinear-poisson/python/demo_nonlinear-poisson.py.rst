@@ -207,8 +207,7 @@ command::
 
     # Plot solution and solution gradient
     plot(u, title="Solution")
-    plot(grad(u), title="Solution gradient")
-    interactive()
+    plot(grad(u), title="Solution gradient", interactive=True)
 
     # Save solution in VTK format
     file = File("nonlinear_poisson.pvd")

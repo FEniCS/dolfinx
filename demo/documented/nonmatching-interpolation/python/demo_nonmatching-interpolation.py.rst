@@ -48,8 +48,6 @@ We now interpolate the function ``v3`` into the ``P1`` space ::
 The interpolated functions, ``v3`` and ``v1`` can ve visualised using
 the ``plot`` function ::
 
-  plot(v3, title='v3')
-  interactive()
+  plot(v3, title='v3', interactive=True)
 
-  plot(v1, title='v1')
-  interactive()
+  plot(v1, title='v1', interactive=True)

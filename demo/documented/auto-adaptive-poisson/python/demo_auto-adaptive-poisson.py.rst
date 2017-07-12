@@ -255,6 +255,5 @@ tolerance::
     solver.summary()
 
     # Plot solution(s)
-    plot(u.root_node(), title="Solution on initial mesh")
-    plot(u.leaf_node(), title="Solution on final mesh")
-    interactive()
+    plot(u.root_node(), title="Solution on initial mesh", interactive=True)
+    plot(u.leaf_node(), title="Solution on final mesh", interactive=True)

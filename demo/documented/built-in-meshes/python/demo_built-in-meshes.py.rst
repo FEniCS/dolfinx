@@ -137,13 +137,7 @@ details, refer to the mshr documentation. ::
 
    mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(10.0, 4.0, 2.0), 10, 10, 10)
    print("Plotting a BoxMesh")
-   plot(mesh, title="Box")
+   plot(mesh, title="Box", interactive=True)
 
 .. image:: boxmesh.png
    :scale: 75 %
-
-By calling :py:meth:`interactive
-<dolfin.cpp.io.VTKPlotter.interactive>` we are allowed to resize, move
-and rotate the plots. ::
-
-   interactive()

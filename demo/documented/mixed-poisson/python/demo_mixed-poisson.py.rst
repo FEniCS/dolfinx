@@ -247,5 +247,4 @@ the solutions to examine the result. ::
 
     # Plot sigma and u
     plot(sigma)
-    plot(u)
-    interactive()
+    plot(u, interactive=True)
