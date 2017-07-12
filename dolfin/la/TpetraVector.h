@@ -255,9 +255,6 @@ namespace dolfin
 
   private:
 
-    // MPI Communicator
-    dolfin::MPI::Comm _mpi_comm;
-
     // Initialise Tpetra vector
     void _init(std::pair<std::int64_t, std::int64_t> range,
                const std::vector<dolfin::la_index>& local_to_global);
@@ -268,6 +265,9 @@ namespace dolfin
 
     // Tpetra multivector with extra rows for ghost values
     Teuchos::RCP<vector_type> _x_ghosted;
+
+    // MPI Communicator
+    Teuchos::RCP<const Teuchos::MpiComm<int>> _comm;
 
   };
 
