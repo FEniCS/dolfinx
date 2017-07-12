@@ -65,8 +65,7 @@ assigner.assign(vv3, [u0, u1])
 ta1 = time.time() - t0
 
 # Plot functions
-plot(vv0, title="Projection; time=%.3fs" % tp)
-plot(vv1, title="Interpolation; time=%.3fs" % ti)
-plot(vv2, title="Assignment; time=%.3fs" % ta0)
-plot(vv3, title="Assignment (cached); time=%.3fs" % ta1)
-interactive()
+plot(vv0, title="Projection; time=%.3fs" % tp, interactive=True)
+plot(vv1, title="Interpolation; time=%.3fs" % ti, interactive=True)
+plot(vv2, title="Assignment; time=%.3fs" % ta0, interactive=Yrue)
+plot(vv3, title="Assignment (cached); time=%.3fs" % ta1, interactive=True)

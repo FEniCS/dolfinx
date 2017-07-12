@@ -167,5 +167,4 @@ file = File("current_density.pvd")
 file << J
 
 # Plot solution and hold plot
-plot(J)
-interactive()
+plot(J, interactive=True)

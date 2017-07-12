@@ -62,6 +62,4 @@ for i in range(5):
     mesh = refine(mesh, cell_markers)
 
     # Plot mesh
-    plot(mesh)
-
-interactive()
+    plot(mesh, interactive=True)

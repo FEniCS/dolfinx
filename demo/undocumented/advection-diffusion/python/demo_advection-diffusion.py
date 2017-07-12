@@ -109,7 +109,7 @@ while t < T:
     u0 = u
 
     # Plot solution
-    plot(u)
+    plot(u, interactive=True)
 
     # Save the solution to file
     out_file << (u, t)
@@ -117,6 +117,3 @@ while t < T:
     # Move to next interval and adjust boundary condition
     t += dt
     g.assign(boundary_value(int(t/dt)))
-
-# Hold plot
-interactive()

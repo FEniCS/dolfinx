@@ -55,6 +55,3 @@ plot(bessel_I(0, x), title='bessel_I(0, x)', mesh=mesh)
 plot(bessel_I(1, x), title='bessel_I(1, x)', mesh=mesh)
 plot(bessel_K(0, x), title='bessel_K(0, x)', mesh=mesh)
 plot(bessel_K(1, x), title='bessel_K(1, x)', mesh=mesh)
-
-print("Note that you must press 'q' to quit.")
-interactive()

@@ -93,6 +93,3 @@ for level in range(MAX_ITER):
 
     # Plot mesh
     plot(mesh)
-
-# Hold plot
-interactive()

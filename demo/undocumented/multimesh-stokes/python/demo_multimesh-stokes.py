@@ -158,10 +158,9 @@ File("p2.pvd") << p2
 
 # Plot solution
 plot(W.multimesh())
-plot(u0, title="u_0")
-plot(u1, title="u_1")
-plot(u2, title="u_2")
-plot(p0, title="p_0")
-plot(p1, title="p_1")
-plot(p2, title="p_2")
-interactive()
+plot(u0, title="u_0", interactive=True)
+plot(u1, title="u_1", interactive=True)
+plot(u2, title="u_2", interactive=True)
+plot(p0, title="p_0", interactive=True)
+plot(p1, title="p_1", interactive=True)
+plot(p2, title="p_2", interactive=True)

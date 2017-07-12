@@ -138,5 +138,5 @@ else:
     out << u
 
 # Plot the current configuration
-plot(u, mode="displacement", wireframe=True, title="Displacement field")
-interactive()
+plot(u, mode="displacement", wireframe=True, title="Displacement field",
+     interactive=True)

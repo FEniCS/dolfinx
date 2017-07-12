@@ -39,5 +39,4 @@ print(hist)
 exec(hist)
 
 # Show mesh
-plot(mesh)
-interactive()
+plot(mesh, interactive=True)

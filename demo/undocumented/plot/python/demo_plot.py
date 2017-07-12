@@ -83,7 +83,8 @@ if 0 in demos:
 # Plot scalar function
 if 1 in demos:
     V = FunctionSpace(mesh, "CG", 1)
-    f = Expression("t * 100 * exp(-10.0 * (pow(x[0] - t, 2) + pow(x[1] - t, 2)))", element=V.ufl_element(), t=0.0)
+    f = Expression("t * 100 * exp(-10.0 * (pow(x[0] - t, 2) + pow(x[1] - t, 2)))",
+                   element=V.ufl_element(), t=0.0)
     for i in range(100):
         f.t += 0.01
         plot(f, mesh=mesh, rescale=True, title="Plotting scalar function")
@@ -92,11 +93,10 @@ if 1 in demos:
 if 2 in demos:
     mesh = UnitSquareMesh(16, 16)
     V = VectorFunctionSpace(mesh, "CG", 1)
-    f = Expression(("-(x[1] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))",\
-                  " (x[0] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))"), \
+    f = Expression(("-(x[1] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))",
+                    " (x[0] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))"),
                    element=V.ufl_element(), t=0.0)
     for i in range(200):
         f.t += 0.005
-        plot(f, mesh=mesh, rescale=True, title="Plotting vector function")
-
-interactive()
+        plot(f, mesh=mesh, rescale=True, title="Plotting vector function",
+             interactive=True)

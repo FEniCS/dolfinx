@@ -67,12 +67,10 @@ solve(a == L, w, solver_parameters={"symmetric": True})
 sigma_cg = project(sigma, VectorFunctionSpace(mesh, "CG", 1))
 u_cg = project(u, FunctionSpace(mesh, "CG", 1))
 plot(sigma_cg, interactive=True)
-plot(u_cg)
+plot(u_cg, interactive=True)
 
 # Store solutions
 file = File("sigma.pvd")
 file << sigma
 file = File("u.pvd")
 file << u
-
-interactive()

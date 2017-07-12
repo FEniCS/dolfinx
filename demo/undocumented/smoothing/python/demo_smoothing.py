@@ -68,6 +68,4 @@ for i in range(num_refinements):
     mesh.snap_boundary(hole)
 
     # Plot mesh
-    plot(mesh, title=("Mesh %d" % (i + 1)))
-
-interactive()
+    plot(mesh, title=("Mesh %d" % (i + 1)), interactive=True)

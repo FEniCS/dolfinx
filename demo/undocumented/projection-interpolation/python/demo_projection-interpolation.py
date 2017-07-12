@@ -38,7 +38,6 @@ PIv = Function(P1)
 PIv.interpolate(v)
 
 # Plot functions
-plot(v, mesh=mesh,  title="v")
-plot(Pv,  title="Pv")
-plot(PIv, title="PI v")
-interactive()
+plot(v, mesh=mesh,  title="v", interactive=True)
+plot(Pv,  title="Pv", interactive=True)
+plot(PIv, title="PI v", interactive=True)

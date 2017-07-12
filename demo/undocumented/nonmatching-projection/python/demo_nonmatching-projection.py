@@ -46,6 +46,5 @@ u1 = Function(P1)
 solve(a == L, u1)
 
 # Plot functions
-plot(u0, mesh=mesh0, title="u0")
-plot(u1, title="u1")
-interactive()
+plot(u0, mesh=mesh0, title="u0", interactive=True)
+plot(u1, title="u1", interactive=True)

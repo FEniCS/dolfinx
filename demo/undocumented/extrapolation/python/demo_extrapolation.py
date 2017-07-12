@@ -37,6 +37,5 @@ z2 = Function(P2)
 z2.extrapolate(z1)
 
 # Plot approximations
-plot(z1, title="z1")
-plot(z2, title="z2")
-interactive()
+plot(z1, title="z1", interactive=True)
+plot(z2, title="z2", interactive=True)

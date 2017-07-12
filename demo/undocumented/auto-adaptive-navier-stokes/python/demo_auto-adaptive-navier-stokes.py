@@ -110,6 +110,5 @@ list_timings(TimingClear_clear, [TimingType_wall])
 # Extract solutions on coarsest and finest mesh:
 (u0, p0) = w.root_node().split()
 (u1, p1) = w.leaf_node().split()
-plot(p0, title="Pressure on initial mesh")
-plot(p1, title="Pressure on final mesh")
-interactive()
+plot(p0, title="Pressure on initial mesh", interactive=True)
+plot(p1, title="Pressure on final mesh", interactive=True)

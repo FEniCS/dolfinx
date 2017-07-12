@@ -54,9 +54,8 @@ ALE.move(fluid_mesh, structure_mesh)
 fluid_mesh.smooth()
 
 # Plot meshes
-plot(fluid_mesh, title="Fluid")
-plot(structure_mesh, title="Structure")
-interactive()
+plot(fluid_mesh, title="Fluid", interactive=True)
+plot(structure_mesh, title="Structure", interactive=True)
 
 # Build mapping from structure to fluid mesh
 structure_to_fluid = compute_vertex_map(structure_mesh, fluid_mesh)

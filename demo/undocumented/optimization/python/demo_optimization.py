@@ -90,10 +90,7 @@ for i in range(100):
     print(u.vector().max())
 
 # Plot solution and parameter
-plot(u,  title="Solution",  rescale=True)
-plot(z,  title="Adjoint",   rescale=True)
-plot(p,  title="Parameter", rescale=True)
-plot(u0, mesh=mesh, title="Target", rescale=True)
-
-# Hold plot
-interactive()
+plot(u,  title="Solution",  rescale=True, interactive=True)
+plot(z,  title="Adjoint",   rescale=True, interactive=True)
+plot(p,  title="Parameter", rescale=True, interactive=True)
+plot(u0, mesh=mesh, title="Target", rescale=True, interactive=True)

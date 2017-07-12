@@ -70,6 +70,5 @@ u = Function(V)
 solve(a == L, u)
 
 # Plot solution and gradient
-plot(domains, title='domains')
-plot(u, title="u")
-interactive()
+plot(domains, title='domains', interactive=True)
+plot(u, title="u", interactive=True)
