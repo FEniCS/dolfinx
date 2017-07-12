@@ -349,9 +349,3 @@ FORWARD_DECLARE_MESHFUNCTIONS(std::size_t, Sizet)
 %ignore dolfin::MeshPartitioning::build_distributed_mesh(Mesh&, const std::vector<std::size_t>&);
 %ignore dolfin::MeshPartitioning::build_distributed_mesh(Mesh&, const LocalMeshData&);
 %ignore dolfin::MeshPartitioning::build_distributed_value_collection;
-
-//-----------------------------------------------------------------------------
-// Ignores for MultiMesh
-//-----------------------------------------------------------------------------
-%ignore dolfin::plot(const MultiMesh&);
-%ignore dolfin::plot(std::shared_ptr<const MultiMesh>);

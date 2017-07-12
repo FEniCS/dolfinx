@@ -23,7 +23,6 @@
 #include <cmath>
 
 #include <dolfin/log/log.h>
-#include <dolfin/plot/plot.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/SimplexQuadrature.h>
@@ -810,57 +809,13 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
   return num_points;
 }
 //-----------------------------------------------------------------------------
- void MultiMesh::_add_normal(std::vector<double>& normals,
-                             const Point& normal,
-                             const std::size_t npts,
-                             const std::size_t gdim) const
- {
-   for (std::size_t i = 0; i < npts; ++i)
-     for (std::size_t j = 0; j < gdim; ++j)
-       normals.push_back(normal[j]);
- }
-
-//-----------------------------------------------------------------------------
-void MultiMesh::_plot() const
+void MultiMesh::_add_normal(std::vector<double>& normals,
+                         const Point& normal,
+                         const std::size_t npts,
+                         const std::size_t gdim) const
 {
-  // Developer note: This function is implemented here rather than
-  // in the plot library since it is too specialized to be implemented
-  // there.
-
-  cout << "Plotting multimesh with " << num_parts() << " parts" << endl;
-
-  // Iterate over parts
-  for (std::size_t p = 0; p < num_parts(); ++p)
-  {
-    // Create a cell function and mark cells
-    std::shared_ptr<MeshFunction<std::size_t>>
-      f(new MeshFunction<std::size_t>(part(p),
-                                      part(p)->topology().dim()));
-
-    // Set all entries to 0 (uncut cells)
-    f->set_all(0);
-
-    // Mark cut cells as 1
-    for (auto it : cut_cells(p))
-      f->set_value(it, 1);
-
-    // Mart covered cells as 2
-    for (auto it : covered_cells(p))
-      f->set_value(it, 2);
-
-    // Write some debug data
-    const std::size_t num_cut = cut_cells(p).size();
-    const std::size_t num_covered = covered_cells(p).size();
-    const std::size_t num_uncut = part(p)->num_cells() - num_cut - num_covered;
-    cout << "Part " << p << " has "
-         << num_uncut   << " uncut cells (0), "
-         << num_cut     << " cut cells (1), and "
-         << num_covered << " covered cells (2)." << endl;
-
-    // Plot
-    std::stringstream s;
-    s << "Map of cell types for multimesh part " << p;
-    dolfin::plot(f, s.str());
-  }
+for (std::size_t i = 0; i < npts; ++i)
+ for (std::size_t j = 0; j < gdim; ++j)
+   normals.push_back(normal[j]);
 }
 //-----------------------------------------------------------------------------
