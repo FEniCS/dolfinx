@@ -68,9 +68,5 @@ int main()
   File file("conditional.pvd");
   file << u;
 
-  // Plot solution
-  plot(u);
-  interactive();
-
   return 0;
 }

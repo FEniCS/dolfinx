@@ -402,15 +402,6 @@ and update values for the next time step:
     *u0 = *u1;
     t += dt;
 
-Finally, we plot the solution and the program is finished:
-
-.. code-block:: c++
-
-    // Plot solution
-    plot(p1, "Pressure");
-    plot(u1, "Velocity");
-    interactive();
-
     return 0;
   }
 

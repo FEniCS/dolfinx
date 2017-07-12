@@ -100,13 +100,12 @@ coarser grid:
 
      v1.interpolate(v3);
 
-Finally, we can visualise the function on the two meshes:
+Finally, we can save the output of each function on each mesh to XDMF: 
 
 .. code-block:: cpp
 
-     plot(v3);
-     plot(v1);
-     interactive();
+     XDMFFile("v1.xdmf").write(v1);
+     XDMFFile("v3.xdmf").write(v3);
 
      return 0;
    }

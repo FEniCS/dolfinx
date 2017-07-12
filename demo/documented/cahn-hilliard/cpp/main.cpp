@@ -157,9 +157,5 @@ int main(int argc, char* argv[])
     file << std::pair<const Function*, double>(&((*u)[0]), t);
   }
 
-  // Plot solution
-  plot((*u)[0]);
-  interactive();
-
   return 0;
 }

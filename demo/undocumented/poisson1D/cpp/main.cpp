@@ -101,9 +101,5 @@ int main()
   File file_u("poisson.pvd");
   file_u << u;
 
-  // Plot solution
-  plot(u);
-  interactive();
-
   return 0;
 }

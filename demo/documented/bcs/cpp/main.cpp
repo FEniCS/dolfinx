@@ -66,9 +66,5 @@ int main()
   File file("u.pvd");
   file << u;
 
-  // Plot solution
-  plot(u);
-  interactive();
-
   return 0;
 }

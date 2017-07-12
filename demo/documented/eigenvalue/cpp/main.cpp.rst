@@ -52,9 +52,8 @@ Under construction
      Function u(V);
      *u.vector() = rx;
 
-     // Plot eigenfunction
-     plot(u);
-     interactive();
+     // Output eigenfunction to file
+     XDMFFile("eigenfunction.xdmf").write(u)
 
      #else
 
