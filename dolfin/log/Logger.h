@@ -133,7 +133,7 @@ namespace dolfin
 
     /// Return MPI Communicator of Logger
     MPI_Comm mpi_comm()
-    { return _mpi_comm.comm(); }
+    { return _mpi_comm; }
 
     /// Helper function for reporting memory usage
     void _report_memory_usage(size_t num_mb);
@@ -176,8 +176,10 @@ namespace dolfin
     // Map for stringifying TimingType
     static std::map<TimingType, std::string> _TimingType_descr;
 
+    // FIXME: This should be a dolfin::MPI::Comm, the MPI-awareness of
+    //        the logging needs to be fixed.
     // MPI Communicator
-    dolfin::MPI::Comm _mpi_comm;
+    MPI_Comm _mpi_comm;
 
   };
 

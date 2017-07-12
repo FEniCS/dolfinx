@@ -50,6 +50,11 @@ dolfin::MPI::Comm::Comm(MPI_Comm comm)
 //-----------------------------------------------------------------------------
 dolfin::MPI::Comm::~Comm()
 {
+  free();
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::Comm::free()
+{
 #ifdef HAS_MPI
   int err = 0;
   if (_comm != MPI_COMM_NULL)

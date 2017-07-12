@@ -57,7 +57,7 @@ namespace dolfin
 
   private:
 
-    std::shared_ptr<const DirichletBC> _bc;
+    std::weak_ptr<const DirichletBC> _bc;
 
   };
 
