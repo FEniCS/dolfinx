@@ -261,7 +261,7 @@ IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_SHARED_POINTERS(Form)
 %extend dolfin::GenericDofMap {
   PyObject* _cell_dofs(std::size_t i)
   {
-    dolfin::ArrayView<const dolfin::la_index> dofs = self->cell_dofs(i);
+    auto dofs = self->cell_dofs(i);
     return %make_numpy_array(1, dolfin_index)(dofs.size(), dofs.data(),
                                               false);
   }

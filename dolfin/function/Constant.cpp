@@ -14,12 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Martin Sandve Alnes 2008
-// Modified by Garth N. Wells 2009-2011
-//
-// First added:  2006-02-09
-// Last changed: 2011-11-14
 
 #include <iostream>
 #include <iterator>
@@ -136,8 +130,14 @@ std::vector<double> Constant::values() const
 void Constant::eval(Array<double>& values, const Array<double>& x) const
 {
   // Copy values
-  for (std::size_t j = 0; j < _values.size(); j++)
-    values[j] = _values[j];
+  std::copy(_values.begin(), _values.end(), values.data());
+}
+//-----------------------------------------------------------------------------
+void Constant::eval(Eigen::Ref<Eigen::VectorXd> values,
+                    const Eigen::Ref<Eigen::VectorXd> x) const
+{
+  // Copy values
+  std::copy(_values.begin(), _values.end(), values.data());
 }
 //-----------------------------------------------------------------------------
 std::string Constant::str(bool verbose) const

@@ -162,8 +162,7 @@ FunctionSpace::interpolate_from_parent(GenericVector& expansion_coefficients,
                             ufc_parent);
 
     // Tabulate dofs - map from cell to vector
-    const ArrayView<const dolfin::la_index> cell_dofs
-      = _dofmap->cell_dofs(cell->index());
+    auto cell_dofs = _dofmap->cell_dofs(cell->index());
 
     // Copy dofs to vector
     expansion_coefficients.set_local(cell_coefficients.data(),
@@ -193,8 +192,7 @@ void FunctionSpace::interpolate_from_any(GenericVector& expansion_coefficients,
                coordinate_dofs.data(), ufc_cell);
 
     // Tabulate dofs
-    const ArrayView<const dolfin::la_index> cell_dofs
-      = _dofmap->cell_dofs(cell->index());
+    auto cell_dofs = _dofmap->cell_dofs(cell->index());
 
     // Copy dofs to vector
     expansion_coefficients.set_local(cell_coefficients.data(),
@@ -373,14 +371,13 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
     cell->get_coordinate_dofs(coordinate_dofs);
 
     // Get local-to-global map
-    const ArrayView<const dolfin::la_index> dofs
-      = _dofmap->cell_dofs(cell->index());
+    auto dofs = _dofmap->cell_dofs(cell->index());
 
     // Tabulate dof coordinates on cell
     _element->tabulate_dof_coordinates(coordinates, coordinate_dofs, *cell);
 
     // Copy dof coordinates into vector
-    for (std::size_t i = 0; i < dofs.size(); ++i)
+    for (Eigen::Index i = 0; i < dofs.size(); ++i)
     {
       const dolfin::la_index dof = dofs[i];
       if (dof < (dolfin::la_index) local_size)
@@ -414,12 +411,11 @@ void FunctionSpace::set_x(GenericVector& x, double value,
     cell->get_coordinate_dofs(coordinate_dofs);
 
     // Get cell local-to-global map
-    const ArrayView<const dolfin::la_index> dofs
-      = _dofmap->cell_dofs(cell->index());
+    auto dofs = _dofmap->cell_dofs(cell->index());
 
     // Tabulate dof coordinates
     _element->tabulate_dof_coordinates(coordinates, coordinate_dofs, *cell);
-    dolfin_assert(coordinates.shape()[0] == dofs.size());
+    dolfin_assert(coordinates.shape()[0] == (std::size_t) dofs.size());
     dolfin_assert(component < coordinates.shape()[1]);
 
     // Copy coordinate (it may be possible to avoid this)
@@ -455,10 +451,9 @@ void FunctionSpace::print_dofmap() const
   dolfin_assert(_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
-    const ArrayView<const dolfin::la_index> dofs
-      = _dofmap->cell_dofs(cell->index());
+    auto dofs = _dofmap->cell_dofs(cell->index());
     cout << cell->index() << ":";
-    for (std::size_t i = 0; i < dofs.size(); i++)
+    for (Eigen::Index i = 0; i < dofs.size(); i++)
       cout << " " << static_cast<std::size_t>(dofs[i]);
     cout << endl;
   }

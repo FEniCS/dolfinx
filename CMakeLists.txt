@@ -122,19 +122,10 @@ if (APPLE)
 endif()
 
 #------------------------------------------------------------------------------
-# This should be removed when Clang support OpenMP is ready
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  option(DOLFIN_ENABLE_OPENMP "Enable OpenMP." OFF)
-else()
-  option(DOLFIN_ENABLE_OPENMP "Enable OpenMP." ON)
-endif()
-
-#------------------------------------------------------------------------------
 # Enable or disable optional packages
 
 # List optional packages
 set(OPTIONAL_PACKAGES "")
-list(APPEND OPTIONAL_PACKAGES "OpenMP")
 list(APPEND OPTIONAL_PACKAGES "MPI")
 list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "PETSc4py")
@@ -265,7 +256,7 @@ if (size_t_size)
 endif()
 
 #------------------------------------------------------------------------------
-# Check for MPI and OpenMP
+# Check for MPI
 
 # FIXME: Should be set CMake to use the MPI compiler wrappers?
 
@@ -280,19 +271,6 @@ if (DOLFIN_ENABLE_MPI)
     # CMAKE_CXX_COMPILER, etc)
     set(MPI_CXX_FOUND TRUE)
     set(MPI_C_FOUND TRUE)
-  endif()
-endif()
-
-# Test for OpenMP (but not for Clang, which does not support OpenMP)
-if (DOLFIN_ENABLE_OPENMP)
-  find_package(OpenMP)
-  set_package_properties(OpenMP PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Open Multi-Processing API"
-    PURPOSE "Enables DOLFIN to run in parallel with OpenMP")
-  include(CheckOpenMP)
-  check_openmp_unsigned_int_loop_control_variable(OPENMP_UINT_TEST_RUNS)
-  if (NOT OPENMP_UINT_TEST_RUNS)
-    set(OPENMP_FOUND FALSE)
   endif()
 endif()
 

@@ -898,11 +898,12 @@ void HDF5File::write(const Function& u, const std::string name)
   for (std::size_t i = 0; i != n_cells; ++i)
   {
     x_cell_dofs.push_back(cell_dofs.size());
-    const ArrayView<const dolfin::la_index> cell_dofs_i = dofmap.cell_dofs(i);
-    for (auto p = cell_dofs_i.begin(); p != cell_dofs_i.end(); ++p)
+    auto  cell_dofs_i = dofmap.cell_dofs(i);
+    for (Eigen::Index j = 0; j < cell_dofs_i.size(); ++j)
     {
-      dolfin_assert(*p < (dolfin::la_index)local_to_global_map.size());
-      cell_dofs.push_back(local_to_global_map[*p]);
+      auto p = cell_dofs_i[j];
+      dolfin_assert(p < (dolfin::la_index)local_to_global_map.size());
+      cell_dofs.push_back(local_to_global_map[p]);
     }
   }
 
