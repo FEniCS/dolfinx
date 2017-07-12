@@ -169,10 +169,8 @@ def test_cell_topology_against_fiat(mesh_factory):
     assert mesh.ordered()
 
     # Create DOLFIN and FIAT cell
-    cell = Cell(mesh, 0)
-    cell_name = CellType.type2string(cell.type())
+    cell_name = CellType.type2string(mesh.type().cell_type())
     fiat_cell = FIAT.ufc_cell(cell_name)
-    assert cell.dim() == fiat_cell.get_spatial_dimension()
 
     # Initialize mesh entities
     tdim = mesh.topology().dim()
