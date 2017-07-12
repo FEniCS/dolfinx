@@ -140,7 +140,7 @@ void VTKPlottableMesh::update(std::shared_ptr<const Variable> var,
 
   dolfin_assert(_grid);
   dolfin_assert(_full_grid);
-  dolfin_assert(_mesh);
+  dolfin_assert(!_mesh.expired());
 
   Timer t("VTK construct grid");
 
@@ -148,17 +148,20 @@ void VTKPlottableMesh::update(std::shared_ptr<const Variable> var,
   // Construct VTK point array from DOLFIN mesh vertices
   //
 
+  // Create a shared pointer
+  auto mesh = _mesh.lock();
+
   // Create point array
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-  points->SetNumberOfPoints(_mesh->num_vertices());
+  points->SetNumberOfPoints(mesh->num_vertices());
 
-  if(_mesh->topology().dim() == 1)
+  if(mesh->topology().dim() == 1)
   {
     // HACK to sort 1D points into ascending order
     // because vtkXYPlotActor does not recognise
     // cell connectivity information
     std::vector<double> pointx;
-    for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex)
+    for (VertexIterator vertex(*mesh); !vertex.end(); ++vertex)
     {
       const Point point = vertex->point();
       pointx.push_back(point.x());
@@ -170,7 +173,7 @@ void VTKPlottableMesh::update(std::shared_ptr<const Variable> var,
   else
   {
     // Iterate vertices and add to point array
-    for (VertexIterator vertex(*_mesh, "all"); !vertex.end(); ++vertex)
+    for (VertexIterator vertex(*mesh, "all"); !vertex.end(); ++vertex)
     {
       const Point point = vertex->point();
       points->SetPoint(vertex->index(), point.x(), point.y(), point.z());
@@ -184,7 +187,7 @@ void VTKPlottableMesh::update(std::shared_ptr<const Variable> var,
   // Construct VTK cells from DOLFIN facets
   //
 
-  build_grid_cells(_full_grid, _mesh->topology().dim());
+  build_grid_cells(_full_grid, mesh->topology().dim());
   if (_entity_dim == dim())
     _grid->ShallowCopy(_full_grid);
   else
@@ -201,10 +204,13 @@ void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid>& gr
   // in cell array did not give speedups when testing during development
   vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
 
-  _mesh->init(topological_dim, 0);
-  const std::vector<unsigned int>& connectivity = _mesh->topology()(topological_dim, 0)();
+  // Create a shared pointer
+  auto mesh = _mesh.lock();
 
-  for (std::size_t i = 0; i < _mesh->size(topological_dim); ++i)
+  mesh->init(topological_dim, 0);
+  const std::vector<unsigned int>& connectivity = mesh->topology()(topological_dim, 0)();
+
+  for (std::size_t i = 0; i < mesh->size(topological_dim); ++i)
   {
     // Insert all vertex indices for a given cell. For a simplex cell in nD,
     // n+1 indices are inserted. The connectivity array must be indexed at
@@ -245,7 +251,7 @@ void VTKPlottableMesh::update_range(double range[2])
 //----------------------------------------------------------------------------
 std::size_t VTKPlottableMesh::dim() const
 {
-  return _mesh->geometry().dim();
+  return _mesh.lock()->geometry().dim();
 }
 //----------------------------------------------------------------------------
 void VTKPlottableMesh::build_id_filter()
@@ -362,7 +368,7 @@ vtkSmartPointer<vtkActor> VTKPlottableMesh::get_mesh_actor()
 //----------------------------------------------------------------------------
 std::shared_ptr<const Mesh> VTKPlottableMesh::mesh() const
 {
-  return _mesh;
+  return _mesh.lock();
 }
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkUnstructuredGrid> VTKPlottableMesh::grid() const
@@ -426,14 +432,16 @@ template <class T>
 void VTKPlottableMesh::setPointValues(std::size_t size, const T* indata,
                                       const Parameters& p)
 {
-  const std::size_t num_vertices = _mesh->num_vertices();
+  // Create a shared pointer
+  auto mesh = _mesh.lock();
+
+  const std::size_t num_vertices = mesh->num_vertices();
   const std::size_t num_components = size / num_vertices;
 
   dolfin_assert(num_components > 0 && num_components <= 3);
   dolfin_assert(num_vertices*num_components == size);
 
-  vtkSmartPointer<vtkFloatArray> values =
-    vtkSmartPointer<vtkFloatArray>::New();
+  vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
   if (num_components == 1)
   {
     values->SetNumberOfValues(num_vertices);
@@ -484,7 +492,10 @@ template <class T>
 void VTKPlottableMesh::setCellValues(std::size_t size, const T* indata,
                                      const Parameters& p)
 {
-  const std::size_t num_entities = _mesh->num_entities(_entity_dim);
+  // Create a shared pointer
+  auto mesh = _mesh.lock();
+
+  const std::size_t num_entities =mesh->num_entities(_entity_dim);
   dolfin_assert(num_entities == size);
 
   vtkSmartPointer<vtkFloatArray> values =

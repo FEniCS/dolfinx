@@ -22,26 +22,28 @@ def run_doxygen():
     print('Running doxygen to read docstrings from C++:')
     print('Doxygen version: ', end='')
     sys.stdout.flush() # doxygen writes to stderr and mangles output order
-    
+
     # Help doxygen find UFC
     try:
         import ffc
         os.environ['FFC_PATH_FOR_DOXYGEN'] = ffc.get_include_path()
     except:
         pass
-    
-    # Run doxygen on C++ sources, generates XML output for us to convert into Sphinx and SWIG formats.
+
+    # Run doxygen on C++ sources, generates XML output for us to
+    # convert into Sphinx and SWIG formats.
     try:
         subprocess.call(['doxygen', '--version'], cwd='..')
         subprocess.call(['doxygen'], cwd='..')
     except OSError as e:
         print('ERROR: could not run doxygen:', e)
-    
+
     print('DONE parsing C++ with doxygen')
     print('--------------------------------------------')
     print('Generating Sphinx API docs from doxygen')
 
-    # Convert doxygen XML output to *.rst files per subdirectory and make SWIG docstrings.i
+    # Convert doxygen XML output to *.rst files per subdirectory and
+    # make SWIG docstrings.i
     cmd = ['python', './generate_api_rst.py', '--no-swig']
     subprocess.call(cmd, cwd='..')
 
@@ -50,8 +52,9 @@ def run_doxygen():
 run_doxygen()
 
 
-# We can't compile the swig generated headers on RTD.  Instead, we generate the python part as usual,
-# and then mock the cpp objects by importing a generated module full of stubs that looks enough like
+# We can't compile the swig generated headers on RTD.  Instead, we
+# generate the python part as usual, and then mock the cpp objects by
+# importing a generated module full of stubs that looks enough like
 # what the C++ SWIG modules will look like.
 if os.path.isfile('../mock_cpp_modules.py'):
     sys.path.insert(0, '../')
@@ -108,7 +111,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'DOLFIN'
-copyright = u'2016, FEniCS Project'
+copyright = u'2017, FEniCS Project'
 author = u'FEniCS Project'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -481,4 +484,3 @@ def copy_image_files(self):
             except Exception as err:
                 logger.warning('cannot copy image file %r: %s', path.join(self.srcdir, src), err)
 StandaloneHTMLBuilder.copy_image_files = copy_image_files
-

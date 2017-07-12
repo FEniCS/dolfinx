@@ -140,7 +140,7 @@ namespace dolfin
     vtkSmartPointer<vtkGeometryFilter> _geometryFilter;
 
     // The mesh to visualize
-    std::shared_ptr<const Mesh> _mesh;
+    std::weak_ptr<const Mesh> _mesh;
 
     // The label actors
     vtkSmartPointer<vtkActor2D> _vertexLabelActor;

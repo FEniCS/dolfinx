@@ -46,19 +46,19 @@ namespace dolfin
 
     /// Get shared pointer to the expression
     std::shared_ptr<const Expression> expression() const
-    { return _expression; }
+    { return _expression.lock(); }
 
     /// Get shared pointer to the mesh
     std::shared_ptr<const Mesh> mesh() const
-    { return _mesh; }
+    { return _mesh.lock(); }
 
   private:
 
     // The mesh to plot on
-    std::shared_ptr<const Mesh> _mesh;
+    std::weak_ptr<const Mesh> _mesh;
 
     // The expression itself
-    std::shared_ptr<const Expression> _expression;
+    std::weak_ptr<const Expression> _expression;
 
   };
 

@@ -52,6 +52,17 @@ def process():
         # Iterate over demos
         for demo, path in demos:
 
+            # Build list of rst files in demo directory
+            rst_files_common = [f for f in os.listdir(path) if os.path.splitext(f)[1] == ".rst" ]
+
+            # Make demo doc directory
+            demo_dir = os.path.join('./demos/', demo)
+            if not os.path.exists(demo_dir):
+                os.makedirs(demo_dir)
+
+            for f in rst_files_common:
+                shutil.copy(os.path.join(path, f), demo_dir)
+
             # Process C++ and Python versions
             for version in ("cpp", "python"):
 
@@ -69,11 +80,13 @@ def process():
                 if not os.path.exists(demo_dir):
                     os.makedirs(demo_dir)
 
-                # Copy rst files into documentation demo directory and process with Pylit
+                # Copy rst files into documentation demo directory and
+                # process with Pylit
                 for f in rst_files:
                     shutil.copy(os.path.join(version_path, f), demo_dir)
 
-                    # Run pylit on cpp.rst and py.rst files (file with 'double extensions')
+                    # Run pylit on cpp.rst and py.rst files (file with
+                    # 'double extensions')
                     if os.path.splitext(os.path.splitext(f)[0])[1] in (".py", ".cpp", ".ufl"):
                         rst_file = os.path.join(demo_dir, f)
                         command = pylit_parser + " " + rst_file

@@ -44,19 +44,24 @@ dolfin::MPI::Comm::Comm(MPI_Comm comm)
   else
     _comm = MPI_COMM_NULL;
 #else
-  _comm = comm
+  _comm = comm;
 #endif
 }
 //-----------------------------------------------------------------------------
 dolfin::MPI::Comm::~Comm()
 {
+  free();
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::Comm::free()
+{
 #ifdef HAS_MPI
-  int err = 0;
   if (_comm != MPI_COMM_NULL)
-    err = MPI_Comm_free(&_comm);
-
-  if (err != MPI_SUCCESS)
-    std::cout << "Error when destroying communicator (MPI_Comm_free)." << std::endl;
+  {
+    int err = MPI_Comm_free(&_comm);
+    if (err != MPI_SUCCESS)
+      std::cout << "Error when destroying communicator (MPI_Comm_free)." << std::endl;
+  }
 #endif
 }
 //-----------------------------------------------------------------------------

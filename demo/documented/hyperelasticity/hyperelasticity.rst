@@ -25,7 +25,7 @@ task is to find the displacement field :math:`u: \Omega \rightarrow
 \mathbb{R}^{d}` that minimises the total potential energy :math:`\Pi`:
 
 .. math::
-   \min_{u \in V} \Pi
+   \min_{u \in V} \Pi,
 
 where :math:`V` is a suitable function space that satisfies boundary
 conditions on :math:`u`.  The total potential energy is given by
@@ -33,7 +33,7 @@ conditions on :math:`u`.  The total potential energy is given by
 .. math::
    \Pi = \int_{\Omega} \psi(u) \, {\rm d} x
    - \int_{\Omega} B \cdot u \, {\rm d} x
-   - \int_{\partial\Omega} T \cdot u \, {\rm d} s
+   - \int_{\partial\Omega} T \cdot u \, {\rm d} s,
 
 where :math:`\psi` is the elastic stored energy density, :math:`B` is a
 body force (per unit reference volume) and :math:`T` is a traction force
@@ -90,7 +90,7 @@ and the scalars  :math:`J` and :math:`I_{c}`
 This demo considers a common neo-Hookean stored energy model of the form
 
 .. math::
-   \psi =  \frac{\mu}{2} (I_{c} - 3) - \mu \ln(J) + \frac{\lambda}{2}\ln(J)^{2}
+   \psi =  \frac{\mu}{2} (I_{c} - 3) - \mu \ln(J) + \frac{\lambda}{2}\ln(J)^{2},
 
 where :math:`\mu` and :math:`\lambda` are the Lame parameters. These
 can be expressed in terms of the more common Young's modulus :math:`E`
@@ -116,12 +116,13 @@ We use the following definitions of the boundary and boundary conditions:
 
 * :math:`\Gamma_{N} = \partial \Omega \backslash \Gamma_{D}` (Neumann boundary)
 
-* On  :math:`\Gamma_{D_{0}}`
+* On :math:`\Gamma_{D_{0}}`:  :math:`u = (0, 0, 0)`
+
+* On  :math:`\Gamma_{D_{1}}`
     .. math::
-        u = (&0, \\
-             &(0.5 + (y - 0.5)\cos(\pi/3) - (z - 0.5)\sin(\pi/3) - y)/2, \\
-             &(0.5 + (y - 0.5)\sin(\pi/3) + (z - 0.5)\cos(\pi/3) - x))/2)
-* On :math:`\Gamma_{D_{1}}`:  :math:`u = (0, 0, 0)`
+       u = (&0, \\
+       &(0.5 + (y - 0.5)\cos(\pi/3) - (z - 0.5)\sin(\pi/3) - y)/2, \\
+       &(0.5 + (y - 0.5)\sin(\pi/3) + (z - 0.5)\cos(\pi/3) - z))/2)
 
 * On :math:`\Gamma_{N}`: :math:`T = (0.1, 0, 0)`
 
