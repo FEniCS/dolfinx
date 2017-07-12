@@ -53,7 +53,7 @@ Under construction
      *u.vector() = rx;
 
      // Output eigenfunction to file
-     XDMFFile("eigenfunction.xdmf").write(u)
+     XDMFFile("eigenfunction.xdmf").write(u);
 
      #else
 

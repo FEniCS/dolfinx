@@ -65,8 +65,8 @@ int main()
   fluid_mesh->smooth();
 
   // Write out meshes to files.
-  XDMFFile("fluid_mesh.xdmf").write(fluid_mesh);
-  XDMFFile("structure_mesh.xdmf").write(structure_mesh);
+  XDMFFile("fluid_mesh.xdmf").write(*fluid_mesh);
+  XDMFFile("structure_mesh.xdmf").write(*structure_mesh);
 
   return 0;
 }

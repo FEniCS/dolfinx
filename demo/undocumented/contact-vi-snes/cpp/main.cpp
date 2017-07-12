@@ -138,7 +138,8 @@ int main()
   // Save solution in VTK format
   File file("displacement.pvd");
   file << *u;
+
 #endif
 
- return 0;
+  return 0;
 }

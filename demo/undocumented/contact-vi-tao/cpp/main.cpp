@@ -118,7 +118,7 @@ int main()
   // Solve the problem
   TAOSolver.solve(A, x, b, xl, xu);
 
-  XDMFFile("u.xdmf").write(usol) 
+  XDMFFile("u.xdmf").write(usol); 
 
   #else
 
@@ -126,5 +126,5 @@ int main()
 
   #endif
 
- return 0;
+  return 0;
 }

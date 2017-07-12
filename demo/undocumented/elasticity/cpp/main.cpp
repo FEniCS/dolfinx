@@ -201,12 +201,9 @@ int main()
     file << partitions;
   }
 
-  // Write solution
-  XDMFFile("u.xdmf").write(u);
-
   // Displace mesh and write 
   ALE::move(*mesh, *u);
-  XDMFFile("deformed_mesh.xdmf").write(mesh);
+  XDMFFile("deformed_mesh.xdmf").write(*mesh);
 
   #else
   dolfin::cout << "DOLFIN must be configured with PETSc to run this demo."
