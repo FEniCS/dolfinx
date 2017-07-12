@@ -183,7 +183,8 @@ void SubDomain::apply_markers(S& sub_domains,
   if (dim < D)
   {
     mesh.init(dim);
-    mesh.init(dim, D - 1);
+    if (dim != D - 1)
+      mesh.init(dim, D - 1);
     mesh.init(D - 1, D);
   }
 
@@ -284,7 +285,8 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
   if (dim < D)
   {
     mesh.init(dim);
-    mesh.init(dim, D - 1);
+    if (dim != D - 1)
+      mesh.init(dim, D - 1);
     mesh.init(D - 1, D);
   }
 
