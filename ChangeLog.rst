@@ -12,6 +12,9 @@ Change log
   change
 - Add new methods ``XDMFFile::write_checkpoint``, ``XDMFFile::read_checkpoint``
   to write and read (checkpoint) functions
+- In ``SubDomain::mark()'', properly setup ``on_boundary'' flag to be passed 
+  to ``SubDomain::inside()'' when marking a ``MeshFunction'' defined 
+  on vertices or edges.
 
 2017.1.0 (2017-05-09)
 ---------------------
