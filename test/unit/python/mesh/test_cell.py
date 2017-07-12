@@ -160,8 +160,8 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
     (UnitIntervalMesh, (8,)),
     (UnitSquareMesh, (4, 4)),
     (UnitCubeMesh, (2, 2, 2)),
-    (UnitQuadMesh, (4, 4)),
-    (UnitHexMesh, (2, 2, 2)),
+    (UnitQuadMesh.create, (4, 4)),
+    (UnitHexMesh.create, (2, 2, 2)),
 ])
 def test_cell_topology_against_fiat(mesh_factory):
     func, args = mesh_factory
