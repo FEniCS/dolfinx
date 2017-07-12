@@ -66,7 +66,7 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
   parameters.add("chunking", false);
 
   // Create directory, if required (create on rank 0)
-  if (_mpi_comm.rank()) == 0)
+  if (_mpi_comm.rank() == 0)
   {
     const boost::filesystem::path path(filename);
     if (path.has_parent_path()
@@ -168,7 +168,7 @@ void HDF5File::write(const GenericVector& x, const std::string dataset_name)
   std::pair<std::size_t, std::size_t> local_range = x.local_range();
   const bool chunking = parameters["chunking"];
   const std::vector<std::int64_t> global_size(1, x.size());
-  const bool mpi_io = _mpi_comm.comm().size() > 1 ? true : false;
+  const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
   HDF5Interface::write_dataset(_hdf5_file_id, dataset_name, local_data,
                                local_range, global_size, mpi_io, chunking);
 
