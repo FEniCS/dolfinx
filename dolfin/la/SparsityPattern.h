@@ -30,6 +30,7 @@
 #include <vector>
 
 #include <dolfin/common/ArrayView.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
 
@@ -119,7 +120,7 @@ namespace dolfin
 
     /// Return MPI communicator
     MPI_Comm mpi_comm() const
-    { return _mpi_comm; }
+    { return _mpi_comm.comm(); }
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -143,7 +144,7 @@ namespace dolfin
     const std::size_t _primary_dim;
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
     // IndexMaps for each dimension
     std::vector<std::shared_ptr<const IndexMap>> _index_maps;

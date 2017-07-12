@@ -226,7 +226,7 @@ namespace dolfin
     /// Write object to file
     template<typename T> void operator<<(const T& t)
     {
-      file->_write(MPI::rank(_mpi_comm));
+      file->_write(_mpi_comm.rank());
       *file << t;
     }
 
@@ -259,7 +259,7 @@ namespace dolfin
 
     // FIXME: Remove when GenericFile::write is cleaned up
     // MPI communicator
-    const MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
     // Pointer to implementation (envelope-letter design)
     std::unique_ptr<GenericFile> file;

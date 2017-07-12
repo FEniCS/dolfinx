@@ -429,7 +429,8 @@ namespace dolfin
 
 
 
-    // Add mesh to XDMF xml_node (usually a Domain or Time Grid) and write data
+    // Add mesh to XDMF xml_node (usually a Domain or Time Grid) and
+    // write data
     static void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
                          hid_t h5_id, const Mesh& mesh,
                          const std::string path_prefix);
@@ -456,17 +457,19 @@ namespace dolfin
                                   hid_t h5_id, const std::string path_prefix,
                                   const Mesh& mesh);
 
-    // Add DataItem node to an XML node. If HDF5 is open (h5_id > 0) the data is
-    // written to the HDFF5 file with the path 'h5_path'. Otherwise, data is
-    // witten to the XML node and 'h5_path' is ignored
+    // Add DataItem node to an XML node. If HDF5 is open (h5_id > 0)
+    // the data is written to the HDFF5 file with the path
+    // 'h5_path'. Otherwise, data is witten to the XML node and
+    // 'h5_path' is ignored
     template<typename T>
     static void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
                               hid_t h5_id, const std::string h5_path, const T& x,
                               const std::vector<std::int64_t> dimensions,
                               const std::string number_type="");
 
-    // Calculate set of entities of dimension cell_dim which are duplicated
-    // on other processes and should not be output on this process
+    // Calculate set of entities of dimension cell_dim which are
+    // duplicated on other processes and should not be output on this
+    // process
     static std::set<unsigned int> compute_nonlocal_entities(const Mesh& mesh,
                                                             int cell_dim);
 
@@ -500,7 +503,8 @@ namespace dolfin
                                       const boost::filesystem::path& parent_path,
                                       std::pair<std::int64_t, std::int64_t> range={0, 0});
 
-    // Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem node
+    // Return (0) HDF5 filename and (1) path in HDF5 file from a
+    // DataItem node
     static std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& dataitem_node);
 
     static std::string get_hdf5_filename(std::string xdmf_filename);
@@ -514,8 +518,9 @@ namespace dolfin
     void write_mesh_function(const MeshFunction<T>& meshfunction,
                              Encoding encoding);
 
-    // Get data width - normally the same as u.value_size(), but expand for 2D
-    // vector/tensor because XDMF presents everything as 3D
+    // Get data width - normally the same as u.value_size(), but
+    // expand for 2D vector/tensor because XDMF presents everything as
+    // 3D
     static std::int64_t get_padded_width(const Function& u);
 
     // Returns true for DG0 Functions
@@ -525,8 +530,8 @@ namespace dolfin
     // flattened 2D array
     static std::vector<double> get_point_data_values(const Function& u);
 
-    // Get point data values collocated at P2 geometry points (vertices
-    // and edges) flattened as a 2D array
+    // Get point data values collocated at P2 geometry points
+    // (vertices and edges) flattened as a 2D array
     static std::vector<double> get_p2_data_values(const Function& u);
 
     // Get cell data values as a flattened 2D array
@@ -549,15 +554,17 @@ namespace dolfin
     template <typename X, typename Y>
     static std::string to_string(X x, Y y);
 
-    // Return a vector of numerical values from a vector of stringstream
+    // Return a vector of numerical values from a vector of
+    // stringstream
     template <typename T>
     static std::vector<T> string_to_vector(const std::vector<std::string>& x_str);
 
-    // Convert a value_rank to the XDMF string description (Scalar, Vector, Tensor)
+    // Convert a value_rank to the XDMF string description (Scalar,
+    // Vector, Tensor)
     static std::string rank_to_string(std::size_t value_rank);
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
 #ifdef HAS_HDF5
     // HDF5 data file

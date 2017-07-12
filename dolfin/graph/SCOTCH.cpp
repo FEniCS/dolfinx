@@ -57,8 +57,10 @@ void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
                                const std::int64_t num_global_cells,
                                const CellType& cell_type)
 {
+
+
   // Create data structures to hold graph
-  CSRGraph<SCOTCH_Num> csr_graph;
+  std::unique_ptr<CSRGraph<SCOTCH_Num>> csr_graph;
   std::set<std::int64_t> ghost_vertices;
 
   // Build dual graph. Use scoping to clean up memory
@@ -69,11 +71,13 @@ void SCOTCH::compute_partition(const MPI_Comm mpi_comm,
                                      num_global_vertices, local_graph,
                                      ghost_vertices);
 
-    csr_graph = CSRGraph<SCOTCH_Num>(MPI_COMM_SELF, local_graph);
+    csr_graph.reset(new CSRGraph<SCOTCH_Num>(MPI_COMM_SELF,
+                                             local_graph));
   }
 
   // Compute partitions
-  partition(mpi_comm, csr_graph, cell_weight, ghost_vertices,
+  dolfin_assert(csr_graph);
+  partition(mpi_comm, *csr_graph, cell_weight, ghost_vertices,
             num_global_cells, cell_partition, ghost_procs);
 }
 //-----------------------------------------------------------------------------

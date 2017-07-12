@@ -59,7 +59,7 @@ void TensorLayout::init(
 
   // Store everything
   _index_maps = index_maps;
-  _mpi_comm = mpi_comm;
+  _mpi_comm.reset(mpi_comm);
   _ghosted = ghosted;
 }
 //-----------------------------------------------------------------------------

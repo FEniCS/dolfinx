@@ -500,7 +500,7 @@ namespace dolfin
     /// Mesh MPI communicator
     /// @return MPI_Comm
     MPI_Comm mpi_comm() const
-    { return _mpi_comm; }
+    { return _mpi_comm.comm(); }
 
     /// Ghost mode used for partitioning. Possible values are
     /// same as `parameters["ghost_mode"]`.
@@ -546,7 +546,7 @@ namespace dolfin
     std::vector<int> _cell_orientations;
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
     // Ghost mode used for partitioning
     std::string _ghost_mode;

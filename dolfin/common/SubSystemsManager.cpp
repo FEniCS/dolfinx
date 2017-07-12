@@ -32,9 +32,8 @@
 #include <boost/algorithm/string/trim.hpp>
 
 #include <dolfin/common/constants.h>
-#include <dolfin/common/Timer.h>
-#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/log/log.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "SubSystemsManager.h"
 
 using namespace dolfin;
@@ -89,8 +88,6 @@ void SubSystemsManager::init_mpi()
 int SubSystemsManager::init_mpi(int argc, char* argv[],
                                 int required_thread_level)
 {
-  Timer timer("Init MPI");
-
   #ifdef HAS_MPI
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
@@ -155,8 +152,6 @@ void SubSystemsManager::init_petsc()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc(int argc, char* argv[])
 {
-  Timer timer("Init PETSc");
-
   #ifdef HAS_PETSC
   if (singleton().petsc_initialized)
     return;

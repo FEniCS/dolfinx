@@ -22,7 +22,6 @@
 #include <memory>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
-#include <dolfin/log/Progress.h>
 #include "Cell.h"
 #include "Mesh.h"
 #include "MeshOrdering.h"
@@ -48,12 +47,8 @@ void MeshOrdering::order(Mesh& mesh)
     return;
 
   // Iterate over all cells and order the mesh entities locally
-  Progress p("Ordering mesh", mesh.num_cells());
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
-  {
     cell->order(local_to_global_vertex_indices);
-    p++;
-  }
 }
 //-----------------------------------------------------------------------------
 bool MeshOrdering::ordered(const Mesh& mesh)
@@ -68,12 +63,10 @@ bool MeshOrdering::ordered(const Mesh& mesh)
     = mesh.topology().global_indices(0);
 
   // Check if all cells are ordered
-  Progress p("Checking mesh ordering", mesh.num_cells());
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
     if (!cell->ordered(local_to_global_vertex_indices))
       return false;
-    p++;
   }
 
   return true;

@@ -124,14 +124,15 @@ void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
 {
   // Duplicate MPI communicator (ParMETIS does not take const
   // arguments, so duplicate communicator to be sure it isn't changed)
-  MPI_Comm comm;
-  MPI_Comm_dup(mpi_comm, &comm);
+  dolfin::MPI::Comm comm(mpi_comm);
 
   const std::int8_t tdim = cell_type.dim();
   const std::int8_t num_vertices_per_cell = cell_type.num_vertices(tdim);
 
-  // Create data structures to hold graph
-  CSRGraph<idx_t> csr_graph;
+  // Create data structures to hold graph (std::unique_ptr would be
+  // more appropriate here, but until std::make_unique is available a
+  // shared_ptr is more convenient)
+  std::shared_ptr<CSRGraph<idx_t>> csr_graph;
 
   // Use ParMETIS or DOLFIN dual graph
   bool use_parmetis_dual_graph = false;
@@ -139,7 +140,8 @@ void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
   if (use_parmetis_dual_graph)
   {
     // Build dual graph using ParMETIS builder
-    csr_graph = dual_graph(mpi_comm, cell_vertices, num_vertices_per_cell);
+    csr_graph = std::make_shared<CSRGraph<idx_t>>(dual_graph(mpi_comm, cell_vertices,
+                                                             num_vertices_per_cell));
   }
   else
   {
@@ -150,17 +152,18 @@ void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
                                      num_global_vertices, local_graph,
                                      ghost_vertices);
 
-    csr_graph = CSRGraph<idx_t>(mpi_comm, local_graph);
+    csr_graph = std::make_shared<CSRGraph<idx_t>>(mpi_comm, local_graph);
 
   }
 
   // Partition graph
+  dolfin_assert(csr_graph);
   if (mode == "partition")
-    partition(comm, csr_graph, cell_partition, ghost_procs);
+    partition(comm.comm(), *csr_graph, cell_partition, ghost_procs);
   else if (mode == "adaptive_repartition")
-    adaptive_repartition(comm, csr_graph, cell_partition);
+    adaptive_repartition(comm.comm(), *csr_graph, cell_partition);
   else if (mode == "refine")
-    refine(comm, csr_graph, cell_partition);
+    refine(comm.comm(), *csr_graph, cell_partition);
   else
   {
     dolfin_error("ParMETIS.cpp",
@@ -168,8 +171,6 @@ void ParMETIS::compute_partition(const MPI_Comm mpi_comm,
                  "partition model %s is unknown. Must be \"partition\", \"adactive_partition\" or \"refine\"",
                  mode.c_str());
   }
-
-  MPI_Comm_free(&comm);
 }
 //-----------------------------------------------------------------------------
 template <typename T>

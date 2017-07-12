@@ -90,7 +90,7 @@ namespace dolfin
 
     /// Return MPI communicator
     MPI_Comm mpi_comm() const
-    { return _mpi_comm; }
+    { return _mpi_comm.comm(); }
 
     /// Return IndexMap for dimension
     std::shared_ptr<const IndexMap> index_map(std::size_t i) const
@@ -108,7 +108,7 @@ namespace dolfin
   private:
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
     // Index maps
     std::vector<std::shared_ptr<const IndexMap>> _index_maps;

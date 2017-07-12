@@ -184,12 +184,12 @@ namespace dolfin
 
     /// Return MPI communicator
     MPI_Comm mpi_comm() const
-    { return _mpi_comm; }
+    { return _mpi_comm.comm(); }
 
   private:
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
   };
 

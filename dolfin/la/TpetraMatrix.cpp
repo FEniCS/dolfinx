@@ -100,8 +100,8 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   // Initialize matrix
 
   // Set up MPI Comm
-  Teuchos::RCP<const Teuchos::Comm<int>>
-    _comm(new Teuchos::MpiComm<int>(sparsity_pattern->mpi_comm()));
+  const Teuchos::MpiComm<int> comm_wrapper(sparsity_pattern->mpi_comm());
+  Teuchos::RCP<const Teuchos::Comm<int>> _comm = comm_wrapper.duplicate();
 
   // Save the local row and column mapping, so we can use add_local
   // later with off-process entries
@@ -726,6 +726,7 @@ void TpetraMatrix::apply(std::string mode)
 MPI_Comm TpetraMatrix::mpi_comm() const
 {
   dolfin_assert(!_matA.is_null());
+
   // Unwrap MPI_Comm
   const Teuchos::RCP<const Teuchos::MpiComm<int>> _mpi_comm
     = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(_matA->getComm());
