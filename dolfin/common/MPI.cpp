@@ -44,7 +44,7 @@ dolfin::MPI::Comm::Comm(MPI_Comm comm)
   else
     _comm = MPI_COMM_NULL;
 #else
-  _comm = comm
+  _comm = comm;
 #endif
 }
 //-----------------------------------------------------------------------------
