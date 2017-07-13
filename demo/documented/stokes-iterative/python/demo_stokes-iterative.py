@@ -106,5 +106,9 @@ pfile_pvd = File("pressure.pvd")
 pfile_pvd << p
 
 # Plot solution
-plot(u, interactive=True)
-plot(p, interactive=True)
+import matplotlib.pyplot as plt
+plt.figure(1)
+plot(u)
+plt.figure(2)
+plot(p)
+plt.show()
