@@ -77,7 +77,7 @@ namespace dolfin
     {
     public:
 
-      /// Duplicate communicator and warp duplicate
+      /// Duplicate communicator and wrap duplicate
       Comm(MPI_Comm comm);
 
       // The disabling of the below is turned off because the SWIG
@@ -106,8 +106,12 @@ namespace dolfin
       unsigned int rank() const;
 
       /// Return size of the group (number of processes) associated
-      /// with the communicator
+      /// with the communicator. This function will also intialise MPI
+      /// if it hasn't already been intialised.
       unsigned int size() const;
+
+      /// Set a barrier (synchronization point)
+      void barrier() const;
 
       /// Return the underlying MPI_Comm object
       MPI_Comm comm() const;
