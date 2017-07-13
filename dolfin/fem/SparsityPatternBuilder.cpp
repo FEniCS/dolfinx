@@ -62,7 +62,7 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
 
   // Initialise sparsity pattern
   if (init)
-    sparsity_pattern.init(mesh.mpi_comm(), index_maps);
+    sparsity_pattern.init(index_maps);
 
   // Only build for rank >= 2 (matrices and higher order tensors) that
   // require sparsity details
@@ -276,18 +276,16 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
   const std::size_t rank = form.rank();
   std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
-  {
     index_maps[i] = form.function_space(i)->dofmap()->index_map();
-  }
 
   // Initialize sparsity pattern
-  sparsity_pattern.init(form.function_space(0)->part(0)->mesh()->mpi_comm(),
-                        index_maps);
+  sparsity_pattern.init(index_maps);
 
   // Iterate over each part
   for (std::size_t part = 0; part < form.num_parts(); part++)
   {
-    // Get mesh on current part (assume it's the same for all arguments)
+    // Get mesh on current part (assume it's the same for all
+    // arguments)
     const Mesh& mesh = *form.function_space(0)->part(part)->mesh();
 
     // Build list of dofmaps

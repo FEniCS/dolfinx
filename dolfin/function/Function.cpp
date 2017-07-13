@@ -560,14 +560,15 @@ void Function::init_vector()
 
   DefaultFactory factory;
 
+  MPI_Comm comm = _function_space->mesh()->mpi_comm();
+
   // Create layout for initialising tensor
   std::shared_ptr<TensorLayout> tensor_layout;
-  tensor_layout = factory.create_layout(1);
+  tensor_layout = factory.create_layout(comm, 1);
   dolfin_assert(tensor_layout);
   dolfin_assert(!tensor_layout->sparsity_pattern());
   dolfin_assert(_function_space->mesh());
-  tensor_layout->init(_function_space->mesh()->mpi_comm(), {index_map},
-                      TensorLayout::Ghosts::GHOSTED);
+  tensor_layout->init({index_map}, TensorLayout::Ghosts::GHOSTED);
 
   // Create vector of dofs
   if (!_vector)

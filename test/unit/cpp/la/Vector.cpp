@@ -82,19 +82,17 @@ TEST(TestVector, test_init)
   // Create local and distributed vector layouts
 
   // Create local vector layout
-  TensorLayout layout_local(0, TensorLayout::Sparsity::DENSE);
+  TensorLayout layout_local(MPI_COMM_SELF, 0, TensorLayout::Sparsity::DENSE);
   std::vector<std::shared_ptr<const IndexMap>> index_maps(1);
   index_maps[0].reset(new IndexMap(MPI_COMM_SELF, 203, 1));
-  layout_local.init(MPI_COMM_SELF, index_maps,
-                    TensorLayout::Ghosts::UNGHOSTED);
+  layout_local.init(index_maps, TensorLayout::Ghosts::UNGHOSTED);
 
   // Create distributed vector layout
-  TensorLayout layout_distributed(0, TensorLayout::Sparsity::DENSE);
+  TensorLayout layout_distributed(MPI_COMM_WORLD, 0, TensorLayout::Sparsity::DENSE);
   auto lrange = dolfin::MPI::local_range(MPI_COMM_WORLD, 203);
   std::size_t nlocal = lrange.second - lrange.first;
   index_maps[0].reset(new IndexMap(MPI_COMM_SELF, nlocal, 1));
-  layout_distributed.init(MPI_COMM_WORLD, index_maps,
-                          TensorLayout::Ghosts::UNGHOSTED);
+  layout_distributed.init(index_maps, TensorLayout::Ghosts::UNGHOSTED);
 
   // Vector
 #ifdef HAS_PETSC
@@ -130,26 +128,24 @@ TEST(TestVector, test_init)
   }
 #endif
 }
-//----------------------------------------------------
+//-----------------------------------------------------------------------------
 TEST(TestVector, test_get_local_empty)
 {
   // Create local and distributed vector layouts
   const std::vector<std::size_t> dims(1, 203);
 
   // Create local vector layout
-  TensorLayout layout_local(0, TensorLayout::Sparsity::DENSE);
+  TensorLayout layout_local(MPI_COMM_SELF, 0, TensorLayout::Sparsity::DENSE);
   std::vector<std::shared_ptr<const IndexMap>> index_maps(1);
   index_maps[0].reset(new IndexMap(MPI_COMM_SELF, 203, 1));
-  layout_local.init(MPI_COMM_SELF, index_maps,
-                    TensorLayout::Ghosts::UNGHOSTED);
+  layout_local.init(index_maps, TensorLayout::Ghosts::UNGHOSTED);
 
   // Create distributed vector layout
-  TensorLayout layout_distributed(0, TensorLayout::Sparsity::DENSE);
+  TensorLayout layout_distributed(MPI_COMM_WORLD, 0, TensorLayout::Sparsity::DENSE);
   auto lrange = dolfin::MPI::local_range(MPI_COMM_WORLD, 203);
   std::size_t nlocal = lrange.second - lrange.first;
   index_maps[0].reset(new IndexMap(MPI_COMM_SELF, nlocal, 1));
-  layout_distributed.init(MPI_COMM_WORLD, index_maps,
-                          TensorLayout::Ghosts::UNGHOSTED);
+  layout_distributed.init(index_maps, TensorLayout::Ghosts::UNGHOSTED);
 
   // Vector
 #ifdef HAS_PETSC

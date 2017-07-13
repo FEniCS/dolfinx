@@ -46,12 +46,12 @@ std::shared_ptr<GenericVector> PETScFactory:: create_vector(MPI_Comm comm) const
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<TensorLayout>
-PETScFactory::create_layout(std::size_t rank) const
+PETScFactory::create_layout(MPI_Comm comm, std::size_t rank) const
 {
   TensorLayout::Sparsity sparsity = TensorLayout::Sparsity::DENSE;
   if (rank > 1)
     sparsity = TensorLayout::Sparsity::SPARSE;
-  return std::make_shared<TensorLayout>(0, sparsity);
+  return std::make_shared<TensorLayout>(comm, 0, sparsity);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearOperator>
