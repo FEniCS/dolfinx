@@ -151,8 +151,9 @@ This description goes through the implementation (in
 :download:`demo_auto-adaptive-poisson.py`) of a solver for the above
 described Poisson equation step-by-step.
 
-First, the dolfin module is imported::
+First, the necessary modules are imported::
 
+    import matplotlib.pyplot as plt
     from dolfin import *
 
 We begin by defining a mesh of the domain and a finite element
@@ -255,5 +256,8 @@ tolerance::
     solver.summary()
 
     # Plot solution(s)
-    plot(u.root_node(), title="Solution on initial mesh", interactive=True)
-    plot(u.leaf_node(), title="Solution on final mesh", interactive=True)
+    plt.figure()
+    plot(u.root_node(), title="Solution on initial mesh")
+    plt.figure()
+    plot(u.leaf_node(), title="Solution on final mesh")
+    plt.show()

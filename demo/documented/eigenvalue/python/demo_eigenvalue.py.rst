@@ -22,6 +22,7 @@ which in turn relies on the linear algebra library PETSc. Therefore,
 both PETSc and SLEPc are required for this demo. We can test whether
 PETSc and SLEPc are available, and exit if not, as follows ::
 
+    import matplotlib.pyplot as plt
     from dolfin import *
     # Test for PETSc and SLEPc
 
@@ -98,4 +99,5 @@ eigenfunction can be manipulated as any other :py:class:`Function
     u.vector()[:] = rx
 
     # Plot eigenfunction
-    plot(u, interactive=True)
+    plot(u)
+    plt.show()
