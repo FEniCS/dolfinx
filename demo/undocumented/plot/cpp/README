@@ -1,3 +1,0 @@
-The C++ interface to DOLFIN does not include plotting. Please use the Python
-interface for basic plotting, or view your solutions using an external
-application such as Paraview.

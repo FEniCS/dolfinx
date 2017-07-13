@@ -27,6 +27,8 @@ manifolds."""
 
 from dolfin import *
 import numpy
+import matplotlib.pyplot as plt
+
 
 # Read mesh
 mesh = Mesh("../sphere_16.xml.gz")
@@ -66,8 +68,11 @@ solve(a == L, w, solver_parameters={"symmetric": True})
 # Plot CG1 representation of solutions
 sigma_cg = project(sigma, VectorFunctionSpace(mesh, "CG", 1))
 u_cg = project(u, FunctionSpace(mesh, "CG", 1))
-plot(sigma_cg, interactive=True)
-plot(u_cg, interactive=True)
+plt.figure()
+plot(sigma_cg)
+plt.figure()
+plot(u_cg)
+plt.show()
 
 # Store solutions
 file = File("sigma.pvd")

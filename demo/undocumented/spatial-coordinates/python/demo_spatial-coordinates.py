@@ -39,6 +39,8 @@ variational formulation.
 # Last changed: 2012-11-12
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Form compiler options
 parameters["form_compiler"]["optimize"]     = True
@@ -76,4 +78,5 @@ file = File("spatial-coordinates.pvd")
 file << u
 
 # Plot solution
-plot(u, interactive=True)
+plot(u)
+plt.show()

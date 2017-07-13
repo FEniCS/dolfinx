@@ -25,6 +25,7 @@ boundary conditions."""
 # Last changed: 2012-11-12
 
 from dolfin import *
+import matplotlib.pyplot as plt
 
 # Create mesh and finite element
 mesh = UnitSquareMesh(32, 32)
@@ -71,4 +72,5 @@ file = File("poisson.pvd")
 file << u
 
 # Plot solution
-plot(u,interactive=True)
+plot(u)
+plt.show()

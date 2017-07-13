@@ -108,6 +108,3 @@ solve(a == L, u, bc)
 # Save solution to file
 file = File("poisson.pvd")
 file << u
-
-# Plot solution
-#plot(u, interactive=True)

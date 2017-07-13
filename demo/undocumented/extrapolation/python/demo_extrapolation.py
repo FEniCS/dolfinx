@@ -19,6 +19,8 @@
 # Last changed: 2010-02-09
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Create mesh and function spaces
 mesh = UnitSquareMesh(8, 8)
@@ -37,5 +39,8 @@ z2 = Function(P2)
 z2.extrapolate(z1)
 
 # Plot approximations
-plot(z1, title="z1", interactive=True)
-plot(z2, title="z2", interactive=True)
+plt.figure()
+plot(z1, title="z1")
+plt.figure()
+plot(z2, title="z2")
+plt.show()

@@ -21,8 +21,9 @@
 # Last changed: 2013-11-08
 
 from dolfin import *
-
 import time
+import matplotlib.pyplot as plt
+
 
 # Create mesh and define function spaces
 mesh = UnitSquareMesh(256, 256)
@@ -65,7 +66,12 @@ assigner.assign(vv3, [u0, u1])
 ta1 = time.time() - t0
 
 # Plot functions
-plot(vv0, title="Projection; time=%.3fs" % tp, interactive=True)
-plot(vv1, title="Interpolation; time=%.3fs" % ti, interactive=True)
-plot(vv2, title="Assignment; time=%.3fs" % ta0, interactive=True)
-plot(vv3, title="Assignment (cached); time=%.3fs" % ta1, interactive=True)
+plt.figure()
+plot(vv0, title="Projection; time=%.3fs" % tp)
+plt.figure()
+plot(vv1, title="Interpolation; time=%.3fs" % ti)
+plt.figure()
+plot(vv2, title="Assignment; time=%.3fs" % ta0)
+plt.figure()
+plot(vv3, title="Assignment (cached); time=%.3fs" % ta1)
+plt.show()

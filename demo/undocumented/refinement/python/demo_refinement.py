@@ -22,9 +22,12 @@
 
 from __future__ import print_function
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Create mesh of unit square
 mesh = UnitSquareMesh(8, 8)
+plt.figure(1)
 plot(mesh)
 
 info(mesh)
@@ -32,6 +35,7 @@ print()
 
 # Uniform refinement
 mesh = refine(mesh)
+plt.figure(2)
 plot(mesh)
 
 info(mesh)
@@ -39,6 +43,7 @@ print()
 
 # Uniform refinement
 mesh = refine(mesh)
+plt.figure(3)
 plot(mesh)
 
 info(mesh)
@@ -62,4 +67,7 @@ for i in range(5):
     mesh = refine(mesh, cell_markers)
 
     # Plot mesh
-    plot(mesh, interactive=True)
+    plt.figure()
+    plot(mesh)
+
+plt.show()

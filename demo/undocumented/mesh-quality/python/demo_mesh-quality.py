@@ -22,6 +22,8 @@
 
 from __future__ import print_function
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Read mesh from file
 mesh = Mesh("../dolfin_fine.xml.gz")
@@ -39,4 +41,5 @@ print(hist)
 exec(hist)
 
 # Show mesh
-plot(mesh, interactive=True)
+plot(mesh)
+plt.show()

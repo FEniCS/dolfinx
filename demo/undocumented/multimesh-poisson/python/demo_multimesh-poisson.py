@@ -24,6 +24,8 @@
 # functionality.
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
@@ -96,10 +98,11 @@ def solve_poisson(t, x1, y1, x2, y2, plot_solution,
 
     # Plot solution (last time)
     if plot_solution:
-        plot(V.multimesh(), interactive=True)
-        plot(u.part(0), title="u_0", interactive=True)
-        plot(u.part(1), title="u_1", interactive=True)
-        plot(u.part(2), title="u_2", interactive=True)
+        plt.figure(); plot(V.multimesh())
+        plt.figure(); plot(u.part(0), title="u_0")
+        plt.figure(); plot(u.part(1), title="u_1")
+        plt.figure(); plot(u.part(2), title="u_2")
+        plt.show()
 
 if MPI.size(mpi_comm_world()) > 1:
     info("Sorry, this demo does not (yet) run in parallel.")

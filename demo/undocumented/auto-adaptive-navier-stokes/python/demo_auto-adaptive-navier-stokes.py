@@ -21,6 +21,8 @@
 # Last changed: 2011-10-04
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 class Noslip(SubDomain):
     def inside(self, x, on_boundary):
@@ -109,6 +111,11 @@ list_timings(TimingClear_clear, [TimingType_wall])
 
 # Extract solutions on coarsest and finest mesh:
 (u0, p0) = w.root_node().split()
+plt.figure()
+plot(p0, title="Pressure on initial mesh")
+
 (u1, p1) = w.leaf_node().split()
-plot(p0, title="Pressure on initial mesh", interactive=True)
-plot(p1, title="Pressure on final mesh", interactive=True)
+plt.figure()
+plot(p1, title="Pressure on final mesh")
+
+plt.show()

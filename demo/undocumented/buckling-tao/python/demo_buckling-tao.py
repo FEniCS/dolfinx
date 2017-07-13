@@ -27,6 +27,8 @@ upwards (and not downwards) in order to minimise the potential energy."""
 
 from __future__ import print_function
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 if not has_petsc():
     print("DOLFIN must be compiled at least with PETSc 3.6 to run this demo.")
@@ -139,5 +141,5 @@ else:
     out << u
 
 # Plot the current configuration
-plot(u, mode="displacement", wireframe=True, title="Displacement field",
-     interactive=True)
+plot(u, mode="displacement", wireframe=True, title="Displacement field")
+plt.show()
