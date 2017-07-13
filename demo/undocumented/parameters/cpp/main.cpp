@@ -30,6 +30,8 @@ using namespace dolfin;
 
 int main(int argc, char* argv[])
 {
+  SubSystemsManager::init_mpi();
+
   //--- Demo of global DOLFIN parameters ---
 
   // Set some global DOLFIN parameters

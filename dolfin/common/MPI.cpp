@@ -72,7 +72,20 @@ unsigned int dolfin::MPI::Comm::rank() const
 //-----------------------------------------------------------------------------
 unsigned int dolfin::MPI::Comm::size() const
 {
-  return dolfin::MPI::size(_comm);
+#ifdef HAS_MPI
+  int size;
+  MPI_Comm_size(_comm, &size);
+  return size;
+#else
+  return 1;
+#endif
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::Comm::barrier() const
+{
+#ifdef HAS_MPI
+  MPI_Barrier(_comm);
+#endif
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::Comm::reset(MPI_Comm comm)
@@ -141,6 +154,7 @@ unsigned int dolfin::MPI::rank(const MPI_Comm comm)
 unsigned int dolfin::MPI::size(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
+  SubSystemsManager::init_mpi();
   int size;
   MPI_Comm_size(comm, &size);
   return size;

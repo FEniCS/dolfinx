@@ -84,7 +84,7 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
   }
 
   // Wait until directory has been created
-  MPI::barrier(_mpi_comm.comm());
+  _mpi_comm.barrier();
 
   // Open HDF5 file
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;

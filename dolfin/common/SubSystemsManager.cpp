@@ -52,8 +52,7 @@ SubSystemsManager& SubSystemsManager::singleton()
 SubSystemsManager::SubSystemsManager() : petsc_err_msg(""),
   petsc_initialized(false), control_mpi(false)
 {
-  // Intialise MPI (if available)
-  SubSystemsManager::init_mpi();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 SubSystemsManager::~SubSystemsManager()

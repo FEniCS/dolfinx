@@ -37,8 +37,8 @@ class InitialConditions : public Expression
 {
 public:
 
-  InitialConditions() : Expression(2)
-  { dolfin::seed(2 + dolfin::MPI::rank(MPI_COMM_WORLD)); }
+  InitialConditions(MPI_Comm comm) : Expression(2)
+  { dolfin::seed(2 + dolfin::MPI::rank(comm)); }
 
   void eval(Array<double>& values, const Array<double>& x) const
   {
@@ -75,7 +75,7 @@ class CahnHilliardEquation : public NonlinearProblem
 
 int main(int argc, char* argv[])
 {
-  init(argc, argv);
+  dolfin::init(argc, argv);
 
   // Mesh
   auto mesh = std::make_shared<UnitSquareMesh>(96, 96);
@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
   auto u = std::make_shared<Function>(V);
 
   // Set solution to intitial condition
-  InitialConditions u_initial;
+  InitialConditions u_initial(mesh->mpi_comm());
   *u0 = u_initial;
   *u = u_initial;
 
