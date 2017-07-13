@@ -45,6 +45,7 @@ and the above constraint.
 # Last changed: 2012-11-12
 # Begin demo
 
+import matplotlib.pyplot as plt
 from dolfin import *
 
 # Create mesh
@@ -69,4 +70,5 @@ solve(a == L, w)
 (u, c) = w.split()
 
 # Plot solution
-plot(u, interactive=True)
+plot(u)
+plt.show()

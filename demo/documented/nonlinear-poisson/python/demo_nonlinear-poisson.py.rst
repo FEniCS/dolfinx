@@ -100,8 +100,9 @@ This description goes through the implementation (in
 :download:`demo_nonlinear-poisson.py`) of a solver for the above
 described nonlinear Poisson equation step-by-step.
 
-First, the :py:mod:`dolfin` module is imported::
+First, the matplotlib and :py:mod:`dolfin` modules are imported::
 
+    import matplotlib.pyplot as plt
     from dolfin import *
 
 Next, we want to consider the Dirichlet boundary condition. A simple
@@ -206,8 +207,13 @@ suffix .pvd) for later visualization and also plot it using the plot
 command::
 
     # Plot solution and solution gradient
+    plt.figure()
     plot(u, title="Solution")
-    plot(grad(u), title="Solution gradient", interactive=True)
+
+    plt.figure()
+    plot(grad(u), title="Solution gradient")
+
+    plt.show()
 
     # Save solution in VTK format
     file = File("nonlinear_poisson.pvd")

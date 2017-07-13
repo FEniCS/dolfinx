@@ -22,8 +22,9 @@ Implementation
 This demo is implemented in the :download:`demo_hyperelasticity.py`
 file.
 
-First, the :py:mod:`dolfin` module is imported::
+First, the required modules are imported::
 
+    import matplotlib.pyplot as plt
     from dolfin import *
 
 The behavior of the form compiler FFC can be adjusted by prescribing
@@ -180,5 +181,6 @@ to the screen::
     file = File("displacement.pvd");
     file << u;
 
-    # Plot and hold solution
-    plot(u, mode = "displacement", interactive = True)
+    # Plot solution
+    plot(u)
+    plt.show()
