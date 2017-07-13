@@ -173,7 +173,7 @@ def main():
                     "Non-existing demo '%s' not marked as not_implemented" % dpath
 
     # Set non-interactive
-    os.putenv('DOLFIN_NOPLOT', '1')
+    os.putenv('MPLBACKEND', 'agg')
 
     print("Running all demos (non-interactively)")
     print("")
