@@ -159,11 +159,11 @@ File("p1.pvd") << p1
 File("p2.pvd") << p2
 
 # Plot solution
-plt.figure(); plot(W.multimesh())
-plt.figure(); plot(u0, title="u_0")
-plt.figure(); plot(u1, title="u_1")
-plt.figure(); plot(u2, title="u_2")
-plt.figure(); plot(p0, title="p_0")
-plt.figure(); plot(p1, title="p_1")
-plt.figure(); plot(p2, title="p_2")
-plt.show()
+#plt.figure(); plot(W.multimesh())
+#plt.figure(); plot(u0, title="u_0")
+#plt.figure(); plot(u1, title="u_1")
+#plt.figure(); plot(u2, title="u_2")
+#plt.figure(); plot(p0, title="p_0")
+#plt.figure(); plot(p1, title="p_1")
+#plt.figure(); plot(p2, title="p_2")
+#plt.show()
