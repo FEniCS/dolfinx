@@ -28,6 +28,7 @@ src/demo/mesh/subdomains."""
 # Begin demo
 
 from __future__ import print_function
+import matplotlib.pyplot as plt
 from dolfin import *
 
 # Load mesh and subdomains
@@ -82,5 +83,11 @@ pfile_pvd = File("pressure.pvd")
 pfile_pvd << p
 
 # Plot solution
-plot(u, interactive=True)
-plot(p, interactive=True)
+plt.figure()
+plot(u, title="velocity")
+
+plt.figure()
+plot(p, title="pressure")
+
+# Display plots
+plt.show()

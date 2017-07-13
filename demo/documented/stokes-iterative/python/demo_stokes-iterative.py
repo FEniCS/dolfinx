@@ -23,6 +23,7 @@ Note that the sign for the pressure has been flipped for symmetry."""
 
 # Begin demo
 
+import matplotlib.pyplot as plt
 from dolfin import *
 
 # Test for PETSc or Tpetra
@@ -106,9 +107,11 @@ pfile_pvd = File("pressure.pvd")
 pfile_pvd << p
 
 # Plot solution
-import matplotlib.pyplot as plt
 plt.figure(1)
-plot(u)
+plot(u, title="velocity")
+
 plt.figure(2)
-plot(p)
+plot(p, title="pressure")
+
+# Show plots
 plt.show()
