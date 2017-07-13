@@ -23,16 +23,17 @@
 #ifndef __UNIT_SQUARE_MESH_H
 #define __UNIT_SQUARE_MESH_H
 
+#include <array>
 #include <string>
 #include "RectangleMesh.h"
 
 namespace dolfin
 {
 
-  /// Triangular mesh of the 2D unit square [0,1] x [0,1].
-  /// Given the number of cells (nx, ny) in each direction,
-  /// the total number of triangles will be 2*nx*ny and the
-  /// total number of vertices will be (nx + 1)*(ny + 1).
+  /// Triangular mesh of the 2D unit square [0,1] x [0,1].  Given the
+  /// number of cells (nx, ny) in each direction, the total number of
+  /// triangles will be 2*nx*ny and the total number of vertices will
+  /// be (nx + 1)*(ny + 1).
   ///
   /// std::string diagonal ("left", "right", "right/left", "left/right",
   /// or "crossed") indicates the direction of the diagonals.
@@ -40,6 +41,43 @@ namespace dolfin
   class UnitSquareMesh : public RectangleMesh
   {
   public:
+
+    /// Create a uniform finite element _Mesh_ over the unit square
+    /// [0,1] x [0,1].
+    ///
+    /// @param    n (std:::array<std::size_t, 2>)
+    ///         Number of cells in each direction.
+    /// @param    diagonal (std::string)
+    ///         Optional argument: A std::string indicating
+    ///         the direction of the diagonals.
+    ///
+    /// @code{.cpp}
+    ///
+    ///         auto mesh1 = UnitSquareMesh::create(32, 32);
+    ///         auto mesh2 = UnitSquareMesh::create(32, 32, "crossed");
+    /// @endcode
+    static Mesh create(std::array<std::size_t, 2> n, std::string diagonal="right")
+    { return RectangleMesh::create({{Point(0.0, 0.0), Point(1.0, 1.0)}}, n); }
+
+    /// Create a uniform finite element _Mesh_ over the unit square
+    /// [0,1] x [0,1].
+    ///
+    /// @param    comm (MPI_Comm)
+    ///         MPI communicator
+    /// @param    n (std:::array<std::size_t, 2>)
+    ///         Number of cells in each direction.
+    /// @param    diagonal (std::string)
+    ///         Optional argument: A std::string indicating
+    ///         the direction of the diagonals.
+    ///
+    /// @code{.cpp}
+    ///
+    ///         auto mesh1 = UnitSquareMesh::create(MPI_COMM_WORLD, 32, 32);
+    ///         auto mesh2 = UnitSquareMesh::create(MPI_COMM_WORLD, 32, 32, "crossed");
+    /// @endcode
+    static Mesh create(MPI_Comm comm, std::array<std::size_t, 2> n,
+                       std::string diagonal="right")
+    { return RectangleMesh::create(comm, {{Point(0.0, 0.0), Point(1.0, 1.0)}}, n); }
 
     /// Create a uniform finite element _Mesh_ over the unit square
     /// [0,1] x [0,1].

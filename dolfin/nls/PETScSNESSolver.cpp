@@ -123,7 +123,10 @@ PETScSNESSolver::PETScSNESSolver(MPI_Comm comm, std::string nls_type)
 }
 //-----------------------------------------------------------------------------
 PETScSNESSolver::PETScSNESSolver(std::string nls_type)
-  : PETScSNESSolver(MPI_COMM_WORLD, nls_type) { }
+  : PETScSNESSolver(MPI_COMM_WORLD, nls_type)
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 PETScSNESSolver::~PETScSNESSolver()
 {

@@ -24,7 +24,6 @@
 #include <dolfin/common/types.h>
 #include <Eigen/Dense>
 
-#include <dolfin/common/Array.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/UFC.h>

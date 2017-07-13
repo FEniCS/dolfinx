@@ -22,7 +22,7 @@ from dolfin import *
 
 # Create mesh
 comm = mpi_comm_world()
-mesh = UnitDiscMesh(comm, 20, 2, 2)
+mesh = UnitDiscMesh.create(comm, 20, 2, 2)
 plot(mesh, interactive=True)
 
 # Fetch coordinate function

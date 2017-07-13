@@ -26,8 +26,8 @@
 namespace dolfin
 {
 
-  /// NB: this code is experimental, just for testing, and will generally not
-  /// work with anything else
+  /// NB: this code is experimental, just for testing, and will
+  /// generally not work with anything else
 
   class UnitQuadMesh : public Mesh
   {
@@ -35,7 +35,22 @@ namespace dolfin
 
     /// NB: this code is experimental, just for testing, and will generally not
     /// work with anything else
-    UnitQuadMesh(MPI_Comm comm, std::size_t nx, std::size_t ny);
+
+    /// Create a mesh
+    static Mesh create(std::size_t nx, std::size_t ny)
+    { return create(MPI_COMM_WORLD, nx, ny); }
+
+    /// Create a mesh
+    static Mesh create(MPI_Comm comm, std::size_t nx, std::size_t ny)
+    {
+      Mesh mesh(comm);
+      build(mesh, {{nx, ny}});;
+      return mesh;
+    }
+
+  private:
+
+    static void build(Mesh& mesh, std::array<std::size_t, 2> n);
 
   };
 

@@ -49,12 +49,14 @@ void VTKPlottableMeshFunction<T>::update(std::shared_ptr<const Variable> var,
 {
   if (var)
     _mesh_function = std::dynamic_pointer_cast<const MeshFunction<T>>(var);
-  dolfin_assert(_mesh_function);
+  dolfin_assert(!_mesh_function.expired());
 
-  VTKPlottableMesh::update(reference_to_no_delete_pointer(*_mesh_function->mesh()),
+  auto mf = _mesh_function.lock();
+
+  VTKPlottableMesh::update(reference_to_no_delete_pointer(*mf->mesh()),
                            parameters, frame_counter);
 
-  setCellValues(_mesh_function->size(), _mesh_function->values(), parameters);
+  setCellValues(mf->size(), mf->values(), parameters);
 }
 
 //---------------------------------------------------------------------------

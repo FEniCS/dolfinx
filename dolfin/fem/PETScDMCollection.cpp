@@ -99,14 +99,13 @@ namespace
       cell->get_coordinate_dofs(coordinate_dofs);
 
       // Get local-to-global map
-      const ArrayView<const dolfin::la_index> dofs
-        = dofmap.cell_dofs(cell->index());
+      auto  dofs = dofmap.cell_dofs(cell->index());
 
       // Tabulate dof coordinates on cell
       element.tabulate_dof_coordinates(coordinates, coordinate_dofs, *cell);
 
       // Map dofs into coords_to_dofs
-      for (std::size_t i = 0; i < dofs.size(); ++i)
+      for (Eigen::Index i = 0; i < dofs.size(); ++i)
       {
         const std::size_t dof = dofs[i];
         if (dof < local_size)
@@ -116,7 +115,8 @@ namespace
             continue;
 
           // Put coordinates in coors
-          std::copy(coordinates[i].begin(), coordinates[i].end(), coors.begin());
+          std::copy(coordinates[i].begin(), coordinates[i].end(),
+                    coors.begin());
 
           // Add dof to list at this coord
           const auto ins = coords_to_dofs.insert({coors, {local_to_global[dof]}});
@@ -540,7 +540,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
                            ufc_cell.orientation);
 
     // Get the coarse dofs associated with this cell
-    ArrayView<const dolfin::la_index> temp_dofs = coarsemap->cell_dofs(id);
+    auto temp_dofs = coarsemap->cell_dofs(id);
 
     // Loop over the fine dofs associated with this collision
     for (unsigned k = 0; k < data_size; k++)

@@ -28,18 +28,20 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitQuadMesh::UnitQuadMesh(MPI_Comm comm, std::size_t nx, std::size_t ny)
-  : Mesh(comm)
+void UnitQuadMesh::build(Mesh& mesh, std::array<std::size_t, 2> n)
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver(this->mpi_comm()))
+  if (MPI::is_receiver(mesh.mpi_comm()))
   {
-    MeshPartitioning::build_distributed_mesh(*this);
+    MeshPartitioning::build_distributed_mesh(mesh);
     return;
   }
 
+  const std::size_t nx = n[0];
+  const std::size_t ny = n[1];
+
   MeshEditor editor;
-  editor.open(*this, CellType::quadrilateral, 2, 2);
+  editor.open(mesh, CellType::quadrilateral, 2, 2);
 
   // Create vertices and cells:
   editor.init_vertices_global((nx + 1)*(ny + 1), (nx + 1)*(ny + 1));
@@ -84,9 +86,9 @@ UnitQuadMesh::UnitQuadMesh(MPI_Comm comm, std::size_t nx, std::size_t ny)
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(this->mpi_comm()))
+  if (MPI::is_broadcaster(mesh.mpi_comm()))
   {
-    MeshPartitioning::build_distributed_mesh(*this);
+    MeshPartitioning::build_distributed_mesh(mesh);
     return;
   }
 

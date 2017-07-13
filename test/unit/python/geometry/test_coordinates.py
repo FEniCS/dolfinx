@@ -37,7 +37,7 @@ def meshes_p1():
 
 @fixture
 def meshes_p2():
-    return UnitDiscMesh(mpi_comm_world(), 1, 2, 2), UnitDiscMesh(mpi_comm_world(), 1, 2, 3)
+    return UnitDiscMesh.create(mpi_comm_world(), 1, 2, 2), UnitDiscMesh.create(mpi_comm_world(), 1, 2, 3)
 
 
 def _test_get_set_coordinates(mesh):
@@ -60,7 +60,6 @@ def _test_get_set_coordinates(mesh):
 
     # Check
     assert np.all(mesh.coordinates() == coords_old)
-
 
 def _check_coords(mesh, c):
     # FIXME: This does not work for higher-order geometries although it should

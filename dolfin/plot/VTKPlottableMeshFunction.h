@@ -57,7 +57,7 @@ namespace dolfin
   private:
 
     // The mesh function
-    std::shared_ptr<const MeshFunction<T> > _mesh_function;
+    std::weak_ptr<const MeshFunction<T> > _mesh_function;
 
   };
 

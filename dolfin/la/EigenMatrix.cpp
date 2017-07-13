@@ -27,17 +27,19 @@ GenericLinearAlgebraFactory& EigenMatrix::factory() const
   return EigenFactory::instance();
 }
 //---------------------------------------------------------------------------
-EigenMatrix::EigenMatrix() : _matA(0, 0)
+EigenMatrix::EigenMatrix() : EigenMatrix(0, 0)
 {
   // Do nothing
 }
 //---------------------------------------------------------------------------
-EigenMatrix::EigenMatrix(std::size_t M, std::size_t N) : _matA(M, N)
+EigenMatrix::EigenMatrix(std::size_t M, std::size_t N)
+  : _mpi_comm(MPI_COMM_SELF), _matA(M, N)
 {
   // Do nothing
 }
 //---------------------------------------------------------------------------
-EigenMatrix::EigenMatrix(const EigenMatrix& A) : _matA(A._matA)
+EigenMatrix::EigenMatrix(const EigenMatrix& A) : _mpi_comm(MPI_COMM_SELF),
+                                                 _matA(A._matA)
 {
   // Do nothing
 }
