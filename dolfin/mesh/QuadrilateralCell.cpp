@@ -128,7 +128,7 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
   }
 
   const Point c = (p0 - p3).cross(p1 - p2);
-  const double volume 0.5 * c.norm();
+  const double volume = 0.5 * c.norm();
 
   if (geometry.dim() == 3)
   {
