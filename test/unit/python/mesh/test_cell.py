@@ -130,8 +130,8 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
 
 
 # Test when |p0-p3| is ~ 1 but |p1-p2| is small
-# Test fails when scale is below 1e-17 because Eigen's determinant gives zero for det(p1-p0 | p3-p0 | p2-p0)
-@pytest.mark.parametrize('scaling', [1e0, 1e-5, 1e-10, 1e-15, pytest.mark.xfail(1e-20), pytest.mark.xfail(1e-30)])
+# The cell is degenerate when scale is below 1e-17, it is expected to fail the test.
+@pytest.mark.parametrize('scaling', [1e0, 1e-5, 1e-10, 1e-15])
 def test_volume_quadrilateral_coplanarity_check_2(scaling):
 
     with pytest.raises(RuntimeError) as error:
