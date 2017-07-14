@@ -334,10 +334,10 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
   dolfin_assert(N == num_vertices);
 
   // Create data structure to hold entities
-  // ([vertices key], (cell_local_index, cell index), [entity vertices])
+  // ([vertices key], (cell_local_index, cell index), [entity vertices], entity index)
   std::vector<std::tuple<std::array<std::int32_t, N>,
                          std::pair<std::int8_t, std::int32_t>,
-                         std::array<std::int32_t, N>>>
+                         std::array<std::int32_t, N>, std::int32_t>>
     keyed_entities(num_entities*mesh.num_cells());
 
   // Loop over cells to build list of keyed (by vertices) entities
@@ -379,132 +379,81 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
   // before those belonging to ghost cells
   std::sort(keyed_entities.begin(), keyed_entities.end());
 
+  // Compute entity indices (using -1, -2, -3, etc, for ghost
+  // entities)
+  std::int32_t nonghost_index(0), ghost_index(-1);
+  std::array<std::int32_t, N> previous_key;
+  std::fill(previous_key.begin(), previous_key.end(), 0);
+  for (std::size_t i = 0; i < keyed_entities.size(); ++i)
+  {
+    const auto& key = std::get<0>(keyed_entities[i]);
+    if (key == previous_key)
+    {
+      // Repeated entity, reuse entity index
+      std::get<3>(keyed_entities[i]) = std::get<3>(keyed_entities[i-1]);
+    }
+    else
+    {
+      // New entry
+      const std::int8_t local_index = std::get<1>(keyed_entities[i]).first;
+      if (local_index < 0)
+        std::get<3>(keyed_entities[i]) = nonghost_index++;
+      else
+        std::get<3>(keyed_entities[i]) = ghost_index--;
+
+      // Update key
+      previous_key = key;
+    }
+  }
+
+  // Total number of entities
+  const std::int32_t num_nonghost_entities = nonghost_index;
+  const std::int32_t num_ghost_entities = -(ghost_index + 1);
+  const std::int32_t num_mesh_entities = num_nonghost_entities + num_ghost_entities;
+
   // List of vertex indices connected to entity e
-  std::vector<std::array<int, N>> connectivity_ev;
-  std::vector<std::array<int, N>> connectivity_ev_ghost;
+  std::vector<std::array<int, N>> connectivity_ev(num_mesh_entities) ;
 
   // List of entity e indices connected to cell
   boost::multi_array<int, 2>
     connectivity_ce(boost::extents[mesh.num_cells()][num_entities]);
 
-  // -- Find duplicate keys
-
-  // Marker for whether or not the most recently created entity is a
-  // ghost entity
-  bool ghost_entity = false;
-
-  // Handle first entity in list
-  if (!keyed_entities.empty())
+  // Build connectivity arrays (with ghost entities at the end)
+  std::int32_t previous_index = -1;
+  for (auto& entity : keyed_entities)
   {
-    // Get enity vertices
-    const auto& e = std::get<2>(keyed_entities[0]);
+    // Get entity index, and remap for ghosts (negative indices) to
+    // true index (after non-ghosts)
+    auto& e_index = std::get<3>(entity);
+    if (e_index < 0)
+      e_index = num_nonghost_entities - (e_index + 1);
 
-    const auto& cell = std::get<1>(keyed_entities[0]);
-    const std::int32_t cell_index = cell.second;
-    const std::int8_t local_index = cell.first;
-
-    if (local_index < 0)
+    // Add to enity-to-vertex map if entity is new
+    if (e_index != previous_index)
     {
-      // 'Create' new entity and mark that most recently created
-      // entity is not a ghost
-      std::int8_t index = -local_index - 1;
-      dolfin_assert(index >= 0);
-      dolfin_assert(index < (int) connectivity_ce[cell_index].size());
-      connectivity_ce[cell_index][index] = connectivity_ev.size();
+      dolfin_assert(e_index < connectivity_ev.size());
+      connectivity_ev[e_index] = std::get<2>(entity);
 
-      connectivity_ev.push_back(e);
-      ghost_entity = false;
-    }
-    else
-    {
-      // 'Create' new entity and mark that most recently created
-      // entity is a ghost
-      dolfin_assert(local_index < (int) connectivity_ce[cell_index].size());
-      connectivity_ce[cell_index][local_index] = -connectivity_ev_ghost.size() - 1;
-      connectivity_ev_ghost.push_back(e);
-      ghost_entity = true;
-    }
-  }
-
-  // Iterate over remaing keys, checking for duplicate keys
-  for (std::size_t i = 1; i < keyed_entities.size(); ++i)
-  {
-    const auto& key1 = std::get<0>(keyed_entities[i]);
-    const auto& e1 = std::get<2>(keyed_entities[i]);
-
-    const auto& cell1 = std::get<1>(keyed_entities[i]);
-    const std::int32_t cell_index = cell1.second;
-    const std::int8_t local_index = cell1.first;
-
-    // Compare entity with the preceding entity
-    const auto& key0 = std::get<0>(keyed_entities[i - 1]);
-    if (!(key0 == key1))
-    {
-      // New entity, so add entity
-      if (local_index < 0)
-      {
-        // 'Create' new entity and flag that the most recent entity is not a
-        // ghost
-        connectivity_ev.push_back(e1);
-        ghost_entity = false;
-      }
-      else
-      {
-        // 'Create' new entity and flag that the most recent entity is
-        // a ghost
-        connectivity_ev_ghost.push_back(e1);
-        ghost_entity = true;
-      }
+      // Update
+      previous_index = e_index;
     }
 
-    // Set entity index. Use negative index for ghost that will be
-    // corrected later once the number of entities is known
-    const std::int8_t _local_index = (local_index < 0) ? (-local_index - 1) : local_index;
-    dolfin_assert(_local_index >= 0);
-    if (!ghost_entity)
-    {
-      // Not a ghost entity
-      const std::size_t entity_index = connectivity_ev.size() - 1;
-      dolfin_assert(_local_index < (int) connectivity_ce[cell_index].size());
-      connectivity_ce[cell_index][_local_index] = entity_index;
-    }
-    else
-    {
-      // Is a ghost entity, so use negative index
-      dolfin_assert(connectivity_ev_ghost.size() > 0);
-      connectivity_ce[cell_index][_local_index] = -connectivity_ev_ghost.size();
-    }
+    // Add to cell-to-entity map
+    const auto& cell = std::get<1>(entity);
+    const auto cell_index = cell.second;
+    auto local_index = cell.first;
+    local_index = (local_index < 0) ? (-local_index - 1) : local_index;
+    connectivity_ce[cell_index][local_index] = e_index;
   }
 
   // Initialise connectivity data structure
-  topology.init(dim, connectivity_ev.size() + connectivity_ev_ghost.size(), 0);
+  topology.init(dim, num_mesh_entities, 0);
 
   // Initialise ghost entity offset
-  topology.init_ghost(dim, connectivity_ev.size());
-
-  // Copy connectivity data into static MeshTopology data structures
-  dolfin_assert(connectivity_ce.size() == mesh.num_cells());
-  if (!connectivity_ev_ghost.empty())
-  {
-    // Re-map any ghost enties with the correct index
-    for (unsigned int i = 0; i < mesh.num_cells(); ++i)
-    {
-      for (auto& x : connectivity_ce[i])
-      {
-        if (x < 0)
-          x = (connectivity_ev.size() - x) - 1;
-      }
-    }
-  }
+  topology.init_ghost(dim, num_nonghost_entities);
 
   // Set cell-entity connectivity
   ce.set(connectivity_ce);
-
-  // Add ghost entity-to-vertices connections to list of rectangular
-  // entities
-  connectivity_ev.insert(connectivity_ev.end(), connectivity_ev_ghost.begin(),
-                         connectivity_ev_ghost.end());
-  connectivity_ev.shrink_to_fit();
   ev.set(connectivity_ev);
 
   return connectivity_ev.size();
