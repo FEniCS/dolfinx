@@ -52,7 +52,6 @@ class DirichletBoundary : public SubDomain
 void solve_poisson(double t,
                    double x1, double y1,
                    double x2, double y2,
-                   bool plot_solution,
                    File& u0_file, File& u1_file, File& u2_file)
 {
   // Create meshes
@@ -101,16 +100,6 @@ void solve_poisson(double t,
   u0_file << *u->part(0);
   u1_file << *u->part(1);
   u2_file << *u->part(2);
-
-  // Plot solution (last time)
-  if (plot_solution)
-  {
-    plot(V->multimesh());
-    plot(u->part(0), "u_0");
-    plot(u->part(1), "u_1");
-    plot(u->part(2), "u_2");
-    interactive();
-  }
 }
 
 int main(int argc, char* argv[])
@@ -144,7 +133,7 @@ int main(int argc, char* argv[])
     const double y2 = sin(t)*cos(2*t);
 
     // Compute solution
-    solve_poisson(t, x1, y1, x2, y2, n == N - 1,
+    solve_poisson(t, x1, y1, x2, y2,
                   u0_file, u1_file, u2_file);
   }
 

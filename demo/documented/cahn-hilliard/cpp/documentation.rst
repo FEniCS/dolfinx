@@ -386,14 +386,6 @@ is saved to a file, along with the time ``t``.
       file << std::pair<const Function*, double>(&(u[0]), t);
     }
 
-The final result is plotted to the screen and the program is finished.
-
-.. code-block:: c++
-
-    // Plot solution
-    plot(u[0]);
-    interactive();
-
     return 0;
   }
 

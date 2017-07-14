@@ -65,10 +65,6 @@ int main()
   Vector x;
   series.retrieve(x, 0.31, false);
 
-  // Plot mesh
-  plot(mesh);
-  interactive();
-
   #endif
 
   return 0;

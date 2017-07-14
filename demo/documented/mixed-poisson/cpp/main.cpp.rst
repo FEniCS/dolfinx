@@ -260,8 +260,8 @@ by calling ``solve``.
      solve(a == L, w, bc);
 
 Now, the separate components ``sigma`` and ``u`` of the solution can
-be extracted by taking components. These can easily be visualized by
-calling ``plot``.
+be extracted by taking components. These can then be written to XDMF
+files.
 
 .. code-block:: cpp
 
@@ -269,10 +269,8 @@ calling ``plot``.
      Function& sigma = w[0];
      Function& u = w[1];
 
-     // Plot solutions
-     plot(u);
-     plot(sigma);
-     interactive();
+     XDMFFile("sigma.xdmf").write(sigma);
+     XDMFFile("u.xdmf").write(u);
 
      return 0;
    }

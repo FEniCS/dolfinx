@@ -195,20 +195,15 @@ call the ``solve`` function with the arguments ``a == L``, ``u`` and
      solve(a == L, u, bc);
 
 The function ``u`` will be modified during the call to solve. A
-:cpp:class:`Function` can be manipulated in various ways, in
-particular, it can be plotted and saved to file. Here, we output the
-solution to a ``VTK`` file (using the suffix ``.pvd``) for later
-visualization and also plot it using the ``plot`` command:
+:cpp:class:`Function` can be saved to a file. Here, we output the
+solution to a ``VTK`` file (specified using the suffix ``.pvd``) for
+visualisation in an external program such as Paraview.
 
 .. code-block:: cpp
 
      // Save solution in VTK format
      File file("poisson.pvd");
      file << u;
-
-     // Plot solution
-     plot(u);
-     interactive();
 
      return 0;
    }

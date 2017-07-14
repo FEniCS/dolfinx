@@ -185,4 +185,6 @@ the :py:func:`plot <dolfin.common.plot.plot>` command: ::
     file << u
 
     # Plot solution
-    plot(u, interactive=True)
+    import matplotlib.pyplot as plt
+    plot(u)
+    plt.show()

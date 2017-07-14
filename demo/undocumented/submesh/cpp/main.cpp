@@ -64,11 +64,9 @@ int main()
   ALE::move(fluid_mesh, *structure_mesh);
   fluid_mesh->smooth();
 
-  // Plot meshes
-  plot(fluid_mesh);
-  plot(structure_mesh);
-
-  interactive();
+  // Write out meshes to files.
+  XDMFFile("fluid_mesh.xdmf").write(*fluid_mesh);
+  XDMFFile("structure_mesh.xdmf").write(*structure_mesh);
 
   return 0;
 }

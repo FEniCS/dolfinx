@@ -114,13 +114,14 @@ Implementation
 This demo is implemented in the :download:`demo_mixed-poisson.py`
 file.
 
-First, the :py:mod:`dolfin` module is imported: ::
+First, the required modules are imported::
 
     from dolfin import *
+    import matplotlib.pyplot as plt
 
 Then, we need to create a :py:class:`Mesh <dolfin.cpp.Mesh>` covering
 the unit square. In this example, we will let the mesh consist of 32 x
-32 squares with each square divided into two triangles: ::
+32 squares with each square divided into two triangles::
 
     # Create mesh
     mesh = UnitSquareMesh(32, 32)
@@ -145,7 +146,7 @@ finite element, here mixed element obtained by ``*`` operator.
     W = \{ (\tau, v) \ \text{such that} \ \tau \in BDM, v \in DG \}.
 
 Next, we need to specify the trial functions (the unknowns) and the
-test functions on this space. This can be done as follows ::
+test functions on this space. This can be done as follows::
 
     # Define trial and test functions
     (sigma, u) = TrialFunctions(W)
@@ -153,7 +154,7 @@ test functions on this space. This can be done as follows ::
 
 In order to define the variational form, it only remains to define the
 source function :math:`f`. This is done just as for the :ref:`Poisson
-demo <demo_poisson_equation>`: ::
+demo <demo_poisson_equation>`::
 
     # Define source function
     f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
@@ -246,6 +247,10 @@ the solutions to examine the result. ::
     (sigma, u) = w.split()
 
     # Plot sigma and u
+    plt.figure()
     plot(sigma)
+
+    plt.figure()
     plot(u)
-    interactive()
+
+    plt.show()

@@ -64,9 +64,8 @@ int main()
   solve(a == L, f1);
 
   // Plot results
-  plot(*f0);
-  plot(f1);
-  interactive();
+  XDMFFile("f0.xdmf").write(*f0);
+  XDMFFile("f1.xdmf").write(f1);
 
   return 0;
 }

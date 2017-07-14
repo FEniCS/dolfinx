@@ -42,6 +42,8 @@ with HYPRE, and petsc4py must be available.
 # Modified by Anders Logg 2011
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Check that DOLFIN has been configured with PETSc
 if not has_petsc():
@@ -168,4 +170,4 @@ file << J
 
 # Plot solution and hold plot
 plot(J)
-interactive()
+plt.show()

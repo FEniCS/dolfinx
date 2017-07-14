@@ -20,6 +20,8 @@
 
 from dolfin import *
 from numpy import ones
+import matplotlib.pyplot as plt
+
 
 # TimeSeries requires DOLFIN to be configured with HDF5
 if has_hdf5() is False:
@@ -56,4 +58,5 @@ x = Vector()
 series.retrieve(x, 0.31, False)
 
 # Plot mesh
-plot(mesh, interactive=True)
+plot(mesh)
+plt.show()

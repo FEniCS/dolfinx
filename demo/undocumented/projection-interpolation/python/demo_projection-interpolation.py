@@ -22,6 +22,8 @@ between different finite element spaces."""
 # Last changed: 2012-11-12
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Create mesh and define function spaces
 mesh = UnitSquareMesh(64, 64)
@@ -38,7 +40,10 @@ PIv = Function(P1)
 PIv.interpolate(v)
 
 # Plot functions
-plot(v, mesh=mesh,  title="v")
+plt.figure()
+plot(v, mesh=mesh, title="v")
+plt.figure()
 plot(Pv,  title="Pv")
+plt.figure()
 plot(PIv, title="PI v")
-interactive()
+plt.show()

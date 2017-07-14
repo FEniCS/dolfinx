@@ -104,8 +104,4 @@ def compute_rates():
                 else:
                     ufile.write(u, encoding)
 
-            # Plot solution
-            #plot(u, title="u, degree=%d" % degree)
-    #interactive()
-
 compute_rates()

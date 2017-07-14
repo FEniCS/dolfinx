@@ -156,15 +156,5 @@ int main(int argc, char* argv[])
   p1_file << p1;
   p2_file << p2;
 
-  // Plot solution
-  plot(W->multimesh());
-  plot(u0, "u_0");
-  plot(u1, "u_1");
-  plot(u2, "u_2");
-  plot(p0, "p_0");
-  plot(p1, "p_1");
-  plot(p2, "p_2");
-  interactive();
-
   return 0;
 }

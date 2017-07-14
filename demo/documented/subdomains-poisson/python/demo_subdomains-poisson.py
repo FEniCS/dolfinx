@@ -112,7 +112,14 @@ m2 = u*dx(1)
 v2 = assemble(m2)
 print("\int u dx(1) = ", v2)
 
+# Plot solution
+import matplotlib.pyplot as plt
+plt.figure()
+plot(u, title="Solution u")
+
 # Plot solution and gradient
-plot(u, title="u")
+plt.figure()
 plot(grad(u), title="Projected grad(u)")
-interactive()
+
+# Show plots
+plt.show()

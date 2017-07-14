@@ -96,6 +96,3 @@ while float(scheme.t()) < T:
 
     # Save the solution to file
     out_file << (u, float(scheme.t()))
-
-# Hold plot
-#interactive()

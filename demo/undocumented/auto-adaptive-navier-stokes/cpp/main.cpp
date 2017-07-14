@@ -122,11 +122,10 @@ int main()
   // Show all timings
   list_timings(TimingClear::clear, { TimingType::wall });
 
-  // Plot solutions
+  // Output solutions
   Function solution = w->leaf_node();
-  plot(solution[0], "Velocity on finest mesh");
-  plot(solution[1], "Pressure on finest mesh");
-  interactive();
+  XDMFFile("velocity.xdmf").write(solution[0]);
+  XDMFFile("pressure.xdmf").write(solution[1]);
 
   return 0;
 }

@@ -103,10 +103,5 @@ int main()
   File pfile_mf("mf.pvd");
   pfile_mf << *sub_domains;
 
-  // Plot solution
-  plot(u);
-  plot(p);
-  interactive();
-
   return 0;
 }
