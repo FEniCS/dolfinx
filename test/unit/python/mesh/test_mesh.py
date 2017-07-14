@@ -27,7 +27,9 @@ import six
 from six.moves import range
 
 from dolfin import *
-from dolfin_utils.test import fixture, skip_in_parallel, xfail_in_parallel, cd_tempdir
+from dolfin_utils.test import fixture, set_parameters_fixture
+from dolfin_utils.test import skip_in_parallel, xfail_in_parallel
+from dolfin_utils.test import cd_tempdir
 import FIAT
 
 import os
@@ -449,18 +451,59 @@ def test_cell_orientations():
     print(mesh.cell_orientations())
 
 
+# - Facilities to run tests on combination of meshes
+
+ghost_mode = set_parameters_fixture("ghost_mode", [
+    "none",
+    "shared_facet",
+    "shared_vertex",
+])
+
 mesh_factories = [
     (UnitIntervalMesh, (8,)),
     (UnitSquareMesh, (4, 4)),
+    (UnitDiscMesh.create, (mpi_comm_world(), 10, 1, 2)),
+    (UnitDiscMesh.create, (mpi_comm_world(), 10, 2, 2)),
+    (UnitDiscMesh.create, (mpi_comm_world(), 10, 1, 3)),
+    (UnitDiscMesh.create, (mpi_comm_world(), 10, 2, 3)),
+    (SphericalShellMesh.create, (mpi_comm_world(), 1,)),
+    (SphericalShellMesh.create, (mpi_comm_world(), 2,)),
+    (UnitCubeMesh, (2, 2, 2)),
+    (UnitQuadMesh.create, (4, 4)),
+    (UnitHexMesh.create, (2, 2, 2)),
+    # FIXME: Add mechanism for testing meshes coming from IO
+]
+
+mesh_factories_broken_shared_entities = [
+    (UnitIntervalMesh, (8,)),
+    (UnitSquareMesh, (4, 4)),
+    # FIXME: Problem in test_shared_entities
+    pytest.param((UnitDiscMesh.create, (mpi_comm_world(), 10, 1, 2)), marks=xfail_in_parallel),
+    pytest.param((UnitDiscMesh.create, (mpi_comm_world(), 10, 2, 2)), marks=xfail_in_parallel),
+    pytest.param((UnitDiscMesh.create, (mpi_comm_world(), 10, 1, 3)), marks=xfail_in_parallel),
+    pytest.param((UnitDiscMesh.create, (mpi_comm_world(), 10, 2, 3)), marks=xfail_in_parallel),
+    pytest.param((SphericalShellMesh.create, (mpi_comm_world(), 1,)), marks=xfail_in_parallel),
+    pytest.param((SphericalShellMesh.create, (mpi_comm_world(), 2,)), marks=xfail_in_parallel),
     (UnitCubeMesh, (2, 2, 2)),
     (UnitQuadMesh.create, (4, 4)),
     (UnitHexMesh.create, (2, 2, 2)),
 ]
 
+# FIXME: Fix this xfail
+def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
+    """Xfail when mesh_factory on quads/hexes uses
+    shared_vertex mode. Needs implementing.
+    """
+    if mesh_factory in [UnitQuadMesh.create, UnitHexMesh.create]:
+        if ghost_mode == 'shared_vertex':
+            pytest.xfail(reason="Missing functionality in '{}' with '' "
+                                "mode".format(mesh_factory, ghost_mode))
 
-@pytest.mark.parametrize('mesh_factory', mesh_factories)
-def test_shared_entities(mesh_factory):
+
+@pytest.mark.parametrize('mesh_factory', mesh_factories_broken_shared_entities)
+def test_shared_entities(mesh_factory, ghost_mode):
     func, args = mesh_factory
+    xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
     dim = mesh.topology().dim()
 
@@ -492,11 +535,12 @@ def test_shared_entities(mesh_factory):
 
 
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
-def test_mesh_topology_against_fiat(mesh_factory):
+def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
     """Test that mesh cells have topology matching to FIAT reference
     cell they were created from.
     """
     func, args = mesh_factory
+    xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
     assert mesh.ordered()
     tdim = mesh.topology().dim()
@@ -532,7 +576,7 @@ def test_mesh_topology_against_fiat(mesh_factory):
 
 
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
-def test_mesh_ufc_ordering(mesh_factory):
+def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
     """Test that DOLFIN follows that UFC standard in numbering
     mesh entities. See chapter 5 of UFC manual
     https://fenicsproject.org/pub/documents/ufc/ufc-user-manual/ufc-user-manual.pdf
@@ -541,6 +585,7 @@ def test_mesh_ufc_ordering(mesh_factory):
     not followed.
     """
     func, args = mesh_factory
+    xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
     assert mesh.ordered()
     tdim = mesh.topology().dim()
@@ -550,8 +595,9 @@ def test_mesh_ufc_ordering(mesh_factory):
         for d1 in range(d):
 
             # NOTE: DOLFIN UFC noncompliance!
-            # DOLFIN has increasing indices for d-0 incidence; UFC
-            # convention for d-d1 with d>d1 is not respected in DOLFIN
+            # DOLFIN has increasing indices only for d-0 incidence
+            # with any d; UFC convention for d-d1 with d>d1 is not
+            # respected in DOLFIN
             if d1 != 0:
                 continue
 
