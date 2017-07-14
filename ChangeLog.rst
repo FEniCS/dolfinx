@@ -4,6 +4,10 @@ Change log
 2017.2.0 (unreleased)
 ---------------------
 
+- Remove VTK plotting backend. Plotting is no longer available from the C++
+  interface. Basic plotting is available using ``matplotlib`` and ``x3dom``
+  backends via the ``plot()`` free function in the Python interface. Users are
+  advised to move to e.g.  Paraview for more demanding plotting needs. 
 - Updates for ``ufc::finite_element::evaluate_vertex_values`` interface
   change
 - Add new methods ``XDMFFile::write_checkpoint``, ``XDMFFile::read_checkpoint``

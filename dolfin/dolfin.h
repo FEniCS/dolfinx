@@ -33,7 +33,6 @@
 #include <dolfin/adaptivity/dolfin_adaptivity.h>
 
 // SWIG module io
-#include <dolfin/plot/dolfin_plot.h>
 #include <dolfin/io/dolfin_io.h>
 
 #endif

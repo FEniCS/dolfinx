@@ -103,10 +103,11 @@ Implementation
 This demo is implemented in the :download:`demo_cahn-hilliard.py`
 file.
 
-First, the Python module :py:mod:`random` and the :py:mod:`dolfin`
-module are imported::
+First, the modules :py:mod:`random` :py:mod:`matplotlib`
+:py:mod:`dolfin` module are imported::
 
     import random
+    import matplotlib.pyplot as plt
     from dolfin import *
 
 .. index:: Expression
@@ -340,7 +341,4 @@ Finally, the last computed solution for :math:`c` is plotted to the
 screen::
 
     plot(u.split()[0])
-    interactive()
-
-The line ``interactive()`` holds the plot (waiting for a keyboard
-action).
+    plt.show()

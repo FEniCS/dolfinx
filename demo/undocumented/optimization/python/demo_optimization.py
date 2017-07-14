@@ -20,6 +20,8 @@
 
 from __future__ import print_function
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Create mesh
 mesh = UnitSquareMesh(16, 16)
@@ -90,10 +92,8 @@ for i in range(100):
     print(u.vector().max())
 
 # Plot solution and parameter
-plot(u,  title="Solution",  rescale=True)
-plot(z,  title="Adjoint",   rescale=True)
-plot(p,  title="Parameter", rescale=True)
-plot(u0, mesh=mesh, title="Target", rescale=True)
-
-# Hold plot
-interactive()
+plt.figure(); plot(u,  title="Solution")
+plt.figure(); plot(z,  title="Adjoint")
+plt.figure(); plot(p,  title="Parameter")
+plt.figure(); plot(u0, mesh=mesh, title="Target")
+plt.show()

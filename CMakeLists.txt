@@ -140,7 +140,6 @@ list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
 list(APPEND OPTIONAL_PACKAGES "HDF5")
-list(APPEND OPTIONAL_PACKAGES "VTK")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
@@ -605,46 +604,6 @@ if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
     DESCRIPTION "Python documentation generator"
     URL "http://www.sphinx-doc.org"
     PURPOSE "Needed to build documentation")
-endif()
-
-# Check for VTK
-if (DOLFIN_ENABLE_VTK)
-  # Find all modules
-  find_package(VTK QUIET HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
-  set_package_properties(VTK PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "The Visualization Toolkit - A high level 3D visualization library"
-    URL "https://www.vtk.org"
-    PURPOSE "Enables plotting with VTK as backend")
-
-  # Add required modules (depends on VTK version)
-  if(TARGET vtkRenderingOpenGL2)
-    # VTK 7.0
-    find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
-      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL2
-      NO_MODULE)
-  elseif(TARGET vtkRenderingFreeTypeOpenGL)
-    # For VTK < 6.3, vtkRenderingFreeTypeOpenGL module is required, so
-    # add if available (vtkRenderingFreeTypeOpenGL was removed from
-    # VTK 6.3)
-    find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
-      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
-      vtkRenderingFreeTypeOpenGL NO_MODULE)
-  elseif(TARGET vtkRenderingOpenGL)
-    # VTK 6.3
-    find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
-      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture
-      vtkRenderingOpenGL NO_MODULE)
-  endif()
-
-  set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
-  if (VTK_FOUND)
-    if ("${VTK_VERSION}" VERSION_LESS "5.2")
-      set(VTK_FOUND FALSE)
-      message(WARNING "Unable to find VTK (>= 5.2)")
-    else()
-      message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
-    endif()
-  endif()
 endif()
 
 #------------------------------------------------------------------------------

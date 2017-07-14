@@ -35,6 +35,7 @@ du/dn(x, y) = A*sin(5*x) for y = 0 or y = 1
 # Begin demo
 
 from dolfin import *
+import matplotlib.pyplot as plt
 
 # Create mesh and define function space
 mesh = UnitSquareMesh(128, 128)
@@ -75,4 +76,5 @@ file = File("poisson.pvd")
 file << u
 
 # Plot solution
-plot(u, interactive=True)
+plot(u)
+plt.show()

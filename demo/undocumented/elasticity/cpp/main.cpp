@@ -201,20 +201,14 @@ int main()
     file << partitions;
   }
 
-  // Plot solution
-  plot(u, "Displacement", "displacement");
-
-  // Displace mesh and plot displaced mesh
+  // Displace mesh and write 
   ALE::move(*mesh, *u);
-  plot(*mesh, "Deformed mesh");
-
-  // Make plot windows interactive
-  interactive();
+  XDMFFile("deformed_mesh.xdmf").write(*mesh);
 
   #else
   dolfin::cout << "DOLFIN must be configured with PETSc to run this demo."
                << dolfin::endl;
   #endif
 
- return 0;
+  return 0;
 }

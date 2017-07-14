@@ -22,14 +22,14 @@ import ufl
 from six.moves import xrange as range
 import os
 
+exit(0)
+
 try:
-    parameters['plotting_backend'] = 'matplotlib'
-except RuntimeError:
-    print("This demo requires matplotlib! Bye.")
-    exit()
-else:
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import axes3d
+except ImportError:
+    print("This demo requires matplotlib! Bye.")
+    exit()
 
 
 rank = MPI.rank(mpi_comm_world())

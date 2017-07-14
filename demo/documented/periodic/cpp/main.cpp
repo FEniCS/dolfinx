@@ -99,9 +99,5 @@ int main()
   File file_u("periodic.pvd");
   file_u << u;
 
-  // Plot solution
-  plot(u);
-  interactive();
-
   return 0;
 }

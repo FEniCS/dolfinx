@@ -21,6 +21,8 @@ smoothed aggregation algerbaric multigrid."""
 
 from __future__ import print_function
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Test for PETSc
 if not has_linear_algebra_backend("PETSc"):
@@ -150,4 +152,5 @@ stress = project(sigma(u), V=W)
 File("stress.pvd") << stress
 
 # Plot solution
-plot(u, interactive=True)
+plot(u)
+plt.show()

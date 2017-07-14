@@ -25,6 +25,7 @@ generated with VMTK (http://www.vmtk.org/)."""
 # Last changed: 2012-10-16
 # Begin demo
 
+import matplotlib.pyplot as plt
 from dolfin import *
 
 # Create mesh and define function space
@@ -63,4 +64,5 @@ solve(a == L, u, [bc0, bc1, bc2, bc3])
 File("u.pvd") << u
 
 # Plot solution
-plot(u, interactive=True)
+plot(u)
+plt.show()

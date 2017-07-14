@@ -83,10 +83,9 @@ Under construction.
 
      solver.summary();
 
-     // Plot final solution
-     plot(u->root_node(), "Solution on initial mesh");
-     plot(u->leaf_node(), "Solution on final mesh");
-     interactive();
+     // Output solution to XDMF for Paraview
+     XDMFFile("initial_solution.xdmf").write(u->root_node());
+     XDMFFile("final_solution.xdmf").write(u->leaf_node());
 
      return 0;
    }

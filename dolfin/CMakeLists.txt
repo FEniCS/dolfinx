@@ -176,15 +176,6 @@ if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
   target_link_libraries(dolfin PUBLIC ${MPI_CXX_LIBRARIES})
 endif()
 
-# VTK
-if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
-  include(${VTK_USE_FILE})
-
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_VTK")
-  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
-  target_link_libraries(dolfin PRIVATE ${VTK_LIBRARIES})
-endif()
-
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 

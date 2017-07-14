@@ -222,13 +222,6 @@
 %shared_ptr(dolfin::TAOLinearBoundSolver)
 %shared_ptr(dolfin::PETScTAOSolver)
 #endif
-// plot
-%shared_ptr(dolfin::VTKPlotter)
-%shared_ptr(dolfin::GenericVTKPlottable)
-%shared_ptr(dolfin::VTKPlottableMesh)
-%shared_ptr(dolfin::VTKPlottableGenericFunction)
-%shared_ptr(dolfin::VTKPlottableMeshFunction)
-%shared_ptr(dolfin::ExpressionWrapper)
 
 // quadrature
 %shared_ptr(dolfin::Quadrature)

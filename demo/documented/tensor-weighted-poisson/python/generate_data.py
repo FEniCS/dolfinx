@@ -55,8 +55,6 @@ c01_file << c01
 c11_file << c11
 
 # Plot mesh functions
-plot(c00, title="C00")
-plot(c01, title="C01")
-plot(c11, title="C11")
-
-interactive()
+plot(c00, title="C00", interactive=True)
+plot(c01, title="C01", interactive=True)
+plot(c11, title="C11", interactive=True)

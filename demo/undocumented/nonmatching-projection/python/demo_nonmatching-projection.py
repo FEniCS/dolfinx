@@ -24,6 +24,8 @@ non-matching mesh."""
 # Last changed: 2012-11-12
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Create mesh and define function spaces
 mesh0 = UnitSquareMesh(16, 16)
@@ -46,6 +48,8 @@ u1 = Function(P1)
 solve(a == L, u1)
 
 # Plot functions
+plt.figure()
 plot(u0, mesh=mesh0, title="u0")
+plt.figure()
 plot(u1, title="u1")
-interactive()
+plt.show()

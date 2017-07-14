@@ -35,6 +35,8 @@ and boundary conditions given by
 # Last changed: 2012-11-12
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Create mesh and function space
 mesh = UnitIntervalMesh(50)
@@ -67,4 +69,5 @@ file = File("poisson.pvd")
 file << u
 
 # Plot solution
-plot(u, interactive=True)
+plot(u)
+plt.show()

@@ -192,10 +192,12 @@ Finally, we can play with the result in different ways:
     pfile_pvd << p
 
     # Plot solution
+    import matplotlib.pyplot as plt
+    plt.figure(1)
     plot(u)
+    plt.figure(2)
     plot(p)
-    interactive()
-
+    plt.show()
 
 
 Complete code

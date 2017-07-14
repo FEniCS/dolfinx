@@ -118,11 +118,7 @@ int main()
   // Solve the problem
   TAOSolver.solve(A, x, b, xl, xu);
 
-  // Plot solution
-  plot(usol, "Displacement", "displacement");
-
-  // Make plot windows interactive
-  interactive();
+  XDMFFile("u.xdmf").write(usol); 
 
   #else
 
@@ -130,5 +126,5 @@ int main()
 
   #endif
 
- return 0;
+  return 0;
 }

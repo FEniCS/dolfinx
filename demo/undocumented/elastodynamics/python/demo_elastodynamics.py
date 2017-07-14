@@ -24,6 +24,8 @@
 
 from __future__ import print_function
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Form compiler options
 parameters["form_compiler"]["cpp_optimize"] = True
@@ -175,4 +177,5 @@ while t <= T:
     vtk_file << u
 
 # Plot solution
-plot(u, mode="displacement", interactive=True)
+plot(u, mode="displacement")
+plt.show()
