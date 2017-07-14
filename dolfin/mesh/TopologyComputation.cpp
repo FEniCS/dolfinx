@@ -438,8 +438,9 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
 
     // Compare entity with the preceding entity
     const auto& key0 = std::get<0>(keyed_entities[i - 1]);
-    if (!std::equal(key1.begin(), key1.end(), key0.begin()))
+    if (!(key0 == key1))
     {
+      // New entity, so add entity
       if (local_index < 0)
       {
         // 'Create' new entity and flag that the most recent entity is not a
@@ -463,8 +464,9 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
     if (!ghost_entity)
     {
       // Not a ghost entity
+      const std::size_t entity_index = connectivity_ev.size() - 1;
       dolfin_assert(_local_index < (int) connectivity_ce[cell_index].size());
-      connectivity_ce[cell_index][_local_index] = connectivity_ev.size() - 1;
+      connectivity_ce[cell_index][_local_index] = entity_index;
     }
     else
     {
@@ -502,6 +504,7 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
   // entities
   connectivity_ev.insert(connectivity_ev.end(), connectivity_ev_ghost.begin(),
                          connectivity_ev_ghost.end());
+  connectivity_ev.shrink_to_fit();
   ev.set(connectivity_ev);
 
   return connectivity_ev.size();
