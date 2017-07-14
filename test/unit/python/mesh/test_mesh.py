@@ -24,6 +24,7 @@ from __future__ import print_function, division
 import pytest
 import numpy
 import six
+from six.moves import range
 
 from dolfin import *
 from dolfin_utils.test import fixture, skip_in_parallel, xfail_in_parallel, cd_tempdir
@@ -448,80 +449,123 @@ def test_cell_orientations():
     print(mesh.cell_orientations())
 
 
-def test_shared_entities():
-    for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh,
-                                     UnitCubeMesh]):
-        dim = ind+1
-        args = [4]*dim
-        mesh = MeshClass(*args)
-
-        # FIXME: Implement a proper test
-        for shared_dim in range(dim+1):
-            # Initialise global indices (if not already)
-            mesh.init_global(shared_dim)
-
-            assert isinstance(mesh.topology().shared_entities(shared_dim), dict)
-            assert isinstance(mesh.topology().global_indices(shared_dim),
-                              numpy.ndarray)
-
-            EntityIterator = {0: vertices, 1: edges, 2: faces, 3: cells}[shared_dim]
-            if mesh.topology().have_shared_entities(shared_dim):
-                for e in EntityIterator(mesh):
-                    sharing = e.sharing_processes()
-                    assert isinstance(sharing, numpy.ndarray)
-                    assert (sharing.size > 0) == e.is_shared()
-
-            n_entities = mesh.size(shared_dim)
-            n_global_entities = mesh.size_global(shared_dim)
-            shared_entities = mesh.topology().shared_entities(shared_dim)
-
-            # Check that sum(local-shared) = global count
-            rank = MPI.rank(mesh.mpi_comm())
-            ct = 0
-            for key, val in shared_entities.items():
-                if (val[0] < rank):
-                    ct += 1
-            size_global = MPI.sum(mesh.mpi_comm(), mesh.size(shared_dim) - ct)
-
-            assert size_global ==  mesh.size_global(shared_dim)
-
-
-@pytest.mark.parametrize('mesh_factory', [
+mesh_factories = [
     (UnitIntervalMesh, (8,)),
     (UnitSquareMesh, (4, 4)),
     (UnitCubeMesh, (2, 2, 2)),
     (UnitQuadMesh.create, (4, 4)),
     (UnitHexMesh.create, (2, 2, 2)),
-])
-def test_cell_topology_against_fiat(mesh_factory):
+]
+
+
+@pytest.mark.parametrize('mesh_factory', mesh_factories)
+def test_shared_entities(mesh_factory):
+    func, args = mesh_factory
+    mesh = func(*args)
+    dim = mesh.topology().dim()
+
+    # FIXME: Implement a proper test
+    for shared_dim in range(dim+1):
+        # Initialise global indices (if not already)
+        mesh.init_global(shared_dim)
+
+        assert isinstance(mesh.topology().shared_entities(shared_dim), dict)
+        assert isinstance(mesh.topology().global_indices(shared_dim),
+                          numpy.ndarray)
+
+        if mesh.topology().have_shared_entities(shared_dim):
+            for e in entities(mesh, shared_dim):
+                sharing = e.sharing_processes()
+                assert isinstance(sharing, numpy.ndarray)
+                assert (sharing.size > 0) == e.is_shared()
+
+        n_entities = mesh.size(shared_dim)
+        n_global_entities = mesh.size_global(shared_dim)
+        shared_entities = mesh.topology().shared_entities(shared_dim)
+
+        # Check that sum(local-shared) = global count
+        rank = MPI.rank(mesh.mpi_comm())
+        ct = sum(1 for val in six.itervalues(shared_entities) if val[0] < rank)
+        size_global = MPI.sum(mesh.mpi_comm(), mesh.size(shared_dim) - ct)
+
+        assert size_global ==  mesh.size_global(shared_dim)
+
+
+@pytest.mark.parametrize('mesh_factory', mesh_factories)
+def test_mesh_topology_against_fiat(mesh_factory):
+    """Test that mesh cells have topology matching to FIAT reference
+    cell they were created from.
+    """
     func, args = mesh_factory
     mesh = func(*args)
     assert mesh.ordered()
+    tdim = mesh.topology().dim()
 
-    # Create DOLFIN and FIAT cell
+    # Create FIAT cell
     cell_name = CellType.type2string(mesh.type().cell_type())
     fiat_cell = FIAT.ufc_cell(cell_name)
 
     # Initialize mesh entities
-    tdim = mesh.topology().dim()
-    for d in six.moves.range(tdim+1):
+    for d in range(tdim+1):
         mesh.init(d)
 
-    # Test topology
     for cell in cells(mesh):
+        # Get mesh-global (MPI-local) indices of cell vertices
         vertex_global_indices = cell.entities(0)
 
+        # Loop over all dimensions of reference cell topology
         for d, d_topology in six.iteritems(fiat_cell.get_topology()):
-            entities = cell.entities(d)
 
-            # Fixup for highest dimension
-            if len(entities) == 0:
+            # Get entities of dimension d on the cell
+            entities = cell.entities(d)
+            if len(entities) == 0:  # Fixup for highest dimension
                 entities = (cell.index(),)
 
+            # Loop over all entities of fixed dimension d
             for entity_index, entity_topology in six.iteritems(d_topology):
 
-                # Check that vertices of mesh entity match FIAT topology
+                # Check that entity vertices map to cell vertices in right order
                 entity = MeshEntity(mesh, d, entities[entity_index])
                 entity_vertices = entity.entities(0)
                 assert all(vertex_global_indices[numpy.array(entity_topology)]
                            == entity_vertices)
+
+
+@pytest.mark.parametrize('mesh_factory', mesh_factories)
+def test_mesh_ufc_ordering(mesh_factory):
+    """Test that DOLFIN follows that UFC standard in numbering
+    mesh entities. See chapter 5 of UFC manual
+    https://fenicsproject.org/pub/documents/ufc/ufc-user-manual/ufc-user-manual.pdf
+
+    In fact, numbering of other mesh entities than vertices is
+    not followed.
+    """
+    func, args = mesh_factory
+    mesh = func(*args)
+    assert mesh.ordered()
+    tdim = mesh.topology().dim()
+
+    # Loop over pair of dimensions d, d1 with d>d1
+    for d in range(tdim+1):
+        for d1 in range(d):
+
+            # NOTE: DOLFIN UFC noncompliance!
+            # DOLFIN has increasing indices for d-0 incidence; UFC
+            # convention for d-d1 with d>d1 is not respected in DOLFIN
+            if d1 != 0:
+                continue
+
+            # Initialize d-d1 connectivity and d1 global indices
+            mesh.init(d, d1)
+            mesh.init_global(d1)
+            assert mesh.topology().have_global_indices(d1)
+
+            # Loop over entities of dimension d
+            for e in entities(mesh, d):
+
+                # Get global indices
+                subentities_indices = [e1.global_index() for e1 in entities(e, d1)]
+                assert subentities_indices.count(-1) == 0
+
+                # Check that d1-subentities of d-entity have increasing indices
+                assert sorted(subentities_indices) == subentities_indices
