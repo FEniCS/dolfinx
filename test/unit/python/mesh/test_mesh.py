@@ -18,23 +18,18 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# Modified by Benjamin Kehlet 2012
-# Modified by Marie E. Rognes 2012
-# Modified by Johannes Ring 2013
-# Modified by Jan Blechta 2013
-# Modified by Oeyvind Evju 2013
-#
-# First added:  2006-08-08
-# Last changed: 2014-08-12
 
-from __future__ import print_function
+from __future__ import print_function, division
+
 import pytest
 import numpy
-from dolfin import *
-import os
+import six
 
+from dolfin import *
 from dolfin_utils.test import fixture, skip_in_parallel, xfail_in_parallel, cd_tempdir
+import FIAT
+
+import os
 
 
 @fixture
@@ -489,3 +484,44 @@ def test_shared_entities():
             size_global = MPI.sum(mesh.mpi_comm(), mesh.size(shared_dim) - ct)
 
             assert size_global ==  mesh.size_global(shared_dim)
+
+
+@pytest.mark.parametrize('mesh_factory', [
+    (UnitIntervalMesh, (8,)),
+    (UnitSquareMesh, (4, 4)),
+    (UnitCubeMesh, (2, 2, 2)),
+    (UnitQuadMesh.create, (4, 4)),
+    (UnitHexMesh.create, (2, 2, 2)),
+])
+def test_cell_topology_against_fiat(mesh_factory):
+    func, args = mesh_factory
+    mesh = func(*args)
+    assert mesh.ordered()
+
+    # Create DOLFIN and FIAT cell
+    cell_name = CellType.type2string(mesh.type().cell_type())
+    fiat_cell = FIAT.ufc_cell(cell_name)
+
+    # Initialize mesh entities
+    tdim = mesh.topology().dim()
+    for d in six.moves.range(tdim+1):
+        mesh.init(d)
+
+    # Test topology
+    for cell in cells(mesh):
+        vertex_global_indices = cell.entities(0)
+
+        for d, d_topology in six.iteritems(fiat_cell.get_topology()):
+            entities = cell.entities(d)
+
+            # Fixup for highest dimension
+            if len(entities) == 0:
+                entities = (cell.index(),)
+
+            for entity_index, entity_topology in six.iteritems(d_topology):
+
+                # Check that vertices of mesh entity match FIAT topology
+                entity = MeshEntity(mesh, d, entities[entity_index])
+                entity_vertices = entity.entities(0)
+                assert all(vertex_global_indices[numpy.array(entity_topology)]
+                           == entity_vertices)
