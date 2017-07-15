@@ -302,7 +302,7 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
     // Add to enity-to-vertex map if entity is new
     if (e_index != previous_index)
     {
-      dolfin_assert(e_index < connectivity_ev.size());
+      dolfin_assert(e_index < (std::int32_t) connectivity_ev.size());
       connectivity_ev[e_index] = std::get<2>(entity);
 
       // Update index
