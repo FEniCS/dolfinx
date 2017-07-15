@@ -279,7 +279,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
   //        function operator[] in std::map and MeshFunction.
 
   log(TRACE, "Computing sub domain markers for sub domain %d.", sub_domain);
-  
+
   // Compute connectivities for boundary detection, if necessary
   const std::size_t D = mesh.topology().dim();
   if (dim < D)

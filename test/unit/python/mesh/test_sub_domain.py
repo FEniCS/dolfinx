@@ -59,7 +59,7 @@ def test_creation_and_marking():
     class Left(SubDomain):
         def inside(self, x, on_boundary):
             return x[0] < DOLFIN_EPS
-            
+
     class LeftOnBoundary(SubDomain):
         def inside(self, x, on_boundary):
             return x[0] < DOLFIN_EPS and on_boundary
@@ -67,7 +67,7 @@ def test_creation_and_marking():
     class Right(SubDomain):
         def inside(self, x, on_boundary):
             return x[0] > 1.0 - DOLFIN_EPS
-            
+
     class RightOnBoundary(SubDomain):
         def inside(self, x, on_boundary):
             return x[0] > 1.0 - DOLFIN_EPS and on_boundary
@@ -83,7 +83,7 @@ def test_creation_and_marking():
           }
         };
     """
-    
+
     left_on_boundary_cpp = """
         class LeftOnBoundary : public SubDomain
         {
@@ -107,7 +107,7 @@ def test_creation_and_marking():
           }
         };
     """
-    
+
     right_on_boundary_cpp = """
         class RightOnBoundary : public SubDomain
         {
