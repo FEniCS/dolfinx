@@ -1188,6 +1188,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   fe_attribute_node.append_attribute("ElementDegree")
     = std::to_string(element_degree).c_str();
   fe_attribute_node.append_attribute("Name") = function_name.c_str();
+  fe_attribute_node.append_attribute("Center") = "Other";
 
   // Prepare and save number of dofs per cell (x_cell_dofs) and
   // cell dofmaps (cell_dofs)
