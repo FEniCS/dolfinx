@@ -39,8 +39,8 @@ testing.
    :target: https://bitbucket.org/fenics-project/dolfin/addon/pipelines/home
    :alt: Pipelines Build Status
 
-.. image:: https://magpie.bpi.cam.ac.uk:8085/plugins/servlet/wittified/build-status/DOL-DODO
-   :target: https://magpie.bpi.cam.ac.uk:8085/browse/DOL-DODO/latest
+.. image:: http://magpie.bpi.cam.ac.uk:8085/plugins/servlet/wittified/build-status/DOL-DODO
+   :target: http://magpie.bpi.cam.ac.uk:8085/browse/DOL-DODO/latest
    :alt: Bamboo Build Status
 
 
