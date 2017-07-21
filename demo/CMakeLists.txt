@@ -3,9 +3,6 @@ project(dolfin-demos)
 # Require CMake 2.8
 cmake_minimum_required(VERSION 3.5)
 
-# FIXME: Temporary fix for whitespace error
-cmake_policy(SET CMP0004 OLD)
-
 # Find DOLFIN config file (not used here, but check that the demo will
 # be able to find it
 find_package(DOLFIN PATHS ${CMAKE_BINARY_DIR} REQUIRED)
