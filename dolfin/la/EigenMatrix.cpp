@@ -261,7 +261,7 @@ void EigenMatrix::get_diagonal(GenericVector& x) const
                  "Matrix and vector dimensions don't match");
   }
 
-  Eigen::VectorXd& xx = x.down_cast<EigenVector>().vec();
+  Eigen::VectorXd& xx = as_type<EigenVector>(x).vec();
   for (std::size_t i = 0; i != x.size(); ++i)
     xx[i] = _matA.coeff(i, i);
 }
@@ -275,7 +275,7 @@ void EigenMatrix::set_diagonal(const GenericVector& x)
                  "Matrix and vector dimensions don't match");
   }
 
-  const Eigen::VectorXd& xx = x.down_cast<EigenVector>().vec();
+  const Eigen::VectorXd& xx = as_type<const EigenVector>(x).vec();
   for (std::size_t i = 0; i != x.size(); ++i)
     _matA.coeffRef(i, i) = xx[i];
 }

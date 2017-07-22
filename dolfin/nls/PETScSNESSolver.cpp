@@ -156,9 +156,9 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
 
   // Set the bounds
   std::shared_ptr<const PETScVector>
-    _ub(&ub.down_cast<PETScVector>(), NoDeleter());
+    _ub(&as_type<const PETScVector>(ub), NoDeleter());
   std::shared_ptr<const PETScVector>
-    _lb(&lb.down_cast<PETScVector>(), NoDeleter());
+    _lb(&as_type<const PETScVector>(lb), NoDeleter());
   this->lb = _lb;
   this->ub = _ub;
   _has_explicit_bounds = true;
@@ -177,7 +177,7 @@ void PETScSNESSolver::init(NonlinearProblem& nonlinear_problem,
 
   // Prepare context for evaluation routines
   _snes_ctx.nonlinear_problem = &nonlinear_problem;
-  _snes_ctx.x = &x.down_cast<PETScVector>();
+  _snes_ctx.x = &as_type<PETScVector>(x);
   // FIXME: We are duplicating ghosted vector, while we don't need ghosted
   // NOTE: Seems that we can get rid of f_tmp and use working vec obtained by
   //       SNESLineSearchGetVecs
@@ -323,7 +323,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   PetscInt its;
   SNESConvergedReason reason;
 
-  PETScVector& _x = x.down_cast<PETScVector>();
+  PETScVector& _x = as_type<PETScVector>(x);
 
   this->init(nonlinear_problem, x);
 
@@ -613,7 +613,7 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
       // tell PETSc the bounds.
       Vec ub, lb;
 
-      PETScVector _x = x.down_cast<PETScVector>();
+      PETScVector _x = as_type<PETScVector>(x);
       ierr = VecDuplicate(_x.vec(), &ub);
       if (ierr != 0) petsc_error(ierr, __FILE__, "VecDuplicate");
       ierr = VecDuplicate(_x.vec(), &lb);

@@ -640,7 +640,7 @@ void MultiMeshAssembler::_init_global_tensor(GenericTensor& A,
   if (A.rank() == 2)
   {
     // Down cast to GenericMatrix
-    GenericMatrix& _matA = A.down_cast<GenericMatrix>();
+    GenericMatrix& _matA = as_type<GenericMatrix>(A);
 
     // Loop over rows and insert 0.0 on the diagonal
     const double block = 0.0;

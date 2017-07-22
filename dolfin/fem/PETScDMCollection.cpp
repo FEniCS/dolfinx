@@ -720,7 +720,7 @@ PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
 
   // Create Vector
   Function u(*V);
-  *vec = u.vector()->down_cast<PETScVector>().vec();
+  *vec = as_type<PETScVector>(u.vector())->vec();
 
   // FIXME: Does increasing the reference count lead to a memory leak?
   // Increment PETSc reference counter the Vec

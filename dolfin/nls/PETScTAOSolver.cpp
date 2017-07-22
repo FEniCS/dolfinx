@@ -181,8 +181,8 @@ PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
   // Bound-constrained minimisation problem
   _has_bounds = true;
 
-  return solve(optimisation_problem, x.down_cast<PETScVector>(),
-               lb.down_cast<PETScVector>(), ub.down_cast<PETScVector>());
+  return solve(optimisation_problem, as_type<PETScVector>(x),
+               as_type<const PETScVector>(lb), as_type<const PETScVector>(ub));
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>
@@ -194,7 +194,7 @@ PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
   PETScVector lb(this->mpi_comm());
   PETScVector ub(this->mpi_comm());
 
-  return solve(optimisation_problem, x.down_cast<PETScVector>(), lb, ub);
+  return solve(optimisation_problem, as_type<PETScVector>(x), lb, ub);
 }
 //-----------------------------------------------------------------------------
 void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
@@ -204,7 +204,7 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   _has_bounds = false;
   PETScVector lb(this->mpi_comm());
   PETScVector ub(this->mpi_comm());
-  init(optimisation_problem, x.down_cast<PETScVector>(), lb, ub);
+  init(optimisation_problem, as_type<PETScVector>(x), lb, ub);
 }
 //-----------------------------------------------------------------------------
 void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
