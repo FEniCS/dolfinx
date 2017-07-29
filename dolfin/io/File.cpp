@@ -14,14 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Magnus Vikstrom 2007.
-// Modified by Nuno Lopes 2008.
-// Modified by Niclas Jansson 2008.
-// Modified by Ola Skavhaug 2009.
-//
-// First added:  2002-11-12
-// Last changed: 2015-03-27
 
 #include <clocale>
 #include <fstream>
@@ -69,7 +61,7 @@ File::File(MPI_Comm comm, const std::string filename, Type type,
 //-----------------------------------------------------------------------------
 File::File(std::ostream& outstream) : _mpi_comm(MPI_COMM_SELF)
 {
-  file.reset(new XMLFile(outstream));
+  _file.reset(new XMLFile(outstream));
 }
 //-----------------------------------------------------------------------------
 File::~File()
@@ -79,39 +71,39 @@ File::~File()
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const Mesh*, double> mesh)
 {
-  file->_write(_mpi_comm.rank());
-  *file << mesh;
+  _file->_write(_mpi_comm.rank());
+  _file->write(*mesh.first, mesh.second);
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<int>*, double> f)
 {
-  file->_write(_mpi_comm.rank());
-  *file << f;
+  _file->_write(_mpi_comm.rank());
+  _file->write(*f.first, f.second);
 }
 //-----------------------------------------------------------------------------
 void
 File::operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f)
 {
-  file->_write(_mpi_comm.rank());
-  *file << f;
+  _file->_write(_mpi_comm.rank());
+  _file->write(*f.first, f.second);
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<double>*, double> f)
 {
-  file->_write(_mpi_comm.rank());
-  *file << f;
+  _file->_write(_mpi_comm.rank());
+  _file->write(*f.first, f.second);
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
 {
-  file->_write(_mpi_comm.rank());
-  *file << f;
+  _file->_write(_mpi_comm.rank());
+  _file->write(*f.first, f.second);
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const Function*, double> u)
 {
-  file->_write(_mpi_comm.rank());
-  *file << u;
+  _file->_write(_mpi_comm.rank());
+  _file->write(*u.first, u.second);
 }
 //-----------------------------------------------------------------------------
 bool File::exists(std::string filename)
@@ -164,7 +156,7 @@ void File::init(MPI_Comm comm, const std::string filename,
     const std::string ext =
       boost::filesystem::extension(boost::filesystem::basename(path));
     if (ext == ".xml")
-      file.reset(new XMLFile(comm, filename));
+      _file.reset(new XMLFile(comm, filename));
     else
     {
       dolfin_error("File.cpp",
@@ -174,17 +166,17 @@ void File::init(MPI_Comm comm, const std::string filename,
     }
   }
   else if (extension == ".x3d")
-    file.reset(new X3DFile(filename));
+    _file.reset(new X3DFile(filename));
   else if (extension == ".xml")
-    file.reset(new XMLFile(comm, filename));
+    _file.reset(new XMLFile(comm, filename));
   else if (extension == ".pvd")
-    file.reset(new VTKFile(filename, encoding));
+    _file.reset(new VTKFile(filename, encoding));
   else if (extension == ".raw")
-    file.reset(new RAWFile(filename));
+    _file.reset(new RAWFile(filename));
   else if (extension == ".xyz")
-    file.reset(new XYZFile(filename));
+    _file.reset(new XYZFile(filename));
   else if (extension == ".svg")
-    file.reset(new SVGFile(filename));
+    _file.reset(new SVGFile(filename));
   else
   {
     dolfin_error("File.cpp",
@@ -200,19 +192,19 @@ void File::init(MPI_Comm comm, const std::string filename, Type type,
   switch (type)
   {
   case Type::x3d:
-    file.reset(new X3DFile(filename));
+    _file.reset(new X3DFile(filename));
     break;
   case Type::xml:
-    file.reset(new XMLFile(comm, filename));
+    _file.reset(new XMLFile(comm, filename));
     break;
   case Type::vtk:
-    file.reset(new VTKFile(filename, encoding));
+    _file.reset(new VTKFile(filename, encoding));
     break;
   case Type::raw:
-    file.reset(new RAWFile(filename));
+    _file.reset(new RAWFile(filename));
     break;
   case Type::xyz:
-    file.reset(new XYZFile(filename));
+    _file.reset(new XYZFile(filename));
     break;
   default:
     dolfin_error("File.cpp",

@@ -73,7 +73,7 @@ XMLFile::~XMLFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>> (Mesh& input_mesh)
+void XMLFile::read(Mesh& input_mesh)
 {
   if (MPI::rank(input_mesh.mpi_comm()) == 0)
   {
@@ -110,7 +110,7 @@ void XMLFile::operator>> (Mesh& input_mesh)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<< (const Mesh& output_mesh)
+void XMLFile::write(const Mesh& output_mesh)
 {
   if (MPI::size(output_mesh.mpi_comm()) > 1)
   {
@@ -125,7 +125,7 @@ void XMLFile::operator<< (const Mesh& output_mesh)
   save_xml_doc(doc);
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>> (GenericVector& input)
+void XMLFile::read(GenericVector& input)
 {
   pugi::xml_document xml_doc;
   pugi::xml_node dolfin_node(0);
@@ -174,7 +174,7 @@ void XMLFile::read_vector(std::vector<double>& input,
   XMLVector::read(input, indices, dolfin_node);
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<< (const GenericVector& output)
+void XMLFile::write(const GenericVector& output)
 {
   // Open file on process 0 for distributed objects and on all
   // processes for local objects
@@ -192,7 +192,7 @@ void XMLFile::operator<< (const GenericVector& output)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>> (Parameters& input)
+void XMLFile::read(Parameters& input)
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
@@ -203,7 +203,7 @@ void XMLFile::operator>> (Parameters& input)
   XMLParameters::read(input, dolfin_node);
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<< (const Parameters& output)
+void XMLFile::write(const Parameters& output)
 {
   if (_mpi_comm.rank() == 0)
   {
@@ -214,7 +214,7 @@ void XMLFile::operator<< (const Parameters& output)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>> (Table& input)
+void XMLFile::read(Table& input)
 {
   if (_mpi_comm.size() > 1)
     dolfin_error("XMLFile.cpp",
@@ -231,7 +231,7 @@ void XMLFile::operator>> (Table& input)
   XMLTable::read(input, node);
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<< (const Table& output)
+void XMLFile::write(const Table& output)
 {
   if (_mpi_comm.size() > 1)
   {
@@ -248,7 +248,7 @@ void XMLFile::operator<< (const Table& output)
   save_xml_doc(doc);
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(Function& input)
+void XMLFile::read(Function& input)
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
@@ -263,7 +263,7 @@ void XMLFile::operator>>(Function& input)
   XMLFunctionData::read(input, dolfin_node);
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<< (const Function& output)
+void XMLFile::write(const Function& output)
 {
   if (_mpi_comm.rank() == 0)
   {
