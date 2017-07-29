@@ -56,57 +56,36 @@ namespace dolfin
     void write(const Mesh& mesh);
 
     /// Output MeshFunction<bool>
-    ///
-    /// @param meshfunction
     void write(const MeshFunction<bool>& meshfunction);
 
     /// Output MeshFunction<std::size_t>
-    ///
-    /// @param meshfunction
     void write(const MeshFunction<std::size_t>& meshfunction);
 
     /// Output MeshFunction<int>
-    ///
-    /// @param meshfunction
     void write(const MeshFunction<int>& meshfunction);
 
     /// Output MeshFunction<double>
-    ///
-    /// @param meshfunction
     void write(const MeshFunction<double>& meshfunction);
 
     /// Output Function
-    /// @param u (Function)
     void write(const Function& u);
 
     /// Output Mesh and timestep
-    /// @param mesh
-    ///   Mesh and time
     void write(const Mesh& mesh, double t);
 
     /// Output MeshFunction and timestep
-    /// @param f
-    ///   MeshFunction and time
     void write(const MeshFunction<int>& mesh, double t);
 
     /// Output MeshFunction and timestep
-    /// @param f
-    ///   MeshFunction and time
     void write(const MeshFunction<std::size_t>& mf, double t);
 
     /// Output MeshFunction and timestep
-    /// @param f
-    ///   MeshFunction and time
     void write(const MeshFunction<double>& mf, double t);
 
     /// Output MeshFunction and timestep
-    /// @param f
-    ///   MeshFunction and time
     void write(const MeshFunction<bool>& mf, double t);
 
     /// Output Function and timestep
-    /// @param u
-    ///   Function and time
     void write(const Function& u, double t);
 
   private:
