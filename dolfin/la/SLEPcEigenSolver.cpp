@@ -323,6 +323,32 @@ void SLEPcEigenSolver::set_deflation_space(const VectorSpaceBasis& deflation_spa
   if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetDeflationSpace");
 }
 //-----------------------------------------------------------------------------
+void SLEPcEigenSolver::set_initial_space(const PETScVector& deflation_space)
+{
+  dolfin_assert(_eps);
+  dolfin_assert(deflation_space.vec());
+  Vec x = deflation_space.vec();
+  dolfin_assert(_eps);
+  EPSSetInitialSpace(_eps, 1, &x);
+}
+//-----------------------------------------------------------------------------
+void SLEPcEigenSolver::set_initial_space(const VectorSpaceBasis& deflation_space)
+{
+  dolfin_assert(_eps);
+
+  // Get PETSc vector pointers from VectorSpaceBasis
+  std::vector<Vec> petsc_vecs(deflation_space.dim());
+  for (std::size_t i = 0; i < deflation_space.dim(); ++i)
+  {
+    dolfin_assert(deflation_space[i]);
+    petsc_vecs[i] = deflation_space[i]->down_cast<PETScVector>().vec();
+  }
+
+  PetscErrorCode ierr = EPSSetInitialSpace(_eps, petsc_vecs.size(),
+                                             petsc_vecs.data());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetInitialSpace");
+}
+//-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_options_prefix(std::string options_prefix)
 {
   // Set options prefix
@@ -338,6 +364,13 @@ std::string SLEPcEigenSolver::get_options_prefix() const
   PetscErrorCode ierr = EPSGetOptionsPrefix(_eps, &prefix);
   if (ierr != 0) petsc_error(ierr, __FILE__, "EPSGetOptionsPrefix");
   return std::string(prefix);
+}
+//-----------------------------------------------------------------------------
+void SLEPcEigenSolver::set_from_options() const
+{
+  dolfin_assert(_eps);
+  PetscErrorCode ierr = EPSSetFromOptions(_eps);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetFromOptions");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::read_parameters()

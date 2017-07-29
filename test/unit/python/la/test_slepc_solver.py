@@ -71,6 +71,17 @@ def K_M_vec(V_vec):
 # Tests
 
 @skip_if_not_PETsc_or_not_slepc
+def test_set_from_options():
+    "Test SLEPc options prefixes"
+
+    prefix = "my_slepc_"
+    solver = SLEPcEigenSolver(mpi_comm_world())
+    solver.set_options_prefix(prefix)
+    solver.set_from_options()
+
+    assert solver.get_options_prefix() == prefix
+
+@skip_if_not_PETsc_or_not_slepc
 def test_slepc_eigensolver_gen_hermitian(K_M):
     "Test SLEPc eigen solver"
 
@@ -80,7 +91,7 @@ def test_slepc_eigensolver_gen_hermitian(K_M):
     esolver.parameters["solver"] = "krylov-schur"
     esolver.parameters["spectral_transform"] = 'shift-and-invert'
     esolver.parameters['spectral_shift'] = 0.0
-    esolver.parameters["problem_type"] = 'gen_hermitian'
+    esolver.parameters["problem_type"] = "gen_hermitian"
 
     nevs = 20
     esolver.solve(nevs)
@@ -118,8 +129,8 @@ def test_slepc_null_space(K_M, V):
     esolver = SLEPcEigenSolver(K, M)
 
     esolver.parameters["solver"] = "jacobi-davidson"
-    esolver.parameters["problem_type"] = 'gen_hermitian'
-    
+    esolver.parameters["problem_type"] = "gen_hermitian"
+
     u0 = Function(V)
     nullspace_basis = as_backend_type(u0.vector().copy())
     V.dofmap().set(nullspace_basis, 1.0)
@@ -159,7 +170,7 @@ def test_slepc_vector_null_space(K_M_vec, V_vec):
     esolver = SLEPcEigenSolver(K, M)
 
     esolver.parameters["solver"] = "jacobi-davidson"
-    esolver.parameters["problem_type"] = 'gen_hermitian'
+    esolver.parameters["problem_type"] = "gen_hermitian"
     
     u0 = Function(V_vec)
     nullspace_basis = build_nullspace(V_vec, u0.vector())
@@ -175,3 +186,52 @@ def test_slepc_vector_null_space(K_M_vec, V_vec):
         assert v_re.norm("l2") > 0.0
         assert near(v_im.norm("l2"), 0.0)
 
+
+@skip_if_not_PETsc_or_not_slepc
+def test_slepc_initial_space(K_M, V):
+    "Test SLEPc eigen solver with inital space as PETScVector"
+
+    K, M = K_M
+    esolver = SLEPcEigenSolver(K, M)
+
+    esolver.parameters["solver"] = "jacobi-davidson"
+    esolver.parameters["problem_type"] = "gen_hermitian"
+
+    u0 = as_backend_type(interpolate(Constant(1.0), V).vector())
+    esolver.set_initial_space(u0)
+
+    nevs = 20
+    esolver.solve(nevs)
+
+    for j in range(1, nevs):
+        re, im, v_re, v_im = esolver.get_eigenpair(j)
+        assert re > 0.0
+        assert near(im, 0.0)
+        assert v_re.norm("l2") > 0.0
+        assert near(v_im.norm("l2"), 0.0)
+
+
+@skip_if_not_PETsc_or_not_slepc
+def test_slepc_vector_initial_space(K_M_vec, V_vec):
+    "Test SLEPc eigen solver with initial space as VectorSpaceBasis"
+
+    K, M = K_M_vec
+    esolver = SLEPcEigenSolver(K, M)
+
+    esolver.parameters["solver"] = "jacobi-davidson"
+    esolver.parameters["problem_type"] = "gen_hermitian"
+
+    u0 = as_backend_type(interpolate(Constant((1.0, 0.0)), V_vec).vector())
+    u1 = as_backend_type(interpolate(Constant((0.0, 1.0)), V_vec).vector())
+    nullspace_basis = VectorSpaceBasis([u0, u1])
+    esolver.set_initial_space(nullspace_basis)
+
+    nevs = 20
+    esolver.solve(nevs)
+
+    for j in range(1, nevs):
+        re, im, v_re, v_im = esolver.get_eigenpair(j)
+        assert re > 0.0
+        assert near(im, 0.0)
+        assert v_re.norm("l2") > 0.0
+        assert near(v_im.norm("l2"), 0.0)
