@@ -184,9 +184,16 @@ namespace dolfin
     /// Set deflation space
     void set_deflation_space(const PETScVector& deflation_space);
 
-    /// Set deflation space. The VectorSpaceBasis does not need
+    /// Set deflation space. The VectorSpaceBasis does not need to be
     /// orthonormal.
     void set_deflation_space(const VectorSpaceBasis& deflation_space);
+
+    /// Set initial space
+    void set_initial_space(const PETScVector& deflation_space);
+
+    /// Set inital space. The VectorSpaceBasis does not need to be
+    /// orthonormal.
+    void set_initial_space(const VectorSpaceBasis& deflation_space);
 
     /// Sets the prefix used by PETSc when searching the PETSc options
     /// database
@@ -195,6 +202,9 @@ namespace dolfin
     /// Returns the prefix used by PETSc when searching the PETSc
     /// options database
     std::string get_options_prefix() const;
+
+    /// Set options from PETSc options database
+    void set_from_options() const;
 
     /// Return SLEPc EPS pointer
     EPS eps() const;
