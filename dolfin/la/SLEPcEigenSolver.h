@@ -189,11 +189,11 @@ namespace dolfin
     void set_deflation_space(const VectorSpaceBasis& deflation_space);
 
     /// Set initial space
-    void set_initial_space(const PETScVector& deflation_space);
+    void set_initial_space(const PETScVector& initial_space);
 
     /// Set inital space. The VectorSpaceBasis does not need to be
     /// orthonormal.
-    void set_initial_space(const VectorSpaceBasis& deflation_space);
+    void set_initial_space(const VectorSpaceBasis& initial_space);
 
     /// Sets the prefix used by PETSc when searching the PETSc options
     /// database
