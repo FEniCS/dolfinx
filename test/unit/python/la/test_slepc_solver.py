@@ -197,7 +197,7 @@ def test_slepc_initial_space(K_M, V):
     esolver.parameters["solver"] = "jacobi-davidson"
     esolver.parameters["problem_type"] = "gen_hermitian"
 
-    u0 = as_backend_type(interpolate(Constant(1.0), V).vector())
+    u0 = as_backend_type(interpolate(Constant(2.0), V).vector())
     esolver.set_initial_space(u0)
 
     nevs = 20
@@ -221,10 +221,10 @@ def test_slepc_vector_initial_space(K_M_vec, V_vec):
     esolver.parameters["solver"] = "jacobi-davidson"
     esolver.parameters["problem_type"] = "gen_hermitian"
 
-    u0 = as_backend_type(interpolate(Constant((1.0, 0.0)), V_vec).vector())
-    u1 = as_backend_type(interpolate(Constant((0.0, 1.0)), V_vec).vector())
-    nullspace_basis = VectorSpaceBasis([u0, u1])
-    esolver.set_initial_space(nullspace_basis)
+    u0 = as_backend_type(interpolate(Constant((2.0, 0.0)), V_vec).vector())
+    u1 = as_backend_type(interpolate(Constant((0.0, -4.0)), V_vec).vector())
+    initial_space = VectorSpaceBasis([u0, u1])
+    esolver.set_initial_space(initial_space)
 
     nevs = 20
     esolver.solve(nevs)
