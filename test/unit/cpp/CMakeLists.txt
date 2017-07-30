@@ -3,9 +3,6 @@ project(dolfin-tests)
 # Require CMake 2.8
 cmake_minimum_required(VERSION 3.5)
 
-# FIXME: Temporary fix for whitespace error
-cmake_policy(SET CMP0004 OLD)
-
 # Set special link option, see `cmake --help-policy CMP0003`
 if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)

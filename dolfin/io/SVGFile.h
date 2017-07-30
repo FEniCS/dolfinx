@@ -39,8 +39,8 @@ namespace dolfin
     /// Destructor
     ~SVGFile();
 
-    /// Store mesh to file
-    void operator<< (const Mesh& mesh);
+    /// Write mesh to file
+    void write(const Mesh& mesh);
 
   };
 

@@ -44,17 +44,17 @@ namespace dolfin
     /// Output MeshFunction (int)
     /// @param meshfunction
     ///  MeshFunction
-    void operator<< (const MeshFunction<int>& meshfunction);
+    void write(const MeshFunction<int>& meshfunction);
 
     /// Output MeshFunction (double)
     /// @param meshfunction
     ///  MeshFunction
-    void operator<< (const MeshFunction<double>& meshfunction);
+    void write(const MeshFunction<double>& meshfunction);
 
     /// Output Function
     /// @param u
     ///  Function
-    void operator<< (const Function& u);
+    void write(const Function& u);
 
   private:
 
@@ -62,7 +62,7 @@ namespace dolfin
     void rawNameUpdate(const int counter);
 
     template<typename T>
-    void MeshFunctionWrite(T& meshfunction);
+      void MeshFunctionWrite(T& meshfunction);
 
     // raw filename
     std::string raw_filename;

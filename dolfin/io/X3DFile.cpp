@@ -51,7 +51,7 @@ X3DFile::~X3DFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void X3DFile::operator<< (const Mesh& mesh)
+void X3DFile::write(const Mesh& mesh)
 {
   // Build XML tree
   pugi::xml_document xml_doc;
@@ -62,12 +62,12 @@ void X3DFile::operator<< (const Mesh& mesh)
     xml_doc.save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void X3DFile::operator<< (const MeshFunction<std::size_t>& meshfunction)
+void X3DFile::write(const MeshFunction<std::size_t>& meshfunction)
 {
   write_meshfunction(meshfunction);
 }
 //-----------------------------------------------------------------------------
-void X3DFile::operator<< (const Function& u)
+void X3DFile::write(const Function& u)
 {
   // Build XML tree
   pugi::xml_document xml_doc;

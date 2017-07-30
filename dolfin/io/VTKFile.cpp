@@ -14,15 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Anders Logg 2005-2011
-// Modified by Kristian Oelgaard 2006
-// Modified by Martin Alnes 2008
-// Modified by Niclas Jansson 2009
-// Modified by Johannes Ring 2012
-//
-// First added:  2005-07-05
-// Last changed: 2013-03-11
 
 #include <ostream>
 #include <sstream>
@@ -91,71 +82,64 @@ VTKFile::~VTKFile()
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const Mesh& mesh)
+void VTKFile::write(const Mesh& mesh)
 {
   write_mesh(mesh, counter);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const MeshFunction<bool>& meshfunction)
+void VTKFile::write(const MeshFunction<bool>& meshfunction)
 {
   mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const MeshFunction<std::size_t>& meshfunction)
+void VTKFile::write(const MeshFunction<std::size_t>& meshfunction)
 {
   mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const MeshFunction<int>& meshfunction)
+void VTKFile::write(const MeshFunction<int>& meshfunction)
 {
   mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const MeshFunction<double>& meshfunction)
+void VTKFile::write(const MeshFunction<double>& meshfunction)
 {
   mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const Function& u)
+void VTKFile::write(const Function& u)
 {
   write_function(u, counter);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const std::pair<const Mesh*, double> mesh)
+void VTKFile::write(const Mesh& mesh, double time)
 {
-  dolfin_assert(mesh.first);
-  write_mesh(*(mesh.first), mesh.second);
+  write_mesh(mesh, time);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const std::pair<const MeshFunction<int>*, double> f)
+void VTKFile::write(const MeshFunction<int>& mf, double time)
 {
-  dolfin_assert(f.first);
-  mesh_function_write(*(f.first), f.second);
+  mesh_function_write(mf, time);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const std::pair<const MeshFunction<std::size_t>*,
-                                         double> f)
+void VTKFile::write(const MeshFunction<std::size_t>& mf, double time)
 {
-  dolfin_assert(f.first);
-  mesh_function_write(*(f.first), f.second);
+  mesh_function_write(mf, time);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const std::pair<const MeshFunction<double>*, double> f)
+void VTKFile::write(const MeshFunction<double>& mf, double time)
 {
-  dolfin_assert(f.first);
-  mesh_function_write(*(f.first), f.second);
+  mesh_function_write(mf, time);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
+void VTKFile::write(const MeshFunction<bool>& mf, double time)
 {
-  dolfin_assert(f.first);
-  mesh_function_write(*(f.first), f.second);
+  mesh_function_write(mf, time);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const std::pair<const Function*, double> u)
+void VTKFile::write(const Function& u, double time)
 {
-  dolfin_assert(u.first);
-  write_function(*(u.first), u.second);
+  write_function(u, time);
 }
 //----------------------------------------------------------------------------
 void VTKFile::write_function(const Function& u, double time)
