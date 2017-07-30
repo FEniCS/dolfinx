@@ -630,7 +630,7 @@ void TpetraMatrix::get_diagonal(GenericVector& x) const
 {
   dolfin_assert(!_matA.is_null());
 
-  TpetraVector& xx = x.down_cast<TpetraVector>();
+  TpetraVector& xx = as_type<TpetraVector>(x);
   if (!xx._x->getMap()->isSameAs(*_matA->getRangeMap()))
   {
     dolfin_error("TpetraMatrix.cpp",
@@ -662,7 +662,7 @@ void TpetraMatrix::set_diagonal(const GenericVector& x)
   if(_matA->isFillComplete())
     _matA->resumeFill();
 
-  const TpetraVector& xx = x.down_cast<TpetraVector>();
+  const TpetraVector& xx = as_type<const TpetraVector>(x);
   if (size(1) != size(0) || size(0) != xx.size())
   {
     dolfin_error("TpetraMatrix.cpp",
