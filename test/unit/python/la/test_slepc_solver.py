@@ -221,7 +221,7 @@ def test_slepc_vector_initial_space(K_M_vec, V_vec):
     esolver.parameters["solver"] = "jacobi-davidson"
     esolver.parameters["problem_type"] = "gen_hermitian"
 
-    u0 = as_backend_type(interpolate(Constant((2.0, 0.0)), V_vec).vector())
+    u0 = as_backend_type(interpolate(Constant((2.0, 1.0)), V_vec).vector())
     u1 = as_backend_type(interpolate(Constant((0.0, -4.0)), V_vec).vector())
     initial_space = VectorSpaceBasis([u0, u1])
     esolver.set_initial_space(initial_space)
