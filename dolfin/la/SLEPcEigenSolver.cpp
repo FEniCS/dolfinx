@@ -340,7 +340,7 @@ void SLEPcEigenSolver::set_initial_space(const VectorSpaceBasis& initial_space)
   std::vector<Vec> petsc_vecs(initial_space.dim());
   for (std::size_t i = 0; i < initial_space.dim(); ++i)
   {
-    dolfin_assert(deflation_space[i]);
+    dolfin_assert(initial_space[i]);
     petsc_vecs[i] = initial_space[i]->down_cast<PETScVector>().vec();
   }
 
