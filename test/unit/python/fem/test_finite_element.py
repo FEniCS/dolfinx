@@ -51,18 +51,30 @@ def W(mesh):
     return FunctionSpace(mesh, V*Q)
 
 
-def test_evaluate_dofs(W, mesh, V):
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitQuadMesh.create, (4, 4))])
+def test_evaluate_dofs(mesh_factory):
 
     e = Expression("x[0] + x[1]", degree=1)
     e2 = Expression(("x[0] + x[1]", "x[0] + x[1]"), degree=1)
 
-    coords = numpy.zeros((3, 2), dtype="d")
+    func, args = mesh_factory
+    mesh = func(*args)
+
+    v = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    w = v*q
+
+    V = FunctionSpace(mesh, v)
+    W = FunctionSpace(mesh, w)
+
+    sdim = V.element().space_dimension()
+    coords = numpy.zeros((sdim, 2), dtype="d")
     coord = numpy.zeros(2, dtype="d")
-    values0 = numpy.zeros(3, dtype="d")
-    values1 = numpy.zeros(3, dtype="d")
-    values2 = numpy.zeros(3, dtype="d")
-    values3 = numpy.zeros(3, dtype="d")
-    values4 = numpy.zeros(6, dtype="d")
+    values0 = numpy.zeros(sdim, dtype="d")
+    values1 = numpy.zeros(sdim, dtype="d")
+    values2 = numpy.zeros(sdim, dtype="d")
+    values3 = numpy.zeros(sdim, dtype="d")
+    values4 = numpy.zeros(2*sdim, dtype="d")
 
     L0 = W.sub(0)
     L1 = W.sub(1)
@@ -81,12 +93,12 @@ def test_evaluate_dofs(W, mesh, V):
         L11.element().evaluate_dofs(values3, e, vx, orientation, cell)
         L1.element().evaluate_dofs(values4, e2, vx, orientation, cell)
 
-        for i in range(3):
+        for i in range(sdim):
             assert round(values0[i] - values1[i], 7) == 0
             assert round(values0[i] - values2[i], 7) == 0
             assert round(values0[i] - values3[i], 7) == 0
-            assert round(values4[:3][i] - values0[i], 7) == 0
-            assert round(values4[3:][i] - values0[i], 7) == 0
+            assert round(values4[:sdim][i] - values0[i], 7) == 0
+            assert round(values4[sdim:][i] - values0[i], 7) == 0
 
 
 def test_evaluate_dofs_manifolds_affine():
