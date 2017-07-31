@@ -125,13 +125,25 @@ def test_evaluate_dofs_manifolds_affine():
                 assert round(values0[i] - values1[i], 7) == 0
 
 
-def test_tabulate_coord(V, W, mesh):
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitQuadMesh.create, (4, 4))])
+def test_tabulate_coord(mesh_factory):
 
-    coord0 = numpy.zeros((3, 2), dtype="d")
-    coord1 = numpy.zeros((3, 2), dtype="d")
-    coord2 = numpy.zeros((3, 2), dtype="d")
-    coord3 = numpy.zeros((3, 2), dtype="d")
-    coord4 = numpy.zeros((6, 2), dtype="d")
+    func, args = mesh_factory
+    mesh = func(*args)
+
+    W0 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    W1 = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    W = W0*W1
+
+    V = FunctionSpace(mesh, V, constrained_domain=periodic_boundary)
+    W = FunctionSpace(mesh, W, constrained_domain=periodic_boundary)
+
+    sdim = V.element().space_dimension()
+    coord0 = numpy.zeros((sdim, 2), dtype="d")
+    coord1 = numpy.zeros((sdim, 2), dtype="d")
+    coord2 = numpy.zeros((sdim, 2), dtype="d")
+    coord3 = numpy.zeros((sdim, 2), dtype="d")
+    coord4 = numpy.zeros((2*sdim, 2), dtype="d")
 
     L0 = W.sub(0)
     L1 = W.sub(1)
@@ -148,5 +160,5 @@ def test_tabulate_coord(V, W, mesh):
         assert (coord0 == coord1).all()
         assert (coord0 == coord2).all()
         assert (coord0 == coord3).all()
-        assert (coord4[:3] == coord0).all()
-        assert (coord4[3:] == coord0).all()
+        assert (coord4[:sdim] == coord0).all()
+        assert (coord4[sdim:] == coord0).all()
