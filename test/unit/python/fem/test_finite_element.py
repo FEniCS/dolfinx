@@ -29,7 +29,10 @@ from six.moves import xrange as range
 from dolfin_utils.test import fixture
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitQuadMesh.create, (4, 4))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)),
+                                          (UnitCubeMesh, (2, 2, 2)),
+                                          (UnitQuadMesh.create, (4, 4)),
+                                          (UnitHexMesh.create, (2, 2, 2))])
 def test_evaluate_dofs(mesh_factory):
 
     func, args = mesh_factory
@@ -117,7 +120,10 @@ def test_evaluate_dofs_manifolds_affine():
                 assert round(values0[i] - values1[i], 7) == 0
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitQuadMesh.create, (4, 4))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)),
+                                          (UnitCubeMesh, (2, 2, 2)),
+                                          (UnitQuadMesh.create, (4, 4)),
+                                          (UnitHexMesh.create, (2, 2, 2))])
 def test_tabulate_coord(mesh_factory):
 
     func, args = mesh_factory
