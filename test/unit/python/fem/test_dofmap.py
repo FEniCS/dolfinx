@@ -35,31 +35,7 @@ def mesh():
     return UnitSquareMesh(4, 4)
 
 
-@fixture
-def V(mesh):
-    return FunctionSpace(mesh, "Lagrange", 1)
-
-
-@fixture
-def Q(mesh):
-    return VectorFunctionSpace(mesh, "Lagrange", 1)
-
-
-@fixture
-def W(mesh):
-    V = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    Q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
-    return FunctionSpace(mesh, V*Q)
-
-
 reorder_dofs = set_parameters_fixture("reorder_dofs_serial", [True, False])
-
-
-mesh_factory_list = [(UnitIntervalMesh, (8,)),
-                     (UnitSquareMesh, (4, 4)),
-                     (UnitCubeMesh, (2, 2, 2)),
-                     (UnitQuadMesh.create, (4, 4)),
-                     (UnitHexMesh.create, (2, 2, 2))]
 
 
 @pytest.mark.parametrize('mesh_factory', [(UnitIntervalMesh, (8,)),
@@ -466,7 +442,11 @@ def test_block_size_real(mesh):
 
 
 @skip_in_serial
-@pytest.mark.parametrize('mesh_factory', mesh_factory_list)
+@pytest.mark.parametrize('mesh_factory', [(UnitIntervalMesh, (8,)),
+                                          (UnitSquareMesh, (4, 4)),
+                                          (UnitCubeMesh, (2, 2, 2)),
+                                          (UnitQuadMesh.create, (4, 4)),
+                                          (UnitHexMesh.create, (2, 2, 2))])
 def test_mpi_dofmap_stats(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
