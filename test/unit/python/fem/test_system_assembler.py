@@ -252,13 +252,15 @@ def test_incremental_assembly():
 
 
 @skip_in_parallel
-def test_domains():
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (24, 24)), (UnitQuadMesh.create, (24, 24))])
+def test_domains(mesh_factory):
 
     class RightSubDomain(SubDomain):
         def inside(self, x, on_boundary):
             return x[0] > 0.5
 
-    mesh = UnitSquareMesh(24, 24)
+    func, args = mesh_factory
+    mesh = func(*args)
 
     sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim())
     sub_domains.set_all(1)
