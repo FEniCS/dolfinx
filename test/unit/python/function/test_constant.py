@@ -66,10 +66,12 @@ def testGrad():
     assert zero == gradient(c3)
 
 
-def test_compute_vertex_values():
+@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (8, 8, 8)), (UnitHexMesh.create, (8, 8, 8))])
+def test_compute_vertex_values(mesh_factory):
     from numpy import zeros, all, array
 
-    mesh = UnitCubeMesh(8, 8, 8)
+    func, args = mesh_factory
+    mesh = func(*args)
 
     e0 = Constant(1)
     e1 = Constant((1, 2, 3))
