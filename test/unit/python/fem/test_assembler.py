@@ -154,13 +154,15 @@ def test_functional_assembly(mesh_factory, facet_area):
     assert round(assemble(M1) - facet_area, 7) == 0
 
 
-def test_subdomain_and_fulldomain_assembly_meshdomains():
+@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (4, 4, 4)), (UnitHexMesh.create, (4, 4, 4))])
+def test_subdomain_and_fulldomain_assembly_meshdomains(mesh_factory):
     """Test assembly over subdomains AND the full domain with markers
     stored as part of the mesh.
     """
 
     # Create a mesh of the unit cube
-    mesh = UnitCubeMesh(4, 4, 4)
+    func, args = mesh_factory
+    mesh = func(*args)
 
     # Define subdomains for 3 faces of the unit cube
     class F0(SubDomain):
