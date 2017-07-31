@@ -213,12 +213,14 @@ def test_vertex_assembly():
         A, b = assemble_system(a, L)
 
 
-def test_incremental_assembly():
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (20, 20)), (UnitQuadMesh.create, (20, 20))])
+def test_incremental_assembly(mesh_factory):
 
     for f in [Constant(0.0), Constant(1e4)]:
 
         # Laplace/Poisson problem
-        mesh = UnitSquareMesh(20, 20)
+        func, args = mesh_factory
+        mesh = func(*args)
         V = FunctionSpace(mesh, 'CG', 1)
         u, v = TrialFunction(V), TestFunction(V)
         a, L = inner(grad(u), grad(v))*dx, f*v*dx
