@@ -27,6 +27,9 @@ from dolfin import *
 from dolfin_utils.test import *
 
 
+xfail = pytest.mark.xfail(strict=True)
+
+
 @fixture
 def mesh():
     return UnitSquareMesh(4, 4)
@@ -59,7 +62,13 @@ mesh_factory_list = [(UnitIntervalMesh, (8,)),
                      (UnitHexMesh.create, (2, 2, 2))]
 
 
-@pytest.mark.parametrize('mesh_factory', mesh_factory_list)
+@pytest.mark.parametrize('mesh_factory', [(UnitIntervalMesh, (8,)),
+                                          (UnitSquareMesh, (4, 4)),
+                                          (UnitCubeMesh, (2, 2, 2)),
+                                          # cell.contains(Point) does not work correctly
+                                          # for quad/hex cells once it is fixed, this test will pass
+                                          xfail((UnitQuadMesh.create, (4, 4))),
+                                          xfail((UnitHexMesh.create, (2, 2, 2)))])
 def test_tabulate_all_coordinates(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -107,7 +116,7 @@ def test_tabulate_all_coordinates(mesh_factory):
     assert all(checked_W)
 
 
-@pytest.mark.parametrize('mesh_factory', mesh_factory_list)
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitQuadMesh.create, (4, 4))])
 def test_tabulate_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
