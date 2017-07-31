@@ -70,9 +70,8 @@ double dolfin::assemble(const Form& a)
   }
 
   // Create Scalar with appropriate communicator
-  dolfin_assert(a.function_space(0));
-  dolfin_assert(a.function_space(0)->mesh());
-  Scalar s(a.function_space(0)->mesh()->mpi_comm());
+  dolfin_assert(a.mesh());
+  Scalar s(a.mesh()->mpi_comm());
 
   // Assemble
   Assembler assembler;
