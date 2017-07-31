@@ -138,16 +138,20 @@ def test_ghost_mode_handling(pushpop_parameters):
     parameters["ghost_mode"] = "shared_facet"
     assert numpy.isclose(assemble(_form()), 1.0)
 
-
-def test_functional_assembly():
-    mesh = UnitSquareMesh(24, 24)
+@pytest.mark.parametrize('mesh_factory, facet_area', [((UnitSquareMesh, (4, 4)), 4.0),
+                                                      ((UnitCubeMesh, (2, 2, 2)), 6.0),
+                                                      ((UnitQuadMesh.create, (4, 4)), 4.0),
+                                                      ((UnitHexMesh.create, (2, 2, 2)), 6.0)])
+def test_functional_assembly(mesh_factory, facet_area):
+    func, args = mesh_factory
+    mesh = func(*args)
 
     f = Constant(1.0)
     M0 = f*dx(mesh)
     assert round(assemble(M0) - 1.0, 7) == 0
 
     M1 = f*ds(mesh)
-    assert round(assemble(M1) - 4.0, 7) == 0
+    assert round(assemble(M1) - facet_area, 7) == 0
 
 
 def test_subdomain_and_fulldomain_assembly_meshdomains():
