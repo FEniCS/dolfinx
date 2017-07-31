@@ -52,7 +52,22 @@ def W(mesh):
 reorder_dofs = set_parameters_fixture("reorder_dofs_serial", [True, False])
 
 
-def test_tabulate_all_coordinates(mesh, V, W):
+mesh_factory_list = [(UnitIntervalMesh, (8,)),
+                     (UnitSquareMesh, (4, 4)),
+                     (UnitCubeMesh, (2, 2, 2)),
+                     (UnitQuadMesh.create, (4, 4)),
+                     (UnitHexMesh.create, (2, 2, 2))]
+
+
+@pytest.mark.parametrize('mesh_factory', mesh_factory_list)
+def test_tabulate_all_coordinates(mesh_factory):
+    func, args = mesh_factory
+    mesh = func(*args)
+    V = FunctionSpace(mesh, "Lagrange", 1)
+    W0 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    W1 = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    W = FunctionSpace(mesh, W0*W1)
+
     D = mesh.geometry().dim()
     V_dofmap = V.dofmap()
     W_dofmap = W.dofmap()
@@ -92,7 +107,13 @@ def test_tabulate_all_coordinates(mesh, V, W):
     assert all(checked_W)
 
 
-def test_tabulate_dofs(mesh, W):
+@pytest.mark.parametrize('mesh_factory', mesh_factory_list)
+def test_tabulate_dofs(mesh_factory):
+    func, args = mesh_factory
+    mesh = func(*args)
+    W0 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    W1 = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    W = FunctionSpace(mesh, W0*W1)
 
     L0 = W.sub(0)
     L1 = W.sub(1)
@@ -116,7 +137,8 @@ def test_tabulate_dofs(mesh, W):
         assert np.array_equal(np.append(dofs1, dofs2), dofs3)
 
 
-def test_tabulate_coord_periodic():
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitQuadMesh.create, (4, 4))])
+def test_tabulate_coord_periodic(mesh_factory):
 
     class PeriodicBoundary2(SubDomain):
         def inside(self, x, on_boundary):
@@ -129,7 +151,8 @@ def test_tabulate_coord_periodic():
     # Create periodic boundary condition
     periodic_boundary = PeriodicBoundary2()
 
-    mesh = UnitSquareMesh(4, 4)
+    func, args = mesh_factory
+    mesh = func(*args)
 
     V = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     Q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
@@ -162,7 +185,8 @@ def test_tabulate_coord_periodic():
         assert (coord4[3:] == coord0).all()
 
 
-def test_tabulate_dofs_periodic():
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (5, 5)), (UnitQuadMesh.create, (5, 5))])
+def test_tabulate_dofs_periodic(mesh_factory):
 
     class PeriodicBoundary2(SubDomain):
         def inside(self, x, on_boundary):
@@ -172,7 +196,8 @@ def test_tabulate_dofs_periodic():
             y[0] = x[0] - 1.0
             y[1] = x[1]
 
-    mesh = UnitSquareMesh(5, 5)
+    func, args = mesh_factory
+    mesh = func(*args)
 
     # Create periodic boundary
     periodic_boundary = PeriodicBoundary2()
@@ -215,8 +240,10 @@ def test_tabulate_dofs_periodic():
         assert np.array_equal(np.append(dofs1, dofs2), dofs3)
 
 
-def test_global_dof_builder():
-    mesh = UnitSquareMesh(3, 3)
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (3, 3)), (UnitQuadMesh.create, (3, 3))])
+def test_global_dof_builder(mesh_factory):
+    func, args = mesh_factory
+    mesh = func(*args)
 
     V = VectorElement("CG", mesh.ufl_cell(), 1)
     Q = FiniteElement("CG", mesh.ufl_cell(), 1)
@@ -228,7 +255,10 @@ def test_global_dof_builder():
     W = FunctionSpace(mesh, R*V)
 
 
-def test_dof_to_vertex_map(mesh, reorder_dofs):
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (3, 3)), (UnitQuadMesh.create, (3, 3))])
+def test_dof_to_vertex_map(mesh_factory, reorder_dofs):
+    func, args = mesh_factory
+    mesh = func(*args)
 
     def _test_maps_consistency(space):
         v2d = vertex_to_dof_map(space)
@@ -334,8 +364,10 @@ def test_entity_dofs(mesh):
 
 
 @skip_in_parallel
-def test_entity_closure_dofs():
-    mesh = UnitSquareMesh(1, 1)
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (2, 2)), (UnitQuadMesh.create, (2, 2))])
+def test_entity_closure_dofs(mesh_factory):
+    func, args = mesh_factory
+    mesh = func(*args)
     tdim = mesh.topology().dim()
 
     for degree in (1, 2, 3):
@@ -397,7 +429,7 @@ def test_clear_sub_map_data_vector(mesh):
 
 
 def test_block_size(mesh):
-    meshes = [UnitSquareMesh(8, 8), UnitCubeMesh(4, 4, 4)]
+    meshes = [UnitSquareMesh(8, 8), UnitCubeMesh(4, 4, 4), UnitQuadMesh.create(8, 8), UnitHexMesh.create(4, 4, 4)]
     for mesh in meshes:
         P2 = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
 
@@ -424,7 +456,10 @@ def test_block_size_real(mesh):
 
 
 @skip_in_serial
-def test_mpi_dofmap_stats(mesh):
+@pytest.mark.parametrize('mesh_factory', mesh_factory_list)
+def test_mpi_dofmap_stats(mesh_factory):
+    func, args = mesh_factory
+    mesh = func(*args)
 
     V = FunctionSpace(mesh, "CG", 1)
     assert len(V.dofmap().shared_nodes()) > 0
@@ -436,8 +471,19 @@ def test_mpi_dofmap_stats(mesh):
     for owner in V.dofmap().off_process_owner():
         assert owner in neighbours
 
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitQuadMesh.create, (4, 4))])
+def test_local_dimension(mesh_factory):
+    func, args = mesh_factory
+    mesh = func(*args)
 
-def test_local_dimension(V, Q, W):
+    v = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    w = v*q
+
+    V = FunctionSpace(mesh, v)
+    Q = FunctionSpace(mesh, q)
+    W = FunctionSpace(mesh, w)
+
     for space in [V, Q, W]:
         dofmap = space.dofmap()
         local_to_global_map = dofmap.tabulate_local_to_global_dofs()
@@ -453,11 +499,13 @@ def test_local_dimension(V, Q, W):
 
 
 @skip_in_parallel
-def test_dofs_dim(mesh, V, Q, W):
+def test_dofs_dim():
     """Test function GenericDofMap::dofs(mesh, dim)"""
     meshes = [UnitIntervalMesh(10),
               UnitSquareMesh(6, 6),
-              UnitCubeMesh(2, 2, 2)]
+              UnitCubeMesh(2, 2, 2),
+              UnitQuadMesh.create(6, 6),
+              UnitHexMesh.create(2, 2, 2)]
 
     for mesh in meshes:
         tdim = mesh.topology().dim()
@@ -467,7 +515,7 @@ def test_dofs_dim(mesh, V, Q, W):
                   FunctionSpace(mesh, "Lagrange", 2),
                   FunctionSpace(mesh, "Lagrange", 3)]
 
-        if tdim > 1:
+        if tdim > 1 and mesh.ufl_cell().cellname() not in ['quadrilateral', 'hexahedron']:
             N1 = "Nedelec 1st kind H(curl)"
             vspaces = [VectorFunctionSpace(mesh, N1, 1),
                        VectorFunctionSpace(mesh, N1, 2),
