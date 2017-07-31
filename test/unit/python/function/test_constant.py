@@ -40,17 +40,23 @@ def testConstantInit():
     c1 = Constant([2, 3], interval)
     c2 = Constant([[2, 3], [3, 4]], triangle)
     c3 = Constant(array([2, 3]), tetrahedron)
+    c4 = Constant([[2, 3], [3, 4]], quadrilateral)
+    c5 = Constant(array([2, 3]), hexahedron)
 
     # FIXME:
     assert c0.cell() is None
     assert c1.cell() == interval
     assert c2.cell() == triangle
     assert c3.cell() == tetrahedron
+    assert c4.cell() == quadrilateral
+    assert c5.cell() == hexahedron
 
     assert c0.ufl_shape == ()
     assert c1.ufl_shape == (2,)
     assert c2.ufl_shape == (2, 2)
     assert c3.ufl_shape == (2,)
+    assert c4.ufl_shape == (2, 2)
+    assert c5.ufl_shape == (2,)
 
 
 def testGrad():
