@@ -131,12 +131,12 @@ def test_tabulate_coord(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
 
-    W0 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    W1 = VectorElement("Lagrange", mesh.ufl_cell(), 1)
-    W = W0*W1
+    v = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    w = v*q
 
-    V = FunctionSpace(mesh, V, constrained_domain=periodic_boundary)
-    W = FunctionSpace(mesh, W, constrained_domain=periodic_boundary)
+    V = FunctionSpace(mesh, v)
+    W = FunctionSpace(mesh, w)
 
     sdim = V.element().space_dimension()
     coord0 = numpy.zeros((sdim, 2), dtype="d")
