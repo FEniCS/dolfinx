@@ -175,10 +175,11 @@ def test_tabulate_coord_periodic(mesh_factory):
     L01 = L1.sub(0)
     L11 = L1.sub(1)
 
-    coord0 = np.zeros((3, 2), dtype="d")
-    coord1 = np.zeros((3, 2), dtype="d")
-    coord2 = np.zeros((3, 2), dtype="d")
-    coord3 = np.zeros((3, 2), dtype="d")
+    sdim = V.element().space_dimension()
+    coord0 = np.zeros((sdim, 2), dtype="d")
+    coord1 = np.zeros((sdim, 2), dtype="d")
+    coord2 = np.zeros((sdim, 2), dtype="d")
+    coord3 = np.zeros((sdim, 2), dtype="d")
 
     for cell in cells(mesh):
         V.element().tabulate_dof_coordinates(cell, coord0)
@@ -190,8 +191,8 @@ def test_tabulate_coord_periodic(mesh_factory):
         assert (coord0 == coord1).all()
         assert (coord0 == coord2).all()
         assert (coord0 == coord3).all()
-        assert (coord4[:3] == coord0).all()
-        assert (coord4[3:] == coord0).all()
+        assert (coord4[:sdim] == coord0).all()
+        assert (coord4[sdim:] == coord0).all()
 
 
 @pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (5, 5)), (UnitQuadMesh.create, (5, 5))])
