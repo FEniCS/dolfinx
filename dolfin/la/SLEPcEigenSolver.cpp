@@ -341,7 +341,7 @@ void SLEPcEigenSolver::set_initial_space(const VectorSpaceBasis& initial_space)
   for (std::size_t i = 0; i < initial_space.dim(); ++i)
   {
     dolfin_assert(initial_space[i]);
-    petsc_vecs[i] = initial_space[i]->down_cast<PETScVector>().vec();
+    petsc_vecs[i] = as_type<const PETScVector>(initial_space[i])->vec();
   }
 
   PetscErrorCode ierr = EPSSetInitialSpace(_eps, petsc_vecs.size(),
