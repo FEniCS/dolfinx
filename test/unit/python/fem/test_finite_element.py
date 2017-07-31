@@ -29,33 +29,8 @@ from six.moves import xrange as range
 from dolfin_utils.test import fixture
 
 
-@fixture
-def mesh():
-    return UnitSquareMesh(4, 4)
-
-
-@fixture
-def V(mesh):
-    return FunctionSpace(mesh, "CG", 1)
-
-
-@fixture
-def Q(mesh):
-    return VectorFunctionSpace(mesh, "CG", 1)
-
-
-@fixture
-def W(mesh):
-    V = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    Q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
-    return FunctionSpace(mesh, V*Q)
-
-
 @pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitQuadMesh.create, (4, 4))])
 def test_evaluate_dofs(mesh_factory):
-
-    e = Expression("x[0] + x[1]", degree=1)
-    e2 = Expression(("x[0] + x[1]", "x[0] + x[1]"), degree=1)
 
     func, args = mesh_factory
     mesh = func(*args)
@@ -68,13 +43,18 @@ def test_evaluate_dofs(mesh_factory):
     W = FunctionSpace(mesh, w)
 
     sdim = V.element().space_dimension()
-    coords = numpy.zeros((sdim, 2), dtype="d")
-    coord = numpy.zeros(2, dtype="d")
+    gdim = V.element().geometric_dimension()
+
+    e = Expression("x[0] + x[1]", degree=1)
+    e2 = Expression(["x[0] + x[1]"]*gdim, degree=1)
+
+    coords = numpy.zeros((sdim, gdim), dtype="d")
+    coord = numpy.zeros(gdim, dtype="d")
     values0 = numpy.zeros(sdim, dtype="d")
     values1 = numpy.zeros(sdim, dtype="d")
     values2 = numpy.zeros(sdim, dtype="d")
     values3 = numpy.zeros(sdim, dtype="d")
-    values4 = numpy.zeros(2*sdim, dtype="d")
+    values4 = numpy.zeros(gdim*sdim, dtype="d")
 
     L0 = W.sub(0)
     L1 = W.sub(1)
@@ -151,11 +131,12 @@ def test_tabulate_coord(mesh_factory):
     W = FunctionSpace(mesh, w)
 
     sdim = V.element().space_dimension()
-    coord0 = numpy.zeros((sdim, 2), dtype="d")
-    coord1 = numpy.zeros((sdim, 2), dtype="d")
-    coord2 = numpy.zeros((sdim, 2), dtype="d")
-    coord3 = numpy.zeros((sdim, 2), dtype="d")
-    coord4 = numpy.zeros((2*sdim, 2), dtype="d")
+    gdim = V.element().geometric_dimension()
+    coord0 = numpy.zeros((sdim, gdim), dtype="d")
+    coord1 = numpy.zeros((sdim, gdim), dtype="d")
+    coord2 = numpy.zeros((sdim, gdim), dtype="d")
+    coord3 = numpy.zeros((sdim, gdim), dtype="d")
+    coord4 = numpy.zeros((gdim*sdim, gdim), dtype="d")
 
     L0 = W.sub(0)
     L1 = W.sub(1)
