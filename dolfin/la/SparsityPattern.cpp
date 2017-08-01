@@ -187,7 +187,7 @@ void SparsityPattern::insert_global(
       const dolfin::la_index I_index = entries[_primary_dim][k];
       // Local row index
       const dolfin::la_index i_index = I_index - (dolfin::la_index) row_local_range.first;
-      global_pridim_entries[k] = I_index;
+      global_pridim_entries[k] = i_index;
     }
 
     global_entries[_primary_dim].set(global_pridim_entries);
