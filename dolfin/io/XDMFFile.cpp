@@ -1159,9 +1159,11 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
     = u.function_space()->element()->ufc_element()->family();
   std::size_t element_degree
     = u.function_space()->element()->ufc_element()->degree();
+  ufc::shape ufc_element_cell
+    = u.function_space()->element()->ufc_element()->cell_shape();
 
   // Map of standard UFL family abbreviations for visualisation
-  std::map<std::string, std::string> _family_abbr = {
+  std::map<std::string, std::string> family_abbr = {
     {"Lagrange", "CG"},
     {"Discontinuous Lagrange", "DG"},
     {"Raviart-Thomas", "RT"},
@@ -1171,9 +1173,17 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
     {"Nedelec 2nd kind H(curl)", "N2curl"},
   };
 
+  std::map<ufc::shape, std::string> cell_shape_repr = {
+    {ufc::shape::interval, "interval"},
+    {ufc::shape::triangle, "triangle"},
+    {ufc::shape::tetrahedron, "tetrahedron"},
+    {ufc::shape::quadrilateral, "quadrilateral"},
+    {ufc::shape::hexahedron, "hexahedron"}
+  };
+
   // Check that element is supported
-  auto it = _family_abbr.find(element_family);
-  if (it == _family_abbr.end())
+  auto it = family_abbr.find(element_family);
+  if (it == family_abbr.end())
   {
     dolfin_error("XDMFFile.cpp",
                  "find element family",
@@ -1181,14 +1191,28 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   }
   element_family = it->second;
 
+  // Check that cell shape is supported
+  auto it_shape = cell_shape_repr.find(ufc_element_cell);
+  if (it_shape == cell_shape_repr.end())
+  {
+    dolfin_error("XDMFFile.cpp",
+      "find element shape",
+      "Element shape not yet supported. Currently supported element shapes"
+      "are \"interval, triangle, tetrahedron, quadrilateral, hexahedron\"");
+  }
+  std::string element_cell = it_shape->second;
+
   // Prepare main Attribute for the FiniteElementFunction type
   pugi::xml_node fe_attribute_node = xml_node.append_child("Attribute");
   fe_attribute_node.append_attribute("ItemType") = "FiniteElementFunction";
   fe_attribute_node.append_attribute("ElementFamily") = element_family.c_str();
   fe_attribute_node.append_attribute("ElementDegree")
     = std::to_string(element_degree).c_str();
+  fe_attribute_node.append_attribute("ElementCell") = element_cell.c_str();
   fe_attribute_node.append_attribute("Name") = function_name.c_str();
   fe_attribute_node.append_attribute("Center") = "Other";
+  fe_attribute_node.append_attribute("AttributeType")
+    = rank_to_string(u.value_rank()).c_str();
 
   // Prepare and save number of dofs per cell (x_cell_dofs) and
   // cell dofmaps (cell_dofs)
