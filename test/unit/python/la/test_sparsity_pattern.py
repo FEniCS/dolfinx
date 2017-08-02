@@ -82,6 +82,7 @@ def test_insert_local(mesh, V):
 def test_insert_global(mesh, V):
     dm = V.dofmap()
     index_map = dm.index_map()
+    local_range = index_map.local_range()
 
     # Build sparse tensor layout (for assembly of matrix)
     tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity_SPARSE)
@@ -89,10 +90,10 @@ def test_insert_global(mesh, V):
     sp = tl.sparsity_pattern()
     sp.init([index_map, index_map])
 
-    pridim_entries = [0, 1, 2]
-    codim_local_entries = [0, 1, 2]
-    codim_entries = map(lambda e: e + index_map.local_range()[0], 
-                        codim_local_entries)
+    pridim_local_entries = [0]
+    pridim_entries = map(lambda e: e + local_range[0], 
+                         pridim_local_entries)
+    codim_entries = [0]
     entries = np.array([pridim_entries, codim_entries], dtype=np.intc)
     sp.insert_global(entries)
 
@@ -104,8 +105,25 @@ def test_insert_global(mesh, V):
     rank = MPI.rank(mesh.mpi_comm())
     size = MPI.size(mesh.mpi_comm())
 
-    for local_row in range(len(nnz_d)):
-      if local_row in pridim_entries and rank == 0:
-        assert nnz_d[local_row] == len(codim_entries)*size
+    nnz_on_diagonal = 0
+    nnz_off_diagonal = 0
+    for entry in codim_entries:
+      in_range = local_range[0] <= entry < local_range[1]
+      if in_range:
+        nnz_on_diagonal += 1
       else:
-        assert nnz_d[local_row] == 0
+        nnz_off_diagonal += 1
+
+    for local_row in range(len(nnz_d)):
+      in_range = local_range[0] <= local_row < local_range[1]
+
+      if local_row in pridim_local_entries:
+        if in_range:
+          assert nnz_d[local_row] == nnz_on_diagonal
+        else:
+          assert nnz_od[local_row] == nnz_off_diagonal
+      else:
+        if in_range:
+          assert nnz_d[local_row] == 0
+        else:
+          assert nnz_od[local_row] == 0
