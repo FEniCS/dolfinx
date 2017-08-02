@@ -338,18 +338,18 @@ std::size_t SparsityPattern::num_nonzeros() const
   std::size_t nz = 0;
 
   // Contribution from diagonal and off-diagonal
-  for (auto slice = diagonal.begin(); slice != diagonal.end(); ++slice)
-    nz += slice->size();
-  for (auto slice = off_diagonal.begin(); slice != off_diagonal.end(); ++slice)
-    nz += slice->size();
+  for (const auto& slice : diagonal)
+    nz += slice.size();
+  for (const auto& slice : off_diagonal)
+    nz += slice.size();
 
   // Contribution from full rows
   const std::size_t local_size0 =
     _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
   const std::size_t codim = _primary_dim == 0 ? 1 : 0;
   const std::size_t ncols = _index_maps[codim]->size(IndexMap::MapSize::GLOBAL);
-  for (auto row = full_rows.begin(); row != full_rows.end(); ++row)
-    if (*row < local_size0)
+  for (unsigned long full_row : full_rows)
+    if (full_row < local_size0)
       nz += ncols;
 
   return nz;
