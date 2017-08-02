@@ -90,7 +90,7 @@ def test_insert_global(mesh, V):
     sp = tl.sparsity_pattern()
     sp.init([index_map, index_map])
 
-    pridim_local_entries = [0]
+    pridim_local_entries = [0, 1, 2]
     pridim_entries = map(lambda e: e + local_range[0], 
                          pridim_local_entries)
     codim_entries = [0]
@@ -105,6 +105,7 @@ def test_insert_global(mesh, V):
     rank = MPI.rank(mesh.mpi_comm())
     size = MPI.size(mesh.mpi_comm())
 
+    # Tabulate on diangonal and off diagonal nnzs
     nnz_on_diagonal = 0
     nnz_off_diagonal = 0
     for entry in codim_entries:
@@ -114,15 +115,19 @@ def test_insert_global(mesh, V):
       else:
         nnz_off_diagonal += 1
 
+    # Compare tabulated and sparsity pattern nnzs
     for local_row in range(len(nnz_d)):
       in_range = local_range[0] <= local_row < local_range[1]
 
       if local_row in pridim_local_entries:
+        # We added some entries into this row DoF, so check nnzs
         if in_range:
           assert nnz_d[local_row] == nnz_on_diagonal
         else:
           assert nnz_od[local_row] == nnz_off_diagonal
       else:
+        # No DoFs entered into this row, so ensure sparsity pattern
+        # is empty.
         if in_range:
           assert nnz_d[local_row] == 0
         else:
