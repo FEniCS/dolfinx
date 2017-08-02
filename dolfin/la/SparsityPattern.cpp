@@ -256,9 +256,7 @@ void SparsityPattern::insert_local_row_global_column(
   std::shared_ptr<const IndexMap> index_map0 = _index_maps[ _primary_dim];
   std::shared_ptr<const IndexMap> index_map1 = _index_maps[primary_codim];
   const std::size_t local_size0 = index_map0->size(IndexMap::MapSize::OWNED);
-  const std::pair<std::size_t, std::size_t>& local_range1 = index_map1->local_range();
-  const std::size_t& local_range1_left = local_range1.first;
-  const std::size_t& local_range1_right = local_range1.second;
+  const auto& local_range1 = index_map1->local_range();
 
   const bool has_full_rows = full_rows.size() > 0;
   const auto full_rows_end = full_rows.end();
@@ -291,7 +289,7 @@ void SparsityPattern::insert_local_row_global_column(
         // Store local entry in diagonal or off-diagonal block
         for (const auto &J : map_j)
         {
-          if (local_range1_left <= J && J < local_range1_right)
+          if (local_range1.first <= J && J < local_range1.second)
           {
             dolfin_assert(i_index < diagonal.size());
             diagonal[i_index].insert(J);
