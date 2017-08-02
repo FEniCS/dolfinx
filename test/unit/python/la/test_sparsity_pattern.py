@@ -56,7 +56,7 @@ def test_insert_local(mesh, V):
     dm = V.dofmap()
     index_map = dm.index_map()
 
-    # Build sparse tensor layout (for assembly of matrix)
+    # Build sparse tensor layout
     tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity_SPARSE)
     tl.init([index_map, index_map], TensorLayout.Ghosts_UNGHOSTED)
     sp = tl.sparsity_pattern()
@@ -84,14 +84,19 @@ def test_insert_global(mesh, V):
     index_map = dm.index_map()
     local_range = index_map.local_range()
 
-    # Build sparse tensor layout (for assembly of matrix)
+    # Build sparse tensor layout
     tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity_SPARSE)
     tl.init([index_map, index_map], TensorLayout.Ghosts_UNGHOSTED)
     sp = tl.sparsity_pattern()
     sp.init([index_map, index_map])
 
+    # Primary dim (row) entries need to be local to the process, so we ensure
+    # they're in the local range of the index map
     pridim_local_entries = np.array([0, 1, 2], dtype=np.intc)
     pridim_entries = pridim_local_entries + local_range[0]
+
+    # The codim (column) entries will be added to the same global entries
+    # on each process.
     codim_entries = np.array([0, 1, 2], dtype=np.intc)
     entries = np.array([pridim_entries, codim_entries], dtype=np.intc)
 
