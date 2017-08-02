@@ -90,13 +90,12 @@ def test_insert_global(mesh, V):
     sp = tl.sparsity_pattern()
     sp.init([index_map, index_map])
 
-    pridim_local_entries = [0, 1, 2]
-    pridim_entries = map(lambda e: e + local_range[0], 
-                         pridim_local_entries)
-    codim_entries = [0]
+    pridim_local_entries = np.array([0, 1, 2], dtype=np.intc)
+    pridim_entries = pridim_local_entries + local_range[0]
+    codim_entries = np.array([0, 1, 2], dtype=np.intc)
     entries = np.array([pridim_entries, codim_entries], dtype=np.intc)
-    sp.insert_global(entries)
 
+    sp.insert_global(entries)
     sp.apply()
 
     nnz_d = sp.num_nonzeros_diagonal()
