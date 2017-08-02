@@ -550,13 +550,13 @@ std::string SparsityPattern::str(bool verbose) const
     else
       s << "Col " << i << ":";
 
-    for (auto entry = diagonal[i].begin(); entry != diagonal[i].end(); ++entry)
-      s << " " << *entry;
+    for (const auto& entry : diagonal[i])
+      s << " " << entry;
 
     if (!off_diagonal.empty())
     {
-      for (auto entry = off_diagonal[i].begin(); entry != off_diagonal[i].end(); ++entry)
-        s << " " << *entry;
+      for (const auto& entry : off_diagonal[i])
+        s << " " << entry;
     }
 
     s << std::endl;
