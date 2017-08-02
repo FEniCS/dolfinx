@@ -171,6 +171,14 @@ void SparsityPattern::insert_global(
   std::vector<ArrayView<const dolfin::la_index>> global_entries(2);
   global_entries[primary_codim].set(entries[primary_codim]);
 
+  for (const auto& I_index : entries[_primary_dim])
+  {
+    if ((I_index < row_local_range.first) || I_index >= row_local_range.second)
+      dolfin_error("SparsityPattern.cpp",
+                   "insert global entries",
+                   "global index for primary dim %d, not in process range [%d, %d]",
+                   I_index, row_local_range.first, row_local_range.second);
+  }
 
   if (_mpi_comm.size() == 1)
   {
