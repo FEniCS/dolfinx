@@ -179,7 +179,8 @@ void SparsityPattern::insert_global(
   }
   else
   {
-    // If in parallel: change the global row indices to local row indices
+    // If in parallel: change the global row (primary dim) indices to
+    // local row (primary dim) indices
     std::vector<dolfin::la_index> global_pridim_entries(entries[_primary_dim].size());
     for (std::size_t k=0; k<global_pridim_entries.size(); ++k)
     {
@@ -216,7 +217,8 @@ void SparsityPattern::insert_local(
   }
   else
   {
-    // If in parallel: change the local column indices to global column indices
+    // If in parallel: change the local column (codim) indices to
+    // global column (codim) indices
     std::vector<dolfin::la_index> global_codim_entries(entries[primary_codim].size());
     for (std::size_t k=0; k<global_codim_entries.size(); ++k)
     {
