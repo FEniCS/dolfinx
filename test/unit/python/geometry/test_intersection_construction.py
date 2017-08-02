@@ -241,7 +241,7 @@ def test_triangle_segment_2D_1():
 
 
 @skip_in_parallel
-@pytest.mark.skipif(True, reason="This test needs to be updated")
+#@pytest.mark.skipif(True, reason="This test needs to be updated")
 def test_segment_segment_1():
     "Case that fails CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(-0.50000000000000710543,-0.50000000000000710543)
@@ -250,6 +250,9 @@ def test_segment_segment_1():
     q1 = Point(-0.29289321881346941367,-0.70710678118654635149)
     intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
 
+    for p in intersection:
+        print(*p)
+    
     # The intersection should according to CGAL be
     cgal = Point(0.91066799144849319703, -1.9106679914484945293)
 
@@ -262,7 +265,7 @@ def test_segment_segment_1():
 
 
 @skip_in_parallel
-@pytest.mark.skipif(True, reason="This test needs to be updated")
+#@pytest.mark.skipif(True, reason="This test needs to be updated")
 def test_segment_segment_2():
     "Case that fails CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.70710678118654746172,-0.70710678118654746172)
@@ -270,6 +273,9 @@ def test_segment_segment_2():
     q0 = Point(0.70710678118654612945,0.70710678118654113344)
     q1 = Point(0.70710678118654657354,0.2928932188134645842)
     intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    for p in intersection:
+        print(*p)
 
     # The intersection should according to CGAL be
     cgal = Point(0.70710678118654612945, 0.7071067811865050512)
@@ -283,7 +289,7 @@ def test_segment_segment_2():
 
 
 @skip_in_parallel
-@pytest.mark.skipif(True, reason="This test needs to be updated")
+#@pytest.mark.skipif(True, reason="This test needs to be updated")
 def test_segment_segment_3():
     "Case that faila CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.70710678118654746172,-0.70710678118654746172)
@@ -291,6 +297,9 @@ def test_segment_segment_3():
     q0 = Point(0.70710678118654757274,-0.097631072937819973756)
     q1 = Point(0.70710678118654257673,-0.1601886205085209236)
     intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    for p in intersection:
+        print(*p)
 
     # The intersection should according to CGAL be
     cgal = Point(0.70710678118654679558, -0.10611057050352221132)
@@ -304,7 +313,7 @@ def test_segment_segment_3():
 
 
 @skip_in_parallel
-@pytest.mark.skipif(True, reason="This test needs to be updated")
+#@pytest.mark.skipif(True, reason="This test needs to be updated")
 def test_segment_segment_4():
     "Case that faila CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.70710678118654746172,-0.70710678118654746172)
@@ -312,6 +321,9 @@ def test_segment_segment_4():
     q0 = Point(0.35355339059326984508,-0.35355339059327078877)
     q1 = Point(0.70710678118655057034,-0.70710678118654701763)
     intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    for p in intersection:
+        print(*p)
 
     # The intersection should according to CGAL be
     cgal = Point(0.67572340116162599166, -0.67572340116162288304)
@@ -322,3 +334,23 @@ def test_segment_segment_4():
     assert len(intersection) == 1
     assert (abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS) or \
         (abs(intersection[0][0] - computed[0]) < DOLFIN_EPS and abs(intersection[0][1] - computed[1]) < DOLFIN_EPS)
+
+@skip_in_parallel
+#@pytest.mark.skipif(True, reason="This test needs to be updated")
+def test_segment_segment_5():
+    "Case that failed CGAL comparison but passed when scaling the numerator"
+    p0 = Point(1.1429047494274684563e-12,0.5)
+    p1 = Point(0.42146018366139809119,0.9214601836602551721)
+    q0 = Point(0.34292036732279607136,0.8429203673205103442)
+    q1 = Point(0.3429203673205103442,0.8429203673205103442)
+
+    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+
+    for p in intersection:
+        print(*p)
+
+    # The intersection should according to CGAL be
+    cgal = Point(0.3429203673216533188,0.8429203673205103442)
+
+    assert len(intersection) == 1
+    assert abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS

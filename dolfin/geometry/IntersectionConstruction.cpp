@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-03-14
+// Last changed: 2017-08-02
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -26,6 +26,8 @@
 #include "GeometryDebugging.h"
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"
+
+#include "dolfin_simplex_tools.h"
 
 using namespace dolfin;
 
@@ -306,8 +308,66 @@ IntersectionConstruction::intersection_segment_segment_1d(double p0,
   return unique(points);
 }
 //-----------------------------------------------------------------------------
+void differ(const Point& p0,
+	    const Point& p1,
+	    const Point& q0,
+	    const Point& q1,
+	    const std::vector<Point>& cgal,
+	    const std::vector<Point>& dolf)
+{
+  std::cout.precision(20);
+  std::cout << "const Point p0("<<p0[0]<<","<<p0[1]<<");\n"
+	    << "const Point p1("<<p1[0]<<","<<p1[1]<<");\n"
+	    << "const Point q0("<<q0[0]<<","<<q0[1]<<");\n"
+	    << "const Point q1("<<q1[0]<<","<<q1[1]<<");" << std::endl;
+  std::cout << tools::drawtriangle({p0,p1})<<tools::drawtriangle({q0,q1},"[0.1 0.1 0.1]")<<std::endl;
+  if (cgal.size())
+  {
+    std::cout << "cgal\n";
+    for (const Point& p : cgal)
+      std::cout << p[0]<<' '<<p[1]<<'\n';
+  }
+  if (dolf.size())
+  {
+    std::cout << "dolf\n";
+    for (const Point& p : dolf)
+      std::cout << p[0]<<' '<<p[1]<<'\n';
+  }
+  std::cout << std::endl;
+}
+
 std::vector<Point>
 IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
+                                                          const Point& p1,
+                                                          const Point& q0,
+                                                          const Point& q1)
+{
+  std::vector<Point> cgal = cgal_intersection_segment_segment_2d(p0, p1, q0, q1);
+
+  std::vector<Point> dolf = _intersection_segment_segment_2d(p0, p1, q0, q1);
+
+  if (cgal.size() != dolf.size())
+    differ(p0,p1,q0,q1, cgal, dolf);
+
+  for (const Point& p: cgal)
+  {
+    bool found = false;
+    for (const Point& q: dolf)
+    {
+      if ((p-q).squared_norm() < DOLFIN_EPS)
+	found = true;
+    }
+    if (!found)
+      differ(p0,p1,q0,q1, cgal, dolf);
+  }
+
+  return dolf;
+
+}
+
+
+std::vector<Point>
+IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
                                                           const Point& p1,
                                                           const Point& q0,
                                                           const Point& q1)
@@ -345,8 +405,13 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   const double q0o = orient2d(p0, p1, q0);
   const double q1o = orient2d(p0, p1, q1);
 
+  // std::cout.precision(20);
+  // std::cout << "q0o q1o " << q0o <<' '<<q1o<<std::endl;
+  
   // Compute total orientation of segment wrt line
   const double qo = q0o*q1o;
+
+  // std::cout << "product " << qo << std::endl;
 
   // Case 0: points on the same side --> no intersection
   if (qo > 0.)
@@ -362,12 +427,16 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   const Point v = p1 - p0;
   const std::size_t major_axis = GeometryTools::major_axis_2d(v);
 
+  // std::cout << "major axis " << major_axis << std::endl;
+  
   // Project points to major axis
   const double P0 = GeometryTools::project_to_axis_2d(p0, major_axis);
   const double P1 = GeometryTools::project_to_axis_2d(p1, major_axis);
   const double Q0 = GeometryTools::project_to_axis_2d(q0, major_axis);
   const double Q1 = GeometryTools::project_to_axis_2d(q1, major_axis);
 
+  // std::cout << "Projected points " << P0 << ' ' << P1 << ' ' << Q0 << ' '<< Q1 << std::endl;
+  
   // Case 2: both points on line (or almost)
   if (std::abs(q0o) < DOLFIN_EPS_LARGE and std::abs(q1o) < DOLFIN_EPS_LARGE)
   {
@@ -404,15 +473,66 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   const double p1o = orient2d(q0, q1, p1);
   const double den = (q1.x() - q0.x())*v.y() - (q1.y() - q0.y())*v.x();
 
+  // std::cout << "p0o p1o "<< p0o <<' '<<p1o<<std::endl;
+  // std::cout << "den parts " << (q1.x() - q0.x()) << ' '<<(q1.x() - q0.x())*v.y()<< "    "<<(q1.y() - q0.y())<<' '<<(q1.y() - q0.y())*v.x()<<std::endl;
+  // std::cout << "den " << den << std::endl;
+  
+  // const double den_kahan = GeometryTools::ad_bc(q1.x() - q0.x(),
+  // 						q1.y() - q0.y(),
+  // 						v.x(),
+  // 						v.y());
+  // std::cout << "den kahan " << den_kahan << std::endl;
+  
   // Figure out which one of the four points we want to use
   // as starting point for numerical robustness
+  const double v_norm = 1.;//*v.norm();
+  const double w_norm = 1.;//*(q0 - q1).norm();
+  
   enum orientation { P0O, P1O, Q0O, Q1O };
   std::array<std::pair<double, orientation>, 4> oo
-		      = {{ { std::abs(p0o), P0O },
-			   { std::abs(p1o), P1O },
-			   { std::abs(q0o), Q0O },
-			   { std::abs(q1o), Q1O } }};
-  const auto it = std::min_element(oo.begin(), oo.end());
+    = {{ { std::abs(p0o) * v_norm, P0O },
+	 { std::abs(p1o) * v_norm, P1O },
+	 { std::abs(q0o) * w_norm, Q0O },
+	 { std::abs(q1o) * w_norm, Q1O } }};
+  auto it = std::min_element(oo.begin(), oo.end());
+
+  // // it->second = P1O;
+  // std::cout << "v_norm " << v_norm << '\n'
+  // 	    << "w_norm " << w_norm << std::endl;
+  // std::cout << "p0o p1o q0o q1o again " << std::abs(p0o) <<' ' << std::abs(p1o) << ' ' << std::abs(q0o) << ' '<< std::abs(q1o) << std::endl;
+  // std::cout << "weighted oo ";
+  // for (const auto opair : oo)
+  //   std::cout << opair.first << ' ';
+  // std::cout << std::endl;
+  // std::cout << "switch " << std::distance(oo.begin(), it) << std::endl;
+
+
+  const auto x0 = p0 - p0o / den * v;
+  const auto x1 = p1 - p1o / den * v;
+  const auto x2 = q0 + q0o / den * (q1 - q0);
+  const auto x3 = q1 - q1o / den * (q0 - q1);
+  std::cout << "x0 " << x0[0]<<' '<<x0[1] << std::endl;
+  std::cout << "x1 " << x1[0]<<' '<<x1[1] << std::endl;
+  std::cout << "x2 " << x2[0]<<' '<<x2[1] << std::endl;
+  std::cout << "x3 " << x3[0]<<' '<<x3[1] << std::endl;
+  const std::vector<Point> xxx = { x0, x1, x2, x3 };
+
+  // CHeck if any is similar to cgal
+  const std::vector<Point> cgal = cgal_intersection_segment_segment_2d(p0,p1,q0,q1);
+  int is_sim = -1;
+  for (std::size_t i = 0; i < 4; ++i)
+  {
+    const double X = GeometryTools::project_to_axis_2d(xxx[i], major_axis);
+    if (CollisionPredicates::collides_segment_point_1d(P0, P1, X))
+    {
+      // CHeck if similar
+      if ((cgal[0] - xxx[i]).squared_norm() < DOLFIN_EPS)
+      {
+	is_sim = i;
+	break;
+      }
+    }
+  }
 
   // Compute the intersection point
   Point x;
@@ -425,6 +545,11 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   case P1O:
     // Flip sign because v = p1 - p0, but we want p0 - p1
     x = p1 - p1o / den * v;
+
+    // std::cout << "x=p1 - p1o/den*v" << std::endl;
+    // std::cout << p1[0]<<' '<<p1[1] << "    " << p1o/den << "    "<<v[0]<<' '<<v[1]<<std::endl;
+    // std::cout << "x " << x[0] <<' '<<x[1] << std::endl;
+    
     break;
   case Q0O:
     // Default case
@@ -435,11 +560,28 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
     x = q1 - q1o / den * (q0 - q1);
     break;
   }
-
+  
   // Project point to major axis and check if inside segment
   const double X = GeometryTools::project_to_axis_2d(x, major_axis);
   if (CollisionPredicates::collides_segment_point_1d(P0, P1, X))
+  {
+    // std::cout.precision(20);
+    // std::cout << cgal.size() << std::endl;
+    // std::cout << "const Point p0("<<p0[0]<<","<<p0[1]<<");\n"
+    // 	      << "const Point p1("<<p1[0]<<","<<p1[1]<<");\n";
+    // std::cout << "const Point q0("<<q0[0]<<","<<q0[1]<<");\n"
+    // 	      << "const Point q1("<<q1[0]<<","<<q1[1]<<");\n";
+
+    // if ((cgal[0]-x).norm() > DOLFIN_EPS)
+    // {
+    //   std::cout << "cgal\n"
+    // 		<< "const Point cgal("<<cgal[0][0]<<","<<cgal[0][1]<<");\n";
+    //   std::cout << "const Point x(" << x[0]<<","<<x[1]<<");\n";
+    //   dolfin_assert(false);
+    // }
+
     return std::vector<Point>(1, x);
+  }
 
   return std::vector<Point>();
 }
