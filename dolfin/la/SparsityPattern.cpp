@@ -348,7 +348,7 @@ std::size_t SparsityPattern::num_nonzeros() const
     _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
   const std::size_t codim = _primary_dim == 0 ? 1 : 0;
   const std::size_t ncols = _index_maps[codim]->size(IndexMap::MapSize::GLOBAL);
-  for (unsigned long full_row : full_rows)
+  for (const auto& full_row : full_rows)
     if (full_row < local_size0)
       nz += ncols;
 
