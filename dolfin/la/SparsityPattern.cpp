@@ -237,23 +237,12 @@ void SparsityPattern::insert_local_row_global_column(
 {
   dolfin_assert(entries.size() == 2);
   const std::size_t _primary_dim = primary_dim();
-
-  ArrayView<const dolfin::la_index> map_i;
-  ArrayView<const dolfin::la_index> map_j;
-  std::size_t primary_codim;
   dolfin_assert(_primary_dim < 2);
-  if (_primary_dim == 0)
-  {
-    primary_codim = 1;
-    map_i = entries[0];
-    map_j = entries[1];
-  }
-  else
-  {
-    primary_codim = 0;
-    map_i = entries[1];
-    map_j = entries[0];
-  }
+  const std::size_t primary_codim = (_primary_dim + 1) % 2;
+  dolfin_assert(primary_codim < 2);
+
+  ArrayView<const dolfin::la_index> map_i = entries[_primary_dim];
+  ArrayView<const dolfin::la_index> map_j = entries[primary_codim];
 
   std::shared_ptr<const IndexMap> index_map0 = _index_maps[ _primary_dim];
   std::shared_ptr<const IndexMap> index_map1 = _index_maps[primary_codim];
