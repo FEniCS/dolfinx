@@ -383,7 +383,7 @@ void SparsityPattern::num_nonzeros_off_diagonal(std::vector<std::size_t>& num_no
   num_nonzeros.resize(off_diagonal.size());
 
   // Return if there is no off-diagonal
-  if (off_diagonal.size() == 0)
+  if (off_diagonal.empty())
     return;
 
   // Compute number of nonzeros per generalised row
