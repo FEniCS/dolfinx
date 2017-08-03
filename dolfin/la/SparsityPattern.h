@@ -142,7 +142,7 @@ namespace dolfin
 
   private:
 
-    // Other inserstion methods will call this method providing the
+    // Other insertion methods will call this method providing the
     // appropriate mapping of the indices in the entries.
     //
     // The primary dim entries must be local
@@ -151,21 +151,6 @@ namespace dolfin
         const std::vector<ArrayView<const dolfin::la_index>>& entries,
         const std::function<dolfin::la_index(const dolfin::la_index&, const IndexMap&)>& pridim_map,
         const std::function<dolfin::la_index(const dolfin::la_index&, const IndexMap&)>& codim_map);
-
-    static dolfin::la_index map_index_to_global(const dolfin::la_index& idx, const IndexMap& index_map)
-    {
-      return (dolfin::la_index) index_map.local_to_global((std::size_t) idx);
-    }
-
-    static dolfin::la_index map_index_to_local(const dolfin::la_index& idx, const IndexMap& index_map)
-    {
-      return idx - (dolfin::la_index) index_map.local_range().first;
-    }
-
-    static dolfin::la_index map_index_identity(const dolfin::la_index& idx, const IndexMap& index_map)
-    {
-      return idx;
-    }
 
     // Print some useful information
     void info_statistics() const;
