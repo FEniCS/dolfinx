@@ -1,3 +1,4 @@
+language: none
 build:
   pre_ci_boot:
     image_name: quay.io/fenicsproject/dev-env
@@ -17,4 +18,5 @@ build:
     - make
     - make install
     - source /usr/local/share/dolfin/dolfin.conf
-    - make run_quicktest
+    - make run_unittests
+    - make run run_regressiontests
