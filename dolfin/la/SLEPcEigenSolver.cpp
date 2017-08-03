@@ -315,11 +315,9 @@ void SLEPcEigenSolver::set_deflation_space(const VectorSpaceBasis& deflation_spa
   for (std::size_t i = 0; i < deflation_space.dim(); ++i)
   {
     dolfin_assert(deflation_space[i]);
-    const auto petsc_vector = as_type<const PETScVector>(deflation_space[i]);
-    dolfin_assert(petsc_vector);
-    dolfin_assert(petsc_vector->vec());
-    petsc_vecs[i] = petsc_vector->vec();
-    dolfin_assert(petsc_vecs[i]);
+    dolfin_assert(as_type<const PETScVector>(deflation_space[i]));
+    dolfin_assert(as_type<const PETScVector>(deflation_space[i])->vec());
+    petsc_vecs[i] = as_type<const PETScVector>(deflation_space[i])->vec();
   }
 
   PetscErrorCode ierr = EPSSetDeflationSpace(_eps, petsc_vecs.size(),
@@ -345,11 +343,9 @@ void SLEPcEigenSolver::set_initial_space(const VectorSpaceBasis& initial_space)
   for (std::size_t i = 0; i < initial_space.dim(); ++i)
   {
     dolfin_assert(initial_space[i]);
-    const auto petsc_vector = as_type<const PETScVector>(initial_space[i]);
-    dolfin_assert(petsc_vector);
-    dolfin_assert(petsc_vector->vec());
-    petsc_vecs[i] = petsc_vector->vec();
-    dolfin_assert(petsc_vecs[i]);
+    dolfin_assert(as_type<const PETScVector>(initial_space[i]));
+    dolfin_assert(as_type<const PETScVector>(initial_space[i])->vec());
+    petsc_vecs[i] = as_type<const PETScVector>(initial_space[i])->vec();
   }
 
   PetscErrorCode ierr = EPSSetInitialSpace(_eps, petsc_vecs.size(),
