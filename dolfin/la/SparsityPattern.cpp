@@ -126,7 +126,6 @@ void SparsityPattern::insert_global(
       };
 
   insert_entries(entries, pridim_map, codim_map);
-
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local(
