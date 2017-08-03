@@ -162,48 +162,20 @@ void SparsityPattern::insert_global(
 {
   dolfin_assert(entries.size() == 2);
 
-  const std::size_t _primary_dim = primary_dim();
-  const std::size_t primary_codim = (_primary_dim + 1) % 2;
+  // The pridim is global and must be mapped to local
+  const auto pridim_map
+      = [](dolfin::la_index i_index, const std::shared_ptr<const IndexMap> index_map0) {
+        return i_index - (dolfin::la_index) index_map0->local_range().first;
+      };
 
-  std::shared_ptr<const IndexMap> row_index_map = _index_maps[primary_codim];
-  const auto& row_local_range = row_index_map->local_range();
+  // The codim is already global and stays the same
+  const auto codim_map
+      = [](dolfin::la_index j_index, const std::shared_ptr<const IndexMap> index_map1) {
+        return j_index;
+      };
 
-  std::vector<ArrayView<const dolfin::la_index>> global_entries(2);
-  global_entries[primary_codim].set(entries[primary_codim]);
+  insert_entries(entries, pridim_map, codim_map);
 
-  // Check primary dimension entries are in process range
-  for (const auto& I_index : entries[_primary_dim])
-  {
-    if ((I_index < row_local_range.first) || I_index >= row_local_range.second)
-      dolfin_error("SparsityPattern.cpp",
-                   "insert global entries",
-                   "global index for primary dim %d, not in process range [%d, %d]",
-                   I_index, row_local_range.first, row_local_range.second);
-  }
-
-  if (_mpi_comm.size() == 1)
-  {
-    global_entries[_primary_dim].set(entries[_primary_dim]);
-    insert_local_row_global_column(global_entries);
-  }
-  else
-  {
-    // If in parallel: change the global row (primary dim) indices to
-    // local row (primary dim) indices
-    std::vector<dolfin::la_index> global_pridim_entries(entries[_primary_dim].size());
-    for (std::size_t k=0; k<global_pridim_entries.size(); ++k)
-    {
-      // Global row index
-      const dolfin::la_index I_index = entries[_primary_dim][k];
-      // Local row index
-      const dolfin::la_index i_index = I_index - (dolfin::la_index) row_local_range.first;
-      global_pridim_entries[k] = i_index;
-    }
-
-    global_entries[_primary_dim].set(global_pridim_entries);
-
-    insert_local_row_global_column(global_entries);
-  }
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local(
@@ -211,38 +183,45 @@ void SparsityPattern::insert_local(
 {
   dolfin_assert(entries.size() == 2);
 
-  const std::size_t _primary_dim = primary_dim();
-  const std::size_t primary_codim = (_primary_dim + 1) % 2;
+  // The pridim is local and stays the same
+  const auto pridim_map
+      = [](dolfin::la_index i_index, const std::shared_ptr<const IndexMap> index_map0) {
+        return i_index;
+      };
 
-  std::shared_ptr<const IndexMap> column_index_map = _index_maps[primary_codim];
+  // The codim must be mapped to global entries
+  const auto codim_map
+      = [](dolfin::la_index j_index, const std::shared_ptr<const IndexMap> index_map1) {
+        return (dolfin::la_index) index_map1->local_to_global((std::size_t) j_index);
+      };
 
-  std::vector<ArrayView<const dolfin::la_index>> global_entries(2);
-  global_entries[_primary_dim].set(entries[_primary_dim]);
-
-  if (_mpi_comm.size() == 1)
-  {
-    global_entries[primary_codim].set(entries[primary_codim]);
-    insert_local_row_global_column(global_entries);
-  }
-  else
-  {
-    // If in parallel: change the local column (codim) indices to
-    // global column (codim) indices
-    std::vector<dolfin::la_index> global_codim_entries(entries[primary_codim].size());
-    for (std::size_t k=0; k<global_codim_entries.size(); ++k)
-    {
-      global_codim_entries[k] = (dolfin::la_index) column_index_map->local_to_global(
-          (std::size_t) entries[primary_codim][k]);
-    }
-
-    global_entries[primary_codim].set(global_codim_entries);
-
-    insert_local_row_global_column(global_entries);
-  }
+  insert_entries(entries, pridim_map, codim_map);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local_row_global_column(
     const std::vector<ArrayView<const dolfin::la_index>>& entries)
+{
+  dolfin_assert(entries.size() == 2);
+
+  // The pridim is local and stays the same
+  const auto pridim_map
+      = [](dolfin::la_index i_index, const std::shared_ptr<const IndexMap> index_map0) {
+        return i_index;
+      };
+
+  // The codim is global and stays the same
+  const auto codim_map
+      = [](dolfin::la_index j_index, const std::shared_ptr<const IndexMap> index_map1) {
+        return j_index;
+      };
+
+  insert_entries(entries, pridim_map, codim_map);
+}
+//-----------------------------------------------------------------------------
+void SparsityPattern::insert_entries(
+    const std::vector<ArrayView<const dolfin::la_index>>& entries,
+    std::function<dolfin::la_index(dolfin::la_index, const std::shared_ptr<const IndexMap>)> pridim_map,
+    std::function<dolfin::la_index(dolfin::la_index, const std::shared_ptr<const IndexMap>)> codim_map)
 {
   dolfin_assert(entries.size() == 2);
   const std::size_t _primary_dim = primary_dim();
@@ -277,37 +256,40 @@ void SparsityPattern::insert_local_row_global_column(
     // Parallel mode, use either diagonal, off_diagonal, non_local or full_rows
     for (const auto &i_index : map_i)
     {
+      const auto I = pridim_map(i_index, index_map0);
       // Full rows are stored separately
-      if (has_full_rows && full_rows.find(i_index) != full_rows_end)
+      if (has_full_rows && full_rows.find(I) != full_rows_end)
       {
         // Do nothing
         continue;
       }
 
-      if (i_index < local_size0)
+      if (I < local_size0)
       {
         // Store local entry in diagonal or off-diagonal block
-        for (const auto &J : map_j)
+        for (const auto &j_index : map_j)
         {
+          const auto J = codim_map(j_index, index_map1);
           if (local_range1.first <= J && J < local_range1.second)
           {
-            dolfin_assert(i_index < diagonal.size());
-            diagonal[i_index].insert(J);
+            dolfin_assert(I < diagonal.size());
+            diagonal[I].insert(J);
           }
           else
           {
-            dolfin_assert(i_index < off_diagonal.size());
-            off_diagonal[i_index].insert(J);
+            dolfin_assert(I < off_diagonal.size());
+            off_diagonal[I].insert(J);
           }
         }
       }
       else
       {
         // Store non-local entry (communicated later during apply())
-        for (const auto &J : map_j)
+        for (const auto &j_index : map_j)
         {
+          const auto J = codim_map(j_index, index_map1);
           // Store indices
-          non_local.push_back(i_index);
+          non_local.push_back(I);
           non_local.push_back(J);
         }
       }
