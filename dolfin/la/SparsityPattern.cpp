@@ -368,13 +368,9 @@ void SparsityPattern::num_local_nonzeros(std::vector<std::size_t>& num_nonzeros)
 void SparsityPattern::apply()
 {
   const std::size_t _primary_dim = primary_dim();
-
-  std::size_t primary_codim;
+  const std::size_t primary_codim = (_primary_dim + 1) % 2;
   dolfin_assert(_primary_dim < 2);
-  if (_primary_dim == 0)
-    primary_codim = 1;
-  else
-    primary_codim = 0;
+  dolfin_assert(primary_codim < 2);
 
   const std::pair<dolfin::la_index, dolfin::la_index>
     local_range0 = _index_maps[_primary_dim]->local_range();

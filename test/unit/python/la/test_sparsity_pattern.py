@@ -25,6 +25,20 @@ from dolfin_utils.test import *
 import numpy as np
 
 
+def count_off_and_on_diagonal_nnz(codim_entries, local_range):
+    nnz_on_diagonal = 0
+    nnz_off_diagonal = 0
+
+    for entry in codim_entries:
+      in_range = local_range[0] <= entry < local_range[1]
+      if in_range:
+        nnz_on_diagonal += 1
+      else:
+        nnz_off_diagonal += 1
+
+    return nnz_on_diagonal, nnz_off_diagonal
+
+
 @fixture
 def mesh():
     return UnitSquareMesh(10, 10)
@@ -109,15 +123,63 @@ def test_insert_global(mesh, V):
     rank = MPI.rank(mesh.mpi_comm())
     size = MPI.size(mesh.mpi_comm())
 
-    # Tabulate on diangonal and off diagonal nnzs
-    nnz_on_diagonal = 0
-    nnz_off_diagonal = 0
-    for entry in codim_entries:
-      in_range = local_range[0] <= entry < local_range[1]
-      if in_range:
-        nnz_on_diagonal += 1
+    # Tabulate on diagonal and off diagonal nnzs
+    nnz_on_diagonal, nnz_off_diagonal = count_off_and_on_diagonal_nnz(
+        codim_entries, local_range)
+
+    # Compare tabulated and sparsity pattern nnzs
+    for local_row in range(len(nnz_d)):
+      in_range = local_range[0] <= local_row < local_range[1]
+
+      if local_row in pridim_local_entries:
+        # We added some entries into this row DoF, so check nnzs
+        if in_range:
+          assert nnz_d[local_row] == nnz_on_diagonal
+        else:
+          assert nnz_od[local_row] == nnz_off_diagonal
       else:
-        nnz_off_diagonal += 1
+        # No DoFs entered into this row, so ensure sparsity pattern
+        # is empty.
+        if in_range:
+          assert nnz_d[local_row] == 0
+        else:
+          assert nnz_od[local_row] == 0
+
+
+def test_insert_local_row_global_column(mesh, V):
+    dm = V.dofmap()
+    index_map = dm.index_map()
+    local_range = index_map.local_range()
+
+    # Build sparse tensor layout
+    tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity_SPARSE)
+    tl.init([index_map, index_map], TensorLayout.Ghosts_UNGHOSTED)
+    sp = tl.sparsity_pattern()
+    sp.init([index_map, index_map])
+
+    # Primary dim (row) entries need to be local to the process, so we ensure
+    # they're in the local range of the index map
+    pridim_local_entries = np.array([0, 1, 2], dtype=np.intc)
+    pridim_entries = pridim_local_entries
+
+    # The codim (column) entries will be added to the same global entries
+    # on each process.
+    codim_local_entries = np.array([0, 1, 2], dtype=np.intc)
+    codim_entries = codim_local_entries #+ local_range[0]
+    entries = np.array([pridim_entries, codim_entries], dtype=np.intc)
+
+    sp.insert_local_row_global_column(entries)
+    sp.apply()
+
+    nnz_d = sp.num_nonzeros_diagonal()
+    nnz_od = sp.num_nonzeros_off_diagonal()
+
+    rank = MPI.rank(mesh.mpi_comm())
+    size = MPI.size(mesh.mpi_comm())
+
+    # Tabulate on diagonal and off diagonal nnzs
+    nnz_on_diagonal, nnz_off_diagonal = count_off_and_on_diagonal_nnz(
+        codim_entries, local_range)
 
     # Compare tabulated and sparsity pattern nnzs
     for local_row in range(len(nnz_d)):
