@@ -118,13 +118,13 @@ void SparsityPattern::insert_global(
         return i_index - (dolfin::la_index) index_map0.local_range().first;
       };
 
-  // The codim is already global and stays the same
-  const auto codim_map
+  // The primary_codim is already global and stays the same
+  const auto primary_codim_map
       = [](const dolfin::la_index& j_index, const IndexMap& index_map1) {
         return j_index;
       };
 
-  insert_entries(entries, primary_dim_map, codim_map);
+  insert_entries(entries, primary_dim_map, primary_codim_map);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local(
@@ -138,13 +138,13 @@ void SparsityPattern::insert_local(
         return i_index;
       };
 
-  // The codim must be mapped to global entries
-  const auto codim_map
+  // The primary_codim must be mapped to global entries
+  const auto primary_codim_map
       = [](const dolfin::la_index& j_index, const IndexMap& index_map1) {
         return (dolfin::la_index) index_map1.local_to_global((std::size_t) j_index);
       };
 
-  insert_entries(entries, primary_dim_map, codim_map);
+  insert_entries(entries, primary_dim_map, primary_codim_map);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local_row_global_column(
@@ -158,19 +158,19 @@ void SparsityPattern::insert_local_row_global_column(
         return i_index;
       };
 
-  // The codim is global and stays the same
-  const auto codim_map
+  // The primary_codim is global and stays the same
+  const auto primary_codim_map
       = [](const dolfin::la_index& j_index, const IndexMap& index_map1) {
         return j_index;
       };
 
-  insert_entries(entries, primary_dim_map, codim_map);
+  insert_entries(entries, primary_dim_map, primary_codim_map);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_entries(
     const std::vector<ArrayView<const dolfin::la_index>>& entries,
     const std::function<dolfin::la_index(const dolfin::la_index&, const IndexMap&)>& primary_dim_map,
-    const std::function<dolfin::la_index(const dolfin::la_index&, const IndexMap&)>& codim_map)
+    const std::function<dolfin::la_index(const dolfin::la_index&, const IndexMap&)>& primary_codim_map)
 {
   dolfin_assert(entries.size() == 2);
   const std::size_t _primary_dim = primary_dim();
@@ -226,7 +226,7 @@ void SparsityPattern::insert_entries(
         // Store local entry in diagonal or off-diagonal block
         for (const auto &j_index : map_j)
         {
-          const auto J = codim_map(j_index, index_map1);
+          const auto J = primary_codim_map(j_index, index_map1);
           if (local_range1.first <= J && J < local_range1.second)
           {
             dolfin_assert(I < diagonal.size());
@@ -244,7 +244,7 @@ void SparsityPattern::insert_entries(
         // Store non-local entry (communicated later during apply())
         for (const auto &j_index : map_j)
         {
-          const auto J = codim_map(j_index, index_map1);
+          const auto J = primary_codim_map(j_index, index_map1);
           // Store indices
           non_local.push_back(I);
           non_local.push_back(J);
@@ -292,8 +292,8 @@ std::size_t SparsityPattern::num_nonzeros() const
   // Contribution from full rows
   const std::size_t local_size0 =
     _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
-  const std::size_t codim = _primary_dim == 0 ? 1 : 0;
-  const std::size_t ncols = _index_maps[codim]->size(IndexMap::MapSize::GLOBAL);
+  const std::size_t primary_codim = _primary_dim == 0 ? 1 : 0;
+  const std::size_t ncols = _index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
   for (const auto& full_row : full_rows)
     if (full_row < local_size0)
       nz += ncols;
@@ -315,8 +315,8 @@ void SparsityPattern::num_nonzeros_diagonal(std::vector<std::size_t>& num_nonzer
   {
     const std::size_t local_size0 =
       _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
-    const std::size_t codim = _primary_dim == 0 ? 1 : 0;
-    const std::size_t ncols = _index_maps[codim]->size(IndexMap::MapSize::OWNED);
+    const std::size_t primary_codim = _primary_dim == 0 ? 1 : 0;
+    const std::size_t ncols = _index_maps[primary_codim]->size(IndexMap::MapSize::OWNED);
     for (const auto row : full_rows)
       if (row < local_size0)
         num_nonzeros[row] = ncols;
@@ -341,10 +341,10 @@ void SparsityPattern::num_nonzeros_off_diagonal(std::vector<std::size_t>& num_no
   {
     const std::size_t local_size0 =
       _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
-    const std::size_t codim = _primary_dim == 0 ? 1 : 0;
+    const std::size_t primary_codim = _primary_dim == 0 ? 1 : 0;
     const std::size_t ncols =
-      _index_maps[codim]->size(IndexMap::MapSize::GLOBAL)
-      - _index_maps[codim]->size(IndexMap::MapSize::OWNED);
+      _index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL)
+      - _index_maps[primary_codim]->size(IndexMap::MapSize::OWNED);
     for (const auto row : full_rows)
       if (row < local_size0)
         num_nonzeros[row] = ncols;
@@ -524,8 +524,8 @@ SparsityPattern::diagonal_pattern(Type type) const
   {
     const std::size_t local_size0 =
       _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
-    const std::size_t codim = _primary_dim == 0 ? 1 : 0;
-    const auto range1 = _index_maps[codim]->local_range();
+    const std::size_t primary_codim = _primary_dim == 0 ? 1 : 0;
+    const auto range1 = _index_maps[primary_codim]->local_range();
     for (const auto row : full_rows)
     {
       if (row >= local_size0)
@@ -557,9 +557,9 @@ std::vector<std::vector<std::size_t>>
   {
     const std::size_t local_size0 =
       _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
-    const std::size_t codim = _primary_dim == 0 ? 1 : 0;
-    const auto range1 = _index_maps[codim]->local_range();
-    const std::size_t N1 = _index_maps[codim]->size(IndexMap::MapSize::GLOBAL);
+    const std::size_t primary_codim = _primary_dim == 0 ? 1 : 0;
+    const auto range1 = _index_maps[primary_codim]->local_range();
+    const std::size_t N1 = _index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
     for (const auto row : full_rows)
     {
       if (row >= local_size0)
