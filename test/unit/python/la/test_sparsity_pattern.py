@@ -164,8 +164,7 @@ def test_insert_local_row_global_column(mesh, V):
 
     # The codim (column) entries will be added to the same global entries
     # on each process.
-    codim_local_entries = np.array([0, 1, 2], dtype=np.intc)
-    codim_entries = codim_local_entries #+ local_range[0]
+    codim_entries = np.array([0, 1, 2], dtype=np.intc)
     entries = np.array([pridim_entries, codim_entries], dtype=np.intc)
 
     sp.insert_local_row_global_column(entries)
