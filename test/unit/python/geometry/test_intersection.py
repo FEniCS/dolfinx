@@ -76,11 +76,12 @@ def test_mesh_point_2d_quadrilateral():
 @skip_in_parallel
 @pytest.mark.xfail(strict=True, raises=AssertionError)
 def test_mesh_point_3d_hexahedron():
-    "Test mesh-point intersection in 3D for tetrahedral mesh"
+    "Test mesh-point intersection in 3D for hexahedral mesh"
 
     point = Point(0.1, 0.2, 0.3)
     mesh = UnitHexMesh.create(8, 8, 8)
 
     intersection = intersect(mesh, point)
 
+    # Returns [] now, but [136] is the correct cell.
     assert intersection.intersected_cells() == [136]
