@@ -34,7 +34,6 @@
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
 
-
 namespace dolfin
 {
 
