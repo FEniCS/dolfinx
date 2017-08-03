@@ -316,6 +316,7 @@ void SLEPcEigenSolver::set_deflation_space(const VectorSpaceBasis& deflation_spa
   {
     dolfin_assert(deflation_space[i]);
     petsc_vecs[i] = as_type<const PETScVector>(deflation_space[i])->vec();
+    dolfin_assert(petsc_vecs[i]);
   }
 
   PetscErrorCode ierr = EPSSetDeflationSpace(_eps, petsc_vecs.size(),
@@ -342,6 +343,7 @@ void SLEPcEigenSolver::set_initial_space(const VectorSpaceBasis& initial_space)
   {
     dolfin_assert(initial_space[i]);
     petsc_vecs[i] = as_type<const PETScVector>(initial_space[i])->vec();
+    dolfin_assert(petsc_vecs[i]);
   }
 
   PetscErrorCode ierr = EPSSetInitialSpace(_eps, petsc_vecs.size(),
