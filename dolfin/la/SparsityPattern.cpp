@@ -25,7 +25,6 @@
 #include <algorithm>
 
 #include <dolfin/common/MPI.h>
-#include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/la/IndexMap.h>
 #include "SparsityPattern.h"
