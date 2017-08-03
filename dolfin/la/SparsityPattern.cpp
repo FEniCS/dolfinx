@@ -189,7 +189,7 @@ void SparsityPattern::insert_entries(
   const bool has_full_rows = full_rows.size() > 0;
   const auto full_rows_end = full_rows.end();
 
-  // Programmers note:
+  // Programmers' note:
   // We use the lower case index i/j to denote the indices before mapping.
   // We use the  upper case index I/J to denote the indices after mapping to be
   // inserted into the SparsityPattern data structure.
