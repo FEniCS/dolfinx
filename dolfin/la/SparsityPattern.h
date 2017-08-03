@@ -162,7 +162,9 @@ namespace dolfin
     dolfin::MPI::Comm _mpi_comm;
 
     // IndexMaps for each dimension
-    std::vector<std::shared_ptr<const IndexMap>> _index_maps;// Sparsity patterns for diagonal and off-diagonal blocks
+    std::vector<std::shared_ptr<const IndexMap>> _index_maps;
+
+    // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;
     std::vector<set_type> off_diagonal;
 
