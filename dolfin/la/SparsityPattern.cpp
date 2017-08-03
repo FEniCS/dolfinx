@@ -99,62 +99,13 @@ void SparsityPattern::init(const std::vector<std::shared_ptr<const IndexMap>> in
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(dolfin::la_index i, dolfin::la_index j)
 {
-  dolfin::la_index i_index = i;
-  dolfin::la_index j_index = j;
-
-  const std::size_t _primary_dim = primary_dim();
-
-  if (_primary_dim != 0)
-  {
-    i_index = j;
-    j_index = i;
-  }
-
-  // Check local range
-  if (_mpi_comm.size() == 1)
-  {
-    // Sequential mode, do simple insertion if not full row
-    if (full_rows.find(i_index) == full_rows.end())
-      diagonal[i_index].insert(j_index);
-  }
-  else
-  {
-    const std::pair<dolfin::la_index, dolfin::la_index>
-      local_range0 = _index_maps[_primary_dim]->local_range();
-    const std::pair<dolfin::la_index, dolfin::la_index>
-      local_range1 = _index_maps[1 - _primary_dim]->local_range();
-
-    if (local_range0.first <= i_index && i_index < local_range0.second)
+  const std::vector<ArrayView<const dolfin::la_index>> entries =
       {
-        // Subtract offset
-        const std::size_t I = i_index - local_range0.first;
+          ArrayView<const dolfin::la_index>(1, &i),
+          ArrayView<const dolfin::la_index>(1, &j)
+      };
 
-        // Full rows are stored separately
-        if (full_rows.find(I) != full_rows.end())
-        {
-          // Do nothing
-          return;
-        }
-
-        // Store local entry in diagonal or off-diagonal block
-        if (local_range1.first <= j_index && j_index < local_range1.second)
-        {
-          dolfin_assert(I < diagonal.size());
-          diagonal[I].insert(j_index);
-        }
-        else
-        {
-          dolfin_assert(I < off_diagonal.size());
-          off_diagonal[I].insert(j_index);
-        }
-      }
-    else
-    {
-      dolfin_error("SparsityPattern.cpp",
-                   "insert using global indices",
-                   "Index must be in the process range");
-    }
-  }
+  insert_global(entries);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
