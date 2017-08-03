@@ -34,6 +34,8 @@
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
 
+#include <dolfin/la/IndexMap.h>
+
 namespace dolfin
 {
 
@@ -147,8 +149,23 @@ namespace dolfin
     // The codim entries must be global
     void insert_entries(
         const std::vector<ArrayView<const dolfin::la_index>>& entries,
-        std::function<dolfin::la_index(dolfin::la_index, const std::shared_ptr<const IndexMap>)> pridim_map,
-        std::function<dolfin::la_index(dolfin::la_index, const std::shared_ptr<const IndexMap>)> codim_map);
+        const std::function<dolfin::la_index(const dolfin::la_index&, const IndexMap&)>& pridim_map,
+        const std::function<dolfin::la_index(const dolfin::la_index&, const IndexMap&)>& codim_map);
+
+    static dolfin::la_index map_index_to_global(const dolfin::la_index& idx, const IndexMap& index_map)
+    {
+      return (dolfin::la_index) index_map.local_to_global((std::size_t) idx);
+    }
+
+    static dolfin::la_index map_index_to_local(const dolfin::la_index& idx, const IndexMap& index_map)
+    {
+      return idx - (dolfin::la_index) index_map.local_range().first;
+    }
+
+    static dolfin::la_index map_index_identity(const dolfin::la_index& idx, const IndexMap& index_map)
+    {
+      return idx;
+    }
 
     // Print some useful information
     void info_statistics() const;
@@ -161,9 +178,7 @@ namespace dolfin
     dolfin::MPI::Comm _mpi_comm;
 
     // IndexMaps for each dimension
-    std::vector<std::shared_ptr<const IndexMap>> _index_maps;
-
-    // Sparsity patterns for diagonal and off-diagonal blocks
+    std::vector<std::shared_ptr<const IndexMap>> _index_maps;// Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;
     std::vector<set_type> off_diagonal;
 
