@@ -71,7 +71,7 @@ namespace dolfin
     std::vector<std::pair<std::pair<std::size_t, std::size_t>, T> >  _values;
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
   };
 
@@ -89,10 +89,10 @@ namespace dolfin
     std::vector<std::vector<T> > send_v;
 
     // Extract data on main process and split among processes
-    if (MPI::is_broadcaster(_mpi_comm))
+    if (MPI::is_broadcaster(_mpi_comm.comm()))
     {
       // Get number of processes
-      const std::size_t num_processes = MPI::size(_mpi_comm);
+      const std::size_t num_processes = MPI::size(_mpi_comm.comm());
       send_indices.resize(num_processes);
       send_v.resize(num_processes);
 
@@ -101,7 +101,7 @@ namespace dolfin
       for (std::size_t p = 0; p < num_processes; p++)
       {
         const std::pair<std::size_t, std::size_t> local_range
-          = MPI::local_range(_mpi_comm, p, vals.size());
+          = MPI::local_range(_mpi_comm.comm(), p, vals.size());
         typename std::map<std::pair<std::size_t,
           std::size_t>, T>::const_iterator it = vals.begin();
         std::advance(it, local_range.first);
@@ -118,8 +118,8 @@ namespace dolfin
     // Scatter data
     std::vector<std::size_t> indices;
     std::vector<T> v;
-    MPI::scatter(_mpi_comm, send_indices, indices);
-    MPI::scatter(_mpi_comm, send_v, v);
+    MPI::scatter(_mpi_comm.comm(), send_indices, indices);
+    MPI::scatter(_mpi_comm.comm(), send_v, v);
     dolfin_assert(2*v.size() == indices.size());
 
     // Unpack

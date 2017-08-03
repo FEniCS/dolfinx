@@ -22,6 +22,8 @@
 # by three overlapping and non-matching meshes.
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 class InflowBoundary(SubDomain):
     def inside(self, x, on_boundary):
@@ -142,10 +144,10 @@ solve(A, w.vector(), b)
 
 # Extract solution components
 u0 = w.part(0).sub(0)
-u1 = w.part(1).sub(1)
+u1 = w.part(1).sub(0)
 u2 = w.part(2).sub(0)
 p0 = w.part(0).sub(1)
-p1 = w.part(1).sub(0)
+p1 = w.part(1).sub(1)
 p2 = w.part(2).sub(1)
 
 # Save to file
@@ -157,11 +159,11 @@ File("p1.pvd") << p1
 File("p2.pvd") << p2
 
 # Plot solution
-plot(W.multimesh())
-plot(u0, title="u_0")
-plot(u1, title="u_1")
-plot(u2, title="u_2")
-plot(p0, title="p_0")
-plot(p1, title="p_1")
-plot(p2, title="p_2")
-interactive()
+#plt.figure(); plot(W.multimesh())
+#plt.figure(); plot(u0, title="u_0")
+#plt.figure(); plot(u1, title="u_1")
+#plt.figure(); plot(u2, title="u_2")
+#plt.figure(); plot(p0, title="p_0")
+#plt.figure(); plot(p1, title="p_1")
+#plt.figure(); plot(p2, title="p_2")
+#plt.show()

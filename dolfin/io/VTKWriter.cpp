@@ -126,8 +126,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Tabulate dofs
-    const ArrayView<const dolfin::la_index>
-      dofs = dofmap.cell_dofs(cell->index());
+    auto dofs = dofmap.cell_dofs(cell->index());
     for(std::size_t i = 0; i < dofmap.num_element_dofs(cell->index()); ++i)
       dof_set.push_back(dofs[i]);
 

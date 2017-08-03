@@ -30,6 +30,7 @@
 # Last changed: 2012-11-12
 # Begin demo
 
+import matplotlib.pyplot as plt
 from dolfin import *
 
 # Source term
@@ -86,4 +87,5 @@ file = File("periodic.pvd")
 file << u
 
 # Plot solution
-plot(u, interactive=True)
+plot(u)
+plt.show()

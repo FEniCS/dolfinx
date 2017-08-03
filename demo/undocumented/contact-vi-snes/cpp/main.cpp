@@ -139,13 +139,7 @@ int main()
   File file("displacement.pvd");
   file << *u;
 
-  // plot the current configuration
-  plot(*u, "Displacement", "displacement");
-
-  // Make plot windows interactive
-  interactive();
-
 #endif
 
- return 0;
+  return 0;
 }

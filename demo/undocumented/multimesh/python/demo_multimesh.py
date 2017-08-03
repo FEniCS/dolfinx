@@ -22,6 +22,9 @@ from __future__ import print_function
 from dolfin import *
 import os
 
+print("Multi-mesh plotting requires updating")
+exit(0)
+
 # Don't plot when DOLFIN_NOPLOT is set
 plot = os.environ.get("DOLFIN_NOPLOT") is None
 if plot:

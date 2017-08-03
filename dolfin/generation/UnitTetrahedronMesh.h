@@ -37,12 +37,12 @@ namespace dolfin
   ///
   /// This class is useful for testing.
 
-  class UnitTetrahedronMesh : public Mesh
+  class UnitTetrahedronMesh
   {
   public:
 
     /// Create mesh of unit tetrahedron
-    UnitTetrahedronMesh();
+    static Mesh create();
 
   };
 

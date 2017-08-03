@@ -9,7 +9,7 @@ Quick start
 ===========
 
 You probably want to read the `FEniCS download and installation web page
-<https://fenicsproject.org/download/>`_ if you just want to get FEniCS 
+<https://fenicsproject.org/download/>`_ if you just want to get FEniCS
 installed as quickly and effortlessly as possible.
 
 
@@ -40,6 +40,7 @@ Required
 - Eigen3 (http://eigen.tuxfamily.org)
 - FFC (https://bitbucket.org/fenics-project/ffc)
 - pkg-config (https://www.freedesktop.org/wiki/Software/pkg-config/)
+- Python (used by the build system)
 - zlib
 
 
@@ -55,7 +56,7 @@ Required for Python interface
 Optional
 ^^^^^^^^
 
-- HDF5, with MPI support enabled
+- HDF5 (with MPI support enabled if building DOLFIN with MPI support)
 - MPI
 - ParMETIS [1]_
 - PETSc (strongly recommended) [2]_
@@ -63,16 +64,16 @@ Optional
 - SLEPc
 - Suitesparse [1]_
 - Trilinos
-- VTK
 
 
 Optional for the Python interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+- Matplotlib (required for plotting)
+- mpi4py
 - petsc4py
 - slepc4py
-- mpi4py
-- Matplotlib
+
 
 .. [1] It is strongly recommended to use the PETSc build system to
        download and configure and build these libraries.

@@ -32,7 +32,6 @@
 #include <dolfin/log/Table.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/parameter/Parameters.h>
-#include <dolfin/plot/plot.h>
 
 #include "GenericAdaptiveVariationalSolver.h"
 #include "GoalFunctional.h"
@@ -179,8 +178,6 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
     timer.start();
     adapt(*mesh, markers);
     datum->add("time_adapt_mesh", timer.stop());
-    if (parameters["plot_mesh"])
-      plot(mesh->child(), "Refined mesh");
     end();
 
     //--- Stage 5: Update forms ---

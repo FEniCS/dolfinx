@@ -18,23 +18,21 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# Modified by Benjamin Kehlet 2012
-# Modified by Marie E. Rognes 2012
-# Modified by Johannes Ring 2013
-# Modified by Jan Blechta 2013
-# Modified by Oeyvind Evju 2013
-#
-# First added:  2006-08-08
-# Last changed: 2014-08-12
 
-from __future__ import print_function
+from __future__ import print_function, division
+
 import pytest
 import numpy
-from dolfin import *
-import os
+import six
+from six.moves import range
 
-from dolfin_utils.test import fixture, skip_in_parallel, xfail_in_parallel, cd_tempdir
+from dolfin import *
+from dolfin_utils.test import fixture, set_parameters_fixture
+from dolfin_utils.test import skip_in_parallel, xfail_in_parallel
+from dolfin_utils.test import cd_tempdir
+import FIAT
+
+import os
 
 
 @fixture
@@ -194,13 +192,13 @@ def test_UnitCubeMeshDistributedLocal():
 
 
 def test_UnitQuadMesh():
-    mesh = UnitQuadMesh(mpi_comm_world(), 5, 7)
+    mesh = UnitQuadMesh.create(mpi_comm_world(), 5, 7)
     assert mesh.size_global(0) == 48
     assert mesh.size_global(2) == 35
 
 
 def test_UnitHexMesh():
-    mesh = UnitHexMesh(mpi_comm_world(), 5, 7, 9)
+    mesh = UnitHexMesh.create(mpi_comm_world(), 5, 7, 9)
     assert mesh.size_global(0) == 480
     assert mesh.size_global(3) == 315
 
@@ -453,39 +451,167 @@ def test_cell_orientations():
     print(mesh.cell_orientations())
 
 
-def test_shared_entities():
-    for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh,
-                                     UnitCubeMesh]):
-        dim = ind+1
-        args = [4]*dim
-        mesh = MeshClass(*args)
+# - Facilities to run tests on combination of meshes
 
-        # FIXME: Implement a proper test
-        for shared_dim in range(dim+1):
-            # Initialise global indices (if not already)
-            mesh.init_global(shared_dim)
+ghost_mode = set_parameters_fixture("ghost_mode", [
+    "none",
+    "shared_facet",
+    "shared_vertex",
+])
 
-            assert isinstance(mesh.topology().shared_entities(shared_dim), dict)
-            assert isinstance(mesh.topology().global_indices(shared_dim),
-                              numpy.ndarray)
+mesh_factories = [
+    (UnitIntervalMesh, (8,)),
+    (UnitSquareMesh, (4, 4)),
+    (UnitDiscMesh.create, (mpi_comm_world(), 10, 1, 2)),
+    (UnitDiscMesh.create, (mpi_comm_world(), 10, 2, 2)),
+    (UnitDiscMesh.create, (mpi_comm_world(), 10, 1, 3)),
+    (UnitDiscMesh.create, (mpi_comm_world(), 10, 2, 3)),
+    (SphericalShellMesh.create, (mpi_comm_world(), 1,)),
+    (SphericalShellMesh.create, (mpi_comm_world(), 2,)),
+    (UnitCubeMesh, (2, 2, 2)),
+    (UnitQuadMesh.create, (4, 4)),
+    (UnitHexMesh.create, (2, 2, 2)),
+    # FIXME: Add mechanism for testing meshes coming from IO
+]
 
-            EntityIterator = {0: vertices, 1: edges, 2: faces, 3: cells}[shared_dim]
-            if mesh.topology().have_shared_entities(shared_dim):
-                for e in EntityIterator(mesh):
-                    sharing = e.sharing_processes()
-                    assert isinstance(sharing, numpy.ndarray)
-                    assert (sharing.size > 0) == e.is_shared()
+mesh_factories_broken_shared_entities = [
+    (UnitIntervalMesh, (8,)),
+    (UnitSquareMesh, (4, 4)),
+    # FIXME: Problem in test_shared_entities
+    xfail_in_parallel((UnitDiscMesh.create, (mpi_comm_world(), 10, 1, 2))),
+    xfail_in_parallel((UnitDiscMesh.create, (mpi_comm_world(), 10, 2, 2))),
+    xfail_in_parallel((UnitDiscMesh.create, (mpi_comm_world(), 10, 1, 3))),
+    xfail_in_parallel((UnitDiscMesh.create, (mpi_comm_world(), 10, 2, 3))),
+    xfail_in_parallel((SphericalShellMesh.create, (mpi_comm_world(), 1,))),
+    xfail_in_parallel((SphericalShellMesh.create, (mpi_comm_world(), 2,))),
+    (UnitCubeMesh, (2, 2, 2)),
+    (UnitQuadMesh.create, (4, 4)),
+    (UnitHexMesh.create, (2, 2, 2)),
+]
 
-            n_entities = mesh.size(shared_dim)
-            n_global_entities = mesh.size_global(shared_dim)
-            shared_entities = mesh.topology().shared_entities(shared_dim)
+# FIXME: Fix this xfail
+def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
+    """Xfail when mesh_factory on quads/hexes uses
+    shared_vertex mode. Needs implementing.
+    """
+    if mesh_factory in [UnitQuadMesh.create, UnitHexMesh.create]:
+        if ghost_mode == 'shared_vertex':
+            pytest.xfail(reason="Missing functionality in '{}' with '' "
+                                "mode".format(mesh_factory, ghost_mode))
 
-            # Check that sum(local-shared) = global count
-            rank = MPI.rank(mesh.mpi_comm())
-            ct = 0
-            for key, val in shared_entities.items():
-                if (val[0] < rank):
-                    ct += 1
-            size_global = MPI.sum(mesh.mpi_comm(), mesh.size(shared_dim) - ct)
 
-            assert size_global ==  mesh.size_global(shared_dim)
+@pytest.mark.parametrize('mesh_factory', mesh_factories_broken_shared_entities)
+def test_shared_entities(mesh_factory, ghost_mode):
+    func, args = mesh_factory
+    xfail_ghosted_quads_hexes(func, ghost_mode)
+    mesh = func(*args)
+    dim = mesh.topology().dim()
+
+    # FIXME: Implement a proper test
+    for shared_dim in range(dim+1):
+        # Initialise global indices (if not already)
+        mesh.init_global(shared_dim)
+
+        assert isinstance(mesh.topology().shared_entities(shared_dim), dict)
+        assert isinstance(mesh.topology().global_indices(shared_dim),
+                          numpy.ndarray)
+
+        if mesh.topology().have_shared_entities(shared_dim):
+            for e in entities(mesh, shared_dim):
+                sharing = e.sharing_processes()
+                assert isinstance(sharing, numpy.ndarray)
+                assert (sharing.size > 0) == e.is_shared()
+
+        n_entities = mesh.size(shared_dim)
+        n_global_entities = mesh.size_global(shared_dim)
+        shared_entities = mesh.topology().shared_entities(shared_dim)
+
+        # Check that sum(local-shared) = global count
+        rank = MPI.rank(mesh.mpi_comm())
+        ct = sum(1 for val in six.itervalues(shared_entities) if val[0] < rank)
+        size_global = MPI.sum(mesh.mpi_comm(), mesh.size(shared_dim) - ct)
+
+        assert size_global ==  mesh.size_global(shared_dim)
+
+
+@pytest.mark.parametrize('mesh_factory', mesh_factories)
+def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
+    """Test that mesh cells have topology matching to FIAT reference
+    cell they were created from.
+    """
+    func, args = mesh_factory
+    xfail_ghosted_quads_hexes(func, ghost_mode)
+    mesh = func(*args)
+    assert mesh.ordered()
+    tdim = mesh.topology().dim()
+
+    # Create FIAT cell
+    cell_name = CellType.type2string(mesh.type().cell_type())
+    fiat_cell = FIAT.ufc_cell(cell_name)
+
+    # Initialize mesh entities
+    for d in range(tdim+1):
+        mesh.init(d)
+
+    for cell in cells(mesh):
+        # Get mesh-global (MPI-local) indices of cell vertices
+        vertex_global_indices = cell.entities(0)
+
+        # Loop over all dimensions of reference cell topology
+        for d, d_topology in six.iteritems(fiat_cell.get_topology()):
+
+            # Get entities of dimension d on the cell
+            entities = cell.entities(d)
+            if len(entities) == 0:  # Fixup for highest dimension
+                entities = (cell.index(),)
+
+            # Loop over all entities of fixed dimension d
+            for entity_index, entity_topology in six.iteritems(d_topology):
+
+                # Check that entity vertices map to cell vertices in right order
+                entity = MeshEntity(mesh, d, entities[entity_index])
+                entity_vertices = entity.entities(0)
+                assert all(vertex_global_indices[numpy.array(entity_topology)]
+                           == entity_vertices)
+
+
+@pytest.mark.parametrize('mesh_factory', mesh_factories)
+def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
+    """Test that DOLFIN follows that UFC standard in numbering
+    mesh entities. See chapter 5 of UFC manual
+    https://fenicsproject.org/pub/documents/ufc/ufc-user-manual/ufc-user-manual.pdf
+
+    In fact, numbering of other mesh entities than vertices is
+    not followed.
+    """
+    func, args = mesh_factory
+    xfail_ghosted_quads_hexes(func, ghost_mode)
+    mesh = func(*args)
+    assert mesh.ordered()
+    tdim = mesh.topology().dim()
+
+    # Loop over pair of dimensions d, d1 with d>d1
+    for d in range(tdim+1):
+        for d1 in range(d):
+
+            # NOTE: DOLFIN UFC noncompliance!
+            # DOLFIN has increasing indices only for d-0 incidence
+            # with any d; UFC convention for d-d1 with d>d1 is not
+            # respected in DOLFIN
+            if d1 != 0:
+                continue
+
+            # Initialize d-d1 connectivity and d1 global indices
+            mesh.init(d, d1)
+            mesh.init_global(d1)
+            assert mesh.topology().have_global_indices(d1)
+
+            # Loop over entities of dimension d
+            for e in entities(mesh, d):
+
+                # Get global indices
+                subentities_indices = [e1.global_index() for e1 in entities(e, d1)]
+                assert subentities_indices.count(-1) == 0
+
+                # Check that d1-subentities of d-entity have increasing indices
+                assert sorted(subentities_indices) == subentities_indices

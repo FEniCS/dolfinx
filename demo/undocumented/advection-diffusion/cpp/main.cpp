@@ -103,7 +103,5 @@ int main(int argc, char *argv[])
     t += k;
   }
 
-  // Plot solution
-  plot(*u);
-  interactive();
+  return 0;
 }

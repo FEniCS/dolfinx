@@ -46,9 +46,4 @@ void run_reference()
   solve(a == L, w, bcs);
   Function u = w[0];
   Function p = w[1];
-
-  // Plot solution
-  plot(u);
-  plot(p);
-  interactive();
 }

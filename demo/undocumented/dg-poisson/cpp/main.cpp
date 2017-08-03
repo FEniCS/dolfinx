@@ -127,10 +127,6 @@ int main()
   // Save solution in VTK format
   File file("poisson.pvd");
   file << u;
-
-  // Plot solution
-  plot(u);
-  interactive();
-
+  
   return 0;
 }

@@ -28,6 +28,7 @@
 #include "MeshData.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
+#include "Facet.h"
 #include "Vertex.h"
 #include "MeshFunction.h"
 #include "MeshValueCollection.h"
@@ -48,6 +49,12 @@ SubDomain::~SubDomain()
 }
 //-----------------------------------------------------------------------------
 bool SubDomain::inside(const Array<double>& x, bool on_boundary) const
+{
+  const Eigen::Map<Eigen::VectorXd> _x(const_cast<double*>(x.data()), x.size());
+  return inside(_x, on_boundary);
+}
+//-----------------------------------------------------------------------------
+bool SubDomain::inside(const Eigen::Ref<Eigen::VectorXd>& x, bool on_boundary) const
 {
   dolfin_error("SubDomain.cpp",
                "check whether point is inside subdomain",
@@ -171,11 +178,13 @@ void SubDomain::apply_markers(S& sub_domains,
   // Get the dimension of the entities we are marking
   const std::size_t dim = sub_domains.dim();
 
-  // Compute facet - cell connectivity if necessary
+  // Compute connectivities for boundary detection, if necessary
   const std::size_t D = mesh.topology().dim();
-  if (dim == D - 1)
+  if (dim < D)
   {
-    mesh.init(D - 1);
+    mesh.init(dim);
+    if (dim != D - 1)
+      mesh.init(dim, D - 1);
     mesh.init(D - 1, D);
   }
 
@@ -189,7 +198,7 @@ void SubDomain::apply_markers(S& sub_domains,
   std::vector<bool> boundary_inside(mesh.num_vertices());
   std::vector<bool> interior_inside(mesh.num_vertices());
 
-  // Always false when not marking facets
+  // Always false when marking cells
   bool on_boundary = false;
 
   // Compute sub domain markers
@@ -199,8 +208,24 @@ void SubDomain::apply_markers(S& sub_domains,
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
       on_boundary = (entity->num_global_entities(D) == 1);
+    // Or, if entity is of topological dimension less than D - 1, check if any connected
+    // facet is on the boundary
+    else if (dim < D - 1)
+    {
+      on_boundary = false;
+      for (std::size_t f(0); f < entity->num_entities(D - 1); ++f)
+      {
+        std::size_t facet_id = entity->entities(D - 1)[f];
+        Facet facet(mesh, facet_id);
+        if (facet.num_global_entities(D) == 1)
+        {
+          on_boundary = true;
+          break;
+        }
+      }
+    }
 
-    // Select the visited-cache to use for this facet (or entity)
+    // Select the visited-cache to use for this entity
     RangedIndexSet&    is_visited = (on_boundary ? boundary_visited : interior_visited);
     std::vector<bool>& is_inside  = (on_boundary ? boundary_inside  : interior_inside);
 
@@ -255,11 +280,13 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
 
   log(TRACE, "Computing sub domain markers for sub domain %d.", sub_domain);
 
-  // Compute facet - cell connectivity if necessary
+  // Compute connectivities for boundary detection, if necessary
   const std::size_t D = mesh.topology().dim();
-  if (dim == D - 1)
+  if (dim < D)
   {
-    mesh.init(D - 1);
+    mesh.init(dim);
+    if (dim != D - 1)
+      mesh.init(dim, D - 1);
     mesh.init(D - 1, D);
   }
 
@@ -273,7 +300,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
   std::vector<bool> boundary_inside(mesh.num_vertices());
   std::vector<bool> interior_inside(mesh.num_vertices());
 
-  // Always false when not marking facets
+  // Always false when marking cells
   bool on_boundary = false;
 
   // Compute sub domain markers
@@ -283,8 +310,24 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
       on_boundary = (entity->num_global_entities(D) == 1);
+    // Or, if entity is of topological dimension less than D - 1, check if any connected
+    // facet is on the boundary
+    else if (dim < D - 1)
+    {
+      on_boundary = false;
+      for (std::size_t f(0); f < entity->num_entities(D - 1); ++f)
+      {
+        std::size_t facet_id = entity->entities(D - 1)[f];
+        Facet facet(mesh, facet_id);
+        if (facet.num_global_entities(D) == 1)
+        {
+          on_boundary = true;
+          break;
+        }
+      }
+    }
 
-    // Select the visited-cache to use for this facet (or entity)
+    // Select the visited-cache to use for this entity
     RangedIndexSet&    is_visited = (on_boundary ? boundary_visited : interior_visited);
     std::vector<bool>& is_inside  = (on_boundary ? boundary_inside  : interior_inside);
 

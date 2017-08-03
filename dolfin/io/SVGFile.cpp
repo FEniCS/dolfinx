@@ -41,7 +41,7 @@ SVGFile::~SVGFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void SVGFile::operator<< (const Mesh& mesh)
+void SVGFile::write(const Mesh& mesh)
 {
   // Get file path and generate filename
   std::string prefix;

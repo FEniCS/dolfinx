@@ -214,18 +214,13 @@ solution of the variational problem.
      solve(F == 0, *u, bcs, J);
 
 Finally, the solution ``u`` is saved to a file named
-``displacement.pvd`` in VTK format, and the displacement solution is
-plotted.
+``displacement.pvd`` in VTK format.
 
 .. code-block:: cpp
 
      // Save solution in VTK format
      File file("displacement.pvd");
      file << *u;
-
-     // Plot solution
-     plot(*u);
-     interactive();
 
      return 0;
    }

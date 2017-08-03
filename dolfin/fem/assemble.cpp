@@ -14,16 +14,10 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Garth N. Wells, 2008-2013.
-// Modified by Johan Hake, 2009.
-// Modified by Joachim B. Haga, 2012.
-// Modified by Martin S. Alnaes, 2013.
-//
-// First added:  2007-01-17
-// Last changed: 2015-11-11
 
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/Scalar.h>
+#include <dolfin/mesh/Mesh.h>
 #include "Form.h"
 #include "MultiMeshForm.h"
 #include "Assembler.h"
@@ -75,7 +69,11 @@ double dolfin::assemble(const Form& a)
                  a.rank());
   }
 
-  Scalar s;
+  // Create Scalar with appropriate communicator
+  dolfin_assert(a.mesh());
+  Scalar s(a.mesh()->mpi_comm());
+
+  // Assemble
   Assembler assembler;
   assembler.assemble(s, a);
   return s.get_scalar_value();
@@ -90,6 +88,7 @@ double dolfin::assemble_multimesh(const MultiMeshForm& a)
                  "Expecting a scalar form but rank is %d",
                  a.rank());
   }
+
   Scalar s;
   MultiMeshAssembler assembler;
   assembler.assemble(s, a);

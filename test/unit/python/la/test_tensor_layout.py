@@ -66,24 +66,24 @@ def test_layout_and_pattern_interface(backend, mesh, element):
     L = inner(f, v)*dx
 
     # Test ghosted vector (for use as dofs of FE function)
-    t0 = TensorLayout(0, TensorLayout.Sparsity_DENSE)
-    t0.init(c, [i], TensorLayout.Ghosts_GHOSTED)
+    t0 = TensorLayout(c, 0, TensorLayout.Sparsity_DENSE)
+    t0.init([i], TensorLayout.Ghosts_GHOSTED)
     x = Vector(c)
     x.init(t0)
     u = Function(V, x)
 
     # Test unghosted vector (for assembly of rhs)
-    t1 = TensorLayout(0, TensorLayout.Sparsity_DENSE)
-    t1.init(c, [i], TensorLayout.Ghosts_UNGHOSTED)
+    t1 = TensorLayout(c, 0, TensorLayout.Sparsity_DENSE)
+    t1.init([i], TensorLayout.Ghosts_UNGHOSTED)
     b = Vector()
     b.init(t1)
     assemble(L, tensor=b)
 
     # Build sparse tensor layout (for assembly of matrix)
-    t2 = TensorLayout(0, TensorLayout.Sparsity_SPARSE)
-    t2.init(c, [i, i], TensorLayout.Ghosts_UNGHOSTED)
+    t2 = TensorLayout(c, 0, TensorLayout.Sparsity_SPARSE)
+    t2.init([i, i], TensorLayout.Ghosts_UNGHOSTED)
     s2 = t2.sparsity_pattern()
-    s2.init(c, [i, i])
+    s2.init([i, i])
     SparsityPatternBuilder.build(s2, m, [d, d],
                                  True, False, False, False,
                                  False, init=False)

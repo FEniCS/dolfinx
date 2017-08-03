@@ -24,6 +24,8 @@
 # NB! This demo is work in progress and will be updated as we get further in the multidomain features implementation.
 #
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 class Left(SubDomain):
     def inside(self, x, on_boundary):
@@ -70,6 +72,8 @@ u = Function(V)
 solve(a == L, u)
 
 # Plot solution and gradient
+plt.figure()
 plot(domains, title='domains')
+plt.figure()
 plot(u, title="u")
-interactive()
+plt.show()

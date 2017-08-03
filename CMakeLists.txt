@@ -122,19 +122,10 @@ if (APPLE)
 endif()
 
 #------------------------------------------------------------------------------
-# This should be removed when Clang support OpenMP is ready
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  option(DOLFIN_ENABLE_OPENMP "Enable OpenMP." OFF)
-else()
-  option(DOLFIN_ENABLE_OPENMP "Enable OpenMP." ON)
-endif()
-
-#------------------------------------------------------------------------------
 # Enable or disable optional packages
 
 # List optional packages
 set(OPTIONAL_PACKAGES "")
-list(APPEND OPTIONAL_PACKAGES "OpenMP")
 list(APPEND OPTIONAL_PACKAGES "MPI")
 list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "PETSc4py")
@@ -149,7 +140,6 @@ list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
 list(APPEND OPTIONAL_PACKAGES "HDF5")
-list(APPEND OPTIONAL_PACKAGES "VTK")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
@@ -265,7 +255,7 @@ if (size_t_size)
 endif()
 
 #------------------------------------------------------------------------------
-# Check for MPI and OpenMP
+# Check for MPI
 
 # FIXME: Should be set CMake to use the MPI compiler wrappers?
 
@@ -280,19 +270,6 @@ if (DOLFIN_ENABLE_MPI)
     # CMAKE_CXX_COMPILER, etc)
     set(MPI_CXX_FOUND TRUE)
     set(MPI_C_FOUND TRUE)
-  endif()
-endif()
-
-# Test for OpenMP (but not for Clang, which does not support OpenMP)
-if (DOLFIN_ENABLE_OPENMP)
-  find_package(OpenMP)
-  set_package_properties(OpenMP PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Open Multi-Processing API"
-    PURPOSE "Enables DOLFIN to run in parallel with OpenMP")
-  include(CheckOpenMP)
-  check_openmp_unsigned_int_loop_control_variable(OPENMP_UINT_TEST_RUNS)
-  if (NOT OPENMP_UINT_TEST_RUNS)
-    set(OPENMP_FOUND FALSE)
   endif()
 endif()
 
@@ -629,46 +606,6 @@ if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
     PURPOSE "Needed to build documentation")
 endif()
 
-# Check for VTK
-if (DOLFIN_ENABLE_VTK)
-  # Find all modules
-  find_package(VTK QUIET HINTS ${VTK_DIR} $ENV{VTK_DIR} NO_MODULE)
-  set_package_properties(VTK PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "The Visualization Toolkit - A high level 3D visualization library"
-    URL "https://www.vtk.org"
-    PURPOSE "Enables plotting with VTK as backend")
-
-  # Add required modules (depends on VTK version)
-  if(TARGET vtkRenderingOpenGL2)
-    # VTK 7.0
-    find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
-      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL2
-      NO_MODULE)
-  elseif(TARGET vtkRenderingFreeTypeOpenGL)
-    # For VTK < 6.3, vtkRenderingFreeTypeOpenGL module is required, so
-    # add if available (vtkRenderingFreeTypeOpenGL was removed from
-    # VTK 6.3)
-    find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
-      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture vtkRenderingOpenGL
-      vtkRenderingFreeTypeOpenGL NO_MODULE)
-  elseif(TARGET vtkRenderingOpenGL)
-    # VTK 6.3
-    find_package(VTK HINTS ${VTK_DIR} $ENV{VTK_DIR} COMPONENTS vtkViewsCore
-      vtkRenderingCore vtkRenderingLabel vtkFiltersTexture
-      vtkRenderingOpenGL NO_MODULE)
-  endif()
-
-  set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
-  if (VTK_FOUND)
-    if ("${VTK_VERSION}" VERSION_LESS "5.2")
-      set(VTK_FOUND FALSE)
-      message(WARNING "Unable to find VTK (>= 5.2)")
-    else()
-      message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
-    endif()
-  endif()
-endif()
-
 #------------------------------------------------------------------------------
 # Set size of dolfin::la_index
 
@@ -889,10 +826,10 @@ if (PYTHONINTERP_FOUND)
   message(STATUS "--------------------------------------------------")
   file(GLOB_RECURSE demo_rst_files "demo/*.py.rst" "demo/*.cpp.rst" "demo/*.ufl.rst")
   foreach(rst_file ${demo_rst_files})
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ./utils/pylit/pylit.py ${rst_file}
       WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
     #add_custom_command(TARGET demos_source PRE_BUILD
-    #  COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+    #  COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ./utils/pylit/pylit.py ${rst_file}
     #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
   endforeach()
 endif()
@@ -908,7 +845,7 @@ if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/cpp/Poisson.h)
   message(STATUS "Generating form files in demo, test and bench directories. May take some time...")
   message(STATUS "----------------------------------------------------------------------------------------")
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-form-files.py
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-form-files.py
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
     RESULT_VARIABLE FORM_GENERATION_RESULT
     OUTPUT_VARIABLE FORM_GENERATION_OUTPUT
@@ -965,7 +902,7 @@ if (COPY_DEMO_TEST_DEMO_DATA)
   message(STATUS "Copying demo and test data to build directory.")
   message(STATUS "----------------------------------------------")
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     RESULT_VARIABLE COPY_DEMO_DATA_RESULT
     OUTPUT_VARIABLE COPY_DEMO_DATA_OUTPUT
@@ -997,7 +934,7 @@ if (PYTHONINTERP_FOUND)
   add_custom_target(demos_source)
   foreach(rst_file ${rst_files})
     add_custom_command(TARGET demos_source PRE_BUILD
-      COMMAND ${PYTHON_EXECUTABLE} ./utils/pylit/pylit.py ${rst_file}
+      COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ./utils/pylit/pylit.py ${rst_file}
       WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
   endforeach()
 endif()
@@ -1054,7 +991,7 @@ if (DOLFIN_ENABLE_BENCHMARKS)
 
   # Add target "run_bench" for running benchmarks
   add_custom_target(run_bench
-    COMMAND ${PYTHON_EXECUTABLE} "bench.py"
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "bench.py"
     DEPENDS bench
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
 endif()
@@ -1086,42 +1023,42 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "copy_data_test_demo"
   add_custom_target(copy_data_test_demo
-    COMMAND ${PYTHON_EXECUTABLE} "-B" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Add target "run_memorytests" for running memory tests
   add_custom_target(run_memorytests
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
     DEPENDS copy_data_test_demo demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/memory")
 
   # Add target "run_regressiontests" for running regression tests
   add_custom_target(run_regressiontests
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "test.py"
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
     DEPENDS copy_data_test_demo demo demos_source
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
   # Add target "run_regressiontests_cpp" for running C++ regression tests
   add_custom_target(run_regressiontests_cpp
-    COMMAND ${CMAKE_COMMAND} -E env DISABLE_PYTHON_TESTING=1 DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_PYTHON_TESTING=1 DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
     DEPENDS copy_data_test_demo demo demos_source
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
   # Add target "run_regressiontests_cpp_mpi" for running C++ regression tests with mpi
   add_custom_target(run_regressiontests_cpp_mpi
-    COMMAND ${CMAKE_COMMAND} -E env DISABLE_PYTHON_TESTING=1 DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_PYTHON_TESTING=1 DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
     DEPENDS copy_data_test_demo demo demos_source
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
   # Add target "run_regressiontests_py" for running Python regression tests
   add_custom_target(run_regressiontests_py
-    COMMAND ${CMAKE_COMMAND} -E env DISABLE_CPP_TESTING=1 DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_CPP_TESTING=1 DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
     DEPENDS copy_data_test_demo demo demos_source
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
   # Add target "run_regressiontests_py_mpi" for running Python regression tests with mpi
   add_custom_target(run_regressiontests_py_mpi
-    COMMAND ${CMAKE_COMMAND} -E env DISABLE_CPP_TESTING=1 DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "test.py"
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_CPP_TESTING=1 DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
     DEPENDS copy_data_test_demo demo demos_source
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
@@ -1150,7 +1087,7 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "run_styletest" for running documentation tests
   add_custom_target(run_styletest
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "test_coding_style.py"
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "test_coding_style.py"
     DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/codingstyle")
 

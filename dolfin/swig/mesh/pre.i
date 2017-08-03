@@ -34,6 +34,8 @@
 %ignore dolfin::LocalMeshData::Geometry;
 %ignore dolfin::LocalMeshData::Topology;
 
+%ignore dolfin::SubDomain::inside(const Eigen::Ref<Eigen::VectorXd>&, bool) const;
+
 //-----------------------------------------------------------------------------
 // SWIG does not seem to generate useful code for non-member operators
 //-----------------------------------------------------------------------------
@@ -349,9 +351,3 @@ FORWARD_DECLARE_MESHFUNCTIONS(std::size_t, Sizet)
 %ignore dolfin::MeshPartitioning::build_distributed_mesh(Mesh&, const std::vector<std::size_t>&);
 %ignore dolfin::MeshPartitioning::build_distributed_mesh(Mesh&, const LocalMeshData&);
 %ignore dolfin::MeshPartitioning::build_distributed_value_collection;
-
-//-----------------------------------------------------------------------------
-// Ignores for MultiMesh
-//-----------------------------------------------------------------------------
-%ignore dolfin::plot(const MultiMesh&);
-%ignore dolfin::plot(std::shared_ptr<const MultiMesh>);

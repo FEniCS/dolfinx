@@ -36,12 +36,12 @@ namespace dolfin
   ///
   /// This class is useful for testing.
 
-  class UnitTriangleMesh : public Mesh
+  class UnitTriangleMesh
   {
   public:
 
     /// Create mesh of unit triangle
-    UnitTriangleMesh();
+    static Mesh create();
 
   };
 

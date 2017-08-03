@@ -59,9 +59,8 @@ int main()
     std::cout << "# $> ./demo_mesh-quality | python"      << std::endl;
   }
 
-  // Show mesh
-  plot(mesh);
-  interactive();
+  // Write out mesh to XDMF.
+  XDMFFile("mesh.xdmf").write(mesh);
 
   return 0;
 }

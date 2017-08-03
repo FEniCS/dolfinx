@@ -75,7 +75,8 @@ def dolfin_error(code, filename):
 
     # Skip exceptions
     exceptions = ["log.h", "log.cpp", "Logger.h", "Logger.cpp",
-                  "pugixml.cpp", "meshconvert.py", "abaqus.py"]
+                  "pugixml.cpp", "meshconvert.py", "abaqus.py",
+                  "MPI.cpp"]
     if filename in exceptions:
         return True
 

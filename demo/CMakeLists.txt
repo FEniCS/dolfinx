@@ -3,9 +3,6 @@ project(dolfin-demos)
 # Require CMake 2.8
 cmake_minimum_required(VERSION 3.5)
 
-# FIXME: Temporary fix for whitespace error
-cmake_policy(SET CMP0004 OLD)
-
 # Find DOLFIN config file (not used here, but check that the demo will
 # be able to find it
 find_package(DOLFIN PATHS ${CMAKE_BINARY_DIR} REQUIRED)
@@ -80,7 +77,6 @@ if (DOLFIN_FOUND)
   #add_subdirectory(undocumented/overlapping-regions/cpp)
   add_subdirectory(undocumented/parallel-refinement/cpp)
   add_subdirectory(undocumented/parameters/cpp)
-  add_subdirectory(undocumented/plot/cpp)
   add_subdirectory(undocumented/poisson1D/cpp)
   add_subdirectory(undocumented/poisson1D-in-2D/cpp)
   add_subdirectory(undocumented/poisson-disc/cpp)

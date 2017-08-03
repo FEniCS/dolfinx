@@ -126,10 +126,8 @@ void
 TAOLinearBoundSolver::set_operators(std::shared_ptr<const GenericMatrix> A,
                                     std::shared_ptr<const GenericVector> b)
 {
-  std::shared_ptr<const PETScMatrix>
-    _matA = GenericTensor::down_cast<const PETScMatrix>(A);
-  std::shared_ptr<const PETScVector>
-    _b = GenericTensor::down_cast<const PETScVector>(b);
+  std::shared_ptr<const PETScMatrix> _matA = as_type<const PETScMatrix>(A);
+  std::shared_ptr<const PETScVector> _b = as_type<const PETScVector>(b);
   set_operators(_matA, _b);
 }
 //-----------------------------------------------------------------------------
@@ -147,11 +145,11 @@ std::size_t TAOLinearBoundSolver::solve(const GenericMatrix& A1,
                                         const GenericVector& xl,
                                         const GenericVector& xu)
 {
-  return solve(A1.down_cast<PETScMatrix>(),
-               x.down_cast<PETScVector>(),
-               b1.down_cast<PETScVector>(),
-               xl.down_cast<PETScVector>(),
-               xu.down_cast<PETScVector>());
+  return solve(as_type<const PETScMatrix>(A1),
+               as_type<PETScVector>(x),
+               as_type<const PETScVector>(b1),
+               as_type<const PETScVector>(xl),
+               as_type<const PETScVector>(xu));
 }
 //-----------------------------------------------------------------------------
 std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,

@@ -176,26 +176,6 @@ if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
   target_link_libraries(dolfin PUBLIC ${MPI_CXX_LIBRARIES})
 endif()
 
-# OpenMP
-if (DOLFIN_ENABLE_OPENMP AND OPENMP_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_OPENMP")
-  set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-
-  if (MINGW)
-    list(APPEND DOLFIN_LINK_FLAGS "${OpenMP_CXX_FLAGS}")
-  endif()
-endif()
-
-
-# VTK
-if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
-  include(${VTK_USE_FILE})
-
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_VTK")
-  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
-  target_link_libraries(dolfin PRIVATE ${VTK_LIBRARIES})
-endif()
-
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 

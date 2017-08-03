@@ -53,8 +53,6 @@ int main()
     mesh = std::make_shared<Mesh>(refine(*mesh, cell_markers));
 
     file << *mesh;
-    plot(*mesh);
-    interactive();
   }
 
   return 0;

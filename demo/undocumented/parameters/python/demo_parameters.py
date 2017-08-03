@@ -30,6 +30,8 @@ from dolfin import *
 
 #--- Demo of global DOLFIN parameters ---
 
+SubSystemsManager.init_mpi()
+
 # Set some global DOLFIN parameters
 parameters["linear_algebra_backend"] = "Eigen"
 

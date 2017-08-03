@@ -91,9 +91,8 @@ int main()
   // Extract subfunction
   Function u = (*w)[0];
 
-  // Plot solution
-  plot(u);
-  interactive();
+  // Write to file
+  XDMFFile("u.xdmf").write(u);
 
   return 0;
 }

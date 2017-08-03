@@ -27,8 +27,100 @@
 #include "SubSystemsManager.h"
 #include "MPI.h"
 
+//-----------------------------------------------------------------------------
+dolfin::MPI::Comm::Comm(MPI_Comm comm)
+{
 #ifdef HAS_MPI
+  // Make sure MPI has been initialised
+  SubSystemsManager::init_mpi();
 
+  // Duplicate communicator
+  if (comm != MPI_COMM_NULL)
+  {
+    int err = MPI_Comm_dup(comm, &_comm);
+    if (err != MPI_SUCCESS)
+      dolfin::error("Duplication of MPI communicator failed (MPI_Comm_dup");
+  }
+  else
+    _comm = MPI_COMM_NULL;
+#else
+  _comm = comm;
+#endif
+}
+//-----------------------------------------------------------------------------
+dolfin::MPI::Comm::~Comm()
+{
+  free();
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::Comm::free()
+{
+#ifdef HAS_MPI
+  if (_comm != MPI_COMM_NULL)
+  {
+    int err = MPI_Comm_free(&_comm);
+    if (err != MPI_SUCCESS)
+      std::cout << "Error when destroying communicator (MPI_Comm_free)." << std::endl;
+  }
+#endif
+}
+//-----------------------------------------------------------------------------
+unsigned int dolfin::MPI::Comm::rank() const
+{
+  return dolfin::MPI::rank(_comm);
+}
+//-----------------------------------------------------------------------------
+unsigned int dolfin::MPI::Comm::size() const
+{
+#ifdef HAS_MPI
+  int size;
+  MPI_Comm_size(_comm, &size);
+  return size;
+#else
+  return 1;
+#endif
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::Comm::barrier() const
+{
+#ifdef HAS_MPI
+  MPI_Barrier(_comm);
+#endif
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::Comm::reset(MPI_Comm comm)
+{
+#ifdef HAS_MPI
+  if (_comm != MPI_COMM_NULL)
+  {
+    int err = 0;
+    if (_comm != MPI_COMM_NULL)
+      err = MPI_Comm_free(&_comm);
+
+    if (err != MPI_SUCCESS)
+    {
+      // Raise error
+    }
+  }
+
+  // Duplicate communicator
+  int err = MPI_Comm_dup(comm, &_comm);
+  if (err != MPI_SUCCESS)
+  {
+    // Raise error
+  }
+#else
+  _comm = comm;
+#endif
+}
+//-----------------------------------------------------------------------------
+MPI_Comm dolfin::MPI::Comm::comm() const
+{
+  return _comm;
+}
+//-----------------------------------------------------------------------------
+
+#ifdef HAS_MPI
 //-----------------------------------------------------------------------------
 dolfin::MPIInfo::MPIInfo()
 {
@@ -51,7 +143,6 @@ MPI_Info& dolfin::MPIInfo::operator*()
 unsigned int dolfin::MPI::rank(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
-  SubSystemsManager::init_mpi();
   int rank;
   MPI_Comm_rank(comm, &rank);
   return rank;
@@ -272,7 +363,6 @@ MPI_Op dolfin::MPI::MPI_AVG()
   static MPI_User_function* fn = [](void*, void*, int*, MPI_Datatype*){ };
   if (op == MPI_OP_NULL)
   {
-    dolfin::SubSystemsManager::init_mpi();
     MPI_Op_create(fn, 1, &op);
     operation_map[op] = "MPI_AVG";
   }

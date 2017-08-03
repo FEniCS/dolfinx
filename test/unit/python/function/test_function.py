@@ -348,7 +348,7 @@ def test_extrapolation(V, pushpop_parameters):
     mesh1 = UnitSquareMesh(3, 3)
     V1 = FunctionSpace(mesh1, "CG", 1)
 
-    mesh2 = UnitTriangleMesh()
+    mesh2 = UnitTriangleMesh.create()
     V2 = FunctionSpace(mesh2, "CG", 1)
 
     parameters["allow_extrapolation"] = True

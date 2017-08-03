@@ -158,10 +158,7 @@ int main()
   File pfile_pvd("pressure.pvd");
   pfile_pvd << p;
 
-  // Plot solution
-  plot(u);
-  plot(p);
-  interactive();
+  return 0;
 }
 
 #else

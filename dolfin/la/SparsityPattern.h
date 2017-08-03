@@ -30,6 +30,7 @@
 #include <vector>
 
 #include <dolfin/common/ArrayView.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
 
@@ -55,16 +56,15 @@ namespace dolfin
     enum class Type {sorted, unsorted};
 
     /// Create empty sparsity pattern
-    SparsityPattern(std::size_t primary_dim);
+    SparsityPattern(MPI_Comm comm, std::size_t primary_dim);
 
     /// Create sparsity pattern for a generic tensor
-    SparsityPattern(MPI_Comm mpi_comm,
+    SparsityPattern(MPI_Comm comm,
                     std::vector<std::shared_ptr<const IndexMap>> index_maps,
                     std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
-    void init(MPI_Comm mpi_comm,
-              std::vector<std::shared_ptr<const IndexMap>> index_maps);
+    void init(std::vector<std::shared_ptr<const IndexMap>> index_maps);
 
     /// Insert a global entry - will be fixed by apply()
     void insert_global(dolfin::la_index i, dolfin::la_index j);
@@ -119,7 +119,7 @@ namespace dolfin
 
     /// Return MPI communicator
     MPI_Comm mpi_comm() const
-    { return _mpi_comm; }
+    { return _mpi_comm.comm(); }
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -143,7 +143,7 @@ namespace dolfin
     const std::size_t _primary_dim;
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
     // IndexMaps for each dimension
     std::vector<std::shared_ptr<const IndexMap>> _index_maps;

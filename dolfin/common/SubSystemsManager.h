@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Garth N. Wells
+// Copyright (C) 2008-2017 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2008-01-07
-// Last changed: 2011-01-23
 
 #ifndef __SUB_SYSTEMS_MANAGER_H
 #define __SUB_SYSTEMS_MANAGER_H
@@ -41,6 +38,9 @@ namespace dolfin
     /// SubSystemsManager is initialized according to the "Construct
     /// on First Use" idiom.
     static SubSystemsManager& singleton();
+
+    // Copy constructor
+    SubSystemsManager(const SubSystemsManager&) = delete;
 
     /// Initialise MPI
     static void init_mpi();
@@ -92,9 +92,6 @@ namespace dolfin
 
     // Constructor (private)
     SubSystemsManager();
-
-    // Copy constructor (private)
-    SubSystemsManager(const SubSystemsManager&);
 
     // Destructor
     ~SubSystemsManager();

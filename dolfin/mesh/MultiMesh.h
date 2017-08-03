@@ -25,7 +25,6 @@
 #include <vector>
 #include <map>
 
-#include <dolfin/plot/plot.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/geometry/Point.h>
 
@@ -289,9 +288,6 @@ namespace dolfin
 
   private:
 
-    // Friend (in plot.h)
-    friend void plot(std::shared_ptr<const MultiMesh>);
-
     // List of meshes
     std::vector<std::shared_ptr<const Mesh> > _meshes;
 
@@ -463,10 +459,6 @@ namespace dolfin
                      const Point& normal,
                      const std::size_t npts,
                      const std::size_t gdim) const;
-
-    // Plot multimesh
-    void _plot() const;
-
   };
 
 }

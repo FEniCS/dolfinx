@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016 Garth N. Wells, Anders Logg, Jan Blechta
+// Copyright (C) 2008-2017 Garth N. Wells, Anders Logg, Jan Blechta
 //
 // This file is part of DOLFIN.
 //
@@ -32,17 +32,16 @@
 #include <boost/algorithm/string/trim.hpp>
 
 #include <dolfin/common/constants.h>
-#include <dolfin/common/Timer.h>
-#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/log/log.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "SubSystemsManager.h"
 
 using namespace dolfin;
 
-// Return singleton instance. Do NOT make the singleton a global static
-// object; the method here ensures that the singleton is initialised
-// before use. (google "static initialization order fiasco" for full
-// explanation)
+// Return singleton instance. Do NOT make the singleton a global
+// static object; the method here ensures that the singleton is
+// initialised before use. (google "static initialization order
+// fiasco" for full explanation)
 
 SubSystemsManager& SubSystemsManager::singleton()
 {
@@ -54,13 +53,6 @@ SubSystemsManager::SubSystemsManager() : petsc_err_msg(""),
   petsc_initialized(false), control_mpi(false)
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-SubSystemsManager::SubSystemsManager(const SubSystemsManager& sub_sys_manager)
-{
-  dolfin_error("SubSystemsManager.cpp",
-               "create subsystems manager",
-               "Copy constructor should not be used");
 }
 //-----------------------------------------------------------------------------
 SubSystemsManager::~SubSystemsManager()
@@ -76,7 +68,8 @@ void SubSystemsManager::init_mpi()
   if (mpi_initialized)
     return;
 
-  // Init MPI with highest level of thread support and take responsibility
+  // Init MPI with highest level of thread support and take
+  // responsibility
   std::string s("");
   char* c = const_cast<char *>(s.c_str());
   SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE);
@@ -89,8 +82,6 @@ void SubSystemsManager::init_mpi()
 int SubSystemsManager::init_mpi(int argc, char* argv[],
                                 int required_thread_level)
 {
-  Timer timer("Init MPI");
-
   #ifdef HAS_MPI
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
@@ -155,8 +146,6 @@ void SubSystemsManager::init_petsc()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc(int argc, char* argv[])
 {
-  Timer timer("Init PETSc");
-
   #ifdef HAS_PETSC
   if (singleton().petsc_initialized)
     return;
@@ -182,11 +171,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 
   // Pass command line arguments to PETSc (will overwrite any
   // default above)
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-  PetscOptionsInsert(&argc, &argv, NULL);
-  #else
   PetscOptionsInsert(NULL, &argc, &argv, NULL);
-  #endif
 
   #ifdef HAS_SLEPC
   // Initialize SLEPc

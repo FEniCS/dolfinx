@@ -97,8 +97,9 @@ Implementation
 
 This demo is implemented in the :download:`demo_biharmonic.py` file.
 
-First, the :py:mod:`dolfin` module is imported::
+First, the necessary modules are imported::
 
+    import matplotlib.pyplot as plt
     from dolfin import *
 
 Next, some parameters for the form compiler are set::
@@ -190,4 +191,5 @@ the screen. ::
     file << u
 
     # Plot solution
-    plot(u, interactive=True)
+    plot(u)
+    plt.show()

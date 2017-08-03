@@ -235,7 +235,6 @@ void PointSource::apply(GenericVector& b)
 
   // Variables for adding local information to vector
   double basis_sum;
-  ArrayView<const dolfin::la_index> dofs;
 
   for (auto & s : _sources)
   {
@@ -266,7 +265,7 @@ void PointSource::apply(GenericVector& b)
 
     // Compute local-to-global mapping
     dolfin_assert(_function_space0->dofmap());
-    dofs = _function_space0->dofmap()->cell_dofs(cell.index());
+    auto dofs = _function_space0->dofmap()->cell_dofs(cell.index());
 
     // Add values to vector
     b.add_local(values.data(), dofs_per_cell, dofs.data());
@@ -338,10 +337,6 @@ void PointSource::apply(GenericMatrix& A)
   boost::multi_array<double, 2>  values(boost::extents[dofs_per_cell0*num_sub_spaces][dofs_per_cell1*num_sub_spaces]);
   // Values vector for one subspace.
   boost::multi_array<double, 2>  values_sub(boost::extents[dofs_per_cell0][dofs_per_cell1]);
-
-  // Variables for adding local data to matrix
-  ArrayView<const dolfin::la_index> dofs0;
-  ArrayView<const dolfin::la_index> dofs1;
 
   // Runs some checks on vector or mixed function spaces
   if (num_sub_spaces > 1)
@@ -431,8 +426,8 @@ void PointSource::apply(GenericMatrix& A)
     }
 
     // Compute local-to-global mapping
-    dofs0 = V0->dofmap()->cell_dofs(cell.index());
-    dofs1 = V1->dofmap()->cell_dofs(cell.index());
+    auto dofs0 = V0->dofmap()->cell_dofs(cell.index());
+    auto dofs1 = V1->dofmap()->cell_dofs(cell.index());
 
     // Add values to matrix
     A.add_local(values.data(),

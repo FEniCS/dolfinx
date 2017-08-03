@@ -33,29 +33,25 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern(std::size_t primary_dim)
-  : _primary_dim(primary_dim), _mpi_comm(MPI_COMM_NULL)
+SparsityPattern::SparsityPattern(MPI_Comm comm, std::size_t primary_dim)
+  : _primary_dim(primary_dim), _mpi_comm(comm)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern(
-  const MPI_Comm mpi_comm,
+SparsityPattern::SparsityPattern(MPI_Comm comm,
   const std::vector<std::shared_ptr<const IndexMap>> index_maps,
   std::size_t primary_dim)
-  : _primary_dim(primary_dim), _mpi_comm(MPI_COMM_NULL)
+  : _primary_dim(primary_dim), _mpi_comm(comm)
 {
-  init(mpi_comm, index_maps);
+  init(index_maps);
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::init(
-  const MPI_Comm mpi_comm,
-  const std::vector<std::shared_ptr<const IndexMap>> index_maps)
+void SparsityPattern::init(const std::vector<std::shared_ptr<const IndexMap>> index_maps)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(index_maps.size() == 2);
 
-  _mpi_comm = mpi_comm;
   _index_maps = index_maps;
 
   const std::size_t _primary_dim = primary_dim();
@@ -90,7 +86,7 @@ void SparsityPattern::init(
   // range)
   if (global_size1 > local_size1)
   {
-    dolfin_assert(MPI::size(_mpi_comm) > 1);
+    dolfin_assert(_mpi_comm.size() > 1);
     off_diagonal.resize(local_size0);
   }
   else
@@ -115,7 +111,7 @@ void SparsityPattern::insert_global(dolfin::la_index i, dolfin::la_index j)
   }
 
   // Check local range
-  if (MPI::size(_mpi_comm) == 1)
+  if (_mpi_comm.size() == 1)
   {
     // Sequential mode, do simple insertion if not full row
     if (full_rows.find(i_index) == full_rows.end())
@@ -196,7 +192,7 @@ void SparsityPattern::insert_global(
   const auto full_rows_end = full_rows.end();
 
   // Check local range
-  if (MPI::size(_mpi_comm) == 1)
+  if (_mpi_comm.size() == 1)
   {
     // Sequential mode, do simple insertion if not full row
     for (const auto &i_index : map_i)
@@ -280,7 +276,7 @@ void SparsityPattern::insert_local(
   const auto full_rows_end = full_rows.end();
 
   // Check local range
-  if (MPI::size(_mpi_comm) == 1)
+  if (_mpi_comm.size() == 1)
   {
     // Sequential mode, do simple insertion if not full row
     for (const auto &i_index : map_i)
@@ -464,15 +460,15 @@ void SparsityPattern::apply()
     = _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
   const std::size_t offset0 = local_range0.first;
 
-  const std::size_t num_processes = MPI::size(_mpi_comm);
-  const std::size_t proc_number = MPI::rank(_mpi_comm);
+  const std::size_t num_processes = _mpi_comm.size();
+  const std::size_t proc_number = _mpi_comm.rank();
 
   // Print some useful information
   if (get_log_level() <= DBG)
     info_statistics();
 
   // Communicate non-local blocks if any
-  if (MPI::size(_mpi_comm) > 1)
+  if (_mpi_comm.size() > 1)
   {
     // Figure out correct process for each non-local entry
     dolfin_assert(non_local.size() % 2 == 0);
@@ -522,7 +518,7 @@ void SparsityPattern::apply()
 
     // Communicate non-local entries to other processes
     std::vector<std::size_t> non_local_received;
-    MPI::all_to_all(_mpi_comm, non_local_send, non_local_received);
+    MPI::all_to_all(_mpi_comm.comm(), non_local_send, non_local_received);
 
     // Insert non-local entries received from other processes
     dolfin_assert(non_local_received.size() % 2 == 0);

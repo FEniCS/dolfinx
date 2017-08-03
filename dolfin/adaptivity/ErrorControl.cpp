@@ -233,8 +233,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   // Convert DG_0 vector to mesh function over cells
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const ArrayView<const dolfin::la_index> dofs
-      = dofmap.cell_dofs(cell->index());
+    auto dofs = dofmap.cell_dofs(cell->index());
     dolfin_assert(dofs.size() == 1);
     indicators[cell->index()] = x[dofs[0]];
   }
@@ -325,12 +324,11 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     x = A.partialPivLu().solve(b);
 
     // Get local-to-global dof map for cell
-    const ArrayView<const dolfin::la_index> dofs
-      = dofmap.cell_dofs(cell->index());
+    auto dofs = dofmap.cell_dofs(cell->index());
 
     // Plug local solution into global vector
     dolfin_assert(R_T.vector());
-    R_T.vector()->set(x.data(), N, &dofs[0]);
+    R_T.vector()->set(x.data(), N, dofs.data());
   }
   end();
 }
@@ -453,12 +451,11 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       x = A.partialPivLu().solve(b);
 
       // Get local-to-global dof map for cell
-      const ArrayView<const dolfin::la_index> dofs
-        = dofmap.cell_dofs(cell->index());
+      auto dofs = dofmap.cell_dofs(cell->index());
 
       // Plug local solution into global vector
       dolfin_assert(R_dT[local_facet].vector());
-      R_dT[local_facet].vector()->set(x.data(), N, &dofs[0]);
+      R_dT[local_facet].vector()->set(x.data(), N, dofs.data());
     }
   }
   end();

@@ -14,10 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Magnus Vikstrom 2007
-// Modified by Nuno Lopes 2008
-// Modified by Ola Skavhaug 2009
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -155,12 +151,16 @@ namespace dolfin
     /// Read from file
     template<typename T> void operator>>(T& t)
     {
-      file->_read();
-      *file >> t;
+      _file->_read();
+      _file->read(t);
     }
 
-    /// Write Function to file
-    //void operator<<(const Function& u);
+    /// Read from file
+    template<typename T> void read(T& t)
+    {
+      _file->_read();
+      _file->read(t);
+    }
 
     /// Write Mesh to file with time
     ///
@@ -224,10 +224,27 @@ namespace dolfin
     void operator<<(const std::pair<const Function*, double> u);
 
     /// Write object to file
-    template<typename T> void operator<<(const T& t)
+    template<typename X>
+      void operator<<(const X& x)
     {
-      file->_write(MPI::rank(_mpi_comm));
-      *file << t;
+      _file->_write(_mpi_comm.rank());
+      _file->write(x);
+    }
+
+    /// Write object to file
+    template<typename X>
+      void write(const X& x)
+    {
+      _file->_write(_mpi_comm.rank());
+      _file->write(x);
+    }
+
+    /// Write object to file with time
+    template<typename X>
+      void write(const X& x, double time)
+    {
+      _file->_write(_mpi_comm.rank());
+      _file->write(x, time);
     }
 
     /// Check if file exists
@@ -259,10 +276,10 @@ namespace dolfin
 
     // FIXME: Remove when GenericFile::write is cleaned up
     // MPI communicator
-    const MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
     // Pointer to implementation (envelope-letter design)
-    std::unique_ptr<GenericFile> file;
+    std::unique_ptr<GenericFile> _file;
 
   };
 

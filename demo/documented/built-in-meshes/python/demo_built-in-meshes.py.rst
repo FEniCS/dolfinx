@@ -29,6 +29,7 @@ Implementation
 First, the :py:mod:`dolfin` module is imported::
 
    from dolfin import *
+   import matplotlib.pyplot as plt
 
 The first mesh we make is a mesh over the unit interval
 :math:`(0,1)`. :py:class:`UnitIntervalMesh
@@ -38,6 +39,7 @@ therefore :math:`(n_x+1)`. ::
 
    mesh = UnitIntervalMesh(10)
    print("Plotting a UnitIntervalMesh")
+   plt.figure()
    plot(mesh, title="Unit interval")
 
 This produces a mesh looking as follows:
@@ -57,6 +59,7 @@ can also omit this argument and thereby use the default direction
 
    mesh = UnitSquareMesh(10, 10)
    print("Plotting a UnitSquareMesh")
+   plt.figure()
    plot(mesh, title="Unit square")
 
 .. image:: unitsquaremesh.png
@@ -76,6 +79,7 @@ has diagonals to both left and right::
 
    mesh = UnitSquareMesh(10, 10, "right/left")
    print("Plotting a UnitSquareMesh")
+   plt.figure()
    plot(mesh, title="Unit square (right/left)")
 
 .. image:: unitsquaremesh_left.png
@@ -99,10 +103,12 @@ diagonals to both left and right. ::
 
    mesh = RectangleMesh(Point(0.0, 0.0), Point(10.0, 4.0), 10, 10)
    print("Plotting a RectangleMesh")
+   plt.figure()
    plot(mesh, title="Rectangle")
 
    mesh = RectangleMesh(Point(-3.0, 2.0), Point(7.0, 6.0), 10, 10, "right/left")
    print("Plotting a RectangleMesh")
+   plt.figure()
    plot(mesh, title="Rectangle (right/left)")
 
 .. image:: rectanglemesh.png
@@ -120,6 +126,7 @@ arguments. ::
 
    mesh = UnitCubeMesh(10, 10, 10)
    print("Plotting a UnitCubeMesh")
+   plt.figure()
    plot(mesh, title="Unit cube")
 
 .. image:: unitcubemesh.png
@@ -137,13 +144,9 @@ details, refer to the mshr documentation. ::
 
    mesh = BoxMesh(Point(0.0, 0.0, 0.0), Point(10.0, 4.0, 2.0), 10, 10, 10)
    print("Plotting a BoxMesh")
+   plt.figure()
    plot(mesh, title="Box")
+   plt.show()
 
 .. image:: boxmesh.png
    :scale: 75 %
-
-By calling :py:meth:`interactive
-<dolfin.cpp.io.VTKPlotter.interactive>` we are allowed to resize, move
-and rotate the plots. ::
-
-   interactive()

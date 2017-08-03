@@ -57,11 +57,9 @@ int main()
   Function z2(P2);
   z2.extrapolate(z1);
 
-  // Plot approximations
-  plot(z1, "z1");
-  plot(z2, "z2");
-  interactive();
-
+  // Output extrapolations
+  XDMFFile("z1.xdmf").write(z1);
+  XDMFFile("z2.xdmf").write(z2);
 
   return 0;
 }

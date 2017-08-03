@@ -19,11 +19,14 @@ coordinates."""
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Create mesh
 comm = mpi_comm_world()
-mesh = UnitDiscMesh(comm, 20, 2, 2)
-plot(mesh, interactive=True)
+mesh = UnitDiscMesh.create(comm, 20, 2, 2)
+plt.figure()
+plot(mesh)
 
 # Fetch coordinate function
 C = FunctionSpace(mesh, mesh.ufl_coordinate_element())
@@ -43,10 +46,15 @@ c_vec += displacement.vector()
 
 # Set coordinates
 set_coordinates(mesh.geometry(), c)
-plot(mesh, interactive=True)
+plt.figure()
+plot(mesh)
 
 # We can create (cubic) mesh from function
 C3 = VectorFunctionSpace(mesh, "Lagrange", 4)
 c3 = interpolate(c, C3)
 mesh3 = create_mesh(c3)
-plot(mesh3, interactive=True)
+plt.figure()
+plot(mesh3)
+
+# Display plots
+plt.show()
