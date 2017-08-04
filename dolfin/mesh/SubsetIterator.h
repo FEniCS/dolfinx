@@ -23,11 +23,9 @@
 #ifndef __SUBSET_ITERATOR_H
 #define __SUBSET_ITERATOR_H
 
+#include <memory>
 #include <vector>
 
-#include<memory>
-
-#include <dolfin/log/log.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
@@ -66,10 +64,9 @@ namespace dolfin
     }
 
     /// Copy Constructor
-    SubsetIterator(const SubsetIterator& subset_iter)
+  SubsetIterator(const SubsetIterator& subset_iter)
     : _entity(subset_iter._entity), _subset(subset_iter._subset),
-    subset(*_subset), it(subset_iter.it)
-    {}
+      subset(*_subset), it(subset_iter.it) {}
 
     /// Destructor
     virtual ~SubsetIterator() {}
@@ -81,12 +78,19 @@ namespace dolfin
       return *this;
     }
 
+    /// Step back to previous mesh entity (prefix decrement)
+    SubsetIterator& operator--()
+    {
+      --it;
+      return *this;
+    }
+
     /// Comparison operator
     bool operator==(const SubsetIterator& sub_iter) const
     {
       return ((const_cast<SubsetIterator *>(this))->operator*()
-            == (const_cast<SubsetIterator *>(&sub_iter))->operator*()
-            && it == sub_iter.it && &subset == &sub_iter.subset);
+              == (const_cast<SubsetIterator *>(&sub_iter))->operator*()
+              && it == sub_iter.it && &subset == &sub_iter.subset);
     }
 
     /// Comparison operator
@@ -115,7 +119,8 @@ namespace dolfin
 
   private:
 
-    /// Set pos to end position. To create a kind of mesh.end() iterator.
+    // Set pos to end position. To create a kind of mesh.end()
+    // iterator.
     void set_end()
     { it = subset.end(); }
 
@@ -123,10 +128,10 @@ namespace dolfin
     MeshEntity _entity;
 
     // Subset in shared data form
-    std::shared_ptr< std::vector<std::size_t> > _subset;
+    std::shared_ptr<std::vector<std::size_t>> _subset;
 
     //Subset reference for convenience / speed
-    std::vector<std::size_t> & subset;
+    std::vector<std::size_t>& subset;
 
     // Iterator
     std::vector<std::size_t>::iterator it;
