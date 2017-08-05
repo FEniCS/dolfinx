@@ -86,6 +86,10 @@ namespace dolfin
     std::vector<double>
     triangulate_intersection(const Cell& c0, const Cell& c1) const;
 
+    /// Compute triangulation of intersection with given entity
+    std::vector<double>
+    triangulate_intersection(const Cell& cell, const MeshEntity& entity) const;
+
     /// Return description of cell type
     std::string description(bool plural) const;
 
