@@ -14,16 +14,9 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Joachim B Haga 2012
-//
-// First added:  2009-05-08
-// Last changed: 2012-09-11
 
 #ifndef __PARAMETER_H
 #define __PARAMETER_H
-
-#include <iostream>
 
 #include <array>
 #include <set>

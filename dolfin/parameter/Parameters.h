@@ -264,11 +264,11 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    /// Return reference to paramater. Throws an exception of
-    /// parameters is not present (const versionn)
+    /// Return reference to parameter. Throws an exception of
+    /// parameters is not present (const version)
     const Parameter& find_parameter(std::string key) const;
 
-    /// Return reference to paramater. Throws an exception of
+    /// Return reference to parameter. Throws an exception of
     /// parameters is not present.
     Parameter& find_parameter(std::string key);
 
