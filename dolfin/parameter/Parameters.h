@@ -22,6 +22,7 @@
 #include <set>
 #include <vector>
 #include <boost/optional.hpp>
+#include <boost/variant.hpp>
 #include "Parameter.h"
 #include <dolfin/log/log.h>
 
@@ -296,10 +297,7 @@ namespace dolfin
     std::string _key;
 
     // Map from key to parameter
-    std::map<std::string, Parameter> _parameters;
-
-    // Map from key to parameter sets
-    std::map<std::string, Parameters> _parameter_sets;
+    std::map<std::string, boost::variant<Parameter, Parameters>> _parameters;
 
   };
 

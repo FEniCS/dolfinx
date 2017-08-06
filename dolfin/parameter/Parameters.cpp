@@ -63,7 +63,6 @@ void Parameters::clear()
 {
   // Delete parameters and parameter sets
   _parameters.clear();
-  _parameter_sets.clear();
 
   // Reset key
   _key = "";
@@ -76,7 +75,7 @@ void Parameters::add_unset(std::string key, Parameter::Type type)
   {
     dolfin_error("Parameters.cpp",
                  "add parameter",
-                 "Parameter \"%s.%s\" already defined",
+                 "Parameter(s) \"%s.%s\" already defined",
                  this->name().c_str(), key.c_str());
   }
 }
@@ -88,7 +87,7 @@ void Parameters::add(std::string key, int value)
   {
     dolfin_error("Parameters.cpp",
                  "add parameter",
-                 "Parameter \"%s.%s\" already defined",
+                 "Parameter(s) \"%s.%s\" already defined",
                  this->name().c_str(), key.c_str());
   }
 }
@@ -101,11 +100,11 @@ void Parameters::add(std::string key, int value,
   {
     dolfin_error("Parameters.cpp",
                  "add parameter",
-                 "Parameter \"%s.%s\" already defined",
+                 "Parameter(s) \"%s.%s\" already defined",
                  this->name().c_str(), key.c_str());
   }
 
-  e.first->second.set_range(min_value, max_value);
+  boost::get<Parameter>(e.first->second).set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, double value)
@@ -115,7 +114,7 @@ void Parameters::add(std::string key, double value)
   {
     dolfin_error("Parameters.cpp",
                  "add parameter",
-                 "Parameter \"%s.%s\" already defined",
+                 "Parameter(s) \"%s.%s\" already defined",
                  this->name().c_str(), key.c_str());
   }
 }
@@ -128,11 +127,11 @@ void Parameters::add(std::string key, double value,
   {
     dolfin_error("Parameters.cpp",
                  "add parameter",
-                 "Parameter \"%s.%s\" already defined",
+                 "Parameter(s) \"%s.%s\" already defined",
                  this->name().c_str(), key.c_str());
   }
 
-  e.first->second.set_range(min_value, max_value);
+  boost::get<Parameter>(e.first->second).set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, std::string value)
@@ -142,7 +141,7 @@ void Parameters::add(std::string key, std::string value)
   {
     dolfin_error("Parameters.cpp",
                  "add parameter",
-                 "Parameter \"%s.%s\" already defined",
+                 "Parameter(s) \"%s.%s\" already defined",
                  this->name().c_str(), key.c_str());
   }
 }
@@ -174,7 +173,7 @@ void Parameters::add(std::string key, std::string value,
                  this->name().c_str(), key.c_str());
   }
 
-  e.first->second.set_range(range);
+  boost::get<Parameter>(e.first->second).set_range(range);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, const char* value,
@@ -192,7 +191,7 @@ void Parameters::add(std::string key, const char* value,
                  this->name().c_str(), key.c_str());
   }
 
-  e.first->second.set_range(range);
+  boost::get<Parameter>(e.first->second).set_range(range);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, bool value)
@@ -209,7 +208,7 @@ void Parameters::add(std::string key, bool value)
 //-----------------------------------------------------------------------------
 void Parameters::add(const Parameters& parameters)
 {
-  auto e =_parameter_sets.insert({parameters.name(), Parameters(parameters)});
+  auto e =_parameters.insert({parameters.name(), Parameters(parameters)});
   if (!e.second)
   {
     dolfin_error("Parameters.cpp",
@@ -226,7 +225,6 @@ void Parameters::remove(std::string key)
 {
   std::size_t num_removed = 0;
   num_removed += _parameters.erase(key);
-  num_removed += _parameter_sets.erase(key);
 
   if (num_removed == 0)
   {
@@ -250,35 +248,44 @@ void Parameters::update(const Parameters& parameters)
   // Update the parameters
   for (auto it = parameters._parameters.begin(); it != parameters._parameters.end(); ++it)
   {
-    // Get parameters
-    const Parameter& other = it->second;
-    auto this_it = _parameters.find(other.key());
-
-    if (this_it == _parameters.end())
+    // If have a parameter set
+    if (it->second.which() == 1)
     {
-      // This set does not have a parameter that is present in 'other'
-      warning("Ignoring unknown parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
-              other.key().c_str(), parameters.name().c_str(), name().c_str());
+      const Parameters& other_p_set = boost::get<Parameters>(it->second);
+      (*this)(it->first).update(other_p_set);
     }
     else
     {
-      // Skip unset parameters
-      if (!other.is_set())
+      // Get 'other' parameter and find 'this' parameter (if at all)
+      const Parameter& other_p = boost::get<Parameter>(it->second);
+      auto this_it = _parameters.find(other_p.key());
+
+      // Check type
+
+      if (this_it == _parameters.end())
       {
-        //warning("Ignoring unset parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
-        //        other.key().c_str(), parameters.name().c_str(), name().c_str());
+        // This set does not have a parameter that is present in 'other'
+        warning("Ignoring unknown parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
+                other_p.key().c_str(), parameters.name().c_str(), name().c_str());
       }
       else
       {
-        // Update value
-        this_it->second = other;
+        // Skip unset parameters
+        if (!other_p.is_set())
+        {
+          //warning("Ignoring unset parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
+          //        other.key().c_str(), parameters.name().c_str(), name().c_str());
+        }
+        else
+        {
+          // Update value
+          Parameter& self_p = boost::get<Parameter>(this_it->second);
+          self_p = other_p;
+        }
       }
     }
   }
 
-  // Update nested parameter sets
-  for (auto it = parameters._parameter_sets.begin(); it != parameters._parameter_sets.end(); ++it)
-    (*this)(it->first).update(it->second);
 }
 //-----------------------------------------------------------------------------
 Parameter& Parameters::operator[] (std::string key)
@@ -291,8 +298,12 @@ Parameter& Parameters::operator[] (std::string key)
                  "Parameter \"%s.%s\" not defined",
                  this->name().c_str(), key.c_str());
   }
+  else if (p->second.which() != 0)
+  {
+    // FIXME
+  }
 
-  return p->second;
+  return boost::get<Parameter>(p->second);
 }
 //-----------------------------------------------------------------------------
 const Parameter& Parameters::operator[] (std::string key) const
@@ -305,36 +316,49 @@ const Parameter& Parameters::operator[] (std::string key) const
                  "Parameter \"%s.%s\" not defined",
                  this->name().c_str(), key.c_str());
   }
+  else if (p->second.which() != 0)
+  {
+    // FIXME
+  }
 
-  return p->second;
+  return boost::get<Parameter>(p->second);
 }
 //-----------------------------------------------------------------------------
 Parameters& Parameters::operator() (std::string key)
 {
-  auto p = _parameter_sets.find(key);
-  if (p == _parameter_sets.end())
+  auto p = _parameters.find(key);
+  if (p == _parameters.end())
   {
     dolfin_error("Parameters.cpp",
                  "access parameter set",
                  "Parameter set \"%s.%s\" not defined",
                  this->name().c_str(), key.c_str());
   }
+  else if (p->second.which() != 1)
+  {
+    // FIXME
+  }
 
-  return p->second;
+  return boost::get<Parameters>(p->second);
 }
 //-----------------------------------------------------------------------------
 const Parameters& Parameters::operator() (std::string key) const
 {
-  auto p = _parameter_sets.find(key);
-  if (p == _parameter_sets.end())
+  auto p = _parameters.find(key);
+  if (p == _parameters.end())
   {
     dolfin_error("Parameters.cpp",
                  "access parameter set",
                  "Parameter set \"%s.%s\" not defined",
                  this->name().c_str(), key.c_str());
   }
+  else if (p->second.which() != 1)
+  {
+    // FIXME
+  }
 
-  return p->second;
+
+  return boost::get<Parameters>(p->second);
 }
 //-----------------------------------------------------------------------------
 const Parameters& Parameters::operator= (const Parameters& parameters)
@@ -347,7 +371,6 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
 
   // Copy parameters and parameter sets
   _parameters = parameters._parameters;
-  _parameter_sets = parameters._parameter_sets;
 
   return *this;
 }
@@ -359,27 +382,33 @@ bool Parameters::has_key(std::string key) const
 //-----------------------------------------------------------------------------
 bool Parameters::has_parameter(std::string key) const
 {
-  return _parameters.find(key) != _parameters.end();
+  auto p = _parameters.find(key);
+  return (p != _parameters.end()) and (p->second.which() == 0);
 }
 //-----------------------------------------------------------------------------
 bool Parameters::has_parameter_set(std::string key) const
 {
-  return _parameter_sets.find(key) != _parameter_sets.end();
+  auto p = _parameters.find(key);
+  return (p != _parameters.end()) and (p->second.which() == 1);
 }
 //-----------------------------------------------------------------------------
 void Parameters::get_parameter_keys(std::vector<std::string>& keys) const
 {
-  keys.reserve(_parameters.size());
   for (auto it = _parameters.begin(); it != _parameters.end(); ++it)
-    keys.push_back(it->first);
+  {
+    if (it->second.which() == 0)
+      keys.push_back(it->first);
+  }
 }
 //-----------------------------------------------------------------------------
 void Parameters::get_parameter_set_keys(std::vector<std::string>& keys) const
 {
-  keys.reserve(_parameter_sets.size());
-  for (auto it = _parameter_sets.begin(); it != _parameter_sets.end(); ++it)
-    keys.push_back(it->first);
- }
+  for (auto it = _parameters.begin(); it != _parameters.end(); ++it)
+  {
+    if (it->second.which() == 1)
+      keys.push_back(it->first);
+  }
+}
 //-----------------------------------------------------------------------------
 std::string Parameters::str(bool verbose) const
 {
@@ -387,7 +416,7 @@ std::string Parameters::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    if (_parameters.empty() and _parameter_sets.empty())
+    if (_parameters.empty())
     {
       s << name() << indent("(empty)");
       return s.str();
@@ -396,23 +425,28 @@ std::string Parameters::str(bool verbose) const
     Table t(_key);
     for (auto it = _parameters.begin(); it != _parameters.end(); ++it)
     {
-      const Parameter& p = it->second;
-      t(p.key(), "type") = p.type_str();
-      t(p.key(), "value") = (p.is_set() ? p.value_str() : "<unset>");
-      t(p.key(), "range") = p.range_str();
-      t(p.key(), "access") = p.access_count();
-      t(p.key(), "change") = p.change_count();
+      if (it->second.which() == 0)
+      {
+        const Parameter& p = boost::get<Parameter>(it->second);
+        t(p.key(), "type") = p.type_str();
+        t(p.key(), "value") = (p.is_set() ? p.value_str() : "<unset>");
+        t(p.key(), "range") = p.range_str();
+        t(p.key(), "access") = p.access_count();
+        t(p.key(), "change") = p.change_count();
+      }
     }
     s << indent(t.str(true));
 
-    for (auto it = _parameter_sets.begin(); it != _parameter_sets.end(); ++it)
-      s << "\n\n" << indent(it->second.str(verbose));
+    for (auto it = _parameters.begin(); it != _parameters.end(); ++it)
+    {
+      if (it->second.which() == 1)
+        s << "\n\n" << indent(boost::get<Parameters>(it->second).str(verbose));
+    }
   }
   else
   {
     s << "<Parameter set \"" << name() << "\" containing "
-      << _parameters.size() << " parameter(s) and "
-      << _parameter_sets.size() << " nested parameter set(s)>";
+      << _parameters.size() << " parameter(s) and parameter set(s)>";
   }
 
   return s.str();
@@ -479,34 +513,41 @@ void Parameters::add_parameter_set_to_po(po::options_description& desc,
 {
   for (auto it = parameters._parameters.begin(); it != parameters._parameters.end(); ++it)
   {
-    const Parameter& p = it->second;
-    std::string param_name(base_name + p.key());
-    if (p.type_str() == "int")
+    if (it->second.which() == 0)
     {
-      desc.add_options()(param_name.c_str(), po::value<int>(),
+      const Parameter& p = boost::get<Parameter>(it->second);
+      std::string param_name(base_name + p.key());
+      if (p.type_str() == "int")
+      {
+        desc.add_options()(param_name.c_str(), po::value<int>(),
+                           p.description().c_str());
+      }
+      else if (p.type_str() == "bool")
+      {
+        desc.add_options()(param_name.c_str(), po::value<bool>(),
+                           p.description().c_str());
+      }
+      else if (p.type_str() == "double")
+      {
+        desc.add_options()(param_name.c_str(), po::value<double>(),
+                           p.description().c_str());
+      }
+      else if (p.type_str() == "string")
+      {
+        desc.add_options()(param_name.c_str(), po::value<std::string>(),
                          p.description().c_str());
-    }
-    else if (p.type_str() == "bool")
-    {
-      desc.add_options()(param_name.c_str(), po::value<bool>(),
-                         p.description().c_str());
-    }
-    else if (p.type_str() == "double")
-    {
-      desc.add_options()(param_name.c_str(), po::value<double>(),
-                         p.description().c_str());
-    }
-    else if (p.type_str() == "string")
-    {
-      desc.add_options()(param_name.c_str(), po::value<std::string>(),
-                         p.description().c_str());
+      }
     }
   }
 
-  for (auto it = parameters._parameter_sets.begin();
-       it != parameters._parameter_sets.end(); ++it)
+  for (auto it = parameters._parameters.begin();
+       it != parameters._parameters.end(); ++it)
   {
-    add_parameter_set_to_po(desc, it->second, base_name + it->first + ".");
+    if (it->second.which() == 1)
+    {
+      const Parameters& p_set = boost::get<Parameters>(it->second);
+      add_parameter_set_to_po(desc, p_set, base_name + it->first + ".");
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -516,38 +557,45 @@ void Parameters::read_vm(po::variables_map& vm, Parameters& parameters,
   // Read values from po::variables_map
   for (auto it = parameters._parameters.begin(); it != parameters._parameters.end(); ++it)
   {
-    Parameter& p = it->second;
-    std::string param_name(base_name + p.key());
-    if (p.type_str() == "int")
+    if (it->second.which() == 0)
     {
-      const po::variable_value& v = vm[param_name];
-      if (!v.empty())
-        p = v.as<int>();
-    }
-    else if (p.type_str() == "bool")
-    {
-      const po::variable_value& v = vm[param_name];
-      if (!v.empty())
-        p = v.as<bool>();
-    }
-    else if (p.type_str() == "double")
-    {
-      const po::variable_value& v = vm[param_name];
-      if (!v.empty())
-        p = v.as<double>();
-    }
-    else if (p.type_str() == "string")
-    {
-      const po::variable_value& v = vm[param_name];
-      if (!v.empty())
-        p = v.as<std::string>();
+      Parameter& p = boost::get<Parameter>(it->second);
+      std::string param_name(base_name + p.key());
+      if (p.type_str() == "int")
+      {
+        const po::variable_value& v = vm[param_name];
+        if (!v.empty())
+          p = v.as<int>();
+      }
+      else if (p.type_str() == "bool")
+      {
+        const po::variable_value& v = vm[param_name];
+        if (!v.empty())
+          p = v.as<bool>();
+      }
+      else if (p.type_str() == "double")
+      {
+        const po::variable_value& v = vm[param_name];
+        if (!v.empty())
+          p = v.as<double>();
+      }
+      else if (p.type_str() == "string")
+      {
+        const po::variable_value& v = vm[param_name];
+        if (!v.empty())
+          p = v.as<std::string>();
+      }
     }
   }
 
-  for (auto it = parameters._parameter_sets.begin();
-       it != parameters._parameter_sets.end(); ++it)
+  for (auto it = parameters._parameters.begin();
+       it != parameters._parameters.end(); ++it)
   {
-    read_vm(vm, it->second, base_name + it->first + ".");
+    if (it->second.which() == 1)
+    {
+      Parameters& p_set = boost::get<Parameters>(it->second);
+      read_vm(vm, p_set, base_name + it->first + ".");
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -556,17 +604,21 @@ boost::optional<Parameter> Parameters::find_parameter(std::string key) const
   auto p = _parameters.find(key);
   if (p == _parameters.end())
     return boost::none;
+  else if (p->second.which() != 0)
+    return boost::none;
   else
-    return p->second;
+    return boost::get<Parameter>(p->second);
 }
 //-----------------------------------------------------------------------------
 boost::optional<Parameters> Parameters::find_parameter_set(std::string key) const
 {
-  auto p = _parameter_sets.find(key);
-  if (p == _parameter_sets.end())
+  auto p = _parameters.find(key);
+  if (p == _parameters.end())
+    return boost::none;
+  else if (p->second.which() != 1)
     return boost::none;
   else
-    return p->second;
+    return boost::get<Parameters>(p->second);
 }
 //-----------------------------------------------------------------------------
 namespace dolfin
