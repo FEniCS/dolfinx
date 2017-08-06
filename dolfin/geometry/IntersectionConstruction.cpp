@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-08-02
+// Last changed: 2017-08-06
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -27,6 +27,7 @@
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"
 
+#include "CGALExactArithmetic.h"
 #include "dolfin_simplex_tools.h"
 
 using namespace dolfin;
@@ -342,10 +343,14 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
                                                           const Point& q0,
                                                           const Point& q1)
 {
+  std::vector<Point> dolf = _intersection_segment_segment_2d(p0, p1, q0, q1);
+  return dolf;
+
+
+  
   std::vector<Point> cgal = cgal_intersection_segment_segment_2d(p0, p1, q0, q1);
 
-  std::vector<Point> dolf = _intersection_segment_segment_2d(p0, p1, q0, q1);
-
+  
   if (cgal.size() != dolf.size())
     differ(p0,p1,q0,q1, cgal, dolf);
 
@@ -485,15 +490,17 @@ IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
   
   // Figure out which one of the four points we want to use
   // as starting point for numerical robustness
-  const double v_norm = 1.;//*v.norm();
-  const double w_norm = 1.;//*(q0 - q1).norm();
+  const double v_norm = v.norm();
+  const double w_norm = (q0 - q1).norm();
+
+  
   
   enum orientation { P0O, P1O, Q0O, Q1O };
   std::array<std::pair<double, orientation>, 4> oo
-    = {{ { std::abs(p0o) * v_norm, P0O },
-	 { std::abs(p1o) * v_norm, P1O },
-	 { std::abs(q0o) * w_norm, Q0O },
-	 { std::abs(q1o) * w_norm, Q1O } }};
+    = {{ { std::abs(p0o), P0O },
+	 { std::abs(p1o), P1O },
+	 { std::abs(q0o), Q0O },
+	 { std::abs(q1o), Q1O } }};
   auto it = std::min_element(oo.begin(), oo.end());
 
   // // it->second = P1O;
@@ -511,29 +518,53 @@ IntersectionConstruction::_intersection_segment_segment_2d(const Point& p0,
   const auto x1 = p1 - p1o / den * v;
   const auto x2 = q0 + q0o / den * (q1 - q0);
   const auto x3 = q1 - q1o / den * (q0 - q1);
-  std::cout << "x0 " << x0[0]<<' '<<x0[1] << std::endl;
-  std::cout << "x1 " << x1[0]<<' '<<x1[1] << std::endl;
-  std::cout << "x2 " << x2[0]<<' '<<x2[1] << std::endl;
-  std::cout << "x3 " << x3[0]<<' '<<x3[1] << std::endl;
   const std::vector<Point> xxx = { x0, x1, x2, x3 };
 
-  // CHeck if any is similar to cgal
+  // Check if found is far off, and if so, if any other is similar to
+  // cgal
   const std::vector<Point> cgal = cgal_intersection_segment_segment_2d(p0,p1,q0,q1);
-  int is_sim = -1;
-  for (std::size_t i = 0; i < 4; ++i)
+  const std::size_t switchoption = std::distance(oo.begin(), it);
+  if (cgal.size() and (xxx[switchoption]-cgal[0]).squared_norm() > DOLFIN_EPS_LARGE)
   {
-    const double X = GeometryTools::project_to_axis_2d(xxx[i], major_axis);
-    if (CollisionPredicates::collides_segment_point_1d(P0, P1, X))
+    int is_sim = -1;
+    for (std::size_t i = 0; i < 4; ++i)
     {
-      // CHeck if similar
-      if ((cgal[0] - xxx[i]).squared_norm() < DOLFIN_EPS)
+      const double X = GeometryTools::project_to_axis_2d(xxx[i], major_axis);
+      if (CollisionPredicates::collides_segment_point_1d(P0, P1, X))
       {
-	is_sim = i;
-	break;
+	// CHeck if similar
+	if (std::abs(cgal[0][0] - xxx[i][0]) < DOLFIN_EPS and
+	    std::abs(cgal[0][1] - xxx[i][1]) < DOLFIN_EPS)
+	{
+	  is_sim = i;
+	  break;
+	}
       }
     }
+    
+    if (is_sim>-1 and is_sim != switchoption)
+    {
+      std::cout << '\n';
+      std::cout << "p0o p1o q0o q1o again " << std::abs(p0o) <<' ' << std::abs(p1o) << ' ' << std::abs(q0o) << ' '<< std::abs(q1o) << std::endl;
+      std::cout << "v_norm " << v.norm() << '\n'
+		<< "w_norm " << (q0-q1).norm() << std::endl;
+      
+      std::cout << "x0 " << x0[0]<<' '<<x0[1] << std::endl;
+      std::cout << "x1 " << x1[0]<<' '<<x1[1] << std::endl;
+      std::cout << "x2 " << x2[0]<<' '<<x2[1] << std::endl;
+      std::cout << "x3 " << x3[0]<<' '<<x3[1] << std::endl;
+      
+      std::cout << "cgal:\n";
+      for (const Point& p : cgal)
+	std::cout << p[0]<<' '<<p[1]<<std::endl;
+      if (cgal.size() > 1)
+	std::cout << " comparison below not valid\n";
+      
+      std::cout << "is_sim " << is_sim << " but smallest is " << switchoption << std::endl;
+      //dolfin_assert(false);
+    }
   }
-
+    
   // Compute the intersection point
   Point x;
   switch (it->second)
