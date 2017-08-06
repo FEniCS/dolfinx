@@ -14,12 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Johan Hake, 2009
-// Modified by Garth N. Wells, 2009
-//
-// First added:  2009-05-08
-// Last changed: 2012-10-26
 
 #include <sstream>
 #include <stdio.h>
@@ -36,12 +30,6 @@
 
 using namespace dolfin;
 namespace po = boost::program_options;
-
-// Typedef of iterators for convenience
-typedef std::map<std::string, Parameter*>::iterator parameter_iterator;
-typedef std::map<std::string, Parameter*>::const_iterator const_parameter_iterator;
-typedef std::map<std::string, Parameters*>::iterator parameter_set_iterator;
-typedef std::map<std::string, Parameters*>::const_iterator const_parameter_set_iterator;
 
 //-----------------------------------------------------------------------------
 Parameters::Parameters(std::string key) : _key(key)
@@ -74,29 +62,21 @@ void Parameters::rename(std::string key)
 void Parameters::clear()
 {
   // Delete parameters
-  for (parameter_iterator it = _parameters.begin(); it != _parameters.end();
-       ++it)
-  {
-    delete it->second;
-  }
   _parameters.clear();
 
   // Delete parameter sets
-  for (parameter_set_iterator it = _parameter_sets.begin();
-       it != _parameter_sets.end(); ++it)
-  {
+  for (auto it = _parameter_sets.begin(); it != _parameter_sets.end(); ++it)
     delete it->second;
-  }
   _parameter_sets.clear();
 
   // Reset key
   _key = "";
 }
 //-----------------------------------------------------------------------------
-void Parameters::add(std::string key, int value)
+void Parameters::add_unset(std::string key, Parameter::Type type)
 {
   // Check key name
-  if (find_parameter(key))
+  if (has_parameter(key))
   {
     dolfin_error("Parameters.cpp",
                  "add parameter",
@@ -105,7 +85,22 @@ void Parameters::add(std::string key, int value)
   }
 
   // Add parameter
-  _parameters[key] = new IntParameter(key, value);
+  _parameters.insert({key, Parameter(key, type)});
+}
+//-----------------------------------------------------------------------------
+void Parameters::add(std::string key, int value)
+{
+  // Check key name
+  if (has_parameter(key))
+  {
+    dolfin_error("Parameters.cpp",
+                 "add parameter",
+                 "Parameter \"%s.%s\" already defined",
+                 this->name().c_str(), key.c_str());
+  }
+
+  // Add parameter
+  _parameters.insert({key, Parameter(key, value)});
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, int value,
@@ -115,15 +110,14 @@ void Parameters::add(std::string key, int value,
   add(key, value);
 
   // Set range
-  Parameter* p = find_parameter(key);
-  dolfin_assert(p);
-  p->set_range(min_value, max_value);
+  Parameter& p = find_parameter(key);
+  p.set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, double value)
 {
   // Check key name
-  if (find_parameter(key))
+  if (has_parameter(key))
   {
     dolfin_error("Parameters.cpp",
                  "add parameter",
@@ -132,7 +126,7 @@ void Parameters::add(std::string key, double value)
   }
 
   // Add parameter
-  _parameters[key] = new DoubleParameter(key, value);
+  _parameters.insert({key, Parameter(key, value)});
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, double value,
@@ -142,15 +136,14 @@ void Parameters::add(std::string key, double value,
   add(key, value);
 
   // Set range
-  Parameter* p = find_parameter(key);
-  dolfin_assert(p);
-  p->set_range(min_value, max_value);
+  Parameter& p = find_parameter(key);
+  p.set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, std::string value)
 {
   // Check key name
-  if (find_parameter(key))
+  if (has_parameter(key))
   {
     dolfin_error("Parameters.cpp",
                  "add parameter",
@@ -159,7 +152,7 @@ void Parameters::add(std::string key, std::string value)
   }
 
   // Add parameter
-  _parameters[key] = new StringParameter(key, value);
+  _parameters.insert({key, Parameter(key, value)});
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, const char* value)
@@ -168,7 +161,7 @@ void Parameters::add(std::string key, const char* value)
   // the add function for bool parameters.
 
   // Check key name
-  if (find_parameter(key))
+  if (has_parameter(key))
   {
     dolfin_error("Parameters.cpp",
                  "add parameter",
@@ -177,7 +170,7 @@ void Parameters::add(std::string key, const char* value)
   }
 
   // Add parameter
-  _parameters[key] = new StringParameter(key, value);
+  _parameters.insert({key, Parameter(key, value)});
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, std::string value,
@@ -187,9 +180,8 @@ void Parameters::add(std::string key, std::string value,
   add(key, value);
 
   // Set range
-  Parameter* p = find_parameter(key);
-  dolfin_assert(p);
-  p->set_range(range);
+  Parameter& p = find_parameter(key);
+  p.set_range(range);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, const char* value,
@@ -202,15 +194,14 @@ void Parameters::add(std::string key, const char* value,
   add(key, value);
 
   // Set range
-  Parameter* p = find_parameter(key);
-  dolfin_assert(p);
-  p->set_range(range);
+  Parameter& p = find_parameter(key);
+  p.set_range(range);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, bool value)
 {
   // Check key name
-  if (find_parameter(key))
+  if (has_parameter(key))
   {
     dolfin_error("Parameters.cpp",
                  "add parameter",
@@ -219,7 +210,7 @@ void Parameters::add(std::string key, bool value)
   }
 
   // Add parameter
-  _parameters[key] = new BoolParameter(key, value);
+  _parameters.insert({key, Parameter(key, value)});
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(const Parameters& parameters)
@@ -242,7 +233,7 @@ void Parameters::add(const Parameters& parameters)
 void Parameters::remove(std::string key)
 {
   // Check key name
-  if (!find_parameter(key) && !find_parameter_set(key))
+  if (!has_parameter(key) && !find_parameter_set(key))
   {
     dolfin_error("Parameters.cpp",
                  "remove parameter or parameter set",
@@ -251,7 +242,6 @@ void Parameters::remove(std::string key)
   }
 
   // Delete objects (safe to delete both even if only one is nonzero)
-  delete find_parameter(key);
   delete find_parameter_set(key);
 
   // Remove from maps (safe to remove both)
@@ -270,60 +260,43 @@ void Parameters::parse(int argc, char* argv[])
 void Parameters::update(const Parameters& parameters)
 {
   // Update the parameters
-  for (const_parameter_iterator it = parameters._parameters.begin();
-       it != parameters._parameters.end(); ++it)
+  for (auto it = parameters._parameters.begin(); it != parameters._parameters.end(); ++it)
   {
     // Get parameters
-    const Parameter& other = *it->second;
-    Parameter* self = find_parameter(other.key());
+    const Parameter& other = it->second;
 
-    // Skip parameters not in this parameter set (no new parameters
-    // added)
-    if (!self)
+    if (!this->has_parameter(other.key()))
     {
+      // This set does not have a parameter that is present in 'other'
       warning("Ignoring unknown parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
               other.key().c_str(), parameters.name().c_str(), name().c_str());
-      continue;
     }
-
-    // Skip unset parameters
-    if (!other.is_set())
-    {
-      //warning("Ignoring unset parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
-      //        other.key().c_str(), parameters.name().c_str(), name().c_str());
-      continue;
-    }
-
-    // Set value (will give an error if the type is wrong)
-    if (other.type_str() == "int")
-      *self = static_cast<int>(other);
-    else if (other.type_str() == "double")
-      *self = static_cast<double>(other);
-    else if (other.type_str() == "bool")
-      *self = static_cast<bool>(other);
-    else if (other.type_str() == "string")
-      *self = static_cast<std::string>(other);
     else
     {
-      dolfin_error("Parameters.cpp",
-                   "update parameter set",
-                   "Parameter \"%s\" has unknown type: \"%s\"",
-                   other.key().c_str(), other.type_str().c_str());
+      // Skip unset parameters
+      if (!other.is_set())
+      {
+        //warning("Ignoring unset parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
+        //        other.key().c_str(), parameters.name().c_str(), name().c_str());
+      }
+      else
+      {
+        // Set value
+        Parameter& my_param = this->find_parameter(other.key());
+        my_param = other;
+      }
     }
   }
 
   // Update nested parameter sets
-  for (const_parameter_set_iterator it = parameters._parameter_sets.begin();
-       it != parameters._parameter_sets.end(); ++it)
-  {
+  for (auto it = parameters._parameter_sets.begin(); it != parameters._parameter_sets.end(); ++it)
     (*this)(it->first).update(*it->second);
-  }
-  }
+}
 //-----------------------------------------------------------------------------
 Parameter& Parameters::operator[] (std::string key)
 {
-  Parameter* p = find_parameter(key);
-  if (!p)
+  auto p = _parameters.find(key);
+  if (p == _parameters.end())
   {
     dolfin_error("Parameters.cpp",
                  "access parameter",
@@ -331,13 +304,13 @@ Parameter& Parameters::operator[] (std::string key)
                  this->name().c_str(), key.c_str());
   }
 
-  return *p;
+  return p->second;
 }
 //-----------------------------------------------------------------------------
 const Parameter& Parameters::operator[] (std::string key) const
 {
-  Parameter* p = find_parameter(key);
-  if (!p)
+  auto p = _parameters.find(key);
+  if (p == _parameters.end())
   {
     dolfin_error("Parameters.cpp",
                  "access parameter",
@@ -345,7 +318,7 @@ const Parameter& Parameters::operator[] (std::string key) const
                  this->name().c_str(), key.c_str());
   }
 
-  return *p;
+  return p->second;
 }
 //-----------------------------------------------------------------------------
 Parameters& Parameters::operator() (std::string key)
@@ -389,33 +362,10 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
   _key = parameters._key;
 
   // Copy parameters
-  for (const_parameter_iterator it = parameters._parameters.begin();
-       it != parameters._parameters.end(); ++it)
-  {
-    const Parameter& p = *it->second;
-    Parameter* q = 0;
-    if (p.type_str() == "int")
-      q = new IntParameter(dynamic_cast<const IntParameter&>(p));
-    else if (p.type_str() == "double")
-      q = new DoubleParameter(dynamic_cast<const DoubleParameter&>(p));
-    else if (p.type_str() == "bool")
-      q = new BoolParameter(dynamic_cast<const BoolParameter&>(p));
-    else if (p.type_str() == "string")
-      q = new StringParameter(dynamic_cast<const StringParameter&>(p));
-    else
-    {
-      dolfin_error("Parameters.cpp",
-                   "copy parameter set",
-                   "Parameter from parameter set \"%s\" to parameter set \"%s\" has unknown type: \"%s\"",
-                   parameters.name().c_str(), name().c_str(), p.type_str().c_str());
-    }
-
-    _parameters[p.key()] = q;
-  }
+  _parameters = parameters._parameters;
 
   // Copy parameter sets
-  for (const_parameter_set_iterator it = parameters._parameter_sets.begin();
-       it != parameters._parameter_sets.end(); ++it)
+  for (auto it = parameters._parameter_sets.begin(); it != parameters._parameter_sets.end(); ++it)
   {
     const Parameters& p = *it->second;
     _parameter_sets[p.name()] = new Parameters(p);
@@ -431,7 +381,7 @@ bool Parameters::has_key(std::string key) const
 //-----------------------------------------------------------------------------
 bool Parameters::has_parameter(std::string key) const
 {
-  return find_parameter(key) != 0;
+  return _parameters.find(key) != _parameters.end();
 }
 //-----------------------------------------------------------------------------
 bool Parameters::has_parameter_set(std::string key) const
@@ -442,21 +392,15 @@ bool Parameters::has_parameter_set(std::string key) const
 void Parameters::get_parameter_keys(std::vector<std::string>& keys) const
 {
   keys.reserve(_parameters.size());
-  for (const_parameter_iterator it = _parameters.begin();
-       it != _parameters.end(); ++it)
-  {
+  for (auto it = _parameters.begin(); it != _parameters.end(); ++it)
     keys.push_back(it->first);
-  }
 }
 //-----------------------------------------------------------------------------
 void Parameters::get_parameter_set_keys(std::vector<std::string>& keys) const
 {
   keys.reserve(_parameter_sets.size());
-  for (const_parameter_set_iterator it = _parameter_sets.begin();
-       it != _parameter_sets.end(); ++it)
-  {
+  for (auto it = _parameter_sets.begin(); it != _parameter_sets.end(); ++it)
     keys.push_back(it->first);
-  }
  }
 //-----------------------------------------------------------------------------
 std::string Parameters::str(bool verbose) const
@@ -472,23 +416,19 @@ std::string Parameters::str(bool verbose) const
     }
 
     Table t(_key);
-    for (const_parameter_iterator it = _parameters.begin();
-         it != _parameters.end(); ++it)
+    for (auto it = _parameters.begin(); it != _parameters.end(); ++it)
     {
-      Parameter* p = it->second;
-      t(p->key(), "type") = p->type_str();
-      t(p->key(), "value") = (p->is_set() ? p->value_str() : "<unset>");
-      t(p->key(), "range") = p->range_str();
-      t(p->key(), "access") = p->access_count();
-      t(p->key(), "change") = p->change_count();
+      const Parameter& p = it->second;
+      t(p.key(), "type") = p.type_str();
+      t(p.key(), "value") = (p.is_set() ? p.value_str() : "<unset>");
+      t(p.key(), "range") = p.range_str();
+      t(p.key(), "access") = p.access_count();
+      t(p.key(), "change") = p.change_count();
     }
     s << indent(t.str(true));
 
-    for (const_parameter_set_iterator it = _parameter_sets.begin();
-         it != _parameter_sets.end(); ++it)
-    {
+    for (auto it = _parameter_sets.begin(); it != _parameter_sets.end(); ++it)
       s << "\n\n" << indent(it->second->str(verbose));
-    }
   }
   else
   {
@@ -519,10 +459,10 @@ void Parameters::parse_common(int argc, char* argv[])
   // Collect and report unrecognized options
   const std::vector<std::string> unrecognized_options
     = po::collect_unrecognized(parsed.options, po::include_positional);
-  for (std::size_t i = 0; i < unrecognized_options.size(); i++)
+  for (std::size_t i = 0; i < unrecognized_options.size(); ++i)
   {
-    cout << "Skipping unrecognized option for parameter set \""
-         << name() << "\": " << unrecognized_options[i] << endl;
+    std::cout << "Skipping unrecognized option for parameter set \""
+              << name() << "\": " << unrecognized_options[i] << std::endl;
   }
 
   // Show help text
@@ -559,10 +499,9 @@ void Parameters::add_parameter_set_to_po(po::options_description& desc,
                                          const Parameters &parameters,
                                          std::string base_name) const
 {
-  for (const_parameter_iterator it = parameters._parameters.begin();
-       it != parameters._parameters.end(); ++it)
+  for (auto it = parameters._parameters.begin(); it != parameters._parameters.end(); ++it)
   {
-    const Parameter& p = *it->second;
+    const Parameter& p = it->second;
     std::string param_name(base_name + p.key());
     if (p.type_str() == "int")
     {
@@ -586,7 +525,7 @@ void Parameters::add_parameter_set_to_po(po::options_description& desc,
     }
   }
 
-  for (const_parameter_set_iterator it = parameters._parameter_sets.begin();
+  for (auto it = parameters._parameter_sets.begin();
        it != parameters._parameter_sets.end(); ++it)
   {
     add_parameter_set_to_po(desc, *it->second, base_name + it->first + ".");
@@ -597,10 +536,9 @@ void Parameters::read_vm(po::variables_map& vm, Parameters& parameters,
                          std::string base_name)
 {
   // Read values from po::variables_map
-  for (parameter_iterator it = parameters._parameters.begin();
-       it != parameters._parameters.end(); ++it)
+  for (auto it = parameters._parameters.begin(); it != parameters._parameters.end(); ++it)
   {
-    Parameter& p = *it->second;
+    Parameter& p = it->second;
     std::string param_name(base_name + p.key());
     if (p.type_str() == "int")
     {
@@ -628,24 +566,44 @@ void Parameters::read_vm(po::variables_map& vm, Parameters& parameters,
     }
   }
 
-  for (parameter_set_iterator it = parameters._parameter_sets.begin();
+  for (auto it = parameters._parameter_sets.begin();
        it != parameters._parameter_sets.end(); ++it)
   {
     read_vm(vm, *it->second, base_name + it->first + ".");
   }
 }
 //-----------------------------------------------------------------------------
-Parameter* Parameters::find_parameter(std::string key) const
+const Parameter& Parameters::find_parameter(std::string key) const
 {
-  const_parameter_iterator p = _parameters.find(key);
+  auto p = _parameters.find(key);
   if (p == _parameters.end())
-    return 0;
+  {
+    dolfin_error("Parameters.cpp",
+                 "find parameter",
+                 "Parameter \"%s\" does not exist",
+                 key.c_str());
+  }
+
+  return p->second;
+}
+//-----------------------------------------------------------------------------
+Parameter& Parameters::find_parameter(std::string key)
+{
+  auto p = _parameters.find(key);
+  if (p == _parameters.end())
+  {
+    dolfin_error("Parameters.cpp",
+                 "find parameter",
+                 "Parameter \"%s\" does not exist",
+                 key.c_str());
+  }
+
   return p->second;
 }
 //-----------------------------------------------------------------------------
 Parameters* Parameters::find_parameter_set(std::string key) const
 {
-  const_parameter_set_iterator p = _parameter_sets.find(key);
+  auto p = _parameter_sets.find(key);
   if (p == _parameter_sets.end())
     return 0;
   return p->second;
