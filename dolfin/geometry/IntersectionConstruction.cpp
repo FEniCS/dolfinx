@@ -408,6 +408,7 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   const Point w = q1 - q0;
   const double q_dist = w.norm();
   const double TOL = 1e-10;
+
   if (p_dist < TOL or q_dist < TOL)
   {
     const bool use_p = p_dist < q_dist;
@@ -449,11 +450,62 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
       break;
     }
   }
-  
+
+
+  const std::vector<Point> cgal = cgal_intersection_segment_segment_2d(p0,p1,q0,q1);
+  const double p1o = orient2d(q0, q1, p1);
+  const Point x0 = p0 - p0o / den * v;
+  const Point x1 = p1 - p1o / den * v;
+  const Point x2 = q0 + q0o / den * w;
+  const Point x3 = q1 + q1o / den * w;
+  const std::vector<Point> xxx = { x0, x1, x2, x3 };
+
+  bool alldiff = true;
+  if(cgal.size())
+  {
+    for (const Point& y : cgal)
+      for (const Point& x : xxx)
+	if (std::abs(y[0] - x[0]) < DOLFIN_EPS and
+	    std::abs(y[1] - x[1]) < DOLFIN_EPS)
+	{
+	  alldiff = false;
+	  break;
+	}
+  }
+	
   // Project point to major axis and check if inside segment
   const double X = GeometryTools::project_to_axis_2d(x, major_axis);
   if (CollisionPredicates::collides_segment_point_1d(P0, P1, X))
+  {
+    {
+      std::cout << '\n';
+      std::cout << "const Point p0("<<p0[0]<<","<<p0[1]<<");\n"
+		<< "const Point p1("<<p1[0]<<","<<p1[1]<<");\n"
+		<< "const Point q0("<<q0[0]<<","<<q0[1]<<");\n"
+		<< "const Point q1("<<q1[0]<<","<<q1[1]<<");" << std::endl;
+      std::cout << "p_dist " << p_dist << '\n'
+		<< "q_dist " << q_dist << std::endl;
+      std::cout << "p0o p1o q0o q1o again " << std::abs(p0o) <<' ' << std::abs(p1o) << ' ' << std::abs(q0o) << ' '<< std::abs(q1o) << std::endl;
+
+      std::cout << "x0 " << x0[0]<<' '<<x0[1] << std::endl;
+      std::cout << "x1 " << x1[0]<<' '<<x1[1] << std::endl;
+      std::cout << "x2 " << x2[0]<<' '<<x2[1] << std::endl;
+      std::cout << "x3 " << x3[0]<<' '<<x3[1] << std::endl;
+      std::cout << "cgal:\n";
+      for (const Point& p : cgal)
+	std::cout << "   " << p[0]<<' '<<p[1]<<std::endl;
+      if (cgal.size() > 1)
+      {
+	std::cout << " comparison maybe not valid\n";
+      }
+      if (alldiff)
+      {
+	std::cout << "all different from cgal (maybe doesn't matter) " << alldiff << std::endl;
+      }
+    }
+      
     return std::vector<Point>(1, x);
+  }
 
   return std::vector<Point>();
 }
