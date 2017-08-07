@@ -496,9 +496,25 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   }
 
   // Case 3: points on different sides (main case)
-  Point x;
+
+  // Compute quantities needed for intersection computation
+  // const double p0o = orient2d(q0, q1, p0);
+  // const double p1o = orient2d(q0, q1, p1);
   const double den = (q1.x() - q0.x())*v.y() - (q1.y() - q0.y())*v.x();
-  //const double p0o = orient2d(q0, q1, p0);
+
+  // Figure out which one of the four points we want to use
+  // as starting point for numerical robustness
+  const double p_dist = v.norm();
+  const double q_dist = (q0 - q1).norm();
+  enum orientation { P0O, P1O, Q0O, Q1O };
+  std::array<std::pair<double, orientation>, 4> oo
+		      = {{ { std::abs(p0o)*p_dist, P0O },
+			   { std::abs(p1o)*p_dist, P1O },
+			   { std::abs(q0o)*q_dist, Q0O },
+			   { std::abs(q1o)*q_dist, Q1O } }};
+  const auto it = std::min_element(oo.begin(), oo.end());
+
+  // Compute the intersection point
 
   // Case 3a: Special case if |p0 - p1| or |q0 - q1| is small
   // use these
