@@ -41,6 +41,9 @@
 %rename (_get_string_range) dolfin::Parameter::get_range(std::set<std::string>& range) const;
 %ignore dolfin::Parameter::operator std::size_t;
 
+%ignore dolfin::Parameter::Parameter;
+%ignore dolfin::Parameter::value;
+
 // ---------------------------------------------------------------------------
 // Renames and ignores for Parameters
 // ---------------------------------------------------------------------------
@@ -54,8 +57,6 @@
 %rename (assign) dolfin::Parameters::operator=;
 %ignore dolfin::Parameters::parse;
 %ignore dolfin::Parameters::update;
-
-%ignore dolfin::Parameter::Parameter;
 
 
 // ---------------------------------------------------------------------------
