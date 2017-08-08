@@ -40,7 +40,7 @@ namespace dolfin
     template<typename T>
       Parameter(std::string key, T x) : _value(x), _access_count(0),
       _change_count(0), _is_set(true), _key(key),
-      _description("missing description") {}
+      _description("missing description") { check_key(key); }
 
     /// Create parameter for given key and value.  This verison (const
     /// char*) is necessary to have the parameter treated as a string
@@ -65,12 +65,13 @@ namespace dolfin
     template<typename T>
       Parameter(std::string key, T min, T max) : _value(T(0)),
       _range(std::array<T, 2>({{min, max}})), _access_count(0), _change_count(0),
-      _is_set(false), _key(key), _description("missing description") {}
+      _is_set(false), _key(key), _description("missing description")
+    { check_key(key); }
 
     /// Create and unset string parameter with set of allowable strings
   Parameter(std::string key, std::set<std::string> range) :  _value(std::string("")),
       _range(range), _access_count(0), _change_count(0), _is_set(false),
-      _key(key), _description("missing description") {}
+      _key(key), _description("missing description") { check_key(key); }
 
     /// Copy constructor
     Parameter(const Parameter&) = default;

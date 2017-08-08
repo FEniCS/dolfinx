@@ -27,13 +27,15 @@ Parameter::Parameter(std::string key, const char* x)
   : _value(std::string(x)), _access_count(0), _change_count(0), _is_set(true),
     _key(key), _description("missing description")
 {
-  // Do nothing
+  check_key(key);
 }
 //-----------------------------------------------------------------------------
 Parameter::Parameter(std::string key, Type ptype)
   : _access_count(0), _change_count(0), _is_set(false), _key(key),
     _description("missing description")
 {
+  check_key(key);
+
   if (ptype == Type::Bool)
     _value = false;
   else if (ptype == Type::Int)
@@ -328,15 +330,12 @@ Parameter::operator bool() const
 void Parameter::check_key(std::string key)
 {
   // Space and punctuation not allowed in key names
-  for (std::size_t i = 0; i < key.size(); i++)
+  if (key.find(' ') != std::string::npos or key.find('.') != std::string::npos)
   {
-    if (key[i] == ' ' || key[i] == '.')
-    {
-      dolfin_error("Parameter.cpp",
-                   "check allowed name for key",
-                   "Illegal character '%c' in parameter key \"%s\"",
-                   key[i], key.c_str());
-    }
+    dolfin_error("Parameter.cpp",
+                 "check allowed name for key",
+                 "Illegal character in parameter key \"%s\" (no spaces for periods allowed)",
+                 key.c_str());
   }
 }
 //-----------------------------------------------------------------------------

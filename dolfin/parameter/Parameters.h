@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Anders Logg
+// Copyright (C) 2009-2017 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -21,6 +21,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <boost/optional.hpp>
 #include "Parameter.h"
 #include <dolfin/log/log.h>
 
@@ -264,16 +265,11 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    /// Return reference to parameter. Throws an exception of
-    /// parameters is not present (const version)
-    const Parameter& find_parameter(std::string key) const;
+    /// Return parameter, if present
+    boost::optional<Parameter&> find_parameter(std::string key);
 
-    /// Return reference to parameter. Throws an exception of
-    /// parameters is not present.
-    Parameter& find_parameter(std::string key);
-
-    /// Return pointer to parameter set for given key and 0 if not found
-    Parameters* find_parameter_set(std::string key) const;
+    /// Return parameter set, if present
+    boost::optional<Parameters&> find_parameter_set(std::string key);
 
   protected:
 
@@ -303,7 +299,7 @@ namespace dolfin
     std::map<std::string, Parameter> _parameters;
 
     // Map from key to parameter sets
-    std::map<std::string, Parameters*> _parameter_sets;
+    std::map<std::string, Parameters> _parameter_sets;
 
   };
 
