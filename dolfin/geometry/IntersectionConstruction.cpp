@@ -27,8 +27,6 @@
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"
 
-#include "dolfin_simplex_tools.h"
-
 using namespace dolfin;
 
 namespace dolfin
