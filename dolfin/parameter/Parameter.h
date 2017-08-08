@@ -14,18 +14,16 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Joachim B Haga 2012
-//
-// First added:  2009-05-08
-// Last changed: 2012-09-11
 
 #ifndef __PARAMETER_H
 #define __PARAMETER_H
 
+#include <array>
 #include <set>
 #include <sstream>
 #include <string>
+#include <boost/blank.hpp>
+#include <boost/variant.hpp>
 
 namespace dolfin
 {
@@ -36,13 +34,56 @@ namespace dolfin
   {
   public:
 
-    /// Create parameter for given key
+    /// Create parameter for given key and value
     /// @param key (std::string)
+    /// @param x (T)
+    template<typename T>
+      Parameter(std::string key, T x) : _value(x), _access_count(0),
+      _change_count(0), _is_set(true), _key(key),
+      _description("missing description") { check_key(key); }
+
+    /// Create parameter for given key and value.  This verison (const
+    /// char*) is necessary to have the parameter treated as a string
+    /// rather than char* being cast as bool.
     ///
-    explicit Parameter(std::string key);
+    /// @param key (std::string)
+    /// @param x (const char*))
+    Parameter(std::string key, const char* x);
+
+    /// Enum for the parameter type
+    enum class Type { Bool, Int, Float, String };
+
+    /// Create an unset parameter (type is specified, value is
+    /// unknown)
+    ///
+    /// @param key (std::string)
+    /// @param ptype (Type))
+    Parameter(std::string key, Type ptype);
+
+    /// Create and unset numerical parameter with specified (min, max)
+    /// range
+    template<typename T>
+      Parameter(std::string key, T min, T max) : _value(T(0)),
+      _range(std::array<T, 2>({{min, max}})), _access_count(0), _change_count(0),
+      _is_set(false), _key(key), _description("missing description")
+    { check_key(key); }
+
+    /// Create and unset string parameter with set of allowable strings
+  Parameter(std::string key, std::set<std::string> range) :  _value(std::string("")),
+      _range(range), _access_count(0), _change_count(0), _is_set(false),
+      _key(key), _description("missing description") { check_key(key); }
+
+    /// Copy constructor
+    Parameter(const Parameter&) = default;
+
+    /// Move constructor
+    Parameter(Parameter&&) = default;
 
     /// Destructor
     virtual ~Parameter();
+
+    /// Assignment operator
+    Parameter& operator= (const Parameter &) = default;
 
     /// Return parameter key
     /// @return std::string
@@ -71,84 +112,91 @@ namespace dolfin
     /// @param min_value (int)
     /// @param max_value (int)
     ///
-    virtual void set_range(int min_value, int max_value);
+    void set_range(int min_value, int max_value);
 
     /// Set range for double-valued parameter
     /// @param min_value (double)
     /// @param max_value (double)
     ///
-    virtual void set_range(double min_value, double max_value);
+    void set_range(double min_value, double max_value);
 
     /// Set range for string-valued parameter
     /// @param range (std::set<std::string>)
     ///
-    virtual void set_range(std::set<std::string> range);
+    void set_range(std::set<std::string> range);
 
     /// Get range for int-valued parameter
     /// @param [out] min_value (int)
     /// @param [out] max_value (int)
-    virtual void get_range(int& min_value, int& max_value) const;
+    void get_range(int& min_value, int& max_value) const;
 
     /// Get range for double-valued parameter
     /// @param [out] min_value (double)
     /// @param [out] max_value (double)
-    virtual void get_range(double& min_value, double& max_value) const;
+    void get_range(double& min_value, double& max_value) const;
 
     /// Get range for string-valued parameter
     /// @param [out] range (std::set<std::string>)
-    virtual void get_range(std::set<std::string>& range) const;
+    void get_range(std::set<std::string>& range) const;
 
     /// Assignment from int
     /// @param value (int)
-    virtual const Parameter& operator= (int value);
+    const Parameter& operator= (int value);
 
     /// Assignment from double
     /// @param value (double)
-    virtual const Parameter& operator= (double value);
+    const Parameter& operator= (double value);
 
     /// Assignment from string
     /// @param value (std::string)
-    virtual const Parameter& operator= (std::string value);
+    const Parameter& operator= (std::string value);
 
     /// Assignment from string
     /// @param value (char *)
-    virtual const Parameter& operator= (const char* value);
+    const Parameter& operator= (const char* value);
 
     /// Assignment from bool
     /// @param value (bool)
-    virtual const Parameter& operator= (bool value);
+    const Parameter& operator= (bool value);
 
     /// Cast parameter to int
-    virtual operator int() const;
+    operator int() const;
 
     /// Cast parameter to std::size_t
-    virtual operator std::size_t() const;
+    operator std::size_t() const;
 
     /// Cast parameter to double
-    virtual operator double() const;
+    operator double() const;
 
     /// Cast parameter to string
-    virtual operator std::string() const;
+    operator std::string() const;
 
     /// Cast parameter to bool
-    virtual operator bool() const;
+    operator bool() const;
 
     /// Return value type string
-    virtual std::string type_str() const = 0;
+    std::string type_str() const;
 
     /// Return value string
-    virtual std::string value_str() const = 0;
+    std::string value_str() const;
 
     /// Return range string
-    virtual std::string range_str() const = 0;
+    std::string range_str() const;
 
     /// Return short string description
-    virtual std::string str() const = 0;
+    std::string str() const;
 
     /// Check that key name is allowed
     static void check_key(std::string key);
 
   protected:
+
+    // Value (0: blank, 1: bool, 2: int, 3: double, 4: std::string)
+    boost::variant<boost::blank, bool, int, double, std::string> _value;
+
+    // Ranges (0: blank, 1: int, 2: double, 3: std::string)
+    boost::variant<boost::blank, std::array<int, 2>, std::array<double, 2>,
+      std::set<std::string>> _range;
 
     // Access count
     mutable std::size_t _access_count;
@@ -166,196 +214,5 @@ namespace dolfin
     std::string _description;
 
   };
-
-  /// Parameter with value type int
-  class IntParameter : public Parameter
-  {
-  public:
-
-    /// Create unset int-valued
-    explicit IntParameter(std::string key);
-
-    /// Create int-valued parameter
-    IntParameter(std::string key, int value);
-
-    /// Destructor
-    ~IntParameter();
-
-    /// Set range
-    void set_range(int min_value, int max_value);
-
-    /// Get range
-    void get_range(int &min_value, int &max_value) const;
-
-    /// Assignment
-    const IntParameter& operator= (int value);
-
-    /// Cast parameter to int
-    operator int() const;
-
-    /// Cast parameter to std::size_t
-    operator std::size_t() const;
-
-    /// Return value type string
-    std::string type_str() const;
-
-    /// Return value string
-    std::string value_str() const;
-
-    /// Return range string
-    std::string range_str() const;
-
-    /// Return short string description
-    std::string str() const;
-
-  private:
-
-    /// Parameter value
-    int _value;
-
-    /// Parameter range
-    int _min, _max;
-
-  };
-
-  /// Parameter with value type double
-  class DoubleParameter : public Parameter
-  {
-  public:
-
-    /// Create unset double-valued parameter
-    explicit DoubleParameter(std::string key);
-
-    /// Create double-valued parameter
-    DoubleParameter(std::string key, double value);
-
-    /// Destructor
-    ~DoubleParameter();
-
-    /// Set range
-    void set_range(double min_value, double max_value);
-
-    /// Get range
-    void get_range(double &min_value, double &max_value) const;
-
-    /// Assignment
-    const DoubleParameter& operator= (double value);
-
-    /// Cast parameter to double
-    operator double() const;
-
-    /// Return value type string
-    std::string type_str() const;
-
-    /// Return value string
-    std::string value_str() const;
-
-    /// Return range string
-    std::string range_str() const;
-
-    /// Return short string description
-    std::string str() const;
-
-  private:
-
-    /// Parameter value
-    double _value;
-
-    /// Parameter range
-    double _min, _max;
-
-  };
-
-  /// Parameter with value type string
-  class StringParameter : public Parameter
-  {
-  public:
-
-    /// Create unset string-valued parameter
-    explicit StringParameter(std::string key);
-
-    /// Create string-valued parameter
-    StringParameter(std::string key, std::string value);
-
-    /// Destructor
-    ~StringParameter();
-
-    /// Set range
-    void set_range(std::set<std::string> range);
-
-    /// Get range
-    void get_range(std::set<std::string>& range) const;
-
-    /// Assignment
-    const StringParameter& operator= (std::string value);
-
-    /// Assignment
-    const StringParameter& operator= (const char* value);
-
-    /// Cast parameter to string
-    operator std::string() const;
-
-    /// Return value type string
-    std::string type_str() const;
-
-    /// Return value string
-    std::string value_str() const;
-
-    /// Return range string
-    std::string range_str() const;
-
-    /// Return short string description
-    std::string str() const;
-
-  private:
-
-    /// Parameter value
-    std::string _value;
-
-    /// Parameter range
-    std::set<std::string> _range;
-
-  };
-
-  /// Parameter with value type bool
-  class BoolParameter : public Parameter
-  {
-  public:
-
-    /// Create unset bool-valued parameter
-    explicit BoolParameter(std::string key);
-
-    /// Create bool-valued parameter
-    BoolParameter(std::string key, bool value);
-
-    /// Destructor
-    ~BoolParameter();
-
-    /// Assignment
-    const BoolParameter& operator= (bool value);
-
-    /// Cast parameter to bool
-    operator bool() const;
-
-    /// Return value type string
-    std::string type_str() const;
-
-    /// Return value string
-    std::string value_str() const;
-
-    /// Return range string
-    std::string range_str() const;
-
-    /// Return short string description
-    std::string str() const;
-
-  private:
-
-    /// Parameter value
-    bool _value;
-
-  };
-
 }
-
 #endif

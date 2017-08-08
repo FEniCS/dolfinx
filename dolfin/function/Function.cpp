@@ -362,7 +362,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
                     const Eigen::Ref<Eigen::VectorXd> x) const
 {
   Array<double> _values(values.size(), values.data());
-  const Array<double> _x(x.size(), const_cast<double*>(values.data()));
+  const Array<double> _x(x.size(), const_cast<double*>(x.data()));
   eval(_values, _x);
 }
 //-----------------------------------------------------------------------------
@@ -371,7 +371,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
                     const Cell& dolfin_cell, const ufc::cell& ufc_cell) const
 {
   Array<double> _values(values.size(), values.data());
-  const Array<double> _x(x.size(), const_cast<double*>(values.data()));
+  const Array<double> _x(x.size(), const_cast<double*>(x.data()));
   eval(_values, _x, dolfin_cell, ufc_cell);
 }
 //-----------------------------------------------------------------------------
