@@ -341,7 +341,7 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   // we instead consider the points to be on the line [Case 2] to
   // obtain one or more sensible points (if any).
 
-   // Compute orientation of segment end points wrt line
+  // Compute orientation of segment end points wrt line
   const double q0o = orient2d(p0, p1, q0);
   const double q1o = orient2d(p0, p1, q1);
 
@@ -357,7 +357,7 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   const double p1o = orient2d(q0, q1, p1);
   if (p0o*p1o > 0.)
     return std::vector<Point>();
-  
+
   // Case 1: exactly one point on line --> possible point intersection
   if (q0o == 0. and q1o != 0.)
     return intersection_segment_point_2d(p0, p1, q0);
@@ -399,7 +399,7 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
         points.push_back(Point(x, p));
       }
     }
-    
+
     return unique(points);
   }
 

@@ -239,7 +239,7 @@ def test_triangle_segment_2D_1():
     intersection = IntersectionConstruction.intersection_triangle_segment_2d(p0, p1, p2, q1, q0)
     assert len(intersection) == 1
 
-    
+
 def compare_with_cgal(p0, p1, q0, q1, cgal):
     intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
 
@@ -248,7 +248,7 @@ def compare_with_cgal(p0, p1, q0, q1, cgal):
 
     return abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and \
         abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS
-    
+
 
 @skip_in_parallel
 #@pytest.mark.skipif(True, reason="This test needs to be updated")
@@ -258,7 +258,7 @@ def test_segment_segment_1():
     p1 = Point(0.99999999999999955591,-2)
     q0 = Point(0.9142135623730932581,-1.9142135623730944793)
     q1 = Point(-0.29289321881346941367,-0.70710678118654635149)
-    
+
     # The intersection should according to CGAL be
     cgal = Point(0.91066799144849319703, -1.9106679914484945293)
 
@@ -275,7 +275,7 @@ def test_segment_segment_2():
     cgal = Point(0.70710678118654612945, 0.7071067811865050512)
     assert(compare_with_cgal(p0, p1, q0, q1, cgal))
 
-    
+
 @skip_in_parallel
 #@pytest.mark.skipif(True, reason="This test needs to be updated")
 def test_segment_segment_3():
@@ -287,7 +287,7 @@ def test_segment_segment_3():
     cgal = Point(0.70710678118654679558, -0.10611057050352221132)
     assert(compare_with_cgal(p0, p1, q0, q1, cgal))
 
-    
+
 @skip_in_parallel
 #@pytest.mark.skipif(True, reason="This test needs to be updated")
 def test_segment_segment_4():
@@ -299,7 +299,7 @@ def test_segment_segment_4():
     cgal = Point(0.67572340116162599166, -0.67572340116162288304)
     assert(compare_with_cgal(p0, p1, q0, q1, cgal))
 
-    
+
 @skip_in_parallel
 def test_segment_segment_5():
     "Case that failed CGAL comparison but passed when scaling the numerator in x = p0 + o / d * v"
@@ -310,7 +310,7 @@ def test_segment_segment_5():
     cgal = Point(0.3429203673216533188,0.8429203673205103442)
     assert(compare_with_cgal(p0, p1, q0, q1, cgal))
 
-    
+
 @skip_in_parallel
 def test_segment_segment_6():
     "Case that demonstrates, among other things, that we must check the orientation for p0, p1 in intersection_segment_segment_2d"
@@ -322,6 +322,3 @@ def test_segment_segment_6():
     intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
 
     assert len(intersection) == 0
-    
-
-    
