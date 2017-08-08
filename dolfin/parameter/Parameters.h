@@ -267,10 +267,10 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     /// Return parameter, if present
-    boost::optional<Parameter> find_parameter(std::string key) const;
+    boost::optional<Parameter&> find_parameter(std::string key);
 
     /// Return parameter set, if present
-    boost::optional<Parameters> find_parameter_set(std::string key) const;
+    boost::optional<Parameters&> find_parameter_set(std::string key);
 
   protected:
 

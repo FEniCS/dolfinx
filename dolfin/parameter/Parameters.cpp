@@ -599,7 +599,7 @@ void Parameters::read_vm(po::variables_map& vm, Parameters& parameters,
   }
 }
 //-----------------------------------------------------------------------------
-boost::optional<Parameter> Parameters::find_parameter(std::string key) const
+boost::optional<Parameter&> Parameters::find_parameter(std::string key)
 {
   auto p = _parameters.find(key);
   if (p == _parameters.end())
@@ -610,7 +610,7 @@ boost::optional<Parameter> Parameters::find_parameter(std::string key) const
     return boost::get<Parameter>(p->second);
 }
 //-----------------------------------------------------------------------------
-boost::optional<Parameters> Parameters::find_parameter_set(std::string key) const
+boost::optional<Parameters&> Parameters::find_parameter_set(std::string key)
 {
   auto p = _parameters.find(key);
   if (p == _parameters.end())
