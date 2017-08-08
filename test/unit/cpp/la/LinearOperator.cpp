@@ -25,17 +25,17 @@
 #include <dolfin.h>
 #include "forms/ReactionDiffusion.h"
 #include "forms/ReactionDiffusionAction.h"
-
-#include <gtest/gtest.h>
+#include <catch/catch.hpp>
 
 using namespace dolfin;
 
-// Backends supporting the LinearOperator interface
-static std::vector<std::string> backends = {"PETSc", "Eigen"};
-
 //-----------------------------------------------------------------------------
-TEST(TestLinearOperator, test_linear_operator)
+TEST_CASE("Testing LinearOperator", "[linear_operator]")
 {
+  // Backends supporting the LinearOperator interface
+  //std::vector<std::string> backends = {"PETSc", "Eigen"};
+  std::vector<std::string> backends = {"PETSc"};
+
   // Define linear operator
   class MyLinearOperator : public LinearOperator
   {
@@ -68,59 +68,53 @@ TEST(TestLinearOperator, test_linear_operator)
 
   };
 
-  // Iterate over backends supporting linear operators
-  for (std::size_t i = 0; i < backends.size(); i++)
+  SECTION("using linear operator")
   {
-    // Check whether backend is available
-    if (!has_linear_algebra_backend(backends[i]))
-      continue;
-
-    // Skip testing Eigen in parallel
-    if (dolfin::MPI::size(MPI_COMM_WORLD) > 1
-        && backends[i] == "Eigen")
+    // Iterate over backends supporting linear operators
+    for (std::size_t i = 0; i < backends.size(); i++)
     {
-      info("Not running Eigen test in parallel");
-      continue;
+      // Check whether backend is available
+      if (!has_linear_algebra_backend(backends[i]))
+        continue;
+
+      // Skip testing Eigen in parallel
+      if (dolfin::MPI::size(MPI_COMM_WORLD) > 1
+          && backends[i] == "Eigen")
+      {
+        info("Not running Eigen test in parallel");
+        continue;
+      }
+
+      // Set linear algebra backend
+      parameters["linear_algebra_backend"] = backends[i];
+
+      // Compute reference value by solving ordinary linear system
+      auto mesh = std::make_shared<UnitSquareMesh>(8, 8);
+      auto V = std::make_shared<ReactionDiffusion::FunctionSpace>(mesh);
+      ReactionDiffusion::BilinearForm a(V, V);
+      ReactionDiffusion::LinearForm L(V);
+      auto f = std::make_shared<Constant>(1.0);
+      L.f = f;
+      Matrix A;
+      Vector x, b;
+      assemble(A, a);
+      assemble(b, L);
+      solve(A, x, b, "gmres", "none");
+      const double norm_ref = norm(x, "l2");
+
+      //continue;
+
+      // Solve using linear operator defined by form action
+      ReactionDiffusionAction::LinearForm a_action(V);
+      auto u = std::make_shared<Function>(V);
+      a_action.u = u;
+      MyLinearOperator O(a_action, *u);
+      solve(O, x, b, "gmres", "none");
+      const double norm_action = norm(x, "l2");
+
+      // Check results
+      CHECK(norm_ref == Approx(norm_action).margin(1e-10));
     }
-
-    // Set linear algebra backend
-    parameters["linear_algebra_backend"] = backends[i];
-
-    // Compute reference value by solving ordinary linear system
-    auto mesh = std::make_shared<UnitSquareMesh>(8, 8);
-    auto V = std::make_shared<ReactionDiffusion::FunctionSpace>(mesh);
-    ReactionDiffusion::BilinearForm a(V, V);
-    ReactionDiffusion::LinearForm L(V);
-    auto f = std::make_shared<Constant>(1.0);
-    L.f = f;
-    Matrix A;
-    Vector x, b;
-    assemble(A, a);
-    assemble(b, L);
-    solve(A, x, b, "gmres", "none");
-    const double norm_ref = norm(x, "l2");
-
-    continue;
-
-    // Solve using linear operator defined by form action
-    ReactionDiffusionAction::LinearForm a_action(V);
-    auto u = std::make_shared<Function>(V);
-    a_action.u = u;
-    MyLinearOperator O(a_action, *u);
-    solve(O, x, b, "gmres", "none");
-    const double norm_action = norm(x, "l2");
-
-    // Check results
-      ASSERT_NEAR(norm_ref, norm_action, 1e-10);
   }
-}
-
-// Test all
-int LinearOperator_main(int argc, char **argv) {
-    // Add backends supporting the LinearOperator interface
-    backends.push_back("PETSc");
-    backends.push_back("Eigen");
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }
 //-----------------------------------------------------------------------------

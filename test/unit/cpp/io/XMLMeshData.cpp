@@ -20,56 +20,58 @@
 //
 
 #include <dolfin.h>
-#include <gtest/gtest.h>
+#include <catch/catch.hpp>
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-TEST(XMLMeshDataIO, test_write_read)
+namespace
 {
-  // XML mesh output is not supported in parallel. Add test for
-  // parallel with HDF5 when ready.
-  if (dolfin::MPI::size(MPI_COMM_WORLD) == 1)
+  void xml_mesh_data()
   {
-    const std::size_t value = 10;
+    // XML mesh output is not supported in parallel. Add test for
+    // parallel with HDF5 when ready.
+    if (dolfin::MPI::size(MPI_COMM_WORLD) == 1)
     {
-      UnitSquareMesh mesh(2, 2);
+      const std::size_t value = 10;
+      {
+        UnitSquareMesh mesh(2, 2);
 
-      // Create some mesh data
-      std::vector<std::size_t>& data0 = mesh.data().create_array("v", 0);
-      data0.resize(mesh.num_entities(0), value);
+        // Create some mesh data
+        std::vector<std::size_t>& data0 = mesh.data().create_array("v", 0);
+        data0.resize(mesh.num_entities(0), value);
 
-      mesh.init(1);
-      std::vector<std::size_t>& data1 = mesh.data().create_array("e", 1);
-      data1.resize(mesh.num_entities(1), value);
+        mesh.init(1);
+        std::vector<std::size_t>& data1 = mesh.data().create_array("e", 1);
+        data1.resize(mesh.num_entities(1), value);
 
-      std::vector<std::size_t>& data2 = mesh.data().create_array("c", 2);
-      data2.resize(mesh.num_entities(2), value);
+        std::vector<std::size_t>& data2 = mesh.data().create_array("c", 2);
+        data2.resize(mesh.num_entities(2), value);
 
-      File file("mesh_data.xml");
-      file << mesh;
-    }
+        File file("mesh_data.xml");
+        file << mesh;
+      }
 
-    {
-      // Read mesh from file
-      Mesh mesh("mesh_data.xml");
+      {
+        // Read mesh from file
+        Mesh mesh("mesh_data.xml");
 
-      // Access mesh data and check
-      const std::vector<std::size_t>& data0 = mesh.data().array("v", 0);
-      ASSERT_EQ(data0.size(), mesh.num_entities(0));
-      ASSERT_EQ(data0[2], value);
-      const std::vector<std::size_t>& data1 = mesh.data().array("e", 1);
-      ASSERT_EQ(data1.size(), mesh.num_entities(1));
-      ASSERT_EQ(data1[2], value);
-      const std::vector<std::size_t>& data2 = mesh.data().array("c", 2);
-      ASSERT_EQ(data2.size(), mesh.num_entities(2));
-      ASSERT_EQ(data2[2], value);
+        // Access mesh data and check
+        const std::vector<std::size_t>& data0 = mesh.data().array("v", 0);
+        CHECK(data0.size() == mesh.num_entities(0));
+        CHECK(data0[2] == value);
+        const std::vector<std::size_t>& data1 = mesh.data().array("e", 1);
+        CHECK(data1.size() == mesh.num_entities(1));
+        CHECK(data1[2] == value);
+        const std::vector<std::size_t>& data2 = mesh.data().array("c", 2);
+        CHECK(data2.size() == mesh.num_entities(2));
+        CHECK(data2[2] == value);
+      }
     }
   }
 }
 
-// Test all
-int XMLMeshData_main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+//-----------------------------------------------------------------------------
+TEST_CASE("Test XML mesh data", "[xml_mesh_data]")
+{
+  CHECK_NOTHROW(xml_mesh_data());
 }

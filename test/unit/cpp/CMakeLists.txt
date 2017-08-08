@@ -1,90 +1,25 @@
+cmake_minimum_required(VERSION 3.5)
 project(dolfin-tests)
 
-# Require CMake 2.8
-cmake_minimum_required(VERSION 3.5)
-
-# Set special link option, see `cmake --help-policy CMP0003`
-if(COMMAND cmake_policy)
-  cmake_policy(SET CMP0003 NEW)
-endif()
-
-# Find DOLFIN config file (not used here, but checks that tests will be able
-# to find it
 find_package(DOLFIN REQUIRED)
+include(${DOLFIN_USE_FILE})
 
-# Add GoogleTest Directory
-include_directories(${CMAKE_BINARY_DIR}/GoogleTest/src/googletest/include)
-link_directories(${CMAKE_BINARY_DIR}/GoogleTest/src/googletest-build)
+# Prepare "Catch" library for other executables
+set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-# If config file is found, add all demo sub-directories, else print helper
-# message
-if (DOLFIN_FOUND)
+add_library(Catch INTERFACE)
+target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
 
-  # Build list of all cpp directories
-  file(GLOB_RECURSE initial_list "*.cpp")
+# Make test executable
+set(TEST_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/common/SubsystemsManager.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/function/Expression.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/io/XMLMeshData.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/io/XMLMeshValueCollection.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/la/LinearOperator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/la/Vector.cpp
+  )
 
-  set(added_files "") # Change to targetting cpp files instead
-
-  # Add each C++ demo directory only once
-  foreach (cpp_test ${initial_list})
-
-    # Get directory
-    get_filename_component(cpp_lib_dir ${cpp_test} DIRECTORY)
-
-    # Get one upper directory
-    get_filename_component(cpp_dir ${cpp_lib_dir} DIRECTORY)
-
-    # Get last dir name
-    get_filename_component(last_component ${cpp_dir} NAME)
-
-    # Only process if last dirname is cpp
-    if ((${last_component} STREQUAL "cpp"))
-      # If you find the cpp lib dir
-      # That means you have allocated the cpp files
-      # Don't need to recheck the directories
-      list(APPEND added_files ${cpp_test})
-
-    endif()
-  endforeach()
-
-  # Set CMake behavior
-  cmake_policy(SET CMP0004 NEW)
-
-  if (EXISTS ${DOLFIN_USE_FILE})
-    include(${DOLFIN_USE_FILE})
-
-    # Default build type (can be overridden by user)
-    if (NOT CMAKE_BUILD_TYPE)
-      set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
-        "Choose the type of build, options are: Debug MinSizeRel Release RelWithDebInfo." FORCE)
-    endif()
-  else()
-    # Compiler definitions
-    add_definitions(${DOLFIN_CXX_DEFINITIONS})
-
-    # Compiler flags
-    set(CMAKE_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
-
-    # Include directories
-    include_directories(${DOLFIN_INCLUDE_DIRS})
-    include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
-  endif()
-
-  # Google Test uses threads
-  if (NOT APPLE)
-    set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-    find_package(Threads REQUIRED)
-    if (CMAKE_USE_PTHREADS_INIT)
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-    endif()
-  endif()
-
-  add_executable(unittests_cpp ${added_files})
-  add_dependencies(unittests_cpp googletest)
-  target_link_libraries(unittests_cpp ${DOLFIN_LIBRARIES} gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
-
-else()
-
-  message(STATUS "Could not locate DOLFINConfig.cmake file. Did you do 'make install' for the DOLFIN library and set the appropriate paths (source <build_dir>/dolfin.conf)?")
-
-endif()
+add_executable(unittests_cpp ${TEST_SOURCES})
+target_link_libraries(unittests_cpp PRIVATE Catch dolfin)

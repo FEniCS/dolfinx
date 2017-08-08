@@ -21,26 +21,25 @@
 // Unit tests for SubSystemsManager
 
 #include <dolfin.h>
-#include <gtest/gtest.h>
+#include <catch/catch.hpp>
 
-using namespace dolfin;
-
-// Test rewritten using Google Test
-TEST(TestSubSystemsManager, test_petsc_user_init)
+namespace
 {
-  // Test user initialisation of PETSc
+  void init_petsc()
+  {
+    // Test user initialisation of PETSc
 #ifdef HAS_PETSC
-  int argc = 0;
-  char **argv = NULL;
-  PetscInitialize(&argc, &argv, NULL, NULL);
+    int argc = 0;
+    char **argv = NULL;
+    PetscInitialize(&argc, &argv, NULL, NULL);
 
-  UnitSquareMesh(12, 12);
-  PETScVector(MPI_COMM_WORLD, 30);
+    dolfin::UnitSquareMesh(12, 12);
+    dolfin::PETScVector(MPI_COMM_WORLD, 30);
 #endif
+  }
 }
 
-// Test all
-int SubSystemsManager_main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+TEST_CASE( "Initialise PETSc", "[petsc_init]" )
+{
+  CHECK_NOTHROW(init_petsc());
 }
