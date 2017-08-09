@@ -38,7 +38,7 @@
 #include "MeshFunction.h"
 #include "MultiMesh.h"
 
-//#include "dolfin_simplex_tools.h"
+// #include "dolfin_simplex_tools.h"
 
 using namespace dolfin;
 
@@ -264,7 +264,7 @@ void MultiMesh::build(std::size_t quadrature_order)
 
   // Make sure that cut cells are actually cut
   // TODO: Do this while building interface quadrature rules
-  _impose_cut_cell_consistency();
+  //_impose_cut_cell_consistency();
 
   end();
 }
