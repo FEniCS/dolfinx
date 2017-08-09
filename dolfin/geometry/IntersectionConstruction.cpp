@@ -27,6 +27,8 @@
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"
 
+#include "dolfin_simplex_tools.h"
+
 using namespace dolfin;
 
 namespace dolfin
@@ -312,6 +314,8 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
                                                           const Point& q0,
                                                           const Point& q1)
 {
+  return cgal_intersection_segment_segment_2d(p0,p1,q0,q1);
+
   // We consider the following 4 cases for the segment q0-q1
   // relative to the line defined by the segment p0-p1:
   //
@@ -375,7 +379,7 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   const double Q1 = GeometryTools::project_to_axis_2d(q1, major_axis);
 
   // Case 2: both points on line (or almost)
-  if (std::abs(q0o) < DOLFIN_EPS_LARGE and std::abs(q1o) < DOLFIN_EPS_LARGE)
+  if (std::abs(q0o) < DOLFIN_EPS and std::abs(q1o) < DOLFIN_EPS)
   {
     // Compute 1D intersection points
     const std::vector<double>
@@ -443,6 +447,48 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
     break;
   }
 
+  // {
+  //   const std::vector<Point> cgal=cgal_intersection_segment_segment_2d(p0,p1,q0,q1);
+  //   return cgal;
+
+  //   std::cout << tools::drawtriangle({p0,p1})<<tools::drawtriangle({q0,q1},"[0.1 0.1 0.1]")<<"\n";
+  //   std::vector<Point> xxx = {{ p0 - p0o / den * v,
+  // 				p1 - p1o / den * v,
+  // 				q0 + q0o / den * w,
+  // 				q1 + q1o / den * w }};
+  //   std::cout.precision(20);
+  //   // std::cout << "xxx\n";
+  //   // for (const Point& x : xxx)
+  //   //   std::cout << x[0]<<' '<<x[1]<<'\n';
+  //   std::cout << "p0o=sym(" << p0o << ");\n";
+  //   std::cout << "p1o=sym(" << p1o << ");\n";
+  //   std::cout << "q0o=sym(" << q0o << ");\n";
+  //   std::cout << "q1o=sym(" << q1o << ");\n";
+  //   std::cout << "den " << den << '\n';
+  //   std::cout << "pdist qdist " << p_dist <<' '<<q_dist << '\n';
+  //   std::cout << "cgal size " << cgal.size() << '\n';
+
+  //   double maxdiff = -1;
+  //   if (cgal.size() == 1)
+  //   {
+  //     for (const Point& x : xxx)
+  //     {
+  // 	//std::cout << x[0]<<' '<<x[1]<<' '<<(x-cgal[0]).norm() << '\n';
+  // 	maxdiff = std::max(maxdiff, (x-cgal[0]).norm());
+  //     }
+  //     if (maxdiff>DOLFIN_EPS)
+  //     {
+  // 	std::cout << "maxdiff " << maxdiff<<'\n';
+  // 	for (const Point& x : xxx)
+  // 	{
+  // 	  std::cout << x[0]<<' '<<x[1]<<' '<<(x-cgal[0]).norm() << '\n';
+  // 	}
+  //     }
+  //   }
+
+  //   std::cout << std::flush;
+  // }
+
   // Project point to major axis and check if inside segment
   const double X = GeometryTools::project_to_axis_2d(x, major_axis);
   if (CollisionPredicates::collides_segment_point_1d(P0, P1, X))
@@ -469,6 +515,8 @@ IntersectionConstruction::intersection_triangle_segment_2d(const Point& p0,
                                                            const Point& q0,
                                                            const Point& q1)
 {
+  return cgal_intersection_triangle_segment_2d(p0,p1,p2,q0,q1);
+
   // The list of points (convex hull)
   std::vector<Point> points;
 
@@ -635,6 +683,8 @@ IntersectionConstruction::intersection_triangle_triangle_2d(const Point& p0,
                                                             const Point& q1,
                                                             const Point& q2)
 {
+  return cgal_intersection_triangle_triangle_2d(p0,p1,p2,q0,q1,q2);
+
   // The list of points (convex hull)
   std::vector<Point> points;
 

@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-06-22
+// Last changed: 2017-08-08
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -37,6 +37,8 @@
 #include "BoundaryMesh.h"
 #include "MeshFunction.h"
 #include "MultiMesh.h"
+
+#include "dolfin_simplex_tools.h"
 
 using namespace dolfin;
 
@@ -492,7 +494,7 @@ void MultiMesh::_build_collision_maps()
     // 2: covered = cell colliding with some higher domain but not its boundary
 
     // Create vector of markers for cells in part `i` (0, 1, or 2)
-    std::vector<char> markers(_meshes[i]->num_cells(), 0);
+    std::vector<std::size_t> markers(_meshes[i]->num_cells(), 0);
 
     // Create local arrays for marking domain and boundary collisions
     // for cells in part `i`. Note that in contrast to the markers
@@ -522,7 +524,7 @@ void MultiMesh::_build_collision_maps()
 	// Get the colliding cell
 	const std::size_t cell_i = boundary_collisions.first[k];
 
-	// Do a careful check if not already marked as colliding
+	// Do a care1ful check if not already marked as colliding
 	if (!collides_with_boundary[cell_i])
 	{
 	  const Cell cell(*_meshes[i], cell_i);
@@ -619,6 +621,8 @@ void MultiMesh::_build_collision_maps()
         covered_cells.push_back(c);
       }
     }
+
+    tools::dolfin_write_medit("../output/markers",*_meshes[i],i,&markers);
 
     // Store data for this mesh
     _uncut_cells.push_back(uncut_cells);
