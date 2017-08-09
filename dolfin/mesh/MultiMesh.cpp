@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-08-08
+// Last changed: 2017-08-09
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -38,7 +38,7 @@
 #include "MeshFunction.h"
 #include "MultiMesh.h"
 
-#include "dolfin_simplex_tools.h"
+//#include "dolfin_simplex_tools.h"
 
 using namespace dolfin;
 
@@ -622,7 +622,7 @@ void MultiMesh::_build_collision_maps()
       }
     }
 
-    tools::dolfin_write_medit("../output/markers",*_meshes[i],i,&markers);
+    //tools::dolfin_write_medit("../output/markers",*_meshes[i],i,&markers);
 
     // Store data for this mesh
     _uncut_cells.push_back(uncut_cells);

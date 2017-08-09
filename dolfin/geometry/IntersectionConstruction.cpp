@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-08-08
+// Last changed: 2017-08-09
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -314,7 +314,7 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
                                                           const Point& q0,
                                                           const Point& q1)
 {
-  return cgal_intersection_segment_segment_2d(p0,p1,q0,q1);
+  //return cgal_intersection_segment_segment_2d(p0,p1,q0,q1);
 
   // We consider the following 4 cases for the segment q0-q1
   // relative to the line defined by the segment p0-p1:
@@ -379,7 +379,7 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   const double Q1 = GeometryTools::project_to_axis_2d(q1, major_axis);
 
   // Case 2: both points on line (or almost)
-  if (std::abs(q0o) < DOLFIN_EPS and std::abs(q1o) < DOLFIN_EPS)
+  if (std::abs(q0o) < DOLFIN_EPS_LARGE and std::abs(q1o) < DOLFIN_EPS_LARGE)
   {
     // Compute 1D intersection points
     const std::vector<double>
@@ -515,7 +515,7 @@ IntersectionConstruction::intersection_triangle_segment_2d(const Point& p0,
                                                            const Point& q0,
                                                            const Point& q1)
 {
-  return cgal_intersection_triangle_segment_2d(p0,p1,p2,q0,q1);
+  //return cgal_intersection_triangle_segment_2d(p0,p1,p2,q0,q1);
 
   // The list of points (convex hull)
   std::vector<Point> points;
@@ -598,7 +598,7 @@ IntersectionConstruction::intersection_triangle_segment_3d(const Point& p0,
   const Point Q1 = GeometryTools::project_to_plane_3d(q1, major_axis);
 
   // Case 2: both points in plane (or almost)
-  if (std::abs(q0o) < DOLFIN_EPS_LARGE and std::abs(q1o) < DOLFIN_EPS_LARGE)
+  if (std::abs(q0o) < DOLFIN_EPS and std::abs(q1o) < DOLFIN_EPS)
   {
     // Compute 2D intersection points
     const std::vector<Point>
@@ -683,7 +683,7 @@ IntersectionConstruction::intersection_triangle_triangle_2d(const Point& p0,
                                                             const Point& q1,
                                                             const Point& q2)
 {
-  return cgal_intersection_triangle_triangle_2d(p0,p1,p2,q0,q1,q2);
+  //return cgal_intersection_triangle_triangle_2d(p0,p1,p2,q0,q1,q2);
 
   // The list of points (convex hull)
   std::vector<Point> points;
