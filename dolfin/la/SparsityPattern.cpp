@@ -203,7 +203,7 @@ void SparsityPattern::insert_entries(
     // Sequential mode, do simple insertion if not full row
     for (const auto &i_index : map_i)
     {
-      dolfin_assert(i_index < diagonal.size());
+      dolfin_assert(i_index < (dolfin::la_index) diagonal.size());
       if (!has_full_rows || full_rows.find(i_index) == full_rows_end)
         diagonal[i_index].insert(map_j.begin(), map_j.end());
     }
@@ -221,20 +221,21 @@ void SparsityPattern::insert_entries(
         continue;
       }
 
-      if (I < local_size0)
+      if (I < (dolfin::la_index) local_size0)
       {
         // Store local entry in diagonal or off-diagonal block
         for (const auto &j_index : map_j)
         {
           const auto J = primary_codim_map(j_index, index_map1);
-          if (local_range1.first <= J && J < local_range1.second)
+          if ((dolfin::la_index) local_range1.first <= J
+              && J < (dolfin::la_index) local_range1.second)
           {
-            dolfin_assert(I < diagonal.size());
+            dolfin_assert(I < (dolfin::la_index) diagonal.size());
             diagonal[I].insert(J);
           }
           else
           {
-            dolfin_assert(I < off_diagonal.size());
+            dolfin_assert(I < (dolfin::la_index) off_diagonal.size());
             off_diagonal[I].insert(J);
           }
         }
