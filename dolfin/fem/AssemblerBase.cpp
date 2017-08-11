@@ -120,7 +120,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
       {
         // Down cast tensor to matrix
         dolfin_assert(A.rank() == 2);
-        GenericMatrix& _matA = A.down_cast<GenericMatrix>();
+        GenericMatrix& _matA = as_type<GenericMatrix>(A);
 
         // Get local row range
         const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
