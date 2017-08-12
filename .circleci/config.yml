@@ -39,7 +39,7 @@ jobs:
           command: source /usr/local/share/dolfin/dolfin.conf && python3 -m pytest test/unit/python/
       - run:
           name: Run Python unit tests (MPI)
-          command: source /usr/local/share/dolfin/dolfin.conf && mpirun -n 3 python3 -m pytest python/unit-tests
+          command: source /usr/local/share/dolfin/dolfin.conf && mpirun -n 3 python3 -m pytest test/unit/python/
       - run:
           name: Run C++ unit tests
           command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_unittests_cpp
