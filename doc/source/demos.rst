@@ -52,7 +52,7 @@ All documented Python demos
    demos/eigenvalue/python/demo_eigenvalue.py.rst
    demos/built-in-meshes/python/demo_built-in-meshes.py.rst
    demos/mixed-poisson/python/demo_mixed-poisson.py.rst
-   demos/documented/stokes-taylor-hood-quadrilateral/python/demo_stokes-taylor-hood-quadrilateral.py.rst
+   demos/stokes-taylor-hood-quadrilateral/python/demo_stokes-taylor-hood-quadrilateral.py.rst
    demos/biharmonic/python/demo_biharmonic.py.rst
    demos/auto-adaptive-poisson/python/demo_auto-adaptive-poisson.py.rst
    demos/cahn-hilliard/python/demo_cahn-hilliard.py.rst
