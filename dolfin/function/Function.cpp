@@ -403,6 +403,16 @@ std::size_t Function::value_dimension(std::size_t i) const
   return _function_space->element()->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
+std::vector<std::size_t> Function::value_shape() const
+{
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->element());
+  std::vector<std::size_t> _shape(this->value_rank(), 1);
+  for (std::size_t i = 0; i < _shape.size(); ++i)
+    _shape[i] = this->value_dimension(i);
+  return _shape;
+}
+//-----------------------------------------------------------------------------
 void Function::eval(Array<double>& values, const Array<double>& x,
                     const ufc::cell& ufc_cell) const
 {

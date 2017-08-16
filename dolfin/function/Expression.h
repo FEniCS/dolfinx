@@ -141,6 +141,12 @@ namespace dolfin
     ///         The value dimension (for the given axis).
     virtual std::size_t value_dimension(std::size_t i) const override;
 
+    /// Return value shape
+    ///
+    /// @return std::vector<std::size_t>
+    ///         The value shape.
+    virtual std::vector<std::size_t> value_shape() const override;
+
     /// Restrict function to local cell (compute expansion coefficients w).
     ///
     /// @param    w (list of doubles)

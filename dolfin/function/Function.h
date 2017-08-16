@@ -270,6 +270,13 @@ namespace dolfin
     ///         The value dimension.
     virtual std::size_t value_dimension(std::size_t i) const override;
 
+    /// Return value shape
+    ///
+    /// *Returns*
+    ///     std::vector<std::size_t>
+    ///         The value shape.
+    virtual std::vector<std::size_t> value_shape() const override;
+
     /// Evaluate at given point in given cell
     ///
     /// @param    values (Array<double>)

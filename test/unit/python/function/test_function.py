@@ -46,6 +46,10 @@ def W(mesh):
     return VectorFunctionSpace(mesh, 'CG', 1)
 
 
+def test_shape(W):
+    u = Function(W)
+    print(u.shape())
+
 def test_name_argument(W):
     u = Function(W)
     v = Function(W, name="v")

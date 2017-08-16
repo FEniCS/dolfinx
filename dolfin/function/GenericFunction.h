@@ -67,6 +67,9 @@ namespace dolfin
     /// Return value dimension for given axis
     virtual std::size_t value_dimension(std::size_t i) const = 0;
 
+    /// Return value shape
+    virtual std::vector<std::size_t> value_shape() const = 0;
+
     /// Evaluate at given point in given cell (deprecated)
     virtual void eval(Array<double>& values, const Array<double>& x,
                       const ufc::cell& cell) const;
