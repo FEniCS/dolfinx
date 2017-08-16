@@ -190,9 +190,11 @@ void SparsityPattern::insert_entries(
   const auto full_rows_end = full_rows.end();
 
   // Programmers' note:
-  // We use the lower case index i/j to denote the indices before mapping.
-  // We use the  upper case index I/J to denote the indices after mapping to be
-  // inserted into the SparsityPattern data structure.
+  // We use the lower case index i/j to denote the indices before calls to
+  // primary_dim_map/primary_codim_map.
+  // We use the  upper case index I/J to denote the indices after mapping
+  // (using primary_dim_map/primary_codim_map) to be inserted into
+  // the SparsityPattern data structure.
   //
   // In serial (_mpi_comm.size() == 1) we have the special case
   // where i == I and j == J.
