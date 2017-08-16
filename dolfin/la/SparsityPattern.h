@@ -147,8 +147,8 @@ namespace dolfin
     // The primary_codim entries must be global
     void insert_entries(
         const std::vector<ArrayView<const dolfin::la_index>>& entries,
-        const std::function<dolfin::la_index(const dolfin::la_index&, const IndexMap&)>& primary_dim_map,
-        const std::function<dolfin::la_index(const dolfin::la_index&, const IndexMap&)>& primary_codim_map);
+        const std::function<dolfin::la_index(const dolfin::la_index, const IndexMap&)>& primary_dim_map,
+        const std::function<dolfin::la_index(const dolfin::la_index, const IndexMap&)>& primary_codim_map);
 
     // Print some useful information
     void info_statistics() const;
