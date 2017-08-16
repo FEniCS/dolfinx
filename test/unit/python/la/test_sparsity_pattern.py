@@ -27,10 +27,10 @@ from dolfin_utils.test import *
 
 
 def count_on_and_off_diagonal_nnz(primary_codim_entries, local_range):
-    nnz_on_diagonal = sum(1 for entry in primary_codim_entries 
-        if local_range[0] <= entry < local_range[1])
-    nnz_off_diagonal = sum(1 for entry in primary_codim_entries 
-        if not local_range[0] <= entry < local_range[1])
+    nnz_on_diagonal = sum(1 for entry in primary_codim_entries
+                          if local_range[0] <= entry < local_range[1])
+    nnz_off_diagonal = sum(1 for entry in primary_codim_entries
+                           if not local_range[0] <= entry < local_range[1])
     return nnz_on_diagonal, nnz_off_diagonal
 
 
@@ -78,14 +78,11 @@ def test_insert_local(mesh, V):
 
     sp.apply()
 
-    assert len(primary_dim_entries)*len(primary_codim_entries) == sp.num_nonzeros()
+    assert len(primary_dim_entries) * len(primary_codim_entries) == sp.num_nonzeros()
 
     nnz_d = sp.num_nonzeros_diagonal()
     for local_row in range(len(nnz_d)):
-      if local_row in primary_dim_entries:
-        assert nnz_d[local_row] == len(primary_codim_entries)
-      else:
-        assert nnz_d[local_row] == 0
+        assert nnz_d[local_row] == (len(primary_codim_entries) if local_row in primary_dim_entries else 0)
 
 
 def test_insert_global(mesh, V):
@@ -124,12 +121,10 @@ def test_insert_global(mesh, V):
 
     # Compare tabulated and sparsity pattern nnzs
     for local_row in range(len(nnz_d)):
-      in_range = local_range[0] <= local_row < local_range[1]
-
-      if in_range:
-          assert nnz_d[local_row] == (nnz_on_diagonal if local_row in primary_dim_local_entries else 0)
-      else:
-          assert nnz_od[local_row] == (nnz_off_diagonal if local_row in primary_dim_local_entries else 0)
+        if local_range[0] <= local_row < local_range[1]:
+            assert nnz_d[local_row] == (nnz_on_diagonal if local_row in primary_dim_local_entries else 0)
+        else:
+            assert nnz_od[local_row] == (nnz_off_diagonal if local_row in primary_dim_local_entries else 0)
 
 
 def test_insert_local_row_global_column(mesh, V):
@@ -151,7 +146,8 @@ def test_insert_local_row_global_column(mesh, V):
     # The codim (column) entries will be added to the same global entries
     # on each process.
     primary_codim_entries = np.array([0, 1, 2], dtype=np.intc)
-    entries = np.array([primary_dim_entries, primary_codim_entries], dtype=np.intc)
+    entries = np.array(
+        [primary_dim_entries, primary_codim_entries], dtype=np.intc)
 
     sp.insert_local_row_global_column(entries)
     sp.apply()
@@ -168,9 +164,7 @@ def test_insert_local_row_global_column(mesh, V):
 
     # Compare tabulated and sparsity pattern nnzs
     for local_row in range(len(nnz_d)):
-      in_range = local_range[0] <= local_row < local_range[1]
-
-      if in_range:
-          assert nnz_d[local_row] == (nnz_on_diagonal if local_row in primary_dim_local_entries else 0)
-      else:
-          assert nnz_od[local_row] == (nnz_off_diagonal if local_row in primary_dim_local_entries else 0)
+        if local_range[0] <= local_row < local_range[1]:
+            assert nnz_d[local_row] == (nnz_on_diagonal if local_row in primary_dim_local_entries else 0)
+        else:
+            assert nnz_od[local_row] == (nnz_off_diagonal if local_row in primary_dim_local_entries else 0)
