@@ -19,23 +19,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from dolfin import *
 import pytest
-from dolfin_utils.test import *
 import numpy as np
+from six.moves import range
+from dolfin import *
+from dolfin_utils.test import *
 
 
-def count_off_and_on_diagonal_nnz(codim_entries, local_range):
-    nnz_on_diagonal = 0
-    nnz_off_diagonal = 0
-
-    for entry in codim_entries:
-      in_range = local_range[0] <= entry < local_range[1]
-      if in_range:
-        nnz_on_diagonal += 1
-      else:
-        nnz_off_diagonal += 1
-
+def count_on_and_off_diagonal_nnz(primary_codim_entries, local_range):
+    nnz_on_diagonal = sum(1 for entry in primary_codim_entries 
+        if local_range[0] <= entry < local_range[1])
+    nnz_off_diagonal = sum(1 for entry in primary_codim_entries 
+        if not local_range[0] <= entry < local_range[1])
     return nnz_on_diagonal, nnz_off_diagonal
 
 
@@ -76,19 +71,19 @@ def test_insert_local(mesh, V):
     sp = tl.sparsity_pattern()
     sp.init([index_map, index_map])
 
-    pridim_entries = [0, 1, 2]
-    codim_entries = [0, 1, 2]
-    entries = np.array([pridim_entries, codim_entries], dtype=np.intc)
+    primary_dim_entries = [0, 1, 2]
+    primary_codim_entries = [0, 1, 2]
+    entries = np.array([primary_dim_entries, primary_codim_entries], dtype=np.intc)
     sp.insert_local(entries)
 
     sp.apply()
 
-    assert len(pridim_entries)*len(codim_entries) == sp.num_nonzeros()
+    assert len(primary_dim_entries)*len(primary_codim_entries) == sp.num_nonzeros()
 
     nnz_d = sp.num_nonzeros_diagonal()
     for local_row in range(len(nnz_d)):
-      if local_row in pridim_entries:
-        assert nnz_d[local_row] == len(codim_entries)
+      if local_row in primary_dim_entries:
+        assert nnz_d[local_row] == len(primary_codim_entries)
       else:
         assert nnz_d[local_row] == 0
 
@@ -106,13 +101,13 @@ def test_insert_global(mesh, V):
 
     # Primary dim (row) entries need to be local to the process, so we ensure
     # they're in the local range of the index map
-    pridim_local_entries = np.array([0, 1, 2], dtype=np.intc)
-    pridim_entries = pridim_local_entries + local_range[0]
+    primary_dim_local_entries = np.array([0, 1, 2], dtype=np.intc)
+    primary_dim_entries = primary_dim_local_entries + local_range[0]
 
     # The codim (column) entries will be added to the same global entries
     # on each process.
-    codim_entries = np.array([0, 1, 2], dtype=np.intc)
-    entries = np.array([pridim_entries, codim_entries], dtype=np.intc)
+    primary_codim_entries = np.array([0, 1, 2], dtype=np.intc)
+    entries = np.array([primary_dim_entries, primary_codim_entries], dtype=np.intc)
 
     sp.insert_global(entries)
     sp.apply()
@@ -124,26 +119,17 @@ def test_insert_global(mesh, V):
     size = MPI.size(mesh.mpi_comm())
 
     # Tabulate on diagonal and off diagonal nnzs
-    nnz_on_diagonal, nnz_off_diagonal = count_off_and_on_diagonal_nnz(
-        codim_entries, local_range)
+    nnz_on_diagonal, nnz_off_diagonal = count_on_and_off_diagonal_nnz(
+        primary_codim_entries, local_range)
 
     # Compare tabulated and sparsity pattern nnzs
     for local_row in range(len(nnz_d)):
       in_range = local_range[0] <= local_row < local_range[1]
 
-      if local_row in pridim_local_entries:
-        # We added some entries into this row DoF, so check nnzs
-        if in_range:
-          assert nnz_d[local_row] == nnz_on_diagonal
-        else:
-          assert nnz_od[local_row] == nnz_off_diagonal
+      if in_range:
+          assert nnz_d[local_row] == (nnz_on_diagonal if local_row in primary_dim_local_entries else 0)
       else:
-        # No DoFs entered into this row, so ensure sparsity pattern
-        # is empty.
-        if in_range:
-          assert nnz_d[local_row] == 0
-        else:
-          assert nnz_od[local_row] == 0
+          assert nnz_od[local_row] == (nnz_off_diagonal if local_row in primary_dim_local_entries else 0)
 
 
 def test_insert_local_row_global_column(mesh, V):
@@ -159,13 +145,13 @@ def test_insert_local_row_global_column(mesh, V):
 
     # Primary dim (row) entries need to be local to the process, so we ensure
     # they're in the local range of the index map
-    pridim_local_entries = np.array([0, 1, 2], dtype=np.intc)
-    pridim_entries = pridim_local_entries
+    primary_dim_local_entries = np.array([0, 1, 2], dtype=np.intc)
+    primary_dim_entries = primary_dim_local_entries
 
     # The codim (column) entries will be added to the same global entries
     # on each process.
-    codim_entries = np.array([0, 1, 2], dtype=np.intc)
-    entries = np.array([pridim_entries, codim_entries], dtype=np.intc)
+    primary_codim_entries = np.array([0, 1, 2], dtype=np.intc)
+    entries = np.array([primary_dim_entries, primary_codim_entries], dtype=np.intc)
 
     sp.insert_local_row_global_column(entries)
     sp.apply()
@@ -177,23 +163,14 @@ def test_insert_local_row_global_column(mesh, V):
     size = MPI.size(mesh.mpi_comm())
 
     # Tabulate on diagonal and off diagonal nnzs
-    nnz_on_diagonal, nnz_off_diagonal = count_off_and_on_diagonal_nnz(
-        codim_entries, local_range)
+    nnz_on_diagonal, nnz_off_diagonal = count_on_and_off_diagonal_nnz(
+        primary_codim_entries, local_range)
 
     # Compare tabulated and sparsity pattern nnzs
     for local_row in range(len(nnz_d)):
       in_range = local_range[0] <= local_row < local_range[1]
 
-      if local_row in pridim_local_entries:
-        # We added some entries into this row DoF, so check nnzs
-        if in_range:
-          assert nnz_d[local_row] == nnz_on_diagonal
-        else:
-          assert nnz_od[local_row] == nnz_off_diagonal
+      if in_range:
+          assert nnz_d[local_row] == (nnz_on_diagonal if local_row in primary_dim_local_entries else 0)
       else:
-        # No DoFs entered into this row, so ensure sparsity pattern
-        # is empty.
-        if in_range:
-          assert nnz_d[local_row] == 0
-        else:
-          assert nnz_od[local_row] == 0
+          assert nnz_od[local_row] == (nnz_off_diagonal if local_row in primary_dim_local_entries else 0)
