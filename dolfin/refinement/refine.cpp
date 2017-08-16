@@ -73,7 +73,7 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh, bool redistribute)
   // Report the number of refined cells
   const std::size_t n0 = mesh.size_global(D);
   const std::size_t n1 = refined_mesh.size_global(D);
-  info("Number of cells increased from %d to %d (%.1f%% increase).",
+  log(TRACE,  "Number of cells increased from %d to %d (%.1f%% increase).",
        n0, n1, 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
 
 }
@@ -116,8 +116,8 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh,
   // Report the number of refined cells
   const std::size_t n0 = mesh.size_global(D);
   const std::size_t n1 = refined_mesh.size_global(D);
-  info("Number of cells increased from %d to %d (%.1f%% increase).",
-       n0, n1, 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
+  log(TRACE, "Number of cells increased from %d to %d (%.1f%% increase).",
+      n0, n1, 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
 
 }
 //-----------------------------------------------------------------------------
