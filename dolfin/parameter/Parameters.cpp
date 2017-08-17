@@ -474,7 +474,7 @@ void Parameters::parse_petsc(int argc, char* argv[])
     s.append(" ");
     s.append(std::string(argv[i]));
   }
-  info(s);
+  log(TRACE, s);
 
   SubSystemsManager::init_petsc(argc, argv);
 }
