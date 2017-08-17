@@ -14,14 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Anders Logg, 2007-2010.
-// Modified by Kent-Andre Mardal, 2008.
-// Modified by Ola Skavhaug, 2008.
-// Modified by Martin Sandve Alnes, 2008.
-//
-// First added:  2007-07-03
-// Last changed: 2011-01-14
 
 #ifndef __DOLFIN_VECTOR_H
 #define __DOLFIN_VECTOR_H
@@ -38,15 +30,18 @@ namespace dolfin
 
   template<typename T> class Array;
 
-  /// This class provides the default DOLFIN vector class,
-  /// based on the default DOLFIN linear algebra backend.
+  /// This class provides the default DOLFIN vector class, based on
+  /// the default DOLFIN linear algebra backend.
 
   class Vector : public GenericVector
   {
   public:
 
     /// Create empty vector
-    Vector(MPI_Comm comm=MPI_COMM_WORLD)
+    Vector() : Vector(MPI_COMM_WORLD) {}
+
+      /// Create empty vector
+    explicit Vector(MPI_Comm comm)
     {
       DefaultFactory factory;
       vector = factory.create_vector(comm);
