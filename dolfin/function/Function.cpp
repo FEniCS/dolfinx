@@ -437,7 +437,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
                     const ufc::cell& ufc_cell) const
 {
   Array<double> _values(values.size(), values.data());
-  Array<double> _x(x.size(), const_cast<double*>(values.data()));
+  Array<double> _x(x.size(), const_cast<double*>(x.data()));
   eval(_values, _x, ufc_cell);
 }
 //-----------------------------------------------------------------------------
