@@ -66,14 +66,14 @@ namespace dolfin
 
     /// Return true for points inside the subdomain
     ///
-    /// @param    x (Eigen::Ref<Eigen::VectorXd<double>>)
+    /// @param    x (Eigen::Ref<const Eigen::VectorXd>)
     ///         The coordinates of the point.
     /// @param   on_boundary (bool)
     ///         True for points on the boundary.
     ///
     /// @return    bool
     ///         True for points inside the subdomain.
-    virtual bool inside(const Eigen::Ref<Eigen::VectorXd>& x, bool on_boundary) const;
+    virtual bool inside(Eigen::Ref<const Eigen::VectorXd> x, bool on_boundary) const;
 
     /// Map coordinate x in domain H to coordinate y in domain G (used for
     /// periodic boundary conditions)
@@ -83,6 +83,17 @@ namespace dolfin
     /// @param    y (Array<double>)
     ///         The coordinates in domain G.
     virtual void map(const Array<double>& x, Array<double>& y) const;
+
+
+    /// Map coordinate x in domain H to coordinate y in domain G (used for
+    /// periodic boundary conditions)
+    ///
+    /// @param   x (Eigen::Ref<const Eigen::VectorXd>)
+    ///         The coordinates in domain H.
+    /// @param    y (Eigen::Ref<Eigen::VectorXd>)
+    ///         The coordinates in domain G.
+    virtual void map(Eigen::Ref<const Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> y) const;
+
 
     /// Snap coordinate to boundary of subdomain
     ///
@@ -249,6 +260,18 @@ namespace dolfin
     /// @return    std::size_t
     ///         The geometric dimension.
     std::size_t geometric_dimension() const;
+
+    /// Property setter
+    ///
+    /// @param name
+    /// @param value
+    virtual void set_property(std::string name, double value);
+
+    /// Property getter
+    ///
+    /// @param name
+    /// @return double
+    virtual double get_property(std::string name) const;
 
     /// Return tolerance uses to find matching point via map function
     ///
