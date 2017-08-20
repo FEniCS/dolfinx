@@ -140,8 +140,8 @@ namespace dolfin
 
     /// Add block of values using local indices
     virtual void
-    add_local(const double* block,
-              const std::vector<ArrayView<const dolfin::la_index>>& rows)
+      add_local(const double* block,
+                const std::vector<ArrayView<const dolfin::la_index>>& rows)
     { add_local(block, rows[0].size(), rows[0].data()); }
 
     /// Set all entries to zero and keep any sparse structure
@@ -254,6 +254,33 @@ namespace dolfin
     /// Return sum of selected rows in vector. Repeated entries are
     /// only summed once.
     virtual double sum(const Array<std::size_t>& rows) const = 0;
+
+    /// Sum two vectors (returns a new vector)
+    std::shared_ptr<GenericVector> operator+ (const GenericVector& x)
+    {
+      auto y = this->copy();
+      dolfin_assert(y);
+      *y += x;
+      return y;
+    }
+
+    /// Add scalar to a vector (returns a new vector)
+    std::shared_ptr<GenericVector> operator+ (double a)
+    {
+      auto y = this->copy();
+      dolfin_assert(y);
+      *y += a;
+      return y;
+    }
+
+    /// Multiply vector by a scalar (returns a new vector)
+    std::shared_ptr<GenericVector> operator* (double a)
+    {
+      auto y = this->copy();
+      dolfin_assert(y);
+      *y *= a;
+      return y;
+    }
 
     /// Multiply vector by given number
     virtual const GenericVector& operator*= (double a) = 0;
