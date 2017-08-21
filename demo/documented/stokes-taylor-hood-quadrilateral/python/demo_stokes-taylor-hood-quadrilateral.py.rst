@@ -8,7 +8,6 @@ This demo is implemented in a single Python file,
 :download:`demo_stokes-taylor-hood-quadrilateral.py`, which contains both the
 variational form and the solver.
 
-It is assumed that the reader is familiar with :ref:`_demo_pde_stokes-taylor-hood_python_documentation`.
 This demo shows the possibility to solve the Stokes equations on a quadrilateral mesh.
 
 This demo illustrates how to:
