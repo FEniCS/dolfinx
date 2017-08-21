@@ -73,7 +73,7 @@ Domain and boundary conditions
 
 In this demo, we shall consider the lid-driven cavity problem on the unit square:
 
-* :math:`\Omega = [0,1]\times[0,1]
+* :math:`\Omega = [0,1] \times [0,1]`
 * :math:`u_0 = (1.0, 0.0)` for :math:`x_1 = 1` and :math:`u_0 = (0.0, 0.0)` otherwise
 * :math:`f = (0.0, 0.0)`
 * :math:`g = (0.0, 0.0)`
