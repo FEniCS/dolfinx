@@ -1171,6 +1171,8 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
     {"Crouzeix-Raviart", "CR"},
     {"Nedelec 1st kind H(curl)", "N1curl"},
     {"Nedelec 2nd kind H(curl)", "N2curl"},
+    {"Q", "Q"},
+    {"DQ", "DQ"}
   };
 
   std::map<ufc::shape, std::string> cell_shape_repr = {
