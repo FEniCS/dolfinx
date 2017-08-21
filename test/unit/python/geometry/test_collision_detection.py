@@ -68,6 +68,7 @@ def test_triangle_collides_point():
 
 
 @skip_in_parallel
+@pytest.mark.xfail(strict=True, raises=RuntimeError)
 def test_quadrilateral_collides_point():
     """Tests if point collide with triangle"""
 
@@ -113,7 +114,7 @@ def test_tetrahedron_collides_point():
 
 
 @skip_in_parallel
-@pytest.mark.xfail(strict=True, raises=AssertionError)
+@pytest.mark.xfail(strict=True, raises=RuntimeError)
 def test_hexahedron_collides_point():
     """Test if point collide with hexahedron"""
 
