@@ -359,19 +359,19 @@ void Function::eval(Array<double>& values, const Array<double>& x,
 }
 //-----------------------------------------------------------------------------
 void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    const Eigen::Ref<Eigen::VectorXd> x) const
+                    Eigen::Ref<const Eigen::VectorXd> x) const
 {
   Array<double> _values(values.size(), values.data());
-  const Array<double> _x(x.size(), const_cast<double*>(values.data()));
+  const Array<double> _x(x.size(), const_cast<double*>(x.data()));
   eval(_values, _x);
 }
 //-----------------------------------------------------------------------------
 void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    const Eigen::Ref<Eigen::VectorXd> x,
+                    Eigen::Ref<const Eigen::VectorXd> x,
                     const Cell& dolfin_cell, const ufc::cell& ufc_cell) const
 {
   Array<double> _values(values.size(), values.data());
-  const Array<double> _x(x.size(), const_cast<double*>(values.data()));
+  const Array<double> _x(x.size(), const_cast<double*>(x.data()));
   eval(_values, _x, dolfin_cell, ufc_cell);
 }
 //-----------------------------------------------------------------------------
@@ -403,6 +403,16 @@ std::size_t Function::value_dimension(std::size_t i) const
   return _function_space->element()->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
+std::vector<std::size_t> Function::value_shape() const
+{
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->element());
+  std::vector<std::size_t> _shape(this->value_rank(), 1);
+  for (std::size_t i = 0; i < _shape.size(); ++i)
+    _shape[i] = this->value_dimension(i);
+  return _shape;
+}
+//-----------------------------------------------------------------------------
 void Function::eval(Array<double>& values, const Array<double>& x,
                     const ufc::cell& ufc_cell) const
 {
@@ -423,11 +433,11 @@ void Function::eval(Array<double>& values, const Array<double>& x,
 }
 //-----------------------------------------------------------------------------
 void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    const Eigen::Ref<Eigen::VectorXd> x,
+                    Eigen::Ref<const Eigen::VectorXd> x,
                     const ufc::cell& ufc_cell) const
 {
   Array<double> _values(values.size(), values.data());
-  Array<double> _x(x.size(), const_cast<double*>(values.data()));
+  Array<double> _x(x.size(), const_cast<double*>(x.data()));
   eval(_values, _x, ufc_cell);
 }
 //-----------------------------------------------------------------------------

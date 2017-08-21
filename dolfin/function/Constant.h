@@ -125,7 +125,7 @@ namespace dolfin
     void eval(Array<double>& values, const Array<double>& x) const override;
 
     void eval(Eigen::Ref<Eigen::VectorXd> values,
-              const Eigen::Ref<Eigen::VectorXd> x) const override;
+              Eigen::Ref<const Eigen::VectorXd> x) const override;
 
     virtual std::string str(bool verbose) const override;
 
