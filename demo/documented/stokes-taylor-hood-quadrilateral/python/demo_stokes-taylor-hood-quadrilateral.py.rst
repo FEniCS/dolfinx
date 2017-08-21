@@ -27,11 +27,10 @@ Strong formulation
                     \nabla \cdot u &= 0 \quad {\rm in} \ \Omega. \\
 
 
-.. note::
-        The sign of the pressure has been flipped from the classical
-    definition. This is done in order to have a symmetric (but not
-    positive-definite) system of equations rather than a
-    non-symmetric (but positive-definite) system of equations.
+.. note:: The sign of the pressure has been flipped from the classical
+          definition. This is done in order to have a symmetric (but not
+          positive-definite) system of equations rather than a
+          non-symmetric (but positive-definite) system of equations.
 
 A typical set of boundary conditions on the boundary :math:`\partial
 \Omega = \Gamma_{D} \cup \Gamma_{N}` can be:
