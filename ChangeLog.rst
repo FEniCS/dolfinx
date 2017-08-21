@@ -18,6 +18,8 @@ Change log
   assembly with ``Real`` space now exhibits linear scaling in number
   of dofs
 - Add assembly for quadrilateral and hexahedral meshes with CG and DG elements
+- Some demos and tests have been updated to show usage of quadrilateral
+  and hexahedral meshes
 
 2017.1.0 (2017-05-09)
 ---------------------
