@@ -45,11 +45,10 @@ and the above constraint.
 # Last changed: 2012-11-12
 # Begin demo
 
-import matplotlib.pyplot as plt
 from dolfin import *
 
 # Create mesh
-mesh = UnitSquareMesh(64, 64)
+mesh = UnitQuadMesh.create(64, 64)
 
 # Build function space with Lagrange multiplier
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
@@ -69,6 +68,6 @@ w = Function(W)
 solve(a == L, w)
 (u, c) = w.split()
 
-# Plot solution
-plot(u)
-plt.show()
+# Save solution in VTK format
+file = File("neumann_poisson.pvd")
+file << u

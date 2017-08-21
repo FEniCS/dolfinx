@@ -60,8 +60,8 @@ If not available, costly QMR method is choosen.
              "Krylov subspace method. Terminating.")
         exit()
 
-Next, we define the mesh (a :py:class:`UnitCubeMesh
-<dolfin.cpp.UnitCubeMesh>`) and a mixed finite element ``TH``.
+Next, we define the mesh (a :py:class:`UnitHexMesh
+<dolfin.cpp.UnitHexMesh>`) and a mixed finite element ``TH``.
 Then we build a :py:class:`FunctionSpace
 <dolfin.functions.functionspace.FunctionSpace>` on this element.
 (This mixed finite element space is known as the
@@ -71,7 +71,7 @@ Stokes equations.)
 .. code-block:: python
 
     # Load mesh
-    mesh = UnitCubeMesh(16, 16, 16)
+    mesh = UnitHexMesh.create(16, 16, 16)
 
     # Build function space
     P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
@@ -190,14 +190,6 @@ Finally, we can play with the result in different ways:
     ufile_pvd << u
     pfile_pvd = File("pressure.pvd")
     pfile_pvd << p
-
-    # Plot solution
-    import matplotlib.pyplot as plt
-    plt.figure(1)
-    plot(u)
-    plt.figure(2)
-    plot(p)
-    plt.show()
 
 
 Complete code

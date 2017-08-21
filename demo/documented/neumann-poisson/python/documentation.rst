@@ -27,13 +27,12 @@ First, the :py:mod:`dolfin` module is imported:
 We proceed by defining a mesh of the domain.  We use a built-in mesh
 provided by the class :py:class:`UnitSquareMesh
 <dolfin.cpp.UnitSquareMesh>`.  In order to create a mesh consisting of
-:math:`64 \times 64` squares with each square divided into two
-triangles, we do as follows:
+:math:`64 \times 64` squares, we do as follows:
 
 .. code-block:: python
 
     # Create mesh
-    mesh = UnitSquareMesh(64, 64)
+    mesh = UnitQuadMesh.create(64, 64)
 
 Next, we need to define the function space.
 
@@ -86,7 +85,7 @@ initialize using the
 ``W``.  The actual computation is performed by calling
 :py:func:`solve<dolfin.fem.solving.solve>`.  The separate components
 ``u`` and ``c`` of the solution can be extracted by calling the split
-function.  Finally, we plot the solutions to examine the result.
+function.  Finally, we output the solution to a ``VTK`` file to examine the result.
 
 .. code-block:: python
 
@@ -95,8 +94,9 @@ function.  Finally, we plot the solutions to examine the result.
     solve(a == L, w)
     (u, c) = w.split()
 
-    # Plot solution
-    plot(u, interactive=True)
+    # Save solution in VTK format
+    file = File("neumann_poisson.pvd")
+    file << u
 
 Complete code
 -------------

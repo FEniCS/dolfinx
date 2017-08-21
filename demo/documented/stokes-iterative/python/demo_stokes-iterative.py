@@ -23,7 +23,6 @@ Note that the sign for the pressure has been flipped for symmetry."""
 
 # Begin demo
 
-import matplotlib.pyplot as plt
 from dolfin import *
 
 # Test for PETSc or Tpetra
@@ -46,7 +45,7 @@ else:
     exit()
 
 # Load mesh
-mesh = UnitCubeMesh(16, 16, 16)
+mesh = UnitHexMesh.create(16, 16, 16)
 
 # Build function space
 P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
@@ -105,13 +104,3 @@ ufile_pvd = File("velocity.pvd")
 ufile_pvd << u
 pfile_pvd = File("pressure.pvd")
 pfile_pvd << p
-
-# Plot solution
-plt.figure(1)
-plot(u, title="velocity")
-
-plt.figure(2)
-plot(p, title="pressure")
-
-# Show plots
-plt.show()
