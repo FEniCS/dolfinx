@@ -217,24 +217,24 @@ namespace dolfin
     ///
     /// @param    values (Eigen::Ref<Eigen::VectorXd> values)
     ///         The values.
-    /// @param    x (Eigen::Ref<Eigen::VectorXd> x)
+    /// @param    x (Eigen::Ref<const Eigen::VectorXd> x)
     ///         The coordinates.
     void eval(Eigen::Ref<Eigen::VectorXd> values,
-              const Eigen::Ref<Eigen::VectorXd> x) const override;
+              Eigen::Ref<const Eigen::VectorXd> x) const override;
 
     /// Evaluate function at given coordinates in given cell
     ///
     /// *Arguments*
     /// @param    values (Eigen::Ref<Eigen::VectorXd>)
     ///         The values.
-    /// @param    x (Eigen::Ref<Eigen::VectorXd>)
+    /// @param    x (Eigen::Ref<const Eigen::VectorXd>)
     ///         The coordinates.
     /// @param    dolfin_cell (_Cell_)
     ///         The cell.
     /// @param    ufc_cell (ufc::cell)
     ///         The ufc::cell.
     void eval(Eigen::Ref<Eigen::VectorXd> values,
-              const Eigen::Ref<Eigen::VectorXd> x,
+              Eigen::Ref<const Eigen::VectorXd> x,
               const dolfin::Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
 
     /// Interpolate function (on possibly non-matching meshes)
@@ -270,6 +270,13 @@ namespace dolfin
     ///         The value dimension.
     virtual std::size_t value_dimension(std::size_t i) const override;
 
+    /// Return value shape
+    ///
+    /// *Returns*
+    ///     std::vector<std::size_t>
+    ///         The value shape.
+    virtual std::vector<std::size_t> value_shape() const override;
+
     /// Evaluate at given point in given cell
     ///
     /// @param    values (Array<double>)
@@ -285,12 +292,12 @@ namespace dolfin
     ///
     /// @param    values (Eigen::Ref<Eigen::VectorXd>)
     ///         The values at the point.
-    /// @param   x (Eigen::Ref<Eigen::VectorXd>
+    /// @param   x (Eigen::Ref<const Eigen::VectorXd>
     ///         The coordinates of the point.
     /// @param    cell (ufc::cell)
     ///         The cell which contains the given point.
     virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
-                      const Eigen::Ref<Eigen::VectorXd> x,
+                      Eigen::Ref<const Eigen::VectorXd> x,
                       const ufc::cell& cell) const override;
 
     /// Restrict function to local cell (compute expansion coefficients w)

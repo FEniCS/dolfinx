@@ -34,7 +34,8 @@
 %ignore dolfin::LocalMeshData::Geometry;
 %ignore dolfin::LocalMeshData::Topology;
 
-%ignore dolfin::SubDomain::inside(const Eigen::Ref<Eigen::VectorXd>&, bool) const;
+%ignore dolfin::SubDomain::inside(Eigen::Ref<const Eigen::VectorXd>, bool) const;
+%ignore dolfin::SubDomain::map(Eigen::Ref<const Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>) const;
 
 //-----------------------------------------------------------------------------
 // SWIG does not seem to generate useful code for non-member operators

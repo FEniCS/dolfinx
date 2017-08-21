@@ -125,13 +125,7 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
 void SubSystemsManager::init_petsc()
 {
   #ifdef HAS_PETSC
-  if (singleton().petsc_initialized)
-    return;
-
-  log(TRACE, "Initializing PETSc (ignoring command-line arguments).");
-
-  // Dummy command-line arguments for PETSc. This is needed since
-  // PetscInitializeNoArguments() does not seem to work.
+  // Dummy command-line arguments
   int argc = 0;
   char** argv = NULL;
 
@@ -164,17 +158,9 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   PetscBool is_initialized;
   PetscInitialized(&is_initialized);
   if (!is_initialized)
-  {
-    // Initialize PETSc
-    PetscInitializeNoArguments();
-  }
-
-  // Pass command line arguments to PETSc (will overwrite any
-  // default above)
-  PetscOptionsInsert(NULL, &argc, &argv, NULL);
+    PetscInitialize(&argc, &argv, NULL, NULL);
 
   #ifdef HAS_SLEPC
-  // Initialize SLEPc
   SlepcInitialize(&argc, &argv, NULL, NULL);
   #endif
 

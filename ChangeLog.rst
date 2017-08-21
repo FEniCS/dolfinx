@@ -14,6 +14,9 @@ Change log
   to write and read (checkpoint) functions
 - Implement marking vertex and edge mesh functions by ``SubDomain::mark()``
   using ``on_boundary`` flag
+- Fix quadratic scaling in PETSc matrix allocation with global dofs;
+  assembly with ``Real`` space now exhibits linear scaling in number
+  of dofs
 - Fix edges and faces numbering for quadrilateral and hexahedron cells
 - Add assembly for quadrilateral and hexahedral meshes with CG and DG elements.
 
