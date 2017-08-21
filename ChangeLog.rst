@@ -17,8 +17,7 @@ Change log
 - Fix quadratic scaling in PETSc matrix allocation with global dofs;
   assembly with ``Real`` space now exhibits linear scaling in number
   of dofs
-- Fix edges and faces numbering for quadrilateral and hexahedron cells
-- Add assembly for quadrilateral and hexahedral meshes with CG and DG elements.
+- Add assembly for quadrilateral and hexahedral meshes with CG and DG elements
 
 2017.1.0 (2017-05-09)
 ---------------------
