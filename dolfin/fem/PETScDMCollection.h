@@ -34,7 +34,6 @@ namespace dolfin
   class FunctionSpace;
   class BoundingBoxTree;
 
-
   /// This class builds and stores of collection of PETSc DM objects
   /// from a hierarchy of FunctionSpaces objects. The DM objects are
   /// used to construct multigrid solvers via PETSc.
@@ -66,21 +65,21 @@ namespace dolfin
 
     /// Create the interpolation matrix from the coarse to the fine
     /// space (prolongation matrix)
-    static std::shared_ptr<PETScMatrix> create_transfer_matrix
-      (std::shared_ptr<const FunctionSpace> coarse_space,
-       std::shared_ptr<const FunctionSpace> fine_space);
+    static std::shared_ptr<PETScMatrix>
+      create_transfer_matrix(const FunctionSpace& coarse_space,
+                             const FunctionSpace& fine_space);
 
   private:
 
     // Find the nearest cells to points which lie outside the domain
     static void find_exterior_points(MPI_Comm mpi_comm,
-        std::shared_ptr<const BoundingBoxTree> treec,
-        int dim, int data_size,
-        const std::vector<double>& send_points,
-        const std::vector<int>& send_indices,
-        std::vector<int>& indices,
-        std::vector<std::size_t>& cell_ids,
-        std::vector<double>& points);
+                                     std::shared_ptr<const BoundingBoxTree> treec,
+                                     int dim, int data_size,
+                                     const std::vector<double>& send_points,
+                                     const std::vector<int>& send_indices,
+                                     std::vector<int>& indices,
+                                     std::vector<std::size_t>& cell_ids,
+                                     std::vector<double>& points);
 
 
     // Pointers to functions that are used in PETSc DM call-backs
