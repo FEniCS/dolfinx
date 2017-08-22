@@ -1157,13 +1157,13 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   std::string element_family
     = u.function_space()->element()->ufc_element()->family();
-  std::size_t element_degree
+  const std::size_t element_degree
     = u.function_space()->element()->ufc_element()->degree();
-  ufc::shape ufc_element_cell
+  const ufc::shape ufc_element_cell
     = u.function_space()->element()->ufc_element()->cell_shape();
 
   // Map of standard UFL family abbreviations for visualisation
-  std::map<std::string, std::string> family_abbr = {
+  const std::map<std::string, std::string> family_abbr = {
     {"Lagrange", "CG"},
     {"Discontinuous Lagrange", "DG"},
     {"Raviart-Thomas", "RT"},
@@ -1175,7 +1175,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
     {"DQ", "DQ"}
   };
 
-  std::map<ufc::shape, std::string> cell_shape_repr = {
+  const std::map<ufc::shape, std::string> cell_shape_repr = {
     {ufc::shape::interval, "interval"},
     {ufc::shape::triangle, "triangle"},
     {ufc::shape::tetrahedron, "tetrahedron"},
@@ -1184,7 +1184,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   };
 
   // Check that element is supported
-  auto it = family_abbr.find(element_family);
+  auto const it = family_abbr.find(element_family);
   if (it == family_abbr.end())
   {
     dolfin_error("XDMFFile.cpp",
@@ -1202,7 +1202,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
       "Element shape not yet supported. Currently supported element shapes"
       "are \"interval, triangle, tetrahedron, quadrilateral, hexahedron\"");
   }
-  std::string element_cell = it_shape->second;
+  const std::string element_cell = it_shape->second;
 
   // Prepare main Attribute for the FiniteElementFunction type
   pugi::xml_node fe_attribute_node = xml_node.append_child("Attribute");
@@ -1261,7 +1261,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
                 {num_cell_dofs_global, 1}, "UInt");
 
   // Get all local data
-  const GenericVector &u_vector = *u.vector();
+  const GenericVector& u_vector = *u.vector();
   std::vector<double> local_data;
   u_vector.get_local(local_data);
 
