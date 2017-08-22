@@ -1,4 +1,3 @@
-.. Documentation for the Neumann-Poisson demo from DOLFIN.
 
 .. _demo_pde_neumann-poisson_python_documentation:
 
@@ -18,25 +17,19 @@ This description goes through the implementation in
 :download:`demo_neumann-poisson.py` of a solver for the above
 described Poisson equation step-by-step.
 
-First, the :py:mod:`dolfin` module is imported:
-
-.. code-block:: python
+First, the :py:mod:`dolfin` module is imported: ::
 
     from dolfin import *
 
 We proceed by defining a mesh of the domain.  We use a built-in mesh
 provided by the class :py:class:`UnitSquareMesh
 <dolfin.cpp.UnitSquareMesh>`.  In order to create a mesh consisting of
-:math:`64 \times 64` squares, we do as follows:
-
-.. code-block:: python
+:math:`64 \times 64` squares, we do as follows: ::
 
     # Create mesh
     mesh = UnitQuadMesh.create(64, 64)
 
-Next, we need to define the function space.
-
-.. code-block:: python
+Next, we need to define the function space. ::
 
     # Build function space with Lagrange multiplier
     P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
@@ -60,9 +53,7 @@ easily be declared using the :py:class:`Expression
 defining ``f`` uses C++ syntax since, for efficiency, DOLFIN will
 generate and compile C++ code for these expressions at run-time.  The
 following code shows how this is done and defines the variational
-problem:
-
-.. code-block:: python
+problem: ::
 
     # Define variational problem
     (u, c) = TrialFunction(W)
@@ -85,9 +76,7 @@ initialize using the
 ``W``.  The actual computation is performed by calling
 :py:func:`solve<dolfin.fem.solving.solve>`.  The separate components
 ``u`` and ``c`` of the solution can be extracted by calling the split
-function.  Finally, we output the solution to a ``VTK`` file to examine the result.
-
-.. code-block:: python
+function.  Finally, we output the solution to a ``VTK`` file to examine the result. ::
 
     # Compute solution
     w = Function(W)
@@ -97,9 +86,3 @@ function.  Finally, we output the solution to a ``VTK`` file to examine the resu
     # Save solution in VTK format
     file = File("neumann_poisson.pvd")
     file << u
-
-Complete code
--------------
-
-.. literalinclude:: demo_neumann-poisson.py
-   :start-after: # Begin demo
