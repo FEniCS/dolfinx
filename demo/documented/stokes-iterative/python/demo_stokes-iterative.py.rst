@@ -1,4 +1,3 @@
-.. Documentation for the DOLFIN iterative Stokes demo
 
 .. _demo_pde_iterative_stokes_python_documentation:
 
@@ -35,9 +34,7 @@ equations. Moreover, not all of the linear algebra backends support
 this. We therefore start by checking that either "PETSc" or "Tpetra"
 (from Trilinos) is available. We also try to pick MINRES Krylov
 subspace method which is suitable for symmetric indefinite problems.
-If not available, costly QMR method is choosen.
-
-.. code-block:: python
+If not available, costly QMR method is choosen. ::
 
     from dolfin import *
 
@@ -66,9 +63,7 @@ Then we build a :py:class:`FunctionSpace
 <dolfin.functions.functionspace.FunctionSpace>` on this element.
 (This mixed finite element space is known as the
 Taylor--Hood elements and is a stable, standard element pair for the
-Stokes equations.)
-
-.. code-block:: python
+Stokes equations.) ::
 
     # Load mesh
     mesh = UnitHexMesh.create(16, 16, 16)
@@ -79,9 +74,7 @@ Stokes equations.)
     TH = P2 * P1
     W = FunctionSpace(mesh, TH)
 
-Next, we define the boundary conditions.
-
-.. code-block:: python
+Next, we define the boundary conditions. ::
 
     # Boundaries
     def right(x, on_boundary): return x[0] > (1.0 - DOLFIN_EPS)
@@ -101,9 +94,7 @@ Next, we define the boundary conditions.
     bcs = [bc0, bc1]
 
 The bilinear and linear forms corresponding to the weak mixed
-formulation of the Stokes equations are defined as follows:
-
-.. code-block:: python
+formulation of the Stokes equations are defined as follows: ::
 
     # Define variational problem
     (u, p) = TrialFunctions(W)
@@ -118,9 +109,7 @@ We can now use the same :py:class:`TrialFunctions
 :py:class:`TestFunctions <dolfin.functions.function.TestFunction>` to
 define the preconditioner matrix. We first define the form
 corresponding to the expression for the preconditioner (given in the
-initial description above):
-
-.. code-block:: python
+initial description above): ::
 
     # Form for use in constructing preconditioner matrix
     b = inner(grad(u), grad(v))*dx + p*q*dx
@@ -135,17 +124,13 @@ will possibly result in a non-symmetric system of equations. Instead,
 we can use the :py:func:`assemble_system
 <dolfin.fem.assembling.assemble_system>` function to assemble both the
 matrix ``A``, the vector ``bb``, and apply the boundary conditions
-``bcs`` in a symmetric fashion:
-
-.. code-block:: python
+``bcs`` in a symmetric fashion: ::
 
     # Assemble system
     A, bb = assemble_system(a, L, bcs)
 
 We do the same for the preconditioner matrix ``P`` using the linear
-form ``L`` as a dummy form:
-
-.. code-block:: python
+form ``L`` as a dummy form: ::
 
     # Assemble preconditioner system
     P, btmp = assemble_system(b, L, bcs)
@@ -154,9 +139,7 @@ Next, we specify the iterative solver we want to use, in this case a
 :py:class:`KrylovSolver <dolfin.cpp.KrylovSolver>`. We associate the
 left-hand side matrix ``A`` and the preconditioner matrix ``P`` with
 the solver by calling :py:func:`solver.set_operators
-<dolfin.cpp.GenericLinearSolver.set_operators>`.
-
-.. code-block:: python
+<dolfin.cpp.GenericLinearSolver.set_operators>`. ::
 
     # Create Krylov solver and AMG preconditioner
     solver = KrylovSolver(krylov_method, "amg")
@@ -170,17 +153,13 @@ storing the result. For easy manipulation later, we can define a
 :py:class:`Function <dolfin.functions.function.Function>` and use the
 vector associated with this Function. The call to
 :py:func:`solver.solve <dolfin.cpp.KrylovSolver.solve>` then looks as
-follows
-
-.. code-block:: python
+follows ::
 
     # Solve
     U = Function(W)
     solver.solve(U.vector(), bb)
 
-Finally, we can play with the result in different ways:
-
-.. code-block:: python
+Finally, we can play with the result in different ways: ::
 
     # Get sub-functions
     u, p = U.split()
@@ -190,10 +169,3 @@ Finally, we can play with the result in different ways:
     ufile_pvd << u
     pfile_pvd = File("pressure.pvd")
     pfile_pvd << p
-
-
-Complete code
--------------
-
-.. literalinclude:: demo_stokes-iterative.py
-   :start-after: # Begin demo
