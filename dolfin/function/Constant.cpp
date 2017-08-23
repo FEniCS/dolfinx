@@ -134,7 +134,7 @@ void Constant::eval(Array<double>& values, const Array<double>& x) const
 }
 //-----------------------------------------------------------------------------
 void Constant::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    const Eigen::Ref<Eigen::VectorXd> x) const
+                    Eigen::Ref<const Eigen::VectorXd> x) const
 {
   // Copy values
   std::copy(_values.begin(), _values.end(), values.data());

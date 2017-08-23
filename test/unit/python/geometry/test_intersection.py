@@ -23,7 +23,7 @@ from __future__ import print_function
 import pytest
 
 from dolfin import intersect
-from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, BoxMesh
+from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, BoxMesh, UnitQuadMesh, UnitHexMesh
 from dolfin import Point, FunctionSpace, Expression, interpolate
 from dolfin import MPI, mpi_comm_world
 
@@ -41,8 +41,8 @@ def test_mesh_point_1d():
     assert intersection.intersected_cells() == [1]
 
 @skip_in_parallel
-def test_mesh_point_2d():
-    "Test mesh-point intersection in 2D"
+def test_mesh_point_2d_triangle():
+    "Test mesh-point intersection in 2D for triangular mesh"
 
     point = Point(0.1, 0.2)
     mesh = UnitSquareMesh(16, 16)
@@ -52,8 +52,8 @@ def test_mesh_point_2d():
     assert intersection.intersected_cells() == [98]
 
 @skip_in_parallel
-def test_mesh_point_3d():
-    "Test mesh-point intersection in 3D"
+def test_mesh_point_3d_tetrahedron():
+    "Test mesh-point intersection in 3D for tetrahedral mesh"
 
     point = Point(0.1, 0.2, 0.3)
     mesh = UnitCubeMesh(8, 8, 8)
@@ -61,3 +61,27 @@ def test_mesh_point_3d():
     intersection = intersect(mesh, point)
 
     assert intersection.intersected_cells() == [816]
+
+@skip_in_parallel
+def test_mesh_point_2d_quadrilateral():
+    "Test mesh-point intersection in 2D for quadrilateral mesh"
+
+    point = Point(0.1, 0.2)
+    mesh = UnitQuadMesh.create(16, 16)
+
+    intersection = intersect(mesh, point)
+
+    assert intersection.intersected_cells() == [49]
+
+@skip_in_parallel
+@pytest.mark.xfail(strict=True, raises=AssertionError)
+def test_mesh_point_3d_hexahedron():
+    "Test mesh-point intersection in 3D for hexahedral mesh"
+
+    point = Point(0.1, 0.2, 0.3)
+    mesh = UnitHexMesh.create(8, 8, 8)
+
+    intersection = intersect(mesh, point)
+
+    # Returns [] now, but [136] is the correct cell.
+    assert intersection.intersected_cells() == [136]

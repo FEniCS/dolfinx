@@ -264,12 +264,12 @@ namespace dolfin
     virtual void resize(std::size_t N);
 
     /// Return reference to Eigen vector (const version)
-    const Eigen::VectorXd& vec() const
-    { return *_x; }
+    std::shared_ptr<const Eigen::VectorXd> vec() const
+    { return _x; }
 
     /// Return reference to Eigen vector (non-const version)
-    Eigen::VectorXd& vec()
-    { return *_x; }
+    std::shared_ptr<Eigen::VectorXd> vec()
+    { return _x; }
 
     /// Access value of given entry (const version)
     virtual double operator[] (dolfin::la_index i) const
