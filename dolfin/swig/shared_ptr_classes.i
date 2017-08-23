@@ -178,7 +178,6 @@
 %shared_ptr(dolfin::PETScObject)
 %shared_ptr(dolfin::PETScPreconditioner)
 %shared_ptr(dolfin::PETScVector)
-%shared_ptr(dolfin::PETScUserPreconditioner)
 #endif
 
 #ifdef HAS_TRILINOS
