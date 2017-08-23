@@ -59,7 +59,9 @@ All documented Python demos
    demos/hyperelasticity/python/demo_hyperelasticity.py.rst
    demos/nonlinear-poisson/python/demo_nonlinear-poisson.py.rst
    demos/singular-poisson/python/demo_singular-poisson-rst.py.rst
+   demos/neumann-poisson/python/demo_neumann-poisson.py.rst
    demos/nonmatching-interpolation/python/demo_nonmatching-interpolation.py.rst
+   demos/stokes-iterative/python/demo_stokes-iterative.py.rst
 
 Using the C++ interface
 -----------------------
