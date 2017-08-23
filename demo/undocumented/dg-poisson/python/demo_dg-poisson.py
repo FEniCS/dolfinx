@@ -53,7 +53,7 @@ class NeumanBoundary(SubDomain):
     return on_boundary and near(x[1]*(1 - x[1]), 0)
 
 # Create mesh and define function space
-mesh = UnitQuadMesh.create(24, 24)
+mesh = UnitSquareMesh(24, 24)
 V = FunctionSpace(mesh, 'DG', 1)
 
 # Define test and trial functions
@@ -62,20 +62,7 @@ v = TestFunction(V)
 
 # Define normal vector and mesh size
 n = FacetNormal(mesh)
-
-if mesh.ufl_domain().is_piecewise_linear_simplex_domain():
-    h = CellSize(mesh)
-else:
-    # CellSize(mesh), CellVolume(mesh) do not work yet for quadrilateral and hexahedral mesh
-    # CellSize(mesh) can be approximated as CellVolume(mesh)**(1/gdim)
-    # CellVolume(mesh)**(1/gdim) can be approximated as following
-    DG0_space = FunctionSpace(mesh, 'DG', 0)
-    q = TestFunction(DG0_space)
-    hh = assemble(q*dx)
-
-    # In this demo mesh is uniform, therefore h is the same for all cells
-    h = Constant(hh.array()[0])
-
+h = CellSize(mesh)
 h_avg = (h('+') + h('-'))/2
 
 # Define the source term f, Dirichlet term u0 and Neumann term g
