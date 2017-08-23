@@ -251,7 +251,7 @@ def compare_with_cgal(p0, p1, q0, q1, cgal):
 
 
 @skip_in_parallel
-#@pytest.mark.skipif(True, reason="This test needs to be updated")
+@pytest.mark.skipif(True, reason="This is a case where the intersection currently fails")
 def test_segment_segment_1():
     "Case that fails CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(-0.50000000000000710543,-0.50000000000000710543)
@@ -262,10 +262,10 @@ def test_segment_segment_1():
     # The intersection should according to CGAL be
     cgal = Point(0.91066799144849319703, -1.9106679914484945293)
 
-    assert(compare_with_cgal(p0, p1, q0, q1, cgal))
+    assert compare_with_cgal(p0, p1, q0, q1, cgal)
 
 @skip_in_parallel
-#@pytest.mark.skipif(True, reason="This test needs to be updated")
+@pytest.mark.skipif(True, reason="This is a case where the intersection currently fails")
 def test_segment_segment_2():
     "Case that fails CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.70710678118654746172,-0.70710678118654746172)
@@ -273,7 +273,7 @@ def test_segment_segment_2():
     q0 = Point(0.70710678118654612945,0.70710678118654113344)
     q1 = Point(0.70710678118654657354,0.2928932188134645842)
     cgal = Point(0.70710678118654612945, 0.7071067811865050512)
-    assert(compare_with_cgal(p0, p1, q0, q1, cgal))
+    assert compare_with_cgal(p0, p1, q0, q1, cgal)
 
 
 @skip_in_parallel
@@ -285,11 +285,11 @@ def test_segment_segment_3():
     q0 = Point(0.70710678118654757274,-0.097631072937819973756)
     q1 = Point(0.70710678118654257673,-0.1601886205085209236)
     cgal = Point(0.70710678118654679558, -0.10611057050352221132)
-    assert(compare_with_cgal(p0, p1, q0, q1, cgal))
+    assert compare_with_cgal(p0, p1, q0, q1, cgal)
 
 
 @skip_in_parallel
-#@pytest.mark.skipif(True, reason="This test needs to be updated")
+@pytest.mark.skipif(True, reason="This is a case where the intersection currently fails")
 def test_segment_segment_4():
     "Case that fails CGAL comparison. We get a different intersection point but still correct area."
     p0 = Point(0.70710678118654746172,-0.70710678118654746172)
@@ -297,7 +297,7 @@ def test_segment_segment_4():
     q0 = Point(0.35355339059326984508,-0.35355339059327078877)
     q1 = Point(0.70710678118655057034,-0.70710678118654701763)
     cgal = Point(0.67572340116162599166, -0.67572340116162288304)
-    assert(compare_with_cgal(p0, p1, q0, q1, cgal))
+    assert compare_with_cgal(p0, p1, q0, q1, cgal)
 
 
 @skip_in_parallel
@@ -308,12 +308,12 @@ def test_segment_segment_5():
     q0 = Point(0.34292036732279607136,0.8429203673205103442)
     q1 = Point(0.3429203673205103442,0.8429203673205103442)
     cgal = Point(0.3429203673216533188,0.8429203673205103442)
-    assert(compare_with_cgal(p0, p1, q0, q1, cgal))
+    assert compare_with_cgal(p0, p1, q0, q1, cgal)
 
 
 @skip_in_parallel
 def test_segment_segment_6():
-    "Case that demonstrates, among other things, that we must check the orientation for p0, p1 in intersection_segment_segment_2d"
+    "Test that demonstrates, among other things, that we must check the orientation for p0, p1 in intersection_segment_segment_2d"
     p0 = Point(0.045342566799435518599,0.41358248517265505662);
     p1 = Point(0.045342566799434436131,0.41358248517265394639);
     q0 = Point(1.8601965322712701917e-16,0.5);
