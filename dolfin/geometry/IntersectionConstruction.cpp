@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-08-09
+// Last changed: 2017-08-15
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -379,7 +379,7 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   const double Q1 = GeometryTools::project_to_axis_2d(q1, major_axis);
 
   // Case 2: both points on line (or almost)
-  if (std::abs(q0o) < DOLFIN_EPS_LARGE and std::abs(q1o) < DOLFIN_EPS_LARGE)
+  if (std::abs(q0o) < DOLFIN_EPS and std::abs(q1o) < DOLFIN_EPS)
   {
     // Compute 1D intersection points
     const std::vector<double>
