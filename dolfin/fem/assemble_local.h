@@ -32,8 +32,8 @@ namespace dolfin
   class Cell;
 
   /// Assemble form to local tensor on a cell (Eigen version for pybind11)
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-    assemble_local(const Form& a, const Cell& cell);
+  void assemble_local(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A_e,
+                      const Form& a, const Cell& cell);
 
   /// Assemble form to local tensor on a cell
   /// (Legacy version for SWIG)

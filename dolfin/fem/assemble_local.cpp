@@ -81,11 +81,11 @@ void dolfin::assemble_local(const Form& a,
       tensor[i*M+j] = A_e(i,j);
 }
 //-----------------------------------------------------------------------------
-Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-dolfin::assemble_local(const Form& a,
+void
+dolfin::assemble_local(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A_e,
+                       const Form& a,
                        const Cell& cell)
 {
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A_e;
   UFC ufc(a);
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
@@ -122,7 +122,5 @@ dolfin::assemble_local(const Form& a,
   LocalAssembler::assemble(A_e, ufc, coordinate_dofs,
                            ufc_cell, cell, cell_domains,
                            exterior_facet_domains, interior_facet_domains);
-
-  return A_e;
 }
 //-----------------------------------------------------------------------------
