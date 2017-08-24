@@ -124,6 +124,11 @@ endif()
 if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_PETSC4PY AND PETSC4PY_FOUND)
   list(APPEND DOLFIN_PYTHON_DEFINITIONS "-DHAS_PETSC4PY")
   list(APPEND PYTHON_INCLUDE_DIRS ${PETSC4PY_INCLUDE_DIRS})
+
+  # This is requied for the pybdind11 transion. Review once SWIG
+  # backend is removed.
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC4PY")
+  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${PETSC4PY_INCLUDE_DIRS})
 endif()
 
 # slepc4py
@@ -249,7 +254,7 @@ endforeach()
 # Convert compiler flags and definitions into space separated strings
 string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
 string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
-string(REPLACE ";" " " PKG_DEFINITIONS "${DOLFIN_CXX_DEFINITIONS}")
+string(REPLACE ";" " " PKG_DEFINITIONS "${DOLFIN_CXX_DEFINITIONS} ${DOLFIN_PYTHON_DEFINITIONS}")
 
 # Get link libraries
 get_target_property(DOLFIN_TARGET_LINK_LIBRARIES dolfin INTERFACE_LINK_LIBRARIES)
