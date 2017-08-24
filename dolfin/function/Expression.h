@@ -147,6 +147,26 @@ namespace dolfin
     ///         The value shape.
     virtual std::vector<std::size_t> value_shape() const override;
 
+    /// Property setter for type "double"
+    /// Used in pybind11 Python interface to attach a value to a python attribute
+    ///
+    virtual void set_property(std::string name, double value);
+
+    /// Property getter for type "double"
+    /// Used in pybind11 Python interface to get the value of a python attribute
+    ///
+    virtual double get_property(std::string name) const;
+
+    /// Property setter for type "GenericFunction"
+    /// Used in pybind11 Python interface to attach a value to a python attribute
+    ///
+    virtual void set_generic_function(std::string name, std::shared_ptr<GenericFunction> f);
+
+    /// Property getter for type "GenericFunction"
+    /// Used in pybind11 Python interface to get the value of a python attribute
+    ///
+    virtual std::shared_ptr<dolfin::GenericFunction> get_generic_function(std::string name) const;
+
     /// Restrict function to local cell (compute expansion coefficients w).
     ///
     /// @param    w (list of doubles)

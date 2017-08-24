@@ -121,6 +121,36 @@ std::vector<std::size_t> Expression::value_shape() const
   return _value_shape;
 }
 //-----------------------------------------------------------------------------
+void Expression::set_property(std::string name, double value)
+{
+  dolfin_error("Expression.cpp",
+               "set property",
+               "This method should be overloaded in the derived class");
+}
+//-----------------------------------------------------------------------------
+double Expression::get_property(std::string name) const
+{
+  dolfin_error("Expression.cpp",
+               "get property",
+               "This method should be overloaded in the derived class");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+void Expression::set_generic_function(std::string name, std::shared_ptr<GenericFunction>)
+{
+  dolfin_error("Expression.cpp",
+               "set property",
+               "This method should be overloaded in the derived class");
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<GenericFunction> Expression::get_generic_function(std::string name) const
+{
+  dolfin_error("Expression.cpp",
+               "get property",
+               "This method should be overloaded in the derived class");
+  return std::shared_ptr<GenericFunction>();
+}
+//-----------------------------------------------------------------------------
 void Expression::restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
