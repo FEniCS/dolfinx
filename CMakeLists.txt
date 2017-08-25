@@ -287,7 +287,7 @@ endif()
 set(Boost_NO_BOOST_CMAKE true)
 
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
-find_package(Boost 1.55 QUIET REQUIRED)
+find_package(Boost 1.56 QUIET REQUIRED)
 
 # Boost public/private libraries to link to.
 # Note: These should all be private as they do not appear in the
