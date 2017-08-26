@@ -237,17 +237,61 @@ install(TARGETS dolfin EXPORT DOLFINTargets
 install(EXPORT DOLFINTargets DESTINATION ${DOLFIN_SHARE_DIR}/cmake)
 
 #------------------------------------------------------------------------------
+# Generate CMake config files (DOLFINConfig{,Version}.cmake)
+
+configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake @ONLY)
+configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfigVersion.cmake.in
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake @ONLY)
+configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
+  ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake @ONLY)
+configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINPythonXY.cmake.in
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINPython${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}.cmake @ONLY)
+
+install(
+  FILES
+  ${CMAKE_SOURCE_DIR}/cmake/modules/FindPETSc.cmake
+  ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
+  ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINPython${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}.cmake
+  DESTINATION ${DOLFIN_SHARE_DIR}/cmake
+  COMPONENT Development
+  )
+
+#------------------------------------------------------------------------------
 # Generate pkg-config file and install it
 
 # Define packages that should be required by pkg-config file
 set(PKG_REQUIRES "")
 
-# Convert include dirs to -I<incdir> form
-foreach(_inc_dir ${DOLFIN_DEP_INCLUDE_DIRECTORIES})
-  set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
+# Get link libraries
+get_target_property(DOLFIN_TARGET_LINK_LIBRARIES dolfin INTERFACE_LINK_LIBRARIES)
+
+# Add imported targets to lists for creating pkg-config file
+foreach(_target ${DOLFIN_TARGET_LINK_LIBRARIES})
+  if ("${_target}" MATCHES "^.*::.*$")
+
+    # Get include paths
+    get_target_property(_inc_dirs ${_target} INTERFACE_INCLUDE_DIRECTORIES)
+    list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${_inc_dirs})
+
+    # Get libraries
+    get_target_property(_libs ${_target} INTERFACE_LINK_LIBRARIES)
+    if (_libs)
+      list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${_libs})
+    endif()
+  endif()
 endforeach()
 
-foreach(_inc_dir ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
+# Join include lists and remove duplicates
+list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
+list(REMOVE_DUPLICATES DOLFIN_DEP_INCLUDE_DIRECTORIES)
+list(REMOVE_DUPLICATES DOLFIN_TARGET_LINK_LIBRARIES)
+
+# Convert include dirs to -I<incdir> form
+foreach(_inc_dir ${DOLFIN_DEP_INCLUDE_DIRECTORIES})
   set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
 endforeach()
 
@@ -255,9 +299,6 @@ endforeach()
 string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
 string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 string(REPLACE ";" " " PKG_DEFINITIONS "${DOLFIN_CXX_DEFINITIONS} ${DOLFIN_PYTHON_DEFINITIONS}")
-
-# Get link libraries
-get_target_property(DOLFIN_TARGET_LINK_LIBRARIES dolfin INTERFACE_LINK_LIBRARIES)
 
 # Convert libraries to -L<libdir> -l<lib> form
 foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
@@ -293,29 +334,4 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
   DESTINATION ${DOLFIN_PKGCONFIG_DIR}
   COMPONENT Development
   )
-
-#------------------------------------------------------------------------------
-# Generate CMake config files (DOLFINConfig{,Version}.cmake)
-
-configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
-  ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake @ONLY)
-configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfigVersion.cmake.in
-  ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake @ONLY)
-configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
-  ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake @ONLY)
-configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINPythonXY.cmake.in
-  ${CMAKE_BINARY_DIR}/dolfin/DOLFINPython${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}.cmake @ONLY)
-
-install(
-  FILES
-  ${CMAKE_SOURCE_DIR}/cmake/modules/FindPETSc.cmake
-  ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
-  ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
-  ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
-  ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake
-  ${CMAKE_BINARY_DIR}/dolfin/DOLFINPython${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}.cmake
-  DESTINATION ${DOLFIN_SHARE_DIR}/cmake
-  COMPONENT Development
-  )
-
 #------------------------------------------------------------------------------
