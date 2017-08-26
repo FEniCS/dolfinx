@@ -64,6 +64,30 @@ set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 add_dependencies(dolfin compile_ale_forms)
 
 #------------------------------------------------------------------------------
+# General compiler defintions
+
+if (DOLFIN_DEPRECATION_ERROR)
+  target_compile_definitions(dolfin PUBLIC DOLFIN_DEPRECATION_ERROR)
+endif()
+
+#------------------------------------------------------------------------------
+# Check type sizes
+
+# Check size of size_t
+include(CheckTypeSize)
+check_type_size("size_t" size_t_size)
+if (size_t_size)
+  target_compile_definitions(dolfin PUBLIC DOLFIN_SIZE_T=${size_t_size})
+endif()
+
+# Set size of dolfin::la_index
+if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
+  target_compile_definitions(dolfin PUBLIC DOLFIN_LA_INDEX_SIZE=${PETSC_INT_SIZE})
+else()
+  target_compile_definitions(dolfin PUBLIC DOLFIN_LA_INDEX_SIZE=4)
+endif()
+
+#------------------------------------------------------------------------------
 # Add include directories and libs of required packages
 
 # UFC
@@ -86,31 +110,31 @@ endforeach()
 
 # HDF5
 if (DOLFIN_ENABLE_HDF5 AND HDF5_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_HDF5")
-  list(APPEND DOLFIN_CXX_DEFINITIONS ${HDF5_DEFINITIONS})
   list(APPEND DOLFIN_LINK_FLAGS ${HDF5_LINK_FLAGS})
+  target_compile_definitions(dolfin PUBLIC HAS_HDF5)
+  target_compile_definitions(dolfin PUBLIC ${HDF5_DEFINITIONS})
   target_link_libraries(dolfin PUBLIC ${HDF5_C_LIBRARIES})
   target_include_directories(dolfin SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
 endif()
 
 # Trilinos
 if (DOLFIN_ENABLE_TRILINOS AND DOLFIN_TRILINOS_PACKAGES_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_TRILINOS")
-  list(APPEND DOLFIN_CXX_DEFINITIONS ${DOLFIN_TRILINOS_DEFINITIONS})
+  target_compile_definitions(dolfin PUBLIC HAS_TRILINOS)
+  target_compile_definitions(dolfin PUBLIC ${DOLFIN_TRILINOS_DEFINITIONS})
   target_link_libraries(dolfin PUBLIC ${DOLFIN_TRILINOS_LIBRARIES})
   target_include_directories(dolfin SYSTEM PUBLIC ${Trilinos_INCLUDE_DIRS})
 endif()
 
 # SLEPC
 if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_SLEPC AND SLEPC_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_SLEPC")
+  target_compile_definitions(dolfin PUBLIC HAS_SLEPC)
   target_link_libraries(dolfin PUBLIC SLEPC::slepc)
   target_link_libraries(dolfin PRIVATE SLEPC::slepc_static)
 endif()
 
 # PETSc
 if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC")
+  target_compile_definitions(dolfin PUBLIC HAS_PETSC)
   target_link_libraries(dolfin PUBLIC PETSC::petsc)
   target_link_libraries(dolfin PRIVATE PETSC::petsc_static)
 endif()
@@ -134,35 +158,35 @@ endif()
 
 # UMFPACK
 if (DOLFIN_ENABLE_UMFPACK AND UMFPACK_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_UMFPACK")
+  target_compile_definitions(dolfin PUBLIC HAS_UMFPACK)
   target_link_libraries(dolfin PRIVATE ${UMFPACK_LIBRARIES})
   target_include_directories(dolfin SYSTEM PRIVATE ${UMFPACK_INCLUDE_DIRS})
 endif()
 
 # CHOLMOD
 if (DOLFIN_ENABLE_CHOLMOD AND CHOLMOD_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_CHOLMOD")
+  target_compile_definitions(dolfin PUBLIC HAS_CHOLMOD)
   target_link_libraries(dolfin PRIVATE ${CHOLMOD_LIBRARIES})
   target_include_directories(dolfin SYSTEM PRIVATE ${CHOLMOD_INCLUDE_DIRS})
 endif()
 
 # SCOTCH
 if (DOLFIN_ENABLE_SCOTCH AND SCOTCH_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_SCOTCH")
+  target_compile_definitions(dolfin PUBLIC HAS_SCOTCH)
   target_link_libraries(dolfin PRIVATE ${SCOTCH_LIBRARIES})
   target_include_directories(dolfin SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})
 endif()
 
 # ParMETIS
 if (DOLFIN_ENABLE_PARMETIS AND PARMETIS_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PARMETIS")
+  target_compile_definitions(dolfin PUBLIC HAS_PARMETIS)
   target_link_libraries(dolfin PRIVATE ${PARMETIS_LIBRARIES})
   target_include_directories(dolfin SYSTEM PRIVATE ${PARMETIS_INCLUDE_DIRS})
 endif()
 
 # ZLIB
 if (DOLFIN_ENABLE_ZLIB AND ZLIB_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_ZLIB")
+  target_compile_definitions(dolfin PUBLIC HAS_ZLIB)
   target_link_libraries(dolfin PRIVATE ${ZLIB_LIBRARIES})
   target_include_directories(dolfin SYSTEM PRIVATE ${ZLIB_INCLUDE_DIRS})
 endif()
@@ -185,7 +209,7 @@ include_directories(BEFORE ${DOLFIN_SOURCE_DIR})
 
 # Add CXX definitions
 add_definitions(${DOLFIN_CXX_DEFINITIONS})
-add_definitions(-DDOLFIN_VERSION="${DOLFIN_VERSION}")
+target_compile_definitions(dolfin PUBLIC DOLFIN_VERSION="${DOLFIN_VERSION}")
 
 # Just add git revision flag to the one affected file
 set_source_files_properties(common/defines.cpp PROPERTIES COMPILE_FLAGS
@@ -237,11 +261,8 @@ install(EXPORT DOLFINTargets DESTINATION ${DOLFIN_SHARE_DIR}/cmake)
 get_target_property(DOLFIN_DEP_INCLUDE_DIRECTORIES dolfin INTERFACE_INCLUDE_DIRECTORIES)
 if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   get_target_property(PETSC_DOLFIN_INCLUDE_DIRECTORIES PETSC::petsc INTERFACE_INCLUDE_DIRECTORIES)
-  message("***: ${PETSC_DOLFIN_INCLUDE_DIRECTORIES}")
   list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${PETSC_DOLFIN_INCLUDE_DIRECTORIES})
 endif()
-
-
 
 configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake @ONLY)
