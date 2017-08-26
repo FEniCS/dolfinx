@@ -266,35 +266,50 @@ install(
 # Define packages that should be required by pkg-config file
 set(PKG_REQUIRES "")
 
+set(PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES)
+set(PKGCONFIG_DOLFIN_LIBS)
+
 # Get link libraries
-get_target_property(DOLFIN_TARGET_LINK_LIBRARIES dolfin INTERFACE_LINK_LIBRARIES)
+get_target_property(PKGCONFIG_DOLFIN_TARGET_LINK_LIBRARIES dolfin INTERFACE_LINK_LIBRARIES)
 
 # Add imported targets to lists for creating pkg-config file
-foreach(_target ${DOLFIN_TARGET_LINK_LIBRARIES})
-  if ("${_target}" MATCHES "^.*::.*$")
+foreach(_target ${PKGCONFIG_DOLFIN_TARGET_LINK_LIBRARIES})
 
+  if ("${_target}" MATCHES "^.*::.*$")
     # Get include paths
     get_target_property(_inc_dirs ${_target} INTERFACE_INCLUDE_DIRECTORIES)
-    list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${_inc_dirs})
+    if (_inc_dirs)
+      list(APPEND PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES ${_inc_dirs})
+    endif()
 
     # Get libraries
     get_target_property(_libs ${_target} INTERFACE_LINK_LIBRARIES)
     if (_libs)
-      list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${_libs})
+      list(APPEND PKGCONFIG_DOLFIN_LIBS ${_libs})
+    endif()
+
+  else()
+    # 'regular' libs, i.e. not imported targets
+    list(APPEND PKGCONFIG_DOLFIN_LIBS ${_target})
+  endif()
+
+  # Special handling for compiled Boost imported targets
+  if (("${_target}" MATCHES "^.*Boost::.*$") AND NOT "${_target}" STREQUAL "Boost::boost")
+    get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
+    if (_libs)
+      list(APPEND PKGCONFIG_DOLFIN_LIBS ${_libs})
     endif()
   endif()
+
 endforeach()
 
-# Boost include dir (pkg-config variable)
-get_target_property(BOOST_INCLUDE_DIR Boost::boost INTERFACE_INCLUDE_DIRECTORIES)
-
 # Join include lists and remove duplicates
-list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
-list(REMOVE_DUPLICATES DOLFIN_DEP_INCLUDE_DIRECTORIES)
-list(REMOVE_DUPLICATES DOLFIN_TARGET_LINK_LIBRARIES)
+list(APPEND PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES ${DOLFIN_DEP_INCLUDE_DIRECTORIES} ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
+list(REMOVE_DUPLICATES PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES)
+list(REMOVE_DUPLICATES PKGCONFIG_DOLFIN_LIBS)
 
 # Convert include dirs to -I<incdir> form
-foreach(_inc_dir ${DOLFIN_DEP_INCLUDE_DIRECTORIES})
+foreach(_inc_dir ${PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES})
   set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
 endforeach()
 
@@ -304,7 +319,7 @@ string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 string(REPLACE ";" " " PKG_DEFINITIONS "${DOLFIN_CXX_DEFINITIONS} ${DOLFIN_PYTHON_DEFINITIONS}")
 
 # Convert libraries to -L<libdir> -l<lib> form
-foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
+foreach(_lib ${PKGCONFIG_DOLFIN_LIBS})
   # Add -Wl,option directives
   if ("${_lib}" MATCHES "-Wl,[^ ]*")
     set(PKG_LINKFLAGS "${_lib} ${PKG_LINKFLAGS}")
@@ -330,6 +345,9 @@ string(REPLACE ";" " " PKG_LINKFLAGS "${PKG_LINKFLAGS}")
 foreach(_linkflag ${DOLFIN_LINK_FLAGS})
   set(PKG_LINKFLAGS "${PKG_LINKFLAGS} ${_linkflag}")
 endforeach()
+
+# Boost include dir (used as pkg-config variable)
+get_target_property(BOOST_INCLUDE_DIR Boost::boost INTERFACE_INCLUDE_DIRECTORIES)
 
 # Configure and install pkg-config file
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.pc.in ${CMAKE_BINARY_DIR}/dolfin.pc @ONLY)
