@@ -285,6 +285,9 @@ foreach(_target ${DOLFIN_TARGET_LINK_LIBRARIES})
   endif()
 endforeach()
 
+# Boost include dir (pkg-config variable)
+get_target_property(BOOST_INCLUDE_DIR Boost::boost INTERFACE_INCLUDE_DIRECTORIES)
+
 # Join include lists and remove duplicates
 list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
 list(REMOVE_DUPLICATES DOLFIN_DEP_INCLUDE_DIRECTORIES)
