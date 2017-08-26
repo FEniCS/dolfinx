@@ -89,8 +89,8 @@ if (DOLFIN_ENABLE_HDF5 AND HDF5_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_HDF5")
   list(APPEND DOLFIN_CXX_DEFINITIONS ${HDF5_DEFINITIONS})
   list(APPEND DOLFIN_LINK_FLAGS ${HDF5_LINK_FLAGS})
-  target_link_libraries(dolfin PRIVATE ${HDF5_C_LIBRARIES})
-  target_include_directories(dolfin SYSTEM PRIVATE ${HDF5_INCLUDE_DIRS})
+  target_link_libraries(dolfin PUBLIC ${HDF5_C_LIBRARIES})
+  target_include_directories(dolfin SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
 endif()
 
 # Trilinos
@@ -232,6 +232,16 @@ install(EXPORT DOLFINTargets DESTINATION ${DOLFIN_SHARE_DIR}/cmake)
 
 #------------------------------------------------------------------------------
 # Generate CMake config files (DOLFINConfig{,Version}.cmake)
+
+# Instant legacy. Remove when transitioned to pybind11
+get_target_property(DOLFIN_DEP_INCLUDE_DIRECTORIES dolfin INTERFACE_INCLUDE_DIRECTORIES)
+if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
+  get_target_property(PETSC_DOLFIN_INCLUDE_DIRECTORIES PETSC::petsc INTERFACE_INCLUDE_DIRECTORIES)
+  message("***: ${PETSC_DOLFIN_INCLUDE_DIRECTORIES}")
+  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${PETSC_DOLFIN_INCLUDE_DIRECTORIES})
+endif()
+
+
 
 configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake @ONLY)
