@@ -87,8 +87,12 @@ get_filename_component(SWIG_MODULE_NAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 # Set project name
 project(${SWIG_MODULE_NAME})
 
-# What does this do?
-get_directory_property(cmake_defs COMPILE_DEFINITIONS)
+# Get definitions
+get_target_property(DOLFIN_DEFINITIONS dolfin INTERFACE_COMPILE_DEFINITIONS)
+set(CXX_DEFS)
+foreach(_def ${DOLFIN_DEFINITIONS})
+    list(APPEND CXX_DEFS "-D${_def}")
+endforeach()
 
 # Set SWIG flags
 set(CMAKE_SWIG_FLAGS
@@ -106,6 +110,7 @@ set(CMAKE_SWIG_FLAGS
   -fastquery
   -nobuildnone%s
   -Iinclude/swig
+  ${CXX_DEFS}
   ${DOLFIN_CXX_DEFINITIONS}
   ${DOLFIN_PYTHON_DEFINITIONS}
   )

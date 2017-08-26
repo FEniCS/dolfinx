@@ -70,6 +70,19 @@ if (DOLFIN_DEPRECATION_ERROR)
   target_compile_definitions(dolfin PUBLIC DOLFIN_DEPRECATION_ERROR)
 endif()
 
+# Set 'Developer' build type flags
+set(CMAKE_CXX_FLAGS_DEVELOPER "${DOLFIN_CXX_DEVELOPER_FLAGS}" CACHE STRING
+  "Flags used by the compiler during development." FORCE)
+
+# FIXME: Do we want to add -DDEBUG to RelWithDebInfo?
+
+# Set debug definitions
+if (CMAKE_BUILD_TYPE STREQUAL "Developer" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
+  target_compile_definitions(dolfin PUBLIC DEBUG)
+else()
+  target_compile_definitions(dolfin PUBLIC NDEBUG)
+endif()
+
 #------------------------------------------------------------------------------
 # Check type sizes
 
@@ -193,8 +206,8 @@ endif()
 
 # MPI
 if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_MPI")
   set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+  target_compile_definitions(dolfin PUBLIC HAS_MPI)
   target_link_libraries(dolfin PUBLIC ${MPI_CXX_LIBRARIES})
   target_include_directories(dolfin SYSTEM PUBLIC ${MPI_CXX_INCLUDE_PATH})
 endif()
@@ -208,7 +221,7 @@ include_directories(BEFORE ${DOLFIN_SOURCE_DIR})
 #include_directories(SYSTEM ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
 
 # Add CXX definitions
-add_definitions(${DOLFIN_CXX_DEFINITIONS})
+#add_definitions(${DOLFIN_CXX_DEFINITIONS})
 target_compile_definitions(dolfin PUBLIC DOLFIN_VERSION="${DOLFIN_VERSION}")
 
 # Just add git revision flag to the one affected file

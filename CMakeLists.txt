@@ -193,15 +193,6 @@ endif()
 set(CMAKE_CXX_FLAGS_DEVELOPER "${DOLFIN_CXX_DEVELOPER_FLAGS}" CACHE STRING
   "Flags used by the compiler during development." FORCE)
 
-# FIXME: Do we want to add -DDEBUG to RelWithDebInfo?
-
-# Set debug definitions
-if (CMAKE_BUILD_TYPE STREQUAL "Developer" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDEBUG")
-else()
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DNDEBUG")
-endif()
-
 # Add flags for generating code coverage reports
 if (DOLFIN_ENABLE_CODE_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
