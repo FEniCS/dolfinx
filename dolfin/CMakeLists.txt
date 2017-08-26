@@ -66,17 +66,11 @@ add_dependencies(dolfin compile_ale_forms)
 #------------------------------------------------------------------------------
 # Add include directories and libs of required packages
 
-# NOTE: The include path for dependecies should be appended to
-#       DOLFIN_DEP_INCLUDE_DIRECTORIES, unless there are issues, such
-#       as unused variable that can cause build errors when using strict
-#       compiler flags, in which case the path should be appended to
-#       DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES
-
 # UFC
-list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${UFC_INCLUDE_DIRS})
+target_include_directories(dolfin SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 
 # Eigen3
-list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${EIGEN3_INCLUDE_DIR})
+target_include_directories(dolfin SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIR})
 
 # Boost
 target_link_libraries(dolfin PUBLIC Boost::boost)
@@ -88,22 +82,23 @@ foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS_PRIVATE})
 endforeach()
 
 #------------------------------------------------------------------------------
+# Optional packages
 
 # HDF5
 if (DOLFIN_ENABLE_HDF5 AND HDF5_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_HDF5")
   list(APPEND DOLFIN_CXX_DEFINITIONS ${HDF5_DEFINITIONS})
-  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${HDF5_INCLUDE_DIRS})
   list(APPEND DOLFIN_LINK_FLAGS ${HDF5_LINK_FLAGS})
   target_link_libraries(dolfin PRIVATE ${HDF5_C_LIBRARIES})
+  target_include_directories(dolfin SYSTEM PRIVATE ${HDF5_INCLUDE_DIRS})
 endif()
 
 # Trilinos
 if (DOLFIN_ENABLE_TRILINOS AND DOLFIN_TRILINOS_PACKAGES_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_TRILINOS")
   list(APPEND DOLFIN_CXX_DEFINITIONS ${DOLFIN_TRILINOS_DEFINITIONS})
-  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${Trilinos_INCLUDE_DIRS})
   target_link_libraries(dolfin PUBLIC ${DOLFIN_TRILINOS_LIBRARIES})
+  target_include_directories(dolfin SYSTEM PUBLIC ${Trilinos_INCLUDE_DIRS})
 endif()
 
 # SLEPC
@@ -128,7 +123,7 @@ if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_PETSC4PY AND PETSC4PY_FOUND)
   # This is requied for the pybdind11 transion. Review once SWIG
   # backend is removed.
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC4PY")
-  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${PETSC4PY_INCLUDE_DIRS})
+  target_include_directories(dolfin SYSTEM PUBLIC ${PETSC4PY_INCLUDE_DIRS})
 endif()
 
 # slepc4py
@@ -140,45 +135,44 @@ endif()
 # UMFPACK
 if (DOLFIN_ENABLE_UMFPACK AND UMFPACK_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_UMFPACK")
-  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${UMFPACK_INCLUDE_DIRS})
   target_link_libraries(dolfin PRIVATE ${UMFPACK_LIBRARIES})
+  target_include_directories(dolfin SYSTEM PRIVATE ${UMFPACK_INCLUDE_DIRS})
 endif()
 
 # CHOLMOD
 if (DOLFIN_ENABLE_CHOLMOD AND CHOLMOD_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_CHOLMOD")
-  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${CHOLMOD_INCLUDE_DIRS})
   target_link_libraries(dolfin PRIVATE ${CHOLMOD_LIBRARIES})
+  target_include_directories(dolfin SYSTEM PRIVATE ${CHOLMOD_INCLUDE_DIRS})
 endif()
 
 # SCOTCH
 if (DOLFIN_ENABLE_SCOTCH AND SCOTCH_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_SCOTCH")
-  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${SCOTCH_INCLUDE_DIRS})
   target_link_libraries(dolfin PRIVATE ${SCOTCH_LIBRARIES})
+  target_include_directories(dolfin SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})
 endif()
 
 # ParMETIS
 if (DOLFIN_ENABLE_PARMETIS AND PARMETIS_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PARMETIS")
-  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${PARMETIS_INCLUDE_DIRS})
   target_link_libraries(dolfin PRIVATE ${PARMETIS_LIBRARIES})
+  target_include_directories(dolfin SYSTEM PRIVATE ${PARMETIS_INCLUDE_DIRS})
 endif()
 
 # ZLIB
 if (DOLFIN_ENABLE_ZLIB AND ZLIB_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_ZLIB")
-  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${ZLIB_INCLUDE_DIRS})
   target_link_libraries(dolfin PRIVATE ${ZLIB_LIBRARIES})
+  target_include_directories(dolfin SYSTEM PRIVATE ${ZLIB_INCLUDE_DIRS})
 endif()
 
 # MPI
 if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_MPI")
-  list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${MPI_CXX_INCLUDE_PATH})
-  list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${MPI_CXX_INCLUDE_PATH})
   set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
   target_link_libraries(dolfin PUBLIC ${MPI_CXX_LIBRARIES})
+  target_include_directories(dolfin SYSTEM PUBLIC ${MPI_CXX_INCLUDE_PATH})
 endif()
 
 #------------------------------------------------------------------------------
@@ -186,8 +180,8 @@ endif()
 
 # Add compiler include directories
 include_directories(BEFORE ${DOLFIN_SOURCE_DIR})
-include_directories(${DOLFIN_DEP_INCLUDE_DIRECTORIES})
-include_directories(SYSTEM ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
+#include_directories(${DOLFIN_DEP_INCLUDE_DIRECTORIES})
+#include_directories(SYSTEM ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
 
 # Add CXX definitions
 add_definitions(${DOLFIN_CXX_DEFINITIONS})
@@ -266,13 +260,12 @@ install(
 # Define packages that should be required by pkg-config file
 set(PKG_REQUIRES "")
 
-set(PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES)
-set(PKGCONFIG_DOLFIN_LIBS)
-
-# Get link libraries
+# Get link libraries and includes
 get_target_property(PKGCONFIG_DOLFIN_TARGET_LINK_LIBRARIES dolfin INTERFACE_LINK_LIBRARIES)
+get_target_property(PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES dolfin INTERFACE_INCLUDE_DIRECTORIES)
 
 # Add imported targets to lists for creating pkg-config file
+set(PKGCONFIG_DOLFIN_LIBS)
 foreach(_target ${PKGCONFIG_DOLFIN_TARGET_LINK_LIBRARIES})
 
   if ("${_target}" MATCHES "^.*::.*$")
@@ -304,7 +297,6 @@ foreach(_target ${PKGCONFIG_DOLFIN_TARGET_LINK_LIBRARIES})
 endforeach()
 
 # Join include lists and remove duplicates
-list(APPEND PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES ${DOLFIN_DEP_INCLUDE_DIRECTORIES} ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
 list(REMOVE_DUPLICATES PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES)
 list(REMOVE_DUPLICATES PKGCONFIG_DOLFIN_LIBS)
 
