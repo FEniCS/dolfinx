@@ -35,15 +35,8 @@ endif()
 # Set common include directories
 include_directories(${UFC_INCLUDE_DIR} ${NUMPY_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS} ${CMAKE_BINARY_DIR})
 
-get_target_property(DOLFIN_DEFINITIONS dolfin INTERFACE_COMPILE_DEFINITIONS)
-foreach(_def ${DOLFIN_DEFINITIONS})
-   message("   ASSS: ${_def}")
-   add_definitions("-D${_def}")
- endforeach()
-
 # Set add PYTHON defines
 add_definitions(${DOLFIN_PYTHON_DEFINITIONS})
-
 
 if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/modules)
   message(STATUS "")

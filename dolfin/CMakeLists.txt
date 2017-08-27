@@ -159,7 +159,7 @@ if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_PETSC4PY AND PETSC4PY_FOUND)
 
   # This is requied for the pybdind11 transion. Review once SWIG
   # backend is removed.
-  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_PETSC4PY")
+  target_compile_definitions(dolfin PUBLIC HAS_PETSC4PY)
   target_include_directories(dolfin SYSTEM PUBLIC ${PETSC4PY_INCLUDE_DIRS})
 endif()
 
@@ -217,8 +217,6 @@ endif()
 
 # Add compiler include directories
 include_directories(BEFORE ${DOLFIN_SOURCE_DIR})
-#include_directories(${DOLFIN_DEP_INCLUDE_DIRECTORIES})
-#include_directories(SYSTEM ${DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES})
 
 # Add CXX definitions
 #add_definitions(${DOLFIN_CXX_DEFINITIONS})
@@ -349,10 +347,16 @@ foreach(_inc_dir ${PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES})
   set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
 endforeach()
 
+# Get dolfin definitions
+get_target_property(PKG_DOLFIN_DEFINITIONS dolfin INTERFACE_COMPILE_DEFINITIONS)
+set(PKG_DEFINITIONS)
+foreach(_def ${PKG_DOLFIN_DEFINITIONS})
+    set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
+endforeach()
+
 # Convert compiler flags and definitions into space separated strings
 string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
 string(REPLACE ";" " " PKG_LINKFLAGS "${CMAKE_EXE_LINKER_FLAGS}")
-string(REPLACE ";" " " PKG_DEFINITIONS "${DOLFIN_CXX_DEFINITIONS} ${DOLFIN_PYTHON_DEFINITIONS}")
 
 # Convert libraries to -L<libdir> -l<lib> form
 foreach(_lib ${PKGCONFIG_DOLFIN_LIBS})

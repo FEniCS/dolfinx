@@ -15,4 +15,4 @@ Version: @DOLFIN_VERSION@
 Requires: @PKG_REQUIRES@
 Conflicts:
 Libs: @PKG_LINKFLAGS@ -L${libdir} -ldolfin
-Cflags: @PKG_CXXFLAGS@ -DDOLFIN_VERSION=\"@DOLFIN_VERSION@\" @PKG_DEFINITIONS@ -I${includedir} @PKG_INCLUDES@
+Cflags: @PKG_CXXFLAGS@ -DDOLFIN_VERSION=\"@DOLFIN_VERSION@\" ${definitions} -I${includedir} @PKG_INCLUDES@
