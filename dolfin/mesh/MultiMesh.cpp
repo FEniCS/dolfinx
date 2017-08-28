@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-06-22
+// Last changed: 2017-08-28
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -410,7 +410,7 @@ std::string MultiMesh::plot_matplotlib(double delta_z,
     {
       const double max_num_parts = 33;
       ss << "    z = " << p<< "*np.ones(int(facets.size / 3))\n"
-	 << "    ax.tripcolor(x, y, facets, facecolors = z, edgecolors = 'k', alpha = alpha, vmin = 0, vmax = " << num_parts() << ")\n";
+	 << "    ax.tripcolor(x, y, facets, facecolors = z, edgecolors = 'k', alpha = alpha, vmin = 0, vmax = " << num_parts()-1 << ")\n";
     }
   }
 
