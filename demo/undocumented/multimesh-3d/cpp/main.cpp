@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2015 Anders Logg
+// Copyright (C) 2017 August Johansson
 //
 // This file is part of DOLFIN.
 //
@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2013-06-26
+// First added:  2013-08-24
 // Last changed: 2017-08-28
 //
 // This demo program solves Poisson's equation on a domain defined by
@@ -35,8 +35,8 @@ using namespace dolfin;
 class Arguments
 {
 public:
-  std::size_t N = 5;
-  std::size_t Nx = 2;
+  std::size_t N = 1;
+  std::size_t Nx = 10;
 
   std::string print() const
   {
@@ -93,7 +93,7 @@ void build_multimesh(std::size_t N,
 		     double& exact_area)
 {
   // Background mesh
-  auto mesh_0 = std::make_shared<UnitSquareMesh>(Nx, Nx);
+  auto mesh_0 = std::make_shared<UnitCubeMesh>(Nx, Nx, Nx);
   multimesh->add(mesh_0);
   exact_volume = 1.;
   exact_area = 0.;
@@ -106,6 +106,7 @@ void build_multimesh(std::size_t N,
     // Create domain range
     double x_a = dolfin::rand();
     double x_b = dolfin::rand();
+
     if (x_a > x_b)
       std::swap(x_a, x_b);
     double y_a = dolfin::rand();
@@ -113,18 +114,26 @@ void build_multimesh(std::size_t N,
     if (y_a > y_b)
       std::swap(y_a, y_b);
 
-    std::cout << i << ' ' << x_a<<' '<<y_a<<' '<<x_b<<' '<<y_b<<std::endl;
+    double z_a = dolfin::rand();
+    double z_b = dolfin::rand();
+    if (z_a > z_b)
+      std::swap(z_a, z_b);
+
+    // std::cout << i << ": " << x_a<<' '<<y_a<<' ' << z_a << ", " << x_b<<' '<<y_b << ' ' << z_b <<std::endl;
 
     // Find number of elements
     const std::size_t Nx_part = (std::size_t)std::max(std::abs(x_a - x_b)*Nx, 1.);
     const std::size_t Ny_part = (std::size_t)std::max(std::abs(y_a - y_b)*Nx, 1.);
+    const std::size_t Nz_part = (std::size_t)std::max(std::abs(z_a - z_b)*Nx, 1.);
 
     // Create mesh
-    auto mesh_i = std::make_shared<RectangleMesh>(Point(x_a, y_a),
-						  Point(x_b, y_b),
-						  Nx_part, Ny_part);
+    auto mesh_i = std::make_shared<BoxMesh>(Point(x_a, y_a, z_a),
+					    Point(x_b, y_b, z_b),
+					    Nx_part, Ny_part, Nz_part);
     multimesh->add(mesh_i);
-    exact_area += 2.*(x_b - x_a + y_b - y_a);
+    exact_area += 2. * (x_b - x_a) * (y_b - y_a) +
+                  2. * (x_b - x_a) * (z_b - z_a) +
+                  2. * (y_b - y_a) * (z_b - z_a);
   }
 
   // Build
