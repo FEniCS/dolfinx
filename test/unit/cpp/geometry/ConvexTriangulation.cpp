@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2017-03-17
-// Last changed: 2012-03-20
+// Last changed: 2012-08-28
 //
 // Unit tests for convex triangulation
 
@@ -24,6 +24,42 @@
 #include <gtest/gtest.h>
 
 using namespace dolfin;
+
+namespace
+{
+  bool pure_triangular(const std::vector<std::vector<Point>>& triangulation, std::size_t dim)
+  {
+    for (const std::vector<Point>& tri : triangulation)
+    {
+
+      if (tri.size() == dim+1)
+	return false;
+    }
+
+    return true;
+  }
+
+  bool has_degenerate(const std::vector<std::vector<Point>>& triangulation, std::size_t dim)
+  {
+    for (const std::vector<Point>& tri : triangulation)
+    {
+      for (std::size_t i = 0; i < tri.size(); i++)
+      {
+	for (std::size_t j = i+1; j < tri.size(); j++)
+	{
+	  if ((tri[i]-tri[j]).norm() < DOLFIN_EPS)
+	    return true;
+	}
+      }
+    }
+    return false;
+  }
+
+  bool triangulation_selfintersects(const std::vector<std::vector<Point>>& triangulation, std::size_t dim)
+  {
+    return false;
+  }
+}
 
 //-----------------------------------------------------------------------------
 TEST(ConvexTriangulationTest, testTrivialCase)
@@ -56,7 +92,9 @@ TEST(ConvexTriangulationTest, testFailingCase)
 
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
-  // TOOD: Test that no triangles are degenerate and do not overlap
+  ASSERT_TRUE(pure_triangular(tri, 3));
+  ASSERT_TRUE(!has_degenerate(tri, 3));
+  ASSERT_TRUE(!triangulation_selfintersects(tri, 3));
 }
 
 TEST(ConvexTriangulationTest, testFailingCase2)
@@ -75,7 +113,9 @@ TEST(ConvexTriangulationTest, testFailingCase2)
 
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
-  // TOOD: Test that no triangles are degenerate and do not overlap
+  ASSERT_TRUE(pure_triangular(tri, 3));
+  ASSERT_TRUE(!has_degenerate(tri, 3));
+  ASSERT_TRUE(!triangulation_selfintersects(tri, 3));
 }
 
 TEST(ConvexTriangulationTest, testFailingCase3)
@@ -92,5 +132,13 @@ TEST(ConvexTriangulationTest, testFailingCase3)
 
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
-  // TOOD: Test that no triangles are degenerate and do not overlap
+  ASSERT_TRUE(pure_triangular(tri, 3));
+  ASSERT_TRUE(!has_degenerate(tri, 3));
+  ASSERT_TRUE(!triangulation_selfintersects(tri, 3));
+}
+
+// Test all
+int ConvecTriangulation_main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
