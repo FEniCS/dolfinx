@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-26
-// Last changed: 2017-08-23
+// Last changed: 2017-08-28
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes. The solution is computed
@@ -24,12 +24,42 @@
 // functionality.
 
 #include <cmath>
+#include <fstream>
 #include <dolfin.h>
 #include "MultiMeshPoisson.h"
 #include "MultiMeshL2Norm.h"
 #include "MultiMeshH10Norm.h"
 
 using namespace dolfin;
+
+class Arguments
+{
+public:
+  std::size_t N = 5;
+  std::size_t Nx = 2;
+
+  std::string print() const
+  {
+    std::stringstream ss;
+    ss << "N" << N<<"_"
+       << "Nx" << Nx;
+    return ss.str();
+  }
+
+  void parse(int argc, char** argv)
+  {
+    std::size_t c = 1;
+
+    if (argc > c)
+    {
+      this->N = atoi(argv[c]);
+      c++;
+      if (argc > c)
+	this->Nx = atoi(argv[c]);
+    }
+  }
+};
+
 
 // Sub domain for Dirichlet boundary condition
 class DirichletBoundary : public SubDomain
@@ -166,40 +196,11 @@ void solve(const std::shared_ptr<MultiMesh> multimesh)
   std::cout << L2error << ' ' << H10error << std::endl;
 }
 
-class Arguments
-{
-public:
-  std::size_t N = 5;
-  std::size_t Nx = 2;
-
-  std::string print()
-  {
-    std::stringstream ss;
-    ss << "N" << N<<"_"
-       << "Nx" << Nx;
-    return ss.str();
-  }
-};
-
-Arguments parse(int argc, char** argv)
-{
-  Arguments args;
-  std::size_t c = 1;
-
-  if (argc > c)
-  {
-    args.N = atoi(argv[c]);
-    c++;
-    if (argc > c)
-      args.Nx = atoi(argv[c]);
-  }
-
-  return args;
-}
 
 int main(int argc, char* argv[])
 {
-  Arguments args = parse(argc, argv);
+  Arguments args;
+  args.parse(argc, argv);
 
   auto multimesh = std::make_shared<MultiMesh>();
   double exact_volume, exact_area;
@@ -212,4 +213,17 @@ int main(int argc, char* argv[])
   const double area = multimesh->compute_area();
   const double area_error = std::abs(area - exact_area);
   std::cout << "area error " << area_error << std::endl;
+
+  if (volume_error > DOLFIN_EPS_LARGE or
+      area_error > DOLFIN_EPS_LARGE)
+  {
+    std::cout << "\n   large error" << std::endl;
+    std::string filename = "multimesh_" + args.print();
+    std::ofstream f(filename + ".py");
+    if (!f.good()) { std::cout << "file " << filename << ".py" << " not good\n"; exit(1); }
+    f << multimesh->plot_matplotlib(0.0, filename + ".pdf") << std::endl;
+    f.close();
+    exit(1);
+  }
+
 }
