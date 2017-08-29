@@ -22,8 +22,8 @@ First, the :py:mod:`dolfin` module is imported: ::
     from dolfin import *
 
 We proceed by defining a mesh of the domain.  We use a built-in mesh
-provided by the class :py:class:`UnitSquareMesh
-<dolfin.cpp.UnitSquareMesh>`.  In order to create a mesh consisting of
+provided by the class :py:class:`UnitQuadMesh
+<dolfin.cpp.UnitQuadMesh>`.  In order to create a mesh consisting of
 :math:`64 \times 64` squares, we do as follows: ::
 
     # Create mesh
@@ -38,7 +38,7 @@ Next, we need to define the function space. ::
 
 The second argument to :py:class:`FunctionSpace
 <dolfin.functions.functionspace.FunctionSpace>` specifies underlying
-finite element, here mixed element obtained by ``*`` operator.
+finite element, here a mixed element is obtained by ``*`` operator.
 
 Now, we want to define the variational problem, but first we need to
 specify the trial functions (the unknowns) and the test functions.
