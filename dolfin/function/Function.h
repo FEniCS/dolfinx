@@ -66,6 +66,8 @@ namespace dolfin
   {
   public:
 
+    Function() : Hierarchical<Function>(*this) {}
+
     /// Create function on given function space (shared data)
     ///
     /// *Arguments*

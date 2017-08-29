@@ -34,6 +34,7 @@ typedef int hid_t;
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/mesh/CellType.h>
 
 namespace boost
 {
@@ -62,7 +63,6 @@ namespace dolfin
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
   class Point;
-  class XDMFxml;
 
   /// Read and write Mesh, Function, MeshFunction and other objects in XDMF
 

@@ -210,7 +210,6 @@
 //-----------------------------------------------------------------------------
 // Add director classes
 //-----------------------------------------------------------------------------
-%feature("director") dolfin::PETScUserPreconditioner;
 
 %feature("director") dolfin::PETScLinearOperator;
 %feature("nodirector") dolfin::PETScLinearOperator::str;

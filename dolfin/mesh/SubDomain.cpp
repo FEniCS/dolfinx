@@ -50,7 +50,7 @@ SubDomain::~SubDomain()
 //-----------------------------------------------------------------------------
 bool SubDomain::inside(const Array<double>& x, bool on_boundary) const
 {
-  const Eigen::Map<Eigen::VectorXd> _x(const_cast<double*>(x.data()), x.size());
+  const Eigen::Map<const Eigen::VectorXd> _x(x.data(), x.size());
   return inside(_x, on_boundary);
 }
 //-----------------------------------------------------------------------------
