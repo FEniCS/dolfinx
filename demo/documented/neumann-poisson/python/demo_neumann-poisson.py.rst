@@ -64,7 +64,7 @@ problem: ::
     L = f*v*dx + g*v*ds
 
 Since we have natural (Neumann) boundary conditions in this problem,
-we don´t have to implement boundary conditions.  This is because
+we do not have to implement boundary conditions.  This is because
 Neumann boundary conditions are default in DOLFIN.
 
 To compute the solution we use the bilinear form, the linear forms,
