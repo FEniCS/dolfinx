@@ -63,6 +63,7 @@ def test_mesh_point_3d_tetrahedron():
     assert intersection.intersected_cells() == [816]
 
 @skip_in_parallel
+@pytest.mark.xfail(strict=True, raises=RuntimeError)
 def test_mesh_point_2d_quadrilateral():
     "Test mesh-point intersection in 2D for quadrilateral mesh"
 
@@ -74,7 +75,7 @@ def test_mesh_point_2d_quadrilateral():
     assert intersection.intersected_cells() == [49]
 
 @skip_in_parallel
-@pytest.mark.xfail(strict=True, raises=AssertionError)
+@pytest.mark.xfail(strict=True, raises=RuntimeError)
 def test_mesh_point_3d_hexahedron():
     "Test mesh-point intersection in 3D for hexahedral mesh"
 

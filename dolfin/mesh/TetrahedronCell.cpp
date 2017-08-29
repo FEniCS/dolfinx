@@ -542,6 +542,12 @@ TetrahedronCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
   return IntersectionTriangulation::triangulate_intersection(c0, c1);
 }
 //-----------------------------------------------------------------------------
+std::vector<double>
+TetrahedronCell::triangulate_intersection(const Cell& cell, const MeshEntity& entity) const
+{
+  return IntersectionTriangulation::triangulate_intersection(cell, entity);
+}
+//-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const
 {
   if (plural)
