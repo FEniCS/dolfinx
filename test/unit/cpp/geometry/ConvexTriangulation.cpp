@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2017-03-17
-// Last changed: 2012-08-28
+// Last changed: 2012-08-30
 //
 // Unit tests for convex triangulation
 
@@ -32,7 +32,7 @@ namespace
     for (const std::vector<Point>& tri : triangulation)
     {
 
-      if (tri.size() == dim+1)
+      if (tri.size() != dim+1)
 	return false;
     }
 
@@ -86,20 +86,34 @@ namespace
       {
 	// Count number of shared vertices
 	std::size_t shared_vertices = 0;
-	for (std::size_t v1 = 0; v1 < 4; v1++)
-	  for (std::size_t v2 = 0; v2 < 4; v2++)
+	for (std::size_t v1 = 0; v1 < dim+1; v1++)
+	  for (std::size_t v2 = 0; v2 < dim+1; v2++)
 	    if (v1 == v2)
 	      shared_vertices++;
 
 	const auto& t2 = triangulation[j];
-	if (CollisionPredicates::collides_tetrahedron_tetrahedron_3d(t1[0],
-								     t1[1],
-								     t1[2],
-								     t1[3],
-								     t2[0],
-								     t2[1],
-								     t2[2],
-								     t2[3]) != shared_vertices)
+
+
+	// TODO: This should realli by improved as it currently only
+	// simplices which are not neighbors...
+	if ((dim == 3 &&
+	     shared_vertices == 0 &&
+	     CollisionPredicates::collides_tetrahedron_tetrahedron_3d(t1[0],
+								      t1[1],
+								      t1[2],
+								      t1[3],
+								      t2[0],
+								      t2[1],
+								      t2[2],
+								      t2[3])) ||
+	    (dim == 2 &&
+	      shared_vertices == 0 &&
+	     CollisionPredicates::collides_triangle_triangle_2d(t1[0],
+								t1[1],
+								t1[2],
+								t2[0],
+								t2[1],
+								t2[2])))
 	{
 	  return true;
 	}
@@ -142,6 +156,27 @@ TEST(ConvexTriangulationTest, testTrivialCase2)
   ASSERT_TRUE(!triangulation_selfintersects(tri, 3));
 }
 
+TEST(ConvexTriangulationTest, testCoplanarPoints)
+{
+  std::vector<Point> input {
+    Point(0,   0,   0),
+    Point(0,   0,   1),
+    Point(0,   1,   0),
+    Point(0,   1,   1),
+    Point(1,   0,   0),
+    Point(1,   0,   1),
+    Point(1,   1,   0),
+    Point(1,   1,   1),
+    Point(0.5, 0.5, 0)};
+
+  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+
+  ASSERT_TRUE(pure_triangular(tri, 3));
+  ASSERT_TRUE(!has_degenerate(tri, 3));
+  ASSERT_TRUE(!triangulation_selfintersects(tri, 3));
+}
+
+
 
 TEST(ConvexTriangulationTest, testFailingCase)
 {
@@ -161,7 +196,7 @@ TEST(ConvexTriangulationTest, testFailingCase)
 
   ASSERT_TRUE(pure_triangular(tri, 3));
   ASSERT_TRUE(!has_degenerate(tri, 3));
-  ASSERT_TRUE(!triangulation_selfintersects(tri, 3));
+  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
 }
 
 TEST(ConvexTriangulationTest, testFailingCase2)

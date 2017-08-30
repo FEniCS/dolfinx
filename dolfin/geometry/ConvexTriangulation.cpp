@@ -348,13 +348,13 @@ ConvexTriangulation::_triangulate_graham_scan_3d(const std::vector<Point>& input
 
 		// Use the center of the coplanar points and point no 0
 		// as reference for the angle calculation
-		Point pointscenter = points[coplanar[0]];
+		Point coplanar_center = points[coplanar[0]];
 		for (std::size_t m = 1; m < coplanar.size(); ++m)
-		  pointscenter += points[coplanar[m]];
-		pointscenter /= coplanar.size();
+		  coplanar_center += points[coplanar[m]];
+		coplanar_center /= coplanar.size();
 
 		// Reference
-		Point ref = points[coplanar[0]] - pointscenter;
+		Point ref = points[coplanar[0]] - coplanar_center;
 		ref /= ref.norm();
 
 		// Normal
@@ -365,7 +365,7 @@ ConvexTriangulation::_triangulate_graham_scan_3d(const std::vector<Point>& input
 		std::vector<std::pair<double, std::size_t>> order;
 		for (std::size_t m = 0; m < coplanar.size(); ++m)
 		{
-		  const Point v = points[coplanar[m]] - pointscenter;
+		  const Point v = points[coplanar[m]] - coplanar_center;
 		  const double frac = ref.dot(v) / v.norm();
 		  double alpha;
 
@@ -385,81 +385,17 @@ ConvexTriangulation::_triangulate_graham_scan_3d(const std::vector<Point>& input
 		// Sort angles
 		std::sort(order.begin(), order.end());
 
-                // Scan for a point which is not colinear with two other
-                // consecutive points (as this will introduce a degenerate triangle)
-
-                int ref_index = -1;
-                bool is_colinear = false;
-                do {
-                  is_colinear = false;
-                  ref_index++;
-                  const Point ref = points[ coplanar[ order[ ref_index].second ]];
-                  for (std::size_t i = 1; i < coplanar.size()-1; i++)
-                  {
-                    const Point p1 = points[ coplanar[ order[ (ref_index+i)%coplanar.size()].second]];
-                    const Point p2 = points[ coplanar[ order[ (ref_index+i+1)%coplanar.size()].second]];
-                    const Point a = p1-ref;
-                    const Point b = p2-ref;
-                    const double cos_angle = (a/a.norm()).dot(b/b.norm());
-
-                    if (-(std::abs(cos_angle) - 1.0) < DOLFIN_EPS )
-                    {
-                      is_colinear = true;
-                      break;
-                    }
-                  }
-                } while (is_colinear);
-
-                // Do ear cut
-                while (order.size() > 2)
-                {
-                  double cos_max_angle = 1.;
-                  std::size_t index_max_angle;
-
-                  for (int i = 0; i < order.size(); i++)
-                  {
-                    const Point p0 = points[coplanar[order[i].second]];
-                    const Point p1 = points[coplanar[order[(i+1)%order.size()].second]];
-                    const Point p2 = points[coplanar[order[(i+2)%order.size()].second]];
-                    const Point v0 = p1-p0;
-                    const Point v1 = p2-p1;
-
-                    const double cos_angle = (v0/v0.norm()).dot(v1/v1.norm());
-                    if (cos_angle < cos_max_angle)
-                    {
-                      cos_max_angle = cos_angle;
-                      index_max_angle = i;
-                    }
-                  }
-
-                  std::vector<Point> cand = {  points[coplanar[order[i].second]],
-                                               points[coplanar[order[(i+1)%order.size()].second]],
-                                               points[coplanar[order[(i+2)%order.size()].second]] };
-
-                  // Suboptimal to erase from vector, but sizes are small som ok for now.
-                  std::vector<std::pair<double, std::size_t>>::iterator
-                    it = order.begin() + (index_max_angle+1)%order.size();
-
-                  order.erase(it);
+		// TODO: Filter out points which are in the interior
+		// of the convex hull of the planar points.
 
 
-
-
-		  // Tessellate
-		  // for (std::size_t m = 1; m < coplanar.size() - 1; ++m)
-		  // {
-		  //   const std::size_t p1_index = (ref_index + m)%coplanar.size();
-		  //   const std::size_t p2_index = (p1_index+1)%coplanar.size();
-
-		  //   std::vector<Point> cand = { points[coplanar[order[ref_index].second]],
-		  // 			      points[coplanar[order[p1_index].second]],
-		  // 			      points[coplanar[order[p2_index].second]],
-		  // 			      polyhedroncenter };
-		  // FIXME: Possibly only include if tet is large enough
-                  //for (auto p : cand)
-                  //  std::cout << " " << p;
-                  //std::cout << std::endl;
-                  triangulation.push_back(cand);
+		// Tessellate
+		for (std::size_t i = 0; i < order.size(); i++)
+		{
+                  triangulation.push_back({polyhedroncenter,
+			                   coplanar_center,
+			                   points[order[i].second],
+                                           points[order[(i+1)%order.size()].second]});
 
 #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
                   if (cgal_tet_is_degenerate(cand))
@@ -478,6 +414,8 @@ ConvexTriangulation::_triangulate_graham_scan_3d(const std::vector<Point>& input
 #endif
 		}
 
+		// Mark all combinations of the coplanar vertices as
+		// checked to avoid duplicating triangles
                 std::sort(coplanar.begin(), coplanar.end());
 
                 for (int i = 0; i < coplanar.size()-2; i++)
