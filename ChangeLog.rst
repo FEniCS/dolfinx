@@ -4,19 +4,26 @@ Change log
 2017.2.0 (unreleased)
 ---------------------
 
-- Remove VTK plotting backend. Plotting is no longer available from the C++
-  interface. Basic plotting is available using ``matplotlib`` and ``x3dom``
-  backends via the ``plot()`` free function in the Python interface. Users are
-  advised to move to e.g.  Paraview for more demanding plotting needs. 
-- Updates for ``ufc::finite_element::evaluate_vertex_values`` interface
-  change
-- Add new methods ``XDMFFile::write_checkpoint``, ``XDMFFile::read_checkpoint``
-  to write and read (checkpoint) functions
-- Implement marking vertex and edge mesh functions by ``SubDomain::mark()``
-  using ``on_boundary`` flag
+- Bump required Boost version to 1.55.
+- Remove PETScUserPreconditioner (unused and untested.
+- Remove VTK plotting backend. Plotting is no longer available from
+  the C++ interface. Basic plotting is available using ``matplotlib``
+  and ``x3dom`` backends via the ``plot()`` free function in the
+  Python interface. Users are advised to move to e.g.  Paraview for
+  more demanding plotting needs.
+- Updates for ``ufc::finite_element::evaluate_vertex_values``
+  interface change.
+- Add new methods ``XDMFFile::write_checkpoint``,
+  ``XDMFFile::read_checkpoint`` to write and read (checkpoint)
+  functions.
+- Implement marking vertex and edge mesh functions by
+  ``SubDomain::mark()`` using ``on_boundary`` flag.
 - Fix quadratic scaling in PETSc matrix allocation with global dofs;
   assembly with ``Real`` space now exhibits linear scaling in number
-  of dofs
+  of dofs.
+- Add assembly for quadrilateral and hexahedral meshes with CG and DG elements.
+- Updates for some demos and tests to show usage of quadrilateral
+  and hexahedral meshes.
 
 2017.1.0 (2017-05-09)
 ---------------------

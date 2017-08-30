@@ -108,6 +108,12 @@ PROBLEM_RENAMES(NonlinearVariational)
 
 
 //-----------------------------------------------------------------------------
+// Ignore dolfin::assemble_local (Eigen version)
+//-----------------------------------------------------------------------------
+%ignore dolfin::assemble_local(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A_e,
+                               const Form& a, const Cell& cell);
+
+//-----------------------------------------------------------------------------
 // PETSc/SLEPc backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_PETSC
