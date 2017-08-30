@@ -55,8 +55,56 @@ namespace
     return false;
   }
 
+  // checks that every pair of cells share 0 or 1 face
+  bool valid_topology(const std::vector<std::vector<Point>>& triangulation, std::size_t dim)
+  {
+    for (std::size_t i = 0; i < triangulation.size(); i++)
+    {
+      const auto& t1 = triangulation[i];
+      for (std::size_t j = i+1; j < triangulation.size(); j++)
+      {
+	// Count number of shared vertices
+	std::size_t shared_vertices = 0;
+	for (std::size_t v1 = 0; v1 < dim+1; v1++)
+	  for (std::size_t v2 = 0; v2 < dim+1; v2++)
+	    if (v1 == v2)
+	      shared_vertices++;
+
+	if (shared_vertices != 0 && shared_vertices != dim)
+	  return false;
+      }
+    }
+    return true;
+  }
+
   bool triangulation_selfintersects(const std::vector<std::vector<Point>>& triangulation, std::size_t dim)
   {
+    for (std::size_t i = 0; i < triangulation.size(); i++)
+    {
+      const auto& t1 = triangulation[i];
+      for (std::size_t j = i+1; j < triangulation.size(); j++)
+      {
+	// Count number of shared vertices
+	std::size_t shared_vertices = 0;
+	for (std::size_t v1 = 0; v1 < 4; v1++)
+	  for (std::size_t v2 = 0; v2 < 4; v2++)
+	    if (v1 == v2)
+	      shared_vertices++;
+
+	const auto& t2 = triangulation[j];
+	if (CollisionPredicates::collides_tetrahedron_tetrahedron_3d(t1[0],
+								     t1[1],
+								     t1[2],
+								     t1[3],
+								     t2[0],
+								     t2[1],
+								     t2[2],
+								     t2[3]) != shared_vertices)
+	{
+	  return true;
+	}
+      }
+    }
     return false;
   }
 }
@@ -73,6 +121,25 @@ TEST(ConvexTriangulationTest, testTrivialCase)
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
   ASSERT_EQ(tri.size(), 1);
+}
+//-----------------------------------------------------------------------------
+TEST(ConvexTriangulationTest, testTrivialCase2)
+{
+  std::vector<Point> input {
+    Point(0,0,0),
+    Point(0,0,1),
+    Point(0,1,0),
+    Point(0,1,1),
+    Point(1,0,0),
+    Point(1,0,1),
+    Point(1,1,0),
+    Point(1,1,1) };
+
+  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+
+  ASSERT_TRUE(pure_triangular(tri, 3));
+  ASSERT_TRUE(!has_degenerate(tri, 3));
+  ASSERT_TRUE(!triangulation_selfintersects(tri, 3));
 }
 
 
