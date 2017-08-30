@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-24
-// Last changed: 2017-08-28
+// Last changed: 2017-08-30
 //
 // This demo program solves Poisson's equation on a domain defined by
 // three overlapping and non-matching meshes. The solution is computed
@@ -89,14 +89,12 @@ class Source : public Expression
 void build_multimesh(std::size_t N,
 		     std::size_t Nx,
 		     std::shared_ptr<MultiMesh> multimesh,
-		     double& exact_volume,
-		     double& exact_area)
+		     double& exact_volume)
 {
   // Background mesh
   auto mesh_0 = std::make_shared<UnitCubeMesh>(Nx, Nx, Nx);
   multimesh->add(mesh_0);
   exact_volume = 1.;
-  exact_area = 0.;
 
   // Initialize random generator (dolfin built-in)
   dolfin::seed(1);
@@ -131,9 +129,6 @@ void build_multimesh(std::size_t N,
 					    Point(x_b, y_b, z_b),
 					    Nx_part, Ny_part, Nz_part);
     multimesh->add(mesh_i);
-    exact_area += 2. * (x_b - x_a) * (y_b - y_a) +
-                  2. * (x_b - x_a) * (z_b - z_a) +
-                  2. * (y_b - y_a) * (z_b - z_a);
   }
 
   // Build
@@ -212,19 +207,14 @@ int main(int argc, char* argv[])
   args.parse(argc, argv);
 
   auto multimesh = std::make_shared<MultiMesh>();
-  double exact_volume, exact_area;
-  build_multimesh(args.N, args.Nx, multimesh, exact_volume, exact_area);
+  double exact_volume;
+  build_multimesh(args.N, args.Nx, multimesh, exact_volume);
 
   const double volume = multimesh->compute_volume();
   const double volume_error = std::abs(volume - exact_volume);
   std::cout << "volume error " << volume_error << std::endl;
 
-  const double area = multimesh->compute_area();
-  const double area_error = std::abs(area - exact_area);
-  std::cout << "area error " << area_error << std::endl;
-
-  if (volume_error > DOLFIN_EPS_LARGE or
-      area_error > DOLFIN_EPS_LARGE)
+  if (volume_error > DOLFIN_EPS_LARGE)
   {
     std::cout << "\n   large error" << std::endl;
     std::string filename = "multimesh_" + args.print();
