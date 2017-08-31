@@ -58,6 +58,8 @@
 %ignore dolfin::Parameters::parse;
 %ignore dolfin::Parameters::update;
 
+%ignore dolfin::Parameters::begin() const;
+%ignore dolfin::Parameters::end() const;
 
 // ---------------------------------------------------------------------------
 // Typemaps (in) for std::set<std::string>
