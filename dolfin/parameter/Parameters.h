@@ -297,7 +297,7 @@ namespace dolfin
     // Parameter set key
     std::string _key;
 
-    // Map from key to parameter
+    // Map from key to parameter(s)
     std::map<std::string, boost::variant<Parameter, Parameters>> _parameters;
 
   public:

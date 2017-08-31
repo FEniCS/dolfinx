@@ -18,7 +18,6 @@
 #include <sstream>
 #include <stdio.h>
 #include <boost/program_options.hpp>
-#include <boost/scoped_array.hpp>
 
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
@@ -104,6 +103,7 @@ void Parameters::add(std::string key, int value,
                  this->name().c_str(), key.c_str());
   }
 
+  // Set range
   boost::get<Parameter>(e.first->second).set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
@@ -131,6 +131,7 @@ void Parameters::add(std::string key, double value,
                  this->name().c_str(), key.c_str());
   }
 
+  // Set range
   boost::get<Parameter>(e.first->second).set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
@@ -191,6 +192,7 @@ void Parameters::add(std::string key, const char* value,
                  this->name().c_str(), key.c_str());
   }
 
+  // Set range
   boost::get<Parameter>(e.first->second).set_range(range);
 }
 //-----------------------------------------------------------------------------
@@ -216,9 +218,6 @@ void Parameters::add(const Parameters& parameters)
                  "Parameter set \"%s.%s\" already defined",
                  this->name().c_str(), parameters.name().c_str());
   }
-
-  // Add parameter set
-
 }
 //-----------------------------------------------------------------------------
 void Parameters::remove(std::string key)
@@ -300,7 +299,9 @@ Parameter& Parameters::operator[] (std::string key)
   }
   else if (p->second.which() != 0)
   {
-    // FIXME
+    dolfin_error("Parameters.cpp",
+                 "access parameter",
+                 "Key '" + key + "' is for a Parameters object (not a Parameter)");
   }
 
   return boost::get<Parameter>(p->second);
@@ -318,7 +319,9 @@ const Parameter& Parameters::operator[] (std::string key) const
   }
   else if (p->second.which() != 0)
   {
-    // FIXME
+    dolfin_error("Parameters.cpp",
+                 "access parameter",
+                 "Key '" + key + "' is for a Parameters object (not a Parameter)");
   }
 
   return boost::get<Parameter>(p->second);
@@ -336,7 +339,9 @@ Parameters& Parameters::operator() (std::string key)
   }
   else if (p->second.which() != 1)
   {
-    // FIXME
+    dolfin_error("Parameters.cpp",
+                 "access parameters",
+                 "Key '" + key + "' is for a Parameter object (not a Parameters)");
   }
 
   return boost::get<Parameters>(p->second);
@@ -354,18 +359,16 @@ const Parameters& Parameters::operator() (std::string key) const
   }
   else if (p->second.which() != 1)
   {
-    // FIXME
+    dolfin_error("Parameters.cpp",
+                 "access parameters",
+                 "Key '" + key + "' is for a Parameter object (not a Parameters)");
   }
-
 
   return boost::get<Parameters>(p->second);
 }
 //-----------------------------------------------------------------------------
 const Parameters& Parameters::operator= (const Parameters& parameters)
 {
-  // Clear all parameters
-  clear();
-
   // Copy key
   _key = parameters._key;
 
