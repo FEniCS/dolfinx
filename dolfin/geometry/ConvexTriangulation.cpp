@@ -53,6 +53,13 @@ namespace
   {
     return p0.x() != p1.x() || p0.y() != p1.y() || p0.z() != p1.z();
   }
+  //------------------------------------------------------------------------------
+  // Check if q lies between p0 and p1. p0, p1 and q are assumed to be colinear
+  bool is_between(dolfin::Point p0, dolfin::Point p1, dolfin::Point q)
+  {
+    const double sqnorm = (p1-p0).squared_norm();
+    return (p0-q).squared_norm() < sqnorm && (p1-q).squared_norm() < sqnorm;
+  }
 
   //------------------------------------------------------------------------------
   // Return the indices to the points that forms the polygon that is
@@ -63,8 +70,6 @@ namespace
     // FIXME: Ensure that 0, 1, 2 are not colinear
     dolfin::Point normal = dolfin::GeometryTools::cross_product(points[0], points[1], points[2]);
     normal /= normal.norm();
-
-    dolfin::cout << "Coplanar normal: " << normal << dolfin::endl;
 
     std::vector<std::pair<std::size_t, std::size_t>> edges;
 
@@ -96,6 +101,7 @@ namespace
         }
 
         bool on_convex_hull = true;
+	std::vector<std::size_t> colinear;
         for (std::size_t p = 0; p < points.size(); p++)
         {
           if (p != i && p != j)
@@ -105,18 +111,44 @@ namespace
                                                 r,
                                                 points[p]);
 
+	    if (orientation == 0)
+	    {
+	      colinear.push_back(p);
+	    }
+
             // Sign change: triangle is not on convex hull
             if (edge_orientation * orientation < 0)
             {
               on_convex_hull = false;
-              break;
             }
           }
         }
 
         if (on_convex_hull)
         {
-          edges.push_back(std::make_pair(i, j));
+	  if (!colinear.empty())
+	  {
+	    // Several points are colinear. Only add if i and j are
+	    // the 1d convex hull of the colinear points
+	    bool is_linear_convex_hull = true;
+	    for (std::size_t q : colinear)
+	    {
+	      if (!is_between(points[i], points[j], points[q]))
+	      {
+		is_linear_convex_hull = false;
+		break;
+	      }
+	    }
+
+	    if (is_linear_convex_hull)
+	    {
+	      edges.push_back(std::make_pair(i,  j));
+	    }
+	  }
+	  else
+	  {
+	    edges.push_back(std::make_pair(i, j));
+	  }
         }
       }
     }
