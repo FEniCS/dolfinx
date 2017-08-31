@@ -54,52 +54,17 @@ namespace
     return p0.x() != p1.x() || p0.y() != p1.y() || p0.z() != p1.z();
   }
 
-
+  //------------------------------------------------------------------------------
   // Return the indices to the points that forms the polygon that is
   // the convex hull of the points. The points are assumed to be coplanar
   std::vector<std::pair<std::size_t, std::size_t>> compute_convex_hull_planar(const std::vector<dolfin::Point>& points)
+  //------------------------------------------------------------------------------
   {
-    dolfin::Point center(0,0,0);
-
-    for (const dolfin::Point& p : points)
-    {
-      center += p;
-    }
-
-    center /= points.size();
-
-    // Reference
-    dolfin::Point ref = points[0] - center;
-    ref /= ref.norm();
-
-    // Normal
     // FIXME: Ensure that 0, 1, 2 are not colinear
     dolfin::Point normal = dolfin::GeometryTools::cross_product(points[0], points[1], points[2]);
     normal /= normal.norm();
 
-    // Calculate and store angles
-    std::vector<std::pair<double, std::size_t>> order;
-    for (std::size_t m = 0; m < points.size(); ++m)
-    {
-      const dolfin::Point v = points[m] - center;
-      const double frac = ref.dot(v) / v.norm();
-      double alpha;
-
-      if (frac <= -1)
-	alpha = DOLFIN_PI;
-      else if (frac >= 1)
-	alpha = 0;
-      else
-      {
-	alpha = std::acos(frac);
-	if (v.dot(normal.cross(ref)) < 0)
-	  alpha = 2*DOLFIN_PI - alpha;
-      }
-      order.push_back(std::make_pair(alpha, m));
-    }
-
-    // Sort angles
-    std::sort(order.begin(), order.end());
+    dolfin::cout << "Coplanar normal: " << normal << dolfin::endl;
 
     std::vector<std::pair<std::size_t, std::size_t>> edges;
 
@@ -109,53 +74,50 @@ namespace
     {
       for (std::size_t j = i+1; j < points.size(); j++)
       {
-	// // Form at plane of i, j  and i + the normal of plane
-      // 	const Point r = points[order[i].second]+normal;
+        // Form at plane of i, j  and i + the normal of plane
+        const dolfin::Point r = points[i]+normal;
 
-      // 	// search for the first point which is not in the
-      // 	// i, j, p plane to determine sign of orietation
-      // 	double edge_orientation = 0;
-      // 	{
-      // 	  std::size_t a = 0;
-      // 	  while (edge_orientation != 0)
-      // 	  {
-      // 	    if (a != i && a != j)
-      // 	    {
-      // 	      edge_orientation = orient3d(points[order[i].second],
-      // 					  points[order[j].second],
-      // 					  r,
-      // 					  points[order[a].second]);
+        // search for the first point which is not in the
+        // i, j, p plane to determine sign of orietation
+        double edge_orientation = 0;
+        {
+          std::size_t a = 0;
+          while (edge_orientation == 0)
+          {
+            if (a != i && a != j)
+            {
+              edge_orientation = orient3d(points[i],
+                                          points[j],
+                                          r,
+                                          points[a]);
+            }
+            a++;
+          }
+        }
 
-      // 	    }
-      // 	    a++;
-      // 	  }
-      // 	}
+        bool on_convex_hull = true;
+        for (std::size_t p = 0; p < points.size(); p++)
+        {
+          if (p != i && p != j)
+          {
+            const double orientation = orient3d(points[i],
+                                                points[j],
+                                                r,
+                                                points[p]);
 
-      // 	bool on_coplanar_convex_hull = true;
-      // 	for (std::size_t p = 0; p < coplanar.size(); p++)
-      // 	{
-      // 	  if (p != i && p != j)
-      // 	  {
-      // 	    const double orientation = orient3d(points[order[i].second],
-      // 						points[order[j].second],
-      // 						r,
-      // 						points[order[p].second]);
-      // 	    // Sign change: triangle is not on convex hull
-      // 	    if (edge_orientation * orientation < 0)
-      // 	    {
-      // 	      on_coplanar_convex_hull = false;
-      // 	      break;
-      // 	    }
-      // 	  }
-      // 	}
+            // Sign change: triangle is not on convex hull
+            if (edge_orientation * orientation < 0)
+            {
+              on_convex_hull = false;
+              break;
+            }
+          }
+        }
 
-      // 	if (!on_coplanar_convex_hull)
-      // 	{
-      // 	  dolfin::cout << "Edge not on convex hull: " << points[order[i].second] << " - " << points[order[j].second] << dolfin::endl;
-      // 	}
-      // }
-
-	edges.push_back(std::make_pair(i, j));
+        if (on_convex_hull)
+        {
+          edges.push_back(std::make_pair(i, j));
+        }
       }
     }
 
