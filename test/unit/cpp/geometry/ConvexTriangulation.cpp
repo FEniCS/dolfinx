@@ -201,19 +201,31 @@ TEST(ConvexTriangulationTest, testCoplanarPoints)
 
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
-  for (const std::vector<Point>& t : tri)
-  {
-    for (const Point& p : t)
-      dolfin::cout << p << " -- ";
-    dolfin::cout << dolfin::endl;
-  }
-
   ASSERT_TRUE(pure_triangular(tri, 3));
   ASSERT_TRUE(!has_degenerate(tri, 3));
   ASSERT_TRUE(!triangulation_selfintersects(tri, 3));
 }
 
 
+TEST(ConvexTriangulationTest, testCoplanarColinearPoints)
+{
+  std::vector<Point> input {
+    Point(0, 0,   0),
+    Point(0, 0,   1),
+    Point(0, 1,   0),
+    Point(0, 1,   1),
+    Point(1, 0,   0),
+    Point(1, 0,   1),
+    Point(1, 1,   0),
+    Point(1, 1,   1),
+    Point(0, 0.1, 0)};
+
+  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+
+  ASSERT_TRUE(pure_triangular(tri, 3));
+  ASSERT_TRUE(!has_degenerate(tri, 3));
+  ASSERT_TRUE(!triangulation_selfintersects(tri, 3));
+}
 
 TEST(ConvexTriangulationTest, testFailingCase)
 {
