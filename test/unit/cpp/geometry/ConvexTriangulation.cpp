@@ -84,38 +84,56 @@ namespace
       const auto& t1 = triangulation[i];
       for (std::size_t j = i+1; j < triangulation.size(); j++)
       {
-	// Count number of shared vertices
-	std::size_t shared_vertices = 0;
-	for (std::size_t v1 = 0; v1 < dim+1; v1++)
-	  for (std::size_t v2 = 0; v2 < dim+1; v2++)
-	    if (v1 == v2)
-	      shared_vertices++;
-
 	const auto& t2 = triangulation[j];
 
-
-	// TODO: This should realli by improved as it currently only
-	// simplices which are not neighbors...
-	if ((dim == 3 &&
-	     shared_vertices == 0 &&
-	     CollisionPredicates::collides_tetrahedron_tetrahedron_3d(t1[0],
-								      t1[1],
-								      t1[2],
-								      t1[3],
-								      t2[0],
-								      t2[1],
-								      t2[2],
-								      t2[3])) ||
-	    (dim == 2 &&
-	      shared_vertices == 0 &&
-	     CollisionPredicates::collides_triangle_triangle_2d(t1[0],
-								t1[1],
-								t1[2],
-								t2[0],
-								t2[1],
-								t2[2])))
+	// Count number of shared vertices
+	std::size_t shared_vertices = 0;
+	std::set<std::size_t> t1_shared;
+	std::set<std::size_t> t2_shared;
+	for (std::size_t v1 = 0; v1 < dim+1; v1++)
 	{
-	  return true;
+	  for (std::size_t v2 = 0; v2 < dim+1; v2++)
+	  {
+	    if (t1[v1] == t2[v2])
+	    {
+	      shared_vertices++;
+	      t1_shared.insert(v1);
+	      t2_shared.insert(v2);
+	    }
+	  }
+	}
+
+	if (dim == 3)
+	{
+	  if (shared_vertices == 0 &&
+	      CollisionPredicates::collides_tetrahedron_tetrahedron_3d(t1[0],
+								       t1[1],
+								       t1[2],
+								       t1[3],
+								       t2[0],
+								       t2[1],
+								       t2[2],
+								       t2[3]))
+	  {
+	    return true;
+	  }
+	  else if (shared_vertices > 0)
+	  {
+	    // None of the non-shared vertices should collide with the other tet
+	  }
+	}
+	else if(dim == 2)
+	{
+	  if (shared_vertices == 0 &&
+	      CollisionPredicates::collides_triangle_triangle_2d(t1[0],
+								 t1[1],
+								 t1[2],
+								 t2[0],
+								 t2[1],
+								 t2[2]))
+	  {
+	    return true;
+	  }
 	}
       }
     }
@@ -170,6 +188,13 @@ TEST(ConvexTriangulationTest, testCoplanarPoints)
     Point(0.5, 0.5, 0)};
 
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+
+  for (const std::vector<Point>& t : tri)
+  {
+    for (const Point& p : t)
+      dolfin::cout << p << " -- ";
+    dolfin::cout << dolfin::endl;
+  }
 
   ASSERT_TRUE(pure_triangular(tri, 3));
   ASSERT_TRUE(!has_degenerate(tri, 3));
@@ -240,7 +265,7 @@ TEST(ConvexTriangulationTest, testFailingCase3)
 }
 
 // Test all
-int ConvecTriangulation_main(int argc, char **argv) {
+int ConvexTriangulation_main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

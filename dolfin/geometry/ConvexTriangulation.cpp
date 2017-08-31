@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-07-07
+// Last changed: 2017-08-31
 
 #include <algorithm>
 #include <tuple>
@@ -52,6 +52,114 @@ namespace
   inline bool operator!=(const dolfin::Point& p0, const dolfin::Point& p1)
   {
     return p0.x() != p1.x() || p0.y() != p1.y() || p0.z() != p1.z();
+  }
+
+
+  // Return the indices to the points that forms the polygon that is
+  // the convex hull of the points. The points are assumed to be coplanar
+  std::vector<std::pair<std::size_t, std::size_t>> compute_convex_hull_planar(const std::vector<dolfin::Point>& points)
+  {
+    dolfin::Point center(0,0,0);
+
+    for (const dolfin::Point& p : points)
+    {
+      center += p;
+    }
+
+    center /= points.size();
+
+    // Reference
+    dolfin::Point ref = points[0] - center;
+    ref /= ref.norm();
+
+    // Normal
+    // FIXME: Ensure that 0, 1, 2 are not colinear
+    dolfin::Point normal = dolfin::GeometryTools::cross_product(points[0], points[1], points[2]);
+    normal /= normal.norm();
+
+    // Calculate and store angles
+    std::vector<std::pair<double, std::size_t>> order;
+    for (std::size_t m = 0; m < points.size(); ++m)
+    {
+      const dolfin::Point v = points[m] - center;
+      const double frac = ref.dot(v) / v.norm();
+      double alpha;
+
+      if (frac <= -1)
+	alpha = DOLFIN_PI;
+      else if (frac >= 1)
+	alpha = 0;
+      else
+      {
+	alpha = std::acos(frac);
+	if (v.dot(normal.cross(ref)) < 0)
+	  alpha = 2*DOLFIN_PI - alpha;
+      }
+      order.push_back(std::make_pair(alpha, m));
+    }
+
+    // Sort angles
+    std::sort(order.begin(), order.end());
+
+    std::vector<std::pair<std::size_t, std::size_t>> edges;
+
+    // Filter out points which are in the interior of the
+    // convex hull of the planar points.
+    for (std::size_t i = 0; i < points.size(); i++)
+    {
+      for (std::size_t j = i+1; j < points.size(); j++)
+      {
+	// // Form at plane of i, j  and i + the normal of plane
+      // 	const Point r = points[order[i].second]+normal;
+
+      // 	// search for the first point which is not in the
+      // 	// i, j, p plane to determine sign of orietation
+      // 	double edge_orientation = 0;
+      // 	{
+      // 	  std::size_t a = 0;
+      // 	  while (edge_orientation != 0)
+      // 	  {
+      // 	    if (a != i && a != j)
+      // 	    {
+      // 	      edge_orientation = orient3d(points[order[i].second],
+      // 					  points[order[j].second],
+      // 					  r,
+      // 					  points[order[a].second]);
+
+      // 	    }
+      // 	    a++;
+      // 	  }
+      // 	}
+
+      // 	bool on_coplanar_convex_hull = true;
+      // 	for (std::size_t p = 0; p < coplanar.size(); p++)
+      // 	{
+      // 	  if (p != i && p != j)
+      // 	  {
+      // 	    const double orientation = orient3d(points[order[i].second],
+      // 						points[order[j].second],
+      // 						r,
+      // 						points[order[p].second]);
+      // 	    // Sign change: triangle is not on convex hull
+      // 	    if (edge_orientation * orientation < 0)
+      // 	    {
+      // 	      on_coplanar_convex_hull = false;
+      // 	      break;
+      // 	    }
+      // 	  }
+      // 	}
+
+      // 	if (!on_coplanar_convex_hull)
+      // 	{
+      // 	  dolfin::cout << "Edge not on convex hull: " << points[order[i].second] << " - " << points[order[j].second] << dolfin::endl;
+      // 	}
+      // }
+
+	edges.push_back(std::make_pair(i, j));
+      }
+    }
+
+    return edges;
   }
 }
 
@@ -348,54 +456,26 @@ ConvexTriangulation::_triangulate_graham_scan_3d(const std::vector<Point>& input
 
 		// Use the center of the coplanar points and point no 0
 		// as reference for the angle calculation
-		Point coplanar_center = points[coplanar[0]];
-		for (std::size_t m = 1; m < coplanar.size(); ++m)
-		  coplanar_center += points[coplanar[m]];
-		coplanar_center /= coplanar.size();
 
-		// Reference
-		Point ref = points[coplanar[0]] - coplanar_center;
-		ref /= ref.norm();
+		std::vector<Point> coplanar_points;
+		for (std::size_t i : coplanar)
+		  coplanar_points.push_back(points[i]);
 
-		// Normal
-		Point normal = GeometryTools::cross_product(points[i], points[j], points[k]);
-		normal /= normal.norm();
+		std::vector<std::pair<std::size_t, std::size_t>> coplanar_convex_hull =
+		  compute_convex_hull_planar(coplanar_points);
 
-		// Calculate and store angles
-		std::vector<std::pair<double, std::size_t>> order;
-		for (std::size_t m = 0; m < coplanar.size(); ++m)
-		{
-		  const Point v = points[coplanar[m]] - coplanar_center;
-		  const double frac = ref.dot(v) / v.norm();
-		  double alpha;
-
-		  if (frac <= -1)
-		    alpha = DOLFIN_PI;
-		  else if (frac >= 1)
-		    alpha = 0;
-		  else
-		  {
-		    alpha = std::acos(frac);
-		    if (v.dot(normal.cross(ref)) < 0)
-		      alpha = 2*DOLFIN_PI - alpha;
-		  }
-		  order.push_back(std::make_pair(alpha, m));
-		}
-
-		// Sort angles
-		std::sort(order.begin(), order.end());
-
-		// TODO: Filter out points which are in the interior
-		// of the convex hull of the planar points.
-
+		Point coplanar_center(0,0,0);
+		for (Point p : coplanar_points)
+		  coplanar_center += p;
+		coplanar_center /= coplanar_points.size();
 
 		// Tessellate
-		for (std::size_t i = 0; i < order.size(); i++)
+		for (const std::pair<std::size_t, std::size_t>& edge : coplanar_convex_hull)
 		{
                   triangulation.push_back({polyhedroncenter,
 			                   coplanar_center,
-			                   points[order[i].second],
-                                           points[order[(i+1)%order.size()].second]});
+			                   coplanar_points[edge.first],
+			                   coplanar_points[edge.second]});
 
 #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
                   if (cgal_tet_is_degenerate(cand))
