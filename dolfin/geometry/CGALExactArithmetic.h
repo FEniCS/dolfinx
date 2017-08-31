@@ -778,6 +778,16 @@ namespace dolfin
     return !tet.has_on_unbounded_side(convert_to_cgal_3d(q0));
   }
   //-----------------------------------------------------------------------------
+    inline bool cgal_collides_interior_tetrahedron_point_3d(const Point& p0,
+							    const Point& p1,
+							    const Point& p2,
+							    const Point& p3,
+							    const Point& q0)
+  {
+    const Tetrahedron_3 tet = convert_to_cgal_3d(p0, p1, p2, p3);
+    return tet.has_on_bounded_side(convert_to_cgal_3d(q0));
+  }
+  //-----------------------------------------------------------------------------
   inline bool cgal_collides_tetrahedron_segment_3d(const Point& p0,
                                                    const Point& p1,
                                                    const Point& p2,

@@ -896,6 +896,39 @@ bool CollisionPredicates::_collides_tetrahedron_point_3d(const Point& p0,
     return true;
   else
     return false;
+}
+//-----------------------------------------------------------------------------
+bool CollisionPredicates::_collides_interior_tetrahedron_point_3d(const Point& p0,
+								  const Point& p1,
+								  const Point& p2,
+								  const Point& p3,
+								  const Point& point)
+{
+  const double ref = orient3d(p0,
+            p1,
+            p2,
+            p3);
+
+  if (ref*orient3d(p0,
+       p1,
+       p2,
+       point) > 0 and
+      ref*orient3d(p0,
+       p3,
+       p1,
+       point) > 0 and
+      ref*orient3d(p0,
+       p2,
+       p3,
+       point) > 0 and
+      ref*orient3d(p1,
+       p3,
+       p2,
+       point) > 0)
+    return true;
+  else
+    return false;
+
 
   // // Check tetrahedron orientation
   // const int sign = std::signbit(orient3d(p0,

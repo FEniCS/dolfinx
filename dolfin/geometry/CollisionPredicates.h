@@ -260,6 +260,19 @@ namespace dolfin
                         cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, point));
     }
 
+    /// Check whether tetrahedron point is in the interior of p0-p1-p2-p3
+    /// ie.  collides but is not on the boundary
+    static bool collides_interior_tetrahedron_point_3d(const Point& p0,
+						       const Point& p1,
+						       const Point& p2,
+						       const Point& p3,
+						       const Point& point)
+    {
+      return CHECK_CGAL(_collides_interior_tetrahedron_point_3d(p0, p1, p2, p3, point),
+                        cgal_collides_interior_tetrahedron_point_3d(p0, p1, p2, p3, point));
+    }
+
+
     /// Check whether tetrahedron p0-p1-p2-p3 collides with segment q0-q1
     static bool collides_tetrahedron_segment_3d(const Point& p0,
                                                 const Point& p1,
@@ -379,6 +392,12 @@ namespace dolfin
                                                const Point& p2,
                                                const Point& p3,
                                                const Point& point);
+
+    static bool _collides_interior_tetrahedron_point_3d(const Point& p0,
+							const Point& p1,
+							const Point& p2,
+							const Point& p3,
+							const Point& point);
 
     static bool _collides_tetrahedron_segment_3d(const Point& p0,
                                                  const Point& p1,
@@ -512,7 +531,7 @@ namespace dolfin
     //          const std::vector<int>& masks,
     //          int f0,
     //          int f1);
-    
+
   };
 
 }
