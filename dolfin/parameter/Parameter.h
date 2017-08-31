@@ -159,6 +159,9 @@ namespace dolfin
     /// @param value (bool)
     const Parameter& operator= (bool value);
 
+    /// Return parameter value
+    boost::variant<boost::blank, bool, int, double, std::string> value() const;
+
     /// Cast parameter to int
     operator int() const;
 

@@ -242,6 +242,11 @@ const Parameter& Parameter::operator= (const char* value)
   return *this;
 }
 //-----------------------------------------------------------------------------
+boost::variant<boost::blank, bool, int, double, std::string> Parameter::value() const
+{
+  return _value;
+}
+//-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (bool value)
 {
   if (_value.which() != 1)

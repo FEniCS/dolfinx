@@ -92,7 +92,6 @@ void GlobalParameters::parse(int argc, char* argv[])
   for (int i = 1; i < argc; ++i)
   {
     std::string arg(argv[i]);
-
     if (arg.size() > 2 && arg.substr(0, 2) == "--")
     {
       if (arg.size() > 8 && arg.substr(0, 8) == "--petsc.")
@@ -111,9 +110,11 @@ void GlobalParameters::parse(int argc, char* argv[])
       if (current)
         current->push_back(arg);
       else
+      {
         dolfin_error("GlobalParameters.cpp",
                      "parse command-line options",
                      "Illegal command-line options");
+      }
     }
   }
 

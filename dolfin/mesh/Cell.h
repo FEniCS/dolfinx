@@ -258,7 +258,7 @@ namespace dolfin
     /// @return     bool
     ///         True iff point is contained in cell.
     bool contains(const Point& point) const
-    { return CollisionDetection::collides(*this, point); }
+    { return _mesh->type().collides(*this, point); }
 
     /// Check whether given point collides with cell
     ///
@@ -268,7 +268,7 @@ namespace dolfin
     /// @return     bool
     ///         True iff point collides with cell.
     bool collides(const Point& point) const
-    { return CollisionDetection::collides(*this, point); }
+    { return _mesh->type().collides(*this, point); }
 
     /// Check whether given entity collides with cell
     ///
@@ -278,7 +278,7 @@ namespace dolfin
     /// @return     bool
     ///         True iff entity collides with cell.
     bool collides(const MeshEntity& entity) const
-    { return CollisionDetection::collides(*this, entity); }
+    { return _mesh->type().collides(*this, entity); }
 
     /// Compute triangulation of intersection with given entity
     ///
@@ -291,7 +291,7 @@ namespace dolfin
     ///         num_simplices x (tdim + 1) x gdim
     std::vector<double>
     triangulate_intersection(const MeshEntity& entity) const
-    { return IntersectionTriangulation::triangulate_intersection(*this, entity); }
+    { return _mesh->type().triangulate_intersection(*this, entity); }
 
     // FIXME: This function is part of a UFC transition
     /// Get cell coordinate dofs (not vertex coordinates)

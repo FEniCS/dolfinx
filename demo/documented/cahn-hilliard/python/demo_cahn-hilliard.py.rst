@@ -107,7 +107,6 @@ First, the modules :py:mod:`random` :py:mod:`matplotlib`
 :py:mod:`dolfin` module are imported::
 
     import random
-    import matplotlib.pyplot as plt
     from dolfin import *
 
 .. index:: Expression
@@ -194,7 +193,7 @@ created, and on this mesh a :py:class:`FunctionSpace
 a pair of linear Lagrangian elements. ::
 
     # Create mesh and build function space
-    mesh = UnitSquareMesh(96, 96)
+    mesh = UnitQuadMesh.create(96, 96)
     P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     ME = FunctionSpace(mesh, P1*P1)
 
@@ -336,9 +335,3 @@ calling :py:func:`solver.solve(problem, u.vector())
 returned in :py:func:`u.vector() <dolfin.cpp.Function.vector>`. The
 ``c`` component of the solution (the first component of ``u``) is then
 written to file at every time step.
-
-Finally, the last computed solution for :math:`c` is plotted to the
-screen::
-
-    plot(u.split()[0])
-    plt.show()

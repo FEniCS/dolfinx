@@ -27,6 +27,8 @@
 #include <boost/multi_array.hpp>
 #include <memory>
 
+#include "BlockVector.h"
+
 namespace dolfin
 {
 

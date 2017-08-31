@@ -33,12 +33,11 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STR
 endif()
 
 # Set common include directories
-include_directories(${NUMPY_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS} ${CMAKE_BINARY_DIR})
+include_directories(${UFC_INCLUDE_DIR} ${NUMPY_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS} ${CMAKE_BINARY_DIR})
 
 # Set add PYTHON defines
 add_definitions(${DOLFIN_PYTHON_DEFINITIONS})
 
-# Check that swig interface is generated, otherwise re-generate it
 if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/modules)
   message(STATUS "")
   message(STATUS "Generating SWIG interface.")

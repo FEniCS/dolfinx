@@ -463,6 +463,12 @@ TriangleCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
   return IntersectionTriangulation::triangulate_intersection(c0, c1);
 }
 //-----------------------------------------------------------------------------
+std::vector<double>
+TriangleCell::triangulate_intersection(const Cell& cell, const MeshEntity& entity) const
+{
+  return IntersectionTriangulation::triangulate_intersection(cell, entity);
+}
+//-----------------------------------------------------------------------------
 std::string TriangleCell::description(bool plural) const
 {
   if (plural)

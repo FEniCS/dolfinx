@@ -50,11 +50,11 @@ SubDomain::~SubDomain()
 //-----------------------------------------------------------------------------
 bool SubDomain::inside(const Array<double>& x, bool on_boundary) const
 {
-  const Eigen::Map<Eigen::VectorXd> _x(const_cast<double*>(x.data()), x.size());
+  const Eigen::Map<const Eigen::VectorXd> _x(x.data(), x.size());
   return inside(_x, on_boundary);
 }
 //-----------------------------------------------------------------------------
-bool SubDomain::inside(const Eigen::Ref<Eigen::VectorXd>& x, bool on_boundary) const
+bool SubDomain::inside(Eigen::Ref<const Eigen::VectorXd> x, bool on_boundary) const
 {
   dolfin_error("SubDomain.cpp",
                "check whether point is inside subdomain",
@@ -63,6 +63,14 @@ bool SubDomain::inside(const Eigen::Ref<Eigen::VectorXd>& x, bool on_boundary) c
 }
 //-----------------------------------------------------------------------------
 void SubDomain::map(const Array<double>& x, Array<double>& y) const
+{
+  Eigen::Map<const Eigen::VectorXd> _x(x.data(), x.size());
+  Eigen::Map<Eigen::VectorXd> _y(const_cast<double*>(y.data()), y.size());
+  map(_x, _y);
+}
+//-----------------------------------------------------------------------------
+void SubDomain::map(Eigen::Ref<const Eigen::VectorXd> x,
+                    Eigen::Ref<Eigen::VectorXd> y) const
 {
   dolfin_error("SubDomain.cpp",
                "map points within subdomain",
@@ -368,5 +376,20 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
 
     p++;
   }
+}
+//-----------------------------------------------------------------------------
+void SubDomain::set_property(std::string name, double value)
+{
+  dolfin_error("SubDomain.cpp",
+               "set parameter",
+               "This method should be overloaded in the derived class");
+}
+//-----------------------------------------------------------------------------
+double SubDomain::get_property(std::string name) const
+{
+  dolfin_error("SubDomain.cpp",
+               "get parameter",
+               "This method should be overloaded in the derived class");
+  return 0.0;
 }
 //-----------------------------------------------------------------------------

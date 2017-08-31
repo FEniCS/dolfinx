@@ -468,7 +468,12 @@ void Parameters::parse_common(int argc, char* argv[])
   po::store(parsed, vm);
   po::notify(vm);
 
+  // FIXME: This is commented out because it generated a lot of
+  // misleading noise with application-specific user parameters,
+  // especially when running in parallel
+
   // Collect and report unrecognized options
+  /*
   const std::vector<std::string> unrecognized_options
     = po::collect_unrecognized(parsed.options, po::include_positional);
   for (std::size_t i = 0; i < unrecognized_options.size(); ++i)
@@ -476,6 +481,7 @@ void Parameters::parse_common(int argc, char* argv[])
     std::cout << "Skipping unrecognized option for parameter set \""
               << name() << "\": " << unrecognized_options[i] << std::endl;
   }
+  */
 
   // Show help text
   if (vm.count("help"))
@@ -502,7 +508,7 @@ void Parameters::parse_petsc(int argc, char* argv[])
     s.append(" ");
     s.append(std::string(argv[i]));
   }
-  info(s);
+  log(TRACE, s);
 
   SubSystemsManager::init_petsc(argc, argv);
 }

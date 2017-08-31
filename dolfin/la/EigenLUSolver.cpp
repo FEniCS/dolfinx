@@ -254,7 +254,9 @@ void EigenLUSolver::call_solver(Solver& solver, GenericVector& x,
   }
 
   // Solve linear system
-  _x.vec() = solver.solve(_b.vec());
+  dolfin_assert(_b.vec());
+  dolfin_assert(_x.vec());
+  *(_x.vec()) = solver.solve(*(_b.vec()));
   if (solver.info() != Eigen::Success)
   {
     dolfin_error("EigenLUSolver.cpp",
