@@ -77,7 +77,8 @@ namespace
     return true;
   }
 
-  bool triangulation_selfintersects(const std::vector<std::vector<Point>>& triangulation, std::size_t dim)
+  bool triangulation_selfintersects(const std::vector<std::vector<Point>>& triangulation,
+				    std::size_t dim)
   {
     for (std::size_t i = 0; i < triangulation.size(); i++)
     {
@@ -106,20 +107,31 @@ namespace
 	if (dim == 3)
 	{
 	  if (shared_vertices == 0 &&
-	      CollisionPredicates::collides_tetrahedron_tetrahedron_3d(t1[0],
-								       t1[1],
-								       t1[2],
-								       t1[3],
-								       t2[0],
-								       t2[1],
-								       t2[2],
-								       t2[3]))
+	      CollisionPredicates::collides_tetrahedron_tetrahedron_3d(t1[0], t1[1], t1[2], t1[3],
+								       t2[0], t2[1], t2[2], t2[3]))
 	  {
 	    return true;
 	  }
 	  else if (shared_vertices > 0)
 	  {
-	    // None of the non-shared vertices should collide with the other tet
+
+	    for (std::size_t a = 0; a < dim+1; a++)
+	    {
+	      // None of the non-shared vertices should collide with the other tet
+	      if (t1_shared.count(a) == 0 &&
+		  CollisionPredicates::collides_tetrahedron_point_3d(t2[0], t2[1], t2[2], t2[3],
+								     t1[a]))
+	      {
+		return true;
+	      }
+
+	      if (t2_shared.count(a) == 0 &&
+		  CollisionPredicates::collides_tetrahedron_point_3d(t1[0], t1[1], t1[2], t1[3],
+								     t2[a]))
+	      {
+		return true;
+	      }
+	    }
 	  }
 	}
 	else if(dim == 2)
@@ -185,7 +197,7 @@ TEST(ConvexTriangulationTest, testCoplanarPoints)
     Point(1,   0,   1),
     Point(1,   1,   0),
     Point(1,   1,   1),
-    Point(0.5, 0.5, 0)};
+    Point(0.1, 0.1, 0)};
 
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
