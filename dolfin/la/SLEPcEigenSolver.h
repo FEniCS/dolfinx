@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2014 Garth N. Wells
+// Copyright (C) 2005-2017 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -153,25 +153,14 @@ namespace dolfin
     /// Compute the n first eigenpairs of the matrix A (solve Ax = \lambda x)
     void solve(std::size_t n);
 
-    /// Get the first eigenvalue
-    void get_eigenvalue(double& lr, double& lc) const;
-
-    /// Get the first eigenpair
-    void get_eigenpair(double& lr, double& lc,
-                       GenericVector& r, GenericVector& c) const;
-
-    /// Get the first eigenpair
-    void get_eigenpair(double& lr, double& lc,
-                       PETScVector& r, PETScVector& c) const;
-
-    /// Get eigenvalue i
+    /// Get ith eigenvalue
     void get_eigenvalue(double& lr, double& lc, std::size_t i) const;
 
-    /// Get eigenpair i
+    /// Get ith eigenpair
     void get_eigenpair(double& lr, double& lc,
                        GenericVector& r, GenericVector& c, std::size_t i) const;
 
-    /// Get eigenpair i
+    /// Get ith eigenpair
     void get_eigenpair(double& lr, double& lc,
                        PETScVector& r, PETScVector& c, std::size_t i) const;
 
@@ -181,15 +170,9 @@ namespace dolfin
     /// Get the number of converged eigenvalues
     std::size_t get_number_converged() const;
 
-    /// Set deflation space
-    void set_deflation_space(const PETScVector& deflation_space);
-
     /// Set deflation space. The VectorSpaceBasis does not need to be
     /// orthonormal.
     void set_deflation_space(const VectorSpaceBasis& deflation_space);
-
-    /// Set initial space
-    void set_initial_space(const PETScVector& initial_space);
 
     /// Set inital space. The VectorSpaceBasis does not need to be
     /// orthonormal.
