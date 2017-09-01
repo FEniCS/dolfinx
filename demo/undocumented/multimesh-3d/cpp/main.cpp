@@ -212,17 +212,13 @@ int main(int argc, char* argv[])
 
   const double volume = multimesh->compute_volume();
   const double volume_error = std::abs(volume - exact_volume);
-  std::cout << "volume error " << volume_error << std::endl;
+  dolfin::cout << "volume error " << volume_error << dolfin::endl;
 
   if (volume_error > DOLFIN_EPS_LARGE)
   {
-    std::cout << "\n   large error" << std::endl;
-    std::string filename = "multimesh_" + args.print();
-    std::ofstream f(filename + ".py");
-    if (!f.good()) { std::cout << "file " << filename << ".py" << " not good\n"; exit(1); }
-    f << multimesh->plot_matplotlib(0.0, filename + ".pdf") << std::endl;
-    f.close();
-    exit(1);
+    dolfin::cout << "  large error" << dolfin::endl;
   }
+
+  solve(multimesh);
 
 }
