@@ -360,8 +360,15 @@ double MultiMesh::compute_volume() const
 std::string MultiMesh::plot_matplotlib(double delta_z,
 				       const std::string& filename) const
 {
-  dolfin_assert(num_parts() > 0);
-  dolfin_assert(part(0)->geometry().dim() == 2);
+  if (num_parts() == 0)
+    dolfin_error("MultiMesh.cpp",
+		 "plotting multimesh with matplotlib",
+		 "Multimesh is empty. Call MultiMesh.add(mesh) before plotting");
+
+  if (part(0)->geometry().dim() != 2)
+    dolfin_error("MultiMesh.cpp",
+		 "plotting multimesh with matplotlib",
+		 "Plotting is only implemented in 2D");
 
   const bool do_3d = delta_z != 0.;
   std::stringstream ss;
