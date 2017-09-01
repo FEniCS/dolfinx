@@ -182,8 +182,8 @@ TEST(ConvexTriangulationTest, testTrivialCase2)
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
   ASSERT_TRUE(pure_triangular(tri, 3));
-  ASSERT_TRUE(!has_degenerate(tri, 3));
-  ASSERT_TRUE(!triangulation_selfintersects(tri, 3));
+  ASSERT_FALSE(has_degenerate(tri, 3));
+  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
 }
 
 TEST(ConvexTriangulationTest, testCoplanarPoints)
@@ -202,8 +202,8 @@ TEST(ConvexTriangulationTest, testCoplanarPoints)
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
   ASSERT_TRUE(pure_triangular(tri, 3));
-  ASSERT_TRUE(!has_degenerate(tri, 3));
-  ASSERT_TRUE(!triangulation_selfintersects(tri, 3));
+  ASSERT_FALSE(has_degenerate(tri, 3));
+  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
 }
 
 
@@ -223,9 +223,11 @@ TEST(ConvexTriangulationTest, testCoplanarColinearPoints)
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
   ASSERT_TRUE(pure_triangular(tri, 3));
-  ASSERT_TRUE(!has_degenerate(tri, 3));
-  ASSERT_TRUE(!triangulation_selfintersects(tri, 3));
+  ASSERT_FALSE(has_degenerate(tri, 3));
+  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
 }
+
+
 
 TEST(ConvexTriangulationTest, testFailingCase)
 {
@@ -244,7 +246,7 @@ TEST(ConvexTriangulationTest, testFailingCase)
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
   ASSERT_TRUE(pure_triangular(tri, 3));
-  ASSERT_TRUE(!has_degenerate(tri, 3));
+  ASSERT_FALSE(has_degenerate(tri, 3));
   ASSERT_FALSE(triangulation_selfintersects(tri, 3));
 }
 
@@ -265,8 +267,8 @@ TEST(ConvexTriangulationTest, testFailingCase2)
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
   ASSERT_TRUE(pure_triangular(tri, 3));
-  ASSERT_TRUE(!has_degenerate(tri, 3));
-  ASSERT_TRUE(!triangulation_selfintersects(tri, 3));
+  ASSERT_FALSE(has_degenerate(tri, 3));
+  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
 }
 
 TEST(ConvexTriangulationTest, testFailingCase3)
@@ -284,8 +286,8 @@ TEST(ConvexTriangulationTest, testFailingCase3)
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
   ASSERT_TRUE(pure_triangular(tri, 3));
-  ASSERT_TRUE(!has_degenerate(tri, 3));
-  ASSERT_TRUE(!triangulation_selfintersects(tri, 3));
+  ASSERT_FALSE(has_degenerate(tri, 3));
+  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
 }
 
 // Test all
