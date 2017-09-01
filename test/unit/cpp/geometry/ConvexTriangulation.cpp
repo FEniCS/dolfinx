@@ -43,14 +43,8 @@ namespace
   {
     for (const std::vector<Point>& tri : triangulation)
     {
-      for (std::size_t i = 0; i < tri.size(); i++)
-      {
-	for (std::size_t j = i+1; j < tri.size(); j++)
-	{
-	  if ((tri[i]-tri[j]).norm() < DOLFIN_EPS)
-	    return true;
-	}
-      }
+      if (orient3d(tri[0], tri[1], tri[2], tri[3]) == 0)
+	return true;
     }
     return false;
   }
