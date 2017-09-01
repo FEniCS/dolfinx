@@ -145,6 +145,29 @@ namespace
     }
     return false;
   }
+  //-----------------------------------------------------------------------------
+  double triangulation_volume(const std::vector<std::vector<dolfin::Point>>& triangulation)
+  {
+    double vol = 0;
+    for (const std::vector<dolfin::Point>& tri : triangulation)
+    {
+      const Point& x0 = tri[0];
+      const Point& x1 = tri[1];
+      const Point& x2 = tri[2];
+      const Point& x3 = tri[3];
+      // Formula for volume from http://mathworld.wolfram.com
+      const double v = (x0[0]*(x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2]
+			     - x2[1]*x1[2] - x1[1]*x3[2] - x3[1]*x2[2])
+		      - x1[0]*(x0[1]*x2[2] + x3[1]*x0[2] + x2[1]*x3[2]
+			     - x2[1]*x0[2] - x0[1]*x3[2] - x3[1]*x2[2])
+                      + x2[0]*(x0[1]*x1[2] + x3[1]*x0[2] + x1[1]*x3[2]
+			     - x1[1]*x0[2] - x0[1]*x3[2] - x3[1]*x1[2])
+		      - x3[0]*(x0[1]*x1[2] + x1[1]*x2[2] + x2[1]*x0[2]
+			     - x1[1]*x0[2] - x2[1]*x1[2] - x0[1]*x2[2]));
+      vol += std::abs(v);
+    }
+    return vol/6;
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -159,6 +182,7 @@ TEST(ConvexTriangulationTest, testTrivialCase)
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
   ASSERT_EQ(tri.size(), 1);
+  ASSERT_NEAR(triangulation_volume(tri), 1./6., DOLFIN_EPS);
 }
 //-----------------------------------------------------------------------------
 TEST(ConvexTriangulationTest, testTrivialCase2)
