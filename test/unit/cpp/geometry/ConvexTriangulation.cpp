@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2017-03-17
-// Last changed: 2012-08-30
+// Last changed: 2012-09-01
 //
 // Unit tests for convex triangulation
 
@@ -166,6 +166,7 @@ namespace
 			     - x1[1]*x0[2] - x2[1]*x1[2] - x0[1]*x2[2]));
       vol += std::abs(v);
     }
+
     return vol/6;
   }
 }
@@ -202,6 +203,7 @@ TEST(ConvexTriangulationTest, testTrivialCase2)
   ASSERT_TRUE(pure_triangular(tri, 3));
   ASSERT_FALSE(has_degenerate(tri, 3));
   ASSERT_FALSE(triangulation_selfintersects(tri, 3));
+  ASSERT_NEAR(triangulation_volume(tri), 1., DOLFIN_EPS);
 }
 
 TEST(ConvexTriangulationTest, testCoplanarPoints)
@@ -222,6 +224,7 @@ TEST(ConvexTriangulationTest, testCoplanarPoints)
   ASSERT_TRUE(pure_triangular(tri, 3));
   ASSERT_FALSE(has_degenerate(tri, 3));
   ASSERT_FALSE(triangulation_selfintersects(tri, 3));
+  ASSERT_NEAR(triangulation_volume(tri), 1., DOLFIN_EPS);
 }
 
 
@@ -243,6 +246,7 @@ TEST(ConvexTriangulationTest, testCoplanarColinearPoints)
   ASSERT_TRUE(pure_triangular(tri, 3));
   ASSERT_FALSE(has_degenerate(tri, 3));
   ASSERT_FALSE(triangulation_selfintersects(tri, 3));
+  ASSERT_NEAR(triangulation_volume(tri), 1., DOLFIN_EPS);
 }
 
 
