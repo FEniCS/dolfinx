@@ -14,27 +14,29 @@
 %feature("docstring") dolfin::SLEPcEigenSolver::_get_eigenpair "Missing docstring";
 %extend dolfin::SLEPcEigenSolver {
 
-PyObject* _get_eigenvalue(const int i) {
+PyObject* _get_eigenvalue(const int i)
+{
     double lr, lc;
     self->get_eigenvalue(lr, lc, i);
     return Py_BuildValue("dd", lr, lc);
 }
 
-PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const int i) {
+PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const int i)
+{
     double lr, lc;
     self->get_eigenpair(lr, lc, r, c, i);
     return Py_BuildValue("dd", lr, lc);
 }
 
 %pythoncode %{
-    def get_eigenpair(self, i = 0, r_vec = None, c_vec = None,):
+    def get_eigenpair(self, i, r_vec=None, c_vec=None):
         """Gets the i-th solution of the eigenproblem"""
         r_vec = r_vec or PETScVector()
         c_vec = c_vec or PETScVector()
         lr, lc = self._get_eigenpair(r_vec, c_vec, i)
         return lr, lc, r_vec, c_vec
 
-    def get_eigenvalue(self, i = 0):
+    def get_eigenvalue(self, i):
         """Gets the i-th eigenvalue of the eigenproblem"""
         return self._get_eigenvalue(i)
 %}

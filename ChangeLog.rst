@@ -4,6 +4,8 @@ Change log
 2017.2.0 (unreleased)
 ---------------------
 
+- Remove redundant SLEPc interfaces. Fixes issue `#908
+  <https://bitbucket.org/fenics-project/dolfin/issues/908>`_.
 - Bump required Boost version to 1.55.
 - Remove PETScUserPreconditioner (unused and untested.
 - Remove VTK plotting backend. Plotting is no longer available from
