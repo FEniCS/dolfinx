@@ -28,7 +28,7 @@ import pytest
 from dolfin import *
 from six.moves import xrange as range
 
-from dolfin_utils.test import skip_in_parallel
+from dolfin_utils.test import skip_in_parallel, skip_if_pybind11
 
 
 def triangulation_to_mesh_2d(triangulation):
@@ -48,6 +48,7 @@ def triangulation_to_mesh_2d(triangulation):
 
 
 @skip_in_parallel
+@skip_if_pybind11("Not supported in pybind11")
 def test_integrate():
     # Create two meshes of the unit square
     mesh_0 = UnitSquareMesh(10, 10)

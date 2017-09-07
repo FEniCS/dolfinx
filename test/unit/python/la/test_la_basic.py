@@ -267,7 +267,10 @@ class TestBasicLaOperations:
 
         a, b = get_forms(mesh)
         if use_backend:
-            backend = getattr(cpp, self.backend+self.sub_backend+'Factory').instance()
+            if has_pybind11():
+                backend = getattr(cpp.la, self.backend+self.sub_backend+'Factory').instance()
+            else:
+                backend = getattr(cpp.la, self.backend+self.sub_backend+'Factory').instance()
         else:
             backend = None
 
@@ -299,7 +302,9 @@ class TestBasicLaOperations:
 
         u = A*v
 
-        assert isinstance(u, type(v))
+        if not has_pybind11():
+            assert isinstance(u, type(v))
+
         assert len(u) == len(v)
 
         # Test basic square matrix multiply results
@@ -321,7 +326,7 @@ class TestBasicLaOperations:
         u3 = 2*u + -1.0*(A*v)
         assert round(sum(u3[4] - u[4]), 7) == 0
 
-        # Numpy arrays are not alligned in parallel
+        # Numpy arrays are not aligned in parallel
         if distributed:
             return
 
