@@ -660,33 +660,30 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
     const SimplexQuadrature sq(tdim, quadrature_order);
 
     // Iterate over cut cells for current part
-    const auto& cmap = collision_map_cut_cells(cut_part);
-    for (auto it = cmap.begin(); it != cmap.end(); ++it)
+    for (const auto& c : collision_map_cut_cells(cut_part))
     {
       // Get cut cell
-      const unsigned int cut_cell_index = it->first;
+      const unsigned int cut_cell_index = c.first;
       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
 
       // Data structure for the first intersections (this is the first
       // stage in the inclusion exclusion principle). These are the
       // polyhedra to be used in the exlusion inclusion.
-      std::vector<std::pair<std::size_t, Polyhedron> > initial_polyhedra;
+      std::vector<std::pair<std::size_t, Polyhedron>> initial_polyhedra;
 
       // Get the cutting cells
-      const auto& cutting_cells = it->second;
+      const std::vector<std::pair<std::size_t, unsigned int>>& cutting_cells = c.second;
 
       // Data structure for the overlap quadrature rule
-      const std::size_t num_cutting_cells = std::distance(cutting_cells.begin(),
-							  cutting_cells.end());
-      std::vector<quadrature_rule> overlap_qr(num_cutting_cells);
+      std::vector<quadrature_rule> overlap_qr(cutting_cells.size());
 
       // Loop over all cutting cells to construct the polyhedra to be
       // used in the inclusion-exclusion principle
-      for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
+      for (const std::pair<std::size_t, unsigned int> cutting : cutting_cells)
       {
 	// Get cutting part and cutting cell
-        const std::size_t cutting_part = jt->first;
-        const std::size_t cutting_cell_index = jt->second;
+        const std::size_t cutting_part = cutting.first;
+        const std::size_t cutting_cell_index = cutting.second;
         const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
 
   	// Only allow same type of cell for now
@@ -714,7 +711,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 				       polyhedron_same_tdim);
       }
 
-      if (num_cutting_cells > 0)
+      if (cutting_cells.size() > 0)
 	_inclusion_exclusion_overlap(overlap_qr, sq, initial_polyhedra,
 				     tdim, gdim, quadrature_order);
 
