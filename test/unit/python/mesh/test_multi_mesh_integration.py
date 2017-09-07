@@ -48,7 +48,7 @@ def triangulation_to_mesh_2d(triangulation):
 
 
 @skip_in_parallel
-@skip_if_pybind11("Not supported in pybind11")
+@skip_if_pybind11
 def test_integrate():
     # Create two meshes of the unit square
     mesh_0 = UnitSquareMesh(10, 10)
