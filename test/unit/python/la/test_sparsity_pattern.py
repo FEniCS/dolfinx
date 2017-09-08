@@ -127,7 +127,7 @@ def test_insert_global(mesh, V):
             assert nnz_od[local_row] == (nnz_off_diagonal if local_row in primary_dim_local_entries else 0)
 
 
-def test_insert_local_row_global_column(mesh, V):
+def test_insert_local_global(mesh, V):
     dm = V.dofmap()
     index_map = dm.index_map()
     local_range = index_map.local_range()
@@ -149,7 +149,7 @@ def test_insert_local_row_global_column(mesh, V):
     entries = np.array(
         [primary_dim_entries, primary_codim_entries], dtype=np.intc)
 
-    sp.insert_local_row_global_column(entries)
+    sp.insert_local_global(entries)
     sp.apply()
 
     nnz_d = sp.num_nonzeros_diagonal()

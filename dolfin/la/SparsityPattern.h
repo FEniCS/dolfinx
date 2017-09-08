@@ -78,9 +78,9 @@ namespace dolfin
                       ArrayView<const dolfin::la_index>>& entries);
 
     /// Insert non-zero entries using local (process-wise) indices for
-    /// the row and global indices for the columns
-    void insert_local_row_global_column(
-      const std::vector<ArrayView<const dolfin::la_index>>& entries);
+    /// the primary dimension and global indices for the co-dimension
+    void insert_local_global(
+        const std::vector<ArrayView<const dolfin::la_index>>& entries);
 
     /// Insert full rows (or columns, according to primary dimension)
     /// using local (process-wise) indices. This must be called before

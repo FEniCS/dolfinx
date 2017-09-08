@@ -147,7 +147,7 @@ void SparsityPattern::insert_local(
   insert_entries(entries, primary_dim_map, primary_codim_map);
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert_local_row_global_column(
+void SparsityPattern::insert_local_global(
     const std::vector<ArrayView<const dolfin::la_index>>& entries)
 {
   dolfin_assert(entries.size() == 2);
