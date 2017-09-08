@@ -115,6 +115,8 @@ void SparsityPattern::insert_global(
   // The primary_dim is global and must be mapped to local
   const auto primary_dim_map
       = [](const dolfin::la_index i_index, const IndexMap& index_map0) {
+        dolfin_assert(index_map0.local_range().first <= i_index
+                      && i_index < index_map0.local_range().second);
         return i_index - (dolfin::la_index) index_map0.local_range().first;
       };
 
