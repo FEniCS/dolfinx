@@ -23,9 +23,20 @@
 #ifndef __ASSEMBLE_LOCAL_H
 #define __ASSEMBLE_LOCAL_H
 
+#include <Eigen/Dense>
+#include <vector>
+
 namespace dolfin
 {
+  class Form;
+  class Cell;
+
+  /// Assemble form to local tensor on a cell (Eigen version for pybind11)
+  void assemble_local(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A_e,
+                      const Form& a, const Cell& cell);
+
   /// Assemble form to local tensor on a cell
+  /// (Legacy version for SWIG)
   void assemble_local(const Form& a,
                       const Cell& cell,
                       std::vector<double>& tensor);

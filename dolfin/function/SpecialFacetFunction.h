@@ -35,8 +35,8 @@ namespace dolfin
   class Function;
 
   /// A _SpecialFacetFunction_ is a representation of a global
-  /// function that is in P(f) for each _Facet_ f in a _Mesh_
-  /// for some _FunctionSpace_ P
+  /// function that is in P(f) for each _Facet_ f in a _Mesh_ for some
+  /// _FunctionSpace_ P
 
   class SpecialFacetFunction : public Expression
   {

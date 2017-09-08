@@ -24,9 +24,13 @@
 #ifdef HAS_PETSC
 
 #include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 #include <petsctao.h>
 #include <petsctaolinesearch.h>
-#include <memory>
+
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/PETScVector.h>

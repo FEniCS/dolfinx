@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Anders Logg
+// Copyright (C) 2009-2017 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -14,19 +14,15 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Johan Hake, 2009
-// Modified by Garth N. Wells, 2009
-//
-// First added:  2009-05-08
-// Last changed: 2011-10-24
 
 #ifndef __PARAMETERS_H
 #define __PARAMETERS_H
 
-#include <set>
 #include <map>
+#include <set>
 #include <vector>
+#include <boost/optional.hpp>
+#include <boost/variant.hpp>
 #include "Parameter.h"
 #include <dolfin/log/log.h>
 
@@ -41,8 +37,6 @@ namespace boost
 
 namespace dolfin
 {
-
-  class XMLParameters;
 
   /// This class stores a set of parameters. Each parameter is
   /// identified by a unique string (the key) and a value of some
@@ -102,7 +96,7 @@ namespace dolfin
   public:
 
     /// Create empty parameter set
-    explicit Parameters(std::string key = "parameters");
+    explicit Parameters(std::string key="parameters");
 
     /// Destructor
     virtual ~Parameters();
@@ -119,37 +113,81 @@ namespace dolfin
     /// Clear parameter set
     void clear();
 
+    // Note: This is not called 'add' because SWIG does not handle
+    // typesafe C++ enums correctly. It may be renamed when switching
+    // to pybind11.
+    //
+    /// Add unset parameter of specified type
+    void add_unset(std::string key, Parameter::Type type);
+
+    // Deprecated. Use add_unset (see add_unset note).
+    //
     /// Add an unset parameter of type T. For example, to create a
     /// unset parameter of type bool, do
     /// parameters.add<bool>("my_setting")
-    template<typename T>
-    void add(std::string key)
+    template<typename T> void add(std::string key)
     {
-      dolfin_error("Parameters.h",
-                   "create parameter of requested type",
-                   "Type '%s' is not allowed", key.c_str());
+      // Check key name
+      if (has_parameter(key))
+      {
+        dolfin_error("Parameters.cpp",
+                     "add parameter",
+                     "Parameter \"%s.%s\" already defined",
+                     this->name().c_str(), key.c_str());
+      }
+
+      // Add parameter. Check for bool must come before check for
+      // std::is_integral.
+      if (std::is_same<T, bool>::value)
+        _parameters.insert({key, Parameter(key, Parameter::Type::Bool)});
+      else if (std::is_same<T, std::string>::value)
+        _parameters.insert({key, Parameter(key, Parameter::Type::String)});
+      else if (std::is_integral<T>::value)
+        _parameters.insert({key, Parameter(key, Parameter::Type::Int)});
+      else if (std::is_floating_point<T>::value)
+        _parameters.insert({key, Parameter(key, Parameter::Type::Float)});
+      else
+      {
+        dolfin_error("Parameters.cpp",
+                     "add parameter",
+                     "Parameter type not supported");
+      }
     }
 
     /// Add an unset parameter of type T with allows parameters. For
     /// example, to create a unset parameter of type bool, do
     /// parameters.add<bool>("my_setting")
-    template<typename T>
-    void add(std::string key, T min, T max)
+    template<typename T> void add(std::string key, T min, T max)
     {
-      dolfin_error("Parameters.h",
-                   "create parameter of requested type",
-                   "Type '%s' is not allowed", key.c_str());
+      // Check key name
+      if (has_parameter(key))
+      {
+        dolfin_error("Parameters.cpp",
+                     "add parameter",
+                     "Parameter \"%s.%s\" already defined",
+                     this->name().c_str(), key.c_str());
+      }
+
+      // Add parameter
+      _parameters.insert({key, Parameter(key, min, max)});
     }
 
     /// Add an unset parameter of type T with allows parameters. For
     /// example, to create a unset parameter of type bool, do
     /// parameters.add<bool>("my_setting")
-    template<typename T>
-    void add(std::string key, std::set<T> valid_values)
+    void add(std::string key, std::set<std::string> valid_values)
     {
-      dolfin_error("Parameters.h",
-                   "create parameter of requested type",
-                   "Type '%s' is not allowed", key.c_str());
+      // Check key name
+      if (has_parameter(key))
+      {
+        dolfin_error("Parameters.cpp",
+                     "add parameter",
+                     "Parameter \"%s.%s\" already defined",
+                     this->name().c_str(), key.c_str());
+      }
+
+      // Add parameter
+      _parameters.insert({key, Parameter(key, valid_values)});
     }
 
     /// Add int-valued parameter
@@ -228,12 +266,11 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    /// Return pointer to parameter for given key and 0 if not found
-    Parameter* find_parameter(std::string key) const;
+    /// Return parameter, if present
+    boost::optional<Parameter&> find_parameter(std::string key);
 
-    /// Return pointer to parameter set for given key and 0 if not found
-    Parameters* find_parameter_set(std::string key) const;
-
+    /// Return parameter set, if present
+    boost::optional<Parameters&> find_parameter_set(std::string key);
 
   protected:
 
@@ -245,7 +282,8 @@ namespace dolfin
 
   private:
 
-    // Add all parameters as options to a boost::program_option instance
+    // Add all parameters as options to a boost::program_option
+    // instance
     void
       add_parameter_set_to_po(boost::program_options::options_description& desc,
                               const Parameters &parameters,
@@ -259,61 +297,26 @@ namespace dolfin
     // Parameter set key
     std::string _key;
 
-    // Map from key to parameter
-    std::map<std::string, Parameter*> _parameters;
+    // Map from key to parameter(s)
+    std::map<std::string, boost::variant<Parameter, Parameters>> _parameters;
 
-    // Map from key to parameter sets
-    std::map<std::string, Parameters*> _parameter_sets;
+  public:
+
+    /// Interface for pybind11 iterators
+    std::size_t size() const { return  _parameters.size(); }
+
+    /// Interface for pybind11 iterators
+    std::map<std::string, boost::variant<Parameter, Parameters>>::const_iterator begin() const
+    { return _parameters.cbegin(); }
+    //decltype(_parameters.cbegin()) begin() const { return _parameters.cbegin(); }
+
+    /// Interface for pybind11 iterators
+    std::map<std::string, boost::variant<Parameter, Parameters>>::const_iterator end() const
+    { return _parameters.cend(); }
+    //decltype(_parameters.cend()) end() const { return _parameters.cend(); }
 
   };
 
-  // Template specialisations
-#ifndef DOXYGEN_IGNORE
-  // Specialised templated for unset parameters
-  template<> inline void Parameters::add<std::size_t>(std::string key)
-  { _parameters[key] = new IntParameter(key); }
-
-  template<> inline void  Parameters::add<std::size_t>(std::string key,
-                                                       std::size_t min,
-                                                       std::size_t max)
-  {
-    _parameters[key] = new IntParameter(key);
-    _parameters[key]->set_range((int) min, (int) max);
-  }
-
-  template<> inline void Parameters::add<int>(std::string key)
-  { _parameters[key] = new IntParameter(key); }
-
-  template<> inline void Parameters::add<int>(std::string key, int min, int max)
-  {
-    _parameters[key] = new IntParameter(key);
-    _parameters[key]->set_range(min, max);
-  }
-
-  template<> inline void Parameters::add<double>(std::string key)
-  { _parameters[key] = new DoubleParameter(key); }
-
-  template<> inline void Parameters::add<double>(std::string key, double min,
-                                                 double max)
-  {
-    _parameters[key] = new DoubleParameter(key);
-    _parameters[key]->set_range(min, max);
-  }
-
-  template<> inline void Parameters::add<std::string>(std::string key)
-  { _parameters[key] = new StringParameter(key); }
-
-  template<> inline void Parameters::add(std::string key,
-                                         std::set<std::string> valid_values)
-  {
-    _parameters[key] = new StringParameter(key);
-    _parameters[key]->set_range(valid_values);
-  }
-
-  template<> inline void Parameters::add<bool>(std::string key)
-  { _parameters[key] = new BoolParameter(key); }
-
-#endif
   /// Default empty parameters
   extern Parameters empty_parameters;
 

@@ -53,7 +53,7 @@ void GenericFunction::eval(Array<double>& values, const Array<double>& x) const
 }
 //-----------------------------------------------------------------------------
 void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
-                           const Eigen::Ref<Eigen::VectorXd> x,
+                           Eigen::Ref<const Eigen::VectorXd> x,
                            const ufc::cell& cell) const
 {
   // Redirect to simple eval
@@ -61,7 +61,7 @@ void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
 }
 //-----------------------------------------------------------------------------
 void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
-                           const Eigen::Ref<Eigen::VectorXd> x) const
+                           Eigen::Ref<const Eigen::VectorXd> x) const
 {
   dolfin_error("GenericFunction.cpp",
                "evaluate function (Eigen version)",

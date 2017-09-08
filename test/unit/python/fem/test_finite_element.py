@@ -29,40 +29,40 @@ from six.moves import xrange as range
 from dolfin_utils.test import fixture
 
 
-@fixture
-def mesh():
-    return UnitSquareMesh(4, 4)
+xfail = pytest.mark.xfail(strict=True)
 
 
-@fixture
-def V(mesh):
-    return FunctionSpace(mesh, "CG", 1)
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)),
+                                          (UnitCubeMesh, (2, 2, 2)),
+                                          (UnitQuadMesh.create, (4, 4)),
+                                          # cell_normal has not been implemented for hex cell
+                                          # cell.orientation() does not work
+                                          xfail((UnitHexMesh.create, (2, 2, 2)))])
+def test_evaluate_dofs(mesh_factory):
 
+    func, args = mesh_factory
+    mesh = func(*args)
 
-@fixture
-def Q(mesh):
-    return VectorFunctionSpace(mesh, "CG", 1)
+    v = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    w = v*q
 
+    V = FunctionSpace(mesh, v)
+    W = FunctionSpace(mesh, w)
 
-@fixture
-def W(mesh):
-    V = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    Q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
-    return FunctionSpace(mesh, V*Q)
-
-
-def test_evaluate_dofs(W, mesh, V):
+    sdim = V.element().space_dimension()
+    gdim = V.element().geometric_dimension()
 
     e = Expression("x[0] + x[1]", degree=1)
-    e2 = Expression(("x[0] + x[1]", "x[0] + x[1]"), degree=1)
+    e2 = Expression(["x[0] + x[1]"]*gdim, degree=1)
 
-    coords = numpy.zeros((3, 2), dtype="d")
-    coord = numpy.zeros(2, dtype="d")
-    values0 = numpy.zeros(3, dtype="d")
-    values1 = numpy.zeros(3, dtype="d")
-    values2 = numpy.zeros(3, dtype="d")
-    values3 = numpy.zeros(3, dtype="d")
-    values4 = numpy.zeros(6, dtype="d")
+    coords = numpy.zeros((sdim, gdim), dtype="d")
+    coord = numpy.zeros(gdim, dtype="d")
+    values0 = numpy.zeros(sdim, dtype="d")
+    values1 = numpy.zeros(sdim, dtype="d")
+    values2 = numpy.zeros(sdim, dtype="d")
+    values3 = numpy.zeros(sdim, dtype="d")
+    values4 = numpy.zeros(gdim*sdim, dtype="d")
 
     L0 = W.sub(0)
     L1 = W.sub(1)
@@ -81,12 +81,16 @@ def test_evaluate_dofs(W, mesh, V):
         L11.element().evaluate_dofs(values3, e, vx, orientation, cell)
         L1.element().evaluate_dofs(values4, e2, vx, orientation, cell)
 
-        for i in range(3):
+        for i in range(sdim):
             assert round(values0[i] - values1[i], 7) == 0
             assert round(values0[i] - values2[i], 7) == 0
             assert round(values0[i] - values3[i], 7) == 0
-            assert round(values4[:3][i] - values0[i], 7) == 0
-            assert round(values4[3:][i] - values0[i], 7) == 0
+            assert round(values4[:sdim][i] - values0[i], 7) == 0
+            if gdim == 3:
+                assert round(values4[sdim:sdim*2][i] - values0[i], 7) == 0
+                assert round(values4[sdim*2:][i] - values0[i], 7) == 0
+            else:
+                assert round(values4[sdim:][i] - values0[i], 7) == 0
 
 
 def test_evaluate_dofs_manifolds_affine():
@@ -125,13 +129,29 @@ def test_evaluate_dofs_manifolds_affine():
                 assert round(values0[i] - values1[i], 7) == 0
 
 
-def test_tabulate_coord(V, W, mesh):
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)),
+                                          (UnitCubeMesh, (2, 2, 2)),
+                                          (UnitQuadMesh.create, (4, 4)),
+                                          (UnitHexMesh.create, (2, 2, 2))])
+def test_tabulate_coord(mesh_factory):
 
-    coord0 = numpy.zeros((3, 2), dtype="d")
-    coord1 = numpy.zeros((3, 2), dtype="d")
-    coord2 = numpy.zeros((3, 2), dtype="d")
-    coord3 = numpy.zeros((3, 2), dtype="d")
-    coord4 = numpy.zeros((6, 2), dtype="d")
+    func, args = mesh_factory
+    mesh = func(*args)
+
+    v = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    q = VectorElement("Lagrange", mesh.ufl_cell(), 1)
+    w = v*q
+
+    V = FunctionSpace(mesh, v)
+    W = FunctionSpace(mesh, w)
+
+    sdim = V.element().space_dimension()
+    gdim = V.element().geometric_dimension()
+    coord0 = numpy.zeros((sdim, gdim), dtype="d")
+    coord1 = numpy.zeros((sdim, gdim), dtype="d")
+    coord2 = numpy.zeros((sdim, gdim), dtype="d")
+    coord3 = numpy.zeros((sdim, gdim), dtype="d")
+    coord4 = numpy.zeros((gdim*sdim, gdim), dtype="d")
 
     L0 = W.sub(0)
     L1 = W.sub(1)
@@ -148,5 +168,8 @@ def test_tabulate_coord(V, W, mesh):
         assert (coord0 == coord1).all()
         assert (coord0 == coord2).all()
         assert (coord0 == coord3).all()
-        assert (coord4[:3] == coord0).all()
-        assert (coord4[3:] == coord0).all()
+        if gdim == 3:
+            assert (coord4[sdim:sdim*2] == coord0).all()
+            assert (coord4[sdim*2:] == coord0).all()
+        else:
+            assert (coord4[sdim:] == coord0).all()
