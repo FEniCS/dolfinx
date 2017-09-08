@@ -233,11 +233,12 @@ def test_vector_valued_expression_member_function(mesh):
 
 
 @skip_in_parallel
+@skip_if_pybind11
 def test_meshfunction_expression():
     mesh = UnitSquareMesh(1, 1)
     V = FunctionSpace(mesh, "DG", 0)
 
-    c = CellFunctionSizet(mesh)
+    c = CellFunction("size_t", mesh)
     c[0] = 2
     c[1] = 3
     e = Expression("(double)c", c=c, degree=0)
@@ -532,9 +533,9 @@ def test_generic_function_attributes(mesh, V):
     W = FunctionSpace(mesh, V.ufl_element()*V.ufl_element())
 
     # Test wrong kwargs
-    with pytest.raises(TypeError):
+    with pytest.raises(Exception):
         Expression("t", t=mesh, degree=0)
-    with pytest.raises(TypeError):
+    with pytest.raises(Exception):
         Expression("t", t=W, degree=0)
 
     # Test non-scalar GenericFunction
@@ -594,6 +595,7 @@ def test_doc_string_eval():
 
 
 @skip_in_parallel
+@skip_if_pybind11
 def test_doc_string_complex_compiled_expression(mesh):
     """
     This test tests all features documented in the doc string of
@@ -686,6 +688,7 @@ def test_doc_string_complex_compiled_expression(mesh):
 
 @pytest.mark.slow
 @skip_in_parallel
+@skip_if_pybind11
 def test_doc_string_compiled_expression_with_system_headers():
     """
     This test tests all features documented in the doc string of
