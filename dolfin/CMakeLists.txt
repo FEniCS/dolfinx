@@ -202,8 +202,8 @@ if (DOLFIN_ENABLE_GEOMETRY_DEBUGGING AND GMP_FOUND AND MPFR_FOUND AND CGAL_FOUND
   list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${CGAL_INCLUDE_DIRS})
   list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${GMP_INCLUDE_DIRS})
   list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${MPFR_INCLUDE_DIRS})
-  target_link_libraries(dolfin PRIVATE ${GMP_LIBRARIES})
-  target_link_libraries(dolfin PRIVATE ${MPFR_LIBRARIES})
+  target_link_libraries(dolfin PUBLIC ${GMP_LIBRARIES})
+  target_link_libraries(dolfin PUBLIC ${MPFR_LIBRARIES})
 endif()
 
 #------------------------------------------------------------------------------
