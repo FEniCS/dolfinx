@@ -472,7 +472,7 @@ ConvexTriangulation::_triangulate_graham_scan_3d(const std::vector<Point>& input
 			                   coplanar_points[edge.second]});
 
 #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
-                  if (cgal_tet_is_degenerate(cand))
+                  if (cgal_tet_is_degenerate(triangulation.back()))
                   {
                     dolfin::dolfin_error("ConvexTriangulation.cpp:544",
                                          "triangulation 3d points",
