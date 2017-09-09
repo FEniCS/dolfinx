@@ -163,7 +163,8 @@ def test_overload_and_call_back(V, mesh):
 
     class F1(UserExpression):
         def __init__(self, mesh, *arg, **kwargs):
-            super().__init__(*arg, **kwargs)
+            if has_pybind11():
+                super().__init__(*arg, **kwargs)
             self.mesh = mesh
 
         def eval_cell(self, values, x, cell):
@@ -478,7 +479,7 @@ def test_name_space_usage(mesh):
     assert round(assemble(e0*dx(mesh)) - assemble(e1*dx(mesh)), 7) == 0
 
 
-@skip_if_pybind11("What is this for?")
+@skip_if_pybind11(reason="CNR What is this for?")
 def test_expression_self_assignment(mesh, V):
     tc = Constant(2.0)
     te = Expression("value", value=tc, degree=0)
@@ -820,7 +821,8 @@ def test_doc_string_python_expressions(mesh):
 
     class MyExpression2(UserExpression):
         def __init__(self, mesh, domain, *arg, **kwargs):
-            super().__init__(*arg, **kwargs)
+            if has_pybind11():
+                super().__init__(*arg, **kwargs)
             self._mesh = mesh
             self._domain = domain
 

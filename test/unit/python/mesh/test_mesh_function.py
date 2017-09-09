@@ -89,7 +89,7 @@ def test_numpy_access(funcs, tp, name):
     assert all(values[i] == funcs[(tp, name)][i] for i in range(len(values)))
 
 
-@skip_if_pybind11("Iteration over MeshFunctions not supported")
+@skip_if_pybind11(reason="Iteration over mesh functions not supported")
 def test_iterate(tp, name, funcs):
     for index, value in enumerate(funcs[(tp, name)]):
         pass
