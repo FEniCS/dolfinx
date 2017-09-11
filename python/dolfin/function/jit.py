@@ -7,7 +7,6 @@
 # either version 3 of the License, or (at your option) any later
 # version.
 
-import hashlib
 import dolfin.cpp as cpp
 from dolfin.jit.jit import compile_class, _math_header
 
@@ -49,7 +48,7 @@ namespace dolfin
 {statement}
        }}
 
-       void set_property(std::string name, double value) override
+       void set_property(std::string name, double _value) override
        {{
 {set_props}
        throw std::runtime_error("No such property");
@@ -62,7 +61,7 @@ namespace dolfin
        return 0.0;
        }}
 
-       void set_generic_function(std::string name, std::shared_ptr<dolfin::GenericFunction> value) override
+       void set_generic_function(std::string name, std::shared_ptr<dolfin::GenericFunction> _value) override
        {{
 {set_generic_function}
        throw std::runtime_error("No such property");
@@ -84,7 +83,7 @@ extern "C" DLL_EXPORT dolfin::Expression * create_{classname}()
 
 """
     _get_props = """          if (name == "{key_name}") return {name};"""
-    _set_props = """          if (name == "{key_name}") {{ {name} = value; return; }}"""
+    _set_props = """          if (name == "{key_name}") {{ {name} = _value; return; }}"""
 
     statements = class_data["statements"]
     statement = ""

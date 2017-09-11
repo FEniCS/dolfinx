@@ -558,7 +558,7 @@ def test_generic_function_attributes(mesh, V):
     assert te(0.0) == 4.0
 
     # Test wrong assignment
-    with pytest.raises(TypeError):
+    with pytest.raises(Exception):
         te.user_parameters.__setitem__("value", 1.0)
     with pytest.raises(KeyError):
         te.user_parameters.__setitem__("values", 1.0)
