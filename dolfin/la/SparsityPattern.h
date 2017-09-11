@@ -77,10 +77,15 @@ namespace dolfin
     void insert_local(const std::vector<
                       ArrayView<const dolfin::la_index>>& entries);
 
+    /// Insert non-zero entries using local (process-wise) indices for
+    /// the primary dimension and global indices for the co-dimension
+    void insert_local_global(
+        const std::vector<ArrayView<const dolfin::la_index>>& entries);
+
     /// Insert full rows (or columns, according to primary dimension)
     /// using local (process-wise) indices. This must be called before
-    /// any other sparse insertion occurs to avoid quadratic complexity
-    /// of dense rows insertion
+    /// any other sparse insertion occurs to avoid quadratic
+    /// complexity of dense rows insertion
     void insert_full_rows_local(const std::vector<std::size_t>& rows);
 
     /// Return rank
@@ -129,11 +134,21 @@ namespace dolfin
     std::vector<std::vector<std::size_t>> diagonal_pattern(Type type) const;
 
     /// Return underlying sparsity pattern (off-diagonal). Options are
-    /// 'sorted' and 'unsorted'. Empty vector is returned if there is no
-    /// off-diagonal contribution.
+    /// 'sorted' and 'unsorted'. Empty vector is returned if there is
+    /// no off-diagonal contribution.
     std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
 
   private:
+
+    // Other insertion methods will call this method providing the
+    // appropriate mapping of the indices in the entries.
+    //
+    // The primary dim entries must be local
+    // The primary_codim entries must be global
+    void insert_entries(
+        const std::vector<ArrayView<const dolfin::la_index>>& entries,
+        const std::function<dolfin::la_index(const dolfin::la_index, const IndexMap&)>& primary_dim_map,
+        const std::function<dolfin::la_index(const dolfin::la_index, const IndexMap&)>& primary_codim_map);
 
     // Print some useful information
     void info_statistics() const;
