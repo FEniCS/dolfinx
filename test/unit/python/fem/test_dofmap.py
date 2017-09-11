@@ -29,6 +29,10 @@ from dolfin_utils.test import *
 
 xfail = pytest.mark.xfail(strict=True)
 
+if has_pybind11():
+    IndexMap.MapSize_OWNED = IndexMap.MapSize.OWNED
+    IndexMap.MapSize_UNOWNED = IndexMap.MapSize.UNOWNED
+    IndexMap.MapSize_ALL = IndexMap.MapSize.ALL
 
 @fixture
 def mesh():
@@ -61,9 +65,6 @@ def test_tabulate_all_coordinates(mesh_factory):
     all_coords_W = W.tabulate_dof_coordinates()
     local_size_V = V_dofmap.ownership_range()[1]-V_dofmap.ownership_range()[0]
     local_size_W = W_dofmap.ownership_range()[1]-W_dofmap.ownership_range()[0]
-
-    assert all_coords_V.shape == (D*local_size_V,)
-    assert all_coords_W.shape == (D*local_size_W,)
 
     all_coords_V = all_coords_V.reshape(local_size_V, D)
     all_coords_W = all_coords_W.reshape(local_size_W, D)
@@ -158,10 +159,10 @@ def test_tabulate_coord_periodic(mesh_factory):
     coord3 = np.zeros((sdim, 2), dtype="d")
 
     for cell in cells(mesh):
-        V.element().tabulate_dof_coordinates(cell, coord0)
-        L0.element().tabulate_dof_coordinates(cell, coord1)
-        L01.element().tabulate_dof_coordinates(cell, coord2)
-        L11.element().tabulate_dof_coordinates(cell, coord3)
+        coord0 = V.element().tabulate_dof_coordinates(cell)
+        coord1 = L0.element().tabulate_dof_coordinates(cell)
+        coord2 = L01.element().tabulate_dof_coordinates(cell)
+        coord3 = L11.element().tabulate_dof_coordinates(cell)
         coord4 = L1.element().tabulate_dof_coordinates(cell)
 
         assert (coord0 == coord1).all()
@@ -271,8 +272,11 @@ def test_dof_to_vertex_map(mesh_factory, reorder_dofs):
     u.interpolate(e)
 
     vert_values = mesh.coordinates().sum(1)
-    func_values = np.empty(len(vert_values))
-    u.vector().get_local(func_values, vertex_to_dof_map(V))
+    if has_pybind11():
+        func_values = u.vector().get_local(vertex_to_dof_map(V))
+    else:
+        func_values = np.empty(len(vert_values))
+        u.vector().get_local(func_values, vertex_to_dof_map(V))
     assert round(max(abs(func_values - vert_values)), 7) == 0
 
     c0 = Constant((1, 2))

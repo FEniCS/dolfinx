@@ -28,12 +28,12 @@ from dolfin import *
 from dolfin_utils.test import skip_in_parallel
 
 
-class Quadratic2D(Expression):
+class Quadratic2D(UserExpression):
     def eval(self, values, x):
         values[0] = x[0]*x[0] + x[1]*x[1] + 1.0
 
 
-class Quadratic3D(Expression):
+class Quadratic3D(UserExpression):
     def eval(self, values, x):
         values[0] = x[0]*x[0] + x[1]*x[1] + x[2]*x[2] + 1.0
 

@@ -25,7 +25,7 @@
 import pytest
 from numpy import array
 from dolfin import *
-
+from ufl import UFLException
 
 def test_name_argument():
     u = Constant(1.0)

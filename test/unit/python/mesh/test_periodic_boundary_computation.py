@@ -41,35 +41,29 @@ def periodic_boundary():
 
     return PeriodicBoundary()
 
-
-@fixture
-def pbc():
-    return PeriodicBoundaryComputation()
-
-
 @fixture
 def mesh():
     return UnitSquareMesh(4, 4)
 
 
 @skip_in_parallel
-def test_ComputePeriodicPairs(pbc, periodic_boundary, mesh):
+def test_ComputePeriodicPairs(periodic_boundary, mesh):
 
     # Verify that correct number of periodic pairs are computed
-    vertices = pbc.compute_periodic_pairs(mesh, periodic_boundary, 0)
-    edges = pbc.compute_periodic_pairs(mesh, periodic_boundary, 1)
+    vertices = PeriodicBoundaryComputation.compute_periodic_pairs(mesh, periodic_boundary, 0)
+    edges = PeriodicBoundaryComputation.compute_periodic_pairs(mesh, periodic_boundary, 1)
     assert len(vertices) == 5
     assert len(edges) == 4
 
 
 @skip_in_parallel
-def test_MastersSlaves(pbc, periodic_boundary, mesh):
+def test_MastersSlaves(periodic_boundary, mesh):
 
     # Verify that correct number of masters and slaves are marked
-    mf = pbc.masters_slaves(mesh, periodic_boundary, 0)
+    mf = PeriodicBoundaryComputation.masters_slaves(mesh, periodic_boundary, 0)
     assert len(np.where(mf.array() == 1)[0]) == 5
     assert len(np.where(mf.array() == 2)[0]) == 5
 
-    mf = pbc.masters_slaves(mesh, periodic_boundary, 1)
+    mf = PeriodicBoundaryComputation.masters_slaves(mesh, periodic_boundary, 1)
     assert len(np.where(mf.array() == 1)[0]) == 4
     assert len(np.where(mf.array() == 2)[0]) == 4
