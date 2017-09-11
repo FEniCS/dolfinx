@@ -333,13 +333,66 @@ namespace dolfin_wrappers
     // dolfin::PointSource
     py::class_<dolfin::PointSource, std::shared_ptr<dolfin::PointSource>>
       (m, "PointSource")
-      .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, const dolfin::Point&, double value>(),
-           py::arg("V"), py::arg("p"), py::arg("value"))
-      .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, std::shared_ptr<const dolfin::FunctionSpace>, const dolfin::Point&, double value>(),
-           py::arg("V0"), py::arg("V1"), py::arg("p"), py::arg("value"))
-      .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, const std::vector<std::pair<const dolfin::Point*, double>>>())
-      .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, std::shared_ptr<const dolfin::FunctionSpace>,
-           const std::vector<std::pair<const dolfin::Point*, double>>>())
+      // FIXME: consolidate down to one intialiser when switching from
+      // SWIG to pybind11
+      .def(py::init([](py::object V, const dolfin::Point& p, double value)
+                    {
+                      std::shared_ptr<const dolfin::FunctionSpace> _V;
+                      if (py::hasattr(V, "_cpp_object"))
+                        _V = V.attr("_cpp_object").cast<std::shared_ptr<dolfin::FunctionSpace>>();
+                      else
+                        _V = V.cast<std::shared_ptr<dolfin::FunctionSpace>>();
+
+                      return dolfin::PointSource(_V, p, value);
+                    }), py::arg("V"), py::arg("p"), py::arg("value"))
+      .def(py::init([](py::object V0, py::object V1, const dolfin::Point& p, double value)
+                    {
+                      std::shared_ptr<const dolfin::FunctionSpace> _V0, _V1;
+                      if (py::hasattr(V0, "_cpp_object"))
+                        _V0 = V0.attr("_cpp_object").cast<std::shared_ptr<dolfin::FunctionSpace>>();
+                      else
+                        _V0 = V0.cast<std::shared_ptr<dolfin::FunctionSpace>>();
+
+                      if (py::hasattr(V1, "_cpp_object"))
+                        _V1 = V1.attr("_cpp_object").cast<std::shared_ptr<dolfin::FunctionSpace>>();
+                      else
+                        _V1 = V1.cast<std::shared_ptr<dolfin::FunctionSpace>>();
+
+                      return dolfin::PointSource(_V0, _V1, p, value);
+                    }), py::arg("V0"), py::arg("V1"), py::arg("p"), py::arg("value"))
+      .def(py::init([](py::object V, const std::vector<std::pair<const dolfin::Point*, double>> values)
+                    {
+                      std::shared_ptr<const dolfin::FunctionSpace> _V;
+                      if (py::hasattr(V, "_cpp_object"))
+                        _V = V.attr("_cpp_object").cast<std::shared_ptr<dolfin::FunctionSpace>>();
+                      else
+                        _V = V.cast<std::shared_ptr<dolfin::FunctionSpace>>();
+
+                      return dolfin::PointSource(_V, values);
+                    }), py::arg("V"), py::arg("values"))
+      .def(py::init([](py::object V0, py::object V1, const std::vector<std::pair<const dolfin::Point*, double>> values)
+                    {
+                      std::shared_ptr<const dolfin::FunctionSpace> _V0, _V1;
+                      if (py::hasattr(V0, "_cpp_object"))
+                        _V0 = V0.attr("_cpp_object").cast<std::shared_ptr<dolfin::FunctionSpace>>();
+                      else
+                        _V0 = V0.cast<std::shared_ptr<dolfin::FunctionSpace>>();
+
+                      if (py::hasattr(V1, "_cpp_object"))
+                        _V1 = V1.attr("_cpp_object").cast<std::shared_ptr<dolfin::FunctionSpace>>();
+                      else
+                        _V1 = V1.cast<std::shared_ptr<dolfin::FunctionSpace>>();
+
+                      return dolfin::PointSource(_V0, _V1, values);
+                    }), py::arg("V0"), py::arg("V1"), py::arg("values"))
+      //
+      //.def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, const dolfin::Point&, double>(),
+      //     py::arg("V"), py::arg("p"), py::arg("value"))
+      //.def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, std::shared_ptr<const dolfin::FunctionSpace>, const dolfin::Point&, double>(),
+      //     py::arg("V0"), py::arg("V1"), py::arg("p"), py::arg("value"))
+      //.def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, const std::vector<std::pair<const dolfin::Point*, double>>>())
+      //.def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, std::shared_ptr<const dolfin::FunctionSpace>,
+      //     const std::vector<std::pair<const dolfin::Point*, double>>>())
       .def("apply", (void (dolfin::PointSource::*)(dolfin::GenericVector&)) &dolfin::PointSource::apply)
       .def("apply", (void (dolfin::PointSource::*)(dolfin::GenericMatrix&)) &dolfin::PointSource::apply);
 
