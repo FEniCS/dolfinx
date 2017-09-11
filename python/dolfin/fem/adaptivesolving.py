@@ -31,6 +31,7 @@ from dolfin.fem.solving import LinearVariationalProblem
 from dolfin.fem.solving import NonlinearVariationalProblem
 from dolfin.fem.errorcontrolgenerator import DOLFINErrorControlGenerator
 
+
 class AdaptiveLinearVariationalSolver(cpp.adaptivity.AdaptiveLinearVariationalSolver):
 
     # Reuse doc-string
@@ -126,7 +127,8 @@ def generate_error_control(problem, goal):
 
     *Arguments*
 
-        problem (:py:class:`LinearVariationalProblem <dolfin.fem.solving.LinearVariationalProblem>` or :py:class:`NonlinearVariationalProblem <dolfin.fem.solving.NonlinearVariationalProblem>`)
+        problem (:py:class:`LinearVariationalProblem <dolfin.fem.solving.LinearVariationalProblem>`
+        or :py:class:`NonlinearVariationalProblem <dolfin.fem.solving.NonlinearVariationalProblem>`)
 
             The (primal) problem
 
@@ -160,7 +162,8 @@ def generate_error_control_forms(problem, goal):
 
     *Arguments*
 
-        problem (:py:class:`LinearVariationalProblem <dolfin.fem.solving.LinearVariationalProblem>` or :py:class:`NonlinearVariationalProblem <dolfin.fem.solving.NonlinearVariationalProblem>`)
+        problem (:py:class:`LinearVariationalProblem <dolfin.fem.solving.LinearVariationalProblem>`
+        or :py:class:`NonlinearVariationalProblem <dolfin.fem.solving.NonlinearVariationalProblem>`)
 
             The (primal) problem
 

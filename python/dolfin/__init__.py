@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Main module for DOLFIN"""
 
+# flake8: noqa
+
 # Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
 #
 # Distributed under the terms of the GNU Lesser Public License (LGPL),
@@ -14,7 +16,6 @@ stored_dlopen_flags = sys.getdlopenflags()
 
 # Developer note: below is related to OpenMPI
 # Fix dlopen flags (may need reorganising)
-import sys
 if "linux" in sys.platform:
     # FIXME: What with other platforms?
     try:
@@ -25,12 +26,9 @@ if "linux" in sys.platform:
     sys.setdlopenflags(RTLD_NOW | RTLD_GLOBAL)
 del sys
 
-#import dolfin.cpp
-
 # Reset dl open flags
-#import sys
-#sys.setdlopenflags(stored_dlopen_flags)
-#del sys
+# sys.setdlopenflags(stored_dlopen_flags)
+# del sys
 
 # Import cpp modules
 from .cpp.common import (Variable, has_debug, has_hdf5, has_scotch,
@@ -174,17 +172,21 @@ from ufl import (FiniteElement, TensorElement, VectorElement,
                  elem_mult, elem_div, elem_pow, elem_op, erf)
 from ufl.formoperators import action
 
+
 # FIXME
 def has_petsc4py():
     return False
+
 
 # FIXME: remove after transition
 def has_pybind11():
     return True
 
+
 # FIXME: remove after transition
 def mpi_comm_self():
     return MPI.comm_self
+
 
 # FIXME: remove after transition
 def mpi_comm_world():

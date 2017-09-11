@@ -11,7 +11,6 @@ import ufl
 import dolfin.cpp as cpp
 from dolfin.mesh.subdomain import CompiledSubDomain
 from dolfin.function.constant import Constant
-from dolfin.function.function import Function
 from dolfin.function.functionspace import FunctionSpace
 from dolfin.fem.projection import project
 
@@ -69,7 +68,7 @@ class DirichletBC(cpp.fem.DirichletBC):
 
         # FIXME: correct the below comment
         # Case: boundary value specified as float, tuple or similar
-        #if len(args) >= 2 and not isinstance(args[1], (cpp.function.GenericFunction):
+        # if len(args) >= 2 and not isinstance(args[1], (cpp.function.GenericFunction):
         if len(args) >= 2:
             # Check if we have a UFL expression or a concrete type
             if not hasattr(args[1], "_cpp_object"):

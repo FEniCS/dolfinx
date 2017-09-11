@@ -23,7 +23,6 @@ finite element space.
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-import dolfin.cpp as cpp
 from dolfin.function.function import Function
 
 
@@ -50,10 +49,10 @@ def interpolate(v, V):
     """
 
     # Check arguments
-    #if not isinstance(V, cpp.functionFunctionSpace):
-    #    cpp.dolfin_error("interpolation.py",
-    #                     "compute interpolation",
-    #                     "Illegal function space for interpolation, not a FunctionSpace (%s)" % str(v))
+    # if not isinstance(V, cpp.functionFunctionSpace):
+    #     cpp.dolfin_error("interpolation.py",
+    #                      "compute interpolation",
+    #                      "Illegal function space for interpolation, not a FunctionSpace (%s)" % str(v))
 
     # Compute interpolation
     Pv = Function(V)

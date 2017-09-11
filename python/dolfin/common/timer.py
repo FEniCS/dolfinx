@@ -25,16 +25,16 @@ __all__ = ["Timer", "timed"]
 class Timer(cpp.common.Timer):
     """A timer can be used for timing tasks. The basic usage is::
 
-	with Timer("Some costly operation"):
+        with Timer("Some costly operation"):
             costly_call_1()
             costly_call_2()
 
     or::
 
-	with Timer() as t:
+        with Timer() as t:
             costly_call_1()
             costly_call_2()
-	    print("Ellapsed time so far: %s" % t.elapsed()[0])
+            print("Ellapsed time so far: %s" % t.elapsed()[0])
 
     The timer is started when entering context manager and timing
     ends when exiting it. It is also possible to start and stop a
@@ -53,9 +53,11 @@ class Timer(cpp.common.Timer):
 
         list_timings(TimingClear_keep, [TimingType_wall, TimingType_user])
     """
+
     def __enter__(self):
         self.start()
         return self
+
     def __exit__(self, *args):
         self.stop()
 

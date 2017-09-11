@@ -36,7 +36,7 @@ class Form(cpp.fem.Form):
         import pkgconfig
         d = pkgconfig.parse('dolfin')
         if form_compiler_parameters is None:
-            form_compiler_parameters = {"external_include_dirs" : d["include_dirs"]}
+            form_compiler_parameters = {"external_include_dirs": d["include_dirs"]}
         else:
             # FIXME: add paths if dict entry already exists
             form_compiler_parameters["external_include_dirs"] = d["include_dirs"]
