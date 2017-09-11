@@ -18,6 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 
+from __future__ import print_function
 import dolfin
 import numpy
 
@@ -66,8 +67,8 @@ def test_array_double():
 
 
 if __name__ == '__main__':
-    print 'test_array_double'
+    print('test_array_double')
     test_array_double()
     
-    print 'test_array_int'  
+    print('test_array_int')
     test_array_int()
