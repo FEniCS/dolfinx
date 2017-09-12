@@ -110,9 +110,6 @@ from . import la
 from . import mesh
 from . import parameter
 
-from .fem.adaptivesolving import (AdaptiveLinearVariationalSolver,
-                                  AdaptiveNonlinearVariationalSolver)
-
 from .common import timer
 from .common.timer import Timer, timed
 from .common.plotting import plot
@@ -128,6 +125,10 @@ from .fem.solving import (solve, LocalSolver,
                           LinearVariationalProblem,
                           NonlinearVariationalProblem)
 from .fem.formmanipulations import (derivative, adjoint, increase_order, tear)
+
+# Need to be careful with other to avoid circular dependency
+from .fem.adaptivesolving import (AdaptiveLinearVariationalSolver,
+                                  AdaptiveNonlinearVariationalSolver)
 
 from .function.functionspace import (FunctionSpace,
                                      VectorFunctionSpace, TensorFunctionSpace)

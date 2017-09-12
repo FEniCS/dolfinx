@@ -142,7 +142,8 @@ class NonlinearVariationalProblem(cpp.fem.NonlinearVariationalProblem):
         # Initialize C++ base class
         cpp.fem.NonlinearVariationalProblem.__init__(self, F, u._cpp_object, bcs, J)
 
-
+# FIXME: The import here are here to avoid a circular dependency
+# (ugly, should fix)
 # Solver classes are imported directly
 from dolfin.cpp.fem import LinearVariationalSolver, NonlinearVariationalSolver
 from dolfin.fem.adaptivesolving import AdaptiveLinearVariationalSolver
