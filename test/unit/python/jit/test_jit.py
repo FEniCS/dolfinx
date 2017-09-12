@@ -22,7 +22,8 @@
 import pytest
 import platform
 from dolfin import *
-from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_MPI, skip_in_serial, skip_if_not_petsc4py
+from dolfin_utils.test import (skip_if_not_PETSc, skip_if_not_MPI, skip_in_serial, 
+                               skip_if_not_petsc4py, skip_if_pybind11)
 
 
 def test_nasty_jit_caching_bug():
@@ -45,6 +46,7 @@ def test_nasty_jit_caching_bug():
     parameters["form_compiler"]["representation"] = default_parameters
 
 
+@skip_if_pybind11
 @skip_if_not_MPI
 def test_mpi_swig():
     from dolfin import compile_extension_module
