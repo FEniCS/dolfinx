@@ -30,7 +30,7 @@ import numpy
 import six
 
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel, datadir
+from dolfin_utils.test import skip_in_parallel, datadir, skip_if_pybind11
 
 
 def test_instantiation():
@@ -51,7 +51,7 @@ def test_director_lifetime():
     class Boundary(SubDomain):
         def inside(self, x, on_boundary): return on_boundary
 
-    class BoundaryFunction(Expression):
+    class BoundaryFunction(UserExpression):
         def eval(self, values, x): values[0] = 1.0
 
     mesh = UnitSquareMesh(8, 8)
@@ -80,7 +80,7 @@ def test_get_values():
     bc = DirichletBC(V, 0.0, upper)
     bc_values = bc.get_boundary_values()
 
-
+@skip_if_pybind11
 def test_meshdomain_bcs(datadir):
     """Test application of Dirichlet boundary conditions stored as part of
     the mesh. This test is also a compatibility test for VMTK.
