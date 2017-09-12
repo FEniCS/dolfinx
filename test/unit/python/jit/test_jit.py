@@ -22,7 +22,7 @@
 import pytest
 import platform
 from dolfin import *
-from dolfin_utils.test import skip_if_not_PETSc, skip_in_serial, skip_if_not_petsc4py
+from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_MPI, skip_in_serial, skip_if_not_petsc4py
 
 
 def test_nasty_jit_caching_bug():
@@ -43,6 +43,18 @@ def test_nasty_jit_caching_bug():
         assert round(M2 - 1.0, 7) == 0
 
     parameters["form_compiler"]["representation"] = default_parameters
+
+
+@skip_if_not_MPI
+def test_mpi_swig():
+    from dolfin import compile_extension_module
+
+    create_transfer_matrix_code = r'''
+    namespace dolfin
+    {
+        void find_exterior_points(MPI_Comm mpi_comm) {}
+    }'''
+    create_transfer_matrix =  compile_extension_module(code=create_transfer_matrix_code)
 
 
 @skip_if_not_PETSc
