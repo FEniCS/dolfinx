@@ -402,6 +402,7 @@ namespace dolfin
 #include <CGAL/intersection_of_Polyhedra_3.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Triangulation_2.h>
+#include <CGAL/Nef_polyhedron_3.h>
 
 namespace
 {
@@ -421,6 +422,7 @@ namespace
   typedef ExactKernel::Segment_3         Segment_3;
   typedef ExactKernel::Tetrahedron_3     Tetrahedron_3;
   typedef ExactKernel::Intersect_3       Intersect_3;
+  typedef CGAL::Nef_polyhedron_3<ExactKernel>  Nef_polyhedron_3;
   typedef CGAL::Polyhedron_3<ExactKernel>      Polyhedron_3;
   typedef CGAL::Triangulation_2<ExactKernel>   Triangulation_2;
 
@@ -856,8 +858,8 @@ namespace dolfin
     std::size_t cnt = 0;
     CGAL::Counting_output_iterator out(&cnt);
     CGAL::intersection_Polyhedron_3_Polyhedron_3<Polyhedron_3>(tet_a,
-                                          							       tet_b,
-                                          							       out);
+							       tet_b,
+							       out);
     // The tetrahedra does not intersect if cnt == 0
     return cnt != 0;
   }
@@ -1317,8 +1319,8 @@ namespace dolfin
 
     std::list<std::vector<Point_3> > triangulation;
     CGAL::intersection_Polyhedron_3_Polyhedron_3(tet,
-                                    						 tri,
-                                    						 std::back_inserter(triangulation));
+						 tri,
+						 std::back_inserter(triangulation));
 
     // FIXME: do we need to add interior point checks? Maybe
     // Polyhedron_3 is only top dim 2?
@@ -1356,13 +1358,13 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   inline std::vector<Point>
   cgal_intersection_tetrahedron_tetrahedron(const Point& p0,
-                              					    const Point& p1,
-                              					    const Point& p2,
-                              					    const Point& p3,
-                              					    const Point& q0,
-                              					    const Point& q1,
-                              					    const Point& q2,
-                              					    const Point& q3)
+					    const Point& p1,
+					    const Point& p2,
+					    const Point& p3,
+					    const Point& q0,
+					    const Point& q1,
+					    const Point& q2,
+					    const Point& q3)
   {
     dolfin_assert(!is_degenerate_3d(p0, p1, p2, p3));
     dolfin_assert(!is_degenerate_3d(q0, q1, q2, q3));
@@ -1378,20 +1380,24 @@ namespace dolfin
 			   convert_to_cgal_3d(q2),
 			   convert_to_cgal_3d(q3));
 
-    std::list<std::vector<Point_3> > triangulation;
-    CGAL::intersection_Polyhedron_3_Polyhedron_3(tet_a,
-    						 tet_b,
-    						 std::back_inserter(triangulation));
+    const Nef_polyhedron_3 tet_a_nef(tet_a);
+    const Nef_polyhedron_3 tet_b_nef(tet_b);
 
-    // FIXME: do we need to add interior point checks? Maybe
-    // Polyhedron_3 is only top dim 2?
+    const Nef_polyhedron_3 intersection_nef = tet_a_nef*tet_a_nef;
 
-    // Shouldn't get here
-    dolfin_error("CGALExactArithmetic.h",
-            		 "cgal_intersection_tetrahedron_tetrahedron",
-            		 "Not implemented");
+    Polyhedron_3 intersection;
+    intersection_nef.convert_to_polyhedron(intersection);
 
-    return std::vector<Point>();
+    std::vector<Point> res;
+    for (Polyhedron_3::Vertex_const_iterator vit = intersection.vertices_begin();
+	 vit != intersection.vertices_end(); vit++)
+    {
+      res.push_back(Point(CGAL::to_double(vit->point().x()),
+			  CGAL::to_double(vit->point().y()),
+			  CGAL::to_double(vit->point().z())));
+    }
+
+    return res;
   }
   //-----------------------------------------------------------------------------
   inline std::vector<std::vector<Point>>

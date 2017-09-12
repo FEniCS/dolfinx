@@ -813,6 +813,22 @@ IntersectionConstruction::intersection_tetrahedron_tetrahedron_3d(const Point& p
   add(points, intersection_triangle_segment_3d(q1, q2, q3, p2, p3));
 
   dolfin_assert(GeometryPredicates::is_finite(points));
-  return unique(points);
+
+  std::vector<Point> filtered = unique(points);
+
+#ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
+  const std::vector<Point> ref_res =
+    cgal_intersection_tetrahedron_tetrahedron(p0, p1, p2, p3,
+					      q0, q1, q2, q3);
+
+  if (ref_res.size() != filtered.size())
+  {
+    dolfin_error("IntersectionConstruction.cpp",
+		 "constructing tetrahedron tetrahedron intersection",
+		 "result doesn't match result from reference implementation");
+  }
+#endif
+
+  return filtered;
 }
 //-----------------------------------------------------------------------------
