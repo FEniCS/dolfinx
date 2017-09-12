@@ -72,14 +72,20 @@ def test_evaluate_dofs(mesh_factory):
     for cell in cells(mesh):
         vx = cell.get_vertex_coordinates()
         orientation = cell.orientation()
-        V.element().tabulate_dof_coordinates(cell, coords)
+        coords = V.element().tabulate_dof_coordinates(cell)
         for i in range(coords.shape[0]):
             coord[:] = coords[i, :]
             values0[i] = e(*coord)
-        L0.element().evaluate_dofs(values1, e, vx, orientation, cell)
-        L01.element().evaluate_dofs(values2, e, vx, orientation, cell)
-        L11.element().evaluate_dofs(values3, e, vx, orientation, cell)
-        L1.element().evaluate_dofs(values4, e2, vx, orientation, cell)
+        if has_pybind11():
+            values1 = L0.element().evaluate_dofs(e, vx, orientation, cell)
+            values2 = L01.element().evaluate_dofs(e, vx, orientation, cell)
+            values3 = L11.element().evaluate_dofs(e, vx, orientation, cell)
+            values4 = L1.element().evaluate_dofs(e2, vx, orientation, cell)
+        else:
+            L0.element().evaluate_dofs(values1, e, vx, orientation, cell)
+            L01.element().evaluate_dofs(values2, e, vx, orientation, cell)
+            L11.element().evaluate_dofs(values3, e, vx, orientation, cell)
+            L1.element().evaluate_dofs(values4, e2, vx, orientation, cell)
 
         for i in range(sdim):
             assert round(values0[i] - values1[i], 7) == 0
@@ -113,18 +119,20 @@ def test_evaluate_dofs_manifolds_affine():
     for V in elements:
         sdim = V.element().space_dimension()
         gdim = V.mesh().geometry().dim()
-        coords = numpy.zeros((sdim, gdim), dtype="d")
         coord = numpy.zeros(gdim, dtype="d")
         values0 = numpy.zeros(sdim, dtype="d")
         values1 = numpy.zeros(sdim, dtype="d")
         for cell in cells(V.mesh()):
             vx = cell.get_vertex_coordinates()
             orientation = cell.orientation()
-            V.element().tabulate_dof_coordinates(cell, coords)
+            coords = V.element().tabulate_dof_coordinates(cell)
             for i in range(coords.shape[0]):
                 coord[:] = coords[i, :]
                 values0[i] = f(*coord)
-            V.element().evaluate_dofs(values1, f, vx, orientation, cell)
+            if has_pybind11():
+                values1 = V.element().evaluate_dofs(f, vx, orientation, cell)
+            else:
+                V.element().evaluate_dofs(values1, f, vx, orientation, cell)
             for i in range(sdim):
                 assert round(values0[i] - values1[i], 7) == 0
 
@@ -159,11 +167,11 @@ def test_tabulate_coord(mesh_factory):
     L11 = L1.sub(1)
 
     for cell in cells(mesh):
-        V.element().tabulate_dof_coordinates(cell, coord0)
-        L0.element().tabulate_dof_coordinates(cell, coord1)
-        L01.element().tabulate_dof_coordinates(cell, coord2)
-        L11.element().tabulate_dof_coordinates(cell, coord3)
-        L1.element().tabulate_dof_coordinates(cell, coord4)
+        coord0 = V.element().tabulate_dof_coordinates(cell)
+        coord1 = L0.element().tabulate_dof_coordinates(cell)
+        coord2 = L01.element().tabulate_dof_coordinates(cell)
+        coord3 = L11.element().tabulate_dof_coordinates(cell)
+        coord4 = L1.element().tabulate_dof_coordinates(cell)
 
         assert (coord0 == coord1).all()
         assert (coord0 == coord2).all()

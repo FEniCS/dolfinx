@@ -25,6 +25,9 @@ from time import sleep
 
 from dolfin import *
 
+# FIXME: remove after transition
+if has_pybind11():
+    TimingClear_clear = TimingClear.clear
 
 def get_random_task_name():
     return uuid.uuid4().hex
