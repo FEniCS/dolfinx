@@ -37,9 +37,10 @@ _x3dom_plottable_types = (cpp.function.Function, cpp.mesh.Mesh)
 _all_plottable_types = tuple(set.union(set(_matplotlib_plottable_types),
                                        set(_x3dom_plottable_types)))
 
+
 def _has_matplotlib():
     try:
-        import matplotlib
+        import matplotlib  # noqa
     except ImportError:
         return False
     return True
@@ -62,10 +63,10 @@ def mplot_mesh(ax, mesh, **kwargs):
         mplot_mesh(ax, bmesh, **kwargs)
     elif gdim == 3 and tdim == 2:
         xy = mesh.coordinates()
-        return ax.plot_trisurf(*[xy[:,i] for i in range(gdim)],
+        return ax.plot_trisurf(*[xy[:, i] for i in range(gdim)],
                                triangles=mesh.cells(), **kwargs)
     elif tdim == 1:
-        x = [mesh.coordinates()[:,i] for i in range(gdim)]
+        x = [mesh.coordinates()[:, i] for i in range(gdim)]
         if gdim == 1:
             x.append(np.zeros_like(x[0]))
             ax.set_yticks([])
@@ -122,10 +123,10 @@ def mplot_function(ax, f, **kwargs):
             # FIXME: Not tested, probably broken
             xy = mesh.coordinates()
             shade = kwargs.pop("shade", True)
-            return ax.plot_trisurf(mesh2triang(mesh), xy[:,2], C, shade=shade,
+            return ax.plot_trisurf(mesh2triang(mesh), xy[:, 2], C, shade=shade,
                                    **kwargs)
         elif gdim == 1 and tdim == 1:
-            x = mesh.coordinates()[:,0]
+            x = mesh.coordinates()[:, 0]
             nv = len(x)
             # Insert duplicate points to get piecewise constant plot
             xp = np.zeros(2*nv-2)
@@ -137,7 +138,7 @@ def mplot_function(ax, f, **kwargs):
             Cp[0:len(Cp)-1:2] = C
             Cp[1:len(Cp):2] = C
             return ax.plot(xp, Cp, *kwargs)
-        #elif tdim == 1: # FIXME: Plot embedded line
+        # elif tdim == 1:  # FIXME: Plot embedded line
         else:
             raise AttributeError('Matplotlib plotting backend only supports 2D mesh for scalar functions.')
 
@@ -159,12 +160,12 @@ def mplot_function(ax, f, **kwargs):
                 cmap = kwargs.pop("cmap", cm.jet)
                 linewidths = kwargs.pop("linewidths", 0)
                 return ax.plot_trisurf(mesh2triang(mesh), C, cmap=cmap,
-                        linewidths=linewidths, **kwargs)
+                                       linewidths=linewidths, **kwargs)
             elif mode == "wireframe":
                 return ax.triplot(mesh2triang(mesh), **kwargs)
             elif mode == "contour":
                 return ax.tricontour(mesh2triang(mesh), C, **kwargs)
-        elif gdim == 3 and tdim == 2: # surface in 3d
+        elif gdim == 3 and tdim == 2:  # surface in 3d
             # FIXME: Not tested
             from matplotlib import cm
             cmap = kwargs.pop("cmap", cm.jet)
@@ -176,7 +177,7 @@ def mplot_function(ax, f, **kwargs):
             X = [mesh.coordinates()[:, i] for i in range(gdim)]
             return ax.scatter(*X, c=C, **kwargs)
         elif gdim == 1 and tdim == 1:
-            x = mesh.coordinates()[:,0]
+            x = mesh.coordinates()[:, 0]
             ax.set_aspect('auto')
 
             p = ax.plot(x, C, **kwargs)
@@ -189,7 +190,7 @@ def mplot_function(ax, f, **kwargs):
             ax.set_ylim([vmin, vmax])
 
             return p
-        #elif tdim == 1: # FIXME: Plot embedded line
+        # elif tdim == 1: # FIXME: Plot embedded line
         else:
             raise AttributeError('Matplotlib plotting backend only supports 2D mesh for scalar functions.')
 
@@ -201,11 +202,11 @@ def mplot_function(ax, f, **kwargs):
             raise AttributeError('Vector length must match geometric dimension.')
         X = mesh.coordinates()
         X = [X[:, i] for i in range(gdim)]
-        U = [w0[i*nv: (i+1)*nv] for i in range(gdim)]
+        U = [w0[i*nv: (i + 1)*nv] for i in range(gdim)]
 
         # Compute magnitude
         C = U[0]**2
-        for i in range(1,gdim):
+        for i in range(1, gdim):
             C += U[i]**2
         C = np.sqrt(C)
 
@@ -282,7 +283,7 @@ def _plot_matplotlib(obj, mesh, kwargs):
     gdim = mesh.geometry().dim()
     if gdim == 3 or kwargs.get("mode") in ("warp",):
         # Importing this toolkit has side effects enabling 3d support
-        from mpl_toolkits.mplot3d import axes3d
+        from mpl_toolkits.mplot3d import axes3d  # noqa
         # Enabling the 3d toolbox requires some additional arguments
         ax = plt.gca(projection='3d')
     else:
@@ -296,9 +297,9 @@ def _plot_matplotlib(obj, mesh, kwargs):
     # Translate range_min/max kwargs supported by VTKPlotter
     vmin = kwargs.pop("range_min", None)
     vmax = kwargs.pop("range_max", None)
-    if vmin and not "vmin" in kwargs:
+    if vmin and "vmin" not in kwargs:
         kwargs["vmin"] = vmin
-    if vmax and not "vmax" in kwargs:
+    if vmax and "vmax" not in kwargs:
         kwargs["vmax"] = vmax
 
     # Drop unsupported kwargs and inform user
@@ -431,8 +432,8 @@ def plot(object, *args, **kwargs):
     if not isinstance(object, _all_plottable_types):
         from dolfin.fem.projection import project
         try:
-            cpp.log.info("Object cannot be plotted directly, projecting to"\
-                     " piecewise linears.")
+            cpp.log.info("Object cannot be plotted directly, projecting to "
+                         "piecewise linears.")
             object = project(object, mesh=mesh)
             mesh = object.function_space().mesh()
         except Exception as e:

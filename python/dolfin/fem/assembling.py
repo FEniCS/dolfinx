@@ -29,7 +29,6 @@ rely on the dolfin::Form class which is not used on the Python side.
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-import types
 import ufl
 import dolfin.cpp as cpp
 from dolfin.fem.form import Form

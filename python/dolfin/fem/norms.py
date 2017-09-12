@@ -25,8 +25,7 @@
 
 from math import sqrt
 import ufl
-from ufl import (inner, grad, div, curl, dx, FiniteElement,
-                 VectorElement, Coefficient)
+from ufl import (grad, div, curl)
 import dolfin.cpp as cpp
 from dolfin.fem.assembling import assemble
 from dolfin.fem.interpolation import interpolate
@@ -94,21 +93,21 @@ def norm(v, norm_type="L2", mesh=None):
 
     """
 
-    #if not isinstance(v, (GenericVector, GenericFunction)):
-    #    cpp.dolfin_error("norms.py",
-    #                     "compute norm",
-    #                     "expected a GenericVector or GenericFunction")
+    # if not isinstance(v, (GenericVector, GenericFunction)):
+    #     cpp.dolfin_error("norms.py",
+    #                      "compute norm",
+    #                      "expected a GenericVector or GenericFunction")
 
     # Check arguments
-    #if not isinstance(norm_type, string_types):
-    #    cpp.dolfin_error("norms.py",
-    #                     "compute norm",
-    #                     "Norm type must be a string, not " +
-    #                     str(type(norm_type)))
-    #if mesh is not None and not isinstance(mesh, cpp.Mesh):
-    #    cpp.dolfin_error("norms.py",
-    #                     "compute norm",
-    #                     "Expecting a Mesh, not " + str(type(mesh)))
+    # if not isinstance(norm_type, string_types):
+    #     cpp.dolfin_error("norms.py",
+    #                      "compute norm",
+    #                      "Norm type must be a string, not " +
+    #                      str(type(norm_type)))
+    # if mesh is not None and not isinstance(mesh, cpp.Mesh):
+    #     cpp.dolfin_error("norms.py",
+    #                      "compute norm",
+    #                      "Expecting a Mesh, not " + str(type(mesh)))
 
     # Get mesh from function
     if isinstance(v, cpp.function.Function) and mesh is None:
@@ -136,15 +135,15 @@ def norm(v, norm_type="L2", mesh=None):
             M = (v**2 + curl(v)**2)*dx
         elif norm_type.lower() == "hcurl0":
             M = curl(v)**2*dx
-        #else:
-        #    cpp.dolfin_error("norms.py",
-        #                     "compute norm",
-        #                     "Unknown norm type (\"%s\") for functions"
-        #                     % str(norm_type))
-    #else:
-    #    cpp.dolfin_error("norms.py",
-    #                     "compute norm",
-    #                     "Unknown object type. Must be a vector or a function")
+        # else:
+        #     cpp.dolfin_error("norms.py",
+        #                      "compute norm",
+        #                      "Unknown norm type (\"%s\") for functions"
+        #                      % str(norm_type))
+    # else:
+    #     cpp.dolfin_error("norms.py",
+    #                      "compute norm",
+    #                      "Unknown object type. Must be a vector or a function")
 
     # Assemble value
     r = assemble(M)
@@ -152,9 +151,9 @@ def norm(v, norm_type="L2", mesh=None):
     # Check value
     if r < 0.0:
         pass
-        #cpp.dolfin_error("norms.py",
-        #                 "compute norm",
-        #                 "Square of norm is negative, might be a round-off error")
+        # cpp.dolfin_error("norms.py",
+        #                  "compute norm",
+        #                  "Square of norm is negative, might be a round-off error")
     elif r == 0.0:
         return 0.0
     else:

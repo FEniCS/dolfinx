@@ -26,6 +26,7 @@ import dolfin.cpp as cpp
 from dolfin.function.function import Function
 from dolfin.fem.form import Form
 import dolfin.fem.formmanipulations as formmanipulations
+from dolfin.fem.formmanipulations import derivative
 
 __all__ = ["LinearVariationalProblem",
            "LinearVariationalSolver",
@@ -77,7 +78,6 @@ class LinearVariationalProblem(cpp.fem.LinearVariationalProblem):
 
 
 class LocalSolver(cpp.fem.LocalSolver):
-
 
     def __init__(self, a, L=None, solver_type=cpp.fem.LocalSolver.SolverType.LU):
         """Create a local (cell-wise) solver for a linear variational problem
@@ -142,9 +142,13 @@ class NonlinearVariationalProblem(cpp.fem.NonlinearVariationalProblem):
         # Initialize C++ base class
         cpp.fem.NonlinearVariationalProblem.__init__(self, F, u._cpp_object, bcs, J)
 
-
+# FIXME: The import here are here to avoid a circular dependency
+# (ugly, should fix)
 # Solver classes are imported directly
 from dolfin.cpp.fem import LinearVariationalSolver, NonlinearVariationalSolver
+from dolfin.fem.adaptivesolving import AdaptiveLinearVariationalSolver
+from dolfin.fem.adaptivesolving import AdaptiveNonlinearVariationalSolver
+
 
 # Solve function handles both linear systems and variational problems
 def solve(*args, **kwargs):
@@ -289,10 +293,10 @@ def solve(*args, **kwargs):
     else:
         if kwargs:
             raise RuntimeError("Not expecting keyword arguments when solving linear algebra problem")
-            #cpp.dolfin_error("solving.py",
-            #                 "solve linear algebra problem",
-            #                 "Not expecting keyword arguments when solving "
-            #                 "linear algebra problem")
+            # cpp.dolfin_error("solving.py",
+            #                  "solve linear algebra problem",
+            #                  "Not expecting keyword arguments when solving "
+            #                  "linear algebra problem")
 
         return cpp.la.solve(*args)
 
@@ -392,25 +396,25 @@ def _extract_args(*args, **kwargs):
     for kwarg in kwargs.keys():
         if kwarg not in valid_kwargs:
             raise RuntimeError("Illegal keyword argument")
-            #cpp.dolfin_error("solving.py",
-            #                 "solve variational problem",
-            #                 "Illegal keyword argument \"%s\"; valid keywords are %s" %
-            #                 (kwarg,
-            #                  ", ".join("\"%s\"" % kwarg for kwarg in valid_kwargs)))
+            # cpp.dolfin_error("solving.py",
+            #                  "solve variational problem",
+            #                  "Illegal keyword argument \"%s\"; valid keywords are %s" %
+            #                  (kwarg,
+            #                   ", ".join("\"%s\"" % kwarg for kwarg in valid_kwargs)))
 
     # Extract equation
     if not len(args) >= 2:
         raise RuntimeError("Missing argument")
-        #cpp.dolfin_error("solving.py",
-        #                 "solve variational problem",
-        #                 "Missing arguments, expecting solve(lhs == rhs, "
-        #                 "u, bcs=bcs), where bcs is optional")
+        # cpp.dolfin_error("solving.py",
+        #                  "solve variational problem",
+        #                  "Missing arguments, expecting solve(lhs == rhs, "
+        #                  "u, bcs=bcs), where bcs is optional")
     if len(args) > 3:
         raise RuntimeError("Too many arguments")
-        #cpp.dolfin_error("solving.py",
-        #                 "solve variational problem",
-        #                 "Too many arguments, expecting solve(lhs == rhs, "
-        #                 "u, bcs=bcs), where bcs is optional")
+        # cpp.dolfin_error("solving.py",
+        #                  "solve variational problem",
+        #                  "Too many arguments, expecting solve(lhs == rhs, "
+        #                  "u, bcs=bcs), where bcs is optional")
 
     # Extract equation
     eq = _extract_eq(args[0])
@@ -465,18 +469,18 @@ def _extract_eq(eq):
 
 def _extract_u(u):
     "Extract and check argument u"
-    #if hasattr(u, "cpp_object") and isinstance(u.cpp_object(), cpp.function.Function):
-    #    return u.cpp_object()
+    # if hasattr(u, "cpp_object") and isinstance(u.cpp_object(), cpp.function.Function):
+    #     return u.cpp_object()
     #
-    #if isinstance(u, cpp.function.Function):
-    #    return u
+    # if isinstance(u, cpp.function.Function):
+    #     return u
     if isinstance(u, Function):
         return u
 
     raise RuntimeError("Expecting second argument to be a Function")
-    #cpp.dolfin_error("solving.py",
-    #                     "solve variational problem",
-    #                     "Expecting second argument to be a Function")
+    # cpp.dolfin_error("solving.py",
+    #                      "solve variational problem",
+    #                      "Expecting second argument to be a Function")
     return u
 
 
@@ -489,7 +493,7 @@ def _extract_bcs(bcs):
     for bc in bcs:
         if not isinstance(bc, cpp.fem.DirichletBC):
             raise RuntimeError("Unable to extract boundary condition arguments")
-            #cpp.dolfin_error("solving.py",
-            #                 "solve variational problem",
-            #                 "Unable to extract boundary condition arguments")
+            # cpp.dolfin_error("solving.py",
+            #                  "solve variational problem",
+            #                  "Unable to extract boundary condition arguments")
     return bcs

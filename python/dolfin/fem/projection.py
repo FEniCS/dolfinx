@@ -84,10 +84,10 @@ def project(v, V=None, bcs=None, mesh=None,
         if isinstance(v, dolfin.function.expression.Expression):
             if mesh is not None and isinstance(mesh, cpp.mesh.Mesh):
                 V = FunctionSpace(mesh, v.ufl_element())
-            #else:
-            #    cpp.dolfin_error("projection.py",
-            #                     "perform projection",
-            #                     "Expected a mesh when projecting an Expression")
+            # else:
+            #     cpp.dolfin_error("projection.py",
+            #                      "perform projection",
+            #                      "Expected a mesh when projecting an Expression")
         else:
             # Otherwise try extracting function space from expression
             V = _extract_function_space(v, mesh)

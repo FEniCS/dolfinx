@@ -21,10 +21,10 @@ import ufl.algorithms.elementtransformations
 import dolfin.cpp as cpp
 from dolfin.function.functionspace import FunctionSpace
 from dolfin.function.function import Function
-from dolfin.function.argument import  Argument
-
+from dolfin.function.argument import Argument
 
 __all__ = ["derivative", "adjoint", "increase_order", "tear"]
+
 
 def adjoint(form, reordered_arguments=None):
 
@@ -34,7 +34,7 @@ def adjoint(form, reordered_arguments=None):
 
     # Extract form arguments
     arguments = form.arguments()
-    if any(arg.part() != None for arg in arguments):
+    if any(arg.part() is not None for arg in arguments):
         cpp.dolfin_error("formmanipulation.py",
                          "compute adjoint of form",
                          "parts not supported")
@@ -52,6 +52,7 @@ def adjoint(form, reordered_arguments=None):
 
     # Call ufl.adjoint with swapped arguments as new arguments
     return ufl.adjoint(form, reordered_arguments=(v_1, v_0))
+
 
 adjoint.__doc__ = ufl.adjoint.__doc__
 
@@ -74,10 +75,10 @@ def derivative(form, u, du=None, coefficient_derivatives=None):
         if isinstance(u, Function):
             V = u.function_space()
             du = Argument(V, number, part)
-        elif isinstance(u, (list,tuple)) and all(isinstance(w, Function) for w in u):
+        elif isinstance(u, (list, tuple)) and all(isinstance(w, Function) for w in u):
             cpp.dolfin_error("formmanipulation.py",
                              "take derivative of form w.r.t. a tuple of Coefficients",
-                             "Take derivative w.r.t. a single Coefficient on "\
+                             "Take derivative w.r.t. a single Coefficient on "
                              "a mixed space instead.")
         else:
             cpp.dolfin_error("formmanipulation.py",
@@ -85,6 +86,7 @@ def derivative(form, u, du=None, coefficient_derivatives=None):
                              "Supply Function as a Coefficient")
 
     return ufl.derivative(form, u, du, coefficient_derivatives)
+
 
 derivative.__doc__ = ufl.derivative.__doc__
 derivative.__doc__ += """
