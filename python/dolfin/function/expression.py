@@ -272,7 +272,6 @@ class ExpressionParameters(object):
         for k,v in dict(params).items():
             self[k] = v
 
-
 class Expression(BaseExpression):
     """JIT Expressions"""
 
@@ -297,7 +296,7 @@ class Expression(BaseExpression):
                 if not isinstance(k, str):
                     raise KeyError("User Parameter key must be a string")
             self._cpp_object = jit.compile_expression(cpp_code, params)
-            self._user_parameters = ExpressionParameters(self._cpp_object, params)
+            self._parameters = ExpressionParameters(self._cpp_object, params)
 
         if element and degree:
             raise RuntimeError("Cannot specify an element and a degree for Expressions.")
@@ -314,9 +313,10 @@ class Expression(BaseExpression):
                                       value_shape=value_shape)
 
         # FIXME: The below is invasive and fragile. Fix multistage so
-        #        the below is note required.
-        # Store C++ code because it is used by
+        #        this is not required.
+        # Store C++ code and user parameters because they are used by
         # the the multistage module.
+        self._user_parameters = kwargs
         self._cppcode = cpp_code
 
         BaseExpression.__init__(self, cell=cell, element=element, domain=domain,
@@ -325,13 +325,13 @@ class Expression(BaseExpression):
     def __getattr__(self, name):
         "Pass attributes through to (JIT compiled) Expression object"
         if name == 'user_parameters':
-            return self._user_parameters
+            return self._parameters
         else:
-            return self._user_parameters[name]
+            return self._parameters[name]
 
     def __setattr__(self, name, value):
         # FIXME: this messes up setting attributes
         if name.startswith("_"):
             super().__setattr__(name, value)
-        elif name in self._user_parameters:
-            self._user_parameters[name] = value
+        elif name in self._parameters:
+            self._parameters[name] = value
