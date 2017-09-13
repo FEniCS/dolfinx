@@ -23,7 +23,7 @@ from dolfin import *
 import ufl
 import numpy
 
-from dolfin_utils.test import fixture, skip_in_parallel
+from dolfin_utils.test import fixture, skip_in_parallel, skip_if_pybind11
 
 
 @fixture
