@@ -553,9 +553,8 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
     cell_name = CellType.type2string(mesh.type().cell_type())
     fiat_cell = FIAT.ufc_cell(cell_name)
 
-    # Initialize mesh entities
-    for d in range(tdim+1):
-        mesh.init(d)
+    # Initialize all mesh entities and connectivities
+    mesh.init()
 
     for cell in cells(mesh):
         # Get mesh-global (MPI-local) indices of cell vertices
