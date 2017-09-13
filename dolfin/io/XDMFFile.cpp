@@ -1157,11 +1157,13 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   std::string element_family
     = u.function_space()->element()->ufc_element()->family();
-  std::size_t element_degree
+  const std::size_t element_degree
     = u.function_space()->element()->ufc_element()->degree();
+  const ufc::shape ufc_element_cell
+    = u.function_space()->element()->ufc_element()->cell_shape();
 
   // Map of standard UFL family abbreviations for visualisation
-  std::map<std::string, std::string> _family_abbr = {
+  const std::map<std::string, std::string> family_abbr = {
     {"Lagrange", "CG"},
     {"Discontinuous Lagrange", "DG"},
     {"Raviart-Thomas", "RT"},
@@ -1169,11 +1171,21 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
     {"Crouzeix-Raviart", "CR"},
     {"Nedelec 1st kind H(curl)", "N1curl"},
     {"Nedelec 2nd kind H(curl)", "N2curl"},
+    {"Q", "Q"},
+    {"DQ", "DQ"}
+  };
+
+  const std::map<ufc::shape, std::string> cell_shape_repr = {
+    {ufc::shape::interval, "interval"},
+    {ufc::shape::triangle, "triangle"},
+    {ufc::shape::tetrahedron, "tetrahedron"},
+    {ufc::shape::quadrilateral, "quadrilateral"},
+    {ufc::shape::hexahedron, "hexahedron"}
   };
 
   // Check that element is supported
-  auto it = _family_abbr.find(element_family);
-  if (it == _family_abbr.end())
+  auto const it = family_abbr.find(element_family);
+  if (it == family_abbr.end())
   {
     dolfin_error("XDMFFile.cpp",
                  "find element family",
@@ -1181,10 +1193,28 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   }
   element_family = it->second;
 
-  // Create a name for the field and index data
-  // incorporating the family and degree
-  std::string name
-    = function_name + "_" + element_family + std::to_string(element_degree);
+  // Check that cell shape is supported
+  auto it_shape = cell_shape_repr.find(ufc_element_cell);
+  if (it_shape == cell_shape_repr.end())
+  {
+    dolfin_error("XDMFFile.cpp",
+      "find element shape",
+      "Element shape not yet supported. Currently supported element shapes"
+      "are \"interval, triangle, tetrahedron, quadrilateral, hexahedron\"");
+  }
+  const std::string element_cell = it_shape->second;
+
+  // Prepare main Attribute for the FiniteElementFunction type
+  pugi::xml_node fe_attribute_node = xml_node.append_child("Attribute");
+  fe_attribute_node.append_attribute("ItemType") = "FiniteElementFunction";
+  fe_attribute_node.append_attribute("ElementFamily") = element_family.c_str();
+  fe_attribute_node.append_attribute("ElementDegree")
+    = std::to_string(element_degree).c_str();
+  fe_attribute_node.append_attribute("ElementCell") = element_cell.c_str();
+  fe_attribute_node.append_attribute("Name") = function_name.c_str();
+  fe_attribute_node.append_attribute("Center") = "Other";
+  fe_attribute_node.append_attribute("AttributeType")
+    = rank_to_string(u.value_rank()).c_str();
 
   // Prepare and save number of dofs per cell (x_cell_dofs) and
   // cell dofmaps (cell_dofs)
@@ -1225,50 +1255,29 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   const std::int64_t num_cell_dofs_global
     = MPI::sum(mpi_comm, cell_dofs.size());
 
-  // Prepare node for dofmap
-  pugi::xml_node cell_dofs_node = xml_node.append_child("Attribute");
-  std::string cell_dofs_node_name = name + "_cell_dofs";
-  cell_dofs_node.append_attribute("Name") = cell_dofs_node_name.c_str();
-  cell_dofs_node.append_attribute("Center") = "Cell";
-
-  // Write dofmap
-  add_data_item(mpi_comm, cell_dofs_node, h5_id,
+  // Write dofmap = indices to the values DataItem
+  add_data_item(mpi_comm, fe_attribute_node, h5_id,
                 h5_path + "/cell_dofs", cell_dofs,
                 {num_cell_dofs_global, 1}, "UInt");
+
+  // Get all local data
+  const GenericVector& u_vector = *u.vector();
+  std::vector<double> local_data;
+  u_vector.get_local(local_data);
+
+  add_data_item(mpi_comm, fe_attribute_node, h5_id,
+                h5_path + "/vector", local_data,
+                {(std::int64_t) u_vector.size(), 1}, "Float");
 
   if (MPI::rank(mpi_comm) == MPI::size(mpi_comm) - 1)
     x_cell_dofs.push_back(num_cell_dofs_global);
 
   const std::int64_t num_x_cell_dofs_global = mesh.size_global(tdim) + 1;
 
-  // Prepare node for number of dofs per cell
-  pugi::xml_node x_cell_dofs_node = xml_node.append_child("Attribute");
-  std::string x_cell_dofs_node_name = name + "_cell_dofs_x";
-  x_cell_dofs_node.append_attribute("Name") = x_cell_dofs_node_name.c_str();
-  x_cell_dofs_node.append_attribute("Center") = "Cell";
-
   // Write number of dofs per cell
-  add_data_item(mpi_comm, x_cell_dofs_node, h5_id,
+  add_data_item(mpi_comm, fe_attribute_node, h5_id,
                 h5_path + "/x_cell_dofs", x_cell_dofs,
                 {num_x_cell_dofs_global, 1}, "UInt");
-
-  // Prepare node for dof values, i.e. function vector
-  pugi::xml_node vector_node = xml_node.append_child("Attribute");
-  dolfin_assert(vector_node);
-  std::string vector_node_name = name + "_vector";
-  vector_node.append_attribute("Name") = vector_node_name.c_str();
-  vector_node.append_attribute("AttributeType")
-    = rank_to_string(u.value_rank()).c_str();
-  vector_node.append_attribute("Center") = "Grid";
-
-  // Get all local data
-  const GenericVector &u_vector = *u.vector();
-  std::vector<double> local_data;
-  u_vector.get_local(local_data);
-
-  add_data_item(mpi_comm, vector_node, h5_id,
-                h5_path + "/vector", local_data,
-                {(std::int64_t) u_vector.size(), 1}, "Float");
 
   // Save cell ordering - copy to local vector and cut off ghosts
   std::vector<std::size_t> cells(
@@ -1277,13 +1286,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   const std::int64_t num_cells_global = mesh.size_global(tdim);
 
-  // Prepare node for cell ordering
-  pugi::xml_node cells_node = xml_node.append_child("Attribute");
-  std::string cells_node_name = name + "_cells";
-  cells_node.append_attribute("Name") = cells_node_name.c_str();
-  cells_node.append_attribute("Center") = "Cell";
-
-  add_data_item(mpi_comm, cells_node, h5_id,
+  add_data_item(mpi_comm, fe_attribute_node, h5_id,
                 h5_path + "/cells", cells,
                 {num_cells_global, 1}, "UInt");
 
@@ -1447,46 +1450,34 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
 
   dolfin_assert(grid_node);
 
-  // Get cells dofs indices
-  // XPath 1.0 do not support function "ends-with"
-  // The following combination is equiv to ends-with
-  pugi::xml_node cell_dofs_node
+  pugi::xml_node fe_attribute_node
     = grid_node.select_node(
-      "Attribute[substring(@Name, string-length(@Name) - "
-      "string-length('_cell_dofs') +1) = '_cell_dofs']").node();
-  dolfin_assert(cell_dofs_node);
+      "Attribute[@ItemType=\"FiniteElementFunction\"]"
+    ).node();
+  dolfin_assert(fe_attribute_node);
 
-  pugi::xml_node cell_dofs_dataitem = cell_dofs_node.child("DataItem");
+  // Get cells dofs indices = dofmap
+  pugi::xml_node cell_dofs_dataitem
+    = fe_attribute_node.select_node(
+      "DataItem[position()=1]").node();
   dolfin_assert(cell_dofs_dataitem);
 
   // Get vector
-  pugi::xml_node vector_node
-    = grid_node.select_node(
-      "Attribute[substring(@Name, string-length(@Name) - "
-      "string-length('_vector') +1) = '_vector']").node();
-  dolfin_assert(vector_node);
-
-  pugi::xml_node vector_dataitem = vector_node.child("DataItem");
+  pugi::xml_node vector_dataitem
+    = fe_attribute_node.select_node(
+      "DataItem[position()=2]").node();
   dolfin_assert(vector_dataitem);
 
   // Get number of dofs per cell
-  pugi::xml_node x_cell_dofs_node
-    = grid_node.select_node(
-      "Attribute[substring(@Name, string-length(@Name) - "
-      "string-length('_cell_dofs_x') +1) = '_cell_dofs_x']").node();
-  dolfin_assert(x_cell_dofs_node);
-
-  pugi::xml_node x_cell_dofs_dataitem = x_cell_dofs_node.child("DataItem");
+  pugi::xml_node x_cell_dofs_dataitem
+    = fe_attribute_node.select_node(
+      "DataItem[position()=3]").node();
   dolfin_assert(x_cell_dofs_dataitem);
 
   // Get cell ordering
-  pugi::xml_node cells_node
-    = grid_node.select_node(
-      "Attribute[substring(@Name, string-length(@Name) - "
-      "string-length('_cells') +1) = '_cells']").node();
-  dolfin_assert(cells_node);
-
-  pugi::xml_node cells_dataitem = cells_node.child("DataItem");
+  pugi::xml_node cells_dataitem
+    = fe_attribute_node.select_node(
+      "DataItem[position()=4]").node();
   dolfin_assert(cells_dataitem);
 
   // Read dataitems

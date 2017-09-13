@@ -10,6 +10,10 @@ jobs:
           command: git lfs clone https://bitbucket.org/"${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}".git .
       - checkout
       - run:
+          name: Install/update dependencies  # Install with sudo as tests not run as superuser in circleci/python
+          command: |
+            sudo pip3 install pytest six --upgrade
+      - run:
           name: Install FIAT
           command: pip3 install git+https://bitbucket.org/fenics-project/fiat.git@master
       - run:
@@ -31,8 +35,23 @@ jobs:
           name: Build DOLFIN and install
           command: cd build && make install
       - run:
-          name: Run unit tests
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_unittests
+          name: Run Python unit tests (serial)
+          command: source /usr/local/share/dolfin/dolfin.conf && python3 -m pytest test/unit/python/
       - run:
-          name: Run regressions tests
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests
+          name: Run Python unit tests (MPI)
+          command: source /usr/local/share/dolfin/dolfin.conf && mpirun -n 3 python3 -m pytest test/unit/python/
+      - run:
+          name: Run C++ unit tests
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_unittests_cpp
+      - run:
+          name: Run Python regressions tests (serial)
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_py
+      - run:
+          name: Run Python regressions tests (MPI)
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_py_mpi
+      - run:
+          name: Run C++ regressions tests (serial)
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_cpp
+      - run:
+          name: Run C++ regression tests (MPI)
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_cpp_mpi

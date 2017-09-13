@@ -32,6 +32,8 @@ def test_vertex_iterators():
     "Iterate over vertices"
 
     mesh = UnitCubeMesh(5, 5, 5)
+    for i in range(4):
+        mesh.init(0, i)
 
     # Test connectivity
     cons = [(i, mesh.topology()(0,i)) for i in range(4)]
@@ -63,6 +65,8 @@ def test_edge_iterators():
     "Iterate over edges"
 
     mesh = UnitCubeMesh(5, 5, 5)
+    for i in range(4):
+        mesh.init(1, i)
 
     # Test connectivity
     cons = [(i, mesh.topology()(1,i)) for i in range(4)]
@@ -86,6 +90,8 @@ def test_face_iterator():
     "Iterate over faces"
 
     mesh = UnitCubeMesh(5, 5, 5)
+    for i in range(4):
+        mesh.init(2, i)
 
     # Test connectivity
     cons = [(i, mesh.topology()(2,i)) for i in range(4)]
@@ -116,6 +122,8 @@ def test_facet_iterators():
 def test_cell_iterators():
     "Iterate over cells"
     mesh = UnitCubeMesh(5, 5, 5)
+    for i in range(4):
+        mesh.init(3, i)
 
     # Test connectivity
     cons = [(i, mesh.topology()(3,i)) for i in range(4)]

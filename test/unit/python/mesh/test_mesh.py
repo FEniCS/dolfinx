@@ -508,7 +508,7 @@ def test_shared_entities(mesh_factory, ghost_mode):
     dim = mesh.topology().dim()
 
     # FIXME: Implement a proper test
-    for shared_dim in range(dim+1):
+    for shared_dim in range(dim + 1):
         # Initialise global indices (if not already)
         mesh.init_global(shared_dim)
 
@@ -519,8 +519,12 @@ def test_shared_entities(mesh_factory, ghost_mode):
         if mesh.topology().have_shared_entities(shared_dim):
             for e in entities(mesh, shared_dim):
                 sharing = e.sharing_processes()
-                assert isinstance(sharing, numpy.ndarray)
-                assert (sharing.size > 0) == e.is_shared()
+                if not has_pybind11():
+                    assert isinstance(sharing, numpy.ndarray)
+                    assert (sharing.size > 0) == e.is_shared()
+                else:
+                    assert isinstance(sharing, set)
+                    assert (len(sharing) > 0) == e.is_shared()
 
         n_entities = mesh.size(shared_dim)
         n_global_entities = mesh.size_global(shared_dim)
@@ -549,9 +553,8 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
     cell_name = CellType.type2string(mesh.type().cell_type())
     fiat_cell = FIAT.ufc_cell(cell_name)
 
-    # Initialize mesh entities
-    for d in range(tdim+1):
-        mesh.init(d)
+    # Initialize all mesh entities and connectivities
+    mesh.init()
 
     for cell in cells(mesh):
         # Get mesh-global (MPI-local) indices of cell vertices

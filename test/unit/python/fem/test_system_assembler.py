@@ -213,12 +213,14 @@ def test_vertex_assembly():
         A, b = assemble_system(a, L)
 
 
-def test_incremental_assembly():
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (20, 20)), (UnitQuadMesh.create, (20, 20))])
+def test_incremental_assembly(mesh_factory):
 
     for f in [Constant(0.0), Constant(1e4)]:
 
         # Laplace/Poisson problem
-        mesh = UnitSquareMesh(20, 20)
+        func, args = mesh_factory
+        mesh = func(*args)
         V = FunctionSpace(mesh, 'CG', 1)
         u, v = TrialFunction(V), TestFunction(V)
         a, L = inner(grad(u), grad(v))*dx, f*v*dx
@@ -252,13 +254,15 @@ def test_incremental_assembly():
 
 
 @skip_in_parallel
-def test_domains():
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (24, 24)), (UnitQuadMesh.create, (24, 24))])
+def test_domains(mesh_factory):
 
     class RightSubDomain(SubDomain):
         def inside(self, x, on_boundary):
             return x[0] > 0.5
 
-    mesh = UnitSquareMesh(24, 24)
+    func, args = mesh_factory
+    mesh = func(*args)
 
     sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim())
     sub_domains.set_all(1)
@@ -367,8 +371,10 @@ def test_facet_assembly_cellwise_insertion(filedir):
     run_test(Mesh(os.path.join(filedir, "gmsh_unit_interval.xml")))
 
 
-def test_non_square_assembly():
-    mesh = UnitSquareMesh(14, 14)
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (24, 24)), (UnitQuadMesh.create, (24, 24))])
+def test_non_square_assembly(mesh_factory):
+    func, args = mesh_factory
+    mesh = func(*args)
 
     def bound(x):
         return (x[0] == 0)

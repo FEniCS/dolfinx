@@ -64,8 +64,7 @@ Expression::~Expression()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Array<double>& values,
-                      const Array<double>& x,
+void Expression::eval(Array<double>& values, const Array<double>& x,
                       const ufc::cell& cell) const
 {
   // Redirect to Eigen eval
@@ -75,7 +74,7 @@ void Expression::eval(Array<double>& values,
 }
 //-----------------------------------------------------------------------------
 void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
-                      const Eigen::Ref<Eigen::VectorXd> x,
+                      Eigen::Ref<const Eigen::VectorXd> x,
                       const ufc::cell& cell) const
 {
   // Redirect to simple eval
@@ -93,7 +92,7 @@ void Expression::eval(Array<double>& values, const Array<double>& x) const
 }
 //-----------------------------------------------------------------------------
 void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
-                      const Eigen::Ref<Eigen::VectorXd> x) const
+                      Eigen::Ref<const Eigen::VectorXd> x) const
 {
   dolfin_error("Expression.cpp",
                "evaluate expression",
@@ -115,6 +114,41 @@ std::size_t Expression::value_dimension(std::size_t i) const
                  i, _value_shape.size());
   }
   return _value_shape[i];
+}
+//-----------------------------------------------------------------------------
+std::vector<std::size_t> Expression::value_shape() const
+{
+  return _value_shape;
+}
+//-----------------------------------------------------------------------------
+void Expression::set_property(std::string name, double value)
+{
+  dolfin_error("Expression.cpp",
+               "set property",
+               "This method should be overloaded in the derived class");
+}
+//-----------------------------------------------------------------------------
+double Expression::get_property(std::string name) const
+{
+  dolfin_error("Expression.cpp",
+               "get property",
+               "This method should be overloaded in the derived class");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+void Expression::set_generic_function(std::string name, std::shared_ptr<GenericFunction>)
+{
+  dolfin_error("Expression.cpp",
+               "set property",
+               "This method should be overloaded in the derived class");
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<GenericFunction> Expression::get_generic_function(std::string name) const
+{
+  dolfin_error("Expression.cpp",
+               "get property",
+               "This method should be overloaded in the derived class");
+  return std::shared_ptr<GenericFunction>();
 }
 //-----------------------------------------------------------------------------
 void Expression::restrict(double* w,

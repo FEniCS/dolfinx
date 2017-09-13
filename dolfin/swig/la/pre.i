@@ -138,6 +138,9 @@
 %ignore dolfin::GenericVector::getitem;
 %ignore dolfin::GenericVector::setitem;
 
+%ignore dolfin::GenericVector::operator+;
+%ignore dolfin::GenericVector::operator*;
+
 //-----------------------------------------------------------------------------
 // Ignore the get and set functions used for blocks
 // NOTE: The %ignore has to be set using the actual type used in the declaration
@@ -207,7 +210,6 @@
 //-----------------------------------------------------------------------------
 // Add director classes
 //-----------------------------------------------------------------------------
-%feature("director") dolfin::PETScUserPreconditioner;
 
 %feature("director") dolfin::PETScLinearOperator;
 %feature("nodirector") dolfin::PETScLinearOperator::str;

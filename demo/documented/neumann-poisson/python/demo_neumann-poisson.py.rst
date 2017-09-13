@@ -1,4 +1,3 @@
-.. Documentation for the Neumann-Poisson demo from DOLFIN.
 
 .. _demo_pde_neumann-poisson_python_documentation:
 
@@ -18,26 +17,19 @@ This description goes through the implementation in
 :download:`demo_neumann-poisson.py` of a solver for the above
 described Poisson equation step-by-step.
 
-First, the :py:mod:`dolfin` module is imported:
-
-.. code-block:: python
+First, the :py:mod:`dolfin` module is imported: ::
 
     from dolfin import *
 
 We proceed by defining a mesh of the domain.  We use a built-in mesh
-provided by the class :py:class:`UnitSquareMesh
-<dolfin.cpp.UnitSquareMesh>`.  In order to create a mesh consisting of
-:math:`64 \times 64` squares with each square divided into two
-triangles, we do as follows:
-
-.. code-block:: python
+provided by the class :py:class:`UnitQuadMesh
+<dolfin.cpp.UnitQuadMesh>`.  In order to create a mesh consisting of
+:math:`64 \times 64` squares, we do as follows: ::
 
     # Create mesh
-    mesh = UnitSquareMesh(64, 64)
+    mesh = UnitQuadMesh.create(64, 64)
 
-Next, we need to define the function space.
-
-.. code-block:: python
+Next, we need to define the function space. ::
 
     # Build function space with Lagrange multiplier
     P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
@@ -46,7 +38,7 @@ Next, we need to define the function space.
 
 The second argument to :py:class:`FunctionSpace
 <dolfin.functions.functionspace.FunctionSpace>` specifies underlying
-finite element, here mixed element obtained by ``*`` operator.
+finite element, here a mixed element is obtained by ``*`` operator.
 
 Now, we want to define the variational problem, but first we need to
 specify the trial functions (the unknowns) and the test functions.
@@ -61,9 +53,7 @@ easily be declared using the :py:class:`Expression
 defining ``f`` uses C++ syntax since, for efficiency, DOLFIN will
 generate and compile C++ code for these expressions at run-time.  The
 following code shows how this is done and defines the variational
-problem:
-
-.. code-block:: python
+problem: ::
 
     # Define variational problem
     (u, c) = TrialFunction(W)
@@ -74,7 +64,7 @@ problem:
     L = f*v*dx + g*v*ds
 
 Since we have natural (Neumann) boundary conditions in this problem,
-we don´t have to implement boundary conditions.  This is because
+we do not have to implement boundary conditions.  This is because
 Neumann boundary conditions are default in DOLFIN.
 
 To compute the solution we use the bilinear form, the linear forms,
@@ -86,20 +76,13 @@ initialize using the
 ``W``.  The actual computation is performed by calling
 :py:func:`solve<dolfin.fem.solving.solve>`.  The separate components
 ``u`` and ``c`` of the solution can be extracted by calling the split
-function.  Finally, we plot the solutions to examine the result.
-
-.. code-block:: python
+function.  Finally, we output the solution to a ``VTK`` file to examine the result. ::
 
     # Compute solution
     w = Function(W)
     solve(a == L, w)
     (u, c) = w.split()
 
-    # Plot solution
-    plot(u, interactive=True)
-
-Complete code
--------------
-
-.. literalinclude:: demo_neumann-poisson.py
-   :start-after: # Begin demo
+    # Save solution in VTK format
+    file = File("neumann_poisson.pvd")
+    file << u

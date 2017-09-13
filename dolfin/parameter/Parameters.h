@@ -22,6 +22,7 @@
 #include <set>
 #include <vector>
 #include <boost/optional.hpp>
+#include <boost/variant.hpp>
 #include "Parameter.h"
 #include <dolfin/log/log.h>
 
@@ -281,7 +282,8 @@ namespace dolfin
 
   private:
 
-    // Add all parameters as options to a boost::program_option instance
+    // Add all parameters as options to a boost::program_option
+    // instance
     void
       add_parameter_set_to_po(boost::program_options::options_description& desc,
                               const Parameters &parameters,
@@ -295,11 +297,23 @@ namespace dolfin
     // Parameter set key
     std::string _key;
 
-    // Map from key to parameter
-    std::map<std::string, Parameter> _parameters;
+    // Map from key to parameter(s)
+    std::map<std::string, boost::variant<Parameter, Parameters>> _parameters;
 
-    // Map from key to parameter sets
-    std::map<std::string, Parameters> _parameter_sets;
+  public:
+
+    /// Interface for pybind11 iterators
+    std::size_t size() const { return  _parameters.size(); }
+
+    /// Interface for pybind11 iterators
+    std::map<std::string, boost::variant<Parameter, Parameters>>::const_iterator begin() const
+    { return _parameters.cbegin(); }
+    //decltype(_parameters.cbegin()) begin() const { return _parameters.cbegin(); }
+
+    /// Interface for pybind11 iterators
+    std::map<std::string, boost::variant<Parameter, Parameters>>::const_iterator end() const
+    { return _parameters.cend(); }
+    //decltype(_parameters.cend()) end() const { return _parameters.cend(); }
 
   };
 
