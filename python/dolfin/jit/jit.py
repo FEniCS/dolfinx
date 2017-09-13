@@ -58,7 +58,15 @@ def compile_class(cpp_data):
     cpp_data['statements'] = tuple(statement_array.flatten())
     cpp_data['value_shape'] = statement_array.shape
 
-    hash_str = str(statements) + str(properties.keys())
+    # Make a string representing the properties (and distinguish float/GenericFunction)
+    # by adding '*' for GenericFunction
+    property_str = ''
+    for k,v in properties.items():
+        property_str += str(k)
+        if hasattr(v, '_cpp_object') and isinstance(v._cpp_object, cpp.function.GenericFunction):
+            property_str += '*'
+
+    hash_str = str(statements) + str(property_str)
     module_hash = hashlib.md5(hash_str.encode('utf-8')).hexdigest()
     module_name = "dolfin_" + name + "_" + module_hash
 
@@ -74,9 +82,9 @@ def compile_class(cpp_data):
     else:
         python_object = cpp.mesh.make_dolfin_subdomain(submodule)
 
-    # Set properties to initial values (if any)
-    for k in properties:
-        python_object.set_property(k, properties[k])
-
+    # Set properties to initial values
+    # FIXME: maybe remove from here (do it in Expression and SubDomain instead)
+    for k, v in properties.items():
+        python_object.set_property(k, v)
 
     return python_object
