@@ -233,6 +233,8 @@ def test_vector_valued_expression_member_function(mesh):
             assert np.allclose(v.vector().array(), 6.0)
 
 
+# NOTE: Do we want this to work (attaching MeshFunctions to
+# Expressions) with pybind11, or use full JIT?
 @skip_in_parallel
 @skip_if_pybind11
 def test_meshfunction_expression():
