@@ -918,10 +918,15 @@ namespace dolfin_wrappers
     #ifdef HAS_SLEPC
     // dolfin::SLEPcEigenSolver
     py::class_<dolfin::SLEPcEigenSolver, std::shared_ptr<dolfin::SLEPcEigenSolver>, dolfin::Variable>(m, "SLEPcEigenSolver")
+      .def(py::init<MPI_Comm>())
       .def(py::init<std::shared_ptr<const dolfin::PETScMatrix>>())
       .def(py::init<std::shared_ptr<const dolfin::PETScMatrix>, std::shared_ptr<const dolfin::PETScMatrix>>())
+      .def("set_options_prefix", &dolfin::SLEPcEigenSolver::set_options_prefix)
+      .def("set_from_options", &dolfin::SLEPcEigenSolver::set_from_options)
+      .def("get_options_prefix", &dolfin::SLEPcEigenSolver::get_options_prefix)
       .def("get_number_converged", &dolfin::SLEPcEigenSolver::get_number_converged)
       .def("set_deflation_space", &dolfin::SLEPcEigenSolver::set_deflation_space)
+      .def("set_initial_space", &dolfin::SLEPcEigenSolver::set_initial_space)
       .def("solve", (void (dolfin::SLEPcEigenSolver::*)())
            &dolfin::SLEPcEigenSolver::solve)
       .def("solve", (void (dolfin::SLEPcEigenSolver::*)(std::size_t))
