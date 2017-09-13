@@ -486,11 +486,11 @@ IntersectionConstruction::intersection_triangle_segment_2d(const Point& p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::intersection_triangle_segment_3d(const Point& p0,
-                                                           const Point& p1,
-                                                           const Point& p2,
-                                                           const Point& q0,
-                                                           const Point& q1)
+IntersectionConstruction::_intersection_triangle_segment_3d(const Point& p0,
+							    const Point& p1,
+							    const Point& p2,
+							    const Point& q0,
+							    const Point& q1)
 {
   // We consider the following 4 cases for the segment q0-q1
   // relative to the plane defined by the triangle p0-p1-p2:
@@ -738,14 +738,14 @@ IntersectionConstruction::intersection_tetrahedron_triangle_3d(const Point& p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::intersection_tetrahedron_tetrahedron_3d(const Point& p0,
-                                                                  const Point& p1,
-                                                                  const Point& p2,
-                                                                  const Point& p3,
-                                                                  const Point& q0,
-                                                                  const Point& q1,
-                                                                  const Point& q2,
-                                                                  const Point& q3)
+IntersectionConstruction::_intersection_tetrahedron_tetrahedron_3d(const Point& p0,
+								   const Point& p1,
+								   const Point& p2,
+								   const Point& p3,
+								   const Point& q0,
+								   const Point& q1,
+								   const Point& q2,
+								   const Point& q3)
 {
   // The list of points (convex hull)
   std::vector<Point> points;
@@ -815,19 +815,6 @@ IntersectionConstruction::intersection_tetrahedron_tetrahedron_3d(const Point& p
   dolfin_assert(GeometryPredicates::is_finite(points));
 
   std::vector<Point> filtered = unique(points);
-
-#ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
-  const std::vector<Point> ref_res =
-    cgal_intersection_tetrahedron_tetrahedron(p0, p1, p2, p3,
-					      q0, q1, q2, q3);
-
-  if (ref_res.size() != filtered.size())
-  {
-    dolfin_error("IntersectionConstruction.cpp",
-		 "constructing tetrahedron tetrahedron intersection",
-		 "result doesn't match result from reference implementation");
-  }
-#endif
 
   return filtered;
 }

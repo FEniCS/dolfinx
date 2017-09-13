@@ -25,6 +25,8 @@
 #include <dolfin/log/log.h>
 #include "Point.h"
 
+#include "CGALExactArithmetic.h"
+
 namespace dolfin
 {
   // Comparison of points
@@ -245,7 +247,13 @@ namespace dolfin
                                      const Point& p1,
                                      const Point& p2,
                                      const Point& q0,
-                                     const Point& q1);
+                                     const Point& q1)
+    {
+      return CGAL_INTERSECTION_CHECK(_intersection_triangle_segment_3d(p0, p1, p2, q0, q1),
+				     cgal_intersection_triangle_segment_3d(p0, p1, p2, q0, q1));
+
+
+    }
 
     /// Compute intersection of tetrahedron p0-p1-p2-p3 with segment q0-q1 (3D)
     static std::vector<Point>
@@ -293,7 +301,31 @@ namespace dolfin
                                             const Point& q0,
                                             const Point& q1,
                                             const Point& q2,
-                                            const Point& q3);
+                                            const Point& q3)
+    {
+      return CGAL_INTERSECTION_CHECK(_intersection_tetrahedron_tetrahedron_3d(p0, p1, p2, p3, q0, q1, q2, q3),
+				     cgal_intersection_tetrahedron_tetrahedron_3d(p0, p1, p2, p3, q0, q1, q2, q3));
+
+    }
+
+  private :
+    /// Compute intersection of triangle p0-p1-p2 with segment q0-q1 (3D)
+    static std::vector<Point>
+    _intersection_triangle_segment_3d(const Point& p0,
+				      const Point& p1,
+				      const Point& p2,
+				      const Point& q0,
+				      const Point& q1);
+
+    static std::vector<Point>
+    _intersection_tetrahedron_tetrahedron_3d(const Point& p0,
+					     const Point& p1,
+					     const Point& p2,
+					     const Point& p3,
+					     const Point& q0,
+					     const Point& q1,
+					     const Point& q2,
+					     const Point& q3);
 
   };
 

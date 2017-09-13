@@ -34,6 +34,8 @@
 // Comparison macro just bypasses CGAL and test when not enabled
 #define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) RESULT_DOLFIN
 
+#define CGAL_INTERSECTION_CHECK(RESULT_DOLFIN, RESULT_CGAL) RESULT_DOLFIN
+
 #else
 
 #define CGAL_CHECK_TOLERANCE 1e-10
@@ -378,11 +380,28 @@ namespace dolfin
     return result_dolfin;
   }
   //-----------------------------------------------------------------------------
-} // end namespace dolfin
 
+  inline std::vector<Point> cgal_intersection_check(const std::vector<Point>& dolfin_result,
+				      const std::vector<Point>& cgal_result,
+				      std::string function)
+  {
+    if (dolfin_result.size() != cgal_result.size())
+    {
+      dolfin_error("CGALExactArithmetic.h",
+		   "verify intersection",
+		   "size of point set differs");
+    }
+
+
+    return dolfin_result;
+  }
+} // end namespace dolfin
+  //-----------------------------------------------------------------------------
 // Comparison macro that calls comparison function
 #define CHECK_CGAL(RESULT_DOLFIN, RESULT_CGAL) \
         check_cgal(RESULT_DOLFIN, RESULT_CGAL, __FUNCTION__)
+
+#define CGAL_INTERSECTION_CHECK(RESULT_DOLFIN, RESULT_CGAL) cgal_intersection_check(RESULT_DOLFIN, RESULT_CGAL, __FUNCTION__)
 
 // CGAL includes
 #define CGAL_HEADER_ONLY
@@ -1335,12 +1354,12 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   inline std::vector<std::vector<Point>>
   cgal_triangulate_tetrahedron_triangle(const Point& p0,
-                              					const Point& p1,
-                              					const Point& p2,
-                              					const Point& p3,
-                              					const Point& q0,
-                              					const Point& q1,
-                              					const Point& q2)
+					const Point& p1,
+					const Point& p2,
+					const Point& p3,
+					const Point& q0,
+					const Point& q1,
+					const Point& q2)
   {
     dolfin_assert(!is_degenerate_3d(p0, p1, p2, p3));
     dolfin_assert(!is_degenerate_3d(q0, q1, q2));
@@ -1357,14 +1376,14 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   inline std::vector<Point>
-  cgal_intersection_tetrahedron_tetrahedron(const Point& p0,
-					    const Point& p1,
-					    const Point& p2,
-					    const Point& p3,
-					    const Point& q0,
-					    const Point& q1,
-					    const Point& q2,
-					    const Point& q3)
+  cgal_intersection_tetrahedron_tetrahedron_3d(const Point& p0,
+					       const Point& p1,
+					       const Point& p2,
+					       const Point& p3,
+					       const Point& q0,
+					       const Point& q1,
+					       const Point& q2,
+					       const Point& q3)
   {
     dolfin_assert(!is_degenerate_3d(p0, p1, p2, p3));
     dolfin_assert(!is_degenerate_3d(q0, q1, q2, q3));
@@ -1400,30 +1419,30 @@ namespace dolfin
     return res;
   }
   //-----------------------------------------------------------------------------
-  inline std::vector<std::vector<Point>>
-  cgal_triangulate_tetrahedron_tetrahedron(const Point& p0,
-                              					   const Point& p1,
-                              					   const Point& p2,
-                              					   const Point& p3,
-                              					   const Point& q0,
-                              					   const Point& q1,
-                              					   const Point& q2,
-                              					   const Point& q3)
-  {
-    dolfin_assert(!is_degenerate_3d(p0, p1, p2, p3));
-    dolfin_assert(!is_degenerate_3d(q0, q1, q2, q3));
+  /* inline std::vector<std::vector<Point>> */
+  /* cgal_triangulate_tetrahedron_tetrahedron(const Point& p0, */
+  /*                             					   const Point& p1, */
+  /*                             					   const Point& p2, */
+  /*                             					   const Point& p3, */
+  /*                             					   const Point& q0, */
+  /*                             					   const Point& q1, */
+  /*                             					   const Point& q2, */
+  /*                             					   const Point& q3) */
+  /* { */
+  /*   dolfin_assert(!is_degenerate_3d(p0, p1, p2, p3)); */
+  /*   dolfin_assert(!is_degenerate_3d(q0, q1, q2, q3)); */
 
-    std::vector<Point> intersection =
-      cgal_intersection_tetrahedron_tetrahedron(p0, p1, p2, p3,
-						q0, q1, q2, q3);
+  /*   std::vector<Point> intersection = */
+  /*     cgal_intersection_tetrahedron_tetrahedron_3(p0, p1, p2, p3, */
+  /* 						q0, q1, q2, q3); */
 
-    // Shouldn't get here
-    dolfin_error("CGALExactArithmetic.h",
-                 "cgal_intersection_tetrahedron_tetrahedron",
-            		 "Not implemented");
+  /*   // Shouldn't get here */
+  /*   dolfin_error("CGALExactArithmetic.h", */
+  /*                "cgal_intersection_tetrahedron_tetrahedron", */
+  /*           		 "Not implemented"); */
 
-    return std::vector<std::vector<Point>>();
-  }
+  /*   return std::vector<std::vector<Point>>(); */
+  /* } */
   //----------------------------------------------------------------------------
   // Reference implementations of DOLFIN is_degenerate
   //-----------------------------------------------------------------------------
