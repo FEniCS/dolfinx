@@ -95,6 +95,23 @@ class BaseExpression(ufl.Coefficient):
         label = label or "User defined expression"
         self._cpp_object.rename(name, label)
 
+    def ufl_evaluate(self, x, component, derivatives):
+        """Function used by ufl to evaluate the Expression"""
+        assert derivatives == () # TODO: Handle derivatives
+
+        if component:
+            shape = self.ufl_shape
+            assert len(shape) == len(component)
+            value_size = product(shape)
+            index = flatten_multiindex(component, shape_to_strides(shape))
+            values = numpy.zeros(value_size)
+            # FIXME: use a function with a return value
+            self(*x, values=values)
+            return values[index]
+        else:
+            # Scalar evaluation
+            return self(*x)
+
     #def __call__(self, x):
     #    return self._cpp_object(x)
     def __call__(self, *args, **kwargs):
@@ -119,7 +136,8 @@ class BaseExpression(ufl.Coefficient):
         # Some help variables
         value_size = product(self.ufl_element().value_shape())
 
-        # If values (return argument) is passed, check the type and length
+        # If values (return argument) is passed, check the type and
+        # length
         values = kwargs.get("values", None)
         if values is not None:
             if not isinstance(values, numpy.ndarray):

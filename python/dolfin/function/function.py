@@ -247,7 +247,33 @@ class Function(ufl.Coefficient):
     def value_shape(self):
         return self._cpp_object.value_shape
 
+   def ufl_evaluate(self, x, component, derivatives):
+        """Function used by ufl to evaluate the Expression"""
+        # FIXME: same as dolfin.expression.Expression version. Find
+        # way to re-use.
+        assert derivatives == () # TODO: Handle derivatives
+
+        if component:
+            shape = self.ufl_shape
+            assert len(shape) == len(component)
+            value_size = product(shape)
+            index = flatten_multiindex(component, shape_to_strides(shape))
+            values = numpy.zeros(value_size)
+            # FIXME: use a function with a return value
+            self(*x, values=values)
+            return values[index]
+        else:
+            # Scalar evaluation
+            return self(*x)
+
     def __call__(self, *args, **kwargs):
+        # GNW: This function is copied from the old DOLFIN Python
+        # code. It is far too complicated. There is no need to provide
+        # so many ways of doing the same thing.
+        #
+        # Deprecate as many options as possible, and maybe share with
+        # dolfin.expression.Expresssion.
+
         if len(args)==0:
             raise TypeError("expected at least 1 argument")
 
