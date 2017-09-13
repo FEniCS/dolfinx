@@ -16,6 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 #include <memory>
+#include <string>
 #include <vector>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -167,8 +168,59 @@ namespace dolfin_wrappers
                return py::object();
              }
            })
+      .def("__len__", [](const dolfin::HDF5Attribute& self)
+           { return self.list_attributes().size(); })
       .def("__contains__", [](const dolfin::HDF5Attribute& instance, std::string key)
            { return instance.exists(key); })
+      .def("to_dict", [](const dolfin::HDF5Attribute& self)
+           {
+             auto d = py::dict();
+             auto names = self.list_attributes();
+             for (auto name : names)
+             {
+               auto type = self.type_str(name);
+               if (type == "string")
+               {
+                 std::string a;
+                 self.get(name, a);
+                 d[name.c_str()] = py::str(a);
+               }
+               else if (type == "float")
+                {
+                  double a;
+                  self.get(name, a);
+                  d[name.c_str()] = py::float_(a);
+               }
+               else if (type == "int")
+               {
+                 // This is bad on the DOLFIN cpp side
+                 std::size_t a;
+                 self.get(name, a);
+                 d[name.c_str()] = py::int_(a);
+               }
+               else if (type == "vectorfloat")
+               {
+                 std::vector<double> a;
+                 self.get(name, a);
+
+                 py::array_t<double> data(a.size(), a.data());
+                 d[name.c_str()] = data;
+               }
+               else if (type == "vectorint")
+               {
+                 // This is bad on the DOLFIN cpp side
+                 std::vector<std::size_t> a;
+                 self.get(name, a);
+
+                 py::array_t<std::size_t> data(a.size(), a.data());
+                 d[name.c_str()] = data;
+               }
+               else
+                 throw std::runtime_error("Unsupported HDF5 attribute type");
+             }
+
+             return d;
+           })
       .def("list_attributes", &dolfin::HDF5Attribute::list_attributes)
       .def("type_str", &dolfin::HDF5Attribute::type_str);
 

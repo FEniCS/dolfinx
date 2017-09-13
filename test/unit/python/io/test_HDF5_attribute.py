@@ -110,15 +110,18 @@ def test_attribute_container_interface(attr):
     assert(attr.list_attributes()==names)
     assert(attr.to_dict() == dict(zip(names, values)))
 
-    for name, value in attr.items():
-        assert(name in names)
-        assert(value in values)
-        assert(names.index(name)==values.index(value))
+    # GNW: Should really just use h5py rather than wrap this. It could
+    # be interfaced with pybind11, but not worth it
+    if not has_pybind11():
+        for name, value in attr.items():
+            assert(name in names)
+            assert(value in values)
+            assert(names.index(name)==values.index(value))
 
-    for name in attr:
-        assert(name in names)
+        for name in attr:
+            assert(name in names)
 
-    for value in attr.values():
-        assert(value in values)
+        for value in attr.values():
+            assert(value in values)
 
-    assert(attr.keys()==attr.list_attributes())
+        assert(attr.keys()==attr.list_attributes())
