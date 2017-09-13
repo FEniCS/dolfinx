@@ -17,10 +17,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-#
-# First added:  2016-06-11
-# Last changed: 2016-09-22
 
 import pytest
 from dolfin import *
@@ -28,6 +24,7 @@ import ufl
 import numpy
 
 from dolfin_utils.test import fixture, skip_in_parallel
+
 
 @fixture
 def multimesh():
@@ -39,23 +36,31 @@ def multimesh():
     multimesh.build()
     return multimesh
 
+
 @fixture
 def V(multimesh):
     element = FiniteElement("Lagrange", triangle, 1)
     return MultiMeshFunctionSpace(multimesh, element)
 
+
 @fixture
 def v(V):
     return MultiMeshFunction(V)
 
+
+@skip_if_pybind11
 @skip_in_parallel
 def test_measure_mul(v, multimesh):
     assert isinstance(v*dX, ufl.form.Form)
 
+
+@skip_if_pybind11
 @skip_in_parallel
 def test_assemble_zero(v, multimesh):
     assert numpy.isclose(assemble_multimesh(v*dX), 0)
 
+
+@skip_if_pybind11
 @skip_in_parallel
 def test_assemble_area(v, multimesh):
     v.vector()[:] = 1
