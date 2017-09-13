@@ -25,8 +25,18 @@ from dolfin import (PETScVector, PETScMatrix, PETScLUSolver,
                     PETScKrylovSolver, UnitSquareMesh, TrialFunction,
                     TestFunction, mpi_comm_self, mpi_comm_world,
                     FunctionSpace, assemble, Constant, dx, parameters)
+from dolfin import has_pybind11
 from dolfin_utils.test import (skip_if_not_PETSc,
-                               skip_if_not_petsc4py, pushpop_parameters)
+                               skip_if_not_petsc4py,
+                               pushpop_parameters)
+
+
+if has_pybind11():
+    PETScKrylovSolver.norm_type_default_norm = PETScKrylovSolver.norm_type.default_norm
+    PETScKrylovSolver.norm_type_natural = PETScKrylovSolver.norm_type.natural
+    PETScKrylovSolver.norm_type_preconditioned = PETScKrylovSolver.norm_type.preconditioned
+    PETScKrylovSolver.norm_type_none = PETScKrylovSolver.norm_type.none
+    PETScKrylovSolver.norm_type_unpreconditioned = PETScKrylovSolver.norm_type.unpreconditioned
 
 
 @skip_if_not_PETSc
