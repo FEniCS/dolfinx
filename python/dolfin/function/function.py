@@ -247,7 +247,7 @@ class Function(ufl.Coefficient):
     def value_shape(self):
         return self._cpp_object.value_shape
 
-   def ufl_evaluate(self, x, component, derivatives):
+    def ufl_evaluate(self, x, component, derivatives):
         """Function used by ufl to evaluate the Expression"""
         # FIXME: same as dolfin.expression.Expression version. Find
         # way to re-use.
