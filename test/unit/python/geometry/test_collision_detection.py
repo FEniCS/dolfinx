@@ -32,15 +32,15 @@ import numpy as np
 def create_triangular_mesh_3D():
     editor = MeshEditor()
     mesh = Mesh()
-    editor.open(mesh,2,3)
+    editor.open(mesh, 'triangle', 2, 3)
     editor.init_cells(2)
     editor.init_vertices(4)
-    editor.add_cell(0, 0,1,2)
-    editor.add_cell(1, 1,2,3)
-    editor.add_vertex(0, 0,0,0.5)
-    editor.add_vertex(1, 1,0,0.5)
-    editor.add_vertex(2, 0,1,0.5)
-    editor.add_vertex(3, 1,1,0.5)
+    editor.add_cell(0, np.array([0,1,2], dtype='uint'))
+    editor.add_cell(1, np.array([1,2,3], dtype='uint'))
+    editor.add_vertex(0, np.array([0,0,0.5], dtype='float'))
+    editor.add_vertex(1, np.array([1,0,0.5], dtype='float'))
+    editor.add_vertex(2, np.array([0,1,0.5], dtype='float'))
+    editor.add_vertex(3, np.array([1,1,0.5], dtype='float'))
     editor.close()
     return mesh;
 

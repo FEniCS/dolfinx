@@ -1,0 +1,90 @@
+# -*- coding: utf-8 -*-
+
+import hashlib
+import dijitso
+import pkgconfig
+
+import dolfin.cpp as cpp
+from . import get_pybind_include
+from dolfin.function.expression import BaseExpression, _select_element
+
+
+def jit_generate(class_data, module_name, signature, parameters):
+
+    # FIXME: decide what needs to be in boilerplate code, if anything.
+
+    template_code = """
+
+#include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
+namespace py = pybind11;
+
+{cpp_code}
+
+PYBIND11_MODULE({signature}, m)
+{{
+   {pybind11_code}
+}}
+"""
+
+    code_c = template_code.format(cpp_code=class_data["cpp_code"],
+                                  pybind11_code=class_data["pybind11_code"],
+                                  signature=signature)
+    code_h = ""
+    depends = []
+
+    return code_h, code_c, depends
+
+def compile_cpp_code(class_data):
+    """Compile a user C(++) string to a Python object with pybind11.  Note
+       this is still experimental.
+
+    """
+
+    if not pkgconfig.exists('dolfin'):
+        raise RuntimeError("Could not find DOLFIN pkg-config file. Please make sure appropriate paths are set.")
+
+    # Get pkg-config data for DOLFIN
+    d = pkgconfig.parse('dolfin')
+
+    # Set compiler/build options
+    # FIXME: need to locate Python libs and pybind11
+    from distutils import sysconfig
+    params = dijitso.params.default_params()
+    pyversion = "python" + sysconfig.get_config_var("LDVERSION")
+    params['cache']['lib_prefix'] = ""
+    params['cache']['lib_basename'] = ""
+    params['cache']['lib_loader'] = "import"
+    params['build']['include_dirs'] = d["include_dirs"] + get_pybind_include() + [sysconfig.get_config_var("INCLUDEDIR") + "/" + pyversion]
+    params['build']['libs'] = d["libraries"] + [ pyversion ]
+    params['build']['lib_dirs'] = d["library_dirs"] + [sysconfig.get_config_var("LIBDIR")]
+    params['build']['cxxflags'] += ('-fno-lto',)
+
+    # enable all define macros from DOLFIN
+    # FIXME:
+    # except "HAS_SLEPC", as the include path is not coming from pkgconfig
+    dmacros = ()
+    for dm in d['define_macros']:
+        if len(dm[1]) == 0:
+            if dm[0] != 'HAS_SLEPC':
+                dmacros += ('-D'+dm[0],)
+        else:
+            dmacros += ('-D'+dm[0]+'='+dm[1],)
+
+    params['build']['cxxflags'] += dmacros
+
+    # This seems to be needed by OSX but not in Linux
+    # FIXME: probably needed for other libraries too
+    if cpp.common.has_petsc():
+        import os
+        params['build']['libs'] += ['petsc']
+        params['build']['lib_dirs'] += [os.environ["PETSC_DIR"] + "/lib"]
+
+
+    module_hash = hashlib.md5((class_data["cpp_code"] + class_data["pybind11_code"]).encode('utf-8')).hexdigest()
+    module_name = "dolfin_cpp_module_" + module_hash
+
+    module, signature = dijitso.jit(class_data, module_name, params,
+                                    generate=jit_generate)
+
+    return module

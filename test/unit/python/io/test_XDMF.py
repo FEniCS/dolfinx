@@ -20,6 +20,10 @@ import os
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 
+if has_pybind11():
+    XDMFFile.Encoding_HDF5 = XDMFFile.Encoding.HDF5
+    XDMFFile.Encoding_ASCII = XDMFFile.Encoding.HDF5
+
 # Supported XDMF file encoding
 encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)
 
@@ -609,7 +613,7 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
         tag = "dim_%d_marker" % mvc_dim
         mvc.rename(tag, "BC")
         mesh.init(mvc_dim, tdim)
-        for e in cpp.entities(mesh, mvc_dim):
+        for e in entities(mesh, mvc_dim):
             if (e.midpoint().x() > 0.5):
                 mvc.set_value(e.index(), dtype(1))
 

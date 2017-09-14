@@ -208,6 +208,7 @@ endif()
 if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
   set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
   target_compile_definitions(dolfin PUBLIC HAS_MPI)
+  list(APPEND DOLFIN_PYTHON_DEFINITIONS "-DHAS_MPI")  # remove this line when Instant/SWIG is removed
   target_link_libraries(dolfin PUBLIC ${MPI_CXX_LIBRARIES})
   target_include_directories(dolfin SYSTEM PUBLIC ${MPI_CXX_INCLUDE_PATH})
 endif()
