@@ -61,7 +61,7 @@ def test_mpi_swig():
 
 @skip_if_pybind11
 def test_pass_array_int():
-    import dolfin, numpy
+    import numpy
     code = """
     int test_int_array(const Array<int>& int_arr)
     {
@@ -73,10 +73,10 @@ def test_pass_array_int():
         return ret;
     }
     """
-    module = dolfin.compile_extension_module(code=code,
-                                             source_directory='.',
-                                             sources=[],
-                                             include_dirs=["."])
+    module = compile_extension_module(code=code,
+                                      source_directory='.',
+                                      sources=[],
+                                      include_dirs=["."])
     arr = numpy.array([1, 2, 4, 8], dtype=numpy.intc)
     ans = module.test_int_array(arr)
     assert ans == arr.sum() == 15
@@ -84,7 +84,7 @@ def test_pass_array_int():
 
 @skip_if_pybind11
 def test_pass_array_double():
-    import dolfin, numpy
+    import numpy
     code = """
     double test_double_array(const Array<double>& arr)
     {
@@ -96,10 +96,10 @@ def test_pass_array_double():
         return ret;
     }
     """
-    module = dolfin.compile_extension_module(code=code,
-                                             source_directory='.',
-                                             sources=[],
-                                             include_dirs=["."])
+    module = compile_extension_module(code=code,
+                                      source_directory='.',
+                                      sources=[],
+                                      include_dirs=["."])
     arr = numpy.array([1, 2, 4, 8], dtype=float)
     ans = module.test_double_array(arr)
     assert abs(arr.sum() - 15) < 1e-15
