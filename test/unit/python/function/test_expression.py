@@ -375,7 +375,7 @@ def test_wrong_sub_classing():
     with pytest.raises(TypeError):
         wrongArgs()
     with pytest.raises(DeprecationWarning):
-       deprecationWarning()
+        deprecationWarning()
     with pytest.raises(RuntimeError):
         noDefaultValues()
     with pytest.raises(TypeError):
