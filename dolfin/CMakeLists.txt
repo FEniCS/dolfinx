@@ -96,8 +96,10 @@ endif()
 # Set size of dolfin::la_index
 if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   target_compile_definitions(dolfin PUBLIC DOLFIN_LA_INDEX_SIZE=${PETSC_INT_SIZE})
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_LA_INDEX_SIZE=${PETSC_INT_SIZE}") # remove this line when Instant/SWIG is removed
 else()
   target_compile_definitions(dolfin PUBLIC DOLFIN_LA_INDEX_SIZE=4)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDOLFIN_LA_INDEX_SIZE=4") # remove this line when Instant/SWIG is removed
 endif()
 
 #------------------------------------------------------------------------------

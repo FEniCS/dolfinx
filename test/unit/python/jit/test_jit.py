@@ -61,6 +61,52 @@ def test_mpi_swig():
 
 
 @skip_if_pybind11
+def test_pass_array_int():
+    import numpy
+    code = """
+    int test_int_array(const Array<int>& int_arr)
+    {
+        int ret = 0;
+        for (int i = 0; i < int_arr.size(); i++)
+        {
+            ret += int_arr[i];
+        }
+        return ret;
+    }
+    """
+    module = compile_extension_module(code=code,
+                                      source_directory='.',
+                                      sources=[],
+                                      include_dirs=["."])
+    arr = numpy.array([1, 2, 4, 8], dtype=numpy.intc)
+    ans = module.test_int_array(arr)
+    assert ans == arr.sum() == 15
+
+
+@skip_if_pybind11
+def test_pass_array_double():
+    import numpy
+    code = """
+    double test_double_array(const Array<double>& arr)
+    {
+        double ret = 0;
+        for (int i = 0; i < arr.size(); i++)
+        {
+            ret += arr[i];
+        }
+        return ret;
+    }
+    """
+    module = compile_extension_module(code=code,
+                                      source_directory='.',
+                                      sources=[],
+                                      include_dirs=["."])
+    arr = numpy.array([1, 2, 4, 8], dtype=float)
+    ans = module.test_double_array(arr)
+    assert abs(arr.sum() - 15) < 1e-15
+    assert abs(ans - 15) < 1e-15
+
+
 @skip_if_not_PETSc
 def test_compile_extension_module():
 
