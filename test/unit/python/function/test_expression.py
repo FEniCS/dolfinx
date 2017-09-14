@@ -27,7 +27,7 @@ from math import sin, cos, exp, tan
 from numpy import array, zeros, float_
 import numpy as np
 
-from dolfin_utils.test import fixture, skip_in_parallel, skip_if_pybind11
+from dolfin_utils.test import fixture, skip_in_parallel, skip_if_pybind11, skip_if_not_pybind11
 
 @fixture
 def mesh():
@@ -400,7 +400,7 @@ def test_runtime_exceptions():
 
     with pytest.raises(RuntimeError):
         noDefaultValues()
-    with pytest.raises(RunTimeError):
+    with pytest.raises(RuntimeError):
         wrongDefaultType()
     with pytest.raises(RuntimeError):
         wrongParameterNames0()
