@@ -206,6 +206,10 @@ def test_creation_and_marking_pybind11():
             return x[0] > 1.0 - DOLFIN_EPS and on_boundary
 
     cpp_code = """
+        #include<pybind11/pybind11.h>
+        #include<pybind11/eigen.h>
+        namespace py = pybind11;
+
         #include<Eigen/Dense>
         #include<dolfin/mesh/SubDomain.h>
 
@@ -248,11 +252,16 @@ def test_creation_and_marking_pybind11():
             return x[0] > 1.0 - DOLFIN_EPS and on_boundary;
           }
         };
+
+    PYBIND11_MODULE(SIGNATURE, m) {
+       py::class_<Left, std::shared_ptr<Left>, dolfin::SubDomain>(m, "Left").def(py::init<>());
+       py::class_<Right, std::shared_ptr<Right>, dolfin::SubDomain>(m, "Right").def(py::init<>());
+       py::class_<LeftOnBoundary, std::shared_ptr<LeftOnBoundary>, dolfin::SubDomain>(m, "LeftOnBoundary").def(py::init<>());
+       py::class_<RightOnBoundary, std::shared_ptr<RightOnBoundary>, dolfin::SubDomain>(m, "RightOnBoundary").def(py::init<>());
+    }
     """
 
-    pybind11_code = "py::class_<{0}, std::shared_ptr<{0}>, dolfin::SubDomain>(m, \"{0}\").def(py::init<>());"
-    py_str = pybind11_code.format("Left") + pybind11_code.format("Right") + pybind11_code.format("LeftOnBoundary") + pybind11_code.format("RightOnBoundary")
-    compiled_domain_module = compile_cpp_code({'cpp_code' : cpp_code, 'pybind11_code' : py_str})
+    compiled_domain_module = compile_cpp_code(cpp_code)
 
     subdomain_pairs = [(Left(), Right()),
                        (LeftOnBoundary(), RightOnBoundary()),
