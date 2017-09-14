@@ -312,7 +312,7 @@ def test_compute_vertex_values(mesh):
     assert all(e1_values[mesh.num_vertices():mesh.num_vertices()*2] == 2)
     assert all(e1_values[mesh.num_vertices()*2:mesh.num_vertices()*3] == 3)
 
-
+@skip_if_pybind11
 def test_wrong_sub_classing():
 
     def noAttributes():
@@ -373,10 +373,34 @@ def test_wrong_sub_classing():
     with pytest.raises(TypeError):
         wrongArgs()
     with pytest.raises(DeprecationWarning):
-        deprecationWarning()
+       deprecationWarning()
     with pytest.raises(RuntimeError):
         noDefaultValues()
     with pytest.raises(TypeError):
+        wrongDefaultType()
+    with pytest.raises(RuntimeError):
+        wrongParameterNames0()
+    with pytest.raises(RuntimeError):
+        wrongParameterNames1()
+
+@skip_if_not_pybind11
+def test_runtime_exceptions():
+
+    def noDefaultValues():
+        Expression("a")
+
+    def wrongDefaultType():
+        Expression("a", a="1", degree=1)
+
+    def wrongParameterNames0():
+        Expression("foo", bar=1.0, degree=1)
+
+    def wrongParameterNames1():
+        Expression("user_parameters", user_parameters=1.0, degree=1)
+
+    with pytest.raises(RuntimeError):
+        noDefaultValues()
+    with pytest.raises(RunTimeError):
         wrongDefaultType()
     with pytest.raises(RuntimeError):
         wrongParameterNames0()
