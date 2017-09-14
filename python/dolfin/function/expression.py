@@ -95,6 +95,23 @@ class BaseExpression(ufl.Coefficient):
         label = label or "User defined expression"
         self._cpp_object.rename(name, label)
 
+    def ufl_evaluate(self, x, component, derivatives):
+        """Function used by ufl to evaluate the Expression"""
+        assert derivatives == () # TODO: Handle derivatives
+
+        if component:
+            shape = self.ufl_shape
+            assert len(shape) == len(component)
+            value_size = product(shape)
+            index = flatten_multiindex(component, shape_to_strides(shape))
+            values = numpy.zeros(value_size)
+            # FIXME: use a function with a return value
+            self(*x, values=values)
+            return values[index]
+        else:
+            # Scalar evaluation
+            return self(*x)
+
     #def __call__(self, x):
     #    return self._cpp_object(x)
     def __call__(self, *args, **kwargs):
@@ -119,7 +136,8 @@ class BaseExpression(ufl.Coefficient):
         # Some help variables
         value_size = product(self.ufl_element().value_shape())
 
-        # If values (return argument) is passed, check the type and length
+        # If values (return argument) is passed, check the type and
+        # length
         values = kwargs.get("values", None)
         if values is not None:
             if not isinstance(values, numpy.ndarray):
@@ -242,6 +260,36 @@ class UserExpression(BaseExpression):
                                 name=name, label=label)
 
 
+class ExpressionParameters(object):
+    """Storage and setting/getting of User Parameters attached to Expression"""
+    def __init__(self, cpp_object, params):
+        self._params = params
+        self._cpp_object = cpp_object
+        for k, v in self._params.items():
+            self[k] = v
+
+    def __getitem__(self, key):
+        if key in self._params.keys():
+            if isinstance(self._params[key], (float, int)):
+                return self._cpp_object.get_property(key)
+            else:
+                return self._cpp_object.get_generic_function(key)
+        else:
+            raise AttributeError
+
+    def __setitem__(self, key, value):
+        if key == 'values':
+            raise KeyError("Reserved name 'values'")
+        if key in self._params.keys():
+            self._cpp_object.set_property(key, value)
+
+    def __contains__(self, key):
+        return key in self._params
+
+    def update(self, params):
+        for k,v in dict(params).items():
+            self[k] = v
+
 class Expression(BaseExpression):
     """JIT Expressions"""
 
@@ -260,14 +308,13 @@ class Expression(BaseExpression):
         label = kwargs.pop("label", None)
         mpi_comm = kwargs.pop("mpi_comm", None)
 
-        # Save properties for checking later
-        self._properties = kwargs
-        for k in self._properties:
-            if not isinstance(k, str):
-                raise KeyError("Invalid key:", k)
-
         if cpp_code is not None:
-            self._cpp_object = jit.compile_expression(cpp_code, self._properties)
+            params = kwargs
+            for k in params:
+                if not isinstance(k, str):
+                    raise KeyError("User Parameter key must be a string")
+            self._cpp_object = jit.compile_expression(cpp_code, params)
+            self._parameters = ExpressionParameters(self._cpp_object, params)
 
         if element and degree:
             raise RuntimeError("Cannot specify an element and a degree for Expressions.")
@@ -284,7 +331,7 @@ class Expression(BaseExpression):
                                       value_shape=value_shape)
 
         # FIXME: The below is invasive and fragile. Fix multistage so
-        #        the below is note required.
+        #        this is not required.
         # Store C++ code and user parameters because they are used by
         # the the multistage module.
         self._user_parameters = kwargs
@@ -293,22 +340,16 @@ class Expression(BaseExpression):
         BaseExpression.__init__(self, cell=cell, element=element, domain=domain,
                                 name=name, label=label)
 
-    # FIXME: below comment seems obsolete?
-    # This is added dynamically in the intialiser to allow checking of
-    # eval in user classes.
     def __getattr__(self, name):
         "Pass attributes through to (JIT compiled) Expression object"
-        if name in self._properties.keys():
-            if isinstance(self._properties[name], (float, int)):
-                return self._cpp_object.get_property(name)
-            else:
-                return self._cpp_object.get_generic_function(name)
+        if name == 'user_parameters':
+            return self._parameters
         else:
-            raise AttributeError
+            return self._parameters[name]
 
     def __setattr__(self, name, value):
         # FIXME: this messes up setting attributes
         if name.startswith("_"):
             super().__setattr__(name, value)
-        elif name in self._properties.keys():
-            self._cpp_object.set_property(name, value)
+        elif name in self._parameters:
+            self._parameters[name] = value

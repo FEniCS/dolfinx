@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 "Unit tests for SparsityPattern"
 
 # Copyright (C) 2017 Nathan Sime
@@ -24,6 +22,13 @@ import numpy as np
 from six.moves import range
 from dolfin import *
 from dolfin_utils.test import *
+
+
+if has_pybind11():
+    TensorLayout.Sparsity_DENSE = TensorLayout.Sparsity.DENSE
+    TensorLayout.Sparsity_SPARSE = TensorLayout.Sparsity.SPARSE
+    TensorLayout.Ghosts_GHOSTED = TensorLayout.Ghosts.GHOSTED
+    TensorLayout.Ghosts_UNGHOSTED = TensorLayout.Ghosts.UNGHOSTED
 
 
 def count_on_and_off_diagonal_nnz(primary_codim_entries, local_range):
@@ -146,8 +151,7 @@ def test_insert_local_global(mesh, V):
     # The codim (column) entries will be added to the same global entries
     # on each process.
     primary_codim_entries = np.array([0, 1, 2], dtype=np.intc)
-    entries = np.array(
-        [primary_dim_entries, primary_codim_entries], dtype=np.intc)
+    entries = np.array([primary_dim_entries, primary_codim_entries], dtype=np.intc)
 
     sp.insert_local_global(entries)
     sp.apply()

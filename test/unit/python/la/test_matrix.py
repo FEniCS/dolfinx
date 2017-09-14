@@ -338,16 +338,19 @@ class TestMatrixForAnyBackend:
                 assert array[row, cols[col]] == values[i]
                 i += 1
 
-        # Test none writeable of a shallow copy of the data
-        rows, cols, values = A.data(False)
-        def write_data(data):
-            data[0] = 1
-        with pytest.raises(Exception):
-            write_data(rows)
-        with pytest.raises(Exception):
-            write_data(cols)
-        with pytest.raises(Exception):
-            write_data(values)
+        # pybind11 transition: Not Pythonic to make read-only. Leave
+        # user in control.
+        if not has_pybind11():
+            # Test none writeable of a shallow copy of the data
+            rows, cols, values = A.data(False)
+            def write_data(data):
+                data[0] = 1
+            with pytest.raises(Exception):
+                write_data(rows)
+            with pytest.raises(Exception):
+                write_data(cols)
+            with pytest.raises(Exception):
+                write_data(values)
 
         # Test for as_backend_typeed Matrix
         A = as_backend_type(A)

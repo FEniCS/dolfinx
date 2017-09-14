@@ -22,8 +22,9 @@
 import pytest
 import platform
 from dolfin import *
-from dolfin_utils.test import (skip_if_not_PETSc, skip_if_not_MPI, skip_in_serial, 
-                               skip_if_not_petsc4py, skip_if_pybind11)
+from dolfin_utils.test import (skip_if_not_PETSc, skip_if_not_MPI, skip_in_serial,
+                               skip_if_not_petsc4py, skip_if_pybind11,
+                               skip_if_not_pybind11)
 
 
 def test_nasty_jit_caching_bug():
@@ -59,6 +60,7 @@ def test_mpi_swig():
     create_transfer_matrix =  compile_extension_module(code=create_transfer_matrix_code)
 
 
+@skip_if_pybind11
 @skip_if_not_PETSc
 def test_compile_extension_module():
 
@@ -92,6 +94,42 @@ def test_compile_extension_module():
         assert (np_vec == vec.array()).all()
 
 
+@skip_if_not_pybind11
+@skip_if_not_PETSc
+def test_compile_extension_module_pybind11():
+
+    # This test should do basically the same as the docstring of the
+    # compile_extension_module function in compilemodule.py.  Remember
+    # to update the docstring if the test is modified!
+
+    from numpy import arange, exp
+    code = """
+      #include <petscvec.h>
+      #include <dolfin/la/PETScVector.h>
+
+      void PETSc_exp(std::shared_ptr<dolfin::PETScVector> vec)
+      {
+        Vec x = vec->vec();
+        assert(x);
+        VecExp(x);
+      }
+    """
+    pybind11 = """
+    m.def("PETSc_exp", &PETSc_exp);
+    """
+
+    ext_module = compile_cpp_code({"cpp_code" : code, "pybind11_code" : pybind11})
+
+    vec = PETScVector(mpi_comm_world(), 10)
+    np_vec = vec.array()
+    np_vec[:] = arange(len(np_vec))
+    vec.set_local(np_vec)
+    ext_module.PETSc_exp(vec)
+    np_vec[:] = exp(np_vec)
+    assert (np_vec == vec.array()).all()
+
+
+@skip_if_pybind11
 def test_compile_extension_module_kwargs():
     # This test check that instant_kwargs of compile_extension_module
     # are taken into account when computing signature
