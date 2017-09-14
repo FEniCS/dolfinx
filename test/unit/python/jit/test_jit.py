@@ -22,7 +22,8 @@
 import pytest
 import platform
 from dolfin import *
-from dolfin_utils.test import (skip_if_not_PETSc, skip_if_not_MPI, skip_in_serial,
+from dolfin_utils.test import (skip_if_not_PETSc, skip_if_not_SLEPc,
+                               skip_if_not_MPI, skip_in_serial,
                                skip_if_not_petsc4py, skip_if_pybind11,
                                skip_if_not_pybind11)
 
@@ -58,6 +59,43 @@ def test_mpi_swig():
         void find_exterior_points(MPI_Comm mpi_comm) {}
     }'''
     create_transfer_matrix =  compile_extension_module(code=create_transfer_matrix_code)
+
+@skip_if_pybind11
+@skip_if_not_PETSc
+def test_pesc_swig():
+    from dolfin import compile_extension_module
+
+    create_matrix_code = r'''
+    namespace dolfin
+    {
+        std::shared_ptr<PETScMatrix> create_matrix(void) {
+            Mat I;
+            std::shared_ptr<PETScMatrix> ptr = std::make_shared<PETScMatrix>(I);
+            return ptr;
+        }
+    }
+    '''
+    create_matrix =  compile_extension_module(code=create_matrix_code)
+
+
+@skip_if_pybind11
+@skip_if_not_SLEPc
+def test_slepc_swig():
+    from dolfin import compile_extension_module
+
+    create_eps_code = r'''
+    #include <slepc.h>
+    namespace dolfin
+    {
+        std::shared_ptr<EPS> create_matrix(MPI_Comm comm) {
+            EPS eps;
+            EPSCreate(comm, &eps);
+	    std::shared_ptr<EPS> ptr = std::make_shared<EPS>(eps);
+            return ptr;
+        }
+    }
+    '''
+    create_matrix =  compile_extension_module(code=create_eps_code)
 
 
 @skip_if_pybind11

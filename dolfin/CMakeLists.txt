@@ -145,6 +145,7 @@ if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_SLEPC AND SLEPC_FOUND)
   target_compile_definitions(dolfin PUBLIC HAS_SLEPC)
   target_link_libraries(dolfin PUBLIC SLEPC::slepc)
   target_link_libraries(dolfin PRIVATE SLEPC::slepc_static)
+  list(APPEND DOLFIN_PYTHON_DEFINITIONS "-DHAS_SLEPC")  # remove this line when Instant/SWIG is removed
 endif()
 
 # PETSc
@@ -152,6 +153,7 @@ if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   target_compile_definitions(dolfin PUBLIC HAS_PETSC)
   target_link_libraries(dolfin PUBLIC PETSC::petsc)
   target_link_libraries(dolfin PRIVATE PETSC::petsc_static)
+  list(APPEND DOLFIN_PYTHON_DEFINITIONS "-DHAS_PETSC")  # remove this line when Instant/SWIG is removed
 endif()
 
 # petsc4py
