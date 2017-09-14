@@ -60,6 +60,7 @@ def test_mpi_swig():
     }'''
     create_transfer_matrix =  compile_extension_module(code=create_transfer_matrix_code)
 
+
 @skip_if_pybind11
 @skip_if_not_PETSc
 def test_pesc_swig():
@@ -145,6 +146,7 @@ def test_pass_array_double():
     assert abs(ans - 15) < 1e-15
 
 
+@skip_if_pybind11
 @skip_if_not_PETSc
 def test_compile_extension_module():
 
