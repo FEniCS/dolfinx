@@ -265,6 +265,8 @@ class ExpressionParameters(object):
     def __init__(self, cpp_object, params):
         self._params = params
         self._cpp_object = cpp_object
+        if "user_parameters" in self._params:
+            raise RuntimeError("'user_parameters' is reserved. Do not use in Expression")
         for k, v in self._params.items():
             self[k] = v
 
