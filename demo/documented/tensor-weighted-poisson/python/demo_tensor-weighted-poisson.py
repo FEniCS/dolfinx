@@ -62,6 +62,11 @@ def boundary(x):
 u0 = Constant(0.0)
 bc = DirichletBC(V, u0, boundary)
 
+# Define conductivity components as MeshFunctions
+c00 = MeshFunction("double", mesh, "../unitsquare_32_32_c00.xml.gz")
+c01 = MeshFunction("double", mesh, "../unitsquare_32_32_c01.xml.gz")
+c11 = MeshFunction("double", mesh, "../unitsquare_32_32_c11.xml.gz")
+
 # Code for C++ evaluation of conductivity
 if has_pybind11():
     conductivity_code = """
@@ -107,6 +112,17 @@ PYBIND11_MODULE(SIGNATURE, m)
 }
 
 """
+    class UserConductivity(UserExpression):
+        def value_shape(self):
+            return (3,)
+
+    c = UserConductivity(degree=0)
+    cc = compile_cpp_code(conductivity_code).Conductivity()
+    cc.c00 = c00
+    cc.c01 = c01
+    cc.c11 = c11
+    c._cpp_object = cc
+
 else:
     conductivity_code = """
 
@@ -134,16 +150,11 @@ public:
 
 };
 """
+    c = Expression(cppcode=conductivity_code, degree=0)
+    c.c00 = c00
+    c.c01 = c01
+    c.c11 = c11
 
-# Define conductivity expression and matrix
-c00 = MeshFunction("double", mesh, "../unitsquare_32_32_c00.xml.gz")
-c01 = MeshFunction("double", mesh, "../unitsquare_32_32_c01.xml.gz")
-c11 = MeshFunction("double", mesh, "../unitsquare_32_32_c11.xml.gz")
-
-c = Expression(cppcode=conductivity_code, degree=0)
-c.c00 = c00
-c.c01 = c01
-c.c11 = c11
 C = as_matrix(((c[0], c[1]), (c[1], c[2])))
 
 # Define variational problem

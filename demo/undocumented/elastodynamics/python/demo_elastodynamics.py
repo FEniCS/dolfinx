@@ -57,7 +57,8 @@ class Traction(UserExpression):
         self.t   = t
         self.dt  = dt
         self.old = old
-        super().__init__(**kwargs)
+        if has_pybind11():
+            super().__init__(**kwargs)
 
     def eval(self, values, x):
 
