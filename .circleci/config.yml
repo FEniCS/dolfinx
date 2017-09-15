@@ -35,19 +35,19 @@ jobs:
           name: Build DOLFIN and install
           command: cd build && make install
       - run:
-          name: Run Python unit tests (serial)
-          command: source /usr/local/share/dolfin/dolfin.conf && python3 -m pytest test/unit/python/
-      - run:
-          name: Run Python unit tests (MPI)
-          command: source /usr/local/share/dolfin/dolfin.conf && mpirun -n 3 python3 -m pytest test/unit/python/
-      - run:
           name: Run C++ unit tests
           command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_unittests_cpp
       - run:
-          name: Run Python regressions tests (serial)
+          name: Run Python unit tests (SWIG, serial)
+          command: source /usr/local/share/dolfin/dolfin.conf && python3 -m pytest test/unit/python/
+      - run:
+          name: Run Python unit tests (SWIG, MPI)
+          command: source /usr/local/share/dolfin/dolfin.conf && mpirun -n 3 python3 -m pytest test/unit/python/
+      - run:
+          name: Run Python regressions tests (SWIG, serial)
           command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_py
       - run:
-          name: Run Python regressions tests (MPI)
+          name: Run Python regressions tests (SWIG, MPI)
           command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_py_mpi
       - run:
           name: Run C++ regressions tests (serial)
@@ -55,3 +55,17 @@ jobs:
       - run:
           name: Run C++ regression tests (MPI)
           command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_cpp_mpi
+      - run:
+          name: Build Python/pybind11 interface
+          command: |
+            rm -rf /usr/local/lib/python3/dist-packages/dolfin
+            rm -rf /usr/local/lib/python3/dist-packages/dolfin_utils
+            rm -rf /usr/local/lib/python3/dist-packages/fenics
+            cd python
+            pip3 -v install . --user
+      - run:
+          name: Run unit tests (pybind11, serial)
+          command: python3 -m pytest test/unit/python/
+      - run:
+          name: Run unit tests (pybind11, MPI parallel)
+          command: mpirun -n 3 python3 -m pytest test/unit/python/
