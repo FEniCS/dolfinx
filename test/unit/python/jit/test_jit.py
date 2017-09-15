@@ -60,6 +60,7 @@ def test_mpi_swig():
     }'''
     create_transfer_matrix =  compile_extension_module(code=create_transfer_matrix_code)
 
+
 @skip_if_pybind11
 @skip_if_not_PETSc
 def test_pesc_swig():
@@ -145,6 +146,7 @@ def test_pass_array_double():
     assert abs(ans - 15) < 1e-15
 
 
+@skip_if_pybind11
 @skip_if_not_PETSc
 def test_compile_extension_module():
 
@@ -188,6 +190,8 @@ def test_compile_extension_module_pybind11():
 
     from numpy import arange, exp
     code = """
+      #include <pybind11/pybind11.h>
+
       #include <petscvec.h>
       #include <dolfin/la/PETScVector.h>
 
@@ -197,12 +201,14 @@ def test_compile_extension_module_pybind11():
         assert(x);
         VecExp(x);
       }
-    """
-    pybind11 = """
-    m.def("PETSc_exp", &PETSc_exp);
+
+    PYBIND11_MODULE(SIGNATURE, m)
+    {
+      m.def("PETSc_exp", &PETSc_exp);
+    }
     """
 
-    ext_module = compile_cpp_code({"cpp_code" : code, "pybind11_code" : pybind11})
+    ext_module = compile_cpp_code(code)
 
     vec = PETScVector(mpi_comm_world(), 10)
     np_vec = vec.array()

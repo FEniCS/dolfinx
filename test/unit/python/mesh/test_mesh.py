@@ -532,7 +532,7 @@ def test_shared_entities(mesh_factory, ghost_mode):
 
         # Check that sum(local-shared) = global count
         rank = MPI.rank(mesh.mpi_comm())
-        ct = sum(1 for val in six.itervalues(shared_entities) if val[0] < rank)
+        ct = sum(1 for val in six.itervalues(shared_entities) if list(val)[0] < rank)
         size_global = MPI.sum(mesh.mpi_comm(), mesh.size(shared_dim) - ct)
 
         assert size_global ==  mesh.size_global(shared_dim)
