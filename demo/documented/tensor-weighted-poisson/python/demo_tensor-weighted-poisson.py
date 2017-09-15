@@ -63,7 +63,52 @@ u0 = Constant(0.0)
 bc = DirichletBC(V, u0, boundary)
 
 # Code for C++ evaluation of conductivity
-conductivity_code = """
+if has_pybind11():
+    conductivity_code = """
+
+#include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
+namespace py = pybind11;
+
+#include <dolfin/function/Expression.h>
+#include <dolfin/mesh/MeshFunction.h>
+
+class Conductivity : public dolfin::Expression
+{
+public:
+
+  // Create expression with 3 components
+  Conductivity() : dolfin::Expression(3) {}
+
+  // Function for evaluating expression on each cell
+  void eval(Eigen::Ref<Eigen::VectorXd> values, Eigen::Ref<const Eigen::VectorXd> x, const ufc::cell& cell) const override
+  {
+    const uint cell_index = cell.index;
+    values[0] = (*c00)[cell_index];
+    values[1] = (*c01)[cell_index];
+    values[2] = (*c11)[cell_index];
+  }
+
+  // The data stored in mesh functions
+  std::shared_ptr<dolfin::MeshFunction<double>> c00;
+  std::shared_ptr<dolfin::MeshFunction<double>> c01;
+  std::shared_ptr<dolfin::MeshFunction<double>> c11;
+
+};
+
+PYBIND11_MODULE(SIGNATURE, m)
+{
+  py::class_<Conductivity, std::shared_ptr<Conductivity>, dolfin::Expression>
+    (m, "Conductivity", py::dynamic_attr())
+    .def(py::init<>())
+    .def_readwrite("c00", &Conductivity::c00)
+    .def_readwrite("c01", &Conductivity::c01)
+    .def_readwrite("c11", &Conductivity::c11);
+}
+
+"""
+else:
+    conductivity_code = """
 
 class Conductivity : public Expression
 {
