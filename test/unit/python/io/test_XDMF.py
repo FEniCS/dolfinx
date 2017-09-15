@@ -20,9 +20,6 @@ import os
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 
-if has_pybind11():
-    XDMFFile.Encoding_HDF5 = XDMFFile.Encoding.HDF5
-    XDMFFile.Encoding_ASCII = XDMFFile.Encoding.ASCII
 
 # Supported XDMF file encoding
 encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)

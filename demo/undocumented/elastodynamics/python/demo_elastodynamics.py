@@ -51,12 +51,13 @@ def update(u, u0, v0, a0, beta, gamma, dt):
     u0.vector()[:] = u.vector()
 
 # External load
-class Traction(Expression):
+class Traction(UserExpression):
 
     def __init__(self, dt, t, old, **kwargs):
         self.t   = t
         self.dt  = dt
         self.old = old
+        super().__init__(**kwargs)
 
     def eval(self, values, x):
 

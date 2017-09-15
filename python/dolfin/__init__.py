@@ -192,3 +192,31 @@ def mpi_comm_self():
 # FIXME: remove after transition
 def mpi_comm_world():
     return MPI.comm_world
+
+# FIXME: remove all these after transition
+TimingClear_clear = TimingClear.clear
+TimingClear_keep = TimingClear.keep
+TimingType_wall = TimingType.wall
+TimingType_system = TimingType.system
+
+IndexMap.MapSize_OWNED = IndexMap.MapSize.OWNED
+IndexMap.MapSize_UNOWNED = IndexMap.MapSize.UNOWNED
+IndexMap.MapSize_ALL = IndexMap.MapSize.ALL
+
+TensorLayout.Sparsity_DENSE = TensorLayout.Sparsity.DENSE
+TensorLayout.Sparsity_SPARSE = TensorLayout.Sparsity.SPARSE
+TensorLayout.Ghosts_GHOSTED = TensorLayout.Ghosts.GHOSTED
+TensorLayout.Ghosts_UNGHOSTED = TensorLayout.Ghosts.UNGHOSTED
+
+if has_linear_algebra_backend('PETSc'):
+    PETScKrylovSolver.norm_type_default_norm = PETScKrylovSolver.norm_type.default_norm
+    PETScKrylovSolver.norm_type_natural = PETScKrylovSolver.norm_type.natural
+    PETScKrylovSolver.norm_type_preconditioned = PETScKrylovSolver.norm_type.preconditioned
+    PETScKrylovSolver.norm_type_none = PETScKrylovSolver.norm_type.none
+    PETScKrylovSolver.norm_type_unpreconditioned = PETScKrylovSolver.norm_type.unpreconditioned
+
+LocalSolver.SolverType_LU = LocalSolver.SolverType.LU
+LocalSolver.SolverType_Cholesky = LocalSolver.SolverType.Cholesky
+
+XDMFFile.Encoding_HDF5 = XDMFFile.Encoding.HDF5
+XDMFFile.Encoding_ASCII = XDMFFile.Encoding.ASCII
