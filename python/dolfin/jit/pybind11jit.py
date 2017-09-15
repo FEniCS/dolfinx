@@ -3,39 +3,31 @@
 import hashlib
 import dijitso
 import pkgconfig
+import re
 
 import dolfin.cpp as cpp
 from . import get_pybind_include
 from dolfin.function.expression import BaseExpression, _select_element
 
 
-def jit_generate(class_data, module_name, signature, parameters):
+def jit_generate(cpp_code, module_name, signature, parameters):
 
-    # FIXME: decide what needs to be in boilerplate code, if anything.
+    # Split code on reserved word "SIGNATURE" which will be replaced by the module signature
+    # This must occur only once in the code
+    split_cpp_code = re.split('SIGNATURE', cpp_code)
+    if len(split_cpp_code) < 2:
+        raise RuntimeError("Cannot find keyword: SIGNATURE in pybind11 C++ code.")
+    elif len(split_cpp_code) > 2:
+        raise RuntimeError("Found multiple instances of keyword: SIGNATURE in pybind11 C++ code.")
 
-    template_code = """
+    code_c = split_cpp_code[0] + signature + split_cpp_code[1]
 
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-namespace py = pybind11;
-
-{cpp_code}
-
-PYBIND11_MODULE({signature}, m)
-{{
-   {pybind11_code}
-}}
-"""
-
-    code_c = template_code.format(cpp_code=class_data["cpp_code"],
-                                  pybind11_code=class_data["pybind11_code"],
-                                  signature=signature)
     code_h = ""
     depends = []
 
     return code_h, code_c, depends
 
-def compile_cpp_code(class_data):
+def compile_cpp_code(cpp_code):
     """Compile a user C(++) string to a Python object with pybind11.  Note
        this is still experimental.
 
@@ -61,13 +53,10 @@ def compile_cpp_code(class_data):
     params['build']['cxxflags'] += ('-fno-lto',)
 
     # enable all define macros from DOLFIN
-    # FIXME:
-    # except "HAS_SLEPC", as the include path is not coming from pkgconfig
     dmacros = ()
     for dm in d['define_macros']:
         if len(dm[1]) == 0:
-            if dm[0] != 'HAS_SLEPC':
-                dmacros += ('-D'+dm[0],)
+            dmacros += ('-D'+dm[0],)
         else:
             dmacros += ('-D'+dm[0]+'='+dm[1],)
 
@@ -80,11 +69,10 @@ def compile_cpp_code(class_data):
         params['build']['libs'] += ['petsc']
         params['build']['lib_dirs'] += [os.environ["PETSC_DIR"] + "/lib"]
 
-
-    module_hash = hashlib.md5((class_data["cpp_code"] + class_data["pybind11_code"]).encode('utf-8')).hexdigest()
+    module_hash = hashlib.md5(cpp_code.encode('utf-8')).hexdigest()
     module_name = "dolfin_cpp_module_" + module_hash
 
-    module, signature = dijitso.jit(class_data, module_name, params,
+    module, signature = dijitso.jit(cpp_code, module_name, params,
                                     generate=jit_generate)
 
     return module
