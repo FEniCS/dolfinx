@@ -28,6 +28,10 @@ generated with VMTK (http://www.vmtk.org/)."""
 import matplotlib.pyplot as plt
 from dolfin import *
 
+if has_pybind11():
+    print("Setting BCs from domains not supported")
+    exit()
+
 # Create mesh and define function space
 mesh = Mesh("../aneurysm.xml.gz")
 V = FunctionSpace(mesh, "CG", 1)

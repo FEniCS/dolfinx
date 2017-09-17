@@ -198,6 +198,7 @@ TimingClear_clear = TimingClear.clear
 TimingClear_keep = TimingClear.keep
 TimingType_wall = TimingType.wall
 TimingType_system = TimingType.system
+TimingType_user = TimingType.user
 
 IndexMap.MapSize_OWNED = IndexMap.MapSize.OWNED
 IndexMap.MapSize_UNOWNED = IndexMap.MapSize.UNOWNED

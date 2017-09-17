@@ -24,6 +24,9 @@
 from dolfin import *
 import matplotlib.pyplot as plt
 
+if has_pybind11():
+    print("Not supported in pybind11")
+    exit()
 
 class InflowBoundary(SubDomain):
     def inside(self, x, on_boundary):
