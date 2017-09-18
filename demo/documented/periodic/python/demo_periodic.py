@@ -34,7 +34,7 @@ import matplotlib.pyplot as plt
 from dolfin import *
 
 # Source term
-class Source(Expression):
+class Source(UserExpression):
     def eval(self, values, x):
         dx = x[0] - 0.5
         dy = x[1] - 0.5

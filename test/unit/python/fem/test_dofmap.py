@@ -29,11 +29,6 @@ from dolfin_utils.test import *
 
 xfail = pytest.mark.xfail(strict=True)
 
-if has_pybind11():
-    IndexMap.MapSize_OWNED = IndexMap.MapSize.OWNED
-    IndexMap.MapSize_UNOWNED = IndexMap.MapSize.UNOWNED
-    IndexMap.MapSize_ALL = IndexMap.MapSize.ALL
-
 @fixture
 def mesh():
     return UnitSquareMesh(4, 4)

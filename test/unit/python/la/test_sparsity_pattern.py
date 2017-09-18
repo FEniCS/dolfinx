@@ -24,13 +24,6 @@ from dolfin import *
 from dolfin_utils.test import *
 
 
-if has_pybind11():
-    TensorLayout.Sparsity_DENSE = TensorLayout.Sparsity.DENSE
-    TensorLayout.Sparsity_SPARSE = TensorLayout.Sparsity.SPARSE
-    TensorLayout.Ghosts_GHOSTED = TensorLayout.Ghosts.GHOSTED
-    TensorLayout.Ghosts_UNGHOSTED = TensorLayout.Ghosts.UNGHOSTED
-
-
 def count_on_and_off_diagonal_nnz(primary_codim_entries, local_range):
     nnz_on_diagonal = sum(1 for entry in primary_codim_entries
                           if local_range[0] <= entry < local_range[1])

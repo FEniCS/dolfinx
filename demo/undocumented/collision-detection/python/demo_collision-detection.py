@@ -40,7 +40,7 @@ mesh_B.translate(Point(x_B, y_B))
 mesh_C.translate(Point(x_C, y_C))
 
 # Create mesh function for plotting
-f = CellFunction("uint", mesh_A)
+f = CellFunction("size_t", mesh_A)
 
 # Build bounding box trees for background mesh
 tree_A = BoundingBoxTree()
@@ -77,8 +77,8 @@ for n in range(num_steps):
     # Mark mesh function
     f.set_all(0)
     for i in entities_AB:
-        f.set_value(i, 1)
+        f[int(i)] = 1
     for i in entities_AC:
-        f.set_value(i, 2)
+        f[int(i)] = 2
     for i in entities_BC:
-        f.set_value(i, 3)
+        f[int(i)] = 3
