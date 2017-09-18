@@ -36,25 +36,25 @@ jobs:
           command: cd build && make install
       - run:
           name: Run C++ unit tests
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_unittests_cpp
+          command: cd build && make run_unittests_cpp
       - run:
           name: Run Python unit tests (SWIG, serial)
-          command: source /usr/local/share/dolfin/dolfin.conf && python3 -m pytest test/unit/python/
+          command: python3 -m pytest test/unit/python/
       - run:
           name: Run Python unit tests (SWIG, MPI)
-          command: source /usr/local/share/dolfin/dolfin.conf && mpirun -n 3 python3 -m pytest test/unit/python/
+          command: mpirun -n 3 python3 -m pytest test/unit/python/
       - run:
           name: Run Python regressions tests (SWIG, serial)
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_py
+          command: cd build && make run_regressiontests_py
       - run:
           name: Run Python regressions tests (SWIG, MPI)
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_py_mpi
+          command: cd build && make run_regressiontests_py_mpi
       - run:
           name: Run C++ regressions tests (serial)
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_cpp
+          command: cd build && make run_regressiontests_cpp
       - run:
           name: Run C++ regression tests (MPI)
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_cpp_mpi
+          command: cd build && make run_regressiontests_cpp_mpi
       - run:
           name: Build Python/pybind11 interface
           command: |
@@ -69,3 +69,6 @@ jobs:
       - run:
           name: Run unit tests (pybind11, MPI parallel)
           command: mpirun -n 3 python3 -m pytest test/unit/python/
+      - run:
+          name: Run Python regression tests (pybind11, serial)
+          command: cd build && make run_regressiontests_py
