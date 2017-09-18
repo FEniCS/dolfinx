@@ -39,16 +39,16 @@ jobs:
           command: cd build && make run_unittests_cpp
       - run:
           name: Run Python unit tests (SWIG, serial)
-          command: python3 -m pytest test/unit/python/
+          command: source /usr/local/share/dolfin/dolfin.conf && python3 -m pytest test/unit/python/
       - run:
           name: Run Python unit tests (SWIG, MPI)
-          command: mpirun -n 3 python3 -m pytest test/unit/python/
+          command: source /usr/local/share/dolfin/dolfin.conf && mpirun -n 3 python3 -m pytest test/unit/python/
       - run:
-          name: Run Python regressions tests (SWIG, serial)
-          command: cd build && make run_regressiontests_py
+          name: Run Python regression tests (SWIG, serial)
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_py
       - run:
-          name: Run Python regressions tests (SWIG, MPI)
-          command: cd build && make run_regressiontests_py_mpi
+          name: Run Python regression tests (SWIG, MPI)
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_py_mpi
       - run:
           name: Run C++ regressions tests (serial)
           command: cd build && make run_regressiontests_cpp
