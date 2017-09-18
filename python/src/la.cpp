@@ -918,9 +918,12 @@ namespace dolfin_wrappers
     #ifdef HAS_SLEPC
     // dolfin::SLEPcEigenSolver
     py::class_<dolfin::SLEPcEigenSolver, std::shared_ptr<dolfin::SLEPcEigenSolver>, dolfin::Variable>(m, "SLEPcEigenSolver")
-      .def(py::init<MPI_Comm>())
       .def(py::init<std::shared_ptr<const dolfin::PETScMatrix>>())
       .def(py::init<std::shared_ptr<const dolfin::PETScMatrix>, std::shared_ptr<const dolfin::PETScMatrix>>())
+      // FIXME: The below must come after the other
+      // constructors. Check the MPI_Comm caster raises appropriate
+      // exceptions for pybind11 to move onto next interface.
+      .def(py::init<MPI_Comm>())
       .def("set_options_prefix", &dolfin::SLEPcEigenSolver::set_options_prefix)
       .def("set_from_options", &dolfin::SLEPcEigenSolver::set_from_options)
       .def("get_options_prefix", &dolfin::SLEPcEigenSolver::get_options_prefix)
