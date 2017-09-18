@@ -51,10 +51,10 @@ jobs:
           command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_py_mpi
       - run:
           name: Run C++ regressions tests (serial)
-          command: cd build && make run_regressiontests_cpp
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_cpp
       - run:
           name: Run C++ regression tests (MPI)
-          command: cd build && make run_regressiontests_cpp_mpi
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_cpp_mpi
       - run:
           name: Build Python/pybind11 interface
           command: |
