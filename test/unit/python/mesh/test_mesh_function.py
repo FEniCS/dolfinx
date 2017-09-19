@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for MeshFunctions"""
 
 # Copyright (C) 2011 Garth N. Wells
@@ -18,9 +16,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2011-03-10
-# Last changed: 2011-03-10
 
 import pytest
 import numpy.random
@@ -29,13 +24,13 @@ from six.moves import xrange as range
 from dolfin_utils.test import fixture, skip_in_parallel, skip_if_pybind11
 
 
-@pytest.fixture(scope="module", params=range(5))
+@pytest.fixture(params=range(5))
 def name(request):
     names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
     return names[request.param]
 
 
-@pytest.fixture(scope="module", params=range(4))
+@pytest.fixture(params=range(4))
 def tp(request):
     tps = ['int', 'size_t', 'bool', 'double']
     return tps[request.param]
