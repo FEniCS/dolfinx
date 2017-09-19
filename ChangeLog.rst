@@ -4,10 +4,21 @@ Change log
 2017.2.0 (unreleased)
 ---------------------
 
+- Improved mesh topology computation performance.
+- Remove excessive calls to MPI init. It may now be necessary in some
+  cases to explicitly intialise MPI.
+- Improvements to sparsity pattern computation.
+- Addition of some interfaces using ``Eigen::Map/ref`` in addition to
+  ``dolfin::Array(View)``.  ``dolfin::Array(View)``interfaces will be
+  removed in favour of Eigen interfaces in the next release.
+- Update pkg-config (dolfin.pc) file.
+- CMake modernisations, with more use of exported targets.
+- Add experimental pybind11 generated Python interface. Will replace
+  the SWIG generated interface in the 2018.1 release.
 - Remove redundant SLEPc interfaces. Fixes issue `#908
   <https://bitbucket.org/fenics-project/dolfin/issues/908>`_.
 - Bump required Boost version to 1.55.
-- Remove PETScUserPreconditioner (unused and untested.
+- Remove PETScUserPreconditioner (was unused and untested).
 - Remove VTK plotting backend. Plotting is no longer available from
   the C++ interface. Basic plotting is available using ``matplotlib``
   and ``x3dom`` backends via the ``plot()`` free function in the
@@ -23,9 +34,11 @@ Change log
 - Fix quadratic scaling in PETSc matrix allocation with global dofs;
   assembly with ``Real`` space now exhibits linear scaling in number
   of dofs.
-- Add assembly for quadrilateral and hexahedral meshes with CG and DG elements.
-- Updates for some demos and tests to show usage of quadrilateral
-  and hexahedral meshes.
+- Add assembly for quadrilateral and hexahedral meshes with CG and DG
+  elements.
+- Updates for some demos and tests to show usage of quadrilateral and
+  hexahedral meshes.
+
 
 2017.1.0 (2017-05-09)
 ---------------------
@@ -79,6 +92,7 @@ Change log
 - Change definition of FunctionSpace::component()
 - Adaptive solving now works for tensor-valued unknowns
 - Improve logging of PETSc errors; details logged at level TRACE
+
 
 2016.1.0 [2016-06-23]
 ---------------------
@@ -140,6 +154,7 @@ Change log
 - Remove method argument of DirichletBC::get_boundary_values()
 - Change return types of free functions adapt() to shared_ptr
 
+
 1.6.0 [2015-07-28]
 ------------------
 - Remove redundant pressure boundary condition in Stokes demos
@@ -189,6 +204,7 @@ Change log
 - Increase default maximum iterations in NewtonSolver to 50.
 - Deprecate Python free function homogenize(bc) in favour of member
   function DirichletBC::homogenize()
+
 
 1.5.0 [2015-01-12]
 ------------------
@@ -265,6 +281,7 @@ Change log
 - Basic support for 'ghost cells' allowing integration over interior
   facets in parallel
 
+
 1.4.0 [2014-06-02]
 ------------------
 - Feature: Add set_diagonal (with GenericVector) to GenericMatrix
@@ -290,6 +307,7 @@ Change log
 - Use MPI communicator in interfaces. Permits the creation of
   distributed and local objects, e.g. Meshes.
 - Reduce memory usage and increase speed of mesh topology computation
+
 
 1.3.0 [2014-01-07]
 ------------------
@@ -334,6 +352,7 @@ Change log
 - Expose PETSc GAMG parameters
 - Modify SystemAssembler to support separate assembly of A and b
 
+
 1.2.0 [2013-03-24]
 ------------------
 - Fixes bug where child/parent hierarchy in Python were destroyed
@@ -371,6 +390,7 @@ Change log
   to dolfin dofs
 - Feature: Add support for solving on m dimensional meshes embedded in
   n >= m dimensions
+
 
 1.1.0 [2013-01-08]
 ------------------
@@ -459,6 +479,7 @@ Change log
 - Remove all tr1::tuple and use boost::tuple
 - Fix wrong link in Python quick reference.
 
+
 1.0.0 [2011-12-07]
 ------------------
 - Change return value of IntervalCell::facet_area() 0.0 --> 1.0.
@@ -467,11 +488,13 @@ Change log
 - Improve docstrings for Box and Rectangle
 - Check number of dofs on local patch in extrapolation
 
+
 1.0-rc2 [2011-11-28]
 --------------------
 - Fix bug in 1D mesh refinement
 - Fix bug in handling of subdirectories for TimeSeries
 - Fix logic behind vector assignment, especially in parallel
+
 
 1.0-rc1 [2011-11-21]
 --------------------
@@ -483,6 +506,7 @@ Change log
   interface
 - Added get_value to MeshValueCollection
 - Added assignment operator to MeshValueCollection
+
 
 1.0-beta2 [2011-10-26]
 ----------------------
@@ -531,6 +555,7 @@ Change log
 - Get XML input/output of boundary markers working again
 - Get FacetArea working again
 
+
 1.0-beta [2011-08-11]
 ---------------------
 - Print percentage of non-zero entries when computing sparsity
@@ -571,6 +596,7 @@ Change log
 - Fixed dimension check for Function and Expression eval in Python
 - Fix compressed VTK output for tensors in 2D
 
+
 0.9.11 [2011-05-16]
 -------------------
 - Change license from LGPL v2.1 to LGPL v3 or later
@@ -600,6 +626,7 @@ Change log
 - Add copy functions to FiniteElement and DofMap
 - Simplify DofMap
 - Interpolate vector values when reading from time series
+
 
 0.9.10 [2011-02-23]
 -------------------
@@ -640,6 +667,7 @@ Change log
 - Permit unset parameters
 - Search only for BLAS library (not cblas.h)
 
+
 0.9.9 [2010-09-01]
 ------------------
 - Change build system to CMake
@@ -655,6 +683,7 @@ Change log
 - Updates for SLEPc 3.1
 - Improve and implement re-use of LU factorizations for all backends
 - Fix bug in refinement of MeshFunctions
+
 
 0.9.8 [2010-07-01]
 ------------------
@@ -710,6 +739,7 @@ Change log
 - Add function ident_zeros for inserting one on diagonal for zero rows
 - Add LU support for Trilinos interface
 
+
 0.9.7 [2010-02-17]
 ------------------
 - Add support for specifying facet orientation in assembly over
@@ -727,6 +757,7 @@ Change log
   facets
 - Rename reconstruct --> extrapolate
 - Remove GTS dependency
+
 
 0.9.6 [2010-02-03]
 ------------------
@@ -752,6 +783,7 @@ Change log
 - Introduce new Array class for simplified wrapping of arrays in SWIG
 - Improved functionality for intersection detection
 - Re-implementation of intersection detection using CGAL
+
 
 0.9.5 [2009-12-03]
 ------------------
@@ -807,6 +839,7 @@ Change log
   adaptive mesh refinement
 - Require mesh in constructor of functionals (C++) or argument to
   assemble (Python)
+
 
 0.9.3 [2009-09-25]
 ------------------
@@ -893,6 +926,7 @@ Change log
 - Add slicing capabilities for GenericVector interface in PyDOLFIN
 - Add sum to GenericVector interface
 
+
 0.9.2 [2009-04-07]
 ------------------
 - Enable setting parameters for Newton solver in VariationalProblem
@@ -915,6 +949,7 @@ Change log
   function to discrete
 - Make _function_space protected in Function
 - Added access to crs data from python for uBLAS and MTL4 backend
+
 
 0.9.1 [2009-02-17]
 ------------------
@@ -970,6 +1005,7 @@ Change log
   necessary)
 - Make mesh iterators const to allow for const-correct Mesh code
 
+
 0.8.1 [2008-10-20]
 ------------------
 - Add option to use ML multigrid preconditioner through PETSc
@@ -1000,6 +1036,7 @@ Change log
 - Add file format: XYZ for use with Xd3d
 - Add built-in meshes: UnitCircle, Box, Rectangle, UnitSphere
 
+
 0.8.0 [2008-06-23]
 ------------------
 - Fix input of matrix data from XML
@@ -1023,6 +1060,7 @@ Change log
 - Add ALE mesh interpolation (moving mesh according to new boundary
   coordinates)
 
+
 0.7.3 [2008-04-30]
 ------------------
 - Add support for Epetra/Trilinos
@@ -1040,6 +1078,7 @@ Change log
 - Make progress bar less annoying
 - New scons-based build system replaces autotools
 - Fix bug when choosing iterative solver from Python
+
 
 0.7.2 [2008-02-18]
 ------------------
@@ -1068,6 +1107,7 @@ Change log
 - Autogenerate docstrings for PyDOLFIN
 - Various small bug fixes and improvements
 
+
 0.7.1 [2007-08-31]
 ------------------
 - Integrate FFC form language into PyDOLFIN
@@ -1079,12 +1119,14 @@ Change log
   KrylovSolver, etc)
 - Add function to return Vector associated with a DiscreteFunction
 
+
 0.7.0-1 [2007-06-22]
 --------------------
 - Recompile all forms with latest FFC release
 - Remove typedefs SparseMatrix and SparseVector
 - Fix includes in LinearPDE
 - Rename DofMaps -> DofMapSet
+
 
 0.7.0 [2007-06-20]
 ------------------
@@ -1104,6 +1146,7 @@ Change log
 - Fix Python interface for vertex and cell maps in boundary
   computation
 
+
 0.6.4 [2006-12-01]
 ------------------
 - Switch from Python Numeric to Python NumPy
@@ -1118,6 +1161,7 @@ Change log
 - Fix detection of curses libraries
 - Remove Tecplot output format
 
+
 0.6.3 [2006-10-27]
 ------------------
 - Move to new mesh library
@@ -1128,10 +1172,12 @@ Change log
 - Add support for evaluation of functionals
 - Fix bug in Vector::sum() for uBLAS vectors
 
+
 0.6.2-1 [2006-09-06]
 --------------------
 - Fix compilation error when using --enable-petsc
   (dolfin::uBLASVector::PETScVector undefined)
+
 
 0.6.2 [2006-09-05]
 ------------------
@@ -1172,6 +1218,7 @@ Change log
 - Add new classes DenseMatrix and DenseVector (wrappers for ublas)
 - Fix bug in conversion from Gmsh format
 
+
 0.6.1 [2006-03-28]
 ------------------
 - Regenerate build system in makedist script
@@ -1203,6 +1250,7 @@ Change log
 - Add separate function to nls to test for convergence of Newton
   iterations
 - Fix bug in dolfin-config (wrong version number)
+
 
 0.6.0 [2006-03-01]
 ------------------
