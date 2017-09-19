@@ -33,7 +33,7 @@ jobs:
           command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DDOLFIN_ENABLE_TESTING=ON
       - run:
           name: Build DOLFIN and install
-          command: cd build && make install
+          command: cd build && make install -j2
       - run:
           name: Run C++ unit tests
           command: cd build && make run_unittests_cpp
