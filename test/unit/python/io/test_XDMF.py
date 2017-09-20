@@ -55,6 +55,19 @@ def invalid_config(encoding):
 def invalid_fe(fe_family, fe_degree):
     return (fe_family == "CG" and fe_degree == 0)
 
+
+@pytest.fixture
+def worker_id(request):
+    """Return worker ID when using pytest-xdist to run tests in
+    parallell
+
+    """
+    if hasattr(request.config, 'slaveinput'):
+        return request.config.slaveinput['slaveid']
+    else:
+        return 'master'
+
+
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_1d_mesh(tempdir, encoding):
     if invalid_config(encoding):

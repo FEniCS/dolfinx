@@ -12,7 +12,7 @@ jobs:
       - run:
           name: Install/update dependencies  # Install with sudo as tests not run as superuser in circleci/python
           command: |
-            sudo pip3 install pytest six --upgrade
+            sudo pip3 install pytest pytest-xdist six --upgrade
       - run:
           name: Install FIAT
           command: pip3 install git+https://bitbucket.org/fenics-project/fiat.git@master
@@ -39,7 +39,7 @@ jobs:
           command: cd build && make run_unittests_cpp
       - run:
           name: Run Python unit tests (SWIG, serial)
-          command: source /usr/local/share/dolfin/dolfin.conf && python3 -m pytest test/unit/python/
+          command: source /usr/local/share/dolfin/dolfin.conf && python3 -m pytest -n 2 test/unit/python/
       - run:
           name: Run Python unit tests (SWIG, MPI)
           command: source /usr/local/share/dolfin/dolfin.conf && mpirun -n 3 python3 -m pytest test/unit/python/
@@ -65,7 +65,7 @@ jobs:
             pip3 -v install . --user
       - run:
           name: Run unit tests (pybind11, serial)
-          command: python3 -m pytest test/unit/python/
+          command: python3 -m pytest -n 2 test/unit/python/
       - run:
           name: Run unit tests (pybind11, MPI parallel)
           command: mpirun -n 3 python3 -m pytest test/unit/python/
