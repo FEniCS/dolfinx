@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the log"""
 
 # Copyright (C) 2017 Tormod Landet
@@ -29,4 +27,3 @@ def test_log_level_comparable():
     warning = dolfin.LogLevel.WARNING
     assert info < warning
     assert warning < 1000
-
