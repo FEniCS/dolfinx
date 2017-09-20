@@ -19,14 +19,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from dolfin import LogLevel
+import dolfin
 from dolfin_utils.test import skip_if_not_pybind11
 
 
 @skip_if_not_pybind11
 def test_log_level_comparable():
-    info = LogLevel.INFO
-    warning = LogLevel.WARNING
+    info = dolfin.LogLevel.INFO
+    warning = dolfin.LogLevel.WARNING
     assert info < warning
     assert warning < 1000
 
