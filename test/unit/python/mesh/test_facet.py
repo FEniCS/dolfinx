@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the Facet class"""
 
 # Copyright (C) 2017 Tormod Landet
@@ -20,7 +18,6 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 from dolfin import UnitSquareMesh, facets
-from dolfin_utils.test import skip_in_parallel
 
 
 def test_normal():
@@ -32,4 +29,3 @@ def test_normal():
         assert isinstance(nx, float)
         assert isinstance(ny, float)
         assert isinstance(nz, float)
-
