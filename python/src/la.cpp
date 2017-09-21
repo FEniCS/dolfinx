@@ -891,6 +891,10 @@ namespace dolfin_wrappers
       .def("get_options_prefix", &dolfin::PETScLUSolver::get_options_prefix)
       .def("set_options_prefix", &dolfin::PETScLUSolver::set_options_prefix)
       .def("solve", (std::size_t (dolfin::PETScLUSolver::*)(dolfin::GenericVector&, const dolfin::GenericVector&))
+           &dolfin::PETScLUSolver::solve)
+      .def("solve", (std::size_t (dolfin::PETScLUSolver::*)(const dolfin::GenericLinearOperator&,
+                                                            dolfin::GenericVector&,
+                                                            const dolfin::GenericVector&))
            &dolfin::PETScLUSolver::solve);
     #endif
 
