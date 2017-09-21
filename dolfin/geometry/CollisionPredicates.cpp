@@ -316,14 +316,6 @@ bool CollisionPredicates::_collides_segment_point_2d(const Point& p0,
     dp.dot(p1-point) >= 0.0 && dp.dot(point-p0) >= 0.0;
 }
 //-----------------------------------------------------------------------------
-namespace
-{
-  bool operator==(const Point& a, const Point& b)
-  {
-    return a.x() == b.x() && a.y() == b.y() && a.z() == b.z();
-  }
-}
-//-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_segment_point_3d(const Point& p0,
                                                      const Point& p1,
                                                      const Point& point)

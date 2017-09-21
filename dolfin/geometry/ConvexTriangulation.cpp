@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-08-31
+// Last changed: 2017-09-21
 
 #include <algorithm>
 #include <tuple>
@@ -29,30 +29,6 @@
 //-----------------------------------------------------------------------------
 namespace
 {
-  struct point_strictly_less
-  {
-    bool operator()(const dolfin::Point& p0, const dolfin::Point& p1)
-    {
-      if (p0.x() != p1.x())
-	return p0.x() < p1.x();
-
-
-      if (p0.y() != p1.y())
-        return p0.y() < p1.y();
-
-      return p0.z() < p1.z();
-    }
-  };
-
-  inline bool operator==(const dolfin::Point& p0, const dolfin::Point& p1)
-  {
-    return p0.x() == p1.x() && p0.y() == p1.y() && p0.z() == p1.z();
-  }
-
-  inline bool operator!=(const dolfin::Point& p0, const dolfin::Point& p1)
-  {
-    return p0.x() != p1.x() || p0.y() != p1.y() || p0.z() != p1.z();
-  }
   //------------------------------------------------------------------------------
   // Check if q lies between p0 and p1. p0, p1 and q are assumed to be colinear
   bool is_between(dolfin::Point p0, dolfin::Point p1, dolfin::Point q)

@@ -42,14 +42,6 @@ bool GeometryPredicates::is_degenerate(const std::vector<Point>& simplex,
   return false;
 }
 //-----------------------------------------------------------------------------
-namespace
-{
-  bool operator==(const Point& a, const Point& b)
-  {
-    return a.x() == b.x() && a.y() == b.y() && a.z() == b.z();
-  }
-}
-//-----------------------------------------------------------------------------
 bool GeometryPredicates::_is_degenerate_2d(const std::vector<Point>& simplex)
 {
   if (simplex.size() < 2 or simplex.size() > 3)

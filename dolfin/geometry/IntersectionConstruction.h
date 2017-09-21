@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-07-07
+// Last changed: 2017-09-21
 
 #ifndef __INTERSECTION_CONSTRUCTION_H
 #define __INTERSECTION_CONSTRUCTION_H
@@ -29,24 +29,6 @@
 
 namespace dolfin
 {
-  // Comparison of points
-  inline bool operator==(const dolfin::Point& p0, const dolfin::Point& p1)
-  {
-    return p0.x() == p1.x() and p0.y() == p1.y() and p0.z() == p1.z();
-  }
-
-  // Comparison of points
-  inline bool operator!=(const dolfin::Point& p0, const dolfin::Point& p1)
-  {
-    return p0.x() != p1.x() or p0.y() != p1.y() or p0.z() != p1.z();
-  }
-
-  // Comparison of points
-  inline bool operator<(const dolfin::Point& p0, const dolfin::Point& p1)
-  {
-    return p0.x() <= p1.x() and p0.y() <= p1.y() and p0.z() <= p1.z();
-  }
-
   // Forward declarations
   class MeshEntity;
 
