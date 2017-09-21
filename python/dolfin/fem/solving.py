@@ -292,11 +292,7 @@ def solve(*args, **kwargs):
     # Default case, just call the wrapped C++ solve function
     else:
         if kwargs:
-            raise RuntimeError("Not expecting keyword arguments when solving linear algebra problem")
-            # cpp.dolfin_error("solving.py",
-            #                  "solve linear algebra problem",
-            #                  "Not expecting keyword arguments when solving "
-            #                  "linear algebra problem")
+            raise RuntimeError("Not expecting keyword arguments when solving linear algebra problem.")
 
         return cpp.la.solve(*args)
 
@@ -351,9 +347,7 @@ def _solve_varproblem_adaptive(*args, **kwargs):
 
     # Check that we received the goal functional
     if M is None:
-        cpp.dolfin_error("solving.py",
-                         "solve variational problem adaptively",
-                         "Missing goal functional")
+        raise RuntimeError("Cannot solve variational problem adaptively. Missing goal functional")
 
     # Solve linear variational problem
     if isinstance(eq.lhs, ufl.Form) and isinstance(eq.rhs, ufl.Form):
@@ -395,26 +389,14 @@ def _extract_args(*args, **kwargs):
                     "form_compiler_parameters", "solver_parameters"]
     for kwarg in kwargs.keys():
         if kwarg not in valid_kwargs:
-            raise RuntimeError("Illegal keyword argument")
-            # cpp.dolfin_error("solving.py",
-            #                  "solve variational problem",
-            #                  "Illegal keyword argument \"%s\"; valid keywords are %s" %
-            #                  (kwarg,
-            #                   ", ".join("\"%s\"" % kwarg for kwarg in valid_kwargs)))
+            raise RuntimeError("Solve variational problem. Illegal keyword argument \'{}\'.".format(kwarg))
 
     # Extract equation
     if not len(args) >= 2:
-        raise RuntimeError("Missing argument")
-        # cpp.dolfin_error("solving.py",
-        #                  "solve variational problem",
-        #                  "Missing arguments, expecting solve(lhs == rhs, "
-        #                  "u, bcs=bcs), where bcs is optional")
+        raise RuntimeError("Solve variational problem. Missing arguments, expecting solve(lhs == rhs, u, bcs=bcs), where bcs is optional")
+
     if len(args) > 3:
-        raise RuntimeError("Too many arguments")
-        # cpp.dolfin_error("solving.py",
-        #                  "solve variational problem",
-        #                  "Too many arguments, expecting solve(lhs == rhs, "
-        #                  "u, bcs=bcs), where bcs is optional")
+        raise RuntimeError("Solve variational problem. Too many arguments, expecting solve(lhs == rhs, u, bcs=bcs), where bcs is optional")
 
     # Extract equation
     eq = _extract_eq(args[0])
@@ -433,23 +415,17 @@ def _extract_args(*args, **kwargs):
     # Extract Jacobian
     J = kwargs.get("J", None)
     if J is not None and not isinstance(J, ufl.Form):
-        cpp.dolfin_error("solving.py",
-                         "solve variational problem",
-                         "Expecting Jacobian J to be a UFL Form")
+        raise RuntimeError("Solve variational problem. Expecting Jacobian J to be a UFL Form.")
 
     # Extract tolerance
     tol = kwargs.get("tol", None)
     if tol is not None and not (isinstance(tol, (float, int)) and tol >= 0.0):
-        cpp.dolfin_error("solving.py",
-                         "solve variational problem",
-                         "Expecting tolerance tol to be a non-negative number")
+        raise RuntimeError("Solve variational problem. Expecting tolerance tol to be a non-negative number.")
 
     # Extract functional
     M = kwargs.get("M", None)
     if M is not None and not isinstance(M, ufl.Form):
-        cpp.dolfin_error("solving.py",
-                         "solve variational problem",
-                         "Expecting goal functional M to be a UFL Form")
+        raise RuntimeError("Solve variational problem. Expecting goal functional M to be a UFL Form.")
 
     # Extract parameters
     form_compiler_parameters = kwargs.get("form_compiler_parameters", {})
@@ -461,9 +437,8 @@ def _extract_args(*args, **kwargs):
 def _extract_eq(eq):
     "Extract and check argument eq"
     if not isinstance(eq, ufl.classes.Equation):
-        cpp.dolfin_error("solving.py",
-                         "solve variational problem",
-                         "Expecting first argument to be an Equation")
+        raise RuntimeError("Solve variational problem. Expecting first argument to be an Equation.")
+
     return eq
 
 
@@ -477,7 +452,7 @@ def _extract_u(u):
     if isinstance(u, Function):
         return u
 
-    raise RuntimeError("Expecting second argument to be a Function")
+    raise RuntimeError("Expecting second argument to be a Function.")
     # cpp.dolfin_error("solving.py",
     #                      "solve variational problem",
     #                      "Expecting second argument to be a Function")
@@ -492,8 +467,6 @@ def _extract_bcs(bcs):
         bcs = [bcs]
     for bc in bcs:
         if not isinstance(bc, cpp.fem.DirichletBC):
-            raise RuntimeError("Unable to extract boundary condition arguments")
-            # cpp.dolfin_error("solving.py",
-            #                  "solve variational problem",
-            #                  "Unable to extract boundary condition arguments")
+            raise RuntimeError("solve variational problem. Unable to extract boundary condition arguments")
+
     return bcs
