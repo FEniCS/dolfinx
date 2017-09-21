@@ -268,34 +268,29 @@ namespace dolfin_wrappers
       .def("get_diagonal", &dolfin::GenericMatrix::get_diagonal)
       .def("set_diagonal", &dolfin::GenericMatrix::set_diagonal)
       .def("ident_zeros", &dolfin::GenericMatrix::ident_zeros)
-      .def("ident", [](dolfin::GenericMatrix& self, std::vector<long> rows)
-           {
-             std::vector<dolfin::la_index> _rows(rows.begin(), rows.end());
-             self.ident(rows.size(), _rows.data());
-           }, py::arg("rows"))
+      .def("ident", [](dolfin::GenericMatrix& self, std::vector<dolfin::la_index> rows)
+           { self.ident(rows.size(), rows.data()); }, py::arg("rows"))
       .def("get", [](dolfin::GenericMatrix& self, Eigen::Ref<RowMatrixXd> block,
-                     const std::vector<long> rows, const std::vector<long> cols)
+                     const std::vector<dolfin::la_index> rows,
+                     const std::vector<dolfin::la_index> cols)
            {
              if (block.rows() != rows.size())
                throw py::value_error("Block must have the same number of rows as len(rows)");
              if (block.cols() != cols.size())
                throw py::value_error("Block must have the same number of columns as len(cols)");
-             std::vector<dolfin::la_index> _rows(rows.begin(), rows.end());
-             std::vector<dolfin::la_index> _cols(cols.begin(), cols.end());
-             self.get((double *) block.data(), rows.size(), _rows.data(),
-                      cols.size(), _cols.data());
+             self.get((double *) block.data(), rows.size(), rows.data(),
+                      cols.size(), cols.data());
            }, py::arg("block"), py::arg("rows"), py::arg("cols"))
       .def("set", [](dolfin::GenericMatrix& self, const Eigen::Ref<const RowMatrixXd> block,
-                     const std::vector<long> rows, const std::vector<long> cols)
+                     const std::vector<dolfin::la_index> rows,
+                     const std::vector<dolfin::la_index> cols)
            {
              if (block.rows() != rows.size())
                throw py::value_error("Block must have the same number of rows as len(rows)");
              if (block.cols() != cols.size())
                throw py::value_error("Block must have the same number of columns as len(cols)");
-             std::vector<dolfin::la_index> _rows(rows.begin(), rows.end());
-             std::vector<dolfin::la_index> _cols(cols.begin(), cols.end());
-             self.set((const double *) block.data(), rows.size(), _rows.data(),
-                      cols.size(), _cols.data());
+             self.set((const double *) block.data(), rows.size(), rows.data(),
+                      cols.size(), cols.data());
            }, py::arg("block"), py::arg("rows"), py::arg("cols"))
       .def("getrow", [](const dolfin::GenericMatrix& instance, std::size_t row)
            {
@@ -507,11 +502,11 @@ namespace dolfin_wrappers
       .def("__len__", [](dolfin::GenericVector& self) { return self.local_size(); })
       .def("size",  (std::size_t (dolfin::GenericVector::*)() const) &dolfin::GenericVector::size)
       //
-      .def("get_local", [](const dolfin::GenericVector& instance, const std::vector<long>& rows)
+      .def("get_local", [](const dolfin::GenericVector& instance,
+                           const std::vector<dolfin::la_index>& rows)
            {
-             std::vector<dolfin::la_index> _rows(rows.begin(), rows.end());
              py::array_t<double> data(rows.size());
-             instance.get_local(data.mutable_data(), _rows.size(), _rows.data());
+             instance.get_local(data.mutable_data(), rows.size(), rows.data());
              return data;
            })
       .def("get_local", [](const dolfin::GenericVector& instance)
