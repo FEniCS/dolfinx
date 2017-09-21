@@ -112,16 +112,13 @@ PYBIND11_MODULE(SIGNATURE, m)
 }
 
 """
-    class UserConductivity(UserExpression):
-        def value_shape(self):
-            return (3,)
 
-    c = UserConductivity(degree=0)
     cc = compile_cpp_code(conductivity_code).Conductivity()
     cc.c00 = c00
     cc.c01 = c01
     cc.c11 = c11
-    c._cpp_object = cc
+
+    c = Expression(cc, degree=0)
 
 else:
     conductivity_code = """
