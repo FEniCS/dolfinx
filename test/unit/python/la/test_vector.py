@@ -136,10 +136,7 @@ class TestVectorForAnyBackend:
         from numpy import empty
         n = 301
         v0 = Vector(mpi_comm_world(), n)
-        if has_pybind11():
-            data = v0.array()
-        else:
-            data = v0.get_local()
+        data = v0.get_local()
 
     def test_set_local(self, any_backend):
         from numpy import zeros

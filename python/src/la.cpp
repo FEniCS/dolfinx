@@ -481,6 +481,12 @@ namespace dolfin_wrappers
              instance.get_local(data.mutable_data(), _rows.size(), _rows.data());
              return data;
            })
+      .def("get_local", [](const dolfin::GenericVector& instance)
+           {
+             std::vector<double> values;
+             instance.get_local(values);
+             return py::array_t<double>(values.size(), values.data());
+           })
       .def("set_local", [](dolfin::GenericVector& instance, std::vector<double> values)
            {
              std::vector<dolfin::la_index> indices(values.size());
