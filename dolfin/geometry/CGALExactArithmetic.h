@@ -100,16 +100,17 @@ namespace dolfin
       for (const Point& p2 : cgal_result)
       {
 	if ( (p1-p2).norm() < 1e-15 )
-      {
-	found = true;
-	break;
-      }
+	{
+	  found = true;
+	  break;
+	}
 
 	if (!found)
 	  dolfin_error("CGALExactArithmetic.h",
 		       "verify intersection construction result",
 		       "Point (%f, %f, %f) in dolfin result not found in cgal result");
-    }<
+      }
+    }
     return dolfin_result;
   }
 } // end namespace dolfin
