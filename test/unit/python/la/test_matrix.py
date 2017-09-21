@@ -267,6 +267,39 @@ class TestMatrixForAnyBackend:
             assert j < cols.size
             assert round(sum(abs(row)) - 1.0, 7) == 0
 
+    def test_ident(self, use_backend, any_backend):
+        self.backend, self.sub_backend = any_backend
+        A, B = self.assemble_matrices(use_backend)
+        N, M = A.size(0), A.size(1)
+
+        # Make sure rows are not identity from before
+        import numpy
+        ROWS = [2, 4]
+        for row in ROWS:
+            block = numpy.array([[42.0]], dtype=float)
+            A.set(block, numpy.array([row], dtype=numpy.intc),
+                  numpy.array([row], dtype=numpy.intc))
+        A.apply("insert")
+
+        def check_row(A, row, idented):
+            cols, vals = A.getrow(row)
+            i = list(cols).index(row)
+            if idented:
+                assert vals[i] == 1
+                vals[i] = 0
+                for c in cols:
+                    if c != row:
+                        assert (vals == 0).all()
+            else:
+                assert vals[i] == 42.0
+
+        for row in ROWS:
+            check_row(A, row, False)
+        A.ident(numpy.array(ROWS, dtype=numpy.intc))
+        A.apply("insert")
+        for row in ROWS:
+            check_row(A, row, True)
+
     def test_setting_getting_diagonal(self, use_backend, any_backend):
         self.backend, self.sub_backend = any_backend
 

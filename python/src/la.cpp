@@ -83,6 +83,9 @@ namespace
 
 namespace dolfin_wrappers
 {
+
+  using RowMatrixXd = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
   void la(py::module& m)
   {
 #ifdef HAS_PETSC4PY
@@ -261,9 +264,27 @@ namespace dolfin_wrappers
       .def("norm", &dolfin::GenericMatrix::norm)
       .def("nnz", &dolfin::GenericMatrix::nnz)
       .def("size", &dolfin::GenericMatrix::size)
+      .def("apply", &dolfin::GenericMatrix::apply)
       .def("get_diagonal", &dolfin::GenericMatrix::get_diagonal)
       .def("set_diagonal", &dolfin::GenericMatrix::set_diagonal)
       .def("ident_zeros", &dolfin::GenericMatrix::ident_zeros)
+      .def("ident", [](dolfin::GenericMatrix& self, std::vector<long> rows)
+           {
+             std::vector<dolfin::la_index> _rows(rows.begin(), rows.end());
+             self.ident(rows.size(), _rows.data());
+           }, py::arg("rows"))
+      .def("set", [](dolfin::GenericMatrix& self, const Eigen::Ref<const RowMatrixXd> block,
+                     const std::vector<long> rows, const std::vector<long> cols)
+           {
+             if (block.rows() != rows.size())
+               throw py::value_error("Block must have the same number of rows as len(rows)");
+             if (block.cols() != cols.size())
+               throw py::value_error("Block must have the same number of columns as len(cols)");
+             std::vector<dolfin::la_index> _rows(rows.begin(), rows.end());
+             std::vector<dolfin::la_index> _cols(cols.begin(), cols.end());
+             self.set((double *) block.data(), rows.size(), _rows.data(),
+                      cols.size(), _cols.data());
+           }, py::arg("block"), py::arg("rows"), py::arg("cols"))
       .def("getrow", [](const dolfin::GenericMatrix& instance, std::size_t row)
            {
              std::vector<double> values;
@@ -272,7 +293,7 @@ namespace dolfin_wrappers
              auto _columns = py::array_t<std::size_t>(columns.size(), columns.data());
              auto _values = py::array_t<double>(values.size(), values.data());
              return std::make_pair(_columns, _values);
-           })
+           }, py::arg("row"))
       .def("array", [](const dolfin::GenericMatrix& instance)
            {
              // FIXME: This function is highly dubious. It assumes a
