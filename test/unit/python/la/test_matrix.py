@@ -339,6 +339,30 @@ class TestMatrixForAnyBackend:
         w.vector()[:] -= b
         assert round(w.vector().norm("l2"), 14) == 0
 
+    @skip_in_parallel
+    def test_get_set(self, use_backend, any_backend):
+        self.backend, self.sub_backend = any_backend
+        A, B = self.assemble_matrices(use_backend)
+        N, M = A.size(0), A.size(1)
+
+        import numpy
+        rows = numpy.array([1, 2], dtype=numpy.intc)
+        cols = numpy.array([1, 2], dtype=numpy.intc)
+
+        block_in = numpy.ones((2, 2), dtype=float) * 42
+        Anp0 = A.array()
+        assert (Anp0[1:3,1:3] != block_in).any()
+
+        A.set(block_in, rows, cols)
+        A.apply("insert")
+
+        Anp1 = A.array()
+        assert (Anp1[1:3,1:3] == block_in).all()
+
+        block_out = numpy.zeros_like(block_in)
+        A.get(block_out, rows, cols)
+        assert (block_out == block_in).all()
+
     # def test_create_from_sparsity_pattern(self):
 
     # def test_size(self):
