@@ -1,4 +1,4 @@
-// Copyright (C) 2016 Benjamin Kehlet, August Johansson, and Anders Logg
+// Copyright (C) 2016-2017 Benjamin Kehlet, August Johansson, and Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -24,7 +24,8 @@
 // algorithms using exact arithmetic with CGAL. It is not included in
 // a normal build but is used as a reference for verification and
 // debugging of the inexact DOLFIN collision detection algorithms.
-// To enable, set the option DOLFIN_ENABLE_GEOMETRY_DEBUGGING.
+// To enable, set the option DOLFIN_ENABLE_GEOMETRY_DEBUGGING when
+// configuring DOLFIN
 
 #ifndef __CGAL_EXACT_ARITHMETIC_H
 #define __CGAL_EXACT_ARITHMETIC_H
@@ -86,12 +87,29 @@ namespace dolfin
   {
     if (dolfin_result.size() != cgal_result.size())
     {
+
+
       dolfin_error("CGALExactArithmetic.h",
 		   "verify intersection",
-		   "size of point set differs");
+		   "size of point set differs (%d vs %d)", dolfin_result.size(), cgal_result.size());
     }
 
+    for (const Point& p1 : dolfin_result)
+    {
+      bool found = false;
+      for (const Point& p2 : cgal_result)
+      {
+	if ( (p1-p2).norm() < 1e-15 )
+      {
+	found = true;
+	break;
+      }
 
+	if (!found)
+	  dolfin_error("CGALExactArithmetic.h",
+		       "verify intersection construction result",
+		       "Point (%f, %f, %f) in dolfin result not found in cgal result");
+    }<
     return dolfin_result;
   }
 } // end namespace dolfin
@@ -565,7 +583,7 @@ namespace dolfin
   }
   //----------------------------------------------------------------------------
   // Reference implementations of DOLFIN intersection triangulation
-  // functions using CGAL exact arithmetic
+  // functions using CGAL with exact arithmetic
   // ---------------------------------------------------------------------------
   inline
   std::vector<Point> cgal_intersection_segment_segment_2d(const Point& p0,

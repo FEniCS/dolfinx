@@ -30,17 +30,6 @@
 namespace dolfin
 {
   // Comparison of points
-  struct point_strictly_less
-  {
-    bool operator()(const dolfin::Point & p0, const dolfin::Point& p1)
-    {
-      if (p0.x() != p1.x())
-        return p0.x() < p1.x();
-      return p0.y() < p1.y();
-    }
-  };
-
-  // Comparison of points
   inline bool operator==(const dolfin::Point& p0, const dolfin::Point& p1)
   {
     return p0.x() == p1.x() and p0.y() == p1.y() and p0.z() == p1.z();
