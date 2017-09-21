@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-08-23
+// Last changed: 2017-09-21
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -349,19 +349,19 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   const double qo = q0o*q1o;
 
   // Case 0: points on the same side --> no intersection
-  if (qo > 0.)
+  if (qo > 0.0)
     return std::vector<Point>();
 
   // Repeat the same procedure for p
   const double p0o = orient2d(q0, q1, p0);
   const double p1o = orient2d(q0, q1, p1);
-  if (p0o*p1o > 0.)
+  if (p0o*p1o > 0.0)
     return std::vector<Point>();
 
   // Case 1: exactly one point on line --> possible point intersection
-  if (q0o == 0. and q1o != 0.)
+  if (q0o == 0.0 and q1o != 0.0)
     return intersection_segment_point_2d(p0, p1, q0);
-  else if (q0o != 0 and q1o == 0.)
+  else if (q0o != 0.0 and q1o == 0.0)
     return intersection_segment_point_2d(p0, p1, q1);
 
   // Compute line vector and major axis
@@ -529,13 +529,13 @@ IntersectionConstruction::_intersection_triangle_segment_3d(const Point& p0,
   const double qo = q0o*q1o;
 
   // Case 0: points on the same side --> no intersection
-  if (qo > 0.)
+  if (qo > 0.0)
     return std::vector<Point>();
 
   // Case 1: exactly one point in plane --> possible point intersection
-  if (q0o == 0. and q1o != 0.)
+  if (q0o == 0.0 and q1o != 0.0)
     return intersection_triangle_point_3d(p0, p1, p2, q0);
-  else if (q0o != 0. and q1o == 0.)
+  else if (q0o != 0.0 and q1o == 0.0)
     return intersection_triangle_point_3d(p0, p1, p2, q1);
 
   // Compute plane normal and major axis
