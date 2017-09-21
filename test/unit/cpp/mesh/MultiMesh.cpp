@@ -32,9 +32,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TEST(MultiMesh, trivialCase3D)
 {
-  std::shared_ptr<Mesh> background = std::make_shared<UnitTetrahedronMesh>();
+  std::shared_ptr<Mesh> background(new Mesh(UnitTetrahedronMesh::create()));
 
-  std::shared_ptr<Mesh> overlapping = std::make_shared<UnitTetrahedronMesh>();
+  std::shared_ptr<Mesh> overlapping(new Mesh(UnitTetrahedronMesh::create()));
   overlapping->translate(Point(.1, .1, .1));
 
   MultiMesh multimesh(background, overlapping, 1);
@@ -50,7 +50,7 @@ TEST(MultiMesh, trivialCase3D2)
 							    1,1,1);
   const std::vector<double>& refmeshcoords = refmesh->coordinates();
 
-  std::shared_ptr<Mesh> tetmesh = std::make_shared<UnitTetrahedronMesh>();
+  std::shared_ptr<Mesh> tetmesh(new Mesh(UnitTetrahedronMesh::create()));
   std::vector<double>& tetmesh_coords = tetmesh->coordinates();
 
   for (CellIterator cell(*refmesh); !cell.end(); ++cell)
@@ -70,7 +70,7 @@ TEST(MultiMesh, trivialCase3D2)
 
 TEST(MultiMesh, takesForever)
 {
-  std::shared_ptr<Mesh> background = std::make_shared<UnitTetrahedronMesh>();
+  std::shared_ptr<Mesh> background(new Mesh(UnitTetrahedronMesh::create()));
   {
     std::vector<double>& coords = background->coordinates();
     coords = { 0, 0, 0,
