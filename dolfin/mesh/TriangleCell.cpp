@@ -458,6 +458,12 @@ bool TriangleCell::collides(const Cell& cell, const MeshEntity& entity) const
   return CollisionPredicates::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
+std::vector<double>
+TriangleCell::triangulate_intersection(const Cell& cell, const MeshEntity& entity) const
+{
+  return IntersectionTriangulation::triangulate_intersection(cell, entity);
+}
+//-----------------------------------------------------------------------------
 std::string TriangleCell::description(bool plural) const
 {
   if (plural)

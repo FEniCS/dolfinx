@@ -31,6 +31,7 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/mesh/Cell.h>
@@ -53,11 +54,12 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   // Build graph
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const ArrayView<const dolfin::la_index> dofs0
-      = dofmap0.cell_dofs(cell->index());
-    const ArrayView<const dolfin::la_index> dofs1
-      = dofmap1.cell_dofs(cell->index());
-    //std::vector<dolfin::la_index>::const_iterator node0, node1;
+    auto _dofs0 = dofmap0.cell_dofs(cell->index());
+    auto _dofs1 = dofmap1.cell_dofs(cell->index());
+
+    ArrayView<const dolfin::la_index> dofs0(_dofs0.size(), _dofs0.data());
+    ArrayView<const dolfin::la_index> dofs1(_dofs1.size(), _dofs1.data());
+
     for (auto node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
       for (auto node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)
         if (*node0 != *node1)

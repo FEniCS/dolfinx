@@ -43,11 +43,13 @@ namespace dolfin
     /// Supports scalar solution on 2D convex domains. The files only have a
     /// list of xyz coordinates 'x y u(x,y)=z'
     explicit XYZFile(const std::string filename);
+
+    // Destructor
     ~XYZFile();
 
     /// Output Function
     /// @param u Function
-    void operator<< (const Function& u);
+    void write(const Function& u);
 
   private:
 

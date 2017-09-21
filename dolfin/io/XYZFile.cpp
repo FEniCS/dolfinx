@@ -50,7 +50,7 @@ XYZFile::~XYZFile()
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void XYZFile::operator<<(const Function& u)
+void XYZFile::write(const Function& u)
 {
   // Update xyz file name and clear file
   xyz_name_update();

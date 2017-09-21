@@ -25,7 +25,6 @@
 #include <vector>
 #include <ufc.h>
 
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/BasisFunction.h>
 #include <dolfin/fem/DirichletBC.h>
@@ -83,8 +82,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
     cell0->get_cell_data(c0);
 
     // Tabulate dofs for w on cell and store values
-    const ArrayView<const dolfin::la_index> dofs
-      = W.dofmap()->cell_dofs(cell0->index());
+    auto dofs = W.dofmap()->cell_dofs(cell0->index());
 
     // Compute coefficients on this cell
     std::size_t offset = 0;
@@ -104,7 +102,7 @@ void Extrapolation::compute_coefficients(
   const Cell& cell0,
   const std::vector<double>& coordinate_dofs0,
   const ufc::cell& c0,
-  const ArrayView<const dolfin::la_index>& dofs,
+  const Eigen::Ref<const Eigen::Matrix<dolfin::la_index, Eigen::Dynamic, 1>> dofs,
   std::size_t& offset)
 {
   // Call recursively for mixed elements
@@ -268,8 +266,7 @@ Extrapolation::compute_unique_dofs(const Cell& cell,
                                    std::set<std::size_t>& unique_dofs)
 {
   dolfin_assert(V.dofmap());
-  const ArrayView<const dolfin::la_index> dofs
-    = V.dofmap()->cell_dofs(cell.index());
+  auto dofs = V.dofmap()->cell_dofs(cell.index());
 
   // Data structure for current cell
   std::map<std::size_t, std::size_t> dof2row;

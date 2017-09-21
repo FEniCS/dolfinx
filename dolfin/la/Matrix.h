@@ -14,13 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Ola Skavhaug, 2007-2008.
-// Modified by Kent-Andre Mardal, 2008.
-// Modified by Martin Sandve Alnes, 2008.
-//
-// First added:  2006-05-15
-// Last changed: 2009-09-08
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -44,7 +37,10 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    Matrix(MPI_Comm comm=MPI_COMM_WORLD)
+    Matrix() : Matrix(MPI_COMM_WORLD) {}
+
+    /// Create empty matrix
+    explicit Matrix(MPI_Comm comm)
     {
       DefaultFactory factory;
       matrix = factory.create_matrix(comm);

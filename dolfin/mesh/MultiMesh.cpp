@@ -1108,7 +1108,6 @@ void MultiMesh::_add_normal(std::vector<double>& normals,
     for (std::size_t j = 0; j < gdim; ++j)
       normals.push_back(-normal[j]);
 }
-
 //-----------------------------------------------------------------------------
 void MultiMesh::_plot() const
 {

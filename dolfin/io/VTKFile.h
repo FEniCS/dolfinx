@@ -48,65 +48,45 @@ namespace dolfin
 
     /// Create VTK file
     VTKFile(const std::string filename, std::string encoding);
+
+    // Destructor
     ~VTKFile();
 
     /// Output mesh
-    void operator<< (const Mesh& mesh);
+    void write(const Mesh& mesh);
 
     /// Output MeshFunction<bool>
-    ///
-    /// @param meshfunction
-    void operator<< (const MeshFunction<bool>& meshfunction);
+    void write(const MeshFunction<bool>& meshfunction);
 
     /// Output MeshFunction<std::size_t>
-    ///
-    /// @param meshfunction
-    void operator<< (const MeshFunction<std::size_t>& meshfunction);
+    void write(const MeshFunction<std::size_t>& meshfunction);
 
     /// Output MeshFunction<int>
-    ///
-    /// @param meshfunction
-    void operator<< (const MeshFunction<int>& meshfunction);
+    void write(const MeshFunction<int>& meshfunction);
 
     /// Output MeshFunction<double>
-    ///
-    /// @param meshfunction
-    void operator<< (const MeshFunction<double>& meshfunction);
+    void write(const MeshFunction<double>& meshfunction);
 
     /// Output Function
-    /// @param u (Function)
-    void operator<< (const Function& u);
+    void write(const Function& u);
 
     /// Output Mesh and timestep
-    /// @param mesh
-    ///   Mesh and time
-    void operator<< (const std::pair<const Mesh*, double> mesh);
+    void write(const Mesh& mesh, double t);
 
     /// Output MeshFunction and timestep
-    /// @param f
-    ///   MeshFunction and time
-    void operator<< (const std::pair<const MeshFunction<int>*, double> f);
+    void write(const MeshFunction<int>& mesh, double t);
 
     /// Output MeshFunction and timestep
-    /// @param f
-    ///   MeshFunction and time
-    void
-      operator<< (const std::pair<const MeshFunction<std::size_t>*, double> f);
+    void write(const MeshFunction<std::size_t>& mf, double t);
 
     /// Output MeshFunction and timestep
-    /// @param f
-    ///   MeshFunction and time
-    void operator<< (const std::pair<const MeshFunction<double>*, double> f);
+    void write(const MeshFunction<double>& mf, double t);
 
     /// Output MeshFunction and timestep
-    /// @param f
-    ///   MeshFunction and time
-    void operator<< (const std::pair<const MeshFunction<bool>*, double> f);
+    void write(const MeshFunction<bool>& mf, double t);
 
     /// Output Function and timestep
-    /// @param u
-    ///   Function and time
-    void operator<< (const std::pair<const Function*, double> u);
+    void write(const Function& u, double t);
 
   private:
 

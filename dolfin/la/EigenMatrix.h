@@ -90,7 +90,7 @@ namespace dolfin
 
     /// Return MPI communicator
     virtual MPI_Comm mpi_comm() const
-    { return MPI_COMM_SELF; }
+    { return _mpi_comm.comm(); }
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -220,6 +220,9 @@ namespace dolfin
     const EigenMatrix& operator= (const EigenMatrix& A);
 
   private:
+
+    // MPI communicator
+    dolfin::MPI::Comm _mpi_comm;
 
     // Eigen matrix object - row major access
     eigen_matrix_type _matA;

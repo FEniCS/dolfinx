@@ -386,7 +386,10 @@ void SystemAssembler::cell_wise_assembly(
 
       // Get local-to-global dof maps for cell
       for (std::size_t dim = 0; dim < rank; ++dim)
-        cell_dofs[form][dim] = dofmaps[form][dim]->cell_dofs(cell->index());
+      {
+        auto dmap = dofmaps[form][dim]->cell_dofs(cell->index());
+        cell_dofs[form][dim].set(dmap.size(), dmap.data());
+      }
 
       // Compute cell tensor (if required)
       bool tensor_required;
@@ -638,8 +641,8 @@ void SystemAssembler::facet_wise_assembly(
         {
           for (std::size_t dim = 0; dim < rank; ++dim)
           {
-            cell_dofs[form][c][dim]
-              = dofmaps[form][dim]->cell_dofs(cell_index[c]);
+            auto dmap = dofmaps[form][dim]->cell_dofs(cell_index[c]);
+            cell_dofs[form][c][dim].set(dmap.size(), dmap.data());
             num_dofs[dim] += cell_dofs[form][c][dim].size();
           }
 
@@ -810,8 +813,8 @@ void SystemAssembler::facet_wise_assembly(
         // Get local-to-global dof maps for cell
         for (std::size_t dim = 0; dim < rank; ++dim)
         {
-          cell_dofs[form][0][dim]
-            = dofmaps[form][dim]->cell_dofs(cell.index());
+          auto dmap = dofmaps[form][dim]->cell_dofs(cell.index());
+          cell_dofs[form][0][dim].set(dmap.size(), dmap.data());
         }
 
         // Store if tensor is required

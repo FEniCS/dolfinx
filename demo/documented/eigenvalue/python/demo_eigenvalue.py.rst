@@ -22,9 +22,10 @@ which in turn relies on the linear algebra library PETSc. Therefore,
 both PETSc and SLEPc are required for this demo. We can test whether
 PETSc and SLEPc are available, and exit if not, as follows ::
 
+    import matplotlib.pyplot as plt
     from dolfin import *
     # Test for PETSc and SLEPc
-  
+
     if not has_linear_algebra_backend("PETSc"):
         print("DOLFIN has not been configured with PETSc. Exiting.")
         exit()
@@ -99,4 +100,4 @@ eigenfunction can be manipulated as any other :py:class:`Function
 
     # Plot eigenfunction
     plot(u)
-    interactive()
+    plt.show()

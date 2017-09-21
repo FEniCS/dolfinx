@@ -21,6 +21,9 @@
 # Last changed: 2010-05-11
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
+
 parameters["refinement_algorithm"] = "plaza"
 
 # Create rectangular mesh
@@ -50,6 +53,7 @@ mesh = SubMesh(mesh, sub_domains, 0)
 mesh.snap_boundary(hole)
 
 # Refine and snap mesh
+plt.figure()
 plot(mesh, title="Mesh 0")
 num_refinements = 3
 for i in range(num_refinements):
@@ -68,6 +72,7 @@ for i in range(num_refinements):
     mesh.snap_boundary(hole)
 
     # Plot mesh
+    plt.figure()
     plot(mesh, title=("Mesh %d" % (i + 1)))
 
-interactive()
+plt.show()

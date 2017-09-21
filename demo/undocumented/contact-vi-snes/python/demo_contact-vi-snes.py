@@ -23,6 +23,8 @@
 # Modified by Corrado Maurini 2013
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # This demo requires PETSc
 if not has_petsc():
@@ -110,4 +112,4 @@ file << u
 
 # plot the current configuration
 plot(u, mode="displacement", wireframe=True, title="Displacement field")
-interactive()
+plt.show()

@@ -44,8 +44,6 @@ def convergence_order(errors, base = 2):
 @skip_in_parallel
 def test_butcher_schemes_scalar():
 
-    LEVEL = cpp.get_log_level()
-    cpp.set_log_level(cpp.WARNING)
     mesh = UnitSquareMesh(4, 4)
 
     V = FunctionSpace(mesh, "R", 0)
@@ -68,15 +66,11 @@ def test_butcher_schemes_scalar():
 
         assert scheme.order() - min(convergence_order(u_errors)) < 0.1
 
-    cpp.set_log_level(LEVEL)
-
 
 @pytest.mark.slow
 @skip_in_parallel
 def test_butcher_schemes_vector():
 
-    LEVEL = cpp.get_log_level()
-    cpp.set_log_level(cpp.WARNING)
     mesh = UnitSquareMesh(4, 4)
 
     V = VectorFunctionSpace(mesh, "R", 0, dim=2)

@@ -112,6 +112,6 @@ double CoordinateMatrix::norm(std::string norm_type) const
         _norm += 2.0*_vals[i]*_vals[i];
     }
   }
-  return std::sqrt(dolfin::MPI::sum(_mpi_comm, _norm));
+  return std::sqrt(dolfin::MPI::sum(_mpi_comm.comm(), _norm));
 }
 //-----------------------------------------------------------------------------

@@ -76,9 +76,5 @@ int main()
   File file("spatial-coordinates.pvd");
   file << *u;
 
-  // Plot solution
-  plot(*u);
-  interactive();
-
   return 0;
 }

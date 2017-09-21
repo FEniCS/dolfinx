@@ -130,9 +130,8 @@ int main()
   residual.axpy(-1.0, b);
   info("Norm of residual: %lf", residual.norm("l2"));
 
-  // Plot solution
-  plot(u);
-  interactive();
+  // Write out solution to XDMF file.
+  XDMFFile("u.xdmf").write(u);
 
   #else
   cout << "This demo requires DOLFIN to be confugured with PETSc." << endl;

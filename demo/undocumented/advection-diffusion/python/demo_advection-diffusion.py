@@ -26,6 +26,7 @@
 # program in src/demo/subdomains.
 
 from dolfin import *
+import matplotlib.pyplot as plt
 
 def boundary_value(n):
     if n < 10:
@@ -95,9 +96,13 @@ out_file = File("results/temperature.pvd")
 # Set intial condition
 u = u0
 
-# Time-stepping
-while t < T:
+# Time-stepping, plot initial condition.
+i = 0
+plt.figure()
+plot(u, title=r"t = {0:1.1f}".format(0.0))
+i += 1 
 
+while t - T < DOLFIN_EPS:
     # Assemble vector and apply boundary conditions
     b = assemble(L)
     bc.apply(b)
@@ -109,14 +114,16 @@ while t < T:
     u0 = u
 
     # Plot solution
-    plot(u)
+    if i % 5 == 0: 
+        plt.figure()
+        plot(u, title=r"t = {0:1.1f}".format(t))
 
     # Save the solution to file
     out_file << (u, t)
 
     # Move to next interval and adjust boundary condition
     t += dt
+    i += 1
     g.assign(boundary_value(int(t/dt)))
 
-# Hold plot
-interactive()
+plt.show()

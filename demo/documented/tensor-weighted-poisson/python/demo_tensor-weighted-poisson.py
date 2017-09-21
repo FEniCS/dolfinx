@@ -62,8 +62,69 @@ def boundary(x):
 u0 = Constant(0.0)
 bc = DirichletBC(V, u0, boundary)
 
+# Define conductivity components as MeshFunctions
+c00 = MeshFunction("double", mesh, "../unitsquare_32_32_c00.xml.gz")
+c01 = MeshFunction("double", mesh, "../unitsquare_32_32_c01.xml.gz")
+c11 = MeshFunction("double", mesh, "../unitsquare_32_32_c11.xml.gz")
+
 # Code for C++ evaluation of conductivity
-conductivity_code = """
+if has_pybind11():
+    conductivity_code = """
+
+#include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
+namespace py = pybind11;
+
+#include <dolfin/function/Expression.h>
+#include <dolfin/mesh/MeshFunction.h>
+
+class Conductivity : public dolfin::Expression
+{
+public:
+
+  // Create expression with 3 components
+  Conductivity() : dolfin::Expression(3) {}
+
+  // Function for evaluating expression on each cell
+  void eval(Eigen::Ref<Eigen::VectorXd> values, Eigen::Ref<const Eigen::VectorXd> x, const ufc::cell& cell) const override
+  {
+    const uint cell_index = cell.index;
+    values[0] = (*c00)[cell_index];
+    values[1] = (*c01)[cell_index];
+    values[2] = (*c11)[cell_index];
+  }
+
+  // The data stored in mesh functions
+  std::shared_ptr<dolfin::MeshFunction<double>> c00;
+  std::shared_ptr<dolfin::MeshFunction<double>> c01;
+  std::shared_ptr<dolfin::MeshFunction<double>> c11;
+
+};
+
+PYBIND11_MODULE(SIGNATURE, m)
+{
+  py::class_<Conductivity, std::shared_ptr<Conductivity>, dolfin::Expression>
+    (m, "Conductivity", py::dynamic_attr())
+    .def(py::init<>())
+    .def_readwrite("c00", &Conductivity::c00)
+    .def_readwrite("c01", &Conductivity::c01)
+    .def_readwrite("c11", &Conductivity::c11);
+}
+
+"""
+    class UserConductivity(UserExpression):
+        def value_shape(self):
+            return (3,)
+
+    c = UserConductivity(degree=0)
+    cc = compile_cpp_code(conductivity_code).Conductivity()
+    cc.c00 = c00
+    cc.c01 = c01
+    cc.c11 = c11
+    c._cpp_object = cc
+
+else:
+    conductivity_code = """
 
 class Conductivity : public Expression
 {
@@ -89,16 +150,11 @@ public:
 
 };
 """
+    c = Expression(cppcode=conductivity_code, degree=0)
+    c.c00 = c00
+    c.c01 = c01
+    c.c11 = c11
 
-# Define conductivity expression and matrix
-c00 = MeshFunction("double", mesh, "../unitsquare_32_32_c00.xml.gz")
-c01 = MeshFunction("double", mesh, "../unitsquare_32_32_c01.xml.gz")
-c11 = MeshFunction("double", mesh, "../unitsquare_32_32_c11.xml.gz")
-
-c = Expression(cppcode=conductivity_code, degree=0)
-c.c00 = c00
-c.c01 = c01
-c.c11 = c11
 C = as_matrix(((c[0], c[1]), (c[1], c[2])))
 
 # Define variational problem
@@ -117,4 +173,6 @@ file = File("poisson.pvd")
 file << u
 
 # Plot solution
-plot(u, interactive=True)
+import matplotlib.pyplot as plt
+plot(u)
+plt.show()

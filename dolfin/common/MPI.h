@@ -71,6 +71,57 @@ namespace dolfin
   {
   public:
 
+    // Create a duplicate MPI communicator and manage lifetime of the
+    // communicator
+    class Comm
+    {
+    public:
+
+      /// Duplicate communicator and wrap duplicate
+      Comm(MPI_Comm comm);
+
+      // The disabling of the below is turned off because the SWIG
+      // docstring generator fails on it.
+
+      // Disable default constructor
+      //Comm() = default;
+
+      // Disable copy constructor
+      //Comm(const Comm& comm) = delete;
+
+      // Disable assignment operator
+      //void operator=(Comm const &comm) = delete;
+
+      /// Destructor (frees wrapped communicator)
+      ~Comm();
+
+      /// Free (destroy) communicator. Calls function 'MPI_Comm_free'.
+      void free();
+
+      /// Duplicate communivator, and free any previously created
+      /// communicator
+      void reset(MPI_Comm comm);
+
+      /// Return process rank for the communicator
+      unsigned int rank() const;
+
+      /// Return size of the group (number of processes) associated
+      /// with the communicator. This function will also intialise MPI
+      /// if it hasn't already been intialised.
+      unsigned int size() const;
+
+      /// Set a barrier (synchronization point)
+      void barrier() const;
+
+      /// Return the underlying MPI_Comm object
+      MPI_Comm comm() const;
+
+    private:
+
+      // MPI communicator
+      MPI_Comm _comm;
+    };
+
     /// Return process rank for the communicator
     static unsigned int rank(MPI_Comm comm);
 

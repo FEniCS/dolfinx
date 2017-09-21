@@ -27,17 +27,19 @@ GenericLinearAlgebraFactory& EigenMatrix::factory() const
   return EigenFactory::instance();
 }
 //---------------------------------------------------------------------------
-EigenMatrix::EigenMatrix() : _matA(0, 0)
+EigenMatrix::EigenMatrix() : EigenMatrix(0, 0)
 {
   // Do nothing
 }
 //---------------------------------------------------------------------------
-EigenMatrix::EigenMatrix(std::size_t M, std::size_t N) : _matA(M, N)
+EigenMatrix::EigenMatrix(std::size_t M, std::size_t N)
+  : _mpi_comm(MPI_COMM_SELF), _matA(M, N)
 {
   // Do nothing
 }
 //---------------------------------------------------------------------------
-EigenMatrix::EigenMatrix(const EigenMatrix& A) : _matA(A._matA)
+EigenMatrix::EigenMatrix(const EigenMatrix& A) : _mpi_comm(MPI_COMM_SELF),
+                                                 _matA(A._matA)
 {
   // Do nothing
 }
@@ -247,7 +249,9 @@ void EigenMatrix::mult(const GenericVector& x, GenericVector& y) const
                  "Vector for matrix-vector result has wrong size");
   }
 
-  yy.vec() = _matA*xx.vec();
+  dolfin_assert(xx.vec());
+  dolfin_assert(yy.vec());
+  *yy.vec() = _matA*(*xx.vec());
 }
 //-----------------------------------------------------------------------------
 void EigenMatrix::get_diagonal(GenericVector& x) const
@@ -259,9 +263,9 @@ void EigenMatrix::get_diagonal(GenericVector& x) const
                  "Matrix and vector dimensions don't match");
   }
 
-  Eigen::VectorXd& xx = x.down_cast<EigenVector>().vec();
+  auto xx = as_type<EigenVector>(x).vec();
   for (std::size_t i = 0; i != x.size(); ++i)
-    xx[i] = _matA.coeff(i, i);
+    (*xx)[i] = _matA.coeff(i, i);
 }
 //-----------------------------------------------------------------------------
 void EigenMatrix::set_diagonal(const GenericVector& x)
@@ -273,9 +277,9 @@ void EigenMatrix::set_diagonal(const GenericVector& x)
                  "Matrix and vector dimensions don't match");
   }
 
-  const Eigen::VectorXd& xx = x.down_cast<EigenVector>().vec();
+  auto xx = as_type<const EigenVector>(x).vec();
   for (std::size_t i = 0; i != x.size(); ++i)
-    _matA.coeffRef(i, i) = xx[i];
+    _matA.coeffRef(i, i) = (*xx)[i];
 }
 //----------------------------------------------------------------------------
 void EigenMatrix::transpmult(const GenericVector& x,
@@ -302,7 +306,9 @@ void EigenMatrix::transpmult(const GenericVector& x,
                  "Vector for matrix-vector result has wrong size");
   }
 
-  yy.vec() = _matA.transpose()*xx.vec();
+  dolfin_assert(xx.vec());
+  dolfin_assert(yy.vec());
+  *yy.vec() = _matA.transpose()*(*xx.vec());
 }
 //----------------------------------------------------------------------------
 const EigenMatrix& EigenMatrix::operator*= (double a)

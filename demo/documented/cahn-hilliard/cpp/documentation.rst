@@ -27,9 +27,9 @@ They differ only in the first line setting the cell:
 
 .. code-block:: python
 
-    cell = triangle
+    cell = quadrilateral
 
-First, a mixed function spaces of linear Lagrange functions on triangles
+First, a mixed function spaces of linear Lagrange functions on quadrilaterals
 is created:
 
 .. code-block:: python
@@ -313,7 +313,7 @@ A mesh is then created with 97 (96 + 1) vertices in each direction:
 .. code-block:: c++
 
     // Mesh
-    auto mesh = std::make_shared<UnitSquareMesh>(96, 96);
+    auto mesh = std::make_shared<Mesh>(UnitQuadMesh::create(96, 96));
 
 A set of constants (required for the assembling of the forms) and two
 scalars (to be used in the time stepping) are then declared:
@@ -385,14 +385,6 @@ is saved to a file, along with the time ``t``.
       // Save function to file
       file << std::pair<const Function*, double>(&(u[0]), t);
     }
-
-The final result is plotted to the screen and the program is finished.
-
-.. code-block:: c++
-
-    // Plot solution
-    plot(u[0]);
-    interactive();
 
     return 0;
   }

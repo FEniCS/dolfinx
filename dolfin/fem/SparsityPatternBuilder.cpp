@@ -62,7 +62,7 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
 
   // Initialise sparsity pattern
   if (init)
-    sparsity_pattern.init(mesh.mpi_comm(), index_maps);
+    sparsity_pattern.init(index_maps);
 
   // Only build for rank >= 2 (matrices and higher order tensors) that
   // require sparsity details
@@ -99,7 +99,10 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
     {
       // Tabulate dofs for each dimension and get local dimensions
       for (std::size_t i = 0; i < rank; ++i)
-        dofs[i] = dofmaps[i]->cell_dofs(cell->index());
+      {
+        auto dmap = dofmaps[i]->cell_dofs(cell->index());
+        dofs[i].set(dmap.size(), dmap.data());
+      }
 
       // Insert non-zeroes in sparsity pattern
       sparsity_pattern.insert_local(dofs);
@@ -137,7 +140,8 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
       const std::size_t local_vertex = mesh_cell.index(*vert);
       for (std::size_t i = 0; i < rank; ++i)
       {
-        dofs[i] = dofmaps[i]->cell_dofs(mesh_cell.index());
+        auto dmap = dofmaps[i]->cell_dofs(mesh_cell.index());
+        dofs[i].set(dmap.size(), dmap.data());
         dofmaps[i]->tabulate_entity_dofs(local_to_local_dofs[i], 0,
                                          local_vertex);
 
@@ -190,7 +194,10 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
 
         // Tabulate dofs for each dimension and get local dimensions
         for (std::size_t i = 0; i < rank; ++i)
-          dofs[i] = dofmaps[i]->cell_dofs(cell.index());
+        {
+          auto dmap = dofmaps[i]->cell_dofs(cell.index());
+          dofs[i].set(dmap.size(), dmap.data());
+        }
 
         // Insert dofs
         sparsity_pattern.insert_local(dofs);
@@ -212,18 +219,16 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
         for (std::size_t i = 0; i < rank; i++)
         {
           // Get dofs for each cell
-          const ArrayView<const dolfin::la_index> cell_dofs0
-            = dofmaps[i]->cell_dofs(cell0.index());
-          const ArrayView<const dolfin::la_index> cell_dofs1
-            = dofmaps[i]->cell_dofs(cell1.index());
+          auto cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
+          auto cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
 
           // Create space in macro dof vector
           macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
 
           // Copy cell dofs into macro dof vector
-          std::copy(cell_dofs0.begin(), cell_dofs0.end(),
+          std::copy(cell_dofs0.data(), cell_dofs0.data() + cell_dofs0.size(),
                     macro_dofs[i].begin());
-          std::copy(cell_dofs1.begin(), cell_dofs1.end(),
+          std::copy(cell_dofs1.data(), cell_dofs1.data() + cell_dofs1.size(),
                     macro_dofs[i].begin() + cell_dofs0.size());
 
           // Store pointer to macro dofs
@@ -271,18 +276,16 @@ void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
   const std::size_t rank = form.rank();
   std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
   for (std::size_t i = 0; i < rank; ++i)
-  {
     index_maps[i] = form.function_space(i)->dofmap()->index_map();
-  }
 
   // Initialize sparsity pattern
-  sparsity_pattern.init(form.function_space(0)->part(0)->mesh()->mpi_comm(),
-                        index_maps);
+  sparsity_pattern.init(index_maps);
 
   // Iterate over each part
   for (std::size_t part = 0; part < form.num_parts(); part++)
   {
-    // Get mesh on current part (assume it's the same for all arguments)
+    // Get mesh on current part (assume it's the same for all
+    // arguments)
     const Mesh& mesh = *form.function_space(0)->part(part)->mesh();
 
     // Build list of dofmaps
@@ -345,7 +348,8 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface(
     for (std::size_t i = 0; i < form.rank(); i++)
     {
       const auto& dofmap = form.function_space(i)->dofmap()->part(part);
-      dofs_0[i] = dofmap->cell_dofs(cut_cell_index);
+      auto dmap = dofmap->cell_dofs(cut_cell_index);
+      dofs_0[i].set(dmap.size(), dmap.data());
     }
 
     // Iterate over cutting cells
@@ -362,7 +366,8 @@ void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface(
         // Get dofs for cutting cell
         const auto& dofmap
           = form.function_space(i)->dofmap()->part(cutting_part);
-        dofs_1[i] = dofmap->cell_dofs(cutting_cell_index);
+        auto dmap = dofmap->cell_dofs(cutting_cell_index);
+        dofs_1[i].set(dmap.size(), dmap.data());
 
         // Collect dofs for cut and cutting cell
         dofs[i].resize(dofs_0[i].size() + dofs_1[i].size());

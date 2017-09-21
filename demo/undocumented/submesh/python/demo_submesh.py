@@ -23,6 +23,7 @@ from a common mesh."""
 
 from __future__ import print_function
 from dolfin import *
+import matplotlib.pyplot as plt
 
 # Structure sub domain
 class Structure(SubDomain):
@@ -54,9 +55,11 @@ ALE.move(fluid_mesh, structure_mesh)
 fluid_mesh.smooth()
 
 # Plot meshes
+plt.figure()
 plot(fluid_mesh, title="Fluid")
+plt.figure()
 plot(structure_mesh, title="Structure")
-interactive()
+plt.show()
 
 # Build mapping from structure to fluid mesh
 structure_to_fluid = compute_vertex_map(structure_mesh, fluid_mesh)

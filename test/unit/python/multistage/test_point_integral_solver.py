@@ -65,7 +65,7 @@ def test_butcher_schemes_scalar_time(Scheme, optimize):
 
     u = Function(V)
     compound_time_expr = Expression("weight*time*time", weight=weight,
-                                    element=time.ufl_element(), time=time, degree=2)
+                                    element=time.ufl_element(), time=time)
     form = (2+time+compound_time_expr-time**4)*v*dP
 
     scheme = Scheme(form, u, time)

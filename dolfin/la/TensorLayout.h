@@ -50,7 +50,8 @@ namespace dolfin
     enum class Ghosts : bool { GHOSTED = true, UNGHOSTED = false };
 
     /// Create empty tensor layout
-    TensorLayout(std::size_t primary_dim, Sparsity sparsity_pattern);
+    TensorLayout(MPI_Comm comm, std::size_t primary_dim,
+                 Sparsity sparsity_pattern);
 
     /// Create a tensor layout
     TensorLayout(MPI_Comm mpi_comm,
@@ -60,8 +61,7 @@ namespace dolfin
                  Ghosts ghosted);
 
     /// Initialize tensor layout
-    void init(MPI_Comm mpi_comm,
-              std::vector<std::shared_ptr<const IndexMap>> index_maps,
+    void init(std::vector<std::shared_ptr<const IndexMap>> index_maps,
               Ghosts ghosted);
 
     /// Return rank
@@ -90,7 +90,7 @@ namespace dolfin
 
     /// Return MPI communicator
     MPI_Comm mpi_comm() const
-    { return _mpi_comm; }
+    { return _mpi_comm.comm(); }
 
     /// Return IndexMap for dimension
     std::shared_ptr<const IndexMap> index_map(std::size_t i) const
@@ -108,7 +108,7 @@ namespace dolfin
   private:
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
     // Index maps
     std::vector<std::shared_ptr<const IndexMap>> _index_maps;

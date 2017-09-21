@@ -245,7 +245,8 @@ void MultiMeshAssembler::_assemble_uncut_cells(GenericTensor& A,
       for (std::size_t i = 0; i < form_rank; ++i)
       {
         const auto dofmap = a.function_space(i)->dofmap()->part(part);
-        dofs[i] = dofmap->cell_dofs(cell.index());
+        auto dmap = dofmap->cell_dofs(cell.index());
+        dofs[i].set(dmap.size(), dmap.data());
       }
 
       // Tabulate cell tensor
@@ -323,7 +324,8 @@ void MultiMeshAssembler::_assemble_cut_cells(GenericTensor& A,
       for (std::size_t i = 0; i < form_rank; ++i)
       {
         const auto dofmap = a.function_space(i)->dofmap()->part(part);
-        dofs[i] = dofmap->cell_dofs(cell.index());
+        auto dmap = dofmap->cell_dofs(cell.index());
+        dofs[i].set(dmap.size(), dmap.data());
       }
 
       // Get quadrature rule for cut cell
@@ -535,9 +537,9 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
           macro_dofs[i].resize(dofs_0.size() + dofs_1.size());
 
           // Copy cell dofs into macro dof vector
-          std::copy(dofs_0.begin(), dofs_0.end(),
+          std::copy(dofs_0.data(), dofs_0.data() + dofs_0.size(),
                     macro_dofs[i].begin());
-          std::copy(dofs_1.begin(), dofs_1.end(),
+          std::copy(dofs_1.data(), dofs_1.data() + dofs_1.size(),
                     macro_dofs[i].begin() + dofs_0.size());
 
           // Update array view
@@ -734,15 +736,14 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
           macro_dofs[i].resize(dofs_0.size() + dofs_1.size());
 
           // Copy cell dofs into macro dof vector
-          std::copy(dofs_0.begin(), dofs_0.end(),
+          std::copy(dofs_0.data(), dofs_0.data() + dofs_0.size(),
                     macro_dofs[i].begin());
-          std::copy(dofs_1.begin(), dofs_1.end(),
+          std::copy(dofs_1.data(), dofs_1.data() + dofs_1.size() ,
                     macro_dofs[i].begin() + dofs_0.size());
 
           // Update array view
-          macro_dof_ptrs[i]
-            = ArrayView<const dolfin::la_index>(macro_dofs[i].size(),
-                                                macro_dofs[i].data());
+          macro_dof_ptrs[i].set(macro_dofs[i].size(),
+                                macro_dofs[i].data());
         }
 
         // FIXME: Cell orientation not supported
@@ -775,7 +776,7 @@ void MultiMeshAssembler::_init_global_tensor(GenericTensor& A,
 
   // Create layout for initializing tensor
   std::shared_ptr<TensorLayout> tensor_layout;
-  tensor_layout = A.factory().create_layout(a.rank());
+  tensor_layout = A.factory().create_layout(MPI_COMM_WORLD, a.rank());
   dolfin_assert(tensor_layout);
 
   // Get dimensions
@@ -790,8 +791,7 @@ void MultiMeshAssembler::_init_global_tensor(GenericTensor& A,
   }
 
   // Initialise tensor layout
-  tensor_layout->init(MPI_COMM_WORLD, index_maps,
-                      TensorLayout::Ghosts::UNGHOSTED);
+  tensor_layout->init(index_maps, TensorLayout::Ghosts::UNGHOSTED);
 
   // Build sparsity pattern if required
   if (tensor_layout->sparsity_pattern())
@@ -810,7 +810,7 @@ void MultiMeshAssembler::_init_global_tensor(GenericTensor& A,
   if (A.rank() == 2)
   {
     // Down cast to GenericMatrix
-    GenericMatrix& _matA = A.down_cast<GenericMatrix>();
+    GenericMatrix& _matA = as_type<GenericMatrix>(A);
 
     // Loop over rows and insert 0.0 on the diagonal
     const double block = 0.0;

@@ -127,6 +127,7 @@ def main():
        os.path.join(demodir, 'undocumented', 'compiled-extension-module',   'cpp'),
        os.path.join(demodir, 'undocumented', 'timing',                      'cpp'),
        os.path.join(demodir, 'undocumented', 'mplot',                       'cpp'),
+       os.path.join(demodir, 'undocumented', 'plot',                        'cpp'),
        os.path.join(demodir, 'undocumented', 'coordinates',                 'cpp'),
        os.path.join(demodir, 'undocumented', 'multimesh-quadrature',        'cpp'),
        os.path.join(demodir, 'documented',   'stokes-mini',                 'cpp'),
@@ -173,7 +174,7 @@ def main():
                     "Non-existing demo '%s' not marked as not_implemented" % dpath
 
     # Set non-interactive
-    os.putenv('DOLFIN_NOPLOT', '1')
+    os.putenv('MPLBACKEND', 'agg')
 
     print("Running all demos (non-interactively)")
     print("")

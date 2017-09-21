@@ -25,6 +25,8 @@ Implemented in python from cpp demo by Johan Hake.
 # Last changed: 2008-12-23
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # FIXME: Make mesh ghosted
 parameters["ghost_mode"] = "shared_facet"
@@ -101,4 +103,5 @@ file = File("temperature.pvd")
 file << up
 
 # Plot solution
-plot(up, interactive=True)
+plot(up)
+plt.show()

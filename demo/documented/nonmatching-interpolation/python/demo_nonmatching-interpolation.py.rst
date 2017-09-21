@@ -13,9 +13,10 @@ finite element spaces on non-matching meshes.
    parallel. See
    https://bitbucket.org/fenics-project/dolfin/issues/162.
 
-First, the :py:mod:`dolfin` module is imported: ::
+First, the modules :py:mod:`dolfin` and matplotlib are imported: ::
 
   from dolfin import *
+  import matplotlib.pyplot as plt
 
 Next, we create two different meshes. In this case we create unit
 square meshes with different size cells ::
@@ -48,8 +49,10 @@ We now interpolate the function ``v3`` into the ``P1`` space ::
 The interpolated functions, ``v3`` and ``v1`` can ve visualised using
 the ``plot`` function ::
 
+  plt.figure()
   plot(v3, title='v3')
-  interactive()
 
+  plt.figure()
   plot(v1, title='v1')
-  interactive()
+
+  plt.show()

@@ -54,12 +54,13 @@ EigenVector::EigenVector(MPI_Comm comm, std::size_t N)
 }
 //-----------------------------------------------------------------------------
 EigenVector::EigenVector(const EigenVector& x)
-  : _x(new Eigen::VectorXd(*(x._x))), _mpi_comm(x._mpi_comm)
+  : _x(new Eigen::VectorXd(*(x._x))), _mpi_comm(x._mpi_comm.comm())
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EigenVector::EigenVector(std::shared_ptr<Eigen::VectorXd> x) : _x(x)
+EigenVector::EigenVector(std::shared_ptr<Eigen::VectorXd> x)
+  : _x(x), _mpi_comm(MPI_COMM_SELF)
 {
   // Do nothing
 }
@@ -239,8 +240,9 @@ void EigenVector::axpy(double a, const GenericVector& y)
                  "Vectors are not of the same size");
   }
 
-  const Eigen::VectorXd& _y = as_type<const EigenVector>(y).vec();
-  (*_x) = _x->array() + a * _y.array();
+  auto _y = as_type<const EigenVector>(y).vec();
+  dolfin_assert(_y);
+  (*_x) = _x->array() + a * _y->array();
 }
 //-----------------------------------------------------------------------------
 void EigenVector::abs()
@@ -252,7 +254,9 @@ void EigenVector::abs()
 double EigenVector::inner(const GenericVector& y) const
 {
   dolfin_assert(_x);
-  return _x->dot(as_type<const EigenVector>(y).vec());
+  auto _y = as_type<const EigenVector>(y).vec();
+  dolfin_assert(_y);
+  return _x->dot(*_y);
 }
 //-----------------------------------------------------------------------------
 const GenericVector& EigenVector::operator= (const GenericVector& v)
@@ -272,7 +276,8 @@ const EigenVector& EigenVector::operator= (const EigenVector& v)
   }
 
   dolfin_assert(_x);
-  *_x = v.vec();
+  dolfin_assert(v.vec());
+  *_x = *(v.vec());
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -293,7 +298,9 @@ const EigenVector& EigenVector::operator*= (const double a)
 const EigenVector& EigenVector::operator*= (const GenericVector& y)
 {
   dolfin_assert(_x);
-  (*_x) = _x->cwiseProduct(as_type<const EigenVector>(y).vec());
+  auto _y = as_type<const EigenVector>(y).vec();
+  dolfin_assert(_y);
+  (*_x) = _x->cwiseProduct(*_y);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -305,8 +312,9 @@ const EigenVector& EigenVector::operator/= (const double a)
 //-----------------------------------------------------------------------------
 const EigenVector& EigenVector::operator+= (const GenericVector& y)
 {
-  const Eigen::VectorXd& _y = as_type<const EigenVector>(y).vec();
-  *_x = _x->array() + _y.array();
+  auto _y = as_type<const EigenVector>(y).vec();
+  dolfin_assert(_y);
+  *_x = _x->array() + _y->array();
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -318,8 +326,9 @@ const EigenVector& EigenVector::operator+= (double a)
 //-----------------------------------------------------------------------------
 const EigenVector& EigenVector::operator-= (const GenericVector& y)
 {
-  const Eigen::VectorXd& _y = as_type<const EigenVector>(y).vec();
-  *_x = _x->array() - _y.array();
+  auto _y = as_type<const EigenVector>(y).vec();
+  dolfin_assert(_y);
+  *_x = _x->array() - _y->array();
   return *this;
 }
 //-----------------------------------------------------------------------------

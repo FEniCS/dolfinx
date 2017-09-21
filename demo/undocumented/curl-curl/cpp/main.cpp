@@ -149,10 +149,6 @@ int main()
   File file("current_density.pvd");
   file << J;
 
-  // Plot solution
-  plot(J);
-  interactive();
-
   return 0;
 }
 

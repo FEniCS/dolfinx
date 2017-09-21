@@ -24,6 +24,8 @@ for implementation of ALE methods)."""
 # Last changed: 2008-12-12
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Create mesh
 mesh = UnitSquareMesh(20, 20)
@@ -40,7 +42,8 @@ for x in boundary.coordinates():
 ALE.move(mesh, boundary)
 
 # Plot mesh
-plot(mesh, interactive=True)
+plot(mesh)
+plt.show()
 
 # Write mesh to file
 File("deformed_mesh.pvd") << mesh

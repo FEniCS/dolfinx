@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for MeshFunctions"""
 
 # Copyright (C) 2011 Garth N. Wells
@@ -18,24 +16,21 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2011-03-10
-# Last changed: 2011-03-10
 
 import pytest
 import numpy.random
 from dolfin import *
 from six.moves import xrange as range
-from dolfin_utils.test import fixture, skip_in_parallel
+from dolfin_utils.test import fixture, skip_in_parallel, skip_if_pybind11
 
 
-@pytest.fixture(scope="module", params=range(5))
+@pytest.fixture(params=range(5))
 def name(request):
     names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
     return names[request.param]
 
 
-@pytest.fixture(scope="module", params=range(4))
+@pytest.fixture(params=range(4))
 def tp(request):
     tps = ['int', 'size_t', 'bool', 'double']
     return tps[request.param]
@@ -89,6 +84,7 @@ def test_numpy_access(funcs, tp, name):
     assert all(values[i] == funcs[(tp, name)][i] for i in range(len(values)))
 
 
+@skip_if_pybind11(reason="Iteration over mesh functions not supported")
 def test_iterate(tp, name, funcs):
     for index, value in enumerate(funcs[(tp, name)]):
         pass
@@ -105,7 +101,6 @@ def test_setvalues(tp, funcs, name):
 
 def test_Create(cube):
     """Create MeshFunctions."""
-    v = MeshFunction("size_t", cube)
 
     v = MeshFunction("size_t", cube, 0)
     assert v.size() == cube.num_vertices()
@@ -151,14 +146,14 @@ def test_Assign(f, cube):
 def test_meshfunction_where_equal():
     mesh = UnitSquareMesh(2, 2)
 
-    cf = CellFunctionSizet(mesh)
+    cf = CellFunction("size_t", mesh)
     cf.set_all(1)
     cf[0] = 3
     cf[3] = 3
     assert list(cf.where_equal(3)) == [0, 3]
     assert list(cf.where_equal(1)) == [1, 2, 4, 5, 6, 7]
 
-    ff = FacetFunctionSizet(mesh)
+    ff = FacetFunction("size_t", mesh)
     ff.set_all(0)
     ff[0] = 1
     ff[2] = 3
@@ -167,7 +162,7 @@ def test_meshfunction_where_equal():
     assert list(ff.where_equal(3)) == [2, 3]
     assert list(ff.where_equal(0)) == [1] + list(range(4, ff.size()))
 
-    vf = VertexFunctionSizet(mesh)
+    vf = VertexFunction("size_t", mesh)
     vf.set_all(3)
     vf[1] = 1
     vf[2] = 1

@@ -70,7 +70,7 @@ class Flux : public Expression
 int main()
 {
   // Create mesh and function space
-  auto mesh = std::make_shared<UnitSquareMesh>(64, 64);
+  auto mesh = std::make_shared<Mesh>(UnitQuadMesh::create(64, 64));
   auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
   // Define variational problem
@@ -91,9 +91,8 @@ int main()
   // Extract subfunction
   Function u = (*w)[0];
 
-  // Plot solution
-  plot(u);
-  interactive();
+  // Write to file
+  XDMFFile("u.xdmf").write(u);
 
   return 0;
 }

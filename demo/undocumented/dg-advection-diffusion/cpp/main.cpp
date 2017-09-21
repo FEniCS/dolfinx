@@ -117,7 +117,5 @@ int main(int argc, char *argv[])
   File file("temperature.pvd");
   file << phi_p;
 
-  // Plot projected solution
-  plot(phi_h);
-  interactive();
+  return 0;
 }

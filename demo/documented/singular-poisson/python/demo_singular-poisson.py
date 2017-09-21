@@ -41,6 +41,7 @@ that removes the component in the null space from the solution vector.
 # Begin demo
 
 from dolfin import *
+import matplotlib.pyplot as plt
 
 # Test for PETSc
 if not has_linear_algebra_backend("PETSc"):
@@ -109,4 +110,5 @@ u = Function(V)
 solver.solve(u.vector(), b)
 
 # Plot solution
-plot(u, interactive=True)
+plot(u)
+plt.show()

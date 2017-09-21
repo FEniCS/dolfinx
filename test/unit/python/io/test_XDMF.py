@@ -20,6 +20,7 @@ import os
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture, tempdir, skip_if_not_HDF5
 
+
 # Supported XDMF file encoding
 encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)
 
@@ -53,6 +54,19 @@ def invalid_config(encoding):
 
 def invalid_fe(fe_family, fe_degree):
     return (fe_family == "CG" and fe_degree == 0)
+
+
+@pytest.fixture
+def worker_id(request):
+    """Return worker ID when using pytest-xdist to run tests in
+    parallell
+
+    """
+    if hasattr(request.config, 'slaveinput'):
+        return request.config.slaveinput['slaveid']
+    else:
+        return 'master'
+
 
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_1d_mesh(tempdir, encoding):
@@ -95,7 +109,7 @@ def test_save_and_load_2d_quad_mesh(tempdir, encoding):
     if invalid_config(encoding):
         pytest.skip("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "mesh_2D_quad.xdmf")
-    mesh = UnitQuadMesh(32, 32)
+    mesh = UnitQuadMesh.create(32, 32)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mesh, encoding)
@@ -611,7 +625,7 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
         tag = "dim_%d_marker" % mvc_dim
         mvc.rename(tag, "BC")
         mesh.init(mvc_dim, tdim)
-        for e in cpp.entities(mesh, mvc_dim):
+        for e in entities(mesh, mvc_dim):
             if (e.midpoint().x() > 0.5):
                 mvc.set_value(e.index(), dtype(1))
 
@@ -633,7 +647,7 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
 def test_quadratic_mesh(tempdir, encoding):
     if invalid_config(encoding):
         pytest.skip("XDMF unsupported in current configuration")
-    mesh = UnitDiscMesh(mpi_comm_world(), 2, 2, 2)
+    mesh = UnitDiscMesh.create(mpi_comm_world(), 2, 2, 2)
     Q = FunctionSpace(mesh, "CG", 1)
     u = Function(Q)
     u.interpolate(Constant(1.0))

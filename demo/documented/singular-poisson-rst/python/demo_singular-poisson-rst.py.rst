@@ -94,14 +94,15 @@ This description goes through the implementation (in
 :download:`demo_singular-poisson.py`) of a solver for the above
 described Poisson equation step-by-step.
 
-First, the :py:mod:`dolfin` module is imported: ::
+First, the modules :py:mod:`dolfin` and matplotlib are imported: ::
 
    from dolfin import *
+   import matplotlib.pyplot as plt
 
 Then, we check that dolfin is configured with the backend called
 PETSc, since it provides us with a wide range of methods used by
 :py:class:`KrylovSolver <dolfin.cpp.la.KrylovSolver>`. We set PETSc as
-our backend for linear algebra. ::
+our backend for linear algebra::
 
    # Test for PETSc
    if not has_linear_algebra_backend("PETSc"):
@@ -198,4 +199,5 @@ Finally we are able to solve our linear system ::
 
 and plot the solution ::
 
-   plot(u, interactive=True)
+   plot(u)
+   plt.show()

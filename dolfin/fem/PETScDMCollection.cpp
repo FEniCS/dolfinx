@@ -99,14 +99,13 @@ namespace
       cell->get_coordinate_dofs(coordinate_dofs);
 
       // Get local-to-global map
-      const ArrayView<const dolfin::la_index> dofs
-        = dofmap.cell_dofs(cell->index());
+      auto  dofs = dofmap.cell_dofs(cell->index());
 
       // Tabulate dof coordinates on cell
       element.tabulate_dof_coordinates(coordinates, coordinate_dofs, *cell);
 
       // Map dofs into coords_to_dofs
-      for (std::size_t i = 0; i < dofs.size(); ++i)
+      for (Eigen::Index i = 0; i < dofs.size(); ++i)
       {
         const std::size_t dof = dofs[i];
         if (dof < local_size)
@@ -116,7 +115,8 @@ namespace
             continue;
 
           // Put coordinates in coors
-          std::copy(coordinates[i].begin(), coordinates[i].end(), coors.begin());
+          std::copy(coordinates[i].begin(), coordinates[i].end(),
+                    coors.begin());
 
           // Add dof to list at this coord
           const auto ins = coords_to_dofs.insert({coors, {local_to_global[dof]}});
@@ -129,118 +129,93 @@ namespace
     return coords_to_dofs;
   }
 }
+
 //-----------------------------------------------------------------------------
-void PETScDMCollection::find_exterior_points(MPI_Comm mpi_comm,
-     std::shared_ptr<const BoundingBoxTree> treec,
-     int dim, int data_size,
-     const std::vector<double>& send_points,
-     const std::vector<int>& send_indices,
-     std::vector<int>& indices,
-     std::vector<std::size_t>& cell_ids,
-     std::vector<double>& points)
+PETScDMCollection::PETScDMCollection(std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
+  : _spaces(function_spaces), _dms(function_spaces.size(), nullptr)
 {
-  dolfin_assert(send_indices.size()/data_size == send_points.size()/dim);
-  const boost::const_multi_array_ref<int, 2>
-    send_indices_arr(send_indices.data(),
-                     boost::extents[send_indices.size()/data_size][data_size]);
-
-  unsigned int mpi_rank = MPI::rank(mpi_comm);
-  unsigned int mpi_size = MPI::size(mpi_comm);
-
-  // Get all points on all processes
-  std::vector<std::vector<double>> recv_points(mpi_size);
-  MPI::all_gather(mpi_comm, send_points, recv_points);
-
-  unsigned int num_recv_points = 0;
-  for (auto &p : recv_points)
-    num_recv_points += p.size();
-  num_recv_points /= dim;
-
-  // Save distances and ids of nearest cells on this process
-  std::vector<double> send_distance;
-  std::vector<unsigned int> ids;
-
-  send_distance.reserve(num_recv_points);
-  ids.reserve(num_recv_points);
-
-  for (const auto &p : recv_points)
+  for (std::size_t i = 0; i < _spaces.size(); ++i)
   {
-    unsigned int n_points = p.size()/dim;
-    for (unsigned int i = 0; i < n_points; ++i)
-    {
-      const Point curr_point(dim, &p[i*dim]);
-      std::pair<unsigned int, double> find_point
-        = treec->compute_closest_entity(curr_point);
-      send_distance.push_back(find_point.second);
-      ids.push_back(find_point.first);
-    }
+    dolfin_assert(_spaces[i]);
+    dolfin_assert(_spaces[i].get());
+
+    // Get MPI communicator from Mesh
+    dolfin_assert(_spaces[i]->mesh());
+    MPI_Comm comm = _spaces[i]->mesh()->mpi_comm();
+
+    // Create DM
+    DMShellCreate(comm, &_dms[i]);
+    DMShellSetContext(_dms[i], (void*)_spaces[i].get());
+
+    // Suppy function to create global vector on DM
+    DMShellSetCreateGlobalVector(_dms[i],
+                                 PETScDMCollection::create_global_vector);
+
+    // Supply function to create interpolation matrix (coarse-to-fine
+    // interpolation, i.e. level n to level n+1)
+    DMShellSetCreateInterpolation(_dms[i],
+                                  PETScDMCollection::create_interpolation);
   }
 
-  // All processes get the same distance information
-  std::vector<double> recv_distance(num_recv_points*mpi_size);
-  MPI::all_gather(mpi_comm, send_distance, recv_distance);
-
-  // Determine which process has closest cell for each point, and send
-  // the global indices to that process
-  int ct = 0;
-  std::vector<std::vector<unsigned int>> send_global_indices(mpi_size);
-
-  for (unsigned int p = 0; p != mpi_size; ++p)
+  for (std::size_t i = 0; i < _spaces.size() - 1; i++)
   {
-    unsigned int n_points = recv_points[p].size()/dim;
-    boost::multi_array_ref<double, 2>
-      point_arr(recv_points[p].data(),
-                boost::extents[n_points][dim]);
-    for (unsigned int i = 0; i < n_points; ++i)
-    {
-      unsigned int min_proc = 0;
-      double min_val = recv_distance[ct];
-      for (unsigned int q = 1; q != mpi_size; ++q)
-      {
-        const double val
-          = recv_distance[q*num_recv_points + ct];
-        if (val < min_val)
-        {
-          min_val = val;
-          min_proc = q;
-        }
-      }
-
-      if (min_proc == mpi_rank)
-      {
-        // If this process has closest cell,
-        // save the information
-        points.insert(points.end(),
-                      point_arr[i].begin(),
-                      point_arr[i].end());
-        cell_ids.push_back(ids[ct]);
-      }
-      if (p == mpi_rank)
-      {
-        send_global_indices[min_proc]
-          .insert(send_global_indices[min_proc].end(),
-                  send_indices_arr[i].begin(),
-                  send_indices_arr[i].end());
-      }
-      ++ct;
-    }
+    // Set the fine 'mesh' associated with _dms[i]
+    DMSetFineDM(_dms[i], _dms[i + 1]);
+    DMShellSetRefine(_dms[i], PETScDMCollection::refine);
   }
 
-  // Send out global indices for the points provided by this process
-  std::vector<unsigned int> recv_global_indices;
-  MPI::all_to_all(mpi_comm, send_global_indices, recv_global_indices);
-
-  indices.insert(indices.end(), recv_global_indices.begin(),
-                 recv_global_indices.end());
+  for (std::size_t i = 1; i < _spaces.size(); i++)
+  {
+    // Set the coarse 'mesh' associated with _dms[i]
+    DMSetCoarseDM(_dms[i], _dms[i - 1]);
+    DMShellSetCoarsen(_dms[i], PETScDMCollection::coarsen);
+  }
+}
+//-----------------------------------------------------------------------------
+PETScDMCollection::~PETScDMCollection()
+{
+  // Don't destroy all the DMs!
+  // Only destroy the finest one.
+  // This is highly counter-intuitive, and possibly a bug in PETSc,
+  // but it took Garth and Patrick an entire day to figure out.
+  if (!_dms.empty())
+    DMDestroy(&_dms.back());
+}
+//-----------------------------------------------------------------------------
+DM PETScDMCollection::get_dm(int i)
+{
+  dolfin_assert(i >= -(int)_dms.size() and i < (int) _dms.size());
+  const int base = i < 0 ? _dms.size() : 0;
+  return _dms[base + i];
+}
+//-----------------------------------------------------------------------------
+void PETScDMCollection::check_ref_count() const
+{
+  for (std::size_t i = 0; i < _dms.size(); ++i)
+  {
+    PetscInt cnt = 0;
+    PetscObjectGetReference((PetscObject)_dms[i], &cnt);
+    std::cout << "Ref count " << i << ": " << cnt << std::endl;
+  }
+}
+//-----------------------------------------------------------------------------
+void PETScDMCollection::reset(int i)
+{
+  PetscObjectDereference((PetscObject)_dms[i]);
+  //PetscObjectDereference((PetscObject)_dms.back());
+  //for (std::size_t i = 0; i < _dms.size(); ++i)
+  //  PetscObjectDereference((PetscObject)_dms[i]);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
-(std::shared_ptr<const FunctionSpace> coarse_space,
- std::shared_ptr<const FunctionSpace> fine_space)
+(const FunctionSpace& coarse_space,
+ const FunctionSpace& fine_space)
 {
+  // FIXME: refactor and split up
+
   // Get coarse mesh and dimension of the domain
-  dolfin_assert(coarse_space->mesh());
-  const Mesh meshc = *coarse_space->mesh();
+  dolfin_assert(coarse_space.mesh());
+  const Mesh meshc = *coarse_space.mesh();
   std::size_t dim = meshc.geometry().dim();
 
   // MPI communicator, size and rank
@@ -249,18 +224,18 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
 
   // Initialise bounding box tree and dofmaps
   std::shared_ptr<BoundingBoxTree> treec = meshc.bounding_box_tree();
-  std::shared_ptr<const GenericDofMap> coarsemap = coarse_space->dofmap();
-  std::shared_ptr<const GenericDofMap> finemap = fine_space->dofmap();
+  std::shared_ptr<const GenericDofMap> coarsemap = coarse_space.dofmap();
+  std::shared_ptr<const GenericDofMap> finemap = fine_space.dofmap();
 
   // Create map from coordinates to dofs sharing that coordinate
   std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
-    coords_to_dofs = tabulate_coordinates_to_dofs(*fine_space);
+    coords_to_dofs = tabulate_coordinates_to_dofs(fine_space);
 
   // Global dimensions of the dofs and of the transfer matrix (M-by-N,
   // where M is the fine space dimension, N is the coarse space
   // dimension)
-  std::size_t M = fine_space->dim();
-  std::size_t N = coarse_space->dim();
+  std::size_t M = fine_space.dim();
+  std::size_t N = coarse_space.dim();
 
   // Local dimension of the dofs and of the transfer matrix
   std::size_t m = finemap->dofs().size();
@@ -268,11 +243,11 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
 
   // Get finite element for the coarse space. This will be needed to
   // evaluate the basis functions for each cell.
-  std::shared_ptr<const FiniteElement> el = coarse_space->element();
+  std::shared_ptr<const FiniteElement> el = coarse_space.element();
 
   // Check that it is the same kind of element on each space.
   {
-    std::shared_ptr<const FiniteElement> elf = fine_space->element();
+    std::shared_ptr<const FiniteElement> elf = fine_space.element();
     // Check that function ranks match
     if (el->value_rank() != elf->value_rank())
     {
@@ -311,7 +286,6 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   // or if found in multiple processors, use compute_closest_entity on
   // all processors and find which coarse cell is the closest entity
   // to the fine point amongst all processors.
-
 
   // found_ids[i] contains the coarse cell id for each fine point
   std::vector<std::size_t> found_ids;
@@ -422,21 +396,20 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
                              &send_found[proc][count[proc]*dim],
                              &send_found[proc][(count[proc] + 1)*dim]);
       exterior_global_indices.insert(exterior_global_indices.end(),
-            &send_found_global_row_indices[proc][count[proc]*data_size],
-            &send_found_global_row_indices[proc][(count[proc] + 1)*data_size]);
+                                     &send_found_global_row_indices[proc][count[proc]*data_size],
+                                     &send_found_global_row_indices[proc][(count[proc] + 1)*data_size]);
     }
     else if (nprocs > 1)
     {
-      // If point is found on multiple processes, send -1 as the index to the
-      // remote processes which are not the "owner"
+      // If point is found on multiple processes, send -1 as the index
+      // to the remote processes which are not the "owner"
       for (unsigned int j = 1; j != (nprocs + 1); ++j)
       {
         const int proc = *(p + j);
         if (proc != owner)
         {
           for (unsigned int k = 0; k != data_size; ++k)
-            send_found_global_row_indices[proc]
-              [count[proc]*data_size + k] = -1;
+            send_found_global_row_indices[proc][count[proc]*data_size + k] = -1;
         }
       }
     }
@@ -462,8 +435,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
     const boost::multi_array_ref<double, 2>
       point_p(recv_found[p].data(), boost::extents[npoints][dim]);
     const boost::multi_array_ref<int, 2>
-      global_idx_p(recv_found_global_row_indices[p].data(),
-                   boost::extents[npoints][data_size]);
+      global_idx_p(recv_found_global_row_indices[p].data(), boost::extents[npoints][data_size]);
 
     for (unsigned int i = 0; i < npoints; ++i)
     {
@@ -483,12 +455,9 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
 
   // Find closest cells for points that lie outside the domain and add
   // them to the lists
-  find_exterior_points(mpi_comm, treec, dim, data_size,
-                       exterior_points,
-                       exterior_global_indices,
-                       global_row_indices,
-                       found_ids,
-                       found_points);
+  find_exterior_points(mpi_comm, treec, dim, data_size, exterior_points,
+                       exterior_global_indices, global_row_indices,
+                       found_ids, found_points);
 
   // Now every processor should have the information needed to
   // assemble its portion of the matrix.  The ids of coarse cell owned
@@ -540,7 +509,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
                            ufc_cell.orientation);
 
     // Get the coarse dofs associated with this cell
-    ArrayView<const dolfin::la_index> temp_dofs = coarsemap->cell_dofs(id);
+    auto temp_dofs = coarsemap->cell_dofs(id);
 
     // Loop over the fine dofs associated with this collision
     for (unsigned k = 0; k < data_size; k++)
@@ -584,7 +553,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
     ++onnz[q - mbegin];
   }
 
-  // Communicate on-process columns nnz, and flatten to get nnz per row
+  // Communicate on-process columns nnz, and flatten to get nnz per
+  // row
   std::vector<dolfin::la_index> recv_dnnz;
   MPI::all_to_all(mpi_comm, send_dnnz, recv_dnnz);
   std::vector<dolfin::la_index> dnnz(m, 0);
@@ -637,79 +607,105 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   return ptr;
 }
 //-----------------------------------------------------------------------------
-PETScDMCollection::PETScDMCollection(std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
-  : _spaces(function_spaces), _dms(function_spaces.size(), nullptr)
+void PETScDMCollection::find_exterior_points(MPI_Comm mpi_comm,
+                                             std::shared_ptr<const BoundingBoxTree> treec,
+                                             int dim, int data_size,
+                                             const std::vector<double>& send_points,
+                                             const std::vector<int>& send_indices,
+                                             std::vector<int>& indices,
+                                             std::vector<std::size_t>& cell_ids,
+                                             std::vector<double>& points)
 {
-  for (std::size_t i = 0; i < _spaces.size(); ++i)
+  dolfin_assert(send_indices.size()/data_size == send_points.size()/dim);
+  const boost::const_multi_array_ref<int, 2>
+    send_indices_arr(send_indices.data(),
+                     boost::extents[send_indices.size()/data_size][data_size]);
+
+  unsigned int mpi_rank = MPI::rank(mpi_comm);
+  unsigned int mpi_size = MPI::size(mpi_comm);
+
+  // Get all points on all processes
+  std::vector<std::vector<double>> recv_points(mpi_size);
+  MPI::all_gather(mpi_comm, send_points, recv_points);
+
+  unsigned int num_recv_points = 0;
+  for (auto &p : recv_points)
+    num_recv_points += p.size();
+  num_recv_points /= dim;
+
+  // Save distances and ids of nearest cells on this process
+  std::vector<double> send_distance;
+  std::vector<unsigned int> ids;
+
+  send_distance.reserve(num_recv_points);
+  ids.reserve(num_recv_points);
+
+  for (const auto &p : recv_points)
   {
-    dolfin_assert(_spaces[i]);
-
-    // Get MPI communicator from Mesh
-    dolfin_assert(_spaces[i]->mesh());
-    MPI_Comm comm = _spaces[i]->mesh()->mpi_comm();
-
-    // Create DM
-    DMShellCreate(comm, &_dms[i]);
-    DMShellSetContext(_dms[i], (void*)&_spaces[i]);
-
-    // Suppy function to create global vector on DM
-    DMShellSetCreateGlobalVector(_dms[i],
-                                 PETScDMCollection::create_global_vector);
-
-    // Supply function to create interpolation matrix (coarse-to-fine
-    // interpolation, i.e. level n to level n+1)
-    DMShellSetCreateInterpolation(_dms[i],
-                                  PETScDMCollection::create_interpolation);
+    unsigned int n_points = p.size()/dim;
+    for (unsigned int i = 0; i < n_points; ++i)
+    {
+      const Point curr_point(dim, &p[i*dim]);
+      std::pair<unsigned int, double> find_point
+        = treec->compute_closest_entity(curr_point);
+      send_distance.push_back(find_point.second);
+      ids.push_back(find_point.first);
+    }
   }
 
-  for (std::size_t i = 0; i < _spaces.size() - 1; i++)
+  // All processes get the same distance information
+  std::vector<double> recv_distance(num_recv_points*mpi_size);
+  MPI::all_gather(mpi_comm, send_distance, recv_distance);
+
+  // Determine which process has closest cell for each point, and send
+  // the global indices to that process
+  int ct = 0;
+  std::vector<std::vector<unsigned int>> send_global_indices(mpi_size);
+
+  for (unsigned int p = 0; p != mpi_size; ++p)
   {
-    // Set the fine 'mesh' associated with _dms[i]
-    DMSetFineDM(_dms[i], _dms[i + 1]);
-    DMShellSetRefine(_dms[i], PETScDMCollection::refine);
+    unsigned int n_points = recv_points[p].size()/dim;
+    boost::multi_array_ref<double, 2>
+      point_arr(recv_points[p].data(),
+                boost::extents[n_points][dim]);
+    for (unsigned int i = 0; i < n_points; ++i)
+    {
+      unsigned int min_proc = 0;
+      double min_val = recv_distance[ct];
+      for (unsigned int q = 1; q != mpi_size; ++q)
+      {
+        const double val
+          = recv_distance[q*num_recv_points + ct];
+        if (val < min_val)
+        {
+          min_val = val;
+          min_proc = q;
+        }
+      }
+
+      if (min_proc == mpi_rank)
+      {
+        // If this process has closest cell, save the information
+        points.insert(points.end(), point_arr[i].begin(), point_arr[i].end());
+        cell_ids.push_back(ids[ct]);
+      }
+      if (p == mpi_rank)
+      {
+        send_global_indices[min_proc]
+          .insert(send_global_indices[min_proc].end(),
+                  send_indices_arr[i].begin(),
+                  send_indices_arr[i].end());
+      }
+      ++ct;
+    }
   }
 
-  for (std::size_t i = 1; i < _spaces.size(); i++)
-  {
-    // Set the coarse 'mesh' associated with _dms[i]
-    DMSetCoarseDM(_dms[i], _dms[i - 1]);
-    DMShellSetCoarsen(_dms[i], PETScDMCollection::coarsen);
-  }
-}
-//-----------------------------------------------------------------------------
-PETScDMCollection::~PETScDMCollection()
-{
-  // Don't destroy all the DMs!
-  // Only destroy the finest one.
-  // This is highly counter-intuitive, and possibly a bug in PETSc,
-  // but it took Garth and Patrick an entire day to figure out.
-  if (!_dms.empty())
-    DMDestroy(&_dms.back());
-}
-//-----------------------------------------------------------------------------
-DM PETScDMCollection::get_dm(int i)
-{
-  dolfin_assert(i >= -(int)_dms.size() and i < (int) _dms.size());
-  const int base = i < 0 ? _dms.size() : 0;
-  return _dms[base + i];
-}
-//-----------------------------------------------------------------------------
-void PETScDMCollection::check_ref_count() const
-{
-  for (std::size_t i = 0; i < _dms.size(); ++i)
-  {
-    PetscInt cnt = 0;
-    PetscObjectGetReference((PetscObject)_dms[i], &cnt);
-    std::cout << "Ref count " << i << ": " << cnt << std::endl;
-  }
-}
-//-----------------------------------------------------------------------------
-void PETScDMCollection::reset(int i)
-{
-  PetscObjectDereference((PetscObject)_dms[i]);
-  //PetscObjectDereference((PetscObject)_dms.back());
-  //for (std::size_t i = 0; i < _dms.size(); ++i)
-  //  PetscObjectDereference((PetscObject)_dms[i]);
+  // Send out global indices for the points provided by this process
+  std::vector<unsigned int> recv_global_indices;
+  MPI::all_to_all(mpi_comm, send_global_indices, recv_global_indices);
+
+  indices.insert(indices.end(), recv_global_indices.begin(),
+                 recv_global_indices.end());
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
@@ -720,7 +716,7 @@ PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
 
   // Create Vector
   Function u(*V);
-  *vec = u.vector()->down_cast<PETScVector>().vec();
+  *vec = as_type<PETScVector>(u.vector())->vec();
 
   // FIXME: Does increasing the reference count lead to a memory leak?
   // Increment PETSc reference counter the Vec
@@ -734,11 +730,12 @@ PetscErrorCode PETScDMCollection::create_interpolation(DM dmc, DM dmf, Mat *mat,
 {
   // Get DOLFIN FunctionSpaces from PETSc DM objects (V0 is coarse
   // space, V1 is fine space)
-  std::shared_ptr<FunctionSpace> *V0, *V1;
+  FunctionSpace *V0(nullptr), *V1(nullptr);
   DMShellGetContext(dmc, (void**)&V0);
   DMShellGetContext(dmf, (void**)&V1);
 
   // Build interpolation matrix (V0 to V1)
+  dolfin_assert(V0); dolfin_assert(V1);
   std::shared_ptr<PETScMatrix> P = create_transfer_matrix(*V0, *V1);
 
   // Copy PETSc matrix pointer and inrease reference count

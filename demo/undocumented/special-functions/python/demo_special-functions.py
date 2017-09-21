@@ -23,6 +23,8 @@ special functions that are available in UFL."""
 
 from __future__ import print_function
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Form compiler options
 parameters["form_compiler"]["optimize"]     = True
@@ -41,20 +43,18 @@ plot(tan(x), title='tan', mesh=mesh)
 mesh = IntervalMesh(n, 0.0+eps, 1.0-eps)
 x = SpatialCoordinate(mesh)[0]
 
-plot(acos(x), title='acos', mesh=mesh)
-plot(asin(x), title='asin', mesh=mesh)
-plot(atan(x), title='atan', mesh=mesh)
-plot(exp(x), title='exp', mesh=mesh)
-plot(ln(x), title='ln', mesh=mesh)
-plot(sqrt(x), title='sqrt', mesh=mesh)
-plot(bessel_J(0, x), title='bessel_J(0, x)', mesh=mesh)
-plot(bessel_J(1, x), title='bessel_J(1, x)', mesh=mesh)
-plot(bessel_Y(0, x), title='bessel_Y(0, x)', mesh=mesh)
-plot(bessel_Y(1, x), title='bessel_Y(1, x)', mesh=mesh)
-plot(bessel_I(0, x), title='bessel_I(0, x)', mesh=mesh)
-plot(bessel_I(1, x), title='bessel_I(1, x)', mesh=mesh)
-plot(bessel_K(0, x), title='bessel_K(0, x)', mesh=mesh)
-plot(bessel_K(1, x), title='bessel_K(1, x)', mesh=mesh)
-
-print("Note that you must press 'q' to quit.")
-interactive()
+plt.figure(); plot(acos(x), title='acos', mesh=mesh)
+plt.figure(); plot(asin(x), title='asin', mesh=mesh)
+plt.figure(); plot(atan(x), title='atan', mesh=mesh)
+plt.figure(); plot(exp(x), title='exp', mesh=mesh)
+plt.figure(); plot(ln(x), title='ln', mesh=mesh)
+plt.figure(); plot(sqrt(x), title='sqrt', mesh=mesh)
+plt.figure(); plot(bessel_J(0, x), title='bessel_J(0, x)', mesh=mesh)
+plt.figure(); plot(bessel_J(1, x), title='bessel_J(1, x)', mesh=mesh)
+plt.figure(); plot(bessel_Y(0, x), title='bessel_Y(0, x)', mesh=mesh)
+plt.figure(); plot(bessel_Y(1, x), title='bessel_Y(1, x)', mesh=mesh)
+plt.figure(); plot(bessel_I(0, x), title='bessel_I(0, x)', mesh=mesh)
+plt.figure(); plot(bessel_I(1, x), title='bessel_I(1, x)', mesh=mesh)
+plt.figure(); plot(bessel_K(0, x), title='bessel_K(0, x)', mesh=mesh)
+plt.figure(); plot(bessel_K(1, x), title='bessel_K(1, x)', mesh=mesh)
+plt.show()

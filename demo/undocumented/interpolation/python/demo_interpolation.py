@@ -26,6 +26,8 @@ extrapolated from there.
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Set option to allow extrapolation
 parameters["allow_extrapolation"] = True
@@ -50,4 +52,5 @@ x += 0.1
 w = interpolate(v, W)
 
 # Plot function
-plot(w, interactive=True)
+plot(w)
+plt.show()

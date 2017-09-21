@@ -161,12 +161,3 @@ bool dolfin::has_hdf5_parallel()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_vtk()
-{
-#ifdef HAS_VTK
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------

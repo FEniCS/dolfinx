@@ -23,6 +23,10 @@
 
 from dolfin import *
 
+if has_pybind11():
+    print("Not supported in pybind11")
+    exit()
+
 class InflowBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return on_boundary and near(x[0], 0.0)

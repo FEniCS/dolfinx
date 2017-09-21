@@ -24,6 +24,10 @@ from dolfin import *
 import numpy
 import os
 
+if has_pybind11():
+    print("pybind11 support for compiled code is different")
+    exit()
+
 header_file = open("Probe/Probe.h")
 code = "\n".join(header_file.readlines())
 compiled_module = compile_extension_module(code=code, source_directory="Probe", \

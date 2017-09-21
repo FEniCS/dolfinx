@@ -30,6 +30,11 @@ from dolfin import *
 
 #--- Demo of global DOLFIN parameters ---
 
+if has_pybind11():
+    MPI.init()
+else:
+    SubSystemsManager.init_mpi()
+
 # Set some global DOLFIN parameters
 parameters["linear_algebra_backend"] = "Eigen"
 
@@ -122,6 +127,10 @@ application_parameters.update(parameter_subset)
 parameter_subset = {"foo": 1.5, "solver_parameters": {"max_iterations": 50}}
 application_parameters.update(parameter_subset)
 
+if has_pybind11():
+    print("Features below not implemented in pybind11")
+    exit()
+
 # Print command-line option string
 print("\nCommand-line option string")
 print(application_parameters.option_string())
@@ -149,5 +158,5 @@ new_application_parameters = Parameters(
         tolerance = 1e-16,
         relative_tolerance = (1e-16, 1e-16, 1.0),
         pcs = ("ilu", ["ilu","amg","icc","sor"])
-        )
     )
+)

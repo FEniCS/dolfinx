@@ -25,7 +25,7 @@
 import pytest
 from numpy import array
 from dolfin import *
-
+from ufl import UFLException
 
 def test_name_argument():
     u = Constant(1.0)
@@ -40,17 +40,23 @@ def testConstantInit():
     c1 = Constant([2, 3], interval)
     c2 = Constant([[2, 3], [3, 4]], triangle)
     c3 = Constant(array([2, 3]), tetrahedron)
+    c4 = Constant([[2, 3], [3, 4]], quadrilateral)
+    c5 = Constant(array([2, 3]), hexahedron)
 
     # FIXME:
     assert c0.cell() is None
     assert c1.cell() == interval
     assert c2.cell() == triangle
     assert c3.cell() == tetrahedron
+    assert c4.cell() == quadrilateral
+    assert c5.cell() == hexahedron
 
     assert c0.ufl_shape == ()
     assert c1.ufl_shape == (2,)
     assert c2.ufl_shape == (2, 2)
     assert c3.ufl_shape == (2,)
+    assert c4.ufl_shape == (2, 2)
+    assert c5.ufl_shape == (2,)
 
 
 def testGrad():
@@ -66,10 +72,12 @@ def testGrad():
     assert zero == gradient(c3)
 
 
-def test_compute_vertex_values():
+@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (8, 8, 8)), (UnitHexMesh.create, (8, 8, 8))])
+def test_compute_vertex_values(mesh_factory):
     from numpy import zeros, all, array
 
-    mesh = UnitCubeMesh(8, 8, 8)
+    func, args = mesh_factory
+    mesh = func(*args)
 
     e0 = Constant(1)
     e1 = Constant((1, 2, 3))

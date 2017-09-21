@@ -103,8 +103,8 @@ Implementation
 This demo is implemented in the :download:`demo_cahn-hilliard.py`
 file.
 
-First, the Python module :py:mod:`random` and the :py:mod:`dolfin`
-module are imported::
+First, the modules :py:mod:`random` :py:mod:`matplotlib`
+:py:mod:`dolfin` module are imported::
 
     import random
     from dolfin import *
@@ -115,9 +115,11 @@ A class which will be used to represent the initial conditions is then
 created::
 
     # Class representing the intial conditions
-    class InitialConditions(Expression):
+    class InitialConditions(UserExpression):
         def __init__(self, **kwargs):
             random.seed(2 + MPI.rank(mpi_comm_world()))
+            if has_pybind11():
+                super().__init__(**kwargs)
         def eval(self, values, x):
             values[0] = 0.63 + 0.02*(0.5 - random.random())
             values[1] = 0.0
@@ -193,7 +195,7 @@ created, and on this mesh a :py:class:`FunctionSpace
 a pair of linear Lagrangian elements. ::
 
     # Create mesh and build function space
-    mesh = UnitSquareMesh(96, 96)
+    mesh = UnitQuadMesh.create(96, 96)
     P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     ME = FunctionSpace(mesh, P1*P1)
 
@@ -335,12 +337,3 @@ calling :py:func:`solver.solve(problem, u.vector())
 returned in :py:func:`u.vector() <dolfin.cpp.Function.vector>`. The
 ``c`` component of the solution (the first component of ``u``) is then
 written to file at every time step.
-
-Finally, the last computed solution for :math:`c` is plotted to the
-screen::
-
-    plot(u.split()[0])
-    interactive()
-
-The line ``interactive()`` holds the plot (waiting for a keyboard
-action).

@@ -20,6 +20,7 @@
 from __future__ import print_function
 import pytest
 import numpy as np
+from dolfin_utils.test import skip_if_pybind11
 
 from dolfin import *
 
@@ -31,8 +32,6 @@ def test_point_getitem():
     assert p[2] == 3.0
     with pytest.raises(IndexError):
         p[3]
-    with pytest.raises(IndexError):
-        p[-1]
     assert np.all(p[:] == np.array((1.0, 2.0, 3.0)))
 
 
@@ -53,8 +52,6 @@ def test_point_setitem():
 
     with pytest.raises(IndexError):
         p[3] = 6666.0
-    with pytest.raises(IndexError):
-        p[-1] = 6666.0
 
     p[:] = (0, 0, 0)
     assert np.all(p[:] == 0)
@@ -72,7 +69,7 @@ def test_point_setitem():
     assert np.all(p[:] == (2, 4, 6))
 
 
-
+@skip_if_pybind11
 def test_point_array():
     p = Point(1, 2, 3)
     assert np.all(p.array() == (1, 2, 3))

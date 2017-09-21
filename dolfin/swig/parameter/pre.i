@@ -41,6 +41,9 @@
 %rename (_get_string_range) dolfin::Parameter::get_range(std::set<std::string>& range) const;
 %ignore dolfin::Parameter::operator std::size_t;
 
+%ignore dolfin::Parameter::Parameter;
+%ignore dolfin::Parameter::value;
+
 // ---------------------------------------------------------------------------
 // Renames and ignores for Parameters
 // ---------------------------------------------------------------------------
@@ -54,6 +57,9 @@
 %rename (assign) dolfin::Parameters::operator=;
 %ignore dolfin::Parameters::parse;
 %ignore dolfin::Parameters::update;
+
+%ignore dolfin::Parameters::begin() const;
+%ignore dolfin::Parameters::end() const;
 
 // ---------------------------------------------------------------------------
 // Typemaps (in) for std::set<std::string>
@@ -73,20 +79,20 @@
     PyErr_SetString(PyExc_ValueError,"expected a list with length > 0");
     return NULL;
   }
-  for (i = 0; i < list_length; i++) 
+  for (i = 0; i < list_length; i++)
   {
     PyObject *o = PyList_GetItem($input,i);
 %#if PY_VERSION_HEX>=0x03000000
-    if (PyUnicode_Check(o)) 
-%#else  
+    if (PyUnicode_Check(o))
+%#else
     if (PyString_Check(o))
 %#endif
     {
       char* str_o = SWIG_Python_str_AsChar(o);
       tmp.insert(std::string(str_o));
       SWIG_Python_str_DelForPy3(str_o);
-    } 
-    else 
+    }
+    else
     {
       PyErr_SetString(PyExc_TypeError,"provide a list of strings");
       return NULL;

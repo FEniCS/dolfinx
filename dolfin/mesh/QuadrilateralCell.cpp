@@ -95,10 +95,10 @@ void QuadrilateralCell::create_entities(boost::multi_array<unsigned int, 2>& e,
   e.resize(boost::extents[4][2]);
 
   // Create the four edges
-  e[0][0] = v[0]; e[0][1] = v[2];
-  e[1][0] = v[1]; e[1][1] = v[3];
-  e[2][0] = v[0]; e[2][1] = v[1];
-  e[3][0] = v[2]; e[3][1] = v[3];
+  e[0][0] = v[0]; e[0][1] = v[1];
+  e[1][0] = v[2]; e[1][1] = v[3];
+  e[2][0] = v[0]; e[2][1] = v[2];
+  e[3][0] = v[1]; e[3][1] = v[3];
 }
 //-----------------------------------------------------------------------------
 double QuadrilateralCell::volume(const MeshEntity& cell) const
@@ -126,7 +126,10 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
                  "compute volume of quadrilateral",
                  "Only know how to compute volume in R^2 or R^3");
   }
-  
+
+  const Point c = (p0 - p3).cross(p1 - p2);
+  const double volume = 0.5 * c.norm();
+
   if (geometry.dim() == 3)
   {
     // Vertices are coplanar if det(p1-p0 | p3-p0 | p2-p0) is zero
@@ -135,8 +138,9 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
     m.row(1) << (p3 - p0)[0], (p3 - p0)[1], (p3 - p0)[2];
     m.row(2) << (p2 - p0)[0], (p2 - p0)[1], (p2 - p0)[2];
     const double copl = m.determinant();
+    const double h = std::min(1.0, std::pow(volume, 1.5));
     // Check for coplanarity
-    if (std::abs(copl) > DOLFIN_EPS)
+    if (std::abs(copl) > h * DOLFIN_EPS)
     {
       dolfin_error("QuadrilateralCell.cpp",
                    "compute volume of quadrilateral",
@@ -144,8 +148,7 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
     }
   }
 
-  const Point c = (p0 - p3).cross(p1 - p2);
-  return 0.5 * c.norm();
+  return volume;
 }
 //-----------------------------------------------------------------------------
 double QuadrilateralCell::circumradius(const MeshEntity& cell) const
@@ -283,6 +286,20 @@ bool QuadrilateralCell::collides(const Cell& cell, const MeshEntity& entity) con
 {
   dolfin_not_implemented();
   return false;
+}
+//-----------------------------------------------------------------------------
+std::vector<double>
+QuadrilateralCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
+{
+  dolfin_not_implemented();
+  return std::vector<double>();
+}
+//-----------------------------------------------------------------------------
+std::vector<double>
+QuadrilateralCell::triangulate_intersection(const Cell& cell, const MeshEntity& entity) const
+{
+  dolfin_not_implemented();
+  return std::vector<double>();
 }
 //-----------------------------------------------------------------------------
 std::string QuadrilateralCell::description(bool plural) const

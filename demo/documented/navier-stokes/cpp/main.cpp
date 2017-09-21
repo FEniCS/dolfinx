@@ -187,10 +187,5 @@ int main()
     cout << "t = " << t << endl;
   }
 
-  // Plot solution
-  plot(p1, "Pressure");
-  plot(u1, "Velocity");
-  interactive();
-
   return 0;
 }

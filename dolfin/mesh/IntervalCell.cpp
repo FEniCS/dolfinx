@@ -249,6 +249,12 @@ bool IntervalCell::collides(const Cell& cell, const MeshEntity& entity) const
   return CollisionPredicates::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
+std::vector<double>
+IntervalCell::triangulate_intersection(const Cell& cell, const MeshEntity& entity) const
+{
+  return IntersectionTriangulation::triangulate_intersection(cell, entity);
+}
+//-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const
 {
   if (plural)
