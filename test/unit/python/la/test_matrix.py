@@ -267,6 +267,7 @@ class TestMatrixForAnyBackend:
             assert j < cols.size
             assert round(sum(abs(row)) - 1.0, 7) == 0
 
+    @skip_in_parallel
     def test_ident(self, use_backend, any_backend):
         self.backend, self.sub_backend = any_backend
         A, B = self.assemble_matrices(use_backend)
