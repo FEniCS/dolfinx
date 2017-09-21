@@ -1,6 +1,6 @@
 #!/usr/bin/env py.test
 
-"""Unit tests for multimesh volume computation"""
+"""Unit tests for reported multimesh issues"""
 
 # Copyright (C) 2016 Anders Logg
 #
@@ -23,7 +23,6 @@
 #
 # First added:  2016-05-03
 # Last changed: 2017-06-19
-
 
 from __future__ import print_function
 import pytest

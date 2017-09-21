@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-#
 # First added:  2017-07-18
 # Last changed: 2017-07-18
 
@@ -25,7 +24,6 @@ import pytest
 from dolfin import *
 
 from dolfin_utils.test import skip_in_parallel, fixture
-
 
 @fixture
 def exactsolution_2d():
@@ -82,7 +80,6 @@ def solve_multimesh_poisson(mesh_0, mesh_1, exactsolution):
     solve(A, uh.vector(), b)
 
     return uh
-
     
 @pytest.mark.slow
 @skip_in_parallel

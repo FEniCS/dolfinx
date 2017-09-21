@@ -84,17 +84,17 @@ def test_assemble_exterior_facet(v, multimesh):
     assert numpy.isclose(assemble_multimesh(v*ds), 4)
 
 @skip_in_parallel
-def test_interpolate(v_high,f):
+def test_interpolate(v_high, f):
     v_high.interpolate(f)
     assert numpy.isclose(assemble_multimesh(v_high*dX), 0)
 
 @skip_in_parallel
-def test_project(f,V_high):
-    v = project(f,V_high)
+def test_project(f, V_high):
+    v = project(f ,V_high)
     assert numpy.isclose(assemble_multimesh(v*dX), 0)
 
 @skip_in_parallel
-def test_errornorm_L2(f_2,v_high):
+def test_errornorm_L2(f_2, v_high):
     const = Expression("1", degree=1)
     v_high.interpolate(f_2)
     assert numpy.isclose(errornorm(const, v_high, norm_type="L2", degree_rise=3), numpy.sqrt(22)/6)
@@ -103,4 +103,3 @@ def test_errornorm_L2(f_2,v_high):
 def test_errornorm_H1(f, f_2, v_high):
     v_high.interpolate(f_2)
     assert numpy.isclose(errornorm(f, v_high, norm_type="H1", degree_rise=3), numpy.sqrt(37./36+5*numpy.pi**2/4))
-
