@@ -29,7 +29,6 @@ using namespace dolfin;
 using namespace boost;
 using std::make_shared;
 
-
 // Value for inflow boundary condition for velocity
 class InflowValue : public Expression
 {

@@ -1,3 +1,25 @@
+"""Unit tests for MultiMesh cell types"""
+
+# Copyright (C) 2016 Magne Nordaas
+#
+# This file is part of DOLFIN.
+#
+# DOLFIN is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DOLFIN is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2016-11-28
+# Last changed: 2016-11-28
+
 from dolfin import *
 import pytest
 from dolfin_utils.test import skip_in_parallel
@@ -43,7 +65,6 @@ def test_case_2(width, offset, Nx):
     multimesh.build()
     return multimesh
 
-
 test_cases = [test_case_1(4,3), 
               test_case_2(DOLFIN_PI/5, 0.1111, 3)]
 
@@ -54,7 +75,6 @@ def test_cut_cell_has_quadrature(multimesh):
     for part in range(multimesh.num_parts()):
         for cell in multimesh.cut_cells(part):
             assert multimesh.quadrature_rules_interface(part, cell)
-
 
 @skip_in_parallel
 @pytest.mark.parametrize("multimesh", test_cases)
@@ -67,8 +87,6 @@ def test_multimesh_cell_types(multimesh):
         covered_cells = set(multimesh.covered_cells(part))
 
         assert cut_cells.union(uncut_cells).union(covered_cells) == cells
-
         assert cut_cells.intersection(uncut_cells) == set()
         assert cut_cells.intersection(covered_cells) == set()
         assert uncut_cells.intersection(covered_cells) == set()
-
