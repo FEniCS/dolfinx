@@ -20,6 +20,7 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/MultiMeshFunctionSpace.h>
@@ -170,7 +171,8 @@ MultiMeshDofMap::inactive_dofs(MultiMesh multimesh, std::size_t part) const
   covered_dofs.reserve(dofmap_part->max_element_dofs() * covered_cells.size());
   for (unsigned int cell : covered_cells)
   {
-    ArrayView<const dolfin::la_index> local_dofs = dofmap_part->cell_dofs(cell);
+    const auto dmap = dofmap_part->cell_dofs(cell);
+    const auto local_dofs = ArrayView<const dolfin::la_index>(dmap.size(), dmap.data());
     std::copy(local_dofs.begin(), local_dofs.end(), std::back_inserter(covered_dofs));
   }
   // Sort and remove duplicates
@@ -185,10 +187,11 @@ MultiMeshDofMap::inactive_dofs(MultiMesh multimesh, std::size_t part) const
   cut_cell_dofs.reserve(dofmap_part->max_element_dofs() * cut_cells.size());
   for (unsigned int cell : cut_cells)
   {
-    //ArrayView<const dolfin::la_index> local_dofs = dofmap_part->cell_dofs(cell);
-    ArrayView<const dolfin::la_index> local_dofs = dofmap_part->cell_dofs(cell);
+    const auto dmap = dofmap_part->cell_dofs(cell);
+    const auto local_dofs = ArrayView<const dolfin::la_index>(dmap.size(), dmap.data());    
     std::copy(local_dofs.begin(), local_dofs.end(), std::back_inserter(cut_cell_dofs));
   }
+  
   // Sort and remove duplicates
   std::sort(cut_cell_dofs.begin(), cut_cell_dofs.end());
   cut_cell_dofs.erase(std::unique(cut_cell_dofs.begin(), cut_cell_dofs.end()),
@@ -201,3 +204,4 @@ MultiMeshDofMap::inactive_dofs(MultiMesh multimesh, std::size_t part) const
                       std::inserter(_inactive_dofs, _inactive_dofs.begin()));
   return _inactive_dofs;
 }
+//-----------------------------------------------------------------------------

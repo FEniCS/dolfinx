@@ -93,7 +93,9 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
+    /// Return inactive dofs
     std::vector<dolfin::la_index> inactive_dofs(MultiMesh multimesh, std::size_t part_id) const;
+
   private:
 
     // Index Map containing total global dimension (sum of parts)

@@ -87,7 +87,7 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
 }
 //-----------------------------------------------------------------------------
 void MultiMeshAssembler::_assemble_uncut_exterior_facets(GenericTensor& A,
-                                               const MultiMeshForm& a)
+                                                         const MultiMeshForm& a)
 {
   // FIXME: This implementation assumes that there is one background mesh
   // that contains the entire exterior facet. 
@@ -168,7 +168,8 @@ void MultiMeshAssembler::_assemble_uncut_exterior_facets(GenericTensor& A,
     for (std::size_t i = 0; i < form_rank; ++i)
     {
       const auto dofmap = a.function_space(i)->dofmap()->part(part);
-      dofs[i] = dofmap->cell_dofs(mesh_cell.index());
+      const auto dmap = dofmap->cell_dofs(mesh_cell.index());
+      dofs[i] = ArrayView<const dolfin::la_index>(dmap.size(), dmap.data());
     }
 
     // Tabulate cell tensor
