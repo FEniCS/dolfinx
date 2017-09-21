@@ -695,6 +695,8 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
         const Polyhedron polyhedron =
           ConvexTriangulation::triangulate(IntersectionConstruction::intersection(cut_cell, cutting_cell), gdim, tdim);
 
+	dolfin_assert(!ConvexTriangulation::selfintersects(polyhedron));
+
 	// FIXME: Flip triangles in polyhedron to maximize minimum angle here?
 	// FIXME: only include large polyhedra
 

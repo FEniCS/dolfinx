@@ -24,7 +24,10 @@
 #include "predicates.h"
 #include "GeometryPredicates.h"
 #include "GeometryTools.h"
+#include "CollisionPredicates.h"
+#include "IntersectionConstruction.h"
 #include "ConvexTriangulation.h"
+
 
 //-----------------------------------------------------------------------------
 namespace
@@ -728,3 +731,57 @@ ConvexTriangulation::unique_points(const std::vector<Point>& input_points,
   return points;
 }
 //-----------------------------------------------------------------------------
+bool ConvexTriangulation::selfintersects(const std::vector<std::vector<Point>>& p)
+//-----------------------------------------------------------------------------
+{
+  for (int i = 0; i < p.size(); i++)
+  {
+    for (int j = i+1; j < p.size(); j++)
+    {
+      dolfin_assert(p[i].size() == p[j].size());
+      if (p[i].size() == 4)
+      {
+	if (CollisionPredicates::collides_tetrahedron_tetrahedron_3d(p[i][0],
+								     p[i][1],
+								     p[i][2],
+								     p[i][3],
+								     p[j][0],
+								     p[j][1],
+								     p[j][2],
+								     p[j][3]))
+	{
+	  auto intersection =
+	    IntersectionConstruction::intersection_tetrahedron_tetrahedron_3d(p[i][0],
+									      p[i][1],
+									      p[i][2],
+									      p[i][3],
+									      p[j][0],
+									      p[j][1],
+									      p[j][2],
+									      p[j][3]);
+	  if (intersection.size() > 3)
+	  {
+	    for (int k = 3; k < intersection.size(); k++)
+	    {
+	      // FIXME: Note that this fails if the first three points are colinear!
+	      if (orient3d(intersection[0],
+			   intersection[1],
+			   intersection[2],
+			   intersection[k]) != 0)
+	      {
+		dolfin::cout << "Tetrahedron: " << p[i][0] << ", " << p[i][1] << ", " << p[i][2] << ", " << p[i][3] << dolfin::endl;
+		dolfin::cout << "and        : " << p[j][0] << ", " << p[j][1] << ", " << p[j][2] << ", " << p[j][3] << dolfin::endl;
+		return true;
+	      }
+	    }
+	  }
+	}
+      }
+      else if (p[i].size() == 3)
+      {
+	dolfin_not_implemented();
+      }
+    }
+  }
+  return false;
+  }

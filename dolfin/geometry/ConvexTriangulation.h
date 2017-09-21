@@ -59,6 +59,8 @@ namespace dolfin
     static std::vector<std::vector<Point>>
     triangulate_graham_scan_3d(const std::vector<Point>& pm);
 
+    static bool selfintersects(const std::vector<std::vector<Point>>& p);
+
   private:
 
     // Implementation declarations
