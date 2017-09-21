@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-05-17
+// Last changed: 2017-09-21
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -505,14 +505,42 @@ bool CollisionPredicates::_collides_triangle_point_2d(const Point& p0,
                                                       const Point& p2,
                                                       const Point& point)
 {
+  // const double ref = orient2d(p0, p1, p2);
+
+  // if (ref*orient2d(p0, p1, point) >= 0 and
+  //     ref*orient2d(p1, p2, point) >= 0 and
+  //     ref*orient2d(p2, p0, point) >= 0)
+  //   return true;
+  // else
+  //   return false;
+
   const double ref = orient2d(p0, p1, p2);
 
-  if (ref*orient2d(p0, p1, point) >= 0 and
-      ref*orient2d(p1, p2, point) >= 0 and
-      ref*orient2d(p2, p0, point) >= 0)
-    return true;
+  if (ref != 0.0)
+  {
+    if (ref*orient2d(p0, p1, point) >= 0.0 and
+	ref*orient2d(p1, p2, point) >= 0.0 and
+	ref*orient2d(p2, p0, point) >= 0.0)
+      return true;
+    else
+      return false;
+  }
   else
-    return false;
+  {
+    if ((orient2d(p0, p1, point) == 0.0 and
+	 collides_segment_point_1d(p0[0], p1[0], point[0]) and
+	 collides_segment_point_1d(p0[1], p1[1], point[1])) or
+	(orient2d(p1, p2, point) == 0.0 and
+	 collides_segment_point_1d(p1[0], p2[0], point[0]) and
+	 collides_segment_point_1d(p1[1], p2[1], point[1])) or
+	(orient2d(p2, p0, point) == 0.0 and
+	 collides_segment_point_1d(p2[0], p0[0], point[0]) and
+	 collides_segment_point_1d(p2[1], p0[1], point[1])))
+      return true;
+    else
+      return false;
+  }
+
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_triangle_point_3d(const Point& p0,

@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2017-02-06
+# Last changed: 2017-09-21
 
 import pytest
 from dolfin import *
@@ -143,6 +143,18 @@ def test_triangle_collides_point():
 
     assert cell.collides(Point(0.5)) == True
     assert cell.collides(Point(1.5)) == False
+
+@skip_in_parallel
+def test_degenerate_triangle_collides_point():
+    """Test a degenerate triangle that does not collide"""
+
+    p0 = Point(-0.10950608157830554745,0.14049391842169450806)
+    p1 = Point(-0.10950608157830354905,0.14049391842169650646)
+    p2 = Point(0.32853262580480108168,0.57853262580480113719)
+    q = Point(3.5952674716233090635e-06,0.25000359526747162331)
+
+    assert CollisionPredicates.collides_triangle_point_2d(p0, p1, p2, q) == False
+
 
 @skip_in_parallel
 def test_triangle_collides_triangle():
