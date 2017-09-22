@@ -81,12 +81,6 @@ namespace dolfin
     /// Implementation of Graham scan 3D
     static std::vector<std::vector<Point>>
     _triangulate_graham_scan_3d(const std::vector<Point>& pm);
-
-    // Utility functions
-    static std::vector<Point> unique_points(const std::vector<Point>& points,
-					    std::size_t gdim,
-					    double tol);
-
   };
 
 } // end namespace dolfin
