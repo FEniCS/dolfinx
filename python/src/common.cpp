@@ -125,6 +125,31 @@ namespace dolfin_wrappers
           });
     m.def("dump_timings_to_xml", &dolfin::dump_timings_to_xml);
 
+    // dolfin::SubSystemsManager
+    py::class_<dolfin::SubSystemsManager, std::unique_ptr<dolfin::SubSystemsManager, py::nodelete>>
+      (m, "SubSystemsManager")
+      .def_static("init_petsc", (void (*)()) &dolfin::SubSystemsManager::init_petsc)
+      .def_static("init_petsc", [](std::vector<std::string> args)
+                  {
+                    std::vector<char*> argv(args.size());
+                    for (std::size_t i = 0; i < args.size(); ++i)
+                      argv[i] = const_cast<char*>(args[i].data());
+                    dolfin::SubSystemsManager::init_petsc(args.size(), argv.data());
+                  })
+      .def_static("init_mpi", (void (*)()) &dolfin::SubSystemsManager::init_mpi)
+      .def_static("init_mpi", [](std::vector<std::string> args, int required_thread_level)->int
+                  {
+                    std::vector<char*> argv(args.size());
+                    for (std::size_t i = 0; i < args.size(); ++i)
+                      argv[i] = const_cast<char*>(args[i].data());
+                    return dolfin::SubSystemsManager::init_mpi(args.size(), argv.data(), required_thread_level);
+                  })
+      .def_static("finalize", &dolfin::SubSystemsManager::finalize)
+      .def_static("responsible_mpi", &dolfin::SubSystemsManager::responsible_mpi)
+      .def_static("responsible_petsc", &dolfin::SubSystemsManager::responsible_petsc)
+      .def_static("mpi_initialized", &dolfin::SubSystemsManager::mpi_initialized)
+      .def_static("mpi_finalized", &dolfin::SubSystemsManager::mpi_finalized);
+
   }
 
   // Interface for MPI
