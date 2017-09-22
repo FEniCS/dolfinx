@@ -28,7 +28,6 @@
 #include "IntersectionConstruction.h"
 #include "ConvexTriangulation.h"
 
-
 //-----------------------------------------------------------------------------
 namespace
 {
@@ -732,7 +731,6 @@ ConvexTriangulation::unique_points(const std::vector<Point>& input_points,
 }
 //-----------------------------------------------------------------------------
 bool ConvexTriangulation::selfintersects(const std::vector<std::vector<Point>>& p)
-//-----------------------------------------------------------------------------
 {
   for (int i = 0; i < p.size(); i++)
   {
@@ -769,8 +767,6 @@ bool ConvexTriangulation::selfintersects(const std::vector<std::vector<Point>>& 
 			   intersection[2],
 			   intersection[k]) != 0)
 	      {
-		dolfin::cout << "Tetrahedron: " << p[i][0] << ", " << p[i][1] << ", " << p[i][2] << ", " << p[i][3] << dolfin::endl;
-		dolfin::cout << "and        : " << p[j][0] << ", " << p[j][1] << ", " << p[j][2] << ", " << p[j][3] << dolfin::endl;
 		return true;
 	      }
 	    }
@@ -783,5 +779,7 @@ bool ConvexTriangulation::selfintersects(const std::vector<std::vector<Point>>& 
       }
     }
   }
+  
   return false;
-  }
+}
+//-----------------------------------------------------------------------------
