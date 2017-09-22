@@ -230,23 +230,18 @@ def errornorm(u, uh, norm_type="l2", degree_rise=3, mesh=None):
     if hasattr(u, "_cpp_object") and mesh is None:
         mesh = u._cpp_object.function_space().mesh()
     if mesh is None:
-        cpp.dolfin_error("norms.py",
-                         "compute error norm",
-                         "Missing mesh")
+        raise RuntimeError("Cannot compute error norm. Missng mesh.")
 
     # Get rank
     if not u.ufl_shape == uh.ufl_shape:
-        cpp.dolfin_error("norms.py",
-                         "compute error norm",
-                         "Value shapes don't match")
+        raise RuntimeError("Cannot compute error norm. Value shapes don't match.")
+
     shape = u.ufl_shape
     rank = len(shape)
 
     # Check that uh is associated with a finite element
     if uh.ufl_element().degree() is None:
-        cpp.dolfin_error("norms.py",
-                         "compute error norm",
-                         "Function uh must have a finite element")
+        raise RuntimeError("Cannot compute error norm. Function uh must have a finite element.")
 
     # Degree for interpolation space. Raise degree with respect to uh.
     degree = uh.ufl_element().degree() + degree_rise
