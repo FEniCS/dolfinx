@@ -250,7 +250,7 @@ void MultiMesh::build(std::size_t quadrature_order)
   // Make sure that cut cells are actually cut
   // TODO: Check if this needed
   // TODO: Maybe also keep track of interface cells
-  _impose_cut_cell_consistency();
+  // _impose_cut_cell_consistency();
 
   end();
 }
@@ -702,9 +702,10 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
       // Remove any near-trival quadrature rules
       // TODO: The tolerance here appears to work ok in 2D with few meshes
       // TODO: It might not be accurate in 3D or a large number of meshes
-      const double tolerance = DOLFIN_EPS * cut_cell.volume();
-      for (std::size_t i = 0; i < overlap_qr.size(); i++)
-      	remove_quadrature_rule(overlap_qr[i], tolerance);
+
+      //const double tolerance = DOLFIN_EPS * cut_cell.volume();
+      //for (std::size_t i = 0; i < overlap_qr.size(); i++)
+      //	remove_quadrature_rule(overlap_qr[i], tolerance);
 
       if (parameters["compress_volume_quadrature"])
       {
@@ -948,8 +949,8 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
                 cut_size = (Eij[1] - Eij[0]).norm();
               else if (Eij.size() == 3)
                 cut_size = (Eij[1] - Eij[0]).cross(Eij[2] - Eij[0]).norm() / 2;
-              const double tolerance = DOLFIN_EPS * cut_size;
-	      remove_quadrature_rule(interface_qr[local_cutting_cell_j_index], tolerance);
+              //const double tolerance = DOLFIN_EPS * cut_size;
+	      //remove_quadrature_rule(interface_qr[local_cutting_cell_j_index], tolerance);
 
 	      // TODO: Investigate if we should compress here or below
 	      if (parameters["compress_interface_quadrature"])
@@ -1562,10 +1563,10 @@ void MultiMesh::_impose_cut_cell_consistency()
 {
   for (std::size_t part_id = 0; part_id < num_parts(); part_id++)
   {
-    // Helper function to decide if cell has overlap quadrature points
+    // Helper function to decide if cell has interface quadrature rules
     auto cell_has_no_quadrature_points = [&](const unsigned int cell) -> bool
     {
-      auto cell_quadrature_rules = _quadrature_rules_overlap[part_id][cell];
+      auto cell_quadrature_rules = _quadrature_rules_interface[part_id][cell];
       bool has_no_qr = true;
       for (quadrature_rule qr : cell_quadrature_rules)
       {
@@ -1578,7 +1579,7 @@ void MultiMesh::_impose_cut_cell_consistency()
       if (has_no_qr)
       {
         // Add the cell to the vector of uncut cells
-        log(PROGRESS, "Marking cell %d on part %d as uncut (no QR)", cell, part_id);
+        log(PROGRESS, "Marking cell %d on part %d as uncut (having no interface QR)", cell, part_id);
         _uncut_cells[part_id].push_back(cell);
 
         // Clear collision map
@@ -1600,23 +1601,12 @@ void MultiMesh::remove_quadrature_rule(quadrature_rule& qr,
   //const double sum = std::accumulate(qr.second.begin(),
   // 				       qr.second.end(), 0.0);
 
-  // Kahan summation to reduce roundoff errors
-  double sum = 0.0;
-  double c = 0.0;
-  double y;
-  double t;
-  for (auto w : qr.second)
-  {
-    y = w - c;
-    t = sum + y;
-    c = (t - sum) - y;
-    sum = t;
-  }
-  if (std::abs(sum) < tolerance)
+  const double sum_of_weights = std::accumulate(qr.second.begin(),
+                                                qr.second.end(), 0.0);
+  if (std::abs(sum_of_weights) < tolerance)
   {
     qr.first.clear();
     qr.second.clear();
-    log(PROGRESS, "Removed near-trivial QR (rel. weight %e)", abs(sum)/tolerance);
   }
 }
 //-----------------------------------------------------------------------------

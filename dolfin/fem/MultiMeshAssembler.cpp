@@ -75,10 +75,6 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   if (finalize_tensor)
     A.apply("add");
 
-  // Lock any remaining inactive dofs
-  //if (A.rank() == 2)
-  //  static_cast<GenericMatrix&>(A).ident_zeros(DOLFIN_EPS_LARGE);
-
   end();
 }
 //-----------------------------------------------------------------------------
