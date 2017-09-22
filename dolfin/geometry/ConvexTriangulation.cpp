@@ -28,25 +28,61 @@
 #include "IntersectionConstruction.h"
 #include "ConvexTriangulation.h"
 
+using namespace dolfin;
+
 //-----------------------------------------------------------------------------
 namespace
 {
+  //-----------------------------------------------------------------------------
+  // Create a unique list of points in the sense that |p-q| > tol in each dimension
+  std::vector<Point>
+  unique_points(const std::vector<Point>& input_points,
+		std::size_t gdim,
+		double tol)
+  {
+    std::vector<Point> points;
+
+    for (std::size_t i = 0; i < input_points.size(); ++i)
+    {
+      bool unique = true;
+      for (std::size_t j = i+1; j < input_points.size(); ++j)
+      {
+	std::size_t cnt = 0;
+	for (std::size_t d = 0; d < gdim; ++d)
+	{
+	  if (std::abs(input_points[i][d] - input_points[j][d]) > tol)
+	  {
+	    cnt++;
+	  }
+	}
+	if (cnt == 0)
+	{
+	  unique = false;
+	  break;
+	}
+      }
+
+      if (unique)
+	points.push_back(input_points[i]);
+    }
+
+    return points;
+  }
   //------------------------------------------------------------------------------
   // Check if q lies between p0 and p1. p0, p1 and q are assumed to be colinear
-  bool is_between(dolfin::Point p0, dolfin::Point p1, dolfin::Point q)
+  bool is_between(Point p0, Point p1, Point q)
   {
     const double sqnorm = (p1-p0).squared_norm();
     return (p0-q).squared_norm() < sqnorm && (p1-q).squared_norm() < sqnorm;
   }
-
   //------------------------------------------------------------------------------
   // Return the indices to the points that forms the polygon that is
   // the convex hull of the points. The points are assumed to be coplanar
-  std::vector<std::pair<std::size_t, std::size_t>> compute_convex_hull_planar(const std::vector<dolfin::Point>& points)
-  //------------------------------------------------------------------------------
+  std::vector<std::pair<std::size_t, std::size_t>>
+  compute_convex_hull_planar(const std::vector<Point>& points)
   {
     // FIXME: Ensure that 0, 1, 2 are not colinear
-    dolfin::Point normal = dolfin::GeometryTools::cross_product(points[0], points[1], points[2]);
+    Point normal = GeometryTools::cross_product(points[0], points[1], points[2]);
     normal /= normal.norm();
 
     std::vector<std::pair<std::size_t, std::size_t>> edges;
@@ -58,7 +94,7 @@ namespace
       for (std::size_t j = i+1; j < points.size(); j++)
       {
         // Form at plane of i, j  and i + the normal of plane
-        const dolfin::Point r = points[i]+normal;
+        const Point r = points[i]+normal;
 
         // search for the first point which is not in the
         // i, j, p plane to determine sign of orietation
@@ -134,8 +170,6 @@ namespace
     return edges;
   }
 }
-
-using namespace dolfin;
 
 //------------------------------------------------------------------------------
 std::vector<std::vector<Point>>
@@ -387,9 +421,9 @@ ConvexTriangulation::_triangulate_graham_scan_3d(const std::vector<Point>& input
 
 #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
                 if (cgal_tet_is_degenerate(cand))
-                  dolfin::dolfin_error("ConvexTriangulation.cpp",
-                                       "triangulation 3d points",
-                                       "tet is degenerate");
+                  dolfin_error("ConvexTriangulation.cpp",
+			       "triangulation 3d points",
+			       "tet is degenerate");
 
 #endif
 
@@ -425,23 +459,23 @@ ConvexTriangulation::_triangulate_graham_scan_3d(const std::vector<Point>& input
 		for (const std::pair<std::size_t, std::size_t>& edge : coplanar_convex_hull)
 		{
                   triangulation.push_back({polyhedroncenter,
-			                   coplanar_center,
-			                   coplanar_points[edge.first],
-			                   coplanar_points[edge.second]});
+			coplanar_center,
+			coplanar_points[edge.first],
+			coplanar_points[edge.second]});
 
 #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
                   if (cgal_tet_is_degenerate(triangulation.back()))
                   {
-                    dolfin::dolfin_error("ConvexTriangulation.cpp:544",
-                                         "triangulation 3d points",
-                                         "tet is degenerate");
+                    dolfin_error("ConvexTriangulation.cpp:544",
+				 "triangulation 3d points",
+				 "tet is degenerate");
                   }
 
                   if (cgal_triangulation_overlap(triangulation))
                   {
-                    dolfin::dolfin_error("ConvexTriangulation.cpp:544",
-                                         "triangulation 3d points",
-                                         "now triangulation overlaps");
+                    dolfin_error("ConvexTriangulation.cpp:544",
+				 "triangulation 3d points",
+				 "now triangulation overlaps");
                   }
 #endif
 		}
@@ -480,15 +514,15 @@ ConvexTriangulation::triangulate_graham_scan_3d(const std::vector<Point>& pm)
 #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
 
   if (cgal_triangulation_has_degenerate(triangulation))
-    dolfin::dolfin_error("ConvexTriangulation.cpp",
-                         "verify convex triangulation",
-                         "triangulation contains degenerate tetrahedron");
+    dolfin_error("ConvexTriangulation.cpp",
+		 "verify convex triangulation",
+		 "triangulation contains degenerate tetrahedron");
 
   if (cgal_triangulation_overlap(triangulation))
   {
-    dolfin::dolfin_error("ConvexTriangulation.cpp",
-                         "verify convex triangulation",
-                         "tetrahedrons overlap");
+    dolfin_error("ConvexTriangulation.cpp",
+		 "verify convex triangulation",
+		 "tetrahedrons overlap");
   }
 
 
@@ -507,50 +541,14 @@ ConvexTriangulation::triangulate_graham_scan_3d(const std::vector<Point>& pm)
   const double reference_volume = cgal_polyhedron_volume(pm);
 
   if (std::abs(volume - reference_volume) > DOLFIN_EPS)
-    dolfin::dolfin_error("ConvexTriangulation.cpp",
-                         "verifying convex triangulation",
-                         "computed volume %f, but reference volume is %f",
-                         volume, reference_volume);
+    dolfin_error("ConvexTriangulation.cpp",
+		 "verifying convex triangulation",
+		 "computed volume %f, but reference volume is %f",
+		 volume, reference_volume);
 
 
 #endif
   return triangulation;
-}
-//-----------------------------------------------------------------------------
-std::vector<Point>
-ConvexTriangulation::unique_points(const std::vector<Point>& input_points,
-				   std::size_t gdim,
-				   double tol)
-{
-  // Create a unique list of points in the sense that |p-q| > tol in each dimension
-
-  std::vector<Point> points;
-
-  for (std::size_t i = 0; i < input_points.size(); ++i)
-  {
-    bool unique = true;
-    for (std::size_t j = i+1; j < input_points.size(); ++j)
-    {
-      std::size_t cnt = 0;
-      for (std::size_t d = 0; d < gdim; ++d)
-      {
-      	if (std::abs(input_points[i][d] - input_points[j][d]) > tol)
-      	{
-      	  cnt++;
-      	}
-      }
-      if (cnt == 0)
-      {
-      	unique = false;
-      	break;
-      }
-    }
-
-    if (unique)
-      points.push_back(input_points[i]);
-  }
-
-  return points;
 }
 //-----------------------------------------------------------------------------
 bool ConvexTriangulation::selfintersects(const std::vector<std::vector<Point>>& p)

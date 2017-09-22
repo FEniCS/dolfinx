@@ -95,5 +95,3 @@ def test_butcher_schemes_vector():
 
         assert scheme.order() - min(convergence_order(u_errors_0)) < 0.1
         assert scheme.order() - min(convergence_order(u_errors_1)) < 0.1
-
-    cpp.set_log_level(LEVEL)

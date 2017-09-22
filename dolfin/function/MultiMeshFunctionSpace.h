@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2016-03-02
+// Last changed: 2017-09-22
 
 #ifndef __MULTI_MESH_FUNCTION_SPACE_H
 #define __MULTI_MESH_FUNCTION_SPACE_H
@@ -123,15 +123,8 @@ namespace dolfin
     /// computed from the full function spaces on each part.
     void build(const std::vector<dolfin::la_index>& offsets);
 
-    // Lock inactive dofs of a system
+    /// Lock inactive dofs of a system
     void lock_inactive_dofs(GenericMatrix &A, GenericVector &b) const;
-
-    // Lock inactive dofs of a matrix
-    //void lock_inactive_dofs(GenericMatrix A) const;
-
-    // Lock inactive dofs of a matrix
-    //void lock_inactive_dofs(GenericVector b) const;
-
 
   private:
 

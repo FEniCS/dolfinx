@@ -4294,5 +4294,6 @@ REAL insphere(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe)
 
 namespace dolfin
 {
+  /// Initialize the predicate
   PredicateInitialization predicate_initialization;
 }

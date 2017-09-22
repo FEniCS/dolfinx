@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2017-04-07
+// Last changed: 2017-09-22
 
 #ifndef __SIMPLEX_QUADRATURE_H
 #define __SIMPLEX_QUADRATURE_H
@@ -30,6 +30,8 @@ namespace dolfin
 
   // Forward declarations
   class Cell;
+
+  /// This class defines quadrature rules for simplices.
 
   class SimplexQuadrature
   {
@@ -98,7 +100,7 @@ namespace dolfin
     ///         corresponding array of quadrature weights.
     std::pair<std::vector<double>, std::vector<double>>
     compute_quadrature_rule_interval(const std::vector<Point>& coordinates,
-				                     std::size_t gdim, 
+				                     std::size_t gdim,
                                      std::size_t order) const;
 
     /// Compute quadrature rule for triangle.

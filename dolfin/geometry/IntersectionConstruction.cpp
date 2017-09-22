@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-09-21
+// Last changed: 2017-09-22
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -29,7 +29,7 @@
 
 using namespace dolfin;
 
-namespace dolfin
+namespace
 {
   // Add points to vector
   template <typename T>
