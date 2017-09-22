@@ -205,7 +205,7 @@ TEST(ConvexTriangulationTest, testTrivialCase2)
   ASSERT_FALSE(triangulation_selfintersects(tri, 3));
   ASSERT_NEAR(triangulation_volume(tri), 1., DOLFIN_EPS);
 }
-
+//-----------------------------------------------------------------------------
 TEST(ConvexTriangulationTest, testCoplanarPoints)
 {
   std::vector<Point> input {
@@ -226,8 +226,7 @@ TEST(ConvexTriangulationTest, testCoplanarPoints)
   ASSERT_FALSE(triangulation_selfintersects(tri, 3));
   ASSERT_NEAR(triangulation_volume(tri), 1., DOLFIN_EPS);
 }
-
-
+//-----------------------------------------------------------------------------
 TEST(ConvexTriangulationTest, testCoplanarColinearPoints)
 {
   std::vector<Point> input {
@@ -248,9 +247,7 @@ TEST(ConvexTriangulationTest, testCoplanarColinearPoints)
   ASSERT_FALSE(triangulation_selfintersects(tri, 3));
   ASSERT_NEAR(triangulation_volume(tri), 1., DOLFIN_EPS);
 }
-
-
-
+//-----------------------------------------------------------------------------
 TEST(ConvexTriangulationTest, testFailingCase)
 {
   std::vector<Point> input {
@@ -271,7 +268,7 @@ TEST(ConvexTriangulationTest, testFailingCase)
   ASSERT_FALSE(has_degenerate(tri, 3));
   ASSERT_FALSE(triangulation_selfintersects(tri, 3));
 }
-
+//-----------------------------------------------------------------------------
 TEST(ConvexTriangulationTest, testFailingCase2)
 {
   std::vector<Point> input {
@@ -292,7 +289,7 @@ TEST(ConvexTriangulationTest, testFailingCase2)
   ASSERT_FALSE(has_degenerate(tri, 3));
   ASSERT_FALSE(triangulation_selfintersects(tri, 3));
 }
-
+//-----------------------------------------------------------------------------
 TEST(ConvexTriangulationTest, testFailingCase3)
 {
   std::vector<Point> input {
@@ -311,9 +308,10 @@ TEST(ConvexTriangulationTest, testFailingCase3)
   ASSERT_FALSE(has_degenerate(tri, 3));
   ASSERT_FALSE(triangulation_selfintersects(tri, 3));
 }
-
-// Test all
-int ConvexTriangulation_main(int argc, char **argv) {
+//-----------------------------------------------------------------------------
+int ConvexTriangulation_main(int argc, char **argv)
+{
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
+//-----------------------------------------------------------------------------
