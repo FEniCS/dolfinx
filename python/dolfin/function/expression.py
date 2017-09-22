@@ -366,20 +366,16 @@ class Expression(BaseExpression):
         label = kwargs.pop("label", None)
         mpi_comm = kwargs.pop("mpi_comm", None)
 
-        if cpp_code is None:
-            raise RuntimeError("Must supply code or module to Expression")
+        if not isinstance(cpp_code, str):
+            raise RuntimeError("Must supply C++ code to Expression")
         else:
             params = kwargs
             for k in params:
                 if not isinstance(k, str):
-                    raise KeyError("User Parameter key must be a string")
-            if isinstance(cpp_code, cpp.function.Expression):
-                self._cpp_object = cpp_code
-                if len(params) > 0:
-                    raise RuntimeError("Assign parameters to the compiled module directly, not via Expression")
-            elif isinstance(cpp_code, str):
-                self._cpp_object = jit.compile_expression(cpp_code, params)
-                self._parameters = ExpressionParameters(self._cpp_object, params)
+                    raise KeyError("User parameter key must be a string")
+
+            self._cpp_object = jit.compile_expression(cpp_code, params)
+            self._parameters = ExpressionParameters(self._cpp_object, params)
 
         if element and degree:
             raise RuntimeError("Cannot specify an element and a degree for Expressions.")
