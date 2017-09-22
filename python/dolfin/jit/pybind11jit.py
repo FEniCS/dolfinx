@@ -6,13 +6,14 @@ import pkgconfig
 import re
 
 import dolfin.cpp as cpp
+from dolfin.cpp.log import log, LogLevel
 from . import get_pybind_include
 from dolfin.function.expression import BaseExpression, _select_element
 
 
 def jit_generate(cpp_code, module_name, signature, parameters):
 
-    cpp.log.info("Calling dijitso just-in-time (JIT) compiler for pybind11 code.")
+    log(LogLevel.INFO, "Calling dijitso just-in-time (JIT) compiler for pybind11 code.")
 
     # Split code on reserved word "SIGNATURE" which will be replaced by the module signature
     # This must occur only once in the code
