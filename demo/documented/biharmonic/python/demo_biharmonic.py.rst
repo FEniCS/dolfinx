@@ -130,7 +130,7 @@ A subclass of :py:class:`Expression
 <dolfin.functions.expression.Expression>`, ``Source`` is created for
 the source term :math:`f`::
 
-    class Source(Expression):
+    class Source(UserExpression):
         def eval(self, values, x):
             values[0] = 4.0*pi**4*sin(pi*x[0])*sin(pi*x[1])
 

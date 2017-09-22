@@ -41,14 +41,15 @@ def fixture(func):
     NOTE: Probably does not work with yield fixtures or
     maybe just ignores post-yield code
 
-    This is the preferred decorator for writing fixtures
-    involving objects which might have collective destructors.
-    If in a need for using ``pytest.fixture`` directly, do::
+    This is the preferred decorator for writing fixtures involving
+    objects which might have collective destructors.  If in a need for
+    using ``pytest.fixture`` directly, do::
 
         yield result_of_fixture
 
         gc.collect()
         MPI.barrier(MPI.comm_world)
+
     """
 
     def wrapper(func, *args, **kwargs):
@@ -74,13 +75,23 @@ def fixture(func):
 
 
 def gc_barrier():
-    """Internal utility to easily switch on and off calls to
-    gc.collect() and MPI.barrier(world) in all fixtures here.
-    Helps make the tests deterministic when debugging.
+    """Internal utility to easily switch on and off calls to gc.collect()
+    and MPI.barrier(world) in all fixtures here.  Helps make the tests
+    deterministic when debugging.
+
     """
     gc.collect()
     if MPI.size(MPI.comm_world) > 1:
         MPI.barrier(MPI.comm_world)
+
+
+@pytest.fixture
+def worker_id(request):
+    """Returns thread id when running with pytest-xdist in parallel."""
+    if hasattr(request.config, 'slaveinput'):
+        return request.config.slaveinput['slaveid']
+    else:
+        return 'master'
 
 
 @pytest.yield_fixture(scope="function")
@@ -89,9 +100,10 @@ def gc_barrier_fixture():
     MPI.barrier(world) before and after a test.  Helps
     make the tests deterministic when debugging.
 
-    NOTE: This decorator is not needed now for writing tests,
-    as there is ``gc.collect()`` call in ``conftest.py`` on
-    teardown of every test.
+    NOTE: This decorator is not needed now for writing tests, as there
+    is ``gc.collect()`` call in ``conftest.py`` on teardown of every
+    test.
+
     """
     gc_barrier()
     yield
@@ -117,7 +129,10 @@ def filedir(request):
 
 @pytest.fixture(scope="module")
 def rootdir(request):
-    "Return the root directory of the repository. Assumes run from within repository filetree."
+    """Return the root directory of the repository. Assumes run from
+    within repository filetree.
+
+    """
     gc_barrier()
     d = os.path.dirname(os.path.abspath(request.module.__file__))
     t = ''
@@ -128,7 +143,10 @@ def rootdir(request):
 
 @pytest.fixture(scope="module")
 def datadir(request):
-    "Return the directory of the shared test data. Assumes run from within repository filetree."
+    """Return the directory of the shared test data. Assumes run from
+    within repository filetree.
+
+    """
     d = os.path.dirname(os.path.abspath(request.module.__file__))
     t = os.path.join(d, "data")
     while not os.path.isdir(t):
@@ -144,7 +162,8 @@ def _create_tempdir(request):
 
     # Construct name test_foo_tempdir from name test_foo.py
     testfilename = os.path.basename(testfile)
-    outputname = testfilename.replace(".py", "_tempdir")
+    outputname = testfilename.replace(".py",
+                                      "_tempdir_{}".format(worker_id(request)))
 
     # Get function name test_something from test_foo.py
     function = request.function.__name__
@@ -164,19 +183,22 @@ def _create_tempdir(request):
 
     # Delete and re-create directory on root node
     if MPI.rank(MPI.comm_world) == 0:
-        # First time visiting this basepath, delete the old and create a new
+        # First time visiting this basepath, delete the old and create
+        # a new
         if basepath not in _create_tempdir._basepaths:
             _create_tempdir._basepaths.add(basepath)
             if os.path.exists(basepath):
                 shutil.rmtree(basepath)
-            # Make sure we have the base path test_foo_tempdir for this test_foo.py file
+            # Make sure we have the base path test_foo_tempdir for
+            # this test_foo.py file
             if not os.path.exists(basepath):
                 os.mkdir(basepath)
 
         # Delete path from old test run
         if os.path.exists(path):
             shutil.rmtree(path)
-        # Make sure we have the path for this test execution: e.g. test_foo_tempdir/test_something__3
+        # Make sure we have the path for this test execution:
+        # e.g. test_foo_tempdir/test_something__3
         if not os.path.exists(path):
             os.mkdir(path)
     MPI.barrier(MPI.comm_world)
@@ -194,12 +216,13 @@ def tempdir(request):
     Deletes and re-creates directory from previous test runs but lets
     the directory stay after the test run for eventual inspection.
 
-    Returns the directory name, derived from the test file and function
-    plus a sequence number to work with parameterized tests.
+    Returns the directory name, derived from the test file and
+    function plus a sequence number to work with parameterized tests.
 
     Does NOT change the current directory.
 
     MPI safe (assuming MPI.comm_world context).
+
     """
     gc_barrier()
     return _create_tempdir(request)
@@ -212,12 +235,14 @@ def cd_tempdir(request):
     Deletes and re-creates directory from previous test runs but lets
     the directory stay after the test run for eventual inspection.
 
-    Returns the directory name, derived from the test file and function
-    plus a sequence number to work with parameterized tests.
+    Returns the directory name, derived from the test file and
+    function plus a sequence number to work with parameterized tests.
 
-    Changes the current directory to the tempdir and resets cwd afterwards.
+    Changes the current directory to the tempdir and resets cwd
+    afterwards.
 
     MPI safe (assuming MPI.comm_world context).
+
     """
     gc_barrier()
     cwd = os.getcwd()
@@ -238,9 +263,9 @@ def pushpop_parameters():
 
 # TODO: Rename set_parameters_fixture to e.g. use_parameter_values
 def set_parameters_fixture(paramname, values, key=lambda x: x):
-    """Return a fixture that sets and resets a global parameter
-    to each of a list of values before and after each test run.
-    Allows paramname="foo.bar.var" meaning parameters["foo"]["bar"]["var"].
+    """Return a fixture that sets and resets a global parameter to each of
+    a list of values before and after each test run.  Allows
+    paramname="foo.bar.var" meaning parameters["foo"]["bar"]["var"].
 
     Usage:
         repr = set_parameters_fixture("form_compiler.representation", ["quadrature", "uflacs"])
@@ -260,6 +285,7 @@ def set_parameters_fixture(paramname, values, key=lambda x: x):
             assert parameters["linear_algebra_backend"] == my_fixture2[0]
 
     Try it and see.
+
     """
     global parameters
     def _pushpop(request):
@@ -277,9 +303,9 @@ def set_parameters_fixture(paramname, values, key=lambda x: x):
                 yield request.param                                            # Let test run
                 parameters[names[0]][names[1]][names[2]] = prev                # Reset value
         else:
-            prev = parameters[paramname]               # Remember original value
-            parameters[paramname] = key(request.param) # Set value
-            yield request.param                        # Let test run
-            parameters[paramname] = prev               # Reset value
+            prev = parameters[paramname]                # Remember original value
+            parameters[paramname] = key(request.param)  # Set value
+            yield request.param                         # Let test run
+            parameters[paramname] = prev                # Reset value
 
     return pytest.yield_fixture(scope="function", params=values)(_pushpop)

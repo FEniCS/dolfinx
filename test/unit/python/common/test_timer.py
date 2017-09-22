@@ -20,36 +20,43 @@
 import pytest
 
 import gc
-import uuid
+import random
 from time import sleep
 
 from dolfin import *
 
-# FIXME: remove after transition
-if has_pybind11():
-    TimingClear_clear = TimingClear.clear
+
+# Seed random generator for determinism
+random.seed(0)
 
 def get_random_task_name():
-    return uuid.uuid4().hex
+    """Get pseudo-random string"""
+    return hex(random.randint(0, 1e32))
 
 
 def test_context_manager_named():
+    """Test that named Timer works as context manager"""
     task = get_random_task_name()
+
+    # Execute task in the context manager
     with Timer(task) as t:
         sleep(0.05)
         assert t.elapsed()[0] >= 0.05
+
+    # Check timing
     t = timing(task, TimingClear_clear)
     assert t[0] == 1
     assert t[1] >= 0.05
 
 
 def test_context_manager_anonymous():
+    """Test that anonymous Timer works as context manager"""
     with Timer() as t:
         sleep(0.05)
         assert t.elapsed()[0] >= 0.05
 
 
-# Test case for free function
+# Test case for decorated free function
 fun2_task = get_random_task_name()
 @timed(fun2_task)
 def fun2(*args, **kwargs):
@@ -58,7 +65,7 @@ def fun2(*args, **kwargs):
     return args, kwargs
 
 class C(object):
-    # Test case for instancemethod
+    # Test case for decorated instancemethod
     task_method2 = get_random_task_name()
     @timed(task_method2)
     def method2(self, *args, **kwargs):
@@ -66,7 +73,7 @@ class C(object):
         sleep(0.05)
         return args, kwargs
 
-    # Test case for staticmethod
+    # Test case for decorated staticmethod
     task_method3 = get_random_task_name()
     @staticmethod
     @timed(task_method3)
@@ -75,7 +82,7 @@ class C(object):
         sleep(0.05)
         return args, kwargs
 
-    # Test case for classmethod
+    # Test case for decorated classmethod
     task_method5 = get_random_task_name()
     @classmethod
     @timed(task_method5)
@@ -84,7 +91,9 @@ class C(object):
         sleep(0.05)
         return args, kwargs
 
+# Testing object with decorated methods
 o = C()
+
 
 @pytest.mark.parametrize(("fun", "task"), [
     (fun2, fun2_task),
@@ -95,18 +104,24 @@ o = C()
     (C.method5, C.task_method5),
 ])
 def test_decorator_functionality(fun, task):
+    """Test functionality of timed decorator on function,
+    instancemethod, classmethod, staticmethod..."""
+    # Check that decorator preserves docstring
     assert fun.__doc__ == "Foo"
+
+    # Check that function call works and returns what expected
     assert fun(1, 2, 3, four=5) == ((1, 2, 3), {'four': 5})
     assert fun(1, 2, 3, four=5) == ((1, 2, 3), {'four': 5})
+
+    # Check that correct timing was recorded
     t = timing(task, TimingClear_clear)
     assert t[0] == 2
     assert t[1] >= 0.1
 
 
 def test_decorator_timer_scope():
-    """Check that Timer object is not launched by decorator
-    unless function is invoked and logging the timing when
-    destroyed without usage"""
+    """Check that underlying Timer object is not launched
+    by decorator unless function is invoked"""
     task = get_random_task_name()
 
     # Delete eventual previous timing
@@ -130,6 +145,8 @@ def test_decorator_timer_scope():
 
 
 def test_decorator_timing_correctness():
+    """Check that timing is measured really when the function
+    is executed, not during existence of decorator"""
     task = get_random_task_name()
 
     @timed(task)

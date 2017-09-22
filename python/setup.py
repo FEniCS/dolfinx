@@ -3,6 +3,7 @@ import re
 import sys
 import platform
 import subprocess
+import multiprocessing
 
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
@@ -46,7 +47,11 @@ class CMakeBuild(build_ext):
             build_args += ['--', '/m']
         else:
             cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-            build_args += ['--', '-j4']
+            if "CIRCLECI" in os.environ:
+                build_args += ['--', '-j2']
+            else:
+                num_build_threads = max(1, multiprocessing.cpu_count() - 2)
+                build_args += ['--', '-j' + str(num_build_threads)]
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
@@ -56,31 +61,30 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
-setup(
-    name='dolfin',
-    version='0.0.1',
-    author='FEniCS Project',
-    description='Experimental DOLFIN pybind11 interface',
-    long_description='',
-    packages=["dolfin",
-              "dolfin.common",
-              "dolfin.function",
-              "dolfin.fem",
-              "dolfin.la",
-              "dolfin.io",
-              "dolfin.jit",
-              "dolfin.mesh",
-              "dolfin.multistage",
-              "dolfin.parameter",
-              "dolfin_utils.meshconvert",
-              "dolfin_utils.test"],
-    package_dir={'dolfin' : 'dolfin', 'dolfin_test' : 'dolfin_test'},
-    ext_modules=[CMakeExtension('dolfin.cpp')],
-    cmdclass=dict(build_ext=CMakeBuild),
-    install_requires=["numpy",
-                      "ffc",
-                      "ufl",
-                      "pkgconfig",
-                      "dijitso"],
-    zip_safe=False,
-)
+
+setup(name='dolfin',
+      version='0.0.1',
+      author='FEniCS Project',
+      description='DOLFIN Python interface (via pybind11)',
+      long_description='',
+      packages=["dolfin",
+                "dolfin.common",
+                "dolfin.function",
+                "dolfin.fem",
+                "dolfin.la",
+                "dolfin.io",
+                "dolfin.jit",
+                "dolfin.mesh",
+                "dolfin.multistage",
+                "dolfin.parameter",
+                "dolfin_utils.meshconvert",
+                "dolfin_utils.test"],
+      package_dir={'dolfin' : 'dolfin', 'dolfin_test' : 'dolfin_test'},
+      ext_modules=[CMakeExtension('dolfin.cpp')],
+      cmdclass=dict(build_ext=CMakeBuild),
+      install_requires=["numpy",
+                        "pkgconfig",
+                        "fenics-ffc",
+                        "fenics-ufl",
+                        "fenics-dijitso"],
+      zip_safe=False)

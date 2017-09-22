@@ -1,8 +1,6 @@
-#!/usr/bin/env py.test
+"""Unit tests for the Facet class"""
 
-"Unit tests for the MeshData class"
-
-# Copyright (C) 2011 Anders Logg
+# Copyright (C) 2017 Tormod Landet
 #
 # This file is part of DOLFIN.
 #
@@ -18,16 +16,16 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2011-08-22
-# Last changed: 2011-08-22
 
-import pytest
-from dolfin import *
+from dolfin import UnitSquareMesh, facets
 
 
-def test_meshfunction():
-    "Test input/output"
-
-    mesh = UnitCubeMesh(3, 3, 3)
-    f = mesh.data().create_array("foo", 3)
+def test_normal():
+    "Test that the normal() method is wrapped"
+    mesh = UnitSquareMesh(4, 4)
+    for facet in facets(mesh):
+        n = facet.normal()
+        nx, ny, nz = n.x(), n.y(), n.z()
+        assert isinstance(nx, float)
+        assert isinstance(ny, float)
+        assert isinstance(nz, float)

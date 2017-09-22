@@ -51,7 +51,7 @@ namespace dolfin_wrappers
     m.def("get_log_level", &dolfin::get_log_level);
 
     // dolfin::LogLevel enums
-    py::enum_<dolfin::LogLevel>(m, "LogLevel")
+    py::enum_<dolfin::LogLevel>(m, "LogLevel", py::arithmetic())
       .value("DEBUG", dolfin::LogLevel::DBG)
       .value("TRACE", dolfin::LogLevel::TRACE)
       .value("PROGRESS", dolfin::LogLevel::PROGRESS)

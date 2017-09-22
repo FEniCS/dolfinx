@@ -45,11 +45,22 @@ u1 = Constant(1.0)
 u2 = Constant(2.0)
 u3 = Constant(3.0)
 
-# Define boundary conditions
-bc0 = DirichletBC(V, u0, 0)
-bc1 = DirichletBC(V, u1, 1)
-bc2 = DirichletBC(V, u2, 2)
-bc3 = DirichletBC(V, u3, 3)
+if has_pybind11():
+    markers = FacetFunction("size_t", mesh, 9999)
+    for (f, v) in mesh.domains().markers(mesh.topology().dim()-1).items():
+        markers[f] = v
+
+    # Define boundary conditions
+    bc0 = DirichletBC(V, u0, markers, 0)
+    bc1 = DirichletBC(V, u1, markers, 1)
+    bc2 = DirichletBC(V, u2, markers, 2)
+    bc3 = DirichletBC(V, u3, markers, 3)
+else:
+    # Define boundary conditions
+    bc0 = DirichletBC(V, u0, 0)
+    bc1 = DirichletBC(V, u1, 1)
+    bc2 = DirichletBC(V, u2, 2)
+    bc3 = DirichletBC(V, u3, 3)
 
 # Set PETSc MUMPS paramter (this is required to prevent a memory error
 # in some cases when using MUMPS LU solver).

@@ -26,11 +26,6 @@ import numpy as np
 
 from dolfin_utils.test import *
 
-if has_pybind11():
-    TensorLayout.Sparsity_DENSE = TensorLayout.Sparsity.DENSE
-    TensorLayout.Sparsity_SPARSE = TensorLayout.Sparsity.SPARSE
-    TensorLayout.Ghosts_GHOSTED = TensorLayout.Ghosts.GHOSTED
-    TensorLayout.Ghosts_UNGHOSTED = TensorLayout.Ghosts.UNGHOSTED
 
 backends = sorted(linear_algebra_backends().keys())
 if MPI.size(mpi_comm_world()) > 1 and 'Eigen' in backends:

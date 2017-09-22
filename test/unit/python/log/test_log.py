@@ -1,8 +1,6 @@
-#!/usr/bin/env py.test
+"""Unit tests for the log"""
 
-"Unit tests for the MeshData class"
-
-# Copyright (C) 2011 Anders Logg
+# Copyright (C) 2017 Tormod Landet
 #
 # This file is part of DOLFIN.
 #
@@ -18,16 +16,14 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2011-08-22
-# Last changed: 2011-08-22
 
-import pytest
-from dolfin import *
+import dolfin
+from dolfin_utils.test import skip_if_not_pybind11
 
 
-def test_meshfunction():
-    "Test input/output"
-
-    mesh = UnitCubeMesh(3, 3, 3)
-    f = mesh.data().create_array("foo", 3)
+@skip_if_not_pybind11
+def test_log_level_comparable():
+    info = dolfin.LogLevel.INFO
+    warning = dolfin.LogLevel.WARNING
+    assert info < warning
+    assert warning < 1000

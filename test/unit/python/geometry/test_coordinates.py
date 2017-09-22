@@ -25,14 +25,11 @@ import numpy as np
 
 from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, UnitDiscMesh
 from dolfin import FunctionSpace, VectorFunctionSpace, Function, mpi_comm_world
+from dolfin import UserExpression
 from dolfin import get_coordinates, set_coordinates, Mesh
-from dolfin import Expression, interpolate, has_pybind11
+from dolfin import Expression, interpolate
 from dolfin_utils.test import skip_in_parallel, fixture
 
-if has_pybind11():
-    from dolfin import UserExpression
-else:
-    UserExpression = Expression
 
 @fixture
 def meshes_p1():
