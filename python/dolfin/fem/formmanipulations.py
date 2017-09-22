@@ -35,13 +35,10 @@ def adjoint(form, reordered_arguments=None):
     # Extract form arguments
     arguments = form.arguments()
     if any(arg.part() is not None for arg in arguments):
-        cpp.dolfin_error("formmanipulation.py",
-                         "compute adjoint of form",
-                         "parts not supported")
+        raise RuntimeError("Compute adjoint of form, parts not supported")
+
     if not (len(arguments) == 2):
-        cpp.dolfin_error("formmanipulation.py",
-                         "compute adjoint of form",
-                         "Form is not bilinear")
+        raise RuntimeError("Compute adjoint of form, form is not bilinear")
 
     # Define new Argument(s) in the same spaces (NB: Order does not
     # matter anymore here because number is absolute)
@@ -66,24 +63,16 @@ def derivative(form, u, du=None, coefficient_derivatives=None):
         number = max([-1] + [arg.number() for arg in form_arguments]) + 1
 
         if any(arg.part() is not None for arg in form_arguments):
-            cpp.dolfin_error("formmanipulation.py",
-                             "compute derivative of form",
-                             "Cannot automatically create new Argument using "
-                             "parts, please supply one")
+            raise RuntimeError("Compute derivative of form, cannot automatically create new Argument using parts, please supply one")
         part = None
 
         if isinstance(u, Function):
             V = u.function_space()
             du = Argument(V, number, part)
         elif isinstance(u, (list, tuple)) and all(isinstance(w, Function) for w in u):
-            cpp.dolfin_error("formmanipulation.py",
-                             "take derivative of form w.r.t. a tuple of Coefficients",
-                             "Take derivative w.r.t. a single Coefficient on "
-                             "a mixed space instead.")
+            raise RuntimeError("Taking derivative of form w.r.t. a tuple of Coefficients. Take derivative w.r.t. a single Coefficient on a mixed space instead.")
         else:
-            cpp.dolfin_error("formmanipulation.py",
-                             "compute derivative of form w.r.t. '%s'" % u,
-                             "Supply Function as a Coefficient")
+            raise RuntimeError("Computing derivative of form w.r.t. '{}'. Supply Function as a Coefficient".format(u))
 
     return ufl.derivative(form, u, du, coefficient_derivatives)
 
