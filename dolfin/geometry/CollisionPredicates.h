@@ -422,18 +422,6 @@ namespace dolfin
                                                      const Point& q1,
                                                      const Point& q2,
                                                      const Point& q3);
-
-    //--- Utility functions ---
-
-    // Utility function for computing the cross product (a-c) x (b-c)
-    // accurately
-    static Point cross_product(const Point& a,
-                               const Point& b,
-                               const Point& c);
-
-    static double cross_product_norm(const Point& a,
-                                     const Point& b,
-                                     const Point& c);
   };
 
 }

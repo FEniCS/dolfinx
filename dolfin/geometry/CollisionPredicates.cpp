@@ -22,6 +22,7 @@
 #include "predicates.h"
 #include "Point.h"
 #include "CollisionPredicates.h"
+#include "GeometryTools.h"
 
 using namespace dolfin;
 
@@ -29,7 +30,7 @@ using namespace dolfin;
 // High-level collision detection predicates
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::collides(const MeshEntity& entity,
-           const Point& point)
+				   const Point& point)
 {
   // Get data
   const MeshGeometry& g = entity.mesh().geometry();
@@ -74,7 +75,7 @@ bool CollisionPredicates::collides(const MeshEntity& entity,
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::collides(const MeshEntity& entity_0,
-           const MeshEntity& entity_1)
+				   const MeshEntity& entity_1)
 {
   // Get data
   const MeshGeometry& g0 = entity_0.mesh().geometry();
@@ -419,10 +420,10 @@ bool CollisionPredicates::_collides_segment_segment_3d(const Point& p0,
   // that they can be parallel, or even collinear.
 
   // Check for collinearity
-  const Point u = cross_product(p0, p1, q0);
+  const Point u = GeometryTools::cross_product(p0, p1, q0);
   if (u[0] == 0. and u[1] == 0. and u[2] == 0.)
   {
-    const Point v = cross_product(p0, p1, q1);
+    const Point v = GeometryTools::cross_product(p0, p1, q1);
     if (v[0] == 0. and v[1] == 0. and v[2] == 0.)
     {
       // Now we know that the segments are collinear
@@ -507,147 +508,17 @@ bool CollisionPredicates::_collides_triangle_point_3d(const Point& p0,
 
   const double tet_det = orient3d(p0, p1, p2, point);
 
-  // FIXME: The determinant should be exactly zero for the point to be
-  // in the plane. However, if we take a triangle with vertices
-  // (0,0,1), (1,1,1), (0,1,0) and check the point (1./3,2./3,2./3)
-  // this gives a determinant of ~5.55112e-17
-  //if (std::abs(det) > DOLFIN_EPS)
   if (tet_det < 0. or tet_det > 0.)
     return false;
 
-  // // Check that the point is inside the triangle using barycentric coords
-  // const double tri_det = cross_product_norm(p0, p1, p2);
-  // std::cout<<std::setprecision(16)<<tri_det << ' '<<((p0-p2).cross(p1-p2)).norm()<<'\n';
+  // Use normal
+  const Point n = GeometryTools::cross_product(p0, p1, p2);
 
-  // // const double r = cross_product_norm(p0, p1, point);
-  // // std::cout<<std::setprecision(16) << r << "  (r<0) " << (r<0) << " (r>tri_det) " << (r>tri_det)<< '\n';
-  // // if (r < 0 or r > tri_det)
-  // //   return false;
-
-  // // const double s = cross_product_norm(p1, p2, point);
-  // // std::cout<<std::setprecision(16) << s << "  (s<0) " << (s<0) << " (s>tri_det) " << (s>tri_det)<<'\n';
-  // // std::cout<<std::setprecision(16) << (r+s) << "  (r+s<0) " << (r+s<0) << " (r+s>tri_det) " << (r+s>tri_det)<< '\n';
-  // // if (s < 0 or s > tri_det or
-  // //     (r+s) < 0 or (r+s) > tri_det)
-  // //   return false;
-
-  // const double r = cross_product_norm(p0, p1, point);
-  // // std::cout << tools::plot3(p0)<<'\n'
-  // //       << tools::plot3(p1)<<'\n'
-  // //       << tools::plot3(point)<<'\n';
-  // std::cout<<std::setprecision(16) << r << " (r>tri_det) " << (r>tri_det)<< '\n';
-  // if (r > tri_det)
-  //   return false;
-
-  // const double s = cross_product_norm(p1, p2, point);
-  // // std::cout << tools::plot3(p1)<<'\n'
-  // //       << tools::plot3(p2)<<'\n'
-  // //       << tools::plot3(point)<<'\n';
-  // std::cout<<std::setprecision(16) << s << " (s>tri_det) " << (s>tri_det)<<'\n';
-  // if (s > tri_det)
-  //   return false;
-
-  // const double t = cross_product_norm(p0, p2, point);
-  // std::cout<<std::setprecision(16) << t << " (t>tri_det) " << (t>tri_det)<<'\n';
-  // std::cout<<std::setprecision(16) << "r+s+t " << r+s+t << '\n';
-  // if (t > tri_det or r+s+t>tri_det)
-  //   return false;
-
-  // return true;
-
-  // const double tri_det_2 = cross_product(p0, p1, p2).squared_norm();
-
-  // std::cout<<std::setprecision(16)<<std::scientific << "permute " << (tri_det_2==cross_product(p0, p2, p1).squared_norm()) <<  ' '<< (tri_det_2==cross_product(p2, p1, p0).squared_norm())<<'\n';
-
-
-  // if (cross_product(p0, p1, point).squared_norm() > tri_det_2)
-  //   return false;
-
-  // if (cross_product(p1, p2, point).squared_norm() > tri_det_2)
-  //   return false;
-
-  // if (cross_product(p0, p2, point).squared_norm() > tri_det_2)
-  //   return false;
-
-  // std::cout<<"sqrt " << std::setprecision(16)<<std::scientific<< cross_product(p0, p1, point).norm()<<' '<< cross_product(p1, p2, point).norm()<<' '<< cross_product(p0, p2, point).norm()<<' '<< std::sqrt(tri_det_2)<<'\n';
-  // std::cout << "sqrt sum < " << std::setprecision(16)<<std::scientific<< cross_product(p0, p1, point).norm()  + cross_product(p1, p2, point).norm()+ cross_product(p0, p2, point).norm()<<' '<< std::sqrt(tri_det_2)<<'\n';
-  // std::cout<<std::setprecision(16)<<std::scientific<< cross_product(p0, p1, point).squared_norm()<<' '<< cross_product(p1, p2, point).squared_norm()<<' '<< cross_product(p0, p2, point).squared_norm()<<' '<< tri_det_2<<'\n';
-
-  // if (cross_product(p0, p1, point).norm()
-  //     + cross_product(p1, p2, point).norm()
-  //     + cross_product(p0, p2, point).norm() > std::sqrt(tri_det_2))
-  //   return false;
-
-  // return true;
-
-
-  // use normal
-  const Point n = cross_product(p0, p1, p2);
-
-  if (n.dot(cross_product(point, p0, p1)) < 0.0 or
-      n.dot(cross_product(point, p2, p0)) < 0.0 or
-      n.dot(cross_product(point, p1, p2)) < 0.0)
+  if (n.dot(GeometryTools::cross_product(point, p0, p1)) < 0.0 or
+      n.dot(GeometryTools::cross_product(point, p2, p0)) < 0.0 or
+      n.dot(GeometryTools::cross_product(point, p1, p2)) < 0.0)
     return false;
   return true;
-
-  // // FIXME
-  // // Test: Reduce to 2d problem by taking the projection of the
-  // // triangle onto the 2d plane xy, xz or yz that has the largest
-  // // determinant
-  // const double det_xy = std::abs(orient2d(p0,
-  //            p1,
-  //            p2));
-  // std::cout << __FUNCTION__ << "  detxy " << det_xy <<std::endl;
-
-  // std::array<Point, 3> xz = { Point(p0.x(), p0.z()),
-  //            Point(p1.x(), p1.z()),
-  //            Point(p2.x(), p2.z()) };
-  // const double det_xz = std::abs(orient2d(xz[0],
-  //            xz[1],
-  //            xz[2]));
-  // std::cout << __FUNCTION__ << "  detxz " << det_xz <<std::endl;
-
-  // std::array<Point, 3> yz = { Point(p0.y(), p0.z()),
-  //            Point(p1.y(), p1.z()),
-  //            Point(p2.y(), p2.z()) };
-  // const double det_yz = std::abs(orient2d(yz[0],
-  //            yz[1],
-  //            yz[2]));
-  // std::cout << __FUNCTION__ << "  detyz " << det_yz <<std::endl;
-
-  // // Check for degeneracy
-  // dolfin_assert(det_xy > DOLFIN_EPS or
-  //    det_xz > DOLFIN_EPS or
-  //    det_yz > DOLFIN_EPS);
-
-  // std::array<Point, 3> tri;
-  // Point a;
-
-  // if (det_xy > det_xz and det_xy > det_yz)
-  // {
-  //   tri = std::array<Point, 3>{ p0, p1, p2 };
-  //   a[0] = point[0];
-  //   a[1] = point[1];
-  // }
-  // else if (det_xz > det_xy and det_xz > det_yz)
-  // {
-  //   tri = xz;
-  //   a[0] = point[0];
-  //   a[1] = point[2];
-  // }
-  // else
-  // {
-  //   tri = yz;
-  //   a[0] = point[1];
-  //   a[1] = point[2];
-  // }
-
-  // // std::cout << tri[0]<<' '<<tri[1]<<' '<<tri[2]<<"    " << ' ' << a << std::endl;
-
-  // // const bool collides_2d = collides_triangle_point_2d(tri[0], tri[1], tri[2], a);
-  // // std::cout << "2d collision " << col2d << std::endl;
-
-  // return collides_triangle_point_2d(tri[0], tri[1], tri[2], a);
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_triangle_segment_2d(const Point& p0,
@@ -1040,47 +911,5 @@ bool CollisionPredicates::_collides_tetrahedron_tetrahedron_3d(const Point& p0,
     return true;
 
   return false;
-}
-//-----------------------------------------------------------------------------
-Point CollisionPredicates::cross_product(const Point& a,
-                                         const Point& b,
-                                         const Point& c)
-{
-  // Accurate cross product p = (a-c) x (b-c). See Shewchuk Lecture
-  // Notes on Geometric Robustness.
-  double ayz[2] = {a.y(), a.z()};
-  double byz[2] = {b.y(), b.z()};
-  double cyz[2] = {c.y(), c.z()};
-  double azx[2] = {a.z(), a.x()};
-  double bzx[2] = {b.z(), b.x()};
-  double czx[2] = {c.z(), c.x()};
-  double axy[2] = {a.x(), a.y()};
-  double bxy[2] = {b.x(), b.y()};
-  double cxy[2] = {c.x(), c.y()};
-  Point p(_orient2d(ayz, byz, cyz),
-	  _orient2d(azx, bzx, czx),
-	  _orient2d(axy, bxy, cxy));
-  return p;
-}
-//-----------------------------------------------------------------------------
-double CollisionPredicates::cross_product_norm(const Point& a,
-                                               const Point& b,
-                                               const Point& c)
-{
-  // Accurate norm of cross product p = (a-c) x (b-c). See Shewchuk
-  // Lecture Notes on Geometric Robustness.
-  double ayz[2] = {a.y(), a.z()};
-  double byz[2] = {b.y(), b.z()};
-  double cyz[2] = {c.y(), c.z()};
-  double azx[2] = {a.z(), a.x()};
-  double bzx[2] = {b.z(), b.x()};
-  double czx[2] = {c.z(), c.x()};
-  double axy[2] = {a.x(), a.y()};
-  double bxy[2] = {b.x(), b.y()};
-  double cxy[2] = {c.x(), c.y()};
-
-  return std::sqrt(std::pow(_orient2d(ayz, byz, cyz), 2)
-                 + std::pow(_orient2d(azx, bzx, czx), 2)
-                 + std::pow(_orient2d(axy, bxy, cxy), 2));
 }
 //-----------------------------------------------------------------------------
