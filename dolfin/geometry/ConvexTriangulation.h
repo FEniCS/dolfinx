@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-07-07
+// Last changed: 2017-09-22
 
 #ifndef __CONVEX_TRIANGULATION
 #define __CONVEX_TRIANGULATION
@@ -27,6 +27,9 @@
 
 namespace dolfin
 {
+
+  /// This class implements algorithms for triangulating convex
+  /// domains represented as a set of points.
 
   class ConvexTriangulation
   {
@@ -59,6 +62,7 @@ namespace dolfin
     static std::vector<std::vector<Point>>
     triangulate_graham_scan_3d(const std::vector<Point>& pm);
 
+    /// Determine if there are self-intersecting tetrahedra
     static bool selfintersects(const std::vector<std::vector<Point>>& p);
 
   private:
