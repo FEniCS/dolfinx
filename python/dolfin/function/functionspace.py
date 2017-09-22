@@ -15,7 +15,7 @@ from . import function
 
 class FunctionSpace(ufl.FunctionSpace):
 
-    def __init__(self,  *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Create finite element function space."""
 
         if len(args) == 1:

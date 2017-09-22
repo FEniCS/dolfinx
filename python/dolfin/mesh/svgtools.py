@@ -45,15 +45,15 @@ def mesh2svg(mesh, display_width=800.0):
 
     # Compute mesh size
     strokewidth = 2
-    mesh_origin = [x[:,k].min() for k in range(d)]
-    x_min = [x[:,k].min() for k in range(d)]
-    x_max = [x[:,k].max() for k in range(d)]
+    #    mesh_origin = [x[:,k].min() for k in range(d)]
+    x_min = [x[:, k].min() for k in range(d)]
+    x_max = [x[:, k].max() for k in range(d)]
     if d == 1:
-        mesh_width  = x_max[0]-x_min[0]
+        mesh_width = x_max[0] - x_min[0]
         mesh_height = 0
     elif d == 2:
-        mesh_width  = x_max[0]-x_min[0]
-        mesh_height = x_max[1]-x_min[1]
+        mesh_width = x_max[0] - x_min[0]
+        mesh_height = x_max[1] - x_min[1]
 
     # Compute display scaling
     scale = float(display_width / mesh_width)
@@ -61,38 +61,38 @@ def mesh2svg(mesh, display_width=800.0):
                          strokewidth)
 
     # Add padding to include vertex circles
-    display_padding = 10*strokewidth
-    display_width = 2*display_padding + display_width
-    display_height = 2*display_padding + display_height
+    display_padding = 10 * strokewidth
+    display_width = 2 * display_padding + display_width
+    display_height = 2 * display_padding + display_height
 
     # Build list of screen coordinate vertices
     vertices = []
     if d == 1:
-        vertices = [(display_padding + int(scale*(x[i,0] - x_min[0])),
+        vertices = [(display_padding + int(scale * (x[i, 0] - x_min[0])),
                      display_padding)
                     for i in range(num_vertices)]
     elif d == 2:
         # Mirror y-axis because of svg coordinate system
-        vertices = [(display_padding + int(scale*(x[i,0] - x_min[0])),
-                     display_padding + int(scale*(x_max[1] - x[i,1])))
+        vertices = [(display_padding + int(scale * (x[i, 0] - x_min[0])),
+                     display_padding + int(scale * (x_max[1] - x[i, 1])))
                     for i in range(num_vertices)]
 
     # Build list of edges
     if cellname == "interval":
         # Build list of unique edges in 1D case
-        edges = [(c[i,0], c[i,1]) for i in range(num_cells)]
+        edges = [(c[i, 0], c[i, 1]) for i in range(num_cells)]
     elif cellname == "triangle": # Should in principle work for quadrilateral as well
         # Build list of unique edges in 2D case
         edges = set()
         for i in range(num_cells):
             for j in range(nv):
-                e = (c[i,j], c[i,(j+1)%nv])
+                e = (c[i, j], c[i, (j + 1) % nv])
                 edges.add(tuple(sorted(e)))
         edges = sorted(edges)
     else:
         edges = []
     # Build lines for all edges
-    lines = [(vertices[e0], vertices[e1]) for e0,e1 in edges]
+    lines = [(vertices[e0], vertices[e1]) for e0, e1 in edges]
 
     # Render svg code
     radius = strokewidth

@@ -4,6 +4,7 @@ from . import svgtools
 
 # Functions to extend cpp.mesh.Mesh with
 
+
 def ufl_cell(self):
     return ufl.Cell(self.cell_name(),
                     geometric_dimension=self.geometry().dim())
@@ -18,6 +19,7 @@ def ufl_coordinate_element(self):
     degree = self.geometry().degree()
     return ufl.VectorElement("Lagrange", cell, degree,
                              dim=cell.geometric_dimension())
+
 
 def ufl_domain(self):
     """Returns the ufl domain corresponding to the mesh."""

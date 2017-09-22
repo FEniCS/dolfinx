@@ -110,9 +110,9 @@ extern "C" DLL_EXPORT dolfin::Expression * create_{classname}()
         elif hasattr(value, "_cpp_object"):
             members += "std::shared_ptr<dolfin::GenericFunction> generic_function_{key};\n".format(key=k)
             set_generic_function += _set_props.format(key_name=k,
-                                                      name="generic_function_"+k)
+                                                      name="generic_function_" + k)
             get_generic_function += _get_props.format(key_name=k,
-                                                      name="generic_function_"+k)
+                                                      name="generic_function_" + k)
 
             value_size = value._cpp_object.value_size()
             if value_size == 1:

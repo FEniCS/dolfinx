@@ -24,7 +24,7 @@ def as_backend_type(x):
 def __gt__(self, value):
     if np.isscalar(value):
         return self.array() > value
-    if np.isinstance(value, dolfin.cpp.la.GenericVector):
+    if np.isinstance(value, cpp.la.GenericVector):
         return self.array() > value.array()
     return NotImplemented
 
@@ -33,9 +33,9 @@ del __gt__
 
 
 def __ge__(self, value):
-    if isscalar(value):
+    if np.isscalar(value):
         return self.array() >= value
-    if isinstance(value, dolfin.cpp.la.GenericVector):
+    if isinstance(value, cpp.la.GenericVector):
         return self.array() >= value.array()
     return NotImplemented
 
@@ -46,7 +46,7 @@ del __ge__
 def __lt__(self, value):
     if np.isscalar(value):
         return self.array() < value
-    if isinstance(value, dolfin.cpp.la.GenericVector):
+    if isinstance(value, cpp.la.GenericVector):
         return self.array() < value.array()
     return NotImplemented
 
@@ -57,7 +57,7 @@ del __lt__
 def __le__(self, value):
     if np.isscalar(value):
         return self.array() <= value
-    if isinstance(value, dolfin.cpp.la.GenericVector):
+    if isinstance(value, cpp.la.GenericVector):
         return self.array() <= value.array()
     return NotImplemented
 
@@ -68,7 +68,7 @@ del __le__
 def __eq__(self, value):
     if np.isscalar(value):
         return self.array() == value
-    if isinstance(value, dolfin.cpp.la.GenericVector):
+    if isinstance(value, cpp.la.GenericVector):
         return self.array() == value.array()
     return NotImplemented
 

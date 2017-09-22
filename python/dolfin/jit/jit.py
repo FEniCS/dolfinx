@@ -61,7 +61,7 @@ def compile_class(cpp_data):
     # Make a string representing the properties (and distinguish float/GenericFunction)
     # by adding '*' for GenericFunction
     property_str = ''
-    for k,v in properties.items():
+    for k, v in properties.items():
         property_str += str(k)
         if hasattr(v, '_cpp_object') and isinstance(v._cpp_object, cpp.function.GenericFunction):
             property_str += '*'

@@ -19,8 +19,8 @@ def __getitem__(self, key):
         # FIXME: I think we want to return the parameter set rather than a copy?
         p = self._get_parameter_set(key)
         return p
-        #np = cpp.parameter.Parameters(p)
-        #return np
+        # np = cpp.parameter.Parameters(p)
+        # return np
     else:
         raise RuntimeError("Invalid parameter: {}".format(key))
 
@@ -43,7 +43,7 @@ def update(self, params):
 # Extend the cpp.parameter.Parameters class and clean-up
 cpp.parameter.Parameters.__getitem__ = __getitem__
 cpp.parameter.Parameters.update = update
-del __getitem__,  update
+del __getitem__, update
 
 
 # Import global form compiler parameters from FFC
