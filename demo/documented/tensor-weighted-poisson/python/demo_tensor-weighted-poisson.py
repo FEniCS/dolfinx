@@ -104,7 +104,7 @@ public:
 PYBIND11_MODULE(SIGNATURE, m)
 {
   py::class_<Conductivity, std::shared_ptr<Conductivity>, dolfin::Expression>
-    (m, "Conductivity", py::dynamic_attr())
+    (m, "Conductivity")
     .def(py::init<>())
     .def_readwrite("c00", &Conductivity::c00)
     .def_readwrite("c01", &Conductivity::c01)

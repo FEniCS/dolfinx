@@ -85,6 +85,8 @@ extern "C" DLL_EXPORT dolfin::Expression * create_{classname}()
     _get_props = """          if (name == "{key_name}") return {name};"""
     _set_props = """          if (name == "{key_name}") {{ {name} = _value; return; }}"""
 
+    cpp.log.info("Calling dijitso just-in-time (JIT) compiler for Expression.")
+
     statements = class_data["statements"]
     statement = ""
     if isinstance(statements, str):

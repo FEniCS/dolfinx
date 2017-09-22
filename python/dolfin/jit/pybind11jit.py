@@ -12,6 +12,8 @@ from dolfin.function.expression import BaseExpression, _select_element
 
 def jit_generate(cpp_code, module_name, signature, parameters):
 
+    cpp.log.info("Calling dijitso just-in-time (JIT) compiler for pybind11 code.")
+
     # Split code on reserved word "SIGNATURE" which will be replaced by the module signature
     # This must occur only once in the code
     split_cpp_code = re.split('SIGNATURE', cpp_code)
