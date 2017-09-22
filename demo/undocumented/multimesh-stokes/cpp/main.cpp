@@ -132,6 +132,9 @@ int main(int argc, char* argv[])
   bc1->apply(*A, *b);
   bc2->apply(*A, *b);
 
+  // Remove inactive dofs
+  V->lock_inactive_dofs(*A, *b);
+
   // Compute solution
   auto w = make_shared<MultiMeshFunction>(W);
   solve(*A, *w->vector(), *b);

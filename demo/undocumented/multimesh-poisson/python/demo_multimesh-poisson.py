@@ -65,15 +65,15 @@ def solve_poisson(t, x1, y1, x2, y2):
     h = (h('+') + h('-')) / 2
 
     # Set parameters
-    alpha = 4.0
-    beta = 4.0
+    alpha = 10.0
+    beta = 1.0
 
     # Define bilinear form
     a = dot(grad(u), grad(v))*dX \
       - dot(avg(grad(u)), jump(v, n))*dI \
       - dot(avg(grad(v)), jump(u, n))*dI \
-      + alpha/h*jump(u)*jump(v)*dI \
-      + beta*dot(jump(grad(u)), jump(grad(v)))*dO
+      + alpha/h * jump(u)*jump(v)*dI \
+      + beta/h**2 * dot(jump(u), jump(v))*dO
 
     # Define linear form
     L = f*v*dX
@@ -87,6 +87,9 @@ def solve_poisson(t, x1, y1, x2, y2):
     boundary = DirichletBoundary()
     bc = MultiMeshDirichletBC(V, zero, boundary)
     bc.apply(A, b)
+
+    # Remove inactive dofs
+    V.lock_inactive_dofs(A, b)
 
     # Compute solution
     u = MultiMeshFunction(V)

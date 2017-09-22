@@ -160,7 +160,7 @@ std::string MultiMeshDofMap::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index>
-MultiMeshDofMap::inactive_dofs(MultiMesh multimesh, std::size_t part) const
+MultiMeshDofMap::inactive_dofs(const MultiMesh &multimesh, std::size_t part) const
 {
   std::shared_ptr<const GenericDofMap> dofmap_part = this->part(part);
 

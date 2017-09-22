@@ -94,7 +94,8 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     /// Return inactive dofs
-    std::vector<dolfin::la_index> inactive_dofs(MultiMesh multimesh, std::size_t part_id) const;
+    std::vector<dolfin::la_index> inactive_dofs(const MultiMesh &multimesh,
+                                                std::size_t part_id) const;
 
   private:
 
