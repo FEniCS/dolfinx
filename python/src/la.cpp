@@ -561,12 +561,6 @@ namespace dolfin_wrappers
       .def("local_range", (std::pair<std::int64_t, std::int64_t> (dolfin::GenericVector::*)() const) &dolfin::GenericVector::local_range)
       .def("owns_index", &dolfin::GenericVector::owns_index)
       .def("apply", &dolfin::GenericVector::apply)
-      .def("array", [](const dolfin::GenericVector& instance)
-           {
-             std::vector<double> values;
-             instance.get_local(values);
-             return py::array_t<double>(values.size(), values.data());
-           })
       .def_property_readonly("__array_priority__", [](const dolfin::GenericVector& self){ return 0; });
 
 

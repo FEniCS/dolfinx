@@ -186,7 +186,7 @@ class TestBasicLaOperations:
         else:
             assert round(A[lind0] - val1 - val2*100, 7) == 0
 
-        A2 = A.array()
+        A2 = A.get_local()
         assert isinstance(A2,ndarray)
         assert A2.shape == (n1 - n0, )
 
@@ -197,7 +197,7 @@ class TestBasicLaOperations:
 
         assert round(MPI.sum(A.mpi_comm(), A2.sum()) - A.sum(), 7) == 0
 
-        B2 = B.array()
+        B2 = B.get_local()
 
         inds = [1,3,6,9,15,20,24,28,32,40,50,60,70,100000]
 
@@ -240,7 +240,7 @@ class TestBasicLaOperations:
         assert (A3==A2).all()
 
         A[:] = A2
-        assert (A.array()==A2).all()
+        assert (A.get_local()==A2).all()
 
         H  = A.copy()
         if not has_pybind11():
@@ -289,7 +289,7 @@ class TestBasicLaOperations:
         with pytest.raises(IndexError):
             wrong_dim([0,2], slice(0,4,1))
 
-        A2 = A.array()
+        A2 = A.get_local()
         A *= B
         A2 *= B2
         I = A*B
@@ -385,13 +385,13 @@ class TestBasicLaOperations:
         if distributed:
             return
 
-        v_numpy = v.array()
+        v_numpy = v.get_local()
         A_numpy = A.array()
 
         u_numpy = dot(A_numpy, v_numpy)
         u_numpy2 = A*v_numpy
 
-        assert absolute(u.array() - u_numpy).sum() < DOLFIN_EPS*len(v)
+        assert absolute(u.get_local() - u_numpy).sum() < DOLFIN_EPS*len(v)
         assert absolute(u_numpy2 - u_numpy).sum() < DOLFIN_EPS*len(v)
 
 

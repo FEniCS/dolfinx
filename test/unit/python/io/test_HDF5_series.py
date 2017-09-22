@@ -56,5 +56,5 @@ def test_save_and_read_function_timeseries(tempdir):
         timestamp = hdf5_file.attributes(vec_name)["timestamp"]
         assert timestamp == t
         result = F0.vector() - F1.vector()
-        assert len(result.array().nonzero()[0]) == 0
+        assert len(result.get_local().nonzero()[0]) == 0
     hdf5_file.close()

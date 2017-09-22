@@ -239,12 +239,12 @@ def test_compile_extension_module_pybind11():
     ext_module = compile_cpp_code(code)
 
     vec = PETScVector(mpi_comm_world(), 10)
-    np_vec = vec.array()
+    np_vec = vec.get_local()
     np_vec[:] = arange(len(np_vec))
     vec.set_local(np_vec)
     ext_module.PETSc_exp(vec)
     np_vec[:] = exp(np_vec)
-    assert (np_vec == vec.array()).all()
+    assert (np_vec == vec.get_local()).all()
 
 
 @skip_if_pybind11

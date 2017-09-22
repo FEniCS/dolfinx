@@ -157,30 +157,30 @@ def test_1_1_assigner(w, ww, wr, wrr, q, r, qqv, u0, u1, u2, W, V, WW):
     assigner = FunctionAssigner(W.sub(0), V)
     assigner.assign(w.sub(0), u0)
 
-    assert np.all(w.sub(0, deepcopy=True).vector().array() == u0.vector().array())
+    assert np.all(w.sub(0, deepcopy=True).vector().get_local() == u0.vector().get_local())
 
     assign(w.sub(2), u2)
-    assert np.all(w.sub(2, deepcopy=True).vector().array() == u2.vector().array())
+    assert np.all(w.sub(2, deepcopy=True).vector().get_local() == u2.vector().get_local())
 
     assigner = FunctionAssigner(V, W.sub(2))
     assigner.assign(u0, w.sub(2))
 
-    assert np.all(u0.vector().array() == w.sub(2, deepcopy=True).vector().array())
+    assert np.all(u0.vector().get_local() == w.sub(2, deepcopy=True).vector().get_local())
 
     assign(u1, w.sub(1))
-    assert np.all(u1.vector().array() == w.sub(1, deepcopy=True).vector().array())
+    assert np.all(u1.vector().get_local() == w.sub(1, deepcopy=True).vector().get_local())
 
     assigner = FunctionAssigner(WW.sub(0), W)
     assigner.assign(ww.sub(0), w)
 
     assign(wr.sub(0), w)
-    assert np.all(wr.sub(0, deepcopy=True).vector().array() == w.vector().array())
+    assert np.all(wr.sub(0, deepcopy=True).vector().get_local() == w.vector().get_local())
 
     assign(wr.sub(1), r)
-    assert np.all(wr.sub(1, deepcopy=True).vector().array() == r.vector().array())
+    assert np.all(wr.sub(1, deepcopy=True).vector().get_local() == r.vector().get_local())
 
     assign(qqv.sub(0).sub(0), q)
-    assert np.all(qqv.sub(0).sub(0, deepcopy=True).vector().array() == q.vector().array())
+    assert np.all(qqv.sub(0).sub(0, deepcopy=True).vector().get_local() == q.vector().get_local())
 
     with pytest.raises(RuntimeError):
         assign(qqv.sub(0), q)
@@ -196,17 +196,17 @@ def test_N_1_assigner(u0, u1, u2, qq, qqv, rr, w, wrr, r, W, V):
     assigner = FunctionAssigner(W, [V,V,V])
     assigner.assign(vv, [u0, u1, u2])
 
-    assert np.all(vv.sub(0, deepcopy=True).vector().array() == u0.vector().array())
-    assert np.all(vv.sub(1, deepcopy=True).vector().array() == u1.vector().array())
-    assert np.all(vv.sub(2, deepcopy=True).vector().array() == u2.vector().array())
+    assert np.all(vv.sub(0, deepcopy=True).vector().get_local() == u0.vector().get_local())
+    assert np.all(vv.sub(1, deepcopy=True).vector().get_local() == u1.vector().get_local())
+    assert np.all(vv.sub(2, deepcopy=True).vector().get_local() == u2.vector().get_local())
 
     assign(qqv, [qq, u1])
-    assert np.all(qqv.sub(0, deepcopy=True).vector().array() == qq.vector().array())
-    assert np.all(qqv.sub(1, deepcopy=True).vector().array() == u1.vector().array())
+    assert np.all(qqv.sub(0, deepcopy=True).vector().get_local() == qq.vector().get_local())
+    assert np.all(qqv.sub(1, deepcopy=True).vector().get_local() == u1.vector().get_local())
 
     assign(wrr, [w, rr])
-    assert np.all(wrr.sub(0, deepcopy=True).vector().array() == w.vector().array())
-    assert np.all(wrr.sub(1, deepcopy=True).vector().array() == rr.vector().array())
+    assert np.all(wrr.sub(0, deepcopy=True).vector().get_local() == w.vector().get_local())
+    assert np.all(wrr.sub(1, deepcopy=True).vector().get_local() == rr.vector().get_local())
 
     with pytest.raises(RuntimeError):
         assign(qqv, [qq, u1, u1])
@@ -219,11 +219,11 @@ def test_1_N_assigner(u0, u1, u2, w, qq, qqv, V, W):
     assigner = FunctionAssigner([V,V,V], W)
     assigner.assign([u0, u1, u2], w)
 
-    assert np.all(w.sub(0, deepcopy=True).vector().array() == u0.vector().array())
-    assert np.all(w.sub(1, deepcopy=True).vector().array() == u1.vector().array())
-    assert np.all(w.sub(2, deepcopy=True).vector().array() == u2.vector().array())
+    assert np.all(w.sub(0, deepcopy=True).vector().get_local() == u0.vector().get_local())
+    assert np.all(w.sub(1, deepcopy=True).vector().get_local() == u1.vector().get_local())
+    assert np.all(w.sub(2, deepcopy=True).vector().get_local() == u2.vector().get_local())
 
     assign([qq, u1], qqv)
 
-    assert np.all(qqv.sub(0, deepcopy=True).vector().array() == qq.vector().array())
-    assert np.all(qqv.sub(1, deepcopy=True).vector().array() == u1.vector().array())
+    assert np.all(qqv.sub(0, deepcopy=True).vector().get_local() == qq.vector().get_local())
+    assert np.all(qqv.sub(1, deepcopy=True).vector().get_local() == u1.vector().get_local())

@@ -39,4 +39,4 @@ def test_save_and_read_xml_function(cd_tempdir):
     xml_file >> F1
     result = F0.vector() - F1.vector()
 
-    assert len(result.array().nonzero()[0]) == 0
+    assert len(result.get_local().nonzero()[0]) == 0

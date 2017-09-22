@@ -366,8 +366,8 @@ def test_manifold_dg0_functions(square3d, any_representation):
     u0 = project(1.0, U0)
     v0v = (1.0, 2.0, 3.0)
     v0 = project(as_vector(v0v), V0)
-    assert round(sum(u0.vector().array()) - 2*1, 7) == 0.0
-    assert round(sum(v0.vector().array()) - 2*(1+2+3), 7) == 0.0
+    assert round(sum(u0.vector().get_local()) - 2*1, 7) == 0.0
+    assert round(sum(v0.vector().get_local()) - 2*(1+2+3), 7) == 0.0
 
     # Integrate piecewise constant functions over manifold cells
     assert round(assemble(u0*dx(0)) - 0.5*area) == 0.0
@@ -380,8 +380,8 @@ def test_manifold_dg0_functions(square3d, any_representation):
     # Project x to scalar and vector DG0 spaces on manifold
     u0x = project(x[0], U0)  # cell averages of x[0]: 2/3, 1/3, sum = 3/3
     v0x = project(x, V0)  # cell averages of x[:]: (2/3, 1/3, 2/3), (1/3, 2/3, 2/3), sum = 10/3
-    assert round(sum(u0x.vector().array()) - 3.0/3.0, 7) == 0.0
-    assert round(sum(v0x.vector().array()) - 10.0/3.0, 7) == 0.0
+    assert round(sum(u0x.vector().get_local()) - 3.0/3.0, 7) == 0.0
+    assert round(sum(v0x.vector().get_local()) - 10.0/3.0, 7) == 0.0
 
     # Evaluate in all corners and cell midpoints, value should be the
     # same constant everywhere
@@ -420,9 +420,9 @@ def test_manifold_cg1_functions(square3d, any_representation):
     v1 = project(x, V1)
     # exact x in vertices is [0,0,0, 1,1,1, 1,0,0, 0,1,0],
     # so sum(x[0] for each vertex) is therefore sum(0 1 1 0):
-    assert round(sum(u1.vector().array()) - (0+1+1+0), 7) == 0.0
+    assert round(sum(u1.vector().get_local()) - (0+1+1+0), 7) == 0.0
     # and sum(x components for each vertex) is sum(1, 3, 1, 1):
-    assert round(sum(v1.vector().array()) - (1+3+1+1), 7) == 0.0
+    assert round(sum(v1.vector().get_local()) - (1+3+1+1), 7) == 0.0
 
     # Integrate piecewise constant functions over manifold cells,
     # computing midpoint coordinates

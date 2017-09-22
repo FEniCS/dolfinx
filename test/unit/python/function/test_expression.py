@@ -226,11 +226,11 @@ def test_vector_valued_expression_member_function(mesh):
     for f in fs:
         u = Expression("f[0] + f[1] + f[2]", f=f, degree=1)
         v = interpolate(u, V)
-        assert np.allclose(v.vector().array(), 6.0)
+        assert np.allclose(v.vector().get_local(), 6.0)
         for g in fs:
             u.f = g
             v = interpolate(u, V)
-            assert np.allclose(v.vector().array(), 6.0)
+            assert np.allclose(v.vector().get_local(), 6.0)
 
 
 # NOTE: Do we want this to work (attaching MeshFunctions to
