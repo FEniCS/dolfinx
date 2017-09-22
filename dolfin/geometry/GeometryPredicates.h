@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-11-21
-// Last changed: 2017-07-03
+// Last changed: 2017-09-22
 
 #ifndef __GEOMETRY_PREDICATES_H
 #define __GEOMETRY_PREDICATES_H
@@ -28,6 +28,9 @@
 
 namespace dolfin
 {
+
+  /// This class implements geometric predicates, i.e. function that
+  /// return either true or false.
 
   class GeometryPredicates
   {
@@ -58,6 +61,7 @@ namespace dolfin
     /// Check whether simplex is finite (not Inf or NaN)
     static bool is_finite(const std::vector<double>& simplex);
 
+    /// Check whether the convex hull is degenerate
     static bool convex_hull_is_degenerate(const std::vector<Point>& p,
                                           std::size_t gdim);
 

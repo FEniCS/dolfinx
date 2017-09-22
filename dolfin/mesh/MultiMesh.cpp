@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-08-28
+// Last changed: 2017-09-22
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -155,7 +155,7 @@ const std::map<unsigned int,
   return _collision_maps_cut_cells[part];
 }
 //-----------------------------------------------------------------------------
-const std::map<unsigned int, quadrature_rule> &
+const std::map<unsigned int, MultiMesh::quadrature_rule> &
 MultiMesh::quadrature_rules_cut_cells(std::size_t part) const
 
 {
@@ -163,7 +163,7 @@ MultiMesh::quadrature_rules_cut_cells(std::size_t part) const
   return _quadrature_rules_cut_cells[part];
 }
 //-----------------------------------------------------------------------------
-const quadrature_rule
+const MultiMesh::quadrature_rule
 MultiMesh::quadrature_rules_cut_cells(std::size_t part,
                                       unsigned int cell_index) const
 {
@@ -172,14 +172,14 @@ MultiMesh::quadrature_rules_cut_cells(std::size_t part,
   return q[cell_index];
 }
 //-----------------------------------------------------------------------------
-const std::map<unsigned int, std::vector<quadrature_rule>>&
+const std::map<unsigned int, std::vector<MultiMesh::quadrature_rule>>&
   MultiMesh::quadrature_rules_overlap(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
   return _quadrature_rules_overlap[part];
 }
 //-----------------------------------------------------------------------------
-const std::vector<quadrature_rule>
+const std::vector<MultiMesh::quadrature_rule>
 MultiMesh::quadrature_rules_overlap(std::size_t part,
 				    unsigned int cell_index) const
 {
@@ -188,14 +188,14 @@ MultiMesh::quadrature_rules_overlap(std::size_t part,
   return q[cell_index];
 }
 //-----------------------------------------------------------------------------
-const std::map<unsigned int, std::vector<quadrature_rule>>&
+const std::map<unsigned int, std::vector<MultiMesh::quadrature_rule>>&
   MultiMesh::quadrature_rules_interface(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
   return _quadrature_rules_interface[part];
 }
 //-----------------------------------------------------------------------------
-const std::vector<quadrature_rule>
+const std::vector<MultiMesh::quadrature_rule>
 MultiMesh::quadrature_rules_interface(std::size_t part,
 				      unsigned int cell_index) const
 {
@@ -266,7 +266,7 @@ void MultiMesh::build(std::size_t quadrature_order)
 
   // Mark space as built
   _is_built = true;
-  
+
   end();
 }
 //-----------------------------------------------------------------------------

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2017-06-22
+// Last changed: 2017-09-22
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -39,12 +39,6 @@ namespace dolfin
   class BoundingBoxTree;
   class SimplexQuadrature;
 
-  /// Typedefs
-  typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
-  typedef std::vector<Point> Simplex;
-  typedef std::vector<Simplex> Polyhedron;
-  typedef std::vector<std::size_t> IncExcKey;
-
   /// This class represents a collection of meshes with arbitrary
   /// overlaps. A multimesh may be created from a set of standard
   /// meshes spaces by repeatedly calling add(), followed by a call to
@@ -54,6 +48,18 @@ namespace dolfin
   class MultiMesh : public Variable
   {
   public:
+
+    /// Structure storing a quadrature rule
+    typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
+
+    /// A simplex is a list of points
+    typedef std::vector<Point> Simplex;
+
+    /// A polyhedron is a list of simplices
+    typedef std::vector<Simplex> Polyhedron;
+
+    /// Key to identify polyhedra
+    typedef std::vector<std::size_t> IncExcKey;
 
     /// Create empty multimesh
     MultiMesh();
@@ -335,7 +341,7 @@ namespace dolfin
 
     /// Check whether multimesh has been built
     bool is_built() const { return _is_built; }
-    
+
     /// Clear multimesh
     void clear();
 
@@ -358,6 +364,8 @@ namespace dolfin
     /// the domain mesh is known, this is a good test to verify that
     /// the mesh-mesh intersections and quadrature are correct.
     double compute_area() const;
+
+    /// Corresponding function for volume
     double compute_volume() const;
 
     /// Create matplotlib string to plot 2D multimesh (small meshes only)
@@ -368,7 +376,7 @@ namespace dolfin
 
     // Flag for whether multimesh has been built
     bool _is_built;
-    
+
     // List of meshes
     std::vector<std::shared_ptr<const Mesh> > _meshes;
 

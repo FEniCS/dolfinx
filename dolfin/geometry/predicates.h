@@ -39,9 +39,9 @@ namespace dolfin
   // Convenience function using dolfin::Point
   double orient3d(const Point& a, const Point& b, const Point& c, const Point& d);
 
-  // Class used for automatic initialization of tolerances at startup.
-  // A global instance is defined inside predicates.cpp to ensure that
-  // the constructor and thus exactinit() is called.
+  /// Class used for automatic initialization of tolerances at startup.
+  /// A global instance is defined inside predicates.cpp to ensure that
+  /// the constructor and thus exactinit() is called.
 
   class PredicateInitialization
   {
