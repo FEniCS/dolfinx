@@ -7,7 +7,6 @@
 # either version 3 of the License, or (at your option) any later
 # version.
 
-import dolfin.cpp as cpp
 from dolfin.jit.jit import compile_class, _math_header
 
 

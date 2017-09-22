@@ -7,7 +7,6 @@
 # either version 3 of the License, or (at your option) any later
 # version.
 
-import types
 import ffc
 import ufl
 import dolfin.cpp as cpp
@@ -25,10 +24,10 @@ class FunctionSpace(ufl.FunctionSpace):
             self._init_from_cpp(*args, **kwargs)
         else:
             if len(args) == 0 or not isinstance(args[0], cpp.mesh.Mesh):
-                #cpp.dolfin_error("functionspace.py",
-                #                 "create function space",
-                #                 "Illegal argument, not a mesh: "
-                #                 + str(args[0]))
+                # cpp.dolfin_error("functionspace.py",
+                #                  "create function space",
+                #                  "Illegal argument, not a mesh: "
+                #                  + str(args[0]))
                 pass
             elif len(args) == 2:
                 self._init_from_ufl(*args, **kwargs)
@@ -118,8 +117,8 @@ class FunctionSpace(ufl.FunctionSpace):
         if self.num_sub_spaces() == 1:
             raise ValueError("no SubSpaces to extract")
         if i >= self.num_sub_spaces():
-            raise ValueError("Can only extract SubSpaces with i = 0 ... %d" % \
-                  (self.num_sub_spaces() - 1))
+            raise ValueError("Can only extract SubSpaces with i = 0 ... %d" %
+                             (self.num_sub_spaces() - 1))
         assert hasattr(self.ufl_element(), "sub_elements")
 
         # Extend with the python layer
@@ -131,11 +130,11 @@ class FunctionSpace(ufl.FunctionSpace):
     def contains(self, V):
         "Check whether a function is in the FunctionSpace"
         return self._cpp_object.contains(V._cpp_object)
-        #if isinstance(u, cpp.function.Function):
+        # if isinstance(u, cpp.function.Function):
         #    return u._in(self)
-        #elif isinstance(u, function.Function):
+        # elif isinstance(u, function.Function):
         #    return u._cpp_object._in(self)
-        #return False
+        # return False
 
     def __contains__(self, u):
         "Check whether a function is in the FunctionSpace"

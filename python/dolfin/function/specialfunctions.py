@@ -21,13 +21,13 @@ SpecialFunctions.h).
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ["MeshCoordinates", "FacetArea", "FacetNormal", "CellSize",
-           "CellVolume", "SpatialCoordinate", "CellNormal",
-           "Circumradius", "MinFacetEdgeLength", "MaxFacetEdgeLength"]
-
 import ufl
 import dolfin.cpp as cpp
 from dolfin.function.expression import BaseExpression
+
+__all__ = ["MeshCoordinates", "FacetArea", "FacetNormal", "CellSize",
+           "CellVolume", "SpatialCoordinate", "CellNormal",
+           "Circumradius", "MinFacetEdgeLength", "MaxFacetEdgeLength"]
 
 
 def _mesh2domain(mesh):
@@ -78,8 +78,10 @@ class FacetArea(BaseExpression):
         # Initialize UFL part
         # NB! This is defined as a piecewise constant function for
         # each cell, not for each facet!
-        ufl_element = ufl.FiniteElement("Discontinuous Lagrange", mesh.ufl_cell(), 0)
-        super().__init__(domain=mesh.ufl_domain(), element=ufl_element, label="FacetArea")
+        ufl_element = ufl.FiniteElement("Discontinuous Lagrange",
+                                        mesh.ufl_cell(), 0)
+        super().__init__(domain=mesh.ufl_domain(),
+                         element=ufl_element, label="FacetArea")
 
 
 # Simple definition of FacetNormal via UFL
@@ -121,7 +123,7 @@ def CellSize(mesh):
 
     """
 
-    return 2.0*ufl.Circumradius(_mesh2domain(mesh))
+    return 2.0 * ufl.Circumradius(_mesh2domain(mesh))
 
 
 # Simple definition of CellVolume via UFL
