@@ -23,6 +23,7 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import cd_tempdir
 
+
 def test_write_and_read_table(cd_tempdir):
     # Do something that takes time
     x = PETScVector(mpi_comm_world(), 197)
@@ -37,7 +38,7 @@ def test_write_and_read_table(cd_tempdir):
         file << t
         del t
         del file
-    
+
         # Read table from file
         file = File(mpi_comm_self(), "my_table.xml")
         t = Table("My Table")

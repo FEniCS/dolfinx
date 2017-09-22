@@ -20,7 +20,7 @@
 #
 #
 # First added:  2016-06-11
-# Last changed: 2017-05-28
+# Last changed: 2017-07-18
 
 import pytest
 from dolfin import *
@@ -79,17 +79,22 @@ def test_assemble_area(v, multimesh):
     assert numpy.isclose(assemble_multimesh(v*dX), 1)
 
 @skip_in_parallel
-def test_interpolate(v_high,f):
+def test_assemble_exterior_facet(v, multimesh):
+    v.vector()[:] = 1
+    assert numpy.isclose(assemble_multimesh(v*ds), 4)
+
+@skip_in_parallel
+def test_interpolate(v_high, f):
     v_high.interpolate(f)
     assert numpy.isclose(assemble_multimesh(v_high*dX), 0)
 
 @skip_in_parallel
-def test_project(f,V_high):
-    v = project(f,V_high)
+def test_project(f, V_high):
+    v = project(f ,V_high)
     assert numpy.isclose(assemble_multimesh(v*dX), 0)
 
 @skip_in_parallel
-def test_errornorm_L2(f_2,v_high):
+def test_errornorm_L2(f_2, v_high):
     const = Expression("1", degree=1)
     v_high.interpolate(f_2)
     assert numpy.isclose(errornorm(const, v_high, norm_type="L2", degree_rise=3), numpy.sqrt(22)/6)
@@ -98,67 +103,3 @@ def test_errornorm_L2(f_2,v_high):
 def test_errornorm_H1(f, f_2, v_high):
     v_high.interpolate(f_2)
     assert numpy.isclose(errornorm(f, v_high, norm_type="H1", degree_rise=3), numpy.sqrt(37./36+5*numpy.pi**2/4))
-
-@fixture
-def exactsolution():
-    return Expression("x[0]", degree=1)
-
-@pytest.mark.slow
-@skip_in_parallel
-def test_multimesh_poisson():
-    # This tests solves a Poisson problem on two meshes with u = x as
-    # exact solution
-
-    # FIXME: This test is quite slow.
-
-    # Solve multimesh Poisson
-    mesh_0 = UnitSquareMesh(2, 2)
-    mesh_1 = RectangleMesh(Point(0.1*DOLFIN_PI, 0.1*DOLFIN_PI),
-                           Point(0.2*DOLFIN_PI, 0.2*DOLFIN_PI),
-                           2, 2)
-
-    # Build multimesh
-    multimesh = MultiMesh()
-    multimesh.add(mesh_0)
-    multimesh.add(mesh_1)
-    multimesh.build()
-
-    # FEM setup
-    V = MultiMeshFunctionSpace(multimesh, "Lagrange", 1)
-    u = TrialFunction(V)
-    v = TestFunction(V)
-    n = FacetNormal(multimesh)
-    h = 2.0*Circumradius(multimesh)
-    h = (h('+') + h('-')) / 2
-
-    # Set data
-    f = Constant(0.0)
-
-    # Set parameters
-    alpha = 4.0
-    beta = 4.0
-
-    # Define bilinear form
-    a = dot(grad(u), grad(v))*dX \
-      - dot(avg(grad(u)), jump(v, n))*dI \
-      - dot(avg(grad(v)), jump(u, n))*dI \
-      + alpha/h*jump(u)*jump(v)*dI \
-      + beta*dot(jump(grad(u)), jump(grad(v)))*dO
-
-    # Define linear form
-    L = f*v*dX
-
-    # Assemble linear system
-    A = assemble_multimesh(a)
-    b = assemble_multimesh(L)
-
-    # Apply boundary condition
-    bc = MultiMeshDirichletBC(V, exactsolution(), DomainBoundary())
-    bc.apply(A, b)
-
-    # Solve
-    uh = MultiMeshFunction(V)
-    solve(A, uh.vector(), b)
-
-    # Check error
-    assert errornorm(exactsolution(), uh, 'L2', degree_rise=1) < DOLFIN_EPS_LARGE

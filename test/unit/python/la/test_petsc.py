@@ -26,7 +26,8 @@ from dolfin import (PETScVector, PETScMatrix, PETScLUSolver,
                     TestFunction, mpi_comm_self, mpi_comm_world,
                     FunctionSpace, assemble, Constant, dx, parameters)
 from dolfin_utils.test import (skip_if_not_PETSc,
-                               skip_if_not_petsc4py, pushpop_parameters)
+                               skip_if_not_petsc4py,
+                               pushpop_parameters)
 
 
 @skip_if_not_PETSc

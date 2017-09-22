@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-03-14
+// Last changed: 2017-09-21
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -341,7 +341,7 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   // we instead consider the points to be on the line [Case 2] to
   // obtain one or more sensible points (if any).
 
-   // Compute orientation of segment end points wrt line
+  // Compute orientation of segment end points wrt line
   const double q0o = orient2d(p0, p1, q0);
   const double q1o = orient2d(p0, p1, q1);
 
@@ -349,13 +349,19 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   const double qo = q0o*q1o;
 
   // Case 0: points on the same side --> no intersection
-  if (qo > 0.)
+  if (qo > 0.0)
+    return std::vector<Point>();
+
+  // Repeat the same procedure for p
+  const double p0o = orient2d(q0, q1, p0);
+  const double p1o = orient2d(q0, q1, p1);
+  if (p0o*p1o > 0.0)
     return std::vector<Point>();
 
   // Case 1: exactly one point on line --> possible point intersection
-  if (q0o == 0. and q1o != 0.)
+  if (q0o == 0.0 and q1o != 0.0)
     return intersection_segment_point_2d(p0, p1, q0);
-  else if (q0o != 0 and q1o == 0.)
+  else if (q0o != 0.0 and q1o == 0.0)
     return intersection_segment_point_2d(p0, p1, q1);
 
   // Compute line vector and major axis
@@ -369,7 +375,7 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   const double Q1 = GeometryTools::project_to_axis_2d(q1, major_axis);
 
   // Case 2: both points on line (or almost)
-  if (std::abs(q0o) < DOLFIN_EPS_LARGE and std::abs(q1o) < DOLFIN_EPS_LARGE)
+  if (std::abs(q0o) < DOLFIN_EPS and std::abs(q1o) < DOLFIN_EPS)
   {
     // Compute 1D intersection points
     const std::vector<double>
@@ -399,19 +405,20 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
 
   // Case 3: points on different sides (main case)
 
-  // Compute quantities needed for intersection computation
-  const double p0o = orient2d(q0, q1, p0);
-  const double p1o = orient2d(q0, q1, p1);
-  const double den = (q1.x() - q0.x())*v.y() - (q1.y() - q0.y())*v.x();
+  // Compute determinant needed for intersection computation
+  const Point w = q1 - q0;
+  const double den = w.x()*v.y() - w.y()*v.x();
 
   // Figure out which one of the four points we want to use
   // as starting point for numerical robustness
+  const double p_dist = v.norm();
+  const double q_dist = w.norm();
   enum orientation { P0O, P1O, Q0O, Q1O };
   std::array<std::pair<double, orientation>, 4> oo
-		      = {{ { std::abs(p0o), P0O },
-			   { std::abs(p1o), P1O },
-			   { std::abs(q0o), Q0O },
-			   { std::abs(q1o), Q1O } }};
+		      = {{ { std::abs(p0o)*p_dist, P0O },
+			   { std::abs(p1o)*p_dist, P1O },
+			   { std::abs(q0o)*q_dist, Q0O },
+			   { std::abs(q1o)*q_dist, Q1O } }};
   const auto it = std::min_element(oo.begin(), oo.end());
 
   // Compute the intersection point
@@ -428,11 +435,11 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
     break;
   case Q0O:
     // Default case
-    x = q0 + q0o / den * (q1 - q0);
+    x = q0 + q0o / den * w;
     break;
   case Q1O:
-    // Flip sign since den = det(q1 - q0, v), but we want det(q0 - q1, v)
-    x = q1 - q1o / den * (q0 - q1);
+    // Use q1o
+    x = q1 + q1o / den * w;
     break;
   }
 
@@ -479,11 +486,11 @@ IntersectionConstruction::intersection_triangle_segment_2d(const Point& p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::intersection_triangle_segment_3d(const Point& p0,
-                                                           const Point& p1,
-                                                           const Point& p2,
-                                                           const Point& q0,
-                                                           const Point& q1)
+IntersectionConstruction::_intersection_triangle_segment_3d(const Point& p0,
+							    const Point& p1,
+							    const Point& p2,
+							    const Point& q0,
+							    const Point& q1)
 {
   // We consider the following 4 cases for the segment q0-q1
   // relative to the plane defined by the triangle p0-p1-p2:
@@ -522,13 +529,13 @@ IntersectionConstruction::intersection_triangle_segment_3d(const Point& p0,
   const double qo = q0o*q1o;
 
   // Case 0: points on the same side --> no intersection
-  if (qo > 0.)
+  if (qo > 0.0)
     return std::vector<Point>();
 
   // Case 1: exactly one point in plane --> possible point intersection
-  if (q0o == 0. and q1o != 0.)
+  if (q0o == 0.0 and q1o != 0.0)
     return intersection_triangle_point_3d(p0, p1, p2, q0);
-  else if (q0o != 0. and q1o == 0.)
+  else if (q0o != 0.0 and q1o == 0.0)
     return intersection_triangle_point_3d(p0, p1, p2, q1);
 
   // Compute plane normal and major axis
@@ -731,14 +738,14 @@ IntersectionConstruction::intersection_tetrahedron_triangle_3d(const Point& p0,
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::intersection_tetrahedron_tetrahedron_3d(const Point& p0,
-                                                                  const Point& p1,
-                                                                  const Point& p2,
-                                                                  const Point& p3,
-                                                                  const Point& q0,
-                                                                  const Point& q1,
-                                                                  const Point& q2,
-                                                                  const Point& q3)
+IntersectionConstruction::_intersection_tetrahedron_tetrahedron_3d(const Point& p0,
+								   const Point& p1,
+								   const Point& p2,
+								   const Point& p3,
+								   const Point& q0,
+								   const Point& q1,
+								   const Point& q2,
+								   const Point& q3)
 {
   // The list of points (convex hull)
   std::vector<Point> points;
@@ -806,6 +813,9 @@ IntersectionConstruction::intersection_tetrahedron_tetrahedron_3d(const Point& p
   add(points, intersection_triangle_segment_3d(q1, q2, q3, p2, p3));
 
   dolfin_assert(GeometryPredicates::is_finite(points));
-  return unique(points);
+
+  std::vector<Point> filtered = unique(points);
+
+  return filtered;
 }
 //-----------------------------------------------------------------------------

@@ -20,8 +20,9 @@
 from __future__ import print_function
 import pytest
 import numpy as np
+from dolfin_utils.test import skip_if_pybind11
 
-from dolfin import Point
+from dolfin import *
 
 
 def test_point_getitem():
@@ -31,8 +32,6 @@ def test_point_getitem():
     assert p[2] == 3.0
     with pytest.raises(IndexError):
         p[3]
-    with pytest.raises(IndexError):
-        p[-1]
     assert np.all(p[:] == np.array((1.0, 2.0, 3.0)))
 
 
@@ -53,8 +52,6 @@ def test_point_setitem():
 
     with pytest.raises(IndexError):
         p[3] = 6666.0
-    with pytest.raises(IndexError):
-        p[-1] = 6666.0
 
     p[:] = (0, 0, 0)
     assert np.all(p[:] == 0)
@@ -72,7 +69,7 @@ def test_point_setitem():
     assert np.all(p[:] == (2, 4, 6))
 
 
-
+@skip_if_pybind11
 def test_point_array():
     p = Point(1, 2, 3)
     assert np.all(p.array() == (1, 2, 3))
@@ -80,3 +77,11 @@ def test_point_array():
     # Point.array() is a copy, no in-place modification
     p.array()[:] += 1000.0
     assert np.all(p.array() == (1, 2, 3))
+
+
+def test_point_equality():
+    p = Point(1.23, 2, DOLFIN_PI)
+    q = Point(1.23, 2, DOLFIN_PI)
+    r = Point(1.23+DOLFIN_EPS, 2, DOLFIN_PI)
+    assert p == q
+    assert p != r

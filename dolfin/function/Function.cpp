@@ -363,6 +363,23 @@ void Function::eval(Array<double>& values, const Array<double>& x,
   }
 }
 //-----------------------------------------------------------------------------
+void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
+                    Eigen::Ref<const Eigen::VectorXd> x) const
+{
+  Array<double> _values(values.size(), values.data());
+  const Array<double> _x(x.size(), const_cast<double*>(x.data()));
+  eval(_values, _x);
+}
+//-----------------------------------------------------------------------------
+void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
+                    Eigen::Ref<const Eigen::VectorXd> x,
+                    const Cell& dolfin_cell, const ufc::cell& ufc_cell) const
+{
+  Array<double> _values(values.size(), values.data());
+  const Array<double> _x(x.size(), const_cast<double*>(x.data()));
+  eval(_values, _x, dolfin_cell, ufc_cell);
+}
+//-----------------------------------------------------------------------------
 void Function::interpolate(const GenericFunction& v)
 {
   dolfin_assert(_vector);
@@ -391,8 +408,17 @@ std::size_t Function::value_dimension(std::size_t i) const
   return _function_space->element()->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Array<double>& values,
-                    const Array<double>& x,
+std::vector<std::size_t> Function::value_shape() const
+{
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->element());
+  std::vector<std::size_t> _shape(this->value_rank(), 1);
+  for (std::size_t i = 0; i < _shape.size(); ++i)
+    _shape[i] = this->value_dimension(i);
+  return _shape;
+}
+//-----------------------------------------------------------------------------
+void Function::eval(Array<double>& values, const Array<double>& x,
                     const ufc::cell& ufc_cell) const
 {
   dolfin_assert(_function_space);
@@ -411,6 +437,15 @@ void Function::eval(Array<double>& values,
     eval(values, x);
 }
 //-----------------------------------------------------------------------------
+void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
+                    Eigen::Ref<const Eigen::VectorXd> x,
+                    const ufc::cell& ufc_cell) const
+{
+  Array<double> _values(values.size(), values.data());
+  Array<double> _x(x.size(), const_cast<double*>(x.data()));
+  eval(_values, _x, ufc_cell);
+}
+//-----------------------------------------------------------------------------
 void Function::restrict(double* w, const FiniteElement& element,
                         const Cell& dolfin_cell,
                         const double* coordinate_dofs,
@@ -426,8 +461,7 @@ void Function::restrict(double* w, const FiniteElement& element,
   {
     // Get dofmap for cell
     const GenericDofMap& dofmap = *_function_space->dofmap();
-    const ArrayView<const dolfin::la_index> dofs
-      = dofmap.cell_dofs(dolfin_cell.index());
+    auto dofs = dofmap.cell_dofs(dolfin_cell.index());
 
     // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
     // Pick values from vector(s)
@@ -495,8 +529,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
     element.interpolate_vertex_values(cell_vertex_values.data(),
                                       coefficients.data(),
                                       coordinate_dofs.data(),
-                                      ufc_cell.orientation,
-                                      ufc_cell);
+                                      ufc_cell.orientation);
 
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
@@ -542,14 +575,15 @@ void Function::init_vector()
 
   DefaultFactory factory;
 
+  MPI_Comm comm = _function_space->mesh()->mpi_comm();
+
   // Create layout for initialising tensor
   std::shared_ptr<TensorLayout> tensor_layout;
-  tensor_layout = factory.create_layout(1);
+  tensor_layout = factory.create_layout(comm, 1);
   dolfin_assert(tensor_layout);
   dolfin_assert(!tensor_layout->sparsity_pattern());
   dolfin_assert(_function_space->mesh());
-  tensor_layout->init(_function_space->mesh()->mpi_comm(), {index_map},
-                      TensorLayout::Ghosts::GHOSTED);
+  tensor_layout->init({index_map}, TensorLayout::Ghosts::GHOSTED);
 
   // Create vector of dofs
   if (!_vector)

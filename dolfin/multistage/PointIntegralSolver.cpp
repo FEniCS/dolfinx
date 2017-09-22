@@ -154,8 +154,7 @@ void PointIntegralSolver::step(double dt)
 
       // Get all dofs for cell
       // FIXME: Should we include logics about empty dofmaps?
-      const ArrayView<const dolfin::la_index> cell_dofs
-        = _dofmap.cell_dofs(cell.index());
+      auto cell_dofs = _dofmap.cell_dofs(cell.index());
 
       // Tabulate local-local dofmap
       _dofmap.tabulate_entity_dofs(_local_to_local_dofs, 0,
@@ -249,7 +248,7 @@ void PointIntegralSolver::step(double dt)
   // Remove performance optimisation flag in case no exception occurred
   ierr = VecSetOption(petsc_vec->vec(), VEC_IGNORE_OFF_PROC_ENTRIES, PETSC_FALSE);
   if (ierr != 0) petsc_vec->petsc_error(ierr, __FILE__, "VecSetOption");
-#endif  
+#endif
 
   timer.stop();
 }

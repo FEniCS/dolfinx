@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-11-21
-// Last changed: 2017-03-01
+// Last changed: 2017-09-21
 
 #include <cmath>
 #include "GeometryPredicates.h"
@@ -42,15 +42,7 @@ bool GeometryPredicates::is_degenerate(const std::vector<Point>& simplex,
   return false;
 }
 //-----------------------------------------------------------------------------
-namespace
-{
-  bool operator==(Point a, Point b)
-  {
-    return a.x() == b.x() && a.y() == b.y() && a.z() == b.z();
-  }
-}
-//-----------------------------------------------------------------------------
-bool GeometryPredicates::_is_degenerate_2d(std::vector<Point> simplex)
+bool GeometryPredicates::_is_degenerate_2d(const std::vector<Point>& simplex)
 {
   if (simplex.size() < 2 or simplex.size() > 3)
   {
@@ -61,7 +53,7 @@ bool GeometryPredicates::_is_degenerate_2d(std::vector<Point> simplex)
   switch (simplex.size())
   {
   case 2: return simplex[0] == simplex[1];
-  case 3: return orient2d(simplex[0], simplex[1], simplex[2]) == 0;
+  case 3: return orient2d(simplex[0], simplex[1], simplex[2]) == 0.0;
   }
 
   // Shouldn't get here
@@ -73,7 +65,7 @@ bool GeometryPredicates::_is_degenerate_2d(std::vector<Point> simplex)
   return true;
 }
 //------------------------------------------------------------------------------
-bool GeometryPredicates::_is_degenerate_3d(std::vector<Point> simplex)
+bool GeometryPredicates::_is_degenerate_3d(const std::vector<Point>& simplex)
 {
   if (simplex.size() < 2 or simplex.size() > 4)
   {
@@ -89,24 +81,24 @@ bool GeometryPredicates::_is_degenerate_3d(std::vector<Point> simplex)
       const double ayz[2] = {simplex[0].y(), simplex[0].z()};
       const double byz[2] = {simplex[1].y(), simplex[1].z()};
       const double cyz[2] = {simplex[2].y(), simplex[2].z()};
-      if (_orient2d(ayz, byz, cyz) != 0.)
+      if (_orient2d(ayz, byz, cyz) != 0.0)
 	return false;
 
       const double azx[2] = {simplex[0].z(), simplex[0].x()};
       const double bzx[2] = {simplex[1].z(), simplex[1].x()};
       const double czx[2] = {simplex[2].z(), simplex[2].x()};
-      if (_orient2d(azx, bzx, czx) != 0.)
+      if (_orient2d(azx, bzx, czx) != 0.0)
 	return false;
 
       const double axy[2] = {simplex[0].x(), simplex[0].y()};
       const double bxy[2] = {simplex[1].x(), simplex[1].y()};
       const double cxy[2] = {simplex[2].x(), simplex[2].y()};
-      if (_orient2d(axy, bxy, cxy) != 0.)
+      if (_orient2d(axy, bxy, cxy) != 0.0)
 	return false;
 
       return true;
     }
-  case 4: return orient3d(simplex[0], simplex[1], simplex[2], simplex[3]) == 0;
+  case 4: return orient3d(simplex[0], simplex[1], simplex[2], simplex[3]) == 0.0;
   }
 
   // Shouldn't get here
@@ -188,10 +180,11 @@ bool GeometryPredicates::convex_hull_is_degenerate(const std::vector<Point>& poi
       if (l == i || l == j || l == k)
         continue;
 
-      if (orient3d(points[i], points[j], points[k], points[l]) == 0)
+      if (orient3d(points[i], points[j], points[k], points[l]) == 0.0)
         return true;
     }
 
     return false;
   }
 }
+//-----------------------------------------------------------------------------

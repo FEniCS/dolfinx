@@ -29,7 +29,7 @@ from dolfin import *
 from dolfin_utils.test import skip_in_parallel
 from numpy import random, sort, any
 
-def build_multimesh(compress_volume, compress_interface):
+def build_multimesh_2d(compress_volume, compress_interface):
 
     # Create multimesh
     multimesh = MultiMesh()
@@ -78,17 +78,17 @@ def volume_area(multimesh):
     return volume, area
 
 @skip_in_parallel
-def test_compression():
+def test_compression_2d():
     # Reference volume and area
-    multimesh = build_multimesh(False, False)
+    multimesh = build_multimesh_2d(False, False)
     volume, area = volume_area(multimesh)
 
     # Volume compression
-    multimesh_v = build_multimesh(True, False)
+    multimesh_v = build_multimesh_2d(True, False)
     volume_v, area_v = volume_area(multimesh)
 
     # Interface compression
-    multimesh_i = build_multimesh(False, True)
+    multimesh_i = build_multimesh_2d(False, True)
     volume_i, area_i = volume_area(multimesh_i)
 
     # Tolerances

@@ -74,7 +74,7 @@ namespace dolfin
 
     /// Return MPI communicator
     virtual MPI_Comm mpi_comm() const
-    { return _mpi_comm; }
+    { return _mpi_comm.comm(); }
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -264,12 +264,12 @@ namespace dolfin
     virtual void resize(std::size_t N);
 
     /// Return reference to Eigen vector (const version)
-    const Eigen::VectorXd& vec() const
-    { return *_x; }
+    std::shared_ptr<const Eigen::VectorXd> vec() const
+    { return _x; }
 
     /// Return reference to Eigen vector (non-const version)
-    Eigen::VectorXd& vec()
-    { return *_x; }
+    std::shared_ptr<Eigen::VectorXd> vec()
+    { return _x; }
 
     /// Access value of given entry (const version)
     virtual double operator[] (dolfin::la_index i) const
@@ -304,7 +304,7 @@ namespace dolfin
     std::shared_ptr<Eigen::VectorXd> _x;
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
   };
 

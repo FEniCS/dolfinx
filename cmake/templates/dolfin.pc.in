@@ -7,6 +7,7 @@ compiler=@CMAKE_CXX_COMPILER@
 definitions=@PKG_DEFINITIONS@
 swigcflags=@PYTHON_CPPFLAGS@
 extlibs=@DOLFIN_EXT_LIBS@
+boost_includedir=@BOOST_INCLUDE_DIR@
 
 Name: DOLFIN
 Description: Dynamic Object-oriented Library for FINite element computation
@@ -14,4 +15,4 @@ Version: @DOLFIN_VERSION@
 Requires: @PKG_REQUIRES@
 Conflicts:
 Libs: @PKG_LINKFLAGS@ -L${libdir} -ldolfin
-Cflags: @PKG_CXXFLAGS@ -DDOLFIN_VERSION=\"@DOLFIN_VERSION@\" @PKG_DEFINITIONS@ -I${includedir} @PKG_INCLUDES@
+Cflags: @PKG_CXXFLAGS@ -DDOLFIN_VERSION=\"@DOLFIN_VERSION@\" ${definitions} -I${includedir} @PKG_INCLUDES@

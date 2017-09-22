@@ -25,6 +25,10 @@
 
 from dolfin import *
 
+if has_pybind11():
+    print("Not supported in pybind11")
+    exit()
+
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return on_boundary

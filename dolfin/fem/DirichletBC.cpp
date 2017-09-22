@@ -789,8 +789,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
                  coordinate_dofs.data(), ufc_cell);
 
     // Tabulate dofs on cell
-    const ArrayView<const dolfin::la_index> cell_dofs
-      = dofmap.cell_dofs(cell.index());
+    auto cell_dofs = dofmap.cell_dofs(cell.index());
 
     // Tabulate which dofs are on the facet
     dofmap.tabulate_facet_dofs(data.facet_dofs, facet_local_index);
@@ -882,19 +881,18 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
         bool interpolated = false;
 
         // Tabulate dofs on cell
-        const ArrayView<const dolfin::la_index> cell_dofs
-          = dofmap.cell_dofs(c->index());
+        auto cell_dofs = dofmap.cell_dofs(c->index());
 
         // Loop over all dofs on cell
-        for (std::size_t i = 0; i < cell_dofs.size(); ++i)
+        for (int i = 0; i < cell_dofs.size(); ++i)
         {
           const std::size_t global_dof = cell_dofs[i];
 
           // Tabulate coordinates if not already done
           if (!tabulated)
           {
-            element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs,
-                                             *c);
+            element.tabulate_dof_coordinates(data.coordinates,
+                                             coordinate_dofs, *c);
             tabulated = true;
           }
 
@@ -985,8 +983,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                        *cell);
 
       // Tabulate dofs on cell
-      const ArrayView<const dolfin::la_index> cell_dofs
-        = dofmap.cell_dofs(cell->index());
+      auto cell_dofs = dofmap.cell_dofs(cell->index());
 
       // Interpolate function only once and only on cells where
       // necessary
@@ -1057,8 +1054,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                     coordinate_dofs.data(), ufc_cell);
 
       // Tabulate dofs on cell
-      const ArrayView<const dolfin::la_index> cell_dofs
-        = dofmap.cell_dofs(cell.index());
+      auto cell_dofs = dofmap.cell_dofs(cell.index());
 
       // Loop dofs on boundary of cell
       for (std::size_t i = 0; i < it->second.size(); ++i)

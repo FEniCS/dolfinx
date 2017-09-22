@@ -102,11 +102,6 @@ int main()
   Function xl_f(V);
   xl_f.interpolate(xl_exp);
 
-  // Create the PetscVector associated to the functions
-  PETScVector& x  = (*usol.vector()).down_cast<PETScVector>(); // Solution
-  PETScVector& xl = (*xl_f.vector()).down_cast<PETScVector>(); // Lower bound
-  PETScVector& xu = (*xu_f.vector()).down_cast<PETScVector>(); // Upper bound
-
   // Solve the problem with the TAO Solver
   TAOLinearBoundSolver TAOSolver("tron", "cg");
 
@@ -116,13 +111,9 @@ int main()
   TAOSolver.parameters("krylov_solver")["monitor_convergence"] = false;
 
   // Solve the problem
-  TAOSolver.solve(A, x, b, xl, xu);
+  TAOSolver.solve(A, *usol.vector(), b, *xl_f.vector(), *xu_f.vector());
 
-  // Plot solution
-  plot(usol, "Displacement", "displacement");
-
-  // Make plot windows interactive
-  interactive();
+  XDMFFile("u.xdmf").write(usol);
 
   #else
 
@@ -130,5 +121,5 @@ int main()
 
   #endif
 
- return 0;
+  return 0;
 }

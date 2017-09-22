@@ -19,24 +19,24 @@
 // First added:  2012-11-01
 // Last changed: 2014-11-24
 
-%ignore dolfin::GenericFile::operator>> (std::vector<int>& x);
-%ignore dolfin::GenericFile::operator>> (std::vector<std::size_t>& x);
-%ignore dolfin::GenericFile::operator>> (std::vector<double>& x);
-%ignore dolfin::GenericFile::operator>> (std::map<std::size_t, int>& map);
-%ignore dolfin::GenericFile::operator>> (std::map<std::size_t, std::size_t>& map);
-%ignore dolfin::GenericFile::operator>> (std::map<std::size_t, double>& map);
-%ignore dolfin::GenericFile::operator>> (std::map<std::size_t, std::vector<int> >& array_map);
-%ignore dolfin::GenericFile::operator>> (std::map<std::size_t, std::vector<std::size_t> >& array_map);
-%ignore dolfin::GenericFile::operator>> (std::map<std::size_t, std::vector<double> >& array_map);
-%ignore dolfin::GenericFile::operator<< (const std::vector<int>& x);
-%ignore dolfin::GenericFile::operator<< (const std::vector<std::size_t>& x);
-%ignore dolfin::GenericFile::operator<< (const std::vector<double>& x);
-%ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, int>& map);
-%ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, std::size_t>& map);
-%ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, double>& map);
-%ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, std::vector<int> >& array_map);
-%ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, std::vector<std::size_t> >& array_map);
-%ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, std::vector<double> >& array_map);
+%ignore dolfin::GenericFile::read(std::vector<int>& x);
+%ignore dolfin::GenericFile::read(std::vector<std::size_t>& x);
+%ignore dolfin::GenericFile::read(std::vector<double>& x);
+%ignore dolfin::GenericFile::read(std::map<std::size_t, int>& map);
+%ignore dolfin::GenericFile::read(std::map<std::size_t, std::size_t>& map);
+%ignore dolfin::GenericFile::read(std::map<std::size_t, double>& map);
+%ignore dolfin::GenericFile::read(std::map<std::size_t, std::vector<int> >& array_map);
+%ignore dolfin::GenericFile::read(std::map<std::size_t, std::vector<std::size_t> >& array_map);
+%ignore dolfin::GenericFile::read(std::map<std::size_t, std::vector<double> >& array_map);
+%ignore dolfin::GenericFile::write(const std::vector<int>& x);
+%ignore dolfin::GenericFile::write(const std::vector<std::size_t>& x);
+%ignore dolfin::GenericFile::write(const std::vector<double>& x);
+%ignore dolfin::GenericFile::write(const std::map<std::size_t, int>& map);
+%ignore dolfin::GenericFile::write(const std::map<std::size_t, std::size_t>& map);
+%ignore dolfin::GenericFile::write(const std::map<std::size_t, double>& map);
+%ignore dolfin::GenericFile::write(const std::map<std::size_t, std::vector<int> >& array_map);
+%ignore dolfin::GenericFile::write(const std::map<std::size_t, std::vector<std::size_t> >& array_map);
+%ignore dolfin::GenericFile::write(const std::map<std::size_t, std::vector<double> >& array_map);
 
 %ignore dolfin::HDF5Attribute::get;
 %ignore dolfin::HDF5Attribute::set;

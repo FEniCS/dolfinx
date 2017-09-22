@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2017-04-10
+// Last changed: 2017-06-22
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -26,7 +26,6 @@
 #include <map>
 #include <deque>
 
-#include <dolfin/plot/plot.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/geometry/Point.h>
 
@@ -131,7 +130,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<unsigned int>
     ///         List of cut cell indices for given part
-    const std::vector<unsigned int>& cut_cells(std::size_t part) const;
+    const std::vector<unsigned int> cut_cells(std::size_t part) const;
 
     /// Return the list of covered cells for given part. The covered
     /// cells are defined as all cells that collide with the domain of
@@ -359,13 +358,11 @@ namespace dolfin
     double compute_volume() const;
 
     /// Create matplotlib string to plot 2D multimesh (small meshes only)
-    std::string plot_matplotlib(double delta_z=1) const;
+    std::string plot_matplotlib(double delta_z=1,
+				const std::string& filename="") const;
 
 
   private:
-
-    // Friend (in plot.h)
-    friend void plot(std::shared_ptr<const MultiMesh>);
 
     // List of meshes
     std::vector<std::shared_ptr<const Mesh> > _meshes;
@@ -389,17 +386,6 @@ namespace dolfin
     //     i = the part (mesh) number
     //     j = the cell number (in the list of uncut cells)
     std::vector<std::vector<unsigned int> > _uncut_cells;
-
-    // Cell indices for all cut cells for all parts. Access data by
-    //
-    //     c = _cut_cells[i][j]
-    //
-    // where
-    //
-    //     c = cell index for a cut cell
-    //     i = the part (mesh) number
-    //     j = the cell number (in the list of cut cells)
-    std::vector<std::vector<unsigned int> > _cut_cells;
 
     // Cell indices for all covered cells for all parts. Access data by
     //
@@ -578,7 +564,7 @@ namespace dolfin
     // Impose consistency of _cut_cells, so that only the cells with
     // a nontrivial interface quadrature rule are classified as cut.
     void _impose_cut_cell_consistency();
-    
+
     // Remove quadrature rule if the sum of the weights is less than a
     // tolerance
     static void remove_quadrature_rule(quadrature_rule& qr,

@@ -25,20 +25,21 @@ boundary conditions."""
 # Last changed: 2012-11-12
 
 from dolfin import *
+import matplotlib.pyplot as plt
 
 # Create mesh and finite element
 mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Source term
-class Source(Expression):
+class Source(UserExpression):
     def eval(self, values, x):
         dx = x[0] - 0.5
         dy = x[1] - 0.5
         values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
 
 # Neumann boundary condition
-class Flux(Expression):
+class Flux(UserExpression):
     def eval(self, values, x):
         if x[0] > DOLFIN_EPS:
             values[0] = 25.0*sin(5.0*DOLFIN_PI*x[1])
@@ -72,4 +73,4 @@ file << u
 
 # Plot solution
 plot(u)
-interactive()
+plt.show()

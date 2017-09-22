@@ -28,13 +28,19 @@ src/demo/mesh/subdomains."""
 # Begin demo
 
 from __future__ import print_function
+import matplotlib.pyplot as plt
 from dolfin import *
+
 
 # Load mesh and subdomains
 mesh = Mesh("../dolfin_fine.xml.gz")
 sub_domains = MeshFunction("size_t", mesh, "../dolfin_fine_subdomains.xml.gz")
 
+
+plt.figure()
 plot(mesh)
+
+plt.figure()
 plot(sub_domains)
 
 # Define function spaces
@@ -84,6 +90,11 @@ pfile_pvd = File("pressure.pvd")
 pfile_pvd << p
 
 # Plot solution
-plot(u)
-plot(p)
-interactive()
+plt.figure()
+plot(u, title="velocity")
+
+plt.figure()
+plot(p, title="pressure")
+
+# Display plots
+plt.show()

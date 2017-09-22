@@ -24,6 +24,8 @@
 
 from __future__ import print_function
 from dolfin import *
+import matplotlib.pyplot as plt
+
 
 # Form compiler options
 parameters["form_compiler"]["cpp_optimize"] = True
@@ -49,12 +51,14 @@ def update(u, u0, v0, a0, beta, gamma, dt):
     u0.vector()[:] = u.vector()
 
 # External load
-class Traction(Expression):
+class Traction(UserExpression):
 
     def __init__(self, dt, t, old, **kwargs):
         self.t   = t
         self.dt  = dt
         self.old = old
+        if has_pybind11():
+            super().__init__(**kwargs)
 
     def eval(self, values, x):
 
@@ -175,4 +179,5 @@ while t <= T:
     vtk_file << u
 
 # Plot solution
-plot(u, mode="displacement", interactive=True)
+plot(u, mode="displacement")
+plt.show()

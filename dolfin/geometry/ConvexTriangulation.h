@@ -16,13 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-06-20
+// Last changed: 2017-07-07
 
 #ifndef __CONVEX_TRIANGULATION
 #define __CONVEX_TRIANGULATION
 
 #include "Point.h"
-#include "CGALExactArithmetic.h"
+//#include "CGALExactArithmetic.h"
 #include <vector>
 
 namespace dolfin
@@ -38,6 +38,14 @@ namespace dolfin
                 std::size_t gdim,
                 std::size_t tdim);
 
+    /// Triangulate 1D
+    static std::vector<std::vector<Point>>
+    triangulate_1d(const std::vector<Point>& pm,
+		   std::size_t gdim)
+    {
+      return _triangulate_1d(pm, gdim);
+    }
+
     /// Triangulate using the Graham scan 2D
     static std::vector<std::vector<Point>>
     triangulate_graham_scan_2d(const std::vector<Point>& pm)
@@ -47,71 +55,34 @@ namespace dolfin
       return _triangulate_graham_scan_2d(pm);
     }
 
-    /// Triangulate using Delaunay (Bowyer-Watson) 2D
-    static std::vector<std::vector<Point>>
-    triangulate_delaunay_2d(const std::vector<Point>& pm)
-    {
-      // return CHECK_CGAL(_triangulate_delaunay_2d(pm),
-      // 			cgal_triangulate_delaunay_2d(pm));
-      return _triangulate_delaunay_2d(pm);
-    }
-
     /// Triangulate using the Graham scan 3D
     static std::vector<std::vector<Point>>
     triangulate_graham_scan_3d(const std::vector<Point>& pm);
+
+    static bool selfintersects(const std::vector<std::vector<Point>>& p);
 
   private:
 
     // Implementation declarations
 
+    /// Implementation of 1D triangulation
+    static std::vector<std::vector<Point>>
+    _triangulate_1d(const std::vector<Point>& pm,
+		    std::size_t gdim);
 
     /// Implementation of Graham scan 2D
     static std::vector<std::vector<Point>>
     _triangulate_graham_scan_2d(const std::vector<Point>& pm);
 
-    /// Implementation of Bowyer Watson Delaunay 2D
-    static std::vector<std::vector<Point>>
-    _triangulate_delaunay_2d(const std::vector<Point>& p);
-
     /// Implementation of Graham scan 3D
     static std::vector<std::vector<Point>>
     _triangulate_graham_scan_3d(const std::vector<Point>& pm);
 
-    // Help class for Bowyer Watson
-    struct Edge
-    {
-      Edge(const Point& p0, const Point& p1) : p0(p0), p1(p1) {}
-      Edge(const Edge& e) : p0(e.p0), p1(e.p1) {}
-      bool operator==(const Edge& e) const;
-
-      Point p0;
-      Point p1;
-    };
-
-    // Help class for Bowyer Watson
-    struct Triangle
-    {
-      Triangle(const Point& p0,
-	       const Point& p1,
-	       const Point& p2)
-	: p0(p0), p1(p1), p2(p2),
-	  e0(p0, p1), e1(p1, p2), e2(p2, p0)
-      {}
-      bool contains_vertex(const Point& v) const;
-      bool circumcircle_contains(const Point& v) const;
-      bool operator==(const Triangle& t) const;
-
-      Point p0;
-      Point p1;
-      Point p2;
-      Edge e0;
-      Edge e1;
-      Edge e2;
-    };
-
     // Utility functions
     static std::vector<Point> unique_points(const std::vector<Point>& points,
+					    std::size_t gdim,
 					    double tol);
+
   };
 
 } // end namespace dolfin

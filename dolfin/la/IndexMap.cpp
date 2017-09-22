@@ -22,13 +22,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap() : _block_size(1)
+IndexMap::IndexMap() : _mpi_comm(MPI_COMM_NULL),  _block_size(1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm mpi_comm)
-  : _mpi_comm(mpi_comm), _rank(MPI::rank(mpi_comm)), _block_size(1)
+IndexMap::IndexMap(MPI_Comm mpi_comm) : _mpi_comm(mpi_comm),
+                                        _rank(MPI::rank(mpi_comm)),
+                                        _block_size(1)
 {
   // Do nothing
 }
@@ -50,11 +51,12 @@ void IndexMap::init(std::size_t local_size, std::size_t block_size)
   _block_size = block_size;
 
   // Calculate offsets
-  MPI::all_gather(_mpi_comm, local_size, _all_ranges);
+  MPI::all_gather(_mpi_comm.comm(), local_size, _all_ranges);
 
-  const std::size_t mpi_size = MPI::size(_mpi_comm);
+  const std::size_t mpi_size = _mpi_comm.size();
   for (std::size_t i = 1; i != mpi_size; ++i)
     _all_ranges[i] += _all_ranges[i - 1];
+
   _all_ranges.insert(_all_ranges.begin(), 0);
 }
 //-----------------------------------------------------------------------------
@@ -80,8 +82,9 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
     return 0;
   }
 
-  const std::size_t owned_size = _block_size*(_all_ranges[_rank + 1]
-                                              - _all_ranges[_rank]);
+  const std::size_t owned_size
+    = _block_size*(_all_ranges[_rank + 1] - _all_ranges[_rank]);
+
   if (type == IndexMap::MapSize::OWNED)
     return owned_size;
   else if (type == IndexMap::MapSize::GLOBAL)
@@ -138,6 +141,6 @@ int IndexMap::block_size() const
 //----------------------------------------------------------------------------
 MPI_Comm IndexMap::mpi_comm() const
 {
-  return _mpi_comm;
+  return _mpi_comm.comm();
 }
 //----------------------------------------------------------------------------

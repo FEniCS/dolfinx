@@ -185,15 +185,23 @@ def test_preconditioner_interface(V, parameter_backend):
             return super(MyNewtonSolver, self).converged(r, p, i)
         def solver_setup(self, A, J, p, i):
             self._solver_setup_called = True
-            assert isinstance(A, GenericMatrix)
-            assert isinstance(J, GenericMatrix)
+            if has_pybind11():
+                assert isinstance(A, cpp.la.GenericMatrix)
+                assert isinstance(J, cpp.la.GenericMatrix)
+            else:
+                assert isinstance(A, GenericMatrix)
+                assert isinstance(J, GenericMatrix)
             assert isinstance(p, NonlinearProblem)
             assert isinstance(i, numbers.Integral)
             super(MyNewtonSolver, self).solver_setup(A, J, p, i)
         def update_solution(self, x, dx, rp, p, i):
             self._update_solution_called = True
-            assert isinstance(x, GenericVector)
-            assert isinstance(dx, GenericVector)
+            if has_pybind11():
+                assert isinstance(x, cpp.la.GenericVector)
+                assert isinstance(dx, cpp.la.GenericVector)
+            else:
+                assert isinstance(x, GenericVector)
+                assert isinstance(dx, GenericVector)
             assert isinstance(rp, float)
             assert isinstance(p, NonlinearProblem)
             assert isinstance(i, numbers.Integral)

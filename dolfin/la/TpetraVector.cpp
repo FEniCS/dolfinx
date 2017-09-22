@@ -34,17 +34,19 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TpetraVector::TpetraVector(MPI_Comm comm) : _mpi_comm(comm)
+TpetraVector::TpetraVector(MPI_Comm comm)
+  : _comm(new Teuchos::MpiComm<int>(Teuchos::MpiComm<int>(comm)))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-TpetraVector::TpetraVector(MPI_Comm comm, std::size_t N) : _mpi_comm(comm)
+TpetraVector::TpetraVector(MPI_Comm comm, std::size_t N)
+  : _comm(new Teuchos::MpiComm<int>(Teuchos::MpiComm<int>(comm)))
 {
   init(N);
 }
 //-----------------------------------------------------------------------------
-TpetraVector::TpetraVector(const TpetraVector& v) : _mpi_comm(v._mpi_comm)
+TpetraVector::TpetraVector(const TpetraVector& v) : _comm(NULL)
 {
   if (v._x.is_null())
     return;
@@ -56,6 +58,11 @@ TpetraVector::TpetraVector(const TpetraVector& v) : _mpi_comm(v._mpi_comm)
 
   _x_ghosted->assign(*v._x_ghosted);
   _x = _x_ghosted->offsetViewNonConst(v_xmap, 0);
+
+  // Unwrap MPI_Comm
+  //const Teuchos::RCP<const Teuchos::MpiComm<int>> _mpi_comm
+  //   = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(_x->getMap()->getComm());
+  _comm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(_x->getMap()->getComm());
 }
 //-----------------------------------------------------------------------------
 TpetraVector::~TpetraVector()
@@ -109,7 +116,14 @@ void TpetraVector::apply(std::string mode)
 //-----------------------------------------------------------------------------
 MPI_Comm TpetraVector::mpi_comm() const
 {
-  return _mpi_comm;
+  if (_x.is_null())
+    return *_comm->getRawMpiComm();
+
+  // Unwrap MPI_Comm
+  const Teuchos::RCP<const Teuchos::MpiComm<int>> _mpi_comm
+    = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(_x->getMap()->getComm());
+
+  return *(_mpi_comm->getRawMpiComm());
 }
 //-----------------------------------------------------------------------------
 std::string TpetraVector::str(bool verbose) const
@@ -133,7 +147,8 @@ std::shared_ptr<GenericVector> TpetraVector::copy() const
 //-----------------------------------------------------------------------------
 void TpetraVector::init(std::size_t N)
 {
-  const std::pair<std::int64_t, std::int64_t> range = MPI::local_range(_mpi_comm, N);
+  const std::pair<std::int64_t, std::int64_t> range
+    = MPI::local_range(mpi_comm(), N);
   std::vector<dolfin::la_index> local_to_global_map;
   _init(range, local_to_global_map);
 }
@@ -365,7 +380,7 @@ void TpetraVector::gather(GenericVector& y,
   if (_y._x.is_null())
     _y._init(range, indices);
 
-  if (y.size() != indices.size() or MPI::size(y.mpi_comm()) != 1)
+  if (y.size() != indices.size() or MPI::size(mpi_comm()) != 1)
   {
     dolfin_error("TpetraVector.cpp",
                  "gather vector entries",
@@ -633,12 +648,10 @@ TpetraVector::_init(std::pair<std::int64_t, std::int64_t> local_range,
                  "Vector cannot be initialised more than once");
   }
 
-  // Make a Trilinos version of the MPI Comm
-  Teuchos::RCP<const Teuchos::Comm<int>> _comm(new Teuchos::MpiComm<int>(_mpi_comm));
 
   // Mapping across processes
   std::size_t Nlocal = local_range.second - local_range.first;
-  std::size_t N = MPI::sum(_mpi_comm, Nlocal);
+  std::size_t N = MPI::sum(mpi_comm(), Nlocal);
 
   Teuchos::RCP<map_type> _map(new map_type(N, Nlocal, 0, _comm));
   Teuchos::RCP<map_type> _ghost_map;
@@ -701,10 +714,8 @@ void TpetraVector::mapdump(Teuchos::RCP<const map_type> xmap,
     ss << j << " -> " << xmap->getGlobalElement(j) << "\n";
   ss << "\n";
 
-
   const Teuchos::RCP<const Teuchos::MpiComm<int>> _mpi_comm
     = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(xmap()->getComm());
-
   MPI_Comm mpi_comm = *(_mpi_comm->getRawMpiComm());
 
   std::vector<std::string> out_str;

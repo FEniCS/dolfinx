@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2014 Garth N. Wells
+// Copyright (C) 2005-2017 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -14,11 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Ola Skavhaug 2008
-// Modified by Anders Logg 2008-2012
-// Modified by Marie Rognes 2009
-// Modified by Fredrik Valdmanis 2011
 
 #ifdef HAS_SLEPC
 
@@ -213,25 +208,6 @@ void SLEPcEigenSolver::solve(std::size_t n)
       eps_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc) const
-{
-  get_eigenvalue(lr, lc, 0);
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
-                                     GenericVector& r, GenericVector& c) const
-{
-  PETScVector& _r = as_type<PETScVector>(r);
-  PETScVector& _c = as_type<PETScVector>(c);
-  get_eigenpair(lr, lc, _r, _c, 0);
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
-                                     PETScVector& r, PETScVector& c) const
-{
-  get_eigenpair(lr, lc, r, c, 0);
-}
-//-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
                                       std::size_t i) const
 {
@@ -297,15 +273,6 @@ std::size_t SLEPcEigenSolver::get_number_converged() const
   return num_conv;
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
-{
-  dolfin_assert(_eps);
-  dolfin_assert(deflation_space.vec());
-  Vec x = deflation_space.vec();
-  dolfin_assert(_eps);
-  EPSSetDeflationSpace(_eps, 1, &x);
-}
-//-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_deflation_space(const VectorSpaceBasis& deflation_space)
 {
   dolfin_assert(_eps);
@@ -315,12 +282,33 @@ void SLEPcEigenSolver::set_deflation_space(const VectorSpaceBasis& deflation_spa
   for (std::size_t i = 0; i < deflation_space.dim(); ++i)
   {
     dolfin_assert(deflation_space[i]);
-    petsc_vecs[i] = deflation_space[i]->down_cast<PETScVector>().vec();
+    dolfin_assert(as_type<const PETScVector>(deflation_space[i]));
+    dolfin_assert(as_type<const PETScVector>(deflation_space[i])->vec());
+    petsc_vecs[i] = as_type<const PETScVector>(deflation_space[i])->vec();
   }
 
   PetscErrorCode ierr = EPSSetDeflationSpace(_eps, petsc_vecs.size(),
                                              petsc_vecs.data());
   if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetDeflationSpace");
+}
+//-----------------------------------------------------------------------------
+void SLEPcEigenSolver::set_initial_space(const VectorSpaceBasis& initial_space)
+{
+  dolfin_assert(_eps);
+
+  // Get PETSc vector pointers from VectorSpaceBasis
+  std::vector<Vec> petsc_vecs(initial_space.dim());
+  for (std::size_t i = 0; i < initial_space.dim(); ++i)
+  {
+    dolfin_assert(initial_space[i]);
+    dolfin_assert(as_type<const PETScVector>(initial_space[i]));
+    dolfin_assert(as_type<const PETScVector>(initial_space[i])->vec());
+    petsc_vecs[i] = as_type<const PETScVector>(initial_space[i])->vec();
+  }
+
+  PetscErrorCode ierr = EPSSetInitialSpace(_eps, petsc_vecs.size(),
+                                           petsc_vecs.data());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetInitialSpace");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_options_prefix(std::string options_prefix)
@@ -338,6 +326,13 @@ std::string SLEPcEigenSolver::get_options_prefix() const
   PetscErrorCode ierr = EPSGetOptionsPrefix(_eps, &prefix);
   if (ierr != 0) petsc_error(ierr, __FILE__, "EPSGetOptionsPrefix");
   return std::string(prefix);
+}
+//-----------------------------------------------------------------------------
+void SLEPcEigenSolver::set_from_options() const
+{
+  dolfin_assert(_eps);
+  PetscErrorCode ierr = EPSSetFromOptions(_eps);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetFromOptions");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::read_parameters()

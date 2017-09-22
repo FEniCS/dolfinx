@@ -19,11 +19,10 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-06-19
+// Last changed: 2017-08-28
 
 #include <cmath>
 #include <dolfin/log/log.h>
-#include <dolfin/plot/plot.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/SimplexQuadrature.h>
@@ -121,11 +120,24 @@ MultiMesh::uncut_cells(std::size_t part) const
   return _uncut_cells[part];
 }
 //-----------------------------------------------------------------------------
-const std::vector<unsigned int>&
+const std::vector<unsigned int>
 MultiMesh::cut_cells(std::size_t part) const
 {
   dolfin_assert(part < num_parts());
-  return _cut_cells[part];
+
+  // Extract keys from collision map
+  const std::map<unsigned int,std::vector<std::pair<std::size_t,unsigned int>>>&
+    cm = collision_map_cut_cells(part);
+
+  // Vector to store cut cell IDs
+  std::vector<unsigned int> _cut_cells;
+  _cut_cells.reserve(cm.size());
+
+  // Add cell ID if it has any collisions
+  for (const auto& it : cm)
+    if (it.second.size() > 0)
+      _cut_cells.push_back(it.first);
+  return _cut_cells;
 }
 //-----------------------------------------------------------------------------
 const std::vector<unsigned int>&
@@ -261,7 +273,6 @@ void MultiMesh::clear()
   _trees.clear();
   _boundary_trees.clear();
   _uncut_cells.clear();
-  _cut_cells.clear();
   _covered_cells.clear();
   _collision_maps_cut_cells.clear();
   _collision_maps_cut_cells_boundary.clear();
@@ -346,10 +357,18 @@ double MultiMesh::compute_volume() const
   return volume;
 }
 //-----------------------------------------------------------------------------
-std::string MultiMesh::plot_matplotlib(double delta_z) const
+std::string MultiMesh::plot_matplotlib(double delta_z,
+				       const std::string& filename) const
 {
-  dolfin_assert(num_parts() > 0);
-  dolfin_assert(part(0)->geometry().dim() == 2);
+  if (num_parts() == 0)
+    dolfin_error("MultiMesh.cpp",
+		 "plotting multimesh with matplotlib",
+		 "Multimesh is empty. Call MultiMesh.add(mesh) before plotting");
+
+  if (part(0)->geometry().dim() != 2)
+    dolfin_error("MultiMesh.cpp",
+		 "plotting multimesh with matplotlib",
+		 "Plotting is only implemented in 2D");
 
   const bool do_3d = delta_z != 0.;
   std::stringstream ss;
@@ -398,15 +417,16 @@ std::string MultiMesh::plot_matplotlib(double delta_z) const
     {
       const double max_num_parts = 33;
       ss << "    z = " << p<< "*np.ones(int(facets.size / 3))\n"
-	 << "    ax.tripcolor(x, y, facets, facecolors = z, edgecolors = 'k', alpha = alpha, vmin = 0, vmax = " << num_parts() << ")\n";
+	 << "    ax.tripcolor(x, y, facets, facecolors = z, edgecolors = 'k', alpha = alpha, vmin = 0, vmax = " << num_parts()-1 << ")\n";
     }
   }
 
   if (!do_3d)
   {
     ss << "    ax.axis('tight')\n"
-       << "    ax.axis('square')\n"
-       << "    plt.savefig('multimesh_" << num_parts()<< ".pdf')\n";
+       << "    ax.axis('square')\n";
+    if (!filename.empty())
+      ss << "    plt.savefig('" << filename << "')\n";
   }
   ss << "    plt.show()\n";
   return ss.str();
@@ -465,7 +485,6 @@ void MultiMesh::_build_collision_maps()
 
   // Clear collision maps
   _uncut_cells.clear();
-  _cut_cells.clear();
   _covered_cells.clear();
   _collision_maps_cut_cells.clear();
   _collision_maps_cut_cells_boundary.clear();
@@ -610,7 +629,7 @@ void MultiMesh::_build_collision_maps()
 
     // Store data for this mesh
     _uncut_cells.push_back(uncut_cells);
-    _cut_cells.push_back(cut_cells);
+    //_cut_cells.push_back(cut_cells);
     _covered_cells.push_back(covered_cells);
     _collision_maps_cut_cells.push_back(collision_map_cut_cells);
 
@@ -641,33 +660,30 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
     const SimplexQuadrature sq(tdim, quadrature_order);
 
     // Iterate over cut cells for current part
-    const auto& cmap = collision_map_cut_cells(cut_part);
-    for (auto it = cmap.begin(); it != cmap.end(); ++it)
+    for (const auto& c : collision_map_cut_cells(cut_part))
     {
       // Get cut cell
-      const unsigned int cut_cell_index = it->first;
+      const unsigned int cut_cell_index = c.first;
       const Cell cut_cell(*(_meshes[cut_part]), cut_cell_index);
 
       // Data structure for the first intersections (this is the first
       // stage in the inclusion exclusion principle). These are the
       // polyhedra to be used in the exlusion inclusion.
-      std::vector<std::pair<std::size_t, Polyhedron> > initial_polyhedra;
+      std::vector<std::pair<std::size_t, Polyhedron>> initial_polyhedra;
 
       // Get the cutting cells
-      const auto& cutting_cells = it->second;
+      const std::vector<std::pair<std::size_t, unsigned int>>& cutting_cells = c.second;
 
       // Data structure for the overlap quadrature rule
-      const std::size_t num_cutting_cells = std::distance(cutting_cells.begin(),
-							  cutting_cells.end());
-      std::vector<quadrature_rule> overlap_qr(num_cutting_cells);
+      std::vector<quadrature_rule> overlap_qr(cutting_cells.size());
 
       // Loop over all cutting cells to construct the polyhedra to be
       // used in the inclusion-exclusion principle
-      for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
+      for (const std::pair<std::size_t, unsigned int> cutting : cutting_cells)
       {
 	// Get cutting part and cutting cell
-        const std::size_t cutting_part = jt->first;
-        const std::size_t cutting_cell_index = jt->second;
+        const std::size_t cutting_part = cutting.first;
+        const std::size_t cutting_cell_index = cutting.second;
         const Cell cutting_cell(*(_meshes[cutting_part]), cutting_cell_index);
 
   	// Only allow same type of cell for now
@@ -679,6 +695,8 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
         //   = IntersectionTriangulation::triangulate(cut_cell, cutting_cell);
         const Polyhedron polyhedron =
           ConvexTriangulation::triangulate(IntersectionConstruction::intersection(cut_cell, cutting_cell), gdim, tdim);
+
+	dolfin_assert(!ConvexTriangulation::selfintersects(polyhedron));
 
 	// FIXME: Flip triangles in polyhedron to maximize minimum angle here?
 	// FIXME: only include large polyhedra
@@ -695,7 +713,7 @@ void MultiMesh::_build_quadrature_rules_overlap(std::size_t quadrature_order)
 				       polyhedron_same_tdim);
       }
 
-      if (num_cutting_cells > 0)
+      if (cutting_cells.size() > 0)
 	_inclusion_exclusion_overlap(overlap_qr, sq, initial_polyhedra,
 				     tdim, gdim, quadrature_order);
 
@@ -1074,13 +1092,6 @@ std::size_t MultiMesh::_add_quadrature_rule(quadrature_rule& qr,
   dolfin_assert(dqr.first.size() == gdim*dqr.second.size());
   const std::size_t num_points = dqr.second.size();
 
-  // Skip if sum of weights is too small
-  double wsum = 0.0;
-  for (std::size_t i = 0; i < num_points; i++)
-    wsum += std::abs(dqr.second[i]);
-  if (wsum < DOLFIN_EPS)
-    return 0;
-
   // Append points and weights
   for (std::size_t i = 0; i < num_points; i++)
   {
@@ -1104,51 +1115,7 @@ void MultiMesh::_add_normal(std::vector<double>& normals,
     for (std::size_t j = 0; j < gdim; ++j)
       normals.push_back(-normal[j]);
 }
-
 //-----------------------------------------------------------------------------
-void MultiMesh::_plot() const
-{
-  // Developer note: This function is implemented here rather than
-  // in the plot library since it is too specialized to be implemented
-  // there.
-
-  std::cout << "Plotting multimesh with " << num_parts() << " parts" << std::endl;
-
-  // Iterate over parts
-  for (std::size_t p = 0; p < num_parts(); ++p)
-  {
-    // Create a cell function and mark cells
-    std::shared_ptr<MeshFunction<std::size_t>>
-      f(new MeshFunction<std::size_t>(part(p),
-                                      part(p)->topology().dim()));
-
-    // Set all entries to 0 (uncut cells)
-    f->set_all(0);
-
-    // Mark cut cells as 1
-    for (auto it : cut_cells(p))
-      f->set_value(it, 1);
-
-    // Mart covered cells as 2
-    for (auto it : covered_cells(p))
-      f->set_value(it, 2);
-
-    // Write some debug data
-    const std::size_t num_cut = cut_cells(p).size();
-    const std::size_t num_covered = covered_cells(p).size();
-    const std::size_t num_uncut = part(p)->num_cells() - num_cut - num_covered;
-    std::cout << "Part " << p << " has "
-	      << num_uncut   << " uncut cells (0), "
-	      << num_cut     << " cut cells (1), and "
-	      << num_covered << " covered cells (2)." << std::endl;
-
-    // Plot
-    std::stringstream s;
-    s << "Map of cell types for multimesh part " << p;
-    dolfin::plot(f, s.str());
-  }
-}
-//------------------------------------------------------------------------------
 void MultiMesh::_inclusion_exclusion_overlap
 (std::vector<quadrature_rule>& qr,
  const SimplexQuadrature& sq,
@@ -1563,8 +1530,7 @@ void MultiMesh::_impose_cut_cell_consistency()
 {
   for (std::size_t part_id = 0; part_id < num_parts(); part_id++)
   {
-    // Helper function to decide if cell has interface quadrature rules
-    auto cell_has_no_quadrature_points = [&](const unsigned int cell) -> bool
+    for (auto cell : cut_cells(part_id))
     {
       auto cell_quadrature_rules = _quadrature_rules_interface[part_id][cell];
       bool has_no_qr = true;
@@ -1578,20 +1544,30 @@ void MultiMesh::_impose_cut_cell_consistency()
       }
       if (has_no_qr)
       {
-        // Add the cell to the vector of uncut cells
-        log(PROGRESS, "Marking cell %d on part %d as uncut (having no interface QR)", cell, part_id);
-        _uncut_cells[part_id].push_back(cell);
+        // Decide if cell is overlapped or uncut
+        // TODO: Implement decision to allow update before generating all the quadrature rules
+        // For now, we use cut cell and overlap quadrature
+        double overlap_area = 0;
+        for (auto _qr : _quadrature_rules_overlap[part_id][cell])
+          for (double w : _qr.second)
+            overlap_area += w;
 
-        // Clear collision map
-        _collision_maps_cut_cells[part_id][cell].clear();
+        double cut_cell_area = 0;
+        for (double w : _quadrature_rules_cut_cells[part_id][cell].second)
+          cut_cell_area += w;
+
+        // Append to _cut_cells or _overlapped_cells
+        // One of cut cell area and overlapped cell area should be zero
+        if (overlap_area > cut_cell_area)
+          _covered_cells[part_id].push_back(cell);
+        else
+        {
+          _uncut_cells[part_id].push_back(cell);
+          // Clear collision map
+          _collision_maps_cut_cells[part_id][cell].clear();
+        }
       }
-      return has_no_qr;
-    };
-    // Remove cells without overlap quadrature points from vector of cut cells
-    _cut_cells[part_id].erase(std::remove_if(_cut_cells[part_id].begin(),
-                                             _cut_cells[part_id].end(),
-                                             cell_has_no_quadrature_points),
-                              _cut_cells[part_id].end());
+    }
   }
 }
 //-----------------------------------------------------------------------------

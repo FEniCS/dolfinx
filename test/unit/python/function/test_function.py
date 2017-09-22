@@ -25,7 +25,6 @@ import ufl
 
 from dolfin_utils.test import skip_in_parallel, pushpop_parameters, fixture
 
-
 @fixture
 def mesh():
     return UnitCubeMesh(8, 8, 8)
@@ -224,7 +223,7 @@ def test_axpy(V, W):
         assert (round(u.vector().sum() -
                       float(expr_scalar1*u.vector().size()), 7) == 0)
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises((RuntimeError, TypeError)):
             FunctionAXPY(u, u3, 0)
 
         axpy = FunctionAXPY(u3, 2.0)
@@ -346,7 +345,7 @@ def test_extrapolation(V, pushpop_parameters):
     mesh1 = UnitSquareMesh(3, 3)
     V1 = FunctionSpace(mesh1, "CG", 1)
 
-    mesh2 = UnitTriangleMesh()
+    mesh2 = UnitTriangleMesh.create()
     V2 = FunctionSpace(mesh2, "CG", 1)
 
     parameters["allow_extrapolation"] = True
@@ -417,11 +416,11 @@ def test_interpolation_jit_rank1(W):
 @skip_in_parallel
 def test_interpolation_old(V, W, mesh):
 
-    class F0(Expression):
+    class F0(UserExpression):
         def eval(self, values, x):
             values[0] = 1.0
 
-    class F1(Expression):
+    class F1(UserExpression):
         def eval(self, values, x):
             values[0] = 1.0
             values[1] = 1.0

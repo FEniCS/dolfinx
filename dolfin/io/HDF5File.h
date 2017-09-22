@@ -241,7 +241,7 @@ namespace dolfin
     hid_t _hdf5_file_id;
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
   };
 
   //---------------------------------------------------------------------------
@@ -262,7 +262,7 @@ namespace dolfin
     num_local_items = data.size()/num_local_items;
 
     // Compute offset
-    const std::size_t offset = MPI::global_offset(_mpi_comm, num_local_items,
+    const std::size_t offset = MPI::global_offset(_mpi_comm.comm(), num_local_items,
                                                   true);
     std::pair<std::size_t, std::size_t> range(offset,
                                               offset + num_local_items);

@@ -40,9 +40,9 @@ std::shared_ptr<GenericVector> DefaultFactory::create_vector(MPI_Comm comm) cons
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<TensorLayout>
-DefaultFactory::create_layout(std::size_t rank) const
+DefaultFactory::create_layout(MPI_Comm comm, std::size_t rank) const
 {
-  return factory().create_layout(rank);
+  return factory().create_layout(comm, rank);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearOperator>

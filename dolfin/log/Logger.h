@@ -62,7 +62,8 @@ namespace dolfin
     /// Print error message and throw exception
     void error(std::string msg) const;
 
-    /// Print error message, prefer this to the above generic error message
+    /// Print error message, prefer this to the above generic error
+    /// message
     void dolfin_error(std::string location,
                       std::string task,
                       std::string reason,
@@ -107,22 +108,24 @@ namespace dolfin
     void register_timing(std::string task,
                          std::tuple<double, double, double> elapsed);
 
-    /// Return a summary of timings and tasks in a Table, optionally clearing
-    /// stored timings
+    /// Return a summary of timings and tasks in a Table, optionally
+    /// clearing stored timings
     Table timings(TimingClear clear, std::set<TimingType> type);
 
-    /// List a summary of timings and tasks, optionally clearing stored timings.
-    /// ``MPI_AVG`` reduction is printed. Collective on ``Logger::mpi_comm()``.
+    /// List a summary of timings and tasks, optionally clearing
+    /// stored timings.  ``MPI_AVG`` reduction is printed. Collective
+    /// on ``Logger::mpi_comm()``.
     void list_timings(TimingClear clear, std::set<TimingType> type);
 
-    /// Dump a summary of timings and tasks to XML file, optionally clearing
-    /// stored timings. ``MPI_MAX``, ``MPI_MIN`` and ``MPI_AVG`` reductions are
-    /// stored. Collective on ``Logger::mpi_comm()``.
+    /// Dump a summary of timings and tasks to XML file, optionally
+    /// clearing stored timings. ``MPI_MAX``, ``MPI_MIN`` and
+    /// ``MPI_AVG`` reductions are stored. Collective on
+    /// ``Logger::mpi_comm()``.
     void dump_timings_to_xml(std::string filename, TimingClear clear);
 
-    /// Return timing (count, total wall time, total user time,
-    /// total system time) for given task, optionally clearing
-    /// all timings for the task
+    /// Return timing (count, total wall time, total user time, total
+    /// system time) for given task, optionally clearing all timings
+    /// for the task
     std::tuple<std::size_t, double, double, double>
       timing(std::string task, TimingClear clear);
 
@@ -176,6 +179,8 @@ namespace dolfin
     // Map for stringifying TimingType
     static std::map<TimingType, std::string> _TimingType_descr;
 
+    // FIXME: This should be a dolfin::MPI::Comm, the MPI-awareness of
+    //        the logging needs to be fixed.
     // MPI Communicator
     MPI_Comm _mpi_comm;
 

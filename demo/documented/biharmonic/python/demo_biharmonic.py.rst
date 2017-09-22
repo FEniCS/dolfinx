@@ -97,8 +97,9 @@ Implementation
 
 This demo is implemented in the :download:`demo_biharmonic.py` file.
 
-First, the :py:mod:`dolfin` module is imported::
+First, the necessary modules are imported::
 
+    import matplotlib.pyplot as plt
     from dolfin import *
 
 Next, some parameters for the form compiler are set::
@@ -129,7 +130,7 @@ A subclass of :py:class:`Expression
 <dolfin.functions.expression.Expression>`, ``Source`` is created for
 the source term :math:`f`::
 
-    class Source(Expression):
+    class Source(UserExpression):
         def eval(self, values, x):
             values[0] = 4.0*pi**4*sin(pi*x[0])*sin(pi*x[1])
 
@@ -190,4 +191,5 @@ the screen. ::
     file << u
 
     # Plot solution
-    plot(u, interactive=True)
+    plot(u)
+    plt.show()

@@ -101,56 +101,7 @@ def test_volume_2d():
     assert abs(exact_volume - approximative_volume) / exact_volume < DOLFIN_EPS_LARGE
 
 @skip_in_parallel
-def test_volume_six_meshes():
-    "Integrate volume of six 2D meshes"
-
-    # Number of elements
-    Nx = 8
-    h = 1. / Nx
-
-    # Background mesh
-    mesh_0 = UnitSquareMesh(Nx, Nx)
-
-    # 5 meshes plus background mesh
-    num_meshes = 5
-
-    # List of points for generating the meshes on top
-    points = [[ Point(0.747427, 0.186781), Point(0.849659, 0.417130) ],
-              [ Point(0.152716, 0.471681), Point(0.455943, 0.741585) ],
-              [ Point(0.464473, 0.251876), Point(0.585051, 0.533569) ],
-              [ Point(0.230112, 0.511897), Point(0.646974, 0.892193) ],
-              [ Point(0.080362, 0.422675), Point(0.580151, 0.454286) ]]
-
-    angles = [ 88.339755, 94.547259, 144.366564, 172.579922, 95.439692 ]
-
-    # Create multimesh
-    multimesh = MultiMesh()
-    multimesh.add(mesh_0)
-
-    # Add the 5 background meshes
-    for i in range(num_meshes):
-        nx = max(int(round(abs(points[i][0].x()-points[i][1].x()) / h)), 1)
-        ny = max(int(round(abs(points[i][0].y()-points[i][1].y()) / h)), 1)
-        mesh = RectangleMesh(points[i][0], points[i][1], nx, ny)
-        mesh.rotate(angles[i])
-        multimesh.add(mesh)
-    multimesh.build()
-
-    # Save meshes to file
-    #vtkfile = File('output/test_six_meshes.pvd')
-    #for i in range(multimesh.num_parts()):
-    #    vtkfile << multimesh.part(i)
-
-    exact_volume = 1.0
-    approximate_volume = compute_volume(multimesh)
-
-    print("exact volume ", exact_volume)
-    print("approximative volume ", approximate_volume)
-    print("approximate volume error %1.16e" % (exact_volume - approximate_volume))
-    assert abs(exact_volume - approximate_volume) < DOLFIN_EPS_LARGE
-
-@skip_in_parallel
-def test_volume_4_meshes():
+def test_volume_2d_4_meshes():
     "Test with four meshes that previously failed"
 
     # Create multimesh
@@ -197,6 +148,55 @@ def test_volume_4_meshes():
     multimesh.build()
 
     exact_volume = 1
+    approximate_volume = compute_volume(multimesh)
+
+    print("exact volume ", exact_volume)
+    print("approximative volume ", approximate_volume)
+    print("approximate volume error %1.16e" % (exact_volume - approximate_volume))
+    assert abs(exact_volume - approximate_volume) < DOLFIN_EPS_LARGE
+    
+@skip_in_parallel
+def test_volume_2d_six_meshes():
+    "Integrate volume of six 2D meshes"
+
+    # Number of elements
+    Nx = 8
+    h = 1. / Nx
+
+    # Background mesh
+    mesh_0 = UnitSquareMesh(Nx, Nx)
+
+    # 5 meshes plus background mesh
+    num_meshes = 5
+
+    # List of points for generating the meshes on top
+    points = [[ Point(0.747427, 0.186781), Point(0.849659, 0.417130) ],
+              [ Point(0.152716, 0.471681), Point(0.455943, 0.741585) ],
+              [ Point(0.464473, 0.251876), Point(0.585051, 0.533569) ],
+              [ Point(0.230112, 0.511897), Point(0.646974, 0.892193) ],
+              [ Point(0.080362, 0.422675), Point(0.580151, 0.454286) ]]
+
+    angles = [ 88.339755, 94.547259, 144.366564, 172.579922, 95.439692 ]
+
+    # Create multimesh
+    multimesh = MultiMesh()
+    multimesh.add(mesh_0)
+
+    # Add the 5 background meshes
+    for i in range(num_meshes):
+        nx = max(int(round(abs(points[i][0].x()-points[i][1].x()) / h)), 1)
+        ny = max(int(round(abs(points[i][0].y()-points[i][1].y()) / h)), 1)
+        mesh = RectangleMesh(points[i][0], points[i][1], nx, ny)
+        mesh.rotate(angles[i])
+        multimesh.add(mesh)
+    multimesh.build()
+
+    # Save meshes to file
+    #vtkfile = File('output/test_six_meshes.pvd')
+    #for i in range(multimesh.num_parts()):
+    #    vtkfile << multimesh.part(i)
+
+    exact_volume = 1.0
     approximate_volume = compute_volume(multimesh)
 
     print("exact volume ", exact_volume)

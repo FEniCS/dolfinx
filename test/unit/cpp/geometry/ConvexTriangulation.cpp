@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2017-03-17
-// Last changed: 2012-03-20
+// Last changed: 2012-09-01
 //
 // Unit tests for convex triangulation
 
@@ -24,6 +24,152 @@
 #include <gtest/gtest.h>
 
 using namespace dolfin;
+
+namespace
+{
+  bool pure_triangular(const std::vector<std::vector<Point>>& triangulation, std::size_t dim)
+  {
+    for (const std::vector<Point>& tri : triangulation)
+    {
+
+      if (tri.size() != dim+1)
+	return false;
+    }
+
+    return true;
+  }
+
+  bool has_degenerate(const std::vector<std::vector<Point>>& triangulation, std::size_t dim)
+  {
+    for (const std::vector<Point>& tri : triangulation)
+    {
+      if (orient3d(tri[0], tri[1], tri[2], tri[3]) == 0)
+	return true;
+    }
+    return false;
+  }
+
+  // checks that every pair of cells share 0 or 1 face
+  bool valid_topology(const std::vector<std::vector<Point>>& triangulation, std::size_t dim)
+  {
+    for (std::size_t i = 0; i < triangulation.size(); i++)
+    {
+      const auto& t1 = triangulation[i];
+      for (std::size_t j = i+1; j < triangulation.size(); j++)
+      {
+	// Count number of shared vertices
+	std::size_t shared_vertices = 0;
+	for (std::size_t v1 = 0; v1 < dim+1; v1++)
+	  for (std::size_t v2 = 0; v2 < dim+1; v2++)
+	    if (v1 == v2)
+	      shared_vertices++;
+
+	if (shared_vertices != 0 && shared_vertices != dim)
+	  return false;
+      }
+    }
+    return true;
+  }
+
+  bool triangulation_selfintersects(const std::vector<std::vector<Point>>& triangulation,
+				    std::size_t dim)
+  {
+    for (std::size_t i = 0; i < triangulation.size(); i++)
+    {
+      const auto& t1 = triangulation[i];
+      for (std::size_t j = i+1; j < triangulation.size(); j++)
+      {
+	const auto& t2 = triangulation[j];
+
+	// Count number of shared vertices
+	std::size_t shared_vertices = 0;
+	std::set<std::size_t> t1_shared;
+	std::set<std::size_t> t2_shared;
+	for (std::size_t v1 = 0; v1 < dim+1; v1++)
+	{
+	  for (std::size_t v2 = 0; v2 < dim+1; v2++)
+	  {
+	    if (t1[v1] == t2[v2])
+	    {
+	      shared_vertices++;
+	      t1_shared.insert(v1);
+	      t2_shared.insert(v2);
+	    }
+	  }
+	}
+
+	if (dim == 3)
+	{
+	  if (shared_vertices == 0 &&
+	      CollisionPredicates::collides_tetrahedron_tetrahedron_3d(t1[0], t1[1], t1[2], t1[3],
+								       t2[0], t2[1], t2[2], t2[3]))
+	  {
+	    return true;
+	  }
+	  else if (shared_vertices > 0)
+	  {
+
+	    for (std::size_t a = 0; a < dim+1; a++)
+	    {
+	      // None of the non-shared vertices should collide with the other tet
+	      if (t1_shared.count(a) == 0 &&
+		  CollisionPredicates::collides_tetrahedron_point_3d(t2[0], t2[1], t2[2], t2[3],
+								     t1[a]))
+	      {
+		return true;
+	      }
+
+	      if (t2_shared.count(a) == 0 &&
+		  CollisionPredicates::collides_tetrahedron_point_3d(t1[0], t1[1], t1[2], t1[3],
+								     t2[a]))
+	      {
+		return true;
+	      }
+	    }
+	  }
+	}
+	else if(dim == 2)
+	{
+	  if (shared_vertices == 0 &&
+	      CollisionPredicates::collides_triangle_triangle_2d(t1[0],
+								 t1[1],
+								 t1[2],
+								 t2[0],
+								 t2[1],
+								 t2[2]))
+	  {
+	    return true;
+	  }
+	}
+      }
+    }
+    return false;
+  }
+  //-----------------------------------------------------------------------------
+  double triangulation_volume(const std::vector<std::vector<dolfin::Point>>& triangulation)
+  {
+    double vol = 0;
+    for (const std::vector<dolfin::Point>& tri : triangulation)
+    {
+      const Point& x0 = tri[0];
+      const Point& x1 = tri[1];
+      const Point& x2 = tri[2];
+      const Point& x3 = tri[3];
+      // Formula for volume from http://mathworld.wolfram.com
+      const double v = (x0[0]*(x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2]
+			     - x2[1]*x1[2] - x1[1]*x3[2] - x3[1]*x2[2])
+		      - x1[0]*(x0[1]*x2[2] + x3[1]*x0[2] + x2[1]*x3[2]
+			     - x2[1]*x0[2] - x0[1]*x3[2] - x3[1]*x2[2])
+                      + x2[0]*(x0[1]*x1[2] + x3[1]*x0[2] + x1[1]*x3[2]
+			     - x1[1]*x0[2] - x0[1]*x3[2] - x3[1]*x1[2])
+		      - x3[0]*(x0[1]*x1[2] + x1[1]*x2[2] + x2[1]*x0[2]
+			     - x1[1]*x0[2] - x2[1]*x1[2] - x0[1]*x2[2]));
+      vol += std::abs(v);
+    }
+
+    return vol/6;
+  }
+}
 
 //-----------------------------------------------------------------------------
 TEST(ConvexTriangulationTest, testTrivialCase)
@@ -37,7 +183,72 @@ TEST(ConvexTriangulationTest, testTrivialCase)
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
   ASSERT_EQ(tri.size(), 1);
+  ASSERT_NEAR(triangulation_volume(tri), 1./6., DOLFIN_EPS);
 }
+//-----------------------------------------------------------------------------
+TEST(ConvexTriangulationTest, testTrivialCase2)
+{
+  std::vector<Point> input {
+    Point(0,0,0),
+    Point(0,0,1),
+    Point(0,1,0),
+    Point(0,1,1),
+    Point(1,0,0),
+    Point(1,0,1),
+    Point(1,1,0),
+    Point(1,1,1) };
+
+  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+
+  ASSERT_TRUE(pure_triangular(tri, 3));
+  ASSERT_FALSE(has_degenerate(tri, 3));
+  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
+  ASSERT_NEAR(triangulation_volume(tri), 1., DOLFIN_EPS);
+}
+
+TEST(ConvexTriangulationTest, testCoplanarPoints)
+{
+  std::vector<Point> input {
+    Point(0,   0,   0),
+    Point(0,   0,   1),
+    Point(0,   1,   0),
+    Point(0,   1,   1),
+    Point(1,   0,   0),
+    Point(1,   0,   1),
+    Point(1,   1,   0),
+    Point(1,   1,   1),
+    Point(0.1, 0.1, 0)};
+
+  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+
+  ASSERT_TRUE(pure_triangular(tri, 3));
+  ASSERT_FALSE(has_degenerate(tri, 3));
+  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
+  ASSERT_NEAR(triangulation_volume(tri), 1., DOLFIN_EPS);
+}
+
+
+TEST(ConvexTriangulationTest, testCoplanarColinearPoints)
+{
+  std::vector<Point> input {
+    Point(0, 0,   0),
+    Point(0, 0,   1),
+    Point(0, 1,   0),
+    Point(0, 1,   1),
+    Point(1, 0,   0),
+    Point(1, 0,   1),
+    Point(1, 1,   0),
+    Point(1, 1,   1),
+    Point(0, 0.1, 0)};
+
+  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+
+  ASSERT_TRUE(pure_triangular(tri, 3));
+  ASSERT_FALSE(has_degenerate(tri, 3));
+  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
+  ASSERT_NEAR(triangulation_volume(tri), 1., DOLFIN_EPS);
+}
+
 
 
 TEST(ConvexTriangulationTest, testFailingCase)
@@ -56,7 +267,9 @@ TEST(ConvexTriangulationTest, testFailingCase)
 
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
-  // TOOD: Test that no triangles are degenerate and do not overlap
+  ASSERT_TRUE(pure_triangular(tri, 3));
+  ASSERT_FALSE(has_degenerate(tri, 3));
+  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
 }
 
 TEST(ConvexTriangulationTest, testFailingCase2)
@@ -75,7 +288,9 @@ TEST(ConvexTriangulationTest, testFailingCase2)
 
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
-  // TOOD: Test that no triangles are degenerate and do not overlap
+  ASSERT_TRUE(pure_triangular(tri, 3));
+  ASSERT_FALSE(has_degenerate(tri, 3));
+  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
 }
 
 TEST(ConvexTriangulationTest, testFailingCase3)
@@ -92,5 +307,13 @@ TEST(ConvexTriangulationTest, testFailingCase3)
 
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
-  // TOOD: Test that no triangles are degenerate and do not overlap
+  ASSERT_TRUE(pure_triangular(tri, 3));
+  ASSERT_FALSE(has_degenerate(tri, 3));
+  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
+}
+
+// Test all
+int ConvexTriangulation_main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

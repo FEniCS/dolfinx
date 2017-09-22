@@ -51,10 +51,6 @@ int main()
   // Move mesh
   ALE::move(mesh, boundary);
 
-  // Plot mesh
-  plot(*mesh);
-  interactive();
-
   // Write mesh to file
   File file("mesh_deformed.pvd");
   file << *mesh;

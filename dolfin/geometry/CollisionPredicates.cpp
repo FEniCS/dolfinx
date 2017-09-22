@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-05-17
+// Last changed: 2017-09-21
 //
 //-----------------------------------------------------------------------------
 // Special note regarding the function collides_tetrahedron_tetrahedron
@@ -313,15 +313,7 @@ bool CollisionPredicates::_collides_segment_point_2d(const Point& p0,
   return orientation == 0.0 &&
     (point-p0).squared_norm() <= segment_length &&
     (point-p1).squared_norm() <= segment_length &&
-    dp.dot(p1-point) >= 0 && dp.dot(point-p0) >= 0;
-}
-//-----------------------------------------------------------------------------
-namespace
-{
-  bool operator==(const Point& a, const Point& b)
-  {
-    return a.x() == b.x() && a.y() == b.y() && a.z() == b.z();
-  }
+    dp.dot(p1-point) >= 0.0 && dp.dot(point-p0) >= 0.0;
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_segment_point_3d(const Point& p0,
@@ -374,7 +366,7 @@ bool CollisionPredicates::_collides_interior_point_segment_2d(const Point& q0,
   const Point dq = q1-q0;
   const double segment_length = dq.squared_norm();
 
-  return q0_q1_p == 0 && (p-q0).squared_norm() <= segment_length && (p-q1).squared_norm() <= segment_length && dq.dot(q1-p) > 0 && dq.dot(p-q0) > 0;
+  return q0_q1_p == 0.0 && (p-q0).squared_norm() <= segment_length && (p-q1).squared_norm() <= segment_length && dq.dot(q1-p) > 0 && dq.dot(p-q0) > 0.0;
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_interior_point_segment_3d(const Point& q0,
@@ -507,12 +499,30 @@ bool CollisionPredicates::_collides_triangle_point_2d(const Point& p0,
 {
   const double ref = orient2d(p0, p1, p2);
 
-  if (ref*orient2d(p0, p1, point) >= 0 and
-      ref*orient2d(p1, p2, point) >= 0 and
-      ref*orient2d(p2, p0, point) >= 0)
-    return true;
+  if (ref != 0.0)
+  {
+    if (ref*orient2d(p0, p1, point) >= 0.0 and
+	ref*orient2d(p1, p2, point) >= 0.0 and
+	ref*orient2d(p2, p0, point) >= 0.0)
+      return true;
+    else
+      return false;
+  }
   else
-    return false;
+  {
+    if ((orient2d(p0, p1, point) == 0.0 and
+	 collides_segment_point_1d(p0[0], p1[0], point[0]) and
+	 collides_segment_point_1d(p0[1], p1[1], point[1])) or
+	(orient2d(p1, p2, point) == 0.0 and
+	 collides_segment_point_1d(p1[0], p2[0], point[0]) and
+	 collides_segment_point_1d(p1[1], p2[1], point[1])) or
+	(orient2d(p2, p0, point) == 0.0 and
+	 collides_segment_point_1d(p2[0], p0[0], point[0]) and
+	 collides_segment_point_1d(p2[1], p0[1], point[1])))
+      return true;
+    else
+      return false;
+  }
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_triangle_point_3d(const Point& p0,
@@ -602,9 +612,9 @@ bool CollisionPredicates::_collides_triangle_point_3d(const Point& p0,
   // use normal
   const Point n = cross_product(p0, p1, p2);
 
-  if (n.dot(cross_product(point, p0, p1)) < 0 or
-      n.dot(cross_product(point, p2, p0)) < 0 or
-      n.dot(cross_product(point, p1, p2)) < 0)
+  if (n.dot(cross_product(point, p0, p1)) < 0.0 or
+      n.dot(cross_product(point, p2, p0)) < 0.0 or
+      n.dot(cross_product(point, p1, p2)) < 0.0)
     return false;
   return true;
 
@@ -703,8 +713,8 @@ bool CollisionPredicates::_collides_triangle_segment_3d(const Point& r,
   const double rstb = orient3d(r, s, t, b);
 
   // Check if a and b are on same side of triangle rst
-  if ((rsta < 0 and rstb < 0) or
-      (rsta > 0 and rstb > 0))
+  if ((rsta < 0.0 and rstb < 0.0) or
+      (rsta > 0.0 and rstb > 0.0))
     return false;
 
   // We check triangle point first. We use this below.
@@ -722,7 +732,7 @@ bool CollisionPredicates::_collides_triangle_segment_3d(const Point& r,
   // plane (in which case rsta = rstb = 0). Check if intersection is
   // in triangle by creating some other tets.
 
-  if (rsta == 0 and rstb == 0)
+  if (rsta == 0.0 and rstb == 0.0)
   {
     // Since we have checked that the points does not collide, the
     // segment is either completely outside the triangle, or we have a
@@ -880,22 +890,55 @@ bool CollisionPredicates::_collides_tetrahedron_point_3d(const Point& p0,
   if (ref*orient3d(p0,
        p1,
        p2,
-       point) >= 0 and
+       point) >= 0.0 and
       ref*orient3d(p0,
        p3,
        p1,
-       point) >= 0 and
+       point) >= 0.0 and
       ref*orient3d(p0,
        p2,
        p3,
-       point) >= 0 and
+       point) >= 0.0 and
       ref*orient3d(p1,
        p3,
        p2,
-       point) >= 0)
+       point) >= 0.0)
     return true;
   else
     return false;
+}
+//-----------------------------------------------------------------------------
+bool CollisionPredicates::_collides_interior_tetrahedron_point_3d(const Point& p0,
+								  const Point& p1,
+								  const Point& p2,
+								  const Point& p3,
+								  const Point& point)
+{
+  const double ref = orient3d(p0,
+            p1,
+            p2,
+            p3);
+
+  if (ref*orient3d(p0,
+       p1,
+       p2,
+       point) > 0.0 and
+      ref*orient3d(p0,
+       p3,
+       p1,
+       point) > 0.0 and
+      ref*orient3d(p0,
+       p2,
+       p3,
+       point) > 0.0 and
+      ref*orient3d(p1,
+       p3,
+       p2,
+       point) > 0.0)
+    return true;
+  else
+    return false;
+
 
   // // Check tetrahedron orientation
   // const int sign = std::signbit(orient3d(p0,

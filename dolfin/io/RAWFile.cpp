@@ -49,17 +49,17 @@ RAWFile::~RAWFile()
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void RAWFile::operator<<(const MeshFunction<int>& meshfunction)
+void RAWFile::write(const MeshFunction<int>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void RAWFile::operator<<(const MeshFunction<double>& meshfunction)
+void RAWFile::write(const MeshFunction<double>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void RAWFile::operator<<(const Function& u)
+void RAWFile::write(const Function& u)
 {
   // Update raw file name and clear file
   rawNameUpdate(counter);

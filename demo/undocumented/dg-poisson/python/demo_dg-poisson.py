@@ -38,6 +38,7 @@ using a discontinuous Galerkin formulation (interior penalty method).
 
 from dolfin import *
 
+
 # FIXME: Make mesh ghosted
 parameters["ghost_mode"] = "shared_facet"
 
@@ -95,10 +96,3 @@ L = v*f*dx - u0*dot(grad(v), n)*ds(1) + (gamma/h)*u0*v*ds(1) + g*v*ds(2)
 u = Function(V)
 solve(a == L, u)
 print("Solution vector norm (0): {!r}".format(u.vector().norm("l2")))
-
-# Save solution to file
-#file = File("poisson.pvd")
-#file << u
-
-# Plot solution
-#plot(u, interactive=True)

@@ -50,15 +50,15 @@ namespace dolfin
 
     /// Output Mesh to X3D format - for a 3D mesh, only producing
     /// surface facets
-    void operator<< (const Mesh& mesh);
+    void write(const Mesh& mesh);
 
     /// Output MeshFunction to X3D format - for a 3D mesh, only
     /// producing surface facets
-    void operator<< (const MeshFunction<std::size_t>& meshfunction);
+    void write(const MeshFunction<std::size_t>& meshfunction);
 
     /// Output Function to X3D format - for a 3D mesh, only producing
     /// surface facets
-    void operator<< (const Function& function);
+    void write(const Function& function);
 
   private:
 

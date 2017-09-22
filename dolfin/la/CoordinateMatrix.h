@@ -67,7 +67,7 @@ namespace dolfin
 
     /// Get MPI_Comm
     MPI_Comm mpi_comm() const
-    { return _mpi_comm; }
+    { return _mpi_comm.comm(); }
 
     /// Whether indices start from 0 (C-style) or 1 (FORTRAN-style)
     bool base_one() const
@@ -76,7 +76,7 @@ namespace dolfin
   private:
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
     // Row and column indices
     std::vector<std::size_t> _rows;

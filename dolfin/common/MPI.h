@@ -71,6 +71,57 @@ namespace dolfin
   {
   public:
 
+    // Create a duplicate MPI communicator and manage lifetime of the
+    // communicator
+    class Comm
+    {
+    public:
+
+      /// Duplicate communicator and wrap duplicate
+      Comm(MPI_Comm comm);
+
+      // The disabling of the below is turned off because the SWIG
+      // docstring generator fails on it.
+
+      // Disable default constructor
+      //Comm() = default;
+
+      // Disable copy constructor
+      //Comm(const Comm& comm) = delete;
+
+      // Disable assignment operator
+      //void operator=(Comm const &comm) = delete;
+
+      /// Destructor (frees wrapped communicator)
+      ~Comm();
+
+      /// Free (destroy) communicator. Calls function 'MPI_Comm_free'.
+      void free();
+
+      /// Duplicate communivator, and free any previously created
+      /// communicator
+      void reset(MPI_Comm comm);
+
+      /// Return process rank for the communicator
+      unsigned int rank() const;
+
+      /// Return size of the group (number of processes) associated
+      /// with the communicator. This function will also intialise MPI
+      /// if it hasn't already been intialised.
+      unsigned int size() const;
+
+      /// Set a barrier (synchronization point)
+      void barrier() const;
+
+      /// Return the underlying MPI_Comm object
+      MPI_Comm comm() const;
+
+    private:
+
+      // MPI communicator
+      MPI_Comm _comm;
+    };
+
     /// Return process rank for the communicator
     static unsigned int rank(MPI_Comm comm);
 
@@ -155,6 +206,11 @@ namespace dolfin
     template<typename T>
       static void all_gather(MPI_Comm comm, const T in_value,
                              std::vector<T>& out_values);
+
+    /// Gather values, one primitive from each process (MPI_Allgather).
+    /// Specialization for std::string
+    static void all_gather(MPI_Comm comm, const std::string& in_values,
+                           std::vector<std::string>& out_values);
 
     /// Return global max value
     template<typename T> static T max(MPI_Comm comm, const T& value);
@@ -610,6 +666,43 @@ namespace dolfin
     out_values.push_back(in_values);
     #endif
   }
+  //---------------------------------------------------------------------------
+  inline void dolfin::MPI::all_gather(MPI_Comm comm,
+                                      const std::string& in_values,
+                                      std::vector<std::string>& out_values)
+  {
+    #ifdef HAS_MPI
+    const std::size_t comm_size = MPI::size(comm);
+
+    // Get data size on each process
+    std::vector<int> pcounts(comm_size);
+    int local_size = in_values.size();
+    MPI_Allgather(&local_size, 1, MPI_INT, pcounts.data(), 1, MPI_INT, comm);
+
+    // Build offsets
+    std::vector<int> offsets(comm_size + 1, 0);
+    for (std::size_t i = 1; i <= comm_size; ++i)
+      offsets[i] = offsets[i - 1] + pcounts[i - 1];
+
+    // Gather
+    const std::size_t n = std::accumulate(pcounts.begin(), pcounts.end(), 0);
+    std::vector<char> _out(n);
+    MPI_Allgatherv(const_cast<char*>(in_values.data()), in_values.size(),
+                   MPI_CHAR, _out.data(), pcounts.data(), offsets.data(),
+                   MPI_CHAR, comm);
+
+    // Rebuild
+    out_values.resize(comm_size);
+    for (std::size_t p = 0; p < comm_size; ++p)
+    {
+      out_values[p] = std::string(_out.begin() + offsets[p],
+                                  _out.begin() + offsets[p + 1]);
+    }
+    #else
+    out_values.clear();
+    out_values.push_back(in_values);
+    #endif
+  }
   //-------------------------------------------------------------------------
   template<typename T>
     void dolfin::MPI::all_gather(MPI_Comm comm,
@@ -622,7 +715,7 @@ namespace dolfin
                   mpi_type<T>(),
                   out_values.data(), in_values.size(), mpi_type<T>(),
                   comm);
-    #else
+#else
     out_values = in_values;
     #endif
   }
