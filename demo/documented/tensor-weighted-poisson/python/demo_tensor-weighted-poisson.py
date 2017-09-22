@@ -113,8 +113,8 @@ PYBIND11_MODULE(SIGNATURE, m)
 
 """
 
-    c = ExpressionWrapper(compile_cpp_code(conductivity_code).Conductivity(),
-                          c00=c00, c01=c01, c11=c11, degree=0)
+    c = CompiledExpression(compile_cpp_code(conductivity_code).Conductivity(),
+                           c00=c00, c01=c01, c11=c11, degree=0)
 
 else:
     conductivity_code = """

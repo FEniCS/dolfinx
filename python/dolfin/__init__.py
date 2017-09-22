@@ -140,7 +140,7 @@ from .function.specialfunctions import (FacetNormal, CellSize,
                                         SpatialCoordinate, CellVolume,
                                         Circumradius, FacetArea,
                                         MeshCoordinates)
-from .function.expression import Expression, UserExpression, ExpressionWrapper
+from .function.expression import Expression, UserExpression, CompiledExpression
 
 # experimental
 from .jit.pybind11jit import compile_cpp_code

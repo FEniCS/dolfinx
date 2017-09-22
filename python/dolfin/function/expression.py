@@ -292,7 +292,7 @@ class ExpressionParameters(object):
         for k,v in dict(params).items():
             self[k] = v
 
-class ExpressionWrapper(BaseExpression):
+class CompiledExpression(BaseExpression):
     """Wrap a compiled module of type cpp.Expression"""
 
     def __init__(self, cpp_module=None, **kwargs):
@@ -307,7 +307,7 @@ class ExpressionWrapper(BaseExpression):
         mpi_comm = kwargs.pop("mpi_comm", None)
 
         if not isinstance(cpp_module, cpp.function.Expression):
-            raise RuntimeError("Must supply compiled C++ Expression module to ExpressionWrapper")
+            raise RuntimeError("Must supply compiled C++ Expression module to CompiledExpression")
         else:
             self._cpp_object = cpp_module
 
