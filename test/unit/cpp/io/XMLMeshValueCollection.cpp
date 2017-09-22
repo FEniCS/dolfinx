@@ -25,7 +25,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TEST_CASE("MeshValueCollection IO test", "[meshvaluecollection_io]")
+TEST_CASE("MeshValueCollection IO test", "[!hide][meshvaluecollection_io]")
 {
   // Create mesh and read file
   // Link to the mesh is quite long...
@@ -43,5 +43,6 @@ TEST_CASE("MeshValueCollection IO test", "[meshvaluecollection_io]")
   std::size_t sum = 0;
   for (auto it = values.begin(); it != values.end(); ++it)
     sum += it->second;
+
   CHECK(dolfin::MPI::sum(mesh->mpi_comm(), sum) == (std::size_t) 48);
 }
