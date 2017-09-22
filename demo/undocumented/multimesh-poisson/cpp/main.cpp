@@ -30,15 +30,6 @@
 using namespace dolfin;
 using std::make_shared;
 
-// Source term (right-hand side)
-class Source : public Expression
-{
-  void eval(Array<double>& values, const Array<double>& x) const
-  {
-    values[0] = 1.0;
-  }
-};
-
 // Sub domain for Dirichlet boundary condition
 class DirichletBoundary : public SubDomain
 {
@@ -49,10 +40,9 @@ class DirichletBoundary : public SubDomain
 };
 
 // Compute solution for given mesh configuration
-void solve_poisson(double t,
-                   double x1, double y1,
-                   double x2, double y2,
-                   File& u0_file, File& u1_file, File& u2_file)
+std::shared_ptr<MultiMeshFunction> solve_poisson(double t,
+                                                 double x1, double y1,
+                                                 double x2, double y2)
 {
   // Create meshes
   double r = 0.5;
@@ -77,7 +67,7 @@ void solve_poisson(double t,
   auto L = make_shared<MultiMeshPoisson::MultiMeshLinearForm>(V);
 
   // Attach coefficients
-  auto f = make_shared<Source>();
+  auto f = make_shared<Constant>(1);
   L->f = f;
 
   // Assemble linear system
@@ -92,14 +82,14 @@ void solve_poisson(double t,
   auto bc = make_shared<MultiMeshDirichletBC>(V, zero, boundary);
   bc->apply(*A, *b);
 
+  // Lock inactive dofs
+  V->lock_inactive_dofs(*A, *b);
+
   // Compute solution
   auto u = make_shared<MultiMeshFunction>(V);
   solve(*A, *u->vector(), *b);
 
-  // Save to file
-  u0_file << *u->part(0);
-  u1_file << *u->part(1);
-  u2_file << *u->part(2);
+  return u;
 }
 
 int main(int argc, char* argv[])
@@ -111,14 +101,14 @@ int main(int argc, char* argv[])
   }
 
   // Parameters
-  const double T = 40.0;
-  const std::size_t N = 400;
+  const double T = 10.0;
+  const std::size_t N = 100;
   const double dt = T / N;
 
-  // Files for storing solution
-  File u0_file("u0.pvd");
-  File u1_file("u1.pvd");
-  File u2_file("u2.pvd");
+  // Create files for output
+  XDMFFile f0("output/u0.xdmf");
+  XDMFFile f1("output/u1.xdmf");
+  XDMFFile f2("output/u2.xdmf");
 
   // Iterate over configurations
   for (std::size_t n = 0; n < N; n++)
@@ -133,9 +123,18 @@ int main(int argc, char* argv[])
     const double y2 = sin(t)*cos(2*t);
 
     // Compute solution
-    solve_poisson(t, x1, y1, x2, y2,
-                  u0_file, u1_file, u2_file);
+    std::shared_ptr<MultiMeshFunction> u = solve_poisson(t, x1, y1, x2, y2);
+
+    // Save to file
+    f0.write(*u->part(0), t);
+    f1.write(*u->part(1), t);
+    f2.write(*u->part(2), t);
   }
+
+  // Close files
+  f0.close();
+  f1.close();
+  f2.close();
 
   return 0;
 }

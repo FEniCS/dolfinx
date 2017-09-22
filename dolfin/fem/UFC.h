@@ -105,6 +105,12 @@ namespace dolfin
     const double* const * macro_w() const
     { return macro_w_pointer.data(); }
 
+    /// Pointer to macro element coefficient data. Used to support UFC
+    /// interface. Non-const version.
+    double* * macro_w()
+    { return macro_w_pointer.data(); }
+
+
   private:
 
     // Finite elements for coefficients

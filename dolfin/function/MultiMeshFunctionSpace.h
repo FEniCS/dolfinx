@@ -29,6 +29,9 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/mesh/MultiMesh.h>
 
+#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/GenericVector.h>
+
 namespace dolfin
 {
 
@@ -119,6 +122,16 @@ namespace dolfin
     /// Build multimesh function space. This function uses offsets
     /// computed from the full function spaces on each part.
     void build(const std::vector<dolfin::la_index>& offsets);
+
+    // Lock inactive dofs of a system
+    void lock_inactive_dofs(GenericMatrix &A, GenericVector &b) const;
+
+    // Lock inactive dofs of a matrix
+    //void lock_inactive_dofs(GenericMatrix A) const;
+
+    // Lock inactive dofs of a matrix
+    //void lock_inactive_dofs(GenericVector b) const;
+
 
   private:
 

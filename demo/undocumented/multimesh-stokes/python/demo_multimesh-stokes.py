@@ -16,13 +16,12 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2015-11-11
-# Last changed: 2015-11-24
+# Last changed: 2017-05-25
 #
 # This demo program solves the Stokes equations on a domain defined
 # by three overlapping and non-matching meshes.
 
 from dolfin import *
-import matplotlib.pyplot as plt
 
 if has_pybind11():
     print("Not supported in pybind11")
@@ -56,8 +55,6 @@ multimesh.add(mesh_1)
 multimesh.add(mesh_2)
 multimesh.build()
 
-# FIXME: Tensor algebra not supported for multimesh function spaces
-
 # Create function space
 P2 = VectorElement("Lagrange", triangle, 2)
 P1 = FiniteElement("Lagrange", triangle, 1)
@@ -78,7 +75,8 @@ n = FacetNormal(multimesh)
 h = 2.0*Circumradius(multimesh)
 
 # Parameters
-alpha = 4.0
+alpha = 20.0
+beta = 5.0
 
 def tensor_jump(v, n):
     return outer(v('+'), n('+')) + outer(v('-'), n('-'))
@@ -95,8 +93,9 @@ def b_h(v, q):
 def l_h(v, q, f):
     return inner(f, v)*dX
 
-def s_O(v, w):
-    return inner(jump(grad(v)), jump(grad(w)))*dO
+def s_O(v, q, w, r):
+    return beta/avg(h)**2 * inner(jump(v), jump(w))*dO \
+        +  beta * inner(jump(q), jump(r))*dO
 
 def s_C(v, q, w, r):
     return h*h*inner(-div(grad(v)) + grad(q), -div(grad(w)) - grad(r))*dC
@@ -105,7 +104,7 @@ def l_C(v, q, f):
     return h*h*inner(f, -div(grad(v)) - grad(q))*dC
 
 # Define bilinear form
-a = a_h(u, v) + b_h(v, p) + b_h(u, q) + s_O(u, v) + s_C(u, p, v, q)
+a = a_h(u, v) + b_h(v, p) + b_h(u, q) + s_O(u, p, v, q) + s_C(u, p, v, q)
 
 # Define linear form
 L  = l_h(v, q, f) + l_C(v, q, f)
@@ -137,36 +136,17 @@ bc2 = MultiMeshDirichletBC(Q, outflow_value, outflow_boundary)
 bc0.apply(A, b)
 bc1.apply(A, b)
 bc2.apply(A, b)
+W.lock_inactive_dofs(A, b)
 
 # Compute solution
 w = MultiMeshFunction(W)
 solve(A, w.vector(), b)
 
-# FIXME: w.part(i).split() not working for extracted parts
-# FIXME: since they are only dolfin::Functions
-
-# Extract solution components
-u0 = w.part(0).sub(0)
-u1 = w.part(1).sub(0)
-u2 = w.part(2).sub(0)
-p0 = w.part(0).sub(1)
-p1 = w.part(1).sub(1)
-p2 = w.part(2).sub(1)
-
-# Save to file
-File("u0.pvd") << u0
-File("u1.pvd") << u1
-File("u2.pvd") << u2
-File("p0.pvd") << p0
-File("p1.pvd") << p1
-File("p2.pvd") << p2
-
-# Plot solution
-#plt.figure(); plot(W.multimesh())
-#plt.figure(); plot(u0, title="u_0")
-#plt.figure(); plot(u1, title="u_1")
-#plt.figure(); plot(u2, title="u_2")
-#plt.figure(); plot(p0, title="p_0")
-#plt.figure(); plot(p1, title="p_1")
-#plt.figure(); plot(p2, title="p_2")
-#plt.show()
+# Save solution parts and components to file
+for part in range(3):
+    ufile = XDMFFile("output/u%d.xdmf" % part)
+    pfile = XDMFFile("output/p%d.xdmf" % part)
+    ufile.write(w.part(part).sub(0))
+    pfile.write(w.part(part).sub(1))
+    ufile.close()
+    pfile.close()

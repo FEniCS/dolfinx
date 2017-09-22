@@ -19,7 +19,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2006-06-12
-// Last changed: 2014-06-06
+// Last changed: 2017-09-21
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -192,6 +192,14 @@ namespace dolfin
     /// Assignment operator
     const Point& operator= (const Point& p)
     { _x = {{p._x[0], p._x[1], p._x[2]}}; return *this; }
+
+    /// Equal to operator
+    bool operator== (const Point& p) const
+    { return _x[0] == p._x[0] && _x[1] == p._x[1] && _x[2] == p._x[2]; }
+
+    /// Not equal to operator
+    bool operator!= (const Point& p) const
+    { return !(*this == p); }
 
     /// Compute squared distance to given point
     ///

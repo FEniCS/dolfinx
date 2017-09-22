@@ -1,6 +1,6 @@
 #!/usr/bin/env py.test
 
-"""Unit tests for the CollisionDetection class"""
+"""Unit tests for the CollisionPredicates class"""
 
 # Copyright (C) 2014 Anders Logg and August Johansson
 #
@@ -20,33 +20,30 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2014-02-16
-# Last changed: 2014-05-30
+# Last changed: 2017-09-21
 
 import pytest
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
-import numpy as np
-
 
 @skip_in_parallel
-def create_triangular_mesh_3D():
+def create_triangular_mesh_3D(vertices, cells):
     editor = MeshEditor()
     mesh = Mesh()
-    editor.open(mesh, 'triangle', 2, 3)
+    editor.open(mesh,2,3)
     editor.init_cells(2)
     editor.init_vertices(4)
-    editor.add_cell(0, np.array([0,1,2], dtype='uint'))
-    editor.add_cell(1, np.array([1,2,3], dtype='uint'))
-    editor.add_vertex(0, np.array([0,0,0.5], dtype='float'))
-    editor.add_vertex(1, np.array([1,0,0.5], dtype='float'))
-    editor.add_vertex(2, np.array([0,1,0.5], dtype='float'))
-    editor.add_vertex(3, np.array([1,1,0.5], dtype='float'))
+    editor.add_cell(0, cells[0][0],cells[0][1],cells[0][2])
+    editor.add_cell(1, cells[1][0],cells[1][1],cells[1][2])
+    editor.add_vertex(0, vertices[0])
+    editor.add_vertex(1, vertices[1])
+    editor.add_vertex(2, vertices[2])
+    editor.add_vertex(3, vertices[3])
     editor.close()
     return mesh;
 
-
 @skip_in_parallel
-def test_inteval_collides_point():
+def test_interval_collides_point():
     """Test if point collide with interval"""
 
     mesh = UnitIntervalMesh(1)
@@ -55,6 +52,87 @@ def test_inteval_collides_point():
     assert cell.collides(Point(0.5)) == True
     assert cell.collides(Point(1.5)) == False
 
+@skip_in_parallel
+def test_segment_collides_point_2D():
+    """Test if segment collide with point in 2D"""
+    mesh = Mesh()
+    editor = MeshEditor()
+    editor.open(mesh, 1, 2)
+    editor.init_vertices(2)
+    editor.init_cells(1)
+    a = Point(1./8., 1./4.)
+    b = Point(2./8., 3./4.)
+    editor.add_vertex(0, a)
+    editor.add_vertex(1, b)
+    editor.add_cell(0,0,1)
+    editor.close()
+    cell = Cell(mesh, 0)
+    mid = Point(1.5/8., 2./4.)
+    mid_average = (a + b) / 2
+    assert cell.contains(mid)
+    assert cell.contains(mid_average)
+    assert cell.contains(cell.midpoint())
+
+@skip_in_parallel
+def test_point_on_segment():
+    a = Point(1e-30, 0)
+    b = Point(1e-3, 0)
+    c = Point(0, 0)
+    d = Point(-1e-30, 0)
+    q0 = Point(1, 0)
+    q1 = Point(0, 0)
+    assert CollisionPredicates.collides_segment_point_2d(q0, q1, a)
+    assert CollisionPredicates.collides_segment_point_2d(q0, q1, b)
+    assert CollisionPredicates.collides_segment_point_2d(q0, q1, c)
+    assert not CollisionPredicates.collides_segment_point_2d(q0, q1, d)
+
+@skip_in_parallel
+def test_point_on_small_segment():
+    a = Point(1e-30, 0)
+    b = Point(0, 0)
+    c = Point(1e-31, 0)
+    d = Point(-1e-30, 0)
+    q0 = Point(0, 0)
+    q1 = Point(1e-30, 0)
+    assert CollisionPredicates.collides_segment_point_2d(q0, q1, a)
+    assert CollisionPredicates.collides_segment_point_2d(q0, q1, b)
+    assert CollisionPredicates.collides_segment_point_2d(q0, q1, c)
+    assert not CollisionPredicates.collides_segment_point_2d(q0, q1, d)
+
+@skip_in_parallel
+def test_interior_point_on_segment():
+    a = Point(1e-30, 0)
+    b = Point(0, 0)
+    q0 = Point(1, 0)
+    q1 = Point(0, 0)
+    assert CollisionPredicates.collides_interior_point_segment_2d(q0, q1, a)
+    assert not CollisionPredicates.collides_interior_point_segment_2d(q0, q1, b)
+
+@skip_in_parallel
+def test_interior_point_on_small_segment():
+    a = Point(1e-31, 0)
+    b = Point(0, 0)
+    q0 = Point(1e-30, 0)
+    q1 = Point(0, 0)
+    assert CollisionPredicates.collides_interior_point_segment_2d(q0, q1, a)
+    assert not CollisionPredicates.collides_interior_point_segment_2d(q0, q1, b)
+
+@skip_in_parallel
+def test_segment_collides_point_3D():
+    """Test if segment collide with point in 3D"""
+    mesh = Mesh()
+    editor = MeshEditor()
+    editor.open(mesh, 1, 3)
+    editor.init_vertices(2)
+    editor.init_cells(1)
+    editor.add_vertex(0, 1./16., 1./8., 1./4.)
+    editor.add_vertex(1, 2./16., 3./8., 2./4.)
+    editor.add_cell(0,0,1)
+    editor.close()
+    cell = Cell(mesh, 0)
+    mid = Point(1.5/16., 2./8., 1.5/4.)
+    assert cell.contains(mid)
+    assert cell.contains(cell.midpoint())
 
 @skip_in_parallel
 def test_triangle_collides_point():
@@ -66,17 +144,16 @@ def test_triangle_collides_point():
     assert cell.collides(Point(0.5)) == True
     assert cell.collides(Point(1.5)) == False
 
-
 @skip_in_parallel
-@pytest.mark.xfail(strict=True, raises=RuntimeError)
-def test_quadrilateral_collides_point():
-    """Tests if point collide with triangle"""
+def test_degenerate_triangle_collides_point():
+    """Test a degenerate triangle that does not collide"""
 
-    mesh = UnitQuadMesh.create(1, 1)
-    cell = Cell(mesh, 0)
+    p0 = Point(-0.10950608157830554745,0.14049391842169450806)
+    p1 = Point(-0.10950608157830354905,0.14049391842169650646)
+    p2 = Point(0.32853262580480108168,0.57853262580480113719)
+    q = Point(3.5952674716233090635e-06,0.25000359526747162331)
 
-    assert cell.collides(Point(0.5)) == True
-    assert cell.collides(Point(1.5)) == False
+    assert CollisionPredicates.collides_triangle_point_2d(p0, p1, p2, q) == False
 
 
 @skip_in_parallel
@@ -93,15 +170,60 @@ def test_triangle_collides_triangle():
 
     assert c0.collides(c0) == True
     assert c0.collides(c1) == True
-    # assert c0.collides(c2) == False # touching edges
+    assert c0.collides(c2) == True # touching edges
     assert c1.collides(c0) == True
     assert c1.collides(c1) == True
-    assert c1.collides(c2) == False
-    # assert c2.collides(c0) == False # touching edges
-    assert c2.collides(c1) == False
+    assert c1.collides(c2) == True
+    assert c2.collides(c0) == True # touching edges
+    assert c2.collides(c1) == True
     assert c2.collides(c2) == True
 
 
+@skip_in_parallel
+def test_triangle_triangle_collision() :
+    "Test that has been failing"
+    assert CollisionPredicates.collides_triangle_triangle_2d(Point(0.177432070718943, 0.5),
+                                                             Point(0.176638957524249, 0.509972290857582),
+                                                             Point(0.217189283468892, 0.550522616802225),
+                                                             Point(0.333333333333333, 0.52399308981973),
+                                                             Point(0.333333333333333, 0.666666666666667),
+                                                             Point(0.211774439087554, 0.545107772420888))
+
+
+
+@skip_in_parallel
+def test_triangle_collides_point_3D():
+    """Test if point collide with triangle (inspired by test_manifold_dg0_functions)"""
+    vertices = [ Point(0.0, 0.0, 1.0),
+                 Point(1.0, 1.0, 1.0),
+                 Point(1.0, 0.0, 0.0),
+                 Point(0.0, 1.0, 0.0) ]
+    cells = [ (0, 1, 2),
+              (0, 1, 3) ]
+    mesh = create_triangular_mesh_3D(vertices, cells)
+    points = [ Point(0.0, 0.0, 1.0),
+               Point(1.0, 1.0, 1.0),
+               Point(1.0, 0.0, 0.0),
+               Point(0.0, 1.0, 0.0),
+               Point(0.25, 0.5, 0.75),
+               Point(0.5, 0.25, 0.75)
+              ]
+    A = Cell(mesh, 0)
+    B = Cell(mesh, 1)
+    assert A.collides(points[0]) == True
+    assert B.collides(points[0]) == True
+    assert A.collides(points[1]) == True
+    assert B.collides(points[1]) == True
+    assert A.collides(points[2]) == True
+    assert B.collides(points[2]) == False
+    assert A.collides(points[3]) == False
+    assert B.collides(points[3]) == True
+    assert A.collides(points[4]) == False
+    assert B.collides(points[4]) == True
+    assert A.collides(points[5]) == True
+    assert B.collides(points[5]) == False
+
+#@pytest.mark.skipif(True, reason="Not implemented in 3D")
 @skip_in_parallel
 def test_tetrahedron_collides_point():
     """Test if point collide with tetrahedron"""
@@ -112,29 +234,22 @@ def test_tetrahedron_collides_point():
     assert cell.collides(Point(0.5)) == True
     assert cell.collides(Point(1.5)) == False
 
-
 @skip_in_parallel
-@pytest.mark.xfail(strict=True, raises=RuntimeError)
-def test_hexahedron_collides_point():
-    """Test if point collide with hexahedron"""
-
-    mesh = UnitHexMesh.create(1, 1, 1)
-    cell = Cell(mesh, 0)
-
-    assert cell.collides(Point(0.5)) == True
-    # FIXME: cell.collides(Point) returns True for any 1D, 2D Point
-    # cell.collides(Point) returns False if Point[2] != 0
-    assert cell.collides(Point(1.5)) == False
-
-
-@skip_in_parallel
+#@pytest.mark.skipif(True, reason="Not implemented in 3D")
 def test_tetrahedron_collides_triangle():
     """Test if point collide with tetrahedron"""
 
     tetmesh = UnitCubeMesh(2, 2, 2)
-    trimesh = create_triangular_mesh_3D()
+    vertices = [ Point(0, 0, 0.5),
+                 Point(1, 0, 0.5),
+                 Point(0, 1, 0.5),
+                 Point(1, 1, 0.5) ]
+    cells = [ (0, 1, 2),
+              (1, 2, 3) ]
+
+    trimesh = create_triangular_mesh_3D(vertices, cells)
     dx = Point(0.1, 0.1, -0.1)
-    trimesh_shift = create_triangular_mesh_3D()
+    trimesh_shift = create_triangular_mesh_3D(vertices, cells)
     trimesh_shift.translate(dx)
 
     tet0 = Cell(tetmesh, 18)
@@ -156,8 +271,8 @@ def test_tetrahedron_collides_triangle():
     assert tet1.collides(tri0) == True
     assert tri0.collides(tet1) == True
 
-
 @skip_in_parallel
+#@pytest.mark.skipif(True, reason="Not implemented in 3D")
 def test_tetrahedron_collides_tetrahedron():
     """Test if point collide with tetrahedron"""
 
@@ -192,48 +307,3 @@ def test_tetrahedron_collides_tetrahedron():
     # touching faces
     assert c3.collides(c43) == True
     assert c43.collides(c3) == True
-
-
-def _test_collision_robustness_2d(aspect, y, step):
-    nx = 10
-    ny = int(aspect*nx)
-    mesh = UnitSquareMesh(nx, ny, 'crossed')
-    bb = mesh.bounding_box_tree()
-
-    x = 0.0
-    p = Point(x, y)
-    while x <= 1.0:
-        c = bb.compute_first_entity_collision(Point(x, y))
-        assert c < np.uintc(-1)
-        x += step
-
-def _test_collision_robustness_3d(aspect, y, z, step):
-    nx = nz = 10
-    ny = int(aspect*nx)
-    mesh = UnitCubeMesh(nx, ny, nz)
-    bb = mesh.bounding_box_tree()
-
-    x = 0.0
-    while x <= 1.0:
-        c = bb.compute_first_entity_collision(Point(x, y, z))
-        assert c < np.uintc(-1)
-        x += step
-
-@skip_in_parallel
-@pytest.mark.slow
-def test_collision_robustness_slow():
-    """Test cases from https://bitbucket.org/fenics-project/dolfin/issue/296"""
-    _test_collision_robustness_2d( 100, 1e-14,       1e-5)
-    _test_collision_robustness_2d(  40, 1e-03,       1e-5)
-    _test_collision_robustness_2d( 100, 0.5 + 1e-14, 1e-5)
-    _test_collision_robustness_2d(4.43, 0.5,      4.03e-6)
-    _test_collision_robustness_3d( 100, 1e-14, 1e-14, 1e-5)
-
-@skip_in_parallel
-@pytest.mark.skipif(True, reason='Very slow test cases')
-def test_collision_robustness_very_slow():
-    """Test cases from https://bitbucket.org/fenics-project/dolfin/issue/296"""
-    _test_collision_robustness_2d(  10, 1e-16,       1e-7)
-    _test_collision_robustness_2d(4.43, 1e-17,    4.03e-6)
-    _test_collision_robustness_2d(  40, 0.5,         1e-6)
-    _test_collision_robustness_2d(  10, 0.5 + 1e-16, 1e-7)

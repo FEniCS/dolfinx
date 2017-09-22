@@ -129,6 +129,8 @@ def main():
        os.path.join(demodir, 'undocumented', 'mplot',                       'cpp'),
        os.path.join(demodir, 'undocumented', 'plot',                        'cpp'),
        os.path.join(demodir, 'undocumented', 'coordinates',                 'cpp'),
+       os.path.join(demodir, 'undocumented', 'multimesh-quadrature',        'cpp'),
+       os.path.join(demodir, 'undocumented', 'multimesh-3d',                'cpp'),       
        os.path.join(demodir, 'documented',   'stokes-mini',                 'cpp'),
        os.path.join(demodir, 'documented',   'tensor-weighted-poisson',     'cpp'),
        os.path.join(demodir, 'documented',   'subdomains-poisson',          'cpp'),

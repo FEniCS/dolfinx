@@ -1,8 +1,8 @@
 #!/usr/bin/env py.test
 
-"""Unit tests for intersection computation"""
+"""Unit tests for multimesh volume computation"""
 
-# Copyright (C) 2013 Anders Logg
+# Copyright (C) 2016 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -19,8 +19,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2013-12-09
-# Last changed: 2014-05-30
+# First added:  2016-05-03
+# Last changed: 2016-11-16
 
 from __future__ import print_function
 import pytest
@@ -28,26 +28,15 @@ import pytest
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
 
+from math import pi, sin, cos
 
 @skip_in_parallel
-def test_issue_97():
-    "Test from Mikael Mortensen (issue #97)"
+def test_multimesh_init_1():
+  mm = MultiMesh()
+  mesh0 = UnitSquareMesh(1, 1)
+  mesh1 = RectangleMesh(Point(0,0), Point(2,0.5), 1, 1)
+  mm.add(mesh0)
+  mm.add(mesh1)
+  mm.build(2)
 
-    N = 2
-    L = 1000
-    mesh = BoxMesh(Point(0, 0, 0), Point(L, L, L), N, N, N)
-    V = FunctionSpace(mesh, 'CG', 1)
-    v = interpolate(Expression('x[0]', degree=1), V)
-    x = Point(0.5*L, 0.5*L, 0.5*L)
-    vx = v(x)
-
-
-@skip_in_parallel
-def test_issue_168():
-    "Test from Torsten Wendav (issue #168)"
-
-    mesh = UnitCubeMesh(14, 14, 14)
-    V = FunctionSpace(mesh, "Lagrange", 1)
-    v = Function(V)
-    x = (0.75, 0.25, 0.125)
-    vx = v(x)
+  return 1 == 1

@@ -89,6 +89,13 @@ namespace dolfin
                          std::size_t part,
                          std::string method="topological");
 
+    /// Copy constructor. Either cached DOF data are copied.
+    ///
+    /// *Arguments*
+    ///     bc (_MultiMeshDirichletBC_)
+    ///         The object to be copied.
+    MultiMeshDirichletBC(const MultiMeshDirichletBC& bc);
+
     /// Destructor
     ~MultiMeshDirichletBC();
 
@@ -134,6 +141,15 @@ namespace dolfin
                GenericVector& b,
                const GenericVector& x) const;
 
+    /// Zero the rows in a matrix A corresponding to boundary dofs
+    ///
+    /// @param     A (_GenericMatrix_)
+    ///         The matrix to zero rows in.
+    void zero(GenericMatrix& A) const;
+
+    /// Set value to 0.0
+    void homogenize();
+
   private:
 
     // Subclass of SubDomain wrapping user-defined subdomain
@@ -172,7 +188,7 @@ namespace dolfin
     };
 
     // List of boundary conditions for parts
-    std::vector<std::shared_ptr<const DirichletBC>> _bcs;
+    std::vector<std::shared_ptr<DirichletBC>> _bcs;
 
     // Wrapper of user-defined subdomain
     mutable std::shared_ptr<MultiMeshSubDomain> _sub_domain;

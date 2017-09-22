@@ -250,6 +250,9 @@ namespace dolfin
     {  set(&value, 1, &ij.first, 1, &ij.second); }
 
     /// Insert one on the diagonal for all zero rows
+    virtual void ident_zeros(double tol);
+
+    /// Insert one on the diagonal for all zero rows
     virtual void ident_zeros();
 
   };
