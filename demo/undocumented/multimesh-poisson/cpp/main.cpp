@@ -82,7 +82,7 @@ std::shared_ptr<MultiMeshFunction> solve_poisson(double t,
   auto bc = make_shared<MultiMeshDirichletBC>(V, zero, boundary);
   bc->apply(*A, *b);
 
-  // Remove inactive dofs
+  // Lock inactive dofs
   V->lock_inactive_dofs(*A, *b);
 
   // Compute solution

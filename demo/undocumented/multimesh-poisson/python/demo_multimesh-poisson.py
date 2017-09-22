@@ -88,7 +88,7 @@ def solve_poisson(t, x1, y1, x2, y2):
     bc = MultiMeshDirichletBC(V, zero, boundary)
     bc.apply(A, b)
 
-    # Remove inactive dofs
+    # Lock inactive dofs
     V.lock_inactive_dofs(A, b)
 
     # Compute solution
