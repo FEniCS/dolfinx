@@ -71,7 +71,8 @@ n = FacetNormal(multimesh)
 h = 2.0*Circumradius(multimesh)
 
 # Parameters
-alpha = 10.0
+alpha = 20.0
+beta = 5.0
 
 def tensor_jump(v, n):
     return outer(v('+'), n('+')) + outer(v('-'), n('-'))
@@ -88,8 +89,9 @@ def b_h(v, q):
 def l_h(v, q, f):
     return inner(f, v)*dX
 
-def s_O(v, w):
-    return inner(jump(grad(v)), jump(grad(w)))*dO
+def s_O(v, q, w, r):
+    return beta/avg(h)**2 * inner(jump(v), jump(w))*dO \
+        +  beta * inner(jump(q), jump(r))*dO
 
 def s_C(v, q, w, r):
     return h*h*inner(-div(grad(v)) + grad(q), -div(grad(w)) - grad(r))*dC
@@ -98,7 +100,7 @@ def l_C(v, q, f):
     return h*h*inner(f, -div(grad(v)) - grad(q))*dC
 
 # Define bilinear form
-a = a_h(u, v) + b_h(v, p) + b_h(u, q) + s_O(u, v) + s_C(u, p, v, q)
+a = a_h(u, v) + b_h(v, p) + b_h(u, q) + s_O(u, p, v, q) + s_C(u, p, v, q)
 
 # Define linear form
 L  = l_h(v, q, f) + l_C(v, q, f)
@@ -130,6 +132,7 @@ bc2 = MultiMeshDirichletBC(Q, outflow_value, outflow_boundary)
 bc0.apply(A, b)
 bc1.apply(A, b)
 bc2.apply(A, b)
+W.lock_inactive_dofs(A, b)
 
 # Compute solution
 w = MultiMeshFunction(W)
