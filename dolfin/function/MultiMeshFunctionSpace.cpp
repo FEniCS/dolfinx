@@ -39,7 +39,13 @@ MultiMeshFunctionSpace::MultiMeshFunctionSpace(std::shared_ptr<const MultiMesh> 
   : _multimesh(multimesh),
     _dofmap(new MultiMeshDofMap())
 {
-  // Do nothing
+  // Check that multimesh has been built
+  if (!multimesh->is_built())
+  {
+    dolfin_error("MultiMeshFunctionSpace.cpp",
+		 "create multimesh function space",
+		 "Multimesh has not been built; did you forget to call multimesh.build()?");
+  }
 }
 //-----------------------------------------------------------------------------
 MultiMeshFunctionSpace::~MultiMeshFunctionSpace()

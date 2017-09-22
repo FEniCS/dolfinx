@@ -333,6 +333,9 @@ namespace dolfin
     /// Build multimesh
     void build(std::size_t quadrature_order=2);
 
+    /// Check whether multimesh has been built
+    bool is_built() const { return _is_built; }
+    
     /// Clear multimesh
     void clear();
 
@@ -361,9 +364,11 @@ namespace dolfin
     std::string plot_matplotlib(double delta_z=1,
 				const std::string& filename="") const;
 
-
   private:
 
+    // Flag for whether multimesh has been built
+    bool _is_built;
+    
     // List of meshes
     std::vector<std::shared_ptr<const Mesh> > _meshes;
 

@@ -40,14 +40,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MultiMesh::MultiMesh()
+MultiMesh::MultiMesh() : _is_built(false)
 {
   // Set parameters
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 MultiMesh::MultiMesh(std::vector<std::shared_ptr<const Mesh>> meshes,
-                     std::size_t quadrature_order)
+                     std::size_t quadrature_order) : _is_built(false)
 {
   // Set parameters
   parameters = default_parameters();
@@ -59,7 +59,7 @@ MultiMesh::MultiMesh(std::vector<std::shared_ptr<const Mesh>> meshes,
 }
 //-----------------------------------------------------------------------------
 MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
-                     std::size_t quadrature_order)
+                     std::size_t quadrature_order) : _is_built(false)
 {
   // Set parameters
   parameters = default_parameters();
@@ -71,7 +71,7 @@ MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
 //-----------------------------------------------------------------------------
 MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
                      std::shared_ptr<const Mesh> mesh_1,
-                     std::size_t quadrature_order)
+                     std::size_t quadrature_order) : _is_built(false)
 {
   // Set parameters
   parameters = default_parameters();
@@ -85,7 +85,7 @@ MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
 MultiMesh::MultiMesh(std::shared_ptr<const Mesh> mesh_0,
                      std::shared_ptr<const Mesh> mesh_1,
                      std::shared_ptr<const Mesh> mesh_2,
-                     std::size_t quadrature_order)
+                     std::size_t quadrature_order) : _is_built(false)
 {
   // Set parameters
   parameters = default_parameters();
@@ -264,6 +264,9 @@ void MultiMesh::build(std::size_t quadrature_order)
   // TODO: Maybe also keep track of interface cells
   // _impose_cut_cell_consistency();
 
+  // Mark space as built
+  _is_built = true;
+  
   end();
 }
 //-----------------------------------------------------------------------------
