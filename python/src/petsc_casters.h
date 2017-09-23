@@ -23,6 +23,7 @@
 
 #ifdef HAS_PETSC
 #include <petscksp.h>
+#include <petscmat.h>
 #include <petscdm.h>
 
 #ifdef HAS_PETSC4PY
@@ -32,10 +33,48 @@
 
 // pybind11 casters for PETSc/petsc4py objects
 
+// FIXME: Create a macro for casting code
+
 namespace pybind11
 {
   namespace detail
   {
+    template <> class type_caster<_p_Mat>
+    {
+    public:
+      PYBIND11_TYPE_CASTER(Mat, _("mat"));
+
+      // Pass communicator from Python to C++
+      bool load(handle src, bool)
+      {
+        // FIXME: check reference counting
+        //std::cout << "Py to c++" << std::endl;
+        #ifdef HAS_PETSC4PY
+        value = PyPetscMat_Get(src.ptr());
+        return true;
+        #else
+        throw std::runtime_error("DOLFIN has not been configured with petsc4py. Accessing underlying PETSc object requires petsc4py");
+        return false;
+        #endif
+      }
+
+      // Cast from C++ to Python (cast to pointer)
+      static handle cast(Mat src, pybind11::return_value_policy policy, handle parent)
+      {
+        // FIXME: check reference counting
+        #ifdef HAS_PETSC4PY
+        std::cout << "C++ to Python" << std::endl;
+        return pybind11::handle(PyPetscMat_New(src));
+        #else
+        throw std::runtime_error("DOLFIN has not been configured with petsc4py. Accessing underlying PETSc object requires petsc4py");
+        return handle();
+        #endif
+      }
+
+      operator Mat()
+      { return value; }
+    };
+
     template <> class type_caster<_p_KSP>
     {
     public:

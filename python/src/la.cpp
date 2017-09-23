@@ -65,6 +65,8 @@
 #include <dolfin/la/VectorSpaceBasis.h>
 #include <dolfin/la/test_nullspace.h>
 
+#include <petsc4py/petsc4py.h>
+
 namespace py = pybind11;
 
 namespace
@@ -83,16 +85,18 @@ namespace
 
 namespace dolfin_wrappers
 {
+  // TODO: Expose PETScLinearOperator
 
   using RowMatrixXd = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
   void la(py::module& m)
   {
-#ifdef HAS_PETSC4PY
+
+    //#ifdef HAS_PETSC4PY
     int ierr = import_petsc4py();
     if (ierr != 0)
       throw std::runtime_error("Failed to import petsc4py");
-#endif
+    //#endif
 
     // dolfin::IndexMap
     py::class_<dolfin::IndexMap, std::shared_ptr<dolfin::IndexMap>> index_map(m, "IndexMap");
@@ -785,11 +789,13 @@ namespace dolfin_wrappers
       .def(py::init<MPI_Comm, std::size_t>())
       .def("get_options_prefix", &dolfin::PETScVector::get_options_prefix)
       .def("set_options_prefix", &dolfin::PETScVector::set_options_prefix)
-      .def("update_ghost_values", &dolfin::PETScVector::update_ghost_values);
+      .def("update_ghost_values", &dolfin::PETScVector::update_ghost_values)
+      .def("vec", &dolfin::PETScMatrix::vec, "Return underlying PETSc Vec object");
 
     // dolfin::PETScBaseMatrix
     py::class_<dolfin::PETScBaseMatrix, std::shared_ptr<dolfin::PETScBaseMatrix>,
-               dolfin::PETScObject, dolfin::Variable>(m, "PETScBaseMatrix");
+               dolfin::PETScObject, dolfin::Variable>(m, "PETScBaseMatrix")
+      .def("mat", &dolfin::PETScBaseMatrix::mat, "Return underlying PETSc Mat object");
 
     // dolfin::PETScMatrix
     py::class_<dolfin::PETScMatrix, std::shared_ptr<dolfin::PETScMatrix>,

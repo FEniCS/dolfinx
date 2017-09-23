@@ -15,6 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+#include <iostream>
+
+//#ifdef HAS_PETSC4PY
+#include <petsc4py/petsc4py.h>
+//#endif
 #include <pybind11/pybind11.h>
 #include <dolfin/log/log.h>
 
@@ -51,6 +56,13 @@ namespace dolfin_wrappers
 
 PYBIND11_MODULE(cpp, m)
 {
+  //#ifdef HAS_PETSC4PY
+  //int ierr = import_petsc4py();
+  //std::cout << "*************" << std::endl;
+  //if (ierr != 0)
+  //  throw std::runtime_error("Error importing petsc4py from pybind11 layer.");
+  //#endif
+
   // Create module for C++ wrappers
   m.doc() ="DOLFIN Python interface";
 
