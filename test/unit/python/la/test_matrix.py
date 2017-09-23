@@ -270,6 +270,8 @@ class TestMatrixForAnyBackend:
     @skip_in_parallel
     def test_ident(self, use_backend, any_backend):
         self.backend, self.sub_backend = any_backend
+        if self.backend == 'Tpetra':
+            pytest.skip()
         A, B = self.assemble_matrices(use_backend)
         N, M = A.size(0), A.size(1)
 
@@ -342,6 +344,8 @@ class TestMatrixForAnyBackend:
     @skip_in_parallel
     def test_get_set(self, use_backend, any_backend):
         self.backend, self.sub_backend = any_backend
+        if self.backend == 'Tpetra':
+            pytest.skip()
         A, B = self.assemble_matrices(use_backend)
         N, M = A.size(0), A.size(1)
 

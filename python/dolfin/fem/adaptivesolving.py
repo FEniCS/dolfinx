@@ -207,9 +207,7 @@ def generate_error_control_forms(problem, goal):
             assert len(form.ufl_domains()) == 1, "Error control got as input a form with more than one domain!"
 
     else:
-        cpp.dolfin_error("adaptivesolving.py",
-                         "generate forms required for error control",
-                         "Unknown problem type (\"%s\")" % str(problem))
+        raise RuntimeError("Generate forms required for error control. Unknown problem type (\"{}\")".format(problem))
 
     # Extract unknown Function from problem
     u = problem.u_ufl
