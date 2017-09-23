@@ -43,7 +43,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 # Check for petsc4py
 find_package(PETSc4py)
 if (PETSC4PY_FOUND)
-  message("************: ${PETSC4PY_INCLUDE_DIRS}")
   target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIRS})
   #target_compile_definitions(cpp PRIVATE HAS_PETSC4PY)
 endif()

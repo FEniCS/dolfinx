@@ -24,6 +24,7 @@
 #ifdef HAS_PETSC
 #include <petscksp.h>
 #include <petscmat.h>
+#include <petscvec.h>
 #include <petscdm.h>
 
 #ifdef HAS_PETSC4PY
@@ -39,6 +40,42 @@ namespace pybind11
 {
   namespace detail
   {
+    template <> class type_caster<_p_Vec>
+    {
+    public:
+      PYBIND11_TYPE_CASTER(Vec, _("vec"));
+
+      // Pass communicator from Python to C++
+      bool load(handle src, bool)
+      {
+        // FIXME: check reference counting
+        //std::cout << "Py to c++" << std::endl;
+        #ifdef HAS_PETSC4PY
+        value = PyPetscVec_Get(src.ptr());
+        return true;
+        #else
+        throw std::runtime_error("DOLFIN has not been configured with petsc4py. Accessing underlying PETSc object requires petsc4py");
+        return false;
+        #endif
+      }
+
+      // Cast from C++ to Python (cast to pointer)
+      static handle cast(Vec src, pybind11::return_value_policy policy, handle parent)
+      {
+        // FIXME: check reference counting
+        #ifdef HAS_PETSC4PY
+        std::cout << "C++ to Python" << std::endl;
+        return pybind11::handle(PyPetscVec_New(src));
+        #else
+        throw std::runtime_error("DOLFIN has not been configured with petsc4py. Accessing underlying PETSc object requires petsc4py");
+        return handle();
+        #endif
+      }
+
+      operator Vec()
+      { return value; }
+    };
+
     template <> class type_caster<_p_Mat>
     {
     public:

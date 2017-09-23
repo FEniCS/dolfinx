@@ -94,6 +94,7 @@ namespace dolfin_wrappers
 
     //#ifdef HAS_PETSC4PY
     int ierr = import_petsc4py();
+    std::cout << "*** testing: " << ierr << std::endl;
     if (ierr != 0)
       throw std::runtime_error("Failed to import petsc4py");
     //#endif
@@ -790,7 +791,7 @@ namespace dolfin_wrappers
       .def("get_options_prefix", &dolfin::PETScVector::get_options_prefix)
       .def("set_options_prefix", &dolfin::PETScVector::set_options_prefix)
       .def("update_ghost_values", &dolfin::PETScVector::update_ghost_values)
-      .def("vec", &dolfin::PETScMatrix::vec, "Return underlying PETSc Vec object");
+      .def("vec", &dolfin::PETScVector::vec, "Return underlying PETSc Vec object");
 
     // dolfin::PETScBaseMatrix
     py::class_<dolfin::PETScBaseMatrix, std::shared_ptr<dolfin::PETScBaseMatrix>,
