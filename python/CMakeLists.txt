@@ -37,6 +37,7 @@ pybind11_add_module(cpp SHARED
 # Add DOLFIN libraries and other config
 target_link_libraries(cpp PRIVATE pybind11::module dolfin)
 
+# Add to CMake earch path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -44,7 +45,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 find_package(PETSc4py)
 if (PETSC4PY_FOUND)
   target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIRS})
-  #target_compile_definitions(cpp PRIVATE HAS_PETSC4PY)
+  target_compile_definitions(cpp PRIVATE HAS_PETSC4PY)
 endif()
 
 #find_package(MPI4PY)
