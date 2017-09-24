@@ -21,9 +21,11 @@ SpecialFunctions.h).
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ["MeshCoordinates", "FacetArea", "FacetNormal", "CellSize",
+__all__ = ["MeshCoordinates", "FacetArea", "FacetNormal",
            "CellVolume", "SpatialCoordinate", "CellNormal",
-           "Circumradius", "MinFacetEdgeLength", "MaxFacetEdgeLength"]
+           "CellDiameter", "CellSize", "Circumradius",
+           "MinCellEdgeLength", "MaxCellEdgeLength",
+           "MinFacetEdgeLength", "MaxFacetEdgeLength"]
 
 import ufl
 import dolfin.cpp as cpp
@@ -84,8 +86,7 @@ class FacetArea(BaseExpression):
 
 # Simple definition of FacetNormal via UFL
 def FacetNormal(mesh):
-    """
-    Return symbolic facet normal for given mesh.
+    """Return symbolic facet normal for given mesh.
 
     *Arguments*
         mesh
@@ -105,8 +106,11 @@ def FacetNormal(mesh):
 
 
 # Simple definition of CellSize via UFL
-def CellSize(mesh):
-    """Return function cell size for given mesh.
+def CellDiameter(mesh):
+    """Return function cell diameter for given mesh.
+
+    Note that diameter of cell :math:`K` is defined as
+    :math:`\sup_{\mathbf{x,y}\in K} |\mathbf{x-y}|`.
 
     *Arguments*
         mesh
@@ -117,10 +121,39 @@ def CellSize(mesh):
         .. code-block:: python
 
             mesh = UnitSquare(4,4)
-            h = CellSize(mesh)
+            h = CellDiameter(mesh)
 
     """
 
+    return ufl.CellDiameter(_mesh2domain(mesh))
+
+
+# Simple definition of CellSize via UFL
+def CellSize(mesh):
+    """Return function twice the cell circumradius for given
+    mesh.
+
+    This does not generalize to quadrilateral/hexahedral cells
+    and the function name is misleading. The function is hence
+    deprecated. Use ``CellDiameter`` (or ``2*Circumradius`` if
+    you really want that).
+
+    *Arguments*
+        mesh
+            a :py:class:`Mesh <dolfin.cpp.Mesh>`.
+
+    *Example of usage*
+
+        .. code-block:: python
+
+            mesh = UnitSquare(4,4)
+            D = CellSize(mesh)
+
+    """
+
+    cpp.deprecation("\"CellSize\"",
+                    "2017.2.0",
+                    "Use \"CellDiameter\" or \"2*Circumradius\".")
     return 2.0*ufl.Circumradius(_mesh2domain(mesh))
 
 
@@ -157,7 +190,7 @@ def SpatialCoordinate(mesh):
         .. code-block:: python
 
             mesh = UnitSquare(4,4)
-            vol = SpatialCoordinate(mesh)
+            x = SpatialCoordinate(mesh)
 
     """
 
@@ -177,7 +210,7 @@ def CellNormal(mesh):
         .. code-block:: python
 
             mesh = UnitSquare(4,4)
-            vol = CellNormal(mesh)
+            n = CellNormal(mesh)
 
     """
 
@@ -197,17 +230,56 @@ def Circumradius(mesh):
         .. code-block:: python
 
             mesh = UnitSquare(4,4)
-            vol = Circumradius(mesh)
+            R = Circumradius(mesh)
 
     """
 
     return ufl.Circumradius(_mesh2domain(mesh))
 
+# Simple definition of MinCellEdgeLength via UFL
+def MinCellEdgeLength(mesh):
+    """Return symbolic minimum cell edge length of a cell
+    for given mesh.
+
+    *Arguments*
+        mesh
+            a :py:class:`Mesh <dolfin.cpp.Mesh>`.
+
+    *Example of usage*
+
+        .. code-block:: python
+
+            mesh = UnitSquare(4,4)
+            mince = MinCellEdgeLength(mesh)
+
+    """
+
+    return ufl.MinCellEdgeLength(_mesh2domain(mesh))
+
+# Simple definition of MaxCellEdgeLength via UFL
+def MaxCellEdgeLength(mesh):
+    """Return symbolic maximum cell edge length of a cell
+    for given mesh.
+
+    *Arguments*
+        mesh
+            a :py:class:`Mesh <dolfin.cpp.Mesh>`.
+
+    *Example of usage*
+
+        .. code-block:: python
+
+            mesh = UnitSquare(4,4)
+            maxce = MaxCellEdgeLength(mesh)
+
+    """
+
+    return ufl.MaxCellEdgeLength(_mesh2domain(mesh))
 
 # Simple definition of MinFacetEdgeLength via UFL
 def MinFacetEdgeLength(mesh):
-    """Return symbolic minimum facet edge length of a cell for given
-    mesh.
+    """Return symbolic minimum facet edge length of a cell
+    for given mesh.
 
     *Arguments*
         mesh
@@ -227,8 +299,8 @@ def MinFacetEdgeLength(mesh):
 
 # Simple definition of MaxFacetEdgeLength via UFL
 def MaxFacetEdgeLength(mesh):
-    """
-    Return symbolic maximum facet edge length of a cell for given mesh.
+    """Return symbolic maximum facet edge length of a cell
+    for given mesh.
 
     *Arguments*
         mesh
@@ -239,7 +311,7 @@ def MaxFacetEdgeLength(mesh):
         .. code-block:: python
 
             mesh = UnitSquare(4,4)
-            vol = MaxFacetEdgeLength(mesh)
+            maxfe = MaxFacetEdgeLength(mesh)
 
     """
 
