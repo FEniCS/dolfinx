@@ -16,10 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
-
-//#ifdef HAS_PETSC4PY
-#include <petsc4py/petsc4py.h>
-//#endif
 #include <pybind11/pybind11.h>
 #include <dolfin/log/log.h>
 

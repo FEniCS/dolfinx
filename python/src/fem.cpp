@@ -25,7 +25,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/cast.h>
 
-#ifdef HAS_PETSC4PY
+#ifdef HAS_PYBIND11_PETSC4PY
 #include <petsc4py/petsc4py.h>
 #endif
 
@@ -65,7 +65,7 @@ namespace dolfin_wrappers
 {
   void fem(py::module& m)
   {
-    #ifdef HAS_PETSC4PY
+    #ifdef HAS_PYBIND11_PETSC4PY
     // Import petsc4py (to support return petsc4py objects)
     int ierr = import_petsc4py();
     if (ierr != 0)

@@ -27,7 +27,7 @@
 #include <petscvec.h>
 #include <petscdm.h>
 
-#ifdef HAS_PETSC4PY
+#ifdef HAS_PYBIND11_PETSC4PY
 #include <petsc4py/petsc4py.h>
 #endif
 
@@ -50,7 +50,7 @@ namespace pybind11
       {
         // FIXME: check reference counting
         //std::cout << "Py to c++" << std::endl;
-        #ifdef HAS_PETSC4PY
+        #ifdef HAS_PYBIND11_PETSC4PY
         value = PyPetscVec_Get(src.ptr());
         return true;
         #else
@@ -63,7 +63,7 @@ namespace pybind11
       static handle cast(Vec src, pybind11::return_value_policy policy, handle parent)
       {
         // FIXME: check reference counting
-        #ifdef HAS_PETSC4PY
+        #ifdef HAS_PYBIND11_PETSC4PY
         std::cout << "C++ to Python" << std::endl;
         return pybind11::handle(PyPetscVec_New(src));
         #else
@@ -86,7 +86,7 @@ namespace pybind11
       {
         // FIXME: check reference counting
         //std::cout << "Py to c++" << std::endl;
-        #ifdef HAS_PETSC4PY
+        #ifdef HAS_PYBIND11_PETSC4PY
         value = PyPetscMat_Get(src.ptr());
         return true;
         #else
@@ -99,7 +99,7 @@ namespace pybind11
       static handle cast(Mat src, pybind11::return_value_policy policy, handle parent)
       {
         // FIXME: check reference counting
-        #ifdef HAS_PETSC4PY
+        #ifdef HAS_PYBIND11_PETSC4PY
         std::cout << "C++ to Python" << std::endl;
         return pybind11::handle(PyPetscMat_New(src));
         #else
@@ -122,7 +122,7 @@ namespace pybind11
       {
         // FIXME: check reference counting
         //std::cout << "Py to c++" << std::endl;
-        #ifdef HAS_PETSC4PY
+        #ifdef HAS_PYBIND11_PETSC4PY
         value = PyPetscKSP_Get(src.ptr());
         return true;
         #else
@@ -135,7 +135,7 @@ namespace pybind11
       static handle cast(KSP src, pybind11::return_value_policy policy, handle parent)
       {
         // FIXME: check reference counting
-        #ifdef HAS_PETSC4PY
+        #ifdef HAS_PYBIND11_PETSC4PY
         //std::cout << "C++ to Python" << std::endl;
         return pybind11::handle(PyPetscKSP_New(src));
         #else
@@ -157,7 +157,7 @@ namespace pybind11
       bool load(handle src, bool)
       {
         // FIXME: check reference counting
-        #ifdef HAS_PETSC4PY
+        #ifdef HAS_PYBIND11_PETSC4PY
         //std::cout << "Py to C++ (DM)" << std::endl;
         value = PyPetscDM_Get(src.ptr());
         //std::cout << "Returning" << std::endl;
@@ -173,7 +173,7 @@ namespace pybind11
       static handle cast(DM src, pybind11::return_value_policy policy, handle parent)
       {
         // FIXME: check reference counting
-        #ifdef HAS_PETSC4PY
+        #ifdef HAS_PYBIND11_PETSC4PY
         //std::cout << "C++ to Python (DM)" << std::endl;
         return pybind11::handle(PyPetscDM_New(src));
         #else

@@ -60,7 +60,7 @@ namespace dolfin_wrappers
     m.def("has_slepc", &dolfin::has_slepc, "Return `True` if DOLFIN is configured with SLEPc");
     m.def("has_petsc4py", []()
           {
-            #ifdef HAS_PETSC4PY
+            #ifdef HAS_PYBIND11_PETSC4PY
             return true;
             #else
             return false;
@@ -68,7 +68,7 @@ namespace dolfin_wrappers
           }, "Return `True` if DOLFIN is configured with petsc4py");
     m.def("has_slepc4py", []()
           {
-            #ifdef HAS_SLEPC4PY
+            #ifdef HAS_PYBIND11_SLEPC4PY
             return true;
             #else
             return false;
