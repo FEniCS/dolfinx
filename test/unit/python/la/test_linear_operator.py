@@ -80,8 +80,8 @@ def test_linear_operator(backend):
         u = Function(V)
         a_action = action(a, coefficient=u)
         O = MyLinearOperator(a_action, u)
-        O = _as_backend_type(O)
-        solve(O, x, b, "gmres", "none")
+        Ob = _as_backend_type(O)
+        solve(Ob, x, b, "gmres", "none")
         norm_action = norm(x, "l2")
 
         # Check at least that petsc4py interface is available

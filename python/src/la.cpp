@@ -83,12 +83,33 @@ namespace
       if (_x < 0 or !(_x < local_size))
         throw py::index_error("Vector index out of range");
     }
-  }
+  };
+
+  // dolfin::GenericLinearOperator trampoline class
+  template<typename LinearOperatorBase>
+  class PyLinearOperator : public LinearOperatorBase
+  {
+    using LinearOperatorBase::LinearOperatorBase;
+
+    // pybdind11 has some issues when passing by reference (due to
+    // the return value policy), so the below is non-standard.  See
+    // https://github.com/pybind/pybind11/issues/250.
+
+    std::size_t size(std::size_t dim) const
+    {
+      PYBIND11_OVERLOAD_PURE(std::size_t, LinearOperatorBase, size, );
+    }
+
+    void mult(const dolfin::GenericVector& x, dolfin::GenericVector& y) const
+    {
+      PYBIND11_OVERLOAD_INT(void, LinearOperatorBase, "mult", &x, &y);
+      py::pybind11_fail("Tried to call pure virtual function LinearOpertor::mult");
+    }
+  };
 }
 
 namespace dolfin_wrappers
 {
-
   using RowMatrixXd = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
   void la(py::module& m)
@@ -188,34 +209,10 @@ namespace dolfin_wrappers
                dolfin::Variable>(m, "LinearAlgebraObject")
       .def("mpi_comm", &dolfin::LinearAlgebraObject::mpi_comm);
 
-    class PyGenericLinearOperator : public dolfin::GenericLinearOperator
-    {
-      // dolfin::GenericLinearOperator trampoline class
-
-      using dolfin::GenericLinearOperator::GenericLinearOperator;
-
-      // pybdind11 has some issues when passing by reference (due to
-      // the return value policy), so the below is non-standard.  See
-      // https://github.com/pybind/pybind11/issues/250.
-
-      std::size_t size(std::size_t dim) const
-      {
-        PYBIND11_OVERLOAD_PURE(std::size_t, dolfin::GenericLinearOperator, size, );
-      }
-
-      void mult(const dolfin::GenericVector& x, dolfin::GenericVector& y) const
-      {
-        PYBIND11_OVERLOAD_INT(void, dolfin::GenericLinearOperator, "mult", &x, &y);
-        py::pybind11_fail("Tried to call pure virtual function dolfin::GenericLinearOpertor::mult");
-      }
-    };
-
     // dolfin::GenericLinearOperator
     py::class_<dolfin::GenericLinearOperator, std::shared_ptr<dolfin::GenericLinearOperator>,
-               PyGenericLinearOperator, dolfin::LinearAlgebraObject>
+               PyLinearOperator<dolfin::GenericLinearOperator>, dolfin::LinearAlgebraObject>
       (m, "GenericLinearOperator", "GenericLinearOperator object");
-      //.def("size", &dolfin::GenericLinearOperator::size)
-      //.def("mult", &dolfin::GenericLinearOperator::mult);
 
     // dolfin::GenericTensor
     py::class_<dolfin::GenericTensor, std::shared_ptr<dolfin::GenericTensor>,
@@ -230,6 +227,7 @@ namespace dolfin_wrappers
       (m, "GenericMatrix", "DOLFIN GenericMatrix object")
       .def("init_vector", &dolfin::GenericMatrix::init_vector)
       .def("axpy", &dolfin::GenericMatrix::axpy)
+      .def("mult", &dolfin::GenericMatrix::mult)
       .def("transpmult", &dolfin::GenericMatrix::transpmult)
       // __ifoo__
       .def("__imul__", &dolfin::GenericMatrix::operator*=, "Multiply by a scalar")
@@ -688,13 +686,11 @@ namespace dolfin_wrappers
 
     // dolfin::LinearOperator
     py::class_<dolfin::LinearOperator, std::shared_ptr<dolfin::LinearOperator>,
-               PyGenericLinearOperator, dolfin::GenericLinearOperator>
+               PyLinearOperator<dolfin::LinearOperator>, dolfin::GenericLinearOperator>
       (m, "LinearOperator")
-      .def(py::init<const dolfin::GenericVector&, const dolfin::GenericVector&>());
-      //.def("size", &dolfin::LinearOperator::size)
-      //.def("mult", &dolfin::LinearOperator::mult)
-      //.def("instance", (std::shared_ptr<dolfin::LinearAlgebraObject>(dolfin::LinearOperator::*)())
-      //     &dolfin::LinearOperator::shared_instance);
+      .def(py::init<const dolfin::GenericVector&, const dolfin::GenericVector&>())
+      .def("instance", (std::shared_ptr<dolfin::LinearAlgebraObject>(dolfin::LinearOperator::*)())
+           &dolfin::LinearOperator::shared_instance);
 
     // dolfin::GenericLinearAlgebraFactory
     py::class_<dolfin::GenericLinearAlgebraFactory, std::shared_ptr<dolfin::GenericLinearAlgebraFactory>>
@@ -800,13 +796,17 @@ namespace dolfin_wrappers
     // dolfin::PETScBaseMatrix
     py::class_<dolfin::PETScBaseMatrix, std::shared_ptr<dolfin::PETScBaseMatrix>,
                dolfin::PETScObject, dolfin::Variable>(m, "PETScBaseMatrix")
+      .def("size", (std::size_t (dolfin::PETScBaseMatrix::*)(std::size_t) const) &dolfin::PETScBaseMatrix::size)
       .def("mat", &dolfin::PETScBaseMatrix::mat, "Return underlying PETSc Mat object");
 
     // dolfin::PETScLinearOperator
     py::class_<dolfin::PETScLinearOperator, std::shared_ptr<dolfin::PETScLinearOperator>,
-               dolfin::PETScBaseMatrix, dolfin::GenericLinearOperator>
+               PyLinearOperator<dolfin::PETScLinearOperator>, dolfin::PETScBaseMatrix,
+               dolfin::GenericLinearOperator>
       (m, "PETScLinearOperator", "PETScLinearOperator object")
       .def(py::init<MPI_Comm>())
+      .def("size", &dolfin::PETScLinearOperator::size)
+      .def("mult", &dolfin::PETScLinearOperator::mult)
       .def("mpi_comm", &dolfin::PETScLinearOperator::mpi_comm);
 
     // dolfin::PETScMatrix
