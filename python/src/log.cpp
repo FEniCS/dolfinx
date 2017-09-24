@@ -49,6 +49,8 @@ namespace dolfin_wrappers
           py::arg("scheme"), py::arg("verbose")=false);
     m.def("set_log_level", &dolfin::set_log_level);
     m.def("get_log_level", &dolfin::get_log_level);
+    m.def("deprecation", [](std::string ftr, std::string ver, std::string msg)
+                         { dolfin::deprecation(ftr, ver, msg); });
 
     // dolfin::LogLevel enums
     py::enum_<dolfin::LogLevel>(m, "LogLevel", py::arithmetic())

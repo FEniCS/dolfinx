@@ -151,9 +151,9 @@ def CellSize(mesh):
 
     """
 
-    cpp.deprecation("\"CellSize\"",
-                    "2017.2.0",
-                    "Use \"CellDiameter\" or \"2*Circumradius\".")
+    cpp.log.deprecation("\"CellSize\"",
+                        "2017.2.0",
+                        "Use \"CellDiameter\" or \"2*Circumradius\".")
     return 2.0*ufl.Circumradius(_mesh2domain(mesh))
 
 
