@@ -136,14 +136,6 @@ namespace dolfin_wrappers
                       argv[i] = const_cast<char*>(args[i].data());
                     dolfin::SubSystemsManager::init_petsc(args.size(), argv.data());
                   })
-      .def_static("init_mpi", (void (*)()) &dolfin::SubSystemsManager::init_mpi)
-      .def_static("init_mpi", [](std::vector<std::string> args, int required_thread_level)->int
-                  {
-                    std::vector<char*> argv(args.size());
-                    for (std::size_t i = 0; i < args.size(); ++i)
-                      argv[i] = const_cast<char*>(args[i].data());
-                    return dolfin::SubSystemsManager::init_mpi(args.size(), argv.data(), required_thread_level);
-                  })
       .def_static("finalize", &dolfin::SubSystemsManager::finalize)
       .def_static("responsible_mpi", &dolfin::SubSystemsManager::responsible_mpi)
       .def_static("responsible_petsc", &dolfin::SubSystemsManager::responsible_petsc)
@@ -176,8 +168,19 @@ namespace dolfin_wrappers
                                     { return MPICommWrapper(MPI_COMM_SELF); })
       .def_property_readonly_static("comm_null", [](py::object)
                                     { return MPICommWrapper(MPI_COMM_NULL); })
-      .def_static("init", [](){ dolfin::SubSystemsManager::init_mpi(); },
+      .def_static("init", (void (*)()) &dolfin::SubSystemsManager::init_mpi,
                   "Initialise MPI")
+      .def_static("init",
+                  [](std::vector<std::string> args, int required_thread_level)->int
+                  {
+                    std::vector<char*> argv(args.size());
+                    for (std::size_t i = 0; i < args.size(); ++i)
+                      argv[i] = const_cast<char*>(args[i].data());
+                    return dolfin::SubSystemsManager::
+                      init_mpi(args.size(), argv.data(), required_thread_level);
+                  },
+                  "Initialise MPI with command-line args and required level "
+                  "of thread support. Return provided thread level.")
       .def_static("barrier", [](const MPICommWrapper comm)
                   { return dolfin::MPI::barrier(comm.get()); })
       .def_static("rank", [](const MPICommWrapper comm)
