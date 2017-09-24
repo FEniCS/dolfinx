@@ -87,7 +87,7 @@ def test_linear_operator(backend):
         # Check at least that petsc4py interface is available
         if backend == 'PETSc' and has_petsc4py() and _as_backend_type == as_backend_type:
             from petsc4py import PETSc
-            assert isinstance(O.mat(), PETSc.Mat)
+            assert isinstance(Ob.mat(), PETSc.Mat)
 
     # Reset backend
     parameters["linear_algebra_backend"] = prev_backend
