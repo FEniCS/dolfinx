@@ -8,9 +8,8 @@
 # version.
 
 import ufl
-import ffc
 import dolfin.cpp as cpp
-
+from dolfin.jit.jit import ffc_jit
 
 class Form(cpp.fem.Form):
     def __init__(self, form, **kwargs):
@@ -41,7 +40,7 @@ class Form(cpp.fem.Form):
             # FIXME: add paths if dict entry already exists
             form_compiler_parameters["external_include_dirs"] = d["include_dirs"]
 
-        ufc_form = ffc.jit(form, form_compiler_parameters)
+        ufc_form = ffc_jit(form, form_compiler_parameters)
         ufc_form = cpp.fem.make_ufc_form(ufc_form[0])
 
         function_spaces = [func.function_space()._cpp_object for func in form.arguments()]

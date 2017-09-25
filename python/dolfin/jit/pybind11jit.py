@@ -9,7 +9,7 @@ import dolfin.cpp as cpp
 from dolfin.cpp.log import log, LogLevel
 from . import get_pybind_include
 from dolfin.function.expression import BaseExpression, _select_element
-
+from dolfin.jit.jit import dijitso_jit
 
 def jit_generate(cpp_code, module_name, signature, parameters):
 
@@ -29,6 +29,7 @@ def jit_generate(cpp_code, module_name, signature, parameters):
     depends = []
 
     return code_h, code_c, depends
+
 
 def compile_cpp_code(cpp_code):
     """Compile a user C(++) string to a Python object with pybind11.  Note
@@ -75,7 +76,7 @@ def compile_cpp_code(cpp_code):
     module_hash = hashlib.md5(cpp_code.encode('utf-8')).hexdigest()
     module_name = "dolfin_cpp_module_" + module_hash
 
-    module, signature = dijitso.jit(cpp_code, module_name, params,
+    module, signature = dijitso_jit(cpp_code, module_name, params,
                                     generate=jit_generate)
 
     return module
