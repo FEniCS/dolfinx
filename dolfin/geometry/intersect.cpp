@@ -16,9 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-30
-// Last changed: 2013-05-30
+// Last changed: 2017-09-25
 
 #include "MeshPointIntersection.h"
+#include <dolfin/mesh/CellType.h>
+#include <dolfin/mesh/Mesh.h>
 #include "intersect.h"
 
 using namespace dolfin;
@@ -27,6 +29,17 @@ using namespace dolfin;
 std::shared_ptr<const MeshPointIntersection>
 dolfin::intersect(const Mesh& mesh, const Point& point)
 {
+  // intersection is only implemented for simplex meshes
+  if (mesh.type().cell_type() != CellType::point &&
+      mesh.type().cell_type() != CellType::interval  &&
+      mesh.type().cell_type() != CellType::triangle  &&
+      mesh.type().cell_type() != CellType::tetrahedron)
+  {
+    dolfin_error("intersect.cpp",
+		 "intersecting mesh and point",
+		 "intersection is only implemented for simplex meshes");
+  }
+
   return std::shared_ptr<const MeshPointIntersection>
     (new MeshPointIntersection(mesh, point));
 }
