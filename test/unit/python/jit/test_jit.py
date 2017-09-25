@@ -51,21 +51,17 @@ def test_nasty_jit_caching_bug():
 @skip_if_pybind11
 @skip_if_not_MPI
 def test_mpi_swig():
-    from dolfin import compile_extension_module
-
     create_transfer_matrix_code = r'''
     namespace dolfin
     {
         void find_exterior_points(MPI_Comm mpi_comm) {}
     }'''
-    create_transfer_matrix =  compile_extension_module(code=create_transfer_matrix_code)
+    compile_extension_module(code=create_transfer_matrix_code)
 
 
 @skip_if_pybind11
 @skip_if_not_PETSc
 def test_pesc_swig():
-    from dolfin import compile_extension_module
-
     create_matrix_code = r'''
     namespace dolfin
     {
@@ -76,14 +72,12 @@ def test_pesc_swig():
         }
     }
     '''
-    create_matrix =  compile_extension_module(code=create_matrix_code)
+    compile_extension_module(code=create_matrix_code)
 
 
 @skip_if_pybind11
 @skip_if_not_SLEPc
 def test_slepc_swig():
-    from dolfin import compile_extension_module
-
     create_eps_code = r'''
     #include <slepc.h>
     namespace dolfin
@@ -91,55 +85,89 @@ def test_slepc_swig():
         std::shared_ptr<EPS> create_matrix(MPI_Comm comm) {
             EPS eps;
             EPSCreate(comm, &eps);
-	    std::shared_ptr<EPS> ptr = std::make_shared<EPS>(eps);
+            std::shared_ptr<EPS> ptr = std::make_shared<EPS>(eps);
             return ptr;
         }
     }
     '''
-    create_matrix =  compile_extension_module(code=create_eps_code)
+    compile_extension_module(code=create_eps_code)
 
 
-@skip_if_pybind11
 def test_pass_array_int():
     import numpy
-    code = """
-    int test_int_array(const Array<int>& int_arr)
-    {
-        int ret = 0;
-        for (int i = 0; i < int_arr.size(); i++)
+
+    if has_pybind11():
+        code = """
+        #include <Eigen/Core>
+        #include <pybind11/pybind11.h>
+        #include <pybind11/eigen.h>
+        using IntVecIn = Eigen::Ref<const Eigen::VectorXi>;
+        int test_int_array(const IntVecIn arr)
         {
-            ret += int_arr[i];
+            return arr.sum();
         }
-        return ret;
-    }
-    """
-    module = compile_extension_module(code=code,
-                                      source_directory='.',
-                                      sources=[],
-                                      include_dirs=["."])
+        PYBIND11_MODULE(SIGNATURE, m)
+        {
+            m.def("test_int_array", &test_int_array);
+        }
+        """
+        module = compile_cpp_code(code)
+    else:
+        code = """
+        int test_int_array(const Array<int>& int_arr)
+        {
+            int ret = 0;
+            for (int i = 0; i < int_arr.size(); i++)
+            {
+                ret += int_arr[i];
+            }
+            return ret;
+        }
+        """
+        module = compile_extension_module(code=code,
+                                          source_directory='.',
+                                          sources=[],
+                                          include_dirs=["."])
     arr = numpy.array([1, 2, 4, 8], dtype=numpy.intc)
     ans = module.test_int_array(arr)
     assert ans == arr.sum() == 15
 
 
-@skip_if_pybind11
 def test_pass_array_double():
     import numpy
-    code = """
-    double test_double_array(const Array<double>& arr)
-    {
-        double ret = 0;
-        for (int i = 0; i < arr.size(); i++)
+
+    if has_pybind11():
+        code = """
+        #include <Eigen/Core>
+        #include <pybind11/pybind11.h>
+        #include <pybind11/eigen.h>
+        using DoubleVecIn = Eigen::Ref<const Eigen::VectorXd>;
+        int test_double_array(const DoubleVecIn arr)
         {
-            ret += arr[i];
+            return arr.sum();
         }
-        return ret;
-    }
-    """
-    module = compile_extension_module(code=code,
-                                      source_directory='.',
-                                      sources=[],
-                                      include_dirs=["."])
+        PYBIND11_MODULE(SIGNATURE, m)
+        {
+            m.def("test_double_array", &test_double_array);
+        }
+        """
+        module = compile_cpp_code(code)
+    else:
+        code = """
+        double test_double_array(const Array<double>& arr)
+        {
+            double ret = 0;
+            for (int i = 0; i < arr.size(); i++)
+            {
+                ret += arr[i];
+            }
+            return ret;
+        }
+        """
+        module = compile_extension_module(code=code,
+                                          source_directory='.',
+                                          sources=[],
+                                          include_dirs=["."])
     arr = numpy.array([1, 2, 4, 8], dtype=float)
     ans = module.test_double_array(arr)
     assert abs(arr.sum() - 15) < 1e-15

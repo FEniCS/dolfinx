@@ -27,6 +27,8 @@ from dolfin.function.function import Function
 from dolfin.fem.form import Form
 import dolfin.fem.formmanipulations as formmanipulations
 from dolfin.fem.formmanipulations import derivative
+import dolfin.la.solver
+from dolfin.fem.problem import LinearVariationalProblem, NonlinearVariationalProblem
 
 __all__ = ["LinearVariationalProblem",
            "LinearVariationalSolver",
@@ -35,46 +37,13 @@ __all__ = ["LinearVariationalProblem",
            "NonlinearVariationalSolver",
            "solve"]
 
+
+# FIXME: The code is this file is outrageously convolute because one
+# function an do a number of unrelated operations, depending in the
+# arguments passed.
+
 # Problem classes need special handling since they involve JIT
 # compilation
-
-
-class LinearVariationalProblem(cpp.fem.LinearVariationalProblem):
-
-    def __init__(self, a, L, u, bcs=None,
-                 form_compiler_parameters=None):
-        """
-        Create linear variational problem a(u, v) = L(v).
-
-        An optional argument bcs may be passed to specify boundary
-        conditions.
-
-        Another optional argument form_compiler_parameters may be
-        specified to pass parameters to the form compiler.
-        """
-
-        # Extract and check arguments
-        u = _extract_u(u)
-        bcs = _extract_bcs(bcs)
-
-        # Store input UFL forms and solution Function
-        self.a_ufl = a
-        self.L_ufl = L
-        self.u_ufl = u
-
-        # Store form compiler parameters
-        form_compiler_parameters = form_compiler_parameters or {}
-        self.form_compiler_parameters = form_compiler_parameters
-
-        # Wrap forms (and check if linear form L is empty)
-        if L.empty():
-            L = cpp.fem.Form(1, 0)
-        else:
-            L = Form(L, form_compiler_parameters=form_compiler_parameters)
-        a = Form(a, form_compiler_parameters=form_compiler_parameters)
-
-        # Initialize C++ base class
-        cpp.fem.LinearVariationalProblem.__init__(self, a, L, u._cpp_object, bcs)
 
 
 class LocalSolver(cpp.fem.LocalSolver):
@@ -104,43 +73,6 @@ class LocalSolver(cpp.fem.LocalSolver):
             cpp.fem.LocalSolver.__init__(self, a, L, solver_type)
 
 
-class NonlinearVariationalProblem(cpp.fem.NonlinearVariationalProblem):
-
-    # Reuse C++ doc-string
-    __doc__ = cpp.fem.NonlinearVariationalProblem.__doc__
-
-    def __init__(self, F, u, bcs=None, J=None,
-                 form_compiler_parameters=None):
-        """
-        Create nonlinear variational problem F(u; v) = 0.
-
-        Optional arguments bcs and J may be passed to specify boundary
-        conditions and the Jacobian J = dF/du.
-
-        Another optional argument form_compiler_parameters may be
-        specified to pass parameters to the form compiler.
-        """
-
-        # Extract and check arguments
-        u = _extract_u(u)
-        bcs = _extract_bcs(bcs)
-
-        # Store input UFL forms and solution Function
-        self.F_ufl = F
-        self.J_ufl = J
-        self.u_ufl = u
-
-        # Store form compiler parameters
-        form_compiler_parameters = form_compiler_parameters or {}
-        self.form_compiler_parameters = form_compiler_parameters
-
-        # Wrap forms
-        F = Form(F, form_compiler_parameters=form_compiler_parameters)
-        if J is not None:
-            J = Form(J, form_compiler_parameters=form_compiler_parameters)
-
-        # Initialize C++ base class
-        cpp.fem.NonlinearVariationalProblem.__init__(self, F, u._cpp_object, bcs, J)
 
 # FIXME: The import here are here to avoid a circular dependency
 # (ugly, should fix)
@@ -294,7 +226,7 @@ def solve(*args, **kwargs):
         if kwargs:
             raise RuntimeError("Not expecting keyword arguments when solving linear algebra problem.")
 
-        return cpp.la.solve(*args)
+        return dolfin.la.solver.solve(*args)
 
 
 def _solve_varproblem(*args, **kwargs):

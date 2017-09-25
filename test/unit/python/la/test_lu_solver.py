@@ -60,6 +60,11 @@ def test_lu_solver(backend):
     solver.solve(x, b)
     assert round(x.norm("l2") - norm, 10) == 0
 
+    solver = LUSolver()
+    x = Vector()
+    solver.solve(A, x, b)
+    assert round(x.norm("l2") - norm, 10) == 0
+
     # Reset backend
     parameters["linear_algebra_backend"] = prev_backend
 
