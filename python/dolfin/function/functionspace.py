@@ -42,7 +42,7 @@ class FunctionSpace(ufl.FunctionSpace):
         ufl.FunctionSpace.__init__(self, mesh.ufl_domain(), element)
 
         # Compile dofmap and element
-        ufc_element, ufc_dofmap = ffc_jit(element, parameters=None)
+        ufc_element, ufc_dofmap = ffc_jit(element, form_compiler_parameters=None)
         ufc_element = cpp.fem.make_ufc_finite_element(ufc_element)
 
         # Create DOLFIN element and dofmap
