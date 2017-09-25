@@ -32,10 +32,9 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
     @wraps(local_jit)
     def mpi_jit(*args, **kwargs):
 
-        # Create MPI_COMM_WORLD wrapper
-        mpi_comm = kwargs.get("mpi_comm")
-        if mpi_comm is None:
-            mpi_comm = MPI.comm_world
+        # FIXME: should require mpi_comm to be explicit
+        # and not default to comm_world?
+        mpi_comm = kwargs.pop("mpi_comm", MPI.comm_world)
 
         # Just call JIT compiler when running in serial
         if MPI.size(mpi_comm) == 1:
