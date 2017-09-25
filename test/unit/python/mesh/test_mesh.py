@@ -153,7 +153,6 @@ def test_UnitSquareMeshDistributed():
     assert mesh.size_global(2) == 70
     if has_petsc4py():
         import petsc4py
-        assert isinstance(mpi_comm_world(), petsc4py.PETSc.Comm)
         assert isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm)
         assert mesh.mpi_comm() == mpi_comm_world()
 
@@ -165,7 +164,6 @@ def test_UnitSquareMeshLocal():
     assert mesh.num_cells() == 70
     if has_petsc4py():
         import petsc4py
-        assert isinstance(mpi_comm_self(), petsc4py.PETSc.Comm)
         assert isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm)
         assert mesh.mpi_comm() == mpi_comm_self()
 
