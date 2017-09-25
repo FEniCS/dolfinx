@@ -142,10 +142,7 @@ def _extract_function_space(expression, mesh):
                     break
 
     if mesh is None:
-        cpp.dolfin_error("projection.py",
-                         "extract function space",
-                         "Unable to project expression, can't find "
-                         "a suitable mesh.")
+        raise RuntimeError("Unable to project expression, cannot find a suitable mesh.")
 
     # Create function space
     shape = expression.ufl_shape
@@ -156,8 +153,6 @@ def _extract_function_space(expression, mesh):
     elif len(shape) == 2:
         V = TensorFunctionSpace(mesh, "Lagrange", 1, shape=shape)
     else:
-        cpp.dolfin_error("projection.py",
-                         "extract function space",
-                         "Unhandled rank, shape is %s." % (shape,))
+        raise RuntimeError("Unhandled rank, shape is {}.".format((shape,)))
 
     return V

@@ -83,6 +83,9 @@ namespace
 
 namespace dolfin_wrappers
 {
+
+  using RowMatrixXd = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
   void la(py::module& m)
   {
 #ifdef HAS_PETSC4PY
@@ -261,9 +264,34 @@ namespace dolfin_wrappers
       .def("norm", &dolfin::GenericMatrix::norm)
       .def("nnz", &dolfin::GenericMatrix::nnz)
       .def("size", &dolfin::GenericMatrix::size)
+      .def("apply", &dolfin::GenericMatrix::apply)
       .def("get_diagonal", &dolfin::GenericMatrix::get_diagonal)
       .def("set_diagonal", &dolfin::GenericMatrix::set_diagonal)
       .def("ident_zeros", &dolfin::GenericMatrix::ident_zeros)
+      .def("ident", [](dolfin::GenericMatrix& self, std::vector<dolfin::la_index> rows)
+           { self.ident(rows.size(), rows.data()); }, py::arg("rows"))
+      .def("get", [](dolfin::GenericMatrix& self, Eigen::Ref<RowMatrixXd> block,
+                     const std::vector<dolfin::la_index> rows,
+                     const std::vector<dolfin::la_index> cols)
+           {
+             if (block.rows() != rows.size())
+               throw py::value_error("Block must have the same number of rows as len(rows)");
+             if (block.cols() != cols.size())
+               throw py::value_error("Block must have the same number of columns as len(cols)");
+             self.get((double *) block.data(), rows.size(), rows.data(),
+                      cols.size(), cols.data());
+           }, py::arg("block"), py::arg("rows"), py::arg("cols"))
+      .def("set", [](dolfin::GenericMatrix& self, const Eigen::Ref<const RowMatrixXd> block,
+                     const std::vector<dolfin::la_index> rows,
+                     const std::vector<dolfin::la_index> cols)
+           {
+             if (block.rows() != rows.size())
+               throw py::value_error("Block must have the same number of rows as len(rows)");
+             if (block.cols() != cols.size())
+               throw py::value_error("Block must have the same number of columns as len(cols)");
+             self.set((const double *) block.data(), rows.size(), rows.data(),
+                      cols.size(), cols.data());
+           }, py::arg("block"), py::arg("rows"), py::arg("cols"))
       .def("getrow", [](const dolfin::GenericMatrix& instance, std::size_t row)
            {
              std::vector<double> values;
@@ -272,7 +300,7 @@ namespace dolfin_wrappers
              auto _columns = py::array_t<std::size_t>(columns.size(), columns.data());
              auto _values = py::array_t<double>(values.size(), values.data());
              return std::make_pair(_columns, _values);
-           })
+           }, py::arg("row"))
       .def("array", [](const dolfin::GenericMatrix& instance)
            {
              // FIXME: This function is highly dubious. It assumes a
@@ -474,12 +502,18 @@ namespace dolfin_wrappers
       .def("__len__", [](dolfin::GenericVector& self) { return self.local_size(); })
       .def("size",  (std::size_t (dolfin::GenericVector::*)() const) &dolfin::GenericVector::size)
       //
-      .def("get_local", [](const dolfin::GenericVector& instance, const std::vector<long>& rows)
+      .def("get_local", [](const dolfin::GenericVector& instance,
+                           const std::vector<dolfin::la_index>& rows)
            {
-             std::vector<dolfin::la_index> _rows(rows.begin(), rows.end());
              py::array_t<double> data(rows.size());
-             instance.get_local(data.mutable_data(), _rows.size(), _rows.data());
+             instance.get_local(data.mutable_data(), rows.size(), rows.data());
              return data;
+           })
+      .def("get_local", [](const dolfin::GenericVector& instance)
+           {
+             std::vector<double> values;
+             instance.get_local(values);
+             return py::array_t<double>(values.size(), values.data());
            })
       .def("set_local", [](dolfin::GenericVector& instance, std::vector<double> values)
            {
@@ -848,8 +882,8 @@ namespace dolfin_wrappers
     py::class_<dolfin::PETScLUSolver, std::shared_ptr<dolfin::PETScLUSolver>,
       dolfin::GenericLinearSolver>
       (m, "PETScLUSolver", "DOLFIN PETScLUSolver object")
-      .def(py::init<MPI_Comm, std::string>(), py::arg("comm"), py::arg("method")="default")
       .def(py::init<std::string>(), py::arg("method")="default")
+      .def(py::init<MPI_Comm, std::string>(), py::arg("comm"), py::arg("method")="default")
       .def(py::init<MPI_Comm, std::shared_ptr<const dolfin::PETScMatrix>, std::string>(),
            py::arg("comm"), py::arg("A"), py::arg("method")="default")
       .def(py::init<std::shared_ptr<const dolfin::PETScMatrix>, std::string>(),
@@ -857,6 +891,10 @@ namespace dolfin_wrappers
       .def("get_options_prefix", &dolfin::PETScLUSolver::get_options_prefix)
       .def("set_options_prefix", &dolfin::PETScLUSolver::set_options_prefix)
       .def("solve", (std::size_t (dolfin::PETScLUSolver::*)(dolfin::GenericVector&, const dolfin::GenericVector&))
+           &dolfin::PETScLUSolver::solve)
+      .def("solve", (std::size_t (dolfin::PETScLUSolver::*)(const dolfin::GenericLinearOperator&,
+                                                            dolfin::GenericVector&,
+                                                            const dolfin::GenericVector&))
            &dolfin::PETScLUSolver::solve);
     #endif
 
