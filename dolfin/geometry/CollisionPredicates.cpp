@@ -33,18 +33,16 @@ using namespace dolfin;
 bool CollisionPredicates::collides(const MeshEntity& entity,
 				   const Point& point)
 {
-  // intersection is only implemented for simplex meshes
+  // Intersection is only implemented for simplex meshes
   if (entity.mesh().type().cell_type() != CellType::point &&
       entity.mesh().type().cell_type() != CellType::interval  &&
       entity.mesh().type().cell_type() != CellType::triangle  &&
       entity.mesh().type().cell_type() != CellType::tetrahedron)
   {
     dolfin_error("Cell.cpp",
-		 "intersecting cell and point",
-		 "intersection is only implemented for simplex meshes");
+		 "intersect cell and point",
+		 "Intersection is only implemented for simplex meshes");
   }
-
-
 
   // Get data
   const MeshGeometry& g = entity.mesh().geometry();
@@ -91,22 +89,21 @@ bool CollisionPredicates::collides(const MeshEntity& entity,
 bool CollisionPredicates::collides(const MeshEntity& entity_0,
 				   const MeshEntity& entity_1)
 {
-  // intersection is only implemented for simplex meshes
-  if (entity_0.mesh().type().cell_type() != CellType::point &&
-      entity_0.mesh().type().cell_type() != CellType::interval  &&
-      entity_0.mesh().type().cell_type() != CellType::triangle  &&
-      entity_0.mesh().type().cell_type() != CellType::tetrahedron &&
-      entity_1.mesh().type().cell_type() != CellType::point &&
-      entity_1.mesh().type().cell_type() != CellType::interval  &&
-      entity_1.mesh().type().cell_type() != CellType::triangle  &&
-      entity_1.mesh().type().cell_type() != CellType::tetrahedron)
+  // Intersection is only implemented for simplex meshes
+  if ((entity_0.mesh().type().cell_type() != CellType::point &&
+       entity_0.mesh().type().cell_type() != CellType::interval &&
+       entity_0.mesh().type().cell_type() != CellType::triangle &&
+       entity_0.mesh().type().cell_type() != CellType::tetrahedron) ||
+      (entity_1.mesh().type().cell_type() != CellType::point &&
+       entity_1.mesh().type().cell_type() != CellType::interval &&
+       entity_1.mesh().type().cell_type() != CellType::triangle &&
+       entity_1.mesh().type().cell_type() != CellType::tetrahedron))
 
   {
     dolfin_error("Cell.cpp",
 		 "intersecting cell and point",
 		 "intersection is only implemented for simplex meshes");
   }
-
 
   // Get data
   const MeshGeometry& g0 = entity_0.mesh().geometry();

@@ -29,15 +29,15 @@ using namespace dolfin;
 std::shared_ptr<const MeshPointIntersection>
 dolfin::intersect(const Mesh& mesh, const Point& point)
 {
-  // intersection is only implemented for simplex meshes
+  // Intersection is only implemented for simplex meshes
   if (mesh.type().cell_type() != CellType::point &&
       mesh.type().cell_type() != CellType::interval  &&
       mesh.type().cell_type() != CellType::triangle  &&
       mesh.type().cell_type() != CellType::tetrahedron)
   {
     dolfin_error("intersect.cpp",
-		 "intersecting mesh and point",
-		 "intersection is only implemented for simplex meshes");
+		 "intersect mesh and point",
+		 "Intersection is only implemented for simplex meshes");
   }
 
   return std::shared_ptr<const MeshPointIntersection>
