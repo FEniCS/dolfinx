@@ -19,6 +19,7 @@
 // Last changed: 2017-09-22
 
 #include <dolfin/mesh/MeshEntity.h>
+#include <dolfin/mesh/CellType.h>
 #include "predicates.h"
 #include "Point.h"
 #include "CollisionPredicates.h"
@@ -32,6 +33,17 @@ using namespace dolfin;
 bool CollisionPredicates::collides(const MeshEntity& entity,
 				   const Point& point)
 {
+  // Intersection is only implemented for simplex meshes
+  if (entity.mesh().type().cell_type() != CellType::point &&
+      entity.mesh().type().cell_type() != CellType::interval  &&
+      entity.mesh().type().cell_type() != CellType::triangle  &&
+      entity.mesh().type().cell_type() != CellType::tetrahedron)
+  {
+    dolfin_error("Cell.cpp",
+		 "intersect cell and point",
+		 "Intersection is only implemented for simplex meshes");
+  }
+
   // Get data
   const MeshGeometry& g = entity.mesh().geometry();
   const unsigned int* v = entity.entities(0);
@@ -77,6 +89,22 @@ bool CollisionPredicates::collides(const MeshEntity& entity,
 bool CollisionPredicates::collides(const MeshEntity& entity_0,
 				   const MeshEntity& entity_1)
 {
+  // Intersection is only implemented for simplex meshes
+  if ((entity_0.mesh().type().cell_type() != CellType::point &&
+       entity_0.mesh().type().cell_type() != CellType::interval &&
+       entity_0.mesh().type().cell_type() != CellType::triangle &&
+       entity_0.mesh().type().cell_type() != CellType::tetrahedron) ||
+      (entity_1.mesh().type().cell_type() != CellType::point &&
+       entity_1.mesh().type().cell_type() != CellType::interval &&
+       entity_1.mesh().type().cell_type() != CellType::triangle &&
+       entity_1.mesh().type().cell_type() != CellType::tetrahedron))
+
+  {
+    dolfin_error("Cell.cpp",
+		 "intersecting cell and point",
+		 "intersection is only implemented for simplex meshes");
+  }
+
   // Get data
   const MeshGeometry& g0 = entity_0.mesh().geometry();
   const MeshGeometry& g1 = entity_1.mesh().geometry();
