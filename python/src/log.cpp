@@ -33,6 +33,17 @@ namespace dolfin_wrappers
 {
   void log(py::module& m)
   {
+
+    // dolfin::LogLevel enums
+    py::enum_<dolfin::LogLevel>(m, "LogLevel", py::arithmetic())
+      .value("DEBUG", dolfin::LogLevel::DBG)
+      .value("TRACE", dolfin::LogLevel::TRACE)
+      .value("PROGRESS", dolfin::LogLevel::PROGRESS)
+      .value("INFO", dolfin::LogLevel::INFO)
+      .value("WARNING", dolfin::LogLevel::WARNING)
+      .value("ERROR", dolfin::LogLevel::ERROR)
+      .value("CRITICAL", dolfin::LogLevel::CRITICAL);
+
     // dolfin::Table
     py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>>(m, "Table")
       .def(py::init<std::string>())
@@ -49,15 +60,7 @@ namespace dolfin_wrappers
           py::arg("scheme"), py::arg("verbose")=false);
     m.def("set_log_level", &dolfin::set_log_level);
     m.def("get_log_level", &dolfin::get_log_level);
+    m.def("log", [](dolfin::LogLevel level, std::string s){ dolfin::log(level, s); });
 
-    // dolfin::LogLevel enums
-    py::enum_<dolfin::LogLevel>(m, "LogLevel", py::arithmetic())
-      .value("DEBUG", dolfin::LogLevel::DBG)
-      .value("TRACE", dolfin::LogLevel::TRACE)
-      .value("PROGRESS", dolfin::LogLevel::PROGRESS)
-      .value("INFO", dolfin::LogLevel::INFO)
-      .value("WARNING", dolfin::LogLevel::WARNING)
-      .value("ERROR", dolfin::LogLevel::ERROR)
-      .value("CRITICAL", dolfin::LogLevel::CRITICAL);
   }
 }
