@@ -282,7 +282,6 @@ namespace dolfin_wrappers
       .def("normal", (dolfin::Point (dolfin::Cell::*)(std::size_t) const) &dolfin::Cell::normal)
       .def("circumradius", &dolfin::Cell::circumradius)
       .def("radius_ratio", &dolfin::Cell::radius_ratio)
-      .def("triangulate_intersection", &dolfin::Cell::triangulate_intersection)
       .def("volume", &dolfin::Cell::volume)
       .def("get_vertex_coordinates", [](const dolfin::Cell& self){
           std::vector<double> x;
