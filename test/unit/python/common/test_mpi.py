@@ -17,10 +17,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+from dolfin import mpi_comm_world, mpi_comm_self
+from dolfin_utils.test import skip_if_not_petsc4py
 
-import gc
-import random
-from time import sleep
 
 @skip_if_not_petsc4py
 def test_mpi_comm_type_petsc4py():
