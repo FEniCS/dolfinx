@@ -69,7 +69,7 @@ extern "C" DLL_EXPORT dolfin::SubDomain * create_{classname}()
     _set_prop = """ if (name == "{name}") {name} = value;\n"""
     _get_prop = """ if (name == "{name}") return {name};\n"""
 
-    log(LogLevel.INFO, "Calling dijitso just-in-time (JIT) compiler for SubDomain.")
+    log(LogLevel.TRACE, "Calling dijitso just-in-time (JIT) compiler for SubDomain.")
 
     inside_code = class_data['statements'][0]
 
