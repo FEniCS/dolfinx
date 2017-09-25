@@ -27,11 +27,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void GenericMatrix::ident_zeros()
-{
-  this->ident_zeros(DOLFIN_EPS);
-}
-
 void GenericMatrix::ident_zeros(double tol)
 {
   // Check size of system
