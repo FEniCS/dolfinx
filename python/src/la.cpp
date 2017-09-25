@@ -914,6 +914,9 @@ namespace dolfin_wrappers
       .def("set_operators", &dolfin::KrylovSolver::set_operators)
       .def("solve", (std::size_t (dolfin::KrylovSolver::*)(dolfin::GenericVector&,
                                                            const dolfin::GenericVector&))
+           &dolfin::KrylovSolver::solve)
+      .def("solve", (std::size_t (dolfin::KrylovSolver::*)(const dolfin::GenericLinearOperator&,
+                      dolfin::GenericVector&, const dolfin::GenericVector&))
            &dolfin::KrylovSolver::solve);
 
     #ifdef HAS_PETSC
@@ -938,6 +941,9 @@ namespace dolfin_wrappers
                                                                  std::shared_ptr<const dolfin::GenericLinearOperator>))
            &dolfin::PETScKrylovSolver::set_operators)
       .def("solve", (std::size_t (dolfin::PETScKrylovSolver::*)(dolfin::GenericVector&, const dolfin::GenericVector&))
+           &dolfin::PETScKrylovSolver::solve)
+      .def("solve", (std::size_t (dolfin::PETScKrylovSolver::*)(const dolfin::GenericLinearOperator&,
+                                                                dolfin::GenericVector&, const dolfin::GenericVector&))
            &dolfin::PETScKrylovSolver::solve)
       .def("set_from_options", &dolfin::PETScKrylovSolver::set_from_options)
       .def("set_reuse_preconditioner", &dolfin::PETScKrylovSolver::set_reuse_preconditioner)
