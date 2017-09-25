@@ -23,7 +23,7 @@ SpecialFunctions.h).
 
 __all__ = ["MeshCoordinates", "FacetArea", "FacetNormal",
            "CellVolume", "SpatialCoordinate", "CellNormal",
-           "CellDiameter", "CellSize", "Circumradius",
+           "CellDiameter", "Circumradius",
            "MinCellEdgeLength", "MaxCellEdgeLength",
            "MinFacetEdgeLength", "MaxFacetEdgeLength"]
 
@@ -105,7 +105,7 @@ def FacetNormal(mesh):
     return ufl.FacetNormal(_mesh2domain(mesh))
 
 
-# Simple definition of CellSize via UFL
+# Simple definition of CellDiameter via UFL
 def CellDiameter(mesh):
     """Return function cell diameter for given mesh.
 
@@ -126,35 +126,6 @@ def CellDiameter(mesh):
     """
 
     return ufl.CellDiameter(_mesh2domain(mesh))
-
-
-# Simple definition of CellSize via UFL
-def CellSize(mesh):
-    """Return function twice the cell circumradius for given
-    mesh.
-
-    This does not generalize to quadrilateral/hexahedral cells
-    and the function name is misleading. The function is hence
-    deprecated. Use ``CellDiameter`` (or ``2*Circumradius`` if
-    you really want that).
-
-    *Arguments*
-        mesh
-            a :py:class:`Mesh <dolfin.cpp.Mesh>`.
-
-    *Example of usage*
-
-        .. code-block:: python
-
-            mesh = UnitSquare(4,4)
-            D = CellSize(mesh)
-
-    """
-
-    cpp.log.deprecation("\"CellSize\"",
-                        "2017.2.0",
-                        "Use \"CellDiameter\" or \"2*Circumradius\".")
-    return 2.0*ufl.Circumradius(_mesh2domain(mesh))
 
 
 # Simple definition of CellVolume via UFL

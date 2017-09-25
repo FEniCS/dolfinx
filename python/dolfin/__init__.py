@@ -138,7 +138,7 @@ from .function.argument import (TestFunction, TrialFunction,
 from .function.constant import Constant
 from .function.specialfunctions import (MeshCoordinates, FacetArea, FacetNormal,
                                         CellVolume, SpatialCoordinate, CellNormal,
-                                        CellDiameter, CellSize, Circumradius,
+                                        CellDiameter, Circumradius,
                                         MinCellEdgeLength, MaxCellEdgeLength,
                                         MinFacetEdgeLength, MaxFacetEdgeLength)
 from .function.expression import Expression, UserExpression
