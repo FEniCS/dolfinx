@@ -83,7 +83,7 @@ namespace
       if (_x < 0 or !(_x < local_size))
         throw py::index_error("Vector index out of range");
     }
-  };
+  }
 
   // dolfin::GenericLinearOperator trampoline class
   template<typename LinearOperatorBase>
