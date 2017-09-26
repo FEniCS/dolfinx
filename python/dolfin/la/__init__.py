@@ -14,7 +14,7 @@ def as_backend_type(x):
     type.
 
     """
-    if isinstance(x, cpp.la.Vector) or isinstance(x, cpp.la.Matrix):
+    if isinstance(x, cpp.la.Vector) or isinstance(x, cpp.la.Matrix) or isinstance(x, cpp.la.LinearOperator):
         return x.instance()
     else:
         return x
