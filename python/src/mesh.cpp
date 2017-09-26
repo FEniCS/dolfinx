@@ -48,6 +48,7 @@
 #include <dolfin/mesh/DomainBoundary.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/MeshTransformation.h>
+#include <dolfin/mesh/MultiMesh.h>
 
 #include "casters.h"
 
@@ -536,5 +537,15 @@ namespace dolfin_wrappers
       .def_static("rotate", (void (*)(dolfin::Mesh&, double, std::size_t)) &dolfin::MeshTransformation::rotate)
       .def_static("rotate", (void (*)(dolfin::Mesh&, double, std::size_t, const dolfin::Point&))
                   &dolfin::MeshTransformation::rotate);
+
+    py::class_<dolfin::MultiMesh, std::shared_ptr<dolfin::MultiMesh>>(m, "MultiMesh")
+      .def(py::init<>())
+      .def("add", &dolfin::MultiMesh::add)
+      .def("build", &dolfin::MultiMesh::build, py::arg("quadrature_order") = 2)
+      .def("num_parts", &dolfin::MultiMesh::num_parts)
+      .def("compute_volume", &dolfin::MultiMesh::compute_volume)
+      .def("part", &dolfin::MultiMesh::part);
   }
+
+
 }

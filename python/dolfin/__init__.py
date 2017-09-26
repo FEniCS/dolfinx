@@ -46,7 +46,7 @@ from .cpp.ale import ALE
 from .cpp import MPI
 from .cpp.function import (Expression, Constant, FunctionAXPY,
                            LagrangeInterpolator, FunctionAssigner,
-                           assign)
+                           assign, MultiMeshFunction, MultiMeshFunctionSpace)
 from .cpp.fem import (FiniteElement, DofMap, Assembler,
                       get_coordinates, create_mesh, set_coordinates,
                       vertex_to_dof_map, dof_to_vertex_map,
@@ -97,7 +97,7 @@ from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, MeshEntity,
                        entities, vertices, SubDomain, BoundaryMesh,
                        MeshEditor, MeshQuality, SubMesh,
                        DomainBoundary, PeriodicBoundaryComputation,
-                       MeshTransformation, SubsetIterator)
+                       MeshTransformation, SubsetIterator, MultiMesh)
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver, OptimisationProblem)
 from .cpp.refinement import refine
@@ -166,7 +166,7 @@ from ufl import (FiniteElement, TensorElement, VectorElement,
                  split, cross, inner, dot, grad, curl, dx, div,
                  Measure, det, pi, sin, cos, tan, acos, asin, atan,
                  ln, exp, sqrt, bessel_I, bessel_J, bessel_K,
-                 bessel_Y, Dx, ds, dS, dP, interval, triangle,
+                 bessel_Y, Dx, ds, dS, dP, dX, dC, interval, triangle,
                  tetrahedron, quadrilateral, hexahedron, avg, jump,
                  sym, tr, Identity, variable, diff, as_vector,
                  as_tensor, as_matrix, system, outer, dev, skew,

@@ -29,6 +29,21 @@ import numpy
 
 from dolfin_utils.test import fixture, skip_in_parallel
 
+
+def get_multimesh_functionspace(multimesh, element) :
+    # Create and add individual function spaces
+    V = MultiMeshFunctionSpace(multimesh)
+    #V_parts = []
+    for part in range(multimesh.num_parts()):
+        V_part = FunctionSpace(multimesh.part(part), element)._cpp_object
+        V.add(V_part)
+
+    # Build multimesh function space
+    V.build()
+
+    return V
+
+
 @fixture
 def multimesh():
     mesh_0 = RectangleMesh(Point(0,0), Point(1, 1), 20, 20)
@@ -43,12 +58,13 @@ def multimesh():
 @fixture
 def V(multimesh):
     element = FiniteElement("Lagrange", triangle, 1)
-    return MultiMeshFunctionSpace(multimesh, element)
+    V = get_multimesh_functionspace(multimesh, element)
+    return V
 
 @fixture
 def V_high(multimesh):
     element = FiniteElement("Lagrange", triangle, 3)
-    return MultiMeshFunctionSpace(multimesh, element)
+    return get_multimesh_functionspace(multimesh, element)
 
 @fixture
 def f():
