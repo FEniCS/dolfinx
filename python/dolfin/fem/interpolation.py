@@ -24,7 +24,6 @@ finite element space.
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 from dolfin.function.function import Function
-from dolfin import MultiMeshFunction
 
 
 def interpolate(v, V):
@@ -48,11 +47,6 @@ def interpolate(v, V):
             Iv = interpolate(v, V)
 
     """
-
-    if isinstance(V, dolfin.MultiMeshFunctionSpace):
-        Pv = MultiMeshFunction(V)
-        Pv.interpolate(v)
-        return Pv
 
     # Check arguments
     # if not isinstance(V, cpp.functionFunctionSpace):

@@ -94,29 +94,6 @@ def project(v, V=None, bcs=None, mesh=None,
 
     # Check arguments
 
-    # Projection into a MultiMeshFunctionSpace
-    if isinstance(V, dolfin.MultiMeshFunctionSpace):
-
-        # Create the measuresum of uncut and cut-cells
-        dX = ufl.dx() + ufl.dC()
-
-        # Define variational problem for projection
-        w = TestFunction(V)
-        Pv = TrialFunction(V)
-        a = ufl.inner(w, Pv)*dX
-        L = ufl.inner(w, v)*dX
-
-        # Assemble linear system
-        A = assemble_multimesh(a, form_compiler_parameters=form_compiler_parameters)
-        b = assemble_multimesh(L, form_compiler_parameters=form_compiler_parameters)
-
-        # Solve linear system for projection
-        if function is None:
-            function = MultiMeshFunction(V)
-        cpp.la_solve(A, function.vector(), b, solver_type, preconditioner_type)
-
-        return function
-
     # Ensure we have a mesh and attach to measure
     if mesh is None:
         mesh = V.mesh()
