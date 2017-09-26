@@ -94,6 +94,13 @@ namespace dolfin_wrappers
            py::keep_alive<0, 1>())
       .def("items", [](const dolfin::Parameters& p) { return py::make_iterator(p.begin(), p.end()); },
            py::keep_alive<0, 1>())
+      .def("keys", [](const dolfin::Parameters& p)
+           {
+             std::vector<std::string> keys;
+             for (auto &q : p)
+               keys.push_back(q.first);
+             return keys;
+           })
       // These set_range function should be remove - they're just duplication
       .def("set_range", [](dolfin::Parameters& self, std::string name, double min, double max)
            { self[name].set_range(min, max);} )
@@ -187,6 +194,10 @@ namespace dolfin_wrappers
            {
              auto param = self.find_parameter_set(key);
              *param = other;
+           })
+      .def("__getitem__", [](dolfin::Parameters& self, std::string key)
+           {
+             return self[key];
            })
       .def("parse", [](dolfin::Parameters& self, py::list argv)
            {
