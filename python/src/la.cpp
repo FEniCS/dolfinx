@@ -267,7 +267,7 @@ namespace dolfin_wrappers
       .def("apply", &dolfin::GenericMatrix::apply)
       .def("get_diagonal", &dolfin::GenericMatrix::get_diagonal)
       .def("set_diagonal", &dolfin::GenericMatrix::set_diagonal)
-      .def("ident_zeros", &dolfin::GenericMatrix::ident_zeros)
+      .def("ident_zeros", &dolfin::GenericMatrix::ident_zeros, py::arg("tol") = DOLFIN_EPS)
       .def("ident", [](dolfin::GenericMatrix& self, std::vector<dolfin::la_index> rows)
            { self.ident(rows.size(), rows.data()); }, py::arg("rows"))
       .def("get", [](dolfin::GenericMatrix& self, Eigen::Ref<RowMatrixXd> block,
