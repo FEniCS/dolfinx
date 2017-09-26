@@ -118,6 +118,7 @@ namespace dolfin_wrappers
            })
       .def(py::self + py::self)
       .def(py::self - py::self)
+      .def(py::self == py::self)
       .def(py::self * float())
       .def(py::self / float())
       .def("array", [](dolfin::Point& self)
