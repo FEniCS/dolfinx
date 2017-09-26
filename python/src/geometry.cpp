@@ -146,7 +146,13 @@ namespace dolfin_wrappers
     .def_static("collides_segment_segment_2d",
 		&dolfin::CollisionPredicates::collides_segment_segment_2d);
 
-    py::class_<dolfin::IntersectionConstruction>(m, "IntersectionConstruction");
+    py::class_<dolfin::IntersectionConstruction>(m, "IntersectionConstruction")
+      .def_static("intersection_triangle_triangle_2d",
+		  &dolfin::IntersectionConstruction::intersection_triangle_triangle_2d)
+      .def_static("intersection_segment_segment_2d",
+		  &dolfin::IntersectionConstruction::intersection_segment_segment_2d)
+      .def_static("intersection_triangle_segment_2d",
+		  &dolfin::IntersectionConstruction::intersection_triangle_segment_2d);
 
     // dolfin/geometry free functions
     m.def("intersect", &dolfin::intersect);
