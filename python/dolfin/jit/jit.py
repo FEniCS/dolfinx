@@ -86,9 +86,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 def ffc_jit(ufl_form, form_compiler_parameters=None):
 
 # Prepare form compiler parameters with overrides from dolfin and kwargs
-    p = ffc_default_parameters()
-    # FIXME: Why not just use this?
-    # p = ffc.default_jit_parameters()
+    p = ffc.default_jit_parameters()
     p.update(dict(parameters["form_compiler"]))
     p.update(form_compiler_parameters or {})
 
