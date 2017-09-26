@@ -27,7 +27,7 @@
 from __future__ import print_function
 import pytest
 from dolfin import *
-from dolfin_utils.test import fixture, skip_in_parallel
+from dolfin_utils.test import fixture, skip_in_parallel, skip_if_pybind11
 
 @fixture
 def mesh0():
@@ -76,6 +76,7 @@ def h(V, V0, V1):
     return h
 
 @skip_in_parallel
+@skip_if_pybind11
 def test_dX_integral(f, g, h):
     f_dX = assemble_multimesh(f * dX)
     assert abs(f_dX - 1.25) < DOLFIN_EPS_LARGE
@@ -84,6 +85,7 @@ def test_dX_integral(f, g, h):
     assert abs(fgh_dX - 0.75) < DOLFIN_EPS_LARGE
 
 @skip_in_parallel
+@skip_if_pybind11
 def test_dI_integral(f, g, h):
     f_dI0 = assemble_multimesh(f("-") * dI)
     assert abs(f_dI0 - 4.0) < DOLFIN_EPS_LARGE
@@ -98,6 +100,7 @@ def test_dI_integral(f, g, h):
     assert abs(fgh_dI1 - 1.0) < DOLFIN_EPS_LARGE
 
 @skip_in_parallel
+@skip_if_pybind11
 def test_dO_integral(f, g, h):
     f_dO0 = assemble_multimesh(f("-") * dO)
     assert abs(f_dO0 - 0.50) < DOLFIN_EPS_LARGE

@@ -27,7 +27,7 @@ from dolfin import *
 import ufl
 import numpy
 
-from dolfin_utils.test import fixture, skip_in_parallel
+from dolfin_utils.test import fixture, skip_in_parallel, skip_if_pybind11
 
 @fixture
 def multimesh():
@@ -65,40 +65,48 @@ def v(V):
 def v_high(V_high):
     return MultiMeshFunction(V_high)
 
+@skip_if_pybind11
 @skip_in_parallel
 def test_measure_mul(v, multimesh):
     assert isinstance(v*dX, ufl.form.Form)
 
+@skip_if_pybind11
 @skip_in_parallel
 def test_assemble_zero(v, multimesh):
     assert numpy.isclose(assemble_multimesh(v*dX), 0)
 
+@skip_if_pybind11
 @skip_in_parallel
 def test_assemble_area(v, multimesh):
     v.vector()[:] = 1
     assert numpy.isclose(assemble_multimesh(v*dX), 1)
 
+@skip_if_pybind11
 @skip_in_parallel
 def test_assemble_exterior_facet(v, multimesh):
     v.vector()[:] = 1
     assert numpy.isclose(assemble_multimesh(v*ds), 4)
 
+@skip_if_pybind11
 @skip_in_parallel
 def test_interpolate(v_high, f):
     v_high.interpolate(f)
     assert numpy.isclose(assemble_multimesh(v_high*dX), 0)
 
+@skip_if_pybind11
 @skip_in_parallel
 def test_project(f, V_high):
     v = project(f ,V_high)
     assert numpy.isclose(assemble_multimesh(v*dX), 0)
 
+@skip_if_pybind11
 @skip_in_parallel
 def test_errornorm_L2(f_2, v_high):
     const = Expression("1", degree=1)
     v_high.interpolate(f_2)
     assert numpy.isclose(errornorm(const, v_high, norm_type="L2", degree_rise=3), numpy.sqrt(22)/6)
 
+@skip_if_pybind11
 @skip_in_parallel
 def test_errornorm_H1(f, f_2, v_high):
     v_high.interpolate(f_2)

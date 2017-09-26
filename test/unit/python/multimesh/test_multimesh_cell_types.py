@@ -22,7 +22,7 @@
 
 from dolfin import *
 import pytest
-from dolfin_utils.test import skip_in_parallel
+from dolfin_utils.test import skip_in_parallel, skip_if_pybind11
 
 # test case with interface-edge overlap
 @pytest.fixture
@@ -69,6 +69,7 @@ test_cases = [test_case_1(4,3),
               test_case_2(DOLFIN_PI/5, 0.1111, 3)]
 
 @skip_in_parallel
+@skip_if_pybind11
 @pytest.mark.parametrize("multimesh", test_cases)
 def test_cut_cell_has_quadrature(multimesh):
     # Test that every cut cell has a nontrivial interface quadrature rule
@@ -77,6 +78,7 @@ def test_cut_cell_has_quadrature(multimesh):
             assert multimesh.quadrature_rules_interface(part, cell)
 
 @skip_in_parallel
+@skip_if_pybind11
 @pytest.mark.parametrize("multimesh", test_cases)
 def test_multimesh_cell_types(multimesh):
     # Test that every cell in the multimesh is either cut, uncut, or covered

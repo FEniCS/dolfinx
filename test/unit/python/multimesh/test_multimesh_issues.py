@@ -28,9 +28,10 @@ from __future__ import print_function
 import pytest
 
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel
+from dolfin_utils.test import skip_in_parallel, skip_if_pybind11
 
 @skip_in_parallel
+@skip_if_pybind11
 def test_issue_754():
     N = 3
     meshes = [UnitSquareMesh(2*N, 2*N),
