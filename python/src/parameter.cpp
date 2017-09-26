@@ -207,7 +207,15 @@ namespace dolfin_wrappers
 
     // dolfin::Parameter
     py::class_<dolfin::Parameter, std::shared_ptr<dolfin::Parameter>>(m, "Parameter")
-      .def("value", &dolfin::Parameter::value)
+      .def("value", [](const dolfin::Parameter& self)
+           {
+             py::object value;
+             if (self.is_set())
+               value = py::cast(self.value());
+             else
+               value = py::none();
+             return value;
+           })
       .def("set_range", (void (dolfin::Parameter::*)(double, double)) &dolfin::Parameter::set_range)
       .def("set_range", (void (dolfin::Parameter::*)(int, int)) &dolfin::Parameter::set_range)
       .def("set_range", (void (dolfin::Parameter::*)(std::set<std::string>)) &dolfin::Parameter::set_range)

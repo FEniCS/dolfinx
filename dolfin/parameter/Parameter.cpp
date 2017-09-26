@@ -244,10 +244,7 @@ const Parameter& Parameter::operator= (const char* value)
 //-----------------------------------------------------------------------------
 boost::variant<boost::blank, bool, int, double, std::string> Parameter::value() const
 {
-  if (_is_set)
-    return _value;
-  else
-    return boost::blank();
+  return _value;
 }
 //-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (bool value)
