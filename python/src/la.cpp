@@ -193,6 +193,12 @@ namespace dolfin_wrappers
                dolfin::LinearAlgebraObject>
       (m, "GenericTensor", "DOLFIN GenericTensor object")
       .def("init", &dolfin::GenericTensor::init)
+      .def("empty", &dolfin::GenericTensor::empty)
+      .def("factory", &dolfin::GenericTensor::factory)
+      .def("local_range", &dolfin::GenericTensor::local_range)
+      .def("rank", &dolfin::GenericTensor::rank)
+      .def("size", &dolfin::GenericTensor::size)
+      .def("str", &dolfin::GenericTensor::str)
       .def("zero", &dolfin::GenericTensor::zero);
 
     // dolfin::GenericMatrix
