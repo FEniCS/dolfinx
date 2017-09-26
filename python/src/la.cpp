@@ -709,8 +709,7 @@ namespace dolfin_wrappers
       .def(py::init<>())
       .def(py::init<MPI_Comm>())
       .def(py::init<MPI_Comm, std::size_t>())
-      //.def("array", (std::shared_ptr<Eigen::VectorXd> (dolfin::EigenVector::*)()) &dolfin::EigenVector::vec);
-      .def("array", [](dolfin::EigenVector& self) -> Eigen::Ref<Eigen::VectorXd> { return *self.vec(); } );
+      .def("array_view", [](dolfin::EigenVector& self) -> Eigen::Ref<Eigen::VectorXd> { return *self.vec(); } );
 
     // dolfin::EigenMatrix
     py::class_<dolfin::EigenMatrix, std::shared_ptr<dolfin::EigenMatrix>,
