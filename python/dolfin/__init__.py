@@ -121,8 +121,8 @@ from .fem.norms import norm, errornorm
 from .fem.dirichletbc import DirichletBC, AutoSubDomain
 from .fem.interpolation import interpolate
 from .fem.projection import project
-from .fem.solving import (solve, LocalSolver,
-                          LinearVariationalProblem,
+from .fem.solvers import LocalSolver
+from .fem.solving import (solve, LinearVariationalProblem,
                           NonlinearVariationalProblem)
 from .fem.formmanipulations import (derivative, adjoint, increase_order, tear)
 
