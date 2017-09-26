@@ -135,9 +135,9 @@ def test_points_on_line():
     ed.add_vertex(2, p2)
     ed.add_vertex(3, p3)
 
-    ed.add_cell(0, (2, 3, 0) )
-    ed.add_cell(1, (0, 1, 3) )
-    ed.add_cell(2, (1, 2, 3) )
+    ed.add_cell(0, 2, 3, 0 )
+    ed.add_cell(1, 0, 1, 3 )
+    ed.add_cell(2, 1, 2, 3 )
 
     ed.close()
 
