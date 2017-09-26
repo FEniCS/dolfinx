@@ -55,8 +55,12 @@ from .cpp.fem import (FiniteElement, DofMap, Assembler,
                       NonlinearVariationalSolver,
                       SparsityPatternBuilder)
 
-from .cpp.geometry import (BoundingBoxTree, Point,
-                           MeshPointIntersection, intersect)
+from .cpp.geometry import (BoundingBoxTree,
+                           Point,
+                           MeshPointIntersection,
+                           intersect,
+                           CollisionPredicates,
+                           IntersectionConstruction)
 from .cpp.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                              UnitDiscMesh, UnitQuadMesh, UnitHexMesh,
                              UnitTriangleMesh, UnitCubeMesh,

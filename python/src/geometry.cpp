@@ -26,6 +26,8 @@
 #include <dolfin/geometry/intersect.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/MeshPointIntersection.h>
+#include <dolfin/geometry/CollisionPredicates.h>
+#include <dolfin/geometry/IntersectionConstruction.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Mesh.h>
 
@@ -131,6 +133,18 @@ namespace dolfin_wrappers
                std::shared_ptr<dolfin::MeshPointIntersection>>
       (m, "MeshPointIntersection")
       .def("intersected_cells", &dolfin::MeshPointIntersection::intersected_cells);
+
+    py::class_<dolfin::CollisionPredicates>(m, "CollisionPredicates")
+      .def_static("collides_segment_point_2d",
+		  &dolfin::CollisionPredicates::collides_segment_point_2d)
+      .def_static("collides_interior_point_segment_2d",
+		  &dolfin::CollisionPredicates::collides_interior_point_segment_2d)
+    .def_static("collides_triangle_point_2d",
+		&dolfin::CollisionPredicates::collides_triangle_point_2d)
+    .def_static("collides_triangle_triangle_2d",
+		&dolfin::CollisionPredicates::collides_triangle_triangle_2d);
+
+    py::class_<dolfin::IntersectionConstruction>(m, "IntersectionConstruction");
 
     // dolfin/geometry free functions
     m.def("intersect", &dolfin::intersect);
