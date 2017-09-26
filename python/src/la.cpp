@@ -72,7 +72,7 @@ namespace
   template<typename T>
   void check_indices(const py::array_t<T>& x, std::int64_t local_size)
   {
-    for (std::size_t i = 0; i < x.size(); ++i)
+    for (std::int64_t i = 0; i < (std::int64_t) x.size(); ++i)
     {
       std::int64_t _x = *(x.data() + i);
       if (_x < 0 or !(_x < local_size))
@@ -238,7 +238,7 @@ namespace dolfin_wrappers
            {
              if (x.ndim() != 1)
                throw py::index_error("NumPy must be a 1D array for multiplication by a GenericMatrix");
-             if (x.size() != self.size(1))
+             if ((std::size_t) x.size() != self.size(1))
                throw py::index_error("Length of array must match number of matrix columns");
 
              auto _x = self.factory().create_vector(self.mpi_comm());
@@ -274,9 +274,9 @@ namespace dolfin_wrappers
                      const std::vector<dolfin::la_index> rows,
                      const std::vector<dolfin::la_index> cols)
            {
-             if (block.rows() != rows.size())
+             if ((std::size_t) block.rows() != rows.size())
                throw py::value_error("Block must have the same number of rows as len(rows)");
-             if (block.cols() != cols.size())
+             if ((std::size_t) block.cols() != cols.size())
                throw py::value_error("Block must have the same number of columns as len(cols)");
              self.get((double *) block.data(), rows.size(), rows.data(),
                       cols.size(), cols.data());
@@ -285,9 +285,9 @@ namespace dolfin_wrappers
                      const std::vector<dolfin::la_index> rows,
                      const std::vector<dolfin::la_index> cols)
            {
-             if (block.rows() != rows.size())
+             if ((std::size_t) block.rows() != rows.size())
                throw py::value_error("Block must have the same number of rows as len(rows)");
-             if (block.cols() != cols.size())
+             if ((std::size_t) block.cols() != cols.size())
                throw py::value_error("Block must have the same number of columns as len(cols)");
              self.set((const double *) block.data(), rows.size(), rows.data(),
                       cols.size(), cols.data());
@@ -394,7 +394,7 @@ namespace dolfin_wrappers
            {
              if (indices.ndim() != 1)
                throw py::index_error("Indices must be a 1D array");
-             if (indices.size() != self.local_size())
+             if ((std::size_t) indices.size() != self.local_size())
                throw py::index_error("Indices size mismatch");
              check_indices(indices, self.local_size());
 
@@ -404,7 +404,7 @@ namespace dolfin_wrappers
 
              // Extract filtered values
              std::vector<double> filtered;
-             for (std::size_t i = 0; i < indices.size(); ++i)
+             for (std::size_t i = 0; i < (std::size_t) indices.size(); ++i)
              {
                bool e = *(indices.data() + i);
                if (e)
