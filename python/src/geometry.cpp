@@ -142,7 +142,9 @@ namespace dolfin_wrappers
     .def_static("collides_triangle_point_2d",
 		&dolfin::CollisionPredicates::collides_triangle_point_2d)
     .def_static("collides_triangle_triangle_2d",
-		&dolfin::CollisionPredicates::collides_triangle_triangle_2d);
+		&dolfin::CollisionPredicates::collides_triangle_triangle_2d)
+    .def_static("collides_segment_segment_2d",
+		&dolfin::CollisionPredicates::collides_segment_segment_2d);
 
     py::class_<dolfin::IntersectionConstruction>(m, "IntersectionConstruction");
 

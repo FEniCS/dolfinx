@@ -31,10 +31,10 @@ import numpy as np
 def create_mesh(a, b):
     editor = MeshEditor()
     mesh = Mesh()
-    editor.open(mesh,1,2)
+    editor.open(mesh, "interval", 1, 2)
     editor.init_cells(1)
     editor.init_vertices(2)
-    editor.add_cell(0, 0, 1)
+    editor.add_cell(0, (0, 1) )
     editor.add_vertex(0, a)
     editor.add_vertex(1, b)
     editor.close()
