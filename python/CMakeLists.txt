@@ -8,11 +8,6 @@ find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
 find_package(DOLFIN REQUIRED)
 include(${DOLFIN_USE_FILE})
 
-# Check for mpi4py
-#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-#  ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-#find_package(MPI4PY)
-
 # Create the binding library
 pybind11_add_module(cpp SHARED
   src/dolfin.cpp
@@ -41,3 +36,20 @@ pybind11_add_module(cpp SHARED
 
 # Add DOLFIN libraries and other config
 target_link_libraries(cpp PRIVATE pybind11::module dolfin)
+
+# Add to CMake earch path
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
+# Check for petsc4py
+find_package(PETSc4py)
+if (PETSC4PY_FOUND)
+  target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIRS})
+  target_compile_definitions(cpp PRIVATE HAS_PYBIND11_PETSC4PY)
+endif()
+
+#find_package(MPI4PY)
+#if (MPI4PY_FOUND)
+#  target_include_directories(cpp PRIVATE ${MPI4PY_INCLUDE_DIR})
+#  target_compile_definitions(cpp PRIVATE HAS_MPI4PY)
+#endif()

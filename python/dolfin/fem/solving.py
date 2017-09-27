@@ -32,7 +32,6 @@ from dolfin.fem.problem import LinearVariationalProblem, NonlinearVariationalPro
 
 __all__ = ["LinearVariationalProblem",
            "LinearVariationalSolver",
-           "LocalSolver",
            "NonlinearVariationalProblem",
            "NonlinearVariationalSolver",
            "solve"]
