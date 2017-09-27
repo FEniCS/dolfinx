@@ -85,7 +85,7 @@ namespace
     }
   }
 
-  // dolfin::GenericLinearOperator trampoline class
+  // Linear operator trampoline class
   template<typename LinearOperatorBase>
   class PyLinearOperator : public LinearOperatorBase
   {
@@ -96,16 +96,29 @@ namespace
     // https://github.com/pybind/pybind11/issues/250.
 
     std::size_t size(std::size_t dim) const
-    {
-      PYBIND11_OVERLOAD_PURE(std::size_t, LinearOperatorBase, size, );
-    }
+    { PYBIND11_OVERLOAD_PURE(std::size_t, LinearOperatorBase, size, ); }
+
+    void mult(const dolfin::GenericVector& x, dolfin::GenericVector& y) const
+    { PYBIND11_OVERLOAD_INT(void, LinearOperatorBase, "mult", &x, &y); }
+  };
+
+  // Linear operator trampoline class (with pure virtual 'mult'
+  // function)
+  template<typename LinearOperatorBase>
+  class PyLinearOperatorPure : public LinearOperatorBase
+  {
+    using LinearOperatorBase::LinearOperatorBase;
+
+    std::size_t size(std::size_t dim) const
+    { PYBIND11_OVERLOAD_PURE(std::size_t, LinearOperatorBase, size, ); }
 
     void mult(const dolfin::GenericVector& x, dolfin::GenericVector& y) const
     {
       PYBIND11_OVERLOAD_INT(void, LinearOperatorBase, "mult", &x, &y);
-      py::pybind11_fail("Tried to call pure virtual function LinearOpertor::mult");
+      py::pybind11_fail("Tried to call pure virtual function \'mult\'");
     }
   };
+
 }
 
 namespace dolfin_wrappers
@@ -211,7 +224,7 @@ namespace dolfin_wrappers
 
     // dolfin::GenericLinearOperator
     py::class_<dolfin::GenericLinearOperator, std::shared_ptr<dolfin::GenericLinearOperator>,
-               PyLinearOperator<dolfin::GenericLinearOperator>, dolfin::LinearAlgebraObject>
+               PyLinearOperatorPure<dolfin::GenericLinearOperator>, dolfin::LinearAlgebraObject>
       (m, "GenericLinearOperator", "GenericLinearOperator object");
 
     // dolfin::GenericTensor
@@ -686,7 +699,7 @@ namespace dolfin_wrappers
 
     // dolfin::LinearOperator
     py::class_<dolfin::LinearOperator, std::shared_ptr<dolfin::LinearOperator>,
-               PyLinearOperator<dolfin::LinearOperator>, dolfin::GenericLinearOperator>
+               PyLinearOperatorPure<dolfin::LinearOperator>, dolfin::GenericLinearOperator>
       (m, "LinearOperator")
       .def(py::init<const dolfin::GenericVector&, const dolfin::GenericVector&>())
       .def("instance", (std::shared_ptr<dolfin::LinearAlgebraObject>(dolfin::LinearOperator::*)())
