@@ -11,6 +11,7 @@ from . import get_pybind_include
 
 from dolfin.jit.jit import dijitso_jit
 
+
 def jit_generate(cpp_code, module_name, signature, parameters):
 
     log(LogLevel.TRACE, "Calling dijitso just-in-time (JIT) compiler for pybind11 code.")

@@ -26,15 +26,17 @@ component.
 # First added:  2014-11-28
 # Last changed: 2014-11-28
 
-from ufl import *
+# from ufl import *
+from ufl import as_ufl
 from ufl.corealg.multifunction import MultiFunction
 from ufl.corealg.map_dag import map_expr_dag
-from ufl.classes import Argument, MultiIndex, Indexed, FixedIndex
+from ufl.classes import Argument, FixedIndex
 from ufl.log import error as ufl_error
 
 __all__ = ["extract_tested_expressions"]
 
 # TODO: "factorization" is not the right term
+
 
 class ScalarFactorizer(MultiFunction):
     def __init__(self):
@@ -47,7 +49,7 @@ class ScalarFactorizer(MultiFunction):
             self._arg = expr
         elif self._arg is not expr:
             ufl_error("Expecting only one Argument in this algorithm implementation.")
-        return { component: self._one }
+        return {component: self._one}
 
     def argument(self, e):
         if e.ufl_shape != ():
@@ -113,13 +115,13 @@ class ScalarFactorizer(MultiFunction):
             ufl_error("Expecting only one Argument in this algorithm. Products of Arguments are not allowed.")
         elif a_is_dict:
             c = {}
-            for k,v in a.items():
-                c[k] = v*b
+            for k, v in a.items():
+                c[k] = v * b
             return c
         elif b_is_dict:
             c = {}
-            for k,v in b.items():
-                c[k] = v*a
+            for k, v in b.items():
+                c[k] = v * a
             return c
         else:
             return e
@@ -129,7 +131,7 @@ class ScalarFactorizer(MultiFunction):
             ufl_error("Cannot divide by Arguments.")
         if isinstance(a, dict):
             c = {}
-            for k,v in a.items():
+            for k, v in a.items():
                 c[k] = v / b
             return c
         else:
