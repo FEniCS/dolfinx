@@ -9,7 +9,6 @@ from dolfin.cpp import MPI
 from functools import wraps
 import ffc
 from dolfin.cpp.parameter import parameters
-from dolfin.parameter import ffc_default_parameters
 
 
 # Copied over from site-packages
