@@ -242,12 +242,12 @@ def test_tetrahedron_collides_triangle():
     """Test if point collide with tetrahedron"""
 
     tetmesh = UnitCubeMesh(2, 2, 2)
-    vertices = [ Point(0, 0, 0.5),
-                 Point(1, 0, 0.5),
-                 Point(0, 1, 0.5),
-                 Point(1, 1, 0.5) ]
-    cells = [ (0, 1, 2),
-              (1, 2, 3) ]
+    vertices = [ np.array( (0, 0, 0.5), dtype='float'),
+                 np.array( (1, 0, 0.5), dtype='float'),
+                 np.array( (0, 1, 0.5), dtype='float'),
+                 np.array( (1, 1, 0.5), dtype='float')]
+    cells = [ np.array( (0, 1, 2), dtype='uint'),
+              np.array( (1, 2, 3), dtype='uint')]
 
     trimesh = create_triangular_mesh_3D(vertices, cells)
     dx = Point(0.1, 0.1, -0.1)

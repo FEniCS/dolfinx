@@ -34,9 +34,9 @@ def create_mesh(a, b):
     editor.open(mesh, "interval", 1, 2)
     editor.init_cells(1)
     editor.init_vertices(2)
-    editor.add_cell(0, (0, 1) )
-    editor.add_vertex(0, a)
-    editor.add_vertex(1, b)
+    editor.add_cell(0, np.array( (0, 1), dtype='uint') )
+    editor.add_vertex(0, np.array( (a.x(), a.y()), dtype='float'))
+    editor.add_vertex(1, np.array( (a.x(), a.y()), dtype='float'))
     editor.close()
     return mesh;
 
