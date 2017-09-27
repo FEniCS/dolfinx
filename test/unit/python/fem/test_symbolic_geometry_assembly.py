@@ -934,6 +934,7 @@ def test_geometric_quantities(uflacs_representation_only, mesh_factory):
 
     h = CellDiameter(mesh)
     R = Circumradius(mesh)
+    E = MaxCellEdgeLength(mesh)
 
     for c in cells(mesh):
         # Mark current cell for integration
@@ -942,6 +943,14 @@ def test_geometric_quantities(uflacs_representation_only, mesh_factory):
 
         # Check cell diameter
         assert numpy.isclose(assemble(h*dx(1))/assemble(1*dx(1)), c.h())
+
+        # Check max cell edge length
+        if mesh.ufl_cell().is_simplex():
+            # Equals cell diameter on simplices
+            assert numpy.isclose(assemble(E*dx(1))/assemble(1*dx(1)), c.h())
+        else:
+            # Is smaller equal than cell diameter in general
+            assert c.h() - assemble(E*dx(1))/assemble(1*dx(1)) >= 1e-12*c.h()
 
         # Check circumradius if it makes sense
         if mesh.ufl_domain().is_piecewise_linear_simplex_domain():
