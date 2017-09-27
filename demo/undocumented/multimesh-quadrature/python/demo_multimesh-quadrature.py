@@ -103,7 +103,7 @@ for compress in [True, False]:
 
 	    # Build multimesh
 	    multimesh = MultiMesh()
-	    multimesh.parameters.compress_volume_quadrature = compress
+	    multimesh.parameters["compress_volume_quadrature"] = compress
 	    multimesh.add(mesh)
 	    multimesh.add(propeller)
 	    multimesh.build()

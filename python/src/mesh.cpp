@@ -543,13 +543,19 @@ namespace dolfin_wrappers
       .def_static("rotate", (void (*)(dolfin::Mesh&, double, std::size_t, const dolfin::Point&))
                   &dolfin::MeshTransformation::rotate);
 
-    py::class_<dolfin::MultiMesh, std::shared_ptr<dolfin::MultiMesh>>(m, "MultiMesh")
+    py::class_<dolfin::MultiMesh, std::shared_ptr<dolfin::MultiMesh>,
+	       dolfin::Variable>(m, "MultiMesh")
       .def(py::init<>())
       .def("add", &dolfin::MultiMesh::add)
       .def("build", &dolfin::MultiMesh::build, py::arg("quadrature_order") = 2)
       .def("num_parts", &dolfin::MultiMesh::num_parts)
       .def("compute_volume", &dolfin::MultiMesh::compute_volume)
-      .def("part", &dolfin::MultiMesh::part);
+      .def("part", &dolfin::MultiMesh::part)
+      .def("cut_cells", &dolfin::MultiMesh::cut_cells)
+      .def("uncut_cells", &dolfin::MultiMesh::uncut_cells)
+      .def("covered_cells", &dolfin::MultiMesh::covered_cells)
+      .def("quadrature_rules_cut_cells",
+	   static_cast<const dolfin::MultiMesh::quadrature_rule(dolfin::MultiMesh::*)(std::size_t, unsigned int) const>(&dolfin::MultiMesh::quadrature_rules_cut_cells));
   }
 
 
