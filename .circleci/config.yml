@@ -12,7 +12,7 @@ jobs:
       - run:
           name: Install/update dependencies  # Install with sudo as tests not run as superuser in circleci/python
           command: |
-            sudo pip3 install pytest pytest-xdist six --upgrade
+            sudo pip3 install pytest pytest-xdist six flake8 --upgrade
       - run:
           name: Install FIAT
           command: pip3 install git+https://bitbucket.org/fenics-project/fiat.git@master
@@ -55,6 +55,9 @@ jobs:
       - run:
           name: Run C++ regression tests (MPI)
           command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_cpp_mpi
+      - run:
+          name: Flake8 checks on pybind11 Python
+	  command: python3 -m flake8 python/dolfin
       - run:
           name: Build Python/pybind11 interface
           command: |

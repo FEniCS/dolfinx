@@ -43,6 +43,7 @@ def _repr_html_(self):
 def _repr_svg_(self):
     return svgtools.mesh2svg(self)
 
+
 # Extend cpp.mesh.Mesh class, and clean-up
 cpp.mesh.Mesh.ufl_cell = ufl_cell
 cpp.mesh.Mesh.ufl_coordinate_element = ufl_coordinate_element
