@@ -32,9 +32,7 @@ import dolfin.cpp as cpp
 from dolfin.function.constant import Constant
 from dolfin.function.expression import Expression
 from dolfin.function.function import Function
-from dolfin.function.argument import TestFunction
 from dolfin.fem.formmanipulations import derivative, adjoint
-from dolfin.multistage.factorize import extract_tested_expressions
 from ufl import action as ufl_action
 from dolfin.fem.form import Form
 import ufl.algorithms
@@ -51,16 +49,16 @@ def safe_adjoint(x):
 def safe_action(x, y):
     x = expand_derivatives(x)
     if x.integrals() == ():
-        return x # form is empty, return anyway
+        return x  # form is empty, return anyway
     else:
         return ufl_action(x, y)
 
 
 def _check_abc(a, b, c):
-    if not (isinstance(a, np.ndarray) and (len(a) == 1 or \
-            (len(a.shape)==2 and a.shape[0] == a.shape[1]))):
+    if not (isinstance(a, np.ndarray) and (len(a) == 1 or
+            (len(a.shape) == 2 and a.shape[0] == a.shape[1]))):
         raise TypeError("Expected an m x m numpy array as the first argument")
-    if not (isinstance(b, np.ndarray) and len(b.shape) in [1,2]):
+    if not (isinstance(b, np.ndarray) and len(b.shape) in [1, 2]):
         raise TypeError("Expected a 1 or 2 dimensional numpy array as the second argument")
     if not (isinstance(c, np.ndarray) and len(c.shape) == 1):
         raise TypeError("Expected a 1 dimensional numpy array as the third argument")
@@ -75,24 +73,24 @@ def _check_abc(a, b, c):
     # If b is a matrix we expect it to have two rows
     if len(b.shape) == 2:
         if not (b.shape[0] == 2 and b.shape[1] == size):
-            raise ValueError("Expected a 2 row matrix with the same number "\
+            raise ValueError("Expected a 2 row matrix with the same number "
                              "of collumns as the first dimension of the a matrix.")
     elif len(b) != size:
-        raise ValueError("Expected the length of the b vector to have the "\
+        raise ValueError("Expected the length of the b vector to have the "
                          "same size as the first dimension of the a matrix.")
 
     if len(c) != size:
-        raise ValueError("Expected the length of the c vector to have the "\
+        raise ValueError("Expected the length of the c vector to have the "
                          "same size as the first dimension of the a matrix.")
 
     # Check if the method is singly diagonally implicit
     sigma = -1
     for i in range(size):
         # If implicit
-        if a[i,i] != 0:
+        if a[i, i] != 0:
             if sigma == -1:
-                sigma = a[i,i]
-            elif sigma != a[i,i]:
+                sigma = a[i, i]
+            elif sigma != a[i, i]:
                 raise ValueError("Expected only singly diagonally implicit "
                                  "schemes. (Same value on the diagonal of 'a'.)")
 
@@ -193,7 +191,7 @@ def _butcher_scheme_generator(a, b, c, time, solution, rhs_form):
 
     # Get test function
     arguments = rhs_form.arguments()
-    coefficients = rhs_form.coefficients()
+    # coefficients = rhs_form.coefficients()
     v = arguments[0]
 
     # Create time step
@@ -204,7 +202,7 @@ def _butcher_scheme_generator(a, b, c, time, solution, rhs_form):
     ufl_stage_forms = []
 
     # Stage solutions
-    k = [Function(solution.function_space(), name="k_%d"%i) for i in range(size)]
+    k = [Function(solution.function_space(), name="k_%d" % i) for i in range(size)]
 
     jacobian_indices = []
 
@@ -216,12 +214,12 @@ def _butcher_scheme_generator(a, b, c, time, solution, rhs_form):
     for i, ki in enumerate(k):
 
         # Check whether the stage is explicit
-        explicit = a[i,i] == 0
+        explicit = a[i, i] == 0
 
         # Evaluation arguments for the ith stage
-        evalargs = y_ + dt * sum([float(a[i,j]) * k[j] \
-                                  for j in range(i+1)], zero_)
-        time = time_ + dt*c[i]
+        evalargs = y_ + dt * sum([float(a[i, j]) * k[j]
+                                  for j in range(i + 1)], zero_)
+        time = time_ + dt * c[i]
 
         replace_dict = _replace_dict_time_dependent_expression(time_dep_expressions,
                                                                time_, dt, c[i])
@@ -235,7 +233,7 @@ def _butcher_scheme_generator(a, b, c, time, solution, rhs_form):
             jacobian_indices.append(-1)
         else:
             # Create a F=0 form and differentiate it
-            stage_form -= ufl.inner(ki, v)*DX
+            stage_form -= ufl.inner(ki, v) * DX
             stage_forms = [stage_form, derivative(stage_form, ki)]
             jacobian_indices.append(0)
         ufl_stage_forms.append(stage_forms)
@@ -244,25 +242,25 @@ def _butcher_scheme_generator(a, b, c, time, solution, rhs_form):
 
     # Only one last stage
     if len(b.shape) == 1:
-        last_stage = Form(ufl.inner(y_+sum([dt*float(bi)*ki for bi, ki in \
-                                            zip(b, k)], zero_), v)*DX)
+        last_stage = Form(ufl.inner(y_ + sum([dt * float(bi) * ki for bi, ki in
+                                              zip(b, k)], zero_), v) * DX)
     else:
         # FIXME: Add support for adaptivity in RKSolver and
         # MultiStageScheme
-        last_stage = [Form(ufl.inner(y_+sum([dt*float(bi)*ki for bi, ki in \
-                                             zip(b[0,:], k)], zero_), v)*DX),
-                      Form(ufl.inner(y_+sum([dt*float(bi)*ki for bi, ki in \
-                                             zip(b[1,:], k)], zero_), v)*DX)]
+        last_stage = [Form(ufl.inner(y_ + sum([dt * float(bi) * ki for bi, ki in
+                                               zip(b[0, :], k)], zero_), v) * DX),
+                      Form(ufl.inner(y_ + sum([dt * float(bi) * ki for bi, ki in
+                                               zip(b[1, :], k)], zero_), v) * DX)]
 
     # Create the Function holding the solution at end of time step
-    #k.append(solution.copy())
+    # k.append(solution.copy())
 
     # Generate human form of MultiStageScheme
     human_form = []
     for i in range(size):
-        kterm = " + ".join("%sh*k_%s" % ("" if a[i,j] == 1.0 else \
-                                         "%s*"% a[i,j], j) \
-                           for j in range(size) if a[i,j] != 0)
+        kterm = " + ".join("%sh*k_%s" % ("" if a[i, j] == 1.0 else
+                                         "%s*" % a[i, j], j)
+                           for j in range(size) if a[i, j] != 0)
         if c[i] in [0.0, 1.0]:
             cih = " + h" if c[i] == 1.0 else ""
         else:
@@ -271,18 +269,18 @@ def _butcher_scheme_generator(a, b, c, time, solution, rhs_form):
         if len(kterm) == 0:
             human_form.append("k_%(i)s = f(t_n%(cih)s, y_n)" % {"i": i, "cih": cih})
         else:
-            human_form.append("k_%(i)s = f(t_n%(cih)s, y_n + %(kterm)s)" % \
-                          {"i": i, "cih": cih, "kterm": kterm})
+            human_form.append("k_%(i)s = f(t_n%(cih)s, y_n + %(kterm)s)" %
+                              {"i": i, "cih": cih, "kterm": kterm})
 
-    parentheses = "(%s)" if np.sum(b>0) > 1 else "%s"
-    human_form.append("y_{n+1} = y_n + h*" + parentheses % (" + ".join(\
-        "%sk_%s" % ("" if b[i] == 1.0 else "%s*" % b[i], i) \
+    parentheses = "(%s)" if np.sum(b > 0) > 1 else "%s"
+    human_form.append("y_{n+1} = y_n + h*" + parentheses % (" + ".join(
+        "%sk_%s" % ("" if b[i] == 1.0 else "%s*" % b[i], i)
         for i in range(size) if b[i] > 0)))
 
     human_form = "\n".join(human_form)
 
     return ufl_stage_forms, dolfin_stage_forms, jacobian_indices, last_stage, \
-           k, dt, human_form, None
+        k, dt, human_form, None
 
 
 def _butcher_scheme_generator_tlm(a, b, c, time, solution, rhs_form,
@@ -316,7 +314,7 @@ def _butcher_scheme_generator_tlm(a, b, c, time, solution, rhs_form,
 
     # Get test function
     arguments = rhs_form.arguments()
-    coefficients = rhs_form.coefficients()
+    # coefficients = rhs_form.coefficients()
     v = arguments[0]
 
     # Create time step
@@ -327,8 +325,8 @@ def _butcher_scheme_generator_tlm(a, b, c, time, solution, rhs_form,
     ufl_stage_forms = []
 
     # Stage solutions
-    k = [Function(solution.function_space(), name="k_%d"%i) for i in range(size)]
-    kdot = [Function(solution.function_space(), name="kdot_%d"%i) \
+    k = [Function(solution.function_space(), name="k_%d" % i) for i in range(size)]
+    kdot = [Function(solution.function_space(), name="kdot_%d" % i)
             for i in range(size)]
 
     # Create the stage forms
@@ -343,12 +341,12 @@ def _butcher_scheme_generator_tlm(a, b, c, time, solution, rhs_form,
     for i, ki in enumerate(k):
 
         # Check whether the stage is explicit
-        explicit = a[i,i] == 0
+        explicit = a[i, i] == 0
 
         # Evaluation arguments for the ith stage
-        evalargs = y_ + dt * sum([float(a[i,j]) * k[j] \
-                                  for j in range(i+1)], zero_)
-        time = time_ + dt*c[i]
+        evalargs = y_ + dt * sum([float(a[i, j]) * k[j]
+                                  for j in range(i + 1)], zero_)
+        time = time_ + dt * c[i]
 
         replace_dict = _replace_dict_time_dependent_expression(time_dep_expressions,
                                                                time_, dt, c[i])
@@ -366,7 +364,7 @@ def _butcher_scheme_generator_tlm(a, b, c, time, solution, rhs_form,
             jacobian_indices.append(-1)
         else:
             # Create a F=0 form and differentiate it
-            stage_form_implicit = stage_form - ufl.inner(ki, v)*DX
+            stage_form_implicit = stage_form - ufl.inner(ki, v) * DX
             stage_forms = [stage_form_implicit, derivative(stage_form_implicit, ki)]
             jacobian_indices.append(0)
 
@@ -376,14 +374,14 @@ def _butcher_scheme_generator_tlm(a, b, c, time, solution, rhs_form,
 
         # And now the tangent linearisation:
         stage_form_tlm = safe_action(derivative(stage_form, y_), perturbation) + \
-                         sum([dt*float(a[i,j]) * safe_action(derivative(\
-            forward_forms[j], y_), kdot[j]) for j in range(i+1)])
+            sum([dt * float(a[i, j]) * safe_action(derivative(
+                forward_forms[j], y_), kdot[j]) for j in range(i + 1)])
         if explicit:
             stage_forms_tlm = [stage_form_tlm]
             jacobian_indices.append(-1)
         else:
             # Create a F=0 form and differentiate it
-            stage_form_tlm -= ufl.inner(kdot[i], v)*DX
+            stage_form_tlm -= ufl.inner(kdot[i], v) * DX
             stage_forms_tlm = [stage_form_tlm, derivative(stage_form_tlm, kdot[i])]
             jacobian_indices.append(1)
 
@@ -393,44 +391,44 @@ def _butcher_scheme_generator_tlm(a, b, c, time, solution, rhs_form,
 
     # Only one last stage
     if len(b.shape) == 1:
-        last_stage = Form(ufl.inner(perturbation + sum(\
-            [dt*float(bi)*kdoti for bi, kdoti in zip(b, kdot)], zero_), v)*DX)
+        last_stage = Form(ufl.inner(perturbation + sum(
+            [dt * float(bi) * kdoti for bi, kdoti in zip(b, kdot)], zero_), v) * DX)
     else:
         raise Exception("Not sure what to do here")
 
     human_form = []
     for i in range(size):
-        kterm = " + ".join("%sh*k_%s" % ("" if a[i,j] == 1.0 else \
-                                         "%s*"% a[i,j], j) \
-                           for j in range(size) if a[i,j] != 0)
+        kterm = " + ".join("%sh*k_%s" % ("" if a[i, j] == 1.0 else
+                                         "%s*" % a[i, j], j)
+                           for j in range(size) if a[i, j] != 0)
         if c[i] in [0.0, 1.0]:
             cih = " + h" if c[i] == 1.0 else ""
         else:
             cih = " + %s*h" % c[i]
 
-        kdotterm = " + ".join("%(a)sh*action(derivative(f(t_n%(cih)s, y_n + "\
-                              "%(kterm)s), kdot_%(i)s" % \
-                              {"a": ("" if a[i,j] == 1.0 else "%s*"% a[i,j], j),
+        kdotterm = " + ".join("%(a)sh*action(derivative(f(t_n%(cih)s, y_n + "
+                              "%(kterm)s), kdot_%(i)s" %
+                              {"a": ("" if a[i, j] == 1.0 else "%s*" % a[i, j], j),
                                "i": i,
                                "cih": cih,
-                               "kterm": kterm} \
-                              for j in range(size) if a[i,j] != 0)
+                               "kterm": kterm}
+                              for j in range(size) if a[i, j] != 0)
 
         if len(kterm) == 0:
             human_form.append("k_%(i)s = f(t_n%(cih)s, y_n)" % {"i": i, "cih": cih})
-            human_form.append("kdot_%(i)s = action(derivative("\
-                              "f(t_n%(cih)s, y_n), y_n), ydot_n)" % \
+            human_form.append("kdot_%(i)s = action(derivative("
+                              "f(t_n%(cih)s, y_n), y_n), ydot_n)" %
                               {"i": i, "cih": cih})
         else:
-            human_form.append("k_%(i)s = f(t_n%(cih)s, y_n + %(kterm)s)" % \
-                          {"i": i, "cih": cih, "kterm": kterm})
-            human_form.append("kdot_%(i)s = action(derivative(f(t_n%(cih)s, "\
-                              "y_n + %(kterm)s), y_n) + %(kdotterm)s" % \
-                          {"i": i, "cih": cih, "kterm": kterm, "kdotterm": kdotterm})
+            human_form.append("k_%(i)s = f(t_n%(cih)s, y_n + %(kterm)s)" %
+                              {"i": i, "cih": cih, "kterm": kterm})
+            human_form.append("kdot_%(i)s = action(derivative(f(t_n%(cih)s, "
+                              "y_n + %(kterm)s), y_n) + %(kdotterm)s" %
+                              {"i": i, "cih": cih, "kterm": kterm, "kdotterm": kdotterm})
 
-    parentheses = "(%s)" if np.sum(b>0) > 1 else "%s"
-    human_form.append("ydot_{n+1} = ydot_n + h*" + parentheses % (" + ".join(\
-        "%skdot_%s" % ("" if b[i] == 1.0 else "%s*" % b[i], i) \
+    parentheses = "(%s)" if np.sum(b > 0) > 1 else "%s"
+    human_form.append("ydot_{n+1} = ydot_n + h*" + parentheses % (" + ".join(
+        "%skdot_%s" % ("" if b[i] == 1.0 else "%s*" % b[i], i)
         for i in range(size) if b[i] > 0)))
 
     human_form = "\n".join(human_form)
@@ -469,7 +467,7 @@ def _butcher_scheme_generator_adm(a, b, c, time, solution, rhs_form, adj):
 
     # Get test function
     arguments = rhs_form.arguments()
-    coefficients = rhs_form.coefficients()
+    # coefficients = rhs_form.coefficients()
     v = arguments[0]
 
     # Create time step
@@ -480,8 +478,8 @@ def _butcher_scheme_generator_adm(a, b, c, time, solution, rhs_form, adj):
     ufl_stage_forms = []
 
     # Stage solutions
-    k = [Function(solution.function_space(), name="k_%d"%i) for i in range(size)]
-    kbar = [Function(solution.function_space(), name="kbar_%d"%i) \
+    k = [Function(solution.function_space(), name="k_%d" % i) for i in range(size)]
+    kbar = [Function(solution.function_space(), name="kbar_%d" % i)
             for i in range(size)]
 
     # Create the stage forms
@@ -497,14 +495,14 @@ def _butcher_scheme_generator_adm(a, b, c, time, solution, rhs_form, adj):
     for i, ki in enumerate(k):
 
         # Check whether the stage is explicit
-        explicit = a[i,i] == 0
+        explicit = a[i, i] == 0
 
         # Evaluation arguments for the ith stage
-        evalargs = y_ + dt * sum([float(a[i,j]) * k[j] \
-                                  for j in range(i+1)], zero_)
-        time = time_ + dt*c[i]
+        evalargs = y_ + dt * sum([float(a[i, j]) * k[j]
+                                  for j in range(i + 1)], zero_)
+        time = time_ + dt * c[i]
 
-        replace_dict = _replace_dict_time_dependent_expression(\
+        replace_dict = _replace_dict_time_dependent_expression(
             time_dep_expressions, time_, dt, c[i])
 
         replace_dict[y_] = evalargs
@@ -518,8 +516,8 @@ def _butcher_scheme_generator_adm(a, b, c, time, solution, rhs_form, adj):
             jacobian_indices.append(-1)
         else:
             # Create a F=0 form and differentiate it
-            stage_form_implicit = stage_form - ufl.inner(ki, v)*DX
-            stage_forms = [stage_form_implicit, derivative(\
+            stage_form_implicit = stage_form - ufl.inner(ki, v) * DX
+            stage_forms = [stage_form_implicit, derivative(
                 stage_form_implicit, ki)]
             jacobian_indices.append(0)
 
@@ -530,18 +528,18 @@ def _butcher_scheme_generator_adm(a, b, c, time, solution, rhs_form, adj):
     for i, kbari in reversed(list(enumerate(kbar))):
 
         # Check whether the stage is explicit
-        explicit = a[i,i] == 0
+        explicit = a[i, i] == 0
 
         # And now the adjoint linearisation:
-        stage_form_adm = ufl.inner(dt * b[i] * adj, v)*DX  + sum(\
-            [dt * float(a[j,i]) * safe_action(safe_adjoint(derivative(\
+        stage_form_adm = ufl.inner(dt * b[i] * adj, v) * DX + sum(
+            [dt * float(a[j, i]) * safe_action(safe_adjoint(derivative(
                 forward_forms[j], y_)), kbar[j]) for j in range(i, size)])
         if explicit:
             stage_forms_adm = [stage_form_adm]
             jacobian_indices.append(-1)
         else:
             # Create a F=0 form and differentiate it
-            stage_form_adm -= ufl.inner(kbar[i], v)*DX
+            stage_form_adm -= ufl.inner(kbar[i], v) * DX
             stage_forms_adm = [stage_form_adm, derivative(stage_form_adm, kbari)]
             jacobian_indices.append(1)
 
@@ -551,16 +549,16 @@ def _butcher_scheme_generator_adm(a, b, c, time, solution, rhs_form, adj):
 
     # Only one last stage
     if len(b.shape) == 1:
-        last_stage = Form(ufl.inner(adj, v)*DX + sum(\
-            [safe_action(safe_adjoint(derivative(forward_forms[i], y_)), kbar[i]) \
+        last_stage = Form(ufl.inner(adj, v) * DX + sum(
+            [safe_action(safe_adjoint(derivative(forward_forms[i], y_)), kbar[i])
              for i in range(size)]))
     else:
         raise Exception("Not sure what to do here")
 
     human_form = "unimplemented"
 
-    return ufl_stage_forms, dolfin_stage_forms, jacobian_indices, last_stage,\
-           stage_solutions, dt, human_form, adj
+    return ufl_stage_forms, dolfin_stage_forms, jacobian_indices, last_stage, \
+        stage_solutions, dt, human_form, adj
 
 
 class MultiStageScheme(cpp.multistage.MultiStageScheme):
@@ -633,6 +631,7 @@ class MultiStageScheme(cpp.multistage.MultiStageScheme):
     def stage_solutions(self):
         "Return the stage solutions"
         return self._stage_solutions
+
     def to_tlm(self, perturbation):
         raise NotImplementedError("'to_tlm:' implement in derived classes")
 
@@ -649,8 +648,8 @@ class ButcherMultiStageScheme(MultiStageScheme):
         bcs = bcs or []
         time = time or Constant(0.0)
         ufl_stage_forms, dolfin_stage_forms, jacobian_indices, last_stage, \
-                         stage_solutions, dt, human_form, contraction = \
-                         generator(a, b, c, time, solution, rhs_form)
+            stage_solutions, dt, human_form, contraction = \
+            generator(a, b, c, time, solution, rhs_form)
 
         # Store data
         self.a = a
@@ -725,7 +724,7 @@ class ExplicitMidPoint(ButcherMultiStageScheme):
     """Explicit 2nd order scheme"""
     def __init__(self, rhs_form, solution, t=None, bcs=None):
 
-        a = np.array([[0, 0],[0.5, 0.0]])
+        a = np.array([[0, 0], [0.5, 0.0]])
         b = np.array([0., 1])
         c = np.array([0, 0.5])
         ButcherMultiStageScheme.__init__(self, rhs_form, solution, t, bcs,
@@ -735,7 +734,7 @@ class ExplicitMidPoint(ButcherMultiStageScheme):
 class CN2(ButcherMultiStageScheme):
     """Semi-implicit 2nd order scheme"""
     def __init__(self, rhs_form, solution, t=None, bcs=None):
-        a = np.array([[0, 0],[0.5, 0.5]])
+        a = np.array([[0, 0], [0.5, 0.5]])
         b = np.array([0.5, 0.5])
         c = np.array([0, 1.0])
 
@@ -750,7 +749,7 @@ class ERK4(ButcherMultiStageScheme):
                       [0.5, 0, 0, 0],
                       [0, 0.5, 0, 0],
                       [0, 0, 1, 0]])
-        b = np.array([1./6, 1./3, 1./3, 1./6])
+        b = np.array([1. / 6, 1. / 3, 1. / 3, 1. / 6])
         c = np.array([0, 0.5, 0.5, 1])
         ButcherMultiStageScheme.__init__(self, rhs_form, solution, t, bcs,
                                          a, b, c, 4)
@@ -765,11 +764,11 @@ class ESDIRK3(ButcherMultiStageScheme):
 
     """
     def __init__(self, rhs_form, solution, t=None, bcs=None):
-        a = np.array([[0,                   0,                   0,                   0 ],
-                      [0.435866521500000,   0.435866521500000,   0,                   0 ],
-                      [0.490563388419108,   0.073570090080892,   0.435866521500000,   0 ],
-                      [0.308809969973036,   1.490563388254108,  -1.235239879727145,   0.435866521500000 ]])
-        b = a[-1,:].copy()
+        a = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000, 0.00000000000000],
+                      [0.435866521500000, 0.435866521500000, 0.000000000000000, 0.00000000000000],
+                      [0.490563388419108, 0.073570090080892, 0.435866521500000, 0.00000000000000],
+                      [0.308809969973036, 1.490563388254108, -1.235239879727145, 0.435866521500000]])
+        b = a[-1, :].copy()
         c = a.sum(1)
         ButcherMultiStageScheme.__init__(self, rhs_form, solution, t, bcs, a, b, c, 3)
 
@@ -783,13 +782,13 @@ class ESDIRK4(ButcherMultiStageScheme):
 
     """
     def __init__(self, rhs_form, solution, t=None, bcs=None):
-        a = np.array([[0,                  0,                 0,                  0,                   0],
-                      [0.435866521500000,  0.4358665215,      0,                  0,                   0                   ],
-                      [0.140737774731968, -0.108365551378832, 0.435866521500000,  0,                   0                   ],
-                      [0.102399400616089, -0.376878452267324, 0.838612530151233,  0.435866521500000,   0                   ],
-                      [0.157024897860995,  0.117330441357768, 0.616678030391680, -0.326899891110444,   0.435866521500000   ]])
+        a = np.array([[0.000000000000000, 0.0000000000000000, 0.000000000000000, 0.000000000000000, 0.000000000000000],
+                      [0.435866521500000, 0.4358665215000000, 0.000000000000000, 0.000000000000000, 0.000000000000000],
+                      [0.140737774731968, -0.108365551378832, 0.435866521500000, 0.000000000000000, 0.000000000000000],
+                      [0.102399400616089, -0.376878452267324, 0.838612530151233, 0.435866521500000, 0.000000000000000],
+                      [0.157024897860995, 0.1173304413577680, 0.616678030391680, -0.326899891110444, 0.435866521500000]])
 
-        b = a[-1,:].copy()
+        b = a[-1, :].copy()
         c = a.sum(1)
         ButcherMultiStageScheme.__init__(self, rhs_form, solution, t, bcs, a, b, c, 4)
 
@@ -803,7 +802,7 @@ BackwardEuler = BDF1
 ERK = ERK1
 RK4 = ERK4
 
-__all__ = [name for name, attr in list(globals().items()) \
+__all__ = [name for name, attr in list(globals().items())
            if isinstance(attr, type) and issubclass(attr, MultiStageScheme)]
 
 __all__.append("MultiStageScheme")

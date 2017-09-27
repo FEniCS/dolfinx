@@ -45,12 +45,39 @@ __all__ = ["LinearVariationalProblem",
 # compilation
 
 
+class LocalSolver(cpp.fem.LocalSolver):
+
+    def __init__(self, a, L=None, solver_type=cpp.fem.LocalSolver.SolverType.LU):
+        """Create a local (cell-wise) solver for a linear variational problem
+        a(u, v) = L(v).
+
+        """
+
+        # Store input UFL forms and solution Function
+        self.a_ufl = a
+        self.L_ufl = L
+
+        # Wrap as DOLFIN forms
+        a = Form(a)
+        if L is None:
+            # Initialize C++ base class
+            cpp.fem.LocalSolver.__init__(self, a, solver_type)
+        else:
+            if L.empty():
+                L = cpp.fem.Form(1, 0)
+            else:
+                L = Form(L)
+
+            # Initialize C++ base class
+            cpp.fem.LocalSolver.__init__(self, a, L, solver_type)
+
+
 # FIXME: The import here are here to avoid a circular dependency
 # (ugly, should fix)
 # Solver classes are imported directly
-from dolfin.cpp.fem import LinearVariationalSolver, NonlinearVariationalSolver
-from dolfin.fem.adaptivesolving import AdaptiveLinearVariationalSolver
-from dolfin.fem.adaptivesolving import AdaptiveNonlinearVariationalSolver
+from dolfin.cpp.fem import LinearVariationalSolver, NonlinearVariationalSolver  # noqa
+from dolfin.fem.adaptivesolving import AdaptiveLinearVariationalSolver  # noqa
+from dolfin.fem.adaptivesolving import AdaptiveNonlinearVariationalSolver  # noqa
 
 
 # Solve function handles both linear systems and variational problems
