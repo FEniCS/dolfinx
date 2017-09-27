@@ -89,8 +89,7 @@ def ffc_jit(ufl_form, form_compiler_parameters=None):
     p = ffc.default_jit_parameters()
     p.update(dict(parameters["form_compiler"]))
     p.update(form_compiler_parameters or {})
-
-    return ffc.jit(ufl_form, parameters=form_compiler_parameters)
+    return ffc.jit(ufl_form, parameters=p)
 
 # Wrap dijitso JIT compilation with decorator
 @mpi_jit_decorator
