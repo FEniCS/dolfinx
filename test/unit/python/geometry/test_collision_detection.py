@@ -25,6 +25,7 @@
 import pytest
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
+import numpy as np
 
 @skip_in_parallel
 def create_triangular_mesh_3D(vertices, cells):
@@ -33,8 +34,9 @@ def create_triangular_mesh_3D(vertices, cells):
     editor.open(mesh,"triangle", 2,3)
     editor.init_cells(2)
     editor.init_vertices(4)
-    editor.add_cell(0, cells[0][0], cells[0][1], cells[0][2] )
-    editor.add_cell(1, cells[1][0], cells[1][1], cells[1][2] )
+    editor.add_cell(0, cells[0])
+    editor.add_cell(1, cells[1])
+
     editor.add_vertex(0, vertices[0])
     editor.add_vertex(1, vertices[1])
     editor.add_vertex(2, vertices[2])
@@ -60,17 +62,17 @@ def test_segment_collides_point_2D():
     editor.open(mesh, "interval", 1, 2)
     editor.init_vertices(2)
     editor.init_cells(1)
-    a = Point(1./8., 1./4.)
-    b = Point(2./8., 3./4.)
+    a = np.array( (1./8., 1./4.), dtype='float')
+    b = np.array( (2./8., 3./4.), dtype='float')
     editor.add_vertex(0, a)
     editor.add_vertex(1, b)
-    editor.add_cell(0, 0,1)
+    editor.add_cell(0, np.array( (0,1), dtype='uint'))
     editor.close()
     cell = Cell(mesh, 0)
     mid = Point(1.5/8., 2./4.)
     mid_average = (a + b) / 2
     assert cell.contains(mid)
-    assert cell.contains(mid_average)
+    assert cell.contains(Point(a[0], a[1]))
     assert cell.contains(cell.midpoint())
 
 @skip_in_parallel
@@ -125,9 +127,9 @@ def test_segment_collides_point_3D():
     editor.open(mesh, "interval", 1, 3)
     editor.init_vertices(2)
     editor.init_cells(1)
-    editor.add_vertex(0, Point(1./16., 1./8., 1./4.))
-    editor.add_vertex(1,Point( 2./16., 3./8., 2./4.))
-    editor.add_cell(0, 0,1 )
+    editor.add_vertex(0, np.array( (1./16., 1./8., 1./4.), dtype='float'))
+    editor.add_vertex(1, np.array( ( 2./16., 3./8., 2./4.), dtype='float'))
+    editor.add_cell(0, np.array( (0,1), dtype='uint') )
     editor.close()
     cell = Cell(mesh, 0)
     mid = Point(1.5/16., 2./8., 1.5/4.)
@@ -194,12 +196,12 @@ def test_triangle_triangle_collision() :
 @skip_in_parallel
 def test_triangle_collides_point_3D():
     """Test if point collide with triangle (inspired by test_manifold_dg0_functions)"""
-    vertices = [ Point(0.0, 0.0, 1.0),
-                 Point(1.0, 1.0, 1.0),
-                 Point(1.0, 0.0, 0.0),
-                 Point(0.0, 1.0, 0.0) ]
-    cells = [ (0, 1, 2),
-              (0, 1, 3) ]
+    vertices = [ np.array( (0.0, 0.0, 1.0), dtype='float'),
+                 np.array( (1.0, 1.0, 1.0), dtype='float'),
+                 np.array( (1.0, 0.0, 0.0), dtype='float'),
+                 np.array( (0.0, 1.0, 0.0), dtype='float') ]
+    cells = [ np.array( (0, 1, 2), dtype='uint'),
+              np.array( (0, 1, 3), dtype='uint') ]
     mesh = create_triangular_mesh_3D(vertices, cells)
     points = [ Point(0.0, 0.0, 1.0),
                Point(1.0, 1.0, 1.0),

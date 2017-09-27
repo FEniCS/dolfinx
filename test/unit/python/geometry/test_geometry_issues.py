@@ -61,9 +61,9 @@ def test_segment_collides_point_3D_2():
     editor.open(mesh, 1, 3)
     editor.init_vertices(2)
     editor.init_cells(1)
-    editor.add_vertex(0, 41.06309891, 63.74219894, 68.10320282)
-    editor.add_vertex(1, 41.45830154, 62.61560059, 66.43019867)
-    editor.add_cell(0,0,1)
+    editor.add_vertex(0, np.array( (41.06309891, 63.74219894, 68.10320282), dtype='float') )
+    editor.add_vertex(1, np.array( (41.45830154, 62.61560059, 66.43019867), dtype='float') )
+    editor.add_cell(0, np.array( (0,1), dtype='uint'))
     editor.close()
     cell = Cell(mesh, 0)
     assert cell.contains(cell.midpoint())
@@ -120,10 +120,10 @@ def test_collision_robustness_very_slow():
 def test_points_on_line():
     """Test case from https://bitbucket.org/fenics-project/dolfin/issues/790"""
     big = 1e6
-    p1 = Point(0.1, 0.06)
-    p3 = Point(big*2.1, big*0.1)
-    p2 = Point(0.0, big*3.0)
-    p0 = Point(big*3.0, 0.0)
+    p1 = np.array((0.1, 0.06), dtype='float')
+    p3 = np.array((big*2.1, big*0.1), dtype='float')
+    p2 = np.array((0.0, big*3.0), dtype='float')
+    p0 = np.array((big*3.0, 0.0), dtype='float')
 
     mesh = Mesh()
     ed = MeshEditor()
@@ -134,11 +134,9 @@ def test_points_on_line():
     ed.add_vertex(1, p1)
     ed.add_vertex(2, p2)
     ed.add_vertex(3, p3)
-
-    ed.add_cell(0, 2, 3, 0 )
-    ed.add_cell(1, 0, 1, 3 )
-    ed.add_cell(2, 1, 2, 3 )
-
+    ed.add_cell(0, np.array( (2, 3, 0), dtype='uint'))
+    ed.add_cell(1, np.array( (0, 1, 3 ), dtype='uint'))
+    ed.add_cell(2, np.array( (1, 2, 3 ), dtype='uint'))
     ed.close()
 
     # xdmf = XDMFFile("a.xdmf")
@@ -152,7 +150,7 @@ def test_points_on_line():
     # Find a point on line somewhere between p3 and p1
     j = 4
     pq = (p3*j + p1*(50-j))/50.0
-    c = bb.compute_entity_collisions(pq)
+    c = bb.compute_entity_collisions(Point(pq[0], pq[1]))
     # print pq.str(), c
 
     # Check that the neighbouring points are in the correct cells
@@ -161,7 +159,7 @@ def test_points_on_line():
     cnt = 0
     for i in range(-1, 2):
         for j in range(-1, 2):
-            pt = pq + Point(step*i, step*j)
+            pt = Point(pq[0], pq[1]) + Point(step*i, step*j)
             c = bb.compute_entity_collisions(pt)
             assert c[0] == cell_numbers[cnt]
             cnt += 1

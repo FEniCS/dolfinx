@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-import numpy
+import numpy as np
 from dolfin import *
 from six.moves import xrange as range
 from dolfin_utils.test import skip_in_parallel
@@ -34,9 +34,9 @@ def triangulation_to_mesh_2d(triangulation):
     editor.init_cells(num_cells)
     editor.init_vertices(num_vertices)
     for i in range(num_cells):
-        editor.add_cell(i, 3*i, 3*i + 1, 3*i + 2)
+        editor.add_cell(i, np.array( (3*i, 3*i + 1, 3*i + 2), dtype='uint') )
     for i in range(num_vertices):
-        editor.add_vertex(i, triangulation[2*i], triangulation[2*i + 1])
+        editor.add_vertex(i, np.array( (triangulation[2*i], triangulation[2*i + 1]), dtype='float'))
     editor.close()
     return mesh
 
@@ -49,9 +49,9 @@ def triangulation_to_mesh_2d_3d(triangulation):
     editor.init_cells(num_cells)
     editor.init_vertices(num_vertices)
     for i in range(num_cells):
-        editor.add_cell(i, 3*i, 3*i+1, 3*i+2)
+        editor.add_cell(i, np.array( (3*i, 3*i+1, 3*i+2), dtype='uint'))
     for i in range(num_vertices):
-        editor.add_vertex(i, triangulation[3*i], triangulation[3*i+1], triangulation[3*i+2])
+        editor.add_vertex(i, np.array( (triangulation[3*i], triangulation[3*i+1], triangulation[3*i+2]), dtype='float') )
     editor.close()
     return mesh
 
@@ -64,9 +64,9 @@ def triangulation_to_mesh_3d(triangulation):
     editor.init_cells(num_cells)
     editor.init_vertices(num_vertices)
     for i in range(num_cells):
-        editor.add_cell(i, 4*i, 4*i+1, 4*i+2, 4*i+3)
+        editor.add_cell(i, np.array( (4*i, 4*i+1, 4*i+2, 4*i+3), dtype='uint'))
     for i in range(num_vertices):
-        editor.add_vertex(i, triangulation[3*i], triangulation[3*i+1], triangulation[3*i+2])
+        editor.add_vertex(i, np.array( (triangulation[3*i], triangulation[3*i+1], triangulation[3*i+2]), dtype='float'))
     editor.close()
     return mesh
 
@@ -79,7 +79,7 @@ def test_triangulate_intersection_2d():
     mesh_1 = UnitSquareMesh(1, 1)
 
     # Translate second mesh randomly
-    #dx = Point(numpy.random.rand(),numpy.random.rand())
+    #dx = Point(np.random.rand(),np.random.rand())
     dx = Point(0.278498, 0.546881)
     mesh_1.translate(dx)
 
@@ -118,14 +118,14 @@ def test_triangulate_intersection_2d_3d():
     editor.init_vertices(4)
 
     # Add cells
-    editor.add_cell(0,0,1,2)
-    editor.add_cell(1,1,2,3)
+    editor.add_cell(0, np.array( (0,1,2), dtype='uint'))
+    editor.add_cell(1, np.array( (1,2,3), dtype='uint'))
 
     # Add vertices
-    editor.add_vertex(0,0,0,0.5)
-    editor.add_vertex(1,1,0,0.5)
-    editor.add_vertex(2,0,1,0.5)
-    editor.add_vertex(3,1,1,0.5)
+    editor.add_vertex(0, np.array( (0, 0, 0.5), dtype='float'))
+    editor.add_vertex(1, np.array( (1, 0, 0.5), dtype='float'))
+    editor.add_vertex(2, np.array( (0, 1, 0.5), dtype='float'))
+    editor.add_vertex(3, np.array( (1, 1, 0.5), dtype='float'))
     editor.close()
 
     # Rotate the triangle mesh around y axis
@@ -158,7 +158,7 @@ def test_triangulate_intersection_3d():
     mesh_1 = UnitCubeMesh(1, 1, 1)
 
     # Translate second mesh
-    # dx = Point(numpy.random.rand(),numpy.random.rand(),numpy.random.rand())
+    # dx = Point(np.random.rand(),np.random.rand(),np.random.rand())
     dx = Point(0.913375, 0.632359, 0.097540)
 
     mesh_1.translate(dx)
