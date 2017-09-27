@@ -5,6 +5,98 @@ import hashlib
 import dijitso
 import dolfin.cpp as cpp
 
+from dolfin.cpp import MPI
+from functools import wraps
+import ffc
+from dolfin.cpp.parameter import parameters
+from dolfin.parameter import ffc_default_parameters
+
+
+# Copied over from site-packages
+def mpi_jit_decorator(local_jit, *args, **kwargs):
+    """A decorator for jit compilation
+
+    Use this function as a decorator to any jit compiler function.  In
+    a parallel run, this function will first call the jit compilation
+    function on the first process. When this is done, and the module
+    is in the cache, it will call the jit compiler on the remaining
+    processes, which will then use the cached module.
+
+    *Example*
+        .. code-block:: python
+
+            def jit_something(something):
+                ....
+
+    """
+    @wraps(local_jit)
+    def mpi_jit(*args, **kwargs):
+
+        # FIXME: should require mpi_comm to be explicit
+        # and not default to comm_world?
+        mpi_comm = kwargs.pop("mpi_comm", MPI.comm_world)
+
+        # Just call JIT compiler when running in serial
+        if MPI.size(mpi_comm) == 1:
+            return local_jit(*args, **kwargs)
+
+        # Default status (0 == ok, 1 == fail)
+        status = 0
+
+        # Compile first on process 0
+        root = MPI.rank(mpi_comm) == 0
+        if root:
+            try:
+                output = local_jit(*args, **kwargs)
+            except Exception as e:
+                status = 1
+                error_msg = str(e)
+
+        # TODO: This would have lower overhead if using the dijitso.jit
+        # features to inject a waiting callback instead of waiting out here.
+        # That approach allows all processes to first look in the cache,
+        # introducing a barrier only on cache miss.
+        # There's also a sketch in dijitso of how to make only one
+        # process per physical cache directory do the compilation.
+
+        # Wait for the compiling process to finish and get status
+        # TODO: Would be better to broadcast the status from root but this works.
+        global_status = MPI.max(mpi_comm, status)
+
+        if global_status == 0:
+            # Success, call jit on all other processes
+            # (this should just read the cache)
+            if not root:
+                output = local_jit(*args,**kwargs)
+        else:
+            # Fail simultaneously on all processes,
+            # to allow catching the error without deadlock
+            if not root:
+                error_msg = "Compilation failed on root node."
+            cpp.dolfin_error("jit.py",
+                             "perform just-in-time compilation of form",
+                             error_msg)
+        return output
+
+    # Return the decorated jit function
+    return mpi_jit
+
+# Wrap FFC JIT compilation with decorator
+@mpi_jit_decorator
+def ffc_jit(ufl_form, form_compiler_parameters=None):
+
+    # Prepare form compiler parameters with overrides from dolfin and kwargs
+#    p = ffc.default_jit_parameters()
+#    p.update(dict([(k, v.value()) for k, v in parameters["form_compiler"].items()]))
+#    p.update(form_compiler_parameters or {})
+
+    return ffc.jit(ufl_form, parameters=form_compiler_parameters)
+
+# Wrap dijitso JIT compilation with decorator
+@mpi_jit_decorator
+def dijitso_jit(*args, **kwargs):
+    return dijitso.jit(*args, **kwargs)
+
 _cpp_math_builtins = [
     # <cmath> functions: from http://www.cplusplus.com/reference/cmath/
     "cos", "sin", "tan", "acos", "asin", "atan", "atan2",
@@ -18,7 +110,6 @@ _math_header = """
 
 const double pi = DOLFIN_PI;
 """ % "\n".join("using std::%s;" % mf for mf in _cpp_math_builtins)
-
 
 def compile_class(cpp_data):
     """Compile a user C(++) string or set of statements to a Python object
@@ -71,7 +162,7 @@ def compile_class(cpp_data):
     module_name = "dolfin_" + name + "_" + module_hash
 
     try:
-        module, signature = dijitso.jit(cpp_data, module_name, params,
+        module, signature = dijitso_jit(cpp_data, module_name, params,
                                         generate=cpp_data['jit_generate'])
         submodule = dijitso.extract_factory_function(module, "create_" + module_name)()
     except:

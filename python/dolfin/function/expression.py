@@ -291,6 +291,61 @@ class ExpressionParameters(object):
             self[k] = v
 
 
+class CompiledExpression(BaseExpression):
+    """Wrap a compiled module of type cpp.Expression"""
+
+    def __init__(self, cpp_module=None, **kwargs):
+
+        # Remove arguments that are used in Expression creation
+        element = kwargs.pop("element", None)
+        degree = kwargs.pop("degree", None)
+        cell = kwargs.pop("cell", None)
+        domain = kwargs.pop("domain", None)
+        name = kwargs.pop("name", None)
+        label = kwargs.pop("label", None)
+        mpi_comm = kwargs.pop("mpi_comm", None)
+
+        if not isinstance(cpp_module, cpp.function.Expression):
+            raise RuntimeError("Must supply compiled C++ Expression module to CompiledExpression")
+        else:
+            self._cpp_object = cpp_module
+
+            params = kwargs
+            for k, val in params.items():
+                if not isinstance(k, str):
+                    raise KeyError("User Parameter key must be a string")
+                if not hasattr(self._cpp_object, k):
+                    raise AttributeError("Compiled module does not have attribute %s", k)
+                setattr(self._cpp_object, k, val)
+
+        if element and degree:
+            raise RuntimeError("Cannot specify an element and a degree for Expressions.")
+
+        # Deduce element type if not provided
+        if element is None:
+            if degree is None:
+                raise KeyError("Must supply element or degree")
+            value_shape = tuple(self.value_dimension(i)
+                                for i in range(self.value_rank()))
+            if domain is not None and cell is None:
+                cell = domain.ufl_cell()
+            element = _select_element(family=None, cell=cell, degree=degree,
+                                      value_shape=value_shape)
+
+        BaseExpression.__init__(self, cell=cell, element=element, domain=domain,
+                                name=name, label=label)
+
+    def __getattr__(self, name):
+        if hasattr(self._cpp_object, name):
+            return getattr(self._cpp_object, name)
+
+    def __setattr__(self, name, value):
+        if name.startswith("_"):
+            super().__setattr__(name, value)
+        elif hasattr(self._cpp_object, name):
+            setattr(self._cpp_object, name, value)
+
+
 class Expression(BaseExpression):
     """JIT Expressions"""
 
@@ -309,11 +364,14 @@ class Expression(BaseExpression):
         label = kwargs.pop("label", None)
         # mpi_comm = kwargs.pop("mpi_comm", None)
 
-        if cpp_code is not None:
+        if not isinstance(cpp_code, (str, tuple, list)):
+            raise RuntimeError("Must supply C++ code to Expression")
+        else:
             params = kwargs
             for k in params:
                 if not isinstance(k, str):
-                    raise KeyError("User Parameter key must be a string")
+                    raise KeyError("User parameter key must be a string")
+
             self._cpp_object = jit.compile_expression(cpp_code, params)
             self._parameters = ExpressionParameters(self._cpp_object, params)
 

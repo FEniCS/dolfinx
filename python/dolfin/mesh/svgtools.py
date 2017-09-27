@@ -81,7 +81,7 @@ def mesh2svg(mesh, display_width=800.0):
     if cellname == "interval":
         # Build list of unique edges in 1D case
         edges = [(c[i, 0], c[i, 1]) for i in range(num_cells)]
-    elif cellname == "triangle": # Should in principle work for quadrilateral as well
+    elif cellname == "triangle":  # Should in principle work for quadrilateral as well
         # Build list of unique edges in 2D case
         edges = set()
         for i in range(num_cells):

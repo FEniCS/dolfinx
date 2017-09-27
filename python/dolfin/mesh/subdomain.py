@@ -17,6 +17,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 import dolfin.cpp as cpp
+from dolfin.cpp.log import log, LogLevel
 from dolfin.jit.jit import compile_class, _math_header
 
 
@@ -81,6 +82,8 @@ extern "C" DLL_EXPORT dolfin::SubDomain * create_{classname}()
 """
     _set_prop = """ if (name == "{name}") {name} = value;\n"""
     _get_prop = """ if (name == "{name}") return {name};\n"""
+
+    log(LogLevel.TRACE, "Calling dijitso just-in-time (JIT) compiler for SubDomain.")
 
     inside_code = class_data['statements'][0]
 

@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 "Unit tests for the mesh library"
 
 # Copyright (C) 2006 Anders Logg
@@ -151,9 +149,8 @@ def test_UnitSquareMeshDistributed():
     mesh = UnitSquareMesh(mpi_comm_world(), 5, 7)
     assert mesh.size_global(0) == 48
     assert mesh.size_global(2) == 70
-    if has_petsc4py():
+    if has_petsc4py() and not has_pybind11():
         import petsc4py
-        assert isinstance(mpi_comm_world(), petsc4py.PETSc.Comm)
         assert isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm)
         assert mesh.mpi_comm() == mpi_comm_world()
 
@@ -163,9 +160,8 @@ def test_UnitSquareMeshLocal():
     mesh = UnitSquareMesh(mpi_comm_self(), 5, 7)
     assert mesh.num_vertices() == 48
     assert mesh.num_cells() == 70
-    if has_petsc4py():
+    if has_petsc4py() and not has_pybind11():
         import petsc4py
-        assert isinstance(mpi_comm_self(), petsc4py.PETSc.Comm)
         assert isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm)
         assert mesh.mpi_comm() == mpi_comm_self()
 

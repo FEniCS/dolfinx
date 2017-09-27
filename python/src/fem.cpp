@@ -197,6 +197,7 @@ namespace dolfin_wrappers
            &dolfin::GenericDofMap::entity_closure_dofs)
       .def("num_entity_dofs", &dolfin::GenericDofMap::num_entity_dofs)
       .def("tabulate_local_to_global_dofs", &dolfin::GenericDofMap::tabulate_local_to_global_dofs)
+      .def("local_to_global_index", &dolfin::GenericDofMap::local_to_global_index)
       .def("clear_sub_map_data", &dolfin::GenericDofMap::clear_sub_map_data)
       .def("tabulate_entity_dofs", [](const dolfin::GenericDofMap& instance, std::size_t entity_dim,
                                       std::size_t cell_entity_index)

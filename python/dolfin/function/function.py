@@ -22,6 +22,7 @@
 import numpy as np
 import ufl
 from ufl.classes import ComponentTensor, Sum, Product, Division
+from ufl.utils.indexflattening import shape_to_strides, flatten_multiindex
 import dolfin.cpp as cpp
 import dolfin.la as la
 from dolfin.function.functionspace import FunctionSpace
@@ -256,7 +257,7 @@ class Function(ufl.Coefficient):
         if component:
             shape = self.ufl_shape
             assert len(shape) == len(component)
-            value_size = product(shape)
+            value_size = ufl.product(shape)
             index = flatten_multiindex(component, shape_to_strides(shape))
             values = np.zeros(value_size)
             # FIXME: use a function with a return value

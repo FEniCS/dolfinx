@@ -8,6 +8,8 @@
 # version.
 
 import dolfin.cpp as cpp
+from ffc import default_jit_parameters
+from dolfin.cpp.parameter import parameters, Parameters
 
 
 #  Extend cpp.Parameters with a __getitem__ method
@@ -44,11 +46,6 @@ def update(self, params):
 cpp.parameter.Parameters.__getitem__ = __getitem__
 cpp.parameter.Parameters.update = update
 del __getitem__, update
-
-
-# Import global form compiler parameters from FFC
-from ffc import default_jit_parameters
-from dolfin.cpp.parameter import parameters, Parameters
 
 
 def ffc_default_parameters():
