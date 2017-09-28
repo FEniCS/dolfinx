@@ -45,7 +45,7 @@ namespace pybind11
     public:
       PYBIND11_TYPE_CASTER(Vec, _("vec"));
 
-      // Pass communicator from Python to C++
+      // Python to C++
       bool load(handle src, bool)
       {
         // FIXME: check reference counting
@@ -59,7 +59,7 @@ namespace pybind11
         #endif
       }
 
-      // Cast from C++ to Python (cast to pointer)
+      // C++ to Python
       static handle cast(Vec src, pybind11::return_value_policy policy, handle parent)
       {
         // FIXME: check reference counting
@@ -81,7 +81,7 @@ namespace pybind11
     public:
       PYBIND11_TYPE_CASTER(Mat, _("mat"));
 
-      // Pass communicator from Python to C++
+      // Python to C++
       bool load(handle src, bool)
       {
         // FIXME: check reference counting
@@ -95,7 +95,7 @@ namespace pybind11
         #endif
       }
 
-      // Cast from C++ to Python (cast to pointer)
+      // C++ to Python
       static handle cast(Mat src, pybind11::return_value_policy policy, handle parent)
       {
         // FIXME: check reference counting
@@ -117,7 +117,7 @@ namespace pybind11
     public:
       PYBIND11_TYPE_CASTER(KSP, _("ksp"));
 
-      // Pass communicator from Python to C++
+      // Python to C++
       bool load(handle src, bool)
       {
         // FIXME: check reference counting
@@ -131,7 +131,7 @@ namespace pybind11
         #endif
       }
 
-      // Cast from C++ to Python (cast to pointer)
+      // C++ to Python
       static handle cast(KSP src, pybind11::return_value_policy policy, handle parent)
       {
         // FIXME: check reference counting
@@ -153,7 +153,7 @@ namespace pybind11
     public:
       PYBIND11_TYPE_CASTER(DM, _("DM"));
 
-      // Pass communicator from Python to C++
+      // Python to C++
       bool load(handle src, bool)
       {
         // FIXME: check reference counting
@@ -169,7 +169,7 @@ namespace pybind11
 
       }
 
-      // Cast from C++ to Python (cast to pointer)
+      // C++ to Python
       static handle cast(DM src, pybind11::return_value_policy policy, handle parent)
       {
         // FIXME: check reference counting
