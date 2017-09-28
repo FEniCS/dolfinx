@@ -109,12 +109,12 @@ namespace dolfin
                                    std::shared_ptr<const MultiMeshFunction> coefficient);
 
     /// Get all MultiMesh Coefficients
-    std::map<std::size_t, std::shared_ptr<const MultiMeshFunction> > multimesh_coefficients() const;
+    std::map<std::size_t, std::shared_ptr<const MultiMeshFunction>> multimesh_coefficients() const;
 
     /// Get one multimesh coefficient
     std::shared_ptr<const MultiMeshFunction> multimesh_coefficient(std::size_t i) const;
 
-    /// get multimesh coefficient keys
+    /// Get multimesh coefficient keys
     std::vector<std::size_t> multimesh_coefficient_keys() const;
 
   private:
@@ -132,7 +132,7 @@ namespace dolfin
     std::vector<std::shared_ptr<const Form>> _forms;
 
     // Map of MultiMesh coefficents
-    std::map<std::size_t, std::shared_ptr<const MultiMeshFunction> > _multimesh_coefficients;
+    std::map<std::size_t, std::shared_ptr<const MultiMeshFunction>> _multimesh_coefficients;
 
 
   };

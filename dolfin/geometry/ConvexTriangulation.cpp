@@ -402,7 +402,6 @@ ConvexTriangulation::_triangulate_graham_scan_3d(const std::vector<Point>& input
                     if (previous_orientation * orientation < 0)
                     {
                       on_convex_hull = false;
-                      // break;
                     }
                   }
 		}
@@ -530,11 +529,7 @@ ConvexTriangulation::triangulate_graham_scan_3d(const std::vector<Point>& pm)
   for (const std::vector<Point>& tet : triangulation)
   {
     dolfin_assert(tet.size() == 4);
-    // for (const Point& p : tet)
-    //   std::cout << "(" << p.x() << ", " << p.y() << ", " << p.z() << ")" << std::endl;
     const double tet_volume = std::abs(orient3d(tet[0], tet[1], tet[2], tet[3]))/6.0;
-    // std::cout << "  vol: " << volume << std::endl;
-    // std::cout << "  ref: " << cgal_tet_volume(tet) << std::endl;
     volume += tet_volume;
   }
 

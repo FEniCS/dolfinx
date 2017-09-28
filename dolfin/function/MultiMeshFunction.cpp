@@ -44,7 +44,7 @@ MultiMeshFunction::MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpac
 }
 //-----------------------------------------------------------------------------
 MultiMeshFunction::MultiMeshFunction(std::shared_ptr<const MultiMeshFunctionSpace> V,
-                   std::shared_ptr<GenericVector> x)
+				     std::shared_ptr<GenericVector> x)
   : _function_space(V), _vector(x)
 {
   // We do not check for a subspace since this constructor is used for
@@ -87,19 +87,18 @@ std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i) const
 //-----------------------------------------------------------------------------
 void MultiMeshFunction::assign_part(std::size_t i, const Function& v)
 {
-  // Finding the relevant part of the global vector
+  // Find the relevant part of the global vector
   std::size_t start_idx = 0;
   for (std::size_t j = 0; j < i; ++j)
-    {
-      start_idx += _function_space->part(j)->dim();
-    }
-  // Replacing old values with new ones
+    start_idx += _function_space->part(j)->dim();
+
+  // Replace old values with new ones
   for (dolfin::la_index i = 0; i < (v.vector()->size()); ++i)
       _vector->setitem(start_idx+i, v.vector()->getitem(i));
 }
-
 //-----------------------------------------------------------------------------
-std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i, bool deepcopy) const
+std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i,
+							bool deepcopy) const
 {
   if (not deepcopy)
     return part(i);
@@ -221,9 +220,9 @@ void MultiMeshFunction::restrict(double* w, const FiniteElement& element,
 }
 //-----------------------------------------------------------------------------
 void MultiMeshFunction::eval(Array<double>& values,
-                        const Array<double>& x,
-                        std::size_t part,
-                        const ufc::cell& ufc_cell) const
+			     const Array<double>& x,
+			     std::size_t part,
+			     const ufc::cell& ufc_cell) const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->multimesh());
@@ -242,7 +241,7 @@ void MultiMeshFunction::eval(Array<double>& values,
 }
 //-----------------------------------------------------------------------------
 void MultiMeshFunction::eval(Array<double>& values,
-                        const Array<double>& x) const
+			     const Array<double>& x) const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->multimesh());
@@ -262,11 +261,11 @@ void MultiMeshFunction::eval(Array<double>& values,
 }
 //-----------------------------------------------------------------------------
 void MultiMeshFunction::restrict_as_ufc_function(double* w,
-                                               const FiniteElement& element,
-                                               std::size_t part,
-                                               const Cell& dolfin_cell,
-                                               const double* coordinate_dofs,
-                                               const ufc::cell& ufc_cell) const
+						 const FiniteElement& element,
+						 std::size_t part,
+						 const Cell& dolfin_cell,
+						 const double* coordinate_dofs,
+						 const ufc::cell& ufc_cell) const
 {
   dolfin_assert(w);
 
@@ -276,7 +275,7 @@ void MultiMeshFunction::restrict_as_ufc_function(double* w,
 }
 //-----------------------------------------------------------------------------
 void MultiMeshFunction::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
-                                          std::vector<la_index>& ghost_indices) const
+					      std::vector<la_index>& ghost_indices) const
 {
   // NOTE: Well, don't implement me! Rather rewrite init_vector().
   //       See Function::init_vector().

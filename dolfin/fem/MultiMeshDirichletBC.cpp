@@ -102,10 +102,7 @@ MultiMeshDirichletBC::MultiMeshDirichletBC(const MultiMeshDirichletBC& bc)
 
   // Iterate over boundary conditions and call the copy constructor
   for (std::size_t part = 0; part < _bcs.size(); part++)
-  {
-    std::shared_ptr<DirichletBC> bc(new DirichletBC(*_bcs[part]));
-    _bcs[part] = bc;
-  }
+    _bcs[part] = std::make_shared<DirichletBC>(*_bcs[part]);
 }
 //-----------------------------------------------------------------------------
 MultiMeshDirichletBC::~MultiMeshDirichletBC()

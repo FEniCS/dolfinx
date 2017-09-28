@@ -817,13 +817,9 @@ namespace dolfin
     if (const auto ii = CGAL::intersection(T, I))
     {
       if (const Point_3* p = boost::get<Point_3>(&*ii))
-      {
         return std::vector<Point>{convert_from_cgal(*p)};
-      }
       else if (const Segment_3* s = boost::get<Segment_3>(&*ii))
-      {
         return convert_from_cgal(*s);
-      }
       else
       {
         dolfin_error("CGALExactArithmetic.h",

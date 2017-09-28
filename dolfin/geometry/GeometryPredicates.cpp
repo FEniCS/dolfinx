@@ -52,8 +52,10 @@ bool GeometryPredicates::_is_degenerate_2d(const std::vector<Point>& simplex)
 
   switch (simplex.size())
   {
-  case 2: return simplex[0] == simplex[1];
-  case 3: return orient2d(simplex[0], simplex[1], simplex[2]) == 0.0;
+  case 2:
+    return simplex[0] == simplex[1];
+  case 3:
+    return orient2d(simplex[0], simplex[1], simplex[2]) == 0.0;
   }
 
   // Shouldn't get here
@@ -75,7 +77,8 @@ bool GeometryPredicates::_is_degenerate_3d(const std::vector<Point>& simplex)
 
   switch (simplex.size())
   {
-  case 2: return simplex[0] == simplex[1];
+  case 2:
+    return simplex[0] == simplex[1];
   case 3:
     {
       const double ayz[2] = {simplex[0].y(), simplex[0].z()};
@@ -98,7 +101,8 @@ bool GeometryPredicates::_is_degenerate_3d(const std::vector<Point>& simplex)
 
       return true;
     }
-  case 4: return orient3d(simplex[0], simplex[1], simplex[2], simplex[3]) == 0.0;
+  case 4:
+    return orient3d(simplex[0], simplex[1], simplex[2], simplex[3]) == 0.0;
   }
 
   // Shouldn't get here
@@ -114,9 +118,12 @@ bool GeometryPredicates::is_finite(const std::vector<Point>& simplex)
 {
   for (auto p : simplex)
   {
-    if (!std::isfinite(p.x())) return false;
-    if (!std::isfinite(p.y())) return false;
-    if (!std::isfinite(p.z())) return false;
+    if (!std::isfinite(p.x()))
+      return false;
+    if (!std::isfinite(p.y()))
+      return false;
+    if (!std::isfinite(p.z()))
+      return false;
   }
   return true;
 }
@@ -125,7 +132,8 @@ bool GeometryPredicates::is_finite(const std::vector<double>& simplex)
 {
   for (double p : simplex)
   {
-    if (!std::isfinite(p)) return false;
+    if (!std::isfinite(p))
+      return false;
   }
   return true;
 }
@@ -140,7 +148,6 @@ bool GeometryPredicates::convex_hull_is_degenerate(const std::vector<Point>& poi
 
   if (gdim == 2)
   {
-
     // FIXME!
     return false;
   }
@@ -173,7 +180,6 @@ bool GeometryPredicates::convex_hull_is_degenerate(const std::vector<Point>& poi
     // All points are collinear
     if (!found)
       return false;
-
 
     for (int l = 0; l < points.size();  l++)
     {

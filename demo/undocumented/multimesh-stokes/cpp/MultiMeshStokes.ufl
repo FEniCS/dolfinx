@@ -57,7 +57,7 @@ def l_h(v, q, f):
     return inner(f, v)*dX
 
 def s_O(v, q, w, r):
-    return beta/avg(h)**2 * inner(jump(v), jump(w))*dO \
+    return (beta/avg(h)**2) * inner(jump(v), jump(w))*dO \
         +  beta * inner(jump(q), jump(r))*dO
 
 def s_C(v, q, w, r):

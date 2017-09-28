@@ -29,13 +29,12 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/mesh/MultiMesh.h>
 
-#include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericVector.h>
-
 namespace dolfin
 {
 
   // Forward declarations
+  class GenericMatrix;
+  class GenericVector;
   class FunctionSpace;
   class MultiMeshDofMap;
 

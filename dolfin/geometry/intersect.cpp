@@ -30,7 +30,7 @@ std::shared_ptr<const MeshPointIntersection>
 dolfin::intersect(const Mesh& mesh, const Point& point)
 {
   // Intersection is only implemented for simplex meshes
-  if (!mesh.type().cell_type().is_simplex())
+  if (!mesh.type().is_simplex())
   {
     dolfin_error("intersect.cpp",
 		 "intersect mesh and point",

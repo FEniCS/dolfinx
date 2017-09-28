@@ -118,7 +118,8 @@ IntersectionConstruction::intersection(const std::vector<Point>& p,
   // Pick correct specialized implementation
   if (d0 == 0 and d1 == 0)
   {
-    switch (gdim) {
+    switch (gdim)
+    {
     case 1: return to_points(intersection_point_point_1d(p[0][0], q[0][0]));
     case 2: return intersection_point_point_2d(p[0], q[0]);
     case 3: return intersection_point_point_3d(p[0], q[0]);
@@ -126,7 +127,8 @@ IntersectionConstruction::intersection(const std::vector<Point>& p,
   }
   else if (d0 == 1 and d1 == 0)
   {
-    switch (gdim) {
+    switch (gdim)
+    {
     case 1: return to_points(intersection_segment_point_1d(p[0][0], p[1][0], q[0][0]));
     case 2: return intersection_segment_point_2d(p[0], p[1], q[0]);
     case 3: return intersection_segment_point_3d(p[0], p[1], q[0]);
@@ -134,7 +136,8 @@ IntersectionConstruction::intersection(const std::vector<Point>& p,
   }
   else if (d0 == 1 and d1 == 1)
   {
-    switch (gdim) {
+    switch (gdim)
+    {
     case 1: return to_points(intersection_segment_segment_1d(p[0][0], p[1][0], q[0][0], q[1][0]));
     case 2: return intersection_segment_segment_2d(p[0], p[1], q[0], q[1]);
     case 3: return intersection_segment_segment_3d(p[0], p[1], q[0], q[1]);
@@ -142,46 +145,53 @@ IntersectionConstruction::intersection(const std::vector<Point>& p,
   }
   else if (d0 == 2 and d1 == 0)
   {
-    switch (gdim) {
+    switch (gdim)
+    {
     case 2: return intersection_triangle_point_2d(p[0], p[1], p[2], q[0]);
     case 3: return intersection_triangle_point_3d(p[0], p[1], p[2], q[0]);
     }
   }
   else if (d0 == 2 and d1 == 1)
   {
-    switch (gdim) {
+    switch (gdim)
+    {
     case 2: return intersection_triangle_segment_2d(p[0], p[1], p[2], q[0], q[1]);
     case 3: return intersection_triangle_segment_3d(p[0], p[1], p[2], q[0], q[1]);
     }
   }
   else if (d0 == 2 and d1 == 2)
   {
-    switch (gdim) {
+    switch (gdim)
+    {
     case 2: return intersection_triangle_triangle_2d(p[0], p[1], p[2], q[0], q[1], q[2]);
     case 3: return intersection_triangle_triangle_3d(p[0], p[1], p[2], q[0], q[1], q[2]);
     }
   }
   else if (d0 == 3 and d1 == 0)
   {
-    switch (gdim) {
+    switch (gdim)
+    {
     case 3: return intersection_tetrahedron_point_3d(p[0], p[1], p[2], p[3], q[0]);
     }
   }
   else if (d0 == 3 and d1 == 1)
   {
-    switch (gdim) {
+    switch (gdim)
+    {
     case 3: return intersection_tetrahedron_segment_3d(p[0], p[1], p[2], p[3], q[0], q[1]);
     }
   }
   else if (d0 == 3 and d1 == 2)
   {
-    switch (gdim) {
+    switch (gdim)
+    {
     case 3: return intersection_tetrahedron_triangle_3d(p[0], p[1], p[2], p[3], q[0], q[1], q[2]);
     }
   }
   else if (d0 == 3 and d1 == 3)
   {
-    switch (gdim) {
+    switch (gdim)
+    {
     case 3: return intersection_tetrahedron_tetrahedron_3d(p[0], p[1], p[2], p[3], q[0], q[1], q[2], q[3]);
     }
   }
@@ -211,7 +221,8 @@ IntersectionConstruction::intersection_point_point_2d(const Point& p0,
 {
   if (p0.x() == q0.x() && p0.y() == q0.y())
     return std::vector<Point>(1, p0);
-  return std::vector<Point>();
+  else
+    return std::vector<Point>();
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -220,7 +231,8 @@ IntersectionConstruction::intersection_point_point_3d(const Point& p0,
 {
   if (p0.x() == q0.x() && p0.y() == q0.y() && p0.z() == q0.z())
     return std::vector<Point>(1, p0);
-  return std::vector<Point>();
+  else
+    return std::vector<Point>();
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
@@ -230,7 +242,8 @@ IntersectionConstruction::intersection_segment_point_1d(double p0,
 {
   if (CollisionPredicates::collides_segment_point_1d(p0, p1, q0))
     return std::vector<double>(1, q0);
-  return std::vector<double>();
+  else
+    return std::vector<double>();
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -240,7 +253,8 @@ IntersectionConstruction::intersection_segment_point_2d(const Point& p0,
 {
   if (CollisionPredicates::collides_segment_point_2d(p0, p1, q0))
     return std::vector<Point>(1, q0);
-  return std::vector<Point>();
+  else
+    return std::vector<Point>();
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -250,7 +264,8 @@ IntersectionConstruction::intersection_segment_point_3d(const Point& p0,
 {
   if (CollisionPredicates::collides_segment_point_3d(p0, p1, q0))
     return std::vector<Point>(1, q0);
-  return std::vector<Point>();
+  else
+    return std::vector<Point>();
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -261,7 +276,8 @@ IntersectionConstruction::intersection_triangle_point_2d(const Point& p0,
 {
   if (CollisionPredicates::collides_triangle_point_2d(p0, p1, p2, q0))
     return std::vector<Point>(1, q0);
-  return std::vector<Point>();
+  else
+    return std::vector<Point>();
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -272,7 +288,8 @@ IntersectionConstruction::intersection_triangle_point_3d(const Point& p0,
 {
   if (CollisionPredicates::collides_triangle_point_3d(p0, p1, p2, q0))
     return std::vector<Point>(1, q0);
-  return std::vector<Point>();
+  else
+    return std::vector<Point>();
 }
 //-----------------------------------------------------------------------------
 std::vector<Point>
@@ -284,7 +301,8 @@ IntersectionConstruction::intersection_tetrahedron_point_3d(const Point& p0,
 {
   if (CollisionPredicates::collides_tetrahedron_point_3d(p0, p1, p2, p3, q0))
     return std::vector<Point>(1, q0);
-  return std::vector<Point>();
+  else
+    return std::vector<Point>();
 }
 //-----------------------------------------------------------------------------
 std::vector<double>
@@ -813,9 +831,6 @@ IntersectionConstruction::_intersection_tetrahedron_tetrahedron_3d(const Point& 
   add(points, intersection_triangle_segment_3d(q1, q2, q3, p2, p3));
 
   dolfin_assert(GeometryPredicates::is_finite(points));
-
-  std::vector<Point> filtered = unique(points);
-
-  return filtered;
+  return unique(points);
 }
 //-----------------------------------------------------------------------------
