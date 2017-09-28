@@ -199,7 +199,7 @@ namespace dolfin
 
     /// Not equal to operator
     bool operator!= (const Point& p) const
-    { return !(*this == p); }
+    { return _x != p._x; }
 
     /// Compute squared distance to given point
     ///
