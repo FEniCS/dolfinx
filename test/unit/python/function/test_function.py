@@ -76,6 +76,10 @@ def test_compute_vertex_values(V, W, mesh):
 
     assert all(u_values == 1)
 
+    u_values2 = u.compute_vertex_values()
+
+    assert all(u_values == u_values2)
+
 
 def test_assign(V, W):
     from ufl.algorithms import replace
