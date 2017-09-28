@@ -386,11 +386,17 @@ class TestVectorForAnyBackend:
         # Test for ordinary Vector
         v = Vector(mpi_comm_world(), 301)
         v = as_backend_type(v)
-        array = v.array()
+        array = v.array_view()
         if has_pybind11():
             assert array.flags.owndata == False
             with pytest.raises(Exception):
                 array.resize([10])
+
+            # Check that the array is a writable view
+            array[0] = 42
+            ro_array = v.get_local()
+            assert ro_array[0] == 42
+
         else:
             data = v.data()
             assert (data == array).all()
