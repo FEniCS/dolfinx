@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2013 Anders Logg
+// Copyright (C) 2006-2017 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2016-05-05
+// Last changed: 2017-09-26
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -79,6 +79,9 @@ namespace dolfin
     /// Return type of cell for entity of dimension i
     Type entity_type(std::size_t i) const;
 
+    /// Check if cell is a simplex
+    virtual bool is_simplex() const = 0;
+    
     /// Return topological dimension of cell
     virtual std::size_t dim() const = 0;
 

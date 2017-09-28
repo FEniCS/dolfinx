@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2013 Anders Logg
+// Copyright (C) 2006-2017 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2016-05-05
+// Last changed: 2017-09-26
 
 #ifndef __TETRAHEDRON_CELL_H
 #define __TETRAHEDRON_CELL_H
@@ -44,6 +44,10 @@ namespace dolfin
     /// Specify cell type and facet type
     TetrahedronCell() : CellType(tetrahedron, triangle) {}
 
+    /// Check if cell is a simplex
+    bool is_simplex() const
+    { return true; }
+    
     /// Return topological dimension of cell
     std::size_t dim() const;
 

@@ -14,7 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
 
 #ifndef __HEXAHEDRON_CELL_H
 #define __HEXAHEDRON_CELL_H
@@ -34,6 +33,10 @@ namespace dolfin
     /// Specify cell type and facet type
     HexahedronCell() : CellType(hexahedron, quadrilateral) {}
 
+    /// Check if cell is a simplex
+    bool is_simplex() const
+    { return false; }
+    
     /// Return topological dimension of cell
     std::size_t dim() const;
 

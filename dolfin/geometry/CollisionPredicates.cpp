@@ -34,10 +34,7 @@ bool CollisionPredicates::collides(const MeshEntity& entity,
 				   const Point& point)
 {
   // Intersection is only implemented for simplex meshes
-  if (entity.mesh().type().cell_type() != CellType::point &&
-      entity.mesh().type().cell_type() != CellType::interval  &&
-      entity.mesh().type().cell_type() != CellType::triangle  &&
-      entity.mesh().type().cell_type() != CellType::tetrahedron)
+  if (!entity.mesh().type().is_simplex())
   {
     dolfin_error("Cell.cpp",
 		 "intersect cell and point",
@@ -90,15 +87,8 @@ bool CollisionPredicates::collides(const MeshEntity& entity_0,
 				   const MeshEntity& entity_1)
 {
   // Intersection is only implemented for simplex meshes
-  if ((entity_0.mesh().type().cell_type() != CellType::point &&
-       entity_0.mesh().type().cell_type() != CellType::interval &&
-       entity_0.mesh().type().cell_type() != CellType::triangle &&
-       entity_0.mesh().type().cell_type() != CellType::tetrahedron) ||
-      (entity_1.mesh().type().cell_type() != CellType::point &&
-       entity_1.mesh().type().cell_type() != CellType::interval &&
-       entity_1.mesh().type().cell_type() != CellType::triangle &&
-       entity_1.mesh().type().cell_type() != CellType::tetrahedron))
-
+  if (!entity_0.mesh().type().is_simplex()) ||
+      !entity_1.mesh().type().is_simplex())
   {
     dolfin_error("Cell.cpp",
 		 "intersecting cell and point",
