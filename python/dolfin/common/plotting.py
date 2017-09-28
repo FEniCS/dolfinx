@@ -116,7 +116,7 @@ def mplot_function(ax, f, **kwargs):
 
     if fvec.size() == mesh.num_cells():
         # DG0 cellwise function
-        C = fvec.array()  # NB! Assuming here dof ordering matching cell numbering
+        C = fvec.get_local()  # NB! Assuming here dof ordering matching cell numbering
         if gdim == 2 and tdim == 2:
             return ax.tripcolor(mesh2triang(mesh), C, **kwargs)
         elif gdim == 3 and tdim == 2:  # surface in 3d
