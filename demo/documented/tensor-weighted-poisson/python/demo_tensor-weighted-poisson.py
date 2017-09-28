@@ -104,7 +104,7 @@ public:
 PYBIND11_MODULE(SIGNATURE, m)
 {
   py::class_<Conductivity, std::shared_ptr<Conductivity>, dolfin::Expression>
-    (m, "Conductivity", py::dynamic_attr())
+    (m, "Conductivity")
     .def(py::init<>())
     .def_readwrite("c00", &Conductivity::c00)
     .def_readwrite("c01", &Conductivity::c01)
@@ -112,16 +112,9 @@ PYBIND11_MODULE(SIGNATURE, m)
 }
 
 """
-    class UserConductivity(UserExpression):
-        def value_shape(self):
-            return (3,)
 
-    c = UserConductivity(degree=0)
-    cc = compile_cpp_code(conductivity_code).Conductivity()
-    cc.c00 = c00
-    cc.c01 = c01
-    cc.c11 = c11
-    c._cpp_object = cc
+    c = CompiledExpression(compile_cpp_code(conductivity_code).Conductivity(),
+                           c00=c00, c01=c01, c11=c11, degree=0)
 
 else:
     conductivity_code = """

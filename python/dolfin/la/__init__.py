@@ -25,7 +25,7 @@ def __gt__(self, value):
     "Returns a boolean array with > status for all elements"
     if np.isscalar(value):
         return self.get_local() > value
-    if np.isinstance(value, dolfin.cpp.la.GenericVector):
+    if np.isinstance(value, cpp.la.GenericVector):
         return self.get_local() > value.get_local()
     return NotImplemented
 
@@ -35,9 +35,9 @@ del __gt__
 
 def __ge__(self, value):
     "Returns a boolean array with >= status for all elements"
-    if isscalar(value):
+    if np.isscalar(value):
         return self.get_local() >= value
-    if isinstance(value, dolfin.cpp.la.GenericVector):
+    if isinstance(value, cpp.la.GenericVector):
         return self.get_local() >= value.get_local()
     return NotImplemented
 
@@ -49,7 +49,7 @@ def __lt__(self, value):
     "Returns a boolean array with < status for all elements"
     if np.isscalar(value):
         return self.get_local() < value
-    if isinstance(value, dolfin.cpp.la.GenericVector):
+    if isinstance(value, cpp.la.GenericVector):
         return self.get_local() < value.get_local()
     return NotImplemented
 
@@ -61,7 +61,7 @@ def __le__(self, value):
     "Returns a boolean array with <= status for all elements"
     if np.isscalar(value):
         return self.get_local() <= value
-    if isinstance(value, dolfin.cpp.la.GenericVector):
+    if isinstance(value, cpp.la.GenericVector):
         return self.get_local() <= value.get_local()
     return NotImplemented
 
@@ -72,7 +72,7 @@ del __le__
 def __eq__(self, value):
     if np.isscalar(value):
         return self.get_local() == value
-    if isinstance(value, dolfin.cpp.la.GenericVector):
+    if isinstance(value, cpp.la.GenericVector):
         return self.get_local() == value.get_local()
     return NotImplemented
 

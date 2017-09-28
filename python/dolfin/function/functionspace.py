@@ -8,9 +8,9 @@
 # version.
 
 import types
-import ffc
 import ufl
 import dolfin.cpp as cpp
+from dolfin.jit.jit import ffc_jit
 from . import function
 
 
@@ -42,7 +42,8 @@ class FunctionSpace(ufl.FunctionSpace):
         ufl.FunctionSpace.__init__(self, mesh.ufl_domain(), element)
 
         # Compile dofmap and element
-        ufc_element, ufc_dofmap = ffc.jit(element, parameters=None)
+        ufc_element, ufc_dofmap = ffc_jit(element, form_compiler_parameters=None,
+                                          mpi_comm=mesh.mpi_comm())
         ufc_element = cpp.fem.make_ufc_finite_element(ufc_element)
 
         # Create DOLFIN element and dofmap
