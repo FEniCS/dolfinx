@@ -16,17 +16,15 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-06-10
-// Last changed: 2016-03-02
+// Last changed: 2017-09-28
 //
 // This demo program solves the Stokes equations on a domain defined
 // by three overlapping and non-matching meshes.
 
-#include "boost/format.hpp"
 #include <dolfin.h>
 #include "MultiMeshStokes.h"
 
 using namespace dolfin;
-using namespace boost;
 using std::make_shared;
 
 // Value for inflow boundary condition for velocity
@@ -142,8 +140,8 @@ int main(int argc, char* argv[])
   // Save solution parts and components to file
   for (int part = 0; part < 3; part++)
   {
-    XDMFFile ufile(str(format("output/u%1%.xdmf") % part));
-    XDMFFile pfile(str(format("output/p%1%.xdmf") % part));
+    XDMFFile ufile("output/u" + std::to_string(part) + ".xdmf");
+    XDMFFile pfile("output/p" + std::to_string(part) + ".xdmf");
     ufile.write((*w->part(part))[0]);
     pfile.write((*w->part(part))[1]);
     ufile.close();
