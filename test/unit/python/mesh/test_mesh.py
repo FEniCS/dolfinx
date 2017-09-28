@@ -279,6 +279,14 @@ def test_Read(cd_tempdir):
     # assert all(f.array() == f.array())
 
 
+def test_hash():
+    h1 = UnitSquareMesh(4, 4).hash()
+    h2 = UnitSquareMesh(4, 5).hash()
+    h3 = UnitSquareMesh(4, 4).hash()
+    assert h1 == h3
+    assert h1 != h2
+
+
 @skip_in_parallel
 def test_SubsetIterators(mesh):
     def inside1(x):
