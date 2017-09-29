@@ -442,7 +442,9 @@ bool CollisionPredicates::_collides_segment_segment_3d(const Point& p0,
       collides_segment_point_3d(p0, p1, q1) or
       collides_segment_point_3d(q0, q1, p0) or
       collides_segment_point_3d(q0, q1, p1))
+  {
     return true;
+  }
 
   // Determinant must be zero
   const double det = orient3d(p0, p1, q0, q1);
@@ -510,32 +512,27 @@ bool CollisionPredicates::_collides_triangle_point_2d(const Point& p0,
 
   if (ref > 0.0)
   {
-    return orient2d(p1, p2, point) >= 0.0 and
-      orient2d(p2, p0, point) >= 0.0 and
-      orient2d(p0, p1, point) >= 0.0;
+    return (orient2d(p1, p2, point) >= 0.0 and
+	    orient2d(p2, p0, point) >= 0.0 and
+	    orient2d(p0, p1, point) >= 0.0);
   }
   else if (ref < 0.0)
   {
-    return orient2d(p1, p2, point) <= 0.0 and
-      orient2d(p2, p0, point) <= 0.0 and
-      orient2d(p0, p1, point) <= 0.0;
+    return (orient2d(p1, p2, point) <= 0.0 and
+	    orient2d(p2, p0, point) <= 0.0 and
+	    orient2d(p0, p1, point) <= 0.0);
   }
   else
   {
-    if ((orient2d(p0, p1, point) == 0.0 and
-  	 collides_segment_point_1d(p0[0], p1[0], point[0]) and
-  	 collides_segment_point_1d(p0[1], p1[1], point[1])) or
-  	(orient2d(p1, p2, point) == 0.0 and
-  	 collides_segment_point_1d(p1[0], p2[0], point[0]) and
-  	 collides_segment_point_1d(p1[1], p2[1], point[1])) or
-  	(orient2d(p2, p0, point) == 0.0 and
-  	 collides_segment_point_1d(p2[0], p0[0], point[0]) and
-  	 collides_segment_point_1d(p2[1], p0[1], point[1])))
-    {
-      return true;
-    }
-    else
-      return false;
+    return ((orient2d(p0, p1, point) == 0.0 and
+	     collides_segment_point_1d(p0[0], p1[0], point[0]) and
+	     collides_segment_point_1d(p0[1], p1[1], point[1])) or
+	    (orient2d(p1, p2, point) == 0.0 and
+	     collides_segment_point_1d(p1[0], p2[0], point[0]) and
+	     collides_segment_point_1d(p1[1], p2[1], point[1])) or
+	    (orient2d(p2, p0, point) == 0.0 and
+	     collides_segment_point_1d(p2[0], p0[0], point[0]) and
+	     collides_segment_point_1d(p2[1], p0[1], point[1])));
   }
 }
 //-----------------------------------------------------------------------------
@@ -555,11 +552,9 @@ bool CollisionPredicates::_collides_triangle_point_3d(const Point& p0,
   // Use normal
   const Point n = GeometryTools::cross_product(p0, p1, p2);
 
-  if (n.dot(GeometryTools::cross_product(point, p0, p1)) < 0.0 or
-      n.dot(GeometryTools::cross_product(point, p2, p0)) < 0.0 or
-      n.dot(GeometryTools::cross_product(point, p1, p2)) < 0.0)
-    return false;
-  return true;
+  return !(n.dot(GeometryTools::cross_product(point, p0, p1)) < 0.0 or
+	   n.dot(GeometryTools::cross_product(point, p2, p0)) < 0.0 or
+	   n.dot(GeometryTools::cross_product(point, p1, p2)) < 0.0);
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_triangle_segment_2d(const Point& p0,
@@ -780,17 +775,17 @@ bool CollisionPredicates::_collides_tetrahedron_point_3d(const Point& p0,
 
   if (ref > 0.0)
   {
-    return orient3d(p0, p1, p2, point) >= 0.0 and
-      orient3d(p0, p3, p1, point) >= 0.0 and
-      orient3d(p0, p2, p3, point) >= 0.0 and
-      orient3d(p1, p3, p2, point) >= 0.0;
+    return (orient3d(p0, p1, p2, point) >= 0.0 and
+	    orient3d(p0, p3, p1, point) >= 0.0 and
+	    orient3d(p0, p2, p3, point) >= 0.0 and
+	    orient3d(p1, p3, p2, point) >= 0.0);
   }
   else if (ref < 0.0)
   {
-    return orient3d(p0, p1, p2, point) <= 0.0 and
-      orient3d(p0, p3, p1, point) <= 0.0 and
-      orient3d(p0, p2, p3, point) <= 0.0 and
-      orient3d(p1, p3, p2, point) <= 0.0;
+    return (orient3d(p0, p1, p2, point) <= 0.0 and
+	    orient3d(p0, p3, p1, point) <= 0.0 and
+	    orient3d(p0, p2, p3, point) <= 0.0 and
+	    orient3d(p1, p3, p2, point) <= 0.0);
   }
   else
   {
@@ -810,17 +805,17 @@ bool CollisionPredicates::_collides_interior_tetrahedron_point_3d(const Point& p
 
   if (ref > 0.0)
   {
-    return orient3d(p0, p1, p2, point) > 0.0 and
-      orient3d(p0, p3, p1, point) > 0.0 and
-      orient3d(p0, p2, p3, point) > 0.0 and
-      orient3d(p1, p3, p2, point) > 0.0;
+    return (orient3d(p0, p1, p2, point) > 0.0 and
+	    orient3d(p0, p3, p1, point) > 0.0 and
+	    orient3d(p0, p2, p3, point) > 0.0 and
+	    orient3d(p1, p3, p2, point) > 0.0);
   }
   else if (ref < 0.0)
   {
-    return orient3d(p0, p1, p2, point) < 0.0 and
-      orient3d(p0, p3, p1, point) < 0.0 and
-      orient3d(p0, p2, p3, point) < 0.0 and
-      orient3d(p1, p3, p2, point) < 0.0;
+    return (orient3d(p0, p1, p2, point) < 0.0 and
+	    orient3d(p0, p3, p1, point) < 0.0 and
+	    orient3d(p0, p2, p3, point) < 0.0 and
+	    orient3d(p1, p3, p2, point) < 0.0);
   }
   else
   {

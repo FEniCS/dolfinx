@@ -105,8 +105,8 @@ std::pair<std::vector<double>, std::vector<double>>
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double>>
   SimplexQuadrature::compute_quadrature_rule_interval(const std::vector<Point>& coordinates,
-						                                          std::size_t gdim,
-						                                          std::size_t order) const
+						      std::size_t gdim,
+						      std::size_t order) const
 {
   log(PROGRESS, "Create quadrature rule using given interval coordinates");
 
@@ -118,9 +118,10 @@ std::pair<std::vector<double>, std::vector<double>>
   switch (gdim)
   {
   case 1:
-    det = coordinates[1].x() - coordinates[0].x();
-    break;
-
+    {
+      det = coordinates[1].x() - coordinates[0].x();
+      break;
+    }
   case 2:
     {
       const std::array<double, 2> J = { coordinates[1].x() - coordinates[0].x(),
@@ -218,6 +219,7 @@ std::pair<std::vector<double>, std::vector<double>>
   // Store points
   quadrature_rule.first.resize(gdim*_p.size());
   for (std::size_t i = 0; i < _p.size(); ++i)
+  {
     for (std::size_t d = 0; d < gdim; ++d)
     {
       quadrature_rule.first[d + i*gdim]
@@ -226,6 +228,7 @@ std::pair<std::vector<double>, std::vector<double>>
         + (1. - _p[i][0] - _p[i][1])*coordinates[2][d];
       dolfin_assert(std::isfinite(quadrature_rule.first[d + i*gdim]));
     }
+  }
 
   // Store weights
   quadrature_rule.second.assign(_w.size(), 0.5*std::abs(det));
@@ -242,8 +245,8 @@ std::pair<std::vector<double>, std::vector<double>>
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double>>
   SimplexQuadrature::compute_quadrature_rule_tetrahedron(const std::vector<Point>& coordinates,
-							                                           std::size_t gdim,
-							                                           std::size_t order) const
+							 std::size_t gdim,
+							 std::size_t order) const
 {
   log(PROGRESS, "Create quadrature rule using given tetrahedron coordinates");
 
@@ -280,27 +283,31 @@ std::pair<std::vector<double>, std::vector<double>>
   // Store points
   quadrature_rule.first.resize(gdim*_p.size());
   for (std::size_t i = 0; i < _p.size(); ++i)
+  {
     for (std::size_t d = 0; d < gdim; ++d)
+    {
       quadrature_rule.first[d + i*gdim]
         = _p[i][0]*coordinates[0][d]
         + _p[i][1]*coordinates[1][d]
         + _p[i][2]*coordinates[2][d]
         + (1. - _p[i][0] - _p[i][1] - _p[i][2])*coordinates[3][d];
-
+    }
+  }
+      
   // Store weights
   quadrature_rule.second.assign(_w.size(), std::abs(det) / 6.);
   for (std::size_t i = 0; i < _w.size(); ++i)
     quadrature_rule.second[i] *= _w[i];
-
+  
   dolfin_assert(quadrature_rule.first.size() == gdim*quadrature_rule.second.size());
-
+  
   return quadrature_rule;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>
 SimplexQuadrature::compress(std::pair<std::vector<double>, std::vector<double>>& qr,
-			                      std::size_t gdim,
-			                      std::size_t quadrature_order)
+			    std::size_t gdim,
+			    std::size_t quadrature_order)
 {
   // Polynomial degree N that can be integrated exactly using the qr_base
   const std::size_t N = quadrature_order;
