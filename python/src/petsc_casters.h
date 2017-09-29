@@ -43,12 +43,12 @@
       PYBIND11_TYPE_CASTER(TYPE, _(#NAME));     \
       bool load(handle src, bool)               \
       {                                         \
-        value = PyPetsc##TYPE##_Get(src.ptr());                              \
+        value = PyPetsc##TYPE##_Get(src.ptr());                         \
         return true;                                                    \
       }                                                                 \
                                                                         \
       static handle cast(TYPE src, pybind11::return_value_policy policy, handle parent) \
-      {
+      {                                                                 \
         return pybind11::handle(PyPetsc##TYPE##_New(src));              \
       }                                                                 \
                                                                         \
