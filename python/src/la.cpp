@@ -833,6 +833,9 @@ namespace dolfin_wrappers
                dolfin::GenericMatrix, dolfin::PETScBaseMatrix>
       (m, "PETScMatrix", "DOLFIN PETScMatrix object")
       .def(py::init<>())
+#ifdef HAS_PYBIND11_PETSC4PY
+      .def(py::init<Mat>())
+#endif
       .def(py::init<MPI_Comm>())
       .def("get_options_prefix", &dolfin::PETScMatrix::get_options_prefix)
       .def("set_options_prefix", &dolfin::PETScMatrix::set_options_prefix)
