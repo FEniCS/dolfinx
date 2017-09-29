@@ -531,7 +531,9 @@ bool CollisionPredicates::_collides_triangle_point_2d(const Point& p0,
   	(orient2d(p2, p0, point) == 0.0 and
   	 collides_segment_point_1d(p2[0], p0[0], point[0]) and
   	 collides_segment_point_1d(p2[1], p0[1], point[1])))
+    {
       return true;
+    }
     else
       return false;
   }
