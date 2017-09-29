@@ -24,7 +24,6 @@
 #include <vector>
 #include <dolfin/log/LogStream.h>
 #include "Point.h"
-#include "CGALExactArithmetic.h"
 
 namespace dolfin
 {
@@ -42,18 +41,11 @@ namespace dolfin
 
 
     /// Check whether simplex is degenerate (2D version)
-    static bool is_degenerate_2d(const std::vector<Point>& simplex)
-    {
-      return CHECK_CGAL(_is_degenerate_2d(simplex),
-			cgal_is_degenerate_2d(simplex));
-    }
+    static bool is_degenerate_2d(const std::vector<Point>& simplex);
 
     /// Check whether simplex is degenerate (3D version)
-    static bool is_degenerate_3d(const std::vector<Point>& simplex)
-    {
-      return CHECK_CGAL(_is_degenerate_3d(simplex),
-                        cgal_is_degenerate_3d(simplex));
-    }
+    static bool is_degenerate_3d(const std::vector<Point>& simplex);
+
 
     /// Check whether simplex is finite (not Inf or NaN)
     static bool is_finite(const std::vector<Point>& simplex);

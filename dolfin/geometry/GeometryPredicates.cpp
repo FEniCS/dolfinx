@@ -16,11 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-11-21
-// Last changed: 2017-09-21
+// Last changed: 2017-09-29
 
 #include <cmath>
-#include "GeometryPredicates.h"
+#include "CGALExactArithmetic.h"
 #include "predicates.h"
+#include "GeometryPredicates.h"
 
 using namespace dolfin;
 
@@ -59,7 +60,7 @@ bool GeometryPredicates::_is_degenerate_2d(const std::vector<Point>& simplex)
   }
 
   // Shouldn't get here
-  dolfin_error("CGALExactArithmetic.h",
+  dolfin_error("GeometryPredicates.h",
                "call _is_degenerate_2d",
                "Only implemented for simplices of tdim 0, 1 and 2, not tdim = %d",
                simplex.size() - 1);
@@ -106,7 +107,7 @@ bool GeometryPredicates::_is_degenerate_3d(const std::vector<Point>& simplex)
   }
 
   // Shouldn't get here
-  dolfin_error("CGALExactArithmetic.h",
+  dolfin_error("GeometryPredicates.h",
                "call _is_degenerate_3d",
                "Only implemented for simplices of tdim 0, 1, 2 and 3, not tdim = %d",
                simplex.size() - 1);
@@ -194,3 +195,14 @@ bool GeometryPredicates::convex_hull_is_degenerate(const std::vector<Point>& poi
   }
 }
 //-----------------------------------------------------------------------------
+bool GeometryPredicates::is_degenerate_2d(const std::vector<Point>& simplex)
+{
+  return CHECK_CGAL(_is_degenerate_2d(simplex),
+		    cgal_is_degenerate_2d(simplex));
+}
+//-----------------------------------------------------------------------------
+bool GeometryPredicates::is_degenerate_3d(const std::vector<Point>& simplex)
+{
+  return CHECK_CGAL(_is_degenerate_3d(simplex),
+		    cgal_is_degenerate_3d(simplex));
+}

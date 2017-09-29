@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-09-22
+// Last changed: 2017-09-29
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -26,6 +26,7 @@
 #include "GeometryDebugging.h"
 #include "CollisionPredicates.h"
 #include "IntersectionConstruction.h"
+#include "CGALExactArithmetic.h"
 
 using namespace dolfin;
 
@@ -834,3 +835,27 @@ IntersectionConstruction::_intersection_tetrahedron_tetrahedron_3d(const Point& 
   return unique(points);
 }
 //-----------------------------------------------------------------------------
+std::vector<Point>
+IntersectionConstruction::intersection_triangle_segment_3d(const Point& p0,
+							   const Point& p1,
+							   const Point& p2,
+							   const Point& q0,
+							   const Point& q1)
+{
+  return CGAL_INTERSECTION_CHECK(_intersection_triangle_segment_3d(p0, p1, p2, q0, q1),
+				 cgal_intersection_triangle_segment_3d(p0, p1, p2, q0, q1));
+}
+//-----------------------------------------------------------------------------
+std::vector<Point>
+IntersectionConstruction::intersection_tetrahedron_tetrahedron_3d(const Point& p0,
+								  const Point& p1,
+								  const Point& p2,
+								  const Point& p3,
+								  const Point& q0,
+								  const Point& q1,
+								  const Point& q2,
+								  const Point& q3)
+{
+  return CGAL_INTERSECTION_CHECK(_intersection_tetrahedron_tetrahedron_3d(p0, p1, p2, p3, q0, q1, q2, q3),
+				 cgal_intersection_tetrahedron_tetrahedron_3d(p0, p1, p2, p3, q0, q1, q2, q3));
+}
