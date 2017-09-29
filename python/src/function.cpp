@@ -101,6 +101,7 @@ namespace dolfin_wrappers
                  throw py::value_error("GenericFunction has no function space mesh. You must supply a mesh.");
              std::vector<double> values;
              self.compute_vertex_values(values, *mesh);
+             // FIXME: this causes a copy, we should rewrite the C++ interface to use Eigen when SWIG is removed
              return py::array_t<double>(values.size(), values.data());
            }, "Compute values at all mesh vertices by using the mesh function.function_space().mesh()")
       .def("function_space", &dolfin::GenericFunction::function_space);
