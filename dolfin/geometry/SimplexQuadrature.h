@@ -1,4 +1,4 @@
-// Copyright (C) 2014 Anders Logg
+]// Copyright (C) 2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -61,7 +61,7 @@ namespace dolfin
     ///         corresponding array of quadrature weights.
     std::pair<std::vector<double>, std::vector<double>>
     compute_quadrature_rule(const Cell& cell,
-			                std::size_t order) const;
+			    std::size_t order) const;
 
     /// Compute quadrature rule for simplex.
     ///
@@ -81,7 +81,7 @@ namespace dolfin
     ///         corresponding array of quadrature weights.
     std::pair<std::vector<double>, std::vector<double>>
     compute_quadrature_rule(const std::vector<Point>& coordinates,
-			                std::size_t gdim,
+			    std::size_t gdim,
                             std::size_t order) const;
 
     /// Compute quadrature rule for interval.
@@ -100,7 +100,7 @@ namespace dolfin
     ///         corresponding array of quadrature weights.
     std::pair<std::vector<double>, std::vector<double>>
     compute_quadrature_rule_interval(const std::vector<Point>& coordinates,
-				                     std::size_t gdim,
+				     std::size_t gdim,
                                      std::size_t order) const;
 
     /// Compute quadrature rule for triangle.
@@ -120,8 +120,8 @@ namespace dolfin
     std::pair<std::vector<double>, std::vector<double>>
     compute_quadrature_rule_triangle(const std::vector<Point>& coordinates,
                                      std::size_t gdim,
-                                    std::size_t order) const;
-
+				     std::size_t order) const;
+    
     /// Compute quadrature rule for tetrahedron.
     ///
     /// *Arguments*
@@ -138,9 +138,9 @@ namespace dolfin
     ///         corresponding array of quadrature weights.
     std::pair<std::vector<double>, std::vector<double>>
     compute_quadrature_rule_tetrahedron(const std::vector<Point>& coordinates,
-					                    std::size_t gdim,
-					                   std::size_t order) const;
-
+					std::size_t gdim,
+					std::size_t order) const;
+    
     /// Compress a quadrature rule using algorithms from
     ///     Compression of multivariate discrete measures and applications
     ///     A. Sommariva, M. Vianello
@@ -161,8 +161,8 @@ namespace dolfin
     ///         if no compression was made)
     static std::vector<std::size_t>
     compress(std::pair<std::vector<double>, std::vector<double>>& qr,
-	         std::size_t gdim,
-	         std::size_t quadrature_order);
+	     std::size_t gdim,
+	     std::size_t quadrature_order);
 
   private:
 
@@ -174,27 +174,22 @@ namespace dolfin
     // Utility function for computing a Vandermonde type matrix in a
     // Chebyshev basis
     static Eigen::MatrixXd
-    Chebyshev_Vandermonde_matrix
-    (const std::pair<std::vector<double>, std::vector<double>>& qr,
-     std::size_t gdim,
-     std::size_t N);
-
+      Chebyshev_Vandermonde_matrix
+      (const std::pair<std::vector<double>, std::vector<double>>& qr,
+       std::size_t gdim, std::size_t N);
+    
     // Utility function for computing a Chebyshev basis
     static std::vector<Eigen::VectorXd>
-    Chebyshev_polynomial(const Eigen::VectorXd& x,
-			 std::size_t N);
-
+      Chebyshev_polynomial(const Eigen::VectorXd& x, std::size_t N);
+    
     // Utility function for creating a matrix with coefficients in
     // graded lexicographic order
     static std::vector<std::vector<std::size_t>>
-    grlex(std::size_t gdim,
-	  std::size_t N);
-
+      grlex(std::size_t gdim, std::size_t N);
+    
     // Utility function for calculating all combinations (n over k)
-    static std::size_t
-    choose(std::size_t n,
-	   std::size_t k);
-
+    static std::size_t choose(std::size_t n, std::size_t k);
+    
     // The following code has been copied from
     //
     // https://people.sc.fsu.edu/~jburkardt/cpp_src/triangle_dunavant_rule/triangle_dunavant_rule.cpp

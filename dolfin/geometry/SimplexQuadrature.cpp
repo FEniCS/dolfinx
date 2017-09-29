@@ -176,8 +176,8 @@ std::pair<std::vector<double>, std::vector<double>>
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double>>
   SimplexQuadrature::compute_quadrature_rule_triangle(const std::vector<Point>& coordinates,
-						                                          std::size_t gdim,
-						                                          std::size_t order) const
+						      std::size_t gdim,
+						      std::size_t order) const
 {
   log(PROGRESS, "Create quadrature rule using given triangle coordinates");
 
