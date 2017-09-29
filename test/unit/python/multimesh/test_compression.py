@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for quadrature compression"""
 
 # Copyright (C) 2017 August Johansson

@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the solve function"""
 
 # Copyright (C) 2011 Anders Logg

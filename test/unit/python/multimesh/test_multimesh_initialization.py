@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for multimesh volume computation"""
 
 # Copyright (C) 2016 Anders Logg

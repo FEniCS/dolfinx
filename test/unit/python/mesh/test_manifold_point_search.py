@@ -1,5 +1,4 @@
-#!/usr/bin/env py.test
-import pytest
+
 import numpy
 from dolfin import *
 

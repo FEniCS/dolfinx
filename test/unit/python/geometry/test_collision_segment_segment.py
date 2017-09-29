@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the CollisionPredicates class"""
 
 # Copyright (C) 2014 Anders Logg and August Johansson

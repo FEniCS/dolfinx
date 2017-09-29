@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for Dirichlet boundary conditions"""
 
 # Copyright (C) 2011-2017 Garth N. Wells

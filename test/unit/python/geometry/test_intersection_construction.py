@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the IntersectionConstruction class"""
 
 # Copyright (C) 2014 Anders Logg and August Johansson

@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for SVG output"""
 
 # Copyright (C) 2012 Anders Logg

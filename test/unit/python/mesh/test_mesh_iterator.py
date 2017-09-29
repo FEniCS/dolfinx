@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 "Unit tests for MeshIterator and subclasses"
 
 # Copyright (C) 2006-2011 Anders Logg

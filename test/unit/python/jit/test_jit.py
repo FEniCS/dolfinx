@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the JIT compiler"""
 
 # Copyright (C) 2011 Anders Logg

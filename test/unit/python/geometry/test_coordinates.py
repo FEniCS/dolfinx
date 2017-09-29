@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for coordinates interface"""
 
 # Copyright (C) 2016 Jan Blechta

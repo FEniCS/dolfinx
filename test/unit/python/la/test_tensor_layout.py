@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for TensorLayout and SparsityPattern interface"""
 
 # Copyright (C) 2015 Jan Blechta

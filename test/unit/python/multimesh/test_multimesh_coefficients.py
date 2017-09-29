@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 "Unit tests for multimesh coefficients"
 
 # Copyright (C) 2006 Magne Nordaas

@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the Attribute interface of the HDF5 io library"""
 
 # Copyright (C) 2013 Chris Richardson
