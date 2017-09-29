@@ -78,23 +78,35 @@ std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i) const
   // Create and rename function for part
   std::shared_ptr<Function> ui(new Function(V, _vector));
   ui->rename(name(), label());
-  
+
   // Insert into cache
   _function_parts[i] = ui;
 
   return _function_parts.find(i)->second;
 }
 //-----------------------------------------------------------------------------
-void MultiMeshFunction::assign_part(std::size_t i, const Function& v)
+void MultiMeshFunction::assign_part(std::size_t part, const Function& v)
 {
-  // Find the relevant part of the global vector
+  // Replace old values with new ones
   std::size_t start_idx = 0;
-  for (std::size_t j = 0; j < i; ++j)
+  for (std::size_t j = 0; j < part; ++j)
     start_idx += _function_space->part(j)->dim();
 
-  // Replace old values with new ones
-  for (dolfin::la_index i = 0; i < (v.vector()->size()); ++i)
-      _vector->setitem(start_idx+i, v.vector()->getitem(i));
+  const std::size_t N = v.vector()->size();
+
+  std::vector<double> buffer(N);
+  std::vector<la_index> indices(N);
+
+  // Get from [0,N)
+  std::iota(indices.begin(), indices.end(), 0);
+  v.vector()->get_local(buffer.data(), N, indices.data());
+
+  // set [start_idx, N+start_idx)
+  std::iota(indices.begin(), indices.end(), start_idx);
+  _vector->set_local(buffer.data(), N, indices.data());
+
+  // for (dolfin::la_index i = 0; i < (v.vector()->size()); ++i)
+  //     _vector->setitem(start_idx+i, v.vector()->getitem(i));
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i,
@@ -112,13 +124,25 @@ std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i,
   // Finding the relevant part of the global vector
   std::size_t start_idx = 0;
   for (std::size_t j = 0; j < i; ++j)
-    {
-      start_idx += _function_space->part(j)->dim();
-    }
+  {
+    start_idx += _function_space->part(j)->dim();
+  }
 
-  // Copy values into output function
-  for (dolfin::la_index i = 0; i < (ui->vector()->size()); ++i)
-      ui->vector()->setitem(i, _vector->getitem(start_idx+i));
+  const std::size_t N = ui->vector()->size();
+  std::vector<double> buffer(N);
+  std::vector<dolfin::la_index> indices;
+
+  // Get [start_idx, N+start_idx)
+  std::iota(indices.begin(), indices.end(), start_idx);
+  _vector->get_local(buffer.data(), N, indices.data());
+
+  // set [0, N)
+  std::iota(indices.begin(), indices.end(), 0);
+  ui->vector()->set_local(buffer.data(), N, indices.data());
+
+  // // Copy values into output function
+  // for (dolfin::la_index i = 0; i < (ui->vector()->size()); ++i)
+  //     ui->vector()->setitem(i, _vector->getitem(start_idx+i));
 
   return ui;
 }
@@ -214,7 +238,7 @@ void MultiMeshFunction::restrict(double* w, const FiniteElement& element,
   else
   {
     // Restrict as UFC function (by calling eval)
-    restrict_as_ufc_function(w, element, part, dolfin_cell, 
+    restrict_as_ufc_function(w, element, part, dolfin_cell,
                              coordinate_dofs, ufc_cell);
   }
 }
