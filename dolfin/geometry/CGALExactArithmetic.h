@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2017-09-21
+// Last changed: 2017-09-29
 //
 // Developer note:
 //
@@ -499,16 +499,6 @@ namespace dolfin
     return !tet.has_on_unbounded_side(convert_to_cgal_3d(q0));
   }
   //-----------------------------------------------------------------------------
-  inline bool cgal_collides_interior_tetrahedron_point_3d(const Point& p0,
-							  const Point& p1,
-							  const Point& p2,
-							  const Point& p3,
-							  const Point& q0)
-  {
-    const Tetrahedron_3 tet = convert_to_cgal_3d(p0, p1, p2, p3);
-    return tet.has_on_bounded_side(convert_to_cgal_3d(q0));
-  }
-  //-----------------------------------------------------------------------------
   inline bool cgal_collides_tetrahedron_segment_3d(const Point& p0,
                                                    const Point& p1,
                                                    const Point& p2,
@@ -668,103 +658,6 @@ namespace dolfin
 							 const Point& q1)
   {
     return cgal_intersection_segment_segment_3d(p0, p1, q0, q1);
-  }
-  //-----------------------------------------------------------------------------
-  inline std::vector<Point>
-  cgal_intersection_segment_interior_segment_interior_2d(const Point& p0,
-							 const Point& p1,
-							 const Point& q0,
-							 const Point& q1)
-  {
-    dolfin_assert(!is_degenerate_2d(p0, p1));
-    dolfin_assert(!is_degenerate_2d(q0, q1));
-
-    const Segment_2 I0 = convert_to_cgal_2d(p0, p1);
-    const Segment_2 I1 = convert_to_cgal_2d(q0, q1);
-    std::vector<Point> triangulation;
-
-    if (const auto ii = CGAL::intersection(I0, I1))
-    {
-      if (const Point_2* p = boost::get<Point_2>(&*ii))
-      {
-        if (*p != I0.source() && *p != I0.target() && *p != I1.source() && *p != I1.target())
-          triangulation.push_back(convert_from_cgal(*p));
-      }
-      else if (const Segment_2* s = boost::get<Segment_2>(&*ii))
-      {
-        if (s->source() != I0.source() && s->source() != I0.target() && s->source() != I1.source() && s->source() != I1.target())
-          triangulation.push_back(convert_from_cgal(s->source()));
-        if (s->target() != I0.source() && s->target() != I0.target() && s->target() != I1.source() && s->target() != I1.target())
-          triangulation.push_back(convert_from_cgal(s->target()));
-      }
-      else
-      {
-	dolfin_error("CGALExactArithmetic.h",
-		     "cgal_intersection_segment_interior_segment_interior_2d",
-		     "Unexpected behavior");
-      }
-    }
-
-    return triangulation;
-  }
-  //-----------------------------------------------------------------------------
-  inline
-  std::vector<Point>
-  cgal_intersection_segment_interior_segment_interior_3d(const Point& p0,
-							 const Point& p1,
-							 const Point& q0,
-							 const Point& q1)
-  {
-    dolfin_assert(!is_degenerate_3d(p0, p1));
-    dolfin_assert(!is_degenerate_3d(q0, q1));
-
-    const Segment_3 I0 = convert_to_cgal_3d(p0, p1);
-    const Segment_3 I1 = convert_to_cgal_3d(q0, q1);
-    std::vector<Point> triangulation;
-
-    if (const auto ii = CGAL::intersection(I0, I1))
-    {
-      if (const Point_3* p = boost::get<Point_3>(&*ii))
-      {
-        if (*p != I0.source() && *p != I0.target() && *p != I1.source() && *p != I1.target())
-          triangulation.push_back(convert_from_cgal(*p));
-      }
-      else if (const Segment_3* s = boost::get<Segment_3>(&*ii))
-      {
-        if (s->source() != I0.source() && s->source() != I0.target() && s->source() != I1.source() && s->source() != I1.target())
-          triangulation.push_back(convert_from_cgal(s->source()));
-        if (s->target() != I0.source() && s->target() != I0.target() && s->target() != I1.source() && s->target() != I1.target())
-          triangulation.push_back(convert_from_cgal(s->target()));
-      }
-      else
-      {
-        dolfin_error("CGALExactArithmetic.h",
-                     "cgal_intersection_segment_interior_segment_interior_3d",
-                     "Unexpected behavior");
-      }
-    }
-
-    return triangulation;
-  }
-  //-----------------------------------------------------------------------------
-  inline
-  std::vector<Point>
-  cgal_triangulate_segment_interior_segment_interior_2d(const Point& p0,
-							const Point& p1,
-							const Point& q0,
-							const Point& q1)
-  {
-    return cgal_intersection_segment_interior_segment_interior_2d(p0, p1, q0, q1);
-  }
-  //-----------------------------------------------------------------------------
-  inline
-  std::vector<Point>
-  cgal_triangulate_segment_interior_segment_interior_3d(const Point& p0,
-							const Point& p1,
-							const Point& q0,
-							const Point& q1)
-  {
-    return cgal_intersection_segment_interior_segment_interior_3d(p0, p1, q0, q1);
   }
   //-----------------------------------------------------------------------------
   inline

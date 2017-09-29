@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-09-22
+// Last changed: 2017-09-29
 
 #ifndef __COLLISION_PREDICATES_H
 #define __COLLISION_PREDICATES_H
@@ -138,26 +138,6 @@ namespace dolfin
                         cgal_collides_segment_segment_3d(p0, p1, q0, q1));
     }
 
-    /// Check whether segment p collides with segment q0-q1 in its
-    /// interior (2D version)
-    static bool collides_interior_point_segment_2d(const Point& q0,
-                                                   const Point& q1,
-                                                   const Point& p)
-    {
-      return CHECK_CGAL(_collides_interior_point_segment_2d(q0, q1, p),
-                        cgal_collides_segment_point_2d(q0, q1, p, true));
-    }
-
-    /// Check whether segment p collides with segment q0-q1 in its
-    /// interior (3D version)
-    static bool collides_interior_point_segment_3d(const Point& q0,
-                                                   const Point& q1,
-                                                   const Point& p)
-    {
-      return CHECK_CGAL(_collides_interior_point_segment_3d(q0, q1, p),
-                        cgal_collides_segment_point_3d(q0, q1, p, true));
-    }
-
     /// Check whether triangle p0-p1-p2 collides with point
     static bool collides_triangle_point(const Point& p0,
                                         const Point& p1,
@@ -260,19 +240,6 @@ namespace dolfin
                         cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, point));
     }
 
-    /// Check whether tetrahedron point is in the interior of p0-p1-p2-p3
-    /// ie.  collides but is not on the boundary
-    static bool collides_interior_tetrahedron_point_3d(const Point& p0,
-						       const Point& p1,
-						       const Point& p2,
-						       const Point& p3,
-						       const Point& point)
-    {
-      return CHECK_CGAL(_collides_interior_tetrahedron_point_3d(p0, p1, p2, p3, point),
-                        cgal_collides_interior_tetrahedron_point_3d(p0, p1, p2, p3, point));
-    }
-
-
     /// Check whether tetrahedron p0-p1-p2-p3 collides with segment q0-q1
     static bool collides_tetrahedron_segment_3d(const Point& p0,
                                                 const Point& p1,
@@ -343,14 +310,6 @@ namespace dolfin
                                              const Point& q0,
                                              const Point& q1);
 
-    static bool _collides_interior_point_segment_2d(const Point& q0,
-                                                    const Point& q1,
-                                                    const Point& p);
-
-    static bool _collides_interior_point_segment_3d(const Point& q0,
-                                                    const Point& q1,
-                                                    const Point& p);
-
     static bool _collides_triangle_point_2d(const Point& p0,
                                             const Point& p1,
                                             const Point& p2,
@@ -392,12 +351,6 @@ namespace dolfin
                                                const Point& p2,
                                                const Point& p3,
                                                const Point& point);
-
-    static bool _collides_interior_tetrahedron_point_3d(const Point& p0,
-							const Point& p1,
-							const Point& p2,
-							const Point& p3,
-							const Point& point);
 
     static bool _collides_tetrahedron_segment_3d(const Point& p0,
                                                  const Point& p1,

@@ -362,32 +362,6 @@ bool CollisionPredicates::_collides_segment_point_3d(const Point& p0,
 
   return false;
 }
-//-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_interior_point_segment_2d(const Point& q0,
-                                                              const Point& q1,
-                                                              const Point& p)
-{
-  const double q0_q1_p = orient2d(q0, q1, p);
-  const Point dq = q1-q0;
-  const double segment_length = dq.squared_norm();
-
-  return q0_q1_p == 0.0 &&
-    (p-q0).squared_norm() <= segment_length &&
-    (p-q1).squared_norm() <= segment_length &&
-    dq.dot(q1-p) > 0 &&
-    dq.dot(p-q0) > 0.0;
-}
-//-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_interior_point_segment_3d(const Point& q0,
-                                                              const Point& q1,
-                                                              const Point& p)
-{
-  // FIXME
-  dolfin_error("CollisionPredicates",
-	       "call _collides_interior_point_segment_3d",
-	       "Not implemented");
-  return false;
-}
 //------------------------------------------------------------------------------
 bool CollisionPredicates::_collides_segment_segment_1d(double p0,
                                                        double p1,
@@ -791,36 +765,6 @@ bool CollisionPredicates::_collides_tetrahedron_point_3d(const Point& p0,
   {
     dolfin_error("CollisionPredicates.cpp",
 		 "compute tetrahedron point collision",
-		 "Not implemented for degenerate tetrahedron");
-  }
-}
-//-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_interior_tetrahedron_point_3d(const Point& p0,
-								  const Point& p1,
-								  const Point& p2,
-								  const Point& p3,
-								  const Point& point)
-{
-  const double ref = orient3d(p0, p1, p2, p3);
-
-  if (ref > 0.0)
-  {
-    return (orient3d(p0, p1, p2, point) > 0.0 and
-	    orient3d(p0, p3, p1, point) > 0.0 and
-	    orient3d(p0, p2, p3, point) > 0.0 and
-	    orient3d(p1, p3, p2, point) > 0.0);
-  }
-  else if (ref < 0.0)
-  {
-    return (orient3d(p0, p1, p2, point) < 0.0 and
-	    orient3d(p0, p3, p1, point) < 0.0 and
-	    orient3d(p0, p2, p3, point) < 0.0 and
-	    orient3d(p1, p3, p2, point) < 0.0);
-  }
-  else
-  {
-    dolfin_error("CollisionPredicates.cpp",
-		 "compute interior tetrahedron point collision",
 		 "Not implemented for degenerate tetrahedron");
   }
 }
