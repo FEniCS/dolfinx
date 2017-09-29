@@ -438,7 +438,7 @@ namespace dolfin_wrappers
            {
              if (color.ndim() != 1 or color.shape(0) != 3)
                throw pybind11::type_error("Color must be a 1D array or length 3");
-             self.set_diffuse_color({*color.data(0), *color.data(1), *color.data(2)});
+             self.set_diffuse_color({{*color.data(0), *color.data(1), *color.data(2)}});
            });
 
     // dolfin::X3DOM

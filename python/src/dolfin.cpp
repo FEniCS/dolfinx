@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+#include <iostream>
 #include <pybind11/pybind11.h>
 #include <dolfin/log/log.h>
 

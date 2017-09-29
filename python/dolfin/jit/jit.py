@@ -9,7 +9,6 @@ from dolfin.cpp import MPI
 from functools import wraps
 import ffc
 from dolfin.cpp.parameter import parameters
-from dolfin.parameter import ffc_default_parameters
 
 
 # Copied over from site-packages
@@ -67,7 +66,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
             # Success, call jit on all other processes
             # (this should just read the cache)
             if not root:
-                output = local_jit(*args,**kwargs)
+                output = local_jit(*args, **kwargs)
         else:
             # Fail simultaneously on all processes,
             # to allow catching the error without deadlock
@@ -81,21 +80,23 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
     # Return the decorated jit function
     return mpi_jit
 
+
 # Wrap FFC JIT compilation with decorator
 @mpi_jit_decorator
 def ffc_jit(ufl_form, form_compiler_parameters=None):
 
     # Prepare form compiler parameters with overrides from dolfin and kwargs
-#    p = ffc.default_jit_parameters()
-#    p.update(dict([(k, v.value()) for k, v in parameters["form_compiler"].items()]))
-#    p.update(form_compiler_parameters or {})
+    p = ffc.default_jit_parameters()
+    p.update(dict(parameters["form_compiler"]))
+    p.update(form_compiler_parameters or {})
+    return ffc.jit(ufl_form, parameters=p)
 
-    return ffc.jit(ufl_form, parameters=form_compiler_parameters)
 
 # Wrap dijitso JIT compilation with decorator
 @mpi_jit_decorator
 def dijitso_jit(*args, **kwargs):
     return dijitso.jit(*args, **kwargs)
+
 
 _cpp_math_builtins = [
     # <cmath> functions: from http://www.cplusplus.com/reference/cmath/
@@ -110,6 +111,7 @@ _math_header = """
 
 const double pi = DOLFIN_PI;
 """ % "\n".join("using std::%s;" % mf for mf in _cpp_math_builtins)
+
 
 def compile_class(cpp_data):
     """Compile a user C(++) string or set of statements to a Python object
@@ -152,7 +154,7 @@ def compile_class(cpp_data):
     # Make a string representing the properties (and distinguish float/GenericFunction)
     # by adding '*' for GenericFunction
     property_str = ''
-    for k,v in properties.items():
+    for k, v in properties.items():
         property_str += str(k)
         if hasattr(v, '_cpp_object') and isinstance(v._cpp_object, cpp.function.GenericFunction):
             property_str += '*'

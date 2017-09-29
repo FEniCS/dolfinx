@@ -57,8 +57,7 @@ namespace pybind11
 //         #ifdef HAS_MPI4PY
 //         return PyMPIComm_New(src.comm);
 //         #else
-//         std::cerr << "Cannot convert MPI communicator to a mpi4py communicator. DOLFIN must be enabled \
-// with mpi4py for this functionality" << std::endl;
+//         std::cerr << "Cannot convert MPI communicator to a mpi4py communicator. DOLFIN must be enabled with mpi4py for this functionality" << std::endl;
 //         #endif
 //         return nullptr;
 //       }

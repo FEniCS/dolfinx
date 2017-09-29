@@ -19,15 +19,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+import ufl
+from .functionspace import FunctionSpace
+
 __all__ = ["TestFunction", "TrialFunction", "Argument",
            "TestFunctions", "TrialFunctions"]
 
-import types
-import ufl
-import dolfin.cpp as cpp
-from .functionspace import FunctionSpace
-
-#--- Subclassing of ufl.{Basis, Trial, Test}Function ---
+# --- Subclassing of ufl.{Basis, Trial, Test}Function ---
 
 # TODO: Update this message to clarify dolfin.FunctionSpace vs
 # ufl.FunctionSpace
@@ -37,6 +35,7 @@ FiniteElement class provided by ufl only represents an abstract finite
 element space and is only used in standalone .ufl files, while the
 FunctionSpace provides a full discrete function space over a given
 mesh and should be used in dolfin programs in Python.  """
+
 
 class Argument(ufl.Argument):
     """UFL value: Representation of an argument to a form.
@@ -93,7 +92,7 @@ def TrialFunction(V, part=None):
     return Argument(V, 1, part)
 
 
-#--- TestFunctions and TrialFunctions ---
+# --- TestFunctions and TrialFunctions ---
 
 def Arguments(V, number):
     """UFL value: Create an Argument in a mixed space, and return a

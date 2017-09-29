@@ -8,8 +8,9 @@ import re
 import dolfin.cpp as cpp
 from dolfin.cpp.log import log, LogLevel
 from . import get_pybind_include
-from dolfin.function.expression import BaseExpression, _select_element
+
 from dolfin.jit.jit import dijitso_jit
+
 
 def jit_generate(cpp_code, module_name, signature, parameters):
 
@@ -52,7 +53,7 @@ def compile_cpp_code(cpp_code):
     params['cache']['lib_basename'] = ""
     params['cache']['lib_loader'] = "import"
     params['build']['include_dirs'] = d["include_dirs"] + get_pybind_include() + [sysconfig.get_config_var("INCLUDEDIR") + "/" + pyversion]
-    params['build']['libs'] = d["libraries"] + [ pyversion ]
+    params['build']['libs'] = d["libraries"] + [pyversion]
     params['build']['lib_dirs'] = d["library_dirs"] + [sysconfig.get_config_var("LIBDIR")]
     params['build']['cxxflags'] += ('-fno-lto',)
 
@@ -60,9 +61,9 @@ def compile_cpp_code(cpp_code):
     dmacros = ()
     for dm in d['define_macros']:
         if len(dm[1]) == 0:
-            dmacros += ('-D'+dm[0],)
+            dmacros += ('-D' + dm[0],)
         else:
-            dmacros += ('-D'+dm[0]+'='+dm[1],)
+            dmacros += ('-D' + dm[0] + '=' + dm[1],)
 
     params['build']['cxxflags'] += dmacros
 

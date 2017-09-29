@@ -1,7 +1,21 @@
-import hashlib
-import types
-import dijitso
-import ffc
+# -*- coding: utf-8 -*-
+# Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
+#
+# This file is part of DOLFIN.
+#
+# DOLFIN is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DOLFIN is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+
 import dolfin.cpp as cpp
 from dolfin.cpp.log import log, LogLevel
 from dolfin.jit.jit import compile_class, _math_header
@@ -78,8 +92,8 @@ extern "C" DLL_EXPORT dolfin::SubDomain * create_{classname}()
     set_props = ""
     for k in class_data['properties']:
         members += " double " + k + ";\n"
-        get_props += _get_prop.format(name = k)
-        set_props += _set_prop.format(name = k)
+        get_props += _get_prop.format(name=k)
+        set_props += _set_prop.format(name=k)
 
     classname = signature
     code_c = template_code.format(inside=inside_code,
