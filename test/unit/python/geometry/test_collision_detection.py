@@ -102,24 +102,6 @@ def test_point_on_small_segment():
     assert not CollisionPredicates.collides_segment_point_2d(q0, q1, d)
 
 @skip_in_parallel
-def test_interior_point_on_segment():
-    a = Point(1e-30, 0)
-    b = Point(0, 0)
-    q0 = Point(1, 0)
-    q1 = Point(0, 0)
-    assert CollisionPredicates.collides_interior_point_segment_2d(q0, q1, a)
-    assert not CollisionPredicates.collides_interior_point_segment_2d(q0, q1, b)
-
-@skip_in_parallel
-def test_interior_point_on_small_segment():
-    a = Point(1e-31, 0)
-    b = Point(0, 0)
-    q0 = Point(1e-30, 0)
-    q1 = Point(0, 0)
-    assert CollisionPredicates.collides_interior_point_segment_2d(q0, q1, a)
-    assert not CollisionPredicates.collides_interior_point_segment_2d(q0, q1, b)
-
-@skip_in_parallel
 def test_segment_collides_point_3D():
     """Test if segment collide with point in 3D"""
     mesh = Mesh()
