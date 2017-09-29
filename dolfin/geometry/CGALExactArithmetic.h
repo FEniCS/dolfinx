@@ -1009,31 +1009,6 @@ namespace dolfin
 
     return res;
   }
-  //-----------------------------------------------------------------------------
-  /* inline std::vector<std::vector<Point>> */
-  /* cgal_triangulate_tetrahedron_tetrahedron(const Point& p0, */
-  /*                             					   const Point& p1, */
-  /*                             					   const Point& p2, */
-  /*                             					   const Point& p3, */
-  /*                             					   const Point& q0, */
-  /*                             					   const Point& q1, */
-  /*                             					   const Point& q2, */
-  /*                             					   const Point& q3) */
-  /* { */
-  /*   dolfin_assert(!is_degenerate_3d(p0, p1, p2, p3)); */
-  /*   dolfin_assert(!is_degenerate_3d(q0, q1, q2, q3)); */
-
-  /*   std::vector<Point> intersection = */
-  /*     cgal_intersection_tetrahedron_tetrahedron_3(p0, p1, p2, p3, */
-  /* 						q0, q1, q2, q3); */
-
-  /*   // Shouldn't get here */
-  /*   dolfin_error("CGALExactArithmetic.h", */
-  /*                "cgal_intersection_tetrahedron_tetrahedron", */
-  /*           		 "Not implemented"); */
-
-  /*   return std::vector<std::vector<Point>>(); */
-  /* } */
   //----------------------------------------------------------------------------
   // Reference implementations of DOLFIN is_degenerate
   //-----------------------------------------------------------------------------
