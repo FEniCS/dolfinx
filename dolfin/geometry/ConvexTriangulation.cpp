@@ -28,6 +28,8 @@
 #include "IntersectionConstruction.h"
 #include "ConvexTriangulation.h"
 
+#include "CGALExactArithmetic.h"
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
