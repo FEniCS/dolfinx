@@ -1,4 +1,4 @@
-]// Copyright (C) 2014 Anders Logg
+// Copyright (C) 2014 Anders Logg
 //
 // This file is part of DOLFIN.
 //
