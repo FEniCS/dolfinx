@@ -20,7 +20,9 @@
 //
 // Unit tests for convex triangulation
 
-#include <dolfin.h>
+#include <dolfin/geometry/ConvexTriangulation.h>
+#include <dolfin/geometry/CollisionPredicates.h>
+#include <dolfin/geometry/predicates.h>
 #include <gtest/gtest.h>
 
 using namespace dolfin;
