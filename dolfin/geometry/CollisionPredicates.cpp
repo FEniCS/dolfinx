@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-09-29
+// Last changed: 2017-09-30
 
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/CellType.h>
@@ -324,12 +324,6 @@ bool CollisionPredicates::collides_segment_point_3d(const Point& p0,
   return CHECK_CGAL(_collides_segment_point_3d(p0, p1, point),
 		    cgal_collides_segment_point_3d(p0, p1, point));
 }
-//------------------------------------------------------------------------------
-bool CollisionPredicates::collides_segment_segment(const Point& p0,
-						   const Point& p1,
-						   const Point& q0,
-						   const Point& q1,
-						   std::size_t gdim);
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_segment_segment_1d(double p0,
 						      double p1,
