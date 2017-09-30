@@ -34,7 +34,7 @@
 
 // pybind11 casters for PETSc/petsc4py objects
 
-// FIXME: Create a macro for casting code
+// Macro for casting between dolfin and petsc4py objects
 #ifdef HAS_PYBIND11_PETSC4PY
 #define PETSC_CASTER_MACRO(TYPE, NAME)          \
   template <> class type_caster<_p_##TYPE>      \
