@@ -99,7 +99,7 @@ def test_collinear_1():
     assert cellp.collides(cellq) == True
 
 @skip_in_parallel
-@skip_if_not_pybind
+@skip_if_not_pybind11
 def test_collinear_2():
     res = cpp.geometry.CollisionPredicates.collides_segment_segment_2d(Point(.5, .3),
                                                                        Point(.5, .4),
