@@ -22,7 +22,7 @@
 
 import pytest
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel
+from dolfin_utils.test import skip_in_parallel, skip_if_not_pybind11
 import numpy as np
 
 @skip_in_parallel
@@ -74,6 +74,7 @@ def test_segment_collides_point_2D():
     assert cell.contains(cell.midpoint())
 
 @skip_in_parallel
+@skip_if_not_pybind11
 def test_point_on_segment():
     a = Point(1e-30, 0)
     b = Point(1e-3, 0)
@@ -81,12 +82,13 @@ def test_point_on_segment():
     d = Point(-1e-30, 0)
     q0 = Point(1, 0)
     q1 = Point(0, 0)
-    assert CollisionPredicates.collides_segment_point_2d(q0, q1, a)
-    assert CollisionPredicates.collides_segment_point_2d(q0, q1, b)
-    assert CollisionPredicates.collides_segment_point_2d(q0, q1, c)
-    assert not CollisionPredicates.collides_segment_point_2d(q0, q1, d)
+    assert cpp.geometry.CollisionPredicates.collides_segment_point_2d(q0, q1, a)
+    assert cpp.geometry.CollisionPredicates.collides_segment_point_2d(q0, q1, b)
+    assert cpp.geometry.CollisionPredicates.collides_segment_point_2d(q0, q1, c)
+    assert not cpp.geometry.CollisionPredicates.collides_segment_point_2d(q0, q1, d)
 
 @skip_in_parallel
+@skip_if_not_pybind11
 def test_point_on_small_segment():
     a = Point(1e-30, 0)
     b = Point(0, 0)
@@ -94,10 +96,10 @@ def test_point_on_small_segment():
     d = Point(-1e-30, 0)
     q0 = Point(0, 0)
     q1 = Point(1e-30, 0)
-    assert CollisionPredicates.collides_segment_point_2d(q0, q1, a)
-    assert CollisionPredicates.collides_segment_point_2d(q0, q1, b)
-    assert CollisionPredicates.collides_segment_point_2d(q0, q1, c)
-    assert not CollisionPredicates.collides_segment_point_2d(q0, q1, d)
+    assert cpp.geometry.CollisionPredicates.collides_segment_point_2d(q0, q1, a)
+    assert cpp.geometry.CollisionPredicates.collides_segment_point_2d(q0, q1, b)
+    assert cpp.geometry.CollisionPredicates.collides_segment_point_2d(q0, q1, c)
+    assert not cpp.geometry.CollisionPredicates.collides_segment_point_2d(q0, q1, d)
 
 @skip_in_parallel
 def test_segment_collides_point_3D():
@@ -127,6 +129,7 @@ def test_triangle_collides_point():
     assert cell.collides(Point(1.5)) == False
 
 @skip_in_parallel
+@skip_if_not_pybind11
 def test_degenerate_triangle_collides_point():
     """Test a degenerate triangle that does not collide"""
 
@@ -135,7 +138,7 @@ def test_degenerate_triangle_collides_point():
     p2 = Point(0.32853262580480108168,0.57853262580480113719)
     q = Point(3.5952674716233090635e-06,0.25000359526747162331)
 
-    assert CollisionPredicates.collides_triangle_point_2d(p0, p1, p2, q) == False
+    assert cpp.geometry.CollisionPredicates.collides_triangle_point_2d(p0, p1, p2, q) == False
 
 @skip_in_parallel
 @pytest.mark.xfail(strict=True, raises=RuntimeError)
@@ -182,14 +185,15 @@ def test_triangle_collides_triangle():
 
 
 @skip_in_parallel
+@skip_if_not_pybind11
 def test_triangle_triangle_collision() :
     "Test that has been failing"
-    assert CollisionPredicates.collides_triangle_triangle_2d(Point(0.177432070718943, 0.5),
-                                                             Point(0.176638957524249, 0.509972290857582),
-                                                             Point(0.217189283468892, 0.550522616802225),
-                                                             Point(0.333333333333333, 0.52399308981973),
-                                                             Point(0.333333333333333, 0.666666666666667),
-                                                             Point(0.211774439087554, 0.545107772420888))
+    assert cpp.geometry.CollisionPredicates.collides_triangle_triangle_2d(Point(0.177432070718943, 0.5),
+                                                                          Point(0.176638957524249, 0.509972290857582),
+                                                                          Point(0.217189283468892, 0.550522616802225),
+                                                                          Point(0.333333333333333, 0.52399308981973),
+                                                                          Point(0.333333333333333, 0.666666666666667),
+                                                                          Point(0.211774439087554, 0.545107772420888))
 
 
 

@@ -58,9 +58,7 @@ from .cpp.fem import (FiniteElement, DofMap, Assembler,
 from .cpp.geometry import (BoundingBoxTree,
                            Point,
                            MeshPointIntersection,
-                           intersect,
-                           CollisionPredicates,
-                           IntersectionConstruction)
+                           intersect)
 from .cpp.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                              UnitDiscMesh, UnitQuadMesh, UnitHexMesh,
                              UnitTriangleMesh, UnitCubeMesh,
