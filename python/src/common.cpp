@@ -149,12 +149,12 @@ namespace dolfin_wrappers
         { return dolfin::MPI::size(comm.get()); })
       .def_static("local_range", [](MPICommunicatorWrapper comm, std::int64_t N)
         { return dolfin::MPI::local_range(comm.get(), N); })
-      // templated for float
-      .def_static("max", [](const MPICommunicatorWrapper& comm, float value)
+      // templated for double
+      .def_static("max", [](const MPICommunicatorWrapper& comm, double value)
         { return dolfin::MPI::max(comm.get(), value); })
-      .def_static("min", [](const MPICommunicatorWrapper& comm, float value)
+      .def_static("min", [](const MPICommunicatorWrapper& comm, double value)
         { return dolfin::MPI::min(comm.get(), value); })
-      .def_static("sum", [](const MPICommunicatorWrapper& comm, float value)
+      .def_static("sum", [](const MPICommunicatorWrapper& comm, double value)
         { return dolfin::MPI::sum(comm.get(), value); })
       // templated for dolfin::Table
       .def_static("max", [](const MPICommunicatorWrapper& comm, dolfin::Table value)
