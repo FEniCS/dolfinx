@@ -23,9 +23,6 @@
 #ifdef HAS_MPI
 #include <mpi.h>
 
-#ifdef HAS_MPI4PY
-#include <mpi4py/mpi4py.h>
-#endif
 
 namespace dolfin_wrappers
 {
@@ -37,31 +34,20 @@ namespace dolfin_wrappers
     MPICommunicatorWrapper& operator=(const MPI_Comm comm) { this->comm = comm; }
     MPI_Comm get() const { return comm; }
   };
-
-#ifndef HAS_MPI4PY
-  // This class is used as a Python MPI_Com object when mpi4py is not available
-  class MPICommWithoutMpi4py {
-    MPI_Comm comm;
-  public:
-    MPICommWithoutMpi4py(MPI_Comm comm) { this->comm = comm; }
-    MPI_Comm get() const { return comm; }
-  };
-#endif
 }
 
-// Tools for managing MPI communicators
+
+#ifdef HAS_MPI4PY
+
+#include <mpi4py/mpi4py.h>
+ 
+// Macro for casting between dolfin and mpi4py objects
 
 namespace pybind11
 {
   namespace detail
   {
-    using CommWrap = dolfin_wrappers::MPICommunicatorWrapper;
-    using NoMpi4Py = dolfin_wrappers::MPICommWithoutMpi4py;
-
-    // Macro for casting between dolfin and mpi4py objects
-    // If mpi4py is not available (at compile time) we instead
-    // wrap the comm in yet another wrapper that is exposed as
-    // a normal pybind11 class (not a custom caster)
+    using CommWrap = dolfin_wrappers::MPICommunicatorWrapper
 
     template <> class type_caster<CommWrap>
       {
@@ -72,26 +58,14 @@ namespace pybind11
         // Python to C++
         bool load(handle src, bool)
         {
-          #ifdef HAS_MPI4PY
-          // Convert mpi4py object to our MPI_Comm wrapper
           value = CommWrap(PyMPIComm_Get(src.ptr()));
           return true;
-          #else
-          NoMpi4Py *comm = src.cast<NoMpi4Py *>();
-          value = comm->get();
-          return true;
-          #endif
         }
 
         // C++ to Python
         static handle cast(CommWrap src, pybind11::return_value_policy policy, handle parent)
         {
-          #ifdef HAS_MPI4PY
           return pybind11::handle(PyMPIComm_New(src.get()));
-          #else 
-          NoMpi4Py * comm = new NoMpi4Py(src.get());
-          return pybind11::cast(comm);
-          #endif
         }
 
         operator CommWrap()
@@ -100,5 +74,6 @@ namespace pybind11
   }
 }
 
-#endif
+#endif // HAS_MPI4PY
+#endif // HAS_MPI
 #endif
