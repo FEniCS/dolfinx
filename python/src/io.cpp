@@ -229,9 +229,9 @@ namespace dolfin_wrappers
     // dolfin::HDF5File
     py::class_<dolfin::HDF5File, std::shared_ptr<dolfin::HDF5File>,
                dolfin::Variable> (m, "HDF5File")
-      .def(py::init([](const MPICommunicatorWrapper & comm, std::string filename) {
-          return std::unique_ptr<dolfin::HDF5File>(new dolfin::HDF5File(comm.get(), filename));
-        }), py::arg("comm"), py::arg("filename"))
+      .def(py::init([](const MPICommunicatorWrapper & comm, const std::string filename, const std::string file_mode) {
+          return std::unique_ptr<dolfin::HDF5File>(new dolfin::HDF5File(comm.get(), filename, file_mode));
+        }), py::arg("comm"), py::arg("filename"), py::arg("file_mode"))
       .def("__enter__", [](dolfin::HDF5File& self){ return &self; })
       .def("__exit__", [](dolfin::HDF5File& self, py::args args, py::kwargs kwargs){ self.close(); })
       .def("close", &dolfin::HDF5File::close)

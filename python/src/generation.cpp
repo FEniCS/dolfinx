@@ -76,7 +76,7 @@ namespace dolfin_wrappers
       .def(py::init([](const MPICommunicatorWrapper & comm, std::size_t nx, std::size_t ny,
                        std::string diagonal="right") {
           return std::unique_ptr<dolfin::UnitSquareMesh>(new dolfin::UnitSquareMesh(comm.get(), nx, ny, diagonal));
-        }), py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("diagonal")="right");
+        }), py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("diagonal")="right")
       .def(py::init<std::size_t, std::size_t, std::string>());
 
     // dolfin::UnitCubeMesh
@@ -89,11 +89,13 @@ namespace dolfin_wrappers
 
     // dolfin::UnitDiscMesh
     py::class_<dolfin::UnitDiscMesh>(m, "UnitDiscMesh")
-      .def_static("create", &dolfin::UnitDiscMesh::create);
+      .def_static("create", [](const MPICommunicatorWrapper & comm, std::size_t n, std::size_t degree, std::size_t gdim)
+        { return dolfin::UnitDiscMesh::create(comm.get(), n, degree, gdim); });
 
     // dolfin::SphericalShellMesh
     py::class_<dolfin::SphericalShellMesh>(m, "SphericalShellMesh")
-      .def_static("create", &dolfin::SphericalShellMesh::create);
+      .def_static("create", [](const MPICommunicatorWrapper & comm, std::size_t degree)
+        { return dolfin::SphericalShellMesh::create(comm.get(), degree); });
 
     // dolfin::UnitTriangleMesh
     py::class_<dolfin::UnitTriangleMesh>(m, "UnitTriangleMesh")

@@ -118,12 +118,19 @@ namespace dolfin_wrappers
   // Interface for MPI
   void mpi(py::module& m)
   {
-    /*
+    
     #ifdef HAS_MPI4PY
-    dolfin::SubSystemsManager::init_mpi();
-    import_mpi4py();
+    //dolfin::SubSystemsManager::init_mpi();
+    //import_mpi4py();
+    #else
+    py::class_<dolfin_wrappers::MPICommWithoutMpi4py>(m, "MPICommWithoutMpi4py"
+      "Dolfin is compiled withoud support for mpi4py. This object can be "
+      "passed into dolfin as an MPI communicator, but is not an mpi4py comm.")
+      .def("underlying_comm", [](dolfin_wrappers::MPICommWithoutMpi4py& self)
+        { return (std::uintptr_t) self.get(); },
+        "Return the underlying MPI_Com cast to std::uintptr_t. "
+        "The return value may or may not make sence depending on the MPI implementation.");
     #endif
-    */
 
     // dolfin::MPI
     py::class_<dolfin::MPI>(m, "MPI", "MPI utilities")
