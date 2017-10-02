@@ -254,12 +254,14 @@ def test_compile_extension_module_kwargs():
     assert not m2.__file__ == m0.__file__
 
 
+@skip_if_pybind11
 @skip_if_not_petsc4py
 @skip_in_serial
 def test_mpi_dependent_jiting():
     # FIXME: Not a proper unit test...
-    from dolfin import Expression, UnitSquareMesh, Function, TestFunction, \
-         Form, FunctionSpace, dx, CompiledSubDomain, SubSystemsManager
+    from dolfin import (Expression, UnitSquareMesh, Function,
+                        TestFunction, Form, FunctionSpace, dx, CompiledSubDomain,
+                        SubSystemsManager)
 
     # Init petsc (needed to initalize petsc and slepc collectively on
     # all processes)

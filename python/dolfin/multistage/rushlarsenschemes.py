@@ -22,29 +22,25 @@ PointIntegralSolver
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
 import functools
 import ufl
 
-import dolfin.cpp as cpp
 from dolfin.function.constant import Constant
 from dolfin.function.function import Function
-from dolfin.function.argument import TestFunction
 from dolfin.fem.formmanipulations import derivative
 from dolfin.multistage.factorize import extract_tested_expressions
-from ufl import action as ufl_action
 from dolfin.fem.form import Form
 from dolfin.multistage.multistagescheme import (MultiStageScheme,
                                                 _check_form, _time_dependent_expressions,
                                                 _replace_dict_time_dependent_expression, safe_action,
                                                 safe_adjoint)
 from dolfin import DOLFIN_EPS
-from dolfin import assemble
 from dolfin import TrialFunction
 
 import ufl.algorithms
 from ufl.algorithms import (expand_derivatives, expand_indices,
                             extract_coefficients)
+
 
 def _rush_larsen_step(rhs_exprs, diff_rhs_exprs, linear_terms,
                       system_size, y0, stage_solution, dt, time, a, c,
@@ -62,9 +58,9 @@ def _rush_larsen_step(rhs_exprs, diff_rhs_exprs, linear_terms,
     # If we have time dependent expressions
     if time_dep_expressions and abs(float(c)) > DOLFIN_EPS:
         time_ = time
-        time = time + dt*float(c)
+        time = time + dt * float(c)
 
-        repl.update(_replace_dict_time_dependent_expression(time_dep_expressions, \
+        repl.update(_replace_dict_time_dependent_expression(time_dep_expressions,
                                                             time_, dt, float(c)))
         repl[time_] = time
 
@@ -78,7 +74,7 @@ def _rush_larsen_step(rhs_exprs, diff_rhs_exprs, linear_terms,
     for ind in range(system_size):
 
         # forward euler step
-        fe_du_i = rhs_exprs[ind]*dt*float(a)
+        fe_du_i = rhs_exprs[ind] * dt * float(a)
 
         # If exact integration
         if linear_terms[ind]:
@@ -88,8 +84,8 @@ def _rush_larsen_step(rhs_exprs, diff_rhs_exprs, linear_terms,
             # diff_rhs_exprs[ind] is never 1.0e-16!  Let's get rid of
             # this when the conditional fixes land properly in UFL.
             eps = Constant(1.0e-16)
-            rl_du_i = rhs_exprs[ind]/(diff_rhs_exprs[ind] + eps)*(\
-                ufl.exp(diff_rhs_exprs[ind]*dt) - 1.0)
+            rl_du_i = rhs_exprs[ind] / (diff_rhs_exprs[ind] + eps) * (
+                ufl.exp(diff_rhs_exprs[ind] * dt) - 1.0)
 
             # If safe guard
             if safe_guard:
@@ -103,9 +99,9 @@ def _rush_larsen_step(rhs_exprs, diff_rhs_exprs, linear_terms,
         if repl:
             du_i = ufl.replace(du_i, repl)
 
-        rl_ufl_form += (y0[ind] + du_i)*v[ind]
+        rl_ufl_form += (y0[ind] + du_i) * v[ind]
 
-    return rl_ufl_form*DX
+    return rl_ufl_form * DX
 
 
 def _find_linear_terms(rhs_exprs, u):
@@ -117,15 +113,15 @@ def _find_linear_terms(rhs_exprs, u):
 
     uu = [Constant(1.0) for _ in rhs_exprs]
     if len(rhs_exprs) > 1:
-        repl = {u:ufl.as_vector(uu)}
+        repl = {u: ufl.as_vector(uu)}
     else:
-        repl = {u:uu[0]}
+        repl = {u: uu[0]}
 
     linear_terms = []
     for i, ui in enumerate(uu):
         comp_i_s = expand_indices(ufl.replace(rhs_exprs[i], repl))
-        linear_terms.append(ui in extract_coefficients(comp_i_s) and \
-                            ui not in extract_coefficients(\
+        linear_terms.append(ui in extract_coefficients(comp_i_s) and
+                            ui not in extract_coefficients(
                                 expand_derivatives(ufl.diff(comp_i_s, ui))))
     return linear_terms
 
@@ -158,8 +154,8 @@ def _rush_larsen_scheme_generator(rhs_form, solution, time, order, generalized):
     dt = Constant(0.1)
 
     # Get test function
-    arguments = rhs_form.arguments()
-    coefficients = rhs_form.coefficients()
+    #    arguments = rhs_form.arguments()
+    #    coefficients = rhs_form.coefficients()
 
     # Get time dependent expressions
     time_dep_expressions = _time_dependent_expressions(rhs_form, time)
@@ -167,7 +163,7 @@ def _rush_larsen_scheme_generator(rhs_form, solution, time, order, generalized):
     # Extract rhs expressions from form
     rhs_integrand = rhs_form.integrals()[0].integrand()
     rhs_exprs, v = extract_tested_expressions(rhs_integrand)
-    vector_rhs = len(v.ufl_shape)>0 and v.ufl_shape[0]>1
+    vector_rhs = len(v.ufl_shape) > 0 and v.ufl_shape[0] > 1
 
     system_size = v.ufl_shape[0] if vector_rhs else 1
 
@@ -186,7 +182,7 @@ def _rush_larsen_scheme_generator(rhs_form, solution, time, order, generalized):
 
     # Takes time!
     if vector_rhs:
-        diff_rhs_exprs = [expand_indices(expand_derivatives(rhs_jac[ind, ind]))\
+        diff_rhs_exprs = [expand_indices(expand_derivatives(rhs_jac[ind, ind]))
                           for ind in range(system_size)]
     else:
         diff_rhs_exprs = [expand_indices(expand_derivatives(rhs_jac[0]))]
@@ -233,7 +229,7 @@ def _rush_larsen_scheme_generator(rhs_form, solution, time, order, generalized):
                                        str(order))
 
     return rhs_form, linear_terms, ufl_stage_forms, dolfin_stage_forms, last_stage, \
-           stage_solutions, dt, dt_stage_offsets, human_form, None
+        stage_solutions, dt, dt_stage_offsets, human_form, None
 
 
 def _rush_larsen_scheme_generator_tlm(rhs_form, solution, time, order,
@@ -267,8 +263,8 @@ def _rush_larsen_scheme_generator_tlm(rhs_form, solution, time, order,
     dt = Constant(0.1)
 
     # Get test function
-    arguments = rhs_form.arguments()
-    coefficients = rhs_form.coefficients()
+    #    arguments = rhs_form.arguments()
+    #    coefficients = rhs_form.coefficients()
 
     # Get time dependent expressions
     time_dep_expressions = _time_dependent_expressions(rhs_form, time)
@@ -276,7 +272,7 @@ def _rush_larsen_scheme_generator_tlm(rhs_form, solution, time, order,
     # Extract rhs expressions from form
     rhs_integrand = rhs_form.integrals()[0].integrand()
     rhs_exprs, v = extract_tested_expressions(rhs_integrand)
-    vector_rhs = len(v.ufl_shape)>0 and v.ufl_shape[0]>1
+    vector_rhs = len(v.ufl_shape) > 0 and v.ufl_shape[0] > 1
 
     system_size = v.ufl_shape[0] if vector_rhs else 1
 
@@ -295,7 +291,7 @@ def _rush_larsen_scheme_generator_tlm(rhs_form, solution, time, order,
 
     # Takes time!
     if vector_rhs:
-        diff_rhs_exprs = [expand_indices(expand_derivatives(rhs_jac[ind, ind]))\
+        diff_rhs_exprs = [expand_indices(expand_derivatives(rhs_jac[ind, ind]))
                           for ind in range(system_size)]
         soln = solution
     else:
@@ -344,8 +340,8 @@ def _rush_larsen_scheme_generator_tlm(rhs_form, solution, time, order,
                                        dt, time, 1.0, 0.5, v, DX,
                                        time_dep_expressions)
 
-        rl_ufl_form    = safe_action(derivative(y_one_form, soln, trial), perturbation) + \
-                         safe_action(derivative(y_one_form, stage_solutions[0], trial), stage_solutions[1])
+        rl_ufl_form = safe_action(derivative(y_one_form, soln, trial), perturbation) + \
+            safe_action(derivative(y_one_form, stage_solutions[0], trial), stage_solutions[1])
 
         ufl_stage_forms.append([y_half_form])
         ufl_stage_forms.append([y_dot_half_form])
@@ -361,7 +357,7 @@ def _rush_larsen_scheme_generator_tlm(rhs_form, solution, time, order,
                                        str(order))
 
     return rhs_form, linear_terms, ufl_stage_forms, dolfin_stage_forms, last_stage, \
-           stage_solutions, dt, dt_stage_offsets, human_form, perturbation
+        stage_solutions, dt, dt_stage_offsets, human_form, perturbation
 
 
 def _rush_larsen_scheme_generator_adm(rhs_form, solution, time, order,
@@ -395,8 +391,8 @@ def _rush_larsen_scheme_generator_adm(rhs_form, solution, time, order,
     dt = Constant(0.1)
 
     # Get test function
-    arguments = rhs_form.arguments()
-    coefficients = rhs_form.coefficients()
+    #    arguments = rhs_form.arguments()
+    #    coefficients = rhs_form.coefficients()
 
     # Get time dependent expressions
     time_dep_expressions = _time_dependent_expressions(rhs_form, time)
@@ -404,7 +400,7 @@ def _rush_larsen_scheme_generator_adm(rhs_form, solution, time, order,
     # Extract rhs expressions from form
     rhs_integrand = rhs_form.integrals()[0].integrand()
     rhs_exprs, v = extract_tested_expressions(rhs_integrand)
-    vector_rhs = len(v.ufl_shape)>0 and v.ufl_shape[0]>1
+    vector_rhs = len(v.ufl_shape) > 0 and v.ufl_shape[0] > 1
 
     system_size = v.ufl_shape[0] if vector_rhs else 1
 
@@ -423,7 +419,7 @@ def _rush_larsen_scheme_generator_adm(rhs_form, solution, time, order,
 
     # Takes time!
     if vector_rhs:
-        diff_rhs_exprs = [expand_indices(expand_derivatives(rhs_jac[ind, ind]))\
+        diff_rhs_exprs = [expand_indices(expand_derivatives(rhs_jac[ind, ind]))
                           for ind in range(system_size)]
         soln = solution
     else:
@@ -476,8 +472,8 @@ def _rush_larsen_scheme_generator_adm(rhs_form, solution, time, order,
         y_bar_half_form = safe_action(safe_adjoint(derivative(y_one_form,
                                                               stage_solutions[0], trial)), perturbation)
 
-        rl_ufl_form    = safe_action(safe_adjoint(derivative(y_one_form, soln, trial)), perturbation) + \
-                         safe_action(safe_adjoint(derivative(y_half_form, soln, trial)), stage_solutions[2])
+        rl_ufl_form = safe_action(safe_adjoint(derivative(y_one_form, soln, trial)), perturbation) + \
+            safe_action(safe_adjoint(derivative(y_half_form, soln, trial)), stage_solutions[2])
 
         ufl_stage_forms.append([y_half_form])
         ufl_stage_forms.append([y_one_form])
@@ -493,7 +489,7 @@ def _rush_larsen_scheme_generator_adm(rhs_form, solution, time, order,
                                        str(order))
 
     return rhs_form, linear_terms, ufl_stage_forms, dolfin_stage_forms, last_stage, \
-           stage_solutions, dt, dt_stage_offsets, human_form, perturbation
+        stage_solutions, dt, dt_stage_offsets, human_form, perturbation
 
 
 class RushLarsenScheme(MultiStageScheme):
@@ -509,12 +505,12 @@ class RushLarsenScheme(MultiStageScheme):
         # FIXME: What with bcs?
         bcs = []
         time = time or Constant(0.0)
-        if order not in [1,2]:
+        if order not in [1, 2]:
             raise ValueError("Expected order to be either 1 or 2")
 
         rhs_form, ufl_stage_forms, linear_terms, dofin_stage_forms, last_stage, \
-                  stage_solutions, dt, dt_stage_offsets, human_form, contraction = \
-                  generator(rhs_form, solution, time, order, generalized)
+            stage_solutions, dt, dt_stage_offsets, human_form, contraction = \
+            generator(rhs_form, solution, time, order, generalized)
 
         self.linear_terms = linear_terms
 
@@ -597,7 +593,7 @@ class GRL2(RushLarsenScheme):
         RushLarsenScheme.__init__(self, rhs_form, solution, t, 2, True)
 
 
-__all__ = [name for name, attr in list(globals().items()) \
+__all__ = [name for name, attr in list(globals().items())
            if isinstance(attr, type) and issubclass(attr, MultiStageScheme)]
 
 __all__.append("MultiStageScheme")

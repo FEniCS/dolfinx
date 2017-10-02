@@ -652,7 +652,7 @@ namespace dolfin
     std::size_t n = std::count(_values.get(), _values.get() + _size, value);
     std::vector<std::size_t> indices;
     indices.reserve(n);
-    for (int i = 0; i < size(); ++i)
+    for (std::size_t i = 0; i < size(); ++i)
     {
       if (_values[i] == value)
         indices.push_back(i);

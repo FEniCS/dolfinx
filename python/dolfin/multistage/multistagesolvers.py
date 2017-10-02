@@ -26,6 +26,7 @@ import dolfin.cpp as cpp
 
 __all__ = ["PointIntegralSolver", "RKSolver"]
 
+
 class PointIntegralSolver(cpp.multistage.PointIntegralSolver):
     def __init__(self, scheme):
         """

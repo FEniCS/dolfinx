@@ -20,8 +20,11 @@
 
 from dolfin import *
 import pytest
-from dolfin_utils.test import skip_if_not_PETSc, skip_if_not_petsc4py, pushpop_parameters
+from dolfin_utils.test import (skip_if_not_PETSc,
+                               skip_if_not_petsc4py, skip_if_pybind11,
+                               pushpop_parameters)
 
+@skip_if_pybind11  # See https://bitbucket.org/fenics-project/dolfin/issues/938
 @skip_if_not_petsc4py
 def test_mg_solver_laplace(pushpop_parameters):
 
