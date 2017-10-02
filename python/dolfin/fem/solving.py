@@ -32,7 +32,6 @@ from dolfin.fem.problem import LinearVariationalProblem, NonlinearVariationalPro
 
 __all__ = ["LinearVariationalProblem",
            "LinearVariationalSolver",
-           "LocalSolver",
            "NonlinearVariationalProblem",
            "NonlinearVariationalSolver",
            "solve"]
@@ -73,13 +72,12 @@ class LocalSolver(cpp.fem.LocalSolver):
             cpp.fem.LocalSolver.__init__(self, a, L, solver_type)
 
 
-
 # FIXME: The import here are here to avoid a circular dependency
 # (ugly, should fix)
 # Solver classes are imported directly
-from dolfin.cpp.fem import LinearVariationalSolver, NonlinearVariationalSolver
-from dolfin.fem.adaptivesolving import AdaptiveLinearVariationalSolver
-from dolfin.fem.adaptivesolving import AdaptiveNonlinearVariationalSolver
+from dolfin.cpp.fem import LinearVariationalSolver, NonlinearVariationalSolver  # noqa
+from dolfin.fem.adaptivesolving import AdaptiveLinearVariationalSolver  # noqa
+from dolfin.fem.adaptivesolving import AdaptiveNonlinearVariationalSolver  # noqa
 
 
 # Solve function handles both linear systems and variational problems

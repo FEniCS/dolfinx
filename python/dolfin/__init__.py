@@ -33,10 +33,10 @@ del sys
 # Import cpp modules
 from .cpp.common import (Variable, has_debug, has_hdf5, has_scotch,
                          has_hdf5_parallel, has_mpi, has_petsc,
-                         has_parmetis, has_slepc, git_commit_hash,
-                         DOLFIN_EPS, DOLFIN_PI, TimingClear,
-                         TimingType, timing, timings, list_timings,
-                         dump_timings_to_xml)
+                         has_petsc4py, has_parmetis, has_slepc,
+                         has_slepc4py, git_commit_hash, DOLFIN_EPS,
+                         DOLFIN_PI, TimingClear, TimingType, timing,
+                         timings, list_timings, dump_timings_to_xml)
 
 if has_hdf5():
     from .cpp.adaptivity import TimeSeries
@@ -123,8 +123,8 @@ from .fem.norms import norm, errornorm
 from .fem.dirichletbc import DirichletBC, AutoSubDomain
 from .fem.interpolation import interpolate
 from .fem.projection import project
-from .fem.solving import (solve, LocalSolver,
-                          LinearVariationalProblem,
+from .fem.solvers import LocalSolver
+from .fem.solving import (solve, LinearVariationalProblem,
                           NonlinearVariationalProblem)
 from .fem.formmanipulations import (derivative, adjoint, increase_order, tear)
 
@@ -176,11 +176,6 @@ from ufl import (FiniteElement, TensorElement, VectorElement,
 from ufl.formoperators import action
 
 
-# FIXME
-def has_petsc4py():
-    return False
-
-
 # FIXME: remove after transition
 def has_pybind11():
     return True
@@ -194,6 +189,7 @@ def mpi_comm_self():
 # FIXME: remove after transition
 def mpi_comm_world():
     return MPI.comm_world
+
 
 # FIXME: remove all these after transition
 TimingClear_clear = TimingClear.clear

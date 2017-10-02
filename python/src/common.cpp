@@ -56,9 +56,25 @@ namespace dolfin_wrappers
     m.def("has_mpi", &dolfin::has_mpi);
     m.def("has_parmetis", &dolfin::has_parmetis);
     m.def("has_scotch", &dolfin::has_scotch);
-    m.def("has_petsc", &dolfin::has_petsc);
+    m.def("has_petsc", &dolfin::has_petsc, "Return `True` if DOLFIN is configured with PETSc");
     m.def("has_slepc", &dolfin::has_slepc, "Return `True` if DOLFIN is configured with SLEPc");
-    m.def("git_commit_hash", &dolfin::git_commit_hash, "Get git hash for this build.");
+    m.def("has_petsc4py", []()
+          {
+            #ifdef HAS_PYBIND11_PETSC4PY
+            return true;
+            #else
+            return false;
+            #endif
+          }, "Return `True` if DOLFIN is configured with petsc4py");
+    m.def("has_slepc4py", []()
+          {
+            #ifdef HAS_PYBIND11_SLEPC4PY
+            return true;
+            #else
+            return false;
+            #endif
+          }, "Return `True` if DOLFIN is configured with slepc4py");
+    m.def("git_commit_hash", &dolfin::git_commit_hash, "Returns git hash for this build.");
     m.def("sizeof_la_index", &dolfin::sizeof_la_index);
 
     m.attr("DOLFIN_EPS") = DOLFIN_EPS;
