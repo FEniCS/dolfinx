@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-09-29
+// Last changed: 2017-09-30
 
 #ifndef __CONVEX_TRIANGULATION
 #define __CONVEX_TRIANGULATION
@@ -52,8 +52,6 @@ namespace dolfin
     static std::vector<std::vector<Point>>
     triangulate_graham_scan_2d(const std::vector<Point>& pm)
     {
-      // return CHECK_CGAL(_triangulate_graham_scan_2d(pm),
-      // 			cgal_triangulate_2d(pm));
       return _triangulate_graham_scan_2d(pm);
     }
 
