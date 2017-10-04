@@ -213,15 +213,13 @@ namespace dolfin_wrappers
     tensor_layout
       .def(py::init([](const MPICommunicatorWrapper & comm, std::size_t primary_dim,
                        dolfin::TensorLayout::Sparsity sparsity_pattern)
-        { return std::unique_ptr<dolfin::TensorLayout>(
-            new dolfin::TensorLayout(comm.get(), primary_dim, sparsity_pattern)); }))
+        { return std::unique_ptr<dolfin::TensorLayout>(new dolfin::TensorLayout(comm.get(), primary_dim, sparsity_pattern)); }))
       .def(py::init([](const MPICommunicatorWrapper & comm,
                        std::vector<std::shared_ptr<const dolfin::IndexMap>> index_maps,
                        std::size_t primary_dim, dolfin::TensorLayout::Sparsity sparsity_pattern,
                        dolfin::TensorLayout::Ghosts ghosted)
-        { return std::unique_ptr<dolfin::TensorLayout>(
-            new dolfin::TensorLayout(comm.get(), index_maps, primary_dim,
-                                     sparsity_pattern, ghosted)); }))
+        { return std::unique_ptr<dolfin::TensorLayout>(new dolfin::TensorLayout(comm.get(), index_maps, primary_dim,
+                                                                                sparsity_pattern, ghosted)); }))
       .def("init", &dolfin::TensorLayout::init)
       .def("sparsity_pattern", (std::shared_ptr<dolfin::SparsityPattern> (dolfin::TensorLayout::*)()) &dolfin::TensorLayout::sparsity_pattern);
 

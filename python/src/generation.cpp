@@ -35,7 +35,6 @@
 #include "casters.h"
 
 namespace py = pybind11;
-using Point = dolfin::Point;
 
 namespace dolfin_wrappers
 {
@@ -45,47 +44,40 @@ namespace dolfin_wrappers
     // dolfin::IntervalMesh
     py::class_<dolfin::IntervalMesh, std::shared_ptr<dolfin::IntervalMesh>, dolfin::Mesh>(m, "IntervalMesh")
       .def(py::init<std::size_t, double, double>())
-      .def(py::init([](const MPICommunicatorWrapper & comm, std::size_t n, double a, double b) {
-          return std::unique_ptr<dolfin::IntervalMesh>(new dolfin::IntervalMesh(comm.get(), n, a, b));
-        }));
+      .def(py::init([](const MPICommunicatorWrapper & comm, std::size_t n, double a, double b)
+        { return std::unique_ptr<dolfin::IntervalMesh>(new dolfin::IntervalMesh(comm.get(), n, a, b)); }));
 
     // dolfin::UnitIntervalMesh
     py::class_<dolfin::UnitIntervalMesh, std::shared_ptr<dolfin::UnitIntervalMesh>,
                dolfin::IntervalMesh, dolfin::Mesh>(m, "UnitIntervalMesh")
       .def(py::init<std::size_t>())
-      .def(py::init([](const MPICommunicatorWrapper & comm, std::size_t n) {
-          return std::unique_ptr<dolfin::UnitIntervalMesh>(new dolfin::UnitIntervalMesh(comm.get(), n));
-        }))
+      .def(py::init([](const MPICommunicatorWrapper & comm, std::size_t n)
+        { return std::unique_ptr<dolfin::UnitIntervalMesh>(new dolfin::UnitIntervalMesh(comm.get(), n)); }))
       .def_static("create", [](std::size_t n){ return dolfin::UnitIntervalMesh::create(n); });
 
     // dolfin::RectangleMesh
     py::class_<dolfin::RectangleMesh, std::shared_ptr<dolfin::RectangleMesh>, dolfin::Mesh>(m, "RectangleMesh")
       .def(py::init<dolfin::Point, dolfin::Point, std::size_t, std::size_t, std::string>(),
            py::arg("p0"), py::arg("p1"), py::arg("nx"), py::arg("ny"), py::arg("diagonal")="right")
-      .def(py::init([](const MPICommunicatorWrapper & comm, const Point& p0, const Point& p1,
-                       std::size_t nx, std::size_t ny, std::string diagonal="right") {
-               return std::unique_ptr<dolfin::RectangleMesh>(new dolfin::RectangleMesh(comm.get(), 
-                        p0, p1, nx, ny, diagonal));
-             }),
-           py::arg("comm"), py::arg("p0"), py::arg("p1"), py::arg("nx"), py::arg("ny"),
-           py::arg("diagonal")="right");
+      .def(py::init([](const MPICommunicatorWrapper & comm, const dolfin::Point& p0, const dolfin::Point& p1,
+                       std::size_t nx, std::size_t ny, std::string diagonal="right")
+        { return std::unique_ptr<dolfin::RectangleMesh>(new dolfin::RectangleMesh(comm.get(), p0, p1, nx, ny, diagonal)); }),
+        py::arg("comm"), py::arg("p0"), py::arg("p1"), py::arg("nx"), py::arg("ny"), py::arg("diagonal")="right");
 
     // dolfin::UnitSquareMesh
     py::class_<dolfin::UnitSquareMesh, std::shared_ptr<dolfin::UnitSquareMesh>, dolfin::Mesh>(m, "UnitSquareMesh")
       .def(py::init<std::size_t, std::size_t>())
-      .def(py::init([](const MPICommunicatorWrapper & comm, std::size_t nx, std::size_t ny,
-                       std::string diagonal="right") {
-          return std::unique_ptr<dolfin::UnitSquareMesh>(new dolfin::UnitSquareMesh(comm.get(), nx, ny, diagonal));
-        }), py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("diagonal")="right")
+      .def(py::init([](const MPICommunicatorWrapper & comm, std::size_t nx, std::size_t ny, std::string diagonal="right")
+        { return std::unique_ptr<dolfin::UnitSquareMesh>(new dolfin::UnitSquareMesh(comm.get(), nx, ny, diagonal)); }),
+        py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("diagonal")="right")
       .def(py::init<std::size_t, std::size_t, std::string>());
 
     // dolfin::UnitCubeMesh
     py::class_<dolfin::UnitCubeMesh, std::shared_ptr<dolfin::UnitCubeMesh>, dolfin::Mesh>(m, "UnitCubeMesh")
       .def(py::init<std::size_t, std::size_t, std::size_t>())
-      .def(py::init([](const MPICommunicatorWrapper & comm, std::size_t nx, 
-                       std::size_t ny, std::size_t nz) {
-          return std::unique_ptr<dolfin::UnitCubeMesh>(new dolfin::UnitCubeMesh(comm.get(), nx, ny, nz));
-        }), py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("nz"));
+      .def(py::init([](const MPICommunicatorWrapper & comm, std::size_t nx, std::size_t ny, std::size_t nz)
+        { return std::unique_ptr<dolfin::UnitCubeMesh>(new dolfin::UnitCubeMesh(comm.get(), nx, ny, nz)); }),
+        py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("nz"));
 
     // dolfin::UnitDiscMesh
     py::class_<dolfin::UnitDiscMesh>(m, "UnitDiscMesh")
@@ -104,23 +96,23 @@ namespace dolfin_wrappers
     // dolfin::UnitQuadMesh
     py::class_<dolfin::UnitQuadMesh>(m, "UnitQuadMesh")
       .def_static("create", [](std::size_t nx, std::size_t ny)
-                  { return dolfin::UnitQuadMesh::create(nx, ny); })
+        { return dolfin::UnitQuadMesh::create(nx, ny); })
       .def_static("create", [](const MPICommunicatorWrapper & comm, std::size_t nx, std::size_t ny)
-                  { return dolfin::UnitQuadMesh::create(comm.get(), nx, ny); });
+        { return dolfin::UnitQuadMesh::create(comm.get(), nx, ny); });
 
     // dolfin::UnitHexMesh
     py::class_<dolfin::UnitHexMesh>(m, "UnitHexMesh")
       .def_static("create", [](std::size_t nx, std::size_t ny, std::size_t nz)
-                  { return dolfin::UnitHexMesh::create(nx, ny, nz); })
+        { return dolfin::UnitHexMesh::create(nx, ny, nz); })
       .def_static("create", [](const MPICommunicatorWrapper & comm, std::size_t nx, std::size_t ny, std::size_t nz)
-                  { return dolfin::UnitHexMesh::create(comm.get(), nx, ny, nz); });
+        { return dolfin::UnitHexMesh::create(comm.get(), nx, ny, nz); });
 
     // dolfin::BoxMesh
     py::class_<dolfin::BoxMesh, std::shared_ptr<dolfin::BoxMesh>, dolfin::Mesh>(m, "BoxMesh")
       .def(py::init<const dolfin::Point&, const dolfin::Point&, std::size_t, std::size_t, std::size_t>())
-      .def(py::init([](const MPICommunicatorWrapper & comm, const Point& p0, const Point& p1,
-                       std::size_t nx, std::size_t ny, std::size_t nz) {
-          return std::unique_ptr<dolfin::BoxMesh>(new dolfin::BoxMesh(comm.get(), p0, p1, nx, ny, nz));
-        }), py::arg("comm"), py::arg("p0"), py::arg("p1"), py::arg("nx"), py::arg("ny"), py::arg("nz"));
+      .def(py::init([](const MPICommunicatorWrapper & comm, const dolfin::Point& p0, const dolfin::Point& p1,
+                       std::size_t nx, std::size_t ny, std::size_t nz)
+        { return std::unique_ptr<dolfin::BoxMesh>(new dolfin::BoxMesh(comm.get(), p0, p1, nx, ny, nz)); }),
+        py::arg("comm"), py::arg("p0"), py::arg("p1"), py::arg("nx"), py::arg("ny"), py::arg("nz"));
   }
 }

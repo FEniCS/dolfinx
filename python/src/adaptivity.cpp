@@ -47,9 +47,8 @@ namespace dolfin_wrappers
     // dolfin::TimesSeries
     py::class_<dolfin::TimeSeries, std::shared_ptr<dolfin::TimeSeries>>(m, "TimeSeries")
       .def(py::init<std::string>())
-      .def(py::init([](const MPICommunicatorWrapper & comm, const std::string &arg) {
-        return std::unique_ptr<dolfin::TimeSeries>(new dolfin::TimeSeries(comm.get(), arg));
-      }))
+      .def(py::init([](const MPICommunicatorWrapper& comm, const std::string &arg)
+        { return std::unique_ptr<dolfin::TimeSeries>(new dolfin::TimeSeries(comm.get(), arg)); }))
       .def("store", (void (dolfin::TimeSeries::*)(const dolfin::GenericVector&, double)) &dolfin::TimeSeries::store)
       .def("store", (void (dolfin::TimeSeries::*)(const dolfin::Mesh&, double)) &dolfin::TimeSeries::store)
       .def("retrieve", (void (dolfin::TimeSeries::*)(dolfin::GenericVector&, double, bool) const) &dolfin::TimeSeries::retrieve,

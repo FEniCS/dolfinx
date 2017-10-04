@@ -118,28 +118,25 @@ namespace dolfin_wrappers
   // Interface for MPI
   void mpi(py::module& m)
   {
-    
-    #ifdef HAS_MPI4PY
-    //dolfin::SubSystemsManager::init_mpi();
-    //import_mpi4py();
-    #else
+
+    #ifndef HAS_MPI4PY
     py::class_<dolfin_wrappers::MPICommunicatorWrapper>(m, "MPICommunicatorWrapper"
       "Dolfin is compiled withoud support for mpi4py. This object can be "
       "passed into dolfin as an MPI communicator, but is not an mpi4py comm.")
       .def("underlying_comm", [](dolfin_wrappers::MPICommunicatorWrapper& self)
         { return (std::uintptr_t) self.get(); },
         "Return the underlying MPI_Com cast to std::uintptr_t. "
-        "The return value may or may not make sence depending on the MPI implementation.");
+        "The return value may or may not make sense depending on the MPI implementation.");
     #endif
 
     // dolfin::MPI
     py::class_<dolfin::MPI>(m, "MPI", "MPI utilities")
       .def_property_readonly_static("comm_world", [](py::object)
-                                    { return MPICommunicatorWrapper(MPI_COMM_WORLD); })
+        { return MPICommunicatorWrapper(MPI_COMM_WORLD); })
       .def_property_readonly_static("comm_self", [](py::object)
-                                    { return MPICommunicatorWrapper(MPI_COMM_SELF); })
+        { return MPICommunicatorWrapper(MPI_COMM_SELF); })
       .def_property_readonly_static("comm_null", [](py::object)
-                                    { return MPICommunicatorWrapper(MPI_COMM_NULL); })
+        { return MPICommunicatorWrapper(MPI_COMM_NULL); })
       .def_static("init", [](){ dolfin::SubSystemsManager::init_mpi(); }, "Initialise MPI")
       .def_static("barrier", [](const MPICommunicatorWrapper& comm)
         { return dolfin::MPI::barrier(comm.get()); })
