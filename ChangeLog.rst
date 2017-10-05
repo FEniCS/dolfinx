@@ -1,7 +1,7 @@
 Change log
 ==========
 
-2017.2.0 (unreleased)
+2017.2.0 (2017-09-25)
 ---------------------
 
 - Improved mesh topology computation performance.
