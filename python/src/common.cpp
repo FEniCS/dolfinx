@@ -121,11 +121,11 @@ namespace dolfin_wrappers
 
     #ifndef HAS_MPI4PY
     py::class_<dolfin_wrappers::MPICommWrapper>(m, "MPICommWrapper"
-      "Dolfin is compiled withoud support for mpi4py. This object can be "
-      "passed into dolfin as an MPI communicator, but is not an mpi4py comm.")
+      "DOLFIN is compiled without support for mpi4py. This object can be "
+      "passed into DOLFIN as an MPI communicator, but is not an mpi4py comm.")
       .def("underlying_comm", [](dolfin_wrappers::MPICommWrapper &self)
         { return (std::uintptr_t) self.get(); },
-        "Return the underlying MPI_Com cast to std::uintptr_t. "
+        "Return the underlying MPI_Comm cast to std::uintptr_t. "
         "The return value may or may not make sense depending on the MPI implementation.");
     #endif
 
