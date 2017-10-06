@@ -9,6 +9,7 @@ set(HEADERS
   IndexSet.h
   init.h
   MPI.h
+  MPICommWrapper.h
   NoDeleter.h
   RangedIndexSet.h
   Set.h
@@ -25,6 +26,7 @@ set(SOURCES
   defines.cpp
   init.cpp
   MPI.cpp
+  MPICommWrapper.cpp
   SubSystemsManager.cpp
   Timer.cpp
   timing.cpp

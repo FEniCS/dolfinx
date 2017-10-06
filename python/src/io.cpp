@@ -48,7 +48,7 @@ namespace dolfin_wrappers
     py::class_<dolfin::File, std::shared_ptr<dolfin::File>>(m, "File")
       .def(py::init<std::string>())
       .def(py::init<std::string, std::string>())
-      .def(py::init([](const MPICommWrapper &comm, std::string filename)
+      .def(py::init([](const dolfin::MPICommWrapper &comm, std::string filename)
         { return std::unique_ptr<dolfin::File>(new dolfin::File(comm.get(), filename)); }),
         py::arg("comm"), py::arg("filename"))
       //
@@ -229,7 +229,7 @@ namespace dolfin_wrappers
     // dolfin::HDF5File
     py::class_<dolfin::HDF5File, std::shared_ptr<dolfin::HDF5File>,
                dolfin::Variable> (m, "HDF5File")
-      .def(py::init([](const MPICommWrapper &comm, const std::string filename, const std::string file_mode)
+      .def(py::init([](const dolfin::MPICommWrapper &comm, const std::string filename, const std::string file_mode)
         { return std::unique_ptr<dolfin::HDF5File>(new dolfin::HDF5File(comm.get(), filename, file_mode)); }),
         py::arg("comm"), py::arg("filename"), py::arg("file_mode"))
       .def("__enter__", [](dolfin::HDF5File& self){ return &self; })
@@ -316,7 +316,7 @@ namespace dolfin_wrappers
                dolfin::Variable> xdmf_file(m, "XDMFFile");
 
     xdmf_file
-      .def(py::init([](const MPICommWrapper &comm, std::string filename)
+      .def(py::init([](const dolfin::MPICommWrapper &comm, std::string filename)
         { return std::unique_ptr<dolfin::XDMFFile>(new dolfin::XDMFFile(comm.get(), filename)); }),
         py::arg("comm"), py::arg("filename"))
       .def(py::init<std::string>())

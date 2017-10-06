@@ -36,15 +36,10 @@ pybind11_add_module(cpp SHARED
   src/nls.cpp
   src/refinement.cpp)
 
-#if (MPI4PY_FOUND)
-#  target_include_directories(cpp PRIVATE ${MPI4PY_INCLUDE_DIR})
-#  add_definitions(-DHAS_MPI4PY)
-#endif()
-
 # Add DOLFIN libraries and other config
 target_link_libraries(cpp PRIVATE pybind11::module dolfin)
 
-# Add to CMake earch path
+# Add to CMake search path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -55,8 +50,9 @@ if (PETSC4PY_FOUND)
   target_compile_definitions(cpp PRIVATE HAS_PYBIND11_PETSC4PY)
 endif()
 
-#find_package(MPI4PY)
-#if (MPI4PY_FOUND)
-#  target_include_directories(cpp PRIVATE ${MPI4PY_INCLUDE_DIR})
-#  target_compile_definitions(cpp PRIVATE HAS_MPI4PY)
-#endif()
+# Check for mpi4py
+find_package(MPI4PY)
+if (MPI4PY_FOUND)
+  target_include_directories(cpp PRIVATE ${MPI4PY_INCLUDE_DIR})
+  target_compile_definitions(cpp PRIVATE HAS_PYBIND11_MPI4PY)
+endif()

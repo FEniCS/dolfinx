@@ -19,6 +19,7 @@
 
 import pytest
 import platform
+import dolfin
 from dolfin import *
 from dolfin_utils.test import (skip_if_not_PETSc, skip_if_not_SLEPc,
                                skip_if_not_MPI, skip_in_serial,
@@ -55,6 +56,60 @@ def test_mpi_swig():
         void find_exterior_points(MPI_Comm mpi_comm) {}
     }'''
     compile_extension_module(code=create_transfer_matrix_code)
+
+
+@skip_if_not_pybind11
+def test_mpi_pybind11():
+    cpp_code = """
+    #include <pybind11/pybind11.h>
+    #include <dolfin/common/MPICommWrapper.h>
+    namespace dolfin
+    {
+      MPICommWrapper test_comm_passing(const MPICommWrapper &comm)
+      {
+        MPI_Comm c = comm.get();
+        return MPICommWrapper(c);
+      }
+    }
+    PYBIND11_MODULE(SIGNATURE, m)
+    {
+        m.def("test_comm_passing", &dolfin::test_comm_passing);
+    }
+    """
+    mod = dolfin.compile_cpp_code(cpp_code)
+
+    # Import MPI_COMM_WORLD
+    if dolfin.has_mpi4py():
+        from mpi4py import MPI
+        w = MPI.COMM_WORLD
+    else:
+        w = dolfin.MPI.comm_world
+
+    # Test MPICommWrapper <-> mpi4py.MPI.Comm conversion
+    # for precompiled code in the dolfin wrappers
+
+    m = dolfin.UnitSquareMesh(w, 4, 4)
+    w2 = m.mpi_comm()
+
+    if dolfin.has_mpi4py():
+        assert isinstance(w2, MPI.Comm)
+        return pytest.xfail('Automatic conversion does not work '
+                            'for JIT-ed code for some reason')
+    else:
+        assert isinstance(w2, dolfin.cpp.MPICommWrapper)
+
+    # Test MPICommWrapper <-> mpi4py.MPI.Comm conversion
+    # for dolfin.compile_cpp_code JIT-ed code
+
+    # Pass a comm into C++ and get a new wrapper of the same comm back
+    w3 = mod.test_comm_passing(w)
+
+    if dolfin.has_mpi4py():
+        assert isinstance(w3, MPI.Comm)
+        assert False
+    else:
+        assert isinstance(w3, dolfin.cpp.MPICommWrapper)
+        assert w3.underlying_comm() == w.underlying_comm()
 
 
 @skip_if_pybind11

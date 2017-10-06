@@ -23,6 +23,7 @@
 #include <pybind11/stl.h>
 
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/MPICommWrapper.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/defines.h>
 #include <dolfin/common/SubSystemsManager.h>
@@ -54,6 +55,14 @@ namespace dolfin_wrappers
     m.def("has_hdf5", &dolfin::has_hdf5);
     m.def("has_hdf5_parallel", &dolfin::has_hdf5_parallel);
     m.def("has_mpi", &dolfin::has_mpi);
+    m.def("has_mpi4py", []()
+          {
+            #ifdef HAS_PYBIND11_MPI4PY
+            return true;
+            #else
+            return false;
+            #endif
+          }, "Return `True` if DOLFIN is configured with mpi4py");
     m.def("has_parmetis", &dolfin::has_parmetis);
     m.def("has_scotch", &dolfin::has_scotch);
     m.def("has_petsc", &dolfin::has_petsc, "Return `True` if DOLFIN is configured with PETSc");
@@ -119,11 +128,12 @@ namespace dolfin_wrappers
   void mpi(py::module& m)
   {
 
-    #ifndef HAS_MPI4PY
-    py::class_<dolfin_wrappers::MPICommWrapper>(m, "MPICommWrapper"
+    #ifndef HAS_PYBIND11_MPI4PY
+    // Expose the MPICommWrapper directly since we cannot cast it to mpi4py
+    py::class_<dolfin::MPICommWrapper>(m, "MPICommWrapper",
       "DOLFIN is compiled without support for mpi4py. This object can be "
       "passed into DOLFIN as an MPI communicator, but is not an mpi4py comm.")
-      .def("underlying_comm", [](dolfin_wrappers::MPICommWrapper &self)
+      .def("underlying_comm", [](dolfin::MPICommWrapper &self)
         { return (std::uintptr_t) self.get(); },
         "Return the underlying MPI_Comm cast to std::uintptr_t. "
         "The return value may or may not make sense depending on the MPI implementation.");
@@ -132,35 +142,35 @@ namespace dolfin_wrappers
     // dolfin::MPI
     py::class_<dolfin::MPI>(m, "MPI", "MPI utilities")
       .def_property_readonly_static("comm_world", [](py::object)
-        { return MPICommWrapper(MPI_COMM_WORLD); })
+        { return dolfin::MPICommWrapper(MPI_COMM_WORLD); })
       .def_property_readonly_static("comm_self", [](py::object)
-        { return MPICommWrapper(MPI_COMM_SELF); })
+        { return dolfin::MPICommWrapper(MPI_COMM_SELF); })
       .def_property_readonly_static("comm_null", [](py::object)
-        { return MPICommWrapper(MPI_COMM_NULL); })
+        { return dolfin::MPICommWrapper(MPI_COMM_NULL); })
       .def_static("init", [](){ dolfin::SubSystemsManager::init_mpi(); }, "Initialise MPI")
-      .def_static("barrier", [](const MPICommWrapper &comm)
+      .def_static("barrier", [](const dolfin::MPICommWrapper &comm)
         { return dolfin::MPI::barrier(comm.get()); })
-      .def_static("rank", [](const MPICommWrapper &comm)
+      .def_static("rank", [](const dolfin::MPICommWrapper &comm)
         { return dolfin::MPI::rank(comm.get()); })
-      .def_static("size", [](const MPICommWrapper &comm)
+      .def_static("size", [](const dolfin::MPICommWrapper &comm)
         { return dolfin::MPI::size(comm.get()); })
-      .def_static("local_range", [](MPICommWrapper comm, std::int64_t N)
+      .def_static("local_range", [](dolfin::MPICommWrapper comm, std::int64_t N)
         { return dolfin::MPI::local_range(comm.get(), N); })
       // templated for double
-      .def_static("max", [](const MPICommWrapper &comm, double value)
+      .def_static("max", [](const dolfin::MPICommWrapper &comm, double value)
         { return dolfin::MPI::max(comm.get(), value); })
-      .def_static("min", [](const MPICommWrapper &comm, double value)
+      .def_static("min", [](const dolfin::MPICommWrapper &comm, double value)
         { return dolfin::MPI::min(comm.get(), value); })
-      .def_static("sum", [](const MPICommWrapper &comm, double value)
+      .def_static("sum", [](const dolfin::MPICommWrapper &comm, double value)
         { return dolfin::MPI::sum(comm.get(), value); })
       // templated for dolfin::Table
-      .def_static("max", [](const MPICommWrapper &comm, dolfin::Table value)
+      .def_static("max", [](const dolfin::MPICommWrapper &comm, dolfin::Table value)
         { return dolfin::MPI::max(comm.get(), value); })
-      .def_static("min", [](const MPICommWrapper &comm, dolfin::Table value)
+      .def_static("min", [](const dolfin::MPICommWrapper &comm, dolfin::Table value)
         { return dolfin::MPI::min(comm.get(), value); })
-      .def_static("sum", [](const MPICommWrapper &comm, dolfin::Table value)
+      .def_static("sum", [](const dolfin::MPICommWrapper &comm, dolfin::Table value)
         { return dolfin::MPI::sum(comm.get(), value); })
-      .def_static("avg", [](const MPICommWrapper &comm, dolfin::Table value)
+      .def_static("avg", [](const dolfin::MPICommWrapper &comm, dolfin::Table value)
         { return dolfin::MPI::avg(comm.get(), value); });
      }
 

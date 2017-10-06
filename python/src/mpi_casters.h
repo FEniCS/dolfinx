@@ -18,62 +18,59 @@
 #ifndef _DOLFIN_PYBIND11_MPI
 #define _DOLFIN_PYBIND11_MPI
 
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/MPICommWrapper.h>
 #include <pybind11/pybind11.h>
 
 #ifdef HAS_MPI
-#include <mpi.h>
-
-
-namespace dolfin_wrappers
-{
-  class MPICommWrapper {
-    MPI_Comm comm;
-  public:
-    MPICommWrapper() {};
-    MPICommWrapper(MPI_Comm comm) { this->comm = comm; }
-    MPICommWrapper &operator=(const MPI_Comm comm) { this->comm = comm; }
-    MPI_Comm get() const { return comm; }
-  };
-}
-
-
-#ifdef HAS_MPI4PY
-
+#ifdef HAS_PYBIND11_MPI4PY
 #include <mpi4py/mpi4py.h>
- 
-// Macro for casting between dolfin and mpi4py objects
+// Macro for casting between dolfin and mpi4py MPI communicators
+
+// Import mpi4py on demand
+#define VERIFY_MPI4PY(func)     \
+  if (!func)                    \
+  {                             \
+    if (import_mpi4py() != 0)   \
+    {                           \
+      std::cout << "ERROR: could not import mpi4py!" << std::endl; \
+      throw std::runtime_error("Error when importing mpi4py");     \
+    }                           \
+  }
 
 namespace pybind11
 {
   namespace detail
   {
-    using CommWrap = dolfin_wrappers::MPICommWrapper
-
-    template <> class type_caster<CommWrap>
+    template <> class type_caster<dolfin::MPICommWrapper>
       {
       public:
-        // define this->value of type CommWrap
-        PYBIND11_TYPE_CASTER(CommWrap, _("mpi_communicator"));
+        // Define this->value of type dolfin::MPICommWrapper
+        PYBIND11_TYPE_CASTER(dolfin::MPICommWrapper, _("MPICommWrapper"));
 
         // Python to C++
         bool load(handle src, bool)
         {
-          value = CommWrap(PyMPIComm_Get(src.ptr()));
+          VERIFY_MPI4PY(PyMPIComm_Get);
+          value = dolfin::MPICommWrapper(*PyMPIComm_Get(src.ptr()));
           return true;
         }
 
         // C++ to Python
-        static handle cast(CommWrap src, pybind11::return_value_policy policy, handle parent)
+        static handle cast(dolfin::MPICommWrapper src, pybind11::return_value_policy policy, handle parent)
         {
+          VERIFY_MPI4PY(PyMPIComm_New);
           return pybind11::handle(PyMPIComm_New(src.get()));
         }
 
-        operator CommWrap()
-        { return value; }
+        operator dolfin::MPICommWrapper()
+        {
+          return this->value;
+        }
     };
   }
 }
 
-#endif // HAS_MPI4PY
+#endif // HAS_PYBIND11_MPI4PY
 #endif // HAS_MPI
 #endif
