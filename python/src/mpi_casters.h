@@ -26,12 +26,12 @@
 
 namespace dolfin_wrappers
 {
-  class MPICommunicatorWrapper {
+  class MPICommWrapper {
     MPI_Comm comm;
   public:
-    MPICommunicatorWrapper() {};
-    MPICommunicatorWrapper(MPI_Comm comm) { this->comm = comm; }
-    MPICommunicatorWrapper& operator=(const MPI_Comm comm) { this->comm = comm; }
+    MPICommWrapper() {};
+    MPICommWrapper(MPI_Comm comm) { this->comm = comm; }
+    MPICommWrapper &operator=(const MPI_Comm comm) { this->comm = comm; }
     MPI_Comm get() const { return comm; }
   };
 }
@@ -47,7 +47,7 @@ namespace pybind11
 {
   namespace detail
   {
-    using CommWrap = dolfin_wrappers::MPICommunicatorWrapper
+    using CommWrap = dolfin_wrappers::MPICommWrapper
 
     template <> class type_caster<CommWrap>
       {
