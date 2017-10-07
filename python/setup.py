@@ -50,7 +50,7 @@ class CMakeBuild(build_ext):
             if "CIRCLECI" in os.environ:
                 build_args += ['--', '-j2']
             else:
-                num_build_threads = max(1, multiprocessing.cpu_count() - 2)
+                num_build_threads = max(1, multiprocessing.cpu_count() - 1)
                 build_args += ['--', '-j' + str(num_build_threads)]
 
         env = os.environ.copy()

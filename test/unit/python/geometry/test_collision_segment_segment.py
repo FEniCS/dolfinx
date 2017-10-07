@@ -22,7 +22,7 @@
 
 import pytest
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel
+from dolfin_utils.test import skip_in_parallel, skip_if_not_pybind11
 import numpy as np
 
 @skip_in_parallel
@@ -59,6 +59,7 @@ def test_L_version_2():
     assert cell0.collides(cell1) == False
 
 @skip_in_parallel
+@skip_if_not_pybind11
 def test_L_version_3():
     # mesh0 = create_mesh(Point(np.finfo(np.float32).eps, 0.), Point(1., 0.))
     # mesh0 = create_mesh(Point(eps(), 0.), Point(1., 0.))
@@ -67,7 +68,7 @@ def test_L_version_3():
     c = Point(0., 0.)
     d = Point(0., 1.)
 
-    assert CollisionPredicates.collides_segment_segment_2d(a, b, c, d) == False
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(a, b, c, d) == False
 
 @skip_in_parallel
 def test_aligned_version_1():
@@ -98,14 +99,16 @@ def test_collinear_1():
     assert cellp.collides(cellq) == True
 
 @skip_in_parallel
+@skip_if_not_pybind11
 def test_collinear_2():
-    res = CollisionPredicates.collides_segment_segment_2d(Point(.5, .3),
-                                                          Point(.5, .4),
-                                                          Point(.5, .5),
-                                                          Point(.5, .6))
+    res = cpp.geometry.CollisionPredicates.collides_segment_segment_2d(Point(.5, .3),
+                                                                       Point(.5, .4),
+                                                                       Point(.5, .5),
+                                                                       Point(.5, .6))
     assert not res
 
 @skip_in_parallel
+@skip_if_not_pybind11
 def test_segment_segment_2d():
     # p0 is on segment q0-q1
     p0 = Point(1e-30, 0)
@@ -113,22 +116,22 @@ def test_segment_segment_2d():
     p2 = Point(2, 1)
     q0 = Point(1, 0)
     q1 = Point(0, 0)
-    assert CollisionPredicates.collides_segment_segment_2d(p0, p1, q0, q1)
-    assert CollisionPredicates.collides_segment_segment_2d(p1, p0, q0, q1)
-    assert CollisionPredicates.collides_segment_segment_2d(p0, p1, q1, q0)
-    assert CollisionPredicates.collides_segment_segment_2d(p1, p0, q1, q0)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p0, p1, q0, q1)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p1, p0, q0, q1)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p0, p1, q1, q0)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p1, p0, q1, q0)
 
-    assert CollisionPredicates.collides_segment_segment_2d(p0, p2, q0, q1)
-    assert CollisionPredicates.collides_segment_segment_2d(p2, p0, q0, q1)
-    assert CollisionPredicates.collides_segment_segment_2d(p0, p2, q1, q0)
-    assert CollisionPredicates.collides_segment_segment_2d(p2, p0, q1, q0)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p0, p2, q0, q1)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p2, p0, q0, q1)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p0, p2, q1, q0)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p2, p0, q1, q0)
 
-    assert CollisionPredicates.collides_segment_segment_2d(p0, p1, q1, q0)
-    assert CollisionPredicates.collides_segment_segment_2d(p1, p0, q1, q0)
-    assert CollisionPredicates.collides_segment_segment_2d(p0, p1, q0, q1)
-    assert CollisionPredicates.collides_segment_segment_2d(p1, p0, q0, q1)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p0, p1, q1, q0)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p1, p0, q1, q0)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p0, p1, q0, q1)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p1, p0, q0, q1)
 
-    assert CollisionPredicates.collides_segment_segment_2d(p0, p2, q1, q0)
-    assert CollisionPredicates.collides_segment_segment_2d(p2, p0, q1, q0)
-    assert CollisionPredicates.collides_segment_segment_2d(p0, p2, q0, q1)
-    assert CollisionPredicates.collides_segment_segment_2d(p2, p0, q0, q1)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p0, p2, q1, q0)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p2, p0, q1, q0)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p0, p2, q0, q1)
+    assert cpp.geometry.CollisionPredicates.collides_segment_segment_2d(p2, p0, q0, q1)

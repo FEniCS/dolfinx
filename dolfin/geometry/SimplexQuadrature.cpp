@@ -60,7 +60,7 @@ std::pair<std::vector<double>, std::vector<double>>
 
   // Get vertex coordinates
   std::vector<double> x;
-  cell.get_vertex_coordinates(x);
+  cell.get_coordinate_dofs(x);
 
   // Convert to std::vector<Point>
   std::vector<Point> s(tdim + 1);

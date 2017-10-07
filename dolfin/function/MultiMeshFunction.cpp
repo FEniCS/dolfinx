@@ -130,7 +130,7 @@ std::shared_ptr<const Function> MultiMeshFunction::part(std::size_t i,
 
   const std::size_t N = ui->vector()->size();
   std::vector<double> buffer(N);
-  std::vector<dolfin::la_index> indices;
+  std::vector<dolfin::la_index> indices(N);
 
   // Get [start_idx, N+start_idx)
   std::iota(indices.begin(), indices.end(), start_idx);

@@ -19,10 +19,11 @@
 # First added:  2009-02-12
 # Last changed: 2012-09-28
 
-__all__ = ["compute_vertex_map", "compute_edge_map", "init_parent_edge_indices"]
-
-from dolfin.cpp.mesh import Vertex
+from dolfin.cpp.mesh import Vertex, edges
+from dolfin.cpp.log import info
 from dolfin import cpp
+
+__all__ = ["compute_vertex_map", "compute_edge_map", "init_parent_edge_indices"]
 
 
 def compute_vertex_map(mesh0, mesh1):
@@ -95,7 +96,7 @@ def compute_edge_map(mesh0, mesh1):
     vertices1 = mesh1.data().array("parent_vertex_indices", 0)
 
     # Check mappings
-    if len(vertices0) == 0  or len(vertices1) == 0:
+    if len(vertices0) == 0 or len(vertices1) == 0:
         raise RuntimeError("Compute edge map. Parent vertex indices are missing.")
 
     # Initialize edges

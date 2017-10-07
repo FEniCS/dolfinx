@@ -21,7 +21,7 @@ import pytest
 import numpy as np
 from dolfin import *
 from six.moves import xrange as range
-from dolfin_utils.test import skip_in_parallel
+from dolfin_utils.test import skip_in_parallel, skip_if_not_pybind11
 
 def triangulation_to_mesh_2d(triangulation):
     editor = MeshEditor()
@@ -90,7 +90,7 @@ def test_triangulate_intersection_2d():
         for c1 in cells(mesh_1):
             intersection = c0.intersection(c1)
             if len(intersection) >= 3 :
-                triangulation = ConvexTriangulation.triangulate(intersection, 2, 2)
+                triangulation = cpp.geometry.ConvexTriangulation.triangulate(intersection, 2, 2)
                 tmesh = triangulation_to_mesh_2d(triangulation)
                 for t in cells(tmesh):
                     volume += t.volume()
@@ -138,7 +138,7 @@ def test_triangulate_intersection_2d_3d():
     for c0 in cells(mesh_0):
         for c1 in cells(mesh_1):
             intersection = c0.intersection(c1)
-            triangulation = ConvexTriangulation.triangulate(intersection, 3, 2)
+            triangulation = cpp.geometry.ConvexTriangulation.triangulate(intersection, 3, 2)
             if (triangulation.size>0):
                 tmesh = triangulation_to_mesh_2d_3d(triangulation)
                 for t in cells(tmesh):
@@ -167,7 +167,7 @@ def test_triangulate_intersection_3d():
     for c0 in cells(mesh_0):
         for c1 in cells(mesh_1):
             intersection = c0.intersection(c1)
-            triangulation = ConvexTriangulation.triangulate(intersection, 3, 3)
+            triangulation = cpp.geometry.ConvexTriangulation.triangulate(intersection, 3, 3)
             if (triangulation.size>0):
                 tmesh = triangulation_to_mesh_3d(triangulation)
                 for t in cells(tmesh):
@@ -177,26 +177,26 @@ def test_triangulate_intersection_3d():
     errorstring += str(dx[0])+" "+str(dx[1])+" "+str(dx[2])
     assert round(volume - exactvolume, 7) == 0, errorstring
 
-
+@skip_if_not_pybind11
 def test_triangle_triangle_2d_trivial() :
     " These two triangles intersect in a common edge"
-    res = IntersectionConstruction.intersection_triangle_triangle_2d(Point(0.0, 0.0),
-	                                                             Point(1.0, 0.0),
-							             Point(0.5, 1.0),
-							             Point(0.5, 0.5),
-							             Point(1.0, 1.5),
-							             Point(0.0, 1.5))
+    res = cpp.geometry.IntersectionConstruction.intersection_triangle_triangle_2d(Point(0.0, 0.0),
+	                                                                          Point(1.0, 0.0),
+							                          Point(0.5, 1.0),
+							                          Point(0.5, 0.5),
+							                          Point(1.0, 1.5),
+							                          Point(0.0, 1.5))
     assert len(res) == 4
 
-
+@skip_if_not_pybind11
 def test_triangle_triangle_2d() :
     " These two triangles intersect in a common edge"
-    res = IntersectionConstruction.intersection_triangle_triangle_2d(Point(0.4960412972015322, 0.3953317542541379),
-	                                                             Point(0.5, 0.3997044273055517),
-							             Point(0.5, 0.4060889538943557),
-							             Point(0.4960412972015322, 0.3953317542541379),
-							             Point(0.5, 0.4060889538943557),
-							             Point(.5, .5))
+    res = cpp.geometry.IntersectionConstruction.intersection_triangle_triangle_2d(Point(0.4960412972015322, 0.3953317542541379),
+	                                                                          Point(0.5, 0.3997044273055517),
+							                          Point(0.5, 0.4060889538943557),
+							                          Point(0.4960412972015322, 0.3953317542541379),
+							                          Point(0.5, 0.4060889538943557),
+                                                                                  Point(.5, .5))
     for p in res:
         print(p[0],p[1])
 
@@ -204,27 +204,30 @@ def test_triangle_triangle_2d() :
 
 
 @skip_in_parallel
+@skip_if_not_pybind11
 def test_parallel_segments_2d():
     " These two segments should be parallel and the intersection computed accordingly"
     p0 = Point(0, 0)
     p1 = Point(1, 0)
     q0 = Point(0.4, 0)
     q1 = Point(1.4, 0)
-    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+    intersection = cpp.geometry.IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
     assert len(intersection) == 2
 
 
+@skip_if_not_pybind11
 def test_equal_segments_2d():
     " These two segments are equal and the intersection computed accordingly"
     p0 = Point(DOLFIN_PI / 7., 9. / DOLFIN_PI)
     p1 = Point(9. / DOLFIN_PI, DOLFIN_PI / 7.)
     q0 = Point(DOLFIN_PI / 7., 9. / DOLFIN_PI)
     q1 = Point(9. / DOLFIN_PI, DOLFIN_PI / 7.)
-    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+    intersection = cpp.geometry.IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
     assert len(intersection) == 2
 
 
 @skip_in_parallel
+@skip_if_not_pybind11
 def test_triangle_segment_2D_1():
     "The intersection of a specific triangle and a specific segment"
     p0 = Point(1e-30, 0)
@@ -232,14 +235,13 @@ def test_triangle_segment_2D_1():
     p2 = Point(2, 1)
     q0 = Point(1, 0)
     q1 = Point(0, 0)
-    intersection = IntersectionConstruction.intersection_triangle_segment_2d(p0, p1, p2, q0, q1)
+    intersection = cpp.geometry.IntersectionConstruction.intersection_triangle_segment_2d(p0, p1, p2, q0, q1)
     assert len(intersection) == 1
-    intersection = IntersectionConstruction.intersection_triangle_segment_2d(p0, p1, p2, q1, q0)
+    intersection = cpp.geometry.IntersectionConstruction.intersection_triangle_segment_2d(p0, p1, p2, q1, q0)
     assert len(intersection) == 1
-
 
 def compare_with_cgal(p0, p1, q0, q1, cgal):
-    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+    intersection = cpp.geometry.IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
 
     for p in intersection:
         print(*p)
@@ -275,6 +277,7 @@ def test_segment_segment_2():
 
 
 @skip_in_parallel
+@skip_if_not_pybind11
 #@pytest.mark.skipif(True, reason="This test needs to be updated")
 def test_segment_segment_3():
     "Case that fails CGAL comparison. We get a different intersection point but still correct area."
@@ -299,6 +302,7 @@ def test_segment_segment_4():
 
 
 @skip_in_parallel
+@skip_if_not_pybind11
 def test_segment_segment_5():
     "Case that failed CGAL comparison but passed when scaling the numerator in x = p0 + o / d * v"
     p0 = Point(1.1429047494274684563e-12,0.5)
@@ -310,6 +314,7 @@ def test_segment_segment_5():
 
 
 @skip_in_parallel
+@skip_if_not_pybind11
 def test_segment_segment_6():
     "Test that demonstrates, among other things, that we must check the orientation for p0, p1 in intersection_segment_segment_2d"
     p0 = Point(0.045342566799435518599,0.41358248517265505662);
@@ -317,6 +322,6 @@ def test_segment_segment_6():
     q0 = Point(1.8601965322712701917e-16,0.5);
     q1 = Point(1.873501354054951662e-16,0.3499999999999999778);
 
-    intersection = IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
+    intersection = cpp.geometry.IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
 
     assert len(intersection) == 0
