@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-11-21
-// Last changed: 2017-09-29
+// Last changed: 2017-10-07
 
 #include <cmath>
 #include "CGALExactArithmetic.h"
@@ -45,12 +45,6 @@ bool GeometryPredicates::is_degenerate(const std::vector<Point>& simplex,
 //-----------------------------------------------------------------------------
 bool GeometryPredicates::_is_degenerate_2d(const std::vector<Point>& simplex)
 {
-  if (simplex.size() < 2 or simplex.size() > 3)
-  {
-    info("Degenerate 2D simplex with %d vertices.", simplex.size());
-    return true;
-  }
-
   switch (simplex.size())
   {
   case 2:
@@ -70,12 +64,6 @@ bool GeometryPredicates::_is_degenerate_2d(const std::vector<Point>& simplex)
 //------------------------------------------------------------------------------
 bool GeometryPredicates::_is_degenerate_3d(const std::vector<Point>& simplex)
 {
-  if (simplex.size() < 2 or simplex.size() > 4)
-  {
-    info("Degenerate 3D simplex with %d vertices.", simplex.size());
-    return true;
-  }
-
   switch (simplex.size())
   {
   case 2:
