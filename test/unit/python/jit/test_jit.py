@@ -81,35 +81,37 @@ def test_mpi_pybind11():
     # Import MPI_COMM_WORLD
     if dolfin.has_mpi4py():
         from mpi4py import MPI
-        w = MPI.COMM_WORLD
+        w1 = MPI.COMM_WORLD
     else:
-        w = dolfin.MPI.comm_world
+        w1 = dolfin.MPI.comm_world
 
     # Test MPICommWrapper <-> mpi4py.MPI.Comm conversion
     # for precompiled code in the dolfin wrappers
 
-    m = dolfin.UnitSquareMesh(w, 4, 4)
+    m = dolfin.UnitSquareMesh(w1, 4, 4)
     w2 = m.mpi_comm()
 
     if dolfin.has_mpi4py():
+        assert isinstance(w1, MPI.Comm)
         assert isinstance(w2, MPI.Comm)
         return pytest.xfail('Automatic conversion does not work '
                             'for JIT-ed code for some reason')
     else:
+        assert isinstance(w1, dolfin.cpp.MPICommWrapper)
         assert isinstance(w2, dolfin.cpp.MPICommWrapper)
 
     # Test MPICommWrapper <-> mpi4py.MPI.Comm conversion
     # for dolfin.compile_cpp_code JIT-ed code
 
     # Pass a comm into C++ and get a new wrapper of the same comm back
-    w3 = mod.test_comm_passing(w)
+    w3 = mod.test_comm_passing(w1)
 
     if dolfin.has_mpi4py():
         assert isinstance(w3, MPI.Comm)
         assert False
     else:
         assert isinstance(w3, dolfin.cpp.MPICommWrapper)
-        assert w3.underlying_comm() == w.underlying_comm()
+        assert w3.underlying_comm() == w1.underlying_comm()
 
 
 @skip_if_pybind11
