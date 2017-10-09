@@ -272,9 +272,10 @@ void MultiMeshFunction::eval(Array<double>& values,
   const MultiMesh& multimesh = *_function_space->multimesh();
 
   // Iterate over meshes from top to bottom
-  std::size_t part = multimesh.num_parts() - 1;
-  for (;part >= 0; part--)
+  for (std::size_t j = 0; j < multimesh.num_parts(); j++)
   {
+    std::size_t part = multimesh.num_parts() - 1 - j;
+
     // Stop if mesh contains point or if mesh number equals 0
     if (multimesh.part(part)->bounding_box_tree()->collides_entity(Point(x)) or part == 0)
     {

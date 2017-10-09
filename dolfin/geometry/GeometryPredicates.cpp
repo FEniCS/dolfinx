@@ -211,3 +211,4 @@ bool GeometryPredicates::is_degenerate_3d(const std::vector<Point>& simplex)
   return CHECK_CGAL(_is_degenerate_3d(simplex),
 		    cgal_is_degenerate_3d(simplex));
 }
+//-----------------------------------------------------------------------------
