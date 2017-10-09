@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-09-30
+// Last changed: 2017-10-09
 
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/CellType.h>
@@ -209,6 +209,7 @@ bool CollisionPredicates::collides_segment_point(const Point& p0,
 		 "call collides_segment_point",
 		 "Unknown dimension (only implemented for dimension 2 and 3");
   }
+  return false;
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::collides_segment_segment(const Point& p0,
@@ -230,7 +231,6 @@ bool CollisionPredicates::collides_segment_segment(const Point& p0,
 		 "compute segment-segment collision ",
 		 "Unknown dimension (Implemented for dimension 1, 2 and 3)");
   }
-
   return false;
 }
 //------------------------------------------------------------------------------
@@ -558,8 +558,8 @@ bool CollisionPredicates::_collides_segment_segment_2d(const Point& p0,
     return true;
 
   // Points must be on different sides
-  if ((orient2d(q0, q1, p0) > 0.0 xor orient2d(q0, q1, p1) > 0.0) and
-      (orient2d(p0, p1, q0) > 0.0 xor orient2d(p0, p1, q1) > 0.0))
+  if (((orient2d(q0, q1, p0) > 0.0) xor (orient2d(q0, q1, p1) > 0.0)) and
+      ((orient2d(p0, p1, q0) > 0.0) xor (orient2d(p0, p1, q1) > 0.0)))
     return true;
   else
     return false;
@@ -929,6 +929,8 @@ bool CollisionPredicates::_collides_tetrahedron_point_3d(const Point& p0,
 		 "compute tetrahedron point collision",
 		 "Not implemented for degenerate tetrahedron");
   }
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_tetrahedron_segment_3d(const Point& p0,

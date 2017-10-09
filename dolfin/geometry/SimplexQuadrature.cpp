@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-24
-// Last changed: 2017-04-20
+// Last changed: 2017-10-09
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -293,14 +293,14 @@ std::pair<std::vector<double>, std::vector<double>>
         + (1. - _p[i][0] - _p[i][1] - _p[i][2])*coordinates[3][d];
     }
   }
-      
+
   // Store weights
   quadrature_rule.second.assign(_w.size(), std::abs(det) / 6.);
   for (std::size_t i = 0; i < _w.size(); ++i)
     quadrature_rule.second[i] *= _w[i];
-  
+
   dolfin_assert(quadrature_rule.first.size() == gdim*quadrature_rule.second.size());
-  
+
   return quadrature_rule;
 }
 //-----------------------------------------------------------------------------
@@ -354,7 +354,7 @@ SimplexQuadrature::compress(std::pair<std::vector<double>, std::vector<double>>&
   // Construct new qr using the non-zero weights. First find the
   // indices for these weights.
   std::vector<std::size_t> indices;
-  for (std::size_t i = 0; i < w_new.size(); ++i)
+  for (int i = 0; i < w_new.size(); ++i)
   {
     if (std::abs(w_new[i]) > 0.0)
       indices.push_back(i);
@@ -1183,7 +1183,7 @@ std::size_t SimplexQuadrature::dunavant_suborder_num(int rule)
 //    Output, int DUNAVANT_SUBORDER_NUM, the number of suborders of the rule.
 //
 {
-  std::size_t suborder_num;
+  std::size_t suborder_num = 0;
 
   if (rule == 1)
   {
@@ -3250,7 +3250,7 @@ void SimplexQuadrature::legendre_compute_glr(std::size_t n,
   x.resize(n);
   w.resize(n);
 
-  int i;
+  std::size_t i;
   double p;
   double pp;
   double w_sum;
@@ -3359,7 +3359,7 @@ void SimplexQuadrature::legendre_compute_glr0(std::size_t n, double& p, double& 
 }
 //****************************************************************************80
 
-void SimplexQuadrature::legendre_compute_glr1(std::size_t n,
+void SimplexQuadrature::legendre_compute_glr1(std::size_t n_,
 					      std::vector<double>& x,
 					      std::vector<double>& w)
 
@@ -3424,6 +3424,8 @@ void SimplexQuadrature::legendre_compute_glr1(std::size_t n,
   // double *u;
   // double *up;
   double xp;
+
+  int n = static_cast<int>(n_);
 
   if (n % 2 == 1)
   {

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-11-21
-// Last changed: 2017-10-07
+// Last changed: 2017-10-09
 
 #include <cmath>
 #include "CGALExactArithmetic.h"
@@ -45,6 +45,12 @@ bool GeometryPredicates::is_degenerate(const std::vector<Point>& simplex,
 //-----------------------------------------------------------------------------
 bool GeometryPredicates::_is_degenerate_2d(const std::vector<Point>& simplex)
 {
+  if (simplex.size() < 2 or simplex.size() > 3)
+  {
+    info("Degenerate 2D simplex with %d vertices.", simplex.size());
+    return true;
+  }
+
   switch (simplex.size())
   {
   case 2:
@@ -64,6 +70,12 @@ bool GeometryPredicates::_is_degenerate_2d(const std::vector<Point>& simplex)
 //------------------------------------------------------------------------------
 bool GeometryPredicates::_is_degenerate_3d(const std::vector<Point>& simplex)
 {
+  if (simplex.size() < 2 or simplex.size() > 4)
+  {
+    info("Degenerate 3D simplex with %d vertices.", simplex.size());
+    return true;
+  }
+
   switch (simplex.size())
   {
   case 2:
@@ -142,7 +154,7 @@ bool GeometryPredicates::convex_hull_is_degenerate(const std::vector<Point>& poi
   }
   else if (gdim == 3)
   {
-    int i = 0, j = 1, k = 2;
+    std::size_t i = 0, j = 1, k = 2;
     bool found = false;
 
     // Find three point which are not collinear
@@ -170,7 +182,7 @@ bool GeometryPredicates::convex_hull_is_degenerate(const std::vector<Point>& poi
     if (!found)
       return false;
 
-    for (int l = 0; l < points.size();  l++)
+    for (std::size_t l = 0; l < points.size();  l++)
     {
       if (l == i || l == j || l == k)
         continue;
@@ -181,6 +193,11 @@ bool GeometryPredicates::convex_hull_is_degenerate(const std::vector<Point>& poi
 
     return false;
   }
+
+  dolfin_error("GeometryPredicates.h",
+               "call convex_hull_is_degenerate",
+               "Only fully implemented for gdim == 3, not gdim = %d", gdim);
+  return false;
 }
 //-----------------------------------------------------------------------------
 bool GeometryPredicates::is_degenerate_2d(const std::vector<Point>& simplex)

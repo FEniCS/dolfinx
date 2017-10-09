@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2016
 //
 // First added:  2013-08-05
-// Last changed: 2017-09-22
+// Last changed: 2017-10-09
 
 #include <cmath>
 #include <dolfin/log/log.h>
@@ -418,7 +418,6 @@ std::string MultiMesh::plot_matplotlib(double delta_z,
     }
     else
     {
-      const double max_num_parts = 33;
       ss << "    z = " << p<< "*np.ones(int(facets.size / 3))\n"
 	 << "    ax.tripcolor(x, y, facets, facecolors = z, edgecolors = 'k', alpha = alpha, vmin = 0, vmax = " << num_parts()-1 << ")\n";
     }
@@ -963,13 +962,13 @@ void MultiMesh::_build_quadrature_rules_interface(std::size_t quadrature_order)
 		   tdim_interface, gdim, quadrature_order);
 	      }
 
-	      // Remove any near-trival quadrature rules
-	      // TODO: Investigate the tolerance
-              double cut_size;
-              if  (Eij.size() == 2)
-                cut_size = (Eij[1] - Eij[0]).norm();
-              else if (Eij.size() == 3)
-                cut_size = (Eij[1] - Eij[0]).cross(Eij[2] - Eij[0]).norm() / 2;
+	      // // Remove any near-trival quadrature rules
+	      // // TODO: Investigate the tolerance
+              // double cut_size;
+              // if  (Eij.size() == 2)
+              //   cut_size = (Eij[1] - Eij[0]).norm();
+              // else if (Eij.size() == 3)
+              //   cut_size = (Eij[1] - Eij[0]).cross(Eij[2] - Eij[0]).norm() / 2;
               //const double tolerance = DOLFIN_EPS * cut_size;
 	      //remove_quadrature_rule(interface_qr[local_cutting_cell_j_index], tolerance);
 
@@ -1042,7 +1041,7 @@ MultiMesh::_is_overlapped_interface(std::vector<Point> simplex,
   simplex_midpoint /= simplex.size();
 
   const unsigned int* vertex_indices = cut_cell.entities(0);
-  for (int j = 0; j < cut_cell.num_entities(0); j++)
+  for (std::size_t j = 0; j < cut_cell.num_entities(0); j++)
   {
     Vertex vertex_j(cut_cell.mesh(), vertex_indices[j]);
     double c = simplex_normal.dot(vertex_j.point() - simplex_midpoint);
@@ -1052,7 +1051,7 @@ MultiMesh::_is_overlapped_interface(std::vector<Point> simplex,
   // Identify a facet being cut, if any
   std::size_t tdim = cut_cell.dim();
   const unsigned int* facet_indices = cut_cell.entities(tdim - 1);
-  for (int j = 0; j < cut_cell.num_entities(tdim - 1); j++)
+  for (std::size_t j = 0; j < cut_cell.num_entities(tdim - 1); j++)
   {
     Facet facet_j(cut_cell.mesh(), facet_indices[j]);
     simplex.push_back(facet_j.midpoint());
