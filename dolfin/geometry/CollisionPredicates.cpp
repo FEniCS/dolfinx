@@ -496,18 +496,18 @@ bool CollisionPredicates::_collides_segment_point_3d(const Point& p0,
 
   if (det_xy == 0.0)
   {
-    const std::array<std::array<double, 2>, 3> xz = {{ { p0.x(), p0.z() },
-						       { p1.x(), p1.z() },
-						       { point.x(), point.z() } }};
+    const std::array<std::array<double, 2>, 3> xz = {{ {{p0.x(), p0.z()}},
+						       {{p1.x(), p1.z()}},
+						       {{point.x(), point.z()}} }};
     const double det_xz = _orient2d(xz[0].data(),
 				    xz[1].data(),
 				    xz[2].data());
 
     if (det_xz == 0.0)
     {
-      const std::array<std::array<double, 2>, 3> yz = {{ { p0.y(), p0.z() },
-							 { p1.y(), p1.z() },
-							 { point.y(), point.z() } }};
+      const std::array<std::array<double, 2>, 3> yz = {{ {{p0.y(), p0.z()}},
+                                                         {{p1.y(), p1.z()}},
+                                                         {{point.y(), point.z()}} }};
       const double det_yz = _orient2d(yz[0].data(),
 				      yz[1].data(),
 				      yz[2].data());
@@ -624,9 +624,9 @@ bool CollisionPredicates::_collides_segment_segment_3d(const Point& p0,
   {
     if (p0[d] == p1[d] and p0[d] == q0[d] and p0[d] == q1[d])
     {
-      const std::array<std::array<std::size_t, 2>, 3> dims = {{ {1, 2},
-								{0, 2},
-								{0, 1} }};
+      const std::array<std::array<std::size_t, 2>, 3> dims = {{ {{1, 2}},
+                                                                {{0, 2}},
+                                                                {{0, 1}} }};
       const Point p0_2d(p0[dims[d][0]], p0[dims[d][1]]);
       const Point p1_2d(p1[dims[d][0]], p1[dims[d][1]]);
       const Point q0_2d(q0[dims[d][0]], q0[dims[d][1]]);
@@ -798,8 +798,8 @@ bool CollisionPredicates::_collides_triangle_triangle_2d(const Point& p0,
   // FIXME: Optimize by avoiding redundant calls to orient2d
 
   // Pack points as vectors
-  const std::array<Point, 3> tri_0({p0, p1, p2});
-  const std::array<Point, 3> tri_1({q0, q1, q2});
+  const std::array<Point, 3> tri_0 = {{p0, p1, p2}};
+  const std::array<Point, 3> tri_1 = {{q0, q1, q2}};
 
   const bool s0 = std::signbit(orient2d(p0, p1, p2));
   const bool s1 = std::signbit(orient2d(q0, q1, q2));
@@ -815,7 +815,9 @@ bool CollisionPredicates::_collides_triangle_triangle_2d(const Point& p0,
     	 orient2d(tri_0[0], tri_0[1], tri_1[i]) >= 0.0 and
     	 orient2d(tri_0[1], tri_0[2], tri_1[i]) >= 0.0 and
     	 orient2d(tri_0[2], tri_0[0], tri_1[i]) >= 0.0))
+    {
       return true;
+    }
 
     if ((s1 and
     	 orient2d(tri_1[0], tri_1[1], tri_0[i]) <= 0.0 and
@@ -826,7 +828,9 @@ bool CollisionPredicates::_collides_triangle_triangle_2d(const Point& p0,
     	 orient2d(tri_1[0], tri_1[1], tri_0[i]) >= 0.0 and
     	 orient2d(tri_1[1], tri_1[2], tri_0[i]) >= 0.0 and
     	 orient2d(tri_1[2], tri_1[0], tri_0[i]) >= 0.0))
+    {
       return true;
+    }
   }
 
   // Find all edge-edge collisions
@@ -858,8 +862,8 @@ bool CollisionPredicates::_collides_triangle_triangle_3d(const Point& p0,
   // FIXME: Optimize by avoiding redundant calls to orient3d
 
   // Pack points as vectors
-  const std::array<Point, 3> tri_0({p0, p1, p2});
-  const std::array<Point, 3> tri_1({q0, q1, q2});
+  const std::array<Point, 3> tri_0 = {{p0, p1, p2}};
+  const std::array<Point, 3> tri_1 = {{q0, q1, q2}};
 
   // First test edge-face collisions
   for (std::size_t i = 0; i < 3; ++i)
@@ -882,7 +886,9 @@ bool CollisionPredicates::_collides_triangle_triangle_3d(const Point& p0,
       const std::size_t j1 = (i1 + 1) % 3;
       if (collides_segment_segment_3d(tri_0[i0], tri_0[j0],
 				      tri_1[i1], tri_1[j1]))
+      {
 	return true;
+      }
     }
   }
 
@@ -1007,15 +1013,21 @@ bool CollisionPredicates::_collides_tetrahedron_tetrahedron_3d(const Point& p0,
   const std::array<Point, 4> tetq = {{q0, q1, q2, q3}};
 
   // Triangle face collisions
-  const std::array<std::array<std::size_t, 3>, 4> faces = {{ {1, 2, 3},
-							     {0, 2, 3},
-							     {0, 1, 3},
-							     {0, 1, 2} }};
+  const std::array<std::array<std::size_t, 3>, 4> faces = {{ {{1, 2, 3}},
+                                                             {{0, 2, 3}},
+                                                             {{0, 1, 3}},
+                                                             {{0, 1, 2}} }};
   for (std::size_t i = 0; i < 4; ++i)
+  {
     for (std::size_t j = 0; j < 4; ++j)
+    {
       if (collides_triangle_triangle_3d(tetp[faces[i][0]], tetp[faces[i][1]], tetp[faces[i][2]],
 					tetq[faces[j][0]], tetq[faces[j][1]], tetq[faces[j][2]]))
+      {
 	return true;
+      }
+    }
+  }
 
   // Vertex in tetrahedron collision
   if (collides_tetrahedron_point_3d(p0, p1, p2, p3, q0))
