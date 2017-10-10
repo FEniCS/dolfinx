@@ -51,28 +51,6 @@ namespace
     return false;
   }
 
-  // checks that every pair of cells share 0 or 1 face
-  bool valid_topology(const std::vector<std::vector<Point>>& triangulation, std::size_t dim)
-  {
-    for (std::size_t i = 0; i < triangulation.size(); i++)
-    {
-      const auto& t1 = triangulation[i];
-      for (std::size_t j = i+1; j < triangulation.size(); j++)
-      {
-	// Count number of shared vertices
-	std::size_t shared_vertices = 0;
-	for (std::size_t v1 = 0; v1 < dim+1; v1++)
-	  for (std::size_t v2 = 0; v2 < dim+1; v2++)
-	    if (v1 == v2)
-	      shared_vertices++;
-
-	if (shared_vertices != 0 && shared_vertices != dim)
-	  return false;
-      }
-    }
-    return true;
-  }
-
   bool triangulation_selfintersects(const std::vector<std::vector<Point>>& triangulation,
 				    std::size_t dim)
   {
@@ -183,8 +161,9 @@ TEST(ConvexTriangulationTest, testTrivialCase)
     Point(1,0,0) };
 
   std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
-
-  ASSERT_EQ(tri.size(), 1);
+  std::size_t expected_size = 1;
+  
+  ASSERT_EQ(tri.size(), expected_size);
   ASSERT_NEAR(triangulation_volume(tri), 1./6., DOLFIN_EPS);
 }
 //-----------------------------------------------------------------------------

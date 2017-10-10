@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-02-03
-// Last changed: 2017-09-29
+// Last changed: 2017-10-07
 
 #include <iomanip>
 #include <dolfin/mesh/MeshEntity.h>
@@ -364,17 +364,14 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
   const double q0o = orient2d(p0, p1, q0);
   const double q1o = orient2d(p0, p1, q1);
 
-  // Compute total orientation of segment wrt line
-  const double qo = q0o*q1o;
-
   // Case 0: points on the same side --> no intersection
-  if (qo > 0.0)
+  if ((q0o > 0.0 and q1o > 0.0) or(q0o < 0.0 and q1o < 0.0))
     return std::vector<Point>();
 
   // Repeat the same procedure for p
   const double p0o = orient2d(q0, q1, p0);
   const double p1o = orient2d(q0, q1, p1);
-  if (p0o*p1o > 0.0)
+  if ((p0o > 0.0 and p1o > 0.0) or (p0o < 0.0 and p1o < 0.0))
     return std::vector<Point>();
 
   // Case 1: exactly one point on line --> possible point intersection
@@ -382,6 +379,10 @@ IntersectionConstruction::intersection_segment_segment_2d(const Point& p0,
     return intersection_segment_point_2d(p0, p1, q0);
   else if (q0o != 0.0 and q1o == 0.0)
     return intersection_segment_point_2d(p0, p1, q1);
+  else if (p0o == 0.0 and p1o != 0.0)
+    return intersection_segment_point_2d(q0, q1, p0);
+  else if (p0o != 0.0 and p1o == 0.0)
+    return intersection_segment_point_2d(q0, q1, p1);
 
   // Compute line vector and major axis
   const Point v = p1 - p0;

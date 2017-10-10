@@ -14,9 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2014-02-24
-// Last changed: 2017-04-20
 
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -118,27 +115,27 @@ std::pair<std::vector<double>, std::vector<double>>
   switch (gdim)
   {
   case 1:
-    {
+  {
       det = coordinates[1].x() - coordinates[0].x();
       break;
-    }
+  }
   case 2:
-    {
-      const std::array<double, 2> J = { coordinates[1].x() - coordinates[0].x(),
-					coordinates[1].y() - coordinates[0].y()};
-      const double det2 = J[0]*J[0] + J[1]*J[1];
-      det = std::sqrt(det2);
-      break;
-    }
+  {
+    const std::array<double, 2> J = {{coordinates[1].x() - coordinates[0].x(),
+                                      coordinates[1].y() - coordinates[0].y()}};
+    const double det2 = J[0]*J[0] + J[1]*J[1];
+    det = std::sqrt(det2);
+    break;
+  }
   case 3:
-    {
-      const std::array<double, 3>  J = { coordinates[1].x() - coordinates[0].x(),
-					 coordinates[1].y() - coordinates[0].y(),
-					 coordinates[1].z() - coordinates[0].z()};
-      const double det2 = J[0]*J[0] + J[1]*J[1];
-      det = std::sqrt(det2);
-      break;
-    }
+  {
+    const std::array<double, 3>  J = {{coordinates[1].x() - coordinates[0].x(),
+                                       coordinates[1].y() - coordinates[0].y(),
+                                       coordinates[1].z() - coordinates[0].z()}};
+    const double det2 = J[0]*J[0] + J[1]*J[1];
+    det = std::sqrt(det2);
+    break;
+  }
   default:
     dolfin_error("SimplexQuadrature.cpp",
                  "compute quadrature rule for interval",
@@ -158,7 +155,6 @@ std::pair<std::vector<double>, std::vector<double>>
       dolfin_assert(std::isfinite(quadrature_rule.first[d + i*gdim]));
     }
   }
-
   dolfin_assert(det >= 0);
 
   // Store weights
@@ -168,16 +164,15 @@ std::pair<std::vector<double>, std::vector<double>>
     quadrature_rule.second[i] *= _w[i];
     dolfin_assert(std::isfinite(quadrature_rule.second[i]));
   }
-
   dolfin_assert(quadrature_rule.first.size() == gdim*quadrature_rule.second.size());
 
   return quadrature_rule;
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double>>
-  SimplexQuadrature::compute_quadrature_rule_triangle(const std::vector<Point>& coordinates,
-						      std::size_t gdim,
-						      std::size_t order) const
+SimplexQuadrature::compute_quadrature_rule_triangle(const std::vector<Point>& coordinates,
+                                                    std::size_t gdim,
+                                                    std::size_t order) const
 {
   log(PROGRESS, "Create quadrature rule using given triangle coordinates");
 
@@ -189,27 +184,27 @@ std::pair<std::vector<double>, std::vector<double>>
   switch (gdim)
   {
   case 2:
-    {
-      det = orient2d(coordinates[0], coordinates[1], coordinates[2]);
+  {
+    det = orient2d(coordinates[0], coordinates[1], coordinates[2]);
 
-      break;
-    }
+    break;
+  }
   case 3:
-    {
-      const std::array<double, 6> J = { coordinates[1].x() - coordinates[0].x(),
-					coordinates[2].x() - coordinates[0].x(),
-					coordinates[1].y() - coordinates[0].y(),
-					coordinates[2].y() - coordinates[0].y(),
-					coordinates[1].z() - coordinates[0].z(),
-					coordinates[2].z() - coordinates[0].z()};
-      const double d_0 = J[2]*J[5] - J[4]*J[3];
-      const double d_1 = J[4]*J[1] - J[0]*J[5];
-      const double d_2 = J[0]*J[3] - J[2]*J[1];
-      const double det2 = d_0*d_0 + d_1*d_1 + d_2*d_2;
-      det = std::sqrt(det2);
+  {
+    const std::array<double, 6> J = {{coordinates[1].x() - coordinates[0].x(),
+                                      coordinates[2].x() - coordinates[0].x(),
+                                      coordinates[1].y() - coordinates[0].y(),
+                                      coordinates[2].y() - coordinates[0].y(),
+                                      coordinates[1].z() - coordinates[0].z(),
+                                      coordinates[2].z() - coordinates[0].z()}};
+    const double d_0 = J[2]*J[5] - J[4]*J[3];
+    const double d_1 = J[4]*J[1] - J[0]*J[5];
+    const double d_2 = J[0]*J[3] - J[2]*J[1];
+    const double det2 = d_0*d_0 + d_1*d_1 + d_2*d_2;
+    det = std::sqrt(det2);
 
-      break;
-    }
+    break;
+  }
   default:
     dolfin_error("SimplexQuadrature.cpp",
                  "compute quadrature rule for triangle",
@@ -244,9 +239,9 @@ std::pair<std::vector<double>, std::vector<double>>
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double>>
-  SimplexQuadrature::compute_quadrature_rule_tetrahedron(const std::vector<Point>& coordinates,
-							 std::size_t gdim,
-							 std::size_t order) const
+SimplexQuadrature::compute_quadrature_rule_tetrahedron(const std::vector<Point>& coordinates,
+                                                       std::size_t gdim,
+                                                       std::size_t order) const
 {
   log(PROGRESS, "Create quadrature rule using given tetrahedron coordinates");
 
@@ -258,22 +253,22 @@ std::pair<std::vector<double>, std::vector<double>>
   switch (gdim)
   {
   case 3:
-    {
-      const std::array<double, 9> J = { coordinates[1].x() - coordinates[0].x(),
-					coordinates[2].x() - coordinates[0].x(),
-					coordinates[3].x() - coordinates[0].x(),
-					coordinates[1].y() - coordinates[0].y(),
-					coordinates[2].y() - coordinates[0].y(),
-					coordinates[3].y() - coordinates[0].y(),
-					coordinates[1].z() - coordinates[0].z(),
-					coordinates[2].z() - coordinates[0].z(),
-					coordinates[3].z() - coordinates[0].z()};
-      const std::array<double, 3> d = { J[4]*J[8] - J[5]*J[7],
-					J[2]*J[7] - J[1]*J[8],
-					J[1]*J[5] - J[2]*J[4] };
-      det = J[0]*d[0] + J[3]*d[1] + J[6]*d[2];
-      break;
-    }
+  {
+    const std::array<double, 9> J = {{coordinates[1].x() - coordinates[0].x(),
+                                      coordinates[2].x() - coordinates[0].x(),
+                                      coordinates[3].x() - coordinates[0].x(),
+                                      coordinates[1].y() - coordinates[0].y(),
+                                      coordinates[2].y() - coordinates[0].y(),
+                                      coordinates[3].y() - coordinates[0].y(),
+                                      coordinates[1].z() - coordinates[0].z(),
+                                      coordinates[2].z() - coordinates[0].z(),
+                                      coordinates[3].z() - coordinates[0].z()}};
+    const std::array<double, 3> d = {{J[4]*J[8] - J[5]*J[7],
+                                      J[2]*J[7] - J[1]*J[8],
+                                      J[1]*J[5] - J[2]*J[4]}};
+    det = J[0]*d[0] + J[3]*d[1] + J[6]*d[2];
+    break;
+  }
   default:
     dolfin_error("SimplexQuadrature.cpp",
                  "compute quadrature rule for tetrahedron",
@@ -293,14 +288,14 @@ std::pair<std::vector<double>, std::vector<double>>
         + (1. - _p[i][0] - _p[i][1] - _p[i][2])*coordinates[3][d];
     }
   }
-      
+
   // Store weights
-  quadrature_rule.second.assign(_w.size(), std::abs(det) / 6.);
+  quadrature_rule.second.assign(_w.size(), std::abs(det)/6.0);
   for (std::size_t i = 0; i < _w.size(); ++i)
     quadrature_rule.second[i] *= _w[i];
-  
+
   dolfin_assert(quadrature_rule.first.size() == gdim*quadrature_rule.second.size());
-  
+
   return quadrature_rule;
 }
 //-----------------------------------------------------------------------------
@@ -309,7 +304,8 @@ SimplexQuadrature::compress(std::pair<std::vector<double>, std::vector<double>>&
 			    std::size_t gdim,
 			    std::size_t quadrature_order)
 {
-  // Polynomial degree N that can be integrated exactly using the qr_base
+  // Polynomial degree N that can be integrated exactly using the
+  // qr_base
   const std::size_t N = quadrature_order;
 
   // By construction the compressed quadrature rule will not have more
@@ -354,7 +350,7 @@ SimplexQuadrature::compress(std::pair<std::vector<double>, std::vector<double>>&
   // Construct new qr using the non-zero weights. First find the
   // indices for these weights.
   std::vector<std::size_t> indices;
-  for (std::size_t i = 0; i < w_new.size(); ++i)
+  for (int i = 0; i < w_new.size(); ++i)
   {
     if (std::abs(w_new[i]) > 0.0)
       indices.push_back(i);
@@ -385,7 +381,6 @@ void SimplexQuadrature::setup_qr_reference_interval(std::size_t order)
   // Create quadrature rule with points on reference element [-1, 1].
   _p.resize(1);
   legendre_compute_glr(order, _p[0], _w);
-
 }
 //-----------------------------------------------------------------------------
 void SimplexQuadrature::setup_qr_reference_triangle(std::size_t order)
@@ -419,10 +414,10 @@ void SimplexQuadrature::setup_qr_reference_tetrahedron(std::size_t order)
   case 3:
     // Assign weights
     _w = { -4./5.,
-	  9./20.,
-	  9./20.,
-	  9./20.,
-	  9./20. };
+           9./20.,
+           9./20.,
+           9./20.,
+           9./20. };
 
     // Assign points
     _p = { { 0.25,  0.25,  0.25  },
@@ -638,8 +633,7 @@ SimplexQuadrature::Chebyshev_polynomial(const Eigen::VectorXd& x,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<std::size_t>>
-SimplexQuadrature::grlex(std::size_t gdim,
-			 std::size_t N)
+SimplexQuadrature::grlex(std::size_t gdim, std::size_t N)
 {
   // Generate a matrix with numbers in graded lexicographic ordering,
   // i.e. if N = 3 and dim = 2, P should be
@@ -1183,7 +1177,7 @@ std::size_t SimplexQuadrature::dunavant_suborder_num(int rule)
 //    Output, int DUNAVANT_SUBORDER_NUM, the number of suborders of the rule.
 //
 {
-  std::size_t suborder_num;
+  std::size_t suborder_num = 0;
 
   if (rule == 1)
   {
@@ -3250,7 +3244,7 @@ void SimplexQuadrature::legendre_compute_glr(std::size_t n,
   x.resize(n);
   w.resize(n);
 
-  int i;
+  std::size_t i;
   double p;
   double pp;
   double w_sum;
@@ -3359,7 +3353,7 @@ void SimplexQuadrature::legendre_compute_glr0(std::size_t n, double& p, double& 
 }
 //****************************************************************************80
 
-void SimplexQuadrature::legendre_compute_glr1(std::size_t n,
+void SimplexQuadrature::legendre_compute_glr1(std::size_t n_,
 					      std::vector<double>& x,
 					      std::vector<double>& w)
 
@@ -3424,6 +3418,8 @@ void SimplexQuadrature::legendre_compute_glr1(std::size_t n,
   // double *u;
   // double *up;
   double xp;
+
+  int n = static_cast<int>(n_);
 
   if (n % 2 == 1)
   {

@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2016 Anders Logg
+// Copyright (C) 2013-2017 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-09-25
-// Last changed: 2016-03-02
+// Last changed: 2017-10-09
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
@@ -272,11 +272,12 @@ void MultiMeshFunction::eval(Array<double>& values,
   const MultiMesh& multimesh = *_function_space->multimesh();
 
   // Iterate over meshes from top to bottom
-  std::size_t part = multimesh.num_parts() - 1;
-  for (;part >= 0; part--)
+  for (std::size_t j = 0; j < multimesh.num_parts(); j++)
   {
-    // Stop if mesh contains point or if mesh number equals 0
-    if (multimesh.part(part)->bounding_box_tree()->collides_entity(Point(x)) or part == 0)
+    std::size_t part = multimesh.num_parts() - 1 - j;
+
+    // Stop if we reached the bottom part (layer) or found layer containing point
+    if (part == 0 or multimesh.part(part)->bounding_box_tree()->collides_entity(Point(x)))
     {
       this->part(part)->eval(values, x);
       break;

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-06-01
-// Last changed: 2017-09-22
+// Last changed: 2017-10-09
 
 #include <algorithm>
 #include <tuple>
@@ -198,6 +198,8 @@ ConvexTriangulation::triangulate(const std::vector<Point>& p,
   dolfin_error("ConvexTriangulation.cpp",
                "triangulate convex polyhedron",
                "Triangulation of polyhedron of topological dimension %u and geometric dimension %u not implemented", tdim, gdim);
+
+  return std::vector<std::vector<Point>>();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<Point>>
@@ -319,8 +321,6 @@ ConvexTriangulation::_triangulate_graham_scan_3d(const std::vector<Point>& input
   //std::cout << "Input to 3D Graham scan:" << std::endl;
   //for (auto p : input_points)
   //  std::cout << p << std::endl;
-
-  const double coplanar_tol = 1000*DOLFIN_EPS_LARGE;
 
   // Make sure the input points are unique. We assume this has
   // negligble effect on volume
@@ -485,11 +485,11 @@ ConvexTriangulation::_triangulate_graham_scan_3d(const std::vector<Point>& input
 		// checked to avoid duplicating triangles
                 std::sort(coplanar.begin(), coplanar.end());
 
-                for (int i = 0; i < coplanar.size()-2; i++)
+                for (int i = 0; i < (int)coplanar.size()-2; i++)
                 {
-                  for (int j = i+1; j < coplanar.size()-1; j++)
+                  for (int j = i+1; j < (int)coplanar.size()-1; j++)
                   {
-                    for (int k = j+1; k < coplanar.size(); k++)
+                    for (std::size_t k = j+1; k < coplanar.size(); k++)
                     {
                       checked.emplace( std::make_tuple(coplanar[i], coplanar[j], coplanar[k]) );
                     }
@@ -550,9 +550,9 @@ ConvexTriangulation::triangulate_graham_scan_3d(const std::vector<Point>& pm)
 //-----------------------------------------------------------------------------
 bool ConvexTriangulation::selfintersects(const std::vector<std::vector<Point>>& p)
 {
-  for (int i = 0; i < p.size(); i++)
+  for (std::size_t i = 0; i < p.size(); i++)
   {
-    for (int j = i+1; j < p.size(); j++)
+    for (std::size_t j = i+1; j < p.size(); j++)
     {
       dolfin_assert(p[i].size() == p[j].size());
       if (p[i].size() == 4)
@@ -577,7 +577,7 @@ bool ConvexTriangulation::selfintersects(const std::vector<std::vector<Point>>& 
 									      p[j][3]);
 	  if (intersection.size() > 3)
 	  {
-	    for (int k = 3; k < intersection.size(); k++)
+	    for (std::size_t k = 3; k < intersection.size(); k++)
 	    {
 	      // FIXME: Note that this fails if the first three points are colinear!
 	      if (orient3d(intersection[0],

@@ -198,10 +198,9 @@ def test_triangle_triangle_2d() :
 							                          Point(0.5, 0.4060889538943557),
                                                                                   Point(.5, .5))
     for p in res:
-        print(p[0],p[1])
+        print(p[0], p[1])
 
     assert len(res) == 2
-
 
 @skip_in_parallel
 @skip_if_not_pybind11
@@ -214,7 +213,6 @@ def test_parallel_segments_2d():
     intersection = cpp.geometry.IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
     assert len(intersection) == 2
 
-
 @skip_if_not_pybind11
 def test_equal_segments_2d():
     " These two segments are equal and the intersection computed accordingly"
@@ -224,7 +222,6 @@ def test_equal_segments_2d():
     q1 = Point(9. / DOLFIN_PI, DOLFIN_PI / 7.)
     intersection = cpp.geometry.IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
     assert len(intersection) == 2
-
 
 @skip_in_parallel
 @skip_if_not_pybind11
@@ -243,12 +240,11 @@ def test_triangle_segment_2D_1():
 def compare_with_cgal(p0, p1, q0, q1, cgal):
     intersection = cpp.geometry.IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
 
-    for p in intersection:
-        print(*p)
+    #for p in intersection:
+    #    print(*p)
 
     return abs(intersection[0][0] - cgal[0]) < DOLFIN_EPS and \
-        abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS
-
+           abs(intersection[0][1] - cgal[1]) < DOLFIN_EPS
 
 @skip_in_parallel
 @pytest.mark.skipif(True, reason="This is a case where the intersection currently fails")

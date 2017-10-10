@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2016-05-03
-// Last changed: 2017-09-29
+// Last changed: 2017-10-07
 //
 // Developer note:
 //
@@ -87,11 +87,10 @@ namespace dolfin
   {
     if (dolfin_result.size() != cgal_result.size())
     {
-
-
       dolfin_error("CGALExactArithmetic.h",
 		   "verify intersection",
-		   "size of point set differs (%d vs %d)", dolfin_result.size(), cgal_result.size());
+		   "size of point set differs (%d vs %d)",
+		   dolfin_result.size(), cgal_result.size());
     }
 
     for (const Point& p1 : dolfin_result)
@@ -104,12 +103,13 @@ namespace dolfin
 	  found = true;
 	  break;
 	}
-
-	if (!found)
-	  dolfin_error("CGALExactArithmetic.h",
-		       "verify intersection construction result",
-		       "Point (%f, %f, %f) in dolfin result not found in cgal result");
       }
+
+      if (!found)
+	dolfin_error("CGALExactArithmetic.h",
+		     "verify intersection construction result",
+		     "Point (%f, %f, %f) in dolfin result not found in cgal result",
+		     p1[0], p1[1], p1[2]);
     }
     return dolfin_result;
   }
