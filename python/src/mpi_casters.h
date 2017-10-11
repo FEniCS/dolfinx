@@ -51,6 +51,12 @@ namespace pybind11
         // Python to C++
         bool load(handle src, bool)
         {
+          // We may get called with any type of python object
+          if (not hasattr(src, "Allgather"))
+          {
+            throw value_error(std::string("Expected an mpi4py communicator with Allgather "
+                              "attribute, got ") + static_cast<std::string>(repr(src)));
+          }
           VERIFY_MPI4PY(PyMPIComm_Get);
           value = dolfin::MPICommWrapper(*PyMPIComm_Get(src.ptr()));
           return true;
