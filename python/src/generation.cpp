@@ -67,10 +67,10 @@ namespace dolfin_wrappers
     // dolfin::UnitSquareMesh
     py::class_<dolfin::UnitSquareMesh, std::shared_ptr<dolfin::UnitSquareMesh>, dolfin::Mesh>(m, "UnitSquareMesh")
       .def(py::init<std::size_t, std::size_t>())
+      .def(py::init<std::size_t, std::size_t, std::string>(), py::arg("nx"), py::arg("ny"), py::arg("diagonal")="right")
       .def(py::init([](const dolfin::MPICommWrapper comm, std::size_t nx, std::size_t ny, std::string diagonal="right")
         { return std::unique_ptr<dolfin::UnitSquareMesh>(new dolfin::UnitSquareMesh(comm.get(), nx, ny, diagonal)); }),
-        py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("diagonal")="right")
-      .def(py::init<std::size_t, std::size_t, std::string>());
+        py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("diagonal")="right");
 
     // dolfin::UnitCubeMesh
     py::class_<dolfin::UnitCubeMesh, std::shared_ptr<dolfin::UnitCubeMesh>, dolfin::Mesh>(m, "UnitCubeMesh")
