@@ -20,16 +20,13 @@
 
 #include <dolfin/common/MPI.h>
 
-namespace dolfin
+namespace dolfin_wrappers
 {
 
   /// This class wraps the MPI_Comm type for use in the pybind11
   /// generation of python wrappers. MPI_Comm is either a pointer
   /// or an int (MPICH vs OpenMPI) and this cannot be wrapped in a
-  /// type safe way with pybind11. This class is NOT used from dolfin
-  /// C++ side, the only reason it is here instead of in the 
-  /// dolfin_wrappers namespace is to make it available to code being
-  /// jit compiled from python with dolfin.compile_cpp_code(...)
+  /// type safe way with pybind11.
 
   class MPICommWrapper {
 
@@ -37,7 +34,7 @@ namespace dolfin
 
   public:
 
-    MPICommWrapper() {};
+    MPICommWrapper();
 
     MPICommWrapper(MPI_Comm comm);
 

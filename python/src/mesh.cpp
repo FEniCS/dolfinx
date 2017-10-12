@@ -114,9 +114,9 @@ namespace dolfin_wrappers
       .def(py::init<>())
       .def(py::init<std::string>())
       .def(py::init<const dolfin::Mesh&>())
-      .def(py::init([](const dolfin::MPICommWrapper comm)
+      .def(py::init([](const MPICommWrapper comm)
         { return std::unique_ptr<dolfin::Mesh>(new dolfin::Mesh(comm.get())); }))
-      .def(py::init([](const dolfin::MPICommWrapper comm, const std::string filename)
+      .def(py::init([](const MPICommWrapper comm, const std::string filename)
         { return std::unique_ptr<dolfin::Mesh>(new dolfin::Mesh(comm.get(), filename)); }))
       .def("bounding_box_tree", &dolfin::Mesh::bounding_box_tree)
       .def("cells", [](const dolfin::Mesh& self)
@@ -156,7 +156,7 @@ namespace dolfin_wrappers
              auto _o = o.attr("_cpp_object").cast<dolfin::Expression*>();
              self.init_cell_orientations(*_o);
            })
-      .def("mpi_comm", [](dolfin::Mesh& self) { return dolfin::MPICommWrapper(self.mpi_comm()); })
+      .def("mpi_comm", [](dolfin::Mesh& self) { return MPICommWrapper(self.mpi_comm()); })
       .def("num_entities", &dolfin::Mesh::num_entities, "Number of mesh entities")
       .def("num_vertices", &dolfin::Mesh::num_vertices, "Number of vertices")
       .def("num_edges", &dolfin::Mesh::num_edges, "Number of edges")

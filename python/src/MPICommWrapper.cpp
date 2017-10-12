@@ -17,7 +17,12 @@
 
 #include "MPICommWrapper.h"
 
-using namespace dolfin;
+using namespace dolfin_wrappers;
+
+MPICommWrapper::MPICommWrapper()
+{
+  this-> comm = MPI_COMM_NULL;
+}
 
 MPICommWrapper::MPICommWrapper(MPI_Comm comm)
 {

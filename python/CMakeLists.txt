@@ -34,7 +34,8 @@ pybind11_add_module(cpp SHARED
   src/io.cpp
   src/la.cpp
   src/nls.cpp
-  src/refinement.cpp)
+  src/refinement.cpp
+  src/MPICommWrapper.cpp)
 
 # Add DOLFIN libraries and other config
 target_link_libraries(cpp PRIVATE pybind11::module dolfin)
