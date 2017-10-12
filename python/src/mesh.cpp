@@ -115,9 +115,9 @@ namespace dolfin_wrappers
       .def(py::init<std::string>())
       .def(py::init<const dolfin::Mesh&>())
       .def(py::init([](const MPICommWrapper comm)
-        { return std::unique_ptr<dolfin::Mesh>(new dolfin::Mesh(comm.get())); }))
+                    { return std::unique_ptr<dolfin::Mesh>(new dolfin::Mesh(comm.get())); }))
       .def(py::init([](const MPICommWrapper comm, const std::string filename)
-        { return std::unique_ptr<dolfin::Mesh>(new dolfin::Mesh(comm.get(), filename)); }))
+                    { return std::unique_ptr<dolfin::Mesh>(new dolfin::Mesh(comm.get(), filename)); }))
       .def("bounding_box_tree", &dolfin::Mesh::bounding_box_tree)
       .def("cells", [](const dolfin::Mesh& self)
            {
@@ -156,8 +156,10 @@ namespace dolfin_wrappers
              auto _o = o.attr("_cpp_object").cast<dolfin::Expression*>();
              self.init_cell_orientations(*_o);
            })
-      .def("mpi_comm", [](dolfin::Mesh& self) { return MPICommWrapper(self.mpi_comm()); })
-      .def("num_entities", &dolfin::Mesh::num_entities, "Number of mesh entities")
+      .def("mpi_comm", [](dolfin::Mesh& self)
+           { return MPICommWrapper(self.mpi_comm()); })
+      .def("num_entities", &dolfin::Mesh::num_entities,
+           "Number of mesh entities")
       .def("num_vertices", &dolfin::Mesh::num_vertices, "Number of vertices")
       .def("num_edges", &dolfin::Mesh::num_edges, "Number of edges")
       .def("num_faces", &dolfin::Mesh::num_faces, "Number of faces")
@@ -174,7 +176,8 @@ namespace dolfin_wrappers
       .def("size_global", &dolfin::Mesh::size_global)
       .def("smooth", &dolfin::Mesh::smooth, py::arg("num_iterations")=1)
       .def("smooth_boundary", &dolfin::Mesh::smooth_boundary)
-      .def("snap_boundary", &dolfin::Mesh::snap_boundary, py::arg("subdomain"), py::arg("harmonic_smoothing")=true)
+      .def("snap_boundary", &dolfin::Mesh::snap_boundary, py::arg("subdomain"),
+           py::arg("harmonic_smoothing")=true)
       .def("topology", (const dolfin::MeshTopology& (dolfin::Mesh::*)() const)
            &dolfin::Mesh::topology, "Mesh topology")
       .def("translate", &dolfin::Mesh::translate)
@@ -210,9 +213,9 @@ namespace dolfin_wrappers
     // dolfin::MeshConnectivity class
     py::class_<dolfin::MeshConnectivity, std::shared_ptr<dolfin::MeshConnectivity>>
       (m, "MeshConnectivity", "DOLFIN MeshConnectivity object")
-      .def("__call__", [](const dolfin::MeshConnectivity& self, std::size_t i){
-          return Eigen::Map<const Eigen::Matrix<unsigned int, Eigen::Dynamic, 1>>
-            (self(i), self.size(i));})
+      .def("__call__", [](const dolfin::MeshConnectivity& self, std::size_t i)
+           {
+             return Eigen::Map<const Eigen::Matrix<unsigned int, Eigen::Dynamic, 1>>(self(i), self.size(i));})
       .def("size", (std::size_t (dolfin::MeshConnectivity::*)() const)
            &dolfin::MeshConnectivity::size)
       .def("size", (std::size_t (dolfin::MeshConnectivity::*)(std::size_t) const)
@@ -232,10 +235,10 @@ namespace dolfin_wrappers
       .def("num_global_entities", &dolfin::MeshEntity::num_global_entities,
            "Global number of incident entities of given dimension")
       .def("entities", [](dolfin::MeshEntity& self, std::size_t dim)
-        {
-          return Eigen::Map<const Eigen::Matrix<unsigned int, Eigen::Dynamic, 1>>
-            (self.entities(dim), self.num_entities(dim));
-        })
+           {
+             return Eigen::Map<const Eigen::Matrix<unsigned int, Eigen::Dynamic, 1>>
+               (self.entities(dim), self.num_entities(dim));
+           })
       .def("midpoint", &dolfin::MeshEntity::midpoint, "Midpoint of Entity")
       .def("sharing_processes", &dolfin::MeshEntity::sharing_processes)
       .def("is_shared", &dolfin::MeshEntity::is_shared)
@@ -318,7 +321,6 @@ namespace dolfin_wrappers
                throw py::stop_iteration("");
              return *self;
            });
-
 
     m.def("entities", [](dolfin::Mesh& mesh, std::size_t dim)
           { return dolfin::MeshEntityIterator(mesh, dim); });

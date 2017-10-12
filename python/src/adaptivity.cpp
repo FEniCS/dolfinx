@@ -48,7 +48,7 @@ namespace dolfin_wrappers
     py::class_<dolfin::TimeSeries, std::shared_ptr<dolfin::TimeSeries>>(m, "TimeSeries")
       .def(py::init<std::string>())
       .def(py::init([](const MPICommWrapper comm, const std::string &arg)
-        { return std::unique_ptr<dolfin::TimeSeries>(new dolfin::TimeSeries(comm.get(), arg)); }))
+                    { return std::unique_ptr<dolfin::TimeSeries>(new dolfin::TimeSeries(comm.get(), arg)); }))
       .def("store", (void (dolfin::TimeSeries::*)(const dolfin::GenericVector&, double)) &dolfin::TimeSeries::store)
       .def("store", (void (dolfin::TimeSeries::*)(const dolfin::Mesh&, double)) &dolfin::TimeSeries::store)
       .def("retrieve", (void (dolfin::TimeSeries::*)(dolfin::GenericVector&, double, bool) const) &dolfin::TimeSeries::retrieve,
@@ -112,7 +112,5 @@ namespace dolfin_wrappers
       .def(py::init<std::shared_ptr<dolfin::NonlinearVariationalProblem>,
            std::shared_ptr<dolfin::Form>,
            std::shared_ptr<dolfin::ErrorControl>>());
-
   }
-
 }

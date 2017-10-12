@@ -19,24 +19,25 @@
 
 using namespace dolfin_wrappers;
 
-MPICommWrapper::MPICommWrapper()
+//-----------------------------------------------------------------------------
+MPICommWrapper::MPICommWrapper() : _comm(MPI_COMM_NULL)
 {
-  this-> comm = MPI_COMM_NULL;
+  // Do nothing
 }
-
-MPICommWrapper::MPICommWrapper(MPI_Comm comm)
+//-----------------------------------------------------------------------------
+MPICommWrapper::MPICommWrapper(MPI_Comm comm) : _comm(comm)
 {
-  this->comm = comm;
+  // Do nothing
 }
-
-MPICommWrapper &MPICommWrapper::operator=(const MPI_Comm comm)
+//-----------------------------------------------------------------------------
+MPICommWrapper& MPICommWrapper::operator=(const MPI_Comm comm)
 {
-  this->comm = comm;
+  this->_comm = comm;
   return *this;
 }
-
+//-----------------------------------------------------------------------------
 MPI_Comm MPICommWrapper::get() const
 {
-  return comm;
+  return _comm;
 }
-
+//-----------------------------------------------------------------------------
