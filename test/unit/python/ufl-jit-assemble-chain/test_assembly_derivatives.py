@@ -1,5 +1,3 @@
-#!usr/bin/env py.test
-
 """System integration tests for ufl-derivative-jit-assembly chain."""
 
 # Copyright (C) 2011 Martin S. Alnaes

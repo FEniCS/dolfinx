@@ -90,6 +90,7 @@ option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
 option(DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py." OFF)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
+option(DOLFIN_ENABLE_GEOMETRY_DEBUGGING "Enable geometry debugging (developers only; requires libcgal-dev and libcgal-qt5-dev)." OFF)
 
 add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFIN with shared libraries.")
 add_feature_info(CMAKE_USE_RELATIVE_PATHS CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects.")
@@ -103,6 +104,7 @@ add_feature_info(DOLFIN_ENABLE_DOCS DOLFIN_ENABLE_DOCS "Enable generation of doc
 add_feature_info(DOLFIN_SKIP_BUILD_TESTS DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
 add_feature_info(DOLFIN_DEPRECATION_ERROR DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors.")
 add_feature_info(DOLFIN_IGNORE_PETSC4PY_VERSION DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py.")
+add_feature_info(DOLFIN_ENABLE_GEOMETRY_DEBUGGING DOLFIN_ENABLE_GEOMETRY_DEBUGGING "Enable geometry debugging.")
 
 # Add shared library paths so shared libs in non-system paths are found
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
@@ -294,6 +296,7 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
 # Note: Check for Python interpreter even when Python is disabled
 #       because it is used to get the installation path for
 #       dolfin_utils
+
 if (DOLFIN_USE_PYTHON3)
   find_package(PythonInterp 3)
 else()
@@ -577,6 +580,23 @@ if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
     DESCRIPTION "Python documentation generator"
     URL "http://www.sphinx-doc.org"
     PURPOSE "Needed to build documentation")
+endif()
+
+# Check for geometry debugging
+if (DOLFIN_ENABLE_GEOMETRY_DEBUGGING)
+  message(STATUS "Enabling geometry debugging")
+  find_package(CGAL REQUIRED)
+  find_package(GMP REQUIRED)
+  find_package(MPFR REQUIRED)
+  if (NOT CGAL_FOUND)
+    message(FATAL_ERROR "Unable to find package CGAL required for DOLFIN_ENABLE_GEOMETRY_DEBUGGING")
+  endif()
+  if (NOT GMP_FOUND)
+    message(FATAL_ERROR "Unable to find package GMP required for DOLFIN_ENABLE_GEOMETRY_DEBUGGING")
+  endif()
+  if (NOT MPFR_FOUND)
+    message(FATAL_ERROR "Unable to find package MPFR required for DOLFIN_ENABLE_GEOMETRY_DEBUGGING")
+  endif()
 endif()
 
 #------------------------------------------------------------------------------

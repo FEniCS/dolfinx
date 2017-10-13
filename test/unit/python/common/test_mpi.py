@@ -17,8 +17,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+import dolfin
 from dolfin import mpi_comm_world, mpi_comm_self
-from dolfin_utils.test import skip_if_not_petsc4py, skip_if_pybind11
+from dolfin_utils.test import skip_if_not_petsc4py, skip_if_pybind11, skip_if_not_pybind11 
 
 
 @skip_if_pybind11
@@ -27,3 +28,25 @@ def test_mpi_comm_type_petsc4py():
     import petsc4py
     assert isinstance(mpi_comm_world(), petsc4py.PETSc.Comm)
     assert isinstance(mpi_comm_self(), petsc4py.PETSc.Comm)
+
+
+@skip_if_not_pybind11
+def test_mpi_comm_wrapper():
+    """
+    Test MPICommWrapper <-> mpi4py.MPI.Comm conversion
+    """
+    if dolfin.has_mpi4py():
+        from mpi4py import MPI
+        w1 = MPI.COMM_WORLD
+    else:
+        w1 = dolfin.MPI.comm_world
+
+    m = dolfin.UnitSquareMesh(w1, 4, 4)
+    w2 = m.mpi_comm()
+
+    if dolfin.has_mpi4py():
+        assert isinstance(w1, MPI.Comm)
+        assert isinstance(w2, MPI.Comm)
+    else:
+        assert isinstance(w1, dolfin.cpp.MPICommWrapper)
+        assert isinstance(w2, dolfin.cpp.MPICommWrapper)

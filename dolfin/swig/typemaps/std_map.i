@@ -243,3 +243,30 @@ MAP_OUT_TYPEMAPS(int, unsigned int, uint, NPY_UINT)
   // Append the output to $result
   %append_output(ret);
 }
+
+
+// Add 'out' typemap for cut cell collisions (std::map<uint, std::vector<std::pair<size_t, uint>>>)
+%typemap(out) const std::map<unsigned int, std::vector<std::pair<std::size_t, unsigned int> > >& \
+  (std::map<unsigned int, std::vector<std::pair<std::size_t, unsigned int> > >::const_iterator it,
+   std::vector<std::pair<std::size_t, unsigned int> >::const_iterator jt,
+   PyObject* item0, PyObject* item1, PyObject* item2)
+{
+  $result = PyDict_New();
+  int size;
+  for (it=$1->begin(); it!=$1->end(); ++it)
+  {
+    item0 = SWIG_From_dec(unsigned int)(it->first);
+    item1 = PyList_New(it->second.size());
+
+    int j = 0;
+    for (jt = it->second.begin(); jt!= it->second.end(); jt++, j++)
+    {
+      item2 = Py_BuildValue("ii", (*jt).first, (*jt).second);
+      PyList_SetItem(item1, j, item2);
+    }
+    PyDict_SetItem($result, item0, item1);
+    Py_XDECREF(item0);
+    Py_XDECREF(item1);
+  }
+}
+

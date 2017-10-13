@@ -32,6 +32,8 @@
 #include <dolfin/function/FunctionAssigner.h>
 #include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/MultiMeshFunction.h>
+#include <dolfin/function/MultiMeshFunctionSpace.h>
 #include <dolfin/function/LagrangeInterpolator.h>
 #include <dolfin/function/SpecialFunctions.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -436,6 +438,18 @@ namespace dolfin_wrappers
                return;
              }
            });
+
+    py::class_<dolfin::MultiMeshFunction>(m, "MultiMeshFunction")
+      .def(py::init<std::shared_ptr<dolfin::MultiMeshFunctionSpace>>())
+      .def("vector", static_cast<std::shared_ptr<dolfin::GenericVector>(dolfin::MultiMeshFunction::*)()>(&dolfin::MultiMeshFunction::vector));
+
+    py::class_<dolfin::MultiMeshFunctionSpace, std::shared_ptr<dolfin::MultiMeshFunctionSpace>>
+      (m, "MultiMeshFunctionSpace")
+      .def(py::init<std::shared_ptr<dolfin::MultiMesh>>())
+      .def("add", &dolfin::MultiMeshFunctionSpace::add)
+      .def("build", static_cast<void(dolfin::MultiMeshFunctionSpace::*)()>(&dolfin::MultiMeshFunctionSpace::build));
+
+
 
     // dolfin::assign interface
     m.def("assign", [](py::object v0, py::object v1)

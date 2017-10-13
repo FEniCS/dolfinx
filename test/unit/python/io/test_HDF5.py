@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the HDF5 io library"""
 
 # Copyright (C) 2012 Garth N. Wells

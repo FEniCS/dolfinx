@@ -1,4 +1,3 @@
-#!/usr/bin/env py.test
 from dolfin import *
 import ufl
 import numpy

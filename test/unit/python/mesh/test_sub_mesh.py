@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 "Unit tests for the mesh library"
 
 # Copyright (C) 2006 Anders Logg
