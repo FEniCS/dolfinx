@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the XML io library for Tables"""
 
 # Copyright (C) 2016 Simon Funke and Marie E. Rognes

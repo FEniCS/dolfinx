@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 # Copyright (C) 2011 Garth N. Wells
 #
 # This file is part of DOLFIN.

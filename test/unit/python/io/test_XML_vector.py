@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the XML io library for vectors"""
 
 # Copyright (C) 2011-2014 Garth N. Wells

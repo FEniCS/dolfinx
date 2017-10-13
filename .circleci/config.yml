@@ -32,7 +32,7 @@ jobs:
           command: python3 -m flake8 python/dolfin
       - run:
           name: Configure DOLFIN
-          command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DDOLFIN_ENABLE_TESTING=ON
+          command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Developer -DDOLFIN_ENABLE_TESTING=ON
       - run:
           name: Build DOLFIN and install
           command: cd build && make install -j2

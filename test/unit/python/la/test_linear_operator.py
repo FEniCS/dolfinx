@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 "Unit tests for matrix-free linear solvers (LinearOperator)"
 
 # Copyright (C) 2012 Anders Logg

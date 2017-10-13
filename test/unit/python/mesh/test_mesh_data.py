@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 "Unit tests for the MeshData class"
 
 # Copyright (C) 2011 Anders Logg

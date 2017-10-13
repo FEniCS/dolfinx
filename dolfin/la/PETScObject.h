@@ -44,6 +44,7 @@ namespace dolfin
     static void petsc_error(int error_code,
                             std::string filename,
                             std::string petsc_function);
+
   };
 }
 

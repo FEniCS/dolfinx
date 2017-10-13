@@ -97,12 +97,17 @@ namespace dolfin
 
     /// Pointer to coefficient data. Used to support UFC
     /// interface. None const version
-    double* * w()
+    double** w()
     { return w_pointer.data(); }
 
     /// Pointer to macro element coefficient data. Used to support UFC
     /// interface.
     const double* const * macro_w() const
+    { return macro_w_pointer.data(); }
+
+    /// Pointer to macro element coefficient data. Used to support UFC
+    /// interface. Non-const version.
+    double** macro_w()
     { return macro_w_pointer.data(); }
 
   private:

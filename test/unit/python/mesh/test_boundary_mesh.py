@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 "Unit tests for BoundaryMesh library"
 
 # Copyright (C) 2012 Garth N. Wells

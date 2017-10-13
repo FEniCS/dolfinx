@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for local assembly"""
 
 # Copyright (C) 2015 Tormod Landet

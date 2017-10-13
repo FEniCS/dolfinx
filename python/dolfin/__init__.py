@@ -32,11 +32,11 @@ del sys
 
 # Import cpp modules
 from .cpp.common import (Variable, has_debug, has_hdf5, has_scotch,
-                         has_hdf5_parallel, has_mpi, has_petsc,
-                         has_petsc4py, has_parmetis, has_slepc,
-                         has_slepc4py, git_commit_hash, DOLFIN_EPS,
-                         DOLFIN_PI, TimingClear, TimingType, timing,
-                         timings, list_timings, dump_timings_to_xml)
+                         has_hdf5_parallel, has_mpi, has_mpi4py,
+                         has_petsc, has_petsc4py, has_parmetis,
+                         has_slepc, has_slepc4py, git_commit_hash,
+                         DOLFIN_EPS, DOLFIN_PI, TimingClear, TimingType,
+                         timing, timings, list_timings, dump_timings_to_xml)
 
 if has_hdf5():
     from .cpp.adaptivity import TimeSeries
@@ -46,7 +46,7 @@ from .cpp.ale import ALE
 from .cpp import MPI
 from .cpp.function import (Expression, Constant, FunctionAXPY,
                            LagrangeInterpolator, FunctionAssigner,
-                           assign)
+                           assign, MultiMeshFunction, MultiMeshFunctionSpace)
 from .cpp.fem import (FiniteElement, DofMap, Assembler,
                       get_coordinates, create_mesh, set_coordinates,
                       vertex_to_dof_map, dof_to_vertex_map,
@@ -55,8 +55,10 @@ from .cpp.fem import (FiniteElement, DofMap, Assembler,
                       NonlinearVariationalSolver,
                       SparsityPatternBuilder)
 
-from .cpp.geometry import (BoundingBoxTree, Point,
-                           MeshPointIntersection, intersect)
+from .cpp.geometry import (BoundingBoxTree,
+                           Point,
+                           MeshPointIntersection,
+                           intersect)
 from .cpp.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                              UnitDiscMesh, UnitQuadMesh, UnitHexMesh,
                              UnitTriangleMesh, UnitCubeMesh,
@@ -97,7 +99,7 @@ from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, MeshEntity,
                        entities, vertices, SubDomain, BoundaryMesh,
                        MeshEditor, MeshQuality, SubMesh,
                        DomainBoundary, PeriodicBoundaryComputation,
-                       MeshTransformation, SubsetIterator)
+                       MeshTransformation, SubsetIterator, MultiMesh)
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver, OptimisationProblem)
 from .cpp.refinement import refine
@@ -166,7 +168,7 @@ from ufl import (FiniteElement, TensorElement, VectorElement,
                  split, cross, inner, dot, grad, curl, dx, div,
                  Measure, det, pi, sin, cos, tan, acos, asin, atan,
                  ln, exp, sqrt, bessel_I, bessel_J, bessel_K,
-                 bessel_Y, Dx, ds, dS, dP, interval, triangle,
+                 bessel_Y, Dx, ds, dS, dP, dX, dC, interval, triangle,
                  tetrahedron, quadrilateral, hexahedron, avg, jump,
                  sym, tr, Identity, variable, diff, as_vector,
                  as_tensor, as_matrix, system, outer, dev, skew,

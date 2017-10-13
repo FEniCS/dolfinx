@@ -21,6 +21,3 @@ Debugging random test deadlocks under MPI:
   while true; do git clean -fdx . && mpirun -n 3 xterm -e gdb -ex r -ex q -args python -m pytest -sv; done
 
 See 'man pytest' for how to use pdb, profiling, coverage, etc.
-
-TODO: Move {function,mesh,io,la,parameter}/cpp to cpp/* and rewrite to google test framework.
-
