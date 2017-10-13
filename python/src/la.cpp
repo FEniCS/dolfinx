@@ -964,6 +964,7 @@ namespace dolfin_wrappers
       .def(py::init<MPI_Comm>())
       .def("set_options_prefix", &dolfin::SLEPcEigenSolver::set_options_prefix)
       .def("set_from_options", &dolfin::SLEPcEigenSolver::set_from_options)
+      .def("set_operators", &dolfin::SLEPcEigenSolver::set_operators)
       .def("get_options_prefix", &dolfin::SLEPcEigenSolver::get_options_prefix)
       .def("get_number_converged", &dolfin::SLEPcEigenSolver::get_number_converged)
       .def("set_deflation_space", &dolfin::SLEPcEigenSolver::set_deflation_space)
