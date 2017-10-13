@@ -887,7 +887,7 @@ namespace dolfin_wrappers
         { return std::unique_ptr<dolfin::TpetraVector>(new dolfin::TpetraVector(comm.get())); }),
         py::arg("comm")=MPICommWrapper(MPI_COMM_WORLD))
       .def(py::init([](const MPICommWrapper comm, std::size_t N)
-        { return std::unique_ptr<dolfin::TpetraVector>(new dolfin::TpetraVector(comm.get(), N)); });
+        { return std::unique_ptr<dolfin::TpetraVector>(new dolfin::TpetraVector(comm.get(), N)); }));
 
     // dolfin::TpetraMatrix
     py::class_<dolfin::TpetraMatrix, std::shared_ptr<dolfin::TpetraMatrix>,
