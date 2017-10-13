@@ -27,15 +27,22 @@
 #include <petscvec.h>
 #include <petscdm.h>
 
+// pybind11 casters for PETSc/petsc4py objects
 #ifdef HAS_PYBIND11_PETSC4PY
 #include <petsc4py/petsc4py.h>
-#endif
 
-
-// pybind11 casters for PETSc/petsc4py objects
+// Import petsc4py on demand
+#define VERIFY_PETSC4PY(func)   \
+  if (!func)                    \
+  {                             \
+    if (import_petsc4py() != 0) \
+    {                           \
+      std::cout << "ERROR: could not import petsc4py!" << std::endl; \
+      throw std::runtime_error("Error when importing petsc4py");     \
+    }                           \
+  }
 
 // Macro for casting between dolfin and petsc4py objects
-#ifdef HAS_PYBIND11_PETSC4PY
 #define PETSC_CASTER_MACRO(TYPE, NAME)          \
   template <> class type_caster<_p_##TYPE>      \
     {                                           \
@@ -43,12 +50,16 @@
       PYBIND11_TYPE_CASTER(TYPE, _(#NAME));     \
       bool load(handle src, bool)               \
       {                                         \
+        VERIFY_PETSC4PY(PyPetsc##TYPE##_Get);   \
+        if (PyObject_TypeCheck(src.ptr(), &PyPetsc##TYPE##_Type) == 0)  \
+          return false;                                                 \
         value = PyPetsc##TYPE##_Get(src.ptr());                         \
         return true;                                                    \
       }                                                                 \
                                                                         \
       static handle cast(TYPE src, pybind11::return_value_policy policy, handle parent) \
       {                                                                 \
+        VERIFY_PETSC4PY(PyPetsc##TYPE##_New);                           \
         return pybind11::handle(PyPetsc##TYPE##_New(src));              \
       }                                                                 \
                                                                         \
