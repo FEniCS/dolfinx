@@ -17,9 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+import gc
 from dolfin import (PETScVector, PETScMatrix, UnitSquareMesh, TrialFunction,
-                    TestFunction, FunctionSpace, assemble, dx, parameters,
-                    as_backend_type)
+                    TestFunction, FunctionSpace, Function, assemble, dx,
+                    parameters, as_backend_type)
 from dolfin_utils.test import skip_if_not_petsc4py, pushpop_parameters
 
 
@@ -74,3 +75,23 @@ def test_petsc4py_matrix(pushpop_parameters):
 
     assert (A1.array()*2.0 == A2.array()).all()
 
+@skip_if_not_petsc4py
+def test_ref_count(pushpop_parameters):
+    "Test petsc4py reference counting"
+    parameters["linear_algebra_backend"] = "PETSc"
+
+    mesh = UnitSquareMesh(3, 3)
+    V = FunctionSpace(mesh, "P", 1)
+
+    # Check u and x own the vector
+    u = Function(V)
+    x = as_backend_type(u.vector()).vec()
+    assert x.refcount == 2
+
+    # Check decref
+    del u; gc.collect()  # destroy u
+    assert x.refcount == 1
+
+    # Check incref
+    vec = PETScVector(x)
+    assert x.refcount == 2
