@@ -382,6 +382,7 @@ namespace dolfin_wrappers
       .def("id", &dolfin::MeshFunction<SCALAR>::id) \
       .def("ufl_id", &dolfin::MeshFunction<SCALAR>::id) \
       .def("mesh", &dolfin::MeshFunction<SCALAR>::mesh) \
+      .def("set_values", &dolfin::MeshFunction<SCALAR>::set_values) \
       .def("set_all", &dolfin::MeshFunction<SCALAR>::set_all) \
       .def("where_equal", &dolfin::MeshFunction<SCALAR>::where_equal) \
       .def("array", [](dolfin::MeshFunction<SCALAR>& self) \
