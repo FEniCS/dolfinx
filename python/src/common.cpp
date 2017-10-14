@@ -181,6 +181,13 @@ namespace dolfin_wrappers
                   },
                   "Initialise MPI with command-line args and required level "
                   "of thread support. Return provided thread level.")
+      .def_static("responsible", &dolfin::SubSystemsManager::responsible_mpi,
+                  "Return true if DOLFIN initialised MPI (and is therefore "
+                  "responsible for finalization)")
+      .def_static("initialized", &dolfin::SubSystemsManager::mpi_initialized,
+                  "Check if MPI has been initialised")
+      .def_static("finalized", &dolfin::SubSystemsManager::mpi_finalized,
+                  "Check if MPI has been finalized")
       .def_static("barrier", [](const MPICommWrapper comm)
                   { return dolfin::MPI::barrier(comm.get()); })
       .def_static("rank", [](const MPICommWrapper comm)
