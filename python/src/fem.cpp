@@ -65,13 +65,6 @@ namespace dolfin_wrappers
 {
   void fem(py::module& m)
   {
-    #ifdef HAS_PYBIND11_PETSC4PY
-    // Import petsc4py (to support return petsc4py objects)
-    int ierr = import_petsc4py();
-    if (ierr != 0)
-      throw std::runtime_error("Error when importing petsc4py");
-    #endif
-
     // UFC objects
     py::class_<ufc::finite_element, std::shared_ptr<ufc::finite_element>>
       (m, "ufc_finite_element", "UFC finite element object");
@@ -500,8 +493,7 @@ namespace dolfin_wrappers
                     auto _V1 = V_fine.attr("_cpp_object").cast<dolfin::FunctionSpace*>();
                     return dolfin::PETScDMCollection::create_transfer_matrix(*_V0, *_V1);
                   })
-      .def("check_ref_count", &dolfin::PETScDMCollection::check_ref_count)
-      .def("get_dm", &dolfin::PETScDMCollection::get_dm);
+      .def("check_ref_count", &dolfin::PETScDMCollection::check_ref_count);
 #endif
 
     // Assemble free functions
