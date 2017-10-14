@@ -493,7 +493,8 @@ namespace dolfin_wrappers
                     auto _V1 = V_fine.attr("_cpp_object").cast<dolfin::FunctionSpace*>();
                     return dolfin::PETScDMCollection::create_transfer_matrix(*_V0, *_V1);
                   })
-      .def("check_ref_count", &dolfin::PETScDMCollection::check_ref_count);
+      .def("check_ref_count", &dolfin::PETScDMCollection::check_ref_count)
+      .def("get_dm", &dolfin::PETScDMCollection::get_dm);
 #endif
 
     // Assemble free functions
