@@ -77,7 +77,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,
                                    std::shared_ptr<const PETScMatrix> B)
-  : _matA(A), _matB(B), _eps(nullptr)
+  : _eps(nullptr)
 
 {
   // TODO: deprecate
@@ -96,9 +96,9 @@ SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,
   // Set operators
   dolfin_assert(_eps);
   if (B)
-    EPSSetOperators(_eps, _matA->mat(), _matB->mat());
+    EPSSetOperators(_eps, A->mat(), B->mat());
   else
-    EPSSetOperators(_eps, _matA->mat(), NULL);
+    EPSSetOperators(_eps, A->mat(), NULL);
 
   // Set default parameter values
   parameters = default_parameters();
@@ -107,7 +107,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,
 SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm,
                                    std::shared_ptr<const PETScMatrix> A,
                                    std::shared_ptr<const PETScMatrix> B)
-  : _matA(A), _matB(B), _eps(nullptr)
+  : _eps(nullptr)
 {
   // TODO: deprecate
 
@@ -127,9 +127,9 @@ SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm,
 
   // Set operators
   if (B)
-    EPSSetOperators(_eps, _matA->mat(), _matB->mat());
+    EPSSetOperators(_eps, A->mat(), B->mat());
   else
-    EPSSetOperators(_eps, _matA->mat(), NULL);
+    EPSSetOperators(_eps, A->mat(), NULL);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::~SLEPcEigenSolver()
@@ -145,9 +145,9 @@ void SLEPcEigenSolver::set_operators(std::shared_ptr<const PETScMatrix> A,
   // Set operators
   dolfin_assert(_eps);
   if (B)
-     EPSSetOperators(_eps, _matA->mat(), _matB->mat());
+     EPSSetOperators(_eps, A->mat(), B->mat());
   else
-    EPSSetOperators(_eps, _matA->mat(), NULL);
+    EPSSetOperators(_eps, A->mat(), NULL);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve()
@@ -164,9 +164,18 @@ void SLEPcEigenSolver::solve()
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(std::size_t n)
 {
+#ifdef DEBUG
+  // Get operators
+  Mat A, B;
+  dolfin_assert(_eps);
+  EPSGetOperators(_eps, &A, &B);
+  
+  // Wrap operator as short-cut to get size
+  PETScMatrix A_wrapped(A);
+  dolfin_assert(n <= A_wrapped.size(0));
+#endif
+  
   // Set number of eigenpairs to compute
-  dolfin_assert(_matA);
-  dolfin_assert(n <= _matA->size(0));
   dolfin_assert(_eps);
   EPSSetDimensions(_eps, n, PETSC_DECIDE, PETSC_DECIDE);
 
@@ -250,9 +259,15 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 
   if (ii < num_computed_eigenvalues)
   {
-    dolfin_assert(_matA);
-    _matA->init_vector(r, 0);
-    _matA->init_vector(c, 0);
+    // Get operators
+    Mat A, B;
+    dolfin_assert(_eps);
+    EPSGetOperators(_eps, &A, &B);
+
+    // Wrap operator and initialize r and c
+    PETScMatrix A_wrapped(A);
+    A_wrapped.init_vector(r, 0);
+    A_wrapped.init_vector(c, 0);
 
     // Get eigen pairs
     EPSGetEigenpair(_eps, ii, &lr, &lc, r.vec(), c.vec());
