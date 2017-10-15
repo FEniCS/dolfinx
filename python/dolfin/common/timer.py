@@ -51,7 +51,7 @@ class Timer(cpp.common.Timer):
     may be printed using functions ``timing``, ``timings``,
     ``list_timings``, ``dump_timings_to_xml``, e.g.::
 
-        list_timings(TimingClear_keep, [TimingType_wall, TimingType_user])
+        list_timings(TimingClear.keep, [TimingType.wall, TimingType.user])
     """
 
     def __enter__(self):
@@ -72,9 +72,9 @@ def timed(task):
 
         do_foo()
 
-        list_timings(TimingClear_keep, [TimingType_wall, TimingType_user])
+        list_timings(TimingClear.keep, [TimingType.wall, TimingType.user])
 
-        t = timing("Do Foo", TimingClear_clear)
+        t = timing("Do Foo", TimingClear.clear)
         print("Do foo wall time: %s" % t[1])
     """
     def decorator(func):
