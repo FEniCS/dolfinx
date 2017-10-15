@@ -65,13 +65,6 @@ namespace dolfin_wrappers
 {
   void fem(py::module& m)
   {
-    #ifdef HAS_PYBIND11_PETSC4PY
-    // Import petsc4py (to support return petsc4py objects)
-    int ierr = import_petsc4py();
-    if (ierr != 0)
-      throw std::runtime_error("Error when importing petsc4py");
-    #endif
-
     // UFC objects
     py::class_<ufc::finite_element, std::shared_ptr<ufc::finite_element>>
       (m, "ufc_finite_element", "UFC finite element object");
