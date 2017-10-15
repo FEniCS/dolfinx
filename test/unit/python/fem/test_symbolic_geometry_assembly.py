@@ -918,7 +918,7 @@ else:
     (rline3d, (None,)),
     (square2d, (None,)),
     (square3d, (None,)),
-    # CellDiameter raises for higher-order meshes
+    # Tested geometric quantities are not implemented for higher-order cells
     xfail_jit((UnitDiscMesh.create, (mpi_comm_world(), 4, 2, 2))),
     xfail_jit((UnitDiscMesh.create, (mpi_comm_world(), 4, 2, 3))),
     xfail_jit((SphericalShellMesh.create, (mpi_comm_world(), 2,))),
@@ -928,29 +928,56 @@ def test_geometric_quantities(uflacs_representation_only, mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
 
-    mf = CellFunction('size_t', mesh, 0)
-    dx = Measure("dx", domain=mesh, subdomain_data=mf)
+    tdim = mesh.ufl_cell().topological_dimension()
+
+    cf = CellFunction('size_t', mesh, 0)
+    dx = Measure("dx", domain=mesh, subdomain_data=cf)
+
+    ff = FacetFunction('size_t', mesh, 0)
+    ds = Measure("ds", domain=mesh, subdomain_data=ff)
+    dS = Measure("dS", domain=mesh, subdomain_data=ff)
 
     h = CellDiameter(mesh)
     R = Circumradius(mesh)
-    E = MaxCellEdgeLength(mesh)
+    max_cell_edge = MaxCellEdgeLength(mesh)
+    min_cell_edge = MinCellEdgeLength(mesh)
+    max_facet_edge = MaxFacetEdgeLength(mesh)
+    min_facet_edge = MinFacetEdgeLength(mesh)
 
     for c in cells(mesh):
         # Mark current cell for integration
-        mf.set_all(0)
-        mf[c] = 1
+        cf.set_all(0)
+        cf[c] = 1
+
+        vol = assemble(1*dx(1))
 
         # Check cell diameter
-        assert numpy.isclose(assemble(h*dx(1))/assemble(1*dx(1)), c.h())
+        assert numpy.isclose(assemble(h*dx(1))/vol, c.h())
 
-        # Check max cell edge length
-        if mesh.ufl_cell().is_simplex():
-            # Equals cell diameter on simplices
-            assert numpy.isclose(assemble(E*dx(1))/assemble(1*dx(1)), c.h())
-        else:
-            # Is smaller equal than cell diameter in general
-            assert c.h() - assemble(E*dx(1))/assemble(1*dx(1)) >= 1e-12*c.h()
+        # Check max/min cell edge length
+        assert numpy.isclose(assemble(max_cell_edge*dx(1))/vol,
+                             max(e.length() for e in edges(c)))
+        assert numpy.isclose(assemble(min_cell_edge*dx(1))/vol,
+                             min(e.length() for e in edges(c)))
 
         # Check circumradius if it makes sense
         if mesh.ufl_domain().is_piecewise_linear_simplex_domain():
-            assert numpy.isclose(assemble(R*dx(1))/assemble(1*dx(1)), c.circumradius())
+            assert numpy.isclose(assemble(R*dx(1))/vol, c.circumradius())
+
+    # Check max/min facet edge length if it makes sense
+    if tdim >= 3:
+
+        mesh.init(tdim-1, tdim)  # for Facet.exterior()
+
+        for f in facets(mesh):
+            # Mark current facet for integration and pick facet measure
+            ff.set_all(0)
+            ff[f] = 1
+            df = ds(1) if f.exterior() else dS(1)
+
+            vol = assemble(1*df)
+
+            assert numpy.isclose(assemble(max_facet_edge*df)/vol,
+                                 max(e.length() for e in edges(f)))
+            assert numpy.isclose(assemble(min_facet_edge*df)/vol,
+                                 min(e.length() for e in edges(f)))
