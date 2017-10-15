@@ -26,14 +26,13 @@
 
 #include <memory>
 
-#include <dolfin/geometry/Point.h>
+
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
-#include <dolfin/geometry/CollisionDetection.h>
-#include <dolfin/geometry/IntersectionTriangulation.h>
+#include <dolfin/geometry/Point.h>
 
 namespace dolfin
 {
@@ -257,8 +256,7 @@ namespace dolfin
     ///
     /// @return     bool
     ///         True iff point is contained in cell.
-    bool contains(const Point& point) const
-    { return _mesh->type().collides(*this, point); }
+    bool contains(const Point& point) const;
 
     /// Check whether given point collides with cell
     ///
@@ -267,8 +265,7 @@ namespace dolfin
     ///
     /// @return     bool
     ///         True iff point collides with cell.
-    bool collides(const Point& point) const
-    { return _mesh->type().collides(*this, point); }
+    bool collides(const Point& point) const;
 
     /// Check whether given entity collides with cell
     ///
@@ -277,21 +274,19 @@ namespace dolfin
     ///
     /// @return     bool
     ///         True iff entity collides with cell.
-    bool collides(const MeshEntity& entity) const
-    { return _mesh->type().collides(*this, entity); }
+    bool collides(const MeshEntity& entity) const;
 
     /// Compute triangulation of intersection with given entity
     ///
     /// @param    entity
     ///         The entity with which to intersect.
     ///
-    /// @return      std::vector<double>
+    /// @return      std::vector<Point>
     ///         A flattened array of simplices of dimension
     ///         num_simplices x num_vertices x gdim =
     ///         num_simplices x (tdim + 1) x gdim
-    std::vector<double>
-    triangulate_intersection(const MeshEntity& entity) const
-    { return _mesh->type().triangulate_intersection(*this, entity); }
+    std::vector<Point>
+    intersection(const MeshEntity& entity) const;
 
     // FIXME: This function is part of a UFC transition
     /// Get cell coordinate dofs (not vertex coordinates)

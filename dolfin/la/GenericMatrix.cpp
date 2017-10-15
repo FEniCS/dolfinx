@@ -27,7 +27,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void GenericMatrix::ident_zeros()
+void GenericMatrix::ident_zeros(double tol)
 {
   // Check size of system
   if (size(0) != size(1))
@@ -58,7 +58,7 @@ void GenericMatrix::ident_zeros()
       max = std::max(max, std::abs(values[k]));
 
     // Check if row is zero
-    if (max < DOLFIN_EPS)
+    if (max < tol)
       zero_rows.push_back(global_row);
   }
 

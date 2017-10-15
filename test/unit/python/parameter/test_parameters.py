@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for parameter library"""
 
 # Copyright (C) 2011 Anders Logg
@@ -22,8 +20,8 @@
 from __future__ import print_function
 import pytest
 import os
-from dolfin import *
 
+from dolfin import *
 from dolfin_utils.test import *
 
 @skip_in_parallel

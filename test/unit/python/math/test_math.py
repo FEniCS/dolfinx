@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for basic math functions"""
 
 # Copyright (C) 2011-2014 Martin Alnaes

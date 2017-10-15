@@ -11,8 +11,7 @@ jobs:
       - checkout
       - run:
           name: Install/update dependencies  # Install with sudo as tests not run as superuser in circleci/python
-          command: |
-            sudo pip3 install pytest pytest-xdist six --upgrade
+          command: sudo pip3 install pytest pytest-xdist six flake8 --upgrade
       - run:
           name: Install FIAT
           command: pip3 install git+https://bitbucket.org/fenics-project/fiat.git@jan/feature-cell-diameter
@@ -29,8 +28,11 @@ jobs:
           name: Install FFC
           command: pip3 install git+https://bitbucket.org/fenics-project/ffc.git@jan/feature-cell-diameter
       - run:
+          name: Flake8 checks on pybind11 Python code
+          command: python3 -m flake8 python/dolfin
+      - run:
           name: Configure DOLFIN
-          command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DDOLFIN_ENABLE_TESTING=ON
+          command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Developer -DDOLFIN_ENABLE_TESTING=ON
       - run:
           name: Build DOLFIN and install
           command: cd build && make install -j2

@@ -18,7 +18,6 @@
 
 import ufl
 import ufl.algorithms.elementtransformations
-import dolfin.cpp as cpp
 from dolfin.function.functionspace import FunctionSpace
 from dolfin.function.function import Function
 from dolfin.function.argument import Argument

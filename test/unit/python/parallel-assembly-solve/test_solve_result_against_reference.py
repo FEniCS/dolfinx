@@ -1,4 +1,3 @@
-#!/usr/bin/env py.test
 """This file solves a simple reaction-diffusion problem and compares
 the norm of the solution vector with a known solution (obtained when
 running in serial). It is used for validating mesh partitioning and

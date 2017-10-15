@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the class MeshMarkers. These unit test actually test
 a bit more than that, since they also test marking of meshes and the
 interaction between Mesh - MeshDomains - MeshMarkers"""

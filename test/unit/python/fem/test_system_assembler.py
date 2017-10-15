@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for class SystemAssembler"""
 
 # Copyright (C) 2011-2013 Garth N. Wells, 2013 Jan Blechta

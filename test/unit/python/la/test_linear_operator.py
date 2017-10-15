@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 "Unit tests for matrix-free linear solvers (LinearOperator)"
 
 # Copyright (C) 2012 Anders Logg
@@ -80,14 +78,14 @@ def test_linear_operator(backend):
         u = Function(V)
         a_action = action(a, coefficient=u)
         O = MyLinearOperator(a_action, u)
-        O = _as_backend_type(O)
-        solve(O, x, b, "gmres", "none")
+        Ob = _as_backend_type(O)
+        solve(Ob, x, b, "gmres", "none")
         norm_action = norm(x, "l2")
 
         # Check at least that petsc4py interface is available
         if backend == 'PETSc' and has_petsc4py() and _as_backend_type == as_backend_type:
             from petsc4py import PETSc
-            assert isinstance(O.mat(), PETSc.Mat)
+            assert isinstance(Ob.mat(), PETSc.Mat)
 
     # Reset backend
     parameters["linear_algebra_backend"] = prev_backend

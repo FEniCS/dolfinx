@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the RKSolver interface"""
 
 # Copyright (C) 2013 Johan Hake

@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the JIT compiler"""
 
 # Copyright (C) 2011 Anders Logg
@@ -21,6 +19,7 @@
 
 import pytest
 import platform
+import dolfin
 from dolfin import *
 from dolfin_utils.test import (skip_if_not_PETSc, skip_if_not_SLEPc,
                                skip_if_not_MPI, skip_in_serial,
@@ -57,6 +56,51 @@ def test_mpi_swig():
         void find_exterior_points(MPI_Comm mpi_comm) {}
     }'''
     compile_extension_module(code=create_transfer_matrix_code)
+
+
+@skip_if_not_pybind11
+def test_mpi_pybind11():
+    """
+    Test MPICommWrapper <-> mpi4py.MPI.Comm conversion for JIT-ed code
+    """
+    cpp_code = """
+    #include <pybind11/pybind11.h>
+    #include <dolfin_wrappers/MPICommWrapper.h>
+    namespace dolfin
+    {
+      dolfin_wrappers::MPICommWrapper
+      test_comm_passing(const dolfin_wrappers::MPICommWrapper comm)
+      {
+        MPI_Comm c = comm.get();
+        return dolfin_wrappers::MPICommWrapper(c);
+      }
+    }
+    PYBIND11_MODULE(SIGNATURE, m)
+    {
+        m.def("test_comm_passing", &dolfin::test_comm_passing);
+    }
+    """
+
+    # Import MPI_COMM_WORLD
+    if dolfin.has_mpi4py():
+        from mpi4py import MPI
+        w1 = MPI.COMM_WORLD
+    else:
+        w1 = dolfin.MPI.comm_world
+
+    # Compile the JIT module
+    return pytest.xfail('Include path for dolfin_wrappers/* not set up to '
+                        'work in the JIT at the moment')
+    mod = dolfin.compile_cpp_code(cpp_code)
+
+    # Pass a comm into C++ and get a new wrapper of the same comm back
+    w2 = mod.test_comm_passing(w1)
+
+    if dolfin.has_mpi4py():
+        assert isinstance(w2, MPI.Comm)
+    else:
+        assert isinstance(w2, dolfin.cpp.MPICommWrapper)
+        assert w1.underlying_comm() == w2.underlying_comm()
 
 
 @skip_if_pybind11
@@ -256,12 +300,14 @@ def test_compile_extension_module_kwargs():
     assert not m2.__file__ == m0.__file__
 
 
+@skip_if_pybind11
 @skip_if_not_petsc4py
 @skip_in_serial
 def test_mpi_dependent_jiting():
     # FIXME: Not a proper unit test...
-    from dolfin import Expression, UnitSquareMesh, Function, TestFunction, \
-         Form, FunctionSpace, dx, CompiledSubDomain, SubSystemsManager
+    from dolfin import (Expression, UnitSquareMesh, Function,
+                        TestFunction, Form, FunctionSpace, dx, CompiledSubDomain,
+                        SubSystemsManager)
 
     # Init petsc (needed to initalize petsc and slepc collectively on
     # all processes)

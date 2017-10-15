@@ -26,6 +26,8 @@
 #include <dolfin/geometry/intersect.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/MeshPointIntersection.h>
+#include <dolfin/geometry/CollisionPredicates.h>
+#include <dolfin/geometry/IntersectionConstruction.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Mesh.h>
 
@@ -55,7 +57,7 @@ namespace dolfin_wrappers
       .def("compute_entity_collisions",
            (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>
             (dolfin::BoundingBoxTree::*)(const dolfin::BoundingBoxTree&) const)
-            &dolfin::BoundingBoxTree::compute_entity_collisions)
+	   &dolfin::BoundingBoxTree::compute_entity_collisions)
       .def("compute_first_collision", &dolfin::BoundingBoxTree::compute_first_collision)
       .def("compute_first_entity_collision", &dolfin::BoundingBoxTree::compute_first_entity_collision)
       .def("compute_closest_entity", &dolfin::BoundingBoxTree::compute_closest_entity);
@@ -116,6 +118,7 @@ namespace dolfin_wrappers
            })
       .def(py::self + py::self)
       .def(py::self - py::self)
+      .def(py::self == py::self)
       .def(py::self * float())
       .def(py::self / float())
       .def("array", [](dolfin::Point& self)
@@ -131,6 +134,27 @@ namespace dolfin_wrappers
                std::shared_ptr<dolfin::MeshPointIntersection>>
       (m, "MeshPointIntersection")
       .def("intersected_cells", &dolfin::MeshPointIntersection::intersected_cells);
+
+    // These classes are wrapped only to be able to write tests in python.
+    // They are not imported into the dolfin namespace in python, but must be accessed through
+    // dolfin.cpp.geometry
+    py::class_<dolfin::CollisionPredicates>(m, "CollisionPredicates")
+      .def_static("collides_segment_point_2d",
+		  &dolfin::CollisionPredicates::collides_segment_point_2d)
+      .def_static("collides_triangle_point_2d",
+		  &dolfin::CollisionPredicates::collides_triangle_point_2d)
+      .def_static("collides_triangle_triangle_2d",
+		  &dolfin::CollisionPredicates::collides_triangle_triangle_2d)
+      .def_static("collides_segment_segment_2d",
+		  &dolfin::CollisionPredicates::collides_segment_segment_2d);
+
+    py::class_<dolfin::IntersectionConstruction>(m, "IntersectionConstruction")
+      .def_static("intersection_triangle_triangle_2d",
+		  &dolfin::IntersectionConstruction::intersection_triangle_triangle_2d)
+      .def_static("intersection_segment_segment_2d",
+		  &dolfin::IntersectionConstruction::intersection_segment_segment_2d)
+      .def_static("intersection_triangle_segment_2d",
+		  &dolfin::IntersectionConstruction::intersection_triangle_segment_2d);
 
     // dolfin/geometry free functions
     m.def("intersect", &dolfin::intersect);

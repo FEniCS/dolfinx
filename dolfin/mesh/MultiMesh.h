@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2014-03-03
-// Last changed: 2016-03-02
+// Last changed: 2017-09-22
 
 #ifndef __MULTI_MESH_H
 #define __MULTI_MESH_H
@@ -24,6 +24,7 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <deque>
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/geometry/Point.h>
@@ -36,9 +37,7 @@ namespace dolfin
   class Mesh;
   class BoundaryMesh;
   class BoundingBoxTree;
-
-  /// Typedefs
-  typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
+  class SimplexQuadrature;
 
   /// This class represents a collection of meshes with arbitrary
   /// overlaps. A multimesh may be created from a set of standard
@@ -49,6 +48,18 @@ namespace dolfin
   class MultiMesh : public Variable
   {
   public:
+
+    /// Structure storing a quadrature rule
+    typedef std::pair<std::vector<double>, std::vector<double> > quadrature_rule;
+
+    /// A simplex is a list of points
+    typedef std::vector<Point> Simplex;
+
+    /// A polyhedron is a list of simplices
+    typedef std::vector<Simplex> Polyhedron;
+
+    /// Key to identify polyhedra
+    typedef std::vector<std::size_t> IncExcKey;
 
     /// Create empty multimesh
     MultiMesh();
@@ -125,7 +136,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<unsigned int>
     ///         List of cut cell indices for given part
-    const std::vector<unsigned int>& cut_cells(std::size_t part) const;
+    const std::vector<unsigned int> cut_cells(std::size_t part) const;
 
     /// Return the list of covered cells for given part. The covered
     /// cells are defined as all cells that collide with the domain of
@@ -170,7 +181,7 @@ namespace dolfin
     ///         of a flattened array of quadrature points and a
     ///         corresponding array of quadrature weights.
     const std::map<unsigned int, quadrature_rule >&
-    quadrature_rule_cut_cells(std::size_t part) const;
+    quadrature_rules_cut_cells(std::size_t part) const;
 
     /// Return quadrature rule for a given cut cell on the given part
     ///
@@ -186,12 +197,8 @@ namespace dolfin
     ///         array of quadrature points and a corresponding array
     ///         of quadrature weights. An error is raised if the given
     ///         cell is not in the map.
-    ///
-    /// Developer note: this function is mainly useful from Python and
-    /// could be replaced by a suitable typemap that would make the
-    /// previous more general function accessible from Python.
-    quadrature_rule
-    quadrature_rule_cut_cell(std::size_t part, unsigned int cell_index) const;
+    const quadrature_rule
+    quadrature_rules_cut_cells(std::size_t part, unsigned int cell_index) const;
 
     /// Return quadrature rules for the overlap on the given part.
     ///
@@ -200,7 +207,7 @@ namespace dolfin
     ///         The part number
     ///
     /// *Returns*
-    ///     std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > >
+    ///     std::map<unsigned int, std::vector<std::pair<std::vector<double>, std::vector<double> > > >
     ///         A map from cell indices of cut cells to quadrature
     ///         rules.  A separate quadrature rule is given for each
     ///         cutting cell and stored in the same order as in the
@@ -208,7 +215,28 @@ namespace dolfin
     ///         a pair of an array of quadrature points and a
     ///         corresponding flattened array of quadrature weights.
     const std::map<unsigned int, std::vector<quadrature_rule> >&
-    quadrature_rule_overlap(std::size_t part) const;
+    quadrature_rules_overlap(std::size_t part) const;
+
+    /// Return quadrature rules for the overlap for a given cell
+    /// on the given part.
+    ///
+    /// *Arguments*
+    ///     part (std::size_t)
+    ///         The part number
+    //      cell (unsigned int)
+    //          The cell index
+    ///
+    /// *Returns*
+    ///     std::vector<std::pair<std::vector<double>, std::vector<double> > >
+    ///         A vector of quadrature rules on the cut cell. A separate
+    ///         quadrature rule is given for each cutting cell and stored
+    ///         in the same order as in the collision map.
+    ///         A quadrature rule represented as a pair of a flattened
+    ///         array of quadrature points and a corresponding array
+    ///         of quadrature weights. An error is raised if the given
+    ///         cell is not in the map.
+    const std::vector<quadrature_rule>
+    quadrature_rules_overlap(std::size_t part, unsigned int cell) const;
 
     /// Return quadrature rules for the interface on the given part
     ///
@@ -217,7 +245,7 @@ namespace dolfin
     ///         The part number
     ///
     /// *Returns*
-    ///     std::map<unsigned int, std::pair<std::vector<double>, std::vector<double> > >
+    ///     std::map<unsigned int, std::vector<std::pair<std::vector<double>, std::vector<double> > > >
     ///         A map from cell indices of cut cells to quadrature
     ///         rules on an interface part cutting through the cell.
     ///         A separate quadrature rule is given for each cutting
@@ -226,7 +254,35 @@ namespace dolfin
     ///         an array of quadrature points and a corresponding
     ///         flattened array of quadrature weights.
     const std::map<unsigned int, std::vector<quadrature_rule> >&
-    quadrature_rule_interface(std::size_t part) const;
+    quadrature_rules_interface(std::size_t part) const;
+
+
+    /// Return quadrature rules for the interface of a given cut cell
+    /// on the given part
+    ///
+    /// *Arguments*
+    ///     part (std::size_t)
+    ///         The part number
+    ///     cell (unsigned int)
+    ///         The cell index
+    ///
+    /// *Returns*
+    ///     std::vector<std::pair<std::vector<double>, std::vector<double> > >
+    ///         A vector of quadrature rules on the cut cell. A separate
+    ///         quadrature rule is given for each cutting cell and stored
+    ///         in the same order as in the collision map.
+    ///         Each quadrature rule represented as a pair of a flattened
+    ///         array of quadrature points and a corresponding array
+    ///         of quadrature weights. An error is raised if the given
+    ///         cell is not in the map.
+    ///
+    /// Developer note: this function is mainly useful from Python and
+    /// could be replaced by a suitable typemap that would make the
+    /// previous more general function accessible from Python.
+    const std::vector<quadrature_rule>
+    quadrature_rules_interface(std::size_t part,
+			       unsigned int cell_index) const;
+
 
     /// Return facet normals for the interface on the given part
     ///
@@ -283,10 +339,43 @@ namespace dolfin
     /// Build multimesh
     void build(std::size_t quadrature_order=2);
 
+    /// Check whether multimesh has been built
+    bool is_built() const { return _is_built; }
+
     /// Clear multimesh
     void clear();
 
+    /// Default parameter values
+    static Parameters default_parameters()
+    {
+      Parameters p("multimesh");
+
+      //p.add("quadrature_order", 1);
+      p.add("compress_volume_quadrature", false);
+      p.add("compress_interface_quadrature", false);
+
+      return p;
+    }
+
+    //--- The functions below are mainly useful for testing/debugging ---
+
+    /// Compute total interface area or the total volume of multimesh
+    /// by summing up quadrature weights.  If the area or volume of
+    /// the domain mesh is known, this is a good test to verify that
+    /// the mesh-mesh intersections and quadrature are correct.
+    double compute_area() const;
+
+    /// Corresponding function for volume
+    double compute_volume() const;
+
+    /// Create matplotlib string to plot 2D multimesh (small meshes only)
+    std::string plot_matplotlib(double delta_z=1,
+				const std::string& filename="") const;
+
   private:
+
+    // Flag for whether multimesh has been built
+    bool _is_built;
 
     // List of meshes
     std::vector<std::shared_ptr<const Mesh> > _meshes;
@@ -310,17 +399,6 @@ namespace dolfin
     //     i = the part (mesh) number
     //     j = the cell number (in the list of uncut cells)
     std::vector<std::vector<unsigned int> > _uncut_cells;
-
-    // Cell indices for all cut cells for all parts. Access data by
-    //
-    //     c = _cut_cells[i][j]
-    //
-    // where
-    //
-    //     c = cell index for a cut cell
-    //     i = the part (mesh) number
-    //     j = the cell number (in the list of cut cells)
-    std::vector<std::vector<unsigned int> > _cut_cells;
 
     // Cell indices for all covered cells for all parts. Access data by
     //
@@ -437,15 +515,23 @@ namespace dolfin
     // Build quadrature rules for the overlap
     void _build_quadrature_rules_overlap(std::size_t quadrature_order);
 
-    // Add quadrature rule for simplices in the triangulation
-    // array. Returns the number of points generated for each simplex.
-    std::vector<std::size_t>
-    _add_quadrature_rule(quadrature_rule& qr,
-                         const std::vector<double>& triangulation,
-                         std::size_t tdim,
-                         std::size_t gdim,
-                         std::size_t quadrature_order,
-                         double factor) const;
+    // Build quadrature rules and normals for the interface
+    void _build_quadrature_rules_interface(std::size_t quadrature_order);
+
+    // Help function to determine if interface intersection is
+    // (exactly) overlapped by a cutting cell
+    bool _is_overlapped_interface(std::vector<Point> simplex,
+				  const Cell cut_cell,
+				  Point simplex_normal) const;
+
+    // Add quadrature rule for simplices in polyhedron. Returns the
+    // number of points generated for each simplex.
+    std::size_t _add_quadrature_rule(quadrature_rule& qr,
+				     const SimplexQuadrature& sq,
+				     const Simplex& simplex,
+				     std::size_t gdim,
+				     std::size_t quadrature_order,
+				     double factor) const;
 
     // Add quadrature rule to existing quadrature rule (append dqr to
     // qr). Returns number of points added.
@@ -457,10 +543,50 @@ namespace dolfin
     // Append normal to list of normals npts times
     void _add_normal(std::vector<double>& normals,
                      const Point& normal,
-                     const std::size_t npts,
-                     const std::size_t gdim) const;
+                     std::size_t npts,
+                     std::size_t gdim) const;
+
+    // Plot multimesh
+    void _plot() const;
+
+    // Inclusion-exclusion for overlap
+    void _inclusion_exclusion_overlap
+      (std::vector<quadrature_rule>& qr,
+       const SimplexQuadrature& sq,
+       const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polyhedra,
+       std::size_t tdim,
+       std::size_t gdim,
+       std::size_t quadrature_order) const;
+
+    // Inclusion-exclusion for interface
+    void _inclusion_exclusion_interface
+      (quadrature_rule& qr,
+       std::vector<double>& normals,
+       const SimplexQuadrature& sq,
+       const Simplex& Eij,
+       const Point& facet_normal,
+       const std::vector<std::pair<std::size_t, Polyhedron> >& initial_polygons,
+       std::size_t tdim,
+       std::size_t gdim,
+       std::size_t quadrature_order) const;
+
+    // Construct and return mapping from boundary facets to full mesh
+    std::vector<std::vector<std::pair<std::size_t, std::size_t> > >
+      _boundary_facets_to_full_mesh(std::size_t part) const;
+
+    // Impose consistency of _cut_cells, so that only the cells with
+    // a nontrivial interface quadrature rule are classified as cut.
+    void _impose_cut_cell_consistency();
+
+    // Remove quadrature rule if the sum of the weights is less than a
+    // tolerance
+    static void remove_quadrature_rule(quadrature_rule& qr,
+				       double tolerance);
   };
 
+
+
 }
+
 
 #endif

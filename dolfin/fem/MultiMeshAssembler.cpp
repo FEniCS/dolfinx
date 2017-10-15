@@ -27,7 +27,10 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/MultiMesh.h>
+#include <dolfin/function/MultiMeshFunction.h>
+#include <dolfin/function/FunctionSpace.h>
 
 #include "SparsityPatternBuilder.h"
 #include "UFC.h"
@@ -60,6 +63,9 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   // Assemble over uncut cells
   _assemble_uncut_cells(A, a);
 
+  // Assemble over exterior facets
+  _assemble_uncut_exterior_facets(A, a);
+
   // Assemble over cut cells
   _assemble_cut_cells(A, a);
 
@@ -73,11 +79,105 @@ void MultiMeshAssembler::assemble(GenericTensor& A, const MultiMeshForm& a)
   if (finalize_tensor)
     A.apply("add");
 
-  // Lock any remaining inactive dofs
-  if (A.rank() == 2)
-    static_cast<GenericMatrix&>(A).ident_zeros();
-
   end();
+}
+//-----------------------------------------------------------------------------
+void MultiMeshAssembler::_assemble_uncut_exterior_facets(GenericTensor& A,
+                                                         const MultiMeshForm& a)
+{
+  // FIXME: This implementation assumes that there is one background mesh
+  // that contains the entire exterior facet. 
+
+  // Get form rank
+  const std::size_t form_rank = a.rank();
+
+  // Extract multimesh
+  std::shared_ptr<const MultiMesh> multimesh = a.multimesh();
+
+  // Collect pointers to dof maps
+  std::vector<const MultiMeshDofMap*> dofmaps;
+  for (std::size_t i = 0; i < form_rank; i++)
+    dofmaps.push_back(a.function_space(i)->dofmap().get());
+
+  // Vector to hold dof map for a cell
+  std::vector<ArrayView<const dolfin::la_index>> dofs(form_rank);
+
+  // Initialize variables that will be reused throughout assembly
+  ufc::cell ufc_cell;
+  std::vector<double> coordinate_dofs;
+
+  // Assembly exterior uncut facets on mesh 0, the background mesh
+  int part = 0;
+
+  log(PROGRESS, "Assembling multimesh form over uncut facets on part %d.", part);
+
+  // Get form for current part
+  const Form& a_part = *a.part(part);
+
+  // Create data structure for local assembly data
+  UFC ufc_part(a_part);
+
+  // Extract mesh
+  dolfin_assert(a_part.mesh());
+  const Mesh& mesh_part = *(a_part.mesh());
+
+  // FIXME: Handle subdomains
+
+  // Exterior facet integral
+  const ufc::exterior_facet_integral* integral = ufc_part.default_exterior_facet_integral.get();
+
+  // Skip if we don't have a facet integral
+  if (!integral) return;
+
+  // Iterate over uncut cells
+  for (FacetIterator facet(mesh_part); !facet.end(); ++facet)
+  {
+
+    // Only consider exterior facets
+    if (!facet->exterior())
+    {
+      continue;
+    }
+
+    const std::size_t D = mesh_part.topology().dim();
+
+    // Get mesh cell to which mesh facet belongs (pick first, there is
+    // only one)
+    dolfin_assert(facet->num_entities(D) == 1);
+    Cell mesh_cell(mesh_part, facet->entities(D)[0]);
+
+    // Check that cell is not a ghost
+    dolfin_assert(!mesh_cell.is_ghost());
+
+    // Get local index of facet with respect to the cell
+    const std::size_t local_facet = mesh_cell.index(*facet);
+
+    // Update UFC cell
+    mesh_cell.get_cell_data(ufc_cell, local_facet);
+    mesh_cell.get_coordinate_dofs(coordinate_dofs);
+
+    // Update UFC object
+    ufc_part.update(mesh_cell, coordinate_dofs, ufc_cell,
+               integral->enabled_coefficients());
+
+    // Get local-to-global dof maps for cell
+    for (std::size_t i = 0; i < form_rank; ++i)
+    {
+      const auto dofmap = a.function_space(i)->dofmap()->part(part);
+      const auto dmap = dofmap->cell_dofs(mesh_cell.index());
+      dofs[i] = ArrayView<const dolfin::la_index>(dmap.size(), dmap.data());
+    }
+
+    // Tabulate cell tensor
+    integral->tabulate_tensor(ufc_part.A.data(),
+                              ufc_part.w(),
+                              coordinate_dofs.data(),
+                              local_facet,
+                              ufc_cell.orientation);
+
+    // Add entries to global tensor
+    A.add(ufc_part.A.data(), dofs);
+  }
 }
 //-----------------------------------------------------------------------------
 void MultiMeshAssembler::_assemble_uncut_cells(GenericTensor& A,
@@ -204,7 +304,7 @@ void MultiMeshAssembler::_assemble_cut_cells(GenericTensor& A,
 
     // Get cut cells and quadrature rules
     const std::vector<unsigned int>& cut_cells = multimesh->cut_cells(part);
-    const auto& quadrature_rules = multimesh->quadrature_rule_cut_cells(part);
+    const auto& quadrature_rules = multimesh->quadrature_rules_cut_cells(part);
 
     // Iterate over cut cells
     for (auto it = cut_cells.begin(); it != cut_cells.end(); ++it)
@@ -283,6 +383,21 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
   // Get form rank
   const std::size_t form_rank = a.rank();
 
+  // Get multimesh coefficients
+  // These are updated in within this assembly loop
+  std::map<std::size_t, std::shared_ptr<const MultiMeshFunction> >
+    multimesh_coefficients = a.multimesh_coefficients();
+
+  // Identify the coefficents that are not MultiMeshFunction
+  // These will be updated by UFC
+  // It is assumed that the coefficents are the same for all parts
+  std::vector<bool> ufc_enabled_coefficients;
+  for (std::size_t i = 0; i < a.part(0)->coefficients().size(); i++)
+  {
+    bool ufc_update = multimesh_coefficients.find(i) == multimesh_coefficients.end();
+    ufc_enabled_coefficients.push_back(ufc_update);
+  }
+
   // Collect pointers to dof maps
   std::vector<const MultiMeshDofMap*> dofmaps;
   for (std::size_t i = 0; i < form_rank; i++)
@@ -321,7 +436,7 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
     if (!integral) continue;
 
     // Get quadrature rules
-    const auto& quadrature_rules = multimesh->quadrature_rule_interface(part);
+    const auto& quadrature_rules = multimesh->quadrature_rules_interface(part);
 
     // Get collision map
     const auto& cmap = multimesh->collision_map_cut_cells(part);
@@ -363,38 +478,56 @@ void MultiMeshAssembler::_assemble_interface(GenericTensor& A,
           continue;
 
         // Create aliases for cells to simplify notation
-        const Cell& cell_0 = cut_cell;
+        const std::size_t& part_1 = cutting_part;
+        const std::size_t& part_0 = part;
         const Cell& cell_1 = cutting_cell;
+        const Cell& cell_0 = cut_cell;
 
         // Update to current pair of cells
+        // Let UFC update the coefficients that are not MultiMeshFunction
         cell_0.get_cell_data(ufc_cell[0], 0);
         cell_1.get_cell_data(ufc_cell[1], 0);
         cell_0.get_coordinate_dofs(coordinate_dofs[0]);
         cell_1.get_coordinate_dofs(coordinate_dofs[1]);
         ufc_part.update(cell_0, coordinate_dofs[0], ufc_cell[0],
-                        cell_1, coordinate_dofs[1], ufc_cell[1]);
+                        cell_1, coordinate_dofs[1], ufc_cell[1],
+                        ufc_enabled_coefficients);
+
+        // Manually update multimesh coefficients
+        for (auto it : multimesh_coefficients)
+        {
+          std::size_t coefficient_number = it.first;
+          std::shared_ptr<const MultiMeshFunction> coefficient = it.second;
+          double** macro_w = ufc_part.macro_w();
+          const FiniteElement& element = *coefficient->function_space()->part(part_0)->element();
+          std::size_t offset = element.space_dimension();
+
+          double * w_0 = macro_w[coefficient_number];
+          double * w_1 = macro_w[coefficient_number] + offset;
+
+          coefficient->restrict(w_0, element,
+                                part_0, cell_0, coordinate_dofs[0].data(), ufc_cell[0]);
+          coefficient->restrict(w_1, element,
+                                part_1, cell_1, coordinate_dofs[1].data(), ufc_cell[1]);
+        }
 
         // Collect vertex coordinates
         macro_coordinate_dofs.resize(coordinate_dofs[0].size() +
                                      coordinate_dofs[0].size());
-        std::copy(coordinate_dofs[0].begin(),
-                  coordinate_dofs[0].end(),
+        std::copy(coordinate_dofs[0].begin(), coordinate_dofs[0].end(),
                   macro_coordinate_dofs.begin());
-        std::copy(coordinate_dofs[1].begin(),
-                  coordinate_dofs[1].end(),
-                  macro_coordinate_dofs.begin()
-                  + coordinate_dofs[0].size());
+        std::copy(coordinate_dofs[1].begin(), coordinate_dofs[1].end(),
+                  macro_coordinate_dofs.begin() + coordinate_dofs[0].size());
 
         // Tabulate dofs for each dimension on macro element
         for (std::size_t i = 0; i < form_rank; i++)
         {
           // Get dofs for cut mesh
-          const auto dofmap_0 = a.function_space(i)->dofmap()->part(part);
+          const auto dofmap_0 = a.function_space(i)->dofmap()->part(part_0);
           const auto dofs_0 = dofmap_0->cell_dofs(cell_0.index());
 
           // Get dofs for cutting mesh
-          const auto dofmap_1
-            = a.function_space(i)->dofmap()->part(cutting_part);
+          const auto dofmap_1 = a.function_space(i)->dofmap()->part(part_1);
           const auto dofs_1 = dofmap_1->cell_dofs(cell_1.index());
 
           // Create space in macro dof vector
@@ -454,6 +587,21 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
   // Get form rank
   const std::size_t form_rank = a.rank();
 
+  // Get multimesh coefficients
+  // These are updated in this assembly loop
+  std::map<std::size_t, std::shared_ptr<const MultiMeshFunction> >
+    multimesh_coefficients = a.multimesh_coefficients();
+
+  // Identify the coefficients that are not MultiMeshFunction
+  // These will be updated by UFC
+  // It is assumed that the coefficents are the same for all parts
+  std::vector<bool> ufc_enabled_coefficients;
+  for (std::size_t i = 0; i < a.part(0)->coefficients().size(); i++)
+  {
+    bool ufc_update = multimesh_coefficients.find(i) == multimesh_coefficients.end();
+    ufc_enabled_coefficients.push_back(ufc_update);
+  }
+
   // Collect pointers to dof maps
   std::vector<const MultiMeshDofMap*> dofmaps;
   for (std::size_t i = 0; i < form_rank; i++)
@@ -491,7 +639,7 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
     if (!integral) continue;
 
     // Get quadrature rules
-    const auto& quadrature_rules = multimesh->quadrature_rule_overlap(part);
+    const auto& quadrature_rules = multimesh->quadrature_rules_overlap(part);
 
     // Get collision map
     const auto& cmap = multimesh->collision_map_cut_cells(part);
@@ -529,37 +677,56 @@ void MultiMeshAssembler::_assemble_overlap(GenericTensor& A,
           continue;
 
         // Create aliases for cells to simplify notation
-        const Cell& cell_0 = cut_cell;
+        const std::size_t& part_1 = cutting_part;
+        const std::size_t& part_0 = part;
         const Cell& cell_1 = cutting_cell;
+        const Cell& cell_0 = cut_cell;
 
         // Update to current pair of cells
+        // Let UFC update the coefficients that are not MultiMeshFunction
         cell_0.get_cell_data(ufc_cell[0], 0);
         cell_1.get_cell_data(ufc_cell[1], 0);
         cell_0.get_coordinate_dofs(coordinate_dofs[0]);
         cell_1.get_coordinate_dofs(coordinate_dofs[1]);
         ufc_part.update(cell_0, coordinate_dofs[0], ufc_cell[0],
-                        cell_1, coordinate_dofs[1], ufc_cell[1]);
+                        cell_1, coordinate_dofs[1], ufc_cell[1],
+                        ufc_enabled_coefficients);
 
+        // Manually update multimesh coefficients
+        for (auto it : multimesh_coefficients)
+        {
+          std::size_t coefficient_number = it.first;
+          std::shared_ptr<const MultiMeshFunction> coefficient = it.second;
+          double** macro_w = ufc_part.macro_w();
+          const FiniteElement& element = *coefficient->function_space()->part(part_0)->element();
+          std::size_t offset = element.space_dimension();
+
+          double * w_0 = macro_w[coefficient_number];
+          double * w_1 = macro_w[coefficient_number] + offset;
+
+          coefficient->restrict(w_0, element,
+                                part_0, cell_0, coordinate_dofs[0].data(), ufc_cell[0]);
+          coefficient->restrict(w_1, element,
+                                part_1, cell_1, coordinate_dofs[1].data(), ufc_cell[1]);
+        }
 
         // Collect vertex coordinates
         macro_coordinate_dofs.resize(coordinate_dofs[0].size() +
                                      coordinate_dofs[0].size());
-        std::copy(coordinate_dofs[0].begin(),
-                  coordinate_dofs[0].end(),
+        std::copy(coordinate_dofs[0].begin(), coordinate_dofs[0].end(),
                   macro_coordinate_dofs.begin());
-        std::copy(coordinate_dofs[1].begin(),
-                  coordinate_dofs[1].end(),
+        std::copy(coordinate_dofs[1].begin(), coordinate_dofs[1].end(),
                   macro_coordinate_dofs.begin() + coordinate_dofs[0].size());
 
         // Tabulate dofs for each dimension on macro element
         for (std::size_t i = 0; i < form_rank; i++)
         {
           // Get dofs for cut mesh
-          const auto dofmap_0 = a.function_space(i)->dofmap()->part(part);
+          const auto dofmap_0 = a.function_space(i)->dofmap()->part(part_0);
           const auto dofs_0 = dofmap_0->cell_dofs(cell_0.index());
 
           // Get dofs for cutting mesh
-          const auto dofmap_1 = a.function_space(i)->dofmap()->part(cutting_part);
+          const auto dofmap_1 = a.function_space(i)->dofmap()->part(part_1);
           const auto dofs_1 = dofmap_1->cell_dofs(cell_1.index());
 
           // Create space in macro dof vector

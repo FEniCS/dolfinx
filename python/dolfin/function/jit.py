@@ -7,7 +7,7 @@
 # either version 3 of the License, or (at your option) any later
 # version.
 
-import dolfin.cpp as cpp
+from dolfin.cpp.log import log, LogLevel
 from dolfin.jit.jit import compile_class, _math_header
 
 
@@ -85,6 +85,8 @@ extern "C" DLL_EXPORT dolfin::Expression * create_{classname}()
     _get_props = """          if (name == "{key_name}") return {name};"""
     _set_props = """          if (name == "{key_name}") {{ {name} = _value; return; }}"""
 
+    log(LogLevel.TRACE, "Calling dijitso just-in-time (JIT) compiler for Expression.")
+
     statements = class_data["statements"]
     statement = ""
     if isinstance(statements, str):
@@ -111,9 +113,9 @@ extern "C" DLL_EXPORT dolfin::Expression * create_{classname}()
         elif hasattr(value, "_cpp_object"):
             members += "std::shared_ptr<dolfin::GenericFunction> generic_function_{key};\n".format(key=k)
             set_generic_function += _set_props.format(key_name=k,
-                                                      name="generic_function_"+k)
+                                                      name="generic_function_" + k)
             get_generic_function += _get_props.format(key_name=k,
-                                                      name="generic_function_"+k)
+                                                      name="generic_function_" + k)
 
             value_size = value._cpp_object.value_size()
             if value_size == 1:

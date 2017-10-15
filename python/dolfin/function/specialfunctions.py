@@ -21,15 +21,15 @@ SpecialFunctions.h).
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+import ufl
+import dolfin.cpp as cpp
+from dolfin.function.expression import BaseExpression
+
 __all__ = ["MeshCoordinates", "FacetArea", "FacetNormal",
            "CellVolume", "SpatialCoordinate", "CellNormal",
            "CellDiameter", "Circumradius",
            "MinCellEdgeLength", "MaxCellEdgeLength",
            "MinFacetEdgeLength", "MaxFacetEdgeLength"]
-
-import ufl
-import dolfin.cpp as cpp
-from dolfin.function.expression import BaseExpression
 
 
 def _mesh2domain(mesh):
@@ -46,6 +46,7 @@ class MeshCoordinates(BaseExpression):
         vertex.
 
         """
+
         # Initialize C++ part
         self._cpp_object = cpp.function.MeshCoordinates(mesh)
 
@@ -80,8 +81,10 @@ class FacetArea(BaseExpression):
         # Initialize UFL part
         # NB! This is defined as a piecewise constant function for
         # each cell, not for each facet!
-        ufl_element = ufl.FiniteElement("Discontinuous Lagrange", mesh.ufl_cell(), 0)
-        super().__init__(domain=mesh.ufl_domain(), element=ufl_element, label="FacetArea")
+        ufl_element = ufl.FiniteElement("Discontinuous Lagrange",
+                                        mesh.ufl_cell(), 0)
+        super().__init__(domain=mesh.ufl_domain(),
+                         element=ufl_element, label="FacetArea")
 
 
 # Simple definition of FacetNormal via UFL
@@ -207,6 +210,7 @@ def Circumradius(mesh):
 
     return ufl.Circumradius(_mesh2domain(mesh))
 
+
 # Simple definition of MinCellEdgeLength via UFL
 def MinCellEdgeLength(mesh):
     """Return symbolic minimum cell edge length of a cell
@@ -227,6 +231,7 @@ def MinCellEdgeLength(mesh):
 
     return ufl.MinCellEdgeLength(_mesh2domain(mesh))
 
+
 # Simple definition of MaxCellEdgeLength via UFL
 def MaxCellEdgeLength(mesh):
     """Return symbolic maximum cell edge length of a cell
@@ -246,6 +251,7 @@ def MaxCellEdgeLength(mesh):
     """
 
     return ufl.MaxCellEdgeLength(_mesh2domain(mesh))
+
 
 # Simple definition of MinFacetEdgeLength via UFL
 def MinFacetEdgeLength(mesh):

@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit test for the PETSc TAO solver"""
 
 # Copyright (C) 2014 Tianyi Li

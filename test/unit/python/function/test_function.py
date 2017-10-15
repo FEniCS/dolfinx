@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the Function class"""
 
 # Copyright (C) 2011-2014 Garth N. Wells
@@ -75,6 +73,10 @@ def test_compute_vertex_values(V, W, mesh):
     v_values = v.compute_vertex_values(mesh)
 
     assert all(u_values == 1)
+
+    u_values2 = u.compute_vertex_values()
+
+    assert all(u_values == u_values2)
 
 
 def test_assign(V, W):
@@ -231,7 +233,6 @@ def test_axpy(V, W):
         with pytest.raises(RuntimeError):
             axpy + u
 
-
 def test_call(R, V, W, mesh):
     from numpy import zeros, all, array
     u0 = Function(R)
@@ -267,7 +268,6 @@ def test_call(R, V, W, mesh):
         u0([0, 0, 0, 0])
     with pytest.raises(TypeError):
         u0([0, 0])
-
 
 def test_constant_float_conversion():
     c = Constant(3.45)
@@ -386,6 +386,25 @@ def test_extrapolation(V, pushpop_parameters):
     assert f2.get_allow_extrapolation() is True
     f2.set_allow_extrapolation(False)
     assert f2.get_allow_extrapolation() is False
+
+
+@skip_in_parallel
+def test_near_evaluations(R, mesh):
+    # Test that we allow point evaluation that are slightly outside
+    parameters["allow_extrapolation"] = False
+
+    u0 = Function(R)
+    u0.vector()[:] = 1.0
+    a = Vertex(mesh, 0).point()
+    offset = 0.99*DOLFIN_EPS
+
+    a_shift_x = Point(a[0] - offset, a[1], a[2])
+    assert round(u0(a) - u0(a_shift_x), 7) == 0
+
+    a_shift_xyz = Point(a[0] - offset / sqrt(3),
+                        a[1] - offset / sqrt(3),
+                        a[2] - offset / sqrt(3))
+    assert round(u0(a) - u0(a_shift_xyz), 7) == 0
 
 
 def test_interpolation_jit_rank1(W):

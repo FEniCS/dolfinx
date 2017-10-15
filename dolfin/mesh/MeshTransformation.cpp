@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Anders Logg
+// Copyright (C) 2012-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -24,6 +24,22 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+void MeshTransformation::scale(Mesh& mesh, double factor)
+{
+ // Get mesh geometry
+  MeshGeometry& geometry = mesh.geometry();
+  const std::size_t gdim = geometry.dim();
+
+  // Scale all points
+  std::vector<double> x0(gdim);
+  for (std::size_t i = 0; i < geometry.num_vertices(); i++)
+  {
+    for (std::size_t j = 0; j < gdim; j++)
+      x0[j] = factor*geometry.x(i, j);
+    geometry.set(i, x0.data());
+  }
+}
 //-----------------------------------------------------------------------------
 void MeshTransformation::translate(Mesh& mesh, const Point& point)
 {

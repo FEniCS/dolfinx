@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2013 Anders Logg
+// Copyright (C) 2006-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -347,6 +347,13 @@ namespace dolfin
     /// cell-vertex connectivity exists as part of the mesh.
     /// @return Mesh
     Mesh renumber_by_color() const;
+
+    /// Scale mesh coordinates with given factor.
+    ///
+    /// *Arguments*
+    ///     factor (double)
+    ///         The factor defining the scaling.
+    void scale(double factor);
 
     /// Translate mesh according to a given vector.
     ///

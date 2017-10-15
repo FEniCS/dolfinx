@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for graph building"""
 
 # Copyright (C) 2013 Garth N. Wells

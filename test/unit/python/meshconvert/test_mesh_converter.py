@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """ Tests for the meshconvert module."""
 
 # Copyright (C) 2012
