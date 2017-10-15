@@ -14,10 +14,10 @@ jobs:
           command: sudo pip3 install pytest pytest-xdist six flake8 --upgrade
       - run:
           name: Install FIAT
-          command: pip3 install git+https://bitbucket.org/fenics-project/fiat.git@jan/feature-cell-diameter
+          command: pip3 install git+https://bitbucket.org/fenics-project/fiat.git@master
       - run:
           name: Install UFL
-          command: pip3 install git+https://bitbucket.org/fenics-project/ufl.git@jan/feature-cell-diameter
+          command: pip3 install git+https://bitbucket.org/fenics-project/ufl.git@master
       - run:
           name: Install Dijitso
           command: pip3 install git+https://bitbucket.org/fenics-project/dijitso.git@master
@@ -26,7 +26,7 @@ jobs:
           command: pip3 install git+https://bitbucket.org/fenics-project/instant.git@master
       - run:
           name: Install FFC
-          command: pip3 install git+https://bitbucket.org/fenics-project/ffc.git@jan/feature-cell-diameter
+          command: pip3 install git+https://bitbucket.org/fenics-project/ffc.git@master
       - run:
           name: Flake8 checks on pybind11 Python code
           command: python3 -m flake8 python/dolfin
