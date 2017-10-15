@@ -306,7 +306,8 @@ namespace dolfin_wrappers
            }, py::arg("u"), py::arg("name"), py::arg("t"))
       .def("set_mpi_atomicity", &dolfin::HDF5File::set_mpi_atomicity)
       .def("get_mpi_atomicity", &dolfin::HDF5File::get_mpi_atomicity)
-      // attributes
+      // others
+      .def("has_dataset", &dolfin::HDF5File::has_dataset)
       .def("attributes", &dolfin::HDF5File::attributes);
 
 #endif

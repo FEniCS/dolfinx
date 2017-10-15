@@ -362,8 +362,11 @@ class Function(ufl.Coefficient):
         else:
             self._cpp_object.interpolate(u)
 
-    def compute_vertex_values(self, mesh):
-        return self._cpp_object.compute_vertex_values(mesh)
+    def compute_vertex_values(self, mesh=None):
+        if mesh is not None:
+            return self._cpp_object.compute_vertex_values(mesh)
+        else:
+            return self._cpp_object.compute_vertex_values()
 
     def set_allow_extrapolation(self, value):
         self._cpp_object.set_allow_extrapolation(value)
