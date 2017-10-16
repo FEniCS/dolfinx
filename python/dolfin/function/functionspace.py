@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Main module for DOLFIN"""
 
 # Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
 #
@@ -10,7 +9,6 @@
 import ufl
 import dolfin.cpp as cpp
 from dolfin.jit.jit import ffc_jit
-from . import function
 
 
 class FunctionSpace(ufl.FunctionSpace):
@@ -131,19 +129,16 @@ class FunctionSpace(ufl.FunctionSpace):
     def contains(self, V):
         "Check whether a function is in the FunctionSpace"
         return self._cpp_object.contains(V._cpp_object)
-        # if isinstance(u, cpp.function.Function):
-        #    return u._in(self)
-        # elif isinstance(u, function.Function):
-        #    return u._cpp_object._in(self)
-        # return False
 
     def __contains__(self, u):
         "Check whether a function is in the FunctionSpace"
-        if isinstance(u, cpp.function.Function):
+        try:
             return u._in(self._cpp_object)
-        elif isinstance(u, function.Function):
-            return u._cpp_object._in(self._cpp_object)
-        return False
+        except AttributeError:
+            try:
+                return u._cpp_object._in(self._cpp_object)
+            except Exception as e:
+                raise RuntimeError("Unable to check if object is in FunctionSpace ({})".format(e))
 
     def __eq__(self, other):
         "Comparison for equality."
