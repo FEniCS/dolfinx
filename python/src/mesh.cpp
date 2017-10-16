@@ -144,6 +144,7 @@ namespace dolfin_wrappers
            &dolfin::Mesh::data, "Data associated with a mesh")
       .def("geometry", (dolfin::MeshGeometry& (dolfin::Mesh::*)()) &dolfin::Mesh::geometry,
            py::return_value_policy::reference, "Mesh geometry")
+      .def("hash", &dolfin::Mesh::hash)
       .def("hmax", &dolfin::Mesh::hmax)
       .def("hmin", &dolfin::Mesh::hmin)
       .def("id", &dolfin::Mesh::id)
