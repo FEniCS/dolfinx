@@ -32,7 +32,7 @@ v   = TestFunction(scalar)
 
 u = Coefficient(vector)
 f = Coefficient(scalar)
-h = 2.0*Circumradius(cell)
+h = CellDiameter(cell)
 h_avg = (h('+') + h('-'))/2
 n = FacetNormal(cell)
 

@@ -62,7 +62,7 @@ v = TestFunction(V)
 
 # Define normal vector and mesh size
 n = FacetNormal(mesh)
-h = CellSize(mesh)
+h = CellDiameter(mesh)
 h_avg = (h('+') + h('-'))/2
 
 # Define the source term f, Dirichlet term u0 and Neumann term g

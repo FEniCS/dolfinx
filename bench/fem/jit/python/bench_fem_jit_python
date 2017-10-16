@@ -50,7 +50,7 @@ p1 = Function(Q)
 W  = Function(DGv)
 nu = Constant(0.1)
 k  = Constant(0.1)
-h  = CellSize(mesh)
+h  = 2*Circumradius(mesh)
 d1 = h
 d2 = 2.0*h
 
