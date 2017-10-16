@@ -170,8 +170,9 @@ def test_in_operator(f, g, V, V2, W, W2):
     assert f in V2
     assert g in W
     assert g in W2
-    with pytest.raises(RuntimeError):
-        mesh() in V
+    if has_pybind11():
+        with pytest.raises(RuntimeError):
+            mesh() in V
 
 
 def test_collapse(W, V):
