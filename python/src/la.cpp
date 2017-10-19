@@ -743,7 +743,7 @@ namespace dolfin_wrappers
         { return std::unique_ptr<dolfin::EigenVector>(new dolfin::EigenVector(comm.get())); }))
       .def(py::init([](const MPICommWrapper comm, std::size_t N)
         { return std::unique_ptr<dolfin::EigenVector>(new dolfin::EigenVector(comm.get(), N)); }))
-      .def("data_view", [](dolfin::EigenVector& self) -> Eigen::Ref<Eigen::VectorXd> { return *self.vec(); },
+      .def("array_view", [](dolfin::EigenVector& self) -> Eigen::Ref<Eigen::VectorXd> { return *self.vec(); },
            "Return a writable numpy array view of the data in the EigenVector");
 
     // dolfin::EigenMatrix
