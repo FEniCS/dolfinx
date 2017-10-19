@@ -386,7 +386,7 @@ class TestVectorForAnyBackend:
         v = as_backend_type(v)
 
         if has_pybind11():
-            rw_array = v.array_view()
+            rw_array = v.data_view()
             assert rw_array.flags.owndata == False
             with pytest.raises(Exception):
                 rw_array.resize([10])
@@ -398,7 +398,7 @@ class TestVectorForAnyBackend:
 
             # Test for as_backend_type Vector
             v = as_backend_type(v)
-            rw_array2 = v.array_view()
+            rw_array2 = v.data_view()
             assert (rw_array2 == ro_array).all()
 
         else:
