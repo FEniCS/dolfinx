@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the function library"""
 
 # Copyright (C) 2011 Kristian B. Oelgaard

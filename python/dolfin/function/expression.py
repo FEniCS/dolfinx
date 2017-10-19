@@ -7,11 +7,6 @@
 # either version 3 of the License, or (at your option) any later
 # version.
 
-
-__all__ = ["UserExpression"]
-
-import hashlib
-from functools import reduce
 import types
 import numpy
 import ufl
@@ -20,6 +15,8 @@ from ufl.utils.indexflattening import (flatten_multiindex,
                                        shape_to_strides)
 import dolfin.cpp as cpp
 import dolfin.function.jit as jit
+
+__all__ = ["UserExpression"]
 
 
 def _select_element(family, cell, degree, value_shape):
@@ -54,6 +51,7 @@ class _InterfaceExpression(cpp.function.Expression):
         # Wrap eval functions
         def wrapped_eval(self, values, x):
             self.user_expression.eval(values, x)
+
         def wrapped_eval_cell(self, values, x, cell):
             self.user_expression.eval_cell(values, x, cell)
 
@@ -97,7 +95,7 @@ class BaseExpression(ufl.Coefficient):
 
     def ufl_evaluate(self, x, component, derivatives):
         """Function used by ufl to evaluate the Expression"""
-        assert derivatives == () # TODO: Handle derivatives
+        assert derivatives == ()  # TODO: Handle derivatives
 
         if component:
             shape = self.ufl_shape
@@ -112,8 +110,8 @@ class BaseExpression(ufl.Coefficient):
             # Scalar evaluation
             return self(*x)
 
-    #def __call__(self, x):
-    #    return self._cpp_object(x)
+    # def __call__(self, x):
+    #     return self._cpp_object(x)
     def __call__(self, *args, **kwargs):
         # GNW: This function is copied from the old DOLFIN Python
         # code. It is far too complicated. There is no need to provide
@@ -143,7 +141,7 @@ class BaseExpression(ufl.Coefficient):
             if not isinstance(values, numpy.ndarray):
                 raise TypeError("expected a NumPy array for 'values'")
             if len(values) != value_size or not numpy.issubdtype(values.dtype, 'd'):
-                raise TypeError("expected a double NumPy array of length"\
+                raise TypeError("expected a double NumPy array of length"
                                 " %d for return values." % value_size)
             values_provided = True
         else:
@@ -171,7 +169,7 @@ class BaseExpression(ufl.Coefficient):
         # Convert it to an 1D numpy array
         try:
             x = numpy.fromiter(x, 'd')
-        except (TypeError, ValueError, AssertionError) as e:
+        except (TypeError, ValueError, AssertionError):
             raise TypeError("expected scalar arguments for the coordinates")
 
         if len(x) == 0:
@@ -186,7 +184,7 @@ class BaseExpression(ufl.Coefficient):
             pass
         else:
             if len(x) != dim:
-                raise TypeError("expected the geometry argument to be of "\
+                raise TypeError("expected the geometry argument to be of "
                                 "length %d" % dim)
 
         # The actual evaluation
@@ -238,7 +236,7 @@ class UserExpression(BaseExpression):
         domain = kwargs.pop("domain", None)
         name = kwargs.pop("name", None)
         label = kwargs.pop("label", None)
-        mpi_comm = kwargs.pop("mpi_comm", None)
+        # mpi_comm = kwargs.pop("mpi_comm", None)
         if (len(kwargs) > 0):
             raise RuntimeError("Invalid keyword argument")
 
@@ -289,8 +287,9 @@ class ExpressionParameters(object):
         return key in self._params
 
     def update(self, params):
-        for k,v in dict(params).items():
+        for k, v in dict(params).items():
             self[k] = v
+
 
 class CompiledExpression(BaseExpression):
     """Wrap a compiled module of type cpp.Expression"""
@@ -304,7 +303,7 @@ class CompiledExpression(BaseExpression):
         domain = kwargs.pop("domain", None)
         name = kwargs.pop("name", None)
         label = kwargs.pop("label", None)
-        mpi_comm = kwargs.pop("mpi_comm", None)
+        # mpi_comm = kwargs.pop("mpi_comm", None)
 
         if not isinstance(cpp_module, cpp.function.Expression):
             raise RuntimeError("Must supply compiled C++ Expression module to CompiledExpression")
@@ -347,7 +346,6 @@ class CompiledExpression(BaseExpression):
             setattr(self._cpp_object, name, value)
 
 
-
 class Expression(BaseExpression):
     """JIT Expressions"""
 
@@ -364,8 +362,8 @@ class Expression(BaseExpression):
         domain = kwargs.pop("domain", None)
         name = kwargs.pop("name", None)
         label = kwargs.pop("label", None)
-        mpi_comm = kwargs.pop("mpi_comm", None)
-
+        # FIXME: feed mpi_comm through to JIT
+        # mpi_comm = kwargs.pop("mpi_comm", None)
 
         if not isinstance(cpp_code, (str, tuple, list)):
             raise RuntimeError("Must supply C++ code to Expression")

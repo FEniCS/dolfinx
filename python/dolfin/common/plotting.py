@@ -129,13 +129,13 @@ def mplot_function(ax, f, **kwargs):
             x = mesh.coordinates()[:, 0]
             nv = len(x)
             # Insert duplicate points to get piecewise constant plot
-            xp = np.zeros(2*nv-2)
+            xp = np.zeros(2 * nv - 2)
             xp[0] = x[0]
             xp[-1] = x[-1]
-            xp[1:2*nv-3:2] = x[1:-1]
-            xp[2:2*nv-2:2] = x[1:-1]
+            xp[1:2 * nv - 3:2] = x[1:-1]
+            xp[2:2 * nv - 2:2] = x[1:-1]
             Cp = np.zeros(len(xp))
-            Cp[0:len(Cp)-1:2] = C
+            Cp[0:len(Cp) - 1:2] = C
             Cp[1:len(Cp):2] = C
             return ax.plot(xp, Cp, *kwargs)
         # elif tdim == 1:  # FIXME: Plot embedded line
@@ -198,11 +198,11 @@ def mplot_function(ax, f, **kwargs):
         # Vector function, interpolated to vertices
         w0 = f.compute_vertex_values(mesh)
         nv = mesh.num_vertices()
-        if len(w0) != gdim*nv:
+        if len(w0) != gdim * nv:
             raise AttributeError('Vector length must match geometric dimension.')
         X = mesh.coordinates()
         X = [X[:, i] for i in range(gdim)]
-        U = [w0[i*nv: (i + 1)*nv] for i in range(gdim)]
+        U = [w0[i * nv: (i + 1) * nv] for i in range(gdim)]
 
         # Compute magnitude
         C = U[0]**2

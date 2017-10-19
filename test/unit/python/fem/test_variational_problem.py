@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the Nonlinear- and Linear-VariationalProblem classes"""
 
 # Copyright (C) 2016 Garth N. Wells

@@ -149,3 +149,31 @@ void MultiMeshForm::clear()
   _forms.clear();
 }
 //-----------------------------------------------------------------------------
+void MultiMeshForm::set_multimesh_coefficient(std::size_t i,
+                                              std::shared_ptr<const MultiMeshFunction> coefficient)
+{
+  dolfin_assert(coefficient);
+  _multimesh_coefficients[i] = coefficient;
+}
+//-----------------------------------------------------------------------------
+std::map<std::size_t, std::shared_ptr<const MultiMeshFunction>>
+  MultiMeshForm::multimesh_coefficients() const
+{
+  return _multimesh_coefficients;
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const MultiMeshFunction>
+  MultiMeshForm::multimesh_coefficient(std::size_t i) const
+{
+  dolfin_assert(i < _multimesh_coefficients.size());
+  return _multimesh_coefficients.at(i);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::size_t> MultiMeshForm::multimesh_coefficient_keys() const
+{
+  std::vector<size_t> keys;
+  for (auto it = _multimesh_coefficients.begin(); it != _multimesh_coefficients.end(); it++)
+    keys.push_back(it->first);
+  return keys;
+}
+//-----------------------------------------------------------------------------

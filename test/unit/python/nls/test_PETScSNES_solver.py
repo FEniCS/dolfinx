@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit test for the SNES nonlinear solver"""
 
 # Copyright (C) 2012 Patrick E. Farrell

@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for TimeSeries"""
 
 # Copyright (C) 2011-2014 Marie E. Rognes

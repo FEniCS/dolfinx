@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the RKSolver interface"""
 
 # Copyright (C) 2013 Johan Hake
@@ -64,7 +62,7 @@ def test_butcher_schemes_scalar():
             solver.step_interval(0., tstop, dt)
             u_errors.append(u_true(0.0, 0.0) - u(0.0, 0.0))
 
-        assert scheme.order()-min(convergence_order(u_errors))<0.1
+        assert scheme.order() - min(convergence_order(u_errors)) < 0.1
 
 
 @pytest.mark.slow
@@ -93,5 +91,5 @@ def test_butcher_schemes_vector():
             u_errors_0.append(u_true(0.0, 0.0)[0] - u(0.0, 0.0)[0])
             u_errors_1.append(u_true(0.0, 0.0)[1] - u(0.0, 0.0)[1])
 
-        assert scheme.order()-min(convergence_order(u_errors_0))<0.1
-        assert scheme.order()-min(convergence_order(u_errors_1))<0.1
+        assert scheme.order() - min(convergence_order(u_errors_0)) < 0.1
+        assert scheme.order() - min(convergence_order(u_errors_1)) < 0.1

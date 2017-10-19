@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the Vector interface"""
 
 # Copyright (C) 2011-2014 Garth N. Wells

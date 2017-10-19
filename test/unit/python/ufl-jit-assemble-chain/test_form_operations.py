@@ -1,5 +1,3 @@
-#!usr/bin/env py.test
-
 """Tests for DOLFIN integration of various form operations"""
 
 # Copyright (C) 2011 Marie E. Rognes

@@ -11,26 +11,22 @@ jobs:
       - checkout
       - run:
           name: Install/update dependencies  # Install with sudo as tests not run as superuser in circleci/python
+          command: sudo pip3 install pytest pytest-xdist six flake8 --upgrade
+      - run:
+          name: Install FEniCS dependencies
           command: |
-            sudo pip3 install pytest pytest-xdist six --upgrade
+            if [ "${CIRCLE_BRANCH}" == "next" ] ; then export DEP_BRANCH_NAME="next" ; else export DEP_BRANCH_NAME="master" ; fi
+            pip3 install git+https://bitbucket.org/fenics-project/fiat.git@"${DEP_BRANCH_NAME}"
+            pip3 install git+https://bitbucket.org/fenics-project/ufl.git@"${DEP_BRANCH_NAME}"
+            pip3 install git+https://bitbucket.org/fenics-project/dijitso.git@"${DEP_BRANCH_NAME}"
+            pip3 install git+https://bitbucket.org/fenics-project/instant.git@"${DEP_BRANCH_NAME}"
+            pip3 install git+https://bitbucket.org/fenics-project/ffc.git@"${DEP_BRANCH_NAME}"
       - run:
-          name: Install FIAT
-          command: pip3 install git+https://bitbucket.org/fenics-project/fiat.git@master
-      - run:
-          name: Install UFL
-          command: pip3 install git+https://bitbucket.org/fenics-project/ufl.git@master
-      - run:
-          name: Install Dijitso
-          command: pip3 install git+https://bitbucket.org/fenics-project/dijitso.git@master
-      - run:
-          name: Install Instant
-          command: pip3 install git+https://bitbucket.org/fenics-project/instant.git@master
-      - run:
-          name: Install FFC
-          command: pip3 install git+https://bitbucket.org/fenics-project/ffc.git@master
+          name: Flake8 checks on pybind11 Python code
+          command: python3 -m flake8 python/dolfin
       - run:
           name: Configure DOLFIN
-          command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DDOLFIN_ENABLE_TESTING=ON
+          command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Developer -DDOLFIN_ENABLE_TESTING=ON
       - run:
           name: Build DOLFIN and install
           command: cd build && make install -j2

@@ -471,6 +471,24 @@ const std::vector<TYPE>&  ARG_NAME
 }
 %enddef
 
+%define OUT_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(TYPE)
+%typemap (out) std::vector<TYPE>
+{
+  PyObject* l = PyList_New(0);
+
+  const std::vector<TYPE>& v = $1;
+  for (const TYPE& o : v)
+  {
+    PyObject* resultobj = SWIG_NewPointerObj(new TYPE(o), $descriptor(TYPE*), SWIG_POINTER_OWN );
+    PyList_Append(l, resultobj);
+    // FIXME: Py_DECREF here?
+  }
+
+  $result = l;
+}
+
+%enddef
+
 //-----------------------------------------------------------------------------
 // Macro for defining an in typemap for const std::vector<std::vector<TYPE> >&
 // where TYPE is a primitive
@@ -744,7 +762,9 @@ OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(std::size_t, size_t)
 // This typemap handles dolfin::la_index, which can be a 32 or 64 bit integer
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(dolfin::la_index, dolfin_index)
 
-IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(Point)
+IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(dolfin::Point)
+OUT_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(dolfin::Point)
+
 IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(MeshEntity)
 #if (DOLFIN_SIZE_T==4)
 IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, facets,

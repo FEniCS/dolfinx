@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for dP assembly"""
 
 # Copyright (C) 2014 Johan Hake

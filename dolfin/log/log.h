@@ -117,6 +117,9 @@ namespace dolfin
   /// Set log level
   void set_log_level(int level);
 
+  /// Set indentation level
+  void set_indentation_level(std::size_t indentation_level);
+
   /// Set output stream
   void set_output_stream(std::ostream& out);
 

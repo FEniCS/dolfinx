@@ -1,8 +1,6 @@
-#!/usr/bin/env py.test
 import ufl
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
-
 
 @skip_in_parallel
 def test_interior_facet_integral_sides():

@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the DiscreteOperator class"""
 
 # Copyright (C) 2015 Garth N. Wells

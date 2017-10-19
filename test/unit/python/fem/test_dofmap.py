@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the fem interface"""
 
 # Copyright (C) 2009-2014 Garth N. Wells

@@ -60,7 +60,7 @@ if not has_petsc4py():
     exit()
 
 # Import petsc4py and check that HYPRE bindings are available
-from petsc4py import *
+from petsc4py import PETSc
 try:
     getattr(PETSc.PC, 'getHYPREType')
 except AttributeError:

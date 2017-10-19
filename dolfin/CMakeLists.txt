@@ -217,6 +217,16 @@ if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
   target_include_directories(dolfin SYSTEM PUBLIC ${MPI_CXX_INCLUDE_PATH})
 endif()
 
+if (DOLFIN_ENABLE_GEOMETRY_DEBUGGING AND GMP_FOUND AND MPFR_FOUND AND CGAL_FOUND) 
+  message(STATUS "Appending link flags for geometry debugging")
+  target_compile_definitions(dolfin PUBLIC "-DDOLFIN_ENABLE_GEOMETRY_DEBUGGING")
+  target_include_directories(dolfin PRIVATE ${CGAL_INCLUDE_DIRS})
+  target_include_directories(dolfin PRIVATE ${GMP_INCLUDE_DIRS})
+  target_include_directories(dolfin PRIVATE ${MPFR_INCLUDE_DIRS})
+  target_link_libraries(dolfin PRIVATE ${GMP_LIBRARIES})
+  target_link_libraries(dolfin PRIVATE ${MPFR_LIBRARIES})
+endif()
+
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 

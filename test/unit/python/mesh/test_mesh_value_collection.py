@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for MeshValueCollection"""
 
 # Copyright (C) 2011 Johan Hake

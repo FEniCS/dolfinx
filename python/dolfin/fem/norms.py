@@ -122,19 +122,19 @@ def norm(v, norm_type="L2", mesh=None):
 
     elif isinstance(v, ufl.Coefficient):
         if norm_type.lower() == "l2":
-            M = v**2*dx
+            M = v**2 * dx
         elif norm_type.lower() == "h1":
-            M = (v**2 + grad(v)**2)*dx
+            M = (v**2 + grad(v)**2) * dx
         elif norm_type.lower() == "h10":
-            M = grad(v)**2*dx
+            M = grad(v)**2 * dx
         elif norm_type.lower() == "hdiv":
-            M = (v**2 + div(v)**2)*dx
+            M = (v**2 + div(v)**2) * dx
         elif norm_type.lower() == "hdiv0":
-            M = div(v)**2*dx
+            M = div(v)**2 * dx
         elif norm_type.lower() == "hcurl":
-            M = (v**2 + curl(v)**2)*dx
+            M = (v**2 + curl(v)**2) * dx
         elif norm_type.lower() == "hcurl0":
-            M = curl(v)**2*dx
+            M = curl(v)**2 * dx
         # else:
         #     cpp.dolfin_error("norms.py",
         #                      "compute norm",

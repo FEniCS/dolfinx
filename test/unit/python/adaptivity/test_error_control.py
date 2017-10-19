@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for error control"""
 
 # Copyright (C) 2011 Marie E. Rognes

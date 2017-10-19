@@ -20,6 +20,7 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/MultiMeshFunctionSpace.h>
@@ -156,5 +157,51 @@ std::string MultiMeshDofMap::str(bool verbose) const
     << ">"
     << std::endl;
   return s.str();
+}
+//-----------------------------------------------------------------------------
+std::vector<dolfin::la_index>
+MultiMeshDofMap::inactive_dofs(const MultiMesh &multimesh, std::size_t part) const
+{
+  std::shared_ptr<const GenericDofMap> dofmap_part = this->part(part);
+
+  // Get all dofs on covered cells
+  std::vector<unsigned int> covered_cells = multimesh.covered_cells(part);
+
+  std::vector<dolfin::la_index> covered_dofs;
+  covered_dofs.reserve(dofmap_part->max_element_dofs() * covered_cells.size());
+  for (unsigned int cell : covered_cells)
+  {
+    const auto dmap = dofmap_part->cell_dofs(cell);
+    const auto local_dofs = ArrayView<const dolfin::la_index>(dmap.size(), dmap.data());
+    std::copy(local_dofs.begin(), local_dofs.end(), std::back_inserter(covered_dofs));
+  }
+  // Sort and remove duplicates
+  std::sort(covered_dofs.begin(), covered_dofs.end());
+  covered_dofs.erase(std::unique(covered_dofs.begin(), covered_dofs.end()),
+                      covered_dofs.end());
+
+  // Get all dofs on cut cells
+  std::vector<unsigned int> cut_cells = multimesh.cut_cells(part);
+
+  std::vector<dolfin::la_index> cut_cell_dofs;
+  cut_cell_dofs.reserve(dofmap_part->max_element_dofs() * cut_cells.size());
+  for (unsigned int cell : cut_cells)
+  {
+    const auto dmap = dofmap_part->cell_dofs(cell);
+    const auto local_dofs = ArrayView<const dolfin::la_index>(dmap.size(), dmap.data());    
+    std::copy(local_dofs.begin(), local_dofs.end(), std::back_inserter(cut_cell_dofs));
+  }
+  
+  // Sort and remove duplicates
+  std::sort(cut_cell_dofs.begin(), cut_cell_dofs.end());
+  cut_cell_dofs.erase(std::unique(cut_cell_dofs.begin(), cut_cell_dofs.end()),
+                      cut_cell_dofs.end());
+
+  // Remove cut cell dofs from covered dofs
+  std::vector<dolfin::la_index> _inactive_dofs;
+  std::set_difference(covered_dofs.begin(), covered_dofs.end(),
+                      cut_cell_dofs.begin(), cut_cell_dofs.end(),
+                      std::inserter(_inactive_dofs, _inactive_dofs.begin()));
+  return _inactive_dofs;
 }
 //-----------------------------------------------------------------------------

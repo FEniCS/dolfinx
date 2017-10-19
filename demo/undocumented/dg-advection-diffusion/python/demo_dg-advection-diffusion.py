@@ -61,7 +61,7 @@ alpha = Constant(5.0)
 
 # Mesh-related functions
 n = FacetNormal(mesh)
-h = CellSize(mesh)
+h = CellDiameter(mesh)
 h_avg = (h('+') + h('-'))/2
 
 # ( dot(v, n) + |dot(v, n)| )/2.0

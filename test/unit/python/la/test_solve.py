@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the solve interface"""
 
 # Copyright (C) 2011 Garth N. Wells

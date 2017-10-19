@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the FunctionAssigner class"""
 
 # Copyright (C) 2013 Johan Hake

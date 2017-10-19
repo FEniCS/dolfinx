@@ -96,6 +96,15 @@ MultiMeshDirichletBC::MultiMeshDirichletBC(std::shared_ptr<const MultiMeshFuncti
   _bcs.push_back(bc);
 }
 //-----------------------------------------------------------------------------
+MultiMeshDirichletBC::MultiMeshDirichletBC(const MultiMeshDirichletBC& bc)
+{
+  *this = bc;
+
+  // Iterate over boundary conditions and call the copy constructor
+  for (std::size_t part = 0; part < _bcs.size(); part++)
+    _bcs[part] = std::make_shared<DirichletBC>(*_bcs[part]);
+}
+//-----------------------------------------------------------------------------
 MultiMeshDirichletBC::~MultiMeshDirichletBC()
 {
   // Do nothing
@@ -242,6 +251,44 @@ void MultiMeshDirichletBC::apply(GenericMatrix& A,
 
     // Apply the single boundary condition
     _bcs[0]->apply(A, b, x);
+  }
+}
+//-----------------------------------------------------------------------------
+void MultiMeshDirichletBC::zero(GenericMatrix& A) const
+{
+  // Check whether we have a list of boundary conditions, one for each
+  // part, or if we have a single boundary condition for a single
+  // part.
+
+  if (_sub_domain)
+  {
+    // Iterate over boundary conditions
+    for (std::size_t part = 0; part < _bcs.size(); part++)
+    {
+      // Set current part for subdomain wrapper
+      dolfin_assert(_sub_domain);
+      _sub_domain->set_current_part(part);
+
+      // Apply boundary condition for current part
+      _bcs[part]->zero(A);
+    }
+  }
+  else
+  {
+    dolfin_assert(_bcs.size() == 1);
+
+    // Apply the single boundary condition
+    _bcs[0]->zero(A);
+  }
+}
+//-----------------------------------------------------------------------------
+void MultiMeshDirichletBC::homogenize()
+{
+  // Iterate over boundary conditions
+  for (std::size_t part = 0; part < _bcs.size(); part++)
+  {
+    // Homogenize boundary condition
+    _bcs[part]->homogenize();
   }
 }
 //-----------------------------------------------------------------------------

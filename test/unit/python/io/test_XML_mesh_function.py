@@ -1,5 +1,3 @@
-#!/us/bin/env py.test
-
 "Unit tests for XML input/output of MeshFunction (class XMLMeshFunction)"
 
 # Copyright (C) 2011-2014 Garth N. Wells

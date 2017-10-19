@@ -19,10 +19,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-import types
 import numpy as np
 import ufl
 from ufl.classes import ComponentTensor, Sum, Product, Division
+from ufl.utils.indexflattening import shape_to_strides, flatten_multiindex
 import dolfin.cpp as cpp
 import dolfin.la as la
 from dolfin.function.functionspace import FunctionSpace
@@ -33,6 +33,7 @@ from dolfin.function.constant import Constant
 def _assign_error():
     raise RuntimeError("Expected only linear combinations of Functions in the same FunctionSpaces")
 
+
 def _check_mul_and_division(e, linear_comb, scalar_weight=1.0, multi_index=None):
     """
     Utility func for checking division and multiplication of a Function
@@ -41,12 +42,12 @@ def _check_mul_and_division(e, linear_comb, scalar_weight=1.0, multi_index=None)
     from ufl.constantvalue import ScalarValue
     from ufl.classes import ComponentTensor, MultiIndex, Indexed
     from ufl.algebra import Division, Product, Sum
-    #ops = e.ufl_operands
+    # ops = e.ufl_operands
 
     # FIXME: What should be checked!?
     # martinal: This code has never done anything sensible,
     #   but I don't know what it was supposed to do so I can't fix it.
-    #same_multi_index = lambda x, y: (x.ufl_free_indices == y.ufl_free_indices \
+    # same_multi_index = lambda x, y: (x.ufl_free_indices == y.ufl_free_indices \
     #                        and x.ufl_index_dimensions == y.ufl_index_dimensions)
 
     assert isinstance(scalar_weight, float)
@@ -55,9 +56,9 @@ def _check_mul_and_division(e, linear_comb, scalar_weight=1.0, multi_index=None)
     if isinstance(e, Product):
         for i, op in enumerate(e.ufl_operands):
             if isinstance(op, ScalarValue) or \
-                   (isinstance(op, Constant) and op.value_size()==1):
+               (isinstance(op, Constant) and op.value_size() == 1):
                 scalar = op
-                expr = e.ufl_operands[1-i]
+                expr = e.ufl_operands[1 - i]
                 break
         else:
             _assign_error()
@@ -65,8 +66,8 @@ def _check_mul_and_division(e, linear_comb, scalar_weight=1.0, multi_index=None)
         scalar_weight *= float(scalar)
     elif isinstance(e, Division):
         expr, scalar = e.ufl_operands
-        if not (isinstance(scalar, ScalarValue) or \
-                isinstance(scalar, Constant) and scalar.value_rank()==1):
+        if not (isinstance(scalar, ScalarValue) or
+                isinstance(scalar, Constant) and scalar.value_rank() == 1):
             _assign_error()
         scalar_weight /= float(scalar)
     else:
@@ -82,7 +83,7 @@ def _check_mul_and_division(e, linear_comb, scalar_weight=1.0, multi_index=None)
         # Unpack Indexed and check equality with passed multi_index
         expr, multi_index2 = expr.ufl_operands
         assert isinstance(multi_index2, MultiIndex)
-        #if not same_multi_index(multi_index, multi_index2):
+        # if not same_multi_index(multi_index, multi_index2):
         #    _assign_error()
 
     if isinstance(expr, Function):
@@ -92,7 +93,7 @@ def _check_mul_and_division(e, linear_comb, scalar_weight=1.0, multi_index=None)
         # If componentTensor we need to unpack the MultiIndices
         if isinstance(expr, ComponentTensor):
             expr, multi_index = expr.ufl_operands
-            #if not same_multi_index(multi_index, multi_index2):
+            # if not same_multi_index(multi_index, multi_index2):
             #    _error()
 
         if isinstance(expr, (Product, Division)):
@@ -136,7 +137,7 @@ def _check_and_extract_functions(e, linear_comb=None, scalar_weight=1.0,
     # If not Product or Division we expect Sum
     elif isinstance(e, Sum):
         for op in e.ufl_operands:
-            linear_comb = _check_and_extract_functions(op, linear_comb, \
+            linear_comb = _check_and_extract_functions(op, linear_comb,
                                                        scalar_weight, multi_index)
 
     else:
@@ -195,7 +196,7 @@ class Function(ufl.Coefficient):
                     raise RuntimeError("No subfunctions to extract")
                 if not i < num_sub_spaces:
                     raise RuntimeError("Can only extract subfunctions "
-                                        "with i = 0..%d"% num_sub_spaces)
+                                       "with i = 0..%d" % num_sub_spaces)
                 self._cpp_object = cpp.function.Function(other._cpp_object, i)
                 ufl.Coefficient.__init__(self, self.function_space().ufl_function_space(),
                                          count=self._cpp_object.id())
@@ -251,14 +252,14 @@ class Function(ufl.Coefficient):
         """Function used by ufl to evaluate the Expression"""
         # FIXME: same as dolfin.expression.Expression version. Find
         # way to re-use.
-        assert derivatives == () # TODO: Handle derivatives
+        assert derivatives == ()   # TODO: Handle derivatives
 
         if component:
             shape = self.ufl_shape
             assert len(shape) == len(component)
-            value_size = product(shape)
+            value_size = ufl.product(shape)
             index = flatten_multiindex(component, shape_to_strides(shape))
-            values = numpy.zeros(value_size)
+            values = np.zeros(value_size)
             # FIXME: use a function with a return value
             self(*x, values=values)
             return values[index]
@@ -274,7 +275,7 @@ class Function(ufl.Coefficient):
         # Deprecate as many options as possible, and maybe share with
         # dolfin.expression.Expresssion.
 
-        if len(args)==0:
+        if len(args) == 0:
             raise TypeError("expected at least 1 argument")
 
         # Test for ufl restriction
@@ -295,9 +296,9 @@ class Function(ufl.Coefficient):
             if not isinstance(values, np.ndarray):
                 raise TypeError("expected a NumPy array for 'values'")
             if len(values) != value_size or \
-                   not np.issubdtype(values.dtype, 'd'):
-                raise TypeError("expected a double NumPy array of length"\
-                      " %d for return values."%value_size)
+               not np.issubdtype(values.dtype, 'd'):
+                raise TypeError("expected a double NumPy array of length"
+                                " %d for return values." % value_size)
             values_provided = True
         else:
             values_provided = False
@@ -320,15 +321,15 @@ class Function(ufl.Coefficient):
         # Convert it to an 1D numpy array
         try:
             x = np.fromiter(x, 'd')
-        except (TypeError, ValueError, AssertionError) as e:
+        except (TypeError, ValueError, AssertionError):
             raise TypeError("expected scalar arguments for the coordinates")
 
         if len(x) == 0:
             raise TypeError("coordinate argument too short")
 
         if len(x) != dim:
-            raise TypeError("expected the geometry argument to be of "\
-                  "length %d"%dim)
+            raise TypeError("expected the geometry argument to be of "
+                            "length %d" % dim)
 
         # The actual evaluation
         self._cpp_object.eval(values, x)
@@ -339,7 +340,7 @@ class Function(ufl.Coefficient):
 
         return values
 
-    #def _assign(self, u):
+    # def _assign(self, u):
     #    if isinstance(u, cpp.function.FunctionAXPY):
     #        self._cpp_object._assign(u)
 
@@ -361,8 +362,11 @@ class Function(ufl.Coefficient):
         else:
             self._cpp_object.interpolate(u)
 
-    def compute_vertex_values(self, mesh):
-        return self._cpp_object.compute_vertex_values(mesh)
+    def compute_vertex_values(self, mesh=None):
+        if mesh is not None:
+            return self._cpp_object.compute_vertex_values(mesh)
+        else:
+            return self._cpp_object.compute_vertex_values()
 
     def set_allow_extrapolation(self, value):
         self._cpp_object.set_allow_extrapolation(value)
@@ -492,7 +496,7 @@ class Function(ufl.Coefficient):
         if num_sub_spaces == 1:
             raise RuntimeError("No subfunctions to extract")
         if not i < num_sub_spaces:
-            raise RuntimeError("Can only extract subfunctions with i = 0..%d" \
+            raise RuntimeError("Can only extract subfunctions with i = 0..%d"
                                % num_sub_spaces)
 
         # Create and instantiate the Function
@@ -502,7 +506,6 @@ class Function(ufl.Coefficient):
                             name='%s-%d' % (str(self), i))
         else:
             return Function(self, i, name='%s-%d' % (str(self), i))
-
 
     def split(self, deepcopy=False):
         """Extract any sub functions.
