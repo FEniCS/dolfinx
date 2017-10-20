@@ -27,6 +27,7 @@ def jit_generate(class_data, module_name, signature, parameters):
 #endif
 
 #include <dolfin/function/Expression.h>
+#include <dolfin/math/basic.h>
 #include <Eigen/Dense>
 
 {math_header}
