@@ -19,6 +19,7 @@ set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/io/XMLMeshValueCollection.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/la/LinearOperator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/la/Vector.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/parameter/Parameters.cpp
   )
 
 add_executable(unittests_cpp ${TEST_SOURCES})

@@ -21,12 +21,17 @@
 // Unit tests for the parameter library
 
 #include <dolfin.h>
-#include <gtest/gtest.h>
+#include <catch/catch.hpp>
 
 using namespace dolfin;
 
-TEST(InputOutput, test_simple)
+TEST_CASE("parameters io", "[test_parameter_io]" )
 {
+  SECTION("flat parameters" )
+  {
+    if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+      return;
+
     // Create some parameters
     Parameters p0("test");
     p0.add("filename", "foo.txt");
@@ -50,14 +55,17 @@ TEST(InputOutput, test_simple)
     bool monitor_convergence(p1["monitor_convergence"]);
 
     // Check values
-    ASSERT_EQ(filename, "foo.txt");
-    ASSERT_EQ(maxiter, (std::size_t) 100);
-    ASSERT_DOUBLE_EQ(tolerance, 0.001);
-    ASSERT_TRUE(monitor_convergence);
-}
+    CHECK(filename == "foo.txt");
+    CHECK(maxiter ==  (std::size_t) 100);
+    CHECK(tolerance == Approx(0.001));
+    CHECK(monitor_convergence);
+  }
 
-TEST(InputOutput, test_nested)
-{
+  SECTION("nested parameters" )
+  {
+    if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+      return;
+
     // Create some nested parameters
     Parameters p0("test");
     Parameters p00("sub0");
@@ -88,25 +96,10 @@ TEST(InputOutput, test_nested)
     bool monitor_convergence(p1("sub0")["monitor_convergence"]);
 
     // Check values
-    ASSERT_EQ(foo, "bar");
-    ASSERT_EQ(filename, "foo.txt");
-    ASSERT_EQ(maxiter, (std::size_t) 100);
-    ASSERT_DOUBLE_EQ(tolerance, 0.001);
-    ASSERT_TRUE(monitor_convergence);
-}
-
-// Test all
-int Parameter_main(int argc, char **argv) {
-
-    // Not working in parallel, even if only process 0 writes and
-    // others wait for a barrier. Skipping this in parallel for now.
-      if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
-      {
-        info("Skipping unit test in parallel.");
-        info("OK");
-        return 0;
-      }
-
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+    CHECK(foo == "bar");
+    CHECK(filename == "foo.txt");
+    CHECK(maxiter == (std::size_t) 100);
+    CHECK(tolerance == Approx(0.001));
+    CHECK(monitor_convergence);
+  }
 }
