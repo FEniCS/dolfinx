@@ -18,7 +18,7 @@
 // Unit tests for the mesh library
 
 #include <dolfin.h>
-#include <catch/catch.hpp>
+#include <catch.hpp>
 
 using namespace dolfin;
 

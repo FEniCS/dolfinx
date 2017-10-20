@@ -15,13 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2011-03-28
-// Last changed: 2011-03-31
-//
 // Unit tests for the parameter library
 
 #include <dolfin.h>
-#include <catch/catch.hpp>
+#include <catch.hpp>
 
 using namespace dolfin;
 

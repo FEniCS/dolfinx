@@ -15,13 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2008-09-30
-// Last changed: 2012-08-21
-//
 // Unit tests Selected methods for GenericVector
 
 #include <dolfin.h>
-#include <catch/catch.hpp>
+#include <catch.hpp>
 
 using namespace dolfin;
 

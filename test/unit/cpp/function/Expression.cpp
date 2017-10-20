@@ -15,18 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2008.
-// Modified by Johannes Ring, 2009.
-// Modified by Benjamin Kehlet 2012
-//
-// First added:  2007-05-24
-// Last changed: 2014-08-12
-//
 // Unit tests for the function library
 
 #include <dolfin.h>
 #include "Projection.h"
-#include <catch/catch.hpp>
+#include <catch.hpp>
 
 using namespace dolfin;
 
@@ -64,7 +57,7 @@ namespace
 
     // Test evaluation of a user-defined function
     f0.eval(u0, x);
-    CHECK(u0[0] == Approx(sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])).margin(DOLFIN_EPS));
+    CHECK(u0[0] == Approx(sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])));
 
     // Test for single core only
     if (dolfin::MPI::size(mesh->mpi_comm()) == 1)
@@ -80,7 +73,7 @@ namespace
       const double tol = 1.0e-6;
       f1->eval(u0, x);
       g.eval(u1, x);
-      CHECK(u0[0] == Approx(u1[0]).margin(tol));
+      CHECK(std::abs(u0[0] - u1[0]) < tol);
     }
   }
 }

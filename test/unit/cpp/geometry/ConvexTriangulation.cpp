@@ -20,7 +20,7 @@
 #include <dolfin/geometry/ConvexTriangulation.h>
 #include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/geometry/predicates.h>
-#include <catch/catch.hpp>
+#include <catch.hpp>
 
 using namespace dolfin;
 
@@ -162,7 +162,7 @@ TEST_CASE("Convex triangulation test")
     std::size_t expected_size = 1;
 
     CHECK(tri.size() == expected_size);
-    CHECK(triangulation_volume(tri) == Approx(1.0/6.0).margin(DOLFIN_EPS));
+    CHECK(triangulation_volume(tri) == Approx(1.0/6.0));
   }
 
   SECTION("test trivial case 2")
@@ -181,7 +181,7 @@ TEST_CASE("Convex triangulation test")
     CHECK(pure_triangular(tri, 3));
     CHECK_FALSE(has_degenerate(tri, 3));
     CHECK_FALSE(triangulation_selfintersects(tri, 3));
-    CHECK(triangulation_volume(tri) == Approx(1.0).margin(DOLFIN_EPS));
+    CHECK(triangulation_volume(tri) == Approx(1.0));
   }
 
   SECTION("test coplanar points")
@@ -202,7 +202,7 @@ TEST_CASE("Convex triangulation test")
     CHECK(pure_triangular(tri, 3));
     CHECK_FALSE(has_degenerate(tri, 3));
     CHECK_FALSE(triangulation_selfintersects(tri, 3));
-    CHECK(triangulation_volume(tri) == Approx(1.0).margin(DOLFIN_EPS));
+    CHECK(triangulation_volume(tri) == Approx(1.0));
   }
 
   SECTION("test coplanar colinear points]")
@@ -223,7 +223,7 @@ TEST_CASE("Convex triangulation test")
     CHECK(pure_triangular(tri, 3));
     CHECK_FALSE(has_degenerate(tri, 3));
     CHECK_FALSE(triangulation_selfintersects(tri, 3));
-    CHECK(triangulation_volume(tri) == Approx(1.0).margin(DOLFIN_EPS));
+    CHECK(triangulation_volume(tri) == Approx(1.0));
   }
 
   SECTION("test failing case")

@@ -21,7 +21,7 @@
 // Unit tests for SubSystemsManager
 
 #include <dolfin.h>
-#include <catch/catch.hpp>
+#include <catch.hpp>
 
 namespace
 {

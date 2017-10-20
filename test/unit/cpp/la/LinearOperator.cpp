@@ -15,17 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Johannes Ring 2012
-//
-// First added:  2012-08-21
-// Last changed: 2012-09-19
-//
 // Unit tests for matrix-free linear solvers (LinearOperator)
 
 #include <dolfin.h>
 #include "forms/ReactionDiffusion.h"
 #include "forms/ReactionDiffusionAction.h"
-#include <catch/catch.hpp>
+#include <catch.hpp>
 
 using namespace dolfin;
 
@@ -113,7 +108,7 @@ TEST_CASE("Testing LinearOperator", "[linear_operator]")
       const double norm_action = norm(x, "l2");
 
       // Check results
-      CHECK(norm_ref == Approx(norm_action).margin(1e-10));
+      CHECK(norm_ref == Approx(norm_action));
     }
   }
 }
