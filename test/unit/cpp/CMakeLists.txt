@@ -20,6 +20,11 @@ set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/io/XMLMeshValueCollection.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/la/LinearOperator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/la/Vector.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/mesh/Mesh.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/mesh/MeshColoring.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/mesh/MeshFunction.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/mesh/MeshValueCollection.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/mesh/MultiMesh.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/parameter/Parameters.cpp
   )
 
