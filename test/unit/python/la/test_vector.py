@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the Vector interface"""
 
 # Copyright (C) 2011-2014 Garth N. Wells
@@ -136,10 +134,7 @@ class TestVectorForAnyBackend:
         from numpy import empty
         n = 301
         v0 = Vector(mpi_comm_world(), n)
-        if has_pybind11():
-            data = v0.array()
-        else:
-            data = v0.get_local()
+        data = v0.get_local()
 
     def test_set_local(self, any_backend):
         from numpy import zeros
@@ -389,27 +384,39 @@ class TestVectorForAnyBackend:
         # Test for ordinary Vector
         v = Vector(mpi_comm_world(), 301)
         v = as_backend_type(v)
-        array = v.array()
+
         if has_pybind11():
-            assert array.flags.owndata == False
+            rw_array = v.array_view()
+            assert rw_array.flags.owndata == False
             with pytest.raises(Exception):
-                array.resize([10])
+                rw_array.resize([10])
+
+            # Check that the array is a writable view
+            rw_array[0] = 42
+            ro_array = v.get_local()
+            assert ro_array[0] == 42
+
+            # Test for as_backend_type Vector
+            v = as_backend_type(v)
+            rw_array2 = v.array_view()
+            assert (rw_array2 == ro_array).all()
+
         else:
+            ro_array = v.get_local()
             data = v.data()
-            assert (data == array).all()
+            assert (data == ro_array).all()
 
-
-            # Test none writeable of a shallow copy of the data
+            # Test that a shallow copy of the data is not writable
             data = v.data(False)
             def write_data(data):
                 data[0] = 1
             with pytest.raises(Exception):
                 write_data(data)
 
-            # Test for as_backend_typeed Vector
+            # Test for as_backend_type Vector
             v = as_backend_type(v)
             data = v.data()
-            assert (data==array).all()
+            assert (data == ro_array).all()
 
 
     # xfail on TypeError

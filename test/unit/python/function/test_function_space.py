@@ -1,6 +1,4 @@
-#!/usr/bin/env py.test
-
-"""Unit tests for the FunctionSpace class"""
+b"""Unit tests for the FunctionSpace class"""
 
 # Copyright (C) 2011 Johan Hake
 #
@@ -27,20 +25,23 @@
 import pytest
 from dolfin import *
 from ufl.log import UFLException
-
 from dolfin_utils.test import fixture
+
 
 @fixture
 def mesh():
     return UnitCubeMesh(8, 8, 8)
 
+
 @fixture
 def V(mesh):
     return FunctionSpace(mesh, 'CG', 1)
 
+
 @fixture
 def W(mesh):
     return VectorFunctionSpace(mesh, 'CG', 1)
+
 
 @fixture
 def Q(mesh):
@@ -48,17 +49,21 @@ def Q(mesh):
     V = FiniteElement('CG', mesh.ufl_cell(), 1)
     return FunctionSpace(mesh, W*V)
 
+
 @fixture
 def f(V):
     return Function(V)
+
 
 @fixture
 def V2(f):
     return f.function_space()
 
+
 @fixture
 def g(W):
     return Function(W)
+
 
 @fixture
 def W2(g):
@@ -81,6 +86,7 @@ def test_python_interface(V, V2, W, W2, Q):
     assert W.id() == W2.id()
     assert V.id() == V2.id()
 
+
 def test_component(V, W, Q):
     assert not W.component()
     assert not V.component()
@@ -89,11 +95,13 @@ def test_component(V, W, Q):
     assert Q.sub(0).component()[0] == 0
     assert Q.sub(1).component()[0] == 1
 
+
 def test_equality(V, V2, W, W2):
     assert V == V
     assert V == V2
     assert W == W
     assert W == W2
+
 
 def test_inclusion(V, Q):
     assert V.contains(V)
@@ -143,9 +151,11 @@ def test_boundary(mesh):
     assert Vb.dim() == 768
     assert Wb.dim() == 1158
 
+
 def test_not_equal(W, V, W2, V2):
     assert W != V
     assert W2 != V2
+
 
 def test_sub_equality(W, Q):
     assert W.sub(0) == W.sub(0)
@@ -154,11 +164,16 @@ def test_sub_equality(W, Q):
     assert W.sub(1) == W.extract_sub_space([1])
     assert Q.sub(0) == Q.extract_sub_space([0])
 
+
 def test_in_operator(f, g, V, V2, W, W2):
     assert f in V
     assert f in V2
     assert g in W
     assert g in W2
+    if has_pybind11():
+        with pytest.raises(RuntimeError):
+            mesh() in V
+
 
 def test_collapse(W, V):
     Vs = W.sub(2)
@@ -173,9 +188,12 @@ def test_collapse(W, V):
     f1 = Function(Vc)
     assert len(f0.vector()) == len(f1.vector())
 
+
 def test_argument_equality(mesh, V, V2, W, W2):
     """Placed this test here because it's mainly about detecting differing
-function spaces."""
+    function spaces.
+
+    """
     mesh2 = UnitCubeMesh(8, 8, 8)
     V3 = FunctionSpace(mesh2, 'CG', 1)
     W3 = VectorFunctionSpace(mesh2, 'CG', 1)

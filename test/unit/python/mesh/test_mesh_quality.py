@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 "Unit tests for the MeshQuality class"
 
 # Copyright (C) 2013 Garth N. Wells

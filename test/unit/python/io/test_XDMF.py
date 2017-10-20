@@ -18,7 +18,7 @@
 import pytest
 import os
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel, fixture, tempdir
+from dolfin_utils.test import skip_in_parallel, fixture, tempdir, skip_if_not_pybind11
 
 
 # Supported XDMF file encoding
@@ -184,7 +184,7 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
         file.read_checkpoint(u_in, "u_out", 0)
 
     result = u_in.vector() - u_out.vector()
-    assert all([near(x, 0.0) for x in result.array()])
+    assert all([near(x, 0.0) for x in result.get_local()])
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -221,7 +221,7 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
         file.read_checkpoint(u_in, "u_out", 0)
 
     result = u_in.vector() - u_out.vector()
-    assert all([near(x, 0.0) for x in result.array()])
+    assert all([near(x, 0.0) for x in result.get_local()])
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -250,7 +250,7 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
 
     for i, p in enumerate(times):
         result = u_in[i].vector() - u_out[i].vector()
-        assert all([near(x, 0.0) for x in result.array()])
+        assert all([near(x, 0.0) for x in result.get_local()])
 
     # test reading last
     with XDMFFile(mesh.mpi_comm(), filename) as file:
@@ -258,7 +258,7 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
         file.read_checkpoint(u_in_last, "u_out", -1)
 
     result = u_out[-1].vector() - u_in_last.vector()
-    assert all([near(x, 0.0) for x in result.array()])
+    assert all([near(x, 0.0) for x in result.get_local()])
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -559,7 +559,7 @@ def test_save_3D_vertex_function(tempdir, encoding, data_type):
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mf, encoding)
 
-
+@skip_if_not_pybind11
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_points_2D(tempdir, encoding):
     if invalid_config(encoding):
@@ -580,6 +580,7 @@ def test_save_points_2D(tempdir, encoding):
         file.write(points, vals, encoding)
 
 
+@skip_if_not_pybind11
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_points_3D(tempdir, encoding):
     if invalid_config(encoding):

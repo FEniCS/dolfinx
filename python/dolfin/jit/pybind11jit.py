@@ -6,11 +6,15 @@ import pkgconfig
 import re
 
 import dolfin.cpp as cpp
+from dolfin.cpp.log import log, LogLevel
 from . import get_pybind_include
-from dolfin.function.expression import BaseExpression, _select_element
+
+from dolfin.jit.jit import dijitso_jit
 
 
 def jit_generate(cpp_code, module_name, signature, parameters):
+
+    log(LogLevel.TRACE, "Calling dijitso just-in-time (JIT) compiler for pybind11 code.")
 
     # Split code on reserved word "SIGNATURE" which will be replaced by the module signature
     # This must occur only once in the code
@@ -26,6 +30,7 @@ def jit_generate(cpp_code, module_name, signature, parameters):
     depends = []
 
     return code_h, code_c, depends
+
 
 def compile_cpp_code(cpp_code):
     """Compile a user C(++) string to a Python object with pybind11.  Note
@@ -48,7 +53,7 @@ def compile_cpp_code(cpp_code):
     params['cache']['lib_basename'] = ""
     params['cache']['lib_loader'] = "import"
     params['build']['include_dirs'] = d["include_dirs"] + get_pybind_include() + [sysconfig.get_config_var("INCLUDEDIR") + "/" + pyversion]
-    params['build']['libs'] = d["libraries"] + [ pyversion ]
+    params['build']['libs'] = d["libraries"] + [pyversion]
     params['build']['lib_dirs'] = d["library_dirs"] + [sysconfig.get_config_var("LIBDIR")]
     params['build']['cxxflags'] += ('-fno-lto',)
 
@@ -56,9 +61,9 @@ def compile_cpp_code(cpp_code):
     dmacros = ()
     for dm in d['define_macros']:
         if len(dm[1]) == 0:
-            dmacros += ('-D'+dm[0],)
+            dmacros += ('-D' + dm[0],)
         else:
-            dmacros += ('-D'+dm[0]+'='+dm[1],)
+            dmacros += ('-D' + dm[0] + '=' + dm[1],)
 
     params['build']['cxxflags'] += dmacros
 
@@ -72,7 +77,7 @@ def compile_cpp_code(cpp_code):
     module_hash = hashlib.md5(cpp_code.encode('utf-8')).hexdigest()
     module_name = "dolfin_cpp_module_" + module_hash
 
-    module, signature = dijitso.jit(cpp_code, module_name, params,
+    module, signature = dijitso_jit(cpp_code, module_name, params,
                                     generate=jit_generate)
 
     return module

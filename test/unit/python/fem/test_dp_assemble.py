@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for dP assembly"""
 
 # Copyright (C) 2014 Johan Hake
@@ -94,16 +92,16 @@ def test_vector_assemble(dim):
 
     (u, uu), (v, vv), (U, UU), dPP, bc = _create_dp_problem(dim)
 
-    # In parallel vec.array() will return only local to process values
+    # In parallel vec.get_local() will return only local to process values
     vec = assemble(u*v*dPP)
-    assert sum(np.absolute(vec.array() - u.vector().array())) < eps
+    assert sum(np.absolute(vec.get_local() - u.vector().get_local())) < eps
 
     vec = assemble(inner(uu, vv)*dP)
-    assert sum(np.absolute(vec.array() - uu.vector().array())) < eps
+    assert sum(np.absolute(vec.get_local() - uu.vector().get_local())) < eps
 
     vec = assemble(inner(uu, vv)*dPP(1))
     bc.apply(uu.vector())
-    assert sum(np.absolute(vec.array() - uu.vector().array())) < eps
+    assert sum(np.absolute(vec.get_local() - uu.vector().get_local())) < eps
 
 
 def test_matrix_assemble(dim):
@@ -119,7 +117,7 @@ def test_matrix_assemble(dim):
     loc_range = u.vector().local_range()
     vec_mat = np.zeros_like(mat.array())
     vec_mat[range(loc_range[1] - loc_range[0]),
-            range(loc_range[0], loc_range[1])] = u.vector().array()
+            range(loc_range[0], loc_range[1])] = u.vector().get_local()
 
     assert np.sum(np.absolute(mat.array() - vec_mat)) < eps
 
@@ -131,6 +129,6 @@ def test_matrix_assemble(dim):
     loc_range = uu.vector().local_range()
     vec_mat = np.zeros_like(mat.array())
     vec_mat[range(loc_range[1] - loc_range[0]),
-            range(loc_range[0], loc_range[1])] = uu.vector().array()
+            range(loc_range[0], loc_range[1])] = uu.vector().get_local()
 
     assert np.sum(np.absolute(mat.array() - vec_mat)) < eps

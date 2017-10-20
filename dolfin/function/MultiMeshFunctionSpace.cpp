@@ -26,6 +26,9 @@
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/SimplexQuadrature.h>
 #include <dolfin/fem/MultiMeshDofMap.h>
+#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/GenericVector.h>
+
 #include "FunctionSpace.h"
 #include "MultiMeshFunctionSpace.h"
 
@@ -36,7 +39,13 @@ MultiMeshFunctionSpace::MultiMeshFunctionSpace(std::shared_ptr<const MultiMesh> 
   : _multimesh(multimesh),
     _dofmap(new MultiMeshDofMap())
 {
-  // Do nothing
+  // Check that multimesh has been built
+  if (!multimesh->is_built())
+  {
+    dolfin_error("MultiMeshFunctionSpace.cpp",
+		 "create multimesh function space",
+		 "Multimesh has not been built; did you forget to call multimesh.build()?");
+  }
 }
 //-----------------------------------------------------------------------------
 MultiMeshFunctionSpace::~MultiMeshFunctionSpace()
@@ -157,3 +166,25 @@ void MultiMeshFunctionSpace::_build_views()
   }
 }
 //-----------------------------------------------------------------------------
+void MultiMeshFunctionSpace::lock_inactive_dofs(GenericMatrix &A, GenericVector &b) const
+{
+  // Iterate over parts
+  for (std::size_t part = 0; part < num_parts(); part++)
+  {
+    // Get inactive dofs
+    std::vector<dolfin::la_index> inactive_dofs_on_part =
+      dofmap()->inactive_dofs(*multimesh(), part);
+
+    // Zero rows of A and put 1 on the diagonal
+    A.ident(inactive_dofs_on_part.size(), &inactive_dofs_on_part[0]);
+
+    // Zero entries in b
+    double zero = 0;
+    for (auto dof : inactive_dofs_on_part)
+    {
+      b.set(&zero, 1, &dof);
+    }
+    //std::vector<const double> zeroes(inactive_dofs_on_part.size());
+    //b.set(&zeroes[0], inactive_dofs_on_part.size(), &inactive_dofs_on_part[0]);
+  }
+}

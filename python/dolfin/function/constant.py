@@ -87,6 +87,8 @@ class Constant(ufl.Coefficient):
         self.rename(name, "a Constant")
 
     def assign(self, x):
+        if isinstance(x, Constant):
+            x = x._cpp_object
         return self._cpp_object.assign(x)
 
     def cell(self):

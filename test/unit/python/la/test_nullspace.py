@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 "Unit tests for nullspace test"
 
 # Copyright (C) 2014 Garth N. Wells

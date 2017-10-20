@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit test for HarmonicSmoothing and ALE"""
 
 # Copyright (C) 2013 Jan Blechta

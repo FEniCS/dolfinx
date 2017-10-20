@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the JIT compiler"""
 
 # Copyright (C) 2011 Anders Logg
@@ -21,6 +19,7 @@
 
 import pytest
 import platform
+import dolfin
 from dolfin import *
 from dolfin_utils.test import (skip_if_not_PETSc, skip_if_not_SLEPc,
                                skip_if_not_MPI, skip_in_serial,
@@ -51,21 +50,62 @@ def test_nasty_jit_caching_bug():
 @skip_if_pybind11
 @skip_if_not_MPI
 def test_mpi_swig():
-    from dolfin import compile_extension_module
-
     create_transfer_matrix_code = r'''
     namespace dolfin
     {
         void find_exterior_points(MPI_Comm mpi_comm) {}
     }'''
-    create_transfer_matrix =  compile_extension_module(code=create_transfer_matrix_code)
+    compile_extension_module(code=create_transfer_matrix_code)
+
+
+@skip_if_not_pybind11
+def test_mpi_pybind11():
+    """
+    Test MPICommWrapper <-> mpi4py.MPI.Comm conversion for JIT-ed code
+    """
+    cpp_code = """
+    #include <pybind11/pybind11.h>
+    #include <dolfin_wrappers/MPICommWrapper.h>
+    namespace dolfin
+    {
+      dolfin_wrappers::MPICommWrapper
+      test_comm_passing(const dolfin_wrappers::MPICommWrapper comm)
+      {
+        MPI_Comm c = comm.get();
+        return dolfin_wrappers::MPICommWrapper(c);
+      }
+    }
+    PYBIND11_MODULE(SIGNATURE, m)
+    {
+        m.def("test_comm_passing", &dolfin::test_comm_passing);
+    }
+    """
+
+    # Import MPI_COMM_WORLD
+    if dolfin.has_mpi4py():
+        from mpi4py import MPI
+        w1 = MPI.COMM_WORLD
+    else:
+        w1 = dolfin.MPI.comm_world
+
+    # Compile the JIT module
+    return pytest.xfail('Include path for dolfin_wrappers/* not set up to '
+                        'work in the JIT at the moment')
+    mod = dolfin.compile_cpp_code(cpp_code)
+
+    # Pass a comm into C++ and get a new wrapper of the same comm back
+    w2 = mod.test_comm_passing(w1)
+
+    if dolfin.has_mpi4py():
+        assert isinstance(w2, MPI.Comm)
+    else:
+        assert isinstance(w2, dolfin.cpp.MPICommWrapper)
+        assert w1.underlying_comm() == w2.underlying_comm()
 
 
 @skip_if_pybind11
 @skip_if_not_PETSc
 def test_pesc_swig():
-    from dolfin import compile_extension_module
-
     create_matrix_code = r'''
     namespace dolfin
     {
@@ -76,14 +116,12 @@ def test_pesc_swig():
         }
     }
     '''
-    create_matrix =  compile_extension_module(code=create_matrix_code)
+    compile_extension_module(code=create_matrix_code)
 
 
 @skip_if_pybind11
 @skip_if_not_SLEPc
 def test_slepc_swig():
-    from dolfin import compile_extension_module
-
     create_eps_code = r'''
     #include <slepc.h>
     namespace dolfin
@@ -91,55 +129,89 @@ def test_slepc_swig():
         std::shared_ptr<EPS> create_matrix(MPI_Comm comm) {
             EPS eps;
             EPSCreate(comm, &eps);
-	    std::shared_ptr<EPS> ptr = std::make_shared<EPS>(eps);
+            std::shared_ptr<EPS> ptr = std::make_shared<EPS>(eps);
             return ptr;
         }
     }
     '''
-    create_matrix =  compile_extension_module(code=create_eps_code)
+    compile_extension_module(code=create_eps_code)
 
 
-@skip_if_pybind11
 def test_pass_array_int():
     import numpy
-    code = """
-    int test_int_array(const Array<int>& int_arr)
-    {
-        int ret = 0;
-        for (int i = 0; i < int_arr.size(); i++)
+
+    if has_pybind11():
+        code = """
+        #include <Eigen/Core>
+        #include <pybind11/pybind11.h>
+        #include <pybind11/eigen.h>
+        using IntVecIn = Eigen::Ref<const Eigen::VectorXi>;
+        int test_int_array(const IntVecIn arr)
         {
-            ret += int_arr[i];
+            return arr.sum();
         }
-        return ret;
-    }
-    """
-    module = compile_extension_module(code=code,
-                                      source_directory='.',
-                                      sources=[],
-                                      include_dirs=["."])
+        PYBIND11_MODULE(SIGNATURE, m)
+        {
+            m.def("test_int_array", &test_int_array);
+        }
+        """
+        module = compile_cpp_code(code)
+    else:
+        code = """
+        int test_int_array(const Array<int>& int_arr)
+        {
+            int ret = 0;
+            for (int i = 0; i < int_arr.size(); i++)
+            {
+                ret += int_arr[i];
+            }
+            return ret;
+        }
+        """
+        module = compile_extension_module(code=code,
+                                          source_directory='.',
+                                          sources=[],
+                                          include_dirs=["."])
     arr = numpy.array([1, 2, 4, 8], dtype=numpy.intc)
     ans = module.test_int_array(arr)
     assert ans == arr.sum() == 15
 
 
-@skip_if_pybind11
 def test_pass_array_double():
     import numpy
-    code = """
-    double test_double_array(const Array<double>& arr)
-    {
-        double ret = 0;
-        for (int i = 0; i < arr.size(); i++)
+
+    if has_pybind11():
+        code = """
+        #include <Eigen/Core>
+        #include <pybind11/pybind11.h>
+        #include <pybind11/eigen.h>
+        using DoubleVecIn = Eigen::Ref<const Eigen::VectorXd>;
+        int test_double_array(const DoubleVecIn arr)
         {
-            ret += arr[i];
+            return arr.sum();
         }
-        return ret;
-    }
-    """
-    module = compile_extension_module(code=code,
-                                      source_directory='.',
-                                      sources=[],
-                                      include_dirs=["."])
+        PYBIND11_MODULE(SIGNATURE, m)
+        {
+            m.def("test_double_array", &test_double_array);
+        }
+        """
+        module = compile_cpp_code(code)
+    else:
+        code = """
+        double test_double_array(const Array<double>& arr)
+        {
+            double ret = 0;
+            for (int i = 0; i < arr.size(); i++)
+            {
+                ret += arr[i];
+            }
+            return ret;
+        }
+        """
+        module = compile_extension_module(code=code,
+                                          source_directory='.',
+                                          sources=[],
+                                          include_dirs=["."])
     arr = numpy.array([1, 2, 4, 8], dtype=float)
     ans = module.test_double_array(arr)
     assert abs(arr.sum() - 15) < 1e-15
@@ -211,12 +283,12 @@ def test_compile_extension_module_pybind11():
     ext_module = compile_cpp_code(code)
 
     vec = PETScVector(mpi_comm_world(), 10)
-    np_vec = vec.array()
+    np_vec = vec.get_local()
     np_vec[:] = arange(len(np_vec))
     vec.set_local(np_vec)
     ext_module.PETSc_exp(vec)
     np_vec[:] = exp(np_vec)
-    assert (np_vec == vec.array()).all()
+    assert (np_vec == vec.get_local()).all()
 
 
 @skip_if_pybind11
@@ -228,12 +300,14 @@ def test_compile_extension_module_kwargs():
     assert not m2.__file__ == m0.__file__
 
 
+@skip_if_pybind11
 @skip_if_not_petsc4py
 @skip_in_serial
 def test_mpi_dependent_jiting():
     # FIXME: Not a proper unit test...
-    from dolfin import Expression, UnitSquareMesh, Function, TestFunction, \
-         Form, FunctionSpace, dx, CompiledSubDomain, SubSystemsManager
+    from dolfin import (Expression, UnitSquareMesh, Function,
+                        TestFunction, Form, FunctionSpace, dx, CompiledSubDomain,
+                        SubSystemsManager)
 
     # Init petsc (needed to initalize petsc and slepc collectively on
     # all processes)

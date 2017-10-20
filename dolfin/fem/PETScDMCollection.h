@@ -40,7 +40,7 @@ namespace dolfin
   ///
   /// Warning: This classs is highly experimental and will change
 
-  class PETScDMCollection
+  class PETScDMCollection : public PETScObject
   {
   public:
 

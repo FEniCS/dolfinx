@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the Matrix interface"""
 
 # Copyright (C) 2011-2014 Garth N. Wells
@@ -267,6 +265,42 @@ class TestMatrixForAnyBackend:
             assert j < cols.size
             assert round(sum(abs(row)) - 1.0, 7) == 0
 
+    @skip_in_parallel
+    def test_ident(self, use_backend, any_backend):
+        self.backend, self.sub_backend = any_backend
+        if self.backend == 'Tpetra':
+            pytest.skip()
+        A, B = self.assemble_matrices(use_backend)
+        N, M = A.size(0), A.size(1)
+
+        # Make sure rows are not identity from before
+        import numpy
+        ROWS = [2, 4]
+        for row in ROWS:
+            block = numpy.array([[42.0]], dtype=float)
+            A.set(block, numpy.array([row], dtype=numpy.intc),
+                  numpy.array([row], dtype=numpy.intc))
+        A.apply("insert")
+
+        def check_row(A, row, idented):
+            cols, vals = A.getrow(row)
+            i = list(cols).index(row)
+            if idented:
+                assert vals[i] == 1
+                vals[i] = 0
+                for c in cols:
+                    if c != row:
+                        assert (vals == 0).all()
+            else:
+                assert vals[i] == 42.0
+
+        for row in ROWS:
+            check_row(A, row, False)
+        A.ident(numpy.array(ROWS, dtype=numpy.intc))
+        A.apply("insert")
+        for row in ROWS:
+            check_row(A, row, True)
+
     def test_setting_getting_diagonal(self, use_backend, any_backend):
         self.backend, self.sub_backend = any_backend
 
@@ -304,6 +338,32 @@ class TestMatrixForAnyBackend:
         A.get_diagonal(w.vector())
         w.vector()[:] -= b
         assert round(w.vector().norm("l2"), 14) == 0
+
+    @skip_in_parallel
+    def test_get_set(self, use_backend, any_backend):
+        self.backend, self.sub_backend = any_backend
+        if self.backend == 'Tpetra':
+            pytest.skip()
+        A, B = self.assemble_matrices(use_backend)
+        N, M = A.size(0), A.size(1)
+
+        import numpy
+        rows = numpy.array([1, 2], dtype=numpy.intc)
+        cols = numpy.array([1, 2], dtype=numpy.intc)
+
+        block_in = numpy.ones((2, 2), dtype=float) * 42
+        Anp0 = A.array()
+        assert (Anp0[1:3,1:3] != block_in).any()
+
+        A.set(block_in, rows, cols)
+        A.apply("insert")
+
+        Anp1 = A.array()
+        assert (Anp1[1:3,1:3] == block_in).all()
+
+        block_out = numpy.zeros_like(block_in)
+        A.get(block_out, rows, cols)
+        assert (block_out == block_in).all()
 
     # def test_create_from_sparsity_pattern(self):
 

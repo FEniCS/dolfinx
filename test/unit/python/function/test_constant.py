@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the function library"""
 
 # Copyright (C) 2007 Anders Logg
@@ -118,3 +116,15 @@ def test_str():
     c1 = Constant((1., 2., 3.))
     c1.str(False)
     c1.str(True)
+
+
+def test_assign():
+    c0 = Constant(1.)
+    assert c0.values() == (1,)
+    c0.assign(Constant(3))
+    assert c0.values() == (3,)
+
+    c1 = Constant([1, 2])
+    assert (c1.values() == (1, 2)).all()
+    c1.assign(Constant([3, 4]))
+    assert (c1.values() == (3, 4)).all()

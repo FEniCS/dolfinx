@@ -1,4 +1,3 @@
-#!/usr/bin/env py.test
 from dolfin import *
 import ufl
 import numpy
@@ -251,13 +250,12 @@ def test_manifold_line_geometry(mesh, uflacs_representation_only):
     assert uflacs_representation_only == "uflacs"
     assert parameters["form_compiler"]["representation"] == "uflacs"
 
+    gdim = mesh.geometry().dim()
+    tdim = mesh.topology().dim()
+
     # Create cell markers and integration measure
     mf = CellFunction("size_t", mesh)
-    for i in range(mesh.num_cells()):
-        mf[i] = i
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
-    coords = mesh.coordinates()
-    cells = mesh.cells()
 
     # Create symbolic geometry for current mesh
     x = SpatialCoordinate(mesh)
@@ -268,6 +266,8 @@ def test_manifold_line_geometry(mesh, uflacs_representation_only):
     detJ = JacobianDeterminant(mesh)
     K = JacobianInverse(mesh)
     vol = CellVolume(mesh)
+    h = CellDiameter(mesh)
+    R = Circumradius(mesh)
 
     # Check that length computed via integral doesn't change with
     # refinement
@@ -288,19 +288,21 @@ def test_manifold_line_geometry(mesh, uflacs_representation_only):
     assert round(assemble((vol-abs(detJ))*dx), 7) == 0.0
     assert round(length - assemble(vol/abs(detJ)*dx), 7) == 0.0
 
-    gdim, tdim = J.ufl_shape
+    coords = mesh.coordinates()
+    cells = mesh.cells()
 
     # Checks on each cell separately
-    for i in range(mesh.num_cells()):
-        mf[i] = 0
-    for i in range(mesh.num_cells()):
-        mf[i] = 1  # mark this cell
-        x0 = Constant(tuple(coords[cells[i][0], :]))
+    for k in range(mesh.num_cells()):
+        # Mark current cell
+        mf.set_all(0)
+        mf[k] = 1
+
+        x0 = Constant(tuple(coords[cells[k][0], :]))
 
         # Integrate x components over a cell and compare with midpoint
         # computed from coords
         for j in range(gdim):
-            xm = 0.5*(coords[cells[i][0], j] + coords[cells[i][1], j])
+            xm = 0.5*(coords[cells[k][0], j] + coords[cells[k][1], j])
             assert round(assemble(x[j]/abs(detJ)*dx(1)) - xm, 7) == 0.0
 
         # Jacobian column is pointing away from x0
@@ -310,6 +312,10 @@ def test_manifold_line_geometry(mesh, uflacs_representation_only):
         assert round(assemble((x - (x0+J*X))**2*dx(1)), 7) == 0.0
         assert round(assemble((X - K*(x-x0))**2*dx(1)), 7) == 0.0
         assert round(assemble((K*J - Identity(tdim))**2*dx(1)), 7) == 0.0
+
+        # Check cell diameter and circumradius
+        assert round(assemble(h/vol*dx(1)) - Cell(mesh, k).h(), 7) == 0.0
+        assert round(assemble(R/vol*dx(1)) - Cell(mesh, k).circumradius(), 7) == 0.0
 
         # Jacobian column is orthogonal to cell normal
         if gdim == 2:
@@ -331,7 +337,6 @@ def test_manifold_line_geometry(mesh, uflacs_representation_only):
             assert round(assemble(up**2*dx(1)), 7) > 0.0
             assert round(assemble((up[0]**2 + up[1]**2)*dx(1)), 7) == 0.0
             assert round(assemble(up[2]*dx(1)), 7) > 0.0
-        mf[i] = 0  # unmark this cell
 
 
 @skip_in_parallel
@@ -366,8 +371,8 @@ def test_manifold_dg0_functions(square3d, any_representation):
     u0 = project(1.0, U0)
     v0v = (1.0, 2.0, 3.0)
     v0 = project(as_vector(v0v), V0)
-    assert round(sum(u0.vector().array()) - 2*1, 7) == 0.0
-    assert round(sum(v0.vector().array()) - 2*(1+2+3), 7) == 0.0
+    assert round(sum(u0.vector().get_local()) - 2*1, 7) == 0.0
+    assert round(sum(v0.vector().get_local()) - 2*(1+2+3), 7) == 0.0
 
     # Integrate piecewise constant functions over manifold cells
     assert round(assemble(u0*dx(0)) - 0.5*area) == 0.0
@@ -380,8 +385,8 @@ def test_manifold_dg0_functions(square3d, any_representation):
     # Project x to scalar and vector DG0 spaces on manifold
     u0x = project(x[0], U0)  # cell averages of x[0]: 2/3, 1/3, sum = 3/3
     v0x = project(x, V0)  # cell averages of x[:]: (2/3, 1/3, 2/3), (1/3, 2/3, 2/3), sum = 10/3
-    assert round(sum(u0x.vector().array()) - 3.0/3.0, 7) == 0.0
-    assert round(sum(v0x.vector().array()) - 10.0/3.0, 7) == 0.0
+    assert round(sum(u0x.vector().get_local()) - 3.0/3.0, 7) == 0.0
+    assert round(sum(v0x.vector().get_local()) - 10.0/3.0, 7) == 0.0
 
     # Evaluate in all corners and cell midpoints, value should be the
     # same constant everywhere
@@ -420,9 +425,9 @@ def test_manifold_cg1_functions(square3d, any_representation):
     v1 = project(x, V1)
     # exact x in vertices is [0,0,0, 1,1,1, 1,0,0, 0,1,0],
     # so sum(x[0] for each vertex) is therefore sum(0 1 1 0):
-    assert round(sum(u1.vector().array()) - (0+1+1+0), 7) == 0.0
+    assert round(sum(u1.vector().get_local()) - (0+1+1+0), 7) == 0.0
     # and sum(x components for each vertex) is sum(1, 3, 1, 1):
-    assert round(sum(v1.vector().array()) - (1+3+1+1), 7) == 0.0
+    assert round(sum(v1.vector().get_local()) - (1+3+1+1), 7) == 0.0
 
     # Integrate piecewise constant functions over manifold cells,
     # computing midpoint coordinates
@@ -503,6 +508,10 @@ def test_manifold_point_evaluation(square3d, any_representation):
 @skip_in_parallel
 def test_manifold_symbolic_geometry(square3d, uflacs_representation_only):
     mesh = square3d
+    assert mesh.num_cells() == 2
+    gdim = mesh.geometry().dim()
+    tdim = mesh.topology().dim()
+
     area = sqrt(3.0)  # known area of mesh
     A = area/2.0  # area of single cell
     Aref = 0.5  # 0.5 is the area of the UFC reference triangle
@@ -550,56 +559,65 @@ def test_manifold_symbolic_geometry(square3d, uflacs_representation_only):
     detJ = JacobianDeterminant(mesh)  # pseudo-determinant
     K = JacobianInverse(mesh)  # pseudo-inverse
     vol = CellVolume(mesh)
+    h = CellDiameter(mesh)
+    R = Circumradius(mesh)
 
     # This is not currently implemented in uflacs:
     # x0 = CellOrigin(mesh)
     # But by happy accident, x0 is the same vertex for both our triangles:
     x0 = as_vector((0.0, 0.0, 1.0))
 
-    # Check integration area vs detJ
-    for k in range(2):
+    # Checks on each cell separately
+    for k in range(mesh.num_cells()):
+        # Mark current cell
+        mf.set_all(0)
+        mf[k] = 1
+
+        # Check integration area vs detJ
         # Validate known cell area A
-        assert round(assemble(1.0*dx(k)) - A, 7) == 0.0
-        assert round(assemble(1.0/A*dx(k)) - 1.0, 7) == 0.0
-        assert round(assemble(A*dx(k)) - A**2, 7) == 0.0
+        assert round(assemble(1.0*dx(1)) - A, 7) == 0.0
+        assert round(assemble(1.0/A*dx(1)) - 1.0, 7) == 0.0
+        assert round(assemble(A*dx(1)) - A**2, 7) == 0.0
         # Compare abs(detJ) to A
         A2 = Aref*abs(detJ)
-        assert round(assemble((A-A2)**2*dx(k)) - 0.0, 7) == 0.0
-        assert round(assemble(1.0/A2*dx(k)) - 1.0, 7) == 0.0
-        assert round(assemble(A2*dx(k)) - A**2, 7) == 0.0
+        assert round(assemble((A-A2)**2*dx(1)) - 0.0, 7) == 0.0
+        assert round(assemble(1.0/A2*dx(1)) - 1.0, 7) == 0.0
+        assert round(assemble(A2*dx(1)) - A**2, 7) == 0.0
         # Validate cell orientation
-        assert round(assemble(co*dx(k)) - A*(1 if k == 1 else -1), 7) == 0.0
+        assert round(assemble(co*dx(1)) - A*(1 if k == 1 else -1), 7) == 0.0
         # Compare co*detJ to A (detJ is pseudo-determinant with sign
         # restored, *co again is equivalent to abs())
         A3 = Aref*co*detJ
-        assert round(assemble((A-A3)**2*dx(k)) - 0.0, 7) == 0.0
-        assert round(assemble((A2-A3)**2*dx(k)) - 0.0, 7) == 0.0
-        assert round(assemble(1.0/A3*dx(k)) - 1.0, 7) == 0.0
-        assert round(assemble(A3*dx(k)) - A**2, 7) == 0.0
+        assert round(assemble((A-A3)**2*dx(1)) - 0.0, 7) == 0.0
+        assert round(assemble((A2-A3)**2*dx(1)) - 0.0, 7) == 0.0
+        assert round(assemble(1.0/A3*dx(1)) - 1.0, 7) == 0.0
+        assert round(assemble(A3*dx(1)) - A**2, 7) == 0.0
         # Compare vol to A
         A4 = vol
-        assert round(assemble((A-A4)**2*dx(k)) - 0.0, 7) == 0.0
-        assert round(assemble((A2-A4)**2*dx(k)) - 0.0, 7) == 0.0
-        assert round(assemble((A3-A4)**2*dx(k)) - 0.0, 7) == 0.0
-        assert round(assemble(1.0/A4*dx(k)) - 1.0, 7) == 0.0
-        assert round(assemble(A4*dx(k)) - A**2, 7) == 0.0
+        assert round(assemble((A-A4)**2*dx(1)) - 0.0, 7) == 0.0
+        assert round(assemble((A2-A4)**2*dx(1)) - 0.0, 7) == 0.0
+        assert round(assemble((A3-A4)**2*dx(1)) - 0.0, 7) == 0.0
+        assert round(assemble(1.0/A4*dx(1)) - 1.0, 7) == 0.0
+        assert round(assemble(A4*dx(1)) - A**2, 7) == 0.0
 
-    # Check integral of reference coordinate components over reference
-    # triangle: \int_0^1 \int_0^{1-x} x dy dx = 1/6
-    Xmp = (1.0/6.0, 1.0/6.0)
-    for k in range(2):
-        for j in range(2):
+        # Check cell diameter and circumradius
+        assert round(assemble(h/vol*dx(1)) - Cell(mesh, k).h(), 7) == 0.0
+        assert round(assemble(R/vol*dx(1)) - Cell(mesh, k).circumradius(), 7) == 0.0
+
+        # Check integral of reference coordinate components over reference
+        # triangle: \int_0^1 \int_0^{1-x} x dy dx = 1/6
+        Xmp = (1.0/6.0, 1.0/6.0)
+        for j in range(tdim):
             # Scale by detJ^-1 to get reference cell integral
-            assert round(assemble(X[j]/abs(detJ)*dx(k)) - Xmp[j], 7) == 0.0
+            assert round(assemble(X[j]/abs(detJ)*dx(1)) - Xmp[j], 7) == 0.0
 
-    # Check average of physical coordinate components over each cell:
-    xmp = [(2.0/3.0, 1.0/3.0, 2.0/3.0),  # midpoint of cell 0
-           (1.0/3.0, 2.0/3.0, 2.0/3.0),  # midpoint of cell 1
-           ]
-    for k in range(2):
-        for i in range(3):
+        # Check average of physical coordinate components over each cell:
+        xmp = [(2.0/3.0, 1.0/3.0, 2.0/3.0),  # midpoint of cell 0
+               (1.0/3.0, 2.0/3.0, 2.0/3.0),  # midpoint of cell 1
+               ]
+        for i in range(gdim):
             # Scale by A^-1 to get average of x, not integral
-            assert round(assemble(x[i]/A*dx(k)) - xmp[k][i], 7) == 0.0
+            assert round(assemble(x[i]/A*dx(1)) - xmp[k][i], 7) == 0.0
 
     # Check affine coordinate relations x=x0+J*X, X=K*(x-x0), K*J=I
     assert round(assemble((x - (x0+J*X))**2*dx), 7) == 0.0
@@ -721,8 +739,6 @@ def test_tetrahedron_symbolic_geometry(uflacs_representation_only):
     Aref = 1.0/6.0  # the volume of the UFC reference tetrahedron
 
     mf = CellFunction("size_t", mesh)
-    for i in range(mesh.num_cells()):
-        mf[i] = i
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
 
     U0 = FunctionSpace(mesh, "DG", 0)
@@ -737,54 +753,62 @@ def test_tetrahedron_symbolic_geometry(uflacs_representation_only):
     detJ = JacobianDeterminant(mesh)
     K = JacobianInverse(mesh)
     vol = CellVolume(mesh)
+    h = CellDiameter(mesh)
+    R = Circumradius(mesh)
 
-    # Check integration area vs detJ
     coordinates = mesh.coordinates()
     cells = mesh.cells()
+
     for k in range(mesh.num_cells()):
+        # Mark current cell
+        mf.set_all(0)
+        mf[k] = 1
+
+        # Check integration area vs detJ
         # This is not currently implemented in uflacs:
         # x0 = CellOrigin(mesh)
         # But we can extract it from the mesh for a given cell k
         x0 = as_vector(coordinates[cells[k][0]][:])
         # Validate known cell volume A
-        assert round(assemble(1.0*dx(k)) - A, 7) == 0.0
-        assert round(assemble(1.0/A*dx(k)) - 1.0, 7) == 0.0
-        assert round(assemble(A*dx(k)) - A**2, 7) == 0.0
+        assert round(assemble(1.0*dx(1)) - A, 7) == 0.0
+        assert round(assemble(1.0/A*dx(1)) - 1.0, 7) == 0.0
+        assert round(assemble(A*dx(1)) - A**2, 7) == 0.0
         # Compare abs(detJ) to A
         A2 = Aref*abs(detJ)
-        assert round(assemble((A-A2)**2*dx(k)) - 0.0, 7) == 0.0
-        assert round(assemble(1.0/A2*dx(k)) - 1.0, 7) == 0.0
-        assert round(assemble(A2*dx(k)) - A**2, 7) == 0.0
+        assert round(assemble((A-A2)**2*dx(1)) - 0.0, 7) == 0.0
+        assert round(assemble(1.0/A2*dx(1)) - 1.0, 7) == 0.0
+        assert round(assemble(A2*dx(1)) - A**2, 7) == 0.0
         # Compare vol to A
         A4 = vol
-        assert round(assemble((A-A4)**2*dx(k)) - 0.0, 7) == 0.0
-        assert round(assemble((A2-A4)**2*dx(k)) - 0.0, 7) == 0.0
-        assert round(assemble(1.0/A4*dx(k)) - 1.0, 7) == 0.0
-        assert round(assemble(A4*dx(k)) - A**2, 7) == 0.0
+        assert round(assemble((A-A4)**2*dx(1)) - 0.0, 7) == 0.0
+        assert round(assemble((A2-A4)**2*dx(1)) - 0.0, 7) == 0.0
+        assert round(assemble(1.0/A4*dx(1)) - 1.0, 7) == 0.0
+        assert round(assemble(A4*dx(1)) - A**2, 7) == 0.0
 
-    # Check integral of reference coordinate components over reference
-    # tetrahedron:
-    Xmp = (1.0/24.0, 1.0/24.0, 1.0/24.0)  # not validated analytically
-    for k in range(mesh.num_cells()):
+        # Check integral of reference coordinate components over reference
+        # tetrahedron:
+        Xmp = (1.0/24.0, 1.0/24.0, 1.0/24.0)  # not validated analytically
         for j in range(tdim):
             # Scale by detJ^-1 to get reference cell integral
-            assert round(assemble(X[j]/abs(detJ)*dx(k)) - Xmp[j], 7) == 0.0
+            assert round(assemble(X[j]/abs(detJ)*dx(1)) - Xmp[j], 7) == 0.0
 
-    # Check average of physical coordinate components over each cell:
-    for k in range(mesh.num_cells()):
+        # Check average of physical coordinate components over each cell:
         # Compute average of vertex coordinates extracted from mesh
         verts = [coordinates[i][:] for i in cells[k]]
         vavg = sum(verts[1:], verts[0])/len(verts)
         for i in range(gdim):
             # Scale by A^-1 to get average of x, not integral
-            assert round(assemble(x[i]/A*dx(k)) - vavg[i], 7) == 0.0
+            assert round(assemble(x[i]/A*dx(1)) - vavg[i], 7) == 0.0
 
-    # Check affine coordinate relations x=x0+J*X, X=K*(x-x0), K*J=I
-    for k in range(mesh.num_cells()):
+        # Check affine coordinate relations x=x0+J*X, X=K*(x-x0), K*J=I
         x0 = as_vector(coordinates[cells[k][0]][:])
-        assert round(assemble((x - (x0+J*X))**2*dx(k)), 7) == 0.0
-        assert round(assemble((X - K*(x-x0))**2*dx(k)), 7) == 0.0
-        assert round(assemble((K*J - Identity(tdim))**2/A*dx(k)), 7) == 0.0
+        assert round(assemble((x - (x0+J*X))**2*dx(1)), 7) == 0.0
+        assert round(assemble((X - K*(x-x0))**2*dx(1)), 7) == 0.0
+        assert round(assemble((K*J - Identity(tdim))**2/A*dx(1)), 7) == 0.0
+
+        # Check cell diameter and circumradius
+        assert round(assemble(h/vol*dx(1)) - Cell(mesh, k).h(), 7) == 0.0
+        assert round(assemble(R/vol*dx(1)) - Cell(mesh, k).circumradius(), 7) == 0.0
 
 
 # Some symbolic quantities are only available through uflacs
@@ -800,8 +824,6 @@ def test_triangle_symbolic_geometry(uflacs_representation_only):
     Aref = 1.0/2.0  # the volume of the UFC reference triangle
 
     mf = CellFunction("size_t", mesh)
-    for i in range(mesh.num_cells()):
-        mf[i] = i
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
 
     U0 = FunctionSpace(mesh, "DG", 0)
@@ -816,51 +838,146 @@ def test_triangle_symbolic_geometry(uflacs_representation_only):
     detJ = JacobianDeterminant(mesh)
     K = JacobianInverse(mesh)
     vol = CellVolume(mesh)
+    h = CellDiameter(mesh)
+    R = Circumradius(mesh)
 
-    # Check integration area vs detJ
     coordinates = mesh.coordinates()
     cells = mesh.cells()
+
     for k in range(mesh.num_cells()):
+        # Mark current cell
+        mf.set_all(0)
+        mf[k] = 1
+
+        # Check integration area vs detJ
         # This is not currently implemented in uflacs:
         # x0 = CellOrigin(mesh)
         # But we can extract it from the mesh for a given cell k
         x0 = as_vector(coordinates[cells[k][0]][:])
         # Validate known cell volume A
-        assert round(assemble(1.0*dx(k)) - A, 7) == 0.0
-        assert round(assemble(1.0/A*dx(k)) - 1.0, 7) == 0.0
-        assert round(assemble(A*dx(k)) - A**2, 7) == 0.0
+        assert round(assemble(1.0*dx(1)) - A, 7) == 0.0
+        assert round(assemble(1.0/A*dx(1)) - 1.0, 7) == 0.0
+        assert round(assemble(A*dx(1)) - A**2, 7) == 0.0
         # Compare abs(detJ) to A
         A2 = Aref*abs(detJ)
-        assert round(assemble((A-A2)**2*dx(k)) - 0.0, 7) == 0.0
-        assert round(assemble(1.0/A2*dx(k)) - 1.0, 7) == 0.0
-        assert round(assemble(A2*dx(k)) - A**2, 7) == 0.0
+        assert round(assemble((A-A2)**2*dx(1)) - 0.0, 7) == 0.0
+        assert round(assemble(1.0/A2*dx(1)) - 1.0, 7) == 0.0
+        assert round(assemble(A2*dx(1)) - A**2, 7) == 0.0
         # Compare vol to A
         A4 = vol
-        assert round(assemble((A-A4)**2*dx(k)) - 0.0, 7) == 0.0
-        assert round(assemble((A2-A4)**2*dx(k)) - 0.0, 7) == 0.0
-        assert round(assemble(1.0/A4*dx(k)) - 1.0, 7) == 0.0
-        assert round(assemble(A4*dx(k)) - A**2, 7) == 0.0
+        assert round(assemble((A-A4)**2*dx(1)) - 0.0, 7) == 0.0
+        assert round(assemble((A2-A4)**2*dx(1)) - 0.0, 7) == 0.0
+        assert round(assemble(1.0/A4*dx(1)) - 1.0, 7) == 0.0
+        assert round(assemble(A4*dx(1)) - A**2, 7) == 0.0
 
-    # Check integral of reference coordinate components over reference
-    # triangle:
-    Xmp = (1.0/6.0, 1.0/6.0)
-    for k in range(mesh.num_cells()):
+        # Check integral of reference coordinate components over reference
+        # triangle:
+        Xmp = (1.0/6.0, 1.0/6.0)
         for j in range(tdim):
             # Scale by detJ^-1 to get reference cell integral
-            assert round(assemble(X[j]/abs(detJ)*dx(k)) - Xmp[j], 7) == 0.0
+            assert round(assemble(X[j]/abs(detJ)*dx(1)) - Xmp[j], 7) == 0.0
 
-    # Check average of physical coordinate components over each cell:
-    for k in range(mesh.num_cells()):
+        # Check average of physical coordinate components over each cell:
         # Compute average of vertex coordinates extracted from mesh
         verts = [coordinates[i][:] for i in cells[k]]
         vavg = sum(verts[1:], verts[0])/len(verts)
         for i in range(gdim):
             # Scale by A^-1 to get average of x, not integral
-            assert round(assemble(x[i]/A*dx(k)) - vavg[i], 7) == 0.0
+            assert round(assemble(x[i]/A*dx(1)) - vavg[i], 7) == 0.0
 
-    # Check affine coordinate relations x=x0+J*X, X=K*(x-x0), K*J=I
-    for k in range(mesh.num_cells()):
+        # Check affine coordinate relations x=x0+J*X, X=K*(x-x0), K*J=I
         x0 = as_vector(coordinates[cells[k][0]][:])
-        assert round(assemble((x - (x0+J*X))**2*dx(k)), 7) == 0.0
-        assert round(assemble((X - K*(x-x0))**2*dx(k)), 7) == 0.0
-        assert round(assemble((K*J - Identity(tdim))**2/A*dx(k)), 7) == 0.0
+        assert round(assemble((x - (x0+J*X))**2*dx(1)), 7) == 0.0
+        assert round(assemble((X - K*(x-x0))**2*dx(1)), 7) == 0.0
+        assert round(assemble((K*J - Identity(tdim))**2/A*dx(1)), 7) == 0.0
+
+        # Check cell diameter and circumradius
+        assert round(assemble(h/vol*dx(1)) - Cell(mesh, k).h(), 7) == 0.0
+        assert round(assemble(R/vol*dx(1)) - Cell(mesh, k).circumradius(), 7) == 0.0
+
+
+if has_pybind11():
+    xfail_jit = pytest.mark.xfail(raises=Exception, strict=True)
+else:
+    xfail_jit = pytest.mark.xfail(raises=RuntimeError, strict=True)
+
+@pytest.mark.parametrize('mesh_factory', [
+    (UnitIntervalMesh, (8,)),
+    (UnitSquareMesh, (4, 4)),
+    (UnitDiscMesh.create, (mpi_comm_world(), 4, 1, 2)),
+    (UnitDiscMesh.create, (mpi_comm_world(), 4, 1, 3)),
+    (SphericalShellMesh.create, (mpi_comm_world(), 1,)),
+    (UnitCubeMesh, (2, 2, 2)),
+    (UnitQuadMesh.create, (4, 4)),
+    (UnitHexMesh.create, (2, 2, 2)),
+    (line1d, (None,)),
+    (line2d, (None,)),
+    (line3d, (None,)),
+    (rline1d, (None,)),
+    (rline2d, (None,)),
+    (rline3d, (None,)),
+    (square2d, (None,)),
+    (square3d, (None,)),
+    # Tested geometric quantities are not implemented for higher-order cells
+    xfail_jit((UnitDiscMesh.create, (mpi_comm_world(), 4, 2, 2))),
+    xfail_jit((UnitDiscMesh.create, (mpi_comm_world(), 4, 2, 3))),
+    xfail_jit((SphericalShellMesh.create, (mpi_comm_world(), 2,))),
+])
+@skip_in_parallel
+def test_geometric_quantities(uflacs_representation_only, mesh_factory):
+    func, args = mesh_factory
+    mesh = func(*args)
+
+    tdim = mesh.ufl_cell().topological_dimension()
+
+    cf = CellFunction('size_t', mesh, 0)
+    dx = Measure("dx", domain=mesh, subdomain_data=cf)
+
+    ff = FacetFunction('size_t', mesh, 0)
+    ds = Measure("ds", domain=mesh, subdomain_data=ff)
+    dS = Measure("dS", domain=mesh, subdomain_data=ff)
+
+    h = CellDiameter(mesh)
+    R = Circumradius(mesh)
+    max_cell_edge = MaxCellEdgeLength(mesh)
+    min_cell_edge = MinCellEdgeLength(mesh)
+    max_facet_edge = MaxFacetEdgeLength(mesh)
+    min_facet_edge = MinFacetEdgeLength(mesh)
+
+    for c in cells(mesh):
+        # Mark current cell for integration
+        cf.set_all(0)
+        cf[c] = 1
+
+        vol = assemble(1*dx(1))
+
+        # Check cell diameter
+        assert numpy.isclose(assemble(h*dx(1))/vol, c.h())
+
+        # Check max/min cell edge length
+        assert numpy.isclose(assemble(max_cell_edge*dx(1))/vol,
+                             max(e.length() for e in edges(c)))
+        assert numpy.isclose(assemble(min_cell_edge*dx(1))/vol,
+                             min(e.length() for e in edges(c)))
+
+        # Check circumradius if it makes sense
+        if mesh.ufl_domain().is_piecewise_linear_simplex_domain():
+            assert numpy.isclose(assemble(R*dx(1))/vol, c.circumradius())
+
+    # Check max/min facet edge length if it makes sense
+    if tdim >= 3:
+
+        mesh.init(tdim-1, tdim)  # for Facet.exterior()
+
+        for f in facets(mesh):
+            # Mark current facet for integration and pick facet measure
+            ff.set_all(0)
+            ff[f] = 1
+            df = ds(1) if f.exterior() else dS(1)
+
+            vol = assemble(1*df)
+
+            assert numpy.isclose(assemble(max_facet_edge*df)/vol,
+                                 max(e.length() for e in edges(f)))
+            assert numpy.isclose(assemble(min_facet_edge*df)/vol,
+                                 min(e.length() for e in edges(f)))

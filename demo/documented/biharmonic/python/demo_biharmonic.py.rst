@@ -157,7 +157,7 @@ the penalty parameter ``alpha``. The penalty parameters is made a
 can be changed without needing to regenerate code. ::
 
     # Define normal component, mesh size and right-hand side
-    h = CellSize(mesh)
+    h = CellDiameter(mesh)
     h_avg = (h('+') + h('-'))/2.0
     n = FacetNormal(mesh)
     f = Source(degree=2)

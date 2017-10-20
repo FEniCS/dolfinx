@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for assembly"""
 
 # Copyright (C) 2011-2014 Garth N. Wells
@@ -33,7 +31,8 @@ from dolfin_utils.test import skip_in_parallel, filedir, pushpop_parameters
 
 def test_cell_size_assembly_1D():
     mesh = UnitIntervalMesh(10)
-    assert round(assemble(CellSize(mesh)*dx) - 0.1, 12) == 0
+    assert round(assemble(2*Circumradius(mesh)*dx) - 0.1, 12) == 0
+    assert round(assemble(CellDiameter(mesh)*dx) - 0.1, 12) == 0
     assert round(assemble(CellVolume(mesh)*dx) - 0.1, 12) == 0
 
 
@@ -89,7 +88,7 @@ def test_facet_assembly(pushpop_parameters):
 
     # Define normal component, mesh size and right-hand side
     n = FacetNormal(mesh)
-    h = CellSize(mesh)
+    h = 2*Circumradius(mesh)
     h_avg = (h('+') + h('-'))/2
     f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
 

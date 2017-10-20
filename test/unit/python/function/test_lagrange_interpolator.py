@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for interpolation using LagrangeInterpolator"""
 
 # Copyright (C) 2014 Mikael Mortensen

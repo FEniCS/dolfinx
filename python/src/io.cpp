@@ -48,7 +48,9 @@ namespace dolfin_wrappers
     py::class_<dolfin::File, std::shared_ptr<dolfin::File>>(m, "File")
       .def(py::init<std::string>())
       .def(py::init<std::string, std::string>())
-      .def(py::init<MPI_Comm, std::string>())
+      .def(py::init([](const MPICommWrapper comm, std::string filename)
+        { return std::unique_ptr<dolfin::File>(new dolfin::File(comm.get(), filename)); }),
+        py::arg("comm"), py::arg("filename"))
       //
       .def("write", (void (dolfin::File::*)(const dolfin::Parameters&)) &dolfin::File::write)
       //
@@ -225,8 +227,11 @@ namespace dolfin_wrappers
       .def("type_str", &dolfin::HDF5Attribute::type_str);
 
     // dolfin::HDF5File
-    py::class_<dolfin::HDF5File, std::shared_ptr<dolfin::HDF5File>> (m, "HDF5File")
-      .def(py::init<MPI_Comm, std::string, std::string>())
+    py::class_<dolfin::HDF5File, std::shared_ptr<dolfin::HDF5File>,
+               dolfin::Variable> (m, "HDF5File")
+      .def(py::init([](const MPICommWrapper comm, const std::string filename, const std::string file_mode)
+        { return std::unique_ptr<dolfin::HDF5File>(new dolfin::HDF5File(comm.get(), filename, file_mode)); }),
+        py::arg("comm"), py::arg("filename"), py::arg("file_mode"))
       .def("__enter__", [](dolfin::HDF5File& self){ return &self; })
       .def("__exit__", [](dolfin::HDF5File& self, py::args args, py::kwargs kwargs){ self.close(); })
       .def("close", &dolfin::HDF5File::close)
@@ -301,16 +306,20 @@ namespace dolfin_wrappers
            }, py::arg("u"), py::arg("name"), py::arg("t"))
       .def("set_mpi_atomicity", &dolfin::HDF5File::set_mpi_atomicity)
       .def("get_mpi_atomicity", &dolfin::HDF5File::get_mpi_atomicity)
-      // attributes
+      // others
+      .def("has_dataset", &dolfin::HDF5File::has_dataset)
       .def("attributes", &dolfin::HDF5File::attributes);
 
 #endif
 
     // dolfin::XDMFFile
-    py::class_<dolfin::XDMFFile, std::shared_ptr<dolfin::XDMFFile>> xdmf_file(m, "XDMFFile");
+    py::class_<dolfin::XDMFFile, std::shared_ptr<dolfin::XDMFFile>,
+               dolfin::Variable> xdmf_file(m, "XDMFFile");
 
     xdmf_file
-      .def(py::init<MPI_Comm, std::string>())
+      .def(py::init([](const MPICommWrapper comm, std::string filename)
+        { return std::unique_ptr<dolfin::XDMFFile>(new dolfin::XDMFFile(comm.get(), filename)); }),
+        py::arg("comm"), py::arg("filename"))
       .def(py::init<std::string>())
       .def("__enter__", [](dolfin::XDMFFile& self){ return &self; })
       .def("__exit__", [](dolfin::XDMFFile& self, py::args args, py::kwargs kwargs){ self.close(); });
@@ -436,7 +445,7 @@ namespace dolfin_wrappers
            {
              if (color.ndim() != 1 or color.shape(0) != 3)
                throw pybind11::type_error("Color must be a 1D array or length 3");
-             self.set_diffuse_color({*color.data(0), *color.data(1), *color.data(2)});
+             self.set_diffuse_color({{*color.data(0), *color.data(1), *color.data(2)}});
            });
 
     // dolfin::X3DOM

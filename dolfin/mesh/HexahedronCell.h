@@ -14,7 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
 
 #ifndef __HEXAHEDRON_CELL_H
 #define __HEXAHEDRON_CELL_H
@@ -34,6 +33,10 @@ namespace dolfin
     /// Specify cell type and facet type
     HexahedronCell() : CellType(hexahedron, quadrilateral) {}
 
+    /// Check if cell is a simplex
+    bool is_simplex() const
+    { return false; }
+    
     /// Return topological dimension of cell
     std::size_t dim() const;
 
@@ -81,14 +84,6 @@ namespace dolfin
 
     /// Check whether given entity collides with cell
     bool collides(const Cell& cell, const MeshEntity& entity) const;
-
-    /// Compute triangulation of intersection of two cells
-    std::vector<double>
-    triangulate_intersection(const Cell& c0, const Cell& c1) const;
-
-    /// Compute triangulation of intersection with given entity
-    std::vector<double>
-    triangulate_intersection(const Cell& cell, const MeshEntity& entity) const;
 
     /// Return description of cell type
     std::string description(bool plural) const;

@@ -102,8 +102,8 @@ def project(v, V=None, bcs=None, mesh=None,
     # Define variational problem for projection
     w = TestFunction(V)
     Pv = TrialFunction(V)
-    a = ufl.inner(w, Pv)*dx
-    L = ufl.inner(w, v)*dx
+    a = ufl.inner(w, Pv) * dx
+    L = ufl.inner(w, v) * dx
 
     # Assemble linear system
     A, b = assemble_system(a, L, bcs=bcs,

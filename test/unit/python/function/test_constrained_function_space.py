@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for FunctionSpace with constrained domain"""
 
 # Copyright (C) 2012-2014 Garth N. Wells

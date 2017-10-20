@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for the LUSolver interface"""
 
 # Copyright (C) 2014 Garth N. Wells
@@ -58,6 +56,11 @@ def test_lu_solver(backend):
     x = Vector()
     solver.set_operator(A)
     solver.solve(x, b)
+    assert round(x.norm("l2") - norm, 10) == 0
+
+    solver = LUSolver()
+    x = Vector()
+    solver.solve(A, x, b)
     assert round(x.norm("l2") - norm, 10) == 0
 
     # Reset backend

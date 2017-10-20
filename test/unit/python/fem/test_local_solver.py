@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for LocalSolver"""
 
 # Copyright (C) 2013 Garth N. Wells

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2014-02-06
+// Last changed: 2016-11-15
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -125,10 +125,6 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
 
     info("Computed global bounding box tree with %d boxes.",
          _global_tree->num_bboxes());
-    // Print on rank 0
-    //    if(MPI::rank(mesh.mpi_comm()) == 0)
-    //      std::cout << _global_tree->str() << "\n";
-
   }
 }
 //-----------------------------------------------------------------------------
@@ -274,7 +270,13 @@ GenericBoundingBoxTree::compute_closest_entity(const Point& point,
 
   // Search point cloud to get a good starting guess
   dolfin_assert(_point_search_tree);
-  double r = _point_search_tree->compute_closest_point(point).second;
+  std::pair<unsigned int, double> guess
+    = _point_search_tree->compute_closest_point(point);
+  double r = guess.second;
+
+  // Return if we have found the point
+  if (r == 0.)
+    return guess;
 
   // Initialize index and distance to closest entity
   unsigned int closest_entity = std::numeric_limits<unsigned int>::max();

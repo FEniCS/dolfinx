@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Main module for DOLFIN"""
 
 # Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
 #
@@ -7,16 +6,14 @@
 # either version 3 of the License, or (at your option) any later
 # version.
 
-import types
-import ffc
 import ufl
 import dolfin.cpp as cpp
-from . import function
+from dolfin.jit.jit import ffc_jit
 
 
 class FunctionSpace(ufl.FunctionSpace):
 
-    def __init__(self,  *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Create finite element function space."""
 
         if len(args) == 1:
@@ -25,10 +22,10 @@ class FunctionSpace(ufl.FunctionSpace):
             self._init_from_cpp(*args, **kwargs)
         else:
             if len(args) == 0 or not isinstance(args[0], cpp.mesh.Mesh):
-                #cpp.dolfin_error("functionspace.py",
-                #                 "create function space",
-                #                 "Illegal argument, not a mesh: "
-                #                 + str(args[0]))
+                # cpp.dolfin_error("functionspace.py",
+                #                  "create function space",
+                #                  "Illegal argument, not a mesh: "
+                #                  + str(args[0]))
                 pass
             elif len(args) == 2:
                 self._init_from_ufl(*args, **kwargs)
@@ -42,7 +39,8 @@ class FunctionSpace(ufl.FunctionSpace):
         ufl.FunctionSpace.__init__(self, mesh.ufl_domain(), element)
 
         # Compile dofmap and element
-        ufc_element, ufc_dofmap = ffc.jit(element, parameters=None)
+        ufc_element, ufc_dofmap = ffc_jit(element, form_compiler_parameters=None,
+                                          mpi_comm=mesh.mpi_comm())
         ufc_element = cpp.fem.make_ufc_finite_element(ufc_element)
 
         # Create DOLFIN element and dofmap
@@ -118,8 +116,8 @@ class FunctionSpace(ufl.FunctionSpace):
         if self.num_sub_spaces() == 1:
             raise ValueError("no SubSpaces to extract")
         if i >= self.num_sub_spaces():
-            raise ValueError("Can only extract SubSpaces with i = 0 ... %d" % \
-                  (self.num_sub_spaces() - 1))
+            raise ValueError("Can only extract SubSpaces with i = 0 ... %d" %
+                             (self.num_sub_spaces() - 1))
         assert hasattr(self.ufl_element(), "sub_elements")
 
         # Extend with the python layer
@@ -131,19 +129,16 @@ class FunctionSpace(ufl.FunctionSpace):
     def contains(self, V):
         "Check whether a function is in the FunctionSpace"
         return self._cpp_object.contains(V._cpp_object)
-        #if isinstance(u, cpp.function.Function):
-        #    return u._in(self)
-        #elif isinstance(u, function.Function):
-        #    return u._cpp_object._in(self)
-        #return False
 
     def __contains__(self, u):
         "Check whether a function is in the FunctionSpace"
-        if isinstance(u, cpp.function.Function):
+        try:
             return u._in(self._cpp_object)
-        elif isinstance(u, function.Function):
-            return u._cpp_object._in(self._cpp_object)
-        return False
+        except AttributeError:
+            try:
+                return u._cpp_object._in(self._cpp_object)
+            except Exception as e:
+                raise RuntimeError("Unable to check if object is in FunctionSpace ({})".format(e))
 
     def __eq__(self, other):
         "Comparison for equality."

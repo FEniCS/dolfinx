@@ -1,5 +1,3 @@
-#!/usr/bin/env py.test
-
 """Unit tests for intersection computation"""
 
 # Copyright (C) 2013-2014 Anders Logg

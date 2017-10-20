@@ -25,8 +25,11 @@
 #include <pybind11/stl.h>
 #include <pybind11/cast.h>
 
-#include <ufc.h>
+#ifdef HAS_PYBIND11_PETSC4PY
+#include <petsc4py/petsc4py.h>
+#endif
 
+#include <ufc.h>
 #include <dolfin/fem/fem_utils.h>
 #include <dolfin/fem/assemble.h>
 #include <dolfin/fem/assemble_local.h>
@@ -41,18 +44,18 @@
 #include <dolfin/fem/LocalSolver.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
 #include <dolfin/fem/NonlinearVariationalSolver.h>
-#include <dolfin/fem/PointSource.h>
-#include <dolfin/fem/SystemAssembler.h>
 #include <dolfin/fem/PETScDMCollection.h>
+#include <dolfin/fem/PointSource.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
-#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/fem/SystemAssembler.h>
 #include <dolfin/function/GenericFunction.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/SubDomain.h>
-#include <dolfin/la/GenericTensor.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
+#include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/SparsityPattern.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/SubDomain.h>
 
 #include "casters.h"
 
@@ -62,12 +65,6 @@ namespace dolfin_wrappers
 {
   void fem(py::module& m)
   {
-#ifdef HAS_PETSC4PY
-    int ierr = import_petsc4py();
-    if (ierr != 0)
-      throw std::runtime_error("Failed to import petsc4py");
-#endif
-
     // UFC objects
     py::class_<ufc::finite_element, std::shared_ptr<ufc::finite_element>>
       (m, "ufc_finite_element", "UFC finite element object");
@@ -187,16 +184,17 @@ namespace dolfin_wrappers
            &dolfin::GenericDofMap::entity_dofs)
       .def("entity_closure_dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&, std::size_t) const)
            &dolfin::GenericDofMap::entity_closure_dofs)
-      .def("entity_dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&,
+          .def("entity_dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&,
                                                                                    std::size_t,
                                                                                    const std::vector<std::size_t>&) const)
            &dolfin::GenericDofMap::entity_dofs)
-      .def("entity_closure_dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&,
+          .def("entity_closure_dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&,
                                                                                            std::size_t,
                                                                                            const std::vector<std::size_t>&) const)
            &dolfin::GenericDofMap::entity_closure_dofs)
       .def("num_entity_dofs", &dolfin::GenericDofMap::num_entity_dofs)
       .def("tabulate_local_to_global_dofs", &dolfin::GenericDofMap::tabulate_local_to_global_dofs)
+      .def("local_to_global_index", &dolfin::GenericDofMap::local_to_global_index)
       .def("clear_sub_map_data", &dolfin::GenericDofMap::clear_sub_map_data)
       .def("tabulate_entity_dofs", [](const dolfin::GenericDofMap& instance, std::size_t entity_dim,
                                       std::size_t cell_entity_index)
