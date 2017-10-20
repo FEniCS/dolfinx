@@ -149,12 +149,13 @@ def la_index_dtype():
 
     def array(self):
         "Return a numpy array representation of the local part of a Vector"
+        # Annoying deprecation warning that cannot be turned off, sorry! 
         import warnings
-        class VectorArrayDeprecationWarning(DeprecationWarning):
-            pass
-        warnings.simplefilter('always', VectorArrayDeprecationWarning)
-        warnings.warn("GenericVector.array() is being deprecated, "
-                      "use GenericVector.get_local()", VectorArrayDeprecationWarning)
+        with warnings.catch_warnings():
+            # Changes default warning filter inside this context manager only
+            warnings.simplefilter('always')
+            warnings.warn("GenericVector.array() is being deprecated, "
+                          "use GenericVector.get_local()", DeprecationWarning)
         return self.get_local()
 
     def __contains__(self, value):
