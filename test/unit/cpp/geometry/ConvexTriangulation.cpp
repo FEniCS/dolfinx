@@ -15,15 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2017-03-17
-// Last changed: 2012-09-01
-//
 // Unit tests for convex triangulation
 
 #include <dolfin/geometry/ConvexTriangulation.h>
 #include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/geometry/predicates.h>
-#include <gtest/gtest.h>
+#include <catch/catch.hpp>
 
 using namespace dolfin;
 
@@ -152,147 +149,139 @@ namespace
 }
 
 //-----------------------------------------------------------------------------
-TEST(ConvexTriangulationTest, testTrivialCase)
+TEST_CASE("Convex triangulation test")
 {
-  std::vector<Point> input {
-    Point(0,0,0),
-    Point(0,0,1),
-    Point(0,1,0),
-    Point(1,0,0) };
+  SECTION("test trivial case]")
+  {
+    std::vector<Point> input = {{Point(0,0,0),
+                                 Point(0,0,1),
+                                 Point(0,1,0),
+                                 Point(1,0,0)}};
 
-  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
-  std::size_t expected_size = 1;
-  
-  ASSERT_EQ(tri.size(), expected_size);
-  ASSERT_NEAR(triangulation_volume(tri), 1./6., DOLFIN_EPS);
-}
-//-----------------------------------------------------------------------------
-TEST(ConvexTriangulationTest, testTrivialCase2)
-{
-  std::vector<Point> input {
-    Point(0,0,0),
-    Point(0,0,1),
-    Point(0,1,0),
-    Point(0,1,1),
-    Point(1,0,0),
-    Point(1,0,1),
-    Point(1,1,0),
-    Point(1,1,1) };
+    std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+    std::size_t expected_size = 1;
 
-  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+    CHECK(tri.size() == expected_size);
+    CHECK(triangulation_volume(tri) == Approx(1.0/6.0).margin(DOLFIN_EPS));
+  }
 
-  ASSERT_TRUE(pure_triangular(tri, 3));
-  ASSERT_FALSE(has_degenerate(tri, 3));
-  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
-  ASSERT_NEAR(triangulation_volume(tri), 1., DOLFIN_EPS);
-}
-//-----------------------------------------------------------------------------
-TEST(ConvexTriangulationTest, testCoplanarPoints)
-{
-  std::vector<Point> input {
-    Point(0,   0,   0),
-    Point(0,   0,   1),
-    Point(0,   1,   0),
-    Point(0,   1,   1),
-    Point(1,   0,   0),
-    Point(1,   0,   1),
-    Point(1,   1,   0),
-    Point(1,   1,   1),
-    Point(0.1, 0.1, 0)};
+  SECTION("test trivial case 2")
+  {
+    std::vector<Point> input = {{Point(0,0,0),
+                                 Point(0,0,1),
+                                 Point(0,1,0),
+                                 Point(0,1,1),
+                                 Point(1,0,0),
+                                 Point(1,0,1),
+                                 Point(1,1,0),
+                                 Point(1,1,1)}};
 
-  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+    std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
-  ASSERT_TRUE(pure_triangular(tri, 3));
-  ASSERT_FALSE(has_degenerate(tri, 3));
-  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
-  ASSERT_NEAR(triangulation_volume(tri), 1., DOLFIN_EPS);
-}
-//-----------------------------------------------------------------------------
-TEST(ConvexTriangulationTest, testCoplanarColinearPoints)
-{
-  std::vector<Point> input {
-    Point(0, 0,   0),
-    Point(0, 0,   1),
-    Point(0, 1,   0),
-    Point(0, 1,   1),
-    Point(1, 0,   0),
-    Point(1, 0,   1),
-    Point(1, 1,   0),
-    Point(1, 1,   1),
-    Point(0, 0.1, 0)};
+    CHECK(pure_triangular(tri, 3));
+    CHECK_FALSE(has_degenerate(tri, 3));
+    CHECK_FALSE(triangulation_selfintersects(tri, 3));
+    CHECK(triangulation_volume(tri) == Approx(1.0).margin(DOLFIN_EPS));
+  }
 
-  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+  SECTION("test coplanar points")
+  {
+    std::vector<Point> input {
+      Point(0,   0,   0),
+        Point(0,   0,   1),
+        Point(0,   1,   0),
+        Point(0,   1,   1),
+        Point(1,   0,   0),
+        Point(1,   0,   1),
+        Point(1,   1,   0),
+        Point(1,   1,   1),
+        Point(0.1, 0.1, 0)};
 
-  ASSERT_TRUE(pure_triangular(tri, 3));
-  ASSERT_FALSE(has_degenerate(tri, 3));
-  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
-  ASSERT_NEAR(triangulation_volume(tri), 1., DOLFIN_EPS);
-}
-//-----------------------------------------------------------------------------
-TEST(ConvexTriangulationTest, testFailingCase)
-{
-  std::vector<Point> input {
-    Point(0.7, 0.6, 0.1),
-    Point(0.7, 0.6, 0.5),
-    Point(0.1, 0.1, 0.1),
-    Point(0.8333333333333333, 0.8333333333333333, 0),
-    Point(0.1, 0.15, 0.1),
-    Point(0.1, 0.45, 0.1),
-    Point(0.16, 0.15, 0.1),
-    Point(0.61, 0.525, 0.1),
-    Point(0.46, 0.6, 0.100000000000000006) };
+    std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
+    CHECK(pure_triangular(tri, 3));
+    CHECK_FALSE(has_degenerate(tri, 3));
+    CHECK_FALSE(triangulation_selfintersects(tri, 3));
+    CHECK(triangulation_volume(tri) == Approx(1.0).margin(DOLFIN_EPS));
+  }
 
-  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+  SECTION("test coplanar colinear points]")
+  {
+    std::vector<Point> input {
+      Point(0, 0,   0),
+        Point(0, 0,   1),
+        Point(0, 1,   0),
+        Point(0, 1,   1),
+        Point(1, 0,   0),
+        Point(1, 0,   1),
+        Point(1, 1,   0),
+        Point(1, 1,   1),
+        Point(0, 0.1, 0)};
 
-  ASSERT_TRUE(pure_triangular(tri, 3));
-  ASSERT_FALSE(has_degenerate(tri, 3));
-  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
-}
-//-----------------------------------------------------------------------------
-TEST(ConvexTriangulationTest, testFailingCase2)
-{
-  std::vector<Point> input {
-    Point(0.7, 0.6, 0.5),
-    Point(0.7, 0.1, 0.1),
-    Point(0.8, 0, 0),
-    Point (0.1, 0.1, 0.1),
-    Point(0.16, 0.1, 0.1),
-    Point(0.592, 0.1, 0.1),
-    Point (0.16, 0.1, 0.14),
-    Point (0.52, 0.1, 0.38),
-    Point (0.7, 0.1, 0.38)
-  };
+    std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
-  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+    CHECK(pure_triangular(tri, 3));
+    CHECK_FALSE(has_degenerate(tri, 3));
+    CHECK_FALSE(triangulation_selfintersects(tri, 3));
+    CHECK(triangulation_volume(tri) == Approx(1.0).margin(DOLFIN_EPS));
+  }
 
-  ASSERT_TRUE(pure_triangular(tri, 3));
-  ASSERT_FALSE(has_degenerate(tri, 3));
-  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
-}
-//-----------------------------------------------------------------------------
-TEST(ConvexTriangulationTest, testFailingCase3)
-{
-  std::vector<Point> input {
-    Point (0.495926, 0.512037, 0.144444),
-    Point (0.376482, 0.519121, 0.284321),
-    Point (0.386541, 0.599783, 0.0609262),
-    Point (0.388086, 0.60059, 0.0607155),
-    Point (0.7, 0.6, 0.5),
-    Point (0.504965, 0.504965, 0.0447775),
-    Point (0.833333, 0.833333, 0)
-  };
+  SECTION("test failing case")
+  {
+    std::vector<Point> input {
+      Point(0.7, 0.6, 0.1),
+        Point(0.7, 0.6, 0.5),
+        Point(0.1, 0.1, 0.1),
+        Point(0.8333333333333333, 0.8333333333333333, 0),
+        Point(0.1, 0.15, 0.1),
+        Point(0.1, 0.45, 0.1),
+        Point(0.16, 0.15, 0.1),
+        Point(0.61, 0.525, 0.1),
+        Point(0.46, 0.6, 0.100000000000000006) };
 
-  std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+    std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
 
-  ASSERT_TRUE(pure_triangular(tri, 3));
-  ASSERT_FALSE(has_degenerate(tri, 3));
-  ASSERT_FALSE(triangulation_selfintersects(tri, 3));
-}
-//-----------------------------------------------------------------------------
-int ConvexTriangulation_main(int argc, char **argv)
-{
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    CHECK(pure_triangular(tri, 3));
+    CHECK_FALSE(has_degenerate(tri, 3));
+    CHECK_FALSE(triangulation_selfintersects(tri, 3));
+  }
+
+  SECTION("test failing case 2")
+  {
+    std::vector<Point> input {
+      Point(0.7, 0.6, 0.5),
+        Point(0.7, 0.1, 0.1),
+        Point(0.8, 0, 0),
+        Point (0.1, 0.1, 0.1),
+        Point(0.16, 0.1, 0.1),
+        Point(0.592, 0.1, 0.1),
+        Point (0.16, 0.1, 0.14),
+        Point (0.52, 0.1, 0.38),
+        Point (0.7, 0.1, 0.38)};
+
+    std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+
+    CHECK(pure_triangular(tri, 3));
+    CHECK_FALSE(has_degenerate(tri, 3));
+    CHECK_FALSE(triangulation_selfintersects(tri, 3));
+  }
+
+  SECTION("test failing case 3")
+  {
+    std::vector<Point> input {
+      Point (0.495926, 0.512037, 0.144444),
+        Point (0.376482, 0.519121, 0.284321),
+        Point (0.386541, 0.599783, 0.0609262),
+        Point (0.388086, 0.60059, 0.0607155),
+        Point (0.7, 0.6, 0.5),
+        Point (0.504965, 0.504965, 0.0447775),
+        Point (0.833333, 0.833333, 0)};
+
+    std::vector<std::vector<Point>> tri = ConvexTriangulation::triangulate_graham_scan_3d(input);
+
+    CHECK(pure_triangular(tri, 3));
+    CHECK_FALSE(has_degenerate(tri, 3));
+    CHECK_FALSE(triangulation_selfintersects(tri, 3));
+  }
 }
 //-----------------------------------------------------------------------------

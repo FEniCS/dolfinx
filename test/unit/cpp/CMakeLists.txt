@@ -15,6 +15,7 @@ set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/common/SubSystemsManager.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/function/Expression.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/geometry/ConvexTriangulation.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/io/XMLMeshData.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/io/XMLMeshValueCollection.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/la/LinearOperator.cpp
