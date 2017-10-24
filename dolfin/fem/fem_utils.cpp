@@ -18,6 +18,7 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/MeshEntityIterator.h>

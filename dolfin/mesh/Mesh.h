@@ -32,7 +32,6 @@
 #include <string>
 #include <utility>
 
-#include <dolfin/ale/MeshDisplacement.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
