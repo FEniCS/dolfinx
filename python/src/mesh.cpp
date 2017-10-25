@@ -49,6 +49,7 @@
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/MeshTransformation.h>
 #include <dolfin/mesh/MultiMesh.h>
+#include <dolfin/function/Expression.h>
 
 #include "casters.h"
 
