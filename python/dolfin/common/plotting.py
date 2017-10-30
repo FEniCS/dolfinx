@@ -276,7 +276,7 @@ def _plot_matplotlib(obj, mesh, kwargs):
     # Avoid importing pyplot until used
     try:
         import matplotlib.pyplot as plt
-    except:
+    except Exception:
         cpp.warning("matplotlib.pyplot not available, cannot plot.")
         return
 

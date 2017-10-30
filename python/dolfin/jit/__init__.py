@@ -16,7 +16,7 @@ def get_pybind_include():
         # Get include paths from module
         import pybind11
         return [pybind11.get_include(True), pybind11.get_include()]
-    except:
+    except Exception:
         pass
 
     # Look in /usr/local/include and /usr/include

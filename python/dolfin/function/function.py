@@ -163,7 +163,7 @@ def _check_and_contract_linear_comb(expr, self, multi_index):
             # Check if the exact same Function is already present
             ind = funcs.index(func)
             weights[ind] += weight
-        except:
+        except Exception:
             funcs.append(func)
             weights.append(weight)
 
