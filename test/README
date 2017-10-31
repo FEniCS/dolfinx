@@ -31,14 +31,3 @@ the LinearOperator.py Python unit tests, do
 
   cd build/test/unit/la/python
   python LinearOperator.py
-
-Similarly, to run one of the C++ unit tests, do
-
-  cd build/test/unit/la/cpp
-  make
-  ./test_LinearOperator
-
-Modifications of tests should be made in the source directory, not in
-the build directory. After a modification, simply run cmake (or the
-cmake.local script) to copy the tests to the build folder. Then run
-the tests from the build folder.
