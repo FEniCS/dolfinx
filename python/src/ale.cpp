@@ -52,7 +52,5 @@ namespace dolfin_wrappers
                     auto _disp = disp.attr("_cpp_object").cast<const dolfin::GenericFunction*>();
                     dolfin::ALE::move(mesh, *_disp);
                   });
-
   }
-
 }

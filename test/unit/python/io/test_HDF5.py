@@ -192,7 +192,7 @@ def test_save_and_read_function(tempdir):
     hdf5_file = HDF5File(mesh.mpi_comm(), filename, "r")
     hdf5_file.read(F1, "/function")
     result = F0.vector() - F1.vector()
-    assert len(result.array().nonzero()[0]) == 0
+    assert len(result.get_local().nonzero()[0]) == 0
     hdf5_file.close()
 
 @skip_if_not_HDF5

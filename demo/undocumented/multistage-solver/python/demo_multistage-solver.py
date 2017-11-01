@@ -43,7 +43,7 @@ exit(0)
 # Load mesh and subdomains
 mesh = Mesh("../dolfin_fine.xml.gz")
 sub_domains = MeshFunction("size_t", mesh, "../dolfin_fine_subdomains.xml.gz");
-h = CellSize(mesh)
+h = CellDiameter(mesh)
 
 # Create FunctionSpaces
 Q = FunctionSpace(mesh, "CG", 1)

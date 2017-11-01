@@ -14,28 +14,24 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2007-05-29
-// Last changed: 2012-01-12
-//
 
 #include <dolfin.h>
-#include <gtest/gtest.h>
+#include <catch.hpp>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TEST(MeshValueCollectionIO, test_read)
+TEST_CASE("MeshValueCollection IO test", "[!hide][meshvaluecollection_io]")
 {
   // Create mesh and read file
   // Link to the mesh is quite long...
   auto mesh = std::make_shared<UnitCubeMesh>(5, 5, 5);
-  MeshValueCollection<std::size_t>
-    markers(mesh, "./test/unit/cpp/io/xml_value_collection_ref.xml");
+  MeshValueCollection<std::size_t> markers(mesh, "./io/xml_value_collection_ref.xml");
+  //MeshValueCollection<std::size_t>
+  //  markers(mesh, "./test/unit/cpp/io/xml_value_collection_ref.xml");
 
   // Check size
-  ASSERT_EQ(dolfin::MPI::sum(mesh->mpi_comm(), markers.size()),
-            (std::size_t) 6);
+  CHECK(dolfin::MPI::sum(mesh->mpi_comm(), markers.size()) == (std::size_t) 6);
 
   // Check sum of values
   const std::map<std::pair<std::size_t, std::size_t>, std::size_t>&
@@ -43,11 +39,6 @@ TEST(MeshValueCollectionIO, test_read)
   std::size_t sum = 0;
   for (auto it = values.begin(); it != values.end(); ++it)
     sum += it->second;
-  ASSERT_EQ(dolfin::MPI::sum(mesh->mpi_comm(), sum), (std::size_t) 48);
-}
 
-// Test all
-int XMLMeshValueCollection_main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+  CHECK(dolfin::MPI::sum(mesh->mpi_comm(), sum) == (std::size_t) 48);
 }

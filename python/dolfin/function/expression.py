@@ -366,7 +366,7 @@ class Expression(BaseExpression):
         # mpi_comm = kwargs.pop("mpi_comm", None)
 
         if not isinstance(cpp_code, (str, tuple, list)):
-            raise RuntimeError("Must supply C++ code to Expression")
+            raise RuntimeError("Must supply C++ code to Expression. You may want to use UserExpression")
         else:
             params = kwargs
             for k in params:

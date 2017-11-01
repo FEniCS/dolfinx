@@ -167,7 +167,7 @@ def compile_class(cpp_data):
         module, signature = dijitso_jit(cpp_data, module_name, params,
                                         generate=cpp_data['jit_generate'])
         submodule = dijitso.extract_factory_function(module, "create_" + module_name)()
-    except:
+    except Exception:
         raise RuntimeError("Unable to compile C++ code with dijitso")
 
     if name == 'expression':

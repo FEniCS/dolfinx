@@ -59,8 +59,8 @@ def test_pointsource_vector_node(mesh, point):
     for v in vertices(mesh):
         if near(v.midpoint().distance(point), 0.0):
             ind = v2d[v.index()]
-            if ind < len(b.array()):
-                assert np.round(b.array()[ind]-10.0) == 0
+            if ind < len(b.get_local()):
+                assert np.round(b.get_local()[ind]-10.0) == 0
 
 
 @pytest.mark.parametrize("mesh", meshes)
@@ -118,8 +118,8 @@ def test_pointsource_vector_fs(mesh, point):
         if near(v.midpoint().distance(point), 0.0):
             for spc_idx in range(V.num_sub_spaces()):
                 ind = v2d[v.index()*V.num_sub_spaces() + spc_idx]
-                if ind < len(b.array()):
-                    assert np.round(b.array()[ind] - 10.0) == 0
+                if ind < len(b.get_local()):
+                    assert np.round(b.get_local()[ind] - 10.0) == 0
 
 
 @pytest.mark.parametrize("mesh, point", data)

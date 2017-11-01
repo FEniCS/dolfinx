@@ -85,7 +85,6 @@ option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
-option(DOLFIN_ENABLE_GTEST "Enable C++ unit tests with Google Test if DOLFIN_ENABLE_TESTING is true (requires Internet connection to download Google Test when first configured)." ON)
 option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
 option(DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py." OFF)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
@@ -98,7 +97,6 @@ add_feature_info(DOLFIN_AUTO_DETECT_MPI DOLFIN_AUTO_DETECT_MPI "Detect MPI autom
 add_feature_info(DOLFIN_ENABLE_CODE_COVERAGE DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage.")
 add_feature_info(DOLFIN_WITH_LIBRARY_VERSION DOLFIN_WITH_LIBRARY_VERSION "Build with library version information.")
 add_feature_info(DOLFIN_ENABLE_TESTING DOLFIN_ENABLE_TESTING "Enable testing.")
-add_feature_info(DOLFIN_ENABLE_GTEST DOLFIN_ENABLE_GTEST "Enable C++ unit tests with Google Test if DOLFIN_ENABLE_TESTING is true (requires Internet connection to download Google Test when first configured).")
 add_feature_info(DOLFIN_ENABLE_BENCHMARKS DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs.")
 add_feature_info(DOLFIN_ENABLE_DOCS DOLFIN_ENABLE_DOCS "Enable generation of documentation.")
 add_feature_info(DOLFIN_SKIP_BUILD_TESTS DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
@@ -982,24 +980,13 @@ endif()
 
 if (DOLFIN_ENABLE_TESTING)
 
-  # Google Test needs to be downloaded and compiled by CMake, so we
-  # handle it as a special case.
-  if (DOLFIN_ENABLE_GTEST)
-    # Add sub directory to build GoogleTest
-    add_subdirectory(test/unit)
+  # Add target "unittests_cpp", but do not add to default target
+  add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
 
-    # Add target "unittests_cpp", but do not add to default target
-    add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
-
-    # Add target "run_unittests_cpp" for running only C++ unit tests
-    add_custom_target(run_unittests_cpp
-      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/unittests_cpp
-      DEPENDS copy_data_test_demo unittests_cpp)
-  else()
-    # Add dummy targets for C++ unit tests
-    add_custom_target(unittests_cpp)
-    add_custom_target(run_unittests_cpp)
-  endif()
+  # Add target "run_unittests_cpp" for running only C++ unit tests
+  add_custom_target(run_unittests_cpp
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/unittests_cpp
+    DEPENDS copy_data_test_demo unittests_cpp)
 
   # FIXME: remove this buildbot updated to call unittests_cpp
   # Add alias for unittests_cpp

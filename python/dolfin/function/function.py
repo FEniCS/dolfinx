@@ -163,7 +163,7 @@ def _check_and_contract_linear_comb(expr, self, multi_index):
             # Check if the exact same Function is already present
             ind = funcs.index(func)
             weights[ind] += weight
-        except:
+        except Exception:
             funcs.append(func)
             weights.append(weight)
 
@@ -362,8 +362,11 @@ class Function(ufl.Coefficient):
         else:
             self._cpp_object.interpolate(u)
 
-    def compute_vertex_values(self, mesh):
-        return self._cpp_object.compute_vertex_values(mesh)
+    def compute_vertex_values(self, mesh=None):
+        if mesh is not None:
+            return self._cpp_object.compute_vertex_values(mesh)
+        else:
+            return self._cpp_object.compute_vertex_values()
 
     def set_allow_extrapolation(self, value):
         self._cpp_object.set_allow_extrapolation(value)

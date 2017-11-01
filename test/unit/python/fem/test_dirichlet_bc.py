@@ -270,9 +270,9 @@ def test_nocaching_values():
         x.zero()
         bc.set_value(Constant(1.0))
         bc.apply(x)
-        assert numpy.allclose(x.array(), 1.0)
+        assert numpy.allclose(x.get_local(), 1.0)
 
         x.zero()
         bc.set_value(Constant(2.0))
         bc.apply(x)
-        assert numpy.allclose(x.array(), 2.0)
+        assert numpy.allclose(x.get_local(), 2.0)

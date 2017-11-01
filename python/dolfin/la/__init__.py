@@ -22,11 +22,11 @@ def as_backend_type(x):
 
 # Extend GenericVector
 def __gt__(self, value):
+    "Returns a boolean array with > status for all elements"
     if np.isscalar(value):
-        return self.array() > value
-    if np.isinstance(value, cpp.la.GenericVector):
-        return self.array() > value.array()
-    return NotImplemented
+        return self.get_local() > value
+    else:
+        return self.get_local() > value.get_local()
 
 
 cpp.la.GenericVector.__gt__ = __gt__
@@ -34,11 +34,11 @@ del __gt__
 
 
 def __ge__(self, value):
+    "Returns a boolean array with >= status for all elements"
     if np.isscalar(value):
-        return self.array() >= value
-    if isinstance(value, cpp.la.GenericVector):
-        return self.array() >= value.array()
-    return NotImplemented
+        return self.get_local() >= value
+    else:
+        return self.get_local() >= value.get_local()
 
 
 cpp.la.GenericVector.__ge__ = __ge__
@@ -46,11 +46,11 @@ del __ge__
 
 
 def __lt__(self, value):
+    "Returns a boolean array with < status for all elements"
     if np.isscalar(value):
-        return self.array() < value
-    if isinstance(value, cpp.la.GenericVector):
-        return self.array() < value.array()
-    return NotImplemented
+        return self.get_local() < value
+    else:
+        return self.get_local() < value.get_local()
 
 
 cpp.la.GenericVector.__lt__ = __lt__
@@ -58,11 +58,11 @@ del __lt__
 
 
 def __le__(self, value):
+    "Returns a boolean array with <= status for all elements"
     if np.isscalar(value):
-        return self.array() <= value
-    if isinstance(value, cpp.la.GenericVector):
-        return self.array() <= value.array()
-    return NotImplemented
+        return self.get_local() <= value
+    else:
+        return self.get_local() <= value.get_local()
 
 
 cpp.la.GenericVector.__le__ = __le__
@@ -71,10 +71,9 @@ del __le__
 
 def __eq__(self, value):
     if np.isscalar(value):
-        return self.array() == value
-    if isinstance(value, cpp.la.GenericVector):
-        return self.array() == value.array()
-    return NotImplemented
+        return self.get_local() == value
+    else:
+        return self.get_local() == value.get_local()
 
 
 cpp.la.GenericVector.__eq__ = __eq__

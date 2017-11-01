@@ -30,6 +30,14 @@ def k(u, v):
 def m(u, v):
     return dot(u, v)*dx
 
+# Wrappers around SLEPcEigenSolver for test_slepc_eigensolver_gen_hermitian
+def SLEPcEigenSolverOperatorsFromInit(K, M):
+    return SLEPcEigenSolver(K, M)
+    
+def SLEPcEigenSolverOperatorsFromSetOperators(K, M):
+    slepc_eigen_solver = SLEPcEigenSolver(K.mpi_comm())
+    slepc_eigen_solver.set_operators(K, M)
+    return slepc_eigen_solver
 
 # Fixtures
 
@@ -80,11 +88,12 @@ def test_set_from_options():
     assert solver.get_options_prefix() == prefix
 
 @skip_if_not_PETsc_or_not_slepc
-def test_slepc_eigensolver_gen_hermitian(K_M):
+@pytest.mark.parametrize("SLEPcEigenSolverWrapper", (SLEPcEigenSolverOperatorsFromInit, SLEPcEigenSolverOperatorsFromSetOperators))
+def test_slepc_eigensolver_gen_hermitian(K_M, SLEPcEigenSolverWrapper):
     "Test SLEPc eigen solver"
 
     K, M = K_M
-    esolver = SLEPcEigenSolver(K, M)
+    esolver = SLEPcEigenSolverWrapper(K, M)
 
     esolver.parameters["solver"] = "krylov-schur"
     esolver.parameters["spectral_transform"] = 'shift-and-invert'

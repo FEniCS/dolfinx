@@ -41,5 +41,5 @@ def test_xdmf_cell_scalar_ghost(cd_tempdir, ghost_mode):
         vec = Vector()
         hdf.read(vec, "/VisualisationVector/0", False)
     
-    area = MPI.sum(mesh.mpi_comm(), sum(vec.array()))
+    area = MPI.sum(mesh.mpi_comm(), sum(vec.get_local()))
     assert abs(n*n - area) < 1e-9

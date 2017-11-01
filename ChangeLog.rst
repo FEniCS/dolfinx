@@ -38,6 +38,9 @@ Change log
   elements.
 - Updates for some demos and tests to show usage of quadrilateral and
   hexahedral meshes.
+- Deprecate ``CellSize`` (equivalent to ``2*Circumradius``)
+  in favour of new ``CellDiameter``; add ``MinCellEdgeLength``
+  and ``MaxCellEdgeLength``
 
 
 2017.1.0 (2017-05-09)

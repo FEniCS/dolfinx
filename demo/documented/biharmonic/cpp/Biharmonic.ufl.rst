@@ -24,7 +24,7 @@ regenerating the code. ::
 
    # Normal component, mesh size and right-hand side
    n  = FacetNormal(triangle)
-   h = 2.0*Circumradius(triangle)
+   h = CellDiameter(triangle)
    h_avg = (h('+') + h('-'))/2
 
    # Parameters

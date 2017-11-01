@@ -110,7 +110,7 @@ def test_assemble_linear(V1, Q1, square_boundary, V2, Q2, cube_boundary):
     w = TestFunction(Q1)
     u.vector()[:] = 0.5
     facetareas = MPI.sum(square_boundary.mpi_comm(),
-                         assemble(u*w*dx).array().sum())
+                         assemble(u*w*dx).get_local().sum())
     assert round(facetareas - 2.0, 7) == 0
 
     u = Function(V2)
@@ -119,7 +119,7 @@ def test_assemble_linear(V1, Q1, square_boundary, V2, Q2, cube_boundary):
     a = u*w*dx
     b = assemble(a)
     facetareas = MPI.sum(cube_boundary.mpi_comm(),
-                         assemble(u*w*dx).array().sum())
+                         assemble(u*w*dx).get_local().sum())
     assert round(facetareas - 3.0, 7) == 0
 
     mesh = UnitSquareMesh(8, 8)
