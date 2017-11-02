@@ -383,7 +383,6 @@ namespace dolfin_wrappers
       .def("id", &dolfin::MeshFunction<SCALAR>::id) \
       .def("ufl_id", &dolfin::MeshFunction<SCALAR>::id) \
       .def("mesh", &dolfin::MeshFunction<SCALAR>::mesh) \
-      .def("set_values", &dolfin::MeshFunction<SCALAR>::set_values) \
       .def("set_all", &dolfin::MeshFunction<SCALAR>::set_all) \
       .def("where_equal", &dolfin::MeshFunction<SCALAR>::where_equal) \
       .def("array", [](dolfin::MeshFunction<SCALAR>& self) \
@@ -397,8 +396,10 @@ namespace dolfin_wrappers
 
 #define MESH_ENTITY_FUNCTION_MACRO(TYPE, SCALAR, SCALAR_NAME) \
     py::class_<dolfin::TYPE<SCALAR>, std::shared_ptr<dolfin::TYPE<SCALAR>>, \
-      dolfin::MeshFunction<SCALAR>>(m, #TYPE""#SCALAR_NAME)
-
+      dolfin::MeshFunction<SCALAR>>(m, #TYPE""#SCALAR_NAME) \
+    .def(py::init<std::shared_ptr<const dolfin::Mesh>>(), "Create a """#TYPE"Function") \
+    .def(py::init<std::shared_ptr<const dolfin::Mesh>, SCALAR>(), "Create a """#TYPE"Function")
+	   
     MESH_ENTITY_FUNCTION_MACRO(VertexFunction, bool, Bool);
     MESH_ENTITY_FUNCTION_MACRO(VertexFunction, int, Int);
     MESH_ENTITY_FUNCTION_MACRO(VertexFunction, double, Double);
