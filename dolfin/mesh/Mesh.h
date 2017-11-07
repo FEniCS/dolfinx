@@ -202,17 +202,6 @@ namespace dolfin
     const std::vector<unsigned int>& cells() const
     { return _topology(_topology.dim(), 0)(); }
 
-    /// Get number of local entities of given topological dimension.
-    ///
-    /// @param  dim (std::size_t)
-    ///         Topological dimension.
-    ///
-    /// @return std::size_t
-    ///         Number of local entities of topological dimension d.
-    ///
-    std::size_t size(std::size_t dim) const
-    { return _topology.size(dim); }
-
     /// Get global number of entities of given topological dimension.
     ///
     /// @param dim (std::size_t)

@@ -4,6 +4,7 @@ Change log
 2017.2.0 (unreleased)
 ---------------------
 
+- Remove ``Mesh::size``. Use ``Mesh::num_entities`` instead.
 - Improved mesh topology computation performance.
 - Remove excessive calls to MPI init. It may now be necessary in some
   cases to explicitly intialise MPI.

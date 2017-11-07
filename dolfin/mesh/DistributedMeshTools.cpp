@@ -196,7 +196,7 @@ std::size_t DistributedMeshTools::number_entities(
   // Prepare list of global entity numbers. Check later that nothing
   // is equal to -1
   global_entity_indices
-    = std::vector<std::int64_t>(mesh.size(d), -1);
+    = std::vector<std::int64_t>(mesh.num_entities(d), -1);
 
   std::map<Entity, EntityData>::const_iterator it;
 

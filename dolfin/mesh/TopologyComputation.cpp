@@ -383,12 +383,12 @@ void TopologyComputation::compute_from_map(Mesh& mesh,
                                                        .entity_type(d0)));
 
   MeshConnectivity& connectivity = mesh.topology()(d0, d1);
-  connectivity.init(mesh.size(d0), cell_type->num_entities(d1));
+  connectivity.init(mesh.num_entities(d0), cell_type->num_entities(d1));
 
   // Make a map from the sorted d1 entity vertices to the d1 entity index
   boost::unordered_map<std::vector<unsigned int>, unsigned int>
     entity_to_index;
-  entity_to_index.reserve(mesh.size(d1));
+  entity_to_index.reserve(mesh.num_entities(d1));
 
   const std::size_t num_verts_d1 = mesh.type().num_vertices(d1);
   std::vector<unsigned int> key(num_verts_d1);

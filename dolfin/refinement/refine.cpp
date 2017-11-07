@@ -153,11 +153,11 @@ void dolfin::p_refine(Mesh& refined_mesh, const Mesh& mesh)
   editor.open(refined_mesh, tdim, gdim, 2);
 
   // Copy over mesh
-  editor.init_vertices_global(mesh.size(0), mesh.size_global(0));
+  editor.init_vertices_global(mesh.num_entities(0), mesh.size_global(0));
   for (VertexIterator v(mesh); !v.end(); ++v)
     editor.add_vertex(v->index(), v->point());
 
-  editor.init_cells_global(mesh.size(tdim), mesh.size_global(tdim));
+  editor.init_cells_global(mesh.num_entities(tdim), mesh.size_global(tdim));
   std::vector<std::size_t> verts(tdim + 1);
   for (CellIterator c(mesh); !c.end(); ++c)
   {

@@ -168,7 +168,6 @@ namespace dolfin_wrappers
       .def("num_facets", &dolfin::Mesh::num_facets, "Number of facets")
       .def("num_cells", &dolfin::Mesh::num_cells, "Number of cells")
       .def("ordered", &dolfin::Mesh::ordered)
-      .def("size", &dolfin::Mesh::size)
       .def("rmax", &dolfin::Mesh::rmax)
       .def("rmin", &dolfin::Mesh::rmin)
       .def("rotate", (void (dolfin::Mesh::*)(double, std::size_t, const dolfin::Point&))

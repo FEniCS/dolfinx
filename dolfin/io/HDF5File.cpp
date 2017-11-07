@@ -444,7 +444,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     global_size[1] = num_cell_points;
 
     const std::int64_t num_cells
-      = mpi_io ? mesh.size_global(cell_dim) : mesh.size(cell_dim);
+      = mpi_io ? mesh.size_global(cell_dim) : mesh.num_entities(cell_dim);
     dolfin_assert(global_size[0] == num_cells);
     const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
     write_data(topology_dataset, topological_data, global_size, mpi_io);
@@ -785,7 +785,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   else
   {
     // In parallel and not CellFunction
-    data_values.reserve(mesh.size(cell_dim));
+    data_values.reserve(mesh.num_entities(cell_dim));
 
     // Drop duplicate data
     const std::size_t tdim = mesh.topology().dim();
