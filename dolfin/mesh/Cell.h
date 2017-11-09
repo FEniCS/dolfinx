@@ -420,11 +420,19 @@ namespace dolfin
 
     /// Constructor on Mesh
     CellFunction(std::shared_ptr<const Mesh> mesh)
-      : MeshFunction<T>(mesh, mesh->topology().dim()) {}
+      : MeshFunction<T>(mesh, mesh->topology().dim()) {
+        deprecation("CellFunction<T>(mesh)",
+                    "2017.1.0dev",
+                    "Use MeshFunction<T>(mesh, mesh->topology().dim())");     
+      }
 
     /// Constructor on Mesh and value
     CellFunction(std::shared_ptr<const Mesh> mesh, const T& value)
-      : MeshFunction<T>(mesh, mesh->topology().dim(), value) {}
+      : MeshFunction<T>(mesh, mesh->topology().dim(), value) {
+        deprecation("CellFunction<T>(mesh, value)",
+                    "2017.1.0dev",
+                    "Use MeshFunction<T>(mesh, mesh->topology().dim(), value)");
+      }
   };
 
 }

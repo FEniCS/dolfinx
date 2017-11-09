@@ -101,11 +101,19 @@ namespace dolfin
 
     /// Constructor on Mesh
     EdgeFunction(std::shared_ptr<const Mesh> mesh)
-      : MeshFunction<T>(mesh, 1) {}
+      : MeshFunction<T>(mesh, 1) {
+        deprecation("EdgeFunction<T>(mesh)",
+                    "2017.1.0dev",
+                    "Use MeshFunction<T>(mesh, 1)");
+      }
 
     /// Constructor on Mesh and value
     EdgeFunction(std::shared_ptr<const Mesh> mesh, const T& value)
-      : MeshFunction<T>(mesh, 1, value) {}
+      : MeshFunction<T>(mesh, 1, value) {
+        deprecation("EdgeFunction<T>(mesh, value)",
+                    "2017.1.0dev",
+                    "Use MeshFunction<T>(mesh, 1, value)");
+      }
 
   };
 

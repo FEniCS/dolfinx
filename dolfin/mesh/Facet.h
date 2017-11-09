@@ -91,11 +91,19 @@ namespace dolfin
 
     /// Constructor on Mesh
     FacetFunction(std::shared_ptr<const Mesh> mesh)
-      : MeshFunction<T>(mesh, mesh->topology().dim() - 1) {}
+      : MeshFunction<T>(mesh, mesh->topology().dim() - 1) {
+        deprecation("FacetFunction<T>(mesh)",
+                    "2017.1.0dev",
+                    "Use MeshFunction<T>(mesh, mesh->topology().dim() - 1)");
+      }
 
     /// Constructor on Mesh and value
     FacetFunction(std::shared_ptr<const Mesh> mesh, const T& value)
-      : MeshFunction<T>(mesh, mesh->topology().dim() - 1, value) {}
+      : MeshFunction<T>(mesh, mesh->topology().dim() - 1, value) {
+        deprecation("FacetFunction<T>(mesh, value)",
+                    "2017.1.0dev",
+                    "Use MeshFunction<T>(mesh, mesh->topology().dim() - 1, value)");
+      }
 
   };
 

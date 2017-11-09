@@ -71,11 +71,19 @@ namespace dolfin
 
     /// Constructor on Mesh
     VertexFunction(std::shared_ptr<const Mesh> mesh)
-      : MeshFunction<T>(mesh, 0) {}
+      : MeshFunction<T>(mesh, 0) {
+        deprecation("VertexFunction<T>(mesh)",
+                    "2017.1.0dev",
+                    "Use MeshFunction<T>(mesh, 0)");
+      }
 
     /// Constructor on Mesh and value
     VertexFunction(std::shared_ptr<const Mesh> mesh, const T& value)
-      : MeshFunction<T>(mesh, 0, value) {}
+      : MeshFunction<T>(mesh, 0, value) {
+        deprecation("VertexFunction<T>(mesh, value)",
+                    "2017.1.0dev",
+                    "Use MeshFunction<T>(mesh, 0, value)");
+      }
 
   };
 
