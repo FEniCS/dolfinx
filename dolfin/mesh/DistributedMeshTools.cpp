@@ -113,7 +113,7 @@ std::size_t DistributedMeshTools::number_entities(
   {
     shared_entities.clear();
     global_entity_indices = mesh.topology().global_indices(d);
-    return mesh.size_global(d);
+    return mesh.num_entities_global(d);
 
     /*
     dolfin_error("MeshPartitioning.cpp",

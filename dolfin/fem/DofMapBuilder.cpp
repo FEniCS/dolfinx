@@ -1077,7 +1077,7 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
       mesh.init(d);
       DistributedMeshTools::number_entities(mesh, d);
       num_mesh_entities_local[d]  = mesh.num_entities(d);
-      num_mesh_entities_global_unconstrained[d] = mesh.size_global(d);
+      num_mesh_entities_global_unconstrained[d] = mesh.num_entities_global(d);
     }
   }
 
@@ -1181,8 +1181,8 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   for (std::size_t d = 0; d <= D; ++d)
     needs_entities[d] = ufc_dofmap->needs_mesh_entities(d);
 
-  // Generate and number required mesh entities (local & global, and
-  // constrained global)
+  // Generate and number required mesh entities (local & global, and constrained
+  // global)
   std::vector<std::size_t> num_mesh_entities_local(D + 1, 0);
   std::vector<std::size_t> num_mesh_entities_global_unconstrained(D + 1, 0);
   std::vector<bool> required_mesh_entities(D + 1, false);
@@ -1194,7 +1194,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
       mesh.init(d);
       DistributedMeshTools::number_entities(mesh, d);
       num_mesh_entities_local[d]  = mesh.num_entities(d);
-      num_mesh_entities_global_unconstrained[d] = mesh.size_global(d);
+      num_mesh_entities_global_unconstrained[d] = mesh.num_entities_global(d);
     }
   }
 

@@ -194,7 +194,7 @@ void ParallelRefinement::create_new_vertices()
   const std::size_t num_new_vertices = n;
   const std::size_t global_offset
     = MPI::global_offset(_mesh.mpi_comm(), num_new_vertices, true)
-    + _mesh.size_global(0);
+    + _mesh.num_entities_global(0);
 
   // If they are shared, then the new global vertex index needs to be
   // sent off-process.  Add offset to map, and collect up any shared

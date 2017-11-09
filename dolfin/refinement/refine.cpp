@@ -71,8 +71,8 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh, bool redistribute)
   }
 
   // Report the number of refined cells
-  const std::size_t n0 = mesh.size_global(D);
-  const std::size_t n1 = refined_mesh.size_global(D);
+  const std::size_t n0 = mesh.num_entities_global(D);
+  const std::size_t n1 = refined_mesh.num_entities_global(D);
   log(TRACE,  "Number of cells increased from %d to %d (%.1f%% increase).",
        n0, n1, 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
 
@@ -114,8 +114,8 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh,
   }
 
   // Report the number of refined cells
-  const std::size_t n0 = mesh.size_global(D);
-  const std::size_t n1 = refined_mesh.size_global(D);
+  const std::size_t n0 = mesh.num_entities_global(D);
+  const std::size_t n1 = refined_mesh.num_entities_global(D);
   log(TRACE, "Number of cells increased from %d to %d (%.1f%% increase).",
       n0, n1, 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
 
@@ -153,11 +153,11 @@ void dolfin::p_refine(Mesh& refined_mesh, const Mesh& mesh)
   editor.open(refined_mesh, tdim, gdim, 2);
 
   // Copy over mesh
-  editor.init_vertices_global(mesh.num_entities(0), mesh.size_global(0));
+  editor.init_vertices_global(mesh.num_entities(0), mesh.num_entities_global(0));
   for (VertexIterator v(mesh); !v.end(); ++v)
     editor.add_vertex(v->index(), v->point());
 
-  editor.init_cells_global(mesh.num_entities(tdim), mesh.size_global(tdim));
+  editor.init_cells_global(mesh.num_entities(tdim), mesh.num_entities_global(tdim));
   std::vector<std::size_t> verts(tdim + 1);
   for (CellIterator c(mesh); !c.end(); ++c)
   {

@@ -190,7 +190,7 @@ std::vector<std::pair<std::size_t, std::size_t>>
 
   const std::size_t num_processes = MPI::size(mpi_comm);
   const std::size_t num_global_cells
-    = mesh.size_global(mesh.topology().dim());
+    = mesh.num_entities_global(mesh.topology().dim());
   const std::pair<std::size_t, std::size_t> cell_range
     = MPI::local_range(mpi_comm, num_global_cells);
 
@@ -258,7 +258,7 @@ void HDF5Utility::cell_owners_in_range(std::vector<std::pair<std::size_t,
   // MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
-  const std::size_t n_global_cells = mesh.size_global(mesh.topology().dim());
+  const std::size_t n_global_cells = mesh.num_entities_global(mesh.topology().dim());
   const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Communicate global ownership of cells to matching process

@@ -191,7 +191,7 @@ std::shared_ptr<Mesh> MeshHierarchy::rebalance() const
 
   // Cells
 
-  local_mesh_data.topology.num_global_cells = coarse_mesh.size_global(tdim);
+  local_mesh_data.topology.num_global_cells = coarse_mesh.num_entities_global(tdim);
   const std::size_t num_local_cells = coarse_mesh.num_entities(tdim);
   local_mesh_data.topology.global_cell_indices.resize(num_local_cells);
   local_mesh_data.topology.cell_vertices.resize(boost::extents[num_local_cells][local_mesh_data.topology.num_vertices_per_cell]);
@@ -207,7 +207,7 @@ std::shared_ptr<Mesh> MeshHierarchy::rebalance() const
   // Vertices - must be reordered into global order
 
   const std::size_t num_local_vertices = coarse_mesh.num_entities(0);
-  local_mesh_data.geometry.num_global_vertices = coarse_mesh.size_global(0);
+  local_mesh_data.geometry.num_global_vertices = coarse_mesh.num_entities_global(0);
   local_mesh_data.geometry.vertex_indices.resize(num_local_vertices);
   for (VertexIterator v(coarse_mesh); !v.end(); ++v)
     local_mesh_data.geometry.vertex_indices[v->index()] = v->global_index();

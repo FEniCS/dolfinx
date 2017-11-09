@@ -33,7 +33,7 @@ def test_1D_mesh():
     # Create global boundary mesh
     bmesh1 = BoundaryMesh(mesh, "exterior")
     assert MPI.sum(mesh.mpi_comm(), bmesh1.num_cells()) == 2
-    assert bmesh1.size_global(0) == 2
+    assert bmesh1.num_entities_global(0) == 2
     assert bmesh1.topology().dim() == 0
 
 
@@ -43,7 +43,7 @@ def test_2D_mesh():
     # Create global boundary mesh
     bmesh1 = BoundaryMesh(mesh, "exterior")
     assert MPI.sum(mesh.mpi_comm(), bmesh1.num_cells()) == 4*8
-    assert bmesh1.size_global(1) == 4*8
+    assert bmesh1.num_entities_global(1) == 4*8
     assert bmesh1.topology().dim() == 1
 
 
@@ -53,5 +53,5 @@ def test_3D_mesh():
     # Create global boundary mesh
     bmesh1 = BoundaryMesh(mesh, "exterior")
     assert MPI.sum(mesh.mpi_comm(), bmesh1.num_cells()) == 6*8*8*2
-    assert bmesh1.size_global(2) == 6*8*8*2
+    assert bmesh1.num_entities_global(2) == 6*8*8*2
     assert bmesh1.topology().dim() == 2

@@ -212,9 +212,9 @@ def test_save_and_read_mesh_2D(tempdir):
     mesh_file.read(mesh1, "/my_mesh", False)
     mesh_file.close()
 
-    assert mesh0.size_global(0) == mesh1.size_global(0)
+    assert mesh0.num_entities_global(0) == mesh1.num_entities_global(0)
     dim = mesh0.topology().dim()
-    assert mesh0.size_global(dim) == mesh1.size_global(dim)
+    assert mesh0.num_entities_global(dim) == mesh1.num_entities_global(dim)
 
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
@@ -233,9 +233,9 @@ def test_save_and_read_mesh_3D(tempdir):
     mesh_file.read(mesh1, "/my_mesh", False)
     mesh_file.close()
 
-    assert mesh0.size_global(0) == mesh1.size_global(0)
+    assert mesh0.num_entities_global(0) == mesh1.num_entities_global(0)
     dim = mesh0.topology().dim()
-    assert mesh0.size_global(dim) == mesh1.size_global(dim)
+    assert mesh0.num_entities_global(dim) == mesh1.num_entities_global(dim)
 
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel

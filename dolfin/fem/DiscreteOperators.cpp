@@ -54,7 +54,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
 
   // Check that V0 is a (lowest-order) edge basis
   mesh.init(1);
-  if (V0.dim() != mesh.size_global(1))
+  if (V0.dim() != mesh.num_entities_global(1))
   {
     dolfin_error("DiscreteGradient.cpp",
                  "compute discrete gradient operator",
@@ -62,7 +62,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   }
 
   // Check that V1 is a linear nodal basis
-  if (V1.dim() != mesh.size_global(0))
+  if (V1.dim() != mesh.num_entities_global(0))
   {
     dolfin_error("DiscreteGradient.cpp",
                  "compute discrete gradient operator",
