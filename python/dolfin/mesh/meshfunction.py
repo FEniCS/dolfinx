@@ -7,9 +7,9 @@ _meshfunction_types = {"bool": cpp.mesh.MeshFunctionBool,
                        "double": cpp.mesh.MeshFunctionDouble}
 
 _vertexfunction_types = {"bool": cpp.mesh.VertexFunctionBool,
-                       "size_t": cpp.mesh.VertexFunctionSizet,
-                       "int": cpp.mesh.VertexFunctionInt,
-                       "double": cpp.mesh.VertexFunctionDouble}
+                         "size_t": cpp.mesh.VertexFunctionSizet,
+                         "int": cpp.mesh.VertexFunctionInt,
+                         "double": cpp.mesh.VertexFunctionDouble}
 
 _edgefunction_types = {"bool": cpp.mesh.EdgeFunctionBool,
                        "size_t": cpp.mesh.EdgeFunctionSizet,
@@ -21,15 +21,10 @@ _facefunction_types = {"bool": cpp.mesh.FaceFunctionBool,
                        "int": cpp.mesh.FaceFunctionInt,
                        "double": cpp.mesh.FaceFunctionDouble}
 
-_facefunction_types = {"bool": cpp.mesh.FaceFunctionBool,
-                       "size_t": cpp.mesh.FaceFunctionSizet,
-                       "int": cpp.mesh.FaceFunctionInt,
-                       "double": cpp.mesh.FaceFunctionDouble}
-
 _facetfunction_types = {"bool": cpp.mesh.FacetFunctionBool,
-                       "size_t": cpp.mesh.FacetFunctionSizet,
-                       "int": cpp.mesh.FacetFunctionInt,
-                       "double": cpp.mesh.FacetFunctionDouble}
+                        "size_t": cpp.mesh.FacetFunctionSizet,
+                        "int": cpp.mesh.FacetFunctionInt,
+                        "double": cpp.mesh.FacetFunctionDouble}
 
 _cellfunction_types = {"bool": cpp.mesh.CellFunctionBool,
                        "size_t": cpp.mesh.CellFunctionSizet,
