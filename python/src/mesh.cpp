@@ -94,13 +94,18 @@ namespace dolfin_wrappers
     py::class_<dolfin::MeshTopology, std::shared_ptr<dolfin::MeshTopology>>
       (m, "MeshTopology", "DOLFIN MeshTopology object")
       .def("dim", &dolfin::MeshTopology::dim, "Topological dimension")
+      .def("init", (void (dolfin::MeshTopology::*)(std::size_t)) &dolfin::MeshTopology::init)
+      .def("init", (void (dolfin::MeshTopology::*)(std::size_t, std::size_t, std::size_t))
+           &dolfin::MeshTopology::init)
       .def("__call__", (const dolfin::MeshConnectivity& (dolfin::MeshTopology::*)(std::size_t, std::size_t) const)
            &dolfin::MeshTopology::operator())
       .def("size", &dolfin::MeshTopology::size)
       .def("hash", &dolfin::MeshTopology::hash)
+      .def("init_global_indices", &dolfin::MeshTopology::init_global_indices)
       .def("have_global_indices", &dolfin::MeshTopology::have_global_indices)
       .def("ghost_offset", &dolfin::MeshTopology::ghost_offset)
       .def("cell_owner", (const std::vector<unsigned int>& (dolfin::MeshTopology::*)() const) &dolfin::MeshTopology::cell_owner)
+      .def("set_global_index", &dolfin::MeshTopology::set_global_index)
       .def("global_indices", [](const dolfin::MeshTopology& self, int dim)
            { auto& indices = self.global_indices(dim); return py::array_t<std::int64_t>(indices.size(), indices.data()); })
       .def("have_shared_entities", &dolfin::MeshTopology::have_shared_entities)
@@ -272,7 +277,8 @@ namespace dolfin_wrappers
       (m, "Facet", "DOLFIN Facet object")
       .def(py::init<const dolfin::Mesh&, std::size_t>())
       .def("exterior", &dolfin::Facet::exterior)
-      .def("normal", (dolfin::Point (dolfin::Facet::*)() const)  &dolfin::Facet::normal);
+      .def("normal", (dolfin::Point (dolfin::Facet::*)() const)  &dolfin::Facet::normal)
+      .def("normal", (double (dolfin::Facet::*)(std::size_t) const)  &dolfin::Facet::normal);
 
     // dolfin::Cell
     py::class_<dolfin::Cell, std::shared_ptr<dolfin::Cell>, dolfin::MeshEntity>
@@ -462,6 +468,10 @@ namespace dolfin_wrappers
            &dolfin::MeshEditor::add_vertex)
       .def("add_vertex", (void (dolfin::MeshEditor::*)(std::size_t, const std::vector<double>&))
            &dolfin::MeshEditor::add_vertex)
+      .def("add_vertex_global", (void (dolfin::MeshEditor::*)(std::size_t, std::size_t, const dolfin::Point&))
+           &dolfin::MeshEditor::add_vertex_global)
+      .def("add_vertex_global", (void (dolfin::MeshEditor::*)(std::size_t, std::size_t, const std::vector<double>&))
+           &dolfin::MeshEditor::add_vertex_global)
       .def("add_cell", (void (dolfin::MeshEditor::*)(std::size_t, const std::vector<std::size_t>&))
            &dolfin::MeshEditor::add_cell)
       .def("close", &dolfin::MeshEditor::close, py::arg("order") = true);
