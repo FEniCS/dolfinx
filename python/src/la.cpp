@@ -613,7 +613,7 @@ namespace dolfin_wrappers
 
     // dolfin::Matrix
     py::class_<dolfin::Matrix, std::shared_ptr<dolfin::Matrix>, dolfin::GenericMatrix>
-      (m, "Matrix", "DOLFIN Matrix object")
+      (m, "Matrix", py::dynamic_attr(), "DOLFIN Matrix object")
       .def(py::init<>())
       .def(py::init<const dolfin::Matrix&>())  // Remove? (use copy instead)
       .def(py::init<const dolfin::GenericMatrix&>())  // Remove? (use copy instead)
@@ -639,7 +639,7 @@ namespace dolfin_wrappers
 
     // dolfin::Vector
     py::class_<dolfin::Vector, std::shared_ptr<dolfin::Vector>, dolfin::GenericVector>
-      (m, "Vector", "DOLFIN Vector object")
+      (m, "Vector", py::dynamic_attr(), "DOLFIN Vector object")
       .def(py::init<>())
       .def(py::init<const dolfin::Vector&>())
       .def(py::init<const dolfin::GenericVector&>())
