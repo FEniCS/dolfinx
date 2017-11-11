@@ -31,6 +31,8 @@ del sys
 # del sys
 
 # Import cpp modules
+from .cpp import __version__
+
 from .cpp.common import (Variable, has_debug, has_hdf5, has_scotch,
                          has_hdf5_parallel, has_mpi, has_mpi4py,
                          has_petsc, has_petsc4py, has_parmetis,
