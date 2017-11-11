@@ -193,7 +193,8 @@ namespace dolfin_wrappers
            });
 
     // dolfin::TensorLayout
-    py::class_<dolfin::TensorLayout, std::shared_ptr<dolfin::TensorLayout>> tensor_layout(m, "TensorLayout");
+    py::class_<dolfin::TensorLayout, std::shared_ptr<dolfin::TensorLayout>,
+               dolfin::Variable> tensor_layout(m, "TensorLayout");
 
     // dolfin::TensorLayout enums
     py::enum_<dolfin::TensorLayout::Sparsity>(tensor_layout, "Sparsity")
@@ -853,7 +854,8 @@ namespace dolfin_wrappers
       .def("set_nullspace", &dolfin::PETScMatrix::set_nullspace)
       .def("set_near_nullspace", &dolfin::PETScMatrix::set_near_nullspace);
 
-    py::class_<dolfin::PETScPreconditioner, std::shared_ptr<dolfin::PETScPreconditioner>>
+    py::class_<dolfin::PETScPreconditioner, std::shared_ptr<dolfin::PETScPreconditioner>, 
+               dolfin::Variable>
       (m, "PETScPreconditioner", "DOLFIN PETScPreconditioner object")
       .def(py::init<std::string>(), py::arg("type")="default")
       .def("preconditioners", &dolfin::PETScPreconditioner::preconditioners);

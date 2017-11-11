@@ -109,9 +109,8 @@ namespace dolfin_wrappers
            &dolfin::MeshTopology::shared_entities);
 
     // dolfin::Mesh
-    py::class_<dolfin::Mesh, std::shared_ptr<dolfin::Mesh>>(m, "Mesh",
-                                                            py::dynamic_attr(),
-                                                            "DOLFIN Mesh object")
+    py::class_<dolfin::Mesh, std::shared_ptr<dolfin::Mesh>, dolfin::Variable>
+      (m, "Mesh", py::dynamic_attr(), "DOLFIN Mesh object")
       .def(py::init<>())
       .def(py::init<std::string>())
       .def(py::init<const dolfin::Mesh&>())
@@ -189,7 +188,8 @@ namespace dolfin_wrappers
            { return dolfin::CellType::type2string(self.type().cell_type()); });
 
     // dolfin::MeshData
-    py::class_<dolfin::MeshData, std::shared_ptr<dolfin::MeshData>>(m, "MeshData", "Mesh data object")
+    py::class_<dolfin::MeshData, std::shared_ptr<dolfin::MeshData>, dolfin::Variable>
+      (m, "MeshData", "Mesh data object")
       .def("array", [](dolfin::MeshData& self, std::string key, std::size_t i)
            {
              const std::vector<std::size_t>& a = self.array(key, i);

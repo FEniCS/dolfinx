@@ -45,7 +45,7 @@ namespace dolfin_wrappers
   {
 #ifdef HAS_HDF5
     // dolfin::TimesSeries
-    py::class_<dolfin::TimeSeries, std::shared_ptr<dolfin::TimeSeries>>(m, "TimeSeries")
+    py::class_<dolfin::TimeSeries, std::shared_ptr<dolfin::TimeSeries>, dolfin::Variable>(m, "TimeSeries")
       .def(py::init<std::string>())
       .def(py::init([](const MPICommWrapper comm, const std::string &arg)
                     { return std::unique_ptr<dolfin::TimeSeries>(new dolfin::TimeSeries(comm.get(), arg)); }))

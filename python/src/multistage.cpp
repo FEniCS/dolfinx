@@ -35,7 +35,7 @@ namespace dolfin_wrappers
   void multistage(py::module& m)
   {
     // dolfin::MultiStageScheme
-    py::class_<dolfin::MultiStageScheme, std::shared_ptr<dolfin::MultiStageScheme>>
+    py::class_<dolfin::MultiStageScheme, std::shared_ptr<dolfin::MultiStageScheme>, dolfin::Variable>
       (m, "MultiStageScheme")
       .def(py::init<std::vector<std::vector<std::shared_ptr<const dolfin::Form>>>,
            std::shared_ptr<const dolfin::Form>,
@@ -58,7 +58,7 @@ namespace dolfin_wrappers
       .def("step_interval", &dolfin::RKSolver::step_interval);
 
     // dolfin::PointIntegralSolver
-    py::class_<dolfin::PointIntegralSolver, std::shared_ptr<dolfin::PointIntegralSolver>>
+    py::class_<dolfin::PointIntegralSolver, std::shared_ptr<dolfin::PointIntegralSolver>, dolfin::Variable>
       (m, "PointIntegralSolver")
       .def(py::init<std::shared_ptr<dolfin::MultiStageScheme>>())
       .def("reset_newton_solver", &dolfin::PointIntegralSolver::reset_newton_solver)
