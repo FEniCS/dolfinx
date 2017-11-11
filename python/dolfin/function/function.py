@@ -204,7 +204,9 @@ class Function(ufl.Coefficient):
                 raise TypeError("expected one or two arguments when "
                                 "instantiating from another Function")
         elif isinstance(args[0], cpp.function.Function):
-            raise RuntimeError("Construction from a cpp function not implemented yet")
+            self._cpp_object = args[0]
+            ufl.Coefficient.__init__(self, self.function_space().ufl_function_space(),
+                                     count=self._cpp_object.id())
         elif isinstance(args[0], FunctionSpace):
             V = args[0]
 
