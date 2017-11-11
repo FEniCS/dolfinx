@@ -806,7 +806,7 @@ namespace dolfin_wrappers
       .def("instance", &dolfin::PETScFactory::instance)
       .def("create_matrix", [](const dolfin::PETScFactory &self, const MPICommWrapper comm)
         { return self.create_matrix(comm.get()); })
-      .def("create_vector", [](const dolfin::EigenFactory &self, const MPICommWrapper comm)
+      .def("create_vector", [](const dolfin::PETScFactory &self, const MPICommWrapper comm)
         { return self.create_vector(comm.get()); });
 
     // dolfin::PETScVector
