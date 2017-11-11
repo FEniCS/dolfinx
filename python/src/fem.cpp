@@ -171,6 +171,7 @@ namespace dolfin_wrappers
     // dolfin::GenericDofMap
     py::class_<dolfin::GenericDofMap, std::shared_ptr<dolfin::GenericDofMap>, dolfin::Variable>
       (m, "GenericDofMap", "DOLFIN DofMap object")
+      .def("global_dimension", &dolfin::GenericDofMap::global_dimension)
       .def("index_map", &dolfin::GenericDofMap::index_map)
       .def("neighbours", &dolfin::GenericDofMap::neighbours)
       .def("off_process_owner", &dolfin::GenericDofMap::off_process_owner)
@@ -195,6 +196,7 @@ namespace dolfin_wrappers
       .def("num_entity_dofs", &dolfin::GenericDofMap::num_entity_dofs)
       .def("tabulate_local_to_global_dofs", &dolfin::GenericDofMap::tabulate_local_to_global_dofs)
       .def("local_to_global_index", &dolfin::GenericDofMap::local_to_global_index)
+      .def("local_to_global_unowned", &dolfin::GenericDofMap::local_to_global_unowned)
       .def("clear_sub_map_data", &dolfin::GenericDofMap::clear_sub_map_data)
       .def("tabulate_entity_dofs", [](const dolfin::GenericDofMap& instance, std::size_t entity_dim,
                                       std::size_t cell_entity_index)
@@ -262,6 +264,10 @@ namespace dolfin_wrappers
       .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&) const)
            &dolfin::DirichletBC::apply)
       .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&, dolfin::GenericVector&) const)
+           &dolfin::DirichletBC::apply)
+      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericVector&, const dolfin::GenericVector&) const)
+           &dolfin::DirichletBC::apply)
+      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&, dolfin::GenericVector&, const dolfin::GenericVector&) const)
            &dolfin::DirichletBC::apply)
       .def("user_subdomain", &dolfin::DirichletBC::user_sub_domain)
       .def("set_value", &dolfin::DirichletBC::set_value)
