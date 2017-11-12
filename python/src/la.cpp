@@ -130,6 +130,7 @@ namespace dolfin_wrappers
     // dolfin::IndexMap
     py::class_<dolfin::IndexMap, std::shared_ptr<dolfin::IndexMap>> index_map(m, "IndexMap");
     index_map.def("size", &dolfin::IndexMap::size);
+    index_map.def("block_size", &dolfin::IndexMap::block_size);
     index_map.def("local_range", &dolfin::IndexMap::local_range);
 
     // dolfin::IndexMap enums
