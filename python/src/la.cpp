@@ -245,7 +245,7 @@ namespace dolfin_wrappers
     // dolfin::GenericMatrix
     py::class_<dolfin::GenericMatrix, std::shared_ptr<dolfin::GenericMatrix>,
                dolfin::GenericTensor, dolfin::GenericLinearOperator>
-      (m, "GenericMatrix", "DOLFIN GenericMatrix object")
+      (m, "GenericMatrix", py::dynamic_attr(), "DOLFIN GenericMatrix object")
       .def("init_vector", &dolfin::GenericMatrix::init_vector)
       .def("axpy", &dolfin::GenericMatrix::axpy)
       .def("mult", &dolfin::GenericMatrix::mult)
@@ -375,7 +375,7 @@ namespace dolfin_wrappers
     // dolfin::GenericVector
     py::class_<dolfin::GenericVector, std::shared_ptr<dolfin::GenericVector>,
                dolfin::GenericTensor>
-      (m, "GenericVector", "DOLFIN GenericVector object")
+      (m, "GenericVector", py::dynamic_attr(), "DOLFIN GenericVector object")
       .def("init", (void (dolfin::GenericVector::*)(std::size_t)) &dolfin::GenericVector::init)
       .def("init", (void (dolfin::GenericVector::*)(const dolfin::TensorLayout&)) &dolfin::GenericVector::init)
       .def("init", (void (dolfin::GenericVector::*)(std::pair<std::size_t, std::size_t>)) &dolfin::GenericVector::init)
@@ -613,7 +613,7 @@ namespace dolfin_wrappers
 
     // dolfin::Matrix
     py::class_<dolfin::Matrix, std::shared_ptr<dolfin::Matrix>, dolfin::GenericMatrix>
-      (m, "Matrix", py::dynamic_attr(), "DOLFIN Matrix object")
+      (m, "Matrix", "DOLFIN Matrix object")
       .def(py::init<>())
       .def(py::init<const dolfin::Matrix&>())  // Remove? (use copy instead)
       .def(py::init<const dolfin::GenericMatrix&>())  // Remove? (use copy instead)
@@ -639,7 +639,7 @@ namespace dolfin_wrappers
 
     // dolfin::Vector
     py::class_<dolfin::Vector, std::shared_ptr<dolfin::Vector>, dolfin::GenericVector>
-      (m, "Vector", py::dynamic_attr(), "DOLFIN Vector object")
+      (m, "Vector", "DOLFIN Vector object")
       .def(py::init<>())
       .def(py::init<const dolfin::Vector&>())
       .def(py::init<const dolfin::GenericVector&>())
