@@ -20,8 +20,10 @@
 from __future__ import print_function
 import pytest
 import numpy as np
-from dolfin import *
 
+import sys
+
+from dolfin import *
 from dolfin_utils.test import *
 
 
@@ -516,3 +518,29 @@ def test_dofs_dim():
                 num_mesh_entities = mesh.num_entities(dim)
                 dofs_per_entity = dofmap.num_entity_dofs(dim)
                 assert len(edofs) == dofs_per_entity*num_mesh_entities
+
+
+@skip_if_not_pybind11
+def test_readonly_view_local_to_global_unwoned(mesh):
+    """Test that local_to_global_unwoned() returns readonly
+    view into the data; in particulat test lifetime of date
+    owner"""
+    V = FunctionSpace(mesh, "P", 1)
+    dofmap = V.dofmap()
+    index_map = dofmap.index_map()
+
+    rc = sys.getrefcount(dofmap)
+    l2gu = dofmap.local_to_global_unowned()
+    assert sys.getrefcount(dofmap) == rc + 1 if l2gu.size else rc
+    assert not l2gu.flags.writeable
+    assert all(l2gu < V.dofmap().global_dimension())
+    del l2gu
+    assert sys.getrefcount(dofmap) == rc
+
+    rc = sys.getrefcount(index_map)
+    l2gu = index_map.local_to_global_unowned()
+    assert sys.getrefcount(index_map) == rc + 1 if l2gu.size else rc
+    assert not l2gu.flags.writeable
+    assert all(l2gu < V.dofmap().global_dimension())
+    del l2gu
+    assert sys.getrefcount(index_map) == rc
