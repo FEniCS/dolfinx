@@ -69,7 +69,6 @@ def test_point_setitem():
     assert np.all(p[:] == (2, 4, 6))
 
 
-@skip_if_pybind11
 def test_point_array():
     p = Point(1, 2, 3)
     assert np.all(p.array() == (1, 2, 3))
