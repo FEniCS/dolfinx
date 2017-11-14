@@ -523,7 +523,7 @@ def test_dofs_dim():
 @skip_if_not_pybind11
 def test_readonly_view_local_to_global_unwoned(mesh):
     """Test that local_to_global_unwoned() returns readonly
-    view into the data; in particulat test lifetime of date
+    view into the data; in particular test lifetime of data
     owner"""
     V = FunctionSpace(mesh, "P", 1)
     dofmap = V.dofmap()
