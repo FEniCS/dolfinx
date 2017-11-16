@@ -97,6 +97,7 @@ namespace pybind11
     PETSC_CASTER_MACRO(Vec, vec);
     PETSC_CASTER_MACRO(Mat, mat);
     PETSC_CASTER_MACRO(KSP, ksp);
+    PETSC_CASTER_MACRO(SNES, snes);
     PETSC_CASTER_MACRO(DM, dm);
   }
 }

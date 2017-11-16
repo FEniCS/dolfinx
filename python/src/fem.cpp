@@ -170,7 +170,7 @@ namespace dolfin_wrappers
       .def("signature", &dolfin::FiniteElement::signature);
 
     // dolfin::GenericDofMap
-    py::class_<dolfin::GenericDofMap, std::shared_ptr<dolfin::GenericDofMap>>
+    py::class_<dolfin::GenericDofMap, std::shared_ptr<dolfin::GenericDofMap>, dolfin::Variable>
       (m, "GenericDofMap", "DOLFIN DofMap object")
       .def("global_dimension", &dolfin::GenericDofMap::global_dimension,
            "The dimension of the global finite element function space")
@@ -241,7 +241,7 @@ namespace dolfin_wrappers
                   py::arg("init")=true, py::arg("finalize")=true);
 
     // dolfin::DirichletBC
-    py::class_<dolfin::DirichletBC, std::shared_ptr<dolfin::DirichletBC>>
+    py::class_<dolfin::DirichletBC, std::shared_ptr<dolfin::DirichletBC>, dolfin::Variable>
       (m, "DirichletBC", "DOLFIN DirichletBC object")
       .def(py::init<const dolfin::DirichletBC&>())
       .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>,
@@ -272,6 +272,10 @@ namespace dolfin_wrappers
       .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&) const)
            &dolfin::DirichletBC::apply)
       .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&, dolfin::GenericVector&) const)
+           &dolfin::DirichletBC::apply)
+      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericVector&, const dolfin::GenericVector&) const)
+           &dolfin::DirichletBC::apply)
+      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&, dolfin::GenericVector&, const dolfin::GenericVector&) const)
            &dolfin::DirichletBC::apply)
       .def("user_subdomain", &dolfin::DirichletBC::user_sub_domain)
       .def("set_value", &dolfin::DirichletBC::set_value)

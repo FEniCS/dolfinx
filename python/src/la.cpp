@@ -130,6 +130,7 @@ namespace dolfin_wrappers
     // dolfin::IndexMap
     py::class_<dolfin::IndexMap, std::shared_ptr<dolfin::IndexMap>> index_map(m, "IndexMap");
     index_map.def("size", &dolfin::IndexMap::size)
+      .def("block_size", &dolfin::IndexMap::block_size)
       .def("local_range", &dolfin::IndexMap::local_range)
       .def("local_to_global_unowned",
            [](dolfin::IndexMap& self) {
@@ -200,7 +201,8 @@ namespace dolfin_wrappers
            });
 
     // dolfin::TensorLayout
-    py::class_<dolfin::TensorLayout, std::shared_ptr<dolfin::TensorLayout>> tensor_layout(m, "TensorLayout");
+    py::class_<dolfin::TensorLayout, std::shared_ptr<dolfin::TensorLayout>,
+               dolfin::Variable> tensor_layout(m, "TensorLayout");
 
     // dolfin::TensorLayout enums
     py::enum_<dolfin::TensorLayout::Sparsity>(tensor_layout, "Sparsity")
@@ -250,7 +252,7 @@ namespace dolfin_wrappers
     // dolfin::GenericMatrix
     py::class_<dolfin::GenericMatrix, std::shared_ptr<dolfin::GenericMatrix>,
                dolfin::GenericTensor, dolfin::GenericLinearOperator>
-      (m, "GenericMatrix", "DOLFIN GenericMatrix object")
+      (m, "GenericMatrix", py::dynamic_attr(), "DOLFIN GenericMatrix object")
       .def("init_vector", &dolfin::GenericMatrix::init_vector)
       .def("axpy", &dolfin::GenericMatrix::axpy)
       .def("mult", &dolfin::GenericMatrix::mult)
@@ -380,7 +382,7 @@ namespace dolfin_wrappers
     // dolfin::GenericVector
     py::class_<dolfin::GenericVector, std::shared_ptr<dolfin::GenericVector>,
                dolfin::GenericTensor>
-      (m, "GenericVector", "DOLFIN GenericVector object")
+      (m, "GenericVector", py::dynamic_attr(), "DOLFIN GenericVector object")
       .def("init", (void (dolfin::GenericVector::*)(std::size_t)) &dolfin::GenericVector::init)
       .def("init", (void (dolfin::GenericVector::*)(const dolfin::TensorLayout&)) &dolfin::GenericVector::init)
       .def("init", (void (dolfin::GenericVector::*)(std::pair<std::size_t, std::size_t>)) &dolfin::GenericVector::init)
@@ -811,7 +813,7 @@ namespace dolfin_wrappers
       .def("instance", &dolfin::PETScFactory::instance)
       .def("create_matrix", [](const dolfin::PETScFactory &self, const MPICommWrapper comm)
         { return self.create_matrix(comm.get()); })
-      .def("create_vector", [](const dolfin::EigenFactory &self, const MPICommWrapper comm)
+      .def("create_vector", [](const dolfin::PETScFactory &self, const MPICommWrapper comm)
         { return self.create_vector(comm.get()); });
 
     // dolfin::PETScVector
@@ -860,7 +862,8 @@ namespace dolfin_wrappers
       .def("set_nullspace", &dolfin::PETScMatrix::set_nullspace)
       .def("set_near_nullspace", &dolfin::PETScMatrix::set_near_nullspace);
 
-    py::class_<dolfin::PETScPreconditioner, std::shared_ptr<dolfin::PETScPreconditioner>>
+    py::class_<dolfin::PETScPreconditioner, std::shared_ptr<dolfin::PETScPreconditioner>,
+               dolfin::Variable>
       (m, "PETScPreconditioner", "DOLFIN PETScPreconditioner object")
       .def(py::init<std::string>(), py::arg("type")="default")
       .def("preconditioners", &dolfin::PETScPreconditioner::preconditioners);

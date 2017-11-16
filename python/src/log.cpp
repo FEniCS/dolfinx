@@ -45,7 +45,7 @@ namespace dolfin_wrappers
       .value("CRITICAL", dolfin::LogLevel::CRITICAL);
 
     // dolfin::Table
-    py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>>(m, "Table")
+    py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>, dolfin::Variable>(m, "Table")
       .def(py::init<std::string>())
       .def("str", &dolfin::Table::str);
 

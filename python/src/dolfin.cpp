@@ -53,7 +53,8 @@ namespace dolfin_wrappers
 PYBIND11_MODULE(cpp, m)
 {
   // Create module for C++ wrappers
-  m.doc() ="DOLFIN Python interface";
+  m.doc() = "DOLFIN Python interface";
+  m.attr("__version__") = DOLFIN_VERSION;
 
   // Create common submodule [common]
   py::module common = m.def_submodule("common", "Common module");
