@@ -33,6 +33,7 @@ namespace dolfin
   class GenericVector;
   class Function;
   class MultiMeshFunction;
+  class FiniteElement;
 
   /// This class represents a function on a cut and composite finite
   /// element function space (MultiMesh) defined on one or more possibly

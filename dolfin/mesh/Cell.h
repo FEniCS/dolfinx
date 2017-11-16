@@ -26,12 +26,12 @@
 
 #include <memory>
 
-
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
+#include <ufc.h>
 #include <dolfin/geometry/Point.h>
 
 namespace dolfin

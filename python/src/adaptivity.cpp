@@ -31,6 +31,7 @@
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/LinearVariationalProblem.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Mesh.h>
 
