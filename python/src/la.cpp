@@ -128,8 +128,8 @@ namespace dolfin_wrappers
   void la(py::module& m)
   {
     // dolfin::IndexMap
-    py::class_<dolfin::IndexMap, std::shared_ptr<dolfin::IndexMap>> index_map(m, "IndexMap")
-      .def("size", &dolfin::IndexMap::size)
+    py::class_<dolfin::IndexMap, std::shared_ptr<dolfin::IndexMap>> index_map(m, "IndexMap");
+    index_map.def("size", &dolfin::IndexMap::size)
       .def("block_size", &dolfin::IndexMap::block_size)
       .def("local_range", &dolfin::IndexMap::local_range)
       .def("local_to_global_unowned",
