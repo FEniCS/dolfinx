@@ -121,8 +121,9 @@ namespace dolfin_wrappers
       .def(py::self == py::self)
       .def(py::self * float())
       .def(py::self / float())
-      .def("array", [](dolfin::Point& self)
-           { return Eigen::Map<Eigen::Vector3d>(self.coordinates()); })
+      .def("array",
+           [](dolfin::Point& self) { return Eigen::Vector3d(self.coordinates()); },
+           "Return copy of coordinate array")
       .def("norm", &dolfin::Point::norm)
       .def("x", &dolfin::Point::x)
       .def("y", &dolfin::Point::y)

@@ -128,10 +128,17 @@ namespace dolfin_wrappers
   void la(py::module& m)
   {
     // dolfin::IndexMap
-    py::class_<dolfin::IndexMap, std::shared_ptr<dolfin::IndexMap>> index_map(m, "IndexMap");
-    index_map.def("size", &dolfin::IndexMap::size);
-    index_map.def("block_size", &dolfin::IndexMap::block_size);
-    index_map.def("local_range", &dolfin::IndexMap::local_range);
+    py::class_<dolfin::IndexMap, std::shared_ptr<dolfin::IndexMap>> index_map(m, "IndexMap")
+      .def("size", &dolfin::IndexMap::size)
+      .def("block_size", &dolfin::IndexMap::block_size)
+      .def("local_range", &dolfin::IndexMap::local_range)
+      .def("local_to_global_unowned",
+           [](dolfin::IndexMap& self) {
+             return Eigen::Map<const Eigen::Matrix<std::size_t, Eigen::Dynamic, 1>>(
+               self.local_to_global_unowned().data(),
+               self.local_to_global_unowned().size()); },
+           py::return_value_policy::reference_internal,
+           "Return view into unowned part of local-to-global map");
 
     // dolfin::IndexMap enums
     py::enum_<dolfin::IndexMap::MapSize>(index_map, "MapSize")
@@ -855,7 +862,7 @@ namespace dolfin_wrappers
       .def("set_nullspace", &dolfin::PETScMatrix::set_nullspace)
       .def("set_near_nullspace", &dolfin::PETScMatrix::set_near_nullspace);
 
-    py::class_<dolfin::PETScPreconditioner, std::shared_ptr<dolfin::PETScPreconditioner>, 
+    py::class_<dolfin::PETScPreconditioner, std::shared_ptr<dolfin::PETScPreconditioner>,
                dolfin::Variable>
       (m, "PETScPreconditioner", "DOLFIN PETScPreconditioner object")
       .def(py::init<std::string>(), py::arg("type")="default")
