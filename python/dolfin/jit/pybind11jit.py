@@ -5,7 +5,6 @@ import dijitso
 import pkgconfig
 import re
 
-import dolfin.cpp as cpp
 from dolfin.cpp.log import log, LogLevel
 from . import get_pybind_include
 
