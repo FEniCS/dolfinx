@@ -356,10 +356,6 @@ def la_index_dtype():
     def __len__(self):
         return self.size()
 
-    def __iter__(self):
-        for i in range(self.size()):
-            yield self[i]
-
     def __add__(self, other):
         """x.__add__(y) <==> x+y"""
         from numpy import isscalar
@@ -473,7 +469,7 @@ def la_index_dtype():
         return NotImplemented
 
     def __iter__(self):
-        return iter(self.array())
+        return iter(self.get_local())
 
     import sys
     if sys.version_info[0] == 2:
