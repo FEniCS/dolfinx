@@ -422,7 +422,7 @@ namespace dolfin
     CellFunction(std::shared_ptr<const Mesh> mesh)
       : MeshFunction<T>(mesh, mesh->topology().dim()) {
         deprecation("CellFunction<T>(mesh)",
-                    "2017.1.0dev",
+                    "2017.2.0",
                     "Use MeshFunction<T>(mesh, mesh->topology().dim())");     
       }
 
@@ -430,7 +430,7 @@ namespace dolfin
     CellFunction(std::shared_ptr<const Mesh> mesh, const T& value)
       : MeshFunction<T>(mesh, mesh->topology().dim(), value) {
         deprecation("CellFunction<T>(mesh, value)",
-                    "2017.1.0dev",
+                    "2017.2.0",
                     "Use MeshFunction<T>(mesh, mesh->topology().dim(), value)");
       }
   };

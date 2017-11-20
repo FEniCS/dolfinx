@@ -73,7 +73,7 @@ namespace dolfin
     VertexFunction(std::shared_ptr<const Mesh> mesh)
       : MeshFunction<T>(mesh, 0) {
         deprecation("VertexFunction<T>(mesh)",
-                    "2017.1.0dev",
+                    "2017.2.0",
                     "Use MeshFunction<T>(mesh, 0)");
       }
 
@@ -81,7 +81,7 @@ namespace dolfin
     VertexFunction(std::shared_ptr<const Mesh> mesh, const T& value)
       : MeshFunction<T>(mesh, 0, value) {
         deprecation("VertexFunction<T>(mesh, value)",
-                    "2017.1.0dev",
+                    "2017.2.0",
                     "Use MeshFunction<T>(mesh, 0, value)");
       }
 

@@ -103,7 +103,7 @@ namespace dolfin
     EdgeFunction(std::shared_ptr<const Mesh> mesh)
       : MeshFunction<T>(mesh, 1) {
         deprecation("EdgeFunction<T>(mesh)",
-                    "2017.1.0dev",
+                    "2017.2.0",
                     "Use MeshFunction<T>(mesh, 1)");
       }
 
@@ -111,7 +111,7 @@ namespace dolfin
     EdgeFunction(std::shared_ptr<const Mesh> mesh, const T& value)
       : MeshFunction<T>(mesh, 1, value) {
         deprecation("EdgeFunction<T>(mesh, value)",
-                    "2017.1.0dev",
+                    "2017.2.0",
                     "Use MeshFunction<T>(mesh, 1, value)");
       }
 
