@@ -138,9 +138,11 @@ void dolfin::p_refine(Mesh& refined_mesh, const Mesh& mesh)
                  "Currently only linear -> quadratic is supported");
   }
 
-  if (mesh.type().cell_type() != CellType::triangle
-      and mesh.type().cell_type() != CellType::tetrahedron
-      and mesh.type().cell_type() != CellType::interval)
+  const CellType::Type cell_type = mesh.type().cell_type();
+
+  if (cell_type != CellType::triangle
+      and cell_type != CellType::tetrahedron
+      and cell_type != CellType::interval)
   {
     dolfin_error("refine.cpp",
                  "increase polynomial degree of mesh",
@@ -150,7 +152,7 @@ void dolfin::p_refine(Mesh& refined_mesh, const Mesh& mesh)
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
 
-  editor.open(refined_mesh, tdim, gdim, 2);
+  editor.open(refined_mesh, cell_type, tdim, gdim, 2);
 
   // Copy over mesh
   editor.init_vertices_global(mesh.num_entities(0), mesh.num_entities_global(0));

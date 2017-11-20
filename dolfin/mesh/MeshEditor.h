@@ -43,24 +43,6 @@ namespace dolfin
     /// Destructor
     ~MeshEditor();
 
-    /// Open mesh of given topological and geometrical dimension
-    ///
-    /// @param    mesh (_Mesh_)
-    ///         The mesh to open.
-    /// @param     tdim (std::size_t)
-    ///         The topological dimension.
-    /// @param     gdim (std::size_t)
-    ///         The geometrical dimension.
-    /// @param     degree (std::size_t)
-    ///         The polynomial degree.
-    /// @code{.cpp}
-    ///
-    ///         Mesh mesh;
-    ///         MeshEditor editor;
-    ///         editor.open(mesh, 2, 2, 1);
-    /// @endcode
-    void open(Mesh& mesh, std::size_t tdim, std::size_t gdim, std::size_t degree=1);
-
     /// Open mesh of given cell type, topological and geometrical dimension
     ///
     /// @param    mesh (_Mesh_)
