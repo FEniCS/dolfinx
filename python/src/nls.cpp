@@ -133,7 +133,6 @@ namespace dolfin_wrappers
     // dolfin::PETScTAOSolver
     py::class_<dolfin::PETScTAOSolver, std::shared_ptr<dolfin::PETScTAOSolver>, dolfin::PETScObject>(m, "PETScTAOSolver")
       .def(py::init<>())
-
       .def(py::init([](const MPICommWrapper comm, std::string tao_type="default",
                        std::string ksp_type="default", std::string pc_type="default")
           { return std::unique_ptr<dolfin::PETScTAOSolver>(

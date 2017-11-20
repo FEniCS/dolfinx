@@ -16,7 +16,8 @@ def jit_generate(cpp_code, module_name, signature, parameters):
 
     log(LogLevel.TRACE, "Calling dijitso just-in-time (JIT) compiler for pybind11 code.")
 
-    # Split code on reserved word "SIGNATURE" which will be replaced by the module signature
+    # Split code on reserved word "SIGNATURE" which will be replaced
+    # by the module signature
     # This must occur only once in the code
     split_cpp_code = re.split('SIGNATURE', cpp_code)
     if len(split_cpp_code) < 2:
@@ -33,8 +34,10 @@ def jit_generate(cpp_code, module_name, signature, parameters):
 
 
 def compile_cpp_code(cpp_code):
-    """Compile a user C(++) string to a Python object with pybind11.  Note
-       this is still experimental.
+    """Compile a user C(++) string and expose as a Python object with
+    pybind11.
+
+    Note: this is experimental
 
     """
 
@@ -42,7 +45,7 @@ def compile_cpp_code(cpp_code):
         raise RuntimeError("Could not find DOLFIN pkg-config file. Please make sure appropriate paths are set.")
 
     # Get pkg-config data for DOLFIN
-    d = pkgconfig.parse('dolfin')
+    dolfin_pc = pkgconfig.parse('dolfin')
 
     # Set compiler/build options
     # FIXME: need to locate Python libs and pybind11
@@ -52,14 +55,17 @@ def compile_cpp_code(cpp_code):
     params['cache']['lib_prefix'] = ""
     params['cache']['lib_basename'] = ""
     params['cache']['lib_loader'] = "import"
-    params['build']['include_dirs'] = d["include_dirs"] + get_pybind_include() + [sysconfig.get_config_var("INCLUDEDIR") + "/" + pyversion]
-    params['build']['libs'] = d["libraries"] + [pyversion]
-    params['build']['lib_dirs'] = d["library_dirs"] + [sysconfig.get_config_var("LIBDIR")]
+
+    # Include path and library info from DOLFIN (dolfin.pc)
+    params['build']['include_dirs'] = dolfin_pc["include_dirs"] + get_pybind_include() + [sysconfig.get_config_var("INCLUDEDIR") + "/" + pyversion]
+    params['build']['libs'] = dolfin_pc["libraries"] + [pyversion]
+    params['build']['lib_dirs'] = dolfin_pc["library_dirs"] + [sysconfig.get_config_var("LIBDIR")]
+
     params['build']['cxxflags'] += ('-fno-lto',)
 
-    # enable all define macros from DOLFIN
+    # Enable all macros from dolfin.pc
     dmacros = ()
-    for dm in d['define_macros']:
+    for dm in dolfin_pc['define_macros']:
         if len(dm[1]) == 0:
             dmacros += ('-D' + dm[0],)
         else:
@@ -69,10 +75,10 @@ def compile_cpp_code(cpp_code):
 
     # This seems to be needed by OSX but not in Linux
     # FIXME: probably needed for other libraries too
-    if cpp.common.has_petsc():
-        import os
-        params['build']['libs'] += ['petsc']
-        params['build']['lib_dirs'] += [os.environ["PETSC_DIR"] + "/lib"]
+    #if cpp.common.has_petsc():
+    #    import os
+    #    params['build']['libs'] += ['petsc']
+    #    params['build']['lib_dirs'] += [os.environ["PETSC_DIR"] + "/lib"]
 
     module_hash = hashlib.md5(cpp_code.encode('utf-8')).hexdigest()
     module_name = "dolfin_cpp_module_" + module_hash
