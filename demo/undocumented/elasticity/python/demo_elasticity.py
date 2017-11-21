@@ -143,7 +143,7 @@ File("elasticity.pvd", "compressed") << u
 
 # Save colored mesh partitions in VTK format if running in parallel
 if MPI.size(mesh.mpi_comm()) > 1:
-    File("partitions.pvd") << CellFunction("size_t", mesh, \
+    File("partitions.pvd") << MeshFunction("size_t", mesh, mesh.topology().dim()\
                                            MPI.rank(mesh.mpi_comm()))
 
 # Project and write stress field to post-processing file

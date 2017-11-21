@@ -41,7 +41,7 @@ class Right(SubDomain):
 
 # Define mesh and subdomains
 mesh = UnitSquareMesh(64, 64)
-domains = CellFunction("size_t", mesh)
+domains = MeshFunction("size_t", mesh, mesh.topology().dim())
 domains.set_all(0)
 Left().mark(domains, 1)
 Mid().mark(domains, 2)

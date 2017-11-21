@@ -2719,7 +2719,8 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
 
   const std::string mf_name = "/MeshFunction/" + std::to_string(_counter);
 
-  // If adding a CellFunction to an existing Mesh, do not rewrite Mesh
+  // If adding a MeshFunction of topology dimension dim() to an existing Mesh, 
+  // do not rewrite Mesh
   // FIXME: do some checks on the existing Mesh to make sure it is the same
   // as the meshfunction's mesh.
   pugi::xml_node grid_node = domain_node.child("Grid");

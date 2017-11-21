@@ -148,10 +148,10 @@ def test_creation_and_marking():
         mesh.init()
 
         for left, right in subdomain_pairs:
-            for MeshFunc, f_dim in [(VertexFunction, 0),
-                                    (FacetFunction, dim - 1),
-                                    (CellFunction, dim)]:
-                f = MeshFunc("size_t", mesh, 0)
+            for t_dim, f_dim in [(0, 0),
+                                    (mesh.topology().dim()-1, dim - 1),
+                                    (mesh.topology().dim(), dim)]:
+                f = MeshFunction("size_t", mesh, t_dim, 0)
 
                 left.mark(f, 1)
                 right.mark(f, 2)
@@ -174,10 +174,10 @@ def test_creation_and_marking():
                         MPI.sum(mesh.mpi_comm(), float((f.array() == 1).sum())),
                 ])
 
-        for MeshFunc, f_dim in [(VertexFunction, 0),
-                                (FacetFunction, dim-1),
-                                (CellFunction, dim)]:
-            f = MeshFunc("size_t", mesh, 0)
+        for t_dim, f_dim in [(0, 0),
+                                (mesh.topology().dim()-1, dim-1),
+                                (mesh.topology().dim(), dim)]:
+            f = MeshFunction("size_t", mesh, t_dim, 0)
 
             empty.mark(f, 1)
             every.mark(f, 2)
@@ -296,10 +296,10 @@ def test_creation_and_marking_pybind11():
         mesh.init()
 
         for left, right in subdomain_pairs:
-            for MeshFunc, f_dim in [(VertexFunction, 0),
-                                    (FacetFunction, dim - 1),
-                                    (CellFunction, dim)]:
-                f = MeshFunc("size_t", mesh, 0)
+            for t_dim, f_dim in [(0, 0),
+                                    (mesh.topology().dim()-1, dim - 1),
+                                    (mesh.topology().dim(), dim)]:
+                f = MeshFunction("size_t", mesh, t_dim, 0)
 
                 left.mark(f, int(1))
                 right.mark(f, 2)
@@ -322,10 +322,10 @@ def test_creation_and_marking_pybind11():
                         MPI.sum(mesh.mpi_comm(), float((f.array() == 1).sum())),
                 ])
 
-        for MeshFunc, f_dim in [(VertexFunction, 0),
-                                (FacetFunction, dim-1),
-                                (CellFunction, dim)]:
-            f = MeshFunc("size_t", mesh, 0)#
+        for t_dim, f_dim in [(0, 0),
+                                (mesh.topology().dim()-1, dim-1),
+                                (mesh.topology().dim(), dim)]:
+            f = MeshFunction("size_t", mesh, t_dim, 0)#
 
             empty.mark(f, 1)
             every.mark(f, 2)

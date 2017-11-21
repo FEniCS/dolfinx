@@ -20,7 +20,7 @@
 from __future__ import print_function
 import pytest
 from dolfin import UnitSquareMesh, BoundaryMesh, Expression, \
-                   CellFunction, SubMesh, Constant, MPI, MeshQuality,\
+                   MeshFunction, SubMesh, Constant, MPI, MeshQuality,\
                    mpi_comm_world, ALE
 from dolfin_utils.test import skip_in_parallel
 
@@ -61,7 +61,7 @@ def test_ale():
     # Make some cell function
     # FIXME: Initialization by array indexing is probably
     #        not a good way for parallel test
-    cellfunc = CellFunction('size_t', mesh)
+    cellfunc = MeshFunction('size_t', mesh, mesh.topology().dim())
     cellfunc.array()[0:4] = 0
     cellfunc.array()[4:]  = 1
 

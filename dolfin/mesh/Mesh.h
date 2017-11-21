@@ -412,7 +412,7 @@ namespace dolfin
 
     /// Color the cells of the mesh such that no two neighboring cells
     /// share the same color. A colored mesh keeps a
-    /// CellFunction<std::size_t> named "cell colors" as mesh data which
+    /// MeshFunction<std::size_t> named "cell colors" as mesh data which
     /// holds the colors of the mesh.
     ///
     /// @param coloring_type (std::string)
@@ -426,7 +426,7 @@ namespace dolfin
 
     /// Color the cells of the mesh such that no two neighboring cells
     /// share the same color. A colored mesh keeps a
-    /// CellFunction<std::size_t> named "cell colors" as mesh data which
+    /// MeshFunction<std::size_t> named "cell colors" as mesh data which
     /// holds the colors of the mesh.
     ///
     /// @param coloring_type (std::vector<std::size_t>&)

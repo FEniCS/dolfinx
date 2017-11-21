@@ -784,7 +784,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   }
   else
   {
-    // In parallel and not CellFunction
+    // In parallel and not MeshFunction of topology dimension dim()
     data_values.reserve(mesh.size(cell_dim));
 
     // Drop duplicate data

@@ -98,7 +98,7 @@ MeshHierarchy::coarsen(const MeshFunction<bool>& coarsen_markers) const
   }
 
   // Set up refinement markers to re-refine the parent mesh
-  EdgeFunction<bool> edge_markers(parent_mesh, false);
+  MeshFunction<bool> edge_markers(parent_mesh, 1, false);
   const std::map<std::size_t, std::size_t>& edge_to_vertex
     = *(_relation->edge_to_global_vertex);
 

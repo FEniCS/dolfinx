@@ -29,15 +29,15 @@ namespace dolfin
 
   // Forward declarations
   class Mesh;
-  template<typename T> class EdgeFunction;
   template<typename T> class MeshFunction;
 
   /// Data structure and methods for refining meshes in parallel
 
   /// ParallelRefinement encapsulates two main features:
-  /// a distributed EdgeFunction, which can be updated
-  /// across processes, and storage for local mesh data,
-  /// which can be used to construct the new Mesh
+  /// a distributed MeshFunction defined over the mesh edes, 
+  /// which can be updated across processes, 
+  /// and storage for local mesh data, which can be used 
+  /// to construct the new Mesh
 
   class ParallelRefinement
   {

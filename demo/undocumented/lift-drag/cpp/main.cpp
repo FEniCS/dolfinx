@@ -57,7 +57,7 @@ int main()
   auto p = std::make_shared<Function>(Vp, "../dolfin_fine_pressure.xml.gz");
 
   // Mark 'fish'
-  auto markers = std::make_shared<FacetFunction<std::size_t>>(mesh, 1);
+  auto markers = std::make_shared<MeshFunction<std::size_t>>(mesh, mesh->topology.dim()-1, 1);
   Fish fish;
   fish.mark(*markers, 1);
 

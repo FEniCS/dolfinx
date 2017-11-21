@@ -38,7 +38,7 @@ def test_creation(MeshFunc):
     mesh = MeshFunc(*args)
     dim_t = mesh.topology().dim()
     mesh.domains().init(dim_t)
-    domains = CellFunction("size_t", mesh, 0)
+    domains = MeshFunction("size_t", mesh, mesh.topology().dim(), 0)
     for cell in cells(mesh):
         # Mark half the cells
         if cell.index() > mesh.num_cells()/2:
@@ -47,7 +47,7 @@ def test_creation(MeshFunc):
         mesh.domains().set_marker((cell.index(), 1), dim_t)
 
     # Create mesh from stored MeshValueCollection and
-    # external CellFunction
+    # external MeshFunction
     smesh0 = SubMesh(mesh, 1)
     smesh1 = SubMesh(mesh, domains, 1)
     assert smesh0.num_cells() == smesh1.num_cells()
