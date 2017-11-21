@@ -22,42 +22,38 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-TEST(MeshColoring, test_mesh_coloring)
+TEST_CASE("MeshColoring")
 {
-  // Create mesh
-  auto mesh = std::make_shared<UnitCubeMesh>(24, 24, 24);
 
-  // Compute vertex-based coloring
-  mesh->color("vertex");
-  const MeshFunction<std::size_t> colors_vertex
-    = MeshColoring::cell_colors(mesh, mesh->topology().dim(), "vertex");
+  SECTION("mesh coloring computation")
+  {
+    // Create mesh
+    auto mesh = std::make_shared<UnitCubeMesh>(24, 24, 24);
 
-  // Compute edge-based coloring
-  mesh->color("edge");
-  const MeshFunction<std::size_t> colors_edge
-    = MeshColoring::cell_colors(mesh, "edge");
+    // Compute vertex-based coloring
+    mesh->color("vertex");
+    const MeshFunction<std::size_t> colors_vertex
+      = MeshColoring::cell_colors(mesh, "vertex");
 
-  // Compute facet-based coloring
-  mesh->color("facet");
-  const MeshFunction<std::size_t> colors_facet
-    = MeshColoring::cell_colors(mesh, "facet");
+    // Compute edge-based coloring
+    mesh->color("edge");
+    const CellFunction<std::size_t> colors_edge
+      = MeshColoring::cell_colors(mesh, "edge");
 
-  // Compute facet-based coloring with distance 2
-  std::vector<std::size_t> coloring_type
-    = {{mesh->topology().dim(),
-        mesh->topology().dim() - 1,
-        mesh->topology().dim(),
-        mesh->topology().dim() - 1,
-        mesh->topology().dim()}};
-  mesh->color(coloring_type);
-  const MeshFunction<std::size_t> colors_vertex_2
-    = MeshColoring::cell_colors(mesh, coloring_type);
-}
+    // Compute facet-based coloring
+    mesh->color("facet");
+    const CellFunction<std::size_t> colors_facet
+      = MeshColoring::cell_colors(mesh, "facet");
 
-// Test all
-int MeshColoring_main(int argc, char **argv)
-{
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+    // Compute facet-based coloring with distance 2
+    std::vector<std::size_t> coloring_type
+      = {{mesh->topology().dim(),
+          mesh->topology().dim() - 1,
+          mesh->topology().dim(),
+          mesh->topology().dim() - 1,
+          mesh->topology().dim()}};
+    mesh->color(coloring_type);
+    const CellFunction<std::size_t> colors_vertex_2
+      = MeshColoring::cell_colors(mesh, coloring_type);
+  }
 }
