@@ -112,7 +112,7 @@ void EigenVector::get_local(double* block, std::size_t m,
 //-----------------------------------------------------------------------------
 void EigenVector::get_local(std::vector<double>& values) const
 {
-  values.assign(_x.data(), _x.data() + _x.size());
+  values.assign(_x->data(), _x->data() + _x->size());
 }
 //-----------------------------------------------------------------------------
 void EigenVector::set_local(const std::vector<double>& values)
