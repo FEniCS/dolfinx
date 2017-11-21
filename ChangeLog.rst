@@ -4,6 +4,8 @@ Change log
 2017.2.0 (unreleased)
 ---------------------
 
+- Remove ``MeshEditor::open`` without cell type. Now you must explicitly
+  specify CellType when opening a ``Mesh`` with ``MeshEditor``.
 - Rename ``Mesh::size_global`` to ``Mesh::num_entities_global``.
 - Remove ``Mesh::size``. Use ``Mesh::num_entities`` instead.
 - Improved mesh topology computation performance.
