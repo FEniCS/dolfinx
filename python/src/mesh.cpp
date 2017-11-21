@@ -505,7 +505,7 @@ namespace dolfin_wrappers
 
     // dolfin::MeshColoring
     py::class_<dolfin::MeshColoring>(m, "MeshColoring")
-      .def_static("cell_colors", (dolfin::CellFunction<std::size_t> (*)(std::shared_ptr<const dolfin::Mesh>, std::vector<std::size_t>))
+      .def_static("cell_colors", (dolfin::MeshFunction<std::size_t> (*)(std::shared_ptr<const dolfin::Mesh>, std::vector<std::size_t>))
                   &dolfin::MeshColoring::cell_colors)
       .def_static("color_cells", &dolfin::MeshColoring::color_cells);
 
