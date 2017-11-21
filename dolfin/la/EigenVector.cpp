@@ -118,14 +118,14 @@ void EigenVector::get_local(std::vector<double>& values) const
 void EigenVector::set_local(const std::vector<double>& values)
 {
   dolfin_assert(values.size() == size());
-  Eigen::Map<Eigen::VectorXd> _values(values.data(), values.size());
+  Eigen::Map<const Eigen::VectorXd> _values(values.data(), values.size());
   *_x = _values;
 }
 //-----------------------------------------------------------------------------
 void EigenVector::add_local(const Array<double>& values)
 {
   dolfin_assert(values.size() == size());
-  Eigen::Map<Eigen::VectorXd> _values(values.data(), values.size());
+  Eigen::Map<const Eigen::VectorXd> _values(values.data(), values.size());
   *_x += _values;
 }
 //-----------------------------------------------------------------------------
