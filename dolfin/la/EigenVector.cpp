@@ -112,23 +112,21 @@ void EigenVector::get_local(double* block, std::size_t m,
 //-----------------------------------------------------------------------------
 void EigenVector::get_local(std::vector<double>& values) const
 {
-  values.resize(size());
-  for (std::size_t i = 0; i < size(); i++)
-    values[i] = (*_x)(i);
+  values.assign(_x->data(), _x->data() + _x->size());
 }
 //-----------------------------------------------------------------------------
 void EigenVector::set_local(const std::vector<double>& values)
 {
   dolfin_assert(values.size() == size());
-  for (std::size_t i = 0; i < size(); i++)
-    (*_x)(i) = values[i];
+  Eigen::Map<const Eigen::VectorXd> _values(values.data(), values.size());
+  *_x = _values;
 }
 //-----------------------------------------------------------------------------
 void EigenVector::add_local(const Array<double>& values)
 {
   dolfin_assert(values.size() == size());
-  for (std::size_t i = 0; i < size(); i++)
-    (*_x)(i) += values[i];
+  Eigen::Map<const Eigen::VectorXd> _values(values.data(), values.size());
+  *_x += _values;
 }
 //-----------------------------------------------------------------------------
 void EigenVector::gather(GenericVector& x,
