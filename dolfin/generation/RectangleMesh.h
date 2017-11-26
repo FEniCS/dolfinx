@@ -21,6 +21,8 @@
 #include <array>
 #include <string>
 #include <dolfin/common/MPI.h>
+#include <dolfin/log/log.h>
+#include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
@@ -39,21 +41,24 @@ namespace dolfin
     ///         Vertex points.
     /// @param    n (std::array<std::size_t, 2>)
     ///         Number of cells in each direction
+    /// @param    cell_type (dolfin::CellType::Type)
+    ///         Cell type
     /// @param    diagonal (string)
     ///         Direction of diagonals: "left", "right", "left/right", "crossed"
     ///
     /// @code{.cpp}
     ///
-    ///         // Mesh with 8 cells in each direction on the
+    ///         // Mesh with 8 cell edges in each direction on the
     ///         // set [-1,2] x [-1,2]
     ///         Point p0(-1, -1);
     ///         Point p1(2, 2);
     ///         auto Mesh = RectangleMesh::create({p0, p1}, {8, 8});
     /// @endcode
-    static Mesh create(const std::array<Point, 2>& p, std::array<std::size_t, 2> n,
+    static Mesh create(const std::array<Point, 2>& p,
+                       std::array<std::size_t, 2> n,
+                       CellType::Type cell_type,
                        std::string diagonal="right")
-    { return create(MPI_COMM_WORLD, p, n); }
-
+    { return create(MPI_COMM_WORLD, p, n, cell_type, diagonal); }
 
     /// @param    comm (MPI_Comm)
     ///         MPI communicator
@@ -61,6 +66,8 @@ namespace dolfin
     ///         Vertex points.
     /// @param    n (std::array<std::size_t, 2>)
     ///         Number of cells in each direction
+    /// @param    cell_type (dolfin::CellType::Type)
+    ///         Cell type
     /// @param    diagonal (string)
     ///         Direction of diagonals: "left", "right", "left/right", "crossed"
     ///
@@ -74,12 +81,21 @@ namespace dolfin
     /// @endcode
     static Mesh create(MPI_Comm comm, const std::array<Point, 2>& p,
                        std::array<std::size_t, 2> n,
+                       CellType::Type cell_type,
                        std::string diagonal="right")
-    { Mesh mesh(comm);
-      build(mesh, p, n);
+    {
+      Mesh mesh(comm);
+      if (cell_type == CellType::Type::triangle)
+        build_tri(mesh, p, n, diagonal);
+      else if (cell_type == CellType::Type::quadrilateral)
+        build_quad(mesh, p, n);
+      else
+        error("Wrong cell type for dolfin::RectangleMesh");
+
       return mesh;
     }
 
+    // Deprecated
     /// @param    p0 (_Point_)
     ///         First point.
     /// @param    p1 (_Point_)
@@ -103,6 +119,7 @@ namespace dolfin
                   std::size_t nx, std::size_t ny,
                   std::string diagonal="right");
 
+    // Deprecated
     /// @param    comm (MPI_Comm)
     ///         MPI communicator
     /// @param    p0 (_Point_)
@@ -132,10 +149,13 @@ namespace dolfin
   private:
 
     // Build mesh
-    static void build(Mesh& mesh, const std::array<Point, 2>& p,
-                      std::array<std::size_t, 2> n,
-                      std::string diagonal="right");
+    static void build_tri(Mesh& mesh, const std::array<Point, 2>& p,
+                          std::array<std::size_t, 2> n,
+                          std::string diagonal="right");
 
+
+    static void build_quad(Mesh& mesh, const std::array<Point, 2>& p,
+                           std::array<std::size_t, 2> n);
   };
 
 }

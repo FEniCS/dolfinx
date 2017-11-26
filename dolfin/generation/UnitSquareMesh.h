@@ -25,6 +25,7 @@
 
 #include <array>
 #include <string>
+#include <dolfin/mesh/CellType.h>
 #include "RectangleMesh.h"
 
 namespace dolfin
@@ -56,8 +57,13 @@ namespace dolfin
     ///         auto mesh1 = UnitSquareMesh::create(32, 32);
     ///         auto mesh2 = UnitSquareMesh::create(32, 32, "crossed");
     /// @endcode
-    static Mesh create(std::array<std::size_t, 2> n, std::string diagonal="right")
-    { return RectangleMesh::create({{Point(0.0, 0.0), Point(1.0, 1.0)}}, n); }
+    static Mesh create(std::array<std::size_t, 2> n,
+                       CellType::Type cell_type,
+                       std::string diagonal="right")
+    {
+      return RectangleMesh::create({{Point(0.0, 0.0), Point(1.0, 1.0)}}, n,
+                                   cell_type, diagonal);
+    }
 
     /// Create a uniform finite element _Mesh_ over the unit square
     /// [0,1] x [0,1].
@@ -76,8 +82,10 @@ namespace dolfin
     ///         auto mesh2 = UnitSquareMesh::create(MPI_COMM_WORLD, 32, 32, "crossed");
     /// @endcode
     static Mesh create(MPI_Comm comm, std::array<std::size_t, 2> n,
+                       CellType::Type cell_type,
                        std::string diagonal="right")
-    { return RectangleMesh::create(comm, {{Point(0.0, 0.0), Point(1.0, 1.0)}}, n); }
+    { return RectangleMesh::create(comm, {{Point(0.0, 0.0), Point(1.0, 1.0)}}, n,
+                                   cell_type, diagonal); }
 
     /// Create a uniform finite element _Mesh_ over the unit square
     /// [0,1] x [0,1].
