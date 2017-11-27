@@ -416,7 +416,7 @@ def test_clear_sub_map_data_vector(mesh):
 def test_block_size(mesh):
     meshes = [UnitSquareMesh(8, 8), UnitCubeMesh(4, 4, 4),
               UnitSquareMesh.create(8, 8, CellType.Type_quadrilateral),
-              UnitCuveMesh.create(4, 4, 4, CellType.Type_hexahedron)]
+              UnitCubeMesh.create(4, 4, 4, CellType.Type_hexahedron)]
     for mesh in meshes:
         P2 = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
 

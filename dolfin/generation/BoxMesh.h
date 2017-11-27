@@ -52,8 +52,8 @@ namespace dolfin
     ///         Point p1(2, 2, 2);
     ///         auto mesh = BoxMesh::create({p0, p1}, {8, 8, 8});
     /// @endcode
-    static Mesh create(const std::array<Point,2 >& p, std::array<std::size_t, 3> n)
-    { return create(MPI_COMM_WORLD, p, n); }
+    static Mesh create(const std::array<Point,2 >& p, std::array<std::size_t, 3> n, CellType::Type cell_type)
+    { return create(MPI_COMM_WORLD, p, n, cell_type); }
 
     /// Create a uniform finite element _Mesh_ over the rectangular
     /// prism spanned by the two _Point_s p0 and p1. The order of the
@@ -75,10 +75,18 @@ namespace dolfin
     ///         auto mesh = BoxMesh::create({p0, p1}, {8, 8, 8});
     /// @endcode
     static Mesh create(MPI_Comm comm, const std::array<Point, 2>& p,
-                       std::array<std::size_t, 3> n)
+                       std::array<std::size_t, 3> n, CellType::Type cell_type)
     {
       Mesh mesh(comm);
-      build(mesh, p, n);
+      if (cell_type == CellType::Type::tetrahedron)
+        build_tet(mesh, p, n);
+      else if (cell_type == CellType::Type::hexahedron)
+        build_hex(mesh, n);
+      else
+      {
+        dolfin::error("Wrong cell type for BoxMesh");
+      }
+
       return mesh;
     }
 
@@ -141,8 +149,10 @@ namespace dolfin
   private:
 
     // Build mesh
-    static void build(Mesh& mesh, const std::array<Point, 2>& p,
-                      std::array<std::size_t, 3> n);
+    static void build_tet(Mesh& mesh, const std::array<Point, 2>& p,
+                          std::array<std::size_t, 3> n);
+
+    static void build_hex(Mesh& mesh, std::array<std::size_t, 3> n);
 
   };
 

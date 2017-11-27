@@ -6,7 +6,6 @@ set(HEADERS
   SphericalShellMesh.h
   UnitCubeMesh.h
   UnitDiscMesh.h
-  UnitHexMesh.h
   UnitIntervalMesh.h
   UnitSquareMesh.h
   UnitTetrahedronMesh.h
@@ -19,7 +18,6 @@ set(SOURCES
   RectangleMesh.cpp
   SphericalShellMesh.cpp
   UnitDiscMesh.cpp
-  UnitHexMesh.cpp
   UnitTetrahedronMesh.cpp
   UnitTriangleMesh.cpp
   PARENT_SCOPE)
