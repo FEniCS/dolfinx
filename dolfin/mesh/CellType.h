@@ -48,7 +48,7 @@ namespace dolfin
   public:
 
     /// Enum for different cell types
-    enum Type { point, interval, triangle, quadrilateral, tetrahedron, hexahedron };
+    enum class Type : int { point, interval, triangle, quadrilateral, tetrahedron, hexahedron };
 
     /// Constructor
     CellType(Type cell_type, Type facet_type);
@@ -81,7 +81,7 @@ namespace dolfin
 
     /// Check if cell is a simplex
     virtual bool is_simplex() const = 0;
-    
+
     /// Return topological dimension of cell
     virtual std::size_t dim() const = 0;
 

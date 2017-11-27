@@ -140,9 +140,9 @@ void dolfin::p_refine(Mesh& refined_mesh, const Mesh& mesh)
 
   const CellType::Type cell_type = mesh.type().cell_type();
 
-  if (cell_type != CellType::triangle
-      and cell_type != CellType::tetrahedron
-      and cell_type != CellType::interval)
+  if (cell_type != CellType::Type::triangle
+      and cell_type != CellType::Type::tetrahedron
+      and cell_type != CellType::Type::interval)
   {
     dolfin_error("refine.cpp",
                  "increase polynomial degree of mesh",

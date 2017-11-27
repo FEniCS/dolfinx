@@ -100,7 +100,7 @@ void BoxMesh::build(Mesh& mesh, const std::array<Point,2 >& p,
 
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(mesh, CellType::tetrahedron, 3, 3);
+  editor.open(mesh, CellType::Type::tetrahedron, 3, 3);
 
   // Storage for vertex coordinates
   std::vector<double> x(3);

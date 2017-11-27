@@ -294,60 +294,20 @@ You might have forgotten to specify the value dimension correctly in an Expressi
                  "Mesh geometry degree does not match degree of coordinate element in form");
   }
 
-  switch (mesh.type().cell_type())
-  {
-  case CellType::interval:
-    if (coordinate_element->cell_shape() != ufc::shape::interval)
-    {
-      dolfin_error("AssemblerBase.cpp",
-                   "assemble form",
-                   "Mesh cell type (intervals) does not match cell type of form");
-    }
-    break;
-  case CellType::triangle:
-    if (coordinate_element->cell_shape() != ufc::shape::triangle)
-    {
-      dolfin_error("AssemblerBase.cpp",
-                   "assemble form",
-                   "Mesh cell type (triangles) does not match cell type of form");
-    }
-    break;
-  case CellType::tetrahedron:
-    if (coordinate_element->cell_shape() != ufc::shape::tetrahedron)
-    {
-      dolfin_error("AssemblerBase.cpp",
-                   "assemble form",
-                   "Mesh cell type (tetrahedra) does not match cell type of form");
-    }
-    break;
-  case CellType::quadrilateral:
-    if (coordinate_element->cell_shape() != ufc::shape::quadrilateral)
-    {
-      dolfin_error("AssemblerBase.cpp",
-                   "assemble form",
-                   "Mesh cell type (quadrilateral) does not match cell type of form");
-    }
-    break;
-  case CellType::hexahedron:
-    if (coordinate_element->cell_shape() != ufc::shape::hexahedron)
-    {
-      dolfin_error("AssemblerBase.cpp",
-                   "assemble form",
-                   "Mesh cell type (hexahedron) does not match cell type of form");
-    }
-    break;
-  default:
-    dolfin_error("AssemblerBase.cpp",
-                 "assemble form",
-                 "Mesh cell type is unknown!");
-  }
+  std::map<CellType::Type, ufc::shape> dolfin_to_ufc_shapes
+    = { {CellType::Type::interval, ufc::shape::interval},
+        {CellType::Type::triangle, ufc::shape::triangle},
+        {CellType::Type::tetrahedron, ufc::shape::tetrahedron},
+        {CellType::Type::quadrilateral, ufc::shape::quadrilateral},
+        {CellType::Type::hexahedron, ufc::shape::hexahedron} };
 
-  // Check that the mesh is ordered
-  if (!mesh.ordered())
+  auto cell_type_pair = dolfin_to_ufc_shapes.find(mesh.type().cell_type());
+  dolfin_assert(cell_type_pair != dolfin_to_ufc_shapes.end());
+  if (coordinate_element->cell_shape() != cell_type_pair->second)
   {
     dolfin_error("AssemblerBase.cpp",
                  "assemble form",
-                 "Mesh is not correctly ordered. Consider calling mesh.order()");
+                 "Mesh cell type does not match cell type of UFC form");
   }
 }
 //-----------------------------------------------------------------------------

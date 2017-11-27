@@ -98,7 +98,7 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
 
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(mesh, CellType::triangle, 2, 2);
+  editor.open(mesh, CellType::Type::triangle, 2, 2);
 
   // Create vertices and cells:
   if (diagonal == "crossed")
@@ -246,7 +246,7 @@ void RectangleMesh::build_quad(Mesh& mesh, const std::array<Point, 2>& p,
   const std::size_t ny = n[1];
 
   MeshEditor editor;
-  editor.open(mesh, CellType::quadrilateral, 2, 2);
+  editor.open(mesh, CellType::Type::quadrilateral, 2, 2);
 
   // Create vertices and cells:
   editor.init_vertices_global((nx + 1)*(ny + 1), (nx + 1)*(ny + 1));

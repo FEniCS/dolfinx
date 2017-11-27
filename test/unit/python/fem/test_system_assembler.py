@@ -211,7 +211,8 @@ def test_vertex_assembly():
         A, b = assemble_system(a, L)
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (20, 20)), (UnitQuadMesh.create, (20, 20))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (20, 20)),
+                                          (UnitSquareMesh.create, (20, 20, CellType.Type_quadrilateral))])
 def test_incremental_assembly(mesh_factory):
 
     for f in [Constant(0.0), Constant(1e4)]:
@@ -252,7 +253,8 @@ def test_incremental_assembly(mesh_factory):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (24, 24)), (UnitQuadMesh.create, (24, 24))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (24, 24)),
+                                          (UnitSquareMesh.create, (24, 24, CellType.Type_quadrilateral))])
 def test_domains(mesh_factory):
 
     class RightSubDomain(SubDomain):
@@ -369,7 +371,8 @@ def test_facet_assembly_cellwise_insertion(filedir):
     run_test(Mesh(os.path.join(filedir, "gmsh_unit_interval.xml")))
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (24, 24)), (UnitQuadMesh.create, (24, 24))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (24, 24)),
+                                          (UnitSquareMesh.create, (24, 24, CellType.Type_quadrilateral))])
 def test_non_square_assembly(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)

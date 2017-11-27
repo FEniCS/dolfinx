@@ -42,8 +42,8 @@ reorder_dofs = set_parameters_fixture("reorder_dofs_serial", [True, False])
                                           (UnitCubeMesh, (2, 2, 2)),
                                           # cell.contains(Point) does not work correctly
                                           # for quad/hex cells once it is fixed, this test will pass
-                                          xfail((UnitQuadMesh.create, (4, 4))),
-                                          xfail((UnitHexMesh.create, (2, 2, 2)))])
+                                          xfail((UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral))),
+                                          xfail((UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron)))])
 def test_tabulate_all_coordinates(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -88,7 +88,7 @@ def test_tabulate_all_coordinates(mesh_factory):
     assert all(checked_W)
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitQuadMesh.create, (4, 4))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral))])
 def test_tabulate_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -118,7 +118,7 @@ def test_tabulate_dofs(mesh_factory):
         assert np.array_equal(np.append(dofs1, dofs2), dofs3)
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitQuadMesh.create, (4, 4))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral))])
 def test_tabulate_coord_periodic(mesh_factory):
 
     class PeriodicBoundary2(SubDomain):
@@ -167,7 +167,7 @@ def test_tabulate_coord_periodic(mesh_factory):
         assert (coord4[sdim:] == coord0).all()
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (5, 5)), (UnitQuadMesh.create, (5, 5))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (5, 5)), (UnitSquareMesh.create, (5, 5, CellType.Type_quadrilateral))])
 def test_tabulate_dofs_periodic(mesh_factory):
 
     class PeriodicBoundary2(SubDomain):
@@ -222,7 +222,7 @@ def test_tabulate_dofs_periodic(mesh_factory):
         assert np.array_equal(np.append(dofs1, dofs2), dofs3)
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (3, 3)), (UnitQuadMesh.create, (3, 3))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (3, 3)), (UnitSquareMesh.create, (3, 3, CellType.Type_quadrilateral))])
 def test_global_dof_builder(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -237,7 +237,7 @@ def test_global_dof_builder(mesh_factory):
     W = FunctionSpace(mesh, R*V)
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (3, 3)), (UnitQuadMesh.create, (3, 3))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (3, 3)), (UnitSquareMesh.create, (3, 3, CellType.Type_quadrilateral))])
 def test_dof_to_vertex_map(mesh_factory, reorder_dofs):
     func, args = mesh_factory
     mesh = func(*args)
@@ -349,7 +349,7 @@ def test_entity_dofs(mesh):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (2, 2)), (UnitQuadMesh.create, (2, 2))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (2, 2)), (UnitSquareMesh.create, (2, 2, CellType.Type_quadrilateral))])
 def test_entity_closure_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -414,7 +414,9 @@ def test_clear_sub_map_data_vector(mesh):
 
 
 def test_block_size(mesh):
-    meshes = [UnitSquareMesh(8, 8), UnitCubeMesh(4, 4, 4), UnitQuadMesh.create(8, 8), UnitHexMesh.create(4, 4, 4)]
+    meshes = [UnitSquareMesh(8, 8), UnitCubeMesh(4, 4, 4),
+              UnitSquareMesh.create(8, 8, CellType.Type_quadrilateral),
+              UnitCuveMesh.create(4, 4, 4, CellType.Type_hexahedron)]
     for mesh in meshes:
         P2 = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
 
@@ -444,8 +446,8 @@ def test_block_size_real(mesh):
 @pytest.mark.parametrize('mesh_factory', [(UnitIntervalMesh, (8,)),
                                           (UnitSquareMesh, (4, 4)),
                                           (UnitCubeMesh, (2, 2, 2)),
-                                          (UnitQuadMesh.create, (4, 4)),
-                                          (UnitHexMesh.create, (2, 2, 2))])
+                                          (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)),
+                                          (UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron))])
 def test_mpi_dofmap_stats(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -460,7 +462,7 @@ def test_mpi_dofmap_stats(mesh_factory):
     for owner in V.dofmap().off_process_owner():
         assert owner in neighbours
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitQuadMesh.create, (4, 4))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral))])
 def test_local_dimension(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -493,8 +495,8 @@ def test_dofs_dim():
     meshes = [UnitIntervalMesh(10),
               UnitSquareMesh(6, 6),
               UnitCubeMesh(2, 2, 2),
-              UnitQuadMesh.create(6, 6),
-              UnitHexMesh.create(2, 2, 2)]
+              UnitSquareMesh.create(6, 6, CellType.Type_quadrilateral),
+              UnitCubeMesh.create(2, 2, 2, CellType.Type_hexahedron)]
 
     for mesh in meshes:
         tdim = mesh.topology().dim()

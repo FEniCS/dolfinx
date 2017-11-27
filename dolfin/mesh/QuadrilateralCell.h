@@ -24,14 +24,14 @@
 namespace dolfin
 {
 
-  /// This class implements functionality for triangular meshes.
+  /// This class implements functionality for quadrilaterial cells.
 
   class QuadrilateralCell : public CellType
   {
   public:
 
     /// Specify cell type and facet type
-    QuadrilateralCell() : CellType(quadrilateral, interval) {}
+    QuadrilateralCell() : CellType(Type::quadrilateral, Type::interval) {}
 
     /// Check if cell is a simplex
     bool is_simplex() const

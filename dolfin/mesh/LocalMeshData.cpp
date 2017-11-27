@@ -181,7 +181,7 @@ void LocalMeshData::broadcast_mesh_data(const MPI_Comm mpi_comm)
     values.push_back(geometry.num_global_vertices);
     values.push_back(topology.num_global_cells);
     values.push_back(topology.num_vertices_per_cell);
-    values.push_back(topology.cell_type);
+    values.push_back(static_cast<int>(topology.cell_type));
     MPI::broadcast(mpi_comm, values);
   }
 

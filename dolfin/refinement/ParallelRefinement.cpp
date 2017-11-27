@@ -256,11 +256,11 @@ void ParallelRefinement::build_local(Mesh& new_mesh) const
 
   CellType::Type cell_type;
   if (tdim == 3)
-    cell_type = CellType::tetrahedron;
+    cell_type = CellType::Type::tetrahedron;
   else if (tdim == 2)
-    cell_type = CellType::triangle;
+    cell_type = CellType::Type::triangle;
   else
-    cell_type = CellType::interval;
+    cell_type = CellType::Type::interval;
 
   ed.open(new_mesh, cell_type, tdim, gdim);
   ed.init_vertices(num_vertices);

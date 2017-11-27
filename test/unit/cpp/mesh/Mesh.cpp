@@ -33,7 +33,7 @@ TEST_CASE("Simple shapes test")
     CHECK(mesh.num_cells() == (std::size_t) 70);
 
     // Create mesh of unit square
-    auto mesh1 = UnitSquareMesh::create({{5, 7}});
+    auto mesh1 = UnitSquareMesh::create({{5, 7}}, CellType::Type::triangle);
     CHECK(mesh1.num_vertices() == (std::size_t) 48);
     CHECK(mesh1.num_cells() == (std::size_t) 70);
   }

@@ -35,19 +35,19 @@ namespace dolfin
 
   class Cell;
 
-  /// This class implements functionality for tetrahedral meshes.
+  /// This class implements functionality for tetrahedral cell meshes.
 
   class TetrahedronCell : public CellType
   {
   public:
 
     /// Specify cell type and facet type
-    TetrahedronCell() : CellType(tetrahedron, triangle) {}
+    TetrahedronCell() : CellType(Type::tetrahedron, Type::triangle) {}
 
     /// Check if cell is a simplex
     bool is_simplex() const
     { return true; }
-    
+
     /// Return topological dimension of cell
     std::size_t dim() const;
 

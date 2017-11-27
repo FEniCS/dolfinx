@@ -41,7 +41,7 @@ void UnitHexMesh::build(Mesh& mesh, std::array<std::size_t, 3> n)
   const std::size_t nz = n[2];
 
   MeshEditor editor;
-  editor.open(mesh, CellType::hexahedron, 3, 3);
+  editor.open(mesh, CellType::Type::hexahedron, 3, 3);
 
   // Create vertices and cells:
   editor.init_vertices_global((nx + 1)*(ny + 1)*(nz + 1),
