@@ -188,15 +188,13 @@ def test_UnitCubeMeshDistributedLocal():
 
 
 def test_UnitQuadMesh():
-    mesh = UnitSquareMesh.create(mpi_comm_world(), 5, 7,
-                                 CellType.Type_quadrilateral)
+    mesh = UnitSquareMesh.create(5, 7, CellType.Type_quadrilateral)
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 35
 
 
 def test_UnitHexMesh():
-    mesh = UnitCubeMesh.create(mpi_comm_world(), 5, 7, 9,
-                               CellType.Type_hexahedron)
+    mesh = UnitCubeMesh.create(5, 7, 9, CellType.Type_hexahedron)
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
 

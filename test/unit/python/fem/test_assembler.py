@@ -139,8 +139,8 @@ def test_ghost_mode_handling(pushpop_parameters):
 
 @pytest.mark.parametrize('mesh_factory, facet_area', [((UnitSquareMesh, (4, 4)), 4.0),
                                                       ((UnitCubeMesh, (2, 2, 2)), 6.0),
-                                                      ((UnitSquareMesh.create, (4, 4), CellType.Type_quadrilateral), 4.0),
-                                                      ((UnitCubeMesh.create, (2, 2, 2), CellType.Type_hexahedron), 6.0)])
+                                                      ((UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)), 4.0),
+                                                      ((UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron)), 6.0)])
 def test_functional_assembly(mesh_factory, facet_area):
     func, args = mesh_factory
     mesh = func(*args)

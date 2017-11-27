@@ -21,7 +21,7 @@ from __future__ import print_function
 import pytest
 
 from dolfin import intersect
-from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, BoxMesh
+from dolfin import (UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, BoxMesh, CellType)
 from dolfin import Point, FunctionSpace, Expression, interpolate
 from dolfin import MPI, mpi_comm_world
 

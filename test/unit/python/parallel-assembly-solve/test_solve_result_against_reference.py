@@ -117,8 +117,8 @@ def test_computed_norms_against_references():
     # Mesh files and degrees to check
     meshes = [(UnitSquareMesh(16, 16), "16x16 unit tri square"),
               (UnitCubeMesh(4, 4, 4),  "4x4x4 unit tet cube"),
-              (UnitQuadMesh.create(16, 16), "16x16 unit quad square"),
-              (UnitHexMesh.create(4, 4, 4), "4x4x4 unit hex cube")]
+              (UnitSquareMesh.create(16, 16, CellType.Type_quadrilateral), "16x16 unit quad square"),
+              (UnitCubeMesh.create(4, 4, 4, CellType.Type_hexahedron), "4x4x4 unit hex cube")]
     degrees = [1, 2, 3, 4]
 
     # For MUMPS, increase estimated require memory increase. Typically
