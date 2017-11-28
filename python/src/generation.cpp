@@ -23,6 +23,7 @@
 #include <pybind11/numpy.h>
 
 #include <dolfin/geometry/Point.h>
+#include <dolfin/mesh/CellType.h>
 #include <dolfin/generation/BoxMesh.h>
 #include <dolfin/generation/UnitTriangleMesh.h>
 #include <dolfin/generation/UnitCubeMesh.h>
@@ -89,14 +90,38 @@ namespace dolfin_wrappers
       .def_static("create", [](const MPICommWrapper comm, std::array<std::size_t, 2> n,
                                dolfin::CellType::Type cell_type, std::string diagonal="right")
                   { return dolfin::UnitSquareMesh::create(comm.get(), n, cell_type, diagonal); },
-                  py::arg("comm"), py::arg("n"), py::arg("cell_type"), py::arg("diagonal")="right");
+                  py::arg("comm"), py::arg("n"), py::arg("cell_type"), py::arg("diagonal")="right")
+      // Remove below for 2018.1 release
+      .def_static("create", [](std::size_t nx, std::size_t ny, dolfin::CellType::Type cell_type)
+                  { return dolfin::UnitSquareMesh::create({nx, ny}, cell_type); },
+                  py::arg("nx"), py::arg("ny"), py::arg("cell_type"))
+      .def_static("create", [](const MPICommWrapper comm, std::size_t nx, std::size_t ny,
+                               dolfin::CellType::Type cell_type)
+                  { return dolfin::UnitSquareMesh::create(comm.get(), {nx, ny}, cell_type); },
+                  py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("cell_type"));
 
     // dolfin::UnitCubeMesh
     py::class_<dolfin::UnitCubeMesh, std::shared_ptr<dolfin::UnitCubeMesh>, dolfin::Mesh>(m, "UnitCubeMesh")
       .def(py::init<std::size_t, std::size_t, std::size_t>())
       .def(py::init([](const MPICommWrapper comm, std::size_t nx, std::size_t ny, std::size_t nz)
                     { return std::unique_ptr<dolfin::UnitCubeMesh>(new dolfin::UnitCubeMesh(comm.get(), nx, ny, nz)); }),
-           py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("nz"));
+           py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("nz"))
+      .def_static("create", [](std::array<std::size_t, 3> n, dolfin::CellType::Type cell_type)
+                  { return dolfin::UnitCubeMesh::create(n, cell_type); },
+                  py::arg("n"), py::arg("cell_type"))
+      .def_static("create", [](const MPICommWrapper comm, std::array<std::size_t, 3> n,
+                               dolfin::CellType::Type cell_type)
+                  { return dolfin::UnitCubeMesh::create(comm.get(), n, cell_type); },
+                  py::arg("comm"), py::arg("n"), py::arg("cell_type"))
+      // Remove below for 2018.1 release
+      .def_static("create", [](std::size_t nx, std::size_t ny, std::size_t nz,
+                               dolfin::CellType::Type cell_type)
+                  { return dolfin::UnitCubeMesh::create({nx, ny, nz}, cell_type); },
+                  py::arg("nx"), py::arg("ny"), py::arg("nz"), py::arg("cell_type"))
+      .def_static("create", [](const MPICommWrapper comm, std::size_t nx, std::size_t ny, std::size_t nz,
+                               dolfin::CellType::Type cell_type)
+                  { return dolfin::UnitCubeMesh::create(comm.get(), {nx, ny, nz}, cell_type); },
+                  py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("nz"), py::arg("cell_type"));
 
     // dolfin::UnitDiscMesh
     py::class_<dolfin::UnitDiscMesh>(m, "UnitDiscMesh")

@@ -33,6 +33,11 @@ import FIAT
 import os
 
 
+if has_pybind11():
+    CellType.Type_quadrilateral = CellType.Type.quadrilateral
+    CellType.Type_hexahedron = CellType.Type.hexahedron
+
+
 @fixture
 def mesh1d():
     # Create 1D mesh with degenerate cell

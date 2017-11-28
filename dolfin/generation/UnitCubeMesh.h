@@ -21,6 +21,7 @@
 #include <array>
 #include <cstddef>
 #include <dolfin/common/MPI.h>
+#include <dolfin/mesh/CellType.h>
 #include "BoxMesh.h"
 
 namespace dolfin
@@ -65,6 +66,12 @@ namespace dolfin
     // Temporary - part of pybind11 transition and will be
     // removed. Avoid using.
     static Mesh create(std::size_t nx, std::size_t ny, std::size_t nz,
+                       CellType::Type cell_type)
+    { return create({nx, ny, nz}, cell_type); }
+
+    // Temporary - part of pybind11 transition and will be
+    // removed. Avoid using.
+    static Mesh create(MPI_Comm comm, std::size_t nx, std::size_t ny, std::size_t nz,
                        CellType::Type cell_type)
     { return create({nx, ny, nz}, cell_type); }
 

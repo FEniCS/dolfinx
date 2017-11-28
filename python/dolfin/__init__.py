@@ -63,7 +63,7 @@ from .cpp.geometry import (BoundingBoxTree,
                            MeshPointIntersection,
                            intersect)
 from .cpp.generation import (IntervalMesh, BoxMesh, RectangleMesh,
-                             UnitDiscMesh, UnitQuadMesh, UnitHexMesh,
+                             UnitDiscMesh,
                              UnitTriangleMesh, UnitCubeMesh,
                              UnitSquareMesh, UnitIntervalMesh,
                              SphericalShellMesh)
