@@ -30,7 +30,6 @@
 #include <dolfin/generation/SphericalShellMesh.h>
 #include <dolfin/generation/UnitSquareMesh.h>
 #include <dolfin/generation/UnitIntervalMesh.h>
-#include <dolfin/generation/UnitHexMesh.h>
 #include <dolfin/generation/IntervalMesh.h>
 
 #include "casters.h"
@@ -112,13 +111,6 @@ namespace dolfin_wrappers
     // dolfin::UnitTriangleMesh
     py::class_<dolfin::UnitTriangleMesh>(m, "UnitTriangleMesh")
       .def_static("create", &dolfin::UnitTriangleMesh::create);
-
-    // dolfin::UnitHexMesh
-    py::class_<dolfin::UnitHexMesh>(m, "UnitHexMesh")
-      .def_static("create", [](std::size_t nx, std::size_t ny, std::size_t nz)
-                  { return dolfin::UnitHexMesh::create(nx, ny, nz); })
-      .def_static("create", [](const MPICommWrapper comm, std::size_t nx, std::size_t ny, std::size_t nz)
-                  { return dolfin::UnitHexMesh::create(comm.get(), nx, ny, nz); });
 
     // dolfin::BoxMesh
     py::class_<dolfin::BoxMesh, std::shared_ptr<dolfin::BoxMesh>, dolfin::Mesh>(m, "BoxMesh")
