@@ -46,7 +46,7 @@ TEST_CASE("Simple shapes test")
     CHECK(mesh.num_cells() == (std::size_t) 1890);
 
     // Create mesh of unit cube
-    auto mesh1 = UnitCubeMesh::create({{5, 7, 9}});
+    auto mesh1 = UnitCubeMesh::create({{5, 7, 9}}, CellType::Type::tetrahedron);
     CHECK(mesh1.num_vertices() == (std::size_t) 480);
     CHECK(mesh1.num_cells() == (std::size_t) 1890);
   }
