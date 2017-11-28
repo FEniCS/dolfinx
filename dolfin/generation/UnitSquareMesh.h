@@ -74,6 +74,16 @@ namespace dolfin
                                    cell_type, diagonal);
     }
 
+    // Temporary - part of pybind11 transition and will be
+    // removed. Avoid using.
+    static Mesh create(MPI_Comm comm, std::size_t nx, std::size_t ny,
+                       CellType::Type cell_type,
+                       std::string diagonal="right")
+    {
+      return RectangleMesh::create(comm, {{Point(0.0, 0.0), Point(1.0, 1.0)}}, {nx, ny},
+                                   cell_type, diagonal);
+    }
+
     /// Create a uniform finite element _Mesh_ over the unit square
     /// [0,1] x [0,1].
     ///
