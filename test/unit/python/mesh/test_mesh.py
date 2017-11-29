@@ -32,6 +32,7 @@ from dolfin import *
 from dolfin_utils.test import fixture, set_parameters_fixture
 from dolfin_utils.test import skip_in_parallel, xfail_in_parallel
 from dolfin_utils.test import cd_tempdir
+from dolfin_utils.test import skip_if_not_pybind11
 
 
 @fixture
@@ -630,3 +631,18 @@ def test_mesh_topology_reference():
     than copy"""
     mesh = UnitSquareMesh(4, 4)
     assert mesh.topology().id() == mesh.topology().id()
+
+
+# Reference counting does not work like expected with SWIG,
+# SWIG handles the lifetime differently
+@skip_if_not_pybind11
+def test_mesh_topology_lifetime():
+    """Check that lifetime Mesh.topology() is bound to
+    underlying mesh object"""
+    mesh = UnitSquareMesh(4, 4)
+
+    rc = sys.getrefcount(mesh)
+    topology = mesh.topology()
+    assert sys.getrefcount(mesh) == rc + 1
+    del topology
+    assert sys.getrefcount(mesh) == rc

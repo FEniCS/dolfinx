@@ -184,8 +184,9 @@ namespace dolfin_wrappers
       .def("smooth_boundary", &dolfin::Mesh::smooth_boundary)
       .def("snap_boundary", &dolfin::Mesh::snap_boundary, py::arg("subdomain"),
            py::arg("harmonic_smoothing")=true)
-      .def("topology", (const dolfin::MeshTopology& (dolfin::Mesh::*)() const)
-           &dolfin::Mesh::topology, "Mesh topology")
+      .def("topology", (dolfin::MeshTopology& (dolfin::Mesh::*)())
+           &dolfin::Mesh::topology, "Mesh topology",
+           py::return_value_policy::reference_internal)
       .def("translate", &dolfin::Mesh::translate)
       .def("type", (const dolfin::CellType& (dolfin::Mesh::*)() const) &dolfin::Mesh::type,
            py::return_value_policy::reference)
