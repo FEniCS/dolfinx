@@ -92,7 +92,7 @@ namespace dolfin_wrappers
       .def("degree", &dolfin::MeshGeometry::degree, "Degree");
 
     // dolfin::MeshTopology class
-    py::class_<dolfin::MeshTopology, std::shared_ptr<dolfin::MeshTopology>>
+    py::class_<dolfin::MeshTopology, std::shared_ptr<dolfin::MeshTopology>, dolfin::Variable>
       (m, "MeshTopology", "DOLFIN MeshTopology object")
       .def("dim", &dolfin::MeshTopology::dim, "Topological dimension")
       .def("init", (void (dolfin::MeshTopology::*)(std::size_t)) &dolfin::MeshTopology::init)

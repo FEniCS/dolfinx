@@ -24,13 +24,14 @@ import numpy
 import six
 from six.moves import range
 
+import sys
+import os
+
+import FIAT
 from dolfin import *
 from dolfin_utils.test import fixture, set_parameters_fixture
 from dolfin_utils.test import skip_in_parallel, xfail_in_parallel
 from dolfin_utils.test import cd_tempdir
-import FIAT
-
-import os
 
 
 @fixture
@@ -603,7 +604,7 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
 
             # NOTE: DOLFIN UFC noncompliance!
             # DOLFIN has increasing indices only for d-0 incidence
-            # with any d; UFC convention for d-d1 with d>d1 is not
+            # with any d; UFC convention for d-d1 with d>d1>0 is not
             # respected in DOLFIN
             if d1 != 0:
                 continue
@@ -622,3 +623,10 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
 
                 # Check that d1-subentities of d-entity have increasing indices
                 assert sorted(subentities_indices) == subentities_indices
+
+
+def test_mesh_topology_reference():
+    """Check that Mesh.topology() returns a reference rather
+    than copy"""
+    mesh = UnitSquareMesh(4, 4)
+    assert mesh.topology().id() == mesh.topology().id()
