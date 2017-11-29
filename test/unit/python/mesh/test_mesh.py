@@ -637,7 +637,7 @@ def test_mesh_topology_reference():
 # SWIG handles the lifetime differently
 @skip_if_not_pybind11
 def test_mesh_topology_lifetime():
-    """Check that lifetime Mesh.topology() is bound to
+    """Check that lifetime of Mesh.topology() is bound to
     underlying mesh object"""
     mesh = UnitSquareMesh(4, 4)
 

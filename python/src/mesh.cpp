@@ -112,7 +112,8 @@ namespace dolfin_wrappers
       .def("have_shared_entities", &dolfin::MeshTopology::have_shared_entities)
       .def("shared_entities",
            (std::map<std::int32_t, std::set<unsigned int> >&(dolfin::MeshTopology::*)(unsigned int))
-           &dolfin::MeshTopology::shared_entities);
+           &dolfin::MeshTopology::shared_entities)
+      .def("str", &dolfin::MeshTopology::str);
 
     // dolfin::Mesh
     py::class_<dolfin::Mesh, std::shared_ptr<dolfin::Mesh>, dolfin::Variable>
