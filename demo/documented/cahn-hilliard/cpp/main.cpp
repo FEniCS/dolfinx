@@ -78,7 +78,9 @@ int main(int argc, char* argv[])
   dolfin::init(argc, argv);
 
   // Mesh
-  auto mesh = std::make_shared<Mesh>(UnitQuadMesh::create(96, 96));
+  auto mesh = std::make_shared<Mesh>(
+    UnitSquareMesh::create({{96, 96}}, CellType::Type::quadrilateral));
+
 
   // Create function space and forms, depending on spatial dimension
   // of the mesh

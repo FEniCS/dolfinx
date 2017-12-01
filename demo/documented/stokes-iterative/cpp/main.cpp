@@ -100,7 +100,8 @@ int main()
   }
 
   // Create mesh
-  auto mesh = std::make_shared<Mesh>(UnitHexMesh::create(16, 16, 16));
+  auto mesh = std::make_shared<Mesh>(
+    UnitCubeMesh::create({{16, 16, 16}}, CellType::Type::hexahedron);
 
   // Create function space and subspaces
   auto W = std::make_shared<Stokes::FunctionSpace>(mesh);

@@ -22,12 +22,12 @@ First, the :py:mod:`dolfin` module is imported: ::
     from dolfin import *
 
 We proceed by defining a mesh of the domain.  We use a built-in mesh
-provided by the class :py:class:`UnitQuadMesh
-<dolfin.cpp.UnitQuadMesh>`.  In order to create a mesh consisting of
+provided by the class :py:class:`UnitSquareMesh
+<dolfin.cpp.UnitSquareMesh>`.  In order to create a mesh consisting of
 :math:`64 \times 64` squares, we do as follows: ::
 
     # Create mesh
-    mesh = UnitQuadMesh.create(64, 64)
+    mesh = UnitSquareMesh.create(64, 64, CellType.Type_quadrilateral)
 
 Next, we need to define the function space. ::
 

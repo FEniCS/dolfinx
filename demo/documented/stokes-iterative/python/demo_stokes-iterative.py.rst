@@ -57,8 +57,8 @@ If not available, costly QMR method is choosen. ::
              "Krylov subspace method. Terminating.")
         exit()
 
-Next, we define the mesh (a :py:class:`UnitHexMesh
-<dolfin.cpp.UnitHexMesh>`) and a mixed finite element ``TH``.
+Next, we define the mesh (a :py:class:`UnitCubeMesh
+<dolfin.cpp.UnitCubeMesh>`) and a mixed finite element ``TH``.
 Then we build a :py:class:`FunctionSpace
 <dolfin.functions.functionspace.FunctionSpace>` on this element.
 (This mixed finite element space is known as the
@@ -66,7 +66,7 @@ Taylor--Hood elements and is a stable, standard element pair for the
 Stokes equations.) ::
 
     # Load mesh
-    mesh = UnitHexMesh.create(16, 16, 16)
+    mesh = UnitCubeMesh.create(16, 16, 16, CellType.Type_hexahedron)
 
     # Build function space
     P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
