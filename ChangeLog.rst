@@ -45,6 +45,8 @@ Change log
 - Deprecate ``CellSize`` (equivalent to ``2*Circumradius``)
   in favour of new ``CellDiameter``; add ``MinCellEdgeLength``
   and ``MaxCellEdgeLength``
+- Deprecate subclassing of ``Expression`` in Python; new Python class
+  ``UserExpression`` introduced for user overloads
 
 
 2017.1.0 (2017-05-09)
