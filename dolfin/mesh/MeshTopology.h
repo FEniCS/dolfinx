@@ -25,6 +25,8 @@
 #include <map>
 #include <utility>
 #include <vector>
+
+#include <dolfin/common/Variable.h>
 #include "MeshConnectivity.h"
 
 namespace dolfin
@@ -41,7 +43,7 @@ namespace dolfin
   /// i), where dim is the topological dimension and i is the index of
   /// the entity within that topological dimension.
 
-  class MeshTopology
+  class MeshTopology : public Variable
   {
   public:
 
