@@ -96,7 +96,7 @@ def test_assign_2D_vertices():
 def test_mesh_function_assign_2D_cells():
     mesh = UnitSquareMesh(3, 3)
     ncells = mesh.num_cells()
-    f = MeshFunction("int", mesh, mesh().topology().dim())
+    f = MeshFunction("int", mesh, mesh.topology().dim())
     for cell in cells(mesh):
         f[cell] = ncells - cell.index()
 

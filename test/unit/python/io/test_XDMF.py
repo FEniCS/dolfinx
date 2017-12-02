@@ -683,9 +683,9 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
     for mesh in meshes:
         dim = mesh.topology().dim()
 
-        vf = VertexFunction(dtype_str, mesh)
+        vf = MeshFunction(dtype_str, mesh, 0)
         vf.rename("vertices", "vertices")
-        ff = MeshFunction(dtype_str, mesh, mesh.topology.dim()-1)
+        ff = MeshFunction(dtype_str, mesh, mesh.topology().dim()-1)
         ff.rename("facets", "facets")
         cf = MeshFunction(dtype_str, mesh, mesh.topology().dim())
         cf.rename("cells", "cells")
@@ -714,9 +714,9 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
             xdmf.write(cf, encoding)
 
         with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-            vf_in = VertexFunction(dtype_str, mesh)
+            vf_in = MeshFunction(dtype_str, mesh, 0)
             xdmf.read(vf_in, "vertices")
-            ff_in = MeshFunction(dtype_str, mesh, mesh.topology.dim()-1)
+            ff_in = MeshFunction(dtype_str, mesh, mesh.topology().dim()-1)
             xdmf.read(ff_in, "facets")
             cf_in = MeshFunction(dtype_str, mesh, mesh.topology().dim())
             xdmf.read(cf_in, "cells")

@@ -195,7 +195,7 @@ def test_vertex_assembly():
         return 0.25 <= x[0] and x[0] <= 0.75 and near(x[1], 0.5)
 
     # Define domain for point integral
-    center_domain = VertexFunction("size_t", mesh, 0)
+    center_domain = MeshFunction("size_t", mesh, 0, 0)
     center = AutoSubDomain(center_func)
     center.mark(center_domain, 1)
     dPP = dP(subdomain_data=center_domain)

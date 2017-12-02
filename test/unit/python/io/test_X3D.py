@@ -52,14 +52,14 @@ def test_save_facet_meshfunction2D(cd_tempdir):
 
 def test_save_cell_meshfunctio22D(cd_tempdir):
     mesh = UnitCubeMesh(16, 16, 16)
-    mf = MeshFunction("size_t", mesh, mesh.topology(),dim(), 12)
+    mf = MeshFunction("size_t", mesh, mesh.topology().dim(), 12)
     file = File("cell_mf3D.x3d")
     file << mf
 
 
 def test_save_facet_meshfunction3D(cd_tempdir):
     mesh = UnitCubeMesh(16, 16, 16)
-    mf = MeshFunction("size_t", mesh, mesh().topology().dim()-1, 12)
+    mf = MeshFunction("size_t", mesh, mesh.topology().dim()-1, 12)
     file = File("facet_mf3D.x3d")
     #with pytest.raises(RuntimeError):
     #    file << mf
