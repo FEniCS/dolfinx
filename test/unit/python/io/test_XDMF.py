@@ -611,7 +611,7 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
     mesh = UnitCubeMesh(4, 4, 4)
     tdim = mesh.topology().dim()
 
-    meshfn = MeshFunction(dtype_str, mesh, mesh.topology().dim(), 0)
+    meshfn = MeshFunction(dtype_str, mesh, mesh.topology().dim(), False)
     meshfn.rename("volume_marker", "Volume Markers")
     for c in cells(mesh):
         if c.midpoint().y() > 0.1:
