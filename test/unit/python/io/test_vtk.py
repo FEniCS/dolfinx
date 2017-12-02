@@ -37,40 +37,43 @@ def type_conv():
 def tempfile(tempdir, request):
     return os.path.join(tempdir, request.function.__name__)
 
-def test_save_1d_meshfunctions(tempfile, mesh_functions,
+def test_save_1d_meshfunctions(tempfile,
                                 mesh_function_types, file_options, type_conv):
     mesh = UnitIntervalMesh(32)
     for d in range(mesh.topology().dim()+1):
-        mf = MeshFunction(t, mesh, mesh.topology().dim()-d, type_conv[t](1))
-        File(tempfile + "mf.pvd") << mf
-        f = File(tempfile + "mf.pvd")
-        f << (mf, 0.)
-        f << (mf, 1.)
-        for file_option in file_options:
-            File(tempfile + "mf.pvd", file_option) << mf
+        for t in mesh_function_types:
+            mf = MeshFunction(t, mesh, mesh.topology().dim()-d, type_conv[t](1))
+            File(tempfile + "mf.pvd") << mf
+            f = File(tempfile + "mf.pvd")
+            f << (mf, 0.)
+            f << (mf, 1.)
+            for file_option in file_options:
+                File(tempfile + "mf.pvd", file_option) << mf
 
-def test_save_2d_meshfunctions(tempfile, mesh_functions,
+def test_save_2d_meshfunctions(tempfile,
                                 mesh_function_types, file_options, type_conv):
     mesh = UnitSquareMesh(32, 32)
     for d in range(mesh.topology().dim()+1):
-        mf = MeshFunction(t, mesh, mesh.topology().dim()-d, type_conv[t](1))
-        File(tempfile + "mf.pvd") << mf
-        f = File(tempfile + "mf.pvd")
-        f << (mf, 0.)
-        f << (mf, 1.)
-        for file_option in file_options:
-            File(tempfile + "mf.pvd", file_option) << mf
+        for t in mesh_function_types:
+            mf = MeshFunction(t, mesh, mesh.topology().dim()-d, type_conv[t](1))
+            File(tempfile + "mf.pvd") << mf
+            f = File(tempfile + "mf.pvd")
+            f << (mf, 0.)
+            f << (mf, 1.)
+            for file_option in file_options:
+                File(tempfile + "mf.pvd", file_option) << mf
 
-def test_save_3d_meshfunctions(tempfile, mesh_functions,
+def test_save_3d_meshfunctions(tempfile,
                                 mesh_function_types, file_options, type_conv):
     mesh = UnitCubeMesh(8, 8, 8)
     for d in range(mesh.topology().dim()+1):
-        mf = MeshFunction(t, mesh, mesh.topology().dim()-d, type_conv[t](1))
-        File(tempfile + "mf.pvd") << mf
-        f = File(tempfile + "mf.pvd")
-        f << (mf, 0.)
-        f << (mf, 1.)
-        for file_option in file_options:
+        for t in mesh_function_types:
+            mf = MeshFunction(t, mesh, mesh.topology().dim()-d, type_conv[t](1))
+            File(tempfile + "mf.pvd") << mf
+            f = File(tempfile + "mf.pvd")
+            f << (mf, 0.)
+            f << (mf, 1.)
+            for file_option in file_options:
                 File(tempfile + "mf.pvd", file_option) << mf
 
 def test_save_1d_mesh(tempfile, file_options):
