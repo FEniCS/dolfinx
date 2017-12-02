@@ -6,6 +6,7 @@ _meshfunction_types = {"bool": cpp.mesh.MeshFunctionBool,
                        "int": cpp.mesh.MeshFunctionInt,
                        "double": cpp.mesh.MeshFunctionDouble}
 
+
 class MeshFunction(object):
     def __new__(cls, value_type, mesh, dim, value=None):
         if value_type not in _meshfunction_types.keys():
