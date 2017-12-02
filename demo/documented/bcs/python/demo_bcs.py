@@ -46,7 +46,7 @@ u2 = Constant(2.0)
 u3 = Constant(3.0)
 
 if has_pybind11():
-    markers = FacetFunction("size_t", mesh, 9999)
+    markers = MeshFunction("size_t", mesh, mesh.topology.dim()-1, 9999)
     for (f, v) in mesh.domains().markers(mesh.topology().dim()-1).items():
         markers[f] = v
 

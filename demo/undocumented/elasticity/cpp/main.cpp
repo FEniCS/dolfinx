@@ -195,8 +195,8 @@ int main()
   // Save colored mesh paritions in VTK format if running in parallel
   if (dolfin::MPI::size(mesh->mpi_comm()) > 1)
   {
-    CellFunction<std::size_t>
-      partitions(mesh, dolfin::MPI::rank(mesh->mpi_comm()));
+    MeshFunction<std::size_t>
+      partitions(mesh, mesh->topology().dim(), dolfin::MPI::rank(mesh->mpi_comm()));
     File file("partitions.pvd");
     file << partitions;
   }

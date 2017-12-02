@@ -29,11 +29,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::CellFunction<double>
+dolfin::MeshFunction<double>
 MeshQuality::radius_ratios(std::shared_ptr<const Mesh> mesh)
 {
-  // Create CellFunction
-  CellFunction<double> cf(mesh, 0.0);
+  // Create MeshFunction
+  MeshFunction<double> cf(mesh, mesh->topology().dim(), 0.0);
 
   // Compute radius ration
   for (CellIterator cell(*mesh); !cell.end(); ++cell)

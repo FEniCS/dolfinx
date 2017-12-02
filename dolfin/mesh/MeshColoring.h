@@ -60,12 +60,12 @@ namespace dolfin
 
     /// Return a MeshFunction with the cell colors (used for
     /// visualisation)
-    static CellFunction<std::size_t>
+    static MeshFunction<std::size_t>
       cell_colors(std::shared_ptr<const Mesh> mesh,
                   std::string coloring_type);
 
     /// Return a MeshFunction with the cell colors (used for visualisation)
-    static CellFunction<std::size_t>
+    static MeshFunction<std::size_t>
       cell_colors(std::shared_ptr<const Mesh> mesh,
                   std::vector<std::size_t> coloring_type);
 

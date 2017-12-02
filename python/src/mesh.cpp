@@ -390,7 +390,6 @@ namespace dolfin_wrappers
       .def("id", &dolfin::MeshFunction<SCALAR>::id) \
       .def("ufl_id", &dolfin::MeshFunction<SCALAR>::id) \
       .def("mesh", &dolfin::MeshFunction<SCALAR>::mesh) \
-      .def("set_values", &dolfin::MeshFunction<SCALAR>::set_values) \
       .def("set_all", &dolfin::MeshFunction<SCALAR>::set_all) \
       .def("where_equal", &dolfin::MeshFunction<SCALAR>::where_equal) \
       .def("array", [](dolfin::MeshFunction<SCALAR>& self) \
@@ -401,32 +400,6 @@ namespace dolfin_wrappers
     MESHFUNCTION_MACRO(double, Double);
     MESHFUNCTION_MACRO(std::size_t, Sizet);
 #undef MESHFUNCTION_MACRO
-
-#define MESH_ENTITY_FUNCTION_MACRO(TYPE, SCALAR, SCALAR_NAME) \
-    py::class_<dolfin::TYPE<SCALAR>, std::shared_ptr<dolfin::TYPE<SCALAR>>, \
-      dolfin::MeshFunction<SCALAR>>(m, #TYPE""#SCALAR_NAME)
-
-    MESH_ENTITY_FUNCTION_MACRO(VertexFunction, bool, Bool);
-    MESH_ENTITY_FUNCTION_MACRO(VertexFunction, int, Int);
-    MESH_ENTITY_FUNCTION_MACRO(VertexFunction, double, Double);
-    MESH_ENTITY_FUNCTION_MACRO(VertexFunction, std::size_t, Sizet);
-    MESH_ENTITY_FUNCTION_MACRO(EdgeFunction, bool, Bool);
-    MESH_ENTITY_FUNCTION_MACRO(EdgeFunction, int, Int);
-    MESH_ENTITY_FUNCTION_MACRO(EdgeFunction, double, Double);
-    MESH_ENTITY_FUNCTION_MACRO(EdgeFunction, std::size_t, Sizet);
-    MESH_ENTITY_FUNCTION_MACRO(FaceFunction, bool, Bool);
-    MESH_ENTITY_FUNCTION_MACRO(FaceFunction, int, Int);
-    MESH_ENTITY_FUNCTION_MACRO(FaceFunction, double, Double);
-    MESH_ENTITY_FUNCTION_MACRO(FaceFunction, std::size_t, Sizet);
-    MESH_ENTITY_FUNCTION_MACRO(FacetFunction, bool, Bool);
-    MESH_ENTITY_FUNCTION_MACRO(FacetFunction, int, Int);
-    MESH_ENTITY_FUNCTION_MACRO(FacetFunction, double, Double);
-    MESH_ENTITY_FUNCTION_MACRO(FacetFunction, std::size_t, Sizet);
-    MESH_ENTITY_FUNCTION_MACRO(CellFunction, bool, Bool);
-    MESH_ENTITY_FUNCTION_MACRO(CellFunction, int, Int);
-    MESH_ENTITY_FUNCTION_MACRO(CellFunction, double, Double);
-    MESH_ENTITY_FUNCTION_MACRO(CellFunction, std::size_t, Sizet);
-#undef MESH_ENTITY_FUNCTION_MACRO
 
     // dolfin::MeshValueCollection
 #define MESHVALUECOLLECTION_MACRO(SCALAR, SCALAR_NAME) \
@@ -543,7 +516,7 @@ namespace dolfin_wrappers
 
     // dolfin::MeshColoring
     py::class_<dolfin::MeshColoring>(m, "MeshColoring")
-      .def_static("cell_colors", (dolfin::CellFunction<std::size_t> (*)(std::shared_ptr<const dolfin::Mesh>, std::vector<std::size_t>))
+      .def_static("cell_colors", (dolfin::MeshFunction<std::size_t> (*)(std::shared_ptr<const dolfin::Mesh>, std::vector<std::size_t>))
                   &dolfin::MeshColoring::cell_colors)
       .def_static("color_cells", &dolfin::MeshColoring::color_cells);
 

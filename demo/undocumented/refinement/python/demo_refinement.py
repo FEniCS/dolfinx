@@ -56,7 +56,7 @@ for i in range(5):
     print("marking for refinement")
 
     # Mark cells for refinement
-    cell_markers = CellFunction("bool", mesh)
+    cell_markers = MeshFunction("bool", mesh, mesh.topology().dim())
     for c in cells(mesh):
         if c.midpoint().distance(p) < 0.1:
             cell_markers[c] = True

@@ -56,12 +56,12 @@ obstacle = Obstacle()
 mesh = UnitSquareMesh(64, 64)
 
 # Initialize mesh function for interior domains
-domains = CellFunction("size_t", mesh)
+domains = MeshFunction("size_t", mesh, mesh.topology().dim())
 domains.set_all(0)
 obstacle.mark(domains, 1)
 
 # Initialize mesh function for boundary domains
-boundaries = FacetFunction("size_t", mesh)
+boundaries = MeshFunction("size_t", mesh, mesh.topology.dim()-1)
 boundaries.set_all(0)
 left.mark(boundaries, 1)
 top.mark(boundaries, 2)
