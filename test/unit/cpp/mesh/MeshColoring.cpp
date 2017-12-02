@@ -37,12 +37,12 @@ TEST_CASE("MeshColoring")
 
     // Compute edge-based coloring
     mesh->color("edge");
-    const CellFunction<std::size_t> colors_edge
+    const MeshFunction<std::size_t> colors_edge
       = MeshColoring::cell_colors(mesh, "edge");
 
     // Compute facet-based coloring
     mesh->color("facet");
-    const CellFunction<std::size_t> colors_facet
+    const MeshFunction<std::size_t> colors_facet
       = MeshColoring::cell_colors(mesh, "facet");
 
     // Compute facet-based coloring with distance 2
@@ -53,7 +53,7 @@ TEST_CASE("MeshColoring")
           mesh->topology().dim() - 1,
           mesh->topology().dim()}};
     mesh->color(coloring_type);
-    const CellFunction<std::size_t> colors_vertex_2
+    const MeshFunction<std::size_t> colors_vertex_2
       = MeshColoring::cell_colors(mesh, coloring_type);
   }
 }
