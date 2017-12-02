@@ -204,7 +204,7 @@ def test_UnitHexMesh():
 def test_RefineUnitIntervalMesh():
     """Refine mesh of unit interval."""
     mesh = UnitIntervalMesh(20)
-    cell_markers = MeshFunction("bool", mesh, mesh.topology().dim())
+    cell_markers = MeshFunction("bool", mesh, mesh.topology().dim(), False)
     cell_markers[0] = (MPI.rank(mesh.mpi_comm()) == 0)
     mesh2 = refine(mesh, cell_markers)
     assert mesh2.num_entities_global(0) == 22
