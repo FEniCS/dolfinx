@@ -1,5 +1,5 @@
-
 import dolfin.cpp as cpp
+
 
 _meshfunction_types = {"bool": cpp.mesh.MeshFunctionBool,
                        "size_t": cpp.mesh.MeshFunctionSizet,
