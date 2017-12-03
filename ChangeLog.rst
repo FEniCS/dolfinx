@@ -4,6 +4,8 @@ Change log
 2017.2.0 (unreleased)
 ---------------------
 
+- Remove ``UnitQuadMesh`` and ``UnitHexMesh``. Now use ``UnitSquareMesh`` and
+  ``UnitCubeMesh`` with cell type qualifiers.
 - Remove ``MeshEditor::open`` without cell type. Now you must explicitly
   specify CellType when opening a ``Mesh`` with ``MeshEditor``.
 - Rename ``Mesh::size_global`` to ``Mesh::num_entities_global``.

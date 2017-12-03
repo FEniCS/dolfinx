@@ -45,6 +45,8 @@ namespace dolfin
     ///         Points of box.
     /// @param n (std::array<double, 3> )
     ///         Number of cells in each direction.
+    /// @param cell_type
+    ///         Tetrahedron or Hexahedron
     ///
     /// @code{.cpp}
     ///         // Mesh with 8 cells in each direction on the
@@ -67,6 +69,8 @@ namespace dolfin
     ///         Points of box.
     /// @param n (std::array<double, 3> )
     ///         Number of cells in each direction.
+    /// @param cell_type
+    ///         Tetrahedron or hexahedron
     ///
     /// @code{.cpp}
     ///         // Mesh with 8 cells in each direction on the
