@@ -24,9 +24,9 @@ from six.moves import xrange as range
 from dolfin_utils.test import fixture, skip_in_parallel, skip_if_pybind11
 
 
-@pytest.fixture(params=range(5))
+@pytest.fixture(params=range(4))
 def name(request):
-    names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
+    names = [3, 0, 1, 2]
     return names[request.param]
 
 
@@ -43,12 +43,12 @@ def mesh():
 
 @fixture
 def funcs(mesh):
-    names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
+    names = [3, 0, 1, 2]
     tps = ['int', 'size_t', 'bool', 'double']
     funcs = {}
     for tp in tps:
         for name in names:
-            funcs[(tp, name)] = eval("%sFunction('%s', mesh)" % (name, tp))
+            funcs[(tp, name)] = eval("MeshFunction('%s', mesh, %d)" % (tp, name))
     return funcs
 
 
@@ -63,13 +63,13 @@ def f(cube):
 
 
 def test_size(tp, name, funcs, mesh):
-    if name is "Vertex":
+    if name == 0:
         a = len(funcs[(tp, name)])
         b = mesh.num_vertices()
         assert a == b
     else:
         a = len(funcs[(tp, name)])
-        b = getattr(mesh, "num_%ss" % name.lower())()
+        b = mesh.num_entities(name)
         assert a == b
 
 

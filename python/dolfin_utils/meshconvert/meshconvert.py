@@ -867,7 +867,7 @@ def diffpack2xml(ifilename, ofilename):
     xml_writer.write_footer_vertices(ofile)
     xml_writer.write_header_cells(ofile, num_cells)
 
-    # Output unique vertex markers as individual VertexFunctions
+    # Output unique vertex markers as individual MeshFunctions on vertices
     unique_vertex_markers.difference_update([0])
     for unique_marker in unique_vertex_markers:
         ofile_marker = open(ofilename.replace(".xml", "") + \
