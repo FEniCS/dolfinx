@@ -20,6 +20,7 @@
 
 #include <array>
 #include <cstddef>
+#include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 
@@ -84,7 +85,9 @@ namespace dolfin
         build_hex(mesh, n);
       else
       {
-        dolfin::error("Wrong cell type for BoxMesh");
+        dolfin_error("BoxMesh.h",
+                     "generate box mesh",
+                     "Wrong cell type '%d'", cell_type);
       }
 
       return mesh;

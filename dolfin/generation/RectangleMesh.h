@@ -90,7 +90,11 @@ namespace dolfin
       else if (cell_type == CellType::Type::quadrilateral)
         build_quad(mesh, p, n);
       else
-        error("Wrong cell type for dolfin::RectangleMesh");
+      {
+        dolfin_error("RectangleMesh.h",
+                     "generate rectangle mesh",
+                     "Wrong cell type '%d'", cell_type);
+      }
 
       return mesh;
     }
