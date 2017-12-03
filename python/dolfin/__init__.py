@@ -211,6 +211,9 @@ TensorLayout.Sparsity_SPARSE = TensorLayout.Sparsity.SPARSE
 TensorLayout.Ghosts_GHOSTED = TensorLayout.Ghosts.GHOSTED
 TensorLayout.Ghosts_UNGHOSTED = TensorLayout.Ghosts.UNGHOSTED
 
+CellType.Type_interval = CellType.Type.interval
+CellType.Type_triangle = CellType.Type.triangle
+CellType.Type_tetrahedron = CellType.Type.tetrahedron
 CellType.Type_quadrilateral = CellType.Type.quadrilateral
 CellType.Type_hexahedron = CellType.Type.hexahedron
 
