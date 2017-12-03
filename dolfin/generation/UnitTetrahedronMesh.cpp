@@ -39,7 +39,7 @@ dolfin::Mesh UnitTetrahedronMesh::create()
 
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(mesh, CellType::tetrahedron, 3, 3);
+  editor.open(mesh, CellType::Type::tetrahedron, 3, 3);
 
   // Create vertices
   editor.init_vertices_global(4, 4);

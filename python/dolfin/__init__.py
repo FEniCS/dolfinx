@@ -63,7 +63,7 @@ from .cpp.geometry import (BoundingBoxTree,
                            MeshPointIntersection,
                            intersect)
 from .cpp.generation import (IntervalMesh, BoxMesh, RectangleMesh,
-                             UnitDiscMesh, UnitQuadMesh, UnitHexMesh,
+                             UnitDiscMesh,
                              UnitTriangleMesh, UnitCubeMesh,
                              UnitSquareMesh, UnitIntervalMesh,
                              SphericalShellMesh)
@@ -210,6 +210,12 @@ TensorLayout.Sparsity_DENSE = TensorLayout.Sparsity.DENSE
 TensorLayout.Sparsity_SPARSE = TensorLayout.Sparsity.SPARSE
 TensorLayout.Ghosts_GHOSTED = TensorLayout.Ghosts.GHOSTED
 TensorLayout.Ghosts_UNGHOSTED = TensorLayout.Ghosts.UNGHOSTED
+
+CellType.Type_interval = CellType.Type.interval
+CellType.Type_triangle = CellType.Type.triangle
+CellType.Type_tetrahedron = CellType.Type.tetrahedron
+CellType.Type_quadrilateral = CellType.Type.quadrilateral
+CellType.Type_hexahedron = CellType.Type.hexahedron
 
 if has_linear_algebra_backend('PETSc'):
     PETScKrylovSolver.norm_type_default_norm = PETScKrylovSolver.norm_type.default_norm

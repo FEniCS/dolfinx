@@ -38,12 +38,12 @@ namespace dolfin
   public:
 
     /// Specify cell type and facet type
-    TriangleCell() : CellType(triangle, interval) {}
+    TriangleCell() : CellType(Type::triangle, Type::interval) {}
 
     /// Check if cell is a simplex
     bool is_simplex() const
     { return true; }
-    
+
     /// Return topological dimension of cell
     std::size_t dim() const;
 

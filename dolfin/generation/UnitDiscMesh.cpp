@@ -45,7 +45,7 @@ void UnitDiscMesh::build(Mesh& mesh, std::size_t n, std::size_t degree,
   }
 
   MeshEditor editor;
-  editor.open(mesh, CellType::triangle, 2, gdim, degree);
+  editor.open(mesh, CellType::Type::triangle, 2, gdim, degree);
   editor.init_vertices_global(1 + 3*n*(n + 1), 1 + 3*n*(n + 1));
 
   std::size_t c = 0;

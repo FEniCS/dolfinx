@@ -109,7 +109,7 @@ def test_save_and_load_2d_quad_mesh(tempdir, encoding):
     if invalid_config(encoding):
         pytest.skip("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "mesh_2D_quad.xdmf")
-    mesh = UnitQuadMesh.create(32, 32)
+    mesh = UnitSquareMesh.create(32, 32, CellType.Type_quadrilateral)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mesh, encoding)

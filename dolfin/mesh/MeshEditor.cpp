@@ -77,17 +77,17 @@ void MeshEditor::open(Mesh& mesh, std::string type, std::size_t tdim,
                       std::size_t gdim, std::size_t degree)
 {
   if (type == "point")
-    open(mesh, CellType::point, tdim, gdim, degree);
+    open(mesh, CellType::Type::point, tdim, gdim, degree);
   else if (type == "interval")
-    open(mesh, CellType::interval, tdim, gdim, degree);
+    open(mesh, CellType::Type::interval, tdim, gdim, degree);
   else if (type == "triangle")
-    open(mesh, CellType::triangle, tdim, gdim, degree);
+    open(mesh, CellType::Type::triangle, tdim, gdim, degree);
   else if (type == "tetrahedron")
-    open(mesh, CellType::tetrahedron, tdim, gdim, degree);
+    open(mesh, CellType::Type::tetrahedron, tdim, gdim, degree);
   else if (type == "quadrilateral")
-    open(mesh, CellType::quadrilateral, tdim, gdim, degree);
+    open(mesh, CellType::Type::quadrilateral, tdim, gdim, degree);
   else if (type == "hexahedron")
-    open(mesh, CellType::hexahedron, tdim, gdim, degree);
+    open(mesh, CellType::Type::hexahedron, tdim, gdim, degree);
   else
   {
     dolfin_error("MeshEditor.cpp",

@@ -313,7 +313,8 @@ A mesh is then created with 97 (96 + 1) vertices in each direction:
 .. code-block:: c++
 
     // Mesh
-    auto mesh = std::make_shared<Mesh>(UnitQuadMesh::create(96, 96));
+    auto mesh = std::make_shared<Mesh>(
+      UnitSquareMesh::create({{96, 96}}, CellType::Type::quadrilateral));
 
 A set of constants (required for the assembling of the forms) and two
 scalars (to be used in the time stepping) are then declared:

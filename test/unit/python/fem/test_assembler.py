@@ -139,8 +139,8 @@ def test_ghost_mode_handling(pushpop_parameters):
 
 @pytest.mark.parametrize('mesh_factory, facet_area', [((UnitSquareMesh, (4, 4)), 4.0),
                                                       ((UnitCubeMesh, (2, 2, 2)), 6.0),
-                                                      ((UnitQuadMesh.create, (4, 4)), 4.0),
-                                                      ((UnitHexMesh.create, (2, 2, 2)), 6.0)])
+                                                      ((UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)), 4.0),
+                                                      ((UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron)), 6.0)])
 def test_functional_assembly(mesh_factory, facet_area):
     func, args = mesh_factory
     mesh = func(*args)
@@ -153,7 +153,7 @@ def test_functional_assembly(mesh_factory, facet_area):
     assert round(assemble(M1) - facet_area, 7) == 0
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (4, 4, 4)), (UnitHexMesh.create, (4, 4, 4))])
+@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (4, 4, 4)), (UnitCubeMesh.create, (4, 4, 4, CellType.Type_hexahedron))])
 def test_subdomain_and_fulldomain_assembly_meshdomains(mesh_factory):
     """Test assembly over subdomains AND the full domain with markers
     stored as part of the mesh.
