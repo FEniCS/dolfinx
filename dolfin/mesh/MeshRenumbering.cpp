@@ -45,10 +45,10 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   // Get some some mesh
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
-  const std::size_t num_local_vertices  = mesh.size(0);
-  const std::size_t num_global_vertices = mesh.size_global(0);
-  const std::size_t num_local_cells     = mesh.size(tdim);
-  const std::size_t num_global_cells    = mesh.size_global(tdim);
+  const std::size_t num_local_vertices  = mesh.num_entities(0);
+  const std::size_t num_global_vertices = mesh.num_entities_global(0);
+  const std::size_t num_local_cells     = mesh.num_entities(tdim);
+  const std::size_t num_global_cells    = mesh.num_entities_global(tdim);
 
   // Check that requested coloring is a cell coloring
   if (coloring_type[0] != tdim)

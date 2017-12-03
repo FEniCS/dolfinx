@@ -41,36 +41,6 @@ MeshEditor::~MeshEditor()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::open(Mesh& mesh, std::size_t tdim,
-                      std::size_t gdim, std::size_t degree)
-{
-  switch (tdim)
-  {
-  case 0:
-    open(mesh, CellType::point, tdim, gdim, degree);
-    break;
-  case 1:
-    open(mesh, CellType::interval, tdim, gdim, degree);
-    break;
-  case 2:
-    open(mesh, CellType::triangle, tdim, gdim, degree);
-    break;
-  case 3:
-    open(mesh, CellType::tetrahedron, tdim, gdim, degree);
-    break;
-  case 4:
-    open(mesh, CellType::quadrilateral, tdim, gdim, degree);
-    break;
-  case 5:
-    open(mesh, CellType::hexahedron, tdim, gdim, degree);
-    break;
-  default:
-    dolfin_error("MeshEditor.cpp",
-                 "open mesh for editing",
-                 "Unknown cell type of topological dimension %d", tdim);
-  }
-}
-//-----------------------------------------------------------------------------
 void MeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
                       std::size_t gdim, std::size_t degree)
 {

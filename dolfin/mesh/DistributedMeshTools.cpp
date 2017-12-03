@@ -113,7 +113,7 @@ std::size_t DistributedMeshTools::number_entities(
   {
     shared_entities.clear();
     global_entity_indices = mesh.topology().global_indices(d);
-    return mesh.size_global(d);
+    return mesh.num_entities_global(d);
 
     /*
     dolfin_error("MeshPartitioning.cpp",
@@ -196,7 +196,7 @@ std::size_t DistributedMeshTools::number_entities(
   // Prepare list of global entity numbers. Check later that nothing
   // is equal to -1
   global_entity_indices
-    = std::vector<std::int64_t>(mesh.size(d), -1);
+    = std::vector<std::int64_t>(mesh.num_entities(d), -1);
 
   std::map<Entity, EntityData>::const_iterator it;
 

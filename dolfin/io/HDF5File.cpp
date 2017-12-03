@@ -444,7 +444,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     global_size[1] = num_cell_points;
 
     const std::int64_t num_cells
-      = mpi_io ? mesh.size_global(cell_dim) : mesh.size(cell_dim);
+      = mpi_io ? mesh.num_entities_global(cell_dim) : mesh.num_entities(cell_dim);
     dolfin_assert(global_size[0] == num_cells);
     const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
     write_data(topology_dataset, topological_data, global_size, mpi_io);
@@ -608,10 +608,10 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
                  "Cell dimension mismatch");
   }
 
-  // Ensure size_global(cell_dim) is set
+  // Ensure num_entities_global(cell_dim) is set
   DistributedMeshTools::number_entities(*mesh, cell_dim);
 
-  if (num_global_cells != mesh->size_global(cell_dim))
+  if (num_global_cells != mesh->num_entities_global(cell_dim))
   {
     dolfin_error("HDF5File.cpp",
                  "read meshfunction topology",
@@ -641,7 +641,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   // Now send the read data to each process on the basis of the first
   // vertex of the entity, since we do not know the global_index
   const std::size_t num_processes = _mpi_comm.size();
-  const std::size_t max_vertex = mesh->size_global(0);
+  const std::size_t max_vertex = mesh->num_entities_global(0);
 
   std::vector<std::vector<std::size_t>> send_topology(num_processes);
   std::vector<std::vector<T>> send_values(num_processes);
@@ -785,7 +785,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   else
   {
     // In parallel and not CellFunction
-    data_values.reserve(mesh.size(cell_dim));
+    data_values.reserve(mesh.num_entities(cell_dim));
 
     // Drop duplicate data
     const std::size_t tdim = mesh.topology().dim();
@@ -925,14 +925,14 @@ void HDF5File::write(const Function& u, const std::string name)
   write_data(name + "/cell_dofs", cell_dofs, global_size, mpi_io);
   if (_mpi_comm.rank() == _mpi_comm.size() - 1)
     x_cell_dofs.push_back(global_size[0]);
-  global_size[0] = mesh.size_global(tdim) + 1;
+  global_size[0] = mesh.num_entities_global(tdim) + 1;
   write_data(name + "/x_cell_dofs", x_cell_dofs, global_size, mpi_io);
 
   // Save cell ordering - copy to local vector and cut off ghosts
   std::vector<std::size_t> cells(mesh.topology().global_indices(tdim).begin(),
                        mesh.topology().global_indices(tdim).begin() + n_cells);
 
-  global_size[0] = mesh.size_global(tdim);
+  global_size[0] = mesh.num_entities_global(tdim);
   write_data(name + "/cells", cells, global_size, mpi_io);
 
   HDF5Interface::add_attribute(_hdf5_file_id, name, "signature",
@@ -1030,7 +1030,7 @@ void HDF5File::read(Function& u, const std::string name)
   const std::vector<std::int64_t> dataset_shape =
     HDF5Interface::get_dataset_shape(_hdf5_file_id, cells_dataset_name);
   const std::size_t num_global_cells = dataset_shape[0];
-  if (mesh.size_global(mesh.topology().dim()) != num_global_cells)
+  if (mesh.num_entities_global(mesh.topology().dim()) != num_global_cells)
   {
     dolfin_error("HDF5File.cpp",
                  "read Function from file",
@@ -1310,7 +1310,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
 
   // Ensure the mesh dimension is initialised
   mesh->init(dim);
-  std::size_t global_vertex_range = mesh->size_global(0);
+  std::size_t global_vertex_range = mesh->num_entities_global(0);
   std::vector<std::size_t> v(num_verts_per_entity);
   const std::size_t num_processes = _mpi_comm.size();
 

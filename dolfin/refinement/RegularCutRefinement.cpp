@@ -260,7 +260,8 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   // Initialize mesh editor
   const std::size_t num_vertices = mesh.num_vertices() + marked_edges.size();
   MeshEditor editor;
-  editor.open(refined_mesh, mesh.topology().dim(), mesh.geometry().dim());
+  editor.open(refined_mesh, mesh.type().cell_type(),
+              mesh.topology().dim(), mesh.geometry().dim());
   editor.init_vertices_global(num_vertices, num_vertices);
   editor.init_cells_global(num_cells, num_cells);
 

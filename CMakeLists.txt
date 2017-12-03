@@ -283,7 +283,7 @@ set_package_properties(Boost PROPERTIES TYPE REQUIRED
   URL "http://www.boost.org")
 
 # Check for required package Eigen3
-find_package(Eigen3 3.2.8 REQUIRED)
+find_package(Eigen3 3.2.90 REQUIRED)
 set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")
@@ -480,7 +480,10 @@ if (DOLFIN_ENABLE_HDF5)
   if (NOT DEFINED ENV{HDF5_ROOT})
     set(ENV{HDF5_ROOT} "$ENV{HDF5_DIR}")
   endif()
-  set(HDF5_PREFER_PARALLEL TRUE)
+  set(HDF5_PREFER_PARALLEL FALSE)
+  if (DOLFIN_ENABLE_MPI)
+    set(HDF5_PREFER_PARALLEL TRUE)
+  endif()
   find_package(HDF5 COMPONENTS C)
   set_package_properties(HDF5 PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Hierarchical Data Format 5 (HDF5)"

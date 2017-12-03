@@ -24,13 +24,15 @@ import numpy
 import six
 from six.moves import range
 
+import sys
+import os
+
+import FIAT
 from dolfin import *
 from dolfin_utils.test import fixture, set_parameters_fixture
 from dolfin_utils.test import skip_in_parallel, xfail_in_parallel
 from dolfin_utils.test import cd_tempdir
-import FIAT
-
-import os
+from dolfin_utils.test import skip_if_not_pybind11
 
 
 @fixture
@@ -140,15 +142,15 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
 def test_UnitSquareMesh():
     """Create mesh of unit square."""
     mesh = UnitSquareMesh(5, 7)
-    assert mesh.size_global(0) == 48
-    assert mesh.size_global(2) == 70
+    assert mesh.num_entities_global(0) == 48
+    assert mesh.num_entities_global(2) == 70
 
 
 def test_UnitSquareMeshDistributed():
     """Create mesh of unit square."""
     mesh = UnitSquareMesh(mpi_comm_world(), 5, 7)
-    assert mesh.size_global(0) == 48
-    assert mesh.size_global(2) == 70
+    assert mesh.num_entities_global(0) == 48
+    assert mesh.num_entities_global(2) == 70
     if has_petsc4py() and not has_pybind11():
         import petsc4py
         assert isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm)
@@ -169,15 +171,15 @@ def test_UnitSquareMeshLocal():
 def test_UnitCubeMesh():
     """Create mesh of unit cube."""
     mesh = UnitCubeMesh(5, 7, 9)
-    assert mesh.size_global(0) == 480
-    assert mesh.size_global(3) == 1890
+    assert mesh.num_entities_global(0) == 480
+    assert mesh.num_entities_global(3) == 1890
 
 
 def test_UnitCubeMeshDistributed():
     """Create mesh of unit cube."""
     mesh = UnitCubeMesh(mpi_comm_world(), 5, 7, 9)
-    assert mesh.size_global(0) == 480
-    assert mesh.size_global(3) == 1890
+    assert mesh.num_entities_global(0) == 480
+    assert mesh.num_entities_global(3) == 1890
 
 
 def test_UnitCubeMeshDistributedLocal():
@@ -189,14 +191,14 @@ def test_UnitCubeMeshDistributedLocal():
 
 def test_UnitQuadMesh():
     mesh = UnitQuadMesh.create(mpi_comm_world(), 5, 7)
-    assert mesh.size_global(0) == 48
-    assert mesh.size_global(2) == 35
+    assert mesh.num_entities_global(0) == 48
+    assert mesh.num_entities_global(2) == 35
 
 
 def test_UnitHexMesh():
     mesh = UnitHexMesh.create(mpi_comm_world(), 5, 7, 9)
-    assert mesh.size_global(0) == 480
-    assert mesh.size_global(3) == 315
+    assert mesh.num_entities_global(0) == 480
+    assert mesh.num_entities_global(3) == 315
 
 
 def test_RefineUnitIntervalMesh():
@@ -205,32 +207,32 @@ def test_RefineUnitIntervalMesh():
     cell_markers = CellFunction("bool", mesh)
     cell_markers[0] = (MPI.rank(mesh.mpi_comm()) == 0)
     mesh2 = refine(mesh, cell_markers)
-    assert mesh2.size_global(0) == 22
-    assert mesh2.size_global(1) == 21
+    assert mesh2.num_entities_global(0) == 22
+    assert mesh2.num_entities_global(1) == 21
 
 
 def test_RefineUnitSquareMesh():
     """Refine mesh of unit square."""
     mesh = UnitSquareMesh(5, 7)
     mesh = refine(mesh)
-    assert mesh.size_global(0) == 165
-    assert mesh.size_global(2) == 280
+    assert mesh.num_entities_global(0) == 165
+    assert mesh.num_entities_global(2) == 280
 
 
 def test_RefineUnitCubeMesh():
     """Refine mesh of unit cube."""
     mesh = UnitCubeMesh(5, 7, 9)
     mesh = refine(mesh)
-    assert mesh.size_global(0) == 3135
-    assert mesh.size_global(3) == 15120
+    assert mesh.num_entities_global(0) == 3135
+    assert mesh.num_entities_global(3) == 15120
 
 
 def test_BoundaryComputation():
     """Compute boundary of mesh."""
     mesh = UnitCubeMesh(2, 2, 2)
     boundary = BoundaryMesh(mesh, "exterior")
-    assert boundary.size_global(0) == 26
-    assert boundary.size_global(2) == 48
+    assert boundary.num_entities_global(0) == 26
+    assert boundary.num_entities_global(2) == 48
 
 
 @xfail_in_parallel
@@ -530,16 +532,16 @@ def test_shared_entities(mesh_factory, ghost_mode):
                     assert isinstance(sharing, set)
                     assert (len(sharing) > 0) == e.is_shared()
 
-        n_entities = mesh.size(shared_dim)
-        n_global_entities = mesh.size_global(shared_dim)
+        n_entities = mesh.num_entities(shared_dim)
+        n_global_entities = mesh.num_entities_global(shared_dim)
         shared_entities = mesh.topology().shared_entities(shared_dim)
 
         # Check that sum(local-shared) = global count
         rank = MPI.rank(mesh.mpi_comm())
         ct = sum(1 for val in six.itervalues(shared_entities) if list(val)[0] < rank)
-        size_global = MPI.sum(mesh.mpi_comm(), mesh.size(shared_dim) - ct)
+        num_entities_global = MPI.sum(mesh.mpi_comm(), mesh.num_entities(shared_dim) - ct)
 
-        assert size_global ==  mesh.size_global(shared_dim)
+        assert num_entities_global ==  mesh.num_entities_global(shared_dim)
 
 
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
@@ -603,7 +605,7 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
 
             # NOTE: DOLFIN UFC noncompliance!
             # DOLFIN has increasing indices only for d-0 incidence
-            # with any d; UFC convention for d-d1 with d>d1 is not
+            # with any d; UFC convention for d-d1 with d>d1>0 is not
             # respected in DOLFIN
             if d1 != 0:
                 continue
@@ -622,3 +624,25 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
 
                 # Check that d1-subentities of d-entity have increasing indices
                 assert sorted(subentities_indices) == subentities_indices
+
+
+def test_mesh_topology_reference():
+    """Check that Mesh.topology() returns a reference rather
+    than copy"""
+    mesh = UnitSquareMesh(4, 4)
+    assert mesh.topology().id() == mesh.topology().id()
+
+
+# Reference counting does not work like expected with SWIG,
+# SWIG handles the lifetime differently
+@skip_if_not_pybind11
+def test_mesh_topology_lifetime():
+    """Check that lifetime of Mesh.topology() is bound to
+    underlying mesh object"""
+    mesh = UnitSquareMesh(4, 4)
+
+    rc = sys.getrefcount(mesh)
+    topology = mesh.topology()
+    assert sys.getrefcount(mesh) == rc + 1
+    del topology
+    assert sys.getrefcount(mesh) == rc

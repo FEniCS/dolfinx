@@ -369,9 +369,9 @@ void XDMFFile::write(const Function& u, const Encoding encoding)
   dolfin_assert(data_values.size()%width == 0);
 
   const std::int64_t num_points = (degree == 2) ?
-    (mesh.size(0) + mesh.size(1)) : mesh.size_global(0);
+    (mesh.num_entities(0) + mesh.num_entities(1)) : mesh.num_entities_global(0);
   const std::int64_t num_values =  cell_centred ?
-    mesh.size_global(mesh.topology().dim()) : num_points;
+    mesh.num_entities_global(mesh.topology().dim()) : num_points;
 
   add_data_item(_mpi_comm.comm(), attribute_node, h5_id,
                 "/VisualisationVector/0", data_values, {num_values, width});
@@ -513,7 +513,7 @@ void XDMFFile::write(const Function& u, double time_step,
   std::int64_t width = get_padded_width(u);
   dolfin_assert(data_values.size()%width == 0);
   std::int64_t num_values =  cell_centred ?
-    mesh.size_global(mesh.topology().dim()) : mesh.size_global(0);
+    mesh.num_entities_global(mesh.topology().dim()) : mesh.num_entities_global(0);
 
   const std::string dataset_name = "/VisualisationVector/"
                                    + std::to_string(_counter);
@@ -673,7 +673,7 @@ void XDMFFile::write_mesh_value_collection(const MeshValueCollection<T>& mvc,
     const std::string dims_str = geometry_data_node.attribute("Dimensions").as_string();
     std::vector<std::string> dims_list;
     boost::split(dims_list, dims_str, boost::is_any_of(" "));
-    const std::int64_t npoints = mesh->size_global(0);
+    const std::int64_t npoints = mesh->num_entities_global(0);
     if (boost::lexical_cast<std::int64_t>(dims_list[0]) != npoints
         or boost::lexical_cast<std::int64_t>(dims_list[1]) != (int)gdim)
     {
@@ -847,7 +847,7 @@ void XDMFFile::read_mesh_value_collection
 
   // Ensure the mesh dimension is initialised
   mesh->init(cell_dim);
-  const std::size_t global_vertex_range = mesh->size_global(0);
+  const std::size_t global_vertex_range = mesh->num_entities_global(0);
   const std::int32_t num_processes = _mpi_comm.size();
 
   // Send entities to processes based on the lowest vertex index
@@ -1136,7 +1136,7 @@ void XDMFFile::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Add topology node and attributes (including writing data)
   const int tdim = mesh.topology().dim();
-  const std::int64_t num_global_cells = mesh.size_global(tdim);
+  const std::int64_t num_global_cells = mesh.num_entities_global(tdim);
   if (num_global_cells < 1e9)
     add_topology_data<std::int32_t>(comm, grid_node, h5_id, path_prefix,
                                     mesh, tdim);
@@ -1272,7 +1272,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   if (MPI::rank(mpi_comm) == MPI::size(mpi_comm) - 1)
     x_cell_dofs.push_back(num_cell_dofs_global);
 
-  const std::int64_t num_x_cell_dofs_global = mesh.size_global(tdim) + 1;
+  const std::int64_t num_x_cell_dofs_global = mesh.num_entities_global(tdim) + 1;
 
   // Write number of dofs per cell
   add_data_item(mpi_comm, fe_attribute_node, h5_id,
@@ -1284,7 +1284,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
     mesh.topology().global_indices(tdim).begin(),
     mesh.topology().global_indices(tdim).begin() + n_cells);
 
-  const std::int64_t num_cells_global = mesh.size_global(tdim);
+  const std::int64_t num_cells_global = mesh.num_entities_global(tdim);
 
   add_data_item(mpi_comm, fe_attribute_node, h5_id,
                 h5_path + "/cells", cells,
@@ -1545,7 +1545,7 @@ void XDMFFile::build_mesh_quadratic(Mesh& mesh, const CellType& cell_type,
   std::vector<std::int32_t> topology_data
     = get_dataset<std::int32_t>(mesh.mpi_comm(), topology_dataset_node,
                                 relative_path);
-  dolfin_assert(topology_data.size()%num_cells == 0);
+  dolfin_assert(topology_data.size() % num_cells == 0);
   const int num_points_per_cell = topology_data.size()/num_cells;
   const int num_vertices_per_cell = cell_type.num_entities(0);
   const int num_edges_per_cell = cell_type.num_entities(1);
@@ -1825,7 +1825,7 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const int degree = mesh_geometry.degree();
   dolfin_assert(degree == 1 or degree == 2);
   const std::int64_t num_points
-    = (degree == 1) ? mesh.size_global(0) : (mesh.size(0) + mesh.size(1));
+    = (degree == 1) ? mesh.num_entities_global(0) : (mesh.num_entities(0) + mesh.num_entities(1));
 
   // Add geometry node and attributes
   pugi::xml_node geometry_node = xml_node.append_child("Geometry");
@@ -2082,7 +2082,7 @@ std::vector<T> XDMFFile::compute_quadratic_topology(const Mesh& mesh)
   const CellType& celltype = mesh.type();
   std::size_t npoint = celltype.num_entities(0) + celltype.num_entities(1);
   std::vector<T> topology_data;
-  topology_data.reserve(npoint*mesh.size(tdim));
+  topology_data.reserve(npoint*mesh.num_entities(tdim));
 
   for (CellIterator c(mesh); !c.end(); ++c)
   {
@@ -2486,9 +2486,9 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction,
   dolfin_assert(cell_dim == meshfunction.dim());
   const std::size_t num_entities_global = get_num_cells(topology_node);
 
-  // Ensure size_global(cell_dim) is set and check dataset matches
+  // Ensure num_entities_global(cell_dim) is set and check dataset matches
   DistributedMeshTools::number_entities(*mesh, cell_dim);
-  dolfin_assert(mesh->size_global(cell_dim) == num_entities_global);
+  dolfin_assert(mesh->num_entities_global(cell_dim) == num_entities_global);
 
   boost::filesystem::path xdmf_filename(_filename);
   const boost::filesystem::path parent_path = xdmf_filename.parent_path();
@@ -2533,7 +2533,7 @@ void XDMFFile::remap_meshfunction_data(MeshFunction<T>& meshfunction,
   // determined by the lowest global vertex index of the entity
   std::vector<std::vector<std::int64_t>> send_topology(num_processes);
   std::vector<std::vector<T>> send_values(num_processes);
-  const std::size_t max_vertex = mesh->size_global(0);
+  const std::size_t max_vertex = mesh->num_entities_global(0);
   for (std::size_t i = 0; i < num_entities ; ++i)
   {
     std::vector<std::int64_t>
@@ -2753,7 +2753,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
     // FIXME: remove this once Edge in 3D in parallel works properly
     DistributedMeshTools::number_entities(*mesh, cell_dim);
 
-    const std::int64_t num_global_cells = mesh->size_global(cell_dim);
+    const std::int64_t num_global_cells = mesh->num_entities_global(cell_dim);
     if (num_global_cells < 1e9)
       add_topology_data<std::int32_t>(_mpi_comm.comm(), grid_node, h5_id, mf_name,
                                       *mesh, cell_dim);
@@ -2782,7 +2782,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
   attribute_node.append_attribute("AttributeType") = "Scalar";
   attribute_node.append_attribute("Center") = "Cell";
 
-  const std::int64_t num_values = mesh->size_global(cell_dim);
+  const std::int64_t num_values = mesh->num_entities_global(cell_dim);
   // Add attribute DataItem node and write data
 
   // Copy values to vector, removing duplicates
@@ -2890,7 +2890,7 @@ std::vector<double> XDMFFile::get_point_data_values(const Function& u)
   if (u.value_rank() > 0)
   {
     // Transpose vector/tensor data arrays
-    const std::size_t num_local_vertices = mesh->size(0);
+    const std::size_t num_local_vertices = mesh->num_entities(0);
     const std::size_t value_size = u.value_size();
     std::vector<double> _data_values(width*num_local_vertices, 0.0);
     for (std::size_t i = 0; i < num_local_vertices; i++)
@@ -2922,7 +2922,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
 
   const std::size_t value_size = u.value_size();
   const std::size_t value_rank = u.value_rank();
-  const std::size_t num_local_points = mesh->size(0) + mesh->size(1);
+  const std::size_t num_local_points = mesh->num_entities(0) + mesh->num_entities(1);
   const std::size_t width = get_padded_width(u);
   std::vector<double> data_values(width*num_local_points);
   std::vector<dolfin::la_index> data_dofs(data_values.size(), 0);
@@ -2958,7 +2958,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
     {
       const std::size_t v0 = e->entities(0)[0];
       const std::size_t v1 = e->entities(0)[1];
-      const std::size_t e0 = (e->index() + mesh->size(0))*width;
+      const std::size_t e0 = (e->index() + mesh->num_entities(0))*width;
       for (std::size_t i = 0; i != value_size; ++i)
         data_values[e0 + i] = (data_values[v0 + i] + data_values[v1 + i])/2.0;
     }
@@ -2982,7 +2982,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
         }
         for (EdgeIterator e(*cell); !e.end(); ++e)
         {
-          const std::size_t e0 = (e->index() + mesh->size(0))*width;
+          const std::size_t e0 = (e->index() + mesh->num_entities(0))*width;
           data_dofs[e0 + i] = dofs[c];
           ++c;
         }

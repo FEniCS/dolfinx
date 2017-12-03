@@ -43,6 +43,7 @@ namespace dolfin
   class IndexMap;
   class SubDomain;
   class UFC;
+  class Cell;
 
   /// Builds a DofMap on a Mesh
 

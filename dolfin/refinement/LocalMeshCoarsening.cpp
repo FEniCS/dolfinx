@@ -49,15 +49,16 @@ void LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(Mesh& mesh,
   log(TRACE, "Coarsen simplicial mesh by edge collapse.");
 
   // Get size of old mesh
-  //const std::size_t num_vertices = mesh.size(0);
-  const std::size_t num_cells = mesh.size(mesh.topology().dim());
+  const std::size_t num_cells = mesh.num_entities(mesh.topology().dim());
 
   // Check cell marker
   if ( cell_marker.size() != num_cells )
+  {
     dolfin_error("LocalMeshCoarsening.cpp",
                  "coarsen mesh by collapsing edges",
                  "Number of cell markers (%d) does not match number of cells (%d)",
                  cell_marker.size(), num_cells);
+  }
 
   // Generate cell - edge connectivity if not generated
   mesh.init(mesh.topology().dim(), 1);
@@ -196,11 +197,8 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
 				      std::vector<int>& old2new_cell,
 				      bool coarsen_boundary)
 {
-  cout << "coarsen_cell: " << cellid << endl;
-  cout << "num_cells: " << mesh.num_cells() << endl;
-
-  const std::size_t num_vertices = mesh.size(0);
-  const std::size_t num_cells = mesh.size(mesh.topology().dim());
+  const std::size_t num_vertices = mesh.num_entities(0);
+  const std::size_t num_cells = mesh.num_entities(mesh.topology().dim());
 
   auto _mesh = reference_to_no_delete_pointer(mesh);
 

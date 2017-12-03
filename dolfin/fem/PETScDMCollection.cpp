@@ -24,6 +24,7 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/common/RangedIndexSet.h>

@@ -50,6 +50,7 @@
 #include <dolfin/fem/SystemAssembler.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericTensor.h>
@@ -169,8 +170,10 @@ namespace dolfin_wrappers
       .def("signature", &dolfin::FiniteElement::signature);
 
     // dolfin::GenericDofMap
-    py::class_<dolfin::GenericDofMap, std::shared_ptr<dolfin::GenericDofMap>>
+    py::class_<dolfin::GenericDofMap, std::shared_ptr<dolfin::GenericDofMap>, dolfin::Variable>
       (m, "GenericDofMap", "DOLFIN DofMap object")
+      .def("global_dimension", &dolfin::GenericDofMap::global_dimension,
+           "The dimension of the global finite element function space")
       .def("index_map", &dolfin::GenericDofMap::index_map)
       .def("neighbours", &dolfin::GenericDofMap::neighbours)
       .def("off_process_owner", &dolfin::GenericDofMap::off_process_owner)
@@ -195,6 +198,13 @@ namespace dolfin_wrappers
       .def("num_entity_dofs", &dolfin::GenericDofMap::num_entity_dofs)
       .def("tabulate_local_to_global_dofs", &dolfin::GenericDofMap::tabulate_local_to_global_dofs)
       .def("local_to_global_index", &dolfin::GenericDofMap::local_to_global_index)
+      .def("local_to_global_unowned",
+           [](dolfin::GenericDofMap& self) {
+             return Eigen::Map<const Eigen::Matrix<std::size_t, Eigen::Dynamic, 1>>(
+               self.local_to_global_unowned().data(),
+               self.local_to_global_unowned().size()); },
+           py::return_value_policy::reference_internal,
+           "Return view into unowned part of local-to-global map")
       .def("clear_sub_map_data", &dolfin::GenericDofMap::clear_sub_map_data)
       .def("tabulate_entity_dofs", [](const dolfin::GenericDofMap& instance, std::size_t entity_dim,
                                       std::size_t cell_entity_index)
@@ -231,7 +241,7 @@ namespace dolfin_wrappers
                   py::arg("init")=true, py::arg("finalize")=true);
 
     // dolfin::DirichletBC
-    py::class_<dolfin::DirichletBC, std::shared_ptr<dolfin::DirichletBC>>
+    py::class_<dolfin::DirichletBC, std::shared_ptr<dolfin::DirichletBC>, dolfin::Variable>
       (m, "DirichletBC", "DOLFIN DirichletBC object")
       .def(py::init<const dolfin::DirichletBC&>())
       .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>,
@@ -262,6 +272,10 @@ namespace dolfin_wrappers
       .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&) const)
            &dolfin::DirichletBC::apply)
       .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&, dolfin::GenericVector&) const)
+           &dolfin::DirichletBC::apply)
+      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericVector&, const dolfin::GenericVector&) const)
+           &dolfin::DirichletBC::apply)
+      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&, dolfin::GenericVector&, const dolfin::GenericVector&) const)
            &dolfin::DirichletBC::apply)
       .def("user_subdomain", &dolfin::DirichletBC::user_sub_domain)
       .def("set_value", &dolfin::DirichletBC::set_value)

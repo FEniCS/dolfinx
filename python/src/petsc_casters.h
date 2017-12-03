@@ -22,10 +22,11 @@
 #include <pybind11/stl.h>
 
 #ifdef HAS_PETSC
+#include <petscdm.h>
 #include <petscksp.h>
 #include <petscmat.h>
+#include <petscsnes.h>
 #include <petscvec.h>
-#include <petscdm.h>
 
 // pybind11 casters for PETSc/petsc4py objects
 #ifdef HAS_PYBIND11_PETSC4PY
@@ -94,10 +95,11 @@ namespace pybind11
 {
   namespace detail
   {
-    PETSC_CASTER_MACRO(Vec, vec);
-    PETSC_CASTER_MACRO(Mat, mat);
-    PETSC_CASTER_MACRO(KSP, ksp);
     PETSC_CASTER_MACRO(DM, dm);
+    PETSC_CASTER_MACRO(KSP, ksp);
+    PETSC_CASTER_MACRO(Mat, mat);
+    PETSC_CASTER_MACRO(SNES, snes);
+    PETSC_CASTER_MACRO(Vec, vec);
   }
 }
 

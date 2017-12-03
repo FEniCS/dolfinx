@@ -49,6 +49,7 @@
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/MeshTransformation.h>
 #include <dolfin/mesh/MultiMesh.h>
+#include <dolfin/function/Expression.h>
 
 #include "casters.h"
 
@@ -91,27 +92,32 @@ namespace dolfin_wrappers
       .def("degree", &dolfin::MeshGeometry::degree, "Degree");
 
     // dolfin::MeshTopology class
-    py::class_<dolfin::MeshTopology, std::shared_ptr<dolfin::MeshTopology>>
+    py::class_<dolfin::MeshTopology, std::shared_ptr<dolfin::MeshTopology>, dolfin::Variable>
       (m, "MeshTopology", "DOLFIN MeshTopology object")
       .def("dim", &dolfin::MeshTopology::dim, "Topological dimension")
+      .def("init", (void (dolfin::MeshTopology::*)(std::size_t)) &dolfin::MeshTopology::init)
+      .def("init", (void (dolfin::MeshTopology::*)(std::size_t, std::size_t, std::size_t))
+           &dolfin::MeshTopology::init)
       .def("__call__", (const dolfin::MeshConnectivity& (dolfin::MeshTopology::*)(std::size_t, std::size_t) const)
            &dolfin::MeshTopology::operator())
       .def("size", &dolfin::MeshTopology::size)
       .def("hash", &dolfin::MeshTopology::hash)
+      .def("init_global_indices", &dolfin::MeshTopology::init_global_indices)
       .def("have_global_indices", &dolfin::MeshTopology::have_global_indices)
       .def("ghost_offset", &dolfin::MeshTopology::ghost_offset)
       .def("cell_owner", (const std::vector<unsigned int>& (dolfin::MeshTopology::*)() const) &dolfin::MeshTopology::cell_owner)
+      .def("set_global_index", &dolfin::MeshTopology::set_global_index)
       .def("global_indices", [](const dolfin::MeshTopology& self, int dim)
            { auto& indices = self.global_indices(dim); return py::array_t<std::int64_t>(indices.size(), indices.data()); })
       .def("have_shared_entities", &dolfin::MeshTopology::have_shared_entities)
       .def("shared_entities",
            (std::map<std::int32_t, std::set<unsigned int> >&(dolfin::MeshTopology::*)(unsigned int))
-           &dolfin::MeshTopology::shared_entities);
+           &dolfin::MeshTopology::shared_entities)
+      .def("str", &dolfin::MeshTopology::str);
 
     // dolfin::Mesh
-    py::class_<dolfin::Mesh, std::shared_ptr<dolfin::Mesh>>(m, "Mesh",
-                                                            py::dynamic_attr(),
-                                                            "DOLFIN Mesh object")
+    py::class_<dolfin::Mesh, std::shared_ptr<dolfin::Mesh>, dolfin::Variable>
+      (m, "Mesh", py::dynamic_attr(), "DOLFIN Mesh object")
       .def(py::init<>())
       .def(py::init<std::string>())
       .def(py::init<const dolfin::Mesh&>())
@@ -168,20 +174,20 @@ namespace dolfin_wrappers
       .def("num_facets", &dolfin::Mesh::num_facets, "Number of facets")
       .def("num_cells", &dolfin::Mesh::num_cells, "Number of cells")
       .def("ordered", &dolfin::Mesh::ordered)
-      .def("size", &dolfin::Mesh::size)
       .def("rmax", &dolfin::Mesh::rmax)
       .def("rmin", &dolfin::Mesh::rmin)
       .def("rotate", (void (dolfin::Mesh::*)(double, std::size_t, const dolfin::Point&))
            &dolfin::Mesh::rotate)
       .def("rotate", (void (dolfin::Mesh::*)(double, std::size_t)) &dolfin::Mesh::rotate,
                       py::arg("angle"), py::arg("axis")=2)
-      .def("size_global", &dolfin::Mesh::size_global)
+      .def("num_entities_global", &dolfin::Mesh::num_entities_global)
       .def("smooth", &dolfin::Mesh::smooth, py::arg("num_iterations")=1)
       .def("smooth_boundary", &dolfin::Mesh::smooth_boundary)
       .def("snap_boundary", &dolfin::Mesh::snap_boundary, py::arg("subdomain"),
            py::arg("harmonic_smoothing")=true)
-      .def("topology", (const dolfin::MeshTopology& (dolfin::Mesh::*)() const)
-           &dolfin::Mesh::topology, "Mesh topology")
+      .def("topology", (dolfin::MeshTopology& (dolfin::Mesh::*)())
+           &dolfin::Mesh::topology, "Mesh topology",
+           py::return_value_policy::reference_internal)
       .def("translate", &dolfin::Mesh::translate)
       .def("type", (const dolfin::CellType& (dolfin::Mesh::*)() const) &dolfin::Mesh::type,
            py::return_value_policy::reference)
@@ -190,7 +196,8 @@ namespace dolfin_wrappers
            { return dolfin::CellType::type2string(self.type().cell_type()); });
 
     // dolfin::MeshData
-    py::class_<dolfin::MeshData, std::shared_ptr<dolfin::MeshData>>(m, "MeshData", "Mesh data object")
+    py::class_<dolfin::MeshData, std::shared_ptr<dolfin::MeshData>, dolfin::Variable>
+      (m, "MeshData", "Mesh data object")
       .def("array", [](dolfin::MeshData& self, std::string key, std::size_t i)
            {
              const std::vector<std::size_t>& a = self.array(key, i);
@@ -463,6 +470,10 @@ namespace dolfin_wrappers
            &dolfin::MeshEditor::add_vertex)
       .def("add_vertex", (void (dolfin::MeshEditor::*)(std::size_t, const std::vector<double>&))
            &dolfin::MeshEditor::add_vertex)
+      .def("add_vertex_global", (void (dolfin::MeshEditor::*)(std::size_t, std::size_t, const dolfin::Point&))
+           &dolfin::MeshEditor::add_vertex_global)
+      .def("add_vertex_global", (void (dolfin::MeshEditor::*)(std::size_t, std::size_t, const std::vector<double>&))
+           &dolfin::MeshEditor::add_vertex_global)
       .def("add_cell", (void (dolfin::MeshEditor::*)(std::size_t, const std::vector<std::size_t>&))
            &dolfin::MeshEditor::add_cell)
       .def("close", &dolfin::MeshEditor::close, py::arg("order") = true);

@@ -20,8 +20,10 @@
 from __future__ import print_function
 import pytest
 import numpy as np
-from dolfin import *
 
+import sys
+
+from dolfin import *
 from dolfin_utils.test import *
 
 
@@ -485,34 +487,82 @@ def test_local_dimension(mesh_factory):
         #    dofmap.index_map().size('foo')
 
 
+# Failures in FFC on quads/hexes
+xfail_ffc = pytest.mark.xfail(raises=Exception, strict=True)
+
 @skip_in_parallel
-def test_dofs_dim():
+@pytest.mark.parametrize('space', [
+    "FunctionSpace(UnitIntervalMesh(10),        'P', 1)",
+    "FunctionSpace(UnitSquareMesh(6, 6),        'P', 1)",
+    "FunctionSpace(UnitCubeMesh(2, 2, 2),       'P', 1)",
+    "FunctionSpace(UnitQuadMesh.create(6, 6),   'Q', 1)",
+    "FunctionSpace(UnitHexMesh.create(2, 2, 2), 'Q', 1)",
+    "FunctionSpace(UnitIntervalMesh(10),        'P', 2)",
+    "FunctionSpace(UnitSquareMesh(6, 6),        'P', 2)",
+    "FunctionSpace(UnitCubeMesh(2, 2, 2),       'P', 2)",
+    "FunctionSpace(UnitQuadMesh.create(6, 6),   'Q', 2)",
+    "FunctionSpace(UnitHexMesh.create(2, 2, 2), 'Q', 2)",
+    "FunctionSpace(UnitIntervalMesh(10),        'P', 3)",
+    "FunctionSpace(UnitSquareMesh(6, 6),        'P', 3)",
+    "FunctionSpace(UnitCubeMesh(2, 2, 2),       'P', 3)",
+    "FunctionSpace(UnitQuadMesh.create(6, 6),   'Q', 3)",
+    "FunctionSpace(UnitHexMesh.create(2, 2, 2), 'Q', 3)",
+    "FunctionSpace(UnitIntervalMesh(10),        'DP', 1)",
+    "FunctionSpace(UnitSquareMesh(6, 6),        'DP', 1)",
+    "FunctionSpace(UnitCubeMesh(2, 2, 2),       'DP', 1)",
+    xfail_ffc("FunctionSpace(UnitQuadMesh.create(6, 6),   'DQ', 1)"),
+    xfail_ffc("FunctionSpace(UnitHexMesh.create(2, 2, 2), 'DQ', 1)"),
+    "FunctionSpace(UnitIntervalMesh(10),        'DP', 2)",
+    "FunctionSpace(UnitSquareMesh(6, 6),        'DP', 2)",
+    "FunctionSpace(UnitCubeMesh(2, 2, 2),       'DP', 2)",
+    xfail_ffc("FunctionSpace(UnitQuadMesh.create(6, 6),   'DQ', 2)"),
+    xfail_ffc("FunctionSpace(UnitHexMesh.create(2, 2, 2), 'DQ', 2)"),
+    "FunctionSpace(UnitSquareMesh(6, 6),        'N1curl', 1)",
+    "FunctionSpace(UnitCubeMesh(2, 2, 2),       'N1curl', 1)",
+    xfail_ffc("FunctionSpace(UnitQuadMesh.create(6, 6),   'N1curl', 1)"),
+    xfail_ffc("FunctionSpace(UnitHexMesh.create(2, 2, 2), 'N1curl', 1)"),
+    "FunctionSpace(UnitSquareMesh(6, 6),        'N1curl', 2)",
+    "FunctionSpace(UnitCubeMesh(2, 2, 2),       'N1curl', 2)",
+    xfail_ffc("FunctionSpace(UnitQuadMesh.create(6, 6),   'N1curl', 2)"),
+    xfail_ffc("FunctionSpace(UnitHexMesh.create(2, 2, 2), 'N1curl', 2)"),
+    "FunctionSpace(UnitSquareMesh(6, 6),        'RT', 1)",
+    "FunctionSpace(UnitCubeMesh(2, 2, 2),       'RT', 1)",
+    xfail_ffc("FunctionSpace(UnitQuadMesh.create(6, 6),   'RT', 1)"),
+    xfail_ffc("FunctionSpace(UnitHexMesh.create(2, 2, 2), 'RT', 1)"),
+])
+def test_dofs_dim(space):
     """Test function GenericDofMap::dofs(mesh, dim)"""
-    meshes = [UnitIntervalMesh(10),
-              UnitSquareMesh(6, 6),
-              UnitCubeMesh(2, 2, 2),
-              UnitQuadMesh.create(6, 6),
-              UnitHexMesh.create(2, 2, 2)]
+    V = eval(space)
+    dofmap = V.dofmap()
+    mesh = V.mesh()
+    for dim in range(0, mesh.topology().dim()):
+        edofs = dofmap.dofs(mesh, dim)
+        num_mesh_entities = mesh.num_entities(dim)
+        dofs_per_entity = dofmap.num_entity_dofs(dim)
+        assert len(edofs) == dofs_per_entity*num_mesh_entities
 
-    for mesh in meshes:
-        tdim = mesh.topology().dim()
-        spaces = [FunctionSpace(mesh, "Discontinuous Lagrange", 1),
-                  FunctionSpace(mesh, "Discontinuous Lagrange", 2),
-                  FunctionSpace(mesh, "Lagrange", 1),
-                  FunctionSpace(mesh, "Lagrange", 2),
-                  FunctionSpace(mesh, "Lagrange", 3)]
 
-        if tdim > 1 and mesh.ufl_cell().cellname() not in ['quadrilateral', 'hexahedron']:
-            N1 = "Nedelec 1st kind H(curl)"
-            vspaces = [VectorFunctionSpace(mesh, N1, 1),
-                       VectorFunctionSpace(mesh, N1, 2),
-                       VectorFunctionSpace(mesh, "RT", 1)]
-            spaces = spaces + vspaces
+@skip_if_not_pybind11
+def test_readonly_view_local_to_global_unwoned(mesh):
+    """Test that local_to_global_unwoned() returns readonly
+    view into the data; in particular test lifetime of data
+    owner"""
+    V = FunctionSpace(mesh, "P", 1)
+    dofmap = V.dofmap()
+    index_map = dofmap.index_map()
 
-        for V in spaces:
-            dofmap = V.dofmap()
-            for dim in range(0, mesh.topology().dim()):
-                edofs = dofmap.dofs(mesh, dim)
-                num_mesh_entities = mesh.num_entities(dim)
-                dofs_per_entity = dofmap.num_entity_dofs(dim)
-                assert len(edofs) == dofs_per_entity*num_mesh_entities
+    rc = sys.getrefcount(dofmap)
+    l2gu = dofmap.local_to_global_unowned()
+    assert sys.getrefcount(dofmap) == rc + 1 if l2gu.size else rc
+    assert not l2gu.flags.writeable
+    assert all(l2gu < V.dofmap().global_dimension())
+    del l2gu
+    assert sys.getrefcount(dofmap) == rc
+
+    rc = sys.getrefcount(index_map)
+    l2gu = index_map.local_to_global_unowned()
+    assert sys.getrefcount(index_map) == rc + 1 if l2gu.size else rc
+    assert not l2gu.flags.writeable
+    assert all(l2gu < V.dofmap().global_dimension())
+    del l2gu
+    assert sys.getrefcount(index_map) == rc

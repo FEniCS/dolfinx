@@ -112,12 +112,14 @@ namespace dolfin_wrappers
               new dolfin::PETScSNESSolver(comm.get(), nls_type)); }),
           py::arg("comm"), py::arg("nls_type") = "default")
       .def_readwrite("parameters", &dolfin::PETScSNESSolver::parameters)
+      .def("snes", &dolfin::PETScSNESSolver::snes)
       .def("solve", (std::pair<std::size_t, bool> (dolfin::PETScSNESSolver::*)(dolfin::NonlinearProblem&,
                                                                                dolfin::GenericVector&))
            &dolfin::PETScSNESSolver::solve);
 
     // dolfin::TAOLinearBoundSolver
-    py::class_<dolfin::TAOLinearBoundSolver>(m, "TAOLinearBoundSolver")
+    py::class_<dolfin::TAOLinearBoundSolver, std::shared_ptr<dolfin::TAOLinearBoundSolver>, dolfin::Variable>
+      (m, "TAOLinearBoundSolver")
       .def(py::init([](const MPICommWrapper comm)
           { return std::unique_ptr<dolfin::TAOLinearBoundSolver>(new dolfin::TAOLinearBoundSolver(comm.get())); }))
       .def(py::init<std::string, std::string, std::string>(), py::arg("method")="default",
@@ -131,7 +133,6 @@ namespace dolfin_wrappers
     // dolfin::PETScTAOSolver
     py::class_<dolfin::PETScTAOSolver, std::shared_ptr<dolfin::PETScTAOSolver>, dolfin::PETScObject>(m, "PETScTAOSolver")
       .def(py::init<>())
-
       .def(py::init([](const MPICommWrapper comm, std::string tao_type="default",
                        std::string ksp_type="default", std::string pc_type="default")
           { return std::unique_ptr<dolfin::PETScTAOSolver>(
