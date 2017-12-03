@@ -211,6 +211,9 @@ TensorLayout.Sparsity_SPARSE = TensorLayout.Sparsity.SPARSE
 TensorLayout.Ghosts_GHOSTED = TensorLayout.Ghosts.GHOSTED
 TensorLayout.Ghosts_UNGHOSTED = TensorLayout.Ghosts.UNGHOSTED
 
+CellType.Type_quadrilateral = CellType.Type.quadrilateral
+CellType.Type_hexahedron = CellType.Type.hexahedron
+
 if has_linear_algebra_backend('PETSc'):
     PETScKrylovSolver.norm_type_default_norm = PETScKrylovSolver.norm_type.default_norm
     PETScKrylovSolver.norm_type_natural = PETScKrylovSolver.norm_type.natural
