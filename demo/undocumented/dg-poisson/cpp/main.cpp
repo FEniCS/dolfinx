@@ -105,7 +105,7 @@ int main()
   NeumannBoundary neumann_boundary;
   DirichletBoundary dirichlet_boundary;
 
-  auto boundaries = std::make_shared<MeshFunction<std::size_t>>(mesh, mesh->topology.dim()-1, 0);
+  auto boundaries = std::make_shared<MeshFunction<std::size_t>>(mesh, mesh->topology().dim()-1, 0);
   neumann_boundary.mark(*boundaries, 2);
   dirichlet_boundary.mark(*boundaries, 1);
 

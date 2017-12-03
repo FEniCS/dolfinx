@@ -61,7 +61,7 @@ domains.set_all(0)
 obstacle.mark(domains, 1)
 
 # Initialize mesh function for boundary domains
-boundaries = MeshFunction("size_t", mesh, mesh.topology.dim()-1)
+boundaries = MeshFunction("size_t", mesh, mesh.topology().dim()-1)
 boundaries.set_all(0)
 left.mark(boundaries, 1)
 top.mark(boundaries, 2)

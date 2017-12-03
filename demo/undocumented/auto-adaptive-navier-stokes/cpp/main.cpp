@@ -90,7 +90,7 @@ int main()
   auto M = std::make_shared<AdaptiveNavierStokes::GoalFunctional>(mesh);
   M->w = w;
   Outflow outflow;
-  auto outflow_markers = std::make_shared<MeshFunction<std::size_t>>(mesh, mesh->topology.dim()-1, 1);
+  auto outflow_markers = std::make_shared<MeshFunction<std::size_t>>(mesh, mesh->topology().dim()-1, 1);
   outflow.mark(*outflow_markers, 0);
   M->ds = outflow_markers;
 

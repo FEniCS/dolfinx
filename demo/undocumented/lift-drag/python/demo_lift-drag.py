@@ -48,7 +48,7 @@ class Fish(SubDomain):
         return x[0] > DOLFIN_EPS and x[0] < (1.0 - DOLFIN_EPS) and \
                x[1] > DOLFIN_EPS and x[1] < (1.0 - DOLFIN_EPS)
 
-markers = MeshFunction("size_t", mesh, mesh.topology.dim()-1, 1)
+markers = MeshFunction("size_t", mesh, mesh.topology().dim()-1, 1)
 Fish().mark(markers, 1);
 
 # Define functionals for drag and lift
