@@ -70,7 +70,8 @@ class Flux : public Expression
 int main()
 {
   // Create mesh and function space
-  auto mesh = std::make_shared<Mesh>(UnitQuadMesh::create(64, 64));
+  auto mesh = std::make_shared<Mesh>(
+    UnitSquareMesh::create({{64, 64}}, CellType::Type::quadrilateral));
   auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
   // Define variational problem

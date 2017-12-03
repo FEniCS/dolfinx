@@ -92,7 +92,7 @@ namespace dolfin_wrappers
       .def("degree", &dolfin::MeshGeometry::degree, "Degree");
 
     // dolfin::MeshTopology class
-    py::class_<dolfin::MeshTopology, std::shared_ptr<dolfin::MeshTopology>>
+    py::class_<dolfin::MeshTopology, std::shared_ptr<dolfin::MeshTopology>, dolfin::Variable>
       (m, "MeshTopology", "DOLFIN MeshTopology object")
       .def("dim", &dolfin::MeshTopology::dim, "Topological dimension")
       .def("init", (void (dolfin::MeshTopology::*)(std::size_t)) &dolfin::MeshTopology::init)
@@ -112,7 +112,8 @@ namespace dolfin_wrappers
       .def("have_shared_entities", &dolfin::MeshTopology::have_shared_entities)
       .def("shared_entities",
            (std::map<std::int32_t, std::set<unsigned int> >&(dolfin::MeshTopology::*)(unsigned int))
-           &dolfin::MeshTopology::shared_entities);
+           &dolfin::MeshTopology::shared_entities)
+      .def("str", &dolfin::MeshTopology::str);
 
     // dolfin::Mesh
     py::class_<dolfin::Mesh, std::shared_ptr<dolfin::Mesh>, dolfin::Variable>
@@ -184,8 +185,9 @@ namespace dolfin_wrappers
       .def("smooth_boundary", &dolfin::Mesh::smooth_boundary)
       .def("snap_boundary", &dolfin::Mesh::snap_boundary, py::arg("subdomain"),
            py::arg("harmonic_smoothing")=true)
-      .def("topology", (const dolfin::MeshTopology& (dolfin::Mesh::*)() const)
-           &dolfin::Mesh::topology, "Mesh topology")
+      .def("topology", (dolfin::MeshTopology& (dolfin::Mesh::*)())
+           &dolfin::Mesh::topology, "Mesh topology",
+           py::return_value_policy::reference_internal)
       .def("translate", &dolfin::Mesh::translate)
       .def("type", (const dolfin::CellType& (dolfin::Mesh::*)() const) &dolfin::Mesh::type,
            py::return_value_policy::reference)

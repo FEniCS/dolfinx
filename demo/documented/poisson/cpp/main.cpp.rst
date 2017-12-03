@@ -144,7 +144,8 @@ the form file) defined relative to this mesh, we do as follows
    int main()
    {
      // Create mesh and function space
-     auto mesh = std::make_shared<Mesh>(UnitSquareMesh::create({{32, 32}}));
+     auto mesh = std::make_shared<Mesh>(
+       UnitSquareMesh::create({{32, 32}}, CellType::Type::triangle));
      auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
