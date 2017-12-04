@@ -24,9 +24,9 @@ from six.moves import xrange as range
 from dolfin_utils.test import fixture, skip_in_parallel, skip_if_pybind11
 
 
-@pytest.fixture(params=range(5))
+@pytest.fixture(params=range(4))
 def name(request):
-    names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
+    names = [3, 0, 1, 2]
     return names[request.param]
 
 
@@ -43,12 +43,12 @@ def mesh():
 
 @fixture
 def funcs(mesh):
-    names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
+    names = [3, 0, 1, 2]
     tps = ['int', 'size_t', 'bool', 'double']
     funcs = {}
     for tp in tps:
         for name in names:
-            funcs[(tp, name)] = eval("%sFunction('%s', mesh)" % (name, tp))
+            funcs[(tp, name)] = eval("MeshFunction('%s', mesh, %d)" % (tp, name))
     return funcs
 
 
@@ -63,13 +63,13 @@ def f(cube):
 
 
 def test_size(tp, name, funcs, mesh):
-    if name is "Vertex":
+    if name == 0:
         a = len(funcs[(tp, name)])
         b = mesh.num_vertices()
         assert a == b
     else:
         a = len(funcs[(tp, name)])
-        b = getattr(mesh, "num_%ss" % name.lower())()
+        b = mesh.num_entities(name)
         assert a == b
 
 
@@ -146,14 +146,14 @@ def test_Assign(f, cube):
 def test_meshfunction_where_equal():
     mesh = UnitSquareMesh(2, 2)
 
-    cf = CellFunction("size_t", mesh)
+    cf = MeshFunction("size_t", mesh, mesh.topology().dim())
     cf.set_all(1)
     cf[0] = 3
     cf[3] = 3
     assert list(cf.where_equal(3)) == [0, 3]
     assert list(cf.where_equal(1)) == [1, 2, 4, 5, 6, 7]
 
-    ff = FacetFunction("size_t", mesh)
+    ff = MeshFunction("size_t", mesh, mesh.topology().dim()-1)
     ff.set_all(0)
     ff[0] = 1
     ff[2] = 3
@@ -162,7 +162,7 @@ def test_meshfunction_where_equal():
     assert list(ff.where_equal(3)) == [2, 3]
     assert list(ff.where_equal(0)) == [1] + list(range(4, ff.size()))
 
-    vf = VertexFunction("size_t", mesh)
+    vf = MeshFunction("size_t", mesh, 0)
     vf.set_all(3)
     vf[1] = 1
     vf[2] = 1

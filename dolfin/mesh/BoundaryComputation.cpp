@@ -419,10 +419,10 @@ void BoundaryComputation::reorder(std::vector<std::size_t>& vertices,
   // Check orientation
   switch (mesh.type().cell_type())
   {
-  case CellType::interval:
+  case CellType::Type::interval:
     // Do nothing
     break;
-  case CellType::triangle:
+  case CellType::Type::triangle:
     {
       dolfin_assert(facet.num_entities(0) == 2);
 
@@ -439,7 +439,7 @@ void BoundaryComputation::reorder(std::vector<std::size_t>& vertices,
       }
     }
     break;
-  case CellType::tetrahedron:
+  case CellType::Type::tetrahedron:
     {
       dolfin_assert(facet.num_entities(0) == 3);
 

@@ -40,7 +40,7 @@ dolfin::Mesh UnitTriangleMesh::create()
 
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(mesh, CellType::triangle, 2, 2);
+  editor.open(mesh, CellType::Type::triangle, 2, 2);
 
   // Create vertices
   editor.init_vertices_global(3, 3);

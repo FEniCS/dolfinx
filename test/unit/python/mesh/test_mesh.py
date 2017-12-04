@@ -35,6 +35,11 @@ from dolfin_utils.test import cd_tempdir
 from dolfin_utils.test import skip_if_not_pybind11
 
 
+if has_pybind11():
+    CellType.Type_quadrilateral = CellType.Type.quadrilateral
+    CellType.Type_hexahedron = CellType.Type.hexahedron
+
+
 @fixture
 def mesh1d():
     # Create 1D mesh with degenerate cell
@@ -190,13 +195,13 @@ def test_UnitCubeMeshDistributedLocal():
 
 
 def test_UnitQuadMesh():
-    mesh = UnitQuadMesh.create(mpi_comm_world(), 5, 7)
+    mesh = UnitSquareMesh.create(5, 7, CellType.Type_quadrilateral)
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 35
 
 
 def test_UnitHexMesh():
-    mesh = UnitHexMesh.create(mpi_comm_world(), 5, 7, 9)
+    mesh = UnitCubeMesh.create(5, 7, 9, CellType.Type_hexahedron)
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
 
@@ -204,7 +209,7 @@ def test_UnitHexMesh():
 def test_RefineUnitIntervalMesh():
     """Refine mesh of unit interval."""
     mesh = UnitIntervalMesh(20)
-    cell_markers = CellFunction("bool", mesh)
+    cell_markers = MeshFunction("bool", mesh, mesh.topology().dim(), False)
     cell_markers[0] = (MPI.rank(mesh.mpi_comm()) == 0)
     mesh2 = refine(mesh, cell_markers)
     assert mesh2.num_entities_global(0) == 22
@@ -298,7 +303,7 @@ def test_SubsetIterators(mesh):
         return x[0] >= 0.5
     sd1 = AutoSubDomain(inside1)
     sd2 = AutoSubDomain(inside2)
-    cf = CellFunction('size_t', mesh)
+    cf = MeshFunction('size_t', mesh, mesh.topology().dim())
     cf.set_all(0)
     sd1.mark(cf, 1)
     sd2.mark(cf, 2)
@@ -475,8 +480,8 @@ mesh_factories = [
     (SphericalShellMesh.create, (mpi_comm_world(), 1,)),
     (SphericalShellMesh.create, (mpi_comm_world(), 2,)),
     (UnitCubeMesh, (2, 2, 2)),
-    (UnitQuadMesh.create, (4, 4)),
-    (UnitHexMesh.create, (2, 2, 2)),
+    (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)),
+    (UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron)),
     # FIXME: Add mechanism for testing meshes coming from IO
 ]
 
@@ -491,8 +496,8 @@ mesh_factories_broken_shared_entities = [
     xfail_in_parallel((SphericalShellMesh.create, (mpi_comm_world(), 1,))),
     xfail_in_parallel((SphericalShellMesh.create, (mpi_comm_world(), 2,))),
     (UnitCubeMesh, (2, 2, 2)),
-    (UnitQuadMesh.create, (4, 4)),
-    (UnitHexMesh.create, (2, 2, 2)),
+    (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)),
+    (UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron)),
 ]
 
 # FIXME: Fix this xfail
@@ -500,10 +505,10 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
     """Xfail when mesh_factory on quads/hexes uses
     shared_vertex mode. Needs implementing.
     """
-    if mesh_factory in [UnitQuadMesh.create, UnitHexMesh.create]:
+    if mesh_factory in [UnitSquareMesh.create, UnitCubeMesh.create]:
         if ghost_mode == 'shared_vertex':
             pytest.xfail(reason="Missing functionality in '{}' with '' "
-                                "mode".format(mesh_factory, ghost_mode))
+                         "mode".format(mesh_factory, ghost_mode))
 
 
 @pytest.mark.parametrize('mesh_factory', mesh_factories_broken_shared_entities)

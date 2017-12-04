@@ -388,17 +388,17 @@ std::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh,
 
   // Determine VTK cell type
   std::uint8_t vtk_cell_type = 0;
-  if (cell_type == CellType::tetrahedron)
+  if (cell_type == CellType::Type::tetrahedron)
     vtk_cell_type = 10;
-  else if (cell_type == CellType::hexahedron)
+  else if (cell_type == CellType::Type::hexahedron)
     vtk_cell_type = 12;
-  else if (cell_type == CellType::quadrilateral)
+  else if (cell_type == CellType::Type::quadrilateral)
     vtk_cell_type = 9;
-  else if (cell_type == CellType::triangle)
+  else if (cell_type == CellType::Type::triangle)
     vtk_cell_type = 5;
-  else if (cell_type == CellType::interval)
+  else if (cell_type == CellType::Type::interval)
     vtk_cell_type = 3;
-  else if (cell_type == CellType::point)
+  else if (cell_type == CellType::Type::point)
     vtk_cell_type = 1;
   else
   {

@@ -41,13 +41,13 @@ namespace dolfin
 
     /// Compute the radius ratio for all cells.
     /// @param mesh (std::shared_ptr<const Mesh>)
-    /// @return     CellFunction<double>
+    /// @return     MeshFunction<double>
     ///         The cell radius ratio radius ratio geometric_dimension *
     ///         * inradius / circumradius (geometric_dimension
     ///         is normalization factor). It has range zero to one.
     ///         Zero indicates a degenerate element.
     ///
-    static CellFunction<double>
+    static MeshFunction<double>
       radius_ratios(std::shared_ptr<const Mesh> mesh);
 
 

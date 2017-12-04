@@ -24,19 +24,19 @@
 namespace dolfin
 {
 
-  /// This class implements functionality for triangular meshes.
+  /// This class implements functionality for hexahedral cell  meshes.
 
   class HexahedronCell : public CellType
   {
   public:
 
     /// Specify cell type and facet type
-    HexahedronCell() : CellType(hexahedron, quadrilateral) {}
+     HexahedronCell() : CellType(Type::hexahedron, Type::quadrilateral) {}
 
     /// Check if cell is a simplex
     bool is_simplex() const
     { return false; }
-    
+
     /// Return topological dimension of cell
     std::size_t dim() const;
 

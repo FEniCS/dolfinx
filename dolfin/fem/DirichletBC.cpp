@@ -641,7 +641,7 @@ void DirichletBC::init_from_sub_domain(std::shared_ptr<const SubDomain>
   // all facet as subdomain 1
   const std::size_t dim = mesh->topology().dim();
   _function_space->mesh()->init(dim - 1);
-  FacetFunction<std::size_t> sub_domains(mesh, 1);
+  MeshFunction<std::size_t> sub_domains(mesh, dim - 1, 1);
 
   // Set geometric dimension (needed for SWIG interface)
   sub_domain->_geometric_dimension = mesh->geometry().dim();

@@ -84,16 +84,8 @@ We next define a mesh of the domain:
 
 The above subdomains are defined with the sole purpose of populating
 mesh functions. (For more complicated geometries, the mesh functions
-would typically be provided by other means.) The classes
-:py:class:`CellFunction <dolfin.cpp.CellFunction>` and
-:py:class:`FacetFunction <dolfin.cpp.FacetFunction>` are specialized
-versions of the more general :py:class:`MeshFunction
-<dolfin.cpp.MeshFunction>`. :py:class:`CellFunction
-<dolfin.cpp.CellFunction>` represents a function with a value for each
-cell of a mesh, while :py:class:`FacetFunction
-<dolfin.cpp.FacetFunction>` represents a function with a value for
-each facet. We define a :py:class:`CellFunction
-<dolfin.cpp.CellFunction>` to indicate which cells that correspond to
+would typically be provided by other means.) We define a :py:class:`MeshFunction
+<dolfin.cpp.MeshFunction>` over the mesh cells to indicate which cells that correspond to
 the different interior subregions :math:`\Omega_0` and
 :math:`\Omega_1`. Those in the interior rectangle will be tagged by
 `1`, while the remainder is tagged by `0`. We can set all the values
@@ -108,20 +100,21 @@ value):
 .. code-block:: python
 
     # Initialize mesh function for interior domains
-    domains = CellFunction("size_t", mesh)
+    domains = MeshFunction("size_t", mesh, mesh.topology().dim())
     domains.set_all(0)
     obstacle.mark(domains, 1)
 
 
-We can do the same for the boundaries using a :py:class:`FacetFunction
-<dolfin.cpp.FacetFunction>`. We first tag all the edges by ``0``, then
+We can do the same for the boundaries using a :py:class:`MeshFunction
+<dolfin.cpp.MeshFunction>` defined ove the topological dimension `
+mesh.topology().dim()-1`. We first tag all the edges by ``0``, then
 the edges on the left by ``1``, on the top by ``2``, on the right by
 ``3`` and on the bottom by ``4``:
 
 .. code-block:: python
 
     # Initialize mesh function for boundary domains
-    boundaries = FacetFunction("size_t", mesh)
+    boundaries = MeshFunction("size_t", mesh, mesh.topology().dim()-1)
     boundaries.set_all(0)
     left.mark(boundaries, 1)
     top.mark(boundaries, 2)

@@ -36,19 +36,19 @@ namespace dolfin
   class MeshEntity;
   template<typename T> class MeshFunction;
 
-  /// This class implements functionality for interval meshes.
+  /// This class implements functionality for interval cell meshes.
 
   class IntervalCell : public CellType
   {
   public:
 
     /// Specify cell type and facet type
-    IntervalCell() : CellType(interval, point) {}
+    IntervalCell() : CellType(Type::interval, Type::point) {}
 
     /// Check if cell is a simplex
     bool is_simplex() const
     { return true; }
-    
+
     /// Return topological dimension of cell
     std::size_t dim() const;
 

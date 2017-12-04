@@ -195,7 +195,7 @@ def test_vertex_assembly():
         return 0.25 <= x[0] and x[0] <= 0.75 and near(x[1], 0.5)
 
     # Define domain for point integral
-    center_domain = VertexFunction("size_t", mesh, 0)
+    center_domain = MeshFunction("size_t", mesh, 0, 0)
     center = AutoSubDomain(center_func)
     center.mark(center_domain, 1)
     dPP = dP(subdomain_data=center_domain)
@@ -211,7 +211,8 @@ def test_vertex_assembly():
         A, b = assemble_system(a, L)
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (20, 20)), (UnitQuadMesh.create, (20, 20))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (20, 20)),
+                                          (UnitSquareMesh.create, (20, 20, CellType.Type_quadrilateral))])
 def test_incremental_assembly(mesh_factory):
 
     for f in [Constant(0.0), Constant(1e4)]:
@@ -253,9 +254,9 @@ def test_incremental_assembly(mesh_factory):
 
 @skip_in_parallel
 @pytest.mark.parametrize('mesh_factory', [
-    (UnitSquareMesh, (24, 24)),
+    (UnitSquareMesh.create, (24, 24, CellType.Type_triangle)),
     # FFC PR #91 disables (broken) DQ elements
-    pytest.mark.xfail((UnitQuadMesh.create, (24, 24)), strict=True, raises=Exception),
+    pytest.mark.xfail((UnitSquareMesh.create, (24, 24, CellType.Type_quadrilateral)), strict=True, raises=Exception),
 ])
 def test_domains(mesh_factory):
 
@@ -373,7 +374,8 @@ def test_facet_assembly_cellwise_insertion(filedir):
     run_test(Mesh(os.path.join(filedir, "gmsh_unit_interval.xml")))
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (24, 24)), (UnitQuadMesh.create, (24, 24))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (24, 24)),
+                                          (UnitSquareMesh.create, (24, 24, CellType.Type_quadrilateral))])
 def test_non_square_assembly(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)

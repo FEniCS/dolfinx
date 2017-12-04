@@ -29,11 +29,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::CellFunction<double>
+dolfin::MeshFunction<double>
 MeshQuality::radius_ratios(std::shared_ptr<const Mesh> mesh)
 {
-  // Create CellFunction
-  CellFunction<double> cf(mesh, 0.0);
+  // Create MeshFunction
+  MeshFunction<double> cf(mesh, mesh->topology().dim(), 0.0);
 
   // Compute radius ration
   for (CellIterator cell(*mesh); !cell.end(); ++cell)
@@ -143,14 +143,12 @@ MeshQuality::radius_ratio_matplotlib_histogram(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 void MeshQuality::dihedral_angles(const Cell& cell, std::vector<double>& dh_angle)
 {
-  if (cell.type() < 4)
+  if (cell.dim() != 3)
   {
       dolfin_error("MeshQuality.cpp",
                  "calculate dihedral angles",
                  "Only works for 3D cells");
   }
-  // Check cell type
-  // dolfin_assert(cell.type()>=4);
 
   static const std::size_t edges[6][2] = {{2, 3},
                                           {1, 3},

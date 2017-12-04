@@ -99,7 +99,7 @@ void BisectionRefinement1D::refine(Mesh& refined_mesh,
                                    const Mesh& mesh, bool redistribute)
 {
   auto _mesh = reference_to_no_delete_pointer(mesh);
-  const CellFunction<bool> cell_markers(_mesh, true);
+  const MeshFunction<bool> cell_markers(_mesh, _mesh->topology().dim(), true);
   BisectionRefinement1D::refine(refined_mesh, mesh, cell_markers, redistribute);
 }
 //-----------------------------------------------------------------------------

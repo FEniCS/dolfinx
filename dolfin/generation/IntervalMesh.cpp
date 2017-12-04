@@ -75,7 +75,7 @@ void IntervalMesh::build(Mesh& mesh, std::size_t nx, std::array<double, 2> x)
 
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(mesh, CellType::interval, 1, 1);
+  editor.open(mesh, CellType::Type::interval, 1, 1);
 
   // Create vertices and cells:
   editor.init_vertices_global((nx+1), (nx+1));

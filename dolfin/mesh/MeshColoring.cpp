@@ -120,7 +120,7 @@ MeshColoring::compute_colors(const Mesh& mesh,
   return GraphColoring::compute_local_vertex_coloring(graph, colors);
 }
 //-----------------------------------------------------------------------------
-CellFunction<std::size_t>
+MeshFunction<std::size_t>
 MeshColoring::cell_colors(std::shared_ptr<const Mesh> mesh,
                           std::string coloring_type)
 {
@@ -136,7 +136,7 @@ MeshColoring::cell_colors(std::shared_ptr<const Mesh> mesh,
   return cell_colors(mesh, _coloring_type);
 }
 //-----------------------------------------------------------------------------
-CellFunction<std::size_t>
+MeshFunction<std::size_t>
 MeshColoring::cell_colors(std::shared_ptr<const Mesh> mesh,
                           std::vector<std::size_t> coloring_type)
 {
@@ -159,7 +159,7 @@ MeshColoring::cell_colors(std::shared_ptr<const Mesh> mesh,
   // Colors
   const std::vector<std::size_t>& colors = coloring_data->second.first;
 
-  CellFunction<std::size_t> mf(mesh);
+  MeshFunction<std::size_t> mf(mesh, mesh->topology().dim());
   dolfin_assert(colors.size() == mesh->num_entities(coloring_type[0]));
   for (CellIterator cell(*mesh); !cell.end(); ++cell)
     mf[*cell] = colors[cell->index()];

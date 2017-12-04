@@ -254,7 +254,7 @@ def test_manifold_line_geometry(mesh, uflacs_representation_only):
     tdim = mesh.topology().dim()
 
     # Create cell markers and integration measure
-    mf = CellFunction("size_t", mesh)
+    mf = MeshFunction("size_t", mesh, mesh.topology().dim())
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
 
     # Create symbolic geometry for current mesh
@@ -357,7 +357,7 @@ def test_manifold_dg0_functions(square3d, any_representation):
     mesh = square3d
     area = sqrt(3.0)  # known area of mesh
 
-    mf = CellFunction("size_t", mesh)
+    mf = MeshFunction("size_t", mesh, mesh.topology().dim())
     mf[0] = 0
     mf[1] = 1
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
@@ -407,7 +407,7 @@ def test_manifold_cg1_functions(square3d, any_representation):
     mesh = square3d
     area = sqrt(3.0)  # known area of mesh
 
-    mf = CellFunction("size_t", mesh)
+    mf = MeshFunction("size_t", mesh, mesh.topology().dim())
     mf[0] = 0
     mf[1] = 1
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
@@ -516,7 +516,7 @@ def test_manifold_symbolic_geometry(square3d, uflacs_representation_only):
     A = area/2.0  # area of single cell
     Aref = 0.5  # 0.5 is the area of the UFC reference triangle
 
-    mf = CellFunction("size_t", mesh)
+    mf = MeshFunction("size_t", mesh, mesh.topology().dim())
     mf[0] = 0
     mf[1] = 1
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
@@ -631,7 +631,7 @@ def test_manifold_piola_mapped_functions(square3d, any_representation):
     area = sqrt(3.0)  # known area of mesh
     A = area/2.0
 
-    mf = CellFunction("size_t", mesh)
+    mf = MeshFunction("size_t", mesh, mesh.topology().dim())
     mf[0] = 0
     mf[1] = 1
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
@@ -738,7 +738,7 @@ def test_tetrahedron_symbolic_geometry(uflacs_representation_only):
     A = area/6.0  # volume of single cell
     Aref = 1.0/6.0  # the volume of the UFC reference tetrahedron
 
-    mf = CellFunction("size_t", mesh)
+    mf = MeshFunction("size_t", mesh, mesh.topology().dim())
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
 
     U0 = FunctionSpace(mesh, "DG", 0)
@@ -823,7 +823,7 @@ def test_triangle_symbolic_geometry(uflacs_representation_only):
     A = area/2.0  # volume of single cell
     Aref = 1.0/2.0  # the volume of the UFC reference triangle
 
-    mf = CellFunction("size_t", mesh)
+    mf = MeshFunction("size_t", mesh, mesh.topology().dim())
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
 
     U0 = FunctionSpace(mesh, "DG", 0)
@@ -908,8 +908,8 @@ else:
     (UnitDiscMesh.create, (mpi_comm_world(), 4, 1, 3)),
     (SphericalShellMesh.create, (mpi_comm_world(), 1,)),
     (UnitCubeMesh, (2, 2, 2)),
-    (UnitQuadMesh.create, (4, 4)),
-    (UnitHexMesh.create, (2, 2, 2)),
+    (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)),
+    (UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron)),
     (line1d, (None,)),
     (line2d, (None,)),
     (line3d, (None,)),
@@ -930,10 +930,10 @@ def test_geometric_quantities(uflacs_representation_only, mesh_factory):
 
     tdim = mesh.ufl_cell().topological_dimension()
 
-    cf = CellFunction('size_t', mesh, 0)
+    cf = MeshFunction('size_t', mesh, mesh.topology().dim(), 0)
     dx = Measure("dx", domain=mesh, subdomain_data=cf)
 
-    ff = FacetFunction('size_t', mesh, 0)
+    ff = MeshFunction('size_t', mesh, mesh.topology().dim()-1, 0)
     ds = Measure("ds", domain=mesh, subdomain_data=ff)
     dS = Measure("dS", domain=mesh, subdomain_data=ff)
 

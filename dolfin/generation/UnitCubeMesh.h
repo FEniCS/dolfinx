@@ -21,12 +21,13 @@
 #include <array>
 #include <cstddef>
 #include <dolfin/common/MPI.h>
+#include <dolfin/mesh/CellType.h>
 #include "BoxMesh.h"
 
 namespace dolfin
 {
 
-  /// Tetrahedral mesh of the 3D unit cube [0,1] x [0,1] x [0,1].
+  /// Tetrahedral/hexahedral mesh of the 3D unit cube [0,1] x [0,1] x [0,1].
   /// Given the number of cells (nx, ny, nz) in each direction, the
   /// total number of tetrahedra will be 6*nx*ny*nz and the total
   /// number of vertices will be (nx + 1)*(ny + 1)*(nz + 1).
@@ -40,13 +41,14 @@ namespace dolfin
     ///
     /// @param    n (std::array<std::size_t, 3>)
     ///         Number of cells in each direction.
-    ///
+    /// @param    cell_type
+    ///         Tetrahedron or hexahedron
     /// @code{.cpp}
     ///
-    ///         auto mesh = UnitCubeMesh::create(32, 32, 32);
+    ///         auto mesh = UnitCubeMesh::create(32, 32, 32, CellType::Type::tetrahedron);
     /// @endcode
-    static Mesh create(std::array<std::size_t, 3> n)
-    { return create(MPI_COMM_WORLD, n); }
+    static Mesh create(std::array<std::size_t, 3> n, CellType::Type cell_type)
+    { return create(MPI_COMM_WORLD, n, cell_type); }
 
     /// Create a uniform finite element _Mesh_ over the unit cube
     /// [0,1] x [0,1] x [0,1].
@@ -55,12 +57,26 @@ namespace dolfin
     ///         MPI communicator
     /// @param    n (std::aray<std::size_t, 3>)
     ///         Number of cells in each direction.
+    /// @param    cell_type
+    ///         Tetrahedron or hexahedron
     ///
     /// @code{.cpp}
-    ///         auto mesh = UnitCubeMesh::create(MPI_COMM_WORLD, 32, 32, 32);
+    ///         auto mesh = UnitCubeMesh::create(MPI_COMM_WORLD, {32, 32, 32}, CellType::Type::hexahedron);
     /// @endcode
-    static Mesh create(MPI_Comm comm, std::array<std::size_t, 3> n)
-    { return BoxMesh::create(comm, {{Point(0.0, 0.0, 0.0), Point(1.0, 1.0, 1.0)}}, n); }
+    static Mesh create(MPI_Comm comm, std::array<std::size_t, 3> n, CellType::Type cell_type)
+    { return BoxMesh::create(comm, {{Point(0.0, 0.0, 0.0), Point(1.0, 1.0, 1.0)}}, n, cell_type); }
+
+    // Temporary - part of pybind11 transition and will be
+    // removed. Avoid using.
+    static Mesh create(std::size_t nx, std::size_t ny, std::size_t nz,
+                       CellType::Type cell_type)
+    { return create({nx, ny, nz}, cell_type); }
+
+    // Temporary - part of pybind11 transition and will be
+    // removed. Avoid using.
+    static Mesh create(MPI_Comm comm, std::size_t nx, std::size_t ny, std::size_t nz,
+                       CellType::Type cell_type)
+    { return create({nx, ny, nz}, cell_type); }
 
     /// Create a uniform finite element _Mesh_ over the unit cube
     /// [0,1] x [0,1] x [0,1].

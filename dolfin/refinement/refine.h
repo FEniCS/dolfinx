@@ -83,7 +83,7 @@ namespace dolfin
   ///         The locally refined mesh.
   ///
   /// @code{.cpp}
-  ///         CellFunction<bool> cell_markers(mesh);
+  ///         MeshFunction<bool> cell_markers(mesh, mesh->topology().dim());
   ///         cell_markers.set_all(false);
   ///         Point origin(0.0, 0.0, 0.0);
   ///         for (CellIterator cell(mesh); !cell.end(); ++cell)

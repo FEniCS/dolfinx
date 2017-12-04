@@ -32,7 +32,7 @@ void SphericalShellMesh::build(Mesh& mesh, std::size_t degree)
   const std::size_t gdim = 3;
 
   dolfin_assert(degree > 0 and degree < 3);
-  editor.open(mesh, CellType::triangle, tdim, gdim, degree);
+  editor.open(mesh, CellType::Type::triangle, tdim, gdim, degree);
 
   editor.init_vertices_global(12, 12);
 

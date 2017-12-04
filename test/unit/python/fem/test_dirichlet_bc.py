@@ -110,12 +110,12 @@ def test_user_meshfunction_domains():
     mesh1 = UnitSquareMesh(12, 12)
     V = FunctionSpace(mesh0, "CG", 1)
 
-    DirichletBC(V, Constant(0.0), EdgeFunction("size_t", mesh0), 0)
-    DirichletBC(V, Constant(0.0), FacetFunction("size_t", mesh0), 0)
+    DirichletBC(V, Constant(0.0), MeshFunction("size_t", mesh0, 1), 0)
+    DirichletBC(V, Constant(0.0), MeshFunction("size_t", mesh0, mesh0.topology().dim()-1), 0)
     with pytest.raises(RuntimeError):
-        DirichletBC(V, 0.0, CellFunction("size_t", mesh0), 0)
-        DirichletBC(V, 0.0, VertexFunction("size_t", mesh0), 0)
-        DirichletBC(V, 0.0, FacetFunction("size_t", mesh1), 0)
+        DirichletBC(V, 0.0, MeshFunction("size_t", mesh0, mesh0.topology().dim()), 0)
+        DirichletBC(V, 0.0, MeshFunction("size_t", mesh0, 0), 0)
+        DirichletBC(V, 0.0, MeshFunction("size_t", mesh1, mesh1.topology().dim()-1), 0)
 
 
 @skip_in_parallel

@@ -56,17 +56,17 @@ CellType* CellType::create(Type type)
 {
   switch ( type )
   {
-  case point:
+  case Type::point:
     return new PointCell();
-  case interval:
+  case Type::interval:
     return new IntervalCell();
-  case triangle:
+  case Type::triangle:
     return new TriangleCell();
-  case tetrahedron:
+  case Type::tetrahedron:
     return new TetrahedronCell();
-  case quadrilateral:
+  case Type::quadrilateral:
     return new QuadrilateralCell();
-  case hexahedron:
+  case Type::hexahedron:
     return new HexahedronCell();
   default:
     dolfin_error("CellType.cpp",
@@ -85,17 +85,17 @@ CellType* CellType::create(std::string type)
 CellType::Type CellType::string2type(std::string type)
 {
   if (type == "point")
-    return point;
+    return Type::point;
   else if (type == "interval")
-    return interval;
+    return Type::interval;
   else if (type == "triangle")
-    return triangle;
+    return Type::triangle;
   else if (type == "tetrahedron")
-    return tetrahedron;
+    return Type::tetrahedron;
   else if (type == "quadrilateral")
-    return quadrilateral;
+    return Type::quadrilateral;
   else if (type == "hexahedron")
-    return hexahedron;
+    return Type::hexahedron;
   else
   {
     dolfin_error("CellType.cpp",
@@ -103,24 +103,24 @@ CellType::Type CellType::string2type(std::string type)
                  "Unknown cell type (\"%s\")", type.c_str());
   }
 
-  return interval;
+  return Type::interval;
 }
 //-----------------------------------------------------------------------------
 std::string CellType::type2string(Type type)
 {
   switch (type)
   {
-  case point:
+  case Type::point:
     return "point";
-  case interval:
+  case Type::interval:
     return "interval";
-  case triangle:
+  case Type::triangle:
    return "triangle";
-  case tetrahedron:
+  case Type::tetrahedron:
     return "tetrahedron";
-  case quadrilateral:
+  case Type::quadrilateral:
     return "quadrilateral";
-  case hexahedron:
+  case Type::hexahedron:
     return "hexahedron";
   default:
     dolfin_error("CellType.cpp",
@@ -178,8 +178,8 @@ double CellType::h(const MeshEntity& entity) const
 double CellType::inradius(const Cell& cell) const
 {
   // Check cell type
-  if (_cell_type != interval && _cell_type != triangle
-      && _cell_type != tetrahedron)
+  if (_cell_type != Type::interval && _cell_type != Type::triangle
+      && _cell_type != Type::tetrahedron)
   {
     dolfin_error("Cell.h",
                  "compute cell inradius",
