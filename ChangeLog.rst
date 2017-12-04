@@ -47,6 +47,8 @@ Change log
   and ``MaxCellEdgeLength``
 - Deprecate subclassing of ``Expression`` in Python; new Python class
   ``UserExpression`` introduced for user overloads
+- Deprecate ``VertexFunction``, ``EdgeFunction``, ``FaceFunction``,
+  ``FacetFunction``, ``CellFunction``; use ``MeshFunction`` instead
 
 
 2017.1.0 (2017-05-09)
