@@ -149,7 +149,8 @@ namespace dolfin
     ///         The dofmap.
     std::shared_ptr<const GenericDofMap> dofmap() const;
 
-    /// Return dimension of function space
+    /// Return global dimension of the function space.
+    /// Equivalent to dofmap()->global_dimension()
     ///
     /// *Returns*
     ///     std::size_t

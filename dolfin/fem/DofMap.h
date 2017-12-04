@@ -104,7 +104,7 @@ namespace dolfin
     { return _is_view; }
 
     /// Return the dimension of the global finite element function
-    /// space
+    /// space. Use index_map()->size() to get the local dimension.
     ///
     /// *Returns*
     ///     std::size_t
