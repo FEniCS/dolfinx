@@ -153,7 +153,7 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
   {
     dolfin_error("X3DFile.cpp",
                  "output meshfunction",
-                 "Can only output CellFunction at present");
+                 "Can only output MeshFunction on cells at present");
   }
 
   // Check that X3D type is appropriate
@@ -161,7 +161,7 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
   {
     dolfin_error("X3DFile.cpp",
                  "output meshfunction",
-                 "Cannot output CellFunction with Edge mesh");
+                 "Cannot output MeshFunction on cells with Edge mesh");
   }
 
   // Check that mesh is in 2D or 3D

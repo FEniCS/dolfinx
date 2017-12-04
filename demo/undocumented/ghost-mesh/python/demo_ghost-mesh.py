@@ -142,7 +142,7 @@ for note in verts_note:
 for note in facet_note:
     plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor=note[3])
 
-# Q = FacetFunction("double", mesh)
+# Q = MeshFunction("double", mesh, mesh.topology().dim()-1)
 
 # # Save solution in XDMF format if available
 # xdmf = XDMFFile(mesh.mpi_comm(), "Q.xdmf")

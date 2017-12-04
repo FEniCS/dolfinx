@@ -456,7 +456,7 @@ class TestTriangle(Tester):
         # test no. 2
         from dolfin import MPI, Mesh, MeshFunction, \
                            edges, Edge, faces, Face, \
-                           SubsetIterator, facets, CellFunction, mpi_comm_world
+                           SubsetIterator, facets, mpi_comm_world
 
         fname = os.path.join(os.path.dirname(__file__), "data", "test_Triangle_3")
         dfname = fname+".xml"
@@ -472,9 +472,9 @@ class TestTriangle(Tester):
         self.assertEqual(mesh.num_vertices(), 58)
         self.assertEqual(mesh.num_cells(), 58)
 
-        # Create a size_t CellFunction and assign the values based on the
+        # Create a size_t MeshFunction and assign the values based on the
         # converted Meshfunction
-        cf = CellFunction("size_t", mesh)
+        cf = MeshFunction("size_t", mesh, mesh.topology().dim())
         cf.array()[mfun.array()==10.0] = 0
         cf.array()[mfun.array()==-10.0] = 1
 

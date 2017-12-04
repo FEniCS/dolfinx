@@ -239,7 +239,7 @@ def test_meshfunction_expression():
     mesh = UnitSquareMesh(1, 1)
     V = FunctionSpace(mesh, "DG", 0)
 
-    c = CellFunction("size_t", mesh)
+    c = MeshFunction("size_t", mesh, mesh.topology().dim())
     c[0] = 2
     c[1] = 3
     e = Expression("(double)c", c=c, degree=0)
@@ -661,7 +661,7 @@ def test_doc_string_complex_compiled_expression(mesh):
       }
     };'''
 
-    cell_data = CellFunction('size_t', mesh)
+    cell_data = MeshFunction('size_t', mesh, mesh.topology().dim())
     cell_data.set_all(3)
     CompiledSubDomain("x[0] <= 0.25").mark(cell_data, 0)
     CompiledSubDomain("x[0] > 0.25 && x[0] < 0.75").mark(cell_data, 1)
@@ -853,7 +853,7 @@ def test_doc_string_python_expressions(mesh):
         def eval(self, values, x):
             pass
 
-    cell_data = CellFunction('size_t', square)
+    cell_data = MeshFunction('size_t', square, square.topology().dim())
 
     P1 = FiniteElement("Lagrange", square.ufl_cell(), 1)
     f3 = MyExpression2(square, cell_data, element=P1)

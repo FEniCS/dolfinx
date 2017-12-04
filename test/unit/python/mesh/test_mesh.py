@@ -209,7 +209,7 @@ def test_UnitHexMesh():
 def test_RefineUnitIntervalMesh():
     """Refine mesh of unit interval."""
     mesh = UnitIntervalMesh(20)
-    cell_markers = CellFunction("bool", mesh)
+    cell_markers = MeshFunction("bool", mesh, mesh.topology().dim(), False)
     cell_markers[0] = (MPI.rank(mesh.mpi_comm()) == 0)
     mesh2 = refine(mesh, cell_markers)
     assert mesh2.num_entities_global(0) == 22
@@ -303,7 +303,7 @@ def test_SubsetIterators(mesh):
         return x[0] >= 0.5
     sd1 = AutoSubDomain(inside1)
     sd2 = AutoSubDomain(inside2)
-    cf = CellFunction('size_t', mesh)
+    cf = MeshFunction('size_t', mesh, mesh.topology().dim())
     cf.set_all(0)
     sd1.mark(cf, 1)
     sd2.mark(cf, 2)

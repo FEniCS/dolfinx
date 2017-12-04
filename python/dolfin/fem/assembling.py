@@ -130,7 +130,7 @@ def assemble(form, tensor=None, form_compiler_parameters=None,
         .. code-block:: python
 
             # MeshFunction marking boundary parts
-            boundary_markers = FacetFunction("size_t", mesh)
+            boundary_markers = MeshFunction("size_t", mesh, mesh.topology().dim()-1)
             # ... fill values in boundary_markers
 
             # Measures with references to cell and boundary markers
@@ -161,8 +161,8 @@ def assemble(form, tensor=None, form_compiler_parameters=None,
         .. code-block:: python
 
             # MeshFunctions marking boundary and cell parts
-            boundary_markers = FacetFunction("size_t", mesh)
-            cell_markers = CellFunction("size_t", mesh)
+            boundary_markers = MeshFunction("size_t", mesh, mesh.topology().dim()-1)
+            cell_markers = MeshFunction("size_t", mesh, mesh.topology().dim())
             # ... fill values in boundary_markers
 
             # Measures with references to cell and boundary markers

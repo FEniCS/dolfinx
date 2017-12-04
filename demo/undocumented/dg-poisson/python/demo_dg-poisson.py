@@ -71,7 +71,7 @@ u0 = Expression('x[0] + 0.25*sin(2*pi*x[1])', degree=2)
 g = Expression('(x[1] - 0.5)*(x[1] - 0.5)', degree=2)
 
 # Mark facets of the mesh
-boundaries = FacetFunction('size_t', mesh, 0)
+boundaries = MeshFunction('size_t', mesh, mesh.topology().dim()-1, 0)
 NeumanBoundary().mark(boundaries, 2)
 DirichletBoundary().mark(boundaries, 1)
 

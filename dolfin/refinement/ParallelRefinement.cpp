@@ -138,7 +138,7 @@ void ParallelRefinement::update_logical_edgefunction()
   // Clear marked_for_update vectors
   marked_for_update = std::vector<std::vector<std::size_t>>(mpi_size);
 
-  // Flatten received values and set EdgeFunction true at each index
+  // Flatten received values and set edges MeshFunction true at each index
   // received
   for (auto const &local_index : received_values)
       marked_edges[local_index] = true;

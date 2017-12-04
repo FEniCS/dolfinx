@@ -117,7 +117,7 @@ def test_ghost_mode_handling(pushpop_parameters):
     def _form():
         # Return form with trivial interior facet integral
         mesh = UnitSquareMesh(10, 10)
-        ff = FacetFunction('size_t', mesh, 0)
+        ff = MeshFunction('size_t', mesh, mesh.topology().dim()-1, 0)
         AutoSubDomain(lambda x: near(x[0], 0.5)).mark(ff, 1)
         return Constant(1.0)*dS(domain=mesh, subdomain_data=ff, subdomain_id=1)
 
@@ -227,7 +227,7 @@ def test_subdomain_assembly_form_1():
     class Left(SubDomain):
         def inside(self, x, on_boundary):
             return x[0] < 0.49
-    subdomains = CellFunction("size_t", mesh)
+    subdomains = MeshFunction("size_t", mesh, mesh.topology().dim())
     subdomains.set_all(0)
     left = Left()
     left.mark(subdomains, 1)
@@ -235,7 +235,7 @@ def test_subdomain_assembly_form_1():
     class RightBoundary(SubDomain):
         def inside(self, x, on_boundary):
             return x[0] > 0.95
-    boundaries = FacetFunction("size_t", mesh)
+    boundaries = MeshFunction("size_t", mesh, mesh.topology().dim()-1)
     boundaries.set_all(0)
     right = RightBoundary()
     right.mark(boundaries, 1)
