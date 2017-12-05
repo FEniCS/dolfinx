@@ -6,7 +6,7 @@ Change log
 
 - No changes.
 
-2017.2.0 (2017-09-25)
+2017.2.0 (2017-12-05)
 ---------------------
 
 - Remove ``UnitQuadMesh`` and ``UnitHexMesh``. Now use ``UnitSquareMesh`` and
