@@ -17,7 +17,6 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from distutils.version import StrictVersion
 
 import dolfin
 import dolfin.cpp as cpp
