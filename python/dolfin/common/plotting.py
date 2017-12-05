@@ -216,7 +216,7 @@ def mplot_function(ax, f, **kwargs):
             if gdim == 3:
                 # 3d quiver plot works only since matplotlib 1.4
                 import matplotlib
-                if StrictVersion(matplotlib.__version__) < '1.4':
+                if StrictVersion(matplotlib.__version__.split('+')[0]) < '1.4':
                     cpp.warning('Matplotlib version %s does not support 3d '
                                 'quiver plot. Continuing without plotting...'
                                 % matplotlib.__version__)
