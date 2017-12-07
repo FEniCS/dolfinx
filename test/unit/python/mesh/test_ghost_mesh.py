@@ -103,27 +103,35 @@ def test_ghost_3d(pushpop_parameters):
 @pytest.mark.parametrize('gmode', ['shared_vertex', 'shared_facet', 'none'])
 def test_ghost_connectivities(gmode, pushpop_parameters):
     parameters['ghost_mode'] = gmode
-    
+
     # Ghosted mesh
     meshG = UnitSquareMesh(MPI.comm_world, 4, 4)
     meshG.init(1, 2)
-    meshG.init_global(1)
-    meshG.init_global(2)
-    
+
     # Reference mesh, not ghosted, not parallel
     meshR = UnitSquareMesh(MPI.comm_self, 4, 4)
     meshR.init(1, 2)
-    
-    # Loop through ghosted mesh and check that connectivities are the same
-    # in the serial and parallel meshes
-    # If this ever starts failing due to different global entity numbering
-    # of the two meshes then a geometrical equivalent to the below code
-    # can be found in commit d3a9b1b
+
+    # Create reference mapping from facet midpoint to cell midpoint
+    reference = {}
+    for facet in facets(meshR):
+        fidx = facet.index()
+        facet_mp = tuple(facet.midpoint()[:])
+        reference[facet_mp] = []
+        for cidx in meshR.topology()(1, 2)(fidx):
+            cell = Cell(meshR, cidx)
+            cell_mp = tuple(cell.midpoint()[:])
+            reference[facet_mp].append(cell_mp)
+
+    # Loop through ghosted mesh and check connectivities
     allowable_cell_indices = [cell.index() for cell in cells(meshG, 'all')]
-    for facet in facets(meshG, 'all'):
-        fidx_global = facet.global_index()
-        for cidx in meshG.topology()(1, 2)(facet.index()):
+    for facet in facets(meshG, 'regular'):
+        fidx = facet.index()
+        facet_mp = tuple(facet.midpoint()[:])
+        assert facet_mp in reference
+
+        for cidx in meshG.topology()(1, 2)(fidx):
             assert cidx in allowable_cell_indices
             cell = Cell(meshG, cidx)
-            cidx_global = cell.global_index()
-            assert cidx_global in meshR.topology()(1, 2)(fidx_global)
+            cell_mp = tuple(cell.midpoint()[:])
+            assert cell_mp in reference[facet_mp]
