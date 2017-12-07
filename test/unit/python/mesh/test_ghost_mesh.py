@@ -109,31 +109,15 @@ def test_ghost_connectivities(gmode, pushpop_parameters):
     # Reference mesh, not ghosted, not parallel
     meshR = UnitSquareMesh(MPI.comm_self, 4, 4)
     meshR.init(1, 2)
-    
-    # Create reference mapping from facet midpoint to cell midpoint
-    reference = {}
-    for facet in facets(meshR):
-        fidx = facet.index()
-        facet_mp = (round(facet.midpoint().x(), 3),
-                    round(facet.midpoint().y(), 3))
-        reference[facet_mp] = []
-        for cidx in meshR.topology()(1, 2)(fidx):
-            cell = Cell(meshR, cidx)
-            cell_mp = (round(cell.midpoint().x(), 3),
-                       round(cell.midpoint().y(), 3))
-            reference[facet_mp].append(cell_mp)
+    meshG.init_global(1)
+    meshG.init_global(2)
     
     # Loop through ghosted mesh and check connectivities
     allowable_cell_indices = [cell.index() for cell in cells(meshG, 'all')]
-    for facet in facets(meshG, 'regular'):
-        fidx = facet.index()
-        facet_mp = (round(facet.midpoint().x(), 3),
-                    round(facet.midpoint().y(), 3))
-        assert facet_mp in reference
-        
-        for cidx in meshG.topology()(1, 2)(fidx):
+    for facet in facets(meshG, 'all'):
+        fidx_global = facet.global_index()
+        for cidx in meshG.topology()(1, 2)(facet.index()):
             assert cidx in allowable_cell_indices
             cell = Cell(meshG, cidx)
-            cell_mp = (round(cell.midpoint().x(), 3),
-                       round(cell.midpoint().y(), 3))
-            assert cell_mp in reference[facet_mp]
+            cidx_global = cell.global_index()
+            assert cidx_global in meshR.topology()(1, 2)(fidx_global)
