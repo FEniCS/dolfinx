@@ -105,12 +105,12 @@ def test_ghost_connectivities(gmode, pushpop_parameters):
     # Ghosted mesh
     meshG = UnitSquareMesh(MPI.comm_world, 4, 4)
     meshG.init(1, 2)
+    meshG.init_global(1)
+    meshG.init_global(2)
     
     # Reference mesh, not ghosted, not parallel
     meshR = UnitSquareMesh(MPI.comm_self, 4, 4)
     meshR.init(1, 2)
-    meshG.init_global(1)
-    meshG.init_global(2)
     
     # Loop through ghosted mesh and check connectivities
     allowable_cell_indices = [cell.index() for cell in cells(meshG, 'all')]
