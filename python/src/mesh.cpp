@@ -224,7 +224,8 @@ namespace dolfin_wrappers
       (m, "MeshConnectivity", "DOLFIN MeshConnectivity object")
       .def("__call__", [](const dolfin::MeshConnectivity& self, std::size_t i)
            {
-             return Eigen::Map<const Eigen::Matrix<unsigned int, Eigen::Dynamic, 1>>(self(i), self.size(i));})
+             return Eigen::Map<const Eigen::Matrix<unsigned int, Eigen::Dynamic, 1>>(self(i), self.size(i));
+           }, py::return_value_policy::reference_internal)
       .def("size", (std::size_t (dolfin::MeshConnectivity::*)() const)
            &dolfin::MeshConnectivity::size)
       .def("size", (std::size_t (dolfin::MeshConnectivity::*)(std::size_t) const)

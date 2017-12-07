@@ -96,3 +96,44 @@ def test_ghost_3d(pushpop_parameters):
         mesh = UnitCubeMesh(N, N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
+
+
+@pytest.mark.parametrize('gmode', ['shared_vertex', 'shared_facet', 'none'])
+def test_ghost_connectivities(gmode, pushpop_parameters):
+    parameters['ghost_mode'] = gmode
+    
+    # Ghosted mesh
+    meshG = UnitSquareMesh(MPI.comm_world, 4, 4)
+    meshG.init(1, 2)
+    
+    # Reference mesh, not ghosted, not parallel
+    meshR = UnitSquareMesh(MPI.comm_self, 4, 4)
+    meshR.init(1, 2)
+    
+    # Create reference mapping from facet midpoint to cell midpoint
+    reference = {}
+    for facet in facets(meshR):
+        fidx = facet.index()
+        facet_mp = (round(facet.midpoint().x(), 3),
+                    round(facet.midpoint().y(), 3))
+        reference[facet_mp] = []
+        for cidx in meshR.topology()(1, 2)(fidx):
+            cell = Cell(meshR, cidx)
+            cell_mp = (round(cell.midpoint().x(), 3),
+                       round(cell.midpoint().y(), 3))
+            reference[facet_mp].append(cell_mp)
+    
+    # Loop through ghosted mesh and check connectivities
+    allowable_cell_indices = [cell.index() for cell in cells(meshG, 'all')]
+    for facet in facets(meshG, 'regular'):
+        fidx = facet.index()
+        facet_mp = (round(facet.midpoint().x(), 3),
+                    round(facet.midpoint().y(), 3))
+        assert facet_mp in reference
+        
+        for cidx in meshG.topology()(1, 2)(fidx):
+            assert cidx in allowable_cell_indices
+            cell = Cell(meshG, cidx)
+            cell_mp = (round(cell.midpoint().x(), 3),
+                       round(cell.midpoint().y(), 3))
+            assert cell_mp in reference[facet_mp]
