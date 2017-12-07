@@ -112,7 +112,11 @@ def test_ghost_connectivities(gmode, pushpop_parameters):
     meshR = UnitSquareMesh(MPI.comm_self, 4, 4)
     meshR.init(1, 2)
     
-    # Loop through ghosted mesh and check connectivities
+    # Loop through ghosted mesh and check that connectivities are the same
+    # in the serial and parallel meshes
+    # If this ever starts failing due to different global entity numbering
+    # of the two meshes then a geometrical equivalent to the below code
+    # can be found in commit d3a9b1b
     allowable_cell_indices = [cell.index() for cell in cells(meshG, 'all')]
     for facet in facets(meshG, 'all'):
         fidx_global = facet.global_index()

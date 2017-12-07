@@ -99,7 +99,7 @@ namespace dolfin_wrappers
       .def("init", (void (dolfin::MeshTopology::*)(std::size_t, std::size_t, std::size_t))
            &dolfin::MeshTopology::init)
       .def("__call__", (const dolfin::MeshConnectivity& (dolfin::MeshTopology::*)(std::size_t, std::size_t) const)
-           &dolfin::MeshTopology::operator())
+           &dolfin::MeshTopology::operator(), py::return_value_policy::reference_internal)
       .def("size", &dolfin::MeshTopology::size)
       .def("hash", &dolfin::MeshTopology::hash)
       .def("init_global_indices", &dolfin::MeshTopology::init_global_indices)
