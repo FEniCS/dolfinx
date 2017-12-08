@@ -133,7 +133,6 @@ list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
 list(APPEND OPTIONAL_PACKAGES "zlib")
-list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "HDF5")
 
 # Add options
@@ -142,9 +141,6 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
   add_feature_info(${OPTION_NAME} ${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}.")
 endforeach()
-
-# Default Python version
-option(DOLFIN_USE_PYTHON3 "Use Python 3." ON)
 
 #------------------------------------------------------------------------------
 # Package-specific options
@@ -286,15 +282,8 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
 #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
-# Note: Check for Python interpreter even when Python is disabled
-#       because it is used to get the installation path for
-#       dolfin_utils
-
-if (DOLFIN_USE_PYTHON3)
-  find_package(PythonInterp 3)
-else()
-  find_package(PythonInterp 2.7)
-endif()
+# Is this still needed?
+find_package(PythonInterp 3)
 
 set_package_properties(PythonInterp PROPERTIES TYPE REQUIRED
   DESCRIPTION "Interactive high-level object-oriented language"
@@ -485,96 +474,6 @@ endif()
 # Print summary of found and not found optional packages
 
 feature_summary(WHAT ALL)
-
-#------------------------------------------------------------------------------
-# Get installation paths for Python modules (pure and platform-dependent)
-
-if (PYTHONINTERP_FOUND)
-
-  if (NOT DEFINED DOLFIN_INSTALL_PYTHON_MODULE_DIR)
-    # Get path for platform-dependent Python modules (since we install
-    # a binary libary)
-
-    # Python command string to discover module install location
-    if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-      set(PYTHON_LIB_DISCOVER_STR "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True))")
-    else()
-      set(PYTHON_LIB_DISCOVER_STR "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))")
-    endif()
-
-    # Probe Python interpreter
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "${PYTHON_LIB_DISCOVER_STR}"
-      OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_MODULE_DIR
-      )
-    set(DOLFIN_INSTALL_PYTHON_MODULE_DIR ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
-      CACHE PATH "Python extension module installation directory.")
-  endif()
-
-  if (NOT DEFINED DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR)
-    # Get path for pure Python modules
-
-    # Python command string to discover module install location
-    if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-      set(PYTHON_LIB_DISCOVER_STR "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False))")
-    else()
-      set(PYTHON_LIB_DISCOVER_STR "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))")
-    endif()
-
-    # Probe Pyton interpreter
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "${PYTHON_LIB_DISCOVER_STR}"
-      OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR
-      )
-    set(DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR ${DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR}
-      CACHE PATH "Python module installation directory.")
-  endif()
-
-endif()
-
-#------------------------------------------------------------------------------
-# Installation of DOLFIN and FEniCS Python modules
-
-if (DOLFIN_ENABLE_PYTHON AND PYTHON_FOUND)
-  install(DIRECTORY
-    ${CMAKE_SOURCE_DIR}/site-packages/dolfin
-    DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
-    USE_SOURCE_PERMISSIONS
-    COMPONENT RuntimeLibraries
-    PATTERN "*.in" EXCLUDE
-    )
-
-  configure_file(${CMAKE_SOURCE_DIR}/site-packages/dolfin/common/globalparameters.py.in
-    ${CMAKE_BINARY_DIR}/globalparameters.py @ONLY)
-
-  install(FILES ${CMAKE_BINARY_DIR}/globalparameters.py
-    DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin/common/
-    COMPONENT RuntimeLibraries
-    )
-
-  install(DIRECTORY
-    ${CMAKE_SOURCE_DIR}/site-packages/fenics
-    DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
-    USE_SOURCE_PERMISSIONS
-    COMPONENT RuntimeLibraries
-    PATTERN "*.in" EXCLUDE
-    )
-endif()
-
-#------------------------------------------------------------------------------
-# Installation of dolfin_utils
-
-if (DOLFIN_INSTALL_PYTHON_MODULE_DIR)
-  install(DIRECTORY ${CMAKE_SOURCE_DIR}/site-packages/dolfin_utils
-    DESTINATION ${DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR}
-    USE_SOURCE_PERMISSIONS)
-
-  # Add target "install_dolfin_utils" for installing dolfin_utils
-  # without building and install the rest of DOLFIN
-  add_custom_target(install_dolfin_utils
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      "${CMAKE_SOURCE_DIR}/site-packages/dolfin_utils"
-      "${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin_utils"
-    COMMENT "Installing dolfin_utils in ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin_utils")
-endif()
 
 #------------------------------------------------------------------------------
 # Installation of docstrings
