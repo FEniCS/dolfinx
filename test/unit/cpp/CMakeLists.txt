@@ -28,5 +28,5 @@ set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/parameter/Parameters.cpp
   )
 
-add_executable(unittests_cpp ${TEST_SOURCES})
-target_link_libraries(unittests_cpp PRIVATE Catch dolfin)
+add_executable(unittests ${TEST_SOURCES})
+target_link_libraries(unittests PRIVATE Catch dolfin)
