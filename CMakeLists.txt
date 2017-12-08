@@ -523,14 +523,6 @@ install(FILES ${DOLFIN_UTILITIES}
   COMPONENT RuntimeExecutables)
 
 #------------------------------------------------------------------------------
-# Installation of DOLFIN manual pages
-
-install(DIRECTORY ${DOLFIN_SOURCE_DIR}/doc-old/man/
-  DESTINATION ${DOLFIN_MAN_DIR}
-  USE_SOURCE_PERMISSIONS
-  COMPONENT RuntimeExecutables)
-
-#------------------------------------------------------------------------------
 # Generate and install helper file dolfin.conf
 
 # FIXME: Can CMake provide the library path name variable?
