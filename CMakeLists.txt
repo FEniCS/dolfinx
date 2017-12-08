@@ -86,7 +86,6 @@ option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
 option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
-option(DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py." OFF)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 option(DOLFIN_ENABLE_GEOMETRY_DEBUGGING "Enable geometry debugging (developers only; requires libcgal-dev and libcgal-qt5-dev)." OFF)
@@ -101,7 +100,6 @@ add_feature_info(DOLFIN_ENABLE_BENCHMARKS DOLFIN_ENABLE_BENCHMARKS "Enable bench
 add_feature_info(DOLFIN_ENABLE_DOCS DOLFIN_ENABLE_DOCS "Enable generation of documentation.")
 add_feature_info(DOLFIN_SKIP_BUILD_TESTS DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
 add_feature_info(DOLFIN_DEPRECATION_ERROR DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors.")
-add_feature_info(DOLFIN_IGNORE_PETSC4PY_VERSION DOLFIN_IGNORE_PETSC4PY_VERSION "Ignore version of PETSc4py.")
 add_feature_info(DOLFIN_ENABLE_GEOMETRY_DEBUGGING DOLFIN_ENABLE_GEOMETRY_DEBUGGING "Enable geometry debugging.")
 
 # Add shared library paths so shared libs in non-system paths are found
@@ -128,9 +126,7 @@ endif()
 set(OPTIONAL_PACKAGES "")
 list(APPEND OPTIONAL_PACKAGES "MPI")
 list(APPEND OPTIONAL_PACKAGES "PETSc")
-list(APPEND OPTIONAL_PACKAGES "PETSc4py")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
-list(APPEND OPTIONAL_PACKAGES "SLEPc4py")
 list(APPEND OPTIONAL_PACKAGES "Trilinos")
 list(APPEND OPTIONAL_PACKAGES "UMFPACK")
 list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
@@ -138,7 +134,6 @@ list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
 list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
-list(APPEND OPTIONAL_PACKAGES "Sphinx")
 list(APPEND OPTIONAL_PACKAGES "HDF5")
 
 # Add options
@@ -305,83 +300,6 @@ set_package_properties(PythonInterp PROPERTIES TYPE REQUIRED
   DESCRIPTION "Interactive high-level object-oriented language"
   URL "http://www.python.org")
 
-if (DOLFIN_ENABLE_PYTHON)
-  set_package_properties(PythonInterp PROPERTIES PURPOSE "Needed for the Python interface to DOLFIN")
-
-  # Set variables to help find Python library that is compatible with
-  # interpreter
-  if (PYTHONINTERP_FOUND)
-    # Get Python include path from Python interpretter
-    execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c
-      "import distutils.sysconfig, sys; sys.stdout.write(distutils.sysconfig.get_python_inc())"
-      OUTPUT_VARIABLE _PYTHON_INCLUDE_PATH
-      RESULT_VARIABLE _PYTHON_INCLUDE_RESULT)
-
-    # Get Python library path from interpreter
-    execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c
-      "import os, sys, inspect; sys.stdout.write(os.path.split(os.path.split(inspect.getfile(inspect))[0])[0])"
-      OUTPUT_VARIABLE _PYTHON_LIB_PATH
-      RESULT_VARIABLE _PYTHON_LIB_RESULT)
-
-    # Set include path, if returned by interpreter
-    if ("${_PYTHON_INCLUDE_RESULT}" STREQUAL "0")
-      set(PYTHON_INCLUDE_DIR ${_PYTHON_INCLUDE_PATH})
-    endif()
-
-    # Add a search path for Python library based on output from
-    # interpreter
-    set(CMAKE_LIBRARY_PATH_SAVE ${CMAKE_LIBRARY_PATH})
-    if ("${_PYTHON_LIB_RESULT}" STREQUAL "0")
-      set(CMAKE_LIBRARY_PATH ${_PYTHON_LIB_PATH})
-    endif()
-
-    # Find Pythons libs
-    find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT REQUIRED)
-    set_package_properties(PythonLibs PROPERTIES TYPE REQUIRED
-      DESCRIPTION "Include paths and libraries for Python")
-    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH_SAVE})
-  endif()
-
-  # If Python is found, check for NumPy, SWIG and ply
-  if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
-
-    # Check for NumPy
-    find_package(NumPy REQUIRED)
-    set_package_properties(NumPy PROPERTIES TYPE REQUIRED
-      DESCRIPTION "Array processing for numbers, strings, records, and objects in Python."
-      URL "http://www.numpy.org"
-      PURPOSE "Needed for the Python interface to DOLFIN")
-
-    # Check for ply
-    include(FindPythonModule)
-    find_python_module(ply REQUIRED)
-    set_package_properties(ply PROPERTIES TYPE REQUIRED
-      DESCRIPTION "Python Lex & Yacc"
-      URL "http://www.dabeaz.com/ply/"
-      PURPOSE "Needed for the Python interface to DOLFIN")
-    if (NOT PY_PLY_FOUND)
-      message(FATAL_ERROR "Required Python module 'ply' (http://www.dabeaz.com/ply/) could not be found. Install ply or set DOLFIN_ENABLE_PYTHON to false.")
-    endif()
-
-    # Check for SWIG
-    if (DEFINED UFC_SWIG_EXECUTABLE)
-      set(SWIG_EXECUTABLE ${UFC_SWIG_EXECUTABLE})
-    endif()
-    find_package(SWIG REQUIRED)
-    set_package_properties(SWIG PROPERTIES TYPE REQUIRED
-      DESCRIPTION "Tool to wrap C/C++ libraries in high-level languages"
-      URL "http://swig.org"
-      PURPOSE "Needed for the Python interface to DOLFIN")
-    set(REQUIRED_SWIG_VERSION "3.0.5")
-    if ("${SWIG_VERSION}" VERSION_LESS "${REQUIRED_SWIG_VERSION}")
-      message(FATAL_ERROR " DOLFIN requires SWIG version ${REQUIRED_SWIG_VERSION} or greater. You have version ${SWIG_VERSION}. Set DOLFIN_ENABLE_PYTHON to false or install correct SWIG version.")
-    endif()
-    include(UseSWIG)
-    set(PYTHON_FOUND TRUE)
-  endif()
-
-endif()
-
 # Check for required package UFC
 find_package(UFC MODULE 2017.2)
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
@@ -398,40 +316,12 @@ if (DOLFIN_ENABLE_PETSC)
     URL "https://www.mcs.anl.gov/petsc/"
     PURPOSE "Enables the PETSc linear algebra backend")
 
-  if (PETSC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_PETSC4PY)
-    find_package(PETSc4py)
-    set_package_properties(PETSc4py PROPERTIES TYPE OPTIONAL
-      DESCRIPTION "Python bindings for PETSc"
-      URL "https://bitbucket.org/petsc/petsc4py/")
-    if (PETSC4PY_FOUND)
-      if (NOT ("${PETSC4PY_VERSION_MAJOR}" EQUAL "${PETSC_VERSION_MAJOR}"
-               AND "${PETSC4PY_VERSION_MINOR}" EQUAL "${PETSC_VERSION_MINOR}") AND NOT DOLFIN_IGNORE_PETSC4PY_VERSION)
-        message(WARNING "PETSc version ${PETSC_VERSION} and petsc4py version ${PETSC4PY_VERSION} do not match. Disabling PETSc4py.")
-        set(PETSC4PY_FOUND FALSE)
-      endif()
-    endif()
-  endif()
-
   set(SLEPC_FOUND FALSE)
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
     find_package(SLEPc 3.7)
     set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
       DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
       URL "http://slepc.upv.es/")
-
-    if (SLEPC_FOUND AND PYTHON_FOUND AND DOLFIN_ENABLE_SLEPC4PY)
-      find_package(SLEPc4py)
-      set_package_properties(SLEPc4py PROPERTIES TYPE OPTIONAL
-	DESCRIPTION "Python bindings for SLEPc"
-	URL "https://bitbucket.org/slepc/slepc4py/")
-      if (SLEPC4PY_FOUND)
-        if (NOT ("${SLEPC4PY_VERSION_MAJOR}" EQUAL "${SLEPC_VERSION_MAJOR}"
-              AND "${SLEPC4PY_VERSION_MINOR}" EQUAL "${SLEPC_VERSION_MINOR}"))
-          message(WARNING "SLEPc version ${SLEPC_VERSION} and slepc4py version ${SLEPC4PY_VERSION} do not match.  Disabling slepc4py support")
-          set(SLEPC4PY_FOUND FALSE)
-        endif()
-      endif()
-    endif()
   endif()
 endif()
 
@@ -572,15 +462,6 @@ if (DOLFIN_ENABLE_ZLIB)
   set_package_properties(ZLIB PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Compression library"
     URL "http://www.zlib.net")
-endif()
-
-# Check for Sphinx
-if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
-  find_package(Sphinx 1.1.0)
-  set_package_properties(Sphinx PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Python documentation generator"
-    URL "http://www.sphinx-doc.org"
-    PURPOSE "Needed to build documentation")
 endif()
 
 # Check for geometry debugging
@@ -948,13 +829,13 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 #------------------------------------------------------------------------------
 # Generate documentation
 
-if (DOLFIN_ENABLE_DOCS)
-  if (NOT SPHINX_FOUND)
-    message(STATUS "Disabling generation of documentation because Sphinx is missing.")
-  else()
-    add_subdirectory(doc-old)
-  endif()
-endif()
+#if (DOLFIN_ENABLE_DOCS)
+#  if (NOT SPHINX_FOUND)
+#    message(STATUS "Disabling generation of documentation because Sphinx is missing.")
+#  else()
+#    add_subdirectory(doc-old)
+#  endif()
+#endif()
 
 #------------------------------------------------------------------------------
 # Add tests and benchmarks
@@ -1024,40 +905,8 @@ if (DOLFIN_ENABLE_TESTING)
     DEPENDS copy_data_test_demo demo demos_source
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
-  # Add target "run_regressiontests_py" for running Python regression tests
-  add_custom_target(run_regressiontests_py
-    COMMAND ${CMAKE_COMMAND} -E env DISABLE_CPP_TESTING=1 DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
-    DEPENDS copy_data_test_demo demo demos_source
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
-
-  # Add target "run_regressiontests_py_mpi" for running Python regression tests with mpi
-  add_custom_target(run_regressiontests_py_mpi
-    COMMAND ${CMAKE_COMMAND} -E env DISABLE_CPP_TESTING=1 DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
-    DEPENDS copy_data_test_demo demo demos_source
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
-
   # Add target "run_unittests" for running unit tests
-  add_custom_target(run_unittests
-    DEPENDS run_unittests_cpp run_unittests_py run_unittests_py_mpi)
-
-  # Add target "run_unittests_py" for running Python unit tests
-  add_custom_target(run_unittests_py
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest"
-    DEPENDS copy_data_test_demo
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
-
-  # Add target "run_unittests_py_mpi" for running Python unit tests with mpi
-  add_custom_target(run_unittests_py_mpi
-    COMMAND ${MPIEXEC} "-np" "3" "./mpipipe.sh" ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest"
-    DEPENDS copy_data_test_demo
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
-
-  # Add target "run_quicktest" for running only Python unit tests not
-  # marked as 'slow'
-  add_custom_target(run_quicktest
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "-m" "pytest" "-k" "'not" "slow'"
-    DEPENDS copy_data_test_demo
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit/python")
+  add_custom_target(run_unittestsDEPENDS run_unittests_cpp)
 
   # Add target "run_styletest" for running documentation tests
   add_custom_target(run_styletest

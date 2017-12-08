@@ -34,18 +34,6 @@ jobs:
           name: Run C++ unit tests
           command: cd build && make run_unittests_cpp
       - run:
-          name: Run Python unit tests (SWIG, serial)
-          command: source /usr/local/share/dolfin/dolfin.conf && python3 -m pytest -n 2 test/unit/python/
-      - run:
-          name: Run Python unit tests (SWIG, MPI)
-          command: source /usr/local/share/dolfin/dolfin.conf && mpirun -n 3 python3 -m pytest test/unit/python/
-      - run:
-          name: Run Python regression tests (SWIG, serial)
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_py
-      - run:
-          name: Run Python regression tests (SWIG, MPI)
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_py_mpi
-      - run:
           name: Run C++ regressions tests (serial)
           command: source /usr/local/share/dolfin/dolfin.conf && cd build && make run_regressiontests_cpp
       - run:
@@ -54,17 +42,14 @@ jobs:
       - run:
           name: Build Python/pybind11 interface
           command: |
-            rm -rf /usr/local/lib/python3/dist-packages/dolfin
-            rm -rf /usr/local/lib/python3/dist-packages/dolfin_utils
-            rm -rf /usr/local/lib/python3/dist-packages/fenics
             cd python
             pip3 -v install . --user
       - run:
-          name: Run unit tests (pybind11, serial)
+          name: Run unit tests (serial)
           command: python3 -m pytest -n 2 test/unit/python/
       - run:
-          name: Run unit tests (pybind11, MPI parallel)
+          name: Run unit tests (MPI parallel)
           command: mpirun -n 3 python3 -m pytest test/unit/python/
       - run:
-          name: Run Python regression tests (pybind11, serial)
+          name: Run Python regression tests (serial)
           command: cd build && make run_regressiontests_py
