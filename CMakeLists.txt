@@ -295,7 +295,7 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified language for form-compilers (part of FFC)"
   URL "https://bitbucket.org/fenics-project/ffc")
 
-# Check for PETSc, SLEPc and petsc4py, slepc4py
+# Check for PETSc and SLEPc
 set(PETSC_FOUND FALSE)
 set(SLEPC_FOUND FALSE)
 if (DOLFIN_ENABLE_PETSC)
@@ -763,13 +763,13 @@ endif()
 
 if (DOLFIN_ENABLE_TESTING)
 
-  # Add target "unittests_cpp", but do not add to default target
+  # Add target "unittests", but do not add to default target
   add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
 
-  # Add target "run_unittests_cpp" for running only C++ unit tests
-  add_custom_target(run_unittests_cpp
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/unittests_cpp
-    DEPENDS copy_data_test_demo unittests_cpp)
+  # Add target "run_unittests" for running unit tests
+  add_custom_target(run_unittests
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/unittests
+    DEPENDS copy_data_test_demo unittests)
 
   # FIXME: remove this buildbot updated to call unittests_cpp
   # Add alias for unittests_cpp
@@ -781,10 +781,10 @@ if (DOLFIN_ENABLE_TESTING)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Add target "run_memorytests" for running memory tests
-  add_custom_target(run_memorytests
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
-    DEPENDS copy_data_test_demo demo
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/memory")
+  #add_custom_target(run_memorytests
+  #  COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
+  #  DEPENDS copy_data_test_demo demo
+  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/memory")
 
   # Add target "run_regressiontests" for running regression tests
   add_custom_target(run_regressiontests
@@ -794,13 +794,13 @@ if (DOLFIN_ENABLE_TESTING)
 
   # Add target "run_regressiontests_cpp" for running C++ regression tests
   add_custom_target(run_regressiontests_cpp
-    COMMAND ${CMAKE_COMMAND} -E env DISABLE_PYTHON_TESTING=1 DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
     DEPENDS copy_data_test_demo demo demos_source
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
   # Add target "run_regressiontests_cpp_mpi" for running C++ regression tests with mpi
   add_custom_target(run_regressiontests_cpp_mpi
-    COMMAND ${CMAKE_COMMAND} -E env DISABLE_PYTHON_TESTING=1 DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
+    COMMAND ${CMAKE_COMMAND} -E env DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
     DEPENDS copy_data_test_demo demo demos_source
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
@@ -808,10 +808,10 @@ if (DOLFIN_ENABLE_TESTING)
   add_custom_target(run_unittestsDEPENDS run_unittests_cpp)
 
   # Add target "run_styletest" for running documentation tests
-  add_custom_target(run_styletest
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "test_coding_style.py"
-    DEPENDS copy_data_test_demo
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/codingstyle")
+  #add_custom_target(run_styletest
+  #  COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "test_coding_style.py"
+  #  DEPENDS copy_data_test_demo
+  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/codingstyle")
 
   # Create test_coding_style.py in build dir (depends on source path)
   configure_file(${CMAKE_SOURCE_DIR}/test/codingstyle/test_coding_style.py.in
