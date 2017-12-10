@@ -35,7 +35,7 @@ jobs:
           command: cd build && make run_unittests
       - run:
           name: Run C++ regressions tests (serial)
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && ctest -j2
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make demo* -j2 && ctest -j2
       #- run:
       #    name: Run C++ regression tests (MPI)
       #    command: source /usr/local/share/dolfin/dolfin.conf && cd build && ctest -j2

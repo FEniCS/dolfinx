@@ -675,8 +675,8 @@ endif()
 
 # Add demo but do not add to default target
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
-#add_subdirectory(demo EXCLUDE_FROM_ALL)
-add_subdirectory(demo)
+add_subdirectory(demo EXCLUDE_FROM_ALL)
+#add_subdirectory(demo)
 
 # Set make program
 if ("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
