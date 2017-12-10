@@ -766,11 +766,11 @@ if (DOLFIN_ENABLE_TESTING)
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/unittests
-    DEPENDS copy_data_test_demo unittests)
+    DEPENDS unittests)
 
   # FIXME: remove this buildbot updated to call unittests_cpp
   # Add alias for unittests_cpp
-  add_custom_target(tests DEPENDS unittests_cpp)
+  #add_custom_target(tests DEPENDS unittests_cpp)
 
   # Add target "copy_data_test_demo"
   #add_custom_target(copy_data_test_demo
