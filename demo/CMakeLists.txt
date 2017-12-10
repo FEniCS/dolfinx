@@ -1,4 +1,4 @@
-#project(dolfin-demos)
+project(dolfin-demos)
 
 # Require CMake 2.8
 #cmake_minimum_required(VERSION 3.5)

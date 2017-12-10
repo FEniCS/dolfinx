@@ -676,7 +676,6 @@ endif()
 # Add demo but do not add to default target
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
 add_subdirectory(demo EXCLUDE_FROM_ALL)
-#add_subdirectory(demo)
 
 # Set make program
 if ("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
@@ -701,8 +700,12 @@ endif()
 # Add target "demo" for building the demos
 add_custom_target(demo
   COMMAND ${MAKE_PROGRAM}
-  DEPENDS copy_data_test_demo demos_source
+  DEPENDS demos_source
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
+#add_custom_target(demo
+#  COMMAND ${MAKE_PROGRAM}
+#  DEPENDS copy_data_test_demo demos_source
+#  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
 install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
@@ -770,9 +773,9 @@ if (DOLFIN_ENABLE_TESTING)
   add_custom_target(tests DEPENDS unittests_cpp)
 
   # Add target "copy_data_test_demo"
-  add_custom_target(copy_data_test_demo
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+  #add_custom_target(copy_data_test_demo
+  #  COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
+  #  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Add target "run_memorytests" for running memory tests
   #add_custom_target(run_memorytests
@@ -781,22 +784,22 @@ if (DOLFIN_ENABLE_TESTING)
   #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/memory")
 
   # Add target "run_regressiontests" for running regression tests
-  add_custom_target(run_regressiontests
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
-    DEPENDS copy_data_test_demo demo demos_source
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+  #add_custom_target(run_regressiontests
+  #  COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
+  #  DEPENDS copy_data_test_demo demo demos_source
+  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
   # Add target "run_regressiontests_cpp" for running C++ regression tests
-  add_custom_target(run_regressiontests_cpp
-    COMMAND ${CMAKE_COMMAND} -E env DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
-    DEPENDS copy_data_test_demo demo demos_source
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+  #add_custom_target(run_regressiontests_cpp
+  #  COMMAND ${CMAKE_COMMAND} -E env DISABLE_PARALLEL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
+  #  DEPENDS copy_data_test_demo demo demos_source
+  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
   # Add target "run_regressiontests_cpp_mpi" for running C++ regression tests with mpi
-  add_custom_target(run_regressiontests_cpp_mpi
-    COMMAND ${CMAKE_COMMAND} -E env DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
-    DEPENDS copy_data_test_demo demo demos_source
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+  #add_custom_target(run_regressiontests_cpp_mpi
+  #  COMMAND ${CMAKE_COMMAND} -E env DISABLE_SERIAL_TESTING=1 ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
+  #  DEPENDS copy_data_test_demo demo demos_source
+  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittestsDEPENDS run_unittests_cpp)
