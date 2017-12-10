@@ -62,6 +62,9 @@ endif()
 
 # Target libraries
 %(target_libraries)s
+
+# Test target
+add_test(${PROJECT_NAME} ${PROJECT_NAME})
 """
 
 executable_str = "add_executable(%s %s)"

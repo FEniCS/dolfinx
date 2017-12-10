@@ -16,6 +16,7 @@ if (NOT DOLFIN_VERSION_RELEASE)
   set(DOLFIN_VERSION "${DOLFIN_VERSION}.dev0")
 endif()
 
+enable_testing()
 #------------------------------------------------------------------------------
 # Require and use C++11
 
@@ -674,7 +675,8 @@ endif()
 
 # Add demo but do not add to default target
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
-add_subdirectory(demo EXCLUDE_FROM_ALL)
+#add_subdirectory(demo EXCLUDE_FROM_ALL)
+add_subdirectory(demo)
 
 # Set make program
 if ("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
@@ -733,12 +735,12 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 
 if (DOLFIN_ENABLE_BENCHMARKS)
   # Add bench but do not add to default target
-  add_subdirectory(bench EXCLUDE_FROM_ALL)
+  #add_subdirectory(bench EXCLUDE_FROM_ALL)
 
   # Add target "bench" for building benchmarks
-  add_custom_target(bench
-    COMMAND ${MAKE_PROGRAM}
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
+  #add_custom_target(bench
+  #  COMMAND ${MAKE_PROGRAM}
+  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
 
   # Copy files needed to run benchmarks in build directory
   file(COPY bench DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
