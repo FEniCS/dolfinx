@@ -29,14 +29,15 @@ import platform
 import instant
 from time import time
 from instant import get_status_output
-from dolfin import has_mpi, has_parmetis, has_scotch
+#from dolfin import has_mpi, has_parmetis, has_scotch
 
 
 def get_executable_name(demo, lang) :
-  """Extract name of executable (without extension) from path.
-     Name should be on the form demo_dir1_dir2 where dir1 and dir2 are
-     directories under demo/[undocumented,documented] and lang (cpp or py)
-     should be excluded.
+  """Extract name of executable (without extension) from path.  Name
+     should be on the form demo_dir1_dir2 where dir1 and dir2 are
+     directories under demo/[undocumented,documented] and lang (cpp or
+     py) should be excluded.
+
   """
   directories = demo.split(os.path.sep)
 
@@ -130,7 +131,7 @@ def main():
        os.path.join(demodir, 'undocumented', 'plot',                        'cpp'),
        os.path.join(demodir, 'undocumented', 'coordinates',                 'cpp'),
        os.path.join(demodir, 'undocumented', 'multimesh-quadrature',        'cpp'),
-       os.path.join(demodir, 'undocumented', 'multimesh-3d',                'cpp'),       
+       os.path.join(demodir, 'undocumented', 'multimesh-3d',                'cpp'),
        os.path.join(demodir, 'documented',   'stokes-mini',                 'cpp'),
        os.path.join(demodir, 'documented',   'tensor-weighted-poisson',     'cpp'),
        os.path.join(demodir, 'documented',   'subdomains-poisson',          'cpp'),
@@ -245,10 +246,11 @@ def main():
     # Build prefix list
     prefixes = [""]
     mpi_prefix = "mpirun -np 3 "
-    if has_mpi() and (has_parmetis() or has_scotch()):
-        prefixes.append(mpi_prefix)
-    else:
-        print("Not running regression tests in parallel.")
+    prefixes.append(mpi_prefix)
+    #if has_mpi() and (has_parmetis() or has_scotch()):
+    #    prefixes.append(mpi_prefix)
+    #else:
+    #    print("Not running regression tests in parallel.")
 
     # Allow to disable parallel testing
     if "DISABLE_PARALLEL_TESTING" in os.environ:
