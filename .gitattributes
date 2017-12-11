@@ -1,8 +1,11 @@
 
 demo/**/*.xml.gz filter=lfs diff=lfs merge=lfs -text
 test/**/*.xml.gz filter=lfs diff=lfs merge=lfs -text
+ptyhon/demo/**/*.xml.gz filter=lfs diff=lfs merge=lfs -text
+
 demo/**/*.h5 filter=lfs diff=lfs merge=lfs -text
 demo/**/*.xdmf filter=lfs diff=lfs merge=lfs -text
+
 test/**/*.h5 filter=lfs diff=lfs merge=lfs -text
 test/**/*.xdmf filter=lfs diff=lfs merge=lfs -text
 
