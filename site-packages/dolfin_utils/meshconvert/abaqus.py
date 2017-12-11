@@ -195,7 +195,7 @@ def convert(ifilename, handler):
 
         mesh = Mesh()
         mesh_editor = MeshEditor()
-        mesh_editor.open(mesh, 3, 3)
+        mesh_editor.open(mesh, "tetrahedron", 3, 3)
 
     node_ids_order = {}
     # Check for gaps in vertex numbering
