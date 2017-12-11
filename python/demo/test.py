@@ -28,6 +28,6 @@ demos = [d for d in demos if d[0].stem != 'tensor-weighted-poisson']
 @pytest.mark.parametrize("path,name", demos)
 def test_demos(name, path):
     ret = subprocess.run([sys.executable, name],
-                         cwd=path,
+                         cwd=str(path),
                          env={**os.environ, 'MPLBACKEND': 'agg'},
                          check=True)
