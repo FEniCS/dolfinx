@@ -5,8 +5,11 @@ import sys
 import pytest
 
 
+# Get directory of this file
+dir_path = pathlib.Path(__file__).resolve().parent)
+
 # Build list of demo programs
-p = pathlib.Path('documented')
+p = pathlib.Path(dir_path, 'documented')
 demo_files = list(p.glob('**/*.py'))
 demos = []
 for f in demo_files:

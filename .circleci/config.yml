@@ -51,5 +51,8 @@ jobs:
       #    name: Run unit tests (MPI parallel)
       #    command: mpirun -n 3 python3 -m pytest python/test/unit/
       - run:
+          name: Generate Python demo (regression) programs
+          command: python3 python/demo/generate-demo-files.py
+      - run:
           name: Run Python regression tests (serial)
           command: python3 -m pytest -v python/demo/test.py

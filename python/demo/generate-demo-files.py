@@ -18,13 +18,18 @@
 # Recompile all ffc forms (use when FFC has been updated)
 # This script should be run from the top level directory.
 
-import os, sys
+import os
+import sys
+
+
+# Get directory of this file
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # Directories to scan
-subdirs = ["."]
+subdirs = [dir_path]
 
 # Check that we can find pylint.py
-parser = "../../utils/pylit/pylit.py"
+parser = dir_path + "/../../utils/pylit/pylit.py"
 if os.path.isfile(parser):
     pass
 else:
