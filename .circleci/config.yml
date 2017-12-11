@@ -44,13 +44,12 @@ jobs:
           command: |
             cd python
             pip3 -v install . --user
-      - run:
-          name: Run unit tests (serial)
-          command: python3 -m pytest -n 2 python/test/unit/
-      - run:
-          name: Run unit tests (MPI parallel)
-          command: mpirun -n 3 python3 -m pytest python/test/unit/
+      #- run:
+      #    name: Run unit tests (serial)
+      #    command: python3 -m pytest -n 2 python/test/unit/
+      #- run:
+      #    name: Run unit tests (MPI parallel)
+      #    command: mpirun -n 3 python3 -m pytest python/test/unit/
       - run:
           name: Run Python regression tests (serial)
-          command: python3 -m pytest python/demo/test.py
-          #command: cd build && make run_regressiontests_py
+          command: python3 -m pytest -v python/demo/test.py

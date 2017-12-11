@@ -1,22 +1,21 @@
+import os
+import pathlib
 import subprocess
 import sys
 import pytest
 
-# Build list of demos
 
-@pytest.mark.parametrize("name,path",
-                         [
-                             ("demo_biharmonic.py", "./documented/biharmonic/"),
-                             ("demo_poisson.py", "./documented/poisson/"),
-                         ])
+# Build list of demo programs
+p = pathlib.Path('documented')
+demo_files = list(p.glob('**/*.py'))
+demos = []
+for f in demo_files:
+    demos.append((f.parent, f.name))
+
+
+@pytest.mark.parametrize("path,name", demos)
 def test_demos(name, path):
-    #ret = subprocess.run([sys.executable, "demo_poisson.py"],
-    #                     shell=True, check=True, cwd="./documented/poisson/")
     ret = subprocess.run([sys.executable, name],
                          cwd=path,
-                         #env={"DOLFIN_NOPLOT": "0",
-                         #     "PYTHONPATH": "/home/garth/code/fenics/dev/dolfin.d/dolfin/python/build/lib.linux-x86_64-3.6/"},
+                         env={**os.environ, 'MPLBACKEND': 'agg'},
                          check=True)
-    #assert ret
-    #print("---------------------")
-    #print(ret.returncode)
