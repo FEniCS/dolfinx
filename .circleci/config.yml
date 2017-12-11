@@ -52,4 +52,5 @@ jobs:
           command: mpirun -n 3 python3 -m pytest python/test/unit/
       - run:
           name: Run Python regression tests (serial)
-          command: cd build && make run_regressiontests_py
+          command: python3 -m pytest python/demo/test.py
+          #command: cd build && make run_regressiontests_py
