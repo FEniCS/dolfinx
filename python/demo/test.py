@@ -10,7 +10,8 @@ dir_path = pathlib.Path(__file__).resolve().parent
 
 # Build list of demo programs
 demos = []
-for subdir in ['documented']:
+#for subdir in ['documented', 'undocumented']:
+for subdir in ['undocumented']:
     p = pathlib.Path(dir_path, subdir)
     demo_files = list(p.glob('**/*.py'))
     for f in demo_files:
