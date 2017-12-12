@@ -19,7 +19,6 @@ jobs:
             pip3 install git+https://bitbucket.org/fenics-project/fiat.git@"${DEP_BRANCH_NAME}"
             pip3 install git+https://bitbucket.org/fenics-project/ufl.git@"${DEP_BRANCH_NAME}"
             pip3 install git+https://bitbucket.org/fenics-project/dijitso.git@"${DEP_BRANCH_NAME}"
-            pip3 install git+https://bitbucket.org/fenics-project/instant.git@"${DEP_BRANCH_NAME}"
             pip3 install git+https://bitbucket.org/fenics-project/ffc.git@"${DEP_BRANCH_NAME}"
       - run:
           name: Flake8 checks on pybind11 Python code

@@ -1,7 +1,0 @@
-The regression test currently consists of running (almost) all demos.
-
-Ideally, we should also store MD5 sums or similar of the output from
-all demos (VTK output etc) and compare against this output when running
-the tests. For this to work, we also need to add an option for storing
-solutions with limited precision so that round-off errors won't affect
-the tests.
