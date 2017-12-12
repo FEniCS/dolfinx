@@ -10,8 +10,7 @@ dir_path = pathlib.Path(__file__).resolve().parent
 
 # Build list of demo programs
 demos = []
-#for subdir in ['documented', 'undocumented']:
-for subdir in ['undocumented']:
+for subdir in ['documented', 'undocumented']:
     p = pathlib.Path(dir_path, subdir)
     demo_files = list(p.glob('**/*.py'))
     for f in demo_files:
@@ -42,8 +41,23 @@ def test_demos(mpiexec, num_proc, path, name):
 
         # FIXME: non-MPI demos should exit gracefully
         # Demos that don't work in parallel
-        broken = ["demo_subdomains.py", "demo_auto-adaptive-poisson.py",
-                  "demo_nonmatching-interpolation.py"]
+        broken = ["demo_subdomains.py",
+                  "demo_auto-adaptive-poisson.py",
+                  "demo_nonmatching-interpolation.py"
+                  'demo_adaptive-poisson,py',
+                  'demo_auto-adaptive-navier-stokes.py',
+                  'demo_eval.py',
+                  'demo_extrapolation.py',
+                  'demo_nonmatching-interpolation.py',
+                  'demo_nonmatching-projection.py',
+                  'demo_poisson-disc.py',
+                  'demo_smoothing.py',
+                  'demo_subdomains.py',
+                  'demo_submesh.py',
+                  'demo_time-series.py',
+                  'demo_poisson1D-in-2D.py',
+                  'demo_coordinates.py',
+        ]
         if name in broken:
             return
 
