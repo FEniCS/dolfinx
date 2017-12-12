@@ -777,12 +777,6 @@ if (DOLFIN_ENABLE_TESTING)
   #  COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
   #  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-  # Add target "run_memorytests" for running memory tests
-  #add_custom_target(run_memorytests
-  #  COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "test.py"
-  #  DEPENDS copy_data_test_demo demo
-  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/memory")
-
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittestsDEPENDS run_unittests_cpp)
 
