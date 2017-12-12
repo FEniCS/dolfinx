@@ -16,7 +16,8 @@ for subdir in ['documented']:
     for f in demo_files:
         demos.append((f.parent, f.name))
 
-# FIXME: remove cases that break pattern
+
+# FIXME: fix cases that break pattern
 # Remove 'tensor-weighted-poisson'
 demos = [d for d in demos if d[0].stem != 'tensor-weighted-poisson']
 
@@ -25,9 +26,24 @@ demos = [d for d in demos if d[0].stem != 'tensor-weighted-poisson']
 #print("------------------------------")
 #print(demos)
 
+
 @pytest.mark.parametrize("path,name", demos)
-def test_demos(name, path):
-    ret = subprocess.run([sys.executable, name],
-                         cwd=str(path),
-                         env={**os.environ, 'MPLBACKEND': 'agg'},
-                         check=True)
+def test_demos(mpiexec, num_proc, path, name):
+
+    if mpiexec is None:
+        # Run in serial
+        ret = subprocess.run([sys.executable, name],
+                             cwd=str(path),
+                             env={**os.environ, 'MPLBACKEND': 'agg'},
+                             check=True)
+    else:
+        # Run with MPI
+        assert int(num_proc) > 0 and int(num_proc) < 32
+        cmd = mpiexec + " -np " + str(num_proc) + " " + sys.executable + " " + name
+        ret = subprocess.run(cmd,
+                             cwd=path,
+                             shell=True,
+                             #stdin=subprocess.DEVNULL,
+                             env={**os.environ, 'MPLBACKEND': 'agg'},
+                             check=True
+        )

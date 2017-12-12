@@ -56,3 +56,6 @@ jobs:
       - run:
           name: Run Python regression tests (serial)
           command: python3 -m pytest -v -n2 python/demo/test.py
+      - run:
+          name: Run Python regression tests (MPI)
+          command: python3 -m pytest -v python/demo/test.py --mpiexec=mpiexec --num-proc=3
