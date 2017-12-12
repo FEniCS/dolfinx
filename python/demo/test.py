@@ -49,7 +49,7 @@ def test_demos(mpiexec, num_proc, path, name):
         assert int(num_proc) > 0 and int(num_proc) < 32
         cmd = mpiexec + " -np " + str(num_proc) + " " + sys.executable + " " + name
         ret = subprocess.run(cmd,
-                             cwd=path,
+                             cwd=str(path),
                              shell=True,
                              #stdin=subprocess.DEVNULL,
                              env={**os.environ, 'MPLBACKEND': 'agg'},
