@@ -16,7 +16,6 @@ if (NOT DOLFIN_VERSION_RELEASE)
   set(DOLFIN_VERSION "${DOLFIN_VERSION}.dev0")
 endif()
 
-enable_testing()
 #------------------------------------------------------------------------------
 # Require and use C++11
 
@@ -671,11 +670,6 @@ endif()
 #------------------------------------------------------------------------------
 # Add demos and install demo source files and mesh files
 
-# Add demo but do not add to default target
-set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
-add_subdirectory(demo EXCLUDE_FROM_ALL)
-#add_subdirectory(demo)
-
 # Set make program
 if ("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
   set(MAKE_PROGRAM "$(MAKE)")
@@ -695,12 +689,6 @@ if (PYTHONINTERP_FOUND)
       WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
   endforeach()
 endif()
-
-# Add target "demos" for building the demos
-add_custom_target(demos
-  COMMAND ${MAKE_PROGRAM}
-  DEPENDS copy_data_test_demo demos_source
-  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
 install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
@@ -731,14 +719,25 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 #------------------------------------------------------------------------------
 # Add tests and benchmarks
 
+enable_testing()
+
 # Add target "unittests", but do not add to default target
 add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
+
+# Add demo but do not add to default target
+set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
+add_subdirectory(demo EXCLUDE_FROM_ALL)
 
 # Add target "copy_data_test_demo"
 add_custom_target(copy_data_test_demo
   COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
+# Add target "demos" for building the demos
+add_custom_target(demos
+  COMMAND ${MAKE_PROGRAM}
+  DEPENDS copy_data_test_demo demos_source
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 #if (DOLFIN_ENABLE_BENCHMARKS)
 #  # Add bench but do not add to default target
@@ -762,10 +761,7 @@ add_custom_target(copy_data_test_demo
 #    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
 #endif()
 
-if (DOLFIN_ENABLE_TESTING)
-
-  #add_subdirectory(test/unit/cpp)
-
+#if (DOLFIN_ENABLE_TESTING)
 
   # Add target "run_styletest" for running documentation tests
   #add_custom_target(run_styletest
@@ -777,7 +773,7 @@ if (DOLFIN_ENABLE_TESTING)
   #configure_file(${CMAKE_SOURCE_DIR}/test/codingstyle/test_coding_style.py.in
   #  ${CMAKE_BINARY_DIR}/test/codingstyle/test_coding_style.py @ONLY)
 
-endif()
+#endif()
 
 #------------------------------------------------------------------------------
 # Add "make uninstall" target
