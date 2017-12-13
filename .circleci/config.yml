@@ -24,30 +24,30 @@ jobs:
           name: Flake8 checks on pybind11 Python code
           command: python3 -m flake8 python/dolfin
       - run:
-          name: Configure DOLFIN
+          name: Configure DOLFIN (C++)
           command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Developer
       - run:
-          name: Build DOLFIN and install
-          command: cd build && make install -j2
+          name: Build DOLFIN and install (C++)
+          command: cd build && make -j2 install
       - run:
-          name: Run C++ unit tests (serial)
-          command: cd build && make unittests && ctest -R unittests
+          name: Build and run C++ unit tests (serial)
+          command: cd build && make -j2 unittests && ctest -R unittests
       - run:
-          name: Run C++ regressions tests (serial)
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make demos -j2 && ctest -j2 -R demo
+          name: Build and run C++ regressions tests (serial)
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make -j2 demos && ctest -j2 -R demo -R serial
       #- run:
       #    name: Run C++ regression tests (MPI)
-      #    command: source /usr/local/share/dolfin/dolfin.conf && cd build && ctest -j2
+      #    command: source /usr/local/share/dolfin/dolfin.conf && cd build && make -j2 demos && ctest -j2 -R demo -R mpi
       - run:
-          name: Build Python/pybind11 interface
+          name: Build Python interface
           command: |
             cd python
             pip3 -v install . --user
       - run:
-          name: Run unit tests (serial)
+          name: Run Python unit tests (serial)
           command: python3 -m pytest -n 2 python/test/unit/
       - run:
-          name: Run unit tests (MPI)
+          name: Run Python unit tests (MPI)
           command: mpirun -n 3 python3 -m pytest python/test/unit/
       - run:
           name: Generate Python demo (regression) programs

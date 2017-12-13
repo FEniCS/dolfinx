@@ -64,7 +64,12 @@ endif()
 %(target_libraries)s
 
 # Test target
-add_test(NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+set(test_parameters -np 3 "./${PROJECT_NAME}")
+add_test(NAME ${PROJECT_NAME}_mpi COMMAND "mpirun" ${test_parameters})
+add_test(NAME ${PROJECT_NAME}_serial COMMAND ${PROJECT_NAME})
+
+#add_test(NAME ${PROJECT_NAME} COMMAND "mpirun -np 3 ./${PROJECT_NAME}")
+#add_test(NAME ${PROJECT_NAME} COMMAND "mpirun -np  ${PROJECT_NAME}" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 """
 
 executable_str = "add_executable(%s %s)"

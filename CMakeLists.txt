@@ -699,7 +699,7 @@ endif()
 # Add target "demos" for building the demos
 add_custom_target(demos
   COMMAND ${MAKE_PROGRAM}
-  DEPENDS demos_source
+  DEPENDS copy_data_test_demo demos_source
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
@@ -734,6 +734,11 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 # Add target "unittests", but do not add to default target
 add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
 
+# Add target "copy_data_test_demo"
+add_custom_target(copy_data_test_demo
+  COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
 
 #if (DOLFIN_ENABLE_BENCHMARKS)
 #  # Add bench but do not add to default target
@@ -761,10 +766,6 @@ if (DOLFIN_ENABLE_TESTING)
 
   #add_subdirectory(test/unit/cpp)
 
-  # Add target "copy_data_test_demo"
-  #add_custom_target(copy_data_test_demo
-  #  COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
-  #  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Add target "run_styletest" for running documentation tests
   #add_custom_target(run_styletest
