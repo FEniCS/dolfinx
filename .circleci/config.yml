@@ -25,16 +25,16 @@ jobs:
           command: python3 -m flake8 python/dolfin
       - run:
           name: Configure DOLFIN
-          command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Developer -DDOLFIN_ENABLE_TESTING=ON
+          command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Developer
       - run:
           name: Build DOLFIN and install
           command: cd build && make install -j2
       - run:
-          name: Run C++ unit tests
-          command: cd build && make run_unittests
+          name: Run C++ unit tests (serial)
+          command: cd build && make unittests && ctest -R unittests
       - run:
           name: Run C++ regressions tests (serial)
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make demo -j2 && ctest -j2
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make demos -j2 && ctest -j2 -R demo
       #- run:
       #    name: Run C++ regression tests (MPI)
       #    command: source /usr/local/share/dolfin/dolfin.conf && cd build && ctest -j2

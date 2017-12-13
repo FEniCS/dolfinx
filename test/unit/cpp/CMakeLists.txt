@@ -30,3 +30,6 @@ set(TEST_SOURCES
 
 add_executable(unittests ${TEST_SOURCES})
 target_link_libraries(unittests PRIVATE Catch dolfin)
+
+# Test target
+add_test(unittests unittests)

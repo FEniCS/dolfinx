@@ -86,7 +86,6 @@ option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
-option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 option(DOLFIN_ENABLE_GEOMETRY_DEBUGGING "Enable geometry debugging (developers only; requires libcgal-dev and libcgal-qt5-dev)." OFF)
@@ -96,7 +95,6 @@ add_feature_info(CMAKE_USE_RELATIVE_PATHS CMAKE_USE_RELATIVE_PATHS "Use relative
 add_feature_info(DOLFIN_AUTO_DETECT_MPI DOLFIN_AUTO_DETECT_MPI "Detect MPI automatically (turn this off to use the MPI compiler wrappers directly via setting CXX, CXX, FC).")
 add_feature_info(DOLFIN_ENABLE_CODE_COVERAGE DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage.")
 add_feature_info(DOLFIN_WITH_LIBRARY_VERSION DOLFIN_WITH_LIBRARY_VERSION "Build with library version information.")
-add_feature_info(DOLFIN_ENABLE_TESTING DOLFIN_ENABLE_TESTING "Enable testing.")
 add_feature_info(DOLFIN_ENABLE_BENCHMARKS DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs.")
 add_feature_info(DOLFIN_ENABLE_DOCS DOLFIN_ENABLE_DOCS "Enable generation of documentation.")
 add_feature_info(DOLFIN_SKIP_BUILD_TESTS DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
@@ -676,6 +674,7 @@ endif()
 # Add demo but do not add to default target
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
 add_subdirectory(demo EXCLUDE_FROM_ALL)
+#add_subdirectory(demo)
 
 # Set make program
 if ("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
@@ -697,15 +696,11 @@ if (PYTHONINTERP_FOUND)
   endforeach()
 endif()
 
-# Add target "demo" for building the demos
-add_custom_target(demo
+# Add target "demos" for building the demos
+add_custom_target(demos
   COMMAND ${MAKE_PROGRAM}
   DEPENDS demos_source
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
-#add_custom_target(demo
-#  COMMAND ${MAKE_PROGRAM}
-#  DEPENDS copy_data_test_demo demos_source
-#  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
 install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
@@ -736,49 +731,40 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 #------------------------------------------------------------------------------
 # Add tests and benchmarks
 
-if (DOLFIN_ENABLE_BENCHMARKS)
-  # Add bench but do not add to default target
-  #add_subdirectory(bench EXCLUDE_FROM_ALL)
+# Add target "unittests", but do not add to default target
+add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
 
-  # Add target "bench" for building benchmarks
-  #add_custom_target(bench
-  #  COMMAND ${MAKE_PROGRAM}
-  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
 
-  # Copy files needed to run benchmarks in build directory
-  file(COPY bench DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-    FILES_MATCHING
-    PATTERN "*"
-    PATTERN "CMakeFiles" EXCLUDE)
-
-  # Add target "run_bench" for running benchmarks
-  add_custom_target(run_bench
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "bench.py"
-    DEPENDS bench
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
-endif()
+#if (DOLFIN_ENABLE_BENCHMARKS)
+#  # Add bench but do not add to default target
+#  #add_subdirectory(bench EXCLUDE_FROM_ALL)
+#
+#  # Add target "bench" for building benchmarks
+#  #add_custom_target(bench
+#  #  COMMAND ${MAKE_PROGRAM}
+#  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")0
+#
+#  # Copy files needed to run benchmarks in build directory
+#  file(COPY bench DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+#    FILES_MATCHING
+#    PATTERN "*"
+#    PATTERN "CMakeFiles" EXCLUDE)
+#
+#  # Add target "run_bench" for running benchmarks
+#  add_custom_target(run_bench
+#    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "bench.py"
+#    DEPENDS bench
+#    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
+#endif()
 
 if (DOLFIN_ENABLE_TESTING)
 
-  # Add target "unittests", but do not add to default target
-  add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
-
-  # Add target "run_unittests" for running unit tests
-  add_custom_target(run_unittests
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/unit/cpp/unittests
-    DEPENDS unittests)
-
-  # FIXME: remove this buildbot updated to call unittests_cpp
-  # Add alias for unittests_cpp
-  #add_custom_target(tests DEPENDS unittests_cpp)
+  #add_subdirectory(test/unit/cpp)
 
   # Add target "copy_data_test_demo"
   #add_custom_target(copy_data_test_demo
   #  COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
   #  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-
-  # Add target "run_unittests" for running unit tests
-  add_custom_target(run_unittestsDEPENDS run_unittests_cpp)
 
   # Add target "run_styletest" for running documentation tests
   #add_custom_target(run_styletest
@@ -787,8 +773,8 @@ if (DOLFIN_ENABLE_TESTING)
   #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/codingstyle")
 
   # Create test_coding_style.py in build dir (depends on source path)
-  configure_file(${CMAKE_SOURCE_DIR}/test/codingstyle/test_coding_style.py.in
-    ${CMAKE_BINARY_DIR}/test/codingstyle/test_coding_style.py @ONLY)
+  #configure_file(${CMAKE_SOURCE_DIR}/test/codingstyle/test_coding_style.py.in
+  #  ${CMAKE_BINARY_DIR}/test/codingstyle/test_coding_style.py @ONLY)
 
 endif()
 

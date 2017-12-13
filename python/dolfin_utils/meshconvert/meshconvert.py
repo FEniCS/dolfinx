@@ -40,7 +40,6 @@
 from __future__ import print_function
 import getopt
 import sys
-from instant import get_status_output
 import re
 import warnings
 import os.path
@@ -1276,15 +1275,16 @@ def netcdf2xml(ifilename,ofilename):
 def exodus2xml(ifilename,ofilename):
     "Convert from Exodus II format to DOLFIN XML."
 
-    print("Converting from Exodus II format to NetCDF format")
+    raise NotImplementedError("Exodus II format to DOLFIN XML need updating")
+    #print("Converting from Exodus II format to NetCDF format")
 
-    name = ifilename.split(".")[0]
-    netcdffilename = name +".ncdf"
-    status, output = get_status_output('ncdump '+ifilename + ' > '+netcdffilename)
-    if status != 0:
-        raise IOError("Something wrong while executing ncdump. Is ncdump "\
-              "installed on the system?")
-    netcdf2xml(netcdffilename, ofilename)
+    #name = ifilename.split(".")[0]
+    #netcdffilename = name +".ncdf"
+    #status, output = get_status_output('ncdump '+ ifilename + ' > '+netcdffilename)
+    #if status != 0:
+    #    raise IOError("Something wrong while executing ncdump. Is ncdump "\
+    #          "installed on the system?")
+    #netcdf2xml(netcdffilename, ofilename)
 
 
 def _error(message):
