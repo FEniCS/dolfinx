@@ -42,7 +42,13 @@ public:
 
 int main()
 {
-  // Create meshes
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    std::cout << "This demo does not work in parallel" << std::endl;
+    return 0;
+  }
+
+ // Create meshes
   auto mesh0 = std::make_shared<UnitSquareMesh>(16, 16);
   auto mesh1 = std::make_shared<UnitSquareMesh>(64, 64);
 

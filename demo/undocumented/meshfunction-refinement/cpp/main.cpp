@@ -23,6 +23,12 @@ using namespace dolfin;
 
 int main()
 {
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    std::cout << "This demo does not work in parallel" << std::endl;
+    return 0;
+  }
+
   // Sub domain for right part of mesh
   class Right : public SubDomain
   {

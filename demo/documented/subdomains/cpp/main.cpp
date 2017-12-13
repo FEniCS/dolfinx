@@ -33,6 +33,12 @@ int main()
 {
   set_log_level(1);
 
+   if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    std::cout << "This demo does not work in parallel" << std::endl;
+    return 0;
+  }
+
   // Sub domain for no-slip (everything except inflow and outflow)
   class Noslip : public SubDomain
   {

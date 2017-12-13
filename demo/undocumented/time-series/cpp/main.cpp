@@ -27,6 +27,11 @@ using namespace dolfin;
 
 int main()
 {
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    std::cout << "This demo does not work in parallel" << std::endl;
+    return 0;
+  }
 
   #ifdef HAS_HDF5
 

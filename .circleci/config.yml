@@ -35,9 +35,9 @@ jobs:
       - run:
           name: Build and run C++ regressions tests (serial)
           command: source /usr/local/share/dolfin/dolfin.conf && cd build && make -j2 demos && ctest -j2 -R demo -R serial
-      #- run:
-      #    name: Run C++ regression tests (MPI)
-      #    command: source /usr/local/share/dolfin/dolfin.conf && cd build && make -j2 demos && ctest -j2 -R demo -R mpi
+      - run:
+          name: Run C++ regression tests (MPI)
+          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make -j2 demos && ctest -j2 -R demo -R mpi
       - run:
           name: Build Python interface
           command: |

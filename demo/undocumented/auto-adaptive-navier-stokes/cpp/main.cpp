@@ -55,6 +55,12 @@ class Pressure : public Expression
 
 int main()
 {
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    std::cout << "This demo does not work in parallel" << std::endl;
+    return 0;
+  }
+
   parameters["allow_extrapolation"] = true;
   parameters["refinement_algorithm"] = "plaza_with_parent_facets";
 

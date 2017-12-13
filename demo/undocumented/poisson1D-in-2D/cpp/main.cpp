@@ -98,6 +98,12 @@ public:
 
 int main()
 {
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    std::cout << "This demo does not work in parallel" << std::endl;
+    return 0;
+  }
+
   // Create original square mesh
   UnitSquareMesh squaremesh(50, 2);
 

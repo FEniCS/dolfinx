@@ -40,6 +40,12 @@ public:
 
 int main()
 {
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    std::cout << "This demo does not work in parallel" << std::endl;
+    return 0;
+  }
+
   // Create mesh and a point in the mesh
   auto mesh = std::make_shared<UnitCubeMesh>(8, 8, 8);
   Point x(0.31, 0.32, 0.33);

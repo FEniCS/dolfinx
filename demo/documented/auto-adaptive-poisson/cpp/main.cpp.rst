@@ -43,6 +43,12 @@ Under construction.
 
    int main()
    {
+     if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+     {
+       std::cout << "This demo does not work in parallel" << std::endl;
+       return 0;
+     }
+
      // Create mesh and define function space
      auto mesh = std::make_shared<UnitSquareMesh>(8, 8);
      auto V = std::make_shared<AdaptivePoisson::BilinearForm::TrialSpace>(mesh);

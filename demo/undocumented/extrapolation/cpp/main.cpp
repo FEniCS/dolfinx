@@ -41,6 +41,12 @@ public:
 
 int main()
 {
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+ {
+   std::cout << "This demo does not work in parallel" << std::endl;
+   return 0;
+ }
+
   // Create mesh and function spaces
   auto mesh = std::make_shared<UnitSquareMesh>(8, 8);
   auto P1 = std::make_shared<P1::FunctionSpace>(mesh);
