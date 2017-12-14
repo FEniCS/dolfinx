@@ -63,7 +63,7 @@ class CMakeBuild(build_ext):
 
 
 setup(name='dolfin',
-      version='0.0.1',
+      version='2018.1.0.dev0',
       author='FEniCS Project',
       description='DOLFIN Python interface (via pybind11)',
       long_description='',

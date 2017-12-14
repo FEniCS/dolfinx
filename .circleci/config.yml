@@ -25,7 +25,7 @@ jobs:
           command: python3 -m flake8 python/dolfin
       - run:
           name: Configure DOLFIN (C++)
-          command: mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Developer
+          command: mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Developer ../
       - run:
           name: Build DOLFIN and install (C++)
           command: cd build && make -j2 install
@@ -34,10 +34,10 @@ jobs:
           command: cd build && make -j2 unittests && ctest -R unittests
       - run:
           name: Build and run C++ regressions tests (serial)
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make -j2 demos && ctest -j2 -R demo -R serial
+          command: cd build && make -j2 demos && ctest -j2 -R demo -R serial
       - run:
           name: Run C++ regression tests (MPI)
-          command: source /usr/local/share/dolfin/dolfin.conf && cd build && make -j2 demos && ctest -R demo -R mpi
+          command: cd build && make -j2 demos && ctest -R demo -R mpi
       - run:
           name: Build Python interface
           command: |
