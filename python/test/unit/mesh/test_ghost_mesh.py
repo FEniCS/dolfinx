@@ -23,7 +23,8 @@ import numpy
 from dolfin import *
 import os
 
-from dolfin_utils.test import fixture, skip_in_parallel, xfail_in_parallel, cd_tempdir, pushpop_parameters
+from dolfin_utils.test import (fixture, skip_in_parallel, xfail_in_parallel, cd_tempdir, 
+                               pushpop_parameters, skip_if_not_pybind11)
 
 
 # See https://bitbucket.org/fenics-project/dolfin/issues/579
@@ -96,3 +97,41 @@ def test_ghost_3d(pushpop_parameters):
         mesh = UnitCubeMesh(N, N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
+
+
+@skip_if_not_pybind11
+@pytest.mark.parametrize('gmode', ['shared_vertex', 'shared_facet', 'none'])
+def test_ghost_connectivities(gmode, pushpop_parameters):
+    parameters['ghost_mode'] = gmode
+
+    # Ghosted mesh
+    meshG = UnitSquareMesh(MPI.comm_world, 4, 4)
+    meshG.init(1, 2)
+
+    # Reference mesh, not ghosted, not parallel
+    meshR = UnitSquareMesh(MPI.comm_self, 4, 4)
+    meshR.init(1, 2)
+
+    # Create reference mapping from facet midpoint to cell midpoint
+    reference = {}
+    for facet in facets(meshR):
+        fidx = facet.index()
+        facet_mp = tuple(facet.midpoint()[:])
+        reference[facet_mp] = []
+        for cidx in meshR.topology()(1, 2)(fidx):
+            cell = Cell(meshR, cidx)
+            cell_mp = tuple(cell.midpoint()[:])
+            reference[facet_mp].append(cell_mp)
+
+    # Loop through ghosted mesh and check connectivities
+    allowable_cell_indices = [cell.index() for cell in cells(meshG, 'all')]
+    for facet in facets(meshG, 'regular'):
+        fidx = facet.index()
+        facet_mp = tuple(facet.midpoint()[:])
+        assert facet_mp in reference
+
+        for cidx in meshG.topology()(1, 2)(fidx):
+            assert cidx in allowable_cell_indices
+            cell = Cell(meshG, cidx)
+            cell_mp = tuple(cell.midpoint()[:])
+            assert cell_mp in reference[facet_mp]
