@@ -140,9 +140,9 @@ sentences). Here's a good example from ``TopologyComputation.cpp``:
 
     ...
 
-Always use ``//`` for comments and ``///`` for documentation (see
-:ref:`styleguides_sphinx_documenting_interface`). Never use ``/*
-... */``, not even for comments that runs over multiple lines.
+Always use ``//`` for comments and ``///`` for documentation. Never
+use ``/* foo */``, not even for comments that runs over multiple
+lines.
 
 Integers and reals
 ^^^^^^^^^^^^^^^^^^
