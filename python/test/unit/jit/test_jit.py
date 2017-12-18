@@ -91,7 +91,7 @@ def test_mpi_pybind11():
 
 
 @skip_if_not_PETSc
-def test_petsc_swig():
+def test_petsc():
     create_matrix_code = r'''
     #include <pybind11/pybind11.h>
     #include <dolfin.h>
@@ -113,9 +113,10 @@ def test_petsc_swig():
 
 
 @skip_if_not_SLEPc
-def test_slepc_swig():
+def test_slepc():
     create_eps_code = r'''
-    #include <memory>
+    #include <pybind11/pybind11.h>
+    #include <dolfin.h>
     #include <slepc.h>
     namespace dolfin
     {
