@@ -195,7 +195,7 @@ created, and on this mesh a :py:class:`FunctionSpace
 a pair of linear Lagrangian elements. ::
 
     # Create mesh and build function space
-    mesh = UnitSquareMesh.create(96, 96, CellType.Type_quadrilateral)
+    mesh = UnitSquareMesh.create(96, 96, CellType.Type.quadrilateral)
     P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     ME = FunctionSpace(mesh, P1*P1)
 

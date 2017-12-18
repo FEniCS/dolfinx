@@ -75,7 +75,7 @@ def test_issue_568():
 
 def test_volume_quadrilateralR2():
 
-    mesh = UnitSquareMesh.create(mpi_comm_self(), 1, 1, CellType.Type_quadrilateral)
+    mesh = UnitSquareMesh.create(mpi_comm_self(), 1, 1, CellType.Type.quadrilateral)
     cell = Cell(mesh, 0)
 
     assert cell.volume() == 1.0

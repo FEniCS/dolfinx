@@ -149,7 +149,7 @@ for note in facet_note:
 # if has_hdf5():
 #     xdmf.write(Q)
 # elif MPI.size(mesh.mpi_comm()) == 1:
-#     encoding = XDMFFile.Encoding_ASCII
+#     encoding = XDMFFile.Encoding.ASCII
 #     xdmf.write(Q, encoding)
 # else:
 #     # Save solution in vtk format

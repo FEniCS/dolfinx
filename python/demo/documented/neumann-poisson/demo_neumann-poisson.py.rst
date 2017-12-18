@@ -27,7 +27,7 @@ provided by the class :py:class:`UnitSquareMesh
 :math:`64 \times 64` squares, we do as follows: ::
 
     # Create mesh
-    mesh = UnitSquareMesh.create(64, 64, CellType.Type_quadrilateral)
+    mesh = UnitSquareMesh.create(64, 64, CellType.Type.quadrilateral)
 
 Next, we need to define the function space. ::
 

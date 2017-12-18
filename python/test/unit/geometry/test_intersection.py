@@ -66,7 +66,7 @@ def test_mesh_point_2d_quadrilateral():
     "Test mesh-point intersection in 2D for quadrilateral mesh"
 
     point = Point(0.1, 0.2)
-    mesh = UnitSquareMesh.create(16, 16, CellType.Type_quadrilateral)
+    mesh = UnitSquareMesh.create(16, 16, CellType.Type.quadrilateral)
 
     intersection = intersect(mesh, point)
 
@@ -78,7 +78,7 @@ def test_mesh_point_3d_hexahedron():
     "Test mesh-point intersection in 3D for hexahedral mesh"
 
     point = Point(0.1, 0.2, 0.3)
-    mesh = UnitCubeMesh.create(8, 8, 8, CellType.Type_hexahedron)
+    mesh = UnitCubeMesh.create(8, 8, 8, CellType.Type.hexahedron)
 
     intersection = intersect(mesh, point)
 

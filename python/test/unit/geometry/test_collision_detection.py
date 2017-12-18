@@ -140,7 +140,7 @@ def test_degenerate_triangle_collides_point():
 @skip_in_parallel
 @pytest.mark.xfail(strict=True, raises=RuntimeError)
 def test_quadrilateral_collides_point():
-    mesh = UnitSquareMesh.create(1, 1, CellType.Type_quadrilateral)
+    mesh = UnitSquareMesh.create(1, 1, CellType.Type.quadrilateral)
     cell = Cell(mesh, 0)
     assert cell.collides(Point(0.5)) == True
     assert cell.collides(Point(1.5)) == False
@@ -149,7 +149,7 @@ def test_quadrilateral_collides_point():
 @pytest.mark.xfail(strict=True, raises=RuntimeError)
 def test_hexahedron_collides_point():
     """Test if point collide with hexahedron"""
-    mesh = UnitCubeMesh.create(1, 1, 1, CellType.Type_hexahedron)
+    mesh = UnitCubeMesh.create(1, 1, 1, CellType.Type.hexahedron)
     cell = Cell(mesh, 0)
 
     assert cell.collides(Point(0.5)) == True

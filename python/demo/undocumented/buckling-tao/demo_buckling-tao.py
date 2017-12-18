@@ -133,7 +133,7 @@ out = XDMFFile(mesh.mpi_comm(), "u.xdmf")
 if has_hdf5():
     out.write(u)
 elif MPI.size(mesh.mpi_comm()) == 1:
-    encoding = XDMFFile.Encoding_ASCII
+    encoding = XDMFFile.Encoding.ASCII
     out.write(u, encoding)
 else:
     # Save solution in vtk format

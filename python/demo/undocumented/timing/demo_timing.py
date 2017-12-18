@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 from dolfin import *
 
 # Let's solve some variational problem to get non-trivial timings
@@ -31,11 +30,11 @@ u = Function(V)
 solve(a == L, u, bc)
 
 # List timings; average across processes in parallel
-list_timings(TimingClear_keep, [TimingType_wall, TimingType_system])
+list_timings(TimingClear.keep, [TimingType.wall, TimingType.system])
 
 # Get Table object with timings
-t = timings(TimingClear_keep,
-            [TimingType_wall, TimingType_user, TimingType_system])
+t = timings(TimingClear.keep,
+            [TimingType.wall, TimingType.user, TimingType.system])
 
 # Use different MPI reductions
 t_sum = MPI.sum(mpi_comm_world(), t)
@@ -63,4 +62,4 @@ f = File(mpi_comm_self(), "timings_rank_%d.xml"
 f << t
 
 # Helper function for storing rank-wise average, min and max
-dump_timings_to_xml("timings_avg_min_max.xml", TimingClear_clear)
+dump_timings_to_xml("timings_avg_min_max.xml", TimingClear.clear)

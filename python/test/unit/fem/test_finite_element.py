@@ -32,10 +32,10 @@ xfail = pytest.mark.xfail(strict=True)
 
 @pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)),
                                           (UnitCubeMesh, (2, 2, 2)),
-                                          (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)),
+                                          (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral)),
                                           # cell_normal has not been implemented for hex cell
                                           # cell.orientation() does not work
-                                          xfail((UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron)))])
+                                          xfail((UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron)))])
 def test_evaluate_dofs(mesh_factory):
 
     func, args = mesh_factory
@@ -128,8 +128,8 @@ def test_evaluate_dofs_manifolds_affine():
 
 @pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)),
                                           (UnitCubeMesh, (2, 2, 2)),
-                                          (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)),
-                                          (UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron))])
+                                          (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral)),
+                                          (UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron))])
 def test_tabulate_coord(mesh_factory):
 
     func, args = mesh_factory

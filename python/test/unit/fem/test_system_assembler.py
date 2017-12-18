@@ -212,7 +212,7 @@ def test_vertex_assembly():
 
 
 @pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (20, 20)),
-                                          (UnitSquareMesh.create, (20, 20, CellType.Type_quadrilateral))])
+                                          (UnitSquareMesh.create, (20, 20, CellType.Type.quadrilateral))])
 def test_incremental_assembly(mesh_factory):
 
     for f in [Constant(0.0), Constant(1e4)]:
@@ -254,9 +254,9 @@ def test_incremental_assembly(mesh_factory):
 
 @skip_in_parallel
 @pytest.mark.parametrize('mesh_factory', [
-    (UnitSquareMesh.create, (24, 24, CellType.Type_triangle)),
+    (UnitSquareMesh.create, (24, 24, CellType.Type.triangle)),
     # FFC PR #91 disables (broken) DQ elements
-    pytest.mark.xfail((UnitSquareMesh.create, (24, 24, CellType.Type_quadrilateral)), strict=True, raises=Exception),
+    pytest.mark.xfail((UnitSquareMesh.create, (24, 24, CellType.Type.quadrilateral)), strict=True, raises=Exception),
 ])
 def test_domains(mesh_factory):
 
@@ -375,7 +375,7 @@ def test_facet_assembly_cellwise_insertion(filedir):
 
 
 @pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (24, 24)),
-                                          (UnitSquareMesh.create, (24, 24, CellType.Type_quadrilateral))])
+                                          (UnitSquareMesh.create, (24, 24, CellType.Type.quadrilateral))])
 def test_non_square_assembly(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)

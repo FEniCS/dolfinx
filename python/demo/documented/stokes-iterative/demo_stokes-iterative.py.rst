@@ -66,7 +66,7 @@ Taylor--Hood elements and is a stable, standard element pair for the
 Stokes equations.) ::
 
     # Load mesh
-    mesh = UnitCubeMesh.create(16, 16, 16, CellType.Type_hexahedron)
+    mesh = UnitCubeMesh.create(16, 16, 16, CellType.Type.hexahedron)
 
     # Build function space
     P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)

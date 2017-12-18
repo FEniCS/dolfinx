@@ -22,7 +22,7 @@ from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 
 
 # Supported XDMF file encoding
-encodings = (XDMFFile.Encoding_HDF5, XDMFFile.Encoding_ASCII)
+encodings = (XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII)
 
 # Data types supported in templating
 data_types = (('int', int), ('size_t', int), ('double', float), ('bool', bool))
@@ -47,8 +47,8 @@ def mesh_factory(tdim, n):
 
 
 def invalid_config(encoding):
-    return (not has_hdf5() and encoding == XDMFFile.Encoding_HDF5) \
-        or (encoding == XDMFFile.Encoding_ASCII and MPI.size(mpi_comm_world()) > 1) \
+    return (not has_hdf5() and encoding == XDMFFile.Encoding.HDF5) \
+        or (encoding == XDMFFile.Encoding.ASCII and MPI.size(mpi_comm_world()) > 1) \
         or (not has_hdf5_parallel() and MPI.size(mpi_comm_world()) > 1)
 
 
@@ -109,7 +109,7 @@ def test_save_and_load_2d_quad_mesh(tempdir, encoding):
     if invalid_config(encoding):
         pytest.skip("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "mesh_2D_quad.xdmf")
-    mesh = UnitSquareMesh.create(32, 32, CellType.Type_quadrilateral)
+    mesh = UnitSquareMesh.create(32, 32, CellType.Type.quadrilateral)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mesh, encoding)
