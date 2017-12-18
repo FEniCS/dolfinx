@@ -28,7 +28,7 @@ import numpy
 import six
 
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel, datadir, skip_if_pybind11
+from dolfin_utils.test import skip_in_parallel, datadir
 
 
 def test_instantiation():
@@ -77,32 +77,6 @@ def test_get_values():
     V = FunctionSpace(mesh, "CG", 1)
     bc = DirichletBC(V, 0.0, upper)
     bc_values = bc.get_boundary_values()
-
-@skip_if_pybind11
-def test_meshdomain_bcs(datadir):
-    """Test application of Dirichlet boundary conditions stored as part of
-    the mesh. This test is also a compatibility test for VMTK.
-
-    """
-
-    mesh = Mesh(os.path.join(datadir, "aneurysm.xml"))
-    V = FunctionSpace(mesh, "CG", 1)
-    v = TestFunction(V)
-
-    f = Constant(0)
-    u1 = Constant(1)
-    u2 = Constant(2)
-    u3 = Constant(3)
-
-    bc1 = DirichletBC(V, u1, 1)
-    bc2 = DirichletBC(V, u2, 2)
-    bc3 = DirichletBC(V, u3, 3)
-    bcs = [bc1, bc2, bc3]
-
-    L = f*v*dx
-    b = assemble(L)
-    [bc.apply(b) for bc in bcs]
-    assert round(norm(b) - 16.55294535724685, 7) == 0
 
 
 def test_user_meshfunction_domains():

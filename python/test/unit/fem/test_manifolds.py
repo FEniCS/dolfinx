@@ -234,44 +234,23 @@ def basis_test(family, degree, basemesh, rotmesh, rotation, piola=False):
         for i in range(f_base.element().space_dimension()):
             for point in points:
 
-                if has_pybind11():
-                    values_base = f_base.element().evaluate_basis(i,
+                values_base = f_base.element().evaluate_basis(i,
+                                       point, vertex_coordinates_base,
+                                       cell_base.orientation())
+
+                derivs_base = f_base.element().evaluate_basis_derivatives(i, 1,
                                           point, vertex_coordinates_base,
                                           cell_base.orientation())
 
-                    derivs_base = f_base.element().evaluate_basis_derivatives(i, 1,
-                                          point, vertex_coordinates_base,
-                                          cell_base.orientation())
-
-                    values_rot = f_rot.element().evaluate_basis(i,
+                values_rot = f_rot.element().evaluate_basis(i,
                                           rotation.rotate_point(point),
                                           vertex_coordinates_rot,
                                           cell_rot.orientation())
 
-                    derivs_rot = f_base.element().evaluate_basis_derivatives(i, 1,
+                derivs_rot = f_base.element().evaluate_basis_derivatives(i, 1,
                                           rotation.rotate_point(point),
                                           vertex_coordinates_rot,
                                           cell_rot.orientation())
-                else:
-                    f_base.element().evaluate_basis(i, values_base,
-                                                    point,
-                                                    vertex_coordinates_base,
-                                                    cell_base.orientation())
-
-                    f_base.element().evaluate_basis_derivatives(i, 1, derivs_base,
-                                                                point,
-                                                                vertex_coordinates_base,
-                                                                cell_base.orientation())
-
-                    f_rot.element().evaluate_basis(i, values_rot,
-                                                   rotation.rotate_point(point),
-                                                   vertex_coordinates_rot,
-                                                   cell_rot.orientation())
-
-                    f_base.element().evaluate_basis_derivatives(i, 1, derivs_rot,
-                                                                rotation.rotate_point(point),
-                                                                vertex_coordinates_rot,
-                                                                cell_rot.orientation())
 
                 if piola:
                     values_cmp = rotation.rotate_point(values_base)

@@ -267,11 +267,7 @@ def test_dof_to_vertex_map(mesh_factory, reorder_dofs):
     u.interpolate(e)
 
     vert_values = mesh.coordinates().sum(1)
-    if has_pybind11():
-        func_values = u.vector().get_local(vertex_to_dof_map(V))
-    else:
-        func_values = np.empty(len(vert_values))
-        u.vector().get_local(func_values, vertex_to_dof_map(V))
+    func_values = u.vector().get_local(vertex_to_dof_map(V))
     assert round(max(abs(func_values - vert_values)), 7) == 0
 
     c0 = Constant((1, 2))
@@ -544,7 +540,6 @@ def test_dofs_dim(space):
         assert len(edofs) == dofs_per_entity*num_mesh_entities
 
 
-@skip_if_not_pybind11
 def test_readonly_view_local_to_global_unwoned(mesh):
     """Test that local_to_global_unwoned() returns readonly
     view into the data; in particular test lifetime of data

@@ -18,7 +18,7 @@
 import pytest
 import os
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel, fixture, tempdir, skip_if_not_pybind11
+from dolfin_utils.test import skip_in_parallel, fixture, tempdir
 
 
 # Supported XDMF file encoding
@@ -559,7 +559,6 @@ def test_save_3D_vertex_function(tempdir, encoding, data_type):
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mf, encoding)
 
-@skip_if_not_pybind11
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_points_2D(tempdir, encoding):
     if invalid_config(encoding):
@@ -580,7 +579,6 @@ def test_save_points_2D(tempdir, encoding):
         file.write(points, vals, encoding)
 
 
-@skip_if_not_pybind11
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_points_3D(tempdir, encoding):
     if invalid_config(encoding):

@@ -23,8 +23,8 @@ import numpy
 from dolfin import *
 import os
 
-from dolfin_utils.test import (fixture, skip_in_parallel, xfail_in_parallel, cd_tempdir, 
-                               pushpop_parameters, skip_if_not_pybind11)
+from dolfin_utils.test import (fixture, skip_in_parallel, xfail_in_parallel, cd_tempdir,
+                               pushpop_parameters)
 
 
 # See https://bitbucket.org/fenics-project/dolfin/issues/579
@@ -99,7 +99,6 @@ def test_ghost_3d(pushpop_parameters):
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
 
-@skip_if_not_pybind11
 @pytest.mark.parametrize('gmode', ['shared_vertex', 'shared_facet', 'none'])
 def test_ghost_connectivities(gmode, pushpop_parameters):
     parameters['ghost_mode'] = gmode

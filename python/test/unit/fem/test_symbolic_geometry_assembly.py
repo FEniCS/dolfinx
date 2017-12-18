@@ -896,10 +896,7 @@ def test_triangle_symbolic_geometry(uflacs_representation_only):
         assert round(assemble(R/vol*dx(1)) - Cell(mesh, k).circumradius(), 7) == 0.0
 
 
-if has_pybind11():
-    xfail_jit = pytest.mark.xfail(raises=Exception, strict=True)
-else:
-    xfail_jit = pytest.mark.xfail(raises=RuntimeError, strict=True)
+xfail_jit = pytest.mark.xfail(raises=Exception, strict=True)
 
 @pytest.mark.parametrize('mesh_factory', [
     (UnitIntervalMesh, (8,)),

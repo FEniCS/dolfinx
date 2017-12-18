@@ -151,9 +151,6 @@ class TestVectorForAnyBackend:
         data = zeros((v0.local_size()), dtype='d')
         v0.add_local(data)
         data = zeros((v0.local_size()*2), dtype='d')
-        if not has_pybind11():
-            with pytest.raises(TypeError):
-                v0.add_local(data[::2])
 
     def test_gather(self, any_backend):
         # Gather not implemented in Eigen
@@ -385,39 +382,20 @@ class TestVectorForAnyBackend:
         v = Vector(mpi_comm_world(), 301)
         v = as_backend_type(v)
 
-        if has_pybind11():
-            rw_array = v.array_view()
-            assert rw_array.flags.owndata == False
-            with pytest.raises(Exception):
-                rw_array.resize([10])
+        rw_array = v.array_view()
+        assert rw_array.flags.owndata == False
+        with pytest.raises(Exception):
+            rw_array.resize([10])
 
-            # Check that the array is a writable view
-            rw_array[0] = 42
-            ro_array = v.get_local()
-            assert ro_array[0] == 42
+        # Check that the array is a writable view
+        rw_array[0] = 42
+        ro_array = v.get_local()
+        assert ro_array[0] == 42
 
-            # Test for as_backend_type Vector
-            v = as_backend_type(v)
-            rw_array2 = v.array_view()
-            assert (rw_array2 == ro_array).all()
-
-        else:
-            ro_array = v.get_local()
-            data = v.data()
-            assert (data == ro_array).all()
-
-            # Test that a shallow copy of the data is not writable
-            data = v.data(False)
-            def write_data(data):
-                data[0] = 1
-            with pytest.raises(Exception):
-                write_data(data)
-
-            # Test for as_backend_type Vector
-            v = as_backend_type(v)
-            data = v.data()
-            assert (data == ro_array).all()
-
+        # Test for as_backend_type Vector
+        v = as_backend_type(v)
+        rw_array2 = v.array_view()
+        assert (rw_array2 == ro_array).all()
 
     # xfail on TypeError
     xfail_type = pytest.mark.xfail(strict=True, raises=TypeError)
@@ -426,70 +404,7 @@ class TestVectorForAnyBackend:
     else:
         xfail_type_py3 = pytest.mark.xfail(strict=True, raises=TypeError)
 
-    @skip_if_pybind11
-    @pytest.mark.parametrize("operand",
-        [t(42) for t in six.integer_types] + [
-        42.0,
-        numpy.sin(1.0),
-        numpy.float(42.0),
-        numpy.float64(42.0),
-        numpy.float_(42.0),
-        numpy.int(42.0),
-        numpy.long(42.0),
 
-        # Cases where promotion to double doesn't work
-        xfail_type(numpy.float16(42.0)),
-        xfail_type(numpy.float32(42.0)),
-        xfail_type(numpy.float128(42.0)),
-        xfail_type(numpy.longfloat(42.0)),
-        xfail_type(numpy.int8(42.0)),
-        xfail_type(numpy.int16(42.0)),
-        xfail_type(numpy.int32(42.0)),
-        xfail_type(numpy.intc(42.0)),
-        xfail_type(numpy.longdouble(42.0)),
-
-        # Cases where promotion to double doesn't work on Py3
-        xfail_type_py3(numpy.int0(42.0)),
-        xfail_type_py3(numpy.int64(42.0)),
-        xfail_type_py3(numpy.int_(42.0)),
-        xfail_type_py3(numpy.longlong(42.0)),
-    ])
-    def test_vector_type_priority_with_numpy(self, any_backend, operand):
-        """Test that DOLFIN return types are prefered over
-        NumPy types for binary operations on NumPy objects"""
-
-        def _test_binary_ops(v, operand):
-            assert isinstance(v+operand, GenericVector)
-            assert isinstance(v-operand, GenericVector)
-            assert isinstance(v*operand, GenericVector)
-            assert isinstance(v/operand, GenericVector)
-            assert isinstance(operand+v, GenericVector)
-            assert isinstance(operand-v, GenericVector)
-            assert isinstance(operand*v, GenericVector)
-            assert isinstance(v+v, GenericVector)
-            assert isinstance(v-v, GenericVector)
-            assert isinstance(v*v, GenericVector)
-            v += v.copy(); assert isinstance(v, GenericVector)
-            v -= v.copy(); assert isinstance(v, GenericVector)
-            v *= v.copy(); assert isinstance(v, GenericVector)
-            v += operand; assert isinstance(v, GenericVector)
-            v -= operand; assert isinstance(v, GenericVector)
-            v *= operand; assert isinstance(v, GenericVector)
-            v /= operand; assert isinstance(v, GenericVector)
-            op = copy(operand); op += v; assert isinstance(op, GenericVector)
-            op = copy(operand); op -= v; assert isinstance(op, GenericVector)
-            op = copy(operand); op *= v; assert isinstance(op, GenericVector)
-
-        # Test with vector wrapper
-        v = Vector(mpi_comm_world(), 8)
-        _test_binary_ops(v, operand)
-
-        # Test with vector casted to backend type
-        v = as_backend_type(v)
-        _test_binary_ops(v, operand)
-
-
-    @skip_if_not_pybind11
     @pytest.mark.parametrize("operand", [t(42) for t in six.integer_types]
                              + [42.0, numpy.sin(1.0), numpy.float(42.0),
                                 numpy.float64(42.0), numpy.float_(42.0),

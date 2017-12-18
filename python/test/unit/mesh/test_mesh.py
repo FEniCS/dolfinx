@@ -32,12 +32,6 @@ from dolfin import *
 from dolfin_utils.test import fixture, set_parameters_fixture
 from dolfin_utils.test import skip_in_parallel, xfail_in_parallel
 from dolfin_utils.test import cd_tempdir
-from dolfin_utils.test import skip_if_not_pybind11
-
-
-if has_pybind11():
-    CellType.Type_quadrilateral = CellType.Type.quadrilateral
-    CellType.Type_hexahedron = CellType.Type.hexahedron
 
 
 @fixture
@@ -156,10 +150,6 @@ def test_UnitSquareMeshDistributed():
     mesh = UnitSquareMesh(mpi_comm_world(), 5, 7)
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 70
-    if has_petsc4py() and not has_pybind11():
-        import petsc4py
-        assert isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm)
-        assert mesh.mpi_comm() == mpi_comm_world()
 
 
 def test_UnitSquareMeshLocal():
@@ -167,10 +157,6 @@ def test_UnitSquareMeshLocal():
     mesh = UnitSquareMesh(mpi_comm_self(), 5, 7)
     assert mesh.num_vertices() == 48
     assert mesh.num_cells() == 70
-    if has_petsc4py() and not has_pybind11():
-        import petsc4py
-        assert isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm)
-        assert mesh.mpi_comm() == mpi_comm_self()
 
 
 def test_UnitCubeMesh():
@@ -195,13 +181,13 @@ def test_UnitCubeMeshDistributedLocal():
 
 
 def test_UnitQuadMesh():
-    mesh = UnitSquareMesh.create(5, 7, CellType.Type_quadrilateral)
+    mesh = UnitSquareMesh.create(5, 7, CellType.Type.quadrilateral)
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 35
 
 
 def test_UnitHexMesh():
-    mesh = UnitCubeMesh.create(5, 7, 9, CellType.Type_hexahedron)
+    mesh = UnitCubeMesh.create(5, 7, 9, CellType.Type.hexahedron)
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
 
@@ -480,8 +466,8 @@ mesh_factories = [
     (SphericalShellMesh.create, (mpi_comm_world(), 1,)),
     (SphericalShellMesh.create, (mpi_comm_world(), 2,)),
     (UnitCubeMesh, (2, 2, 2)),
-    (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)),
-    (UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron)),
+    (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral)),
+    (UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron)),
     # FIXME: Add mechanism for testing meshes coming from IO
 ]
 
@@ -496,8 +482,8 @@ mesh_factories_broken_shared_entities = [
     xfail_in_parallel((SphericalShellMesh.create, (mpi_comm_world(), 1,))),
     xfail_in_parallel((SphericalShellMesh.create, (mpi_comm_world(), 2,))),
     (UnitCubeMesh, (2, 2, 2)),
-    (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)),
-    (UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron)),
+    (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral)),
+    (UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron)),
 ]
 
 # FIXME: Fix this xfail
@@ -530,12 +516,8 @@ def test_shared_entities(mesh_factory, ghost_mode):
         if mesh.topology().have_shared_entities(shared_dim):
             for e in entities(mesh, shared_dim):
                 sharing = e.sharing_processes()
-                if not has_pybind11():
-                    assert isinstance(sharing, numpy.ndarray)
-                    assert (sharing.size > 0) == e.is_shared()
-                else:
-                    assert isinstance(sharing, set)
-                    assert (len(sharing) > 0) == e.is_shared()
+                assert isinstance(sharing, set)
+                assert (len(sharing) > 0) == e.is_shared()
 
         n_entities = mesh.num_entities(shared_dim)
         n_global_entities = mesh.num_entities_global(shared_dim)
@@ -638,9 +620,6 @@ def test_mesh_topology_reference():
     assert mesh.topology().id() == mesh.topology().id()
 
 
-# Reference counting does not work like expected with SWIG,
-# SWIG handles the lifetime differently
-@skip_if_not_pybind11
 def test_mesh_topology_lifetime():
     """Check that lifetime of Mesh.topology() is bound to
     underlying mesh object"""
@@ -653,7 +632,6 @@ def test_mesh_topology_lifetime():
     assert sys.getrefcount(mesh) == rc
 
 
-@skip_if_not_pybind11
 def test_mesh_connectivity_lifetime():
     """Check that lifetime of MeshConnectivity is bound to
     underlying mesh topology object"""

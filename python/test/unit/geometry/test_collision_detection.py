@@ -22,7 +22,7 @@
 
 import pytest
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel, skip_if_not_pybind11
+from dolfin_utils.test import skip_in_parallel
 import numpy as np
 
 @skip_in_parallel
@@ -74,7 +74,6 @@ def test_segment_collides_point_2D():
     assert cell.contains(cell.midpoint())
 
 @skip_in_parallel
-@skip_if_not_pybind11
 def test_point_on_segment():
     a = Point(1e-30, 0)
     b = Point(1e-3, 0)
@@ -88,7 +87,6 @@ def test_point_on_segment():
     assert not cpp.geometry.CollisionPredicates.collides_segment_point_2d(q0, q1, d)
 
 @skip_in_parallel
-@skip_if_not_pybind11
 def test_point_on_small_segment():
     a = Point(1e-30, 0)
     b = Point(0, 0)
@@ -129,7 +127,6 @@ def test_triangle_collides_point():
     assert cell.collides(Point(1.5)) == False
 
 @skip_in_parallel
-@skip_if_not_pybind11
 def test_degenerate_triangle_collides_point():
     """Test a degenerate triangle that does not collide"""
 
@@ -185,7 +182,6 @@ def test_triangle_collides_triangle():
 
 
 @skip_in_parallel
-@skip_if_not_pybind11
 def test_triangle_triangle_collision() :
     "Test that has been failing"
     assert cpp.geometry.CollisionPredicates.collides_triangle_triangle_2d(Point(0.177432070718943, 0.5),

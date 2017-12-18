@@ -25,7 +25,7 @@ from math import sin, cos, exp, tan
 from numpy import array, zeros, float_
 import numpy as np
 
-from dolfin_utils.test import fixture, skip_in_parallel, skip_if_pybind11, skip_if_not_pybind11
+from dolfin_utils.test import fixture, skip_in_parallel
 
 @fixture
 def mesh():
@@ -161,8 +161,7 @@ def test_overload_and_call_back(V, mesh):
 
     class F1(UserExpression):
         def __init__(self, mesh, *arg, **kwargs):
-            if has_pybind11():
-                super().__init__(*arg, **kwargs)
+            super().__init__(*arg, **kwargs)
             self.mesh = mesh
 
         def eval_cell(self, values, x, cell):
@@ -231,61 +230,6 @@ def test_vector_valued_expression_member_function(mesh):
             assert np.allclose(v.vector().get_local(), 6.0)
 
 
-# NOTE: Do we want this to work (attaching MeshFunctions to
-# Expressions) with pybind11, or use full JIT?
-@skip_in_parallel
-@skip_if_pybind11
-def test_meshfunction_expression():
-    mesh = UnitSquareMesh(1, 1)
-    V = FunctionSpace(mesh, "DG", 0)
-
-    c = MeshFunction("size_t", mesh, mesh.topology().dim())
-    c[0] = 2
-    c[1] = 3
-    e = Expression("(double)c", c=c, degree=0)
-    e.c = c
-
-    h = interpolate(e, V)
-    v = h.vector()
-    assert v[0] == float(c[0])
-    assert v[1] == float(c[1])
-
-    a = MeshFunctionDouble(mesh, 2)
-    a[0] = 2.0
-    a[1] = 4.0
-    e = Expression("a", a=a, degree=0)
-    e.a = a
-
-    h = interpolate(e, V)
-    v = h.vector()
-    assert v[0] == float(a[0])
-    assert v[1] == float(a[1])
-
-    f = Function(V)
-    f.vector()[:] = 2.0
-    g = Constant(3.0)
-    e = Expression("a*(c == 2 ? f: g)", a=1.0, c=c, f=f, g=g, degree=0)
-    e.a = 5.0
-    e.c = c
-    e.f = f
-    e.g = g
-
-    h = interpolate(e, V)
-    v = h.vector()
-    assert v[0] == 5.0 * 2.0
-    assert v[1] == 5.0 * 3.0
-
-    w = Constant((0.0, 1.0, 2.0, 3.0, 4.0, 5.0))
-    e = Expression("w[c]", w=w, c=c, degree=0)
-    e.w = w
-    e.c = c
-
-    h = interpolate(e, V)
-    v = h.vector()
-    assert v[0] == float(c[0])
-    assert v[1] == float(c[1])
-
-
 def test_no_write_to_const_array():
     class F1(UserExpression):
         def eval(self, values, x):
@@ -312,78 +256,7 @@ def test_compute_vertex_values(mesh):
     assert all(e1_values[mesh.num_vertices():mesh.num_vertices()*2] == 2)
     assert all(e1_values[mesh.num_vertices()*2:mesh.num_vertices()*3] == 3)
 
-@skip_if_pybind11
-def test_wrong_sub_classing():
 
-    def noAttributes():
-        class NoAttributes(UserExpression):
-            pass
-
-    def wrongEvalAttribute():
-        class WrongEvalAttribute(UserExpression):
-            def eval(values, x):
-                pass
-
-    def wrongEvalDataAttribute():
-        class WrongEvalDataAttribute(UserExpression):
-            def eval_cell(values, data):
-                pass
-
-    def noEvalAttribute():
-        class NoEvalAttribute(UserExpression):
-            def evaluate(self, values, data):
-                pass
-
-    def wrongArgs():
-        class WrongArgs(UserExpression):
-            def eval(self, values, x):
-                pass
-        e = WrongArgs(V)
-
-    def deprecationWarning():
-        class Deprecated(UserExpression):
-            def eval(self, values, x):
-                pass
-
-            def dim(self):
-                return 2
-
-        e = Deprecated()
-
-    def noDefaultValues():
-        Expression("a")
-
-    def wrongDefaultType():
-        Expression("a", a="1", degree=1)
-
-    def wrongParameterNames0():
-        Expression("foo", bar=1.0, degree=1)
-
-    def wrongParameterNames1():
-        Expression("user_parameters", user_parameters=1.0, degree=1)
-
-    with pytest.raises(TypeError):
-        noAttributes()
-    with pytest.raises(TypeError):
-        noEvalAttribute()
-    with pytest.raises(TypeError):
-        wrongEvalAttribute()
-    with pytest.raises(TypeError):
-        wrongEvalDataAttribute()
-    with pytest.raises(TypeError):
-        wrongArgs()
-    with pytest.raises(DeprecationWarning):
-        deprecationWarning()
-    with pytest.raises(RuntimeError):
-        noDefaultValues()
-    with pytest.raises(TypeError):
-        wrongDefaultType()
-    with pytest.raises(RuntimeError):
-        wrongParameterNames0()
-    with pytest.raises(RuntimeError):
-        wrongParameterNames1()
-
-@skip_if_not_pybind11
 def test_runtime_exceptions():
 
     def noDefaultValues():
@@ -503,18 +376,6 @@ def test_name_space_usage(mesh):
     assert round(assemble(e0*dx(mesh)) - assemble(e1*dx(mesh)), 7) == 0
 
 
-@skip_if_pybind11(reason="CNR What is this for?")
-def test_expression_self_assignment(mesh, V):
-    tc = Constant(2.0)
-    te = Expression("value", value=tc, degree=0)
-    e2 = Expression("t", t=te, degree=0)
-
-    # Test self assignment
-    e2.t = e2
-    with pytest.raises(RuntimeError):
-        e2(0, 0)
-
-
 def test_generic_function_attributes(mesh, V):
     tc = Constant(2.0)
     te = Expression("value", value=tc, degree=0)
@@ -619,185 +480,6 @@ def test_doc_string_eval():
     assert round(f(pi/4, pi/4) - 6./sqrt(2), 7) == 0
 
 
-@skip_in_parallel
-@skip_if_pybind11
-def test_doc_string_complex_compiled_expression(mesh):
-    """
-    This test tests all features documented in the doc string of
-    Expression. If this test breaks and it is fixed the corresponding fixes
-    need also be updated in the docstring.
-    """
-
-    code = '''
-    class MyFunc : public Expression
-    {
-    public:
-
-      std::shared_ptr<MeshFunction<std::size_t> > cell_data;
-
-      MyFunc() : Expression()
-      {
-      }
-
-      void eval(Array<double>& values, const Array<double>& x,
-                const ufc::cell& c) const
-      {
-        assert(cell_data);
-        const Cell cell(*cell_data->mesh(), c.index);
-        switch ((*cell_data)[cell.index()])
-        {
-        case 0:
-          values[0] = exp(-x[0]);
-          break;
-        case 1:
-          values[0] = exp(-x[2]);
-          break;
-        case 2:
-          values[0] = exp(-x[1]);
-          break;
-        default:
-          values[0] = 0.0;
-        }
-      }
-    };'''
-
-    cell_data = MeshFunction('size_t', mesh, mesh.topology().dim())
-    cell_data.set_all(3)
-    CompiledSubDomain("x[0] <= 0.25").mark(cell_data, 0)
-    CompiledSubDomain("x[0] > 0.25 && x[0] < 0.75").mark(cell_data, 1)
-    CompiledSubDomain("x[0] >= 0.75").mark(cell_data, 2)
-
-    # Points manually chosen to be in cells marked in cell_data as 0, 1, 2
-    p0 = Point(0.1, 1.0, 0)
-    p1 = Point(0.5, 1.0, 0)
-    p2 = Point(1.0, 1.0, 1.0)
-
-    # Find cell indices
-    bb = mesh.bounding_box_tree()
-    c0 = bb.compute_first_entity_collision(p0)
-    c1 = bb.compute_first_entity_collision(p1)
-    c2 = bb.compute_first_entity_collision(p2)
-
-    # Cell indices should be valid
-    assert c0 < mesh.num_cells()
-    assert c1 < mesh.num_cells()
-    assert c2 < mesh.num_cells()
-
-    # Cell data should be 0,1,2 by construction
-    assert cell_data[c0] == 0
-    assert cell_data[c1] == 1
-    assert cell_data[c2] == 2
-
-    # Create cells for evaluation
-    c0 = Cell(mesh, c0)
-    c1 = Cell(mesh, c1)
-    c2 = Cell(mesh, c2)
-    values = zeros(1, dtype=float_)
-
-    # Create compiled expression and attach cell data
-    f = Expression(code, degree=2)
-    f.cell_data = cell_data
-
-    coords = array([p0.x(), p0.y(), p0.z()], dtype=float_)
-    f.eval_cell(values, coords, c0)
-    assert values[0] == exp(-p0.x())
-
-    coords = array([p1.x(), p1.y(), p1.z()], dtype=float_)
-    f.eval_cell(values, coords, c1)
-    assert values[0] == exp(-p1.z())
-
-    coords = array([p2.x(), p2.y(), p2.z()], dtype=float_)
-    f.eval_cell(values, coords, c2)
-    assert values[0] == exp(-p2.y())
-
-
-@pytest.mark.slow
-@skip_in_parallel
-@skip_if_pybind11
-def test_doc_string_compiled_expression_with_system_headers():
-    """
-    This test tests all features documented in the doc string of
-    Expression. If this test breaks and it is fixed the corresponding fixes
-    need also be updated in the docstring.
-    """
-
-    # Add header and it should compile
-    code_compile = '''
-    #include "dolfin/fem/GenericDofMap.h"
-    namespace dolfin
-    {
-      class Delta : public Expression
-      {
-      public:
-
-        Delta() : Expression() {}
-
-        void eval(Array<double>& values, const Array<double>& data,
-                  const ufc::cell& cell) const
-        { }
-
-        void update(const std::shared_ptr<const Function> u,
-                    double nu, double dt, double C1,
-                    double U_infty, double chord)
-        {
-          const std::shared_ptr<const Mesh> mesh = u->function_space()->mesh();
-          const std::shared_ptr<const GenericDofMap> dofmap = u->function_space()->dofmap();
-          const std::size_t ncells = mesh->num_cells();
-          std::size_t ndofs_per_cell;
-          if (ncells > 0)
-          {
-            CellIterator cell(*mesh);
-            ndofs_per_cell = dofmap->num_element_dofs(cell->index());
-          }
-          else
-          {
-              return;
-          }
-        }
-      };
-    }'''
-
-    e = Expression(code_compile, degree=1)
-    assert hasattr(e, "update")
-
-    # Test not compile
-    code_not_compile = '''
-    namespace dolfin
-    {
-      class Delta : public Expression
-      {
-      public:
-
-        Delta() : Expression() {}
-
-        void eval(Array<double>& values, const Array<double>& data,
-                  const ufc::cell& cell) const
-        {}
-
-        void update(const std::shared_ptr<const Function> u,
-                    double nu, double dt, double C1,
-                    double U_infty, double chord)
-        {
-          const std::shared_ptr<const Mesh> mesh = u->function_space()->mesh();
-          const std::shared_ptr<const GenericDofMap> dofmap = u->function_space()->dofmap();
-          const std::size_t ncells = mesh->num_cells();
-          std::size_t ndofs_per_cell;
-          if (ncells > 0)
-          {
-            CellIterator cell(*mesh);
-            ndofs_per_cell = dofmap->num_element_dofs(cell->index());
-          }
-          else
-          {
-            return;
-          }
-        }
-      };
-    }'''
-
-    with pytest.raises(Exception):
-        Expression(code_not_compile)
-
 
 def test_doc_string_python_expressions(mesh):
     """This test tests all features documented in the doc string of
@@ -845,8 +527,7 @@ def test_doc_string_python_expressions(mesh):
 
     class MyExpression2(UserExpression):
         def __init__(self, mesh, domain, *arg, **kwargs):
-            if has_pybind11():
-                super().__init__(*arg, **kwargs)
+            super().__init__(*arg, **kwargs)
             self._mesh = mesh
             self._domain = domain
 

@@ -21,7 +21,7 @@ import pytest
 import numpy.random
 from dolfin import *
 from six.moves import xrange as range
-from dolfin_utils.test import fixture, skip_in_parallel, skip_if_pybind11
+from dolfin_utils.test import fixture, skip_in_parallel
 
 
 @pytest.fixture(params=range(4))
@@ -82,15 +82,6 @@ def test_numpy_access(funcs, tp, name):
     values = funcs[(tp, name)].array()
     values[:] = numpy.random.rand(len(values))
     assert all(values[i] == funcs[(tp, name)][i] for i in range(len(values)))
-
-
-@skip_if_pybind11(reason="Iteration over mesh functions not supported")
-def test_iterate(tp, name, funcs):
-    for index, value in enumerate(funcs[(tp, name)]):
-        pass
-    assert index == len(funcs[(tp, name)])-1
-    with pytest.raises(IndexError):
-        funcs[(tp, name)].__getitem__(len(funcs[(tp, name)]))
 
 
 def test_setvalues(tp, funcs, name):

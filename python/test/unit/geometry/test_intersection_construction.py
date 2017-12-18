@@ -21,7 +21,7 @@ import pytest
 import numpy as np
 from dolfin import *
 from six.moves import xrange as range
-from dolfin_utils.test import skip_in_parallel, skip_if_not_pybind11
+from dolfin_utils.test import skip_in_parallel
 
 def triangulation_to_mesh_2d(triangulation):
     editor = MeshEditor()
@@ -177,7 +177,6 @@ def test_triangulate_intersection_3d():
     errorstring += str(dx[0])+" "+str(dx[1])+" "+str(dx[2])
     assert round(volume - exactvolume, 7) == 0, errorstring
 
-@skip_if_not_pybind11
 def test_triangle_triangle_2d_trivial() :
     " These two triangles intersect in a common edge"
     res = cpp.geometry.IntersectionConstruction.intersection_triangle_triangle_2d(Point(0.0, 0.0),
@@ -188,7 +187,6 @@ def test_triangle_triangle_2d_trivial() :
 							                          Point(0.0, 1.5))
     assert len(res) == 4
 
-@skip_if_not_pybind11
 def test_triangle_triangle_2d() :
     " These two triangles intersect in a common edge"
     res = cpp.geometry.IntersectionConstruction.intersection_triangle_triangle_2d(Point(0.4960412972015322, 0.3953317542541379),
@@ -203,7 +201,6 @@ def test_triangle_triangle_2d() :
     assert len(res) == 2
 
 @skip_in_parallel
-@skip_if_not_pybind11
 def test_parallel_segments_2d():
     " These two segments should be parallel and the intersection computed accordingly"
     p0 = Point(0, 0)
@@ -213,7 +210,6 @@ def test_parallel_segments_2d():
     intersection = cpp.geometry.IntersectionConstruction.intersection_segment_segment_2d(p0, p1, q0, q1)
     assert len(intersection) == 2
 
-@skip_if_not_pybind11
 def test_equal_segments_2d():
     " These two segments are equal and the intersection computed accordingly"
     p0 = Point(DOLFIN_PI / 7., 9. / DOLFIN_PI)
@@ -224,7 +220,6 @@ def test_equal_segments_2d():
     assert len(intersection) == 2
 
 @skip_in_parallel
-@skip_if_not_pybind11
 def test_triangle_segment_2D_1():
     "The intersection of a specific triangle and a specific segment"
     p0 = Point(1e-30, 0)
@@ -273,7 +268,6 @@ def test_segment_segment_2():
 
 
 @skip_in_parallel
-@skip_if_not_pybind11
 #@pytest.mark.skipif(True, reason="This test needs to be updated")
 def test_segment_segment_3():
     "Case that fails CGAL comparison. We get a different intersection point but still correct area."
@@ -298,7 +292,6 @@ def test_segment_segment_4():
 
 
 @skip_in_parallel
-@skip_if_not_pybind11
 def test_segment_segment_5():
     "Case that failed CGAL comparison but passed when scaling the numerator in x = p0 + o / d * v"
     p0 = Point(1.1429047494274684563e-12,0.5)
@@ -310,7 +303,6 @@ def test_segment_segment_5():
 
 
 @skip_in_parallel
-@skip_if_not_pybind11
 def test_segment_segment_6():
     "Test that demonstrates, among other things, that we must check the orientation for p0, p1 in intersection_segment_segment_2d"
     p0 = Point(0.045342566799435518599,0.41358248517265505662);
