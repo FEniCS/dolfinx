@@ -266,7 +266,7 @@ class AbaqusTest(_ConverterTest):
         self.assert_(handler.cells_ended)
 
         self.assert_("facet_region" in list(handler.functions.keys()))
-        cell_type = DataHandler.CellType.Triangle
+        cell_type = DataHandler.CellType_Triangle
         function_dim, sz, entries, ended = handler.functions["facet_region"]
 
         # the dimension of the meshfunction should be dim-1
@@ -284,7 +284,7 @@ class AbaqusTest(_ConverterTest):
         self.assert_(handler.closed)
 
     def __convert(self, fname):
-        handler = _TestHandler(DataHandler.CellType.Tetrahedron, 3, self)
+        handler = _TestHandler(DataHandler.CellType_Tetrahedron, 3, self)
         if not os.path.isabs(fname):
             fname = os.path.join("data", fname)
         meshconvert.convert(fname, handler)
@@ -396,11 +396,11 @@ class TestGmsh(_ConverterTest):
 
     def _facet_marker_driver (self, dim, id, marked_facets, size ):
         if dim == 1:
-            cell_type = DataHandler.CellType.Interval
+            cell_type = DataHandler.CellType_Interval
         elif dim == 2:
-            cell_type = DataHandler.CellType.Triangle
+            cell_type = DataHandler.CellType_Triangle
         elif dim == 3:
-            cell_type = DataHandler.CellType.Tetrahedron
+            cell_type = DataHandler.CellType_Tetrahedron
 
         handler = self.__convert("gmsh_test_facet_regions_%dD_%d.msh" % (dim, id), cell_type, dim)
 
@@ -424,7 +424,7 @@ class TestGmsh(_ConverterTest):
         self.assert_(ended)
         self.assert_(handler.closed)
 
-    def __convert(self, fname, cell_type=DataHandler.CellType.Tetrahedron, dim=3):
+    def __convert(self, fname, cell_type=DataHandler.CellType_Tetrahedron, dim=3):
         handler = _TestHandler(cell_type, dim, self)
         if not os.path.isabs(fname):
             fname = os.path.join(os.path.dirname(__file__), "data", fname)

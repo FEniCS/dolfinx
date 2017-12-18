@@ -50,11 +50,11 @@ def test_krylov_solver_norm_type():
 
     """
 
-    norm_type = (PETScKrylovSolver.norm_type_default_norm,
-                 PETScKrylovSolver.norm_type_natural,
-                 PETScKrylovSolver.norm_type_preconditioned,
-                 PETScKrylovSolver.norm_type_none,
-                 PETScKrylovSolver.norm_type_unpreconditioned)
+    norm_type = (PETScKrylovSolver.norm_type.default_norm,
+                 PETScKrylovSolver.norm_type.natural,
+                 PETScKrylovSolver.norm_type.preconditioned,
+                 PETScKrylovSolver.norm_type.none,
+                 PETScKrylovSolver.norm_type.unpreconditioned)
 
     for norm in norm_type:
         # Solve a system of equations
@@ -73,7 +73,7 @@ def test_krylov_solver_norm_type():
         solver.solve(b.copy(), b)
         solver.get_norm_type()
 
-        if norm is not PETScKrylovSolver.norm_type_default_norm:
+        if norm is not PETScKrylovSolver.norm_type.default_norm:
             assert solver.get_norm_type() == norm
 
 

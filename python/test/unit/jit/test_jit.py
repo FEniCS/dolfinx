@@ -115,6 +115,7 @@ def test_petsc_swig():
 @skip_if_not_SLEPc
 def test_slepc_swig():
     create_eps_code = r'''
+    #include <memory>
     #include <slepc.h>
     namespace dolfin
     {
