@@ -24,7 +24,7 @@ from dolfin_utils.test import (skip_if_not_PETSc,
                                skip_if_not_petsc4py,
                                pushpop_parameters)
 
-# See https://bitbucket.org/fenics-project/dolfin/issues/938
+@pytest.mark.skip # See https://bitbucket.org/fenics-project/dolfin/issues/938
 @skip_if_not_petsc4py
 def test_mg_solver_laplace(pushpop_parameters):
 
