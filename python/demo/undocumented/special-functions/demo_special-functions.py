@@ -21,7 +21,7 @@ special functions that are available in UFL."""
 # First added:  2011-10-24
 # Last changed: 2011-10-24
 
-from __future__ import print_function
+
 from dolfin import *
 import matplotlib.pyplot as plt
 

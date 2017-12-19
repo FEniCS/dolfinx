@@ -25,7 +25,7 @@ in a box of the same size."""
 # First added:  2012-09-03
 # Last changed: 2014-07-19
 
-from __future__ import print_function
+
 from dolfin import *
 import matplotlib.pyplot as plt
 

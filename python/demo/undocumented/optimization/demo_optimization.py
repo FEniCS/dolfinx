@@ -18,7 +18,7 @@
 # First added:  2008-10-17
 # Last changed: 2012-11-12
 
-from __future__ import print_function
+
 from dolfin import *
 import matplotlib.pyplot as plt
 

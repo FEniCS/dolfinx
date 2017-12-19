@@ -20,7 +20,7 @@
 
 # Begin demo
 
-from __future__ import print_function
+
 from dolfin import *
 
 # Create classes for defining parts of the boundaries and the interior

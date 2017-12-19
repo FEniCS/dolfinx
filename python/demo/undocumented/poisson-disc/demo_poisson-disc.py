@@ -31,7 +31,7 @@ du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 
 # Begin demo
 
-from __future__ import print_function
+
 
 from dolfin import *
 import math

@@ -25,7 +25,7 @@ upwards (and not downwards) in order to minimise the potential energy."""
 #
 # First added:  2014-07-19
 
-from __future__ import print_function
+
 from dolfin import *
 import matplotlib.pyplot as plt
 

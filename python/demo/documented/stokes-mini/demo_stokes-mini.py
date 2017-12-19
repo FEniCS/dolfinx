@@ -27,7 +27,7 @@ src/demo/mesh/subdomains."""
 # Last changed: 2010-04-01
 # Begin demo
 
-from __future__ import print_function
+
 import matplotlib.pyplot as plt
 from dolfin import *
 

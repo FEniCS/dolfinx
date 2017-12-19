@@ -22,7 +22,7 @@
 #
 # Last changed: 2012-11-22
 
-from __future__ import print_function
+
 
 # Write mesh header
 def write_header_mesh(ofile, cell_type, dim):

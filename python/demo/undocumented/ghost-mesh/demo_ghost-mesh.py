@@ -1,11 +1,10 @@
 # very rough demo to test out ghost cells
 # run with mpirun
 #
-from __future__ import print_function
+
 from dolfin import *
 import numpy as np
 import sys, os
-import six
 
 try:
     import matplotlib.pyplot as plt
@@ -46,7 +45,7 @@ ghost_vertices = np.arange(num_regular_vertices, mesh.topology().size(0))
 
 verts_note = []
 if (n == 0):
-    for k,val in six.iteritems(mesh.topology().shared_entities(0)):
+    for k,val in mesh.topology().shared_entities(0).items():
         vtx = Vertex(mesh, k)
         verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
 elif (n == 1):

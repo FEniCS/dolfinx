@@ -20,7 +20,7 @@
 # First added:  2013-11-19
 # Last changed:
 
-from __future__ import print_function
+
 from dolfin import *
 import matplotlib.pyplot as plt
 

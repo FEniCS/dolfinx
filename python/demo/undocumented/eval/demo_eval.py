@@ -19,7 +19,7 @@
 #
 # Modified by Johan Hake, 2009
 
-from __future__ import print_function
+
 from dolfin import *
 from numpy import array
 

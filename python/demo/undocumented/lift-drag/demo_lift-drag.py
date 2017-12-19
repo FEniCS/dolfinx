@@ -32,7 +32,7 @@ forces).
 # First added:  2007-11-14
 # Last changed: 2008-12-27
 
-from __future__ import print_function
+
 from dolfin import *
 
 # Read the mesh from file

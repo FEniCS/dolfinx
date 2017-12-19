@@ -19,7 +19,7 @@ smoothed aggregation algerbaric multigrid."""
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
+
 from dolfin import *
 import matplotlib.pyplot as plt
 

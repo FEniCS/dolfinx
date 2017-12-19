@@ -21,7 +21,7 @@ from a common mesh."""
 # First added:  2009-02-11
 # Last changed: 2015-06-15
 
-from __future__ import print_function
+
 from dolfin import *
 import matplotlib.pyplot as plt
 
