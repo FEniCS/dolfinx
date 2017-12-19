@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 import dolfin
-from dolfin import mpi_comm_world, mpi_comm_self
+from dolfin import MPI
 from dolfin_utils.test import skip_if_not_petsc4py
 
 

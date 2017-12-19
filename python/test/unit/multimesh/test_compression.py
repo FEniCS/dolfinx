@@ -20,11 +20,10 @@
 # First added:  2016-06-28
 # Last changed: 2017-05-28
 
-from __future__ import print_function
 import pytest
 
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel, skip_if_pybind11
+from dolfin_utils.test import skip_in_parallel
 from numpy import random, sort, any
 
 def build_multimesh_2d(compress_volume, compress_interface):
@@ -76,7 +75,7 @@ def volume_area(multimesh):
     return volume, area
 
 @skip_in_parallel
-@skip_if_pybind11
+@pytest.mark.skip
 def test_compression_2d():
     # Reference volume and area
     multimesh = build_multimesh_2d(False, False)

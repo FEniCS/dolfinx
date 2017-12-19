@@ -23,7 +23,6 @@
 import pytest
 import numpy
 from dolfin import *
-from six.moves import xrange as range
 from dolfin_utils.test import fixture
 
 

@@ -37,7 +37,6 @@
 # and the value of the functional at the solution usol is F(usol)=Ly
 # for any value of ell, with 0<ell<Lx.
 
-from __future__ import print_function
 from dolfin import *
 import pytest
 

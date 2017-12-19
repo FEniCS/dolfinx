@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 import pytest
 from dolfin import *
 import numpy as np
@@ -26,7 +25,7 @@ from dolfin_utils.test import *
 
 
 backends = sorted(linear_algebra_backends().keys())
-if MPI.size(mpi_comm_world()) > 1 and 'Eigen' in backends:
+if MPI.size(MPI.comm_world) > 1 and 'Eigen' in backends:
     backends.remove('Eigen')
 backend = set_parameters_fixture("linear_algebra_backend", backends)
 

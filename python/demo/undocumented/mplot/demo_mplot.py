@@ -32,8 +32,8 @@ except ImportError:
     exit()
 
 
-rank = MPI.rank(mpi_comm_world())
-size = MPI.size(mpi_comm_world())
+rank = MPI.rank(MPI.comm_world)
+size = MPI.size(MPI.comm_world)
 suffix = "_r%s" % rank if size > 1 else ""
 
 

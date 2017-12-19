@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 import pytest
 from dolfin import *
 from dolfin_utils.test import *
@@ -36,10 +35,10 @@ def test_xdmf_cell_scalar_ghost(cd_tempdir, ghost_mode):
 
     with XDMFFile(mesh.mpi_comm(), "dg0.xdmf") as xdmf:
         xdmf.write(F)
-    
+
     with HDF5File(mesh.mpi_comm(), "dg0.h5", "r") as hdf:
         vec = Vector()
         hdf.read(vec, "/VisualisationVector/0", False)
-    
+
     area = MPI.sum(mesh.mpi_comm(), sum(vec.get_local()))
     assert abs(n*n - area) < 1e-9

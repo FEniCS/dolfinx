@@ -19,7 +19,6 @@
 
 import pytest
 import numpy as np
-from six.moves import range
 from dolfin import *
 from dolfin_utils.test import *
 

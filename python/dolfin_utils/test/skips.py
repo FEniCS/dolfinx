@@ -57,10 +57,3 @@ skip_in_debug = pytest.mark.skipif(has_debug(),
                                    reason="This test does not work in debug mode.")
 skip_in_release = pytest.mark.skipif(not has_debug(),
                                      reason="This test does not work in release mode.")
-
-# Skips for pybind11
-import dolfin
-skip_if_pybind11 = pytest.mark.skipif(has_pybind11(),
-                                      reason="Skipping this test with pybind11.")
-skip_if_not_pybind11 = pytest.mark.skipif(not has_pybind11(),
-                                          reason="Skipping this test without pybind11.")

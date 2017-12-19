@@ -20,9 +20,7 @@
 # First added:  2008-09-30
 # Last changed: 2014-05-30
 
-from __future__ import print_function
 import pytest
-from six import integer_types
 from dolfin import *
 import sys
 
@@ -33,7 +31,7 @@ data_backends = []
 no_data_backends = [("PETSc", ""), ("Tpetra", "")]
 
 # Add serial only backends
-if MPI.size(mpi_comm_world()) == 1:
+if MPI.size(MPI.comm_world) == 1:
     # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't
     # used in the old test.
     data_backends += [("Eigen", "")]
@@ -105,7 +103,7 @@ class TestBasicLaOperations:
         # Test set and access with different integers
         lind = 2
         for T in [int,int16,int32,int64,uint,uint0,uint16,uint32,uint64,\
-                  int0,integer_types[-1]]:
+                  int0]:
             v[T(lind)] = 2.0
             assert round(v[T(lind)] - 2.0, 7) == 0
 

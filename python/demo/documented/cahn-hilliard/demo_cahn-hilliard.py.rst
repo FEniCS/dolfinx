@@ -117,7 +117,7 @@ created::
     # Class representing the intial conditions
     class InitialConditions(UserExpression):
         def __init__(self, **kwargs):
-            random.seed(2 + MPI.rank(mpi_comm_world()))
+            random.seed(2 + MPI.rank(MPI.comm_world))
             if has_pybind11():
                 super().__init__(**kwargs)
         def eval(self, values, x):

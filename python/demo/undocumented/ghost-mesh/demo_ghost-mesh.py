@@ -28,7 +28,7 @@ if(len(sys.argv) == 2):
     except:
         n = 0
 
-if(MPI.size(mpi_comm_world()) == 1):
+if(MPI.size(MPI.comm_world) == 1):
     print("Only works with MPI")
     quit()
 

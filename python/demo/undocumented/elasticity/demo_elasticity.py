@@ -63,7 +63,7 @@ def build_nullspace(V, x):
 
 # Load mesh from file
 mesh = Mesh()
-XDMFFile(mpi_comm_world(), "../pulley.xdmf").read(mesh)
+XDMFFile(MPI.comm_world, "../pulley.xdmf").read(mesh)
 
 # Function to mark inner surface of pulley
 def inner_surface(x, on_boundary):

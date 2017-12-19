@@ -21,10 +21,8 @@
 # Modified by Mikael Mortensen 2011
 # Modified by Jan Blechta 2013
 
-from __future__ import print_function
 import pytest
 from dolfin import *
-from six.moves import xrange as range
 from dolfin_utils.test import *
 
 # TODO: Reuse this fixture setup code between matrix and vector tests:
@@ -35,7 +33,7 @@ data_backends = []
 no_data_backends = [("PETSc", ""), ("Tpetra", "")]
 
 # Add serial only backends
-if MPI.size(mpi_comm_world()) == 1:
+if MPI.size(MPI.comm_world) == 1:
     # TODO: What about "Dense" and "Sparse"? The sub_backend wasn't
     # used in the old test.
     data_backends += [("Eigen", "")]

@@ -25,7 +25,6 @@ import os
 
 import pytest
 import numpy
-import six
 
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, datadir
@@ -170,9 +169,9 @@ def test_zero_columns_offdiag():
 
     # Test that A gets zero columns
     bc_dict = bc.get_boundary_values()
-    for i in six.moves.xrange(*A.local_range(0)):
+    for i in range(*A.local_range(0)):
         cols, vals = A.getrow(i)
-        for j, v in six.moves.zip(cols, vals):
+        for j, v in zip(cols, vals):
             if j in bc_dict:
                 assert v == 0.0
 
@@ -201,9 +200,9 @@ def test_zero_columns_square():
     # Check that A gets zeros in bc rows and bc columns and 42 on
     # diagonal
     bc_dict = bc.get_boundary_values()
-    for i in six.moves.xrange(*A.local_range(0)):
+    for i in range(*A.local_range(0)):
         cols, vals = A.getrow(i)
-        for j, v in six.moves.zip(cols, vals):
+        for j, v in zip(cols, vals):
             if i in bc_dict or j in bc_dict:
                 if i == j:
                     assert numpy.isclose(v, 42.0)

@@ -23,7 +23,7 @@
 import pytest
 from dolfin import *
 
-from dolfin_utils.test import skip_in_parallel, skip_if_pybind11, fixture
+from dolfin_utils.test import skip_in_parallel, fixture
 
 @fixture
 def exactsolution_2d():
@@ -80,9 +80,9 @@ def solve_multimesh_poisson(mesh_0, mesh_1, exactsolution):
     solve(A, uh.vector(), b)
 
     return uh
-    
+
 @pytest.mark.slow
-@skip_if_pybind11
+@pytest.mark.skip
 @skip_in_parallel
 def test_multimesh_poisson_2d():
     # This tests solves a Poisson problem on two meshes in 2D with u =
@@ -98,12 +98,12 @@ def test_multimesh_poisson_2d():
 
     # Solve multimesh Poisson
     uh = solve_multimesh_poisson(mesh_0, mesh_1, exactsolution_2d())
-    
+
     # Check error
     assert errornorm(exactsolution_2d(), uh, 'L2', degree_rise=1) < DOLFIN_EPS_LARGE
 
 @pytest.mark.slow
-@skip_if_pybind11
+@pytest.mark.skip
 @skip_in_parallel
 @pytest.mark.skipif(True, reason="3D not fully implemented")
 def test_multimesh_poisson_3d():
@@ -117,9 +117,9 @@ def test_multimesh_poisson_3d():
     mesh_1 = BoxMesh(Point(0.1*DOLFIN_PI, 0.1*DOLFIN_PI, 0.1*DOLFIN_PI),
                      Point(0.2*DOLFIN_PI, 0.2*DOLFIN_PI, 0.2*DOLFIN_PI),
                      2, 2, 2)
-    
+
     # Solve multimesh Poisson
     uh = solve_multimesh_poisson(mesh_0, mesh_1, exactsolution_3d())
-    
+
     # Check error
     assert errornorm(exactsolution_3d(), uh, 'L2', degree_rise=1) < DOLFIN_EPS_LARGE

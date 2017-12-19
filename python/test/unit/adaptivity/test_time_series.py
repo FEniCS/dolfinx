@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 import pytest
 from dolfin import *
 import os
@@ -39,13 +38,13 @@ def _test_retrieve(tempdir, basename):
     V = FunctionSpace(mesh, "CG", 2)
 
     u = Function(V)
-    series = TimeSeries(mpi_comm_world(), filename)
+    series = TimeSeries(MPI.comm_world, filename)
     for t in times:
         u.vector()[:] = t
         series.store(u.vector(), t)
         series.store(mesh, t)
 
-    series = TimeSeries(mpi_comm_world(), filename)
+    series = TimeSeries(MPI.comm_world, filename)
     t0 = series.vector_times()[0]
     T = series.mesh_times()[-1]
 
@@ -78,15 +77,15 @@ def test_subdirectory(tempdir):
 
     m0 = UnitSquareMesh(3, 3)
 
-    series0 = TimeSeries(mpi_comm_world(), filename)
-    x0 = Vector(mpi_comm_world(), 10)
+    series0 = TimeSeries(MPI.comm_world, filename)
+    x0 = Vector(MPI.comm_world, 10)
 
     # Test storage of only one time point for the mesh
     series0.store(m0, 0.1)
     series0.store(x0, 0.1)
     series0.store(x0, 0.2)
 
-    series1 = TimeSeries(mpi_comm_world(), filename)
+    series1 = TimeSeries(MPI.comm_world, filename)
     m1 = Mesh()
     x1 = Vector()
 

@@ -20,7 +20,6 @@
 import pytest
 import numpy.random
 from dolfin import *
-from six.moves import xrange as range
 from dolfin_utils.test import fixture, skip_in_parallel
 
 

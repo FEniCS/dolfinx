@@ -176,18 +176,3 @@ from ufl import (FiniteElement, TensorElement, VectorElement,
                  as_tensor, as_matrix, system, outer, dev, skew,
                  elem_mult, elem_div, elem_pow, elem_op, erf)
 from ufl.formoperators import action
-
-
-# FIXME: remove after transition
-def has_pybind11():
-    return True
-
-
-# FIXME: remove after transition
-def mpi_comm_self():
-    return MPI.comm_self
-
-
-# FIXME: remove after transition
-def mpi_comm_world():
-    return MPI.comm_world

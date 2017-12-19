@@ -19,7 +19,6 @@
 #
 # Modified by Garth N. Wells, 2011
 
-from __future__ import print_function
 import pytest
 import numpy
 from dolfin import *

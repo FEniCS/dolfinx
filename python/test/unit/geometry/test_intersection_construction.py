@@ -20,7 +20,6 @@
 import pytest
 import numpy as np
 from dolfin import *
-from six.moves import xrange as range
 from dolfin_utils.test import skip_in_parallel
 
 def triangulation_to_mesh_2d(triangulation):

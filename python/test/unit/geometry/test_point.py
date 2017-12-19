@@ -17,10 +17,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 import pytest
 import numpy as np
-from dolfin_utils.test import skip_if_pybind11
 
 from dolfin import *
 

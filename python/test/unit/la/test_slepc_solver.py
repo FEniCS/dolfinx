@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 import pytest
 from dolfin import *
 from dolfin_utils.test import skip_if_not_PETsc_or_not_slepc, fixture
@@ -33,7 +32,7 @@ def m(u, v):
 # Wrappers around SLEPcEigenSolver for test_slepc_eigensolver_gen_hermitian
 def SLEPcEigenSolverOperatorsFromInit(K, M):
     return SLEPcEigenSolver(K, M)
-    
+
 def SLEPcEigenSolverOperatorsFromSetOperators(K, M):
     slepc_eigen_solver = SLEPcEigenSolver(K.mpi_comm())
     slepc_eigen_solver.set_operators(K, M)
@@ -81,7 +80,7 @@ def test_set_from_options():
     "Test SLEPc options prefixes"
 
     prefix = "my_slepc_"
-    solver = SLEPcEigenSolver(mpi_comm_world())
+    solver = SLEPcEigenSolver(MPI.comm_world)
     solver.set_options_prefix(prefix)
     solver.set_from_options()
 

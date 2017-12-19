@@ -112,6 +112,7 @@ def test_petsc():
     module = compile_cpp_code(create_matrix_code)
 
 
+@pytest.mark.skip
 @skip_if_not_SLEPc
 def test_slepc():
     create_eps_code = r'''
@@ -213,7 +214,7 @@ def test_compile_extension_module():
 
     ext_module = compile_cpp_code(code)
 
-    vec = PETScVector(mpi_comm_world(), 10)
+    vec = PETScVector(MPI.comm_world, 10)
     np_vec = vec.get_local()
     np_vec[:] = arange(len(np_vec))
     vec.set_local(np_vec)

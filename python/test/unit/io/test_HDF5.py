@@ -29,13 +29,13 @@ from dolfin_utils.test import skip_if_not_HDF5, fixture, tempdir, xfail_with_ser
 def test_parallel(tempdir):
     filename = os.path.join(tempdir, "y.h5")
     have_parallel = has_hdf5_parallel()
-    hdf5 = HDF5File(mpi_comm_world(), filename, "w")
+    hdf5 = HDF5File(MPI.comm_world, filename, "w")
 
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
 def test_save_vector(tempdir):
     filename = os.path.join(tempdir, "x.h5")
-    x = Vector(mpi_comm_world(), 305)
+    x = Vector(MPI.comm_world, 305)
     x[:] = 1.0
     with HDF5File(x.mpi_comm(), filename, "w") as vector_file:
         vector_file.write(x, "/my_vector")
@@ -46,7 +46,7 @@ def test_save_and_read_vector(tempdir):
     filename = os.path.join(tempdir, "vector.h5")
 
     # Write to file
-    x = Vector(mpi_comm_world(), 305)
+    x = Vector(MPI.comm_world, 305)
     x[:] = 1.2
     with HDF5File(x.mpi_comm(), filename, "w") as vector_file:
         vector_file.write(x, "/my_vector")
@@ -240,10 +240,10 @@ def test_save_and_read_mesh_3D(tempdir):
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
 def test_mpi_atomicity(tempdir):
-    comm_world = mpi_comm_world()
+    comm_world = MPI.comm_world
     if MPI.size(comm_world) > 1:
         filename = os.path.join(tempdir, "mpiatomic.h5")
-        with HDF5File(mpi_comm_world(), filename, "w") as f:
+        with HDF5File(MPI.comm_world, filename, "w") as f:
             assert f.get_mpi_atomicity() is False
             f.set_mpi_atomicity(True)
             assert f.get_mpi_atomicity() is True

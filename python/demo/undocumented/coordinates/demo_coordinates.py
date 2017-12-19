@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 
 
 # Create mesh
-comm = mpi_comm_world()
+comm = MPI.comm_world
 mesh = UnitDiscMesh.create(comm, 20, 2, 2)
 plt.figure()
 plot(mesh)

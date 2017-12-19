@@ -25,8 +25,6 @@ embedded in higher dimensional spaces."""
 
 import pytest
 from dolfin import *
-from six.moves import zip
-from six.moves import xrange as range
 import os
 import numpy
 from dolfin_utils.test import *

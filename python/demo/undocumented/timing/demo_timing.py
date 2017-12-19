@@ -37,10 +37,10 @@ t = timings(TimingClear.keep,
             [TimingType.wall, TimingType.user, TimingType.system])
 
 # Use different MPI reductions
-t_sum = MPI.sum(mpi_comm_world(), t)
-t_min = MPI.min(mpi_comm_world(), t)
-t_max = MPI.max(mpi_comm_world(), t)
-t_avg = MPI.avg(mpi_comm_world(), t)
+t_sum = MPI.sum(MPI.comm_world, t)
+t_min = MPI.min(MPI.comm_world, t)
+t_max = MPI.max(MPI.comm_world, t)
+t_avg = MPI.avg(MPI.comm_world, t)
 
 # Print aggregate timings to screen
 print('\n'+t_sum.str(True))
@@ -49,16 +49,16 @@ print('\n'+t_max.str(True))
 print('\n'+t_avg.str(True))
 
 # Store to XML file on rank 0
-if MPI.rank(mpi_comm_world()) == 0:
-    f = File(mpi_comm_self(), "timings_aggregate.xml")
+if MPI.rank(MPI.comm_world) == 0:
+    f = File(MPI.comm_self, "timings_aggregate.xml")
     f << t_sum
     f << t_min
     f << t_max
     f << t_avg
 
 # Store timings of each rank separately
-f = File(mpi_comm_self(), "timings_rank_%d.xml"
-         % MPI.rank(mpi_comm_world()))
+f = File(MPI.comm_self, "timings_rank_%d.xml"
+         % MPI.rank(MPI.comm_world))
 f << t
 
 # Helper function for storing rank-wise average, min and max

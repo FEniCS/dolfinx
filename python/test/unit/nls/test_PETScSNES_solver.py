@@ -20,8 +20,6 @@
 # First added:  2012-10-17
 # Last changed: 2016-10-26
 
-from __future__ import print_function
-
 """Solve the Yamabe PDE which arises in the differential geometry of
 general relativity. http://arxiv.org/abs/1107.0360.
 

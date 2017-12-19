@@ -110,8 +110,8 @@ def test_calling():
 
 def test_nonlinear_variational_solver_custom_comm():
     "Check that nonlinear variational solver works on subset of comm_world"
-    if MPI.rank(mpi_comm_world()) == 0:
-        mesh = UnitIntervalMesh(mpi_comm_self(), 2)
+    if MPI.rank(MPI.comm_world) == 0:
+        mesh = UnitIntervalMesh(MPI.comm_self, 2)
         V = FunctionSpace(mesh, "CG", 1)
         f = Constant(1)
         u = Function(V)

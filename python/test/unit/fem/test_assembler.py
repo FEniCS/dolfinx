@@ -123,7 +123,7 @@ def test_ghost_mode_handling(pushpop_parameters):
 
     # Not-ghosted mesh won't work in parallel and assembler should raise
     parameters["ghost_mode"] = "none"
-    if MPI.size(mpi_comm_world()) == 1:
+    if MPI.size(MPI.comm_world) == 1:
         assert numpy.isclose(assemble(_form()), 1.0)
     else:
         form = _form()
