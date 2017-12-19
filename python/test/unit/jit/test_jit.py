@@ -232,6 +232,7 @@ def test_compile_extension_module_kwargs():
     assert not m2.__file__ == m0.__file__
 
 
+@pytest.mark.skip
 @skip_if_not_petsc4py
 @skip_in_serial
 def test_mpi_dependent_jiting():
