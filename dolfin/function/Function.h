@@ -88,16 +88,6 @@ namespace dolfin
     Function(std::shared_ptr<const FunctionSpace> V,
              std::shared_ptr<GenericVector> x);
 
-    /// Create function from vector of dofs stored to file (shared data)
-    ///
-    /// *Arguments*
-    ///     V (_FunctionSpace_)
-    ///         The function space.
-    ///     filename_dofdata (std::string)
-    ///         The name of the file containing the dofmap data.
-    Function(std::shared_ptr<const FunctionSpace> V,
-             std::string filename);
-
     /// Copy constructor
     ///
     /// *Arguments*

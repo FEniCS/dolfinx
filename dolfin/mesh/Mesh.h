@@ -91,20 +91,6 @@ namespace dolfin
     ///         Object to be copied.
     Mesh(const Mesh& mesh);
 
-    /// Create mesh from data file.
-    ///
-    /// @param  filename (std::string)
-    ///         Name of file to load.
-    explicit Mesh(std::string filename);
-
-    /// Create mesh from data file.
-    ///
-    /// @param comm (MPI_Comm)
-    ///         The MPI communicator
-    /// @param filename (std::string)
-    ///         Name of file to load.
-    Mesh(MPI_Comm comm, std::string filename);
-
     /// Create a distributed mesh from local (per process) data.
     ///
     /// @param comm (MPI_Comm)

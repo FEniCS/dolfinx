@@ -213,7 +213,6 @@ namespace dolfin_wrappers
     py::class_<dolfin::Function, std::shared_ptr<dolfin::Function>, dolfin::GenericFunction>
       (m, "Function", "A finite element function")
       .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>>(), "Create a function on the given function space")
-      .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, std::string>())
       .def(py::init<dolfin::Function&, std::size_t>())
       .def(py::init<std::shared_ptr<dolfin::FunctionSpace>, std::shared_ptr<dolfin::GenericVector>>())
       .def("_assign", (const dolfin::Function& (dolfin::Function::*)(const dolfin::Function&))

@@ -33,7 +33,6 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/function/Expression.h>
-#include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include "Cell.h"
@@ -70,19 +69,6 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                _ghost_mode("none")
 {
   *this = mesh;
-}
-//-----------------------------------------------------------------------------
-Mesh::Mesh(std::string filename) : Mesh(MPI_COMM_WORLD, filename)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm, std::string filename)
-  : Variable("mesh", "DOLFIN mesh"), _ordered(false),
-  _mpi_comm(comm), _ghost_mode("none")
-{
-  File file(_mpi_comm.comm(), filename);
-  file >> *this;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)

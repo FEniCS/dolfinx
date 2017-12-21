@@ -114,12 +114,9 @@ namespace dolfin_wrappers
     py::class_<dolfin::Mesh, std::shared_ptr<dolfin::Mesh>, dolfin::Variable>
       (m, "Mesh", py::dynamic_attr(), "DOLFIN Mesh object")
       .def(py::init<>())
-      .def(py::init<std::string>())
       .def(py::init<const dolfin::Mesh&>())
       .def(py::init([](const MPICommWrapper comm)
                     { return std::unique_ptr<dolfin::Mesh>(new dolfin::Mesh(comm.get())); }))
-      .def(py::init([](const MPICommWrapper comm, const std::string filename)
-                    { return std::unique_ptr<dolfin::Mesh>(new dolfin::Mesh(comm.get(), filename)); }))
       .def("bounding_box_tree", &dolfin::Mesh::bounding_box_tree)
       .def("cells", [](const dolfin::Mesh& self)
            {
@@ -333,7 +330,6 @@ namespace dolfin_wrappers
       .def(py::init([](std::shared_ptr<const dolfin::Mesh> mesh, std::size_t dim) \
                     { return dolfin::MeshFunction<SCALAR>(mesh, dim, 0); })) \
       .def(py::init<std::shared_ptr<const dolfin::Mesh>, std::size_t, SCALAR>()) \
-      .def(py::init<std::shared_ptr<const dolfin::Mesh>, std::string>()) \
       .def(py::init<std::shared_ptr<const dolfin::Mesh>, const dolfin::MeshValueCollection<SCALAR>&>()) \
       .def("__getitem__", (const SCALAR& (dolfin::MeshFunction<SCALAR>::*) \
                            (std::size_t) const) \
@@ -372,7 +368,6 @@ namespace dolfin_wrappers
       (m, "MeshValueCollection_"#SCALAR_NAME, "DOLFIN MeshValueCollection object") \
       .def(py::init<std::shared_ptr<const dolfin::Mesh>>()) \
       .def(py::init<std::shared_ptr<const dolfin::Mesh>, std::size_t>()) \
-      .def(py::init<std::shared_ptr<const dolfin::Mesh>, std::string>()) \
       .def("dim", &dolfin::MeshValueCollection<SCALAR>::dim) \
       .def("size", &dolfin::MeshValueCollection<SCALAR>::size) \
       .def("get_value", &dolfin::MeshValueCollection<SCALAR>::get_value) \
@@ -483,4 +478,3 @@ namespace dolfin_wrappers
   }
 
 }
-

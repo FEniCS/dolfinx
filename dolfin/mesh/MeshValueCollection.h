@@ -76,15 +76,6 @@ namespace dolfin
     ///         The mesh entity dimension for the mesh value collection.
     MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
-    /// Create a mesh value collection from a file.
-    ///
-    /// @param    mesh (Mesh)
-    ///         A mesh associated with the collection. The mesh is used to
-    ///         map collection values to the appropriate process.
-    /// @param    filename (std::string)
-    ///         The XML file name.
-    MeshValueCollection(std::shared_ptr<const Mesh> mesh, const std::string filename);
-
     /// Destructor
     ~MeshValueCollection() {}
 
@@ -290,17 +281,6 @@ namespace dolfin
         }
       }
     }
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
-    MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
-                                                const std::string filename)
-    : Variable("m", "unnamed MeshValueCollection"),
-      _mesh(mesh), _dim(-1)
-  {
-    File file(filename);
-    file >> *this;
-    dolfin_assert(_dim > -1);
   }
   //---------------------------------------------------------------------------
   template <typename T>

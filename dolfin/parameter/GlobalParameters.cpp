@@ -23,7 +23,6 @@
 #include <iostream>
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
-#include <dolfin/io/File.h>
 #include "GlobalParameters.h"
 
 using namespace dolfin;
@@ -36,42 +35,6 @@ GlobalParameters::GlobalParameters() : Parameters("dolfin")
 {
   // Set default parameter values
   *static_cast<Parameters*>(this) = default_parameters();
-
-  // Search paths to parameter files in order of decreasing priority
-  std::vector<std::string> parameter_files;
-  parameter_files.push_back("dolfin_parameters.xml");
-  parameter_files.push_back("dolfin_parameters.xml.gz");
-#ifdef _WIN32
-  std::string home_directory(std::getenv("USERPROFILE"));
-  parameter_files.push_back(home_directory + "\\.config\\fenics\\dolfin_parameters.xml");
-  parameter_files.push_back(home_directory + "\\.config\\fenics\\dolfin_parameters.xml.gz");
-#else
-  std::string home_directory(std::getenv("HOME"));
-  parameter_files.push_back(home_directory + "/.config/fenics/dolfin_parameters.xml");
-  parameter_files.push_back(home_directory + "/.config/fenics/dolfin_parameters.xml.gz");
-#endif
-
-  // Try reading parameters from files
-  for (std::size_t i = 0; i < parameter_files.size(); ++i)
-  {
-    // Check if file exists
-    std::ifstream f;
-    f.open(parameter_files[i].c_str());
-    if (!f.is_open())
-      continue;
-    f.close();
-
-    // Note: Cannot use DOLFIN log system here since it's not initialized
-    std::cout << "Reading DOLFIN parameters from file \""
-              << parameter_files[i] << "\"." << std::endl;
-
-    // Read global parameters from file
-    File file(parameter_files[i]);
-    file >> *this;
-
-    // Don't read further files if found
-    break;
-  }
 }
 //-----------------------------------------------------------------------------
 GlobalParameters::~GlobalParameters()

@@ -40,7 +40,6 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/common/defines.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/io/File.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "LogLevel.h"
 #include "Logger.h"
@@ -311,24 +310,6 @@ void Logger::list_timings(TimingClear clear, std::set<TimingType> type)
     std::stringstream s;
     s << "\nMaximum memory usage: " << _maximum_memory_usage << " MB";
     log(s.str());
-  }
-}
-//-----------------------------------------------------------------------------
-void Logger::dump_timings_to_xml(std::string filename, TimingClear clear)
-{
-  Table t = timings(clear,
-    { TimingType::wall, TimingType::user, TimingType::system });
-
-  Table t_max = MPI::max(_mpi_comm, t);
-  Table t_min = MPI::min(_mpi_comm, t);
-  Table t_avg = MPI::avg(_mpi_comm, t);
-
-  if (dolfin::MPI::rank(_mpi_comm) == 0)
-  {
-    File f(MPI_COMM_SELF, filename);
-    f << t_max;
-    f << t_min;
-    f << t_avg;
   }
 }
 //-----------------------------------------------------------------------------

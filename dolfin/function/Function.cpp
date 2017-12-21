@@ -31,7 +31,6 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/geometry/Point.h>
-#include <dolfin/io/File.h>
 #include <dolfin/io/XMLFile.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/DefaultFactory.h>
@@ -74,37 +73,6 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
   // Assertion uses '<=' to deal with sub-functions
   dolfin_assert(V->dofmap());
   dolfin_assert(V->dofmap()->global_dimension() <= x->size());
-}
-//-----------------------------------------------------------------------------
-Function::Function(std::shared_ptr<const FunctionSpace> V,
-                   std::string filename) :
-  _function_space(V),
-  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
-{
-  // Check that we don't have a subspace
-  if (!V->component().empty())
-  {
-    dolfin_error("Function.cpp",
-                 "create function",
-                 "Cannot be created from subspace. Consider collapsing the function space");
-  }
-
-  // Initialize vector
-  init_vector();
-
-  // Check size of vector
-  if (_vector->size() != _function_space->dim())
-  {
-    dolfin_error("Function.cpp",
-                 "read function from file",
-                 "The number of degrees of freedom (%d) does not match dimension of function space (%d)",
-                 _vector->size(), _function_space->dim());
-  }
-
-  // Read function data from file
-  MPI_Comm comm = _function_space->mesh()->mpi_comm();
-  File file(comm, filename);
-  file >> *this;
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v) :

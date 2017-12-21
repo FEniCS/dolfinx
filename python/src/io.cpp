@@ -44,67 +44,6 @@ namespace dolfin_wrappers
 
   void io(py::module& m)
   {
-    // dolfin::File
-    py::class_<dolfin::File, std::shared_ptr<dolfin::File>>(m, "File")
-      .def(py::init<std::string>())
-      .def(py::init<std::string, std::string>())
-      .def(py::init([](const MPICommWrapper comm, std::string filename)
-        { return std::unique_ptr<dolfin::File>(new dolfin::File(comm.get(), filename)); }),
-        py::arg("comm"), py::arg("filename"))
-      //
-      .def("write", (void (dolfin::File::*)(const dolfin::Parameters&)) &dolfin::File::write)
-      //
-      .def("write", (void (dolfin::File::*)(const dolfin::Mesh&)) &dolfin::File::write)
-      .def("write", (void (dolfin::File::*)(const dolfin::Mesh&, double)) &dolfin::File::write)
-      //
-      .def("write", (void (dolfin::File::*)(const dolfin::Function&)) &dolfin::File::write)
-      .def("write", (void (dolfin::File::*)(const dolfin::Function&, double)) &dolfin::File::write)
-       //
-      .def("write", (void (dolfin::File::*)(const dolfin::MeshFunction<int>&)) &dolfin::File::write)
-      .def("write", (void (dolfin::File::*)(const dolfin::MeshFunction<int>&, double)) &dolfin::File::write)
-      .def("write", (void (dolfin::File::*)(const dolfin::MeshFunction<std::size_t>&)) &dolfin::File::write)
-      .def("write", (void (dolfin::File::*)(const dolfin::MeshFunction<std::size_t>&, double)) &dolfin::File::write)
-      .def("write", (void (dolfin::File::*)(const dolfin::MeshFunction<double>&)) &dolfin::File::write)
-      .def("write", (void (dolfin::File::*)(const dolfin::MeshFunction<double>&, double)) &dolfin::File::write)
-      .def("write", (void (dolfin::File::*)(const dolfin::MeshFunction<bool>&)) &dolfin::File::write)
-      .def("write", (void (dolfin::File::*)(const dolfin::MeshFunction<bool>&, double)) &dolfin::File::write)
-      //
-      .def("write", (void (dolfin::File::*)(const dolfin::MeshValueCollection<int>&)) &dolfin::File::write)
-      .def("write", (void (dolfin::File::*)(const dolfin::MeshValueCollection<std::size_t>&)) &dolfin::File::write)
-      .def("write", (void (dolfin::File::*)(const dolfin::MeshValueCollection<double>&)) &dolfin::File::write)
-      .def("write", (void (dolfin::File::*)(const dolfin::MeshValueCollection<bool>&)) &dolfin::File::write)
-      //
-      .def("write", (void (dolfin::File::*)(const dolfin::GenericVector&)) &dolfin::File::write)
-      .def("write", (void (dolfin::File::*)(const dolfin::Table&)) &dolfin::File::write)
-      // Unpack
-      .def("write", [](dolfin::File& instance, py::object u)
-           {
-             auto _u = u.attr("_cpp_object").cast<dolfin::Function&>();
-             instance.write(_u);
-           })
-      .def("write", [](dolfin::File& instance, py::object u, double t)
-           {
-             auto _u = u.attr("_cpp_object").cast<dolfin::Function&>();
-             instance.write(_u, t);
-           })
-      // Read
-      .def("read", (void (dolfin::File::*)(dolfin::Parameters&)) &dolfin::File::read)
-      .def("read", (void (dolfin::File::*)(dolfin::Table&)) &dolfin::File::read)
-      .def("read", (void (dolfin::File::*)(dolfin::GenericVector&)) &dolfin::File::read)
-      .def("read", (void (dolfin::File::*)(dolfin::Function&)) &dolfin::File::read)
-      //
-      .def("read", (void (dolfin::File::*)(dolfin::MeshFunction<bool>&)) &dolfin::File::read)
-      .def("read", (void (dolfin::File::*)(dolfin::MeshFunction<int>&)) &dolfin::File::read)
-      .def("read", (void (dolfin::File::*)(dolfin::MeshFunction<std::size_t>&)) &dolfin::File::read)
-      .def("read", (void (dolfin::File::*)(dolfin::MeshFunction<double>&)) &dolfin::File::read)
-      //
-      .def("read", (void (dolfin::File::*)(dolfin::MeshValueCollection<bool>&)) &dolfin::File::read)
-      .def("read", (void (dolfin::File::*)(dolfin::MeshValueCollection<int>&)) &dolfin::File::read)
-      .def("read", (void (dolfin::File::*)(dolfin::MeshValueCollection<std::size_t>&)) &dolfin::File::read)
-      .def("read", (void (dolfin::File::*)(dolfin::MeshValueCollection<double>&)) &dolfin::File::read)
-      //
-      .def("read", (void (dolfin::File::*)(dolfin::Mesh&)) &dolfin::File::read);
-
     // dolfin::VTKFile
     py::class_<dolfin::VTKFile, std::shared_ptr<dolfin::VTKFile>>(m, "VTKFile")
       .def(py::init<std::string, std::string>())

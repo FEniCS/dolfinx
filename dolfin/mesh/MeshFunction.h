@@ -33,7 +33,6 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
-#include <dolfin/io/File.h>
 #include "LocalMeshValueCollection.h"
 #include "MeshEntity.h"
 #include "Mesh.h"
@@ -83,15 +82,6 @@ namespace dolfin
     ///         The value.
     MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim,
                  const T& value);
-
-    /// Create function from data file (shared_ptr version)
-    ///
-    /// @param mesh (_Mesh_)
-    ///         The mesh to create mesh function on.
-    /// @param filename (std::string)
-    ///         The filename to create mesh function from.
-    MeshFunction(std::shared_ptr<const Mesh> mesh,
-                 const std::string filename);
 
     /// Create function from a MeshValueCollecion (shared_ptr version)
     ///
@@ -331,16 +321,6 @@ namespace dolfin
 
   {
     set_all(value);
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
-    MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
-                                  const std::string filename)
-    : Variable("f", "unnamed MeshFunction"),
-    _mesh(mesh), _dim(0), _size(0)
-  {
-    File file(mesh->mpi_comm(), filename);
-    file >> *this;
   }
   //---------------------------------------------------------------------------
   template <typename T>
