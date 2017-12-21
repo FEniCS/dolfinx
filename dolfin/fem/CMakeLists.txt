@@ -19,10 +19,6 @@ set(HEADERS
   LinearVariationalSolver.h
   LocalAssembler.h
   LocalSolver.h
-  MultiMeshAssembler.h
-  MultiMeshDirichletBC.h
-  MultiMeshDofMap.h
-  MultiMeshForm.h
   NonlinearVariationalProblem.h
   NonlinearVariationalSolver.h
   PETScDMCollection.h
@@ -51,10 +47,6 @@ set(SOURCES
   LinearVariationalSolver.cpp
   LocalAssembler.cpp
   LocalSolver.cpp
-  MultiMeshAssembler.cpp
-  MultiMeshDirichletBC.cpp
-  MultiMeshDofMap.cpp
-  MultiMeshForm.cpp
   NonlinearVariationalProblem.cpp
   NonlinearVariationalSolver.cpp
   PointSource.cpp

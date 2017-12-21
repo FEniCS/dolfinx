@@ -26,7 +26,6 @@
 #include <dolfin/log/log.h>
 #include "Cell.h"
 #include "Mesh.h"
-#include "MeshDomains.h"
 #include "Vertex.h"
 #include "LocalMeshData.h"
 
@@ -124,12 +123,6 @@ void LocalMeshData::clear()
 //-----------------------------------------------------------------------------
 void LocalMeshData::extract_mesh_data(const Mesh& mesh)
 {
-  if (!mesh.domains().is_empty())
-  {
-    dolfin_error("LocalMeshData.cpp",
-                 "extract local mesh data",
-                 "Marked subdomains are not yet supported");
-  }
 
   // Clear old data
   clear();

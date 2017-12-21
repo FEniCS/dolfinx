@@ -1,15 +1,10 @@
 set(HEADERS
-  BoundaryComputation.h
-  BoundaryMesh.h
   Cell.h
   CellType.h
   DistributedMeshTools.h
   dolfin_mesh.h
-  DomainBoundary.h
-  DynamicMeshEditor.h
   Edge.h
   Face.h
-  FacetCell.h
   Facet.h
   HexahedronCell.h
   IntervalCell.h
@@ -17,8 +12,6 @@ set(HEADERS
   LocalMeshValueCollection.h
   MeshColoring.h
   MeshConnectivity.h
-  MeshData.h
-  MeshDomains.h
   MeshEditor.h
   MeshEntity.h
   MeshEntityIteratorBase.h
@@ -26,22 +19,18 @@ set(HEADERS
   MeshFunction.h
   MeshGeometry.h
   Mesh.h
-  MeshHierarchy.h
   MeshOrdering.h
   MeshPartitioning.h
   MeshQuality.h
   MeshRelation.h
   MeshRenumbering.h
-  MeshSmoothing.h
   MeshTopology.h
   MeshTransformation.h
   MeshValueCollection.h
-  MultiMesh.h
   PeriodicBoundaryComputation.h
   PointCell.h
   QuadrilateralCell.h
   SubDomain.h
-  SubMesh.h
   SubsetIterator.h
   TetrahedronCell.h
   TopologyComputation.h
@@ -50,15 +39,11 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
-  BoundaryComputation.cpp
-  BoundaryMesh.cpp
   Cell.cpp
   CellType.cpp
   DistributedMeshTools.cpp
-  DynamicMeshEditor.cpp
   Edge.cpp
   Face.cpp
-  FacetCell.cpp
   Facet.cpp
   HexahedronCell.cpp
   IntervalCell.cpp
@@ -66,26 +51,20 @@ set(SOURCES
   MeshColoring.cpp
   MeshConnectivity.cpp
   Mesh.cpp
-  MeshData.cpp
-  MeshDomains.cpp
   MeshEditor.cpp
   MeshEntity.cpp
   MeshFunction.cpp
   MeshGeometry.cpp
-  MeshHierarchy.cpp
   MeshOrdering.cpp
   MeshPartitioning.cpp
   MeshQuality.cpp
   MeshRenumbering.cpp
-  MeshSmoothing.cpp
   MeshTopology.cpp
   MeshTransformation.cpp
-  MultiMesh.cpp
   PeriodicBoundaryComputation.cpp
   PointCell.cpp
   QuadrilateralCell.cpp
   SubDomain.cpp
-  SubMesh.cpp
   TetrahedronCell.cpp
   TopologyComputation.cpp
   TriangleCell.cpp

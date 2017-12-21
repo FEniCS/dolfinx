@@ -10,10 +10,6 @@ set(HEADERS
   FunctionSpace.h
   GenericFunction.h
   LagrangeInterpolator.h
-  MultiMeshCoefficientAssigner.h
-  MultiMeshFunction.h
-  MultiMeshFunctionSpace.h
-  MultiMeshSubSpace.h
   SpecialFacetFunction.h
   SpecialFunctions.h
   PARENT_SCOPE)
@@ -29,10 +25,6 @@ set(SOURCES
   FunctionSpace.cpp
   GenericFunction.cpp
   LagrangeInterpolator.cpp
-  MultiMeshCoefficientAssigner.cpp
-  MultiMeshFunction.cpp
-  MultiMeshFunctionSpace.cpp
-  MultiMeshSubSpace.cpp
   SpecialFacetFunction.cpp
   SpecialFunctions.cpp
   PARENT_SCOPE)

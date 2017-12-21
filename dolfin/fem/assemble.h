@@ -40,7 +40,6 @@ namespace dolfin
   class GenericTensor;
   class GenericVector;
   template<typename T> class MeshFunction;
-  class MultiMeshForm;
 
   /// Assemble tensor
   void assemble(GenericTensor& A, const Form& a);
@@ -57,16 +56,11 @@ namespace dolfin
                        std::vector<std::shared_ptr<const DirichletBC>> bcs,
                        const GenericVector& x0);
 
-  /// Assemble tensor from multimesh form
-  void assemble_multimesh(GenericTensor& A, const MultiMeshForm& a);
-
   //--- Specialized version for scalars ---
 
   /// Assemble scalar
   double assemble(const Form& a);
 
-  /// Assemble scalar from multimesh form
-  double assemble_multimesh(const MultiMeshForm& a);
 }
 
 #endif

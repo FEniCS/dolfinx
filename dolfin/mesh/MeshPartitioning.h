@@ -207,9 +207,6 @@ namespace dolfin
       const std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices);
 
     // Create and attach distributed MeshDomains from local_data
-    static void build_mesh_domains(Mesh& mesh, const LocalMeshData& local_data);
-
-    // Create and attach distributed MeshDomains from local_data
     // [entry, (cell_index, local_index, value)]
     template<typename T, typename MeshValueCollection>
     static void build_mesh_value_collection(const Mesh& mesh,

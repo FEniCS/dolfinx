@@ -76,8 +76,6 @@ class LocalSolver(cpp.fem.LocalSolver):
 # (ugly, should fix)
 # Solver classes are imported directly
 from dolfin.cpp.fem import LinearVariationalSolver, NonlinearVariationalSolver  # noqa
-from dolfin.fem.adaptivesolving import AdaptiveLinearVariationalSolver  # noqa
-from dolfin.fem.adaptivesolving import AdaptiveNonlinearVariationalSolver  # noqa
 
 
 # Solve function handles both linear systems and variational problems

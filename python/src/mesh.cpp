@@ -24,10 +24,8 @@
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
-#include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshColoring.h>
-#include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/MeshTopology.h>
@@ -43,12 +41,9 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/MeshQuality.h>
 #include <dolfin/mesh/SubDomain.h>
-#include <dolfin/mesh/SubMesh.h>
 #include <dolfin/mesh/SubsetIterator.h>
-#include <dolfin/mesh/DomainBoundary.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/MeshTransformation.h>
-#include <dolfin/mesh/MultiMesh.h>
 #include <dolfin/function/Expression.h>
 
 #include "casters.h"
@@ -144,10 +139,6 @@ namespace dolfin_wrappers
                 self.geometry().num_points(),
                 self.geometry().dim());
            })
-      .def("domains", (dolfin::MeshDomains& (dolfin::Mesh::*)())
-           &dolfin::Mesh::domains, py::return_value_policy::reference_internal)
-      .def("data", (dolfin::MeshData& (dolfin::Mesh::*)())
-           &dolfin::Mesh::data, "Data associated with a mesh")
       .def("geometry", (dolfin::MeshGeometry& (dolfin::Mesh::*)()) &dolfin::Mesh::geometry,
            py::return_value_policy::reference, "Mesh geometry")
       .def("hash", &dolfin::Mesh::hash)
@@ -181,10 +172,6 @@ namespace dolfin_wrappers
       .def("rotate", (void (dolfin::Mesh::*)(double, std::size_t)) &dolfin::Mesh::rotate,
                       py::arg("angle"), py::arg("axis")=2)
       .def("num_entities_global", &dolfin::Mesh::num_entities_global)
-      .def("smooth", &dolfin::Mesh::smooth, py::arg("num_iterations")=1)
-      .def("smooth_boundary", &dolfin::Mesh::smooth_boundary)
-      .def("snap_boundary", &dolfin::Mesh::snap_boundary, py::arg("subdomain"),
-           py::arg("harmonic_smoothing")=true)
       .def("topology", (dolfin::MeshTopology& (dolfin::Mesh::*)())
            &dolfin::Mesh::topology, "Mesh topology",
            py::return_value_policy::reference_internal)
@@ -194,30 +181,6 @@ namespace dolfin_wrappers
       .def("ufl_id", [](const dolfin::Mesh& self){ return self.id(); })
       .def("cell_name", [](const dolfin::Mesh& self)
            { return dolfin::CellType::type2string(self.type().cell_type()); });
-
-    // dolfin::MeshData
-    py::class_<dolfin::MeshData, std::shared_ptr<dolfin::MeshData>, dolfin::Variable>
-      (m, "MeshData", "Mesh data object")
-      .def("array", [](dolfin::MeshData& self, std::string key, std::size_t i)
-           {
-             const std::vector<std::size_t>& a = self.array(key, i);
-             return py::array_t<std::size_t>(a.size(), a.data());
-           })
-      .def("create_array", &dolfin::MeshData::create_array);
-
-    // dolfin::MeshDomain
-    py::class_<dolfin::MeshDomains, std::shared_ptr<dolfin::MeshDomains>>(m, "MeshDomains", "Mesh domains object")
-      .def("set_marker", &dolfin::MeshDomains::set_marker)
-      .def("get_marker", &dolfin::MeshDomains::get_marker)
-      .def("init", &dolfin::MeshDomains::init)
-      .def("markers", (std::map<std::size_t, std::size_t>& (dolfin::MeshDomains::*)(std::size_t))
-           &dolfin::MeshDomains::markers);
-
-    // dolfin::BoundaryMesh
-    py::class_<dolfin::BoundaryMesh, std::shared_ptr<dolfin::BoundaryMesh>, dolfin::Mesh>
-      (m, "BoundaryMesh", "DOLFIN BoundaryMesh object")
-      .def(py::init<const dolfin::Mesh&, std::string, bool>(),
-           py::arg("mesh"), py::arg("type"), py::arg("order")=true);
 
     // dolfin::MeshConnectivity class
     py::class_<dolfin::MeshConnectivity, std::shared_ptr<dolfin::MeshConnectivity>>
@@ -371,7 +334,6 @@ namespace dolfin_wrappers
                     { return dolfin::MeshFunction<SCALAR>(mesh, dim, 0); })) \
       .def(py::init<std::shared_ptr<const dolfin::Mesh>, std::size_t, SCALAR>()) \
       .def(py::init<std::shared_ptr<const dolfin::Mesh>, std::string>()) \
-      .def(py::init<std::shared_ptr<const dolfin::Mesh>, std::size_t, const dolfin::MeshDomains&>()) \
       .def(py::init<std::shared_ptr<const dolfin::Mesh>, const dolfin::MeshValueCollection<SCALAR>&>()) \
       .def("__getitem__", (const SCALAR& (dolfin::MeshFunction<SCALAR>::*) \
                            (std::size_t) const) \
@@ -464,13 +426,6 @@ namespace dolfin_wrappers
       .def_static("dihedral_angles_min_max", &dolfin::MeshQuality::dihedral_angles_min_max)
       .def_static("dihedral_angles_matplotlib_histogram", &dolfin::MeshQuality::dihedral_angles_matplotlib_histogram);
 
-    // dolfin::SubMesh
-    py::class_<dolfin::SubMesh, std::shared_ptr<dolfin::SubMesh>, dolfin::Mesh>
-      (m, "SubMesh", "DOLFIN SubMesh")
-      .def(py::init<const dolfin::Mesh&, std::size_t>())
-      .def(py::init<const dolfin::Mesh&, const dolfin::SubDomain&>())
-      .def(py::init<const dolfin::Mesh&, const dolfin::MeshFunction<std::size_t>&, std::size_t>());
-
     // dolfin::SubDomain trampoline class for user overloading from
     // Python
     class PySubDomain : public dolfin::SubDomain
@@ -505,11 +460,6 @@ namespace dolfin_wrappers
       .def("mark", (void (dolfin::SubDomain::*)(dolfin::MeshFunction<bool>&, bool, bool) const)
            &dolfin::SubDomain::mark, py::arg("meshfunction"), py::arg("marker"), py::arg("check_midpoint")=true);
 
-    // dolfin::DomainBoundary
-    py::class_<dolfin::DomainBoundary, std::shared_ptr<dolfin::DomainBoundary>, dolfin::SubDomain>
-      (m, "DomainBoundary")
-      .def(py::init<>());
-
     // dolfin::PeriodicBoundaryComputation
     py::class_<dolfin::PeriodicBoundaryComputation>
       (m, "PeriodicBoundaryComputation")
@@ -530,20 +480,7 @@ namespace dolfin_wrappers
       .def_static("rotate", (void (*)(dolfin::Mesh&, double, std::size_t, const dolfin::Point&))
                   &dolfin::MeshTransformation::rotate);
 
-    py::class_<dolfin::MultiMesh, std::shared_ptr<dolfin::MultiMesh>,
-	       dolfin::Variable>(m, "MultiMesh")
-      .def(py::init<>())
-      .def("add", &dolfin::MultiMesh::add)
-      .def("build", &dolfin::MultiMesh::build, py::arg("quadrature_order") = 2)
-      .def("num_parts", &dolfin::MultiMesh::num_parts)
-      .def("compute_volume", &dolfin::MultiMesh::compute_volume)
-      .def("part", &dolfin::MultiMesh::part)
-      .def("cut_cells", &dolfin::MultiMesh::cut_cells)
-      .def("uncut_cells", &dolfin::MultiMesh::uncut_cells)
-      .def("covered_cells", &dolfin::MultiMesh::covered_cells)
-      .def("quadrature_rules_cut_cells",
-	   static_cast<const dolfin::MultiMesh::quadrature_rule(dolfin::MultiMesh::*)(std::size_t, unsigned int) const>(&dolfin::MultiMesh::quadrature_rules_cut_cells));
   }
 
-
 }
+

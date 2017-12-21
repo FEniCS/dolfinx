@@ -327,11 +327,6 @@ namespace dolfin
     void interpolate_from_any(GenericVector& expansion_coefficients,
                               const GenericFunction& v) const;
 
-    // Specialised interpolate routine when functions are related by a
-    // parent mesh
-    void interpolate_from_parent(GenericVector& expansion_coefficients,
-                                 const GenericFunction& v) const;
-
     // The mesh
     std::shared_ptr<const Mesh> _mesh;
 

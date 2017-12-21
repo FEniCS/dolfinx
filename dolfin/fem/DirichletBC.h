@@ -366,9 +366,6 @@ namespace dolfin
     void init_from_mesh_function(const MeshFunction<std::size_t>& sub_domains,
                                  std::size_t sub_domain) const;
 
-    // Initialize sub domain markers from mesh
-    void init_from_mesh(std::size_t sub_domain) const;
-
     // Compute dofs and values for application of boundary conditions
     // using given method
     void compute_bc(Map& boundary_values, LocalData& data,

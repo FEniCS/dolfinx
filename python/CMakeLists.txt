@@ -19,8 +19,6 @@ include(${DOLFIN_USE_FILE})
 pybind11_add_module(cpp SHARED
   src/dolfin.cpp
   src/parameter.cpp
-  src/adaptivity.cpp
-  src/ale.cpp
   src/common.cpp
   src/fem.cpp
   src/function.cpp
@@ -30,11 +28,9 @@ pybind11_add_module(cpp SHARED
   src/log.cpp
   src/math.cpp
   src/mesh.cpp
-  src/multistage.cpp
   src/io.cpp
   src/la.cpp
   src/nls.cpp
-  src/refinement.cpp
   src/MPICommWrapper.cpp)
 
 # Add DOLFIN libraries and other config

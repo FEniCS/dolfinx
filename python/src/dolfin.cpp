@@ -30,9 +30,6 @@ namespace dolfin_wrappers
   // log
   void log(py::module& m);
 
-  void adaptivity(py::module& m);
-  void ale(py::module& m);
-
   void function(py::module& m);
   void fem(py::module& m);
 
@@ -43,10 +40,8 @@ namespace dolfin_wrappers
   void la(py::module& m);
   void math(py::module& m);
   void mesh(py::module& m);
-  void multistage(py::module& m);
   void nls(py::module& m);
   void parameter(py::module& m);
-  void refinement(py::module& m);
 }
 
 
@@ -72,11 +67,6 @@ PYBIND11_MODULE(cpp, m)
                                         "Function module");
   dolfin_wrappers::function(function);
 
-
-  // Create ale submodule [ale]
-  py::module ale = m.def_submodule("ale", "ALE (mesh movement) module");
-  dolfin_wrappers::ale(ale);
-
   // Create math submodule [math]
   py::module math = m.def_submodule("math", "Math library module");
   dolfin_wrappers::math(math);
@@ -84,10 +74,6 @@ PYBIND11_MODULE(cpp, m)
   // Create mesh submodule [mesh]
   py::module mesh = m.def_submodule("mesh", "Mesh library module");
   dolfin_wrappers::mesh(mesh);
-
-  // Create multistage submodule [multistage]
-  py::module multistage = m.def_submodule("multistage", "Multistage integrator library module");
-  dolfin_wrappers::multistage(multistage);
 
   // Create graph submodule [graph]
   py::module graph = m.def_submodule("graph", "Graph module");
@@ -122,14 +108,6 @@ PYBIND11_MODULE(cpp, m)
   // Create parameter submodule
   py::module parameter = m.def_submodule("parameter", "Parameter module");
   dolfin_wrappers::parameter(parameter);
-
-  // Create refinement submodule
-  py::module refinement = m.def_submodule("refinement", "Mesh refinement module");
-  dolfin_wrappers::refinement(refinement);
-
-  // Create adaptivity submodule [adaptivity]
-  py::module adaptivity = m.def_submodule("adaptivity", "Adaptivity module");
-  dolfin_wrappers::adaptivity(adaptivity);
 
   // FIXME: these are just for the transition
   m.def("warning", [](std::string message) { dolfin::warning(message); });

@@ -19,10 +19,8 @@
 #include <dolfin/la/Scalar.h>
 #include <dolfin/mesh/Mesh.h>
 #include "Form.h"
-#include "MultiMeshForm.h"
 #include "Assembler.h"
 #include "SystemAssembler.h"
-#include "MultiMeshAssembler.h"
 #include "assemble.h"
 
 using namespace dolfin;
@@ -53,12 +51,6 @@ void dolfin::assemble_system(GenericMatrix& A, GenericVector& b,
   assembler.assemble(A, b, x0);
 }
 //-----------------------------------------------------------------------------
-void dolfin::assemble_multimesh(GenericTensor& A, const MultiMeshForm& a)
-{
-  MultiMeshAssembler assembler;
-  assembler.assemble(A, a);
-}
-//-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a)
 {
   if (a.rank() != 0)
@@ -75,22 +67,6 @@ double dolfin::assemble(const Form& a)
 
   // Assemble
   Assembler assembler;
-  assembler.assemble(s, a);
-  return s.get_scalar_value();
-}
-//-----------------------------------------------------------------------------
-double dolfin::assemble_multimesh(const MultiMeshForm& a)
-{
-  if (a.rank() != 0)
-  {
-    dolfin_error("assemble.cpp",
-                 "assemble MultiMeshForm",
-                 "Expecting a scalar form but rank is %d",
-                 a.rank());
-  }
-
-  Scalar s;
-  MultiMeshAssembler assembler;
   assembler.assemble(s, a);
   return s.get_scalar_value();
 }

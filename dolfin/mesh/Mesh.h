@@ -35,15 +35,12 @@
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
-#include "MeshData.h"
-#include "MeshDomains.h"
 #include "MeshGeometry.h"
 #include "MeshConnectivity.h"
 #include "MeshTopology.h"
 
 namespace dolfin
 {
-  class BoundaryMesh;
   class CellType;
   class Expression;
   class GenericFunction;
@@ -240,20 +237,6 @@ namespace dolfin
     const MeshGeometry& geometry() const
     { return _geometry; }
 
-    /// Get mesh (sub)domains.
-    ///
-    /// @return MeshDomains
-    ///         The (sub)domains associated with the mesh.
-    MeshDomains& domains()
-    { return _domains; }
-
-    /// Get mesh (sub)domains (const).
-    ///
-    /// @return MeshDomains
-    ///         The (sub)domains associated with the mesh.
-    const MeshDomains& domains() const
-    { return _domains; }
-
     /// Get bounding box tree for mesh. The bounding box tree is
     /// initialized and built upon the first call to this
     /// function. The bounding box tree can be used to compute
@@ -264,17 +247,6 @@ namespace dolfin
     ///
     /// @return std::shared_ptr<BoundingBoxTree>
     std::shared_ptr<BoundingBoxTree> bounding_box_tree() const;
-
-    /// Get mesh data.
-    ///
-    /// @return MeshData&
-    ///         The mesh data object associated with the mesh.
-    MeshData& data();
-
-    /// Get mesh data (const version).
-    /// @return MeshData&
-    ///         The mesh data object associated with the mesh.
-    const MeshData& data() const;
 
     /// Get mesh cell type.
     ///
@@ -367,36 +339,6 @@ namespace dolfin
     /// @param    point (_Point_)
     ///         The point around which to rotate the mesh.
     void rotate(double angle, std::size_t axis, const Point& point);
-
-    /// Smooth internal vertices of mesh by local averaging.
-    ///
-    /// @param    num_iterations (std::size_t)
-    ///         Number of iterations to perform smoothing,
-    ///         default value is 1.
-    void smooth(std::size_t num_iterations=1);
-
-    /// Smooth boundary vertices of mesh by local averaging.
-    ///
-    /// @param  num_iterations (std::size_t)
-    ///         Number of iterations to perform smoothing,
-    ///         default value is 1.
-    ///
-    /// @param  harmonic_smoothing (bool)
-    ///         Flag to turn on harmonics smoothing, default
-    ///         value is true.
-    void smooth_boundary(std::size_t num_iterations=1,
-                         bool harmonic_smoothing=true);
-
-    /// Snap boundary vertices of mesh to match given sub domain.
-    ///
-    /// @param sub_domain (_SubDomain_)
-    ///         A _SubDomain_ object.
-    ///
-    /// @param harmonic_smoothing (bool)
-    ///         Flag to turn on harmonics smoothing, default
-    ///         value is true.
-    void snap_boundary(const SubDomain& sub_domain,
-                       bool harmonic_smoothing=true);
 
     /// Color the cells of the mesh such that no two neighboring cells
     /// share the same color. A colored mesh keeps a
@@ -519,12 +461,6 @@ namespace dolfin
 
     // Mesh geometry
     MeshGeometry _geometry;
-
-    // Mesh domains
-    MeshDomains _domains;
-
-    // Auxiliary mesh data
-    MeshData _data;
 
     // Bounding box tree used to compute collisions between the mesh
     // and other objects. The tree is initialized to a zero pointer

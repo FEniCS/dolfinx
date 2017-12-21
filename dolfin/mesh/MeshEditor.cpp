@@ -61,9 +61,6 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
   // Initialize geometric dimension and degree
   mesh._geometry.init(gdim, degree);
 
-  // Initialize domains
-  mesh._domains.init(tdim);
-
   // Clear cached ordering state so that mesh.order() is always
   // triggered on close(true) or mesh is considered unordered
   // after close(false)

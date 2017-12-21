@@ -25,7 +25,6 @@
 #include <dolfin/log/log.h>
 #include <dolfin/log/Progress.h>
 #include "Mesh.h"
-#include "MeshData.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
 #include "Facet.h"
@@ -96,10 +95,11 @@ void SubDomain::mark(Mesh& mesh,
                      std::size_t sub_domain,
                      bool check_midpoint) const
 {
+  dolfin_not_implemented();
   //dolfin_assert(mesh.domains().markers(dim));
   //dolfin_error("Not yet updated (SubDomain::mark) ");
-  apply_markers(mesh.domains().markers(dim), dim, sub_domain, mesh,
-                check_midpoint);
+  //  apply_markers(mesh.domains().markers(dim), dim, sub_domain, mesh,
+  //                check_midpoint);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<std::size_t>& sub_domains,

@@ -89,19 +89,7 @@ void XMLFile::read(Mesh& input_mesh)
   if (MPI::size(input_mesh.mpi_comm()) > 1)
   {
     // Distribute local data
-    input_mesh.domains().clear();
     LocalMeshData local_mesh_data(input_mesh);
-
-    // FIXME: To be removed when advanced parallel XML IO is removed
-    // Add mesh domain data
-    if (MPI::rank(input_mesh.mpi_comm()) == 0)
-    {
-      // Create XML doc and get DOLFIN node
-      pugi::xml_document xml_doc;
-      load_xml_doc(xml_doc);
-      pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
-      XMLMesh::read_domain_data(local_mesh_data, dolfin_node);
-    }
 
     // Partition and build mesh
     const std::string ghost_mode = dolfin::parameters["ghost_mode"];

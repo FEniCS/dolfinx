@@ -42,7 +42,7 @@ using namespace dolfin;
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh)
   : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0), _multimesh_offset(0),
+    _global_dimension(0), _ufc_offset(0),
     _index_map(new IndexMap(mesh.mpi_comm()))
 {
   dolfin_assert(_ufc_dofmap);
@@ -55,7 +55,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& mesh,
                std::shared_ptr<const SubDomain> constrained_domain)
   : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0), _multimesh_offset(0),
+    _global_dimension(0), _ufc_offset(0),
     _index_map(new IndexMap(mesh.mpi_comm()))
 {
   dolfin_assert(_ufc_dofmap);
@@ -70,7 +70,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
 DofMap::DofMap(const DofMap& parent_dofmap,
                const std::vector<std::size_t>& component, const Mesh& mesh)
   : _cell_dimension(0), _ufc_dofmap(0), _is_view(true),
-    _global_dimension(0), _ufc_offset(0), _multimesh_offset(0),
+    _global_dimension(0), _ufc_offset(0),
     _index_map(parent_dofmap._index_map)
 {
   // Build sub-dofmap
@@ -80,7 +80,7 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh)
   : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
-    _global_dimension(0), _ufc_offset(0), _multimesh_offset(0),
+    _global_dimension(0), _ufc_offset(0),
     _index_map(new IndexMap(mesh.mpi_comm()))
 {
   dolfin_assert(_ufc_dofmap);
@@ -136,7 +136,6 @@ DofMap::DofMap(const DofMap& dofmap) : _index_map(dofmap._index_map)
   _is_view = dofmap._is_view;
   _global_dimension = dofmap._global_dimension;
   _ufc_offset = dofmap._ufc_offset;
-  _multimesh_offset = dofmap._multimesh_offset;
   _shared_nodes = dofmap._shared_nodes;
   _neighbours = dofmap._neighbours;
   constrained_domain = dofmap.constrained_domain;

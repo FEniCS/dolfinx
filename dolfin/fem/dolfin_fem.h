@@ -26,10 +26,6 @@
 #include <dolfin/fem/LinearVariationalSolver.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
 #include <dolfin/fem/NonlinearVariationalSolver.h>
-#include <dolfin/fem/MultiMeshAssembler.h>
-#include <dolfin/fem/MultiMeshDirichletBC.h>
-#include <dolfin/fem/MultiMeshDofMap.h>
-#include <dolfin/fem/MultiMeshForm.h>
 #include <dolfin/fem/PETScDMCollection.h>
 
 #endif

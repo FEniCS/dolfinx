@@ -379,9 +379,6 @@ DofMapBuilder::build_sub_map_view(DofMap& sub_dofmap,
       dolfin_assert(node < local_to_local.size());
       std::size_t current_dof = bs*local_to_local[node] + component;
 
-      // Add multimesh offset
-      current_dof += parent_dofmap._multimesh_offset;
-
       // Set dof index in transformed dofmap
       *dof = current_dof;
     }

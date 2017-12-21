@@ -60,9 +60,6 @@ endforeach()
 add_library(dolfin ${DOLFIN_H} ${DOLFIN_HEADERS} ${DOLFIN_SOURCES})
 set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 
-# Add dependency on the compile_ale_forms target
-add_dependencies(dolfin compile_ale_forms)
-
 #------------------------------------------------------------------------------
 # General compiler defintions
 

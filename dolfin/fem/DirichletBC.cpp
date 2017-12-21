@@ -46,8 +46,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshData.h>
-#include <dolfin/mesh/MeshDomains.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/SubDomain.h>
@@ -619,8 +617,6 @@ void DirichletBC::init_facets(const MPI_Comm mpi_comm) const
     init_from_sub_domain(_user_sub_domain);
   else if (_user_mesh_function)
     init_from_mesh_function(*_user_mesh_function, _user_sub_domain_marker);
-  else
-    init_from_mesh(_user_sub_domain_marker);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::init_from_sub_domain(std::shared_ptr<const SubDomain>
@@ -670,30 +666,6 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<std::size_t>& sub_d
   {
     if (sub_domains[*facet] == sub_domain)
       _facets.push_back(facet->index());
-  }
-}
-//-----------------------------------------------------------------------------
-void DirichletBC::init_from_mesh(std::size_t sub_domain) const
-{
-  // For this to work, the mesh *needs* to be ordered according to the
-  // UFC ordering before it gets here. So reordering the mesh here
-  // will either have no effect (if the mesh is already ordered or it
-  // won't do anything good (since the markers are wrong anyway).  In
-  // conclusion: we don't need to order the mesh here.
-
-  dolfin_assert(_function_space->mesh());
-  const Mesh& mesh = *_function_space->mesh();
-
-  // Assign domain numbers for each facet
-  const std::size_t D = mesh.topology().dim();
-  const std::map<std::size_t, std::size_t>& markers
-    = mesh.domains().markers(D - 1);
-
-  dolfin_assert(_facets.empty());
-  for (auto mark = markers.begin(); mark != markers.end(); ++mark)
-  {
-    if (mark->second == sub_domain)
-      _facets.push_back(mark->first);
   }
 }
 //-----------------------------------------------------------------------------
@@ -1163,8 +1135,6 @@ void DirichletBC::check_arguments(GenericMatrix* A, GenericVector* b,
   }
 
   // Check dimension of function space is not "too big"
-  // NOTE: Keeping these primitive inequality test because detailed range
-  //       checks below may be turned off; needed for MultiMesh stuff
   if (A && A->size(dim) < _function_space->dim())
   {
     dolfin_error("BoundaryCondition.cpp",

@@ -28,7 +28,6 @@
 // First added:  2006-05-09
 // Last changed: 2016-05-05
 
-#include <dolfin/ale/ALE.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
@@ -37,7 +36,6 @@
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
-#include "BoundaryMesh.h"
 #include "Cell.h"
 #include "DistributedMeshTools.h"
 #include "Facet.h"
@@ -46,7 +44,6 @@
 #include "MeshOrdering.h"
 #include "MeshPartitioning.h"
 #include "MeshRenumbering.h"
-#include "MeshSmoothing.h"
 #include "MeshTransformation.h"
 #include "TopologyComputation.h"
 #include "Vertex.h"
@@ -106,8 +103,6 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   // Assign data
   _topology = mesh._topology;
   _geometry = mesh._geometry;
-  _domains = mesh._domains;
-  _data = mesh._data;
   if (mesh._cell_type)
     _cell_type.reset(CellType::create(mesh._cell_type->cell_type()));
   else
@@ -123,16 +118,6 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   Hierarchical<Mesh>::operator=(mesh);
 
   return *this;
-}
-//-----------------------------------------------------------------------------
-MeshData& Mesh::data()
-{
-  return _data;
-}
-//-----------------------------------------------------------------------------
-const MeshData& Mesh::data() const
-{
-  return _data;
 }
 //-----------------------------------------------------------------------------
 std::size_t Mesh::init(std::size_t dim) const
@@ -293,21 +278,6 @@ void Mesh::rotate(double angle, std::size_t axis, const Point& point)
   MeshTransformation::rotate(*this, angle, axis, point);
 }
 //-----------------------------------------------------------------------------
-void Mesh::smooth(std::size_t num_iterations)
-{
-  MeshSmoothing::smooth(*this, num_iterations);
-}
-//-----------------------------------------------------------------------------
-void Mesh::smooth_boundary(std::size_t num_iterations, bool harmonic_smoothing)
-{
-  MeshSmoothing::smooth_boundary(*this, num_iterations, harmonic_smoothing);
-}
-//-----------------------------------------------------------------------------
-void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
-{
-  MeshSmoothing::snap_boundary(*this, sub_domain, harmonic_smoothing);
-}
-//-----------------------------------------------------------------------------
 const std::vector<std::size_t>& Mesh::color(std::string coloring_type) const
 {
   // Define graph type
@@ -410,7 +380,6 @@ std::string Mesh::str(bool verbose) const
 
     s << indent(_geometry.str(true));
     s << indent(_topology.str(true));
-    s << indent(_data.str(true));
   }
   else
   {

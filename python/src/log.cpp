@@ -24,7 +24,6 @@
 #include <dolfin/log/log.h>
 #include <dolfin/log/Table.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/multistage/MultiStageScheme.h>
 #include "casters.h"
 
 namespace py = pybind11;
@@ -56,8 +55,6 @@ namespace dolfin_wrappers
     m.def("info", [](const dolfin::Parameters& p, bool verbose){ dolfin::info(p, verbose); });
     m.def("info", [](const dolfin::Mesh& mesh, bool verbose){ dolfin::info(mesh, verbose); },
           py::arg("mesh"), py::arg("verbose")=false);
-    m.def("info", [](const dolfin::MultiStageScheme& mms, bool verbose){ dolfin::info(mms, verbose); },
-          py::arg("scheme"), py::arg("verbose")=false);
     m.def("set_log_level", &dolfin::set_log_level);
     m.def("get_log_level", &dolfin::get_log_level);
     m.def("log", [](dolfin::LogLevel level, std::string s){ dolfin::log(level, s); });

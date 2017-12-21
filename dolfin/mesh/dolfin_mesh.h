@@ -6,8 +6,6 @@
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/MeshTopology.h>
 #include <dolfin/mesh/MeshGeometry.h>
-#include <dolfin/mesh/MeshDomains.h>
-#include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
@@ -30,13 +28,10 @@
 #include <dolfin/mesh/MeshTransformation.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/SubDomain.h>
-#include <dolfin/mesh/SubMesh.h>
 #include <dolfin/mesh/DomainBoundary.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/MeshQuality.h>
-#include <dolfin/mesh/MultiMesh.h>
-#include <dolfin/mesh/MeshHierarchy.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 
 #endif

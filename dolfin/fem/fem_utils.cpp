@@ -291,8 +291,6 @@ Mesh dolfin::create_mesh(Function& coordinates)
   // Assign all data except geometry
 
   mesh1._topology = mesh0._topology;
-  mesh1._domains = mesh0._domains;
-  mesh1._data = mesh0._data;
   if (mesh0._cell_type)
     mesh1._cell_type.reset(CellType::create(mesh0._cell_type->cell_type()));
   else

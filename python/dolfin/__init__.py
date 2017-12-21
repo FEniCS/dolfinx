@@ -42,14 +42,12 @@ from .cpp.common import (Variable, has_debug, has_hdf5, has_scotch,
                          SubSystemsManager)
 
 if has_hdf5():
-    from .cpp.adaptivity import TimeSeries
     from .cpp.io import HDF5File
 
-from .cpp.ale import ALE
 from .cpp import MPI
 from .cpp.function import (Expression, Constant, FunctionAXPY,
                            LagrangeInterpolator, FunctionAssigner,
-                           assign, MultiMeshFunction, MultiMeshFunctionSpace)
+                           assign)
 from .cpp.fem import (FiniteElement, DofMap, Assembler,
                       get_coordinates, create_mesh, set_coordinates,
                       vertex_to_dof_map, dof_to_vertex_map,
@@ -99,13 +97,12 @@ from .cpp.math import ipow, near, between
 from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, MeshEntity,
                        MeshColoring, CellType, Cell, Facet, Face,
                        Edge, Vertex, cells, facets, faces, edges,
-                       entities, vertices, SubDomain, BoundaryMesh,
-                       MeshEditor, MeshQuality, SubMesh,
-                       DomainBoundary, PeriodicBoundaryComputation,
-                       MeshTransformation, SubsetIterator, MultiMesh)
+                       entities, vertices, SubDomain,
+                       MeshEditor, MeshQuality,
+                        PeriodicBoundaryComputation,
+                       MeshTransformation, SubsetIterator)
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver, OptimisationProblem)
-from .cpp.refinement import refine
 from .cpp.parameter import Parameters, parameters
 from .cpp.io import X3DOM, X3DOMParameters
 
@@ -131,10 +128,6 @@ from .fem.solving import (solve, LinearVariationalProblem,
                           NonlinearVariationalProblem)
 from .fem.formmanipulations import (derivative, adjoint, increase_order, tear)
 
-# Need to be careful with other to avoid circular dependency
-from .fem.adaptivesolving import (AdaptiveLinearVariationalSolver,
-                                  AdaptiveNonlinearVariationalSolver)
-
 from .function.functionspace import (FunctionSpace,
                                      VectorFunctionSpace, TensorFunctionSpace)
 from .function.function import Function
@@ -152,17 +145,9 @@ from .function.expression import Expression, UserExpression, CompiledExpression
 from .jit.pybind11jit import compile_cpp_code
 
 from .la import as_backend_type, la_index_dtype
-from .mesh.ale import (compute_vertex_map, compute_edge_map,
-                       init_parent_edge_indices)
 from .mesh.meshfunction import (MeshFunction)
 from .mesh.meshvaluecollection import MeshValueCollection
 from .mesh.subdomain import CompiledSubDomain
-
-from .multistage.multistagescheme import (RK4, CN2, ExplicitMidPoint,
-                                          ESDIRK3, ESDIRK4,
-                                          ForwardEuler, BackwardEuler)
-from .multistage.multistagesolvers import PointIntegralSolver, RKSolver
-from .multistage.rushlarsenschemes import RL1, RL2, GRL1, GRL2
 
 # Import from ufl
 from ufl import (FiniteElement, TensorElement, VectorElement,

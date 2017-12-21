@@ -37,8 +37,6 @@ namespace dolfin
 
   class LocalMeshData;
   class Mesh;
-  class MeshData;
-  class MeshDomains;
 
   /// I/O of XML representation of a Mesh
 
@@ -58,26 +56,6 @@ namespace dolfin
     static void read_mesh(Mesh& mesh,
                           const pugi::xml_node mesh_node);
 
-    // Read mesh data
-    static void read_data(MeshData& data,
-                          const Mesh& mesh,
-                          const pugi::xml_node mesh_node);
-
-    // Read mesh domains
-    static void read_domains(MeshDomains& domains,
-                             const Mesh& mesh,
-                             const pugi::xml_node mesh_node);
-
-  public:
-
-    // FIXME: This is hack for domain data support via XML in
-    // parallel.
-    /// Read domain data in LocalMeshData.
-    static void read_domain_data(LocalMeshData& mesh_data,
-                                 const pugi::xml_node mesh_node);
-
-  private:
-
     // Read array
     static void read_array_uint(std::vector<std::size_t>& array,
                                 const pugi::xml_node xml_array);
@@ -85,15 +63,6 @@ namespace dolfin
     // Write mesh
     static void write_mesh(const Mesh& mesh,
                            pugi::xml_node mesh_node);
-
-    // Write mesh data
-    static void write_data(const Mesh& mesh, const MeshData& data,
-                           pugi::xml_node mesh_node);
-
-    // Write mesh markers
-    static void write_domains(const Mesh& mesh,
-                              const MeshDomains& domains,
-                              pugi::xml_node mesh_node);
 
   };
 

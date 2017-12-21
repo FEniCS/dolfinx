@@ -24,7 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include <dolfin/adaptivity/Extrapolation.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
@@ -391,7 +390,9 @@ void Function::interpolate(const GenericFunction& v)
 //-----------------------------------------------------------------------------
 void Function::extrapolate(const Function& v)
 {
-  Extrapolation::extrapolate(*this, v);
+  dolfin_not_implemented();
+  // Was in "adaptivity"
+  //  Extrapolation::extrapolate(*this, v);
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_rank() const

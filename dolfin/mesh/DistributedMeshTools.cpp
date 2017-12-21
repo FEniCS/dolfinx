@@ -27,7 +27,6 @@
 #include "dolfin/graph/Graph.h"
 #include "dolfin/graph/SCOTCH.h"
 #include "dolfin/log/log.h"
-#include "BoundaryMesh.h"
 #include "Facet.h"
 #include "Mesh.h"
 #include "MeshEntityIterator.h"

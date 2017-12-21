@@ -446,15 +446,9 @@ namespace dolfin
     // UFC dof map offset
     std::size_t _ufc_offset;
 
-    // Multimesh dof map offset
-    std::size_t _multimesh_offset;
-
     // Object containing information about dof distribution across
     // processes
     std::shared_ptr<IndexMap> _index_map;
-
-    // Temporary until MultiMeshDofMap runs in parallel
-    friend class MultiMeshDofMap;
 
     // List of processes that share a given dof
     std::unordered_map<int, std::vector<int>> _shared_nodes;

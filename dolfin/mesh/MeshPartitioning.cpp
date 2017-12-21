@@ -155,10 +155,6 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // Build mesh from local mesh data and provided cell partition
   build(mesh, local_data, cell_partition, ghost_procs, ghost_mode);
 
-  // Create MeshDomains from local_data
-  // FIXME: probably not working with ghost cells?
-  build_mesh_domains(mesh, local_data);
-
   // Initialise number of globally connected cells to each facet. This
   // is necessary to distinguish between facets on an exterior
   // boundary and facets on a partition boundary (see
@@ -1128,84 +1124,4 @@ void MeshPartitioning::build_local_mesh(Mesh& mesh,
   editor.close();
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::build_mesh_domains(Mesh& mesh,
-                                          const LocalMeshData& local_data)
-{
-  // Get topological dimension
-  const std::size_t D = mesh.topology().dim();
 
-  // Local domain data
-  const std::map<std::size_t, std::vector<
-                                std::pair<std::pair<std::size_t, std::size_t>,
-                                          std::size_t>>>&
-    domain_data = local_data.domain_data;
-
-  // Check which dimensions we have (can't use empty() on domain_data
-  // because other processes might have data)
-  std::vector<std::size_t> dims;
-  for (std::size_t d = 0; d < D + 1; ++d)
-  {
-    auto it = domain_data.find(d);
-    const int have_dim = (it == domain_data.end()) ? 0 : 1;
-    int dsum = dolfin::MPI::sum(mesh.mpi_comm(), have_dim);
-    if (dsum > 0)
-      dims.push_back(d);
-  }
-
-  // Return if no processes have domain data
-  if (dims.empty())
-    return;
-
-  // Initialise mesh domains
-  mesh.domains().init(D);
-
-  // Loop over dimension and build mesh data
-  for (std::size_t d : dims)
-  {
-    // Initialise mesh
-    mesh.init(d);
-
-    // Create empty MeshValueCollection
-    MeshValueCollection<std::size_t> mvc(reference_to_no_delete_pointer(mesh), d);
-
-    // Get domain data and build mesh value collection
-    auto dim_data = domain_data.find(d);
-    if (dim_data != domain_data.end())
-    {
-      const std::vector<std::pair<std::pair<std::size_t, std::size_t>,
-                                  std::size_t>>& local_value_data
-        = dim_data->second;
-
-      // Build mesh value collection
-      build_mesh_value_collection(mesh, local_value_data, mvc);
-    }
-    else
-    {
-      const std::vector<std::pair<std::pair<std::size_t, std::size_t>,
-                                  std::size_t>> local_value_data;
-      build_mesh_value_collection(mesh, local_value_data, mvc);
-    }
-
-    // Get data from mesh value collection
-    const std::map<std::pair<std::size_t, std::size_t>, std::size_t>& values
-      = mvc.values();
-
-    // Get map from mesh domains
-    std::map<std::size_t, std::size_t>& markers = mesh.domains().markers(d);
-    for (auto it = values.begin(); it != values.end(); ++it)
-    {
-      const std::size_t cell_index = it->first.first;
-      const std::size_t local_entity_index = it->first.second;
-
-      if (d == D)
-        markers[0] = it->second;
-      else
-      {
-        const Cell cell(mesh, cell_index);
-        const MeshEntity e(mesh, d, cell.entities(d)[local_entity_index]);
-        markers[e.index()] = it->second;
-      }
-    }
-  }
-}
-//-----------------------------------------------------------------------------

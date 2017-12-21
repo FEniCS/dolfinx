@@ -22,18 +22,15 @@
 
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/Progress.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MultiMesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/MultiMeshFunctionSpace.h>
-#include "MultiMeshDofMap.h"
-#include "MultiMeshForm.h"
 #include "SparsityPatternBuilder.h"
 
 using namespace dolfin;
@@ -266,120 +263,5 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
   // Finalize sparsity pattern (communicate off-process terms)
   if (finalize)
     sparsity_pattern.apply();
-}
-//-----------------------------------------------------------------------------
-void SparsityPatternBuilder::build_multimesh_sparsity_pattern(
-  SparsityPattern& sparsity_pattern,
-  const MultiMeshForm& form)
-{
-  // Get global dimensions and local range
-  const std::size_t rank = form.rank();
-  std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
-  for (std::size_t i = 0; i < rank; ++i)
-    index_maps[i] = form.function_space(i)->dofmap()->index_map();
-
-  // Initialize sparsity pattern
-  sparsity_pattern.init(index_maps);
-
-  // Iterate over each part
-  for (std::size_t part = 0; part < form.num_parts(); part++)
-  {
-    // Get mesh on current part (assume it's the same for all
-    // arguments)
-    const Mesh& mesh = *form.function_space(0)->part(part)->mesh();
-
-    // Build list of dofmaps
-    std::vector<const GenericDofMap*> dofmaps;
-    for (std::size_t i = 0; i < form.rank(); i++)
-      dofmaps.push_back(&*form.function_space(i)->dofmap()->part(part));
-
-    log(PROGRESS, "Building intra-mesh sparsity pattern on part %d.", part);
-
-    // Build sparsity pattern for part by calling the regular dofmap
-    // builder. This builds the sparsity pattern for all interacting
-    // dofs on the current part.
-    build(sparsity_pattern, mesh, dofmaps,
-          true, false, false, true, false, false);
-
-    log(PROGRESS, "Building inter-mesh sparsity pattern on part %d.", part);
-
-    // Build sparsity pattern for interface. This builds the sparsity
-    // pattern for all dofs that may interact across the interface
-    // between cutting meshes.
-    _build_multimesh_sparsity_pattern_interface(sparsity_pattern, form, part);
-  }
-
-  log(PROGRESS, "Applying changes to sparsity pattern.");
-
-  // Finalize sparsity pattern
-  sparsity_pattern.apply();
-}
-//-----------------------------------------------------------------------------
-void SparsityPatternBuilder::_build_multimesh_sparsity_pattern_interface(
-  SparsityPattern& sparsity_pattern,
-  const MultiMeshForm& form,
-  std::size_t part)
-{
-  // Get multimesh
-  const auto& multimesh = form.multimesh();
-
-  // Get collision map
-  const auto& cmap = multimesh->collision_map_cut_cells(part);
-
-  // Data structures for storing dofs on cut (0) and cutting cell (1)
-  std::vector<ArrayView<const dolfin::la_index>> dofs_0(form.rank());
-  std::vector<ArrayView<const dolfin::la_index>> dofs_1(form.rank());
-
-  // FIXME: We need two different lists here because the interface
-  // FIXME: of insert() requires a list of pointers to dofs. Consider
-  // FIXME: improving the interface of SparsityPattern.
-
-  // Data structure for storing dofs on macro cell (0 + 1)
-  std::vector<std::vector<dolfin::la_index>> dofs(form.rank());
-  std::vector<ArrayView<const dolfin::la_index>> _dofs(form.rank());
-
-  // Iterate over all cut cells in collision map
-  for (auto it = cmap.begin(); it != cmap.end(); ++it)
-  {
-    // Get cut cell index
-    const unsigned int cut_cell_index = it->first;
-
-    // Get dofs for cut cell
-    for (std::size_t i = 0; i < form.rank(); i++)
-    {
-      const auto& dofmap = form.function_space(i)->dofmap()->part(part);
-      auto dmap = dofmap->cell_dofs(cut_cell_index);
-      dofs_0[i].set(dmap.size(), dmap.data());
-    }
-
-    // Iterate over cutting cells
-    const auto& cutting_cells = it->second;
-    for (auto jt = cutting_cells.begin(); jt != cutting_cells.end(); jt++)
-    {
-      // Get cutting part and cutting cell index
-      const std::size_t cutting_part = jt->first;
-      const std::size_t cutting_cell_index = jt->second;
-
-      // Add dofs for cutting cell
-      for (std::size_t i = 0; i < form.rank(); i++)
-      {
-        // Get dofs for cutting cell
-        const auto& dofmap
-          = form.function_space(i)->dofmap()->part(cutting_part);
-        auto dmap = dofmap->cell_dofs(cutting_cell_index);
-        dofs_1[i].set(dmap.size(), dmap.data());
-
-        // Collect dofs for cut and cutting cell
-        dofs[i].resize(dofs_0[i].size() + dofs_1[i].size());
-        std::copy(dofs_0[i].begin(), dofs_0[i].end(), dofs[i].begin());
-        std::copy(dofs_1[i].begin(), dofs_1[i].end(),
-                  dofs[i].begin() + dofs_0[i].size());
-        _dofs[i].set(dofs[i]);
-      }
-
-      // Insert into sparsity pattern
-      sparsity_pattern.insert_local(_dofs);
-    }
-  }
 }
 //-----------------------------------------------------------------------------

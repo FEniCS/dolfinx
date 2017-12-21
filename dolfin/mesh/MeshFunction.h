@@ -36,7 +36,6 @@
 #include <dolfin/log/log.h>
 #include <dolfin/io/File.h>
 #include "LocalMeshValueCollection.h"
-#include "MeshDomains.h"
 #include "MeshEntity.h"
 #include "Mesh.h"
 #include "MeshConnectivity.h"
@@ -104,17 +103,6 @@ namespace dolfin
     ///         The mesh value collection for the mesh function data.
     MeshFunction(std::shared_ptr<const Mesh> mesh,
                  const MeshValueCollection<T>& value_collection);
-
-    /// Create function from MeshDomains
-    ///
-    /// @param mesh (_Mesh_)
-    ///         The mesh to create mesh function on.
-    /// @param dim (std::size_t)
-    ///         The dimension of the MeshFunction
-    /// @param domains (_MeshDomains)
-    ///         The domains from which to extract the domain markers
-    MeshFunction(std::shared_ptr<const Mesh> mesh,
-                 std::size_t dim, const MeshDomains& domains);
 
     /// Copy constructor
     ///
@@ -365,43 +353,6 @@ namespace dolfin
       _dim(value_collection.dim()), _size(0)
   {
     *this = value_collection;
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
-  MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
-                                std::size_t dim, const MeshDomains& domains)
-    : Variable("f", "unnamed MeshFunction"),
-      Hierarchical<MeshFunction<T>>(*this), _mesh(mesh), _dim(0), _size(0)
-  {
-    dolfin_assert(_mesh);
-
-    // Initialise MeshFunction
-    init(dim);
-
-    // Initialise mesh
-    mesh->init(dim);
-
-    // Set MeshFunction with default value
-    set_all(std::numeric_limits<T>::max());
-
-    // Get mesh dimension
-    const std::size_t D = _mesh->topology().dim();
-    dolfin_assert(dim <= D);
-
-    // Get domain data
-    const std::map<std::size_t, std::size_t>& data = domains.markers(dim);
-
-    // Iterate over all values and copy into MeshFunctions
-    std::map<std::size_t, std::size_t>::const_iterator it;
-    for (it = data.begin(); it != data.end(); ++it)
-    {
-      // Get value collection entry data
-      const std::size_t entity_index = it->first;
-      const T value = it->second;
-
-      dolfin_assert(entity_index < _size);
-      _values[entity_index] = value;
-    }
   }
   //---------------------------------------------------------------------------
   template <typename T>
