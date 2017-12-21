@@ -29,7 +29,6 @@
 
 #include <memory>
 #include <unordered_set>
-#include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Variable.h>
@@ -52,8 +51,7 @@ namespace dolfin
   /// scheme for the entities of a (parallel) mesh, marking sub
   /// domains or boolean markers for mesh refinement.
 
-  template <typename T> class MeshFunction : public Variable,
-    public Hierarchical<MeshFunction<T>>
+  template <typename T> class MeshFunction : public Variable
   {
   public:
 
@@ -312,7 +310,7 @@ namespace dolfin
   template <typename T>
   MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh)
     : Variable("f", "unnamed MeshFunction"),
-      Hierarchical<MeshFunction<T>>(*this), _mesh(mesh), _dim(0), _size(0)
+    _mesh(mesh), _dim(0), _size(0)
   {
     // Do nothing
   }
@@ -321,7 +319,7 @@ namespace dolfin
   MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
                                 std::size_t dim)
     : Variable("f", "unnamed MeshFunction"),
-      Hierarchical<MeshFunction<T>>(*this), _mesh(mesh), _dim(0), _size(0)
+      _mesh(mesh), _dim(0), _size(0)
   {
     init(dim);
   }
@@ -339,7 +337,7 @@ namespace dolfin
     MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
                                   const std::string filename)
     : Variable("f", "unnamed MeshFunction"),
-    Hierarchical<MeshFunction<T>>(*this), _mesh(mesh), _dim(0), _size(0)
+    _mesh(mesh), _dim(0), _size(0)
   {
     File file(mesh->mpi_comm(), filename);
     file >> *this;
@@ -348,8 +346,7 @@ namespace dolfin
   template <typename T>
     MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
                                   const MeshValueCollection<T>& value_collection)
-    : Variable("f", "unnamed MeshFunction"),
-      Hierarchical<MeshFunction<T>>(*this), _mesh(mesh),
+    : Variable("f", "unnamed MeshFunction"), _mesh(mesh),
       _dim(value_collection.dim()), _size(0)
   {
     *this = value_collection;
@@ -357,8 +354,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename T>
   MeshFunction<T>::MeshFunction(const MeshFunction<T>& f) :
-    Variable("f", "unnamed MeshFunction"),
-    Hierarchical<MeshFunction<T>>(*this), _dim(0), _size(0)
+    Variable("f", "unnamed MeshFunction"), _dim(0), _size(0)
   {
     *this = f;
   }
@@ -372,8 +368,6 @@ namespace dolfin
     _dim  = f._dim;
     _size = f._size;
     std::copy(f._values.get(), f._values.get() + _size, _values.get());
-
-    Hierarchical<MeshFunction<T>>::operator=(f);
 
     return *this;
   }
@@ -515,7 +509,6 @@ namespace dolfin
     const MeshFunction<T>& MeshFunction<T>::operator= (const T& value)
   {
     set_all(value);
-    //Hierarchical<MeshFunction<T>>::operator=(value);
     return *this;
   }
   //---------------------------------------------------------------------------

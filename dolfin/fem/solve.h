@@ -22,6 +22,7 @@
 #define __SOLVE_FEM_H
 
 #include <vector>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/parameter/Parameters.h>
 
 namespace dolfin

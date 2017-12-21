@@ -5,7 +5,6 @@ set(HEADERS
   defines.h
   dolfin_common.h
   dolfin_doc.h
-  Hierarchical.h
   IndexSet.h
   init.h
   MPI.h

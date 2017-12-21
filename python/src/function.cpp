@@ -24,7 +24,6 @@
 #include <pybind11/operators.h>
 
 #include <dolfin/common/Array.h>
-#include <dolfin/common/Hierarchical.h>
 #include <dolfin/function/assign.h>
 #include <dolfin/function/Constant.h>
 #include <dolfin/function/Expression.h>
@@ -210,20 +209,8 @@ namespace dolfin_wrappers
       (m, "MeshCoordinates")
       .def(py::init<std::shared_ptr<const dolfin::Mesh>>());
 
-
-    // Hierarchical dolfin::Function
-    py::class_<dolfin::Hierarchical<dolfin::Function>, std::shared_ptr<dolfin::Hierarchical<dolfin::Function>>>
-      (m, "HierarchicalFunction", "some description")
-      .def("root_node", [](dolfin::Hierarchical<dolfin::Function>& self)
-           { return self.root_node_shared_ptr(); } )
-      .def("leaf_node", [](dolfin::Hierarchical<dolfin::Function>& self)
-           { return self.leaf_node_shared_ptr(); } );
-      //.def("root_node", &dolfin::Hierarchical<dolfin::Function>::root_node_shared_ptr)
-      //.def("leaf_node", &dolfin::Hierarchical<dolfin::Function>::leaf_node_shared_ptr);
-
     // dolfin::Function
-    py::class_<dolfin::Function, std::shared_ptr<dolfin::Function>, dolfin::GenericFunction,
-               dolfin::Hierarchical<dolfin::Function>>
+    py::class_<dolfin::Function, std::shared_ptr<dolfin::Function>, dolfin::GenericFunction>
       (m, "Function", "A finite element function")
       .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>>(), "Create a function on the given function space")
       .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, std::string>())

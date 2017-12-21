@@ -22,7 +22,6 @@
 #define __LINEAR_TIME_DEPENDENT_PROBLEM_H
 
 #include <memory>
-#include <dolfin/common/Hierarchical.h>
 
 // FIXME: Temporary fix
 #include "Form.h"
@@ -45,7 +44,7 @@ namespace dolfin
   /// where U is a tensor-product trial space and V is a tensor-product
   /// test space.
 
-  class LinearTimeDependentProblem : public Hierarchical<LinearTimeDependentProblem>
+  class LinearTimeDependentProblem
   {
   public:
 

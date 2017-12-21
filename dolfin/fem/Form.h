@@ -28,7 +28,6 @@
 #include <vector>
 #include <memory>
 
-#include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/types.h>
 #include "Equation.h"
 
@@ -82,7 +81,7 @@ namespace dolfin
   /// and then space number 1 (the trial space).
   /// @endverbatim
 
-  class Form : public Hierarchical<Form>
+  class Form
   {
   public:
 

@@ -68,7 +68,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          std::shared_ptr<const SubDomain> sub_domain,
                          std::string method,
                          bool check_midpoint)
-  : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
+  : _function_space(V), _g(g),
     _method(method), _user_sub_domain(sub_domain),
     _num_dofs(0), _check_midpoint(check_midpoint)
 {
@@ -81,7 +81,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          std::shared_ptr<const MeshFunction<std::size_t>> sub_domains,
                          std::size_t sub_domain,
                          std::string method)
-  : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
+  : _function_space(V), _g(g),
     _method(method), _num_dofs(0), _user_mesh_function(sub_domains),
     _user_sub_domain_marker(sub_domain), _check_midpoint(true)
 {
@@ -92,7 +92,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
 DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          std::shared_ptr<const GenericFunction> g,
                          std::size_t sub_domain, std::string method)
-  : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
+  : _function_space(V), _g(g),
     _method(method), _num_dofs(0), _user_sub_domain_marker(sub_domain),
     _check_midpoint(true)
 {
@@ -104,7 +104,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
                          std::shared_ptr<const GenericFunction> g,
                          const std::vector<std::size_t>& markers,
                          std::string method)
-  : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
+  : _function_space(V), _g(g),
     _method(method), _num_dofs(0), _facets(markers),
     _user_sub_domain_marker(0), _check_midpoint(true)
 {
@@ -113,7 +113,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const DirichletBC& bc)
-  : Hierarchical<DirichletBC>(*this)
 {
   *this = bc;
 }
@@ -138,7 +137,6 @@ const DirichletBC& DirichletBC::operator= (const DirichletBC& bc)
 
   // Call assignment operator for base class
   Variable::operator=(bc);
-  Hierarchical<DirichletBC>::operator=(bc);
 
   return *this;
 }

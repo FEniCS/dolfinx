@@ -32,7 +32,6 @@
 #include <string>
 #include <utility>
 
-#include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include "MeshGeometry.h"
@@ -76,7 +75,7 @@ namespace dolfin
   /// such as all edges connected to a given vertex must also be
   /// explicitly created (in this case by a call to mesh.init(0, 1)).
 
-  class Mesh : public Variable, public Hierarchical<Mesh>
+  class Mesh : public Variable
   {
   public:
 

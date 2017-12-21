@@ -20,7 +20,6 @@
 
 #include <memory>
 #include <vector>
-#include <dolfin/common/Hierarchical.h>
 
 namespace dolfin
 {
@@ -39,7 +38,7 @@ namespace dolfin
   ///
   /// where V is the trial space and V^ is the test space.
 
-  class LinearVariationalProblem : public Hierarchical<LinearVariationalProblem>
+  class LinearVariationalProblem
   {
   public:
 

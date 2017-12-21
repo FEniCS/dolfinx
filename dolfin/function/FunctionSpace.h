@@ -33,7 +33,6 @@
 #include <unordered_map>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/Hierarchical.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Cell.h>
 
@@ -50,7 +49,7 @@ namespace dolfin
   /// a mesh, a finite element, and a local-to-global mapping of the
   /// degrees of freedom (dofmap).
 
-  class FunctionSpace : public Variable, public Hierarchical<FunctionSpace>
+  class FunctionSpace : public Variable
   {
   public:
 

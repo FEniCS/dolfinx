@@ -302,9 +302,6 @@ Mesh dolfin::create_mesh(Function& coordinates)
   // Rename
   mesh1.rename(mesh0.name(), mesh0.label());
 
-  // Call assignment operator for base class
-  static_cast<Hierarchical<Mesh>>(mesh1) = mesh0;
-
   // Prepare a new geometry
   mesh1.geometry().init(mesh0.geometry().dim(),
     coordinates.function_space()->element()->ufc_element()->degree());

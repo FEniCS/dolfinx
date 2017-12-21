@@ -83,7 +83,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
     editor.add_vertex(i, x);
   }
 
-  cout << "Done adding vertices" << endl;
+  std::cout << "Done adding vertices" << std::endl;
 
   // Add cells
   dolfin_assert(new_coordinates.size() == num_local_vertices*gdim);
@@ -99,7 +99,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
 
   editor.close();
 
-  cout << "Close editor" << endl;
+  std::cout << "Close editor" << std::endl;
 
   // Initialise coloring data
   typedef std::map<std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
@@ -151,7 +151,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
                           std::make_pair(new_colors, new_entities_of_color)));
   dolfin_assert(insert.second);
 
-  cout << "Return new mesh" << endl;
+  std::cout << "Return new mesh" << std::endl;
   return new_mesh;
 }
 //-----------------------------------------------------------------------------

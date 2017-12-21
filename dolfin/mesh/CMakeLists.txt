@@ -22,7 +22,6 @@ set(HEADERS
   MeshOrdering.h
   MeshPartitioning.h
   MeshQuality.h
-  MeshRelation.h
   MeshRenumbering.h
   MeshTopology.h
   MeshTransformation.h

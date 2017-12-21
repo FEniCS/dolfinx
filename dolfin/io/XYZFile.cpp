@@ -61,8 +61,8 @@ void XYZFile::write(const Function& u)
   // Increase the number of times we have saved the function
   counter++;
 
-  cout << "Saved function " << u.name() << " (" << u.label()
-       << ") to file " << _filename << " in xd3d xyz format." << endl;
+  std::cout << "Saved function " << u.name() << " (" << u.label()
+            << ") to file " << _filename << " in xd3d xyz format." << std::endl;
 }
 //----------------------------------------------------------------------------
 void XYZFile::results_write(const Function& u) const
@@ -202,8 +202,8 @@ void XYZFile::mesh_function_write(T& meshfunction)
   // Increase the number of times we have saved the mesh function
   counter++;
 
-  cout << "saved mesh function " << counter << " times." << endl;
-  cout << "Saved mesh function " << mesh.name() << " (" << mesh.label()
-       << ") to file " << _filename << " in XYZ format." << endl;
+  std::cout << "saved mesh function " << counter << " times." << std::endl;
+  std::cout << "Saved mesh function " << mesh.name() << " (" << mesh.label()
+            << ") to file " << _filename << " in XYZ format." << std::endl;
 }
 //----------------------------------------------------------------------------

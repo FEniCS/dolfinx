@@ -70,8 +70,8 @@ void RAWFile::write(const Function& u)
   // Increase the number of times we have saved the function
   counter++;
 
-  cout << "Saved function " << u.name() << " (" << u.label()
-       << ") to file " << _filename << " in RAW format." << endl;
+  std::cout << "Saved function " << u.name() << " (" << u.label()
+            << ") to file " << _filename << " in RAW format." << std::endl;
 }
 //----------------------------------------------------------------------------
 void RAWFile::ResultsWrite(const Function& u) const
@@ -227,9 +227,9 @@ void RAWFile::MeshFunctionWrite(T& meshfunction)
   // Increase the number of times we have saved the mesh function
   counter++;
 
-  cout << "saved mesh function " << counter << " times." << endl;
+  std::cout << "saved mesh function " << counter << " times." << std::endl;
 
-  cout << "Saved mesh function " << mesh.name() << " (" << mesh.label()
-       << ") to file " << _filename << " in RAW format." << endl;
+  std::cout << "Saved mesh function " << mesh.name() << " (" << mesh.label()
+            << ") to file " << _filename << " in RAW format." << std::endl;
 }
 //----------------------------------------------------------------------------

@@ -40,7 +40,6 @@
 #include <unordered_map>
 
 #include <dolfin/common/types.h>
-#include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 
@@ -121,7 +120,7 @@ namespace dolfin
   /// supplied object (defining boundary subdomain) after first use may
   /// have no effect. But this is implementation and method specific.
 
-  class DirichletBC : public Hierarchical<DirichletBC>, public Variable
+  class DirichletBC : public Variable
   {
 
   public:

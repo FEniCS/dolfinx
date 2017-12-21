@@ -41,20 +41,18 @@ using namespace dolfin;
 FunctionSpace::FunctionSpace(std::shared_ptr<const Mesh> mesh,
                              std::shared_ptr<const FiniteElement> element,
                              std::shared_ptr<const GenericDofMap> dofmap)
-  : Hierarchical<FunctionSpace>(*this),
-    _mesh(mesh), _element(element), _dofmap(dofmap), _root_space_id(id())
+  : _mesh(mesh), _element(element), _dofmap(dofmap), _root_space_id(id())
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(std::shared_ptr<const Mesh> mesh)
-  : Hierarchical<FunctionSpace>(*this), _mesh(mesh), _root_space_id(id())
+  : _mesh(mesh), _root_space_id(id())
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const FunctionSpace& V)
-  : Hierarchical<FunctionSpace>(*this)
 {
   // Assign data (will be shared)
   *this = V;
@@ -82,7 +80,6 @@ const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
 
   // Call assignment operator for base class
   Variable::operator=(V);
-  Hierarchical<FunctionSpace>::operator=(V);
 
   return *this;
 }
@@ -387,16 +384,14 @@ std::string FunctionSpace::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void FunctionSpace::print_dofmap() const
 {
-  // Note: static_cast is used below to support types that cannot be
-  //       directed to dolfin::cout
   dolfin_assert(_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
     auto dofs = _dofmap->cell_dofs(cell->index());
-    cout << cell->index() << ":";
+    std::cout << cell->index() << ":";
     for (Eigen::Index i = 0; i < dofs.size(); i++)
-      cout << " " << static_cast<std::size_t>(dofs[i]);
-    cout << endl;
+      std::cout << " " << static_cast<std::size_t>(dofs[i]);
+    std::cout << std::endl;
   }
 }
 //-----------------------------------------------------------------------------

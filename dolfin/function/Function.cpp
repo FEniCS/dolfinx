@@ -48,7 +48,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
-  : Hierarchical<Function>(*this), _function_space(V),
+  : _function_space(V),
   _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
@@ -65,7 +65,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V,
                    std::shared_ptr<GenericVector> x)
-  : Hierarchical<Function>(*this), _function_space(V), _vector(x),
+  : _function_space(V), _vector(x),
   _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // We do not check for a subspace since this constructor is used for
@@ -77,7 +77,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V,
-                   std::string filename) : Hierarchical<Function>(*this),
+                   std::string filename) :
   _function_space(V),
   _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
@@ -107,7 +107,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
   file >> *this;
 }
 //-----------------------------------------------------------------------------
-Function::Function(const Function& v) : Hierarchical<Function>(*this),
+Function::Function(const Function& v) :
   _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Assign data
@@ -115,8 +115,7 @@ Function::Function(const Function& v) : Hierarchical<Function>(*this),
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v, std::size_t i)
-  : Hierarchical<Function>(*this),
-  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
+  : _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Copy function space pointer
   this->_function_space = v[i]._function_space;
@@ -183,9 +182,6 @@ const Function& Function::operator= (const Function& v)
                              new_rows.data());
     this->_vector->apply("insert");
   }
-
-  // Call assignment operator for base class
-  Hierarchical<Function>::operator=(v);
 
   return *this;
 }

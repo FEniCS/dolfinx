@@ -31,7 +31,6 @@
 #include <Eigen/Dense>
 
 #include <dolfin/common/types.h>
-#include <dolfin/common/Hierarchical.h>
 #include "GenericFunction.h"
 #include "FunctionAXPY.h"
 
@@ -62,11 +61,12 @@ namespace dolfin
   /// where :math:`\{\phi_i\}_{i=1}^{n}` is a basis for :math:`V_h`,
   /// and :math:`U` is a vector of expansion coefficients for :math:`u_h`.
 
-  class Function : public GenericFunction, public Hierarchical<Function>
+  class Function : public GenericFunction
   {
   public:
 
-    Function() : Hierarchical<Function>(*this) {}
+    Function()
+    {}
 
     /// Create function on given function space (shared data)
     ///

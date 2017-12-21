@@ -58,14 +58,14 @@ Mesh::Mesh() : Mesh(MPI_COMM_WORLD)
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm) : Variable("mesh", "DOLFIN mesh"),
-                            Hierarchical<Mesh>(*this), _ordered(false),
+                            _ordered(false),
                             _mpi_comm(comm), _ghost_mode("none")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
-                               Hierarchical<Mesh>(*this), _ordered(false),
+                               _ordered(false),
                                _mpi_comm(mesh.mpi_comm()),
                                _ghost_mode("none")
 {
@@ -78,7 +78,7 @@ Mesh::Mesh(std::string filename) : Mesh(MPI_COMM_WORLD, filename)
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, std::string filename)
-  : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this), _ordered(false),
+  : Variable("mesh", "DOLFIN mesh"), _ordered(false),
   _mpi_comm(comm), _ghost_mode("none")
 {
   File file(_mpi_comm.comm(), filename);
@@ -86,7 +86,7 @@ Mesh::Mesh(MPI_Comm comm, std::string filename)
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
-  : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
+  : Variable("mesh", "DOLFIN mesh"),
   _ordered(false), _mpi_comm(comm), _ghost_mode("none")
 {
   const std::string ghost_mode = parameters["ghost_mode"];
@@ -113,9 +113,6 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
 
   // Rename
   rename(mesh.name(), mesh.label());
-
-  // Call assignment operator for base class
-  Hierarchical<Mesh>::operator=(mesh);
 
   return *this;
 }

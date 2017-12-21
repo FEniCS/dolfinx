@@ -32,8 +32,7 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(
   std::shared_ptr<Function> u,
   std::vector<std::shared_ptr<const DirichletBC>> bcs,
   std::shared_ptr<const Form> J)
-  : Hierarchical<NonlinearVariationalProblem>(*this), _residual(F),
-  _jacobian(J), _u(u), _bcs(bcs)
+  : _residual(F), _jacobian(J), _u(u), _bcs(bcs)
 {
   // Check forms
   check_forms();
