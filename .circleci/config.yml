@@ -11,7 +11,7 @@ jobs:
       - checkout
       - run:
           name: Install/update dependencies  # Install with sudo as tests not run as superuser in circleci/python
-          command: sudo pip3 install pytest pytest-xdist flake8 --upgrade
+          command: sudo pip3 install flake8 pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
       - run:
           name: Install FEniCS dependencies
           command: |
@@ -23,6 +23,9 @@ jobs:
       - run:
           name: Flake8 checks on pybind11 Python code
           command: python3 -m flake8 python/dolfin
+      - run:
+          name: Build DOLFIN C++ documentation
+          command: cd doc && doxygen
       - run:
           name: Configure DOLFIN (C++)
           command: mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Developer ../
@@ -43,6 +46,9 @@ jobs:
           command: |
             cd python
             pip3 -v install . --user
+      - run:
+          name: Build DOLFIN Python documentation
+          command: cd python/doc && make html
       - run:
           name: Run Python unit tests (serial)
           command: python3 -m pytest -n 2 python/test/unit/

@@ -27,10 +27,10 @@ We will thus illustrate how to:
 The two solutions for u in this demo will look as follows, where the
 first is the unrefined while the second is the refined solution:
 
-.. image:: ../u_unrefined.png
+.. image:: u_unrefined.png
     :scale: 75 %
 
-.. image:: ../u_refined.png
+.. image:: u_refined.png
     :scale: 75 %
 
 

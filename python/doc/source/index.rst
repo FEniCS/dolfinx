@@ -1,9 +1,20 @@
 DOLFIN documentation
 ====================
 
-Testing documentation auto-generated from the pybind11 code.
-
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
+   installation
+   using
+   demos
    api
+   developer
+   contributing
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

@@ -13,4 +13,3 @@ page <https://fenicsproject.org/community/>`_.
    :maxdepth: 2
 
    styleguide_cpp
-   documenting_dolfin_api

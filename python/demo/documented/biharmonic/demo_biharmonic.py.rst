@@ -13,7 +13,7 @@ This demo illustrates how to:
 
 The solution for :math:`u` in this demo will look as follows:
 
-.. image:: ../biharmonic_u.png
+.. image:: biharmonic_u.png
     :scale: 75 %
 
 

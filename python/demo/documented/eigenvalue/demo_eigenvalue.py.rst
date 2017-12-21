@@ -40,7 +40,7 @@ it; constructing the variational form defining the matrix; and then
 assembling this form. The code is shown below ::
 
     # Define mesh, function space
-    mesh = Mesh("../box_with_dent.xml.gz")
+    mesh = Mesh("box_with_dent.xml.gz")
     V = FunctionSpace(mesh, "Lagrange", 1)
 
     # Define basis and bilinear form
