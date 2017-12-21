@@ -39,8 +39,6 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/Form.h>
-#include <dolfin/fem/LinearVariationalProblem.h>
-#include <dolfin/fem/LinearVariationalSolver.h>
 #include <dolfin/fem/LocalSolver.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
 #include <dolfin/fem/NonlinearVariationalSolver.h>
@@ -409,23 +407,6 @@ namespace dolfin_wrappers
       .def("apply", (void (dolfin::PointSource::*)(dolfin::GenericVector&)) &dolfin::PointSource::apply)
       .def("apply", (void (dolfin::PointSource::*)(dolfin::GenericMatrix&)) &dolfin::PointSource::apply);
 
-    // dolfin::LinearVariationalProblem
-    py::class_<dolfin::LinearVariationalProblem,
-               std::shared_ptr<dolfin::LinearVariationalProblem>>
-      (m, "LinearVariationalProblem")
-      .def(py::init<std::shared_ptr<const dolfin::Form>,
-           std::shared_ptr<const dolfin::Form>,
-           std::shared_ptr<dolfin::Function>,
-           std::vector<std::shared_ptr<const dolfin::DirichletBC>>>())
-      .def("bcs", &dolfin::LinearVariationalProblem::bcs);
-
-    // dolfin::LinearVariationalSolver
-    py::class_<dolfin::LinearVariationalSolver,
-               std::shared_ptr<dolfin::LinearVariationalSolver>,
-               dolfin::Variable>(m, "LinearVariationalSolver")
-      .def(py::init<std::shared_ptr<dolfin::LinearVariationalProblem>>())
-      .def("solve", &dolfin::LinearVariationalSolver::solve);
-
     // dolfin::NonlinearVariationalProblem
     py::class_<dolfin::NonlinearVariationalProblem,
                std::shared_ptr<dolfin::NonlinearVariationalProblem>>
@@ -446,7 +427,6 @@ namespace dolfin_wrappers
              auto& _ub = ub.attr("_cpp_object").cast<dolfin::Function&>();
              self.set_bounds(_lb, _ub);
            });
-
 
     // dolfin::NonlinearVariationalSolver
     py::class_<dolfin::NonlinearVariationalSolver,

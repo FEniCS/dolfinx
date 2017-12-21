@@ -14,16 +14,12 @@ set(HEADERS
   FiniteElement.h
   Form.h
   GenericDofMap.h
-  LinearTimeDependentProblem.h
-  LinearVariationalProblem.h
-  LinearVariationalSolver.h
   LocalAssembler.h
   LocalSolver.h
   NonlinearVariationalProblem.h
   NonlinearVariationalSolver.h
   PETScDMCollection.h
   PointSource.h
-  solve.h
   SparsityPatternBuilder.h
   SystemAssembler.h
   UFC.h
@@ -42,16 +38,12 @@ set(SOURCES
   fem_utils.cpp
   FiniteElement.cpp
   Form.cpp
-  LinearTimeDependentProblem.cpp
-  LinearVariationalProblem.cpp
-  LinearVariationalSolver.cpp
   LocalAssembler.cpp
   LocalSolver.cpp
   NonlinearVariationalProblem.cpp
   NonlinearVariationalSolver.cpp
   PointSource.cpp
   PETScDMCollection.cpp
-  solve.cpp
   SparsityPatternBuilder.cpp
   SystemAssembler.cpp
   UFC.cpp
