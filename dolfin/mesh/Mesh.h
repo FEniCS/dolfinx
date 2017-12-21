@@ -284,15 +284,6 @@ namespace dolfin
     ///         The return values is true iff the mesh is ordered.
     bool ordered() const;
 
-    /// Renumber mesh entities by coloring. This function is currently
-    /// restricted to renumbering by cell coloring. The cells
-    /// (cell-vertex connectivity) and the coordinates of the mesh are
-    /// renumbered to improve the locality within each color. It is
-    /// assumed that the mesh has already been colored and that only
-    /// cell-vertex connectivity exists as part of the mesh.
-    /// @return Mesh
-    Mesh renumber_by_color() const;
-
     /// Scale mesh coordinates with given factor.
     ///
     /// *Arguments*
@@ -324,34 +315,6 @@ namespace dolfin
     /// @param    point (_Point_)
     ///         The point around which to rotate the mesh.
     void rotate(double angle, std::size_t axis, const Point& point);
-
-    /// Color the cells of the mesh such that no two neighboring cells
-    /// share the same color. A colored mesh keeps a
-    /// MeshFunction<std::size_t> named "cell colors" as mesh data which
-    /// holds the colors of the mesh.
-    ///
-    /// @param coloring_type (std::string)
-    ///         Coloring type, specifying what relation makes two
-    ///         cells neighbors, can be one of "vertex", "edge" or
-    ///         "facet".
-    ///
-    /// @return std::vector<std::size_t>&
-    ///         The colors as a mesh function over the cells of the mesh.
-    const std::vector<std::size_t>& color(std::string coloring_type) const;
-
-    /// Color the cells of the mesh such that no two neighboring cells
-    /// share the same color. A colored mesh keeps a
-    /// MeshFunction<std::size_t> named "cell colors" as mesh data which
-    /// holds the colors of the mesh.
-    ///
-    /// @param coloring_type (std::vector<std::size_t>&)
-    ///         Coloring type given as list of topological dimensions,
-    ///         specifying what relation makes two mesh entities neighbors.
-    ///
-    /// @return std::vector<std::size_t>&
-    ///         The colors as a mesh function over entities of the mesh.
-    const std::vector<std::size_t>&
-    color(std::vector<std::size_t> coloring_type) const;
 
     /// Compute minimum cell size in mesh, measured greatest distance
     /// between any two vertices of a cell.

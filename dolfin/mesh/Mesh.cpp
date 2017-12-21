@@ -39,7 +39,6 @@
 #include "DistributedMeshTools.h"
 #include "Facet.h"
 #include "LocalMeshData.h"
-#include "MeshColoring.h"
 #include "MeshOrdering.h"
 #include "MeshPartitioning.h"
 #include "MeshRenumbering.h"
@@ -234,13 +233,6 @@ bool Mesh::ordered() const
   return _ordered;
 }
 //-----------------------------------------------------------------------------
-dolfin::Mesh Mesh::renumber_by_color() const
-{
-  const std::size_t D = topology().dim();
-  const std::vector<std::size_t> coloring_type = {{D, 0, D}};
-  return MeshRenumbering::renumber_by_color(*this, coloring_type);
-}
-//-----------------------------------------------------------------------------
 void Mesh::scale(double factor)
 {
   MeshTransformation::scale(*this, factor);
@@ -259,37 +251,6 @@ void Mesh::rotate(double angle, std::size_t axis)
 void Mesh::rotate(double angle, std::size_t axis, const Point& point)
 {
   MeshTransformation::rotate(*this, angle, axis, point);
-}
-//-----------------------------------------------------------------------------
-const std::vector<std::size_t>& Mesh::color(std::string coloring_type) const
-{
-  // Define graph type
-  const std::size_t dim = MeshColoring::type_to_dim(coloring_type, *this);
-  const std::vector<std::size_t> _coloring_type
-    = {{topology().dim(), dim, topology().dim()}};
-
-  return color(_coloring_type);
-}
-//-----------------------------------------------------------------------------
-const std::vector<std::size_t>&
-Mesh::color(std::vector<std::size_t> coloring_type) const
-{
-  // Find color data
-  std::map<std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
-           std::vector<std::vector<std::size_t>>>>::const_iterator
-    coloring_data = this->topology().coloring.find(coloring_type);
-
-  if (coloring_data != this->topology().coloring.end())
-  {
-    dolfin_debug("Mesh has already been colored, not coloring again.");
-    return coloring_data->second.first;
-  }
-
-  // We do the same const-cast trick here as in the init() functions
-  // since we are not really changing the mesh, just attaching some
-  // auxiliary data to it.
-  Mesh* _mesh = const_cast<Mesh*>(this);
-  return MeshColoring::color(*_mesh, coloring_type);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const

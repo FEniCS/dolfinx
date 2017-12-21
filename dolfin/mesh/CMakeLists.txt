@@ -10,7 +10,6 @@ set(HEADERS
   IntervalCell.h
   LocalMeshData.h
   LocalMeshValueCollection.h
-  MeshColoring.h
   MeshConnectivity.h
   MeshEditor.h
   MeshEntity.h
@@ -47,7 +46,6 @@ set(SOURCES
   HexahedronCell.cpp
   IntervalCell.cpp
   LocalMeshData.cpp
-  MeshColoring.cpp
   MeshConnectivity.cpp
   Mesh.cpp
   MeshEditor.cpp
