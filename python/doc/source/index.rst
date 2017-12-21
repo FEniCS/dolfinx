@@ -9,6 +9,7 @@ Testing documentation auto-generated from the pybind11 code.
 
    installation
    using
+   demos
    contributing
    api
    developer

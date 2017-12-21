@@ -38,35 +38,38 @@ using namespace dolfin;
 // Comparison operator for hashing coordinates. Note that two
 // coordinates are considered equal if equal to within specified
 // tolerance.
-struct lt_coordinate
+namespace
 {
-  lt_coordinate(double tolerance) : TOL(tolerance) {}
-
-  bool operator() (const std::vector<double>& x,
-                   const std::vector<double>& y) const
+  struct lt_coordinate
   {
-    std::size_t n = std::max(x.size(), y.size());
-    for (std::size_t i = 0; i < n; ++i)
+    lt_coordinate(double tolerance) : TOL(tolerance) {}
+
+    bool operator() (const std::vector<double>& x,
+                     const std::vector<double>& y) const
     {
-      double xx = 0.0;
-      double yy = 0.0;
-      if (i < x.size())
-        xx = x[i];
-      if (i < y.size())
-        yy = y[i];
+      std::size_t n = std::max(x.size(), y.size());
+      for (std::size_t i = 0; i < n; ++i)
+      {
+        double xx = 0.0;
+        double yy = 0.0;
+        if (i < x.size())
+          xx = x[i];
+        if (i < y.size())
+          yy = y[i];
 
-      if (xx < (yy - TOL))
-        return true;
-      else if (xx > (yy + TOL))
-        return false;
+        if (xx < (yy - TOL))
+          return true;
+        else if (xx > (yy + TOL))
+          return false;
+      }
+      return false;
     }
-    return false;
-  }
 
-  // Tolerance
-  const double TOL;
+    // Tolerance
+    const double TOL;
 
-};
+  };
+}
 
 //-----------------------------------------------------------------------------
 std::map<unsigned int, std::pair<unsigned int, unsigned int>>
