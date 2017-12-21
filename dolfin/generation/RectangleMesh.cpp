@@ -27,22 +27,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-RectangleMesh::RectangleMesh(const Point& p0, const Point& p1,
-                             std::size_t nx, std::size_t ny,
-                             std::string diagonal)
-  : RectangleMesh(MPI_COMM_WORLD, p0, p1, nx, ny, diagonal)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-RectangleMesh::RectangleMesh(MPI_Comm comm,
-                             const Point& p0, const Point& p1,
-                             std::size_t nx, std::size_t ny,
-                             std::string diagonal) : Mesh(comm)
-{
-  build_tri(*this, {{p0, p1}}, {{nx, ny}}, diagonal);
-}
-//-----------------------------------------------------------------------------
 void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
                               std::array<std::size_t, 2> n,
                               std::string diagonal)

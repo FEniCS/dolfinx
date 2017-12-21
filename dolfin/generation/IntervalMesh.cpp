@@ -26,18 +26,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IntervalMesh::IntervalMesh(std::size_t n, double a, double b)
-  : IntervalMesh(MPI_COMM_WORLD, n, a, b)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-IntervalMesh::IntervalMesh(MPI_Comm comm, std::size_t n, double a, double b)
-  : Mesh(comm)
-{
-  build(*this, n, {{a, b}});
-}
-//-----------------------------------------------------------------------------
 void IntervalMesh::build(Mesh& mesh, std::size_t nx, std::array<double, 2> x)
 {
   // Receive mesh according to parallel policy

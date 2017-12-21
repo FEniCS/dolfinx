@@ -41,28 +41,6 @@ namespace dolfin
     /// two points is not important in terms of minimum and maximum
     /// coordinates.
     ///
-    /// @param p (std::array<_Point_, 2>)
-    ///         Points of box.
-    /// @param n (std::array<double, 3> )
-    ///         Number of cells in each direction.
-    /// @param cell_type
-    ///         Tetrahedron or Hexahedron
-    ///
-    /// @code{.cpp}
-    ///         // Mesh with 8 cells in each direction on the
-    ///         // set [-1,2] x [-1,2] x [-1,2].
-    ///         Point p0(-1, -1, -1);
-    ///         Point p1(2, 2, 2);
-    ///         auto mesh = BoxMesh::create({p0, p1}, {8, 8, 8});
-    /// @endcode
-    static Mesh create(const std::array<Point,2 >& p, std::array<std::size_t, 3> n, CellType::Type cell_type)
-    { return create(MPI_COMM_WORLD, p, n, cell_type); }
-
-    /// Create a uniform finite element _Mesh_ over the rectangular
-    /// prism spanned by the two _Point_s p0 and p1. The order of the
-    /// two points is not important in terms of minimum and maximum
-    /// coordinates.
-    ///
     /// @param comm (MPI_Comm)
     ///         MPI communicator
     /// @param p (std::array<_Point_, 2>)
@@ -96,62 +74,6 @@ namespace dolfin
 
       return mesh;
     }
-
-    /// Deprecated
-    /// Create a uniform finite element _Mesh_ over the rectangular
-    /// prism spanned by the two _Point_s p0 and p1. The order of the
-    /// two points is not important in terms of minimum and maximum
-    /// coordinates.
-    ///
-    /// @param p0 (_Point_)
-    ///         First point.
-    /// @param p1 (_Point_)
-    ///         Second point.
-    /// @param nx (double)
-    ///         Number of cells in x-direction.
-    /// @param ny (double)
-    ///         Number of cells in y-direction.
-    /// @param nz (double)
-    ///         Number of cells in z-direction.
-    ///
-    /// @code{.cpp}
-    ///         // Mesh with 8 cells in each direction on the
-    ///         // set [-1,2] x [-1,2] x [-1,2].
-    ///         Point p0(-1, -1, -1);
-    ///         Point p1(2, 2, 2);
-    ///         BoxMesh mesh(p0, p1, 8, 8, 8);
-    /// @endcode
-    BoxMesh(const Point& p0, const Point& p1,
-            std::size_t nx, std::size_t ny, std::size_t nz);
-
-    /// Deprecated
-    /// Create a uniform finite element _Mesh_ over the rectangular
-    /// prism spanned by the two _Point_s p0 and p1. The order of the
-    /// two points is not important in terms of minimum and maximum
-    /// coordinates.
-    ///
-    /// @param comm (MPI_Comm)
-    ///         MPI communicator
-    /// @param p0 (_Point_)
-    ///         First point.
-    /// @param p1 (_Point_)
-    ///         Second point.
-    /// @param nx (double)
-    ///         Number of cells in x-direction.
-    /// @param ny (double)
-    ///         Number of cells in y-direction.
-    /// @param nz (double)
-    ///         Number of cells in z-direction.
-    ///
-    /// @code{.cpp}
-    ///         // Mesh with 8 cells in each direction on the
-    ///         // set [-1,2] x [-1,2] x [-1,2].
-    ///         Point p0(-1, -1, -1);
-    ///         Point p1(2, 2, 2);
-    ///         BoxMesh mesh(MPI_COMM_WORLD, p0, p1, 8, 8, 8);
-    /// @endcode
-    BoxMesh(MPI_Comm comm, const Point& p0, const Point& p1,
-            std::size_t nx, std::size_t ny, std::size_t nz);
 
   private:
 

@@ -42,29 +42,17 @@ namespace dolfin_wrappers
   {
     // dolfin::IntervalMesh
     py::class_<dolfin::IntervalMesh, std::shared_ptr<dolfin::IntervalMesh>, dolfin::Mesh>(m, "IntervalMesh")
-      .def(py::init<std::size_t, double, double>())
-      .def(py::init([](const MPICommWrapper comm, std::size_t n, double a, double b)
-                    { return std::unique_ptr<dolfin::IntervalMesh>(new dolfin::IntervalMesh(comm.get(), n, a, b)); }));
+      .def_static("create", [](const MPICommWrapper comm, std::size_t n, std::array<double, 2> p)
+                  { return dolfin::IntervalMesh::create(comm.get(), n, p); });
 
     // dolfin::RectangleMesh
     py::class_<dolfin::RectangleMesh, std::shared_ptr<dolfin::RectangleMesh>, dolfin::Mesh>(m, "RectangleMesh")
-      .def_static("create", [](std::array<dolfin::Point, 2> p, std::array<std::size_t, 2> n,
-                               dolfin::CellType::Type cell_type, std::string diagonal)
-                  { return dolfin::RectangleMesh::create(p, n, cell_type, diagonal); },
-                  py::arg("p"), py::arg("n"), py::arg("cell_type"), py::arg("diagonal")="right")
       .def_static("create", [](const MPICommWrapper comm, std::array<dolfin::Point, 2> p,
                                std::array<std::size_t, 2> n, dolfin::CellType::Type cell_type,
                                std::string diagonal)
                   { return dolfin::RectangleMesh::create(comm.get(), p, n, cell_type, diagonal); },
                   py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("cell_type"),
-                  py::arg("diagonal")="right")
-      // Remove
-      .def(py::init<dolfin::Point, dolfin::Point, std::size_t, std::size_t, std::string>(),
-           py::arg("p0"), py::arg("p1"), py::arg("nx"), py::arg("ny"), py::arg("diagonal")="right")
-      .def(py::init([](const MPICommWrapper comm, const dolfin::Point& p0, const dolfin::Point& p1,
-                       std::size_t nx, std::size_t ny, std::string diagonal="right")
-                    { return std::unique_ptr<dolfin::RectangleMesh>(new dolfin::RectangleMesh(comm.get(), p0, p1, nx, ny, diagonal)); }),
-           py::arg("comm"), py::arg("p0"), py::arg("p1"), py::arg("nx"), py::arg("ny"), py::arg("diagonal")="right");
+                  py::arg("diagonal")="right");
 
     // dolfin::UnitDiscMesh
     py::class_<dolfin::UnitDiscMesh>(m, "UnitDiscMesh")
@@ -82,10 +70,9 @@ namespace dolfin_wrappers
 
     // dolfin::BoxMesh
     py::class_<dolfin::BoxMesh, std::shared_ptr<dolfin::BoxMesh>, dolfin::Mesh>(m, "BoxMesh")
-      .def(py::init<const dolfin::Point&, const dolfin::Point&, std::size_t, std::size_t, std::size_t>())
-      .def(py::init([](const MPICommWrapper comm, const dolfin::Point& p0, const dolfin::Point& p1,
-                       std::size_t nx, std::size_t ny, std::size_t nz)
-                    { return std::unique_ptr<dolfin::BoxMesh>(new dolfin::BoxMesh(comm.get(), p0, p1, nx, ny, nz)); }),
-           py::arg("comm"), py::arg("p0"), py::arg("p1"), py::arg("nx"), py::arg("ny"), py::arg("nz"));
+      .def_static("create", [](const MPICommWrapper comm, std::array<dolfin::Point, 2> p,
+                              std::array<std::size_t, 3> n, dolfin::CellType::Type cell_type)
+                           { return dolfin::BoxMesh::create(comm.get(), p, n, cell_type); },
+                  py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("cell_type"));
   }
 }

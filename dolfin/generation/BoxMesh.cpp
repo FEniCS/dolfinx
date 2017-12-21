@@ -34,19 +34,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BoxMesh::BoxMesh(const Point& p0, const Point& p1,
-                 std::size_t nx, std::size_t ny, std::size_t nz)
-  : BoxMesh(MPI_COMM_WORLD, p0, p1, nx, ny, nz)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-BoxMesh::BoxMesh(MPI_Comm comm, const Point& p0, const Point& p1,
-                 std::size_t nx, std::size_t ny, std::size_t nz) : Mesh(comm)
-{
-  build_tet(*this, {{p0, p1}}, {{nx, ny, nz}});
-}
-//-----------------------------------------------------------------------------
 void BoxMesh::build_tet(Mesh& mesh, const std::array<Point,2 >& p,
                         std::array<std::size_t, 3> n)
 {

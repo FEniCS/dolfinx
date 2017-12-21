@@ -36,21 +36,6 @@ namespace dolfin
 
     /// Factory
     ///
-    /// @param    n (std::size_t)
-    ///         The number of cells.
-    /// @param    x (std::array<double, 2>)
-    ///         The end points
-    ///
-    /// @code{.cpp}
-    ///
-    ///         // Create a mesh of 25 cells in the interval [-1,1]
-    ///         auto mesh = IntervalMesh::create(25, {-1.0, 1.0});
-    /// @endcode
-    static Mesh create(std::size_t n, std::array<double, 2> x)
-    { return create(MPI_COMM_WORLD, n, x); }
-
-    /// Factory
-    ///
     /// @param    comm (MPI_Comm)
     ///         MPI communicator
     /// @param    n (std::size_t)
@@ -69,40 +54,6 @@ namespace dolfin
       build(mesh, n, x);
       return mesh;
     }
-
-    /// Constructor
-    ///
-    /// @param    n (std::size_t)
-    ///         The number of cells.
-    /// @param    a (double)
-    ///         The minimum point (inclusive).
-    /// @param    b (double)
-    ///         The maximum point (inclusive).
-    ///
-    /// @code{.cpp}
-    ///
-    ///         // Create a mesh of 25 cells in the interval [-1,1]
-    ///         IntervalMesh mesh(25, -1.0, 1.0);
-    /// @endcode
-    IntervalMesh(std::size_t n, double a, double b);
-
-    /// Constructor
-    ///
-    /// @param    comm (MPI_Comm)
-    ///         MPI communicator
-    /// @param    n (std::size_t)
-    ///         The number of cells.
-    /// @param    a (double)
-    ///         The minimum point (inclusive).
-    /// @param    b (double)
-    ///         The maximum point (inclusive).
-    ///
-    /// @code{.cpp}
-    ///
-    ///         // Create a mesh of 25 cells in the interval [-1,1]
-    ///         IntervalMesh mesh(MPI_COMM_WORLD, 25, -1.0, 1.0);
-    /// @endcode
-    IntervalMesh(MPI_Comm comm, std::size_t n, double a, double b);
 
   private:
 
