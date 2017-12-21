@@ -17,8 +17,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function, division
-
 import pytest
 import numpy
 
@@ -75,7 +73,7 @@ def test_issue_568():
 
 def test_volume_quadrilateralR2():
 
-    mesh = UnitSquareMesh.create(mpi_comm_self(), 1, 1, CellType.Type_quadrilateral)
+    mesh = UnitSquareMesh.create(MPI.comm_self, 1, 1, CellType.Type.quadrilateral)
     cell = Cell(mesh, 0)
 
     assert cell.volume() == 1.0

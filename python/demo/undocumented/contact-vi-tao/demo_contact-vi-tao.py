@@ -25,7 +25,7 @@ in a box of the same size."""
 # First added:  2012-09-03
 # Last changed: 2014-07-19
 
-from __future__ import print_function
+
 from dolfin import *
 import matplotlib.pyplot as plt
 
@@ -132,7 +132,7 @@ out = XDMFFile(mesh.mpi_comm(), "u.xdmf")
 if has_hdf5():
     out.write(u)
 elif MPI.size(mesh.mpi_comm()) == 1:
-    encoding = XDMFFile.Encoding_ASCII
+    encoding = XDMFFile.Encoding.ASCII
     out.write(u, encoding)
 else:
     # Save solution in vtk format

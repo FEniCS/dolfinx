@@ -26,7 +26,7 @@ from dolfin_utils.test import skip_if_not_PETSc, fixture, cd_tempdir
 @skip_if_not_PETSc
 def test_save_vector_petsc(cd_tempdir):
     # Create vector and write file
-    x = PETScVector(mpi_comm_world(), 197)
+    x = PETScVector(MPI.comm_world, 197)
     x[:] = 1.0
     f = File("x.xml")
     f << x
@@ -34,7 +34,7 @@ def test_save_vector_petsc(cd_tempdir):
 @skip_if_not_PETSc
 def test_save_gzipped_vector(cd_tempdir):
     # Create vector and write file
-    x = PETScVector(mpi_comm_world(), 197)
+    x = PETScVector(MPI.comm_world, 197)
     x[:] = 1.0
     f = File("x.xml.gz")
     f << x
@@ -42,7 +42,7 @@ def test_save_gzipped_vector(cd_tempdir):
 @skip_if_not_PETSc
 def test_read_vector_petcs(cd_tempdir):
     # Create vector and write file
-    x = PETScVector(mpi_comm_world(), 197)
+    x = PETScVector(MPI.comm_world, 197)
     x[:] = 1.0
     f = File("x.xml")
     f << x
@@ -57,7 +57,7 @@ def test_read_vector_petcs(cd_tempdir):
 @skip_if_not_PETSc
 def test_read_gzipped_vector(cd_tempdir):
     # Create vector and write file
-    x = PETScVector(mpi_comm_world(), 197)
+    x = PETScVector(MPI.comm_world, 197)
     x[:] = 1.0
     f = File("x.xml")
     f << x
@@ -70,7 +70,7 @@ def test_read_gzipped_vector(cd_tempdir):
 
 def test_save_read_vector(cd_tempdir):
     size = 512
-    x = Vector(mpi_comm_world(), size)
+    x = Vector(MPI.comm_world, size)
     x[:] = 1.0
 
     out_file = File("test_vector_xml.xml")

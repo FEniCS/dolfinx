@@ -22,7 +22,7 @@
 # First added:  2010-04-30
 # Last changed: 2012-11-12
 
-from __future__ import print_function
+
 from dolfin import *
 import matplotlib.pyplot as plt
 
@@ -57,8 +57,7 @@ class Traction(UserExpression):
         self.t   = t
         self.dt  = dt
         self.old = old
-        if has_pybind11():
-            super().__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def eval(self, values, x):
 

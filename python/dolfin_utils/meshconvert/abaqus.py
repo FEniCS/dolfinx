@@ -20,10 +20,9 @@
 #
 # Modified by Simon Funke (surface export)
 
-from __future__ import print_function
+
 # TODO: The change to python 3 compatible iteration may have introduced performance
 #       regressions here, with unnecessary list() applications in the below code.
-from six import iterkeys, iteritems
 import re
 import csv
 import numpy as np
@@ -199,7 +198,7 @@ def convert(ifilename, handler):
 
     node_ids_order = {}
     # Check for gaps in vertex numbering
-    node_ids = list(iterkeys(nodes))
+    node_ids = list(nodes.keys())
     if len(node_ids) > 0:
         vertex_gap = (min(node_ids) != 0 or max(node_ids) != len(node_ids) - 1)
         for x, y in enumerate(node_ids):
@@ -208,7 +207,7 @@ def convert(ifilename, handler):
         vertex_gap = True
 
     # Check for gaps in cell numbering
-    elemids = list(iterkeys(elems))
+    elemids = list(elems.keys())
     if len(elemids) > 0:
         cell_gap = (min(elemids) != 0 or max(elemids) != len(elemids) - 1)
     else:
@@ -221,14 +220,14 @@ def convert(ifilename, handler):
 
     if not vertex_gap:
 
-        for v_id, v_coords in list(iteritems(nodes)):
+        for v_id, v_coords in list(nodes.items()):
             handler.add_vertex(v_id, v_coords)
             if process_facets:
                 mesh_editor.add_vertex(v_id, np.array(v_coords, dtype=np.float_))
 
     else:
 
-        for idx, (v_id, v_coords) in enumerate(iteritems(nodes)):
+        for idx, (v_id, v_coords) in enumerate(nodes.items()):
             handler.add_vertex(idx, v_coords)
             if process_facets:
                 mesh_editor.add_vertex(idx, np.array(v_coords, dtype=np.float_))
@@ -242,7 +241,7 @@ def convert(ifilename, handler):
 
     if not vertex_gap and not cell_gap:
 
-        for c_index, c_data in list(iteritems(elems)):
+        for c_index, c_data in list(elems.items()):
             for v_id in c_data:
                 if not (0 <= v_id < len(nodes)):
                     handler.error("Element %s references non-existent node %s" % (c_index, v_id))
@@ -256,7 +255,7 @@ def convert(ifilename, handler):
 
     elif not vertex_gap and cell_gap:
 
-        for idx, (c_index, c_data) in enumerate(iteritems(elems)):
+        for idx, (c_index, c_data) in enumerate(elems.items()):
             for v_id in c_data:
                 if not (0 <= v_id < len(nodes)):
                     handler.error("Element %s references non-existent node %s" % (c_index, v_id))
@@ -269,7 +268,7 @@ def convert(ifilename, handler):
 
     else:
 
-        for idx, (c_id, c_data) in enumerate(iteritems(elems)):
+        for idx, (c_id, c_data) in enumerate(elems.items()):
             c_nodes = []
             for v_id in c_data:
                 try: c_nodes.append(node_ids_order[v_id])
@@ -290,7 +289,7 @@ def convert(ifilename, handler):
     #                           and its local entity.
     if len(node_sets) > 0:
         node_cell_map = {}
-        for c_dolfin_index, (c_index, c_data) in enumerate(iteritems(elems)):
+        for c_dolfin_index, (c_index, c_data) in enumerate(elems.items()):
             c_data_tmp = np.array(c_data)
             c_data_tmp.sort()
             for local_entity, n_index in enumerate(c_data_tmp):
@@ -298,7 +297,7 @@ def convert(ifilename, handler):
 
     # Write vertex/node sets
     dim = 0
-    for value, (name, node_set) in enumerate(iteritems(node_sets)):
+    for value, (name, node_set) in enumerate(node_sets.items()):
         handler.start_mesh_value_collection(name, dim, len(node_set), "uint")
 
         for node in node_set:
@@ -311,7 +310,7 @@ def convert(ifilename, handler):
 
     # Write cell/element sets
     dim = 3
-    for name, s in list(iteritems(cell_sets)):
+    for name, s in list(cell_sets.items()):
         handler.start_mesh_value_collection(name, dim, len(s), "uint")
         for cell in s:
             handler.add_entity_mesh_value_collection(dim, cell, 0)
@@ -333,7 +332,7 @@ def convert(ifilename, handler):
                          'S4': S4,
                          }
 
-        for index, (name, s) in enumerate(iteritems(surface_sets)):
+        for index, (name, s) in enumerate(surface_sets.items()):
             cell_face_list = []
             for cell_set_name, face_index in s:
                 cell_face_list += [(cell, face_index) for cell in cell_sets[cell_set_name]]

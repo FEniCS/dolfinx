@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import division
 import numpy
 from dolfin import *
 from dolfin_utils.test import set_parameters_fixture
@@ -94,7 +93,7 @@ def test_local_assembler_on_facet_integrals(ghost_mode):
     else:
         error = 0.0
 
-    error = MPI.max(mpi_comm_world(), float(error))
+    error = MPI.max(MPI.comm_world, float(error))
     assert error < 1e-8
 
 
@@ -132,7 +131,7 @@ def test_local_assembler_on_facet_integrals2(ghost_mode):
     else:
         error = 0.0
 
-    error = MPI.max(mpi_comm_world(), float(error))
+    error = MPI.max(MPI.comm_world, float(error))
     assert error < 1e-16
 
 
@@ -152,6 +151,6 @@ def get_cell_at(mesh, x, y, z, eps=1e-3):
 
     # Make sure this cell is on at least one of the parallel processes
     marker = 1 if found is not None else 0
-    assert MPI.max(mpi_comm_world(), marker) == 1
+    assert MPI.max(MPI.comm_world, marker) == 1
 
     return found

@@ -28,8 +28,8 @@ from dolfin_utils.test import skip_if_not_HDF5, fixture, tempdir, \
 
 @pytest.yield_fixture
 def attr(tempdir):
-    hdf_file = HDF5File(mpi_comm_world(), os.path.join(tempdir, "hdf_file.h5"), "w")
-    x = Vector(mpi_comm_world(), 123)
+    hdf_file = HDF5File(MPI.comm_world, os.path.join(tempdir, "hdf_file.h5"), "w")
+    x = Vector(MPI.comm_world, 123)
     hdf_file.write(x, "/a_vector")
     attr = hdf_file.attributes("/a_vector")
 
@@ -39,12 +39,12 @@ def attr(tempdir):
     hdf_file.close()
     del hdf_file, x, attr
     gc.collect()
-    MPI.barrier(mpi_comm_world())
+    MPI.barrier(MPI.comm_world)
 
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
 def test_fail_on_accessing_attribute_on_non_existing_dataset(tempdir):
-    hdf_file = HDF5File(mpi_comm_world(), os.path.join(tempdir, "hdf_file.h5"), "w")
+    hdf_file = HDF5File(MPI.comm_world, os.path.join(tempdir, "hdf_file.h5"), "w")
     with pytest.raises(RuntimeError):
         attr = hdf_file.attributes("/a_vector")
 
@@ -113,19 +113,3 @@ def test_attribute_container_interface(attr):
             assert (value0 == value1).all()
         else:
             assert value0 == value1
-
-    # GNW: Should really just use h5py rather than wrap this. It could
-    # be interfaced with pybind11, but not worth it
-    if not has_pybind11():
-        for name, value in attr.items():
-            assert(name in names)
-            assert(value in values)
-            assert(names.index(name)==values.index(value))
-
-        for name in attr:
-            assert(name in names)
-
-        for value in attr.values():
-            assert(value in values)
-
-        assert(attr.keys()==attr.list_attributes())

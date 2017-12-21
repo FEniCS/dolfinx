@@ -19,7 +19,6 @@
 
 import pytest
 import numpy as np
-from six.moves import range
 from dolfin import *
 from dolfin_utils.test import *
 
@@ -47,8 +46,8 @@ def test_str(mesh, V):
     index_map = dm.index_map()
 
     # Build sparse tensor layout (for assembly of matrix)
-    tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity_SPARSE)
-    tl.init([index_map, index_map], TensorLayout.Ghosts_UNGHOSTED)
+    tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity.SPARSE)
+    tl.init([index_map, index_map], TensorLayout.Ghosts.UNGHOSTED)
     sp = tl.sparsity_pattern()
     sp.init([index_map, index_map])
     SparsityPatternBuilder.build(sp, mesh, [dm, dm],
@@ -64,8 +63,8 @@ def test_insert_local(mesh, V):
     index_map = dm.index_map()
 
     # Build sparse tensor layout
-    tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity_SPARSE)
-    tl.init([index_map, index_map], TensorLayout.Ghosts_UNGHOSTED)
+    tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity.SPARSE)
+    tl.init([index_map, index_map], TensorLayout.Ghosts.UNGHOSTED)
     sp = tl.sparsity_pattern()
     sp.init([index_map, index_map])
 
@@ -89,8 +88,8 @@ def test_insert_global(mesh, V):
     local_range = index_map.local_range()
 
     # Build sparse tensor layout
-    tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity_SPARSE)
-    tl.init([index_map, index_map], TensorLayout.Ghosts_UNGHOSTED)
+    tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity.SPARSE)
+    tl.init([index_map, index_map], TensorLayout.Ghosts.UNGHOSTED)
     sp = tl.sparsity_pattern()
     sp.init([index_map, index_map])
 
@@ -131,8 +130,8 @@ def test_insert_local_global(mesh, V):
     local_range = index_map.local_range()
 
     # Build sparse tensor layout
-    tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity_SPARSE)
-    tl.init([index_map, index_map], TensorLayout.Ghosts_UNGHOSTED)
+    tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity.SPARSE)
+    tl.init([index_map, index_map], TensorLayout.Ghosts.UNGHOSTED)
     sp = tl.sparsity_pattern()
     sp.init([index_map, index_map])
 

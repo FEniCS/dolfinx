@@ -22,7 +22,6 @@
 import pytest
 import os
 from dolfin import *
-from six.moves import xrange as range
 from dolfin_utils.test import skip_in_parallel, fixture, cd_tempdir
 
 

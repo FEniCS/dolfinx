@@ -22,12 +22,10 @@ parallel assembly/solve."""
 #
 # Modified by Garth N. Wells, 2013
 
-from __future__ import print_function
 import pytest
 import sys
 from dolfin import *
 from dolfin_utils.test import *
-from six import print_
 
 # Relative tolerance for regression test
 tol = 1e-10
@@ -55,18 +53,18 @@ def compute_norm(mesh, degree):
 
 def print_reference(results):
     "Print nicely formatted values for gluing into code as a reference"
-    MPI.barrier(mpi_comm_world())
-    if MPI.rank(mpi_comm_world()) == 0:
-        print_("reference = {", end=' ')
+    MPI.barrier(MPI.comm_world)
+    if MPI.rank(MPI.comm_world) == 0:
+        print("reference = {", end=' ')
         for (i, result) in enumerate(results):
             if i > 0:
-                print_("             ", end=' ')
-            print_("(\"%s\", %d): %.16g" % result, end=' ')
+                print("             ", end=' ')
+            print("(\"%s\", %d): %.16g" % result, end=' ')
             if i < len(results) - 1:
                 print(",")
             else:
                 print("}")
-    MPI.barrier(mpi_comm_world())
+    MPI.barrier(MPI.comm_world)
 
 def check_results(results, reference, tol):
     "Compare results with reference"
@@ -82,18 +80,18 @@ def check_results(results, reference, tol):
     return errors
 
 def print_errors(errors):
-    MPI.barrier(mpi_comm_world())
-    if MPI.rank(mpi_comm_world()) == 0:
+    MPI.barrier(MPI.comm_world)
+    if MPI.rank(MPI.comm_world) == 0:
         print("Checking results")
         print("----------------")
         for (mesh_file, degree, norm, ref, diff) in errors:
-            print_("(%s, %d):\t" % (mesh_file, degree), end=' ')
+            print("(%s, %d):\t" % (mesh_file, degree), end=' ')
             if diff is None:
                 print("missing reference")
             else:
-                print_("*** ERROR", end=' ')
+                print("*** ERROR", end=' ')
                 print("(norm = %.16g, reference = %.16g, relative diff = %.16g)" % (norm, ref, diff))
-    MPI.barrier(mpi_comm_world())
+    MPI.barrier(MPI.comm_world)
 
 def test_computed_norms_against_references():
     # Reference values for norm of solution vector
@@ -117,8 +115,8 @@ def test_computed_norms_against_references():
     # Mesh files and degrees to check
     meshes = [(UnitSquareMesh(16, 16), "16x16 unit tri square"),
               (UnitCubeMesh(4, 4, 4),  "4x4x4 unit tet cube"),
-              (UnitSquareMesh.create(16, 16, CellType.Type_quadrilateral), "16x16 unit quad square"),
-              (UnitCubeMesh.create(4, 4, 4, CellType.Type_hexahedron), "4x4x4 unit hex cube")]
+              (UnitSquareMesh.create(16, 16, CellType.Type.quadrilateral), "16x16 unit quad square"),
+              (UnitCubeMesh.create(4, 4, 4, CellType.Type.hexahedron), "4x4x4 unit hex cube")]
     degrees = [1, 2, 3, 4]
 
     # For MUMPS, increase estimated require memory increase. Typically

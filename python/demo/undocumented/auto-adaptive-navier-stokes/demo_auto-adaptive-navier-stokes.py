@@ -107,7 +107,7 @@ solver.solve(tol)
 solver.summary();
 
 # Show all timings
-list_timings(TimingClear_clear, [TimingType_wall])
+list_timings(TimingClear.clear, [TimingType.wall])
 
 # Extract solutions on coarsest and finest mesh:
 (u0, p0) = w.root_node().split()

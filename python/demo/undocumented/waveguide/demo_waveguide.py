@@ -33,7 +33,7 @@ Jianming Jin [7.2.1 - 7.2.2]
 # First added:  2008-08-22
 # Last changed: 2015-06-15
 
-from __future__ import print_function
+
 from dolfin import *
 
 # Test for PETSc and SLEPc

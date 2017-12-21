@@ -123,7 +123,7 @@ def test_ghost_mode_handling(pushpop_parameters):
 
     # Not-ghosted mesh won't work in parallel and assembler should raise
     parameters["ghost_mode"] = "none"
-    if MPI.size(mpi_comm_world()) == 1:
+    if MPI.size(MPI.comm_world) == 1:
         assert numpy.isclose(assemble(_form()), 1.0)
     else:
         form = _form()
@@ -139,8 +139,8 @@ def test_ghost_mode_handling(pushpop_parameters):
 
 @pytest.mark.parametrize('mesh_factory, facet_area', [((UnitSquareMesh, (4, 4)), 4.0),
                                                       ((UnitCubeMesh, (2, 2, 2)), 6.0),
-                                                      ((UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)), 4.0),
-                                                      ((UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron)), 6.0)])
+                                                      ((UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral)), 4.0),
+                                                      ((UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron)), 6.0)])
 def test_functional_assembly(mesh_factory, facet_area):
     func, args = mesh_factory
     mesh = func(*args)
@@ -153,7 +153,7 @@ def test_functional_assembly(mesh_factory, facet_area):
     assert round(assemble(M1) - facet_area, 7) == 0
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (4, 4, 4)), (UnitCubeMesh.create, (4, 4, 4, CellType.Type_hexahedron))])
+@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (4, 4, 4)), (UnitCubeMesh.create, (4, 4, 4, CellType.Type.hexahedron))])
 def test_subdomain_and_fulldomain_assembly_meshdomains(mesh_factory):
     """Test assembly over subdomains AND the full domain with markers
     stored as part of the mesh.

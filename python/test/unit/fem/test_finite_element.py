@@ -23,7 +23,6 @@
 import pytest
 import numpy
 from dolfin import *
-from six.moves import xrange as range
 from dolfin_utils.test import fixture
 
 
@@ -32,10 +31,10 @@ xfail = pytest.mark.xfail(strict=True)
 
 @pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)),
                                           (UnitCubeMesh, (2, 2, 2)),
-                                          (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)),
+                                          (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral)),
                                           # cell_normal has not been implemented for hex cell
                                           # cell.orientation() does not work
-                                          xfail((UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron)))])
+                                          xfail((UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron)))])
 def test_evaluate_dofs(mesh_factory):
 
     func, args = mesh_factory
@@ -74,16 +73,10 @@ def test_evaluate_dofs(mesh_factory):
         for i in range(coords.shape[0]):
             coord[:] = coords[i, :]
             values0[i] = e(*coord)
-        if has_pybind11():
-            values1 = L0.element().evaluate_dofs(e, vx, orientation, cell)
-            values2 = L01.element().evaluate_dofs(e, vx, orientation, cell)
-            values3 = L11.element().evaluate_dofs(e, vx, orientation, cell)
-            values4 = L1.element().evaluate_dofs(e2, vx, orientation, cell)
-        else:
-            L0.element().evaluate_dofs(values1, e, vx, orientation, cell)
-            L01.element().evaluate_dofs(values2, e, vx, orientation, cell)
-            L11.element().evaluate_dofs(values3, e, vx, orientation, cell)
-            L1.element().evaluate_dofs(values4, e2, vx, orientation, cell)
+        values1 = L0.element().evaluate_dofs(e, vx, orientation, cell)
+        values2 = L01.element().evaluate_dofs(e, vx, orientation, cell)
+        values3 = L11.element().evaluate_dofs(e, vx, orientation, cell)
+        values4 = L1.element().evaluate_dofs(e2, vx, orientation, cell)
 
         for i in range(sdim):
             assert round(values0[i] - values1[i], 7) == 0
@@ -127,18 +120,15 @@ def test_evaluate_dofs_manifolds_affine():
             for i in range(coords.shape[0]):
                 coord[:] = coords[i, :]
                 values0[i] = f(*coord)
-            if has_pybind11():
-                values1 = V.element().evaluate_dofs(f, vx, orientation, cell)
-            else:
-                V.element().evaluate_dofs(values1, f, vx, orientation, cell)
+            values1 = V.element().evaluate_dofs(f, vx, orientation, cell)
             for i in range(sdim):
                 assert round(values0[i] - values1[i], 7) == 0
 
 
 @pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)),
                                           (UnitCubeMesh, (2, 2, 2)),
-                                          (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)),
-                                          (UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron))])
+                                          (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral)),
+                                          (UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron))])
 def test_tabulate_coord(mesh_factory):
 
     func, args = mesh_factory

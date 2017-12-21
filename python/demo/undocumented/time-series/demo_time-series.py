@@ -29,7 +29,7 @@ if has_hdf5() is False:
     exit()
 
 # Create empty time series
-series = TimeSeries(mpi_comm_world(), "primal")
+series = TimeSeries(MPI.comm_world, "primal")
 
 # Create a mesh and a vector
 mesh = UnitSquareMesh(2, 2)

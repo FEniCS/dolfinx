@@ -16,10 +16,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
+
 from dolfin import *
 import ufl
-from six.moves import xrange as range
 import os
 
 exit(0)
@@ -32,8 +31,8 @@ except ImportError:
     exit()
 
 
-rank = MPI.rank(mpi_comm_world())
-size = MPI.size(mpi_comm_world())
+rank = MPI.rank(MPI.comm_world)
+size = MPI.size(MPI.comm_world)
 suffix = "_r%s" % rank if size > 1 else ""
 
 

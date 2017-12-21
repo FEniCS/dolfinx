@@ -17,7 +17,6 @@
 
 import pytest
 import numpy as np
-import six
 
 import os
 
@@ -37,7 +36,7 @@ def test_save_2d_scalar(tempdir):
 
     # Save results multiple times for append test case
     N = 10
-    for i in six.moves.range(N):
+    for i in range(N):
         file << u
 
     # Load name of datafile, stored in main file (usually scalar2D******.xyz)

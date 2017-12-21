@@ -37,7 +37,7 @@
 # NOTE: If future additions need that please import dolfin in a try: except:
 # NOTE: clause and tell the user to install dolfin if it is not installed.
 
-from __future__ import print_function
+
 import getopt
 import subprocess
 import sys
@@ -45,7 +45,6 @@ import re
 import warnings
 import os.path
 import numpy
-import six
 
 from . import abaqus
 from . import xml_writer
@@ -579,7 +578,7 @@ def triangle2xml(ifilename, ofilename):
                 print("Some edge markers are negative! dolfin will increase "\
                         "them by probably 2**32 when loading xml. "\
                         "Consider using non-negative edge markers only.")
-            for tri, vertices in six.iteritems(tris):
+            for tri, vertices in tris.items():
                 v0, v1, v2 = sorted((vertices[0:3]))
                 try:
                     edge_markers_local.append((tri, 0, \
@@ -600,12 +599,12 @@ def triangle2xml(ifilename, ofilename):
     xml_writer.write_header_mesh(ofile, "triangle", 2)
     xml_writer.write_header_vertices(ofile, num_nodes)
     node_off = 0 if 0 in nodes else -1
-    for node, node_t in six.iteritems(nodes):
+    for node, node_t in nodes.items():
         xml_writer.write_vertex(ofile, node+node_off, node_t[0], node_t[1], 0.0)
     xml_writer.write_footer_vertices(ofile)
     xml_writer.write_header_cells(ofile, num_tris)
     tri_off = 0 if 0 in tris else -1
-    for tri, tri_t in six.iteritems(tris):
+    for tri, tri_t in tris.items():
         xml_writer.write_cell_triangle(ofile, tri+tri_off, tri_t[0] + node_off,
                                        tri_t[1] + node_off, tri_t[2] + node_off)
     xml_writer.write_footer_cells(ofile)
@@ -625,7 +624,7 @@ def triangle2xml(ifilename, ofilename):
         xml_writer.write_header_meshfunction2(afile)
         xml_writer.write_header_meshvaluecollection(afile, \
                              "triangle attribs "+str(i), 2, num_tris, "double")
-        for tri, tri_a in six.iteritems(tri_attrs):
+        for tri, tri_a in tri_attrs.items():
              xml_writer.write_entity_meshvaluecollection(afile, \
                                             2, tri+tri_off, tri_a[i], 0)
         xml_writer.write_footer_meshvaluecollection(afile)

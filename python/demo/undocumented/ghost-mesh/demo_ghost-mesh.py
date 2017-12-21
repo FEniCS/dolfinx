@@ -1,11 +1,10 @@
 # very rough demo to test out ghost cells
 # run with mpirun
 #
-from __future__ import print_function
+
 from dolfin import *
 import numpy as np
 import sys, os
-import six
 
 try:
     import matplotlib.pyplot as plt
@@ -28,7 +27,7 @@ if(len(sys.argv) == 2):
     except:
         n = 0
 
-if(MPI.size(mpi_comm_world()) == 1):
+if(MPI.size(MPI.comm_world) == 1):
     print("Only works with MPI")
     quit()
 
@@ -46,7 +45,7 @@ ghost_vertices = np.arange(num_regular_vertices, mesh.topology().size(0))
 
 verts_note = []
 if (n == 0):
-    for k,val in six.iteritems(mesh.topology().shared_entities(0)):
+    for k,val in mesh.topology().shared_entities(0).items():
         vtx = Vertex(mesh, k)
         verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
 elif (n == 1):
@@ -149,7 +148,7 @@ for note in facet_note:
 # if has_hdf5():
 #     xdmf.write(Q)
 # elif MPI.size(mesh.mpi_comm()) == 1:
-#     encoding = XDMFFile.Encoding_ASCII
+#     encoding = XDMFFile.Encoding.ASCII
 #     xdmf.write(Q, encoding)
 # else:
 #     # Save solution in vtk format

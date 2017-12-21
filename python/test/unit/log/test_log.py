@@ -18,10 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 import dolfin
-from dolfin_utils.test import skip_if_not_pybind11
 
-
-@skip_if_not_pybind11
 def test_log_level_comparable():
     info = dolfin.LogLevel.INFO
     warning = dolfin.LogLevel.WARNING

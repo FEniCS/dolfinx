@@ -235,6 +235,7 @@ namespace dolfin_wrappers
       .def("__enter__", [](dolfin::HDF5File& self){ return &self; })
       .def("__exit__", [](dolfin::HDF5File& self, py::args args, py::kwargs kwargs){ self.close(); })
       .def("close", &dolfin::HDF5File::close)
+      .def("flush", &dolfin::HDF5File::flush)
       // read
       .def("read", (void (dolfin::HDF5File::*)(dolfin::Mesh&, std::string, bool) const) &dolfin::HDF5File::read)
       .def("read", (void (dolfin::HDF5File::*)(dolfin::MeshValueCollection<bool>&, std::string) const)

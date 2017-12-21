@@ -20,6 +20,7 @@
 
 #include <pybind11/pybind11.h>
 #include "MPICommWrapper.h"
+#include <dolfin/common/SubSystemsManager.h>
 
 // Macro for casting between dolfin and mpi4py MPI communicators
 #ifdef HAS_MPI
@@ -30,7 +31,9 @@
 #define VERIFY_MPI4PY(func)     \
   if (!func)                    \
   {                             \
-    if (import_mpi4py() != 0)   \
+    dolfin::SubSystemsManager::init_mpi();      \
+    int rc = import_mpi4py();                     \
+    if (rc != 0)   \
     {                           \
       std::cout << "ERROR: could not import mpi4py!" << std::endl; \
       throw std::runtime_error("Error when importing mpi4py");     \

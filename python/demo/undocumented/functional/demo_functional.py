@@ -30,7 +30,7 @@ simple reaction-diffusion equation."""
 # First added:  2007-11-14
 # Last changed: 2012-11-12
 
-from __future__ import print_function
+
 from dolfin import *
 
 # Create mesh and define function space

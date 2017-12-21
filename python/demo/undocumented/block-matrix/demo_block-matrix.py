@@ -22,7 +22,7 @@
 # First added:  2008-12-12
 # Last changed: 2012-11-12
 
-from __future__ import print_function
+
 from dolfin import *
 
 # Create a simple stiffness matrix and vector

@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 import pytest
 from dolfin import *
 import numpy as np
@@ -26,7 +25,7 @@ from dolfin_utils.test import *
 
 
 backends = sorted(linear_algebra_backends().keys())
-if MPI.size(mpi_comm_world()) > 1 and 'Eigen' in backends:
+if MPI.size(MPI.comm_world) > 1 and 'Eigen' in backends:
     backends.remove('Eigen')
 backend = set_parameters_fixture("linear_algebra_backend", backends)
 
@@ -64,22 +63,22 @@ def test_layout_and_pattern_interface(backend, mesh, element):
     L = inner(f, v)*dx
 
     # Test ghosted vector (for use as dofs of FE function)
-    t0 = TensorLayout(c, 0, TensorLayout.Sparsity_DENSE)
-    t0.init([i], TensorLayout.Ghosts_GHOSTED)
+    t0 = TensorLayout(c, 0, TensorLayout.Sparsity.DENSE)
+    t0.init([i], TensorLayout.Ghosts.GHOSTED)
     x = Vector(c)
     x.init(t0)
     u = Function(V, x)
 
     # Test unghosted vector (for assembly of rhs)
-    t1 = TensorLayout(c, 0, TensorLayout.Sparsity_DENSE)
-    t1.init([i], TensorLayout.Ghosts_UNGHOSTED)
+    t1 = TensorLayout(c, 0, TensorLayout.Sparsity.DENSE)
+    t1.init([i], TensorLayout.Ghosts.UNGHOSTED)
     b = Vector()
     b.init(t1)
     assemble(L, tensor=b)
 
     # Build sparse tensor layout (for assembly of matrix)
-    t2 = TensorLayout(c, 0, TensorLayout.Sparsity_SPARSE)
-    t2.init([i, i], TensorLayout.Ghosts_UNGHOSTED)
+    t2 = TensorLayout(c, 0, TensorLayout.Sparsity.SPARSE)
+    t2.init([i, i], TensorLayout.Ghosts.UNGHOSTED)
     s2 = t2.sparsity_pattern()
     s2.init([i, i])
     SparsityPatternBuilder.build(s2, m, [d, d],

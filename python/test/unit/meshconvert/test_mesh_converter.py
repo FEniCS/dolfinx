@@ -22,7 +22,6 @@
 # First added:
 # Last changed: 2014-05-30
 
-from __future__ import print_function
 import pytest
 import os
 import glob
@@ -30,8 +29,7 @@ import tempfile
 
 from dolfin_utils.meshconvert import meshconvert
 from dolfin_utils.meshconvert.meshconvert import DataHandler
-from dolfin import MPI, mpi_comm_world
-import six
+from dolfin import MPI
 from functools import reduce
 from dolfin_utils.test import skip_in_parallel
 
@@ -277,7 +275,7 @@ class AbaqusTest(_ConverterTest):
 
 
         # Check that the right number of facets are marked
-        for marker, count in six.iteritems(marker_counter):
+        for marker, count in marker_counter.items():
             self.assert_(len([i for i in entries if i == marker]) == count)
 
         self.assert_(ended)
@@ -437,7 +435,7 @@ class TestTriangle(Tester):
     def test_convert_triangle(self): # Disabled because it fails, see FIXME below
 
         # test no. 1
-        from dolfin import Mesh, MPI, mpi_comm_world
+        from dolfin import Mesh, MPI
 
         fname = os.path.join(os.path.dirname(__file__), "data", "triangle")
         dfname = fname+".xml"
@@ -456,7 +454,7 @@ class TestTriangle(Tester):
         # test no. 2
         from dolfin import MPI, Mesh, MeshFunction, \
                            edges, Edge, faces, Face, \
-                           SubsetIterator, facets, mpi_comm_world
+                           SubsetIterator, facets
 
         fname = os.path.join(os.path.dirname(__file__), "data", "test_Triangle_3")
         dfname = fname+".xml"
@@ -524,7 +522,7 @@ class TestTriangle(Tester):
 class TestDiffPack(Tester):
     def test_convert_diffpack(self):
 
-        from dolfin import Mesh, MPI, MeshFunction, mpi_comm_world
+        from dolfin import Mesh, MPI, MeshFunction
 
         fname = os.path.join(os.path.dirname(__file__), "data", "diffpack_tet")
         dfname = fname+".xml"
@@ -552,7 +550,7 @@ class TestDiffPack(Tester):
 
     def test_convert_diffpack_2d(self):
 
-        from dolfin import Mesh, MPI, MeshFunction, mpi_comm_world
+        from dolfin import Mesh, MPI, MeshFunction
 
         fname = os.path.join(os.path.dirname(__file__), "data", "diffpack_tri")
         dfname = fname+".xml"

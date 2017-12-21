@@ -22,11 +22,10 @@
 # First added:  2016-11-02
 # Last changed: 2016-11-14
 
-from __future__ import print_function
 import pytest
 
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel, skip_if_pybind11
+from dolfin_utils.test import skip_in_parallel
 
 def compute_area_using_quadrature(multimesh):
     total_area = 0
@@ -82,7 +81,7 @@ def create_multimesh_with_meshes_on_diagonal(width, offset, Nx):
     return relative_error < tol
 
 @skip_in_parallel
-@skip_if_pybind11
+@pytest.mark.skip
 def test_meshes_on_diagonal():
     "Place meshes on the diagonal inside a background mesh and check the interface area"
 
@@ -105,7 +104,7 @@ def test_meshes_on_diagonal():
     #     assert(create_multimesh_with_meshes_on_diagonal(width, offset, Nx))
 
 @skip_in_parallel
-@skip_if_pybind11
+@pytest.mark.skip
 def test_meshes_with_boundary_edge_overlap_2d():
     # start with boundary of mesh 1 overlapping edges of mesg 0
     mesh0 = UnitSquareMesh(4,4)
@@ -131,9 +130,8 @@ def test_meshes_with_boundary_edge_overlap_2d():
     area = compute_area_using_quadrature(multimesh)
     assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
 
-    # next translate mesh 1 such that no boundaries overlap with edges 
+    # next translate mesh 1 such that no boundaries overlap with edges
     mesh1.translate(Point(0.0, 0.1))
     multimesh.build()
     area = compute_area_using_quadrature(multimesh)
     assert  abs(area - exact_area) < DOLFIN_EPS_LARGE
-

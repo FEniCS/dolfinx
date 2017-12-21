@@ -21,7 +21,6 @@ import os
 import gc
 import pytest
 from dolfin import *
-import six
 from dolfin_utils.test import skip_in_parallel, datadir, fixture
 
 
@@ -89,13 +88,13 @@ def test_facet_domain_propagation(datadir):
         sum_parent = 0
         sum_inner = 0
         sum_outer = 0
-        for key, val in six.iteritems(parent_facets):
+        for key, val in parent_facets.items():
             if val == value:
                 sum_parent += val
-        for key, val in six.iteritems(inner_facets):
+        for key, val in inner_facets.items():
             if val == value:
                 sum_inner += val
-        for key, val in six.iteritems(outer_facets):
+        for key, val in outer_facets.items():
             if val == value:
                 sum_outer += val
 

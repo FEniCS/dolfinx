@@ -23,11 +23,10 @@
 # First added:  2016-05-03
 # Last changed: 2017-05-25
 
-from __future__ import print_function
 import pytest
 
 from dolfin import *
-from dolfin_utils.test import skip_in_parallel, skip_if_pybind11
+from dolfin_utils.test import skip_in_parallel
 
 def compute_volume(multimesh):
     # Reference volume computation
@@ -53,7 +52,7 @@ def compute_volume(multimesh):
     return v0
 
 @skip_in_parallel
-@skip_if_pybind11
+@pytest.mark.skip
 def test_volume_2d():
     "Integrate volume of union of 2D meshes"
 
@@ -100,7 +99,7 @@ def test_volume_2d():
     assert abs(exact_volume - approximative_volume) / exact_volume < DOLFIN_EPS_LARGE
 
 @skip_in_parallel
-@skip_if_pybind11
+@pytest.mark.skip
 def test_volume_2d_4_meshes():
     "Test with four meshes that previously failed"
 
@@ -154,9 +153,9 @@ def test_volume_2d_4_meshes():
     print("approximative volume ", approximate_volume)
     print("approximate volume error %1.16e" % (exact_volume - approximate_volume))
     assert abs(exact_volume - approximate_volume) < DOLFIN_EPS_LARGE
-    
+
 @skip_in_parallel
-@skip_if_pybind11
+@pytest.mark.skip
 def test_volume_2d_six_meshes():
     "Integrate volume of six 2D meshes"
 

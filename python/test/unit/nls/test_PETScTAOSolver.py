@@ -20,8 +20,6 @@
 # First added:  2014-07-19
 # Last changed: 2014-10-14
 
-from __future__ import print_function
-
 """This demo uses PETSc TAO solver for nonlinear (bound-constrained)
 optimisation problems to solve the same minimization problem for testing
 TAOLinearBoundSolver."""

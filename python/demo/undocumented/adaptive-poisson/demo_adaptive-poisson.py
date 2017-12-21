@@ -31,11 +31,10 @@ edge (jump) terms and the size of the interpolation constant.
 #
 # Modified by Anders Logg 2008-2011
 
-from __future__ import print_function
+
 from dolfin import *
 from numpy import array, sqrt
 from math import pow
-from six.moves import xrange as range
 
 TOL = 5e-4           # Error tolerance
 REFINE_RATIO = 0.50  # Refine 50 % of the cells in each iteration

@@ -205,8 +205,7 @@ to overload the ``value_shape`` method.
     class BoundarySource(UserExpression):
         def __init__(self, mesh, **kwargs):
             self.mesh = mesh
-	    if has_pybind11():
-                super().__init__(**kwargs)
+            super().__init__(**kwargs)
         def eval_cell(self, values, x, ufc_cell):
             cell = Cell(self.mesh, ufc_cell.index)
             n = cell.normal(ufc_cell.local_facet)

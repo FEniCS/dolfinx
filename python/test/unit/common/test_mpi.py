@@ -18,19 +18,10 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 import dolfin
-from dolfin import mpi_comm_world, mpi_comm_self
-from dolfin_utils.test import skip_if_not_petsc4py, skip_if_pybind11, skip_if_not_pybind11 
+from dolfin import MPI
+from dolfin_utils.test import skip_if_not_petsc4py
 
 
-@skip_if_pybind11
-@skip_if_not_petsc4py
-def test_mpi_comm_type_petsc4py():
-    import petsc4py
-    assert isinstance(mpi_comm_world(), petsc4py.PETSc.Comm)
-    assert isinstance(mpi_comm_self(), petsc4py.PETSc.Comm)
-
-
-@skip_if_not_pybind11
 def test_mpi_comm_wrapper():
     """
     Test MPICommWrapper <-> mpi4py.MPI.Comm conversion

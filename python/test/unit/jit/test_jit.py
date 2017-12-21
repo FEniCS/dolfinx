@@ -23,8 +23,7 @@ import dolfin
 from dolfin import *
 from dolfin_utils.test import (skip_if_not_PETSc, skip_if_not_SLEPc,
                                skip_if_not_MPI, skip_in_serial,
-                               skip_if_not_petsc4py, skip_if_pybind11,
-                               skip_if_not_pybind11)
+                               skip_if_not_petsc4py)
 
 
 def test_nasty_jit_caching_bug():
@@ -47,18 +46,6 @@ def test_nasty_jit_caching_bug():
     parameters["form_compiler"]["representation"] = default_parameters
 
 
-@skip_if_pybind11
-@skip_if_not_MPI
-def test_mpi_swig():
-    create_transfer_matrix_code = r'''
-    namespace dolfin
-    {
-        void find_exterior_points(MPI_Comm mpi_comm) {}
-    }'''
-    compile_extension_module(code=create_transfer_matrix_code)
-
-
-@skip_if_not_pybind11
 def test_mpi_pybind11():
     """
     Test MPICommWrapper <-> mpi4py.MPI.Comm conversion for JIT-ed code
@@ -103,10 +90,11 @@ def test_mpi_pybind11():
         assert w1.underlying_comm() == w2.underlying_comm()
 
 
-@skip_if_pybind11
 @skip_if_not_PETSc
-def test_pesc_swig():
+def test_petsc():
     create_matrix_code = r'''
+    #include <pybind11/pybind11.h>
+    #include <dolfin.h>
     namespace dolfin
     {
         std::shared_ptr<PETScMatrix> create_matrix(void) {
@@ -115,14 +103,21 @@ def test_pesc_swig():
             return ptr;
         }
     }
+
+    PYBIND11_MODULE(SIGNATURE, m)
+    {
+      m.def("create_matrix", &dolfin::create_matrix);
+    }
     '''
-    compile_extension_module(code=create_matrix_code)
+    module = compile_cpp_code(create_matrix_code)
 
 
-@skip_if_pybind11
+@pytest.mark.skip
 @skip_if_not_SLEPc
-def test_slepc_swig():
+def test_slepc():
     create_eps_code = r'''
+    #include <pybind11/pybind11.h>
+    #include <dolfin.h>
     #include <slepc.h>
     namespace dolfin
     {
@@ -133,45 +128,34 @@ def test_slepc_swig():
             return ptr;
         }
     }
+
+    PYBIND11_MODULE(SIGNATURE, m)
+    {
+      m.def("create_matrix", &dolfin::create_matrix);
+    }
+
     '''
-    compile_extension_module(code=create_eps_code)
+    compile_cpp_code(create_eps_code)
 
 
 def test_pass_array_int():
     import numpy
 
-    if has_pybind11():
-        code = """
-        #include <Eigen/Core>
-        #include <pybind11/pybind11.h>
-        #include <pybind11/eigen.h>
-        using IntVecIn = Eigen::Ref<const Eigen::VectorXi>;
-        int test_int_array(const IntVecIn arr)
-        {
-            return arr.sum();
-        }
-        PYBIND11_MODULE(SIGNATURE, m)
-        {
-            m.def("test_int_array", &test_int_array);
-        }
-        """
-        module = compile_cpp_code(code)
-    else:
-        code = """
-        int test_int_array(const Array<int>& int_arr)
-        {
-            int ret = 0;
-            for (int i = 0; i < int_arr.size(); i++)
-            {
-                ret += int_arr[i];
-            }
-            return ret;
-        }
-        """
-        module = compile_extension_module(code=code,
-                                          source_directory='.',
-                                          sources=[],
-                                          include_dirs=["."])
+    code = """
+    #include <Eigen/Core>
+    #include <pybind11/pybind11.h>
+    #include <pybind11/eigen.h>
+    using IntVecIn = Eigen::Ref<const Eigen::VectorXi>;
+    int test_int_array(const IntVecIn arr)
+    {
+    return arr.sum();
+    }
+    PYBIND11_MODULE(SIGNATURE, m)
+    {
+    m.def("test_int_array", &test_int_array);
+    }
+    """
+    module = compile_cpp_code(code)
     arr = numpy.array([1, 2, 4, 8], dtype=numpy.intc)
     ans = module.test_int_array(arr)
     assert ans == arr.sum() == 15
@@ -180,81 +164,29 @@ def test_pass_array_int():
 def test_pass_array_double():
     import numpy
 
-    if has_pybind11():
-        code = """
-        #include <Eigen/Core>
-        #include <pybind11/pybind11.h>
-        #include <pybind11/eigen.h>
-        using DoubleVecIn = Eigen::Ref<const Eigen::VectorXd>;
-        int test_double_array(const DoubleVecIn arr)
-        {
-            return arr.sum();
-        }
-        PYBIND11_MODULE(SIGNATURE, m)
-        {
-            m.def("test_double_array", &test_double_array);
-        }
-        """
-        module = compile_cpp_code(code)
-    else:
-        code = """
-        double test_double_array(const Array<double>& arr)
-        {
-            double ret = 0;
-            for (int i = 0; i < arr.size(); i++)
-            {
-                ret += arr[i];
-            }
-            return ret;
-        }
-        """
-        module = compile_extension_module(code=code,
-                                          source_directory='.',
-                                          sources=[],
-                                          include_dirs=["."])
+    code = """
+    #include <Eigen/Core>
+    #include <pybind11/pybind11.h>
+    #include <pybind11/eigen.h>
+    using DoubleVecIn = Eigen::Ref<const Eigen::VectorXd>;
+    int test_double_array(const DoubleVecIn arr)
+    {
+    return arr.sum();
+    }
+    PYBIND11_MODULE(SIGNATURE, m)
+    {
+    m.def("test_double_array", &test_double_array);
+    }
+    """
+    module = compile_cpp_code(code)
     arr = numpy.array([1, 2, 4, 8], dtype=float)
     ans = module.test_double_array(arr)
     assert abs(arr.sum() - 15) < 1e-15
     assert abs(ans - 15) < 1e-15
 
 
-@skip_if_pybind11
 @skip_if_not_PETSc
 def test_compile_extension_module():
-
-    # This test should do basically the same as the docstring of the
-    # compile_extension_module function in compilemodule.py.  Remember
-    # to update the docstring if the test is modified!
-
-    from numpy import arange, exp
-    code = """
-    namespace dolfin {
-
-      void PETSc_exp(std::shared_ptr<dolfin::PETScVector> vec)
-      {
-        Vec x = vec->vec();
-        assert(x);
-        VecExp(x);
-      }
-    }
-    """
-    for module_name in ["mypetscmodule_" + dolfin.__version__ +
-                        "_py-" + platform.python_version()[:3], ""]:
-        ext_module = compile_extension_module(\
-            code, module_name=module_name,\
-            additional_system_headers=["petscvec.h"])
-        vec = PETScVector(mpi_comm_world(), 10)
-        np_vec = vec.array()
-        np_vec[:] = arange(len(np_vec))
-        vec.set_local(np_vec)
-        ext_module.PETSc_exp(vec)
-        np_vec[:] = exp(np_vec)
-        assert (np_vec == vec.array()).all()
-
-
-@skip_if_not_pybind11
-@skip_if_not_PETSc
-def test_compile_extension_module_pybind11():
 
     # This test should do basically the same as the docstring of the
     # compile_extension_module function in compilemodule.py.  Remember
@@ -282,7 +214,7 @@ def test_compile_extension_module_pybind11():
 
     ext_module = compile_cpp_code(code)
 
-    vec = PETScVector(mpi_comm_world(), 10)
+    vec = PETScVector(MPI.comm_world, 10)
     np_vec = vec.get_local()
     np_vec[:] = arange(len(np_vec))
     vec.set_local(np_vec)
@@ -291,16 +223,16 @@ def test_compile_extension_module_pybind11():
     assert (np_vec == vec.get_local()).all()
 
 
-@skip_if_pybind11
+@pytest.mark.xfail
 def test_compile_extension_module_kwargs():
     # This test check that instant_kwargs of compile_extension_module
     # are taken into account when computing signature
-    m2 = compile_extension_module('', cppargs='-O2')
-    m0 = compile_extension_module('', cppargs='')
+    m2 = compile_cpp_code('', cppargs='-O2')
+    m0 = compile_cpp_code('', cppargs='')
     assert not m2.__file__ == m0.__file__
 
 
-@skip_if_pybind11
+@pytest.mark.skip
 @skip_if_not_petsc4py
 @skip_in_serial
 def test_mpi_dependent_jiting():

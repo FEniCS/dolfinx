@@ -17,12 +17,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 import pytest
 import numpy as np
 
 from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, UnitDiscMesh
-from dolfin import FunctionSpace, VectorFunctionSpace, Function, mpi_comm_world
+from dolfin import FunctionSpace, VectorFunctionSpace, Function, MPI
 from dolfin import UserExpression
 from dolfin import get_coordinates, set_coordinates, Mesh
 from dolfin import Expression, interpolate
@@ -36,7 +35,7 @@ def meshes_p1():
 
 @fixture
 def meshes_p2():
-    return UnitDiscMesh.create(mpi_comm_world(), 1, 2, 2), UnitDiscMesh.create(mpi_comm_world(), 1, 2, 3)
+    return UnitDiscMesh.create(MPI.comm_world, 1, 2, 2), UnitDiscMesh.create(MPI.comm_world, 1, 2, 3)
 
 
 def _test_get_set_coordinates(mesh):

@@ -70,7 +70,7 @@ def testGrad():
     assert zero == gradient(c3)
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (8, 8, 8)), (UnitCubeMesh.create, (8, 8, 8, CellType.Type_hexahedron))])
+@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (8, 8, 8)), (UnitCubeMesh.create, (8, 8, 8, CellType.Type.hexahedron))])
 def test_compute_vertex_values(mesh_factory):
     from numpy import zeros, all, array
 

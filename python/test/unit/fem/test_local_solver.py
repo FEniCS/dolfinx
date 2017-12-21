@@ -39,7 +39,7 @@ def test_solve_global_rhs():
     # Forms for projection
     a, L = inner(v, u)*dx, inner(v, f)*dx
 
-    solvers = [LocalSolver.SolverType_LU, LocalSolver.SolverType_Cholesky]
+    solvers = [LocalSolver.SolverType.LU, LocalSolver.SolverType.Cholesky]
     for solver_type in solvers:
 
         # First solve
@@ -75,7 +75,7 @@ def test_solve_local_rhs(ghost_mode):
     # Forms for projection
     a, L = inner(v, u)*dx, inner(v, f)*dx
 
-    solvers = [LocalSolver.SolverType_LU, LocalSolver.SolverType_Cholesky]
+    solvers = [LocalSolver.SolverType.LU, LocalSolver.SolverType.Cholesky]
     for solver_type in solvers:
 
         # First solve
@@ -162,7 +162,7 @@ def test_local_solver_dg(ghost_mode):
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
 
     # Compute solution with local solver (Cholesky) and compare
-    local_solver = LocalSolver(a, L, LocalSolver.SolverType_Cholesky)
+    local_solver = LocalSolver(a, L, LocalSolver.SolverType.Cholesky)
     u_ls = Function(U)
     local_solver.solve_global_rhs(u_ls)
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
@@ -201,7 +201,7 @@ def test_solve_local(ghost_mode):
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0
 
     # Compute solution with local solver (Cholesky) and compare
-    local_solver = LocalSolver(a, solver_type=LocalSolver.SolverType_Cholesky)
+    local_solver = LocalSolver(a, solver_type=LocalSolver.SolverType.Cholesky)
     u_ls = Function(U)
     local_solver.solve_local(u_ls.vector(), b, U.dofmap())
     assert round((u_lu.vector() - u_ls.vector()).norm("l2"), 12) == 0

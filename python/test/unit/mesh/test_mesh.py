@@ -17,12 +17,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function, division
-
 import pytest
 import numpy
-import six
-from six.moves import range
 
 import sys
 import os
@@ -32,12 +28,6 @@ from dolfin import *
 from dolfin_utils.test import fixture, set_parameters_fixture
 from dolfin_utils.test import skip_in_parallel, xfail_in_parallel
 from dolfin_utils.test import cd_tempdir
-from dolfin_utils.test import skip_if_not_pybind11
-
-
-if has_pybind11():
-    CellType.Type_quadrilateral = CellType.Type.quadrilateral
-    CellType.Type_hexahedron = CellType.Type.hexahedron
 
 
 @fixture
@@ -153,24 +143,16 @@ def test_UnitSquareMesh():
 
 def test_UnitSquareMeshDistributed():
     """Create mesh of unit square."""
-    mesh = UnitSquareMesh(mpi_comm_world(), 5, 7)
+    mesh = UnitSquareMesh(MPI.comm_world, 5, 7)
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 70
-    if has_petsc4py() and not has_pybind11():
-        import petsc4py
-        assert isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm)
-        assert mesh.mpi_comm() == mpi_comm_world()
 
 
 def test_UnitSquareMeshLocal():
     """Create mesh of unit square."""
-    mesh = UnitSquareMesh(mpi_comm_self(), 5, 7)
+    mesh = UnitSquareMesh(MPI.comm_self, 5, 7)
     assert mesh.num_vertices() == 48
     assert mesh.num_cells() == 70
-    if has_petsc4py() and not has_pybind11():
-        import petsc4py
-        assert isinstance(mesh.mpi_comm(), petsc4py.PETSc.Comm)
-        assert mesh.mpi_comm() == mpi_comm_self()
 
 
 def test_UnitCubeMesh():
@@ -182,26 +164,26 @@ def test_UnitCubeMesh():
 
 def test_UnitCubeMeshDistributed():
     """Create mesh of unit cube."""
-    mesh = UnitCubeMesh(mpi_comm_world(), 5, 7, 9)
+    mesh = UnitCubeMesh(MPI.comm_world, 5, 7, 9)
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 1890
 
 
 def test_UnitCubeMeshDistributedLocal():
     """Create mesh of unit cube."""
-    mesh = UnitCubeMesh(mpi_comm_self(), 5, 7, 9)
+    mesh = UnitCubeMesh(MPI.comm_self, 5, 7, 9)
     assert mesh.num_vertices() == 480
     assert mesh.num_cells() == 1890
 
 
 def test_UnitQuadMesh():
-    mesh = UnitSquareMesh.create(5, 7, CellType.Type_quadrilateral)
+    mesh = UnitSquareMesh.create(5, 7, CellType.Type.quadrilateral)
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 35
 
 
 def test_UnitHexMesh():
-    mesh = UnitCubeMesh.create(5, 7, 9, CellType.Type_hexahedron)
+    mesh = UnitCubeMesh.create(5, 7, 9, CellType.Type.hexahedron)
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
 
@@ -473,15 +455,15 @@ ghost_mode = set_parameters_fixture("ghost_mode", [
 mesh_factories = [
     (UnitIntervalMesh, (8,)),
     (UnitSquareMesh, (4, 4)),
-    (UnitDiscMesh.create, (mpi_comm_world(), 10, 1, 2)),
-    (UnitDiscMesh.create, (mpi_comm_world(), 10, 2, 2)),
-    (UnitDiscMesh.create, (mpi_comm_world(), 10, 1, 3)),
-    (UnitDiscMesh.create, (mpi_comm_world(), 10, 2, 3)),
-    (SphericalShellMesh.create, (mpi_comm_world(), 1,)),
-    (SphericalShellMesh.create, (mpi_comm_world(), 2,)),
+    (UnitDiscMesh.create, (MPI.comm_world, 10, 1, 2)),
+    (UnitDiscMesh.create, (MPI.comm_world, 10, 2, 2)),
+    (UnitDiscMesh.create, (MPI.comm_world, 10, 1, 3)),
+    (UnitDiscMesh.create, (MPI.comm_world, 10, 2, 3)),
+    (SphericalShellMesh.create, (MPI.comm_world, 1,)),
+    (SphericalShellMesh.create, (MPI.comm_world, 2,)),
     (UnitCubeMesh, (2, 2, 2)),
-    (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)),
-    (UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron)),
+    (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral)),
+    (UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron)),
     # FIXME: Add mechanism for testing meshes coming from IO
 ]
 
@@ -489,15 +471,15 @@ mesh_factories_broken_shared_entities = [
     (UnitIntervalMesh, (8,)),
     (UnitSquareMesh, (4, 4)),
     # FIXME: Problem in test_shared_entities
-    xfail_in_parallel((UnitDiscMesh.create, (mpi_comm_world(), 10, 1, 2))),
-    xfail_in_parallel((UnitDiscMesh.create, (mpi_comm_world(), 10, 2, 2))),
-    xfail_in_parallel((UnitDiscMesh.create, (mpi_comm_world(), 10, 1, 3))),
-    xfail_in_parallel((UnitDiscMesh.create, (mpi_comm_world(), 10, 2, 3))),
-    xfail_in_parallel((SphericalShellMesh.create, (mpi_comm_world(), 1,))),
-    xfail_in_parallel((SphericalShellMesh.create, (mpi_comm_world(), 2,))),
+    xfail_in_parallel((UnitDiscMesh.create, (MPI.comm_world, 10, 1, 2))),
+    xfail_in_parallel((UnitDiscMesh.create, (MPI.comm_world, 10, 2, 2))),
+    xfail_in_parallel((UnitDiscMesh.create, (MPI.comm_world, 10, 1, 3))),
+    xfail_in_parallel((UnitDiscMesh.create, (MPI.comm_world, 10, 2, 3))),
+    xfail_in_parallel((SphericalShellMesh.create, (MPI.comm_world, 1,))),
+    xfail_in_parallel((SphericalShellMesh.create, (MPI.comm_world, 2,))),
     (UnitCubeMesh, (2, 2, 2)),
-    (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)),
-    (UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron)),
+    (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral)),
+    (UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron)),
 ]
 
 # FIXME: Fix this xfail
@@ -530,12 +512,8 @@ def test_shared_entities(mesh_factory, ghost_mode):
         if mesh.topology().have_shared_entities(shared_dim):
             for e in entities(mesh, shared_dim):
                 sharing = e.sharing_processes()
-                if not has_pybind11():
-                    assert isinstance(sharing, numpy.ndarray)
-                    assert (sharing.size > 0) == e.is_shared()
-                else:
-                    assert isinstance(sharing, set)
-                    assert (len(sharing) > 0) == e.is_shared()
+                assert isinstance(sharing, set)
+                assert (len(sharing) > 0) == e.is_shared()
 
         n_entities = mesh.num_entities(shared_dim)
         n_global_entities = mesh.num_entities_global(shared_dim)
@@ -543,7 +521,7 @@ def test_shared_entities(mesh_factory, ghost_mode):
 
         # Check that sum(local-shared) = global count
         rank = MPI.rank(mesh.mpi_comm())
-        ct = sum(1 for val in six.itervalues(shared_entities) if list(val)[0] < rank)
+        ct = sum(1 for val in shared_entities.values() if list(val)[0] < rank)
         num_entities_global = MPI.sum(mesh.mpi_comm(), mesh.num_entities(shared_dim) - ct)
 
         assert num_entities_global ==  mesh.num_entities_global(shared_dim)
@@ -572,7 +550,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
         vertex_global_indices = cell.entities(0)
 
         # Loop over all dimensions of reference cell topology
-        for d, d_topology in six.iteritems(fiat_cell.get_topology()):
+        for d, d_topology in fiat_cell.get_topology().items():
 
             # Get entities of dimension d on the cell
             entities = cell.entities(d)
@@ -580,7 +558,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
                 entities = (cell.index(),)
 
             # Loop over all entities of fixed dimension d
-            for entity_index, entity_topology in six.iteritems(d_topology):
+            for entity_index, entity_topology in d_topology.items():
 
                 # Check that entity vertices map to cell vertices in right order
                 entity = MeshEntity(mesh, d, entities[entity_index])
@@ -638,9 +616,6 @@ def test_mesh_topology_reference():
     assert mesh.topology().id() == mesh.topology().id()
 
 
-# Reference counting does not work like expected with SWIG,
-# SWIG handles the lifetime differently
-@skip_if_not_pybind11
 def test_mesh_topology_lifetime():
     """Check that lifetime of Mesh.topology() is bound to
     underlying mesh object"""
@@ -653,7 +628,6 @@ def test_mesh_topology_lifetime():
     assert sys.getrefcount(mesh) == rc
 
 
-@skip_if_not_pybind11
 def test_mesh_connectivity_lifetime():
     """Check that lifetime of MeshConnectivity is bound to
     underlying mesh topology object"""

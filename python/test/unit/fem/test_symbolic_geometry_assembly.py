@@ -896,20 +896,17 @@ def test_triangle_symbolic_geometry(uflacs_representation_only):
         assert round(assemble(R/vol*dx(1)) - Cell(mesh, k).circumradius(), 7) == 0.0
 
 
-if has_pybind11():
-    xfail_jit = pytest.mark.xfail(raises=Exception, strict=True)
-else:
-    xfail_jit = pytest.mark.xfail(raises=RuntimeError, strict=True)
+xfail_jit = pytest.mark.xfail(raises=Exception, strict=True)
 
 @pytest.mark.parametrize('mesh_factory', [
     (UnitIntervalMesh, (8,)),
     (UnitSquareMesh, (4, 4)),
-    (UnitDiscMesh.create, (mpi_comm_world(), 4, 1, 2)),
-    (UnitDiscMesh.create, (mpi_comm_world(), 4, 1, 3)),
-    (SphericalShellMesh.create, (mpi_comm_world(), 1,)),
+    (UnitDiscMesh.create, (MPI.comm_world, 4, 1, 2)),
+    (UnitDiscMesh.create, (MPI.comm_world, 4, 1, 3)),
+    (SphericalShellMesh.create, (MPI.comm_world, 1,)),
     (UnitCubeMesh, (2, 2, 2)),
-    (UnitSquareMesh.create, (4, 4, CellType.Type_quadrilateral)),
-    (UnitCubeMesh.create, (2, 2, 2, CellType.Type_hexahedron)),
+    (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral)),
+    (UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron)),
     (line1d, (None,)),
     (line2d, (None,)),
     (line3d, (None,)),
@@ -919,9 +916,9 @@ else:
     (square2d, (None,)),
     (square3d, (None,)),
     # Tested geometric quantities are not implemented for higher-order cells
-    xfail_jit((UnitDiscMesh.create, (mpi_comm_world(), 4, 2, 2))),
-    xfail_jit((UnitDiscMesh.create, (mpi_comm_world(), 4, 2, 3))),
-    xfail_jit((SphericalShellMesh.create, (mpi_comm_world(), 2,))),
+    xfail_jit((UnitDiscMesh.create, (MPI.comm_world, 4, 2, 2))),
+    xfail_jit((UnitDiscMesh.create, (MPI.comm_world, 4, 2, 3))),
+    xfail_jit((SphericalShellMesh.create, (MPI.comm_world, 2,))),
 ])
 @skip_in_parallel
 def test_geometric_quantities(uflacs_representation_only, mesh_factory):
