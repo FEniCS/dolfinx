@@ -30,8 +30,10 @@
 
 #include <tuple>
 #include <vector>
+#include <dolfin/common/constants.h>
 #include "GenericTensor.h"
 #include "GenericLinearOperator.h"
+
 
 namespace dolfin
 {
@@ -127,8 +129,9 @@ namespace dolfin
     /// product y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
-    /// *Arguments*
-    ///     dim (std::size_t)
+    /// @param z (GenericVector&)
+    ///         Vector to initialise
+    /// @param dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
     virtual void init_vector(GenericVector& z, std::size_t dim) const = 0;
 
@@ -249,8 +252,7 @@ namespace dolfin
     {  set(&value, 1, &ij.first, 1, &ij.second); }
 
     /// Insert one on the diagonal for all zero rows
-    virtual void ident_zeros();
-
+    virtual void ident_zeros(double tol=DOLFIN_EPS);
   };
 
 }

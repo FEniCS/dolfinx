@@ -48,8 +48,7 @@ namespace dolfin
 
     /// Create zero scalar
     Scalar(MPI_Comm comm) : GenericTensor(), _value(0.0), _local_increment(0.0),
-      _mpi_comm(comm)
-      { SubSystemsManager::init_mpi(); }
+      _mpi_comm(comm) {}
 
     /// Destructor
     virtual ~Scalar() {}
@@ -61,7 +60,7 @@ namespace dolfin
     {
       _value = 0.0;
       _local_increment = 0.0;
-      _mpi_comm = tensor_layout.mpi_comm();
+      _mpi_comm.reset(tensor_layout.mpi_comm());
     }
 
     /// Return true if empty
@@ -169,13 +168,13 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply(std::string mode)
     {
-      _value = _value + MPI::sum(_mpi_comm, _local_increment);
+      _value = _value + MPI::sum(_mpi_comm.comm(), _local_increment);
       _local_increment = 0.0;
     }
 
     /// Return MPI communicator
     virtual MPI_Comm mpi_comm() const
-    { return _mpi_comm; }
+    { return _mpi_comm.comm(); }
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const
@@ -193,7 +192,7 @@ namespace dolfin
       std::shared_ptr<Scalar> s(new Scalar);
       s->_value = _value;
       s->_local_increment = _local_increment;
-      s->_mpi_comm = _mpi_comm;
+      s->_mpi_comm.reset(_mpi_comm.comm());
       return s;
     }
 
@@ -225,7 +224,7 @@ namespace dolfin
     double _local_increment;
 
     // MPI communicator
-     MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
   };
 

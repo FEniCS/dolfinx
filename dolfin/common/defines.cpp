@@ -25,6 +25,10 @@
 #include <petscversion.h>
 #endif
 
+#ifdef HAS_HDF5
+#include <hdf5.h>
+#endif
+
 #include "types.h"
 #include "defines.h"
 
@@ -47,6 +51,15 @@ std::string dolfin::git_commit_hash()
 std::size_t dolfin::sizeof_la_index()
 {
   return sizeof(dolfin::la_index);
+}
+//-------------------------------------------------------------------------
+bool dolfin::has_debug()
+{
+#ifdef DEBUG
+  return true;
+#else
+  return false;
+#endif
 }
 //-------------------------------------------------------------------------
 bool dolfin::has_openmp()
@@ -138,10 +151,10 @@ bool dolfin::has_hdf5()
   return false;
 #endif
 }
-//-------------------------------------------------------------------------
-bool dolfin::has_vtk()
+//-----------------------------------------------------------------------------
+bool dolfin::has_hdf5_parallel()
 {
-#ifdef HAS_VTK
+#ifdef H5_HAVE_PARALLEL
   return true;
 #else
   return false;

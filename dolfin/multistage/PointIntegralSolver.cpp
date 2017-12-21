@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2014-10-14
+// Last changed: 2017-01-19
 
 #include <cmath>
 #include <algorithm>
@@ -40,6 +40,13 @@
 #include "MultiStageScheme.h"
 #include "PointIntegralSolver.h"
 
+#ifdef HAS_PETSC
+#include "dolfin/la/PETScVector.h"
+#include <petscsys.h>
+#include <petscvec.h>
+#endif
+
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -58,8 +65,6 @@ PointIntegralSolver::PointIntegralSolver(std::shared_ptr<MultiStageScheme> schem
   _ufcs(), _coefficient_index(), _recompute_jacobian(),
   _jacobians(), _eta(1.0), _num_jacobian_computations(0)
 {
-  Timer construct_pis("Construct PointIntegralSolver");
-
   // Set parameters
   parameters = default_parameters();
 
@@ -98,6 +103,8 @@ void PointIntegralSolver::step(double dt)
 {
   dolfin_assert(_mesh);
 
+  Timer timer("PointIntegralSolver::step");
+
   const bool reset_stage_solutions_ = parameters["reset_stage_solutions"];
   const bool reset_newton_solver_
     = parameters("newton_solver")["reset_each_step"];
@@ -109,8 +116,6 @@ void PointIntegralSolver::step(double dt)
   // Check for reseting newtonsolver for each time step
   if (reset_newton_solver_)
     reset_newton_solver();
-
-  Timer t_step("PointIntegralSolver::step");
 
   dolfin_assert(dt > 0.0);
 
@@ -124,98 +129,128 @@ void PointIntegralSolver::step(double dt)
   const dolfin::la_index local_dof_size = _dofmap.ownership_range().second
     - _dofmap.ownership_range().first;
 
-  // Iterate over vertices
-  ufc::cell ufc_cell;
-  std::vector<double> coordinate_dofs;
-  for (std::size_t vert_ind = 0; vert_ind < _mesh->num_vertices(); ++vert_ind)
+  // PETSc performance optimisation: Since we know that we will only set local
+  // values, we can tell PETSc to ignore off processor vector entry communication
+  // during assembly.
+#ifdef HAS_PETSC
+  auto petsc_vec = as_type<PETScVector>(_scheme->solution()->vector());
+  PetscErrorCode ierr = VecSetOption(petsc_vec->vec(), VEC_IGNORE_OFF_PROC_ENTRIES, PETSC_TRUE);
+  if (ierr != 0) petsc_vec->petsc_error(ierr, __FILE__, "VecSetOption");
+#endif
+
+
+  try
   {
-    // Cell containing vertex
-    const Cell cell(*_mesh, _vertex_map[vert_ind].first);
-    cell.get_coordinate_dofs(coordinate_dofs);
-    cell.get_cell_data(ufc_cell);
 
-    // Get all dofs for cell
-    // FIXME: Should we include logics about empty dofmaps?
-    const ArrayView<const dolfin::la_index> cell_dofs
-      = _dofmap.cell_dofs(cell.index());
-
-    // Tabulate local-local dofmap
-    _dofmap.tabulate_entity_dofs(_local_to_local_dofs, 0,
-                                 _vertex_map[vert_ind].second);
-
-    // Fill local to global dof map and check that the dof is owned
-    bool owns_all_dofs = true;
-    for (unsigned int row = 0; row < _system_size; row++)
+    // Iterate over vertices
+    ufc::cell ufc_cell;
+    std::vector<double> coordinate_dofs;
+    for (std::size_t vert_ind = 0; vert_ind < _mesh->num_vertices(); ++vert_ind)
     {
-      _local_to_global_dofs[row] = cell_dofs[_local_to_local_dofs[row]];
-      if (_local_to_global_dofs[row] >= local_dof_size)
+      // Cell containing vertex
+      const Cell cell(*_mesh, _vertex_map[vert_ind].first);
+      cell.get_coordinate_dofs(coordinate_dofs);
+      cell.get_cell_data(ufc_cell);
+
+      // Get all dofs for cell
+      // FIXME: Should we include logics about empty dofmaps?
+      auto cell_dofs = _dofmap.cell_dofs(cell.index());
+
+      // Tabulate local-local dofmap
+      _dofmap.tabulate_entity_dofs(_local_to_local_dofs, 0,
+                                   _vertex_map[vert_ind].second);
+
+      // Fill local to global dof map and check that the dof is owned
+      bool owns_all_dofs = true;
+      for (unsigned int row = 0; row < _system_size; row++)
       {
-        owns_all_dofs = false;
-        break;
+        _local_to_global_dofs[row] = cell_dofs[_local_to_local_dofs[row]];
+        if (_local_to_global_dofs[row] >= local_dof_size)
+        {
+          owns_all_dofs = false;
+          break;
+        }
       }
-    }
 
-    // If not owning all dofs
-    if (!owns_all_dofs)
-      continue;
+      // If not owning all dofs
+      if (!owns_all_dofs)
+        continue;
 
-    // Iterate over stage forms
-    for (unsigned int stage = 0; stage < _num_stages; stage++)
-    {
-      // Update cell
+      // Iterate over stage forms
+      for (unsigned int stage = 0; stage < _num_stages; stage++)
+      {
+        // Update cell
+        // TODO: Pass suitable bool vector here to avoid tabulating all
+        // coefficient dofs:
+        _ufcs[stage][0]->update(cell, coordinate_dofs, ufc_cell);
+        //some_integral.enabled_coefficients());
+
+        // Check if we have an explicit stage (only 1 form)
+        if (_ufcs[stage].size() == 1)
+        {
+          _solve_explicit_stage(vert_ind, stage, ufc_cell, coordinate_dofs);
+        }
+        // or an implicit stage (2 forms)
+        else
+        {
+          _solve_implicit_stage(vert_ind, stage, cell, ufc_cell,
+                                coordinate_dofs);
+        }
+      }
+
+      // Last stage point integral
+      const ufc::vertex_integral& integral
+        = *_last_stage_ufc->default_vertex_integral;
+
+      // Update coefficients for last stage
       // TODO: Pass suitable bool vector here to avoid tabulating all
       // coefficient dofs:
-      _ufcs[stage][0]->update(cell, coordinate_dofs, ufc_cell);
-      //some_integral.enabled_coefficients());
+      _last_stage_ufc->update(cell, coordinate_dofs, ufc_cell);
+      //integral.enabled_coefficients());
 
-      // Check if we have an explicit stage (only 1 form)
-      if (_ufcs[stage].size() == 1)
-      {
-        _solve_explicit_stage(vert_ind, stage, ufc_cell, coordinate_dofs);
-      }
-      // or an implicit stage (2 forms)
-      else
-      {
-        _solve_implicit_stage(vert_ind, stage, cell, ufc_cell,
-                              coordinate_dofs);
-      }
+      // Tabulate cell tensor
+      integral.tabulate_tensor(_last_stage_ufc->A.data(), _last_stage_ufc->w(),
+                               coordinate_dofs.data(),
+                               _vertex_map[vert_ind].second,
+                               ufc_cell.orientation);
+
+      // Update solution with a tabulation of the last stage
+      for (unsigned int row = 0; row < _system_size; row++)
+        _y[row] = _last_stage_ufc->A[_local_to_local_dofs[row]];
+
+      // Update global solution with last stage
+      _scheme->solution()->vector()->set_local(_y.data(),
+                                               _local_to_global_dofs.size(),
+                                               _local_to_global_dofs.data());
     }
 
-    Timer t_last_stage("Last stage: tabulate_tensor");
+    Timer timer_apply("PointIntegralSolver::apply");
+    for (unsigned int stage=0; stage<_num_stages; stage++)
+      _scheme->stage_solutions()[stage]->vector()->apply("insert");
 
-    // Last stage point integral
-    const ufc::vertex_integral& integral
-      = *_last_stage_ufc->default_vertex_integral;
+    _scheme->solution()->vector()->apply("insert");
+    timer_apply.stop();
 
-    // Update coefficients for last stage
-    // TODO: Pass suitable bool vector here to avoid tabulating all
-    // coefficient dofs:
-    _last_stage_ufc->update(cell, coordinate_dofs, ufc_cell);
-    //integral.enabled_coefficients());
+    // Update time
+    *_scheme->t() = t0 + dt;
 
-    // Tabulate cell tensor
-    integral.tabulate_tensor(_last_stage_ufc->A.data(), _last_stage_ufc->w(),
-                             coordinate_dofs.data(),
-                             _vertex_map[vert_ind].second,
-                             ufc_cell.orientation);
-
-    // Update solution with a tabulation of the last stage
-    for (unsigned int row = 0; row < _system_size; row++)
-      _y[row] = _last_stage_ufc->A[_local_to_local_dofs[row]];
-
-    // Update global solution with last stage
-    _scheme->solution()->vector()->set_local(_y.data(),
-                                             _local_to_global_dofs.size(),
-                                             _local_to_global_dofs.data());
   }
+  catch (std::exception &e)
+  {
+#ifdef HAS_PETSC
+    // Remove performance optimisation flag an exception occurred
+    ierr = VecSetOption(petsc_vec->vec(), VEC_IGNORE_OFF_PROC_ENTRIES, PETSC_FALSE);
+    if (ierr != 0) petsc_vec->petsc_error(ierr, __FILE__, "VecSetOption");
+#endif
+    throw;
+  }
+#ifdef HAS_PETSC
+  // Remove performance optimisation flag in case no exception occurred
+  ierr = VecSetOption(petsc_vec->vec(), VEC_IGNORE_OFF_PROC_ENTRIES, PETSC_FALSE);
+  if (ierr != 0) petsc_vec->petsc_error(ierr, __FILE__, "VecSetOption");
+#endif
 
-  for (unsigned int stage=0; stage<_num_stages; stage++)
-    _scheme->stage_solutions()[stage]->vector()->apply("insert");
-
-  _scheme->solution()->vector()->apply("insert");
-
-  // Update time
-  *_scheme->t() = t0 + dt;
+  timer.stop();
 }
 //-----------------------------------------------------------------------------
 void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
@@ -223,7 +258,6 @@ void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
                                                 const ufc::cell& ufc_cell,
                                                 const std::vector<double>& coordinate_dofs)
 {
-  Timer t_expl("Explicit stage");
 
   // Local vertex ind
   const unsigned int local_vert = _vertex_map[vert_ind].second;
@@ -233,11 +267,9 @@ void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
     = *_ufcs[stage][0]->default_vertex_integral;
 
   // Tabulate cell tensor
-  Timer t_expl_tt("Explicit stage: tabulate_tensor");
   integral.tabulate_tensor(_ufcs[stage][0]->A.data(), _ufcs[stage][0]->w(),
                            coordinate_dofs.data(), local_vert,
                            ufc_cell.orientation);
-  t_expl_tt.stop();
 
   // Extract vertex dofs from tabulated tensor and put them into the
   // local stage solution vector
@@ -265,8 +297,6 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
                                                 const ufc::cell& ufc_cell,
                                                 const std::vector<double>& coordinate_dofs)
 {
-  Timer t_impl("Implicit stage");
-
   // Do a simplified newton solve
   _simplified_newton_solve(vert_ind, stage, cell, ufc_cell, coordinate_dofs);
 
@@ -318,13 +348,10 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
 {
   const ufc::vertex_integral& J_integral = *loc_ufc.default_vertex_integral;
 
-  //Timer _timer_compute_jac("Implicit stage: Compute jacobian");
-  //Timer t_impl_update("Update_cell");
   // TODO: Pass suitable bool vector here to avoid tabulating all
   // coefficient dofs:
   loc_ufc.update(cell, coordinate_dofs, ufc_cell);
   //J_integral.enabled_coefficients());
-  //t_impl_update.stop();
 
   // If there is a solution coefficient in the Jacobian form
   if (coefficient_index > 0)
@@ -336,15 +363,12 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
   }
 
   // Tabulate Jacobian
-  Timer t_impl_tt_jac("Implicit stage: tabulate_tensor (J)");
   J_integral.tabulate_tensor(loc_ufc.A.data(), loc_ufc.w(),
                              coordinate_dofs.data(),
                              local_vert,
                              ufc_cell.orientation);
-  t_impl_tt_jac.stop();
 
   // Extract vertex dofs from tabulated tensor
-  //Timer t_impl_update_jac("Implicit stage: update_jac");
   for (unsigned int row = 0; row < _system_size; row++)
   {
     for (unsigned int col = 0; col < _system_size; col++)
@@ -354,12 +378,11 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
                     + _local_to_local_dofs[col]];
     }
   }
-  //t_impl_update_jac.stop();
 
   // LU factorize Jacobian
-  //Timer lu_factorize("Implicit stage: LU factorize");
   _lu_factorize(jac);
   _num_jacobian_computations += 1;
+
 }
 //-----------------------------------------------------------------------------
 void PointIntegralSolver::_lu_factorize(std::vector<double>& A)
@@ -601,7 +624,6 @@ void PointIntegralSolver::_simplified_newton_solve(
   std::size_t vert_ind, unsigned int stage, const Cell& cell,
   const ufc::cell& ufc_cell, const std::vector<double>& coordinate_dofs)
 {
-  //Timer _timer_newton_solve("Implicit stage: Newton solve");
   const Parameters& newton_solver_params = parameters("newton_solver");
   const size_t report_vertex = newton_solver_params["report_vertex"];
   const double kappa = newton_solver_params["kappa"];
@@ -649,12 +671,10 @@ void PointIntegralSolver::_simplified_newton_solve(
   do
   {
     // Tabulate residual
-    Timer t_impl_tt_F("Implicit stage: tabulate_tensor (F)");
     F_integral.tabulate_tensor(loc_ufc_F.A.data(), loc_ufc_F.w(),
                                coordinate_dofs.data(),
                                local_vert,
                                ufc_cell.orientation);
-    t_impl_tt_F.stop();
 
     // Extract vertex dofs from tabulated tensor, together with the
     // old stage solution
@@ -687,9 +707,7 @@ void PointIntegralSolver::_simplified_newton_solve(
     }
 
     // Perform linear solve By forward backward substitution
-    //Timer forward_backward_substitution("Implicit stage: fb substitution");
     _forward_backward_subst(jac, _residual, _dx);
-    //forward_backward_substitution.stop();
 
     // Newton_Iterations == 0
     if (newton_iterations == 0)

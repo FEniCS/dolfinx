@@ -74,7 +74,7 @@ namespace dolfin
 
     /// Return MPI communicator
     virtual MPI_Comm mpi_comm() const
-    { return _mpi_comm; }
+    { return _mpi_comm.comm(); }
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -85,24 +85,20 @@ namespace dolfin
     virtual std::shared_ptr<GenericVector> copy() const;
 
     /// Initialize vector to size N
-    virtual void init(MPI_Comm comm, std::size_t N)
+    virtual void init(std::size_t N)
     {
-      check_mpi_size(comm);
       if (!empty())
       {
         dolfin_error("EigenVector.cpp",
                      "calling EigenVector::init(...)",
                      "Cannot call init for a non-empty vector. Use EigenVector::resize instead");
       }
-
       resize(N);
     }
 
     /// Resize vector with given ownership range
-    virtual void init(MPI_Comm comm,
-                      std::pair<std::size_t, std::size_t> range)
+    virtual void init(std::pair<std::size_t, std::size_t> range)
     {
-      check_mpi_size(comm);
       if (!empty())
       {
         dolfin_error("EigenVector.cpp",
@@ -116,12 +112,10 @@ namespace dolfin
     }
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void init(MPI_Comm comm,
-                      std::pair<std::size_t, std::size_t> range,
+    virtual void init(std::pair<std::size_t, std::size_t> range,
                       const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index>& ghost_indices)
     {
-      check_mpi_size(comm);
       if (!empty())
       {
         dolfin_error("EigenVector.cpp",
@@ -270,12 +264,12 @@ namespace dolfin
     virtual void resize(std::size_t N);
 
     /// Return reference to Eigen vector (const version)
-    const Eigen::VectorXd& vec() const
-    { return *_x; }
+    std::shared_ptr<const Eigen::VectorXd> vec() const
+    { return _x; }
 
     /// Return reference to Eigen vector (non-const version)
-    Eigen::VectorXd& vec()
-    { return *_x; }
+    std::shared_ptr<Eigen::VectorXd> vec()
+    { return _x; }
 
     /// Access value of given entry (const version)
     virtual double operator[] (dolfin::la_index i) const
@@ -310,7 +304,7 @@ namespace dolfin
     std::shared_ptr<Eigen::VectorXd> _x;
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
   };
 

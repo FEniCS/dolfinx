@@ -44,31 +44,39 @@ namespace dolfin
     /// Destructor
     virtual ~CoordinateMatrix() {}
 
+    /// Size
+    /// @param dim (std::size_t)
+    /// Dimension (0 or 1)
     std::size_t size(std::size_t dim) const
     { return _size[dim]; }
 
+    /// Get row indices
     const std::vector<std::size_t>& rows() const
     { return _rows; }
 
+    /// Get column indices
     const std::vector<std::size_t>& columns() const
     { return _cols; }
 
+    /// Get values
     const std::vector<double>& values() const
     { return _vals; }
 
     /// Return norm of matrix
     double norm(std::string norm_type) const;
 
+    /// Get MPI_Comm
     MPI_Comm mpi_comm() const
-    { return _mpi_comm; }
+    { return _mpi_comm.comm(); }
 
+    /// Whether indices start from 0 (C-style) or 1 (FORTRAN-style)
     bool base_one() const
     { return _base_one; }
 
   private:
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
     // Row and column indices
     std::vector<std::size_t> _rows;

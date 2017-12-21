@@ -25,12 +25,24 @@
 namespace dolfin
 {
 
-  class SphericalShellMesh : public Mesh
+  /// Spherical shell approximation, icosahedral mesh, with degree=1
+  /// or degree=2
+
+  class SphericalShellMesh
   {
   public:
 
     /// Create a spherical shell manifold for testing
-    SphericalShellMesh(MPI_Comm comm, std::size_t degree);
+    static Mesh create(MPI_Comm comm, std::size_t degree)
+    {
+      Mesh mesh(comm);
+      build(mesh, degree);
+      return mesh;
+    }
+
+  private:
+
+    static void build(Mesh& mesh, std::size_t degree);
 
   };
 

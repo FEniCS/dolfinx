@@ -43,10 +43,9 @@ namespace dolfin
 
     /// Assemble tensor from given form
     ///
-    /// *Arguments*
-    ///     A (_GenericTensor_)
+    /// @param     A (_GenericTensor_)
     ///         The tensor to assemble.
-    ///     a (_Form_)
+    /// @param     a (_Form_)
     ///         The form to assemble the tensor from.
     void assemble(GenericTensor& A, const MultiMeshForm& a);
 
@@ -65,6 +64,9 @@ namespace dolfin
 
     // Assemble over cut cells
     void _assemble_cut_cells(GenericTensor& A, const MultiMeshForm& a);
+
+    // Assemble over uncut exterior facets
+    void _assemble_uncut_exterior_facets(GenericTensor& A, const MultiMeshForm& a);
 
     // Assemble over interface
     void _assemble_interface(GenericTensor& A, const MultiMeshForm& a);

@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2014 Garth N. Wells
+// Copyright (C) 2005-2017 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -14,18 +14,14 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Ola Skavhaug, 2008.
-// Modified by Anders Logg, 2008.
-// Modified by Marie Rognes, 2009.
 
 #ifndef __SLEPC_EIGEN_SOLVER_H
 #define __SLEPC_EIGEN_SOLVER_H
 
 #ifdef HAS_SLEPC
 
-#include <string>
 #include <memory>
+#include <string>
 #include <slepceps.h>
 #include "dolfin/common/types.h"
 #include "dolfin/common/MPI.h"
@@ -38,6 +34,7 @@ namespace dolfin
   class GenericVector;
   class PETScMatrix;
   class PETScVector;
+  class VectorSpaceBasis;
 
   /// This class provides an eigenvalue solver for PETSc matrices. It
   /// is a wrapper for the SLEPc eigenvalue solver.
@@ -156,25 +153,14 @@ namespace dolfin
     /// Compute the n first eigenpairs of the matrix A (solve Ax = \lambda x)
     void solve(std::size_t n);
 
-    /// Get the first eigenvalue
-    void get_eigenvalue(double& lr, double& lc) const;
-
-    /// Get the first eigenpair
-    void get_eigenpair(double& lr, double& lc,
-                       GenericVector& r, GenericVector& c) const;
-
-    /// Get the first eigenpair
-    void get_eigenpair(double& lr, double& lc,
-                       PETScVector& r, PETScVector& c) const;
-
-    /// Get eigenvalue i
+    /// Get ith eigenvalue
     void get_eigenvalue(double& lr, double& lc, std::size_t i) const;
 
-    /// Get eigenpair i
+    /// Get ith eigenpair
     void get_eigenpair(double& lr, double& lc,
                        GenericVector& r, GenericVector& c, std::size_t i) const;
 
-    /// Get eigenpair i
+    /// Get ith eigenpair
     void get_eigenpair(double& lr, double& lc,
                        PETScVector& r, PETScVector& c, std::size_t i) const;
 
@@ -184,8 +170,13 @@ namespace dolfin
     /// Get the number of converged eigenvalues
     std::size_t get_number_converged() const;
 
-    /// Set deflation space
-    void set_deflation_space(const PETScVector& deflation_space);
+    /// Set deflation space. The VectorSpaceBasis does not need to be
+    /// orthonormal.
+    void set_deflation_space(const VectorSpaceBasis& deflation_space);
+
+    /// Set inital space. The VectorSpaceBasis does not need to be
+    /// orthonormal.
+    void set_initial_space(const VectorSpaceBasis& initial_space);
 
     /// Sets the prefix used by PETSc when searching the PETSc options
     /// database
@@ -194,6 +185,9 @@ namespace dolfin
     /// Returns the prefix used by PETSc when searching the PETSc
     /// options database
     std::string get_options_prefix() const;
+
+    /// Set options from PETSc options database
+    void set_from_options() const;
 
     /// Return SLEPc EPS pointer
     EPS eps() const;
@@ -233,9 +227,6 @@ namespace dolfin
 
     // Set tolerance
     void set_tolerance(double tolerance, int maxiter);
-
-    // Operators (A x = \lambda x or Ax = \lambda B x)
-    std::shared_ptr<const PETScMatrix> _matA, _matB;
 
     // SLEPc solver pointer
     EPS _eps;

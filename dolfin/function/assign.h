@@ -26,18 +26,17 @@
 
 namespace dolfin
 {
-  
+
   class Function;
 
   /// Assign one function to another. The functions must reside in the
   /// same type of FunctionSpace. One or both functions can be sub
   /// functions.
   ///
-  /// *Arguments*
-  ///     receiving_func (std::shared_ptr<_Function_>)
-  ///         The receiving function 
-  ///     assigning_func (std::shared_ptr<_Function_>)
-  ///         The assigning function 
+  /// @param    receiving_func (std::shared_ptr<_Function_>)
+  ///         The receiving function
+  /// @param    assigning_func (std::shared_ptr<_Function_>)
+  ///         The assigning function
   void assign(std::shared_ptr<Function> receiving_func,
 	      std::shared_ptr<const Function> assigning_func);
 
@@ -46,15 +45,23 @@ namespace dolfin
   /// number of sub functions in the assigning mixed function. The sub
   /// spaces of the assigning mixed space must be of the same type ans
   /// size as the receiving spaces.
+  /// @param    receiving_func (std::shared_ptr<_Function_>)
+  ///         The receiving function
+  /// @param    assigning_funcs (std::vector<std::shared_ptr<_Function_>>)
+  ///         The assigning functions
   void assign(std::shared_ptr<Function> receiving_func,
-	      std::vector<std::shared_ptr<const Function> > assigning_funcs);
+	      std::vector<std::shared_ptr<const Function>> assigning_funcs);
 
   /// Assign sub functions of a single mixed function to single
   /// receiving functions. The number of sub functions in the
   /// assigning mixed function must sum up to the number of receiving
   /// functions. The sub spaces of the receiving mixed space must be
   /// of the same type ans size as the assigning spaces.
-  void assign(std::vector<std::shared_ptr<Function> > receiving_funcs, 
+  /// @param    receiving_funcs (std::vector<std::shared_ptr<_Function_>>)
+  ///         The receiving functions
+  /// @param    assigning_func (std::shared_ptr<_Function_>)
+  ///         The assigning function
+  void assign(std::vector<std::shared_ptr<Function>> receiving_funcs,
 	      std::shared_ptr<const Function> assigning_func);
 
 }

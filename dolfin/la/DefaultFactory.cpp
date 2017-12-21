@@ -40,9 +40,9 @@ std::shared_ptr<GenericVector> DefaultFactory::create_vector(MPI_Comm comm) cons
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<TensorLayout>
-DefaultFactory::create_layout(std::size_t rank) const
+DefaultFactory::create_layout(MPI_Comm comm, std::size_t rank) const
 {
-  return factory().create_layout(rank);
+  return factory().create_layout(comm, rank);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericLinearOperator>
@@ -51,8 +51,8 @@ DefaultFactory::create_linear_operator(MPI_Comm comm) const
   return factory().create_linear_operator(comm);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericLUSolver>
-  DefaultFactory::create_lu_solver(MPI_Comm comm, std::string method) const
+std::shared_ptr<GenericLinearSolver>
+DefaultFactory::create_lu_solver(MPI_Comm comm, std::string method) const
 {
   return factory().create_lu_solver(comm, method);
 }

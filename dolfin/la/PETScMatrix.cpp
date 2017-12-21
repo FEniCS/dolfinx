@@ -41,13 +41,17 @@
 #include "VectorSpaceBasis.h"
 #include "PETScMatrix.h"
 
+
+// Ceiling division of nonnegative integers
+#define dolfin_ceil_div(x, y) (x/y + int(x%y != 0))
+
+
 using namespace dolfin;
 
 const std::map<std::string, NormType> PETScMatrix::norm_types
 = { {"l1",        NORM_1},
     {"linf",      NORM_INFINITY},
     {"frobenius", NORM_FROBENIUS} };
-
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix() : PETScMatrix(MPI_COMM_WORLD)
 {
@@ -138,14 +142,20 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   ierr = MatSetFromOptions(_matA);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetFromOptions");
 
-  // Build data to intialise sparsity pattern (modify for block size)
+  // Build data to initialixe sparsity pattern (modify for block size)
   std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.size()/block_size),
     _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.size()/block_size);
 
   for (std::size_t i = 0; i < _num_nonzeros_diagonal.size(); ++i)
-    _num_nonzeros_diagonal[i] = num_nonzeros_diagonal[block_size*i]/block_size;
+  {
+    _num_nonzeros_diagonal[i]
+      = dolfin_ceil_div(num_nonzeros_diagonal[block_size*i], block_size);
+  }
   for (std::size_t i = 0; i < _num_nonzeros_off_diagonal.size(); ++i)
-    _num_nonzeros_off_diagonal[i] = num_nonzeros_off_diagonal[block_size*i]/block_size;
+  {
+    _num_nonzeros_off_diagonal[i]
+      = dolfin_ceil_div(num_nonzeros_off_diagonal[block_size*i], block_size);
+  }
 
   // Allocate space (using data from sparsity pattern)
   ierr = MatXAIJSetPreallocation(_matA, block_size,
@@ -269,12 +279,12 @@ void PETScMatrix::axpy(double a, const GenericMatrix& A,
 {
   PetscErrorCode ierr;
 
-  const PETScMatrix* AA = &as_type<const PETScMatrix>(A);
+  const PETScMatrix& AA = as_type<const PETScMatrix>(A);
   dolfin_assert(_matA);
-  dolfin_assert(AA->mat());
+  dolfin_assert(AA.mat());
   if (same_nonzero_pattern)
   {
-    ierr = MatAXPY(_matA, a, AA->mat(), SAME_NONZERO_PATTERN);
+    ierr = MatAXPY(_matA, a, AA.mat(), SAME_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAXPY");
   }
   else
@@ -294,7 +304,7 @@ void PETScMatrix::axpy(double a, const GenericMatrix& A,
     PetscObjectReference((PetscObject) rmapping0);
     PetscObjectReference((PetscObject) cmapping0);
 
-    ierr = MatAXPY(_matA, a, AA->mat(), DIFFERENT_NONZERO_PATTERN);
+    ierr = MatAXPY(_matA, a, AA.mat(), DIFFERENT_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAXPY");
 
     // Set local-to-global map and decrease reference count to maps
@@ -466,7 +476,7 @@ void PETScMatrix::get_diagonal(GenericVector& x) const
 {
   dolfin_assert(_matA);
 
-  PETScVector& xx = x.down_cast<PETScVector>();
+  PETScVector& xx = as_type<PETScVector>(x);
   if (size(1) != size(0) || size(0) != xx.size())
   {
     dolfin_error("PETScMatrix.cpp",
@@ -483,7 +493,7 @@ void PETScMatrix::set_diagonal(const GenericVector& x)
 {
   dolfin_assert(_matA);
 
-  const PETScVector& xx = x.down_cast<PETScVector>();
+  const PETScVector& xx = as_type<const PETScVector>(x);
   if (size(1) != size(0) || size(0) != xx.size())
   {
     dolfin_error("PETScMatrix.cpp",
@@ -743,25 +753,22 @@ MatNullSpace PETScMatrix::create_petsc_nullspace(const VectorSpaceBasis& nullspa
   PetscErrorCode ierr;
 
   // Copy vectors in vector space object
-  std::vector<PETScVector> _nullspace;
+  std::vector<Vec> _nullspace;
   for (std::size_t i = 0; i < nullspace.dim(); ++i)
   {
     dolfin_assert(nullspace[i]);
-    const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
+    dolfin_assert(as_type<const PETScVector>(nullspace[i]));
+    auto x = as_type<const PETScVector>(nullspace[i])->vec();
 
-    // Copy vector
+    // Copy vector pointer
+    dolfin_assert(x);
     _nullspace.push_back(x);
   }
 
-  // Get pointers to underlying PETSc objects
-  std::vector<Vec> petsc_vecs;
-  for (auto& basis_vector : _nullspace)
-    petsc_vecs.push_back(basis_vector.vec());
-
   // Create PETSC nullspace
   MatNullSpace petsc_nullspace = NULL;
-  ierr = MatNullSpaceCreate(mpi_comm(), PETSC_FALSE, petsc_vecs.size(),
-                            petsc_vecs.data(), &petsc_nullspace);
+  ierr = MatNullSpaceCreate(mpi_comm(), PETSC_FALSE, _nullspace.size(),
+                            _nullspace.data(), &petsc_nullspace);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
 
   return petsc_nullspace;

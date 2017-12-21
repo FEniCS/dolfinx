@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2009 Garth N. Wells
+// Copyright (C) 2005-2017 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -14,12 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Anders Logg 2006.
-// Modified by Niclas Jansson 2009.
-//
-// First added:  2005-07-05
-// Last changed: 2013-03-11
 
 #ifndef __VTK_FILE_H
 #define __VTK_FILE_H
@@ -38,7 +32,13 @@ namespace pugi
 namespace dolfin
 {
 
-  /// This class supports the output of meshes and functions in VTK
+  class Function;
+  class GenericFunction;
+  class Mesh;
+  template<typename T> class MeshFunction;
+
+  /// Output of meshes and functions in VTK format
+
   /// XML format for visualisation purposes. It is not suitable to
   /// checkpointing as it may decimate some data.
 
@@ -46,24 +46,49 @@ namespace dolfin
   {
   public:
 
+    /// Create VTK file
     VTKFile(const std::string filename, std::string encoding);
+
+    // Destructor
     ~VTKFile();
 
-    void operator<< (const Mesh& mesh);
-    void operator<< (const MeshFunction<bool>& meshfunction);
-    void operator<< (const MeshFunction<std::size_t>& meshfunction);
-    void operator<< (const MeshFunction<int>& meshfunction);
-    void operator<< (const MeshFunction<double>& meshfunction);
-    void operator<< (const Function& u);
-    void operator<< (const std::pair<const Mesh*, double> mesh);
-    void operator<< (const std::pair<const MeshFunction<int>*, double> f);
-    void
-      operator<< (const std::pair<const MeshFunction<std::size_t>*, double> f);
-    void operator<< (const std::pair<const MeshFunction<double>*, double> f);
-    void operator<< (const std::pair<const MeshFunction<bool>*, double> f);
-    void operator<< (const std::pair<const Function*, double> u);
+    /// Output mesh
+    void write(const Mesh& mesh);
 
-  protected:
+    /// Output MeshFunction<bool>
+    void write(const MeshFunction<bool>& meshfunction);
+
+    /// Output MeshFunction<std::size_t>
+    void write(const MeshFunction<std::size_t>& meshfunction);
+
+    /// Output MeshFunction<int>
+    void write(const MeshFunction<int>& meshfunction);
+
+    /// Output MeshFunction<double>
+    void write(const MeshFunction<double>& meshfunction);
+
+    /// Output Function
+    void write(const Function& u);
+
+    /// Output Mesh and timestep
+    void write(const Mesh& mesh, double t);
+
+    /// Output MeshFunction and timestep
+    void write(const MeshFunction<int>& mesh, double t);
+
+    /// Output MeshFunction and timestep
+    void write(const MeshFunction<std::size_t>& mf, double t);
+
+    /// Output MeshFunction and timestep
+    void write(const MeshFunction<double>& mf, double t);
+
+    /// Output MeshFunction and timestep
+    void write(const MeshFunction<bool>& mf, double t);
+
+    /// Output Function and timestep
+    void write(const Function& u, double t);
+
+  private:
 
     void write_function(const Function& u, double time);
 

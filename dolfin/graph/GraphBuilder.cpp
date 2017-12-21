@@ -31,6 +31,7 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/mesh/Cell.h>
@@ -53,11 +54,12 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   // Build graph
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const ArrayView<const dolfin::la_index> dofs0
-      = dofmap0.cell_dofs(cell->index());
-    const ArrayView<const dolfin::la_index> dofs1
-      = dofmap1.cell_dofs(cell->index());
-    //std::vector<dolfin::la_index>::const_iterator node0, node1;
+    auto _dofs0 = dofmap0.cell_dofs(cell->index());
+    auto _dofs1 = dofmap1.cell_dofs(cell->index());
+
+    ArrayView<const dolfin::la_index> dofs0(_dofs0.size(), _dofs0.data());
+    ArrayView<const dolfin::la_index> dofs1(_dofs1.size(), _dofs1.data());
+
     for (auto node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
       for (auto node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)
         if (*node0 != *node1)
@@ -446,32 +448,28 @@ std::int32_t GraphBuilder::compute_nonlocal_dual_graph(
   }
 
   // Send matches to other processes
-  MPI::all_to_all(mpi_comm, send_buffer, received_buffer);
+  std::vector<std::size_t> cell_list;
+  MPI::all_to_all(mpi_comm, send_buffer, cell_list);
 
   // Clear ghost vertices
   ghost_vertices.clear();
 
-  // Flatten received data and insert connected cells into local map
+  // Insert connected cells into local map
   std::int32_t num_nonlocal_edges = 0;
-  for (std::size_t p = 0; p < received_buffer.size(); ++p)
+  for (std::size_t i = 0; i < cell_list.size(); i += 2)
   {
-    const std::vector<std::size_t>& cell_list = received_buffer[p];
-    for (std::size_t i = 0; i < cell_list.size(); i += 2)
+    dolfin_assert((std::int64_t) cell_list[i] >= offset);
+    dolfin_assert((std::int64_t)  (cell_list[i] - offset)
+                  < (std::int64_t) local_graph.size());
+
+    auto& edges = local_graph[cell_list[i] - offset];
+    auto it = std::find(edges.begin(), edges.end(), cell_list[i + 1]);
+    if (it == local_graph[cell_list[i] - offset].end())
     {
-      dolfin_assert((std::int64_t) cell_list[i] >= offset);
-      dolfin_assert((std::int64_t)  (cell_list[i] - offset)
-                    < (std::int64_t) local_graph.size());
-
-      //local_graph[cell_list[i] - offset].insert(cell_list[i + 1]);
-      auto& edges = local_graph[cell_list[i] - offset];
-      auto it = std::find(edges.begin(), edges.end(), cell_list[i + 1]);
-      if (it == local_graph[cell_list[i] - offset].end())
-        edges.push_back(cell_list[i + 1]);
-
-      ghost_vertices.insert(cell_list[i + 1]);
+      edges.push_back(cell_list[i + 1]);
+      ++num_nonlocal_edges;
     }
-
-    ++num_nonlocal_edges;
+    ghost_vertices.insert(cell_list[i + 1]);
   }
 
   return num_nonlocal_edges;

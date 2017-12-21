@@ -24,7 +24,7 @@
 #include <algorithm>
 #include <dolfin/log/log.h>
 #include <dolfin/log/Progress.h>
-#include <dolfin/common/Array.h>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/la/GenericTensor.h>
@@ -41,7 +41,6 @@
 #include "Form.h"
 #include "UFC.h"
 #include "FiniteElement.h"
-#include "OpenMpAssembler.h"
 #include "AssemblerBase.h"
 #include "Assembler.h"
 
@@ -55,20 +54,6 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
   // cells, exterior and interior facets.
-
-  // Check whether we should call the multi-core assembler
-  #ifdef HAS_OPENMP
-  const std::size_t num_threads = parameters["num_threads"];
-  if (num_threads > 0)
-  {
-    OpenMpAssembler assembler;
-    assembler.add_values = add_values;
-    assembler.finalize_tensor = finalize_tensor;
-    assembler.keep_diagonal = keep_diagonal;
-    assembler.assemble(A, a);
-    return;
-  }
-  #endif
 
   // Get cell domains
   std::shared_ptr<const MeshFunction<std::size_t>>
@@ -183,7 +168,8 @@ void Assembler::assemble_cells(
     bool empty_dofmap = false;
     for (std::size_t i = 0; i < form_rank; ++i)
     {
-      dofs[i] = dofmaps[i]->cell_dofs(cell->index());
+      auto dmap = dofmaps[i]->cell_dofs(cell->index());
+      dofs[i] = ArrayView<const dolfin::la_index>(dmap.size(), dmap.data());
       empty_dofmap = empty_dofmap || dofs[i].size() == 0;
     }
 
@@ -292,7 +278,10 @@ void Assembler::assemble_exterior_facets(
 
     // Get local-to-global dof maps for cell
     for (std::size_t i = 0; i < form_rank; ++i)
-      dofs[i] = dofmaps[i]->cell_dofs(mesh_cell.index());
+    {
+      auto dmap = dofmaps[i]->cell_dofs(mesh_cell.index());
+      dofs[i].set(dmap.size(), dmap.data());
+    }
 
     // Tabulate exterior facet tensor
     integral->tabulate_tensor(ufc.A.data(),
@@ -326,6 +315,11 @@ void Assembler::assemble_interior_facets(
   // Extract mesh and coefficients
   dolfin_assert(a.mesh());
   const Mesh& mesh = *(a.mesh());
+
+  // Sanity check of ghost mode (proper check in AssemblerBase::check)
+  dolfin_assert(mesh.ghost_mode() == "shared_vertex"
+                || mesh.ghost_mode() == "shared_facet"
+                || MPI::size(mesh.mpi_comm()) == 1);
 
   // MPI rank
   const int my_mpi_rank = MPI::rank(mesh.mpi_comm());
@@ -410,10 +404,8 @@ void Assembler::assemble_interior_facets(
     for (std::size_t i = 0; i < form_rank; i++)
     {
       // Get dofs for each cell
-      const ArrayView<const dolfin::la_index> cell_dofs0
-        = dofmaps[i]->cell_dofs(cell0.index());
-      const ArrayView<const dolfin::la_index> cell_dofs1
-        = dofmaps[i]->cell_dofs(cell1.index());
+      auto cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
+      auto cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
 
       // Create space in macro dof vector
       macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
@@ -634,7 +626,8 @@ void Assembler::assemble_vertices(
     for (std::size_t i = 0; i < form_rank; ++i)
     {
       // Get local-to-global dof maps for cell
-      dofs[i] = dofmaps[i]->cell_dofs(mesh_cell.index());
+      auto dmap = dofmaps[i]->cell_dofs(mesh_cell.index());
+      dofs[i].set(dmap.size(), dmap.data());
 
       // Get local dofs of the local vertex
       dofmaps[i]->tabulate_entity_dofs(local_to_local_dofs[i], 0, local_vertex);

@@ -15,226 +15,238 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Benjamin Kehlet 2012
-//
-// First added:  2007-05-14
-// Last changed: 2012-11-12
-//
 // Unit tests for the mesh library
 
 #include <dolfin.h>
-#include <gtest/gtest.h>
+#include <catch.hpp>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TEST(SimpleShapesTest, testUnitSquareMesh)
+TEST_CASE("Simple shapes test")
 {
-  // Create mesh of unit square
-  UnitSquareMesh mesh(5, 7);
-  ASSERT_EQ(mesh.num_vertices(), (std::size_t) 48);
-  ASSERT_EQ(mesh.num_cells(), (std::size_t) 70);
+  SECTION("Test UnitSquareMesh")
+  {
+    // Create mesh of unit square
+    UnitSquareMesh mesh(5, 7);
+    CHECK(mesh.num_vertices() == (std::size_t) 48);
+    CHECK(mesh.num_cells() == (std::size_t) 70);
+
+    // Create mesh of unit square
+    auto mesh1 = UnitSquareMesh::create({{5, 7}}, CellType::Type::triangle);
+    CHECK(mesh1.num_vertices() == (std::size_t) 48);
+    CHECK(mesh1.num_cells() == (std::size_t) 70);
+  }
+
+  SECTION("Test UnitCubeMesh")
+  {
+    // Create mesh of unit cube
+    UnitCubeMesh mesh(5, 7, 9);
+    CHECK(mesh.num_vertices() == (std::size_t) 480);
+    CHECK(mesh.num_cells() == (std::size_t) 1890);
+
+    // Create mesh of unit cube
+    auto mesh1 = UnitCubeMesh::create({{5, 7, 9}}, CellType::Type::tetrahedron);
+    CHECK(mesh1.num_vertices() == (std::size_t) 480);
+    CHECK(mesh1.num_cells() == (std::size_t) 1890);
+  }
 }
-//-----------------------------------------------------------------------------
-TEST(SimpleShapesTest, testUnitCubeMesh)
+
+TEST_CASE("Mesh refinement")
 {
-  // Create mesh of unit cube
-  UnitCubeMesh mesh(5, 7, 9);
-  ASSERT_EQ(mesh.num_vertices(), (std::size_t) 480);
-  ASSERT_EQ(mesh.num_cells(), (std::size_t) 1890);
+  SECTION("Test refine UnitSquareMesh")
+  {
+    // Refine mesh of unit square
+    UnitSquareMesh mesh0(5, 7);
+    Mesh mesh1 = refine(mesh0);
+    CHECK(mesh1.num_vertices() == (std::size_t) 165);
+    CHECK(mesh1.num_cells() == (std::size_t) 280);
+  }
+
+  SECTION("Test refine UnitCubeMesh")
+  {
+    // Refine mesh of unit cube
+    UnitCubeMesh mesh0(5, 7, 9);
+    Mesh mesh1 = refine(mesh0);
+    CHECK(mesh1.num_vertices() == (std::size_t) 3135);
+    CHECK(mesh1.num_cells() == (std::size_t) 15120);
+  }
 }
-//-----------------------------------------------------------------------------
-TEST(MeshRefinement, testRefineUnitSquareMesh)
+
+TEST_CASE("Mesh iterators")
 {
-  // Refine mesh of unit square
-  UnitSquareMesh mesh0(5, 7);
-  Mesh mesh1 = refine(mesh0);
-  ASSERT_EQ(mesh1.num_vertices(), (std::size_t) 165);
-  ASSERT_EQ(mesh1.num_cells(), (std::size_t) 280);
-}
-//-----------------------------------------------------------------------------
-TEST(MeshRefinement, testRefineUnitCubeMesh)
-{
-  // Refine mesh of unit cube
-  UnitCubeMesh mesh0(5, 7, 9);
-  Mesh mesh1 = refine(mesh0);
-  ASSERT_EQ(mesh1.num_vertices(), (std::size_t) 3135);
-  ASSERT_EQ(mesh1.num_cells(), (std::size_t) 15120);
-}
-//-----------------------------------------------------------------------------
-TEST(MeshIterators, testVertexIterators)
-{
-  // Iterate over vertices
-  UnitCubeMesh mesh(5, 5, 5);
-  unsigned int n = 0;
-  for (VertexIterator v(mesh); !v.end(); ++v)
-    n++;
-  ASSERT_EQ(n, mesh.num_vertices());
-}
-//-----------------------------------------------------------------------------
-TEST(MeshIterators, testEdgeIterators)
-{
-  // Iterate over edges
-  UnitCubeMesh mesh(5, 5, 5);
-  unsigned int n = 0;
-  for (EdgeIterator e(mesh); !e.end(); ++e)
-    n++;
-  ASSERT_EQ(n, mesh.num_edges());
-}
-//-----------------------------------------------------------------------------
-TEST(MeshIterators, testFaceIterators)
-{
-  // Iterate over faces
-  UnitCubeMesh mesh(5, 5, 5);
-  unsigned int n = 0;
-  for (FaceIterator f(mesh); !f.end(); ++f)
-    n++;
-  ASSERT_EQ(n, mesh.num_faces());
-}
-//-----------------------------------------------------------------------------
-TEST(MeshIterators, testFacetIterators)
-{
-  // Iterate over facets
-  UnitCubeMesh mesh(5, 5, 5);
-  unsigned int n = 0;
-  for (FacetIterator f(mesh); !f.end(); ++f)
-    n++;
-  ASSERT_EQ(n, mesh.num_facets());
-}
-//-----------------------------------------------------------------------------
-TEST(MeshIterators, testCellIterators)
-{
-  // Iterate over cells
-  UnitCubeMesh mesh(5, 5, 5);
-  unsigned int n = 0;
-  for (CellIterator c(mesh); !c.end(); ++c)
-    n++;
-  ASSERT_EQ(n, mesh.num_cells());
-}
-//-----------------------------------------------------------------------------
-TEST(MeshIterators, testMixedIterators)
-{
-  // Iterate over vertices of cells
-  UnitCubeMesh mesh(5, 5, 5);
-  unsigned int n = 0;
-  for (CellIterator c(mesh); !c.end(); ++c)
-    for (VertexIterator v(*c); !v.end(); ++v)
+  SECTION("Test vertex iterators")
+  {
+    // Iterate over vertices
+    UnitCubeMesh mesh(5, 5, 5);
+    unsigned int n = 0;
+    for (VertexIterator v(mesh); !v.end(); ++v)
       n++;
-  ASSERT_EQ(n, 4*mesh.num_cells());
-}
-//-----------------------------------------------------------------------------
-TEST(BoundaryExtraction, testBoundaryComputation)
-{
-  // Compute boundary of mesh
-  UnitCubeMesh mesh(2, 2, 2);
-  BoundaryMesh boundary(mesh, "exterior");
-  ASSERT_EQ(boundary.num_vertices(), (std::size_t) 26);
-  ASSERT_EQ(boundary.num_cells(), (std::size_t) 48);
-}
-//-----------------------------------------------------------------------------
-TEST(BoundaryExtraction, testBoundaryBoundary)
-{
-  // Compute boundary of boundary
-  //
-  // Note that we can't do
-  //
-  //   BoundaryMesh b0(mesh);
-  //   BoundaryMesh b1(b0);
-  //
-  // since b1 would then be a copy of b0 (copy
-  // constructor in Mesh will be used).
 
-  UnitCubeMesh mesh(2, 2, 2);
-  BoundaryMesh b0(mesh, "exterior");
-  b0.order();
-  BoundaryMesh b1(b0, "exterior");
-  ASSERT_EQ(b1.num_vertices(), (std::size_t) 0);
-  ASSERT_EQ(b1.num_cells(), (std::size_t) 0);
-}
-//-----------------------------------------------------------------------------
-TEST(MeshFunctions, testAssign)
-{
-  /// Assign value of mesh function
-  auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
-  MeshFunction<int> f(mesh, 0);
-  f[3] = 10;
-  Vertex v(*mesh, 3);
-  ASSERT_EQ(f[v], 10);
-}
-//-----------------------------------------------------------------------------
-TEST(InputOutput, testMeshXML2D)
-{
-  // Write and read 2D mesh to/from file
-  UnitSquareMesh mesh_out(3, 3);
-  Mesh mesh_in;
-  File file("unitsquare.xml");
-  file << mesh_out;
-  file >> mesh_in;
-  ASSERT_EQ(mesh_in.num_vertices(), (std::size_t) 16);
-}
-//-----------------------------------------------------------------------------
-TEST(InputOutput, testMeshXML3D)
-{
-  // Write and read 3D mesh to/from file
-  UnitCubeMesh mesh_out(3, 3, 3);
-  Mesh mesh_in;
-  File file("unitcube.xml");
-  file << mesh_out;
-  file >> mesh_in;
-  ASSERT_EQ(mesh_in.num_vertices(), (std::size_t) 64);
-}
-//-----------------------------------------------------------------------------
-TEST(InputOutput, testMeshFunction)
-{
-  // Write and read mesh function to/from file
-  auto mesh = std::make_shared<UnitSquareMesh>(1, 1);
-  MeshFunction<int> f(mesh, 0);
-  f[0] = 2;
-  f[1] = 4;
-  f[2] = 6;
-  f[3] = 8;
-  File file("meshfunction.xml");
-  file << f;
-  MeshFunction<int> g(mesh, 0);
-  file >> g;
-  for (VertexIterator v(*mesh); !v.end(); ++v)
-    ASSERT_EQ(f[*v], g[*v]);
+    CHECK(n == mesh.num_vertices());
+  }
+
+  SECTION("Test edge iterators")
+  {
+    // Iterate over edges
+    UnitCubeMesh mesh(5, 5, 5);
+    unsigned int n = 0;
+    for (EdgeIterator e(mesh); !e.end(); ++e)
+      n++;
+
+    CHECK(n == mesh.num_edges());
+  }
+
+  SECTION("Test face iterators")
+  {
+    // Iterate over faces
+    UnitCubeMesh mesh(5, 5, 5);
+    unsigned int n = 0;
+    for (FaceIterator f(mesh); !f.end(); ++f)
+      n++;
+
+    CHECK(n == mesh.num_faces());
+  }
+
+  SECTION("Test facet iterators")
+  {
+    // Iterate over facets
+    UnitCubeMesh mesh(5, 5, 5);
+    unsigned int n = 0;
+    for (FacetIterator f(mesh); !f.end(); ++f)
+      n++;
+
+    CHECK(n == mesh.num_facets());
+  }
+
+  SECTION("Test cell iterators")
+  {
+    // Iterate over cells
+    UnitCubeMesh mesh(5, 5, 5);
+    unsigned int n = 0;
+    for (CellIterator c(mesh); !c.end(); ++c)
+      n++;
+
+    CHECK(n == mesh.num_cells());
+  }
+
+  SECTION("Test mixed iterators")
+  {
+    // Iterate over vertices of cells
+    UnitCubeMesh mesh(5, 5, 5);
+    unsigned int n = 0;
+    for (CellIterator c(mesh); !c.end(); ++c)
+      for (VertexIterator v(*c); !v.end(); ++v)
+        n++;
+
+    CHECK(n == 4*mesh.num_cells());
+  }
+
+  SECTION("Test boundary computation")
+  {
+    // Compute boundary of mesh
+    UnitCubeMesh mesh(2, 2, 2);
+    BoundaryMesh boundary(mesh, "exterior");
+    CHECK(boundary.num_vertices() == (std::size_t) 26);
+    CHECK(boundary.num_cells() == (std::size_t) 48);
+  }
 }
 
-//-----------------------------------------------
-TEST(PyCCInterface, testGetGeometricalDimension)
+TEST_CASE("Boundary extraction")
 {
-  // Get geometrical dimension of mesh
-  UnitSquareMesh mesh(5, 5);
-  ASSERT_EQ(mesh.geometry().dim(), (std::size_t) 2);
-}
-//-----------------------------------------------------------------------------
-TEST(PyCCInterface, testGetCoordinates)
-{
-  // Get coordinates of vertices
-  UnitSquareMesh mesh(5, 5);
-  ASSERT_EQ(mesh.geometry().num_vertices(), (std::size_t) 36);
-}
-//-----------------------------------------------------------------------------
-TEST(PyCCInterface, testGetCells)
-{
-  // Get cells of mesh
-  UnitSquareMesh mesh(5, 5);
-  ASSERT_EQ(mesh.topology().size(2), (std::size_t) 50);
+  SECTION("Test boundary of boundary")
+  {
+    // Compute boundary of boundary
+    //
+    // Note that we can't do
+    //
+    //   BoundaryMesh b0(mesh);
+    //   BoundaryMesh b1(b0);
+    //
+    // since b1 would then be a copy of b0 (copy
+    // constructor in Mesh will be used).
+
+    UnitCubeMesh mesh(2, 2, 2);
+    BoundaryMesh b0(mesh, "exterior");
+    b0.order();
+    BoundaryMesh b1(b0, "exterior");
+    CHECK(b1.num_vertices() == (std::size_t) 0);
+    CHECK(b1.num_cells() == (std::size_t) 0);
+  }
+
+  SECTION("Test assign")
+  {
+    /// Assign value of mesh function
+    auto mesh = std::make_shared<UnitSquareMesh>(3, 3);
+    MeshFunction<int> f(mesh, 0);
+    f[3] = 10;
+    Vertex v(*mesh, 3);
+    CHECK(f[v] == 10);
+  }
 }
 
-// Test all
-int Mesh_main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
+TEST_CASE("InputOutput")
+{
+  SECTION("Test mesh XML 2D")
+  {
+    // Write and read 2D mesh to/from file
+    UnitSquareMesh mesh_out(3, 3);
+    Mesh mesh_in;
+    File file("unitsquare.xml");
+    file << mesh_out;
+    file >> mesh_in;
+    CHECK(mesh_in.num_vertices() == (std::size_t) 16);
+  }
 
-    // FIXME: Only the following test works in Parallel
-    // Failed: SimpleShapes; MeshRefinement; BoundaryExtraction
-    // MeshFunctions; InputOutput; PyCCInterface
-    if (dolfin::MPI::size(MPI_COMM_WORLD) != 1)
-    {
-      ::testing::GTEST_FLAG(filter) = "MeshIterators.*";
-    }
-    return RUN_ALL_TESTS();
+  SECTION("Test mesh XML 3D")
+  {
+    // Write and read 3D mesh to/from file
+    UnitCubeMesh mesh_out(3, 3, 3);
+    Mesh mesh_in;
+    File file("unitcube.xml");
+    file << mesh_out;
+    file >> mesh_in;
+    CHECK(mesh_in.num_vertices() == (std::size_t) 64);
+  }
 
+  SECTION("Test MeshFunction")
+  {
+    // Write and read mesh function to/from file
+    auto mesh = std::make_shared<UnitSquareMesh>(1, 1);
+    MeshFunction<int> f(mesh, 0);
+    f[0] = 2;
+    f[1] = 4;
+    f[2] = 6;
+    f[3] = 8;
+    File file("meshfunction.xml");
+    file << f;
+    MeshFunction<int> g(mesh, 0);
+    file >> g;
+    for (VertexIterator v(*mesh); !v.end(); ++v)
+      CHECK(f[*v] == g[*v]);
+  }
 }
-//-----------------------------------------------------------------------------
+
+TEST_CASE("PyCCInterface")
+{
+  SECTION("Test get geometrical dimension")
+  {
+    // Get geometrical dimension of mesh
+    UnitSquareMesh mesh(5, 5);
+    CHECK(mesh.geometry().dim() == (std::size_t) 2);
+  }
+
+  SECTION("Test get coordinates")
+  {
+    // Get coordinates of vertices
+    UnitSquareMesh mesh(5, 5);
+    CHECK(mesh.geometry().num_vertices() == (std::size_t) 36);
+  }
+
+  SECTION("Test get cells")
+  {
+    // Get cells of mesh
+    UnitSquareMesh mesh(5, 5);
+    CHECK(mesh.topology().size(2) == (std::size_t) 50);
+  }
+}

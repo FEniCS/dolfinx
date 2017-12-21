@@ -17,18 +17,18 @@
 dolfin/libdolfin.so*
 
 # FFC generated code in library
-dolfin/ale/Poisson*D.h
+/dolfin/ale/Poisson*D.h
 
 # FFC generated code in benchmarks
-bench/fem/convergence/cpp/Poisson2D_1.cpp
-bench/fem/convergence/cpp/Poisson2D_2.cpp
-bench/fem/convergence/cpp/Poisson2D_3.cpp
-bench/fem/convergence/cpp/Poisson2D_4.cpp
-bench/fem/convergence/cpp/Poisson2D_5.cpp
-bench/fem/convergence/cpp/Poisson3D_1.cpp
-bench/fem/convergence/cpp/Poisson3D_2.cpp
-bench/fem/convergence/cpp/Poisson3D_3.cpp
-bench/fem/convergence/cpp/Poisson3D_4.cpp
+/bench/fem/convergence/cpp/Poisson2D_1.cpp
+/bench/fem/convergence/cpp/Poisson2D_2.cpp
+/bench/fem/convergence/cpp/Poisson2D_3.cpp
+/bench/fem/convergence/cpp/Poisson2D_4.cpp
+/bench/fem/convergence/cpp/Poisson2D_5.cpp
+/bench/fem/convergence/cpp/Poisson3D_1.cpp
+/bench/fem/convergence/cpp/Poisson3D_2.cpp
+/bench/fem/convergence/cpp/Poisson3D_3.cpp
+/bench/fem/convergence/cpp/Poisson3D_4.cpp
 
 # Log files
 *.log
@@ -37,17 +37,12 @@ bench/fem/convergence/cpp/Poisson3D_4.cpp
 /local
 /local.*
 
-# SWIG generated files
-dolfin/swig/**/**/*.py
-dolfin/swig/**/**/*.h
-dolfin/swig/**/**/*.cc
-dolfin/swig/**/**/*.cxx
-dolfin/swig/**/**/module.i
-dolfin/swig/**/**/dependencies.txt
-swigimportinfo.py
-
 # Documentation
 docstrings.i
+generated_rst_files
+mock_cpp_modules.py
+doxygen
+doc/source/demos
 
 # Configuration files
 dolfin.conf
@@ -61,26 +56,27 @@ dolfin-config-version.cmake
 # Demos and tests
 build_demo.*
 test_*_tempdir
-test/unit/mesh/{cpp,python}/*.{xml,m}
-test/unit/parameter/{cpp,python}/*.{xml,xml.gz}
-bench/**/**/cpp/forms/*.h
-bench/**/**/cpp/*.h
-test/unit/**/python/*.xml
-test/unit/**/cpp/*.xml
-test/unit/cpp/function/Projection.h
-test/unit/cpp/la/forms/ReactionDiffusion.h
-test/unit/cpp/la/forms/ReactionDiffusionAction.h
-test/unit/cpp/multimesh/MultiMeshStokes2D.h
-test/**/.cache/
+/test/unit/cpp/mesh/*.{xml,m}
+/test/unit/cpp/parameter/*.{xml,xml.gz}
+/bench/**/**/cpp/forms/*.h
+/bench/**/**/cpp/*.h
+/python/demo/**/*.py
+/python/demo/**/*.xml
+/python/demo/undocumented/mesh-quality/mesh-quality.pdf
+/demo/**/*.ufl
+/demo/**/*.cpp
+/test/unit/cpp/**/*.xml
+/python/test/unit/**/*.xml
+/test/unit/cpp/function/Projection.h
+/test/unit/cpp/la/forms/ReactionDiffusion.h
+/test/unit/cpp/la/forms/ReactionDiffusionAction.h
+/test/unit/cpp/multimesh/MultiMeshStokes2D.h
+.cache
 
 # FFC generated demo files
 demo/**/**/cpp/*.h
 demo/documented/cahn-hilliard/cpp/CahnHilliard2D.cpp
 demo/documented/cahn-hilliard/cpp/CahnHilliard3D.cpp
-
-
-# QT generated code
-moc_*
 
 # Temporaries
 *~
@@ -98,10 +94,11 @@ moc_*
 *.xdmf
 *.bin
 
-# CMake and Make file
+# CMake files
 CMakeLists.txt
 !/CMakeLists.txt
 !dolfin/CMakeLists.txt
+!dolfin/*/CMakeLists.txt
 !bench/CMakeLists.txt
 !dolfin/swig/CMakeLists.txt
 !doc/CMakeLists.txt
@@ -130,8 +127,5 @@ install_manifest.txt
 .settings
 
 cmake.local
-
-# Google Test Files
-/GoogleTest/
 
 build/

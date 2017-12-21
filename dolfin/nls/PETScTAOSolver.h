@@ -24,9 +24,13 @@
 #ifdef HAS_PETSC
 
 #include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 #include <petsctao.h>
 #include <petsctaolinesearch.h>
-#include <memory>
+
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/PETScVector.h>
@@ -49,12 +53,15 @@ namespace dolfin
   public:
 
     /// Create TAO solver
-    explicit PETScTAOSolver(MPI_Comm comm);
+    explicit PETScTAOSolver(MPI_Comm comm,
+                            std::string tao_type="default",
+                            std::string ksp_type="default",
+                            std::string pc_type="default");
 
-    /// Create TAO solver for a particular method
-    PETScTAOSolver(const std::string tao_type="default",
-                   const std::string ksp_type="default",
-                   const std::string pc_type="default");
+    /// Create TAO solver on MPI_COMM_WORLD
+    explicit PETScTAOSolver(std::string tao_type="default",
+                            std::string ksp_type="default",
+                            std::string pc_type="default");
 
     /// Destructor
     virtual ~PETScTAOSolver();
@@ -94,6 +101,9 @@ namespace dolfin
     ///         iteration converged
     std::pair<std::size_t, bool> solve(OptimisationProblem& optimisation_problem,
                                        GenericVector& x);
+
+    /// Return the MPI communicator
+    MPI_Comm mpi_comm() const;
 
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string>> methods();
@@ -153,22 +163,25 @@ namespace dolfin
     Tao _tao;
 
     // Update parameters when tao/ksp/pc_types are explictly given
-    void update_parameters(const std::string tao_type,
-                           const std::string ksp_type,
-                           const std::string pc_type);
+    void update_parameters(std::string tao_type,
+                           std::string ksp_type,
+                           std::string pc_type);
 
     // Set options
     void set_tao_options();
     void set_ksp_options();
 
     // Set the TAO solver type
-    void set_tao(const std::string tao_type="default");
+    void set_tao(std::string tao_type);
 
     // Flag to indicate if the bounds are set
     bool _has_bounds;
 
     // Hessian matrix
     PETScMatrix _matH;
+
+    // Hessian preconditioner matrix
+    PETScMatrix _matP;
 
     // Available solvers
     static const std::map<std::string,

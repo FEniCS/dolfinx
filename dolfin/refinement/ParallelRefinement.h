@@ -29,17 +29,21 @@ namespace dolfin
 
   // Forward declarations
   class Mesh;
-  template<typename T> class EdgeFunction;
   template<typename T> class MeshFunction;
+
+  /// Data structure and methods for refining meshes in parallel
+
+  /// ParallelRefinement encapsulates two main features:
+  /// a distributed MeshFunction defined over the mesh edes, 
+  /// which can be updated across processes, 
+  /// and storage for local mesh data, which can be used 
+  /// to construct the new Mesh
 
   class ParallelRefinement
   {
   public:
 
-    /// ParallelRefinement encapsulates two main features:
-    /// a distributed EdgeFunction, which can be updated
-    /// across processes, and storage for local mesh data,
-    /// which can be used to construct the new Mesh
+    /// Constructor
     ParallelRefinement(const Mesh& mesh);
 
     /// Destructor
@@ -50,9 +54,12 @@ namespace dolfin
     { return _mesh; }
 
     /// Return marked status of edge
+    /// @param edge_index (std::size_t)
     bool is_marked(std::size_t edge_index) const;
 
     /// Mark edge by index
+    /// @param edge_index (std::size_t)
+    ///  Index of edge to mark
     void mark(std::size_t edge_index);
 
     /// Mark all edges in mesh
@@ -60,13 +67,16 @@ namespace dolfin
 
     /// Mark all edges incident on entities indicated by refinement
     /// marker
+    /// @param refinement_marker (const MeshFunction<bool>)
     void mark(const MeshFunction<bool>& refinement_marker);
 
     /// Mark all incident edges of an entity
+    /// @param cell (MeshEntity)
     void mark(const MeshEntity& cell);
 
     /// Return list of marked edges incident on this MeshEntity -
     /// usually a cell
+    /// @param cell (const _MeshEntity_)
     std::vector<std::size_t> marked_edge_list(const MeshEntity& cell) const;
 
     /// Transfer marked edges between processes
@@ -82,16 +92,34 @@ namespace dolfin
     std::shared_ptr<const std::map<std::size_t, std::size_t> > edge_to_new_vertex() const;
 
     /// Add a new cell to the list in 3D or 2D
+    /// @param cell (const _Cell_)
     void new_cell(const Cell& cell);
+
+    /// Add a new cell with vertex indices
+    /// @param i0 (std::size_t)
+    /// @param i1 (std::size_t)
+    /// @param i2 (std::size_t)
+    /// @param i3 (std::size_t)
     void new_cell(std::size_t i0, std::size_t i1, std::size_t i2,
                   std::size_t i3);
+
+    /// Add a new cell with vertex indices
+    /// @param i0 (std::size_t)
+    /// @param i1 (std::size_t)
+    /// @param i2 (std::size_t)
     void new_cell(std::size_t i0, std::size_t i1, std::size_t i2);
+
+    /// Add new cells with vertex indices
+    /// @param idx (const std::vector<std::size_t>)
     void new_cells(const std::vector<std::size_t>& idx);
 
     /// Use vertex and topology data to partition new mesh across processes
+    /// @param new_mesh (_Mesh_)
+    /// @param redistribute (bool)
     void partition(Mesh& new_mesh, bool redistribute) const;
 
     /// Build local mesh from internal data when not running in parallel
+    /// @param new_mesh (_Mesh_)
     void build_local(Mesh& new_mesh) const;
 
   private:

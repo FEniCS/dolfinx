@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2014 Anders Logg
+// Copyright (C) 2006-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-09
-// Last changed: 2014-08-11
+// Last changed: 2016-05-05
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Array.h>
@@ -62,14 +62,15 @@ Mesh::Mesh() : Mesh(MPI_COMM_WORLD)
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm) : Variable("mesh", "DOLFIN mesh"),
                             Hierarchical<Mesh>(*this), _ordered(false),
-                            _mpi_comm(comm)
+                            _mpi_comm(comm), _ghost_mode("none")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                Hierarchical<Mesh>(*this), _ordered(false),
-                               _mpi_comm(mesh.mpi_comm())
+                               _mpi_comm(mesh.mpi_comm()),
+                               _ghost_mode("none")
 {
   *this = mesh;
 }
@@ -81,15 +82,15 @@ Mesh::Mesh(std::string filename) : Mesh(MPI_COMM_WORLD, filename)
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, std::string filename)
   : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this), _ordered(false),
-  _mpi_comm(comm)
+  _mpi_comm(comm), _ghost_mode("none")
 {
-  File file(_mpi_comm, filename);
+  File file(_mpi_comm.comm(), filename);
   file >> *this;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
   : Variable("mesh", "DOLFIN mesh"), Hierarchical<Mesh>(*this),
-  _ordered(false), _mpi_comm(comm)
+  _ordered(false), _mpi_comm(comm), _ghost_mode("none")
 {
   const std::string ghost_mode = parameters["ghost_mode"];
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data, ghost_mode);
@@ -113,6 +114,7 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
     _cell_type.reset();
   _ordered = mesh._ordered;
   _cell_orientations = mesh._cell_orientations;
+  _ghost_mode = mesh._ghost_mode;
 
   // Rename
   rename(mesh.name(), mesh.label());
@@ -271,6 +273,11 @@ dolfin::Mesh Mesh::renumber_by_color() const
   return MeshRenumbering::renumber_by_color(*this, coloring_type);
 }
 //-----------------------------------------------------------------------------
+void Mesh::scale(double factor)
+{
+  MeshTransformation::scale(*this, factor);
+}
+//-----------------------------------------------------------------------------
 void Mesh::translate(const Point& point)
 {
   MeshTransformation::translate(*this, point);
@@ -387,8 +394,8 @@ std::size_t Mesh::hash() const
   const std::size_t kg_local = _geometry.hash();
 
   // Compute global hash
-  const std::size_t kt = hash_global(_mpi_comm, kt_local);
-  const std::size_t kg = hash_global(_mpi_comm, kg_local);
+  const std::size_t kt = hash_global(_mpi_comm.comm(), kt_local);
+  const std::size_t kg = hash_global(_mpi_comm.comm(), kg_local);
 
   // Compute hash based on the Cantor pairing function
   return (kt + kg)*(kt + kg + 1)/2 + kg;
@@ -466,5 +473,13 @@ void Mesh::init_cell_orientations(const Expression& global_normal)
     dolfin_assert(cell->index() < _cell_orientations.size());
     _cell_orientations[cell->index()] = cell->orientation(up);
   }
+}
+//-----------------------------------------------------------------------------
+std::string Mesh::ghost_mode() const
+{
+  dolfin_assert(_ghost_mode == "none"
+                || _ghost_mode == "shared_vertex"
+                || _ghost_mode == "shared_facet");
+  return _ghost_mode;
 }
 //-----------------------------------------------------------------------------

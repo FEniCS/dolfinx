@@ -29,19 +29,32 @@
 namespace dolfin
 {
 
+  /// Output of data in raw binary format
+
   class RAWFile : public GenericFile
   {
   public:
 
-    /// Write results in raw format
-
+    /// Constructor
     explicit RAWFile(const std::string filename);
 
+    /// Destructor
     ~RAWFile();
 
-    void operator<< (const MeshFunction<int>& meshfunction);
-    void operator<< (const MeshFunction<double>& meshfunction);
-    void operator<< (const Function& u);
+    /// Output MeshFunction (int)
+    /// @param meshfunction
+    ///  MeshFunction
+    void write(const MeshFunction<int>& meshfunction);
+
+    /// Output MeshFunction (double)
+    /// @param meshfunction
+    ///  MeshFunction
+    void write(const MeshFunction<double>& meshfunction);
+
+    /// Output Function
+    /// @param u
+    ///  Function
+    void write(const Function& u);
 
   private:
 
@@ -49,7 +62,7 @@ namespace dolfin
     void rawNameUpdate(const int counter);
 
     template<typename T>
-    void MeshFunctionWrite(T& meshfunction);
+      void MeshFunctionWrite(T& meshfunction);
 
     // raw filename
     std::string raw_filename;

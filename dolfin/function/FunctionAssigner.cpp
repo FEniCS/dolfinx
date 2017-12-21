@@ -23,6 +23,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -457,10 +458,8 @@ void FunctionAssigner::_check_and_build_indices(
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Get local cell dofs
-      const ArrayView<const dolfin::la_index> assigning_cell_dofs
-        = assigning_dofmap.cell_dofs(cell->index());
-      const ArrayView<const dolfin::la_index> receiving_cell_dofs
-        = receiving_dofmap.cell_dofs(cell->index());
+      auto assigning_cell_dofs = assigning_dofmap.cell_dofs(cell->index());
+      auto receiving_cell_dofs = receiving_dofmap.cell_dofs(cell->index());
 
       // Check that both spaces have the same number of dofs
       if (assigning_cell_dofs.size() != receiving_cell_dofs.size())
@@ -472,7 +471,7 @@ void FunctionAssigner::_check_and_build_indices(
       }
 
       // Iterate over the local dofs and collect on-process dofs
-      for (std::size_t j = 0; j < assigning_cell_dofs.size(); j++)
+      for (Eigen::Index j = 0; j < assigning_cell_dofs.size(); j++)
       {
         const std::size_t assigning_dof = assigning_cell_dofs[j];
         const std::size_t receiving_dof = receiving_cell_dofs[j];

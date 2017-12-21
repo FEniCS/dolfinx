@@ -92,7 +92,7 @@ void _monitor_memory_usage(dolfin::Logger* logger)
 #endif
 
 //-----------------------------------------------------------------------------
-Logger::Logger() : _active(true), _log_level(INFO), indentation_level(0),
+Logger::Logger() : _active(true), _log_level(INFO), _indentation_level(0),
                    logstream(&std::cout), _maximum_memory_usage(-1),
                    _mpi_comm(MPI_COMM_WORLD)
 {
@@ -119,7 +119,7 @@ void Logger::log_underline(std::string msg, int log_level) const
   std::stringstream s;
   s << msg;
   s << "\n";
-  for (int i = 0; i < indentation_level; i++)
+  for (int i = 0; i < _indentation_level; i++)
     s << "  ";
   for (std::size_t i = 0; i < msg.size(); i++)
     s << "-";
@@ -146,7 +146,7 @@ void Logger::dolfin_error(std::string location,
 {
 
   if (mpi_rank < 0)
-    mpi_rank = MPI::rank(_mpi_comm);
+    mpi_rank = dolfin::MPI::rank(_mpi_comm);
   std::string _mpi_rank = std::to_string(mpi_rank);
 
   std::stringstream s;
@@ -213,12 +213,12 @@ void Logger::begin(std::string msg, int log_level)
 {
   // Write a message
   log(msg, log_level);
-  indentation_level++;
+  _indentation_level++;
 }
 //-----------------------------------------------------------------------------
 void Logger::end()
 {
-  indentation_level--;
+  _indentation_level--;
 }
 //-----------------------------------------------------------------------------
 void Logger::progress(std::string title, double p) const
@@ -226,7 +226,7 @@ void Logger::progress(std::string title, double p) const
   std::stringstream line;
   line << title << " [";
 
-  const int N = DOLFIN_TERM_WIDTH - title.size() - 12 - 2*indentation_level;
+  const int N = DOLFIN_TERM_WIDTH - title.size() - 12 - 2*_indentation_level;
   const int n = static_cast<int>(p*static_cast<double>(N));
 
   for (int i = 0; i < n; i++)
@@ -256,6 +256,11 @@ void Logger::set_log_active(bool active)
 void Logger::set_log_level(int log_level)
 {
   _log_level = log_level;
+}
+//-----------------------------------------------------------------------------
+void Logger::set_indentation_level(std::size_t indentation_level)
+{
+  _indentation_level = indentation_level;
 }
 //-----------------------------------------------------------------------------
 void Logger::register_timing(std::string task,
@@ -297,7 +302,7 @@ void Logger::list_timings(TimingClear clear, std::set<TimingType> type)
   const std::string str = timings.str(true);
 
   // Print just on rank 0
-  if (MPI::rank(_mpi_comm) == 0)
+  if (dolfin::MPI::rank(_mpi_comm) == 0)
     log(str);
 
   // Print maximum memory usage if available
@@ -318,7 +323,7 @@ void Logger::dump_timings_to_xml(std::string filename, TimingClear clear)
   Table t_min = MPI::min(_mpi_comm, t);
   Table t_avg = MPI::avg(_mpi_comm, t);
 
-  if (MPI::rank(_mpi_comm) == 0)
+  if (dolfin::MPI::rank(_mpi_comm) == 0)
   {
     File f(MPI_COMM_SELF, filename);
     f << t_max;
@@ -439,7 +444,7 @@ void Logger::write(int log_level, std::string msg) const
   if (!_active || log_level < _log_level)
     return;
 
-  const std::size_t rank = MPI::rank(_mpi_comm);
+  const std::size_t rank = dolfin::MPI::rank(_mpi_comm);
 
   // Check if we want output on root process only
   const bool std_out_all_processes = parameters["std_out_all_processes"];
@@ -447,7 +452,7 @@ void Logger::write(int log_level, std::string msg) const
     return;
 
   // Prefix with process number if running in parallel
-  if (MPI::size(_mpi_comm) > 1)
+  if (dolfin::MPI::size(_mpi_comm) > 1)
   {
     std::stringstream prefix;
     prefix << "Process " << rank << ": ";
@@ -455,7 +460,7 @@ void Logger::write(int log_level, std::string msg) const
   }
 
   // Add indentation
-  for (int i = 0; i < indentation_level; i++)
+  for (int i = 0; i < _indentation_level; i++)
     msg = "  " + msg;
 
   // Write to stream

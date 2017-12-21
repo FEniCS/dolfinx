@@ -25,8 +25,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n, std::size_t degree,
-                           std::size_t gdim) : Mesh(comm)
+void UnitDiscMesh::build(Mesh& mesh, std::size_t n, std::size_t degree,
+                         std::size_t gdim)
 {
   dolfin_assert(n > 0);
 
@@ -45,7 +45,7 @@ UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n, std::size_t degree,
   }
 
   MeshEditor editor;
-  editor.open(*this, 2, gdim, degree);
+  editor.open(mesh, CellType::Type::triangle, 2, gdim, degree);
   editor.init_vertices_global(1 + 3*n*(n + 1), 1 + 3*n*(n + 1));
 
   std::size_t c = 0;
@@ -105,10 +105,10 @@ UnitDiscMesh::UnitDiscMesh(MPI_Comm comm, std::size_t n, std::size_t degree,
   {
     editor.init_entities();
 
-    for (EdgeIterator e(*this); !e.end(); ++e)
+    for (EdgeIterator e(mesh); !e.end(); ++e)
     {
-      const Point v0 = Vertex(*this, e->entities(0)[0]).point();
-      const Point v1 = Vertex(*this, e->entities(0)[1]).point();
+      const Point v0 = Vertex(mesh, e->entities(0)[0]).point();
+      const Point v1 = Vertex(mesh, e->entities(0)[1]).point();
       Point pt = e->midpoint();
 
       if (std::abs(v0.norm() - 1.0) < 1e-6 and

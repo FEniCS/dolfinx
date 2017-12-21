@@ -14,14 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Anders Logg, 2007-2010.
-// Modified by Kent-Andre Mardal, 2008.
-// Modified by Ola Skavhaug, 2008.
-// Modified by Martin Sandve Alnes, 2008.
-//
-// First added:  2007-07-03
-// Last changed: 2011-01-14
 
 #ifndef __DOLFIN_VECTOR_H
 #define __DOLFIN_VECTOR_H
@@ -38,15 +30,18 @@ namespace dolfin
 
   template<typename T> class Array;
 
-  /// This class provides the default DOLFIN vector class,
-  /// based on the default DOLFIN linear algebra backend.
+  /// This class provides the default DOLFIN vector class, based on
+  /// the default DOLFIN linear algebra backend.
 
   class Vector : public GenericVector
   {
   public:
 
     /// Create empty vector
-    Vector(MPI_Comm comm=MPI_COMM_WORLD)
+    Vector() : Vector(MPI_COMM_WORLD) {}
+
+      /// Create empty vector
+    explicit Vector(MPI_Comm comm)
     {
       DefaultFactory factory;
       vector = factory.create_vector(comm);
@@ -57,7 +52,7 @@ namespace dolfin
     {
       DefaultFactory factory;
       vector = factory.create_vector(comm);
-      vector->init(comm, N);
+      vector->init(N);
     }
 
     /// Copy constructor
@@ -94,20 +89,19 @@ namespace dolfin
     //--- Implementation of the GenericVector interface ---
 
     /// Initialize vector to size N
-    virtual void init(MPI_Comm comm, std::size_t N)
-    { vector->init(comm, N); }
+    virtual void init(std::size_t N)
+    { vector->init(N); }
 
     /// Initialize vector with given ownership range
-    virtual void init(MPI_Comm comm, std::pair<std::size_t, std::size_t> range)
-    { vector->init(comm, range); }
+    virtual void init(std::pair<std::size_t, std::size_t> range)
+    { vector->init(range); }
 
     /// Initialize vector with given ownership range and with ghost
     /// values
-    virtual void init(MPI_Comm comm,
-                      std::pair<std::size_t, std::size_t> range,
+    virtual void init(std::pair<std::size_t, std::size_t> range,
                       const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index>& ghost_indices)
-    { vector->init(comm, range, local_to_global_map, ghost_indices); }
+    { vector->init(range, local_to_global_map, ghost_indices); }
 
     // Bring init function from GenericVector into scope
     using GenericVector::init;
@@ -176,12 +170,13 @@ namespace dolfin
     virtual void add_local(const Array<double>& values)
     { vector->add_local(values); }
 
-    /// Gather entries into local vector x
+    /// Gather entries (given by global indices) into local
+    /// vector x
     virtual void gather(GenericVector& x,
                         const std::vector<dolfin::la_index>& indices) const
     { vector->gather(x, indices); }
 
-    /// Gather entries into x
+    /// Gather entries (given by global indices) into x
     virtual void gather(std::vector<double>& x,
                         const std::vector<dolfin::la_index>& indices) const
     { vector->gather(x, indices); }

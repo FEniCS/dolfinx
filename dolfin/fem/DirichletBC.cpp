@@ -210,67 +210,63 @@ void DirichletBC::gather(Map& boundary_values) const
   }
 
   // Distribute the lists between neighbours
-  std::vector<std::vector<std::size_t>> received_bvc0;
-  std::vector<std::vector<double>> received_bvc1;
+  std::vector<std::size_t> received_bvc0;
+  std::vector<double> received_bvc1;
   MPI::all_to_all(mpi_comm, proc_map0, received_bvc0);
   MPI::all_to_all(mpi_comm, proc_map1, received_bvc1);
+  dolfin_assert(received_bvc0.size() == received_bvc1.size());
 
   const std::size_t n0 = dofmap.ownership_range().first;
   const std::size_t n1 = dofmap.ownership_range().second;
   const std::size_t owned_size = n1 - n0;
 
   // Reserve space
-  std::size_t num_dofs = boundary_values.size();
-  for (std::size_t p = 0; p < comm_size; ++p)
-    num_dofs += received_bvc0[p].size();
+  const std::size_t num_dofs = boundary_values.size() + received_bvc0.size();
   boundary_values.reserve(num_dofs);
 
   // Add the received boundary values to the local boundary values
-  for (std::size_t p = 0; p < comm_size; ++p)
+  std::vector<std::pair<std::size_t, double>> _vec(received_bvc0.size());
+  for (std::size_t i = 0; i < _vec.size(); ++i)
   {
-    dolfin_assert(received_bvc0[p].size() == received_bvc1[p].size());
-    std::vector<std::pair<std::size_t, double>> _vec(received_bvc0[p].size());
-    for (std::size_t i = 0; i < _vec.size(); ++i)
-    {
-      // Global dof index
-      _vec[i].first = received_bvc0[p][i];
+    // Global dof index
+    _vec[i].first = received_bvc0[i];
 
-      // Convert to local (process) dof index
-      if (_vec[i].first >= n0 && _vec[i].first < n1)
+    // Convert to local (process) dof index
+    if (_vec[i].first >= n0 && _vec[i].first < n1)
+    {
+      // Case 0: dof is owned by this process
+      _vec[i].first  = received_bvc0[i] - n0;
+    }
+    else
+    {
+      const std::imaxdiv_t div = std::imaxdiv(_vec[i].first, bs);
+      const std::size_t node = div.quot;
+      const int component = div.rem;
+      const std::vector<std::size_t>& local_to_global
+        = dofmap.index_map()->local_to_global_unowned();
+
+      // Case 1: dof is not owned by this process
+      auto it = std::find(local_to_global.begin(),
+                          local_to_global.end(),
+                          node);
+      if (it == local_to_global.end())
       {
-        // Case 0: dof is owned by this process
-        _vec[i].first  = received_bvc0[p][i] - n0;
+        // Throw error if dof is not in local map
+        dolfin_error("DirichletBC.cpp",
+                     "gather boundary values",
+                     "Cannot find dof in local_to_global_unowned array");
       }
       else
       {
-        const std::imaxdiv_t div = std::imaxdiv(_vec[i].first, bs);
-        const std::size_t node = div.quot;
-        const int component = div.rem;
-        const std::vector<std::size_t>& local_to_global
-          = dofmap.index_map()->local_to_global_unowned();
-
-        // Case 1: dof is not owned by this process
-        auto it = std::find(local_to_global.begin(),
-                            local_to_global.end(),
-                            node);
-        if (it == local_to_global.end())
-        {
-          // Throw error if dof is not in local map
-          dolfin_error("DirichletBC.cpp",
-                       "gather boundary values",
-                       "Cannot find dof in local_to_global_unowned array");
-        }
-        else
-        {
-          const std::size_t pos
-            = std::distance(local_to_global.begin(), it);
-          _vec[i].first = owned_size + bs*pos + component;
-        }
+        const std::size_t pos
+          = std::distance(local_to_global.begin(), it);
+        _vec[i].first = owned_size + bs*pos + component;
       }
-      _vec[i].second = received_bvc1[p][i];
     }
-    boundary_values.insert(_vec.begin(), _vec.end());
+    _vec[i].second = received_bvc1[i];
   }
+
+  boundary_values.insert(_vec.begin(), _vec.end());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::get_boundary_values(Map& boundary_values) const
@@ -286,7 +282,7 @@ void DirichletBC::get_boundary_values(Map& boundary_values) const
 void DirichletBC::zero(GenericMatrix& A) const
 {
   // Check arguments
-  check_arguments(&A, NULL, NULL);
+  check_arguments(&A, NULL, NULL, 0);
 
   // A map to hold the mapping from boundary dofs to boundary values
   Map boundary_values;
@@ -316,7 +312,7 @@ void DirichletBC::zero_columns(GenericMatrix& A,
                                double diag_val) const
 {
   // Check arguments
-  check_arguments(&A, &b, NULL);
+  check_arguments(&A, &b, NULL, 1);
 
   // A map to hold the mapping from boundary dofs to boundary values
   Map bv_map;
@@ -451,7 +447,7 @@ void DirichletBC::apply(GenericMatrix* A,
   Timer timer("DirichletBC apply");
 
   // Check arguments
-  check_arguments(A, b, x);
+  check_arguments(A, b, x, 0);
 
   // A map to hold the mapping from boundary dofs to boundary values
   Map boundary_values;
@@ -645,7 +641,7 @@ void DirichletBC::init_from_sub_domain(std::shared_ptr<const SubDomain>
   // all facet as subdomain 1
   const std::size_t dim = mesh->topology().dim();
   _function_space->mesh()->init(dim - 1);
-  FacetFunction<std::size_t> sub_domains(mesh, 1);
+  MeshFunction<std::size_t> sub_domains(mesh, dim - 1, 1);
 
   // Set geometric dimension (needed for SWIG interface)
   sub_domain->_geometric_dimension = mesh->geometry().dim();
@@ -793,8 +789,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
                  coordinate_dofs.data(), ufc_cell);
 
     // Tabulate dofs on cell
-    const ArrayView<const dolfin::la_index> cell_dofs
-      = dofmap.cell_dofs(cell.index());
+    auto cell_dofs = dofmap.cell_dofs(cell.index());
 
     // Tabulate which dofs are on the facet
     dofmap.tabulate_facet_dofs(data.facet_dofs, facet_local_index);
@@ -886,19 +881,18 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
         bool interpolated = false;
 
         // Tabulate dofs on cell
-        const ArrayView<const dolfin::la_index> cell_dofs
-          = dofmap.cell_dofs(c->index());
+        auto cell_dofs = dofmap.cell_dofs(c->index());
 
         // Loop over all dofs on cell
-        for (std::size_t i = 0; i < cell_dofs.size(); ++i)
+        for (int i = 0; i < cell_dofs.size(); ++i)
         {
           const std::size_t global_dof = cell_dofs[i];
 
           // Tabulate coordinates if not already done
           if (!tabulated)
           {
-            element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs,
-                                             *c);
+            element.tabulate_dof_coordinates(data.coordinates,
+                                             coordinate_dofs, *c);
             tabulated = true;
           }
 
@@ -989,8 +983,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                        *cell);
 
       // Tabulate dofs on cell
-      const ArrayView<const dolfin::la_index> cell_dofs
-        = dofmap.cell_dofs(cell->index());
+      auto cell_dofs = dofmap.cell_dofs(cell->index());
 
       // Interpolate function only once and only on cells where
       // necessary
@@ -1061,8 +1054,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                     coordinate_dofs.data(), ufc_cell);
 
       // Tabulate dofs on cell
-      const ArrayView<const dolfin::la_index> cell_dofs
-        = dofmap.cell_dofs(cell.index());
+      auto cell_dofs = dofmap.cell_dofs(cell.index());
 
       // Loop dofs on boundary of cell
       for (std::size_t i = 0; i < it->second.size(); ++i)
@@ -1139,7 +1131,8 @@ bool DirichletBC::on_facet(const double* coordinates, const Facet& facet) const
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::check_arguments(GenericMatrix* A, GenericVector* b,
-                                  const GenericVector* x) const
+                                  const GenericVector* x,
+                                  std::size_t dim) const
 {
   dolfin_assert(_function_space);
 
@@ -1160,40 +1153,24 @@ void DirichletBC::check_arguments(GenericMatrix* A, GenericVector* b,
                  A->size(0), b->size());
   }
 
-  // This extra assumption should be needed only when x != NULL
+  // Check the system is square if (x && b)
   if (x && b && x->size() != b->size())
   {
     dolfin_error("BoundaryCondition.cpp",
                  "apply boundary condition",
-                 "Vector dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions",
+                 "Dimensions of x vector(%d) and b vector (%d) do not match for application of boundary conditions to square system",
                  x->size(), b->size());
   }
 
   // Check dimension of function space is not "too big"
-  // NOTE: Keeping these primitive inequality tests because detailed range
+  // NOTE: Keeping these primitive inequality test because detailed range
   //       checks below may be turned off; needed for MultiMesh stuff
-  if (A && A->size(0) < _function_space->dim())
+  if (A && A->size(dim) < _function_space->dim())
   {
     dolfin_error("BoundaryCondition.cpp",
                  "apply boundary condition",
-                 "Dimension of function space (%d) too large for application of boundary conditions to linear system (%d rows)",
-                 _function_space->dim(), A->size(0));
-  }
-
-  if (x && x->size() < _function_space->dim())
-  {
-    dolfin_error("BoundaryCondition.cpp",
-                 "apply boundary condition",
-                 "Dimension of function space (%d) too large for application to boundary conditions linear system (%d rows)",
-                 _function_space->dim(), x->size());
-  }
-
-  if (b && b->size() < _function_space->dim())
-  {
-    dolfin_error("BoundaryCondition.cpp",
-                 "apply boundary condition",
-                 "Dimension of function space (%d) too large for application to boundary conditions linear system (%d rows)",
-                 _function_space->dim(), b->size());
+                 "Dimension of function space (%d) too large for application of boundary conditions to linear system (%d %s)",
+                 _function_space->dim(), A->size(dim), dim ? "columns" : "rows");
   }
 
   // Check local range of tensors against function space
@@ -1202,15 +1179,37 @@ void DirichletBC::check_arguments(GenericMatrix* A, GenericVector* b,
     std::pair<std::int64_t, std::int64_t> dofmap_range =
       _function_space->dofmap()->ownership_range();
 
-    if (A && A->local_range(0) != dofmap_range)
+    // Check rows onwership matches dofmap (if applying bc to rows)
+    if (dim == 0 && A && A->local_range(0) != dofmap_range)
     {
       dolfin_error("BoundaryCondition.cpp",
                    "apply boundary condition",
-                   "Dofmap ownership range (%d,%d) does not match matrix local range (%d,%d)",
+                   "Dofmap ownership range (%d,%d) does not match matrix row range (%d,%d)",
                    dofmap_range.first, dofmap_range.second,
                    A->local_range(0).first, A->local_range(0).second);
     }
 
+    // Check rows onwership matches b
+    if (A && b && A->local_range(0) != b->local_range())
+    {
+      dolfin_error("BoundaryCondition.cpp",
+                   "apply boundary condition",
+                   "Matrix row range (%d,%d) does not match b vector local range (%d,%d)",
+                   A->local_range(0).first, A->local_range(0).second,
+                   b->local_range().first, b->local_range().second);
+    }
+
+    // Check rows onwership matches x
+    if (A && x && A->local_range(0) != x->local_range())
+    {
+      dolfin_error("BoundaryCondition.cpp",
+                   "apply boundary condition",
+                   "Matrix row range (%d,%d) does not match x vector local range (%d,%d)",
+                   A->local_range(0).first, A->local_range(0).second,
+                   x->local_range().first, x->local_range().second);
+    }
+
+    // Check that x vector has right ownership
     if (x && x->local_range() != dofmap_range)
     {
       dolfin_error("BoundaryCondition.cpp",
@@ -1220,12 +1219,13 @@ void DirichletBC::check_arguments(GenericMatrix* A, GenericVector* b,
                    x->local_range().first, x->local_range().second);
     }
 
-    if (b && b->local_range() != dofmap_range)
+    // Check that vectors have same ownership if (x && b)
+    if (x && b && x->local_range() != b->local_range())
     {
       dolfin_error("BoundaryCondition.cpp",
                    "apply boundary condition",
-                   "Dofmap ownership range (%d,%d) does not match b vector local range (%d,%d)",
-                   dofmap_range.first, dofmap_range.second,
+                   "x vector local range (%d,%d) does not match b vector local range (%d,%d)",
+                   x->local_range().first, x->local_range().second,
                    b->local_range().first, b->local_range().second);
     }
   }

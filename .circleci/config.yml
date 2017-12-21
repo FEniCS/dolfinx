@@ -1,0 +1,60 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: quay.io/fenicsproject/dev-env:latest
+    working_directory: /home/fenics/working
+    steps:
+      - run:
+          name: Clone DOLFIN
+          command: git lfs clone https://bitbucket.org/"${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}".git .
+      - checkout
+      - run:
+          name: Install/update dependencies  # Install with sudo as tests not run as superuser in circleci/python
+          command: sudo pip3 install pytest pytest-xdist flake8 --upgrade
+      - run:
+          name: Install FEniCS dependencies
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "next" ] ; then export DEP_BRANCH_NAME="next" ; else export DEP_BRANCH_NAME="master" ; fi
+            pip3 install git+https://bitbucket.org/fenics-project/fiat.git@"${DEP_BRANCH_NAME}"
+            pip3 install git+https://bitbucket.org/fenics-project/ufl.git@"${DEP_BRANCH_NAME}"
+            pip3 install git+https://bitbucket.org/fenics-project/dijitso.git@"${DEP_BRANCH_NAME}"
+            pip3 install git+https://bitbucket.org/fenics-project/ffc.git@"${DEP_BRANCH_NAME}"
+      - run:
+          name: Flake8 checks on pybind11 Python code
+          command: python3 -m flake8 python/dolfin
+      - run:
+          name: Configure DOLFIN (C++)
+          command: mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Developer ../
+      - run:
+          name: Build DOLFIN and install (C++)
+          command: cd build && make -j2 install
+      - run:
+          name: Build and run C++ unit tests (serial)
+          command: cd build && make -j2 unittests && ctest -R unittests
+      - run:
+          name: Build and run C++ regressions tests (serial)
+          command: cd build && make -j2 demos && ctest -j2 -R demo -R serial
+      - run:
+          name: Run C++ regression tests (MPI)
+          command: cd build && make -j2 demos && ctest -R demo -R mpi
+      - run:
+          name: Build Python interface
+          command: |
+            cd python
+            pip3 -v install . --user
+      - run:
+          name: Run Python unit tests (serial)
+          command: python3 -m pytest -n 2 python/test/unit/
+      - run:
+          name: Run Python unit tests (MPI)
+          command: mpirun -n 3 python3 -m pytest python/test/unit/
+      - run:
+          name: Generate Python demo (regression) programs
+          command: python3 python/demo/generate-demo-files.py
+      - run:
+          name: Run Python regression tests (serial)
+          command: python3 -m pytest -v -n2 python/demo/test.py
+      - run:
+          name: Run Python regression tests (MPI)
+          command: python3 -m pytest -v python/demo/test.py --mpiexec=mpiexec --num-proc=3

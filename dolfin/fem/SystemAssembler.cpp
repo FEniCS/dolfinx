@@ -367,6 +367,10 @@ void SystemAssembler::cell_wise_assembly(
     // Loop over lhs and then rhs contributions
     for (std::size_t form = 0; form < 2; ++form)
     {
+      // Don't need to assemble rhs if only system matrix is required
+      if (form == 1 && !tensors[form])
+        continue;
+
       // Get rank (lhs=2, rhs=1)
       const std::size_t rank = (form == 0) ? 2 : 1;
 
@@ -382,7 +386,10 @@ void SystemAssembler::cell_wise_assembly(
 
       // Get local-to-global dof maps for cell
       for (std::size_t dim = 0; dim < rank; ++dim)
-        cell_dofs[form][dim] = dofmaps[form][dim]->cell_dofs(cell->index());
+      {
+        auto dmap = dofmaps[form][dim]->cell_dofs(cell->index());
+        cell_dofs[form][dim].set(dmap.size(), dmap.data());
+      }
 
       // Compute cell tensor (if required)
       bool tensor_required;
@@ -497,6 +504,11 @@ void SystemAssembler::facet_wise_assembly(
   dolfin_assert(ufc[0]->dolfin_form.mesh());
   const Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
+  // Sanity check of ghost mode (proper check in AssemblerBase::check)
+  dolfin_assert(mesh.ghost_mode() == "shared_vertex"
+                || mesh.ghost_mode() == "shared_facet"
+                || MPI::size(mesh.mpi_comm()) == 1);
+
   // Compute facets and facet - cell connectivity if not already
   // computed
   const std::size_t D = mesh.topology().dim();
@@ -551,7 +563,8 @@ void SystemAssembler::facet_wise_assembly(
     = exterior_facet_domains && !exterior_facet_domains->empty();
 
   // Indicator whether or not tensor is required
-  std::array<bool, 2> tensor_required_cell, tensor_required_facet;
+  std::array<bool, 2> tensor_required_cell = {{false, false}};
+  std::array<bool, 2> tensor_required_facet = {{false, false}};
 
   // Track whether or not cell contribution has been computed
   std::array<bool, 2> compute_cell_tensor = {{true, true}};
@@ -615,6 +628,10 @@ void SystemAssembler::facet_wise_assembly(
       // Loop over lhs and then rhs contributions
       for (std::size_t form = 0; form < 2; ++form)
       {
+        // Don't need to assemble rhs if only system matrix is required
+        if (form == 1 && !tensors[form])
+          continue;
+
         // Get rank (lhs=2, rhs=1)
         const std::size_t rank = (form == 0) ? 2 : 1;
 
@@ -624,8 +641,8 @@ void SystemAssembler::facet_wise_assembly(
         {
           for (std::size_t dim = 0; dim < rank; ++dim)
           {
-            cell_dofs[form][c][dim]
-              = dofmaps[form][dim]->cell_dofs(cell_index[c]);
+            auto dmap = dofmaps[form][dim]->cell_dofs(cell_index[c]);
+            cell_dofs[form][c][dim].set(dmap.size(), dmap.data());
             num_dofs[dim] += cell_dofs[form][c][dim].size();
           }
 
@@ -796,8 +813,8 @@ void SystemAssembler::facet_wise_assembly(
         // Get local-to-global dof maps for cell
         for (std::size_t dim = 0; dim < rank; ++dim)
         {
-          cell_dofs[form][0][dim]
-            = dofmaps[form][dim]->cell_dofs(cell.index());
+          auto dmap = dofmaps[form][dim]->cell_dofs(cell.index());
+          cell_dofs[form][0][dim].set(dmap.size(), dmap.data());
         }
 
         // Store if tensor is required

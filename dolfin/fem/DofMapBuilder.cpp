@@ -509,24 +509,19 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
       new_shared_vertex_indices[p][i] += offset;
 
   // Send/receive new indices for shared vertices
-  std::vector<std::vector<std::size_t>> received_vertex_data;
+  std::vector<std::size_t> received_vertex_data;
   MPI::all_to_all(mesh.mpi_comm(), new_shared_vertex_indices,
                   received_vertex_data);
 
   // Set index for shared vertices that have been numbered by another
   // process
-  for (std::size_t p = 0; p < received_vertex_data.size(); ++p)
+  for (std::size_t i = 0; i < received_vertex_data.size(); i += 2)
   {
-    const std::vector<std::size_t>& received_vertex_data_p
-      = received_vertex_data[p];
-    for (std::size_t i = 0; i < received_vertex_data_p.size(); i += 2)
-    {
-      const unsigned int local_index = received_vertex_data_p[i];
-      const std::size_t recv_new_index = received_vertex_data_p[i + 1];
+    const unsigned int local_index = received_vertex_data[i];
+    const std::size_t recv_new_index = received_vertex_data[i + 1];
 
-      dolfin_assert(local_index < modified_vertex_indices_global.size());
-      modified_vertex_indices_global[local_index] = recv_new_index;
-    }
+    dolfin_assert(local_index < modified_vertex_indices_global.size());
+    modified_vertex_indices_global[local_index] = recv_new_index;
   }
 
   // Request master vertex index from master owner
@@ -1082,7 +1077,7 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
       mesh.init(d);
       DistributedMeshTools::number_entities(mesh, d);
       num_mesh_entities_local[d]  = mesh.num_entities(d);
-      num_mesh_entities_global_unconstrained[d] = mesh.size_global(d);
+      num_mesh_entities_global_unconstrained[d] = mesh.num_entities_global(d);
     }
   }
 
@@ -1186,8 +1181,8 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   for (std::size_t d = 0; d <= D; ++d)
     needs_entities[d] = ufc_dofmap->needs_mesh_entities(d);
 
-  // Generate and number required mesh entities (local & global, and
-  // constrained global)
+  // Generate and number required mesh entities (local & global, and constrained
+  // global)
   std::vector<std::size_t> num_mesh_entities_local(D + 1, 0);
   std::vector<std::size_t> num_mesh_entities_global_unconstrained(D + 1, 0);
   std::vector<bool> required_mesh_entities(D + 1, false);
@@ -1199,7 +1194,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
       mesh.init(d);
       DistributedMeshTools::number_entities(mesh, d);
       num_mesh_entities_local[d]  = mesh.num_entities(d);
-      num_mesh_entities_global_unconstrained[d] = mesh.size_global(d);
+      num_mesh_entities_global_unconstrained[d] = mesh.num_entities_global(d);
     }
   }
 

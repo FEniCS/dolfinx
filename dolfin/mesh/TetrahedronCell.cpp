@@ -22,13 +22,14 @@
 // Modified by August Johansson 2014
 //
 // First added:  2006-06-05
-// Last changed: 2014-02-13
+// Last changed: 2016-05-05
 
 #include <algorithm>
 #include <cmath>
 #include <boost/multi_array.hpp>
 
 #include <dolfin/log/log.h>
+#include <dolfin/geometry/CollisionPredicates.h>
 #include "Cell.h"
 #include "Facet.h"
 #include "MeshEditor.h"
@@ -528,18 +529,12 @@ void TetrahedronCell::order(
 //-----------------------------------------------------------------------------
 bool TetrahedronCell::collides(const Cell& cell, const Point& point) const
 {
-  return CollisionDetection::collides(cell, point);
+  return CollisionPredicates::collides(cell, point);
 }
 //-----------------------------------------------------------------------------
 bool TetrahedronCell::collides(const Cell& cell, const MeshEntity& entity) const
 {
-  return CollisionDetection::collides(cell, entity);
-}
-//-----------------------------------------------------------------------------
-std::vector<double>
-TetrahedronCell::triangulate_intersection(const Cell& c0, const Cell& c1) const
-{
-  return IntersectionTriangulation::triangulate_intersection(c0, c1);
+  return CollisionPredicates::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const
@@ -558,7 +553,12 @@ std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
   dolfin_assert(e);
 
   // Ordering convention for edges (order of non-incident vertices)
-  static std::size_t EV[6][2] = {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}};
+  static const std::size_t EV[6][2] = {{0, 1},
+                                       {0, 2},
+                                       {0, 3},
+                                       {1, 2},
+                                       {1, 3},
+                                       {2, 3}};
 
   // Look for edge satisfying ordering convention
   for (std::size_t j = 0; j < 6; j++)

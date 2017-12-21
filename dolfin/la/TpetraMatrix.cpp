@@ -100,8 +100,8 @@ void TpetraMatrix::init(const TensorLayout& tensor_layout)
   // Initialize matrix
 
   // Set up MPI Comm
-  Teuchos::RCP<const Teuchos::Comm<int>>
-    _comm(new Teuchos::MpiComm<int>(sparsity_pattern->mpi_comm()));
+  const Teuchos::MpiComm<int> comm_wrapper(sparsity_pattern->mpi_comm());
+  Teuchos::RCP<const Teuchos::Comm<int>> _comm = comm_wrapper.duplicate();
 
   // Save the local row and column mapping, so we can use add_local
   // later with off-process entries
@@ -417,7 +417,7 @@ void TpetraMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
   dolfin_assert(!_matA.is_null());
 
   const std::size_t ncols = _matA->getNumEntriesInGlobalRow(row);
-  if (ncols == Tpetra::OrdinalTraits<std::size_t>::invalid())
+  if (ncols == Teuchos::OrdinalTraits<std::size_t>::invalid())
   {
     dolfin_error("TpetraMatrix.cpp",
                  "get TpetraMatrix row",
@@ -630,7 +630,7 @@ void TpetraMatrix::get_diagonal(GenericVector& x) const
 {
   dolfin_assert(!_matA.is_null());
 
-  TpetraVector& xx = x.down_cast<TpetraVector>();
+  TpetraVector& xx = as_type<TpetraVector>(x);
   if (!xx._x->getMap()->isSameAs(*_matA->getRangeMap()))
   {
     dolfin_error("TpetraMatrix.cpp",
@@ -662,7 +662,7 @@ void TpetraMatrix::set_diagonal(const GenericVector& x)
   if(_matA->isFillComplete())
     _matA->resumeFill();
 
-  const TpetraVector& xx = x.down_cast<TpetraVector>();
+  const TpetraVector& xx = as_type<const TpetraVector>(x);
   if (size(1) != size(0) || size(0) != xx.size())
   {
     dolfin_error("TpetraMatrix.cpp",
@@ -726,6 +726,7 @@ void TpetraMatrix::apply(std::string mode)
 MPI_Comm TpetraMatrix::mpi_comm() const
 {
   dolfin_assert(!_matA.is_null());
+
   // Unwrap MPI_Comm
   const Teuchos::RCP<const Teuchos::MpiComm<int>> _mpi_comm
     = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(_matA->getComm());

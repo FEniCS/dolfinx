@@ -24,6 +24,12 @@ using namespace dolfin;
 
 int main()
 {
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    std::cout << "This demo does not work in parallel" << std::endl;
+    return 0;
+  }
+
   // Structure sub domain
   class Structure : public SubDomain
   {
@@ -64,11 +70,9 @@ int main()
   ALE::move(fluid_mesh, *structure_mesh);
   fluid_mesh->smooth();
 
-  // Plot meshes
-  plot(fluid_mesh);
-  plot(structure_mesh);
-
-  interactive();
+  // Write out meshes to files.
+  XDMFFile("fluid_mesh.xdmf").write(*fluid_mesh);
+  XDMFFile("structure_mesh.xdmf").write(*structure_mesh);
 
   return 0;
 }

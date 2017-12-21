@@ -53,8 +53,7 @@ namespace dolfin
   ///
   /// It is a wrapper for the TAO bound constrained solver.
   ///
-  /// *Example*
-  ///    .. code-block:: python
+  /// @code{.py}
   ///
   ///       # Assemble the linear system
   ///       A, b = assemble_system(a, L, bc)
@@ -73,7 +72,7 @@ namespace dolfin
   ///       # Solve the problem
   ///       solver.solve(A, usol.vector(), b , u_min.vector(), u_max.vector())
   ///       info(solver.parameters,True)
-  ///
+  /// @endcode
   class TAOLinearBoundSolver : public Variable, public PETScObject
   {
   public:
@@ -101,13 +100,13 @@ namespace dolfin
                       const PETScVector& b,
                       const PETScVector& xl, const PETScVector& xu);
 
-    // Set the TAO solver type
+    /// Set the TAO solver type
     void set_solver(const std::string&);
 
     /// Set PETSC Krylov Solver (ksp) used by TAO
     void set_ksp(const std::string ksp_type = "default");
 
-    // Return TAO solver pointer
+    /// Return TAO solver pointer
     Tao tao() const;
 
     /// Return a list of available Tao solver methods
@@ -126,8 +125,6 @@ namespace dolfin
 
       p.add("monitor_convergence"    , false);
       p.add("report"                 , false);
-      p.add("function_absolute_tol"  , 1.0e-10);
-      p.add("function_relative_tol"  , 1.0e-10);
       p.add("gradient_absolute_tol"  , 1.0e-8);
       p.add("gradient_relative_tol"  , 1.0e-8);
       p.add("gradient_t_tol"         , 0.0);
@@ -142,10 +139,10 @@ namespace dolfin
       return p;
     }
 
-    // Return Matrix shared pointer
+    /// Return Matrix shared pointer
     std::shared_ptr<const PETScMatrix> get_matrix() const;
 
-    // Return load vector shared pointer
+    /// Return load vector shared pointer
     std::shared_ptr<const PETScVector> get_vector() const;
 
   private:

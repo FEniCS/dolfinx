@@ -36,6 +36,9 @@ namespace dolfin
   {
   public:
 
+    /// MapSize (ALL = all local indices, OWNED = owned local indices,
+    /// UNOWNED = unowned local indices, GLOBAL = total indices
+    /// globally)
     enum class MapSize : int32_t { ALL = 0,
                                    OWNED = 1,
                                    UNOWNED = 2,
@@ -79,6 +82,9 @@ namespace dolfin
     /// Get off process owner for unowned indices
     const std::vector<int>& off_process_owner() const;
 
+    /// Get process owner of any global index
+    int global_index_owner(std::size_t index) const;
+
     /// Get block size
     int block_size() const;
 
@@ -88,9 +94,10 @@ namespace dolfin
   private:
 
     // MPI Communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
-    // Cache rank of mpi_comm (otherwise calls to MPI_Comm_rank can be excessive)
+    // Cache rank of mpi_comm (otherwise calls to MPI_Comm_rank can be
+    // excessive)
     unsigned int _rank;
 
     // Range of ownership of index for all processes
@@ -107,12 +114,11 @@ namespace dolfin
 
   };
 
-
   // Function which may appear in a hot loop
   inline std::size_t IndexMap::local_to_global(std::size_t i) const
   {
-    // These two calls get hepefully optimized out of hot loops due
-    // to inlining
+    // These two calls get hopefully optimized out of hot loops due to
+    // inlining
     const std::size_t local_size = size(IndexMap::MapSize::OWNED);
     const std::size_t global_offset = local_range().first;
 

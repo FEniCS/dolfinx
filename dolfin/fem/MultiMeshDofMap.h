@@ -22,12 +22,14 @@
 #define __MULTI_MESH_DOF_MAP_H
 
 #include "GenericDofMap.h"
+#include <dolfin/mesh/MultiMesh.h>
 
 namespace dolfin
 {
 
   // Forward declarations
   class MultiMeshFunctionSpace;
+  class MultiMesh;
 
   /// This class handles the mapping of degrees of freedom for MultiMesh
   /// function spaces.
@@ -39,7 +41,7 @@ namespace dolfin
     /// Constructor
     MultiMeshDofMap();
 
-    // Copy constructor
+    /// Copy constructor
     MultiMeshDofMap(const MultiMeshDofMap& dofmap);
 
     /// Destructor
@@ -90,6 +92,10 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
+
+    /// Return inactive dofs
+    std::vector<dolfin::la_index> inactive_dofs(const MultiMesh &multimesh,
+                                                std::size_t part_id) const;
 
   private:
 

@@ -42,16 +42,15 @@ namespace dolfin
 
     /// Create boundary mesh from given mesh.
     ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
+    /// @param      mesh (_Mesh_)
     ///         Another _Mesh_ object.
-    ///     type (_std::string_)
+    /// @param     type (_std::string_)
     ///         The type of BoundaryMesh, which can be "exterior",
     ///         "interior" or "local". "exterior" is the globally
     ///         external boundary, "interior" is the inter-process mesh
     ///         and "local" is the boundary of the local (this process)
     ///         mesh.
-    ///     order (bool)
+    /// @param     order (bool)
     ///         Optional argument which can be used to control whether
     ///         or not the boundary mesh should be ordered according
     ///         to the UFC ordering convention. If set to false, the

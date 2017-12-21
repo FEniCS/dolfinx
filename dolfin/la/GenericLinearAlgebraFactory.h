@@ -37,10 +37,11 @@ namespace dolfin
 {
 
   class GenericLinearSolver;
-  class GenericLUSolver;
   class GenericMatrix;
   class GenericVector;
   class TensorLayout;
+
+  /// Base class for LinearAlgebra factories
 
   class GenericLinearAlgebraFactory
   {
@@ -60,14 +61,15 @@ namespace dolfin
       create_vector(MPI_Comm comm) const = 0;
 
     /// Create empty tensor layout
-    virtual std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const = 0;
+    virtual std::shared_ptr<TensorLayout>
+      create_layout(MPI_Comm comm, std::size_t rank) const = 0;
 
     /// Create empty linear operator
     virtual std::shared_ptr<GenericLinearOperator>
       create_linear_operator(MPI_Comm comm) const = 0;
 
     /// Create LU solver
-    virtual std::shared_ptr<GenericLUSolver>
+    virtual std::shared_ptr<GenericLinearSolver>
     create_lu_solver(MPI_Comm comm, std::string method) const = 0;
 
     /// Create Krylov solver

@@ -12,7 +12,7 @@ This demo illustrates how to:
 The solution for :math:`u` in this demo will look as follows:
 
 .. image:: ../poisson_u.png
-                         :scale: 75 %
+    :scale: 75 %
 
 
 Equation and problem definition
@@ -134,7 +134,7 @@ boundary condition should be applied.
 
 Inside the ``main`` function, we begin by defining a mesh of the
 domain. As the unit square is a very standard domain, we can use a
-built-in mesh provided by the class :cpp:class:`UnitSquareMesh`. In
+built-in mesh provided by the :cpp:class:`UnitSquareMesh` factory. In
 order to create a mesh consisting of 32 x 32 squares with each square
 divided into two triangles, and the finite element space (specified in
 the form file) defined relative to this mesh, we do as follows
@@ -144,7 +144,8 @@ the form file) defined relative to this mesh, we do as follows
    int main()
    {
      // Create mesh and function space
-     auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
+     auto mesh = std::make_shared<Mesh>(
+       UnitSquareMesh::create({{32, 32}}, CellType::Type::triangle));
      auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
@@ -160,10 +161,10 @@ as follows:
 
 .. code-block:: cpp
 
-   // Define boundary condition
-   auto u0 = std::make_shared<Constant>(0.0);
-   auto boundary = std::make_shared<DirichletBoundary>();
-   DirichletBC bc(V, u0, boundary);
+     // Define boundary condition
+     auto u0 = std::make_shared<Constant>(0.0);
+     auto boundary = std::make_shared<DirichletBoundary>();
+     DirichletBC bc(V, u0, boundary);
 
 Next, we define the variational formulation by initializing the
 bilinear and linear forms (:math:`a`, :math:`L`) using the previously
@@ -173,13 +174,13 @@ to the linear form.
 
 .. code-block:: cpp
 
-   // Define variational forms
-   Poisson::BilinearForm a(V, V);
-   Poisson::LinearForm L(V);
-   auto f = std::make_shared<Source>();
-   auto g = std::make_shared<dUdN>();
-   L.f = f;
-   L.g = g;
+     // Define variational forms
+     Poisson::BilinearForm a(V, V);
+     Poisson::LinearForm L(V);
+     auto f = std::make_shared<Source>();
+     auto g = std::make_shared<dUdN>();
+     L.f = f;
+     L.g = g;
 
 Now, we have specified the variational forms and can consider the
 solution of the variational problem. First, we need to define a
@@ -190,25 +191,20 @@ call the ``solve`` function with the arguments ``a == L``, ``u`` and
 
 .. code-block:: cpp
 
-   // Compute solution
-   Function u(V);
-   solve(a == L, u, bc);
+     // Compute solution
+     Function u(V);
+     solve(a == L, u, bc);
 
 The function ``u`` will be modified during the call to solve. A
-:cpp:class:`Function` can be manipulated in various ways, in
-particular, it can be plotted and saved to file. Here, we output the
-solution to a ``VTK`` file (using the suffix ``.pvd``) for later
-visualization and also plot it using the ``plot`` command:
+:cpp:class:`Function` can be saved to a file. Here, we output the
+solution to a ``VTK`` file (specified using the suffix ``.pvd``) for
+visualisation in an external program such as Paraview.
 
 .. code-block:: cpp
 
      // Save solution in VTK format
      File file("poisson.pvd");
      file << u;
-
-     // Plot solution
-     plot(u);
-     interactive();
 
      return 0;
    }

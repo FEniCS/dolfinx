@@ -155,12 +155,9 @@ void LocalSolver::_solve_local(GenericVector& x, const GenericVector* global_b,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get local-to-global dof maps for cell
-    const ArrayView<const dolfin::la_index> dofs_a0
-      = dofmaps_a[0]->cell_dofs(cell->index());
-    const ArrayView<const dolfin::la_index> dofs_a1
-      = dofmaps_a[1]->cell_dofs(cell->index());
-    const ArrayView<const dolfin::la_index> dofs_L
-      = dofmap_L->cell_dofs(cell->index());
+    auto dofs_a0 = dofmaps_a[0]->cell_dofs(cell->index());
+    auto dofs_a1 = dofmaps_a[1]->cell_dofs(cell->index());
+    auto dofs_L = dofmap_L->cell_dofs(cell->index());
 
     // Check that the local matrix is square
     if (dofs_a0.size() != dofs_a1.size())
@@ -287,10 +284,8 @@ void LocalSolver::factorize()
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get local-to-global dof maps for cell
-    const ArrayView<const dolfin::la_index> dofs_a0
-      = dofmaps_a[0]->cell_dofs(cell->index());
-    const ArrayView<const dolfin::la_index> dofs_a1
-      = dofmaps_a[1]->cell_dofs(cell->index());
+    auto dofs_a0 = dofmaps_a[0]->cell_dofs(cell->index());
+    auto dofs_a1 = dofmaps_a[1]->cell_dofs(cell->index());
 
     // Check that the local matrix is square
     if (dofs_a0.size() != dofs_a1.size())

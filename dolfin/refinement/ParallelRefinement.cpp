@@ -131,22 +131,18 @@ void ParallelRefinement::update_logical_edgefunction()
 {
   const std::size_t mpi_size = MPI::size(_mesh.mpi_comm());
 
-  // Send all shared edges marked for update
-  std::vector<std::vector<std::size_t>> received_values;
+  // Send all shared edges marked for update and receive from other processes
+  std::vector<std::size_t> received_values;
   MPI::all_to_all(_mesh.mpi_comm(), marked_for_update, received_values);
 
   // Clear marked_for_update vectors
   marked_for_update = std::vector<std::vector<std::size_t>>(mpi_size);
 
-  // Flatten received values and set EdgeFunction true at each index
+  // Flatten received values and set edges MeshFunction true at each index
   // received
-  for (auto const &local_indices: received_values)
-  {
-    for (auto const &local_index : local_indices)
-    {
+  for (auto const &local_index : received_values)
       marked_edges[local_index] = true;
-    }
-  }
+
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::create_new_vertices()
@@ -198,7 +194,7 @@ void ParallelRefinement::create_new_vertices()
   const std::size_t num_new_vertices = n;
   const std::size_t global_offset
     = MPI::global_offset(_mesh.mpi_comm(), num_new_vertices, true)
-    + _mesh.size_global(0);
+    + _mesh.num_entities_global(0);
 
   // If they are shared, then the new global vertex index needs to be
   // sent off-process.  Add offset to map, and collect up any shared
@@ -226,13 +222,13 @@ void ParallelRefinement::create_new_vertices()
   }
 
   // Send new vertex indices to remote processes and receive
-  std::vector<std::vector<std::size_t>> received_values(mpi_size);
+  std::vector<std::size_t> received_values;
   MPI::all_to_all(_mesh.mpi_comm(), values_to_send, received_values);
 
-  // Flatten and add received remote global vertex indices to map
-  for (auto const &p : received_values)
-    for (auto q = p.begin(); q != p.end(); q += 2)
-      (*local_edge_to_new_vertex)[*q] = *(q + 1);
+  // Add received remote global vertex indices to map
+  for (auto q = received_values.begin();
+       q != received_values.end(); q += 2)
+    (*local_edge_to_new_vertex)[*q] = *(q + 1);
 
   // Attach global indices to each vertex, old and new, and sort
   // them across processes into this order
@@ -258,7 +254,15 @@ void ParallelRefinement::build_local(Mesh& new_mesh) const
   dolfin_assert(new_cell_topology.size()%num_cell_vertices == 0);
   const std::size_t num_cells = new_cell_topology.size()/num_cell_vertices;
 
-  ed.open(new_mesh, tdim, gdim);
+  CellType::Type cell_type;
+  if (tdim == 3)
+    cell_type = CellType::Type::tetrahedron;
+  else if (tdim == 2)
+    cell_type = CellType::Type::triangle;
+  else
+    cell_type = CellType::Type::interval;
+
+  ed.open(new_mesh, cell_type, tdim, gdim);
   ed.init_vertices(num_vertices);
   std::size_t i = 0;
   for (auto p = new_vertex_coordinates.begin();

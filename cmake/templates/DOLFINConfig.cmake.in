@@ -5,6 +5,14 @@
 
 # FIXME: Check that naming conforms to CMake standards
 
+if (POLICY CMP0011)
+  cmake_policy(SET CMP0011 NEW)
+endif()
+
+if (POLICY CMP0012)
+  cmake_policy(SET CMP0012 NEW)
+endif()
+
 # Compute path
 get_filename_component(DOLFIN_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
@@ -33,21 +41,6 @@ set(DOLFIN_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/@DOLFIN_INCLUDE_DIR@")
 
 # Third party include directories
 set(DOLFIN_3RD_PARTY_INCLUDE_DIRS "@DOLFIN_DEP_INCLUDE_DIRECTORIES@;@DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES@")
-
-# Python include directories
-set(DOLFIN_PYTHON_INCLUDE_DIRS "@NUMPY_INCLUDE_DIR@;@PYTHON_INCLUDE_DIRS@")
-
-# Python definitions
-set(DOLFIN_PYTHON_DEFINITIONS "@DOLFIN_PYTHON_DEFINITIONS@")
-
-# Python libraries
-set(DOLFIN_PYTHON_LIBRARIES "@PYTHON_LIBRARIES@")
-
-# Python executable
-set(DOLFIN_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
-
-# SWIG executable
-set(DOLFIN_SWIG_EXECUTABLE "@SWIG_EXECUTABLE@")
 
 # DOLFIN library
 set(DOLFIN_LIBRARIES dolfin)

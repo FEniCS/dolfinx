@@ -351,14 +351,14 @@ LagrangeInterpolator::tabulate_coordinates_to_dofs(const FunctionSpace& V)
     cell->get_coordinate_dofs(coordinate_dofs);
 
     // Get local-to-global map
-    const ArrayView<const dolfin::la_index> dofs
-      = dofmap.cell_dofs(cell->index());
+    auto dofs = dofmap.cell_dofs(cell->index());
 
     // Tabulate dof coordinates on cell
-    element.tabulate_dof_coordinates(coordinates, coordinate_dofs, *cell);
+    element.tabulate_dof_coordinates(coordinates, coordinate_dofs,
+                                     *cell);
 
     // Map dofs into coords_to_dofs
-    for (std::size_t i = 0; i < dofs.size(); ++i)
+    for (Eigen::Index i = 0; i < dofs.size(); ++i)
     {
       const std::size_t dof = dofs[i];
       if (dof < local_size)
@@ -368,7 +368,8 @@ LagrangeInterpolator::tabulate_coordinates_to_dofs(const FunctionSpace& V)
           continue;
 
         // Put coordinates in coors
-        std::copy(coordinates[i].begin(), coordinates[i].end(), coors.begin());
+        std::copy(coordinates[i].begin(), coordinates[i].end(),
+                  coors.begin());
 
         // Add dof to list at this coord
         const auto ins = coords_to_dofs.insert

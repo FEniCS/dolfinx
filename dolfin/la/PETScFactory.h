@@ -38,6 +38,8 @@
 namespace dolfin
 {
 
+  /// PETSc linear algebra factory
+
   class PETScFactory : public GenericLinearAlgebraFactory
   {
   public:
@@ -52,15 +54,16 @@ namespace dolfin
     std::shared_ptr<GenericVector> create_vector(MPI_Comm comm) const;
 
     /// Create empty tensor layout
-    std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const;
+    std::shared_ptr<TensorLayout> create_layout(MPI_Comm comm,
+                                                std::size_t rank) const;
 
     /// Create empty linear operator
     std::shared_ptr<GenericLinearOperator>
       create_linear_operator(MPI_Comm comm) const;
 
     /// Create LU solver
-    std::shared_ptr<GenericLUSolver> create_lu_solver(MPI_Comm comm,
-                                                      std::string method) const;
+    std::shared_ptr<GenericLinearSolver>
+    create_lu_solver(MPI_Comm comm, std::string method) const;
 
     /// Create Krylov solver
     std::shared_ptr<GenericLinearSolver>

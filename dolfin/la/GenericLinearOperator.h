@@ -59,8 +59,8 @@ namespace dolfin
 
     friend class LinearOperator;
 
-    // Initialize linear operator to match parallel layout of vectors
-    // x and y for product y = Ax. Needs to be implemented by backend.
+    /// Initialize linear operator to match parallel layout of vectors
+    /// x and y for product y = Ax. Needs to be implemented by backend.
     virtual void init_layout(const GenericVector& x,
 			     const GenericVector& y,
 			     GenericLinearOperator* wrapper)

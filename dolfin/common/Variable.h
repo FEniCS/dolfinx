@@ -55,7 +55,7 @@ namespace dolfin
     void rename(const std::string name, const std::string label);
 
     /// Return name
-    std::string name()  const;
+    std::string name() const;
 
     /// Return label (description)
     std::string label() const;
@@ -70,7 +70,7 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
-    // Parameters
+    /// Parameters
     Parameters parameters;
 
   private:

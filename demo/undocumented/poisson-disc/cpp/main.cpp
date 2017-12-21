@@ -52,10 +52,16 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    std::cout << "This demo does not work in parallel" << std::endl;
+    return 0;
+  }
+
   // Create mesh and function space
   int degree = 2;
   int gdim = 2;
-  auto mesh = std::make_shared<UnitDiscMesh>(MPI_COMM_WORLD, 32, degree, gdim);
+  auto mesh = std::make_shared<Mesh>(UnitDiscMesh::create(MPI_COMM_WORLD, 32, degree, gdim));
 
   auto V = std::make_shared<PoissonDisc::FunctionSpace>(mesh);
 
@@ -84,10 +90,6 @@ int main()
   // Save solution in VTK format
   //File file("poisson.pvd");
   //file << u;
-
-  // Plot solution
-  //plot(u);
-  //interactive();
 
   return 0;
 }

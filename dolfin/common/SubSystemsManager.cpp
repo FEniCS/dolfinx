@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016 Garth N. Wells, Anders Logg, Jan Blechta
+// Copyright (C) 2008-2017 Garth N. Wells, Anders Logg, Jan Blechta
 //
 // This file is part of DOLFIN.
 //
@@ -32,17 +32,16 @@
 #include <boost/algorithm/string/trim.hpp>
 
 #include <dolfin/common/constants.h>
-#include <dolfin/common/Timer.h>
-#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/log/log.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "SubSystemsManager.h"
 
 using namespace dolfin;
 
-// Return singleton instance. Do NOT make the singleton a global static
-// object; the method here ensures that the singleton is initialised
-// before use. (google "static initialization order fiasco" for full
-// explanation)
+// Return singleton instance. Do NOT make the singleton a global
+// static object; the method here ensures that the singleton is
+// initialised before use. (google "static initialization order
+// fiasco" for full explanation)
 
 SubSystemsManager& SubSystemsManager::singleton()
 {
@@ -54,13 +53,6 @@ SubSystemsManager::SubSystemsManager() : petsc_err_msg(""),
   petsc_initialized(false), control_mpi(false)
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-SubSystemsManager::SubSystemsManager(const SubSystemsManager& sub_sys_manager)
-{
-  dolfin_error("SubSystemsManager.cpp",
-               "create subsystems manager",
-               "Copy constructor should not be used");
 }
 //-----------------------------------------------------------------------------
 SubSystemsManager::~SubSystemsManager()
@@ -76,7 +68,8 @@ void SubSystemsManager::init_mpi()
   if (mpi_initialized)
     return;
 
-  // Init MPI with highest level of thread support and take responsibility
+  // Init MPI with highest level of thread support and take
+  // responsibility
   std::string s("");
   char* c = const_cast<char *>(s.c_str());
   SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE);
@@ -89,8 +82,6 @@ void SubSystemsManager::init_mpi()
 int SubSystemsManager::init_mpi(int argc, char* argv[],
                                 int required_thread_level)
 {
-  Timer timer("Init MPI");
-
   #ifdef HAS_MPI
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
@@ -134,13 +125,7 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
 void SubSystemsManager::init_petsc()
 {
   #ifdef HAS_PETSC
-  if (singleton().petsc_initialized)
-    return;
-
-  log(TRACE, "Initializing PETSc (ignoring command-line arguments).");
-
-  // Dummy command-line arguments for PETSc. This is needed since
-  // PetscInitializeNoArguments() does not seem to work.
+  // Dummy command-line arguments
   int argc = 0;
   char** argv = NULL;
 
@@ -155,8 +140,6 @@ void SubSystemsManager::init_petsc()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc(int argc, char* argv[])
 {
-  Timer timer("Init PETSc");
-
   #ifdef HAS_PETSC
   if (singleton().petsc_initialized)
     return;
@@ -175,21 +158,9 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   PetscBool is_initialized;
   PetscInitialized(&is_initialized);
   if (!is_initialized)
-  {
-    // Initialize PETSc
-    PetscInitializeNoArguments();
-  }
-
-  // Pass command line arguments to PETSc (will overwrite any
-  // default above)
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-  PetscOptionsInsert(&argc, &argv, NULL);
-  #else
-  PetscOptionsInsert(NULL, &argc, &argv, NULL);
-  #endif
+    PetscInitialize(&argc, &argv, NULL, NULL);
 
   #ifdef HAS_SLEPC
-  // Initialize SLEPc
   SlepcInitialize(&argc, &argv, NULL, NULL);
   #endif
 
@@ -198,7 +169,8 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   if (!use_petsc_signal_handler)
     PetscPopSignalHandler();
 
-  // Use our own error handler so we can pretty print errors from PETSc
+  // Use our own error handler so we can pretty print errors from
+  // PETSc
   PetscPushErrorHandler(PetscDolfinErrorHandler, nullptr);
 
   // Remember that PETSc has been initialized
@@ -287,9 +259,9 @@ void SubSystemsManager::finalize_petsc()
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::mpi_initialized()
 {
-  // This function not affected if MPI_Finalize has been called. It returns
-  // true if MPI_Init has been called at any point, even if MPI_Finalize has
-  // been called.
+  // This function not affected if MPI_Finalize has been called. It
+  // returns true if MPI_Init has been called at any point, even if
+  // MPI_Finalize has been called.
 
   #ifdef HAS_MPI
   int mpi_initialized;
@@ -319,7 +291,8 @@ PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
   PetscErrorCode n, PetscErrorType p, const char *mess, void *ctx)
 {
   // Store message for printing later (by PETScObject::petsc_error)
-  // only if it's not empty message (passed by PETSc when repeating error)
+  // only if it's not empty message (passed by PETSc when repeating
+  // error)
   std::string _mess = mess;
   boost::algorithm::trim(_mess);
   if (_mess != "")

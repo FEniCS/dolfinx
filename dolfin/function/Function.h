@@ -24,9 +24,11 @@
 #define __FUNCTION_H
 
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 #include <boost/ptr_container/ptr_map.hpp>
+#include <Eigen/Dense>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
@@ -43,7 +45,7 @@ namespace dolfin
 {
 
   // Forward declarations
-  class DirichletBC;
+  class Cell;
   class Expression;
   class FunctionSpace;
   class GenericVector;
@@ -63,6 +65,8 @@ namespace dolfin
   class Function : public GenericFunction, public Hierarchical<Function>
   {
   public:
+
+    Function() : Hierarchical<Function>(*this) {}
 
     /// Create function on given function space (shared data)
     ///
@@ -146,54 +150,12 @@ namespace dolfin
     ///         The subfunction.
     Function& operator[] (std::size_t i) const;
 
-    /// Add operator with other function
-    ///
-    /// *Returns*
-    ///     _FunctionAXPY_
-    ///         Return a linear combination of Functions
-    FunctionAXPY operator+(std::shared_ptr<const Function> other) const;
-
-    /// Add operator with other linear combination of functions
-    ///
-    /// *Returns*
-    ///     _FunctionAXPY_
-    ///         Return a linear combination of Functions
-    FunctionAXPY operator+(const FunctionAXPY& axpy) const;
-
-    /// Subtraction operator with other function
-    ///
-    /// *Returns*
-    ///     _FunctionAXPY_
-    ///         Return a linear combination of Functions
-    FunctionAXPY operator-(std::shared_ptr<const Function> other) const;
-
-    /// Subtraction operator with other linear combination of functions
-    ///
-    /// *Returns*
-    ///     _FunctionAXPY_
-    ///         Return a linear combination of Functions
-    FunctionAXPY operator-(const FunctionAXPY& axpy) const;
-
-    /// Scale operator
-    ///
-    /// *Returns*
-    ///     _FunctionAXPY_
-    ///         Return a linear combination of Functions
-    FunctionAXPY operator*(double scalar) const;
-
-    /// Scale operator
-    ///
-    /// *Returns*
-    ///     _FunctionAXPY_
-    ///         Return a linear combination of Functions
-    FunctionAXPY operator/(double scalar) const;
-
     /// Return shared pointer to function space
     ///
     /// *Returns*
     ///     _FunctionSpace_
     ///         Return the shared pointer.
-    virtual std::shared_ptr<const FunctionSpace> function_space() const
+    virtual std::shared_ptr<const FunctionSpace> function_space() const override
     {
       dolfin_assert(_function_space);
       return _function_space;
@@ -233,31 +195,53 @@ namespace dolfin
 
     /// Evaluate function at given coordinates
     ///
-    /// *Arguments*
-    ///     values (_Array_ <double>)
+    /// @param    values (Array<double>)
     ///         The values.
-    ///     x (_Array_ <double>)
+    /// @param    x (Array<double>)
     ///         The coordinates.
-    void eval(Array<double>& values, const Array<double>& x) const;
+    void eval(Array<double>& values, const Array<double>& x) const override;
 
     /// Evaluate function at given coordinates in given cell
     ///
     /// *Arguments*
-    ///     values (_Array_ <double>)
+    /// @param    values (Array<double>)
     ///         The values.
-    ///     x (_Array_ <double>)
+    /// @param    x (Array<double>)
     ///         The coordinates.
-    ///     dolfin_cell (_Cell_)
+    /// @param    dolfin_cell (_Cell_)
     ///         The cell.
-    ///     ufc_cell (ufc::cell)
+    /// @param    ufc_cell (ufc::cell)
     ///         The ufc::cell.
     void eval(Array<double>& values, const Array<double>& x,
               const Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
 
-    /// Interpolate function (on possibly non-matching meshes)
+    /// Evaluate function at given coordinates
+    ///
+    /// @param    values (Eigen::Ref<Eigen::VectorXd> values)
+    ///         The values.
+    /// @param    x (Eigen::Ref<const Eigen::VectorXd> x)
+    ///         The coordinates.
+    void eval(Eigen::Ref<Eigen::VectorXd> values,
+              Eigen::Ref<const Eigen::VectorXd> x) const override;
+
+    /// Evaluate function at given coordinates in given cell
     ///
     /// *Arguments*
-    ///     v (_GenericFunction_)
+    /// @param    values (Eigen::Ref<Eigen::VectorXd>)
+    ///         The values.
+    /// @param    x (Eigen::Ref<const Eigen::VectorXd>)
+    ///         The coordinates.
+    /// @param    dolfin_cell (_Cell_)
+    ///         The cell.
+    /// @param    ufc_cell (ufc::cell)
+    ///         The ufc::cell.
+    void eval(Eigen::Ref<Eigen::VectorXd> values,
+              Eigen::Ref<const Eigen::VectorXd> x,
+              const dolfin::Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
+
+    /// Interpolate function (on possibly non-matching meshes)
+    ///
+    /// @param    v (GenericFunction)
     ///         The function to be interpolated.
     void interpolate(const GenericFunction& v);
 
@@ -275,7 +259,7 @@ namespace dolfin
     /// *Returns*
     ///     std::size_t
     ///         The value rank.
-    virtual std::size_t value_rank() const;
+    virtual std::size_t value_rank() const override;
 
     /// Return value dimension for given axis
     ///
@@ -286,66 +270,81 @@ namespace dolfin
     /// *Returns*
     ///     std::size_t
     ///         The value dimension.
-    virtual std::size_t value_dimension(std::size_t i) const;
+    virtual std::size_t value_dimension(std::size_t i) const override;
+
+    /// Return value shape
+    ///
+    /// *Returns*
+    ///     std::vector<std::size_t>
+    ///         The value shape.
+    virtual std::vector<std::size_t> value_shape() const override;
 
     /// Evaluate at given point in given cell
     ///
-    /// *Arguments*
-    ///     values (_Array_ <double>)
+    /// @param    values (Array<double>)
     ///         The values at the point.
-    ///     x (_Array_ <double>)
+    /// @param   x (Array<double>)
     ///         The coordinates of the point.
-    ///     cell (ufc::cell)
+    /// @param    cell (ufc::cell)
     ///         The cell which contains the given point.
     virtual void eval(Array<double>& values, const Array<double>& x,
-                      const ufc::cell& cell) const;
+                      const ufc::cell& cell) const override;
+
+    /// Evaluate at given point in given cell
+    ///
+    /// @param    values (Eigen::Ref<Eigen::VectorXd>)
+    ///         The values at the point.
+    /// @param   x (Eigen::Ref<const Eigen::VectorXd>
+    ///         The coordinates of the point.
+    /// @param    cell (ufc::cell)
+    ///         The cell which contains the given point.
+    virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
+                      Eigen::Ref<const Eigen::VectorXd> x,
+                      const ufc::cell& cell) const override;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     ///
-    /// *Arguments*
-    ///     w (list of doubles)
+    /// @param    w (list of doubles)
     ///         Expansion coefficients.
-    ///     element (_FiniteElement_)
+    /// @param    element (_FiniteElement_)
     ///         The element.
-    ///     dolfin_cell (_Cell_)
+    /// @param    dolfin_cell (_Cell_)
     ///         The cell.
-    ///     ufc_cell (ufc::cell).
+    /// @param  coordinate_dofs (double *)
+    ///         The coordinates
+    /// @param    ufc_cell (ufc::cell).
     ///         The ufc::cell.
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
                           const double* coordinate_dofs,
-                          const ufc::cell& ufc_cell) const;
+                          const ufc::cell& ufc_cell) const override;
 
     /// Compute values at all mesh vertices
     ///
-    /// *Arguments*
-    ///     vertex_values (_Array_ <double>)
+    /// @param    vertex_values (Array<double>)
     ///         The values at all vertices.
-    ///     mesh (_Mesh_)
+    /// @param    mesh (_Mesh_)
     ///         The mesh.
     virtual void compute_vertex_values(std::vector<double>& vertex_values,
-                                       const Mesh& mesh) const;
+                                       const Mesh& mesh) const override;
 
     /// Compute values at all mesh vertices
     ///
-    /// *Arguments*
-    ///     vertex_values (_Array_ <double>)
+    /// @param    vertex_values (Array<double>)
     ///         The values at all vertices.
     void compute_vertex_values(std::vector<double>& vertex_values);
 
     /// Allow extrapolation when evaluating the Function
     ///
-    /// *Arguments*
-    ///     allow_extrapolation (bool)
+    /// @param allow_extrapolation (bool)
     ///         Whether or not permit extrapolation.
     void set_allow_extrapolation(bool allow_extrapolation)
     { _allow_extrapolation = allow_extrapolation; }
 
     /// Check if extrapolation is permitted when evaluating the Function
     ///
-    /// *Returns*
-    ///     bool
+    /// @return bool
     ///         True if extrapolation is permitted, otherwise false
     bool get_allow_extrapolation() const
     { return _allow_extrapolation; }

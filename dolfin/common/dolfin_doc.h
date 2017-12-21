@@ -23,10 +23,6 @@
 
 /*! \mainpage DOLFIN Programmer's Reference
  *
- * This documentation is automatically generated each night for the current
- * development version of DOLFIN.
+ * FIXME: put some content here
  *
- * <p>
- *
- * A good starting point is the <a href="inherits.html">graphical class hierarchy</a>. <p>
  */

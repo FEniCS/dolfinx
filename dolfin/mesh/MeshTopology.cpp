@@ -28,13 +28,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshTopology::MeshTopology()
+MeshTopology::MeshTopology() : Variable("topology", "mesh topology")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)
-  : coloring(topology.coloring), num_entities(topology.num_entities),
+  : Variable("topology", "mesh topology"),
+    coloring(topology.coloring), num_entities(topology.num_entities),
     ghost_offset_index(topology.ghost_offset_index),
     global_num_entities(topology.global_num_entities),
     _global_indices(topology._global_indices),

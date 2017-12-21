@@ -42,6 +42,10 @@ namespace dolfin
   /// Return sizeof the dolfin::la_index type
   std::size_t sizeof_la_index();
 
+  /// Return true if DOLFIN is compiled in debugging mode,
+  /// i.e., with assertions on
+  bool has_debug();
+
   /// Return true if DOLFIN is compiled with OpenMP
   bool has_openmp();
 
@@ -72,8 +76,8 @@ namespace dolfin
   /// Return true if DOLFIN is compiled with HDF5
   bool has_hdf5();
 
-  /// Return true if DOLFIN is compiled with VTK
-  bool has_vtk();
+  /// Return true if DOLFIN is compiled with Parallel HDF5
+  bool has_hdf5_parallel();
 
 }
 

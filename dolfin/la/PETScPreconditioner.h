@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Garth N. Wells
+// Copyright (C) 2010-2016 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,18 +16,15 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2011
-//
-// First added:  2010-02-25
-// Last changed: 2014-07-09
 
 #ifndef __DOLFIN_PETSC_PRECONDITIONER_H
 #define __DOLFIN_PETSC_PRECONDITIONER_H
 
 #ifdef HAS_PETSC
 
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 #include <petscpc.h>
 
 #include <dolfin/common/types.h>
@@ -52,6 +49,7 @@ namespace dolfin
   {
   public:
 
+    /// Select type by name
     static void set_type(PETScKrylovSolver& solver, std::string type);
 
     /// Create a particular preconditioner object
@@ -69,7 +67,11 @@ namespace dolfin
     /// can be generated using GenericDofMap::tabulate_all_dofs.
     void set_coordinates(const std::vector<double>& x, std::size_t dim);
 
-    // FIXME: Document
+    /// Assign indices from fields as separate PETSc index sets, with
+    /// given names
+    /// @param solver (PETScKrylovSolver&)
+    /// @param fields (std::vector<std::vector<dolfin::la_index>>&)
+    /// @param split_names (std::vector<std::string>&)
     void
       set_fieldsplit(PETScKrylovSolver& solver,
                      const std::vector<std::vector<dolfin::la_index>>& fields,
@@ -81,16 +83,12 @@ namespace dolfin
     /// Return a list of available preconditioners
     static std::map<std::string, std::string> preconditioners();
 
-    /// Default parameter values
-    //static Parameters default_parameters();
-
     friend class PETScSNESSolver;
-
     friend class PETScTAOSolver;
 
   private:
 
-    /// Named preconditioner
+    // Named preconditioner
     std::string _type;
 
     // Available names preconditioners

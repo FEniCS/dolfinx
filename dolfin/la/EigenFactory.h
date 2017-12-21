@@ -38,6 +38,8 @@ namespace dolfin
   // Forward declaration
   class GenericLinearSolver;
 
+  /// Eigen linear algebra factory
+
   class EigenFactory : public GenericLinearAlgebraFactory
   {
   public:
@@ -51,16 +53,16 @@ namespace dolfin
 
     /// Create empty vector
     std::shared_ptr<GenericVector> create_vector(MPI_Comm comm) const
-    { return std::make_shared<EigenVector>(); }
+    { return std::make_shared<EigenVector>(comm); }
 
     /// Create empty tensor layout
-    std::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
+    std::shared_ptr<TensorLayout> create_layout(MPI_Comm comm,
+                                                std::size_t rank) const
     {
       TensorLayout::Sparsity sparsity = TensorLayout::Sparsity::DENSE;
       if (rank > 1)
         sparsity = TensorLayout::Sparsity::SPARSE;
-      std::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
-      return pattern;
+      return std::make_shared<TensorLayout>(comm, 0, sparsity);
     }
 
     /// Create empty linear operator
@@ -72,9 +74,10 @@ namespace dolfin
     }
 
     /// Create LU solver
-    std::shared_ptr<GenericLUSolver> create_lu_solver(MPI_Comm comm, std::string method) const
+    std::shared_ptr<GenericLinearSolver>
+    create_lu_solver(MPI_Comm comm, std::string method) const
     {
-      return std::shared_ptr<GenericLUSolver>(new EigenLUSolver(method));
+      return std::make_shared<EigenLUSolver>(method);
     }
 
     /// Create Krylov solver

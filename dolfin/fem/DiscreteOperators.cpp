@@ -54,7 +54,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
 
   // Check that V0 is a (lowest-order) edge basis
   mesh.init(1);
-  if (V0.dim() != mesh.size_global(1))
+  if (V0.dim() != mesh.num_entities_global(1))
   {
     dolfin_error("DiscreteGradient.cpp",
                  "compute discrete gradient operator",
@@ -62,7 +62,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   }
 
   // Check that V1 is a linear nodal basis
-  if (V1.dim() != mesh.size_global(0))
+  if (V1.dim() != mesh.num_entities_global(0))
   {
     dolfin_error("DiscreteGradient.cpp",
                  "compute discrete gradient operator",
@@ -85,7 +85,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
 
   // Create layout for initialising tensor
   std::shared_ptr<TensorLayout> tensor_layout;
-  tensor_layout = A->factory().create_layout(2);
+  tensor_layout = A->factory().create_layout(mesh.mpi_comm(), 2);
   dolfin_assert(tensor_layout);
 
   // Copy index maps from dofmaps
@@ -95,14 +95,13 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
     = { V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
 
   // Initialise tensor layout
-  tensor_layout->init(mesh.mpi_comm(), index_maps,
-                      TensorLayout::Ghosts::UNGHOSTED);
+  tensor_layout->init(index_maps, TensorLayout::Ghosts::UNGHOSTED);
 
   // Initialize edge -> vertex connections
   mesh.init(1, 0);
 
   SparsityPattern& pattern = *tensor_layout->sparsity_pattern();
-  pattern.init(mesh.mpi_comm(), index_maps);
+  pattern.init(index_maps);
 
     // Build sparsity pattern
   if (tensor_layout->sparsity_pattern())

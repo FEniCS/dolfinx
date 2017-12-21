@@ -66,8 +66,6 @@ Parameters PETScTAOSolver::default_parameters()
 
   p.add("monitor_convergence"    , false);
   p.add("report"                 , false);
-  p.add("function_absolute_tol"  , 1.0e-10);
-  p.add("function_relative_tol"  , 1.0e-10);
   p.add("gradient_absolute_tol"  , 1.0e-08);
   p.add("gradient_relative_tol"  , 1.0e-08);
   p.add("gradient_t_tol"         , 0.0);
@@ -87,28 +85,19 @@ Parameters PETScTAOSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScTAOSolver::PETScTAOSolver(MPI_Comm comm) : _tao(nullptr),
-                                                _has_bounds(false)
+PETScTAOSolver::PETScTAOSolver(MPI_Comm comm,
+                               std::string tao_type,
+                               std::string ksp_type,
+                               std::string pc_type)
+  : _tao(nullptr), _has_bounds(false), _matH(comm), _matP(comm)
 {
   // Create TAO object
   PetscErrorCode ierr = TaoCreate(comm, &_tao);
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoCreate");
 
-  // Set parameter values
-  parameters = default_parameters();
-
-  // Update parameters when tao/ksp/pc_types are explictly given
-  update_parameters("default", "default", "default");
-}
-//-----------------------------------------------------------------------------
-PETScTAOSolver::PETScTAOSolver(const std::string tao_type,
-                               const std::string ksp_type,
-                               const std::string pc_type) : _tao(NULL),
-                                                            _has_bounds(false)
-{
-  // Create TAO object
-  PetscErrorCode ierr = TaoCreate(PETSC_COMM_WORLD, &_tao);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoCreate");
+  // Set Hessian and preconditioner only once
+  ierr = TaoSetHessianRoutine(_tao, _matH.mat(), _matP.mat(), nullptr, nullptr);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetHessianRoutine");
 
   // Set parameter values
   parameters = default_parameters();
@@ -117,15 +106,20 @@ PETScTAOSolver::PETScTAOSolver(const std::string tao_type,
   update_parameters(tao_type, ksp_type, pc_type);
 }
 //-----------------------------------------------------------------------------
+PETScTAOSolver::PETScTAOSolver(std::string tao_type,
+                               std::string ksp_type,
+                               std::string pc_type)
+  : PETScTAOSolver(MPI_COMM_WORLD, tao_type, ksp_type, pc_type) { }
+//-----------------------------------------------------------------------------
 PETScTAOSolver::~PETScTAOSolver()
 {
   if (_tao)
     TaoDestroy(&_tao);
 }
 //-----------------------------------------------------------------------------
-void PETScTAOSolver::update_parameters(const std::string tao_type,
-                                       const std::string ksp_type,
-                                       const std::string pc_type)
+void PETScTAOSolver::update_parameters(std::string tao_type,
+                                       std::string ksp_type,
+                                       std::string pc_type)
 {
   // Update parameters when tao/ksp/pc_types are explictly given
   if (tao_type != "default")
@@ -170,6 +164,14 @@ void PETScTAOSolver::set_tao(const std::string tao_type)
   }
 }
 //-----------------------------------------------------------------------------
+MPI_Comm PETScTAOSolver::mpi_comm() const
+{
+  dolfin_assert(_tao);
+  MPI_Comm mpi_comm = MPI_COMM_NULL;
+  PetscObjectGetComm((PetscObject)_tao, &mpi_comm);
+  return mpi_comm;
+}
+//-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>
 PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
                       GenericVector& x,
@@ -179,8 +181,8 @@ PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
   // Bound-constrained minimisation problem
   _has_bounds = true;
 
-  return solve(optimisation_problem, x.down_cast<PETScVector>(),
-               lb.down_cast<PETScVector>(), ub.down_cast<PETScVector>());
+  return solve(optimisation_problem, as_type<PETScVector>(x),
+               as_type<const PETScVector>(lb), as_type<const PETScVector>(ub));
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>
@@ -189,9 +191,10 @@ PETScTAOSolver::solve(OptimisationProblem& optimisation_problem,
 {
   // Unconstrained minimisation problem
   _has_bounds = false;
-  PETScVector lb, ub;
+  PETScVector lb(this->mpi_comm());
+  PETScVector ub(this->mpi_comm());
 
-  return solve(optimisation_problem, x.down_cast<PETScVector>(), lb, ub);
+  return solve(optimisation_problem, as_type<PETScVector>(x), lb, ub);
 }
 //-----------------------------------------------------------------------------
 void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
@@ -199,8 +202,9 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
 {
   // Unconstrained minimisation problem
   _has_bounds = false;
-  PETScVector lb, ub;
-  init(optimisation_problem, x.down_cast<PETScVector>(), lb, ub);
+  PETScVector lb(this->mpi_comm());
+  PETScVector ub(this->mpi_comm());
+  init(optimisation_problem, as_type<PETScVector>(x), lb, ub);
 }
 //-----------------------------------------------------------------------------
 void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
@@ -218,15 +222,6 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   set_tao_options();
   set_ksp_options();
 
-  // Initialise the Hessian matrix during the first call
-  if (!_matH.mat())
-  {
-    PETScVector g;
-    optimisation_problem.form(_matH, g, x);
-    optimisation_problem.J(_matH, x);
-  }
-  dolfin_assert(_matH.mat());
-
   // Set initial vector
   ierr = TaoSetInitialVector(_tao, x.vec());
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetInitialVector");
@@ -241,7 +236,7 @@ void PETScTAOSolver::init(OptimisationProblem& optimisation_problem,
   // Set the objective function, gradient and Hessian evaluation routines
   ierr = TaoSetObjectiveAndGradientRoutine(_tao, FormFunctionGradient, &_tao_ctx);
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetObjectiveAndGradientRoutine");
-  ierr = TaoSetHessianRoutine(_tao, _matH.mat(), _matH.mat(), FormHessian, &_tao_ctx);
+  ierr = TaoSetHessianRoutine(_tao, nullptr, nullptr, FormHessian, &_tao_ctx);
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetHessianRoutine");
 
   // Clear previous monitors
@@ -356,15 +351,16 @@ PetscErrorCode PETScTAOSolver::FormFunctionGradient(Tao tao, Vec x,
   PETScVector g_wrap(g);
 
   // Compute the objective function f and its gradient g = f'
-  PETScMatrix H;
+  PETScMatrix H(x_wrap.mpi_comm());
+  PETScMatrix P(x_wrap.mpi_comm());
   *fobj = optimisation_problem->f(x_wrap);
-  optimisation_problem->form(H, g_wrap, x_wrap);
+  optimisation_problem->form(H, P, g_wrap, x_wrap);
   optimisation_problem->F(g_wrap, x_wrap);
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-PetscErrorCode PETScTAOSolver::FormHessian(Tao tao, Vec x, Mat H, Mat Hpre,
+PetscErrorCode PETScTAOSolver::FormHessian(Tao tao, Vec x, Mat H, Mat P,
                                            void *ctx)
 {
   // Get the optimisation problem object
@@ -372,13 +368,25 @@ PetscErrorCode PETScTAOSolver::FormHessian(Tao tao, Vec x, Mat H, Mat Hpre,
   OptimisationProblem* optimisation_problem = tao_ctx.optimisation_problem;
 
   // Wrap the PETSc objects
-  PETScVector x_wrap(x);
   PETScMatrix H_wrap(H);
+  PETScMatrix P_wrap(P);
+  PETScVector x_wrap(x);
 
   // Compute the hessian H(x) = f''(x)
-  PETScVector g;
-  optimisation_problem->form(H_wrap, g, x_wrap);
+  PETScVector g(x_wrap.mpi_comm());
+  optimisation_problem->form(H_wrap, P_wrap, g, x_wrap);
   optimisation_problem->J(H_wrap, x_wrap);
+  if (H != P)
+    optimisation_problem->J_pc(P_wrap, x_wrap);
+
+  // Use Hessian as preconditioner if not provided
+  if (P_wrap.empty())
+  {
+    log(TRACE, "TAO FormHessian: using Hessian as preconditioner matrix");
+    PetscErrorCode ierr = TaoSetHessianRoutine(tao, nullptr, H,
+                                               nullptr, nullptr);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetHessianRoutine");
+  }
 
   return 0;
 }
@@ -416,19 +424,10 @@ void PETScTAOSolver::set_tao_options()
   set_tao(parameters["method"]);
 
   // Set tolerances
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-  ierr = TaoSetTolerances(_tao, parameters["function_absolute_tol"],
-                                parameters["function_relative_tol"],
-                                parameters["gradient_absolute_tol"],
-                                parameters["gradient_relative_tol"],
-                                parameters["gradient_t_tol"]);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetTolerances");
-  #else
   ierr = TaoSetTolerances(_tao, parameters["gradient_absolute_tol"],
                                 parameters["gradient_relative_tol"],
                                 parameters["gradient_t_tol"]);
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetTolerances");
-  #endif
 
   // Set TAO solver maximum iterations
   int maxits = parameters["maximum_iterations"];
@@ -487,10 +486,10 @@ void PETScTAOSolver::set_ksp_options()
         if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
       }
     }
-    else if (ksp_type == "lu" || PETScLUSolver::_methods.count(ksp_type) != 0)
+    else if (ksp_type == "lu" || PETScLUSolver::lumethods.count(ksp_type) != 0)
     {
       std::string lu_method;
-      if (PETScLUSolver::_methods.find(ksp_type) != PETScLUSolver::_methods.end())
+      if (PETScLUSolver::lumethods.find(ksp_type) != PETScLUSolver::lumethods.end())
       {
         lu_method = ksp_type;
       }
@@ -533,8 +532,8 @@ void PETScTAOSolver::set_ksp_options()
       ierr = PCSetType(pc, PCLU);
       if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
       std::map<std::string, const MatSolverPackage>::const_iterator lu_pair
-        = PETScLUSolver::_methods.find(lu_method);
-      dolfin_assert(lu_pair != PETScLUSolver::_methods.end());
+        = PETScLUSolver::lumethods.find(lu_method);
+      dolfin_assert(lu_pair != PETScLUSolver::lumethods.end());
       ierr = PCFactorSetMatSolverPackage(pc, lu_pair->second);
       if (ierr != 0) petsc_error(ierr, __FILE__, "PCFactorSetMatSolverPackage");
     }
@@ -568,12 +567,6 @@ void PETScTAOSolver::set_ksp_options()
     {
       if (krylov_parameters["monitor_convergence"])
       {
-        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-        ierr = TaoSetMonitor(_tao, TaoDefaultMonitor,
-                             PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_tao)),
-                             NULL);
-        if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetMonitor");
-        #else
         PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
         PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
         PetscViewerAndFormat *vf;
@@ -583,7 +576,6 @@ void PETScTAOSolver::set_ksp_options()
                          vf,
                          (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
         if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
-        #endif
       }
     }
 

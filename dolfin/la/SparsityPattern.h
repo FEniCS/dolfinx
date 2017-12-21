@@ -30,6 +30,7 @@
 #include <vector>
 
 #include <dolfin/common/ArrayView.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
 
@@ -46,24 +47,24 @@ namespace dolfin
 
     // NOTE: Do not change this typedef without performing careful
     //       performance profiling
-    // Set type used for the rows of the sparsity pattern
+    /// Set type used for the rows of the sparsity pattern
     typedef dolfin::Set<std::size_t> set_type;
 
   public:
 
+    /// Whether SparsityPattern is sorted
     enum class Type {sorted, unsorted};
 
     /// Create empty sparsity pattern
-    SparsityPattern(std::size_t primary_dim);
+    SparsityPattern(MPI_Comm comm, std::size_t primary_dim);
 
     /// Create sparsity pattern for a generic tensor
-    SparsityPattern(MPI_Comm mpi_comm,
+    SparsityPattern(MPI_Comm comm,
                     std::vector<std::shared_ptr<const IndexMap>> index_maps,
                     std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
-    void init(MPI_Comm mpi_comm,
-              std::vector<std::shared_ptr<const IndexMap>> index_maps);
+    void init(std::vector<std::shared_ptr<const IndexMap>> index_maps);
 
     /// Insert a global entry - will be fixed by apply()
     void insert_global(dolfin::la_index i, dolfin::la_index j);
@@ -76,10 +77,15 @@ namespace dolfin
     void insert_local(const std::vector<
                       ArrayView<const dolfin::la_index>>& entries);
 
+    /// Insert non-zero entries using local (process-wise) indices for
+    /// the primary dimension and global indices for the co-dimension
+    void insert_local_global(
+        const std::vector<ArrayView<const dolfin::la_index>>& entries);
+
     /// Insert full rows (or columns, according to primary dimension)
     /// using local (process-wise) indices. This must be called before
-    /// any other sparse insertion occurs to avoid quadratic complexity
-    /// of dense rows insertion
+    /// any other sparse insertion occurs to avoid quadratic
+    /// complexity of dense rows insertion
     void insert_full_rows_local(const std::vector<std::size_t>& rows);
 
     /// Return rank
@@ -116,9 +122,9 @@ namespace dolfin
     /// Finalize sparsity pattern
     void apply();
 
-    // Return MPI communicator
+    /// Return MPI communicator
     MPI_Comm mpi_comm() const
-    { return _mpi_comm; }
+    { return _mpi_comm.comm(); }
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -128,11 +134,21 @@ namespace dolfin
     std::vector<std::vector<std::size_t>> diagonal_pattern(Type type) const;
 
     /// Return underlying sparsity pattern (off-diagonal). Options are
-    /// 'sorted' and 'unsorted'. Empty vector is returned if there is no
-    /// off-diagonal contribution.
+    /// 'sorted' and 'unsorted'. Empty vector is returned if there is
+    /// no off-diagonal contribution.
     std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
 
   private:
+
+    // Other insertion methods will call this method providing the
+    // appropriate mapping of the indices in the entries.
+    //
+    // The primary dim entries must be local
+    // The primary_codim entries must be global
+    void insert_entries(
+        const std::vector<ArrayView<const dolfin::la_index>>& entries,
+        const std::function<dolfin::la_index(const dolfin::la_index, const IndexMap&)>& primary_dim_map,
+        const std::function<dolfin::la_index(const dolfin::la_index, const IndexMap&)>& primary_codim_map);
 
     // Print some useful information
     void info_statistics() const;
@@ -142,7 +158,7 @@ namespace dolfin
     const std::size_t _primary_dim;
 
     // MPI communicator
-    MPI_Comm _mpi_comm;
+    dolfin::MPI::Comm _mpi_comm;
 
     // IndexMaps for each dimension
     std::vector<std::shared_ptr<const IndexMap>> _index_maps;

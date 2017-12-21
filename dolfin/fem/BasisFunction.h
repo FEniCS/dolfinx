@@ -29,8 +29,10 @@
 namespace dolfin
 {
 
-  /// This class represents a finite element basis function. It can be
-  /// used for computation of basis function values and derivatives.
+  /// Represention of a finite element basis function.
+
+  /// It can be used for computation of basis function values
+  /// and derivatives.
   ///
   /// Evaluation of basis functions is also possible through the use
   /// of the functions ``evaluate_basis`` and
@@ -46,13 +48,12 @@ namespace dolfin
 
     /// Create basis function with given index on element on given cell
     ///
-    /// *Arguments*
-    ///     index (std::size_t)
+    /// @param    index (std::size_t)
     ///         The index of the basis function.
-    ///     element (_FiniteElement_)
+    /// @param    element (_FiniteElement_)
     ///         The element to create basis function on.
-    ///     cell (ufc::cell)
-    ///         The cell.
+    /// @param  coordinate_dofs (std::vector<double>&)
+    ///         The coordinate dofs of the cell
     BasisFunction(std::size_t index,
                   std::shared_ptr<const FiniteElement> element,
                   const std::vector<double>& coordinate_dofs)
@@ -63,18 +64,16 @@ namespace dolfin
 
     /// Update the basis function index
     ///
-    /// *Arguments*
-    ///     index (std::size_t)
+    /// @param    index (std::size_t)
     ///         The index of the basis function.
     void update_index(std::size_t index)
     { _index = index; }
 
     /// Evaluate basis function at given point
     ///
-    /// *Arguments*
-    ///     values (double)
+    /// @param    values (double)
     ///         The values of the function at the point.
-    ///     x (double)
+    /// @param    x (double)
     ///         The coordinates of the point.
     void eval(double* values, const double* x) const
     {
@@ -85,12 +84,11 @@ namespace dolfin
 
     /// Evaluate all order n derivatives at given point
     ///
-    /// *Arguments*
-    ///     values (double)
+    /// @param    values (double)
     ///         The values of derivatives at the point.
-    ///     x (double)
+    /// @param    x (double)
     ///         The coordinates of the point.
-    ///     n (std::size_t)
+    /// @param    n (std::size_t)
     ///         The order of derivation.
     void eval_derivatives(double* values, const double* x, std::size_t n) const
     {
@@ -104,12 +102,11 @@ namespace dolfin
 
     /// Evaluate function at given point in cell
     ///
-    /// *Arguments*
-    ///     values (double)
+    /// @param    values (double)
     ///         The values of the function at the point..
-    ///     coordinates (double)
+    /// @param    coordinates (double)
     ///         The coordinates of the point.
-    ///     cell (ufc::cell)
+    /// @param    cell (ufc::cell)
     ///         The cell.
     void evaluate(double* values, const double* coordinates,
                   const ufc::cell& cell) const

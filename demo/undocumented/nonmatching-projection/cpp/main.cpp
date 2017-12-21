@@ -42,7 +42,13 @@ public:
 
 int main()
 {
-  // Create meshes
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+  {
+    std::cout << "This demo does not work in parallel" << std::endl;
+    return 0;
+  }
+
+ // Create meshes
   auto mesh0 = std::make_shared<UnitSquareMesh>(16, 16);
   auto mesh1 = std::make_shared<UnitSquareMesh>(64, 64);
 
@@ -64,9 +70,8 @@ int main()
   solve(a == L, f1);
 
   // Plot results
-  plot(*f0);
-  plot(f1);
-  interactive();
+  XDMFFile("f0.xdmf").write(*f0);
+  XDMFFile("f1.xdmf").write(f1);
 
   return 0;
 }

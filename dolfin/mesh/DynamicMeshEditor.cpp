@@ -62,22 +62,22 @@ void DynamicMeshEditor::open(Mesh& mesh, std::string type, std::size_t tdim,
 {
   if (type == "point")
   {
-    open(mesh, CellType::point, tdim, gdim, num_global_vertices,
+    open(mesh, CellType::Type::point, tdim, gdim, num_global_vertices,
          num_global_cells);
   }
   else if (type == "interval")
   {
-    open(mesh, CellType::interval, tdim, gdim, num_global_vertices,
+    open(mesh, CellType::Type::interval, tdim, gdim, num_global_vertices,
          num_global_cells);
   }
   else if (type == "triangle")
   {
-    open(mesh, CellType::triangle, tdim, gdim, num_global_vertices,
+    open(mesh, CellType::Type::triangle, tdim, gdim, num_global_vertices,
          num_global_cells);
   }
   else if (type == "tetrahedron")
   {
-    open(mesh, CellType::tetrahedron, tdim, gdim, num_global_vertices,
+    open(mesh, CellType::Type::tetrahedron, tdim, gdim, num_global_vertices,
          num_global_cells);
   }
   else

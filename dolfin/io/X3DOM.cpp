@@ -19,6 +19,7 @@
 #include <string>
 #include <sstream>
 #include <utility>
+#include <algorithm>
 #include "pugixml.hpp"
 
 #include <dolfin/common/MPI.h>
@@ -34,6 +35,26 @@
 #include <dolfin/mesh/Vertex.h>
 
 #include "X3DOM.h"
+
+namespace
+{
+  boost::multi_array<float, 2> default_color_map()
+  {
+    boost::multi_array<float, 2> rgb_map(boost::extents[256][3]);
+
+    // Create RGB palette of 256 colors
+    for (int i = 0; i < 256; ++i)
+    {
+      const double x = (double)i/255.0;
+      const double y = 1.0 - x;
+      rgb_map[i][0] = 4*std::pow(x, 3) - 3*std::pow(x, 4);
+      rgb_map[i][1] = 4*std::pow(x, 2)*(1.0 - std::pow(x, 2));
+      rgb_map[i][2] = 4*std::pow(y, 3) - 3*std::pow(y, 4);
+    }
+
+    return rgb_map;
+  }
+}
 
 using namespace dolfin;
 
@@ -215,24 +236,6 @@ void X3DOMParameters::check_value_range(double value, double lower,
   }
 }
 //-----------------------------------------------------------------------------
-boost::multi_array<float, 2> X3DOMParameters::default_color_map()
-{
-  boost::multi_array<float, 2> rgb_map(boost::extents[256][3]);
-
-  // Create RGB palette of 256 colors
-  for (int i = 0; i < 256; ++i)
-  {
-    const double x = (double)i/255.0;
-    const double y = 1.0 - x;
-    rgb_map[i][0] = 4*std::pow(x, 3) - 3*std::pow(x, 4);
-    rgb_map[i][1] = 4*std::pow(x, 2)*(1.0 - std::pow(x, 2));
-    rgb_map[i][2] = 4*std::pow(y, 3) - 3*std::pow(y, 4);
-  }
-
-  return rgb_map;
-}
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 std::string X3DOM::str(const Mesh& mesh, X3DOMParameters parameters)
 {
   // Build XML doc
@@ -379,7 +382,7 @@ pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
 
   // Set attributes for x3dom script node
   x3d_script_node.append_attribute("type") = "text/javascript";
-  x3d_script_node.append_attribute("src") = "http://www.x3dom.org/download/x3dom.js";
+  x3d_script_node.append_attribute("src") = "https://www.x3dom.org/download/x3dom.js";
 
   // add jquery script node
   pugi::xml_node jquery_script_node = head_node.append_child("script");
@@ -406,7 +409,7 @@ pugi::xml_node X3DOM::add_html_preamble(pugi::xml_node& xml_node)
   // Set attributes for x3dom link node
   x3d_link_node.append_attribute("rel") = "stylesheet";
   x3d_link_node.append_attribute("type") = "text/css";
-  x3d_link_node.append_attribute("href") = "http://www.x3dom.org/download/x3dom.css";
+  x3d_link_node.append_attribute("href") = "https://www.x3dom.org/download/x3dom.css";
 
   // Add link node for support
   pugi::xml_node support_link_node = head_node.append_child("link");
@@ -1235,6 +1238,9 @@ void X3DOM::build_mesh_data(std::vector<int>& topology,
                                           vertex_indices.find(index));
           local_topology.push_back(pos + offset);
         }
+
+        // Swap two last coord indices of a face to fix quadrilateral and hexahedral mesh visualisation
+        std::iter_swap(local_topology.end() - 2, local_topology.end() - 1);
 
         // Add -1 to denote end of entity
         local_topology.push_back(-1);

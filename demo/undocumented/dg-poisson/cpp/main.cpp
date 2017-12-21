@@ -105,7 +105,7 @@ int main()
   NeumannBoundary neumann_boundary;
   DirichletBoundary dirichlet_boundary;
 
-  auto boundaries = std::make_shared<FacetFunction<std::size_t>>(mesh, 0);
+  auto boundaries = std::make_shared<MeshFunction<std::size_t>>(mesh, mesh->topology().dim()-1, 0);
   neumann_boundary.mark(*boundaries, 2);
   dirichlet_boundary.mark(*boundaries, 1);
 
@@ -127,10 +127,6 @@ int main()
   // Save solution in VTK format
   File file("poisson.pvd");
   file << u;
-
-  // Plot solution
-  plot(u);
-  interactive();
-
+  
   return 0;
 }

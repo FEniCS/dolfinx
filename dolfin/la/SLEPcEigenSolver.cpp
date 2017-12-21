@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2014 Garth N. Wells
+// Copyright (C) 2005-2017 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -14,11 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Ola Skavhaug 2008
-// Modified by Anders Logg 2008-2012
-// Modified by Marie Rognes 2009
-// Modified by Fredrik Valdmanis 2011
 
 #ifdef HAS_SLEPC
 
@@ -29,6 +24,7 @@
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "SLEPcEigenSolver.h"
+#include "VectorSpaceBasis.h"
 
 using namespace dolfin;
 
@@ -54,7 +50,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(EPS eps) : _eps(eps)
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",
-                 "intialise SLEPcEigenSolver with SLEPc EPS object",
+                 "initialize SLEPcEigenSolver with SLEPc EPS object",
                  "SLEPc EPS must be initialised (EPSCreate) before wrapping");
   }
 
@@ -81,7 +77,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,
                                    std::shared_ptr<const PETScMatrix> B)
-  : _matA(A), _matB(B), _eps(nullptr)
+  : _eps(nullptr)
 
 {
   // TODO: deprecate
@@ -100,9 +96,9 @@ SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,
   // Set operators
   dolfin_assert(_eps);
   if (B)
-    EPSSetOperators(_eps, _matA->mat(), _matB->mat());
+    EPSSetOperators(_eps, A->mat(), B->mat());
   else
-    EPSSetOperators(_eps, _matA->mat(), NULL);
+    EPSSetOperators(_eps, A->mat(), NULL);
 
   // Set default parameter values
   parameters = default_parameters();
@@ -111,7 +107,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,
 SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm,
                                    std::shared_ptr<const PETScMatrix> A,
                                    std::shared_ptr<const PETScMatrix> B)
-  : _matA(A), _matB(B), _eps(nullptr)
+  : _eps(nullptr)
 {
   // TODO: deprecate
 
@@ -131,9 +127,9 @@ SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm,
 
   // Set operators
   if (B)
-    EPSSetOperators(_eps, _matA->mat(), _matB->mat());
+    EPSSetOperators(_eps, A->mat(), B->mat());
   else
-    EPSSetOperators(_eps, _matA->mat(), NULL);
+    EPSSetOperators(_eps, A->mat(), NULL);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::~SLEPcEigenSolver()
@@ -149,9 +145,9 @@ void SLEPcEigenSolver::set_operators(std::shared_ptr<const PETScMatrix> A,
   // Set operators
   dolfin_assert(_eps);
   if (B)
-     EPSSetOperators(_eps, _matA->mat(), _matB->mat());
+     EPSSetOperators(_eps, A->mat(), B->mat());
   else
-    EPSSetOperators(_eps, _matA->mat(), NULL);
+    EPSSetOperators(_eps, A->mat(), NULL);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve()
@@ -168,9 +164,18 @@ void SLEPcEigenSolver::solve()
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(std::size_t n)
 {
+#ifdef DEBUG
+  // Get operators
+  Mat A, B;
+  dolfin_assert(_eps);
+  EPSGetOperators(_eps, &A, &B);
+  
+  // Wrap operator as short-cut to get size
+  PETScMatrix A_wrapped(A);
+  dolfin_assert(n <= A_wrapped.size(0));
+#endif
+  
   // Set number of eigenpairs to compute
-  dolfin_assert(_matA);
-  dolfin_assert(n <= _matA->size(0));
   dolfin_assert(_eps);
   EPSSetDimensions(_eps, n, PETSC_DECIDE, PETSC_DECIDE);
 
@@ -185,25 +190,11 @@ void SLEPcEigenSolver::solve(std::size_t n)
   {
     if (parameters["verbose"])
     {
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-      KSP ksp;
-      ST st;
-      EPSMonitorSet(_eps, EPSMonitorAll,
-                    PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_eps)),
-                    NULL);
-      EPSGetST(_eps, &st);
-      STGetKSP(st, &ksp);
-      KSPMonitorSet(ksp, KSPMonitorDefault,
-                    PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp)),
-                    NULL);
-      EPSView(_eps, PETSC_VIEWER_STDOUT_SELF);
-      #else
       PetscViewerAndFormat *vf;
       PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD, PETSC_VIEWER_DEFAULT, &vf);
       EPSMonitorSet(_eps,(PetscErrorCode (*)(EPS,PetscInt,PetscInt,PetscScalar*,PetscScalar*,
                                              PetscReal*,PetscInt,void*))EPSMonitorAll,vf,
                     (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
-      #endif
     }
   }
 
@@ -224,25 +215,6 @@ void SLEPcEigenSolver::solve(std::size_t n)
   EPSGetType(_eps, &eps_type);
   log(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.",
       eps_type, num_iterations);
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc) const
-{
-  get_eigenvalue(lr, lc, 0);
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
-                                     GenericVector& r, GenericVector& c) const
-{
-  PETScVector& _r = as_type<PETScVector>(r);
-  PETScVector& _c = as_type<PETScVector>(c);
-  get_eigenpair(lr, lc, _r, _c, 0);
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
-                                     PETScVector& r, PETScVector& c) const
-{
-  get_eigenpair(lr, lc, r, c, 0);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
@@ -287,9 +259,15 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 
   if (ii < num_computed_eigenvalues)
   {
-    dolfin_assert(_matA);
-    _matA->init_vector(r, 0);
-    _matA->init_vector(c, 0);
+    // Get operators
+    Mat A, B;
+    dolfin_assert(_eps);
+    EPSGetOperators(_eps, &A, &B);
+
+    // Wrap operator and initialize r and c
+    PETScMatrix A_wrapped(A);
+    A_wrapped.init_vector(r, 0);
+    A_wrapped.init_vector(c, 0);
 
     // Get eigen pairs
     EPSGetEigenpair(_eps, ii, &lr, &lc, r.vec(), c.vec());
@@ -310,13 +288,42 @@ std::size_t SLEPcEigenSolver::get_number_converged() const
   return num_conv;
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
+void SLEPcEigenSolver::set_deflation_space(const VectorSpaceBasis& deflation_space)
 {
   dolfin_assert(_eps);
-  dolfin_assert(deflation_space.vec());
-  Vec x = deflation_space.vec();
+
+  // Get PETSc vector pointers from VectorSpaceBasis
+  std::vector<Vec> petsc_vecs(deflation_space.dim());
+  for (std::size_t i = 0; i < deflation_space.dim(); ++i)
+  {
+    dolfin_assert(deflation_space[i]);
+    dolfin_assert(as_type<const PETScVector>(deflation_space[i]));
+    dolfin_assert(as_type<const PETScVector>(deflation_space[i])->vec());
+    petsc_vecs[i] = as_type<const PETScVector>(deflation_space[i])->vec();
+  }
+
+  PetscErrorCode ierr = EPSSetDeflationSpace(_eps, petsc_vecs.size(),
+                                             petsc_vecs.data());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetDeflationSpace");
+}
+//-----------------------------------------------------------------------------
+void SLEPcEigenSolver::set_initial_space(const VectorSpaceBasis& initial_space)
+{
   dolfin_assert(_eps);
-  EPSSetDeflationSpace(_eps, 1, &x);
+
+  // Get PETSc vector pointers from VectorSpaceBasis
+  std::vector<Vec> petsc_vecs(initial_space.dim());
+  for (std::size_t i = 0; i < initial_space.dim(); ++i)
+  {
+    dolfin_assert(initial_space[i]);
+    dolfin_assert(as_type<const PETScVector>(initial_space[i]));
+    dolfin_assert(as_type<const PETScVector>(initial_space[i])->vec());
+    petsc_vecs[i] = as_type<const PETScVector>(initial_space[i])->vec();
+  }
+
+  PetscErrorCode ierr = EPSSetInitialSpace(_eps, petsc_vecs.size(),
+                                           petsc_vecs.data());
+  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetInitialSpace");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_options_prefix(std::string options_prefix)
@@ -334,6 +341,13 @@ std::string SLEPcEigenSolver::get_options_prefix() const
   PetscErrorCode ierr = EPSGetOptionsPrefix(_eps, &prefix);
   if (ierr != 0) petsc_error(ierr, __FILE__, "EPSGetOptionsPrefix");
   return std::string(prefix);
+}
+//-----------------------------------------------------------------------------
+void SLEPcEigenSolver::set_from_options() const
+{
+  dolfin_assert(_eps);
+  PetscErrorCode ierr = EPSSetFromOptions(_eps);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetFromOptions");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::read_parameters()
@@ -490,6 +504,10 @@ void SLEPcEigenSolver::set_solver(std::string solver)
     EPSSetType(_eps, EPSLAPACK);
   else if (solver == "arpack")
     EPSSetType(_eps, EPSARPACK);
+  else if (solver == "jacobi-davidson")
+    EPSSetType(_eps, EPSJD);
+  else if (solver == "generalized-davidson")
+    EPSSetType(_eps, EPSGD);
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Anders Logg
+// Copyright (C) 2012-2016 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-16
-// Last changed: 2013-06-27
+// Last changed: 2016-05-03
 
 #ifndef __MESH_TRANSFORMATION_H
 #define __MESH_TRANSFORMATION_H
@@ -34,49 +34,54 @@ class MeshTransformation
 {
 public:
 
-  /// Translate mesh according to a given vector.
+  /// Scale mesh coordinates with given factor.
   ///
   /// *Arguments*
   ///     mesh (_Mesh_)
   ///         The mesh
-  ///     point (Point)
+  ///     factor (double)
+  ///         The factor defining the scaling.
+  static void scale(Mesh& mesh, double factor);
+
+  /// Translate mesh according to a given vector.
+  ///
+  /// @param mesh (Mesh)
+  ///         The mesh
+  /// @param point (Point)
   ///         The vector defining the translation.
   static void translate(Mesh& mesh, const Point& point);
 
   /// Rescale mesh by a given scaling factor with respect to a center
   /// point.
   ///
-  /// *Arguments*
-  ///     mesh (_Mesh_)
+  /// @param mesh (Mesh)
   ///         The mesh
-  ///      scale (double)
+  /// @param scale (double)
   ///         The scaling factor.
-  ///      center (Point)
+  /// @param center (Point)
   ///         The center of the scaling.
   static void rescale(Mesh& mesh, const double scale, const Point& center);
 
   /// Rotate mesh around a coordinate axis through center of mass
   /// of all mesh vertices
   ///
-  /// *Arguments*
-  ///     mesh (_Mesh_)
+  /// @param mesh (Mesh)
   ///         The mesh.
-  ///     angle (double)
+  /// @param angle (double)
   ///         The number of degrees (0-360) of rotation.
-  ///     axis (std::size_t)
+  /// @param axis (std::size_t)
   ///         The coordinate axis around which to rotate the mesh.
   static void rotate(Mesh& mesh, double angle, std::size_t axis);
 
   /// Rotate mesh around a coordinate axis through a given point
   ///
-  /// *Arguments*
-  ///     mesh (_Mesh_)
+  /// @param mesh (Mesh)
   ///         The mesh.
-  ///     angle (double)
+  /// @param angle (double)
   ///         The number of degrees (0-360) of rotation.
-  ///     axis (std::size_t)
+  /// @param axis (std::size_t)
   ///         The coordinate axis around which to rotate the mesh.
-  ///     point (_Point_)
+  /// @param p (Point)
   ///         The point around which to rotate the mesh.
   static void rotate(Mesh& mesh, double angle, std::size_t axis,
                      const Point& p);

@@ -41,30 +41,6 @@ MeshEditor::~MeshEditor()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::open(Mesh& mesh, std::size_t tdim,
-                      std::size_t gdim, std::size_t degree)
-{
-  switch (tdim)
-  {
-  case 0:
-    open(mesh, CellType::point, tdim, gdim, degree);
-    break;
-  case 1:
-    open(mesh, CellType::interval, tdim, gdim, degree);
-    break;
-  case 2:
-    open(mesh, CellType::triangle, tdim, gdim, degree);
-    break;
-  case 3:
-    open(mesh, CellType::tetrahedron, tdim, gdim, degree);
-    break;
-  default:
-    dolfin_error("MeshEditor.cpp",
-                 "open mesh for editing",
-                 "Unknown cell type of topological dimension %d", tdim);
-  }
-}
-//-----------------------------------------------------------------------------
 void MeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
                       std::size_t gdim, std::size_t degree)
 {
@@ -88,6 +64,11 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
   // Initialize domains
   mesh._domains.init(tdim);
 
+  // Clear cached ordering state so that mesh.order() is always
+  // triggered on close(true) or mesh is considered unordered
+  // after close(false)
+  mesh._ordered = false;
+
   // Initialize temporary storage for local cell data
   _vertices = std::vector<std::size_t>(mesh.type().num_vertices(tdim), 0);
 }
@@ -96,13 +77,17 @@ void MeshEditor::open(Mesh& mesh, std::string type, std::size_t tdim,
                       std::size_t gdim, std::size_t degree)
 {
   if (type == "point")
-    open(mesh, CellType::point, tdim, gdim, degree);
+    open(mesh, CellType::Type::point, tdim, gdim, degree);
   else if (type == "interval")
-    open(mesh, CellType::interval, tdim, gdim, degree);
+    open(mesh, CellType::Type::interval, tdim, gdim, degree);
   else if (type == "triangle")
-    open(mesh, CellType::triangle, tdim, gdim, degree);
+    open(mesh, CellType::Type::triangle, tdim, gdim, degree);
   else if (type == "tetrahedron")
-    open(mesh, CellType::tetrahedron, tdim, gdim, degree);
+    open(mesh, CellType::Type::tetrahedron, tdim, gdim, degree);
+  else if (type == "quadrilateral")
+    open(mesh, CellType::Type::quadrilateral, tdim, gdim, degree);
+  else if (type == "hexahedron")
+    open(mesh, CellType::Type::hexahedron, tdim, gdim, degree);
   else
   {
     dolfin_error("MeshEditor.cpp",

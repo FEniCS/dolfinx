@@ -26,18 +26,20 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitTetrahedronMesh::UnitTetrahedronMesh() : Mesh()
+dolfin::Mesh UnitTetrahedronMesh::create()
 {
-  // Receive mesh according to parallel policy
-  if (MPI::is_receiver(this->mpi_comm()))
+  Mesh mesh(MPI_COMM_SELF);
+
+// Receive mesh according to parallel policy
+  if (MPI::is_receiver(mesh.mpi_comm()))
   {
-    MeshPartitioning::build_distributed_mesh(*this);
-    return;
+    MeshPartitioning::build_distributed_mesh(mesh);
+    return mesh;
   }
 
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(*this, CellType::tetrahedron, 3, 3);
+  editor.open(mesh, CellType::Type::tetrahedron, 3, 3);
 
   // Create vertices
   editor.init_vertices_global(4, 4);
@@ -64,10 +66,12 @@ UnitTetrahedronMesh::UnitTetrahedronMesh() : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(this->mpi_comm()))
+  if (MPI::is_broadcaster(mesh.mpi_comm()))
   {
-    MeshPartitioning::build_distributed_mesh(*this);
-    return;
+    MeshPartitioning::build_distributed_mesh(mesh);
+    return mesh;
   }
+
+  return mesh;
 }
 //-----------------------------------------------------------------------------

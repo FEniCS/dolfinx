@@ -67,8 +67,7 @@ namespace dolfin
 
     /// Assignment operator
     ///
-    /// *Arguments*
-    ///     data (_MeshData_)
+    /// @param     data (_MeshData_)
     ///         Another MeshData object.
     const MeshData& operator= (const MeshData& data);
 
@@ -79,12 +78,11 @@ namespace dolfin
 
     /// Check is array exists
     ///
-    /// *Arguments*
-    ///     name (std::string)
+    /// @param     name (std::string)
     ///         The name of the array.
+    /// @param dim (std::size_t)
     ///
-    /// *Returns*
-    ///     bool
+    /// @return     bool
     ///         True is array exists, false otherwise.
     bool exists(std::string name, std::size_t dim) const;
 
@@ -92,14 +90,12 @@ namespace dolfin
 
     /// Create array (vector) with given name and size
     ///
-    /// *Arguments*
-    ///     name (std::string)
+    /// @param     name (std::string)
     ///         The name of the array.
-    ///     size (std::size_t)
-    ///         The size (length) of the array.
+    /// @param dim (std::size_t)
+    ///          Dimension.
     ///
-    /// *Returns*
-    ///     std::vector<std::size_t>
+    ///  @return    std::vector<std::size_t>
     ///         The array.
     std::vector<std::size_t>& create_array(std::string name, std::size_t dim);
 
@@ -108,24 +104,23 @@ namespace dolfin
     /// Return array with given name (returning zero if data is not
     /// available)
     ///
-    /// *Arguments*
-    ///     name (std::string)
+    /// @param     name (std::string)
     ///         The name of the array.
-    ///
-    /// *Returns*
-    ///     std::vector<std::size_t>
+    ///  @param dim (std::size_t)
+    ///          Dimension.
+    /// @return    std::vector<std::size_t>
     ///         The array.
     std::vector<std::size_t>& array(std::string name, std::size_t dim);
 
     /// Return array with given name (returning zero if data is not
     /// available)
     ///
-    /// *Arguments*
-    ///     name (std::string)
+    /// @param     name (std::string)
     ///         The name of the array.
+    /// @param dim (std::size_t)
+    ///          Dimension.
     ///
-    /// *Returns*
-    ///     std::vector<std::size_t>
+    /// @return      std::vector<std::size_t>
     ///         The array.
     const std::vector<std::size_t>& array(std::string name,
                                           std::size_t dim) const;
@@ -134,21 +129,20 @@ namespace dolfin
 
     /// Erase array with given name
     ///
-    /// *Arguments*
-    ///     name (std::string)
+    /// @param     name (std::string)
     ///         The name of the array.
+    /// @param dim (std::size_t)
+    ///          Dimension.
     void erase_array(const std::string name, std::size_t dim);
 
     //--- Misc ---
 
     /// Return informal string representation (pretty-print)
     ///
-    /// *Arguments*
-    ///     verbose (bool)
+    /// @param     verbose (bool)
     ///         Flag to turn on additional output.
     ///
-    /// *Returns*
-    ///     std::string
+    /// @return     std::string
     ///         An informal representation.
     std::string str(bool verbose) const;
 

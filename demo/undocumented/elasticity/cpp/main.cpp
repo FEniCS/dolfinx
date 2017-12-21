@@ -99,7 +99,9 @@ int main()
   };
 
   // Read mesh
-  auto mesh = std::make_shared<Mesh>("../pulley.xml.gz");
+  auto mesh = std::make_shared<Mesh>();
+  XDMFFile file("../pulley.xdmf");
+  file.read(*mesh);
 
   // Create right-hand side loading function
   auto f = std::make_shared<CentripetalLoading>();
@@ -193,26 +195,20 @@ int main()
   // Save colored mesh paritions in VTK format if running in parallel
   if (dolfin::MPI::size(mesh->mpi_comm()) > 1)
   {
-    CellFunction<std::size_t>
-      partitions(mesh, dolfin::MPI::rank(mesh->mpi_comm()));
+    MeshFunction<std::size_t>
+      partitions(mesh, mesh->topology().dim(), dolfin::MPI::rank(mesh->mpi_comm()));
     File file("partitions.pvd");
     file << partitions;
   }
 
-  // Plot solution
-  plot(u, "Displacement", "displacement");
-
-  // Displace mesh and plot displaced mesh
+  // Displace mesh and write 
   ALE::move(*mesh, *u);
-  plot(*mesh, "Deformed mesh");
-
-  // Make plot windows interactive
-  interactive();
+  XDMFFile("deformed_mesh.xdmf").write(*mesh);
 
   #else
   dolfin::cout << "DOLFIN must be configured with PETSc to run this demo."
                << dolfin::endl;
   #endif
 
- return 0;
+  return 0;
 }

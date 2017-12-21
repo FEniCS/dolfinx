@@ -13,7 +13,6 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/VectorSpaceBasis.h>
 #include <dolfin/la/GenericLinearSolver.h>
-#include <dolfin/la/GenericLUSolver.h>
 
 #include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScObject.h>
@@ -48,7 +47,6 @@
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/la/EigenFactory.h>
-#include <dolfin/la/PETScUserPreconditioner.h>
 #include <dolfin/la/PETScFactory.h>
 #include <dolfin/la/TpetraFactory.h>
 #include <dolfin/la/SLEPcEigenSolver.h>

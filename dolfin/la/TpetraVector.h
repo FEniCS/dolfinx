@@ -54,9 +54,11 @@ namespace dolfin
   {
   public:
 
-     // Tpetra typedefs with default values
+    /// Node type
     typedef Tpetra::MultiVector<>::node_type node_type;
+    /// TpetraVector map type (local index, global index)
     typedef Tpetra::Map<int, dolfin::la_index, node_type> map_type;
+    /// TpetraVector vector type (scalar, local index, global index, node)
     typedef Tpetra::MultiVector<double, int, dolfin::la_index, node_type>
     vector_type;
 
@@ -65,9 +67,6 @@ namespace dolfin
 
     /// Create vector of size N
     TpetraVector(MPI_Comm comm, std::size_t N);
-
-    /// Create vector
-    //explicit TpetraVector(const SparsityPattern& sparsity_pattern);
 
     /// Copy constructor
     TpetraVector(const TpetraVector& x);
@@ -98,16 +97,14 @@ namespace dolfin
     virtual std::shared_ptr<GenericVector> copy() const;
 
     /// Initialize vector to global size N
-    virtual void init(MPI_Comm comm, std::size_t N);
+    virtual void init(std::size_t N);
 
     /// Initialize vector with given ownership range
-    virtual void init(MPI_Comm comm,
-                      std::pair<std::size_t, std::size_t> range);
+    virtual void init(std::pair<std::size_t, std::size_t> range);
 
     /// Initialize vector with given ownership range and with ghost
     /// values
-    virtual void init(MPI_Comm comm,
-                      std::pair<std::size_t, std::size_t> range,
+    virtual void init(std::pair<std::size_t, std::size_t> range,
                       const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index>& ghost_indices);
 
@@ -164,15 +161,20 @@ namespace dolfin
     /// Add values to each entry on local process
     virtual void add_local(const Array<double>& values);
 
-    /// Gather vector entries into a local vector
+    /// Gather entries (given by global indices) into local
+    /// (MPI_COMM_SELF) vector x. Provided x must be empty or of
+    /// correct dimension (same as provided indices).  This operation
+    /// is collective
     virtual void gather(GenericVector& y,
                         const std::vector<dolfin::la_index>& indices) const;
 
-    /// Gather entries into x
+    /// Gather entries (given by global indices) into x. This
+    /// operation is collective
     virtual void gather(std::vector<double>& x,
                         const std::vector<dolfin::la_index>& indices) const;
 
-    /// Gather all entries into x on process 0
+    /// Gather all entries into x on process 0.
+    /// This operation is collective
     virtual void gather_on_zero(std::vector<double>& x) const;
 
     /// Add multiple of given vector (AXPY operation)
@@ -226,7 +228,7 @@ namespace dolfin
     /// Assignment operator
     virtual const TpetraVector& operator= (double a);
 
-    // Update ghost values in vector
+    /// Update ghost values in vector
     virtual void update_ghost_values();
 
     //--- Special functions ---
@@ -242,12 +244,11 @@ namespace dolfin
     /// Assignment operator
     const TpetraVector& operator= (const TpetraVector& x);
 
-    /// output map
-
+    /// output map for debugging
     static void mapdump(Teuchos::RCP<const map_type> xmap,
                         const std::string desc);
 
-    // Dump x.map and ghost_map
+    /// Dump x.map and ghost_map for debugging
     void mapdump(const std::string desc);
 
     friend class TpetraMatrix;
@@ -255,7 +256,7 @@ namespace dolfin
   private:
 
     // Initialise Tpetra vector
-    void _init(MPI_Comm comm, std::pair<std::int64_t, std::int64_t> range,
+    void _init(std::pair<std::int64_t, std::int64_t> range,
                const std::vector<dolfin::la_index>& local_to_global);
 
     // Tpetra multivector - actually a view into the ghosted vector,
@@ -264,6 +265,9 @@ namespace dolfin
 
     // Tpetra multivector with extra rows for ghost values
     Teuchos::RCP<vector_type> _x_ghosted;
+
+    // MPI Communicator
+    Teuchos::RCP<const Teuchos::MpiComm<int>> _comm;
 
   };
 

@@ -126,10 +126,8 @@ void
 TAOLinearBoundSolver::set_operators(std::shared_ptr<const GenericMatrix> A,
                                     std::shared_ptr<const GenericVector> b)
 {
-  std::shared_ptr<const PETScMatrix>
-    _matA = GenericTensor::down_cast<const PETScMatrix>(A);
-  std::shared_ptr<const PETScVector>
-    _b = GenericTensor::down_cast<const PETScVector>(b);
+  std::shared_ptr<const PETScMatrix> _matA = as_type<const PETScMatrix>(A);
+  std::shared_ptr<const PETScVector> _b = as_type<const PETScVector>(b);
   set_operators(_matA, _b);
 }
 //-----------------------------------------------------------------------------
@@ -147,11 +145,11 @@ std::size_t TAOLinearBoundSolver::solve(const GenericMatrix& A1,
                                         const GenericVector& xl,
                                         const GenericVector& xu)
 {
-  return solve(A1.down_cast<PETScMatrix>(),
-               x.down_cast<PETScVector>(),
-               b1.down_cast<PETScVector>(),
-               xl.down_cast<PETScVector>(),
-               xu.down_cast<PETScVector>());
+  return solve(as_type<const PETScMatrix>(A1),
+               as_type<PETScVector>(x),
+               as_type<const PETScVector>(b1),
+               as_type<const PETScVector>(xl),
+               as_type<const PETScVector>(xu));
 }
 //-----------------------------------------------------------------------------
 std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
@@ -320,7 +318,7 @@ void TAOLinearBoundSolver::set_ksp(std::string ksp_type)
     }
     else
     {
-      log(WARNING, "The selected tao solver does not allow to set a specific "\
+      log(WARNING, "The selected tao solver does not allow one to set a specific "\
       "Krylov solver. Option %s is ignored", ksp_type.c_str());
     }
   }
@@ -347,19 +345,10 @@ void TAOLinearBoundSolver::read_parameters()
   PetscErrorCode ierr;
 
   // Set tolerances
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-  ierr = TaoSetTolerances(_tao, parameters["function_absolute_tol"],
-                                parameters["function_relative_tol"],
-                                parameters["gradient_absolute_tol"],
-                                parameters["gradient_relative_tol"],
-                                parameters["gradient_t_tol"]);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetTolerances");
-  #else
   ierr = TaoSetTolerances(_tao, parameters["gradient_absolute_tol"],
                                 parameters["gradient_relative_tol"],
                                 parameters["gradient_t_tol"]);
   if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetTolerances");
-  #endif
 
   // Set TAO solver maximum iterations
   if (parameters["maximum_iterations"].is_set())
@@ -420,10 +409,6 @@ void TAOLinearBoundSolver::set_ksp_options()
     {
       if (krylov_parameters["monitor_convergence"])
       {
-        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 6 && PETSC_VERSION_RELEASE == 1
-        ierr = TaoSetMonitor(_tao, __TAOMonitor, this, NULL);
-        if (ierr != 0) petsc_error(ierr, __FILE__, "TaoSetMonitor");
-        #else
         PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)ksp));
         PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
         PetscViewerAndFormat *vf;
@@ -431,7 +416,6 @@ void TAOLinearBoundSolver::set_ksp_options()
         ierr = KSPMonitorSet(ksp, (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
                              vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
         if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
-        #endif
       }
     }
 

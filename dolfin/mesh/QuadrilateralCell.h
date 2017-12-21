@@ -14,7 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
 
 #ifndef __QUADRILATERAL_CELL_H
 #define __QUADRILATERAL_CELL_H
@@ -25,14 +24,18 @@
 namespace dolfin
 {
 
-  /// This class implements functionality for triangular meshes.
+  /// This class implements functionality for quadrilaterial cells.
 
   class QuadrilateralCell : public CellType
   {
   public:
 
     /// Specify cell type and facet type
-    QuadrilateralCell() : CellType(quadrilateral, interval) {}
+    QuadrilateralCell() : CellType(Type::quadrilateral, Type::interval) {}
+
+    /// Check if cell is a simplex
+    bool is_simplex() const
+    { return false; }
 
     /// Return topological dimension of cell
     std::size_t dim() const;
@@ -81,10 +84,6 @@ namespace dolfin
 
     /// Check whether given entity collides with cell
     bool collides(const Cell& cell, const MeshEntity& entity) const;
-
-    /// Compute triangulation of intersection of two cells
-    std::vector<double>
-    triangulate_intersection(const Cell& c0, const Cell& c1) const;
 
     /// Return description of cell type
     std::string description(bool plural) const;

@@ -105,7 +105,6 @@ namespace dolfin
     ///
     ///     "max_iterations"     (int)
     ///     "max_dimension"      (int)
-    ///     "plot_mesh"          (bool)
     ///     "save_data"          (bool)
     ///     "data_label"         (std::string)
     ///     "reference"          (double)
@@ -118,7 +117,6 @@ namespace dolfin
       // Set default generic adaptive parameters
       p.add("max_iterations", 50);
       p.add("max_dimension", 0);
-      p.add("plot_mesh", false); // Useful for debugging
       p.add("save_data", false);
       p.add("data_label", "default/adaptivity");
       p.add("reference", 0.0);
@@ -137,10 +135,10 @@ namespace dolfin
 
   protected:
 
-    // The goal functional
+    /// The goal functional
     std::shared_ptr<Form> goal;
 
-    // Error control object
+    /// Error control object
     std::shared_ptr<ErrorControl> control;
 
     // A list of adaptive data

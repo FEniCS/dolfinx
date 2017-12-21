@@ -22,6 +22,7 @@
 #define __CONSTANT_H
 
 #include <vector>
+#include <Eigen/Dense>
 #include "Expression.h"
 
 namespace dolfin
@@ -37,67 +38,58 @@ namespace dolfin
 
     /// Create scalar constant
     ///
-    /// *Arguments*
-    ///     value (double)
+    /// @param  value (double)
     ///         The scalar to create a Constant object from.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
+    /// @code{.cpp}
     ///         Constant c(1.0);
+    /// @endcode
     explicit Constant(double value);
 
     /// Create vector constant (dim = 2)
     ///
-    /// *Arguments*
-    ///     value0 (double)
+    /// @param value0 (double)
     ///         The first vector element.
-    ///     value1 (double)
+    /// @param value1 (double)
     ///         The second vector element.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
+    /// @code{.cpp}
     ///         Constant B(0.0, 1.0);
+    /// @endcode
     Constant(double value0, double value1);
 
     /// Create vector constant (dim = 3)
     ///
-    /// *Arguments*
-    ///     value0 (double)
+    /// @param value0 (double)
     ///         The first vector element.
-    ///     value1 (double)
+    /// @param value1 (double)
     ///         The second vector element.
-    ///     value2 (double)
+    /// @param value2 (double)
     ///         The third vector element.
     ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
+    /// @code{.cpp}
     ///         Constant T(0.0, 1.0, 0.0);
+    /// @endcode
     Constant(double value0, double value1, double value2);
 
     /// Create vector-valued constant
     ///
-    /// *Arguments*
-    ///     values (std::vector<double>)
+    /// @param values (std::vector<double>)
     ///         Values to create a vector-valued constant from.
     explicit Constant(std::vector<double> values);
 
     /// Create tensor-valued constant for flattened array of values
     ///
-    /// *Arguments*
-    ///     value_shape (std::vector<std::size_t>)
+    /// @param value_shape (std::vector<std::size_t>)
     ///         Shape of tensor.
-    ///     values (std::vector<double>)
+    /// @param values (std::vector<double>)
     ///         Values to create tensor-valued constant from.
     Constant(std::vector<std::size_t> value_shape,
              std::vector<double> values);
 
     /// Copy constructor
     ///
-    /// *Arguments*
-    ///     constant (_Constant_)
+    /// @param constant (Constant)
     ///         Object to be copied.
     Constant(const Constant& constant);
 
@@ -106,37 +98,36 @@ namespace dolfin
 
     /// Assignment operator
     ///
-    /// *Arguments*
-    ///     constant (_Constant_)
+    /// @param constant (Constant)
     ///         Another constant.
     const Constant& operator= (const Constant& constant);
 
     /// Assignment operator
     ///
-    /// *Arguments*
-    ///     constant (double)
+    /// @param constant (double)
     ///         Another constant.
     const Constant& operator= (double constant);
 
     /// Cast to double (for scalar constants)
     ///
-    /// *Returns*
-    ///     double
+    /// @return double
     ///         The scalar value.
     operator double() const;
 
     /// Return copy of this Constant's current values
     ///
-    /// *Returns*
-    ///     std::vector<double>
+    /// @return std::vector<double>
     ///         The vector of scalar values of the constant.
     std::vector<double> values() const;
 
     //--- Implementation of Expression interface ---
 
-    void eval(Array<double>& values, const Array<double>& x) const;
+    void eval(Array<double>& values, const Array<double>& x) const override;
 
-    virtual std::string str(bool verbose) const;
+    void eval(Eigen::Ref<Eigen::VectorXd> values,
+              Eigen::Ref<const Eigen::VectorXd> x) const override;
+
+    virtual std::string str(bool verbose) const override;
 
   private:
 

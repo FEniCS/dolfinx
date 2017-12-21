@@ -27,20 +27,24 @@
 #include <boost/multi_array.hpp>
 #include <memory>
 
+#include "BlockVector.h"
+
 namespace dolfin
 {
 
-  /// Forward declarations
+  // Forward declarations
   class GenericMatrix;
+
+  /// Block Matrix
 
   class BlockMatrix
   {
   public:
 
-    // Constructor
+    /// Constructor
     BlockMatrix(std::size_t m=0, std::size_t n=0);
 
-    // Destructor
+    /// Destructor
     ~BlockMatrix();
 
     /// Set block

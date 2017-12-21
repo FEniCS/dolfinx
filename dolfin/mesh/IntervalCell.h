@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2013 Anders Logg
+// Copyright (C) 2006-2017 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Kristoffer Selim 2008
 //
 // First added:  2006-06-05
-// Last changed: 2014-05-22
+// Last changed: 2017-09-26
 
 #ifndef __INTERVAL_CELL_H
 #define __INTERVAL_CELL_H
@@ -36,14 +36,18 @@ namespace dolfin
   class MeshEntity;
   template<typename T> class MeshFunction;
 
-  /// This class implements functionality for interval meshes.
+  /// This class implements functionality for interval cell meshes.
 
   class IntervalCell : public CellType
   {
   public:
 
     /// Specify cell type and facet type
-    IntervalCell() : CellType(interval, point) {}
+    IntervalCell() : CellType(Type::interval, Type::point) {}
+
+    /// Check if cell is a simplex
+    bool is_simplex() const
+    { return true; }
 
     /// Return topological dimension of cell
     std::size_t dim() const;
@@ -104,10 +108,6 @@ namespace dolfin
     /// Check whether given entity collides with cell
     virtual
     bool collides(const Cell& cell, const MeshEntity& entity) const;
-
-    /// Compute triangulation of intersection of two cells
-    virtual std::vector<double>
-    triangulate_intersection(const Cell& c0, const Cell& c1) const;
 
     /// Return description of cell type
     std::string description(bool plural) const;

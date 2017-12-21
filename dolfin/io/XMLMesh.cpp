@@ -483,16 +483,16 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
 
     switch (_cell_type)
     {
-    case CellType::interval:
+    case CellType::Type::interval:
       cell_node.append_attribute("v0") = (unsigned int) vertices[0];
       cell_node.append_attribute("v1") = (unsigned int) vertices[1];
       break;
-    case CellType::triangle:
+    case CellType::Type::triangle:
       cell_node.append_attribute("v0") = (unsigned int) vertices[0];
       cell_node.append_attribute("v1") = (unsigned int) vertices[1];
       cell_node.append_attribute("v2") = (unsigned int) vertices[2];
       break;
-    case CellType::tetrahedron:
+    case CellType::Type::tetrahedron:
       cell_node.append_attribute("v0") = (unsigned int) vertices[0];
       cell_node.append_attribute("v1") = (unsigned int) vertices[1];
       cell_node.append_attribute("v2") = (unsigned int) vertices[2];

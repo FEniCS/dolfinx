@@ -351,22 +351,24 @@ std::size_t EigenKrylovSolver::call_solver(Solver& solver,
   }
 
   // Call approriate solve function
+  dolfin_assert(_b.vec());
+  dolfin_assert(_x.vec());
   if (parameters["nonzero_initial_guess"].is_set())
   {
     const bool nonzero_guess = parameters["nonzero_initial_guess"];
     if (nonzero_guess)
-      _x.vec() = solver.solveWithGuess(_b.vec(), _x.vec());
+      *_x.vec() = solver.solveWithGuess(*_b.vec(), *_x.vec());
     else
-      _x.vec() = solver.solve(_b.vec());
+      *_x.vec() = solver.solve(*_b.vec());
   }
   else
-    _x.vec() = solver.solve(_b.vec());
+    *_x.vec() = solver.solve(*_b.vec());
 
   // Get number of solver iterations
   const int num_iterations = solver.iterations();
 
   // Handle case that solver fails to converge
-  bool error_on_nonconvergence = parameters["error_on_nonconvergence"].is_set() ? parameters["error_on_nonconvergence"].is_set() : false;
+  bool error_on_nonconvergence = parameters["error_on_nonconvergence"].is_set() ? parameters["error_on_nonconvergence"] : true;
   if (solver.info() != Eigen::Success)
   {
     if (num_iterations >= solver.maxIterations())

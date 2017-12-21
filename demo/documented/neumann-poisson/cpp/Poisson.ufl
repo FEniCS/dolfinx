@@ -23,8 +23,8 @@
 #
 # Compile this form with FFC: ffc -l dolfin Poisson.ufl.
 
-V = FiniteElement("Lagrange", triangle, 1)
-R = FiniteElement("R", triangle, 0)
+V = FiniteElement("Lagrange", quadrilateral, 1)
+R = FiniteElement("R", quadrilateral, 0)
 element = V * R
 
 (u, c) = TrialFunctions(element)

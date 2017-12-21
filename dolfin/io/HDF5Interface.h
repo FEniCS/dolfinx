@@ -315,8 +315,14 @@ namespace dolfin
     const hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
     if (use_mpi_io)
     {
+     #ifdef H5_HAVE_PARALLEL
       status = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
       dolfin_assert(status != HDF5_FAIL);
+     #else
+      dolfin_error("HDF5Interface.h",
+                   "use MPI",
+                   "HDF5 library has not been configured with MPI");
+     #endif
     }
 
     // Write local dataset into selected hyperslab

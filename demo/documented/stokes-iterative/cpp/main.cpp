@@ -100,7 +100,8 @@ int main()
   }
 
   // Create mesh
-  auto mesh = std::make_shared<UnitCubeMesh>(16, 16, 16);
+  auto mesh = std::make_shared<Mesh>(
+    UnitCubeMesh::create({{16, 16, 16}}, CellType::Type::hexahedron));
 
   // Create function space and subspaces
   auto W = std::make_shared<Stokes::FunctionSpace>(mesh);
@@ -158,10 +159,7 @@ int main()
   File pfile_pvd("pressure.pvd");
   pfile_pvd << p;
 
-  // Plot solution
-  plot(u);
-  plot(p);
-  interactive();
+  return 0;
 }
 
 #else

@@ -41,6 +41,12 @@ public:
 
 int main()
 {
+  if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
+ {
+   std::cout << "This demo does not work in parallel" << std::endl;
+   return 0;
+ }
+
   // Create mesh and function spaces
   auto mesh = std::make_shared<UnitSquareMesh>(8, 8);
   auto P1 = std::make_shared<P1::FunctionSpace>(mesh);
@@ -57,11 +63,9 @@ int main()
   Function z2(P2);
   z2.extrapolate(z1);
 
-  // Plot approximations
-  plot(z1, "z1");
-  plot(z2, "z2");
-  interactive();
-
+  // Output extrapolations
+  XDMFFile("z1.xdmf").write(z1);
+  XDMFFile("z2.xdmf").write(z2);
 
   return 0;
 }

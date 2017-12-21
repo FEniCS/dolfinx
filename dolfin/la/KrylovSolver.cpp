@@ -14,12 +14,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Ola Skavhaug 2008
-// Modified by Anders Logg 2008-2012
-//
-// First added:  2007-07-03
-// Last changed: 2013-11-25
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>
@@ -107,26 +101,22 @@ KrylovSolver::set_operators(std::shared_ptr<const GenericLinearOperator> A,
 std::size_t KrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(solver);
-  //check_dimensions(solver->get_operator(), x, b);
-
   Timer timer("Krylov solver");
   solver->parameters.update(parameters);
   return solver->solve(x, b);
 }
 //-----------------------------------------------------------------------------
 std::size_t KrylovSolver::solve(const GenericLinearOperator& A,
-                                GenericVector& x,
-                                const GenericVector& b)
+                                GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(solver);
-  //check_dimensions(A, x, b);
-
   Timer timer("Krylov solver");
   solver->parameters.update(parameters);
   return solver->solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::init(std::string method, std::string preconditioner, MPI_Comm comm)
+void KrylovSolver::init(std::string method, std::string preconditioner,
+                        MPI_Comm comm)
 {
   // Get default linear algebra factory
   DefaultFactory factory;
