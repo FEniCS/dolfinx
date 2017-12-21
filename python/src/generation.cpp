@@ -25,13 +25,11 @@
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/generation/BoxMesh.h>
+#include <dolfin/generation/IntervalMesh.h>
+#include <dolfin/generation/RectangleMesh.h>
 #include <dolfin/generation/UnitTriangleMesh.h>
-#include <dolfin/generation/UnitCubeMesh.h>
 #include <dolfin/generation/UnitDiscMesh.h>
 #include <dolfin/generation/SphericalShellMesh.h>
-#include <dolfin/generation/UnitSquareMesh.h>
-#include <dolfin/generation/UnitIntervalMesh.h>
-#include <dolfin/generation/IntervalMesh.h>
 
 #include "casters.h"
 
@@ -47,15 +45,6 @@ namespace dolfin_wrappers
       .def(py::init<std::size_t, double, double>())
       .def(py::init([](const MPICommWrapper comm, std::size_t n, double a, double b)
                     { return std::unique_ptr<dolfin::IntervalMesh>(new dolfin::IntervalMesh(comm.get(), n, a, b)); }));
-
-    // dolfin::UnitIntervalMesh
-    py::class_<dolfin::UnitIntervalMesh, std::shared_ptr<dolfin::UnitIntervalMesh>,
-               dolfin::IntervalMesh, dolfin::Mesh>(m, "UnitIntervalMesh")
-      .def(py::init<std::size_t>())
-      .def(py::init([](const MPICommWrapper comm, std::size_t n)
-                    { return std::unique_ptr<dolfin::UnitIntervalMesh>(new dolfin::UnitIntervalMesh(comm.get(), n)); }))
-      .def_static("create", [](std::size_t n)
-                  { return dolfin::UnitIntervalMesh::create(n); });
 
     // dolfin::RectangleMesh
     py::class_<dolfin::RectangleMesh, std::shared_ptr<dolfin::RectangleMesh>, dolfin::Mesh>(m, "RectangleMesh")
@@ -76,52 +65,6 @@ namespace dolfin_wrappers
                        std::size_t nx, std::size_t ny, std::string diagonal="right")
                     { return std::unique_ptr<dolfin::RectangleMesh>(new dolfin::RectangleMesh(comm.get(), p0, p1, nx, ny, diagonal)); }),
            py::arg("comm"), py::arg("p0"), py::arg("p1"), py::arg("nx"), py::arg("ny"), py::arg("diagonal")="right");
-
-    // dolfin::UnitSquareMesh
-    py::class_<dolfin::UnitSquareMesh, std::shared_ptr<dolfin::UnitSquareMesh>, dolfin::Mesh>(m, "UnitSquareMesh")
-      .def(py::init<std::size_t, std::size_t, std::string>(), py::arg("nx"), py::arg("ny"), py::arg("diagonal")="right")
-      .def(py::init([](const MPICommWrapper comm, std::size_t nx, std::size_t ny, std::string diagonal="right")
-                    { return std::unique_ptr<dolfin::UnitSquareMesh>(new dolfin::UnitSquareMesh(comm.get(), nx, ny, diagonal)); }),
-           py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("diagonal")="right")
-      .def_static("create", [](std::array<std::size_t, 2> n, dolfin::CellType::Type cell_type,
-                               std::string diagonal)
-                  { return dolfin::UnitSquareMesh::create(n, cell_type, diagonal); },
-                  py::arg("n"), py::arg("cell_type"), py::arg("diagonal")="right")
-      .def_static("create", [](const MPICommWrapper comm, std::array<std::size_t, 2> n,
-                               dolfin::CellType::Type cell_type, std::string diagonal="right")
-                  { return dolfin::UnitSquareMesh::create(comm.get(), n, cell_type, diagonal); },
-                  py::arg("comm"), py::arg("n"), py::arg("cell_type"), py::arg("diagonal")="right")
-      // Remove below for 2018.1 release
-      .def_static("create", [](std::size_t nx, std::size_t ny, dolfin::CellType::Type cell_type)
-                  { return dolfin::UnitSquareMesh::create({nx, ny}, cell_type); },
-                  py::arg("nx"), py::arg("ny"), py::arg("cell_type"))
-      .def_static("create", [](const MPICommWrapper comm, std::size_t nx, std::size_t ny,
-                               dolfin::CellType::Type cell_type)
-                  { return dolfin::UnitSquareMesh::create(comm.get(), {nx, ny}, cell_type); },
-                  py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("cell_type"));
-
-    // dolfin::UnitCubeMesh
-    py::class_<dolfin::UnitCubeMesh, std::shared_ptr<dolfin::UnitCubeMesh>, dolfin::Mesh>(m, "UnitCubeMesh")
-      .def(py::init<std::size_t, std::size_t, std::size_t>())
-      .def(py::init([](const MPICommWrapper comm, std::size_t nx, std::size_t ny, std::size_t nz)
-                    { return std::unique_ptr<dolfin::UnitCubeMesh>(new dolfin::UnitCubeMesh(comm.get(), nx, ny, nz)); }),
-           py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("nz"))
-      .def_static("create", [](std::array<std::size_t, 3> n, dolfin::CellType::Type cell_type)
-                  { return dolfin::UnitCubeMesh::create(n, cell_type); },
-                  py::arg("n"), py::arg("cell_type"))
-      .def_static("create", [](const MPICommWrapper comm, std::array<std::size_t, 3> n,
-                               dolfin::CellType::Type cell_type)
-                  { return dolfin::UnitCubeMesh::create(comm.get(), n, cell_type); },
-                  py::arg("comm"), py::arg("n"), py::arg("cell_type"))
-      // Remove below for 2018.1 release
-      .def_static("create", [](std::size_t nx, std::size_t ny, std::size_t nz,
-                               dolfin::CellType::Type cell_type)
-                  { return dolfin::UnitCubeMesh::create({nx, ny, nz}, cell_type); },
-                  py::arg("nx"), py::arg("ny"), py::arg("nz"), py::arg("cell_type"))
-      .def_static("create", [](const MPICommWrapper comm, std::size_t nx, std::size_t ny, std::size_t nz,
-                               dolfin::CellType::Type cell_type)
-                  { return dolfin::UnitCubeMesh::create(comm.get(), {nx, ny, nz}, cell_type); },
-                  py::arg("comm"), py::arg("nx"), py::arg("ny"), py::arg("nz"), py::arg("cell_type"));
 
     // dolfin::UnitDiscMesh
     py::class_<dolfin::UnitDiscMesh>(m, "UnitDiscMesh")

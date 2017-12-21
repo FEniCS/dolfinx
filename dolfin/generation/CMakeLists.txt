@@ -4,10 +4,7 @@ set(HEADERS
   IntervalMesh.h
   RectangleMesh.h
   SphericalShellMesh.h
-  UnitCubeMesh.h
   UnitDiscMesh.h
-  UnitIntervalMesh.h
-  UnitSquareMesh.h
   UnitTetrahedronMesh.h
   UnitTriangleMesh.h
   PARENT_SCOPE)
