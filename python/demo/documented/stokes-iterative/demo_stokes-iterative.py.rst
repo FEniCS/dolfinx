@@ -1,8 +1,7 @@
-
 .. _demo_pde_iterative_stokes_python_documentation:
 
-Stokes equations
-================
+Stokes equations with an iterative solver
+=========================================
 
 This demo is implemented in a single Python file,
 :download:`demo_stokes-iterative.py`, which contains both the
@@ -13,17 +12,6 @@ This demo illustrates how to:
 * Read mesh and subdomains from file
 * Use mixed function spaces
 
-The mesh and subdomains look as follows:
-
-.. image:: ../plot_mesh.png
-
-.. image:: ../plot_mesh_boundaries.png
-
-and the solution of u and p, respectively:
-
-.. image:: ../plot_u.png
-
-.. image:: ../plot_p.png
 
 Equation and problem definition
 -------------------------------
@@ -34,7 +22,6 @@ Strong formulation
 .. math::
 	- \nabla \cdot (\nabla u + p I) &= f \quad {\rm in} \ \Omega, \\
                 	\nabla \cdot u &= 0 \quad {\rm in} \ \Omega. \\
-
 
 .. note::
         The sign of the pressure has been flipped from the classical
@@ -66,44 +53,35 @@ for all :math:`(v, q) \in W`, where
 .. math::
 
 	a((u, p), (v, q))
-				&= \int_{\Omega} \nabla u \cdot \nabla v
-                 - \nabla \cdot v \ p
-                 + \nabla \cdot u \ q \, {\rm d} x, \\
+        &= \int_{\Omega} \nabla u \cdot \nabla v
+        - \nabla \cdot v \ p
+        + \nabla \cdot u \ q \, {\rm d} x, \\
 	L((v, q))
-				&= \int_{\Omega} f \cdot v \, {\rm d} x
-    			+ \int_{\partial \Omega_N} g \cdot v \, {\rm d} s. \\
+        &= \int_{\Omega} f \cdot v \, {\rm d} x
+        + \int_{\partial \Omega_N} g \cdot v \, {\rm d} s. \\
 
 The space :math:`W` should be a mixed (product) function space
 :math:`W = V \times Q`, such that :math:`u \in V` and :math:`q \in Q`.
 
+
 Domain and boundary conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In this demo, we shall consider the following definitions of the input functions, the domain, and the boundaries:
+In this demo, we shall consider the following definitions of the input
+functions, the domain, and the boundaries:
 
-* :math:`\Omega = [0,1]\times[0,1] \backslash {\rm dolphin}` (a unit cube)
+* :math:`\Omega = [0,1]\times[0,1] \backslash {\rm dolphin}` (a unit
+  cube)
 * :math:`\Gamma_D =`
 * :math:`\Gamma_N =`
-* :math:`u_0 = (- \sin(\pi x_1), 0.0)` for :math:`x_0 = 1` and :math:`u_0 = (0.0, 0.0)` otherwise
+* :math:`u_0 = (- \sin(\pi x_1), 0.0)` for :math:`x_0 = 1` and
+  :math:`u_0 = (0.0, 0.0)` otherwise
 * :math:`f = (0.0, 0.0)`
 * :math:`g = (0.0, 0.0)`
 
 
 Implementation
 --------------
-
-This description goes through the implementation (in
-:download:`demo_stokes-iterative.py`) of a solver for the above
-described Stokes equations.  Some of the standard steps will be
-described in less detail, so before reading this, we suggest that you
-are familiarize with the :ref:`Poisson demo
-<demo_pde_poisson_python_documentation>` (for the very basics) and the
-:ref:`Mixed Poisson demo
-<demo_pde_mixed-poisson_python_documentation>` (for how to deal with
-mixed function spaces). Also, the :ref:`Navier--Stokes demo
-<demo_pde_navier_stokes_python_documentation>` illustrates how to use
-iterative solvers in a more implicit manner (typically only suitable
-for positive-definite systems of equations).
 
 The Stokes equations as formulated above result in a system of linear
 equations that is not positive-definite. Standard iterative linear
@@ -137,12 +115,11 @@ If not available, costly QMR method is choosen. ::
         exit()
 
 Next, we define the mesh (a :py:class:`UnitCubeMesh
-<dolfin.cpp.UnitCubeMesh>`) and a mixed finite element ``TH``.
-Then we build a :py:class:`FunctionSpace
+<dolfin.cpp.UnitCubeMesh>`) and a mixed finite element ``TH``.  Then
+we build a :py:class:`FunctionSpace
 <dolfin.functions.functionspace.FunctionSpace>` on this element.
-(This mixed finite element space is known as the
-Taylor--Hood elements and is a stable, standard element pair for the
-Stokes equations.) ::
+(This mixed finite element space is known as the Taylor--Hood elements
+and is a stable, standard element pair for the Stokes equations.) ::
 
     # Load mesh
     mesh = UnitCubeMesh.create(16, 16, 16, CellType.Type_hexahedron)
@@ -198,9 +175,9 @@ form and the vector corresponding to the linear form of the Stokes
 equations. Moreover, we want to apply the specified boundary
 conditions to the linear system. However, :py:func:`assembling
 <dolfin.fem.assembling.assemble>` the matrix and vector and applying a
-:py:func:`DirichletBC <dolfin.fem.bcs.DirichletBC>` separately
-will possibly result in a non-symmetric system of equations. Instead,
-we can use the :py:func:`assemble_system
+:py:func:`DirichletBC <dolfin.fem.bcs.DirichletBC>` separately will
+possibly result in a non-symmetric system of equations. Instead, we
+can use the :py:func:`assemble_system
 <dolfin.fem.assembling.assemble_system>` function to assemble both the
 matrix ``A``, the vector ``bb``, and apply the boundary conditions
 ``bcs`` in a symmetric fashion: ::
