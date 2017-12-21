@@ -27,8 +27,6 @@
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/nls/PETScSNESSolver.h>
-#include <dolfin/nls/PETScTAOSolver.h>
-#include <dolfin/nls/TAOLinearBoundSolver.h>
 #include <dolfin/nls/NonlinearProblem.h>
 #include <dolfin/nls/OptimisationProblem.h>
 
@@ -116,35 +114,6 @@ namespace dolfin_wrappers
       .def("solve", (std::pair<std::size_t, bool> (dolfin::PETScSNESSolver::*)(dolfin::NonlinearProblem&,
                                                                                dolfin::GenericVector&))
            &dolfin::PETScSNESSolver::solve);
-
-    // dolfin::TAOLinearBoundSolver
-    py::class_<dolfin::TAOLinearBoundSolver, std::shared_ptr<dolfin::TAOLinearBoundSolver>, dolfin::Variable>
-      (m, "TAOLinearBoundSolver")
-      .def(py::init([](const MPICommWrapper comm)
-          { return std::unique_ptr<dolfin::TAOLinearBoundSolver>(new dolfin::TAOLinearBoundSolver(comm.get())); }))
-      .def(py::init<std::string, std::string, std::string>(), py::arg("method")="default",
-           py::arg("ksp_type")="default", py::arg("pc_type")="default")
-      .def("solve", (std::size_t (dolfin::TAOLinearBoundSolver::*)
-                     (const dolfin::GenericMatrix&, dolfin::GenericVector&,
-                      const dolfin::GenericVector&, const dolfin::GenericVector&,
-                      const dolfin::GenericVector&))
-           &dolfin::TAOLinearBoundSolver::solve);
-
-    // dolfin::PETScTAOSolver
-    py::class_<dolfin::PETScTAOSolver, std::shared_ptr<dolfin::PETScTAOSolver>, dolfin::PETScObject>(m, "PETScTAOSolver")
-      .def(py::init<>())
-      .def(py::init([](const MPICommWrapper comm, std::string tao_type="default",
-                       std::string ksp_type="default", std::string pc_type="default")
-          { return std::unique_ptr<dolfin::PETScTAOSolver>(
-              new dolfin::PETScTAOSolver(comm.get(), tao_type, ksp_type, pc_type)); }),
-           py::arg("comm"), py::arg("tao_type")="default",
-           py::arg("ksp_type")="default", py::arg("pc_type")="default")
-      .def_readwrite("parameters", &dolfin::PETScTAOSolver::parameters)
-      .def("solve", (std::pair<std::size_t, bool> (dolfin::PETScTAOSolver::*)(dolfin::OptimisationProblem&, dolfin::GenericVector&))
-           &dolfin::PETScTAOSolver::solve)
-      .def("solve", (std::pair<std::size_t, bool> (dolfin::PETScTAOSolver::*)(dolfin::OptimisationProblem&, dolfin::GenericVector&,
-                                                                              const dolfin::GenericVector&, const dolfin::GenericVector&))
-           &dolfin::PETScTAOSolver::solve);
 #endif
 
     // dolfin::NonlinearProblem 'trampoline' for overloading from
