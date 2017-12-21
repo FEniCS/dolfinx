@@ -8,7 +8,6 @@ set(HEADERS
   HDF5File.h
   HDF5Interface.h
   HDF5Utility.h
-  RAWFile.h
   SVGFile.h
   VTKFile.h
   VTKWriter.h
@@ -25,7 +24,6 @@ set(HEADERS
   XMLTable.h
   xmlutils.h
   XMLVector.h
-  XYZFile.h
   PARENT_SCOPE)
 
 set(SOURCES
@@ -37,7 +35,6 @@ set(SOURCES
   HDF5Interface.cpp
   HDF5Utility.cpp
   pugixml.cpp
-  RAWFile.cpp
   SVGFile.cpp
   VTKFile.cpp
   VTKWriter.cpp
@@ -51,5 +48,4 @@ set(SOURCES
   XMLTable.cpp
   xmlutils.cpp
   XMLVector.cpp
-  XYZFile.cpp
   PARENT_SCOPE)

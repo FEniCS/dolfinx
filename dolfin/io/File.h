@@ -35,11 +35,9 @@ namespace dolfin
   /// A list of objects that can be read/written to file can be found in
   /// GenericFile.h. Compatible file formats include:
   ///     * Binary (.bin)
-  ///     * RAW    (.raw)
   ///     * SVG    (.svg)
   ///     * XD3    (.xd3)
   ///     * XML    (.xml)
-  ///     * XYZ    (.xyz)
   ///     * VTK    (.pvd)
 
   class File

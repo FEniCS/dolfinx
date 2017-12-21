@@ -23,12 +23,10 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/log/log.h>
-#include "RAWFile.h"
 #include "SVGFile.h"
 #include "VTKFile.h"
 #include "X3DFile.h"
 #include "XMLFile.h"
-#include "XYZFile.h"
 
 #include "File.h"
 
@@ -171,10 +169,6 @@ void File::init(MPI_Comm comm, const std::string filename,
     _file.reset(new XMLFile(comm, filename));
   else if (extension == ".pvd")
     _file.reset(new VTKFile(filename, encoding));
-  else if (extension == ".raw")
-    _file.reset(new RAWFile(filename));
-  else if (extension == ".xyz")
-    _file.reset(new XYZFile(filename));
   else if (extension == ".svg")
     _file.reset(new SVGFile(filename));
   else
@@ -199,12 +193,6 @@ void File::init(MPI_Comm comm, const std::string filename, Type type,
     break;
   case Type::vtk:
     _file.reset(new VTKFile(filename, encoding));
-    break;
-  case Type::raw:
-    _file.reset(new RAWFile(filename));
-    break;
-  case Type::xyz:
-    _file.reset(new XYZFile(filename));
     break;
   default:
     dolfin_error("File.cpp",
