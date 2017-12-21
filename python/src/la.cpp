@@ -30,8 +30,6 @@
 
 #include <dolfin/common/Array.h>
 #include <dolfin/la/solve.h>
-#include <dolfin/la/BlockVector.h>
-#include <dolfin/la/BlockMatrix.h>
 #include <dolfin/la/GenericLinearOperator.h>
 #include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/GenericTensor.h>
@@ -659,39 +657,6 @@ namespace dolfin_wrappers
       .def("str", &dolfin::Vector::str)
       .def("instance", (std::shared_ptr<dolfin::LinearAlgebraObject>(dolfin::Vector::*)())
            &dolfin::Vector::shared_instance);
-
-    // dolfin::BlockMatrix
-    py::class_<dolfin::BlockMatrix, std::shared_ptr<dolfin::BlockMatrix>>
-      (m, "BlockMatrix")
-      .def(py::init<std::size_t, std::size_t>(), py::arg("m")=0, py::arg("n")=0)
-      .def("__getitem__", [](dolfin::BlockMatrix& self, py::tuple index)
-           {
-             if (index.size() != 2)
-               throw py::key_error("Wrong number of indices");
-             std::size_t i = index[0].cast<std::size_t>();
-             std::size_t j = index[1].cast<std::size_t>();
-             return self.get_block(i, j);
-           })
-      .def("__setitem__", [](dolfin::BlockMatrix& self, py::tuple index,
-                             std::shared_ptr<dolfin::GenericMatrix> m)
-           {
-             if (index.size() != 2)
-               throw py::key_error("Wrong number of indices");
-             std::size_t i = index[0].cast<std::size_t>();
-             std::size_t j = index[1].cast<std::size_t>();
-             self.set_block(i, j, m);
-           })
-      .def("mult", &dolfin::BlockMatrix::mult, py::arg("x"), py::arg("y"), py::arg("transposed")=false);
-
-    // dolfin::BlockVector
-    py::class_<dolfin::BlockVector, std::shared_ptr<dolfin::BlockVector>>
-      (m, "BlockVector")
-      .def(py::init<std::size_t>())
-      .def("__getitem__", [](dolfin::BlockVector& self, std::size_t index)
-           { return self.get_block(index); })
-      .def("__setitem__", [](dolfin::BlockVector& self, std::size_t index,
-                             std::shared_ptr<dolfin::GenericVector> v)
-           { self.set_block(index, v); });
 
     // dolfin::Scalar
     py::class_<dolfin::Scalar, std::shared_ptr<dolfin::Scalar>, dolfin::GenericTensor>

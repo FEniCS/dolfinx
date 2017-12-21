@@ -1,6 +1,4 @@
 set(HEADERS
-  BlockMatrix.h
-  BlockVector.h
   CoordinateMatrix.h
   DefaultFactory.h
   dolfin_la.h
@@ -43,8 +41,6 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
-  BlockMatrix.cpp
-  BlockVector.cpp
   CoordinateMatrix.cpp
   DefaultFactory.cpp
   EigenFactory.cpp
