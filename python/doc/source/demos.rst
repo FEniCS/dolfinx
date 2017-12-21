@@ -18,10 +18,10 @@ in the given order.
    <demos/nonlinear-poisson/demo_nonlinear-poisson.py>`
 
 3. Using mixed elements: :doc:`Solving the Stokes equations
-   <demos/stokes_taylor_hood/demo_stokes_taylor_hood.py>`
+   <demos/stokes-taylor-hood/demo_stokes-taylor-hood.py>`
 
 4. Using iterative linear solvers: :doc:`Solving the Stokes equations
-   more efficiently <demos/stokes_iterative/demo_stokes_iterative.py>`
+   more efficiently <demos/stokes-iterative/demo_stokes-iterative.py>`
 
 
 More advanced demos
@@ -42,8 +42,8 @@ functionality and optimizations.
   <demos/maxwell-eigenvalues/demo_maxwell-eigenvalues.py>`
 
 
-Documented demos
-----------------
+All documented demos
+--------------------
 
 .. toctree::
    :maxdepth: 1

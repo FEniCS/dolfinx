@@ -21,6 +21,12 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+# Copy demo files into doc source tree and process with pylit
+import os
+import sys
+sys.path.append(os.getcwd())
+import rstprocess
+rstprocess.process()
 
 # -- General configuration ------------------------------------------------
 

@@ -63,7 +63,7 @@ def process():
 
             # Build list of rst and png files in demo source directory
             rst_files = [f for f in os.listdir(path) if os.path.splitext(f)[1] == ".rst" ]
-            other_files = [f for f in os.listdir(path) if os.path.splitext(f)[1] in (".png", ".py")]
+            other_files = [f for f in os.listdir(path) if os.path.splitext(f)[1] in (".png", ".py", ".gz")]
 
             # Create directory in documentation tree for demo
             demo_dir = os.path.join('./demos/', demo)
