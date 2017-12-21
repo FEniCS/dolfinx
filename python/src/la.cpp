@@ -56,12 +56,6 @@
 #include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScPreconditioner.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/la/TpetraFactory.h>
-#include <dolfin/la/TpetraMatrix.h>
-#include <dolfin/la/TpetraVector.h>
-#include <dolfin/la/TrilinosPreconditioner.h>
-#include <dolfin/la/MueluPreconditioner.h>
-#include <dolfin/la/BelosKrylovSolver.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/SLEPcEigenSolver.h>
@@ -868,60 +862,6 @@ namespace dolfin_wrappers
       .def(py::init<std::string>(), py::arg("type")="default")
       .def("preconditioners", &dolfin::PETScPreconditioner::preconditioners);
 
-    #endif
-
-    #ifdef HAS_TRILINOS
-
-    // dolfin::TpetraFactory
-    py::class_<dolfin::TpetraFactory, std::shared_ptr<dolfin::TpetraFactory>,
-               dolfin::GenericLinearAlgebraFactory>
-      (m, "TpetraFactory", "DOLFIN TpetraFactory object")
-      .def("instance", &dolfin::TpetraFactory::instance)
-      .def("create_matrix", [](const dolfin::TpetraFactory &self, const MPICommWrapper comm)
-        { return self.create_matrix(comm.get()); })
-      .def("create_vector", [](const dolfin::TpetraFactory &self, const MPICommWrapper comm)
-        { return self.create_vector(comm.get()); });
-
-    // dolfin::TpetraVector
-    py::class_<dolfin::TpetraVector, std::shared_ptr<dolfin::TpetraVector>,
-               dolfin::GenericVector>
-      (m, "TpetraVector", "DOLFIN TpetraVector object")
-      .def(py::init([](const MPICommWrapper comm=MPICommWrapper(MPI_COMM_WORLD))
-        { return std::unique_ptr<dolfin::TpetraVector>(new dolfin::TpetraVector(comm.get())); }),
-        py::arg("comm")=MPICommWrapper(MPI_COMM_WORLD))
-      .def(py::init([](const MPICommWrapper comm, std::size_t N)
-        { return std::unique_ptr<dolfin::TpetraVector>(new dolfin::TpetraVector(comm.get(), N)); }));
-
-    // dolfin::TpetraMatrix
-    py::class_<dolfin::TpetraMatrix, std::shared_ptr<dolfin::TpetraMatrix>,
-               dolfin::GenericMatrix>
-      (m, "TpetraMatrix", "DOLFIN TpetraMatrix object")
-      .def(py::init<>());
-
-    // dolfin::TrilinosPreconditioner
-    py::class_<dolfin::TrilinosPreconditioner, std::shared_ptr<dolfin::TrilinosPreconditioner>>
-      (m, "TrilinosPreconditioner", "DOLFIN TrilinosPreconditioner object");
-
-    // dolfin::MueluPreconditioner
-    py::class_<dolfin::MueluPreconditioner, std::shared_ptr<dolfin::MueluPreconditioner>,
-               dolfin::TrilinosPreconditioner, dolfin::Variable>
-      (m, "MueluPreconditioner", "Muelu Preconditioner")
-      .def(py::init<>());
-
-    // dolfin::BelosKrylovSolver
-    py::class_<dolfin::BelosKrylovSolver, std::shared_ptr<dolfin::BelosKrylovSolver>,
-               dolfin::GenericLinearSolver>
-      (m, "BelosKrylovSolver", "Belos KrylovSolver")
-      .def(py::init<std::string, std::shared_ptr<dolfin::TrilinosPreconditioner>>())
-      .def("set_operator", &dolfin::BelosKrylovSolver::set_operator)
-      .def("set_operators", &dolfin::BelosKrylovSolver::set_operators)
-      .def("solve", (std::size_t (dolfin::BelosKrylovSolver::*)
-                     (dolfin::GenericVector&, const dolfin::GenericVector&))
-           &dolfin::BelosKrylovSolver::solve)
-      .def("solve", (std::size_t (dolfin::BelosKrylovSolver::*)
-                     (const dolfin::GenericLinearOperator&,
-                      dolfin::GenericVector&, const dolfin::GenericVector&))
-           &dolfin::BelosKrylovSolver::solve);
     #endif
 
     // dolfin::LUSolver

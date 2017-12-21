@@ -1,6 +1,4 @@
 set(HEADERS
-  Amesos2LUSolver.h
-  BelosKrylovSolver.h
   BlockMatrix.h
   BlockVector.h
   CoordinateMatrix.h
@@ -17,7 +15,6 @@ set(HEADERS
   GenericMatrix.h
   GenericTensor.h
   GenericVector.h
-  Ifpack2Preconditioner.h
   IndexMap.h
   KrylovSolver.h
   LinearAlgebraObject.h
@@ -25,7 +22,6 @@ set(HEADERS
   LinearSolver.h
   LUSolver.h
   Matrix.h
-  MueluPreconditioner.h
   PETScBaseMatrix.h
   PETScFactory.h
   PETScKrylovSolver.h
@@ -42,18 +38,11 @@ set(HEADERS
   SparsityPattern.h
   TensorLayout.h
   test_nullspace.h
-  TpetraFactory.h
-  TpetraMatrix.h
-  TpetraVector.h
-  TrilinosParameters.h
-  TrilinosPreconditioner.h
   Vector.h
   VectorSpaceBasis.h
   PARENT_SCOPE)
 
 set(SOURCES
-  Amesos2LUSolver.cpp
-  BelosKrylovSolver.cpp
   BlockMatrix.cpp
   BlockVector.cpp
   CoordinateMatrix.cpp
@@ -65,13 +54,11 @@ set(SOURCES
   EigenVector.cpp
   GenericLinearSolver.cpp
   GenericMatrix.cpp
-  Ifpack2Preconditioner.cpp
   IndexMap.cpp
   KrylovSolver.cpp
   LinearOperator.cpp
   LinearSolver.cpp
   LUSolver.cpp
-  MueluPreconditioner.cpp
   PETScBaseMatrix.cpp
   PETScFactory.cpp
   PETScKrylovSolver.cpp
@@ -87,9 +74,5 @@ set(SOURCES
   SparsityPattern.cpp
   TensorLayout.cpp
   test_nullspace.cpp
-  TpetraFactory.cpp
-  TpetraMatrix.cpp
-  TpetraVector.cpp
-  TrilinosParameters.cpp
   VectorSpaceBasis.cpp
   PARENT_SCOPE)
