@@ -9,7 +9,6 @@ set(HEADERS
   DofMapBuilder.h
   DofMap.h
   dolfin_fem.h
-  Equation.h
   fem_utils.h
   FiniteElement.h
   Form.h
@@ -34,7 +33,6 @@ set(SOURCES
   DiscreteOperators.cpp
   DofMapBuilder.cpp
   DofMap.cpp
-  Equation.cpp
   fem_utils.cpp
   FiniteElement.cpp
   Form.cpp

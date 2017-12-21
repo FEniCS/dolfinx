@@ -29,7 +29,6 @@
 #include <memory>
 
 #include <dolfin/common/types.h>
-#include "Equation.h"
 
 // Forward declaration
 namespace ufc
@@ -311,12 +310,6 @@ namespace dolfin
 
     /// Check function spaces and coefficients
     void check() const;
-
-    /// Comparison operator, returning equation lhs == rhs
-    Equation operator==(const Form& rhs) const;
-
-    /// Comparison operator, returning equation lhs == 0
-    Equation operator==(int rhs) const;
 
     /// Domain markers for cells
     std::shared_ptr<const MeshFunction<std::size_t>> dx;
