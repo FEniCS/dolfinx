@@ -8,7 +8,6 @@ set(HEADERS
   HDF5File.h
   HDF5Interface.h
   HDF5Utility.h
-  SVGFile.h
   VTKFile.h
   VTKWriter.h
   X3DFile.h
@@ -35,7 +34,6 @@ set(SOURCES
   HDF5Interface.cpp
   HDF5Utility.cpp
   pugixml.cpp
-  SVGFile.cpp
   VTKFile.cpp
   VTKWriter.cpp
   X3DFile.cpp

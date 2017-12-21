@@ -23,7 +23,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/log/log.h>
-#include "SVGFile.h"
 #include "VTKFile.h"
 #include "X3DFile.h"
 #include "XMLFile.h"
@@ -169,8 +168,6 @@ void File::init(MPI_Comm comm, const std::string filename,
     _file.reset(new XMLFile(comm, filename));
   else if (extension == ".pvd")
     _file.reset(new VTKFile(filename, encoding));
-  else if (extension == ".svg")
-    _file.reset(new SVGFile(filename));
   else
   {
     dolfin_error("File.cpp",

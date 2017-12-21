@@ -35,7 +35,6 @@ namespace dolfin
   /// A list of objects that can be read/written to file can be found in
   /// GenericFile.h. Compatible file formats include:
   ///     * Binary (.bin)
-  ///     * SVG    (.svg)
   ///     * XD3    (.xd3)
   ///     * XML    (.xml)
   ///     * VTK    (.pvd)
@@ -45,7 +44,7 @@ namespace dolfin
   public:
 
     /// File formats
-    enum class Type {x3d, xml, vtk, raw, xyz, binary, svg};
+    enum class Type {x3d, xml, vtk, binary};
 
     /// Create a file with given name
     ///
