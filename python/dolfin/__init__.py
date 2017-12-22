@@ -63,25 +63,19 @@ from .cpp.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                              SphericalShellMesh)
 from .cpp.graph import GraphBuilder
 from .cpp.io import XDMFFile, VTKFile
-from .cpp.la import (has_linear_algebra_backend,
-                     linear_algebra_backends,
-                     has_krylov_solver_method,
-                     has_krylov_solver_preconditioner, normalize,
-                     VectorSpaceBasis, in_nullspace)
+from .cpp.la import VectorSpaceBasis, in_nullspace
 
-if has_linear_algebra_backend('PETSc'):
-    from .cpp.la import (PETScVector, PETScMatrix, PETScFactory,
-                         PETScOptions, PETScLUSolver,
-                         PETScKrylovSolver, PETScPreconditioner)
-    from .cpp.fem import PETScDMCollection
-    from .cpp.nls import PETScSNESSolver
+from .cpp.la import (PETScVector, PETScMatrix, PETScFactory,
+                     PETScOptions, PETScLUSolver,
+                     PETScKrylovSolver, PETScPreconditioner)
+from .cpp.fem import PETScDMCollection
+from .cpp.nls import PETScSNESSolver
 
 if has_slepc():
     from .cpp.la import SLEPcEigenSolver
 
 from .cpp.la import (IndexMap, DefaultFactory, Matrix, Vector, Scalar,
-                     EigenMatrix, EigenVector, EigenFactory, LUSolver,
-                     KrylovSolver, TensorLayout, LinearOperator)
+                     LUSolver, KrylovSolver, TensorLayout, LinearOperator)
 from .cpp.la import GenericVector  # Remove when pybind11 transition complete
 from .cpp.log import (info, Table, set_log_level, get_log_level, LogLevel)
 from .cpp.math import ipow, near, between
@@ -95,7 +89,6 @@ from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, MeshEntity,
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver, OptimisationProblem)
 from .cpp.parameter import Parameters, parameters
-from .cpp.io import X3DOM, X3DOMParameters
 
 # Import Python modules
 from . import la
@@ -129,6 +122,8 @@ from .function.specialfunctions import (MeshCoordinates, FacetArea, FacetNormal,
                                         MinCellEdgeLength, MaxCellEdgeLength,
                                         MinFacetEdgeLength, MaxFacetEdgeLength)
 from .function.expression import Expression, UserExpression, CompiledExpression
+
+from .generation.builtin import UnitSquareMesh
 
 # experimental
 from .jit.pybind11jit import compile_cpp_code

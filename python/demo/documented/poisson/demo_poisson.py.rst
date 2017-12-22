@@ -86,7 +86,7 @@ to create a mesh consisting of 32 x 32 squares with each square
 divided into two triangles, we do as follows ::
 
     # Create mesh and define function space
-    mesh = UnitSquareMesh(32, 32)
+    mesh = RectangleMesh.create(MPI.comm_world, [Point(0,0), Point(1,1)], [32, 32], CellType.Type.triangle)
     V = FunctionSpace(mesh, "Lagrange", 1)
 
 The second argument to :py:class:`FunctionSpace
