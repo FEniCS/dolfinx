@@ -24,11 +24,9 @@
 #include <pybind11/operators.h>
 
 #include <dolfin/common/Array.h>
-#include <dolfin/function/assign.h>
 #include <dolfin/function/Constant.h>
 #include <dolfin/function/Expression.h>
 #include <dolfin/function/Function.h>
-#include <dolfin/function/FunctionAssigner.h>
 #include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/LagrangeInterpolator.h>
@@ -357,100 +355,5 @@ namespace dolfin_wrappers
                       throw py::type_error("Can only interpolate Expression or Function");
                   });
 
-    // dolfin::FunctionAssigner
-    py::class_<dolfin::FunctionAssigner, std::shared_ptr<dolfin::FunctionAssigner>>
-      (m, "FunctionAssigner")
-      .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>,
-           std::shared_ptr<const dolfin::FunctionSpace>>())
-      .def(py::init<std::vector<std::shared_ptr<const dolfin::FunctionSpace>>,
-           std::shared_ptr<const dolfin::FunctionSpace>>())
-      .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>,
-           std::vector<std::shared_ptr<const dolfin::FunctionSpace>>>())
-      .def(py::init([](py::object V0, py::object V1)
-           {
-             if (py::isinstance<py::list>(V0))
-             {
-               std::vector<std::shared_ptr<const dolfin::FunctionSpace>> _V0;
-               for (auto V : py::cast<py::list>(V0))
-                 _V0.push_back(V.attr("_cpp_object").cast<std::shared_ptr<const dolfin::FunctionSpace>>());
-               auto _V1 = V1.attr("_cpp_object").cast<std::shared_ptr<const dolfin::FunctionSpace>>();
-               return dolfin::FunctionAssigner(_V0, _V1);
-             }
-             else if (py::isinstance<py::list>(V1))
-             {
-               std::vector<std::shared_ptr<const dolfin::FunctionSpace>> _V1;
-               for (auto V : py::cast<py::list>(V1))
-                 _V1.push_back(V.attr("_cpp_object").cast<std::shared_ptr<const dolfin::FunctionSpace>>());
-               auto _V0 = V0.attr("_cpp_object").cast<std::shared_ptr<const dolfin::FunctionSpace>>();
-               return dolfin::FunctionAssigner(_V0, _V1);
-             }
-             else
-             {
-               auto _V0 = V0.attr("_cpp_object").cast<std::shared_ptr<const dolfin::FunctionSpace>>();
-               auto _V1 = V1.attr("_cpp_object").cast<std::shared_ptr<const dolfin::FunctionSpace>>();
-               return dolfin::FunctionAssigner(_V0, _V1);
-             }
-           }))
-      .def("assign", (void (dolfin::FunctionAssigner::*)(std::shared_ptr<dolfin::Function>,
-                                                         std::shared_ptr<const dolfin::Function>) const)
-           &dolfin::FunctionAssigner::assign)
-      .def("assign", [](const dolfin::FunctionAssigner& self, py::object v0, py::object v1)
-           {
-             if (py::isinstance<py::list>(v0))
-             {
-               std::vector<std::shared_ptr<dolfin::Function>> _v0;
-               for (auto v : py::cast<py::list>(v0))
-                 _v0.push_back(v.attr("_cpp_object").cast<std::shared_ptr<dolfin::Function>>());
-               auto _v1 = v1.attr("_cpp_object").cast<std::shared_ptr<const dolfin::Function>>();
-               self.assign(_v0, _v1);
-               return;
-             }
-             else if (py::isinstance<py::list>(v1))
-             {
-               auto _v0 = v0.attr("_cpp_object").cast<std::shared_ptr<dolfin::Function>>();
-               std::vector<std::shared_ptr<const dolfin::Function>> _v1;
-               for (auto v : py::cast<py::list>(v1))
-                 _v1.push_back(v.attr("_cpp_object").cast<std::shared_ptr<const dolfin::Function>>());
-               self.assign(_v0, _v1);
-               return;
-             }
-             else
-             {
-               auto _v0 = v0.attr("_cpp_object").cast<std::shared_ptr<dolfin::Function>>();
-               auto _v1 = v1.attr("_cpp_object").cast<std::shared_ptr<const dolfin::Function>>();
-               self.assign(_v0, _v1);
-               return;
-             }
-           });
-
-    // dolfin::assign interface
-    m.def("assign", [](py::object v0, py::object v1)
-           {
-             if (py::isinstance<py::list>(v0))
-             {
-               std::vector<std::shared_ptr<dolfin::Function>> _v0;
-               for (auto v : py::cast<py::list>(v0))
-                 _v0.push_back(v.attr("_cpp_object").cast<std::shared_ptr<dolfin::Function>>());
-               auto _v1 = v1.attr("_cpp_object").cast<std::shared_ptr<const dolfin::Function>>();
-               dolfin::assign(_v0, _v1);
-               return;
-             }
-             else if (py::isinstance<py::list>(v1))
-             {
-               auto _v0 = v0.attr("_cpp_object").cast<std::shared_ptr<dolfin::Function>>();
-               std::vector<std::shared_ptr<const dolfin::Function>> _v1;
-               for (auto v : py::cast<py::list>(v1))
-                 _v1.push_back(v.attr("_cpp_object").cast<std::shared_ptr<const dolfin::Function>>());
-               dolfin::assign(_v0, _v1);
-               return;
-             }
-             else
-             {
-               auto _v0 = v0.attr("_cpp_object").cast<std::shared_ptr<dolfin::Function>>();
-               auto _v1 = v1.attr("_cpp_object").cast<std::shared_ptr<const dolfin::Function>>();
-               dolfin::assign(_v0, _v1);
-               return;
-             }
-           });
   }
 }

@@ -45,8 +45,7 @@ if has_hdf5():
 
 from .cpp import MPI
 from .cpp.function import (Expression, Constant, FunctionAXPY,
-                           LagrangeInterpolator, FunctionAssigner,
-                           assign)
+                           LagrangeInterpolator)
 from .cpp.fem import (FiniteElement, DofMap, Assembler,
                       get_coordinates, create_mesh, set_coordinates,
                       vertex_to_dof_map, dof_to_vertex_map,
@@ -69,7 +68,6 @@ from .cpp.la import (PETScVector, PETScMatrix, PETScFactory,
                      PETScOptions, PETScLUSolver,
                      PETScKrylovSolver, PETScPreconditioner)
 from .cpp.fem import PETScDMCollection
-from .cpp.nls import PETScSNESSolver
 
 if has_slepc():
     from .cpp.la import SLEPcEigenSolver
@@ -84,8 +82,8 @@ from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, MeshEntity,
                        Edge, Vertex, cells, facets, faces, edges,
                        entities, vertices, SubDomain,
                        MeshEditor, MeshQuality,
-                        PeriodicBoundaryComputation,
-                       MeshTransformation, SubsetIterator)
+                       PeriodicBoundaryComputation,
+                       SubsetIterator)
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver, OptimisationProblem)
 from .cpp.parameter import Parameters, parameters

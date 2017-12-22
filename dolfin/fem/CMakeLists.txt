@@ -14,7 +14,6 @@ set(HEADERS
   LocalAssembler.h
   LocalSolver.h
   NonlinearVariationalProblem.h
-  NonlinearVariationalSolver.h
   PETScDMCollection.h
   PointSource.h
   SparsityPatternBuilder.h
@@ -35,7 +34,6 @@ set(SOURCES
   LocalAssembler.cpp
   LocalSolver.cpp
   NonlinearVariationalProblem.cpp
-  NonlinearVariationalSolver.cpp
   PointSource.cpp
   PETScDMCollection.cpp
   SparsityPatternBuilder.cpp

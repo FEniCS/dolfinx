@@ -26,7 +26,6 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/nls/NewtonSolver.h>
-#include <dolfin/nls/PETScSNESSolver.h>
 #include <dolfin/nls/NonlinearProblem.h>
 #include <dolfin/nls/OptimisationProblem.h>
 
@@ -99,22 +98,6 @@ namespace dolfin_wrappers
       .def("converged", &PyPublicNewtonSolver::converged)
       .def("solver_setup", &PyPublicNewtonSolver::solver_setup)
       .def("update_solution", &PyPublicNewtonSolver::update_solution);
-
-#ifdef HAS_PETSC
-    // dolfin::PETScSNESSolver
-    py::class_<dolfin::PETScSNESSolver, std::shared_ptr<dolfin::PETScSNESSolver>,
-               dolfin::PETScObject>(m, "PETScSNESSolver")
-      .def(py::init<std::string>(), py::arg("nls_type")="default")
-      .def(py::init([](const MPICommWrapper comm, std::string nls_type="default")
-          { return std::unique_ptr<dolfin::PETScSNESSolver>(
-              new dolfin::PETScSNESSolver(comm.get(), nls_type)); }),
-          py::arg("comm"), py::arg("nls_type") = "default")
-      .def_readwrite("parameters", &dolfin::PETScSNESSolver::parameters)
-      .def("snes", &dolfin::PETScSNESSolver::snes)
-      .def("solve", (std::pair<std::size_t, bool> (dolfin::PETScSNESSolver::*)(dolfin::NonlinearProblem&,
-                                                                               dolfin::GenericVector&))
-           &dolfin::PETScSNESSolver::solve);
-#endif
 
     // dolfin::NonlinearProblem 'trampoline' for overloading from
     // Python

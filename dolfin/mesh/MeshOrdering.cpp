@@ -20,7 +20,6 @@
 
 #include <vector>
 #include <memory>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
 #include "Cell.h"
 #include "Mesh.h"

@@ -8,7 +8,6 @@ set(HEADERS
   IndexSet.h
   init.h
   MPI.h
-  NoDeleter.h
   RangedIndexSet.h
   Set.h
   SubSystemsManager.h

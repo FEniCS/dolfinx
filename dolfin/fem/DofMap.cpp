@@ -26,7 +26,6 @@
 #include <unordered_map>
 
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/types.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/LogStream.h>

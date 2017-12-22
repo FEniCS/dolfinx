@@ -25,7 +25,6 @@
 #include <iostream>
 #include <petscmat.h>
 #include <memory>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>

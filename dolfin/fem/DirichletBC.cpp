@@ -34,7 +34,6 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/constants.h>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/Constant.h>

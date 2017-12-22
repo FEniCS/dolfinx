@@ -16,7 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 #include <dolfin/parameter/GlobalParameters.h>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
 #include "DefaultFactory.h"
 #include "LinearSolver.h"

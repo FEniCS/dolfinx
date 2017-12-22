@@ -18,7 +18,6 @@
 // Modified by Martin Alnes, 2008.
 
 #include <memory>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/log/log.h>
 #include "CoefficientAssigner.h"

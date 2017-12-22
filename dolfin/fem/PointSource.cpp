@@ -19,7 +19,6 @@
 #include <memory>
 #include <vector>
 
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/GenericVector.h>

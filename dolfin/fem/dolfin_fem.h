@@ -19,7 +19,6 @@
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/fem/SystemAssembler.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
-#include <dolfin/fem/NonlinearVariationalSolver.h>
 #include <dolfin/fem/PETScDMCollection.h>
 
 #endif

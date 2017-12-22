@@ -24,7 +24,6 @@
 #include <memory>
 #include <string>
 
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>

@@ -30,7 +30,6 @@
 #include <memory>
 #include <unordered_set>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 #include "LocalMeshValueCollection.h"

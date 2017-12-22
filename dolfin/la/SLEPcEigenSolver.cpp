@@ -20,7 +20,6 @@
 #include <slepcversion.h>
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/NoDeleter.h>
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "SLEPcEigenSolver.h"
@@ -169,12 +168,12 @@ void SLEPcEigenSolver::solve(std::size_t n)
   Mat A, B;
   dolfin_assert(_eps);
   EPSGetOperators(_eps, &A, &B);
-  
+
   // Wrap operator as short-cut to get size
   PETScMatrix A_wrapped(A);
   dolfin_assert(n <= A_wrapped.size(0));
 #endif
-  
+
   // Set number of eigenpairs to compute
   dolfin_assert(_eps);
   EPSSetDimensions(_eps, n, PETSC_DECIDE, PETSC_DECIDE);

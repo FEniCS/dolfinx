@@ -39,7 +39,6 @@
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/LocalSolver.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
-#include <dolfin/fem/NonlinearVariationalSolver.h>
 #include <dolfin/fem/PETScDMCollection.h>
 #include <dolfin/fem/PointSource.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
@@ -425,14 +424,6 @@ namespace dolfin_wrappers
              auto& _ub = ub.attr("_cpp_object").cast<dolfin::Function&>();
              self.set_bounds(_lb, _ub);
            });
-
-    // dolfin::NonlinearVariationalSolver
-    py::class_<dolfin::NonlinearVariationalSolver,
-               std::shared_ptr<dolfin::NonlinearVariationalSolver>,
-               dolfin::Variable>
-      (m, "NonlinearVariationalSolver")
-      .def(py::init<std::shared_ptr<dolfin::NonlinearVariationalProblem>>())
-      .def("solve", &dolfin::NonlinearVariationalSolver::solve);
 
     // dolfin::LocalSolver
     py::class_<dolfin::LocalSolver, std::shared_ptr<dolfin::LocalSolver>>

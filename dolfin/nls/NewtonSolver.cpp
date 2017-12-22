@@ -26,7 +26,6 @@
 #include <string>
 
 #include <dolfin/common/constants.h>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/la/LinearSolver.h>

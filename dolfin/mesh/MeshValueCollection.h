@@ -26,7 +26,6 @@
 #include <map>
 #include <utility>
 #include <memory>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 #include "Cell.h"
