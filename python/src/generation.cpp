@@ -28,8 +28,6 @@
 #include <dolfin/generation/IntervalMesh.h>
 #include <dolfin/generation/RectangleMesh.h>
 #include <dolfin/generation/UnitTriangleMesh.h>
-#include <dolfin/generation/UnitDiscMesh.h>
-#include <dolfin/generation/SphericalShellMesh.h>
 
 #include "casters.h"
 
