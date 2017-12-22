@@ -11,7 +11,7 @@ pipelines:
           - mkdir -p build
           - cd build
           - cmake -DCMAKE_BUILD_TYPE=Debug ../
-          - make
+          - make -j2
           - make install
           - cd ../python
           - python3 setup.py build --debug
