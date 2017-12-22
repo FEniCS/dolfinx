@@ -62,15 +62,6 @@ bool dolfin::has_debug()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_openmp()
-{
-#ifdef HAS_OPENMP
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
 bool dolfin::has_mpi()
 {
 #ifdef HAS_MPI
@@ -101,24 +92,6 @@ bool dolfin::has_slepc()
 bool dolfin::has_scotch()
 {
 #ifdef HAS_SCOTCH
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
-bool dolfin::has_umfpack()
-{
-#ifdef HAS_UMFPACK
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
-bool dolfin::has_cholmod()
-{
-#ifdef HAS_CHOLMOD
   return true;
 #else
   return false;

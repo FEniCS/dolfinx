@@ -46,9 +46,6 @@ namespace dolfin
   /// i.e., with assertions on
   bool has_debug();
 
-  /// Return true if DOLFIN is compiled with OpenMP
-  bool has_openmp();
-
   /// Return true if DOLFIN is compiled with MPI
   bool has_mpi();
 
@@ -60,12 +57,6 @@ namespace dolfin
 
   /// Return true if DOLFIN is compiled with Scotch
   bool has_scotch();
-
-  /// Return true if DOLFIN is compiled with Umfpack
-  bool has_umfpack();
-
-  /// Return true if DOLFIN is compiled with Cholmod
-  bool has_cholmod();
 
   /// Return true if DOLFIN is compiled with ParMETIS
   bool has_parmetis();
