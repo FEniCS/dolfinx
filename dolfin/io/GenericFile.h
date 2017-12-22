@@ -52,39 +52,8 @@ namespace dolfin
     /// Destructor
     virtual ~GenericFile();
 
-    // Input
-    virtual void read(Mesh& mesh);
-    virtual void read(GenericVector& x);
-    virtual void read(GenericMatrix& A);
-    virtual void read(GenericDofMap& dofmap);
-    virtual void read(LocalMeshData& data);
-    virtual void read(MeshFunction<int>& mesh_function);
-    virtual void read(MeshFunction<std::size_t>& mesh_function);
-    virtual void read(MeshFunction<double>& mesh_function);
-    virtual void read(MeshFunction<bool>& mesh_function);
-    virtual void read(MeshValueCollection<int>& mesh_markers);
-    virtual void read(MeshValueCollection<std::size_t>& mesh_markers);
-    virtual void read(MeshValueCollection<double>& mesh_markers);
-    virtual void read(MeshValueCollection<bool>& mesh_markers);
-    virtual void read(Parameters& parameters);
-    virtual void read(Table& table);
-    virtual void read(std::vector<int>& x);
-    virtual void read(std::vector<std::size_t>& x);
-    virtual void read(std::vector<double>& x);
-    virtual void read(std::map<std::size_t, int>& map);
-    virtual void read(std::map<std::size_t, std::size_t>& map);
-    virtual void read(std::map<std::size_t, double>& map);
-    virtual void read(std::map<std::size_t, std::vector<int>>& array_map);
-    virtual void read(std::map<std::size_t, std::vector<std::size_t>>& array_map);
-    virtual void read(std::map<std::size_t, std::vector<double>>& array_map);
-    virtual void read(Function& u);
-
     // Output
-    virtual void write(const GenericVector& x);
-    virtual void write(const GenericMatrix& A);
     virtual void write(const Mesh& mesh);
-    virtual void write(const GenericDofMap& dofmap);
-    virtual void write(const LocalMeshData& data);
     virtual void write(const MeshFunction<int>& mesh_function);
     virtual void write(const MeshFunction<std::size_t>& mesh_function);
     virtual void write(const MeshFunction<double>& mesh_function);
@@ -102,20 +71,6 @@ namespace dolfin
     virtual void write(const MeshFunction<double>& mf, double time);
     virtual void write(const MeshFunction<bool>& mf, double time);
     virtual void write(const Function& u, double time);
-
-    virtual void write(const Parameters& parameters);
-    virtual void write(const Table& table);
-    virtual void write(const std::vector<int>& x);
-    virtual void write(const std::vector<std::size_t>& x);
-    virtual void write(const std::vector<double>& x);
-    virtual void write(const std::map<std::size_t, int>& map);
-    virtual void write(const std::map<std::size_t, std::size_t>& map);
-    virtual void write(const std::map<std::size_t, double>& map);
-    virtual void write(const std::map<std::size_t, std::vector<int>>& array_map);
-    virtual void write(const std::map<std::size_t,
-                       std::vector<std::size_t>>& array_map);
-    virtual void write(const std::map<std::size_t,
-                       std::vector<double>>& array_map);
 
     void _read();
     void _write(std::size_t process_number);

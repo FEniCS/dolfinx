@@ -10,10 +10,8 @@ pipelines:
           - pip3 install git+https://bitbucket.org/fenics-project/ffc.git@master
           - mkdir -p build
           - cd build
-          - cmake .. -DCMAKE_BUILD_TYPE=Debug -DDOLFIN_ENABLE_TESTING=OFF
+          - cmake -DCMAKE_BUILD_TYPE=Debug ../
           - make
           - make install
-          - source /usr/local/share/dolfin/dolfin.conf
           - cd ../python
-          - python3 setup.py build
-
+          - python3 setup.py build --debug
