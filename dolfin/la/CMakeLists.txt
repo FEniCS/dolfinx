@@ -2,11 +2,6 @@ set(HEADERS
   CoordinateMatrix.h
   DefaultFactory.h
   dolfin_la.h
-  EigenFactory.h
-  EigenKrylovSolver.h
-  EigenLUSolver.h
-  EigenMatrix.h
-  EigenVector.h
   GenericLinearAlgebraFactory.h
   GenericLinearOperator.h
   GenericLinearSolver.h
@@ -32,7 +27,6 @@ set(HEADERS
   PETScVector.h
   Scalar.h
   SLEPcEigenSolver.h
-  solve.h
   SparsityPattern.h
   TensorLayout.h
   test_nullspace.h
@@ -43,11 +37,6 @@ set(HEADERS
 set(SOURCES
   CoordinateMatrix.cpp
   DefaultFactory.cpp
-  EigenFactory.cpp
-  EigenKrylovSolver.cpp
-  EigenLUSolver.cpp
-  EigenMatrix.cpp
-  EigenVector.cpp
   GenericLinearSolver.cpp
   GenericMatrix.cpp
   IndexMap.cpp
@@ -66,7 +55,6 @@ set(SOURCES
   PETScPreconditioner.cpp
   PETScVector.cpp
   SLEPcEigenSolver.cpp
-  solve.cpp
   SparsityPattern.cpp
   TensorLayout.cpp
   test_nullspace.cpp

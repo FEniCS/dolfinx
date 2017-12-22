@@ -29,7 +29,6 @@
 #include "casters.h"
 
 #include <dolfin/common/Array.h>
-#include <dolfin/la/solve.h>
 #include <dolfin/la/GenericLinearOperator.h>
 #include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/GenericTensor.h>
@@ -43,9 +42,6 @@
 #include <dolfin/la/Scalar.h>
 #include <dolfin/la/TensorLayout.h>
 #include <dolfin/la/DefaultFactory.h>
-#include <dolfin/la/EigenFactory.h>
-#include <dolfin/la/EigenMatrix.h>
-#include <dolfin/la/EigenVector.h>
 #include <dolfin/la/PETScFactory.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
@@ -58,7 +54,6 @@
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/SLEPcEigenSolver.h>
 #include <dolfin/la/SparsityPattern.h>
-#include <dolfin/la/solve.h>
 #include <dolfin/la/VectorSpaceBasis.h>
 #include <dolfin/la/test_nullspace.h>
 
@@ -692,61 +687,6 @@ namespace dolfin_wrappers
       .def("create_vector", [](const dolfin::DefaultFactory &self, const MPICommWrapper comm)
         { return self.create_vector(comm.get()); });
 
-    // dolfin::EigenFactory
-    py::class_<dolfin::EigenFactory, std::shared_ptr<dolfin::EigenFactory>,
-      dolfin::GenericLinearAlgebraFactory>
-      (m, "EigenFactory", "DOLFIN EigenFactory object")
-      .def("instance", &dolfin::EigenFactory::instance)
-      .def("create_matrix", [](const dolfin::EigenFactory &self, const MPICommWrapper comm)
-        { return self.create_matrix(comm.get()); })
-      .def("create_vector", [](const dolfin::EigenFactory &self, const MPICommWrapper comm)
-        { return self.create_vector(comm.get()); });
-
-    // dolfin::EigenVector
-    py::class_<dolfin::EigenVector, std::shared_ptr<dolfin::EigenVector>,
-               dolfin::GenericVector>
-      (m, "EigenVector", "DOLFIN EigenVector object")
-      .def(py::init<>())
-      .def(py::init([](const MPICommWrapper comm)
-        { return std::unique_ptr<dolfin::EigenVector>(new dolfin::EigenVector(comm.get())); }))
-      .def(py::init([](const MPICommWrapper comm, std::size_t N)
-        { return std::unique_ptr<dolfin::EigenVector>(new dolfin::EigenVector(comm.get(), N)); }))
-      .def("array_view", [](dolfin::EigenVector& self) -> Eigen::Ref<Eigen::VectorXd> { return *self.vec(); },
-           "Return a writable numpy array view of the data in the EigenVector");
-
-    // dolfin::EigenMatrix
-    py::class_<dolfin::EigenMatrix, std::shared_ptr<dolfin::EigenMatrix>,
-               dolfin::GenericMatrix>
-      (m, "EigenMatrix", "DOLFIN EigenMatrix object")
-      .def(py::init<>())
-      .def(py::init<std::size_t, std::size_t>())
-      .def("sparray", (dolfin::EigenMatrix::eigen_matrix_type& (dolfin::EigenMatrix::*)()) &dolfin::EigenMatrix::mat,
-           py::return_value_policy::reference_internal)
-      .def("data_view", [](dolfin::EigenMatrix& instance)
-           {
-             auto _data = instance.data();
-             std::size_t nnz = std::get<3>(_data);
-
-             Eigen::Map<const Eigen::VectorXi> rows(std::get<0>(_data), instance.size(0) + 1);
-             Eigen::Map<const Eigen::VectorXi> cols(std::get<1>(_data), nnz);
-             Eigen::Map<const Eigen::VectorXd> values(std::get<2>(_data), nnz);
-
-             return py::make_tuple(rows, cols, values);
-           },
-           py::return_value_policy::reference_internal, "Return CSR matrix data as NumPy arrays (shared data)")
-      .def("data", [](dolfin::EigenMatrix& instance)
-           {
-             auto _data = instance.data();
-             std::size_t nnz = std::get<3>(_data);
-
-             Eigen::VectorXi rows = Eigen::Map<const Eigen::VectorXi>(std::get<0>(_data), instance.size(0) + 1);
-             Eigen::VectorXi cols = Eigen::Map<const Eigen::VectorXi>(std::get<1>(_data), nnz);
-             Eigen::VectorXd values  = Eigen::Map<const Eigen::VectorXd>(std::get<2>(_data), nnz);
-
-             return py::make_tuple(rows, cols, values);
-           },
-           py::return_value_policy::copy, "Return copy of CSR matrix data as NumPy arrays");
-
     // dolfin::GenericLinearSolver
     py::class_<dolfin::GenericLinearSolver, std::shared_ptr<dolfin::GenericLinearSolver>,
                dolfin::Variable>
@@ -995,16 +935,11 @@ namespace dolfin_wrappers
           py::arg("type")="right");
 
     // la free functions
-    m.def("has_linear_algebra_backend", &dolfin::has_linear_algebra_backend);
-    m.def("linear_algebra_backends", &dolfin::linear_algebra_backends);
-    m.def("has_krylov_solver_method", &dolfin::has_krylov_solver_method);
-    m.def("has_krylov_solver_preconditioner", &dolfin::has_krylov_solver_preconditioner);
-    m.def("normalize", &dolfin::normalize, py::arg("x"), py::arg("normalization_type")="average");
+    //m.def("has_linear_algebra_backend", &dolfin::has_linear_algebra_backend);
+    //m.def("linear_algebra_backends", &dolfin::linear_algebra_backends);
+    //m.def("has_krylov_solver_method", &dolfin::has_krylov_solver_method);
+    //m.def("has_krylov_solver_preconditioner", &dolfin::has_krylov_solver_preconditioner);
+    //m.def("normalize", &dolfin::normalize, py::arg("x"), py::arg("normalization_type")="average");
 
-    // la/solve free functions
-    m.def("solve", (std::size_t (*)(const dolfin::GenericLinearOperator&, dolfin::GenericVector&,
-                                    const dolfin::GenericVector&, std::string, std::string)) &dolfin::solve,
-          py::arg("A"), py::arg("x"), py::arg("b"), py::arg("method")="lu",
-          py::arg("preconditioner")="none");
   }
 }

@@ -21,7 +21,6 @@
 // Last changed: 2011-11-11
 
 #include <dolfin/parameter/GlobalParameters.h>
-#include "EigenFactory.h"
 #include "PETScFactory.h"
 #include "DefaultFactory.h"
 
@@ -83,29 +82,6 @@ DefaultFactory::krylov_solver_preconditioners() const
 //-----------------------------------------------------------------------------
 GenericLinearAlgebraFactory& DefaultFactory::factory()
 {
-  // Fallback
-  const std::string default_backend = "Eigen";
-
-  // Get backend from parameter system
-  const std::string backend = dolfin::parameters["linear_algebra_backend"];
-
-  // Choose backend
-  if (backend == "Eigen")
-    return EigenFactory::instance();
-  else if (backend == "PETSc")
-  {
-    #ifdef HAS_PETSC
-    return PETScFactory::instance();
-    #else
-    dolfin_error("DefaultFactory.cpp",
-                 "access linear algebra backend",
-                 "PETSc linear algebra backend is not available");
-    #endif
-  }
-
-  // Fallback
-  log(WARNING, "Linear algebra backend \"" + backend
-      + "\" not available, using " + default_backend + ".");
-  return EigenFactory::instance();
+  return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------

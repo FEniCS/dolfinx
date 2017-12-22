@@ -18,15 +18,11 @@
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/PETScBaseMatrix.h>
 
-#include <dolfin/la/EigenMatrix.h>
-
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScLinearOperator.h>
 #include <dolfin/la/PETScPreconditioner.h>
 #include <dolfin/la/TpetraMatrix.h>
 
-#include <dolfin/la/EigenKrylovSolver.h>
-#include <dolfin/la/EigenLUSolver.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/BelosKrylovSolver.h>
@@ -35,7 +31,6 @@
 #include <dolfin/la/Ifpack2Preconditioner.h>
 
 #include <dolfin/la/CoordinateMatrix.h>
-#include <dolfin/la/EigenVector.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/TpetraVector.h>
 
@@ -46,7 +41,6 @@
 
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/DefaultFactory.h>
-#include <dolfin/la/EigenFactory.h>
 #include <dolfin/la/PETScFactory.h>
 #include <dolfin/la/TpetraFactory.h>
 #include <dolfin/la/SLEPcEigenSolver.h>

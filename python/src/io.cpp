@@ -22,7 +22,6 @@
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
-#include <dolfin/io/File.h>
 #include <dolfin/io/HDF5Attribute.h>
 #include <dolfin/io/HDF5File.h>
 #include <dolfin/io/VTKFile.h>
