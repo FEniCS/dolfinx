@@ -1,7 +1,0 @@
-#!/bin/bash
-
-echo "Running \"$2\" on $1 processes through gdb debugger."
-env=""
-# Example of how to set the environment, if needed
-#env="source /home/skavhaug/.setups/alt1; source ../../dolfin.conf;"
-mpirun -np $1 -x DISPLAY=:0.0 xterm -e "$env gdb $2"
