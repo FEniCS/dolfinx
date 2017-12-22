@@ -31,8 +31,6 @@
 
 #include <ufc.h>
 #include <dolfin/fem/fem_utils.h>
-#include <dolfin/fem/assemble.h>
-#include <dolfin/fem/assemble_local.h>
 #include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>
@@ -491,28 +489,6 @@ namespace dolfin_wrappers
       .def("check_ref_count", &dolfin::PETScDMCollection::check_ref_count)
       .def("get_dm", &dolfin::PETScDMCollection::get_dm);
 #endif
-
-    // Assemble free functions
-    m.def("assemble", (void (*)(dolfin::GenericTensor&, const dolfin::Form&)) &dolfin::assemble);
-    m.def("assemble", (double (*)(const dolfin::Form&)) &dolfin::assemble);
-
-    m.def("assemble_system", (void (*)(dolfin::GenericMatrix&, dolfin::GenericVector&,
-                                       const dolfin::Form&, const dolfin::Form&,
-                                       std::vector<std::shared_ptr<const dolfin::DirichletBC>>))
-          &dolfin::assemble_system);
-
-    m.def("assemble_system", (void (*)(dolfin::GenericMatrix&, dolfin::GenericVector&,
-                                       const dolfin::Form&, const dolfin::Form&,
-                                       std::vector<std::shared_ptr<const dolfin::DirichletBC>>,
-                                       const dolfin::GenericVector&))
-          &dolfin::assemble_system);
-
-    m.def("assemble_local", [](const dolfin::Form& form, const dolfin::Cell& cell)
-          {
-            Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> m;
-            dolfin::assemble_local(m, form, cell);
-            return m;
-          });
 
     // FEM utils free functions
     m.def("create_mesh", dolfin::create_mesh);

@@ -1,6 +1,4 @@
 set(HEADERS
-  assemble.h
-  assemble_local.h
   AssemblerBase.h
   Assembler.h
   BasisFunction.h
@@ -25,8 +23,6 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
-  assemble.cpp
-  assemble_local.cpp
   AssemblerBase.cpp
   Assembler.cpp
   DirichletBC.cpp

@@ -11,8 +11,6 @@
 #include <dolfin/fem/DiscreteOperators.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/PointSource.h>
-#include <dolfin/fem/assemble.h>
-#include <dolfin/fem/assemble_local.h>
 #include <dolfin/fem/LocalAssembler.h>
 #include <dolfin/fem/LocalSolver.h>
 #include <dolfin/fem/Form.h>

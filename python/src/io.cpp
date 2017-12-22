@@ -26,7 +26,6 @@
 #include <dolfin/io/HDF5File.h>
 #include <dolfin/io/VTKFile.h>
 #include <dolfin/io/XDMFFile.h>
-#include <dolfin/io/X3DOM.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/la/GenericVector.h>
@@ -375,28 +374,5 @@ namespace dolfin_wrappers
              instance.read_checkpoint(*_u, name, counter);
            },
            py::arg("u"), py::arg("name"), py::arg("counter")=-1);
-
-
-    py::class_<dolfin::X3DOMParameters>(m, "X3DOMParameters")
-      .def(py::init<>())
-      .def("get_diffuse_color", &dolfin::X3DOMParameters::get_diffuse_color)
-      .def("set_diffuse_color", [](dolfin::X3DOMParameters& self, py::array_t<double> color)
-           {
-             if (color.ndim() != 1 or color.shape(0) != 3)
-               throw pybind11::type_error("Color must be a 1D array or length 3");
-             self.set_diffuse_color({{*color.data(0), *color.data(1), *color.data(2)}});
-           });
-
-    // dolfin::X3DOM
-    py::class_<dolfin::X3DOM>(m, "X3DOM")
-      .def_static("str", (std::string (*)(const dolfin::Mesh&, dolfin::X3DOMParameters)) &dolfin::X3DOM::str,
-                  py::arg("mesh"), py::arg("parameters")=dolfin::X3DOMParameters())
-      .def_static("str", (std::string (*)(const dolfin::Function&, dolfin::X3DOMParameters)) &dolfin::X3DOM::str,
-                  py::arg("u"), py::arg("parameters")=dolfin::X3DOMParameters())
-      .def_static("html", (std::string (*)(const dolfin::Mesh&, dolfin::X3DOMParameters)) &dolfin::X3DOM::html,
-                  py::arg("mesh"), py::arg("parameters")=dolfin::X3DOMParameters())
-      .def_static("html", (std::string (*)(const dolfin::Function&, dolfin::X3DOMParameters)) &dolfin::X3DOM::html,
-                  py::arg("u"), py::arg("parameters")=dolfin::X3DOMParameters());
-
   }
 }

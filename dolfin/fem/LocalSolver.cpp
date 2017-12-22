@@ -26,6 +26,7 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
+#include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/LocalAssembler.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -35,7 +36,6 @@
 #include <dolfin/log/Progress.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
-#include "assemble.h"
 #include "Form.h"
 #include "GenericDofMap.h"
 #include "UFC.h"
@@ -69,7 +69,8 @@ void LocalSolver::solve_global_rhs(Function& u) const
     = u.vector()->factory().create_vector(u.vector()->mpi_comm());
   dolfin_assert(b);
   dolfin_assert(_formL);
-  assemble(*b, *_formL);
+  Assembler assembler;
+  assembler.assemble(*b, *_formL);
 
   // Extract the vector where the solution will be stored
   dolfin_assert(u.vector());
