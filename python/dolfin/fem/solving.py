@@ -23,6 +23,8 @@ VariationalProblem/Solver classes as well as the solve function.
 
 import ufl
 import dolfin.cpp as cpp
+from dolfin.cpp.la import PETScVector, PETScMatrix, LUSolver
+from dolfin.cpp.fem import SystemAssembler
 from dolfin.function.function import Function
 from dolfin.fem.form import Form
 import dolfin.fem.formmanipulations as formmanipulations
@@ -233,14 +235,27 @@ def _solve_varproblem(*args, **kwargs):
     # Solve linear variational problem
     if isinstance(eq.lhs, ufl.Form) and isinstance(eq.rhs, ufl.Form):
 
-        # Create problem
-        problem = LinearVariationalProblem(eq.lhs, eq.rhs, u, bcs,
-                                           form_compiler_parameters=form_compiler_parameters)
+        A = PETScMatrix()
+        b = PETScVector()
+        a = Form(eq.lhs)
+        L = Form(eq.rhs)
 
+        assembler = SystemAssembler(a, L, bcs)
+        assembler.assemble(A, b)
+
+        solver = LUSolver(A)
+
+        solver.solve(u.vector(), b)
+
+        # Create problem
+#        problem = LinearVariationalProblem(eq.lhs, eq.rhs, u, bcs,
+#                                           form_compiler_parameters=form_compiler_parameters)
         # Create solver and call solve
-        solver = LinearVariationalSolver(problem)
-        solver.parameters.update(solver_parameters)
-        solver.solve()
+#        solver = LinearVariationalSolver(problem)
+#        solver.parameters.update(solver_parameters)
+#        solver.solve()
+
+
 
     # Solve nonlinear variational problem
     else:

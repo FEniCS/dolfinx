@@ -176,13 +176,13 @@ detail if desired.
 
 A :py:class:`Function <dolfin.functions.function.Function>` can be
 manipulated in various ways, in particular, it can be plotted and
-saved to file. Here, we output the solution to a ``VTK`` file (using
-the suffix ``.pvd``) for later visualization and also plot it using
+saved to file. Here, we output the solution to an ``XDMF`` file
+for later visualization and also plot it using
 the :py:func:`plot <dolfin.common.plot.plot>` command: ::
 
-    # Save solution in VTK format
-    file = File("poisson.pvd")
-    file << u
+    # Save solution in XDMF format
+    file = XDMFFile(MPI.comm_world, "poisson.xdmf")
+    file.write(u, XDMFFile.Encoding.ASCII)
 
     # Plot solution
     import matplotlib.pyplot as plt
