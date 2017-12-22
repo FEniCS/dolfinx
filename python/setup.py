@@ -61,7 +61,9 @@ class CMakeBuild(build_ext):
             build_args += ['--', '/m']
         else:
             cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-            if "CIRCLECI" in os.environ:
+            if "CI" in os.environ:
+                build_args += ['--', '-j1']
+            elif "CIRCLECI" in os.environ:
                 build_args += ['--', '-j2']
             else:
                 num_build_threads = max(1, multiprocessing.cpu_count() - 1)
