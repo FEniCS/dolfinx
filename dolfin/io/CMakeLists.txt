@@ -9,8 +9,6 @@ set(HEADERS
   HDF5Utility.h
   VTKFile.h
   VTKWriter.h
-  X3DFile.h
-  X3DOM.h
   XDMFFile.h
   xmlutils.h
   PARENT_SCOPE)
@@ -25,8 +23,6 @@ set(SOURCES
   pugixml.cpp
   VTKFile.cpp
   VTKWriter.cpp
-  X3DFile.cpp
-  X3DOM.cpp
   XDMFFile.cpp
   xmlutils.cpp
   PARENT_SCOPE)
