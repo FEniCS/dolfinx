@@ -21,9 +21,7 @@ set(HEADERS
   MeshOrdering.h
   MeshPartitioning.h
   MeshQuality.h
-  MeshRenumbering.h
   MeshTopology.h
-  MeshTransformation.h
   MeshValueCollection.h
   PeriodicBoundaryComputation.h
   PointCell.h
@@ -55,9 +53,7 @@ set(SOURCES
   MeshOrdering.cpp
   MeshPartitioning.cpp
   MeshQuality.cpp
-  MeshRenumbering.cpp
   MeshTopology.cpp
-  MeshTransformation.cpp
   PeriodicBoundaryComputation.cpp
   PointCell.cpp
   QuadrilateralCell.cpp

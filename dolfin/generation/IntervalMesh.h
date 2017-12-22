@@ -50,7 +50,7 @@ namespace dolfin
     /// @endcode
     static Mesh create(MPI_Comm comm, std::size_t n, std::array<double, 2> x)
     {
-      Mesh mesh;
+      Mesh mesh(comm);
       build(mesh, n, x);
       return mesh;
     }

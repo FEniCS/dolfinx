@@ -23,9 +23,6 @@
 #include <dolfin/mesh/LocalMeshValueCollection.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
-#include <dolfin/mesh/MeshColoring.h>
-#include <dolfin/mesh/MeshRenumbering.h>
-#include <dolfin/mesh/MeshTransformation.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/DomainBoundary.h>

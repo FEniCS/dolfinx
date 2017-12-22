@@ -41,19 +41,12 @@
 #include "LocalMeshData.h"
 #include "MeshOrdering.h"
 #include "MeshPartitioning.h"
-#include "MeshRenumbering.h"
-#include "MeshTransformation.h"
 #include "TopologyComputation.h"
 #include "Vertex.h"
 #include "Mesh.h"
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-Mesh::Mesh() : Mesh(MPI_COMM_WORLD)
-{
-  // Do nothing
-}
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm) : Variable("mesh", "DOLFIN mesh"),
                             _ordered(false),
@@ -231,26 +224,6 @@ bool Mesh::ordered() const
 
   _ordered = MeshOrdering::ordered(*this);
   return _ordered;
-}
-//-----------------------------------------------------------------------------
-void Mesh::scale(double factor)
-{
-  MeshTransformation::scale(*this, factor);
-}
-//-----------------------------------------------------------------------------
-void Mesh::translate(const Point& point)
-{
-  MeshTransformation::translate(*this, point);
-}
-//-----------------------------------------------------------------------------
-void Mesh::rotate(double angle, std::size_t axis)
-{
-  MeshTransformation::rotate(*this, angle, axis);
-}
-//-----------------------------------------------------------------------------
-void Mesh::rotate(double angle, std::size_t axis, const Point& point)
-{
-  MeshTransformation::rotate(*this, angle, axis, point);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const

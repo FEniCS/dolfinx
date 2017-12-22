@@ -80,9 +80,6 @@ namespace dolfin
   public:
 
     /// Create empty mesh
-    Mesh();
-
-    /// Create empty mesh
     Mesh(MPI_Comm comm);
 
     /// Copy constructor.
@@ -283,38 +280,6 @@ namespace dolfin
     /// @return bool
     ///         The return values is true iff the mesh is ordered.
     bool ordered() const;
-
-    /// Scale mesh coordinates with given factor.
-    ///
-    /// *Arguments*
-    ///     factor (double)
-    ///         The factor defining the scaling.
-    void scale(double factor);
-
-    /// Translate mesh according to a given vector.
-    ///
-    /// @param  point (Point)
-    ///         The vector defining the translation.
-    void translate(const Point& point);
-
-    /// Rotate mesh around a coordinate axis through center of mass
-    /// of all mesh vertices
-    ///
-    /// @param    angle (double)
-    ///         The number of degrees (0-360) of rotation.
-    /// @param    axis (std::size_t)
-    ///         The coordinate axis around which to rotate the mesh.
-    void rotate(double angle, std::size_t axis=2);
-
-    /// Rotate mesh around a coordinate axis through a given point
-    ///
-    /// @param    angle (double)
-    ///         The number of degrees (0-360) of rotation.
-    /// @param    axis (std::size_t)
-    ///         The coordinate axis around which to rotate the mesh.
-    /// @param    point (_Point_)
-    ///         The point around which to rotate the mesh.
-    void rotate(double angle, std::size_t axis, const Point& point);
 
     /// Compute minimum cell size in mesh, measured greatest distance
     /// between any two vertices of a cell.

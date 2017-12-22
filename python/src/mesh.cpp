@@ -42,7 +42,6 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/SubsetIterator.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
-#include <dolfin/mesh/MeshTransformation.h>
 #include <dolfin/function/Expression.h>
 
 #include "casters.h"
@@ -112,7 +111,6 @@ namespace dolfin_wrappers
     // dolfin::Mesh
     py::class_<dolfin::Mesh, std::shared_ptr<dolfin::Mesh>, dolfin::Variable>
       (m, "Mesh", py::dynamic_attr(), "DOLFIN Mesh object")
-      .def(py::init<>())
       .def(py::init<const dolfin::Mesh&>())
       .def(py::init([](const MPICommWrapper comm)
                     { return std::unique_ptr<dolfin::Mesh>(new dolfin::Mesh(comm.get())); }))
@@ -159,15 +157,10 @@ namespace dolfin_wrappers
       .def("ordered", &dolfin::Mesh::ordered)
       .def("rmax", &dolfin::Mesh::rmax)
       .def("rmin", &dolfin::Mesh::rmin)
-      .def("rotate", (void (dolfin::Mesh::*)(double, std::size_t, const dolfin::Point&))
-           &dolfin::Mesh::rotate)
-      .def("rotate", (void (dolfin::Mesh::*)(double, std::size_t)) &dolfin::Mesh::rotate,
-                      py::arg("angle"), py::arg("axis")=2)
       .def("num_entities_global", &dolfin::Mesh::num_entities_global)
       .def("topology", (dolfin::MeshTopology& (dolfin::Mesh::*)())
            &dolfin::Mesh::topology, "Mesh topology",
            py::return_value_policy::reference_internal)
-      .def("translate", &dolfin::Mesh::translate)
       .def("type", (const dolfin::CellType& (dolfin::Mesh::*)() const) &dolfin::Mesh::type,
            py::return_value_policy::reference)
       .def("ufl_id", [](const dolfin::Mesh& self){ return self.id(); })
@@ -455,14 +448,6 @@ namespace dolfin_wrappers
       (m, "PeriodicBoundaryComputation")
       .def_static("compute_periodic_pairs", &dolfin::PeriodicBoundaryComputation::compute_periodic_pairs)
       .def_static("masters_slaves", &dolfin::PeriodicBoundaryComputation::masters_slaves);
-
-    // dolfin::MeshTransformation
-    py::class_<dolfin::MeshTransformation>(m, "MeshTransformation")
-      .def_static("translate", &dolfin::MeshTransformation::translate)
-      .def_static("rescale", &dolfin::MeshTransformation::rescale)
-      .def_static("rotate", (void (*)(dolfin::Mesh&, double, std::size_t)) &dolfin::MeshTransformation::rotate)
-      .def_static("rotate", (void (*)(dolfin::Mesh&, double, std::size_t, const dolfin::Point&))
-                  &dolfin::MeshTransformation::rotate);
 
   }
 
