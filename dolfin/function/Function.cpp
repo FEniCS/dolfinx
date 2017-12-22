@@ -31,7 +31,6 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/geometry/Point.h>
-#include <dolfin/io/XMLFile.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/log/log.h>

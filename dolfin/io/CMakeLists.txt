@@ -12,16 +12,7 @@ set(HEADERS
   X3DFile.h
   X3DOM.h
   XDMFFile.h
-  XMLArray.h
-  XMLFile.h
-  XMLFunctionData.h
-  XMLMeshFunction.h
-  XMLMesh.h
-  XMLMeshValueCollection.h
-  XMLParameters.h
-  XMLTable.h
   xmlutils.h
-  XMLVector.h
   PARENT_SCOPE)
 
 set(SOURCES
@@ -37,11 +28,5 @@ set(SOURCES
   X3DFile.cpp
   X3DOM.cpp
   XDMFFile.cpp
-  XMLFile.cpp
-  XMLFunctionData.cpp
-  XMLMesh.cpp
-  XMLParameters.cpp
-  XMLTable.cpp
   xmlutils.cpp
-  XMLVector.cpp
   PARENT_SCOPE)
