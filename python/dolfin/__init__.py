@@ -38,8 +38,7 @@ from .cpp.common import (Variable, has_debug, has_hdf5, has_scotch,
                          has_petsc, has_petsc4py, has_parmetis,
                          has_slepc, has_slepc4py, git_commit_hash,
                          DOLFIN_EPS, DOLFIN_PI, TimingClear, TimingType,
-                         timing, timings, list_timings, dump_timings_to_xml,
-                         SubSystemsManager)
+                         timing, timings, list_timings, SubSystemsManager)
 
 if has_hdf5():
     from .cpp.io import HDF5File
@@ -52,8 +51,6 @@ from .cpp.fem import (FiniteElement, DofMap, Assembler,
                       get_coordinates, create_mesh, set_coordinates,
                       vertex_to_dof_map, dof_to_vertex_map,
                       PointSource, DiscreteOperators,
-                      LinearVariationalSolver,
-                      NonlinearVariationalSolver,
                       SparsityPatternBuilder)
 
 from .cpp.geometry import (BoundingBoxTree,
@@ -62,11 +59,10 @@ from .cpp.geometry import (BoundingBoxTree,
                            intersect)
 from .cpp.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                              UnitDiscMesh,
-                             UnitTriangleMesh, UnitCubeMesh,
-                             UnitSquareMesh, UnitIntervalMesh,
+                             UnitTriangleMesh,
                              SphericalShellMesh)
 from .cpp.graph import GraphBuilder
-from .cpp.io import File, XDMFFile, VTKFile
+from .cpp.io import XDMFFile, VTKFile
 from .cpp.la import (has_linear_algebra_backend,
                      linear_algebra_backends,
                      has_krylov_solver_method,
@@ -78,24 +74,19 @@ if has_linear_algebra_backend('PETSc'):
                          PETScOptions, PETScLUSolver,
                          PETScKrylovSolver, PETScPreconditioner)
     from .cpp.fem import PETScDMCollection
-    from .cpp.nls import (PETScSNESSolver, PETScTAOSolver, TAOLinearBoundSolver)
-
-if has_linear_algebra_backend('Tpetra'):
-    from .cpp.la import (TpetraVector, TpetraMatrix, TpetraFactory,
-                         MueluPreconditioner, BelosKrylovSolver)
+    from .cpp.nls import PETScSNESSolver
 
 if has_slepc():
     from .cpp.la import SLEPcEigenSolver
 
 from .cpp.la import (IndexMap, DefaultFactory, Matrix, Vector, Scalar,
                      EigenMatrix, EigenVector, EigenFactory, LUSolver,
-                     KrylovSolver, TensorLayout, LinearOperator,
-                     BlockMatrix, BlockVector)
+                     KrylovSolver, TensorLayout, LinearOperator)
 from .cpp.la import GenericVector  # Remove when pybind11 transition complete
 from .cpp.log import (info, Table, set_log_level, get_log_level, LogLevel)
 from .cpp.math import ipow, near, between
 from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, MeshEntity,
-                       MeshColoring, CellType, Cell, Facet, Face,
+                       CellType, Cell, Facet, Face,
                        Edge, Vertex, cells, facets, faces, edges,
                        entities, vertices, SubDomain,
                        MeshEditor, MeshQuality,
@@ -107,7 +98,6 @@ from .cpp.parameter import Parameters, parameters
 from .cpp.io import X3DOM, X3DOMParameters
 
 # Import Python modules
-from . import io
 from . import la
 from . import mesh
 from . import parameter
@@ -124,8 +114,7 @@ from .fem.dirichletbc import DirichletBC, AutoSubDomain
 from .fem.interpolation import interpolate
 from .fem.projection import project
 from .fem.solvers import LocalSolver
-from .fem.solving import (solve, LinearVariationalProblem,
-                          NonlinearVariationalProblem)
+from .fem.solving import solve
 from .fem.formmanipulations import (derivative, adjoint, increase_order, tear)
 
 from .function.functionspace import (FunctionSpace,

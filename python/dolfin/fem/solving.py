@@ -28,7 +28,6 @@ from dolfin.fem.form import Form
 import dolfin.fem.formmanipulations as formmanipulations
 from dolfin.fem.formmanipulations import derivative
 import dolfin.la.solver
-from dolfin.fem.problem import LinearVariationalProblem, NonlinearVariationalProblem
 
 __all__ = ["LinearVariationalProblem",
            "LinearVariationalSolver",
@@ -75,7 +74,6 @@ class LocalSolver(cpp.fem.LocalSolver):
 # FIXME: The import here are here to avoid a circular dependency
 # (ugly, should fix)
 # Solver classes are imported directly
-from dolfin.cpp.fem import LinearVariationalSolver, NonlinearVariationalSolver  # noqa
 
 
 # Solve function handles both linear systems and variational problems
