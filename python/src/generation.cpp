@@ -54,16 +54,6 @@ namespace dolfin_wrappers
                   py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("cell_type"),
                   py::arg("diagonal")="right");
 
-    // dolfin::UnitDiscMesh
-    py::class_<dolfin::UnitDiscMesh>(m, "UnitDiscMesh")
-      .def_static("create", [](const MPICommWrapper comm, std::size_t n, std::size_t degree, std::size_t gdim)
-                  { return dolfin::UnitDiscMesh::create(comm.get(), n, degree, gdim); });
-
-    // dolfin::SphericalShellMesh
-    py::class_<dolfin::SphericalShellMesh>(m, "SphericalShellMesh")
-      .def_static("create", [](const MPICommWrapper comm, std::size_t degree)
-                  { return dolfin::SphericalShellMesh::create(comm.get(), degree); });
-
     // dolfin::UnitTriangleMesh
     py::class_<dolfin::UnitTriangleMesh>(m, "UnitTriangleMesh")
       .def_static("create", &dolfin::UnitTriangleMesh::create);

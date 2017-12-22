@@ -90,7 +90,7 @@ void BoxMesh::build_tet(Mesh& mesh, const std::array<Point,2 >& p,
   editor.open(mesh, CellType::Type::tetrahedron, 3, 3);
 
   // Storage for vertex coordinates
-  std::vector<double> x(3);
+  Point x;
 
   // Create vertices
   editor.init_vertices_global((nx + 1)*(ny + 1)*(nz + 1),
@@ -105,7 +105,7 @@ void BoxMesh::build_tet(Mesh& mesh, const std::array<Point,2 >& p,
       for (std::size_t ix = 0; ix <= nx; ix++)
       {
         x[0] = a + (static_cast<double>(ix))*(b-a) / static_cast<double>(nx);
-        editor.add_vertex(vertex, x);
+        editor.add_vertex(vertex, vertex, x);
         vertex++;
       }
     }
@@ -178,7 +178,7 @@ void BoxMesh::build_hex(Mesh& mesh, std::array<std::size_t, 3> n)
   editor.init_cells_global(nx*ny*nz, nx*ny*nz);
 
   // Storage for vertices
-  std::vector<double> x(3);
+  Point x;
 
   const double a = 0.0;
   const double b = 1.0;

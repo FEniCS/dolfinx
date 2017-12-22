@@ -43,7 +43,8 @@ dolfin::Mesh UnitTetrahedronMesh::create()
 
   // Create vertices
   editor.init_vertices_global(4, 4);
-  std::vector<double> x(3);
+  Point x;
+
   x[0] = 0.0; x[1] = 0.0; x[2] = 0.0;
   editor.add_vertex(0, x);
 

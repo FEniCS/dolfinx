@@ -98,7 +98,7 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
   }
 
   // Storage for vertices
-  std::vector<double> x(2);
+  Point x;
 
   // Create main vertices:
   std::size_t vertex = 0;
@@ -237,7 +237,7 @@ void RectangleMesh::build_quad(Mesh& mesh, const std::array<Point, 2>& p,
   editor.init_cells_global(nx*ny, nx*ny);
 
   // Storage for vertices
-  std::vector<double> x(2);
+  Point x;
 
   const double a = 0.0;
   const double b = 1.0;
