@@ -123,7 +123,6 @@ namespace dolfin_wrappers
             std::set<dolfin::TimingType> _type(type.begin(), type.end());
             dolfin::list_timings(clear, _type);
           });
-    m.def("dump_timings_to_xml", &dolfin::dump_timings_to_xml);
 
     // dolfin::SubSystemsManager
     py::class_<dolfin::SubSystemsManager, std::unique_ptr<dolfin::SubSystemsManager, py::nodelete>>

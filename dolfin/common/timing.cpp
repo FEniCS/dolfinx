@@ -60,11 +60,6 @@ void dolfin::list_timings(TimingClear clear, std::set<TimingType> type)
   LogManager::logger().list_timings(clear, type);
 }
 //-----------------------------------------------------------------------------
-void dolfin::dump_timings_to_xml(std::string filename, TimingClear clear)
-{
-  LogManager::logger().dump_timings_to_xml(filename, clear);
-}
-//-----------------------------------------------------------------------------
 std::tuple<std::size_t, double, double, double>
   dolfin::timing(std::string task, TimingClear clear)
 {
