@@ -132,20 +132,6 @@ if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   target_link_libraries(dolfin PRIVATE PETSC::petsc_static)
 endif()
 
-# UMFPACK
-if (DOLFIN_ENABLE_UMFPACK AND UMFPACK_FOUND)
-  target_compile_definitions(dolfin PUBLIC HAS_UMFPACK)
-  target_link_libraries(dolfin PRIVATE ${UMFPACK_LIBRARIES})
-  target_include_directories(dolfin SYSTEM PRIVATE ${UMFPACK_INCLUDE_DIRS})
-endif()
-
-# CHOLMOD
-if (DOLFIN_ENABLE_CHOLMOD AND CHOLMOD_FOUND)
-  target_compile_definitions(dolfin PUBLIC HAS_CHOLMOD)
-  target_link_libraries(dolfin PRIVATE ${CHOLMOD_LIBRARIES})
-  target_include_directories(dolfin SYSTEM PRIVATE ${CHOLMOD_INCLUDE_DIRS})
-endif()
-
 # SCOTCH
 if (DOLFIN_ENABLE_SCOTCH AND SCOTCH_FOUND)
   target_compile_definitions(dolfin PUBLIC HAS_SCOTCH)
@@ -192,17 +178,11 @@ endif()
 include_directories(BEFORE ${DOLFIN_SOURCE_DIR})
 
 # Add CXX definitions
-#add_definitions(${DOLFIN_CXX_DEFINITIONS})
 target_compile_definitions(dolfin PUBLIC DOLFIN_VERSION="${DOLFIN_VERSION}")
 
 # Just add git revision flag to the one affected file
 set_source_files_properties(common/defines.cpp PROPERTIES COMPILE_FLAGS
   "-DDOLFIN_GIT_COMMIT_HASH=\\\"${GIT_COMMIT_HASH}\\\" -DUFC_SIGNATURE=\\\"${UFC_SIGNATURE}\\\"")
-
-# Add flags
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
-#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${DOLFIN_LINK_FLAGS}")
-#set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${DOLFIN_LINK_FLAGS}")
 
 #------------------------------------------------------------------------------
 # Install

@@ -1,4 +1,0 @@
-#!/bin/bash
-
-# Helper script to print the version of DOLFIN
-echo @DOLFIN_VERSION@

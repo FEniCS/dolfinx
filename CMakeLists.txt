@@ -17,27 +17,16 @@ if (NOT DOLFIN_VERSION_RELEASE)
 endif()
 
 #------------------------------------------------------------------------------
-# Require and use C++11
+# Require and use C++14
 
 # Use C++11
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
-# Require C++11
+# Require C++14
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Do not enable compler-specific extensions
 set(CMAKE_CXX_EXTENSIONS OFF)
-
-#------------------------------------------------------------------------------
-# Check compiler version
-
-# Check for GCC version - earlier versions have insuffcient C++11
-# support, or bugs.
-if (CMAKE_COMPILER_IS_GNUCXX)
-  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8.3)
-    message(FATAL_ERROR "GCC version must be at least 4.8.3 (for sufficient C++11  support and to avoid some compiler bugs). You have version ${CMAKE_CXX_COMPILER_VERSION}")
-  endif()
-endif()
 
 #------------------------------------------------------------------------------
 # Get GIT changeset, if available
@@ -71,7 +60,7 @@ set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
 
 # Make sure CMake uses the correct DOLFINConfig.cmake for tests and demos
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfin)
+#set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfin)
 
 #------------------------------------------------------------------------------
 # Configurable options for how we want to build
@@ -82,23 +71,19 @@ option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
 option(DOLFIN_AUTO_DETECT_MPI "Detect MPI automatically (turn this off to use the MPI compiler wrappers directly via setting CXX, CXX, FC)." ON)
 option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
-option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
-option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
-option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
+#option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
-option(DOLFIN_ENABLE_GEOMETRY_DEBUGGING "Enable geometry debugging (developers only; requires libcgal-dev and libcgal-qt5-dev)." OFF)
+#option(DOLFIN_ENABLE_GEOMETRY_DEBUGGING "Enable geometry debugging (developers only; requires libcgal-dev and libcgal-qt5-dev)." OFF)
 
 add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFIN with shared libraries.")
 add_feature_info(CMAKE_USE_RELATIVE_PATHS CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects.")
 add_feature_info(DOLFIN_AUTO_DETECT_MPI DOLFIN_AUTO_DETECT_MPI "Detect MPI automatically (turn this off to use the MPI compiler wrappers directly via setting CXX, CXX, FC).")
-add_feature_info(DOLFIN_ENABLE_CODE_COVERAGE DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage.")
+#add_feature_info(DOLFIN_ENABLE_CODE_COVERAGE DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage.")
 add_feature_info(DOLFIN_WITH_LIBRARY_VERSION DOLFIN_WITH_LIBRARY_VERSION "Build with library version information.")
-add_feature_info(DOLFIN_ENABLE_BENCHMARKS DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs.")
-add_feature_info(DOLFIN_ENABLE_DOCS DOLFIN_ENABLE_DOCS "Enable generation of documentation.")
 add_feature_info(DOLFIN_SKIP_BUILD_TESTS DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
 add_feature_info(DOLFIN_DEPRECATION_ERROR DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors.")
-add_feature_info(DOLFIN_ENABLE_GEOMETRY_DEBUGGING DOLFIN_ENABLE_GEOMETRY_DEBUGGING "Enable geometry debugging.")
+#add_feature_info(DOLFIN_ENABLE_GEOMETRY_DEBUGGING DOLFIN_ENABLE_GEOMETRY_DEBUGGING "Enable geometry debugging.")
 
 # Add shared library paths so shared libs in non-system paths are found
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
@@ -126,8 +111,6 @@ list(APPEND OPTIONAL_PACKAGES "MPI")
 list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "Trilinos")
-list(APPEND OPTIONAL_PACKAGES "UMFPACK")
-list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
 list(APPEND OPTIONAL_PACKAGES "zlib")
@@ -183,10 +166,10 @@ set(CMAKE_CXX_FLAGS_DEVELOPER "${DOLFIN_CXX_DEVELOPER_FLAGS}" CACHE STRING
   "Flags used by the compiler during development." FORCE)
 
 # Add flags for generating code coverage reports
-if (DOLFIN_ENABLE_CODE_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
-endif()
+#if (DOLFIN_ENABLE_CODE_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
+#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
+#  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
+#endif()
 
 # Settings for Intel compilers
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
@@ -194,27 +177,27 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
 
   # Stop spurious warnings from older Intel compilers
-  if("${CMAKE_CXX_COMPILER_VERSION}" LESS "13")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd654,1125")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -wd654,1125")
-    set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -wd654,1125")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -wd654,1125")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -wd654,1125")
-  endif()
+  #if("${CMAKE_CXX_COMPILER_VERSION}" LESS "13")
+  #  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd654,1125")
+  #  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -wd654,1125")
+  #  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -wd654,1125")
+  #  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -wd654,1125")
+  #  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -wd654,1125")
+  #endif()
 endif()
 
 # Set system include flags to get around CMake bug on OSX with gcc See
 # http://public.kitware.com/Bug/print_bug_page.php?bug_id=10837
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
-endif()
+#if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+#  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
+#endif()
 
-if (APPLE)
-  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
-  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -Wno-long-long")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-long-long")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -Wno-long-long")
-endif()
+#if (APPLE)
+#  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
+#  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -Wno-long-long")
+#  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-long-long")
+#  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -Wno-long-long")
+#endif()
 
 #------------------------------------------------------------------------------
 # Check for MPI
@@ -329,27 +312,6 @@ if (DOLFIN_ENABLE_MPI AND MPI_C_FOUND)
       URL "https://www.labri.fr/perso/pelegrin/scotch"
       PURPOSE "Enables parallel graph partitioning")
   endif()
-endif()
-
-# Check for UMFPACK
-if (DOLFIN_ENABLE_UMFPACK)
-  find_package(AMD QUIET)
-  find_package(BLAS QUIET)
-  set_package_properties(BLAS PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Basic Linear Algebra Subprograms"
-    URL "http://netlib.org/blas/")
-  find_package(UMFPACK)
-  set_package_properties(UMFPACK PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Sparse LU factorization library"
-    URL "http://faculty.cse.tamu.edu/davis/suitesparse.html")
-endif()
-
-# Check for CHOLMOD
-if (DOLFIN_ENABLE_CHOLMOD)
-  find_package(CHOLMOD)
-  set_package_properties(CHOLMOD PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Sparse Cholesky factorization library for sparse matrices"
-    URL "http://faculty.cse.tamu.edu/davis/suitesparse.html")
 endif()
 
 # Check for HDF5
@@ -508,19 +470,6 @@ set(DOLFIN_ETC_DIR "etc" CACHE PATH "Configuration file directory.")
 add_subdirectory(dolfin)
 
 #------------------------------------------------------------------------------
-# Installation of DOLFIN utilities
-
-set(DOLFIN_UTILITIES
-  ${DOLFIN_SOURCE_DIR}/scripts/dolfin-convert/dolfin-convert
-  ${DOLFIN_SOURCE_DIR}/scripts/dolfin-order/dolfin-order
-  ${DOLFIN_SOURCE_DIR}/scripts/dolfin-plot/dolfin-plot)
-
-install(FILES ${DOLFIN_UTILITIES}
-  DESTINATION ${DOLFIN_BIN_DIR}
-  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-  COMPONENT RuntimeExecutables)
-
-#------------------------------------------------------------------------------
 # Generate and install helper file dolfin.conf
 
 # FIXME: Can CMake provide the library path name variable?
@@ -537,40 +486,6 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in
 install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
         DESTINATION ${DOLFIN_SHARE_DIR}
         COMPONENT Development)
-
-#------------------------------------------------------------------------------
-# Generate and install helper scripts dolfin-version, fenics-version
-
-# FIXME: not cross-platform compatible
-
-# Create and install dolfin-version
-configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-version.in
-               ${CMAKE_BINARY_DIR}/dolfin-version @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
-  DESTINATION ${DOLFIN_BIN_DIR}
-  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
-  OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-  COMPONENT RuntimeExecutables)
-
-# Create and install fenics-version
-configure_file(${DOLFIN_CMAKE_DIR}/templates/fenics-version.in
-               ${CMAKE_BINARY_DIR}/fenics-version @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/fenics-version
-        DESTINATION ${DOLFIN_BIN_DIR}
-  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
-        OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-        COMPONENT RuntimeExecutables)
-
-#------------------------------------------------------------------------------
-# Generate and install utility script dolfin-get-demos
-
-configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-get-demos.in
-  ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
-  DESTINATION ${DOLFIN_BIN_DIR}
-  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
-  OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-  COMPONENT RuntimeExecutables)
 
 #------------------------------------------------------------------------------
 # Generate demo files from rst
@@ -706,17 +621,6 @@ install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
 install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 
 #------------------------------------------------------------------------------
-# Generate documentation
-
-#if (DOLFIN_ENABLE_DOCS)
-#  if (NOT SPHINX_FOUND)
-#    message(STATUS "Disabling generation of documentation because Sphinx is missing.")
-#  else()
-#    add_subdirectory(doc-old)
-#  endif()
-#endif()
-
-#------------------------------------------------------------------------------
 # Add tests and benchmarks
 
 enable_testing()
@@ -738,42 +642,6 @@ add_custom_target(demos
   COMMAND ${MAKE_PROGRAM}
   DEPENDS copy_data_test_demo demos_source
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
-
-#if (DOLFIN_ENABLE_BENCHMARKS)
-#  # Add bench but do not add to default target
-#  #add_subdirectory(bench EXCLUDE_FROM_ALL)
-#
-#  # Add target "bench" for building benchmarks
-#  #add_custom_target(bench
-#  #  COMMAND ${MAKE_PROGRAM}
-#  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")0
-#
-#  # Copy files needed to run benchmarks in build directory
-#  file(COPY bench DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-#    FILES_MATCHING
-#    PATTERN "*"
-#    PATTERN "CMakeFiles" EXCLUDE)
-#
-#  # Add target "run_bench" for running benchmarks
-#  add_custom_target(run_bench
-#    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "bench.py"
-#    DEPENDS bench
-#    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
-#endif()
-
-#if (DOLFIN_ENABLE_TESTING)
-
-  # Add target "run_styletest" for running documentation tests
-  #add_custom_target(run_styletest
-  #  COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" "test_coding_style.py"
-  #  DEPENDS copy_data_test_demo
-  #  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/codingstyle")
-
-  # Create test_coding_style.py in build dir (depends on source path)
-  #configure_file(${CMAKE_SOURCE_DIR}/test/codingstyle/test_coding_style.py.in
-  #  ${CMAKE_BINARY_DIR}/test/codingstyle/test_coding_style.py @ONLY)
-
-#endif()
 
 #------------------------------------------------------------------------------
 # Add "make uninstall" target
