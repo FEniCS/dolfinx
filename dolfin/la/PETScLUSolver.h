@@ -31,7 +31,6 @@
 namespace dolfin
 {
   /// Forward declarations
-  class GenericLinearOperator;
   class GenericVector;
   class PETScLinearOperator;
   class PETScMatrix;
@@ -62,9 +61,6 @@ namespace dolfin
 
     /// Destructor
     ~PETScLUSolver();
-
-    /// Set operator (matrix)
-    void set_operator(std::shared_ptr<const GenericLinearOperator> A);
 
     /// Set operator (matrix)
     void set_operator(const PETScMatrix& A);

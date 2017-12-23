@@ -198,12 +198,6 @@ PETScLUSolver::~PETScLUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void
-PETScLUSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
-{
-  _solver.set_operator(A);
-}
-//-----------------------------------------------------------------------------
 void PETScLUSolver::set_operator(const PETScMatrix& A)
 {
   _solver.set_operator(A);

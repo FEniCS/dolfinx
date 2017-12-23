@@ -33,8 +33,8 @@ namespace dolfin
 {
 
   // Forward declarations
-  class GenericMatrix;
-  class GenericVector;
+  class PETScMatrix;
+  class PETScVector;
   class NonlinearProblem;
   class PETScKrylovSolver;
 
@@ -170,8 +170,8 @@ namespace dolfin
     ///         The nonlinear problem.
     ///     iteration (std::size_t)
     ///         Newton iteration number.
-    virtual void solver_setup(std::shared_ptr<const GenericMatrix> A,
-                              std::shared_ptr<const GenericMatrix> P,
+    virtual void solver_setup(std::shared_ptr<const PETScMatrix> A,
+                              std::shared_ptr<const PETScMatrix> P,
                               const NonlinearProblem& nonlinear_problem,
                               std::size_t iteration);
 
@@ -215,16 +215,16 @@ namespace dolfin
     std::shared_ptr<PETScKrylovSolver> _solver;
 
     // Jacobian matrix
-    std::shared_ptr<GenericMatrix> _matA;
+    std::shared_ptr<PETScMatrix> _matA;
 
     // Preconditioner matrix
-    std::shared_ptr<GenericMatrix> _matP;
+    std::shared_ptr<PETScMatrix> _matP;
 
     // Solution vector
-    std::shared_ptr<GenericVector> _dx;
+    std::shared_ptr<PETScVector> _dx;
 
     // Residual vector
-    std::shared_ptr<GenericVector> _b;
+    std::shared_ptr<PETScVector> _b;
 
     // MPI communicator
     dolfin::MPI::Comm _mpi_comm;

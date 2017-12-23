@@ -32,7 +32,6 @@
 #include <vector>
 #include <dolfin/common/constants.h>
 #include "GenericTensor.h"
-#include "GenericLinearOperator.h"
 
 
 namespace dolfin
@@ -43,7 +42,7 @@ namespace dolfin
 
   /// This class defines a common interface for matrices.
 
-  class GenericMatrix : public GenericTensor, public GenericLinearOperator
+  class GenericMatrix : public GenericTensor
   {
   public:
 

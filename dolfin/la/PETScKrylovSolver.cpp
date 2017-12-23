@@ -215,23 +215,9 @@ PETScKrylovSolver::~PETScKrylovSolver()
     KSPDestroy(&_ksp);
 }
 //-----------------------------------------------------------------------------
-void
-PETScKrylovSolver::set_operator(std::shared_ptr<const GenericLinearOperator> A)
-{
-  set_operators(A, A);
-}
-//-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operator(const PETScBaseMatrix& A)
 {
   set_operators(A, A);
-}
-//-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operators(
-  std::shared_ptr<const GenericLinearOperator> A,
-  std::shared_ptr<const GenericLinearOperator> P)
-{
-  set_operators(*as_type<const PETScBaseMatrix>(A),
-                *as_type<const PETScBaseMatrix>(P));
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operators(const PETScBaseMatrix& A,
@@ -257,13 +243,6 @@ std::size_t PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b,
 {
   return solve(as_type<PETScVector>(x), as_type<const PETScVector>(b),
                transpose);
-}
-//-----------------------------------------------------------------------------
-std::size_t PETScKrylovSolver::solve(const GenericLinearOperator& A,
-                                     GenericVector& x, const GenericVector& b)
-{
-  return _solve(as_type<const PETScBaseMatrix>(A), as_type<PETScVector>(x),
-                as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,

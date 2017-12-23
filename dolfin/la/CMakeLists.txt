@@ -1,7 +1,6 @@
 set(HEADERS
   CoordinateMatrix.h
   dolfin_la.h
-  GenericLinearOperator.h
   GenericMatrix.h
   GenericTensor.h
   GenericVector.h

@@ -278,20 +278,20 @@ bool NewtonSolver::converged(const GenericVector& r,
     return false;
 }
 //-----------------------------------------------------------------------------
-void NewtonSolver::solver_setup(std::shared_ptr<const GenericMatrix> A,
-                                std::shared_ptr<const GenericMatrix> P,
+void NewtonSolver::solver_setup(std::shared_ptr<const PETScMatrix> A,
+                                std::shared_ptr<const PETScMatrix> P,
                                 const NonlinearProblem& nonlinear_problem,
                                 std::size_t interation)
 {
   // Update Jacobian in linear solver (and preconditioner if given)
   if (_matP->empty())
   {
-    _solver->set_operator(A);
+    _solver->set_operator(*A);
     log(TRACE, "NewtonSolver: using Jacobian as preconditioner matrix");
   }
   else
   {
-    _solver->set_operators(A, P);
+    _solver->set_operators(*A, *P);
   }
 }
 //-----------------------------------------------------------------------------

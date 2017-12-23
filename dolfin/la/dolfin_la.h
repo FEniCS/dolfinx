@@ -6,7 +6,6 @@
 // Note that the order is important!
 
 #include <dolfin/la/LinearAlgebraObject.h>
-#include <dolfin/la/GenericLinearOperator.h>
 
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
