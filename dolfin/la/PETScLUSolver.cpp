@@ -34,6 +34,7 @@ using namespace dolfin;
 // Functions in anonymous namespace (local scope)
 namespace
 {
+  /*
   const MatSolverPackage get_solver_package_type(KSP ksp)
   {
     PetscErrorCode ierr;
@@ -47,6 +48,7 @@ namespace
 
     return solver_type;
   }
+  */
   //---------------------------------------------------------------------------
   std::map<const MatSolverPackage, bool> methods_cholesky
   = { {MATSOLVERUMFPACK,      false},
