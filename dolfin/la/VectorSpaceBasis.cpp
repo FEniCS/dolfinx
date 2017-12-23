@@ -20,14 +20,14 @@
 
 #include <cmath>
 #include <dolfin/common/constants.h>
-#include "GenericVector.h"
+#include "PETScVector.h"
 #include "VectorSpaceBasis.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 VectorSpaceBasis::VectorSpaceBasis(const std::vector<std::shared_ptr<
-                                   GenericVector>> basis) : _basis(basis)
+                                   PETScVector>> basis) : _basis(basis)
 {
   // Do nothing
 }
@@ -95,7 +95,7 @@ bool VectorSpaceBasis::is_orthogonal(double tol) const
   return true;
 }
 //-----------------------------------------------------------------------------
-void VectorSpaceBasis::orthogonalize(GenericVector& x) const
+void VectorSpaceBasis::orthogonalize(PETScVector& x) const
 {
   for (std::size_t i = 0; i < _basis.size(); i++)
   {
@@ -110,7 +110,7 @@ std::size_t VectorSpaceBasis::dim() const
   return _basis.size();
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const GenericVector>
+std::shared_ptr<const PETScVector>
 VectorSpaceBasis::operator[] (std::size_t i) const
 {
   dolfin_assert(i < _basis.size());

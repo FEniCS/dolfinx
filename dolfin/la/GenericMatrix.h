@@ -37,7 +37,6 @@
 namespace dolfin
 {
 
-  class GenericVector;
   class TensorLayout;
 
   /// This class defines a common interface for matrices.
@@ -132,7 +131,7 @@ namespace dolfin
     ///         Vector to initialise
     /// @param dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void init_vector(GenericVector& z, std::size_t dim) const = 0;
+    //virtual void init_vector(GenericVector& z, std::size_t dim) const = 0;
 
     /// Get block of values
     virtual void get(double* block,
@@ -189,13 +188,13 @@ namespace dolfin
 
     /// Matrix-vector product, y = A^T x. The y vector must either be
     /// zero-sized or have correct size and parallel layout.
-    virtual void transpmult(const GenericVector& x, GenericVector& y) const = 0;
+    //virtual void transpmult(const GenericVector& x, GenericVector& y) const = 0;
 
     /// Get diagonal of a matrix
-    virtual void get_diagonal(GenericVector& x) const = 0;
+    //virtual void get_diagonal(GenericVector& x) const = 0;
 
     /// Set diagonal of a matrix
-    virtual void set_diagonal(const GenericVector& x) = 0;
+    //virtual void set_diagonal(const GenericVector& x) = 0;
 
     /// Multiply matrix by given number
     virtual const GenericMatrix& operator*= (double a) = 0;

@@ -22,7 +22,6 @@
 
 #include <petscvec.h>
 #include <dolfin/log/log.h>
-#include "GenericVector.h"
 #include "PETScVector.h"
 #include "PETScBaseMatrix.h"
 
@@ -103,13 +102,10 @@ PETScBaseMatrix::local_range(std::size_t dim) const
   return {m, n};
 }
 //-----------------------------------------------------------------------------
-void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
+void PETScBaseMatrix::init_vector(PETScVector& z, std::size_t dim) const
 {
   dolfin_assert(_matA);
   PetscErrorCode ierr;
-
-  // Downcast vector
-  PETScVector& _z = as_type<PETScVector>(z);
 
   // Create new PETSc vector
   Vec x = nullptr;
@@ -130,9 +126,9 @@ void PETScBaseMatrix::init_vector(GenericVector& z, std::size_t dim) const
                  "Dimension must be 0 or 1, not %d", dim);
   }
 
-  // Associate new PETSc Vec with _z (this will increase the reference
+  // Associate new PETSc Vec with z (this will increase the reference
   // count to x)
-  _z.reset(x);
+  z.reset(x);
 
   // Decrease reference count
   VecDestroy(&x);

@@ -222,10 +222,10 @@ namespace dolfin_wrappers
     py::class_<dolfin::GenericMatrix, std::shared_ptr<dolfin::GenericMatrix>,
                dolfin::GenericTensor>
       (m, "GenericMatrix", py::dynamic_attr(), "DOLFIN GenericMatrix object")
-      .def("init_vector", &dolfin::GenericMatrix::init_vector)
+      //.def("init_vector", &dolfin::GenericMatrix::init_vector)
       .def("axpy", &dolfin::GenericMatrix::axpy)
       //.def("mult", &dolfin::GenericMatrix::mult)
-      .def("transpmult", &dolfin::GenericMatrix::transpmult)
+      //.def("transpmult", &dolfin::GenericMatrix::transpmult)
       // __ifoo__
       .def("__imul__", &dolfin::GenericMatrix::operator*=, "Multiply by a scalar")
       .def("__itruediv__", &dolfin::GenericMatrix::operator/=, py::is_operator(), "Divide by a scalar")
@@ -291,8 +291,8 @@ namespace dolfin_wrappers
       .def("nnz", &dolfin::GenericMatrix::nnz)
       .def("size", &dolfin::GenericMatrix::size)
       .def("apply", &dolfin::GenericMatrix::apply)
-      .def("get_diagonal", &dolfin::GenericMatrix::get_diagonal)
-      .def("set_diagonal", &dolfin::GenericMatrix::set_diagonal)
+      //.def("get_diagonal", &dolfin::GenericMatrix::get_diagonal)
+      //.def("set_diagonal", &dolfin::GenericMatrix::set_diagonal)
       .def("ident_zeros", &dolfin::GenericMatrix::ident_zeros, py::arg("tol") = DOLFIN_EPS)
       .def("ident", [](dolfin::GenericMatrix& self, std::vector<dolfin::la_index> rows)
            { self.ident(rows.size(), rows.data()); }, py::arg("rows"))
@@ -744,7 +744,7 @@ namespace dolfin_wrappers
 
     // dolfin::VectorSpaceBasis
     py::class_<dolfin::VectorSpaceBasis, std::shared_ptr<dolfin::VectorSpaceBasis>>(m, "VectorSpaceBasis")
-      .def(py::init<const std::vector<std::shared_ptr<dolfin::GenericVector>>>())
+      .def(py::init<const std::vector<std::shared_ptr<dolfin::PETScVector>>>())
       .def("is_orthonormal", &dolfin::VectorSpaceBasis::is_orthonormal, py::arg("tol")=1.0e-10)
       .def("is_orthogonal", &dolfin::VectorSpaceBasis::is_orthogonal, py::arg("tol")=1.0e-10)
       .def("orthogonalize", &dolfin::VectorSpaceBasis::orthogonalize)

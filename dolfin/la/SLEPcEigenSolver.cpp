@@ -237,15 +237,6 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
-                                     GenericVector& r, GenericVector& c,
-                                     std::size_t i) const
-{
-  PETScVector& _r = as_type<PETScVector>(r);
-  PETScVector& _c = as_type<PETScVector>(c);
-  get_eigenpair(lr, lc, _r, _c, i);
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                      PETScVector& r, PETScVector& c,
                                      std::size_t i) const
 {

@@ -413,14 +413,11 @@ void PETScMatrix::ident_local(std::size_t m, const dolfin::la_index* rows)
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRowsLocal");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
+void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
 {
   dolfin_assert(_matA);
 
-  const PETScVector& xx = as_type<const PETScVector>(x);
-  PETScVector& yy = as_type<PETScVector>(y);
-
-  if (this->size(1) != xx.size())
+  if (this->size(1) != x.size())
   {
     dolfin_error("PETScMatrix.cpp",
                  "compute matrix-vector product with PETSc matrix",
@@ -428,28 +425,25 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
   }
 
   // Resize RHS if empty
-  if (yy.size() == 0)
-    init_vector(yy, 0);
+  if (y.size() == 0)
+    init_vector(y, 0);
 
-  if (size(0) != yy.size())
+  if (size(0) != y.size())
   {
     dolfin_error("PETScMatrix.cpp",
                  "compute matrix-vector product with PETSc matrix",
                  "Vector for matrix-vector result has wrong size");
   }
 
-  PetscErrorCode ierr = MatMult(_matA, xx.vec(), yy.vec());
+  PetscErrorCode ierr = MatMult(_matA, x.vec(), y.vec());
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatMult");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
+void PETScMatrix::transpmult(const PETScVector& x, PETScVector& y) const
 {
   dolfin_assert(_matA);
 
-  const PETScVector& xx = as_type<const PETScVector>(x);
-  PETScVector& yy = as_type<PETScVector>(y);
-
-  if (size(0) != xx.size())
+  if (size(0) != x.size())
   {
     dolfin_error("PETScMatrix.cpp",
                  "compute transpose matrix-vector product with PETSc matrix",
@@ -457,50 +451,48 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
   }
 
   // Resize RHS if empty
-  if (yy.size() == 0)
-    init_vector(yy, 1);
+  if (y.size() == 0)
+    init_vector(y, 1);
 
-  if (size(1) != yy.size())
+  if (size(1) != y.size())
   {
     dolfin_error("PETScMatrix.cpp",
                  "compute transpose matrix-vector product with PETSc matrix",
                  "Vector for transpose matrix-vector result has wrong size");
   }
 
-  PetscErrorCode ierr = MatMultTranspose(_matA, xx.vec(), yy.vec());
+  PetscErrorCode ierr = MatMultTranspose(_matA, x.vec(), y.vec());
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatMultTranspose");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::get_diagonal(GenericVector& x) const
+void PETScMatrix::get_diagonal(PETScVector& x) const
 {
   dolfin_assert(_matA);
 
-  PETScVector& xx = as_type<PETScVector>(x);
-  if (size(1) != size(0) || size(0) != xx.size())
+  if (size(1) != size(0) || size(0) != x.size())
   {
     dolfin_error("PETScMatrix.cpp",
                  "get diagonal of a PETSc matrix",
                  "Matrix and vector dimensions don't match for matrix-vector set");
   }
 
-  PetscErrorCode ierr = MatGetDiagonal(_matA, xx.vec());
+  PetscErrorCode ierr = MatGetDiagonal(_matA, x.vec());
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetDiagonal");
-  xx.update_ghost_values();
+  x.update_ghost_values();
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_diagonal(const GenericVector& x)
+void PETScMatrix::set_diagonal(const PETScVector& x)
 {
   dolfin_assert(_matA);
 
-  const PETScVector& xx = as_type<const PETScVector>(x);
-  if (size(1) != size(0) || size(0) != xx.size())
+  if (size(1) != size(0) || size(0) != x.size())
   {
     dolfin_error("PETScMatrix.cpp",
                  "set diagonal of a PETSc matrix",
                  "Matrix and vector dimensions don't match for matrix-vector set");
   }
 
-  PetscErrorCode ierr = MatDiagonalSet(_matA, xx.vec(), INSERT_VALUES);
+  PetscErrorCode ierr = MatDiagonalSet(_matA, x.vec(), INSERT_VALUES);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatDiagonalSet");
   apply("insert");
 }

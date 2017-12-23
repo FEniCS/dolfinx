@@ -24,7 +24,7 @@
 namespace dolfin
 {
 
-  class GenericVector;
+  class PETScVector;
 
   /// This class defines a basis for vector spaces, typically used for
   /// expressing nullspaces of singular operators and 'near
@@ -35,7 +35,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    VectorSpaceBasis(const std::vector<std::shared_ptr<GenericVector>> basis);
+    VectorSpaceBasis(const std::vector<std::shared_ptr<PETScVector>> basis);
 
     /// Destructor
     ~VectorSpaceBasis() {}
@@ -52,18 +52,18 @@ namespace dolfin
     bool is_orthogonal(double tol=1.0e-10) const;
 
     /// Orthogonalize x with respect to basis
-    void orthogonalize(GenericVector& x) const;
+    void orthogonalize(PETScVector& x) const;
 
     /// Number of vectors in the basis
     std::size_t dim() const;
 
     /// Get a particular basis vector
-    std::shared_ptr<const GenericVector> operator[] (std::size_t i) const;
+    std::shared_ptr<const PETScVector> operator[] (std::size_t i) const;
 
   private:
 
     // Basis vectors
-    const std::vector<std::shared_ptr<GenericVector>> _basis;
+    const std::vector<std::shared_ptr<PETScVector>> _basis;
 
   };
 }
