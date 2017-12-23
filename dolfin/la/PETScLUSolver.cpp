@@ -205,12 +205,12 @@ void PETScLUSolver::set_operator(const PETScMatrix& A)
   _solver.set_operator(A);
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
+std::size_t PETScLUSolver::solve(PETScVector& x, const PETScVector& b)
 {
   return solve(x, b, false);
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
+std::size_t PETScLUSolver::solve(PETScVector& x, const PETScVector& b,
                                  bool transpose)
 {
   // FIXME: This should really go in PETScKrylovSolver
@@ -230,13 +230,6 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
   }
   */
   return _solver.solve(x, b);
-}
-//-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
-                                 const PETScVector& b)
-{
-  _solver.set_operators(A, A);
-  return solve(x, b);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_options_prefix(std::string options_prefix)

@@ -668,11 +668,8 @@ namespace dolfin_wrappers
            py::arg("A"), py::arg("method")="default")
       .def("get_options_prefix", &dolfin::PETScLUSolver::get_options_prefix)
       .def("set_options_prefix", &dolfin::PETScLUSolver::set_options_prefix)
-      .def("solve", (std::size_t (dolfin::PETScLUSolver::*)(dolfin::GenericVector&, const dolfin::GenericVector&))
+      .def("solve", (std::size_t (dolfin::PETScLUSolver::*)(dolfin::PETScVector&, const dolfin::PETScVector&))
            &dolfin::PETScLUSolver::solve)
-      //.def("solve", (std::size_t (dolfin::PETScLUSolver::*)(const dolfin::GenericLinearOperator&,
-      //                                                      dolfin::GenericVector&,
-      //                                                      const dolfin::GenericVector&))
       .def("ksp", &dolfin::PETScLUSolver::ksp);
     #endif
 
