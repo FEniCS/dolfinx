@@ -379,7 +379,7 @@ namespace dolfin_wrappers
     py::class_<dolfin::MeshEditor, std::shared_ptr<dolfin::MeshEditor>>
       (m, "MeshEditor", "DOLFIN MeshEditor object")
       .def(py::init<>())
-      .def("open", (void (dolfin::MeshEditor::*)(dolfin::Mesh& , std::string, std::size_t, std::size_t, std::size_t))
+      .def("open", (void (dolfin::MeshEditor::*)(dolfin::Mesh& , dolfin::CellType::Type, std::size_t, std::size_t, std::size_t))
            &dolfin::MeshEditor::open,
            py::arg("mesh"), py::arg("type"), py::arg("tdim"), py::arg("gdim"), py::arg("degree") = 1)
       .def("init_vertices_global", &dolfin::MeshEditor::init_vertices_global)
