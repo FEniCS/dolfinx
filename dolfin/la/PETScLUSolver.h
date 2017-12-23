@@ -41,7 +41,7 @@ namespace dolfin
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of PETSc.
 
-  class PETScLUSolver : public GenericLinearSolver
+  class PETScLUSolver
   {
   public:
 
@@ -77,10 +77,6 @@ namespace dolfin
                       bool transpose);
 
     /// Solve linear system Ax = b
-    std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
-                      const GenericVector& b);
-
-    /// Solve linear system Ax = b
     std::size_t solve(const PETScMatrix& A, PETScVector& x,
                       const PETScVector& b);
 
@@ -106,9 +102,6 @@ namespace dolfin
 
     /// Return a list of available solver methods
     static std::map<std::string, std::string> methods();
-
-    /// Default parameter values
-    static Parameters default_parameters();
 
     /// Return parameter type: "krylov_solver" or "lu_solver"
     std::string parameter_type() const

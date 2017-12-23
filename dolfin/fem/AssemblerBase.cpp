@@ -29,7 +29,6 @@
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/SparsityPattern.h>
-#include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/TensorLayout.h>
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
@@ -63,8 +62,10 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     Timer t0("Build sparsity");
 
     // Create layout for initialising tensor
-    std::shared_ptr<TensorLayout> tensor_layout;
-    tensor_layout = A.factory().create_layout(mesh.mpi_comm(), a.rank());
+    TensorLayout::Sparsity sparsity = TensorLayout::Sparsity::DENSE;
+    if (a.rank() > 1)
+      sparsity = TensorLayout::Sparsity::SPARSE;
+    auto tensor_layout =  std::make_shared<TensorLayout>(A.mpi_comm(), 0, sparsity);
     dolfin_assert(tensor_layout);
 
     // Get dimensions and mapping across processes for each dimension

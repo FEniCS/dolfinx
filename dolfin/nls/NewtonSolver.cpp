@@ -26,13 +26,11 @@
 #include <string>
 
 #include <dolfin/common/constants.h>
-#include <dolfin/la/GenericLinearSolver.h>
-#include <dolfin/la/DefaultFactory.h>
-#include <dolfin/la/LinearSolver.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/LUSolver.h>
-#include <dolfin/la/KrylovSolver.h>
+#include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/PETScVector.h>
+#include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
 #include "NonlinearProblem.h"
@@ -55,38 +53,18 @@ Parameters NewtonSolver::default_parameters()
   p.add("error_on_nonconvergence", true);
   p.add<double>("relaxation_parameter");
 
-  //p.add("reuse_preconditioner", false);
-
-  p.add(LUSolver::default_parameters());
-  p.add(KrylovSolver::default_parameters());
-
   return p;
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(MPI_Comm comm,
-                           std::shared_ptr<GenericLinearSolver> solver,
-                           GenericLinearAlgebraFactory& factory)
+NewtonSolver::NewtonSolver(MPI_Comm comm)
   : Variable("Newton solver", "unnamed"), _newton_iteration(0),
     _krylov_iterations(0), _relaxation_parameter(1.0), _residual(0.0),
-    _residual0(0.0), _solver(solver), _matA(factory.create_matrix(comm)),
-    _matP(factory.create_matrix(comm)), _dx(factory.create_vector(comm)),
-    _b(factory.create_vector(comm)), _mpi_comm(comm)
+    _residual0(0.0),_matA(new PETScMatrix(comm)),
+    _matP(new PETScMatrix(comm)), _dx(new PETScVector(comm)),
+    _b(new PETScVector(comm)), _mpi_comm(comm)
 {
   // Set default parameters
   parameters = default_parameters();
-
-  // Override linear solver type if solver passed in
-  if (solver)
-  {
-    parameters["linear_solver"] = "user_defined";
-    parameters["preconditioner"] = "user_defined";
-  }
-}
-//-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(MPI_Comm comm)
-  : NewtonSolver(comm, nullptr, DefaultFactory::factory())
-{
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
@@ -113,12 +91,12 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   const std::string pc_type = parameters["preconditioner"];
   if (!_solver)
   {
-    _solver = std::make_shared<LinearSolver>(x.mpi_comm(), solver_type, pc_type);
+    _solver = std::make_shared<PETScKrylovSolver>(x.mpi_comm(), solver_type, pc_type);
   }
   dolfin_assert(_solver);
 
   // Set parameters for linear solver
-  _solver->update_parameters(parameters(_solver->parameter_type()));
+  // _solver->update_parameters(parameters(_solver->parameter_type()));
 
   // Reset iteration counts
   _newton_iteration = 0;
@@ -253,6 +231,7 @@ double NewtonSolver::relative_residual() const
   return _residual/_residual0;
 }
 //-----------------------------------------------------------------------------
+/*
 GenericLinearSolver& NewtonSolver::linear_solver() const
 {
   if (!_solver)
@@ -266,6 +245,7 @@ GenericLinearSolver& NewtonSolver::linear_solver() const
 
   return *_solver;
 }
+*/
 //-----------------------------------------------------------------------------
 bool NewtonSolver::converged(const GenericVector& r,
                              const NonlinearProblem& nonlinear_problem,

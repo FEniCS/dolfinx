@@ -33,11 +33,10 @@ namespace dolfin
 {
 
   // Forward declarations
-  class GenericLinearSolver;
-  class GenericLinearAlgebraFactory;
   class GenericMatrix;
   class GenericVector;
   class NonlinearProblem;
+  class PETScKrylovSolver;
 
   /// This class defines a Newton solver for nonlinear systems of
   /// equations of the form :math:`F(x) = 0`.
@@ -47,19 +46,7 @@ namespace dolfin
   public:
 
     /// Create nonlinear solver
-    explicit NewtonSolver(MPI_Comm comm=MPI_COMM_WORLD);
-
-    /// Create nonlinear solver using provided linear solver
-    ///
-    /// *Arguments*
-    ///     comm (_MPI_Ccmm_)
-    ///         The MPI communicator.
-    ///     solver (_GenericLinearSolver_)
-    ///         The linear solver.
-    ///     factory (_GenericLinearAlgebraFactory_)
-    ///         The factory.
-    NewtonSolver(MPI_Comm comm, std::shared_ptr<GenericLinearSolver> solver,
-                 GenericLinearAlgebraFactory& factory);
+    explicit NewtonSolver(MPI_Comm comm);
 
     /// Destructor
     virtual ~NewtonSolver();
@@ -121,7 +108,7 @@ namespace dolfin
     /// *Returns*
     ///     _GenericLinearSolver_
     ///         The linear solver.
-    GenericLinearSolver& linear_solver() const;
+    //GenericLinearSolver& linear_solver() const;
 
     /// Default parameter values
     ///
@@ -225,7 +212,7 @@ namespace dolfin
     double _residual, _residual0;
 
     // Solver
-    std::shared_ptr<GenericLinearSolver> _solver;
+    std::shared_ptr<PETScKrylovSolver> _solver;
 
     // Jacobian matrix
     std::shared_ptr<GenericMatrix> _matA;

@@ -20,7 +20,6 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/Matrix.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/TensorLayout.h>
@@ -81,11 +80,11 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   V1.dofmap()->tabulate_local_to_global_dofs(local_to_global_map1);
 
   // Declare matrix
-  auto A = std::make_shared<Matrix>();
+  auto A = std::make_shared<PETScMatrix>();
 
   // Create layout for initialising tensor
-  std::shared_ptr<TensorLayout> tensor_layout;
-  tensor_layout = A->factory().create_layout(mesh.mpi_comm(), 2);
+  auto tensor_layout = std::make_shared<TensorLayout>(mesh.mpi_comm(), 0,
+                                                      TensorLayout::Sparsity::SPARSE);
   dolfin_assert(tensor_layout);
 
   // Copy index maps from dofmaps

@@ -37,7 +37,6 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/Form.h>
-#include <dolfin/fem/LocalSolver.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
 #include <dolfin/fem/PETScDMCollection.h>
 #include <dolfin/fem/PointSource.h>
@@ -423,36 +422,6 @@ namespace dolfin_wrappers
              auto& _lb = lb.attr("_cpp_object").cast<dolfin::Function&>();
              auto& _ub = ub.attr("_cpp_object").cast<dolfin::Function&>();
              self.set_bounds(_lb, _ub);
-           });
-
-    // dolfin::LocalSolver
-    py::class_<dolfin::LocalSolver, std::shared_ptr<dolfin::LocalSolver>>
-      local_solver(m, "LocalSolver");
-
-    // dolfin::LocalSolver enums
-    py::enum_<dolfin::LocalSolver::SolverType>(local_solver, "SolverType")
-      .value("LU", dolfin::LocalSolver::SolverType::LU)
-      .value("Cholesky", dolfin::LocalSolver::SolverType::Cholesky);
-
-    local_solver.def(py::init<std::shared_ptr<const dolfin::Form>,
-                     std::shared_ptr<const dolfin::Form>,
-                     dolfin::LocalSolver::SolverType>())
-      .def(py::init<std::shared_ptr<const dolfin::Form>,
-                     dolfin::LocalSolver::SolverType>())
-      .def("factorize", &dolfin::LocalSolver::factorize)
-      .def("clear_factorization", &dolfin::LocalSolver::clear_factorization)
-      .def("solve_local", &dolfin::LocalSolver::solve_local)
-      .def("solve_local_rhs", &dolfin::LocalSolver::solve_local_rhs)
-      .def("solve_global_rhs", &dolfin::LocalSolver::solve_global_rhs)
-      .def("solve_local_rhs", [](dolfin::LocalSolver& self, py::object u)
-           {
-             auto _u = u.attr("_cpp_object").cast<dolfin::Function*>();
-             self.solve_local_rhs(*_u);
-           })
-      .def("solve_global_rhs", [](dolfin::LocalSolver& self, py::object u)
-           {
-             auto _u = u.attr("_cpp_object").cast<dolfin::Function*>();
-             self.solve_global_rhs(*_u);
            });
 
 #ifdef HAS_PETSC

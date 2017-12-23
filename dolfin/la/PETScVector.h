@@ -237,11 +237,6 @@ namespace dolfin
     /// Update values shared from remote processes
     virtual void update_ghost_values();
 
-    //--- Special functions ---
-
-    /// Return linear algebra backend factory
-    virtual GenericLinearAlgebraFactory& factory() const;
-
     //--- Special PETSc functions ---
 
     /// Sets the prefix used by PETSc when searching the options

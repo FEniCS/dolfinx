@@ -62,18 +62,18 @@ from .cpp.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                              SphericalShellMesh)
 from .cpp.graph import GraphBuilder
 from .cpp.io import XDMFFile, VTKFile
-from .cpp.la import VectorSpaceBasis, in_nullspace
+from .cpp.la import VectorSpaceBasis
 
-from .cpp.la import (PETScVector, PETScMatrix, PETScFactory,
+from .cpp.la import (PETScVector, PETScMatrix,
                      PETScOptions, PETScLUSolver,
-                     PETScKrylovSolver, PETScPreconditioner)
+                     PETScKrylovSolver)
 from .cpp.fem import PETScDMCollection
 
 if has_slepc():
     from .cpp.la import SLEPcEigenSolver
 
-from .cpp.la import (IndexMap, DefaultFactory, Matrix, Vector, Scalar,
-                     LUSolver, KrylovSolver, TensorLayout, LinearOperator)
+from .cpp.la import (IndexMap, Scalar,
+                     TensorLayout)
 from .cpp.la import GenericVector  # Remove when pybind11 transition complete
 from .cpp.log import (info, Table, set_log_level, get_log_level, LogLevel)
 from .cpp.math import ipow, near, between
@@ -104,7 +104,6 @@ from .fem.norms import norm, errornorm
 from .fem.dirichletbc import DirichletBC, AutoSubDomain
 from .fem.interpolation import interpolate
 from .fem.projection import project
-from .fem.solvers import LocalSolver
 from .fem.solving import solve
 from .fem.formmanipulations import (derivative, adjoint, increase_order, tear)
 

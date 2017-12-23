@@ -27,7 +27,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/common/types.h>
-#include "DefaultFactory.h"
 #include "GenericTensor.h"
 #include "TensorLayout.h"
 
@@ -197,13 +196,6 @@ namespace dolfin
     }
 
     //--- Special functions
-
-    /// Return a factory for the default linear algebra backend
-    virtual GenericLinearAlgebraFactory& factory() const
-    {
-      DefaultFactory f;
-      return f.factory();
-    }
 
     /// Get final value (assumes prior apply(), not part of
     /// GenericTensor interface)

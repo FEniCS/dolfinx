@@ -205,11 +205,6 @@ namespace dolfin
     /// Test if matrix is symmetric
     virtual bool is_symmetric(double tol) const;
 
-    //--- Special functions ---
-
-    /// Return linear algebra backend factory
-    virtual GenericLinearAlgebraFactory& factory() const;
-
     //--- Special PETSc Functions ---
 
     /// Sets the prefix used by PETSc when searching the options

@@ -24,7 +24,6 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
 #include <dolfin/parameter/GlobalParameters.h>
-#include "LUSolver.h"
 #include "PETScMatrix.h"
 #include "PETScObject.h"
 #include "PETScVector.h"
@@ -113,14 +112,6 @@ std::map<std::string, std::string> PETScLUSolver::methods()
   return methods_descr;
 }
 //-----------------------------------------------------------------------------
-Parameters PETScLUSolver::default_parameters()
-{
-  Parameters p(LUSolver::default_parameters());
-  p.rename("petsc_lu_solver");
-
-  return p;
-}
-//-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(MPI_Comm comm, std::string method)
   :  PETScLUSolver(comm, nullptr, method)
 {
@@ -155,9 +146,6 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm,
     ierr = MatIsSymmetricKnown(A->mat(), &symm_is_set, &is_symmetric);
     if (ierr != 0) PETScObject::petsc_error(ierr, __FILE__, "MatIsSymmetricKnown");
   }
-
-  // Set parameter values
-  parameters = default_parameters();
 
   // Select solver package
   const MatSolverPackage solver_package = select_solver(comm, method);
@@ -230,7 +218,7 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
                                  bool transpose)
 {
   // FIXME: This should really go in PETScKrylovSolver
-
+  /*
   const bool report = parameters["report"].is_set() ? parameters["report"] : false;
   if (report && dolfin::MPI::rank(mpi_comm()) == 0)
   {
@@ -244,17 +232,8 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
     log(PROGRESS,"Solving linear system of size %ld x %ld (PETSc LU solver, %s).",
         A.size(0), A.size(1), solver_type);
   }
-
+  */
   return _solver.solve(x, b);
-}
-//-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve(const GenericLinearOperator& A,
-                                 GenericVector& x,
-                                 const GenericVector& b)
-{
-  return solve(as_type<const PETScMatrix>(require_matrix(A)),
-               as_type<PETScVector>(x),
-               as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,

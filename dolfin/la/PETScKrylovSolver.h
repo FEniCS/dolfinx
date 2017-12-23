@@ -30,7 +30,6 @@
 #include <string>
 #include <petscksp.h>
 #include <dolfin/common/types.h>
-#include "GenericLinearSolver.h"
 #include "PETScObject.h"
 
 namespace dolfin
@@ -42,7 +41,6 @@ namespace dolfin
   class PETScBaseMatrix;
   class PETScMatrix;
   class PETScVector;
-  class PETScPreconditioner;
   class PETScSNESSolver;
   class VectorSpaceBasis;
 
@@ -51,7 +49,7 @@ namespace dolfin
   /// This class implements Krylov methods for linear systems of the
   /// form Ax = b. It is a wrapper for the Krylov solvers of PETSc.
 
-  class PETScKrylovSolver : public GenericLinearSolver, public PETScObject
+  class PETScKrylovSolver : public PETScObject
   {
   public:
 
@@ -66,22 +64,6 @@ namespace dolfin
     PETScKrylovSolver(MPI_Comm comm,
                       std::string method="default",
                       std::string preconditioner="default");
-
-    /// Create Krylov solver for a particular method and named
-    /// preconditioner
-    PETScKrylovSolver(std::string method="default",
-                      std::string preconditioner="default");
-
-    /// Create Krylov solver for a particular method and
-    /// PETScPreconditioner (shared_ptr version)
-    PETScKrylovSolver(MPI_Comm comm,
-                      std::string method,
-                      std::shared_ptr<PETScPreconditioner> preconditioner);
-
-    /// Create Krylov solver for a particular method and
-    /// PETScPreconditioner (shared_ptr version)
-    PETScKrylovSolver(std::string method,
-                      std::shared_ptr<PETScPreconditioner> preconditioner);
 
     /// Create solver wrapper of a PETSc KSP object
     explicit PETScKrylovSolver(KSP ksp);
@@ -167,18 +149,13 @@ namespace dolfin
     /// Return PETSc KSP pointer
     KSP ksp() const;
 
-    /// Return a list of available solver methods
+    /// Return a list of names solver methods. For access to all
+    /// methods, use PETScOptions.
     static std::map<std::string, std::string> methods();
 
-    /// Return a list of available named preconditioners
+    /// Return a list of named preconditioner shortcuts. For access to
+    /// all methods, use PETScOptions.
     static std::map<std::string, std::string> preconditioners();
-
-    /// Default parameter values
-    static Parameters default_parameters();
-
-    /// Return parameter type: "krylov_solver" or "lu_solver"
-    std::string parameter_type() const
-    { return "krylov_solver"; }
 
     /// Set the DM
     void set_dm(DM dm);
@@ -190,6 +167,10 @@ namespace dolfin
     friend class PETScTAOSolver;
 
   private:
+
+    // Temporary work-arounds
+    static std::map<std::string, const KSPType> petsc_methods();
+    static std::map<std::string, const PCType> petsc_pc_methods();
 
     // Return norm_type enum for norm string
     static PETScKrylovSolver::norm_type get_norm_type(std::string norm);
@@ -204,17 +185,8 @@ namespace dolfin
     void check_dimensions(const PETScBaseMatrix& A, const GenericVector& x,
                           const GenericVector& b) const;
 
-    // Available solvers
-    static const std::map<std::string, const KSPType> _methods;
-
-    // Available solvers descriptions
-    static const std::map<std::string, std::string> _methods_descr;
-
     // PETSc solver pointer
     KSP _ksp;
-
-    // Preconditioner
-    std::shared_ptr<PETScPreconditioner> _preconditioner;
 
     bool preconditioner_set;
 

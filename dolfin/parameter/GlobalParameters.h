@@ -24,8 +24,6 @@
 #define __GLOBAL_PARAMETERS_H
 
 #include "Parameters.h"
-#include <dolfin/la/KrylovSolver.h>
-#include <dolfin/la/LUSolver.h>
 
 namespace dolfin
 {
@@ -152,10 +150,6 @@ namespace dolfin
       p.add("linear_algebra_backend",
             default_backend,
             allowed_backends);
-
-      // Add nested parameter sets
-      p.add(KrylovSolver::default_parameters());
-      p.add(LUSolver::default_parameters());
 
       return p;
     }

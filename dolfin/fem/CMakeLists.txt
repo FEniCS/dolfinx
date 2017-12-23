@@ -12,7 +12,6 @@ set(HEADERS
   Form.h
   GenericDofMap.h
   LocalAssembler.h
-  LocalSolver.h
   NonlinearVariationalProblem.h
   PETScDMCollection.h
   PointSource.h
@@ -32,7 +31,6 @@ set(SOURCES
   FiniteElement.cpp
   Form.cpp
   LocalAssembler.cpp
-  LocalSolver.cpp
   NonlinearVariationalProblem.cpp
   PointSource.cpp
   PETScDMCollection.cpp

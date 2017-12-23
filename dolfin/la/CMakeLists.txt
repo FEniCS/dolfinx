@@ -1,62 +1,39 @@
 set(HEADERS
   CoordinateMatrix.h
-  DefaultFactory.h
   dolfin_la.h
-  GenericLinearAlgebraFactory.h
   GenericLinearOperator.h
-  GenericLinearSolver.h
   GenericMatrix.h
   GenericTensor.h
   GenericVector.h
   IndexMap.h
-  KrylovSolver.h
   LinearAlgebraObject.h
-  LinearOperator.h
-  LinearSolver.h
-  LUSolver.h
-  Matrix.h
   PETScBaseMatrix.h
-  PETScFactory.h
   PETScKrylovSolver.h
-  PETScLinearOperator.h
   PETScLUSolver.h
   PETScMatrix.h
   PETScObject.h
   PETScOptions.h
-  PETScPreconditioner.h
   PETScVector.h
   Scalar.h
   SLEPcEigenSolver.h
   SparsityPattern.h
   TensorLayout.h
-  test_nullspace.h
-  Vector.h
   VectorSpaceBasis.h
   PARENT_SCOPE)
 
 set(SOURCES
   CoordinateMatrix.cpp
-  DefaultFactory.cpp
-  GenericLinearSolver.cpp
   GenericMatrix.cpp
   IndexMap.cpp
-  KrylovSolver.cpp
-  LinearOperator.cpp
-  LinearSolver.cpp
-  LUSolver.cpp
   PETScBaseMatrix.cpp
-  PETScFactory.cpp
   PETScKrylovSolver.cpp
-  PETScLinearOperator.cpp
   PETScLUSolver.cpp
   PETScMatrix.cpp
   PETScObject.cpp
   PETScOptions.cpp
-  PETScPreconditioner.cpp
   PETScVector.cpp
   SLEPcEigenSolver.cpp
   SparsityPattern.cpp
   TensorLayout.cpp
-  test_nullspace.cpp
   VectorSpaceBasis.cpp
   PARENT_SCOPE)

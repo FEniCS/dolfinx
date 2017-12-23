@@ -16,8 +16,6 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
-#include "GenericLinearAlgebraFactory.h"
-#include "GenericLinearOperator.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "VectorSpaceBasis.h"

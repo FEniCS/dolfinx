@@ -49,7 +49,6 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include "FiniteElement.h"

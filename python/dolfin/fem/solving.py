@@ -23,7 +23,7 @@ VariationalProblem/Solver classes as well as the solve function.
 
 import ufl
 import dolfin.cpp as cpp
-from dolfin.cpp.la import PETScVector, PETScMatrix, LUSolver
+from dolfin.cpp.la import PETScVector, PETScMatrix, PETScLUSolver
 from dolfin.cpp.fem import SystemAssembler
 from dolfin.function.function import Function
 from dolfin.fem.form import Form
@@ -46,32 +46,31 @@ __all__ = ["LinearVariationalProblem",
 # compilation
 
 
-class LocalSolver(cpp.fem.LocalSolver):
-
-    def __init__(self, a, L=None, solver_type=cpp.fem.LocalSolver.SolverType.LU):
-        """Create a local (cell-wise) solver for a linear variational problem
-        a(u, v) = L(v).
-
-        """
-
-        # Store input UFL forms and solution Function
-        self.a_ufl = a
-        self.L_ufl = L
-
-        # Wrap as DOLFIN forms
-        a = Form(a)
-        if L is None:
-            # Initialize C++ base class
-            cpp.fem.LocalSolver.__init__(self, a, solver_type)
-        else:
-            if L.empty():
-                L = cpp.fem.Form(1, 0)
-            else:
-                L = Form(L)
-
-            # Initialize C++ base class
-            cpp.fem.LocalSolver.__init__(self, a, L, solver_type)
-
+#class LocalSolver(cpp.fem.LocalSolver):
+#
+#    def __init__(self, a, L=None, solver_type=cpp.fem.LocalSolver.SolverType.LU):
+#        """Create a local (cell-wise) solver for a linear variational problem
+#        a(u, v) = L(v).
+#
+#        """
+#
+#        # Store input UFL forms and solution Function
+#        self.a_ufl = a
+#        self.L_ufl = L
+#
+#        # Wrap as DOLFIN forms
+#        a = Form(a)
+#        if L is None:
+#            # Initialize C++ base class
+#            cpp.fem.LocalSolver.__init__(self, a, solver_type)
+#        else:
+#            if L.empty():
+#                L = cpp.fem.Form(1, 0)
+#            else:
+#                L = Form(L)
+#
+#            # Initialize C++ base class
+#            cpp.fem.LocalSolver.__init__(self, a, L, solver_type)
 
 # FIXME: The import here are here to avoid a circular dependency
 # (ugly, should fix)
@@ -243,7 +242,7 @@ def _solve_varproblem(*args, **kwargs):
         assembler = SystemAssembler(a, L, bcs)
         assembler.assemble(A, b)
 
-        solver = LUSolver(A)
+        solver = PETScLUSolver(A)
 
         solver.solve(u.vector(), b)
 

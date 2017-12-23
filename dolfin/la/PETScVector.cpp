@@ -33,7 +33,6 @@
 #include <dolfin/log/log.h>
 #include "SparsityPattern.h"
 #include "PETScVector.h"
-#include "PETScFactory.h"
 
 using namespace dolfin;
 
@@ -804,11 +803,6 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
     PETScVector _vout(vout);
     _vout.get_local(x);
   }
-}
-//-----------------------------------------------------------------------------
-GenericLinearAlgebraFactory& PETScVector::factory() const
-{
-  return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set_options_prefix(std::string options_prefix)

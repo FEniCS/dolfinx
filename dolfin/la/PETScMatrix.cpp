@@ -34,7 +34,6 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
-#include "PETScFactory.h"
 #include "PETScVector.h"
 #include "SparsityPattern.h"
 #include "TensorLayout.h"
@@ -607,11 +606,6 @@ bool PETScMatrix::is_symmetric(double tol) const
   PetscErrorCode ierr = MatIsSymmetric(_matA, tol, &symmetric);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatIsSymmetric");
   return symmetric == PETSC_TRUE ? true : false;
-}
-//-----------------------------------------------------------------------------
-GenericLinearAlgebraFactory& PETScMatrix::factory() const
-{
-  return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_options_prefix(std::string options_prefix)

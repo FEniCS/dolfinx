@@ -32,7 +32,7 @@
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/DefaultFactory.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
@@ -537,13 +537,13 @@ void Function::init_vector()
   std::shared_ptr<const IndexMap> index_map = dofmap.index_map();
   dolfin_assert(index_map);
 
-  DefaultFactory factory;
-
   MPI_Comm comm = _function_space->mesh()->mpi_comm();
 
   // Create layout for initialising tensor
-  std::shared_ptr<TensorLayout> tensor_layout;
-  tensor_layout = factory.create_layout(comm, 1);
+  //std::shared_ptr<TensorLayout> tensor_layout;
+  //tensor_layout = factory.create_layout(comm, 1);
+  auto tensor_layout = std::make_shared<TensorLayout>(comm, 0, TensorLayout::Sparsity::DENSE);
+
   dolfin_assert(tensor_layout);
   dolfin_assert(!tensor_layout->sparsity_pattern());
   dolfin_assert(_function_space->mesh());
@@ -551,7 +551,7 @@ void Function::init_vector()
 
   // Create vector of dofs
   if (!_vector)
-    _vector = factory.create_vector(_function_space->mesh()->mpi_comm());
+    _vector = std::make_shared<PETScVector>(_function_space->mesh()->mpi_comm());
   dolfin_assert(_vector);
   if (!_vector->empty())
   {

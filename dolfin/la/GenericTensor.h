@@ -41,7 +41,6 @@ namespace dolfin
 {
 
   class TensorLayout;
-  class GenericLinearAlgebraFactory;
 
   /// A common interface for arbitrary rank tensors.
 
@@ -114,9 +113,6 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
-
-    /// Return linear algebra backend factory
-    virtual GenericLinearAlgebraFactory& factory() const = 0;
 
   };
 
