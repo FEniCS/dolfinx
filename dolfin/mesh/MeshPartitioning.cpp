@@ -1093,7 +1093,7 @@ void MeshPartitioning::build_local_mesh(Mesh& mesh,
   {
     for (std::int8_t j = 0; j < gdim; ++j)
       point[j] = vertex_coordinates[i][j];
-    editor.add_vertex_global(i, vertex_indices[i], point);
+    editor.add_vertex(i, vertex_indices[i], point);
   }
 
   // Create CellType

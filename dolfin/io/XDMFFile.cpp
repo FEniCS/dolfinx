@@ -1573,7 +1573,7 @@ void XDMFFile::build_mesh_quadratic(Mesh& mesh, const CellType& cell_type,
   MeshEditor mesh_editor;
   mesh_editor.open(mesh, cell_type.cell_type(), tdim, gdim, 2);
 
-  mesh_editor.init_vertices(vertex_indices.size());
+  mesh_editor.init_vertices_global(vertex_indices.size(), vertex_indices.size());
   int c = 0;
   for (const auto &q : vertex_indices.set())
   {
@@ -1581,7 +1581,7 @@ void XDMFFile::build_mesh_quadratic(Mesh& mesh, const CellType& cell_type,
     ++c;
   }
 
-  mesh_editor.init_cells(num_cells);
+  mesh_editor.init_cells_global(num_cells, num_cells);
   std::vector<unsigned int> pts(num_vertices_per_cell);
   for(int i = 0; i < num_cells; ++i)
   {
@@ -2719,7 +2719,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
 
   const std::string mf_name = "/MeshFunction/" + std::to_string(_counter);
 
-  // If adding a MeshFunction of topology dimension dim() to an existing Mesh, 
+  // If adding a MeshFunction of topology dimension dim() to an existing Mesh,
   // do not rewrite Mesh
   // FIXME: do some checks on the existing Mesh to make sure it is the same
   // as the meshfunction's mesh.

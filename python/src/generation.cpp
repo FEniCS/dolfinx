@@ -28,8 +28,6 @@
 #include <dolfin/generation/IntervalMesh.h>
 #include <dolfin/generation/RectangleMesh.h>
 #include <dolfin/generation/UnitTriangleMesh.h>
-#include <dolfin/generation/UnitDiscMesh.h>
-#include <dolfin/generation/SphericalShellMesh.h>
 
 #include "casters.h"
 
@@ -53,16 +51,6 @@ namespace dolfin_wrappers
                   { return dolfin::RectangleMesh::create(comm.get(), p, n, cell_type, diagonal); },
                   py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("cell_type"),
                   py::arg("diagonal")="right");
-
-    // dolfin::UnitDiscMesh
-    py::class_<dolfin::UnitDiscMesh>(m, "UnitDiscMesh")
-      .def_static("create", [](const MPICommWrapper comm, std::size_t n, std::size_t degree, std::size_t gdim)
-                  { return dolfin::UnitDiscMesh::create(comm.get(), n, degree, gdim); });
-
-    // dolfin::SphericalShellMesh
-    py::class_<dolfin::SphericalShellMesh>(m, "SphericalShellMesh")
-      .def_static("create", [](const MPICommWrapper comm, std::size_t degree)
-                  { return dolfin::SphericalShellMesh::create(comm.get(), degree); });
 
     // dolfin::UnitTriangleMesh
     py::class_<dolfin::UnitTriangleMesh>(m, "UnitTriangleMesh")

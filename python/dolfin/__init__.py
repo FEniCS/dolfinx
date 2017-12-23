@@ -56,10 +56,7 @@ from .cpp.geometry import (BoundingBoxTree,
                            Point,
                            MeshPointIntersection,
                            intersect)
-from .cpp.generation import (IntervalMesh, BoxMesh, RectangleMesh,
-                             UnitDiscMesh,
-                             UnitTriangleMesh,
-                             SphericalShellMesh)
+from .cpp.generation import IntervalMesh, BoxMesh, RectangleMesh
 from .cpp.graph import GraphBuilder
 from .cpp.io import XDMFFile, VTKFile
 from .cpp.la import VectorSpaceBasis

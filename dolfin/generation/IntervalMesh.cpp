@@ -72,8 +72,7 @@ void IntervalMesh::build(Mesh& mesh, std::size_t nx, std::array<double, 2> x)
   // Create main vertices:
   for (std::size_t ix = 0; ix <= nx; ix++)
   {
-    const std::vector<double>
-      x(1, a + (static_cast<double>(ix)*(b - a)/static_cast<double>(nx)));
+    Point x(a + (static_cast<double>(ix)*(b - a)/static_cast<double>(nx)));
     editor.add_vertex(ix, x);
   }
 

@@ -10,11 +10,11 @@ pipelines:
           - pip3 install git+https://bitbucket.org/fenics-project/ffc.git@master
           - mkdir -p build
           - cd build
-          - cmake -DCMAKE_BUILD_TYPE=Debug ../
+          - cmake -DCMAKE_BUILD_TYPE=Debug ..
           - make -j2
           - make install
           - cd ../python
-          - pip3 install . --debug
+          - pip3 install .
           - cd demo
           - python3 ./generate-demo-files.py
           - cd documented/poisson
