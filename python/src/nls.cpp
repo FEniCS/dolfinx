@@ -24,6 +24,7 @@
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/nls/NonlinearProblem.h>
@@ -55,8 +56,8 @@ namespace dolfin_wrappers
         return dolfin::NewtonSolver::converged(r, nonlinear_problem, iteration);
       }
 
-      void solver_setup(std::shared_ptr<const dolfin::GenericMatrix> A,
-                        std::shared_ptr<const dolfin::GenericMatrix> P,
+      void solver_setup(std::shared_ptr<const dolfin::PETScMatrix> A,
+                        std::shared_ptr<const dolfin::PETScMatrix> P,
                         const dolfin::NonlinearProblem& nonlinear_problem,
                         std::size_t iteration)
       {

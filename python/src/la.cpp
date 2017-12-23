@@ -29,7 +29,6 @@
 #include "casters.h"
 
 #include <dolfin/common/Array.h>
-#include <dolfin/la/GenericLinearOperator.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
@@ -207,11 +206,6 @@ namespace dolfin_wrappers
       .def("mpi_comm", [](dolfin::LinearAlgebraObject& self)
         { return MPICommWrapper(self.mpi_comm()); });
 
-    // dolfin::GenericLinearOperator
-    py::class_<dolfin::GenericLinearOperator, std::shared_ptr<dolfin::GenericLinearOperator>,
-               PyLinearOperatorPure<dolfin::GenericLinearOperator>, dolfin::LinearAlgebraObject>
-      (m, "GenericLinearOperator", "GenericLinearOperator object");
-
     // dolfin::GenericTensor
     py::class_<dolfin::GenericTensor, std::shared_ptr<dolfin::GenericTensor>,
                dolfin::LinearAlgebraObject>
@@ -226,11 +220,11 @@ namespace dolfin_wrappers
 
     // dolfin::GenericMatrix
     py::class_<dolfin::GenericMatrix, std::shared_ptr<dolfin::GenericMatrix>,
-               dolfin::GenericTensor, dolfin::GenericLinearOperator>
+               dolfin::GenericTensor>
       (m, "GenericMatrix", py::dynamic_attr(), "DOLFIN GenericMatrix object")
       .def("init_vector", &dolfin::GenericMatrix::init_vector)
       .def("axpy", &dolfin::GenericMatrix::axpy)
-      .def("mult", &dolfin::GenericMatrix::mult)
+      //.def("mult", &dolfin::GenericMatrix::mult)
       .def("transpmult", &dolfin::GenericMatrix::transpmult)
       // __ifoo__
       .def("__imul__", &dolfin::GenericMatrix::operator*=, "Multiply by a scalar")
@@ -696,15 +690,9 @@ namespace dolfin_wrappers
       .def("get_norm_type", (dolfin::PETScKrylovSolver::norm_type (dolfin::PETScKrylovSolver::*)() const)
            &dolfin::PETScKrylovSolver::get_norm_type)
       .def("set_norm_type", &dolfin::PETScKrylovSolver::set_norm_type)
-      .def("set_operator",  (void (dolfin::PETScKrylovSolver::*)(std::shared_ptr<const dolfin::GenericLinearOperator>))
-           &dolfin::PETScKrylovSolver::set_operator)
-      .def("set_operators", (void (dolfin::PETScKrylovSolver::*)(std::shared_ptr<const dolfin::GenericLinearOperator>,
-                                                                 std::shared_ptr<const dolfin::GenericLinearOperator>))
-           &dolfin::PETScKrylovSolver::set_operators)
+      .def("set_operator",  &dolfin::PETScKrylovSolver::set_operator)
+      .def("set_operators", &dolfin::PETScKrylovSolver::set_operators)
       .def("solve", (std::size_t (dolfin::PETScKrylovSolver::*)(dolfin::GenericVector&, const dolfin::GenericVector&))
-           &dolfin::PETScKrylovSolver::solve)
-      .def("solve", (std::size_t (dolfin::PETScKrylovSolver::*)(const dolfin::GenericLinearOperator&,
-                                                                dolfin::GenericVector&, const dolfin::GenericVector&))
            &dolfin::PETScKrylovSolver::solve)
       .def("set_from_options", &dolfin::PETScKrylovSolver::set_from_options)
       .def("set_reuse_preconditioner", &dolfin::PETScKrylovSolver::set_reuse_preconditioner)
