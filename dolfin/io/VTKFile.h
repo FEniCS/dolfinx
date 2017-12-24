@@ -22,7 +22,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "GenericFile.h"
 
 namespace pugi
 {
@@ -42,7 +41,7 @@ namespace dolfin
   /// XML format for visualisation purposes. It is not suitable to
   /// checkpointing as it may decimate some data.
 
-  class VTKFile : public GenericFile
+  class VTKFile
   {
   public:
 
@@ -134,6 +133,13 @@ namespace dolfin
     std::string strip_path(std::string file) const;
 
   private:
+
+    const std::string _filename;
+
+    // Counters for the number of times various data has been written
+    std::size_t counter;
+    std::size_t counter1;
+    std::size_t counter2;
 
     void pvtu_write_mesh(pugi::xml_node xml_node) const;
 

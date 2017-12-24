@@ -31,7 +31,6 @@
 
 #include <ufc.h>
 #include <dolfin/fem/fem_utils.h>
-#include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>
 #include <dolfin/fem/DofMap.h>
@@ -252,25 +251,12 @@ namespace dolfin_wrappers
       .def("function_space", &dolfin::DirichletBC::function_space)
       .def("homogenize", &dolfin::DirichletBC::homogenize)
       .def("method", &dolfin::DirichletBC::method)
-      .def("zero", &dolfin::DirichletBC::zero)
-      .def("zero_columns", &dolfin::DirichletBC::zero_columns,
-           py::arg("A"), py::arg("b"), py::arg("diagonal_value")=0.0)
       .def("get_boundary_values", [](const dolfin::DirichletBC& instance)
            {
              dolfin::DirichletBC::Map map;
              instance.get_boundary_values(map);
              return map;
            })
-      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::PETScVector&) const)
-           &dolfin::DirichletBC::apply)
-      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&) const)
-           &dolfin::DirichletBC::apply)
-      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&, dolfin::PETScVector&) const)
-           &dolfin::DirichletBC::apply)
-      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::PETScVector&, const dolfin::PETScVector&) const)
-           &dolfin::DirichletBC::apply)
-      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&, dolfin::PETScVector&, const dolfin::PETScVector&) const)
-           &dolfin::DirichletBC::apply)
       .def("user_subdomain", &dolfin::DirichletBC::user_sub_domain)
       .def("set_value", &dolfin::DirichletBC::set_value)
       .def("set_value", [](dolfin::DirichletBC& self, py::object value)
@@ -283,15 +269,9 @@ namespace dolfin_wrappers
     py::class_<dolfin::AssemblerBase, std::shared_ptr<dolfin::AssemblerBase>>
       (m, "AssemblerBase")
       .def("init_global_tensor", &dolfin::AssemblerBase::init_global_tensor)
-      .def_readwrite("add_values", &dolfin::Assembler::add_values)
-      .def_readwrite("keep_diagonal", &dolfin::Assembler::keep_diagonal)
-      .def_readwrite("finalize_tensor", &dolfin::Assembler::finalize_tensor);
-
-    // dolfin::Assembler
-    py::class_<dolfin::Assembler, std::shared_ptr<dolfin::Assembler>, dolfin::AssemblerBase>
-      (m, "Assembler", "DOLFIN Assembler object")
-      .def(py::init<>())
-      .def("assemble", &dolfin::Assembler::assemble);
+      .def_readwrite("add_values", &dolfin::AssemblerBase::add_values)
+      .def_readwrite("keep_diagonal", &dolfin::AssemblerBase::keep_diagonal)
+      .def_readwrite("finalize_tensor", &dolfin::AssemblerBase::finalize_tensor);
 
     // dolfin::SystemAssembler
     py::class_<dolfin::SystemAssembler, std::shared_ptr<dolfin::SystemAssembler>, dolfin::AssemblerBase>

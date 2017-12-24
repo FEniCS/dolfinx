@@ -1,6 +1,5 @@
 set(HEADERS
   AssemblerBase.h
-  Assembler.h
   BasisFunction.h
   DirichletBC.h
   DiscreteOperators.h
@@ -22,7 +21,6 @@ set(HEADERS
 
 set(SOURCES
   AssemblerBase.cpp
-  Assembler.cpp
   DirichletBC.cpp
   DiscreteOperators.cpp
   DofMapBuilder.cpp
