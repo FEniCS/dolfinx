@@ -20,7 +20,6 @@
 
 #include <cstring>
 
-#include <dolfin/common/Array.h>
 #include <dolfin/function/Function.h>
 #include "SpecialFacetFunction.h"
 
@@ -52,7 +51,8 @@ Function& SpecialFacetFunction::operator[] (std::size_t i) const
   return _f_e[i];
 }
 //-----------------------------------------------------------------------------
-void SpecialFacetFunction::eval(Array<double>& values, const Array<double>& x,
+void SpecialFacetFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
+                                Eigen::Ref<const Eigen::VectorXd> x,
                                 const ufc::cell& cell) const
 {
   memset(values.data(), 0, values.size()*sizeof(double));

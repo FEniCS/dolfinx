@@ -49,7 +49,6 @@ namespace dolfin
   class FunctionSpace;
   class PETScVector;
   class SubDomain;
-  template<typename T> class Array;
 
   /// This class represents a function :math:`u_h` in a finite
   /// element function space :math:`V_h`, given by
@@ -185,28 +184,6 @@ namespace dolfin
 
     /// Evaluate function at given coordinates
     ///
-    /// @param    values (Array<double>)
-    ///         The values.
-    /// @param    x (Array<double>)
-    ///         The coordinates.
-    void eval(Array<double>& values, const Array<double>& x) const override;
-
-    /// Evaluate function at given coordinates in given cell
-    ///
-    /// *Arguments*
-    /// @param    values (Array<double>)
-    ///         The values.
-    /// @param    x (Array<double>)
-    ///         The coordinates.
-    /// @param    dolfin_cell (_Cell_)
-    ///         The cell.
-    /// @param    ufc_cell (ufc::cell)
-    ///         The ufc::cell.
-    void eval(Array<double>& values, const Array<double>& x,
-              const Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
-
-    /// Evaluate function at given coordinates
-    ///
     /// @param    values (Eigen::Ref<Eigen::VectorXd> values)
     ///         The values.
     /// @param    x (Eigen::Ref<const Eigen::VectorXd> x)
@@ -268,17 +245,6 @@ namespace dolfin
     ///     std::vector<std::size_t>
     ///         The value shape.
     virtual std::vector<std::size_t> value_shape() const override;
-
-    /// Evaluate at given point in given cell
-    ///
-    /// @param    values (Array<double>)
-    ///         The values at the point.
-    /// @param   x (Array<double>)
-    ///         The coordinates of the point.
-    /// @param    cell (ufc::cell)
-    ///         The cell which contains the given point.
-    virtual void eval(Array<double>& values, const Array<double>& x,
-                      const ufc::cell& cell) const override;
 
     /// Evaluate at given point in given cell
     ///

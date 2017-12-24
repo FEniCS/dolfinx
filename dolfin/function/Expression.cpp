@@ -64,31 +64,12 @@ Expression::~Expression()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Array<double>& values, const Array<double>& x,
-                      const ufc::cell& cell) const
-{
-  // Redirect to Eigen eval
-  Eigen::Map<Eigen::VectorXd> _values(values.data(), values.size());
-  const Eigen::Map<Eigen::VectorXd> _x(const_cast<double*>(x.data()), x.size());
-  eval(_values, _x, cell);
-}
-//-----------------------------------------------------------------------------
 void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
                       Eigen::Ref<const Eigen::VectorXd> x,
                       const ufc::cell& cell) const
 {
   // Redirect to simple eval
-  Array<double> _values(values.size(), values.data());
-  const Array<double> _x(x.size(), const_cast<double*>(x.data()));
-  eval(_values, _x);
-}
-//-----------------------------------------------------------------------------
-void Expression::eval(Array<double>& values, const Array<double>& x) const
-{
-  // Redirect to simple eval (Eigen version)
-  Eigen::Map<Eigen::VectorXd> _values(values.data(), values.size());
-  const Eigen::Map<Eigen::VectorXd> _x(const_cast<double*>(x.data()), x.size());
-  eval(_values, _x);
+  eval(values, x);
 }
 //-----------------------------------------------------------------------------
 void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
@@ -167,7 +148,7 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
 {
   // Local data for vertex values
   const std::size_t size = value_size();
-  Array<double> local_vertex_values(size);
+  Eigen::VectorXd local_vertex_values(size);
 
   // Resize vertex_values
   vertex_values.resize(size*mesh.num_vertices());
@@ -183,8 +164,7 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
       // Wrap coordinate data
-      const Array<double> x(mesh.geometry().dim(),
-                            const_cast<double*>(vertex->x()));
+      Eigen::Map<const Eigen::VectorXd> x(vertex->x(), mesh.geometry().dim());
 
       // Evaluate at vertex
       eval(local_vertex_values, x, ufc_cell);

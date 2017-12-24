@@ -24,7 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -241,7 +240,8 @@ std::size_t Function::geometric_dimension() const
   return _function_space->mesh()->geometry().dim();
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Array<double>& values, const Array<double>& x) const
+void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
+                    Eigen::Ref<const Eigen::VectorXd> x) const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
@@ -282,7 +282,8 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   eval(values, x, cell, ufc_cell);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Array<double>& values, const Array<double>& x,
+void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
+                    Eigen::Ref<const Eigen::VectorXd> x,
                     const Cell& dolfin_cell, const ufc::cell& ufc_cell) const
 {
   // Developer note: work arrays/vectors are re-created each time this
@@ -326,23 +327,6 @@ void Function::eval(Array<double>& values, const Array<double>& x,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x) const
-{
-  Array<double> _values(values.size(), values.data());
-  const Array<double> _x(x.size(), const_cast<double*>(x.data()));
-  eval(_values, _x);
-}
-//-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x,
-                    const Cell& dolfin_cell, const ufc::cell& ufc_cell) const
-{
-  Array<double> _values(values.size(), values.data());
-  const Array<double> _x(x.size(), const_cast<double*>(x.data()));
-  eval(_values, _x, dolfin_cell, ufc_cell);
-}
-//-----------------------------------------------------------------------------
 void Function::interpolate(const GenericFunction& v)
 {
   dolfin_assert(_vector);
@@ -383,7 +367,8 @@ std::vector<std::size_t> Function::value_shape() const
   return _shape;
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Array<double>& values, const Array<double>& x,
+void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
+                    Eigen::Ref<const Eigen::VectorXd> x,
                     const ufc::cell& ufc_cell) const
 {
   dolfin_assert(_function_space);
@@ -400,15 +385,6 @@ void Function::eval(Array<double>& values, const Array<double>& x,
   }
   else
     eval(values, x);
-}
-//-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x,
-                    const ufc::cell& ufc_cell) const
-{
-  Array<double> _values(values.size(), values.data());
-  Array<double> _x(x.size(), const_cast<double*>(x.data()));
-  eval(_values, _x, ufc_cell);
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(double* w, const FiniteElement& element,

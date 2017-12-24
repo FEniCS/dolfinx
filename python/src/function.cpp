@@ -29,7 +29,6 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/LagrangeInterpolator.h>
 #include <dolfin/function/SpecialFunctions.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -141,13 +140,6 @@ namespace dolfin_wrappers
              self.eval(f, x);
              return f;
            })
-      .def("__call__", [](const dolfin::Expression& self, const dolfin::Point& p)
-           {
-             const Eigen::Map<Eigen::VectorXd> x(const_cast<double*>(p.coordinates()), 3);
-             Eigen::VectorXd f(self.value_size());
-             self.eval(f, x);
-             return f;
-           })
       .def("value_dimension", &dolfin::Expression::value_dimension)
       .def("get_property", &dolfin::Expression::get_property)
       .def("set_property", [](dolfin::Expression& self, std::string name, py::object value)
@@ -220,13 +212,10 @@ namespace dolfin_wrappers
       .def("_assign", (void (dolfin::Function::*)(const dolfin::FunctionAXPY&))
            &dolfin::Function::operator=)
       .def("_in", &dolfin::Function::in)
-      .def("__call__", [](dolfin::Function& self, std::vector<double>& p)
+      .def("__call__", [](dolfin::Function& self, Eigen::Ref<const Eigen::VectorXd> x)
           {
-            // FIXME - remove Array and replace with Eigen in DOLFIN
-            const dolfin::Array<double> x(p.size(), p.data());
-            Eigen::VectorXd values(self.value_size());
-            dolfin::Array<double> _values(self.value_size(), values.data());
-            self.eval(_values, x);
+             Eigen::VectorXd values(self.value_size());
+            self.eval(values, x);
             return values;
           })
       .def("extrapolate", &dolfin::Function::extrapolate)
@@ -332,28 +321,6 @@ namespace dolfin_wrappers
              py::array_t<double> c({coords.size()/gdim, gdim}, coords.data() );
              return c;
            });
-
-    // dolfin::LagrangeInterpolator
-    py::class_<dolfin::LagrangeInterpolator> (m, "LagrangeInterpolator")
-      .def_static("interpolate", (void (*)(dolfin::Function&, const dolfin::Function&))
-                  &dolfin::LagrangeInterpolator::interpolate)
-      .def_static("interpolate", [](py::object f1, py::object f2)
-                  {
-                    auto _f1 = f1.attr("_cpp_object").cast<dolfin::Function*>();
-                    auto _f2cpp = f2.attr("_cpp_object");
-                    if (py::isinstance<dolfin::Function>(_f2cpp))
-                    {
-                      auto _f2 = _f2cpp.cast<const dolfin::Function*>();
-                      dolfin::LagrangeInterpolator::interpolate(*_f1, *_f2);
-                    }
-                    else if (py::isinstance<dolfin::Expression>(_f2cpp))
-                    {
-                      auto _f2 = _f2cpp.cast<const dolfin::Expression*>();
-                      dolfin::LagrangeInterpolator::interpolate(*_f1, *_f2);
-                    }
-                    else
-                      throw py::type_error("Can only interpolate Expression or Function");
-                  });
 
   }
 }

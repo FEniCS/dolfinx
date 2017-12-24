@@ -1,5 +1,4 @@
-#ifndef __DOLFIN_FUNCTION_H
-#define __DOLFIN_FUNCTION_H
+#pragma once
 
 // DOLFIN function interface
 
@@ -11,6 +10,3 @@
 #include <dolfin/function/Constant.h>
 #include <dolfin/function/SpecialFunctions.h>
 #include <dolfin/function/SpecialFacetFunction.h>
-#include <dolfin/function/LagrangeInterpolator.h>
-
-#endif

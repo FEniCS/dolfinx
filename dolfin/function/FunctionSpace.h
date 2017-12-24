@@ -27,11 +27,11 @@
 
 #include <cstddef>
 #include <map>
-#include <vector>
-
 #include <memory>
+#include <vector>
 #include <unordered_map>
-#include <dolfin/common/Array.h>
+#include <Eigen/Dense>
+
 #include <dolfin/common/Variable.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Cell.h>

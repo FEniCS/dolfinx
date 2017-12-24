@@ -339,12 +339,12 @@ void Mesh::init_cell_orientations(const Expression& global_normal)
   _cell_orientations.resize(num_cells());
 
   // Set orientation
-  Array<double> values(ndim);
+  Eigen::VectorXd values(ndim);
   Point up;
   for (CellIterator cell(*this); !cell.end(); ++cell)
   {
     // Extract cell midpoint as Array
-    const Array<double> x(3, cell->midpoint().coordinates());
+    Eigen::Map<const Eigen::VectorXd> x(cell->midpoint().coordinates(), 3);
 
     // Evaluate global normal at cell midpoint
     global_normal.eval(values, x);

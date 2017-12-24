@@ -7,7 +7,6 @@ set(HEADERS
   Function.h
   FunctionSpace.h
   GenericFunction.h
-  LagrangeInterpolator.h
   SpecialFacetFunction.h
   SpecialFunctions.h
   PARENT_SCOPE)
@@ -20,7 +19,6 @@ set(SOURCES
   Function.cpp
   FunctionSpace.cpp
   GenericFunction.cpp
-  LagrangeInterpolator.cpp
   SpecialFacetFunction.cpp
   SpecialFunctions.cpp
   PARENT_SCOPE)

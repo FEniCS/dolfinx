@@ -36,7 +36,8 @@ MeshCoordinates::MeshCoordinates(std::shared_ptr<const Mesh> mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshCoordinates::eval(Array<double>& values, const Array<double>& x,
+void MeshCoordinates::eval(Eigen::Ref<Eigen::VectorXd> values,
+                           Eigen::Ref<const Eigen::VectorXd> x,
                            const ufc::cell& cell) const
 {
   dolfin_assert(_mesh);
@@ -55,7 +56,8 @@ FacetArea::FacetArea(std::shared_ptr<const Mesh> mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FacetArea::eval(Array<double>& values, const Array<double>& x,
+void FacetArea::eval(Eigen::Ref<Eigen::VectorXd> values,
+                     Eigen::Ref<const Eigen::VectorXd> x,
                      const ufc::cell& cell) const
 {
   dolfin_assert(_mesh);
