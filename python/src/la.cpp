@@ -31,7 +31,6 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericVector.h>
 #include <dolfin/la/IndexMap.h>
 #include <dolfin/la/LinearAlgebraObject.h>
 #include <dolfin/la/Scalar.h>
@@ -73,7 +72,7 @@ namespace
     std::size_t size(std::size_t dim) const
     { PYBIND11_OVERLOAD_PURE(std::size_t, LinearOperatorBase, size, ); }
 
-    void mult(const dolfin::GenericVector& x, dolfin::GenericVector& y) const
+    void mult(const dolfin::PETScVector& x, dolfin::PETScVector& y) const
     { PYBIND11_OVERLOAD_INT(void, LinearOperatorBase, "mult", &x, &y); }
   };
 
@@ -87,7 +86,7 @@ namespace
     std::size_t size(std::size_t dim) const
     { PYBIND11_OVERLOAD_PURE(std::size_t, LinearOperatorBase, size, ); }
 
-    void mult(const dolfin::GenericVector& x, dolfin::GenericVector& y) const
+    void mult(const dolfin::PETScVector& x, dolfin::PETScVector& y) const
     {
       PYBIND11_OVERLOAD_INT(void, LinearOperatorBase, "mult", &x, &y);
       py::pybind11_fail("Tried to call pure virtual function \'mult\'");
@@ -350,6 +349,7 @@ namespace dolfin_wrappers
              return A;
            });
 
+    /*
     // dolfin::GenericVector
     py::class_<dolfin::GenericVector, std::shared_ptr<dolfin::GenericVector>,
                dolfin::GenericTensor>
@@ -588,6 +588,7 @@ namespace dolfin_wrappers
       .def("owns_index", &dolfin::GenericVector::owns_index)
       .def("apply", &dolfin::GenericVector::apply)
       .def_property_readonly("__array_priority__", [](const dolfin::GenericVector& self){ return 0; });
+    */
 
     // dolfin::Scalar
     py::class_<dolfin::Scalar, std::shared_ptr<dolfin::Scalar>, dolfin::GenericTensor>
@@ -616,7 +617,7 @@ namespace dolfin_wrappers
 
     // dolfin::PETScVector
     py::class_<dolfin::PETScVector, std::shared_ptr<dolfin::PETScVector>,
-               dolfin::GenericVector, dolfin::PETScObject>
+               dolfin::GenericTensor, dolfin::PETScObject>
       (m, "PETScVector", "DOLFIN PETScVector object")
       .def(py::init<>())
       .def(py::init([](const MPICommWrapper comm)
@@ -627,6 +628,7 @@ namespace dolfin_wrappers
       .def("get_options_prefix", &dolfin::PETScVector::get_options_prefix)
       .def("set_options_prefix", &dolfin::PETScVector::set_options_prefix)
       .def("update_ghost_values", &dolfin::PETScVector::update_ghost_values)
+      .def("size",  (std::size_t (dolfin::PETScVector::*)() const) &dolfin::PETScVector::size)
       .def("vec", &dolfin::PETScVector::vec, "Return underlying PETSc Vec object");
 
     // dolfin::PETScBaseMatrix
@@ -689,7 +691,7 @@ namespace dolfin_wrappers
       .def("set_norm_type", &dolfin::PETScKrylovSolver::set_norm_type)
       .def("set_operator",  &dolfin::PETScKrylovSolver::set_operator)
       .def("set_operators", &dolfin::PETScKrylovSolver::set_operators)
-      .def("solve", (std::size_t (dolfin::PETScKrylovSolver::*)(dolfin::GenericVector&, const dolfin::GenericVector&))
+      .def("solve", (std::size_t (dolfin::PETScKrylovSolver::*)(dolfin::PETScVector&, const dolfin::PETScVector&))
            &dolfin::PETScKrylovSolver::solve)
       .def("set_from_options", &dolfin::PETScKrylovSolver::set_from_options)
       .def("set_reuse_preconditioner", &dolfin::PETScKrylovSolver::set_reuse_preconditioner)

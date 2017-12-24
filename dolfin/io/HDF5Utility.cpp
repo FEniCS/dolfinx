@@ -34,7 +34,7 @@
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 
 #include "HDF5Utility.h"
 
@@ -340,7 +340,7 @@ void HDF5Utility::build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data)
 //-----------------------------------------------------------------------------
 void HDF5Utility::set_local_vector_values(
   const MPI_Comm mpi_comm,
-  GenericVector& x,
+  PETScVector& x,
   const Mesh& mesh,
   const std::vector<size_t>& cells,
   const std::vector<dolfin::la_index>& cell_dofs,

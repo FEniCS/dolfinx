@@ -31,7 +31,7 @@ namespace dolfin
   class Function;
   class FunctionSpace;
   class DirichletBC;
-  class GenericVector;
+  class PETScVector;
 
   /// This class represents a nonlinear variational problem:
   ///
@@ -58,8 +58,8 @@ namespace dolfin
     void set_bounds(const Function& lb_func, const Function& ub_func);
 
     /// Set the bounds for bound constrained solver
-    void set_bounds(std::shared_ptr<const GenericVector> lb,
-                    std::shared_ptr<const GenericVector> ub);
+    void set_bounds(std::shared_ptr<const PETScVector> lb,
+                    std::shared_ptr<const PETScVector> ub);
 
     /// Return residual form
     std::shared_ptr<const Form> residual_form() const;
@@ -83,10 +83,10 @@ namespace dolfin
     std::shared_ptr<const FunctionSpace> test_space() const;
 
     /// Return lower bound
-    std::shared_ptr<const GenericVector> lower_bound() const;
+    std::shared_ptr<const PETScVector> lower_bound() const;
 
     /// Return upper bound
-    std::shared_ptr<const GenericVector> upper_bound() const;
+    std::shared_ptr<const PETScVector> upper_bound() const;
 
     /// Check whether Jacobian has been defined
     bool has_jacobian() const;
@@ -116,8 +116,8 @@ namespace dolfin
 
     // The lower and upper bounds (pointers may be null if not
     // provided)
-    std::shared_ptr<const GenericVector> _lb;
-    std::shared_ptr<const GenericVector> _ub;
+    std::shared_ptr<const PETScVector> _lb;
+    std::shared_ptr<const PETScVector> _ub;
   };
 
 }

@@ -27,7 +27,7 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
@@ -572,7 +572,7 @@ std::vector<dolfin::la_index> DofMap::dofs() const
   return _dofs;
 }
 //-----------------------------------------------------------------------------
-void DofMap::set(GenericVector& x, double value) const
+void DofMap::set(PETScVector& x, double value) const
 {
   dolfin_assert(_dofmap.size() % _cell_dimension == 0);
   const std::size_t num_cells = _dofmap.size() / _cell_dimension;

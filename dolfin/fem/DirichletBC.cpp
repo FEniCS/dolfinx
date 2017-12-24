@@ -50,7 +50,7 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include "FiniteElement.h"
 #include "GenericDofMap.h"
 #include "DirichletBC.h"
@@ -144,24 +144,24 @@ void DirichletBC::apply(GenericMatrix& A) const
   apply(&A, 0, 0);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericVector& b) const
+void DirichletBC::apply(PETScVector& b) const
 {
   apply(0, &b, 0);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericMatrix& A, GenericVector& b) const
+void DirichletBC::apply(GenericMatrix& A, PETScVector& b) const
 {
   apply(&A, &b, 0);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::apply(GenericVector& b, const GenericVector& x) const
+void DirichletBC::apply(PETScVector& b, const PETScVector& x) const
 {
   apply(0, &b, &x);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A,
-                        GenericVector& b,
-                        const GenericVector& x) const
+                        PETScVector& b,
+                        const PETScVector& x) const
 {
   apply(&A, &b, &x);
 }
@@ -302,7 +302,7 @@ void DirichletBC::zero(GenericMatrix& A) const
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::zero_columns(GenericMatrix& A,
-                               GenericVector& b,
+                               PETScVector& b,
                                double diag_val) const
 {
   // Check arguments
@@ -346,7 +346,7 @@ void DirichletBC::zero_columns(GenericMatrix& A,
         vals[j] = (cols[j] == row)*diag_val;
       A.setrow(row, cols, vals);
       A.apply("insert");
-      b.setitem(row, bc_dof_val[row]*diag_val);
+      //b.setitem(row, bc_dof_val[row]*diag_val);
     }
     else // Otherwise, we scan the row for BC columns
     {
@@ -435,8 +435,8 @@ std::string DirichletBC::method() const
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix* A,
-                        GenericVector* b,
-                        const GenericVector* x) const
+                        PETScVector* b,
+                        const PETScVector* x) const
 {
   Timer timer("DirichletBC apply");
 
@@ -1098,8 +1098,8 @@ bool DirichletBC::on_facet(const double* coordinates, const Facet& facet) const
   return false;
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::check_arguments(GenericMatrix* A, GenericVector* b,
-                                  const GenericVector* x,
+void DirichletBC::check_arguments(GenericMatrix* A, PETScVector* b,
+                                  const PETScVector* x,
                                   std::size_t dim) const
 {
   dolfin_assert(_function_space);

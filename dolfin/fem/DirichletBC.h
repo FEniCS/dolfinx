@@ -50,7 +50,7 @@ namespace dolfin
   class FunctionSpace;
   class Facet;
   class GenericMatrix;
-  class GenericVector;
+  class PETScVector;
   class SubDomain;
   template<typename T> class MeshFunction;
 
@@ -222,36 +222,36 @@ namespace dolfin
 
     /// Apply boundary condition to a vector
     ///
-    /// @param[in,out] b (GenericVector)
+    /// @param[in,out] b (PETScVector)
     ///         The vector to apply boundary condition to.
-    void apply(GenericVector& b) const;
+    void apply(PETScVector& b) const;
 
     /// Apply boundary condition to a linear system
     ///
     /// @param[in,out] A (GenericMatrix)
     ///         The matrix to apply boundary condition to.
-    /// @param[in,out] b (GenericVector)
+    /// @param[in,out] b (PETScVector)
     ///         The vector to apply boundary condition to.
-    void apply(GenericMatrix& A, GenericVector& b) const;
+    void apply(GenericMatrix& A, PETScVector& b) const;
 
     /// Apply boundary condition to vectors for a nonlinear problem
     ///
-    /// @param[in,out] b (GenericVector)
+    /// @param[in,out] b (PETScVector)
     ///         The vector to apply boundary conditions to.
-    /// @param[in] x (GenericVector)
+    /// @param[in] x (PETScVector)
     ///         Another vector (nonlinear problem).
-    void apply(GenericVector& b, const GenericVector& x) const;
+    void apply(PETScVector& b, const PETScVector& x) const;
 
     /// Apply boundary condition to a linear system for a nonlinear problem
     ///
     /// @param[in,out] A (GenericMatrix)
     ///         The matrix to apply boundary conditions to.
-    /// @param[in,out] b (GenericVector)
+    /// @param[in,out] b (PETScVector)
     ///         The vector to apply boundary conditions to.
-    /// @param[in] x (GenericVector)
+    /// @param[in] x (PETScVector)
     ///         Another vector (nonlinear problem).
-    void apply(GenericMatrix& A, GenericVector& b,
-               const GenericVector& x) const;
+    void apply(GenericMatrix& A, PETScVector& b,
+               const PETScVector& x) const;
 
     /// Get Dirichlet dofs and values. If a method other than 'pointwise' is
     /// used in parallel, the map may not be complete for local vertices since
@@ -284,11 +284,11 @@ namespace dolfin
     ///
     /// @param[in,out] A (GenericMatrix&)
     ///         The matrix
-    /// @param[in,out] b (GenericVector&)
+    /// @param[in,out] b (PETScVector&)
     ///         The vector
     /// @param[in] diag_val (double)
     ///         This parameter would normally be -1, 0 or 1.
-    void zero_columns(GenericMatrix& A, GenericVector& b,
+    void zero_columns(GenericMatrix& A, PETScVector& b,
                       double diag_val=0) const;
 
     /// Return boundary markers
@@ -348,8 +348,8 @@ namespace dolfin
     class LocalData;
 
     // Apply boundary conditions, common method
-    void apply(GenericMatrix* A, GenericVector* b,
-               const GenericVector* x) const;
+    void apply(GenericMatrix* A, PETScVector* b,
+               const PETScVector* x) const;
 
     // Check input data to constructor
     void check() const;
@@ -387,8 +387,8 @@ namespace dolfin
 
     // Check arguments for compatibility of tensors and dofmap,
     // dim is means an axis to which bc applies
-    void check_arguments(GenericMatrix* A, GenericVector* b,
-                         const GenericVector* x,
+    void check_arguments(GenericMatrix* A, PETScVector* b,
+                         const PETScVector* x,
                          std::size_t dim) const;
 
     // The function space (possibly a sub function space)

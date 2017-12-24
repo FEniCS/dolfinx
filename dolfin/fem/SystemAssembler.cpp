@@ -30,7 +30,7 @@
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/Progress.h>
 #include <dolfin/mesh/Cell.h>
@@ -58,7 +58,7 @@ SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
   check_arity(_a, _l);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b)
+void SystemAssembler::assemble(GenericMatrix& A, PETScVector& b)
 {
   assemble(&A, &b, NULL);
 }
@@ -68,18 +68,18 @@ void SystemAssembler::assemble(GenericMatrix& A)
   assemble(&A, NULL, NULL);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericVector& b)
+void SystemAssembler::assemble(PETScVector& b)
 {
   assemble(NULL, &b, NULL);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
-                               const GenericVector& x0)
+void SystemAssembler::assemble(GenericMatrix& A, PETScVector& b,
+                               const PETScVector& x0)
 {
   assemble(&A, &b, &x0);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericVector& b, const GenericVector& x0)
+void SystemAssembler::assemble(PETScVector& b, const PETScVector& x0)
 {
   assemble(NULL, &b, &x0);
 }
@@ -135,8 +135,8 @@ bool SystemAssembler::check_functionspace_for_bc
   return fs->contains(*bc_function_space);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
-                               const GenericVector* x0)
+void SystemAssembler::assemble(GenericMatrix* A, PETScVector* b,
+                               const PETScVector* x0)
 {
   dolfin_assert(_a);
   dolfin_assert(_l);

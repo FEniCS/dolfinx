@@ -21,7 +21,7 @@
 
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
@@ -202,7 +202,7 @@ void PointSource::distribute_sources(const Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-void PointSource::apply(GenericVector& b)
+void PointSource::apply(PETScVector& b)
 {
   // Applies local point sources.
   dolfin_assert(_function_space0);

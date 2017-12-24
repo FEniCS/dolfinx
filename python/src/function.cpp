@@ -34,7 +34,7 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/geometry/Point.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
 
 namespace py = pybind11;
@@ -212,7 +212,7 @@ namespace dolfin_wrappers
       (m, "Function", "A finite element function")
       .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>>(), "Create a function on the given function space")
       .def(py::init<dolfin::Function&, std::size_t>())
-      .def(py::init<std::shared_ptr<dolfin::FunctionSpace>, std::shared_ptr<dolfin::GenericVector>>())
+      .def(py::init<std::shared_ptr<dolfin::FunctionSpace>, std::shared_ptr<dolfin::PETScVector>>())
       .def("_assign", (const dolfin::Function& (dolfin::Function::*)(const dolfin::Function&))
            &dolfin::Function::operator=)
       .def("_assign", (const dolfin::Function& (dolfin::Function::*)(const dolfin::Expression&))
@@ -247,7 +247,7 @@ namespace dolfin_wrappers
       .def("set_allow_extrapolation", &dolfin::Function::set_allow_extrapolation)
       // FIXME: A lot of error when using non-const version - misused
       // by Python interface?
-      .def("vector", (std::shared_ptr<const dolfin::GenericVector> (dolfin::Function::*)() const)
+      .def("vector", (std::shared_ptr<const dolfin::PETScVector> (dolfin::Function::*)() const)
            &dolfin::Function::vector, "Return the vector associated with the finite element Function");
 
     // FIXME: why is this floating here?

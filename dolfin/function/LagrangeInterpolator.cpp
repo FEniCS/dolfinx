@@ -21,7 +21,7 @@
 
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/common/RangedIndexSet.h>
 #include "Expression.h"
 #include "Function.h"

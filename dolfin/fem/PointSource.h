@@ -29,7 +29,7 @@ namespace dolfin
   // Forward declarations
   class FunctionSpace;
   class GenericMatrix;
-  class GenericVector;
+  class PETScVector;
   class Mesh;
 
   /// This class provides an easy mechanism for adding a point
@@ -68,7 +68,7 @@ namespace dolfin
     ~PointSource();
 
     /// Apply (add) point source to right-hand side vector
-    void apply(GenericVector& b);
+    void apply(PETScVector& b);
 
     /// Apply (add) point source to matrix
     void apply(GenericMatrix& A);

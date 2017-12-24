@@ -37,7 +37,7 @@ namespace dolfin
 
   class CellType;
   class Function;
-  class GenericVector;
+  class PETScVector;
   class LocalMeshData;
   class Mesh;
   template<typename T> class MeshFunction;
@@ -70,11 +70,11 @@ namespace dolfin
     void write(const std::vector<double>& values, const std::string name);
 
     /// Write Vector to file in a format suitable for re-reading
-    void write(const GenericVector& x, const std::string name);
+    void write(const PETScVector& x, const std::string name);
 
     /// Read vector from file and optionally re-use any partitioning
     /// that is available in the file
-    void read(GenericVector& x, const std::string dataset_name,
+    void read(PETScVector& x, const std::string dataset_name,
               const bool use_partition_from_file) const;
 
     /// Write Mesh to file in a format suitable for re-reading

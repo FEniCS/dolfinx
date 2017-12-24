@@ -47,7 +47,7 @@ namespace dolfin
   class Cell;
   class Expression;
   class FunctionSpace;
-  class GenericVector;
+  class PETScVector;
   class SubDomain;
   template<typename T> class Array;
 
@@ -86,7 +86,7 @@ namespace dolfin
     ///     x (_GenericVector_)
     ///         The vector.
     Function(std::shared_ptr<const FunctionSpace> V,
-             std::shared_ptr<GenericVector> x);
+             std::shared_ptr<PETScVector> x);
 
     /// Copy constructor
     ///
@@ -156,14 +156,14 @@ namespace dolfin
     /// *Returns*
     ///     _GenericVector_
     ///         The vector of expansion coefficients.
-    std::shared_ptr<GenericVector> vector();
+    std::shared_ptr<PETScVector> vector();
 
     /// Return vector of expansion coefficients (const version)
     ///
     /// *Returns*
     ///     _GenericVector_
     ///         The vector of expansion coefficients (const).
-    std::shared_ptr<const GenericVector> vector() const;
+    std::shared_ptr<const PETScVector> vector() const;
 
     /// Check if function is a member of the given function space
     ///
@@ -355,7 +355,7 @@ namespace dolfin
     std::shared_ptr<const FunctionSpace> _function_space;
 
     // The vector of expansion coefficients (local)
-    std::shared_ptr<GenericVector> _vector;
+    std::shared_ptr<PETScVector> _vector;
 
     // True if extrapolation should be allowed
     bool _allow_extrapolation;

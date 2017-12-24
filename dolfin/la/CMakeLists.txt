@@ -3,7 +3,6 @@ set(HEADERS
   dolfin_la.h
   GenericMatrix.h
   GenericTensor.h
-  GenericVector.h
   IndexMap.h
   LinearAlgebraObject.h
   PETScBaseMatrix.h

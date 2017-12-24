@@ -42,7 +42,7 @@ namespace dolfin
   class Function;
   class GenericDofMap;
   class GenericFunction;
-  class GenericVector;
+  class PETScVector;
   class Mesh;
 
   /// This class represents a finite element function space defined by
@@ -160,11 +160,11 @@ namespace dolfin
     /// vector of expansion coefficients
     ///
     /// *Arguments*
-    ///     expansion_coefficients (_GenericVector_)
+    ///     expansion_coefficients (_PETScVector_)
     ///         The expansion coefficients.
     ///     v (_GenericFunction_)
     ///         The function to be interpolated.
-    void interpolate(GenericVector& expansion_coefficients,
+    void interpolate(PETScVector& expansion_coefficients,
                      const GenericFunction& v) const;
 
     /// Extract subspace for component
@@ -296,7 +296,7 @@ namespace dolfin
     /// operator, e.g. rigid body rotations.
     ///
     /// *Arguments*
-    ///     vector (_GenericVector_)
+    ///     vector (_PETScVector_)
     ///         The vector to set.
     ///     value (double)
     ///         The value to multiply to coordinate by.
@@ -304,7 +304,7 @@ namespace dolfin
     ///         The coordinate index.
     ///     mesh (_Mesh_)
     ///         The mesh.
-    void set_x(GenericVector& x, double value, std::size_t component) const;
+    void set_x(PETScVector& x, double value, std::size_t component) const;
 
     /// Return informal string representation (pretty-print)
     ///
@@ -323,7 +323,7 @@ namespace dolfin
   private:
 
     // General interpolation from any GenericFunction on any mesh
-    void interpolate_from_any(GenericVector& expansion_coefficients,
+    void interpolate_from_any(PETScVector& expansion_coefficients,
                               const GenericFunction& v) const;
 
     // The mesh

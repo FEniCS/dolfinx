@@ -31,8 +31,9 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/geometry/Point.h>
-#include <dolfin/la/GenericVector.h>
 #include <dolfin/la/PETScVector.h>
+#include <dolfin/la/PETScVector.h>
+#include <dolfin/la/TensorLayout.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
@@ -62,7 +63,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V,
-                   std::shared_ptr<GenericVector> x)
+                   std::shared_ptr<PETScVector> x)
   : _function_space(V), _vector(x),
   _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
@@ -205,7 +206,7 @@ void Function::operator=(const FunctionAXPY& axpy)
   }
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericVector> Function::vector()
+std::shared_ptr<PETScVector> Function::vector()
 {
   dolfin_assert(_vector);
   dolfin_assert(_function_space->dofmap());
@@ -221,7 +222,7 @@ std::shared_ptr<GenericVector> Function::vector()
   return _vector;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const GenericVector> Function::vector() const
+std::shared_ptr<const PETScVector> Function::vector() const
 {
   dolfin_assert(_vector);
   return _vector;

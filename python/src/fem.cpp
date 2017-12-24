@@ -46,7 +46,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Mesh.h>
@@ -261,15 +261,15 @@ namespace dolfin_wrappers
              instance.get_boundary_values(map);
              return map;
            })
-      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericVector&) const)
+      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::PETScVector&) const)
            &dolfin::DirichletBC::apply)
       .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&) const)
            &dolfin::DirichletBC::apply)
-      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&, dolfin::GenericVector&) const)
+      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&, dolfin::PETScVector&) const)
            &dolfin::DirichletBC::apply)
-      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericVector&, const dolfin::GenericVector&) const)
+      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::PETScVector&, const dolfin::PETScVector&) const)
            &dolfin::DirichletBC::apply)
-      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&, dolfin::GenericVector&, const dolfin::GenericVector&) const)
+      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&, dolfin::PETScVector&, const dolfin::PETScVector&) const)
            &dolfin::DirichletBC::apply)
       .def("user_subdomain", &dolfin::DirichletBC::user_sub_domain)
       .def("set_value", &dolfin::DirichletBC::set_value)
@@ -298,14 +298,14 @@ namespace dolfin_wrappers
       (m, "SystemAssembler", "DOLFIN SystemAssembler object")
       .def(py::init<std::shared_ptr<const dolfin::Form>, std::shared_ptr<const dolfin::Form>,
            std::vector<std::shared_ptr<const dolfin::DirichletBC>>>())
-      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&, dolfin::GenericVector&))
+      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&, dolfin::PETScVector&))
            &dolfin::SystemAssembler::assemble)
       .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&)) &dolfin::SystemAssembler::assemble)
-      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericVector&)) &dolfin::SystemAssembler::assemble)
-      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&, dolfin::GenericVector&,
-                                                          const dolfin::GenericVector&))
+      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::PETScVector&)) &dolfin::SystemAssembler::assemble)
+      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&, dolfin::PETScVector&,
+                                                          const dolfin::PETScVector&))
            &dolfin::SystemAssembler::assemble)
-      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericVector&, const dolfin::GenericVector&))
+      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::PETScVector&, const dolfin::PETScVector&))
            &dolfin::SystemAssembler::assemble);
 
     // dolfin::DiscreteOperators
@@ -400,7 +400,7 @@ namespace dolfin_wrappers
       //.def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, const std::vector<std::pair<const dolfin::Point*, double>>>())
       //.def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, std::shared_ptr<const dolfin::FunctionSpace>,
       //     const std::vector<std::pair<const dolfin::Point*, double>>>())
-      .def("apply", (void (dolfin::PointSource::*)(dolfin::GenericVector&)) &dolfin::PointSource::apply)
+      .def("apply", (void (dolfin::PointSource::*)(dolfin::PETScVector&)) &dolfin::PointSource::apply)
       .def("apply", (void (dolfin::PointSource::*)(dolfin::GenericMatrix&)) &dolfin::PointSource::apply);
 
     // dolfin::NonlinearVariationalProblem
@@ -412,8 +412,8 @@ namespace dolfin_wrappers
            std::vector<std::shared_ptr<const dolfin::DirichletBC>>,
            std::shared_ptr<const dolfin::Form>>())
       // FIXME: is there a better way to handle the casting
-      .def("set_bounds", (void (dolfin::NonlinearVariationalProblem::*)(std::shared_ptr<const dolfin::GenericVector>,
-                                                                        std::shared_ptr<const dolfin::GenericVector>))
+      .def("set_bounds", (void (dolfin::NonlinearVariationalProblem::*)(std::shared_ptr<const dolfin::PETScVector>,
+                                                                        std::shared_ptr<const dolfin::PETScVector>))
            &dolfin::NonlinearVariationalProblem::set_bounds)
       .def("set_bounds", (void (dolfin::NonlinearVariationalProblem::*)(const dolfin::Function&, const dolfin::Function&))
            &dolfin::NonlinearVariationalProblem::set_bounds)

@@ -71,7 +71,6 @@ if has_slepc():
 
 from .cpp.la import (IndexMap, Scalar,
                      TensorLayout)
-from .cpp.la import GenericVector  # Remove when pybind11 transition complete
 from .cpp.log import (info, Table, set_log_level, get_log_level, LogLevel)
 from .cpp.math import ipow, near, between
 from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, MeshEntity,

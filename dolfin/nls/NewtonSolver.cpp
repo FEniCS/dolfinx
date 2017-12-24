@@ -27,7 +27,7 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/PETScKrylovSolver.h>
@@ -74,7 +74,7 @@ NewtonSolver::~NewtonSolver()
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>
 NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
-                    GenericVector& x)
+                    PETScVector& x)
 {
   dolfin_assert(_matA);
   dolfin_assert(_b);
@@ -247,7 +247,7 @@ GenericLinearSolver& NewtonSolver::linear_solver() const
 }
 */
 //-----------------------------------------------------------------------------
-bool NewtonSolver::converged(const GenericVector& r,
+bool NewtonSolver::converged(const PETScVector& r,
                              const NonlinearProblem& nonlinear_problem,
                              std::size_t newton_iteration)
 {
@@ -295,7 +295,7 @@ void NewtonSolver::solver_setup(std::shared_ptr<const PETScMatrix> A,
   }
 }
 //-----------------------------------------------------------------------------
-void NewtonSolver::update_solution(GenericVector& x, const GenericVector& dx,
+void NewtonSolver::update_solution(PETScVector& x, const PETScVector& dx,
                                    double relaxation_parameter,
                                    const NonlinearProblem& nonlinear_problem,
                                    std::size_t interation)

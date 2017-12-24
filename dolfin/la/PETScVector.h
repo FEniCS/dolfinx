@@ -39,8 +39,10 @@
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/types.h>
-#include "GenericVector.h"
+#include "TensorLayout.h"
+#include "GenericTensor.h"
 #include "PETScObject.h"
+#include "IndexMap.h"
 
 namespace dolfin
 {
@@ -51,13 +53,13 @@ namespace dolfin
   /// A simple vector class based on PETSc.
   ///
   /// It is a simple wrapper for a PETSc vector pointer (Vec)
-  /// implementing the GenericVector interface.
+  /// implementing the GenericTensor interface.
   ///
   /// The interface is intentionally simple. For advanced usage,
   /// access the PETSc Vec pointer using the function vec() and
   /// use the standard PETSc interface.
 
-  class PETScVector : public GenericVector, public PETScObject
+  class PETScVector : public GenericTensor, public PETScObject
   {
   public:
 
@@ -98,10 +100,93 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
-    //--- Implementation of the GenericVector interface ---
+    //--- Implementation of the PETScVector interface ---
 
     /// Return copy of vector
-    virtual std::shared_ptr<GenericVector> copy() const;
+    virtual std::shared_ptr<PETScVector> copy() const;
+
+    std::size_t size(std::size_t dim) const
+    { return this->size(); }
+
+     /// Return local ownership range
+    std::pair<std::int64_t, std::int64_t> local_range(std::size_t dim) const
+    { return this->local_range(); }
+
+    /// Set block of values using global indices
+    void set(const double* block, const dolfin::la_index* num_rows,
+                     const dolfin::la_index * const * rows)
+    {
+      this->set(block, num_rows[0], rows[0]);
+    }
+
+    /// Set block of values using local indices
+    void set_local(const double* block,
+                           const dolfin::la_index* num_rows,
+                           const dolfin::la_index * const * rows)
+    {
+      this->set_local(block, num_rows[0], rows[0]);
+    }
+
+    /// Add block of values using global indices
+    virtual void add(const double* block, const dolfin::la_index* num_rows,
+                     const dolfin::la_index * const * rows)
+    { add(block, num_rows[0], rows[0]); }
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block,
+                           const dolfin::la_index* num_rows,
+                           const dolfin::la_index * const * rows)
+    { add_local(block, num_rows[0], rows[0]); }
+
+    /// Add block of values using global indices
+    virtual void
+      add(const double* block,
+          const std::vector<ArrayView<const dolfin::la_index>>& rows)
+    { add(block, rows[0].size(), rows[0].data()); }
+
+    /// Add block of values using local indices
+    virtual void
+      add_local(const double* block,
+                const std::vector<ArrayView<const dolfin::la_index>>& rows)
+    { add_local(block, rows[0].size(), rows[0].data()); }
+
+    std::size_t rank() const
+    { return 1;}
+
+    /// Initialize zero tensor using sparsity pattern
+    /// FIXME: This needs to be implemented on backend side! Remove it!
+    virtual void init(const TensorLayout& tensor_layout)
+    {
+      if (!empty())
+      {
+        dolfin_error("GenericVector.h",
+                     "initialize vector",
+                     "Vector cannot be initialised more than once");
+      }
+
+      std::vector<dolfin::la_index> ghosts;
+      std::vector<std::size_t> local_to_global(tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL));
+
+      // FIXME: should just pass index_map to init()
+      for (std::size_t i = 0; i != local_to_global.size(); ++i)
+        local_to_global[i] = tensor_layout.index_map(0)->local_to_global(i);
+
+      // FIXME: temporary hack - needs passing tensor layout directly to backend
+      if (tensor_layout.is_ghosted() == TensorLayout::Ghosts::GHOSTED)
+      {
+        const std::size_t nowned
+          = tensor_layout.index_map(0)->size(IndexMap::MapSize::OWNED);
+        const std::size_t nghosts
+          = tensor_layout.index_map(0)->size(IndexMap::MapSize::UNOWNED);
+        ghosts.resize(nghosts);
+        for (std::size_t i = 0; i != nghosts; ++i)
+          ghosts[i] = local_to_global[i + nowned];
+      }
+
+      this->init(tensor_layout.local_range(0), local_to_global, ghosts);
+      this->zero();
+    }
+
 
     /// Initialize vector to global size N
     virtual void init(std::size_t N);
@@ -115,8 +200,8 @@ namespace dolfin
                       const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index>& ghost_indices);
 
-    // Bring init function from GenericVector into scope
-    using GenericVector::init;
+    // Bring init function from PETScVector into scope
+    //using GenericVector::init;
 
     /// Return true if vector is empty
     virtual bool empty() const;
@@ -171,7 +256,7 @@ namespace dolfin
     /// (MPI_COMM_SELF) vector x. Provided x must be empty
     /// or of correct dimension (same as provided indices).
     /// This operation is collective
-    virtual void gather(GenericVector& y,
+    virtual void gather(PETScVector& y,
                         const std::vector<dolfin::la_index>& indices) const;
 
     /// Gather entries (given by global indices) into x.
@@ -184,13 +269,13 @@ namespace dolfin
     virtual void gather_on_zero(std::vector<double>& x) const;
 
     /// Add multiple of given vector (AXPY operation)
-    virtual void axpy(double a, const GenericVector& x);
+    virtual void axpy(double a, const PETScVector& x);
 
     /// Replace all entries in the vector by their absolute values
     virtual void abs();
 
     /// Return inner product with given vector
-    virtual double inner(const GenericVector& v) const;
+    virtual double inner(const PETScVector& v) const;
 
     /// Return norm of vector
     virtual double norm(std::string norm_type) const;
@@ -211,25 +296,25 @@ namespace dolfin
     virtual const PETScVector& operator*= (double a);
 
     /// Multiply vector by another vector pointwise
-    virtual const PETScVector& operator*= (const GenericVector& x);
+    virtual const PETScVector& operator*= (const PETScVector& x);
 
     /// Divide vector by given number
     virtual const PETScVector& operator/= (double a);
 
     /// Add given vector
-    virtual const PETScVector& operator+= (const GenericVector& x);
+    virtual const PETScVector& operator+= (const PETScVector& x);
 
     /// Add number to all components of a vector
     virtual const PETScVector& operator+= (double a);
 
     /// Subtract given vector
-    virtual const PETScVector& operator-= (const GenericVector& x);
+    virtual const PETScVector& operator-= (const PETScVector& x);
 
     /// Subtract number from all components of a vector
     virtual const PETScVector& operator-= (double a);
 
     /// Assignment operator
-    virtual const GenericVector& operator= (const GenericVector& x);
+    virtual const PETScVector& operator= (const PETScVector& x);
 
     /// Assignment operator
     virtual const PETScVector& operator= (double a);
@@ -253,9 +338,6 @@ namespace dolfin
 
     /// Return pointer to PETSc Vec object
     Vec vec() const;
-
-    /// Assignment operator
-    const PETScVector& operator= (const PETScVector& x);
 
     /// Switch underlying PETSc object. Intended for internal library
     /// usage.

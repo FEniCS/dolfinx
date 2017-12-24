@@ -28,7 +28,7 @@
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
@@ -119,7 +119,7 @@ std::size_t FunctionSpace::dim() const
   return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate_from_any(GenericVector& expansion_coefficients,
+void FunctionSpace::interpolate_from_any(PETScVector& expansion_coefficients,
                                          const GenericFunction& v) const
 {
   // Initialize local arrays
@@ -149,7 +149,7 @@ void FunctionSpace::interpolate_from_any(GenericVector& expansion_coefficients,
 
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
+void FunctionSpace::interpolate(PETScVector& expansion_coefficients,
                                 const GenericFunction& v) const
 {
   dolfin_assert(_mesh);
@@ -333,7 +333,7 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
   return x;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::set_x(GenericVector& x, double value,
+void FunctionSpace::set_x(PETScVector& x, double value,
                           std::size_t component) const
 {
   dolfin_assert(_mesh);

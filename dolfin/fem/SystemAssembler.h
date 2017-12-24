@@ -46,7 +46,7 @@ namespace dolfin
   class Form;
   class GenericDofMap;
   class GenericMatrix;
-  class GenericVector;
+  class PETScVector;
   template<typename T> class MeshFunction;
   class UFC;
 
@@ -65,23 +65,23 @@ namespace dolfin
                     std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
     /// Assemble system (A, b)
-    void assemble(GenericMatrix& A, GenericVector& b);
+    void assemble(GenericMatrix& A, PETScVector& b);
 
     /// Assemble matrix A
     void assemble(GenericMatrix& A);
 
     /// Assemble vector b
-    void assemble(GenericVector& b);
+    void assemble(PETScVector& b);
 
     /// Assemble system (A, b) for (negative) increment dx, where x =
     /// x0 - dx is solution to system a == -L subject to bcs.
     /// Suitable for use inside a (quasi-)Newton solver.
-    void assemble(GenericMatrix& A, GenericVector& b, const GenericVector& x0);
+    void assemble(GenericMatrix& A, PETScVector& b, const PETScVector& x0);
 
     /// Assemble rhs vector b for (negative) increment dx, where x =
     /// x0 - dx is solution to system a == -L subject to bcs.
     /// Suitable for use inside a (quasi-)Newton solver.
-    void assemble(GenericVector& b, const GenericVector& x0);
+    void assemble(PETScVector& b, const PETScVector& x0);
 
   private:
 
@@ -103,8 +103,8 @@ namespace dolfin
       (std::shared_ptr<const FunctionSpace> fs, std::size_t bc_index);
 
     // Assemble system
-    void assemble(GenericMatrix* A, GenericVector* b,
-                  const GenericVector* x0);
+    void assemble(GenericMatrix* A, PETScVector* b,
+                  const PETScVector* x0);
 
     // Bilinear and linear forms
     std::shared_ptr<const Form> _a, _l;

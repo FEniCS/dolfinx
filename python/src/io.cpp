@@ -28,7 +28,7 @@
 #include <dolfin/io/XDMFFile.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/geometry/Point.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
@@ -189,7 +189,7 @@ namespace dolfin_wrappers
            &dolfin::HDF5File::read, py::arg("meshfunction"), py::arg("name"))
       .def("read", (void (dolfin::HDF5File::*)(dolfin::MeshFunction<double>&, std::string) const)
            &dolfin::HDF5File::read, py::arg("meshfunction"), py::arg("name"))
-      .def("read", (void (dolfin::HDF5File::*)(dolfin::GenericVector&, std::string, bool) const)
+      .def("read", (void (dolfin::HDF5File::*)(dolfin::PETScVector&, std::string, bool) const)
            &dolfin::HDF5File::read, py::arg("vector"), py::arg("name"), py::arg("use_partitioning"))
       .def("read", (void (dolfin::HDF5File::*)(dolfin::Function&, const std::string))
            &dolfin::HDF5File::read, py::arg("u"), py::arg("name"))
@@ -218,7 +218,7 @@ namespace dolfin_wrappers
            &dolfin::HDF5File::write, py::arg("meshfunction"), py::arg("name"))
       .def("write", (void (dolfin::HDF5File::*)(const dolfin::MeshFunction<double>&, std::string))
            &dolfin::HDF5File::write, py::arg("meshfunction"), py::arg("name"))
-      .def("write", (void (dolfin::HDF5File::*)(const dolfin::GenericVector&, std::string))
+      .def("write", (void (dolfin::HDF5File::*)(const dolfin::PETScVector&, std::string))
            &dolfin::HDF5File::write, py::arg("vector"), py::arg("name"))
       .def("write", (void (dolfin::HDF5File::*)(const dolfin::Function&, std::string))
            &dolfin::HDF5File::write, py::arg("u"), py::arg("name"))
