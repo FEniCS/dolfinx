@@ -84,29 +84,6 @@ namespace dolfin
   /// codimension 1.
   typedef MeshEntityIteratorBase<Facet> FacetIterator;
 
-  /// A FacetFunction is a MeshFunction of topological codimension 1.
-  template <typename T> class FacetFunction : public MeshFunction<T>
-  {
-  public:
-
-    /// Constructor on Mesh
-    FacetFunction(std::shared_ptr<const Mesh> mesh)
-      : MeshFunction<T>(mesh, mesh->topology().dim() - 1) {
-        deprecation("FacetFunction<T>(mesh)",
-                    "2017.2.0",
-                    "Use MeshFunction<T>(mesh, mesh->topology().dim() - 1)");
-      }
-
-    /// Constructor on Mesh and value
-    FacetFunction(std::shared_ptr<const Mesh> mesh, const T& value)
-      : MeshFunction<T>(mesh, mesh->topology().dim() - 1, value) {
-        deprecation("FacetFunction<T>(mesh, value)",
-                    "2017.2.0",
-                    "Use MeshFunction<T>(mesh, mesh->topology().dim() - 1, value)");
-      }
-
-  };
-
 }
 
 #endif

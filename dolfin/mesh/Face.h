@@ -61,29 +61,6 @@ namespace dolfin
   /// A FaceIterator is a MeshEntityIterator of topological dimension 2.
   typedef MeshEntityIteratorBase<Face> FaceIterator;
 
-  /// A FaceFunction is a MeshFunction of topological dimension 2.
-  template <typename T> class FaceFunction : public MeshFunction<T>
-  {
-  public:
-
-    /// Constructor on Mesh
-    FaceFunction(std::shared_ptr<const Mesh> mesh)
-      : MeshFunction<T>(mesh, 2) {
-        deprecation("FaceFunction<T>(mesh)",
-                    "2017.2.0",
-                    "Use MeshFunction<T>(mesh, 2)");
-      }
-
-    /// Constructor on Mesh and value
-    FaceFunction(std::shared_ptr<const Mesh> mesh, const T& value)
-      : MeshFunction<T>(mesh, 2, value) {
-        deprecation("FaceFunction<T>(mesh, value)",
-                    "2017.2.0",
-                    "Use MeshFunction<T>(mesh, 2, value)");
-      }
-
-  };
-
 }
 
 #endif

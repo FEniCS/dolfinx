@@ -59,34 +59,11 @@ namespace dolfin
     const double* x() const
     { return _mesh->geometry().x(_local_index); }
 
+    template <typename T> friend class MeshIterator;
   };
 
   /// A VertexIterator is a MeshEntityIterator of topological dimension 0
   typedef MeshEntityIteratorBase<Vertex> VertexIterator;
-
-  /// A VertexFunction is a MeshFunction of topological dimension 0.
-  template <typename T> class VertexFunction : public MeshFunction<T>
-  {
-  public:
-
-    /// Constructor on Mesh
-    VertexFunction(std::shared_ptr<const Mesh> mesh)
-      : MeshFunction<T>(mesh, 0) {
-        deprecation("VertexFunction<T>(mesh)",
-                    "2017.2.0",
-                    "Use MeshFunction<T>(mesh, 0)");
-      }
-
-    /// Constructor on Mesh and value
-    VertexFunction(std::shared_ptr<const Mesh> mesh, const T& value)
-      : MeshFunction<T>(mesh, 0, value) {
-        deprecation("VertexFunction<T>(mesh, value)",
-                    "2017.2.0",
-                    "Use MeshFunction<T>(mesh, 0, value)");
-      }
-
-  };
-
 }
 
 #endif

@@ -84,17 +84,37 @@ namespace dolfin
 
   };
 
-  class cells
+  template<class T>
+  class entities
   {
   public:
-    cells(const Mesh& mesh) : _mesh(&mesh)
+    entities(const Mesh& mesh) : _mesh(&mesh)
     {}
 
-    const MeshIterator<Cell> begin() const
-    { return MeshIterator<Cell>(*_mesh); }
+    const MeshIterator<T> begin() const
+    { return MeshIterator<T>(*_mesh); }
 
-    const MeshIterator<Cell> end() const
-    { return MeshIterator<Cell>(*_mesh, _mesh->topology().ghost_offset(_mesh->topology().dim())); }
+    const MeshIterator<T> end() const
+    { T c(*_mesh, 0);
+      return MeshIterator<T>(*_mesh, _mesh->topology().ghost_offset(c.dim())); }
+
+  private:
+    const Mesh *_mesh;
+  };
+
+  typedef entities<Cell> cells;
+
+  class vertices
+  {
+  public:
+    vertices(const Mesh& mesh) : _mesh(&mesh)
+    {}
+
+    const MeshIterator<Vertex> begin() const
+    { return MeshIterator<Vertex>(*_mesh); }
+
+    const MeshIterator<Vertex> end() const
+    { return MeshIterator<Vertex>(*_mesh, _mesh->topology().ghost_offset(0)); }
 
   private:
     const Mesh *_mesh;
