@@ -10,6 +10,9 @@
 
 namespace dolfin
 {
+  // Forward declaration
+  template <typename T> class entities;
+
   template<class T>
   class MeshIterator : public boost::iterator_facade<MeshIterator<T>, T, boost::forward_traversal_tag>
   {
@@ -82,8 +85,10 @@ namespace dolfin
     // Mapping from pos to index (if any)
     const unsigned int* _index;
 
+    template <typename T> friend class entities;
   };
 
+  // Class defining begin() and end() methods for a given entity
   template<class T>
   class entities
   {
@@ -91,34 +96,28 @@ namespace dolfin
     entities(const Mesh& mesh) : _mesh(&mesh)
     {}
 
+    entities(const MeshEntity& e) : _mesh(&e.mesh())
+    {}
+
     const MeshIterator<T> begin() const
     { return MeshIterator<T>(*_mesh); }
 
     const MeshIterator<T> end() const
-    { T c(*_mesh, 0);
-      return MeshIterator<T>(*_mesh, _mesh->topology().ghost_offset(c.dim())); }
+    {
+      MeshIterator<T> it(*_mesh);
+      std::size_t dim = it._entity->dim();
+      std::size_t end_pos = _mesh->topology().ghost_offset(dim);
+      it._pos = end_pos;
+      it._entity->_local_index = (_index ? _index[_pos] : _pos);
+      return it;
+    }
 
   private:
     const Mesh *_mesh;
   };
 
   typedef entities<Cell> cells;
-
-  class vertices
-  {
-  public:
-    vertices(const Mesh& mesh) : _mesh(&mesh)
-    {}
-
-    const MeshIterator<Vertex> begin() const
-    { return MeshIterator<Vertex>(*_mesh); }
-
-    const MeshIterator<Vertex> end() const
-    { return MeshIterator<Vertex>(*_mesh, _mesh->topology().ghost_offset(0)); }
-
-  private:
-    const Mesh *_mesh;
-  };
+  typedef entities<Vertex> vertices;
 
 }
 
