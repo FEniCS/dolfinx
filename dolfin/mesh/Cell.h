@@ -37,8 +37,6 @@
 namespace dolfin
 {
 
-  template <typename T> class MeshIterator;
-
   /// A Cell is a _MeshEntity_ of topological codimension 0.
 
   class Cell : public MeshEntity

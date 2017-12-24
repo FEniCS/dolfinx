@@ -10,8 +10,13 @@
 
 namespace dolfin
 {
-  // Forward declaration
-  template <typename T> class entities;
+  // Forward declarations
+  class Vertex;
+  class Edge;
+  class Face;
+  class Facet;
+  class Cell;
+  template<typename X> class entities;
 
   template<class T>
   class MeshIterator : public boost::iterator_facade<MeshIterator<T>, T, boost::forward_traversal_tag>
@@ -27,6 +32,15 @@ namespace dolfin
       _pos(it._pos), _index(it._index)
     {
       _entity->_local_index = (_index ? _index[_pos] : _pos);
+    }
+
+    // Copy assignment
+    const MeshIterator& operator= (const MeshIterator& m)
+    {
+      _entity = std::make_unique<T>(*m._entity);
+      _pos = m._pos;
+      _index = m._index;
+      return *this;
     }
 
     // Constructor with Mesh
@@ -85,7 +99,7 @@ namespace dolfin
     // Mapping from pos to index (if any)
     const unsigned int* _index;
 
-    template <typename T> friend class entities;
+    template <typename X> friend class entities;
   };
 
   // Class defining begin() and end() methods for a given entity
@@ -93,30 +107,33 @@ namespace dolfin
   class entities
   {
   public:
-    entities(const Mesh& mesh) : _mesh(&mesh)
-    {}
-
-    entities(const MeshEntity& e) : _mesh(&e.mesh())
-    {}
-
-    const MeshIterator<T> begin() const
-    { return MeshIterator<T>(*_mesh); }
-
-    const MeshIterator<T> end() const
+  entities(const Mesh& mesh) : _it_begin(mesh, 0)
     {
-      MeshIterator<T> it(*_mesh);
-      std::size_t dim = it._entity->dim();
-      std::size_t end_pos = _mesh->topology().ghost_offset(dim);
-      it._pos = end_pos;
-      it._entity->_local_index = (_index ? _index[_pos] : _pos);
-      return it;
+      const std::size_t dim = _it_begin._entity->dim();
+      _it_end = MeshIterator<T>(mesh, mesh.topology().ghost_offset(dim));
     }
 
+    entities(const MeshEntity& e) : _it_begin(e, 0)
+    {
+      const std::size_t dim = _it_begin._entity->dim();
+      _it_end = MeshIterator<T>(e, e.num_entities(dim));
+    }
+
+    const MeshIterator<T> begin() const
+    { return _it_begin; }
+
+    const MeshIterator<T> end() const
+    { return _it_end; }
+
   private:
-    const Mesh *_mesh;
+    MeshIterator<T> _it_begin;
+    MeshIterator<T> _it_end;
   };
 
   typedef entities<Cell> cells;
+  typedef entities<Facet> facets;
+  typedef entities<Face> faces;
+  typedef entities<Edge> edges;
   typedef entities<Vertex> vertices;
 
 }

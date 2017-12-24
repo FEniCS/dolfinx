@@ -373,7 +373,7 @@ bool PETScVector::owns_index(std::size_t i) const
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const PETScVector& v)
 {
-  *this = as_type<const PETScVector>(v);
+  _x = v._x;
   return *this;
 }
 //-----------------------------------------------------------------------------
