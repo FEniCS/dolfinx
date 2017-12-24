@@ -743,8 +743,7 @@ MatNullSpace PETScMatrix::create_petsc_nullspace(const VectorSpaceBasis& nullspa
   for (std::size_t i = 0; i < nullspace.dim(); ++i)
   {
     dolfin_assert(nullspace[i]);
-    dolfin_assert(as_type<const PETScVector>(nullspace[i]));
-    auto x = as_type<const PETScVector>(nullspace[i])->vec();
+    auto x = nullspace[i]->vec();
 
     // Copy vector pointer
     dolfin_assert(x);
