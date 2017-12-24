@@ -311,6 +311,7 @@ namespace dolfin_wrappers
              self.set((const double *) block.data(), rows.size(), rows.data(),
                       cols.size(), cols.data());
            }, py::arg("block"), py::arg("rows"), py::arg("cols"))
+      /*
       .def("getrow", [](const dolfin::GenericMatrix& instance, std::size_t row)
            {
              std::vector<double> values;
@@ -320,6 +321,8 @@ namespace dolfin_wrappers
              auto _values = py::array_t<double>(values.size(), values.data());
              return std::make_pair(_columns, _values);
            }, py::arg("row"))
+      */
+      /*
       .def("array", [](const dolfin::GenericMatrix& instance)
            {
              // FIXME: This function is highly dubious. It assumes a
@@ -341,7 +344,9 @@ namespace dolfin_wrappers
              }
 
              return A;
-           });
+           })
+      */
+      ;
 
     /*
     // dolfin::GenericVector

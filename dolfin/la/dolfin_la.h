@@ -18,7 +18,6 @@
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
 
-#include <dolfin/la/CoordinateMatrix.h>
 #include <dolfin/la/PETScVector.h>
 
 #include <dolfin/la/TensorLayout.h>

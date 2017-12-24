@@ -1,5 +1,4 @@
 set(HEADERS
-  CoordinateMatrix.h
   dolfin_la.h
   GenericMatrix.h
   GenericTensor.h
@@ -19,7 +18,6 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
-  CoordinateMatrix.cpp
   IndexMap.cpp
   PETScBaseMatrix.cpp
   PETScKrylovSolver.cpp
