@@ -18,8 +18,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 // Modified by Garth N. Wells, 2008-2011.
 
-#ifndef __CONSTANT_H
-#define __CONSTANT_H
+#pragma once
 
 #include <vector>
 #include <Eigen/Dense>
@@ -27,7 +26,6 @@
 
 namespace dolfin
 {
-  template<typename T> class Array;
   class Mesh;
 
   /// This class represents a constant-valued expression.
@@ -122,8 +120,6 @@ namespace dolfin
 
     //--- Implementation of Expression interface ---
 
-    void eval(Array<double>& values, const Array<double>& x) const override;
-
     void eval(Eigen::Ref<Eigen::VectorXd> values,
               Eigen::Ref<const Eigen::VectorXd> x) const override;
 
@@ -137,5 +133,3 @@ namespace dolfin
   };
 
 }
-
-#endif

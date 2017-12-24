@@ -36,7 +36,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Edge.h>
@@ -1261,7 +1261,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
                 {num_cell_dofs_global, 1}, "UInt");
 
   // Get all local data
-  const GenericVector& u_vector = *u.vector();
+  const PETScVector& u_vector = *u.vector();
   std::vector<double> local_data;
   u_vector.get_local(local_data);
 
@@ -1526,7 +1526,7 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
     = get_dataset<double>(_mpi_comm.comm(), vector_dataitem, parent_path,
                           input_vector_range);
 
-  GenericVector& x = *u.vector();
+  PETScVector& x = *u.vector();
 
   HDF5Utility::set_local_vector_values(_mpi_comm.comm(), x, mesh, cells,
                                        cell_dofs, x_cell_dofs, vector,
@@ -2951,7 +2951,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
     }
 
     // Get the values at the vertex points
-    const GenericVector& uvec = *u.vector();
+    const PETScVector& uvec = *u.vector();
     uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
 
     // Get midpoint values for Edge points
@@ -2990,7 +2990,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
       }
     }
 
-    const GenericVector& uvec = *u.vector();
+    const PETScVector& uvec = *u.vector();
     uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
   }
   else

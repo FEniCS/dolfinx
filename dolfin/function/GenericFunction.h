@@ -26,7 +26,6 @@
 #include <memory>
 #include <Eigen/Dense>
 #include <ufc.h>
-#include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -71,13 +70,6 @@ namespace dolfin
     /// Return value shape
     virtual std::vector<std::size_t> value_shape() const = 0;
 
-    /// Evaluate at given point in given cell (deprecated)
-    virtual void eval(Array<double>& values, const Array<double>& x,
-                      const ufc::cell& cell) const;
-
-    /// Evaluate at given point (deprecated)
-    virtual void eval(Array<double>& values, const Array<double>& x) const;
-
     /// Evaluate at given point in given cell
     virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
                       Eigen::Ref<const Eigen::VectorXd> x,
@@ -104,30 +96,6 @@ namespace dolfin
     virtual void update() const {}
 
     //--- Convenience functions ---
-
-    /// Evaluation at given point (scalar function)
-    double operator() (double x) const;
-
-    /// Evaluation at given point (scalar function)
-    double operator() (double x, double y) const;
-
-    /// Evaluation at given point (scalar function)
-    double operator() (double x, double y, double z) const;
-
-    /// Evaluation at given point (scalar function)
-    double operator() (const Point& p) const;
-
-    /// Evaluation at given point (vector-valued function)
-    void operator() (Array<double>& values, double x) const;
-
-    /// Evaluation at given point (vector-valued function)
-    void operator() (Array<double>& values, double x, double y) const;
-
-    /// Evaluation at given point (vector-valued function)
-    void operator() (Array<double>& values, double x, double y, double z) const;
-
-    /// Evaluation at given point (vector-valued function)
-    void operator() (Array<double>& values, const Point& p) const;
 
     /// Evaluation at given point
 

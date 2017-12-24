@@ -57,7 +57,7 @@ namespace dolfin
     /// *Arguments*
     ///     nonlinear_function (_NonlinearProblem_)
     ///         The nonlinear problem.
-    ///     x (_GenericVector_)
+    ///     x (_PETScVector_)
     ///         The vector.
     ///
     /// *Returns*
@@ -65,7 +65,7 @@ namespace dolfin
     ///         Pair of number of Newton iterations, and whether
     ///         iteration converged)
     std::pair<std::size_t, bool> solve(NonlinearProblem& nonlinear_function,
-                                       GenericVector& x);
+                                       PETScVector& x);
 
     /// Return current Newton iteration number
     ///
@@ -141,7 +141,7 @@ namespace dolfin
     /// this base criterion may be called from derived, both in C++ and Python.
     ///
     /// *Arguments*
-    ///     r (_GenericVector_)
+    ///     r (_PETScVector_)
     ///         Residual for criterion evaluation.
     ///     nonlinear_problem (_NonlinearProblem_)
     ///         The nonlinear problem.
@@ -151,7 +151,7 @@ namespace dolfin
     /// *Returns*
     ///     bool
     ///         Whether convergence occurred.
-    virtual bool converged(const GenericVector& r,
+    virtual bool converged(const PETScVector& r,
                            const NonlinearProblem& nonlinear_problem,
                            std::size_t iteration);
 
@@ -181,9 +181,9 @@ namespace dolfin
     ///   x -= relaxation_parameter*dx
     ///
     /// *Arguments*
-    ///     x (_GenericVector>_)
+    ///     x (_PETScVector>_)
     ///         The solution vector to be updated.
-    ///     dx (_GenericVector>_)
+    ///     dx (_PETScVector>_)
     ///         The update vector computed by Newton step.
     ///     relaxation_parameter (double)
     ///         Newton relaxation parameter.
@@ -191,8 +191,8 @@ namespace dolfin
     ///         The nonlinear problem.
     ///     iteration (std::size_t)
     ///         Newton iteration number.
-    virtual void update_solution(GenericVector& x,
-                                 const GenericVector& dx,
+    virtual void update_solution(PETScVector& x,
+                                 const PETScVector& dx,
                                  double relaxation_parameter,
                                  const NonlinearProblem& nonlinear_problem,
                                  std::size_t iteration);

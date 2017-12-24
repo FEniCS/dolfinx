@@ -31,7 +31,6 @@ namespace dolfin
 {
 
   /// Forward declarations
-  class GenericVector;
   class PETScMatrix;
   class PETScVector;
   class VectorSpaceBasis;
@@ -155,10 +154,6 @@ namespace dolfin
 
     /// Get ith eigenvalue
     void get_eigenvalue(double& lr, double& lc, std::size_t i) const;
-
-    /// Get ith eigenpair
-    void get_eigenpair(double& lr, double& lc,
-                       GenericVector& r, GenericVector& c, std::size_t i) const;
 
     /// Get ith eigenpair
     void get_eigenpair(double& lr, double& lc,

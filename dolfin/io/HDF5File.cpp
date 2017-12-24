@@ -34,7 +34,7 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/LocalMeshData.h>
@@ -154,7 +154,7 @@ void HDF5File::write(const std::vector<double>& values,
   write_data(dataset_name, values, global_size, mpi_io);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write(const GenericVector& x, const std::string dataset_name)
+void HDF5File::write(const PETScVector& x, const std::string dataset_name)
 {
   dolfin_assert(x.size() > 0);
   dolfin_assert(_hdf5_file_id > 0);
@@ -181,7 +181,7 @@ void HDF5File::write(const GenericVector& x, const std::string dataset_name)
                                partitions);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(GenericVector& x, const std::string dataset_name,
+void HDF5File::read(PETScVector& x, const std::string dataset_name,
                     const bool use_partition_from_file) const
 {
   dolfin_assert(_hdf5_file_id > 0);
@@ -1059,7 +1059,7 @@ void HDF5File::read(Function& u, const std::string name)
                                              x_cell_dofs.back()),
                               input_cell_dofs);
 
-  GenericVector& x = *u.vector();
+  PETScVector& x = *u.vector();
 
   const std::vector<std::int64_t> vector_shape =
     HDF5Interface::get_dataset_shape(_hdf5_file_id, vector_dataset_name);

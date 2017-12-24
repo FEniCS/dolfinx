@@ -20,7 +20,7 @@ def as_backend_type(x):
         return x
 
 
-# Extend GenericVector
+# Extend PETScVector
 def __gt__(self, value):
     "Returns a boolean array with > status for all elements"
     if np.isscalar(value):
@@ -29,7 +29,7 @@ def __gt__(self, value):
         return self.get_local() > value.get_local()
 
 
-cpp.la.GenericVector.__gt__ = __gt__
+cpp.la.PETScVector.__gt__ = __gt__
 del __gt__
 
 
@@ -41,7 +41,7 @@ def __ge__(self, value):
         return self.get_local() >= value.get_local()
 
 
-cpp.la.GenericVector.__ge__ = __ge__
+cpp.la.PETScVector.__ge__ = __ge__
 del __ge__
 
 
@@ -53,7 +53,7 @@ def __lt__(self, value):
         return self.get_local() < value.get_local()
 
 
-cpp.la.GenericVector.__lt__ = __lt__
+cpp.la.PETScVector.__lt__ = __lt__
 del __lt__
 
 
@@ -65,7 +65,7 @@ def __le__(self, value):
         return self.get_local() <= value.get_local()
 
 
-cpp.la.GenericVector.__le__ = __le__
+cpp.la.PETScVector.__le__ = __le__
 del __le__
 
 
@@ -76,7 +76,7 @@ def __eq__(self, value):
         return self.get_local() == value.get_local()
 
 
-cpp.la.GenericVector.__eq__ = __eq__
+cpp.la.PETScVector.__eq__ = __eq__
 del __eq__
 
 
@@ -85,5 +85,5 @@ def __iter__(self):
         yield self[i]
 
 
-cpp.la.GenericVector.__iter__ = __iter__
+cpp.la.PETScVector.__iter__ = __iter__
 del __iter__

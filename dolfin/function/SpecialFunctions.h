@@ -26,8 +26,8 @@
 #define __SPECIAL_FUNCTIONS_H
 
 #include <memory>
+#include <Eigen/Dense>
 #include <dolfin/log/Event.h>
-#include <dolfin/common/Array.h>
 #include "Expression.h"
 
 namespace dolfin
@@ -44,8 +44,9 @@ namespace dolfin
     explicit MeshCoordinates(std::shared_ptr<const Mesh> mesh);
 
     /// Evaluate function
-    void eval(Array<double>& values, const Array<double>& x,
-              const ufc::cell& cell) const;
+    void eval(Eigen::Ref<Eigen::VectorXd> values,
+                      Eigen::Ref<const Eigen::VectorXd> x,
+                      const ufc::cell& cell) const;
 
   private:
 
@@ -64,8 +65,8 @@ namespace dolfin
     explicit FacetArea(std::shared_ptr<const Mesh> mesh);
 
     /// Evaluate function
-    void eval(Array<double>& values,
-              const Array<double>& x,
+    void eval(Eigen::Ref<Eigen::VectorXd> values,
+              Eigen::Ref<const Eigen::VectorXd> x,
               const ufc::cell& cell) const;
 
   private:

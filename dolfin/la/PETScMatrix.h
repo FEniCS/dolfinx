@@ -120,11 +120,11 @@ namespace dolfin
     /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
-    /// @param z (GenericVector&)
+    /// @param z (PETScVector&)
     ///         Vector to initialise
     /// @param  dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void init_vector(GenericVector& z, std::size_t dim) const
+    virtual void init_vector(PETScVector& z, std::size_t dim) const
     { PETScBaseMatrix::init_vector(z, dim); }
 
     /// Get block of values
@@ -182,16 +182,16 @@ namespace dolfin
     virtual void ident_local(std::size_t m, const dolfin::la_index* rows);
 
     // Matrix-vector product, y = Ax
-    virtual void mult(const GenericVector& x, GenericVector& y) const;
+    virtual void mult(const PETScVector& x, PETScVector& y) const;
 
     // Matrix-vector product, y = A^T x
-    virtual void transpmult(const GenericVector& x, GenericVector& y) const;
+    virtual void transpmult(const PETScVector& x, PETScVector& y) const;
 
     /// Get diagonal of a matrix
-    virtual void get_diagonal(GenericVector& x) const;
+    virtual void get_diagonal(PETScVector& x) const;
 
     /// Set diagonal of a matrix
-    virtual void set_diagonal(const GenericVector& x);
+    virtual void set_diagonal(const PETScVector& x);
 
     /// Multiply matrix by given number
     virtual const PETScMatrix& operator*= (double a);

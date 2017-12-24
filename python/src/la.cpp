@@ -31,7 +31,6 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericVector.h>
 #include <dolfin/la/IndexMap.h>
 #include <dolfin/la/LinearAlgebraObject.h>
 #include <dolfin/la/Scalar.h>
@@ -73,7 +72,7 @@ namespace
     std::size_t size(std::size_t dim) const
     { PYBIND11_OVERLOAD_PURE(std::size_t, LinearOperatorBase, size, ); }
 
-    void mult(const dolfin::GenericVector& x, dolfin::GenericVector& y) const
+    void mult(const dolfin::PETScVector& x, dolfin::PETScVector& y) const
     { PYBIND11_OVERLOAD_INT(void, LinearOperatorBase, "mult", &x, &y); }
   };
 
@@ -87,7 +86,7 @@ namespace
     std::size_t size(std::size_t dim) const
     { PYBIND11_OVERLOAD_PURE(std::size_t, LinearOperatorBase, size, ); }
 
-    void mult(const dolfin::GenericVector& x, dolfin::GenericVector& y) const
+    void mult(const dolfin::PETScVector& x, dolfin::PETScVector& y) const
     {
       PYBIND11_OVERLOAD_INT(void, LinearOperatorBase, "mult", &x, &y);
       py::pybind11_fail("Tried to call pure virtual function \'mult\'");
@@ -222,10 +221,10 @@ namespace dolfin_wrappers
     py::class_<dolfin::GenericMatrix, std::shared_ptr<dolfin::GenericMatrix>,
                dolfin::GenericTensor>
       (m, "GenericMatrix", py::dynamic_attr(), "DOLFIN GenericMatrix object")
-      .def("init_vector", &dolfin::GenericMatrix::init_vector)
+      //.def("init_vector", &dolfin::GenericMatrix::init_vector)
       .def("axpy", &dolfin::GenericMatrix::axpy)
       //.def("mult", &dolfin::GenericMatrix::mult)
-      .def("transpmult", &dolfin::GenericMatrix::transpmult)
+      //.def("transpmult", &dolfin::GenericMatrix::transpmult)
       // __ifoo__
       .def("__imul__", &dolfin::GenericMatrix::operator*=, "Multiply by a scalar")
       .def("__itruediv__", &dolfin::GenericMatrix::operator/=, py::is_operator(), "Divide by a scalar")
@@ -291,8 +290,8 @@ namespace dolfin_wrappers
       .def("nnz", &dolfin::GenericMatrix::nnz)
       .def("size", &dolfin::GenericMatrix::size)
       .def("apply", &dolfin::GenericMatrix::apply)
-      .def("get_diagonal", &dolfin::GenericMatrix::get_diagonal)
-      .def("set_diagonal", &dolfin::GenericMatrix::set_diagonal)
+      //.def("get_diagonal", &dolfin::GenericMatrix::get_diagonal)
+      //.def("set_diagonal", &dolfin::GenericMatrix::set_diagonal)
       .def("ident_zeros", &dolfin::GenericMatrix::ident_zeros, py::arg("tol") = DOLFIN_EPS)
       .def("ident", [](dolfin::GenericMatrix& self, std::vector<dolfin::la_index> rows)
            { self.ident(rows.size(), rows.data()); }, py::arg("rows"))
@@ -350,6 +349,7 @@ namespace dolfin_wrappers
              return A;
            });
 
+    /*
     // dolfin::GenericVector
     py::class_<dolfin::GenericVector, std::shared_ptr<dolfin::GenericVector>,
                dolfin::GenericTensor>
@@ -588,6 +588,7 @@ namespace dolfin_wrappers
       .def("owns_index", &dolfin::GenericVector::owns_index)
       .def("apply", &dolfin::GenericVector::apply)
       .def_property_readonly("__array_priority__", [](const dolfin::GenericVector& self){ return 0; });
+    */
 
     // dolfin::Scalar
     py::class_<dolfin::Scalar, std::shared_ptr<dolfin::Scalar>, dolfin::GenericTensor>
@@ -616,7 +617,7 @@ namespace dolfin_wrappers
 
     // dolfin::PETScVector
     py::class_<dolfin::PETScVector, std::shared_ptr<dolfin::PETScVector>,
-               dolfin::GenericVector, dolfin::PETScObject>
+               dolfin::GenericTensor, dolfin::PETScObject>
       (m, "PETScVector", "DOLFIN PETScVector object")
       .def(py::init<>())
       .def(py::init([](const MPICommWrapper comm)
@@ -627,6 +628,7 @@ namespace dolfin_wrappers
       .def("get_options_prefix", &dolfin::PETScVector::get_options_prefix)
       .def("set_options_prefix", &dolfin::PETScVector::set_options_prefix)
       .def("update_ghost_values", &dolfin::PETScVector::update_ghost_values)
+      .def("size",  (std::size_t (dolfin::PETScVector::*)() const) &dolfin::PETScVector::size)
       .def("vec", &dolfin::PETScVector::vec, "Return underlying PETSc Vec object");
 
     // dolfin::PETScBaseMatrix
@@ -668,11 +670,8 @@ namespace dolfin_wrappers
            py::arg("A"), py::arg("method")="default")
       .def("get_options_prefix", &dolfin::PETScLUSolver::get_options_prefix)
       .def("set_options_prefix", &dolfin::PETScLUSolver::set_options_prefix)
-      .def("solve", (std::size_t (dolfin::PETScLUSolver::*)(dolfin::GenericVector&, const dolfin::GenericVector&))
+      .def("solve", (std::size_t (dolfin::PETScLUSolver::*)(dolfin::PETScVector&, const dolfin::PETScVector&))
            &dolfin::PETScLUSolver::solve)
-      //.def("solve", (std::size_t (dolfin::PETScLUSolver::*)(const dolfin::GenericLinearOperator&,
-      //                                                      dolfin::GenericVector&,
-      //                                                      const dolfin::GenericVector&))
       .def("ksp", &dolfin::PETScLUSolver::ksp);
     #endif
 
@@ -692,7 +691,7 @@ namespace dolfin_wrappers
       .def("set_norm_type", &dolfin::PETScKrylovSolver::set_norm_type)
       .def("set_operator",  &dolfin::PETScKrylovSolver::set_operator)
       .def("set_operators", &dolfin::PETScKrylovSolver::set_operators)
-      .def("solve", (std::size_t (dolfin::PETScKrylovSolver::*)(dolfin::GenericVector&, const dolfin::GenericVector&))
+      .def("solve", (std::size_t (dolfin::PETScKrylovSolver::*)(dolfin::PETScVector&, const dolfin::PETScVector&))
            &dolfin::PETScKrylovSolver::solve)
       .def("set_from_options", &dolfin::PETScKrylovSolver::set_from_options)
       .def("set_reuse_preconditioner", &dolfin::PETScKrylovSolver::set_reuse_preconditioner)
@@ -747,7 +746,7 @@ namespace dolfin_wrappers
 
     // dolfin::VectorSpaceBasis
     py::class_<dolfin::VectorSpaceBasis, std::shared_ptr<dolfin::VectorSpaceBasis>>(m, "VectorSpaceBasis")
-      .def(py::init<const std::vector<std::shared_ptr<dolfin::GenericVector>>>())
+      .def(py::init<const std::vector<std::shared_ptr<dolfin::PETScVector>>>())
       .def("is_orthonormal", &dolfin::VectorSpaceBasis::is_orthonormal, py::arg("tol")=1.0e-10)
       .def("is_orthogonal", &dolfin::VectorSpaceBasis::is_orthogonal, py::arg("tol")=1.0e-10)
       .def("orthogonalize", &dolfin::VectorSpaceBasis::orthogonalize)

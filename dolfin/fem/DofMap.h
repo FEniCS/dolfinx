@@ -42,7 +42,7 @@
 namespace dolfin
 {
 
-  class GenericVector;
+  class PETScVector;
 
   /// Degree-of-freedom map
 
@@ -355,11 +355,11 @@ namespace dolfin
     /// function is typically used to construct the null space of a
     /// matrix operator.
     ///
-    /// @param  x (GenericVector)
+    /// @param  x (PETScVector)
     ///         The vector to set.
     /// @param  value (double)
     ///         The value to set.
-    void set(GenericVector& x, double value) const;
+    void set(PETScVector& x, double value) const;
 
     /// Return the map (const access)
     std::shared_ptr<const IndexMap> index_map() const

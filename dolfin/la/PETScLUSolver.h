@@ -31,7 +31,6 @@
 namespace dolfin
 {
   /// Forward declarations
-  class GenericVector;
   class PETScLinearOperator;
   class PETScMatrix;
   class PETScVector;
@@ -66,15 +65,11 @@ namespace dolfin
     void set_operator(const PETScMatrix& A);
 
     /// Solve linear system Ax = b
-    std::size_t solve(GenericVector& x, const GenericVector& b);
+    std::size_t solve(PETScVector& x, const PETScVector& b);
 
     /// Solve linear system Ax = b (A^t x = b if transpose is true)
-    std::size_t solve(GenericVector& x, const GenericVector& b,
+    std::size_t solve(PETScVector& x, const PETScVector& b,
                       bool transpose);
-
-    /// Solve linear system Ax = b
-    std::size_t solve(const PETScMatrix& A, PETScVector& x,
-                      const PETScVector& b);
 
     /// Sets the prefix used by PETSc when searching the options
     /// database

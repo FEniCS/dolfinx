@@ -28,7 +28,7 @@ namespace dolfin
 
   // Forward declarations
   class GenericMatrix;
-  class GenericVector;
+  class PETScVector;
 
   /// This is a base class for nonlinear optimisation problems which
   /// return the real-valued objective function :math:`f(x)`, its
@@ -46,15 +46,15 @@ namespace dolfin
     virtual ~OptimisationProblem() {}
 
     /// Compute the objective function :math:`f(x)`
-    virtual double f(const GenericVector& x) = 0;
+    virtual double f(const PETScVector& x) = 0;
 
     /// Compute the Hessian :math:`J(x)=f''(x)` and the gradient
     /// :math:`F(x)=f'(x)` together. Called before requesting
     /// F or J.
     /// NOTE: This function is deprecated. Use variant with
     /// preconditioner
-    virtual void form(GenericMatrix& A, GenericVector& b,
-                      const GenericVector& x)
+    virtual void form(GenericMatrix& A, PETScVector& b,
+                      const PETScVector& x)
     {
       // NOTE: Deprecation mechanism
       _called = true;
@@ -63,8 +63,8 @@ namespace dolfin
     /// Function called by the solver before requesting F, J or J_pc.
     /// This can be used to compute F, J and J_pc together. Preconditioner
     /// matrix P can be left empty so that A is used instead
-    virtual void form(GenericMatrix& A, GenericMatrix& P, GenericVector& b,
-                      const GenericVector& x)
+    virtual void form(GenericMatrix& A, GenericMatrix& P, PETScVector& b,
+                      const PETScVector& x)
     {
       // Do nothing if not supplied by the user
 
@@ -82,10 +82,10 @@ namespace dolfin
     }
 
     /// Compute the gradient :math:`F(x) = f'(x)`
-    virtual void F(GenericVector& b, const GenericVector& x) = 0;
+    virtual void F(PETScVector& b, const PETScVector& x) = 0;
 
     /// Compute the Hessian :math:`J(x) = f''(x)`
-    virtual void J(GenericMatrix& A, const GenericVector& x) = 0;
+    virtual void J(GenericMatrix& A, const PETScVector& x) = 0;
 
     /// Compute J_pc used to precondition J. Not implementing this
     /// or leaving P empty results in system matrix A being used
@@ -94,7 +94,7 @@ namespace dolfin
     /// Note that if nonempty P is not assembled on first call
     /// then a solver implementation may throw away P and not
     /// call this routine ever again.
-    virtual void J_pc(GenericMatrix& P, const GenericVector& x)
+    virtual void J_pc(GenericMatrix& P, const PETScVector& x)
     {
       // Do nothing if not supplied by the user
     }

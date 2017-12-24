@@ -29,7 +29,7 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Mesh.h>
@@ -43,7 +43,7 @@ using namespace dolfin;
 
 //----------------------------------------------------------------------------
 VTKFile::VTKFile(const std::string filename, std::string encoding)
-  : GenericFile(filename, "VTK"),
+  : _filename(filename), counter(0), counter1(0), counter2(0),
     _encoding(encoding), binary(false), compress(false)
 {
   if (encoding != "ascii" && encoding != "base64" && encoding != "compressed")

@@ -44,9 +44,8 @@ if has_hdf5():
     from .cpp.io import HDF5File
 
 from .cpp import MPI
-from .cpp.function import (Expression, Constant, FunctionAXPY,
-                           LagrangeInterpolator)
-from .cpp.fem import (FiniteElement, DofMap, Assembler,
+from .cpp.function import (Expression, Constant, FunctionAXPY)
+from .cpp.fem import (FiniteElement, DofMap,
                       get_coordinates, create_mesh, set_coordinates,
                       vertex_to_dof_map, dof_to_vertex_map,
                       PointSource, DiscreteOperators,
@@ -71,7 +70,6 @@ if has_slepc():
 
 from .cpp.la import (IndexMap, Scalar,
                      TensorLayout)
-from .cpp.la import GenericVector  # Remove when pybind11 transition complete
 from .cpp.log import (info, Table, set_log_level, get_log_level, LogLevel)
 from .cpp.math import ipow, near, between
 from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, MeshEntity,
@@ -94,7 +92,7 @@ from .common import timer
 from .common.timer import Timer, timed
 from .common.plotting import plot
 
-from .fem.assembling import (assemble, assemble_system,
+from .fem.assembling import (assemble_system,
                              SystemAssembler, assemble_local)
 from .fem.form import Form
 from .fem.norms import norm, errornorm

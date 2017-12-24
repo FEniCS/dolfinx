@@ -36,8 +36,6 @@ namespace dolfin
 {
 
   /// Forward declarations
-  class GenericMatrix;
-  class GenericVector;
   class PETScBaseMatrix;
   class PETScMatrix;
   class PETScVector;
@@ -79,14 +77,6 @@ namespace dolfin
     /// memory-safe as PETSc will increase the reference count to the
     /// underlying PETSc objects.
     void set_operators(const PETScBaseMatrix& A, const PETScBaseMatrix& P);
-
-    /// Solve linear system Ax = b and return number of iterations
-    std::size_t solve(GenericVector& x, const GenericVector& b);
-
-    /// Solve linear system Ax = b and return number of iterations
-    /// (A^t x = b if transpose is true)
-    std::size_t solve(GenericVector& x, const GenericVector& b,
-                      bool transpose);
 
     /// Solve linear system Ax = b and return number of iterations
     /// (A^t x = b if transpose is true)
@@ -171,8 +161,8 @@ namespace dolfin
     // Report the number of iterations
     void write_report(int num_iterations, KSPConvergedReason reason);
 
-    void check_dimensions(const PETScBaseMatrix& A, const GenericVector& x,
-                          const GenericVector& b) const;
+    void check_dimensions(const PETScBaseMatrix& A, const PETScVector& x,
+                          const PETScVector& b) const;
 
     // PETSc solver pointer
     KSP _ksp;

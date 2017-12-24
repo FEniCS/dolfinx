@@ -31,7 +31,6 @@
 
 #include <ufc.h>
 #include <dolfin/fem/fem_utils.h>
-#include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>
 #include <dolfin/fem/DofMap.h>
@@ -46,7 +45,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Mesh.h>
@@ -252,25 +251,12 @@ namespace dolfin_wrappers
       .def("function_space", &dolfin::DirichletBC::function_space)
       .def("homogenize", &dolfin::DirichletBC::homogenize)
       .def("method", &dolfin::DirichletBC::method)
-      .def("zero", &dolfin::DirichletBC::zero)
-      .def("zero_columns", &dolfin::DirichletBC::zero_columns,
-           py::arg("A"), py::arg("b"), py::arg("diagonal_value")=0.0)
       .def("get_boundary_values", [](const dolfin::DirichletBC& instance)
            {
              dolfin::DirichletBC::Map map;
              instance.get_boundary_values(map);
              return map;
            })
-      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericVector&) const)
-           &dolfin::DirichletBC::apply)
-      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&) const)
-           &dolfin::DirichletBC::apply)
-      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&, dolfin::GenericVector&) const)
-           &dolfin::DirichletBC::apply)
-      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericVector&, const dolfin::GenericVector&) const)
-           &dolfin::DirichletBC::apply)
-      .def("apply", (void (dolfin::DirichletBC::*)(dolfin::GenericMatrix&, dolfin::GenericVector&, const dolfin::GenericVector&) const)
-           &dolfin::DirichletBC::apply)
       .def("user_subdomain", &dolfin::DirichletBC::user_sub_domain)
       .def("set_value", &dolfin::DirichletBC::set_value)
       .def("set_value", [](dolfin::DirichletBC& self, py::object value)
@@ -283,29 +269,23 @@ namespace dolfin_wrappers
     py::class_<dolfin::AssemblerBase, std::shared_ptr<dolfin::AssemblerBase>>
       (m, "AssemblerBase")
       .def("init_global_tensor", &dolfin::AssemblerBase::init_global_tensor)
-      .def_readwrite("add_values", &dolfin::Assembler::add_values)
-      .def_readwrite("keep_diagonal", &dolfin::Assembler::keep_diagonal)
-      .def_readwrite("finalize_tensor", &dolfin::Assembler::finalize_tensor);
-
-    // dolfin::Assembler
-    py::class_<dolfin::Assembler, std::shared_ptr<dolfin::Assembler>, dolfin::AssemblerBase>
-      (m, "Assembler", "DOLFIN Assembler object")
-      .def(py::init<>())
-      .def("assemble", &dolfin::Assembler::assemble);
+      .def_readwrite("add_values", &dolfin::AssemblerBase::add_values)
+      .def_readwrite("keep_diagonal", &dolfin::AssemblerBase::keep_diagonal)
+      .def_readwrite("finalize_tensor", &dolfin::AssemblerBase::finalize_tensor);
 
     // dolfin::SystemAssembler
     py::class_<dolfin::SystemAssembler, std::shared_ptr<dolfin::SystemAssembler>, dolfin::AssemblerBase>
       (m, "SystemAssembler", "DOLFIN SystemAssembler object")
       .def(py::init<std::shared_ptr<const dolfin::Form>, std::shared_ptr<const dolfin::Form>,
            std::vector<std::shared_ptr<const dolfin::DirichletBC>>>())
-      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&, dolfin::GenericVector&))
+      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&, dolfin::PETScVector&))
            &dolfin::SystemAssembler::assemble)
       .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&)) &dolfin::SystemAssembler::assemble)
-      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericVector&)) &dolfin::SystemAssembler::assemble)
-      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&, dolfin::GenericVector&,
-                                                          const dolfin::GenericVector&))
+      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::PETScVector&)) &dolfin::SystemAssembler::assemble)
+      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&, dolfin::PETScVector&,
+                                                          const dolfin::PETScVector&))
            &dolfin::SystemAssembler::assemble)
-      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericVector&, const dolfin::GenericVector&))
+      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::PETScVector&, const dolfin::PETScVector&))
            &dolfin::SystemAssembler::assemble);
 
     // dolfin::DiscreteOperators
@@ -400,7 +380,7 @@ namespace dolfin_wrappers
       //.def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, const std::vector<std::pair<const dolfin::Point*, double>>>())
       //.def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, std::shared_ptr<const dolfin::FunctionSpace>,
       //     const std::vector<std::pair<const dolfin::Point*, double>>>())
-      .def("apply", (void (dolfin::PointSource::*)(dolfin::GenericVector&)) &dolfin::PointSource::apply)
+      .def("apply", (void (dolfin::PointSource::*)(dolfin::PETScVector&)) &dolfin::PointSource::apply)
       .def("apply", (void (dolfin::PointSource::*)(dolfin::GenericMatrix&)) &dolfin::PointSource::apply);
 
     // dolfin::NonlinearVariationalProblem
@@ -412,8 +392,8 @@ namespace dolfin_wrappers
            std::vector<std::shared_ptr<const dolfin::DirichletBC>>,
            std::shared_ptr<const dolfin::Form>>())
       // FIXME: is there a better way to handle the casting
-      .def("set_bounds", (void (dolfin::NonlinearVariationalProblem::*)(std::shared_ptr<const dolfin::GenericVector>,
-                                                                        std::shared_ptr<const dolfin::GenericVector>))
+      .def("set_bounds", (void (dolfin::NonlinearVariationalProblem::*)(std::shared_ptr<const dolfin::PETScVector>,
+                                                                        std::shared_ptr<const dolfin::PETScVector>))
            &dolfin::NonlinearVariationalProblem::set_bounds)
       .def("set_bounds", (void (dolfin::NonlinearVariationalProblem::*)(const dolfin::Function&, const dolfin::Function&))
            &dolfin::NonlinearVariationalProblem::set_bounds)

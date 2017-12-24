@@ -40,7 +40,6 @@
 namespace dolfin
 {
 
-  class GenericVector;
   class PETScVector;
 
   /// This class is a base class for matrices that can be used in
@@ -76,11 +75,11 @@ namespace dolfin
     /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
-    /// @param z (GenericVector&)
+    /// @param z (PETScVector&)
     ///         Vector to initialise
     /// @param      dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    void init_vector(GenericVector& z, std::size_t dim) const;
+    void init_vector(PETScVector& z, std::size_t dim) const;
 
     /// Return PETSc Mat pointer
     Mat mat() const

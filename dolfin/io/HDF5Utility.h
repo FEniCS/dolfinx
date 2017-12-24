@@ -87,7 +87,7 @@ namespace dolfin
     /// Missing docstring
     static void set_local_vector_values(
       MPI_Comm mpi_comm,
-      GenericVector& x,
+      PETScVector& x,
       const Mesh& mesh,
       const std::vector<size_t>& cells,
       const std::vector<dolfin::la_index>& cell_dofs,

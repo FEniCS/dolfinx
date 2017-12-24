@@ -19,7 +19,7 @@
 
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include "Form.h"
 #include "DirichletBC.h"
 #include "NonlinearVariationalProblem.h"
@@ -45,8 +45,8 @@ void NonlinearVariationalProblem::set_bounds(const Function& lb_func,
 }
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::set_bounds(
-  std::shared_ptr<const GenericVector> lb,
-  std::shared_ptr<const GenericVector> ub)
+  std::shared_ptr<const PETScVector> lb,
+  std::shared_ptr<const PETScVector> ub)
 {
   dolfin_assert(lb);
   dolfin_assert(ub);
@@ -94,14 +94,14 @@ NonlinearVariationalProblem::test_space() const
   return _residual->function_space(0);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const GenericVector>
+std::shared_ptr<const PETScVector>
 NonlinearVariationalProblem::lower_bound() const
 {
   dolfin_assert(_lb);
   return _lb;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const GenericVector>
+std::shared_ptr<const PETScVector>
 NonlinearVariationalProblem::upper_bound() const
 {
   dolfin_assert(_ub);

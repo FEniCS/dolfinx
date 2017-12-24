@@ -14,7 +14,6 @@
 #include <dolfin/fem/LocalAssembler.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/AssemblerBase.h>
-#include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/fem/SystemAssembler.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>

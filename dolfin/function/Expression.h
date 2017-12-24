@@ -18,13 +18,11 @@
 // First added:  2009-09-28
 // Last changed: 2011-08-15
 
-#ifndef __EXPRESSION_H
-#define __EXPRESSION_H
+#pragma once
 
 #include <vector>
 #include <ufc.h>
 #include <Eigen/Dense>
-#include <dolfin/common/Array.h>
 #include "GenericFunction.h"
 
 namespace dolfin
@@ -85,18 +83,6 @@ namespace dolfin
 
     //--- Implementation of GenericFunction interface ---
 
-    /// Evaluate at given point in given cell (deprecated)
-    ///
-    /// @param    values (Array<double>)
-    ///         The values at the point.
-    /// @param    x (Array<double>)
-    ///         The coordinates of the point.
-    /// @param    cell (ufc::cell)
-    ///         The cell which contains the given point.
-    virtual void eval(Array<double>& values,
-                      const Array<double>& x,
-                      const ufc::cell& cell) const override;
-
     /// Evaluate at given point in given cell
     ///
     /// @param    values (Eigen::Ref<Eigen::VectorXd>)
@@ -108,14 +94,6 @@ namespace dolfin
     virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
                       Eigen::Ref<const Eigen::VectorXd> x,
                       const ufc::cell& cell) const override;
-
-    /// Evaluate at given point (deprecated)
-    ///
-    /// @param values (Array<double>)
-    ///         The values at the point.
-    /// @param x (Array<double>)
-    ///         The coordinates of the point.
-    virtual void eval(Array<double>& values, const Array<double>& x) const override;
 
     /// Evaluate at given point.
     ///
@@ -209,5 +187,3 @@ namespace dolfin
   };
 
 }
-
-#endif

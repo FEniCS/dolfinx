@@ -40,7 +40,7 @@ namespace dolfin
 {
 
   class Cell;
-  class GenericVector;
+  class PETScVector;
   class Mesh;
   class SubDomain;
 
@@ -174,7 +174,7 @@ namespace dolfin
     /// layout of vector must be consistent with dof map range. This
     /// function is typically used to construct the null space of a
     /// matrix operator
-    virtual void set(GenericVector& x, double value) const = 0;
+    virtual void set(PETScVector& x, double value) const = 0;
 
     /// Return the map from unowned local dofmap nodes to global dofmap
     /// nodes. Dofmap node is dof index modulo block size.

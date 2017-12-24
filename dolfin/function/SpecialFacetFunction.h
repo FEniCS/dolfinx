@@ -31,7 +31,6 @@ namespace ufc
 
 namespace dolfin
 {
-  template <typename T> class Array;
   class Function;
 
   /// A _SpecialFacetFunction_ is a representation of a global
@@ -72,7 +71,8 @@ namespace dolfin
 
     /// Evaluate SpecialFacetFunction (cf _Expression_.eval)
     /// Evaluate function for given cell
-    void eval(Array<double>& values, const Array<double>& x,
+    void eval(Eigen::Ref<Eigen::VectorXd> values,
+              Eigen::Ref<const Eigen::VectorXd> x,
               const ufc::cell& cell) const;
 
     /// Extract sub-function i

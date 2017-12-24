@@ -97,7 +97,7 @@ PETScVector::~PETScVector()
     VecDestroy(&_x);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericVector> PETScVector::copy() const
+std::shared_ptr<PETScVector> PETScVector::copy() const
 {
   return std::make_shared<PETScVector>(*this);
 }
@@ -371,44 +371,9 @@ bool PETScVector::owns_index(std::size_t i) const
   return _i >= _local_range.first && _i < _local_range.second;
 }
 //-----------------------------------------------------------------------------
-const GenericVector& PETScVector::operator= (const GenericVector& v)
-{
-  *this = as_type<const PETScVector>(v);
-  return *this;
-}
-//-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const PETScVector& v)
 {
-  // Check that vector lengths are equal
-  if (size() != v.size())
-  {
-    dolfin_error("PETScVector.cpp",
-                 "assign one vector to another",
-                 "Vectors must be of the same length when assigning. "
-                 "Consider using the copy constructor instead");
-  }
-
-  // Check that vector local ranges are equal (relevant in parallel)
-  if (local_range() != v.local_range())
-  {
-    dolfin_error("PETScVector.cpp",
-                 "assign one vector to another",
-                 "Vectors must have the same parallel layout when assigning. "
-                 "Consider using the copy constructor instead");
-  }
-
-  // Check for self-assignment
-  if (this != &v)
-  {
-    // Copy data (local operation)
-    dolfin_assert(v._x);
-    dolfin_assert(_x);
-    PetscErrorCode ierr = VecCopy(v._x, _x);
-    CHECK_ERROR("VecCopy");
-
-    // Update ghost values
-    update_ghost_values();
-  }
+  *this = as_type<const PETScVector>(v);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -444,7 +409,7 @@ void PETScVector::update_ghost_values()
   CHECK_ERROR("VecGhostRestoreLocalForm");
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator+= (const GenericVector& x)
+const PETScVector& PETScVector::operator+= (const PETScVector& x)
 {
   axpy(1.0, x);
   return *this;
@@ -462,7 +427,7 @@ const PETScVector& PETScVector::operator+= (double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator-= (const GenericVector& x)
+const PETScVector& PETScVector::operator-= (const PETScVector& x)
 {
   axpy(-1.0, x);
   return *this;
@@ -487,7 +452,7 @@ const PETScVector& PETScVector::operator*= (const double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator*= (const GenericVector& y)
+const PETScVector& PETScVector::operator*= (const PETScVector& y)
 {
   dolfin_assert(_x);
   const PETScVector& v = as_type<const PETScVector>(y);
@@ -517,7 +482,7 @@ const PETScVector& PETScVector::operator/= (const double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-double PETScVector::inner(const GenericVector& y) const
+double PETScVector::inner(const PETScVector& y) const
 {
   dolfin_assert(_x);
   const PETScVector& _y = as_type<const PETScVector>(y);
@@ -528,7 +493,7 @@ double PETScVector::inner(const GenericVector& y) const
   return a;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::axpy(double a, const GenericVector& y)
+void PETScVector::axpy(double a, const PETScVector& y)
 {
   dolfin_assert(_x);
 
@@ -695,7 +660,7 @@ std::string PETScVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(GenericVector& y,
+void PETScVector::gather(PETScVector& y,
                          const std::vector<dolfin::la_index>& indices) const
 {
   dolfin_assert(_x);

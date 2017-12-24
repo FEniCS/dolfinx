@@ -23,7 +23,7 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/nls/NewtonSolver.h>
@@ -48,7 +48,7 @@ namespace dolfin_wrappers
       // the return value policy), so the below is non-standard.  See
       // https://github.com/pybind/pybind11/issues/250.
 
-      bool converged(const dolfin::GenericVector& r,
+      bool converged(const dolfin::PETScVector& r,
                      const dolfin::NonlinearProblem& nonlinear_problem,
                      std::size_t iteration)
       {
@@ -66,7 +66,7 @@ namespace dolfin_wrappers
         return dolfin::NewtonSolver::solver_setup(A, P, nonlinear_problem, iteration);
       }
 
-      void update_solution(dolfin::GenericVector& x, const dolfin::GenericVector& dx,
+      void update_solution(dolfin::PETScVector& x, const dolfin::PETScVector& dx,
                            double relaxation_parameter,
                            const dolfin::NonlinearProblem& nonlinear_problem,
                            std::size_t iteration)
@@ -109,20 +109,20 @@ namespace dolfin_wrappers
       // the return value policy), so the below is non-standard.  See
       // https://github.com/pybind/pybind11/issues/250.
 
-      void J(dolfin::GenericMatrix& A, const dolfin::GenericVector& x) override
+      void J(dolfin::GenericMatrix& A, const dolfin::PETScVector& x) override
       {
         PYBIND11_OVERLOAD_INT(void, dolfin::NonlinearProblem, "J", &A, &x);
         py::pybind11_fail("Tried to call pure virtual function dolfin::OptimisationProblem::J");
       }
 
-      void F(dolfin::GenericVector& b, const dolfin::GenericVector& x) override
+      void F(dolfin::PETScVector& b, const dolfin::PETScVector& x) override
       {
         PYBIND11_OVERLOAD_INT(void, dolfin::NonlinearProblem, "F", &b, &x);
         py::pybind11_fail("Tried to call pure virtual function dolfin::OptimisationProblem::F");
       }
 
       void form(dolfin::GenericMatrix& A, dolfin::GenericMatrix& P,
-                dolfin::GenericVector& b, const dolfin::GenericVector& x) override
+                dolfin::PETScVector& b, const dolfin::PETScVector& x) override
       {
         PYBIND11_OVERLOAD_INT(void, dolfin::NonlinearProblem, "form", &A, &P, &b, &x);
         return dolfin::NonlinearProblem::form(A, P, b, x);
@@ -136,7 +136,7 @@ namespace dolfin_wrappers
       .def("F", &dolfin::NonlinearProblem::F)
       .def("J", &dolfin::NonlinearProblem::J)
       .def("form", (void (dolfin::NonlinearProblem::*)(dolfin::GenericMatrix&, dolfin::GenericMatrix&,
-                                                       dolfin::GenericVector&, const dolfin::GenericVector&))
+                                                       dolfin::PETScVector&, const dolfin::PETScVector&))
                     &dolfin::NonlinearProblem::form);
 
     // dolfin::OptimizationProblem 'trampoline' for overloading from
@@ -149,19 +149,19 @@ namespace dolfin_wrappers
       // the return value policy), so the below is non-standard.  See
       // https://github.com/pybind/pybind11/issues/250.
 
-      double f(const dolfin::GenericVector& x) override
+      double f(const dolfin::PETScVector& x) override
       {
         PYBIND11_OVERLOAD_INT(double, dolfin::OptimisationProblem, "f", &x);
         py::pybind11_fail("Tried to call pure virtual function dolfin::OptimisationProblem::f");
       }
 
-      void F(dolfin::GenericVector& b, const dolfin::GenericVector& x) override
+      void F(dolfin::PETScVector& b, const dolfin::PETScVector& x) override
       {
         PYBIND11_OVERLOAD_INT(void, dolfin::OptimisationProblem, "F", &b, &x);
         py::pybind11_fail("Tried to call pure virtual function dolfin::OptimisationProblem::F");
       }
 
-      void J(dolfin::GenericMatrix& A, const dolfin::GenericVector& x) override
+      void J(dolfin::GenericMatrix& A, const dolfin::PETScVector& x) override
       {
         PYBIND11_OVERLOAD_INT(void, dolfin::OptimisationProblem, "J", &A, &x);
         py::pybind11_fail("Tried to call pure virtual function dolfin::OptimisationProblem::J");

@@ -19,7 +19,6 @@
 // Last changed: 2014-03-25
 
 #include <string>
-#include <dolfin/common/Array.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
@@ -38,20 +37,6 @@ GenericFunction::~GenericFunction()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void GenericFunction::eval(Array<double>& values, const Array<double>& x,
-                           const ufc::cell& cell) const
-{
-  // Redirect to simple eval
-  eval(values, x);
-}
-//-----------------------------------------------------------------------------
-void GenericFunction::eval(Array<double>& values, const Array<double>& x) const
-{
-  dolfin_error("GenericFunction.cpp",
-               "evaluate function (dolfin::Array version)",
-               "Missing eval() function (must be overloaded)");
-}
-//-----------------------------------------------------------------------------
 void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
                            Eigen::Ref<const Eigen::VectorXd> x,
                            const ufc::cell& cell) const
@@ -66,116 +51,6 @@ void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
   dolfin_error("GenericFunction.cpp",
                "evaluate function (Eigen version)",
                "Missing eval() function (must be overloaded)");
-}
-//-----------------------------------------------------------------------------
-double GenericFunction::operator() (double x) const
-{
-  // Check that function is scalar
-  if (value_rank() != 0)
-  {
-    dolfin_error("GenericFunction.cpp",
-                 "evaluate function at point",
-                 "Function is not scalar");
-  }
-
-  // Set up Array arguments
-  double values_data[1];
-  Array<double> values(1, values_data);
-  const Array<double> _x(1, &x);
-
-  // Call eval
-  eval(values, _x);
-
-  // Return value
-  return values[0];
-}
-//-----------------------------------------------------------------------------
-double GenericFunction::operator() (double x, double y) const
-{
-  // Check that function is scalar
-  if (value_rank() != 0)
-  {
-    dolfin_error("GenericFunction.cpp",
-                 "evaluate function at point",
-                 "Function is not scalar");
-  }
-
-  // Set up Array arguments
-  double values_data[1];
-  Array<double> values(1, values_data);
-  double _x_data[2] = { x, y };
-  const Array<double> _x(2, _x_data);
-
-  // Call eval
-  eval(values, _x);
-
-  // Return value
-  return values[0];
-}
-//-----------------------------------------------------------------------------
-double GenericFunction::operator() (double x, double y, double z) const
-{
-  // Check that function is scalar
-  if (value_rank() != 0)
-  {
-    dolfin_error("GenericFunction.cpp",
-                 "evaluate function at point",
-                 "Function is not scalar");
-  }
-
-  // Set up Array arguments
-  double values_data[1];
-  Array<double> values(1, values_data);
-  double _x_data[3] = { x, y, z };
-  const Array<double> _x(3, _x_data);
-
-  // Call eval
-  eval(values, _x);
-
-  // Return value
-  return values[0];
-}
-//-----------------------------------------------------------------------------
-double GenericFunction::operator() (const Point& p) const
-{
-  return (*this)(p.x(), p.y(), p.z());
-}
-//-----------------------------------------------------------------------------
-void GenericFunction::operator() (Array<double>& values,
-                                  double x) const
-{
-  // Set up Array argument
-  const Array<double> _x(1, &x);
-
-  // Call eval
-  eval(values, _x);
-}
-//-----------------------------------------------------------------------------
-void GenericFunction::operator() (Array<double>& values,
-                                  double x, double y) const
-{
-  // Set up Array argument
-  double _x_data[2] = { x, y };
-  const Array<double> _x(2, _x_data);
-
-  // Call eval
-  eval(values, _x);
-}
-//-----------------------------------------------------------------------------
-void GenericFunction::operator() (Array<double>& values,
-                                  double x, double y, double z) const
-{
-  // Set up Array argument
-  double _x_data[3] = { x, y, z };
-  const Array<double> _x(3, _x_data);
-
-  // Call eval
-  eval(values, _x);
-}
-//-----------------------------------------------------------------------------
-void GenericFunction::operator() (Array<double>& values, const Point& p) const
-{
-  (*this)(values, p.x(), p.y(), p.z());
 }
 //-----------------------------------------------------------------------------
 std::size_t GenericFunction::value_size() const
@@ -194,9 +69,8 @@ void GenericFunction::evaluate(double* values,
   dolfin_assert(coordinates);
 
   // Wrap data
-  Array<double> _values(value_size(), values);
-  const Array<double>
-    x(cell.geometric_dimension, const_cast<double*>(coordinates));
+  Eigen::Map<Eigen::VectorXd> _values(values, value_size());
+  Eigen::Map<const Eigen::VectorXd> x(coordinates, cell.geometric_dimension);
 
   // Redirect to eval
   eval(_values, x, cell);

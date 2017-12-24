@@ -26,8 +26,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/PETScDMCollection.h>
-#include "GenericMatrix.h"
-#include "GenericVector.h"
 #include "PETScBaseMatrix.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
@@ -230,19 +228,6 @@ void PETScKrylovSolver::set_operators(const PETScBaseMatrix& A,
   PetscErrorCode ierr;
   ierr = KSPSetOperators(_ksp, A.mat(), P.mat());
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
-}
-//-----------------------------------------------------------------------------
-std::size_t PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
-{
-  return solve(as_type<PETScVector>(x), as_type<const PETScVector>(b),
-               false);
-}
-//-----------------------------------------------------------------------------
-std::size_t PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b,
-                                     bool transpose)
-{
-  return solve(as_type<PETScVector>(x), as_type<const PETScVector>(b),
-               transpose);
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
@@ -687,8 +672,8 @@ void PETScKrylovSolver::write_report(int num_iterations,
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
-                                         const GenericVector& x,
-                                         const GenericVector& b) const
+                                         const PETScVector& x,
+                                         const PETScVector& b) const
 {
   // Check dimensions of A
   if (A.size(0) == 0 || A.size(1) == 0)
