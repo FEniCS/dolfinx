@@ -114,7 +114,7 @@ namespace dolfin
     //--- Implementation of the GenericMatrix interface --
 
     /// Return copy of matrix
-    virtual std::shared_ptr<GenericMatrix> copy() const;
+    virtual std::shared_ptr<PETScMatrix> copy() const;
 
     /// Initialize vector z to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are
@@ -153,7 +153,7 @@ namespace dolfin
                            std::size_t n, const dolfin::la_index* cols);
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A,
+    virtual void axpy(double a, const PETScMatrix& A,
                       bool same_nonzero_pattern);
 
     /// Return norm of matrix
@@ -200,7 +200,7 @@ namespace dolfin
     virtual const PETScMatrix& operator/= (double a);
 
     /// Assignment operator
-    virtual const GenericMatrix& operator= (const GenericMatrix& A);
+    virtual const PETScMatrix& operator= (const PETScMatrix& A);
 
     /// Test if matrix is symmetric
     virtual bool is_symmetric(double tol) const;
@@ -217,9 +217,6 @@ namespace dolfin
 
     /// Call PETSc function MatSetFromOptions on the PETSc Mat object
     void set_from_options();
-
-    /// Assignment operator
-    const PETScMatrix& operator= (const PETScMatrix& A);
 
     /// Attach nullspace to matrix (typically used by Krylov solvers
     /// when solving singular systems)

@@ -30,6 +30,7 @@
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/TensorLayout.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
@@ -120,7 +121,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
       {
         // Down cast tensor to matrix
         dolfin_assert(A.rank() == 2);
-        GenericMatrix& _matA = as_type<GenericMatrix>(A);
+        GenericMatrix& _matA = dynamic_cast<GenericMatrix&>(A);
 
         // Get local row range
         const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
@@ -158,7 +159,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     if (keep_diagonal && A.rank() == 2)
     {
       // Down cast to GenericMatrix
-      GenericMatrix& _matA = as_type<GenericMatrix>(A);
+      GenericMatrix& _matA = dynamic_cast<GenericMatrix&>(A);
 
       // Loop over rows and insert 0.0 on the diagonal
       const double block = 0.0;

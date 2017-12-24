@@ -90,7 +90,7 @@ PETScMatrix::~PETScMatrix()
   // Do nothing (PETSc matrix is destroyed in base class)
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericMatrix> PETScMatrix::copy() const
+std::shared_ptr<PETScMatrix> PETScMatrix::copy() const
 {
   return std::make_shared<PETScMatrix>(*this);
 }
@@ -273,17 +273,16 @@ void PETScMatrix::add_local(const double* block,
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::axpy(double a, const GenericMatrix& A,
+void PETScMatrix::axpy(double a, const PETScMatrix& A,
                        bool same_nonzero_pattern)
 {
   PetscErrorCode ierr;
 
-  const PETScMatrix& AA = as_type<const PETScMatrix>(A);
   dolfin_assert(_matA);
-  dolfin_assert(AA.mat());
+  dolfin_assert(A.mat());
   if (same_nonzero_pattern)
   {
-    ierr = MatAXPY(_matA, a, AA.mat(), SAME_NONZERO_PATTERN);
+    ierr = MatAXPY(_matA, a, A.mat(), SAME_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAXPY");
   }
   else
@@ -303,7 +302,7 @@ void PETScMatrix::axpy(double a, const GenericMatrix& A,
     PetscObjectReference((PetscObject) rmapping0);
     PetscObjectReference((PetscObject) cmapping0);
 
-    ierr = MatAXPY(_matA, a, AA.mat(), DIFFERENT_NONZERO_PATTERN);
+    ierr = MatAXPY(_matA, a, A.mat(), DIFFERENT_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAXPY");
 
     // Set local-to-global map and decrease reference count to maps
@@ -582,12 +581,6 @@ const PETScMatrix& PETScMatrix::operator/= (double a)
 {
   dolfin_assert(_matA);
   MatScale(_matA, 1.0/a);
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const GenericMatrix& PETScMatrix::operator= (const GenericMatrix& A)
-{
-  *this = as_type<const PETScMatrix>(A);
   return *this;
 }
 //-----------------------------------------------------------------------------

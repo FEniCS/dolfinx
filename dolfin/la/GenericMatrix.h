@@ -121,7 +121,7 @@ namespace dolfin
     //--- Matrix interface ---
 
     /// Return copy of matrix
-    virtual std::shared_ptr<GenericMatrix> copy() const = 0;
+    //virtual std::shared_ptr<GenericMatrix> copy() const = 0;
 
     /// Initialize vector z to be compatible with the matrix-vector
     /// product y = Ax. In the parallel case, both size and layout are
@@ -159,8 +159,8 @@ namespace dolfin
                            std::size_t n, const dolfin::la_index* cols) = 0;
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A,
-                      bool same_nonzero_pattern) = 0;
+    //virtual void axpy(double a, const GenericMatrix& A,
+    //                  bool same_nonzero_pattern) = 0;
 
     /// Return norm of matrix
     virtual double norm(std::string norm_type) const = 0;
@@ -203,18 +203,18 @@ namespace dolfin
     virtual const GenericMatrix& operator/= (double a) = 0;
 
     /// Add given matrix
-    const GenericMatrix& operator+= (const GenericMatrix& A)
-    {
-      axpy(1.0, A, false);
-      return *this;
-    }
+    //const GenericMatrix& operator+= (const GenericMatrix& A)
+    //{
+    //  axpy(1.0, A, false);
+    //  return *this;
+    //}
 
     /// Subtract given matrix
-    const GenericMatrix& operator-= (const GenericMatrix& A)
-    {
-      axpy(-1.0, A, false);
-      return *this;
-    }
+    //const GenericMatrix& operator-= (const GenericMatrix& A)
+    //{
+    //  axpy(-1.0, A, false);
+    //  return *this;
+    //}
 
     /// Test if matrix is symmetric
     virtual bool is_symmetric(double tol) const
@@ -226,7 +226,7 @@ namespace dolfin
     }
 
     /// Assignment operator
-    virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
+    //virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 
     //--- Convenience functions ---
 
@@ -250,7 +250,7 @@ namespace dolfin
     {  set(&value, 1, &ij.first, 1, &ij.second); }
 
     /// Insert one on the diagonal for all zero rows
-    virtual void ident_zeros(double tol=DOLFIN_EPS);
+    //virtual void ident_zeros(double tol=DOLFIN_EPS);
   };
 
 }

@@ -35,7 +35,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
-#include "LinearAlgebraObject.h"
 
 namespace dolfin
 {
@@ -44,7 +43,7 @@ namespace dolfin
 
   /// A common interface for arbitrary rank tensors.
 
-  class GenericTensor : public virtual LinearAlgebraObject
+  class GenericTensor
   {
   public:
 
@@ -109,7 +108,7 @@ namespace dolfin
     virtual void apply(std::string mode) = 0;
 
     /// Return MPI communicator
-    //virtual MPI_Comm mpi_comm() const = 0;
+    virtual MPI_Comm mpi_comm() const = 0;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
