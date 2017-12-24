@@ -29,7 +29,6 @@
 
 #include <dolfin/geometry/Point.h>
 #include "Mesh.h"
-#include "MeshIterator.h"
 
 namespace dolfin
 {

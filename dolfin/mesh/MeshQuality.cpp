@@ -38,7 +38,10 @@ MeshQuality::radius_ratios(std::shared_ptr<const Mesh> mesh)
 
   // Compute radius ratio
   for (auto &cell : cells(*mesh))
+  {
+    std::cout << cell.index() << "\n";
     cf[cell] = cell.radius_ratio();
+  }
 
   return cf;
 }

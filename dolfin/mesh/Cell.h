@@ -30,13 +30,14 @@
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
-#include "MeshIterator.h"
 #include "MeshFunction.h"
 #include <ufc.h>
 #include <dolfin/geometry/Point.h>
 
 namespace dolfin
 {
+
+  template <typename T> class MeshIterator;
 
   /// A Cell is a _MeshEntity_ of topological codimension 0.
 
@@ -415,21 +416,6 @@ namespace dolfin
   /// A CellIterator is a MeshEntityIterator of topological codimension 0.
   typedef MeshEntityIteratorBase<Cell> CellIterator;
 
-  class cells
-  {
-  public:
-    cells(const Mesh& mesh) : _mesh(&mesh)
-    {}
-
-    const MeshIterator<Cell> begin() const
-    { return MeshIterator<Cell>(*_mesh); }
-
-    const MeshIterator<Cell> end() const
-    { return MeshIterator<Cell>(*_mesh, _mesh->topology().ghost_offset(_mesh->topology().dim())); }
-
-  private:
-    const Mesh *_mesh;
-  };
 
 }
 

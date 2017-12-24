@@ -11,57 +11,94 @@
 namespace dolfin
 {
   template<class T>
-  class MeshIterator : public boost::iterator_facade<MeshIterator<T>, T,
-    boost::forward_traversal_tag>
-    {
-    public:
+  class MeshIterator : public boost::iterator_facade<MeshIterator<T>, T, boost::forward_traversal_tag>
+  {
+  public:
 
     /// Default constructor
-    MeshIterator() : _pos(0)
-      {}
+    MeshIterator() : _pos(0), _index(nullptr)
+    {}
 
-    // Copy constructor
-    MeshIterator(const MeshIterator& it) : _pos(it._pos)
+    /// Copy constructor
+    MeshIterator(const MeshIterator& it) : _entity(std::make_unique<T>(it._entity->mesh(), 0)),
+      _pos(it._pos), _index(it._index)
     {
-      _entity->init(it._entity->mesh(), it._entity->dim(), _pos);
+      _entity->_local_index = (_index ? _index[_pos] : _pos);
     }
 
-    MeshIterator(const Mesh& mesh, std::size_t pos=0)
-      : _pos(pos)
-      {
-        // Check if mesh is empty
-        if (mesh.num_vertices() == 0)
-          return;
+    // Constructor with Mesh
+    MeshIterator(const Mesh& mesh, std::size_t pos=0) : _pos(pos), _index(nullptr)
+    {
+      // Check if mesh is empty
+      if (mesh.num_vertices() == 0)
+        return;
 
-        // Initialize mesh entity
-        _entity->init(mesh, _entity->dim(), pos);
-      }
+      // Initialize mesh entity
+      _entity = std::make_unique<T>(mesh, 0);
+      _entity->_local_index = _pos;
+    }
 
-    private:
-      friend class boost::iterator_core_access;
+    // Constructor with MeshEntity
+    MeshIterator(const MeshEntity& e, std::size_t pos=0) : _entity(std::make_unique<T>(e.mesh(), 0)), _pos(pos)
+    {
+      // Get connectivity
+      const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity->dim());
 
-      void increment()
-      {
-        ++_pos;
-        _entity->_local_index = _pos;
-      }
+      // Compute connectivity if empty
+      if (c.empty())
+        e.mesh().init(e.dim(), _entity->dim());
 
-      bool equal(MeshIterator const& other) const
-      {
-        return (_pos == other._pos);
-      }
+      // Set _index to point at connectivity for that entity
+      _index = c(e.index());
+      _entity->_local_index = _index[_pos];
+    }
 
-      T& dereference() const
-      {
-        return *_entity;
-      }
+  private:
 
-      // MeshEntity
-      std::unique_ptr<T> _entity;
+    friend class boost::iterator_core_access;
 
-      // Current position
-      std::size_t _pos;
-    };
+    void increment()
+    {
+      ++_pos;
+      _entity->_local_index = (_index ? _index[_pos] : _pos);
+    }
+
+    bool equal(MeshIterator const& other) const
+    {
+      return (_pos == other._pos and _index == other._index);
+    }
+
+    T& dereference() const
+    {
+      return *_entity;
+    }
+
+    // MeshEntity
+    std::unique_ptr<T> _entity;
+
+    // Current position
+    std::size_t _pos;
+
+    // Mapping from pos to index (if any)
+    const unsigned int* _index;
+
+  };
+
+  class cells
+  {
+  public:
+    cells(const Mesh& mesh) : _mesh(&mesh)
+    {}
+
+    const MeshIterator<Cell> begin() const
+    { return MeshIterator<Cell>(*_mesh); }
+
+    const MeshIterator<Cell> end() const
+    { return MeshIterator<Cell>(*_mesh, _mesh->topology().ghost_offset(_mesh->topology().dim())); }
+
+  private:
+    const Mesh *_mesh;
+  };
 
 }
 
