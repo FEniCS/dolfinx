@@ -14,7 +14,7 @@ pipelines:
           - make -j2
           - make install
           - cd ../python
-          - pip3 install .
+          - pip3 build_ext --debug install .
           - cd demo
           - python3 ./generate-demo-files.py
           - cd documented/poisson
