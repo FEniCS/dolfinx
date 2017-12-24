@@ -25,6 +25,7 @@
 #include "MeshFunction.h"
 #include "MeshQuality.h"
 #include "Vertex.h"
+#include "MeshIterator.h"
 
 using namespace dolfin;
 
@@ -35,9 +36,9 @@ MeshQuality::radius_ratios(std::shared_ptr<const Mesh> mesh)
   // Create MeshFunction
   MeshFunction<double> cf(mesh, mesh->topology().dim(), 0.0);
 
-  // Compute radius ration
-  for (CellIterator cell(*mesh); !cell.end(); ++cell)
-    cf[*cell] = cell->radius_ratio();
+  // Compute radius ratio
+  for (auto &cell : cells(*mesh))
+    cf[cell] = cell.radius_ratio();
 
   return cf;
 }
@@ -74,9 +75,9 @@ MeshQuality::radius_ratio_histogram_data(const Mesh& mesh,
   std::cout << static_cast<double>(num_bins) << std::endl;
 
 
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (auto &cell : cells(mesh))
   {
-    const double ratio = cell->radius_ratio();
+    const double ratio = cell.radius_ratio();
 
     // Compute 'bin' index, and handle special case that ratio = 1.0
     const std::size_t slot

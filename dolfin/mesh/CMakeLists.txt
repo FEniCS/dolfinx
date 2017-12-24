@@ -17,6 +17,7 @@ set(HEADERS
   MeshEntityIterator.h
   MeshFunction.h
   MeshGeometry.h
+  MeshIterator.h
   Mesh.h
   MeshOrdering.h
   MeshPartitioning.h

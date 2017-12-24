@@ -30,6 +30,7 @@
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
+#include "MeshIterator.h"
 #include "MeshFunction.h"
 #include <ufc.h>
 #include <dolfin/geometry/Point.h>
@@ -408,31 +409,26 @@ namespace dolfin
       ufc_cell.index = ufc_cell.entity_indices[tdim][0];
     }
 
+    friend class MeshIterator<Cell>;
   };
 
   /// A CellIterator is a MeshEntityIterator of topological codimension 0.
   typedef MeshEntityIteratorBase<Cell> CellIterator;
 
-  /// A CellFunction is a MeshFunction of topological codimension 0.
-  template <typename T> class CellFunction : public MeshFunction<T>
+  class cells
   {
   public:
+    cells(const Mesh& mesh) : _mesh(&mesh)
+    {}
 
-    /// Constructor on Mesh
-    CellFunction(std::shared_ptr<const Mesh> mesh)
-      : MeshFunction<T>(mesh, mesh->topology().dim()) {
-        deprecation("CellFunction<T>(mesh)",
-                    "2017.2.0",
-                    "Use MeshFunction<T>(mesh, mesh->topology().dim())");     
-      }
+    const MeshIterator<Cell> begin() const
+    { return MeshIterator<Cell>(*_mesh); }
 
-    /// Constructor on Mesh and value
-    CellFunction(std::shared_ptr<const Mesh> mesh, const T& value)
-      : MeshFunction<T>(mesh, mesh->topology().dim(), value) {
-        deprecation("CellFunction<T>(mesh, value)",
-                    "2017.2.0",
-                    "Use MeshFunction<T>(mesh, mesh->topology().dim(), value)");
-      }
+    const MeshIterator<Cell> end() const
+    { return MeshIterator<Cell>(*_mesh, _mesh->topology().ghost_offset(_mesh->topology().dim())); }
+
+  private:
+    const Mesh *_mesh;
   };
 
 }

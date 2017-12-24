@@ -394,7 +394,6 @@ namespace dolfin
 
     // Ghost mode used for partitioning
     std::string _ghost_mode;
-
   };
 }
 
