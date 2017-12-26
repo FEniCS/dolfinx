@@ -27,7 +27,5 @@
 
 #include <dolfin/la/SLEPcEigenSolver.h>
 #include <dolfin/la/Scalar.h>
-#include <dolfin/la/solve.h>
-#include <dolfin/la/LinearOperator.h>
 
 #endif

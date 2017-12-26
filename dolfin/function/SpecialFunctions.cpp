@@ -42,7 +42,7 @@ void MeshCoordinates::eval(Eigen::Ref<Eigen::VectorXd> values,
 {
   dolfin_assert(_mesh);
   dolfin_assert(cell.geometric_dimension == _mesh->geometry().dim());
-  dolfin_assert(x.size() == _mesh->geometry().dim());
+  dolfin_assert((unsigned int)x.size() == _mesh->geometry().dim());
 
   for (std::size_t i = 0; i < cell.geometric_dimension; ++i)
     values[i] = x[i];
