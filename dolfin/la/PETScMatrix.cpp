@@ -90,7 +90,7 @@ PETScMatrix::~PETScMatrix()
   // Do nothing (PETSc matrix is destroyed in base class)
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericMatrix> PETScMatrix::copy() const
+std::shared_ptr<PETScMatrix> PETScMatrix::copy() const
 {
   return std::make_shared<PETScMatrix>(*this);
 }
@@ -273,17 +273,16 @@ void PETScMatrix::add_local(const double* block,
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::axpy(double a, const GenericMatrix& A,
+void PETScMatrix::axpy(double a, const PETScMatrix& A,
                        bool same_nonzero_pattern)
 {
   PetscErrorCode ierr;
 
-  const PETScMatrix& AA = as_type<const PETScMatrix>(A);
   dolfin_assert(_matA);
-  dolfin_assert(AA.mat());
+  dolfin_assert(A.mat());
   if (same_nonzero_pattern)
   {
-    ierr = MatAXPY(_matA, a, AA.mat(), SAME_NONZERO_PATTERN);
+    ierr = MatAXPY(_matA, a, A.mat(), SAME_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAXPY");
   }
   else
@@ -303,7 +302,7 @@ void PETScMatrix::axpy(double a, const GenericMatrix& A,
     PetscObjectReference((PetscObject) rmapping0);
     PetscObjectReference((PetscObject) cmapping0);
 
-    ierr = MatAXPY(_matA, a, AA.mat(), DIFFERENT_NONZERO_PATTERN);
+    ierr = MatAXPY(_matA, a, A.mat(), DIFFERENT_NONZERO_PATTERN);
     if (ierr != 0) petsc_error(ierr, __FILE__, "MatAXPY");
 
     // Set local-to-global map and decrease reference count to maps
@@ -585,12 +584,6 @@ const PETScMatrix& PETScMatrix::operator/= (double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const GenericMatrix& PETScMatrix::operator= (const GenericMatrix& A)
-{
-  *this = as_type<const PETScMatrix>(A);
-  return *this;
-}
-//-----------------------------------------------------------------------------
 bool PETScMatrix::is_symmetric(double tol) const
 {
   dolfin_assert(_matA);
@@ -743,8 +736,7 @@ MatNullSpace PETScMatrix::create_petsc_nullspace(const VectorSpaceBasis& nullspa
   for (std::size_t i = 0; i < nullspace.dim(); ++i)
   {
     dolfin_assert(nullspace[i]);
-    dolfin_assert(as_type<const PETScVector>(nullspace[i]));
-    auto x = as_type<const PETScVector>(nullspace[i])->vec();
+    auto x = nullspace[i]->vec();
 
     // Copy vector pointer
     dolfin_assert(x);

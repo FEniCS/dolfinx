@@ -295,7 +295,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = value_size();
 
-  dolfin_assert(values.size() == value_size_loc);
+  dolfin_assert((std::size_t)values.size() == value_size_loc);
 
   // Create work vector for expansion coefficients
   std::vector<double> coefficients(element.space_dimension());

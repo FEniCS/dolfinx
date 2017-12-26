@@ -16,17 +16,13 @@
 #include <dolfin/mesh/Face.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/FacetCell.h>
 #include <dolfin/mesh/MeshConnectivity.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include <dolfin/mesh/DynamicMeshEditor.h>
 #include <dolfin/mesh/LocalMeshValueCollection.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/SubDomain.h>
-#include <dolfin/mesh/DomainBoundary.h>
-#include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/MeshQuality.h>
 #include <dolfin/mesh/MeshPartitioning.h>

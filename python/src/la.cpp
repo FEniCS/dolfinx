@@ -32,7 +32,6 @@
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/IndexMap.h>
-#include <dolfin/la/LinearAlgebraObject.h>
 #include <dolfin/la/Scalar.h>
 #include <dolfin/la/TensorLayout.h>
 #include <dolfin/la/PETScKrylovSolver.h>
@@ -199,15 +198,8 @@ namespace dolfin_wrappers
       .def("init", &dolfin::TensorLayout::init)
       .def("sparsity_pattern", (std::shared_ptr<dolfin::SparsityPattern> (dolfin::TensorLayout::*)()) &dolfin::TensorLayout::sparsity_pattern);
 
-    // dolfin::LinearAlgebraObject
-    py::class_<dolfin::LinearAlgebraObject, std::shared_ptr<dolfin::LinearAlgebraObject>,
-               dolfin::Variable>(m, "LinearAlgebraObject")
-      .def("mpi_comm", [](dolfin::LinearAlgebraObject& self)
-        { return MPICommWrapper(self.mpi_comm()); });
-
     // dolfin::GenericTensor
-    py::class_<dolfin::GenericTensor, std::shared_ptr<dolfin::GenericTensor>,
-               dolfin::LinearAlgebraObject>
+    py::class_<dolfin::GenericTensor, std::shared_ptr<dolfin::GenericTensor>>
       (m, "GenericTensor", "DOLFIN GenericTensor object")
       .def("init", &dolfin::GenericTensor::init)
       .def("empty", &dolfin::GenericTensor::empty)
@@ -215,14 +207,16 @@ namespace dolfin_wrappers
       .def("rank", &dolfin::GenericTensor::rank)
       .def("size", &dolfin::GenericTensor::size)
       .def("str", &dolfin::GenericTensor::str)
-      .def("zero", &dolfin::GenericTensor::zero);
+      .def("zero", &dolfin::GenericTensor::zero)
+      .def("mpi_comm", [](dolfin::GenericTensor& self)
+           { return MPICommWrapper(self.mpi_comm()); });
 
     // dolfin::GenericMatrix
     py::class_<dolfin::GenericMatrix, std::shared_ptr<dolfin::GenericMatrix>,
                dolfin::GenericTensor>
       (m, "GenericMatrix", py::dynamic_attr(), "DOLFIN GenericMatrix object")
       //.def("init_vector", &dolfin::GenericMatrix::init_vector)
-      .def("axpy", &dolfin::GenericMatrix::axpy)
+      //.def("axpy", &dolfin::GenericMatrix::axpy)
       //.def("mult", &dolfin::GenericMatrix::mult)
       //.def("transpmult", &dolfin::GenericMatrix::transpmult)
       // __ifoo__
@@ -237,19 +231,19 @@ namespace dolfin_wrappers
       //       self /= a;
       //       return self;
       //     }, py::is_operator(), "Divide by a scalar")
-      .def("__iadd__", &dolfin::GenericMatrix::operator+=, py::is_operator(), "Add Matrix")
-      .def("__isub__", &dolfin::GenericMatrix::operator-=, py::is_operator(), "Subtract Matrix")
+      //.def("__iadd__", &dolfin::GenericMatrix::operator+=, py::is_operator(), "Add Matrix")
+      //.def("__isub__", &dolfin::GenericMatrix::operator-=, py::is_operator(), "Subtract Matrix")
       // __add__
-      .def("__add__", [](const dolfin::GenericMatrix& self, const dolfin::GenericMatrix& B)
-           { auto C = self.copy(); (*C) += B; return C; }, py::is_operator())
+      //.def("__add__", [](const dolfin::GenericMatrix& self, const dolfin::GenericMatrix& B)
+      //     { auto C = self.copy(); (*C) += B; return C; }, py::is_operator())
       // __sub__
-      .def("__sub__", [](const dolfin::GenericMatrix& self, const dolfin::GenericMatrix& B)
-           { auto C = self.copy(); (*C) -= B; return C; }, py::is_operator())
+      //.def("__sub__", [](const dolfin::GenericMatrix& self, const dolfin::GenericMatrix& B)
+      //     { auto C = self.copy(); (*C) -= B; return C; }, py::is_operator())
       // __mul__
-      .def("__mul__", [](const dolfin::GenericMatrix& self, double a)
-           { auto B = self.copy(); (*B) *= a; return B; }, py::is_operator())
-      .def("__rmul__", [](const dolfin::GenericMatrix& self, double a)
-           { auto B = self.copy(); (*B) *= a; return B; }, py::is_operator())
+      //.def("__mul__", [](const dolfin::GenericMatrix& self, double a)
+      //     { auto B = self.copy(); (*B) *= a; return B; }, py::is_operator())
+      //.def("__rmul__", [](const dolfin::GenericMatrix& self, double a)
+      //     { auto B = self.copy(); (*B) *= a; return B; }, py::is_operator())
       //.def("__mul__", [](const dolfin::GenericMatrix& self, const dolfin::GenericVector& x)
       //     {
       //       auto y = x.factory().create_vector(x.mpi_comm());
@@ -281,10 +275,10 @@ namespace dolfin_wrappers
            }, "Multiply a DOLFIN matrix and a NumPy array (non-distributed matricds only)")
       */
       // __div__
-      .def("__truediv__", [](const dolfin::GenericMatrix& self, double a)
-           { auto B = self.copy(); (*B) /= a; return B; }, py::is_operator())
+      //.def("__truediv__", [](const dolfin::GenericMatrix& self, double a)
+      //     { auto B = self.copy(); (*B) /= a; return B; }, py::is_operator())
       //
-      .def("copy", &dolfin::GenericMatrix::copy)
+      //.def("copy", &dolfin::GenericMatrix::copy)
       .def("local_range", &dolfin::GenericMatrix::local_range)
       .def("norm", &dolfin::GenericMatrix::norm)
       .def("nnz", &dolfin::GenericMatrix::nnz)
@@ -292,7 +286,7 @@ namespace dolfin_wrappers
       .def("apply", &dolfin::GenericMatrix::apply)
       //.def("get_diagonal", &dolfin::GenericMatrix::get_diagonal)
       //.def("set_diagonal", &dolfin::GenericMatrix::set_diagonal)
-      .def("ident_zeros", &dolfin::GenericMatrix::ident_zeros, py::arg("tol") = DOLFIN_EPS)
+      //.def("ident_zeros", &dolfin::GenericMatrix::ident_zeros, py::arg("tol") = DOLFIN_EPS)
       .def("ident", [](dolfin::GenericMatrix& self, std::vector<dolfin::la_index> rows)
            { self.ident(rows.size(), rows.data()); }, py::arg("rows"))
       .def("get", [](dolfin::GenericMatrix& self, Eigen::Ref<RowMatrixXd> block,
@@ -317,6 +311,7 @@ namespace dolfin_wrappers
              self.set((const double *) block.data(), rows.size(), rows.data(),
                       cols.size(), cols.data());
            }, py::arg("block"), py::arg("rows"), py::arg("cols"))
+      /*
       .def("getrow", [](const dolfin::GenericMatrix& instance, std::size_t row)
            {
              std::vector<double> values;
@@ -326,6 +321,8 @@ namespace dolfin_wrappers
              auto _values = py::array_t<double>(values.size(), values.data());
              return std::make_pair(_columns, _values);
            }, py::arg("row"))
+      */
+      /*
       .def("array", [](const dolfin::GenericMatrix& instance)
            {
              // FIXME: This function is highly dubious. It assumes a
@@ -347,7 +344,9 @@ namespace dolfin_wrappers
              }
 
              return A;
-           });
+           })
+      */
+      ;
 
     /*
     // dolfin::GenericVector

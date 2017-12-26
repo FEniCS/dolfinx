@@ -1,10 +1,8 @@
 set(HEADERS
-  CoordinateMatrix.h
   dolfin_la.h
   GenericMatrix.h
   GenericTensor.h
   IndexMap.h
-  LinearAlgebraObject.h
   PETScBaseMatrix.h
   PETScKrylovSolver.h
   PETScLUSolver.h
@@ -20,8 +18,6 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
-  CoordinateMatrix.cpp
-  GenericMatrix.cpp
   IndexMap.cpp
   PETScBaseMatrix.cpp
   PETScKrylovSolver.cpp

@@ -100,7 +100,8 @@ Then follows the definition of the coefficient functions (for
    // Source term (right-hand side)
    class Source : public Expression
    {
-     void eval(Array<double>& values, const Array<double>& x) const
+     void eval(Eigen::Ref<Eigen::VectorXd> values,
+            Eigen::Ref<const Eigen::VectorXd> x) const
      {
        double dx = x[0] - 0.5;
        double dy = x[1] - 0.5;
@@ -111,7 +112,8 @@ Then follows the definition of the coefficient functions (for
    // Normal derivative (Neumann boundary condition)
    class dUdN : public Expression
    {
-     void eval(Array<double>& values, const Array<double>& x) const
+     void eval(Eigen::Ref<Eigen::VectorXd> values,
+            Eigen::Ref<const Eigen::VectorXd> x) const
      {
        values[0] = sin(5*x[0]);
      }
@@ -144,8 +146,8 @@ the form file) defined relative to this mesh, we do as follows
    int main()
    {
      // Create mesh and function space
-     auto mesh = std::make_shared<Mesh>(
-       UnitSquareMesh::create({{32, 32}}, CellType::Type::triangle));
+     std::array<Point, 2> pt = {Point(0.,0.), Point(1.,1.)};
+     auto mesh = std::make_shared<Mesh>(RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, CellType::Type::triangle));
      auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
@@ -164,7 +166,9 @@ as follows:
      // Define boundary condition
      auto u0 = std::make_shared<Constant>(0.0);
      auto boundary = std::make_shared<DirichletBoundary>();
-     DirichletBC bc(V, u0, boundary);
+     std::vector<std::shared_ptr<const DirichletBC>> bc
+      = {std::make_shared<DirichletBC>(V, u0, boundary)};
+
 
 Next, we define the variational formulation by initializing the
 bilinear and linear forms (:math:`a`, :math:`L`) using the previously
@@ -175,12 +179,12 @@ to the linear form.
 .. code-block:: cpp
 
      // Define variational forms
-     Poisson::BilinearForm a(V, V);
-     Poisson::LinearForm L(V);
+     auto a = std::make_shared<Poisson::BilinearForm>(V, V);
+     auto L = std::make_shared<Poisson::LinearForm>(V);
      auto f = std::make_shared<Source>();
      auto g = std::make_shared<dUdN>();
-     L.f = f;
-     L.g = g;
+     L->f = f;
+     L->g = g;
 
 Now, we have specified the variational forms and can consider the
 solution of the variational problem. First, we need to define a
@@ -193,7 +197,16 @@ call the ``solve`` function with the arguments ``a == L``, ``u`` and
 
      // Compute solution
      Function u(V);
-     solve(a == L, u, bc);
+     auto A = std::make_shared<PETScMatrix>();
+     auto b = std::make_shared<PETScVector>();
+
+     SystemAssembler assem(a, L, bc);
+     assem.assemble(*A);
+     assem.assemble(*b);
+
+     PETScLUSolver lu(A);
+     lu.solve(*u.vector(), *b);
+
 
 The function ``u`` will be modified during the call to solve. A
 :cpp:class:`Function` can be saved to a file. Here, we output the
@@ -203,8 +216,8 @@ visualisation in an external program such as Paraview.
 .. code-block:: cpp
 
      // Save solution in VTK format
-     File file("poisson.pvd");
-     file << u;
+     VTKFile file("poisson.pvd", "ascii");
+     file.write(u);
 
      return 0;
    }

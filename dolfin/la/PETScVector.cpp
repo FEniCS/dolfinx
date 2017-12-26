@@ -452,10 +452,9 @@ const PETScVector& PETScVector::operator*= (const double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator*= (const PETScVector& y)
+const PETScVector& PETScVector::operator*= (const PETScVector& v)
 {
   dolfin_assert(_x);
-  const PETScVector& v = as_type<const PETScVector>(y);
   dolfin_assert(v._x);
   if (size() != v.size())
   {
@@ -485,10 +484,9 @@ const PETScVector& PETScVector::operator/= (const double a)
 double PETScVector::inner(const PETScVector& y) const
 {
   dolfin_assert(_x);
-  const PETScVector& _y = as_type<const PETScVector>(y);
-  dolfin_assert(_y._x);
+  dolfin_assert(y._x);
   double a;
-  PetscErrorCode ierr = VecDot(_y._x, _x, &a);
+  PetscErrorCode ierr = VecDot(y._x, _x, &a);
   CHECK_ERROR("VecDot");
   return a;
 }
@@ -497,16 +495,15 @@ void PETScVector::axpy(double a, const PETScVector& y)
 {
   dolfin_assert(_x);
 
-  const PETScVector& _y = as_type<const PETScVector>(y);
-  dolfin_assert(_y._x);
-  if (size() != _y.size())
+  dolfin_assert(y._x);
+  if (size() != y.size())
   {
     dolfin_error("PETScVector.cpp",
                  "perform axpy operation with PETSc vector",
                  "Vectors are not of the same size");
   }
 
-  PetscErrorCode ierr = VecAXPY(_x, a, _y._x);
+  PetscErrorCode ierr = VecAXPY(_x, a, y._x);
   CHECK_ERROR("VecAXPY");
 
   // Update ghost values
@@ -666,14 +663,11 @@ void PETScVector::gather(PETScVector& y,
   dolfin_assert(_x);
   PetscErrorCode ierr;
 
-  // Down cast to a PETScVector
-  PETScVector& _y = as_type<PETScVector>(y);
-
   // Get number of required entries
   const std::size_t n = indices.size();
 
   // Check that passed vector is local
-  if (MPI::size(_y.mpi_comm()) != 1)
+  if (MPI::size(y.mpi_comm()) != 1)
   {
     dolfin_error("PETScVector.cpp",
                  "gather vector entries",
@@ -681,11 +675,11 @@ void PETScVector::gather(PETScVector& y,
   }
 
   // Initialize vector if empty
-  if (_y.empty())
-    _y.init(n);
+  if (y.empty())
+    y.init(n);
 
   // Check that passed vector has correct size
-  if (_y.size() != n)
+  if (y.size() != n)
   {
     dolfin_error("PETScVector.cpp",
                  "gather vector entries",
@@ -713,12 +707,12 @@ void PETScVector::gather(PETScVector& y,
 
   // Perform scatter
   VecScatter scatter;
-  ierr = VecScatterCreate(_x, from, _y.vec(), to, &scatter);
+  ierr = VecScatterCreate(_x, from, y.vec(), to, &scatter);
   CHECK_ERROR("VecScatterCreate");
-  ierr = VecScatterBegin(scatter, _x, _y.vec(), INSERT_VALUES,
+  ierr = VecScatterBegin(scatter, _x, y.vec(), INSERT_VALUES,
                          SCATTER_FORWARD);
   CHECK_ERROR("VecScatterBegin");
-  ierr = VecScatterEnd(scatter, _x, _y.vec(), INSERT_VALUES,
+  ierr = VecScatterEnd(scatter, _x, y.vec(), INSERT_VALUES,
                        SCATTER_FORWARD);
   CHECK_ERROR("VecScatterEnd");
 

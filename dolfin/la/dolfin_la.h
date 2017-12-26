@@ -5,8 +5,6 @@
 
 // Note that the order is important!
 
-#include <dolfin/la/LinearAlgebraObject.h>
-
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/VectorSpaceBasis.h>
@@ -20,7 +18,6 @@
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
 
-#include <dolfin/la/CoordinateMatrix.h>
 #include <dolfin/la/PETScVector.h>
 
 #include <dolfin/la/TensorLayout.h>
@@ -30,7 +27,5 @@
 
 #include <dolfin/la/SLEPcEigenSolver.h>
 #include <dolfin/la/Scalar.h>
-#include <dolfin/la/solve.h>
-#include <dolfin/la/LinearOperator.h>
 
 #endif

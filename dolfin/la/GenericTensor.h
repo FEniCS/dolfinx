@@ -35,7 +35,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
-#include "LinearAlgebraObject.h"
 
 namespace dolfin
 {
@@ -44,7 +43,7 @@ namespace dolfin
 
   /// A common interface for arbitrary rank tensors.
 
-  class GenericTensor : public virtual LinearAlgebraObject
+  class GenericTensor
   {
   public:
 
@@ -69,33 +68,15 @@ namespace dolfin
     virtual std::pair<std::int64_t, std::int64_t>
     local_range(std::size_t dim) const = 0;
 
-    /// Get block of values
-    //virtual void get(double* block, const dolfin::la_index* num_rows,
-    //                 const dolfin::la_index * const * rows) const = 0;
-
-    /// Set block of values using global indices
-    virtual void set(const double* block, const dolfin::la_index* num_rows,
-                     const dolfin::la_index * const * rows) = 0;
-
     /// Set block of values using local indices
     virtual void set_local(const double* block,
                            const dolfin::la_index* num_rows,
                            const dolfin::la_index * const * rows) = 0;
 
-    /// Add block of values using global indices
-    virtual
-      void add(const double* block,
-           const std::vector<ArrayView<const dolfin::la_index>>& rows) = 0;
-
     /// Add block of values using local indices
     virtual void add_local(
       const double* block,
       const std::vector<ArrayView<const dolfin::la_index>>& rows) = 0;
-
-
-    /// Add block of values using global indices
-    virtual void add(const double* block, const dolfin::la_index* num_rows,
-                     const dolfin::la_index * const * rows) = 0;
 
     /// Add block of values using local indices
     virtual void add_local(const double* block,
@@ -109,7 +90,7 @@ namespace dolfin
     virtual void apply(std::string mode) = 0;
 
     /// Return MPI communicator
-    //virtual MPI_Comm mpi_comm() const = 0;
+    virtual MPI_Comm mpi_comm() const = 0;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
