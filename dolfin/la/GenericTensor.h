@@ -70,18 +70,18 @@ namespace dolfin
 
     /// Set block of values using local indices
     virtual void set_local(const double* block,
-                           const dolfin::la_index* num_rows,
-                           const dolfin::la_index * const * rows) = 0;
+                           const dolfin::la_index_t* num_rows,
+                           const dolfin::la_index_t * const * rows) = 0;
 
     /// Add block of values using local indices
     virtual void add_local(
       const double* block,
-      const std::vector<ArrayView<const dolfin::la_index>>& rows) = 0;
+      const std::vector<ArrayView<const dolfin::la_index_t>>& rows) = 0;
 
     /// Add block of values using local indices
     virtual void add_local(const double* block,
-                           const dolfin::la_index* num_rows,
-                           const dolfin::la_index * const * rows) = 0;
+                           const dolfin::la_index_t* num_rows,
+                           const dolfin::la_index_t * const * rows) = 0;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;

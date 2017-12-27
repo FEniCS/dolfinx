@@ -317,10 +317,10 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
     {
-      const dolfin::la_index dof = dofs[i];
-      if (dof < (dolfin::la_index) local_size)
+      const dolfin::la_index_t dof = dofs[i];
+      if (dof < (dolfin::la_index_t) local_size)
       {
-        const dolfin::la_index local_index = dof;
+        const dolfin::la_index_t local_index = dof;
         for (std::size_t j = 0; j < gdim; ++j)
         {
           dolfin_assert(gdim*local_index + j < x.size());

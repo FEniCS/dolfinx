@@ -64,36 +64,36 @@ namespace dolfin
     virtual std::size_t nnz() const = 0;
 
     /// Get block of values
-    //virtual void get(double* block, const dolfin::la_index* num_rows,
-    //                 const dolfin::la_index * const * rows) const
+    //virtual void get(double* block, const dolfin::la_index_t* num_rows,
+    //                 const dolfin::la_index_t * const * rows) const
     //{ get(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set block of values using global indices
-    //virtual void set(const double* block, const dolfin::la_index* num_rows,
-    //                 const dolfin::la_index * const * rows)
+    //virtual void set(const double* block, const dolfin::la_index_t* num_rows,
+    //                 const dolfin::la_index_t * const * rows)
     //{ set(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set block of values using local indices
     virtual void set_local(const double* block,
-                           const dolfin::la_index* num_rows,
-                           const dolfin::la_index * const * rows)
+                           const dolfin::la_index_t* num_rows,
+                           const dolfin::la_index_t * const * rows)
     { set_local(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values using global indices
-    //virtual void add(const double* block, const dolfin::la_index* num_rows,
-    //                 const dolfin::la_index * const * rows)
+    //virtual void add(const double* block, const dolfin::la_index_t* num_rows,
+    //                 const dolfin::la_index_t * const * rows)
     //{ add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values using local indices
     virtual void add_local(const double* block,
-                           const dolfin::la_index* num_rows,
-                           const dolfin::la_index * const * rows)
+                           const dolfin::la_index_t* num_rows,
+                           const dolfin::la_index_t * const * rows)
     { add_local(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values using global indices
     //virtual void
     //add(const double* block,
-    //    const std::vector<ArrayView<const dolfin::la_index>>& rows)
+    //    const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
     // {
     //  add(block, rows[0].size(), rows[0].data(),
     //      rows[1].size(), rows[1].data());
@@ -102,7 +102,7 @@ namespace dolfin
     /// Add block of values using local indices
     virtual void
     add_local(const double* block,
-              const std::vector<ArrayView<const dolfin::la_index>>& rows)
+              const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
     {
       add_local(block, rows[0].size(), rows[0].data(),
                 rows[1].size(), rows[1].data());
@@ -134,28 +134,28 @@ namespace dolfin
 
     /// Get block of values
     virtual void get(double* block,
-                     std::size_t m, const dolfin::la_index* rows,
-                     std::size_t n, const dolfin::la_index* cols) const = 0;
+                     std::size_t m, const dolfin::la_index_t* rows,
+                     std::size_t n, const dolfin::la_index_t* cols) const = 0;
 
     /// Set block of values using global indices
     virtual void set(const double* block,
-                     std::size_t m, const dolfin::la_index* rows,
-                     std::size_t n, const dolfin::la_index* cols) = 0;
+                     std::size_t m, const dolfin::la_index_t* rows,
+                     std::size_t n, const dolfin::la_index_t* cols) = 0;
 
     /// Set block of values using local indices
     virtual void set_local(const double* block,
-                           std::size_t m, const dolfin::la_index* rows,
-                           std::size_t n, const dolfin::la_index* cols) = 0;
+                           std::size_t m, const dolfin::la_index_t* rows,
+                           std::size_t n, const dolfin::la_index_t* cols) = 0;
 
     /// Add block of values using global indices
     //virtual void add(const double* block,
-    //                 std::size_t m, const dolfin::la_index* rows,
-    //                 std::size_t n, const dolfin::la_index* cols) = 0;
+    //                 std::size_t m, const dolfin::la_index_t* rows,
+    //                 std::size_t n, const dolfin::la_index_t* cols) = 0;
 
     /// Add block of values using local indices
     virtual void add_local(const double* block,
-                           std::size_t m, const dolfin::la_index* rows,
-                           std::size_t n, const dolfin::la_index* cols) = 0;
+                           std::size_t m, const dolfin::la_index_t* rows,
+                           std::size_t n, const dolfin::la_index_t* cols) = 0;
 
     /// Add multiple of given matrix (AXPY operation)
     //virtual void axpy(double a, const GenericMatrix& A,
@@ -174,16 +174,16 @@ namespace dolfin
     //                    const std::vector<double>& values) = 0;
 
     /// Set given rows (global row indices) to zero
-    virtual void zero(std::size_t m, const dolfin::la_index* rows) = 0;
+    virtual void zero(std::size_t m, const dolfin::la_index_t* rows) = 0;
 
     /// Set given rows (local row indices) to zero
-    virtual void zero_local(std::size_t m, const dolfin::la_index* rows) = 0;
+    virtual void zero_local(std::size_t m, const dolfin::la_index_t* rows) = 0;
 
     /// Set given rows (global row indices) to identity matrix
-    virtual void ident(std::size_t m, const dolfin::la_index* rows) = 0;
+    virtual void ident(std::size_t m, const dolfin::la_index_t* rows) = 0;
 
     /// Set given rows (local row indices) to identity matrix
-    virtual void ident_local(std::size_t m, const dolfin::la_index* rows) = 0;
+    virtual void ident_local(std::size_t m, const dolfin::la_index_t* rows) = 0;
 
     /// Matrix-vector product, y = A^T x. The y vector must either be
     /// zero-sized or have correct size and parallel layout.
@@ -230,12 +230,12 @@ namespace dolfin
     //--- Convenience functions ---
 
     /// Get value of given entry
-    //virtual double operator() (dolfin::la_index i, dolfin::la_index j) const
+    //virtual double operator() (dolfin::la_index_t i, dolfin::la_index_t j) const
     //{ double value(0); get(&value, 1, &i, 1, &j); return value; }
 
     /// Get value of given entry
-    //virtual double getitem(std::pair<dolfin::la_index,
-    //                       dolfin::la_index> ij) const
+    //virtual double getitem(std::pair<dolfin::la_index_t,
+    //                       dolfin::la_index_t> ij) const
     //{
     //  double value(0);
     //  get(&value, 1, &ij.first, 1, &ij.second);
@@ -244,7 +244,7 @@ namespace dolfin
 
     /// Set given entry to value. apply("insert") must be called
     /// before using using the object.
-    //virtual void setitem(std::pair<dolfin::la_index, dolfin::la_index> ij,
+    //virtual void setitem(std::pair<dolfin::la_index_t, dolfin::la_index_t> ij,
     //                     double value)
     //{  set(&value, 1, &ij.first, 1, &ij.second); }
 

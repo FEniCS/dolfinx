@@ -103,27 +103,27 @@ namespace dolfin
     virtual const std::vector<int>& off_process_owner() const = 0;
 
     /// Local-to-global mapping of dofs on a cell
-    virtual Eigen::Map<const Eigen::Array<dolfin::la_index, Eigen::Dynamic, 1>>
+    virtual Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>>
       cell_dofs(std::size_t cell_index) const = 0;
 
     /// Return the dof indices associated with entities of given dimension and entity indices
-    virtual std::vector<dolfin::la_index>
+    virtual std::vector<dolfin::la_index_t>
       entity_dofs(const Mesh& mesh, std::size_t entity_dim,
                   const std::vector<std::size_t> & entity_indices) const = 0;
 
     /// Return the dof indices associated with all entities of given dimension
-    virtual std::vector<dolfin::la_index>
+    virtual std::vector<dolfin::la_index_t>
       entity_dofs(const Mesh& mesh, std::size_t entity_dim) const = 0;
 
     /// Return the dof indices associated with the closure of entities of
     /// given dimension and entity indices
-    virtual std::vector<dolfin::la_index>
+    virtual std::vector<dolfin::la_index_t>
       entity_closure_dofs(const Mesh& mesh, std::size_t entity_dim,
                           const std::vector<std::size_t> & entity_indices) const = 0;
 
     /// Return the dof indices associated with the closure of all entities of
     /// given dimension
-    virtual std::vector<dolfin::la_index>
+    virtual std::vector<dolfin::la_index_t>
       entity_closure_dofs(const Mesh& mesh, std::size_t entity_dim) const = 0;
 
     /// Tabulate local-local facet dofs
@@ -164,11 +164,11 @@ namespace dolfin
 
     /// Return list of dof indices on this process that belong to mesh
     /// entities of dimension dim
-    virtual std::vector<dolfin::la_index> dofs(const Mesh& mesh,
+    virtual std::vector<dolfin::la_index_t> dofs(const Mesh& mesh,
                                                std::size_t dim) const = 0;
 
     /// Return list of global dof indices on this process
-    virtual std::vector<dolfin::la_index> dofs() const = 0;
+    virtual std::vector<dolfin::la_index_t> dofs() const = 0;
 
     /// Set dof entries in vector to a specified value. Parallel
     /// layout of vector must be consistent with dof map range. This

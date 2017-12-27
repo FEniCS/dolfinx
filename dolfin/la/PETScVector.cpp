@@ -115,7 +115,7 @@ void PETScVector::init(std::pair<std::size_t, std::size_t> range)
 //-----------------------------------------------------------------------------
 void PETScVector::init(std::pair<std::size_t, std::size_t> range,
                        const std::vector<std::size_t>& local_to_global_map,
-                       const std::vector<la_index>& ghost_indices)
+                       const std::vector<la_index_t>& ghost_indices)
 {
   // Initialise vector
   _init(range, local_to_global_map, ghost_indices);
@@ -193,7 +193,7 @@ void PETScVector::add_local(const Array<double>& values)
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(double* block, std::size_t m,
-			    const dolfin::la_index* rows) const
+			    const dolfin::la_index_t* rows) const
 {
   if (m == 0)
     return;
@@ -234,7 +234,7 @@ void PETScVector::get_local(double* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get(double* block, std::size_t m,
-                      const dolfin::la_index* rows) const
+                      const dolfin::la_index_t* rows) const
 {
   if (m == 0)
     return;
@@ -245,7 +245,7 @@ void PETScVector::get(double* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set(const double* block, std::size_t m,
-                      const dolfin::la_index* rows)
+                      const dolfin::la_index_t* rows)
 {
   dolfin_assert(_x);
   PetscErrorCode ierr = VecSetValues(_x, m, rows, block, INSERT_VALUES);
@@ -253,7 +253,7 @@ void PETScVector::set(const double* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set_local(const double* block, std::size_t m,
-                            const dolfin::la_index* rows)
+                            const dolfin::la_index_t* rows)
 {
   dolfin_assert(_x);
   PetscErrorCode ierr = VecSetValuesLocal(_x, m, rows, block, INSERT_VALUES);
@@ -261,7 +261,7 @@ void PETScVector::set_local(const double* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add(const double* block, std::size_t m,
-                      const dolfin::la_index* rows)
+                      const dolfin::la_index_t* rows)
 {
   dolfin_assert(_x);
   PetscErrorCode ierr = VecSetValues(_x, m, rows, block, ADD_VALUES);
@@ -269,7 +269,7 @@ void PETScVector::add(const double* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add_local(const double* block, std::size_t m,
-                            const dolfin::la_index* rows)
+                            const dolfin::la_index_t* rows)
 {
   dolfin_assert(_x);
   PetscErrorCode ierr = VecSetValuesLocal(_x, m, rows, block, ADD_VALUES);
@@ -658,7 +658,7 @@ std::string PETScVector::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 void PETScVector::gather(PETScVector& y,
-                         const std::vector<dolfin::la_index>& indices) const
+                         const std::vector<dolfin::la_index_t>& indices) const
 {
   dolfin_assert(_x);
   PetscErrorCode ierr;
@@ -726,7 +726,7 @@ void PETScVector::gather(PETScVector& y,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::gather(std::vector<double>& x,
-                         const std::vector<dolfin::la_index>& indices) const
+                         const std::vector<dolfin::la_index_t>& indices) const
 {
   x.resize(indices.size());
   PETScVector y(PETSC_COMM_SELF);
@@ -828,7 +828,7 @@ void PETScVector::reset(Vec vec)
 //-----------------------------------------------------------------------------
 void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
                         const std::vector<std::size_t>& local_to_global_map,
-                        const std::vector<la_index>& ghost_indices)
+                        const std::vector<la_index_t>& ghost_indices)
 {
   if (!_x)
   {

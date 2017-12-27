@@ -113,41 +113,41 @@ namespace dolfin
     { return this->local_range(); }
 
     /// Set block of values using global indices
-    void set(const double* block, const dolfin::la_index* num_rows,
-                     const dolfin::la_index * const * rows)
+    void set(const double* block, const dolfin::la_index_t* num_rows,
+                     const dolfin::la_index_t * const * rows)
     {
       this->set(block, num_rows[0], rows[0]);
     }
 
     /// Set block of values using local indices
     void set_local(const double* block,
-                           const dolfin::la_index* num_rows,
-                           const dolfin::la_index * const * rows)
+                           const dolfin::la_index_t* num_rows,
+                           const dolfin::la_index_t * const * rows)
     {
       this->set_local(block, num_rows[0], rows[0]);
     }
 
     /// Add block of values using global indices
-    virtual void add(const double* block, const dolfin::la_index* num_rows,
-                     const dolfin::la_index * const * rows)
+    virtual void add(const double* block, const dolfin::la_index_t* num_rows,
+                     const dolfin::la_index_t * const * rows)
     { add(block, num_rows[0], rows[0]); }
 
     /// Add block of values using local indices
     virtual void add_local(const double* block,
-                           const dolfin::la_index* num_rows,
-                           const dolfin::la_index * const * rows)
+                           const dolfin::la_index_t* num_rows,
+                           const dolfin::la_index_t * const * rows)
     { add_local(block, num_rows[0], rows[0]); }
 
     /// Add block of values using global indices
     virtual void
       add(const double* block,
-          const std::vector<ArrayView<const dolfin::la_index>>& rows)
+          const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
     { add(block, rows[0].size(), rows[0].data()); }
 
     /// Add block of values using local indices
     virtual void
       add_local(const double* block,
-                const std::vector<ArrayView<const dolfin::la_index>>& rows)
+                const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
     { add_local(block, rows[0].size(), rows[0].data()); }
 
     std::size_t rank() const
@@ -164,7 +164,7 @@ namespace dolfin
                      "Vector cannot be initialised more than once");
       }
 
-      std::vector<dolfin::la_index> ghosts;
+      std::vector<dolfin::la_index_t> ghosts;
       std::vector<std::size_t> local_to_global(tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL));
 
       // FIXME: should just pass index_map to init()
@@ -198,7 +198,7 @@ namespace dolfin
     /// values
     virtual void init(std::pair<std::size_t, std::size_t> range,
                       const std::vector<std::size_t>& local_to_global_map,
-                      const std::vector<la_index>& ghost_indices);
+                      const std::vector<la_index_t>& ghost_indices);
 
     // Bring init function from PETScVector into scope
     //using GenericVector::init;
@@ -221,27 +221,27 @@ namespace dolfin
     /// Get block of values using global indices (all values must be
     /// owned by local process, ghosts cannot be accessed)
     virtual void get(double* block, std::size_t m,
-                     const dolfin::la_index* rows) const;
+                     const dolfin::la_index_t* rows) const;
 
     /// Get block of values using local indices
     virtual void get_local(double* block, std::size_t m,
-                           const dolfin::la_index* rows) const;
+                           const dolfin::la_index_t* rows) const;
 
     /// Set block of values using global indices
     virtual void set(const double* block, std::size_t m,
-                     const dolfin::la_index* rows);
+                     const dolfin::la_index_t* rows);
 
     /// Set block of values using local indices
     virtual void set_local(const double* block, std::size_t m,
-                           const dolfin::la_index* rows);
+                           const dolfin::la_index_t* rows);
 
     /// Add block of values using global indices
     virtual void add(const double* block, std::size_t m,
-                     const dolfin::la_index* rows);
+                     const dolfin::la_index_t* rows);
 
     /// Add block of values using local indices
     virtual void add_local(const double* block, std::size_t m,
-                           const dolfin::la_index* rows);
+                           const dolfin::la_index_t* rows);
 
     /// Get all values on local process
     virtual void get_local(std::vector<double>& values) const;
@@ -257,12 +257,12 @@ namespace dolfin
     /// or of correct dimension (same as provided indices).
     /// This operation is collective
     virtual void gather(PETScVector& y,
-                        const std::vector<dolfin::la_index>& indices) const;
+                        const std::vector<dolfin::la_index_t>& indices) const;
 
     /// Gather entries (given by global indices) into x.
     /// This operation is collective
     virtual void gather(std::vector<double>& x,
-                        const std::vector<dolfin::la_index>& indices) const;
+                        const std::vector<dolfin::la_index_t>& indices) const;
 
     /// Gather all entries into x on process 0.
     /// This operation is collective
@@ -348,7 +348,7 @@ namespace dolfin
     // Initialise PETSc vector
     void _init(std::pair<std::size_t, std::size_t> range,
                const std::vector<std::size_t>& local_to_global_map,
-               const std::vector<la_index>& ghost_indices);
+               const std::vector<la_index_t>& ghost_indices);
 
     // PETSc Vec pointer
     Vec _x;

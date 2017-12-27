@@ -32,7 +32,7 @@ using namespace dolfin;
 std::vector<std::size_t> dolfin::dof_to_vertex_map(const FunctionSpace& space)
 {
   // Get vertex_to_dof_map and invert it
-  const std::vector<dolfin::la_index> vertex_map = vertex_to_dof_map(space);
+  const std::vector<dolfin::la_index_t> vertex_map = vertex_to_dof_map(space);
   std::vector<std::size_t> return_map(vertex_map.size());
   for (std::size_t i = 0; i < vertex_map.size(); i++)
   {
@@ -41,7 +41,7 @@ std::vector<std::size_t> dolfin::dof_to_vertex_map(const FunctionSpace& space)
   return return_map;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index>
+std::vector<dolfin::la_index_t>
 dolfin::vertex_to_dof_map(const FunctionSpace& space)
 {
   // Get the mesh
@@ -75,7 +75,7 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
   std::vector<std::size_t> local_to_local_map(dofs_per_vertex);
 
   // Create return data structure
-  std::vector<dolfin::la_index>
+  std::vector<dolfin::la_index_t>
     return_map(dofs_per_vertex*mesh.num_entities(0));
 
   // Iterate over vertices
@@ -112,7 +112,7 @@ dolfin::vertex_to_dof_map(const FunctionSpace& space)
     // Fill local dofs for the vertex
     for (std::size_t local_dof = 0; local_dof < dofs_per_vertex; local_dof++)
     {
-      const dolfin::la_index global_dof
+      const dolfin::la_index_t global_dof
         = cell_dofs[local_to_local_map[local_dof]];
       return_map[dofs_per_vertex*vertex->index() + local_dof] = global_dof;
     }

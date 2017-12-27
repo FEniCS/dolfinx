@@ -168,24 +168,24 @@ namespace dolfin
       std::vector<double>& Ae,
       std::vector<double>& macro_A,
       const std::array<bool, 2>& add_local_tensor,
-      const std::array<std::vector<ArrayView<const la_index>>, 2>& cell_dofs);
+      const std::array<std::vector<ArrayView<const la_index_t>>, 2>& cell_dofs);
 
     static void apply_bc(double* A, double* b,
                          const std::vector<DirichletBC::Map>& boundary_values,
-                         const ArrayView<const dolfin::la_index>& global_dofs0,
-                         const ArrayView<const dolfin::la_index>& global_dofs1);
+                         const ArrayView<const dolfin::la_index_t>& global_dofs0,
+                         const ArrayView<const dolfin::la_index_t>& global_dofs1);
 
     // Return true if cell has an Dirichlet/essential boundary
     // condition applied
     static bool has_bc(const DirichletBC::Map& boundary_values,
-                       const ArrayView<const dolfin::la_index>& dofs);
+                       const ArrayView<const dolfin::la_index_t>& dofs);
 
     // Return true if element matrix is required
     static bool
       cell_matrix_required(const GenericTensor* A,
                            const void* integral,
                            const std::vector<DirichletBC::Map>& boundary_values,
-                           const ArrayView<const dolfin::la_index>& dofs);
+                           const ArrayView<const dolfin::la_index_t>& dofs);
 
   };
 

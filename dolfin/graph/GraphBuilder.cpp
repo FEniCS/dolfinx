@@ -57,8 +57,8 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
     auto _dofs0 = dofmap0.cell_dofs(cell->index());
     auto _dofs1 = dofmap1.cell_dofs(cell->index());
 
-    ArrayView<const dolfin::la_index> dofs0(_dofs0.size(), _dofs0.data());
-    ArrayView<const dolfin::la_index> dofs1(_dofs1.size(), _dofs1.data());
+    ArrayView<const dolfin::la_index_t> dofs0(_dofs0.size(), _dofs0.data());
+    ArrayView<const dolfin::la_index_t> dofs1(_dofs1.size(), _dofs1.data());
 
     for (auto node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
       for (auto node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)

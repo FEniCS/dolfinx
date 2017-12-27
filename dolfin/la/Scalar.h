@@ -99,8 +99,8 @@ namespace dolfin
     }
 
     /// Get block of values
-    virtual void get(double* block, const dolfin::la_index* num_rows,
-             const dolfin::la_index * const * rows) const
+    virtual void get(double* block, const dolfin::la_index_t* num_rows,
+             const dolfin::la_index_t * const * rows) const
     {
       dolfin_error("Scalar.h",
                    "get global value of scalar",
@@ -108,8 +108,8 @@ namespace dolfin
     }
 
     /// Set block of values using global indices
-    virtual void set(const double* block, const dolfin::la_index* num_rows,
-             const dolfin::la_index * const * rows)
+    virtual void set(const double* block, const dolfin::la_index_t* num_rows,
+             const dolfin::la_index_t * const * rows)
     {
       dolfin_error("Scalar.h",
                    "set global value of scalar",
@@ -117,8 +117,8 @@ namespace dolfin
     }
 
     /// Set block of values using local indices
-    virtual void set_local(const double* block, const dolfin::la_index* num_rows,
-                   const dolfin::la_index * const * rows)
+    virtual void set_local(const double* block, const dolfin::la_index_t* num_rows,
+                   const dolfin::la_index_t * const * rows)
     {
       dolfin_error("Scalar.h",
                    "set local value of scalar",
@@ -126,16 +126,16 @@ namespace dolfin
     }
 
     /// Add block of values using global indices
-    virtual void add(const double* block, const dolfin::la_index* num_rows,
-             const dolfin::la_index * const * rows)
+    virtual void add(const double* block, const dolfin::la_index_t* num_rows,
+             const dolfin::la_index_t * const * rows)
     {
       dolfin_assert(block);
       _local_increment += block[0];
     }
 
     /// Add block of values using local indices
-    virtual void add_local(const double* block, const dolfin::la_index* num_rows,
-                   const dolfin::la_index * const * rows)
+    virtual void add_local(const double* block, const dolfin::la_index_t* num_rows,
+                   const dolfin::la_index_t * const * rows)
     {
       dolfin_assert(block);
       _local_increment += block[0];
@@ -143,7 +143,7 @@ namespace dolfin
 
     /// Add block of values using global indices
     virtual void add(const double* block,
-             const std::vector<ArrayView<const dolfin::la_index>>& rows)
+             const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
     {
       dolfin_assert(block);
       _local_increment += block[0];
@@ -151,7 +151,7 @@ namespace dolfin
 
     /// Add block of values using local indices
     virtual void add_local(const double* block,
-             const std::vector<ArrayView<const dolfin::la_index>>& rows)
+             const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
     {
       dolfin_assert(block);
       _local_increment += block[0];

@@ -472,14 +472,14 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
 
   // Initialise row and column indices and values of the transfer
   // matrix
-  std::vector<std::vector<dolfin::la_index>> col_indices(m_owned, std::vector<dolfin::la_index>(eldim));
+  std::vector<std::vector<dolfin::la_index_t>> col_indices(m_owned, std::vector<dolfin::la_index_t>(eldim));
   std::vector<std::vector<double>> values(m_owned, std::vector<double>(eldim));
   std::vector<double> temp_values(eldim*data_size);
 
   // Initialise global sparsity pattern: record on-process and
   // off-process dependencies of fine dofs
-  std::vector<std::vector<dolfin::la_index>> send_dnnz(mpi_size);
-  std::vector<std::vector<dolfin::la_index>> send_onnz(mpi_size);
+  std::vector<std::vector<dolfin::la_index_t>> send_dnnz(mpi_size);
+  std::vector<std::vector<dolfin::la_index_t>> send_onnz(mpi_size);
 
   // Initialise local to global dof maps (needed to allocate the
   // entries of the transfer matrix with the correct global indices)
@@ -543,26 +543,26 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   // row we also keep track of the ownership range
   std::size_t mbegin = finemap->ownership_range().first;
   std::size_t mend = finemap->ownership_range().second;
-  std::vector<dolfin::la_index> recv_onnz;
+  std::vector<dolfin::la_index_t> recv_onnz;
   MPI::all_to_all(mpi_comm, send_onnz, recv_onnz);
 
-  std::vector<dolfin::la_index> onnz(m, 0);
+  std::vector<dolfin::la_index_t> onnz(m, 0);
   for (const auto &q : recv_onnz)
   {
-    dolfin_assert(q >= (dolfin::la_index)mbegin
-                  and q < (dolfin::la_index)mend);
+    dolfin_assert(q >= (dolfin::la_index_t)mbegin
+                  and q < (dolfin::la_index_t)mend);
     ++onnz[q - mbegin];
   }
 
   // Communicate on-process columns nnz, and flatten to get nnz per
   // row
-  std::vector<dolfin::la_index> recv_dnnz;
+  std::vector<dolfin::la_index_t> recv_dnnz;
   MPI::all_to_all(mpi_comm, send_dnnz, recv_dnnz);
-  std::vector<dolfin::la_index> dnnz(m, 0);
+  std::vector<dolfin::la_index_t> dnnz(m, 0);
   for (const auto &q : recv_dnnz)
   {
-    dolfin_assert(q >= (dolfin::la_index)mbegin
-                  and q < (dolfin::la_index)mend);
+    dolfin_assert(q >= (dolfin::la_index_t)mbegin
+                  and q < (dolfin::la_index_t)mend);
     ++dnnz[q - mbegin];
   }
 

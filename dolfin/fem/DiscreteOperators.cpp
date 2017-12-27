@@ -69,8 +69,8 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   }
 
   // Build maps from entities to local dof indices
-  const std::vector<dolfin::la_index> edge_to_dof = V0.dofmap()->dofs(mesh, 1);
-  const std::vector<dolfin::la_index> vertex_to_dof
+  const std::vector<dolfin::la_index_t> edge_to_dof = V0.dofmap()->dofs(mesh, 1);
+  const std::vector<dolfin::la_index_t> vertex_to_dof
     = V1.dofmap()->dofs(mesh, 0);
 
   // Build maps from local dof numbering to global
@@ -131,8 +131,8 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   // Build discrete gradient operator/matrix
   for (EdgeIterator edge(mesh); !edge.end(); ++edge)
   {
-    dolfin::la_index row;
-    dolfin::la_index cols[2];
+    dolfin::la_index_t row;
+    dolfin::la_index_t cols[2];
     double values[2];
 
     row = local_to_global_map0[edge_to_dof[edge->index()]];

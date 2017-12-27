@@ -131,7 +131,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
 
         // Set zeros in dense rows in order of increasing column index
         const double block = 0.0;
-        dolfin::la_index IJ[2];
+        dolfin::la_index_t IJ[2];
         for (std::size_t i: global_dofs)
         {
           const std::size_t I = index_map_0.local_to_global(i);
@@ -168,7 +168,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
 
       for (std::size_t i = row_range.first; i < range; i++)
       {
-        const dolfin::la_index _i = i;
+        const dolfin::la_index_t _i = i;
         _matA.set(&block, 1, &_i, 1, &_i);
       }
 

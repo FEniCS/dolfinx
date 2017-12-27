@@ -146,29 +146,29 @@ namespace dolfin_wrappers
            })
       // FIXME: Switch EigenMap in DOLFIN interface when SWIG is dropped
       .def("insert_local", [](dolfin::SparsityPattern& self,
-                              std::vector<Eigen::Matrix<dolfin::la_index, Eigen::Dynamic, 1>> entries)
+                              std::vector<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>> entries)
            {
-             std::vector<dolfin::ArrayView<const dolfin::la_index>> e(entries.size());
+             std::vector<dolfin::ArrayView<const dolfin::la_index_t>> e(entries.size());
              for (std::size_t i = 0; i < entries.size(); ++i)
-               e[i] = dolfin::ArrayView<const dolfin::la_index>(entries[i].size(), &entries[i][0]);
+               e[i] = dolfin::ArrayView<const dolfin::la_index_t>(entries[i].size(), &entries[i][0]);
 
              self.insert_local(e);
            })
       .def("insert_global", [](dolfin::SparsityPattern& self,
-                              std::vector<Eigen::Matrix<dolfin::la_index, Eigen::Dynamic, 1>> entries)
+                              std::vector<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>> entries)
            {
-             std::vector<dolfin::ArrayView<const dolfin::la_index>> e(entries.size());
+             std::vector<dolfin::ArrayView<const dolfin::la_index_t>> e(entries.size());
              for (std::size_t i = 0; i < entries.size(); ++i)
-               e[i] = dolfin::ArrayView<const dolfin::la_index>(entries[i].size(), &entries[i][0]);
+               e[i] = dolfin::ArrayView<const dolfin::la_index_t>(entries[i].size(), &entries[i][0]);
 
              self.insert_global(e);
            })
       .def("insert_local_global", [](dolfin::SparsityPattern& self,
-                                     std::vector<Eigen::Matrix<dolfin::la_index, Eigen::Dynamic, 1>> entries)
+                                     std::vector<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>> entries)
            {
-             std::vector<dolfin::ArrayView<const dolfin::la_index>> e(entries.size());
+             std::vector<dolfin::ArrayView<const dolfin::la_index_t>> e(entries.size());
              for (std::size_t i = 0; i < entries.size(); ++i)
-               e[i] = dolfin::ArrayView<const dolfin::la_index>(entries[i].size(), &entries[i][0]);
+               e[i] = dolfin::ArrayView<const dolfin::la_index_t>(entries[i].size(), &entries[i][0]);
 
              self.insert_local_global(e);
            });
@@ -287,11 +287,11 @@ namespace dolfin_wrappers
       //.def("get_diagonal", &dolfin::GenericMatrix::get_diagonal)
       //.def("set_diagonal", &dolfin::GenericMatrix::set_diagonal)
       //.def("ident_zeros", &dolfin::GenericMatrix::ident_zeros, py::arg("tol") = DOLFIN_EPS)
-      .def("ident", [](dolfin::GenericMatrix& self, std::vector<dolfin::la_index> rows)
+      .def("ident", [](dolfin::GenericMatrix& self, std::vector<dolfin::la_index_t> rows)
            { self.ident(rows.size(), rows.data()); }, py::arg("rows"))
       .def("get", [](dolfin::GenericMatrix& self, Eigen::Ref<RowMatrixXd> block,
-                     const std::vector<dolfin::la_index> rows,
-                     const std::vector<dolfin::la_index> cols)
+                     const std::vector<dolfin::la_index_t> rows,
+                     const std::vector<dolfin::la_index_t> cols)
            {
              if ((std::size_t) block.rows() != rows.size())
                throw py::value_error("Block must have the same number of rows as len(rows)");
@@ -301,8 +301,8 @@ namespace dolfin_wrappers
                       cols.size(), cols.data());
            }, py::arg("block"), py::arg("rows"), py::arg("cols"))
       .def("set", [](dolfin::GenericMatrix& self, const Eigen::Ref<const RowMatrixXd> block,
-                     const std::vector<dolfin::la_index> rows,
-                     const std::vector<dolfin::la_index> cols)
+                     const std::vector<dolfin::la_index_t> rows,
+                     const std::vector<dolfin::la_index_t> cols)
            {
              if ((std::size_t) block.rows() != rows.size())
                throw py::value_error("Block must have the same number of rows as len(rows)");
@@ -405,7 +405,7 @@ namespace dolfin_wrappers
              std::vector<double> values(slicelength);
              if (start != 0 or stop != self.local_size() or step != 1)
              {
-               std::vector<dolfin::la_index> indices(slicelength, start);
+               std::vector<dolfin::la_index_t> indices(slicelength, start);
                for (size_t i = 1; i < slicelength; ++i)
                  indices[i] = indices[i-1] + step;
                self.get_local(values.data(), values.size(), indices.data());
@@ -440,7 +440,7 @@ namespace dolfin_wrappers
            }, py::arg().noconvert())  // Use noconvert to avoid integers being converted to bool
       .def("__getitem__", [](dolfin::GenericVector& self, double index)
            { throw py::type_error("Cannot use float for GenericVector indexing with floats"); }, py::arg().noconvert())
-      .def("__getitem__", [](dolfin::GenericVector& self, py::array_t<dolfin::la_index> indices)
+      .def("__getitem__", [](dolfin::GenericVector& self, py::array_t<dolfin::la_index_t> indices)
            {
              if (indices.ndim() > 1)
                throw py::index_error("Indices must be a 1D array");
@@ -450,13 +450,13 @@ namespace dolfin_wrappers
              self.get_local(values.mutable_data(), values.size(), indices.data());
              return values;
            })
-      .def("__getitem__", [](dolfin::GenericVector& self, dolfin::la_index index)
+      .def("__getitem__", [](dolfin::GenericVector& self, dolfin::la_index_t index)
            {
              if (self.local_size() == 0)
                throw py::index_error("GenericVector has zero (local) length. Cannot index into it.");
              else if (index < 0)
                throw py::index_error("Index is negative");
-             else if (!(index < (dolfin::la_index) self.local_size()))
+             else if (!(index < (dolfin::la_index_t) self.local_size()))
                throw py::index_error("Index exceeds (local) size of GenericVector");
              return self.getitem(index);
            })
@@ -498,7 +498,7 @@ namespace dolfin_wrappers
                self.apply("insert");
              }
            })
-      .def("__setitem__", [](dolfin::GenericVector& self, const py::array_t<dolfin::la_index> indices, double x)
+      .def("__setitem__", [](dolfin::GenericVector& self, const py::array_t<dolfin::la_index_t> indices, double x)
            {
              if (indices.ndim() > 1)
                throw py::index_error("Indices to set must be a 1D array");
@@ -509,7 +509,7 @@ namespace dolfin_wrappers
              self.set_local(_x.data(), _x.size(), indices.data());
              self.apply("insert");
            })
-      .def("__setitem__", [](dolfin::GenericVector& self, const py::array_t<dolfin::la_index> indices,
+      .def("__setitem__", [](dolfin::GenericVector& self, const py::array_t<dolfin::la_index_t> indices,
                              const py::array_t<double> x)
            {
              if (indices.ndim() != 1)
@@ -528,7 +528,7 @@ namespace dolfin_wrappers
       .def("size",  (std::size_t (dolfin::GenericVector::*)() const) &dolfin::GenericVector::size)
       //
       .def("get_local", [](const dolfin::GenericVector& instance,
-                           const std::vector<dolfin::la_index>& rows)
+                           const std::vector<dolfin::la_index_t>& rows)
            {
              py::array_t<double> data(rows.size());
              instance.get_local(data.mutable_data(), rows.size(), rows.data());
@@ -542,7 +542,7 @@ namespace dolfin_wrappers
            })
       .def("set_local", [](dolfin::GenericVector& instance, std::vector<double> values)
            {
-             std::vector<dolfin::la_index> indices(values.size());
+             std::vector<dolfin::la_index_t> indices(values.size());
              std::iota(indices.begin(), indices.end(), 0);
              instance.set_local(values.data(), values.size(), indices.data());
            })
@@ -553,16 +553,16 @@ namespace dolfin_wrappers
              self.add_local(_values);
            })
       .def("gather", [](const dolfin::GenericVector& instance, dolfin::GenericVector& y,
-                        const std::vector<dolfin::la_index>& rows)
+                        const std::vector<dolfin::la_index_t>& rows)
            { instance.gather(y, rows); })
-      .def("gather", [](const dolfin::GenericVector& instance, py::array_t<dolfin::la_index> rows)
+      .def("gather", [](const dolfin::GenericVector& instance, py::array_t<dolfin::la_index_t> rows)
            {
-             std::vector<dolfin::la_index> _rows(rows.data(), rows.data() + rows.size());
+             std::vector<dolfin::la_index_t> _rows(rows.data(), rows.data() + rows.size());
              std::vector<double> values(rows.size());
              instance.gather(values, _rows);
              return py::array_t<double>(values.size(), values.data());
            })
-      .def("gather", [](const dolfin::GenericVector& instance, std::vector<dolfin::la_index> rows)
+      .def("gather", [](const dolfin::GenericVector& instance, std::vector<dolfin::la_index_t> rows)
            {
              std::vector<double> values(rows.size());
              instance.gather(values, rows);

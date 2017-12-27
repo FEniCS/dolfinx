@@ -58,9 +58,9 @@ namespace dolfin
   ///         The FunctionSpace for what the vertex to dof map should
   ///         be computed for
   ///
-  /// @return    std::vector<dolfin::la_index>
+  /// @return    std::vector<dolfin::la_index_t>
   ///         The vertex to dof map
-  std::vector<dolfin::la_index> vertex_to_dof_map(const FunctionSpace& space);
+  std::vector<dolfin::la_index_t> vertex_to_dof_map(const FunctionSpace& space);
 
   /// Sets mesh coordinates from function
   ///

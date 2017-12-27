@@ -122,8 +122,8 @@ const Function& Function::operator= (const Function& v)
 
     // Get row indices of original and new vectors
     std::unordered_map<std::size_t, std::size_t>::const_iterator entry;
-    std::vector<dolfin::la_index> new_rows(collapsed_map.size());
-    std::vector<dolfin::la_index> old_rows(collapsed_map.size());
+    std::vector<dolfin::la_index_t> new_rows(collapsed_map.size());
+    std::vector<dolfin::la_index_t> old_rows(collapsed_map.size());
     std::size_t i = 0;
     for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
     {

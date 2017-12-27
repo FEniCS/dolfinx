@@ -96,78 +96,78 @@ void SparsityPattern::init(const std::vector<std::shared_ptr<const IndexMap>> in
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert_global(dolfin::la_index i, dolfin::la_index j)
+void SparsityPattern::insert_global(dolfin::la_index_t i, dolfin::la_index_t j)
 {
-  const std::vector<ArrayView<const dolfin::la_index>> entries =
-    { ArrayView<const dolfin::la_index>(1, &i),
-      ArrayView<const dolfin::la_index>(1, &j)};
+  const std::vector<ArrayView<const dolfin::la_index_t>> entries =
+    { ArrayView<const dolfin::la_index_t>(1, &i),
+      ArrayView<const dolfin::la_index_t>(1, &j)};
 
   insert_global(entries);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
-  const std::vector<ArrayView<const dolfin::la_index>>& entries)
+  const std::vector<ArrayView<const dolfin::la_index_t>>& entries)
 {
   dolfin_assert(entries.size() == 2);
 
   // The primary_dim is global and must be mapped to local
   const auto primary_dim_map
-      = [](const dolfin::la_index i_index, const IndexMap& index_map0)
+      = [](const dolfin::la_index_t i_index, const IndexMap& index_map0)
     {
       dolfin_assert(index_map0.local_range().first <= (std::size_t) i_index
                     && (std::size_t) i_index < index_map0.local_range().second);
-      return i_index - (dolfin::la_index) index_map0.local_range().first;
+      return i_index - (dolfin::la_index_t) index_map0.local_range().first;
     };
 
   // The primary_codim is already global and stays the same
   const auto primary_codim_map
-    = [](const dolfin::la_index j_index, const IndexMap& index_map1)
+    = [](const dolfin::la_index_t j_index, const IndexMap& index_map1)
     { return j_index; };
 
   insert_entries(entries, primary_dim_map, primary_codim_map);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local(
-  const std::vector<ArrayView<const dolfin::la_index>>& entries)
+  const std::vector<ArrayView<const dolfin::la_index_t>>& entries)
 {
   dolfin_assert(entries.size() == 2);
 
   // The primary_dim is local and stays the same
   const auto primary_dim_map
-    = [](const dolfin::la_index i_index, const IndexMap& index_map0)
+    = [](const dolfin::la_index_t i_index, const IndexMap& index_map0)
     { return i_index; };
 
   // The primary_codim must be mapped to global entries
   const auto primary_codim_map
-    = [](const dolfin::la_index j_index,
-         const IndexMap& index_map1) -> dolfin::la_index
+    = [](const dolfin::la_index_t j_index,
+         const IndexMap& index_map1) -> dolfin::la_index_t
     { return index_map1.local_to_global((std::size_t) j_index); };
 
   insert_entries(entries, primary_dim_map, primary_codim_map);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local_global(
-    const std::vector<ArrayView<const dolfin::la_index>>& entries)
+    const std::vector<ArrayView<const dolfin::la_index_t>>& entries)
 {
   dolfin_assert(entries.size() == 2);
 
   // The primary_dim is local and stays the same
   const auto primary_dim_map
-    = [](const dolfin::la_index i_index, const IndexMap& index_map0)
+    = [](const dolfin::la_index_t i_index, const IndexMap& index_map0)
     { return i_index; };
 
   // The primary_codim is global and stays the same
   const auto primary_codim_map
-    = [](const dolfin::la_index j_index, const IndexMap& index_map1)
+    = [](const dolfin::la_index_t j_index, const IndexMap& index_map1)
     { return j_index; };
 
   insert_entries(entries, primary_dim_map, primary_codim_map);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_entries(
-    const std::vector<ArrayView<const dolfin::la_index>>& entries,
-    const std::function<dolfin::la_index(const dolfin::la_index, const IndexMap&)>& primary_dim_map,
-    const std::function<dolfin::la_index(const dolfin::la_index, const IndexMap&)>& primary_codim_map)
+    const std::vector<ArrayView<const dolfin::la_index_t>>& entries,
+    const std::function<dolfin::la_index_t(const dolfin::la_index_t, const IndexMap&)>& primary_dim_map,
+    const std::function<dolfin::la_index_t(const dolfin::la_index_t, const IndexMap&)>& primary_codim_map)
 {
   dolfin_assert(entries.size() == 2);
   const std::size_t _primary_dim = primary_dim();
@@ -175,8 +175,8 @@ void SparsityPattern::insert_entries(
   const std::size_t primary_codim = (_primary_dim + 1) % 2;
   dolfin_assert(primary_codim < 2);
 
-  ArrayView<const dolfin::la_index> map_i = entries[_primary_dim];
-  ArrayView<const dolfin::la_index> map_j = entries[primary_codim];
+  ArrayView<const dolfin::la_index_t> map_i = entries[_primary_dim];
+  ArrayView<const dolfin::la_index_t> map_j = entries[primary_codim];
 
   const IndexMap& index_map0 = *_index_maps[ _primary_dim];
   const IndexMap& index_map1 = *_index_maps[primary_codim];
@@ -202,7 +202,7 @@ void SparsityPattern::insert_entries(
     // Sequential mode, do simple insertion if not full row
     for (const auto &i_index : map_i)
     {
-      dolfin_assert(i_index < (dolfin::la_index) diagonal.size());
+      dolfin_assert(i_index < (dolfin::la_index_t) diagonal.size());
       if (!has_full_rows || full_rows.find(i_index) == full_rows_end)
         diagonal[i_index].insert(map_j.begin(), map_j.end());
     }
@@ -221,21 +221,21 @@ void SparsityPattern::insert_entries(
         continue;
       }
 
-      if (I < (dolfin::la_index) local_size0)
+      if (I < (dolfin::la_index_t) local_size0)
       {
         // Store local entry in diagonal or off-diagonal block
         for (const auto &j_index : map_j)
         {
           const auto J = primary_codim_map(j_index, index_map1);
-          if ((dolfin::la_index) local_range1.first <= J
-              && J < (dolfin::la_index) local_range1.second)
+          if ((dolfin::la_index_t) local_range1.first <= J
+              && J < (dolfin::la_index_t) local_range1.second)
           {
-            dolfin_assert(I < (dolfin::la_index) diagonal.size());
+            dolfin_assert(I < (dolfin::la_index_t) diagonal.size());
             diagonal[I].insert(J);
           }
           else
           {
-            dolfin_assert(I < (dolfin::la_index) off_diagonal.size());
+            dolfin_assert(I < (dolfin::la_index_t) off_diagonal.size());
             off_diagonal[I].insert(J);
           }
         }
@@ -372,9 +372,9 @@ void SparsityPattern::apply()
   dolfin_assert(_primary_dim < 2);
   dolfin_assert(primary_codim < 2);
 
-  const std::pair<dolfin::la_index, dolfin::la_index>
+  const std::pair<dolfin::la_index_t, dolfin::la_index_t>
     local_range0 = _index_maps[_primary_dim]->local_range();
-  const std::pair<dolfin::la_index, dolfin::la_index>
+  const std::pair<dolfin::la_index_t, dolfin::la_index_t>
     local_range1 = _index_maps[primary_codim]->local_range();
   const std::size_t local_size0
     = _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
@@ -417,7 +417,7 @@ void SparsityPattern::apply()
       dolfin_assert(p != proc_number);
 
       // Get global I index
-      la_index I = 0;
+      la_index_t I = 0;
       if (i_index < local_size0)
         I = i_index + offset0;
       else
@@ -446,8 +446,8 @@ void SparsityPattern::apply()
     for (std::size_t i = 0; i < non_local_received.size(); i += 2)
     {
       // Get global row and column
-      const dolfin::la_index I = non_local_received[i];
-      const dolfin::la_index J = non_local_received[i + 1];
+      const dolfin::la_index_t I = non_local_received[i];
+      const dolfin::la_index_t J = non_local_received[i + 1];
 
       // Sanity check
       if (I < local_range0.first

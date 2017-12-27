@@ -85,7 +85,7 @@ namespace dolfin
     // Build simple local UFC-based dofmap data structure (does not
     // account for master/slave constraints)
     static void
-      build_local_ufc_dofmap(std::vector<std::vector<dolfin::la_index>>& dofmap,
+      build_local_ufc_dofmap(std::vector<std::vector<dolfin::la_index_t>>& dofmap,
                              const ufc::dofmap& ufc_dofmap,
                              const Mesh& mesh);
 
@@ -104,7 +104,7 @@ namespace dolfin
       std::vector<short int>& node_ownership,
       std::unordered_map<int, std::vector<int>>& shared_node_to_processes,
       std::set<int>& neighbours,
-      const std::vector<std::vector<la_index>>& node_dofmap,
+      const std::vector<std::vector<la_index_t>>& node_dofmap,
       const std::vector<int>& boundary_nodes,
       const std::set<std::size_t>& global_nodes,
       const std::vector<std::size_t>& node_local_to_global,
@@ -113,8 +113,8 @@ namespace dolfin
 
     // Build dofmap based on re-ordered nodes
     static void
-      build_dofmap(std::vector<std::vector<la_index>>& dofmap,
-                   const std::vector<std::vector<la_index>>& node_dofmap,
+      build_dofmap(std::vector<std::vector<la_index_t>>& dofmap,
+                   const std::vector<std::vector<la_index_t>>& node_dofmap,
                    const std::vector<int>& old_to_new_node_local,
                    const std::size_t block_size);
 
@@ -153,7 +153,7 @@ namespace dolfin
 
     static std::shared_ptr<const ufc::dofmap>
       build_ufc_node_graph(
-        std::vector<std::vector<la_index>>& node_dofmap,
+        std::vector<std::vector<la_index_t>>& node_dofmap,
         std::vector<std::size_t>& node_local_to_global,
         std::vector<std::size_t>& num_mesh_entities_global,
         std::shared_ptr<const ufc::dofmap> ufc_dofmap,
@@ -163,7 +163,7 @@ namespace dolfin
 
     static std::shared_ptr<const ufc::dofmap>
       build_ufc_node_graph_constrained(
-        std::vector<std::vector<la_index>>& node_dofmap,
+        std::vector<std::vector<la_index_t>>& node_dofmap,
         std::vector<std::size_t>& node_local_to_global,
         std::vector<int>& node_ufc_local_to_local,
         std::vector<std::size_t>& num_mesh_entities_global,
@@ -179,7 +179,7 @@ namespace dolfin
     // ghost nodes are marked as -3
     static void compute_shared_nodes(
       std::vector<int>& boundary_nodes,
-      const std::vector<std::vector<la_index>>& node_dofmap,
+      const std::vector<std::vector<la_index_t>>& node_dofmap,
       const std::size_t num_nodes_local,
       const ufc::dofmap& ufc_dofmap,
       const Mesh& mesh);
@@ -189,7 +189,7 @@ namespace dolfin
       std::vector<int>& old_to_new_local,
       const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
       const std::vector<std::size_t>& old_local_to_global,
-      const std::vector<std::vector<la_index>>& node_dofmap,
+      const std::vector<std::vector<la_index_t>>& node_dofmap,
       const std::vector<short int>& node_ownership,
       const std::set<std::size_t>& global_nodes,
       const MPI_Comm mpi_comm);

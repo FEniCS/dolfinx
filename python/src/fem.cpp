@@ -172,19 +172,19 @@ namespace dolfin_wrappers
       .def("off_process_owner", &dolfin::GenericDofMap::off_process_owner)
       .def("shared_nodes", &dolfin::GenericDofMap::shared_nodes)
       .def("cell_dofs", &dolfin::GenericDofMap::cell_dofs)
-      .def("dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)() const)
+      .def("dofs", (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)() const)
            &dolfin::GenericDofMap::dofs)
-      .def("dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&, std::size_t) const)
+      .def("dofs", (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)(const dolfin::Mesh&, std::size_t) const)
            &dolfin::GenericDofMap::dofs)
-      .def("entity_dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&, std::size_t) const)
+      .def("entity_dofs", (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)(const dolfin::Mesh&, std::size_t) const)
            &dolfin::GenericDofMap::entity_dofs)
-      .def("entity_closure_dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&, std::size_t) const)
+      .def("entity_closure_dofs", (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)(const dolfin::Mesh&, std::size_t) const)
            &dolfin::GenericDofMap::entity_closure_dofs)
-          .def("entity_dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&,
+          .def("entity_dofs", (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)(const dolfin::Mesh&,
                                                                                    std::size_t,
                                                                                    const std::vector<std::size_t>&) const)
            &dolfin::GenericDofMap::entity_dofs)
-          .def("entity_closure_dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&,
+          .def("entity_closure_dofs", (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)(const dolfin::Mesh&,
                                                                                            std::size_t,
                                                                                            const std::vector<std::size_t>&) const)
            &dolfin::GenericDofMap::entity_closure_dofs)
@@ -455,14 +455,14 @@ namespace dolfin_wrappers
     m.def("vertex_to_dof_map", [](const dolfin::FunctionSpace& V)
           {
             const auto _v2d = dolfin::vertex_to_dof_map(V);
-            return py::array_t<dolfin::la_index>(_v2d.size(), _v2d.data());
+            return py::array_t<dolfin::la_index_t>(_v2d.size(), _v2d.data());
           });
 
     m.def("vertex_to_dof_map", [](py::object V)
           {
             auto _V = V.attr("_cpp_object").cast<dolfin::FunctionSpace*>();
             const auto _v2d = dolfin::vertex_to_dof_map(*_V);
-            return py::array_t<dolfin::la_index>(_v2d.size(), _v2d.data());
+            return py::array_t<dolfin::la_index_t>(_v2d.size(), _v2d.data());
           });
     m.def("dof_to_vertex_map", &dolfin::dof_to_vertex_map);
     m.def("dof_to_vertex_map", [](py::object V)

@@ -255,7 +255,7 @@ void SystemAssembler::assemble(GenericMatrix* A, PETScVector* b,
                   == _a->function_space(1)->dofmap()->global_dimension());
 
     const std::size_t num_bc_dofs = boundary_values[0].size();
-    std::vector<dolfin::la_index> bc_indices;
+    std::vector<dolfin::la_index_t> bc_indices;
     std::vector<double> bc_values;
     bc_indices.reserve(num_bc_dofs);
     bc_values.reserve(num_bc_dofs);
@@ -331,9 +331,9 @@ void SystemAssembler::cell_wise_assembly(
   dofmaps[1].push_back(ufc[1]->dolfin_form.function_space(0)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::array<std::vector<ArrayView<const dolfin::la_index>>, 2> cell_dofs
-    = { {std::vector<ArrayView<const dolfin::la_index>>(2),
-         std::vector<ArrayView<const dolfin::la_index>>(1)} };
+  std::array<std::vector<ArrayView<const dolfin::la_index_t>>, 2> cell_dofs
+    = { {std::vector<ArrayView<const dolfin::la_index_t>>(2),
+         std::vector<ArrayView<const dolfin::la_index_t>>(1)} };
 
   // Create pointers to hold integral objects
   std::array<const ufc::cell_integral*, 2> cell_integrals
@@ -525,7 +525,7 @@ void SystemAssembler::facet_wise_assembly(
   dofmaps[1].push_back(ufc[1]->dolfin_form.function_space(0)->dofmap().get());
 
   // Cell dofmaps [form][cell][form dim]
-  std::array<std::array<std::vector<ArrayView<const dolfin::la_index>>,
+  std::array<std::array<std::vector<ArrayView<const dolfin::la_index_t>>,
                         2>, 2> cell_dofs;
   cell_dofs[0][0].resize(2);
   cell_dofs[0][1].resize(2);
@@ -537,7 +537,7 @@ void SystemAssembler::facet_wise_assembly(
   std::array<std::size_t, 2> local_facet;
 
   // Vectors to hold dofs for macro cells
-  std::array<std::vector<std::vector<dolfin::la_index>>, 2> macro_dofs;
+  std::array<std::vector<std::vector<dolfin::la_index_t>>, 2> macro_dofs;
   macro_dofs[0].resize(2);
   macro_dofs[1].resize(1);
 
@@ -741,15 +741,15 @@ void SystemAssembler::facet_wise_assembly(
                                     compute_cell_tensor);
 
       // Modify local tensors for bcs
-      ArrayView<const la_index> mdofs0(macro_dofs[0][0]);
-      ArrayView<const la_index> mdofs1(macro_dofs[0][1]);
+      ArrayView<const la_index_t> mdofs0(macro_dofs[0][0]);
+      ArrayView<const la_index_t> mdofs1(macro_dofs[0][1]);
       apply_bc(ufc[0]->macro_A.data(), ufc[1]->macro_A.data(), boundary_values,
                mdofs0, mdofs1);
 
       // Add entries to global tensor
       if (tensors[1])
       {
-        std::vector<ArrayView<const la_index>> mdofs(macro_dofs[1].size());
+        std::vector<ArrayView<const la_index_t>> mdofs(macro_dofs[1].size());
         for (std::size_t i = 0; i < macro_dofs[1].size(); ++i)
           mdofs[i].set(macro_dofs[1][i]);
         tensors[1]->add_local(ufc[1]->macro_A.data(), mdofs);
@@ -759,7 +759,7 @@ void SystemAssembler::facet_wise_assembly(
         = ufc[0]->form.has_interior_facet_integrals();
       if (tensors[0] && add_macro_element)
       {
-        std::vector<ArrayView<const la_index>> mdofs(macro_dofs[0].size());
+        std::vector<ArrayView<const la_index_t>> mdofs(macro_dofs[0].size());
         for (std::size_t i = 0; i < macro_dofs[0].size(); ++i)
           mdofs[i].set(macro_dofs[0][i]);
         tensors[0]->add_local(ufc[0]->macro_A.data(), mdofs);
@@ -1013,7 +1013,7 @@ void SystemAssembler::matrix_block_add(
   std::vector<double>& Ae,
   std::vector<double>& macro_A,
   const std::array<bool, 2>& add_local_tensor,
-  const std::array<std::vector<ArrayView<const la_index>>, 2>& cell_dofs)
+  const std::array<std::vector<ArrayView<const la_index_t>>, 2>& cell_dofs)
 {
   for (std::size_t c = 0; c < 2; ++c)
   {
@@ -1036,8 +1036,8 @@ void SystemAssembler::matrix_block_add(
 void
 SystemAssembler::apply_bc(double* A, double* b,
                           const std::vector<DirichletBC::Map>& boundary_values,
-                          const ArrayView<const dolfin::la_index>& global_dofs0,
-                          const ArrayView<const dolfin::la_index>& global_dofs1)
+                          const ArrayView<const dolfin::la_index_t>& global_dofs0,
+                          const ArrayView<const dolfin::la_index_t>& global_dofs1)
 {
   dolfin_assert(A);
   dolfin_assert(b);
@@ -1112,7 +1112,7 @@ SystemAssembler::apply_bc(double* A, double* b,
 }
 //-----------------------------------------------------------------------------
 bool SystemAssembler::has_bc(const DirichletBC::Map& boundary_values,
-                             const ArrayView<const dolfin::la_index>& dofs)
+                             const ArrayView<const dolfin::la_index_t>& dofs)
 {
   // Loop over dofs and check if bc is applied
   for (auto dof = dofs.begin(); dof != dofs.end(); ++dof)
@@ -1129,7 +1129,7 @@ bool SystemAssembler::cell_matrix_required(
   const GenericTensor* A,
   const void* integral,
   const std::vector<DirichletBC::Map>& boundary_values,
-  const ArrayView<const dolfin::la_index>& dofs)
+  const ArrayView<const dolfin::la_index_t>& dofs)
 {
   if (A && integral)
     return true;

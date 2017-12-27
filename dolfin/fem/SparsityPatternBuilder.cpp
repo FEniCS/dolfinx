@@ -67,10 +67,10 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
     return;
 
   // Vector to store macro-dofs, if required (for interior facets)
-  std::vector<std::vector<dolfin::la_index>> macro_dofs(rank);
+  std::vector<std::vector<dolfin::la_index_t>> macro_dofs(rank);
 
   // Create vector to point to dofs
-  std::vector<ArrayView<const dolfin::la_index>> dofs(rank);
+  std::vector<ArrayView<const dolfin::la_index_t>> dofs(rank);
 
   // Build sparsity pattern for reals (globally supported basis members)
   // NOTE: It is very important that this is done before other integrals
@@ -114,7 +114,7 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
     mesh.init(0);
     mesh.init(0, D);
 
-    std::vector<std::vector<dolfin::la_index>> global_dofs(rank);
+    std::vector<std::vector<dolfin::la_index_t>> global_dofs(rank);
     std::vector<std::vector<std::size_t>> local_to_local_dofs(rank);
 
     // Resize local dof map vector
@@ -148,7 +148,7 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
       }
 
       // Insert non-zeroes in sparsity pattern
-      std::vector<ArrayView<const dolfin::la_index>> global_dofs_p(rank);
+      std::vector<ArrayView<const dolfin::la_index_t>> global_dofs_p(rank);
       for (std::size_t i = 0; i < rank; ++i)
         global_dofs_p[i].set(global_dofs[i]);
       sparsity_pattern.insert_local(global_dofs_p);

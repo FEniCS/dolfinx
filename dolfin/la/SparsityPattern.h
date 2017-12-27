@@ -67,20 +67,20 @@ namespace dolfin
     void init(std::vector<std::shared_ptr<const IndexMap>> index_maps);
 
     /// Insert a global entry - will be fixed by apply()
-    void insert_global(dolfin::la_index i, dolfin::la_index j);
+    void insert_global(dolfin::la_index_t i, dolfin::la_index_t j);
 
     /// Insert non-zero entries using global indices
     void insert_global(const std::vector<
-                       ArrayView<const dolfin::la_index>>& entries);
+                       ArrayView<const dolfin::la_index_t>>& entries);
 
     /// Insert non-zero entries using local (process-wise) indices
     void insert_local(const std::vector<
-                      ArrayView<const dolfin::la_index>>& entries);
+                      ArrayView<const dolfin::la_index_t>>& entries);
 
     /// Insert non-zero entries using local (process-wise) indices for
     /// the primary dimension and global indices for the co-dimension
     void insert_local_global(
-        const std::vector<ArrayView<const dolfin::la_index>>& entries);
+        const std::vector<ArrayView<const dolfin::la_index_t>>& entries);
 
     /// Insert full rows (or columns, according to primary dimension)
     /// using local (process-wise) indices. This must be called before
@@ -146,9 +146,9 @@ namespace dolfin
     // The primary dim entries must be local
     // The primary_codim entries must be global
     void insert_entries(
-        const std::vector<ArrayView<const dolfin::la_index>>& entries,
-        const std::function<dolfin::la_index(const dolfin::la_index, const IndexMap&)>& primary_dim_map,
-        const std::function<dolfin::la_index(const dolfin::la_index, const IndexMap&)>& primary_codim_map);
+        const std::vector<ArrayView<const dolfin::la_index_t>>& entries,
+        const std::function<dolfin::la_index_t(const dolfin::la_index_t, const IndexMap&)>& primary_dim_map,
+        const std::function<dolfin::la_index_t(const dolfin::la_index_t, const IndexMap&)>& primary_codim_map);
 
     // Print some useful information
     void info_statistics() const;

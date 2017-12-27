@@ -1223,7 +1223,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
 
   const std::size_t tdim = mesh.topology().dim();
-  std::vector<dolfin::la_index> cell_dofs;
+  std::vector<dolfin::la_index_t> cell_dofs;
   std::vector<std::size_t> x_cell_dofs;
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
   x_cell_dofs.reserve(n_cells);
@@ -1240,7 +1240,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
     for (Eigen::Index j = 0; j < cell_dofs_i.size(); ++j)
     {
       auto p = cell_dofs_i[j];
-      dolfin_assert(p < (dolfin::la_index) local_to_global_map.size());
+      dolfin_assert(p < (dolfin::la_index_t) local_to_global_map.size());
       cell_dofs.push_back(local_to_global_map[p]);
     }
   }
@@ -1507,8 +1507,8 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
                                               cell_range.second + 1));
 
   // Read cell dofmaps
-  std::vector<dolfin::la_index> cell_dofs
-    = get_dataset<dolfin::la_index>(_mpi_comm.comm(), cell_dofs_dataitem,
+  std::vector<dolfin::la_index_t> cell_dofs
+    = get_dataset<dolfin::la_index_t>(_mpi_comm.comm(), cell_dofs_dataitem,
                                     parent_path,
                                     std::make_pair(x_cell_dofs.front(),
                                                    x_cell_dofs.back()));
@@ -1518,7 +1518,7 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
   const std::size_t num_global_dofs = vector_shape[0];
 
   // Divide vector between processes
-  const std::pair<dolfin::la_index, dolfin::la_index> input_vector_range
+  const std::pair<dolfin::la_index_t, dolfin::la_index_t> input_vector_range
     = MPI::local_range(_mpi_comm.comm(), num_global_dofs);
 
   // Read function vector
@@ -2815,7 +2815,7 @@ std::vector<double> XDMFFile::get_cell_data_values(const Function& u)
   const std::size_t local_size = num_local_cells*value_size;
 
   // Build lists of dofs and create map
-  std::vector<dolfin::la_index> dof_set;
+  std::vector<dolfin::la_index_t> dof_set;
   dof_set.reserve(local_size);
   const auto dofmap = u.function_space()->dofmap();
   for (CellIterator cell(*mesh); !cell.end(); ++cell)
@@ -2926,7 +2926,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
   const std::size_t num_local_points = mesh->num_entities(0) + mesh->num_entities(1);
   const std::size_t width = get_padded_width(u);
   std::vector<double> data_values(width*num_local_points);
-  std::vector<dolfin::la_index> data_dofs(data_values.size(), 0);
+  std::vector<dolfin::la_index_t> data_dofs(data_values.size(), 0);
 
   dolfin_assert(u.function_space()->dofmap());
   const auto dofmap = u.function_space()->dofmap();

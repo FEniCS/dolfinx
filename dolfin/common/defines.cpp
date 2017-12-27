@@ -48,9 +48,9 @@ std::string dolfin::git_commit_hash()
   return std::string(DOLFIN_GIT_COMMIT_HASH);
 }
 //-------------------------------------------------------------------------
-std::size_t dolfin::sizeof_la_index()
+std::size_t dolfin::sizeof_la_index_t()
 {
-  return sizeof(dolfin::la_index);
+  return sizeof(dolfin::la_index_t);
 }
 //-------------------------------------------------------------------------
 bool dolfin::has_debug()

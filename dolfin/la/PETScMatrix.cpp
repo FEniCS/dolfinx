@@ -224,8 +224,8 @@ bool PETScMatrix::empty() const
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(double* block,
-                      std::size_t m, const dolfin::la_index* rows,
-                      std::size_t n, const dolfin::la_index* cols) const
+                      std::size_t m, const dolfin::la_index_t* rows,
+                      std::size_t n, const dolfin::la_index_t* cols) const
 {
   // Get matrix entries (must be on this process)
   dolfin_assert(_matA);
@@ -234,8 +234,8 @@ void PETScMatrix::get(double* block,
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set(const double* block,
-                      std::size_t m, const dolfin::la_index* rows,
-                      std::size_t n, const dolfin::la_index* cols)
+                      std::size_t m, const dolfin::la_index_t* rows,
+                      std::size_t n, const dolfin::la_index_t* cols)
 {
   dolfin_assert(_matA);
   PetscErrorCode ierr = MatSetValues(_matA, m, rows, n, cols, block,
@@ -244,8 +244,8 @@ void PETScMatrix::set(const double* block,
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_local(const double* block,
-                            std::size_t m, const dolfin::la_index* rows,
-                            std::size_t n, const dolfin::la_index* cols)
+                            std::size_t m, const dolfin::la_index_t* rows,
+                            std::size_t n, const dolfin::la_index_t* cols)
 {
   dolfin_assert(_matA);
   PetscErrorCode ierr = MatSetValuesLocal(_matA, m, rows, n, cols, block,
@@ -254,8 +254,8 @@ void PETScMatrix::set_local(const double* block,
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::add(const double* block,
-                      std::size_t m, const dolfin::la_index* rows,
-                      std::size_t n, const dolfin::la_index* cols)
+                      std::size_t m, const dolfin::la_index_t* rows,
+                      std::size_t n, const dolfin::la_index_t* cols)
 {
   dolfin_assert(_matA);
   PetscErrorCode ierr = MatSetValues(_matA, m, rows, n, cols, block,
@@ -264,8 +264,8 @@ void PETScMatrix::add(const double* block,
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::add_local(const double* block,
-                            std::size_t m, const dolfin::la_index* rows,
-                            std::size_t n, const dolfin::la_index* cols)
+                            std::size_t m, const dolfin::la_index_t* rows,
+                            std::size_t n, const dolfin::la_index_t* cols)
 {
   dolfin_assert(_matA);
   PetscErrorCode ierr = MatSetValuesLocal(_matA, m, rows, n, cols, block,
@@ -357,7 +357,7 @@ void PETScMatrix::setrow(std::size_t row,
   set(values.data(), 1, &_row, n, _columns.data());
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::zero(std::size_t m, const dolfin::la_index* rows)
+void PETScMatrix::zero(std::size_t m, const dolfin::la_index_t* rows)
 {
   dolfin_assert(_matA);
 
@@ -367,7 +367,7 @@ void PETScMatrix::zero(std::size_t m, const dolfin::la_index* rows)
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRows");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index* rows)
+void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index_t* rows)
 {
   dolfin_assert(_matA);
 
@@ -378,7 +378,7 @@ void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index* rows)
 }
 
 //-----------------------------------------------------------------------------
-void PETScMatrix::ident(std::size_t m, const dolfin::la_index* rows)
+void PETScMatrix::ident(std::size_t m, const dolfin::la_index_t* rows)
 {
   dolfin_assert(_matA);
 
@@ -395,7 +395,7 @@ void PETScMatrix::ident(std::size_t m, const dolfin::la_index* rows)
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRows");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::ident_local(std::size_t m, const dolfin::la_index* rows)
+void PETScMatrix::ident_local(std::size_t m, const dolfin::la_index_t* rows)
 {
   dolfin_assert(_matA);
 

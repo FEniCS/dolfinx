@@ -129,28 +129,28 @@ namespace dolfin
 
     /// Get block of values
     virtual void get(double* block,
-                     std::size_t m, const dolfin::la_index* rows,
-                     std::size_t n, const dolfin::la_index* cols) const;
+                     std::size_t m, const dolfin::la_index_t* rows,
+                     std::size_t n, const dolfin::la_index_t* cols) const;
 
     /// Set block of values using global indices
     virtual void set(const double* block,
-                     std::size_t m, const dolfin::la_index* rows,
-                     std::size_t n, const dolfin::la_index* cols);
+                     std::size_t m, const dolfin::la_index_t* rows,
+                     std::size_t n, const dolfin::la_index_t* cols);
 
     /// Set block of values using local indices
     virtual void set_local(const double* block,
-                           std::size_t m, const dolfin::la_index* rows,
-                           std::size_t n, const dolfin::la_index* cols);
+                           std::size_t m, const dolfin::la_index_t* rows,
+                           std::size_t n, const dolfin::la_index_t* cols);
 
     /// Add block of values using global indices
     virtual void add(const double* block,
-                     std::size_t m, const dolfin::la_index* rows,
-                     std::size_t n, const dolfin::la_index* cols);
+                     std::size_t m, const dolfin::la_index_t* rows,
+                     std::size_t n, const dolfin::la_index_t* cols);
 
     /// Add block of values using local indices
     virtual void add_local(const double* block,
-                           std::size_t m, const dolfin::la_index* rows,
-                           std::size_t n, const dolfin::la_index* cols);
+                           std::size_t m, const dolfin::la_index_t* rows,
+                           std::size_t n, const dolfin::la_index_t* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const PETScMatrix& A,
@@ -170,16 +170,16 @@ namespace dolfin
                         const std::vector<double>& values);
 
     /// Set given rows (global row indices) to zero
-    virtual void zero(std::size_t m, const dolfin::la_index* rows);
+    virtual void zero(std::size_t m, const dolfin::la_index_t* rows);
 
     /// Set given rows (local row indices) to zero
-    virtual void zero_local(std::size_t m, const dolfin::la_index* rows);
+    virtual void zero_local(std::size_t m, const dolfin::la_index_t* rows);
 
     /// Set given rows (global row indices) to identity matrix
-    virtual void ident(std::size_t m, const dolfin::la_index* rows);
+    virtual void ident(std::size_t m, const dolfin::la_index_t* rows);
 
     /// Set given rows (local row indices) to identity matrix
-    virtual void ident_local(std::size_t m, const dolfin::la_index* rows);
+    virtual void ident_local(std::size_t m, const dolfin::la_index_t* rows);
 
     // Matrix-vector product, y = Ax
     virtual void mult(const PETScVector& x, PETScVector& y) const;
