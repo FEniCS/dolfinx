@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+#include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>

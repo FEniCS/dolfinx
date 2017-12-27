@@ -89,8 +89,8 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int>>
   std::vector<double> y(gdim);
 
   // Wrap x and y (Array view of x and y)
-  Array<double> _x(gdim, x.data());
-  Array<double> _y(gdim, y.data());
+  Eigen::Map<Eigen::VectorXd> _x(x.data(), gdim);
+  Eigen::Map<Eigen::VectorXd> _y(y.data(), gdim);
 
   std::vector<std::size_t> slave_entities;
   std::vector<std::vector<double>> slave_mapped_coords;

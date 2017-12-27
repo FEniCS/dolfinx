@@ -55,17 +55,6 @@ namespace dolfin
 
     /// Return true for points inside the subdomain
     ///
-    /// @param    x (Array<double>)
-    ///         The coordinates of the point.
-    /// @param   on_boundary (bool)
-    ///         True for points on the boundary.
-    ///
-    /// @return    bool
-    ///         True for points inside the subdomain.
-    virtual bool inside(const Array<double>& x, bool on_boundary) const;
-
-    /// Return true for points inside the subdomain
-    ///
     /// @param    x (Eigen::Ref<const Eigen::VectorXd>)
     ///         The coordinates of the point.
     /// @param   on_boundary (bool)
@@ -74,16 +63,6 @@ namespace dolfin
     /// @return    bool
     ///         True for points inside the subdomain.
     virtual bool inside(Eigen::Ref<const Eigen::VectorXd> x, bool on_boundary) const;
-
-    /// Map coordinate x in domain H to coordinate y in domain G (used for
-    /// periodic boundary conditions)
-    ///
-    /// @param   x (Array<double>)
-    ///         The coordinates in domain H.
-    /// @param    y (Array<double>)
-    ///         The coordinates in domain G.
-    virtual void map(const Array<double>& x, Array<double>& y) const;
-
 
     /// Map coordinate x in domain H to coordinate y in domain G (used for
     /// periodic boundary conditions)
