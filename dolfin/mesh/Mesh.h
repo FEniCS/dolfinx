@@ -34,12 +34,14 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/fem/fem_utils.h>
 #include "MeshGeometry.h"
 #include "MeshConnectivity.h"
 #include "MeshTopology.h"
 
 namespace dolfin
 {
+
   class CellType;
   class Expression;
   class GenericFunction;
@@ -360,7 +362,7 @@ namespace dolfin
     std::string ghost_mode() const;
 
     // Friend in fem_utils.h
-    friend Mesh create_mesh(Function& coordinates);
+    friend Mesh fem::create_mesh(Function& coordinates);
 
   private:
 
