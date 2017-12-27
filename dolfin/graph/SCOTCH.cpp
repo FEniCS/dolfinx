@@ -337,17 +337,6 @@ void SCOTCH::partition(
   }
   timer2.stop();
 
-  /*
-  // Write SCOTCH strategy to file
-  if (dolfin::MPI::rank(MPI_COMM_WORLD) == 0)
-  {
-    FILE* fp;
-    fp = fopen("test.txt", "w");
-    SCOTCH_stratSave(&strat, fp);
-    fclose(fp);
-  }
-  */
-
   // Exchange halo with cell_partition data for ghosts
   // FIXME: check MPI type compatibility with SCOTCH_Num. Getting this
   //        wrong will cause a SEGV

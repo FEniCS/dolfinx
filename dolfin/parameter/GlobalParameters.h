@@ -120,36 +120,12 @@ namespace dolfin
       p.add("refinement_algorithm", "plaza",
             {"regular_cut", "plaza", "plaza_with_parent_facets"});
 
-      //-- Graphs
-
-      // Graph coloring
-      std::set<std::string> allowed_coloring_libraries;
-      allowed_coloring_libraries.insert("Boost");
-      #ifdef HAS_TRILINOS
-      allowed_coloring_libraries.insert("Zoltan");
-      #endif
-      p.add("graph_coloring_library", "Boost", allowed_coloring_libraries);
 
       //-- Linear algebra
 
-      // Linear algebra backend
-      std::string default_backend = "Eigen";
-      std::set<std::string> allowed_backends = {"Eigen"};
       #ifdef HAS_PETSC
-      allowed_backends.insert("PETSc");
-      default_backend = "PETSc";
       p.add("use_petsc_signal_handler", false);
       #endif
-      #ifdef HAS_TRILINOS
-      allowed_backends.insert("Tpetra");
-        #ifndef HAS_PETSC
-        default_backend = "Tpetra";
-        #endif
-      #endif
-
-      p.add("linear_algebra_backend",
-            default_backend,
-            allowed_backends);
 
       return p;
     }
