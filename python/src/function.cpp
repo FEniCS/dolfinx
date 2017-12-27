@@ -23,7 +23,6 @@
 #include <pybind11/eigen.h>
 #include <pybind11/operators.h>
 
-#include <dolfin/common/Array.h>
 #include <dolfin/function/Constant.h>
 #include <dolfin/function/Expression.h>
 #include <dolfin/function/Function.h>

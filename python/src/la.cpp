@@ -28,7 +28,6 @@
 
 #include "casters.h"
 
-#include <dolfin/common/Array.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/IndexMap.h>
