@@ -28,7 +28,6 @@
 // First added:  2006-05-09
 // Last changed: 2016-05-05
 
-#include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>

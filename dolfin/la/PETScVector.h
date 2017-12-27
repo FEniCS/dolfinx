@@ -48,7 +48,6 @@ namespace dolfin
 {
 
   class SparsityPattern;
-  template<typename T> class Array;
 
   /// A simple vector class based on PETSc.
   ///
@@ -247,7 +246,7 @@ namespace dolfin
     virtual void set_local(const std::vector<double>& values);
 
     /// Add values to each entry on local process
-    virtual void add_local(const Array<double>& values);
+    virtual void add_local(const std::vector<double>& values);
 
     /// Gather entries (given by global indices) into local
     /// (MPI_COMM_SELF) vector x. Provided x must be empty
@@ -287,7 +286,7 @@ namespace dolfin
     virtual double sum() const;
 
     /// Return sum of selected rows in vector
-    virtual double sum(const Array<std::size_t>& rows) const;
+    virtual double sum(const std::vector<std::size_t>& rows) const;
 
     /// Multiply vector by given number
     virtual const PETScVector& operator*= (double a);

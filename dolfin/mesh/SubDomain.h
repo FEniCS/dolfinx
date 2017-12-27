@@ -33,7 +33,6 @@ namespace dolfin
   class Mesh;
   template <typename T> class MeshFunction;
   template <typename T> class MeshValueCollection;
-  template <typename T> class Array;
 
   /// This class defines the interface for definition of subdomains.
   /// Alternatively, subdomains may be defined by a _Mesh_ and a
@@ -55,17 +54,6 @@ namespace dolfin
 
     /// Return true for points inside the subdomain
     ///
-    /// @param    x (Array<double>)
-    ///         The coordinates of the point.
-    /// @param   on_boundary (bool)
-    ///         True for points on the boundary.
-    ///
-    /// @return    bool
-    ///         True for points inside the subdomain.
-    virtual bool inside(const Array<double>& x, bool on_boundary) const;
-
-    /// Return true for points inside the subdomain
-    ///
     /// @param    x (Eigen::Ref<const Eigen::VectorXd>)
     ///         The coordinates of the point.
     /// @param   on_boundary (bool)
@@ -78,28 +66,11 @@ namespace dolfin
     /// Map coordinate x in domain H to coordinate y in domain G (used for
     /// periodic boundary conditions)
     ///
-    /// @param   x (Array<double>)
-    ///         The coordinates in domain H.
-    /// @param    y (Array<double>)
-    ///         The coordinates in domain G.
-    virtual void map(const Array<double>& x, Array<double>& y) const;
-
-
-    /// Map coordinate x in domain H to coordinate y in domain G (used for
-    /// periodic boundary conditions)
-    ///
     /// @param   x (Eigen::Ref<const Eigen::VectorXd>)
     ///         The coordinates in domain H.
     /// @param    y (Eigen::Ref<Eigen::VectorXd>)
     ///         The coordinates in domain G.
     virtual void map(Eigen::Ref<const Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> y) const;
-
-
-    /// Snap coordinate to boundary of subdomain
-    ///
-    /// @param x (Array<double>)
-    ///         The coordinates.
-    virtual void snap(Array<double>& x) const {}
 
     //--- Marking of Mesh ---
 

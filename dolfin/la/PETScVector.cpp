@@ -28,7 +28,6 @@
 #include <cstring>
 #include <numeric>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include "SparsityPattern.h"
@@ -162,7 +161,7 @@ void PETScVector::set_local(const std::vector<double>& values)
   CHECK_ERROR("VecSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add_local(const Array<double>& values)
+void PETScVector::add_local(const std::vector<double>& values)
 {
   dolfin_assert(_x);
   const auto _local_range = local_range();
@@ -560,7 +559,7 @@ double PETScVector::sum() const
   return value;
 }
 //-----------------------------------------------------------------------------
-double PETScVector::sum(const Array<std::size_t>& rows) const
+double PETScVector::sum(const std::vector<std::size_t>& rows) const
 {
   dolfin_assert(_x);
   const auto _local_range = local_range();

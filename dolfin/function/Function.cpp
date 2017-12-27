@@ -25,6 +25,7 @@
 #include <vector>
 
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>

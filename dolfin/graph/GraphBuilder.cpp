@@ -60,10 +60,10 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
     ArrayView<const dolfin::la_index_t> dofs0(_dofs0.size(), _dofs0.data());
     ArrayView<const dolfin::la_index_t> dofs1(_dofs1.size(), _dofs1.data());
 
-    for (auto node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
-      for (auto node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)
-        if (*node0 != *node1)
-          graph[*node0].insert(*node1);
+    for (auto node0 : dofs0)
+      for (auto node1 : dofs1)
+        if (node0 != node1)
+          graph[node0].insert(node1);
   }
 
   return graph;

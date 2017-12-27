@@ -19,6 +19,8 @@
 // Last changed: 2017-10-09
 
 #include <cmath>
+#include <dolfin/common/constants.h>
+
 #include "CGALExactArithmetic.h"
 #include "predicates.h"
 #include "GeometryPredicates.h"

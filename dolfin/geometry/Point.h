@@ -28,7 +28,7 @@
 #include <cmath>
 #include <iostream>
 #include <dolfin/log/log.h>
-#include <dolfin/common/Array.h>
+#include <Eigen/Dense>
 
 namespace dolfin
 {
@@ -68,9 +68,9 @@ namespace dolfin
     ///
     /// @param    x (Array<double>)
     ///         Array of coordinates.
-    Point(const Array<double>& x) : _x({{0.0, 0.0, 0.0}})
+    Point(const Eigen::VectorXd& x) : _x({{0.0, 0.0, 0.0}})
     {
-      for (std::size_t i = 0; i < x.size(); i++)
+      for (int i = 0; i < x.size(); i++)
         _x[i] = x[i];
     }
 
