@@ -93,7 +93,7 @@ std::size_t MeshTopology::ghost_offset(unsigned int dim) const
   if (_ghost_offset_index.empty())
     return 0;
 
-  dolfin_assert(dim < ghost_offset_index.size());
+  dolfin_assert(dim < _ghost_offset_index.size());
   return _ghost_offset_index[dim];
 }
 //-----------------------------------------------------------------------------

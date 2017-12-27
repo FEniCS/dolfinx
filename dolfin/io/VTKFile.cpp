@@ -43,7 +43,7 @@ using namespace dolfin;
 
 //----------------------------------------------------------------------------
 VTKFile::VTKFile(const std::string filename, std::string encoding)
-  : _filename(filename), counter(0), counter1(0), counter2(0),
+  : _filename(filename), counter(0),
     _encoding(encoding), binary(false), compress(false)
 {
   if (encoding != "ascii" && encoding != "base64" && encoding != "compressed")
