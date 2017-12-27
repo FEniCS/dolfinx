@@ -89,7 +89,7 @@ namespace dolfin
     virtual std::size_t num_entities(std::size_t dim) const = 0;
 
     /// Return number of vertices for cell
-    std::size_t num_vertices() const
+    int num_vertices() const
     { return num_vertices(dim()); }
 
     /// Return number of vertices for entity of given topological dimension

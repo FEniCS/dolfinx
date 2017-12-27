@@ -235,7 +235,7 @@ void PointSource::apply(PETScVector& b)
   // Variables for adding local information to vector
   double basis_sum;
 
-  for (auto & s : _sources)
+  for (auto &s : _sources)
   {
     Point& p = s.first;
     double magnitude = s.second;

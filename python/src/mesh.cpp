@@ -89,7 +89,7 @@ namespace dolfin_wrappers
       (m, "MeshTopology", "DOLFIN MeshTopology object")
       .def("dim", &dolfin::MeshTopology::dim, "Topological dimension")
       .def("init", (void (dolfin::MeshTopology::*)(std::size_t)) &dolfin::MeshTopology::init)
-      .def("init", (void (dolfin::MeshTopology::*)(std::size_t, std::size_t, std::size_t))
+      .def("init", (void (dolfin::MeshTopology::*)(std::size_t, std::int32_t, std::int64_t))
            &dolfin::MeshTopology::init)
       .def("__call__", (const dolfin::MeshConnectivity& (dolfin::MeshTopology::*)(std::size_t, std::size_t) const)
            &dolfin::MeshTopology::operator(), py::return_value_policy::reference_internal)
@@ -118,7 +118,7 @@ namespace dolfin_wrappers
       .def("cells", [](const dolfin::Mesh& self)
            {
              const unsigned int tdim = self.topology().dim();
-             return py::array({self.topology().size(tdim), self.type().num_vertices(tdim)},
+             return py::array({(std::int32_t) self.topology().size(tdim), (std::int32_t) self.type().num_vertices(tdim)},
                               self.topology()(tdim, 0)().data());
            })
       .def("cell_orientations", &dolfin::Mesh::cell_orientations)

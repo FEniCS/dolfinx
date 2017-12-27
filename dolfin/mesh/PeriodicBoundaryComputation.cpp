@@ -73,9 +73,9 @@ namespace
 
 //-----------------------------------------------------------------------------
 std::map<unsigned int, std::pair<unsigned int, unsigned int>>
-  PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
-                                                      const SubDomain& sub_domain,
-                                                      const std::size_t dim)
+PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
+                                                    const SubDomain& sub_domain,
+                                                    const std::size_t dim)
 {
   // MPI communication
   const MPI_Comm mpi_comm = mesh.mpi_comm();
