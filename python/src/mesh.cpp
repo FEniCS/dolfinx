@@ -83,12 +83,12 @@ namespace dolfin_wrappers
       (m, "MeshGeometry", "DOLFIN MeshGeometry object")
       .def("dim", &dolfin::MeshGeometry::dim, "Geometrical dimension")
       .def("degree", &dolfin::MeshGeometry::degree, "Degree")
-      .def("x", [](dolfin::Mesh& self)
+      .def("x", [](dolfin::MeshGeometry& self)
            {
              return Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-               (self.geometry().x().data(),
-                self.geometry().num_points(),
-                self.geometry().dim());
+               (self.x().data(),
+                self.num_points(),
+                self.dim());
            });
 
     // dolfin::MeshTopology class
