@@ -234,13 +234,6 @@ bool Function::in(const FunctionSpace& V) const
   return *_function_space == V;
 }
 //-----------------------------------------------------------------------------
-std::size_t Function::geometric_dimension() const
-{
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->mesh());
-  return _function_space->mesh()->geometry().dim();
-}
-//-----------------------------------------------------------------------------
 void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
                     Eigen::Ref<const Eigen::VectorXd> x) const
 {

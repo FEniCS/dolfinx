@@ -175,13 +175,6 @@ namespace dolfin
     ///         True if the function is in the function space.
     bool in(const FunctionSpace& V) const;
 
-    /// Return geometric dimension
-    ///
-    /// *Returns*
-    ///     std::size_t
-    ///         The geometric dimension.
-    std::size_t geometric_dimension() const;
-
     /// Evaluate function at given coordinates
     ///
     /// @param    values (Eigen::Ref<Eigen::VectorXd> values)
