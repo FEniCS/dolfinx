@@ -299,7 +299,6 @@ Mesh dolfin::fem::create_mesh(Function& coordinates)
   else
     mesh1._cell_type.reset();
   mesh1._ordered = mesh0._ordered;
-  mesh1._cell_orientations = mesh0._cell_orientations;
   mesh1._ghost_mode = mesh0._ghost_mode;
 
   // Rename

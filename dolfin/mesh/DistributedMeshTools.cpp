@@ -1114,7 +1114,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
 std::vector<double>
 DistributedMeshTools::reorder_vertices_by_global_indices(const Mesh& mesh)
 {
-  std::vector<double> ordered_coordinates(mesh.coordinates());
+  std::vector<double> ordered_coordinates(mesh.geometry().x());
   reorder_values_by_global_indices(mesh, ordered_coordinates,
                                    mesh.geometry().dim());
   return ordered_coordinates;

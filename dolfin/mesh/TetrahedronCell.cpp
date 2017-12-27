@@ -88,22 +88,6 @@ std::size_t TetrahedronCell::num_vertices(std::size_t dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-std::size_t TetrahedronCell::orientation(const Cell& cell) const
-{
-  const Vertex v0(cell.mesh(), cell.entities(0)[0]);
-  const Vertex v1(cell.mesh(), cell.entities(0)[1]);
-  const Vertex v2(cell.mesh(), cell.entities(0)[2]);
-  const Vertex v3(cell.mesh(), cell.entities(0)[3]);
-
-  const Point p01 = v1.point() - v0.point();
-  const Point p02 = v2.point() - v0.point();
-  const Point p03 = v3.point() - v0.point();
-
-  const Point n = p01.cross(p02);
-
-  return (n.dot(p03) < 0.0 ? 1 : 0);
-}
-//-----------------------------------------------------------------------------
 void
 TetrahedronCell::create_entities(boost::multi_array<unsigned int, 2>& e,
                                  std::size_t dim, const unsigned int* v) const

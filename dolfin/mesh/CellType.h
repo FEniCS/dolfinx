@@ -95,12 +95,6 @@ namespace dolfin
     /// Return number of vertices for entity of given topological dimension
     virtual std::size_t num_vertices(std::size_t dim) const = 0;
 
-    /// Return orientation of the cell (assuming flat space)
-    virtual std::size_t orientation(const Cell& cell) const = 0;
-
-    /// Return orientation of the cell relative to given up direction
-    std::size_t orientation(const Cell& cell, const Point& up) const;
-
     /// Create entities e of given topological dimension from
     /// vertices v
     virtual void create_entities(boost::multi_array<unsigned int, 2>& e,

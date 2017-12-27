@@ -32,7 +32,6 @@ namespace dolfin
 {
 
   class CellType;
-  class Expression;
   class GenericFunction;
   class LocalMeshData;
   class MeshEntity;
@@ -146,22 +145,6 @@ namespace dolfin
     ///
     std::size_t num_entities(std::size_t d) const
     { return _topology.size(d); }
-
-    /// Get vertex coordinates.
-    ///
-    /// @return std::vector<double>&
-    ///         Coordinates of all vertices.
-    ///
-    std::vector<double>& coordinates()
-    { return _geometry.x(); }
-
-    /// Return coordinates of all vertices (const version).
-    ///
-    /// @return std::vector<double>&
-    ///         Coordinates of all vertices.
-    ///
-    const std::vector<double>& coordinates() const
-    { return _geometry.x(); }
 
     /// Get cell connectivity.
     ///
@@ -322,22 +305,6 @@ namespace dolfin
     ///
     std::string str(bool verbose) const;
 
-    /// Return cell_orientations (const version)
-    ///
-    /// @return std::vector<int>
-    ///
-    ///         Map from cell index to orientation of cell. Is empty
-    ///         if cell orientations have not been computed.
-    const std::vector<int>& cell_orientations() const;
-
-    /// Compute and initialize cell_orientations relative to a given
-    /// global outward direction/normal/orientation. Only defined if
-    /// mesh is orientable.
-    ///
-    /// @param global_normal (Expression)
-    ///         A global normal direction to the mesh
-    void init_cell_orientations(const Expression& global_normal);
-
     /// Mesh MPI communicator
     /// @return MPI_Comm
     MPI_Comm mpi_comm() const
@@ -376,9 +343,6 @@ namespace dolfin
 
     // True if mesh has been ordered
     mutable bool _ordered;
-
-    // Orientation of cells relative to a global direction
-    std::vector<int> _cell_orientations;
 
     // MPI communicator
     dolfin::MPI::Comm _mpi_comm;

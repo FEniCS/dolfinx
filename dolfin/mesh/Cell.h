@@ -66,23 +66,6 @@ namespace dolfin
     std::size_t num_vertices() const
     { return _mesh->type().num_vertices(); }
 
-    /// Compute orientation of cell
-    ///
-    /// @return     std::size_t
-    ///         Orientation of the cell (0 is 'up'/'right', 1 is 'down'/'left')
-    std::size_t orientation() const
-    { return _mesh->type().orientation(*this); }
-
-    /// Compute orientation of cell relative to given 'up' direction
-    ///
-    /// @param    up
-    ///         The direction defined as 'up'
-    ///
-    /// @return     std::size_t
-    ///         Orientation of the cell (0 is 'same', 1 is 'opposite')
-    std::size_t orientation(const Point& up) const
-    { return _mesh->type().orientation(*this, up); }
-
     /// Compute (generalized) volume of cell
     ///
     /// @return     double
@@ -353,13 +336,7 @@ namespace dolfin
     {
       ufc_cell.geometric_dimension = _mesh->geometry().dim();
       ufc_cell.local_facet = local_facet;
-      if (_mesh->cell_orientations().empty())
-        ufc_cell.orientation = -1;
-      else
-      {
-        dolfin_assert(index() < _mesh->cell_orientations().size());
-        ufc_cell.orientation = _mesh->cell_orientations()[index()];
-      }
+      ufc_cell.orientation = -1;
       ufc_cell.mesh_identifier = mesh_id();
       ufc_cell.index = index();
     }
@@ -372,13 +349,7 @@ namespace dolfin
 
       const std::size_t tdim = topology.dim();
       ufc_cell.topological_dimension = tdim;
-      if (_mesh->cell_orientations().empty())
-        ufc_cell.orientation = -1;
-      else
-      {
-        dolfin_assert(index() < _mesh->cell_orientations().size());
-        ufc_cell.orientation = _mesh->cell_orientations()[index()];
-      }
+      ufc_cell.orientation = -1;
       ufc_cell.entity_indices.resize(tdim + 1);
       for (std::size_t d = 0; d < tdim; d++)
       {
@@ -423,7 +394,7 @@ namespace dolfin
       : MeshFunction<T>(mesh, mesh->topology().dim()) {
         deprecation("CellFunction<T>(mesh)",
                     "2017.2.0",
-                    "Use MeshFunction<T>(mesh, mesh->topology().dim())");     
+                    "Use MeshFunction<T>(mesh, mesh->topology().dim())");
       }
 
     /// Constructor on Mesh and value

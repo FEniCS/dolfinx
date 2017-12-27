@@ -69,14 +69,6 @@ std::size_t PointCell::num_vertices(std::size_t dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-std::size_t PointCell::orientation(const Cell& cell) const
-{
-  dolfin_error("PointCell.cpp",
-               "find orientation",
-               "Orientation not defined for point cell");
-  return 0;
-}
-//-----------------------------------------------------------------------------
 void PointCell::create_entities(boost::multi_array<unsigned int, 2>& e,
                                 std::size_t dim,
                                 const unsigned int* v) const

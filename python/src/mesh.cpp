@@ -82,7 +82,14 @@ namespace dolfin_wrappers
     py::class_<dolfin::MeshGeometry, std::shared_ptr<dolfin::MeshGeometry>>
       (m, "MeshGeometry", "DOLFIN MeshGeometry object")
       .def("dim", &dolfin::MeshGeometry::dim, "Geometrical dimension")
-      .def("degree", &dolfin::MeshGeometry::degree, "Degree");
+      .def("degree", &dolfin::MeshGeometry::degree, "Degree")
+      .def("x", [](dolfin::Mesh& self)
+           {
+             return Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+               (self.geometry().x().data(),
+                self.geometry().num_points(),
+                self.geometry().dim());
+           });
 
     // dolfin::MeshTopology class
     py::class_<dolfin::MeshTopology, std::shared_ptr<dolfin::MeshTopology>, dolfin::Variable>
@@ -121,14 +128,6 @@ namespace dolfin_wrappers
              return py::array({(std::int32_t) self.topology().size(tdim), (std::int32_t) self.type().num_vertices(tdim)},
                               self.topology()(tdim, 0)().data());
            })
-      .def("cell_orientations", &dolfin::Mesh::cell_orientations)
-      .def("coordinates", [](dolfin::Mesh& self)
-           {
-             return Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-               (self.geometry().x().data(),
-                self.geometry().num_points(),
-                self.geometry().dim());
-           })
       .def("geometry", (dolfin::MeshGeometry& (dolfin::Mesh::*)()) &dolfin::Mesh::geometry,
            py::return_value_policy::reference, "Mesh geometry")
       .def("hash", &dolfin::Mesh::hash)
@@ -139,12 +138,6 @@ namespace dolfin_wrappers
       .def("init", (void (dolfin::Mesh::*)() const) &dolfin::Mesh::init)
       .def("init", (std::size_t (dolfin::Mesh::*)(std::size_t) const) &dolfin::Mesh::init)
       .def("init", (void (dolfin::Mesh::*)(std::size_t, std::size_t) const) &dolfin::Mesh::init)
-      .def("init_cell_orientations", &dolfin::Mesh::init_cell_orientations)
-      .def("init_cell_orientations", [](dolfin::Mesh& self, py::object o)
-           {
-             auto _o = o.attr("_cpp_object").cast<dolfin::Expression*>();
-             self.init_cell_orientations(*_o);
-           })
       .def("mpi_comm", [](dolfin::Mesh& self)
            { return MPICommWrapper(self.mpi_comm()); })
       .def("num_entities", &dolfin::Mesh::num_entities,
@@ -249,9 +242,7 @@ namespace dolfin_wrappers
       .def("get_vertex_coordinates", [](const dolfin::Cell& self){
           std::vector<double> x;
           self.get_vertex_coordinates(x);
-          return x; }, "Get cell vertex coordinates")
-      .def("orientation", (std::size_t (dolfin::Cell::*)() const) &dolfin::Cell::orientation)
-      .def("orientation", (std::size_t (dolfin::Cell::*)(const dolfin::Point&) const) &dolfin::Cell::orientation);
+          return x; }, "Get cell vertex coordinates");
 
     // dolfin::MeshEntityIterator
     py::class_<dolfin::MeshEntityIterator, std::shared_ptr<dolfin::MeshEntityIterator>>
