@@ -128,7 +128,7 @@ boundary condition should be applied.
    // Sub domain for Dirichlet boundary condition
    class DirichletBoundary : public SubDomain
    {
-     bool inside(const Array<double>& x, bool on_boundary) const
+     bool inside(Eigen::Ref<const Eigen::VectorXd> x, bool on_boundary) const
      {
        return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS;
      }
@@ -197,14 +197,14 @@ call the ``solve`` function with the arguments ``a == L``, ``u`` and
 
      // Compute solution
      Function u(V);
-     auto A = std::make_shared<PETScMatrix>();
-     auto b = std::make_shared<PETScVector>();
+     auto A = std::make_shared<PETScMatrix>(MPI_COMM_WORLD);
+     auto b = std::make_shared<PETScVector>(MPI_COMM_WORLD);
 
      SystemAssembler assem(a, L, bc);
      assem.assemble(*A);
      assem.assemble(*b);
 
-     PETScLUSolver lu(A);
+     PETScLUSolver lu(MPI_COMM_WORLD, A);
      lu.solve(*u.vector(), *b);
 
 

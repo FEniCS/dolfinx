@@ -7,7 +7,7 @@ pipelines:
           - pip3 install git+https://bitbucket.org/fenics-project/fiat.git@master
           - pip3 install git+https://bitbucket.org/fenics-project/ufl.git@master
           - pip3 install git+https://bitbucket.org/fenics-project/dijitso.git@master
-          - pip3 install git+https://bitbucket.org/fenics-project/ffc.git@master
+          - pip3 install git+https://bitbucket.org/chris_richardson/ffcx.git@master
           - mkdir -p build
           - cd build
           - cmake -DCMAKE_BUILD_TYPE=Debug ..
@@ -19,3 +19,5 @@ pipelines:
           - python3 ./generate-demo-files.py
           - cd documented/poisson
           - python3 ./demo_poisson.py
+          - cd ../../../demo/documented/poisson/cpp
+          - cmake . && make
