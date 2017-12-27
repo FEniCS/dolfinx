@@ -42,12 +42,6 @@ const std::map<std::string, NormType> PETScVector::norm_types
 
 #define CHECK_ERROR(NAME) do { if (ierr != 0) petsc_error(ierr, __FILE__, NAME); } while(0)
 
-
-//-----------------------------------------------------------------------------
-PETScVector::PETScVector() : PETScVector(MPI_COMM_WORLD)
-{
-  // Do nothing
-}
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(MPI_Comm comm) : _x(nullptr)
 {

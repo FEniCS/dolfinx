@@ -63,9 +63,6 @@ namespace dolfin
   {
   public:
 
-    /// Create empty vector (on MPI_COMM_WORLD)
-    PETScVector();
-
     /// Create empty vector on an MPI communicator
     explicit PETScVector(MPI_Comm comm);
 

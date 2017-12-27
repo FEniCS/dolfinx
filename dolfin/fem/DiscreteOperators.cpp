@@ -80,7 +80,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   V1.dofmap()->tabulate_local_to_global_dofs(local_to_global_map1);
 
   // Declare matrix
-  auto A = std::make_shared<PETScMatrix>();
+  auto A = std::make_shared<PETScMatrix>(mesh.mpi_comm());
 
   // Create layout for initialising tensor
   auto tensor_layout = std::make_shared<TensorLayout>(mesh.mpi_comm(), 0,

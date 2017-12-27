@@ -234,15 +234,18 @@ def _solve_varproblem(*args, **kwargs):
     # Solve linear variational problem
     if isinstance(eq.lhs, ufl.Form) and isinstance(eq.rhs, ufl.Form):
 
-        A = PETScMatrix()
-        b = PETScVector()
         a = Form(eq.lhs)
         L = Form(eq.rhs)
+
+        comm = L.mesh().mpi_comm()
+        A = PETScMatrix(comm)
+        b = PETScVector(comm)
 
         assembler = SystemAssembler(a, L, bcs)
         assembler.assemble(A, b)
 
-        solver = PETScLUSolver(A)
+        solver = PETScLUSolver(comm)
+        solver.set_operator(A)
 
         solver.solve(u.vector(), b)
 
@@ -253,8 +256,6 @@ def _solve_varproblem(*args, **kwargs):
 #        solver = LinearVariationalSolver(problem)
 #        solver.parameters.update(solver_parameters)
 #        solver.solve()
-
-
 
     # Solve nonlinear variational problem
     else:

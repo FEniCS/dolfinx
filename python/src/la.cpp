@@ -592,9 +592,8 @@ namespace dolfin_wrappers
     // dolfin::Scalar
     py::class_<dolfin::Scalar, std::shared_ptr<dolfin::Scalar>, dolfin::GenericTensor>
       (m, "Scalar")
-      .def(py::init<>())
       .def(py::init([](const MPICommWrapper comm)
-        { return std::unique_ptr<dolfin::Scalar>(new dolfin::Scalar(comm.get())); }))
+                    { return std::unique_ptr<dolfin::Scalar>(new dolfin::Scalar(comm.get())); }))
       .def("add_local_value", &dolfin::Scalar::add_local_value)
       .def("apply", &dolfin::Scalar::apply)
       .def("mpi_comm", [](dolfin::Scalar& self)
@@ -618,7 +617,6 @@ namespace dolfin_wrappers
     py::class_<dolfin::PETScVector, std::shared_ptr<dolfin::PETScVector>,
                dolfin::GenericTensor, dolfin::PETScObject>
       (m, "PETScVector", "DOLFIN PETScVector object")
-      .def(py::init<>())
       .def(py::init([](const MPICommWrapper comm)
                     { return std::unique_ptr<dolfin::PETScVector>(new dolfin::PETScVector(comm.get())); }))
       .def(py::init([](const MPICommWrapper comm, std::size_t N)
@@ -640,9 +638,8 @@ namespace dolfin_wrappers
     py::class_<dolfin::PETScMatrix, std::shared_ptr<dolfin::PETScMatrix>,
                dolfin::GenericMatrix, dolfin::PETScBaseMatrix>
       (m, "PETScMatrix", "DOLFIN PETScMatrix object")
-      .def(py::init<>())
       .def(py::init([](const MPICommWrapper comm)
-        { return std::unique_ptr<dolfin::PETScMatrix>(new dolfin::PETScMatrix(comm.get())); }))
+        { return std::make_unique<dolfin::PETScMatrix>(comm.get()); }))
       .def(py::init<Mat>())
       .def("get_options_prefix", &dolfin::PETScMatrix::get_options_prefix)
       .def("set_options_prefix", &dolfin::PETScMatrix::set_options_prefix)
@@ -655,18 +652,10 @@ namespace dolfin_wrappers
     // dolfin::PETScLUSolver
     py::class_<dolfin::PETScLUSolver, std::shared_ptr<dolfin::PETScLUSolver>>
       (m, "PETScLUSolver", "DOLFIN PETScLUSolver object")
-      .def(py::init<std::string>(), py::arg("method")="default")
-      .def(py::init([](const MPICommWrapper comm,
-                       std::string method="default")
-          { return std::unique_ptr<dolfin::PETScLUSolver>(new dolfin::PETScLUSolver(comm.get(), method)); }),
-          py::arg("comm"), py::arg("method") = "default")
-      .def(py::init([](const MPICommWrapper comm,
-                       std::shared_ptr<const dolfin::PETScMatrix> A,
-                       std::string method="default")
-          { return std::unique_ptr<dolfin::PETScLUSolver>(new dolfin::PETScLUSolver(comm.get(), A, method)); }),
-          py::arg("comm"), py::arg("A"), py::arg("method") = "default")
-      .def(py::init<std::shared_ptr<const dolfin::PETScMatrix>, std::string>(),
-           py::arg("A"), py::arg("method")="default")
+      .def(py::init([](const MPICommWrapper comm, std::string method="default")
+                    { return std::make_unique<dolfin::PETScLUSolver>(comm.get(), method); }),
+           py::arg("comm"), py::arg("method") = "default")
+      .def("set_operator", &dolfin::PETScLUSolver::set_operator)
       .def("get_options_prefix", &dolfin::PETScLUSolver::get_options_prefix)
       .def("set_options_prefix", &dolfin::PETScLUSolver::set_options_prefix)
       .def("solve", (std::size_t (dolfin::PETScLUSolver::*)(dolfin::PETScVector&, const dolfin::PETScVector&))
@@ -710,13 +699,8 @@ namespace dolfin_wrappers
     // dolfin::SLEPcEigenSolver
     py::class_<dolfin::SLEPcEigenSolver, std::shared_ptr<dolfin::SLEPcEigenSolver>,
                dolfin::Variable>(m, "SLEPcEigenSolver")
-      .def(py::init<std::shared_ptr<const dolfin::PETScMatrix>>())
-      .def(py::init<std::shared_ptr<const dolfin::PETScMatrix>, std::shared_ptr<const dolfin::PETScMatrix>>())
-      // FIXME: The below must come after the other
-      // constructors. Check the MPI_Comm caster raises appropriate
-      // exceptions for pybind11 to move onto next interface.
       .def(py::init([](const MPICommWrapper comm)
-          { return std::unique_ptr<dolfin::SLEPcEigenSolver>(new dolfin::SLEPcEigenSolver(comm.get())); }))
+          { return std::make_unique<dolfin::SLEPcEigenSolver>(comm.get()); }))
       .def("set_options_prefix", &dolfin::SLEPcEigenSolver::set_options_prefix)
       .def("set_from_options", &dolfin::SLEPcEigenSolver::set_from_options)
       .def("set_operators", &dolfin::SLEPcEigenSolver::set_operators)
@@ -737,14 +721,15 @@ namespace dolfin_wrappers
       .def("get_eigenpair", [](dolfin::SLEPcEigenSolver& self, std::size_t i)
            {
              double lr, lc;
-             dolfin::PETScVector r, c;
+             dolfin::PETScVector r(self.mpi_comm()), c(self.mpi_comm());
              self.get_eigenpair(lr, lc, r, c, i);
              return py::make_tuple(lr, lc, r, c);
            });
     #endif
 
     // dolfin::VectorSpaceBasis
-    py::class_<dolfin::VectorSpaceBasis, std::shared_ptr<dolfin::VectorSpaceBasis>>(m, "VectorSpaceBasis")
+    py::class_<dolfin::VectorSpaceBasis,
+               std::shared_ptr<dolfin::VectorSpaceBasis>>(m, "VectorSpaceBasis")
       .def(py::init<const std::vector<std::shared_ptr<dolfin::PETScVector>>>())
       .def("is_orthonormal", &dolfin::VectorSpaceBasis::is_orthonormal, py::arg("tol")=1.0e-10)
       .def("is_orthogonal", &dolfin::VectorSpaceBasis::is_orthogonal, py::arg("tol")=1.0e-10)

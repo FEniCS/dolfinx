@@ -57,80 +57,6 @@ SLEPcEigenSolver::SLEPcEigenSolver(EPS eps) : _eps(eps)
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A)
-  : SLEPcEigenSolver(A,  nullptr)
-{
-  // TODO: deprecate
-
-  // Do nothing (handled by other constructor)
-}
-//-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm,
-                                   std::shared_ptr<const PETScMatrix> A)
-  : SLEPcEigenSolver(comm, A, nullptr)
-{
-  // TODO: deprecate
-
-  // Do nothing (handled by other constructor)
-}
-//-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,
-                                   std::shared_ptr<const PETScMatrix> B)
-  : _eps(nullptr)
-
-{
-  // TODO: deprecate
-
-  dolfin_assert(A);
-  dolfin_assert(A->size(0) == A->size(1));
-  if (B)
-  {
-    dolfin_assert(B->size(0) == A->size(0));
-    dolfin_assert(B->size(1) == A->size(1));
-  }
-
-  // Set up solver environment
-  EPSCreate(A->mpi_comm(), &_eps);
-
-  // Set operators
-  dolfin_assert(_eps);
-  if (B)
-    EPSSetOperators(_eps, A->mat(), B->mat());
-  else
-    EPSSetOperators(_eps, A->mat(), NULL);
-
-  // Set default parameter values
-  parameters = default_parameters();
-}
-//-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm,
-                                   std::shared_ptr<const PETScMatrix> A,
-                                   std::shared_ptr<const PETScMatrix> B)
-  : _eps(nullptr)
-{
-  // TODO: deprecate
-
-  dolfin_assert(A);
-  dolfin_assert(A->size(0) == A->size(1));
-  if (B)
-  {
-    dolfin_assert(B->size(0) == A->size(0));
-    dolfin_assert(B->size(1) == A->size(1));
-  }
-
-  // Set default parameter values
-  parameters = default_parameters();
-
-  // Set up solver environment
-  EPSCreate(comm, &_eps);
-
-  // Set operators
-  if (B)
-    EPSSetOperators(_eps, A->mat(), B->mat());
-  else
-    EPSSetOperators(_eps, A->mat(), NULL);
-}
-//-----------------------------------------------------------------------------
 SLEPcEigenSolver::~SLEPcEigenSolver()
 {
   // Destroy solver environment
@@ -144,7 +70,7 @@ void SLEPcEigenSolver::set_operators(std::shared_ptr<const PETScMatrix> A,
   // Set operators
   dolfin_assert(_eps);
   if (B)
-     EPSSetOperators(_eps, A->mat(), B->mat());
+    EPSSetOperators(_eps, A->mat(), B->mat());
   else
     EPSSetOperators(_eps, A->mat(), NULL);
 }
@@ -522,6 +448,14 @@ std::size_t SLEPcEigenSolver::get_iteration_number() const
 EPS SLEPcEigenSolver::eps() const
 {
   return _eps;
+}
+//-----------------------------------------------------------------------------
+MPI_Comm SLEPcEigenSolver::mpi_comm() const
+{
+  dolfin_assert(_eps);
+  MPI_Comm mpi_comm = MPI_COMM_NULL;
+  PetscObjectGetComm((PetscObject)_eps, &mpi_comm);
+  return mpi_comm;
 }
 //-----------------------------------------------------------------------------
 

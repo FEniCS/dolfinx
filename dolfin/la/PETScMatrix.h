@@ -59,9 +59,6 @@ namespace dolfin
   {
   public:
 
-    /// Create empty matrix (on MPI_COMM_WORLD)
-    PETScMatrix();
-
     /// Create empty matrix
     explicit PETScMatrix(MPI_Comm comm);
 

@@ -42,7 +42,7 @@
 
 
 // Ceiling division of nonnegative integers
-#define dolfin_ceil_div(x, y) (x/y + int(x%y != 0))
+#define dolfin_ceil_div(x, y) (x/y + int(x % y != 0))
 
 
 using namespace dolfin;
@@ -51,11 +51,6 @@ const std::map<std::string, NormType> PETScMatrix::norm_types
 = { {"l1",        NORM_1},
     {"linf",      NORM_INFINITY},
     {"frobenius", NORM_FROBENIUS} };
-//-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix() : PETScMatrix(MPI_COMM_WORLD)
-{
-  // Do nothing
-}
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(MPI_Comm comm) : PETScBaseMatrix()
 {

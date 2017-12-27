@@ -120,12 +120,6 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm, std::string method)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver(std::string method)
-  : PETScLUSolver(MPI_COMM_WORLD, nullptr, method)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(MPI_Comm comm,
                              std::shared_ptr<const PETScMatrix> A,
                              std::string method) : _solver(comm)
@@ -186,13 +180,6 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm,
     ierr = KSPSetOperators(ksp, A->mat(), A->mat());
     if (ierr != 0) PETScObject::petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
-}
-//-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver(std::shared_ptr<const PETScMatrix> A,
-                             std::string method)
-  : PETScLUSolver(MPI_COMM_WORLD, A, method)
-{
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::~PETScLUSolver()

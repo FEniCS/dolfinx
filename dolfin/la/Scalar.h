@@ -43,9 +43,6 @@ namespace dolfin
   public:
 
     /// Create zero scalar
-    Scalar() : Scalar(MPI_COMM_WORLD) {}
-
-    /// Create zero scalar
     Scalar(MPI_Comm comm) : GenericTensor(), _value(0.0), _local_increment(0.0),
       _mpi_comm(comm) {}
 
@@ -188,10 +185,9 @@ namespace dolfin
     /// Return copy of scalar
     virtual std::shared_ptr<Scalar> copy() const
     {
-      std::shared_ptr<Scalar> s(new Scalar);
+      auto s = std::make_shared<Scalar>(_mpi_comm.comm());
       s->_value = _value;
       s->_local_increment = _local_increment;
-      s->_mpi_comm.reset(_mpi_comm.comm());
       return s;
     }
 

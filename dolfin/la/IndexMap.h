@@ -44,9 +44,6 @@ namespace dolfin
                                    UNOWNED = 2,
                                    GLOBAL = 3 };
 
-    /// Constructor
-    IndexMap();
-
     /// Index map with no data
     explicit IndexMap(MPI_Comm mpi_comm);
 
