@@ -33,7 +33,6 @@ namespace dolfin
   class Mesh;
   template <typename T> class MeshFunction;
   template <typename T> class MeshValueCollection;
-  template <typename T> class Array;
 
   /// This class defines the interface for definition of subdomains.
   /// Alternatively, subdomains may be defined by a _Mesh_ and a
@@ -72,13 +71,6 @@ namespace dolfin
     /// @param    y (Eigen::Ref<Eigen::VectorXd>)
     ///         The coordinates in domain G.
     virtual void map(Eigen::Ref<const Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> y) const;
-
-
-    /// Snap coordinate to boundary of subdomain
-    ///
-    /// @param x (Array<double>)
-    ///         The coordinates.
-    virtual void snap(Array<double>& x) const {}
 
     //--- Marking of Mesh ---
 

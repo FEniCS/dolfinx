@@ -26,7 +26,6 @@
 #include <string>
 #include <vector>
 
-#include<dolfin/common/Array.h>
 #include "HDF5Interface.h"
 
 namespace dolfin

@@ -25,7 +25,6 @@
 #include <dolfin/common/MPI.h>
 
 #include <string>
-#include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "BoostGraphColoring.h"

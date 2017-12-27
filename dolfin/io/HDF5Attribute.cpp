@@ -24,7 +24,6 @@
 #include <string>
 #include <boost/lexical_cast.hpp>
 
-#include <dolfin/common/Array.h>
 #include "HDF5Interface.h"
 #include "HDF5Attribute.h"
 

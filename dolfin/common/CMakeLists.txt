@@ -1,5 +1,4 @@
 set(HEADERS
-  Array.h
   ArrayView.h
   constants.h
   defines.h

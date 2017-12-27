@@ -24,7 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
 #include "DistributedMeshTools.h"
 #include "Facet.h"
@@ -88,7 +87,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int>>
   std::vector<double> x(gdim);
   std::vector<double> y(gdim);
 
-  // Wrap x and y (Array view of x and y)
+  // Wrap x and y (view of x and y)
   Eigen::Map<Eigen::VectorXd> _x(x.data(), gdim);
   Eigen::Map<Eigen::VectorXd> _y(y.data(), gdim);
 
