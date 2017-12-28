@@ -170,35 +170,12 @@ namespace dolfin
     /// Extract subspace for component
     ///
     /// *Arguments*
-    ///     i (std::size_t)
-    ///         Index of the subspace.
-    /// *Returns*
-    ///     _FunctionSpace_
-    ///         The subspace.
-    std::shared_ptr<FunctionSpace> operator[] (std::size_t i) const;
-
-    /// Extract subspace for component
-    ///
-    /// *Arguments*
     ///     component (std::size_t)
     ///         Index of the subspace.
     /// *Returns*
     ///     _FunctionSpace_
     ///         The subspace.
-    std::shared_ptr<FunctionSpace> sub(std::size_t component) const
-    { return extract_sub_space({component}); }
-
-    /// Extract subspace for component
-    ///
-    /// *Arguments*
-    ///     component (std::vector<std::size_t>)
-    ///         The component.
-    /// *Returns*
-    ///     _FunctionSpace_
-    ///         The subspace.
-    std::shared_ptr<FunctionSpace>
-    sub(const std::vector<std::size_t>& component) const
-    { return extract_sub_space(component); }
+    std::shared_ptr<FunctionSpace> sub(std::size_t i) const;
 
     /// Extract subspace for component
     ///
@@ -210,7 +187,7 @@ namespace dolfin
     ///     _FunctionSpace_
     ///         The subspace.
     std::shared_ptr<FunctionSpace>
-    extract_sub_space(const std::vector<std::size_t>& component) const;
+      sub(const std::vector<std::size_t>& component) const;
 
     /// Check whether V is subspace of this, or this itself
     ///

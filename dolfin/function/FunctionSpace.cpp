@@ -194,15 +194,13 @@ void FunctionSpace::interpolate(PETScVector& expansion_coefficients,
   expansion_coefficients.apply("insert");
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<FunctionSpace> FunctionSpace::operator[] (std::size_t i) const
+std::shared_ptr<FunctionSpace> FunctionSpace::sub(std::size_t i) const
 {
-  std::vector<std::size_t> component;
-  component.push_back(i);
-  return extract_sub_space(component);
+  return sub({{i}});
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>
-FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) const
+FunctionSpace::sub(const std::vector<std::size_t>& component) const
 {
   dolfin_assert(_mesh);
   dolfin_assert(_element);
