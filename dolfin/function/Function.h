@@ -64,8 +64,7 @@ namespace dolfin
   {
   public:
 
-    Function()
-    {}
+    Function() {}
 
     /// Create function on given function space (shared data)
     ///

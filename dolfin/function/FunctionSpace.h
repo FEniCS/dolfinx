@@ -343,7 +343,7 @@ namespace dolfin
 
     // Cache of subspaces
     mutable std::map<std::vector<std::size_t>,
-                     std::shared_ptr<FunctionSpace> > _subspaces;
+      std::weak_ptr<FunctionSpace>> _subspaces;
 
   };
 

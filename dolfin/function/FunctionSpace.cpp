@@ -208,40 +208,34 @@ FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) cons
   dolfin_assert(_element);
   dolfin_assert(_dofmap);
 
-  // Check if sub space is already in the cache
-  std::map<std::vector<std::size_t>,
-           std::shared_ptr<FunctionSpace>>::const_iterator subspace;
-  subspace = _subspaces.find(component);
+  // Check if sub space is already in the cache and not expired
+  auto subspace = _subspaces.find(component);
   if (subspace != _subspaces.end())
-    return subspace->second;
-  else
-  {
-    // Extract sub element
-    std::shared_ptr<const FiniteElement>
-      element(_element->extract_sub_element(component));
+    if (auto s = subspace->second.lock())
+      return s;
 
-    // Extract sub dofmap
-    std::shared_ptr<GenericDofMap>
-      dofmap(_dofmap->extract_sub_dofmap(component, *_mesh));
+  // Extract sub-element
+  auto element = _element->extract_sub_element(component);
 
-    // Create new sub space
-    std::shared_ptr<FunctionSpace>
-      new_sub_space(new FunctionSpace(_mesh, element, dofmap));
+  // Extract sub dofmap
+  std::shared_ptr<GenericDofMap> dofmap(_dofmap->extract_sub_dofmap(component, *_mesh));
 
-    // Set root space id and component w.r.t. root
-    new_sub_space->_root_space_id = _root_space_id;
-    auto& new_component = new_sub_space->_component;
-    new_component.clear();
-    new_component.insert(new_component.end(), _component.begin(), _component.end());
-    new_component.insert(new_component.end(), component.begin(), component.end());
+  // Create new sub space
+  auto new_sub_space = std::make_shared<FunctionSpace>(_mesh, element, dofmap);
 
-    // Insert new sub space into cache
-    _subspaces.insert(std::pair<std::vector<std::size_t>,
-                      std::shared_ptr<FunctionSpace>>(component,
-                                                      new_sub_space));
+  // Set root space id and component w.r.t. root
+  new_sub_space->_root_space_id = _root_space_id;
+  auto& new_component = new_sub_space->_component;
+  new_component.clear();
+  new_component.insert(new_component.end(), _component.begin(), _component.end());
+  new_component.insert(new_component.end(), component.begin(), component.end());
 
-    return new_sub_space;
-  }
+  // Insert new subspace into cache
+  _subspaces.insert(std::pair<std::vector<std::size_t>,
+                    std::shared_ptr<FunctionSpace>>(component,
+                                                    new_sub_space));
+
+  return new_sub_space;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace> FunctionSpace::collapse() const
