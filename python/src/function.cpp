@@ -210,7 +210,6 @@ namespace dolfin_wrappers
            &dolfin::Function::operator=)
       .def("_assign", (void (dolfin::Function::*)(const dolfin::FunctionAXPY&))
            &dolfin::Function::operator=)
-      .def("_in", &dolfin::Function::in)
       .def("__call__", [](dolfin::Function& self, Eigen::Ref<const Eigen::VectorXd> x)
           {
              Eigen::VectorXd values(self.value_size());

@@ -228,12 +228,6 @@ std::shared_ptr<const PETScVector> Function::vector() const
   return _vector;
 }
 //-----------------------------------------------------------------------------
-bool Function::in(const FunctionSpace& V) const
-{
-  dolfin_assert(_function_space);
-  return *_function_space == V;
-}
-//-----------------------------------------------------------------------------
 void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
                     Eigen::Ref<const Eigen::VectorXd> x) const
 {

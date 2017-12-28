@@ -164,17 +164,6 @@ namespace dolfin
     ///         The vector of expansion coefficients (const).
     std::shared_ptr<const PETScVector> vector() const;
 
-    /// Check if function is a member of the given function space
-    ///
-    /// *Arguments*
-    ///     V (_FunctionSpace_)
-    ///         The function space.
-    ///
-    /// *Returns*
-    ///     bool
-    ///         True if the function is in the function space.
-    bool in(const FunctionSpace& V) const;
-
     /// Evaluate function at given coordinates
     ///
     /// @param    values (Eigen::Ref<Eigen::VectorXd> values)
