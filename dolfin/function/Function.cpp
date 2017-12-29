@@ -170,8 +170,7 @@ Function& Function::operator[] (std::size_t i) const
   else
   {
     // Extract function subspace
-    std::shared_ptr<const FunctionSpace>
-      sub_space(_function_space->sub(i));
+    auto sub_space = _function_space->sub({i});
 
     // Insert sub-Function into map and return reference
     _sub_functions.insert(i, new Function(sub_space, _vector));

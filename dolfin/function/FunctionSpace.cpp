@@ -194,11 +194,6 @@ void FunctionSpace::interpolate(PETScVector& expansion_coefficients,
   expansion_coefficients.apply("insert");
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<FunctionSpace> FunctionSpace::sub(std::size_t i) const
-{
-  return sub({{i}});
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>
 FunctionSpace::sub(const std::vector<std::size_t>& component) const
 {

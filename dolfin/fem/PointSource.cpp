@@ -344,14 +344,14 @@ void PointSource::apply(GenericMatrix& A)
     {
       // Doesn't work for mixed function spaces with different
       // elements.
-      if (V0->sub(0)->element()->signature() != V0->sub(n)->element()->signature())
+      if (V0->sub({0})->element()->signature() != V0->sub({n})->element()->signature())
       {
 	dolfin_error("PointSource.cpp",
 		     "apply point source to matrix",
 		     "The mixed elements are not the same. Not currently implemented");
       }
 
-      if (V0->sub(n)->element()->num_sub_elements() > 1)
+      if (V0->sub({n})->element()->num_sub_elements() > 1)
       {
 	dolfin_error("PointSource.cpp",
 		     "apply point source to matrix",

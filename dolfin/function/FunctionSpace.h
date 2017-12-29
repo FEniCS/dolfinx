@@ -170,16 +170,6 @@ namespace dolfin
     /// Extract subspace for component
     ///
     /// *Arguments*
-    ///     component (std::size_t)
-    ///         Index of the subspace.
-    /// *Returns*
-    ///     _FunctionSpace_
-    ///         The subspace.
-    std::shared_ptr<FunctionSpace> sub(std::size_t i) const;
-
-    /// Extract subspace for component
-    ///
-    /// *Arguments*
     ///     component (std::vector<std::size_t>)
     ///         The component.
     ///
@@ -218,7 +208,7 @@ namespace dolfin
     ///     _FunctionSpace_
     ///       The new function space.
     std::shared_ptr<FunctionSpace>
-    collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const;
+      collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const;
 
     /// Check if function space has given cell
     ///
