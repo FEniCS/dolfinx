@@ -46,7 +46,7 @@ FunctionAXPY::FunctionAXPY(std::shared_ptr<const Function> func0,
   dolfin_assert(func1);
   dolfin_assert(func1->function_space());
 
-  if (!func0->in(*func1->function_space()))
+  if (*func0->function_space() != *func1->function_space())
   {
     dolfin_error("FunctionAXPY.cpp",
                  "Construct FunctionAXPY",
@@ -68,7 +68,7 @@ FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy,
   dolfin_assert(func->function_space());
 
   _register(axpy, static_cast<int>(direction) % 2 == 0 ? 1.0 : -1.0);
-  if (_pairs.size()>0 && !_pairs[0].second->in(*func->function_space()))
+  if (_pairs.size() > 0 and *_pairs[0].second->function_space() != *func->function_space())
   {
     dolfin_error("FunctionAXPY.cpp",
                  "Construct FunctionAXPY",
@@ -132,10 +132,10 @@ const std::vector<std::pair<double, std::shared_ptr<const Function>>>&
 //-----------------------------------------------------------------------------
 void FunctionAXPY::_register(const FunctionAXPY& axpy, double scale)
 {
-  if (_pairs.size() > 0 && axpy._pairs.size() > 0
-      && _pairs[0].second && axpy._pairs[0].second // nullptr checks
-      && axpy._pairs[0].second->function_space()   // nullptr checks
-      && !_pairs[0].second->in(*axpy._pairs[0].second->function_space()))
+  if (_pairs.size() > 0 and axpy._pairs.size() > 0
+      and _pairs[0].second and axpy._pairs[0].second // nullptr checks
+      and axpy._pairs[0].second->function_space()   // nullptr checks
+      and *_pairs[0].second->function_space() != *axpy._pairs[0].second->function_space())
   {
     dolfin_error("FunctionAXPY.cpp",
                  "Construct FunctionAXPY",

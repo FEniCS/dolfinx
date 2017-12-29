@@ -170,9 +170,7 @@ Function& Function::operator[] (std::size_t i) const
   else
   {
     // Extract function subspace
-    std::vector<std::size_t> component(1, i);
-    std::shared_ptr<const FunctionSpace>
-      sub_space(_function_space->extract_sub_space(component));
+    auto sub_space = _function_space->sub({i});
 
     // Insert sub-Function into map and return reference
     _sub_functions.insert(i, new Function(sub_space, _vector));
@@ -226,12 +224,6 @@ std::shared_ptr<const PETScVector> Function::vector() const
 {
   dolfin_assert(_vector);
   return _vector;
-}
-//-----------------------------------------------------------------------------
-bool Function::in(const FunctionSpace& V) const
-{
-  dolfin_assert(_function_space);
-  return *_function_space == V;
 }
 //-----------------------------------------------------------------------------
 void Function::eval(Eigen::Ref<Eigen::VectorXd> values,

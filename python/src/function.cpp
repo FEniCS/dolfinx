@@ -210,7 +210,6 @@ namespace dolfin_wrappers
            &dolfin::Function::operator=)
       .def("_assign", (void (dolfin::Function::*)(const dolfin::FunctionAXPY&))
            &dolfin::Function::operator=)
-      .def("_in", &dolfin::Function::in)
       .def("__call__", [](dolfin::Function& self, Eigen::Ref<const Eigen::VectorXd> x)
           {
              Eigen::VectorXd values(self.value_size());
@@ -308,9 +307,7 @@ namespace dolfin_wrappers
       .def("mesh", &dolfin::FunctionSpace::mesh)
       .def("dofmap", &dolfin::FunctionSpace::dofmap)
       .def("set_x", &dolfin::FunctionSpace::set_x)
-      .def("sub", (std::shared_ptr<dolfin::FunctionSpace> (dolfin::FunctionSpace::*)(std::size_t) const)
-           &dolfin::FunctionSpace::sub)
-      .def("extract_sub_space", &dolfin::FunctionSpace::extract_sub_space)
+      .def("sub", &dolfin::FunctionSpace::sub)
       .def("tabulate_dof_coordinates", [](const dolfin::FunctionSpace& self)
            {
              const std::size_t gdim = self.element()->geometric_dimension();
