@@ -307,10 +307,7 @@ namespace dolfin_wrappers
       .def("mesh", &dolfin::FunctionSpace::mesh)
       .def("dofmap", &dolfin::FunctionSpace::dofmap)
       .def("set_x", &dolfin::FunctionSpace::set_x)
-      .def("sub", (std::shared_ptr<dolfin::FunctionSpace> (dolfin::FunctionSpace::*)(std::size_t) const)
-           &dolfin::FunctionSpace::sub)
-      .def("sub", (std::shared_ptr<dolfin::FunctionSpace> (dolfin::FunctionSpace::*)(const std::vector<std::size_t>& component) const)
-           &dolfin::FunctionSpace::sub)
+      .def("sub", &dolfin::FunctionSpace::sub)
       .def("tabulate_dof_coordinates", [](const dolfin::FunctionSpace& self)
            {
              const std::size_t gdim = self.element()->geometric_dimension();
