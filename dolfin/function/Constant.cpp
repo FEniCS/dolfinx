@@ -32,23 +32,6 @@ Constant::Constant(double value)
   _values[0] = value;
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(double value0, double value1)
-  : Expression(2)
-{
-  _values.resize(2);
-  _values[0] = value0;
-  _values[1] = value1;
-}
-//-----------------------------------------------------------------------------
-Constant::Constant(double value0, double value1, double value2)
-  : Expression(3)
-{
-  _values.resize(3);
-  _values[0] = value0;
-  _values[1] = value1;
-  _values[2] = value2;
-}
-//-----------------------------------------------------------------------------
 Constant::Constant(std::vector<double> values)
   : Expression(values.size()), _values(values)
 {

@@ -34,6 +34,7 @@ namespace dolfin
   {
   public:
 
+    // FIXME: remove once Expression constructor is fixed for scalars
     /// Create scalar constant
     ///
     /// @param  value (double)
@@ -43,32 +44,6 @@ namespace dolfin
     ///         Constant c(1.0);
     /// @endcode
     explicit Constant(double value);
-
-    /// Create vector constant (dim = 2)
-    ///
-    /// @param value0 (double)
-    ///         The first vector element.
-    /// @param value1 (double)
-    ///         The second vector element.
-    ///
-    /// @code{.cpp}
-    ///         Constant B(0.0, 1.0);
-    /// @endcode
-    Constant(double value0, double value1);
-
-    /// Create vector constant (dim = 3)
-    ///
-    /// @param value0 (double)
-    ///         The first vector element.
-    /// @param value1 (double)
-    ///         The second vector element.
-    /// @param value2 (double)
-    ///         The third vector element.
-    ///
-    /// @code{.cpp}
-    ///         Constant T(0.0, 1.0, 0.0);
-    /// @endcode
-    Constant(double value0, double value1, double value2);
 
     /// Create vector-valued constant
     ///
