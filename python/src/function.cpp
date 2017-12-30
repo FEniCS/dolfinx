@@ -129,9 +129,6 @@ namespace dolfin_wrappers
     // dolfin:Expression
     py::class_<dolfin::Expression, PyExpression, std::shared_ptr<dolfin::Expression>,
                dolfin::GenericFunction>(m, "Expression", "An Expression is a function (field) that can appear as a coefficient in a form")
-      .def(py::init<>())
-      .def(py::init<std::size_t>())
-      .def(py::init<std::size_t, std::size_t>())
       .def(py::init<std::vector<std::size_t>>())
       .def("__call__", [](const dolfin::Expression& self, Eigen::Ref<const Eigen::VectorXd> x)
            {
@@ -169,7 +166,6 @@ namespace dolfin_wrappers
       .def(py::init<std::vector<std::size_t>, std::vector<double>>())
       .def("values", [](const dolfin::Constant& self)
            { auto v =  self.values(); return py::array_t<double>(v.size(), v.data()); })
-      .def("__float__", [](const dolfin::Constant& instance) -> double { return instance; })
       /*
       .def("_assign", [](dolfin::Constant& self, const dolfin::Constant& other) -> const dolfin::Constant&
            {self = other;})

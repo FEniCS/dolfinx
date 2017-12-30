@@ -26,14 +26,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Constant::Constant(double value)
+Constant::Constant(double value) : Expression({}), _values(1, value)
 {
-  _values.resize(1);
-  _values[0] = value;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Constant::Constant(std::vector<double> values)
-  : Expression(values.size()), _values(values)
+  : Expression({values.size()}), _values(values)
 {
   // Do nothing
 }
@@ -59,7 +58,7 @@ Constant::~Constant()
 const Constant& Constant::operator= (const Constant& constant)
 {
   // Check value shape
-  if (constant._value_shape != _value_shape)
+  if (constant.value_shape() != value_shape())
   {
     dolfin_error("Constant.cpp",
                  "assign value to constant",
@@ -75,7 +74,7 @@ const Constant& Constant::operator= (const Constant& constant)
 const Constant& Constant::operator= (double constant)
 {
   // Check value shape
-  if (!_value_shape.empty())
+  if (!value_shape().empty())
   {
     dolfin_error("Constant.cpp",
                  "assign scalar value to constant",
@@ -87,21 +86,6 @@ const Constant& Constant::operator= (double constant)
   _values[0] = constant;
 
   return *this;
-}
-//-----------------------------------------------------------------------------
-Constant::operator double() const
-{
-  // Check value shape
-  if (!_value_shape.empty())
-  {
-    dolfin_error("Constant.cpp",
-                 "convert constant to double",
-                 "Constant is not a scalar");
-  }
-
-  // Return value
-  dolfin_assert(_values.size() == 1);
-  return _values[0];
 }
 //-----------------------------------------------------------------------------
 std::vector<double> Constant::values() const
@@ -128,7 +112,7 @@ std::string Constant::str(bool verbose) const
     if (!_values.empty())
     {
       ossv << std::endl << std::endl;
-      if (!_value_shape.empty())
+      if (!value_shape().empty())
       {
         ossv << "Values: ";
         ossv << "(";
