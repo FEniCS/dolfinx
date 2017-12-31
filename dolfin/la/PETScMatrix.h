@@ -156,27 +156,11 @@ namespace dolfin
     /// Return norm of matrix
     double norm(std::string norm_type) const;
 
-    /// Get non-zero values of given row
-    virtual void getrow(std::size_t row,
-                        std::vector<std::size_t>& columns,
-                        std::vector<double>& values) const;
-
-    /// Set values for given row
-    virtual void setrow(std::size_t row,
-                        const std::vector<std::size_t>& columns,
-                        const std::vector<double>& values);
-
     /// Set given rows (global row indices) to zero
     virtual void zero(std::size_t m, const dolfin::la_index_t* rows);
 
     /// Set given rows (local row indices) to zero
     virtual void zero_local(std::size_t m, const dolfin::la_index_t* rows);
-
-    /// Set given rows (global row indices) to identity matrix
-    virtual void ident(std::size_t m, const dolfin::la_index_t* rows);
-
-    /// Set given rows (local row indices) to identity matrix
-    virtual void ident_local(std::size_t m, const dolfin::la_index_t* rows);
 
     // Matrix-vector product, y = Ax
     virtual void mult(const PETScVector& x, PETScVector& y) const;
@@ -219,8 +203,8 @@ namespace dolfin
     /// when solving singular systems)
     void set_nullspace(const VectorSpaceBasis& nullspace);
 
-    /// Attach near nullspace to matrix (used by preconditioners, such
-    /// as smoothed aggregation algerbraic multigrid)
+    /// Attach 'near' nullspace to matrix (used by preconditioners,
+    /// such as smoothed aggregation algerbraic multigrid)
     void set_near_nullspace(const VectorSpaceBasis& nullspace);
 
     /// Dump matrix to PETSc binary format

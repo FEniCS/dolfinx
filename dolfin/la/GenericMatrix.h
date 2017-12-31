@@ -179,41 +179,11 @@ namespace dolfin
     /// Set given rows (local row indices) to zero
     virtual void zero_local(std::size_t m, const dolfin::la_index_t* rows) = 0;
 
-    /// Set given rows (global row indices) to identity matrix
-    virtual void ident(std::size_t m, const dolfin::la_index_t* rows) = 0;
-
-    /// Set given rows (local row indices) to identity matrix
-    virtual void ident_local(std::size_t m, const dolfin::la_index_t* rows) = 0;
-
-    /// Matrix-vector product, y = A^T x. The y vector must either be
-    /// zero-sized or have correct size and parallel layout.
-    //virtual void transpmult(const GenericVector& x, GenericVector& y) const = 0;
-
-    /// Get diagonal of a matrix
-    //virtual void get_diagonal(GenericVector& x) const = 0;
-
-    /// Set diagonal of a matrix
-    //virtual void set_diagonal(const GenericVector& x) = 0;
-
     /// Multiply matrix by given number
     virtual const GenericMatrix& operator*= (double a) = 0;
 
     /// Divide matrix by given number
     virtual const GenericMatrix& operator/= (double a) = 0;
-
-    /// Add given matrix
-    //const GenericMatrix& operator+= (const GenericMatrix& A)
-    //{
-    //  axpy(1.0, A, false);
-    //  return *this;
-    //}
-
-    /// Subtract given matrix
-    //const GenericMatrix& operator-= (const GenericMatrix& A)
-    //{
-    //  axpy(-1.0, A, false);
-    //  return *this;
-    //}
 
     /// Test if matrix is symmetric
     virtual bool is_symmetric(double tol) const
@@ -224,32 +194,6 @@ namespace dolfin
       return false;
     }
 
-    /// Assignment operator
-    //virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
-
-    //--- Convenience functions ---
-
-    /// Get value of given entry
-    //virtual double operator() (dolfin::la_index_t i, dolfin::la_index_t j) const
-    //{ double value(0); get(&value, 1, &i, 1, &j); return value; }
-
-    /// Get value of given entry
-    //virtual double getitem(std::pair<dolfin::la_index_t,
-    //                       dolfin::la_index_t> ij) const
-    //{
-    //  double value(0);
-    //  get(&value, 1, &ij.first, 1, &ij.second);
-    //  return value;
-    //}
-
-    /// Set given entry to value. apply("insert") must be called
-    /// before using using the object.
-    //virtual void setitem(std::pair<dolfin::la_index_t, dolfin::la_index_t> ij,
-    //                     double value)
-    //{  set(&value, 1, &ij.first, 1, &ij.second); }
-
-    /// Insert one on the diagonal for all zero rows
-    //virtual void ident_zeros(double tol=DOLFIN_EPS);
   };
 
 }

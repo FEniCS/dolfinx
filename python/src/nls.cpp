@@ -109,7 +109,7 @@ namespace dolfin_wrappers
       // the return value policy), so the below is non-standard.  See
       // https://github.com/pybind/pybind11/issues/250.
 
-      void J(dolfin::GenericMatrix& A, const dolfin::PETScVector& x) override
+      void J(dolfin::PETScMatrix& A, const dolfin::PETScVector& x) override
       {
         PYBIND11_OVERLOAD_INT(void, dolfin::NonlinearProblem, "J", &A, &x);
         py::pybind11_fail("Tried to call pure virtual function dolfin::OptimisationProblem::J");
@@ -121,7 +121,7 @@ namespace dolfin_wrappers
         py::pybind11_fail("Tried to call pure virtual function dolfin::OptimisationProblem::F");
       }
 
-      void form(dolfin::GenericMatrix& A, dolfin::GenericMatrix& P,
+      void form(dolfin::PETScMatrix& A, dolfin::PETScMatrix& P,
                 dolfin::PETScVector& b, const dolfin::PETScVector& x) override
       {
         PYBIND11_OVERLOAD_INT(void, dolfin::NonlinearProblem, "form", &A, &P, &b, &x);
@@ -135,7 +135,7 @@ namespace dolfin_wrappers
       .def(py::init<>())
       .def("F", &dolfin::NonlinearProblem::F)
       .def("J", &dolfin::NonlinearProblem::J)
-      .def("form", (void (dolfin::NonlinearProblem::*)(dolfin::GenericMatrix&, dolfin::GenericMatrix&,
+      .def("form", (void (dolfin::NonlinearProblem::*)(dolfin::PETScMatrix&, dolfin::PETScMatrix&,
                                                        dolfin::PETScVector&, const dolfin::PETScVector&))
                     &dolfin::NonlinearProblem::form);
 
@@ -161,7 +161,7 @@ namespace dolfin_wrappers
         py::pybind11_fail("Tried to call pure virtual function dolfin::OptimisationProblem::F");
       }
 
-      void J(dolfin::GenericMatrix& A, const dolfin::PETScVector& x) override
+      void J(dolfin::PETScMatrix& A, const dolfin::PETScVector& x) override
       {
         PYBIND11_OVERLOAD_INT(void, dolfin::OptimisationProblem, "J", &A, &x);
         py::pybind11_fail("Tried to call pure virtual function dolfin::OptimisationProblem::J");
