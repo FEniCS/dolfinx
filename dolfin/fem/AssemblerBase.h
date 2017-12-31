@@ -27,15 +27,14 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <dolfin/common/types.h>
-#include <dolfin/log/log.h>
 
 namespace dolfin
 {
 
   // Forward declarations
-  class GenericTensor;
+  class GenericMatrix;
   class Form;
+  class PETScVector;
 
   /// Provide some common functions used in assembler classes.
   class AssemblerBase
@@ -71,7 +70,8 @@ namespace dolfin
     ///  GenericTensor to assemble into
     /// @param[in] a (Form&)
     ///  Form to assemble from
-    void init_global_tensor(GenericTensor& A, const Form& a);
+    void init_global_tensor(PETScVector& A, const Form& a);
+    void init_global_tensor(GenericMatrix& A, const Form& a);
 
   protected:
 

@@ -268,7 +268,7 @@ namespace dolfin_wrappers
     // dolfin::AssemblerBase
     py::class_<dolfin::AssemblerBase, std::shared_ptr<dolfin::AssemblerBase>>
       (m, "AssemblerBase")
-      .def("init_global_tensor", &dolfin::AssemblerBase::init_global_tensor)
+      //.def("init_global_tensor", &dolfin::AssemblerBase::init_global_tensor)
       .def_readwrite("add_values", &dolfin::AssemblerBase::add_values)
       .def_readwrite("keep_diagonal", &dolfin::AssemblerBase::keep_diagonal)
       .def_readwrite("finalize_tensor", &dolfin::AssemblerBase::finalize_tensor);
