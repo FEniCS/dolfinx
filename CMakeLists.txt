@@ -110,7 +110,6 @@ set(OPTIONAL_PACKAGES "")
 list(APPEND OPTIONAL_PACKAGES "MPI")
 list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
-list(APPEND OPTIONAL_PACKAGES "Trilinos")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
 list(APPEND OPTIONAL_PACKAGES "zlib")
@@ -327,82 +326,6 @@ if (DOLFIN_ENABLE_HDF5)
   set_package_properties(HDF5 PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
     URL "https://www.hdfgroup.org/HDF5")
-endif()
-
-# Check for Trilinos and the requires Trilinos packages
-if (DOLFIN_ENABLE_TRILINOS)
-  message(STATUS "Checking for Trilinos")
-  find_package(Trilinos QUIET PATHS ${TRILINOS_DIR} ${Trilinos_DIR}
-    $ENV{TRILINOS_DIR})
-  set(DOLFIN_TRILINOS_PACKAGES "Tpetra;Zoltan;MueLu;Amesos2;Ifpack2;Belos")
-
-  if ("${Trilinos_VERSION}" VERSION_LESS "12.4.0")
-    set(Trilinos_FOUND FALSE)
-    message(STATUS "Unable to find Trilinos (>= 12.4.0)")
-  endif()
-
-  set_package_properties(Trilinos PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Object-oriented framework for large-scale problems"
-    URL "https://trilinos.org")
-
-  # Check for required packages
-  set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
-  if (Trilinos_FOUND)
-    message(STATUS "  Trilinos version ${Trilinos_VERSION} found. Checking for components")
-
-    # Check that necessary packages are enabled
-    set(DOLFIN_TRILINOS_PACKAGES_FOUND true)
-    foreach (required_package ${DOLFIN_TRILINOS_PACKAGES})
-
-      # Search for required package in list of available packages
-      list(FIND Trilinos_PACKAGE_LIST ${required_package} required_trilinos_package_index)
-      if(required_trilinos_package_index EQUAL -1)
-          set(required_trilinos_package_found false)
-      else()
-          set(required_trilinos_package_found true)
-      endif()
-
-      # Print whether or not package is found
-      if (required_trilinos_package_found)
-        message(STATUS "    ${required_package} found")
-      else()
-        message(STATUS "    Trilinos found, but required package ${required_package} not found. Trilinos will be disabled.")
-        set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
-        break()
-      endif()
-
-    endforeach()
-
-    # Add package libraries if all packages have been found
-    if (DOLFIN_TRILINOS_PACKAGES_FOUND)
-      message(STATUS "  All necessary Trilinos components found. Trilinos will be enabled.")
-      set(DOLFIN_TRILINOS_DEFINITIONS)
-
-      # Loop over each package
-      foreach (package ${DOLFIN_TRILINOS_PACKAGES})
-
-        # Loop over libs and get full path
-        foreach (lib ${${package}_LIBRARIES})
-          find_library(TRILINOS_LIB_${lib} ${lib} PATHS ${${package}_LIBRARY_DIRS} NO_DEFAULT_PATH)
-          # Also search the default paths
-          find_library(TRILINOS_LIB_${lib} ${lib})
-          if (TRILINOS_LIB_${lib})
-            list(APPEND DOLFIN_TRILINOS_LIBRARIES ${TRILINOS_LIB_${lib}})
-          endif()
-        endforeach()
-
-      endforeach()
-
-      # Remove duplicates
-      list(REVERSE DOLFIN_TRILINOS_LIBRARIES)
-      list(REMOVE_DUPLICATES DOLFIN_TRILINOS_LIBRARIES)
-      list(REVERSE DOLFIN_TRILINOS_LIBRARIES)
-
-    endif()
-
-  else()
-    message(STATUS "Trilinos could not be found")
-  endif()
 endif()
 
 # Check for zlib
