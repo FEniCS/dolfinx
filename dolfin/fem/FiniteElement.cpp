@@ -53,11 +53,11 @@ void FiniteElement::tabulate_dof_coordinates(
                                          coordinate_dofs.data());
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FiniteElement>
+std::shared_ptr<FiniteElement>
 FiniteElement::extract_sub_element(const std::vector<std::size_t>& component) const
 {
   // Recursively extract sub element
-  std::shared_ptr<const FiniteElement> sub_finite_element
+  std::shared_ptr<FiniteElement> sub_finite_element
     = extract_sub_element(*this, component);
   log(DBG, "Extracted finite element for sub system: %s",
       sub_finite_element->signature().c_str());
@@ -65,7 +65,7 @@ FiniteElement::extract_sub_element(const std::vector<std::size_t>& component) co
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FiniteElement>
+std::shared_ptr<FiniteElement>
 FiniteElement::extract_sub_element(const FiniteElement& finite_element,
                                    const std::vector<std::size_t>& component)
 {
@@ -95,7 +95,7 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   }
 
   // Create sub system
-  std::shared_ptr<const FiniteElement> sub_element
+  std::shared_ptr<FiniteElement> sub_element
     = finite_element.create_sub_element(component[0]);
   dolfin_assert(sub_element);
 
@@ -108,9 +108,6 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   for (std::size_t i = 1; i < component.size(); i++)
     sub_component.push_back(component[i]);
 
-  std::shared_ptr<const FiniteElement> sub_sub_element
-    = extract_sub_element(*sub_element, sub_component);
-
-  return sub_sub_element;
+  return extract_sub_element(*sub_element, sub_component);
 }
 //-----------------------------------------------------------------------------
