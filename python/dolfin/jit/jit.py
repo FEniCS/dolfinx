@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import pkgconfig
 import numpy
 import hashlib
 import dijitso
@@ -9,6 +10,12 @@ from dolfin.cpp import MPI
 from functools import wraps
 import ffc
 from dolfin.cpp.parameter import parameters
+
+# Get DOLFIN pkg-config data
+if pkgconfig.exists("dolfin"):
+    dolfin_pc = pkgconfig.parse("dolfin")
+else:
+    raise RuntimeError("Could not find DOLFIN pkg-config file. Please make sure appropriate paths are set.")
 
 
 # Copied over from site-packages
@@ -124,18 +131,11 @@ def compile_class(cpp_data):
 
     """
 
-    import pkgconfig
-    if not pkgconfig.exists('dolfin'):
-        raise RuntimeError("Could not find DOLFIN pkg-config file. Please make sure appropriate paths are set.")
-
-    # Get DOLFIN pkg-config data
-    d = pkgconfig.parse('dolfin')
-
     # Set compiler/build options
     params = dijitso.params.default_params()
-    params['build']['include_dirs'] = d["include_dirs"]
-    params['build']['libs'] = d["libraries"]
-    params['build']['lib_dirs'] = d["library_dirs"]
+    params['build']['include_dirs'] = dolfin_pc["include_dirs"]
+    params['build']['libs'] = dolfin_pc["libraries"]
+    params['build']['lib_dirs'] = dolfin_pc["library_dirs"]
 
     name = cpp_data['name']
     if name not in ('subdomain', 'expression'):

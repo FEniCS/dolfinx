@@ -9,7 +9,7 @@
 
 import ufl
 import dolfin.cpp as cpp
-from dolfin.jit.jit import ffc_jit
+from dolfin.jit.jit import dolfin_pc, ffc_jit
 
 
 class Form(cpp.fem.Form):
@@ -33,13 +33,11 @@ class Form(cpp.fem.Form):
         # Add DOLFIN include paths (just the Boost path for special
         # math functions is really required)
         # FIXME: move getting include paths to elsewhere
-        import pkgconfig
-        d = pkgconfig.parse('dolfin')
         if form_compiler_parameters is None:
-            form_compiler_parameters = {"external_include_dirs": d["include_dirs"]}
+            form_compiler_parameters = {"external_include_dirs": dolfin_pc["include_dirs"]}
         else:
             # FIXME: add paths if dict entry already exists
-            form_compiler_parameters["external_include_dirs"] = d["include_dirs"]
+            form_compiler_parameters["external_include_dirs"] = dolfin_pc["include_dirs"]
 
         ufc_form = ffc_jit(form, form_compiler_parameters=form_compiler_parameters,
                            mpi_comm=mesh.mpi_comm())
