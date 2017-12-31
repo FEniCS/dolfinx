@@ -44,7 +44,6 @@
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
-#include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/SparsityPattern.h>
@@ -278,11 +277,11 @@ namespace dolfin_wrappers
       (m, "SystemAssembler", "DOLFIN SystemAssembler object")
       .def(py::init<std::shared_ptr<const dolfin::Form>, std::shared_ptr<const dolfin::Form>,
            std::vector<std::shared_ptr<const dolfin::DirichletBC>>>())
-      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&, dolfin::PETScVector&))
+      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::PETScMatrix&, dolfin::PETScVector&))
            &dolfin::SystemAssembler::assemble)
-      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&)) &dolfin::SystemAssembler::assemble)
+      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::PETScMatrix&)) &dolfin::SystemAssembler::assemble)
       .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::PETScVector&)) &dolfin::SystemAssembler::assemble)
-      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&, dolfin::PETScVector&,
+      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::PETScMatrix&, dolfin::PETScVector&,
                                                           const dolfin::PETScVector&))
            &dolfin::SystemAssembler::assemble)
       .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::PETScVector&, const dolfin::PETScVector&))
@@ -381,7 +380,7 @@ namespace dolfin_wrappers
       //.def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, std::shared_ptr<const dolfin::FunctionSpace>,
       //     const std::vector<std::pair<const dolfin::Point*, double>>>())
       .def("apply", (void (dolfin::PointSource::*)(dolfin::PETScVector&)) &dolfin::PointSource::apply)
-      .def("apply", (void (dolfin::PointSource::*)(dolfin::GenericMatrix&)) &dolfin::PointSource::apply);
+      .def("apply", (void (dolfin::PointSource::*)(dolfin::PETScMatrix&)) &dolfin::PointSource::apply);
 
     // dolfin::NonlinearVariationalProblem
     py::class_<dolfin::NonlinearVariationalProblem,

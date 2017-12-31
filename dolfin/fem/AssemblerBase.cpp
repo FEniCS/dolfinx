@@ -27,7 +27,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
-#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/IndexMap.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/TensorLayout.h>
@@ -83,7 +83,7 @@ void AssemblerBase::init_global_tensor(PETScVector& x, const Form& a)
     x.zero();
 }
 //-----------------------------------------------------------------------------
-void AssemblerBase::init_global_tensor(GenericMatrix& A, const Form& a)
+void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
 {
   dolfin_assert(a.ufc_form());
   if (a.rank() != 2)
@@ -178,7 +178,7 @@ void AssemblerBase::init_global_tensor(GenericMatrix& A, const Form& a)
 
     // Insert zeros on the diagonal as diagonal entries may be
     // prematurely optimised away by the linear algebra backend when
-    // calling GenericMatrix::apply, e.g. PETSc does this then errors
+    // calling PETScMatrix::apply, e.g. PETSc does this then errors
     // when matrices have no diagonal entry inserted.
     if (keep_diagonal)
     {

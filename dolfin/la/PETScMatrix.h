@@ -37,7 +37,7 @@
 #include <petscmat.h>
 #include <petscsys.h>
 
-#include "GenericMatrix.h"
+#include "GenericTensor.h"
 #include "PETScBaseMatrix.h"
 
 namespace dolfin
@@ -55,7 +55,7 @@ namespace dolfin
   /// access the PETSc Mat pointer using the function mat() and
   /// use the standard PETSc interface.
 
-  class PETScMatrix : public GenericMatrix, public PETScBaseMatrix
+  class PETScMatrix : public GenericTensor, public PETScBaseMatrix
   {
   public:
 
@@ -107,6 +107,31 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
+
+    /// Return tensor rank (number of dimensions)
+    virtual std::size_t rank() const
+    { return 2; }
+
+    /// Set block of values using local indices
+    virtual void set_local(const double* block,
+                           const dolfin::la_index_t* num_rows,
+                           const dolfin::la_index_t * const * rows)
+    { set_local(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block,
+                           const dolfin::la_index_t* num_rows,
+                           const dolfin::la_index_t * const * rows)
+    { add_local(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
+
+    /// Add block of values using local indices
+    virtual void
+      add_local(const double* block,
+                const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
+    {
+      add_local(block, rows[0].size(), rows[0].data(),
+                rows[1].size(), rows[1].data());
+    }
 
     //--- Implementation of the GenericMatrix interface --
 

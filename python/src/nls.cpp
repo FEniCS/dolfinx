@@ -22,7 +22,6 @@
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/parameter/Parameters.h>
-#include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScObject.h>

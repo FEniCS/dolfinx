@@ -29,7 +29,7 @@
 #include "casters.h"
 
 #include <dolfin/la/GenericTensor.h>
-#include <dolfin/la/GenericMatrix.h>
+//#include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/IndexMap.h>
 #include <dolfin/la/Scalar.h>
 #include <dolfin/la/TensorLayout.h>
@@ -211,6 +211,7 @@ namespace dolfin_wrappers
            { return MPICommWrapper(self.mpi_comm()); });
 
     // dolfin::GenericMatrix
+    /*
     py::class_<dolfin::GenericMatrix, std::shared_ptr<dolfin::GenericMatrix>,
                dolfin::GenericTensor>
       (m, "GenericMatrix", py::dynamic_attr(), "DOLFIN GenericMatrix object")
@@ -250,7 +251,6 @@ namespace dolfin_wrappers
       //       self.mult(x, *y);
       //      return y;
       //     }, py::is_operator())
-      /*
       .def("__mul__", [](const dolfin::GenericMatrix& self, const py::array_t<double> x)
            {
              if (x.ndim() != 1)
@@ -272,7 +272,6 @@ namespace dolfin_wrappers
              y->get_local(values);
              return py::array_t<double>(values.size(), values.data());
            }, "Multiply a DOLFIN matrix and a NumPy array (non-distributed matricds only)")
-      */
       // __div__
       //.def("__truediv__", [](const dolfin::GenericMatrix& self, double a)
       //     { auto B = self.copy(); (*B) /= a; return B; }, py::is_operator())
@@ -310,7 +309,6 @@ namespace dolfin_wrappers
              self.set((const double *) block.data(), rows.size(), rows.data(),
                       cols.size(), cols.data());
            }, py::arg("block"), py::arg("rows"), py::arg("cols"))
-      /*
       .def("getrow", [](const dolfin::GenericMatrix& instance, std::size_t row)
            {
              std::vector<double> values;
@@ -320,8 +318,6 @@ namespace dolfin_wrappers
              auto _values = py::array_t<double>(values.size(), values.data());
              return std::make_pair(_columns, _values);
            }, py::arg("row"))
-      */
-      /*
       .def("array", [](const dolfin::GenericMatrix& instance)
            {
              // FIXME: This function is highly dubious. It assumes a
@@ -344,8 +340,8 @@ namespace dolfin_wrappers
 
              return A;
            })
-      */
       ;
+    */
 
     /*
     // dolfin::GenericVector
@@ -635,7 +631,7 @@ namespace dolfin_wrappers
 
     // dolfin::PETScMatrix
     py::class_<dolfin::PETScMatrix, std::shared_ptr<dolfin::PETScMatrix>,
-               dolfin::GenericMatrix, dolfin::PETScBaseMatrix>
+               dolfin::GenericTensor, dolfin::PETScBaseMatrix>
       (m, "PETScMatrix", "DOLFIN PETScMatrix object")
       .def(py::init([](const MPICommWrapper comm)
         { return std::make_unique<dolfin::PETScMatrix>(comm.get()); }))

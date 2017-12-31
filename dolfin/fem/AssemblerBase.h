@@ -32,7 +32,7 @@ namespace dolfin
 {
 
   // Forward declarations
-  class GenericMatrix;
+  class PETScMatrix;
   class Form;
   class PETScVector;
 
@@ -71,7 +71,7 @@ namespace dolfin
     /// @param[in] a (Form&)
     ///  Form to assemble from
     void init_global_tensor(PETScVector& A, const Form& a);
-    void init_global_tensor(GenericMatrix& A, const Form& a);
+    void init_global_tensor(PETScMatrix& A, const Form& a);
 
   protected:
 
