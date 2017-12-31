@@ -10,7 +10,7 @@ pipelines:
           - pip3 install git+https://bitbucket.org/fenics-project/ffc.git@master
           - mkdir -p build
           - cd build
-          - cmake -DCMAKE_BUILD_TYPE=Debug ..
+          - cmake -DCMAKE_BUILD_TYPE=Developer ..
           - make -j2
           - make install
           - cd ../python

@@ -65,12 +65,12 @@ MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
   return *this;
 }
 //-----------------------------------------------------------------------------
-std::int32_t MeshTopology::dim() const
+std::uint32_t MeshTopology::dim() const
 {
   return _num_entities.size() - 1;
 }
 //-----------------------------------------------------------------------------
-std::int32_t MeshTopology::size(unsigned int dim) const
+std::uint32_t MeshTopology::size(unsigned int dim) const
 {
   if (_num_entities.empty())
     return 0;
@@ -79,7 +79,7 @@ std::int32_t MeshTopology::size(unsigned int dim) const
   return _num_entities[dim];
 }
 //-----------------------------------------------------------------------------
-std::int64_t MeshTopology::size_global(unsigned int dim) const
+std::uint64_t MeshTopology::size_global(unsigned int dim) const
 {
   if (_global_num_entities.empty())
     return 0;
@@ -88,7 +88,7 @@ std::int64_t MeshTopology::size_global(unsigned int dim) const
   return _global_num_entities[dim];
 }
 //-----------------------------------------------------------------------------
-std::size_t MeshTopology::ghost_offset(unsigned int dim) const
+std::uint32_t MeshTopology::ghost_offset(unsigned int dim) const
 {
   if (_ghost_offset_index.empty())
     return 0;

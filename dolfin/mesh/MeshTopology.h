@@ -58,18 +58,17 @@ namespace dolfin
     MeshTopology& operator= (const MeshTopology& topology);
 
     /// Return topological dimension
-    std::int32_t dim() const;
+    std::uint32_t dim() const;
 
     /// Return number of entities for given dimension (local to process)
-    std::int32_t size(unsigned int dim) const;
+    std::uint32_t size(unsigned int dim) const;
 
     /// Return global number of entities for given dimension
-    std::int64_t size_global(unsigned int dim) const;
+    std::uint64_t size_global(unsigned int dim) const;
 
-    // FIXME: use fixed-width signed int for return value
     /// Return number of regular (non-ghost) entities or equivalently,
     /// the offset of where ghost entities begin
-    std::size_t ghost_offset(unsigned int dim) const;
+    std::uint32_t ghost_offset(unsigned int dim) const;
 
     /// Clear all data
     void clear();
@@ -97,7 +96,7 @@ namespace dolfin
                           std::int64_t global_index)
     {
       dolfin_assert(dim < _global_indices.size());
-      dolfin_assert(local_index < _global_indices[dim].size());
+      dolfin_assert(local_index < (std::int32_t)_global_indices[dim].size());
       _global_indices[dim][local_index] = global_index;
     }
 
