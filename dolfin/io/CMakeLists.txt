@@ -9,7 +9,6 @@ set(HEADERS
   VTKFile.h
   VTKWriter.h
   XDMFFile.h
-  xmlutils.h
   PARENT_SCOPE)
 
 set(SOURCES
@@ -22,5 +21,4 @@ set(SOURCES
   VTKFile.cpp
   VTKWriter.cpp
   XDMFFile.cpp
-  xmlutils.cpp
   PARENT_SCOPE)

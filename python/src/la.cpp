@@ -620,6 +620,7 @@ namespace dolfin_wrappers
       .def("set_options_prefix", &dolfin::PETScVector::set_options_prefix)
       .def("update_ghost_values", &dolfin::PETScVector::update_ghost_values)
       .def("size",  (std::size_t (dolfin::PETScVector::*)() const) &dolfin::PETScVector::size)
+      .def("norm", &dolfin::PETScVector::norm)
       .def("vec", &dolfin::PETScVector::vec, "Return underlying PETSc Vec object");
 
     // dolfin::PETScBaseMatrix

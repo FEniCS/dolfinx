@@ -20,3 +20,5 @@ pipelines:
           - cd documented/poisson
           - python3 ./demo_poisson.py
           - mpirun -np 3 python3 ./demo_poisson.py
+          - cd ../stokes-taylor-hood
+          - python3 ./demo_stokes-taylor-hood.py

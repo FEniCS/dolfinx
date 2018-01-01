@@ -110,14 +110,6 @@ if (DOLFIN_ENABLE_HDF5 AND HDF5_FOUND)
   target_include_directories(dolfin SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
 endif()
 
-# Trilinos
-if (DOLFIN_ENABLE_TRILINOS AND DOLFIN_TRILINOS_PACKAGES_FOUND)
-  target_compile_definitions(dolfin PUBLIC HAS_TRILINOS)
-  target_compile_definitions(dolfin PUBLIC ${DOLFIN_TRILINOS_DEFINITIONS})
-  target_link_libraries(dolfin PUBLIC ${DOLFIN_TRILINOS_LIBRARIES})
-  target_include_directories(dolfin SYSTEM PUBLIC ${Trilinos_INCLUDE_DIRS})
-endif()
-
 # SLEPC
 if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_SLEPC AND SLEPC_FOUND)
   target_compile_definitions(dolfin PUBLIC HAS_SLEPC)

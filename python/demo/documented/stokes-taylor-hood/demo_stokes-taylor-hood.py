@@ -33,15 +33,15 @@ from dolfin import *
 
 
 # Load mesh and subdomains
-mesh = Mesh("../dolfin_fine.xml.gz")
-sub_domains = MeshFunction("size_t", mesh, "../dolfin_fine_subdomains.xml.gz")
+mesh = RectangleMesh.create(MPI.comm_world, [Point(0,0), Point(1,1)], [32, 32], CellType.Type.triangle)
+print(mesh.topology().dim())
 
-
-plt.figure()
-plot(mesh)
-
-plt.figure()
-plot(sub_domains)
+sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim()-1)
+for f in facets(mesh):
+    if f.midpoint().y() == 0.0 or f.midpoint().y() == 1.0:
+        sub_domains[f] = 1
+    if f.midpoint().x() == 1.0:
+        sub_domains[f] = 2
 
 # Define function spaces
 P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
@@ -52,12 +52,12 @@ W = FunctionSpace(mesh, TH)
 # No-slip boundary condition for velocity
 # x1 = 0, x1 = 1 and around the dolphin
 noslip = Constant((0, 0))
-bc0 = DirichletBC(W.sub(0), noslip, sub_domains, 0)
+bc0 = DirichletBC(W.sub(0), noslip, sub_domains, 1)
 
 # Inflow boundary condition for velocity
 # x0 = 1
 inflow = Expression(("-sin(x[1]*pi)", "0.0"), degree=2)
-bc1 = DirichletBC(W.sub(0), inflow, sub_domains, 1)
+bc1 = DirichletBC(W.sub(0), inflow, sub_domains, 2)
 
 # Collect boundary conditions
 bcs = [bc0, bc1]
@@ -84,10 +84,11 @@ print("Norm of pressure coefficient vector: %.15g" % p.vector().norm("l2"))
 (u, p) = w.split()
 
 # Save solution in VTK format
-ufile_pvd = File("velocity.pvd")
-ufile_pvd << u
-pfile_pvd = File("pressure.pvd")
-pfile_pvd << p
+with XDMFFile(MPI.comm_world, "velocity.xdmf") as ufile_pvd:
+    ufile_pvd.write(u)
+
+with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_pvd:
+    pfile_pvd.write(p)
 
 # Plot solution
 plt.figure()
