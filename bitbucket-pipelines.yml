@@ -19,3 +19,4 @@ pipelines:
           - python3 ./generate-demo-files.py
           - cd documented/poisson
           - python3 ./demo_poisson.py
+          - mpirun -np 3 python3 ./demo_poisson.py

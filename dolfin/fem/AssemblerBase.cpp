@@ -65,8 +65,17 @@ void AssemblerBase::init_global_tensor(PETScVector& x, const Form& a)
     // Get dimensions and mapping across processes for each dimension
     auto index_map = dofmap->index_map();
 
+    // FIXME: Do we need to sort out ghosts here
+    // Build ghost
+    //std::vector<dolfin::la_index_t> ghosts;
+
+    // Build local-to-global index map
+    std::vector<std::size_t> local_to_global(index_map->size(IndexMap::MapSize::ALL));
+    for (std::size_t i = 0; i < local_to_global.size(); ++i)
+      local_to_global[i] = index_map->local_to_global(i);
+
     // Initialize tensor
-    x.init(index_map->local_range());
+    x.init(index_map->local_range(), local_to_global, {});
   }
   else
   {
@@ -111,7 +120,8 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
     dolfin_assert(tensor_layout);
 
     // Get dimensions and mapping across processes for each dimension
-    std::vector<std::shared_ptr<const IndexMap>> index_maps = {dofmaps[0]->index_map(), dofmaps[1]->index_map()};
+    std::vector<std::shared_ptr<const IndexMap>> index_maps = {dofmaps[0]->index_map(),
+                                                               dofmaps[1]->index_map()};
 
     // Initialise tensor layout
     // FIXME: somewhere need to check block sizes are same on both axes

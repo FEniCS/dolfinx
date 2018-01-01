@@ -26,15 +26,12 @@
 #define __GENERIC_TENSOR_H
 
 #include <cstdint>
-#include <exception>
 #include <memory>
-#include <typeinfo>
 #include <utility>
 
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
-#include <dolfin/log/log.h>
 
 namespace dolfin
 {

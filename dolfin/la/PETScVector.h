@@ -65,12 +65,6 @@ namespace dolfin
     /// Create empty vector on an MPI communicator
     explicit PETScVector(MPI_Comm comm);
 
-    /// Create vector of size N
-    PETScVector(MPI_Comm comm, std::size_t N);
-
-    /// Create vector
-    explicit PETScVector(const SparsityPattern& sparsity_pattern);
-
     /// Copy constructor
     PETScVector(const PETScVector& x);
 
@@ -111,17 +105,13 @@ namespace dolfin
     /// Set block of values using global indices
     void set(const double* block, const dolfin::la_index_t* num_rows,
                      const dolfin::la_index_t * const * rows)
-    {
-      this->set(block, num_rows[0], rows[0]);
-    }
+    { this->set(block, num_rows[0], rows[0]); }
 
     /// Set block of values using local indices
     void set_local(const double* block,
                            const dolfin::la_index_t* num_rows,
                            const dolfin::la_index_t * const * rows)
-    {
-      this->set_local(block, num_rows[0], rows[0]);
-    }
+    { this->set_local(block, num_rows[0], rows[0]); }
 
     /// Add block of values using global indices
     virtual void add(const double* block, const dolfin::la_index_t* num_rows,
@@ -149,7 +139,6 @@ namespace dolfin
     std::size_t rank() const
     { return 1;}
 
-    /// Initialize zero tensor using sparsity pattern
     /// FIXME: This needs to be implemented on backend side! Remove it!
     virtual void init(const TensorLayout& tensor_layout)
     {
@@ -183,7 +172,6 @@ namespace dolfin
       this->zero();
     }
 
-
     /// Initialize vector to global size N
     virtual void init(std::size_t N);
 
@@ -195,9 +183,6 @@ namespace dolfin
     virtual void init(std::pair<std::size_t, std::size_t> range,
                       const std::vector<std::size_t>& local_to_global_map,
                       const std::vector<la_index_t>& ghost_indices);
-
-    // Bring init function from PETScVector into scope
-    //using GenericVector::init;
 
     /// Return true if vector is empty
     virtual bool empty() const;
@@ -340,11 +325,6 @@ namespace dolfin
     void reset(Vec vec);
 
   private:
-
-    // Initialise PETSc vector
-    void _init(std::pair<std::size_t, std::size_t> range,
-               const std::vector<std::size_t>& local_to_global_map,
-               const std::vector<la_index_t>& ghost_indices);
 
     // PETSc Vec pointer
     Vec _x;

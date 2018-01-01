@@ -48,19 +48,6 @@ PETScVector::PETScVector(MPI_Comm comm) : _x(nullptr)
   CHECK_ERROR("VecCreate");
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(MPI_Comm comm, std::size_t N) : PETScVector(comm)
-{
-  // Compute a local range and initialise vector
-  const auto range = dolfin::MPI::local_range(comm, N);
-  _init(range, {}, {});
-}
-//-----------------------------------------------------------------------------
-PETScVector::PETScVector(const SparsityPattern& sparsity_pattern)
-  : PETScVector(sparsity_pattern.mpi_comm())
-{
-  _init(sparsity_pattern.local_range(0), {}, {});
-}
-//-----------------------------------------------------------------------------
 PETScVector::PETScVector(Vec x) : _x(x)
 {
   // Increase reference count to PETSc object
@@ -98,20 +85,87 @@ std::shared_ptr<PETScVector> PETScVector::copy() const
 void PETScVector::init(std::size_t N)
 {
   const auto range = dolfin::MPI::local_range(this->mpi_comm(), N);
-  _init(range, {}, {});
+  init(range, {}, {});
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(std::pair<std::size_t, std::size_t> range)
 {
-  _init(range, {}, {});
+  init(range, {}, {});
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(std::pair<std::size_t, std::size_t> range,
                        const std::vector<std::size_t>& local_to_global_map,
                        const std::vector<la_index_t>& ghost_indices)
 {
-  // Initialise vector
-  _init(range, local_to_global_map, ghost_indices);
+  if (!_x)
+  {
+    dolfin_error("PETScVector.h",
+                 "initialize vector",
+                 "Underlying PETSc Vec has not been initialized");
+  }
+
+  PetscErrorCode ierr;
+
+  // Set from PETSc options. This will set the vector type.
+  ierr = VecSetFromOptions(_x);
+  CHECK_ERROR("VecSetFromOptions");
+
+  // Get local size
+  const std::size_t local_size = range.second - range.first;
+  dolfin_assert(range.second >= range.first);
+
+  // Set vector size
+  ierr = VecSetSizes(_x, local_size, PETSC_DECIDE);
+  CHECK_ERROR("VecSetSizes");
+
+  // Get PETSc Vec type
+  VecType vec_type = nullptr;
+  ierr = VecGetType(_x, &vec_type);
+  CHECK_ERROR("VecGetType");
+
+  // Add ghost points if Vec type is MPI (throw an error if Vec is not
+  // VECMPI and ghost entry vector is not empty)
+  if (strcmp(vec_type, VECMPI) == 0)
+  {
+    ierr = VecMPISetGhost(_x, ghost_indices.size(), ghost_indices.data());
+    CHECK_ERROR("VecMPISetGhost");
+  }
+  else if (!ghost_indices.empty())
+  {
+    dolfin_error("PETScVector.cpp",
+                 "initialize vector",
+                 "Sequential PETSc Vec objects cannot have ghost entries");
+  }
+
+  // Build local-to-global map
+  std::vector<PetscInt> _map;
+  if (!local_to_global_map.empty())
+  {
+    // Copy data to get correct PETSc integer type
+    _map = std::vector<PetscInt>(local_to_global_map.begin(),
+                                 local_to_global_map.end());
+  }
+  else
+  {
+    // Fill vector with [i0 + 0, i0 + 1, i0 +2, . . .]
+    const std::size_t size = range.second - range.first;
+    _map.assign(size, range.first);
+    std::iota(_map.begin(), _map.end(), range.first);
+  }
+
+  // Create PETSc local-to-global map
+  ISLocalToGlobalMapping petsc_local_to_global;
+  ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, 1, _map.size(), _map.data(),
+                               PETSC_COPY_VALUES, &petsc_local_to_global);
+  CHECK_ERROR("ISLocalToGlobalMappingCreate");
+
+  // Apply local-to-global map to vector
+  ierr = VecSetLocalToGlobalMapping(_x, petsc_local_to_global);
+  CHECK_ERROR("VecSetLocalToGlobalMapping");
+
+  // Clean-up PETSc local-to-global map
+  ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
+  CHECK_ERROR("ISLocalToGlobalMappingDestroy");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(std::vector<double>& values) const
@@ -817,81 +871,6 @@ void PETScVector::reset(Vec vec)
   _x = vec;
   ierr = PetscObjectReference((PetscObject)_x);
   CHECK_ERROR("PetscObjectReference");
-}
-//-----------------------------------------------------------------------------
-void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
-                        const std::vector<std::size_t>& local_to_global_map,
-                        const std::vector<la_index_t>& ghost_indices)
-{
-  if (!_x)
-  {
-    dolfin_error("PETScVector.h",
-                 "initialize vector",
-                 "Underlying PETSc Vec has not been initialized");
-  }
-
-  PetscErrorCode ierr;
-
-  // Set from PETSc options. This will set the vector type.
-  ierr = VecSetFromOptions(_x);
-  CHECK_ERROR("VecSetFromOptions");
-
-  // Get local size
-  const std::size_t local_size = range.second - range.first;
-  dolfin_assert(range.second >= range.first);
-
-  // Set vector size
-  ierr = VecSetSizes(_x, local_size, PETSC_DECIDE);
-  CHECK_ERROR("VecSetSizes");
-
-  // Get PETSc Vec type
-  VecType vec_type = nullptr;
-  ierr = VecGetType(_x, &vec_type);
-  CHECK_ERROR("VecGetType");
-
-  // Add ghost points if Vec type is MPI (throw an error if Vec is not
-  // VECMPI and ghost entry vector is not empty)
-  if (strcmp(vec_type, VECMPI) == 0)
-  {
-    ierr = VecMPISetGhost(_x, ghost_indices.size(), ghost_indices.data());
-    CHECK_ERROR("VecMPISetGhost");
-  }
-  else if (!ghost_indices.empty())
-  {
-    dolfin_error("PETScVector.cpp",
-                 "initialize vector",
-                 "Sequential PETSc Vec objects cannot have ghost entries");
-  }
-
-  // Build local-to-global map
-  std::vector<PetscInt> _map;
-  if (!local_to_global_map.empty())
-  {
-    // Copy data to get correct PETSc integer type
-    _map = std::vector<PetscInt>(local_to_global_map.begin(),
-                                 local_to_global_map.end());
-  }
-  else
-  {
-    // Fill vector with [i0 + 0, i0 + 1, i0 +2, . . .]
-    const std::size_t size = range.second - range.first;
-    _map.assign(size, range.first);
-    std::iota(_map.begin(), _map.end(), range.first);
-  }
-
-  // Create PETSc local-to-global map
-  ISLocalToGlobalMapping petsc_local_to_global;
-  ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, 1, _map.size(), _map.data(),
-                               PETSC_COPY_VALUES, &petsc_local_to_global);
-  CHECK_ERROR("ISLocalToGlobalMappingCreate");
-
-  // Apply local-to-global map to vector
-  ierr = VecSetLocalToGlobalMapping(_x, petsc_local_to_global);
-  CHECK_ERROR("VecSetLocalToGlobalMapping");
-
-  // Clean-up PETSc local-to-global map
-  ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
-  CHECK_ERROR("ISLocalToGlobalMappingDestroy");
 }
 //-----------------------------------------------------------------------------
 
