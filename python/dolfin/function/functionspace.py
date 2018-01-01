@@ -121,7 +121,7 @@ class FunctionSpace(ufl.FunctionSpace):
         assert hasattr(self.ufl_element(), "sub_elements")
 
         # Extend with the python layer
-        return FunctionSpace(cpp.function.FunctionSpace.sub(self._cpp_object, i))
+        return FunctionSpace(cpp.function.FunctionSpace.sub(self._cpp_object, [i]))
 
     def component(self):
         return self._cpp_object.component()

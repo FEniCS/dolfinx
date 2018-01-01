@@ -215,7 +215,7 @@ class Function(ufl.Coefficient):
                 # If passing only the FunctionSpace
                 self._cpp_object = cpp.function.Function(V._cpp_object)
             elif len(args) == 2:
-                if isinstance(args[1], cpp.la.GenericVector):
+                if isinstance(args[1], cpp.la.PETScVector):
                     self._cpp_object = cpp.function.Function(V._cpp_object, args[1])
                 elif isinstance(args[1], cpp.function.Function):
                     self._cpp_object = args[1]

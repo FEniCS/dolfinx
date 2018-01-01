@@ -19,3 +19,5 @@ pipelines:
           - python3 ./generate-demo-files.py
           - cd documented/poisson
           - python3 ./demo_poisson.py
+          - cd ../stokes-taylor-hood
+          - python3 ./demo_stokes-taylor-hood.py
