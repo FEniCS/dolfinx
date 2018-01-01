@@ -28,7 +28,7 @@ namespace dolfin
 
   // Forward declarations
   class FunctionSpace;
-  class GenericMatrix;
+  class PETScMatrix;
   class PETScVector;
   class Mesh;
 
@@ -71,7 +71,7 @@ namespace dolfin
     void apply(PETScVector& b);
 
     /// Apply (add) point source to matrix
-    void apply(GenericMatrix& A);
+    void apply(PETScMatrix& A);
 
   private:
 

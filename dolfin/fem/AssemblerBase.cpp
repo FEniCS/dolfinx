@@ -21,16 +21,18 @@
 // Modified by Johannes Ring, 2012
 // Modified by Martin Alnaes, 2014
 
+#include <iostream>
 #include <memory>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
-#include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericTensor.h>
+#include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/IndexMap.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/TensorLayout.h>
 #include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
@@ -45,14 +47,55 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
+void AssemblerBase::init_global_tensor(PETScVector& x, const Form& a)
 {
   dolfin_assert(a.ufc_form());
+  if (a.rank() != 1)
+  {
+    dolfin_error("AssemblerBase.cpp",
+                 "intialise vector",
+                 "Form is not a linear form");
+  }
+
+  // Get dof map
+  auto dofmap = a.function_space(0)->dofmap();
+
+  if (x.empty())
+  {
+    // Get dimensions and mapping across processes for each dimension
+    auto index_map = dofmap->index_map();
+
+    // Initialize tensor
+    x.init(index_map->local_range());
+  }
+  else
+  {
+    // If tensor is not reset, check that dimensions are correct
+    if (x.size(0) != dofmap->global_dimension())
+    {
+      dolfin_error("AssemblerBase.cpp",
+                   "assemble form",
+                   "Size of vector does not match form");
+    }
+  }
+
+  if (!add_values)
+    x.zero();
+}
+//-----------------------------------------------------------------------------
+void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
+{
+  dolfin_assert(a.ufc_form());
+  if (a.rank() != 2)
+  {
+    dolfin_error("AssemblerBase.cpp",
+                 "intialise matrix",
+                 "Form is not a bilinear form");
+  }
 
   // Get dof maps
-  std::vector<const GenericDofMap*> dofmaps;
-  for (std::size_t i = 0; i < a.rank(); ++i)
-    dofmaps.push_back(a.function_space(i)->dofmap().get());
+  std::vector<const GenericDofMap*> dofmaps = {a.function_space(0)->dofmap().get(),
+                                               a.function_space(1)->dofmap().get()};
 
   // Get mesh
   dolfin_assert(a.mesh());
@@ -63,19 +106,12 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     Timer t0("Build sparsity");
 
     // Create layout for initialising tensor
-    TensorLayout::Sparsity sparsity = TensorLayout::Sparsity::DENSE;
-    if (a.rank() > 1)
-      sparsity = TensorLayout::Sparsity::SPARSE;
+    TensorLayout::Sparsity sparsity = TensorLayout::Sparsity::SPARSE;
     auto tensor_layout =  std::make_shared<TensorLayout>(A.mpi_comm(), 0, sparsity);
     dolfin_assert(tensor_layout);
 
     // Get dimensions and mapping across processes for each dimension
-    std::vector<std::shared_ptr<const IndexMap>> index_maps;
-    for (std::size_t i = 0; i < a.rank(); i++)
-    {
-      dolfin_assert(dofmaps[i]);
-      index_maps.push_back(dofmaps[i]->index_map());
-    }
+    std::vector<std::shared_ptr<const IndexMap>> index_maps = {dofmaps[0]->index_map(), dofmaps[1]->index_map()};
 
     // Initialise tensor layout
     // FIXME: somewhere need to check block sizes are same on both axes
@@ -85,19 +121,14 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     //            correct int type
 
     tensor_layout->init(index_maps, TensorLayout::Ghosts::UNGHOSTED);
-
-    // Build sparsity pattern if required
-    if (tensor_layout->sparsity_pattern())
-    {
-      SparsityPattern& pattern = *tensor_layout->sparsity_pattern();
-      SparsityPatternBuilder::build(pattern,
-                                    mesh, dofmaps,
-                                    a.ufc_form()->has_cell_integrals(),
-                                    a.ufc_form()->has_interior_facet_integrals(),
-                                    a.ufc_form()->has_exterior_facet_integrals(),
-                                    a.ufc_form()->has_vertex_integrals(),
-                                    keep_diagonal);
-    }
+    SparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+    SparsityPatternBuilder::build(pattern,
+                                  mesh, dofmaps,
+                                  a.ufc_form()->has_cell_integrals(),
+                                  a.ufc_form()->has_interior_facet_integrals(),
+                                  a.ufc_form()->has_exterior_facet_integrals(),
+                                  a.ufc_form()->has_vertex_integrals(),
+                                  keep_diagonal);
     t0.stop();
 
     // Initialize tensor
@@ -109,58 +140,48 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
     // to avoid CSR data reallocation when assembling in random order
     // resulting in quadratic complexity; this has to be done before
     // inserting to diagonal below
-    if (tensor_layout->sparsity_pattern())
+
+    // Tabulate indices of dense rows
+    const std::size_t primary_dim = tensor_layout->sparsity_pattern()->primary_dim();
+    std::vector<std::size_t> global_dofs;
+    dofmaps[primary_dim]->tabulate_global_dofs(global_dofs);
+
+    if (global_dofs.size() > 0)
     {
-      // Tabulate indices of dense rows
-      const std::size_t primary_dim
-        = tensor_layout->sparsity_pattern()->primary_dim();
-      std::vector<std::size_t> global_dofs;
-      dofmaps[primary_dim]->tabulate_global_dofs(global_dofs);
+      // Get local row range
+      const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
+      const IndexMap& index_map_0 = *dofmaps[primary_dim]->index_map();
+      const std::pair<std::size_t, std::size_t> row_range
+        = A.local_range(primary_dim);
 
-      if (global_dofs.size() > 0)
+      // Set zeros in dense rows in order of increasing column index
+      const double block = 0.0;
+      dolfin::la_index_t IJ[2];
+      for (std::size_t i: global_dofs)
       {
-        // Down cast tensor to matrix
-        dolfin_assert(A.rank() == 2);
-        GenericMatrix& _matA = dynamic_cast<GenericMatrix&>(A);
-
-        // Get local row range
-        const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
-        const IndexMap& index_map_0 = *dofmaps[primary_dim]->index_map();
-        const std::pair<std::size_t, std::size_t> row_range
-          = A.local_range(primary_dim);
-
-        // Set zeros in dense rows in order of increasing column index
-        const double block = 0.0;
-        dolfin::la_index_t IJ[2];
-        for (std::size_t i: global_dofs)
+        const std::size_t I = index_map_0.local_to_global(i);
+        if (I >= row_range.first && I < row_range.second)
         {
-          const std::size_t I = index_map_0.local_to_global(i);
-          if (I >= row_range.first && I < row_range.second)
+          IJ[primary_dim] = I;
+          for (std::size_t J = 0; J < A.size(primary_codim); J++)
           {
-            IJ[primary_dim] = I;
-            for (std::size_t J = 0; J < _matA.size(primary_codim); J++)
-            {
-              IJ[primary_codim] = J;
-              _matA.set(&block, 1, &IJ[0], 1, &IJ[1]);
-            }
+            IJ[primary_codim] = J;
+            A.set(&block, 1, &IJ[0], 1, &IJ[1]);
           }
         }
-
-        // Eventually wait with assembly flush for keep_diagonal
-        if (!keep_diagonal)
-          A.apply("flush");
       }
+
+      // Eventually wait with assembly flush for keep_diagonal
+      if (!keep_diagonal)
+        A.apply("flush");
     }
 
     // Insert zeros on the diagonal as diagonal entries may be
     // prematurely optimised away by the linear algebra backend when
-    // calling GenericMatrix::apply, e.g. PETSc does this then errors
+    // calling PETScMatrix::apply, e.g. PETSc does this then errors
     // when matrices have no diagonal entry inserted.
-    if (keep_diagonal && A.rank() == 2)
+    if (keep_diagonal)
     {
-      // Down cast to GenericMatrix
-      GenericMatrix& _matA = dynamic_cast<GenericMatrix&>(A);
-
       // Loop over rows and insert 0.0 on the diagonal
       const double block = 0.0;
       const std::pair<std::size_t, std::size_t> row_range = A.local_range(0);
@@ -169,7 +190,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
       for (std::size_t i = row_range.first; i < range; i++)
       {
         const dolfin::la_index_t _i = i;
-        _matA.set(&block, 1, &_i, 1, &_i);
+        A.set(&block, 1, &_i, 1, &_i);
       }
 
       A.apply("flush");

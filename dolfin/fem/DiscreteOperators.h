@@ -24,7 +24,7 @@ namespace dolfin
 {
 
   class FunctionSpace;
-  class GenericMatrix;
+  class PETScMatrix;
 
   /// Discrete gradient operators providing derivatives of functions
 
@@ -52,8 +52,8 @@ namespace dolfin
     /// @param[in] V1 (FunctionSpace&)
     ///  P1 Lagrange space
     ///
-    /// @return GenericMatrix
-    static std::shared_ptr<GenericMatrix>
+    /// @return PETScMatrix
+    static std::shared_ptr<PETScMatrix>
       build_gradient(const FunctionSpace& V0, const FunctionSpace& V1);
 
   };

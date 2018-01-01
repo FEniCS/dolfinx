@@ -19,7 +19,7 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/TensorLayout.h>
@@ -31,7 +31,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericMatrix>
+std::shared_ptr<PETScMatrix>
 DiscreteOperators::build_gradient(const FunctionSpace& V0,
                                   const FunctionSpace& V1)
 {

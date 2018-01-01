@@ -45,7 +45,7 @@ namespace dolfin
   class Facet;
   class Form;
   class GenericDofMap;
-  class GenericMatrix;
+  class PETScMatrix;
   class PETScVector;
   template<typename T> class MeshFunction;
   class UFC;
@@ -65,10 +65,10 @@ namespace dolfin
                     std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
     /// Assemble system (A, b)
-    void assemble(GenericMatrix& A, PETScVector& b);
+    void assemble(PETScMatrix& A, PETScVector& b);
 
     /// Assemble matrix A
-    void assemble(GenericMatrix& A);
+    void assemble(PETScMatrix& A);
 
     /// Assemble vector b
     void assemble(PETScVector& b);
@@ -76,7 +76,7 @@ namespace dolfin
     /// Assemble system (A, b) for (negative) increment dx, where x =
     /// x0 - dx is solution to system a == -L subject to bcs.
     /// Suitable for use inside a (quasi-)Newton solver.
-    void assemble(GenericMatrix& A, PETScVector& b, const PETScVector& x0);
+    void assemble(PETScMatrix& A, PETScVector& b, const PETScVector& x0);
 
     /// Assemble rhs vector b for (negative) increment dx, where x =
     /// x0 - dx is solution to system a == -L subject to bcs.
@@ -103,7 +103,7 @@ namespace dolfin
       (std::shared_ptr<const FunctionSpace> fs, std::size_t bc_index);
 
     // Assemble system
-    void assemble(GenericMatrix* A, PETScVector* b,
+    void assemble(PETScMatrix* A, PETScVector* b,
                   const PETScVector* x0);
 
     // Bilinear and linear forms

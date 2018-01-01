@@ -51,7 +51,6 @@
 #include "HDF5File.h"
 #include "HDF5Utility.h"
 #include "XDMFFile.h"
-#include "xmlutils.h"
 
 using namespace dolfin;
 
@@ -2381,7 +2380,14 @@ std::array<std::string, 2> XDMFFile::get_hdf5_paths(const pugi::xml_node& datait
 {
   // Check that node is a DataItem node
   dolfin_assert(dataitem_node);
-  xmlutils::check_node_name(dataitem_node, "DataItem");
+  const std::string dataitem_str = "DataItem";
+  if (dataitem_node.name() != dataitem_str)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "checking node name",
+                 "Node name is \"%s\", expecting \"DataItem\"",
+                 dataitem_node.name());
+  }
 
   // Check that format is HDF
   pugi::xml_attribute format_attr = dataitem_node.attribute("Format");

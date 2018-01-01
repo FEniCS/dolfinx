@@ -22,7 +22,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntityIteratorBase.h>
@@ -273,7 +273,7 @@ void PointSource::apply(PETScVector& b)
   b.apply("add");
 }
 //-----------------------------------------------------------------------------
-void PointSource::apply(GenericMatrix& A)
+void PointSource::apply(PETScMatrix& A)
 {
   // Applies local point sources.
   dolfin_assert(_function_space0);

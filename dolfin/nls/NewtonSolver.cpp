@@ -26,8 +26,6 @@
 #include <string>
 
 #include <dolfin/common/constants.h>
-#include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/PETScVector.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/PETScKrylovSolver.h>
