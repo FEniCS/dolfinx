@@ -198,10 +198,9 @@ namespace dolfin_wrappers
     py::class_<dolfin::Function, std::shared_ptr<dolfin::Function>, dolfin::GenericFunction>
       (m, "Function", "A finite element function")
       .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>>(), "Create a function on the given function space")
-      .def(py::init<dolfin::Function&, std::size_t>())
       .def(py::init<std::shared_ptr<dolfin::FunctionSpace>, std::shared_ptr<dolfin::PETScVector>>())
-      .def("_assign", (const dolfin::Function& (dolfin::Function::*)(const dolfin::Function&))
-           &dolfin::Function::operator=)
+      //.def("_assign", (const dolfin::Function& (dolfin::Function::*)(const dolfin::Function&))
+      //     &dolfin::Function::operator=)
       .def("_assign", (const dolfin::Function& (dolfin::Function::*)(const dolfin::Expression&))
            &dolfin::Function::operator=)
       .def("_assign", (void (dolfin::Function::*)(const dolfin::FunctionAXPY&))
@@ -218,7 +217,7 @@ namespace dolfin_wrappers
              auto _v = v.attr("_cpp_object").cast<dolfin::Function*>();
              instance.extrapolate(*_v);
            })
-      .def("sub", &dolfin::Function::operator[])
+      .def("sub", &dolfin::Function::sub, "Return sub-function (view into parent Function")
       .def("get_allow_extrapolation", &dolfin::Function::get_allow_extrapolation)
       .def("interpolate", (void (dolfin::Function::*)(const dolfin::GenericFunction&))
            &dolfin::Function::interpolate, "Interpolate the function u")

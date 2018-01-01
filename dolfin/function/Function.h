@@ -27,7 +27,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <boost/ptr_container/ptr_map.hpp>
 #include <Eigen/Dense>
 
 #include <dolfin/common/types.h>
@@ -66,7 +65,7 @@ namespace dolfin
 
     Function() {}
 
-    /// Create function on given function space (shared data)
+    /// Create function on given function space
     ///
     /// *Arguments*
     ///     V (_FunctionSpace_)
@@ -74,7 +73,6 @@ namespace dolfin
     explicit Function(std::shared_ptr<const FunctionSpace> V);
 
     /// Create function on given function space with a given vector
-    /// (shared data)
     ///
     /// *Warning: This constructor is intended for internal library use only*
     ///
@@ -88,21 +86,14 @@ namespace dolfin
 
     /// Copy constructor
     ///
+    /// If v is not a sub-function, the new Function shares the
+    /// FunctionSpace of v and copies the degree-of-freedom vector. If v
+    /// is a sub-Function, the new Function is a collapsed version of v.
+    ///
     /// *Arguments*
     ///     v (_Function_)
     ///         The object to be copied.
     Function(const Function& v);
-
-    /// Sub-function constructor with shallow copy of vector (used in Python
-    /// interface)
-    ///
-    /// *Arguments*
-    ///     v (_Function_)
-    ///         The function to be copied.
-    ///     i (std::size_t)
-    ///         Index of subfunction.
-    ///
-    Function(const Function& v, std::size_t i);
 
     /// Destructor
     virtual ~Function();
@@ -112,7 +103,7 @@ namespace dolfin
     /// *Arguments*
     ///     v (_Function_)
     ///         Another function.
-    const Function& operator= (const Function& v);
+    //const Function& operator= (const Function& v);
 
     /// Assignment from expression using interpolation
     ///
@@ -128,7 +119,7 @@ namespace dolfin
     ///         A linear combination of other Functions
     void operator=(const FunctionAXPY& axpy);
 
-    /// Extract subfunction
+    /// Extract subfunction (view into the Function)
     ///
     /// *Arguments*
     ///     i (std::size_t)
@@ -136,7 +127,7 @@ namespace dolfin
     /// *Returns*
     ///     _Function_
     ///         The subfunction.
-    Function& operator[] (std::size_t i) const;
+    Function sub(std::size_t i) const;
 
     /// Return shared pointer to function space
     ///
@@ -289,11 +280,8 @@ namespace dolfin
   private:
 
     // Friends
-    friend class FunctionSpace;
+    //friend class FunctionSpace;
     friend class FunctionAssigner;
-
-    // Collection of sub-functions which share data with the function
-    mutable boost::ptr_map<std::size_t, Function> _sub_functions;
 
     // Initialize vector
     void init_vector();
