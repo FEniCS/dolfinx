@@ -1,6 +1,5 @@
 set(HEADERS
   dolfin_la.h
-  GenericMatrix.h
   GenericTensor.h
   IndexMap.h
   PETScBaseMatrix.h

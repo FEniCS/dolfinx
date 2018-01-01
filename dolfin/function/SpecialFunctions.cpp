@@ -31,7 +31,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshCoordinates::MeshCoordinates(std::shared_ptr<const Mesh> mesh)
-  : Expression(mesh->geometry().dim()), _mesh(mesh)
+  : Expression({mesh->geometry().dim()}), _mesh(mesh)
 {
   // Do nothing
 }
@@ -49,7 +49,7 @@ void MeshCoordinates::eval(Eigen::Ref<Eigen::VectorXd> values,
 }
 //-----------------------------------------------------------------------------
 FacetArea::FacetArea(std::shared_ptr<const Mesh> mesh)
-  : _mesh(mesh),
+  : Expression({}), _mesh(mesh),
     not_on_boundary("*** Warning: evaluating special function FacetArea on a "
                     "non-facet domain, returning zero.")
 {

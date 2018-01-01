@@ -26,21 +26,21 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e,
-                                           std::vector<std::size_t> value_shape)
-  : Expression(value_shape), _f_e(f_e)
+SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e)
+  : Expression({}), _f_e(f_e)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e, std::size_t dim)
-  : Expression(dim), _f_e(f_e)
+  : Expression({dim}), _f_e(f_e)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e)
-  : Expression(), _f_e(f_e)
+SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e,
+                                           std::vector<std::size_t> value_shape)
+  : Expression(value_shape), _f_e(f_e)
 {
   // Do nothing
 }

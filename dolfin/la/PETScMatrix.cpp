@@ -307,51 +307,6 @@ void PETScMatrix::axpy(double a, const PETScMatrix& A,
   }
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
-                         std::vector<double>& values) const
-{
-  dolfin_assert(_matA);
-
-  PetscErrorCode ierr;
-  const PetscInt *cols = 0;
-  const double *vals = 0;
-  PetscInt ncols = 0;
-  ierr = MatGetRow(_matA, row, &ncols, &cols, &vals);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetRow");
-
-  // Assign values to std::vectors
-  columns.assign(cols, cols + ncols);
-  values.assign(vals, vals + ncols);
-
-  ierr = MatRestoreRow(_matA, row, &ncols, &cols, &vals);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatRestorRow");
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::setrow(std::size_t row,
-                         const std::vector<std::size_t>& columns,
-                         const std::vector<double>& values)
-{
-  dolfin_assert(_matA);
-
-  // Check size of arrays
-  if (columns.size() != values.size())
-  {
-    dolfin_error("PETScMatrix.cpp",
-                 "set row of values for PETSc matrix",
-                 "Number of columns and values don't match");
-  }
-
-  // Handle case n = 0
-  const PetscInt n = columns.size();
-  if (n == 0)
-    return;
-
-  // Set values
-  const PetscInt _row = row;
-  const std::vector<PetscInt> _columns(columns.begin(), columns.end());
-  set(values.data(), 1, &_row, n, _columns.data());
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::zero(std::size_t m, const dolfin::la_index_t* rows)
 {
   dolfin_assert(_matA);
@@ -369,41 +324,6 @@ void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index_t* rows)
   PetscErrorCode ierr;
   PetscScalar null = 0.0;
   ierr = MatZeroRowsLocal(_matA, static_cast<PetscInt>(m), rows, null, NULL, NULL);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRowsLocal");
-}
-
-//-----------------------------------------------------------------------------
-void PETScMatrix::ident(std::size_t m, const dolfin::la_index_t* rows)
-{
-  dolfin_assert(_matA);
-
-  PetscErrorCode ierr;
-  PetscScalar one = 1.0;
-  ierr = MatZeroRows(_matA, m, rows, one, NULL, NULL);
-  if (ierr == PETSC_ERR_ARG_WRONGSTATE)
-  {
-    dolfin_error("PETScMatrix.cpp",
-                 "set given (global) rows to identity matrix",
-                 "some diagonal elements not preallocated "
-                 "(try assembler option keep_diagonal)");
-  }
-  if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRows");
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::ident_local(std::size_t m, const dolfin::la_index_t* rows)
-{
-  dolfin_assert(_matA);
-
-  PetscErrorCode ierr;
-  PetscScalar one = 1.0;
-  ierr = MatZeroRowsLocal(_matA, static_cast<PetscInt>(m), rows, one, NULL, NULL);
-  if (ierr == PETSC_ERR_ARG_WRONGSTATE)
-  {
-    dolfin_error("PETScMatrix.cpp",
-                 "set given (local) rows to identity matrix",
-                 "some diagonal elements not preallocated "
-                 "(try assembler option keep_diagonal)");
-  }
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatZeroRowsLocal");
 }
 //-----------------------------------------------------------------------------

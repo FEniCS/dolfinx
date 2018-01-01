@@ -47,7 +47,7 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include "FiniteElement.h"
 #include "GenericDofMap.h"
@@ -881,7 +881,7 @@ bool DirichletBC::on_facet(const double* coordinates, const Facet& facet) const
   return false;
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::check_arguments(GenericMatrix* A, PETScVector* b,
+void DirichletBC::check_arguments(PETScMatrix* A, PETScVector* b,
                                   const PETScVector* x,
                                   std::size_t dim) const
 {

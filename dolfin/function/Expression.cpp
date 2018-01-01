@@ -29,24 +29,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Expression::Expression()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Expression::Expression(std::size_t dim)
-{
-  _value_shape.resize(1);
-  _value_shape[0] = dim;
-}
-//-----------------------------------------------------------------------------
-Expression::Expression(std::size_t dim0, std::size_t dim1)
-{
-  _value_shape.resize(2);
-  _value_shape[0] = dim0;
-  _value_shape[1] = dim1;
-}
-//-----------------------------------------------------------------------------
 Expression::Expression(std::vector<std::size_t> value_shape)
   : _value_shape(value_shape)
 {

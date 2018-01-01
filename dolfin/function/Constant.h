@@ -81,12 +81,6 @@ namespace dolfin
     ///         Another constant.
     const Constant& operator= (double constant);
 
-    /// Cast to double (for scalar constants)
-    ///
-    /// @return double
-    ///         The scalar value.
-    operator double() const;
-
     /// Return copy of this Constant's current values
     ///
     /// @return std::vector<double>
