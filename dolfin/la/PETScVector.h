@@ -139,39 +139,6 @@ namespace dolfin
     std::size_t rank() const
     { return 1;}
 
-    /// FIXME: This needs to be implemented on backend side! Remove it!
-    virtual void init(const TensorLayout& tensor_layout)
-    {
-      if (!empty())
-      {
-        dolfin_error("GenericVector.h",
-                     "initialize vector",
-                     "Vector cannot be initialised more than once");
-      }
-
-      std::vector<dolfin::la_index_t> ghosts;
-      std::vector<std::size_t> local_to_global(tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL));
-
-      // FIXME: should just pass index_map to init()
-      for (std::size_t i = 0; i != local_to_global.size(); ++i)
-        local_to_global[i] = tensor_layout.index_map(0)->local_to_global(i);
-
-      // FIXME: temporary hack - needs passing tensor layout directly to backend
-      if (tensor_layout.is_ghosted() == TensorLayout::Ghosts::GHOSTED)
-      {
-        const std::size_t nowned
-          = tensor_layout.index_map(0)->size(IndexMap::MapSize::OWNED);
-        const std::size_t nghosts
-          = tensor_layout.index_map(0)->size(IndexMap::MapSize::UNOWNED);
-        ghosts.resize(nghosts);
-        for (std::size_t i = 0; i != nghosts; ++i)
-          ghosts[i] = local_to_global[i + nowned];
-      }
-
-      this->init(tensor_layout.local_range(0), local_to_global, ghosts);
-      this->zero();
-    }
-
     /// Initialize vector to global size N
     virtual void init(std::size_t N);
 
@@ -255,8 +222,8 @@ namespace dolfin
     /// Replace all entries in the vector by their absolute values
     virtual void abs();
 
-    /// Return inner product with given vector
-    virtual double inner(const PETScVector& v) const;
+    /// Return dot product with given vector
+    virtual double dot(const PETScVector& v) const;
 
     /// Return norm of vector
     virtual double norm(std::string norm_type) const;
@@ -269,9 +236,6 @@ namespace dolfin
 
     /// Return sum of values of vector
     virtual double sum() const;
-
-    /// Return sum of selected rows in vector
-    virtual double sum(const std::vector<std::size_t>& rows) const;
 
     /// Multiply vector by given number
     virtual const PETScVector& operator*= (double a);
@@ -328,9 +292,6 @@ namespace dolfin
 
     // PETSc Vec pointer
     Vec _x;
-
-    // PETSc norm types
-    static const std::map<std::string, NormType> norm_types;
 
   };
 

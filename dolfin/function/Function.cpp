@@ -530,6 +530,7 @@ void Function::init_vector()
   }
 
   // Get index map
+  /*
   std::shared_ptr<const IndexMap> index_map = dofmap.index_map();
   dolfin_assert(index_map);
 
@@ -557,6 +558,37 @@ void Function::init_vector()
 
   }
   _vector->init(*tensor_layout);
+  _vector->zero();
+  */
+
+  // Get index map
+  std::shared_ptr<const IndexMap> index_map = dofmap.index_map();
+  dolfin_assert(index_map);
+
+  // Build local-to-global map
+  std::vector<std::size_t> local_to_global(index_map->size(IndexMap::MapSize::ALL));
+  for (std::size_t i = 0; i < local_to_global.size(); ++i)
+    local_to_global[i] = index_map->local_to_global(i);
+
+  // Build list of ghosts
+  const std::size_t nowned = index_map->size(IndexMap::MapSize::OWNED);
+  dolfin_assert(nowned + index_map->size(IndexMap::MapSize::UNOWNED) == local_to_global.size());
+  std::vector<dolfin::la_index_t> ghosts(local_to_global.begin() + nowned,
+                                         local_to_global.end());
+
+  // Create vector of dofs
+  if (!_vector)
+    _vector = std::make_shared<PETScVector>(_function_space->mesh()->mpi_comm());
+  dolfin_assert(_vector);
+
+  if (!_vector->empty())
+  {
+    dolfin_error("Function.cpp",
+                 "initialize vector of degrees of freedom for function",
+                 "Cannot re-initialize a non-empty vector. Consider creating a new function");
+
+  }
+  _vector->init(index_map->local_range(), local_to_global, ghosts);
   _vector->zero();
 }
 //-----------------------------------------------------------------------------

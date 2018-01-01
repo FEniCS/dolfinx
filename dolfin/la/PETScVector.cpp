@@ -35,9 +35,11 @@
 
 using namespace dolfin;
 
-const std::map<std::string, NormType> PETScVector::norm_types
-= { {"l1",   NORM_1}, {"l2",   NORM_2},  {"linf", NORM_INFINITY} };
-
+namespace
+{
+  const std::map<std::string, NormType> norm_types
+  = { {"l1",   NORM_1}, {"l2",   NORM_2},  {"linf", NORM_INFINITY} };
+}
 
 #define CHECK_ERROR(NAME) do { if (ierr != 0) petsc_error(ierr, __FILE__, NAME); } while(0)
 
@@ -528,7 +530,7 @@ const PETScVector& PETScVector::operator/= (const double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-double PETScVector::inner(const PETScVector& y) const
+double PETScVector::dot(const PETScVector& y) const
 {
   dolfin_assert(_x);
   dolfin_assert(y._x);
@@ -611,59 +613,6 @@ double PETScVector::sum() const
   PetscErrorCode ierr = VecSum(_x, &value);
   CHECK_ERROR("VecSum");
   return value;
-}
-//-----------------------------------------------------------------------------
-double PETScVector::sum(const std::vector<std::size_t>& rows) const
-{
-  dolfin_assert(_x);
-  const auto _local_range = local_range();
-  const std::size_t n0 = _local_range.first;
-  const std::size_t n1 = _local_range.second;
-
-  // Build sets of local and nonlocal entries
-  Set<PetscInt> local_rows;
-  Set<std::size_t> send_nonlocal_rows;
-  for (std::size_t i = 0; i < rows.size(); ++i)
-  {
-    if (rows[i] >= n0 && rows[i] < n1)
-      local_rows.insert(rows[i]);
-    else
-      send_nonlocal_rows.insert(rows[i]);
-  }
-
-  // Send nonlocal rows indices to other processes
-  const std::size_t num_processes  = dolfin::MPI::size(mpi_comm());
-  const std::size_t process_number = dolfin::MPI::rank(mpi_comm());
-  for (std::size_t i = 1; i < num_processes; ++i)
-  {
-    // Receive data from process p - i (i steps to the left), send
-    // data to process p + i (i steps to the right)
-    const std::size_t source
-      = (process_number - i + num_processes) % num_processes;
-    const std::size_t dest = (process_number + i) % num_processes;
-
-    // Send and receive data
-    std::vector<std::size_t> received_nonlocal_rows;
-    dolfin::MPI::send_recv(mpi_comm(), send_nonlocal_rows.set(), dest,
-                           received_nonlocal_rows, source);
-
-    // Add rows which reside on this process
-    for (std::size_t j = 0; j < received_nonlocal_rows.size(); ++j)
-    {
-      if (received_nonlocal_rows[j] >= n0 && received_nonlocal_rows[j] < n1)
-        local_rows.insert(received_nonlocal_rows[j]);
-    }
-  }
-
-  // Get local values (using global indices)
-  std::vector<double> local_values(local_rows.size());
-  get(local_values.data(), local_rows.size(), &local_rows.set()[0]);
-
-  // Compute local sum
-  const double local_sum = std::accumulate(local_values.begin(),
-                                           local_values.end(), 0.0);
-
-  return dolfin::MPI::sum(mpi_comm(), local_sum);
 }
 //-----------------------------------------------------------------------------
 std::string PETScVector::str(bool verbose) const

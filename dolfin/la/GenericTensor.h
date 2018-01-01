@@ -50,7 +50,10 @@ namespace dolfin
     //--- Basic GenericTensor interface ---
 
     /// Initialize zero tensor using tensor layout
-    virtual void init(const TensorLayout& tensor_layout) = 0;
+    virtual void init(const TensorLayout& tensor_layout)
+    {
+      throw std::runtime_error("GenericTensor::init not available.");
+    }
 
     /// Return true if empty
     virtual bool empty() const = 0;

@@ -280,7 +280,6 @@ namespace dolfin
   private:
 
     // Friends
-    //friend class FunctionSpace;
     friend class FunctionAssigner;
 
     // Initialize vector
