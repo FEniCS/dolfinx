@@ -38,9 +38,9 @@
 #include <petscvec.h>
 
 #include <dolfin/log/log.h>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include "TensorLayout.h"
-#include "GenericTensor.h"
 #include "PETScObject.h"
 #include "IndexMap.h"
 
@@ -58,7 +58,7 @@ namespace dolfin
   /// access the PETSc Vec pointer using the function vec() and
   /// use the standard PETSc interface.
 
-  class PETScVector : public GenericTensor, public PETScObject
+  class PETScVector : public PETScObject
   {
   public:
 

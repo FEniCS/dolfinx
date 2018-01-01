@@ -23,6 +23,7 @@
 #include <array>
 #include <map>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "DirichletBC.h"
@@ -113,7 +114,7 @@ namespace dolfin
     std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 
     static void cell_wise_assembly(
-      std::array<GenericTensor*, 2>& tensors,
+      std::pair<PETScMatrix*, PETScVector*>& tensors,
       std::array<UFC*, 2>& ufc,
       Scratch& data,
       const std::vector<DirichletBC::Map>& boundary_values,
@@ -121,7 +122,7 @@ namespace dolfin
       std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains);
 
     static void facet_wise_assembly(
-      std::array<GenericTensor*, 2>& tensors,
+      std::pair<PETScMatrix*, PETScVector*>& tensors,
       std::array<UFC*, 2>& ufc,
       Scratch& data,
       const std::vector<DirichletBC::Map>& boundary_values,
@@ -164,7 +165,7 @@ namespace dolfin
     // Modified matrix insertion for case when rhs has facet integrals
     // and lhs has no facet integrals
     static void matrix_block_add(
-      GenericTensor& tensor,
+      PETScMatrix& tensor,
       std::vector<double>& Ae,
       std::vector<double>& macro_A,
       const std::array<bool, 2>& add_local_tensor,
@@ -182,7 +183,7 @@ namespace dolfin
 
     // Return true if element matrix is required
     static bool
-      cell_matrix_required(const GenericTensor* A,
+      cell_matrix_required(const PETScMatrix* A,
                            const void* integral,
                            const std::vector<DirichletBC::Map>& boundary_values,
                            const ArrayView<const dolfin::la_index_t>& dofs);

@@ -45,7 +45,6 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/SubDomain.h>

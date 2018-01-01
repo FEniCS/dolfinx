@@ -28,8 +28,6 @@
 
 #include "casters.h"
 
-#include <dolfin/la/GenericTensor.h>
-//#include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/IndexMap.h>
 #include <dolfin/la/Scalar.h>
 #include <dolfin/la/TensorLayout.h>
@@ -198,6 +196,7 @@ namespace dolfin_wrappers
       .def("sparsity_pattern", (std::shared_ptr<dolfin::SparsityPattern> (dolfin::TensorLayout::*)()) &dolfin::TensorLayout::sparsity_pattern);
 
     // dolfin::GenericTensor
+    /*
     py::class_<dolfin::GenericTensor, std::shared_ptr<dolfin::GenericTensor>>
       (m, "GenericTensor", "DOLFIN GenericTensor object")
       .def("init", &dolfin::GenericTensor::init)
@@ -209,7 +208,7 @@ namespace dolfin_wrappers
       .def("zero", &dolfin::GenericTensor::zero)
       .def("mpi_comm", [](dolfin::GenericTensor& self)
            { return MPICommWrapper(self.mpi_comm()); });
-
+    */
     // dolfin::GenericMatrix
     /*
     py::class_<dolfin::GenericMatrix, std::shared_ptr<dolfin::GenericMatrix>,
@@ -585,7 +584,7 @@ namespace dolfin_wrappers
     */
 
     // dolfin::Scalar
-    py::class_<dolfin::Scalar, std::shared_ptr<dolfin::Scalar>, dolfin::GenericTensor>
+    py::class_<dolfin::Scalar, std::shared_ptr<dolfin::Scalar>>
       (m, "Scalar")
       .def(py::init([](const MPICommWrapper comm)
                     { return std::unique_ptr<dolfin::Scalar>(new dolfin::Scalar(comm.get())); }))
@@ -609,8 +608,7 @@ namespace dolfin_wrappers
     py::class_<dolfin::PETScObject, std::shared_ptr<dolfin::PETScObject>>(m, "PETScObject");
 
     // dolfin::PETScVector
-    py::class_<dolfin::PETScVector, std::shared_ptr<dolfin::PETScVector>,
-               dolfin::GenericTensor, dolfin::PETScObject>
+    py::class_<dolfin::PETScVector, std::shared_ptr<dolfin::PETScVector>, dolfin::PETScObject>
       (m, "PETScVector", "DOLFIN PETScVector object")
       .def(py::init([](const MPICommWrapper comm)
                     { return std::unique_ptr<dolfin::PETScVector>(new dolfin::PETScVector(comm.get())); }))
@@ -630,8 +628,7 @@ namespace dolfin_wrappers
       .def("mat", &dolfin::PETScBaseMatrix::mat, "Return underlying PETSc Mat object");
 
     // dolfin::PETScMatrix
-    py::class_<dolfin::PETScMatrix, std::shared_ptr<dolfin::PETScMatrix>,
-               dolfin::GenericTensor, dolfin::PETScBaseMatrix>
+    py::class_<dolfin::PETScMatrix, std::shared_ptr<dolfin::PETScMatrix>, dolfin::PETScBaseMatrix>
       (m, "PETScMatrix", "DOLFIN PETScMatrix object")
       .def(py::init([](const MPICommWrapper comm)
         { return std::make_unique<dolfin::PETScMatrix>(comm.get()); }))

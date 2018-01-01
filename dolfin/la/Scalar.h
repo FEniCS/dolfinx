@@ -19,15 +19,14 @@
 // Modified by Ola Skavhaug, 2007.
 // Modified by Martin Alnaes, 2014.
 
-#ifndef __SCALAR_H
-#define __SCALAR_H
+#pragma once
 
 #include <string>
 #include <vector>
+#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/common/types.h>
-#include "GenericTensor.h"
 #include "TensorLayout.h"
 
 namespace dolfin
@@ -38,12 +37,12 @@ namespace dolfin
   /// This class represents a real-valued scalar quantity and
   /// implements the GenericTensor interface for scalars.
 
-  class Scalar : public GenericTensor
+  class Scalar
   {
   public:
 
     /// Create zero scalar
-    Scalar(MPI_Comm comm) : GenericTensor(), _value(0.0), _local_increment(0.0),
+    Scalar(MPI_Comm comm) : _value(0.0), _local_increment(0.0),
       _mpi_comm(comm) {}
 
     /// Destructor
@@ -217,5 +216,3 @@ namespace dolfin
   };
 
 }
-
-#endif

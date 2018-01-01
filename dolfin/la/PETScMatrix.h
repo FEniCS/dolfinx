@@ -36,8 +36,7 @@
 
 #include <petscmat.h>
 #include <petscsys.h>
-
-#include "GenericTensor.h"
+#include <dolfin/common/ArrayView.h>
 #include "PETScBaseMatrix.h"
 
 namespace dolfin
@@ -55,7 +54,7 @@ namespace dolfin
   /// access the PETSc Mat pointer using the function mat() and
   /// use the standard PETSc interface.
 
-  class PETScMatrix : public GenericTensor, public PETScBaseMatrix
+  class PETScMatrix : public PETScBaseMatrix
   {
   public:
 
