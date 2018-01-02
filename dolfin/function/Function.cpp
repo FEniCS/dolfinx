@@ -430,8 +430,8 @@ void Function::restrict(double* w, const FiniteElement& element,
   else
   {
     // Restrict as UFC function (by calling eval)
-    restrict_as_ufc_function(w, element, dolfin_cell, coordinate_dofs,
-                             ufc_cell);
+    element.evaluate_dofs(w, *this, coordinate_dofs, ufc_cell.orientation,
+                          ufc_cell);
   }
 }
 //-----------------------------------------------------------------------------

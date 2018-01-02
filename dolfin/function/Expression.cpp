@@ -21,6 +21,7 @@
 // Last changed: 2011-11-14
 
 #include <dolfin/log/log.h>
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
@@ -120,9 +121,9 @@ void Expression::restrict(double* w,
                           const double* coordinate_dofs,
                           const ufc::cell& ufc_cell) const
 {
-  // Restrict as UFC function (by calling eval)
-  restrict_as_ufc_function(w, element, dolfin_cell, coordinate_dofs,
-                           ufc_cell);
+  // Evaluate dofs to get the expansion coefficients
+  element.evaluate_dofs(w, *this, coordinate_dofs, ufc_cell.orientation,
+                        ufc_cell);
 }
 //-----------------------------------------------------------------------------
 void Expression::compute_vertex_values(std::vector<double>& vertex_values,
@@ -136,12 +137,8 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
   vertex_values.resize(size*mesh.num_vertices());
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
-  ufc::cell ufc_cell;
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
   {
-    // Update cell data
-    cell->get_cell_data(ufc_cell);
-
     // Iterate over cell vertices
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
@@ -149,7 +146,7 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
       Eigen::Map<const Eigen::VectorXd> x(vertex->x(), mesh.geometry().dim());
 
       // Evaluate at vertex
-      eval(local_vertex_values, x, ufc_cell);
+      eval(local_vertex_values, x);
 
       // Copy to array
       for (std::size_t i = 0; i < size; i++)
