@@ -25,12 +25,10 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/log/log.h>
-#include <dolfin/log/Progress.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/function/FunctionSpace.h>
 #include "SparsityPatternBuilder.h"
 
 using namespace dolfin;
@@ -91,7 +89,6 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
   // Build sparsity pattern for cell integrals
   if (cells)
   {
-    Progress p("Building sparsity pattern over cells", mesh.num_cells());
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Tabulate dofs for each dimension and get local dimensions
@@ -103,7 +100,6 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
 
       // Insert non-zeroes in sparsity pattern
       sparsity_pattern.insert_local(dofs);
-      p++;
     }
   }
 
@@ -124,7 +120,6 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
       local_to_local_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
     }
 
-    Progress p("Building sparsity pattern over vertices", mesh.num_vertices());
     for (VertexIterator vert(mesh); !vert.end(); ++vert)
     {
       // Get mesh cell to which mesh vertex belongs (pick first)
@@ -152,7 +147,6 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
       for (std::size_t i = 0; i < rank; ++i)
         global_dofs_p[i].set(global_dofs[i]);
       sparsity_pattern.insert_local(global_dofs_p);
-      p++;
     }
   }
 
@@ -174,8 +168,6 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
                    "Consider calling mesh.order()");
     }
 
-    Progress p("Building sparsity pattern over interior facets",
-               mesh.num_facets());
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
     {
       bool this_exterior_facet = false;
@@ -235,7 +227,6 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
         // Insert dofs
         sparsity_pattern.insert_local(dofs);
       }
-      p++;
     }
   }
 
@@ -251,13 +242,8 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
     const std::size_t diagonal_range
       = std::min(primary_range.second, secondary_range);
 
-    Progress p("Building sparsity pattern over diagonal",
-               diagonal_range - primary_range.first);
     for (std::size_t j = primary_range.first; j < diagonal_range; j++)
-    {
       sparsity_pattern.insert_global(j, j);
-      p++;
-    }
   }
 
   // Finalize sparsity pattern (communicate off-process terms)

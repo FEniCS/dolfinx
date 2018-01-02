@@ -39,7 +39,6 @@
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
-#include <dolfin/log/Progress.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
@@ -514,8 +513,6 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 
   // Iterate over marked
   dolfin_assert(_function_space->element());
-  Progress p("Computing Dirichlet boundary values, topological search",
-             _facets.size());
   for (std::size_t f = 0; f < _facets.size(); ++f)
   {
     // Create facet
@@ -552,7 +549,6 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
       const double value = data.w[data.facet_dofs[i]];
       boundary_values[local_dof] = value;
     }
-    p++;
   }
 }
 //-----------------------------------------------------------------------------
@@ -602,8 +598,6 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
     boundary_values.reserve(boundary_values.size() + _num_dofs);
 
   // Iterate over facets
-  Progress p("Computing Dirichlet boundary values, geometric search",
-             _facets.size());
   for (std::size_t f = 0; f < _facets.size(); ++f)
   {
     // Create facet
@@ -721,8 +715,6 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   {
     // First time around all cells must be iterated over.  Create map
     // from cells attached to boundary to local dofs.
-    Progress p("Computing Dirichlet boundary values, pointwise search",
-               mesh.num_cells());
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Update UFC cell
@@ -779,7 +771,6 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
         const double value = data.w[i];
         boundary_values[global_dof] = value;
       }
-      p++;
     }
   }
   else

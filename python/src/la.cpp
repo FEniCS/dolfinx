@@ -588,11 +588,11 @@ namespace dolfin_wrappers
       (m, "Scalar")
       .def(py::init([](const MPICommWrapper comm)
                     { return std::unique_ptr<dolfin::Scalar>(new dolfin::Scalar(comm.get())); }))
-      .def("add_local_value", &dolfin::Scalar::add_local_value)
+      .def("add", &dolfin::Scalar::add)
       .def("apply", &dolfin::Scalar::apply)
       .def("mpi_comm", [](dolfin::Scalar& self)
         { return MPICommWrapper(self.mpi_comm()); })
-      .def("get_scalar_value", &dolfin::Scalar::get_scalar_value);
+      .def("value", &dolfin::Scalar::value);
 
     #ifdef HAS_PETSC
     py::class_<dolfin::PETScOptions>(m, "PETScOptions")

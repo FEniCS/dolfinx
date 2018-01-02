@@ -58,11 +58,6 @@ namespace dolfin
     /// Create empty sparsity pattern
     SparsityPattern(MPI_Comm comm, std::size_t primary_dim);
 
-    /// Create sparsity pattern for a generic tensor
-    SparsityPattern(MPI_Comm comm,
-                    std::vector<std::shared_ptr<const IndexMap>> index_maps,
-                    std::size_t primary_dim);
-
     /// Initialize sparsity pattern for a generic tensor
     void init(std::vector<std::shared_ptr<const IndexMap>> index_maps);
 
@@ -70,12 +65,10 @@ namespace dolfin
     void insert_global(dolfin::la_index_t i, dolfin::la_index_t j);
 
     /// Insert non-zero entries using global indices
-    void insert_global(const std::vector<
-                       ArrayView<const dolfin::la_index_t>>& entries);
+    void insert_global(const std::vector<ArrayView<const dolfin::la_index_t>>& entries);
 
     /// Insert non-zero entries using local (process-wise) indices
-    void insert_local(const std::vector<
-                      ArrayView<const dolfin::la_index_t>>& entries);
+    void insert_local(const std::vector<ArrayView<const dolfin::la_index_t>>& entries);
 
     /// Insert non-zero entries using local (process-wise) indices for
     /// the primary dimension and global indices for the co-dimension
@@ -164,18 +157,18 @@ namespace dolfin
     std::vector<std::shared_ptr<const IndexMap>> _index_maps;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
-    std::vector<set_type> diagonal;
-    std::vector<set_type> off_diagonal;
+    std::vector<set_type> _diagonal;
+    std::vector<set_type> _off_diagonal;
 
     // List of full rows (or columns, according to primary dimension).
     // Full rows are kept separately to circumvent quadratic scaling
     // (caused by linear insertion time into dolfin::Set; std::set has
     // logarithmic insertion, which would result in N log(N) overall
     // complexity for dense rows)
-    set_type full_rows;
+    set_type _full_rows;
 
     // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
-    std::vector<std::size_t> non_local;
+    std::vector<std::size_t> _non_local;
 
   };
 

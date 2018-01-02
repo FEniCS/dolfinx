@@ -22,7 +22,6 @@
 
 #include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/log/log.h>
-#include <dolfin/log/Progress.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
@@ -196,7 +195,6 @@ void SubDomain::apply_markers(S& sub_domains,
   bool on_boundary = false;
 
   // Compute sub domain markers
-  Progress p("Computing sub domain markers", mesh.num_entities(dim));
   for (MeshEntityIterator entity(mesh, dim); !entity.end(); ++entity)
   {
     // Check if entity is on the boundary if entity is a facet
@@ -257,8 +255,6 @@ void SubDomain::apply_markers(S& sub_domains,
     // Mark entity with all vertices inside
     if (all_points_inside)
       sub_domains.set_value(entity->index(), sub_domain);
-
-    p++;
   }
 }
 //-----------------------------------------------------------------------------
@@ -298,7 +294,6 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
   bool on_boundary = false;
 
   // Compute sub domain markers
-  Progress p("Computing sub domain markers", mesh.num_entities(dim));
   for (MeshEntityIterator entity(mesh, dim); !entity.end(); ++entity)
   {
     // Check if entity is on the boundary if entity is a facet
@@ -360,8 +355,6 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
     // Mark entity with all vertices inside
     if (all_points_inside)
       sub_domains[entity->index()] =  sub_domain;
-
-    p++;
   }
 }
 //-----------------------------------------------------------------------------

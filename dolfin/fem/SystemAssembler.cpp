@@ -32,7 +32,6 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
-#include <dolfin/log/Progress.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Facet.h>
@@ -355,7 +354,6 @@ void SystemAssembler::cell_wise_assembly(
   // Iterate over all cells
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Check that cell is not a ghost
@@ -488,8 +486,6 @@ void SystemAssembler::cell_wise_assembly(
       A->add_local(data.Ae[0].data(), cell_dofs[0]);
     if (b)
       b->add_local(data.Ae[1].data(), cell_dofs[1]);
-
-    p++;
   }
 }
 //-----------------------------------------------------------------------------
@@ -578,7 +574,6 @@ void SystemAssembler::facet_wise_assembly(
   // Iterate over facets
   std::array<ufc::cell, 2> ufc_cell;
   std::array<std::vector<double>, 2> coordinate_dofs;
-  Progress p("Assembling system (facet-wise)", mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Number of cells sharing facet
@@ -868,7 +863,6 @@ void SystemAssembler::facet_wise_assembly(
       // Mark cell as processed
       cell_tensor_computed[cell.index()] = true;
     }
-    p++;
   }
 }
 //-----------------------------------------------------------------------------
