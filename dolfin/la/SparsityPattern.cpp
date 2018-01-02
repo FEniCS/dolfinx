@@ -88,33 +88,24 @@ void SparsityPattern::init(const std::vector<std::shared_ptr<const IndexMap>> in
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert_global(dolfin::la_index_t i, dolfin::la_index_t j)
-{
-  const std::vector<ArrayView<const dolfin::la_index_t>> entries =
-    { ArrayView<const dolfin::la_index_t>(1, &i),
-      ArrayView<const dolfin::la_index_t>(1, &j)};
-
-  insert_global(entries);
-}
-//-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
   const std::vector<ArrayView<const dolfin::la_index_t>>& entries)
 {
   dolfin_assert(entries.size() == 2);
 
   // The primary_dim is global and must be mapped to local
-  const auto primary_dim_map
-      = [](const dolfin::la_index_t i_index, const IndexMap& index_map0)
-    {
-      dolfin_assert(index_map0.local_range().first <= (std::size_t) i_index
-                    && (std::size_t) i_index < index_map0.local_range().second);
-      return i_index - (dolfin::la_index_t) index_map0.local_range().first;
-    };
+  const auto primary_dim_map = [](const dolfin::la_index_t i_index,
+                                  const IndexMap& index_map0)
+  {
+    dolfin_assert(index_map0.local_range().first <= (std::size_t) i_index
+                  && (std::size_t) i_index < index_map0.local_range().second);
+    return i_index - (dolfin::la_index_t) index_map0.local_range().first;
+  };
 
   // The primary_codim is already global and stays the same
-  const auto primary_codim_map
-    = [](const dolfin::la_index_t j_index, const IndexMap& index_map1)
-    { return j_index; };
+  const auto primary_codim_map = [](const dolfin::la_index_t j_index,
+                                    const IndexMap& index_map1)
+  { return j_index; };
 
   insert_entries(entries, primary_dim_map, primary_codim_map);
 }
@@ -125,15 +116,14 @@ void SparsityPattern::insert_local(
   dolfin_assert(entries.size() == 2);
 
   // The primary_dim is local and stays the same
-  const auto primary_dim_map
-    = [](const dolfin::la_index_t i_index, const IndexMap& index_map0)
-    { return i_index; };
+  const auto primary_dim_map = [](const dolfin::la_index_t i_index,
+                                  const IndexMap& index_map0)
+  { return i_index; };
 
   // The primary_codim must be mapped to global entries
-  const auto primary_codim_map
-    = [](const dolfin::la_index_t j_index,
-         const IndexMap& index_map1) -> dolfin::la_index_t
-    { return index_map1.local_to_global((std::size_t) j_index); };
+  const auto primary_codim_map = [](const dolfin::la_index_t j_index,
+                                   const IndexMap& index_map1) -> dolfin::la_index_t
+  { return index_map1.local_to_global((std::size_t) j_index); };
 
   insert_entries(entries, primary_dim_map, primary_codim_map);
 }
@@ -144,14 +134,14 @@ void SparsityPattern::insert_local_global(
   dolfin_assert(entries.size() == 2);
 
   // The primary_dim is local and stays the same
-  const auto primary_dim_map
-    = [](const dolfin::la_index_t i_index, const IndexMap& index_map0)
-    { return i_index; };
+  const auto primary_dim_map = [](const dolfin::la_index_t i_index,
+                                  const IndexMap& index_map0)
+  { return i_index; };
 
   // The primary_codim is global and stays the same
-  const auto primary_codim_map
-    = [](const dolfin::la_index_t j_index, const IndexMap& index_map1)
-    { return j_index; };
+  const auto primary_codim_map = [](const dolfin::la_index_t j_index,
+                                    const IndexMap& index_map1)
+  { return j_index; };
 
   insert_entries(entries, primary_dim_map, primary_codim_map);
 }
@@ -247,8 +237,7 @@ void SparsityPattern::insert_entries(
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert_full_rows_local(
-  const std::vector<std::size_t>& rows)
+void SparsityPattern::insert_full_rows_local(const std::vector<std::size_t>& rows)
 {
   const std::size_t ghosted_size0 =
     _index_maps[_primary_dim]->size(IndexMap::MapSize::ALL);

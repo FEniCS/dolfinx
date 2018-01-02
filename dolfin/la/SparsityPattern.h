@@ -61,9 +61,6 @@ namespace dolfin
     /// Initialize sparsity pattern for a generic tensor
     void init(std::vector<std::shared_ptr<const IndexMap>> index_maps);
 
-    /// Insert a global entry - will be fixed by apply()
-    void insert_global(dolfin::la_index_t i, dolfin::la_index_t j);
-
     /// Insert non-zero entries using global indices
     void insert_global(const std::vector<ArrayView<const dolfin::la_index_t>>& entries);
 

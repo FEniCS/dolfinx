@@ -242,8 +242,13 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
     const std::size_t diagonal_range
       = std::min(primary_range.second, secondary_range);
 
-    for (std::size_t j = primary_range.first; j < diagonal_range; j++)
-      sparsity_pattern.insert_global(j, j);
+    std::vector<dolfin::la_index_t> indices(diagonal_range - primary_range.first);
+    std::iota(indices.begin(), indices.end(), primary_range.first);
+    const std::vector<ArrayView<const dolfin::la_index_t>> diags
+     = { ArrayView<const dolfin::la_index_t>(indices.size(), indices.data()),
+         ArrayView<const dolfin::la_index_t>(indices.size(), indices.data())};
+
+    sparsity_pattern.insert_global(diags);
   }
 
   // Finalize sparsity pattern (communicate off-process terms)
