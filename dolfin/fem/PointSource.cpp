@@ -220,7 +220,6 @@ void PointSource::apply(PETScVector& b)
 
   // Variables for cell information
   std::vector<double> coordinate_dofs;
-  ufc::cell ufc_cell;
 
   // Variables for evaluating basis
   dolfin_assert(_function_space0->element());
@@ -247,14 +246,13 @@ void PointSource::apply(PETScVector& b)
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Evaluate all basis functions at the point()
-    cell.get_cell_data(ufc_cell);
 
     for (std::size_t i = 0; i < dofs_per_cell; ++i)
     {
       _function_space0->element()->evaluate_basis(i, basis.data(),
 	  					     p.coordinates(),
 						     coordinate_dofs.data(),
-						     ufc_cell.orientation);
+						     -1);
 
       basis_sum = 0.0;
       for (const auto& v : basis)
@@ -309,7 +307,6 @@ void PointSource::apply(PETScMatrix& A)
 
   // Variables for cell information
   std::vector<double> coordinate_dofs;
-  ufc::cell ufc_cell;
 
   // Variables for evaluating basis
   const std::size_t rank = V0->element()->value_rank();
@@ -371,7 +368,6 @@ void PointSource::apply(PETScMatrix& A)
 
     // Cell information
     cell.get_coordinate_dofs(coordinate_dofs);
-    cell.get_cell_data(ufc_cell);
 
     // Calculate values with magnitude*basis_sum_0*basis_sum_1
     for (std::size_t i = 0; i < dofs_per_cell0; ++i)
@@ -379,14 +375,14 @@ void PointSource::apply(PETScMatrix& A)
       V0->element()->evaluate_basis(i, basis0.data(),
                                     p.coordinates(),
                                     coordinate_dofs.data(),
-                                    ufc_cell.orientation);
+                                    -1);
 
       for (std::size_t j = 0; j < dofs_per_cell0; ++j)
       {
         V1->element()->evaluate_basis(j, basis1.data(),
                                       p.coordinates(),
                                       coordinate_dofs.data(),
-                                      ufc_cell.orientation);
+                                      -1);
 
         basis_sum0 = 0.0;
         basis_sum1 = 0.0;

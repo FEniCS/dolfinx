@@ -139,18 +139,6 @@ namespace dolfin
     // proper fallback to default)
     std::vector<std::shared_ptr<ufc::custom_integral>> custom_integrals;
 
-    // Cutcell integrals (access through get_cutcell_integral to get
-    // proper fallback to default)
-    std::vector<std::shared_ptr<ufc::cutcell_integral>> cutcell_integrals;
-
-    // Interface integrals (access through get_interface_integral to
-    // get proper fallback to default)
-    std::vector<std::shared_ptr<ufc::interface_integral>> interface_integrals;
-
-    // Overlap integrals (access through get_overlap_integral to get
-    // proper fallback to default)
-    std::vector<std::shared_ptr<ufc::overlap_integral>> overlap_integrals;
-
   public:
 
     // Default cell integral
@@ -171,15 +159,6 @@ namespace dolfin
 
     // Default custom integral
     std::shared_ptr<ufc::custom_integral> default_custom_integral;
-
-    // Default cutcell integral
-    std::shared_ptr<ufc::cutcell_integral> default_cutcell_integral;
-
-    // Default interface integral
-    std::shared_ptr<ufc::interface_integral> default_interface_integral;
-
-    // Default overlap integral
-    std::shared_ptr<ufc::overlap_integral> default_overlap_integral;
 
     /// Get cell integral over a given domain, falling back to the
     /// default if necessary
@@ -252,45 +231,6 @@ namespace dolfin
           return integral;
       }
       return default_custom_integral.get();
-    }
-
-    /// Get cutcell integral over a given domain, falling back to the
-    /// default if necessary
-    ufc::cutcell_integral * get_cutcell_integral(std::size_t domain)
-    {
-      if (domain < form.max_cutcell_subdomain_id())
-      {
-        ufc::cutcell_integral * integral = cutcell_integrals[domain].get();
-        if (integral)
-          return integral;
-      }
-      return default_cutcell_integral.get();
-    }
-
-    /// Get interface integral over a given domain, falling back to
-    /// the default if necessary
-    ufc::interface_integral * get_interface_integral(std::size_t domain)
-    {
-      if (domain < form.max_interface_subdomain_id())
-      {
-        ufc::interface_integral * integral = interface_integrals[domain].get();
-        if (integral)
-          return integral;
-      }
-      return default_interface_integral.get();
-    }
-
-    /// Get overlap integral over a given domain, falling back to the
-    /// default if necessary
-    ufc::overlap_integral * get_overlap_integral(std::size_t domain)
-    {
-      if (domain < form.max_overlap_subdomain_id())
-      {
-        ufc::overlap_integral * integral = overlap_integrals[domain].get();
-        if (integral)
-          return integral;
-      }
-      return default_overlap_integral.get();
     }
 
     /// Form

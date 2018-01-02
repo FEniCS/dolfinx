@@ -96,7 +96,7 @@ namespace
 
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      // Update UFC cell
+      // Get cell coordinates
       cell->get_coordinate_dofs(coordinate_dofs);
 
       // Get local-to-global map
@@ -487,7 +487,6 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
   coarsemap->tabulate_local_to_global_dofs(coarse_local_to_global_dofs);
 
   std::vector<double> coordinate_dofs; // cell dofs coordinates vector
-  ufc::cell ufc_cell; // ufc cell
 
   // Loop over the found coarse cells
   for (unsigned int i = 0; i < found_ids.size(); ++i)
@@ -500,14 +499,13 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
     Cell coarse_cell(meshc, static_cast<std::size_t>(id));
     // Get dofs coordinates of the coarse cell
     coarse_cell.get_coordinate_dofs(coordinate_dofs);
-    // Save cell information into the ufc cell
-    coarse_cell.get_cell_data(ufc_cell);
+
     // Evaluate the basis functions of the coarse cells at the fine
     // point and store the values into temp_values
     el->evaluate_basis_all(temp_values.data(),
                            curr_point.coordinates(),
                            coordinate_dofs.data(),
-                           ufc_cell.orientation);
+                           -1);
 
     // Get the coarse dofs associated with this cell
     auto temp_dofs = coarsemap->cell_dofs(id);
