@@ -1491,9 +1491,8 @@ void DofMapBuilder::compute_node_reordering(
                    "compute node reordering",
                    "Invalid node ownership index.");
   }
-  dolfin_assert((unowned_local_size+owned_local_size) == node_ownership.size());
-  dolfin_assert((unowned_local_size+owned_local_size)
-                == old_local_to_global.size());
+  dolfin_assert((unowned_local_size + owned_local_size) == node_ownership.size());
+  dolfin_assert((unowned_local_size + owned_local_size) == old_local_to_global.size());
 
   // Create global-to-local index map for local un-owned nodes
   std::vector<std::pair<std::size_t, int>> node_pairs;
@@ -1556,8 +1555,7 @@ void DofMapBuilder::compute_node_reordering(
   }
 
   // Reorder nodes
-  const std::string ordering_library
-    = dolfin::parameters["dof_ordering_library"];
+  const std::string ordering_library = dolfin::parameters["dof_ordering_library"];
   std::vector<int> node_remap;
   if (ordering_library == "Boost")
     node_remap = BoostGraphOrdering::compute_cuthill_mckee(graph, true);

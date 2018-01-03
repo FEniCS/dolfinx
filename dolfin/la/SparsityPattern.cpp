@@ -442,7 +442,7 @@ void SparsityPattern::apply()
 
       // Sanity check
       if (I < local_range0.first
-          || I >= local_range0.second)
+          || I >= bs0*local_range0.second)
       {
         dolfin_error("SparsityPattern.cpp",
                      "apply changes to sparsity pattern",
@@ -455,8 +455,7 @@ void SparsityPattern::apply()
       const std::size_t i_index = I - offset0;
 
       // Insert in diagonal or off-diagonal block
-      if (local_range1.first <= J &&
-          J < local_range1.second)
+      if (bs1*local_range1.first <= J and J < bs1*local_range1.second)
       {
         dolfin_assert(i_index < _diagonal.size());
         _diagonal[i_index].insert(J);

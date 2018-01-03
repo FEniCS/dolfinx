@@ -56,6 +56,9 @@ def build_nullspace(V, x):
 mesh = Mesh(MPI.comm_world)
 XDMFFile(MPI.comm_world, "../pulley.xdmf").read(mesh)
 
+#mesh = UnitCubeMesh(1, 1, 1)
+#mesh = BoxMesh.create(MPI.comm_world, [Point(0,0,0), Point(1,1,1)], [1, 1, 1], CellType.Type.tetrahedron)
+
 # Function to mark inner surface of pulley
 def inner_surface(x, on_boundary):
     r = 3.75 - x[2]*0.17
@@ -109,6 +112,7 @@ A.set_near_nullspace(null_space)
 
 # Set solver options
 PETScOptions.set("ksp_type", "cg")
+PETScOptions.set("ksp_rtol", 1.0e-9)
 PETScOptions.set("pc_type", "gamg")
 
 # Use Chebyshev smoothing for multigrid
@@ -124,6 +128,7 @@ PETScOptions.set("ksp_monitor");
 
 # Create CG Krylov solver and turn convergence monitoring on
 solver = PETScKrylovSolver(MPI.comm_world)
+#solver = PETScKrylovSolver()
 solver.set_from_options()
 
 # Set matrix operator
@@ -135,6 +140,11 @@ solver.solve(u.vector(), b);
 # Save solution to XDMF format
 file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
 file.write(u, XDMFFile.Encoding.ASCII)
+
+unorm = u.vector().norm("l2")
+if MPI.rank(mesh.mpi_comm()) == 0:
+    print("Solution vector norm:", unorm)
+
 
 # Save colored mesh partitions in VTK format if running in parallel
 #if MPI.size(mesh.mpi_comm()) > 1:
