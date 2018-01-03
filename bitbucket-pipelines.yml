@@ -22,3 +22,5 @@ pipelines:
           - mpirun -np 3 python3 ./demo_poisson.py
           - cd ../stokes-taylor-hood
           - python3 ./demo_stokes-taylor-hood.py
+          - cd ../../undocumented/elasticity
+          - python3 demo_elasticity.py
