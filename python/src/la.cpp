@@ -99,14 +99,14 @@ namespace dolfin_wrappers
   {
     // dolfin::IndexMap
     py::class_<dolfin::IndexMap, std::shared_ptr<dolfin::IndexMap>> index_map(m, "IndexMap");
-    index_map.def("size", &dolfin::IndexMap::size)
+    index_map.def("size_block", &dolfin::IndexMap::size_block)
       .def("block_size", &dolfin::IndexMap::block_size)
-      .def("local_range", &dolfin::IndexMap::local_range)
-      .def("local_to_global_unowned",
+      .def("local_range_block", &dolfin::IndexMap::local_range_block)
+      .def("block_local_to_global_unowned",
            [](dolfin::IndexMap& self) {
              return Eigen::Map<const Eigen::Matrix<std::size_t, Eigen::Dynamic, 1>>(
-               self.local_to_global_unowned().data(),
-               self.local_to_global_unowned().size()); },
+               self.block_local_to_global_unowned().data(),
+               self.block_local_to_global_unowned().size()); },
            py::return_value_policy::reference_internal,
            "Return view into unowned part of local-to-global map");
 
@@ -613,12 +613,13 @@ namespace dolfin_wrappers
       .def(py::init([](const MPICommWrapper comm)
                     { return std::unique_ptr<dolfin::PETScVector>(new dolfin::PETScVector(comm.get())); }))
       .def(py::init<Vec>())
+      .def("copy", &dolfin::PETScVector::copy)
+      .def("apply", &dolfin::PETScVector::apply)
       .def("norm", &dolfin::PETScVector::norm)
       .def("get_options_prefix", &dolfin::PETScVector::get_options_prefix)
       .def("set_options_prefix", &dolfin::PETScVector::set_options_prefix)
       .def("update_ghost_values", &dolfin::PETScVector::update_ghost_values)
       .def("size",  (std::size_t (dolfin::PETScVector::*)() const) &dolfin::PETScVector::size)
-      .def("norm", &dolfin::PETScVector::norm)
       .def("vec", &dolfin::PETScVector::vec, "Return underlying PETSc Vec object");
 
     // dolfin::PETScBaseMatrix
@@ -662,8 +663,9 @@ namespace dolfin_wrappers
       petsc_ks(m, "PETScKrylovSolver", "DOLFIN PETScKrylovSolver object");
 
     petsc_ks
-      .def(py::init([](const MPICommWrapper comm, std::string method="default", std::string pc="default")
-          { return std::unique_ptr<dolfin::PETScKrylovSolver>(new dolfin::PETScKrylovSolver(comm.get(), method, pc)); }))
+      .def(py::init([](const MPICommWrapper comm, std::string method, std::string pc)
+                    { return std::unique_ptr<dolfin::PETScKrylovSolver>(new dolfin::PETScKrylovSolver(comm.get(), method, pc)); }),
+           py::arg("comm"), py::arg("method")="default", py::arg("pc")="default")
       .def(py::init<KSP>())
       .def("get_options_prefix", &dolfin::PETScKrylovSolver::get_options_prefix)
       .def("set_options_prefix", &dolfin::PETScKrylovSolver::set_options_prefix)

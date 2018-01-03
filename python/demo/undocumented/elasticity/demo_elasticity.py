@@ -23,15 +23,6 @@ smoothed aggregation algerbaric multigrid."""
 from dolfin import *
 import matplotlib.pyplot as plt
 
-
-# Test for PETSc
-if not has_linear_algebra_backend("PETSc"):
-    print("DOLFIN has not been configured with PETSc. Exiting.")
-    exit()
-
-# Set backend to PETSC
-parameters["linear_algebra_backend"] = "PETSc"
-
 def build_nullspace(V, x):
     """Function to build null space for 3D elasticity"""
 
@@ -52,7 +43,7 @@ def build_nullspace(V, x):
     V.sub(1).set_x(nullspace_basis[5], -1.0, 2);
 
     for x in nullspace_basis:
-        x.apply("insert")
+        x.apply("add")
 
     # Create vector space basis and orthogonalize
     basis = VectorSpaceBasis(nullspace_basis)
@@ -62,7 +53,7 @@ def build_nullspace(V, x):
 
 
 # Load mesh from file
-mesh = Mesh()
+mesh = Mesh(MPI.comm_world)
 XDMFFile(MPI.comm_world, "../pulley.xdmf").read(mesh)
 
 # Function to mark inner surface of pulley
@@ -114,11 +105,11 @@ u = Function(V)
 null_space = build_nullspace(V, u.vector())
 
 # Attach near nullspace to matrix
-as_backend_type(A).set_near_nullspace(null_space)
+A.set_near_nullspace(null_space)
 
-# Create PETSC smoothed aggregation AMG preconditioner and attach near
-# null space
-pc = PETScPreconditioner("petsc_amg")
+# Set solver options
+PETScOptions.set("ksp_type", "cg")
+PETScOptions.set("pc_type", "gamg")
 
 # Use Chebyshev smoothing for multigrid
 PETScOptions.set("mg_levels_ksp_type", "chebyshev")
@@ -126,11 +117,14 @@ PETScOptions.set("mg_levels_pc_type", "jacobi")
 
 # Improve estimate of eigenvalues for Chebyshev smoothing
 PETScOptions.set("mg_levels_esteig_ksp_type", "cg")
-PETScOptions.set("mg_levels_ksp_chebyshev_esteig_steps", 50)
+PETScOptions.set("mg_levels_ksp_chebyshev_esteig_steps", 20)
+
+# Monitor solver
+PETScOptions.set("ksp_monitor");
 
 # Create CG Krylov solver and turn convergence monitoring on
-solver = PETScKrylovSolver("cg", pc)
-solver.parameters["monitor_convergence"] = True
+solver = PETScKrylovSolver(MPI.comm_world)
+solver.set_from_options()
 
 # Set matrix operator
 solver.set_operator(A);
@@ -138,19 +132,20 @@ solver.set_operator(A);
 # Compute solution
 solver.solve(u.vector(), b);
 
-# Save solution to VTK format
-File("elasticity.pvd", "compressed") << u
+# Save solution to XDMF format
+file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
+file.write(u, XDMFFile.Encoding.ASCII)
 
 # Save colored mesh partitions in VTK format if running in parallel
-if MPI.size(mesh.mpi_comm()) > 1:
-    File("partitions.pvd") << MeshFunction("size_t", mesh, mesh.topology().dim(), \
-                                           MPI.rank(mesh.mpi_comm()))
+#if MPI.size(mesh.mpi_comm()) > 1:
+#    File("partitions.pvd") << MeshFunction("size_t", mesh, mesh.topology().dim(), \
+#                                           MPI.rank(mesh.mpi_comm()))
 
 # Project and write stress field to post-processing file
-W = TensorFunctionSpace(mesh, "Discontinuous Lagrange", 0)
-stress = project(sigma(u), V=W)
-File("stress.pvd") << stress
+#W = TensorFunctionSpace(mesh, "Discontinuous Lagrange", 0)
+#stress = project(sigma(u), V=W)
+#File("stress.pvd") << stress
 
 # Plot solution
-plot(u)
-plt.show()
+#plot(u)
+#plt.show()

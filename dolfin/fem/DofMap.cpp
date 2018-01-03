@@ -181,7 +181,9 @@ std::size_t DofMap::num_facet_dofs() const
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> DofMap::ownership_range() const
 {
-  return _index_map->local_range();
+  auto block_range = _index_map->local_range_block();
+  std::size_t bs = _index_map->block_size();
+  return std::make_pair(bs*block_range.first, bs*block_range.second);
 }
 //-----------------------------------------------------------------------------
 const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const
@@ -552,9 +554,10 @@ std::vector<dolfin::la_index_t> DofMap::dofs() const
   std::vector<la_index_t> _dofs;
   _dofs.reserve(_dofmap.size()*max_element_dofs());
 
+  const std::size_t bs = _index_map->block_size();
   const dolfin::la_index_t local_ownership_size
-    = _index_map->size(IndexMap::MapSize::OWNED);
-  const std::size_t global_offset = _index_map->local_range().first;
+    = bs*_index_map->size_block(IndexMap::MapSize::OWNED);
+  const std::size_t global_offset = bs*_index_map->local_range_block().first;
 
   // Insert all dofs into a vector (will contain duplicates)
   for (auto dof : _dofmap)
@@ -591,17 +594,17 @@ void DofMap::tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_gl
 {
   const std::size_t bs = _index_map->block_size();
   const std::vector<std::size_t>& local_to_global_unowned
-    = _index_map->local_to_global_unowned();
+    = _index_map->block_local_to_global_unowned();
   const std::size_t local_ownership_size
-    = _index_map->size(IndexMap::MapSize::OWNED);
-  local_to_global_map.resize(_index_map->size(IndexMap::MapSize::ALL));
+    = bs*_index_map->size_block(IndexMap::MapSize::OWNED);
+  local_to_global_map.resize(bs*_index_map->size_block(IndexMap::MapSize::ALL));
 
-  const std::size_t global_offset = _index_map->local_range().first;
+  const std::size_t global_offset = bs*_index_map->local_range_block().first;
   for (std::size_t i = 0; i < local_ownership_size; ++i)
     local_to_global_map[i] = i + global_offset;
 
   for (std::size_t node = 0;
-       node < _index_map->local_to_global_unowned().size(); ++node)
+       node < _index_map->block_local_to_global_unowned().size(); ++node)
   {
     for (std::size_t component = 0; component < bs; ++component)
     {

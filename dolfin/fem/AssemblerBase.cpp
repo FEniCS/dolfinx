@@ -70,12 +70,15 @@ void AssemblerBase::init_global_tensor(PETScVector& x, const Form& a)
     //std::vector<dolfin::la_index_t> ghosts;
 
     // Build local-to-global index map
-    std::vector<std::size_t> local_to_global(index_map->size(IndexMap::MapSize::ALL));
+    int block_size = index_map->block_size();
+    std::vector<std::size_t> local_to_global(block_size*index_map->size_block(IndexMap::MapSize::ALL));
     for (std::size_t i = 0; i < local_to_global.size(); ++i)
-      local_to_global[i] = index_map->local_to_global(i);
+      local_to_global[i] = index_map->local_to_global_index(i);
 
     // Initialize tensor
-    x.init(index_map->local_range(), local_to_global, {});
+    auto block_range = index_map->local_range_block();
+    std::pair<std::size_t, std::size_t> local_range(block_size*block_range.first, block_size*block_range.second);
+    x.init(local_range, local_to_global, {});
   }
   else
   {
@@ -169,7 +172,7 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
       dolfin::la_index_t IJ[2];
       for (std::size_t i: global_dofs)
       {
-        const std::size_t I = index_map_0.local_to_global(i);
+        const std::size_t I = index_map_0.local_to_global_index(i);
         if (I >= row_range.first && I < row_range.second)
         {
           IJ[primary_dim] = I;

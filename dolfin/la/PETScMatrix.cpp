@@ -163,13 +163,13 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   dolfin_assert(tensor_layout.rank() == 2);
 
   std::vector<PetscInt> _map0, _map1;
-  _map0.resize(tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL)/block_size);
-  _map1.resize(tensor_layout.index_map(1)->size(IndexMap::MapSize::ALL)/block_size);
+  _map0.resize(tensor_layout.index_map(0)->size_block(IndexMap::MapSize::ALL));
+  _map1.resize(tensor_layout.index_map(1)->size_block(IndexMap::MapSize::ALL));
 
   for (std::size_t i = 0; i < _map0.size(); ++i)
-    _map0[i] = tensor_layout.index_map(0)->local_to_global(i*block_size)/block_size;
+    _map0[i] = tensor_layout.index_map(0)->local_to_global_index(i*block_size)/block_size;
   for (std::size_t i = 0; i < _map1.size(); ++i)
-    _map1[i] = tensor_layout.index_map(1)->local_to_global(i*block_size)/block_size;
+    _map1[i] = tensor_layout.index_map(1)->local_to_global_index(i*block_size)/block_size;
 
   // FIXME: In many cases the rows and columns could shared a commin
   // local-to-global map

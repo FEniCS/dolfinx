@@ -167,7 +167,7 @@ void DirichletBC::gather(Map& boundary_values) const
       for (auto proc = shared_node->second.begin();
            proc != shared_node->second.end(); ++proc)
       {
-        proc_map0[*proc].push_back(dofmap.index_map()->local_to_global(bv->first));
+        proc_map0[*proc].push_back(dofmap.index_map()->local_to_global_index(bv->first));
         proc_map1[*proc].push_back(bv->second);
       }
     }
@@ -207,7 +207,7 @@ void DirichletBC::gather(Map& boundary_values) const
       const std::size_t node = div.quot;
       const int component = div.rem;
       const std::vector<std::size_t>& local_to_global
-        = dofmap.index_map()->local_to_global_unowned();
+        = dofmap.index_map()->block_local_to_global_unowned();
 
       // Case 1: dof is not owned by this process
       auto it = std::find(local_to_global.begin(),

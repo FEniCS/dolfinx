@@ -36,8 +36,8 @@ namespace dolfin
   {
   public:
 
-    /// MapSize (ALL = all local indices, OWNED = owned local indices,
-    /// UNOWNED = unowned local indices, GLOBAL = total indices
+    /// MapSize (ALL=(all local indices), OWNED=(owned local indices),
+    /// UNOWNED=(unowned local indices), GLOBAL=(total indices
     /// globally)
     enum class MapSize : int32_t { ALL = 0,
                                    OWNED = 1,
@@ -54,33 +54,42 @@ namespace dolfin
     /// Destructor
     ~IndexMap();
 
-    /// Initialise with number of local entries and block size. This
-    /// function is collective
+    /// Initialise with number of local entries (number of blocks) and
+    /// block size. This function is collective
     void init(std::size_t local_size, std::size_t block_size);
 
+    /// Local range of block indices
+    std::pair<std::size_t, std::size_t> local_range_block() const;
+
     /// Local range of indices
-    std::pair<std::size_t, std::size_t> local_range() const;
+    //std::pair<std::size_t, std::size_t> local_range() const;
+
+    /// Get number of local blocks of type MapSize::OWNED,
+    /// MapSize::UNOWNED, MapSize::ALL or MapSize::GLOBAL
+    std::size_t size_block(MapSize type) const;
 
     /// Get number of local indices of type MapSize::OWNED,
     /// MapSize::UNOWNED, MapSize::ALL or MapSize::GLOBAL
-    std::size_t size(MapSize type) const;
+    //std::size_t size(MapSize type) const;
 
-    /// Get local to global map for unowned indices
+    /// Get local to global map for unowned blocks
     /// (local indexing beyond end of local range)
-    const std::vector<std::size_t>& local_to_global_unowned() const;
+    const std::vector<std::size_t>& block_local_to_global_unowned() const;
 
     /// Get global index of local index i
-    std::size_t local_to_global(std::size_t i) const;
+    std::size_t local_to_global_block(std::size_t i) const;
 
-    /// Set local_to_global map for unowned indices (beyond end of local
+    std::size_t local_to_global_index(std::size_t i) const;
+
+    /// Set local_to_global map for unowned blocks (beyond end of local
     /// range). Computes and stores off-process owner array.
-    void set_local_to_global(const std::vector<std::size_t>& indices);
+    void set_block_local_to_global(const std::vector<std::size_t>& indices);
 
-    /// Get off process owner for unowned indices
-    const std::vector<int>& off_process_owner() const;
+    /// Get off process owner for unowned blocks
+    const std::vector<int>& block_off_process_owner() const;
 
     /// Get process owner of any global index
-    int global_index_owner(std::size_t index) const;
+    int global_block_index_owner(std::size_t index) const;
 
     /// Get block size
     int block_size() const;
@@ -97,6 +106,7 @@ namespace dolfin
     // excessive)
     unsigned int _rank;
 
+    // FIXME: This could get big for large process counts
     // Range of ownership of index for all processes
     std::vector<std::size_t> _all_ranges;
 
@@ -112,12 +122,26 @@ namespace dolfin
   };
 
   // Function which may appear in a hot loop
-  inline std::size_t IndexMap::local_to_global(std::size_t i) const
+  inline std::size_t IndexMap::local_to_global_block(std::size_t i) const
   {
     // These two calls get hopefully optimized out of hot loops due to
     // inlining
-    const std::size_t local_size = size(IndexMap::MapSize::OWNED);
-    const std::size_t global_offset = local_range().first;
+    const std::size_t local_size = size_block(IndexMap::MapSize::OWNED);
+    const std::size_t global_offset = local_range_block().first;
+
+    if (i < local_size)
+      return (i + global_offset);
+    else
+      return _local_to_global[i - local_size];
+  }
+
+  // Function which may appear in a hot loop
+  inline std::size_t IndexMap::local_to_global_index(std::size_t i) const
+  {
+    // These two calls get hopefully optimized out of hot loops due to
+    // inlining
+    const std::size_t local_size = _block_size*size_block(IndexMap::MapSize::OWNED);
+    const std::size_t global_offset = _block_size*local_range_block().first;
 
     if (i < local_size)
       return (i + global_offset);
@@ -130,7 +154,6 @@ namespace dolfin
       return _block_size*_local_to_global[index] + component;
     }
   }
-
 }
 
 #endif
