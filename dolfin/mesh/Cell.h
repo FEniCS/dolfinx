@@ -340,6 +340,8 @@ namespace dolfin
       ufc_cell.mesh_identifier = mesh_id();
       ufc_cell.index = index();
     }
+
+    template <typename T> friend class MeshIterator;
   };
 
   /// A CellIterator is a MeshEntityIterator of topological codimension 0.
