@@ -168,7 +168,7 @@ namespace dolfin
     /// @return     std::vector<unsigned int>
     ///         The map from non-local dofs.
     const std::vector<int>& off_process_owner() const
-    { return _index_map->off_process_owner(); }
+    { return _index_map->block_off_process_owner(); }
 
     /// Return map from all shared nodes to the sharing processes (not
     /// including the current process) that share it.
@@ -385,11 +385,11 @@ namespace dolfin
     /// @return     std::size_t
     ///         The global dof index.
     std::size_t local_to_global_index(int local_index) const
-    { return _index_map->local_to_global(local_index); }
+    { return _index_map->local_to_global_index(local_index); }
 
     /// Return indices of dofs which are owned by other processes
     const std::vector<std::size_t>& local_to_global_unowned() const
-    { return _index_map->local_to_global_unowned(); }
+    { return _index_map->block_local_to_global_unowned(); }
 
     /// Return informal string representation (pretty-print)
     ///

@@ -173,8 +173,8 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
     // ghost nodes are marked as -3
     std::vector<int> shared_nodes;
     compute_shared_nodes(shared_nodes, node_graph0,
-                           node_local_to_global0.size(),
-                           *ufc_node_dofmap, mesh);
+                        node_local_to_global0.size(),
+                        *ufc_node_dofmap, mesh);
 
     // Compute:
     // (a) owned and shared nodes (and owned and un-owned):
@@ -196,7 +196,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
 
     // Sanity check
     dolfin_assert(MPI::sum(mesh.mpi_comm(),
-       (std::size_t) dofmap._index_map->size(IndexMap::MapSize::OWNED))
+       (std::size_t) bs*dofmap._index_map->size(IndexMap::MapSize::OWNED))
                   == dofmap._global_dimension);
 
     // Compute node re-ordering for process index locality and spatial
@@ -1491,9 +1491,8 @@ void DofMapBuilder::compute_node_reordering(
                    "compute node reordering",
                    "Invalid node ownership index.");
   }
-  dolfin_assert((unowned_local_size+owned_local_size) == node_ownership.size());
-  dolfin_assert((unowned_local_size+owned_local_size)
-                == old_local_to_global.size());
+  dolfin_assert((unowned_local_size + owned_local_size) == node_ownership.size());
+  dolfin_assert((unowned_local_size + owned_local_size) == old_local_to_global.size());
 
   // Create global-to-local index map for local un-owned nodes
   std::vector<std::pair<std::size_t, int>> node_pairs;
@@ -1556,8 +1555,7 @@ void DofMapBuilder::compute_node_reordering(
   }
 
   // Reorder nodes
-  const std::string ordering_library
-    = dolfin::parameters["dof_ordering_library"];
+  const std::string ordering_library = dolfin::parameters["dof_ordering_library"];
   std::vector<int> node_remap;
   if (ordering_library == "Boost")
     node_remap = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
@@ -1654,7 +1652,7 @@ void DofMapBuilder::compute_node_reordering(
       off_process_node_counter++;
     }
 
-  index_map.set_local_to_global(local_to_global_unowned);
+  index_map.set_block_local_to_global(local_to_global_unowned);
 
   // Sanity check
   for (auto it : old_to_new_local)

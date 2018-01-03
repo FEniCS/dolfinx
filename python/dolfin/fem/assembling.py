@@ -261,10 +261,10 @@ def assemble_system(A_form, b_form, bcs=None, x0=None,
     # Create tensors
     comm_A = A_dolfin_form.mesh().mpi_comm()
     comm_b = A_dolfin_form.mesh().mpi_comm()
-    A_tensor = _create_tensor(comm_A, A_form, A_dolfin_form.rank(), backend,
-                              A_tensor)
-    b_tensor = _create_tensor(comm_b, b_form, b_dolfin_form.rank(), backend,
-                              b_tensor)
+    if A_tensor is None:
+        A_tensor = cpp.la.PETScMatrix(comm_A)
+    if b_tensor is None:
+        b_tensor = cpp.la.PETScVector(comm_A)
 
     # Check bcs
     bcs = _wrap_in_list(bcs, 'bcs', cpp.fem.DirichletBC)

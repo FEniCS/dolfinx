@@ -281,8 +281,8 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
 
   // Get local size
   dolfin_assert(_dofmap);
-  std::size_t local_size
-    = _dofmap->index_map()->size(IndexMap::MapSize::OWNED);
+  std::size_t bs = _dofmap->block_size();
+  std::size_t local_size = bs*_dofmap->index_map()->size(IndexMap::MapSize::OWNED);
 
   // Vector to hold coordinates and return
   std::vector<double> x(gdim*local_size);
