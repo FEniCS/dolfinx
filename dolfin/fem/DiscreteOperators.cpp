@@ -108,10 +108,10 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   {
     std::vector<dolfin::la_index_t> rows;
     std::vector<dolfin::la_index_t> cols;
-    for (EdgeIterator edge(mesh); !edge.end(); ++edge)
+    for (auto &edge : edges(mesh))
     {
       // Row index (global indices)
-      const std::size_t row = local_to_global_map0[edge_to_dof[edge->index()]];
+      const std::size_t row = local_to_global_map0[edge_to_dof[edge.index()]];
       rows.push_back(row);
 
       if (row >= local_range[0].first and row < local_range[0].second)
