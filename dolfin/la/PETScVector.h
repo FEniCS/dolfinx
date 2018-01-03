@@ -27,6 +27,7 @@
 
 #ifdef HAS_PETSC
 
+#include <array>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -143,13 +144,14 @@ namespace dolfin
     virtual void init(std::size_t N);
 
     /// Initialize vector with given ownership range
-    virtual void init(std::pair<std::size_t, std::size_t> range);
+    virtual void init(std::array<std::int64_t, 2> range);
 
     /// Initialize vector with given ownership range and with ghost
     /// values
-    virtual void init(std::pair<std::size_t, std::size_t> range,
-                      const std::vector<std::size_t>& local_to_global_map,
-                      const std::vector<la_index_t>& ghost_indices);
+    virtual void init(std::array<std::int64_t, 2> range,
+                      const std::vector<la_index_t>& local_to_global_map,
+                      const std::vector<la_index_t>& ghost_indices,
+                      int block_size);
 
     /// Return true if vector is empty
     virtual bool empty() const;

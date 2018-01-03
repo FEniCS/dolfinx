@@ -55,15 +55,15 @@ void IndexMap::init(std::size_t local_size, std::size_t block_size)
   _all_ranges.insert(_all_ranges.begin(), 0);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> IndexMap::local_range_block() const
+std::array<std::int64_t, 2> IndexMap::local_range() const
 {
   if(_all_ranges.size() == 0)
   {
     warning("Asking for size of uninitialised range");
-    return std::pair<std::size_t, std::size_t>(0, 0);
+    return {0, 0};
   }
   else
-    return std::make_pair(_all_ranges[_rank], _all_ranges[_rank + 1]);
+    return { (std::int64_t) _all_ranges[_rank], (std::int64_t) _all_ranges[_rank + 1]};
 }
 //-----------------------------------------------------------------------------
 /*
@@ -75,7 +75,7 @@ std::pair<std::size_t, std::size_t> IndexMap::local_range() const
 }
 */
 //-----------------------------------------------------------------------------
-std::size_t IndexMap::size_block(const IndexMap::MapSize type) const
+std::size_t IndexMap::size(const IndexMap::MapSize type) const
 {
   if(_all_ranges.size() == 0)
   {

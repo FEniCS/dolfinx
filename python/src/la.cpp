@@ -99,9 +99,9 @@ namespace dolfin_wrappers
   {
     // dolfin::IndexMap
     py::class_<dolfin::IndexMap, std::shared_ptr<dolfin::IndexMap>> index_map(m, "IndexMap");
-    index_map.def("size_block", &dolfin::IndexMap::size_block)
-      .def("block_size", &dolfin::IndexMap::block_size)
-      .def("local_range_block", &dolfin::IndexMap::local_range_block)
+    index_map.def("size", &dolfin::IndexMap::size)
+      .def("block_size", &dolfin::IndexMap::block_size, "Return block size")
+      .def("local_range", &dolfin::IndexMap::local_range)
       .def("block_local_to_global_unowned",
            [](dolfin::IndexMap& self) {
              return Eigen::Map<const Eigen::Matrix<std::size_t, Eigen::Dynamic, 1>>(

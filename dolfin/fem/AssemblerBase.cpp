@@ -27,7 +27,6 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
-#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/IndexMap.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/TensorLayout.h>
@@ -71,14 +70,12 @@ void AssemblerBase::init_global_tensor(PETScVector& x, const Form& a)
 
     // Build local-to-global index map
     int block_size = index_map->block_size();
-    std::vector<std::size_t> local_to_global(block_size*index_map->size_block(IndexMap::MapSize::ALL));
+    std::vector<la_index_t> local_to_global(index_map->size(IndexMap::MapSize::ALL));
     for (std::size_t i = 0; i < local_to_global.size(); ++i)
-      local_to_global[i] = index_map->local_to_global_index(i);
+      local_to_global[i] = index_map->local_to_global(i);
 
     // Initialize tensor
-    auto block_range = index_map->local_range_block();
-    std::pair<std::size_t, std::size_t> local_range(block_size*block_range.first, block_size*block_range.second);
-    x.init(local_range, local_to_global, {});
+    x.init(index_map->local_range(), local_to_global, {}, block_size);
   }
   else
   {

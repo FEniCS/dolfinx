@@ -18,7 +18,7 @@
 #ifndef __INDEX_MAP_H
 #define __INDEX_MAP_H
 
-#include <utility>
+#include <array>
 #include <vector>
 #include <dolfin/common/MPI.h>
 
@@ -27,10 +27,10 @@ namespace dolfin
 
   /// This class represents the distribution index arrays across
   /// processes. An index array is a contiguous collection of N+1
-  /// indices [0, 1, . . ., N] that are distributed across processes M
+  /// block indices [0, 1, . . ., N] that are distributed across processes M
   /// processes. On a given process, the IndexMap stores a portion of
   /// the index set using local indices [0, 1, . . . , n], and a map
-  /// from the local indices to a unique global index.
+  /// from the local block indices to a unique global block index.
 
   class IndexMap
   {
@@ -47,26 +47,27 @@ namespace dolfin
     /// Index map with no data
     explicit IndexMap(MPI_Comm mpi_comm);
 
-    /// Index map with local size on each process. This constructor
-    /// is collective
+    /// Create Index map with local_size owned blocks on this process, and blocks
+    /// have size block_size.
+    ///
+    /// Collective
     IndexMap(MPI_Comm mpi_comm, std::size_t local_size, std::size_t block_size);
 
     /// Destructor
     ~IndexMap();
 
-    /// Initialise with number of local entries (number of blocks) and
-    /// block size. This function is collective
+    /// Initialise IndexMap with local_size block owned on this process with
+    /// block_size.
+    ///
+    /// Collective
     void init(std::size_t local_size, std::size_t block_size);
 
     /// Local range of block indices
-    std::pair<std::size_t, std::size_t> local_range_block() const;
-
-    /// Local range of indices
-    //std::pair<std::size_t, std::size_t> local_range() const;
+    std::array<std::int64_t, 2> local_range() const;
 
     /// Get number of local blocks of type MapSize::OWNED,
     /// MapSize::UNOWNED, MapSize::ALL or MapSize::GLOBAL
-    std::size_t size_block(MapSize type) const;
+    std::size_t size(MapSize type) const;
 
     /// Get number of local indices of type MapSize::OWNED,
     /// MapSize::UNOWNED, MapSize::ALL or MapSize::GLOBAL
@@ -76,8 +77,8 @@ namespace dolfin
     /// (local indexing beyond end of local range)
     const std::vector<std::size_t>& block_local_to_global_unowned() const;
 
-    /// Get global index of local index i
-    std::size_t local_to_global_block(std::size_t i) const;
+    /// Get global block index of local block i
+    std::size_t local_to_global(std::size_t i) const;
 
     std::size_t local_to_global_index(std::size_t i) const;
 
@@ -122,12 +123,12 @@ namespace dolfin
   };
 
   // Function which may appear in a hot loop
-  inline std::size_t IndexMap::local_to_global_block(std::size_t i) const
+  inline std::size_t IndexMap::local_to_global(std::size_t i) const
   {
     // These two calls get hopefully optimized out of hot loops due to
     // inlining
-    const std::size_t local_size = size_block(IndexMap::MapSize::OWNED);
-    const std::size_t global_offset = local_range_block().first;
+    const std::size_t local_size = size(IndexMap::MapSize::OWNED);
+    const std::size_t global_offset = local_range()[0];
 
     if (i < local_size)
       return (i + global_offset);
@@ -140,8 +141,8 @@ namespace dolfin
   {
     // These two calls get hopefully optimized out of hot loops due to
     // inlining
-    const std::size_t local_size = _block_size*size_block(IndexMap::MapSize::OWNED);
-    const std::size_t global_offset = _block_size*local_range_block().first;
+    const std::size_t local_size = _block_size*size(IndexMap::MapSize::OWNED);
+    const std::size_t global_offset = _block_size*local_range()[0];
 
     if (i < local_size)
       return (i + global_offset);

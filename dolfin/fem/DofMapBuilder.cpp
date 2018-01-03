@@ -196,7 +196,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
 
     // Sanity check
     dolfin_assert(MPI::sum(mesh.mpi_comm(),
-       (std::size_t) bs*dofmap._index_map->size_block(IndexMap::MapSize::OWNED))
+       (std::size_t) bs*dofmap._index_map->size(IndexMap::MapSize::OWNED))
                   == dofmap._global_dimension);
 
     // Compute node re-ordering for process index locality and spatial

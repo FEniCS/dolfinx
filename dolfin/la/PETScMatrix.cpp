@@ -163,8 +163,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   dolfin_assert(tensor_layout.rank() == 2);
 
   std::vector<PetscInt> _map0, _map1;
-  _map0.resize(tensor_layout.index_map(0)->size_block(IndexMap::MapSize::ALL));
-  _map1.resize(tensor_layout.index_map(1)->size_block(IndexMap::MapSize::ALL));
+  _map0.resize(tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL));
+  _map1.resize(tensor_layout.index_map(1)->size(IndexMap::MapSize::ALL));
 
   for (std::size_t i = 0; i < _map0.size(); ++i)
   {
