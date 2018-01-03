@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
+<Xdmf Version="3.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <Domain>
+    <Grid Name="mesh" GridType="Uniform">
+      <Topology NumberOfElements="5400" TopologyType="Triangle" NodesPerElement="3">
+        <DataItem Dimensions="5400 3" NumberType="UInt" Format="HDF">dolfin_fine.h5:/Mesh/mesh/topology</DataItem>
+      </Topology>
+      <Geometry GeometryType="XY">
+        <DataItem Dimensions="2868 2" Format="HDF">dolfin_fine.h5:/Mesh/mesh/geometry</DataItem>
+      </Geometry>
+    </Grid>
+    <Grid Name="mesh" GridType="Uniform">
+      <Topology NumberOfElements="8268" TopologyType="PolyLine" NodesPerElement="2">
+        <DataItem Dimensions="8268 2" NumberType="UInt" Format="HDF">dolfin_fine.h5:/MeshFunction/0/mesh/topology</DataItem>
+      </Topology>
+      <Geometry Reference="XML">/Xdmf/Domain/Grid/Geometry</Geometry>
+      <Attribute Name="subdomains" AttributeType="Scalar" Center="Cell">
+        <DataItem Dimensions="8268 1" Format="HDF">dolfin_fine.h5:/MeshFunction/0/values</DataItem>
+      </Attribute>
+    </Grid>
+  </Domain>
+</Xdmf>
