@@ -35,12 +35,12 @@ MeshTopology::MeshTopology() : Variable("topology", "mesh topology")
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)
   : Variable("topology", "mesh topology"),
-    coloring(topology.coloring), num_entities(topology.num_entities),
-    ghost_offset_index(topology.ghost_offset_index),
-    global_num_entities(topology.global_num_entities),
+    _num_entities(topology._num_entities),
+    _ghost_offset_index(topology._ghost_offset_index),
+    _global_num_entities(topology._global_num_entities),
     _global_indices(topology._global_indices),
     _shared_entities(topology._shared_entities),
-    connectivity(topology.connectivity)
+    _connectivity(topology._connectivity)
 {
   // Do nothing
 }
@@ -52,69 +52,69 @@ MeshTopology::~MeshTopology()
 //-----------------------------------------------------------------------------
 MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
 {
-  // Public data
-  coloring = topology.coloring;
+  // FIXME: Call copy constructor?
 
   // Private data
-  num_entities = topology.num_entities;
-  global_num_entities = topology.global_num_entities;
-  ghost_offset_index = topology.ghost_offset_index;
+  _num_entities = topology._num_entities;
+  _global_num_entities = topology._global_num_entities;
+  _ghost_offset_index = topology._ghost_offset_index;
   _global_indices = topology._global_indices;
   _shared_entities = topology._shared_entities;
-  connectivity = topology.connectivity;
+  _connectivity = topology._connectivity;
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-std::size_t MeshTopology::dim() const
+std::uint32_t MeshTopology::dim() const
 {
-  return num_entities.size() - 1;
+  return _num_entities.size() - 1;
 }
 //-----------------------------------------------------------------------------
-std::size_t MeshTopology::size(std::size_t dim) const
+std::uint32_t MeshTopology::size(unsigned int dim) const
 {
-  if (num_entities.size() == 0)
+  if (_num_entities.empty())
     return 0;
 
-  dolfin_assert(dim < num_entities.size());
-  return num_entities[dim];
+  dolfin_assert(dim < _num_entities.size());
+  return _num_entities[dim];
 }
 //-----------------------------------------------------------------------------
-std::size_t MeshTopology::size_global(std::size_t dim) const
+std::uint64_t MeshTopology::size_global(unsigned int dim) const
 {
-  if (global_num_entities.empty())
+  if (_global_num_entities.empty())
     return 0;
 
-  dolfin_assert(dim < global_num_entities.size());
-  return global_num_entities[dim];
+  dolfin_assert(dim < _global_num_entities.size());
+  return _global_num_entities[dim];
 }
 //-----------------------------------------------------------------------------
-std::size_t MeshTopology::ghost_offset(std::size_t dim) const
+std::uint32_t MeshTopology::ghost_offset(unsigned int dim) const
 {
-  if (ghost_offset_index.empty())
+  if (_ghost_offset_index.empty())
     return 0;
 
-  dolfin_assert(dim < ghost_offset_index.size());
-  return ghost_offset_index[dim];
+  dolfin_assert(dim < _ghost_offset_index.size());
+  return _ghost_offset_index[dim];
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::clear()
 {
+  // FIXME: why is this function needed?
+
   // Clear data
-  coloring.clear();
-  num_entities.clear();
-  global_num_entities.clear();
-  ghost_offset_index.clear();
+  _num_entities.clear();
+  _global_num_entities.clear();
+  _ghost_offset_index.clear();
   _global_indices.clear();
   _shared_entities.clear();
-  connectivity.clear();
+  _connectivity.clear();
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::clear(std::size_t d0, std::size_t d1)
 {
-  dolfin_assert(d0 < connectivity.size());
-  dolfin_assert(d1 < connectivity[d0].size());
-  connectivity[d0][d1].clear();
+  dolfin_assert(d0 < _connectivity.size());
+  dolfin_assert(d1 < _connectivity[d0].size());
+  _connectivity[d0][d1].clear();
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::init(std::size_t dim)
@@ -123,28 +123,28 @@ void MeshTopology::init(std::size_t dim)
   clear();
 
   // Initialize number of mesh entities
-  num_entities = std::vector<unsigned int>(dim + 1, 0);
-  global_num_entities = std::vector<std::size_t>(dim + 1, 0);
-  ghost_offset_index = std::vector<std::size_t>(dim + 1, 0);
+  _num_entities = std::vector<std::int32_t>(dim + 1, 0);
+  _global_num_entities = std::vector<std::int64_t>(dim + 1, 0);
+  _ghost_offset_index = std::vector<std::size_t>(dim + 1, 0);
 
   // Initialize storage for global indices
   _global_indices.resize(dim + 1);
 
   // Initialize mesh connectivity
-  connectivity.resize(dim + 1);
+  _connectivity.resize(dim + 1);
   for (std::size_t d0 = 0; d0 <= dim; d0++)
     for (std::size_t d1 = 0; d1 <= dim; d1++)
-      connectivity[d0].push_back(MeshConnectivity(d0, d1));
+      _connectivity[d0].push_back(MeshConnectivity(d0, d1));
 }
 //-----------------------------------------------------------------------------
-void MeshTopology::init(std::size_t dim, std::size_t local_size,
-                        std::size_t global_size)
+void MeshTopology::init(std::size_t dim, std::int32_t local_size,
+                        std::int64_t global_size)
 {
-  dolfin_assert(dim < num_entities.size());
-  num_entities[dim] = local_size;
+  dolfin_assert(dim < _num_entities.size());
+  _num_entities[dim] = local_size;
 
-  dolfin_assert(dim < global_num_entities.size());
-  global_num_entities[dim] = global_size;
+  dolfin_assert(dim < _global_num_entities.size());
+  _global_num_entities[dim] = global_size;
 
   // FIXME: Remove this when ghost/halo cells are supported
   // If mesh is local, make shared vertices empty
@@ -154,42 +154,41 @@ void MeshTopology::init(std::size_t dim, std::size_t local_size,
 //-----------------------------------------------------------------------------
 void MeshTopology::init_ghost(std::size_t dim, std::size_t index)
 {
-  dolfin_assert(dim < ghost_offset_index.size());
-  ghost_offset_index[dim] = index;
+  dolfin_assert(dim < _ghost_offset_index.size());
+  _ghost_offset_index[dim] = index;
 }
 //-----------------------------------------------------------------------------
-void MeshTopology::init_global_indices(std::size_t dim, std::size_t size)
+void MeshTopology::init_global_indices(std::size_t dim, std::int64_t size)
 {
   dolfin_assert(dim < _global_indices.size());
-  _global_indices[dim]
-    = std::vector<std::int64_t>(size, -1);
+  _global_indices[dim] = std::vector<std::int64_t>(size, -1);
 }
 //-----------------------------------------------------------------------------
 dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0,
                                                     std::size_t d1)
 {
-  dolfin_assert(d0 < connectivity.size());
-  dolfin_assert(d1 < connectivity[d0].size());
-  return connectivity[d0][d1];
+  dolfin_assert(d0 < _connectivity.size());
+  dolfin_assert(d1 < _connectivity[d0].size());
+  return _connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
 const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0,
                                                           std::size_t d1) const
 {
-  dolfin_assert(d0 < connectivity.size());
-  dolfin_assert(d1 < connectivity[d0].size());
-  return connectivity[d0][d1];
+  dolfin_assert(d0 < _connectivity.size());
+  dolfin_assert(d1 < _connectivity[d0].size());
+  return _connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<unsigned int>>&
-  MeshTopology::shared_entities(unsigned int dim)
+MeshTopology::shared_entities(unsigned int dim)
 {
   dolfin_assert(dim <= this->dim());
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
 const std::map<std::int32_t, std::set<unsigned int>>&
-  MeshTopology::shared_entities(unsigned int dim) const
+MeshTopology::shared_entities(unsigned int dim) const
 {
   auto e = _shared_entities.find(dim);
   if (e == _shared_entities.end())
@@ -208,7 +207,7 @@ size_t MeshTopology::hash() const
 //-----------------------------------------------------------------------------
 std::string MeshTopology::str(bool verbose) const
 {
-  const std::size_t _dim = num_entities.size() - 1;
+  const std::size_t _dim = _num_entities.size() - 1;
   std::stringstream s;
   if (verbose)
   {
@@ -216,7 +215,7 @@ std::string MeshTopology::str(bool verbose) const
 
     s << "  Number of entities:" << std::endl << std::endl;
     for (std::size_t d = 0; d <= _dim; d++)
-      s << "    dim = " << d << ": " << num_entities[d] << std::endl;
+      s << "    dim = " << d << ": " << _num_entities[d] << std::endl;
     s << std::endl;
 
     s << "  Connectivity matrix:" << std::endl << std::endl;
@@ -229,7 +228,7 @@ std::string MeshTopology::str(bool verbose) const
       s << "    " << d0;
       for (std::size_t d1 = 0; d1 <= _dim; d1++)
       {
-        if (!connectivity[d0][d1].empty())
+        if (!_connectivity[d0][d1].empty())
           s << " x";
         else
           s << " -";
@@ -242,9 +241,9 @@ std::string MeshTopology::str(bool verbose) const
     {
       for (std::size_t d1 = 0; d1 <= _dim; d1++)
       {
-        if (connectivity[d0][d1].empty())
+        if (_connectivity[d0][d1].empty())
           continue;
-        s << indent(connectivity[d0][d1].str(true));
+        s << indent(_connectivity[d0][d1].str(true));
         s << std::endl;
       }
     }

@@ -28,7 +28,6 @@
 // First added:  2006-05-09
 // Last changed: 2016-05-05
 
-#include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
@@ -85,8 +84,8 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
     _cell_type.reset(CellType::create(mesh._cell_type->cell_type()));
   else
     _cell_type.reset();
+
   _ordered = mesh._ordered;
-  _cell_orientations = mesh._cell_orientations;
   _ghost_mode = mesh._ghost_mode;
 
   // Rename
@@ -211,9 +210,6 @@ void Mesh::order()
 
   // Remember that the mesh has been ordered
   _ordered = true;
-
-  // Clear any cell_orientations (as these depend on the ordering)
-  _cell_orientations.clear();
 }
 //-----------------------------------------------------------------------------
 bool Mesh::ordered() const
@@ -313,52 +309,6 @@ std::string Mesh::str(bool verbose) const
   }
 
   return s.str();
-}
-//-----------------------------------------------------------------------------
-const std::vector<int>& Mesh::cell_orientations() const
-{
-  return _cell_orientations;
-}
-//-----------------------------------------------------------------------------
-void Mesh::init_cell_orientations(const Expression& global_normal)
-{
-  std::size_t gdim = geometry().dim();
-  std::size_t ndim = global_normal.value_size();
-
-  // Check that global_normal has the "right" size
-  // Allowing 3 if gdim < 3 to avoid breaking legacy code.
-  if (ndim < gdim && ndim <= 3)
-  {
-     dolfin_error("Mesh.cpp",
-                  "initialize cell orientations",
-                  "Global normal value size is %d, smaller than gdim (%d)",
-                  ndim, gdim);
-  }
-
-  // Resize storage
-  _cell_orientations.resize(num_cells());
-
-  // Set orientation
-  Eigen::VectorXd values(ndim);
-  Point up;
-  for (CellIterator cell(*this); !cell.end(); ++cell)
-  {
-    // Extract cell midpoint as Array
-    Eigen::Map<const Eigen::VectorXd> x(cell->midpoint().coordinates(), 3);
-
-    // Evaluate global normal at cell midpoint
-    global_normal.eval(values, x);
-
-    // Extract values as Point
-    for (unsigned int i = 0; i < ndim; i++)
-      up[i] = values[i];
-    for (unsigned int i = ndim; i < gdim; i++)
-      up[i] = 0.0;
-
-    // Set orientation as orientation relative to up direction.
-    dolfin_assert(cell->index() < _cell_orientations.size());
-    _cell_orientations[cell->index()] = cell->orientation(up);
-  }
 }
 //-----------------------------------------------------------------------------
 std::string Mesh::ghost_mode() const

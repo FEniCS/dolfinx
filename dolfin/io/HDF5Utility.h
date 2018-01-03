@@ -50,9 +50,9 @@ namespace dolfin
     static void
       map_gdof_to_cell(const MPI_Comm mpi_comm,
                        const std::vector<std::size_t>& input_cells,
-                       const std::vector<dolfin::la_index>& input_cell_dofs,
+                       const std::vector<dolfin::la_index_t>& input_cell_dofs,
                        const std::vector<std::size_t>& x_cell_dofs,
-                       const std::pair<dolfin::la_index, dolfin::la_index>
+                       const std::pair<dolfin::la_index_t, dolfin::la_index_t>
                        vector_range,
                        std::vector<std::size_t>& global_cells,
                        std::vector<std::size_t>& remote_local_dofi);
@@ -67,7 +67,7 @@ namespace dolfin
       const std::vector<std::size_t>& remote_local_dofi,
       std::pair<std::size_t, std::size_t> vector_range,
       const GenericDofMap& dofmap,
-      std::vector<dolfin::la_index>& global_dof);
+      std::vector<dolfin::la_index_t>& global_dof);
 
     /// Get cell owners for an arbitrary set of cells.
     /// Returns (process, local index) pairs
@@ -90,10 +90,10 @@ namespace dolfin
       PETScVector& x,
       const Mesh& mesh,
       const std::vector<size_t>& cells,
-      const std::vector<dolfin::la_index>& cell_dofs,
+      const std::vector<dolfin::la_index_t>& cell_dofs,
       const std::vector<std::size_t>& x_cell_dofs,
       const std::vector<double>& vector,
-      std::pair<dolfin::la_index, dolfin::la_index> input_vector_range,
+      std::pair<dolfin::la_index_t, dolfin::la_index_t> input_vector_range,
       const GenericDofMap& dofmap);
   };
 

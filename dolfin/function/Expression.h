@@ -49,23 +49,6 @@ namespace dolfin
 
   public:
 
-    /// Create scalar expression.
-    Expression();
-
-    /// Create vector-valued expression with given dimension.
-    ///
-    /// @param dim (std::size_t)
-    ///     Dimension of the vector-valued expression.
-    explicit Expression(std::size_t dim);
-
-    /// Create matrix-valued expression with given dimensions.
-    ///
-    /// @param dim0 (std::size_t)
-    ///         Dimension (rows).
-    /// @param dim1 (std::size_t)
-    ///         Dimension (columns).
-    Expression(std::size_t dim0, std::size_t dim1);
-
     /// Create tensor-valued expression with given shape.
     ///
     /// @param value_shape (std::vector<std::size_t>)
@@ -179,7 +162,7 @@ namespace dolfin
     ///         Return the shared pointer.
     virtual std::shared_ptr<const FunctionSpace> function_space() const override;
 
-  protected:
+  private:
 
     // Value shape
     std::vector<std::size_t> _value_shape;

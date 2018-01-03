@@ -28,7 +28,6 @@
 #include <cstring>
 #include <numeric>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include "SparsityPattern.h"
@@ -36,36 +35,19 @@
 
 using namespace dolfin;
 
-const std::map<std::string, NormType> PETScVector::norm_types
-= { {"l1",   NORM_1}, {"l2",   NORM_2},  {"linf", NORM_INFINITY} };
-
+namespace
+{
+  const std::map<std::string, NormType> norm_types
+  = { {"l1",   NORM_1}, {"l2",   NORM_2},  {"linf", NORM_INFINITY} };
+}
 
 #define CHECK_ERROR(NAME) do { if (ierr != 0) petsc_error(ierr, __FILE__, NAME); } while(0)
 
-
-//-----------------------------------------------------------------------------
-PETScVector::PETScVector() : PETScVector(MPI_COMM_WORLD)
-{
-  // Do nothing
-}
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(MPI_Comm comm) : _x(nullptr)
 {
   PetscErrorCode ierr = VecCreate(comm, &_x);
   CHECK_ERROR("VecCreate");
-}
-//-----------------------------------------------------------------------------
-PETScVector::PETScVector(MPI_Comm comm, std::size_t N) : PETScVector(comm)
-{
-  // Compute a local range and initialise vector
-  const auto range = dolfin::MPI::local_range(comm, N);
-  _init(range, {}, {});
-}
-//-----------------------------------------------------------------------------
-PETScVector::PETScVector(const SparsityPattern& sparsity_pattern)
-  : PETScVector(sparsity_pattern.mpi_comm())
-{
-  _init(sparsity_pattern.local_range(0), {}, {});
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(Vec x) : _x(x)
@@ -105,20 +87,87 @@ std::shared_ptr<PETScVector> PETScVector::copy() const
 void PETScVector::init(std::size_t N)
 {
   const auto range = dolfin::MPI::local_range(this->mpi_comm(), N);
-  _init(range, {}, {});
+  init(range, {}, {});
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(std::pair<std::size_t, std::size_t> range)
 {
-  _init(range, {}, {});
+  init(range, {}, {});
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(std::pair<std::size_t, std::size_t> range,
                        const std::vector<std::size_t>& local_to_global_map,
-                       const std::vector<la_index>& ghost_indices)
+                       const std::vector<la_index_t>& ghost_indices)
 {
-  // Initialise vector
-  _init(range, local_to_global_map, ghost_indices);
+  if (!_x)
+  {
+    dolfin_error("PETScVector.h",
+                 "initialize vector",
+                 "Underlying PETSc Vec has not been initialized");
+  }
+
+  PetscErrorCode ierr;
+
+  // Set from PETSc options. This will set the vector type.
+  ierr = VecSetFromOptions(_x);
+  CHECK_ERROR("VecSetFromOptions");
+
+  // Get local size
+  const std::size_t local_size = range.second - range.first;
+  dolfin_assert(range.second >= range.first);
+
+  // Set vector size
+  ierr = VecSetSizes(_x, local_size, PETSC_DECIDE);
+  CHECK_ERROR("VecSetSizes");
+
+  // Get PETSc Vec type
+  VecType vec_type = nullptr;
+  ierr = VecGetType(_x, &vec_type);
+  CHECK_ERROR("VecGetType");
+
+  // Add ghost points if Vec type is MPI (throw an error if Vec is not
+  // VECMPI and ghost entry vector is not empty)
+  if (strcmp(vec_type, VECMPI) == 0)
+  {
+    ierr = VecMPISetGhost(_x, ghost_indices.size(), ghost_indices.data());
+    CHECK_ERROR("VecMPISetGhost");
+  }
+  else if (!ghost_indices.empty())
+  {
+    dolfin_error("PETScVector.cpp",
+                 "initialize vector",
+                 "Sequential PETSc Vec objects cannot have ghost entries");
+  }
+
+  // Build local-to-global map
+  std::vector<PetscInt> _map;
+  if (!local_to_global_map.empty())
+  {
+    // Copy data to get correct PETSc integer type
+    _map = std::vector<PetscInt>(local_to_global_map.begin(),
+                                 local_to_global_map.end());
+  }
+  else
+  {
+    // Fill vector with [i0 + 0, i0 + 1, i0 +2, . . .]
+    const std::size_t size = range.second - range.first;
+    _map.assign(size, range.first);
+    std::iota(_map.begin(), _map.end(), range.first);
+  }
+
+  // Create PETSc local-to-global map
+  ISLocalToGlobalMapping petsc_local_to_global;
+  ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, 1, _map.size(), _map.data(),
+                               PETSC_COPY_VALUES, &petsc_local_to_global);
+  CHECK_ERROR("ISLocalToGlobalMappingCreate");
+
+  // Apply local-to-global map to vector
+  ierr = VecSetLocalToGlobalMapping(_x, petsc_local_to_global);
+  CHECK_ERROR("VecSetLocalToGlobalMapping");
+
+  // Clean-up PETSc local-to-global map
+  ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
+  CHECK_ERROR("ISLocalToGlobalMappingDestroy");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(std::vector<double>& values) const
@@ -168,7 +217,7 @@ void PETScVector::set_local(const std::vector<double>& values)
   CHECK_ERROR("VecSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add_local(const Array<double>& values)
+void PETScVector::add_local(const std::vector<double>& values)
 {
   dolfin_assert(_x);
   const auto _local_range = local_range();
@@ -193,7 +242,7 @@ void PETScVector::add_local(const Array<double>& values)
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(double* block, std::size_t m,
-			    const dolfin::la_index* rows) const
+			    const dolfin::la_index_t* rows) const
 {
   if (m == 0)
     return;
@@ -234,7 +283,7 @@ void PETScVector::get_local(double* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get(double* block, std::size_t m,
-                      const dolfin::la_index* rows) const
+                      const dolfin::la_index_t* rows) const
 {
   if (m == 0)
     return;
@@ -245,7 +294,7 @@ void PETScVector::get(double* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set(const double* block, std::size_t m,
-                      const dolfin::la_index* rows)
+                      const dolfin::la_index_t* rows)
 {
   dolfin_assert(_x);
   PetscErrorCode ierr = VecSetValues(_x, m, rows, block, INSERT_VALUES);
@@ -253,7 +302,7 @@ void PETScVector::set(const double* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set_local(const double* block, std::size_t m,
-                            const dolfin::la_index* rows)
+                            const dolfin::la_index_t* rows)
 {
   dolfin_assert(_x);
   PetscErrorCode ierr = VecSetValuesLocal(_x, m, rows, block, INSERT_VALUES);
@@ -261,7 +310,7 @@ void PETScVector::set_local(const double* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add(const double* block, std::size_t m,
-                      const dolfin::la_index* rows)
+                      const dolfin::la_index_t* rows)
 {
   dolfin_assert(_x);
   PetscErrorCode ierr = VecSetValues(_x, m, rows, block, ADD_VALUES);
@@ -269,7 +318,7 @@ void PETScVector::add(const double* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add_local(const double* block, std::size_t m,
-                            const dolfin::la_index* rows)
+                            const dolfin::la_index_t* rows)
 {
   dolfin_assert(_x);
   PetscErrorCode ierr = VecSetValuesLocal(_x, m, rows, block, ADD_VALUES);
@@ -481,7 +530,7 @@ const PETScVector& PETScVector::operator/= (const double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-double PETScVector::inner(const PETScVector& y) const
+double PETScVector::dot(const PETScVector& y) const
 {
   dolfin_assert(_x);
   dolfin_assert(y._x);
@@ -566,59 +615,6 @@ double PETScVector::sum() const
   return value;
 }
 //-----------------------------------------------------------------------------
-double PETScVector::sum(const Array<std::size_t>& rows) const
-{
-  dolfin_assert(_x);
-  const auto _local_range = local_range();
-  const std::size_t n0 = _local_range.first;
-  const std::size_t n1 = _local_range.second;
-
-  // Build sets of local and nonlocal entries
-  Set<PetscInt> local_rows;
-  Set<std::size_t> send_nonlocal_rows;
-  for (std::size_t i = 0; i < rows.size(); ++i)
-  {
-    if (rows[i] >= n0 && rows[i] < n1)
-      local_rows.insert(rows[i]);
-    else
-      send_nonlocal_rows.insert(rows[i]);
-  }
-
-  // Send nonlocal rows indices to other processes
-  const std::size_t num_processes  = dolfin::MPI::size(mpi_comm());
-  const std::size_t process_number = dolfin::MPI::rank(mpi_comm());
-  for (std::size_t i = 1; i < num_processes; ++i)
-  {
-    // Receive data from process p - i (i steps to the left), send
-    // data to process p + i (i steps to the right)
-    const std::size_t source
-      = (process_number - i + num_processes) % num_processes;
-    const std::size_t dest = (process_number + i) % num_processes;
-
-    // Send and receive data
-    std::vector<std::size_t> received_nonlocal_rows;
-    dolfin::MPI::send_recv(mpi_comm(), send_nonlocal_rows.set(), dest,
-                           received_nonlocal_rows, source);
-
-    // Add rows which reside on this process
-    for (std::size_t j = 0; j < received_nonlocal_rows.size(); ++j)
-    {
-      if (received_nonlocal_rows[j] >= n0 && received_nonlocal_rows[j] < n1)
-        local_rows.insert(received_nonlocal_rows[j]);
-    }
-  }
-
-  // Get local values (using global indices)
-  std::vector<double> local_values(local_rows.size());
-  get(local_values.data(), local_rows.size(), &local_rows.set()[0]);
-
-  // Compute local sum
-  const double local_sum = std::accumulate(local_values.begin(),
-                                           local_values.end(), 0.0);
-
-  return dolfin::MPI::sum(mpi_comm(), local_sum);
-}
-//-----------------------------------------------------------------------------
 std::string PETScVector::str(bool verbose) const
 {
   dolfin_assert(_x);
@@ -658,7 +654,7 @@ std::string PETScVector::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 void PETScVector::gather(PETScVector& y,
-                         const std::vector<dolfin::la_index>& indices) const
+                         const std::vector<dolfin::la_index_t>& indices) const
 {
   dolfin_assert(_x);
   PetscErrorCode ierr;
@@ -726,7 +722,7 @@ void PETScVector::gather(PETScVector& y,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::gather(std::vector<double>& x,
-                         const std::vector<dolfin::la_index>& indices) const
+                         const std::vector<dolfin::la_index_t>& indices) const
 {
   x.resize(indices.size());
   PETScVector y(PETSC_COMM_SELF);
@@ -824,81 +820,6 @@ void PETScVector::reset(Vec vec)
   _x = vec;
   ierr = PetscObjectReference((PetscObject)_x);
   CHECK_ERROR("PetscObjectReference");
-}
-//-----------------------------------------------------------------------------
-void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
-                        const std::vector<std::size_t>& local_to_global_map,
-                        const std::vector<la_index>& ghost_indices)
-{
-  if (!_x)
-  {
-    dolfin_error("PETScVector.h",
-                 "initialize vector",
-                 "Underlying PETSc Vec has not been initialized");
-  }
-
-  PetscErrorCode ierr;
-
-  // Set from PETSc options. This will set the vector type.
-  ierr = VecSetFromOptions(_x);
-  CHECK_ERROR("VecSetFromOptions");
-
-  // Get local size
-  const std::size_t local_size = range.second - range.first;
-  dolfin_assert(range.second >= range.first);
-
-  // Set vector size
-  ierr = VecSetSizes(_x, local_size, PETSC_DECIDE);
-  CHECK_ERROR("VecSetSizes");
-
-  // Get PETSc Vec type
-  VecType vec_type = nullptr;
-  ierr = VecGetType(_x, &vec_type);
-  CHECK_ERROR("VecGetType");
-
-  // Add ghost points if Vec type is MPI (throw an error if Vec is not
-  // VECMPI and ghost entry vector is not empty)
-  if (strcmp(vec_type, VECMPI) == 0)
-  {
-    ierr = VecMPISetGhost(_x, ghost_indices.size(), ghost_indices.data());
-    CHECK_ERROR("VecMPISetGhost");
-  }
-  else if (!ghost_indices.empty())
-  {
-    dolfin_error("PETScVector.cpp",
-                 "initialize vector",
-                 "Sequential PETSc Vec objects cannot have ghost entries");
-  }
-
-  // Build local-to-global map
-  std::vector<PetscInt> _map;
-  if (!local_to_global_map.empty())
-  {
-    // Copy data to get correct PETSc integer type
-    _map = std::vector<PetscInt>(local_to_global_map.begin(),
-                                 local_to_global_map.end());
-  }
-  else
-  {
-    // Fill vector with [i0 + 0, i0 + 1, i0 +2, . . .]
-    const std::size_t size = range.second - range.first;
-    _map.assign(size, range.first);
-    std::iota(_map.begin(), _map.end(), range.first);
-  }
-
-  // Create PETSc local-to-global map
-  ISLocalToGlobalMapping petsc_local_to_global;
-  ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, 1, _map.size(), _map.data(),
-                               PETSC_COPY_VALUES, &petsc_local_to_global);
-  CHECK_ERROR("ISLocalToGlobalMappingCreate");
-
-  // Apply local-to-global map to vector
-  ierr = VecSetLocalToGlobalMapping(_x, petsc_local_to_global);
-  CHECK_ERROR("VecSetLocalToGlobalMapping");
-
-  // Clean-up PETSc local-to-global map
-  ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
-  CHECK_ERROR("ISLocalToGlobalMappingDestroy");
 }
 //-----------------------------------------------------------------------------
 

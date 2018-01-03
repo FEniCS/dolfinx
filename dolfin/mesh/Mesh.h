@@ -14,19 +14,8 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Johan Hoffman 2007
-// Modified by Magnus Vikstrøm 2007
-// Modified by Garth N. Wells 2007-2015
-// Modified by Niclas Jansson 2008
-// Modified by Kristoffer Selim 2008
-// Modified by Andre Massing 2009-2010
-// Modified by Marie E. Rognes 2012
-// Modified by Mikael Mortensen 2012
-// Modified by Jan Blechta 2013
 
-#ifndef __MESH_H
-#define __MESH_H
+#pragma once
 
 #include <memory>
 #include <string>
@@ -34,14 +23,15 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/fem/fem_utils.h>
 #include "MeshGeometry.h"
 #include "MeshConnectivity.h"
 #include "MeshTopology.h"
 
 namespace dolfin
 {
+
   class CellType;
-  class Expression;
   class GenericFunction;
   class LocalMeshData;
   class MeshEntity;
@@ -155,22 +145,6 @@ namespace dolfin
     ///
     std::size_t num_entities(std::size_t d) const
     { return _topology.size(d); }
-
-    /// Get vertex coordinates.
-    ///
-    /// @return std::vector<double>&
-    ///         Coordinates of all vertices.
-    ///
-    std::vector<double>& coordinates()
-    { return _geometry.x(); }
-
-    /// Return coordinates of all vertices (const version).
-    ///
-    /// @return std::vector<double>&
-    ///         Coordinates of all vertices.
-    ///
-    const std::vector<double>& coordinates() const
-    { return _geometry.x(); }
 
     /// Get cell connectivity.
     ///
@@ -331,22 +305,6 @@ namespace dolfin
     ///
     std::string str(bool verbose) const;
 
-    /// Return cell_orientations (const version)
-    ///
-    /// @return std::vector<int>
-    ///
-    ///         Map from cell index to orientation of cell. Is empty
-    ///         if cell orientations have not been computed.
-    const std::vector<int>& cell_orientations() const;
-
-    /// Compute and initialize cell_orientations relative to a given
-    /// global outward direction/normal/orientation. Only defined if
-    /// mesh is orientable.
-    ///
-    /// @param global_normal (Expression)
-    ///         A global normal direction to the mesh
-    void init_cell_orientations(const Expression& global_normal);
-
     /// Mesh MPI communicator
     /// @return MPI_Comm
     MPI_Comm mpi_comm() const
@@ -360,7 +318,7 @@ namespace dolfin
     std::string ghost_mode() const;
 
     // Friend in fem_utils.h
-    friend Mesh create_mesh(Function& coordinates);
+    friend Mesh fem::create_mesh(Function& coordinates);
 
   private:
 
@@ -386,9 +344,6 @@ namespace dolfin
     // True if mesh has been ordered
     mutable bool _ordered;
 
-    // Orientation of cells relative to a global direction
-    std::vector<int> _cell_orientations;
-
     // MPI communicator
     dolfin::MPI::Comm _mpi_comm;
 
@@ -396,5 +351,3 @@ namespace dolfin
     std::string _ghost_mode;
   };
 }
-
-#endif

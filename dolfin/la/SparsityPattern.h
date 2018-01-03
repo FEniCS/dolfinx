@@ -58,29 +58,19 @@ namespace dolfin
     /// Create empty sparsity pattern
     SparsityPattern(MPI_Comm comm, std::size_t primary_dim);
 
-    /// Create sparsity pattern for a generic tensor
-    SparsityPattern(MPI_Comm comm,
-                    std::vector<std::shared_ptr<const IndexMap>> index_maps,
-                    std::size_t primary_dim);
-
     /// Initialize sparsity pattern for a generic tensor
     void init(std::vector<std::shared_ptr<const IndexMap>> index_maps);
 
-    /// Insert a global entry - will be fixed by apply()
-    void insert_global(dolfin::la_index i, dolfin::la_index j);
-
     /// Insert non-zero entries using global indices
-    void insert_global(const std::vector<
-                       ArrayView<const dolfin::la_index>>& entries);
+    void insert_global(const std::vector<ArrayView<const dolfin::la_index_t>>& entries);
 
     /// Insert non-zero entries using local (process-wise) indices
-    void insert_local(const std::vector<
-                      ArrayView<const dolfin::la_index>>& entries);
+    void insert_local(const std::vector<ArrayView<const dolfin::la_index_t>>& entries);
 
     /// Insert non-zero entries using local (process-wise) indices for
     /// the primary dimension and global indices for the co-dimension
     void insert_local_global(
-        const std::vector<ArrayView<const dolfin::la_index>>& entries);
+        const std::vector<ArrayView<const dolfin::la_index_t>>& entries);
 
     /// Insert full rows (or columns, according to primary dimension)
     /// using local (process-wise) indices. This must be called before
@@ -146,9 +136,9 @@ namespace dolfin
     // The primary dim entries must be local
     // The primary_codim entries must be global
     void insert_entries(
-        const std::vector<ArrayView<const dolfin::la_index>>& entries,
-        const std::function<dolfin::la_index(const dolfin::la_index, const IndexMap&)>& primary_dim_map,
-        const std::function<dolfin::la_index(const dolfin::la_index, const IndexMap&)>& primary_codim_map);
+        const std::vector<ArrayView<const dolfin::la_index_t>>& entries,
+        const std::function<dolfin::la_index_t(const dolfin::la_index_t, const IndexMap&)>& primary_dim_map,
+        const std::function<dolfin::la_index_t(const dolfin::la_index_t, const IndexMap&)>& primary_codim_map);
 
     // Print some useful information
     void info_statistics() const;
@@ -164,18 +154,18 @@ namespace dolfin
     std::vector<std::shared_ptr<const IndexMap>> _index_maps;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
-    std::vector<set_type> diagonal;
-    std::vector<set_type> off_diagonal;
+    std::vector<set_type> _diagonal;
+    std::vector<set_type> _off_diagonal;
 
     // List of full rows (or columns, according to primary dimension).
     // Full rows are kept separately to circumvent quadratic scaling
     // (caused by linear insertion time into dolfin::Set; std::set has
     // logarithmic insertion, which would result in N log(N) overall
     // complexity for dense rows)
-    set_type full_rows;
+    set_type _full_rows;
 
     // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
-    std::vector<std::size_t> non_local;
+    std::vector<std::size_t> _non_local;
 
   };
 

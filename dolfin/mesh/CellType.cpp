@@ -142,12 +142,6 @@ CellType::Type CellType::entity_type(std::size_t i) const
  return Type::point;
 }
 //-----------------------------------------------------------------------------
-std::size_t CellType::orientation(const Cell& cell, const Point& up) const
-{
-  Point n = cell.cell_normal();
-  return (n.dot(up) < 0.0 ? 1 : 0);
-}
-//-----------------------------------------------------------------------------
 double CellType::h(const MeshEntity& entity) const
 {
   // Get mesh geometry

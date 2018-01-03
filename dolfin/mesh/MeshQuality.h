@@ -26,6 +26,7 @@
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <memory>
+#include <dolfin/common/constants.h>
 #include "Cell.h"
 
 namespace dolfin

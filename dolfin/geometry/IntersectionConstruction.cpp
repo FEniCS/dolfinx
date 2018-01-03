@@ -19,6 +19,7 @@
 // Last changed: 2017-10-07
 
 #include <iomanip>
+#include <dolfin/common/constants.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include "predicates.h"
 #include "GeometryPredicates.h"

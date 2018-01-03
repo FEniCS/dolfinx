@@ -196,13 +196,13 @@ namespace dolfin
     /// @param     cell_index (std::size_t)
     ///         The cell index.
     ///
-    /// @return         ArrayView<const dolfin::la_index>
-    Eigen::Map<const Eigen::Array<dolfin::la_index, Eigen::Dynamic, 1>>
+    /// @return         ArrayView<const dolfin::la_index_t>
+    Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>>
       cell_dofs(std::size_t cell_index) const
     {
       const std::size_t index = cell_index*_cell_dimension;
       dolfin_assert(index + _cell_dimension <= _dofmap.size());
-      return Eigen::Map<const Eigen::Array<dolfin::la_index, Eigen::Dynamic, 1>>(&_dofmap[index], _cell_dimension);
+      return Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>>(&_dofmap[index], _cell_dimension);
     }
 
     /// Return the dof indices associated with entities of given dimension and entity indices
@@ -210,12 +210,12 @@ namespace dolfin
     /// *Arguments*
     ///     entity_dim (std::size_t)
     ///         Entity dimension.
-    ///     entity_indices (std::vector<dolfin::la_index>&)
+    ///     entity_indices (std::vector<dolfin::la_index_t>&)
     ///         Entity indices to get dofs for.
     /// *Returns*
-    ///     std::vector<dolfin::la_index>
+    ///     std::vector<dolfin::la_index_t>
     ///         Dof indices associated with selected entities.
-    std::vector<dolfin::la_index>
+    std::vector<dolfin::la_index_t>
       entity_dofs(const Mesh& mesh, std::size_t entity_dim,
                   const std::vector<std::size_t> & entity_indices) const;
 
@@ -225,9 +225,9 @@ namespace dolfin
     ///     entity_dim (std::size_t)
     ///         Entity dimension.
     /// *Returns*
-    ///     std::vector<dolfin::la_index>
+    ///     std::vector<dolfin::la_index_t>
     ///         Dof indices associated with selected entities.
-    std::vector<dolfin::la_index>
+    std::vector<dolfin::la_index_t>
       entity_dofs(const Mesh& mesh, std::size_t entity_dim) const;
 
     /// Return the dof indices associated with the closure of entities of
@@ -236,12 +236,12 @@ namespace dolfin
     /// *Arguments*
     ///     entity_dim (std::size_t)
     ///         Entity dimension.
-    ///     entity_indices (std::vector<dolfin::la_index>&)
+    ///     entity_indices (std::vector<dolfin::la_index_t>&)
     ///         Entity indices to get dofs for.
     /// *Returns*
-    ///     std::vector<dolfin::la_index>
+    ///     std::vector<dolfin::la_index_t>
     ///         Dof indices associated with selected entities and their closure.
-    std::vector<dolfin::la_index>
+    std::vector<dolfin::la_index_t>
       entity_closure_dofs(const Mesh& mesh, std::size_t entity_dim,
                           const std::vector<std::size_t> & entity_indices) const;
 
@@ -252,9 +252,9 @@ namespace dolfin
     ///         Mesh
     /// @param  entity_dim (std::size_t)
     ///         Entity dimension.
-    /// @return  std::vector<dolfin::la_index>
+    /// @return  std::vector<dolfin::la_index_t>
     ///         Dof indices associated with selected entities and their closure.
-    std::vector<dolfin::la_index>
+    std::vector<dolfin::la_index_t>
       entity_closure_dofs(const Mesh& mesh, std::size_t entity_dim) const;
 
     /// Tabulate local-local facet dofs
@@ -344,11 +344,11 @@ namespace dolfin
     // FIXME: Document this function properly
     /// Return list of dof indices on this process that belong to mesh
     /// entities of dimension dim
-    std::vector<dolfin::la_index> dofs(const Mesh& mesh,
+    std::vector<dolfin::la_index_t> dofs(const Mesh& mesh,
                                        std::size_t dim) const;
 
     // FIXME: Document this function
-    std::vector<dolfin::la_index> dofs() const;
+    std::vector<dolfin::la_index_t> dofs() const;
 
     /// Set dof entries in vector to a specified value. Parallel layout
     /// of vector must be consistent with dof map range. This
@@ -414,7 +414,7 @@ namespace dolfin
                                         const Mesh& mesh);
 
     // Cell-local-to-dof map (dofs for cell dofmap[i])
-    std::vector<dolfin::la_index> _dofmap;
+    std::vector<dolfin::la_index_t> _dofmap;
 
     // List of global nodes
     std::set<std::size_t> _global_nodes;

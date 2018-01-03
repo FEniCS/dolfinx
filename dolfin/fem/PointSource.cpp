@@ -22,7 +22,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntityIteratorBase.h>
@@ -220,7 +220,6 @@ void PointSource::apply(PETScVector& b)
 
   // Variables for cell information
   std::vector<double> coordinate_dofs;
-  ufc::cell ufc_cell;
 
   // Variables for evaluating basis
   dolfin_assert(_function_space0->element());
@@ -235,7 +234,7 @@ void PointSource::apply(PETScVector& b)
   // Variables for adding local information to vector
   double basis_sum;
 
-  for (auto & s : _sources)
+  for (auto &s : _sources)
   {
     Point& p = s.first;
     double magnitude = s.second;
@@ -247,14 +246,13 @@ void PointSource::apply(PETScVector& b)
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Evaluate all basis functions at the point()
-    cell.get_cell_data(ufc_cell);
 
     for (std::size_t i = 0; i < dofs_per_cell; ++i)
     {
       _function_space0->element()->evaluate_basis(i, basis.data(),
 	  					     p.coordinates(),
 						     coordinate_dofs.data(),
-						     ufc_cell.orientation);
+						     -1);
 
       basis_sum = 0.0;
       for (const auto& v : basis)
@@ -273,7 +271,7 @@ void PointSource::apply(PETScVector& b)
   b.apply("add");
 }
 //-----------------------------------------------------------------------------
-void PointSource::apply(GenericMatrix& A)
+void PointSource::apply(PETScMatrix& A)
 {
   // Applies local point sources.
   dolfin_assert(_function_space0);
@@ -309,7 +307,6 @@ void PointSource::apply(GenericMatrix& A)
 
   // Variables for cell information
   std::vector<double> coordinate_dofs;
-  ufc::cell ufc_cell;
 
   // Variables for evaluating basis
   const std::size_t rank = V0->element()->value_rank();
@@ -344,14 +341,14 @@ void PointSource::apply(GenericMatrix& A)
     {
       // Doesn't work for mixed function spaces with different
       // elements.
-      if (V0->sub(0)->element()->signature() != V0->sub(n)->element()->signature())
+      if (V0->sub({0})->element()->signature() != V0->sub({n})->element()->signature())
       {
 	dolfin_error("PointSource.cpp",
 		     "apply point source to matrix",
 		     "The mixed elements are not the same. Not currently implemented");
       }
 
-      if (V0->sub(n)->element()->num_sub_elements() > 1)
+      if (V0->sub({n})->element()->num_sub_elements() > 1)
       {
 	dolfin_error("PointSource.cpp",
 		     "apply point source to matrix",
@@ -371,7 +368,6 @@ void PointSource::apply(GenericMatrix& A)
 
     // Cell information
     cell.get_coordinate_dofs(coordinate_dofs);
-    cell.get_cell_data(ufc_cell);
 
     // Calculate values with magnitude*basis_sum_0*basis_sum_1
     for (std::size_t i = 0; i < dofs_per_cell0; ++i)
@@ -379,14 +375,14 @@ void PointSource::apply(GenericMatrix& A)
       V0->element()->evaluate_basis(i, basis0.data(),
                                     p.coordinates(),
                                     coordinate_dofs.data(),
-                                    ufc_cell.orientation);
+                                    -1);
 
       for (std::size_t j = 0; j < dofs_per_cell0; ++j)
       {
         V1->element()->evaluate_basis(j, basis1.data(),
                                       p.coordinates(),
                                       coordinate_dofs.data(),
-                                      ufc_cell.orientation);
+                                      -1);
 
         basis_sum0 = 0.0;
         basis_sum1 = 0.0;

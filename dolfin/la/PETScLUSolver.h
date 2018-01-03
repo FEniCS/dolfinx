@@ -54,10 +54,6 @@ namespace dolfin
                   std::shared_ptr<const PETScMatrix> A,
                   std::string method="default");
 
-    /// Constructor
-    PETScLUSolver(std::shared_ptr<const PETScMatrix> A,
-                  std::string method="default");
-
     /// Destructor
     ~PETScLUSolver();
 

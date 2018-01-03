@@ -889,7 +889,7 @@ void HDF5File::write(const Function& u, const std::string name)
   // the start of each row
 
   const std::size_t tdim = mesh.topology().dim();
-  std::vector<dolfin::la_index> cell_dofs;
+  std::vector<dolfin::la_index_t> cell_dofs;
   std::vector<std::size_t> x_cell_dofs;
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
   x_cell_dofs.reserve(n_cells);
@@ -904,7 +904,7 @@ void HDF5File::write(const Function& u, const std::string name)
     for (Eigen::Index j = 0; j < cell_dofs_i.size(); ++j)
     {
       auto p = cell_dofs_i[j];
-      dolfin_assert(p < (dolfin::la_index)local_to_global_map.size());
+      dolfin_assert(p < (dolfin::la_index_t)local_to_global_map.size());
       cell_dofs.push_back(local_to_global_map[p]);
     }
   }
@@ -1053,7 +1053,7 @@ void HDF5File::read(Function& u, const std::string name)
                               x_cell_dofs);
 
   // Read cell-DOF maps
-  std::vector<dolfin::la_index> input_cell_dofs;
+  std::vector<dolfin::la_index_t> input_cell_dofs;
   HDF5Interface::read_dataset(_hdf5_file_id, cell_dofs_dataset_name,
                               std::make_pair(x_cell_dofs.front(),
                                              x_cell_dofs.back()),
@@ -1065,7 +1065,7 @@ void HDF5File::read(Function& u, const std::string name)
     HDF5Interface::get_dataset_shape(_hdf5_file_id, vector_dataset_name);
   const std::size_t num_global_dofs = vector_shape[0];
   dolfin_assert(num_global_dofs == x.size(0));
-  const std::pair<dolfin::la_index, dolfin::la_index>
+  const std::pair<dolfin::la_index_t, dolfin::la_index_t>
     input_vector_range = MPI::local_range(_mpi_comm.comm(), vector_shape[0]);
 
   std::vector<double> input_values;

@@ -25,6 +25,7 @@
 #include <vector>
 
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -77,18 +78,56 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
 Function::Function(const Function& v) :
   _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
-  // Assign data
-  *this = v;
-}
-//-----------------------------------------------------------------------------
-Function::Function(const Function& v, std::size_t i)
-  : _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
-{
-  // Copy function space pointer
-  this->_function_space = v[i]._function_space;
+  // Make a copy of all the data, or if v is a sub-function, then we
+  // collapse the dof map and copy only the relevant entries from the
+  // vector of v.
+  dolfin_assert(v._vector);
+  if (v._vector->size() == v._function_space->dim())
+  {
+    // Copy function space pointer
+    this->_function_space = v._function_space;
 
-  // Copy vector pointer
-  this->_vector = v[i]._vector;
+    // Copy vector
+    this->_vector = v._vector->copy();
+  }
+  else
+  {
+    // Create new collapsed FunctionSpace
+    std::unordered_map<std::size_t, std::size_t> collapsed_map;
+    _function_space = v._function_space->collapse(collapsed_map);
+
+    // Get row indices of original and new vectors
+    std::unordered_map<std::size_t, std::size_t>::const_iterator entry;
+    std::vector<dolfin::la_index_t> new_rows(collapsed_map.size());
+    std::vector<dolfin::la_index_t> old_rows(collapsed_map.size());
+    std::size_t i = 0;
+    for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
+    {
+      new_rows[i]   = entry->first;
+      old_rows[i++] = entry->second;
+    }
+
+    // Gather values into a vector
+    dolfin_assert(v.vector());
+    std::vector<double> gathered_values(collapsed_map.size());
+    v.vector()->get_local(gathered_values.data(), gathered_values.size(),
+                          old_rows.data());
+
+    // Initial new vector (global)
+    init_vector();
+    dolfin_assert(_function_space->dofmap());
+    dolfin_assert(_vector->size()
+                  == _function_space->dofmap()->global_dimension());
+
+    // FIXME (local): Check this for local or global
+    // Set values in vector
+    this->_vector->set_local(gathered_values.data(), collapsed_map.size(),
+                             new_rows.data());
+    this->_vector->apply("insert");
+  }
+
+  // Assign data
+  //*this = v;
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
@@ -96,6 +135,7 @@ Function::~Function()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+/*
 const Function& Function::operator= (const Function& v)
 {
   dolfin_assert(v._vector);
@@ -122,8 +162,8 @@ const Function& Function::operator= (const Function& v)
 
     // Get row indices of original and new vectors
     std::unordered_map<std::size_t, std::size_t>::const_iterator entry;
-    std::vector<dolfin::la_index> new_rows(collapsed_map.size());
-    std::vector<dolfin::la_index> old_rows(collapsed_map.size());
+    std::vector<dolfin::la_index_t> new_rows(collapsed_map.size());
+    std::vector<dolfin::la_index_t> old_rows(collapsed_map.size());
     std::size_t i = 0;
     for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
     {
@@ -152,6 +192,7 @@ const Function& Function::operator= (const Function& v)
 
   return *this;
 }
+*/
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Expression& v)
 {
@@ -159,24 +200,15 @@ const Function& Function::operator= (const Expression& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-Function& Function::operator[] (std::size_t i) const
+Function Function::sub(std::size_t i) const
 {
-  // Check if sub-Function is in the cache, otherwise create and add
-  // to cache
-  auto sub_function = _sub_functions.find(i);
-  if (sub_function != _sub_functions.end())
-    return *(sub_function->second);
-  else
-  {
-    // Extract function subspace
-    std::vector<std::size_t> component(1, i);
-    std::shared_ptr<const FunctionSpace>
-      sub_space(_function_space->extract_sub_space(component));
+  // Extract function subspace
+  auto sub_space = _function_space->sub({i});
 
-    // Insert sub-Function into map and return reference
-    _sub_functions.insert(i, new Function(sub_space, _vector));
-    return *(_sub_functions.find(i)->second);
-  }
+  // Return sub-function
+  dolfin_assert(sub_space);
+  dolfin_assert(_vector);
+  return Function(sub_space, _vector);
 }
 //-----------------------------------------------------------------------------
 void Function::operator=(const FunctionAXPY& axpy)
@@ -225,19 +257,6 @@ std::shared_ptr<const PETScVector> Function::vector() const
 {
   dolfin_assert(_vector);
   return _vector;
-}
-//-----------------------------------------------------------------------------
-bool Function::in(const FunctionSpace& V) const
-{
-  dolfin_assert(_function_space);
-  return *_function_space == V;
-}
-//-----------------------------------------------------------------------------
-std::size_t Function::geometric_dimension() const
-{
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->mesh());
-  return _function_space->mesh()->geometry().dim();
 }
 //-----------------------------------------------------------------------------
 void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
@@ -411,8 +430,8 @@ void Function::restrict(double* w, const FiniteElement& element,
   else
   {
     // Restrict as UFC function (by calling eval)
-    restrict_as_ufc_function(w, element, dolfin_cell, coordinate_dofs,
-                             ufc_cell);
+    element.evaluate_dofs(w, *this, coordinate_dofs, ufc_cell.orientation,
+                          ufc_cell);
   }
 }
 //-----------------------------------------------------------------------------
@@ -511,6 +530,7 @@ void Function::init_vector()
   }
 
   // Get index map
+  /*
   std::shared_ptr<const IndexMap> index_map = dofmap.index_map();
   dolfin_assert(index_map);
 
@@ -538,6 +558,37 @@ void Function::init_vector()
 
   }
   _vector->init(*tensor_layout);
+  _vector->zero();
+  */
+
+  // Get index map
+  std::shared_ptr<const IndexMap> index_map = dofmap.index_map();
+  dolfin_assert(index_map);
+
+  // Build local-to-global map
+  std::vector<std::size_t> local_to_global(index_map->size(IndexMap::MapSize::ALL));
+  for (std::size_t i = 0; i < local_to_global.size(); ++i)
+    local_to_global[i] = index_map->local_to_global(i);
+
+  // Build list of ghosts
+  const std::size_t nowned = index_map->size(IndexMap::MapSize::OWNED);
+  dolfin_assert(nowned + index_map->size(IndexMap::MapSize::UNOWNED) == local_to_global.size());
+  std::vector<dolfin::la_index_t> ghosts(local_to_global.begin() + nowned,
+                                         local_to_global.end());
+
+  // Create vector of dofs
+  if (!_vector)
+    _vector = std::make_shared<PETScVector>(_function_space->mesh()->mpi_comm());
+  dolfin_assert(_vector);
+
+  if (!_vector->empty())
+  {
+    dolfin_error("Function.cpp",
+                 "initialize vector of degrees of freedom for function",
+                 "Cannot re-initialize a non-empty vector. Consider creating a new function");
+
+  }
+  _vector->init(index_map->local_range(), local_to_global, ghosts);
   _vector->zero();
 }
 //-----------------------------------------------------------------------------

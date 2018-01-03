@@ -23,6 +23,7 @@
 #include <array>
 #include <map>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "DirichletBC.h"
@@ -45,7 +46,7 @@ namespace dolfin
   class Facet;
   class Form;
   class GenericDofMap;
-  class GenericMatrix;
+  class PETScMatrix;
   class PETScVector;
   template<typename T> class MeshFunction;
   class UFC;
@@ -65,10 +66,10 @@ namespace dolfin
                     std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
     /// Assemble system (A, b)
-    void assemble(GenericMatrix& A, PETScVector& b);
+    void assemble(PETScMatrix& A, PETScVector& b);
 
     /// Assemble matrix A
-    void assemble(GenericMatrix& A);
+    void assemble(PETScMatrix& A);
 
     /// Assemble vector b
     void assemble(PETScVector& b);
@@ -76,7 +77,7 @@ namespace dolfin
     /// Assemble system (A, b) for (negative) increment dx, where x =
     /// x0 - dx is solution to system a == -L subject to bcs.
     /// Suitable for use inside a (quasi-)Newton solver.
-    void assemble(GenericMatrix& A, PETScVector& b, const PETScVector& x0);
+    void assemble(PETScMatrix& A, PETScVector& b, const PETScVector& x0);
 
     /// Assemble rhs vector b for (negative) increment dx, where x =
     /// x0 - dx is solution to system a == -L subject to bcs.
@@ -103,7 +104,7 @@ namespace dolfin
       (std::shared_ptr<const FunctionSpace> fs, std::size_t bc_index);
 
     // Assemble system
-    void assemble(GenericMatrix* A, PETScVector* b,
+    void assemble(PETScMatrix* A, PETScVector* b,
                   const PETScVector* x0);
 
     // Bilinear and linear forms
@@ -113,7 +114,7 @@ namespace dolfin
     std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 
     static void cell_wise_assembly(
-      std::array<GenericTensor*, 2>& tensors,
+      std::pair<PETScMatrix*, PETScVector*>& tensors,
       std::array<UFC*, 2>& ufc,
       Scratch& data,
       const std::vector<DirichletBC::Map>& boundary_values,
@@ -121,7 +122,7 @@ namespace dolfin
       std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains);
 
     static void facet_wise_assembly(
-      std::array<GenericTensor*, 2>& tensors,
+      std::pair<PETScMatrix*, PETScVector*>& tensors,
       std::array<UFC*, 2>& ufc,
       Scratch& data,
       const std::vector<DirichletBC::Map>& boundary_values,
@@ -164,28 +165,28 @@ namespace dolfin
     // Modified matrix insertion for case when rhs has facet integrals
     // and lhs has no facet integrals
     static void matrix_block_add(
-      GenericTensor& tensor,
+      PETScMatrix& tensor,
       std::vector<double>& Ae,
       std::vector<double>& macro_A,
       const std::array<bool, 2>& add_local_tensor,
-      const std::array<std::vector<ArrayView<const la_index>>, 2>& cell_dofs);
+      const std::array<std::vector<ArrayView<const la_index_t>>, 2>& cell_dofs);
 
     static void apply_bc(double* A, double* b,
                          const std::vector<DirichletBC::Map>& boundary_values,
-                         const ArrayView<const dolfin::la_index>& global_dofs0,
-                         const ArrayView<const dolfin::la_index>& global_dofs1);
+                         const ArrayView<const dolfin::la_index_t>& global_dofs0,
+                         const ArrayView<const dolfin::la_index_t>& global_dofs1);
 
     // Return true if cell has an Dirichlet/essential boundary
     // condition applied
     static bool has_bc(const DirichletBC::Map& boundary_values,
-                       const ArrayView<const dolfin::la_index>& dofs);
+                       const ArrayView<const dolfin::la_index_t>& dofs);
 
     // Return true if element matrix is required
     static bool
-      cell_matrix_required(const GenericTensor* A,
+      cell_matrix_required(const PETScMatrix* A,
                            const void* integral,
                            const std::vector<DirichletBC::Map>& boundary_values,
-                           const ArrayView<const dolfin::la_index>& dofs);
+                           const ArrayView<const dolfin::la_index_t>& dofs);
 
   };
 

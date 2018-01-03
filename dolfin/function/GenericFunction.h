@@ -115,15 +115,6 @@ namespace dolfin
     /// Pointer to FunctionSpace, if appropriate, otherwise NULL
     virtual std::shared_ptr<const FunctionSpace> function_space() const = 0;
 
-  protected:
-
-    /// Restrict as UFC function (by calling eval)
-    void restrict_as_ufc_function(double* w,
-                                  const FiniteElement& element,
-                                  const Cell& dolfin_cell,
-                                  const double* coordinate_dofs,
-                                  const ufc::cell& ufc_cell) const;
-
   };
 
 }

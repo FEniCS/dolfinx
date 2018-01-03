@@ -162,10 +162,10 @@ TEST_CASE("Test Vector", "[test_vector]")
       CHECK(y.size() == (std::size_t) 203);
 
       //:get_local(double* block, std::size_t m,
-      //           const dolfin::la_index* rows) const
+      //           const dolfin::la_index_t* rows) const
 
       double* block = NULL;
-      dolfin::la_index* rows = NULL;
+      dolfin::la_index_t* rows = NULL;
       x.get_local(block, 0, rows);
       y.get_local(block, 0, rows);
     }

@@ -124,20 +124,6 @@ namespace dolfin
     /// Create eigenvalue solver from EPS object
     explicit SLEPcEigenSolver(EPS eps);
 
-    /// Create eigenvalue solver for Ax = \lambda
-    explicit SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A);
-
-    /// Create eigenvalue solver for Ax = \lambda x
-    SLEPcEigenSolver(MPI_Comm comm, std::shared_ptr<const PETScMatrix> A);
-
-    /// Create eigenvalue solver for Ax = \lambda x on MPI_COMM_WORLD
-    SLEPcEigenSolver(std::shared_ptr<const PETScMatrix> A,
-                     std::shared_ptr<const PETScMatrix> B);
-
-    /// Create eigenvalue solver for Ax = \lambda x
-    SLEPcEigenSolver(MPI_Comm comm, std::shared_ptr<const PETScMatrix> A,
-                     std::shared_ptr<const PETScMatrix> B);
-
     /// Destructor
     ~SLEPcEigenSolver();
 
@@ -186,6 +172,9 @@ namespace dolfin
 
     /// Return SLEPc EPS pointer
     EPS eps() const;
+
+    /// Return MPI communicator
+    MPI_Comm mpi_comm() const;
 
     /// Default parameter values
     static Parameters default_parameters()

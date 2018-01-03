@@ -22,11 +22,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap() : _mpi_comm(MPI_COMM_NULL),  _block_size(1)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm) : _mpi_comm(mpi_comm),
                                         _rank(MPI::rank(mpi_comm)),
                                         _block_size(1)

@@ -34,12 +34,12 @@ def jit_generate(class_data, module_name, signature, parameters):
 
 namespace dolfin
 {{
-  class {classname} : public Expression
+  class {classname} : public dolfin::Expression
   {{
      public:
        {members}
 
-       {classname}()
+       {classname}() : Expression({value_shape})
        {{
             {constructor}
        }}
@@ -128,20 +128,21 @@ extern "C" DLL_EXPORT dolfin::Expression * create_{classname}()
             generic_function_{key}->eval(Eigen::Map<Eigen::Matrix<double, {value_size}, 1>>({key}), x);\n""".format(key=k, value_size=value_size)
             statement = _setup_statement + statement
 
-    # Set the value_shape
-    for dim in class_data['value_shape']:
-        constructor += "_value_shape.push_back(" + str(dim) + ");"
+    # Set the value_shape to pass to initialiser
+    value_shape = str(class_data['value_shape']).replace("(", "{").replace(")", "}")
 
     classname = signature
     code_c = template_code.format(statement=statement,
                                   classname=classname,
                                   members=members,
+                                  value_shape=value_shape,
                                   constructor=constructor,
                                   set_props=set_props,
                                   get_props=get_props,
                                   get_generic_function=get_generic_function,
                                   set_generic_function=set_generic_function,
                                   math_header=_math_header)
+
     code_h = ""
     depends = []
 

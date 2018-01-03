@@ -20,10 +20,8 @@
 // First added:  2007-04-24
 // Last changed: 2011-08-31
 
-#include <dolfin/common/Array.h>
 #include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/log/log.h>
-#include <dolfin/log/Progress.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
@@ -47,25 +45,12 @@ SubDomain::~SubDomain()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool SubDomain::inside(const Array<double>& x, bool on_boundary) const
-{
-  const Eigen::Map<const Eigen::VectorXd> _x(x.data(), x.size());
-  return inside(_x, on_boundary);
-}
-//-----------------------------------------------------------------------------
 bool SubDomain::inside(Eigen::Ref<const Eigen::VectorXd> x, bool on_boundary) const
 {
   dolfin_error("SubDomain.cpp",
                "check whether point is inside subdomain",
                "Function inside() not implemented by user");
   return false;
-}
-//-----------------------------------------------------------------------------
-void SubDomain::map(const Array<double>& x, Array<double>& y) const
-{
-  Eigen::Map<const Eigen::VectorXd> _x(x.data(), x.size());
-  Eigen::Map<Eigen::VectorXd> _y(const_cast<double*>(y.data()), y.size());
-  map(_x, _y);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::map(Eigen::Ref<const Eigen::VectorXd> x,
@@ -210,7 +195,6 @@ void SubDomain::apply_markers(S& sub_domains,
   bool on_boundary = false;
 
   // Compute sub domain markers
-  Progress p("Computing sub domain markers", mesh.num_entities(dim));
   for (MeshEntityIterator entity(mesh, dim); !entity.end(); ++entity)
   {
     // Check if entity is on the boundary if entity is a facet
@@ -247,7 +231,7 @@ void SubDomain::apply_markers(S& sub_domains,
       {
         if (is_visited.insert(vertex->index()))
         {
-          Array<double> x(_geometric_dimension, const_cast<double*>(vertex->x()));
+          Eigen::Map<Eigen::VectorXd> x(const_cast<double*>(vertex->x()), _geometric_dimension);
           is_inside[vertex->index()] = inside(x, on_boundary);
         }
 
@@ -262,8 +246,8 @@ void SubDomain::apply_markers(S& sub_domains,
     // Check midpoint (works also in the case when we have a single vertex)
     if (all_points_inside && check_midpoint)
     {
-      Array<double> x(_geometric_dimension,
-                      const_cast<double*>(entity->midpoint().coordinates()));
+      Eigen::Map<Eigen::VectorXd> x(
+                        const_cast<double*>(entity->midpoint().coordinates()),_geometric_dimension);
       if (!inside(x, on_boundary))
         all_points_inside = false;
     }
@@ -271,8 +255,6 @@ void SubDomain::apply_markers(S& sub_domains,
     // Mark entity with all vertices inside
     if (all_points_inside)
       sub_domains.set_value(entity->index(), sub_domain);
-
-    p++;
   }
 }
 //-----------------------------------------------------------------------------
@@ -312,7 +294,6 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
   bool on_boundary = false;
 
   // Compute sub domain markers
-  Progress p("Computing sub domain markers", mesh.num_entities(dim));
   for (MeshEntityIterator entity(mesh, dim); !entity.end(); ++entity)
   {
     // Check if entity is on the boundary if entity is a facet
@@ -349,7 +330,8 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
       {
         if (is_visited.insert(vertex->index()))
         {
-          Array<double> x(_geometric_dimension, const_cast<double*>(vertex->x()));
+          Eigen::Map<Eigen::VectorXd> x(
+                                        const_cast<double*>(vertex->x()), _geometric_dimension);
           is_inside[vertex->index()] = inside(x, on_boundary);
         }
 
@@ -364,8 +346,8 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
     // Check midpoint (works also in the case when we have a single vertex)
     if (all_points_inside && check_midpoint)
     {
-      Array<double> x(_geometric_dimension,
-                      const_cast<double*>(entity->midpoint().coordinates()));
+      Eigen::Map<Eigen::VectorXd> x(
+                                    const_cast<double*>(entity->midpoint().coordinates()), _geometric_dimension);
       if (!inside(x, on_boundary))
         all_points_inside = false;
     }
@@ -373,8 +355,6 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
     // Mark entity with all vertices inside
     if (all_points_inside)
       sub_domains[entity->index()] =  sub_domain;
-
-    p++;
   }
 }
 //-----------------------------------------------------------------------------

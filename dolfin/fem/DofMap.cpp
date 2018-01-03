@@ -194,7 +194,7 @@ const std::set<int>& DofMap::neighbours() const
   return _neighbours;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> DofMap::entity_closure_dofs(
+std::vector<dolfin::la_index_t> DofMap::entity_closure_dofs(
     const Mesh& mesh,
     std::size_t entity_dim,
     const std::vector<std::size_t> & entity_indices) const
@@ -208,7 +208,7 @@ std::vector<dolfin::la_index> DofMap::entity_closure_dofs(
 
   // Allocate the the array to return
   const std::size_t num_marked_entities = entity_indices.size();
-  std::vector<dolfin::la_index> entity_to_dofs(num_marked_entities * dofs_per_entity);
+  std::vector<dolfin::la_index_t> entity_to_dofs(num_marked_entities * dofs_per_entity);
 
   // Allocate data for tabulating local to local map
   std::vector<std::size_t> local_to_local_map(dofs_per_entity);
@@ -243,7 +243,7 @@ std::vector<dolfin::la_index> DofMap::entity_closure_dofs(
     for (std::size_t local_dof = 0; local_dof < dofs_per_entity; ++local_dof)
     {
       // Map dofs
-      const dolfin::la_index global_dof
+      const dolfin::la_index_t global_dof
         = cell_dof_list[local_to_local_map[local_dof]];
       entity_to_dofs[dofs_per_entity*i + local_dof] = global_dof;
     }
@@ -251,7 +251,7 @@ std::vector<dolfin::la_index> DofMap::entity_closure_dofs(
   return entity_to_dofs;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> DofMap::entity_closure_dofs(
+std::vector<dolfin::la_index_t> DofMap::entity_closure_dofs(
     const Mesh& mesh,
     std::size_t entity_dim) const
 {
@@ -264,7 +264,7 @@ std::vector<dolfin::la_index> DofMap::entity_closure_dofs(
   mesh.init(entity_dim, top_dim);
 
   // Allocate the the array to return
-  std::vector<dolfin::la_index> entity_to_dofs(num_mesh_entities * dofs_per_entity);
+  std::vector<dolfin::la_index_t> entity_to_dofs(num_mesh_entities * dofs_per_entity);
 
   // Allocate data for tabulating local to local map
   std::vector<std::size_t> local_to_local_map(dofs_per_entity);
@@ -297,7 +297,7 @@ std::vector<dolfin::la_index> DofMap::entity_closure_dofs(
     for (std::size_t local_dof = 0; local_dof < dofs_per_entity; ++local_dof)
     {
       // Map dofs
-      const dolfin::la_index global_dof
+      const dolfin::la_index_t global_dof
         = cell_dof_list[local_to_local_map[local_dof]];
       entity_to_dofs[dofs_per_entity*entity->index() + local_dof] = global_dof;
     }
@@ -305,7 +305,7 @@ std::vector<dolfin::la_index> DofMap::entity_closure_dofs(
   return entity_to_dofs;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> DofMap::entity_dofs(
+std::vector<dolfin::la_index_t> DofMap::entity_dofs(
     const Mesh& mesh,
     std::size_t entity_dim,
     const std::vector<std::size_t> & entity_indices) const
@@ -319,7 +319,7 @@ std::vector<dolfin::la_index> DofMap::entity_dofs(
 
   // Allocate the the array to return
   const std::size_t num_marked_entities = entity_indices.size();
-  std::vector<dolfin::la_index> entity_to_dofs(num_marked_entities * dofs_per_entity);
+  std::vector<dolfin::la_index_t> entity_to_dofs(num_marked_entities * dofs_per_entity);
 
   // Allocate data for tabulating local to local map
   std::vector<std::size_t> local_to_local_map(dofs_per_entity);
@@ -354,7 +354,7 @@ std::vector<dolfin::la_index> DofMap::entity_dofs(
     for (std::size_t local_dof = 0; local_dof < dofs_per_entity; ++local_dof)
     {
       // Map dofs
-      const dolfin::la_index global_dof
+      const dolfin::la_index_t global_dof
         = cell_dof_list[local_to_local_map[local_dof]];
       entity_to_dofs[dofs_per_entity*i + local_dof] = global_dof;
     }
@@ -362,7 +362,7 @@ std::vector<dolfin::la_index> DofMap::entity_dofs(
   return entity_to_dofs;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> DofMap::entity_dofs(
+std::vector<dolfin::la_index_t> DofMap::entity_dofs(
     const Mesh& mesh,
     std::size_t entity_dim) const
 {
@@ -375,7 +375,7 @@ std::vector<dolfin::la_index> DofMap::entity_dofs(
   mesh.init(entity_dim, top_dim);
 
   // Allocate the the array to return
-  std::vector<dolfin::la_index> entity_to_dofs(num_mesh_entities * dofs_per_entity);
+  std::vector<dolfin::la_index_t> entity_to_dofs(num_mesh_entities * dofs_per_entity);
 
   // Allocate data for tabulating local to local map
   std::vector<std::size_t> local_to_local_map(dofs_per_entity);
@@ -408,7 +408,7 @@ std::vector<dolfin::la_index> DofMap::entity_dofs(
     for (std::size_t local_dof = 0; local_dof < dofs_per_entity; ++local_dof)
     {
       // Map dofs
-      const dolfin::la_index global_dof
+      const dolfin::la_index_t global_dof
         = cell_dof_list[local_to_local_map[local_dof]];
       entity_to_dofs[dofs_per_entity*entity->index() + local_dof] = global_dof;
     }
@@ -476,7 +476,7 @@ std::shared_ptr<GenericDofMap>
                                                      *this, mesh));
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> DofMap::dofs(const Mesh& mesh,
+std::vector<dolfin::la_index_t> DofMap::dofs(const Mesh& mesh,
                                            std::size_t dim) const
 {
   // FIXME: This function requires a special case when dim ==
@@ -488,10 +488,10 @@ std::vector<dolfin::la_index> DofMap::dofs(const Mesh& mesh,
 
   // Return empty vector if not dofs on requested entity
   if (num_dofs_per_entity == 0)
-    return std::vector<dolfin::la_index>();
+    return std::vector<dolfin::la_index_t>();
 
   // Vector to hold list of dofs
-  std::vector<dolfin::la_index>
+  std::vector<dolfin::la_index_t>
     dof_list(mesh.num_entities(dim)*num_dofs_per_entity);
 
   // Iterate over cells
@@ -514,7 +514,7 @@ std::vector<dolfin::la_index> DofMap::dofs(const Mesh& mesh,
         for (std::size_t i = 0; i < entity_dofs_local.size(); ++i)
         {
           const std::size_t entity_dof_local = entity_dofs_local[i];
-          const dolfin::la_index dof_index = cell_dof_list[entity_dof_local];
+          const dolfin::la_index_t dof_index = cell_dof_list[entity_dof_local];
           dolfin_assert(e->index()*num_dofs_per_entity + i < dof_list.size());
           dof_list[e->index()*num_dofs_per_entity + i] = dof_index;
         }
@@ -536,7 +536,7 @@ std::vector<dolfin::la_index> DofMap::dofs(const Mesh& mesh,
       for (std::size_t i = 0; i < entity_dofs_local.size(); ++i)
       {
         const std::size_t entity_dof_local = entity_dofs_local[i];
-        const dolfin::la_index dof_index = cell_dof_list[entity_dof_local];
+        const dolfin::la_index_t dof_index = cell_dof_list[entity_dof_local];
         dolfin_assert(c->index()*num_dofs_per_entity + i < dof_list.size());
         dof_list[c->index()*num_dofs_per_entity + i] = dof_index;
       }
@@ -546,13 +546,13 @@ std::vector<dolfin::la_index> DofMap::dofs(const Mesh& mesh,
   return dof_list;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> DofMap::dofs() const
+std::vector<dolfin::la_index_t> DofMap::dofs() const
 {
   // Create vector to hold dofs
-  std::vector<la_index> _dofs;
+  std::vector<la_index_t> _dofs;
   _dofs.reserve(_dofmap.size()*max_element_dofs());
 
-  const dolfin::la_index local_ownership_size
+  const dolfin::la_index_t local_ownership_size
     = _index_map->size(IndexMap::MapSize::OWNED);
   const std::size_t global_offset = _index_map->local_range().first;
 

@@ -21,6 +21,8 @@
 #include <algorithm>
 #include <tuple>
 #include <set>
+#include <dolfin/common/constants.h>
+
 #include "predicates.h"
 #include "GeometryPredicates.h"
 #include "GeometryTools.h"

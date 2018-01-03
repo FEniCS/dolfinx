@@ -194,54 +194,41 @@ void FunctionSpace::interpolate(PETScVector& expansion_coefficients,
   expansion_coefficients.apply("insert");
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<FunctionSpace> FunctionSpace::operator[] (std::size_t i) const
-{
-  std::vector<std::size_t> component;
-  component.push_back(i);
-  return extract_sub_space(component);
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>
-FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) const
+FunctionSpace::sub(const std::vector<std::size_t>& component) const
 {
   dolfin_assert(_mesh);
   dolfin_assert(_element);
   dolfin_assert(_dofmap);
 
-  // Check if sub space is already in the cache
-  std::map<std::vector<std::size_t>,
-           std::shared_ptr<FunctionSpace>>::const_iterator subspace;
-  subspace = _subspaces.find(component);
+  // Check if sub space is already in the cache and not expired
+  auto subspace = _subspaces.find(component);
   if (subspace != _subspaces.end())
-    return subspace->second;
-  else
-  {
-    // Extract sub element
-    std::shared_ptr<const FiniteElement>
-      element(_element->extract_sub_element(component));
+    if (auto s = subspace->second.lock())
+      return s;
 
-    // Extract sub dofmap
-    std::shared_ptr<GenericDofMap>
-      dofmap(_dofmap->extract_sub_dofmap(component, *_mesh));
+  // Extract sub-element
+  auto element = _element->extract_sub_element(component);
 
-    // Create new sub space
-    std::shared_ptr<FunctionSpace>
-      new_sub_space(new FunctionSpace(_mesh, element, dofmap));
+  // Extract sub dofmap
+  std::shared_ptr<GenericDofMap> dofmap(_dofmap->extract_sub_dofmap(component, *_mesh));
 
-    // Set root space id and component w.r.t. root
-    new_sub_space->_root_space_id = _root_space_id;
-    auto& new_component = new_sub_space->_component;
-    new_component.clear();
-    new_component.insert(new_component.end(), _component.begin(), _component.end());
-    new_component.insert(new_component.end(), component.begin(), component.end());
+  // Create new sub space
+  auto new_sub_space = std::make_shared<FunctionSpace>(_mesh, element, dofmap);
 
-    // Insert new sub space into cache
-    _subspaces.insert(std::pair<std::vector<std::size_t>,
-                      std::shared_ptr<FunctionSpace>>(component,
-                                                      new_sub_space));
+  // Set root space id and component w.r.t. root
+  new_sub_space->_root_space_id = _root_space_id;
+  auto& new_component = new_sub_space->_component;
+  new_component.clear();
+  new_component.insert(new_component.end(), _component.begin(), _component.end());
+  new_component.insert(new_component.end(), component.begin(), component.end());
 
-    return new_sub_space;
-  }
+  // Insert new subspace into cache
+  _subspaces.insert(std::pair<std::vector<std::size_t>,
+                    std::shared_ptr<FunctionSpace>>(component,
+                                                    new_sub_space));
+
+  return new_sub_space;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace> FunctionSpace::collapse() const
@@ -317,10 +304,10 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
     {
-      const dolfin::la_index dof = dofs[i];
-      if (dof < (dolfin::la_index) local_size)
+      const dolfin::la_index_t dof = dofs[i];
+      if (dof < (dolfin::la_index_t) local_size)
       {
-        const dolfin::la_index local_index = dof;
+        const dolfin::la_index_t local_index = dof;
         for (std::size_t j = 0; j < gdim; ++j)
         {
           dolfin_assert(gdim*local_index + j < x.size());

@@ -19,7 +19,7 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/TensorLayout.h>
@@ -32,7 +32,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericMatrix>
+std::shared_ptr<PETScMatrix>
 DiscreteOperators::build_gradient(const FunctionSpace& V0,
                                   const FunctionSpace& V1)
 {
@@ -70,8 +70,8 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   }
 
   // Build maps from entities to local dof indices
-  const std::vector<dolfin::la_index> edge_to_dof = V0.dofmap()->dofs(mesh, 1);
-  const std::vector<dolfin::la_index> vertex_to_dof
+  const std::vector<dolfin::la_index_t> edge_to_dof = V0.dofmap()->dofs(mesh, 1);
+  const std::vector<dolfin::la_index_t> vertex_to_dof
     = V1.dofmap()->dofs(mesh, 0);
 
   // Build maps from local dof numbering to global
@@ -81,7 +81,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   V1.dofmap()->tabulate_local_to_global_dofs(local_to_global_map1);
 
   // Declare matrix
-  auto A = std::make_shared<PETScMatrix>();
+  auto A = std::make_shared<PETScMatrix>(mesh.mpi_comm());
 
   // Create layout for initialising tensor
   auto tensor_layout = std::make_shared<TensorLayout>(mesh.mpi_comm(), 0,
@@ -106,10 +106,13 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
     // Build sparsity pattern
   if (tensor_layout->sparsity_pattern())
   {
-    for (auto &edge : edges(mesh))
+    std::vector<dolfin::la_index_t> rows;
+    std::vector<dolfin::la_index_t> cols;
+    for (EdgeIterator edge(mesh); !edge.end(); ++edge)
     {
       // Row index (global indices)
-      const std::size_t row = local_to_global_map0[edge_to_dof[edge.index()]];
+      const std::size_t row = local_to_global_map0[edge_to_dof[edge->index()]];
+      rows.push_back(row);
 
       if (row >= local_range[0].first and row < local_range[0].second)
       {
@@ -118,11 +121,15 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
         const Vertex v1(mesh, edge.entities(0)[1]);
         std::size_t col0 = local_to_global_map1[vertex_to_dof[v0.index()]];
         std::size_t col1 = local_to_global_map1[vertex_to_dof[v1.index()]];
-
-        pattern.insert_global(row, col0);
-        pattern.insert_global(row, col1);
+        cols.push_back(col0);
+        cols.push_back(col1);
       }
     }
+
+    const std::vector<ArrayView<const dolfin::la_index_t>> entries
+     = { ArrayView<const dolfin::la_index_t>(rows.size(), rows.data()),
+         ArrayView<const dolfin::la_index_t>(cols.size(), cols.data())};
+    pattern.insert_global(entries);
     pattern.apply();
   }
 
@@ -132,8 +139,8 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   // Build discrete gradient operator/matrix
   for (auto &edge : edges(mesh))
   {
-    dolfin::la_index row;
-    dolfin::la_index cols[2];
+    dolfin::la_index_t row;
+    dolfin::la_index_t cols[2];
     double values[2];
 
     row = local_to_global_map0[edge_to_dof[edge.index()]];

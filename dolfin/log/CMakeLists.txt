@@ -6,7 +6,6 @@ set(HEADERS
   LogLevel.h
   LogManager.h
   LogStream.h
-  Progress.h
   Table.h
   PARENT_SCOPE)
 
@@ -16,6 +15,5 @@ set(SOURCES
   Logger.cpp
   LogManager.cpp
   LogStream.cpp
-  Progress.cpp
   Table.cpp
   PARENT_SCOPE)

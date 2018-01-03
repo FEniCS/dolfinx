@@ -75,12 +75,6 @@ std::size_t HexahedronCell::num_vertices(std::size_t dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-std::size_t HexahedronCell::orientation(const Cell& cell) const
-{
-  const Point up(0.0, 0.0, 1.0);
-  return cell.orientation(up);
-}
-//-----------------------------------------------------------------------------
 void HexahedronCell::create_entities(boost::multi_array<unsigned int, 2>& e,
                                         std::size_t dim, const unsigned int* v) const
 {

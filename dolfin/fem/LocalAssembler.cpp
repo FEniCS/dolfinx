@@ -28,7 +28,6 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/la/GenericTensor.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include "LocalAssembler.h"

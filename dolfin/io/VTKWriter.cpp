@@ -120,7 +120,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   const std::size_t size = num_cells*data_dim;
 
   // Build lists of dofs and create map
-  std::vector<dolfin::la_index> dof_set;
+  std::vector<dolfin::la_index_t> dof_set;
   std::vector<std::size_t> offset(size + 1);
   std::vector<std::size_t>::iterator cell_offset = offset.begin();
   for (CellIterator cell(mesh); !cell.end(); ++cell)

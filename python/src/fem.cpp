@@ -44,9 +44,7 @@
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
-#include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/SubDomain.h>
@@ -172,19 +170,19 @@ namespace dolfin_wrappers
       .def("off_process_owner", &dolfin::GenericDofMap::off_process_owner)
       .def("shared_nodes", &dolfin::GenericDofMap::shared_nodes)
       .def("cell_dofs", &dolfin::GenericDofMap::cell_dofs)
-      .def("dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)() const)
+      .def("dofs", (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)() const)
            &dolfin::GenericDofMap::dofs)
-      .def("dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&, std::size_t) const)
+      .def("dofs", (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)(const dolfin::Mesh&, std::size_t) const)
            &dolfin::GenericDofMap::dofs)
-      .def("entity_dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&, std::size_t) const)
+      .def("entity_dofs", (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)(const dolfin::Mesh&, std::size_t) const)
            &dolfin::GenericDofMap::entity_dofs)
-      .def("entity_closure_dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&, std::size_t) const)
+      .def("entity_closure_dofs", (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)(const dolfin::Mesh&, std::size_t) const)
            &dolfin::GenericDofMap::entity_closure_dofs)
-          .def("entity_dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&,
+          .def("entity_dofs", (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)(const dolfin::Mesh&,
                                                                                    std::size_t,
                                                                                    const std::vector<std::size_t>&) const)
            &dolfin::GenericDofMap::entity_dofs)
-          .def("entity_closure_dofs", (std::vector<dolfin::la_index>(dolfin::GenericDofMap::*)(const dolfin::Mesh&,
+          .def("entity_closure_dofs", (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)(const dolfin::Mesh&,
                                                                                            std::size_t,
                                                                                            const std::vector<std::size_t>&) const)
            &dolfin::GenericDofMap::entity_closure_dofs)
@@ -268,7 +266,7 @@ namespace dolfin_wrappers
     // dolfin::AssemblerBase
     py::class_<dolfin::AssemblerBase, std::shared_ptr<dolfin::AssemblerBase>>
       (m, "AssemblerBase")
-      .def("init_global_tensor", &dolfin::AssemblerBase::init_global_tensor)
+      //.def("init_global_tensor", &dolfin::AssemblerBase::init_global_tensor)
       .def_readwrite("add_values", &dolfin::AssemblerBase::add_values)
       .def_readwrite("keep_diagonal", &dolfin::AssemblerBase::keep_diagonal)
       .def_readwrite("finalize_tensor", &dolfin::AssemblerBase::finalize_tensor);
@@ -278,11 +276,11 @@ namespace dolfin_wrappers
       (m, "SystemAssembler", "DOLFIN SystemAssembler object")
       .def(py::init<std::shared_ptr<const dolfin::Form>, std::shared_ptr<const dolfin::Form>,
            std::vector<std::shared_ptr<const dolfin::DirichletBC>>>())
-      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&, dolfin::PETScVector&))
+      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::PETScMatrix&, dolfin::PETScVector&))
            &dolfin::SystemAssembler::assemble)
-      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&)) &dolfin::SystemAssembler::assemble)
+      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::PETScMatrix&)) &dolfin::SystemAssembler::assemble)
       .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::PETScVector&)) &dolfin::SystemAssembler::assemble)
-      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::GenericMatrix&, dolfin::PETScVector&,
+      .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::PETScMatrix&, dolfin::PETScVector&,
                                                           const dolfin::PETScVector&))
            &dolfin::SystemAssembler::assemble)
       .def("assemble", (void (dolfin::SystemAssembler::*)(dolfin::PETScVector&, const dolfin::PETScVector&))
@@ -381,7 +379,7 @@ namespace dolfin_wrappers
       //.def(py::init<std::shared_ptr<const dolfin::FunctionSpace>, std::shared_ptr<const dolfin::FunctionSpace>,
       //     const std::vector<std::pair<const dolfin::Point*, double>>>())
       .def("apply", (void (dolfin::PointSource::*)(dolfin::PETScVector&)) &dolfin::PointSource::apply)
-      .def("apply", (void (dolfin::PointSource::*)(dolfin::GenericMatrix&)) &dolfin::PointSource::apply);
+      .def("apply", (void (dolfin::PointSource::*)(dolfin::PETScMatrix&)) &dolfin::PointSource::apply);
 
     // dolfin::NonlinearVariationalProblem
     py::class_<dolfin::NonlinearVariationalProblem,
@@ -431,44 +429,44 @@ namespace dolfin_wrappers
 #endif
 
     // FEM utils free functions
-    m.def("create_mesh", dolfin::create_mesh);
+    m.def("create_mesh", dolfin::fem::create_mesh);
     m.def("create_mesh", [](const py::object u)
           {
             auto _u = u.attr("_cpp_object").cast<dolfin::Function*>();
-            return dolfin::create_mesh(*_u);
+            return dolfin::fem::create_mesh(*_u);
           });
 
-    m.def("set_coordinates", &dolfin::set_coordinates);
+    m.def("set_coordinates", &dolfin::fem::set_coordinates);
     m.def("set_coordinates", [](dolfin::MeshGeometry& geometry, const py::object u)
           {
             auto _u = u.attr("_cpp_object").cast<const dolfin::Function*>();
-            dolfin::set_coordinates(geometry, *_u);
+            dolfin::fem::set_coordinates(geometry, *_u);
           });
 
-    m.def("get_coordinates", &dolfin::get_coordinates);
+    m.def("get_coordinates", &dolfin::fem::get_coordinates);
     m.def("get_coordinates", [](py::object u, const dolfin::MeshGeometry& geometry)
           {
             auto _u = u.attr("_cpp_object").cast<dolfin::Function*>();
-            return dolfin::get_coordinates(*_u, geometry);
+            return dolfin::fem::get_coordinates(*_u, geometry);
           });
 
     m.def("vertex_to_dof_map", [](const dolfin::FunctionSpace& V)
           {
-            const auto _v2d = dolfin::vertex_to_dof_map(V);
-            return py::array_t<dolfin::la_index>(_v2d.size(), _v2d.data());
+            const auto _v2d = dolfin::fem::vertex_to_dof_map(V);
+            return py::array_t<dolfin::la_index_t>(_v2d.size(), _v2d.data());
           });
 
     m.def("vertex_to_dof_map", [](py::object V)
           {
             auto _V = V.attr("_cpp_object").cast<dolfin::FunctionSpace*>();
-            const auto _v2d = dolfin::vertex_to_dof_map(*_V);
-            return py::array_t<dolfin::la_index>(_v2d.size(), _v2d.data());
+            const auto _v2d = dolfin::fem::vertex_to_dof_map(*_V);
+            return py::array_t<dolfin::la_index_t>(_v2d.size(), _v2d.data());
           });
-    m.def("dof_to_vertex_map", &dolfin::dof_to_vertex_map);
+    m.def("dof_to_vertex_map", &dolfin::fem::dof_to_vertex_map);
     m.def("dof_to_vertex_map", [](py::object V)
           {
             auto _V = V.attr("_cpp_object").cast<dolfin::FunctionSpace*>();
-            const auto _d2v = dolfin::dof_to_vertex_map(*_V);
+            const auto _d2v = dolfin::fem::dof_to_vertex_map(*_V);
             return py::array_t<std::size_t>(_d2v.size(), _d2v.data());
           });
   }

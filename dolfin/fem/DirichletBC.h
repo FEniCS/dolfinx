@@ -49,7 +49,7 @@ namespace dolfin
   class GenericFunction;
   class FunctionSpace;
   class Facet;
-  class GenericMatrix;
+  class PETScMatrix;
   class PETScVector;
   class SubDomain;
   template<typename T> class MeshFunction;
@@ -324,7 +324,7 @@ namespace dolfin
 
     // Check arguments for compatibility of tensors and dofmap,
     // dim is means an axis to which bc applies
-    void check_arguments(GenericMatrix* A, PETScVector* b,
+    void check_arguments(PETScMatrix* A, PETScVector* b,
                          const PETScVector* x,
                          std::size_t dim) const;
 

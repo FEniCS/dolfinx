@@ -23,7 +23,6 @@
 #include <pybind11/eigen.h>
 #include <pybind11/operators.h>
 
-#include <dolfin/common/Array.h>
 #include <dolfin/function/Constant.h>
 #include <dolfin/function/Expression.h>
 #include <dolfin/function/Function.h>
@@ -130,9 +129,6 @@ namespace dolfin_wrappers
     // dolfin:Expression
     py::class_<dolfin::Expression, PyExpression, std::shared_ptr<dolfin::Expression>,
                dolfin::GenericFunction>(m, "Expression", "An Expression is a function (field) that can appear as a coefficient in a form")
-      .def(py::init<>())
-      .def(py::init<std::size_t>())
-      .def(py::init<std::size_t, std::size_t>())
       .def(py::init<std::vector<std::size_t>>())
       .def("__call__", [](const dolfin::Expression& self, Eigen::Ref<const Eigen::VectorXd> x)
            {
@@ -170,7 +166,6 @@ namespace dolfin_wrappers
       .def(py::init<std::vector<std::size_t>, std::vector<double>>())
       .def("values", [](const dolfin::Constant& self)
            { auto v =  self.values(); return py::array_t<double>(v.size(), v.data()); })
-      .def("__float__", [](const dolfin::Constant& instance) -> double { return instance; })
       /*
       .def("_assign", [](dolfin::Constant& self, const dolfin::Constant& other) -> const dolfin::Constant&
            {self = other;})
@@ -203,15 +198,13 @@ namespace dolfin_wrappers
     py::class_<dolfin::Function, std::shared_ptr<dolfin::Function>, dolfin::GenericFunction>
       (m, "Function", "A finite element function")
       .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>>(), "Create a function on the given function space")
-      .def(py::init<dolfin::Function&, std::size_t>())
       .def(py::init<std::shared_ptr<dolfin::FunctionSpace>, std::shared_ptr<dolfin::PETScVector>>())
-      .def("_assign", (const dolfin::Function& (dolfin::Function::*)(const dolfin::Function&))
-           &dolfin::Function::operator=)
+      //.def("_assign", (const dolfin::Function& (dolfin::Function::*)(const dolfin::Function&))
+      //     &dolfin::Function::operator=)
       .def("_assign", (const dolfin::Function& (dolfin::Function::*)(const dolfin::Expression&))
            &dolfin::Function::operator=)
       .def("_assign", (void (dolfin::Function::*)(const dolfin::FunctionAXPY&))
            &dolfin::Function::operator=)
-      .def("_in", &dolfin::Function::in)
       .def("__call__", [](dolfin::Function& self, Eigen::Ref<const Eigen::VectorXd> x)
           {
              Eigen::VectorXd values(self.value_size());
@@ -224,7 +217,7 @@ namespace dolfin_wrappers
              auto _v = v.attr("_cpp_object").cast<dolfin::Function*>();
              instance.extrapolate(*_v);
            })
-      .def("sub", &dolfin::Function::operator[])
+      .def("sub", &dolfin::Function::sub, "Return sub-function (view into parent Function")
       .def("get_allow_extrapolation", &dolfin::Function::get_allow_extrapolation)
       .def("interpolate", (void (dolfin::Function::*)(const dolfin::GenericFunction&))
            &dolfin::Function::interpolate, "Interpolate the function u")
@@ -309,9 +302,7 @@ namespace dolfin_wrappers
       .def("mesh", &dolfin::FunctionSpace::mesh)
       .def("dofmap", &dolfin::FunctionSpace::dofmap)
       .def("set_x", &dolfin::FunctionSpace::set_x)
-      .def("sub", (std::shared_ptr<dolfin::FunctionSpace> (dolfin::FunctionSpace::*)(std::size_t) const)
-           &dolfin::FunctionSpace::sub)
-      .def("extract_sub_space", &dolfin::FunctionSpace::extract_sub_space)
+      .def("sub", &dolfin::FunctionSpace::sub)
       .def("tabulate_dof_coordinates", [](const dolfin::FunctionSpace& self)
            {
              const std::size_t gdim = self.element()->geometric_dimension();

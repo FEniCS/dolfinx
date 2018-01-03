@@ -87,7 +87,7 @@ namespace dolfin_wrappers
           }, "Return `True` if DOLFIN is configured with slepc4py");
     m.def("git_commit_hash", &dolfin::git_commit_hash,
           "Returns git hash for this build.");
-    m.def("sizeof_la_index", &dolfin::sizeof_la_index);
+    m.def("sizeof_la_index_t", &dolfin::sizeof_la_index_t);
 
     m.attr("DOLFIN_EPS") = DOLFIN_EPS;
     m.attr("DOLFIN_PI") = DOLFIN_PI;

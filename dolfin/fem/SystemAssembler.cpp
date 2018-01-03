@@ -29,10 +29,9 @@
 #include <dolfin/common/types.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
-#include <dolfin/log/Progress.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Facet.h>
@@ -58,12 +57,12 @@ SystemAssembler::SystemAssembler(std::shared_ptr<const Form> a,
   check_arity(_a, _l);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericMatrix& A, PETScVector& b)
+void SystemAssembler::assemble(PETScMatrix& A, PETScVector& b)
 {
   assemble(&A, &b, NULL);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericMatrix& A)
+void SystemAssembler::assemble(PETScMatrix& A)
 {
   assemble(&A, NULL, NULL);
 }
@@ -73,7 +72,7 @@ void SystemAssembler::assemble(PETScVector& b)
   assemble(NULL, &b, NULL);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericMatrix& A, PETScVector& b,
+void SystemAssembler::assemble(PETScMatrix& A, PETScVector& b,
                                const PETScVector& x0)
 {
   assemble(&A, &b, &x0);
@@ -135,7 +134,7 @@ bool SystemAssembler::check_functionspace_for_bc
   return fs->contains(*bc_function_space);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericMatrix* A, PETScVector* b,
+void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
                                const PETScVector* x0)
 {
   dolfin_assert(_a);
@@ -203,7 +202,7 @@ void SystemAssembler::assemble(GenericMatrix* A, PETScVector* b,
     init_global_tensor(*b, *_l);
 
   // Gather tensors
-  std::array<GenericTensor*, 2> tensors = { {A, b} };
+  std::pair<PETScMatrix*, PETScVector*> tensors(A, b);
 
   // Allocate data
   Scratch data(*_a, *_l);
@@ -255,7 +254,7 @@ void SystemAssembler::assemble(GenericMatrix* A, PETScVector* b,
                   == _a->function_space(1)->dofmap()->global_dimension());
 
     const std::size_t num_bc_dofs = boundary_values[0].size();
-    std::vector<dolfin::la_index> bc_indices;
+    std::vector<dolfin::la_index_t> bc_indices;
     std::vector<double> bc_values;
     bc_indices.reserve(num_bc_dofs);
     bc_values.reserve(num_bc_dofs);
@@ -301,7 +300,7 @@ void SystemAssembler::assemble(GenericMatrix* A, PETScVector* b,
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::cell_wise_assembly(
-  std::array<GenericTensor*, 2>& tensors,
+  std::pair<PETScMatrix*, PETScVector*>& tensors,
   std::array<UFC*, 2>& ufc,
   Scratch& data,
   const std::vector<DirichletBC::Map>& boundary_values,
@@ -331,9 +330,9 @@ void SystemAssembler::cell_wise_assembly(
   dofmaps[1].push_back(ufc[1]->dolfin_form.function_space(0)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::array<std::vector<ArrayView<const dolfin::la_index>>, 2> cell_dofs
-    = { {std::vector<ArrayView<const dolfin::la_index>>(2),
-         std::vector<ArrayView<const dolfin::la_index>>(1)} };
+  std::array<std::vector<ArrayView<const dolfin::la_index_t>>, 2> cell_dofs
+    = { {std::vector<ArrayView<const dolfin::la_index_t>>(2),
+         std::vector<ArrayView<const dolfin::la_index_t>>(1)} };
 
   // Create pointers to hold integral objects
   std::array<const ufc::cell_integral*, 2> cell_integrals
@@ -349,10 +348,12 @@ void SystemAssembler::cell_wise_assembly(
   bool use_exterior_facet_domains
     = exterior_facet_domains && !exterior_facet_domains->empty();
 
+  PETScMatrix* A = tensors.first;
+  PETScVector* b = tensors.second;
+
   // Iterate over all cells
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Check that cell is not a ghost
@@ -368,7 +369,7 @@ void SystemAssembler::cell_wise_assembly(
     for (std::size_t form = 0; form < 2; ++form)
     {
       // Don't need to assemble rhs if only system matrix is required
-      if (form == 1 && !tensors[form])
+      if (form == 1 && !b)
         continue;
 
       // Get rank (lhs=2, rhs=1)
@@ -395,13 +396,13 @@ void SystemAssembler::cell_wise_assembly(
       bool tensor_required;
       if (rank == 2) // form == 0
       {
-        tensor_required = cell_matrix_required(tensors[form],
+        tensor_required = cell_matrix_required(A,
                                                cell_integrals[form],
                                                boundary_values,
                                                cell_dofs[form][1]);
       }
       else
-        tensor_required = tensors[form] && cell_integrals[form];
+        tensor_required = b && cell_integrals[form];
 
       if (tensor_required)
       {
@@ -447,13 +448,13 @@ void SystemAssembler::cell_wise_assembly(
           if (rank == 2) // form == 0
           {
             tensor_required
-              = cell_matrix_required(tensors[form],
+              = cell_matrix_required(A,
                                      exterior_facet_integrals[form],
                                      boundary_values,
                                      cell_dofs[form][1]);
           }
           else
-            tensor_required = tensors[form];
+            tensor_required = b;
 
           // Add exterior facet tensor
           if (tensor_required)
@@ -481,18 +482,15 @@ void SystemAssembler::cell_wise_assembly(
              cell_dofs[0][0], cell_dofs[0][1]);
 
     // Add entries to global tensor
-    for (std::size_t form = 0; form < 2; ++form)
-    {
-      if (tensors[form])
-        tensors[form]->add_local(data.Ae[form].data(), cell_dofs[form]);
-    }
-
-    p++;
+    if (A)
+      A->add_local(data.Ae[0].data(), cell_dofs[0]);
+    if (b)
+      b->add_local(data.Ae[1].data(), cell_dofs[1]);
   }
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::facet_wise_assembly(
-  std::array<GenericTensor*, 2>& tensors,
+  std::pair<PETScMatrix*, PETScVector*>& tensors,
   std::array<UFC*, 2>& ufc,
   Scratch& data,
   const std::vector<DirichletBC::Map>& boundary_values,
@@ -525,7 +523,7 @@ void SystemAssembler::facet_wise_assembly(
   dofmaps[1].push_back(ufc[1]->dolfin_form.function_space(0)->dofmap().get());
 
   // Cell dofmaps [form][cell][form dim]
-  std::array<std::array<std::vector<ArrayView<const dolfin::la_index>>,
+  std::array<std::array<std::vector<ArrayView<const dolfin::la_index_t>>,
                         2>, 2> cell_dofs;
   cell_dofs[0][0].resize(2);
   cell_dofs[0][1].resize(2);
@@ -537,7 +535,7 @@ void SystemAssembler::facet_wise_assembly(
   std::array<std::size_t, 2> local_facet;
 
   // Vectors to hold dofs for macro cells
-  std::array<std::vector<std::vector<dolfin::la_index>>, 2> macro_dofs;
+  std::array<std::vector<std::vector<dolfin::la_index_t>>, 2> macro_dofs;
   macro_dofs[0].resize(2);
   macro_dofs[1].resize(1);
 
@@ -570,10 +568,12 @@ void SystemAssembler::facet_wise_assembly(
   std::array<bool, 2> compute_cell_tensor = {{true, true}};
   std::vector<bool> cell_tensor_computed(mesh.num_cells(), false);
 
+  PETScMatrix* A = tensors.first;
+  PETScVector* b = tensors.second;
+
   // Iterate over facets
   std::array<ufc::cell, 2> ufc_cell;
   std::array<std::vector<double>, 2> coordinate_dofs;
-  Progress p("Assembling system (facet-wise)", mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Number of cells sharing facet
@@ -629,7 +629,7 @@ void SystemAssembler::facet_wise_assembly(
       for (std::size_t form = 0; form < 2; ++form)
       {
         // Don't need to assemble rhs if only system matrix is required
-        if (form == 1 && !tensors[form])
+        if (form == 1 && !b)
           continue;
 
         // Get rank (lhs=2, rhs=1)
@@ -675,7 +675,7 @@ void SystemAssembler::facet_wise_assembly(
           for (std::size_t c = 0; c < 2; ++c)
           {
             tensor_required_facet[form]
-              = cell_matrix_required(tensors[form],
+              = cell_matrix_required(A,
                                      interior_facet_integrals[form],
                                      boundary_values,
                                      cell_dofs[form][c][1]);
@@ -686,7 +686,7 @@ void SystemAssembler::facet_wise_assembly(
         else
         {
           tensor_required_facet[form]
-            = (tensors[form] && interior_facet_integrals[form]);
+            = (b && interior_facet_integrals[form]);
         }
 
         // Get cell integrals (if required)
@@ -705,13 +705,13 @@ void SystemAssembler::facet_wise_assembly(
             if (form == 0)
             {
               tensor_required_cell[form]
-                = cell_matrix_required(tensors[form],
+                = cell_matrix_required(A,
                                        cell_integrals[form],
                                        boundary_values,
                                        cell_dofs[form][c][1]);
             }
             else
-              tensor_required_cell[form] = tensors[form] && cell_integrals[form];
+              tensor_required_cell[form] = b && cell_integrals[form];
           }
         }
 
@@ -741,30 +741,30 @@ void SystemAssembler::facet_wise_assembly(
                                     compute_cell_tensor);
 
       // Modify local tensors for bcs
-      ArrayView<const la_index> mdofs0(macro_dofs[0][0]);
-      ArrayView<const la_index> mdofs1(macro_dofs[0][1]);
+      ArrayView<const la_index_t> mdofs0(macro_dofs[0][0]);
+      ArrayView<const la_index_t> mdofs1(macro_dofs[0][1]);
       apply_bc(ufc[0]->macro_A.data(), ufc[1]->macro_A.data(), boundary_values,
                mdofs0, mdofs1);
 
       // Add entries to global tensor
-      if (tensors[1])
+      if (b)
       {
-        std::vector<ArrayView<const la_index>> mdofs(macro_dofs[1].size());
+        std::vector<ArrayView<const la_index_t>> mdofs(macro_dofs[1].size());
         for (std::size_t i = 0; i < macro_dofs[1].size(); ++i)
           mdofs[i].set(macro_dofs[1][i]);
-        tensors[1]->add_local(ufc[1]->macro_A.data(), mdofs);
+        b->add_local(ufc[1]->macro_A.data(), mdofs);
       }
 
       const bool add_macro_element
         = ufc[0]->form.has_interior_facet_integrals();
-      if (tensors[0] && add_macro_element)
+      if (A && add_macro_element)
       {
-        std::vector<ArrayView<const la_index>> mdofs(macro_dofs[0].size());
+        std::vector<ArrayView<const la_index_t>> mdofs(macro_dofs[0].size());
         for (std::size_t i = 0; i < macro_dofs[0].size(); ++i)
           mdofs[i].set(macro_dofs[0][i]);
-        tensors[0]->add_local(ufc[0]->macro_A.data(), mdofs);
+        A->add_local(ufc[0]->macro_A.data(), mdofs);
       }
-      else if (tensors[0] && !add_macro_element && tensor_required_cell[0])
+      else if (A && !add_macro_element && tensor_required_cell[0])
       {
         // FIXME: This can be simplied by assembling into Ae instead
         // of macro_A.
@@ -772,7 +772,7 @@ void SystemAssembler::facet_wise_assembly(
         // The sparsity pattern may not support the macro element so
         // instead extract back out the diagonal cell blocks and add
         // them individually
-        matrix_block_add(*tensors[0], data.Ae[0], ufc[0]->macro_A,
+        matrix_block_add(*A, data.Ae[0], ufc[0]->macro_A,
                          compute_cell_tensor, cell_dofs[0]);
       }
 
@@ -821,12 +821,12 @@ void SystemAssembler::facet_wise_assembly(
         if (rank == 2)
         {
           tensor_required_facet[form]
-            = cell_matrix_required(tensors[form],
+            = cell_matrix_required(A,
                                    exterior_facet_integrals[form],
                                    boundary_values,
                                    cell_dofs[form][0][1]);
           tensor_required_cell[form]
-            = cell_matrix_required(tensors[form],
+            = cell_matrix_required(A,
                                    cell_integrals[form],
                                    boundary_values,
                                    cell_dofs[form][0][1]);
@@ -834,9 +834,9 @@ void SystemAssembler::facet_wise_assembly(
         else
         {
           tensor_required_facet[form]
-            = (tensors[form] && exterior_facet_integrals[form]);
+            = (b && exterior_facet_integrals[form]);
           tensor_required_cell[form]
-            = tensors[form] && cell_integrals[form];
+            = b && cell_integrals[form];
         }
       }
 
@@ -855,16 +855,14 @@ void SystemAssembler::facet_wise_assembly(
                cell_dofs[0][0][0], cell_dofs[0][0][1]);
 
       // Add entries to global tensor
-      for (std::size_t form = 0; form < 2; ++form)
-      {
-        if (tensors[form])
-          tensors[form]->add_local(data.Ae[form].data(), cell_dofs[form][0]);
-      }
+      if (A)
+        A->add_local(data.Ae[0].data(), cell_dofs[0][0]);
+      if (b)
+        b->add_local(data.Ae[1].data(), cell_dofs[1][0]);
 
       // Mark cell as processed
       cell_tensor_computed[cell.index()] = true;
     }
-    p++;
   }
 }
 //-----------------------------------------------------------------------------
@@ -1009,11 +1007,11 @@ void SystemAssembler::compute_interior_facet_tensor(
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::matrix_block_add(
-  GenericTensor& tensor,
+  PETScMatrix& tensor,
   std::vector<double>& Ae,
   std::vector<double>& macro_A,
   const std::array<bool, 2>& add_local_tensor,
-  const std::array<std::vector<ArrayView<const la_index>>, 2>& cell_dofs)
+  const std::array<std::vector<ArrayView<const la_index_t>>, 2>& cell_dofs)
 {
   for (std::size_t c = 0; c < 2; ++c)
   {
@@ -1036,8 +1034,8 @@ void SystemAssembler::matrix_block_add(
 void
 SystemAssembler::apply_bc(double* A, double* b,
                           const std::vector<DirichletBC::Map>& boundary_values,
-                          const ArrayView<const dolfin::la_index>& global_dofs0,
-                          const ArrayView<const dolfin::la_index>& global_dofs1)
+                          const ArrayView<const dolfin::la_index_t>& global_dofs0,
+                          const ArrayView<const dolfin::la_index_t>& global_dofs1)
 {
   dolfin_assert(A);
   dolfin_assert(b);
@@ -1112,7 +1110,7 @@ SystemAssembler::apply_bc(double* A, double* b,
 }
 //-----------------------------------------------------------------------------
 bool SystemAssembler::has_bc(const DirichletBC::Map& boundary_values,
-                             const ArrayView<const dolfin::la_index>& dofs)
+                             const ArrayView<const dolfin::la_index_t>& dofs)
 {
   // Loop over dofs and check if bc is applied
   for (auto dof = dofs.begin(); dof != dofs.end(); ++dof)
@@ -1126,10 +1124,10 @@ bool SystemAssembler::has_bc(const DirichletBC::Map& boundary_values,
 }
 //-----------------------------------------------------------------------------
 bool SystemAssembler::cell_matrix_required(
-  const GenericTensor* A,
+  const PETScMatrix* A,
   const void* integral,
   const std::vector<DirichletBC::Map>& boundary_values,
-  const ArrayView<const dolfin::la_index>& dofs)
+  const ArrayView<const dolfin::la_index_t>& dofs)
 {
   if (A && integral)
     return true;

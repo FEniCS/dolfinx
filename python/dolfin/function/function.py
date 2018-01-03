@@ -197,7 +197,7 @@ class Function(ufl.Coefficient):
                 if not i < num_sub_spaces:
                     raise RuntimeError("Can only extract subfunctions "
                                        "with i = 0..%d" % num_sub_spaces)
-                self._cpp_object = cpp.function.Function(other._cpp_object, i)
+                self._cpp_object = other._cpp_object.sub(i)
                 ufl.Coefficient.__init__(self, self.function_space().ufl_function_space(),
                                          count=self._cpp_object.id())
             else:
@@ -215,7 +215,7 @@ class Function(ufl.Coefficient):
                 # If passing only the FunctionSpace
                 self._cpp_object = cpp.function.Function(V._cpp_object)
             elif len(args) == 2:
-                if isinstance(args[1], cpp.la.GenericVector):
+                if isinstance(args[1], cpp.la.PETScVector):
                     self._cpp_object = cpp.function.Function(V._cpp_object, args[1])
                 elif isinstance(args[1], cpp.function.Function):
                     self._cpp_object = args[1]

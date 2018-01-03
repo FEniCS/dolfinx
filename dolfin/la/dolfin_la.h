@@ -3,10 +3,6 @@
 
 // DOLFIN la interface
 
-// Note that the order is important!
-
-#include <dolfin/la/GenericTensor.h>
-#include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/VectorSpaceBasis.h>
 
 #include <dolfin/la/PETScOptions.h>

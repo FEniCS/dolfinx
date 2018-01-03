@@ -24,7 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
 #include "DistributedMeshTools.h"
 #include "Facet.h"
@@ -73,9 +72,9 @@ namespace
 
 //-----------------------------------------------------------------------------
 std::map<unsigned int, std::pair<unsigned int, unsigned int>>
-  PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
-                                                      const SubDomain& sub_domain,
-                                                      const std::size_t dim)
+PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
+                                                    const SubDomain& sub_domain,
+                                                    const std::size_t dim)
 {
   // MPI communication
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -88,9 +87,9 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int>>
   std::vector<double> x(gdim);
   std::vector<double> y(gdim);
 
-  // Wrap x and y (Array view of x and y)
-  Array<double> _x(gdim, x.data());
-  Array<double> _y(gdim, y.data());
+  // Wrap x and y (view of x and y)
+  Eigen::Map<Eigen::VectorXd> _x(x.data(), gdim);
+  Eigen::Map<Eigen::VectorXd> _y(y.data(), gdim);
 
   std::vector<std::size_t> slave_entities;
   std::vector<std::vector<double>> slave_mapped_coords;

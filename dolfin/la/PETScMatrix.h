@@ -36,8 +36,7 @@
 
 #include <petscmat.h>
 #include <petscsys.h>
-
-#include "GenericMatrix.h"
+#include <dolfin/common/ArrayView.h>
 #include "PETScBaseMatrix.h"
 
 namespace dolfin
@@ -55,12 +54,9 @@ namespace dolfin
   /// access the PETSc Mat pointer using the function mat() and
   /// use the standard PETSc interface.
 
-  class PETScMatrix : public GenericMatrix, public PETScBaseMatrix
+  class PETScMatrix : public PETScBaseMatrix
   {
   public:
-
-    /// Create empty matrix (on MPI_COMM_WORLD)
-    PETScMatrix();
 
     /// Create empty matrix
     explicit PETScMatrix(MPI_Comm comm);
@@ -111,6 +107,31 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
+    /// Return tensor rank (number of dimensions)
+    virtual std::size_t rank() const
+    { return 2; }
+
+    /// Set block of values using local indices
+    virtual void set_local(const double* block,
+                           const dolfin::la_index_t* num_rows,
+                           const dolfin::la_index_t * const * rows)
+    { set_local(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
+
+    /// Add block of values using local indices
+    virtual void add_local(const double* block,
+                           const dolfin::la_index_t* num_rows,
+                           const dolfin::la_index_t * const * rows)
+    { add_local(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
+
+    /// Add block of values using local indices
+    virtual void
+      add_local(const double* block,
+                const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
+    {
+      add_local(block, rows[0].size(), rows[0].data(),
+                rows[1].size(), rows[1].data());
+    }
+
     //--- Implementation of the GenericMatrix interface --
 
     /// Return copy of matrix
@@ -129,28 +150,28 @@ namespace dolfin
 
     /// Get block of values
     virtual void get(double* block,
-                     std::size_t m, const dolfin::la_index* rows,
-                     std::size_t n, const dolfin::la_index* cols) const;
+                     std::size_t m, const dolfin::la_index_t* rows,
+                     std::size_t n, const dolfin::la_index_t* cols) const;
 
     /// Set block of values using global indices
     virtual void set(const double* block,
-                     std::size_t m, const dolfin::la_index* rows,
-                     std::size_t n, const dolfin::la_index* cols);
+                     std::size_t m, const dolfin::la_index_t* rows,
+                     std::size_t n, const dolfin::la_index_t* cols);
 
     /// Set block of values using local indices
     virtual void set_local(const double* block,
-                           std::size_t m, const dolfin::la_index* rows,
-                           std::size_t n, const dolfin::la_index* cols);
+                           std::size_t m, const dolfin::la_index_t* rows,
+                           std::size_t n, const dolfin::la_index_t* cols);
 
     /// Add block of values using global indices
     virtual void add(const double* block,
-                     std::size_t m, const dolfin::la_index* rows,
-                     std::size_t n, const dolfin::la_index* cols);
+                     std::size_t m, const dolfin::la_index_t* rows,
+                     std::size_t n, const dolfin::la_index_t* cols);
 
     /// Add block of values using local indices
     virtual void add_local(const double* block,
-                           std::size_t m, const dolfin::la_index* rows,
-                           std::size_t n, const dolfin::la_index* cols);
+                           std::size_t m, const dolfin::la_index_t* rows,
+                           std::size_t n, const dolfin::la_index_t* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const PETScMatrix& A,
@@ -159,27 +180,11 @@ namespace dolfin
     /// Return norm of matrix
     double norm(std::string norm_type) const;
 
-    /// Get non-zero values of given row
-    virtual void getrow(std::size_t row,
-                        std::vector<std::size_t>& columns,
-                        std::vector<double>& values) const;
-
-    /// Set values for given row
-    virtual void setrow(std::size_t row,
-                        const std::vector<std::size_t>& columns,
-                        const std::vector<double>& values);
-
     /// Set given rows (global row indices) to zero
-    virtual void zero(std::size_t m, const dolfin::la_index* rows);
+    virtual void zero(std::size_t m, const dolfin::la_index_t* rows);
 
     /// Set given rows (local row indices) to zero
-    virtual void zero_local(std::size_t m, const dolfin::la_index* rows);
-
-    /// Set given rows (global row indices) to identity matrix
-    virtual void ident(std::size_t m, const dolfin::la_index* rows);
-
-    /// Set given rows (local row indices) to identity matrix
-    virtual void ident_local(std::size_t m, const dolfin::la_index* rows);
+    virtual void zero_local(std::size_t m, const dolfin::la_index_t* rows);
 
     // Matrix-vector product, y = Ax
     virtual void mult(const PETScVector& x, PETScVector& y) const;
@@ -222,8 +227,8 @@ namespace dolfin
     /// when solving singular systems)
     void set_nullspace(const VectorSpaceBasis& nullspace);
 
-    /// Attach near nullspace to matrix (used by preconditioners, such
-    /// as smoothed aggregation algerbraic multigrid)
+    /// Attach 'near' nullspace to matrix (used by preconditioners,
+    /// such as smoothed aggregation algerbraic multigrid)
     void set_near_nullspace(const VectorSpaceBasis& nullspace);
 
     /// Dump matrix to PETSc binary format

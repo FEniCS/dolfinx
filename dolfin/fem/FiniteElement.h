@@ -216,29 +216,26 @@ namespace dolfin
     std::size_t hash() const
     { return _hash; }
 
-    /// Create a new finite element for sub element i (for a mixed element)
-    std::shared_ptr<const FiniteElement>
-      create_sub_element(std::size_t i) const
+    /// Create a new finite element for sub element i (for a mixed
+    /// element)
+    std::shared_ptr<FiniteElement> create_sub_element(std::size_t i) const
     {
       dolfin_assert(_ufc_element);
-      std::shared_ptr<const ufc::finite_element>
+      std::shared_ptr<ufc::finite_element>
         ufc_element(_ufc_element->create_sub_element(i));
-      std::shared_ptr<const FiniteElement>
-        element(new const FiniteElement(ufc_element));
-      return element;
+      return std::make_shared<FiniteElement>(ufc_element);
     }
 
     /// Create a new class instance
-    std::shared_ptr<const FiniteElement> create() const
+    std::shared_ptr<FiniteElement> create() const
     {
       dolfin_assert(_ufc_element);
-      std::shared_ptr<const ufc::finite_element>
-        ufc_element(_ufc_element->create());
-      return std::shared_ptr<const FiniteElement>(new FiniteElement(ufc_element));
+      std::shared_ptr<ufc::finite_element> ufc_element(_ufc_element->create());
+      return std::make_shared<FiniteElement>(ufc_element);
     }
 
     /// Extract sub finite element for component
-    std::shared_ptr<const FiniteElement>
+    std::shared_ptr<FiniteElement>
       extract_sub_element(const std::vector<std::size_t>& component) const;
 
     /// Return underlying UFC element. Intended for libray usage only
@@ -252,7 +249,7 @@ namespace dolfin
     std::shared_ptr<const ufc::finite_element> _ufc_element;
 
     // Recursively extract sub finite element
-    static std::shared_ptr<const FiniteElement>
+    static std::shared_ptr<FiniteElement>
       extract_sub_element(const FiniteElement& finite_element,
                           const std::vector<std::size_t>& component);
 
