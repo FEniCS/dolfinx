@@ -29,7 +29,7 @@ namespace dolfin
 {
 
   /// This class provides an special-purpose data structure for testing if a given
-  /// index within a range is set. It is very fast.
+  /// index within a range is set.
   ///
   /// The memory requirements are one bit per item in range, since it uses a
   /// (packed) std::vector<bool> for storage.
