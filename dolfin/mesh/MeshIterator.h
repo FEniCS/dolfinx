@@ -25,9 +25,7 @@ namespace dolfin
 
     /// Copy constructor
     MeshIterator(const MeshIterator& it) : _entity(it._entity),  _pos(it._pos), _index(it._index)
-    {
-      _entity._local_index = (_index ? _index[_pos] : _pos);
-    }
+    {}
 
     // Copy assignment
     const MeshIterator& operator= (const MeshIterator& m)
@@ -44,8 +42,6 @@ namespace dolfin
       // Check if mesh is empty
       if (mesh.num_vertices() == 0)
         return;
-
-      _entity._local_index = pos;
     }
 
     // Constructor with MeshEntity
@@ -58,22 +54,12 @@ namespace dolfin
       if (c.empty())
         e.mesh().init(e.dim(), _entity.dim());
 
-      // Set _index to point at connectivity for that entity
       _index = c(e.index());
-      _entity._local_index = _index[_pos];
     }
 
     MeshIterator& operator++()
     {
       ++_pos;
-      _entity._local_index = (_index ? _index[_pos] : _pos);
-      return *this;
-    }
-
-    MeshIterator operator++(int)
-    {
-      ++_pos;
-      _entity._local_index = (_index ? _index[_pos] : _pos);
       return *this;
     }
 
@@ -87,11 +73,19 @@ namespace dolfin
       return (_pos != other._pos or _index != other._index);
     }
 
+    T* operator->()
+    {
+      _entity._local_index = (_index ? _index[_pos] : _pos);
+      return &_entity;
+    }
+
     T& operator*()
     {
+      _entity._local_index = (_index ? _index[_pos] : _pos);
       return _entity;
     }
 
+  private:
     // MeshEntity
     T _entity;
 
@@ -115,16 +109,16 @@ namespace dolfin
       _it_end = MeshIterator<T>(mesh, mesh.topology().ghost_offset(dim));
     }
 
-  entities(const MeshEntity& e) : _it_begin(e, 0), _it_end(e, 0)
+  entities(const MeshEntity& e) : _it_begin(e, 0), _it_end(_it_begin)
     {
       const std::size_t dim = _it_begin._entity.dim();
-      _it_end = MeshIterator<T>(e, e.num_entities(dim));
+      _it_end._pos = e.num_entities(dim);
     }
 
-    const MeshIterator<T> begin() const
+    const MeshIterator<T>& begin() const
     { return _it_begin; }
 
-    const MeshIterator<T> end() const
+    const MeshIterator<T>& end() const
     { return _it_end; }
 
   private:
