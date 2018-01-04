@@ -3,7 +3,7 @@
 #define __MESH_ITERATOR_H
 
 #include <memory>
-#include <boost/iterator/iterator_facade.hpp>
+#include <iterator>
 
 #include "Mesh.h"
 #include "MeshEntity.h"
@@ -19,80 +19,81 @@ namespace dolfin
   template<typename X> class entities;
 
   template<class T>
-  class MeshIterator : public boost::iterator_facade<MeshIterator<T>, T, boost::forward_traversal_tag>
+    class MeshIterator : public std::iterator<std::forward_iterator_tag, T>
   {
   public:
 
-    /// Default constructor
-    MeshIterator() : _pos(0), _index(nullptr)
-    {}
-
     /// Copy constructor
-    MeshIterator(const MeshIterator& it) : _entity(std::make_unique<T>(it._entity->mesh(), 0)),
-      _pos(it._pos), _index(it._index)
+    MeshIterator(const MeshIterator& it) : _entity(it._entity),  _pos(it._pos), _index(it._index)
     {
-      _entity->_local_index = (_index ? _index[_pos] : _pos);
+      _entity._local_index = (_index ? _index[_pos] : _pos);
     }
 
     // Copy assignment
     const MeshIterator& operator= (const MeshIterator& m)
     {
-      _entity = std::make_unique<T>(*m._entity);
+      _entity = m._entity;
       _pos = m._pos;
       _index = m._index;
       return *this;
     }
 
     // Constructor with Mesh
-    MeshIterator(const Mesh& mesh, std::size_t pos=0) : _pos(pos), _index(nullptr)
+    MeshIterator(const Mesh& mesh, std::size_t pos=0) : _entity(mesh, 0), _pos(pos), _index(nullptr)
     {
       // Check if mesh is empty
       if (mesh.num_vertices() == 0)
         return;
 
-      // Initialize mesh entity
-      _entity = std::make_unique<T>(mesh, 0);
-      // Need to do this to set beyond end
-      _entity->_local_index = pos;
+      _entity._local_index = pos;
     }
 
     // Constructor with MeshEntity
-    MeshIterator(const MeshEntity& e, std::size_t pos=0) : _entity(std::make_unique<T>(e.mesh(), 0)), _pos(pos)
+    MeshIterator(const MeshEntity& e, std::size_t pos=0) : _entity(e.mesh(), 0), _pos(pos)
     {
       // Get connectivity
-      const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity->dim());
+      const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity.dim());
 
       // Compute connectivity if empty
       if (c.empty())
-        e.mesh().init(e.dim(), _entity->dim());
+        e.mesh().init(e.dim(), _entity.dim());
 
       // Set _index to point at connectivity for that entity
       _index = c(e.index());
-      _entity->_local_index = _index[_pos];
+      _entity._local_index = _index[_pos];
     }
 
-  private:
-
-    friend class boost::iterator_core_access;
-
-    void increment()
+    MeshIterator& operator++()
     {
       ++_pos;
-      _entity->_local_index = (_index ? _index[_pos] : _pos);
+      _entity._local_index = (_index ? _index[_pos] : _pos);
+      return *this;
     }
 
-    bool equal(MeshIterator const& other) const
+    MeshIterator operator++(int)
+    {
+      ++_pos;
+      _entity._local_index = (_index ? _index[_pos] : _pos);
+      return *this;
+    }
+
+    bool operator==(const MeshIterator& other) const
     {
       return (_pos == other._pos and _index == other._index);
     }
 
-    T& dereference() const
+    bool operator!=(const MeshIterator& other) const
     {
-      return *_entity;
+      return (_pos != other._pos or _index != other._index);
+    }
+
+    T& operator*()
+    {
+      return _entity;
     }
 
     // MeshEntity
-    std::unique_ptr<T> _entity;
+    T _entity;
 
     // Current position
     std::size_t _pos;
@@ -108,15 +109,15 @@ namespace dolfin
   class entities
   {
   public:
-  entities(const Mesh& mesh) : _it_begin(mesh, 0)
+  entities(const Mesh& mesh) : _it_begin(mesh, 0), _it_end(mesh, 0)
     {
-      const std::size_t dim = _it_begin._entity->dim();
+      const std::size_t dim = _it_begin._entity.dim();
       _it_end = MeshIterator<T>(mesh, mesh.topology().ghost_offset(dim));
     }
 
-    entities(const MeshEntity& e) : _it_begin(e, 0)
+  entities(const MeshEntity& e) : _it_begin(e, 0), _it_end(e, 0)
     {
-      const std::size_t dim = _it_begin._entity->dim();
+      const std::size_t dim = _it_begin._entity.dim();
       _it_end = MeshIterator<T>(e, e.num_entities(dim));
     }
 
