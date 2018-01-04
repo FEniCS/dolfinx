@@ -21,8 +21,9 @@
 // Modified by Johannes Ring, 2012
 // Modified by Martin Alnaes, 2014
 
-#include <iostream>
+#include <array>
 #include <memory>
+#include <vector>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -103,8 +104,8 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
   }
 
   // Get dof maps
-  std::vector<const GenericDofMap*> dofmaps = {a.function_space(0)->dofmap().get(),
-                                               a.function_space(1)->dofmap().get()};
+  std::array<const GenericDofMap*, 2> dofmaps = {a.function_space(0)->dofmap().get(),
+                                                 a.function_space(1)->dofmap().get()};
 
   // Get mesh
   dolfin_assert(a.mesh());
@@ -120,8 +121,8 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
     dolfin_assert(tensor_layout);
 
     // Get dimensions and mapping across processes for each dimension
-    std::vector<std::shared_ptr<const IndexMap>> index_maps = {dofmaps[0]->index_map(),
-                                                               dofmaps[1]->index_map()};
+    std::array<std::shared_ptr<const IndexMap>, 2> index_maps = {dofmaps[0]->index_map(),
+                                                                 dofmaps[1]->index_map()};
 
     // Initialise tensor layout
     // FIXME: somewhere need to check block sizes are same on both axes

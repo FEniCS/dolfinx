@@ -176,18 +176,11 @@ namespace dolfin
     /// matrix operator
     virtual void set(PETScVector& x, double value) const = 0;
 
-    /// Return the map from unowned local dofmap nodes to global dofmap
-    /// nodes. Dofmap node is dof index modulo block size.
-    virtual const std::vector<std::size_t>& local_to_global_unowned() const = 0;
-
     /// Index map (const access)
     virtual std::shared_ptr<const IndexMap> index_map() const = 0;
 
     /// Tabulate map between local (process) and global dof indices
     virtual void tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const = 0;
-
-    /// Return global dof index corresponding to a given local index
-    virtual std::size_t local_to_global_index(int local_index) const = 0;
 
     /// Return map from shared nodes to the processes (not including
     /// the current process) that share it.

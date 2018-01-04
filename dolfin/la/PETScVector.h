@@ -83,7 +83,7 @@ namespace dolfin
     virtual void zero();
 
     /// Finalize assembly of tensor
-    virtual void apply(std::string mode);
+    virtual void apply();
 
     /// Return MPI communicator
     virtual MPI_Comm mpi_comm() const;

@@ -377,20 +377,6 @@ namespace dolfin
     ///         The local-to-global map to fill.
     void tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const;
 
-    /// Return global dof index for a given local (process) dof index
-    ///
-    /// @param     local_index (int)
-    ///         The local local index.
-    ///
-    /// @return     std::size_t
-    ///         The global dof index.
-    std::size_t local_to_global_index(int local_index) const
-    { return _index_map->local_to_global_index(local_index); }
-
-    /// Return indices of dofs which are owned by other processes
-    const std::vector<std::size_t>& local_to_global_unowned() const
-    { return _index_map->block_local_to_global_unowned(); }
-
     /// Return informal string representation (pretty-print)
     ///
     /// @param     verbose (bool)

@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+#include <array>
 #include <vector>
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -88,7 +89,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   dolfin_assert(tensor_layout);
 
   // Copy index maps from dofmaps
-  std::vector<std::shared_ptr<const IndexMap> > index_maps
+  std::array<std::shared_ptr<const IndexMap>, 2> index_maps
     = {V0.dofmap()->index_map(), V1.dofmap()->index_map()};
   std::vector<std::pair<std::size_t, std::size_t>> local_range
     = { V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
@@ -125,7 +126,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
       }
     }
 
-    const std::vector<ArrayView<const dolfin::la_index_t>> entries
+    const std::array<ArrayView<const dolfin::la_index_t>, 2> entries
      = { ArrayView<const dolfin::la_index_t>(rows.size(), rows.data()),
          ArrayView<const dolfin::la_index_t>(cols.size(), cols.data())};
     pattern.insert_global(entries);

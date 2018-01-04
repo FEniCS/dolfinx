@@ -21,6 +21,7 @@
 #ifndef __TENSOR_LAYOUT_H
 #define __TENSOR_LAYOUT_H
 
+#include <array>
 #include <memory>
 #include <string>
 #include <utility>
@@ -55,30 +56,27 @@ namespace dolfin
 
     /// Create a tensor layout
     TensorLayout(MPI_Comm mpi_comm,
-                 std::vector<std::shared_ptr<const IndexMap>> index_maps,
+                 std::array<std::shared_ptr<const IndexMap>, 2> index_maps,
                  std::size_t primary_dim,
                  Sparsity sparsity_pattern,
                  Ghosts ghosted);
 
     /// Initialize tensor layout
-    void init(std::vector<std::shared_ptr<const IndexMap>> index_maps,
+    void init(std::array<std::shared_ptr<const IndexMap>, 2> index_maps,
               Ghosts ghosted);
-
-    /// Return rank
-    std::size_t rank() const;
 
     /// Return global size for dimension i (size of tensor, includes
     /// non-zeroes)
     std::size_t size(std::size_t i) const;
 
     /// Return local range for dimension dim
-    std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const;
+    std::array<std::size_t, 2> local_range(std::size_t dim) const;
 
-    /// Return sparsity pattern (possibly null)
+    /// Return sparsity pattern
     std::shared_ptr<SparsityPattern> sparsity_pattern()
     { return _sparsity_pattern; }
 
-    /// Return sparsity pattern (possibly null), const version
+    /// Return sparsity pattern (const version)
     std::shared_ptr<const SparsityPattern> sparsity_pattern() const
     { return _sparsity_pattern; }
 
@@ -101,9 +99,7 @@ namespace dolfin
 
     /// Require ghosts
     Ghosts is_ghosted() const
-    {
-      return _ghosted;
-    }
+    { return _ghosted; }
 
   private:
 
@@ -111,7 +107,7 @@ namespace dolfin
     dolfin::MPI::Comm _mpi_comm;
 
     // Index maps
-    std::vector<std::shared_ptr<const IndexMap>> _index_maps;
+    std::array<std::shared_ptr<const IndexMap>, 2> _index_maps;
 
     // Sparsity pattern
     std::shared_ptr<SparsityPattern> _sparsity_pattern;

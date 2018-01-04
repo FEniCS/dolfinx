@@ -123,11 +123,8 @@ Function::Function(const Function& v) :
     // Set values in vector
     this->_vector->set_local(gathered_values.data(), collapsed_map.size(),
                              new_rows.data());
-    this->_vector->apply("insert");
+    this->_vector->apply();
   }
-
-  // Assign data
-  //*this = v;
 }
 //-----------------------------------------------------------------------------
 Function::~Function()

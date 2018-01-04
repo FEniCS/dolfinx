@@ -295,7 +295,7 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
     if (A)
       A->apply("add");
     if (b)
-      b->apply("add");
+      b->apply();
   }
 }
 //-----------------------------------------------------------------------------

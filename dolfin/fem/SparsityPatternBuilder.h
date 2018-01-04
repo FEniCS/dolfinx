@@ -24,8 +24,7 @@
 #ifndef __SPARSITY_PATTERN_BUILDER_H
 #define __SPARSITY_PATTERN_BUILDER_H
 
-#include <utility>
-#include <vector>
+#include <array>
 
 namespace dolfin
 {
@@ -41,10 +40,10 @@ namespace dolfin
   {
   public:
 
-    /// Build sparsity pattern for assembly of given form
+    /// Build sparsity pattern for assembly of given bilinea form
     static void build(SparsityPattern& sparsity_pattern,
                       const Mesh& mesh,
-                      const std::vector<const GenericDofMap*> dofmaps,
+                      const std::array<const GenericDofMap*, 2> dofmaps,
                       bool cells,
                       bool interior_facets,
                       bool exterior_facets,

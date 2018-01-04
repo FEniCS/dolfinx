@@ -75,7 +75,7 @@ namespace dolfin
 
     /// Get local to global map for unowned blocks
     /// (local indexing beyond end of local range)
-    const std::vector<std::size_t>& block_local_to_global_unowned() const;
+    const std::vector<std::size_t>& local_to_global_unowned() const;
 
     /// Get global block index of local block i
     std::size_t local_to_global(std::size_t i) const;

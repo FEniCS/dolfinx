@@ -102,11 +102,13 @@ namespace dolfin_wrappers
     index_map.def("size", &dolfin::IndexMap::size)
       .def("block_size", &dolfin::IndexMap::block_size, "Return block size")
       .def("local_range", &dolfin::IndexMap::local_range)
-      .def("block_local_to_global_unowned",
-           [](dolfin::IndexMap& self) {
+      .def("local_to_global_unowned",
+           [](dolfin::IndexMap& self)
+           {
              return Eigen::Map<const Eigen::Matrix<std::size_t, Eigen::Dynamic, 1>>(
-               self.block_local_to_global_unowned().data(),
-               self.block_local_to_global_unowned().size()); },
+               self.local_to_global_unowned().data(),
+               self.local_to_global_unowned().size());
+           },
            py::return_value_policy::reference_internal,
            "Return view into unowned part of local-to-global map");
 
@@ -143,30 +145,27 @@ namespace dolfin_wrappers
            })
       // FIXME: Switch EigenMap in DOLFIN interface when SWIG is dropped
       .def("insert_local", [](dolfin::SparsityPattern& self,
-                              std::vector<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>> entries)
+                              std::array<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>, 2> entries)
            {
-             std::vector<dolfin::ArrayView<const dolfin::la_index_t>> e(entries.size());
-             for (std::size_t i = 0; i < entries.size(); ++i)
-               e[i] = dolfin::ArrayView<const dolfin::la_index_t>(entries[i].size(), &entries[i][0]);
-
+             std::array<dolfin::ArrayView<const dolfin::la_index_t>, 2> e
+               = { dolfin::ArrayView<const dolfin::la_index_t>(entries[0].size(), &entries[0][0]),
+                   dolfin::ArrayView<const dolfin::la_index_t>(entries[1].size(), &entries[1][0])};
              self.insert_local(e);
            })
       .def("insert_global", [](dolfin::SparsityPattern& self,
-                              std::vector<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>> entries)
+                               std::array<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>, 2> entries)
            {
-             std::vector<dolfin::ArrayView<const dolfin::la_index_t>> e(entries.size());
-             for (std::size_t i = 0; i < entries.size(); ++i)
-               e[i] = dolfin::ArrayView<const dolfin::la_index_t>(entries[i].size(), &entries[i][0]);
-
+             std::array<dolfin::ArrayView<const dolfin::la_index_t>, 2> e
+               = { dolfin::ArrayView<const dolfin::la_index_t>(entries[0].size(), &entries[0][0]),
+                   dolfin::ArrayView<const dolfin::la_index_t>(entries[1].size(), &entries[1][0])};
              self.insert_global(e);
-           })
+               })
       .def("insert_local_global", [](dolfin::SparsityPattern& self,
-                                     std::vector<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>> entries)
+                                     std::array<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>, 2> entries)
            {
-             std::vector<dolfin::ArrayView<const dolfin::la_index_t>> e(entries.size());
-             for (std::size_t i = 0; i < entries.size(); ++i)
-               e[i] = dolfin::ArrayView<const dolfin::la_index_t>(entries[i].size(), &entries[i][0]);
-
+             std::array<dolfin::ArrayView<const dolfin::la_index_t>, 2> e
+               = { dolfin::ArrayView<const dolfin::la_index_t>(entries[0].size(), &entries[0][0]),
+                   dolfin::ArrayView<const dolfin::la_index_t>(entries[1].size(), &entries[1][0])};
              self.insert_local_global(e);
            });
 
@@ -187,7 +186,7 @@ namespace dolfin_wrappers
                        dolfin::TensorLayout::Sparsity sparsity_pattern)
         { return std::unique_ptr<dolfin::TensorLayout>(new dolfin::TensorLayout(comm.get(), primary_dim, sparsity_pattern)); }))
       .def(py::init([](const MPICommWrapper comm,
-                       std::vector<std::shared_ptr<const dolfin::IndexMap>> index_maps,
+                       std::array<std::shared_ptr<const dolfin::IndexMap>, 2> index_maps,
                        std::size_t primary_dim, dolfin::TensorLayout::Sparsity sparsity_pattern,
                        dolfin::TensorLayout::Ghosts ghosted)
         { return std::unique_ptr<dolfin::TensorLayout>(new dolfin::TensorLayout(comm.get(), index_maps, primary_dim,

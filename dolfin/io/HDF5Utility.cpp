@@ -411,9 +411,10 @@ void HDF5Utility::set_local_vector_values(
   for (std::size_t i = 0; i != num_processes; ++i)
   {
     const std::vector<double> &rval = receive_values[i];
-    const std::vector<dolfin::la_index_t> &rindex = receive_indices[i];
+    const std::vector<dolfin::la_index_t>& rindex = receive_indices[i];
     dolfin_assert(rval.size() == rindex.size());
-    for (std::size_t j = 0; j != rindex.size(); ++j) {
+    for (std::size_t j = 0; j != rindex.size(); ++j)
+    {
       dolfin_assert(rindex[j] >= vector_range.first);
       dolfin_assert(rindex[j] < vector_range.second);
       vector_values[rindex[j] - vector_range.first] = rval[j];
@@ -421,6 +422,6 @@ void HDF5Utility::set_local_vector_values(
   }
 
   x.set_local(vector_values);
-  x.apply("insert");
+  x.apply();
 }
 //-----------------------------------------------------------------------------

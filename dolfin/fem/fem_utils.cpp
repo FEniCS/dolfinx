@@ -169,7 +169,7 @@ namespace
     }
 
     if (!setting)
-      v.apply("insert");
+      v.apply();
   }
 }
 

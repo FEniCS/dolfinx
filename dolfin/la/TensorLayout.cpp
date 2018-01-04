@@ -36,7 +36,7 @@ TensorLayout::TensorLayout(MPI_Comm comm, std::size_t pdim,
 }
 //-----------------------------------------------------------------------------
 TensorLayout::TensorLayout(MPI_Comm comm,
-                           std::vector<std::shared_ptr<const IndexMap>> index_maps,
+                           std::array<std::shared_ptr<const IndexMap>, 2> index_maps,
                            std::size_t pdim,
                            Sparsity sparsity_pattern,
                            Ghosts ghosted)
@@ -45,25 +45,14 @@ TensorLayout::TensorLayout(MPI_Comm comm,
 {
   if (sparsity_pattern == TensorLayout::Sparsity::SPARSE)
     _sparsity_pattern = std::make_shared<SparsityPattern>(comm, primary_dim);
-
-  // Only rank 2 sparsity patterns are supported
-  dolfin_assert(!(_sparsity_pattern && index_maps.size() != 2));
 }
 //-----------------------------------------------------------------------------
-void TensorLayout::init(const std::vector<std::shared_ptr<const IndexMap>> index_maps,
+void TensorLayout::init(const std::array<std::shared_ptr<const IndexMap>, 2> index_maps,
                         const Ghosts ghosted)
 {
-  // Only rank 2 sparsity patterns are supported
-  dolfin_assert(!(_sparsity_pattern && index_maps.size() != 2));
-
   // Store everything
   _index_maps = index_maps;
   _ghosted = ghosted;
-}
-//-----------------------------------------------------------------------------
-std::size_t TensorLayout::rank() const
-{
-  return _index_maps.size();
 }
 //-----------------------------------------------------------------------------
 std::size_t TensorLayout::size(std::size_t i) const
@@ -72,8 +61,7 @@ std::size_t TensorLayout::size(std::size_t i) const
   return _index_maps[i]->block_size()*_index_maps[i]->size(IndexMap::MapSize::GLOBAL);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t>
-TensorLayout::local_range(std::size_t dim) const
+std::array<std::size_t, 2> TensorLayout::local_range(std::size_t dim) const
 {
   dolfin_assert(dim < _index_maps.size());
   std::size_t bs = _index_maps[dim]->block_size();
@@ -84,11 +72,11 @@ TensorLayout::local_range(std::size_t dim) const
 std::string TensorLayout::str(bool verbose) const
 {
   std::stringstream s;
-  s << "<TensorLayout for tensor of rank " << rank() << ">" << std::endl;
-  for (std::size_t i = 0; i < rank(); i++)
+  s << "<TensorLayout for matrix>" << std::endl;
+  for (std::size_t i = 0; i < 2; i++)
   {
-    s << " Local range for dim " << i << ": [" << local_range(i).first
-      << ", " << local_range(i).second << ")" << std::endl;
+    s << " Local range for dim " << i << ": [" << local_range(i)[0]
+      << ", " << local_range(i)[1] << ")" << std::endl;
   }
   return s.str();
 }

@@ -104,15 +104,12 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   PetscErrorCode ierr;
 
   // Get global dimensions and local range
-  dolfin_assert(tensor_layout.rank() == 2);
   const std::size_t M = tensor_layout.size(0);
   const std::size_t N = tensor_layout.size(1);
-  const std::pair<std::int64_t, std::int64_t> row_range
-    = tensor_layout.local_range(0);
-  const std::pair<std::int64_t, std::int64_t> col_range
-    = tensor_layout.local_range(1);
-  const std::size_t m = row_range.second - row_range.first;
-  const std::size_t n = col_range.second - col_range.first;
+  const std::array<std::size_t, 2> row_range = tensor_layout.local_range(0);
+  const std::array<std::size_t, 2> col_range = tensor_layout.local_range(1);
+  const std::size_t m = row_range[1] - row_range[0];
+  const std::size_t n = col_range[1] - col_range[0];
 
   // Get sparsity pattern
   auto sparsity_pattern = tensor_layout.sparsity_pattern();
@@ -160,24 +157,15 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
   // Create pointers to PETSc IndexSet for local-to-globa map
   ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
-  dolfin_assert(tensor_layout.rank() == 2);
 
   std::vector<PetscInt> _map0, _map1;
   _map0.resize(tensor_layout.index_map(0)->size(IndexMap::MapSize::ALL));
   _map1.resize(tensor_layout.index_map(1)->size(IndexMap::MapSize::ALL));
 
   for (std::size_t i = 0; i < _map0.size(); ++i)
-  {
     _map0[i] = tensor_layout.index_map(0)->local_to_global_index(i*block_size)/block_size;
-    //if (dolfin::MPI::rank(mpi_comm()) == 1)
-    //  std::cout << "Testing A: " <<  _map0[i] << std::endl;
-  }
   for (std::size_t i = 0; i < _map1.size(); ++i)
-  {
     _map1[i] = tensor_layout.index_map(1)->local_to_global_index(i*block_size)/block_size;
-    //if (dolfin::MPI::rank(mpi_comm()) == 1)
-    //  std::cout << "Testing B: " <<  _map1[i] << std::endl;
-  }
 
   // FIXME: In many cases the rows and columns could shared a commin
   // local-to-global map
