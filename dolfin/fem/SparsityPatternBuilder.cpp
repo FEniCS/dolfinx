@@ -52,9 +52,11 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
   std::array<std::shared_ptr<const IndexMap>, 2> index_maps = {dofmaps[0]->index_map(),
                                                                dofmaps[1]->index_map()};
 
+  // FIXME: Should check that index maps are matching
+
   // Initialise sparsity pattern
-  if (init)
-    sparsity_pattern.init(index_maps);
+  if (!sparsity_pattern.index_map(0) or !sparsity_pattern.index_map(1))
+    throw std::runtime_error("SparsityPattern has not been initialised.");
 
   // Vector to store macro-dofs, if required (for interior facets)
   std::array<std::vector<dolfin::la_index_t>, 2> macro_dofs;

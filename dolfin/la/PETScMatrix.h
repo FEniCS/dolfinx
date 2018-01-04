@@ -43,7 +43,7 @@ namespace dolfin
 {
 
   class PETScVector;
-  class TensorLayout;
+  class SparsityPattern;
   class VectorSpaceBasis;
 
   /// This class provides a simple matrix class based on PETSc.
@@ -73,8 +73,8 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Initialize zero tensor using tensor layout
-    void init(const TensorLayout& tensor_layout);
+    /// Initialize zero tensor using sparsity pattern
+    void init(const SparsityPattern& sparsity_pattern);
 
     /// Return true if empty
     bool empty() const;

@@ -30,7 +30,6 @@
 
 #include <dolfin/la/IndexMap.h>
 #include <dolfin/la/Scalar.h>
-#include <dolfin/la/TensorLayout.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/PETScMatrix.h>
@@ -120,8 +119,14 @@ namespace dolfin_wrappers
       .value("GLOBAL", dolfin::IndexMap::MapSize::GLOBAL);
 
     // dolfin::SparsityPattern
-    py::class_<dolfin::SparsityPattern, std::shared_ptr<dolfin::SparsityPattern>>(m, "SparsityPattern")
-      .def("init", &dolfin::SparsityPattern::init)
+    py::class_<dolfin::SparsityPattern, std::shared_ptr<dolfin::SparsityPattern>> sparsity_pattern(m, "SparsityPattern");
+
+    // dolfin::SparsityPattern enums
+    py::enum_<dolfin::SparsityPattern::Ghosts>(sparsity_pattern, "Ghosts")
+      .value("GHOSTED", dolfin::SparsityPattern::Ghosts::GHOSTED)
+      .value("UNGHOSTED", dolfin::SparsityPattern::Ghosts::UNGHOSTED);
+
+    sparsity_pattern.def("init", &dolfin::SparsityPattern::init)
       .def("apply", &dolfin::SparsityPattern::apply)
       .def("str", &dolfin::SparsityPattern::str)
       .def("num_nonzeros", &dolfin::SparsityPattern::num_nonzeros)
@@ -168,31 +173,6 @@ namespace dolfin_wrappers
                    dolfin::ArrayView<const dolfin::la_index_t>(entries[1].size(), &entries[1][0])};
              self.insert_local_global(e);
            });
-
-    // dolfin::TensorLayout
-    py::class_<dolfin::TensorLayout, std::shared_ptr<dolfin::TensorLayout>,
-               dolfin::Variable> tensor_layout(m, "TensorLayout");
-
-    // dolfin::TensorLayout enums
-    py::enum_<dolfin::TensorLayout::Sparsity>(tensor_layout, "Sparsity")
-      .value("SPARSE", dolfin::TensorLayout::Sparsity::SPARSE)
-      .value("DENSE", dolfin::TensorLayout::Sparsity::DENSE);
-    py::enum_<dolfin::TensorLayout::Ghosts>(tensor_layout, "Ghosts")
-      .value("GHOSTED", dolfin::TensorLayout::Ghosts::GHOSTED)
-      .value("UNGHOSTED", dolfin::TensorLayout::Ghosts::UNGHOSTED);
-
-    tensor_layout
-      .def(py::init([](const MPICommWrapper comm, std::size_t primary_dim,
-                       dolfin::TensorLayout::Sparsity sparsity_pattern)
-        { return std::unique_ptr<dolfin::TensorLayout>(new dolfin::TensorLayout(comm.get(), primary_dim, sparsity_pattern)); }))
-      .def(py::init([](const MPICommWrapper comm,
-                       std::array<std::shared_ptr<const dolfin::IndexMap>, 2> index_maps,
-                       std::size_t primary_dim, dolfin::TensorLayout::Sparsity sparsity_pattern,
-                       dolfin::TensorLayout::Ghosts ghosted)
-        { return std::unique_ptr<dolfin::TensorLayout>(new dolfin::TensorLayout(comm.get(), index_maps, primary_dim,
-                                                                                sparsity_pattern, ghosted)); }))
-      .def("init", &dolfin::TensorLayout::init)
-      .def("sparsity_pattern", (std::shared_ptr<dolfin::SparsityPattern> (dolfin::TensorLayout::*)()) &dolfin::TensorLayout::sparsity_pattern);
 
     // dolfin::GenericTensor
     /*

@@ -30,7 +30,6 @@
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/la/IndexMap.h>
 #include <dolfin/la/SparsityPattern.h>
-#include <dolfin/la/TensorLayout.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
@@ -115,11 +114,6 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
   {
     Timer t0("Build sparsity");
 
-    // Create layout for initialising tensor
-    TensorLayout::Sparsity sparsity = TensorLayout::Sparsity::SPARSE;
-    auto tensor_layout =  std::make_shared<TensorLayout>(A.mpi_comm(), 0, sparsity);
-    dolfin_assert(tensor_layout);
-
     // Get dimensions and mapping across processes for each dimension
     std::array<std::shared_ptr<const IndexMap>, 2> index_maps = {dofmaps[0]->index_map(),
                                                                  dofmaps[1]->index_map()};
@@ -131,8 +125,8 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
     //            moreover the functions will tabulate directly using a
     //            correct int type
 
-    tensor_layout->init(index_maps, TensorLayout::Ghosts::UNGHOSTED);
-    SparsityPattern& pattern = *tensor_layout->sparsity_pattern();
+    SparsityPattern pattern(A.mpi_comm(), 0) ;
+    pattern.init(index_maps, SparsityPattern::Ghosts::UNGHOSTED);
     SparsityPatternBuilder::build(pattern,
                                   mesh, dofmaps,
                                   a.ufc_form()->has_cell_integrals(),
@@ -144,7 +138,7 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
 
     // Initialize tensor
     Timer t1("Init tensor");
-    A.init(*tensor_layout);
+    A.init(pattern);
     t1.stop();
 
     // Insert zeros to dense rows in increasing order of column index
@@ -153,7 +147,7 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
     // inserting to diagonal below
 
     // Tabulate indices of dense rows
-    const std::size_t primary_dim = tensor_layout->sparsity_pattern()->primary_dim();
+    const std::size_t primary_dim = pattern.primary_dim();
     std::vector<std::size_t> global_dofs;
     dofmaps[primary_dim]->tabulate_global_dofs(global_dofs);
 

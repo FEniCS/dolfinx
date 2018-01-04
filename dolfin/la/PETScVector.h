@@ -41,7 +41,6 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
-#include "TensorLayout.h"
 #include "PETScObject.h"
 #include "IndexMap.h"
 

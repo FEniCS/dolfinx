@@ -32,8 +32,6 @@
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/la/PETScVector.h>
-#include <dolfin/la/TensorLayout.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>

@@ -38,10 +38,12 @@ SparsityPattern::SparsityPattern(MPI_Comm comm, std::size_t primary_dim)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::init(const std::array<std::shared_ptr<const IndexMap>, 2> index_maps)
+void SparsityPattern::init(const std::array<std::shared_ptr<const IndexMap>, 2> index_maps,
+                           Ghosts ghosted)
 {
-  // Store index maps
+  // Store index maps and ghosting
   _index_maps = index_maps;
+  _ghosted = ghosted;
 
   const std::size_t _primary_dim = primary_dim();
 

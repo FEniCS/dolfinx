@@ -11,7 +11,6 @@ set(HEADERS
   Scalar.h
   SLEPcEigenSolver.h
   SparsityPattern.h
-  TensorLayout.h
   VectorSpaceBasis.h
   PARENT_SCOPE)
 
@@ -26,6 +25,5 @@ set(SOURCES
   PETScVector.cpp
   SLEPcEigenSolver.cpp
   SparsityPattern.cpp
-  TensorLayout.cpp
   VectorSpaceBasis.cpp
   PARENT_SCOPE)

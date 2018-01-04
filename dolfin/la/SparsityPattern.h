@@ -55,11 +55,14 @@ namespace dolfin
     /// Whether SparsityPattern is sorted
     enum class Type {sorted, unsorted};
 
+    /// Ghosted or unghosted layout
+    enum class Ghosts : bool { GHOSTED = true, UNGHOSTED = false };
+
     /// Create empty sparsity pattern
     SparsityPattern(MPI_Comm comm, std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
-    void init(std::array<std::shared_ptr<const IndexMap>, 2> index_maps);
+    void init(std::array<std::shared_ptr<const IndexMap>, 2> index_maps, Ghosts ghosted);
 
     /// Insert non-zero entries using global indices
     void insert_global(const std::array<ArrayView<const dolfin::la_index_t>, 2>& entries);
@@ -84,6 +87,13 @@ namespace dolfin
 
     /// Return local range for dimension dim
     std::array<std::size_t, 2> local_range(std::size_t dim) const;
+
+    /// Return local range for dimension dim
+    std::shared_ptr<const IndexMap> index_map(std::size_t i) const
+    {
+      dolfin_assert(i < 2);
+      return _index_maps[i];
+    }
 
     /// Return number of local nonzeros
     std::size_t num_nonzeros() const;
@@ -123,6 +133,10 @@ namespace dolfin
     /// no off-diagonal contribution.
     std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
 
+    /// Require ghosts
+    Ghosts is_ghosted() const
+    { return _ghosted; }
+
   private:
 
     // Other insertion methods will call this method providing the
@@ -161,6 +175,9 @@ namespace dolfin
 
     // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
     std::vector<std::size_t> _non_local;
+
+    // Ghosted tensor (typically vector) required
+    Ghosts _ghosted = Ghosts::UNGHOSTED;
 
   };
 
