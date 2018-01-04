@@ -51,7 +51,9 @@ namespace dolfin
         return;
 
       // Initialize mesh entity
-      _entity = std::make_unique<T>(mesh, pos);
+      _entity = std::make_unique<T>(mesh, 0);
+      // Need to do this to set beyond end
+      _entity->_local_index = pos;
     }
 
     // Constructor with MeshEntity

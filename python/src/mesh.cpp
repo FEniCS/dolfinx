@@ -36,6 +36,7 @@
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/MeshQuality.h>
@@ -275,30 +276,21 @@ namespace dolfin_wrappers
     m.def("entities", [](dolfin::MeshEntity& meshentity, std::size_t dim)
           { return dolfin::MeshEntityIterator(meshentity, dim); });
 
-#define MESHITERATOR_MACRO(TYPE, NAME) \
-    py::class_<dolfin::MeshEntityIteratorBase<dolfin::TYPE>, \
-               std::shared_ptr<dolfin::MeshEntityIteratorBase<dolfin::TYPE>>> \
-      (m, #TYPE"Iterator", "DOLFIN "#TYPE"Iterator object") \
+    // dolfin::MeshIterator (cells, facets, faces, edges, vertices)
+#define MESHITERATOR_MACRO(TYPE) \
+    py::class_<dolfin::TYPE, std::shared_ptr<dolfin::TYPE>> \
+      (m, #TYPE, "DOLFIN "#TYPE" object") \
       .def(py::init<const dolfin::Mesh&>()) \
-      .def("__iter__",[](dolfin::MeshEntityIteratorBase<dolfin::TYPE>& self) { self.operator--(); return self; }) \
-      .def("__next__",[](dolfin::MeshEntityIteratorBase<dolfin::TYPE>& self) { \
-          self.operator++(); \
-          if (self.end()) \
-            throw py::stop_iteration(""); \
-          return *self; \
-        }); \
- \
-    m.def(#NAME, [](dolfin::Mesh& mesh, std::string opt)                          \
-          { return dolfin::MeshEntityIteratorBase<dolfin::TYPE>(mesh, opt); }, \
-          py::arg("mesh"), py::arg("type")="regular");                  \
-    m.def(#NAME, [](dolfin::MeshEntity& meshentity)\
-          { return dolfin::MeshEntityIteratorBase<dolfin::TYPE>(meshentity); })
+      .def(py::init<const dolfin::MeshEntity&>()) \
+      .def("__iter__", [](const dolfin::TYPE& c) { \
+          return py::make_iterator(c.begin(), c.end()); \
+        });
 
-    MESHITERATOR_MACRO(Cell, cells);
-    MESHITERATOR_MACRO(Facet, facets);
-    MESHITERATOR_MACRO(Face, faces);
-    MESHITERATOR_MACRO(Edge, edges);
-    MESHITERATOR_MACRO(Vertex, vertices);
+    MESHITERATOR_MACRO(cells);
+    MESHITERATOR_MACRO(facets);
+    MESHITERATOR_MACRO(faces);
+    MESHITERATOR_MACRO(edges);
+    MESHITERATOR_MACRO(vertices);
 #undef MESHITERATOR_MACRO
 
     // dolfin::MeshFunction
