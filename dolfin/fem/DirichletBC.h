@@ -28,8 +28,7 @@
 //        data structure (perhaps an std::vector<std::size_t> with
 //        facet indices).
 
-#ifndef __DIRICHLET_BC_H
-#define __DIRICHLET_BC_H
+#pragma once
 
 #include <map>
 #include <set>
@@ -390,5 +389,3 @@ namespace dolfin
   };
 
 }
-
-#endif

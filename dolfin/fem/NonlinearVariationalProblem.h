@@ -88,15 +88,6 @@ namespace dolfin
     /// Return upper bound
     std::shared_ptr<const PETScVector> upper_bound() const;
 
-    /// Check whether Jacobian has been defined
-    bool has_jacobian() const;
-
-    /// Check whether lower bound has been defined
-    bool has_lower_bound() const;
-
-    /// Check whether upper bound have has defined
-    bool has_upper_bound() const;
-
   private:
 
     // Check forms

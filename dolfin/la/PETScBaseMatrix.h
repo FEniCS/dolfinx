@@ -20,8 +20,7 @@
 // First added:  2005-01-17
 // Last changed: 2011-09-07
 
-#ifndef __PETSC_BASE_MATRIX_H
-#define __PETSC_BASE_MATRIX_H
+#pragma once
 
 #ifdef HAS_PETSC
 
@@ -100,7 +99,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif

@@ -4,7 +4,6 @@ set(HEADERS
   defines.h
   dolfin_common.h
   dolfin_doc.h
-  IndexSet.h
   init.h
   MPI.h
   RangedIndexSet.h
