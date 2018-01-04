@@ -1,6 +1,5 @@
 set(HEADERS
   AssemblerBase.h
-  BasisFunction.h
   DirichletBC.h
   DiscreteOperators.h
   DofMapBuilder.h

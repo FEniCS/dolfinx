@@ -7,7 +7,6 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/fem_utils.h>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/BasisFunction.h>
 #include <dolfin/fem/DiscreteOperators.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/PointSource.h>
