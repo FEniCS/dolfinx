@@ -87,17 +87,18 @@ std::shared_ptr<PETScVector> PETScVector::copy() const
 void PETScVector::init(std::size_t N)
 {
   const auto range = dolfin::MPI::local_range(this->mpi_comm(), N);
-  init(range, {}, {});
+  init({range.first, range.second}, {}, {}, 1);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(std::pair<std::size_t, std::size_t> range)
+void PETScVector::init(std::array<std::int64_t, 2> range)
 {
-  init(range, {}, {});
+  init(range, {}, {}, 1);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(std::pair<std::size_t, std::size_t> range,
-                       const std::vector<std::size_t>& local_to_global_map,
-                       const std::vector<la_index_t>& ghost_indices)
+void PETScVector::init(std::array<std::int64_t, 2> range,
+                       const std::vector<la_index_t>& local_to_global_map,
+                       const std::vector<la_index_t>& ghost_indices,
+                       int block_size)
 {
   if (!_x)
   {
@@ -113,12 +114,16 @@ void PETScVector::init(std::pair<std::size_t, std::size_t> range,
   CHECK_ERROR("VecSetFromOptions");
 
   // Get local size
-  const std::size_t local_size = range.second - range.first;
-  dolfin_assert(range.second >= range.first);
+  dolfin_assert(range[1] >= range[0]);
+  const std::size_t local_size = block_size*(range[1] - range[0]);
 
   // Set vector size
   ierr = VecSetSizes(_x, local_size, PETSC_DECIDE);
   CHECK_ERROR("VecSetSizes");
+
+  // Set block size
+  ierr = VecSetBlockSize(_x, block_size);
+  CHECK_ERROR("VecSetBlockSize");
 
   // Get PETSc Vec type
   VecType vec_type = nullptr;
@@ -129,7 +134,29 @@ void PETScVector::init(std::pair<std::size_t, std::size_t> range,
   // VECMPI and ghost entry vector is not empty)
   if (strcmp(vec_type, VECMPI) == 0)
   {
-    ierr = VecMPISetGhost(_x, ghost_indices.size(), ghost_indices.data());
+    // Note: is re-creating the vector ok?
+    MPI_Comm comm = this->mpi_comm();
+    Vec y;
+    ierr = VecCreateGhostBlock(comm, block_size, local_size, PETSC_DECIDE,
+                               ghost_indices.size(), ghost_indices.data(), &y);
+    if (_x)
+      VecDestroy(&_x);
+    _x = y;
+
+    /*
+    // This version has problem when setting the block size
+    if (block_size == 1)
+      ierr = VecMPISetGhost(_x, ghost_indices.size(), ghost_indices.data());
+    else
+    {
+      std::vector<PetscInt> _ghost_indices(block_size*ghost_indices.size());
+      for (std::size_t i = 0; i < ghost_indices.size(); ++i)
+        for (int j = 0; j < block_size; ++j)
+          _ghost_indices[block_size*i + j] = block_size*ghost_indices[i] + j;
+
+      ierr = VecMPISetGhost(_x, _ghost_indices.size(), _ghost_indices.data());
+    }
+    */
     CHECK_ERROR("VecMPISetGhost");
   }
   else if (!ghost_indices.empty())
@@ -140,26 +167,27 @@ void PETScVector::init(std::pair<std::size_t, std::size_t> range,
   }
 
   // Build local-to-global map
-  std::vector<PetscInt> _map;
+  ISLocalToGlobalMapping petsc_local_to_global;
   if (!local_to_global_map.empty())
   {
-    // Copy data to get correct PETSc integer type
-    _map = std::vector<PetscInt>(local_to_global_map.begin(),
-                                 local_to_global_map.end());
+    // Create PETSc local-to-global map
+    ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, block_size,
+                                        local_to_global_map.size(),
+                                        local_to_global_map.data(),
+                                        PETSC_COPY_VALUES, &petsc_local_to_global);
+    CHECK_ERROR("ISLocalToGlobalMappingCreate");
   }
   else
   {
     // Fill vector with [i0 + 0, i0 + 1, i0 +2, . . .]
-    const std::size_t size = range.second - range.first;
-    _map.assign(size, range.first);
-    std::iota(_map.begin(), _map.end(), range.first);
-  }
+    std::vector<PetscInt> map(local_size);
+    std::iota(map.begin(), map.end(), range[0]);
 
-  // Create PETSc local-to-global map
-  ISLocalToGlobalMapping petsc_local_to_global;
-  ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, 1, _map.size(), _map.data(),
-                               PETSC_COPY_VALUES, &petsc_local_to_global);
-  CHECK_ERROR("ISLocalToGlobalMappingCreate");
+    // Create PETSc local-to-global map
+    ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, block_size, map.size(), map.data(),
+                                        PETSC_COPY_VALUES, &petsc_local_to_global);
+    CHECK_ERROR("ISLocalToGlobalMappingCreate");
+  }
 
   // Apply local-to-global map to vector
   ierr = VecSetLocalToGlobalMapping(_x, petsc_local_to_global);

@@ -27,7 +27,6 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
-#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/IndexMap.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/TensorLayout.h>
@@ -70,12 +69,13 @@ void AssemblerBase::init_global_tensor(PETScVector& x, const Form& a)
     //std::vector<dolfin::la_index_t> ghosts;
 
     // Build local-to-global index map
-    std::vector<std::size_t> local_to_global(index_map->size(IndexMap::MapSize::ALL));
+    int block_size = index_map->block_size();
+    std::vector<la_index_t> local_to_global(index_map->size(IndexMap::MapSize::ALL));
     for (std::size_t i = 0; i < local_to_global.size(); ++i)
       local_to_global[i] = index_map->local_to_global(i);
 
     // Initialize tensor
-    x.init(index_map->local_range(), local_to_global, {});
+    x.init(index_map->local_range(), local_to_global, {}, block_size);
   }
   else
   {
@@ -169,7 +169,7 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
       dolfin::la_index_t IJ[2];
       for (std::size_t i: global_dofs)
       {
-        const std::size_t I = index_map_0.local_to_global(i);
+        const std::size_t I = index_map_0.local_to_global_index(i);
         if (I >= row_range.first && I < row_range.second)
         {
           IJ[primary_dim] = I;

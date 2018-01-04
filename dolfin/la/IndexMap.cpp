@@ -55,19 +55,25 @@ void IndexMap::init(std::size_t local_size, std::size_t block_size)
   _all_ranges.insert(_all_ranges.begin(), 0);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> IndexMap::local_range() const
+std::array<std::int64_t, 2> IndexMap::local_range() const
 {
   if(_all_ranges.size() == 0)
   {
     warning("Asking for size of uninitialised range");
-    return std::pair<std::size_t, std::size_t>(0, 0);
+    return {0, 0};
   }
   else
-  {
-    return std::make_pair(_block_size*_all_ranges[_rank],
-                          _block_size*_all_ranges[_rank + 1]);
-  }
+    return { (std::int64_t) _all_ranges[_rank], (std::int64_t) _all_ranges[_rank + 1]};
 }
+//-----------------------------------------------------------------------------
+/*
+std::pair<std::size_t, std::size_t> IndexMap::local_range() const
+{
+  auto block_range = local_block_range();
+  return std::make_pair(_block_size*block_range.first,
+                         _block_size*block_range.second);
+}
+*/
 //-----------------------------------------------------------------------------
 std::size_t IndexMap::size(const IndexMap::MapSize type) const
 {
@@ -77,15 +83,14 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
     return 0;
   }
 
-  const std::size_t owned_size
-    = _block_size*(_all_ranges[_rank + 1] - _all_ranges[_rank]);
+  const std::size_t owned_size = _all_ranges[_rank + 1] - _all_ranges[_rank];
 
   if (type == IndexMap::MapSize::OWNED)
     return owned_size;
   else if (type == IndexMap::MapSize::GLOBAL)
-    return _all_ranges.back() * _block_size;
+    return _all_ranges.back();
 
-  const std::size_t unowned_size = _local_to_global.size()*_block_size;
+  const std::size_t unowned_size = _local_to_global.size();
   if (type == IndexMap::MapSize::ALL)
     return (owned_size + unowned_size);
   else if (type == IndexMap::MapSize::UNOWNED)
@@ -96,27 +101,35 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
                  "get size",
                  "Unrecognised option for IndexMap::MapSize");
   }
+
   return 0;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::size_t>& IndexMap::local_to_global_unowned() const
+/*
+std::size_t IndexMap::size(const IndexMap::MapSize type) const
+{
+  return size_block()*_block_size;
+}
+*/
+//-----------------------------------------------------------------------------
+const std::vector<std::size_t>& IndexMap::block_local_to_global_unowned() const
 {
   return _local_to_global;
 }
 //-----------------------------------------------------------------------------
-void IndexMap::set_local_to_global(const std::vector<std::size_t>& indices)
+void IndexMap::set_block_local_to_global(const std::vector<std::size_t>& indices)
 {
   _local_to_global = indices;
 
   for (const auto &node : _local_to_global)
   {
-    const std::size_t p = global_index_owner(node);
+    const std::size_t p = global_block_index_owner(node);
     dolfin_assert(p != _rank);
     _off_process_owner.push_back(p);
   }
 }
 //-----------------------------------------------------------------------------
-int IndexMap::global_index_owner(std::size_t index) const
+int IndexMap::global_block_index_owner(std::size_t index) const
 {
   const int p
     = std::upper_bound(_all_ranges.begin(), _all_ranges.end(), index)
@@ -124,7 +137,7 @@ int IndexMap::global_index_owner(std::size_t index) const
   return p;
 }
 //-----------------------------------------------------------------------------
-const std::vector<int>& IndexMap::off_process_owner() const
+const std::vector<int>& IndexMap::block_off_process_owner() const
 {
   return _off_process_owner;
 }

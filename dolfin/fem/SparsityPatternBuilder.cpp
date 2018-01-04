@@ -235,15 +235,16 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
     dolfin_assert(rank == 2);
     const std::size_t primary_dim = sparsity_pattern.primary_dim();
     const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
-    const std::pair<std::size_t, std::size_t> primary_range
-      = index_maps[primary_dim]->local_range();
-    const std::size_t secondary_range
-      = index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
-    const std::size_t diagonal_range
-      = std::min(primary_range.second, secondary_range);
+    const auto primary_range = index_maps[primary_dim]->local_range();
+    const std::size_t secondary_range = index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
+    const std::size_t diagonal_range = std::min((std::size_t) primary_range[1], secondary_range);
 
-    std::vector<dolfin::la_index_t> indices(diagonal_range - primary_range.first);
-    std::iota(indices.begin(), indices.end(), primary_range.first);
+    if (index_maps[0]->block_size() != index_maps[1]->block_size())
+      throw std::runtime_error("Add diagonal with non-matching block sizes not working yet.");
+    std::size_t bs = index_maps[0]->block_size();
+
+    std::vector<dolfin::la_index_t> indices(bs*(diagonal_range - primary_range[0]));
+    std::iota(indices.begin(), indices.end(), bs*primary_range[0]);
     const std::vector<ArrayView<const dolfin::la_index_t>> diags
      = { ArrayView<const dolfin::la_index_t>(indices.size(), indices.data()),
          ArrayView<const dolfin::la_index_t>(indices.size(), indices.data())};

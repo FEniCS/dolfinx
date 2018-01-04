@@ -69,15 +69,16 @@ std::size_t TensorLayout::rank() const
 std::size_t TensorLayout::size(std::size_t i) const
 {
   dolfin_assert(i < _index_maps.size());
-  return _index_maps[i]->size(IndexMap::MapSize::GLOBAL);
+  return _index_maps[i]->block_size()*_index_maps[i]->size(IndexMap::MapSize::GLOBAL);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
 TensorLayout::local_range(std::size_t dim) const
 {
   dolfin_assert(dim < _index_maps.size());
-  return _index_maps[dim]->local_range();
-
+  std::size_t bs = _index_maps[dim]->block_size();
+  auto lrange = _index_maps[dim]->local_range();
+  return {bs*lrange[0], bs*lrange[1]};
 }
 //-----------------------------------------------------------------------------
 std::string TensorLayout::str(bool verbose) const

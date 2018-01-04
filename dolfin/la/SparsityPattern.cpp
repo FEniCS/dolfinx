@@ -62,13 +62,13 @@ void SparsityPattern::init(const std::vector<std::shared_ptr<const IndexMap>> in
   }
 
   const std::size_t local_size0
-    = index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
+    = index_maps[_primary_dim]->block_size()*index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
 
   const std::size_t primary_codim = _primary_dim == 0 ? 1 : 0;
   const std::size_t local_size1
-    = index_maps[primary_codim]->size(IndexMap::MapSize::OWNED);
+    = index_maps[primary_codim]->block_size()*index_maps[primary_codim]->size(IndexMap::MapSize::OWNED);
   const std::size_t global_size1
-    = index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
+    = index_maps[primary_codim]->block_size()*index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
 
   // Resize diagonal block
   _diagonal.resize(local_size0);
@@ -95,16 +95,17 @@ void SparsityPattern::insert_global(
 
   // The primary_dim is global and must be mapped to local
   const auto primary_dim_map = [](const dolfin::la_index_t i_index,
-                                  const IndexMap& index_map0)
+                                  const IndexMap& index_map0) -> dolfin::la_index_t
   {
-    dolfin_assert(index_map0.local_range().first <= (std::size_t) i_index
-                  && (std::size_t) i_index < index_map0.local_range().second);
-    return i_index - (dolfin::la_index_t) index_map0.local_range().first;
+    std::size_t bs = index_map0.block_size();
+    dolfin_assert(bs*index_map0.local_range()[0] <= (std::size_t) i_index
+                  && (std::size_t) i_index < bs*index_map0.local_range()[1]);
+    return i_index - (dolfin::la_index_t) bs*index_map0.local_range()[0];
   };
 
   // The primary_codim is already global and stays the same
   const auto primary_codim_map = [](const dolfin::la_index_t j_index,
-                                    const IndexMap& index_map1)
+                                    const IndexMap& index_map1) -> dolfin::la_index_t
   { return j_index; };
 
   insert_entries(entries, primary_dim_map, primary_codim_map);
@@ -117,13 +118,13 @@ void SparsityPattern::insert_local(
 
   // The primary_dim is local and stays the same
   const auto primary_dim_map = [](const dolfin::la_index_t i_index,
-                                  const IndexMap& index_map0)
+                                  const IndexMap& index_map0) -> dolfin::la_index_t
   { return i_index; };
 
   // The primary_codim must be mapped to global entries
   const auto primary_codim_map = [](const dolfin::la_index_t j_index,
                                    const IndexMap& index_map1) -> dolfin::la_index_t
-  { return index_map1.local_to_global((std::size_t) j_index); };
+  { return index_map1.local_to_global_index((std::size_t) j_index); };
 
   insert_entries(entries, primary_dim_map, primary_codim_map);
 }
@@ -135,12 +136,12 @@ void SparsityPattern::insert_local_global(
 
   // The primary_dim is local and stays the same
   const auto primary_dim_map = [](const dolfin::la_index_t i_index,
-                                  const IndexMap& index_map0)
+                                  const IndexMap& index_map0) -> dolfin::la_index_t
   { return i_index; };
 
   // The primary_codim is global and stays the same
   const auto primary_codim_map = [](const dolfin::la_index_t j_index,
-                                    const IndexMap& index_map1)
+                                    const IndexMap& index_map1) -> dolfin::la_index_t
   { return j_index; };
 
   insert_entries(entries, primary_dim_map, primary_codim_map);
@@ -159,11 +160,14 @@ void SparsityPattern::insert_entries(
 
   ArrayView<const dolfin::la_index_t> map_i = entries[_primary_dim];
   ArrayView<const dolfin::la_index_t> map_j = entries[primary_codim];
-
   const IndexMap& index_map0 = *_index_maps[ _primary_dim];
   const IndexMap& index_map1 = *_index_maps[primary_codim];
-  const std::size_t local_size0 = index_map0.size(IndexMap::MapSize::OWNED);
-  const auto& local_range1 = index_map1.local_range();
+
+  std::size_t bs0 = index_map0.block_size();
+  const std::size_t local_size0 = bs0*index_map0.size(IndexMap::MapSize::OWNED);
+
+  std::size_t bs1 = index_map1.block_size();
+  const auto local_range1 = index_map1.local_range();
 
   const bool has_full_rows = _full_rows.size() > 0;
   const auto full_rows_end = _full_rows.end();
@@ -209,8 +213,7 @@ void SparsityPattern::insert_entries(
         for (const auto &j_index : map_j)
         {
           const auto J = primary_codim_map(j_index, index_map1);
-          if ((dolfin::la_index_t) local_range1.first <= J
-              && J < (dolfin::la_index_t) local_range1.second)
+          if ((dolfin::la_index_t) (bs1*local_range1[0]) <= J and J < (dolfin::la_index_t) (bs1*local_range1[1]))
           {
             dolfin_assert(I < (dolfin::la_index_t) _diagonal.size());
             _diagonal[I].insert(J);
@@ -239,8 +242,8 @@ void SparsityPattern::insert_entries(
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_full_rows_local(const std::vector<std::size_t>& rows)
 {
-  const std::size_t ghosted_size0 =
-    _index_maps[_primary_dim]->size(IndexMap::MapSize::ALL);
+  std::size_t bs0 = _index_maps[_primary_dim]->block_size();
+  const std::size_t ghosted_size0 = bs0*_index_maps[_primary_dim]->size(IndexMap::MapSize::ALL);
   _full_rows.set().reserve(rows.size());
   for (const auto row : rows)
   {
@@ -258,7 +261,9 @@ std::pair<std::size_t, std::size_t>
   SparsityPattern::local_range(std::size_t dim) const
 {
   dolfin_assert(dim < 2);
-  return _index_maps[dim]->local_range();
+  std::size_t bs = _index_maps[dim]->block_size();
+  auto lrange = _index_maps[dim]->local_range();
+  return std::make_pair(bs*lrange[0], bs*lrange[1]);
 }
 //-----------------------------------------------------------------------------
 std::size_t SparsityPattern::num_nonzeros() const
@@ -272,10 +277,12 @@ std::size_t SparsityPattern::num_nonzeros() const
     nz += slice.size();
 
   // Contribution from full rows
-  const std::size_t local_size0 =
-    _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
+  std::size_t bs0 = _index_maps[_primary_dim]->block_size();
+  const std::size_t local_size0 = bs0*_index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
+
   const std::size_t primary_codim = _primary_dim == 0 ? 1 : 0;
-  const std::size_t ncols = _index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
+  std::size_t bs1 = _index_maps[primary_codim]->block_size();
+  const std::size_t ncols = bs1*_index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
   for (const auto& full_row : _full_rows)
     if (full_row < local_size0)
       nz += ncols;
@@ -295,10 +302,12 @@ void SparsityPattern::num_nonzeros_diagonal(std::vector<std::size_t>& num_nonzer
   // Get number of nonzeros per full row
   if (_full_rows.size() > 0)
   {
-    const std::size_t local_size0 =
-      _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
+    std::size_t bs0 = _index_maps[_primary_dim]->block_size();
+    const std::size_t local_size0 =bs0*_index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
+
     const std::size_t primary_codim = _primary_dim == 0 ? 1 : 0;
-    const std::size_t ncols = _index_maps[primary_codim]->size(IndexMap::MapSize::OWNED);
+    std::size_t bs1 = _index_maps[primary_codim]->block_size();
+    const std::size_t ncols = bs1*_index_maps[primary_codim]->size(IndexMap::MapSize::OWNED);
     for (const auto row : _full_rows)
       if (row < local_size0)
         num_nonzeros[row] = ncols;
@@ -321,12 +330,14 @@ void SparsityPattern::num_nonzeros_off_diagonal(std::vector<std::size_t>& num_no
   // Get number of nonzeros per full row
   if (_full_rows.size() > 0)
   {
-    const std::size_t local_size0 =
-      _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
+    std::size_t bs0 = _index_maps[_primary_dim]->block_size();
+    const std::size_t local_size0 = bs0*_index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
+
     const std::size_t primary_codim = _primary_dim == 0 ? 1 : 0;
+    std::size_t bs1 = _index_maps[primary_codim]->block_size();
     const std::size_t ncols =
-      _index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL)
-      - _index_maps[primary_codim]->size(IndexMap::MapSize::OWNED);
+      bs1*_index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL)
+      - bs1*_index_maps[primary_codim]->size(IndexMap::MapSize::OWNED);
     for (const auto row : _full_rows)
       if (row < local_size0)
         num_nonzeros[row] = ncols;
@@ -353,13 +364,12 @@ void SparsityPattern::apply()
   dolfin_assert(_primary_dim < 2);
   dolfin_assert(primary_codim < 2);
 
-  const std::pair<dolfin::la_index_t, dolfin::la_index_t>
-    local_range0 = _index_maps[_primary_dim]->local_range();
-  const std::pair<dolfin::la_index_t, dolfin::la_index_t>
-    local_range1 = _index_maps[primary_codim]->local_range();
-  const std::size_t local_size0
-    = _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
-  const std::size_t offset0 = local_range0.first;
+  std::size_t bs0 = _index_maps[_primary_dim]->block_size();
+  std::size_t bs1 = _index_maps[primary_codim]->block_size();
+  const auto local_range0 = _index_maps[_primary_dim]->local_range();
+  const auto local_range1 = _index_maps[primary_codim]->local_range();
+  const std::size_t local_size0 = bs0*_index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
+  const std::size_t offset0 = bs0*local_range0[0];
 
   const std::size_t num_processes = _mpi_comm.size();
   const std::size_t proc_number = _mpi_comm.rank();
@@ -376,10 +386,10 @@ void SparsityPattern::apply()
     std::vector<std::vector<std::size_t>> non_local_send(num_processes);
 
     const std::vector<int>& off_process_owner
-      = _index_maps[_primary_dim]->off_process_owner();
+      = _index_maps[_primary_dim]->block_off_process_owner();
 
     const std::vector<std::size_t>& local_to_global
-      = _index_maps[_primary_dim]->local_to_global_unowned();
+      = _index_maps[_primary_dim]->block_local_to_global_unowned();
 
     std::size_t dim_block_size = _index_maps[_primary_dim]->block_size();
     for (std::size_t i = 0; i < _non_local.size(); i += 2)
@@ -431,22 +441,20 @@ void SparsityPattern::apply()
       const dolfin::la_index_t J = non_local_received[i + 1];
 
       // Sanity check
-      if (I < local_range0.first
-          || I >= local_range0.second)
+      if (I < local_range0[0] or I >= (dolfin::la_index_t) (bs0*local_range0[1]))
       {
         dolfin_error("SparsityPattern.cpp",
                      "apply changes to sparsity pattern",
                      "Received illegal sparsity pattern entry for row/column %d, not in range [%d, %d]",
-                     I, local_range0.first,
-                     local_range0.second);
+                     I, local_range0[0],
+                     local_range0[1]);
       }
 
       // Get local I index
       const std::size_t i_index = I - offset0;
 
       // Insert in diagonal or off-diagonal block
-      if (local_range1.first <= J &&
-          J < local_range1.second)
+      if ((dolfin::la_index_t) (bs1*local_range1[0]) <= J and J < (dolfin::la_index_t) (bs1*local_range1[1]))
       {
         dolfin_assert(i_index < _diagonal.size());
         _diagonal[i_index].insert(J);
@@ -504,17 +512,19 @@ SparsityPattern::diagonal_pattern(Type type) const
 
   if (_full_rows.size() > 0)
   {
-    const std::size_t local_size0 =
-      _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
+    std::size_t bs0 = _index_maps[_primary_dim]->block_size();
+    const std::size_t local_size0 = bs0*_index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
+
     const std::size_t primary_codim = _primary_dim == 0 ? 1 : 0;
+    std::size_t bs1 = _index_maps[primary_codim]->block_size();
     const auto range1 = _index_maps[primary_codim]->local_range();
     for (const auto row : _full_rows)
     {
       if (row >= local_size0)
         continue;
       dolfin_assert(v[row].size() == 0);
-      v[row].reserve(range1.second - range1.first);
-      for (std::size_t J = range1.first; J < range1.second; ++J)
+      v[row].reserve(range1[1] - range1[0]);
+      for (std::size_t J = bs1*range1[0]; J < bs1*range1[1]; ++J)
         v[row].push_back(J);
     }
   }
@@ -537,20 +547,22 @@ std::vector<std::vector<std::size_t>>
 
   if (_full_rows.size() > 0)
   {
-    const std::size_t local_size0 =
-      _index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
+    std::size_t bs0 = _index_maps[_primary_dim]->block_size();
+    const std::size_t local_size0 = bs0*_index_maps[_primary_dim]->size(IndexMap::MapSize::OWNED);
+
     const std::size_t primary_codim = _primary_dim == 0 ? 1 : 0;
+    std::size_t bs1 = _index_maps[primary_codim]->block_size();
     const auto range1 = _index_maps[primary_codim]->local_range();
-    const std::size_t N1 = _index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
+    const std::size_t N1 = bs1*_index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
     for (const auto row : _full_rows)
     {
       if (row >= local_size0)
         continue;
       dolfin_assert(v[row].size() == 0);
-      v[row].reserve(N1 - (range1.second - range1.first));
-      for (std::size_t J = 0; J < range1.first; ++J)
+      v[row].reserve(N1 - (range1[1] - range1[0]));
+      for (std::size_t J = 0; J < bs1*range1[0]; ++J)
         v[row].push_back(J);
-      for (std::size_t J = range1.second; J < N1; ++J)
+      for (std::size_t J = bs1*range1[1]; J < N1; ++J)
         v[row].push_back(J);
     }
   }
@@ -577,8 +589,11 @@ void SparsityPattern::info_statistics() const
   const std::size_t num_nonzeros_total = num_nonzeros_diagonal
     + num_nonzeros_off_diagonal + num_nonzeros_non_local;
 
-  std::size_t size0 = _index_maps[0]->size(IndexMap::MapSize::GLOBAL);
-  std::size_t size1 = _index_maps[1]->size(IndexMap::MapSize::GLOBAL);
+  std::size_t bs0 = _index_maps[0]->block_size();
+  std::size_t size0 = bs0*_index_maps[0]->size(IndexMap::MapSize::GLOBAL);
+
+  std::size_t bs1 = _index_maps[1]->block_size();
+  std::size_t size1 = bs1*_index_maps[1]->size(IndexMap::MapSize::GLOBAL);
 
   // Return number of entries
   cout << "Matrix of size " << size0 << " x " << size1 << " has "
