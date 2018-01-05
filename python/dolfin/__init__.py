@@ -114,7 +114,7 @@ from .function.specialfunctions import (MeshCoordinates, FacetArea, FacetNormal,
                                         MinFacetEdgeLength, MaxFacetEdgeLength)
 from .function.expression import Expression, UserExpression, CompiledExpression
 
-from .generation.builtin import UnitSquareMesh
+from .generation.builtin import UnitSquareMesh, UnitCubeMesh, UnitIntervalMesh
 
 # experimental
 from .jit.pybind11jit import compile_cpp_code

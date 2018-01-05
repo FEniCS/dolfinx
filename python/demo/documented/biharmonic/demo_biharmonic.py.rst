@@ -187,8 +187,8 @@ The computed solution is written to a file in VTK format and plotted to
 the screen. ::
 
     # Save solution to file
-    file = File("biharmonic.pvd")
-    file << u
+    file = XDMFFile(mesh.mpi_comm(), "biharmonic.xdmf")
+    file.write(u)
 
     # Plot solution
     plot(u)
