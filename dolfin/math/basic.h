@@ -36,15 +36,6 @@ namespace dolfin
   /// @return std::size_t
   std::size_t ipow(std::size_t a, std::size_t n);
 
-  /// Return a random number, uniformly distributed between [0.0, 1.0)
-  /// @return double
-  double rand();
-
-  /// Seed random number generator
-  /// @param s (std::size_t)
-  ///   Seed value
-  void seed(std::size_t s);
-
   /// Check whether x is close to x0 (to within DOLFIN_EPS)
   /// @param x (double)
   ///    First value
@@ -54,16 +45,6 @@ namespace dolfin
   ///   Tolerance
   /// @return bool
   bool near(double x, double x0, double eps=DOLFIN_EPS);
-
-  // FIXME: This should not involve eps. It is 'between' and
-  //        not 'nearly between'.
-  /// Check whether x is between x0 and x1 (inclusive, to within DOLFIN_EPS)
-  /// @param x (double)
-  ///   Value to check
-  /// @param range (std::pair<double, double>)
-  ///   Range to check
-  /// @return bool
-  bool between(double x, std::pair<double, double> range);
 
 }
 
