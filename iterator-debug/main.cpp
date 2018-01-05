@@ -7,42 +7,47 @@ int main()
 {
   //std::array<Point, 2> pt = {Point(0.,0.), Point(1.,1.)};
   //auto mesh = std::make_shared<Mesh>(RectangleMesh::create(MPI_COMM_WORLD, pt, {{320, 320}}, CellType::Type::triangle));
-  std::array<Point, 2> pt = {Point(0.,0.,0.), Point(1.,1.,1.0)};
+  std::array<Point, 2> pt = {Point(0.,0.,0.), Point(1.,1.,1.)};
   auto mesh = std::make_shared<Mesh>(BoxMesh::create(MPI_COMM_WORLD, pt,
                                                      {{200, 200, 200}}, CellType::Type::tetrahedron));
 
-  {
+  //  auto mesh = std::make_shared<Mesh>(RectangleMesh::create(MPI_COMM_WORLD, pt,
+  //                                                        {{1000, 1000}}, CellType::Type::triangle));
 
-    Timer t0("old");
-    std::size_t p = 0;
+  {
     boost::timer::cpu_timer t;
-    for (CellIterator c(*mesh); !c.end(); ++c)
+    for (unsigned int j = 0; j < 1; ++j)
     {
-      ++p;
-      //for (VertexIterator v(*c); !v.end(); ++v)
-      //  p += v->index();
+      Timer t0("old");
+      std::size_t p = 0;
+      for (CellIterator c(*mesh); !c.end(); ++c)
+      {
+        for (VertexIterator v(*c); !v.end(); ++v)
+          p += v->index();
+        p += c->index();
+      }
+      std::cout << p << std::endl;
     }
     auto tend = t.elapsed();
-    std::cout << p << std::endl;
     std::cout << boost::timer::format(tend) << "\n";
   }
 
   {
-    std::size_t p = 0;
-
-    auto u = cells(*mesh);
-    MeshIterator<Cell> c0 = u.begin();
-    MeshIterator<Cell> c1 = u.end();
-
-    std::cout << "Start timer" << std::endl;
-    Timer t0("new3");
     boost::timer::cpu_timer t;
-    for (MeshIterator<Cell> c = c0; c != c1; ++c)
+    for (unsigned int j = 0; j < 1; ++j)
     {
-      ++p;
+      Timer t0("new3");
+      std::size_t p = 0;
+
+      for (auto &c : cells(*mesh))
+      {
+        for (auto &v : vertices(c))
+          p += v.index();
+        p += c.index();
+      }
+      std::cout << p << std::endl;
     }
     auto tend = t.elapsed();
-    std::cout << p << std::endl;
     std::cout << boost::timer::format(tend) << "\n";
   }
 

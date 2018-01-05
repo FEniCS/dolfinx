@@ -23,16 +23,17 @@ namespace dolfin
   {
   public:
 
+    // Default constructor
+    MeshIterator()
+    {}
+
     /// Copy constructor
     MeshIterator(const MeshIterator& it) : _entity(it._entity),  _pos(it._pos), _index(it._index)
-    {
-      std::cout << "EMPTY COPY" << std::endl;
-    }
+    { }
 
     // Copy assignment
     const MeshIterator& operator= (const MeshIterator& m)
     {
-      //std::cout << "ASSIGN" << std::endl;
       _entity = m._entity;
       _pos = m._pos;
       _index = m._index;
@@ -43,7 +44,6 @@ namespace dolfin
     MeshIterator(const Mesh& mesh, std::size_t pos=0)
       : _entity(mesh, 0), _pos(pos), _index(nullptr)
     {
-      std::cout << "Mesh constructor" << std::endl;
       // Check if mesh is empty
       //if (mesh.num_vertices() == 0)
       //  return;
@@ -53,8 +53,6 @@ namespace dolfin
     MeshIterator(const MeshEntity& e, std::size_t pos=0)
       : _entity(e.mesh(), 0), _pos(pos)
     {
-      std::cout << "AAAA" << std::endl;
-
       // Get connectivity
       const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity.dim());
 
@@ -73,26 +71,22 @@ namespace dolfin
 
     bool operator==(const MeshIterator& other) const
     {
-      std::cout << "BBBB" << std::endl;
-      return (_pos == other._pos and _index == other._index);
+      return (_pos == other._pos);
     }
 
     bool operator!=(const MeshIterator& other) const
     {
-      //return (_pos != other._pos or _index != other._index);
       return (_pos != other._pos);
     }
 
     T* operator->()
     {
-      std::cout << "CCC" << std::endl;
       _entity._local_index = (_index ? _index[_pos] : _pos);
       return &_entity;
     }
 
     T& operator*()
     {
-      std::cout << "DDDD" << std::endl;
       _entity._local_index = (_index ? _index[_pos] : _pos);
       return _entity;
     }
@@ -116,19 +110,24 @@ namespace dolfin
   {
   public:
 
-  entities(const Mesh& mesh) : _it_begin(mesh, 0), _it_end(mesh, 0)
+  entities(const Mesh& mesh) : _it_begin(mesh, 0) //, _it_end(_it_begin)
     {
+      // Don't bother initialising mesh or entity for end iterator
       const std::size_t dim = _it_begin._entity.dim();
-      _it_end = MeshIterator<T>(mesh, mesh.topology().ghost_offset(dim));
+      _it_end._pos = mesh.topology().ghost_offset(dim);
     }
 
-  entities(const MeshEntity& e) : _it_begin(e, 0), _it_end(_it_begin)
+    entities(const MeshEntity& e) : _it_begin(e, 0) //, _it_end(_it_begin)
     {
+      // Don't bother initialising mesh or entity for end iterator
       const std::size_t dim = _it_begin._entity.dim();
       _it_end._pos = e.num_entities(dim);
     }
 
     const MeshIterator<T>& begin() const
+    { return _it_begin; }
+
+    MeshIterator<T>& begin()
     { return _it_begin; }
 
     const MeshIterator<T>& end() const
