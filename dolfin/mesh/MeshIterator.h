@@ -25,24 +25,27 @@ namespace dolfin
 
     // Default constructor
     MeshIterator()
-    {}
+    {
+      // Do nothing
+    }
 
     /// Copy constructor
-    MeshIterator(const MeshIterator& it) : _entity(it._entity),  _pos(it._pos), _index(it._index)
-    { }
+    MeshIterator(const MeshIterator& it) : _entity(it._entity),  _pos(it._pos)
+    {
+      // Do nothing
+    }
 
     // Copy assignment
     const MeshIterator& operator= (const MeshIterator& m)
     {
       _entity = m._entity;
       _pos = m._pos;
-      _index = m._index;
       return *this;
     }
 
     // Constructor with Mesh
     MeshIterator(const Mesh& mesh, std::size_t pos=0)
-      : _entity(mesh, 0), _pos(pos), _index(nullptr)
+      : _entity(mesh, 0), _pos(pos)
     {
       // Check if mesh is empty
       //if (mesh.num_vertices() == 0)
@@ -59,8 +62,6 @@ namespace dolfin
       // Compute connectivity if empty
       if (c.empty())
         e.mesh().init(e.dim(), _entity.dim());
-
-      _index = c(e.index());
     }
 
     MeshIterator& operator++()
@@ -81,38 +82,35 @@ namespace dolfin
 
     T* operator->()
     {
-      _entity._local_index = (_index ? _index[_pos] : _pos);
+      _entity._local_index = _pos;
       return &_entity;
     }
 
     T& operator*()
     {
-      _entity._local_index = (_index ? _index[_pos] : _pos);
+      _entity._local_index = _pos;
       return _entity;
     }
 
   private:
+
+    template <typename X> friend class entities;
+
     // MeshEntity
     T _entity;
 
     // Current position
     std::size_t _pos;
-
-    // Mapping from pos to index (if any)
-    const unsigned int* _index;
-
-    template <typename X> friend class entities;
   };
 
-  // Class defining begin() and end() methods for a given entity
-  template<class T>
-    class entities
+  /// Class defining begin() and end() methods for a given entity
+  template<class T> class entities
   {
   public:
 
-  entities(const Mesh& mesh) : _it_begin(mesh, 0) //, _it_end(_it_begin)
+    entities(const Mesh& mesh) : _it_begin(mesh, 0) //, _it_end(_it_begin)
     {
-      // Don't bother initialising mesh or entity for end iterator
+      // Don't initialise mesh or entity for end iterator
       const std::size_t dim = _it_begin._entity.dim();
       _it_end._pos = mesh.topology().ghost_offset(dim);
     }
@@ -134,6 +132,7 @@ namespace dolfin
     { return _it_end; }
 
   private:
+
     MeshIterator<T> _it_begin;
     MeshIterator<T> _it_end;
   };
