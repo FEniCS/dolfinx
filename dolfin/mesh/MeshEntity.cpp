@@ -30,11 +30,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+/*
 MeshEntity::MeshEntity(const Mesh& mesh, std::size_t dim, std::size_t index)
-  : _mesh(0), _dim(0), _local_index(0)
+  : _mesh(&mesh), _dim(dim), _local_index(index)
 {
-  init(mesh, dim, index);
+  //init(mesh, dim, index);
 }
+*/
 //-----------------------------------------------------------------------------
 void MeshEntity::init(const Mesh& mesh, std::size_t dim, std::size_t index)
 {
@@ -69,7 +71,7 @@ MeshEntity::~MeshEntity()
 bool MeshEntity::incident(const MeshEntity& entity) const
 {
   // Must be in the same mesh to be incident
-  if ( _mesh != entity._mesh )
+  if (_mesh != entity._mesh)
     return false;
 
   // Get list of entities for given topological dimension

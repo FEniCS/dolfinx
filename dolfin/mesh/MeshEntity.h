@@ -54,7 +54,11 @@ namespace dolfin
     ///         The topological dimension.
     /// @param     index (std::size_t)
     ///         The index.
-    MeshEntity(const Mesh& mesh, std::size_t dim, std::size_t index);
+    MeshEntity(const Mesh& mesh, std::size_t dim, std::size_t index)
+      : _mesh(&mesh), _dim(dim), _local_index(index)
+    {
+      // Do nothing
+    }
 
     /// Destructor
     virtual ~MeshEntity();
@@ -103,7 +107,7 @@ namespace dolfin
     ///
     /// @return     std::size_t
     ///         The dimension.
-    std::size_t dim() const
+    inline std::size_t dim() const
     { return _dim; }
 
     /// Return index of mesh entity

@@ -57,7 +57,7 @@ namespace dolfin
     { return _connections.empty(); }
 
     /// Return total number of connections
-    std::size_t size() const
+    inline std::size_t size() const
     { return _connections.size(); }
 
     /// Return number of connections for given entity

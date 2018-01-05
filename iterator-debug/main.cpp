@@ -19,7 +19,7 @@ int main()
     {
       for (VertexIterator v(*c); !v.end(); ++v)
         p += v->index();
-      p += c->index();
+      //p += c->index();
     }
     auto tend = t.elapsed();
     std::cout << p << std::endl;
@@ -27,13 +27,32 @@ int main()
   }
 
   {
-    Timer t0("new");
+    Timer t0("new (auto)");
     std::size_t p = 0;
     boost::timer::cpu_timer t;
     for (auto &c : cells(*mesh))
     {
       for (auto &v : vertices(c))
         p += v.index();
+      p += c.index();
+    }
+    auto tend = t.elapsed();
+    std::cout << p << std::endl;
+    std::cout << boost::timer::format(tend) << "\n";
+  }
+
+  {
+    Timer t0("new (no auto)");
+    std::size_t p = 0;
+    boost::timer::cpu_timer t;
+    for (auto &c : cells(*mesh))
+    {
+      auto vert = vertices(c);
+      auto v0 = vert.begin();
+      auto v1 = vert.end();
+      for (auto v = v0; v != v1; ++v)
+        p += v->index();
+
       p += c.index();
     }
     auto tend = t.elapsed();
@@ -50,6 +69,7 @@ int main()
       // Use old iterator
       for (VertexIterator v(c); !v.end(); ++v)
         p += v->index();
+      p += c.index();
     }
     auto tend = t.elapsed();
     std::cout << p << std::endl;

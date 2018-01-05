@@ -25,24 +25,29 @@ namespace dolfin
 
     // Default constructor
     MeshIterator()
-    {}
+    {
+      // Do nothing
+    }
 
     /// Copy constructor
-    MeshIterator(const MeshIterator& it) : _entity(it._entity),  _pos(it._pos), _index(it._index)
-    { }
+    MeshIterator(const MeshIterator& it) : _entity(it._entity),  _pos(it._pos),
+      _connections(it._connections)
+    {
+      // Do nothing
+    }
 
     // Copy assignment
     const MeshIterator& operator= (const MeshIterator& m)
     {
       _entity = m._entity;
       _pos = m._pos;
-      _index = m._index;
+      _connections = m._connections;
       return *this;
     }
 
     // Constructor with Mesh
     MeshIterator(const Mesh& mesh, std::size_t pos=0)
-      : _entity(mesh, 0), _pos(pos), _index(nullptr)
+      : _entity(mesh, 0), _pos(pos), _connections(nullptr)
     {
       // Check if mesh is empty
       //if (mesh.num_vertices() == 0)
@@ -57,10 +62,11 @@ namespace dolfin
       const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity.dim());
 
       // Compute connectivity if empty
-      if (c.empty())
-        e.mesh().init(e.dim(), _entity.dim());
+      //if (c.empty())
+      //  e.mesh().init(e.dim(), _entity.dim());
 
-      _index = c(e.index());
+      // Pointer to array of connections
+      _connections = c(e.index());
     }
 
     MeshIterator& operator++()
@@ -71,35 +77,36 @@ namespace dolfin
 
     bool operator==(const MeshIterator& other) const
     {
-      return (_pos == other._pos);
+      return _pos == other._pos;
     }
 
     bool operator!=(const MeshIterator& other) const
     {
-      return (_pos != other._pos);
+      return _pos != other._pos;
     }
 
     T* operator->()
     {
-      _entity._local_index = (_index ? _index[_pos] : _pos);
+      _entity._local_index = (_connections ? _connections[_pos] : _pos);
       return &_entity;
     }
 
     T& operator*()
     {
-      _entity._local_index = (_index ? _index[_pos] : _pos);
+      _entity._local_index = (_connections ? _connections[_pos] : _pos);
       return _entity;
     }
 
   private:
+
     // MeshEntity
     T _entity;
 
     // Current position
     std::size_t _pos;
 
-    // Mapping from pos to index (if any)
-    const unsigned int* _index;
+    // Array of connections for entity relative 'parent'
+    const unsigned int* _connections;
 
     template <typename X> friend class entities;
   };
@@ -110,7 +117,7 @@ namespace dolfin
   {
   public:
 
-  entities(const Mesh& mesh) : _it_begin(mesh, 0) //, _it_end(_it_begin)
+    entities(const Mesh& mesh) : _it_begin(mesh, 0) //, _it_end(_it_begin)
     {
       // Don't bother initialising mesh or entity for end iterator
       const std::size_t dim = _it_begin._entity.dim();
@@ -120,8 +127,8 @@ namespace dolfin
     entities(const MeshEntity& e) : _it_begin(e, 0) //, _it_end(_it_begin)
     {
       // Don't bother initialising mesh or entity for end iterator
-      const std::size_t dim = _it_begin._entity.dim();
-      _it_end._pos = e.num_entities(dim);
+      //const std::size_t dim = _it_begin._entity.dim();
+      _it_end._pos = e.num_entities(_it_begin._entity.dim());
     }
 
     const MeshIterator<T>& begin() const
