@@ -60,30 +60,8 @@ std::size_t dolfin::ipow(std::size_t a, std::size_t n)
   return p;
 }
 //-----------------------------------------------------------------------------
-double dolfin::rand()
-{
-  if (!rand_seeded)
-  {
-    unsigned int s = static_cast<long int>(time(0));
-    std::srand(s);
-    rand_seeded = true;
-  }
-  return static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
-}
-//-----------------------------------------------------------------------------
-void dolfin::seed(std::size_t s)
-{
-  std::srand(s);
-  rand_seeded = true;
-}
-//-----------------------------------------------------------------------------
 bool dolfin::near(double x, double x0, double eps)
 {
   return x0 - eps <= x && x <= x0 + eps;
-}
-//-----------------------------------------------------------------------------
-bool dolfin::between(double x, std::pair<double, double> range)
-{
-  return range.first - DOLFIN_EPS <= x && x <= range.second + DOLFIN_EPS;
 }
 //-----------------------------------------------------------------------------

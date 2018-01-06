@@ -353,7 +353,7 @@ void PETScVector::add_local(const double* block, std::size_t m,
   CHECK_ERROR("VecSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::apply(std::string mode)
+void PETScVector::apply()
 {
   Timer timer("Apply (PETScVector)");
   dolfin_assert(_x);
@@ -382,7 +382,7 @@ void PETScVector::zero()
   double a = 0.0;
   PetscErrorCode ierr = VecSet(_x, a);
   CHECK_ERROR("VecSet");
-  this->apply("insert");
+  this->apply();
 }
 //-----------------------------------------------------------------------------
 bool PETScVector::empty() const
@@ -459,7 +459,7 @@ const PETScVector& PETScVector::operator= (double a)
   dolfin_assert(_x);
   PetscErrorCode ierr = VecSet(_x, a);
   CHECK_ERROR("VecSet");
-  apply("insert");
+  apply();
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -473,7 +473,6 @@ void PETScVector::update_ghost_values()
   ierr = VecGhostGetLocalForm(_x, &xg);
   CHECK_ERROR("VecGhostGetLocalForm");
 
-  // If ghosted, update
   if (xg)
   {
     ierr = VecGhostUpdateBegin(_x, INSERT_VALUES, SCATTER_FORWARD);

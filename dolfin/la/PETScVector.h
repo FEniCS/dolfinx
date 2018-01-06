@@ -41,7 +41,6 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
-#include "TensorLayout.h"
 #include "PETScObject.h"
 #include "IndexMap.h"
 
@@ -83,7 +82,7 @@ namespace dolfin
     virtual void zero();
 
     /// Finalize assembly of tensor
-    virtual void apply(std::string mode);
+    virtual void apply();
 
     /// Return MPI communicator
     virtual MPI_Comm mpi_comm() const;

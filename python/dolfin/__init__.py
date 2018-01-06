@@ -68,8 +68,7 @@ from .cpp.fem import PETScDMCollection
 if has_slepc():
     from .cpp.la import SLEPcEigenSolver
 
-from .cpp.la import (IndexMap, Scalar,
-                     TensorLayout)
+from .cpp.la import (IndexMap, Scalar)
 from .cpp.log import (info, Table, set_log_level, get_log_level, LogLevel)
 from .cpp.math import ipow, near, between
 from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, MeshEntity,

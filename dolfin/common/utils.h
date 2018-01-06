@@ -68,9 +68,6 @@ namespace dolfin
     return s.str();
   }
 
-  /// Return string representation of given array
-  std::string to_string(const double* x, std::size_t n);
-
   /// Return a hash of a given object
   template <class T>
   std::size_t hash_local(const T& x)

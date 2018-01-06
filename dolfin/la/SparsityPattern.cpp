@@ -38,12 +38,12 @@ SparsityPattern::SparsityPattern(MPI_Comm comm, std::size_t primary_dim)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::init(const std::vector<std::shared_ptr<const IndexMap>> index_maps)
+void SparsityPattern::init(const std::array<std::shared_ptr<const IndexMap>, 2> index_maps,
+                           Ghosts ghosted)
 {
-  // Only rank 2 sparsity patterns are supported
-  dolfin_assert(index_maps.size() == 2);
-
+  // Store index maps and ghosting
   _index_maps = index_maps;
+  _ghosted = ghosted;
 
   const std::size_t _primary_dim = primary_dim();
 
@@ -89,17 +89,15 @@ void SparsityPattern::init(const std::vector<std::shared_ptr<const IndexMap>> in
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
-  const std::vector<ArrayView<const dolfin::la_index_t>>& entries)
+  const std::array<ArrayView<const dolfin::la_index_t>, 2>& entries)
 {
-  dolfin_assert(entries.size() == 2);
-
   // The primary_dim is global and must be mapped to local
   const auto primary_dim_map = [](const dolfin::la_index_t i_index,
                                   const IndexMap& index_map0) -> dolfin::la_index_t
   {
     std::size_t bs = index_map0.block_size();
     dolfin_assert(bs*index_map0.local_range()[0] <= (std::size_t) i_index
-                  && (std::size_t) i_index < bs*index_map0.local_range()[1]);
+                  and (std::size_t) i_index < bs*index_map0.local_range()[1]);
     return i_index - (dolfin::la_index_t) bs*index_map0.local_range()[0];
   };
 
@@ -112,10 +110,8 @@ void SparsityPattern::insert_global(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local(
-  const std::vector<ArrayView<const dolfin::la_index_t>>& entries)
+  const std::array<ArrayView<const dolfin::la_index_t>, 2>& entries)
 {
-  dolfin_assert(entries.size() == 2);
-
   // The primary_dim is local and stays the same
   const auto primary_dim_map = [](const dolfin::la_index_t i_index,
                                   const IndexMap& index_map0) -> dolfin::la_index_t
@@ -130,7 +126,7 @@ void SparsityPattern::insert_local(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local_global(
-    const std::vector<ArrayView<const dolfin::la_index_t>>& entries)
+    const std::array<ArrayView<const dolfin::la_index_t>, 2>& entries)
 {
   dolfin_assert(entries.size() == 2);
 
@@ -148,11 +144,10 @@ void SparsityPattern::insert_local_global(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_entries(
-    const std::vector<ArrayView<const dolfin::la_index_t>>& entries,
+    const std::array<ArrayView<const dolfin::la_index_t>, 2>& entries,
     const std::function<dolfin::la_index_t(const dolfin::la_index_t, const IndexMap&)>& primary_dim_map,
     const std::function<dolfin::la_index_t(const dolfin::la_index_t, const IndexMap&)>& primary_codim_map)
 {
-  dolfin_assert(entries.size() == 2);
   const std::size_t _primary_dim = primary_dim();
   dolfin_assert(_primary_dim < 2);
   const std::size_t primary_codim = (_primary_dim + 1) % 2;
@@ -252,18 +247,12 @@ void SparsityPattern::insert_full_rows_local(const std::vector<std::size_t>& row
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t SparsityPattern::rank() const
-{
-  return 2;
-}
-//-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t>
-  SparsityPattern::local_range(std::size_t dim) const
+std::array<std::size_t, 2> SparsityPattern::local_range(std::size_t dim) const
 {
   dolfin_assert(dim < 2);
   std::size_t bs = _index_maps[dim]->block_size();
   auto lrange = _index_maps[dim]->local_range();
-  return std::make_pair(bs*lrange[0], bs*lrange[1]);
+  return {bs*lrange[0], bs*lrange[1]};
 }
 //-----------------------------------------------------------------------------
 std::size_t SparsityPattern::num_nonzeros() const
@@ -388,8 +377,9 @@ void SparsityPattern::apply()
     const std::vector<int>& off_process_owner
       = _index_maps[_primary_dim]->block_off_process_owner();
 
+    // Get local-to-global for unowned blocks
     const std::vector<std::size_t>& local_to_global
-      = _index_maps[_primary_dim]->block_local_to_global_unowned();
+      = _index_maps[_primary_dim]->local_to_global_unowned();
 
     std::size_t dim_block_size = _index_maps[_primary_dim]->block_size();
     for (std::size_t i = 0; i < _non_local.size(); i += 2)

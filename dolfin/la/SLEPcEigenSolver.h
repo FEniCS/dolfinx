@@ -15,8 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef __SLEPC_EIGEN_SOLVER_H
-#define __SLEPC_EIGEN_SOLVER_H
+#pragma once
 
 #ifdef HAS_SLEPC
 
@@ -218,7 +217,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif

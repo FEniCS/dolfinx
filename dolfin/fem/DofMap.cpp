@@ -587,13 +587,15 @@ void DofMap::set(PETScVector& x, double value) const
     x.set_local(_value.data(), dofs.size(), dofs.data());
   }
 
-  x.apply("insert");
+  x.apply();
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_global_map) const
 {
+  // FIXME: use IndexMap::local_to_global_index?
+
   const std::size_t bs = _index_map->block_size();
-  const std::vector<std::size_t>& local_to_global_unowned = _index_map->block_local_to_global_unowned();
+  const std::vector<std::size_t>& local_to_global_unowned = _index_map->local_to_global_unowned();
   const std::size_t local_ownership_size = bs*_index_map->size(IndexMap::MapSize::OWNED);
   local_to_global_map.resize(bs*_index_map->size(IndexMap::MapSize::ALL));
 
@@ -601,8 +603,7 @@ void DofMap::tabulate_local_to_global_dofs(std::vector<std::size_t>& local_to_gl
   for (std::size_t i = 0; i < local_ownership_size; ++i)
     local_to_global_map[i] = i + global_offset;
 
-  for (std::size_t node = 0;
-       node < _index_map->block_local_to_global_unowned().size(); ++node)
+  for (std::size_t node = 0; node < _index_map->local_to_global_unowned().size(); ++node)
   {
     for (std::size_t component = 0; component < bs; ++component)
     {

@@ -255,7 +255,7 @@ void HDF5File::read(PETScVector& x, const std::string dataset_name,
 
   // Set data
   x.set_local(data);
-  x.apply("insert");
+  x.apply();
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const Mesh& mesh, const std::string name)

@@ -28,6 +28,5 @@ namespace dolfin_wrappers
     m.def("ipow", &dolfin::ipow);
     m.def("near", &dolfin::near, py::arg("x0"), py::arg("x1"),
           py::arg("eps")=DOLFIN_EPS);
-    m.def("between", &dolfin::between);
   }
 }

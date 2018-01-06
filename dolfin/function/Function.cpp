@@ -32,8 +32,6 @@
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/la/PETScVector.h>
-#include <dolfin/la/TensorLayout.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
@@ -123,11 +121,8 @@ Function::Function(const Function& v) :
     // Set values in vector
     this->_vector->set_local(gathered_values.data(), collapsed_map.size(),
                              new_rows.data());
-    this->_vector->apply("insert");
+    this->_vector->apply();
   }
-
-  // Assign data
-  //*this = v;
 }
 //-----------------------------------------------------------------------------
 Function::~Function()

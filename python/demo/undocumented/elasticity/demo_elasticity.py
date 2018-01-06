@@ -43,7 +43,7 @@ def build_nullspace(V, x):
     V.sub(1).set_x(nullspace_basis[5], -1.0, 2);
 
     for x in nullspace_basis:
-        x.apply("add")
+        x.apply()
 
     # Create vector space basis and orthogonalize
     basis = VectorSpaceBasis(nullspace_basis)
@@ -109,6 +109,7 @@ null_space = build_nullspace(V, u.vector())
 
 # Attach near nullspace to matrix
 A.set_near_nullspace(null_space)
+#as_backend_type(A).set_near_nullspace(null_space)
 
 # Set solver options
 PETScOptions.set("ksp_type", "cg")

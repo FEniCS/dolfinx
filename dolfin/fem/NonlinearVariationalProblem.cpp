@@ -44,9 +44,8 @@ void NonlinearVariationalProblem::set_bounds(const Function& lb_func,
   this->set_bounds(lb_func.vector(), ub_func.vector());
 }
 //-----------------------------------------------------------------------------
-void NonlinearVariationalProblem::set_bounds(
-  std::shared_ptr<const PETScVector> lb,
-  std::shared_ptr<const PETScVector> ub)
+void NonlinearVariationalProblem::set_bounds(std::shared_ptr<const PETScVector> lb,
+                                             std::shared_ptr<const PETScVector> ub)
 {
   dolfin_assert(lb);
   dolfin_assert(ub);
@@ -106,21 +105,6 @@ NonlinearVariationalProblem::upper_bound() const
 {
   dolfin_assert(_ub);
   return _ub;
-}
-//-----------------------------------------------------------------------------
-bool NonlinearVariationalProblem::has_jacobian() const
-{
-  return _jacobian ?  true : false;
-}
-//-----------------------------------------------------------------------------
-bool NonlinearVariationalProblem::has_lower_bound() const
-{
-  return _lb ?  true : false;
-}
-//-----------------------------------------------------------------------------
-bool NonlinearVariationalProblem::has_upper_bound() const
-{
-  return _ub ?  true : false;
 }
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::check_forms() const

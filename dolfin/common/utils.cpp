@@ -39,20 +39,3 @@ std::string dolfin::indent(std::string block)
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string dolfin::to_string(const double* x, std::size_t n)
-{
-  std::stringstream s;
-
-  s << "[";
-  for (std::size_t i = 0; i < n; i++)
-  {
-    s << x[i];
-    if (i < n - 1)
-      s << ", ";
-  }
-  s << "]";
-
-  return s.str();
-}
-//-----------------------------------------------------------------------------
-

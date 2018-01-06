@@ -268,7 +268,7 @@ void PointSource::apply(PETScVector& b)
     b.add_local(values.data(), dofs_per_cell, dofs.data());
   }
 
-  b.apply("add");
+  b.apply();
 }
 //-----------------------------------------------------------------------------
 void PointSource::apply(PETScMatrix& A)

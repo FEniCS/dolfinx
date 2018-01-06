@@ -37,7 +37,7 @@ using namespace dolfin;
 void
 SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
                               const Mesh& mesh,
-                              const std::vector<const GenericDofMap*> dofmaps,
+                              const std::array<const GenericDofMap*, 2> dofmaps,
                               bool cells,
                               bool interior_facets,
                               bool exterior_facets,
@@ -46,29 +46,23 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
                               bool init,
                               bool finalize)
 {
-  // Get global dimensions and local range
-  const std::size_t rank = dofmaps.size();
-  std::vector<std::shared_ptr<const IndexMap>> index_maps(rank);
-  for (std::size_t i = 0; i < rank; ++i)
-  {
-    dolfin_assert(dofmaps[i]);
-    index_maps[i] = dofmaps[i]->index_map();
-  }
+  // Get index maps
+  dolfin_assert(dofmaps[0]);
+  dolfin_assert(dofmaps[1]);
+  std::array<std::shared_ptr<const IndexMap>, 2> index_maps = {dofmaps[0]->index_map(),
+                                                               dofmaps[1]->index_map()};
+
+  // FIXME: Should check that index maps are matching
 
   // Initialise sparsity pattern
-  if (init)
-    sparsity_pattern.init(index_maps);
-
-  // Only build for rank >= 2 (matrices and higher order tensors) that
-  // require sparsity details
-  if (rank < 2)
-    return;
+  if (!sparsity_pattern.index_map(0) or !sparsity_pattern.index_map(1))
+    throw std::runtime_error("SparsityPattern has not been initialised.");
 
   // Vector to store macro-dofs, if required (for interior facets)
-  std::vector<std::vector<dolfin::la_index_t>> macro_dofs(rank);
+  std::array<std::vector<dolfin::la_index_t>, 2> macro_dofs;
 
   // Create vector to point to dofs
-  std::vector<ArrayView<const dolfin::la_index_t>> dofs(rank);
+  std::array<ArrayView<const dolfin::la_index_t>, 2> dofs;
 
   // Build sparsity pattern for reals (globally supported basis members)
   // NOTE: It is very important that this is done before other integrals
@@ -92,7 +86,7 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Tabulate dofs for each dimension and get local dimensions
-      for (std::size_t i = 0; i < rank; ++i)
+      for (std::size_t i = 0; i < 2; ++i)
       {
         auto dmap = dofmaps[i]->cell_dofs(cell->index());
         dofs[i].set(dmap.size(), dmap.data());
@@ -110,11 +104,11 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
     mesh.init(0);
     mesh.init(0, D);
 
-    std::vector<std::vector<dolfin::la_index_t>> global_dofs(rank);
-    std::vector<std::vector<std::size_t>> local_to_local_dofs(rank);
+    std::array<std::vector<dolfin::la_index_t>, 2> global_dofs;
+    std::array<std::vector<std::size_t>, 2> local_to_local_dofs;
 
     // Resize local dof map vector
-    for (std::size_t i = 0; i < rank; ++i)
+    for (std::size_t i = 0; i < 2; ++i)
     {
       global_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
       local_to_local_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
@@ -130,7 +124,7 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
 
       // Get local index of vertex with respect to the cell
       const std::size_t local_vertex = mesh_cell.index(*vert);
-      for (std::size_t i = 0; i < rank; ++i)
+      for (std::size_t i = 0; i < 2; ++i)
       {
         auto dmap = dofmaps[i]->cell_dofs(mesh_cell.index());
         dofs[i].set(dmap.size(), dmap.data());
@@ -143,8 +137,8 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
       }
 
       // Insert non-zeroes in sparsity pattern
-      std::vector<ArrayView<const dolfin::la_index_t>> global_dofs_p(rank);
-      for (std::size_t i = 0; i < rank; ++i)
+      std::array<ArrayView<const dolfin::la_index_t>, 2> global_dofs_p;
+      for (std::size_t i = 0; i < 2; ++i)
         global_dofs_p[i].set(global_dofs[i]);
       sparsity_pattern.insert_local(global_dofs_p);
     }
@@ -182,7 +176,7 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
         Cell cell(mesh, facet->entities(D)[0]);
 
         // Tabulate dofs for each dimension and get local dimensions
-        for (std::size_t i = 0; i < rank; ++i)
+        for (std::size_t i = 0; i < 2; ++i)
         {
           auto dmap = dofmaps[i]->cell_dofs(cell.index());
           dofs[i].set(dmap.size(), dmap.data());
@@ -205,7 +199,7 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
         Cell cell1(mesh, facet->entities(D)[1]);
 
         // Tabulate dofs for each dimension on macro element
-        for (std::size_t i = 0; i < rank; i++)
+        for (std::size_t i = 0; i < 2; i++)
         {
           // Get dofs for each cell
           auto cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
@@ -232,7 +226,6 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
 
   if (diagonal)
   {
-    dolfin_assert(rank == 2);
     const std::size_t primary_dim = sparsity_pattern.primary_dim();
     const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
     const auto primary_range = index_maps[primary_dim]->local_range();
@@ -245,7 +238,7 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
 
     std::vector<dolfin::la_index_t> indices(bs*(diagonal_range - primary_range[0]));
     std::iota(indices.begin(), indices.end(), bs*primary_range[0]);
-    const std::vector<ArrayView<const dolfin::la_index_t>> diags
+    const std::array<ArrayView<const dolfin::la_index_t>, 2> diags
      = { ArrayView<const dolfin::la_index_t>(indices.size(), indices.data()),
          ArrayView<const dolfin::la_index_t>(indices.size(), indices.data())};
 
