@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+#include <array>
 #include <vector>
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -22,11 +23,9 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/SparsityPattern.h>
-#include <dolfin/la/TensorLayout.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/MeshIterator.h>
 #include "DiscreteOperators.h"
 
 using namespace dolfin;
@@ -83,70 +82,60 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   // Declare matrix
   auto A = std::make_shared<PETScMatrix>(mesh.mpi_comm());
 
-  // Create layout for initialising tensor
-  auto tensor_layout = std::make_shared<TensorLayout>(mesh.mpi_comm(), 0,
-                                                      TensorLayout::Sparsity::SPARSE);
-  dolfin_assert(tensor_layout);
+  // Initialize edge -> vertex connections
+  mesh.init(1, 0);
 
   // Copy index maps from dofmaps
-  std::vector<std::shared_ptr<const IndexMap> > index_maps
+  std::array<std::shared_ptr<const IndexMap>, 2> index_maps
     = {V0.dofmap()->index_map(), V1.dofmap()->index_map()};
   std::vector<std::pair<std::size_t, std::size_t>> local_range
     = { V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
 
-  // Initialise tensor layout
-  tensor_layout->init(index_maps, TensorLayout::Ghosts::UNGHOSTED);
+  // Initialise sparsity pattern
+  SparsityPattern pattern(mesh.mpi_comm(), 0);
+  pattern.init(index_maps, SparsityPattern::Ghosts::UNGHOSTED);
 
-  // Initialize edge -> vertex connections
-  mesh.init(1, 0);
-
-  SparsityPattern& pattern = *tensor_layout->sparsity_pattern();
-  pattern.init(index_maps);
-
-    // Build sparsity pattern
-  if (tensor_layout->sparsity_pattern())
+  // Build sparsity pattern
+  std::vector<dolfin::la_index_t> rows;
+  std::vector<dolfin::la_index_t> cols;
+  for (EdgeIterator edge(mesh); !edge.end(); ++edge)
   {
-    std::vector<dolfin::la_index_t> rows;
-    std::vector<dolfin::la_index_t> cols;
-    for (auto &edge : edges(mesh))
+    // Row index (global indices)
+    const std::size_t row = local_to_global_map0[edge_to_dof[edge->index()]];
+    rows.push_back(row);
+
+    if (row >= local_range[0].first and row < local_range[0].second)
     {
-      // Row index (global indices)
-      const std::size_t row = local_to_global_map0[edge_to_dof[edge.index()]];
-      rows.push_back(row);
-
-      if (row >= local_range[0].first and row < local_range[0].second)
-      {
-        // Column indices (global indices)
-        const Vertex v0(mesh, edge.entities(0)[0]);
-        const Vertex v1(mesh, edge.entities(0)[1]);
-        std::size_t col0 = local_to_global_map1[vertex_to_dof[v0.index()]];
-        std::size_t col1 = local_to_global_map1[vertex_to_dof[v1.index()]];
-        cols.push_back(col0);
-        cols.push_back(col1);
-      }
+      // Column indices (global indices)
+      const Vertex v0(mesh, edge->entities(0)[0]);
+      const Vertex v1(mesh, edge->entities(0)[1]);
+      std::size_t col0 = local_to_global_map1[vertex_to_dof[v0.index()]];
+      std::size_t col1 = local_to_global_map1[vertex_to_dof[v1.index()]];
+      cols.push_back(col0);
+      cols.push_back(col1);
     }
-
-    const std::vector<ArrayView<const dolfin::la_index_t>> entries
-     = { ArrayView<const dolfin::la_index_t>(rows.size(), rows.data()),
-         ArrayView<const dolfin::la_index_t>(cols.size(), cols.data())};
-    pattern.insert_global(entries);
-    pattern.apply();
   }
 
+  const std::array<ArrayView<const dolfin::la_index_t>, 2> entries
+    = { ArrayView<const dolfin::la_index_t>(rows.size(), rows.data()),
+        ArrayView<const dolfin::la_index_t>(cols.size(), cols.data())};
+  pattern.insert_global(entries);
+  pattern.apply();
+
   // Initialise matrix
-  A->init(*tensor_layout);
+  A->init(pattern);
 
   // Build discrete gradient operator/matrix
-  for (auto &edge : edges(mesh))
+  for (EdgeIterator edge(mesh); !edge.end(); ++edge)
   {
     dolfin::la_index_t row;
     dolfin::la_index_t cols[2];
     double values[2];
 
-    row = local_to_global_map0[edge_to_dof[edge.index()]];
+    row = local_to_global_map0[edge_to_dof[edge->index()]];
 
-    Vertex v0(mesh, edge.entities(0)[0]);
-    Vertex v1(mesh, edge.entities(0)[1]);
+    Vertex v0(mesh, edge->entities(0)[0]);
+    Vertex v1(mesh, edge->entities(0)[1]);
 
     cols[0] = local_to_global_map1[vertex_to_dof[v0.index()]];
     cols[1] = local_to_global_map1[vertex_to_dof[v1.index()]];

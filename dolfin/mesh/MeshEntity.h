@@ -141,7 +141,7 @@ namespace dolfin
     /// @return     std::size_t
     /// The number of local incident MeshEntity objects of given
     /// dimension.
-    std::size_t num_entities(std::size_t dim) const
+    inline std::size_t num_entities(std::size_t dim) const
     { return _mesh->topology()(_dim, dim).size(_local_index); }
 
     /// Return global number of incident mesh entities of given

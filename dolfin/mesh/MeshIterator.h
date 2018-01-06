@@ -26,6 +26,7 @@ namespace dolfin
     // Default constructor
     MeshIterator()
     {
+      //std::cout << "    Ent empty constructor" << std::endl;
       // Do nothing
     }
 
@@ -33,12 +34,14 @@ namespace dolfin
     MeshIterator(const MeshIterator& it) : _entity(it._entity),  _pos(it._pos),
       _connections(it._connections)
     {
+      //std::cout << "    Ent copy: " << it._pos << std::endl;
       // Do nothing
     }
 
     // Copy assignment
     const MeshIterator& operator= (const MeshIterator& m)
     {
+      //std::cout << "    Ent assign" << std::endl;
       _entity = m._entity;
       _pos = m._pos;
       _connections = m._connections;
@@ -49,6 +52,7 @@ namespace dolfin
     MeshIterator(const Mesh& mesh, std::size_t pos=0)
       : _entity(mesh, 0), _pos(pos), _connections(nullptr)
     {
+      //std::cout << "    Ent assign" << std::endl;
       // Check if mesh is empty
       //if (mesh.num_vertices() == 0)
       //  return;
@@ -58,6 +62,8 @@ namespace dolfin
     MeshIterator(const MeshEntity& e, std::size_t pos=0)
       : _entity(e.mesh(), 0), _pos(pos)
     {
+      //std::cout << "    Ent constructor" << std::endl;
+
       // Get connectivity
       const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity.dim());
 
@@ -71,17 +77,20 @@ namespace dolfin
 
     MeshIterator& operator++()
     {
+      //std::cout << "    Ent incr" << std::endl;
       ++_pos;
       return *this;
     }
 
     bool operator==(const MeshIterator& other) const
     {
+      //std::cout << "    Ent ==" << std::endl;
       return _pos == other._pos;
     }
 
     bool operator!=(const MeshIterator& other) const
     {
+      //std::cout << "    Ent !=" << std::endl;
       return _pos != other._pos;
     }
 
@@ -117,32 +126,31 @@ namespace dolfin
   {
   public:
 
-    entities(const Mesh& mesh) : _it_begin(mesh, 0) //, _it_end(_it_begin)
+  entities(const MeshEntity& e, int dim) : _entity(e), _dim(dim)
     {
-      // Don't bother initialising mesh or entity for end iterator
-      const std::size_t dim = _it_begin._entity.dim();
-      _it_end._pos = mesh.topology().ghost_offset(dim);
+      // Do nothing
     }
 
-    entities(const MeshEntity& e) : _it_begin(e, 0) //, _it_end(_it_begin)
+    const MeshIterator<T> begin() const
     {
-      // Don't bother initialising mesh or entity for end iterator
-      //const std::size_t dim = _it_begin._entity.dim();
-      _it_end._pos = e.num_entities(_it_begin._entity.dim());
+      return MeshIterator<T>(_entity, _dim);
     }
 
-    const MeshIterator<T>& begin() const
-    { return _it_begin; }
+    MeshIterator<T> begin()
+    {
+      return MeshIterator<T>(_entity, _dim);
+    }
 
-    MeshIterator<T>& begin()
-    { return _it_begin; }
-
-    const MeshIterator<T>& end() const
-    { return _it_end; }
+    const MeshIterator<T> end() const
+    {
+      std::size_t n = _entity.num_entities(_dim);
+      return MeshIterator<T>(_entity, n);
+    }
 
   private:
-    MeshIterator<T> _it_begin;
-    MeshIterator<T> _it_end;
+
+    const int _dim;
+    const MeshEntity& _entity;
   };
 
   typedef entities<Cell> cells;
@@ -150,6 +158,40 @@ namespace dolfin
   typedef entities<Face> faces;
   typedef entities<Edge> edges;
   typedef entities<Vertex> vertices;
+
+
+  // Class defining begin() and end() methods for a given entity
+  template<typename T> class mesh_entities
+  {
+  public:
+
+    mesh_entities(const Mesh& mesh, int dim) : _dim(dim), _mesh(mesh)
+    {
+      // Do nothing
+    }
+
+    const MeshIterator<T> begin() const
+    { return MeshIterator<T>(_mesh, _dim); }
+
+    MeshIterator<T> begin()
+    { return MeshIterator<T>(_mesh, _dim); }
+
+    const MeshIterator<T> end() const
+    { return MeshIterator<T>(_mesh, _mesh.topology().ghost_offset(_dim)); }
+
+  private:
+
+    const int _dim;
+    const Mesh& _mesh;
+  };
+
+  /*
+  typedef mesh_entities<Cell> mesh_cells;
+  //typedef mesh_entities<Facet> mesh_facets;
+  typedef mesh_entities<Face, 2> mesh_faces;
+  typedef mesh_entities<Edge, 1> mesh_edges;
+  typedef mesh_entities<Vertex, 0> mesh_vertices;
+  */
 
 }
 
