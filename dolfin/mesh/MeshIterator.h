@@ -133,12 +133,12 @@ namespace dolfin
 
     const MeshIterator<T> begin() const
     {
-      return MeshIterator<T>(_entity, _dim);
+      return MeshIterator<T>(_entity, 0);
     }
 
     MeshIterator<T> begin()
     {
-      return MeshIterator<T>(_entity, _dim);
+      return MeshIterator<T>(_entity, 0);
     }
 
     const MeshIterator<T> end() const
@@ -171,10 +171,10 @@ namespace dolfin
     }
 
     const MeshIterator<T> begin() const
-    { return MeshIterator<T>(_mesh, _dim); }
+    { return MeshIterator<T>(_mesh); }
 
     MeshIterator<T> begin()
-    { return MeshIterator<T>(_mesh, _dim); }
+    { return MeshIterator<T>(_mesh); }
 
     const MeshIterator<T> end() const
     { return MeshIterator<T>(_mesh, _mesh.topology().ghost_offset(_dim)); }
