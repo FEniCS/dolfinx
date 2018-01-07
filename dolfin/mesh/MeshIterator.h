@@ -21,14 +21,15 @@ namespace dolfin
   /// An iterator for iterating over entities of a Mesh
   // FIXME: Add 'MeshIterator Mesh::iterator(std::size_t dim);'?
   // FIXME: Shouldn't really template this class over cell type
-  template<class T>
-    class MeshIterator : public std::iterator<std::forward_iterator_tag, T>
+  //template<class T>
+    class MeshIterator : public std::iterator<std::forward_iterator_tag,
+      MeshEntity>
   {
   public:
 
     // Constructor from Mesh and entity dimension
     MeshIterator(const Mesh& mesh, std::size_t dim, std::size_t pos)
-      : _entity(mesh, dim), _pos(pos)
+      : _entity(mesh, dim, 0), _pos(pos)
     {
       // Do nothing
     }
@@ -59,13 +60,13 @@ namespace dolfin
     bool operator!=(const MeshIterator& other) const
     { return _pos != other._pos; }
 
-    T* operator->()
+    MeshEntity* operator->()
     {
       _entity._local_index = _pos;
       return &_entity;
     }
 
-    T& operator*()
+    MeshEntity& operator*()
     {
       _entity._local_index = _pos;
       return _entity;
@@ -74,7 +75,7 @@ namespace dolfin
   private:
 
     // MeshEntity
-    T _entity;
+    MeshEntity _entity;
 
     // Current position
     std::size_t _pos;
@@ -82,17 +83,16 @@ namespace dolfin
 
   /// An iterator for iterating over entities indicent to a MeshEntity
   // FIXME: Add 'MeshIterator MeshEntity::iterator(std::size_t dim);'?
-  // FIXME: Shouldn't really template this class over cell type?
-  template<class T>
+  //template<class T>
     class MeshEntityIteratorNew
-    : public std::iterator<std::forward_iterator_tag, T>
+    : public std::iterator<std::forward_iterator_tag, MeshEntity>
   {
   public:
 
     // Constructor from MeshEntity and dimension
     MeshEntityIteratorNew(const MeshEntity& e, std::size_t dim,
                           std::size_t pos)
-      : _entity(e.mesh(), dim), _pos(pos), _connections(nullptr)
+      : _entity(e.mesh(), dim, pos), _pos(pos), _connections(nullptr)
     {
       // Get connectivity
       const MeshConnectivity& c = e.mesh().topology()(e.dim(), dim);
@@ -133,13 +133,13 @@ namespace dolfin
     bool operator!=(const MeshEntityIteratorNew& other) const
     { return _pos != other._pos; }
 
-    T* operator->()
+    MeshEntity* operator->()
     {
       _entity._local_index = _connections[_pos];
       return &_entity;
     }
 
-    T& operator*()
+    MeshEntity& operator*()
     {
       _entity._local_index = _connections[_pos];
       return _entity;
@@ -148,7 +148,7 @@ namespace dolfin
   private:
 
     // MeshEntity
-    T _entity;
+    MeshEntity _entity;
 
     // Current position
     std::size_t _pos;
@@ -160,10 +160,9 @@ namespace dolfin
 
   /// Object with begin() and end() methods for iterating over
   /// entities incident to a MeshEntity
-  // FIXME: Probably shouldn't template over cell type
   // FIXME: Use consistent class name
   // Add method 'entities MeshEntity::items(std::size_t dim);'
-  template<class T>
+  //template<class T>
     class entities
   {
   public:
@@ -173,20 +172,20 @@ namespace dolfin
       // Do nothing
     }
 
-    const MeshEntityIteratorNew<T> begin() const
+    const MeshEntityIteratorNew begin() const
     {
-      return MeshEntityIteratorNew<T>(_entity, _dim, 0);
+      return MeshEntityIteratorNew(_entity, _dim, 0);
     }
 
-    MeshEntityIteratorNew<T> begin()
+    MeshEntityIteratorNew begin()
     {
-      return MeshEntityIteratorNew<T>(_entity, _dim, 0);
+      return MeshEntityIteratorNew(_entity, _dim, 0);
     }
 
-    const MeshEntityIteratorNew<T> end() const
+    const MeshEntityIteratorNew end() const
     {
       std::size_t n = _entity.num_entities(_dim);
-      return MeshEntityIteratorNew<T>(_entity, _dim, n);
+      return MeshEntityIteratorNew(_entity, _dim, n);
     }
 
   private:
@@ -205,10 +204,10 @@ namespace dolfin
 
   /// Object with begin() and end() methods for iterating over
   /// entities of a Mesh
-  // FIXME: Probably shouldn't template over cell type
   // FIXME: Use consistent class name
   // Add method 'entities Mesh::items(std::size_t dim);'
-  template<typename T> class mesh_entities
+  //template<typename T>
+    class mesh_entities
   {
   public:
 
@@ -217,14 +216,14 @@ namespace dolfin
       // Do nothing
     }
 
-    const MeshIterator<T> begin() const
-    { return MeshIterator<T>(_mesh, _dim, 0); }
+    const MeshIterator begin() const
+    { return MeshIterator(_mesh, _dim, 0); }
 
-    MeshIterator<T> begin()
-    { return MeshIterator<T>(_mesh, _dim, 0); }
+    MeshIterator begin()
+    { return MeshIterator(_mesh, _dim, 0); }
 
-    const MeshIterator<T> end() const
-    { return MeshIterator<T>(_mesh, _dim, _mesh.topology().ghost_offset(_dim)); }
+    const MeshIterator end() const
+    { return MeshIterator(_mesh, _dim, _mesh.topology().ghost_offset(_dim)); }
 
   private:
 

@@ -92,7 +92,6 @@ namespace dolfin
     /// @endcode
     double dot(const Edge& edge) const;
 
-    template <typename T> friend class MeshIterator;
   };
 
   /// An EdgeIterator is a _MeshEntityIterator_ of topological dimension 1.

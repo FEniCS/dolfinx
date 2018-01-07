@@ -78,7 +78,6 @@ namespace dolfin
     /// calling this function.
     bool exterior() const;
 
-    template <typename T> friend class MeshIterator;
   };
 
   /// A FacetIterator is a MeshEntityIterator of topological

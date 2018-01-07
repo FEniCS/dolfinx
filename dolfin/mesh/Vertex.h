@@ -62,8 +62,6 @@ namespace dolfin
     const double* x() const
     { return _mesh->geometry().x(_local_index); }
 
-    template <typename T> friend class MeshIterator;
-    template <typename T> friend class MeshEntityIteratorNew;
   };
 
   /// A VertexIterator is a MeshEntityIterator of topological dimension 0

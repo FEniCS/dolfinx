@@ -39,12 +39,12 @@ int main()
     std::size_t p = 0;
     boost::timer::cpu_timer t;
     //std::cout << "Start cell loop" << std::endl;
-    for (const auto &c : mesh_entities<Cell>(*mesh, mesh->topology().dim()))
+    for (const auto &c : mesh_entities(*mesh, mesh->topology().dim()))
     {
       //std::cout << "\n1. Create v list (range)" << std::endl;
       //const auto vert = entities<Vertex>(c, 0);
       //std::cout << "2. Start v loop (range)" << std::endl;
-      for (const auto& v : entities<Vertex>(c, 0))
+      for (const auto& v : entities(c, 0))
       {
         p += v.index();
       //  //p += std::sqrt(p);
@@ -61,10 +61,10 @@ int main()
     Timer t0("new (no range-based)");
     std::size_t p = 0;
     boost::timer::cpu_timer t;
-    for (const auto &c : mesh_entities<Cell>(*mesh, mesh->topology().dim()))
+    for (const auto &c : mesh_entities(*mesh, mesh->topology().dim()))
     {
       //std::cout << "\n1. Create v list (no range)" << std::endl;
-      entities<Vertex> vert(c, 0);
+      entities vert(c, 0);
       //std::cout << "2. Create begin/end (no range)" << std::endl;
       const auto v0 = vert.begin();
       const auto v1 = vert.end();

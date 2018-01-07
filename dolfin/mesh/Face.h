@@ -56,7 +56,6 @@ namespace dolfin
     /// Compute normal to the face
     Point normal() const;
 
-    template <typename T> friend class MeshIterator;
   };
 
   /// A FaceIterator is a MeshEntityIterator of topological dimension 2.
