@@ -80,8 +80,11 @@ namespace dolfin
       //if (c.empty())
       //  e.mesh().init(e.dim(), _entity.dim());
 
+      // FIXME: Handle case when number of attached entities is zero?
+
       // Pointer to array of connections
       _connections = c(e.index()) + pos;
+      _entity._local_index = *_connections;
     }
 
     /// Copy constructor

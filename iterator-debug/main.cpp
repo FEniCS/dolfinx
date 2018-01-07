@@ -12,7 +12,7 @@ int main()
                                                     {{300, 200, 200}},
                                                      CellType::Type::tetrahedron));
   //auto mesh = std::make_shared<Mesh>(BoxMesh::create(MPI_COMM_WORLD, pt,
-  //                                                   {{1, 1, 1}}, CellType::Type::tetrahedron));
+  //                                                   {{2, 2, 1}}, CellType::Type::tetrahedron));
 
   {
     Timer t0("old iterators");
@@ -59,6 +59,7 @@ int main()
     std::cout << boost::timer::format(tend) << "\n";
   }
 
+  /*
   std::cout << "B--------------------------" << std::endl;
   {
     Timer t0("new (no range-based)");
@@ -83,7 +84,7 @@ int main()
     std::cout << p << std::endl;
     std::cout << boost::timer::format(tend) << "\n";
   }
-
+  */
   /*
   std::cout << "--------------------------" << std::endl;
   {
