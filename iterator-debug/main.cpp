@@ -9,7 +9,7 @@ int main()
   //auto mesh = std::make_shared<Mesh>(RectangleMesh::create(MPI_COMM_WORLD, pt, {{320, 320}}, CellType::Type::triangle));
   std::array<Point, 2> pt = {Point(0.,0.,0.), Point(1.,1.,1.)};
   auto mesh = std::make_shared<Mesh>(BoxMesh::create(MPI_COMM_WORLD, pt,
-                                                     {{300, 200, 200}},
+                                                    {{300, 200, 200}},
                                                      CellType::Type::tetrahedron));
   //auto mesh = std::make_shared<Mesh>(BoxMesh::create(MPI_COMM_WORLD, pt,
   //                                                   {{1, 1, 1}}, CellType::Type::tetrahedron));
@@ -23,6 +23,7 @@ int main()
       //std::cout << "Start old v loop" << std::endl;
       for (VertexIterator v(*c); !v.end(); ++v)
       {
+        //std::cout << "   vertex loop: " << v->index() << std::endl;
         p += v->index();
         //p += std::sqrt(p);
       }
@@ -44,10 +45,12 @@ int main()
       //std::cout << "\n1. Create v list (range)" << std::endl;
       //const auto vert = entities<Vertex>(c, 0);
       //std::cout << "2. Start v loop (range)" << std::endl;
+      //std::cout << "Start vertex loop" << std::endl;
       for (const auto& v : entities(c, 0))
       {
+        //std::cout << "   vertex loop: " << v.index() << std::endl;
         p += v.index();
-      //  //p += std::sqrt(p);
+        //p += std::sqrt(p);
       }
       //p += c.index();
     }

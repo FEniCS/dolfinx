@@ -60,8 +60,8 @@ MeshConnectivity::operator= (const MeshConnectivity& connectivity)
 //-----------------------------------------------------------------------------
 void MeshConnectivity::clear()
 {
-  std::vector<unsigned int>().swap(_connections);
-  std::vector<unsigned int>().swap(index_to_position);
+  std::vector<std::uint32_t>().swap(_connections);
+  std::vector<std::uint32_t>().swap(index_to_position);
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::init(std::size_t num_entities,
@@ -128,7 +128,7 @@ void MeshConnectivity::set(std::size_t entity, std::size_t* connections)
 std::size_t MeshConnectivity::hash() const
 {
   // Compute local hash key
-  boost::hash<std::vector<unsigned int>> uhash;
+  boost::hash<std::vector<std::uint32_t>> uhash;
   return uhash(_connections);
 }
 //-----------------------------------------------------------------------------
