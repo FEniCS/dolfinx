@@ -29,13 +29,13 @@ namespace dolfin
 
     // Constructor from Mesh and entity dimension
     MeshIterator(const Mesh& mesh, std::size_t dim, std::size_t pos)
-      : _entity(mesh, dim, 0), _pos(pos)
+      : _entity(mesh, dim, pos)
     {
       // Do nothing
     }
 
     /// Copy constructor
-    MeshIterator(const MeshIterator& it) : _entity(it._entity), _pos(it._pos)
+    MeshIterator(const MeshIterator& it) : _entity(it._entity)
     {
       // Do nothing
     }
@@ -44,41 +44,32 @@ namespace dolfin
     const MeshIterator& operator= (const MeshIterator& m)
     {
       _entity = m._entity;
-      _pos = m._pos;
       return *this;
     }
 
     MeshIterator& operator++()
     {
-      ++_pos;
+      _entity._local_index += 1;
       return *this;
     }
 
     bool operator==(const MeshIterator& other) const
-    { return _pos == other._pos; }
+    { return _entity._local_index == other._entity._local_index; }
 
     bool operator!=(const MeshIterator& other) const
-    { return _pos != other._pos; }
+    { return _entity._local_index != other._entity._local_index; }
 
     MeshEntity* operator->()
-    {
-      _entity._local_index = _pos;
-      return &_entity;
-    }
+    { return &_entity; }
 
     MeshEntity& operator*()
-    {
-      _entity._local_index = _pos;
-      return _entity;
-    }
+    { return _entity; }
 
   private:
 
     // MeshEntity
     MeshEntity _entity;
 
-    // Current position
-    std::size_t _pos;
   };
 
   /// An iterator for iterating over entities indicent to a MeshEntity
