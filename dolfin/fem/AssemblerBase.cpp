@@ -103,8 +103,8 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
   }
 
   // Get dof maps
-  std::array<const GenericDofMap*, 2> dofmaps = {a.function_space(0)->dofmap().get(),
-                                                 a.function_space(1)->dofmap().get()};
+  std::array<const GenericDofMap*, 2> dofmaps = {{a.function_space(0)->dofmap().get(),
+                                                 a.function_space(1)->dofmap().get()}};
 
   // Get mesh
   dolfin_assert(a.mesh());
@@ -115,8 +115,8 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
     Timer t0("Build sparsity");
 
     // Get dimensions and mapping across processes for each dimension
-    std::array<std::shared_ptr<const IndexMap>, 2> index_maps = {dofmaps[0]->index_map(),
-                                                                 dofmaps[1]->index_map()};
+    std::array<std::shared_ptr<const IndexMap>, 2> index_maps = {{dofmaps[0]->index_map(),
+                                                                  dofmaps[1]->index_map()}};
 
     // Initialise tensor layout
     // FIXME: somewhere need to check block sizes are same on both axes
