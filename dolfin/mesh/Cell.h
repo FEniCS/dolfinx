@@ -342,6 +342,7 @@ namespace dolfin
     }
 
     template <typename T> friend class MeshIterator;
+    template <typename T> friend class MeshEntityIteratorNew;
   };
 
   /// A CellIterator is a MeshEntityIterator of topological codimension 0.
