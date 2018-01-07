@@ -87,7 +87,7 @@ std::shared_ptr<PETScVector> PETScVector::copy() const
 void PETScVector::init(std::size_t N)
 {
   const auto range = dolfin::MPI::local_range(this->mpi_comm(), N);
-  init({range.first, range.second}, {}, {}, 1);
+  init({{range.first, range.second}}, {}, {}, 1);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(std::array<std::int64_t, 2> range)

@@ -252,7 +252,7 @@ std::array<std::size_t, 2> SparsityPattern::local_range(std::size_t dim) const
   dolfin_assert(dim < 2);
   std::size_t bs = _index_maps[dim]->block_size();
   auto lrange = _index_maps[dim]->local_range();
-  return {bs*lrange[0], bs*lrange[1]};
+  return {{bs*lrange[0], bs*lrange[1]}};
 }
 //-----------------------------------------------------------------------------
 std::size_t SparsityPattern::num_nonzeros() const
