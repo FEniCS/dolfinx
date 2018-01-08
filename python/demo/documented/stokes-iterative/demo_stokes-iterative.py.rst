@@ -96,25 +96,6 @@ If not available, costly QMR method is choosen. ::
 
     from dolfin import *
 
-    # Test for PETSc or Tpetra
-    if not has_linear_algebra_backend("PETSc") and not has_linear_algebra_backend("Tpetra"):
-        info("DOLFIN has not been configured with Trilinos or PETSc. Exiting.")
-        exit()
-
-    if not has_krylov_solver_preconditioner("amg"):
-        info("Sorry, this demo is only available when DOLFIN is compiled with AMG "
-             "preconditioner, Hypre or ML.")
-        exit()
-
-    if has_krylov_solver_method("minres"):
-        krylov_method = "minres"
-    elif has_krylov_solver_method("tfqmr"):
-        krylov_method = "tfqmr"
-    else:
-        info("Default linear algebra backend was not compiled with MINRES or TFQMR "
-             "Krylov subspace method. Terminating.")
-        exit()
-
 Next, we define the mesh (a :py:class:`UnitCubeMesh
 <dolfin.cpp.UnitCubeMesh>`) and a mixed finite element ``TH``.  Then
 we build a :py:class:`FunctionSpace
@@ -123,7 +104,7 @@ we build a :py:class:`FunctionSpace
 and is a stable, standard element pair for the Stokes equations.) ::
 
     # Load mesh
-    mesh = UnitCubeMesh.create(16, 16, 16, CellType.Type.hexahedron)
+    mesh = UnitCubeMesh(16, 16, 16, CellType.Type.hexahedron)
 
     # Build function space
     P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
@@ -199,7 +180,7 @@ the solver by calling :py:func:`solver.set_operators
 <dolfin.cpp.GenericLinearSolver.set_operators>`. ::
 
     # Create Krylov solver and AMG preconditioner
-    solver = KrylovSolver(krylov_method, "amg")
+    solver = PETScKrylovSolver(mesh.mpi_comm(), "minres", "amg")
 
     # Associate operator (A) and preconditioner matrix (P)
     solver.set_operators(A, P)
@@ -222,7 +203,7 @@ Finally, we can play with the result in different ways: ::
     u, p = U.split()
 
     # Save solution in VTK format
-    ufile_pvd = File("velocity.pvd")
-    ufile_pvd << u
-    pfile_pvd = File("pressure.pvd")
-    pfile_pvd << p
+    with XDMFFile(mesh.mpi_comm(), "velocity.xdmf") as ufile_xdmf:
+        ufile_xdmf.write(u)
+    with XDMFFile(mesh.mpi_comm(), "pressure.xdmf") as pfile_xdmf:
+        pfile_xdmf.write(p)
