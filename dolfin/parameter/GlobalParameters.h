@@ -53,18 +53,10 @@ namespace dolfin
       // Prefix for timer tasks
       p.add("timer_prefix", "");
 
-      //-- Input
-
-      // Warn if reading large XML files in parallel (MB)
-      p.add("warn_on_xml_file_size", 100);
-
       //-- Output
 
       // Print standard output on all processes
       p.add("std_out_all_processes", true);
-
-      // Line width relative to edge length in SVG output
-      p.add("relative_line_width", 0.025);
 
       // Print the level of thread support provided by the MPI library
       p.add("print_mpi_thread_support_level", false);
@@ -112,11 +104,6 @@ namespace dolfin
       // to cells when shifting between processes
       p.add("ParMETIS_repartitioning_weight", 1000.0);
       #endif
-
-      // Mesh refinement
-      p.add("refinement_algorithm", "plaza",
-            {"regular_cut", "plaza", "plaza_with_parent_facets"});
-
 
       //-- Linear algebra
 
