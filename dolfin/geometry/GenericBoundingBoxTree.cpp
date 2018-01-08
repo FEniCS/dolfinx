@@ -32,6 +32,7 @@
 #include "BoundingBoxTree1D.h" // used for internal point search tree
 #include "BoundingBoxTree2D.h" // used for internal point search tree
 #include "BoundingBoxTree3D.h" // used for internal point search tree
+#include "CollisionPredicates.h"
 #include "GenericBoundingBoxTree.h"
 
 using namespace dolfin;
@@ -433,7 +434,7 @@ GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& tree,
     {
       // Get cell
       Cell cell(*mesh, entity_index);
-      if (cell.collides(point))
+      if (CollisionPredicates::collides(cell, point))
         entities.push_back(entity_index);
     }
 
@@ -485,7 +486,7 @@ GenericBoundingBoxTree::_compute_collisions(const GenericBoundingBoxTree& A,
       dolfin_assert(mesh_B);
       Cell cell_A(*mesh_A, entity_index_A);
       Cell cell_B(*mesh_B, entity_index_B);
-      if (cell_A.collides(cell_B))
+      if (CollisionPredicates::collides(cell_A, cell_B))
       {
         entities_A.push_back(entity_index_A);
         entities_B.push_back(entity_index_B);
@@ -602,7 +603,7 @@ GenericBoundingBoxTree::_compute_first_entity_collision(const GenericBoundingBox
     Cell cell(mesh, entity_index);
 
     // Check entity
-    if (cell.collides(point))
+    if (CollisionPredicates::collides(cell, point))
       return entity_index;
   }
 
