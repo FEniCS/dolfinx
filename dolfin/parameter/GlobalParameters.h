@@ -53,9 +53,6 @@ namespace dolfin
       // Prefix for timer tasks
       p.add("timer_prefix", "");
 
-      // Allow extrapolation in function interpolation
-      p.add("allow_extrapolation", false);
-
       //-- Input
 
       // Warn if reading large XML files in parallel (MB)
