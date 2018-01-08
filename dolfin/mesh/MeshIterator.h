@@ -44,7 +44,7 @@ namespace dolfin
     MeshEntity* operator->()
     { return &_entity; }
 
-    /// Deference
+    /// Dereference
     MeshEntity& operator*()
     { return _entity; }
 
@@ -153,7 +153,7 @@ namespace dolfin
 
   // FIXME: handled ghosted meshes
   /// Class with begin() and end() methods for iterating over
-  /// entities incident to a MeshEntity
+  /// entities incident to a Mesh
   class MeshEntityRange
   {
   public:
