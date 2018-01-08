@@ -30,14 +30,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-/*
-MeshEntity::MeshEntity(const Mesh& mesh, std::size_t dim, std::size_t index)
-  : _mesh(&mesh), _dim(dim), _local_index(index)
-{
-  //init(mesh, dim, index);
-}
-*/
-//-----------------------------------------------------------------------------
 void MeshEntity::init(const Mesh& mesh, std::size_t dim, std::size_t index)
 {
   // Store variables
@@ -148,15 +140,19 @@ Point MeshEntity::midpoint() const
 unsigned int MeshEntity::owner() const
 {
   if (_dim != _mesh->topology().dim())
+  {
     dolfin_error("MeshEntity.cpp",
                  "get ownership of entity",
                  "Entity ownership is only defined for cells");
+  }
 
   const std::size_t offset = _mesh->topology().ghost_offset(_dim);
   if (_local_index < offset)
+  {
     dolfin_error("MeshEntity.cpp",
                  "get ownership of entity",
                  "Ownership of non-ghost cells is local process");
+  }
 
   return _mesh->topology().cell_owner()[_local_index - offset];
 }

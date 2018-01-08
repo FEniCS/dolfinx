@@ -26,12 +26,13 @@
 
 #include <memory>
 
+#include <ufc.h>
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
-#include <ufc.h>
+
 #include <dolfin/geometry/Point.h>
 
 namespace dolfin
@@ -338,7 +339,7 @@ namespace dolfin
       ufc_cell.geometric_dimension = _mesh->geometry().dim();
       ufc_cell.local_facet = local_facet;
       ufc_cell.orientation = -1;
-      ufc_cell.mesh_identifier = mesh_id();
+      ufc_cell.mesh_identifier = this->mesh().id();
       ufc_cell.index = index();
     }
 

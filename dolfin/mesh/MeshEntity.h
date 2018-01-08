@@ -33,9 +33,6 @@
 namespace dolfin
 {
 
-  //class Mesh;
-  class Point;
-
   /// A MeshEntity represents a mesh entity associated with
   /// a specific topological dimension of some _Mesh_.
 
@@ -44,7 +41,7 @@ namespace dolfin
   public:
 
     /// Default Constructor
-    MeshEntity() : _mesh(0), _dim(0), _local_index(0) {}
+    MeshEntity() : _mesh(nullptr), _dim(0), _local_index(0) {}
 
     /// Constructor
     ///
@@ -171,13 +168,6 @@ namespace dolfin
       dolfin_assert(initialized_mesh_entities);
       return initialized_mesh_entities;
     }
-
-    /// Return unique mesh ID
-    ///
-    /// @return     std::size_t
-    ///         The unique mesh ID.
-    std::size_t mesh_id() const
-    { return _mesh->id(); }
 
     /// Check if given entity is incident
     ///

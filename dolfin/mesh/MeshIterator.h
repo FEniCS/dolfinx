@@ -19,16 +19,10 @@ namespace dolfin
 
     /// Constructor for entitirs off dimension d
     MeshIterator(const Mesh& mesh, std::size_t dim, std::size_t pos)
-      : _entity(mesh, dim, pos) { /* Do nothing */ }
+      : _entity(mesh, dim, pos) {}
 
     /// Copy constructor
     MeshIterator(const MeshIterator& it) = default;
-    /*
-    MeshIterator(const MeshIterator& it) : _entity(it._entity)
-    {
-      // Do nothing
-    }
-    */
 
     /// Copy assignment
     const MeshIterator& operator= (const MeshIterator& m)
@@ -131,6 +125,7 @@ namespace dolfin
 
   /// Class with begin() and end() methods for iterating over
   /// entities incident to a MeshEntity
+
   class EntityRange
   {
   public:
@@ -162,8 +157,7 @@ namespace dolfin
   {
   public:
 
-    MeshEntityRange(const Mesh& mesh, int dim) : _mesh(mesh), _dim(dim)
-    { /* Do nothing */ }
+    MeshEntityRange(const Mesh& mesh, int dim) : _mesh(mesh), _dim(dim) {}
 
     const MeshIterator begin() const
     { return MeshIterator(_mesh, _dim, 0); }
