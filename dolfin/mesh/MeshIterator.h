@@ -17,7 +17,7 @@ namespace dolfin
   {
   public:
 
-    /// Constructor for entitirs off dimension d
+    /// Constructor for entities of dimension d
     MeshIterator(const Mesh& mesh, std::size_t dim, std::size_t pos)
       : _entity(mesh, dim, pos) {}
 
@@ -151,6 +151,7 @@ namespace dolfin
 
   };
 
+  // FIXME: handled ghosted meshes
   /// Class with begin() and end() methods for iterating over
   /// entities incident to a Mesh
   class MeshEntityRange

@@ -58,7 +58,7 @@ namespace dolfin
     }
 
     /// Destructor
-    virtual ~MeshEntity();
+    ~MeshEntity();
 
     /// Initialize mesh entity with given data
     ///
