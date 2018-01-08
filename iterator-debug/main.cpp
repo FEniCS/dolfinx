@@ -59,6 +59,32 @@ int main()
     std::cout << boost::timer::format(tend) << "\n";
   }
 
+  std::cout << "AA--------------------------" << std::endl;
+  {
+    Timer t0("new (range-based, concrete)");
+    std::size_t p = 0;
+    boost::timer::cpu_timer t;
+    //std::cout << "Start cell loop" << std::endl;
+    for (const auto &c : MeshEntityRangeT<Cell>(*mesh))
+    {
+      //std::cout << "\n1. Create v list (range)" << std::endl;
+      //const auto vert = entities<Vertex>(c, 0);
+      //std::cout << "2. Start v loop (range)" << std::endl;
+      //std::cout << "Start vertex loop" << std::endl;
+      //for (const auto& v : EntityRange(c, 0))
+      for (const auto& v : VertexRange(c))
+      {
+        //std::cout << "   vertex loop: " << v.index() << std::endl;
+        p += v.index();
+        //p += std::sqrt(p);
+      }
+      //p += c.index();
+    }
+    auto tend = t.elapsed();
+    std::cout << p << std::endl;
+    std::cout << boost::timer::format(tend) << "\n";
+  }
+
   /*
   std::cout << "B--------------------------" << std::endl;
   {
