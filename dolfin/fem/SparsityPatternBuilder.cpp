@@ -49,8 +49,8 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
   // Get index maps
   dolfin_assert(dofmaps[0]);
   dolfin_assert(dofmaps[1]);
-  std::array<std::shared_ptr<const IndexMap>, 2> index_maps = {dofmaps[0]->index_map(),
-                                                               dofmaps[1]->index_map()};
+  std::array<std::shared_ptr<const IndexMap>, 2> index_maps = {{dofmaps[0]->index_map(),
+                                                                dofmaps[1]->index_map()}};
 
   // FIXME: Should check that index maps are matching
 
@@ -239,8 +239,8 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
     std::vector<dolfin::la_index_t> indices(bs*(diagonal_range - primary_range[0]));
     std::iota(indices.begin(), indices.end(), bs*primary_range[0]);
     const std::array<ArrayView<const dolfin::la_index_t>, 2> diags
-     = { ArrayView<const dolfin::la_index_t>(indices.size(), indices.data()),
-         ArrayView<const dolfin::la_index_t>(indices.size(), indices.data())};
+      = {{ ArrayView<const dolfin::la_index_t>(indices.size(), indices.data()),
+           ArrayView<const dolfin::la_index_t>(indices.size(), indices.data())}};
 
     sparsity_pattern.insert_global(diags);
   }

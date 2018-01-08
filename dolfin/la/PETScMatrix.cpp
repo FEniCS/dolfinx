@@ -104,10 +104,10 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
 
   // Get IndexMaps
   std::array<std::shared_ptr<const IndexMap>, 2> index_maps
-    = {sparsity_pattern.index_map(0), sparsity_pattern.index_map(1) };
+    = {{sparsity_pattern.index_map(0), sparsity_pattern.index_map(1) }};
 
   // Get block sizes
-  std::array<int, 2> block_sizes = {index_maps[0]->block_size(), index_maps[1]->block_size()};
+  std::array<int, 2> block_sizes = {{index_maps[0]->block_size(), index_maps[1]->block_size()}};
 
   // Get global dimensions and local range
   const std::size_t M = block_sizes[0]*index_maps[0]->size(IndexMap::MapSize::GLOBAL);

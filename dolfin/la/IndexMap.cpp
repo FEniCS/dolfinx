@@ -60,10 +60,11 @@ std::array<std::int64_t, 2> IndexMap::local_range() const
   if(_all_ranges.size() == 0)
   {
     warning("Asking for size of uninitialised range");
-    return {0, 0};
+    return {{0, 0}};
   }
   else
-    return { (std::int64_t) _all_ranges[_rank], (std::int64_t) _all_ranges[_rank + 1]};
+    return {{ (std::int64_t) _all_ranges[_rank],
+              (std::int64_t) _all_ranges[_rank + 1]}};
 }
 //-----------------------------------------------------------------------------
 /*
