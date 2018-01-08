@@ -40,9 +40,6 @@ namespace dolfin
   {
   public:
 
-    /// Create empty edge
-    Edge() : MeshEntity() {}
-
     /// Create edge on given mesh
     ///
     /// @param    mesh (_Mesh_)

@@ -43,6 +43,7 @@ namespace dolfin
   {
   public:
 
+    // FIXME: can thos be removed?
     /// Create empty cell
     Cell() : MeshEntity() {}
 

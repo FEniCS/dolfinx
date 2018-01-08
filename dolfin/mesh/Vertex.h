@@ -38,9 +38,6 @@ namespace dolfin
   {
   public:
 
-    /// Create empty vertex
-    Vertex() : MeshEntity() {}
-
     /// Create vertex on given mesh
     Vertex(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, 0, index) {}
 
