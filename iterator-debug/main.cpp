@@ -9,7 +9,7 @@ int main()
   //auto mesh = std::make_shared<Mesh>(RectangleMesh::create(MPI_COMM_WORLD, pt, {{320, 320}}, CellType::Type::triangle));
   std::array<Point, 2> pt = {Point(0.,0.,0.), Point(1.,1.,1.)};
   auto mesh = std::make_shared<Mesh>(BoxMesh::create(MPI_COMM_WORLD, pt,
-                                                    {{200, 200, 200}},
+                                                    {{50, 200, 200}},
                                                      CellType::Type::tetrahedron));
   //auto mesh = std::make_shared<Mesh>(BoxMesh::create(MPI_COMM_WORLD, pt,
   //                                                   {{2, 2, 1}}, CellType::Type::tetrahedron));
@@ -112,7 +112,7 @@ int main()
 
   std::cout << "--------------------------" << std::endl;
   {
-    Timer t0("edge (new. range-based, concrete)");
+    Timer t0("edge (new, range-based, concrete)");
     std::size_t p = 0;
     boost::timer::cpu_timer t;
     //std::cout << "Start cell loop" << std::endl;
@@ -135,6 +135,32 @@ int main()
     std::cout << p << std::endl;
     std::cout << boost::timer::format(tend) << "\n";
   }
+
+  std::cout << "--------------------------" << std::endl;
+  {
+    Timer t0("edge (new, range-based)");
+    std::size_t p = 0;
+    boost::timer::cpu_timer t;
+    //std::cout << "Start cell loop" << std::endl;
+    for (const auto &c : MeshEntityRange(*mesh, D))
+    {
+      //std::cout << "\n1. Create v list (range)" << std::endl;
+      //const auto vert = entities<Vertex>(c, 0);
+      //std::cout << "2. Start v loop (range)" << std::endl;
+      //std::cout << "Start vertex loop" << std::endl;
+      for (const auto& v : EntityRange(c, 1))
+      {
+        //std::cout << "   vertex loop: " << v.index() << std::endl;
+        p += v.index();
+        //p += std::sqrt(p);
+      }
+      //p += c.index();
+    }
+    auto tend = t.elapsed();
+    std::cout << p << std::endl;
+    std::cout << boost::timer::format(tend) << "\n";
+  }
+
 
   mesh->init(D - 1);
   mesh->init(D, D - 1);
@@ -161,7 +187,7 @@ int main()
 
   std::cout << "--------------------------" << std::endl;
   {
-    Timer t0("facet(new, range-based, concrete)");
+    Timer t0("facet (new, range-based, concrete)");
     std::size_t p = 0;
     boost::timer::cpu_timer t;
     //std::cout << "Start cell loop" << std::endl;
@@ -187,7 +213,7 @@ int main()
 
   std::cout << "--------------------------" << std::endl;
   {
-    Timer t0("facet (new,range-based, facet)");
+    Timer t0("facet (new, range-based)");
     std::size_t p = 0;
     boost::timer::cpu_timer t;
     //std::cout << "Start cell loop" << std::endl;
