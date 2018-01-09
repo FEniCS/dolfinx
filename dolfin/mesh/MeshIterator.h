@@ -194,7 +194,7 @@ namespace dolfin
       // Get connectivity
       const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity.dim());
 
-      dolfin_assert(!c.empty())
+      dolfin_assert(!c.empty());
 
       // Pointer to array of connections
       _connections = c(e.index()) + pos;
@@ -360,6 +360,11 @@ class EntityRangeT
 
   };
 
+  class Edge;
+  class Facet;
   class Vertex;
+  typedef EntityRangeT<Facet> FacetRange;
   typedef EntityRangeT<Vertex> VertexRange;
+  typedef EntityRangeT<Edge> EdgeRange;
+
 }
