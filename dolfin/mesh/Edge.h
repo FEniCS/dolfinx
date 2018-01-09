@@ -24,15 +24,12 @@
 #ifndef __EDGE_H
 #define __EDGE_H
 
-#include <memory>
-
-#include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
-#include "MeshFunction.h"
 
 namespace dolfin
 {
+  class Mesh;
 
   /// An Edge is a _MeshEntity_ of topological dimension 1.
 

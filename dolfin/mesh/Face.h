@@ -23,11 +23,8 @@
 #ifndef __FACE_H
 #define __FACE_H
 
-#include <memory>
-
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
-#include "MeshFunction.h"
 
 namespace dolfin
 {
