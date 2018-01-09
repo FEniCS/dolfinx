@@ -28,7 +28,6 @@ set(HEADERS
   PointCell.h
   QuadrilateralCell.h
   SubDomain.h
-  SubsetIterator.h
   TetrahedronCell.h
   TopologyComputation.h
   TriangleCell.h

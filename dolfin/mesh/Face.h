@@ -47,9 +47,6 @@ namespace dolfin
     /// Calculate the area of the face (triangle)
     double area() const;
 
-    /// Compute component i of the normal to the face
-    double normal(std::size_t i) const;
-
     /// Compute normal to the face
     Point normal() const;
 

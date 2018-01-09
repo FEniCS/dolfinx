@@ -41,7 +41,6 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/MeshQuality.h>
 #include <dolfin/mesh/SubDomain.h>
-#include <dolfin/mesh/SubsetIterator.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/function/Expression.h>
 
@@ -214,8 +213,7 @@ namespace dolfin_wrappers
     py::class_<dolfin::Face, std::shared_ptr<dolfin::Face>, dolfin::MeshEntity>
       (m, "Face", "DOLFIN Face object")
       .def(py::init<const dolfin::Mesh&, std::size_t>())
-      .def("normal", (dolfin::Point (dolfin::Face::*)() const) &dolfin::Face::normal)
-      .def("normal", (double (dolfin::Face::*)(std::size_t) const) &dolfin::Face::normal)
+      .def("normal", &dolfin::Face::normal)
       .def("area", &dolfin::Face::area);
 
     // dolfin::Facet
@@ -223,7 +221,7 @@ namespace dolfin_wrappers
       (m, "Facet", "DOLFIN Facet object")
       .def(py::init<const dolfin::Mesh&, std::size_t>())
       .def("exterior", &dolfin::Facet::exterior)
-      .def("normal", (dolfin::Point (dolfin::Facet::*)() const)  &dolfin::Facet::normal);
+      .def("normal", &dolfin::Facet::normal);
 
     // dolfin::Cell
     py::class_<dolfin::Cell, std::shared_ptr<dolfin::Cell>, dolfin::MeshEntity>
@@ -233,7 +231,7 @@ namespace dolfin_wrappers
       .def("facet_area", &dolfin::Cell::facet_area)
       .def("h", &dolfin::Cell::h)
       .def("inradius", &dolfin::Cell::inradius)
-      .def("normal", (dolfin::Point (dolfin::Cell::*)(std::size_t) const) &dolfin::Cell::normal)
+      .def("normal", &dolfin::Cell::normal)
       .def("circumradius", &dolfin::Cell::circumradius)
       .def("radius_ratio", &dolfin::Cell::radius_ratio)
       .def("volume", &dolfin::Cell::volume)
@@ -248,19 +246,6 @@ namespace dolfin_wrappers
       .def(py::init<const dolfin::Mesh&, std::size_t>())
       .def("__iter__",[](dolfin::MeshEntityIterator& self) { self.operator--(); return self; }) // TODO: check return type and policy
       .def("__next__",[](dolfin::MeshEntityIterator& self)  // TODO: check return type and policy
-           {
-             self.operator++();
-             if (self.end())
-               throw py::stop_iteration("");
-             return *self;
-           });
-
-    // dolfin::SubsetIterator
-    py::class_<dolfin::SubsetIterator>(m, "SubsetIterator")
-      .def(py::init<const dolfin::MeshFunction<std::size_t>&, std::size_t>())
-      .def(py::init<const dolfin::SubsetIterator&>())
-      .def("__iter__",[](dolfin::SubsetIterator& self) { self.operator--(); return self; })  // TODO: check return type and policy
-      .def("__next__",[](dolfin::SubsetIterator& self)
            {
              self.operator++();
              if (self.end())

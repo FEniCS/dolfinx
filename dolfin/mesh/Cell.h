@@ -177,18 +177,6 @@ namespace dolfin
       return sqrt(squared_distance(point));
     }
 
-    /// Compute component i of normal of given facet with respect to the cell
-    ///
-    /// @param    facet
-    ///         Index of facet.
-    /// @param    i
-    ///         Component.
-    ///
-    /// @return     double
-    ///         Component i of the normal of the facet.
-    double normal(std::size_t facet, std::size_t i) const
-    { return _mesh->type().normal(*this, facet, i); }
-
     /// Compute normal of given facet with respect to the cell
     ///
     /// @param    facet

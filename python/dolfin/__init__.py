@@ -75,8 +75,7 @@ from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, MeshEntity,
                        CellType, Cell, Facet, Face,
                        Edge, Vertex, SubDomain,
                        MeshEditor, MeshQuality,
-                       PeriodicBoundaryComputation,
-                       SubsetIterator)
+                       PeriodicBoundaryComputation)
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver, OptimisationProblem)
 from .cpp.parameter import Parameters, parameters
