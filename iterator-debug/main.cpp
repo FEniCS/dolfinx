@@ -105,6 +105,6 @@ int main()
   }
   */
 
-  list_timings(TimingClear::clear, {{TimingType::wall}});
+  list_timings(TimingClear::clear, {TimingType::wall});
   return 0;
 }
