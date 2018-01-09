@@ -36,7 +36,6 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
-  Cell.cpp
   CellType.cpp
   DistributedMeshTools.cpp
   Edge.cpp

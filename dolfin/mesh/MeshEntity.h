@@ -33,9 +33,6 @@
 namespace dolfin
 {
 
-  //class Mesh;
-  class Point;
-
   /// A MeshEntity represents a mesh entity associated with
   /// a specific topological dimension of some _Mesh_.
 
@@ -44,7 +41,7 @@ namespace dolfin
   public:
 
     /// Default Constructor
-    MeshEntity() : _mesh(0), _dim(0), _local_index(0) {}
+    MeshEntity() : _mesh(nullptr), _dim(0), _local_index(0) {}
 
     /// Constructor
     ///
@@ -61,7 +58,7 @@ namespace dolfin
     }
 
     /// Destructor
-    virtual ~MeshEntity();
+    ~MeshEntity();
 
     /// Initialize mesh entity with given data
     ///
@@ -172,13 +169,6 @@ namespace dolfin
       return initialized_mesh_entities;
     }
 
-    /// Return unique mesh ID
-    ///
-    /// @return     std::size_t
-    ///         The unique mesh ID.
-    std::size_t mesh_id() const
-    { return _mesh->id(); }
-
     /// Check if given entity is incident
     ///
     /// @param     entity (_MeshEntity_)
@@ -261,6 +251,11 @@ namespace dolfin
 
     friend class MeshIterator;
     friend class MeshEntityIteratorNew;
+    template<typename T> friend class MeshEntityRangeT;
+    template<typename T> friend class EntityRangeT;
+    template<typename T> friend class MeshIteratorT;
+    template<typename T> friend class MeshEntityIteratorNewT;
+
 
     template<typename T> friend class MeshEntityIteratorBase;
     friend class SubsetIterator;
