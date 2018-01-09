@@ -73,8 +73,7 @@ from .cpp.log import (info, Table, set_log_level, get_log_level, LogLevel)
 from .cpp.math import ipow, near
 from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, MeshEntity,
                        CellType, Cell, Facet, Face,
-                       Edge, Vertex, cells, facets, faces, edges,
-                       entities, vertices, SubDomain,
+                       Edge, Vertex, SubDomain,
                        MeshEditor, MeshQuality,
                        PeriodicBoundaryComputation,
                        SubsetIterator)
