@@ -273,7 +273,7 @@ namespace dolfin_wrappers
     m.def("entities", [](dolfin::MeshEntity& meshentity, std::size_t dim)
           { return dolfin::MeshEntityIterator(meshentity, dim); });
 
-    // dolfin::MeshIterator (cells, facets, faces, edges, vertices)
+    // dolfin::MeshIterator (Cells, Facets, Faces, Edges, Vertices)
 #define MESHITERATOR_MACRO(TYPE, ENTITYNAME)                     \
     py::class_<dolfin::TYPE, std::shared_ptr<dolfin::TYPE>> \
       (m, #TYPE, "Range for iterating over entities of type "#ENTITYNAME" of a Mesh") \
@@ -289,7 +289,7 @@ namespace dolfin_wrappers
     MESHITERATOR_MACRO(Vertices, Vertex);
 #undef MESHITERATOR_MACRO
 
-    // dolfin::MeshIterator (cells, facets, faces, edges, vertices)
+    // dolfin::MeshEntityIterator (CellRange, FacetRange, FaceRange, EdgeRange, VertexRange)
 #define MESHENTITYITERATOR_MACRO(TYPE, ENTITYNAME)               \
     py::class_<dolfin::TYPE, std::shared_ptr<dolfin::TYPE>> \
       (m, #TYPE, "Range for iterating over entities of type "#ENTITYNAME" incident to a MeshEntity") \
@@ -303,7 +303,7 @@ namespace dolfin_wrappers
     MESHENTITYITERATOR_MACRO(FaceRange, Face);
     MESHENTITYITERATOR_MACRO(EdgeRange, Edge);
     MESHENTITYITERATOR_MACRO(VertexRange, Vertex);
-#undef MESHITERATOR_MACRO
+#undef MESHENTITYITERATOR_MACRO
 
     // dolfin::MeshFunction
 #define MESHFUNCTION_MACRO(SCALAR, SCALAR_NAME) \
