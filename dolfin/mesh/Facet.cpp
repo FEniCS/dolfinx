@@ -19,30 +19,13 @@
 // Modified by Martin Alnaes, 2015
 
 #include <dolfin/geometry/Point.h>
+#include "Cell.h"
 #include "IntervalCell.h"
 #include "TriangleCell.h"
-#include "Cell.h"
-#include "MeshTopology.h"
 #include "Facet.h"
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-double Facet::normal(std::size_t i) const
-{
-  const std::size_t D = _mesh->topology().dim();
-  _mesh->init(D - 1);
-  _mesh->init(D - 1, D);
-  dolfin_assert(_mesh->ordered());
-
-  // Get cell to which face belong (first cell when there is more than one)
-  const Cell cell(*_mesh, this->entities(D)[0]);
-
-  // Get local index of facet with respect to the cell
-  const std::size_t local_facet = cell.index(*this);
-
-  return cell.normal(local_facet, i);
-}
 //-----------------------------------------------------------------------------
 Point Facet::normal() const
 {

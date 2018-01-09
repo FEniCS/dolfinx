@@ -274,22 +274,35 @@ namespace dolfin_wrappers
           { return dolfin::MeshEntityIterator(meshentity, dim); });
 
     // dolfin::MeshIterator (cells, facets, faces, edges, vertices)
+#define MESHITERATOR_MACRO(TYPE, ENTITYNAME)                     \
+    py::class_<dolfin::TYPE, std::shared_ptr<dolfin::TYPE>> \
+      (m, #TYPE, "Range for iterating over entities of type "#ENTITYNAME" of a Mesh") \
+      .def(py::init<const dolfin::Mesh&>()) \
+      .def("__iter__", [](const dolfin::TYPE& c) { \
+          return py::make_iterator(c.begin(), c.end()); \
+        });
 
+    MESHITERATOR_MACRO(Cells, Cell);
+    MESHITERATOR_MACRO(Facets, Facet);
+    MESHITERATOR_MACRO(Faces, Face);
+    MESHITERATOR_MACRO(Edges, Edge);
+    MESHITERATOR_MACRO(Vertices, Vertex);
+#undef MESHITERATOR_MACRO
 
-
-#define MESHITERATOR_MACRO(TYPE) \
-    py::class_<dolfin::EntityRangeT<dolfin::TYPE>, std::shared_ptr<dolfin::EntityRangeT<dolfin::TYPE>>> \
-      (m, #TYPE"Range", "DOLFIN "#TYPE"Range")\
+    // dolfin::MeshIterator (cells, facets, faces, edges, vertices)
+#define MESHENTITYITERATOR_MACRO(TYPE, ENTITYNAME)               \
+    py::class_<dolfin::TYPE, std::shared_ptr<dolfin::TYPE>> \
+      (m, #TYPE, "Range for iterating over entities of type "#ENTITYNAME" incident to a MeshEntity") \
       .def(py::init<const dolfin::MeshEntity&>()) \
-      .def("__iter__", [](const dolfin::EntityRangeT<dolfin::TYPE>& r)\
-           { return py::make_iterator(r.begin(), r.end()); });
+      .def("__iter__", [](const dolfin::TYPE& c) { \
+          return py::make_iterator(c.begin(), c.end()); \
+        });
 
-    MESHITERATOR_MACRO(Cell);
-    MESHITERATOR_MACRO(Facet);
-    MESHITERATOR_MACRO(Face);
-    MESHITERATOR_MACRO(Edge);
-    MESHITERATOR_MACRO(Vertex);
-
+    MESHENTITYITERATOR_MACRO(CellRange, Cell);
+    MESHENTITYITERATOR_MACRO(FacetRange, Facet);
+    MESHENTITYITERATOR_MACRO(FaceRange, Face);
+    MESHENTITYITERATOR_MACRO(EdgeRange, Edge);
+    MESHENTITYITERATOR_MACRO(VertexRange, Vertex);
 #undef MESHITERATOR_MACRO
 
     // dolfin::MeshFunction

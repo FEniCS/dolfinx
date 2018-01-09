@@ -21,11 +21,7 @@
 // First added:  2006-05-11
 // Last changed: 2014-07-02
 
-#ifndef __MESH_ENTITY_H
-#define __MESH_ENTITY_H
-
-#include <cmath>
-#include <iostream>
+#pragma once
 
 #include <dolfin/geometry/Point.h>
 #include "Mesh.h"
@@ -249,12 +245,10 @@ namespace dolfin
     // Friends
     friend class MeshEntityIterator;
 
-    friend class MeshIterator;
-    friend class MeshEntityIteratorNew;
-    template<typename T> friend class MeshEntityRangeT;
-    template<typename T> friend class EntityRangeT;
-    template<typename T> friend class MeshIteratorT;
-    template<typename T> friend class MeshEntityIteratorNewT;
+    template<typename T> friend class MeshEntityRangeTyped;
+    template<typename T> friend class EntityRangeTyped;
+    template<typename T> friend class MeshIterator;
+    template<typename T> friend class MeshEntityIteratorNew;
 
 
     template<typename T> friend class MeshEntityIteratorBase;
@@ -272,5 +266,3 @@ namespace dolfin
   };
 
 }
-
-#endif

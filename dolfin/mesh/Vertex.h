@@ -27,7 +27,7 @@
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
-#include "MeshFunction.h"
+#include "MeshGeometry.h"
 
 namespace dolfin
 {

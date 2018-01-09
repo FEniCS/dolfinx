@@ -67,7 +67,7 @@ int main()
     std::size_t p = 0;
     boost::timer::cpu_timer t;
     //std::cout << "Start cell loop" << std::endl;
-    for (const auto &c : MeshEntityRangeT<Cell>(*mesh))
+    for (const auto &c : MeshEntityRangeTyped<Cell>(*mesh))
     {
       //std::cout << "\n1. Create v list (range)" << std::endl;
       //const auto vert = entities<Vertex>(c, 0);
@@ -116,7 +116,7 @@ int main()
     std::size_t p = 0;
     boost::timer::cpu_timer t;
     //std::cout << "Start cell loop" << std::endl;
-    for (const auto &c : MeshEntityRangeT<Cell>(*mesh))
+    for (const auto &c : MeshEntityRangeTyped<Cell>(*mesh))
     {
       //std::cout << "\n1. Create v list (range)" << std::endl;
       //const auto vert = entities<Vertex>(c, 0);
@@ -191,7 +191,7 @@ int main()
     std::size_t p = 0;
     boost::timer::cpu_timer t;
     //std::cout << "Start cell loop" << std::endl;
-    for (const auto &c : MeshEntityRangeT<Cell>(*mesh))
+    for (const auto &c : MeshEntityRangeTyped<Cell>(*mesh))
     {
       //std::cout << "\n1. Create v list (range)" << std::endl;
       //const auto vert = entities<Vertex>(c, 0);

@@ -25,11 +25,10 @@
 
 #include <utility>
 #include <vector>
-#include "Cell.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
-#include "MeshFunction.h"
+#include "MeshTopology.h"
 
 namespace dolfin
 {
@@ -47,9 +46,6 @@ namespace dolfin
     /// Destructor
     ~Facet() {}
 
-    /// Compute component i of the normal to the facet
-    double normal(std::size_t i) const;
-
     /// Compute normal to the facet
     Point normal() const;
 
@@ -60,17 +56,6 @@ namespace dolfin
     /// @return     double
     ///         The squared distance to the point.
     double squared_distance(const Point& point) const;
-
-    /// Compute distance to given point.
-    ///
-    /// @param     point (_Point_)
-    ///         The point.
-    /// @return     double
-    ///         The distance to the point.
-    double distance(const Point& point) const
-    {
-      return sqrt(squared_distance(point));
-    }
 
     /// Return true if facet is an exterior facet (relative to global mesh,
     /// so this function will return false for facets on partition
