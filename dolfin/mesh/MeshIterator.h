@@ -167,12 +167,27 @@ namespace dolfin
 
   };
 
+  class Cell;
+  class Edge;
+  class Face;
+  class Facet;
+  class Vertex;
+  template<class T> class MeshEntityRangeTyped;
+
+  /// Convenience typedefs for tange of incident entities (of type T)
+  /// over a MeshEntity
+  typedef MeshEntityRangeTyped<Cell> Cells;
+  typedef MeshEntityRangeTyped<Edge> Edges;
+  typedef MeshEntityRangeTyped<Face> Faces;
+  typedef MeshEntityRangeTyped<Facet> Facets;
+  typedef MeshEntityRangeTyped<Vertex> Vertices;
+
   template<class T>
-  class MeshEntityRangeT
+  class MeshEntityRangeTyped
   {
   public:
 
-    MeshEntityRangeT(const Mesh& mesh) : _mesh(mesh) {}
+    MeshEntityRangeTyped(const Mesh& mesh) : _mesh(mesh) {}
 
     const MeshIterator<T> begin() const
     { return MeshIterator<T>(_mesh, 0); }
@@ -230,6 +245,7 @@ namespace dolfin
 
   class Cell;
   class Edge;
+  class Face;
   class Facet;
   class Vertex;
   template<class T> class EntityRangeTyped;
@@ -237,6 +253,7 @@ namespace dolfin
   /// Convenience typedefs for tange of incident entities (of type T)
   /// over a MeshEntity
   typedef EntityRangeTyped<Cell> CellRange;
+  typedef EntityRangeTyped<Face> FaceRange;
   typedef EntityRangeTyped<Facet> FacetRange;
   typedef EntityRangeTyped<Vertex> VertexRange;
   typedef EntityRangeTyped<Edge> EdgeRange;
