@@ -130,7 +130,7 @@ namespace dolfin
       // Get connectivity
       const MeshConnectivity& c = e.mesh().topology()(e.dim(), dim);
 
-      dolfin_assert(!c.empty())
+      dolfin_assert(!c.empty());
 
       // Pointer to array of connections
       _connections = c(e.index()) + pos;
