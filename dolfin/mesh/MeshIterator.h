@@ -60,16 +60,16 @@ namespace dolfin
   };
 
 
-  // FIXME: Add 'MeshIterator MeshEntity::iterator(std::size_t dim);'?
 
   /// Iterator for entities of specified dimension that are incident to a MeshEntity
-  class MeshEntityIteratorNew
-    : public std::iterator<std::forward_iterator_tag, MeshEntity>
+  template<class T>
+  class MeshEntityIteratorT
+    : public std::iterator<std::forward_iterator_tag, T>
   {
   public:
 
     // Constructor from MeshEntity and dimension
-    MeshEntityIteratorNew(const MeshEntity& e, std::size_t dim,
+    MeshEntityIteratorT(const MeshEntity& e, std::size_t dim,
                           std::size_t pos)
       : _entity(e.mesh(), dim, pos), _connections(nullptr)
     {
@@ -81,60 +81,10 @@ namespace dolfin
       // Pointer to array of connections
       _connections = c(e.index()) + pos;
       _entity._local_index = *_connections;
-
-
-      // Compute connectivity if empty
-      //if (c.empty())
-      //  e.mesh().init(e.dim(), _entity.dim());
-
-      // FIXME: Handle case when number of attached entities is zero?
     }
-
-    /// Copy constructor
-    MeshEntityIteratorNew(const MeshEntityIteratorNew& it) = default;
-
-    // Copy assignment
-    const MeshEntityIteratorNew& operator= (const MeshEntityIteratorNew& m)
-    {
-      _entity = m._entity;
-      _connections = m._connections;
-      return *this;
-    }
-
-    MeshEntityIteratorNew& operator++()
-    { ++_connections; _entity._local_index = *_connections; return *this; }
-
-    bool operator==(const MeshEntityIteratorNew& other) const
-    { return _connections == other._connections; }
-
-    bool operator!=(const MeshEntityIteratorNew& other) const
-    { return _connections != other._connections; }
-
-    MeshEntity* operator->()
-    { return &_entity; }
-
-    MeshEntity& operator*()
-    { return _entity; }
-
-  private:
-
-    // MeshEntity
-    MeshEntity _entity;
-
-    // Pointer to current entity index
-    const std::uint32_t* _connections;
-
-  };
-
-  /// Iterator for entities of specified dimension that are incident to a MeshEntity
-  template<class T>
-  class MeshEntityIteratorNewT
-    : public std::iterator<std::forward_iterator_tag, T>
-  {
-  public:
 
     // Constructor from MeshEntity and dimension
-    MeshEntityIteratorNewT(const MeshEntity& e, std::size_t pos)
+    MeshEntityIteratorT(const MeshEntity& e, std::size_t pos)
       : _entity(e.mesh(), pos), _connections(nullptr)
     {
       // Get connectivity
@@ -155,23 +105,23 @@ namespace dolfin
     }
 
     /// Copy constructor
-    MeshEntityIteratorNewT(const MeshEntityIteratorNewT& it) = default;
+    MeshEntityIteratorT(const MeshEntityIteratorT& it) = default;
 
     // Copy assignment
-    const MeshEntityIteratorNewT& operator= (const MeshEntityIteratorNewT& m)
+    const MeshEntityIteratorT& operator= (const MeshEntityIteratorT& m)
     {
       _entity = m._entity;
       _connections = m._connections;
       return *this;
     }
 
-    MeshEntityIteratorNewT& operator++()
+    MeshEntityIteratorT& operator++()
     { ++_connections; _entity._local_index = *_connections; return *this; }
 
-    bool operator==(const MeshEntityIteratorNewT& other) const
+    bool operator==(const MeshEntityIteratorT& other) const
     { return _connections == other._connections; }
 
-    bool operator!=(const MeshEntityIteratorNewT& other) const
+    bool operator!=(const MeshEntityIteratorT& other) const
     { return _connections != other._connections; }
 
     T* operator->()
@@ -204,16 +154,16 @@ namespace dolfin
 
     EntityRange(const MeshEntity& e, int dim) : _entity(e), _dim(dim) {}
 
-    const MeshEntityIteratorNew begin() const
-    { return MeshEntityIteratorNew(_entity, _dim, 0); }
+    const MeshEntityIteratorT<MeshEntity> begin() const
+    { return MeshEntityIteratorT<MeshEntity>(_entity, _dim, 0); }
 
-    MeshEntityIteratorNew begin()
-    { return MeshEntityIteratorNew(_entity, _dim, 0); }
+    MeshEntityIteratorT<MeshEntity> begin()
+    { return MeshEntityIteratorT<MeshEntity>(_entity, _dim, 0); }
 
-    const MeshEntityIteratorNew end() const
+    const MeshEntityIteratorT<MeshEntity> end() const
     {
       std::size_t n = _entity.num_entities(_dim);
-      return MeshEntityIteratorNew(_entity, _dim, n);
+      return MeshEntityIteratorT<MeshEntity>(_entity, _dim, n);
     }
 
   private:
@@ -283,15 +233,15 @@ class EntityRangeT
 
     EntityRangeT(const MeshEntity& e) : _entity(e) {}
 
-    const MeshEntityIteratorNewT<T> begin() const
-    { return MeshEntityIteratorNewT<T>(_entity, 0); }
+    const MeshEntityIteratorT<T> begin() const
+    { return MeshEntityIteratorT<T>(_entity, 0); }
 
-    MeshEntityIteratorNewT<T> begin()
-    { return MeshEntityIteratorNewT<T>(_entity, 0); }
+    MeshEntityIteratorT<T> begin()
+    { return MeshEntityIteratorT<T>(_entity, 0); }
 
-    const MeshEntityIteratorNewT<T> end() const
+    const MeshEntityIteratorT<T> end() const
     {
-      auto it = MeshEntityIteratorNewT<T>(_entity, 0);
+      auto it = MeshEntityIteratorT<T>(_entity, 0);
       std::size_t n = _entity.num_entities(it->dim());
       it._connections = it._connections + n;
       it->_local_index = *it._connections;
