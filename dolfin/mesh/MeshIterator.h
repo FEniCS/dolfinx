@@ -11,74 +11,17 @@
 namespace dolfin
 {
 
-  // Note: testing
-  /// Iterator for entities of a given dimension of a Mesh
+  /// Iterator for entities of type T over a Mesh
   template<class T>
-  class MeshIteratorT : public std::iterator<std::forward_iterator_tag, T>
+  class MeshIterator : public std::iterator<std::forward_iterator_tag, T>
   {
   public:
 
     /// Constructor for entities of dimension d
-    MeshIteratorT(const Mesh& mesh, std::size_t pos) : _entity(mesh, pos) {}
+    MeshIterator(const Mesh& mesh, std::size_t dim, std::size_t pos) : _entity(mesh, dim, pos) {}
 
-    /// Copy constructor
-    MeshIteratorT(const MeshIteratorT& it) = default;
-
-    /// Copy assignment
-    const MeshIteratorT& operator= (const MeshIteratorT& m)
-    { _entity = m._entity; return *this; }
-
-    /// Increment iterator
-    MeshIteratorT& operator++()
-    { _entity._local_index += 1; return *this; }
-
-    /// Return true if equal
-    bool operator==(const MeshIteratorT& other) const
-    { return _entity._local_index == other._entity._local_index; }
-
-    /// Return true if not equal
-    bool operator!=(const MeshIteratorT& other) const
-    { return _entity._local_index != other._entity._local_index; }
-
-    /// Member access
-    T* operator->()
-    { return &_entity; }
-
-    /// Dereference
-    T& operator*()
-    { return _entity; }
-
-    template<typename X> friend class MeshEntityRangeT;
-
- private:
-
-    // MeshEntity
-    T _entity;
-
-  };
-
-
-  /*
-  struct NamedMeshIterator
-  {
-    static MeshIteratorT<Cell> cell_iterator(const Mesh& mesh, std::size_t pos)
-    {
-      std::size_t dim = mesh.topology().dim();
-      return MeshIteratorT<Cell>(mesh, dim, pos);
-    }
-  };
-  */
-
-  // FIXME: Add 'MeshIterator Mesh::iterator(std::size_t dim);'?
-
-  /// Iterator for entities of a given dimension of a Mesh
-  class MeshIterator : public std::iterator<std::forward_iterator_tag, MeshEntity>
-  {
-  public:
-
-    /// Constructor for entities of dimension d
-    MeshIterator(const Mesh& mesh, std::size_t dim, std::size_t pos)
-      : _entity(mesh, dim, pos) {}
+    /// Constructor for entities of dimension
+    MeshIterator(const Mesh& mesh, std::size_t pos) : _entity(mesh, pos) {}
 
     /// Copy constructor
     MeshIterator(const MeshIterator& it) = default;
@@ -100,19 +43,22 @@ namespace dolfin
     { return _entity._local_index != other._entity._local_index; }
 
     /// Member access
-    MeshEntity* operator->()
+    T* operator->()
     { return &_entity; }
 
     /// Dereference
-    MeshEntity& operator*()
+    T& operator*()
     { return _entity; }
 
-  private:
+    template<typename X> friend class MeshEntityRangeT;
+
+ private:
 
     // MeshEntity
-    MeshEntity _entity;
+    T _entity;
 
   };
+
 
   // FIXME: Add 'MeshIterator MeshEntity::iterator(std::size_t dim);'?
 
@@ -286,14 +232,14 @@ namespace dolfin
 
     MeshEntityRange(const Mesh& mesh, int dim) : _mesh(mesh), _dim(dim) {}
 
-    const MeshIterator begin() const
-    { return MeshIterator(_mesh, _dim, 0); }
+    const MeshIterator<MeshEntity> begin() const
+    { return MeshIterator<MeshEntity>(_mesh, _dim, 0); }
 
-    MeshIterator begin()
-    { return MeshIterator(_mesh, _dim, 0); }
+    MeshIterator<MeshEntity> begin()
+    { return MeshIterator<MeshEntity>(_mesh, _dim, 0); }
 
-    const MeshIterator end() const
-    { return MeshIterator(_mesh, _dim, _mesh.topology().ghost_offset(_dim)); }
+    const MeshIterator<MeshEntity> end() const
+    { return MeshIterator<MeshEntity>(_mesh, _dim, _mesh.topology().ghost_offset(_dim)); }
 
   private:
 
@@ -309,15 +255,15 @@ namespace dolfin
 
     MeshEntityRangeT(const Mesh& mesh) : _mesh(mesh) {}
 
-    const MeshIteratorT<T> begin() const
-    { return MeshIteratorT<T>(_mesh, 0); }
+    const MeshIterator<T> begin() const
+    { return MeshIterator<T>(_mesh, 0); }
 
-    MeshIteratorT<T> begin()
-    { return MeshIteratorT<T>(_mesh, 0); }
+    MeshIterator<T> begin()
+    { return MeshIterator<T>(_mesh, 0); }
 
-    const MeshIteratorT<T> end() const
+    const MeshIterator<T> end() const
     {
-      auto it = MeshIteratorT<T>(_mesh, 0);
+      auto it = MeshIterator<T>(_mesh, 0);
       std::size_t end = _mesh.topology().ghost_offset(it->dim());
       it->_local_index = end;
       return it;
