@@ -48,18 +48,10 @@ namespace dolfin
     {
       Parameters p("dolfin");
 
-      //-- General
-
-      // Prefix for timer tasks
-      p.add("timer_prefix", "");
-
       //-- Output
 
       // Print standard output on all processes
       p.add("std_out_all_processes", true);
-
-      // Print the level of thread support provided by the MPI library
-      p.add("print_mpi_thread_support_level", false);
 
       //-- dof ordering
 
