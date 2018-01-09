@@ -45,8 +45,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
-  : _function_space(V),
-  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
+  : _function_space(V), _allow_extrapolation(false)
 {
   // Check that we don't have a subspace
   if (!V->component().empty())
@@ -62,8 +61,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V,
                    std::shared_ptr<PETScVector> x)
-  : _function_space(V), _vector(x),
-  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
+  : _function_space(V), _vector(x), _allow_extrapolation(false)
 {
   // We do not check for a subspace since this constructor is used for
   // creating subfunctions
@@ -73,8 +71,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
   dolfin_assert(V->dofmap()->global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const Function& v) :
-  _allow_extrapolation(dolfin::parameters["allow_extrapolation"])
+Function::Function(const Function& v) : _allow_extrapolation(false)
 {
   // Make a copy of all the data, or if v is a sub-function, then we
   // collapse the dof map and copy only the relevant entries from the
