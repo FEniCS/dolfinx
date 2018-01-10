@@ -187,7 +187,7 @@ def test_UnitHexMesh():
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
 
-@pytest.mark.skip
+@pytest.mark.skip(reason="Mesh refinement not working")
 def test_RefineUnitIntervalMesh():
     """Refine mesh of unit interval."""
     mesh = UnitIntervalMesh(MPI.comm_world, 20)
@@ -197,7 +197,7 @@ def test_RefineUnitIntervalMesh():
     assert mesh2.num_entities_global(0) == 22
     assert mesh2.num_entities_global(1) == 21
 
-@pytest.mark.skip
+@pytest.mark.skip(reason="Mesh refinement not working")
 def test_RefineUnitSquareMesh():
     """Refine mesh of unit square."""
     mesh = UnitSquareMesh(MPI.comm_world, 5, 7)
@@ -205,7 +205,7 @@ def test_RefineUnitSquareMesh():
     assert mesh.num_entities_global(0) == 165
     assert mesh.num_entities_global(2) == 280
 
-@pytest.mark.skip
+@pytest.mark.skip(reason="Mesh refinement not working")
 def test_RefineUnitCubeMesh():
     """Refine mesh of unit cube."""
     mesh = UnitCubeMesh(MPI.comm_world, 5, 7, 9)
@@ -257,28 +257,6 @@ def test_hash():
     h3 = UnitSquareMesh(MPI.comm_world, 4, 4).hash()
     assert h1 == h3
     assert h1 != h2
-
-
-@pytest.mark.skip
-@skip_in_parallel
-def test_SubsetIterators(mesh):
-    def inside1(x):
-        return x[0] <= 0.5
-
-    def inside2(x):
-        return x[0] >= 0.5
-    sd1 = AutoSubDomain(inside1)
-    sd2 = AutoSubDomain(inside2)
-    cf = MeshFunction('size_t', mesh, mesh.topology().dim())
-    cf.set_all(0)
-    sd1.mark(cf, 1)
-    sd2.mark(cf, 2)
-
-    for i in range(3):
-        num = 0
-        for e in SubsetIterator(cf, i):
-            num += 1
-        assert num == 6
 
 
 # FIXME: Mesh IO tests should be in io test directory
