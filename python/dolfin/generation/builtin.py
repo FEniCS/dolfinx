@@ -1,5 +1,5 @@
 
-from dolfin.cpp.generation import RectangleMesh, BoxMesh
+from dolfin.cpp.generation import IntervalMesh, RectangleMesh, BoxMesh
 from dolfin.cpp import MPI
 from dolfin.cpp.geometry import Point
 from dolfin.cpp.mesh import CellType

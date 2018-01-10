@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from dolfin import UnitSquareMesh, facets
+from dolfin import UnitSquareMesh, Facets
 
 
 def test_normal():

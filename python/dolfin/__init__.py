@@ -72,9 +72,11 @@ from .cpp.la import (IndexMap, Scalar)
 from .cpp.log import (info, Table, set_log_level, get_log_level, LogLevel)
 from .cpp.math import ipow, near
 from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, MeshEntity,
-                       CellType, Cell, Facet, Face,
-                       Edge, Vertex, SubDomain,
-                       MeshEditor, MeshQuality,
+                       CellType,
+                       Cell, Facet, Face, Edge, Vertex,
+                       Cells, Facets, Faces, Edges, Vertices,
+                       CellRange, FacetRange, FaceRange, EdgeRange, VertexRange,
+                       SubDomain, MeshEditor, MeshQuality,
                        PeriodicBoundaryComputation)
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver, OptimisationProblem)
@@ -112,7 +114,7 @@ from .function.specialfunctions import (MeshCoordinates, FacetArea, FacetNormal,
                                         MinFacetEdgeLength, MaxFacetEdgeLength)
 from .function.expression import Expression, UserExpression, CompiledExpression
 
-from .generation.builtin import UnitSquareMesh
+from .generation.builtin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
 
 # experimental
 from .jit.pybind11jit import compile_cpp_code

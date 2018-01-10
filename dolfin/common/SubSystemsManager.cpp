@@ -93,29 +93,6 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
   MPI_Init_thread(&argc, &argv, required_thread_level, &provided);
   singleton().control_mpi = true;
 
-  const bool print_thread_support
-    = dolfin::parameters["print_mpi_thread_support_level"];
-  if (print_thread_support)
-  {
-    switch (provided)
-      {
-      case MPI_THREAD_SINGLE:
-        printf("MPI_Init_thread level = MPI_THREAD_SINGLE\n");
-        break;
-      case MPI_THREAD_FUNNELED:
-        printf("MPI_Init_thread level = MPI_THREAD_FUNNELED\n");
-        break;
-      case MPI_THREAD_SERIALIZED:
-        printf("MPI_Init_thread level = MPI_THREAD_SERIALIZED\n");
-        break;
-      case MPI_THREAD_MULTIPLE:
-        printf("MPI_Init_thread level = MPI_THREAD_MULTIPLE\n");
-        break;
-      default:
-        printf("MPI_Init_thread level = unknown\n");
-      }
-  }
-
   return provided;
   #else
   return -1;
