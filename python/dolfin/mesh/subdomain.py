@@ -35,7 +35,6 @@ def jit_generate(class_data, module_name, signature, parameters):
     #define DLL_EXPORT __attribute__ ((visibility ("default")))
 #endif
 
-#include <dolfin/common/Array.h>
 #include <dolfin/math/basic.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <Eigen/Dense>

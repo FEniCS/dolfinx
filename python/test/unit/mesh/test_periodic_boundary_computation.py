@@ -41,7 +41,7 @@ def periodic_boundary():
 
 @fixture
 def mesh():
-    return UnitSquareMesh(4, 4)
+    return UnitSquareMesh(MPI.comm_world, 4, 4)
 
 
 @skip_in_parallel

@@ -60,7 +60,7 @@ def test_distance_tetrahedron():
 @skip_in_release
 @skip_in_parallel
 def test_issue_568():
-    mesh = UnitSquareMesh(4, 4)
+    mesh = UnitSquareMesh(MPI.comm_self, 4, 4)
     cell = Cell(mesh, 0)
 
     # Should throw an error, not just segfault (only works in DEBUG mode!)

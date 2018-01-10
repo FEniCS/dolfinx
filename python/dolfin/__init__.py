@@ -71,11 +71,11 @@ if has_slepc():
 from .cpp.la import (IndexMap, Scalar)
 from .cpp.log import (info, Table, set_log_level, get_log_level, LogLevel)
 from .cpp.math import ipow, near
-from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, MeshEntity,
+from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry,
                        CellType,
-                       Cell, Facet, Face, Edge, Vertex,
-                       Cells, Facets, Faces, Edges, Vertices,
-                       CellRange, FacetRange, FaceRange, EdgeRange, VertexRange,
+                       Cell, Facet, Face, Edge, Vertex, MeshEntity,
+                       Cells, Facets, Faces, Edges, Vertices, MeshEntities,
+                       CellRange, FacetRange, FaceRange, EdgeRange, VertexRange, EntityRange,
                        SubDomain, MeshEditor, MeshQuality,
                        PeriodicBoundaryComputation)
 

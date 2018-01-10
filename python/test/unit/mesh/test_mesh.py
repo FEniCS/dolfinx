@@ -33,31 +33,31 @@ from dolfin_utils.test import cd_tempdir
 @fixture
 def mesh1d():
     # Create 1D mesh with degenerate cell
-    mesh1d = UnitIntervalMesh(4)
-    mesh1d.coordinates()[4] = mesh1d.coordinates()[3]
+    mesh1d = UnitIntervalMesh(MPI.comm_world, 4)
+    mesh1d.geometry().x()[4] = mesh1d.geometry().x()[3]
     return mesh1d
 
 
 @fixture
 def mesh2d():
     # Create 2D mesh with one equilateral triangle
-    mesh2d = UnitSquareMesh(MPI.comm_world, 1, 1, 'left')
-    mesh2d.coordinates()[3] += 0.5*(sqrt(3.0)-1.0)
+    mesh2d = RectangleMesh.create(MPI.comm_world, [Point(0,0), Point(1,1)], [1, 1], CellType.Type.triangle, 'left')
+    mesh2d.geometry().x()[3] += 0.5*(sqrt(3.0)-1.0)
     return mesh2d
 
 
 @fixture
 def mesh3d():
     # Create 3D mesh with regular tetrahedron and degenerate cells
-    mesh3d = UnitCubeMesh(1, 1, 1)
-    mesh3d.coordinates()[2][0] = 1.0
-    mesh3d.coordinates()[7][1] = 0.0
+    mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
+    mesh3d.geometry().x()[2][0] = 1.0
+    mesh3d.geometry().x()[7][1] = 0.0
     return mesh3d
 
 
 @fixture
 def c0(mesh3d):
-    # Original tetrahedron from UnitCubeMesh(1, 1, 1)
+    # Original tetrahedron from UnitCubeMesh(MPI.comm_world, 1, 1, 1)
     return Cell(mesh3d, 0)
 
 
@@ -75,7 +75,7 @@ def c5(mesh3d):
 
 @fixture
 def interval():
-    return UnitIntervalMesh(10)
+    return UnitIntervalMesh(MPI.comm_world, 10)
 
 
 @fixture
@@ -85,17 +85,17 @@ def square():
 
 @fixture
 def rectangle():
-    return RectangleMesh(Point(0, 0), Point(2, 2), 5, 5)
+    return RectangleMesh.create(MPI.comm_world, [Point(0, 0), Point(2, 2)], [5, 5], CellType.Type.triangle)
 
 
 @fixture
 def cube():
-    return UnitCubeMesh(3, 3, 3)
+    return UnitCubeMesh(MPI.comm_world, 3, 3, 3)
 
 
 @fixture
 def box():
-    return BoxMesh(Point(0, 0, 0), Point(2, 2, 2), 2, 2, 5)
+    return BoxMesh.create(MPI.comm_world, [Point(0, 0, 0), Point(2, 2, 2)], [2, 2, 5], CellType.Type.tetrahedron)
 
 
 @fixture
@@ -157,7 +157,7 @@ def test_UnitSquareMeshLocal():
 
 def test_UnitCubeMesh():
     """Create mesh of unit cube."""
-    mesh = UnitCubeMesh(5, 7, 9)
+    mesh = UnitCubeMesh(MPI.comm_world, 5, 7, 9)
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 1890
 
@@ -187,17 +187,17 @@ def test_UnitHexMesh():
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
 
-
+@pytest.mark.skip
 def test_RefineUnitIntervalMesh():
     """Refine mesh of unit interval."""
-    mesh = UnitIntervalMesh(20)
+    mesh = UnitIntervalMesh(MPI.comm_world, 20)
     cell_markers = MeshFunction("bool", mesh, mesh.topology().dim(), False)
     cell_markers[0] = (MPI.rank(mesh.mpi_comm()) == 0)
     mesh2 = refine(mesh, cell_markers)
     assert mesh2.num_entities_global(0) == 22
     assert mesh2.num_entities_global(1) == 21
 
-
+@pytest.mark.skip
 def test_RefineUnitSquareMesh():
     """Refine mesh of unit square."""
     mesh = UnitSquareMesh(MPI.comm_world, 5, 7)
@@ -205,31 +205,14 @@ def test_RefineUnitSquareMesh():
     assert mesh.num_entities_global(0) == 165
     assert mesh.num_entities_global(2) == 280
 
-
+@pytest.mark.skip
 def test_RefineUnitCubeMesh():
     """Refine mesh of unit cube."""
-    mesh = UnitCubeMesh(5, 7, 9)
+    mesh = UnitCubeMesh(MPI.comm_world, 5, 7, 9)
     mesh = refine(mesh)
     assert mesh.num_entities_global(0) == 3135
     assert mesh.num_entities_global(3) == 15120
 
-
-def test_BoundaryComputation():
-    """Compute boundary of mesh."""
-    mesh = UnitCubeMesh(2, 2, 2)
-    boundary = BoundaryMesh(mesh, "exterior")
-    assert boundary.num_entities_global(0) == 26
-    assert boundary.num_entities_global(2) == 48
-
-
-@xfail_in_parallel
-def test_BoundaryBoundary():
-    """Compute boundary of boundary."""
-    mesh = UnitCubeMesh(2, 2, 2)
-    b0 = BoundaryMesh(mesh, "exterior")
-    b1 = BoundaryMesh(b0, "exterior")
-    assert b1.num_vertices() == 0
-    assert b1.num_cells() == 0
 
 
 @skip_in_parallel
@@ -247,8 +230,8 @@ def test_Write(cd_tempdir, f):
     f = f
     f[0] = 1
     f[1] = 2
-    file = File("saved_mesh_function.xml")
-    file << f
+    file = XDMFFile(f.mesh().mpi_comm(), "saved_mesh_function.xdmf")
+    file.write(f, XDMFFile.Encoding.ASCII)
 
 
 @skip_in_parallel
@@ -276,6 +259,7 @@ def test_hash():
     assert h1 != h2
 
 
+@pytest.mark.skip
 @skip_in_parallel
 def test_SubsetIterators(mesh):
     def inside1(x):
@@ -302,21 +286,21 @@ def test_SubsetIterators(mesh):
 def test_MeshXML2D(cd_tempdir):
     """Write and read 2D mesh to/from file"""
     mesh_out = UnitSquareMesh(MPI.comm_world, 3, 3)
-    mesh_in = Mesh()
-    file = File("unitsquare.xml")
-    file << mesh_out
-    file >> mesh_in
+    mesh_in = Mesh(MPI.comm_world)
+    file = XDMFFile(mesh_out.mpi_comm(), "unitsquare.xdmf")
+    file.write(mesh_out, XDMFFile.Encoding.ASCII)
+    file.read(mesh_in)
     assert mesh_in.num_vertices() == 16
 
 
 @skip_in_parallel
 def test_MeshXML3D(cd_tempdir):
     """Write and read 3D mesh to/from file"""
-    mesh_out = UnitCubeMesh(3, 3, 3)
-    mesh_in = Mesh()
-    file = File("unitcube.xml")
-    file << mesh_out
-    file >> mesh_in
+    mesh_out = UnitCubeMesh(MPI.comm_world, 3, 3, 3)
+    mesh_in = Mesh(MPI.comm_world)
+    file = XDMFFile(mesh_out.mpi_comm(), "unitcube.xdmf")
+    file.write(mesh_out, XDMFFile.Encoding.ASCII)
+    file.read(mesh_in)
     assert mesh_in.num_vertices() == 64
 
 
@@ -329,10 +313,10 @@ def xtest_MeshFunction(cd_tempdir):
     f[1] = 4
     f[2] = 6
     f[3] = 8
-    file = File("meshfunction.xml")
-    file << f
+    file = XDMFFile(mesh.mpi_comm(), "meshfunction.xdmf")
+    file.write(f, XDMFFile.Encoding.ASCII)
     g = MeshFunction('int', mesh, 0)
-    file >> g
+    file.read(g)
     for v in vertices(mesh):
         assert f[v] == g[v]
 
@@ -347,7 +331,7 @@ def test_GetGeometricalDimension():
 def test_GetCoordinates():
     """Get coordinates of vertices"""
     mesh = UnitSquareMesh(MPI.comm_world, 5, 5)
-    assert len(mesh.coordinates()) == 36
+    assert len(mesh.geometry().x()) == 36
 
 
 def test_GetCells():
@@ -408,42 +392,6 @@ def test_rmin_rmax(mesh1d, mesh2d, mesh3d):
     assert round(mesh3d.rmin() - 0.0, 7) == 0
     assert round(mesh3d.rmax() - sqrt(3.0)/6.0, 7) == 0
 
-
-def test_basic_cell_orientations():
-    "Test that default cell orientations initialize and update as expected."
-    mesh = UnitIntervalMesh(MPI.comm_world, 12)
-    orientations = mesh.cell_orientations()
-    print(len(orientations))
-    assert len(orientations) == 0
-
-    mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0"), degree=0))
-    orientations = mesh.cell_orientations()
-    assert len(orientations) == mesh.num_cells()
-    for i in range(mesh.num_cells()):
-        assert mesh.cell_orientations()[i] == 0
-
-
-@skip_in_parallel
-def test_cell_orientations():
-    "Test that cell orientations update as expected."
-    mesh = UnitIntervalMesh(MPI.comm_world, 12)
-    mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0"), degree=0))
-    for i in range(mesh.num_cells()):
-        assert mesh.cell_orientations()[i] == 0
-
-    mesh = UnitSquareMesh(MPI.comm_world, 2, 2)
-    mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0"), degree=0))
-    reference = numpy.array((0, 1, 0, 1, 0, 1, 0, 1))
-    # Only compare against reference in serial (don't know how to
-    # compare in parallel)
-    for i in range(mesh.num_cells()):
-        assert mesh.cell_orientations()[i] == reference[i]
-
-    mesh = BoundaryMesh(UnitSquareMesh(MPI.comm_world, 2, 2), "exterior")
-    mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]"), degree=1))
-    print(mesh.cell_orientations())
-
-
 # - Facilities to run tests on combination of meshes
 
 ghost_mode = set_parameters_fixture("ghost_mode", [
@@ -498,7 +446,7 @@ def test_shared_entities(mesh_factory, ghost_mode):
                           numpy.ndarray)
 
         if mesh.topology().have_shared_entities(shared_dim):
-            for e in Entities(mesh, shared_dim):
+            for e in MeshEntities(mesh, shared_dim):
                 sharing = e.sharing_processes()
                 assert isinstance(sharing, set)
                 assert (len(sharing) > 0) == e.is_shared()
@@ -533,7 +481,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
     # Initialize all mesh entities and connectivities
     mesh.init()
 
-    for cell in cells(mesh):
+    for cell in Cells(mesh):
         # Get mesh-global (MPI-local) indices of cell vertices
         vertex_global_indices = cell.entities(0)
 
@@ -587,7 +535,7 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
             assert mesh.topology().have_global_indices(d1)
 
             # Loop over entities of dimension d
-            for e in Entities(mesh, d):
+            for e in MeshEntities(mesh, d):
 
                 # Get global indices
                 subentities_indices = [e1.global_index() for e1 in EntityRange(e, d1)]
