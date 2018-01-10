@@ -187,33 +187,6 @@ def test_UnitHexMesh():
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
 
-@pytest.mark.skip(reason="Mesh refinement not working")
-def test_RefineUnitIntervalMesh():
-    """Refine mesh of unit interval."""
-    mesh = UnitIntervalMesh(MPI.comm_world, 20)
-    cell_markers = MeshFunction("bool", mesh, mesh.topology().dim(), False)
-    cell_markers[0] = (MPI.rank(mesh.mpi_comm()) == 0)
-    mesh2 = refine(mesh, cell_markers)
-    assert mesh2.num_entities_global(0) == 22
-    assert mesh2.num_entities_global(1) == 21
-
-@pytest.mark.skip(reason="Mesh refinement not working")
-def test_RefineUnitSquareMesh():
-    """Refine mesh of unit square."""
-    mesh = UnitSquareMesh(MPI.comm_world, 5, 7)
-    mesh = refine(mesh)
-    assert mesh.num_entities_global(0) == 165
-    assert mesh.num_entities_global(2) == 280
-
-@pytest.mark.skip(reason="Mesh refinement not working")
-def test_RefineUnitCubeMesh():
-    """Refine mesh of unit cube."""
-    mesh = UnitCubeMesh(MPI.comm_world, 5, 7, 9)
-    mesh = refine(mesh)
-    assert mesh.num_entities_global(0) == 3135
-    assert mesh.num_entities_global(3) == 15120
-
-
 
 @skip_in_parallel
 def test_Assign(mesh, f):
