@@ -599,6 +599,16 @@ namespace dolfin_wrappers
       .def("set_options_prefix", &dolfin::PETScVector::set_options_prefix)
       .def("update_ghost_values", &dolfin::PETScVector::update_ghost_values)
       .def("size",  (std::size_t (dolfin::PETScVector::*)() const) &dolfin::PETScVector::size)
+      .def("__add__", [](const dolfin::PETScVector& self, const dolfin::PETScVector& x)
+           { auto y = self.copy(); *y += x; return y;}, py::is_operator())
+      .def("__sub__", [](dolfin::PETScVector& self, const dolfin::PETScVector& x)
+           { auto y = self.copy(); *y -= x; return y;}, py::is_operator())
+      .def("get_local", [](const dolfin::PETScVector& self)
+           {
+             std::vector<double> values;
+             self.get_local(values);
+             return py::array_t<double>(values.size(), values.data());
+           })
       .def("vec", &dolfin::PETScVector::vec, "Return underlying PETSc Vec object");
 
     // dolfin::PETScBaseMatrix

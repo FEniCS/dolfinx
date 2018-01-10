@@ -234,7 +234,7 @@ void HDF5File::read(PETScVector& x, const std::string dataset_name,
 
       // Initialise vector
       const std::size_t process_num = _mpi_comm.rank();
-      x.init({ (std::int64_t) partitions[process_num], (std::int64_t) partitions[process_num + 1]});
+      x.init({{ (std::int64_t) partitions[process_num], (std::int64_t) partitions[process_num + 1]}});
     }
     else
       x.init(data_shape[0]);

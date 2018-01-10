@@ -35,7 +35,7 @@ def test_parallel(tempdir):
 @xfail_with_serial_hdf5_in_parallel
 def test_save_vector(tempdir):
     filename = os.path.join(tempdir, "x.h5")
-    x = Vector(MPI.comm_world, 305)
+    x = PETScVector(MPI.comm_world, 305)
     x[:] = 1.0
     with HDF5File(x.mpi_comm(), filename, "w") as vector_file:
         vector_file.write(x, "/my_vector")
@@ -46,13 +46,13 @@ def test_save_and_read_vector(tempdir):
     filename = os.path.join(tempdir, "vector.h5")
 
     # Write to file
-    x = Vector(MPI.comm_world, 305)
+    x = PETScVector(MPI.comm_world, 305)
     x[:] = 1.2
     with HDF5File(x.mpi_comm(), filename, "w") as vector_file:
         vector_file.write(x, "/my_vector")
 
     # Read from file
-    y = Vector()
+    y = PETScVector(MPI.comm_world)
     with HDF5File(x.mpi_comm(), filename, "r") as vector_file:
         vector_file.read(y, "/my_vector", False)
         assert y.size() == x.size()
@@ -64,7 +64,7 @@ def test_save_and_read_meshfunction_2D(tempdir):
     filename = os.path.join(tempdir, "meshfn-2d.h5")
 
     # Write to file
-    mesh = UnitSquareMesh(20, 20)
+    mesh = UnitSquareMesh(MPI.comm_world, 20, 20)
     with HDF5File(mesh.mpi_comm(), filename, "w") as mf_file:
 
         # save meshfuns to compare when reading back
@@ -73,7 +73,7 @@ def test_save_and_read_meshfunction_2D(tempdir):
             mf = MeshFunction('double', mesh, i)
             # NB choose a value to set which will be the same
             # on every process for each entity
-            for cell in entities(mesh, i):
+            for cell in MeshEntities(mesh, i):
                 mf[cell] = cell.midpoint()[0]
             meshfunctions.append(mf)
             mf_file.write(mf, "/meshfunction/meshfun%d" % i)
@@ -83,7 +83,7 @@ def test_save_and_read_meshfunction_2D(tempdir):
         for i in range(0,3):
             mf2 = MeshFunction('double', mesh, i)
             mf_file.read(mf2, "/meshfunction/meshfun%d" % i)
-            for cell in entities(mesh, i):
+            for cell in MeshEntities(mesh, i):
                 assert meshfunctions[i][cell] == mf2[cell]
 
 @skip_if_not_HDF5
@@ -92,7 +92,7 @@ def test_save_and_read_meshfunction_3D(tempdir):
     filename = os.path.join(tempdir, "meshfn-3d.h5")
 
     # Write to file
-    mesh = UnitCubeMesh(10, 10, 10)
+    mesh = UnitCubeMesh(MPI.comm_world, 10, 10, 10)
     mf_file = HDF5File(mesh.mpi_comm(), filename, "w")
 
     # save meshfuns to compare when reading back
@@ -101,7 +101,7 @@ def test_save_and_read_meshfunction_3D(tempdir):
         mf = MeshFunction('double', mesh, i)
         # NB choose a value to set which will be the same
         # on every process for each entity
-        for cell in entities(mesh, i):
+        for cell in MeshEntities(mesh, i):
             mf[cell] = cell.midpoint()[0]
         meshfunctions.append(mf)
         mf_file.write(mf, "/meshfunction/group/%d/meshfun"%i)
@@ -112,7 +112,7 @@ def test_save_and_read_meshfunction_3D(tempdir):
     for i in range(0,4):
         mf2 = MeshFunction('double', mesh, i)
         mf_file.read(mf2, "/meshfunction/group/%d/meshfun"%i)
-        for cell in entities(mesh, i):
+        for cell in MeshEntities(mesh, i):
             assert meshfunctions[i][cell] == mf2[cell]
     mf_file.close()
 
@@ -121,7 +121,7 @@ def test_save_and_read_meshfunction_3D(tempdir):
 def test_save_and_read_mesh_value_collection(tempdir):
     ndiv = 5
     filename = os.path.join(tempdir, "mesh_value_collection.h5")
-    mesh = UnitCubeMesh(ndiv, ndiv, ndiv)
+    mesh = UnitCubeMesh(MPI.comm_world, ndiv, ndiv, ndiv)
 
     point2list = lambda p : [ p.x(), p.y(), p.z() ]
 
@@ -130,7 +130,7 @@ def test_save_and_read_mesh_value_collection(tempdir):
         for dim in range(mesh.topology().dim()) :
             mvc = MeshValueCollection("size_t", mesh, dim)
             mesh.init(dim)
-            for e in entities(mesh, dim) :
+            for e in MeshEntities(mesh, dim) :
                 # this can be easily computed to the check the value
                 val = int(ndiv*sum(point2list(e.midpoint()))) + 1
                 mvc.set_value(e.index(), val)
@@ -152,7 +152,7 @@ def test_save_and_read_mesh_value_collection(tempdir):
 def test_save_and_read_mesh_value_collection_with_only_one_marked_entity(tempdir):
     ndiv = 5
     filename = os.path.join(tempdir, "mesh_value_collection.h5")
-    mesh = UnitCubeMesh(ndiv, ndiv, ndiv)
+    mesh = UnitCubeMesh(MPI.comm_world, ndiv, ndiv, ndiv)
     mvc = MeshValueCollection("size_t", mesh, 3)
     mesh.init(3)
     if MPI.rank(mesh.mpi_comm()) == 0:
@@ -175,7 +175,7 @@ def test_save_and_read_mesh_value_collection_with_only_one_marked_entity(tempdir
 def test_save_and_read_function(tempdir):
     filename = os.path.join(tempdir, "function.h5")
 
-    mesh = UnitSquareMesh(10, 10)
+    mesh = UnitSquareMesh(MPI.comm_world, 10, 10)
     Q = FunctionSpace(mesh, "CG", 3)
     F0 = Function(Q)
     F1 = Function(Q)
@@ -201,13 +201,13 @@ def test_save_and_read_mesh_2D(tempdir):
     filename = os.path.join(tempdir, "mesh2d.h5")
 
     # Write to file
-    mesh0 = UnitSquareMesh(20, 20)
+    mesh0 = UnitSquareMesh(MPI.comm_world, 20, 20)
     mesh_file = HDF5File(mesh0.mpi_comm(), filename, "w")
     mesh_file.write(mesh0, "/my_mesh")
     mesh_file.close()
 
     # Read from file
-    mesh1 = Mesh()
+    mesh1 = Mesh(MPI.comm_world)
     mesh_file = HDF5File(mesh0.mpi_comm(), filename, "r")
     mesh_file.read(mesh1, "/my_mesh", False)
     mesh_file.close()
@@ -222,13 +222,13 @@ def test_save_and_read_mesh_3D(tempdir):
     filename = os.path.join(tempdir, "mesh3d.h5")
 
     # Write to file
-    mesh0 = UnitCubeMesh(10, 10, 10)
+    mesh0 = UnitCubeMesh(MPI.comm_world, 10, 10, 10)
     mesh_file = HDF5File(mesh0.mpi_comm(), filename, "w")
     mesh_file.write(mesh0, "/my_mesh")
     mesh_file.close()
 
     # Read from file
-    mesh1 = Mesh()
+    mesh1 = Mesh(MPI.comm_world)
     mesh_file = HDF5File(mesh0.mpi_comm(), filename, "r")
     mesh_file.read(mesh1, "/my_mesh", False)
     mesh_file.close()
