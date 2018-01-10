@@ -112,7 +112,7 @@ def test_ghost_connectivities(gmode, pushpop_parameters):
 
     # Create reference mapping from facet midpoint to cell midpoint
     reference = {}
-    for facet in facets(meshR):
+    for facet in Facets(meshR):
         fidx = facet.index()
         facet_mp = tuple(facet.midpoint()[:])
         reference[facet_mp] = []
@@ -122,8 +122,8 @@ def test_ghost_connectivities(gmode, pushpop_parameters):
             reference[facet_mp].append(cell_mp)
 
     # Loop through ghosted mesh and check connectivities
-    allowable_cell_indices = [cell.index() for cell in cells(meshG, 'all')]
-    for facet in facets(meshG, 'regular'):
+    allowable_cell_indices = [cell.index() for cell in Cells(meshG, 'all')]
+    for facet in Facets(meshG, 'regular'):
         fidx = facet.index()
         facet_mp = tuple(facet.midpoint()[:])
         assert facet_mp in reference

@@ -20,14 +20,15 @@
 import pytest
 import numpy
 
-from dolfin import *
+from dolfin import (UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
+                    MPI, Cell, Mesh, MeshEditor, CellType, Point)
 from dolfin_utils.test import skip_in_parallel, skip_in_release
 
 
 @skip_in_parallel
 def test_distance_interval():
 
-    mesh = UnitIntervalMesh.create(1)
+    mesh = UnitIntervalMesh(MPI.comm_self, 1)
     cell = Cell(mesh, 0)
 
     assert round(cell.distance(Point(-1.0)) - 1.0, 7) == 0
@@ -37,7 +38,7 @@ def test_distance_interval():
 @skip_in_parallel
 def test_distance_triangle():
 
-    mesh = UnitSquareMesh(1, 1)
+    mesh = UnitSquareMesh(MPI.comm_self, 1, 1)
     cell = Cell(mesh, 1)
 
     assert round(cell.distance(Point(-1.0, -1.0)) - numpy.sqrt(2), 7) == 0
@@ -48,7 +49,7 @@ def test_distance_triangle():
 @skip_in_parallel
 def test_distance_tetrahedron():
 
-    mesh = UnitCubeMesh(1, 1, 1)
+    mesh = UnitCubeMesh(MPI.comm_self, 1, 1, 1)
     cell = Cell(mesh, 5)
 
     assert round(cell.distance(Point(-1.0, -1.0, -1.0))-numpy.sqrt(3), 7) == 0
@@ -73,7 +74,7 @@ def test_issue_568():
 
 def test_volume_quadrilateralR2():
 
-    mesh = UnitSquareMesh.create(MPI.comm_self, 1, 1, CellType.Type.quadrilateral)
+    mesh = UnitSquareMesh(MPI.comm_self, 1, 1, CellType.Type.quadrilateral)
     cell = Cell(mesh, 0)
 
     assert cell.volume() == 1.0
@@ -83,11 +84,11 @@ def test_volume_quadrilateralR2():
     [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 1.0]]])
 def test_volume_quadrilateralR3(coordinates):
 
-    mesh = Mesh()
+    mesh = Mesh(MPI.comm_world)
     editor = MeshEditor()
-    editor.open(mesh, "quadrilateral", 2, 3)
-    editor.init_vertices(4)
-    editor.init_cells(1)
+    editor.open(mesh, CellType.Type.quadrilateral, 2, 3)
+    editor.init_vertices_global(4, 4)
+    editor.init_cells_global(1, 1)
     editor.add_vertex(0, Point(numpy.array(coordinates[0])))
     editor.add_vertex(1, Point(numpy.array(coordinates[1])))
     editor.add_vertex(2, Point(numpy.array(coordinates[2])))
@@ -105,11 +106,11 @@ def test_volume_quadrilateralR3(coordinates):
 def test_volume_quadrilateral_coplanarity_check_1(scaling):
 
     with pytest.raises(RuntimeError) as error:
-        mesh = Mesh()
+        mesh = Mesh(MPI.comm_world)
         editor = MeshEditor()
-        editor.open(mesh, "quadrilateral", 2, 3)
-        editor.init_vertices(4)
-        editor.init_cells(1)
+        editor.open(mesh, CellType.Type.quadrilateral, 2, 3)
+        editor.init_vertices_global(4, 4)
+        editor.init_cells_global(1, 1)
         # Unit square cell scaled down by 'scaling' and the first vertex is distorted so that the vertices are clearly non coplanar
         editor.add_vertex(0, Point(scaling, 0.5 * scaling, 0.6 * scaling))
         editor.add_vertex(1, Point(0.0, scaling, 0.0))
@@ -130,11 +131,11 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
 def test_volume_quadrilateral_coplanarity_check_2(scaling):
 
     with pytest.raises(RuntimeError) as error:
-        mesh = Mesh()
+        mesh = Mesh(MPI.comm_world)
         editor = MeshEditor()
-        editor.open(mesh, "quadrilateral", 2, 3)
-        editor.init_vertices(4)
-        editor.init_cells(1)
+        editor.open(mesh, CellType.Type.quadrilateral, 2, 3)
+        editor.init_vertices_global(4, 4)
+        editor.init_cells_global(1, 1)
         # Unit square cell scaled down by 'scaling' and the first vertex is distorted so that the vertices are clearly non coplanar
         editor.add_vertex(0, Point(1.0, 0.5, 0.6))
         editor.add_vertex(1, Point(0.0, scaling, 0.0))

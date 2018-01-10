@@ -17,13 +17,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-from dolfin import UnitSquareMesh, Facets
-
+from dolfin import UnitSquareMesh, Facets, MPI
 
 def test_normal():
     "Test that the normal() method is wrapped"
-    mesh = UnitSquareMesh(4, 4)
-    for facet in facets(mesh):
+    mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
+    mesh.init(1)
+    for facet in Facets(mesh):
         n = facet.normal()
         nx, ny, nz = n.x(), n.y(), n.z()
         assert isinstance(nx, float)

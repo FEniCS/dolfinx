@@ -253,6 +253,12 @@ namespace dolfin_wrappers
              return *self;
            });
 
+    py::class_<dolfin::MeshEntityRange, std::shared_ptr<dolfin::MeshEntityRange>>
+      (m, "Entities", "Range for iterative over entities of a Mesh")
+      .def(py::init<const dolfin::Mesh&, int>())
+      .def("__iter__", [](const dolfin::MeshEntityRange& r)
+           { return py::make_iterator(r.begin(), r.end()); });
+
     m.def("entities", [](dolfin::Mesh& mesh, std::size_t dim)
           { return dolfin::MeshEntityIterator(mesh, dim); });
     m.def("entities", [](dolfin::MeshEntity& meshentity, std::size_t dim)

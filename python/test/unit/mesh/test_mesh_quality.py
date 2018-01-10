@@ -29,30 +29,30 @@ from dolfin_utils.test import skip_in_parallel
 def test_radius_ratio_triangle():
 
     # Create mesh and compute rations
-    mesh = UnitSquareMesh(12, 12)
+    mesh = UnitSquareMesh(MPI.comm_world, 12, 12)
     ratios = MeshQuality.radius_ratios(mesh)
-    for c in cells(mesh):
+    for c in Cells(mesh):
         assert round(ratios[c] - 0.828427124746, 7) == 0
 
 
 def test_radius_ratio_tetrahedron():
 
     # Create mesh and compute ratios
-    mesh = UnitCubeMesh(14, 14, 14)
+    mesh = UnitCubeMesh(MPI.comm_world, 14, 14, 14)
     ratios = MeshQuality.radius_ratios(mesh)
-    for c in cells(mesh):
+    for c in Cells(mesh):
         assert round(ratios[c] - 0.717438935214, 7) == 0
 
 
 def test_radius_ratio_triangle_min_max():
 
     # Create mesh, collpase and compute min ratio
-    mesh = UnitSquareMesh(12, 12)
+    mesh = UnitSquareMesh(MPI.comm_world, 12, 12)
 
     rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
     assert rmax <= rmax
 
-    x = mesh.coordinates()
+    x = mesh.geometry().x()
     x[:, 0] *= 0.0
     rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
     assert round(rmin - 0.0, 7) == 0
@@ -62,12 +62,12 @@ def test_radius_ratio_triangle_min_max():
 def test_radius_ratio_tetrahedron_min_max():
 
     # Create mesh, collpase and compute min ratio
-    mesh = UnitCubeMesh(12, 12, 12)
+    mesh = UnitCubeMesh(MPI.comm_world, 12, 12, 12)
 
     rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
     assert rmax <= rmax
 
-    x = mesh.coordinates()
+    x = mesh.geometry().x()
     x[:, 0] *= 0.0
     rmin, rmax = MeshQuality.radius_ratio_min_max(mesh)
     assert round(rmax - 0.0, 7) == 0
@@ -76,24 +76,27 @@ def test_radius_ratio_tetrahedron_min_max():
 
 def test_radius_ratio_matplotlib():
     # Create mesh, collpase and compute min ratio
-    mesh = UnitCubeMesh(12, 12, 12)
+    mesh = UnitCubeMesh(MPI.comm_world, 12, 12, 12)
     test = MeshQuality.radius_ratio_matplotlib_histogram(mesh, 5)
     print(test)
 
 
 @skip_in_parallel
 def test_radius_ratio_min_radius_ratio_max():
-    mesh1d = UnitIntervalMesh(4)
-    mesh1d.coordinates()[4] = mesh1d.coordinates()[3]
+    mesh1d = UnitIntervalMesh(MPI.comm_self, 4)
+    x = mesh1d.geometry().x()
+    x[4] = mesh1d.geometry().x()[3]
 
     # Create 2D mesh with one equilateral triangle
-    mesh2d = UnitSquareMesh(1, 1, 'left')
-    mesh2d.coordinates()[3] += 0.5*(sqrt(3.0)-1.0)
+    mesh2d = UnitSquareMesh(MPI.comm_self, 1, 1)
+    x = mesh2d.geometry().x()
+    x[3] += 0.5*(sqrt(3.0)-1.0)
 
     # Create 3D mesh with regular tetrahedron and degenerate cells
-    mesh3d = UnitCubeMesh(1, 1, 1)
-    mesh3d.coordinates()[2][0] = 1.0
-    mesh3d.coordinates()[7][1] = 0.0
+    mesh3d = UnitCubeMesh(MPI.comm_self, 1, 1, 1)
+    x = mesh3d.geometry().x()
+    x[2][0] = 1.0
+    x[7][1] = 0.0
     rmin, rmax = MeshQuality.radius_ratio_min_max(mesh1d)
     assert round(rmin - 0.0, 7) == 0
     assert round(rmax - 1.0, 7) == 0
@@ -109,7 +112,7 @@ def test_radius_ratio_min_radius_ratio_max():
 
 def test_dihedral_angles_min_max():
     # Create 3D mesh with regular tetrahedron
-    mesh = UnitCubeMesh(2, 2, 2)
+    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     dang_min, dang_max = MeshQuality.dihedral_angles_min_max(mesh)
     assert round(dang_min*(180/numpy.pi) - 45.0) == 0
     assert round(dang_max*(180/numpy.pi) - 90.0) == 0
@@ -117,6 +120,6 @@ def test_dihedral_angles_min_max():
 
 def test_dihedral_angles_matplotlib():
     # Create mesh, collpase and compute min ratio
-    mesh = UnitCubeMesh(12, 12, 12)
+    mesh = UnitCubeMesh(MPI.comm_world, 12, 12, 12)
     test = MeshQuality.dihedral_angles_matplotlib_histogram(mesh, 5)
     print(test)

@@ -37,7 +37,7 @@ def tp(request):
 
 @fixture
 def mesh():
-    return UnitCubeMesh(3, 3, 3)
+    return UnitCubeMesh(MPI.comm_world, 3, 3, 3)
 
 
 @fixture
@@ -53,7 +53,7 @@ def funcs(mesh):
 
 @fixture
 def cube():
-    return UnitCubeMesh(8, 8, 8)
+    return UnitCubeMesh(MPI.comm_world, 8, 8, 8)
 
 
 @fixture
@@ -134,7 +134,7 @@ def test_Assign(f, cube):
 
 @skip_in_parallel
 def test_meshfunction_where_equal():
-    mesh = UnitSquareMesh(2, 2)
+    mesh = UnitSquareMesh(MPI.comm_self, 2, 2)
 
     cf = MeshFunction("size_t", mesh, mesh.topology().dim())
     cf.set_all(1)

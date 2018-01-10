@@ -41,7 +41,7 @@ def mesh1d():
 @fixture
 def mesh2d():
     # Create 2D mesh with one equilateral triangle
-    mesh2d = UnitSquareMesh(1, 1, 'left')
+    mesh2d = UnitSquareMesh(MPI.comm_world, 1, 1, 'left')
     mesh2d.coordinates()[3] += 0.5*(sqrt(3.0)-1.0)
     return mesh2d
 
@@ -80,7 +80,7 @@ def interval():
 
 @fixture
 def square():
-    return UnitSquareMesh(5, 5)
+    return UnitSquareMesh(MPI.comm_world, 5, 5)
 
 
 @fixture
@@ -100,7 +100,7 @@ def box():
 
 @fixture
 def mesh():
-    return UnitSquareMesh(3, 3)
+    return UnitSquareMesh(MPI.comm_world, 3, 3)
 
 
 @fixture
@@ -136,7 +136,7 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
 
 def test_UnitSquareMesh():
     """Create mesh of unit square."""
-    mesh = UnitSquareMesh(5, 7)
+    mesh = UnitSquareMesh(MPI.comm_world, 5, 7)
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 70
 
@@ -177,13 +177,13 @@ def test_UnitCubeMeshDistributedLocal():
 
 
 def test_UnitQuadMesh():
-    mesh = UnitSquareMesh.create(5, 7, CellType.Type.quadrilateral)
+    mesh = UnitSquareMesh(MPI.comm_world, 5, 7, CellType.Type.quadrilateral)
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 35
 
 
 def test_UnitHexMesh():
-    mesh = UnitCubeMesh.create(5, 7, 9, CellType.Type.hexahedron)
+    mesh = UnitCubeMesh(MPI.comm_world, 5, 7, 9, CellType.Type.hexahedron)
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
 
@@ -200,7 +200,7 @@ def test_RefineUnitIntervalMesh():
 
 def test_RefineUnitSquareMesh():
     """Refine mesh of unit square."""
-    mesh = UnitSquareMesh(5, 7)
+    mesh = UnitSquareMesh(MPI.comm_world, 5, 7)
     mesh = refine(mesh)
     assert mesh.num_entities_global(0) == 165
     assert mesh.num_entities_global(2) == 280
@@ -269,9 +269,9 @@ def test_Read(cd_tempdir):
 
 
 def test_hash():
-    h1 = UnitSquareMesh(4, 4).hash()
-    h2 = UnitSquareMesh(4, 5).hash()
-    h3 = UnitSquareMesh(4, 4).hash()
+    h1 = UnitSquareMesh(MPI.comm_world, 4, 4).hash()
+    h2 = UnitSquareMesh(MPI.comm_world, 4, 5).hash()
+    h3 = UnitSquareMesh(MPI.comm_world, 4, 4).hash()
     assert h1 == h3
     assert h1 != h2
 
@@ -301,7 +301,7 @@ def test_SubsetIterators(mesh):
 @skip_in_parallel
 def test_MeshXML2D(cd_tempdir):
     """Write and read 2D mesh to/from file"""
-    mesh_out = UnitSquareMesh(3, 3)
+    mesh_out = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh_in = Mesh()
     file = File("unitsquare.xml")
     file << mesh_out
@@ -323,7 +323,7 @@ def test_MeshXML3D(cd_tempdir):
 @skip_in_parallel
 def xtest_MeshFunction(cd_tempdir):
     """Write and read mesh function to/from file"""
-    mesh = UnitSquareMesh(1, 1)
+    mesh = UnitSquareMesh(MPI.comm_world, 1, 1)
     f = MeshFunction('int', mesh, 0)
     f[0] = 2
     f[1] = 4
@@ -339,20 +339,20 @@ def xtest_MeshFunction(cd_tempdir):
 
 def test_GetGeometricalDimension():
     """Get geometrical dimension of mesh"""
-    mesh = UnitSquareMesh(5, 5)
+    mesh = UnitSquareMesh(MPI.comm_world, 5, 5)
     assert mesh.geometry().dim() == 2
 
 
 @skip_in_parallel
 def test_GetCoordinates():
     """Get coordinates of vertices"""
-    mesh = UnitSquareMesh(5, 5)
+    mesh = UnitSquareMesh(MPI.comm_world, 5, 5)
     assert len(mesh.coordinates()) == 36
 
 
 def test_GetCells():
     """Get cells of mesh"""
-    mesh = UnitSquareMesh(5, 5)
+    mesh = UnitSquareMesh(MPI.comm_world, 5, 5)
     assert MPI.sum(mesh.mpi_comm(), len(mesh.cells())) == 50
 
 
@@ -411,7 +411,7 @@ def test_rmin_rmax(mesh1d, mesh2d, mesh3d):
 
 def test_basic_cell_orientations():
     "Test that default cell orientations initialize and update as expected."
-    mesh = UnitIntervalMesh(12)
+    mesh = UnitIntervalMesh(MPI.comm_world, 12)
     orientations = mesh.cell_orientations()
     print(len(orientations))
     assert len(orientations) == 0
@@ -426,12 +426,12 @@ def test_basic_cell_orientations():
 @skip_in_parallel
 def test_cell_orientations():
     "Test that cell orientations update as expected."
-    mesh = UnitIntervalMesh(12)
+    mesh = UnitIntervalMesh(MPI.comm_world, 12)
     mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0"), degree=0))
     for i in range(mesh.num_cells()):
         assert mesh.cell_orientations()[i] == 0
 
-    mesh = UnitSquareMesh(2, 2)
+    mesh = UnitSquareMesh(MPI.comm_world, 2, 2)
     mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0"), degree=0))
     reference = numpy.array((0, 1, 0, 1, 0, 1, 0, 1))
     # Only compare against reference in serial (don't know how to
@@ -439,7 +439,7 @@ def test_cell_orientations():
     for i in range(mesh.num_cells()):
         assert mesh.cell_orientations()[i] == reference[i]
 
-    mesh = BoundaryMesh(UnitSquareMesh(2, 2), "exterior")
+    mesh = BoundaryMesh(UnitSquareMesh(MPI.comm_world, 2, 2), "exterior")
     mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]"), degree=1))
     print(mesh.cell_orientations())
 
@@ -453,21 +453,21 @@ ghost_mode = set_parameters_fixture("ghost_mode", [
 ])
 
 mesh_factories = [
-    (UnitIntervalMesh, (8,)),
-    (UnitSquareMesh, (4, 4)),
-    (UnitCubeMesh, (2, 2, 2)),
-    (UnitSquareMesh, (4, 4, CellType.Type.quadrilateral)),
-    (UnitCubeMesh, (2, 2, 2, CellType.Type.hexahedron)),
+    (UnitIntervalMesh, (MPI.comm_world, 8,)),
+    (UnitSquareMesh, (MPI.comm_world, 4, 4)),
+    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
+    (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
+    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron)),
     # FIXME: Add mechanism for testing meshes coming from IO
 ]
 
 mesh_factories_broken_shared_entities = [
-    (UnitIntervalMesh, (8,)),
-    (UnitSquareMesh, (4, 4)),
+    (UnitIntervalMesh, (MPI.comm_world, 8,)),
+    (UnitSquareMesh, (MPI.comm_world, 4, 4)),
     # FIXME: Problem in test_shared_entities
-    (UnitCubeMesh, (2, 2, 2)),
-    (UnitSquareMesh, (4, 4, CellType.Type.quadrilateral)),
-    (UnitCubeMesh, (2, 2, 2, CellType.Type.hexahedron)),
+    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
+    (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
+    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron)),
 ]
 
 # FIXME: Fix this xfail
@@ -475,7 +475,7 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
     """Xfail when mesh_factory on quads/hexes uses
     shared_vertex mode. Needs implementing.
     """
-    if mesh_factory in [UnitSquareMesh.create, UnitCubeMesh.create]:
+    if mesh_factory in [UnitSquareMesh, UnitCubeMesh]:
         if ghost_mode == 'shared_vertex':
             pytest.xfail(reason="Missing functionality in '{}' with '' "
                          "mode".format(mesh_factory, ghost_mode))
@@ -498,7 +498,7 @@ def test_shared_entities(mesh_factory, ghost_mode):
                           numpy.ndarray)
 
         if mesh.topology().have_shared_entities(shared_dim):
-            for e in entities(mesh, shared_dim):
+            for e in Entities(mesh, shared_dim):
                 sharing = e.sharing_processes()
                 assert isinstance(sharing, set)
                 assert (len(sharing) > 0) == e.is_shared()
@@ -587,10 +587,10 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
             assert mesh.topology().have_global_indices(d1)
 
             # Loop over entities of dimension d
-            for e in entities(mesh, d):
+            for e in Entities(mesh, d):
 
                 # Get global indices
-                subentities_indices = [e1.global_index() for e1 in entities(e, d1)]
+                subentities_indices = [e1.global_index() for e1 in EntityRange(e, d1)]
                 assert subentities_indices.count(-1) == 0
 
                 # Check that d1-subentities of d-entity have increasing indices
@@ -600,14 +600,14 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
 def test_mesh_topology_reference():
     """Check that Mesh.topology() returns a reference rather
     than copy"""
-    mesh = UnitSquareMesh(4, 4)
+    mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
     assert mesh.topology().id() == mesh.topology().id()
 
 
 def test_mesh_topology_lifetime():
     """Check that lifetime of Mesh.topology() is bound to
     underlying mesh object"""
-    mesh = UnitSquareMesh(4, 4)
+    mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
 
     rc = sys.getrefcount(mesh)
     topology = mesh.topology()
@@ -619,7 +619,7 @@ def test_mesh_topology_lifetime():
 def test_mesh_connectivity_lifetime():
     """Check that lifetime of MeshConnectivity is bound to
     underlying mesh topology object"""
-    mesh = UnitSquareMesh(4, 4)
+    mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
     mesh.init(1, 2)
     topology = mesh.topology()
 

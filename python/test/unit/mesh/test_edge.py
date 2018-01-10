@@ -21,18 +21,18 @@
 # Last changed: 2014-05-30
 
 import pytest
-from dolfin import *
+from dolfin import UnitSquareMesh, UnitCubeMesh, MPI, Edge, Edges
 from dolfin_utils.test import fixture, skip_in_parallel
 
 
 @fixture
 def cube():
-    return UnitCubeMesh(5, 5, 5)
+    return UnitCubeMesh(MPI.comm_world, 5, 5, 5)
 
 
 @fixture
 def square():
-    return UnitSquareMesh(5, 5)
+    return UnitSquareMesh(MPI.comm_world, 5, 5)
 
 
 @pytest.fixture(scope='module', params=range(2))
@@ -45,7 +45,9 @@ def meshes(cube, square, request):
 def test_2DEdgeLength(square):
     """Iterate over edges and sum length."""
     length = 0.0
-    for e in edges(square):
+    square.init(1)
+    print (square.num_edges())
+    for e in Edges(square):
         length += e.length()
     assert round(length - 19.07106781186544708362, 7) == 0
 
@@ -54,13 +56,15 @@ def test_2DEdgeLength(square):
 def test_3DEdgeLength(cube):
     """Iterate over edges and sum length."""
     length = 0.0
-    for e in edges(cube):
+    cube.init(1)
+    for e in Edges(cube):
         length += e.length()
     assert round(length - 278.58049080280125053832, 7) == 0
 
 
 def test_EdgeDot(meshes):
     """Iterate over edges compute dot product with ."""
-    for e in edges(meshes):
+    meshes.init(1)
+    for e in Edges(meshes):
         dot = e.dot(e)/(e.length()**2)
         assert round(dot - 1.0, 7) == 0
