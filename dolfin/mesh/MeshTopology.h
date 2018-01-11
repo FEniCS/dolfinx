@@ -77,9 +77,6 @@ namespace dolfin
       return _ghost_offset_index[dim];
     }
 
-    /// Clear all data
-    void clear();
-
     /// Clear data for given pair of topological dimensions
     void clear(std::size_t d0, std::size_t d1);
 

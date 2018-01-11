@@ -21,7 +21,6 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 #include <pybind11/operators.h>
-
 #ifdef HAS_PYBIND11_PETSC4PY
 #include <petsc4py/petsc4py.h>
 #endif
@@ -305,7 +304,7 @@ namespace dolfin_wrappers
              std::size_t num_rows = m_range.second - m_range.first;
              std::size_t num_cols = instance.size(1);
 
-             Eigen::MatrixXd A = Eigen::MatrixXd::Zero(num_rows, num_cols);
+             RowMatrixXd A = Eigen::RowMatrixXd::Zero(num_rows, num_cols);
              std::vector<std::size_t> columns;
              std::vector<double> values;
              for (std::size_t i = 0; i < num_rows; ++i)

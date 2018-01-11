@@ -240,19 +240,6 @@ namespace dolfin_wrappers
           self.get_vertex_coordinates(x);
           return x; }, "Get cell vertex coordinates");
 
-    // dolfin::MeshEntityIterator
-    py::class_<dolfin::MeshEntityIterator, std::shared_ptr<dolfin::MeshEntityIterator>>
-      (m, "MeshEntityIterator", "DOLFIN MeshEntityIterator object")
-      .def(py::init<const dolfin::Mesh&, std::size_t>())
-      .def("__iter__",[](dolfin::MeshEntityIterator& self) { self.operator--(); return self; }) // TODO: check return type and policy
-      .def("__next__",[](dolfin::MeshEntityIterator& self)  // TODO: check return type and policy
-           {
-             self.operator++();
-             if (self.end())
-               throw py::stop_iteration("");
-             return *self;
-           });
-
     py::class_<dolfin::MeshEntityRange, std::shared_ptr<dolfin::MeshEntityRange>>
       (m, "MeshEntities", "Range for iterative over entities of a Mesh")
       .def(py::init<const dolfin::Mesh&, int>())
