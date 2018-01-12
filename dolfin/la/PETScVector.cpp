@@ -84,11 +84,6 @@ PETScVector::~PETScVector()
     VecDestroy(&_x);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<PETScVector> PETScVector::copy() const
-{
-  return std::make_shared<PETScVector>(*this);
-}
-//-----------------------------------------------------------------------------
 void PETScVector::init(std::size_t N)
 {
   const auto range = dolfin::MPI::local_range(this->mpi_comm(), N);

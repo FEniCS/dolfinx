@@ -66,9 +66,6 @@ public:
   /// Destructor
   virtual ~PETScVector();
 
-  /// Return copy of vector
-  std::shared_ptr<PETScVector> copy() const;
-
   /// Initialize vector to global size N
   void init(std::size_t N);
 

@@ -82,11 +82,6 @@ PETScMatrix::~PETScMatrix()
   // Do nothing (PETSc matrix is destroyed in base class)
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<PETScMatrix> PETScMatrix::copy() const
-{
-  return std::make_shared<PETScMatrix>(*this);
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
 {
   // Throw error if already initialised

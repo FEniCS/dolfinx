@@ -469,7 +469,9 @@ void SystemAssembler::cell_wise_assembly(
 
     // Add entries to global tensor
     if (A)
-      A->add_local(data.Ae[0].data(), cell_dofs[0]);
+      A->add_local(data.Ae[0].data(), cell_dofs[0][0].size(),
+                   cell_dofs[0][0].data(), cell_dofs[0][1].size(),
+                   cell_dofs[0][1].data());
     if (b)
       b->add_local(data.Ae[1].data(), cell_dofs[1][0].size(),
                    cell_dofs[1][0].data());
@@ -737,7 +739,8 @@ void SystemAssembler::facet_wise_assembly(
         std::vector<ArrayView<const la_index_t>> mdofs(macro_dofs[0].size());
         for (std::size_t i = 0; i < macro_dofs[0].size(); ++i)
           mdofs[i].set(macro_dofs[0][i]);
-        A->add_local(ufc[0]->macro_A.data(), mdofs);
+        A->add_local(ufc[0]->macro_A.data(), mdofs[0].size(), mdofs[0].data(),
+                     mdofs[1].size(), mdofs[1].data());
       }
       else if (A && !add_macro_element && tensor_required_cell[0])
       {
@@ -820,10 +823,17 @@ void SystemAssembler::facet_wise_assembly(
 
       // Add entries to global tensor
       if (A)
-        A->add_local(data.Ae[0].data(), cell_dofs[0][0]);
+      {
+        A->add_local(data.Ae[0].data(), cell_dofs[0][0][0].size(),
+                     cell_dofs[0][0][0].data(), cell_dofs[0][0][1].size(),
+                     cell_dofs[0][0][1].data());
+      }
+
       if (b)
+      {
         b->add_local(data.Ae[1].data(), cell_dofs[1][0][0].size(),
                      cell_dofs[1][0][0].data());
+      }
 
       // Mark cell as processed
       cell_tensor_computed[cell.index()] = true;
@@ -978,7 +988,10 @@ void SystemAssembler::matrix_block_add(
         for (std::size_t j = 0; j < nn; j++)
           Ae[i * nn + j] = macro_A[2 * nn * mm * c + 2 * i * nn + nn * c + j];
       }
-      tensor.add_local(Ae.data(), cell_dofs[c]);
+
+      tensor.add_local(Ae.data(), cell_dofs[c][0].size(),
+                       cell_dofs[c][0].data(), cell_dofs[c][1].size(),
+                       cell_dofs[c][1].data());
     }
   }
 }

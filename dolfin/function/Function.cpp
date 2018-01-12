@@ -83,7 +83,7 @@ Function::Function(const Function& v) : _allow_extrapolation(false)
     this->_function_space = v._function_space;
 
     // Copy vector
-    this->_vector = v._vector->copy();
+    this->_vector = std::make_shared<PETScVector>(*v._vector);
   }
   else
   {

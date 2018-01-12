@@ -31,7 +31,6 @@
 #ifdef HAS_PETSC
 
 #include "PETScBaseMatrix.h"
-#include <dolfin/common/ArrayView.h>
 #include <map>
 #include <memory>
 #include <petscmat.h>
@@ -122,19 +121,6 @@ public:
   {
     add_local(block, num_rows[0], rows[0], num_rows[1], rows[1]);
   }
-
-  /// Add block of values using local indices
-  void add_local(const double* block,
-                 const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
-  {
-    add_local(block, rows[0].size(), rows[0].data(), rows[1].size(),
-              rows[1].data());
-  }
-
-  //--- Implementation of the GenericMatrix interface --
-
-  /// Return copy of matrix
-  std::shared_ptr<PETScMatrix> copy() const;
 
   /// Initialize vector z to be compatible with the matrix-vector product
   /// y = Ax. In the parallel case, both size and layout are

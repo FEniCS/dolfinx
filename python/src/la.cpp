@@ -683,16 +683,14 @@ void la(py::module& m)
   py::class_<dolfin::PETScVector, std::shared_ptr<dolfin::PETScVector>,
              dolfin::PETScObject>(m, "PETScVector", "DOLFIN PETScVector object")
       .def(py::init([](const MPICommWrapper comm) {
-        return std::unique_ptr<dolfin::PETScVector>(
-            new dolfin::PETScVector(comm.get()));
+        return std::make_unique<dolfin::PETScVector>(comm.get());
       }))
       .def(py::init([](const MPICommWrapper comm, std::size_t N) {
-        auto ptr = new dolfin::PETScVector(comm.get());
-        ptr->init(N);
-        return std::unique_ptr<dolfin::PETScVector>(ptr);
+        auto _x = std::make_unique<dolfin::PETScVector>(comm.get());
+        _x->init(N);
+        return _x;
       }))
       .def(py::init<Vec>())
-      .def("copy", &dolfin::PETScVector::copy)
       .def("apply", &dolfin::PETScVector::apply)
       .def("norm", &dolfin::PETScVector::norm)
       .def("get_options_prefix", &dolfin::PETScVector::get_options_prefix)
@@ -703,14 +701,14 @@ void la(py::module& m)
                & dolfin::PETScVector::size)
       .def("__add__",
            [](const dolfin::PETScVector& self, const dolfin::PETScVector& x) {
-             auto y = self.copy();
+             auto y = std::make_unique<dolfin::PETScVector>(self);
              *y += x;
              return y;
            },
            py::is_operator())
       .def("__sub__",
            [](dolfin::PETScVector& self, const dolfin::PETScVector& x) {
-             auto y = self.copy();
+             auto y = std::make_unique<dolfin::PETScVector>(self);
              *y -= x;
              return y;
            },
