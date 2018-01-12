@@ -20,6 +20,7 @@ pipelines:
           - cd ../demo
           - python3 ./generate-demo-files.py
           - cd documented/poisson
+          - export DOLFIN_NOPLOT=1
           - python3 ./demo_poisson.py
           - mpirun -np 3 python3 ./demo_poisson.py
           - cd ../stokes-taylor-hood
