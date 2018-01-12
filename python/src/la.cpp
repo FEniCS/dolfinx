@@ -601,12 +601,6 @@ namespace dolfin_wrappers
       .def(py::init<Vec>())
       .def("copy", &dolfin::PETScVector::copy)
       .def("apply", &dolfin::PETScVector::apply)
-      .def("get_local", [](const dolfin::PETScVector& self)
-           {
-             std::vector<double> values;
-             self.get_local(values);
-             return py::array_t<double>(values.size(), values.data());
-           })
       .def("norm", &dolfin::PETScVector::norm)
       .def("get_options_prefix", &dolfin::PETScVector::get_options_prefix)
       .def("set_options_prefix", &dolfin::PETScVector::set_options_prefix)

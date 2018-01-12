@@ -114,7 +114,7 @@ A mesh is created, and a quadratic finite element function space::
     parameters["ghost_mode"] = "shared_facet"
 
     # Create mesh and define function space
-    mesh = UnitSquareMesh(32, 32)
+    mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
     V = FunctionSpace(mesh, "CG", 2)
 
 A subclass of :py:class:`SubDomain <dolfin.cpp.SubDomain>`,
@@ -187,8 +187,8 @@ The computed solution is written to a file in VTK format and plotted to
 the screen. ::
 
     # Save solution to file
-    file = XDMFFile(mesh.mpi_comm(), "biharmonic.xdmf")
-    file.write(u)
+    with XDMFFile(mesh.mpi_comm(), "biharmonic.xdmf") as file:
+        file.write(u)
 
     # Plot solution
     plot(u)
