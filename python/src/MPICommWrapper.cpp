@@ -36,8 +36,5 @@ MPICommWrapper& MPICommWrapper::operator=(const MPI_Comm comm)
   return *this;
 }
 //-----------------------------------------------------------------------------
-MPI_Comm MPICommWrapper::get() const
-{
-  return _comm;
-}
+MPI_Comm MPICommWrapper::get() const { return _comm; }
 //-----------------------------------------------------------------------------

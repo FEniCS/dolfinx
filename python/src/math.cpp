@@ -15,18 +15,18 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-#include <pybind11/pybind11.h>
 #include <dolfin/math/basic.h>
+#include <pybind11/pybind11.h>
 
 namespace py = pybind11;
 
 namespace dolfin_wrappers
 {
-  void math(py::module& m)
-  {
-    // dolfin/math free functions
-    m.def("ipow", &dolfin::ipow);
-    m.def("near", &dolfin::near, py::arg("x0"), py::arg("x1"),
-          py::arg("eps")=DOLFIN_EPS);
-  }
+void math(py::module& m)
+{
+  // dolfin/math free functions
+  m.def("ipow", &dolfin::ipow);
+  m.def("near", &dolfin::near, py::arg("x0"), py::arg("x1"),
+        py::arg("eps") = DOLFIN_EPS);
+}
 }
