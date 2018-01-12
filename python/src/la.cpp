@@ -691,6 +691,7 @@ void la(py::module& m)
         return _x;
       }))
       .def(py::init<Vec>())
+      .def(py::init<const dolfin::PETScVector>())
       .def("apply", &dolfin::PETScVector::apply)
       .def("norm", &dolfin::PETScVector::norm)
       .def("get_options_prefix", &dolfin::PETScVector::get_options_prefix)
