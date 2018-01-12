@@ -69,7 +69,7 @@ namespace dolfin
     PETScMatrix(const PETScMatrix& A);
 
     /// Destructor
-    virtual ~PETScMatrix();
+    ~PETScMatrix();
 
     //--- Implementation of the GenericTensor interface ---
 
@@ -91,7 +91,7 @@ namespace dolfin
     std::size_t nnz() const;
 
     /// Set all entries to zero and keep any sparse structure
-    virtual void zero();
+    void zero();
 
     /// Finalize assembly of tensor. The following values are recognized
     /// for the mode parameter:
@@ -99,34 +99,29 @@ namespace dolfin
     ///   add    - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
     ///   insert - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
     ///   flush  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
-    virtual void apply(std::string mode);
+    void apply(std::string mode);
 
     /// Return MPI communicator
     MPI_Comm mpi_comm() const;
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose) const;
-
-    /// Return tensor rank (number of dimensions)
-    virtual std::size_t rank() const
-    { return 2; }
+    std::string str(bool verbose) const;
 
     /// Set block of values using local indices
-    virtual void set_local(const double* block,
-                           const dolfin::la_index_t* num_rows,
-                           const dolfin::la_index_t * const * rows)
+    void set_local(const double* block,
+                   const dolfin::la_index_t* num_rows,
+                   const dolfin::la_index_t * const * rows)
     { set_local(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values using local indices
-    virtual void add_local(const double* block,
-                           const dolfin::la_index_t* num_rows,
-                           const dolfin::la_index_t * const * rows)
+    void add_local(const double* block,
+                   const dolfin::la_index_t* num_rows,
+                   const dolfin::la_index_t * const * rows)
     { add_local(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values using local indices
-    virtual void
-      add_local(const double* block,
-                const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
+    void add_local(const double* block,
+                   const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
     {
       add_local(block, rows[0].size(), rows[0].data(),
                 rows[1].size(), rows[1].data());
@@ -135,7 +130,7 @@ namespace dolfin
     //--- Implementation of the GenericMatrix interface --
 
     /// Return copy of matrix
-    virtual std::shared_ptr<PETScMatrix> copy() const;
+    std::shared_ptr<PETScMatrix> copy() const;
 
     /// Initialize vector z to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are
@@ -145,67 +140,67 @@ namespace dolfin
     ///         Vector to initialise
     /// @param  dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void init_vector(PETScVector& z, std::size_t dim) const
+    void init_vector(PETScVector& z, std::size_t dim) const
     { PETScBaseMatrix::init_vector(z, dim); }
 
     /// Get block of values
-    virtual void get(double* block,
-                     std::size_t m, const dolfin::la_index_t* rows,
-                     std::size_t n, const dolfin::la_index_t* cols) const;
+    void get(double* block,
+             std::size_t m, const dolfin::la_index_t* rows,
+             std::size_t n, const dolfin::la_index_t* cols) const;
 
     /// Set block of values using global indices
-    virtual void set(const double* block,
-                     std::size_t m, const dolfin::la_index_t* rows,
-                     std::size_t n, const dolfin::la_index_t* cols);
+    void set(const double* block,
+             std::size_t m, const dolfin::la_index_t* rows,
+             std::size_t n, const dolfin::la_index_t* cols);
 
     /// Set block of values using local indices
-    virtual void set_local(const double* block,
-                           std::size_t m, const dolfin::la_index_t* rows,
-                           std::size_t n, const dolfin::la_index_t* cols);
+    void set_local(const double* block,
+                   std::size_t m, const dolfin::la_index_t* rows,
+                   std::size_t n, const dolfin::la_index_t* cols);
 
     /// Add block of values using global indices
-    virtual void add(const double* block,
-                     std::size_t m, const dolfin::la_index_t* rows,
-                     std::size_t n, const dolfin::la_index_t* cols);
+    void add(const double* block,
+             std::size_t m, const dolfin::la_index_t* rows,
+             std::size_t n, const dolfin::la_index_t* cols);
 
     /// Add block of values using local indices
-    virtual void add_local(const double* block,
-                           std::size_t m, const dolfin::la_index_t* rows,
-                           std::size_t n, const dolfin::la_index_t* cols);
+    void add_local(const double* block,
+                   std::size_t m, const dolfin::la_index_t* rows,
+                   std::size_t n, const dolfin::la_index_t* cols);
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const PETScMatrix& A,
-                      bool same_nonzero_pattern);
+    void axpy(double a, const PETScMatrix& A,
+              bool same_nonzero_pattern);
 
     /// Return norm of matrix
     double norm(std::string norm_type) const;
 
     /// Set given rows (global row indices) to zero
-    virtual void zero(std::size_t m, const dolfin::la_index_t* rows);
+    void zero(std::size_t m, const dolfin::la_index_t* rows);
 
     /// Set given rows (local row indices) to zero
-    virtual void zero_local(std::size_t m, const dolfin::la_index_t* rows);
+    void zero_local(std::size_t m, const dolfin::la_index_t* rows);
 
-    // Matrix-vector product, y = Ax
-    virtual void mult(const PETScVector& x, PETScVector& y) const;
+    /// Matrix-vector product, y = Ax
+    void mult(const PETScVector& x, PETScVector& y) const;
 
-    // Matrix-vector product, y = A^T x
-    virtual void transpmult(const PETScVector& x, PETScVector& y) const;
+    /// Matrix-vector product, y = A^T x
+    void transpmult(const PETScVector& x, PETScVector& y) const;
 
     /// Get diagonal of a matrix
-    virtual void get_diagonal(PETScVector& x) const;
+    void get_diagonal(PETScVector& x) const;
 
     /// Set diagonal of a matrix
-    virtual void set_diagonal(const PETScVector& x);
+    void set_diagonal(const PETScVector& x);
 
     /// Multiply matrix by given number
-    virtual const PETScMatrix& operator*= (double a);
+    const PETScMatrix& operator*= (double a);
 
     /// Divide matrix by given number
-    virtual const PETScMatrix& operator/= (double a);
+    const PETScMatrix& operator/= (double a);
 
     /// Assignment operator
-    virtual const PETScMatrix& operator= (const PETScMatrix& A);
+    const PETScMatrix& operator= (const PETScMatrix& A);
 
     /// Test if matrix is symmetric
     virtual bool is_symmetric(double tol) const;
