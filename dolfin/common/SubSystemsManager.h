@@ -27,87 +27,84 @@
 namespace dolfin
 {
 
-  /// This is a singleton class which manages the initialisation and
-  /// finalisation of various sub systems, such as MPI and PETSc.
+/// This is a singleton class which manages the initialisation and
+/// finalisation of various sub systems, such as MPI and PETSc.
 
-  class SubSystemsManager
-  {
-  public:
+class SubSystemsManager
+{
+public:
+  /// Singleton instance. Calling this ensures singleton instance of
+  /// SubSystemsManager is initialized according to the "Construct
+  /// on First Use" idiom.
+  static SubSystemsManager& singleton();
 
-    /// Singleton instance. Calling this ensures singleton instance of
-    /// SubSystemsManager is initialized according to the "Construct
-    /// on First Use" idiom.
-    static SubSystemsManager& singleton();
+  // Copy constructor
+  SubSystemsManager(const SubSystemsManager&) = delete;
 
-    // Copy constructor
-    SubSystemsManager(const SubSystemsManager&) = delete;
+  /// Initialise MPI
+  static void init_mpi();
 
-    /// Initialise MPI
-    static void init_mpi();
+  /// Initialise MPI with required level of thread support
+  static int init_mpi(int argc, char* argv[], int required_thread_level);
 
-    /// Initialise MPI with required level of thread support
-    static int init_mpi(int argc, char* argv[], int required_thread_level);
+  /// Initialize PETSc without command-line arguments
+  static void init_petsc();
 
-    /// Initialize PETSc without command-line arguments
-    static void init_petsc();
+  /// Initialize PETSc with command-line arguments. Note that PETSc
+  /// command-line arguments may also be filtered and sent to PETSc
+  /// by parameters.parse(argc, argv).
+  static void init_petsc(int argc, char* argv[]);
 
-    /// Initialize PETSc with command-line arguments. Note that PETSc
-    /// command-line arguments may also be filtered and sent to PETSc
-    /// by parameters.parse(argc, argv).
-    static void init_petsc(int argc, char* argv[]);
+  /// Finalize subsystems. This will be called by the destructor, but in
+  /// special cases it may be necessary to call finalize() explicitly.
+  static void finalize();
 
-    /// Finalize subsystems. This will be called by the destructor, but in
-    /// special cases it may be necessary to call finalize() explicitly.
-    static void finalize();
+  /// Return true if DOLFIN initialised MPI (and is therefore responsible
+  /// for finalization)
+  static bool responsible_mpi();
 
-    /// Return true if DOLFIN initialised MPI (and is therefore responsible
-    /// for finalization)
-    static bool responsible_mpi();
+  /// Return true if DOLFIN initialised PETSc (and is therefore
+  /// responsible for finalization)
+  static bool responsible_petsc();
 
-    /// Return true if DOLFIN initialised PETSc (and is therefore
-    /// responsible for finalization)
-    static bool responsible_petsc();
+  /// Check if MPI has been initialised (returns true if MPI has been
+  /// initialised, even if it is later finalised)
+  static bool mpi_initialized();
 
-    /// Check if MPI has been initialised (returns true if MPI has been
-    /// initialised, even if it is later finalised)
-    static bool mpi_initialized();
-
-    /// Check if MPI has been finalized (returns true if MPI has been
-    /// finalised)
-    static bool mpi_finalized();
+  /// Check if MPI has been finalized (returns true if MPI has been
+  /// finalised)
+  static bool mpi_finalized();
 
 #ifdef HAS_PETSC
-    /// PETSc error handler. Logs everything known to DOLFIN logging
-    /// system (with level TRACE) and stores the error message into
-    /// pests_err_msg member.
-    static PetscErrorCode PetscDolfinErrorHandler(
-      MPI_Comm comm, int line, const char *fun, const char *file,
-      PetscErrorCode n, PetscErrorType p, const char *mess, void *ctx);
+  /// PETSc error handler. Logs everything known to DOLFIN logging
+  /// system (with level TRACE) and stores the error message into
+  /// pests_err_msg member.
+  static PetscErrorCode
+  PetscDolfinErrorHandler(MPI_Comm comm, int line, const char* fun,
+                          const char* file, PetscErrorCode n, PetscErrorType p,
+                          const char* mess, void* ctx);
 #endif
 
-    /// Last recorded PETSc error message
-    std::string petsc_err_msg;
+  /// Last recorded PETSc error message
+  std::string petsc_err_msg;
 
-  private:
+private:
+  // Constructor (private)
+  SubSystemsManager();
 
-    // Constructor (private)
-    SubSystemsManager();
+  // Destructor
+  ~SubSystemsManager();
 
-    // Destructor
-    ~SubSystemsManager();
+  // Finalize MPI
+  static void finalize_mpi();
 
-    // Finalize MPI
-    static void finalize_mpi();
+  // Finalize PETSc
+  static void finalize_petsc();
 
-    // Finalize PETSc
-    static void finalize_petsc();
-
-    // State variables
-    bool petsc_initialized;
-    bool control_mpi;
-
-  };
-
+  // State variables
+  bool petsc_initialized;
+  bool control_mpi;
+};
 }
 
 #endif

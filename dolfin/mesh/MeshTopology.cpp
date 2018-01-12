@@ -18,12 +18,12 @@
 // First added:  2006-05-08
 // Last changed: 2014-07-02
 
+#include "MeshTopology.h"
+#include "MeshConnectivity.h"
+#include <dolfin/common/utils.h>
+#include <dolfin/log/log.h>
 #include <numeric>
 #include <sstream>
-#include <dolfin/log/log.h>
-#include <dolfin/common/utils.h>
-#include "MeshConnectivity.h"
-#include "MeshTopology.h"
 
 using namespace dolfin;
 
@@ -34,13 +34,13 @@ MeshTopology::MeshTopology() : Variable("topology", "mesh topology")
 }
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)
-  : Variable("topology", "mesh topology"),
-    _num_entities(topology._num_entities),
-    _ghost_offset_index(topology._ghost_offset_index),
-    _global_num_entities(topology._global_num_entities),
-    _global_indices(topology._global_indices),
-    _shared_entities(topology._shared_entities),
-    _connectivity(topology._connectivity)
+    : Variable("topology", "mesh topology"),
+      _num_entities(topology._num_entities),
+      _ghost_offset_index(topology._ghost_offset_index),
+      _global_num_entities(topology._global_num_entities),
+      _global_indices(topology._global_indices),
+      _shared_entities(topology._shared_entities),
+      _connectivity(topology._connectivity)
 {
   // Do nothing
 }
@@ -50,7 +50,7 @@ MeshTopology::~MeshTopology()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
+MeshTopology& MeshTopology::operator=(const MeshTopology& topology)
 {
   // FIXME: Call copy constructor?
 
@@ -65,10 +65,7 @@ MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
   return *this;
 }
 //-----------------------------------------------------------------------------
-std::uint32_t MeshTopology::dim() const
-{
-  return _num_entities.size() - 1;
-}
+std::uint32_t MeshTopology::dim() const { return _num_entities.size() - 1; }
 //-----------------------------------------------------------------------------
 std::uint32_t MeshTopology::size(unsigned int dim) const
 {
@@ -163,17 +160,13 @@ MeshTopology::shared_entities(unsigned int dim) const
   auto e = _shared_entities.find(dim);
   if (e == _shared_entities.end())
   {
-    dolfin_error("MeshTopology.cpp",
-                 "get shared mesh entities",
+    dolfin_error("MeshTopology.cpp", "get shared mesh entities",
                  "Shared mesh entities have not been computed for dim %d", dim);
   }
   return e->second;
 }
 //-----------------------------------------------------------------------------
-size_t MeshTopology::hash() const
-{
-  return (*this)(dim(), 0).hash();
-}
+size_t MeshTopology::hash() const { return (*this)(dim(), 0).hash(); }
 //-----------------------------------------------------------------------------
 std::string MeshTopology::str(bool verbose) const
 {

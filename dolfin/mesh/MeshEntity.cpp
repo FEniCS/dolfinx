@@ -21,11 +21,11 @@
 // First added:  2006-05-11
 // Last changed: 2013-06-23
 
-#include <dolfin/log/log.h>
+#include "MeshEntity.h"
 #include "Mesh.h"
 #include "MeshTopology.h"
 #include "Vertex.h"
-#include "MeshEntity.h"
+#include <dolfin/log/log.h>
 
 using namespace dolfin;
 
@@ -38,21 +38,21 @@ void MeshEntity::init(const Mesh& mesh, std::size_t dim, std::size_t index)
   _local_index = index;
 
   // Check index range
-  if ((std::int64_t) index < _mesh->num_entities(dim))
+  if ((std::int64_t)index < _mesh->num_entities(dim))
     return;
 
   // Initialize mesh entities
   _mesh->init(dim);
 
   // Check index range again
-  if ((std::int64_t) index < _mesh->num_entities(dim))
+  if ((std::int64_t)index < _mesh->num_entities(dim))
     return;
 
   // Illegal index range
-  dolfin_error("MeshEntity.cpp",
-               "create mesh entity",
-               "Mesh entity index %d out of range [0, %d] for entity of dimension %d",
-               index, _mesh->num_entities(dim), dim);
+  dolfin_error(
+      "MeshEntity.cpp", "create mesh entity",
+      "Mesh entity index %d out of range [0, %d] for entity of dimension %d",
+      index, _mesh->num_entities(dim), dim);
 }
 //-----------------------------------------------------------------------------
 MeshEntity::~MeshEntity()
@@ -67,8 +67,10 @@ bool MeshEntity::incident(const MeshEntity& entity) const
     return false;
 
   // Get list of entities for given topological dimension
-  const unsigned int* entities = _mesh->topology()(_dim, entity._dim)(_local_index);
-  const std::size_t num_entities = _mesh->topology()(_dim, entity._dim).size(_local_index);
+  const unsigned int* entities
+      = _mesh->topology()(_dim, entity._dim)(_local_index);
+  const std::size_t num_entities
+      = _mesh->topology()(_dim, entity._dim).size(_local_index);
 
   // Check if any entity matches
   for (std::size_t i = 0; i < num_entities; ++i)
@@ -84,14 +86,15 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
   // Must be in the same mesh to be incident
   if (_mesh != entity._mesh)
   {
-    dolfin_error("MeshEntity.cpp",
-                 "compute index of mesh entity",
+    dolfin_error("MeshEntity.cpp", "compute index of mesh entity",
                  "Mesh entity is defined on a different mesh");
   }
 
   // Get list of entities for given topological dimension
-  const unsigned int* entities = _mesh->topology()(_dim, entity._dim)(_local_index);
-  const std::size_t num_entities = _mesh->topology()(_dim, entity._dim).size(_local_index);
+  const unsigned int* entities
+      = _mesh->topology()(_dim, entity._dim)(_local_index);
+  const std::size_t num_entities
+      = _mesh->topology()(_dim, entity._dim).size(_local_index);
 
   // Check if any entity matches
   for (std::size_t i = 0; i < num_entities; ++i)
@@ -99,8 +102,7 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
       return i;
 
   // Entity was not found
-  dolfin_error("MeshEntity.cpp",
-               "compute index of mesh entity",
+  dolfin_error("MeshEntity.cpp", "compute index of mesh entity",
                "Mesh entity was not found");
 
   return 0;
@@ -141,16 +143,14 @@ unsigned int MeshEntity::owner() const
 {
   if (_dim != _mesh->topology().dim())
   {
-    dolfin_error("MeshEntity.cpp",
-                 "get ownership of entity",
+    dolfin_error("MeshEntity.cpp", "get ownership of entity",
                  "Entity ownership is only defined for cells");
   }
 
   const std::size_t offset = _mesh->topology().ghost_offset(_dim);
   if (_local_index < offset)
   {
-    dolfin_error("MeshEntity.cpp",
-                 "get ownership of entity",
+    dolfin_error("MeshEntity.cpp", "get ownership of entity",
                  "Ownership of non-ghost cells is local process");
   }
 
@@ -163,8 +163,8 @@ std::string MeshEntity::str(bool verbose) const
     warning("Verbose output for MeshEntityIterator not implemented.");
 
   std::stringstream s;
-  s << "<Mesh entity " << index()
-    << " of topological dimension " << dim() << ">";
+  s << "<Mesh entity " << index() << " of topological dimension " << dim()
+    << ">";
   return s.str();
 }
 //-----------------------------------------------------------------------------

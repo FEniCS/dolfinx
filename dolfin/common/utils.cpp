@@ -18,9 +18,9 @@
 // First added:  2009-08-09
 // Last changed: 2010-11-18
 
+#include "utils.h"
 #include <cstdlib>
 #include <sstream>
-#include "utils.h"
 
 //-----------------------------------------------------------------------------
 std::string dolfin::indent(std::string block)

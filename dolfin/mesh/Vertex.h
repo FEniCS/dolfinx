@@ -23,46 +23,41 @@
 
 #include <memory>
 
-#include <dolfin/geometry/Point.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
 #include "MeshGeometry.h"
+#include <dolfin/geometry/Point.h>
 
 namespace dolfin
 {
 
-  /// A Vertex is a MeshEntity of topological dimension 0.
+/// A Vertex is a MeshEntity of topological dimension 0.
 
-  class Vertex : public MeshEntity
-  {
-  public:
+class Vertex : public MeshEntity
+{
+public:
+  /// Create vertex on given mesh
+  Vertex(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, 0, index) {}
 
-    /// Create vertex on given mesh
-    Vertex(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, 0, index) {}
+  /// Create vertex from mesh entity
+  Vertex(MeshEntity& entity) : MeshEntity(entity.mesh(), 0, entity.index()) {}
 
-    /// Create vertex from mesh entity
-    Vertex(MeshEntity& entity) : MeshEntity(entity.mesh(), 0, entity.index()) {}
+  /// Destructor
+  ~Vertex() {}
 
-    /// Destructor
-    ~Vertex() {}
+  /// Return value of vertex coordinate i
+  double x(std::size_t i) const { return _mesh->geometry().x(_local_index, i); }
 
-    /// Return value of vertex coordinate i
-    double x(std::size_t i) const
-    { return _mesh->geometry().x(_local_index, i); }
+  /// Return vertex coordinates as a 3D point value
+  Point point() const { return _mesh->geometry().point(_local_index); }
 
-    /// Return vertex coordinates as a 3D point value
-    Point point() const
-    { return _mesh->geometry().point(_local_index); }
+  /// Return array of vertex coordinates (const version)
+  const double* x() const { return _mesh->geometry().x(_local_index); }
+};
 
-    /// Return array of vertex coordinates (const version)
-    const double* x() const
-    { return _mesh->geometry().x(_local_index); }
-
-  };
-
-  /// A VertexIterator is a MeshEntityIterator of topological dimension 0
-  typedef MeshEntityIteratorBase<Vertex> VertexIterator;
+/// A VertexIterator is a MeshEntityIterator of topological dimension 0
+typedef MeshEntityIteratorBase<Vertex> VertexIterator;
 }
 
 #endif

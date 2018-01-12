@@ -28,24 +28,21 @@
 namespace dolfin
 {
 
-  /// A mesh consisting of a single tetrahedron with vertices at
-  ///
-  ///   (0, 0, 0)
-  ///   (1, 0, 0)
-  ///   (0, 1, 0)
-  ///   (0, 0, 1)
-  ///
-  /// This class is useful for testing.
+/// A mesh consisting of a single tetrahedron with vertices at
+///
+///   (0, 0, 0)
+///   (1, 0, 0)
+///   (0, 1, 0)
+///   (0, 0, 1)
+///
+/// This class is useful for testing.
 
-  class UnitTetrahedronMesh
-  {
-  public:
-
-    /// Create mesh of unit tetrahedron
-    static Mesh create();
-
-  };
-
+class UnitTetrahedronMesh
+{
+public:
+  /// Create mesh of unit tetrahedron
+  static Mesh create();
+};
 }
 
 #endif

@@ -20,22 +20,22 @@
 // First added:  2006-05-09
 // Last changed: 2014-01-09
 
-#include <sstream>
+#include "MeshConnectivity.h"
 #include <boost/functional/hash.hpp>
 #include <dolfin/log/log.h>
-#include "MeshConnectivity.h"
+#include <sstream>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshConnectivity::MeshConnectivity(std::size_t d0, std::size_t d1)
-  : _d0(d0), _d1(d1)
+    : _d0(d0), _d1(d1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshConnectivity::MeshConnectivity(const MeshConnectivity& connectivity)
-  : _d0(0), _d1(0)
+    : _d0(0), _d1(0)
 {
   *this = connectivity;
 }
@@ -45,8 +45,8 @@ MeshConnectivity::~MeshConnectivity()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const MeshConnectivity&
-MeshConnectivity::operator= (const MeshConnectivity& connectivity)
+const MeshConnectivity& MeshConnectivity::
+operator=(const MeshConnectivity& connectivity)
 {
   // Copy data
   _d0 = connectivity._d0;
@@ -71,7 +71,7 @@ void MeshConnectivity::init(std::size_t num_entities,
   clear();
 
   // Compute the total size
-  const std::size_t size = num_entities*num_connections;
+  const std::size_t size = num_entities * num_connections;
 
   // Allocate
   _connections.resize(size);
@@ -80,7 +80,7 @@ void MeshConnectivity::init(std::size_t num_entities,
 
   // Initialize data
   for (std::size_t e = 0; e < index_to_position.size(); e++)
-    index_to_position[e] = e*num_connections;
+    index_to_position[e] = e * num_connections;
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::init(std::vector<std::size_t>& num_connections)
@@ -108,8 +108,8 @@ void MeshConnectivity::set(std::size_t entity, std::size_t connection,
                            std::size_t pos)
 {
   dolfin_assert((entity + 1) < index_to_position.size());
-  dolfin_assert(pos < index_to_position[entity + 1]
-                - index_to_position[entity]);
+  dolfin_assert(pos
+                < index_to_position[entity + 1] - index_to_position[entity]);
   _connections[index_to_position[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
@@ -120,7 +120,7 @@ void MeshConnectivity::set(std::size_t entity, std::size_t* connections)
 
   // Copy data
   const std::size_t num_connections
-    = index_to_position[entity + 1] - index_to_position[entity];
+      = index_to_position[entity + 1] - index_to_position[entity];
   std::copy(connections, connections + num_connections,
             _connections.begin() + index_to_position[entity]);
 }

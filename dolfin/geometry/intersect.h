@@ -26,25 +26,24 @@
 namespace dolfin
 {
 
-  // Forward declarations
-  class Mesh;
-  class Point;
-  class MeshPointIntersection;
+// Forward declarations
+class Mesh;
+class Point;
+class MeshPointIntersection;
 
-  /// Compute and return intersection between _Mesh_ and _Point_.
-  ///
-  /// *Arguments*
-  ///     mesh (_Mesh_)
-  ///         The mesh to be intersected.
-  ///     point (_Point_)
-  ///         The point to be intersected.
-  ///
-  /// *Returns*
-  ///     _MeshPointIntersection_
-  ///         The intersection data.
-  std::shared_ptr<const MeshPointIntersection>
-  intersect(const Mesh& mesh, const Point& point);
-
+/// Compute and return intersection between _Mesh_ and _Point_.
+///
+/// *Arguments*
+///     mesh (_Mesh_)
+///         The mesh to be intersected.
+///     point (_Point_)
+///         The point to be intersected.
+///
+/// *Returns*
+///     _MeshPointIntersection_
+///         The intersection data.
+std::shared_ptr<const MeshPointIntersection> intersect(const Mesh& mesh,
+                                                       const Point& point);
 }
 
 #endif

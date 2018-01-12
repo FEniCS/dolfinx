@@ -18,20 +18,21 @@
 // First added:  2009-09-25
 // Last changed: 2011-09-22
 
-#include <sstream>
-#include <string>
+#include "MeshFunction.h"
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshPartitioning.h"
-#include "MeshFunction.h"
 #include "MeshValueCollection.h"
+#include <sstream>
+#include <string>
 
 namespace dolfin
 {
 
 //-----------------------------------------------------------------------------
-template<> std::string MeshFunction<double>::str(bool verbose) const
+template <>
+std::string MeshFunction<double>::str(bool verbose) const
 {
   std::stringstream s;
 
@@ -43,11 +44,13 @@ template<> std::string MeshFunction<double>::str(bool verbose) const
       s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
   }
   else
-    s << "<MeshFunction of topological dimension " << _dim << " containing " << _size << " values>";
+    s << "<MeshFunction of topological dimension " << _dim << " containing "
+      << _size << " values>";
   return s.str();
 }
 //-----------------------------------------------------------------------------
-template<> std::string MeshFunction<std::size_t>::str(bool verbose) const
+template <>
+std::string MeshFunction<std::size_t>::str(bool verbose) const
 {
   std::stringstream s;
 
@@ -59,9 +62,9 @@ template<> std::string MeshFunction<std::size_t>::str(bool verbose) const
       s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
   }
   else
-    s << "<MeshFunction of topological dimension " << _dim << " containing " << _size << " values>";
+    s << "<MeshFunction of topological dimension " << _dim << " containing "
+      << _size << " values>";
   return s.str();
 }
 //-----------------------------------------------------------------------------
-
 }

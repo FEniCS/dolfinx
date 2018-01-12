@@ -21,48 +21,44 @@
 #ifndef __DOLFIN_BOOST_GRAPH_ORDERING_H
 #define __DOLFIN_BOOST_GRAPH_ORDERING_H
 
+#include "Graph.h"
 #include <set>
 #include <utility>
 #include <vector>
-#include "Graph.h"
 
 namespace dolfin
 {
 
-  /// This class computes graph re-orderings. It uses Boost Graph.
+/// This class computes graph re-orderings. It uses Boost Graph.
 
-  class BoostGraphOrdering
-  {
+class BoostGraphOrdering
+{
 
-  public:
+public:
+  /// Compute re-ordering (map[old] -> new) using Cuthill-McKee
+  /// algorithm
+  static std::vector<int> compute_cuthill_mckee(const Graph& graph,
+                                                bool reverse = false);
 
-    /// Compute re-ordering (map[old] -> new) using Cuthill-McKee
-    /// algorithm
-    static std::vector<int> compute_cuthill_mckee(const Graph& graph,
-                                                  bool reverse=false);
+  /// Compute re-ordering (map[old] -> new) using Cuthill-McKee
+  /// algorithm
+  static std::vector<int> compute_cuthill_mckee(
+      const std::set<std::pair<std::size_t, std::size_t>>& edges,
+      std::size_t size, bool reverse = false);
 
-    /// Compute re-ordering (map[old] -> new) using Cuthill-McKee
-    /// algorithm
-    static std::vector<int>
-      compute_cuthill_mckee(const std::set<std::pair<std::size_t, std::size_t>>& edges,
-                            std::size_t size, bool reverse=false);
+private:
+  // Build Boost undirected graph
+  template <typename T, typename X>
+  static T build_undirected_graph(const X& graph);
 
-  private:
+  // Build Boost directed graph
+  template <typename T, typename X>
+  static T build_directed_graph(const X& graph);
 
-    // Build Boost undirected graph
-    template<typename T, typename X>
-      static T build_undirected_graph(const X& graph);
-
-    // Build Boost directed graph
-    template<typename T, typename X>
-      static T build_directed_graph(const X& graph);
-
-    // Build Boost compressed sparse row graph
-    template<typename T, typename X>
-      static T build_csr_directed_graph(const X& graph);
-
-  };
-
+  // Build Boost compressed sparse row graph
+  template <typename T, typename X>
+  static T build_csr_directed_graph(const X& graph);
+};
 }
 
 #endif

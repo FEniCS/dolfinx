@@ -20,20 +20,20 @@
 // First added:  2003-02-06
 // Last changed: 2011-07-01
 
-#include <time.h>
-#include <cstdlib>
+#include "basic.h"
 #include <cmath>
+#include <cstdlib>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
-#include "basic.h"
+#include <time.h>
 
 using namespace dolfin;
 
 namespace dolfin
 {
-  /// Flag to determine whether to reseed dolfin::rand().
-  /// Normally on first call.
-  bool rand_seeded = false;
+/// Flag to determine whether to reseed dolfin::rand().
+/// Normally on first call.
+bool rand_seeded = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -45,8 +45,7 @@ std::size_t dolfin::ipow(std::size_t a, std::size_t n)
     if (n == 0)
     {
       // size_t does not have NaN, raise error
-      dolfin_error("math/basic.cpp",
-                   "take power ipow(0, 0)",
+      dolfin_error("math/basic.cpp", "take power ipow(0, 0)",
                    "ipow(0, 0) does not have a sense");
     }
     return 0;

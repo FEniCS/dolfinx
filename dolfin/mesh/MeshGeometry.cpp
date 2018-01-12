@@ -21,11 +21,11 @@
 // First added:  2006-05-19
 // Last changed: 2010-04-29
 
-#include <sstream>
 #include <boost/functional/hash.hpp>
+#include <sstream>
 
-#include <dolfin/log/log.h>
 #include "MeshGeometry.h"
+#include <dolfin/log/log.h>
 
 using namespace dolfin;
 
@@ -45,7 +45,7 @@ MeshGeometry::~MeshGeometry()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
+const MeshGeometry& MeshGeometry::operator=(const MeshGeometry& geometry)
 {
   // Try init; may fail with non-matching _dim and _degree
   init(geometry._dim, geometry._degree);
@@ -59,7 +59,8 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
 //-----------------------------------------------------------------------------
 Point MeshGeometry::point(std::size_t n) const
 {
-  return Point(_dim, x(n));;
+  return Point(_dim, x(n));
+  ;
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::init(std::size_t dim, std::size_t degree)
@@ -67,22 +68,19 @@ void MeshGeometry::init(std::size_t dim, std::size_t degree)
   // Check input
   if (dim == 0)
   {
-    dolfin_error("MeshGeometry.cpp",
-                 "initialize mesh geometry",
+    dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
                  "Mesh geometry of dimension zero is not supported");
   }
   if (degree == 0)
   {
-    dolfin_error("MeshGeometry.cpp",
-                 "initialize mesh geometry",
+    dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
                  "Mesh geometry of degree zero is not supported");
   }
 
   // Avoid repeated initialization; would be a hell for UFL
   if (_dim > 0 && (_dim != dim || _degree != degree))
   {
-    dolfin_error("MeshGeometry.cpp",
-                 "initialize mesh geometry",
+    dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
                  "Mesh geometry cannot be reinitialized with different "
                  "dimension and/or degree");
   }
@@ -109,13 +107,12 @@ void MeshGeometry::init_entities(const std::vector<std::size_t>& num_entities)
       offset += num_entities[i];
     }
   }
-  coordinates.resize(_dim*offset);
+  coordinates.resize(_dim * offset);
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::set(std::size_t local_index,
-                       const double* x)
+void MeshGeometry::set(std::size_t local_index, const double* x)
 {
-  std::copy(x, x +_dim, coordinates.begin() + local_index*_dim);
+  std::copy(x, x + _dim, coordinates.begin() + local_index * _dim);
 }
 //-----------------------------------------------------------------------------
 std::size_t MeshGeometry::hash() const
@@ -143,8 +140,8 @@ std::string MeshGeometry::str(bool verbose) const
   }
   else
   {
-    s << "<MeshGeometry of dimension " << _dim << " and size "
-      << num_vertices() << ">";
+    s << "<MeshGeometry of dimension " << _dim << " and size " << num_vertices()
+      << ">";
   }
 
   return s.str();

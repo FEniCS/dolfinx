@@ -16,25 +16,22 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <algorithm>
-#include <cmath>
-#include <Eigen/Dense>
-#include <dolfin/log/log.h>
-#include <dolfin/common/constants.h>
+#include "QuadrilateralCell.h"
 #include "Cell.h"
+#include "Facet.h"
 #include "MeshEditor.h"
 #include "MeshEntity.h"
-#include "Facet.h"
-#include "QuadrilateralCell.h"
 #include "Vertex.h"
+#include <Eigen/Dense>
+#include <algorithm>
+#include <cmath>
+#include <dolfin/common/constants.h>
+#include <dolfin/log/log.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::size_t QuadrilateralCell::dim() const
-{
-  return 2;
-}
+std::size_t QuadrilateralCell::dim() const { return 2; }
 //-----------------------------------------------------------------------------
 std::size_t QuadrilateralCell::num_entities(std::size_t dim) const
 {
@@ -66,41 +63,46 @@ std::size_t QuadrilateralCell::num_vertices(std::size_t dim) const
   case 2:
     return 4; // cells
   default:
-    dolfin_error("QuadrilateralCell.cpp",
-                 "access number of vertices for subsimplex of quadrilateral cell",
-                 "Illegal topological dimension (%d)", dim);
+    dolfin_error(
+        "QuadrilateralCell.cpp",
+        "access number of vertices for subsimplex of quadrilateral cell",
+        "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
 }
 //-----------------------------------------------------------------------------
 void QuadrilateralCell::create_entities(boost::multi_array<unsigned int, 2>& e,
-                                        std::size_t dim, const unsigned int* v) const
+                                        std::size_t dim,
+                                        const unsigned int* v) const
 {
   // We only need to know how to create edges
   if (dim != 1)
   {
-    dolfin_error("QuadrilateralCell.cpp",
-                 "create entities of quadrilateral cell",
-                 "Don't know how to create entities of topological dimension %d", dim);
+    dolfin_error(
+        "QuadrilateralCell.cpp", "create entities of quadrilateral cell",
+        "Don't know how to create entities of topological dimension %d", dim);
   }
 
   // Resize data structure
   e.resize(boost::extents[4][2]);
 
   // Create the four edges
-  e[0][0] = v[0]; e[0][1] = v[1];
-  e[1][0] = v[2]; e[1][1] = v[3];
-  e[2][0] = v[0]; e[2][1] = v[2];
-  e[3][0] = v[1]; e[3][1] = v[3];
+  e[0][0] = v[0];
+  e[0][1] = v[1];
+  e[1][0] = v[2];
+  e[1][1] = v[3];
+  e[2][0] = v[0];
+  e[2][1] = v[2];
+  e[3][0] = v[1];
+  e[3][1] = v[3];
 }
 //-----------------------------------------------------------------------------
 double QuadrilateralCell::volume(const MeshEntity& cell) const
 {
   if (cell.dim() != 2)
   {
-    dolfin_error("QuadrilateralCell.cpp",
-                 "compute volume (area) of cell",
+    dolfin_error("QuadrilateralCell.cpp", "compute volume (area) of cell",
                  "Illegal mesh entity");
   }
 
@@ -116,8 +118,7 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
 
   if (geometry.dim() != 2 && geometry.dim() != 3)
   {
-    dolfin_error("QuadrilateralCell.cpp",
-                 "compute volume of quadrilateral",
+    dolfin_error("QuadrilateralCell.cpp", "compute volume of quadrilateral",
                  "Only know how to compute volume in R^2 or R^3");
   }
 
@@ -136,8 +137,7 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
     // Check for coplanarity
     if (std::abs(copl) > h * DOLFIN_EPS)
     {
-      dolfin_error("QuadrilateralCell.cpp",
-                   "compute volume of quadrilateral",
+      dolfin_error("QuadrilateralCell.cpp", "compute volume of quadrilateral",
                    "Vertices of the quadrilateral are not coplanar");
     }
   }
@@ -170,7 +170,8 @@ double QuadrilateralCell::squared_distance(const Cell& cell,
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double QuadrilateralCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
+double QuadrilateralCell::normal(const Cell& cell, std::size_t facet,
+                                 std::size_t i) const
 {
   return normal(cell, facet)[i];
 }
@@ -185,9 +186,10 @@ Point QuadrilateralCell::normal(const Cell& cell, std::size_t facet) const
   Facet f(cell.mesh(), cell.entities(1)[facet]);
 
   if (cell.mesh().geometry().dim() != 2)
-    dolfin_error("QuadrilateralCell.cpp",
-                 "find normal",
-                 "Normal vector is not defined in dimension %d (only defined when the triangle is in R^2", cell.mesh().geometry().dim());
+    dolfin_error("QuadrilateralCell.cpp", "find normal",
+                 "Normal vector is not defined in dimension %d (only defined "
+                 "when the triangle is in R^2",
+                 cell.mesh().geometry().dim());
 
   // Get global index of opposite vertex
   const std::size_t v0 = cell.entities(0)[facet];
@@ -208,7 +210,7 @@ Point QuadrilateralCell::normal(const Cell& cell, std::size_t facet) const
   Point t = p2 - p1;
   t /= t.norm();
   Point n = p2 - p0;
-  n -= n.dot(t)*t;
+  n -= n.dot(t) * t;
 
   // Normalize
   n /= n.norm();
@@ -224,8 +226,7 @@ Point QuadrilateralCell::cell_normal(const Cell& cell) const
   // Cell_normal only defined for gdim = 2, 3:
   const std::size_t gdim = geometry.dim();
   if (gdim > 3)
-    dolfin_error("QuadrilateralCell.cpp",
-                 "compute cell normal",
+    dolfin_error("QuadrilateralCell.cpp", "compute cell normal",
                  "Illegal geometric dimension (%d)", gdim);
 
   // Get the three vertices as points
@@ -263,8 +264,9 @@ double QuadrilateralCell::facet_area(const Cell& cell, std::size_t facet) const
   return (p0 - p1).norm();
 }
 //-----------------------------------------------------------------------------
-void QuadrilateralCell::order(Cell& cell,
-                 const std::vector<std::int64_t>& local_to_global_vertex_indices) const
+void QuadrilateralCell::order(
+    Cell& cell,
+    const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
   // Not implemented
   // FIXME - probably not appropriate for quad cells.
@@ -276,7 +278,8 @@ bool QuadrilateralCell::collides(const Cell& cell, const Point& point) const
   return false;
 }
 //-----------------------------------------------------------------------------
-bool QuadrilateralCell::collides(const Cell& cell, const MeshEntity& entity) const
+bool QuadrilateralCell::collides(const Cell& cell,
+                                 const MeshEntity& entity) const
 {
   dolfin_not_implemented();
   return false;

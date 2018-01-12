@@ -25,14 +25,14 @@
 #include <cmath>
 #include <string>
 
+#include "NewtonSolver.h"
+#include "NonlinearProblem.h"
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/log/log.h>
-#include <dolfin/common/MPI.h>
-#include "NonlinearProblem.h"
-#include "NewtonSolver.h"
 
 using namespace dolfin;
 
@@ -41,13 +41,13 @@ Parameters NewtonSolver::default_parameters()
 {
   Parameters p("newton_solver");
 
-  p.add("linear_solver",           "default");
-  p.add("preconditioner",          "default");
-  p.add("maximum_iterations",      50);
-  p.add("relative_tolerance",      1e-9);
-  p.add("absolute_tolerance",      1e-10);
-  p.add("convergence_criterion",   "residual");
-  p.add("report",                  true);
+  p.add("linear_solver", "default");
+  p.add("preconditioner", "default");
+  p.add("maximum_iterations", 50);
+  p.add("relative_tolerance", 1e-9);
+  p.add("absolute_tolerance", 1e-10);
+  p.add("convergence_criterion", "residual");
+  p.add("report", true);
   p.add("error_on_nonconvergence", true);
   p.add<double>("relaxation_parameter");
 
@@ -55,11 +55,11 @@ Parameters NewtonSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(MPI_Comm comm)
-  : Variable("Newton solver", "unnamed"), _newton_iteration(0),
-    _krylov_iterations(0), _relaxation_parameter(1.0), _residual(0.0),
-    _residual0(0.0),_matA(new PETScMatrix(comm)),
-    _matP(new PETScMatrix(comm)), _dx(new PETScVector(comm)),
-    _b(new PETScVector(comm)), _mpi_comm(comm)
+    : Variable("Newton solver", "unnamed"), _newton_iteration(0),
+      _krylov_iterations(0), _relaxation_parameter(1.0), _residual(0.0),
+      _residual0(0.0), _matA(new PETScMatrix(comm)),
+      _matP(new PETScMatrix(comm)), _dx(new PETScVector(comm)),
+      _b(new PETScVector(comm)), _mpi_comm(comm)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -71,8 +71,7 @@ NewtonSolver::~NewtonSolver()
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>
-NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
-                    PETScVector& x)
+NewtonSolver::solve(NonlinearProblem& nonlinear_problem, PETScVector& x)
 {
   dolfin_assert(_matA);
   dolfin_assert(_b);
@@ -89,7 +88,8 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   const std::string pc_type = parameters["preconditioner"];
   if (!_solver)
   {
-    _solver = std::make_shared<PETScKrylovSolver>(x.mpi_comm(), solver_type, pc_type);
+    _solver = std::make_shared<PETScKrylovSolver>(x.mpi_comm(), solver_type,
+                                                  pc_type);
   }
   dolfin_assert(_solver);
 
@@ -116,9 +116,9 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   }
   else
   {
-    dolfin_error("NewtonSolver.cpp",
-                 "check for convergence",
-                 "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'",
+    dolfin_error("NewtonSolver.cpp", "check for convergence",
+                 "The convergence criterion %s is unknown, known criteria are "
+                 "'residual' or 'incremental'",
                  convergence_criterion.c_str());
   }
 
@@ -139,8 +139,8 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     _krylov_iterations += _solver->solve(*_dx, *_b);
 
     // Update solution
-    update_solution(x, *_dx, _relaxation_parameter,
-                    nonlinear_problem, _newton_iteration);
+    update_solution(x, *_dx, _relaxation_parameter, nonlinear_problem,
+                    _newton_iteration);
 
     // Increment iteration count
     _newton_iteration++;
@@ -159,14 +159,14 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     {
       // Subtract 1 to make sure that the initial residual0 is
       // properly set.
-      newton_converged = converged(*_dx, nonlinear_problem,
-                                   _newton_iteration - 1);
+      newton_converged
+          = converged(*_dx, nonlinear_problem, _newton_iteration - 1);
     }
     else
     {
-      dolfin_error("NewtonSolver.cpp",
-                   "check for convergence",
-                   "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'",
+      dolfin_error("NewtonSolver.cpp", "check for convergence",
+                   "The convergence criterion %s is unknown, known criteria "
+                   "are 'residual' or 'incremental'",
                    convergence_criterion.c_str());
     }
   }
@@ -175,7 +175,8 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   {
     if (_mpi_comm.rank() == 0)
     {
-      info("Newton solver finished in %d iterations and %d linear solver iterations.",
+      info("Newton solver finished in %d iterations and %d linear solver "
+           "iterations.",
            _newton_iteration, _krylov_iterations);
     }
   }
@@ -188,7 +189,8 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
       {
         dolfin_error("NewtonSolver.cpp",
                      "solve nonlinear system with NewtonSolver",
-                     "Newton solver did not converge because maximum number of iterations reached");
+                     "Newton solver did not converge because maximum number of "
+                     "iterations reached");
       }
       else
       {
@@ -204,29 +206,20 @@ NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   return std::make_pair(_newton_iteration, newton_converged);
 }
 //-----------------------------------------------------------------------------
-std::size_t NewtonSolver::iteration() const
-{
-  return _newton_iteration;
-}
+std::size_t NewtonSolver::iteration() const { return _newton_iteration; }
 //-----------------------------------------------------------------------------
 std::size_t NewtonSolver::krylov_iterations() const
 {
   return _krylov_iterations;
 }
 //-----------------------------------------------------------------------------
-double NewtonSolver::residual() const
-{
-  return _residual;
-}
+double NewtonSolver::residual() const { return _residual; }
 //-----------------------------------------------------------------------------
-double NewtonSolver::residual0() const
-{
-  return _residual0;
-}
+double NewtonSolver::residual0() const { return _residual0; }
 //-----------------------------------------------------------------------------
 double NewtonSolver::relative_residual() const
 {
-  return _residual/_residual0;
+  return _residual / _residual0;
 }
 //-----------------------------------------------------------------------------
 /*
@@ -260,12 +253,13 @@ bool NewtonSolver::converged(const PETScVector& r,
     _residual0 = _residual;
 
   // Relative residual
-  const double relative_residual = _residual/_residual0;
+  const double relative_residual = _residual / _residual0;
 
   // Output iteration number and residual
   if (report && _mpi_comm.rank() == 0)
   {
-    info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = %.3e (tol = %.3e)",
+    info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = %.3e (tol "
+         "= %.3e)",
          newton_iteration, _residual, atol, relative_residual, rtol);
   }
 

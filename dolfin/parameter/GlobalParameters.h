@@ -28,89 +28,85 @@
 namespace dolfin
 {
 
-  /// This class defines the global DOLFIN parameter database.
+/// This class defines the global DOLFIN parameter database.
 
-  class GlobalParameters : public Parameters
+class GlobalParameters : public Parameters
+{
+public:
+  /// Constructor
+  GlobalParameters();
+
+  /// Destructor
+  virtual ~GlobalParameters();
+
+  /// Parse parameters from command-line
+  virtual void parse(int argc, char* argv[]);
+
+  /// Default parameter values
+  static Parameters default_parameters()
   {
-  public:
+    Parameters p("dolfin");
 
-    /// Constructor
-    GlobalParameters();
+    //-- Output
 
-    /// Destructor
-    virtual ~GlobalParameters();
+    // Print standard output on all processes
+    p.add("std_out_all_processes", true);
 
-    /// Parse parameters from command-line
-    virtual void parse(int argc, char* argv[]);
+    //-- dof ordering
 
-    /// Default parameter values
-    static Parameters default_parameters()
-    {
-      Parameters p("dolfin");
+    // DOF reordering when running in serial
+    p.add("reorder_dofs_serial", true);
 
-      //-- Output
+    // Add dof ordering library
+    std::string default_dof_ordering_library = "Boost";
+#ifdef HAS_SCOTCH
+    default_dof_ordering_library = "SCOTCH";
+#endif
+    p.add("dof_ordering_library", default_dof_ordering_library,
+          {"Boost", "random", "SCOTCH"});
 
-      // Print standard output on all processes
-      p.add("std_out_all_processes", true);
+    //-- Meshes
 
-      //-- dof ordering
+    // Mesh ghosting type
+    p.add("ghost_mode", "none", {"shared_facet", "shared_vertex", "none"});
 
-      // DOF reordering when running in serial
-      p.add("reorder_dofs_serial", true);
+    // Mesh ordering via SCOTCH and GPS
+    p.add("reorder_cells_gps", false);
+    p.add("reorder_vertices_gps", false);
 
-      // Add dof ordering library
-      std::string default_dof_ordering_library = "Boost";
-      #ifdef HAS_SCOTCH
-      default_dof_ordering_library = "SCOTCH";
-      #endif
-      p.add("dof_ordering_library", default_dof_ordering_library,
-            {"Boost", "random", "SCOTCH"});
+    // Set default graph/mesh partitioner
+    std::string default_mesh_partitioner = "SCOTCH";
+#ifdef HAS_PARMETIS
+#ifndef HAS_SCOTCH
+    default_mesh_partitioner = "ParMETIS";
+#endif
+#endif
+    p.add("mesh_partitioner", default_mesh_partitioner,
+          {"ParMETIS", "SCOTCH", "None"});
 
-      //-- Meshes
+    // Approaches to partitioning (following Zoltan syntax)
+    // but applies to ParMETIS
+    p.add("partitioning_approach", "PARTITION",
+          {"PARTITION", "REPARTITION", "REFINE"});
 
-      // Mesh ghosting type
-      p.add("ghost_mode", "none",
-            {"shared_facet", "shared_vertex", "none"});
+#ifdef HAS_PARMETIS
+    // Repartitioning parameter, determines how strongly to hold on
+    // to cells when shifting between processes
+    p.add("ParMETIS_repartitioning_weight", 1000.0);
+#endif
 
-      // Mesh ordering via SCOTCH and GPS
-      p.add("reorder_cells_gps", false);
-      p.add("reorder_vertices_gps", false);
+//-- Linear algebra
 
-      // Set default graph/mesh partitioner
-      std::string default_mesh_partitioner = "SCOTCH";
-      #ifdef HAS_PARMETIS
-        #ifndef HAS_SCOTCH
-        default_mesh_partitioner = "ParMETIS";
-        #endif
-      #endif
-      p.add("mesh_partitioner", default_mesh_partitioner,
-            {"ParMETIS", "SCOTCH", "None"});
+#ifdef HAS_PETSC
+    p.add("use_petsc_signal_handler", false);
+#endif
 
-      // Approaches to partitioning (following Zoltan syntax)
-      // but applies to ParMETIS
-      p.add("partitioning_approach", "PARTITION",
-            {"PARTITION", "REPARTITION", "REFINE"});
+    return p;
+  }
+};
 
-      #ifdef HAS_PARMETIS
-      // Repartitioning parameter, determines how strongly to hold on
-      // to cells when shifting between processes
-      p.add("ParMETIS_repartitioning_weight", 1000.0);
-      #endif
-
-      //-- Linear algebra
-
-      #ifdef HAS_PETSC
-      p.add("use_petsc_signal_handler", false);
-      #endif
-
-      return p;
-    }
-
-  };
-
-  /// The global parameter database
-  extern GlobalParameters parameters;
-
+/// The global parameter database
+extern GlobalParameters parameters;
 }
 
 #endif

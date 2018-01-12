@@ -20,12 +20,12 @@
 // First added:  2006-06-12
 // Last changed: 2014-01-06
 
+#include "Point.h"
 #include <cmath>
 #include <dolfin/common/constants.h>
-#include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
+#include <dolfin/log/log.h>
 #include <dolfin/math/basic.h>
-#include "Point.h"
 
 using namespace dolfin;
 
@@ -34,9 +34,9 @@ const Point Point::cross(const Point& p) const
 {
   Point q;
 
-  q._x[0] = _x[1]*p._x[2] - _x[2]*p._x[1];
-  q._x[1] = _x[2]*p._x[0] - _x[0]*p._x[2];
-  q._x[2] = _x[0]*p._x[1] - _x[1]*p._x[0];
+  q._x[0] = _x[1] * p._x[2] - _x[2] * p._x[1];
+  q._x[1] = _x[2] * p._x[0] - _x[0] * p._x[2];
+  q._x[2] = _x[0] * p._x[1] - _x[1] * p._x[0];
 
   return q;
 }
@@ -47,12 +47,12 @@ double Point::squared_distance(const Point& p) const
   const double dy = p._x[1] - _x[1];
   const double dz = p._x[2] - _x[2];
 
-  return dx*dx + dy*dy + dz*dz;
+  return dx * dx + dy * dy + dz * dz;
 }
 //-----------------------------------------------------------------------------
 double Point::dot(const Point& p) const
 {
-  return _x[0]*p._x[0] + _x[1]*p._x[1] + _x[2]*p._x[2];
+  return _x[0] * p._x[0] + _x[1] * p._x[1] + _x[2] * p._x[2];
 }
 //-----------------------------------------------------------------------------
 Point Point::rotate(const Point& k, double theta) const
@@ -63,8 +63,8 @@ Point Point::rotate(const Point& k, double theta) const
   const double cosTheta = cos(theta);
   const double sinTheta = sin(theta);
 
-  //Rodriques' rotation formula
-  return v*cosTheta + k.cross(v)*sinTheta + k*k.dot(v)*(1-cosTheta);
+  // Rodriques' rotation formula
+  return v * cosTheta + k.cross(v) * sinTheta + k * k.dot(v) * (1 - cosTheta);
 }
 //-----------------------------------------------------------------------------
 std::string Point::str(bool verbose) const

@@ -21,42 +21,39 @@
 #ifndef __MESH_POINT_INTERSECTION_H
 #define __MESH_POINT_INTERSECTION_H
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 namespace dolfin
 {
 
-  // Forward declarations
-  class Mesh;
-  class Point;
+// Forward declarations
+class Mesh;
+class Point;
 
-  /// This class represents an intersection between a _Mesh_ and a
-  /// _Point_. The resulting intersection is stored as a list of zero
-  /// or more cells.
+/// This class represents an intersection between a _Mesh_ and a
+/// _Point_. The resulting intersection is stored as a list of zero
+/// or more cells.
 
-  class MeshPointIntersection
+class MeshPointIntersection
+{
+public:
+  /// Compute intersection between mesh and point
+  MeshPointIntersection(const Mesh& mesh, const Point& point);
+
+  /// Destructor
+  ~MeshPointIntersection();
+
+  /// Return the list of (local) indices for intersected cells
+  const std::vector<unsigned int>& intersected_cells() const
   {
-  public:
+    return _intersected_cells;
+  }
 
-    /// Compute intersection between mesh and point
-    MeshPointIntersection(const Mesh& mesh,
-                          const Point& point);
-
-    /// Destructor
-    ~MeshPointIntersection();
-
-    /// Return the list of (local) indices for intersected cells
-    const std::vector<unsigned int>& intersected_cells() const
-    { return _intersected_cells; }
-
-  private:
-
-    // The list of (local) indices for intersected cells
-    std::vector<unsigned int> _intersected_cells;
-
-  };
-
+private:
+  // The list of (local) indices for intersected cells
+  std::vector<unsigned int> _intersected_cells;
+};
 }
 
 #endif

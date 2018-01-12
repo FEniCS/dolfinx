@@ -19,15 +19,14 @@
 
 #include <petsc.h>
 
+#include "PETScObject.h"
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/log/log.h>
-#include "PETScObject.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void PETScObject::petsc_error(int error_code,
-                              std::string filename,
+void PETScObject::petsc_error(int error_code, std::string filename,
                               std::string petsc_function)
 {
   // Fetch PETSc error description
@@ -39,8 +38,8 @@ void PETScObject::petsc_error(int error_code,
   SubSystemsManager::singleton().petsc_err_msg = "";
 
   // Log detailed error info
-  log(TRACE, "PETSc error in '%s', '%s'",
-      filename.c_str(), petsc_function.c_str());
+  log(TRACE, "PETSc error in '%s', '%s'", filename.c_str(),
+      petsc_function.c_str());
   log(TRACE, "PETSc error code '%d' (%s), message follows:", error_code, desc);
   // NOTE: don't put msg as variadic argument; it might get trimmed
   log(TRACE, std::string(78, '-'));
@@ -50,7 +49,7 @@ void PETScObject::petsc_error(int error_code,
   // Raise exception with standard error message
   dolfin_error(filename,
                "successfully call PETSc function '" + petsc_function + "'",
-                "PETSc error code is: %d (%s)", error_code, desc);
+               "PETSc error code is: %d (%s)", error_code, desc);
 }
 //-----------------------------------------------------------------------------
 

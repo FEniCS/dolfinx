@@ -28,6 +28,6 @@
 dolfin::Logger& dolfin::LogManager::logger()
 {
   // NB static - this only allocates a new Logger on the first call to logger()
-  static dolfin::Logger* lg = new(dolfin::Logger);
+  static dolfin::Logger* lg = new (dolfin::Logger);
   return *lg;
 }

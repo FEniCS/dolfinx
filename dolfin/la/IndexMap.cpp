@@ -15,23 +15,22 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+#include "IndexMap.h"
 #include <algorithm>
 #include <limits>
-#include "IndexMap.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm mpi_comm) : _mpi_comm(mpi_comm),
-                                        _rank(MPI::rank(mpi_comm)),
-                                        _block_size(1)
+IndexMap::IndexMap(MPI_Comm mpi_comm)
+    : _mpi_comm(mpi_comm), _rank(MPI::rank(mpi_comm)), _block_size(1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
                    std::size_t block_size)
-  : _mpi_comm(mpi_comm), _rank(MPI::rank(mpi_comm))
+    : _mpi_comm(mpi_comm), _rank(MPI::rank(mpi_comm))
 {
   init(local_size, block_size);
 }
@@ -57,14 +56,14 @@ void IndexMap::init(std::size_t local_size, std::size_t block_size)
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
 {
-  if(_all_ranges.size() == 0)
+  if (_all_ranges.size() == 0)
   {
     warning("Asking for size of uninitialised range");
     return {{0, 0}};
   }
   else
-    return {{ (std::int64_t) _all_ranges[_rank],
-              (std::int64_t) _all_ranges[_rank + 1]}};
+    return {{(std::int64_t)_all_ranges[_rank],
+             (std::int64_t)_all_ranges[_rank + 1]}};
 }
 //-----------------------------------------------------------------------------
 /*
@@ -78,7 +77,7 @@ std::pair<std::size_t, std::size_t> IndexMap::local_range() const
 //-----------------------------------------------------------------------------
 std::size_t IndexMap::size(const IndexMap::MapSize type) const
 {
-  if(_all_ranges.size() == 0)
+  if (_all_ranges.size() == 0)
   {
     warning("Asking for size of uninitialised range");
     return 0;
@@ -98,8 +97,7 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
     return unowned_size;
   else
   {
-    dolfin_error("IndexMap.cpp",
-                 "get size",
+    dolfin_error("IndexMap.cpp", "get size",
                  "Unrecognised option for IndexMap::MapSize");
   }
 
@@ -118,11 +116,12 @@ const std::vector<std::size_t>& IndexMap::local_to_global_unowned() const
   return _local_to_global;
 }
 //-----------------------------------------------------------------------------
-void IndexMap::set_block_local_to_global(const std::vector<std::size_t>& indices)
+void IndexMap::set_block_local_to_global(
+    const std::vector<std::size_t>& indices)
 {
   _local_to_global = indices;
 
-  for (const auto &node : _local_to_global)
+  for (const auto& node : _local_to_global)
   {
     const std::size_t p = global_block_index_owner(node);
     dolfin_assert(p != _rank);
@@ -132,9 +131,8 @@ void IndexMap::set_block_local_to_global(const std::vector<std::size_t>& indices
 //-----------------------------------------------------------------------------
 int IndexMap::global_block_index_owner(std::size_t index) const
 {
-  const int p
-    = std::upper_bound(_all_ranges.begin(), _all_ranges.end(), index)
-    - _all_ranges.begin() - 1;
+  const int p = std::upper_bound(_all_ranges.begin(), _all_ranges.end(), index)
+                - _all_ranges.begin() - 1;
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -143,13 +141,7 @@ const std::vector<int>& IndexMap::block_off_process_owner() const
   return _off_process_owner;
 }
 //-----------------------------------------------------------------------------
-int IndexMap::block_size() const
-{
-  return _block_size;
-}
+int IndexMap::block_size() const { return _block_size; }
 //----------------------------------------------------------------------------
-MPI_Comm IndexMap::mpi_comm() const
-{
-  return _mpi_comm.comm();
-}
+MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm.comm(); }
 //----------------------------------------------------------------------------

@@ -17,16 +17,16 @@
 //
 // Modified by Martin Alnes, 2008.
 
-#include <memory>
+#include "CoefficientAssigner.h"
 #include <dolfin/fem/Form.h>
 #include <dolfin/log/log.h>
-#include "CoefficientAssigner.h"
+#include <memory>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 CoefficientAssigner::CoefficientAssigner(Form& form, std::size_t number)
-  : _form(form), _number(number)
+    : _form(form), _number(number)
 {
   // Do nothing
 }
@@ -36,7 +36,8 @@ CoefficientAssigner::~CoefficientAssigner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void CoefficientAssigner::operator= (std::shared_ptr<const GenericFunction> coefficient)
+void CoefficientAssigner::
+operator=(std::shared_ptr<const GenericFunction> coefficient)
 {
   dolfin_assert(coefficient);
   _form.set_coefficient(_number, coefficient);

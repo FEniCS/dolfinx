@@ -20,6 +20,7 @@
 
 #include <algorithm>
 
+#include "SparsityPatternBuilder.h"
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -29,28 +30,21 @@
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
-#include "SparsityPatternBuilder.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void
-SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
-                              const Mesh& mesh,
-                              const std::array<const GenericDofMap*, 2> dofmaps,
-                              bool cells,
-                              bool interior_facets,
-                              bool exterior_facets,
-                              bool vertices,
-                              bool diagonal,
-                              bool init,
-                              bool finalize)
+void SparsityPatternBuilder::build(
+    SparsityPattern& sparsity_pattern, const Mesh& mesh,
+    const std::array<const GenericDofMap*, 2> dofmaps, bool cells,
+    bool interior_facets, bool exterior_facets, bool vertices, bool diagonal,
+    bool init, bool finalize)
 {
   // Get index maps
   dolfin_assert(dofmaps[0]);
   dolfin_assert(dofmaps[1]);
-  std::array<std::shared_ptr<const IndexMap>, 2> index_maps = {{dofmaps[0]->index_map(),
-                                                                dofmaps[1]->index_map()}};
+  std::array<std::shared_ptr<const IndexMap>, 2> index_maps
+      = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
 
   // FIXME: Should check that index maps are matching
 
@@ -156,10 +150,10 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
     mesh.init(D - 1, D);
     if (!mesh.ordered())
     {
-      dolfin_error("SparsityPatternBuilder.cpp",
-                   "compute sparsity pattern",
-                   "Mesh is not ordered according to the UFC numbering convention. "
-                   "Consider calling mesh.order()");
+      dolfin_error(
+          "SparsityPatternBuilder.cpp", "compute sparsity pattern",
+          "Mesh is not ordered according to the UFC numbering convention. "
+          "Consider calling mesh.order()");
     }
 
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -229,18 +223,22 @@ SparsityPatternBuilder::build(SparsityPattern& sparsity_pattern,
     const std::size_t primary_dim = sparsity_pattern.primary_dim();
     const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
     const auto primary_range = index_maps[primary_dim]->local_range();
-    const std::size_t secondary_range = index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
-    const std::size_t diagonal_range = std::min((std::size_t) primary_range[1], secondary_range);
+    const std::size_t secondary_range
+        = index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
+    const std::size_t diagonal_range
+        = std::min((std::size_t)primary_range[1], secondary_range);
 
     if (index_maps[0]->block_size() != index_maps[1]->block_size())
-      throw std::runtime_error("Add diagonal with non-matching block sizes not working yet.");
+      throw std::runtime_error(
+          "Add diagonal with non-matching block sizes not working yet.");
     std::size_t bs = index_maps[0]->block_size();
 
-    std::vector<dolfin::la_index_t> indices(bs*(diagonal_range - primary_range[0]));
-    std::iota(indices.begin(), indices.end(), bs*primary_range[0]);
-    const std::array<ArrayView<const dolfin::la_index_t>, 2> diags
-      = {{ ArrayView<const dolfin::la_index_t>(indices.size(), indices.data()),
-           ArrayView<const dolfin::la_index_t>(indices.size(), indices.data())}};
+    std::vector<dolfin::la_index_t> indices(
+        bs * (diagonal_range - primary_range[0]));
+    std::iota(indices.begin(), indices.end(), bs * primary_range[0]);
+    const std::array<ArrayView<const dolfin::la_index_t>, 2> diags = {
+        {ArrayView<const dolfin::la_index_t>(indices.size(), indices.data()),
+         ArrayView<const dolfin::la_index_t>(indices.size(), indices.data())}};
 
     sparsity_pattern.insert_global(diags);
   }

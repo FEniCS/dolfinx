@@ -18,10 +18,10 @@
 // First added:  2013-04-18
 // Last changed: 2013-08-28
 
+#include "MeshPointIntersection.h"
+#include "BoundingBoxTree.h"
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/Cell.h>
-#include "BoundingBoxTree.h"
-#include "MeshPointIntersection.h"
 
 using namespace dolfin;
 

@@ -20,12 +20,12 @@
 // First added:  2003-06-03
 // Last changed: 2009-02-17
 
-#include <cmath>
 #include <boost/math/special_functions/legendre.hpp>
+#include <cmath>
 
+#include "Legendre.h"
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
-#include "Legendre.h"
 
 using namespace dolfin;
 
@@ -37,13 +37,13 @@ double Legendre::eval(std::size_t n, double x)
 //-----------------------------------------------------------------------------
 double Legendre::ddx(std::size_t n, double x)
 {
-  dolfin_assert(1.0 - x*x > 0.0);
-  return -boost::math::legendre_p(n, 1, x)/(std::sqrt(1.0 - x*x));
+  dolfin_assert(1.0 - x * x > 0.0);
+  return -boost::math::legendre_p(n, 1, x) / (std::sqrt(1.0 - x * x));
 }
 //-----------------------------------------------------------------------------
 double Legendre::d2dx(std::size_t n, double x)
 {
-  dolfin_assert(1.0 - x*x != 0.0);
-  return boost::math::legendre_p(n, 2, x)/(1.0 - x*x);
+  dolfin_assert(1.0 - x * x != 0.0);
+  return boost::math::legendre_p(n, 2, x) / (1.0 - x * x);
 }
 //-----------------------------------------------------------------------------

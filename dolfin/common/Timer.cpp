@@ -18,9 +18,9 @@
 // First added:  2013-09-08
 // Last changed:
 
-#include <dolfin/parameter/GlobalParameters.h>
-#include <dolfin/log/LogManager.h>
 #include "Timer.h"
+#include <dolfin/log/LogManager.h>
+#include <dolfin/parameter/GlobalParameters.h>
 
 using namespace dolfin;
 
@@ -37,21 +37,17 @@ Timer::Timer(std::string task) : _task(task)
 //-----------------------------------------------------------------------------
 Timer::~Timer()
 {
- if (!_timer.is_stopped())
-   stop();
+  if (!_timer.is_stopped())
+    stop();
 }
 //-----------------------------------------------------------------------------
-void Timer::start()
-{
-  _timer.start();
-}
+void Timer::start() { _timer.start(); }
 //-----------------------------------------------------------------------------
 void Timer::resume()
 {
   if (_task.size() > 0)
   {
-    dolfin_error("Timer.cpp",
-                 "resume timing",
+    dolfin_error("Timer.cpp", "resume timing",
                  "Resuming is not well-defined for logging timer. "
                  "Only non-logging timer can be resumed");
   }
@@ -70,8 +66,8 @@ double Timer::stop()
 std::tuple<double, double, double> Timer::elapsed() const
 {
   const auto elapsed = _timer.elapsed();
-  const double wall   = static_cast<double>(elapsed.wall  ) * 1e-9;
-  const double user   = static_cast<double>(elapsed.user  ) * 1e-9;
+  const double wall = static_cast<double>(elapsed.wall) * 1e-9;
+  const double user = static_cast<double>(elapsed.user) * 1e-9;
   const double system = static_cast<double>(elapsed.system) * 1e-9;
   return std::make_tuple(wall, user, system);
 }

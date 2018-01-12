@@ -28,23 +28,20 @@
 namespace dolfin
 {
 
-  /// A mesh consisting of a single triangle with vertices at
-  ///
-  ///   (0, 0)
-  ///   (1, 0)
-  ///   (0, 1)
-  ///
-  /// This class is useful for testing.
+/// A mesh consisting of a single triangle with vertices at
+///
+///   (0, 0)
+///   (1, 0)
+///   (0, 1)
+///
+/// This class is useful for testing.
 
-  class UnitTriangleMesh
-  {
-  public:
-
-    /// Create mesh of unit triangle
-    static Mesh create();
-
-  };
-
+class UnitTriangleMesh
+{
+public:
+  /// Create mesh of unit triangle
+  static Mesh create();
+};
 }
 
 #endif

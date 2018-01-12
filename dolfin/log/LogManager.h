@@ -28,17 +28,14 @@
 namespace dolfin
 {
 
-  /// Logger initialisation
+/// Logger initialisation
 
-  class LogManager
-  {
-  public:
-
-    /// Singleton instance of logger
-    static Logger& logger();
-
-  };
-
+class LogManager
+{
+public:
+  /// Singleton instance of logger
+  static Logger& logger();
+};
 }
 
 #endif

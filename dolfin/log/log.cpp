@@ -31,17 +31,17 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include <dolfin/common/constants.h>
-#include <dolfin/common/Variable.h>
-#include <dolfin/common/MPI.h>
-#include <dolfin/parameter/Parameters.h>
 #include "LogManager.h"
 #include "log.h"
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Variable.h>
+#include <dolfin/common/constants.h>
+#include <dolfin/parameter/Parameters.h>
 
 using namespace dolfin;
 
 static std::unique_ptr<char[]> buffer;
-static unsigned int buffer_size= 0;
+static unsigned int buffer_size = 0;
 
 // Buffer allocation
 void allocate_buffer(std::string msg)
@@ -50,9 +50,10 @@ void allocate_buffer(std::string msg)
   // need to allocate the buffer here. We allocate twice the size of
   // the format string and at least DOLFIN_LINELENGTH. This should be
   // ok in most cases.
-  unsigned int new_size = std::max(static_cast<unsigned int>(2*msg.size()),
-                                   static_cast<unsigned int>(DOLFIN_LINELENGTH));
-  //static_cast<unsigned int>(DOLFIN_LINELENGTH));
+  unsigned int new_size
+      = std::max(static_cast<unsigned int>(2 * msg.size()),
+                 static_cast<unsigned int>(DOLFIN_LINELENGTH));
+  // static_cast<unsigned int>(DOLFIN_LINELENGTH));
   if (new_size > buffer_size)
   {
     buffer.reset(new char[new_size]);
@@ -61,11 +62,11 @@ void allocate_buffer(std::string msg)
 }
 
 // Macro for parsing arguments
-#define read(buffer, msg) \
-  allocate_buffer(msg); \
-  va_list aptr; \
-  va_start(aptr, msg); \
-  vsnprintf(buffer, buffer_size, msg.c_str(), aptr); \
+#define read(buffer, msg)                                                      \
+  allocate_buffer(msg);                                                        \
+  va_list aptr;                                                                \
+  va_start(aptr, msg);                                                         \
+  vsnprintf(buffer, buffer_size, msg.c_str(), aptr);                           \
   va_end(aptr);
 
 //-----------------------------------------------------------------------------
@@ -126,16 +127,14 @@ void dolfin::error(std::string msg, ...)
   LogManager::logger().error(buffer.get());
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_error(std::string location,
-                          std::string task,
+void dolfin::dolfin_error(std::string location, std::string task,
                           std::string reason, ...)
 {
   read(buffer.get(), reason);
   LogManager::logger().dolfin_error(location, task, buffer.get());
 }
 //-----------------------------------------------------------------------------
-void dolfin::deprecation(std::string feature,
-                         std::string version_deprecated,
+void dolfin::deprecation(std::string feature, std::string version_deprecated,
                          std::string message, ...)
 {
   read(buffer.get(), message);
@@ -160,7 +159,8 @@ void dolfin::begin(std::string msg, ...)
 //-----------------------------------------------------------------------------
 void dolfin::begin(int log_level, std::string msg, ...)
 {
-  if (!LogManager::logger().is_active()) return; // optimization
+  if (!LogManager::logger().is_active())
+    return; // optimization
   read(buffer.get(), msg);
   LogManager::logger().begin(buffer.get(), log_level);
 }
@@ -192,10 +192,7 @@ void dolfin::set_output_stream(std::ostream& out)
   LogManager::logger().set_output_stream(out);
 }
 //-----------------------------------------------------------------------------
-int dolfin::get_log_level()
-{
-  return LogManager::logger().get_log_level();
-}
+int dolfin::get_log_level() { return LogManager::logger().get_log_level(); }
 //-----------------------------------------------------------------------------
 void dolfin::monitor_memory_usage()
 {
@@ -206,16 +203,16 @@ void dolfin::not_working_in_parallel(std::string what)
 {
   if (MPI::size(MPI_COMM_WORLD) > 1)
   {
-    dolfin_error("log.cpp",
-                 "perform operation in parallel",
+    dolfin_error("log.cpp", "perform operation in parallel",
                  "%s is not yet working in parallel.\n"
                  "***          Consider filing a bug report at %s",
-                 what.c_str(), "https://bitbucket.org/fenics-project/dolfin/issues");
+                 what.c_str(),
+                 "https://bitbucket.org/fenics-project/dolfin/issues");
   }
 }
 //-----------------------------------------------------------------------------
-void dolfin::__debug(std::string file, unsigned long line,
-                     std::string function, std::string format, ...)
+void dolfin::__debug(std::string file, unsigned long line, std::string function,
+                     std::string format, ...)
 {
   read(buffer.get(), format);
   std::ostringstream ost;
@@ -226,7 +223,7 @@ void dolfin::__debug(std::string file, unsigned long line,
 }
 //-----------------------------------------------------------------------------
 void dolfin::__dolfin_assert(std::string file, unsigned long line,
-                      std::string function, std::string check)
+                             std::string function, std::string check)
 {
   LogManager::logger().__dolfin_assert(file, line, function, check);
 }

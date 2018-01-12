@@ -18,16 +18,18 @@
 // Modified by Anders Logg 2011
 // Modified by Johannes Ring 2012
 
+#include <boost/detail/endian.hpp>
 #include <cstdint>
 #include <fstream>
+#include <iomanip>
 #include <ostream>
 #include <sstream>
 #include <vector>
-#include <iomanip>
-#include <boost/detail/endian.hpp>
 
-#include <dolfin/fem/GenericDofMap.h>
+#include "Encoder.h"
+#include "VTKWriter.h"
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
@@ -36,8 +38,6 @@
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
-#include "Encoder.h"
-#include "VTKWriter.h"
 
 using namespace dolfin;
 
@@ -70,11 +70,11 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
 
   // Get rank of Function
   const std::size_t rank = u.value_rank();
-  if(rank > 2)
+  if (rank > 2)
   {
-      dolfin_error("VTKFile.cpp",
-                   "write data to VTK file",
-                   "Don't know how to handle vector function with dimension other than 2 or 3");
+    dolfin_error("VTKFile.cpp", "write data to VTK file",
+                 "Don't know how to handle vector function with dimension "
+                 "other than 2 or 3");
   }
 
   // Get number of components
@@ -88,36 +88,36 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   if (rank == 0)
   {
     fp << "<CellData  Scalars=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
-       << "\"  format=\"" << encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  format=\""
+       << encode_string << "\">";
   }
   else if (rank == 1)
   {
-    if(!(data_dim == 2 || data_dim == 3))
+    if (!(data_dim == 2 || data_dim == 3))
     {
-      dolfin_error("VTKWriter.cpp",
-                   "write data to VTK file",
-                   "Don't know how to handle vector function with dimension other than 2 or 3");
+      dolfin_error("VTKWriter.cpp", "write data to VTK file",
+                   "Don't know how to handle vector function with dimension "
+                   "other than 2 or 3");
     }
     fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
     fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
-       << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
+       << "\"  NumberOfComponents=\"3\" format=\"" << encode_string << "\">";
   }
   else if (rank == 2)
   {
-    if(!(data_dim == 4 || data_dim == 9))
+    if (!(data_dim == 4 || data_dim == 9))
     {
-      dolfin_error("VTKFile.cpp",
-                   "write data to VTK file",
-                   "Don't know how to handle tensor function with dimension other than 4 or 9");
+      dolfin_error("VTKFile.cpp", "write data to VTK file",
+                   "Don't know how to handle tensor function with dimension "
+                   "other than 4 or 9");
     }
     fp << "<CellData  Tensors=\"" << u.name() << "\"> " << std::endl;
     fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
-       << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
+       << "\"  NumberOfComponents=\"9\" format=\"" << encode_string << "\">";
   }
 
   // Allocate memory for function values at cell centres
-  const std::size_t size = num_cells*data_dim;
+  const std::size_t size = num_cells * data_dim;
 
   // Build lists of dofs and create map
   std::vector<dolfin::la_index_t> dof_set;
@@ -127,12 +127,12 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   {
     // Tabulate dofs
     auto dofs = dofmap.cell_dofs(cell->index());
-    for(std::size_t i = 0; i < dofmap.num_element_dofs(cell->index()); ++i)
+    for (std::size_t i = 0; i < dofmap.num_element_dofs(cell->index()); ++i)
       dof_set.push_back(dofs[i]);
 
     // Add local dimension to cell offset and increment
     *(cell_offset + 1)
-      = *(cell_offset) + dofmap.num_element_dofs(cell->index());
+        = *(cell_offset) + dofmap.num_element_dofs(cell->index());
     ++cell_offset;
   }
 
@@ -173,10 +173,10 @@ std::string VTKWriter::ascii_cell_data(const Mesh& mesh,
     else if (rank == 2 && data_dim == 4)
     {
       // Pad with 0.0 to 2D tensors to make them 3D
-      for(std::size_t i = 0; i < 2; i++)
+      for (std::size_t i = 0; i < 2; i++)
       {
-        ss << values[*cell_offset + 2*i] << " ";
-        ss << values[*cell_offset + 2*i + 1] << " ";
+        ss << values[*cell_offset + 2 * i] << " ";
+        ss << values[*cell_offset + 2 * i + 1] << " ";
         ss << 0.0 << " ";
       }
       ss << 0.0 << " ";
@@ -213,15 +213,15 @@ std::string VTKWriter::base64_cell_data(const Mesh& mesh,
 
   // Number of data entries per point and total number
   const std::size_t num_data_per_point = data_dim + padding_per_point;
-  const std::size_t num_total_data_points = num_cells*num_data_per_point;
+  const std::size_t num_total_data_points = num_cells * num_data_per_point;
 
   std::vector<std::size_t>::const_iterator cell_offset = offset.begin();
   std::vector<double> data(num_total_data_points, 0);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const std::size_t index = cell->index();
-    for(std::size_t i = 0; i < data_dim; i++)
-      data[index*num_data_per_point + i] = values[*cell_offset + i];
+    for (std::size_t i = 0; i < data_dim; i++)
+      data[index * num_data_per_point + i] = values[*cell_offset + i];
     ++cell_offset;
   }
 
@@ -242,29 +242,31 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
   file.precision(16);
   if (!file.is_open())
   {
-    dolfin_error("VTKWriter.cpp",
-                 "write mesh to VTK file"
-                 "Unable to open file \"%s\"", filename.c_str());
+    dolfin_error("VTKWriter.cpp", "write mesh to VTK file"
+                                  "Unable to open file \"%s\"",
+                 filename.c_str());
   }
 
   // Write vertex positions
   file << "<Points>" << std::endl;
   file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
-       << "ascii" << "\">";
+       << "ascii"
+       << "\">";
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     Point p = v->point();
-    file << p.x() << " " << p.y() << " " <<  p.z() << "  ";
+    file << p.x() << " " << p.y() << " " << p.z() << "  ";
   }
-  file << "</DataArray>" << std::endl <<  "</Points>" << std::endl;
+  file << "</DataArray>" << std::endl << "</Points>" << std::endl;
 
   // Write cell connectivity
   file << "<Cells>" << std::endl;
   file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\""
-       << "ascii" << "\">";
+       << "ascii"
+       << "\">";
 
-  std::unique_ptr<CellType>
-    celltype(CellType::create(mesh.type().entity_type(cell_dim)));
+  std::unique_ptr<CellType> celltype(
+      CellType::create(mesh.type().entity_type(cell_dim)));
   const std::vector<std::int8_t> perm = celltype->vtk_mapping();
   for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
   {
@@ -275,19 +277,21 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
   file << "</DataArray>" << std::endl;
 
   // Write offset into connectivity array for the end of each cell
-  file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\"" << "ascii"
+  file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\""
+       << "ascii"
        << "\">";
   for (std::size_t offsets = 1; offsets <= num_cells; offsets++)
-    file << offsets*num_cell_vertices << " ";
+    file << offsets * num_cell_vertices << " ";
   file << "</DataArray>" << std::endl;
 
   // Write cell type
-  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"" << "ascii"
+  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\""
+       << "ascii"
        << "\">";
   for (std::size_t types = 0; types < num_cells; types++)
     file << _vtk_cell_type << " ";
-  file  << "</DataArray>" << std::endl;
-  file  << "</Cells>" << std::endl;
+  file << "</DataArray>" << std::endl;
+  file << "</Cells>" << std::endl;
 
   // Close file
   file.close();
@@ -305,18 +309,18 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
   file.precision(16);
-  if ( !file.is_open() )
+  if (!file.is_open())
   {
-    dolfin_error("VTKWriter.cpp",
-                 "write mesh to VTK file",
+    dolfin_error("VTKWriter.cpp", "write mesh to VTK file",
                  "Unable to open file \"%s\"", filename.c_str());
   }
 
   // Write vertex positions
   file << "<Points>" << std::endl;
   file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
-       << "binary" << "\">" << std::endl;
-  std::vector<double> vertex_data(3*mesh.num_vertices());
+       << "binary"
+       << "\">" << std::endl;
+  std::vector<double> vertex_data(3 * mesh.num_vertices());
   std::vector<double>::iterator vertex_entry = vertex_data.begin();
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
@@ -326,19 +330,20 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
     *vertex_entry++ = p.z();
   }
   // Create encoded stream
-  file <<  encode_stream(vertex_data, compress) << std::endl;
-  file << "</DataArray>" << std::endl <<  "</Points>" << std::endl;
+  file << encode_stream(vertex_data, compress) << std::endl;
+  file << "</DataArray>" << std::endl << "</Points>" << std::endl;
 
   // Write cell connectivity
   file << "<Cells>" << std::endl;
   file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\""
-       << "binary" << "\">" << std::endl;
-  const int size = num_cells*num_cell_vertices;
+       << "binary"
+       << "\">" << std::endl;
+  const int size = num_cells * num_cell_vertices;
   std::vector<std::uint32_t> cell_data(size);
   std::vector<std::uint32_t>::iterator cell_entry = cell_data.begin();
 
-  std::unique_ptr<CellType>
-    celltype(CellType::create(mesh.type().entity_type(cell_dim)));
+  std::unique_ptr<CellType> celltype(
+      CellType::create(mesh.type().entity_type(cell_dim)));
   const std::vector<std::int8_t> perm = celltype->vtk_mapping();
   for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
   {
@@ -352,18 +357,20 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
 
   // Write offset into connectivity array for the end of each cell
   file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\""
-       << "binary" << "\">" << std::endl;
-  std::vector<std::uint32_t> offset_data(num_cells*num_cell_vertices);
+       << "binary"
+       << "\">" << std::endl;
+  std::vector<std::uint32_t> offset_data(num_cells * num_cell_vertices);
   std::vector<std::uint32_t>::iterator offset_entry = offset_data.begin();
   for (std::size_t offsets = 1; offsets <= num_cells; offsets++)
-    *offset_entry++ = offsets*num_cell_vertices;
+    *offset_entry++ = offsets * num_cell_vertices;
 
   // Create encoded stream
   file << encode_stream(offset_data, compress) << std::endl;
   file << "</DataArray>" << std::endl;
 
   // Write cell type
-  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"" << "binary"
+  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\""
+       << "binary"
        << "\">" << std::endl;
   std::vector<std::uint8_t> type_data(num_cells);
   std::vector<std::uint8_t>::iterator type_entry = type_data.begin();
@@ -373,15 +380,14 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
   // Create encoded stream
   file << encode_stream(type_data, compress) << std::endl;
 
-  file  << "</DataArray>" << std::endl;
-  file  << "</Cells>" << std::endl;
+  file << "</DataArray>" << std::endl;
+  file << "</Cells>" << std::endl;
 
   // Close file
   file.close();
 }
 //----------------------------------------------------------------------------
-std::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh,
-                                      std::size_t cell_dim)
+std::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh, std::size_t cell_dim)
 {
   // Get cell type
   CellType::Type cell_type = mesh.type().entity_type(cell_dim);
@@ -402,8 +408,7 @@ std::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh,
     vtk_cell_type = 1;
   else
   {
-    dolfin_error("VTKWriter.cpp",
-                 "write data to VTK file",
+    dolfin_error("VTKWriter.cpp", "write data to VTK file",
                  "Unknown cell type (%d)", cell_type);
   }
 

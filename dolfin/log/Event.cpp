@@ -18,14 +18,14 @@
 // First added:  2004-01-03
 // Last changed: 2005
 
-#include "log.h"
 #include "Event.h"
+#include "log.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Event::Event(const std::string msg, unsigned int maxcount) :
-  _msg(msg), _maxcount(maxcount), _count(0)
+Event::Event(const std::string msg, unsigned int maxcount)
+    : _msg(msg), _maxcount(maxcount), _count(0)
 {
   // Do nothing
 }
@@ -35,24 +35,18 @@ Event::~Event()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Event::operator() ()
+void Event::operator()()
 {
-  if ( _count < _maxcount)
+  if (_count < _maxcount)
     info(_msg);
 
   _count++;
 
-  if ( _count == _maxcount && _maxcount > 1 )
+  if (_count == _maxcount && _maxcount > 1)
     info("Last message repeated %d times. Not displaying again.", _count);
 }
 //-----------------------------------------------------------------------------
-unsigned int Event::count() const
-{
-  return _count;
-}
+unsigned int Event::count() const { return _count; }
 //-----------------------------------------------------------------------------
-unsigned int Event::maxcount() const
-{
-  return _maxcount;
-}
+unsigned int Event::maxcount() const { return _maxcount; }
 //-----------------------------------------------------------------------------

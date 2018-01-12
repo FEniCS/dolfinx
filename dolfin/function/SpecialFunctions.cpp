@@ -22,16 +22,16 @@
 // First added:  2008-07-17
 // Last changed: 2011-11-16
 
-#include <dolfin/log/log.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/Cell.h>
 #include "SpecialFunctions.h"
+#include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshCoordinates::MeshCoordinates(std::shared_ptr<const Mesh> mesh)
-  : Expression({mesh->geometry().dim()}), _mesh(mesh)
+    : Expression({mesh->geometry().dim()}), _mesh(mesh)
 {
   // Do nothing
 }
@@ -49,9 +49,9 @@ void MeshCoordinates::eval(Eigen::Ref<Eigen::VectorXd> values,
 }
 //-----------------------------------------------------------------------------
 FacetArea::FacetArea(std::shared_ptr<const Mesh> mesh)
-  : Expression({}), _mesh(mesh),
-    not_on_boundary("*** Warning: evaluating special function FacetArea on a "
-                    "non-facet domain, returning zero.")
+    : Expression({}), _mesh(mesh),
+      not_on_boundary("*** Warning: evaluating special function FacetArea on a "
+                      "non-facet domain, returning zero.")
 {
   // Do nothing
 }

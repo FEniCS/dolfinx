@@ -29,29 +29,20 @@
 #include <hdf5.h>
 #endif
 
-#include "types.h"
 #include "defines.h"
+#include "types.h"
 
 //-------------------------------------------------------------------------
-std::string dolfin::dolfin_version()
-{
-  return std::string(DOLFIN_VERSION);
-}
+std::string dolfin::dolfin_version() { return std::string(DOLFIN_VERSION); }
 //-------------------------------------------------------------------------
-std::string dolfin::ufc_signature()
-{
-  return std::string(UFC_SIGNATURE);
-}
+std::string dolfin::ufc_signature() { return std::string(UFC_SIGNATURE); }
 //-------------------------------------------------------------------------
 std::string dolfin::git_commit_hash()
 {
   return std::string(DOLFIN_GIT_COMMIT_HASH);
 }
 //-------------------------------------------------------------------------
-std::size_t dolfin::sizeof_la_index_t()
-{
-  return sizeof(dolfin::la_index_t);
-}
+std::size_t dolfin::sizeof_la_index_t() { return sizeof(dolfin::la_index_t); }
 //-------------------------------------------------------------------------
 bool dolfin::has_debug()
 {

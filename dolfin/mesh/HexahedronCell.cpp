@@ -16,22 +16,19 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <algorithm>
-#include <dolfin/log/log.h>
+#include "HexahedronCell.h"
 #include "Cell.h"
+#include "Facet.h"
 #include "MeshEditor.h"
 #include "MeshEntity.h"
-#include "Facet.h"
-#include "HexahedronCell.h"
 #include "Vertex.h"
+#include <algorithm>
+#include <dolfin/log/log.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::size_t HexahedronCell::dim() const
-{
-  return 3;
-}
+std::size_t HexahedronCell::dim() const { return 3; }
 //-----------------------------------------------------------------------------
 std::size_t HexahedronCell::num_entities(std::size_t dim) const
 {
@@ -76,7 +73,8 @@ std::size_t HexahedronCell::num_vertices(std::size_t dim) const
 }
 //-----------------------------------------------------------------------------
 void HexahedronCell::create_entities(boost::multi_array<unsigned int, 2>& e,
-                                        std::size_t dim, const unsigned int* v) const
+                                     std::size_t dim,
+                                     const unsigned int* v) const
 {
   // We need to know how to create edges and faces
   switch (dim)
@@ -86,35 +84,65 @@ void HexahedronCell::create_entities(boost::multi_array<unsigned int, 2>& e,
     e.resize(boost::extents[12][2]);
 
     // Create the 12 edges
-    e[0][0]  = v[0]; e[0][1]  = v[1];
-    e[1][0]  = v[2]; e[1][1]  = v[3];
-    e[2][0]  = v[4]; e[2][1]  = v[5];
-    e[3][0]  = v[6]; e[3][1]  = v[7];
-    e[4][0]  = v[0]; e[4][1]  = v[2];
-    e[5][0]  = v[1]; e[5][1]  = v[3];
-    e[6][0]  = v[4]; e[6][1]  = v[6];
-    e[7][0]  = v[5]; e[7][1]  = v[7];
-    e[8][0]  = v[0]; e[8][1]  = v[4];
-    e[9][0]  = v[1]; e[9][1]  = v[5];
-    e[10][0] = v[2]; e[10][1] = v[6];
-    e[11][0] = v[3]; e[11][1] = v[7];
+    e[0][0] = v[0];
+    e[0][1] = v[1];
+    e[1][0] = v[2];
+    e[1][1] = v[3];
+    e[2][0] = v[4];
+    e[2][1] = v[5];
+    e[3][0] = v[6];
+    e[3][1] = v[7];
+    e[4][0] = v[0];
+    e[4][1] = v[2];
+    e[5][0] = v[1];
+    e[5][1] = v[3];
+    e[6][0] = v[4];
+    e[6][1] = v[6];
+    e[7][0] = v[5];
+    e[7][1] = v[7];
+    e[8][0] = v[0];
+    e[8][1] = v[4];
+    e[9][0] = v[1];
+    e[9][1] = v[5];
+    e[10][0] = v[2];
+    e[10][1] = v[6];
+    e[11][0] = v[3];
+    e[11][1] = v[7];
     break;
   case 2:
     // Resize data structure
     e.resize(boost::extents[6][4]);
 
     // Create the 6 faces
-    e[0][0] = v[0]; e[0][1] = v[1]; e[0][2] = v[2]; e[0][3] = v[3];
-    e[1][0] = v[4]; e[1][1] = v[5]; e[1][2] = v[6]; e[1][3] = v[7];
-    e[2][0] = v[0]; e[2][1] = v[1]; e[2][2] = v[4]; e[2][3] = v[5];
-    e[3][0] = v[2]; e[3][1] = v[3]; e[3][2] = v[6]; e[3][3] = v[7];
-    e[4][0] = v[0]; e[4][1] = v[2]; e[4][2] = v[4]; e[4][3] = v[6];
-    e[5][0] = v[1]; e[5][1] = v[3]; e[5][2] = v[5]; e[5][3] = v[7];
+    e[0][0] = v[0];
+    e[0][1] = v[1];
+    e[0][2] = v[2];
+    e[0][3] = v[3];
+    e[1][0] = v[4];
+    e[1][1] = v[5];
+    e[1][2] = v[6];
+    e[1][3] = v[7];
+    e[2][0] = v[0];
+    e[2][1] = v[1];
+    e[2][2] = v[4];
+    e[2][3] = v[5];
+    e[3][0] = v[2];
+    e[3][1] = v[3];
+    e[3][2] = v[6];
+    e[3][3] = v[7];
+    e[4][0] = v[0];
+    e[4][1] = v[2];
+    e[4][2] = v[4];
+    e[4][3] = v[6];
+    e[5][0] = v[1];
+    e[5][1] = v[3];
+    e[5][2] = v[5];
+    e[5][3] = v[7];
     break;
   default:
-    dolfin_error("HexahedronCell.cpp",
-                 "create entities of tetrahedron cell",
-                 "Don't know how to create entities of topological dimension %d", dim);
+    dolfin_error(
+        "HexahedronCell.cpp", "create entities of tetrahedron cell",
+        "Don't know how to create entities of topological dimension %d", dim);
   }
 }
 //-----------------------------------------------------------------------------
@@ -122,8 +150,7 @@ double HexahedronCell::volume(const MeshEntity& cell) const
 {
   if (cell.dim() != 2)
   {
-    dolfin_error("HexahedronCell.cpp",
-                 "compute volume (area) of cell",
+    dolfin_error("HexahedronCell.cpp", "compute volume (area) of cell",
                  "Illegal mesh entity");
   }
 
@@ -139,8 +166,7 @@ double HexahedronCell::volume(const MeshEntity& cell) const
   const Point p4 = geometry.point(vertices[4]);
   const Point p5 = geometry.point(vertices[5]);
 
-  dolfin_error("HexahedronCell.cpp",
-               "compute volume of hexahedron",
+  dolfin_error("HexahedronCell.cpp", "compute volume of hexahedron",
                "Not implemented");
 
   return 0.0;
@@ -156,8 +182,7 @@ double HexahedronCell::circumradius(const MeshEntity& cell) const
                  "Illegal mesh entity");
   }
 
-  dolfin_error("HexahedronCell.cpp",
-               "compute circumradius of hexahedron cell",
+  dolfin_error("HexahedronCell.cpp", "compute circumradius of hexahedron cell",
                "Don't know how to compute diameter");
 
   dolfin_not_implemented();
@@ -165,13 +190,14 @@ double HexahedronCell::circumradius(const MeshEntity& cell) const
 }
 //-----------------------------------------------------------------------------
 double HexahedronCell::squared_distance(const Cell& cell,
-                                           const Point& point) const
+                                        const Point& point) const
 {
   dolfin_not_implemented();
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double HexahedronCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
+double HexahedronCell::normal(const Cell& cell, std::size_t facet,
+                              std::size_t i) const
 {
   return normal(cell, facet)[i];
 }
@@ -216,8 +242,9 @@ double HexahedronCell::facet_area(const Cell& cell, std::size_t facet) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void HexahedronCell::order(Cell& cell,
-                 const std::vector<std::int64_t>& local_to_global_vertex_indices) const
+void HexahedronCell::order(
+    Cell& cell,
+    const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
   // Not implemented
   dolfin_not_implemented();

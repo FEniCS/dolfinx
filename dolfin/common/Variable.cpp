@@ -20,29 +20,30 @@
 // First added:  2003-02-26
 // Last changed: 2011-09-24
 
-#include <sstream>
-#include <dolfin/parameter/Parameters.h>
-#include "UniqueIdGenerator.h"
 #include "Variable.h"
+#include "UniqueIdGenerator.h"
+#include <dolfin/parameter/Parameters.h>
+#include <sstream>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Variable::Variable()
-  : _name("x"), _label("unnamed data"), unique_id(UniqueIdGenerator::id())
+    : _name("x"), _label("unnamed data"), unique_id(UniqueIdGenerator::id())
 
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Variable::Variable(const std::string name, const std::string label)
-  : _name(name), _label(label), unique_id(UniqueIdGenerator::id())
+    : _name(name), _label(label), unique_id(UniqueIdGenerator::id())
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Variable::Variable(const Variable& variable) : _name(variable._name),
-  _label(variable._label), unique_id(UniqueIdGenerator::id())
+Variable::Variable(const Variable& variable)
+    : _name(variable._name), _label(variable._label),
+      unique_id(UniqueIdGenerator::id())
 {
   // Do nothing
 }
@@ -68,21 +69,14 @@ void Variable::rename(const std::string name, const std::string label)
   _label = label;
 }
 //-----------------------------------------------------------------------------
-std::string Variable::name() const
-{
-  return _name;
-}
+std::string Variable::name() const { return _name; }
 //-----------------------------------------------------------------------------
-std::string Variable::label() const
-{
-  return _label;
-}
+std::string Variable::label() const { return _label; }
 //-----------------------------------------------------------------------------
 std::string Variable::str(bool verbose) const
 {
   std::stringstream s;
-  s << "<DOLFIN object "
-    << _name << " (" << _label << ")>";
+  s << "<DOLFIN object " << _name << " (" << _label << ")>";
   return s.str();
 }
 //-----------------------------------------------------------------------------

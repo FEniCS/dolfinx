@@ -21,20 +21,20 @@
 // First added:  2005-12-02
 // Last changed: 2015-06-15
 
-#include <cmath>
 #include <boost/multi_array.hpp>
+#include <cmath>
 
-#include <dolfin/common/constants.h>
+#include "BoxMesh.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/common/constants.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include "BoxMesh.h"
+#include <dolfin/mesh/MeshPartitioning.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void BoxMesh::build_tet(Mesh& mesh, const std::array<Point,2 >& p,
+void BoxMesh::build_tet(Mesh& mesh, const std::array<Point, 2>& p,
                         std::array<std::size_t, 3> n)
 {
   Timer timer("Build BoxMesh");
@@ -69,18 +69,19 @@ void BoxMesh::build_tet(Mesh& mesh, const std::array<Point,2 >& p,
   const double f = z1;
 
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS
-      || std::abs(z0 - z1) < DOLFIN_EPS )
+      || std::abs(z0 - z1) < DOLFIN_EPS)
   {
-    dolfin_error("BoxMesh.cpp",
-                 "create box",
-                 "Box seems to have zero width, height or depth. Consider checking your dimensions");
+    dolfin_error("BoxMesh.cpp", "create box", "Box seems to have zero width, "
+                                              "height or depth. Consider "
+                                              "checking your dimensions");
   }
 
-  if ( nx < 1 || ny < 1 || nz < 1 )
+  if (nx < 1 || ny < 1 || nz < 1)
   {
-    dolfin_error("BoxMesh.cpp",
-                 "create box",
-                 "BoxMesh has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
+    dolfin_error("BoxMesh.cpp", "create box", "BoxMesh has non-positive number "
+                                              "of vertices in some dimension: "
+                                              "number of vertices must be at "
+                                              "least 1 in each dimension");
   }
 
   mesh.rename("mesh", "Mesh of the cuboid (a,b) x (c,d) x (e,f)");
@@ -93,18 +94,19 @@ void BoxMesh::build_tet(Mesh& mesh, const std::array<Point,2 >& p,
   Point x;
 
   // Create vertices
-  editor.init_vertices_global((nx + 1)*(ny + 1)*(nz + 1),
-                              (nx + 1)*(ny + 1)*(nz + 1));
+  editor.init_vertices_global((nx + 1) * (ny + 1) * (nz + 1),
+                              (nx + 1) * (ny + 1) * (nz + 1));
   std::size_t vertex = 0;
   for (std::size_t iz = 0; iz <= nz; iz++)
   {
-    x[2] = e + (static_cast<double>(iz))*(f-e) / static_cast<double>(nz);
+    x[2] = e + (static_cast<double>(iz)) * (f - e) / static_cast<double>(nz);
     for (std::size_t iy = 0; iy <= ny; iy++)
     {
-      x[1] = c + (static_cast<double>(iy))*(d-c) / static_cast<double>(ny);
+      x[1] = c + (static_cast<double>(iy)) * (d - c) / static_cast<double>(ny);
       for (std::size_t ix = 0; ix <= nx; ix++)
       {
-        x[0] = a + (static_cast<double>(ix))*(b-a) / static_cast<double>(nx);
+        x[0]
+            = a + (static_cast<double>(ix)) * (b - a) / static_cast<double>(nx);
         editor.add_vertex(vertex, vertex, x);
         vertex++;
       }
@@ -112,7 +114,7 @@ void BoxMesh::build_tet(Mesh& mesh, const std::array<Point,2 >& p,
   }
 
   // Create tetrahedra
-  editor.init_cells_global(6*nx*ny*nz, 6*nx*ny*nz);
+  editor.init_cells_global(6 * nx * ny * nz, 6 * nx * ny * nz);
   std::size_t cell = 0;
   boost::multi_array<std::size_t, 2> cells(boost::extents[6][4]);
   for (std::size_t iz = 0; iz < nz; iz++)
@@ -121,22 +123,40 @@ void BoxMesh::build_tet(Mesh& mesh, const std::array<Point,2 >& p,
     {
       for (std::size_t ix = 0; ix < nx; ix++)
       {
-        const std::size_t v0 = iz*(nx + 1)*(ny + 1) + iy*(nx + 1) + ix;
+        const std::size_t v0 = iz * (nx + 1) * (ny + 1) + iy * (nx + 1) + ix;
         const std::size_t v1 = v0 + 1;
         const std::size_t v2 = v0 + (nx + 1);
         const std::size_t v3 = v1 + (nx + 1);
-        const std::size_t v4 = v0 + (nx + 1)*(ny + 1);
-        const std::size_t v5 = v1 + (nx + 1)*(ny + 1);
-        const std::size_t v6 = v2 + (nx + 1)*(ny + 1);
-        const std::size_t v7 = v3 + (nx + 1)*(ny + 1);
+        const std::size_t v4 = v0 + (nx + 1) * (ny + 1);
+        const std::size_t v5 = v1 + (nx + 1) * (ny + 1);
+        const std::size_t v6 = v2 + (nx + 1) * (ny + 1);
+        const std::size_t v7 = v3 + (nx + 1) * (ny + 1);
 
         // Note that v0 < v1 < v2 < v3 < vmid.
-        cells[0][0] = v0; cells[0][1] = v1; cells[0][2] = v3; cells[0][3] = v7;
-        cells[1][0] = v0; cells[1][1] = v1; cells[1][2] = v7; cells[1][3] = v5;
-        cells[2][0] = v0; cells[2][1] = v5; cells[2][2] = v7; cells[2][3] = v4;
-        cells[3][0] = v0; cells[3][1] = v3; cells[3][2] = v2; cells[3][3] = v7;
-        cells[4][0] = v0; cells[4][1] = v6; cells[4][2] = v4; cells[4][3] = v7;
-        cells[5][0] = v0; cells[5][1] = v2; cells[5][2] = v6; cells[5][3] = v7;
+        cells[0][0] = v0;
+        cells[0][1] = v1;
+        cells[0][2] = v3;
+        cells[0][3] = v7;
+        cells[1][0] = v0;
+        cells[1][1] = v1;
+        cells[1][2] = v7;
+        cells[1][3] = v5;
+        cells[2][0] = v0;
+        cells[2][1] = v5;
+        cells[2][2] = v7;
+        cells[2][3] = v4;
+        cells[3][0] = v0;
+        cells[3][1] = v3;
+        cells[3][2] = v2;
+        cells[3][3] = v7;
+        cells[4][0] = v0;
+        cells[4][1] = v6;
+        cells[4][2] = v4;
+        cells[4][3] = v7;
+        cells[5][0] = v0;
+        cells[5][1] = v2;
+        cells[5][2] = v6;
+        cells[5][3] = v7;
 
         // Add cells
         for (auto _cell = cells.begin(); _cell != cells.end(); ++_cell)
@@ -173,9 +193,9 @@ void BoxMesh::build_hex(Mesh& mesh, std::array<std::size_t, 3> n)
   editor.open(mesh, CellType::Type::hexahedron, 3, 3);
 
   // Create vertices and cells:
-  editor.init_vertices_global((nx + 1)*(ny + 1)*(nz + 1),
-                              (nx + 1)*(ny + 1)*(nz + 1));
-  editor.init_cells_global(nx*ny*nz, nx*ny*nz);
+  editor.init_vertices_global((nx + 1) * (ny + 1) * (nz + 1),
+                              (nx + 1) * (ny + 1) * (nz + 1));
+  editor.init_cells_global(nx * ny * nz, nx * ny * nz);
 
   // Storage for vertices
   Point x;
@@ -191,13 +211,15 @@ void BoxMesh::build_hex(Mesh& mesh, std::array<std::size_t, 3> n)
   std::size_t vertex = 0;
   for (std::size_t iz = 0; iz <= nz; iz++)
   {
-    x[2] = e + ((static_cast<double>(iz))*(f - e)/static_cast<double>(nz));
+    x[2] = e + ((static_cast<double>(iz)) * (f - e) / static_cast<double>(nz));
     for (std::size_t iy = 0; iy <= ny; iy++)
     {
-      x[1] = c + ((static_cast<double>(iy))*(d - c)/static_cast<double>(ny));
+      x[1]
+          = c + ((static_cast<double>(iy)) * (d - c) / static_cast<double>(ny));
       for (std::size_t ix = 0; ix <= nx; ix++)
       {
-        x[0] = a + ((static_cast<double>(ix))*(b - a)/static_cast<double>(nx));
+        x[0] = a + ((static_cast<double>(ix)) * (b - a)
+                    / static_cast<double>(nx));
         editor.add_vertex(vertex, x);
         vertex++;
       }
@@ -213,14 +235,14 @@ void BoxMesh::build_hex(Mesh& mesh, std::array<std::size_t, 3> n)
     {
       for (std::size_t ix = 0; ix < nx; ix++)
       {
-        v[0] = (iz*(ny + 1) + iy)*(nx + 1) + ix;
+        v[0] = (iz * (ny + 1) + iy) * (nx + 1) + ix;
         v[1] = v[0] + 1;
         v[2] = v[0] + (nx + 1);
         v[3] = v[1] + (nx + 1);
-        v[4] = v[0] + (nx + 1)*(ny + 1);
-        v[5] = v[1] + (nx + 1)*(ny + 1);
-        v[6] = v[2] + (nx + 1)*(ny + 1);
-        v[7] = v[3] + (nx + 1)*(ny + 1);
+        v[4] = v[0] + (nx + 1) * (ny + 1);
+        v[5] = v[1] + (nx + 1) * (ny + 1);
+        v[6] = v[2] + (nx + 1) * (ny + 1);
+        v[7] = v[3] + (nx + 1) * (ny + 1);
         editor.add_cell(cell, v);
         ++cell;
       }

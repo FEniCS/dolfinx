@@ -27,13 +27,12 @@
 namespace dolfin
 {
 
-  /// Index type for compatibility with linear algebra backend(s)
-  #ifdef HAS_PETSC
-  typedef PetscInt la_index_t;
-  #else
-  typedef int la_index_t;
-  #endif
-
+/// Index type for compatibility with linear algebra backend(s)
+#ifdef HAS_PETSC
+typedef PetscInt la_index_t;
+#else
+typedef int la_index_t;
+#endif
 }
 
 #endif

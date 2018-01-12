@@ -5,9 +5,9 @@
 
 #include <dolfin/la/VectorSpaceBasis.h>
 
-#include <dolfin/la/PETScOptions.h>
-#include <dolfin/la/PETScObject.h>
 #include <dolfin/la/PETScBaseMatrix.h>
+#include <dolfin/la/PETScObject.h>
+#include <dolfin/la/PETScOptions.h>
 
 #include <dolfin/la/PETScMatrix.h>
 

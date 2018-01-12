@@ -20,9 +20,9 @@
 // First added:  2006-06-02
 // Last changed: 2011-02-08
 
-#include <cmath>
-#include "Vertex.h"
 #include "Edge.h"
+#include "Vertex.h"
+#include <cmath>
 
 using namespace dolfin;
 
@@ -38,9 +38,9 @@ double Edge::length() const
   const Point p0 = v0.point();
   const Point p1 = v1.point();
 
-  double length(sqrt((p1.x()-p0.x())*(p1.x()-p0.x())
-               + (p1.y()-p0.y())*(p1.y()-p0.y())
-               + (p1.z()-p0.z())*(p1.z()-p0.z())));
+  double length(sqrt((p1.x() - p0.x()) * (p1.x() - p0.x())
+                     + (p1.y() - p0.y()) * (p1.y() - p0.y())
+                     + (p1.z() - p0.z()) * (p1.z() - p0.z())));
 
   return length;
 }

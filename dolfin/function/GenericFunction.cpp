@@ -18,11 +18,11 @@
 // First added:  2009-09-28
 // Last changed: 2014-03-25
 
-#include <string>
+#include "GenericFunction.h"
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
-#include "GenericFunction.h"
+#include <string>
 
 using namespace dolfin;
 
@@ -48,8 +48,7 @@ void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
 void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
                            Eigen::Ref<const Eigen::VectorXd> x) const
 {
-  dolfin_error("GenericFunction.cpp",
-               "evaluate function (Eigen version)",
+  dolfin_error("GenericFunction.cpp", "evaluate function (Eigen version)",
                "Missing eval() function (must be overloaded)");
 }
 //-----------------------------------------------------------------------------
@@ -61,8 +60,7 @@ std::size_t GenericFunction::value_size() const
   return size;
 }
 //-----------------------------------------------------------------------------
-void GenericFunction::evaluate(double* values,
-                               const double* coordinates,
+void GenericFunction::evaluate(double* values, const double* coordinates,
                                const ufc::cell& cell) const
 {
   dolfin_assert(values);

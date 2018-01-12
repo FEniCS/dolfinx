@@ -22,30 +22,29 @@
 #define __BASIC_H
 
 #include <cstddef>
-#include <utility>
 #include <dolfin/common/constants.h>
+#include <utility>
 
 namespace dolfin
 {
-  /// Return a to the power n.
-  /// NOTE: Overflow is not checked!
-  /// @param a (std::size_t)
-  ///   Value
-  /// @param n (std::size_t)
-  ///   Power
-  /// @return std::size_t
-  std::size_t ipow(std::size_t a, std::size_t n);
+/// Return a to the power n.
+/// NOTE: Overflow is not checked!
+/// @param a (std::size_t)
+///   Value
+/// @param n (std::size_t)
+///   Power
+/// @return std::size_t
+std::size_t ipow(std::size_t a, std::size_t n);
 
-  /// Check whether x is close to x0 (to within DOLFIN_EPS)
-  /// @param x (double)
-  ///    First value
-  /// @param x0 (double)
-  ///    Second value
-  /// @param eps (double)
-  ///   Tolerance
-  /// @return bool
-  bool near(double x, double x0, double eps=DOLFIN_EPS);
-
+/// Check whether x is close to x0 (to within DOLFIN_EPS)
+/// @param x (double)
+///    First value
+/// @param x0 (double)
+///    Second value
+/// @param eps (double)
+///   Tolerance
+/// @return bool
+bool near(double x, double x0, double eps = DOLFIN_EPS);
 }
 
 #endif

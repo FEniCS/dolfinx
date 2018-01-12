@@ -26,50 +26,46 @@
 namespace dolfin
 {
 
-  /// A event is a string message which is displayed
-  /// only a limited number of times.
-  ///
-  /// @code{.cpp}
-  ///
-  ///         Event event("System is stiff, damping is needed.");
-  ///         while ()
-  ///         {
-  ///           ...
-  ///           if ( ... )
-  ///           {
-  ///             event();
-  ///             ...
-  ///           }
-  ///         }
-  /// @endcode
+/// A event is a string message which is displayed
+/// only a limited number of times.
+///
+/// @code{.cpp}
+///
+///         Event event("System is stiff, damping is needed.");
+///         while ()
+///         {
+///           ...
+///           if ( ... )
+///           {
+///             event();
+///             ...
+///           }
+///         }
+/// @endcode
 
-  class Event
-  {
-  public:
+class Event
+{
+public:
+  /// Constructor
+  Event(const std::string msg, unsigned int maxcount = 1);
 
-    /// Constructor
-    Event(const std::string msg, unsigned int maxcount = 1);
+  /// Destructor
+  ~Event();
 
-    /// Destructor
-    ~Event();
+  /// Display message
+  void operator()();
 
-    /// Display message
-    void operator() ();
+  /// Display count
+  unsigned int count() const;
 
-    /// Display count
-    unsigned int count() const;
+  /// Maximum display count
+  unsigned int maxcount() const;
 
-    /// Maximum display count
-    unsigned int maxcount() const;
-
-  private:
-
-    std::string _msg;
-    unsigned int _maxcount;
-    unsigned int _count;
-
-  };
-
+private:
+  std::string _msg;
+  unsigned int _maxcount;
+  unsigned int _count;
+};
 }
 
 #endif

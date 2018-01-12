@@ -23,22 +23,19 @@
 // First added:  2006-06-05
 // Last changed: 2016-05-05
 
-#include <algorithm>
-#include <dolfin/log/log.h>
-#include <dolfin/geometry/CollisionPredicates.h>
+#include "IntervalCell.h"
 #include "Cell.h"
 #include "MeshEditor.h"
 #include "MeshEntity.h"
 #include "MeshGeometry.h"
-#include "IntervalCell.h"
+#include <algorithm>
+#include <dolfin/geometry/CollisionPredicates.h>
+#include <dolfin/log/log.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::size_t IntervalCell::dim() const
-{
-  return 1;
-}
+std::size_t IntervalCell::dim() const { return 1; }
 //-----------------------------------------------------------------------------
 std::size_t IntervalCell::num_entities(std::size_t dim) const
 {
@@ -83,7 +80,8 @@ void IntervalCell::create_entities(boost::multi_array<unsigned int, 2>& e,
   // Resize data structure
   e.resize(boost::extents[2][1]);
   // Create the three edges
-  e[0][0] = v[0]; e[1][0] = v[1];
+  e[0][0] = v[0];
+  e[1][0] = v[1];
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::volume(const MeshEntity& interval) const
@@ -91,8 +89,7 @@ double IntervalCell::volume(const MeshEntity& interval) const
   // Check that we get an interval
   if (interval.dim() != 1)
   {
-    dolfin_error("IntervalCell.cpp",
-                 "compute volume (length) of interval cell",
+    dolfin_error("IntervalCell.cpp", "compute volume (length) of interval cell",
                  "Illegal mesh entity, not an interval");
   }
 
@@ -112,13 +109,12 @@ double IntervalCell::circumradius(const MeshEntity& interval) const
   // Check that we get an interval
   if (interval.dim() != 1)
   {
-    dolfin_error("IntervalCell.cpp",
-                 "compute diameter of interval cell",
+    dolfin_error("IntervalCell.cpp", "compute diameter of interval cell",
                  "Illegal mesh entity, not an interval");
   }
 
   // Circumradius is half the volume for an interval (line segment)
-  return volume(interval)/2.0;
+  return volume(interval) / 2.0;
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::squared_distance(const Cell& cell,
@@ -134,13 +130,12 @@ double IntervalCell::squared_distance(const Cell& cell,
   return squared_distance(point, a, b);
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::squared_distance(const Point& point,
-                                      const Point& a,
+double IntervalCell::squared_distance(const Point& point, const Point& a,
                                       const Point& b)
 {
   // Compute vector
-  const Point v0  = point - a;
-  const Point v1  = point - b;
+  const Point v0 = point - a;
+  const Point v1 = point - b;
   const Point v01 = b - a;
 
   // Check if a is closest point (outside of interval)
@@ -149,12 +144,12 @@ double IntervalCell::squared_distance(const Point& point,
     return v0.dot(v0);
 
   // Check if b is closest point (outside the interval)
-  const double a1 = - v1.dot(v01);
+  const double a1 = -v1.dot(v01);
   if (a1 < 0.0)
     return v1.dot(v1);
 
   // Inside interval, so use Pythagoras to subtract length of projection
-  return std::max(v0.dot(v0) - a0*a0 / v01.dot(v01), 0.0);
+  return std::max(v0.dot(v0) - a0 * a0 / v01.dot(v01), 0.0);
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::normal(const Cell& cell, std::size_t facet,
@@ -192,8 +187,7 @@ Point IntervalCell::cell_normal(const Cell& cell) const
   // Cell_normal only defined for gdim = 1, 2 for now
   const std::size_t gdim = geometry.dim();
   if (gdim > 2)
-    dolfin_error("IntervalCell.cpp",
-                 "compute cell normal",
+    dolfin_error("IntervalCell.cpp", "compute cell normal",
                  "Illegal geometric dimension (%d)", gdim);
 
   // Get the two vertices as points
@@ -216,9 +210,9 @@ double IntervalCell::facet_area(const Cell& cell, std::size_t facet) const
   return 1.0;
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::order(Cell& cell,
-                         const std::vector<std::int64_t>&
-                         local_to_global_vertex_indices) const
+void IntervalCell::order(
+    Cell& cell,
+    const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0
 

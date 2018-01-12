@@ -20,32 +20,29 @@
 
 #ifdef HAS_PETSC
 
-#include <string>
 #include <dolfin/common/SubSystemsManager.h>
+#include <string>
 
 namespace dolfin
 {
 
-  /// This class calls SubSystemsManager to initialise PETSc.
-  ///
-  /// All PETSc objects must be derived from this class.
+/// This class calls SubSystemsManager to initialise PETSc.
+///
+/// All PETSc objects must be derived from this class.
 
-  class PETScObject
-  {
-  public:
+class PETScObject
+{
+public:
+  /// Constructor. Ensures that PETSc has been initialised.
+  PETScObject() { SubSystemsManager::init_petsc(); }
 
-    /// Constructor. Ensures that PETSc has been initialised.
-    PETScObject() { SubSystemsManager::init_petsc(); }
+  /// Destructor
+  virtual ~PETScObject() {}
 
-    /// Destructor
-    virtual ~PETScObject() {}
-
-    /// Print error message for PETSc calls that return an error
-    static void petsc_error(int error_code,
-                            std::string filename,
-                            std::string petsc_function);
-
-  };
+  /// Print error message for PETSc calls that return an error
+  static void petsc_error(int error_code, std::string filename,
+                          std::string petsc_function);
+};
 }
 
 #endif

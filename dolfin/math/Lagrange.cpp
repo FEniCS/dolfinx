@@ -21,21 +21,24 @@
 // First added:  2003-06-12
 // Last changed: 2009-03-20
 
+#include "Lagrange.h"
 #include <cmath>
 #include <dolfin/common/constants.h>
-#include "Lagrange.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Lagrange::Lagrange(std::size_t q) : _q(q), counter(0), points(q + 1, 0.0),
-   instability_detected("Warning: Lagrange polynomial is not numerically stable. The degree is too high.")
+Lagrange::Lagrange(std::size_t q)
+    : _q(q), counter(0), points(q + 1, 0.0),
+      instability_detected("Warning: Lagrange polynomial is not numerically "
+                           "stable. The degree is too high.")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Lagrange::Lagrange(const Lagrange& p) : _q(p._q), counter(p.counter),
-    points(p.points), instability_detected(p.instability_detected)
+Lagrange::Lagrange(const Lagrange& p)
+    : _q(p._q), counter(p.counter), points(p.points),
+      instability_detected(p.instability_detected)
 {
   if (counter == size())
     init();
@@ -52,15 +55,9 @@ void Lagrange::set(std::size_t i, double x)
     init();
 }
 //-----------------------------------------------------------------------------
-std::size_t Lagrange::size() const
-{
-  return points.size();
-}
+std::size_t Lagrange::size() const { return points.size(); }
 //-----------------------------------------------------------------------------
-std::size_t Lagrange::degree() const
-{
-  return _q;
-}
+std::size_t Lagrange::degree() const { return _q; }
 //-----------------------------------------------------------------------------
 double Lagrange::point(std::size_t i) const
 {
@@ -68,10 +65,7 @@ double Lagrange::point(std::size_t i) const
   return points[i];
 }
 //-----------------------------------------------------------------------------
-double Lagrange::operator() (std::size_t i, double x)
-{
-  return eval(i, x);
-}
+double Lagrange::operator()(std::size_t i, double x) { return eval(i, x); }
 //-----------------------------------------------------------------------------
 double Lagrange::eval(std::size_t i, double x)
 {
@@ -104,23 +98,23 @@ double Lagrange::ddx(std::size_t i, double x)
         x_equals_point = true;
       else
       {
-        s += 1/t;
+        s += 1 / t;
         prod *= t;
       }
     }
   }
 
   if (x_equals_point)
-    return prod*constants[i];
+    return prod * constants[i];
   else
-    return prod*constants[i]*s;
+    return prod * constants[i] * s;
 }
 //-----------------------------------------------------------------------------
 double Lagrange::dqdx(std::size_t i)
 {
   double product = constants[i];
   for (std::size_t j = 1; j <= _q; j++)
-    product *= (double) j;
+    product *= (double)j;
 
   return product;
 }
@@ -137,8 +131,8 @@ std::string Lagrange::str(bool verbose) const
   }
   else
   {
-    s << "<Lagrange polynomial of degree " << _q << " with "
-          << points.size() << " points>";
+    s << "<Lagrange polynomial of degree " << _q << " with " << points.size()
+      << " points>";
   }
 
   return s.str();
@@ -163,8 +157,7 @@ void Lagrange::init()
       {
         if (std::abs(points[i] - points[j]) < DOLFIN_EPS)
         {
-          dolfin_error("Lagrange.cpp",
-                       "create Lagrange polynomial",
+          dolfin_error("Lagrange.cpp", "create Lagrange polynomial",
                        "Nodal points are not distinct");
         }
         product *= points[i] - points[j];
@@ -174,7 +167,7 @@ void Lagrange::init()
     if (std::abs(product) < DOLFIN_EPS)
       instability_detected();
 
-    constants[i] = 1.0/product;
+    constants[i] = 1.0 / product;
   }
 }
 //-----------------------------------------------------------------------------

@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
+#include "Constant.h"
+#include <dolfin/common/utils.h>
+#include <dolfin/log/log.h>
 #include <iostream>
 #include <iterator>
 #include <sstream>
 #include <string>
-#include <dolfin/common/utils.h>
-#include <dolfin/log/log.h>
-#include "Constant.h"
 
 using namespace dolfin;
 
@@ -32,20 +32,19 @@ Constant::Constant(double value) : Expression({}), _values(1, value)
 }
 //-----------------------------------------------------------------------------
 Constant::Constant(std::vector<double> values)
-  : Expression({values.size()}), _values(values)
+    : Expression({values.size()}), _values(values)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Constant::Constant(std::vector<std::size_t> value_shape,
                    std::vector<double> values)
-  : Expression(value_shape), _values(values)
+    : Expression(value_shape), _values(values)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(const Constant& constant)
-  : Expression(constant)
+Constant::Constant(const Constant& constant) : Expression(constant)
 {
   *this = constant;
 }
@@ -55,13 +54,12 @@ Constant::~Constant()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const Constant& Constant::operator= (const Constant& constant)
+const Constant& Constant::operator=(const Constant& constant)
 {
   // Check value shape
   if (constant.value_shape() != value_shape())
   {
-    dolfin_error("Constant.cpp",
-                 "assign value to constant",
+    dolfin_error("Constant.cpp", "assign value to constant",
                  "Value shape mismatch");
   }
 
@@ -71,13 +69,12 @@ const Constant& Constant::operator= (const Constant& constant)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Constant& Constant::operator= (double constant)
+const Constant& Constant::operator=(double constant)
 {
   // Check value shape
   if (!value_shape().empty())
   {
-    dolfin_error("Constant.cpp",
-                 "assign scalar value to constant",
+    dolfin_error("Constant.cpp", "assign scalar value to constant",
                  "Constant is not a scalar");
   }
 

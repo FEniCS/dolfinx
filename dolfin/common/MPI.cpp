@@ -123,7 +123,7 @@ dolfin::MPIInfo::MPIInfo() { MPI_Info_create(&info); }
 //-----------------------------------------------------------------------------
 dolfin::MPIInfo::~MPIInfo() { MPI_Info_free(&info); }
 //-----------------------------------------------------------------------------
-MPI_Info &dolfin::MPIInfo::operator*() { return info; }
+MPI_Info& dolfin::MPIInfo::operator*() { return info; }
 //-----------------------------------------------------------------------------
 #endif
 //-----------------------------------------------------------------------------
@@ -238,7 +238,7 @@ unsigned int dolfin::MPI::index_owner(const MPI_Comm comm, std::size_t index,
 #ifdef HAS_MPI
 template <>
 dolfin::Table dolfin::MPI::all_reduce(const MPI_Comm comm,
-                                      const dolfin::Table &table,
+                                      const dolfin::Table& table,
                                       const MPI_Op op)
 {
   const std::string new_title = "[" + operation_map[op] + "] " + table.name();
@@ -273,16 +273,16 @@ dolfin::Table dolfin::MPI::all_reduce(const MPI_Comm comm,
     return Table(new_title);
 
   // Prepare reduction operation y := op(y, x)
-  void (*op_impl)(double &, const double &) = NULL;
+  void (*op_impl)(double&, const double&) = NULL;
   if (op == MPI_SUM || op == MPI_AVG())
-    op_impl = [](double &y, const double &x) { y += x; };
+    op_impl = [](double& y, const double& x) { y += x; };
   else if (op == MPI_MIN)
-    op_impl = [](double &y, const double &x) {
+    op_impl = [](double& y, const double& x) {
       if (x < y)
         y = x;
     };
   else if (op == MPI_MAX)
-    op_impl = [](double &y, const double &x) {
+    op_impl = [](double& y, const double& x) {
       if (x > y)
         y = x;
     };
@@ -296,7 +296,7 @@ dolfin::Table dolfin::MPI::all_reduce(const MPI_Comm comm,
   std::array<std::string, 2> key;
   key[0].reserve(128);
   key[1].reserve(128);
-  double *values_ptr = values_all.data();
+  double* values_ptr = values_all.data();
   for (unsigned int i = 0; i != MPI::size(comm); ++i)
   {
     std::stringstream keys_stream(keys_all[i]);
@@ -316,13 +316,13 @@ dolfin::Table dolfin::MPI::all_reduce(const MPI_Comm comm,
   if (op == MPI_AVG())
   {
     const double w = 1.0 / static_cast<double>(size(comm));
-    for (auto &it : dvalues_all)
+    for (auto& it : dvalues_all)
       it.second *= w;
   }
 
   // Construct table to return
   Table table_all(new_title);
-  for (auto &it : dvalues_all)
+  for (auto& it : dvalues_all)
     table_all(it.first[0], it.first[1]) = it.second;
 
   return table_all;
@@ -331,15 +331,15 @@ dolfin::Table dolfin::MPI::all_reduce(const MPI_Comm comm,
 //-----------------------------------------------------------------------------
 #ifdef HAS_MPI
 template <>
-dolfin::Table dolfin::MPI::avg(MPI_Comm comm, const dolfin::Table &table)
+dolfin::Table dolfin::MPI::avg(MPI_Comm comm, const dolfin::Table& table)
 {
   return all_reduce(comm, table, MPI_AVG());
 }
 #endif
 //-----------------------------------------------------------------------------
 #ifdef HAS_MPI
-std::map<MPI_Op, std::string> dolfin::MPI::operation_map = {
-    {MPI_SUM, "MPI_SUM"}, {MPI_MAX, "MPI_MAX"}, {MPI_MIN, "MPI_MIN"}};
+std::map<MPI_Op, std::string> dolfin::MPI::operation_map
+    = {{MPI_SUM, "MPI_SUM"}, {MPI_MAX, "MPI_MAX"}, {MPI_MIN, "MPI_MIN"}};
 #endif
 //-----------------------------------------------------------------------------
 #ifdef HAS_MPI
@@ -347,7 +347,7 @@ MPI_Op dolfin::MPI::MPI_AVG()
 {
   // Return dummy MPI_Op which we identify with average
   static MPI_Op op = MPI_OP_NULL;
-  static MPI_User_function *fn = [](void *, void *, int *, MPI_Datatype *) {};
+  static MPI_User_function* fn = [](void*, void*, int*, MPI_Datatype*) {};
   if (op == MPI_OP_NULL)
   {
     MPI_Op_create(fn, 1, &op);

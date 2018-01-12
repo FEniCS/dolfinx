@@ -18,12 +18,12 @@
 // First added:  2009-07-02
 // Last changed: 2011-11-15
 
-#include <fstream>
-#include <cstdlib>
-#include <iostream>
-#include <dolfin/log/log.h>
-#include <dolfin/log/LogStream.h>
 #include "GlobalParameters.h"
+#include <cstdlib>
+#include <dolfin/log/LogStream.h>
+#include <dolfin/log/log.h>
+#include <fstream>
+#include <iostream>
 
 using namespace dolfin;
 
@@ -74,8 +74,7 @@ void GlobalParameters::parse(int argc, char* argv[])
         current->push_back(arg);
       else
       {
-        dolfin_error("GlobalParameters.cpp",
-                     "parse command-line options",
+        dolfin_error("GlobalParameters.cpp", "parse command-line options",
                      "Illegal command-line options");
       }
     }
@@ -115,10 +114,10 @@ void GlobalParameters::parse(int argc, char* argv[])
 
   // Cleanup
   for (std::size_t i = 0; i < args_dolfin.size(); ++i)
-    delete [] argv_dolfin[i];
+    delete[] argv_dolfin[i];
   for (std::size_t i = 0; i < args_petsc.size(); ++i)
-    delete [] argv_petsc[i];
-  delete [] argv_dolfin;
-  delete [] argv_petsc;
+    delete[] argv_petsc[i];
+  delete[] argv_dolfin;
+  delete[] argv_petsc;
 }
 //-----------------------------------------------------------------------------

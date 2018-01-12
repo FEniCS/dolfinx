@@ -25,60 +25,51 @@
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
 
-#include <memory>
+#include "Expression.h"
 #include <Eigen/Dense>
 #include <dolfin/log/Event.h>
-#include "Expression.h"
+#include <memory>
 
 namespace dolfin
 {
 
-  class Mesh;
+class Mesh;
 
-  /// This Function represents the mesh coordinates on a given mesh.
-  class MeshCoordinates : public Expression
-  {
-  public:
+/// This Function represents the mesh coordinates on a given mesh.
+class MeshCoordinates : public Expression
+{
+public:
+  /// Constructor
+  explicit MeshCoordinates(std::shared_ptr<const Mesh> mesh);
 
-    /// Constructor
-    explicit MeshCoordinates(std::shared_ptr<const Mesh> mesh);
+  /// Evaluate function
+  void eval(Eigen::Ref<Eigen::VectorXd> values,
+            Eigen::Ref<const Eigen::VectorXd> x, const ufc::cell& cell) const;
 
-    /// Evaluate function
-    void eval(Eigen::Ref<Eigen::VectorXd> values,
-                      Eigen::Ref<const Eigen::VectorXd> x,
-                      const ufc::cell& cell) const;
+private:
+  // The mesh
+  std::shared_ptr<const Mesh> _mesh;
+};
 
-  private:
+/// This function represents the area/length of a cell facet on a
+/// given mesh.
+class FacetArea : public Expression
+{
+public:
+  /// Constructor
+  explicit FacetArea(std::shared_ptr<const Mesh> mesh);
 
-    // The mesh
-    std::shared_ptr<const Mesh> _mesh;
+  /// Evaluate function
+  void eval(Eigen::Ref<Eigen::VectorXd> values,
+            Eigen::Ref<const Eigen::VectorXd> x, const ufc::cell& cell) const;
 
-  };
+private:
+  // The mesh
+  std::shared_ptr<const Mesh> _mesh;
 
-  /// This function represents the area/length of a cell facet on a
-  /// given mesh.
-  class FacetArea : public Expression
-  {
-  public:
-
-    /// Constructor
-    explicit FacetArea(std::shared_ptr<const Mesh> mesh);
-
-    /// Evaluate function
-    void eval(Eigen::Ref<Eigen::VectorXd> values,
-              Eigen::Ref<const Eigen::VectorXd> x,
-              const ufc::cell& cell) const;
-
-  private:
-
-    // The mesh
-    std::shared_ptr<const Mesh> _mesh;
-
-    // Warning when evaluating on cells
-    mutable Event not_on_boundary;
-
-  };
-
+  // Warning when evaluating on cells
+  mutable Event not_on_boundary;
+};
 }
 
 #endif

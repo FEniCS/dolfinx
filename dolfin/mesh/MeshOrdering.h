@@ -24,23 +24,20 @@
 namespace dolfin
 {
 
-  class Mesh;
+class Mesh;
 
-  /// This class implements the ordering of mesh entities according to
-  /// the UFC specification (see appendix of DOLFIN user manual).
+/// This class implements the ordering of mesh entities according to
+/// the UFC specification (see appendix of DOLFIN user manual).
 
-  class MeshOrdering
-  {
-  public:
+class MeshOrdering
+{
+public:
+  /// Order mesh
+  static void order(Mesh& mesh);
 
-    /// Order mesh
-    static void order(Mesh& mesh);
-
-    /// Check if mesh is ordered
-    static bool ordered(const Mesh& mesh);
-
-  };
-
+  /// Check if mesh is ordered
+  static bool ordered(const Mesh& mesh);
+};
 }
 
 #endif

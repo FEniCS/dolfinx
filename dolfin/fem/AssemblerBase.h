@@ -31,59 +31,57 @@
 namespace dolfin
 {
 
-  // Forward declarations
-  class PETScMatrix;
-  class Form;
-  class PETScVector;
+// Forward declarations
+class PETScMatrix;
+class Form;
+class PETScVector;
 
-  /// Provide some common functions used in assembler classes.
-  class AssemblerBase
+/// Provide some common functions used in assembler classes.
+class AssemblerBase
+{
+public:
+  /// Constructor
+  AssemblerBase()
+      : add_values(false), finalize_tensor(true), keep_diagonal(false)
   {
-  public:
+  }
 
-    /// Constructor
-    AssemblerBase() : add_values(false), finalize_tensor(true),
-      keep_diagonal(false) {}
+  /// add_values (bool)
+  ///     Default value is false.
+  ///     This controls whether values are added to the given
+  ///     tensor or if it is zeroed prior to assembly.
+  bool add_values;
 
-    /// add_values (bool)
-    ///     Default value is false.
-    ///     This controls whether values are added to the given
-    ///     tensor or if it is zeroed prior to assembly.
-    bool add_values;
+  /// finalize_tensor (bool)
+  ///     Default value is true.
+  ///     This controls whether the assembler finalizes the
+  ///     given tensor after assembly is completed by calling
+  ///     A.apply().
+  bool finalize_tensor;
 
-    /// finalize_tensor (bool)
-    ///     Default value is true.
-    ///     This controls whether the assembler finalizes the
-    ///     given tensor after assembly is completed by calling
-    ///     A.apply().
-    bool finalize_tensor;
+  /// keep_diagonal (bool)
+  ///     Default value is false.
+  ///     This controls whether the assembler enures that a diagonal
+  ///     entry exists in an assembled matrix. It may be removed
+  ///     if the matrix is finalised.
+  bool keep_diagonal;
 
-    /// keep_diagonal (bool)
-    ///     Default value is false.
-    ///     This controls whether the assembler enures that a diagonal
-    ///     entry exists in an assembled matrix. It may be removed
-    ///     if the matrix is finalised.
-    bool keep_diagonal;
+  /// Initialize global tensor
+  /// @param[out] A (GenericTensor&)
+  ///  GenericTensor to assemble into
+  /// @param[in] a (Form&)
+  ///  Form to assemble from
+  void init_global_tensor(PETScVector& A, const Form& a);
+  void init_global_tensor(PETScMatrix& A, const Form& a);
 
-    /// Initialize global tensor
-    /// @param[out] A (GenericTensor&)
-    ///  GenericTensor to assemble into
-    /// @param[in] a (Form&)
-    ///  Form to assemble from
-    void init_global_tensor(PETScVector& A, const Form& a);
-    void init_global_tensor(PETScMatrix& A, const Form& a);
+protected:
+  /// Check form
+  static void check(const Form& a);
 
-  protected:
-
-    /// Check form
-    static void check(const Form& a);
-
-    /// Pretty-printing for progress bar
-    static std::string progress_message(std::size_t rank,
-                                        std::string integral_type);
-
-  };
-
+  /// Pretty-printing for progress bar
+  static std::string progress_message(std::size_t rank,
+                                      std::string integral_type);
+};
 }
 
 #endif

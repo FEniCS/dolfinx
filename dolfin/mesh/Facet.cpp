@@ -18,11 +18,11 @@
 // Modified by Garth N. Wells 2011
 // Modified by Martin Alnaes, 2015
 
-#include <dolfin/geometry/Point.h>
+#include "Facet.h"
 #include "Cell.h"
 #include "IntervalCell.h"
 #include "TriangleCell.h"
-#include "Facet.h"
+#include <dolfin/geometry/Point.h>
 
 using namespace dolfin;
 
@@ -69,8 +69,7 @@ double Facet::squared_distance(const Point& point) const
     return TriangleCell::squared_distance(point, a, b, c);
   }
 
-  dolfin_error("Facet.cpp",
-               "compute (squared) distance to facet",
+  dolfin_error("Facet.cpp", "compute (squared) distance to facet",
                "Not implemented for facets of dimension %d", _dim);
 
   return 0.0;

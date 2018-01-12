@@ -18,10 +18,10 @@
 // First added:  2010-10-19
 // Last changed: 2014-02-06
 
-#include <dolfin/common/MPI.h>
-#include <dolfin/mesh/MeshPartitioning.h>
-#include <dolfin/mesh/MeshEditor.h>
 #include "UnitTetrahedronMesh.h"
+#include <dolfin/common/MPI.h>
+#include <dolfin/mesh/MeshEditor.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 
 using namespace dolfin;
 
@@ -30,7 +30,7 @@ dolfin::Mesh UnitTetrahedronMesh::create()
 {
   Mesh mesh(MPI_COMM_SELF);
 
-// Receive mesh according to parallel policy
+  // Receive mesh according to parallel policy
   if (MPI::is_receiver(mesh.mpi_comm()))
   {
     MeshPartitioning::build_distributed_mesh(mesh);
@@ -45,22 +45,33 @@ dolfin::Mesh UnitTetrahedronMesh::create()
   editor.init_vertices_global(4, 4);
   Point x;
 
-  x[0] = 0.0; x[1] = 0.0; x[2] = 0.0;
+  x[0] = 0.0;
+  x[1] = 0.0;
+  x[2] = 0.0;
   editor.add_vertex(0, x);
 
-  x[0] = 1.0; x[1] = 0.0; x[2] = 0.0;
+  x[0] = 1.0;
+  x[1] = 0.0;
+  x[2] = 0.0;
   editor.add_vertex(1, x);
 
-  x[0] = 0.0; x[1] = 1.0; x[2] = 0.0;
+  x[0] = 0.0;
+  x[1] = 1.0;
+  x[2] = 0.0;
   editor.add_vertex(2, x);
 
-  x[0] = 0.0; x[1] = 0.0; x[2] = 1.0;
+  x[0] = 0.0;
+  x[1] = 0.0;
+  x[2] = 1.0;
   editor.add_vertex(3, x);
 
   // Create cells
   editor.init_cells_global(1, 1);
   std::vector<std::size_t> cell_data(4);
-  cell_data[0] = 0; cell_data[1] = 1; cell_data[2] = 2; cell_data[3] = 3;
+  cell_data[0] = 0;
+  cell_data[1] = 1;
+  cell_data[2] = 2;
+  cell_data[3] = 3;
   editor.add_cell(0, cell_data);
 
   // Close mesh editor

@@ -18,16 +18,17 @@
 // First added:  2013-05-29
 // Last changed: 2013-05-29
 
+#include "VectorSpaceBasis.h"
+#include "PETScVector.h"
 #include <cmath>
 #include <dolfin/common/constants.h>
-#include "PETScVector.h"
-#include "VectorSpaceBasis.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-VectorSpaceBasis::VectorSpaceBasis(const std::vector<std::shared_ptr<
-                                   PETScVector>> basis) : _basis(basis)
+VectorSpaceBasis::VectorSpaceBasis(
+    const std::vector<std::shared_ptr<PETScVector>> basis)
+    : _basis(basis)
 {
   // Do nothing
 }
@@ -41,14 +42,13 @@ void VectorSpaceBasis::orthonormalize(double tol)
     // orthonormalized vectors
     for (std::size_t j = 0; j < i; ++j)
     {
-      const double dot_ij =_basis[i]->dot(*_basis[j]);
+      const double dot_ij = _basis[i]->dot(*_basis[j]);
       _basis[i]->axpy(-dot_ij, *_basis[j]);
     }
 
     if (_basis[i]->norm("l2") < tol)
     {
-      dolfin_error("VectorSpaceBasis.cpp",
-                   "orthonormalize vector basis",
+      dolfin_error("VectorSpaceBasis.cpp", "orthonormalize vector basis",
                    "Vector space has linear dependency");
     }
 
@@ -105,13 +105,10 @@ void VectorSpaceBasis::orthogonalize(PETScVector& x) const
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t VectorSpaceBasis::dim() const
-{
-  return _basis.size();
-}
+std::size_t VectorSpaceBasis::dim() const { return _basis.size(); }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const PETScVector>
-VectorSpaceBasis::operator[] (std::size_t i) const
+std::shared_ptr<const PETScVector> VectorSpaceBasis::
+operator[](std::size_t i) const
 {
   dolfin_assert(i < _basis.size());
   return _basis[i];

@@ -18,11 +18,11 @@
 // First added:  2010-10-19
 // Last changed: 2014-02-06
 
+#include "UnitTriangleMesh.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/CellType.h>
-#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include "UnitTriangleMesh.h"
+#include <dolfin/mesh/MeshPartitioning.h>
 
 using namespace dolfin;
 
@@ -45,17 +45,22 @@ dolfin::Mesh UnitTriangleMesh::create()
   // Create vertices
   editor.init_vertices_global(3, 3);
   Point x;
-  x[0] = 0.0; x[1] = 0.0;
+  x[0] = 0.0;
+  x[1] = 0.0;
   editor.add_vertex(0, 0, x);
-  x[0] = 1.0; x[1] = 0.0;
+  x[0] = 1.0;
+  x[1] = 0.0;
   editor.add_vertex(1, 1, x);
-  x[0] = 0.0; x[1] = 1.0;
+  x[0] = 0.0;
+  x[1] = 1.0;
   editor.add_vertex(2, 2, x);
 
   // Create cells
   editor.init_cells_global(1, 1);
   std::vector<std::size_t> cell_data(3);
-  cell_data[0] = 0; cell_data[1] = 1; cell_data[2] = 2;
+  cell_data[0] = 0;
+  cell_data[1] = 1;
+  cell_data[2] = 2;
   editor.add_cell(0, 0, cell_data);
 
   // Close mesh editor

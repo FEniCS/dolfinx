@@ -29,32 +29,29 @@
 namespace dolfin
 {
 
-  class Mesh;
-  class Point;
+class Mesh;
+class Point;
 
-  /// A Face is a MeshEntity of topological dimension 2.
+/// A Face is a MeshEntity of topological dimension 2.
 
-  class Face : public MeshEntity
-  {
-  public:
+class Face : public MeshEntity
+{
+public:
+  /// Constructor
+  Face(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, 2, index) {}
 
-    /// Constructor
-    Face(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, 2, index) {}
+  /// Destructor
+  ~Face() {}
 
-    /// Destructor
-    ~Face() {}
+  /// Calculate the area of the face (triangle)
+  double area() const;
 
-    /// Calculate the area of the face (triangle)
-    double area() const;
+  /// Compute normal to the face
+  Point normal() const;
+};
 
-    /// Compute normal to the face
-    Point normal() const;
-
-  };
-
-  /// A FaceIterator is a MeshEntityIterator of topological dimension 2.
-  typedef MeshEntityIteratorBase<Face> FaceIterator;
-
+/// A FaceIterator is a MeshEntityIterator of topological dimension 2.
+typedef MeshEntityIteratorBase<Face> FaceIterator;
 }
 
 #endif

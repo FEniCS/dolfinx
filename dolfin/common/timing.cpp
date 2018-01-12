@@ -20,35 +20,26 @@
 
 #include <tuple>
 
-#include <dolfin/log/log.h>
-#include <dolfin/log/LogManager.h>
-#include <dolfin/log/Table.h>
 #include "Timer.h"
 #include "timing.h"
+#include <dolfin/log/LogManager.h>
+#include <dolfin/log/Table.h>
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
-  Timer __global_timer;
-  Timer __tic_timer;
+Timer __global_timer;
+Timer __tic_timer;
 }
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------
-void dolfin::tic()
-{
-  __tic_timer.start();
-}
+void dolfin::tic() { __tic_timer.start(); }
 //-----------------------------------------------------------------------------
-double dolfin::toc()
-{
-  return std::get<0>(__tic_timer.elapsed());
-}
+double dolfin::toc() { return std::get<0>(__tic_timer.elapsed()); }
 //-----------------------------------------------------------------------------
-double dolfin::time()
-{
-  return std::get<0>(__global_timer.elapsed());
-}
+double dolfin::time() { return std::get<0>(__global_timer.elapsed()); }
 //-----------------------------------------------------------------------------
 Table dolfin::timings(TimingClear clear, std::set<TimingType> type)
 {
@@ -61,7 +52,7 @@ void dolfin::list_timings(TimingClear clear, std::set<TimingType> type)
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::size_t, double, double, double>
-  dolfin::timing(std::string task, TimingClear clear)
+dolfin::timing(std::string task, TimingClear clear)
 {
   return LogManager::logger().timing(task, clear);
 }

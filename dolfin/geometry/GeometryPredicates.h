@@ -21,50 +21,44 @@
 #ifndef __GEOMETRY_PREDICATES_H
 #define __GEOMETRY_PREDICATES_H
 
-#include <vector>
-#include <dolfin/log/LogStream.h>
 #include "Point.h"
+#include <dolfin/log/LogStream.h>
+#include <vector>
 
 namespace dolfin
 {
 
-  /// This class implements geometric predicates, i.e. function that
-  /// return either true or false.
+/// This class implements geometric predicates, i.e. function that
+/// return either true or false.
 
-  class GeometryPredicates
-  {
-  public:
+class GeometryPredicates
+{
+public:
+  /// Check whether simplex is degenerate
+  static bool is_degenerate(const std::vector<Point>& simplex,
+                            std::size_t gdim);
 
-    /// Check whether simplex is degenerate
-    static bool is_degenerate(const std::vector<Point>& simplex,
-			      std::size_t gdim);
+  /// Check whether simplex is degenerate (2D version)
+  static bool is_degenerate_2d(const std::vector<Point>& simplex);
 
+  /// Check whether simplex is degenerate (3D version)
+  static bool is_degenerate_3d(const std::vector<Point>& simplex);
 
-    /// Check whether simplex is degenerate (2D version)
-    static bool is_degenerate_2d(const std::vector<Point>& simplex);
+  /// Check whether simplex is finite (not Inf or NaN)
+  static bool is_finite(const std::vector<Point>& simplex);
 
-    /// Check whether simplex is degenerate (3D version)
-    static bool is_degenerate_3d(const std::vector<Point>& simplex);
+  /// Check whether simplex is finite (not Inf or NaN)
+  static bool is_finite(const std::vector<double>& simplex);
 
+  /// Check whether the convex hull is degenerate
+  static bool convex_hull_is_degenerate(const std::vector<Point>& p,
+                                        std::size_t gdim);
 
-    /// Check whether simplex is finite (not Inf or NaN)
-    static bool is_finite(const std::vector<Point>& simplex);
-
-    /// Check whether simplex is finite (not Inf or NaN)
-    static bool is_finite(const std::vector<double>& simplex);
-
-    /// Check whether the convex hull is degenerate
-    static bool convex_hull_is_degenerate(const std::vector<Point>& p,
-                                          std::size_t gdim);
-
-  private:
-
-    // Implementations of is_degenerate
-    static bool _is_degenerate_2d(const std::vector<Point>& simplex);
-    static bool _is_degenerate_3d(const std::vector<Point>& simplex);
-
-  };
-
+private:
+  // Implementations of is_degenerate
+  static bool _is_degenerate_2d(const std::vector<Point>& simplex);
+  static bool _is_degenerate_3d(const std::vector<Point>& simplex);
+};
 }
 
 #endif

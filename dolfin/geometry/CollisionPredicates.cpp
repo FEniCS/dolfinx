@@ -18,12 +18,12 @@
 // First added:  2014-02-03
 // Last changed: 2017-10-09
 
-#include <dolfin/mesh/MeshEntity.h>
-#include <dolfin/mesh/CellType.h>
-#include "predicates.h"
-#include "Point.h"
 #include "CollisionPredicates.h"
 #include "GeometryTools.h"
+#include "Point.h"
+#include "predicates.h"
+#include <dolfin/mesh/CellType.h>
+#include <dolfin/mesh/MeshEntity.h>
 
 #include "CGALExactArithmetic.h"
 
@@ -32,15 +32,13 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 // High-level collision detection predicates
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::collides(const MeshEntity& entity,
-				   const Point& point)
+bool CollisionPredicates::collides(const MeshEntity& entity, const Point& point)
 {
   // Intersection is only implemented for simplex meshes
   if (!entity.mesh().type().is_simplex())
   {
-    dolfin_error("Cell.cpp",
-		 "intersect cell and point",
-		 "Intersection is only implemented for simplex meshes");
+    dolfin_error("Cell.cpp", "intersect cell and point",
+                 "Intersection is only implemented for simplex meshes");
   }
 
   // Get data
@@ -51,7 +49,8 @@ bool CollisionPredicates::collides(const MeshEntity& entity,
 
   // Pick correct specialized implementation
   if (tdim == 1 && gdim == 1)
-    return collides_segment_point_1d(g.point(v[0])[0], g.point(v[1])[0], point[0]);
+    return collides_segment_point_1d(g.point(v[0])[0], g.point(v[1])[0],
+                                     point[0]);
 
   if (tdim == 1 && gdim == 2)
     return collides_segment_point_2d(g.point(v[0]), g.point(v[1]), point);
@@ -60,41 +59,32 @@ bool CollisionPredicates::collides(const MeshEntity& entity,
     return collides_segment_point_3d(g.point(v[0]), g.point(v[1]), point);
 
   if (tdim == 2 && gdim == 2)
-    return collides_triangle_point_2d(g.point(v[0]),
-                                      g.point(v[1]),
-                                      g.point(v[2]),
-                                      point);
+    return collides_triangle_point_2d(g.point(v[0]), g.point(v[1]),
+                                      g.point(v[2]), point);
 
   if (tdim == 2 && gdim == 3)
-    return collides_triangle_point_3d(g.point(v[0]),
-                                      g.point(v[1]),
-                                      g.point(v[2]),
-                                      point);
+    return collides_triangle_point_3d(g.point(v[0]), g.point(v[1]),
+                                      g.point(v[2]), point);
 
   if (tdim == 3)
-    return collides_tetrahedron_point_3d(g.point(v[0]),
-                                         g.point(v[1]),
-                                         g.point(v[2]),
-                                         g.point(v[3]),
-                                         point);
+    return collides_tetrahedron_point_3d(g.point(v[0]), g.point(v[1]),
+                                         g.point(v[2]), g.point(v[3]), point);
 
-  dolfin_error("CollisionPredicates.cpp",
-               "compute entity-point collision",
+  dolfin_error("CollisionPredicates.cpp", "compute entity-point collision",
                "Not implemented for dimensions %d / %d", tdim, gdim);
 
   return false;
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::collides(const MeshEntity& entity_0,
-				   const MeshEntity& entity_1)
+                                   const MeshEntity& entity_1)
 {
   // Intersection is only implemented for simplex meshes
-  if (!entity_0.mesh().type().is_simplex() ||
-      !entity_1.mesh().type().is_simplex())
+  if (!entity_0.mesh().type().is_simplex()
+      || !entity_1.mesh().type().is_simplex())
   {
-    dolfin_error("Cell.cpp",
-		 "intersect cell and point",
-		 "intersection is only implemented for simplex meshes");
+    dolfin_error("Cell.cpp", "intersect cell and point",
+                 "intersection is only implemented for simplex meshes");
   }
 
   // Get data
@@ -110,81 +100,56 @@ bool CollisionPredicates::collides(const MeshEntity& entity_0,
   // Pick correct specialized implementation
   if (d0 == 1 && d1 == 1)
   {
-    return collides_segment_segment(g0.point(v0[0]),
-                                    g0.point(v0[1]),
-                                    g1.point(v1[0]),
-                                    g1.point(v1[1]),
-                                    gdim);
+    return collides_segment_segment(g0.point(v0[0]), g0.point(v0[1]),
+                                    g1.point(v1[0]), g1.point(v1[1]), gdim);
   }
 
   if (d0 == 1 && d1 == 2)
   {
-    return collides_triangle_segment(g1.point(v1[0]),
-				     g1.point(v1[1]),
-				     g1.point(v1[2]),
-				     g0.point(v0[0]),
-				     g0.point(v0[1]),
-				     gdim);
+    return collides_triangle_segment(g1.point(v1[0]), g1.point(v1[1]),
+                                     g1.point(v1[2]), g0.point(v0[0]),
+                                     g0.point(v0[1]), gdim);
   }
 
   if (d0 == 2 && d1 == 1)
   {
-    return collides_triangle_segment(g0.point(v0[0]),
-                                     g0.point(v0[1]),
-                                     g0.point(v0[2]),
-                                     g1.point(v1[0]),
-                                     g1.point(v1[1]),
-                                     gdim);
+    return collides_triangle_segment(g0.point(v0[0]), g0.point(v0[1]),
+                                     g0.point(v0[2]), g1.point(v1[0]),
+                                     g1.point(v1[1]), gdim);
   }
 
   if (d0 == 2 && d1 == 2)
   {
-    return collides_triangle_triangle(g0.point(v0[0]),
-                                      g0.point(v0[1]),
-                                      g0.point(v0[2]),
-                                      g1.point(v1[0]),
-                                      g1.point(v1[1]),
-                                      g1.point(v1[2]),
-                                      gdim);
+    return collides_triangle_triangle(g0.point(v0[0]), g0.point(v0[1]),
+                                      g0.point(v0[2]), g1.point(v1[0]),
+                                      g1.point(v1[1]), g1.point(v1[2]), gdim);
   }
 
   if (d0 == 2 && d1 == 3)
   {
-    return collides_tetrahedron_triangle_3d(g1.point(v1[0]),
-                                            g1.point(v1[1]),
-                                            g1.point(v1[2]),
-                                            g1.point(v1[3]),
-                                            g0.point(v0[0]),
-                                            g0.point(v0[1]),
-                                            g0.point(v0[2]));
+    return collides_tetrahedron_triangle_3d(
+        g1.point(v1[0]), g1.point(v1[1]), g1.point(v1[2]), g1.point(v1[3]),
+        g0.point(v0[0]), g0.point(v0[1]), g0.point(v0[2]));
   }
 
   if (d0 == 3 && d1 == 2)
   {
-    return collides_tetrahedron_triangle_3d(g0.point(v0[0]),
-                                            g0.point(v0[1]),
-                                            g0.point(v0[2]),
-                                            g0.point(v0[3]),
-                                            g1.point(v1[0]),
-                                            g1.point(v1[1]),
-                                            g1.point(v1[2]));
+    return collides_tetrahedron_triangle_3d(
+        g0.point(v0[0]), g0.point(v0[1]), g0.point(v0[2]), g0.point(v0[3]),
+        g1.point(v1[0]), g1.point(v1[1]), g1.point(v1[2]));
   }
 
   if (d0 == 3 && d1 == 3)
   {
-    return collides_tetrahedron_tetrahedron_3d(g0.point(v0[0]),
-                                               g0.point(v0[1]),
-                                               g0.point(v0[2]),
-                                               g0.point(v0[3]),
-                                               g1.point(v1[0]),
-                                               g1.point(v1[1]),
-                                               g1.point(v1[2]),
-                                               g1.point(v1[3]));
+    return collides_tetrahedron_tetrahedron_3d(
+        g0.point(v0[0]), g0.point(v0[1]), g0.point(v0[2]), g0.point(v0[3]),
+        g1.point(v1[0]), g1.point(v1[1]), g1.point(v1[2]), g1.point(v1[3]));
   }
 
-  dolfin_error("CollisionPredicates.cpp",
-               "compute entity-entity collision",
-               "Not implemented for topological dimensions %d / %d and geometrical dimension %d", d0, d1, gdim);
+  dolfin_error("CollisionPredicates.cpp", "compute entity-entity collision",
+               "Not implemented for topological dimensions %d / %d and "
+               "geometrical dimension %d",
+               d0, d1, gdim);
 
   return false;
 }
@@ -205,9 +170,8 @@ bool CollisionPredicates::collides_segment_point(const Point& p0,
   case 3:
     return collides_segment_point_3d(p0, p1, point);
   default:
-    dolfin_error("CollisionPredicates.cpp",
-		 "call collides_segment_point",
-		 "Unknown dimension (only implemented for dimension 2 and 3");
+    dolfin_error("CollisionPredicates.cpp", "call collides_segment_point",
+                 "Unknown dimension (only implemented for dimension 2 and 3");
   }
   return false;
 }
@@ -228,8 +192,8 @@ bool CollisionPredicates::collides_segment_segment(const Point& p0,
     return collides_segment_segment_3d(p0, p1, q0, q1);
   default:
     dolfin_error("CollisionPredicates.cpp",
-		 "compute segment-segment collision ",
-		 "Unknown dimension (Implemented for dimension 1, 2 and 3)");
+                 "compute segment-segment collision ",
+                 "Unknown dimension (Implemented for dimension 1, 2 and 3)");
   }
   return false;
 }
@@ -247,19 +211,15 @@ bool CollisionPredicates::collides_triangle_point(const Point& p0,
   case 3:
     return collides_triangle_point_3d(p0, p1, p2, point);
   default:
-    dolfin_error("CollisionPredicates.cpp",
-		 "compute triangle-point collision ",
-		 "Implemented only for dimension 2 and 3.");
+    dolfin_error("CollisionPredicates.cpp", "compute triangle-point collision ",
+                 "Implemented only for dimension 2 and 3.");
   }
   return false;
 }
 //------------------------------------------------------------------------------
-bool CollisionPredicates::collides_triangle_segment(const Point& p0,
-                                                    const Point& p1,
-                                                    const Point& p2,
-                                                    const Point& q0,
-                                                    const Point& q1,
-                                                    std::size_t gdim)
+bool CollisionPredicates::collides_triangle_segment(
+    const Point& p0, const Point& p1, const Point& p2, const Point& q0,
+    const Point& q1, std::size_t gdim)
 {
   switch (gdim)
   {
@@ -269,19 +229,15 @@ bool CollisionPredicates::collides_triangle_segment(const Point& p0,
     return collides_triangle_segment_3d(p0, p1, p2, q0, q1);
   default:
     dolfin_error("CollisionPredicates.cpp",
-		 "compute triangle-segment collision ",
-		 "Implmented only for dimension 2 and 3.");
+                 "compute triangle-segment collision ",
+                 "Implmented only for dimension 2 and 3.");
   }
   return false;
 }
 //------------------------------------------------------------------------------
-bool CollisionPredicates::collides_triangle_triangle(const Point& p0,
-                                                     const Point& p1,
-                                                     const Point& p2,
-                                                     const Point& q0,
-                                                     const Point& q1,
-                                                     const Point& q2,
-                                                     std::size_t gdim)
+bool CollisionPredicates::collides_triangle_triangle(
+    const Point& p0, const Point& p1, const Point& p2, const Point& q0,
+    const Point& q1, const Point& q2, std::size_t gdim)
 {
   switch (gdim)
   {
@@ -291,176 +247,155 @@ bool CollisionPredicates::collides_triangle_triangle(const Point& p0,
     return collides_triangle_triangle_3d(p0, p1, p2, q0, q1, q2);
   default:
     dolfin_error("CollisionPredicates.cpp",
-		 "compute triangle-triangle collision ",
-		 "Implmented only for dimension 2 and 3.");
+                 "compute triangle-triangle collision ",
+                 "Implmented only for dimension 2 and 3.");
   }
   return false;
 }
 
-
-
-    //--- Low-level collision detection predicates ---
+//--- Low-level collision detection predicates ---
 //------------------------------------------------------------------------------
-bool CollisionPredicates::collides_segment_point_1d(double p0,
-				      double p1,
-				      double point)
+bool CollisionPredicates::collides_segment_point_1d(double p0, double p1,
+                                                    double point)
 {
   // FIXME: Skip CGAL for now
   return _collides_segment_point_1d(p0, p1, point);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_segment_point_2d(const Point& p0,
-				      const Point& p1,
-				      const Point& point)
+                                                    const Point& p1,
+                                                    const Point& point)
 {
   return CHECK_CGAL(_collides_segment_point_2d(p0, p1, point),
-		    cgal_collides_segment_point_2d(p0, p1, point));
+                    cgal_collides_segment_point_2d(p0, p1, point));
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_segment_point_3d(const Point& p0,
-						    const Point& p1,
-						    const Point& point)
+                                                    const Point& p1,
+                                                    const Point& point)
 {
   return CHECK_CGAL(_collides_segment_point_3d(p0, p1, point),
-		    cgal_collides_segment_point_3d(p0, p1, point));
+                    cgal_collides_segment_point_3d(p0, p1, point));
 }
 //------------------------------------------------------------------------------
-bool CollisionPredicates::collides_segment_segment_1d(double p0,
-						      double p1,
-						      double q0,
-						      double q1)
+bool CollisionPredicates::collides_segment_segment_1d(double p0, double p1,
+                                                      double q0, double q1)
 {
   return _collides_segment_segment_1d(p0, p1, q0, q1);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_segment_segment_2d(const Point& p0,
-						      const Point& p1,
-						      const Point& q0,
-						      const Point& q1)
+                                                      const Point& p1,
+                                                      const Point& q0,
+                                                      const Point& q1)
 {
   return CHECK_CGAL(_collides_segment_segment_2d(p0, p1, q0, q1),
-		    cgal_collides_segment_segment_2d(p0, p1, q0, q1));
+                    cgal_collides_segment_segment_2d(p0, p1, q0, q1));
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_segment_segment_3d(const Point& p0,
-						      const Point& p1,
-						      const Point& q0,
-						      const Point& q1)
+                                                      const Point& p1,
+                                                      const Point& q0,
+                                                      const Point& q1)
 {
   return CHECK_CGAL(_collides_segment_segment_3d(p0, p1, q0, q1),
-		    cgal_collides_segment_segment_3d(p0, p1, q0, q1));
+                    cgal_collides_segment_segment_3d(p0, p1, q0, q1));
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_triangle_point_2d(const Point& p0,
-						     const Point& p1,
-						     const Point& p2,
-						     const Point& point)
+                                                     const Point& p1,
+                                                     const Point& p2,
+                                                     const Point& point)
 {
   return CHECK_CGAL(_collides_triangle_point_2d(p0, p1, p2, point),
-		    cgal_collides_triangle_point_2d(p0, p1, p2, point));
+                    cgal_collides_triangle_point_2d(p0, p1, p2, point));
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_triangle_point_3d(const Point& p0,
-						     const Point& p1,
-						     const Point& p2,
-						     const Point& point)
+                                                     const Point& p1,
+                                                     const Point& p2,
+                                                     const Point& point)
 {
   return CHECK_CGAL(_collides_triangle_point_3d(p0, p1, p2, point),
-		    cgal_collides_triangle_point_3d(p0, p1, p2, point));
+                    cgal_collides_triangle_point_3d(p0, p1, p2, point));
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_triangle_segment_2d(const Point& p0,
-						       const Point& p1,
-						       const Point& p2,
-						       const Point& q0,
-						       const Point& q1)
+                                                       const Point& p1,
+                                                       const Point& p2,
+                                                       const Point& q0,
+                                                       const Point& q1)
 {
   return CHECK_CGAL(_collides_triangle_segment_2d(p0, p1, p2, q0, q1),
-		    cgal_collides_triangle_segment_2d(p0, p1, p2, q0, q1));
+                    cgal_collides_triangle_segment_2d(p0, p1, p2, q0, q1));
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_triangle_segment_3d(const Point& p0,
-						       const Point& p1,
-						       const Point& p2,
-						       const Point& q0,
-						       const Point& q1)
+                                                       const Point& p1,
+                                                       const Point& p2,
+                                                       const Point& q0,
+                                                       const Point& q1)
 {
   return CHECK_CGAL(_collides_triangle_segment_3d(p0, p1, p2, q0, q1),
-		    cgal_collides_triangle_segment_3d(p0, p1, p2, q0, q1));
+                    cgal_collides_triangle_segment_3d(p0, p1, p2, q0, q1));
 }
 //------------------------------------------------------------------------------
-bool CollisionPredicates::collides_triangle_triangle_2d(const Point& p0,
-							const Point& p1,
-							const Point& p2,
-							const Point& q0,
-							const Point& q1,
-							const Point& q2)
+bool CollisionPredicates::collides_triangle_triangle_2d(
+    const Point& p0, const Point& p1, const Point& p2, const Point& q0,
+    const Point& q1, const Point& q2)
 {
   return CHECK_CGAL(_collides_triangle_triangle_2d(p0, p1, p2, q0, q1, q2),
-		    cgal_collides_triangle_triangle_2d(p0, p1, p2, q0, q1, q2));
+                    cgal_collides_triangle_triangle_2d(p0, p1, p2, q0, q1, q2));
 }
 //------------------------------------------------------------------------------
-bool CollisionPredicates::collides_triangle_triangle_3d(const Point& p0,
-							const Point& p1,
-							const Point& p2,
-							const Point& q0,
-							const Point& q1,
-							const Point& q2)
+bool CollisionPredicates::collides_triangle_triangle_3d(
+    const Point& p0, const Point& p1, const Point& p2, const Point& q0,
+    const Point& q1, const Point& q2)
 {
   return CHECK_CGAL(_collides_triangle_triangle_3d(p0, p1, p2, q0, q1, q2),
-		    cgal_collides_triangle_triangle_3d(p0, p1, p2, q0, q1, q2));
+                    cgal_collides_triangle_triangle_3d(p0, p1, p2, q0, q1, q2));
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_tetrahedron_point_3d(const Point& p0,
-							const Point& p1,
-							const Point& p2,
-							const Point& p3,
-							const Point& point)
+                                                        const Point& p1,
+                                                        const Point& p2,
+                                                        const Point& p3,
+                                                        const Point& point)
 {
   return CHECK_CGAL(_collides_tetrahedron_point_3d(p0, p1, p2, p3, point),
-		    cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, point));
+                    cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, point));
 }
 //------------------------------------------------------------------------------
-bool CollisionPredicates::collides_tetrahedron_segment_3d(const Point& p0,
-							  const Point& p1,
-							  const Point& p2,
-							  const Point& p3,
-							  const Point& q0,
-							  const Point& q1)
+bool CollisionPredicates::collides_tetrahedron_segment_3d(
+    const Point& p0, const Point& p1, const Point& p2, const Point& p3,
+    const Point& q0, const Point& q1)
 {
-  return CHECK_CGAL(_collides_tetrahedron_segment_3d(p0, p1, p2, p3, q0, q1),
-		    cgal_collides_tetrahedron_segment_3d(p0, p1, p2, p3, q0, q1));
+  return CHECK_CGAL(
+      _collides_tetrahedron_segment_3d(p0, p1, p2, p3, q0, q1),
+      cgal_collides_tetrahedron_segment_3d(p0, p1, p2, p3, q0, q1));
 }
 //------------------------------------------------------------------------------
-bool CollisionPredicates::collides_tetrahedron_triangle_3d(const Point& p0,
-							   const Point& p1,
-							   const Point& p2,
-							   const Point& p3,
-							   const Point& q0,
-							   const Point& q1,
-							   const Point& q2)
+bool CollisionPredicates::collides_tetrahedron_triangle_3d(
+    const Point& p0, const Point& p1, const Point& p2, const Point& p3,
+    const Point& q0, const Point& q1, const Point& q2)
 {
-  return CHECK_CGAL(_collides_tetrahedron_triangle_3d(p0, p1, p2, p3, q0, q1, q2),
-		    cgal_collides_tetrahedron_triangle_3d(p0, p1, p2, p3, q0, q1, q2));
+  return CHECK_CGAL(
+      _collides_tetrahedron_triangle_3d(p0, p1, p2, p3, q0, q1, q2),
+      cgal_collides_tetrahedron_triangle_3d(p0, p1, p2, p3, q0, q1, q2));
 }
 //------------------------------------------------------------------------------
-bool CollisionPredicates::collides_tetrahedron_tetrahedron_3d(const Point& p0,
-							      const Point& p1,
-							      const Point& p2,
-							      const Point& p3,
-							      const Point& q0,
-							      const Point& q1,
-							      const Point& q2,
-							      const Point& q3)
+bool CollisionPredicates::collides_tetrahedron_tetrahedron_3d(
+    const Point& p0, const Point& p1, const Point& p2, const Point& p3,
+    const Point& q0, const Point& q1, const Point& q2, const Point& q3)
 {
-  return CHECK_CGAL(_collides_tetrahedron_tetrahedron_3d(p0, p1, p2, p3, q0, q1, q2, q3),
-		    cgal_collides_tetrahedron_tetrahedron_3d(p0, p1, p2, p3, q0, q1, q2, q3));
+  return CHECK_CGAL(
+      _collides_tetrahedron_tetrahedron_3d(p0, p1, p2, p3, q0, q1, q2, q3),
+      cgal_collides_tetrahedron_tetrahedron_3d(p0, p1, p2, p3, q0, q1, q2, q3));
 }
 //-----------------------------------------------------------------------------
 // Implementation of private members
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_segment_point_1d(double p0,
-                                                     double p1,
+bool CollisionPredicates::_collides_segment_point_1d(double p0, double p1,
                                                      double point)
 {
   if (p0 > p1)
@@ -477,10 +412,9 @@ bool CollisionPredicates::_collides_segment_point_2d(const Point& p0,
   const Point dp = p1 - p0;
   const double segment_length = dp.squared_norm();
 
-  return orientation == 0.0 &&
-    (point-p0).squared_norm() <= segment_length &&
-    (point-p1).squared_norm() <= segment_length &&
-    dp.dot(p1-point) >= 0.0 && dp.dot(point-p0) >= 0.0;
+  return orientation == 0.0 && (point - p0).squared_norm() <= segment_length
+         && (point - p1).squared_norm() <= segment_length
+         && dp.dot(p1 - point) >= 0.0 && dp.dot(point - p0) >= 0.0;
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_segment_point_3d(const Point& p0,
@@ -496,28 +430,22 @@ bool CollisionPredicates::_collides_segment_point_3d(const Point& p0,
 
   if (det_xy == 0.0)
   {
-    const std::array<std::array<double, 2>, 3> xz = {{ {{p0.x(), p0.z()}},
-						       {{p1.x(), p1.z()}},
-						       {{point.x(), point.z()}} }};
-    const double det_xz = _orient2d(xz[0].data(),
-				    xz[1].data(),
-				    xz[2].data());
+    const std::array<std::array<double, 2>, 3> xz
+        = {{{{p0.x(), p0.z()}}, {{p1.x(), p1.z()}}, {{point.x(), point.z()}}}};
+    const double det_xz = _orient2d(xz[0].data(), xz[1].data(), xz[2].data());
 
     if (det_xz == 0.0)
     {
-      const std::array<std::array<double, 2>, 3> yz = {{ {{p0.y(), p0.z()}},
-                                                         {{p1.y(), p1.z()}},
-                                                         {{point.y(), point.z()}} }};
-      const double det_yz = _orient2d(yz[0].data(),
-				      yz[1].data(),
-				      yz[2].data());
+      const std::array<std::array<double, 2>, 3> yz = {
+          {{{p0.y(), p0.z()}}, {{p1.y(), p1.z()}}, {{point.y(), point.z()}}}};
+      const double det_yz = _orient2d(yz[0].data(), yz[1].data(), yz[2].data());
 
       if (det_yz == 0.0)
       {
         // Point is aligned with segment
         const double length = (p0 - p1).squared_norm();
-        return (point-p0).squared_norm() <= length and
-	  (point-p1).squared_norm() <= length;
+        return (point - p0).squared_norm() <= length
+               and (point - p1).squared_norm() <= length;
       }
     }
   }
@@ -525,10 +453,8 @@ bool CollisionPredicates::_collides_segment_point_3d(const Point& p0,
   return false;
 }
 //------------------------------------------------------------------------------
-bool CollisionPredicates::_collides_segment_segment_1d(double p0,
-                                                       double p1,
-                                                       double q0,
-                                                       double q1)
+bool CollisionPredicates::_collides_segment_segment_1d(double p0, double p1,
+                                                       double q0, double q1)
 {
   // Get range
   const double a0 = std::min(p0, p1);
@@ -558,8 +484,8 @@ bool CollisionPredicates::_collides_segment_segment_2d(const Point& p0,
     return true;
 
   // Points must be on different sides
-  if (((orient2d(q0, q1, p0) > 0.0) xor (orient2d(q0, q1, p1) > 0.0)) and
-      ((orient2d(p0, p1, q0) > 0.0) xor (orient2d(p0, p1, q1) > 0.0)))
+  if (((orient2d(q0, q1, p0) > 0.0) xor (orient2d(q0, q1, p1) > 0.0))
+      and ((orient2d(p0, p1, q0) > 0.0) xor (orient2d(p0, p1, q1) > 0.0)))
     return true;
   else
     return false;
@@ -574,10 +500,10 @@ bool CollisionPredicates::_collides_segment_segment_3d(const Point& p0,
   if (p0 == q0 || p0 == q1 || p1 == q0 || p1 == q1)
     return true;
 
-  if (collides_segment_point_3d(p0, p1, q0) or
-      collides_segment_point_3d(p0, p1, q1) or
-      collides_segment_point_3d(q0, q1, p0) or
-      collides_segment_point_3d(q0, q1, p1))
+  if (collides_segment_point_3d(p0, p1, q0)
+      or collides_segment_point_3d(p0, p1, q1)
+      or collides_segment_point_3d(q0, q1, p0)
+      or collides_segment_point_3d(q0, q1, p1))
   {
     return true;
   }
@@ -599,21 +525,21 @@ bool CollisionPredicates::_collides_segment_segment_3d(const Point& p0,
     if (v[0] == 0.0 and v[1] == 0.0 and v[2] == 0.0)
     {
       // Now we know that the segments are collinear
-      if ((p0-q0).squared_norm() <= (q1-q0).squared_norm() and
-	  (p0-q1).squared_norm() <= (q0-q1).squared_norm())
-	return true;
+      if ((p0 - q0).squared_norm() <= (q1 - q0).squared_norm()
+          and (p0 - q1).squared_norm() <= (q0 - q1).squared_norm())
+        return true;
 
-      if ((p1-q0).squared_norm() <= (q1-q0).squared_norm() and
-	  (p1-q1).squared_norm() <= (q0-q1).squared_norm())
-	return true;
+      if ((p1 - q0).squared_norm() <= (q1 - q0).squared_norm()
+          and (p1 - q1).squared_norm() <= (q0 - q1).squared_norm())
+        return true;
 
-      if ((q0-p0).squared_norm() <= (p1-p0).squared_norm() and
-	  (q0-p1).squared_norm() <= (p0-p1).squared_norm())
-	return true;
+      if ((q0 - p0).squared_norm() <= (p1 - p0).squared_norm()
+          and (q0 - p1).squared_norm() <= (p0 - p1).squared_norm())
+        return true;
 
-      if ((q1-p0).squared_norm() <= (p1-p0).squared_norm() and
-	  (q1-p1).squared_norm() <= (p0-p1).squared_norm())
-	return true;
+      if ((q1 - p0).squared_norm() <= (p1 - p0).squared_norm()
+          and (q1 - p1).squared_norm() <= (p0 - p1).squared_norm())
+        return true;
     }
   }
 
@@ -624,9 +550,8 @@ bool CollisionPredicates::_collides_segment_segment_3d(const Point& p0,
   {
     if (p0[d] == p1[d] and p0[d] == q0[d] and p0[d] == q1[d])
     {
-      const std::array<std::array<std::size_t, 2>, 3> dims = {{ {{1, 2}},
-                                                                {{0, 2}},
-                                                                {{0, 1}} }};
+      const std::array<std::array<std::size_t, 2>, 3> dims
+          = {{{{1, 2}}, {{0, 2}}, {{0, 1}}}};
       const Point p0_2d(p0[dims[d][0]], p0[dims[d][1]]);
       const Point p1_2d(p1[dims[d][0]], p1[dims[d][1]]);
       const Point q0_2d(q0[dims[d][0]], q0[dims[d][1]]);
@@ -648,27 +573,25 @@ bool CollisionPredicates::_collides_triangle_point_2d(const Point& p0,
 
   if (ref > 0.0)
   {
-    return (orient2d(p1, p2, point) >= 0.0 and
-	    orient2d(p2, p0, point) >= 0.0 and
-	    orient2d(p0, p1, point) >= 0.0);
+    return (orient2d(p1, p2, point) >= 0.0 and orient2d(p2, p0, point) >= 0.0
+            and orient2d(p0, p1, point) >= 0.0);
   }
   else if (ref < 0.0)
   {
-    return (orient2d(p1, p2, point) <= 0.0 and
-	    orient2d(p2, p0, point) <= 0.0 and
-	    orient2d(p0, p1, point) <= 0.0);
+    return (orient2d(p1, p2, point) <= 0.0 and orient2d(p2, p0, point) <= 0.0
+            and orient2d(p0, p1, point) <= 0.0);
   }
   else
   {
-    return ((orient2d(p0, p1, point) == 0.0 and
-	     collides_segment_point_1d(p0[0], p1[0], point[0]) and
-	     collides_segment_point_1d(p0[1], p1[1], point[1])) or
-	    (orient2d(p1, p2, point) == 0.0 and
-	     collides_segment_point_1d(p1[0], p2[0], point[0]) and
-	     collides_segment_point_1d(p1[1], p2[1], point[1])) or
-	    (orient2d(p2, p0, point) == 0.0 and
-	     collides_segment_point_1d(p2[0], p0[0], point[0]) and
-	     collides_segment_point_1d(p2[1], p0[1], point[1])));
+    return ((orient2d(p0, p1, point) == 0.0
+             and collides_segment_point_1d(p0[0], p1[0], point[0])
+             and collides_segment_point_1d(p0[1], p1[1], point[1]))
+            or (orient2d(p1, p2, point) == 0.0
+                and collides_segment_point_1d(p1[0], p2[0], point[0])
+                and collides_segment_point_1d(p1[1], p2[1], point[1]))
+            or (orient2d(p2, p0, point) == 0.0
+                and collides_segment_point_1d(p2[0], p0[0], point[0])
+                and collides_segment_point_1d(p2[1], p0[1], point[1])));
   }
 }
 //-----------------------------------------------------------------------------
@@ -688,9 +611,9 @@ bool CollisionPredicates::_collides_triangle_point_3d(const Point& p0,
   // Use normal
   const Point n = GeometryTools::cross_product(p0, p1, p2);
 
-  return !(n.dot(GeometryTools::cross_product(point, p0, p1)) < 0.0 or
-	   n.dot(GeometryTools::cross_product(point, p2, p0)) < 0.0 or
-	   n.dot(GeometryTools::cross_product(point, p1, p2)) < 0.0);
+  return !(n.dot(GeometryTools::cross_product(point, p0, p1)) < 0.0
+           or n.dot(GeometryTools::cross_product(point, p2, p0)) < 0.0
+           or n.dot(GeometryTools::cross_product(point, p1, p2)) < 0.0);
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_triangle_segment_2d(const Point& p0,
@@ -731,8 +654,7 @@ bool CollisionPredicates::_collides_triangle_segment_3d(const Point& r,
   const double rstb = orient3d(r, s, t, b);
 
   // Check if a and b are on same side of triangle rst
-  if ((rsta < 0.0 and rstb < 0.0) or
-      (rsta > 0.0 and rstb > 0.0))
+  if ((rsta < 0.0 and rstb < 0.0) or (rsta > 0.0 and rstb > 0.0))
     return false;
 
   // We check triangle point first. We use this below.
@@ -788,12 +710,9 @@ bool CollisionPredicates::_collides_triangle_segment_3d(const Point& r,
   return true;
 }
 //------------------------------------------------------------------------------
-bool CollisionPredicates::_collides_triangle_triangle_2d(const Point& p0,
-                                                         const Point& p1,
-                                                         const Point& p2,
-                                                         const Point& q0,
-                                                         const Point& q1,
-                                                         const Point& q2)
+bool CollisionPredicates::_collides_triangle_triangle_2d(
+    const Point& p0, const Point& p1, const Point& p2, const Point& q0,
+    const Point& q1, const Point& q2)
 {
   // FIXME: Optimize by avoiding redundant calls to orient2d
 
@@ -806,28 +725,22 @@ bool CollisionPredicates::_collides_triangle_triangle_2d(const Point& p0,
 
   for (std::size_t i = 0; i < 3; ++i)
   {
-    if ((s0 and
-    	 orient2d(tri_0[0], tri_0[1], tri_1[i]) <= 0.0 and
-    	 orient2d(tri_0[1], tri_0[2], tri_1[i]) <= 0.0 and
-    	 orient2d(tri_0[2], tri_0[0], tri_1[i]) <= 0.0)
-	or
-    	(!s0 and
-    	 orient2d(tri_0[0], tri_0[1], tri_1[i]) >= 0.0 and
-    	 orient2d(tri_0[1], tri_0[2], tri_1[i]) >= 0.0 and
-    	 orient2d(tri_0[2], tri_0[0], tri_1[i]) >= 0.0))
+    if ((s0 and orient2d(tri_0[0], tri_0[1], tri_1[i]) <= 0.0
+         and orient2d(tri_0[1], tri_0[2], tri_1[i]) <= 0.0
+         and orient2d(tri_0[2], tri_0[0], tri_1[i]) <= 0.0)
+        or (!s0 and orient2d(tri_0[0], tri_0[1], tri_1[i]) >= 0.0
+            and orient2d(tri_0[1], tri_0[2], tri_1[i]) >= 0.0
+            and orient2d(tri_0[2], tri_0[0], tri_1[i]) >= 0.0))
     {
       return true;
     }
 
-    if ((s1 and
-    	 orient2d(tri_1[0], tri_1[1], tri_0[i]) <= 0.0 and
-    	 orient2d(tri_1[1], tri_1[2], tri_0[i]) <= 0.0 and
-    	 orient2d(tri_1[2], tri_1[0], tri_0[i]) <= 0.0)
-	or
-    	(!s1 and
-    	 orient2d(tri_1[0], tri_1[1], tri_0[i]) >= 0.0 and
-    	 orient2d(tri_1[1], tri_1[2], tri_0[i]) >= 0.0 and
-    	 orient2d(tri_1[2], tri_1[0], tri_0[i]) >= 0.0))
+    if ((s1 and orient2d(tri_1[0], tri_1[1], tri_0[i]) <= 0.0
+         and orient2d(tri_1[1], tri_1[2], tri_0[i]) <= 0.0
+         and orient2d(tri_1[2], tri_1[0], tri_0[i]) <= 0.0)
+        or (!s1 and orient2d(tri_1[0], tri_1[1], tri_0[i]) >= 0.0
+            and orient2d(tri_1[1], tri_1[2], tri_0[i]) >= 0.0
+            and orient2d(tri_1[2], tri_1[0], tri_0[i]) >= 0.0))
     {
       return true;
     }
@@ -852,12 +765,9 @@ bool CollisionPredicates::_collides_triangle_triangle_2d(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_triangle_triangle_3d(const Point& p0,
-                                                         const Point& p1,
-                                                         const Point& p2,
-                                                         const Point& q0,
-                                                         const Point& q1,
-                                                         const Point& q2)
+bool CollisionPredicates::_collides_triangle_triangle_3d(
+    const Point& p0, const Point& p1, const Point& p2, const Point& q0,
+    const Point& q1, const Point& q2)
 {
   // FIXME: Optimize by avoiding redundant calls to orient3d
 
@@ -884,10 +794,10 @@ bool CollisionPredicates::_collides_triangle_triangle_3d(const Point& p0,
     for (std::size_t i1 = 0; i1 < 3; i1++)
     {
       const std::size_t j1 = (i1 + 1) % 3;
-      if (collides_segment_segment_3d(tri_0[i0], tri_0[j0],
-				      tri_1[i1], tri_1[j1]))
+      if (collides_segment_segment_3d(tri_0[i0], tri_0[j0], tri_1[i1],
+                                      tri_1[j1]))
       {
-	return true;
+        return true;
       }
     }
   }
@@ -917,34 +827,31 @@ bool CollisionPredicates::_collides_tetrahedron_point_3d(const Point& p0,
 
   if (ref > 0.0)
   {
-    return (orient3d(p0, p1, p2, point) >= 0.0 and
-	    orient3d(p0, p3, p1, point) >= 0.0 and
-	    orient3d(p0, p2, p3, point) >= 0.0 and
-	    orient3d(p1, p3, p2, point) >= 0.0);
+    return (orient3d(p0, p1, p2, point) >= 0.0
+            and orient3d(p0, p3, p1, point) >= 0.0
+            and orient3d(p0, p2, p3, point) >= 0.0
+            and orient3d(p1, p3, p2, point) >= 0.0);
   }
   else if (ref < 0.0)
   {
-    return (orient3d(p0, p1, p2, point) <= 0.0 and
-	    orient3d(p0, p3, p1, point) <= 0.0 and
-	    orient3d(p0, p2, p3, point) <= 0.0 and
-	    orient3d(p1, p3, p2, point) <= 0.0);
+    return (orient3d(p0, p1, p2, point) <= 0.0
+            and orient3d(p0, p3, p1, point) <= 0.0
+            and orient3d(p0, p2, p3, point) <= 0.0
+            and orient3d(p1, p3, p2, point) <= 0.0);
   }
   else
   {
     dolfin_error("CollisionPredicates.cpp",
-		 "compute tetrahedron point collision",
-		 "Not implemented for degenerate tetrahedron");
+                 "compute tetrahedron point collision",
+                 "Not implemented for degenerate tetrahedron");
   }
 
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_tetrahedron_segment_3d(const Point& p0,
-                                                           const Point& p1,
-                                                           const Point& p2,
-                                                           const Point& p3,
-                                                           const Point& q0,
-                                                           const Point& q1)
+bool CollisionPredicates::_collides_tetrahedron_segment_3d(
+    const Point& p0, const Point& p1, const Point& p2, const Point& p3,
+    const Point& q0, const Point& q1)
 {
   // FIXME: Optimize by avoiding redundant calls to orient3d
 
@@ -967,13 +874,9 @@ bool CollisionPredicates::_collides_tetrahedron_segment_3d(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_tetrahedron_triangle_3d(const Point& p0,
-                                                            const Point& p1,
-                                                            const Point& p2,
-                                                            const Point& p3,
-                                                            const Point& q0,
-                                                            const Point& q1,
-                                                            const Point& q2)
+bool CollisionPredicates::_collides_tetrahedron_triangle_3d(
+    const Point& p0, const Point& p1, const Point& p2, const Point& p3,
+    const Point& q0, const Point& q1, const Point& q2)
 {
   // FIXME: Optimize by avoiding redundant calls to orient3d
 
@@ -998,14 +901,9 @@ bool CollisionPredicates::_collides_tetrahedron_triangle_3d(const Point& p0,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::_collides_tetrahedron_tetrahedron_3d(const Point& p0,
-                                                               const Point& p1,
-                                                               const Point& p2,
-                                                               const Point& p3,
-                                                               const Point& q0,
-                                                               const Point& q1,
-                                                               const Point& q2,
-                                                               const Point& q3)
+bool CollisionPredicates::_collides_tetrahedron_tetrahedron_3d(
+    const Point& p0, const Point& p1, const Point& p2, const Point& p3,
+    const Point& q0, const Point& q1, const Point& q2, const Point& q3)
 {
   // FIXME: Optimize by avoiding redundant calls to orient3d
 
@@ -1013,18 +911,17 @@ bool CollisionPredicates::_collides_tetrahedron_tetrahedron_3d(const Point& p0,
   const std::array<Point, 4> tetq = {{q0, q1, q2, q3}};
 
   // Triangle face collisions
-  const std::array<std::array<std::size_t, 3>, 4> faces = {{ {{1, 2, 3}},
-                                                             {{0, 2, 3}},
-                                                             {{0, 1, 3}},
-                                                             {{0, 1, 2}} }};
+  const std::array<std::array<std::size_t, 3>, 4> faces
+      = {{{{1, 2, 3}}, {{0, 2, 3}}, {{0, 1, 3}}, {{0, 1, 2}}}};
   for (std::size_t i = 0; i < 4; ++i)
   {
     for (std::size_t j = 0; j < 4; ++j)
     {
-      if (collides_triangle_triangle_3d(tetp[faces[i][0]], tetp[faces[i][1]], tetp[faces[i][2]],
-					tetq[faces[j][0]], tetq[faces[j][1]], tetq[faces[j][2]]))
+      if (collides_triangle_triangle_3d(tetp[faces[i][0]], tetp[faces[i][1]],
+                                        tetp[faces[i][2]], tetq[faces[j][0]],
+                                        tetq[faces[j][1]], tetq[faces[j][2]]))
       {
-	return true;
+        return true;
       }
     }
   }

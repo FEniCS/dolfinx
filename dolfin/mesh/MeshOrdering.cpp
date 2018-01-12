@@ -18,12 +18,12 @@
 // First added:  2007-01-30
 // Last changed: 2012-06-25
 
-#include <vector>
-#include <memory>
-#include <dolfin/log/log.h>
+#include "MeshOrdering.h"
 #include "Cell.h"
 #include "Mesh.h"
-#include "MeshOrdering.h"
+#include <dolfin/log/log.h>
+#include <memory>
+#include <vector>
 
 using namespace dolfin;
 
@@ -39,7 +39,7 @@ void MeshOrdering::order(Mesh& mesh)
   // Get global vertex numbering
   dolfin_assert(mesh.topology().have_global_indices(0));
   const auto& local_to_global_vertex_indices
-    = mesh.topology().global_indices(0);
+      = mesh.topology().global_indices(0);
 
   // Skip ordering for dimension 0
   if (mesh.topology().dim() == 0)
@@ -59,7 +59,7 @@ bool MeshOrdering::ordered(const Mesh& mesh)
   // Get global vertex numbering
   dolfin_assert(mesh.topology().have_global_indices(0));
   const auto& local_to_global_vertex_indices
-    = mesh.topology().global_indices(0);
+      = mesh.topology().global_indices(0);
 
   // Check if all cells are ordered
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)

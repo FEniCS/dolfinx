@@ -17,14 +17,14 @@
 //
 // Modified by Garth N. Wells, 2009.
 
-#include <dolfin/common/constants.h>
+#include "LogStream.h"
+#include "log.h"
 #include <dolfin/common/Variable.h>
+#include <dolfin/common/constants.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
-#include "log.h"
-#include "LogStream.h"
 
 using namespace dolfin;
 
@@ -43,7 +43,7 @@ LogStream::~LogStream()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (const LogStream& stream)
+LogStream& LogStream::operator<<(const LogStream& stream)
 {
   if (stream._type == Type::ENDL)
   {
@@ -59,68 +59,65 @@ LogStream& LogStream::operator<< (const LogStream& stream)
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (const std::string& s)
+LogStream& LogStream::operator<<(const std::string& s)
 {
   buffer << s;
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (int a)
+LogStream& LogStream::operator<<(int a)
 {
   buffer << a;
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (unsigned int a)
+LogStream& LogStream::operator<<(unsigned int a)
 {
   buffer << a;
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (long int a)
+LogStream& LogStream::operator<<(long int a)
 {
   buffer << a;
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (long unsigned int a)
+LogStream& LogStream::operator<<(long unsigned int a)
 {
   buffer << a;
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (double a)
+LogStream& LogStream::operator<<(double a)
 {
   buffer << a;
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (std::complex<double> z)
+LogStream& LogStream::operator<<(std::complex<double> z)
 {
   buffer << z.real() << " + " << z.imag() << "i";
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (const Variable& variable)
+LogStream& LogStream::operator<<(const Variable& variable)
 {
   buffer << variable.str(false);
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (const MeshEntity& entity)
+LogStream& LogStream::operator<<(const MeshEntity& entity)
 {
   buffer << entity.str(false);
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (const Point& point)
+LogStream& LogStream::operator<<(const Point& point)
 {
   buffer << point.str(false);
   return *this;
 }
 //-----------------------------------------------------------------------------
-void LogStream::setprecision(std::streamsize n)
-{
-  buffer.precision(n);
-}
+void LogStream::setprecision(std::streamsize n) { buffer.precision(n); }
 //-----------------------------------------------------------------------------
