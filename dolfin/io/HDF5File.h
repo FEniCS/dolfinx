@@ -256,16 +256,15 @@ namespace dolfin
     dolfin_assert(global_size.size() > 0);
 
     // Get number of 'items'
-    std::size_t num_local_items = 1;
+    std::int64_t num_local_items = 1;
     for (std::size_t i = 1; i < global_size.size(); ++i)
       num_local_items *= global_size[i];
     num_local_items = data.size()/num_local_items;
 
     // Compute offset
-    const std::size_t offset = MPI::global_offset(_mpi_comm.comm(), num_local_items,
+    const std::int64_t offset = MPI::global_offset(_mpi_comm.comm(), num_local_items,
                                                   true);
-    std::pair<std::size_t, std::size_t> range(offset,
-                                              offset + num_local_items);
+    std::array<std::int64_t, 2> range = {{offset, offset + num_local_items}};
 
     // Write data to HDF5 file
     const bool chunking = parameters["chunking"];

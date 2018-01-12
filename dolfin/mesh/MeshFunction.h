@@ -535,7 +535,7 @@ namespace dolfin
 
     // Initialize mesh for entities of given dimension
     mesh->init(dim);
-    dolfin_assert(mesh->num_entities(dim) == size);
+    dolfin_assert(mesh->num_entities(dim) == (std::int64_t) size);
 
     // Initialize data
     if (_size != size)

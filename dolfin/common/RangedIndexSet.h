@@ -21,6 +21,7 @@
 #ifndef __RANGED_INDEX_SET_H
 #define __RANGED_INDEX_SET_H
 
+#include <array>
 #include <cstddef>
 #include <vector>
 #include <dolfin/log/log.h>
@@ -28,54 +29,41 @@
 namespace dolfin
 {
 
-  /// This class provides an special-purpose data structure for testing if a given
-  /// index within a range is set.
+  /// This class provides an special-purpose data structure for
+  /// testing if a given index within a range is set.
   ///
-  /// The memory requirements are one bit per item in range, since it uses a
-  /// (packed) std::vector<bool> for storage.
+  /// The memory requirements are one bit per item in range, since it
+  /// uses a (packed) std::vector<bool> for storage.
 
   class RangedIndexSet
   {
 
   public:
 
-    /// Create a ranged set with range given as a (lower, upper) pair.
-    RangedIndexSet(std::pair<std::size_t, std::size_t> range)
-      : _range(range), _is_set(range.second - range.first)
-    {
-      clear();
-    }
+    /// Create a ranged set with range given as a (lower, upper) pair
+    explicit RangedIndexSet(std::array<std::int64_t, 2> range) : _range(range),
+      _is_set(range[1] - range[0], false) {}
 
-    /// Create a ranged set with 0 as lower range
-    RangedIndexSet(std::size_t upper_range)
-      : _range(std::pair<std::size_t, std::size_t>(0, upper_range)), _is_set(upper_range)
-    {
-      clear();
-    }
-
-    /// Return true if a given index is within range, i.e., if it can be stored in the set.
-    bool in_range(std::size_t i) const
-    {
-      return (i >= _range.first && i < _range.second);
-    }
+    /// Return true if a given index is within range, i.e., if it can
+    /// be stored in the set.
+    bool in_range(std::int64_t i) const
+    { return (i >= _range[0] && i < _range[1]); }
 
     /// Check is the set contains the given index.
-    bool has_index(std::size_t i) const
+    bool has_index(std::int64_t i) const
     {
       dolfin_assert(in_range(i));
-      return _is_set[i - _range.first];
+      return _is_set[i - _range[0]];
     }
 
-    /// Insert a given index into the set. Returns true if the index was
-    /// inserted (i.e., the index was not already in the set).
-    bool insert(std::size_t i)
+    /// Insert a given index into the set. Returns true if the index
+    /// was inserted (i.e., the index was not already in the set).
+    bool insert(std::int64_t i)
     {
       dolfin_assert(in_range(i));
-      std::vector<bool>::reference entry = _is_set[i - _range.first];
+      std::vector<bool>::reference entry = _is_set[i - _range[0]];
       if (entry)
-      {
         return false;
-      }
       else
       {
         entry = true;
@@ -84,21 +72,19 @@ namespace dolfin
     }
 
     /// Erase an index from the set.
-    void erase(std::size_t i)
+    void erase(std::int64_t i)
     {
       dolfin_assert(in_range(i));
-      _is_set[i - _range.first] = false;
+      _is_set[i - _range[0]] = false;
     }
 
     /// Erase all indices from the set.
-    void clear()
-    {
-      std::fill(_is_set.begin(), _is_set.end(), false);
-    }
+    //void clear()
+    //{ std::fill(_is_set.begin(), _is_set.end(), false); }
 
   private:
 
-    const std::pair<std::size_t, std::size_t> _range;
+    const std::array<std::int64_t, 2> _range;
     std::vector<bool> _is_set;
 
   };

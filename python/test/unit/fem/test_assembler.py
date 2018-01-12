@@ -30,14 +30,14 @@ from dolfin_utils.test import skip_in_parallel, filedir, pushpop_parameters
 
 
 def test_cell_size_assembly_1D():
-    mesh = UnitIntervalMesh(10)
+    mesh = UnitIntervalMesh(MPI.comm_world, 10)
     assert round(assemble(2*Circumradius(mesh)*dx) - 0.1, 12) == 0
     assert round(assemble(CellDiameter(mesh)*dx) - 0.1, 12) == 0
     assert round(assemble(CellVolume(mesh)*dx) - 0.1, 12) == 0
 
 
 def test_cell_assembly_1D():
-    mesh = UnitIntervalMesh(48)
+    mesh = UnitIntervalMesh(MPI.comm_world, 48)
     V = FunctionSpace(mesh, "CG", 1)
 
     v = TestFunction(V)
@@ -56,7 +56,7 @@ def test_cell_assembly_1D():
 
 
 def test_cell_assembly():
-    mesh = UnitCubeMesh(4, 4, 4)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     V = VectorFunctionSpace(mesh, "DG", 1)
 
     v = TestFunction(V)
@@ -79,7 +79,7 @@ def test_cell_assembly():
 
 def test_facet_assembly(pushpop_parameters):
     parameters["ghost_mode"] = "shared_facet"
-    mesh = UnitSquareMesh(24, 24)
+    mesh = UnitSquareMesh(MPI.comm_world, 24, 24)
     V = FunctionSpace(mesh, "DG", 1)
 
     # Define test and trial functions
@@ -116,7 +116,7 @@ def test_facet_assembly(pushpop_parameters):
 def test_ghost_mode_handling(pushpop_parameters):
     def _form():
         # Return form with trivial interior facet integral
-        mesh = UnitSquareMesh(10, 10)
+        mesh = UnitSquareMesh(MPI.comm_world, 10, 10)
         ff = MeshFunction('size_t', mesh, mesh.topology().dim()-1, 0)
         AutoSubDomain(lambda x: near(x[0], 0.5)).mark(ff, 1)
         return Constant(1.0)*dS(domain=mesh, subdomain_data=ff, subdomain_id=1)
@@ -137,10 +137,10 @@ def test_ghost_mode_handling(pushpop_parameters):
     parameters["ghost_mode"] = "shared_facet"
     assert numpy.isclose(assemble(_form()), 1.0)
 
-@pytest.mark.parametrize('mesh_factory, facet_area', [((UnitSquareMesh, (4, 4)), 4.0),
-                                                      ((UnitCubeMesh, (2, 2, 2)), 6.0),
-                                                      ((UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral)), 4.0),
-                                                      ((UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron)), 6.0)])
+@pytest.mark.parametrize('mesh_factory, facet_area', [((UnitSquareMesh, (MPI.comm_world, 4, 4)), 4.0),
+                                                      ((UnitCubeMesh, (MPI.comm_world, 2, 2, 2)), 6.0),
+                                                      ((UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)), 4.0),
+                                                      ((UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron)), 6.0)])
 def test_functional_assembly(mesh_factory, facet_area):
     func, args = mesh_factory
     mesh = func(*args)
@@ -153,7 +153,7 @@ def test_functional_assembly(mesh_factory, facet_area):
     assert round(assemble(M1) - facet_area, 7) == 0
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (4, 4, 4)), (UnitCubeMesh.create, (4, 4, 4, CellType.Type.hexahedron))])
+@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (MPI.comm_world, 4, 4, 4)), (UnitCubeMesh, (MPI.comm_world, 4, 4, 4, CellType.Type.hexahedron))])
 def test_subdomain_and_fulldomain_assembly_meshdomains(mesh_factory):
     """Test assembly over subdomains AND the full domain with markers
     stored as part of the mesh.
@@ -221,7 +221,7 @@ def test_subdomain_and_fulldomain_assembly_meshdomains(mesh_factory):
 def test_subdomain_assembly_form_1():
     "Test assembly over subdomains with markers stored as part of form"
 
-    mesh = UnitSquareMesh(4, 4)
+    mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
 
     # Define cell/facet function
     class Left(SubDomain):
@@ -288,7 +288,7 @@ def test_subdomain_assembly_form_2():
     "Test assembly over subdomains with markers stored as part of form"
 
     # Define mesh
-    mesh = UnitSquareMesh(8, 8)
+    mesh = UnitSquareMesh(MPI.comm_world, 8, 8)
 
     # Define domain for lower left corner
     class MyDomain(SubDomain):
@@ -325,7 +325,7 @@ def test_subdomain_assembly_form_2():
 def test_nonsquare_assembly():
     """Test assembly of a rectangular matrix"""
 
-    mesh = UnitSquareMesh(16, 16)
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
 
     V = VectorElement("Lagrange", mesh.ufl_cell(), 2)
     Q = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
@@ -391,7 +391,7 @@ def test_reference_assembly(filedir, pushpop_parameters):
 
 
 def test_ways_to_pass_mesh_to_assembler():
-    mesh = UnitSquareMesh(16, 16)
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
 
     # Geometry with mesh (ufl.Domain with mesh in domain data)
     x = SpatialCoordinate(mesh)

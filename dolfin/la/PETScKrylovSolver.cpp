@@ -246,8 +246,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   PetscErrorCode ierr;
 
   // Check dimensions
-  const std::size_t M = A.size(0);
-  const std::size_t N = A.size(1);
+  const std::int64_t M = A.size(0);
+  const std::int64_t N = A.size(1);
   if (M != b.size())
   {
     dolfin_error("PETScKrylovSolver.cpp",

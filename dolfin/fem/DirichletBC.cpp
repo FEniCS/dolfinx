@@ -180,16 +180,16 @@ void DirichletBC::gather(Map& boundary_values) const
   MPI::all_to_all(mpi_comm, proc_map1, received_bvc1);
   dolfin_assert(received_bvc0.size() == received_bvc1.size());
 
-  const std::size_t n0 = dofmap.ownership_range().first;
-  const std::size_t n1 = dofmap.ownership_range().second;
-  const std::size_t owned_size = n1 - n0;
+  const std::int64_t n0 = dofmap.ownership_range()[0];
+  const std::int64_t n1 = dofmap.ownership_range()[1];
+  const std::int64_t owned_size = n1 - n0;
 
   // Reserve space
   const std::size_t num_dofs = boundary_values.size() + received_bvc0.size();
   boundary_values.reserve(num_dofs);
 
   // Add the received boundary values to the local boundary values
-  std::vector<std::pair<std::size_t, double>> _vec(received_bvc0.size());
+  std::vector<std::pair<std::int64_t, double>> _vec(received_bvc0.size());
   for (std::size_t i = 0; i < _vec.size(); ++i)
   {
     // Global dof index
@@ -586,9 +586,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   mesh.init(mesh.topology().dim() - 1);
 
   // Speed up the computations by only visiting (most) dofs once
-  RangedIndexSet already_visited(dofmap.is_view()
-                                 ? std::pair<std::size_t, std::size_t>(0, 0)
-                                 : dofmap.ownership_range());
+  RangedIndexSet already_visited(dofmap.is_view() ? std::array<std::int64_t, 2>{{0, 0}} : dofmap.ownership_range());
 
   const std::size_t D = mesh.topology().dim();
 
@@ -701,7 +699,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 
   // Speed up the computations by only visiting (most) dofs once
   RangedIndexSet already_visited(dofmap.is_view()
-                                 ? std::pair<std::size_t, std::size_t>(0,0)
+                                 ? std::array<std::int64_t, 2>{{0, 0}}
                                  : dofmap.ownership_range());
 
   // Allocate space using cached size
@@ -915,8 +913,8 @@ void DirichletBC::check_arguments(PETScMatrix* A, PETScVector* b,
   // Check local range of tensors against function space
   if (parameters["check_dofmap_range"])
   {
-    std::pair<std::int64_t, std::int64_t> dofmap_range =
-      _function_space->dofmap()->ownership_range();
+    std::array<std::int64_t, 2> dofmap_range
+      = _function_space->dofmap()->ownership_range();
 
     // Check rows onwership matches dofmap (if applying bc to rows)
     if (dim == 0 && A && A->local_range(0) != dofmap_range)
@@ -924,8 +922,8 @@ void DirichletBC::check_arguments(PETScMatrix* A, PETScVector* b,
       dolfin_error("BoundaryCondition.cpp",
                    "apply boundary condition",
                    "Dofmap ownership range (%d,%d) does not match matrix row range (%d,%d)",
-                   dofmap_range.first, dofmap_range.second,
-                   A->local_range(0).first, A->local_range(0).second);
+                   dofmap_range[0], dofmap_range[1],
+                   A->local_range(0)[0], A->local_range(0)[1]);
     }
 
     // Check rows onwership matches b
@@ -934,8 +932,8 @@ void DirichletBC::check_arguments(PETScMatrix* A, PETScVector* b,
       dolfin_error("BoundaryCondition.cpp",
                    "apply boundary condition",
                    "Matrix row range (%d,%d) does not match b vector local range (%d,%d)",
-                   A->local_range(0).first, A->local_range(0).second,
-                   b->local_range().first, b->local_range().second);
+                   A->local_range(0)[0], A->local_range(0)[1],
+                   b->local_range()[0], b->local_range()[1]);
     }
 
     // Check rows onwership matches x
@@ -944,8 +942,8 @@ void DirichletBC::check_arguments(PETScMatrix* A, PETScVector* b,
       dolfin_error("BoundaryCondition.cpp",
                    "apply boundary condition",
                    "Matrix row range (%d,%d) does not match x vector local range (%d,%d)",
-                   A->local_range(0).first, A->local_range(0).second,
-                   x->local_range().first, x->local_range().second);
+                   A->local_range(0)[0], A->local_range(0)[1],
+                   x->local_range()[0], x->local_range()[1]);
     }
 
     // Check that x vector has right ownership
@@ -954,8 +952,8 @@ void DirichletBC::check_arguments(PETScMatrix* A, PETScVector* b,
       dolfin_error("BoundaryCondition.cpp",
                    "apply boundary condition",
                    "Dofmap ownership range (%d,%d) does not match x vector local range (%d,%d)",
-                   dofmap_range.first, dofmap_range.second,
-                   x->local_range().first, x->local_range().second);
+                   dofmap_range[0], dofmap_range[1],
+                   x->local_range()[0], x->local_range()[1]);
     }
 
     // Check that vectors have same ownership if (x && b)
@@ -964,8 +962,8 @@ void DirichletBC::check_arguments(PETScMatrix* A, PETScVector* b,
       dolfin_error("BoundaryCondition.cpp",
                    "apply boundary condition",
                    "x vector local range (%d,%d) does not match b vector local range (%d,%d)",
-                   x->local_range().first, x->local_range().second,
-                   b->local_range().first, b->local_range().second);
+                   x->local_range()[0], x->local_range()[1],
+                   b->local_range()[0], b->local_range()[1]);
     }
   }
 }

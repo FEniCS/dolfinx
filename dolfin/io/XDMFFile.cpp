@@ -1496,28 +1496,26 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
     = get_dataset_shape(cells_dataitem);
 
   // Divide cells equally between processes
-  std::pair<std::size_t, std::size_t> cell_range
+  std::array<std::int64_t, 2> cell_range
     = MPI::local_range(_mpi_comm.comm(), x_cell_dofs_shape[0]);
 
   // Read number of dofs per cell
-  std::vector<std::size_t> x_cell_dofs
-    = get_dataset<std::size_t>(_mpi_comm.comm(), x_cell_dofs_dataitem, parent_path,
-                               std::make_pair(cell_range.first,
-                                              cell_range.second + 1));
+  std::vector<std::int64_t> x_cell_dofs
+    = get_dataset<std::int64_t>(_mpi_comm.comm(), x_cell_dofs_dataitem, parent_path,
+      {{cell_range[0], cell_range[1] + 1}});
 
   // Read cell dofmaps
   std::vector<dolfin::la_index_t> cell_dofs
     = get_dataset<dolfin::la_index_t>(_mpi_comm.comm(), cell_dofs_dataitem,
                                     parent_path,
-                                    std::make_pair(x_cell_dofs.front(),
-                                                   x_cell_dofs.back()));
+      {{x_cell_dofs.front(), x_cell_dofs.back()}});
 
   const std::vector<std::int64_t> vector_shape
     = get_dataset_shape(vector_dataitem);
   const std::size_t num_global_dofs = vector_shape[0];
 
   // Divide vector between processes
-  const std::pair<dolfin::la_index_t, dolfin::la_index_t> input_vector_range
+  const std::array<std::int64_t, 2> input_vector_range
     = MPI::local_range(_mpi_comm.comm(), num_global_dofs);
 
   // Read function vector
@@ -1918,8 +1916,7 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
       local_shape0 /= shape[i];
     }
     const std::int64_t offset = MPI::global_offset(comm, local_shape0, true);
-    const std::pair<std::int64_t, std::int64_t> local_range
-      = {offset, offset + local_shape0};
+    const std::array<std::int64_t, 2> local_range = {{offset, offset + local_shape0}};
 
     const bool use_mpi_io = (MPI::size(comm) > 1);
     HDF5Interface::write_dataset(h5_id, h5_path, x, local_range, shape, use_mpi_io,
@@ -2238,7 +2235,7 @@ template <typename T>
 std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
                                     const pugi::xml_node& dataset_node,
                                     const boost::filesystem::path& parent_path,
-                                    std::pair<std::int64_t, std::int64_t> range)
+                                    std::array<std::int64_t, 2> range)
 {
   // FIXME: Need to sort out datasset dimensions - can't depend on
   // HDF5 shape, and a Topology data item is not required to have a
@@ -2310,7 +2307,7 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
 
     // If range = {0, 0} then no range is supplied
     // and we must determine the range
-    if (range.first == 0 and range.second == 0)
+    if (range[0] == 0 and range[1] == 0)
     {
       if (shape_xml == shape_hdf5)
         range = MPI::local_range(comm, shape_hdf5[0]);
@@ -2322,7 +2319,7 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
           d *= shape_xml[i];
 
         // Check for data size consistency
-        if (d * shape_xml[0] != shape_hdf5[0])
+        if (d*shape_xml[0] != shape_hdf5[0])
         {
           dolfin_error("XDMFFile.cpp",
                        "reading data from XDMF file",
@@ -2331,8 +2328,8 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
 
         // Compute data range to read
         range = MPI::local_range(comm, shape_xml[0]);
-        range.first *= d;
-        range.second *= d;
+        range[0] *= d;
+        range[1] *= d;
       }
       else
       {
@@ -2490,7 +2487,7 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction,
   const unsigned int num_vertices_per_cell = cell_type->num_entities(0);
   const unsigned int cell_dim = cell_type->dim();
   dolfin_assert(cell_dim == meshfunction.dim());
-  const std::size_t num_entities_global = get_num_cells(topology_node);
+  const std::int64_t num_entities_global = get_num_cells(topology_node);
 
   // Ensure num_entities_global(cell_dim) is set and check dataset matches
   DistributedMeshTools::number_entities(*mesh, cell_dim);

@@ -135,3 +135,5 @@ install_manifest.txt
 cmake.local
 
 build/
+
+.vscode

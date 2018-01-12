@@ -88,7 +88,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   // Copy index maps from dofmaps
   std::array<std::shared_ptr<const IndexMap>, 2> index_maps
     = {{V0.dofmap()->index_map(), V1.dofmap()->index_map()}};
-  std::vector<std::pair<std::size_t, std::size_t>> local_range
+  std::vector<std::array<std::int64_t, 2>> local_range
     = { V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
 
   // Initialise sparsity pattern
@@ -101,10 +101,10 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   for (EdgeIterator edge(mesh); !edge.end(); ++edge)
   {
     // Row index (global indices)
-    const std::size_t row = local_to_global_map0[edge_to_dof[edge->index()]];
+    const std::int64_t row = local_to_global_map0[edge_to_dof[edge->index()]];
     rows.push_back(row);
 
-    if (row >= local_range[0].first and row < local_range[0].second)
+    if (row >= local_range[0][0] and row < local_range[0][1])
     {
       // Column indices (global indices)
       const Vertex v0(mesh, edge->entities(0)[0]);

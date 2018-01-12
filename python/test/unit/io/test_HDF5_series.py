@@ -29,7 +29,7 @@ from dolfin_utils.test import skip_if_not_HDF5, fixture, tempdir, \
 def test_save_and_read_function_timeseries(tempdir):
     filename = os.path.join(tempdir, "function.h5")
 
-    mesh = UnitSquareMesh(10, 10)
+    mesh = UnitSquareMesh(MPI.comm_world, 10, 10)
     Q = FunctionSpace(mesh, "CG", 3)
     F0 = Function(Q)
     F1 = Function(Q)

@@ -21,20 +21,13 @@
 // First added:  2006-05-11
 // Last changed: 2014-07-02
 
-#ifndef __MESH_ENTITY_H
-#define __MESH_ENTITY_H
-
-#include <cmath>
-#include <iostream>
+#pragma once
 
 #include <dolfin/geometry/Point.h>
 #include "Mesh.h"
 
 namespace dolfin
 {
-
-  //class Mesh;
-  class Point;
 
   /// A MeshEntity represents a mesh entity associated with
   /// a specific topological dimension of some _Mesh_.
@@ -44,7 +37,7 @@ namespace dolfin
   public:
 
     /// Default Constructor
-    MeshEntity() : _mesh(0), _dim(0), _local_index(0) {}
+    MeshEntity() : _mesh(nullptr), _dim(0), _local_index(0) {}
 
     /// Constructor
     ///
@@ -54,10 +47,14 @@ namespace dolfin
     ///         The topological dimension.
     /// @param     index (std::size_t)
     ///         The index.
-    MeshEntity(const Mesh& mesh, std::size_t dim, std::size_t index);
+    MeshEntity(const Mesh& mesh, std::size_t dim, std::size_t index)
+      : _mesh(&mesh), _dim(dim), _local_index(index)
+    {
+      // Do nothing
+    }
 
     /// Destructor
-    virtual ~MeshEntity();
+    ~MeshEntity();
 
     /// Initialize mesh entity with given data
     ///
@@ -103,7 +100,7 @@ namespace dolfin
     ///
     /// @return     std::size_t
     ///         The dimension.
-    std::size_t dim() const
+    inline std::size_t dim() const
     { return _dim; }
 
     /// Return index of mesh entity
@@ -137,7 +134,7 @@ namespace dolfin
     /// @return     std::size_t
     /// The number of local incident MeshEntity objects of given
     /// dimension.
-    std::size_t num_entities(std::size_t dim) const
+    inline std::size_t num_entities(std::size_t dim) const
     { return _mesh->topology()(_dim, dim).size(_local_index); }
 
     /// Return global number of incident mesh entities of given
@@ -167,13 +164,6 @@ namespace dolfin
       dolfin_assert(initialized_mesh_entities);
       return initialized_mesh_entities;
     }
-
-    /// Return unique mesh ID
-    ///
-    /// @return     std::size_t
-    ///         The unique mesh ID.
-    std::size_t mesh_id() const
-    { return _mesh->id(); }
 
     /// Check if given entity is incident
     ///
@@ -254,6 +244,13 @@ namespace dolfin
 
     // Friends
     friend class MeshEntityIterator;
+
+    template<typename T> friend class MeshEntityRangeTyped;
+    template<typename T> friend class EntityRangeTyped;
+    template<typename T> friend class MeshIterator;
+    template<typename T> friend class MeshEntityIteratorNew;
+
+
     template<typename T> friend class MeshEntityIteratorBase;
     friend class SubsetIterator;
 
@@ -269,5 +266,3 @@ namespace dolfin
   };
 
 }
-
-#endif

@@ -217,8 +217,8 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
 bool PETScMatrix::empty() const
 {
   auto sizes = PETScBaseMatrix::size();
-  dolfin_assert((sizes.first < 1 and sizes.second < 1) or (sizes.first > 0 and sizes.second > 0));
-  return (sizes.first < 1) and (sizes.second < 1);
+  dolfin_assert((sizes[0] < 1 and sizes[1] < 1) or (sizes[0] > 0 and sizes[1] > 0));
+  return (sizes[0] < 1) and (sizes[1] < 1);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(double* block,

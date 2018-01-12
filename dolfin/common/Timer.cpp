@@ -30,10 +30,9 @@ Timer::Timer() : _task("")
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Timer::Timer(std::string task) : _task("")
+Timer::Timer(std::string task) : _task(task)
 {
-  const std::string prefix = parameters["timer_prefix"];
-  _task = prefix + task;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Timer::~Timer()
@@ -50,10 +49,12 @@ void Timer::start()
 void Timer::resume()
 {
   if (_task.size() > 0)
+  {
     dolfin_error("Timer.cpp",
                  "resume timing",
                  "Resuming is not well-defined for logging timer. "
                  "Only non-logging timer can be resumed");
+  }
   _timer.resume();
 }
 //-----------------------------------------------------------------------------

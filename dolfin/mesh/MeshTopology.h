@@ -68,10 +68,14 @@ namespace dolfin
 
     /// Return number of regular (non-ghost) entities or equivalently,
     /// the offset of where ghost entities begin
-    std::uint32_t ghost_offset(unsigned int dim) const;
+    inline std::uint32_t ghost_offset(unsigned int dim) const
+    {
+      if (_ghost_offset_index.empty())
+        return 0;
 
-    /// Clear all data
-    void clear();
+      dolfin_assert(dim < _ghost_offset_index.size());
+      return _ghost_offset_index[dim];
+    }
 
     /// Clear data for given pair of topological dimensions
     void clear(std::size_t d0, std::size_t d1);
@@ -142,11 +146,21 @@ namespace dolfin
     { return _cell_owner;  }
 
     /// Return connectivity for given pair of topological dimensions
-    dolfin::MeshConnectivity& operator() (std::size_t d0, std::size_t d1);
+    dolfin::MeshConnectivity& operator() (std::size_t d0, std::size_t d1)
+    {
+      dolfin_assert(d0 < _connectivity.size());
+      dolfin_assert(d1 < _connectivity[d0].size());
+      return _connectivity[d0][d1];
+    }
 
     /// Return connectivity for given pair of topological dimensions
     const dolfin::MeshConnectivity& operator() (std::size_t d0,
-                                                std::size_t d1) const;
+                                                std::size_t d1) const
+    {
+      dolfin_assert(d0 < _connectivity.size());
+      dolfin_assert(d1 < _connectivity[d0].size());
+      return _connectivity[d0][d1];
+    }
 
     /// Return hash based on the hash of cell-vertex connectivity
     size_t hash() const;

@@ -186,8 +186,8 @@ void SubDomain::apply_markers(S& sub_domains,
 
   // Speed up the computation by only checking each vertex once (or
   // twice if it is on the boundary for some but not all facets).
-  RangedIndexSet boundary_visited(mesh.num_vertices());
-  RangedIndexSet interior_visited(mesh.num_vertices());
+  RangedIndexSet boundary_visited({{0, mesh.num_vertices()}});
+  RangedIndexSet interior_visited({{0, mesh.num_vertices()}});
   std::vector<bool> boundary_inside(mesh.num_vertices());
   std::vector<bool> interior_inside(mesh.num_vertices());
 
@@ -285,8 +285,8 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
 
   // Speed up the computation by only checking each vertex once (or
   // twice if it is on the boundary for some but not all facets).
-  RangedIndexSet boundary_visited(mesh.num_vertices());
-  RangedIndexSet interior_visited(mesh.num_vertices());
+  RangedIndexSet boundary_visited({{0, mesh.num_vertices()}});
+  RangedIndexSet interior_visited({{0, mesh.num_vertices()}});
   std::vector<bool> boundary_inside(mesh.num_vertices());
   std::vector<bool> interior_inside(mesh.num_vertices());
 

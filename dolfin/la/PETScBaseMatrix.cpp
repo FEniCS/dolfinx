@@ -56,7 +56,7 @@ PETScBaseMatrix::PETScBaseMatrix(const PETScBaseMatrix& A)
                "PETScBaseMatrix does not provide a copy constructor");
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScBaseMatrix::size(std::size_t dim) const
+std::int64_t PETScBaseMatrix::size(std::size_t dim) const
 {
   if (dim > 1)
   {
@@ -75,17 +75,16 @@ std::size_t PETScBaseMatrix::size(std::size_t dim) const
     return n > 0 ? n : 0;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::int64_t, std::int64_t> PETScBaseMatrix::size() const
+std::array<std::int64_t, 2> PETScBaseMatrix::size() const
 {
   dolfin_assert(_matA);
   PetscInt m(0), n(0);
   PetscErrorCode ierr = MatGetSize(_matA, &m, &n);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MetGetSize");
-  return {m, n};
+  return {{m, n}};
 }
 //-----------------------------------------------------------------------------
-std::pair<std::int64_t, std::int64_t>
-PETScBaseMatrix::local_range(std::size_t dim) const
+std::array<std::int64_t, 2> PETScBaseMatrix::local_range(std::size_t dim) const
 {
   dolfin_assert(dim <= 1);
   if (dim == 1)
@@ -99,7 +98,7 @@ PETScBaseMatrix::local_range(std::size_t dim) const
   PetscInt m(0), n(0);
   PetscErrorCode ierr = MatGetOwnershipRange(_matA, &m, &n);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetOwnershipRange");
-  return {m, n};
+  return {{m, n}};
 }
 //-----------------------------------------------------------------------------
 void PETScBaseMatrix::init_vector(PETScVector& z, std::size_t dim) const

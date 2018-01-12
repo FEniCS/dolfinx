@@ -26,12 +26,13 @@
 
 #include <memory>
 
+#include <ufc.h>
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
-#include <ufc.h>
+
 #include <dolfin/geometry/Point.h>
 
 namespace dolfin
@@ -43,6 +44,7 @@ namespace dolfin
   {
   public:
 
+    // FIXME: can thos be removed?
     /// Create empty cell
     Cell() : MeshEntity() {}
 
@@ -175,18 +177,6 @@ namespace dolfin
       return sqrt(squared_distance(point));
     }
 
-    /// Compute component i of normal of given facet with respect to the cell
-    ///
-    /// @param    facet
-    ///         Index of facet.
-    /// @param    i
-    ///         Component.
-    ///
-    /// @return     double
-    ///         Component i of the normal of the facet.
-    double normal(std::size_t facet, std::size_t i) const
-    { return _mesh->type().normal(*this, facet, i); }
-
     /// Compute normal of given facet with respect to the cell
     ///
     /// @param    facet
@@ -230,46 +220,6 @@ namespace dolfin
     ///         True iff ordered.
     bool ordered(const std::vector<std::int64_t>& local_to_global_vertex_indices) const
     { return _mesh->type().ordered(*this, local_to_global_vertex_indices); }
-
-    /// Check whether given point is contained in cell. This function is
-    /// identical to the function collides(point).
-    ///
-    /// @param     point
-    ///         The point to be checked.
-    ///
-    /// @return     bool
-    ///         True iff point is contained in cell.
-    bool contains(const Point& point) const;
-
-    /// Check whether given point collides with cell
-    ///
-    /// @param    point
-    ///         The point to be checked.
-    ///
-    /// @return     bool
-    ///         True iff point collides with cell.
-    bool collides(const Point& point) const;
-
-    /// Check whether given entity collides with cell
-    ///
-    /// @param    entity
-    ///         The cell to be checked.
-    ///
-    /// @return     bool
-    ///         True iff entity collides with cell.
-    bool collides(const MeshEntity& entity) const;
-
-    /// Compute triangulation of intersection with given entity
-    ///
-    /// @param    entity
-    ///         The entity with which to intersect.
-    ///
-    /// @return      std::vector<Point>
-    ///         A flattened array of simplices of dimension
-    ///         num_simplices x num_vertices x gdim =
-    ///         num_simplices x (tdim + 1) x gdim
-    std::vector<Point>
-    intersection(const MeshEntity& entity) const;
 
     // FIXME: This function is part of a UFC transition
     /// Get cell coordinate dofs (not vertex coordinates)
@@ -337,35 +287,14 @@ namespace dolfin
       ufc_cell.geometric_dimension = _mesh->geometry().dim();
       ufc_cell.local_facet = local_facet;
       ufc_cell.orientation = -1;
-      ufc_cell.mesh_identifier = mesh_id();
+      ufc_cell.mesh_identifier = this->mesh().id();
       ufc_cell.index = index();
     }
+
   };
 
   /// A CellIterator is a MeshEntityIterator of topological codimension 0.
   typedef MeshEntityIteratorBase<Cell> CellIterator;
-
-  /// A CellFunction is a MeshFunction of topological codimension 0.
-  template <typename T> class CellFunction : public MeshFunction<T>
-  {
-  public:
-
-    /// Constructor on Mesh
-    CellFunction(std::shared_ptr<const Mesh> mesh)
-      : MeshFunction<T>(mesh, mesh->topology().dim()) {
-        deprecation("CellFunction<T>(mesh)",
-                    "2017.2.0",
-                    "Use MeshFunction<T>(mesh, mesh->topology().dim())");
-      }
-
-    /// Constructor on Mesh and value
-    CellFunction(std::shared_ptr<const Mesh> mesh, const T& value)
-      : MeshFunction<T>(mesh, mesh->topology().dim(), value) {
-        deprecation("CellFunction<T>(mesh, value)",
-                    "2017.2.0",
-                    "Use MeshFunction<T>(mesh, mesh->topology().dim(), value)");
-      }
-  };
 
 }
 

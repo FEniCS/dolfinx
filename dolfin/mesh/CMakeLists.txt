@@ -17,6 +17,7 @@ set(HEADERS
   MeshEntityIterator.h
   MeshFunction.h
   MeshGeometry.h
+  MeshIterator.h
   Mesh.h
   MeshOrdering.h
   MeshPartitioning.h
@@ -27,7 +28,6 @@ set(HEADERS
   PointCell.h
   QuadrilateralCell.h
   SubDomain.h
-  SubsetIterator.h
   TetrahedronCell.h
   TopologyComputation.h
   TriangleCell.h
@@ -35,7 +35,6 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
-  Cell.cpp
   CellType.cpp
   DistributedMeshTools.cpp
   Edge.cpp

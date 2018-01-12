@@ -154,7 +154,7 @@ def test_creation_and_marking():
                                      UnitCubeMesh]):
         dim = ind + 1
         args = [10]*dim
-        mesh = MeshClass(*args)
+        mesh = MeshClass(MPI.comm_world, *args)
 
         mesh.init()
 

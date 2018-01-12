@@ -29,13 +29,13 @@ from dolfin_utils.test import (fixture, skip_in_parallel, xfail_in_parallel, cd_
 # See https://bitbucket.org/fenics-project/dolfin/issues/579
 def xtest_ghost_vertex_1d(pushpop_parameters):
     parameters["ghost_mode"] = "shared_vertex"
-    mesh = UnitIntervalMesh(20)
+    mesh = UnitIntervalMesh(MPI.comm_world, 20)
     #print("Test: {}".format(MPI.sum(mesh.mpi_comm(), mesh.num_cells())))
 
 
 def xtest_ghost_facet_1d(pushpop_parameters):
     parameters["ghost_mode"] = "shared_facet"
-    mesh = UnitIntervalMesh(20)
+    mesh = UnitIntervalMesh(MPI.comm_world, 20)
 
 
 def test_ghost_2d(pushpop_parameters):
@@ -45,25 +45,25 @@ def test_ghost_2d(pushpop_parameters):
         N = 8
         num_cells = 128
 
-        mesh = UnitSquareMesh(N, N)
+        mesh = UnitSquareMesh(MPI.comm_world, N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
         parameters["reorder_cells_gps"] = True
         parameters["reorder_vertices_gps"] = False
-        mesh = UnitSquareMesh(N, N)
+        mesh = UnitSquareMesh(MPI.comm_world, N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
         parameters["reorder_cells_gps"] = True
         parameters["reorder_vertices_gps"] = True
-        mesh = UnitSquareMesh(N, N)
+        mesh = UnitSquareMesh(MPI.comm_world, N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
         parameters["reorder_cells_gps"] = False
         parameters["reorder_vertices_gps"] = True
-        mesh = UnitSquareMesh(N, N)
+        mesh = UnitSquareMesh(MPI.comm_world,N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
@@ -75,29 +75,29 @@ def test_ghost_3d(pushpop_parameters):
         N = 2
         num_cells = 48
 
-        mesh = UnitCubeMesh(N, N, N)
+        mesh = UnitCubeMesh(MPI.comm_world,N, N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
         parameters["reorder_cells_gps"] = True
         parameters["reorder_vertices_gps"] = False
-        mesh = UnitCubeMesh(N, N, N)
+        mesh = UnitCubeMesh(MPI.comm_world,N, N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
         parameters["reorder_cells_gps"] = True
         parameters["reorder_vertices_gps"] = True
-        mesh = UnitCubeMesh(N, N, N)
+        mesh = UnitCubeMesh(MPI.comm_world,N, N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
         parameters["reorder_cells_gps"] = False
         parameters["reorder_vertices_gps"] = True
-        mesh = UnitCubeMesh(N, N, N)
+        mesh = UnitCubeMesh(MPI.comm_world,N, N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
-
+@pytest.mark.xfail
 @pytest.mark.parametrize('gmode', ['shared_vertex', 'shared_facet', 'none'])
 def test_ghost_connectivities(gmode, pushpop_parameters):
     parameters['ghost_mode'] = gmode
@@ -112,7 +112,7 @@ def test_ghost_connectivities(gmode, pushpop_parameters):
 
     # Create reference mapping from facet midpoint to cell midpoint
     reference = {}
-    for facet in facets(meshR):
+    for facet in Facets(meshR):
         fidx = facet.index()
         facet_mp = tuple(facet.midpoint()[:])
         reference[facet_mp] = []
@@ -122,8 +122,8 @@ def test_ghost_connectivities(gmode, pushpop_parameters):
             reference[facet_mp].append(cell_mp)
 
     # Loop through ghosted mesh and check connectivities
-    allowable_cell_indices = [cell.index() for cell in cells(meshG, 'all')]
-    for facet in facets(meshG, 'regular'):
+    allowable_cell_indices = [cell.index() for cell in Cells(meshG, 'all')]
+    for facet in Facets(meshG, 'regular'):
         fidx = facet.index()
         facet_mp = tuple(facet.midpoint()[:])
         assert facet_mp in reference

@@ -36,11 +36,11 @@
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/MeshQuality.h>
 #include <dolfin/mesh/SubDomain.h>
-#include <dolfin/mesh/SubsetIterator.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/function/Expression.h>
 
@@ -213,8 +213,7 @@ namespace dolfin_wrappers
     py::class_<dolfin::Face, std::shared_ptr<dolfin::Face>, dolfin::MeshEntity>
       (m, "Face", "DOLFIN Face object")
       .def(py::init<const dolfin::Mesh&, std::size_t>())
-      .def("normal", (dolfin::Point (dolfin::Face::*)() const) &dolfin::Face::normal)
-      .def("normal", (double (dolfin::Face::*)(std::size_t) const) &dolfin::Face::normal)
+      .def("normal", &dolfin::Face::normal)
       .def("area", &dolfin::Face::area);
 
     // dolfin::Facet
@@ -222,20 +221,17 @@ namespace dolfin_wrappers
       (m, "Facet", "DOLFIN Facet object")
       .def(py::init<const dolfin::Mesh&, std::size_t>())
       .def("exterior", &dolfin::Facet::exterior)
-      .def("normal", (dolfin::Point (dolfin::Facet::*)() const)  &dolfin::Facet::normal);
+      .def("normal", &dolfin::Facet::normal);
 
     // dolfin::Cell
     py::class_<dolfin::Cell, std::shared_ptr<dolfin::Cell>, dolfin::MeshEntity>
       (m, "Cell", "DOLFIN Cell object")
       .def(py::init<const dolfin::Mesh&, std::size_t>())
-      .def("collides", (bool (dolfin::Cell::*)(const dolfin::Point&) const) &dolfin::Cell::collides)
-      .def("collides", (bool (dolfin::Cell::*)(const dolfin::MeshEntity&) const) &dolfin::Cell::collides)
-      .def("contains", &dolfin::Cell::contains)
       .def("distance", &dolfin::Cell::distance)
       .def("facet_area", &dolfin::Cell::facet_area)
       .def("h", &dolfin::Cell::h)
       .def("inradius", &dolfin::Cell::inradius)
-      .def("normal", (dolfin::Point (dolfin::Cell::*)(std::size_t) const) &dolfin::Cell::normal)
+      .def("normal", &dolfin::Cell::normal)
       .def("circumradius", &dolfin::Cell::circumradius)
       .def("radius_ratio", &dolfin::Cell::radius_ratio)
       .def("volume", &dolfin::Cell::volume)
@@ -244,62 +240,54 @@ namespace dolfin_wrappers
           self.get_vertex_coordinates(x);
           return x; }, "Get cell vertex coordinates");
 
-    // dolfin::MeshEntityIterator
-    py::class_<dolfin::MeshEntityIterator, std::shared_ptr<dolfin::MeshEntityIterator>>
-      (m, "MeshEntityIterator", "DOLFIN MeshEntityIterator object")
-      .def(py::init<const dolfin::Mesh&, std::size_t>())
-      .def("__iter__",[](dolfin::MeshEntityIterator& self) { self.operator--(); return self; }) // TODO: check return type and policy
-      .def("__next__",[](dolfin::MeshEntityIterator& self)  // TODO: check return type and policy
-           {
-             self.operator++();
-             if (self.end())
-               throw py::stop_iteration("");
-             return *self;
-           });
+    py::class_<dolfin::MeshEntityRange, std::shared_ptr<dolfin::MeshEntityRange>>
+      (m, "MeshEntities", "Range for iterative over entities of a Mesh")
+      .def(py::init<const dolfin::Mesh&, int>())
+      .def("__iter__", [](const dolfin::MeshEntityRange& r)
+           { return py::make_iterator(r.begin(), r.end()); });
 
-    // dolfin::SubsetIterator
-    py::class_<dolfin::SubsetIterator>(m, "SubsetIterator")
-      .def(py::init<const dolfin::MeshFunction<std::size_t>&, std::size_t>())
-      .def(py::init<const dolfin::SubsetIterator&>())
-      .def("__iter__",[](dolfin::SubsetIterator& self) { self.operator--(); return self; })  // TODO: check return type and policy
-      .def("__next__",[](dolfin::SubsetIterator& self)
-           {
-             self.operator++();
-             if (self.end())
-               throw py::stop_iteration("");
-             return *self;
-           });
+    py::class_<dolfin::EntityRange, std::shared_ptr<dolfin::EntityRange>>
+      (m, "EntityRange", "Range for iterative over entities of another entity")
+      .def(py::init<const dolfin::MeshEntity&, int>())
+      .def("__iter__", [](const dolfin::EntityRange& r)
+           { return py::make_iterator(r.begin(), r.end()); });
 
     m.def("entities", [](dolfin::Mesh& mesh, std::size_t dim)
           { return dolfin::MeshEntityIterator(mesh, dim); });
     m.def("entities", [](dolfin::MeshEntity& meshentity, std::size_t dim)
           { return dolfin::MeshEntityIterator(meshentity, dim); });
 
-#define MESHITERATOR_MACRO(TYPE, NAME) \
-    py::class_<dolfin::MeshEntityIteratorBase<dolfin::TYPE>, \
-               std::shared_ptr<dolfin::MeshEntityIteratorBase<dolfin::TYPE>>> \
-      (m, #TYPE"Iterator", "DOLFIN "#TYPE"Iterator object") \
+    // dolfin::MeshIterator (Cells, Facets, Faces, Edges, Vertices)
+#define MESHITERATOR_MACRO(TYPE, ENTITYNAME)                     \
+    py::class_<dolfin::TYPE, std::shared_ptr<dolfin::TYPE>> \
+      (m, #TYPE, "Range for iterating over entities of type "#ENTITYNAME" of a Mesh") \
       .def(py::init<const dolfin::Mesh&>()) \
-      .def("__iter__",[](dolfin::MeshEntityIteratorBase<dolfin::TYPE>& self) { self.operator--(); return self; }) \
-      .def("__next__",[](dolfin::MeshEntityIteratorBase<dolfin::TYPE>& self) { \
-          self.operator++(); \
-          if (self.end()) \
-            throw py::stop_iteration(""); \
-          return *self; \
-        }); \
- \
-    m.def(#NAME, [](dolfin::Mesh& mesh, std::string opt)                          \
-          { return dolfin::MeshEntityIteratorBase<dolfin::TYPE>(mesh, opt); }, \
-          py::arg("mesh"), py::arg("type")="regular");                  \
-    m.def(#NAME, [](dolfin::MeshEntity& meshentity)\
-          { return dolfin::MeshEntityIteratorBase<dolfin::TYPE>(meshentity); })
+      .def("__iter__", [](const dolfin::TYPE& c) { \
+          return py::make_iterator(c.begin(), c.end()); \
+        });
 
-    MESHITERATOR_MACRO(Cell, cells);
-    MESHITERATOR_MACRO(Facet, facets);
-    MESHITERATOR_MACRO(Face, faces);
-    MESHITERATOR_MACRO(Edge, edges);
-    MESHITERATOR_MACRO(Vertex, vertices);
+    MESHITERATOR_MACRO(Cells, Cell);
+    MESHITERATOR_MACRO(Facets, Facet);
+    MESHITERATOR_MACRO(Faces, Face);
+    MESHITERATOR_MACRO(Edges, Edge);
+    MESHITERATOR_MACRO(Vertices, Vertex);
 #undef MESHITERATOR_MACRO
+
+    // dolfin::MeshEntityIterator (CellRange, FacetRange, FaceRange, EdgeRange, VertexRange)
+#define MESHENTITYITERATOR_MACRO(TYPE, ENTITYNAME)               \
+    py::class_<dolfin::TYPE, std::shared_ptr<dolfin::TYPE>> \
+      (m, #TYPE, "Range for iterating over entities of type "#ENTITYNAME" incident to a MeshEntity") \
+      .def(py::init<const dolfin::MeshEntity&>()) \
+      .def("__iter__", [](const dolfin::TYPE& c) { \
+          return py::make_iterator(c.begin(), c.end()); \
+        });
+
+    MESHENTITYITERATOR_MACRO(CellRange, Cell);
+    MESHENTITYITERATOR_MACRO(FacetRange, Facet);
+    MESHENTITYITERATOR_MACRO(FaceRange, Face);
+    MESHENTITYITERATOR_MACRO(EdgeRange, Edge);
+    MESHENTITYITERATOR_MACRO(VertexRange, Vertex);
+#undef MESHENTITYITERATOR_MACRO
 
     // dolfin::MeshFunction
 #define MESHFUNCTION_MACRO(SCALAR, SCALAR_NAME) \

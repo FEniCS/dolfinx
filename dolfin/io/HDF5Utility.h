@@ -51,9 +51,8 @@ namespace dolfin
       map_gdof_to_cell(const MPI_Comm mpi_comm,
                        const std::vector<std::size_t>& input_cells,
                        const std::vector<dolfin::la_index_t>& input_cell_dofs,
-                       const std::vector<std::size_t>& x_cell_dofs,
-                       const std::pair<dolfin::la_index_t, dolfin::la_index_t>
-                       vector_range,
+                       const std::vector<std::int64_t>& x_cell_dofs,
+                       const std::array<std::int64_t, 2> vector_range,
                        std::vector<std::size_t>& global_cells,
                        std::vector<std::size_t>& remote_local_dofi);
 
@@ -65,7 +64,7 @@ namespace dolfin
       MPI_Comm mpi_comm,
       const std::vector<std::pair<std::size_t, std::size_t>>& cell_ownership,
       const std::vector<std::size_t>& remote_local_dofi,
-      std::pair<std::size_t, std::size_t> vector_range,
+      std::array<std::int64_t, 2> vector_range,
       const GenericDofMap& dofmap,
       std::vector<dolfin::la_index_t>& global_dof);
 
@@ -85,16 +84,15 @@ namespace dolfin
     static void build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data);
 
     /// Missing docstring
-    static void set_local_vector_values(
-      MPI_Comm mpi_comm,
-      PETScVector& x,
-      const Mesh& mesh,
-      const std::vector<size_t>& cells,
-      const std::vector<dolfin::la_index_t>& cell_dofs,
-      const std::vector<std::size_t>& x_cell_dofs,
-      const std::vector<double>& vector,
-      std::pair<dolfin::la_index_t, dolfin::la_index_t> input_vector_range,
-      const GenericDofMap& dofmap);
+    static void set_local_vector_values(MPI_Comm mpi_comm,
+                                        PETScVector& x,
+                                        const Mesh& mesh,
+                                        const std::vector<size_t>& cells,
+                                        const std::vector<dolfin::la_index_t>& cell_dofs,
+                                        const std::vector<std::int64_t>& x_cell_dofs,
+                                        const std::vector<double>& vector,
+                                        std::array<std::int64_t, 2> input_vector_range,
+                                        const GenericDofMap& dofmap);
   };
 
 }

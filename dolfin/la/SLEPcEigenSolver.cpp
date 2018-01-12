@@ -87,7 +87,7 @@ void SLEPcEigenSolver::solve()
   solve(A_wrapped.size(0));
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::solve(std::size_t n)
+void SLEPcEigenSolver::solve(std::int64_t n)
 {
 #ifdef DEBUG
   // Get operators

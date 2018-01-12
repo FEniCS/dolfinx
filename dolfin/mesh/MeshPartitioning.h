@@ -281,8 +281,7 @@ namespace dolfin
         = mesh.topology().shared_entities(D);
 
       const std::size_t global_cell_index = ldata[i].first.first;
-      std::map<std::size_t, std::size_t>::const_iterator data
-        = map_of_global_entity_indices.find(global_cell_index);
+      auto data = map_of_global_entity_indices.find(global_cell_index);
       if (data != map_of_global_entity_indices.end())
       {
         const std::size_t local_cell_index = data->second;
@@ -311,7 +310,6 @@ namespace dolfin
     // Pack data to send to appropriate process
     std::vector<std::vector<std::size_t>> send_data0(num_processes);
     std::vector<std::vector<T>> send_data1(num_processes);
-    std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t>>>::const_iterator entity_host;
 
     {
       // Build a convenience map in order to speedup the loop over
@@ -320,7 +318,7 @@ namespace dolfin
       for (std::size_t i = 0; i < ldata.size(); ++i)
         map_of_ldata[ldata[i].first.first].insert(i);
 
-      for (entity_host = entity_hosts.begin(); entity_host != entity_hosts.end();
+      for (auto entity_host = entity_hosts.begin(); entity_host != entity_hosts.end();
            ++entity_host)
       {
         const std::size_t host_global_cell_index = entity_host->first;
@@ -328,18 +326,14 @@ namespace dolfin
           = entity_host->second;
 
         // Loop over local data
-        std::map<std::size_t, std::set<std::size_t>>::const_iterator ldata_it
-          = map_of_ldata.find(host_global_cell_index);
+        auto ldata_it = map_of_ldata.find(host_global_cell_index);
         if (ldata_it != map_of_ldata.end())
         {
-          for (std::set<std::size_t>::const_iterator it = ldata_it->second.begin();
-               it != ldata_it->second.end(); it++)
+          for (auto it = ldata_it->second.begin(); it != ldata_it->second.end(); it++)
           {
             const std::size_t local_entity_index = ldata[*it].first.second;
             const T domain_value = ldata[*it].second;
-
-            std::set<std::pair<std::size_t, std::size_t>>::const_iterator process_data;
-            for (process_data = processes_data.begin();
+            for (auto process_data = processes_data.begin();
                  process_data != processes_data.end(); ++process_data)
             {
               const std::size_t proc = process_data->first;
@@ -363,8 +357,8 @@ namespace dolfin
     // Add received data to mesh domain
     for (std::size_t i = 0; i < received_data1.size(); ++i)
     {
-      const std::size_t local_cell_entity = received_data0[2*i];
-      const std::size_t local_entity_index = received_data0[2*i + 1];
+      const std::int64_t local_cell_entity = received_data0[2*i];
+      const std::int64_t local_entity_index = received_data0[2*i + 1];
       const T value = received_data1[i];
       dolfin_assert(local_cell_entity < mesh.num_cells());
       markers.set_value(local_cell_entity, local_entity_index, value);

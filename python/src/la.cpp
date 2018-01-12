@@ -21,7 +21,6 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 #include <pybind11/operators.h>
-
 #ifdef HAS_PYBIND11_PETSC4PY
 #include <petsc4py/petsc4py.h>
 #endif
@@ -305,7 +304,7 @@ namespace dolfin_wrappers
              std::size_t num_rows = m_range.second - m_range.first;
              std::size_t num_cols = instance.size(1);
 
-             Eigen::MatrixXd A = Eigen::MatrixXd::Zero(num_rows, num_cols);
+             RowMatrixXd A = Eigen::RowMatrixXd::Zero(num_rows, num_cols);
              std::vector<std::size_t> columns;
              std::vector<double> values;
              for (std::size_t i = 0; i < num_rows; ++i)
@@ -590,7 +589,15 @@ namespace dolfin_wrappers
     py::class_<dolfin::PETScVector, std::shared_ptr<dolfin::PETScVector>, dolfin::PETScObject>
       (m, "PETScVector", "DOLFIN PETScVector object")
       .def(py::init([](const MPICommWrapper comm)
-                    { return std::unique_ptr<dolfin::PETScVector>(new dolfin::PETScVector(comm.get())); }))
+                    {
+                      return std::unique_ptr<dolfin::PETScVector>(new dolfin::PETScVector(comm.get()));
+                    }))
+      .def(py::init([](const MPICommWrapper comm, std::size_t N)
+                    {
+                      auto ptr = new dolfin::PETScVector(comm.get());
+                      ptr->init(N);
+                      return std::unique_ptr<dolfin::PETScVector>(ptr);
+                    }))
       .def(py::init<Vec>())
       .def("copy", &dolfin::PETScVector::copy)
       .def("apply", &dolfin::PETScVector::apply)
@@ -605,12 +612,32 @@ namespace dolfin_wrappers
       .def("set_options_prefix", &dolfin::PETScVector::set_options_prefix)
       .def("update_ghost_values", &dolfin::PETScVector::update_ghost_values)
       .def("size",  (std::size_t (dolfin::PETScVector::*)() const) &dolfin::PETScVector::size)
+      .def("__add__", [](const dolfin::PETScVector& self, const dolfin::PETScVector& x)
+           { auto y = self.copy(); *y += x; return y;}, py::is_operator())
+      .def("__sub__", [](dolfin::PETScVector& self, const dolfin::PETScVector& x)
+           { auto y = self.copy(); *y -= x; return y;}, py::is_operator())
+      .def("get_local", [](const dolfin::PETScVector& self)
+           {
+             std::vector<double> values;
+             self.get_local(values);
+             return py::array_t<double>(values.size(), values.data());
+           })
+      .def("__setitem__", [](dolfin::PETScVector& self, py::slice slice, double value)
+           {
+             std::size_t start, stop, step, slicelength;
+             if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
+               throw py::error_already_set();
+             if (start != 0 or stop != self.size() or step != 1)
+               throw std::range_error("Only setting full slices for GenericVector is supported");
+
+             self = value;
+           })
       .def("vec", &dolfin::PETScVector::vec, "Return underlying PETSc Vec object");
 
     // dolfin::PETScBaseMatrix
     py::class_<dolfin::PETScBaseMatrix, std::shared_ptr<dolfin::PETScBaseMatrix>,
                dolfin::PETScObject, dolfin::Variable>(m, "PETScBaseMatrix")
-      .def("size", (std::size_t (dolfin::PETScBaseMatrix::*)(std::size_t) const) &dolfin::PETScBaseMatrix::size)
+      .def("size", (std::int64_t (dolfin::PETScBaseMatrix::*)(std::size_t) const) &dolfin::PETScBaseMatrix::size)
       .def("mat", &dolfin::PETScBaseMatrix::mat, "Return underlying PETSc Mat object");
 
     // dolfin::PETScMatrix
@@ -690,7 +717,7 @@ namespace dolfin_wrappers
       .def("set_initial_space", &dolfin::SLEPcEigenSolver::set_initial_space)
       .def("solve", (void (dolfin::SLEPcEigenSolver::*)())
            &dolfin::SLEPcEigenSolver::solve)
-      .def("solve", (void (dolfin::SLEPcEigenSolver::*)(std::size_t))
+      .def("solve", (void (dolfin::SLEPcEigenSolver::*)(std::int64_t))
            &dolfin::SLEPcEigenSolver::solve)
       .def("get_eigenvalue", [](dolfin::SLEPcEigenSolver& self, std::size_t i)
            {

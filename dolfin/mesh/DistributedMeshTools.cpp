@@ -27,6 +27,7 @@
 #include "dolfin/graph/Graph.h"
 #include "dolfin/graph/SCOTCH.h"
 #include "dolfin/log/log.h"
+#include "Cell.h"
 #include "Facet.h"
 #include "Mesh.h"
 #include "MeshEntityIterator.h"
@@ -395,7 +396,7 @@ DistributedMeshTools::locate_off_process_entities(const std::vector<std::size_t>
   const std::vector<std::int64_t> global_entity_indices
       = mesh.topology().global_indices(dim);
 
-  dolfin_assert(global_entity_indices.size() == mesh.num_cells());
+  dolfin_assert((std::int64_t) global_entity_indices.size() == mesh.num_cells());
 
   // Prepare map to hold process numbers
   std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t>>>
@@ -1236,20 +1237,19 @@ void DistributedMeshTools::reorder_values_by_global_indices(MPI_Comm mpi_comm,
 
   // When receiving, just go through all received values and place
   // them in the local partition of the global vector.
-  const std::pair<std::size_t, std::size_t> range
-    = MPI::local_range(mpi_comm, global_vector_size);
-  values.resize((range.second - range.first)*width);
+  const std::array<std::int64_t, 2> range = MPI::local_range(mpi_comm, global_vector_size);
+  values.resize((range[1] - range[0])*width);
   boost::multi_array_ref<double, 2>
     new_vertex_array(values.data(),
-                     boost::extents[range.second - range.first][width]);
+                     boost::extents[range[1] - range[0]][width]);
 
   for (std::size_t j = 0; j != received_values0.size(); ++j)
   {
-    const std::size_t global_i = received_values0[j];
-    dolfin_assert(global_i >= range.first && global_i < range.second);
+    const std::int64_t global_i = received_values0[j];
+    dolfin_assert(global_i >= range[0] && global_i < range[1]);
     std::copy(received_values1.begin() + j*width,
               received_values1.begin() + (j + 1)*width,
-              new_vertex_array[global_i - range.first].begin());
+              new_vertex_array[global_i - range[0]].begin());
   }
 }
 //-----------------------------------------------------------------------------

@@ -501,7 +501,7 @@ namespace dolfin
     static std::vector<T> get_dataset(MPI_Comm comm,
                                       const pugi::xml_node& dataset_node,
                                       const boost::filesystem::path& parent_path,
-                                      std::pair<std::int64_t, std::int64_t> range={0, 0});
+                                      std::array<std::int64_t, 2> range={{0, 0}});
 
     // Return (0) HDF5 filename and (1) path in HDF5 file from a
     // DataItem node

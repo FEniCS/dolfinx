@@ -80,7 +80,7 @@ void AssemblerBase::init_global_tensor(PETScVector& x, const Form& a)
   else
   {
     // If tensor is not reset, check that dimensions are correct
-    if (x.size(0) != dofmap->global_dimension())
+    if (x.size() != dofmap->global_dimension())
     {
       dolfin_error("AssemblerBase.cpp",
                    "assemble form",
@@ -156,19 +156,18 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
       // Get local row range
       const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
       const IndexMap& index_map_0 = *dofmaps[primary_dim]->index_map();
-      const std::pair<std::size_t, std::size_t> row_range
-        = A.local_range(primary_dim);
+      const auto row_range = A.local_range(primary_dim);
 
       // Set zeros in dense rows in order of increasing column index
       const double block = 0.0;
       dolfin::la_index_t IJ[2];
       for (std::size_t i: global_dofs)
       {
-        const std::size_t I = index_map_0.local_to_global_index(i);
-        if (I >= row_range.first && I < row_range.second)
+        const std::int64_t I = index_map_0.local_to_global_index(i);
+        if (I >= row_range[0] && I < row_range[1])
         {
           IJ[primary_dim] = I;
-          for (std::size_t J = 0; J < A.size(primary_codim); J++)
+          for (std::int64_t J = 0; J < A.size(primary_codim); J++)
           {
             IJ[primary_codim] = J;
             A.set(&block, 1, &IJ[0], 1, &IJ[1]);
@@ -189,10 +188,10 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
     {
       // Loop over rows and insert 0.0 on the diagonal
       const double block = 0.0;
-      const std::pair<std::size_t, std::size_t> row_range = A.local_range(0);
-      const std::size_t range = std::min(row_range.second, A.size(1));
+      const auto row_range = A.local_range(0);
+      const std::int64_t range = std::min(row_range[1], A.size(1));
 
-      for (std::size_t i = row_range.first; i < range; i++)
+      for (std::int64_t i = row_range[0]; i < range; i++)
       {
         const dolfin::la_index_t _i = i;
         A.set(&block, 1, &_i, 1, &_i);

@@ -70,14 +70,14 @@ if has_slepc():
 
 from .cpp.la import (IndexMap, Scalar)
 from .cpp.log import (info, Table, set_log_level, get_log_level, LogLevel)
-from .cpp.math import ipow, near, between
-from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, MeshEntity,
-                       CellType, Cell, Facet, Face,
-                       Edge, Vertex, cells, facets, faces, edges,
-                       entities, vertices, SubDomain,
-                       MeshEditor, MeshQuality,
-                       PeriodicBoundaryComputation,
-                       SubsetIterator)
+from .cpp.math import ipow, near
+from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry,
+                       CellType,
+                       Cell, Facet, Face, Edge, Vertex, MeshEntity,
+                       Cells, Facets, Faces, Edges, Vertices, MeshEntities,
+                       CellRange, FacetRange, FaceRange, EdgeRange, VertexRange, EntityRange,
+                       SubDomain, MeshEditor, MeshQuality,
+                       PeriodicBoundaryComputation)
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver, OptimisationProblem)
 from .cpp.parameter import Parameters, parameters
@@ -114,7 +114,7 @@ from .function.specialfunctions import (MeshCoordinates, FacetArea, FacetNormal,
                                         MinFacetEdgeLength, MaxFacetEdgeLength)
 from .function.expression import Expression, UserExpression, CompiledExpression
 
-from .generation.builtin import UnitSquareMesh, UnitCubeMesh, UnitIntervalMesh
+from .generation.builtin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
 
 # experimental
 from .jit.pybind11jit import compile_cpp_code

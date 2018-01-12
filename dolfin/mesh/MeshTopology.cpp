@@ -47,7 +47,7 @@ MeshTopology::MeshTopology(const MeshTopology& topology)
 //-----------------------------------------------------------------------------
 MeshTopology::~MeshTopology()
 {
-  clear();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
@@ -88,6 +88,7 @@ std::uint64_t MeshTopology::size_global(unsigned int dim) const
   return _global_num_entities[dim];
 }
 //-----------------------------------------------------------------------------
+/*
 std::uint32_t MeshTopology::ghost_offset(unsigned int dim) const
 {
   if (_ghost_offset_index.empty())
@@ -96,19 +97,7 @@ std::uint32_t MeshTopology::ghost_offset(unsigned int dim) const
   dolfin_assert(dim < _ghost_offset_index.size());
   return _ghost_offset_index[dim];
 }
-//-----------------------------------------------------------------------------
-void MeshTopology::clear()
-{
-  // FIXME: why is this function needed?
-
-  // Clear data
-  _num_entities.clear();
-  _global_num_entities.clear();
-  _ghost_offset_index.clear();
-  _global_indices.clear();
-  _shared_entities.clear();
-  _connectivity.clear();
-}
+*/
 //-----------------------------------------------------------------------------
 void MeshTopology::clear(std::size_t d0, std::size_t d1)
 {
@@ -119,9 +108,6 @@ void MeshTopology::clear(std::size_t d0, std::size_t d1)
 //-----------------------------------------------------------------------------
 void MeshTopology::init(std::size_t dim)
 {
-  // Clear old data if any
-  clear();
-
   // Initialize number of mesh entities
   _num_entities = std::vector<std::int32_t>(dim + 1, 0);
   _global_num_entities = std::vector<std::int64_t>(dim + 1, 0);
@@ -162,22 +148,6 @@ void MeshTopology::init_global_indices(std::size_t dim, std::int64_t size)
 {
   dolfin_assert(dim < _global_indices.size());
   _global_indices[dim] = std::vector<std::int64_t>(size, -1);
-}
-//-----------------------------------------------------------------------------
-dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0,
-                                                    std::size_t d1)
-{
-  dolfin_assert(d0 < _connectivity.size());
-  dolfin_assert(d1 < _connectivity[d0].size());
-  return _connectivity[d0][d1];
-}
-//-----------------------------------------------------------------------------
-const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0,
-                                                          std::size_t d1) const
-{
-  dolfin_assert(d0 < _connectivity.size());
-  dolfin_assert(d1 < _connectivity[d0].size());
-  return _connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<unsigned int>>&

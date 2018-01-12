@@ -26,18 +26,16 @@ import numpy
 def test_triangle_mesh():
 
     # Create mesh object and open editor
-    mesh = Mesh()
+    mesh = Mesh(MPI.comm_world)
     editor = MeshEditor()
-    editor.open(mesh, "triangle", 2, 2)
-    editor.init_vertices(3)  # test both versions of interface
+    editor.open(mesh, CellType.Type.triangle, 2, 2)
     editor.init_vertices_global(3, 3)
-    editor.init_cells(1)    # test both versions of interface
     editor.init_cells_global(1, 1)
 
     # Add vertices
-    editor.add_vertex(0, numpy.array([0.0, 0.0], dtype='float'))
-    editor.add_vertex(1, numpy.array([1.0, 0.0], dtype='float'))
-    editor.add_vertex(2, numpy.array([0.0, 1.0], dtype='float'))
+    editor.add_vertex(0, Point([0.0, 0.0]))
+    editor.add_vertex(1, Point([1.0, 0.0]))
+    editor.add_vertex(2, Point([0.0, 1.0]))
 
     # Add cell
     editor.add_cell(0, numpy.array([0, 1, 2], dtype='uint'))

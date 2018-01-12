@@ -24,15 +24,12 @@
 #ifndef __EDGE_H
 #define __EDGE_H
 
-#include <memory>
-
-#include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
-#include "MeshFunction.h"
 
 namespace dolfin
 {
+  class Mesh;
 
   /// An Edge is a _MeshEntity_ of topological dimension 1.
 
@@ -93,29 +90,6 @@ namespace dolfin
 
   /// An EdgeIterator is a _MeshEntityIterator_ of topological dimension 1.
   typedef MeshEntityIteratorBase<Edge> EdgeIterator;
-
-  /// An EdgeFunction is a _MeshFunction_ of topological dimension 1.
-  template <typename T> class EdgeFunction : public MeshFunction<T>
-  {
-  public:
-
-    /// Constructor on Mesh
-    EdgeFunction(std::shared_ptr<const Mesh> mesh)
-      : MeshFunction<T>(mesh, 1) {
-        deprecation("EdgeFunction<T>(mesh)",
-                    "2017.2.0",
-                    "Use MeshFunction<T>(mesh, 1)");
-      }
-
-    /// Constructor on Mesh and value
-    EdgeFunction(std::shared_ptr<const Mesh> mesh, const T& value)
-      : MeshFunction<T>(mesh, 1, value) {
-        deprecation("EdgeFunction<T>(mesh, value)",
-                    "2017.2.0",
-                    "Use MeshFunction<T>(mesh, 1, value)");
-      }
-
-  };
 
 }
 

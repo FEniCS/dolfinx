@@ -22,23 +22,18 @@
 // Modified by Martin Alnæs, 2008.
 // Modified by Fredrik Valdmanis, 2011.
 
-#ifndef __DOLFIN_PETSC_VECTOR_H
-#define __DOLFIN_PETSC_VECTOR_H
+#pragma once
 
 #ifdef HAS_PETSC
 
 #include <array>
 #include <cstdint>
-#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
-#include <utility>
 
 #include <petscsys.h>
 #include <petscvec.h>
 
-#include <dolfin/log/log.h>
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
 #include "PETScObject.h"
@@ -46,8 +41,6 @@
 
 namespace dolfin
 {
-
-  class SparsityPattern;
 
   /// A simple vector class based on PETSc.
   ///
@@ -76,199 +69,149 @@ namespace dolfin
     /// Destructor
     virtual ~PETScVector();
 
-    //--- Implementation of the GenericTensor interface ---
-
-    /// Set all entries to zero and keep any sparse structure
-    virtual void zero();
-
-    /// Finalize assembly of tensor
-    virtual void apply();
-
-    /// Return MPI communicator
-    virtual MPI_Comm mpi_comm() const;
-
-    /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose) const;
-
-    //--- Implementation of the PETScVector interface ---
-
     /// Return copy of vector
-    virtual std::shared_ptr<PETScVector> copy() const;
-
-    std::size_t size(std::size_t dim) const
-    { return this->size(); }
-
-     /// Return local ownership range
-    std::pair<std::int64_t, std::int64_t> local_range(std::size_t dim) const
-    { return this->local_range(); }
-
-    /// Set block of values using global indices
-    void set(const double* block, const dolfin::la_index_t* num_rows,
-                     const dolfin::la_index_t * const * rows)
-    { this->set(block, num_rows[0], rows[0]); }
-
-    /// Set block of values using local indices
-    void set_local(const double* block,
-                           const dolfin::la_index_t* num_rows,
-                           const dolfin::la_index_t * const * rows)
-    { this->set_local(block, num_rows[0], rows[0]); }
-
-    /// Add block of values using global indices
-    virtual void add(const double* block, const dolfin::la_index_t* num_rows,
-                     const dolfin::la_index_t * const * rows)
-    { add(block, num_rows[0], rows[0]); }
-
-    /// Add block of values using local indices
-    virtual void add_local(const double* block,
-                           const dolfin::la_index_t* num_rows,
-                           const dolfin::la_index_t * const * rows)
-    { add_local(block, num_rows[0], rows[0]); }
-
-    /// Add block of values using global indices
-    virtual void
-      add(const double* block,
-          const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
-    { add(block, rows[0].size(), rows[0].data()); }
-
-    /// Add block of values using local indices
-    virtual void
-      add_local(const double* block,
-                const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
-    { add_local(block, rows[0].size(), rows[0].data()); }
-
-    std::size_t rank() const
-    { return 1;}
+    std::shared_ptr<PETScVector> copy() const;
 
     /// Initialize vector to global size N
-    virtual void init(std::size_t N);
+    void init(std::size_t N);
 
     /// Initialize vector with given ownership range
-    virtual void init(std::array<std::int64_t, 2> range);
+    void init(std::array<std::int64_t, 2> range);
 
     /// Initialize vector with given ownership range and with ghost
     /// values
-    virtual void init(std::array<std::int64_t, 2> range,
+    void init(std::array<std::int64_t, 2> range,
                       const std::vector<la_index_t>& local_to_global_map,
                       const std::vector<la_index_t>& ghost_indices,
                       int block_size);
 
-    /// Return true if vector is empty
-    virtual bool empty() const;
-
     /// Return size of vector
-    virtual std::size_t size() const;
+    std::int64_t size() const;
 
     /// Return local size of vector
-    virtual std::size_t local_size() const;
+    std::size_t local_size() const;
 
     /// Return ownership range of a vector
-    virtual std::pair<std::int64_t, std::int64_t> local_range() const;
+    std::array<std::int64_t, 2> local_range() const;
+
+    /// Set all entries to zero and keep any sparse structure
+    void zero();
+
+    /// Finalize assembly of tensor
+    void apply();
+
+    /// Return MPI communicator
+    MPI_Comm mpi_comm() const;
+
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose) const;
+
+    /// Return true if vector is empty
+    bool empty() const;
 
     /// Determine whether global vector index is owned by this process
-    virtual bool owns_index(std::size_t i) const;
+    bool owns_index(std::size_t i) const;
 
     /// Get block of values using global indices (all values must be
     /// owned by local process, ghosts cannot be accessed)
-    virtual void get(double* block, std::size_t m,
-                     const dolfin::la_index_t* rows) const;
+    void get(double* block, std::size_t m,
+             const dolfin::la_index_t* rows) const;
 
     /// Get block of values using local indices
-    virtual void get_local(double* block, std::size_t m,
-                           const dolfin::la_index_t* rows) const;
+    void get_local(double* block, std::size_t m,
+                   const dolfin::la_index_t* rows) const;
 
     /// Set block of values using global indices
-    virtual void set(const double* block, std::size_t m,
-                     const dolfin::la_index_t* rows);
+    void set(const double* block, std::size_t m,
+             const dolfin::la_index_t* rows);
 
     /// Set block of values using local indices
-    virtual void set_local(const double* block, std::size_t m,
-                           const dolfin::la_index_t* rows);
+    void set_local(const double* block, std::size_t m,
+                   const dolfin::la_index_t* rows);
 
     /// Add block of values using global indices
-    virtual void add(const double* block, std::size_t m,
-                     const dolfin::la_index_t* rows);
+    void add(const double* block, std::size_t m,
+             const dolfin::la_index_t* rows);
 
     /// Add block of values using local indices
-    virtual void add_local(const double* block, std::size_t m,
-                           const dolfin::la_index_t* rows);
+    void add_local(const double* block, std::size_t m,
+                   const dolfin::la_index_t* rows);
 
     /// Get all values on local process
-    virtual void get_local(std::vector<double>& values) const;
+    void get_local(std::vector<double>& values) const;
 
     /// Set all values on local process
-    virtual void set_local(const std::vector<double>& values);
+    void set_local(const std::vector<double>& values);
 
     /// Add values to each entry on local process
-    virtual void add_local(const std::vector<double>& values);
+    void add_local(const std::vector<double>& values);
 
     /// Gather entries (given by global indices) into local
-    /// (MPI_COMM_SELF) vector x. Provided x must be empty
-    /// or of correct dimension (same as provided indices).
-    /// This operation is collective
-    virtual void gather(PETScVector& y,
-                        const std::vector<dolfin::la_index_t>& indices) const;
+    /// (MPI_COMM_SELF) vector x. Provided x must be empty or of
+    /// correct dimension (same as provided indices).  This operation
+    /// is collective.
+    void gather(PETScVector& y,
+                const std::vector<dolfin::la_index_t>& indices) const;
 
-    /// Gather entries (given by global indices) into x.
-    /// This operation is collective
-    virtual void gather(std::vector<double>& x,
-                        const std::vector<dolfin::la_index_t>& indices) const;
+    /// Gather entries (given by global indices) into x.  This
+    /// operation is collective
+    void gather(std::vector<double>& x,
+                const std::vector<dolfin::la_index_t>& indices) const;
 
     /// Gather all entries into x on process 0.
     /// This operation is collective
-    virtual void gather_on_zero(std::vector<double>& x) const;
+    void gather_on_zero(std::vector<double>& x) const;
 
     /// Add multiple of given vector (AXPY operation)
-    virtual void axpy(double a, const PETScVector& x);
+    void axpy(double a, const PETScVector& x);
 
     /// Replace all entries in the vector by their absolute values
-    virtual void abs();
+    void abs();
 
     /// Return dot product with given vector
-    virtual double dot(const PETScVector& v) const;
+    double dot(const PETScVector& v) const;
 
     /// Return norm of vector
-    virtual double norm(std::string norm_type) const;
+    double norm(std::string norm_type) const;
 
     /// Return minimum value of vector
-    virtual double min() const;
+    double min() const;
 
     /// Return maximum value of vector
-    virtual double max() const;
+    double max() const;
 
     /// Return sum of values of vector
-    virtual double sum() const;
+    double sum() const;
 
     /// Multiply vector by given number
-    virtual const PETScVector& operator*= (double a);
+    const PETScVector& operator*= (double a);
 
     /// Multiply vector by another vector pointwise
-    virtual const PETScVector& operator*= (const PETScVector& x);
+    const PETScVector& operator*= (const PETScVector& x);
 
     /// Divide vector by given number
-    virtual const PETScVector& operator/= (double a);
+    const PETScVector& operator/= (double a);
 
     /// Add given vector
-    virtual const PETScVector& operator+= (const PETScVector& x);
+    const PETScVector& operator+= (const PETScVector& x);
 
     /// Add number to all components of a vector
-    virtual const PETScVector& operator+= (double a);
+    const PETScVector& operator+= (double a);
 
     /// Subtract given vector
-    virtual const PETScVector& operator-= (const PETScVector& x);
+    const PETScVector& operator-= (const PETScVector& x);
 
     /// Subtract number from all components of a vector
-    virtual const PETScVector& operator-= (double a);
+    const PETScVector& operator-= (double a);
 
     /// Assignment operator
-    virtual const PETScVector& operator= (const PETScVector& x);
+    const PETScVector& operator= (const PETScVector& x);
 
     /// Assignment operator
-    virtual const PETScVector& operator= (double a);
+    const PETScVector& operator= (double a);
 
     /// Update values shared from remote processes
-    virtual void update_ghost_values();
-
-    //--- Special PETSc functions ---
+    void update_ghost_values();
 
     /// Sets the prefix used by PETSc when searching the options
     /// database
@@ -297,7 +240,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif

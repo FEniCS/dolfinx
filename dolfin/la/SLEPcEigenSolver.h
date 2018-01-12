@@ -135,7 +135,7 @@ namespace dolfin
     void solve();
 
     /// Compute the n first eigenpairs of the matrix A (solve Ax = \lambda x)
-    void solve(std::size_t n);
+    void solve(std::int64_t n);
 
     /// Get ith eigenvalue
     void get_eigenvalue(double& lr, double& lc, std::size_t i) const;

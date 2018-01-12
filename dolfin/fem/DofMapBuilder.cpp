@@ -195,9 +195,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
     dofmap._index_map->init(num_owned_nodes, bs);
 
     // Sanity check
-    dolfin_assert(MPI::sum(mesh.mpi_comm(),
-       (std::size_t) bs*dofmap._index_map->size(IndexMap::MapSize::OWNED))
-                  == dofmap._global_dimension);
+    dolfin_assert(MPI::sum(mesh.mpi_comm(), bs*dofmap._index_map->size(IndexMap::MapSize::OWNED)) == (std::size_t) dofmap._global_dimension);
 
     // Compute node re-ordering for process index locality and spatial
     // locality within a process, including

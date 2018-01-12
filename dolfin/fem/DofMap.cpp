@@ -113,7 +113,7 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
 
   // Build map from collapsed dof index to original dof index
   collapsed_map.clear();
-  for (std::size_t i = 0; i < mesh.num_cells(); ++i)
+  for (std::int64_t i = 0; i < mesh.num_cells(); ++i)
   {
     auto view_cell_dofs = dofmap_view.cell_dofs(i);
     auto cell_dofs = this->cell_dofs(i);
@@ -145,7 +145,7 @@ DofMap::~DofMap()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMap::global_dimension() const
+std::int64_t DofMap::global_dimension() const
 {
   return _global_dimension;
 }
@@ -179,11 +179,11 @@ std::size_t DofMap::num_facet_dofs() const
   return _ufc_dofmap->num_facet_dofs();
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> DofMap::ownership_range() const
+std::array<std::int64_t, 2> DofMap::ownership_range() const
 {
   auto block_range = _index_map->local_range();
-  std::size_t bs = _index_map->block_size();
-  return std::make_pair(bs*block_range[0], bs*block_range[1]);
+  std::int64_t bs = _index_map->block_size();
+  return {{bs*block_range[0], bs*block_range[1]}};
 }
 //-----------------------------------------------------------------------------
 const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const

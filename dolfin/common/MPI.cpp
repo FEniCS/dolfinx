@@ -197,19 +197,19 @@ std::size_t dolfin::MPI::global_offset(const MPI_Comm comm,
 #endif
 }
 //-----------------------------------------------------------------------------
-std::pair<std::int64_t, std::int64_t>
+std::array<std::int64_t, 2>
 dolfin::MPI::local_range(const MPI_Comm comm, std::int64_t N)
 {
   return local_range(comm, rank(comm), N);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::int64_t, std::int64_t>
+std::array<std::int64_t, 2>
 dolfin::MPI::local_range(const MPI_Comm comm, int process, std::int64_t N)
 {
   return compute_local_range(process, N, size(comm));
 }
 //-----------------------------------------------------------------------------
-std::pair<std::int64_t, std::int64_t>
+std::array<std::int64_t, 2>
 dolfin::MPI::compute_local_range(int process, std::int64_t N, int size)
 {
   dolfin_assert(process >= 0);
@@ -222,9 +222,9 @@ dolfin::MPI::compute_local_range(int process, std::int64_t N, int size)
 
   // Compute local range
   if (process < r)
-    return {process*(n + 1), process*(n + 1) + n + 1};
+    return {{process*(n + 1), process*(n + 1) + n + 1}};
   else
-    return {process*n + r,  process*n + r + n};
+    return {{process*n + r,  process*n + r + n}};
 }
 //-----------------------------------------------------------------------------
 unsigned int dolfin::MPI::index_owner(const MPI_Comm comm,
@@ -300,17 +300,17 @@ template<>
                  op);
 
   // Construct dvalues map from obtained data
-  std::map<std::pair<std::string, std::string>, double> dvalues_all;
-  std::map<std::pair<std::string, std::string>, double>::iterator it;
-  std::pair<std::string, std::string> key;
-  key.first.reserve(128);
-  key.second.reserve(128);
+  std::map<std::array<std::string, 2>, double> dvalues_all;
+  std::map<std::array<std::string, 2>, double>::iterator it;
+  std::array<std::string, 2> key;
+  key[0].reserve(128);
+  key[1].reserve(128);
   double* values_ptr = values_all.data();
   for (unsigned int i = 0; i != MPI::size(comm); ++i)
   {
     std::stringstream keys_stream(keys_all[i]);
-    while (std::getline(keys_stream, key.first, '\0'),
-           std::getline(keys_stream, key.second, '\0'))
+    while (std::getline(keys_stream, key[0], '\0'),
+           std::getline(keys_stream, key[1], '\0'))
     {
       it = dvalues_all.find(key);
       if (it != dvalues_all.end())
@@ -332,7 +332,7 @@ template<>
   // Construct table to return
   Table table_all(new_title);
   for (auto& it : dvalues_all)
-    table_all(it.first.first, it.first.second) = it.second;
+    table_all(it.first[0], it.first[1]) = it.second;
 
   return table_all;
 }
