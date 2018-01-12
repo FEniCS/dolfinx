@@ -183,7 +183,7 @@ std::array<std::int64_t, 2> DofMap::ownership_range() const
 {
   auto block_range = _index_map->local_range();
   std::int64_t bs = _index_map->block_size();
-  return {bs*block_range[0], bs*block_range[1]};
+  return {{bs*block_range[0], bs*block_range[1]}};
 }
 //-----------------------------------------------------------------------------
 const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const

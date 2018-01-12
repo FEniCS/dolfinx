@@ -246,7 +246,7 @@ std::array<std::int64_t, 2> PETScVector::local_range() const
   PetscErrorCode ierr = VecGetOwnershipRange(_x, &n0, &n1);
   CHECK_ERROR("VecGetOwnershipRange");
   dolfin_assert(n0 <= n1);
-  return {n0, n1};
+  return {{n0, n1}};
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(std::vector<double>& values) const

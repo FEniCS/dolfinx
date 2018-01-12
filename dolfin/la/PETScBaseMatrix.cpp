@@ -81,7 +81,7 @@ std::array<std::int64_t, 2> PETScBaseMatrix::size() const
   PetscInt m(0), n(0);
   PetscErrorCode ierr = MatGetSize(_matA, &m, &n);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MetGetSize");
-  return {m, n};
+  return {{m, n}};
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> PETScBaseMatrix::local_range(std::size_t dim) const
@@ -98,7 +98,7 @@ std::array<std::int64_t, 2> PETScBaseMatrix::local_range(std::size_t dim) const
   PetscInt m(0), n(0);
   PetscErrorCode ierr = MatGetOwnershipRange(_matA, &m, &n);
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetOwnershipRange");
-  return {m, n};
+  return {{m, n}};
 }
 //-----------------------------------------------------------------------------
 void PETScBaseMatrix::init_vector(PETScVector& z, std::size_t dim) const

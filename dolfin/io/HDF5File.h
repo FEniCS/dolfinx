@@ -264,7 +264,7 @@ namespace dolfin
     // Compute offset
     const std::int64_t offset = MPI::global_offset(_mpi_comm.comm(), num_local_items,
                                                   true);
-    std::array<std::int64_t, 2> range = {offset, offset + num_local_items};
+    std::array<std::int64_t, 2> range = {{offset, offset + num_local_items}};
 
     // Write data to HDF5 file
     const bool chunking = parameters["chunking"];

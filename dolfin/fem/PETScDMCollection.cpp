@@ -92,7 +92,7 @@ namespace
     // Speed up the computations by only visiting (most) dofs once
     const std::int64_t local_size = dofmap.ownership_range()[1]
       - dofmap.ownership_range()[0];
-    RangedIndexSet already_visited({0, local_size});
+    RangedIndexSet already_visited(std::array<std::int64_t, 2>{{0, local_size}});
 
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {

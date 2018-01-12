@@ -222,9 +222,9 @@ dolfin::MPI::compute_local_range(int process, std::int64_t N, int size)
 
   // Compute local range
   if (process < r)
-    return {process*(n + 1), process*(n + 1) + n + 1};
+    return {{process*(n + 1), process*(n + 1) + n + 1}};
   else
-    return {process*n + r,  process*n + r + n};
+    return {{process*n + r,  process*n + r + n}};
 }
 //-----------------------------------------------------------------------------
 unsigned int dolfin::MPI::index_owner(const MPI_Comm comm,

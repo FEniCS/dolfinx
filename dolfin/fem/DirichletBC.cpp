@@ -586,7 +586,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   mesh.init(mesh.topology().dim() - 1);
 
   // Speed up the computations by only visiting (most) dofs once
-  RangedIndexSet already_visited(dofmap.is_view() ? std::array<std::int64_t, 2>{0, 0} : dofmap.ownership_range());
+  RangedIndexSet already_visited(dofmap.is_view() ? std::array<std::int64_t, 2>{{0, 0}} : dofmap.ownership_range());
 
   const std::size_t D = mesh.topology().dim();
 
@@ -699,7 +699,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 
   // Speed up the computations by only visiting (most) dofs once
   RangedIndexSet already_visited(dofmap.is_view()
-                                 ? std::array<std::int64_t, 2>{0, 0}
+                                 ? std::array<std::int64_t, 2>{{0, 0}}
                                  : dofmap.ownership_range());
 
   // Allocate space using cached size

@@ -1046,13 +1046,13 @@ void HDF5File::read(Function& u, const std::string name)
   // Overlap reads of DOF indices, to get full range on each process
   std::vector<std::int64_t> x_cell_dofs;
   HDF5Interface::read_dataset(_hdf5_file_id, x_cell_dofs_dataset_name,
-                              {cell_range[0], cell_range[1] + 1},
+                              {{cell_range[0], cell_range[1] + 1}},
                               x_cell_dofs);
 
   // Read cell-DOF maps
   std::vector<dolfin::la_index_t> input_cell_dofs;
   HDF5Interface::read_dataset(_hdf5_file_id, cell_dofs_dataset_name,
-                              {x_cell_dofs.front(), x_cell_dofs.back()},
+                              {{x_cell_dofs.front(), x_cell_dofs.back()}},
                               input_cell_dofs);
 
   PETScVector& x = *u.vector();
@@ -1489,7 +1489,7 @@ void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
   if (values_shape[0] < max_data_one)
   {
     // read on all processes
-    const std::array<std::int64_t, 2> range = {0, values_shape[0]};
+    const std::array<std::int64_t, 2> range = {{0, values_shape[0]}};
     const std::size_t local_size = range[1] - range[0];
 
     std::vector<T> values_data;
@@ -1782,7 +1782,7 @@ void HDF5File::read(Mesh& input_mesh,
   {
     cell_partitions.push_back(num_global_cells);
     const std::size_t proc = _mpi_comm.rank();
-    cell_range = {cell_partitions[proc], cell_partitions[proc + 1]};
+    cell_range = {{cell_partitions[proc], cell_partitions[proc + 1]}};
 
     // Restore partitioning if requested
     if (use_partition_from_file)

@@ -41,7 +41,7 @@ namespace dolfin
   public:
 
     /// Create a ranged set with range given as a (lower, upper) pair
-    RangedIndexSet(std::array<std::int64_t, 2> range) : _range(range),
+    explicit RangedIndexSet(std::array<std::int64_t, 2> range) : _range(range),
       _is_set(range[1] - range[0], false) {}
 
     /// Return true if a given index is within range, i.e., if it can

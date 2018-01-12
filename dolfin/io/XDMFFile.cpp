@@ -1502,13 +1502,13 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
   // Read number of dofs per cell
   std::vector<std::int64_t> x_cell_dofs
     = get_dataset<std::int64_t>(_mpi_comm.comm(), x_cell_dofs_dataitem, parent_path,
-                               {cell_range[0], cell_range[1] + 1});
+      {{cell_range[0], cell_range[1] + 1}});
 
   // Read cell dofmaps
   std::vector<dolfin::la_index_t> cell_dofs
     = get_dataset<dolfin::la_index_t>(_mpi_comm.comm(), cell_dofs_dataitem,
                                     parent_path,
-                                      {x_cell_dofs.front(), x_cell_dofs.back()});
+      {{x_cell_dofs.front(), x_cell_dofs.back()}});
 
   const std::vector<std::int64_t> vector_shape
     = get_dataset_shape(vector_dataitem);
@@ -1916,7 +1916,7 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
       local_shape0 /= shape[i];
     }
     const std::int64_t offset = MPI::global_offset(comm, local_shape0, true);
-    const std::array<std::int64_t, 2> local_range = {offset, offset + local_shape0};
+    const std::array<std::int64_t, 2> local_range = {{offset, offset + local_shape0}};
 
     const bool use_mpi_io = (MPI::size(comm) > 1);
     HDF5Interface::write_dataset(h5_id, h5_path, x, local_range, shape, use_mpi_io,
