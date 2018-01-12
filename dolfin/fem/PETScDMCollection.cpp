@@ -90,8 +90,8 @@ namespace
     std::vector<double> coors(gdim);
 
     // Speed up the computations by only visiting (most) dofs once
-    const std::size_t local_size = dofmap.ownership_range().second
-      - dofmap.ownership_range().first;
+    const std::int64_t local_size = dofmap.ownership_range()[1]
+      - dofmap.ownership_range()[0];
     RangedIndexSet already_visited({0, local_size});
 
     for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -108,7 +108,7 @@ namespace
       // Map dofs into coords_to_dofs
       for (Eigen::Index i = 0; i < dofs.size(); ++i)
       {
-        const std::size_t dof = dofs[i];
+        const std::int64_t dof = dofs[i];
         if (dof < local_size)
         {
           // Skip already checked dofs
@@ -539,8 +539,8 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix
 
   // Communicate off-process columns nnz, and flatten to get nnz per
   // row we also keep track of the ownership range
-  std::size_t mbegin = finemap->ownership_range().first;
-  std::size_t mend = finemap->ownership_range().second;
+  std::size_t mbegin = finemap->ownership_range()[0];
+  std::size_t mend = finemap->ownership_range()[1];
   std::vector<dolfin::la_index_t> recv_onnz;
   MPI::all_to_all(mpi_comm, send_onnz, recv_onnz);
 

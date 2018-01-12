@@ -249,17 +249,16 @@ namespace dolfin
 
     /// Return local range for local process, splitting [0, N - 1] into
     /// size() portions of almost equal size
-    static std::pair<std::int64_t, std::int64_t>
-      local_range(MPI_Comm comm, std::int64_t N);
+    static std::array<std::int64_t, 2> local_range(MPI_Comm comm, std::int64_t N);
 
     /// Return local range for given process, splitting [0, N - 1] into
     /// size() portions of almost equal size
-    static std::pair<std::int64_t, std::int64_t>
+    static std::array<std::int64_t, 2>
       local_range(MPI_Comm comm, int process, std::int64_t N);
 
     /// Return local range for given process, splitting [0, N - 1] into
     /// size() portions of almost equal size
-    static std::pair<std::int64_t, std::int64_t>
+    static std::array<std::int64_t, 2>
       compute_local_range(int process, std::int64_t N, int size);
 
     /// Return which process owns index (inverse of local_range)

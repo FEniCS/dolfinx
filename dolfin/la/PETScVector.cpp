@@ -87,7 +87,7 @@ std::shared_ptr<PETScVector> PETScVector::copy() const
 void PETScVector::init(std::size_t N)
 {
   const auto range = dolfin::MPI::local_range(this->mpi_comm(), N);
-  init({{range.first, range.second}}, {}, {}, 1);
+  init(range, {}, {}, 1);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(std::array<std::int64_t, 2> range)
@@ -198,11 +198,62 @@ void PETScVector::init(std::array<std::int64_t, 2> range,
   CHECK_ERROR("ISLocalToGlobalMappingDestroy");
 }
 //-----------------------------------------------------------------------------
+std::int64_t PETScVector::size() const
+{
+  dolfin_assert(_x);
+  PetscErrorCode ierr;
+
+  // Return zero if vector type has not been set (Vec has not been
+  // initialized)
+  VecType vec_type = nullptr;
+  ierr = VecGetType(_x, &vec_type);
+  if (vec_type == nullptr)
+    return 0;
+  CHECK_ERROR("VecGetType");
+
+  PetscInt n = 0;
+  dolfin_assert(_x);
+  ierr = VecGetSize(_x, &n);
+  CHECK_ERROR("VecGetSize");
+
+  return n > 0 ? n : 0;
+}
+//-----------------------------------------------------------------------------
+std::size_t PETScVector::local_size() const
+{
+  dolfin_assert(_x);
+  PetscErrorCode ierr;
+
+  // Return zero if vector type has not been set
+  VecType vec_type = nullptr;
+  ierr = VecGetType(_x, &vec_type);
+  if (vec_type == nullptr)
+    return 0;
+  CHECK_ERROR("VecGetType");
+
+  PetscInt n = 0;
+  ierr = VecGetLocalSize(_x, &n);
+  CHECK_ERROR("VecGetLocalSize");
+
+  return n;
+}
+//-----------------------------------------------------------------------------
+std::array<std::int64_t, 2> PETScVector::local_range() const
+{
+  dolfin_assert(_x);
+
+  PetscInt n0, n1;
+  PetscErrorCode ierr = VecGetOwnershipRange(_x, &n0, &n1);
+  CHECK_ERROR("VecGetOwnershipRange");
+  dolfin_assert(n0 <= n1);
+  return {n0, n1};
+}
+//-----------------------------------------------------------------------------
 void PETScVector::get_local(std::vector<double>& values) const
 {
   dolfin_assert(_x);
   const auto _local_range = local_range();
-  const std::size_t local_size = _local_range.second - _local_range.first;
+  const std::size_t local_size = _local_range[1] - _local_range[0];
   values.resize(local_size);
 
   if (local_size == 0)
@@ -225,7 +276,7 @@ void PETScVector::set_local(const std::vector<double>& values)
 {
   dolfin_assert(_x);
   const auto _local_range = local_range();
-  const std::size_t local_size = _local_range.second - _local_range.first;
+  const std::size_t local_size = _local_range[1] - _local_range[0];
   if (values.size() != local_size)
   {
     dolfin_error("PETScVector.cpp",
@@ -249,7 +300,7 @@ void PETScVector::add_local(const std::vector<double>& values)
 {
   dolfin_assert(_x);
   const auto _local_range = local_range();
-  const std::size_t local_size = _local_range.second - _local_range.first;
+  const std::size_t local_size = _local_range[1] - _local_range[0];
   if (values.size() != local_size)
   {
     dolfin_error("PETScVector.cpp",
@@ -390,62 +441,11 @@ bool PETScVector::empty() const
   return this->size() == 0;
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScVector::size() const
-{
-  dolfin_assert(_x);
-  PetscErrorCode ierr;
-
-  // Return zero if vector type has not been set (Vec has not been
-  // initialized)
-  VecType vec_type = nullptr;
-  ierr = VecGetType(_x, &vec_type);
-  if (vec_type == nullptr)
-    return 0;
-  CHECK_ERROR("VecGetType");
-
-  PetscInt n = 0;
-  dolfin_assert(_x);
-  ierr = VecGetSize(_x, &n);
-  CHECK_ERROR("VecGetSize");
-
-  return n > 0 ? n : 0;
-}
-//-----------------------------------------------------------------------------
-std::size_t PETScVector::local_size() const
-{
-  dolfin_assert(_x);
-  PetscErrorCode ierr;
-
-  // Return zero if vector type has not been set
-  VecType vec_type = nullptr;
-  ierr = VecGetType(_x, &vec_type);
-  if (vec_type == nullptr)
-    return 0;
-  CHECK_ERROR("VecGetType");
-
-  PetscInt n = 0;
-  ierr = VecGetLocalSize(_x, &n);
-  CHECK_ERROR("VecGetLocalSize");
-
-  return n;
-}
-//-----------------------------------------------------------------------------
-std::pair<std::int64_t, std::int64_t> PETScVector::local_range() const
-{
-  dolfin_assert(_x);
-
-  PetscInt n0, n1;
-  PetscErrorCode ierr = VecGetOwnershipRange(_x, &n0, &n1);
-  CHECK_ERROR("VecGetOwnershipRange");
-  dolfin_assert(n0 <= n1);
-  return {n0, n1};
-}
-//-----------------------------------------------------------------------------
 bool PETScVector::owns_index(std::size_t i) const
 {
   const auto _local_range = local_range();
   const std::int64_t _i = i;
-  return _i >= _local_range.first && _i < _local_range.second;
+  return _i >= _local_range[0] && _i < _local_range[1];
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const PETScVector& v)
@@ -687,7 +687,7 @@ void PETScVector::gather(PETScVector& y,
   PetscErrorCode ierr;
 
   // Get number of required entries
-  const std::size_t n = indices.size();
+  const std::int64_t n = indices.size();
 
   // Check that passed vector is local
   if (MPI::size(y.mpi_comm()) != 1)

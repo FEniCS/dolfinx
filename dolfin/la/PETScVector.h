@@ -76,7 +76,27 @@ namespace dolfin
     /// Destructor
     virtual ~PETScVector();
 
-    //--- Implementation of the GenericTensor interface ---
+    /// Return copy of vector
+    virtual std::shared_ptr<PETScVector> copy() const;
+
+    /// Initialize vector to global size N
+    virtual void init(std::size_t N);
+
+    /// Initialize vector with given ownership range
+    virtual void init(std::array<std::int64_t, 2> range);
+
+    /// Initialize vector with given ownership range and with ghost
+    /// values
+    virtual void init(std::array<std::int64_t, 2> range,
+                      const std::vector<la_index_t>& local_to_global_map,
+                      const std::vector<la_index_t>& ghost_indices,
+                      int block_size);
+
+    /// Return local size of vector
+    virtual std::size_t local_size() const;
+
+    /// Return ownership range of a vector
+    virtual std::array<std::int64_t, 2> local_range() const;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
@@ -92,15 +112,7 @@ namespace dolfin
 
     //--- Implementation of the PETScVector interface ---
 
-    /// Return copy of vector
-    virtual std::shared_ptr<PETScVector> copy() const;
 
-    std::size_t size(std::size_t dim) const
-    { return this->size(); }
-
-     /// Return local ownership range
-    std::pair<std::int64_t, std::int64_t> local_range(std::size_t dim) const
-    { return this->local_range(); }
 
     /// Set block of values using global indices
     void set(const double* block, const dolfin::la_index_t* num_rows,
@@ -139,30 +151,11 @@ namespace dolfin
     std::size_t rank() const
     { return 1;}
 
-    /// Initialize vector to global size N
-    virtual void init(std::size_t N);
-
-    /// Initialize vector with given ownership range
-    virtual void init(std::array<std::int64_t, 2> range);
-
-    /// Initialize vector with given ownership range and with ghost
-    /// values
-    virtual void init(std::array<std::int64_t, 2> range,
-                      const std::vector<la_index_t>& local_to_global_map,
-                      const std::vector<la_index_t>& ghost_indices,
-                      int block_size);
-
     /// Return true if vector is empty
     virtual bool empty() const;
 
     /// Return size of vector
-    virtual std::size_t size() const;
-
-    /// Return local size of vector
-    virtual std::size_t local_size() const;
-
-    /// Return ownership range of a vector
-    virtual std::pair<std::int64_t, std::int64_t> local_range() const;
+    virtual std::int64_t size() const;
 
     /// Determine whether global vector index is owned by this process
     virtual bool owns_index(std::size_t i) const;

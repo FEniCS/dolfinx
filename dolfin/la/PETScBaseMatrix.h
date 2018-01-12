@@ -61,14 +61,14 @@ namespace dolfin
     ~PETScBaseMatrix();
 
     /// Return number of rows (dim = 0) or columns (dim = 1)
-    std::size_t size(std::size_t dim) const;
+    std::int64_t size(std::size_t dim) const;
 
     /// Return number of rows and columns (num_rows, num_cols). PETSc
     /// returns -1 if size has not been set.
-    std::pair<std::int64_t, std::int64_t> size() const;
+    std::array<std::int64_t, 2> size() const;
 
     /// Return local range along dimension dim
-    std::pair<std::int64_t, std::int64_t> local_range(std::size_t dim) const;
+    std::array<std::int64_t, 2> local_range(std::size_t dim) const;
 
     /// Initialize vector to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are

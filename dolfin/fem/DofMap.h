@@ -107,9 +107,9 @@ namespace dolfin
     /// space. Use index_map()->size() to get the local dimension.
     ///
     /// *Returns*
-    ///     std::size_t
+    ///     std::int64_t
     ///         The dimension of the global finite element function space.
-    std::size_t global_dimension() const;
+    std::int64_t global_dimension() const;
 
     /// Return the dimension of the local finite element function
     /// space on a cell
@@ -158,9 +158,9 @@ namespace dolfin
     /// Return the ownership range (dofs in this range are owned by
     /// this process)
     ///
-    /// @return   std::pair<std::size_t, std::size_t>
+    /// @return   std::array<std::size_t, 2>
     ///         The ownership range.
-    std::pair<std::size_t, std::size_t> ownership_range() const;
+    std::array<std::int64_t, 2> ownership_range() const;
 
     /// Return map from nonlocal dofs that appear in local dof map to
     /// owning process
@@ -427,7 +427,7 @@ namespace dolfin
 
     // Global dimension. Note that this may differ from the global
     // dimension of the UFC dofmap if the function space is periodic.
-    std::size_t _global_dimension;
+    std::int64_t _global_dimension;
 
     // UFC dof map offset
     std::size_t _ufc_offset;

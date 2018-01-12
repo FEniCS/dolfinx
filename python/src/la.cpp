@@ -613,7 +613,7 @@ namespace dolfin_wrappers
     // dolfin::PETScBaseMatrix
     py::class_<dolfin::PETScBaseMatrix, std::shared_ptr<dolfin::PETScBaseMatrix>,
                dolfin::PETScObject, dolfin::Variable>(m, "PETScBaseMatrix")
-      .def("size", (std::size_t (dolfin::PETScBaseMatrix::*)(std::size_t) const) &dolfin::PETScBaseMatrix::size)
+      .def("size", (std::int64_t (dolfin::PETScBaseMatrix::*)(std::size_t) const) &dolfin::PETScBaseMatrix::size)
       .def("mat", &dolfin::PETScBaseMatrix::mat, "Return underlying PETSc Mat object");
 
     // dolfin::PETScMatrix
@@ -693,7 +693,7 @@ namespace dolfin_wrappers
       .def("set_initial_space", &dolfin::SLEPcEigenSolver::set_initial_space)
       .def("solve", (void (dolfin::SLEPcEigenSolver::*)())
            &dolfin::SLEPcEigenSolver::solve)
-      .def("solve", (void (dolfin::SLEPcEigenSolver::*)(std::size_t))
+      .def("solve", (void (dolfin::SLEPcEigenSolver::*)(std::int64_t))
            &dolfin::SLEPcEigenSolver::solve)
       .def("get_eigenvalue", [](dolfin::SLEPcEigenSolver& self, std::size_t i)
            {

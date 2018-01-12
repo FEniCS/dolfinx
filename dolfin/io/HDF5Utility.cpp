@@ -45,8 +45,8 @@ void HDF5Utility::map_gdof_to_cell(
   const MPI_Comm mpi_comm,
   const std::vector<std::size_t>& input_cells,
   const std::vector<dolfin::la_index_t>& input_cell_dofs,
-  const std::vector<std::size_t>& x_cell_dofs,
-  const std::pair<dolfin::la_index_t, dolfin::la_index_t> vector_range,
+  const std::vector<std::int64_t>& x_cell_dofs,
+  const std::array<std::int64_t, 2> vector_range,
   std::vector<std::size_t>& global_cells,
   std::vector<std::size_t>& remote_local_dofi)
 {
@@ -56,7 +56,7 @@ void HDF5Utility::map_gdof_to_cell(
 
   const std::size_t num_processes = MPI::size(mpi_comm);
   std::vector<dolfin::la_index_t> all_vec_range;
-  std::vector<dolfin::la_index_t> vector_range_second(1, vector_range.second);
+  std::vector<dolfin::la_index_t> vector_range_second(1, vector_range[1]);
   MPI::gather(mpi_comm, vector_range_second, all_vec_range);
   MPI::broadcast(mpi_comm, all_vec_range);
 
@@ -65,7 +65,7 @@ void HDF5Utility::map_gdof_to_cell(
   const std::size_t offset = x_cell_dofs[0];
   for (std::size_t i = 0; i < x_cell_dofs.size() - 1; ++i)
   {
-    for (std::size_t j = x_cell_dofs[i] ; j != x_cell_dofs[i + 1]; ++j)
+    for (std::int64_t j = x_cell_dofs[i]; j != x_cell_dofs[i + 1]; ++j)
     {
       const unsigned char local_dof_i = j - x_cell_dofs[i];
       const dolfin::la_index_t global_dof = input_cell_dofs[j - offset];
@@ -99,8 +99,8 @@ void HDF5Utility::map_gdof_to_cell(
   // There may be some overwriting due to receiving an
   // index for the same DOF from multiple cells on different processes
 
-  global_cells.resize(vector_range.second - vector_range.first);
-  remote_local_dofi.resize(vector_range.second - vector_range.first);
+  global_cells.resize(vector_range[1] - vector_range[0]);
+  remote_local_dofi.resize(vector_range[1] - vector_range[0]);
   for (std::size_t i = 0; i < num_processes; ++i)
   {
     std::vector<dolfin::la_index_t>& rdofs = receive_dofs[i];
@@ -108,10 +108,10 @@ void HDF5Utility::map_gdof_to_cell(
     dolfin_assert(rcelldofs.size() == 2*rdofs.size());
     for (std::size_t j = 0; j < rdofs.size(); ++j)
     {
-      dolfin_assert(rdofs[j] >= vector_range.first);
-      dolfin_assert(rdofs[j] < vector_range.second);
-      global_cells[rdofs[j] - vector_range.first] = rcelldofs[2*j];
-      remote_local_dofi[rdofs[j] - vector_range.first] = rcelldofs[2*j + 1];
+      dolfin_assert(rdofs[j] >= vector_range[0]);
+      dolfin_assert(rdofs[j] < vector_range[1]);
+      global_cells[rdofs[j] - vector_range[0]] = rcelldofs[2*j];
+      remote_local_dofi[rdofs[j] - vector_range[0]] = rcelldofs[2*j + 1];
     }
   }
 }
@@ -120,13 +120,13 @@ void HDF5Utility::get_global_dof(
   const MPI_Comm mpi_comm,
   const std::vector<std::pair<std::size_t, std::size_t>>& cell_ownership,
   const std::vector<std::size_t>& remote_local_dofi,
-  const std::pair<std::size_t, std::size_t> vector_range,
+  const std::array<std::int64_t, 2> vector_range,
   const GenericDofMap& dofmap,
   std::vector<dolfin::la_index_t>& global_dof)
 {
   const std::size_t num_processes = MPI::size(mpi_comm);
   std::vector<std::vector<std::size_t>> send_cell_dofs(num_processes);
-  const std::size_t n_vector_vals = vector_range.second - vector_range.first;
+  const std::size_t n_vector_vals = vector_range[1] - vector_range[0];
   global_dof.resize(n_vector_vals);
 
   for (std::size_t i = 0; i != n_vector_vals; ++i)
@@ -191,7 +191,7 @@ std::vector<std::pair<std::size_t, std::size_t>>
   const std::size_t num_processes = MPI::size(mpi_comm);
   const std::size_t num_global_cells
     = mesh.num_entities_global(mesh.topology().dim());
-  const std::pair<std::size_t, std::size_t> cell_range
+  const std::array<std::int64_t, 2> cell_range
     = MPI::local_range(mpi_comm, num_global_cells);
 
   // Find the ownership and local index for
@@ -201,11 +201,10 @@ std::vector<std::pair<std::size_t, std::size_t>>
 
   // Requested cells (given in "cells" argument) are now known to be
   // on the "matching" process given by MPI::index_owner
-  std::vector<std::vector<std::size_t>> receive_input_cells(num_processes);
+  std::vector<std::vector<std::int64_t>> receive_input_cells(num_processes);
   {
-    std::vector<std::vector<std::size_t>> send_input_cells(num_processes);
-    for (std::vector<std::size_t>::const_iterator c = cells.begin();
-         c != cells.end(); ++c)
+    std::vector<std::vector<std::int64_t>> send_input_cells(num_processes);
+    for (auto c = cells.begin(); c != cells.end(); ++c)
     {
       const std::size_t dest = MPI::index_owner(mpi_comm, *c, num_global_cells);
       send_input_cells[dest].push_back(*c);
@@ -214,22 +213,21 @@ std::vector<std::pair<std::size_t, std::size_t>>
   }
 
   // Reflect back to sending process with cell owner and local index
-  std::vector<std::vector<std::size_t>> send_cells(num_processes);
+  std::vector<std::vector<std::int64_t>> send_cells(num_processes);
   for (std::size_t i = 0; i != num_processes; ++i)
   {
-    const std::vector<std::size_t>& rcells = receive_input_cells[i];
+    const std::vector<std::int64_t>& rcells = receive_input_cells[i];
     for (std::size_t j = 0; j < rcells.size(); ++j)
     {
-      dolfin_assert(rcells[j] >= cell_range.first);
-      dolfin_assert(rcells[j] < cell_range.second);
-      std::pair<std::size_t, std::size_t>& loc
-        = cell_locations[rcells[j] - cell_range.first];
+      dolfin_assert(rcells[j] >= cell_range[0]);
+      dolfin_assert(rcells[j] < cell_range[1]);
+      std::pair<std::size_t, std::size_t>& loc = cell_locations[rcells[j] - cell_range[0]];
       send_cells[i].push_back(loc.first);
       send_cells[i].push_back(loc.second);
     }
   }
 
-  std::vector<std::vector<std::size_t>> receive_cells(num_processes);
+  std::vector<std::vector<std::int64_t>> receive_cells(num_processes);
   MPI::all_to_all(mpi_comm, send_cells, receive_cells);
 
   std::vector<std::pair<std::size_t, std::size_t>>
@@ -241,7 +239,7 @@ std::vector<std::pair<std::size_t, std::size_t>>
   {
     const std::size_t src = MPI::index_owner(mpi_comm, cells[i],
                                              num_global_cells);
-    const std::vector<std::size_t>& rcell = receive_cells[src];
+    const std::vector<std::int64_t>& rcell = receive_cells[src];
     dolfin_assert(pos[src] < rcell.size()/2);
     output_cell_locations[i].first  = rcell[2*pos[src]];
     output_cell_locations[i].second = rcell[2*pos[src] + 1];
@@ -262,9 +260,8 @@ void HDF5Utility::cell_owners_in_range(std::vector<std::pair<std::size_t,
   const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Communicate global ownership of cells to matching process
-  const std::pair<std::size_t, std::size_t> range
-    = MPI::local_range(mpi_comm, n_global_cells);
-  global_owner.resize(range.second - range.first);
+  const std::array<std::int64_t, 2> range = MPI::local_range(mpi_comm, n_global_cells);
+  global_owner.resize(range[1] - range[0]);
 
   std::vector<std::vector<std::size_t>> send_owned_global(num_processes);
   for (CellIterator mesh_cell(mesh); !mesh_cell.end(); ++mesh_cell)
@@ -280,7 +277,7 @@ void HDF5Utility::cell_owners_in_range(std::vector<std::pair<std::size_t,
   std::vector<std::vector<std::size_t>> owned_global(num_processes);
   MPI::all_to_all(mpi_comm, send_owned_global, owned_global);
 
-  std::size_t count = 0;
+  std::int64_t count = 0;
   // Construct mapping from global_index(partial range held) to owning
   // process and remote local_index
   for (std::vector<std::vector<std::size_t>>::iterator owner
@@ -290,7 +287,7 @@ void HDF5Utility::cell_owners_in_range(std::vector<std::pair<std::size_t,
          r != owner->end(); r += 2)
     {
       const std::size_t proc = owner - owned_global.begin();
-      const std::size_t idx = *r - range.first;
+      const std::size_t idx = *r - range[0];
       global_owner[idx].first = proc;    // owning process
       global_owner[idx].second = *(r+1); // local index on owning process
       count++;
@@ -298,7 +295,7 @@ void HDF5Utility::cell_owners_in_range(std::vector<std::pair<std::size_t,
   }
 
   // All cells in range should be accounted for
-  dolfin_assert(count == range.second - range.first);
+  dolfin_assert(count == range[1] - range[0]);
 }
 //-----------------------------------------------------------------------------
 void HDF5Utility::build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data)
@@ -344,9 +341,9 @@ void HDF5Utility::set_local_vector_values(
   const Mesh& mesh,
   const std::vector<size_t>& cells,
   const std::vector<dolfin::la_index_t>& cell_dofs,
-  const std::vector<std::size_t>& x_cell_dofs,
+  const std::vector<std::int64_t>& x_cell_dofs,
   const std::vector<double>& vector,
-  const std::pair<dolfin::la_index_t, dolfin::la_index_t> input_vector_range,
+  const std::array<std::int64_t, 2> input_vector_range,
   const GenericDofMap& dofmap)
 {
 
@@ -376,8 +373,7 @@ void HDF5Utility::set_local_vector_values(
   const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Shift to dividing things into the vector range of Function Vector
-  const std::pair<dolfin::la_index_t, dolfin::la_index_t>
-      vector_range = x.local_range();
+  const std::array<std::int64_t, 2> vector_range = x.local_range();
 
   std::vector<std::vector<double>> receive_values(num_processes);
   std::vector<std::vector<dolfin::la_index_t>> receive_indices(num_processes);
@@ -385,10 +381,10 @@ void HDF5Utility::set_local_vector_values(
     std::vector<std::vector<double>> send_values(num_processes);
     std::vector<std::vector<dolfin::la_index_t>> send_indices(num_processes);
     const std::size_t
-        n_vector_vals = input_vector_range.second - input_vector_range.first;
+        n_vector_vals = input_vector_range[1] - input_vector_range[0];
     std::vector<dolfin::la_index_t> all_vec_range;
 
-    std::vector<dolfin::la_index_t> vector_range_second(1, vector_range.second);
+    std::vector<dolfin::la_index_t> vector_range_second(1, vector_range[1]);
     MPI::gather(mpi_comm, vector_range_second, all_vec_range);
     MPI::broadcast(mpi_comm, all_vec_range);
 
@@ -407,7 +403,7 @@ void HDF5Utility::set_local_vector_values(
     MPI::all_to_all(mpi_comm, send_indices, receive_indices);
   }
 
-  std::vector<double> vector_values(vector_range.second - vector_range.first);
+  std::vector<double> vector_values(vector_range[1] - vector_range[0]);
   for (std::size_t i = 0; i != num_processes; ++i)
   {
     const std::vector<double> &rval = receive_values[i];
@@ -415,9 +411,9 @@ void HDF5Utility::set_local_vector_values(
     dolfin_assert(rval.size() == rindex.size());
     for (std::size_t j = 0; j != rindex.size(); ++j)
     {
-      dolfin_assert(rindex[j] >= vector_range.first);
-      dolfin_assert(rindex[j] < vector_range.second);
-      vector_values[rindex[j] - vector_range.first] = rval[j];
+      dolfin_assert(rindex[j] >= vector_range[0]);
+      dolfin_assert(rindex[j] < vector_range[1]);
+      vector_values[rindex[j] - vector_range[0]] = rval[j];
     }
   }
 

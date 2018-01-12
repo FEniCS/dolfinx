@@ -183,14 +183,14 @@ void LocalMeshData::broadcast_mesh_data(const MPI_Comm mpi_comm)
     std::vector<std::vector<double>> send_values(num_processes);
     for (std::size_t p = 0; p < num_processes; p++)
     {
-      const std::pair<std::size_t, std::size_t> local_range
+      const std::array<std::int64_t, 2> local_range
         = MPI::local_range(mpi_comm, p, geometry.num_global_vertices);
       log(TRACE, "Sending %d vertices to process %d, range is (%d, %d)",
-          local_range.second - local_range.first, p, local_range.first,
-          local_range.second);
+          local_range[1] - local_range[0], p, local_range[0],
+          local_range[1]);
 
-      send_values[p].reserve(geometry.dim*(local_range.second - local_range.first));
-      for (std::size_t i = local_range.first; i < local_range.second; i++)
+      send_values[p].reserve(geometry.dim*(local_range[1] - local_range[0]));
+      for (std::int64_t i = local_range[0]; i < local_range[1]; i++)
       {
         send_values[p].insert(send_values[p].end(),
                               geometry.vertex_coordinates[i].begin(),
@@ -207,10 +207,10 @@ void LocalMeshData::broadcast_mesh_data(const MPI_Comm mpi_comm)
     std::vector<std::vector<std::int64_t>> send_values(num_processes);
     for (std::size_t p = 0; p < num_processes; p++)
     {
-      const std::pair<std::size_t, std::size_t> local_range
+      const std::array<std::int64_t, 2> local_range
         = MPI::local_range(mpi_comm, p, geometry.num_global_vertices);
-      send_values[p].reserve(local_range.second - local_range.first);
-      for (std::size_t i = local_range.first; i < local_range.second; i++)
+      send_values[p].reserve(local_range[1] - local_range[0]);
+      for (std::int64_t i = local_range[0]; i < local_range[1]; i++)
         send_values[p].push_back(geometry.vertex_indices[i]);
     }
     MPI::scatter(mpi_comm, send_values, geometry.vertex_indices);
@@ -222,13 +222,13 @@ void LocalMeshData::broadcast_mesh_data(const MPI_Comm mpi_comm)
     std::vector<std::vector<std::int64_t>> send_values(num_processes);
     for (std::size_t p = 0; p < num_processes; p++)
     {
-      const std::pair<std::size_t, std::size_t> local_range
+      const std::array<std::int64_t, 2> local_range
         = MPI::local_range(mpi_comm, p, topology.num_global_cells);
       log(TRACE, "Sending %d cells to process %d, range is (%d, %d)",
-          local_range.second - local_range.first, p, local_range.first, local_range.second);
-      const std::size_t range = local_range.second - local_range.first;
+          local_range[1] - local_range[0], p, local_range[0], local_range[1]);
+      const std::size_t range = local_range[1] - local_range[0];
       send_values[p].reserve(range*(topology.num_vertices_per_cell + 1));
-      for (std::size_t i = local_range.first; i < local_range.second; i++)
+      for (std::int64_t i = local_range[0]; i < local_range[1]; i++)
       {
         send_values[p].push_back(topology.global_cell_indices[i]);
         send_values[p].insert(send_values[p].end(),

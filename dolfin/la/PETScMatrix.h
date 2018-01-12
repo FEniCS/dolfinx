@@ -80,11 +80,11 @@ namespace dolfin
     bool empty() const;
 
     /// Return size of given dimension
-    std::size_t size(std::size_t dim) const
+    std::int64_t size(std::size_t dim) const
     { return PETScBaseMatrix::size(dim); }
 
     /// Return local ownership range
-    std::pair<std::int64_t, std::int64_t> local_range(std::size_t dim) const
+    std::array<std::int64_t, 2> local_range(std::size_t dim) const
     { return PETScBaseMatrix::local_range(dim); }
 
     /// Return number of non-zero entries in matrix (collective)

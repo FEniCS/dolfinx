@@ -70,7 +70,7 @@ namespace dolfin
     static void write_dataset(const hid_t file_handle,
                               const std::string dataset_path,
                               const std::vector<T>& data,
-                              const std::pair<std::int64_t, std::int64_t> range,
+                              const std::array<std::int64_t, 2> range,
                               const std::vector<std::int64_t> global_size,
                               bool use_mpio, bool use_chunking);
 
@@ -81,7 +81,7 @@ namespace dolfin
     template <typename T>
     static void read_dataset(const hid_t file_handle,
                              const std::string dataset_path,
-                             const std::pair<std::int64_t, std::int64_t> range,
+                             const std::array<std::int64_t, 2> range,
                              std::vector<T>& data);
 
     /// Check for existence of group in HDF5 file
@@ -233,7 +233,7 @@ namespace dolfin
   HDF5Interface::write_dataset(const hid_t file_handle,
                                const std::string dataset_path,
                                const std::vector<T>& data,
-                               const std::pair<std::int64_t, std::int64_t> range,
+                               const std::array<std::int64_t, 2> range,
                                const std::vector<int64_t> global_size,
                                bool use_mpi_io, bool use_chunking)
   {
@@ -253,11 +253,11 @@ namespace dolfin
 
     // Hyperslab selection parameters
     std::vector<hsize_t> count(global_size.begin(), global_size.end());
-    count[0] = range.second - range.first;
+    count[0] = range[1] - range[0];
 
     // Data offsets
     std::vector<hsize_t> offset(rank, 0);
-    offset[0] = range.first;
+    offset[0] = range[0];
 
     // Dataset dimensions
     const std::vector<hsize_t> dimsf(global_size.begin(), global_size.end());
@@ -358,7 +358,7 @@ namespace dolfin
   inline void
   HDF5Interface::read_dataset(const hid_t file_handle,
                               const std::string dataset_path,
-                              const std::pair<std::int64_t, std::int64_t> range,
+                              const std::array<std::int64_t, 2> range,
                               std::vector<T>& data)
   {
     // Open the dataset
@@ -387,10 +387,10 @@ namespace dolfin
     // Hyperslab selection
     std::vector<hsize_t> offset(rank, 0);
     std::vector<hsize_t> count = shape;
-    if (range.first != -1 and range.second != -1)
+    if (range[0] != -1 and range[1] != -1)
     {
-      offset[0]= range.first;
-      count[0] = range.second - range.first;
+      offset[0]= range[0];
+      count[0] = range[1] - range[0];
     }
     else
       offset[0]= 0;

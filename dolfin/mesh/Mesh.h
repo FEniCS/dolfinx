@@ -159,10 +159,10 @@ namespace dolfin
     /// @param dim (std::size_t)
     ///         Topological dimension.
     ///
-    /// @return std::size_t
+    /// @return std::int64_t
     ///         Global number of entities of topological dimension d.
     ///
-    std::size_t num_entities_global(std::size_t dim) const
+    std::int64_t num_entities_global(std::size_t dim) const
     { return _topology.size_global(dim); }
 
     /// Get mesh topology.

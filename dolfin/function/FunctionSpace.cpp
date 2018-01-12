@@ -113,7 +113,7 @@ std::shared_ptr<const GenericDofMap> FunctionSpace::dofmap() const
   return _dofmap;
 }
 //-----------------------------------------------------------------------------
-std::size_t FunctionSpace::dim() const
+std::int64_t FunctionSpace::dim() const
 {
   dolfin_assert(_dofmap);
   return _dofmap->global_dimension();

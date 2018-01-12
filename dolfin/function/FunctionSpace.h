@@ -154,7 +154,7 @@ namespace dolfin
     /// *Returns*
     ///     std::size_t
     ///         The dimension of the function space.
-    std::size_t dim() const;
+    std::int64_t dim() const;
 
     /// Interpolate function v into function space, returning the
     /// vector of expansion coefficients
