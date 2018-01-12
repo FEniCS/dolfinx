@@ -100,7 +100,7 @@ namespace dolfin
     /// @return std::size_t
     ///         Number of vertices.
     ///
-    std::size_t num_vertices() const
+    std::int64_t num_vertices() const
     { return _topology.size(0); }
 
     /// Get number of edges in mesh.
@@ -108,7 +108,7 @@ namespace dolfin
     /// @return std::size_t
     ///         Number of edges.
     ///
-    std::size_t num_edges() const
+    std::int64_t num_edges() const
     { return _topology.size(1); }
 
     /// Get number of faces in mesh.
@@ -116,7 +116,7 @@ namespace dolfin
     /// @return std::size_t
     ///         Number of faces.
     ///
-    std::size_t num_faces() const
+    std::int64_t num_faces() const
     { return _topology.size(2); }
 
     /// Get number of facets in mesh.
@@ -124,7 +124,7 @@ namespace dolfin
     /// @return std::size_t
     ///         Number of facets.
     ///
-    std::size_t num_facets() const
+    std::int64_t num_facets() const
     { return _topology.size(_topology.dim() - 1); }
 
     /// Get number of cells in mesh.
@@ -132,7 +132,7 @@ namespace dolfin
     /// @return std::size_t
     ///         Number of cells.
     ///
-    std::size_t num_cells() const
+    std::int64_t num_cells() const
     { return _topology.size(_topology.dim()); }
 
     /// Get number of entities of given topological dimension.
@@ -143,7 +143,7 @@ namespace dolfin
     /// @return std::size_t
     ///         Number of entities of topological dimension d.
     ///
-    std::size_t num_entities(std::size_t d) const
+    std::int64_t num_entities(std::size_t d) const
     { return _topology.size(d); }
 
     /// Get cell connectivity.

@@ -38,14 +38,14 @@ void MeshEntity::init(const Mesh& mesh, std::size_t dim, std::size_t index)
   _local_index = index;
 
   // Check index range
-  if (index < _mesh->num_entities(dim))
+  if ((std::int64_t) index < _mesh->num_entities(dim))
     return;
 
   // Initialize mesh entities
   _mesh->init(dim);
 
   // Check index range again
-  if (index < _mesh->num_entities(dim))
+  if ((std::int64_t) index < _mesh->num_entities(dim))
     return;
 
   // Illegal index range

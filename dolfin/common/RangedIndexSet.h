@@ -29,28 +29,20 @@
 namespace dolfin
 {
 
-  /// This class provides an special-purpose data structure for testing if a given
-  /// index within a range is set.
+  /// This class provides an special-purpose data structure for
+  /// testing if a given index within a range is set.
   ///
-  /// The memory requirements are one bit per item in range, since it uses a
-  /// (packed) std::vector<bool> for storage.
+  /// The memory requirements are one bit per item in range, since it
+  /// uses a (packed) std::vector<bool> for storage.
 
   class RangedIndexSet
   {
 
   public:
 
-    /// Create a ranged set with range given as a (lower, upper) pair.
+    /// Create a ranged set with range given as a (lower, upper) pair
     RangedIndexSet(std::array<std::int64_t, 2> range) : _range(range),
-      _is_set(range[1] - range[0])
-    { clear(); }
-
-    /// Create a ranged set with 0 as lower range
-    RangedIndexSet(std::int64_t upper_range)
-      : _range({0, upper_range}), _is_set(upper_range)
-    {
-      clear();
-    }
+      _is_set(range[1] - range[0], false) {}
 
     /// Return true if a given index is within range, i.e., if it can
     /// be stored in the set.
@@ -87,8 +79,8 @@ namespace dolfin
     }
 
     /// Erase all indices from the set.
-    void clear()
-    { std::fill(_is_set.begin(), _is_set.end(), false); }
+    //void clear()
+    //{ std::fill(_is_set.begin(), _is_set.end(), false); }
 
   private:
 

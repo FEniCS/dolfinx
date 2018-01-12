@@ -113,7 +113,7 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
 
   // Build map from collapsed dof index to original dof index
   collapsed_map.clear();
-  for (std::size_t i = 0; i < mesh.num_cells(); ++i)
+  for (std::int64_t i = 0; i < mesh.num_cells(); ++i)
   {
     auto view_cell_dofs = dofmap_view.cell_dofs(i);
     auto cell_dofs = this->cell_dofs(i);

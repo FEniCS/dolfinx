@@ -396,7 +396,7 @@ DistributedMeshTools::locate_off_process_entities(const std::vector<std::size_t>
   const std::vector<std::int64_t> global_entity_indices
       = mesh.topology().global_indices(dim);
 
-  dolfin_assert(global_entity_indices.size() == mesh.num_cells());
+  dolfin_assert((std::int64_t) global_entity_indices.size() == mesh.num_cells());
 
   // Prepare map to hold process numbers
   std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t>>>
