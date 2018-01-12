@@ -43,12 +43,12 @@ def test_save_1d_meshfunctions(tempfile,
     for d in range(mesh.topology().dim()+1):
         for t in mesh_function_types:
             mf = MeshFunction(t, mesh, mesh.topology().dim()-d, type_conv[t](1))
-            VTKFile(tempfile + "mf.pvd", "ascii") << mf
+            VTKFile(tempfile + "mf.pvd", "ascii").write(mf)
             f = VTKFile(tempfile + "mf.pvd", "ascii")
-            f << (mf, 0.)
-            f << (mf, 1.)
+            f.write(mf, 0.)
+            f.write(mf, 1.)
             for file_option in file_options:
-                VTKFile(tempfile + "mf.pvd", file_option) << mf
+                VTKFile(tempfile + "mf.pvd", file_option).write(mf)
 
 def test_save_2d_meshfunctions(tempfile,
                                 mesh_function_types, file_options, type_conv):
@@ -56,12 +56,12 @@ def test_save_2d_meshfunctions(tempfile,
     for d in range(mesh.topology().dim()+1):
         for t in mesh_function_types:
             mf = MeshFunction(t, mesh, mesh.topology().dim()-d, type_conv[t](1))
-            VTKFile(tempfile + "mf.pvd") << mf
-            f = VTKFile(tempfile + "mf.pvd")
-            f << (mf, 0.)
-            f << (mf, 1.)
+            VTKFile(tempfile + "mf.pvd", "ascii").write(mf)
+            f = VTKFile(tempfile + "mf.pvd", "ascii")
+            f.write(mf, 0.)
+            f.write(mf, 1.)
             for file_option in file_options:
-                VTKFile(tempfile + "mf.pvd", file_option) << mf
+                VTKFile(tempfile + "mf.pvd", file_option).write(mf)
 
 def test_save_3d_meshfunctions(tempfile,
                                 mesh_function_types, file_options, type_conv):
@@ -69,72 +69,72 @@ def test_save_3d_meshfunctions(tempfile,
     for d in range(mesh.topology().dim()+1):
         for t in mesh_function_types:
             mf = MeshFunction(t, mesh, mesh.topology().dim()-d, type_conv[t](1))
-            VTKFile(tempfile + "mf.pvd") << mf
-            f = VTKFile(tempfile + "mf.pvd")
-            f << (mf, 0.)
-            f << (mf, 1.)
+            VTKFile(tempfile + "mf.pvd", "ascii").write(mf)
+            f = VTKFile(tempfile + "mf.pvd", "ascii")
+            f.write(mf, 0.)
+            f.write(mf, 1.)
             for file_option in file_options:
-                VTKFile(tempfile + "mf.pvd", file_option) << mf
+                VTKFile(tempfile + "mf.pvd", file_option).write(mf)
 
 def test_save_1d_mesh(tempfile, file_options):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
-    VTKFile(tempfile + "mesh.pvd") << mesh
-    f = VTKFile(tempfile + "mesh.pvd")
-    f << (mesh, 0.)
-    f << (mesh, 1.)
+    VTKFile(tempfile + "mesh.pvd", "ascii").write(mesh)
+    f = VTKFile(tempfile + "mesh.pvd", "ascii")
+    f.write(mesh, 0.)
+    f.write(mesh, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "mesh.pvd", file_option) << mesh
+        VTKFile(tempfile + "mesh.pvd", file_option).write(mesh)
 
 def test_save_2d_mesh(tempfile, file_options):
     mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
-    VTKFile(tempfile + "mesh.pvd") << mesh
-    f = VTKFile(tempfile + "mesh.pvd")
-    f << (mesh, 0.)
-    f << (mesh, 1.)
+    VTKFile(tempfile + "mesh.pvd", "ascii").write(mesh)
+    f = VTKFile(tempfile + "mesh.pvd", "ascii")
+    f.write(mesh, 0.)
+    f.write(mesh, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "mesh.pvd", file_option) << mesh
+        VTKFile(tempfile + "mesh.pvd", file_option).write(mesh)
 
 def test_save_3d_mesh(tempfile, file_options):
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
-    VTKFile(tempfile + "mesh.pvd") << mesh
-    f = VTKFile(tempfile + "mesh.pvd")
-    f << (mesh, 0.)
-    f << (mesh, 1.)
+    VTKFile(tempfile + "mesh.pvd", "ascii").write(mesh)
+    f = VTKFile(tempfile + "mesh.pvd", "ascii")
+    f.write(mesh, 0.)
+    f.write(mesh, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "mesh.pvd", file_option) << mesh
+        VTKFile(tempfile + "mesh.pvd", file_option).write(mesh)
 
 def test_save_1d_scalar(tempfile, file_options):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
     u = Function(FunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    VTKFile(tempfile + "u.pvd") << u
-    f = VTKFile(tempfile + "u.pvd")
-    f << (u, 0.)
-    f << (u, 1.)
+    VTKFile(tempfile + "u.pvd", "ascii").write(u)
+    f = VTKFile(tempfile + "u.pvd", "ascii")
+    f.write(u, 0.)
+    f.write(u, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option) << u
+        VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 def test_save_2d_scalar(tempfile, file_options):
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     u = Function(FunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    VTKFile(tempfile + "u.pvd") << u
-    f = VTKFile(tempfile + "u.pvd")
-    f << (u, 0.)
-    f << (u, 1.)
+    VTKFile(tempfile + "u.pvd", "ascii").write(u)
+    f = VTKFile(tempfile + "u.pvd", "ascii")
+    f.write(u, 0.)
+    f.write(u, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option) << u
+        VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 def test_save_3d_scalar(tempfile, file_options):
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     u = Function(FunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    VTKFile(tempfile + "u.pvd") << u
-    f = VTKFile(tempfile + "u.pvd")
-    f << (u, 0.)
-    f << (u, 1.)
+    VTKFile(tempfile + "u.pvd", "ascii").write(u)
+    f = VTKFile(tempfile + "u.pvd", "ascii")
+    f.write(u, 0.)
+    f.write(u, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option) << u
+        VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 @pytest.mark.xfail(reason="FFC fails for tensor spaces in 1D")
 @skip_in_parallel
@@ -142,31 +142,31 @@ def test_save_1d_vector(tempfile, file_options):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    VTKFile(tempfile + "u.pvd") << u
+    VTKFile(tempfile + "u.pvd", "ascii").write(u)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option) << u
+        VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 def test_save_2d_vector(tempfile, file_options):
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    VTKFile(tempfile + "u.pvd") << u
+    VTKFile(tempfile + "u.pvd", "ascii").write(u)
     f = VTKFile(tempfile + "u.pvd")
-    f << (u, 0.)
-    f << (u, 1.)
+    f.write(u, 0.)
+    f.write(u, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option) << u
+        VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 def test_save_3d_vector(tempfile, file_options):
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    VTKFile(tempfile + "u.pvd") << u
+    VTKFile(tempfile + "u.pvd", "ascii").write(u)
     f = VTKFile(tempfile + "u.pvd")
-    f << (u, 0.)
-    f << (u, 1.)
+    f.write(u, 0.)
+    f.write(u, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option) << u
+        VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 @pytest.mark.xfail(reason="FFC fails for tensor spaces in 1D")
 @skip_in_parallel
@@ -174,28 +174,28 @@ def test_save_1d_tensor(tempfile, file_options):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
     u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    VTKFile(tempfile + "u.pvd") << u
+    VTKFile(tempfile + "u.pvd", "ascii").write(u)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option) << u
+        VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 def test_save_2d_tensor(tempfile, file_options):
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    VTKFile(tempfile + "u.pvd") << u
-    f = VTKFile(tempfile + "u.pvd")
-    f << (u, 0.)
-    f << (u, 1.)
+    VTKFile(tempfile + "u.pvd", "ascii").write(u)
+    f = VTKFile(tempfile + "u.pvd", "ascii")
+    f.write(u, 0.)
+    f.write(u, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option) << u
+        VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 def test_save_3d_tensor(tempfile, file_options):
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
-    VTKFile(tempfile + "u.pvd") << u
-    f = VTKFile(tempfile + "u.pvd")
-    f << (u, 0.)
-    f << (u, 1.)
+    VTKFile(tempfile + "u.pvd", "ascii").write(u)
+    f = VTKFile(tempfile + "u.pvd", "ascii")
+    f.write(u, 0.)
+    f.write(u, 1.)
     for file_option in file_options:
-        VTKFile(tempfile + "u.pvd", file_option) << u
+        VTKFile(tempfile + "u.pvd", file_option).write(u)

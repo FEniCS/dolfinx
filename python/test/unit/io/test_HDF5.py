@@ -37,7 +37,7 @@ def test_save_vector(tempdir):
     filename = os.path.join(tempdir, "x.h5")
     x = PETScVector(MPI.comm_world, 305)
     x[:] = 1.0
-    with HDF5File(x.mpi_comm(), filename, "w") as vector_file:
+    with HDF5File(MPI.comm_world, filename, "w") as vector_file:
         vector_file.write(x, "/my_vector")
 
 @skip_if_not_HDF5
@@ -48,12 +48,12 @@ def test_save_and_read_vector(tempdir):
     # Write to file
     x = PETScVector(MPI.comm_world, 305)
     x[:] = 1.2
-    with HDF5File(x.mpi_comm(), filename, "w") as vector_file:
+    with HDF5File(MPI.comm_world, filename, "w") as vector_file:
         vector_file.write(x, "/my_vector")
 
     # Read from file
     y = PETScVector(MPI.comm_world)
-    with HDF5File(x.mpi_comm(), filename, "r") as vector_file:
+    with HDF5File(MPI.comm_world, filename, "r") as vector_file:
         vector_file.read(y, "/my_vector", False)
         assert y.size() == x.size()
         assert (x - y).norm("l1") == 0.0

@@ -589,7 +589,15 @@ namespace dolfin_wrappers
     py::class_<dolfin::PETScVector, std::shared_ptr<dolfin::PETScVector>, dolfin::PETScObject>
       (m, "PETScVector", "DOLFIN PETScVector object")
       .def(py::init([](const MPICommWrapper comm)
-                    { return std::unique_ptr<dolfin::PETScVector>(new dolfin::PETScVector(comm.get())); }))
+                    {
+                      return std::unique_ptr<dolfin::PETScVector>(new dolfin::PETScVector(comm.get()));
+                    }))
+      .def(py::init([](const MPICommWrapper comm, std::size_t N)
+                    {
+                      auto ptr = new dolfin::PETScVector(comm.get());
+                      ptr->init(N);
+                      return std::unique_ptr<dolfin::PETScVector>(ptr);
+                    }))
       .def(py::init<Vec>())
       .def("copy", &dolfin::PETScVector::copy)
       .def("apply", &dolfin::PETScVector::apply)
@@ -607,6 +615,16 @@ namespace dolfin_wrappers
              std::vector<double> values;
              self.get_local(values);
              return py::array_t<double>(values.size(), values.data());
+           })
+      .def("__setitem__", [](dolfin::PETScVector& self, py::slice slice, double value)
+           {
+             std::size_t start, stop, step, slicelength;
+             if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
+               throw py::error_already_set();
+             if (start != 0 or stop != self.size() or step != 1)
+               throw std::range_error("Only setting full slices for GenericVector is supported");
+
+             self = value;
            })
       .def("vec", &dolfin::PETScVector::vec, "Return underlying PETSc Vec object");
 

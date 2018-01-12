@@ -16,7 +16,7 @@ pipelines:
           - cd ../python
           - pip3 install .
           - cd test
-          - python3 -m pytest unit/mesh
+          - python3 -m pytest unit/mesh unit/io
           - cd ../demo
           - python3 ./generate-demo-files.py
           - cd documented/poisson
