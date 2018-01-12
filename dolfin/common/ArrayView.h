@@ -24,91 +24,93 @@
 namespace dolfin
 {
 
-  /// This class provides a wrapper for a pointer to an array. It
-  /// never owns the data, and will not be valid if the underlying
-  /// data goes out-of-scope.
+/// This class provides a wrapper for a pointer to an array. It
+/// never owns the data, and will not be valid if the underlying
+/// data goes out-of-scope.
 
-  template <typename T> class ArrayView
+template <typename T>
+class ArrayView
+{
+public:
+  /// Constructor
+  ArrayView() : _size(0), _x(NULL) {}
+
+  /// Construct array from a pointer. Array does not take ownership.
+  ArrayView(std::size_t N, T *x) : _size(N), _x(x) {}
+
+  /// Construct array from a container with the the data() and
+  /// size() functions
+  template <typename V>
+  explicit ArrayView(V &v) : _size(v.size()), _x(v.data())
   {
+  }
 
-  public:
+  /// Copy constructor
+  ArrayView(const ArrayView &x) : _size(x._size), _x(x._x) {}
 
-    /// Constructor
-    ArrayView() : _size(0), _x(NULL) {}
+  /// Destructor
+  ~ArrayView() {}
 
-    /// Construct array from a pointer. Array does not take ownership.
-    ArrayView(std::size_t N, T* x) : _size(N), _x(x) {}
+  /// Update object to point to new data
+  void set(std::size_t N, T *x)
+  {
+    _size = N;
+    _x = x;
+  }
 
-    /// Construct array from a container with the the data() and
-    /// size() functions
-    template<typename V>
-      explicit ArrayView(V& v) : _size(v.size()), _x(v.data()) {}
+  /// Update object to point to new container
+  template <typename V>
+  void set(V &v)
+  {
+    _size = v.size();
+    _x = v.data();
+  }
 
-    /// Copy constructor
-    ArrayView(const ArrayView& x) : _size(x._size), _x(x._x) {}
+  /// Return size of array
+  std::size_t size() const { return _size; }
 
-    /// Destructor
-    ~ArrayView() {}
+  /// Test if array view is empty
+  bool empty() const { return (_size == 0) ? true : false; }
 
-    /// Update object to point to new data
-    void set(std::size_t N, T* x)
-    { _size = N; _x = x; }
+  /// Access value of given entry (const version)
+  const T &operator[](std::size_t i) const
+  {
+    dolfin_assert(i < _size);
+    return _x[i];
+  }
 
-    /// Update object to point to new container
-    template<typename V>
-    void set(V& v)
-    { _size = v.size(); _x = v.data(); }
+  /// Access value of given entry (non-const version)
+  T &operator[](std::size_t i)
+  {
+    dolfin_assert(i < _size);
+    return _x[i];
+  }
 
-    /// Return size of array
-    std::size_t size() const
-    { return _size; }
+  /// Pointer to start of array
+  T *begin() { return &_x[0]; }
 
-    /// Test if array view is empty
-    bool empty() const
-    { return (_size == 0) ? true : false; }
+  /// Pointer to start of array (const)
+  const T *begin() const { return &_x[0]; }
 
-    /// Access value of given entry (const version)
-    const T& operator[] (std::size_t i) const
-    { dolfin_assert(i < _size); return _x[i]; }
+  /// Pointer to beyond end of array
+  T *end() { return &_x[_size]; }
 
-    /// Access value of given entry (non-const version)
-    T& operator[] (std::size_t i)
-    { dolfin_assert(i < _size); return _x[i]; }
+  /// Pointer to beyond end of array (const)
+  const T *end() const { return &_x[_size]; }
 
-    /// Pointer to start of array
-    T* begin()
-    { return &_x[0]; }
+  /// Return pointer to data (const version)
+  const T *data() const { return _x; }
 
-    /// Pointer to start of array (const)
-    const T* begin() const
-    { return &_x[0]; }
+  /// Return pointer to data (non-const version)
+  T *data() { return _x; }
 
-    /// Pointer to beyond end of array
-    T* end()
-    { return &_x[_size]; }
+private:
+  // Length of array
+  std::size_t _size;
 
-    /// Pointer to beyond end of array (const)
-    const T* end() const
-    { return &_x[_size]; }
-
-    /// Return pointer to data (const version)
-    const T* data() const
-    { return _x; }
-
-    /// Return pointer to data (non-const version)
-    T* data()
-    { return _x; }
-
-  private:
-
-    // Length of array
-    std::size_t _size;
-
-    // Array data
-    T* _x;
-
-  };
-
+  // Array data
+  T *_x;
+};
 }
 
 #endif

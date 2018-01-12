@@ -22,10 +22,10 @@
 // Modified by Joachim B Haga 2012
 // Modified by Martin Sandve Alnes 2014
 
-#include <numeric>
-#include <algorithm>
-#include "SubSystemsManager.h"
 #include "MPI.h"
+#include "SubSystemsManager.h"
+#include <algorithm>
+#include <numeric>
 
 //-----------------------------------------------------------------------------
 dolfin::MPI::Comm::Comm(MPI_Comm comm)
@@ -46,12 +46,11 @@ dolfin::MPI::Comm::Comm(MPI_Comm comm)
 #else
   _comm = comm;
 #endif
+
+  std::vector<double> x = {{1.0, 3.0}};
 }
 //-----------------------------------------------------------------------------
-dolfin::MPI::Comm::~Comm()
-{
-  free();
-}
+dolfin::MPI::Comm::~Comm() { free(); }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::Comm::free()
 {
@@ -60,7 +59,8 @@ void dolfin::MPI::Comm::free()
   {
     int err = MPI_Comm_free(&_comm);
     if (err != MPI_SUCCESS)
-      std::cout << "Error when destroying communicator (MPI_Comm_free)." << std::endl;
+      std::cout << "Error when destroying communicator (MPI_Comm_free)."
+                << std::endl;
   }
 #endif
 }
@@ -114,28 +114,16 @@ void dolfin::MPI::Comm::reset(MPI_Comm comm)
 #endif
 }
 //-----------------------------------------------------------------------------
-MPI_Comm dolfin::MPI::Comm::comm() const
-{
-  return _comm;
-}
+MPI_Comm dolfin::MPI::Comm::comm() const { return _comm; }
 //-----------------------------------------------------------------------------
 
 #ifdef HAS_MPI
 //-----------------------------------------------------------------------------
-dolfin::MPIInfo::MPIInfo()
-{
-  MPI_Info_create(&info);
-}
+dolfin::MPIInfo::MPIInfo() { MPI_Info_create(&info); }
 //-----------------------------------------------------------------------------
-dolfin::MPIInfo::~MPIInfo()
-{
-  MPI_Info_free(&info);
-}
+dolfin::MPIInfo::~MPIInfo() { MPI_Info_free(&info); }
 //-----------------------------------------------------------------------------
-MPI_Info& dolfin::MPIInfo::operator*()
-{
-  return info;
-}
+MPI_Info &dolfin::MPIInfo::operator*() { return info; }
 //-----------------------------------------------------------------------------
 #endif
 //-----------------------------------------------------------------------------
@@ -182,8 +170,8 @@ void dolfin::MPI::barrier(const MPI_Comm comm)
 #endif
 }
 //-----------------------------------------------------------------------------
-std::size_t dolfin::MPI::global_offset(const MPI_Comm comm,
-                                       std::size_t range, bool exclusive)
+std::size_t dolfin::MPI::global_offset(const MPI_Comm comm, std::size_t range,
+                                       bool exclusive)
 {
 #ifdef HAS_MPI
   // Compute inclusive or exclusive partial reduction
@@ -197,8 +185,8 @@ std::size_t dolfin::MPI::global_offset(const MPI_Comm comm,
 #endif
 }
 //-----------------------------------------------------------------------------
-std::array<std::int64_t, 2>
-dolfin::MPI::local_range(const MPI_Comm comm, std::int64_t N)
+std::array<std::int64_t, 2> dolfin::MPI::local_range(const MPI_Comm comm,
+                                                     std::int64_t N)
 {
   return local_range(comm, rank(comm), N);
 }
@@ -222,13 +210,13 @@ dolfin::MPI::compute_local_range(int process, std::int64_t N, int size)
 
   // Compute local range
   if (process < r)
-    return {{process*(n + 1), process*(n + 1) + n + 1}};
+    return {{process * (n + 1), process * (n + 1) + n + 1}};
   else
-    return {{process*n + r,  process*n + r + n}};
+    return {{process * n + r, process * n + r + n}};
 }
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::index_owner(const MPI_Comm comm,
-                                      std::size_t index, std::size_t N)
+unsigned int dolfin::MPI::index_owner(const MPI_Comm comm, std::size_t index,
+                                      std::size_t N)
 {
   dolfin_assert(index < N);
 
@@ -248,13 +236,12 @@ unsigned int dolfin::MPI::index_owner(const MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_MPI
-template<>
-  dolfin::Table dolfin::MPI::all_reduce(const MPI_Comm comm,
-                                        const dolfin::Table& table,
-                                        const MPI_Op op)
+template <>
+dolfin::Table dolfin::MPI::all_reduce(const MPI_Comm comm,
+                                      const dolfin::Table &table,
+                                      const MPI_Op op)
 {
-  const std::string new_title = "[" + operation_map[op] + "] "
-                              + table.name();
+  const std::string new_title = "[" + operation_map[op] + "] " + table.name();
 
   // Handle trivial reduction
   if (MPI::size(comm) == 1)
@@ -267,7 +254,7 @@ template<>
   // Get keys, values into containers
   std::string keys;
   std::vector<double> values;
-  keys.reserve(128*table.dvalues.size());
+  keys.reserve(128 * table.dvalues.size());
   values.reserve(table.dvalues.size());
   for (auto it = table.dvalues.begin(); it != table.dvalues.end(); ++it)
   {
@@ -286,18 +273,22 @@ template<>
     return Table(new_title);
 
   // Prepare reduction operation y := op(y, x)
-  void (*op_impl)(double&, const double&) = NULL;
+  void (*op_impl)(double &, const double &) = NULL;
   if (op == MPI_SUM || op == MPI_AVG())
-    op_impl = [](double& y, const double& x){ y += x; };
+    op_impl = [](double &y, const double &x) { y += x; };
   else if (op == MPI_MIN)
-    op_impl = [](double& y, const double& x){ if (x<y) y = x; };
+    op_impl = [](double &y, const double &x) {
+      if (x < y)
+        y = x;
+    };
   else if (op == MPI_MAX)
-    op_impl = [](double& y, const double& x){ if (x>y) y = x; };
+    op_impl = [](double &y, const double &x) {
+      if (x > y)
+        y = x;
+    };
   else
-    dolfin_error("MPI.h",
-                 "perform reduction of Table",
-                 "MPI::reduce(comm, table, %d) not implemented",
-                 op);
+    dolfin_error("MPI.h", "perform reduction of Table",
+                 "MPI::reduce(comm, table, %d) not implemented", op);
 
   // Construct dvalues map from obtained data
   std::map<std::array<std::string, 2>, double> dvalues_all;
@@ -305,7 +296,7 @@ template<>
   std::array<std::string, 2> key;
   key[0].reserve(128);
   key[1].reserve(128);
-  double* values_ptr = values_all.data();
+  double *values_ptr = values_all.data();
   for (unsigned int i = 0; i != MPI::size(comm); ++i)
   {
     std::stringstream keys_stream(keys_all[i]);
@@ -325,13 +316,13 @@ template<>
   if (op == MPI_AVG())
   {
     const double w = 1.0 / static_cast<double>(size(comm));
-    for (auto& it : dvalues_all)
+    for (auto &it : dvalues_all)
       it.second *= w;
   }
 
   // Construct table to return
   Table table_all(new_title);
-  for (auto& it : dvalues_all)
+  for (auto &it : dvalues_all)
     table_all(it.first[0], it.first[1]) = it.second;
 
   return table_all;
@@ -339,20 +330,16 @@ template<>
 #endif
 //-----------------------------------------------------------------------------
 #ifdef HAS_MPI
-template<>
-  dolfin::Table dolfin::MPI::avg(MPI_Comm comm, const dolfin::Table& table)
+template <>
+dolfin::Table dolfin::MPI::avg(MPI_Comm comm, const dolfin::Table &table)
 {
   return all_reduce(comm, table, MPI_AVG());
 }
 #endif
 //-----------------------------------------------------------------------------
 #ifdef HAS_MPI
-std::map<MPI_Op, std::string> dolfin::MPI::operation_map =
-{
-  { MPI_SUM, "MPI_SUM" },
-  { MPI_MAX, "MPI_MAX" },
-  { MPI_MIN, "MPI_MIN" }
-};
+std::map<MPI_Op, std::string> dolfin::MPI::operation_map = {
+    {MPI_SUM, "MPI_SUM"}, {MPI_MAX, "MPI_MAX"}, {MPI_MIN, "MPI_MIN"}};
 #endif
 //-----------------------------------------------------------------------------
 #ifdef HAS_MPI
@@ -360,7 +347,7 @@ MPI_Op dolfin::MPI::MPI_AVG()
 {
   // Return dummy MPI_Op which we identify with average
   static MPI_Op op = MPI_OP_NULL;
-  static MPI_User_function* fn = [](void*, void*, int*, MPI_Datatype*){ };
+  static MPI_User_function *fn = [](void *, void *, int *, MPI_Datatype *) {};
   if (op == MPI_OP_NULL)
   {
     MPI_Op_create(fn, 1, &op);
