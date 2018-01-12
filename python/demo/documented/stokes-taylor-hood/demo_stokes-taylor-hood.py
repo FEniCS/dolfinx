@@ -87,11 +87,11 @@ with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
     pfile_xdmf.write(p)
 
 # Plot solution
-plt.figure()
-plot(u, title="velocity")
+#plt.figure()
+#plot(u, title="velocity")
 
-plt.figure()
-plot(p, title="pressure")
+#plt.figure()
+#plot(p, title="pressure")
 
 # Display plots
-plt.show()
+#plt.show()
