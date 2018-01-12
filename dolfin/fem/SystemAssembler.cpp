@@ -485,7 +485,7 @@ void SystemAssembler::cell_wise_assembly(
     if (A)
       A->add_local(data.Ae[0].data(), cell_dofs[0]);
     if (b)
-      b->add_local(data.Ae[1].data(), cell_dofs[1]);
+      b->add_local(data.Ae[1].data(), cell_dofs[1][0]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -752,7 +752,7 @@ void SystemAssembler::facet_wise_assembly(
         std::vector<ArrayView<const la_index_t>> mdofs(macro_dofs[1].size());
         for (std::size_t i = 0; i < macro_dofs[1].size(); ++i)
           mdofs[i].set(macro_dofs[1][i]);
-        b->add_local(ufc[1]->macro_A.data(), mdofs);
+        b->add_local(ufc[1]->macro_A.data(), mdofs[0]);
       }
 
       const bool add_macro_element
@@ -858,7 +858,7 @@ void SystemAssembler::facet_wise_assembly(
       if (A)
         A->add_local(data.Ae[0].data(), cell_dofs[0][0]);
       if (b)
-        b->add_local(data.Ae[1].data(), cell_dofs[1][0]);
+        b->add_local(data.Ae[1].data(), cell_dofs[1][0][0]);
 
       // Mark cell as processed
       cell_tensor_computed[cell.index()] = true;

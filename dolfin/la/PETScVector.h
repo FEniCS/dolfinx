@@ -110,46 +110,10 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
 
-    //--- Implementation of the PETScVector interface ---
-
-
-
-    /// Set block of values using global indices
-    void set(const double* block, const dolfin::la_index_t* num_rows,
-                     const dolfin::la_index_t * const * rows)
-    { this->set(block, num_rows[0], rows[0]); }
-
-    /// Set block of values using local indices
-    void set_local(const double* block,
-                           const dolfin::la_index_t* num_rows,
-                           const dolfin::la_index_t * const * rows)
-    { this->set_local(block, num_rows[0], rows[0]); }
-
-    /// Add block of values using global indices
-    virtual void add(const double* block, const dolfin::la_index_t* num_rows,
-                     const dolfin::la_index_t * const * rows)
-    { add(block, num_rows[0], rows[0]); }
-
     /// Add block of values using local indices
     virtual void add_local(const double* block,
-                           const dolfin::la_index_t* num_rows,
-                           const dolfin::la_index_t * const * rows)
-    { add_local(block, num_rows[0], rows[0]); }
-
-    /// Add block of values using global indices
-    virtual void
-      add(const double* block,
-          const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
-    { add(block, rows[0].size(), rows[0].data()); }
-
-    /// Add block of values using local indices
-    virtual void
-      add_local(const double* block,
-                const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
-    { add_local(block, rows[0].size(), rows[0].data()); }
-
-    std::size_t rank() const
-    { return 1;}
+                           const ArrayView<const dolfin::la_index_t>& rows)
+    { add_local(block, rows.size(), rows.data()); }
 
     /// Return true if vector is empty
     virtual bool empty() const;
