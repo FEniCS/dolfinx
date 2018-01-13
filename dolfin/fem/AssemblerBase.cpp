@@ -177,8 +177,8 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
         A.apply("flush");
     }
 
-    // Insert zeros on the diagonal as diagonal entries may be
-    // prematurely optimised away by the linear algebra backend when
+    // Insert zeros on the diagonal as diagonal entries may be prematurely
+    // optimised away by the linear algebra backend when
     // calling PETScMatrix::apply, e.g. PETSc does this then errors
     // when matrices have no diagonal entry inserted.
     if (keep_diagonal)
