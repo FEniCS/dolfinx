@@ -1,5 +1,4 @@
-#ifndef __DOLFIN_MESH_H
-#define __DOLFIN_MESH_H
+#pragma once
 
 // DOLFIN mesh interface
 
@@ -27,4 +26,4 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
 
-#endif
+

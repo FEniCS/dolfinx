@@ -1,5 +1,4 @@
-#ifndef __DOLFIN_COMMON_H
-#define __DOLFIN_COMMON_H
+#pragma once
 
 // DOLFIN common
 
@@ -16,4 +15,4 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/version.h>
 
-#endif
+

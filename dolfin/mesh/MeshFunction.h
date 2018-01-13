@@ -1,28 +1,10 @@
 // Copyright (C) 2006-2009 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Johan Hoffman, 2007.
-// Modified by Garth N. Wells, 2010-2013
-//
-// First added:  2006-05-22
-// Last changed: 2013-05-10
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifndef __MESH_FUNCTION_H
-#define __MESH_FUNCTION_H
+#pragma once
 
 #include <map>
 #include <vector>
@@ -608,4 +590,4 @@ std::string MeshFunction<T>::str(bool verbose) const
 //---------------------------------------------------------------------------
 }
 
-#endif
+

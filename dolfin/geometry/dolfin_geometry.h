@@ -1,5 +1,4 @@
-#ifndef __DOLFIN_GEOMETRY_H
-#define __DOLFIN_GEOMETRY_H
+#pragma once
 
 // DOLFIN geometry interface
 
@@ -11,4 +10,4 @@
 #include <dolfin/geometry/Point.h>
 #include <dolfin/geometry/intersect.h>
 
-#endif
+

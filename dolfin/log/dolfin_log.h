@@ -1,5 +1,4 @@
-#ifndef __DOLFIN_LOG_H
-#define __DOLFIN_LOG_H
+#pragma once
 
 /// DOLFIN log interface
 
@@ -9,4 +8,4 @@
 #include <dolfin/log/Table.h>
 #include <dolfin/log/log.h>
 
-#endif
+

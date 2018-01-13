@@ -1,5 +1,4 @@
-#ifndef __DOLFIN_LA_H
-#define __DOLFIN_LA_H
+#pragma once
 
 // DOLFIN la interface
 
@@ -23,4 +22,4 @@
 #include <dolfin/la/SLEPcEigenSolver.h>
 #include <dolfin/la/Scalar.h>
 
-#endif
+
