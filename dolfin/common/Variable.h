@@ -66,5 +66,3 @@ private:
   const std::size_t unique_id;
 };
 }
-
-

@@ -32,17 +32,6 @@ public:
   /// Compute the objective function :math:`f(x)`
   virtual double f(const PETScVector& x) = 0;
 
-  /// Compute the Hessian :math:`J(x)=f''(x)` and the gradient
-  /// :math:`F(x)=f'(x)` together. Called before requesting
-  /// F or J.
-  /// NOTE: This function is deprecated. Use variant with
-  /// preconditioner
-  virtual void form(PETScMatrix& A, PETScVector& b, const PETScVector& x)
-  {
-    // NOTE: Deprecation mechanism
-    _called = true;
-  }
-
   /// Function called by the solver before requesting F, J or J_pc.
   /// This can be used to compute F, J and J_pc together. Preconditioner
   /// matrix P can be left empty so that A is used instead
@@ -50,17 +39,6 @@ public:
                     const PETScVector& x)
   {
     // Do nothing if not supplied by the user
-
-    // NOTE: Deprecation mechanism
-    form(A, b, x);
-    if (!_called)
-    {
-      // deprecated form(A, b, x) was not called which means that user
-      // overloaded the deprecated method
-      deprecation("NonlinearProblem::form(A, b, x)", "2017.1.0dev",
-                  "Use NonlinearProblem::form(A, P, b, x)");
-    }
-    _called = false;
   }
 
   /// Compute the gradient :math:`F(x) = f'(x)`
@@ -80,11 +58,5 @@ public:
   {
     // Do nothing if not supplied by the user
   }
-
-private:
-  // NOTE: Deprecation mechanism
-  bool _called;
 };
 }
-
-

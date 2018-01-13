@@ -4,16 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "VTKWriter.h"
+#include "Encoder.h"
 #include <boost/detail/endian.hpp>
 #include <cstdint>
-#include <fstream>
-#include <iomanip>
-#include <ostream>
-#include <sstream>
-#include <vector>
-
-#include "Encoder.h"
-#include "VTKWriter.h"
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
@@ -24,6 +18,11 @@
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
+#include <fstream>
+#include <iomanip>
+#include <ostream>
+#include <sstream>
+#include <vector>
 
 using namespace dolfin;
 

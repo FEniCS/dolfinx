@@ -4,13 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <memory>
-#include <pybind11/eigen.h>
-#include <pybind11/eval.h>
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include <dolfin/common/Variable.h>
 #include <dolfin/function/Expression.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
@@ -32,6 +25,12 @@
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
+#include <memory>
+#include <pybind11/eigen.h>
+#include <pybind11/eval.h>
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include "casters.h"
 

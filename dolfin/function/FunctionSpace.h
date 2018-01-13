@@ -289,5 +289,3 @@ private:
       _subspaces;
 };
 }
-
-

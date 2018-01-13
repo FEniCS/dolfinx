@@ -6,16 +6,15 @@
 
 #ifdef HAS_PETSC
 
-#include <petsclog.h>
-
-#include "PETScBaseMatrix.h"
 #include "PETScKrylovSolver.h"
+#include "PETScBaseMatrix.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "VectorSpaceBasis.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/PETScDMCollection.h>
+#include <petsclog.h>
 
 using namespace dolfin;
 

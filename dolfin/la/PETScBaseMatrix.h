@@ -8,17 +8,16 @@
 
 #ifdef HAS_PETSC
 
+#include "PETScObject.h"
+#include "PETScVector.h"
 #include <cinttypes>
 #include <cstddef>
+#include <dolfin/common/Variable.h>
+#include <dolfin/common/types.h>
 #include <memory>
 #include <petscmat.h>
 #include <string>
 #include <utility>
-
-#include "PETScObject.h"
-#include "PETScVector.h"
-#include <dolfin/common/Variable.h>
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {

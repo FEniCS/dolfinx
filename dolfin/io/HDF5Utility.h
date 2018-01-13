@@ -6,16 +6,17 @@
 
 #pragma once
 
+#include "dolfin/common/types.h"
 #include <string>
 #include <vector>
-
-#include "dolfin/common/types.h"
+#include <array>
 
 namespace dolfin
 {
 class LocalMeshData;
 class GenericDofMap;
 class Mesh;
+class PETScVector;
 
 /// This class contains some algorithms which do not explicitly
 /// depend on the HDF5 file format, mostly to do with reorganising
@@ -76,5 +77,3 @@ public:
                           const GenericDofMap& dofmap);
 };
 }
-
-

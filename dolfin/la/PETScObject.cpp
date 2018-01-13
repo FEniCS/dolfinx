@@ -6,11 +6,10 @@
 
 #ifdef HAS_PETSC
 
-#include <petsc.h>
-
 #include "PETScObject.h"
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/log/log.h>
+#include <petsc.h>
 
 using namespace dolfin;
 

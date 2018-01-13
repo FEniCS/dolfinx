@@ -209,5 +209,3 @@ private:
   dolfin::MPI::Comm _mpi_comm;
 };
 }
-
-

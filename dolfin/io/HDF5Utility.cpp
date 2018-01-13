@@ -4,9 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "HDF5Utility.h"
 #include <boost/multi_array.hpp>
-#include <iostream>
-
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -18,8 +17,7 @@
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Vertex.h>
-
-#include "HDF5Utility.h"
+#include <iostream>
 
 using namespace dolfin;
 

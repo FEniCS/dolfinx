@@ -48,7 +48,7 @@ PETScVector::PETScVector(const PETScVector& v) : _x(nullptr)
 {
   dolfin_assert(v._x);
 
-  // Create new vector
+  // Duplicate vector
   PetscErrorCode ierr;
   ierr = VecDuplicate(v._x, &_x);
   CHECK_ERROR("VecDuplicate");

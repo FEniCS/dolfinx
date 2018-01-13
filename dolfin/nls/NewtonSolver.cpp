@@ -4,17 +4,16 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <cmath>
-#include <string>
-
 #include "NewtonSolver.h"
 #include "NonlinearProblem.h"
+#include <cmath>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
+#include <string>
 
 using namespace dolfin;
 

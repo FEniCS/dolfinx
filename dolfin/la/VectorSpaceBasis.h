@@ -52,5 +52,3 @@ private:
   const std::vector<std::shared_ptr<PETScVector>> _basis;
 };
 }
-
-

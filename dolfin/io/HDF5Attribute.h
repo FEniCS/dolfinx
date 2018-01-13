@@ -8,10 +8,9 @@
 
 #ifdef HAS_HDF5
 
+#include "HDF5Interface.h"
 #include <string>
 #include <vector>
-
-#include "HDF5Interface.h"
 
 namespace dolfin
 {
@@ -101,4 +100,3 @@ private:
 }
 
 #endif
-

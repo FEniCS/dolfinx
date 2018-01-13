@@ -32,23 +32,14 @@ class Mesh;
 class PointSource
 {
 public:
-  /// Create point source at given point of given magnitude
-  PointSource(std::shared_ptr<const FunctionSpace> V, const Point& p,
-              double magnitude = 1.0);
-
   /// Create point sources at given points of given magnitudes
   PointSource(std::shared_ptr<const FunctionSpace> V,
-              const std::vector<std::pair<const Point*, double>> sources);
-
-  /// Create point source at given point of given magnitude
-  PointSource(std::shared_ptr<const FunctionSpace> V0,
-              std::shared_ptr<const FunctionSpace> V1, const Point& p,
-              double magnitude = 1.0);
+              const std::vector<std::pair<Point, double>> sources);
 
   /// Create point sources at given points of given magnitudes
   PointSource(std::shared_ptr<const FunctionSpace> V0,
               std::shared_ptr<const FunctionSpace> V1,
-              const std::vector<std::pair<const Point*, double>> sources);
+              const std::vector<std::pair<Point, double>> sources);
 
   /// Destructor
   ~PointSource();
@@ -76,5 +67,3 @@ private:
   std::vector<std::pair<Point, double>> _sources;
 };
 }
-
-

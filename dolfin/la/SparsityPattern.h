@@ -7,15 +7,14 @@
 #pragma once
 
 #include <array>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace dolfin
 {
@@ -172,4 +171,3 @@ private:
   Ghosts _ghosted = Ghosts::UNGHOSTED;
 };
 }
-

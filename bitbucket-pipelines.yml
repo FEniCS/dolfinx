@@ -21,8 +21,8 @@ pipelines:
           - pip3 install .
 
           - cd test
+          - python3 -m pytest unit/io
           - python3 -m pytest unit/mesh
-          #- python3 -m pytest unit/io
 
           - cd ../demo
           - python3 ./generate-demo-files.py

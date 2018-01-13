@@ -5,13 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <Eigen/Dense>
-#include <memory>
-#include <pybind11/eigen.h>
-#include <pybind11/numpy.h>
-#include <pybind11/operators.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/geometry/IntersectionConstruction.h>
@@ -19,6 +12,12 @@
 #include <dolfin/geometry/Point.h>
 #include <dolfin/geometry/intersect.h>
 #include <dolfin/mesh/Mesh.h>
+#include <memory>
+#include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
+#include <pybind11/operators.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 

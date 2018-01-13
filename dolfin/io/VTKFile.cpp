@@ -4,18 +4,12 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "VTKFile.h"
+#include "Encoder.h"
+#include "VTKWriter.h"
+#include "pugixml.hpp"
 #include <boost/cstdint.hpp>
 #include <boost/detail/endian.hpp>
-#include <iomanip>
-#include <ostream>
-#include <sstream>
-#include <vector>
-
-#include "pugixml.hpp"
-
-#include "Encoder.h"
-#include "VTKFile.h"
-#include "VTKWriter.h"
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -27,6 +21,10 @@
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
+#include <iomanip>
+#include <ostream>
+#include <sstream>
+#include <vector>
 
 using namespace dolfin;
 

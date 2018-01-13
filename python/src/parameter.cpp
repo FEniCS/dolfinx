@@ -4,15 +4,14 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <memory>
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "casters.h"
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/parameter/Parameter.h>
 #include <dolfin/parameter/Parameters.h>
+#include <memory>
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 

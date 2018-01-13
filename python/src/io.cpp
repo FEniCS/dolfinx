@@ -4,13 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <memory>
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <string>
-#include <vector>
-
 #include <dolfin/function/Function.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/io/HDF5Attribute.h>
@@ -21,6 +14,12 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
+#include <memory>
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <string>
+#include <vector>
 
 #include "casters.h"
 
@@ -43,7 +42,7 @@ void io(py::module& m)
   py::class_<dolfin::HDF5Attribute, std::shared_ptr<dolfin::HDF5Attribute>>(
       m, "HDF5Attribute")
       //.def("__getitem__", [](const dolfin::HDF5Attribute& instance,
-      //std::string name){ return instance[name]; })
+      // std::string name){ return instance[name]; })
       .def("__setitem__", [](dolfin::HDF5Attribute& instance, std::string name,
                              std::string value) { instance.set(name, value); })
       .def("__setitem__", [](dolfin::HDF5Attribute& instance, std::string name,

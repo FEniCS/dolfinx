@@ -4,13 +4,12 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <tuple>
-
-#include "Timer.h"
 #include "timing.h"
+#include "Timer.h"
 #include <dolfin/log/LogManager.h>
 #include <dolfin/log/Table.h>
 #include <dolfin/log/log.h>
+#include <tuple>
 
 namespace dolfin
 {

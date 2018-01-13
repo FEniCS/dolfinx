@@ -9,7 +9,6 @@
 #include <boost/graph/compressed_sparse_row_graph.hpp>
 #include <boost/graph/cuthill_mckee_ordering.hpp>
 #include <boost/graph/properties.hpp>
-
 #include "BoostGraphOrdering.h"
 #include "Graph.h"
 #include <dolfin/common/Timer.h>

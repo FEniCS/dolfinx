@@ -6,11 +6,10 @@
 
 #ifdef HAS_HDF5
 
-#include <boost/lexical_cast.hpp>
-#include <string>
-
 #include "HDF5Attribute.h"
 #include "HDF5Interface.h"
+#include <boost/lexical_cast.hpp>
+#include <string>
 
 using namespace dolfin;
 

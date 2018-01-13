@@ -4,14 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <memory>
-
-#include <pybind11/eigen.h>
-#include <pybind11/numpy.h>
-#include <pybind11/operators.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Constant.h>
@@ -23,6 +15,12 @@
 #include <dolfin/geometry/Point.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
+#include <memory>
+#include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
+#include <pybind11/operators.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -220,7 +218,7 @@ void function(py::module& m)
       .def(py::init<std::shared_ptr<dolfin::FunctionSpace>,
                     std::shared_ptr<dolfin::PETScVector>>())
       //.def("_assign", (const dolfin::Function& (dolfin::Function::*)(const
-      //dolfin::Function&))
+      // dolfin::Function&))
       //     &dolfin::Function::operator=)
       .def("_assign",
            (const dolfin::Function& (
