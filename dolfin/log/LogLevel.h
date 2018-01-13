@@ -1,5 +1,4 @@
-#ifndef __LOGLEVEL_H
-#define __LOGLEVEL_H
+#pragma once
 
 namespace dolfin
 {
@@ -17,4 +16,4 @@ enum LogLevel
 };
 }
 
-#endif
+

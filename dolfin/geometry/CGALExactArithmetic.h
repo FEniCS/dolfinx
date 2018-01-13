@@ -1,34 +1,10 @@
 // Copyright (C) 2016-2017 Benjamin Kehlet, August Johansson, and Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2016-05-03
-// Last changed: 2017-10-07
-//
-// Developer note:
-//
-// This file contains reference implementations of collision detection
-// algorithms using exact arithmetic with CGAL. It is not included in
-// a normal build but is used as a reference for verification and
-// debugging of the inexact DOLFIN collision detection algorithms.
-// To enable, set the option DOLFIN_ENABLE_GEOMETRY_DEBUGGING when
-// configuring DOLFIN
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifndef __CGAL_EXACT_ARITHMETIC_H
-#define __CGAL_EXACT_ARITHMETIC_H
+#pragma once
 
 #ifndef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
 
@@ -1052,4 +1028,4 @@ cgal_triangulation_overlap(std::vector<std::vector<Point>> triangulation)
 }
 #endif
 
-#endif
+

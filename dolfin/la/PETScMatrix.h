@@ -1,32 +1,10 @@
 // Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson, Anders Logg
-// and Garth N. Wells
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Andy R. Terrel 2005
-// Modified by Garth N. Wells 2006-2009
-// Modified by Kent-Andre Mardal 2008
-// Modified by Ola Skavhaug 2008
-// Modified by Fredrik Valdmanis 2011
-//
-// First added:  2004-01-01
-// Last changed: 2012-08-22
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifndef __PETSC_MATRIX_H
-#define __PETSC_MATRIX_H
+#pragma once
 
 #ifdef HAS_PETSC
 
@@ -242,4 +220,4 @@ private:
 
 #endif
 
-#endif
+

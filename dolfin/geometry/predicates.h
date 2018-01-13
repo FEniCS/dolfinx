@@ -1,16 +1,5 @@
-// This is a DOLFIN header file for predicates.cpp which provides
-//
-//   Routines for Arbitrary Precision Floating-point Arithmetic
-//   and Fast Robust Geometric Predicates
-//
-// by
-//
-//   Jonathan Richard Shewchuk
-//
-// Code is placed in the public domain.
 
-#ifndef __PREDICATES_H
-#define __PREDICATES_H
+#pragma once
 
 namespace dolfin
 {
@@ -51,4 +40,4 @@ public:
 };
 }
 
-#endif
+

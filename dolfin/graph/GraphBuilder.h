@@ -1,25 +1,10 @@
 // Copyright (C) 2010-2013 Garth N. Wells
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2010-02-19
-// Last changed: 2013-01-16
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifndef __GRAPH_BUILDER_H
-#define __GRAPH_BUILDER_H
+#pragma once
 
 #include "Graph.h"
 #include <boost/multi_array.hpp>
@@ -104,4 +89,4 @@ private:
 };
 }
 
-#endif
+

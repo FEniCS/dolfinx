@@ -1,5 +1,4 @@
-#ifndef __DOLFIN_FEM_H
-#define __DOLFIN_FEM_H
+#pragma once
 
 // DOLFIN fem interface
 
@@ -18,4 +17,4 @@
 #include <dolfin/fem/SystemAssembler.h>
 #include <dolfin/fem/fem_utils.h>
 
-#endif
+
