@@ -1,5 +1,4 @@
-#ifndef __DOLFIN_NLS_H
-#define __DOLFIN_NLS_H
+#pragma once
 
 // DOLFIN nonlinear solver
 
@@ -7,4 +6,4 @@
 #include <dolfin/nls/NonlinearProblem.h>
 #include <dolfin/nls/OptimisationProblem.h>
 
-#endif
+

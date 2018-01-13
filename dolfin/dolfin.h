@@ -1,5 +1,4 @@
-#ifndef __DOLFIN_H
-#define __DOLFIN_H
+#pragma once
 
 // DOLFIN interface
 
@@ -17,4 +16,4 @@
 #include <dolfin/nls/dolfin_nls.h>
 #include <dolfin/parameter/dolfin_parameter.h>
 
-#endif
+
