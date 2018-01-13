@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2017 Garth N. Wells
+#
+# This file is part of DOLFIN (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+
 import numpy as np
 from numpy import intc, int64
 import dolfin.cpp as cpp

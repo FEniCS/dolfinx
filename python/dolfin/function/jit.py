@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""FIXME: Add description"""
-
 # Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
 #
-# Distributed under the terms of the GNU Lesser Public License (LGPL),
-# either version 3 of the License, or (at your option) any later
-# version.
+# This file is part of DOLFIN (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+
+"""FIXME: Add description"""
 
 from dolfin.cpp.log import log, LogLevel
 from dolfin.jit.jit import compile_class, _math_header
