@@ -12,7 +12,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Vertex.h>
-
 #include "fem_utils.h"
 
 using namespace dolfin;

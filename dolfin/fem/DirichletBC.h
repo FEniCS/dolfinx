@@ -13,7 +13,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
@@ -27,8 +26,7 @@ class Facet;
 class PETScMatrix;
 class PETScVector;
 class SubDomain;
-template <typename T>
-class MeshFunction;
+template <typename T> class MeshFunction;
 
 /// Interface for setting (strong) Dirichlet boundary conditions.
 
@@ -308,11 +306,9 @@ private:
   // Possible search methods
   static const std::set<std::string> methods;
 
-public:
   // User defined sub domain
   std::shared_ptr<const SubDomain> _user_sub_domain;
 
-private:
   // Cached number of bc dofs, used for memory allocation on second use
   mutable std::size_t _num_dofs;
 
