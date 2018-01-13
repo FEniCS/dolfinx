@@ -702,14 +702,14 @@ void la(py::module& m)
                & dolfin::PETScVector::size)
       .def("__add__",
            [](const dolfin::PETScVector& self, const dolfin::PETScVector& x) {
-             auto y = std::make_unique<dolfin::PETScVector>(self);
+             auto y = std::make_shared<dolfin::PETScVector>(self);
              *y += x;
              return y;
            },
            py::is_operator())
       .def("__sub__",
            [](dolfin::PETScVector& self, const dolfin::PETScVector& x) {
-             auto y = std::make_unique<dolfin::PETScVector>(self);
+             auto y = std::make_shared<dolfin::PETScVector>(self);
              *y -= x;
              return y;
            },
