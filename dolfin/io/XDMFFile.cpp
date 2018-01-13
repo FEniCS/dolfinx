@@ -4,22 +4,15 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "XDMFFile.h"
+#include "HDF5File.h"
+#include "HDF5Utility.h"
 #include "pugixml.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/container/vector.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <iomanip>
-#include <memory>
-#include <ostream>
-#include <sstream>
-#include <string>
-#include <vector>
-
-#include "HDF5File.h"
-#include "HDF5Utility.h"
-#include "XDMFFile.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/defines.h>
 #include <dolfin/common/utils.h>
@@ -38,6 +31,12 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
+#include <iomanip>
+#include <memory>
+#include <ostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 using namespace dolfin;
 

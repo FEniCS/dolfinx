@@ -76,5 +76,3 @@ static std::vector<unsigned char> compress_data(const std::vector<T>& data)
 #endif
 }
 }
-
-

@@ -15,16 +15,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
-#include <memory>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <string>
-
 #include "casters.h"
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/Table.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
+#include <memory>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <string>
 
 namespace py = pybind11;
 

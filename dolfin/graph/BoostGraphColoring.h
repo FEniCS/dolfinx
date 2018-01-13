@@ -6,14 +6,13 @@
 
 #pragma once
 
-#include <iostream>
-#include <vector>
-
 #include "Graph.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/compressed_sparse_row_graph.hpp>
 #include <boost/graph/sequential_vertex_coloring.hpp>
 #include <dolfin/common/Timer.h>
+#include <iostream>
+#include <vector>
 
 namespace dolfin
 {
@@ -104,5 +103,3 @@ public:
   }
 };
 }
-
-

@@ -25,5 +25,3 @@
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
-
-

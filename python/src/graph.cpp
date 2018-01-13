@@ -19,7 +19,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <vector>
-
 #include <dolfin/graph/Graph.h>
 #include <dolfin/graph/GraphBuilder.h>
 #include <dolfin/mesh/Mesh.h>

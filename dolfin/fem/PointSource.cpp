@@ -21,35 +21,17 @@
 #include <dolfin/mesh/Vertex.h>
 
 using namespace dolfin;
-//-----------------------------------------------------------------------------
-PointSource::PointSource(std::shared_ptr<const FunctionSpace> V, const Point& p,
-                         double magnitude)
-    : _function_space0(V)
-{
-  // Puts point and magniude data into a vector
-  std::vector<std::pair<Point, double>> sources = {{p, magnitude}};
 
-  // Distribute sources
-  dolfin_assert(_function_space0->mesh());
-  const Mesh& mesh0 = *_function_space0->mesh();
-  distribute_sources(mesh0, sources);
-
-  // Check that function space is supported
-  check_space_supported(*V);
-}
 //-----------------------------------------------------------------------------
-PointSource::PointSource(
-    std::shared_ptr<const FunctionSpace> V,
-    const std::vector<std::pair<const Point*, double>> sources)
+PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
+                         const std::vector<std::pair<Point, double>> sources)
     : _function_space0(V)
 {
   // Checking meshes exist
   dolfin_assert(_function_space0->mesh());
 
-  // Copy over from pointers
-  std::vector<std::pair<Point, double>> sources_copy;
-  for (auto& p : sources)
-    sources_copy.push_back({*(p.first), p.second});
+  // Copy sources
+  std::vector<std::pair<Point, double>> sources_copy = sources;
 
   // Distribute sources
   const Mesh& mesh0 = *_function_space0->mesh();
@@ -61,29 +43,7 @@ PointSource::PointSource(
 //-----------------------------------------------------------------------------
 PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
                          std::shared_ptr<const FunctionSpace> V1,
-                         const Point& p, double magnitude)
-    : _function_space0(V0), _function_space1(V1)
-{
-  // Checking meshes exist
-  dolfin_assert(_function_space0->mesh());
-  dolfin_assert(_function_space1->mesh());
-
-  // Puts point and magnitude data into a vector
-  std::vector<std::pair<Point, double>> sources = {{p, magnitude}};
-
-  // Distribute sources
-  const Mesh& mesh0 = *_function_space0->mesh();
-  distribute_sources(mesh0, sources);
-
-  // Check that function spaces are supported
-  check_space_supported(*V0);
-  check_space_supported(*V1);
-}
-//----------------------------------------------------------------------------
-PointSource::PointSource(
-    std::shared_ptr<const FunctionSpace> V0,
-    std::shared_ptr<const FunctionSpace> V1,
-    const std::vector<std::pair<const Point*, double>> sources)
+                         const std::vector<std::pair<Point, double>> sources)
     : _function_space0(V0), _function_space1(V1)
 {
   // Check that function spaces are supported
@@ -92,14 +52,12 @@ PointSource::PointSource(
   check_space_supported(*V0);
   check_space_supported(*V1);
 
-  // Copy point and magnitude data
-  std::vector<std::pair<Point, double>> source_copy;
-  for (auto& p : sources)
-    source_copy.push_back({*(p.first), p.second});
+  // Copy sources
+  std::vector<std::pair<Point, double>> sources_copy = sources;
 
   dolfin_assert(_function_space0->mesh());
   const Mesh& mesh0 = *_function_space0->mesh();
-  distribute_sources(mesh0, source_copy);
+  distribute_sources(mesh0, sources_copy);
 }
 //-----------------------------------------------------------------------------
 PointSource::~PointSource()

@@ -6,19 +6,14 @@
 
 #ifdef HAS_HDF5
 
+#include "HDF5File.h"
+#include "HDF5Attribute.h"
+#include "HDF5Interface.h"
+#include "HDF5Utility.h"
 #include <boost/filesystem.hpp>
 #include <boost/multi_array.hpp>
 #include <boost/unordered_map.hpp>
 #include <cstdio>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <string>
-
-#include "HDF5Attribute.h"
-#include "HDF5File.h"
-#include "HDF5Interface.h"
-#include "HDF5Utility.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
@@ -37,6 +32,10 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <string>
 
 using namespace dolfin;
 

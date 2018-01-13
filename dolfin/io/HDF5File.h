@@ -8,15 +8,14 @@
 
 #ifdef HAS_HDF5
 
-#include <string>
-#include <utility>
-#include <vector>
-
 #include "HDF5Attribute.h"
 #include "HDF5Interface.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/geometry/Point.h>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace dolfin
 {
@@ -260,4 +259,3 @@ void HDF5File::write_data(const std::string dataset_name,
 }
 
 #endif
-

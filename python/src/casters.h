@@ -18,13 +18,12 @@
 #ifndef _DOLFIN_PYBIND11_CASTERS
 #define _DOLFIN_PYBIND11_CASTERS
 
+#include "mpi_casters.h"
+#include "petsc_casters.h"
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-#include "mpi_casters.h"
-#include "petsc_casters.h"
 
 namespace pybind11
 {

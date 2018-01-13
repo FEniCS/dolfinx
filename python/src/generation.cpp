@@ -16,18 +16,17 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 #include <array>
-#include <iostream>
-#include <memory>
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <string>
-
 #include <dolfin/generation/BoxMesh.h>
 #include <dolfin/generation/IntervalMesh.h>
 #include <dolfin/generation/RectangleMesh.h>
 #include <dolfin/generation/UnitTriangleMesh.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/CellType.h>
+#include <iostream>
+#include <memory>
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+#include <string>
 
 #include "casters.h"
 

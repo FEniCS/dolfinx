@@ -586,5 +586,3 @@ inline void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
 }
 #endif
 }
-
-
