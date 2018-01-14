@@ -48,14 +48,14 @@ public:
   std::uint32_t dim() const;
 
   /// Return number of entities for given dimension (local to process)
-  std::uint32_t size(unsigned int dim) const;
+  std::uint32_t size(std::uint32_t dim) const;
 
   /// Return global number of entities for given dimension
-  std::uint64_t size_global(unsigned int dim) const;
+  std::uint64_t size_global(std::uint32_t dim) const;
 
   /// Return number of regular (non-ghost) entities or equivalently,
   /// the offset of where ghost entities begin
-  inline std::uint32_t ghost_offset(unsigned int dim) const
+  inline std::uint32_t ghost_offset(std::uint32_t dim) const
   {
     if (_ghost_offset_index.empty())
       return 0;
@@ -109,31 +109,31 @@ public:
 
   /// Check whether there are any shared entities calculated
   /// of dimension dim
-  bool have_shared_entities(unsigned int dim) const
+  bool have_shared_entities(std::uint32_t dim) const
   {
     return (_shared_entities.find(dim) != _shared_entities.end());
   }
 
   /// Return map from shared entities (local index) to processes
   /// that share the entity
-  std::map<std::int32_t, std::set<unsigned int>>&
-  shared_entities(unsigned int dim);
+  std::map<std::int32_t, std::set<std::uint32_t>>&
+  shared_entities(std::uint32_t dim);
 
   /// Return map from shared entities (local index) to process that
   /// share the entity (const version)
-  const std::map<std::int32_t, std::set<unsigned int>>&
-  shared_entities(unsigned int dim) const;
+  const std::map<std::int32_t, std::set<std::uint32_t>>&
+  shared_entities(std::uint32_t dim) const;
 
   /// Return mapping from local ghost cell index to owning process
   /// Since ghost cells are at the end of the range, this is just
   /// a vector over those cells
-  std::vector<unsigned int>& cell_owner() { return _cell_owner; }
+  std::vector<std::uint32_t>& cell_owner() { return _cell_owner; }
 
   /// Return mapping from local ghost cell index to owning process (const
   /// version)
   /// Since ghost cells are at the end of the range, this is just
   /// a vector over those cells
-  const std::vector<unsigned int>& cell_owner() const { return _cell_owner; }
+  const std::vector<std::uint32_t>& cell_owner() const { return _cell_owner; }
 
   /// Return connectivity for given pair of topological dimensions
   dolfin::MeshConnectivity& operator()(std::size_t d0, std::size_t d1)
@@ -174,17 +174,15 @@ private:
 
   // For entities of a given dimension d, maps each shared entity
   // (local index) to a list of the processes sharing the vertex
-  std::map<unsigned int, std::map<std::int32_t, std::set<unsigned int>>>
+  std::map<std::uint32_t, std::map<std::int32_t, std::set<std::uint32_t>>>
       _shared_entities;
 
   // For cells which are "ghosted", locate the owning process,
   // using a vector rather than a map,
   // since ghost cells are always at the end of the range.
-  std::vector<unsigned int> _cell_owner;
+  std::vector<std::uint32_t> _cell_owner;
 
   // Connectivity for pairs of topological dimensions
   std::vector<std::vector<MeshConnectivity>> _connectivity;
 };
 }
-
-

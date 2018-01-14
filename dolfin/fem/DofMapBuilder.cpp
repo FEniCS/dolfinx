@@ -364,7 +364,7 @@ void DofMapBuilder::build_sub_map_view(
 //-----------------------------------------------------------------------------
 std::size_t DofMapBuilder::build_constrained_vertex_indices(
     const Mesh& mesh,
-    const std::map<unsigned int, std::pair<unsigned int, unsigned int>>&
+    const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>&
         slave_to_master_vertices,
     std::vector<std::int64_t>& modified_vertex_indices_global)
 {
@@ -373,9 +373,10 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
 
   // Get vertex sharing information (local index, [(sharing process p,
   // local index on p)])
-  const std::unordered_map<unsigned int,
-                           std::vector<std::pair<unsigned int, unsigned int>>>&
-      shared_vertices
+  const std::
+      unordered_map<std::uint32_t,
+                    std::vector<std::pair<std::uint32_t, std::uint32_t>>>&
+          shared_vertices
       = DistributedMeshTools::compute_shared_entities(mesh, 0);
 
   // Mark shared vertices
@@ -389,8 +390,8 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
 
   // Mark slave vertices
   std::vector<bool> slave_vertex(mesh.num_vertices(), false);
-  std::map<unsigned int, std::pair<unsigned int, unsigned int>>::const_iterator
-      slave;
+  std::map<std::uint32_t,
+           std::pair<std::uint32_t, std::uint32_t>>::const_iterator slave;
   for (slave = slave_to_master_vertices.begin();
        slave != slave_to_master_vertices.end(); ++slave)
   {
@@ -422,12 +423,12 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
       // If shared, let lowest rank process number the vertex
       auto it = shared_vertices.find(local_index);
       dolfin_assert(it != shared_vertices.end());
-      const std::vector<std::pair<unsigned int, unsigned int>>& sharing_procs
+      const std::vector<std::pair<std::uint32_t, std::uint32_t>>& sharing_procs
           = it->second;
 
       // Figure out if this is the lowest rank process sharing the
       // vertex
-      std::vector<std::pair<unsigned int, unsigned int>>::const_iterator
+      std::vector<std::pair<std::uint32_t, std::uint32_t>>::const_iterator
           min_sharing_rank
           = std::min_element(sharing_procs.begin(), sharing_procs.end());
       std::size_t _min_sharing_rank = proc_num + 1;
@@ -440,7 +441,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
         modified_vertex_indices_global[vertex->index()] = new_index;
 
         // Add to list to communicate
-        std::vector<std::pair<unsigned int, unsigned int>>::const_iterator p;
+        std::vector<std::pair<std::uint32_t, std::uint32_t>>::const_iterator p;
         for (p = sharing_procs.begin(); p != sharing_procs.end(); ++p)
         {
           dolfin_assert(p->first < new_shared_vertex_indices.size());
@@ -480,7 +481,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
   // process
   for (std::size_t i = 0; i < received_vertex_data.size(); i += 2)
   {
-    const unsigned int local_index = received_vertex_data[i];
+    const std::uint32_t local_index = received_vertex_data[i];
     const std::size_t recv_new_index = received_vertex_data[i + 1];
 
     dolfin_assert(local_index < modified_vertex_indices_global.size());
@@ -493,9 +494,9 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
   for (auto master = slave_to_master_vertices.begin();
        master != slave_to_master_vertices.end(); ++master)
   {
-    const unsigned int local_index = master->first;
-    const unsigned int master_proc = master->second.first;
-    const unsigned int remote_master_local_index = master->second.second;
+    const std::uint32_t local_index = master->first;
+    const std::uint32_t master_proc = master->second.first;
+    const std::uint32_t remote_master_local_index = master->second.second;
     dolfin_assert(master_proc < local_slave_index.size());
     dolfin_assert(master_proc < master_send_buffer.size());
     local_slave_index[master_proc].push_back(local_index);
@@ -624,7 +625,7 @@ int DofMapBuilder::compute_node_ownership(
   std::vector<std::vector<std::size_t>> recv_buffer(num_processes);
 
   // Add a counter to the start of each send buffer
-  for (unsigned int i = 0; i != num_processes; ++i)
+  for (std::uint32_t i = 0; i != num_processes; ++i)
     send_buffer[i].push_back(0);
 
   // FIXME: could get rid of global_to_local map since response will
@@ -649,7 +650,7 @@ int DofMapBuilder::compute_node_ownership(
 
   // Make note of current size of each send buffer i.e. the number of
   // boundary nodes, labelled '0'
-  for (unsigned int i = 0; i != num_processes; ++i)
+  for (std::uint32_t i = 0; i != num_processes; ++i)
     send_buffer[i][0] = send_buffer[i].size() - 1;
 
   // Additionally send any ghost or ghost-shared nodes to determine
@@ -671,18 +672,18 @@ int DofMapBuilder::compute_node_ownership(
   MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
 
   // Map from global index to sharing processes
-  std::map<std::size_t, std::vector<unsigned int>> global_to_procs;
-  for (unsigned int i = 0; i != num_processes; ++i)
+  std::map<std::size_t, std::vector<std::uint32_t>> global_to_procs;
+  for (std::uint32_t i = 0; i != num_processes; ++i)
   {
     const std::vector<std::size_t>& recv_i = recv_buffer[i];
     const std::size_t num_boundary_nodes = recv_i[0];
 
-    for (unsigned int j = 1; j != num_boundary_nodes + 1; ++j)
+    for (std::uint32_t j = 1; j != num_boundary_nodes + 1; ++j)
     {
       auto map_it = global_to_procs.find(recv_i[j]);
       if (map_it == global_to_procs.end())
         global_to_procs.insert(
-            std::make_pair(recv_i[j], std::vector<unsigned int>(1, i)));
+            std::make_pair(recv_i[j], std::vector<std::uint32_t>(1, i)));
       else
         map_it->second.push_back(i);
     }
@@ -695,17 +696,17 @@ int DofMapBuilder::compute_node_ownership(
     std::shuffle(p->second.begin(), p->second.end(), random_engine);
 
   // Add other sharing processes (ghosts etc) which cannot be owners
-  for (unsigned int i = 0; i != num_processes; ++i)
+  for (std::uint32_t i = 0; i != num_processes; ++i)
   {
     const std::vector<std::size_t>& recv_i = recv_buffer[i];
     const std::size_t num_boundary_nodes = recv_i[0];
 
-    for (unsigned int j = num_boundary_nodes + 1; j != recv_i.size(); ++j)
+    for (std::uint32_t j = num_boundary_nodes + 1; j != recv_i.size(); ++j)
     {
       auto map_it = global_to_procs.find(recv_i[j]);
       if (map_it == global_to_procs.end())
         global_to_procs.insert(
-            std::make_pair(recv_i[j], std::vector<unsigned int>(1, i)));
+            std::make_pair(recv_i[j], std::vector<std::uint32_t>(1, i)));
       else
         map_it->second.push_back(i);
     }
@@ -713,10 +714,10 @@ int DofMapBuilder::compute_node_ownership(
 
   // Send response back to originators in same order
   std::vector<std::vector<std::size_t>> send_response(num_processes);
-  for (unsigned int i = 0; i != num_processes; ++i)
+  for (std::uint32_t i = 0; i != num_processes; ++i)
     for (auto q = recv_buffer[i].begin() + 1; q != recv_buffer[i].end(); ++q)
     {
-      std::vector<unsigned int>& gprocs = global_to_procs[*q];
+      std::vector<std::uint32_t>& gprocs = global_to_procs[*q];
       send_response[i].push_back(gprocs.size());
       send_response[i].insert(send_response[i].end(), gprocs.begin(),
                               gprocs.end());
@@ -725,12 +726,12 @@ int DofMapBuilder::compute_node_ownership(
   MPI::all_to_all(mpi_comm, send_response, recv_buffer);
   // [n_sharing, owner, others]
 
-  for (unsigned int i = 0; i != num_processes; ++i)
+  for (std::uint32_t i = 0; i != num_processes; ++i)
   {
     auto q = recv_buffer[i].begin();
     for (auto p = send_buffer[i].begin() + 1; p != send_buffer[i].end(); ++p)
     {
-      const unsigned int num_sharing = *q;
+      const std::uint32_t num_sharing = *q;
       if (num_sharing > 1)
       {
         const std::size_t global_index = *p;
@@ -782,7 +783,7 @@ int DofMapBuilder::compute_node_ownership(
 
   // Shared ownership for global dofs (after neighbour calculation)
   std::vector<int> all_procs;
-  for (unsigned int i = 0; i != num_processes; ++i)
+  for (std::uint32_t i = 0; i != num_processes; ++i)
     if (i != process_number)
       all_procs.push_back((int)i);
 
@@ -1266,8 +1267,8 @@ void DofMapBuilder::compute_constrained_mesh_indices(
   dolfin_assert(needs_mesh_entities.size() == (D + 1));
 
   // Compute slave-master pairs
-  std::map<unsigned int,
-           std::map<unsigned int, std::pair<unsigned int, unsigned int>>>
+  std::map<std::uint32_t,
+           std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>>
       slave_master_mesh_entities;
   for (std::size_t d = 0; d <= D; ++d)
   {
@@ -1304,7 +1305,7 @@ void DofMapBuilder::compute_constrained_mesh_indices(
       else
       {
         // Get number of entities
-        std::map<std::int32_t, std::set<unsigned int>> shared_entities;
+        std::map<std::int32_t, std::set<std::uint32_t>> shared_entities;
         const std::size_t num_entities = DistributedMeshTools::number_entities(
             mesh, slave_to_master_mesh_entities, global_entity_indices[d],
             shared_entities, d);

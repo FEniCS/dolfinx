@@ -58,8 +58,8 @@ std::size_t TriangleCell::num_vertices(std::size_t dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void TriangleCell::create_entities(boost::multi_array<unsigned int, 2>& e,
-                                   std::size_t dim, const unsigned int* v) const
+void TriangleCell::create_entities(boost::multi_array<std::uint32_t, 2>& e,
+                                   std::size_t dim, const std::uint32_t* v) const
 {
   // We only need to know how to create edges
   if (dim != 1)
@@ -94,7 +94,7 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   const MeshGeometry& geometry = triangle.mesh().geometry();
 
   // Get the coordinates of the three vertices
-  const unsigned int* vertices = triangle.entities(0);
+  const std::uint32_t* vertices = triangle.entities(0);
   const Point x0 = geometry.point(vertices[0]);
   const Point x1 = geometry.point(vertices[1]);
   const Point x2 = geometry.point(vertices[2]);
@@ -149,7 +149,7 @@ double TriangleCell::circumradius(const MeshEntity& triangle) const
         "Only know how to compute diameter when embedded in R^2 or R^3");
 
   // Get the coordinates of the three vertices
-  const unsigned int* vertices = triangle.entities(0);
+  const std::uint32_t* vertices = triangle.entities(0);
   const Point p0 = geometry.point(vertices[0]);
   const Point p1 = geometry.point(vertices[1]);
   const Point p2 = geometry.point(vertices[2]);
@@ -172,7 +172,7 @@ double TriangleCell::squared_distance(const Cell& cell,
 {
   // Get the vertices as points
   const MeshGeometry& geometry = cell.mesh().geometry();
-  const unsigned int* vertices = cell.entities(0);
+  const std::uint32_t* vertices = cell.entities(0);
   const Point a = geometry.point(vertices[0]);
   const Point b = geometry.point(vertices[1]);
   const Point c = geometry.point(vertices[2]);
@@ -319,7 +319,7 @@ Point TriangleCell::cell_normal(const Cell& cell) const
   }
 
   // Get the three vertices as points
-  const unsigned int* vertices = cell.entities(0);
+  const std::uint32_t* vertices = cell.entities(0);
   const Point p0 = geometry.point(vertices[0]);
   const Point p1 = geometry.point(vertices[1]);
   const Point p2 = geometry.point(vertices[2]);
@@ -369,13 +369,13 @@ void TriangleCell::order(
     dolfin_assert(!topology(2, 1).empty());
 
     // Get edge indices (local)
-    const unsigned int* cell_edges = cell.entities(1);
+    const std::uint32_t* cell_edges = cell.entities(1);
 
     // Sort vertices on each edge
     for (std::size_t i = 0; i < 3; i++)
     {
-      unsigned int* edge_vertices
-          = const_cast<unsigned int*>(topology(1, 0)(cell_edges[i]));
+      std::uint32_t* edge_vertices
+          = const_cast<std::uint32_t*>(topology(1, 0)(cell_edges[i]));
       sort_entities(2, edge_vertices, local_to_global_vertex_indices);
     }
   }
@@ -383,7 +383,7 @@ void TriangleCell::order(
   // Sort local vertices on cell in ascending order, connectivity 2 - 0
   if (!topology(2, 0).empty())
   {
-    unsigned int* cell_vertices = const_cast<unsigned int*>(cell.entities(0));
+    std::uint32_t* cell_vertices = const_cast<std::uint32_t*>(cell.entities(0));
     sort_entities(3, cell_vertices, local_to_global_vertex_indices);
   }
 
@@ -393,8 +393,8 @@ void TriangleCell::order(
     dolfin_assert(!topology(2, 1).empty());
 
     // Get cell vertex and edge indices (local)
-    const unsigned int* cell_vertices = cell.entities(0);
-    unsigned int* cell_edges = const_cast<unsigned int*>(cell.entities(1));
+    const std::uint32_t* cell_vertices = cell.entities(0);
+    std::uint32_t* cell_edges = const_cast<std::uint32_t*>(cell.entities(1));
 
     // Loop over vertices on cell
     for (std::size_t i = 0; i < 3; i++)
@@ -402,7 +402,7 @@ void TriangleCell::order(
       // Loop over edges on cell
       for (std::size_t j = i; j < 3; j++)
       {
-        const unsigned int* edge_vertices = topology(1, 0)(cell_edges[j]);
+        const std::uint32_t* edge_vertices = topology(1, 0)(cell_edges[j]);
 
         // Check if the ith vertex of the cell is non-incident with edge j
         if (std::count(edge_vertices, edge_vertices + 2, cell_vertices[i]) == 0)
@@ -438,15 +438,15 @@ std::string TriangleCell::description(bool plural) const
 std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
 {
   // Get vertices and edges
-  const unsigned int* v = cell.entities(0);
-  const unsigned int* e = cell.entities(1);
+  const std::uint32_t* v = cell.entities(0);
+  const std::uint32_t* e = cell.entities(1);
   dolfin_assert(v);
   dolfin_assert(e);
 
   // Look for edge satisfying ordering convention
   for (std::size_t j = 0; j < 3; j++)
   {
-    const unsigned int* ev = cell.mesh().topology()(1, 0)(e[j]);
+    const std::uint32_t* ev = cell.mesh().topology()(1, 0)(e[j]);
     dolfin_assert(ev);
     if (ev[0] != v[i] && ev[1] != v[i])
       return j;

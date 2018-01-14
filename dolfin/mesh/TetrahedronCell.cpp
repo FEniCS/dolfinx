@@ -4,17 +4,16 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <algorithm>
-#include <boost/multi_array.hpp>
-#include <cmath>
-
+#include "TetrahedronCell.h"
 #include "Cell.h"
 #include "Facet.h"
 #include "MeshEditor.h"
 #include "MeshGeometry.h"
-#include "TetrahedronCell.h"
 #include "TriangleCell.h"
 #include "Vertex.h"
+#include <algorithm>
+#include <boost/multi_array.hpp>
+#include <cmath>
 #include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/log/log.h>
 
@@ -65,9 +64,9 @@ std::size_t TetrahedronCell::num_vertices(std::size_t dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void TetrahedronCell::create_entities(boost::multi_array<unsigned int, 2>& e,
+void TetrahedronCell::create_entities(boost::multi_array<std::uint32_t, 2>& e,
                                       std::size_t dim,
-                                      const unsigned int* v) const
+                                      const std::uint32_t* v) const
 {
   // We only need to know how to create edges and faces
   switch (dim)
@@ -135,7 +134,7 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   }
 
   // Get the coordinates of the four vertices
-  const unsigned int* vertices = tetrahedron.entities(0);
+  const std::uint32_t* vertices = tetrahedron.entities(0);
   const Point x0 = geometry.point(vertices[0]);
   const Point x1 = geometry.point(vertices[1]);
   const Point x2 = geometry.point(vertices[2]);
@@ -176,7 +175,7 @@ double TetrahedronCell::circumradius(const MeshEntity& tetrahedron) const
   }
 
   // Get the coordinates of the four vertices
-  const unsigned int* vertices = tetrahedron.entities(0);
+  const std::uint32_t* vertices = tetrahedron.entities(0);
   const Point p0 = geometry.point(vertices[0]);
   const Point p1 = geometry.point(vertices[1]);
   const Point p2 = geometry.point(vertices[2]);
@@ -213,7 +212,7 @@ double TetrahedronCell::squared_distance(const Cell& cell,
 
   // Get the vertices as points
   const MeshGeometry& geometry = cell.mesh().geometry();
-  const unsigned int* vertices = cell.entities(0);
+  const std::uint32_t* vertices = cell.entities(0);
   const Point a = geometry.point(vertices[0]);
   const Point b = geometry.point(vertices[1]);
   const Point c = geometry.point(vertices[2]);
@@ -314,7 +313,7 @@ double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const
   const MeshGeometry& geometry = f.mesh().geometry();
 
   // Get the coordinates of the three vertices
-  const unsigned int* vertices = f.entities(0);
+  const std::uint32_t* vertices = f.entities(0);
   const Point x0 = geometry.point(vertices[0]);
   const Point x1 = geometry.point(vertices[1]);
   const Point x2 = geometry.point(vertices[2]);
@@ -346,13 +345,13 @@ void TetrahedronCell::order(
     dolfin_assert(!topology(3, 1).empty());
 
     // Get edges
-    const unsigned int* cell_edges = cell.entities(1);
+    const std::uint32_t* cell_edges = cell.entities(1);
 
     // Sort vertices on each edge
     for (std::size_t i = 0; i < 6; i++)
     {
-      unsigned int* edge_vertices
-          = const_cast<unsigned int*>(topology(1, 0)(cell_edges[i]));
+      std::uint32_t* edge_vertices
+          = const_cast<std::uint32_t*>(topology(1, 0)(cell_edges[i]));
       sort_entities(2, edge_vertices, local_to_global_vertex_indices);
     }
   }
@@ -363,13 +362,13 @@ void TetrahedronCell::order(
     dolfin_assert(!topology(3, 2).empty());
 
     // Get facets
-    const unsigned int* cell_facets = cell.entities(2);
+    const std::uint32_t* cell_facets = cell.entities(2);
 
     // Sort vertices on each facet
     for (std::size_t i = 0; i < 4; i++)
     {
-      unsigned int* facet_vertices
-          = const_cast<unsigned int*>(topology(2, 0)(cell_facets[i]));
+      std::uint32_t* facet_vertices
+          = const_cast<std::uint32_t*>(topology(2, 0)(cell_facets[i]));
       sort_entities(3, facet_vertices, local_to_global_vertex_indices);
     }
   }
@@ -383,17 +382,17 @@ void TetrahedronCell::order(
     dolfin_assert(!topology(1, 0).empty());
 
     // Get facet numbers
-    const unsigned int* cell_facets = cell.entities(2);
+    const std::uint32_t* cell_facets = cell.entities(2);
 
     // Loop over facets on cell
     for (std::size_t i = 0; i < 4; i++)
     {
       // For each facet number get the global vertex numbers
-      const unsigned int* facet_vertices = topology(2, 0)(cell_facets[i]);
+      const std::uint32_t* facet_vertices = topology(2, 0)(cell_facets[i]);
 
       // For each facet number get the global edge number
-      unsigned int* cell_edges
-          = const_cast<unsigned int*>(topology(2, 1)(cell_facets[i]));
+      std::uint32_t* cell_edges
+          = const_cast<std::uint32_t*>(topology(2, 1)(cell_facets[i]));
 
       // Loop over vertices on facet
       std::size_t m = 0;
@@ -403,7 +402,7 @@ void TetrahedronCell::order(
         for (std::size_t k(m); k < 3; k++)
         {
           // For each edge number get the global vertex numbers
-          const unsigned int* edge_vertices = topology(1, 0)(cell_edges[k]);
+          const std::uint32_t* edge_vertices = topology(1, 0)(cell_edges[k]);
 
           // Check if the jth vertex of facet i is non-incident on edge k
           if (!std::count(edge_vertices, edge_vertices + 2, facet_vertices[j]))
@@ -423,7 +422,7 @@ void TetrahedronCell::order(
   // Sort local vertices on cell in ascending order, connectivity 3 - 0
   if (!topology(3, 0).empty())
   {
-    unsigned int* cell_vertices = const_cast<unsigned int*>(cell.entities(0));
+    std::uint32_t* cell_vertices = const_cast<std::uint32_t*>(cell.entities(0));
     sort_entities(4, cell_vertices, local_to_global_vertex_indices);
   }
 
@@ -433,8 +432,8 @@ void TetrahedronCell::order(
     dolfin_assert(!topology(1, 0).empty());
 
     // Get cell vertices and edge numbers
-    const unsigned int* cell_vertices = cell.entities(0);
-    unsigned int* cell_edges = const_cast<unsigned int*>(cell.entities(1));
+    const std::uint32_t* cell_vertices = cell.entities(0);
+    std::uint32_t* cell_edges = const_cast<std::uint32_t*>(cell.entities(1));
 
     // Loop two vertices on cell as a lexicographical tuple
     // (i, j): (0,1) (0,2) (0,3) (1,2) (1,3) (2,3)
@@ -447,7 +446,7 @@ void TetrahedronCell::order(
         for (std::size_t k = m; k < 6; k++)
         {
           // Get local vertices on edge
-          const unsigned int* edge_vertices = topology(1, 0)(cell_edges[k]);
+          const std::uint32_t* edge_vertices = topology(1, 0)(cell_edges[k]);
 
           // Check if the ith and jth vertex of the cell are
           // non-incident on edge k
@@ -474,8 +473,8 @@ void TetrahedronCell::order(
     dolfin_assert(!topology(2, 0).empty());
 
     // Get cell vertices and facet numbers
-    const unsigned int* cell_vertices = cell.entities(0);
-    unsigned int* cell_facets = const_cast<unsigned int*>(cell.entities(2));
+    const std::uint32_t* cell_vertices = cell.entities(0);
+    std::uint32_t* cell_facets = const_cast<std::uint32_t*>(cell.entities(2));
 
     // Loop vertices on cell
     for (std::size_t i = 0; i < 4; i++)
@@ -483,8 +482,8 @@ void TetrahedronCell::order(
       // Loop facets on cell
       for (std::size_t j = i; j < 4; j++)
       {
-        unsigned int* facet_vertices
-            = const_cast<unsigned int*>(topology(2, 0)(cell_facets[j]));
+        std::uint32_t* facet_vertices
+            = const_cast<std::uint32_t*>(topology(2, 0)(cell_facets[j]));
 
         // Check if the ith vertex of the cell is non-incident on facet j
         if (!std::count(facet_vertices, facet_vertices + 3, cell_vertices[i]))
@@ -520,8 +519,8 @@ std::string TetrahedronCell::description(bool plural) const
 std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
 {
   // Get vertices and edges
-  const unsigned int* v = cell.entities(0);
-  const unsigned int* e = cell.entities(1);
+  const std::uint32_t* v = cell.entities(0);
+  const std::uint32_t* e = cell.entities(1);
   dolfin_assert(v);
   dolfin_assert(e);
 
@@ -532,7 +531,7 @@ std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
   // Look for edge satisfying ordering convention
   for (std::size_t j = 0; j < 6; j++)
   {
-    const unsigned int* ev = cell.mesh().topology()(1, 0)(e[j]);
+    const std::uint32_t* ev = cell.mesh().topology()(1, 0)(e[j]);
     dolfin_assert(ev);
     const std::size_t v0 = v[EV[i][0]];
     const std::size_t v1 = v[EV[i][1]];

@@ -454,7 +454,7 @@ private:
   // Calculate set of entities of dimension cell_dim which are
   // duplicated on other processes and should not be output on this
   // process
-  static std::set<unsigned int> compute_nonlocal_entities(const Mesh& mesh,
+  static std::set<std::uint32_t> compute_nonlocal_entities(const Mesh& mesh,
                                                           int cell_dim);
 
   // Return topology data on this process as a flat vector

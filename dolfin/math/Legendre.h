@@ -44,5 +44,3 @@ public:
   static double d2dx(std::size_t n, double x);
 };
 }
-
-

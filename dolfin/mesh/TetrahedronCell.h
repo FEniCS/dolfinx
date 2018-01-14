@@ -6,10 +6,9 @@
 
 #pragma once
 
+#include "CellType.h"
 #include <boost/multi_array.hpp>
 #include <vector>
-
-#include "CellType.h"
 
 namespace dolfin
 {
@@ -37,8 +36,8 @@ public:
   std::size_t num_vertices(std::size_t dim) const;
 
   /// Create entities e of given topological dimension from vertices v
-  void create_entities(boost::multi_array<unsigned int, 2>& e, std::size_t dim,
-                       const unsigned int* v) const;
+  void create_entities(boost::multi_array<std::uint32_t, 2>& e, std::size_t dim,
+                       const std::uint32_t* v) const;
 
   /// Compute volume of tetrahedron
   double volume(const MeshEntity& tetrahedron) const;
@@ -90,5 +89,3 @@ private:
                               const Point& D) const;
 };
 }
-
-

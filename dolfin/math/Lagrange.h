@@ -7,7 +7,6 @@
 #pragma once
 
 #include <vector>
-
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/Event.h>
 

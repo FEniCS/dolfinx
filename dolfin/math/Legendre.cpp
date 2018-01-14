@@ -4,10 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "Legendre.h"
 #include <boost/math/special_functions/legendre.hpp>
 #include <cmath>
-
-#include "Legendre.h"
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 

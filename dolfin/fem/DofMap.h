@@ -141,7 +141,7 @@ public:
   /// Return map from nonlocal dofs that appear in local dof map to
   /// owning process
   ///
-  /// @return     std::vector<unsigned int>
+  /// @return     std::vector<std::uint32_t>
   ///         The map from non-local dofs.
   const std::vector<int>& off_process_owner() const
   {
@@ -151,7 +151,7 @@ public:
   /// Return map from all shared nodes to the sharing processes (not
   /// including the current process) that share it.
   ///
-  /// @return     std::unordered_map<std::size_t, std::vector<unsigned int>>
+  /// @return     std::unordered_map<std::size_t, std::vector<std::uint32_t>>
   ///         The map from dofs to list of processes
   const std::unordered_map<int, std::vector<int>>& shared_nodes() const;
 

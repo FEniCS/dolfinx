@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <vector>
+#include <cstdint>
 
 namespace dolfin
 {
@@ -22,12 +22,6 @@ public:
   /// Compute mesh entities of given topological dimension, and connectivity
   /// cell-to-enity (tdim, dim)
   static std::size_t compute_entities(Mesh& mesh, std::size_t dim);
-
-  /// Compute mesh entities of given topological dimension.
-  /// Note: this function will be replaced by the new 'compute_entities'
-  /// function, which is considerably faster, especially for poorly ordered
-  /// mesh.
-  static std::size_t compute_entities_old(Mesh& mesh, std::size_t dim);
 
   /// Compute connectivity for given pair of topological dimensions
   static void compute_connectivity(Mesh& mesh, std::size_t d0, std::size_t d1);
@@ -56,11 +50,5 @@ private:
 
   // Direct lookup of entity from vertices in a map
   static void compute_from_map(Mesh& mesh, std::size_t d0, std::size_t d1);
-
-  // Compute connectivity from intersection
-  static void compute_from_intersection(Mesh& mesh, std::size_t d0,
-                                        std::size_t d1, std::size_t d);
 };
 }
-
-

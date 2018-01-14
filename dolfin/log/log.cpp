@@ -4,20 +4,19 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "log.h"
+#include "LogManager.h"
 #include <cstdarg>
 #include <cstdlib>
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Variable.h>
+#include <dolfin/common/constants.h>
+#include <dolfin/parameter/Parameters.h>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <stdarg.h>
 #include <stdio.h>
-
-#include "LogManager.h"
-#include "log.h"
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/Variable.h>
-#include <dolfin/common/constants.h>
-#include <dolfin/parameter/Parameters.h>
 
 using namespace dolfin;
 

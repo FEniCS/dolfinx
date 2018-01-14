@@ -4,17 +4,15 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <boost/program_options.hpp>
-#include <sstream>
-#include <stdio.h>
-
-#include "Parameter.h"
 #include "Parameters.h"
+#include "Parameter.h"
+#include <boost/program_options.hpp>
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/Table.h>
 #include <dolfin/log/log.h>
+#include <sstream>
 
 using namespace dolfin;
 namespace po = boost::program_options;

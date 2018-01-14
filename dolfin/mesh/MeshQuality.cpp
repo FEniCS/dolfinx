@@ -141,7 +141,7 @@ void MeshQuality::dihedral_angles(const Cell& cell,
   const Mesh& mesh = cell.mesh();
 
   dh_angle.resize(6);
-  for (unsigned int i = 0; i < 6; ++i)
+  for (std::uint32_t i = 0; i < 6; ++i)
   {
     const std::size_t i0 = cell.entities(0)[edges[i][0]];
     const std::size_t i1 = cell.entities(0)[edges[i][1]];

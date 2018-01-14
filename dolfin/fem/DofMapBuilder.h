@@ -59,7 +59,7 @@ private:
   // bcs
   static std::size_t build_constrained_vertex_indices(
       const Mesh& mesh,
-      const std::map<unsigned int, std::pair<unsigned int, unsigned int>>&
+      const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>&
           slave_to_master_vertices,
       std::vector<std::int64_t>& modified_vertex_indices_global);
 

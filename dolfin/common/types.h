@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cstdint>
 #ifdef HAS_PETSC
 #include <petscsys.h>
 #endif
@@ -17,8 +18,6 @@ namespace dolfin
 #ifdef HAS_PETSC
 typedef PetscInt la_index_t;
 #else
-typedef int la_index_t;
+typedef std::int32_t la_index_t;
 #endif
 }
-
-

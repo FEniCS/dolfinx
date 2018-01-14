@@ -33,8 +33,8 @@ public:
   std::size_t num_vertices(std::size_t dim) const;
 
   /// Create entities e of given topological dimension from vertices v
-  void create_entities(boost::multi_array<unsigned int, 2>& e, std::size_t dim,
-                       const unsigned int* v) const;
+  void create_entities(boost::multi_array<std::uint32_t, 2>& e, std::size_t dim,
+                       const std::uint32_t* v) const;
 
   /// Compute (generalized) volume (area) of triangle
   double volume(const MeshEntity& triangle) const;
@@ -75,5 +75,3 @@ public:
   std::vector<std::int8_t> vtk_mapping() const { return {0, 1, 3, 2}; }
 };
 }
-
-

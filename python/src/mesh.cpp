@@ -96,7 +96,7 @@ void mesh(py::module& m)
       .def("have_global_indices", &dolfin::MeshTopology::have_global_indices)
       .def("ghost_offset", &dolfin::MeshTopology::ghost_offset)
       .def("cell_owner",
-           (const std::vector<unsigned int>& (dolfin::MeshTopology::*)() const)
+           (const std::vector<std::uint32_t>& (dolfin::MeshTopology::*)() const)
                & dolfin::MeshTopology::cell_owner)
       .def("set_global_index", &dolfin::MeshTopology::set_global_index)
       .def("global_indices",
@@ -110,8 +110,10 @@ void mesh(py::module& m)
           (std::
                map<std::int32_t,
                    std::
-                       set<unsigned int>> & (dolfin::
-                                                 MeshTopology::*)(unsigned int))
+                       set<std::
+                               uint32_t>> & (dolfin::
+                                                 MeshTopology::*)(std::
+                                                                      uint32_t))
               & dolfin::MeshTopology::shared_entities)
       .def("str", &dolfin::MeshTopology::str);
 
@@ -125,7 +127,7 @@ void mesh(py::module& m)
       .def("bounding_box_tree", &dolfin::Mesh::bounding_box_tree)
       .def("cells",
            [](const dolfin::Mesh& self) {
-             const unsigned int tdim = self.topology().dim();
+             const std::uint32_t tdim = self.topology().dim();
              return py::array({(std::int32_t)self.topology().size(tdim),
                                (std::int32_t)self.type().num_vertices(tdim)},
                               self.topology()(tdim, 0)().data());
@@ -151,8 +153,6 @@ void mesh(py::module& m)
       .def("num_entities", &dolfin::Mesh::num_entities,
            "Number of mesh entities")
       .def("num_vertices", &dolfin::Mesh::num_vertices, "Number of vertices")
-      .def("num_edges", &dolfin::Mesh::num_edges, "Number of edges")
-      .def("num_faces", &dolfin::Mesh::num_faces, "Number of faces")
       .def("num_facets", &dolfin::Mesh::num_facets, "Number of facets")
       .def("num_cells", &dolfin::Mesh::num_cells, "Number of cells")
       .def("ordered", &dolfin::Mesh::ordered)
@@ -178,8 +178,9 @@ void mesh(py::module& m)
       m, "MeshConnectivity", "DOLFIN MeshConnectivity object")
       .def("__call__",
            [](const dolfin::MeshConnectivity& self, std::size_t i) {
-             return Eigen::Map<const Eigen::Matrix<unsigned int, Eigen::Dynamic,
-                                                   1>>(self(i), self.size(i));
+             return Eigen::Map<const Eigen::Matrix<std::uint32_t,
+                                                   Eigen::Dynamic, 1>>(
+                 self(i), self.size(i));
            },
            py::return_value_policy::reference_internal)
       .def("size",
@@ -206,9 +207,9 @@ void mesh(py::module& m)
            "Global number of incident entities of given dimension")
       .def("entities",
            [](dolfin::MeshEntity& self, std::size_t dim) {
-             return Eigen::Map<const Eigen::Matrix<unsigned int, Eigen::Dynamic,
-                                                   1>>(self.entities(dim),
-                                                       self.num_entities(dim));
+             return Eigen::Map<const Eigen::Matrix<std::uint32_t,
+                                                   Eigen::Dynamic, 1>>(
+                 self.entities(dim), self.num_entities(dim));
            })
       .def("midpoint", &dolfin::MeshEntity::midpoint, "Midpoint of Entity")
       .def("sharing_processes", &dolfin::MeshEntity::sharing_processes)

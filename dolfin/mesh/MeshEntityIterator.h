@@ -203,8 +203,6 @@ private:
   std::size_t pos_end;
 
   // Mapping from pos to index (if any)
-  const unsigned int* index;
+  const std::uint32_t* index;
 };
 }
-
-

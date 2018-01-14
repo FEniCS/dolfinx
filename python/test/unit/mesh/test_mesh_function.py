@@ -47,7 +47,8 @@ def funcs(mesh):
     funcs = {}
     for tp in tps:
         for name in names:
-            funcs[(tp, name)] = eval("MeshFunction('%s', mesh, %d)" % (tp, name))
+            funcs[(tp, name)] = eval(
+                "MeshFunction('%s', mesh, %d)" % (tp, name))
     return funcs
 
 
@@ -86,7 +87,7 @@ def test_numpy_access(funcs, tp, name):
 def test_setvalues(tp, funcs, name):
     if tp != 'bool':
         with pytest.raises(TypeError):
-            funcs[(tp, name)].__setitem__(len(funcs[(tp, name)])-1, "jada")
+            funcs[(tp, name)].__setitem__(len(funcs[(tp, name)]) - 1, "jada")
 
 
 def test_Create(cube):
@@ -96,7 +97,7 @@ def test_Create(cube):
     assert v.size() == cube.num_vertices()
 
     v = MeshFunction("size_t", cube, 1)
-    assert v.size() == cube.num_edges()
+    assert v.size() == cube.num_entities(1)
 
     v = MeshFunction("size_t", cube, 2)
     assert v.size() == cube.num_facets()
@@ -113,7 +114,7 @@ def test_CreateAssign(cube):
     assert v[0] == i
 
     v = MeshFunction("size_t", cube, 1, i)
-    assert v.size() == cube.num_edges()
+    assert v.size() == cube.num_entities(1)
     assert v[0] == i
 
     v = MeshFunction("size_t", cube, 2, i)
@@ -143,7 +144,7 @@ def test_meshfunction_where_equal():
     assert list(cf.where_equal(3)) == [0, 3]
     assert list(cf.where_equal(1)) == [1, 2, 4, 5, 6, 7]
 
-    ff = MeshFunction("size_t", mesh, mesh.topology().dim()-1)
+    ff = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
     ff.set_all(0)
     ff[0] = 1
     ff[2] = 3

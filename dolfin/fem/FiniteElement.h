@@ -58,8 +58,8 @@ public:
   }
 
   /// Return the geometric dimension of the cell shape
-  /// @return unsigned int
-  virtual unsigned int geometric_dimension() const
+  /// @return std::uint32_t
+  virtual std::uint32_t geometric_dimension() const
   {
     dolfin_assert(_ufc_element);
     return _ufc_element->geometric_dimension();
@@ -107,7 +107,7 @@ public:
   }
 
   /// Evaluate order n derivatives of basis function i at given point in cell
-  void evaluate_basis_derivatives(unsigned int i, unsigned int n,
+  void evaluate_basis_derivatives(std::uint32_t i, std::uint32_t n,
                                   double* values, const double* x,
                                   const double* coordinate_dofs,
                                   int cell_orientation) const
@@ -119,7 +119,7 @@ public:
 
   /// Evaluate order n derivatives of all basis functions at given
   /// point in cell
-  void evaluate_basis_derivatives_all(unsigned int n, double* values,
+  void evaluate_basis_derivatives_all(std::uint32_t n, double* values,
                                       const double* x,
                                       const double* coordinate_dofs,
                                       int cell_orientation) const

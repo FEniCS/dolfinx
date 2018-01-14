@@ -29,8 +29,6 @@ private:
   static UniqueIdGenerator unique_id_generator;
 
   // Next ID to be returned
-  std::size_t next_id;
+  std::size_t _next_id;
 };
 }
-
-

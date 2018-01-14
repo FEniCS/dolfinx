@@ -35,8 +35,8 @@ public:
   std::size_t num_vertices(std::size_t dim) const;
 
   /// Create entities e of given topological dimension from vertices v
-  void create_entities(boost::multi_array<unsigned int, 2>& e, std::size_t dim,
-                       const unsigned int* v) const;
+  void create_entities(boost::multi_array<std::uint32_t, 2>& e, std::size_t dim,
+                       const std::uint32_t* v) const;
 
   /// Order entities locally (connectivity 1-0, 2-0, 2-1)
   void
@@ -86,5 +86,3 @@ private:
   std::size_t find_edge(std::size_t i, const Cell& cell) const;
 };
 }
-
-

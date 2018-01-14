@@ -6,6 +6,10 @@
 
 #pragma once
 
+#include "LogLevel.h"
+#include "Table.h"
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/timing.h>
 #include <map>
 #include <memory>
 #include <ostream>
@@ -13,11 +17,6 @@
 #include <string>
 #include <thread>
 #include <tuple>
-
-#include "LogLevel.h"
-#include "Table.h"
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/timing.h>
 
 namespace dolfin
 {

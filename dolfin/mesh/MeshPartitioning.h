@@ -58,12 +58,6 @@ public:
   static void build_distributed_mesh(Mesh& mesh, const LocalMeshData& data,
                                      const std::string ghost_mode);
 
-  /// Build a MeshValueCollection based on LocalMeshValueCollection
-  template <typename T>
-  static void build_distributed_value_collection(
-      MeshValueCollection<T>& values,
-      const LocalMeshValueCollection<T>& local_data, const Mesh& mesh);
-
 private:
   // Compute cell partitioning from local mesh data. Returns a
   // vector 'cell -> process' vector for cells in LocalMeshData, and
@@ -88,7 +82,7 @@ private:
   static void distribute_cell_layer(
       MPI_Comm mpi_comm, const int num_regular_cells,
       const std::int64_t num_global_vertices,
-      std::map<std::int32_t, std::set<unsigned int>>& shared_cells,
+      std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
       boost::multi_array<std::int64_t, 2>& cell_vertices,
       std::vector<std::int64_t>& global_cell_indices,
       std::vector<int>& cell_partition);
@@ -97,12 +91,12 @@ private:
   // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH). Returns
   // the tuple (new_shared_cells, new_cell_vertices,new_global_cell_indices).
   static void reorder_cells_gps(
-      MPI_Comm mpi_comm, const unsigned int num_regular_cells,
+      MPI_Comm mpi_comm, const std::uint32_t num_regular_cells,
       const CellType& cell_type,
-      const std::map<std::int32_t, std::set<unsigned int>>& shared_cells,
+      const std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
       const boost::multi_array<std::int64_t, 2>& cell_vertices,
       const std::vector<std::int64_t>& global_cell_indices,
-      std::map<std::int32_t, std::set<unsigned int>>& reordered_shared_cells,
+      std::map<std::int32_t, std::set<std::uint32_t>>& reordered_shared_cells,
       boost::multi_array<std::int64_t, 2>& reordered_cell_vertices,
       std::vector<std::int64_t>& reordered_global_cell_indices);
 
@@ -133,14 +127,14 @@ private:
       boost::multi_array<std::int64_t, 2>& new_cell_vertices,
       std::vector<std::int64_t>& new_global_cell_indices,
       std::vector<int>& new_cell_partition,
-      std::map<std::int32_t, std::set<unsigned int>>& shared_cells);
+      std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells);
 
   // FIXME: Improve explaination
   // Utility to convert received_vertex_indices into
   // vertex sharing information
   static void build_shared_vertices(
       MPI_Comm mpi_comm,
-      std::map<std::int32_t, std::set<unsigned int>>& shared_vertices,
+      std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices,
       const std::map<std::int64_t, std::int32_t>&
           vertex_global_to_local_indices,
       const std::vector<std::vector<std::size_t>>& received_vertex_indices);
@@ -152,7 +146,7 @@ private:
       const std::vector<std::int64_t>& vertex_indices,
       boost::multi_array<double, 2>& new_vertex_coordinates,
       std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices,
-      std::map<std::int32_t, std::set<unsigned int>>& shared_vertices_local);
+      std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local);
 
   // Compute the local->global and global->local maps for all local vertices
   // on this process, from the global vertex indices on each local cell.
@@ -175,171 +169,5 @@ private:
       const std::int64_t num_global_vertices,
       const std::map<std::int64_t, std::int32_t>&
           vertex_global_to_local_indices);
-
-  // Create and attach distributed MeshDomains from local_data
-  // [entry, (cell_index, local_index, value)]
-  template <typename T, typename MeshValueCollection>
-  static void build_mesh_value_collection(
-      const Mesh& mesh,
-      const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T>>&
-          local_value_data,
-      MeshValueCollection& mesh_values);
 };
-//---------------------------------------------------------------------------
-template <typename T>
-void MeshPartitioning::build_distributed_value_collection(
-    MeshValueCollection<T>& values,
-    const LocalMeshValueCollection<T>& local_data, const Mesh& mesh)
-{
-  // Extract data
-  const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T>>&
-      local_values
-      = local_data.values();
-
-  // Build MeshValueCollection from local data
-  build_mesh_value_collection(mesh, local_values, values);
 }
-//---------------------------------------------------------------------------
-template <typename T, typename MeshValueCollection>
-void MeshPartitioning::build_mesh_value_collection(
-    const Mesh& mesh,
-    const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T>>&
-        local_value_data,
-    MeshValueCollection& mesh_values)
-{
-  // Get MPI communicator
-  const MPI_Comm mpi_comm = mesh.mpi_comm();
-
-  // Get topological dimensions
-  const std::size_t D = mesh.topology().dim();
-  const std::size_t dim = mesh_values.dim();
-  mesh.init(dim);
-
-  // This is required for old-style mesh data that uses (cell index,
-  // local entity index)
-  mesh.init(dim, D);
-
-  // Clear MeshValueCollection values
-  mesh_values.clear();
-
-  // Initialise global entity numbering
-  DistributedMeshTools::number_entities(mesh, dim);
-
-  // Get mesh value collection used for marking
-  MeshValueCollection& markers = mesh_values;
-
-  // Get local mesh data for domains
-  const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T>>& ldata
-      = local_value_data;
-
-  // Get local local-to-global map
-  if (!mesh.topology().have_global_indices(D))
-  {
-    dolfin_error("MeshPartitioning.h", "build mesh value collection",
-                 "Do not have have_global_entity_indices");
-  }
-
-  // Get global indices on local process
-  const auto& global_entity_indices = mesh.topology().global_indices(D);
-
-  // Add local (to this process) data to domain marker
-  std::vector<std::size_t> off_process_global_cell_entities;
-
-  // Build and populate a local map for global_entity_indices
-  std::map<std::size_t, std::size_t> map_of_global_entity_indices;
-  for (std::size_t i = 0; i < global_entity_indices.size(); i++)
-    map_of_global_entity_indices[global_entity_indices[i]] = i;
-
-  for (std::size_t i = 0; i < ldata.size(); ++i)
-  {
-    const std::map<std::int32_t, std::set<unsigned int>>& sharing_map
-        = mesh.topology().shared_entities(D);
-
-    const std::size_t global_cell_index = ldata[i].first.first;
-    auto data = map_of_global_entity_indices.find(global_cell_index);
-    if (data != map_of_global_entity_indices.end())
-    {
-      const std::size_t local_cell_index = data->second;
-      const std::size_t entity_local_index = ldata[i].first.second;
-      const T value = ldata[i].second;
-      markers.set_value(local_cell_index, entity_local_index, value);
-
-      // If shared with other processes, add to off process list
-      if (sharing_map.find(local_cell_index) != sharing_map.end())
-        off_process_global_cell_entities.push_back(global_cell_index);
-    }
-    else
-      off_process_global_cell_entities.push_back(global_cell_index);
-  }
-
-  // Get destinations and local cell index at destination for
-  // off-process cells
-  const std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t>>>
-      entity_hosts = DistributedMeshTools::locate_off_process_entities(
-          off_process_global_cell_entities, D, mesh);
-
-  // Number of MPI processes
-  const std::size_t num_processes = MPI::size(mpi_comm);
-
-  // Pack data to send to appropriate process
-  std::vector<std::vector<std::size_t>> send_data0(num_processes);
-  std::vector<std::vector<T>> send_data1(num_processes);
-
-  {
-    // Build a convenience map in order to speedup the loop over
-    // local data
-    std::map<std::size_t, std::set<std::size_t>> map_of_ldata;
-    for (std::size_t i = 0; i < ldata.size(); ++i)
-      map_of_ldata[ldata[i].first.first].insert(i);
-
-    for (auto entity_host = entity_hosts.begin();
-         entity_host != entity_hosts.end(); ++entity_host)
-    {
-      const std::size_t host_global_cell_index = entity_host->first;
-      const std::set<std::pair<std::size_t, std::size_t>>& processes_data
-          = entity_host->second;
-
-      // Loop over local data
-      auto ldata_it = map_of_ldata.find(host_global_cell_index);
-      if (ldata_it != map_of_ldata.end())
-      {
-        for (auto it = ldata_it->second.begin(); it != ldata_it->second.end();
-             it++)
-        {
-          const std::size_t local_entity_index = ldata[*it].first.second;
-          const T domain_value = ldata[*it].second;
-          for (auto process_data = processes_data.begin();
-               process_data != processes_data.end(); ++process_data)
-          {
-            const std::size_t proc = process_data->first;
-            const std::size_t local_cell_entity = process_data->second;
-            send_data0[proc].push_back(local_cell_entity);
-            send_data0[proc].push_back(local_entity_index);
-            send_data1[proc].push_back(domain_value);
-          }
-        }
-      }
-    }
-  }
-
-  // Send/receive data
-  std::vector<std::size_t> received_data0;
-  std::vector<T> received_data1;
-  MPI::all_to_all(mpi_comm, send_data0, received_data0);
-  MPI::all_to_all(mpi_comm, send_data1, received_data1);
-  dolfin_assert(2 * received_data1.size() == received_data0.size());
-
-  // Add received data to mesh domain
-  for (std::size_t i = 0; i < received_data1.size(); ++i)
-  {
-    const std::int64_t local_cell_entity = received_data0[2 * i];
-    const std::int64_t local_entity_index = received_data0[2 * i + 1];
-    const T value = received_data1[i];
-    dolfin_assert(local_cell_entity < mesh.num_cells());
-    markers.set_value(local_cell_entity, local_entity_index, value);
-  }
-}
-//---------------------------------------------------------------------------
-}
-
-

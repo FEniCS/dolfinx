@@ -710,7 +710,7 @@ void XDMFFile::write_mesh_value_collection(const MeshValueCollection<T>& mvc,
     MeshEntity cell = Cell(*mesh, p.first.first);
     if (cell_dim != tdim)
     {
-      const unsigned int entity_local_idx
+      const std::uint32_t entity_local_idx
           = cell.entities(cell_dim)[p.first.second];
       cell = MeshEntity(*mesh, cell_dim, entity_local_idx);
     }
@@ -1524,7 +1524,7 @@ void XDMFFile::build_mesh_quadratic(
 
   // Get set of indices for vertices
   dolfin::Set<std::int32_t> vertex_indices;
-  for (unsigned int i = 0; i < num_cells; ++i)
+  for (std::uint32_t i = 0; i < num_cells; ++i)
   {
     for (int j = 0; j < num_vertices_per_cell; ++j)
       vertex_indices.insert(topology_data_array[i][j]);
@@ -1549,7 +1549,7 @@ void XDMFFile::build_mesh_quadratic(
   }
 
   mesh_editor.init_cells_global(num_cells, num_cells);
-  std::vector<unsigned int> pts(num_vertices_per_cell);
+  std::vector<std::uint32_t> pts(num_vertices_per_cell);
   for (int i = 0; i < num_cells; ++i)
   {
     for (int j = 0; j < num_vertices_per_cell; ++j)
@@ -1571,9 +1571,9 @@ void XDMFFile::build_mesh_quadratic(
     edge_mapping = {5, 4, 1, 3, 2, 0};
 
   mesh_editor.init_entities();
-  for (unsigned int i = 0; i < num_cells; ++i)
+  for (std::uint32_t i = 0; i < num_cells; ++i)
   {
-    unsigned int j = 0;
+    std::uint32_t j = 0;
     for (EdgeIterator e(Cell(mesh, i)); !e.end(); ++e)
     {
       // fixme: permute j
@@ -1626,7 +1626,7 @@ void XDMFFile::build_mesh(Mesh& mesh, const CellType& cell_type,
                                + (i + 1) * num_vertices_per_cell);
 
       // Apply permutation and store topology as permuted topology
-      for (unsigned int j = 0; j < num_vertices_per_cell; ++j)
+      for (std::uint32_t j = 0; j < num_vertices_per_cell; ++j)
       {
         cell_topology_permuted[j] = cell_topology[perm[j]];
       }
@@ -1910,7 +1910,7 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
   }
 }
 //----------------------------------------------------------------------------
-std::set<unsigned int> XDMFFile::compute_nonlocal_entities(const Mesh& mesh,
+std::set<std::uint32_t> XDMFFile::compute_nonlocal_entities(const Mesh& mesh,
                                                            int cell_dim)
 {
   // If not already numbered, number entities of
@@ -1918,10 +1918,10 @@ std::set<unsigned int> XDMFFile::compute_nonlocal_entities(const Mesh& mesh,
   DistributedMeshTools::number_entities(mesh, cell_dim);
 
   const std::size_t mpi_rank = MPI::rank(mesh.mpi_comm());
-  const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
+  const std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities
       = mesh.topology().shared_entities(cell_dim);
 
-  std::set<unsigned int> non_local_entities;
+  std::set<std::uint32_t> non_local_entities;
 
   const std::size_t tdim = mesh.topology().dim();
   bool ghosted
@@ -1933,7 +1933,7 @@ std::set<unsigned int> XDMFFile::compute_nonlocal_entities(const Mesh& mesh,
     // which are on lower rank processes
     for (const auto& e : shared_entities)
     {
-      const unsigned int lowest_rank_owner = *(e.second.begin());
+      const std::uint32_t lowest_rank_owner = *(e.second.begin());
       if (lowest_rank_owner < mpi_rank)
         non_local_entities.insert(e.first);
     }
@@ -1944,7 +1944,7 @@ std::set<unsigned int> XDMFFile::compute_nonlocal_entities(const Mesh& mesh,
     // which are in lower rank process cells
     for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
     {
-      const unsigned int cell_owner = c->owner();
+      const std::uint32_t cell_owner = c->owner();
       for (MeshEntityIterator e(*c, cell_dim); !e.end(); ++e)
         if (!e->is_ghost() && cell_owner < mpi_rank)
           non_local_entities.insert(e->index());
@@ -1979,15 +1979,15 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
       const auto& global_vertices = mesh.topology().global_indices(0);
       for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
       {
-        const unsigned int* entities = c->entities(0);
-        for (unsigned int i = 0; i != c->num_entities(0); ++i)
+        const std::uint32_t* entities = c->entities(0);
+        for (std::uint32_t i = 0; i != c->num_entities(0); ++i)
           topology_data.push_back(global_vertices[entities[perm[i]]]);
       }
     }
   }
   else
   {
-    std::set<unsigned int> non_local_entities
+    std::set<std::uint32_t> non_local_entities
         = compute_nonlocal_entities(mesh, cell_dim);
 
     if (cell_dim == 0)
@@ -2008,9 +2008,9 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
         // If not excluded, add to topology
         if (non_local_entities.find(e->index()) == non_local_entities.end())
         {
-          for (unsigned int i = 0; i != e->num_entities(0); ++i)
+          for (std::uint32_t i = 0; i != e->num_entities(0); ++i)
           {
-            const unsigned int local_idx = e->entities(0)[perm[i]];
+            const std::uint32_t local_idx = e->entities(0)[perm[i]];
             topology_data.push_back(global_vertices[local_idx]);
           }
         }
@@ -2050,9 +2050,9 @@ std::vector<T> XDMFFile::compute_quadratic_topology(const Mesh& mesh)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     // Add indices for vertices and edges
-    for (unsigned int dim = 0; dim != 2; ++dim)
+    for (std::uint32_t dim = 0; dim != 2; ++dim)
     {
-      for (unsigned int i = 0; i != celltype.num_entities(dim); ++i)
+      for (std::uint32_t i = 0; i != celltype.num_entities(dim); ++i)
       {
         std::size_t im = (dim == 0) ? i : edge_mapping[i];
         const std::size_t entity_index
@@ -2089,7 +2089,7 @@ std::vector<T> XDMFFile::compute_value_data(const MeshFunction<T>& meshfunction)
   }
   else
   {
-    std::set<unsigned int> non_local_entities
+    std::set<std::uint32_t> non_local_entities
         = compute_nonlocal_entities(*mesh, cell_dim);
 
     for (MeshEntityIterator e(*mesh, cell_dim); !e.end(); ++e)
@@ -2443,8 +2443,8 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction,
   dolfin_assert(cell_type_str.second == 1);
   std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str.first));
   dolfin_assert(cell_type);
-  const unsigned int num_vertices_per_cell = cell_type->num_entities(0);
-  const unsigned int cell_dim = cell_type->dim();
+  const std::uint32_t num_vertices_per_cell = cell_type->num_entities(0);
+  const std::uint32_t cell_dim = cell_type->dim();
   dolfin_assert(cell_dim == meshfunction.dim());
   const std::int64_t num_entities_global = get_num_cells(topology_node);
 

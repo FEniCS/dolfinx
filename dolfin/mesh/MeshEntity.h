@@ -139,9 +139,9 @@ public:
   ///
   /// @return     std::size_t
   ///         The index for incident mesh entities of given dimension.
-  const unsigned int* entities(std::size_t dim) const
+  const std::uint32_t* entities(std::size_t dim) const
   {
-    const unsigned int* initialized_mesh_entities
+    const std::uint32_t* initialized_mesh_entities
         = _mesh->topology()(_dim, dim)(_local_index);
     dolfin_assert(initialized_mesh_entities);
     return initialized_mesh_entities;
@@ -182,15 +182,15 @@ public:
   }
 
   /// Return set of sharing processes
-  /// @return std::set<unsigned int>
+  /// @return std::set<std::uint32_t>
   ///   List of sharing processes
-  std::set<unsigned int> sharing_processes() const
+  std::set<std::uint32_t> sharing_processes() const
   {
-    const std::map<std::int32_t, std::set<unsigned int>>& sharing_map
+    const std::map<std::int32_t, std::set<std::uint32_t>>& sharing_map
         = _mesh->topology().shared_entities(_dim);
     const auto map_it = sharing_map.find(_local_index);
     if (map_it == sharing_map.end())
-      return std::set<unsigned int>();
+      return std::set<std::uint32_t>();
     else
       return map_it->second;
   }
@@ -202,7 +202,7 @@ public:
   {
     if (_mesh->topology().have_shared_entities(_dim))
     {
-      const std::map<std::int32_t, std::set<unsigned int>>& sharing_map
+      const std::map<std::int32_t, std::set<std::uint32_t>>& sharing_map
           = _mesh->topology().shared_entities(_dim);
       return (sharing_map.find(_local_index) != sharing_map.end());
     }
@@ -210,9 +210,9 @@ public:
   }
 
   /// Get ownership of this entity - only really valid for cells
-  /// @return unsigned int
+  /// @return std::uint32_t
   ///    Owning process
-  unsigned int owner() const;
+  std::uint32_t owner() const;
 
   // Note: Not a subclass of Variable for efficiency!
   /// Return informal string representation (pretty-print)

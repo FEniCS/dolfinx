@@ -4,26 +4,25 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <algorithm>
-#include <boost/multi_array.hpp>
-#include <boost/unordered_map.hpp>
-#include <boost/version.hpp>
-#include <cstdint>
-#include <string>
-#include <tuple>
-#include <utility>
-#include <vector>
-
+#include "TopologyComputation.h"
 #include "Cell.h"
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshConnectivity.h"
 #include "MeshEntityIterator.h"
 #include "MeshTopology.h"
-#include "TopologyComputation.h"
+#include <algorithm>
+#include <boost/multi_array.hpp>
+#include <boost/unordered_map.hpp>
+#include <boost/version.hpp>
+#include <cstdint>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/log/log.h>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 using namespace dolfin;
 
@@ -179,10 +178,10 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
   const int num_vertices = cell_type.num_vertices(dim);
 
   // Create map from cell vertices to entity vertices
-  boost::multi_array<unsigned int, 2> e_vertices(
+  boost::multi_array<std::uint32_t, 2> e_vertices(
       boost::extents[num_entities][num_vertices]);
   const int num_vertices_per_cell = cell_type.num_vertices();
-  std::vector<unsigned int> v(num_vertices_per_cell);
+  std::vector<std::uint32_t> v(num_vertices_per_cell);
   std::iota(v.begin(), v.end(), 0);
   cell_type.create_entities(e_vertices, dim, v.data());
 
@@ -201,7 +200,7 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
   for (CellIterator c(mesh, "all"); !c.end(); ++c)
   {
     // Get vertices from cell
-    const unsigned int* vertices = c->entities(0);
+    const std::uint32_t* vertices = c->entities(0);
     dolfin_assert(vertices);
 
     // Iterate over entities of cell
@@ -377,11 +376,11 @@ void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
   connectivity.init(mesh.num_entities(d0), cell_type->num_entities(d1));
 
   // Make a map from the sorted d1 entity vertices to the d1 entity index
-  boost::unordered_map<std::vector<unsigned int>, unsigned int> entity_to_index;
+  boost::unordered_map<std::vector<std::uint32_t>, std::uint32_t> entity_to_index;
   entity_to_index.reserve(mesh.num_entities(d1));
 
   const std::size_t num_verts_d1 = mesh.type().num_vertices(d1);
-  std::vector<unsigned int> key(num_verts_d1);
+  std::vector<std::uint32_t> key(num_verts_d1);
   for (MeshEntityIterator e(mesh, d1, "all"); !e.end(); ++e)
   {
     std::partial_sort_copy(e->entities(0), e->entities(0) + num_verts_d1,
@@ -391,7 +390,7 @@ void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
 
   // Search for d1 entities of d0 in map, and recover index
   std::vector<std::size_t> entities;
-  boost::multi_array<unsigned int, 2> keys;
+  boost::multi_array<std::uint32_t, 2> keys;
   for (MeshEntityIterator e(mesh, d0, "all"); !e.end(); ++e)
   {
     entities.clear();
@@ -405,92 +404,5 @@ void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
     }
     connectivity.set(e->index(), entities.data());
   }
-}
-//-----------------------------------------------------------------------------
-void TopologyComputation::compute_from_intersection(Mesh& mesh, std::size_t d0,
-                                                    std::size_t d1,
-                                                    std::size_t d)
-{
-  log(TRACE,
-      "Computing mesh connectivity %d - %d from intersection %d - %d - %d.", d0,
-      d1, d0, d, d1);
-
-  // Get mesh topology
-  MeshTopology& topology = mesh.topology();
-
-  // Check preconditions
-  dolfin_assert(d0 >= d1);
-  dolfin_assert(!topology(d0, d).empty());
-  dolfin_assert(!topology(d, d1).empty());
-
-  // Temporary dynamic storage, later copied into static storage
-  std::vector<std::vector<std::size_t>> connectivity(topology.size(d0));
-
-  // A bitmap used to ensure we do not store duplicates
-  std::vector<bool> e1_visited(topology.size(d1));
-
-  // Iterate over all entities of dimension d0
-  std::size_t max_size = 1;
-  const std::size_t e0_num_entities = mesh.type().num_vertices(d0);
-  const std::size_t e1_num_entities = mesh.type().num_vertices(d1);
-  std::vector<std::size_t> _e0(e0_num_entities);
-  std::vector<std::size_t> _e1(e1_num_entities);
-  for (MeshEntityIterator e0(mesh, d0, "all"); !e0.end(); ++e0)
-  {
-    // Get set of connected entities for current entity
-    std::vector<std::size_t>& entities = connectivity[e0->index()];
-
-    // Reserve space
-    entities.reserve(max_size);
-
-    // Sorted list of e0 vertex indices (necessary to test for
-    // presence of one list in another)
-    std::copy(e0->entities(0), e0->entities(0) + e0_num_entities, _e0.begin());
-    std::sort(_e0.begin(), _e0.end());
-
-    // Initialise e1_visited to false for all neighbours of e0. The
-    // loop structure mirrors the one below.
-    for (MeshEntityIterator e(*e0, d); !e.end(); ++e)
-      for (MeshEntityIterator e1(*e, d1); !e1.end(); ++e1)
-        e1_visited[e1->index()] = false;
-
-    // Iterate over all connected entities of dimension d
-    for (MeshEntityIterator e(*e0, d); !e.end(); ++e)
-    {
-      // Iterate over all connected entities of dimension d1
-      for (MeshEntityIterator e1(*e, d1); !e1.end(); ++e1)
-      {
-        // Skip already visited connected entities (to avoid duplicates)
-        if (e1_visited[e1->index()])
-          continue;
-        e1_visited[e1->index()] = true;
-
-        if (d0 == d1)
-        {
-          // An entity is not a neighbor to itself (duplicate index
-          // entries removed at end)
-          if (e0->index() != e1->index())
-            entities.push_back(e1->index());
-        }
-        else
-        {
-          // Sorted list of e1 vertex indices
-          std::copy(e1->entities(0), e1->entities(0) + e1_num_entities,
-                    _e1.begin());
-          std::sort(_e1.begin(), _e1.end());
-
-          // Entity e1 must be completely contained in e0
-          if (std::includes(_e0.begin(), _e0.end(), _e1.begin(), _e1.end()))
-            entities.push_back(e1->index());
-        }
-      }
-    }
-
-    // Store maximum size
-    max_size = std::max(entities.size(), max_size);
-  }
-
-  // Copy to static storage
-  topology(d0, d1).set(connectivity);
 }
 //-----------------------------------------------------------------------------
