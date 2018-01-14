@@ -4,17 +4,16 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <algorithm>
-#include <boost/multi_array.hpp>
-#include <cmath>
-
+#include "TetrahedronCell.h"
 #include "Cell.h"
 #include "Facet.h"
 #include "MeshEditor.h"
 #include "MeshGeometry.h"
-#include "TetrahedronCell.h"
 #include "TriangleCell.h"
 #include "Vertex.h"
+#include <algorithm>
+#include <boost/multi_array.hpp>
+#include <cmath>
 #include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/log/log.h>
 

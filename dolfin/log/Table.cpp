@@ -4,14 +4,13 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-
 #include "Table.h"
 #include <dolfin/common/constants.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/log.h>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
 using namespace dolfin;
 

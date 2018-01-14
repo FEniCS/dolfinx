@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <memory>
-
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
@@ -44,5 +42,3 @@ public:
 /// A VertexIterator is a MeshEntityIterator of topological dimension 0
 typedef MeshEntityIteratorBase<Vertex> VertexIterator;
 }
-
-

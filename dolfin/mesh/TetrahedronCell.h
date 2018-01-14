@@ -6,10 +6,9 @@
 
 #pragma once
 
+#include "CellType.h"
 #include <boost/multi_array.hpp>
 #include <vector>
-
-#include "CellType.h"
 
 namespace dolfin
 {
@@ -90,5 +89,3 @@ private:
                               const Point& D) const;
 };
 }
-
-

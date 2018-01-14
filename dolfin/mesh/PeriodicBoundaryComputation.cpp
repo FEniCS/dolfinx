@@ -4,19 +4,18 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "PeriodicBoundaryComputation.h"
+#include "DistributedMeshTools.h"
+#include "Facet.h"
+#include "Mesh.h"
+#include "MeshEntityIterator.h"
+#include "SubDomain.h"
+#include <dolfin/log/log.h>
 #include <limits>
 #include <map>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-
-#include "DistributedMeshTools.h"
-#include "Facet.h"
-#include "Mesh.h"
-#include "MeshEntityIterator.h"
-#include "PeriodicBoundaryComputation.h"
-#include "SubDomain.h"
-#include <dolfin/log/log.h>
 
 using namespace dolfin;
 

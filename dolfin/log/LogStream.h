@@ -89,5 +89,3 @@ extern LogStream cout;
 /// dolfin::endl;
 extern LogStream endl;
 }
-
-
