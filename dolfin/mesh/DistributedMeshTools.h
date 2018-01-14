@@ -33,10 +33,10 @@ public:
   /// given global vertex indices.
   static std::size_t number_entities(
       const Mesh& mesh,
-      const std::map<unsigned int, std::pair<unsigned int, unsigned int>>&
+      const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>&
           slave_entities,
       std::vector<std::int64_t>& global_entity_indices,
-      std::map<std::int32_t, std::set<unsigned int>>& shared_entities,
+      std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities,
       std::size_t d);
 
   /// Compute number of cells connected to each facet
@@ -55,9 +55,10 @@ public:
   /// Compute map from local index of shared entity to list
   /// of sharing process and local index,
   /// i.e. (local index, [(sharing process p, local index on p)])
-  static std::unordered_map<unsigned int,
-                            std::vector<std::pair<unsigned int, unsigned int>>>
-  compute_shared_entities(const Mesh& mesh, std::size_t d);
+  static std::
+      unordered_map<std::uint32_t,
+                    std::vector<std::pair<std::uint32_t, std::uint32_t>>>
+      compute_shared_entities(const Mesh& mesh, std::size_t d);
 
   /// Reorders the vertices in a distributed mesh according to
   /// their global index, and redistributes them evenly across processes
@@ -89,25 +90,25 @@ private:
     EntityData() : local_index(0) {}
 
     // Constructor  (index is local)
-    explicit EntityData(unsigned int index) : local_index(index) {}
+    explicit EntityData(std::uint32_t index) : local_index(index) {}
 
     // Constructor (index is local)
-    EntityData(unsigned int index, const std::vector<unsigned int>& procs)
+    EntityData(std::uint32_t index, const std::vector<std::uint32_t>& procs)
         : local_index(index), processes(procs)
     {
     }
 
     // Constructor  (index is local)
-    EntityData(unsigned int index, unsigned int process)
+    EntityData(std::uint32_t index, std::uint32_t process)
         : local_index(index), processes(1, process)
     {
     }
 
     // Local (this process) entity index
-    unsigned int local_index;
+    std::uint32_t local_index;
 
     // Processes on which entity resides
-    std::vector<unsigned int> processes;
+    std::vector<std::uint32_t> processes;
   };
 
   // Compute ownership of entities ([entity vertices], data)
@@ -118,8 +119,8 @@ private:
   //       and number communicated to this processes)
   static void compute_entity_ownership(
       const MPI_Comm mpi_comm,
-      const std::map<std::vector<std::size_t>, unsigned int>& entities,
-      const std::map<std::int32_t, std::set<unsigned int>>&
+      const std::map<std::vector<std::size_t>, std::uint32_t>& entities,
+      const std::map<std::int32_t, std::set<std::uint32_t>>&
           shared_vertices_local,
       const std::vector<std::int64_t>& global_vertex_indices, std::size_t d,
       std::vector<std::size_t>& owned_entities,
@@ -129,8 +130,8 @@ private:
   // not involve any inter-process communication.
   static void compute_preliminary_entity_ownership(
       const MPI_Comm mpi_comm,
-      const std::map<std::size_t, std::set<unsigned int>>& shared_vertices,
-      const std::map<Entity, unsigned int>& entities,
+      const std::map<std::size_t, std::set<std::uint32_t>>& shared_vertices,
+      const std::map<Entity, std::uint32_t>& entities,
       std::vector<std::size_t>& owned_entities,
       std::array<std::map<Entity, EntityData>, 2>& entity_ownership);
 
@@ -142,7 +143,7 @@ private:
   // Check if all entity vertices are the shared vertices in overlap
   static bool is_shared(
       const std::vector<std::size_t>& entity_vertices,
-      const std::map<std::size_t, std::set<unsigned int>>& shared_vertices);
+      const std::map<std::size_t, std::set<std::uint32_t>>& shared_vertices);
 
   // Compute and return (number of global entities, process offset)
   static std::pair<std::size_t, std::size_t> compute_num_global_entities(
@@ -150,5 +151,3 @@ private:
       std::size_t num_processes, std::size_t process_number);
 };
 }
-
-

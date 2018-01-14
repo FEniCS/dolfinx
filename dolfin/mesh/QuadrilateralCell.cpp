@@ -60,9 +60,9 @@ std::size_t QuadrilateralCell::num_vertices(std::size_t dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void QuadrilateralCell::create_entities(boost::multi_array<unsigned int, 2>& e,
+void QuadrilateralCell::create_entities(boost::multi_array<std::uint32_t, 2>& e,
                                         std::size_t dim,
-                                        const unsigned int* v) const
+                                        const std::uint32_t* v) const
 {
   // We only need to know how to create edges
   if (dim != 1)
@@ -98,7 +98,7 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the four vertices
-  const unsigned int* vertices = cell.entities(0);
+  const std::uint32_t* vertices = cell.entities(0);
   const Point p0 = geometry.point(vertices[0]);
   const Point p1 = geometry.point(vertices[1]);
   const Point p2 = geometry.point(vertices[2]);
@@ -218,7 +218,7 @@ Point QuadrilateralCell::cell_normal(const Cell& cell) const
                  "Illegal geometric dimension (%d)", gdim);
 
   // Get the three vertices as points
-  const unsigned int* vertices = cell.entities(0);
+  const std::uint32_t* vertices = cell.entities(0);
   const Point p0 = geometry.point(vertices[0]);
   const Point p1 = geometry.point(vertices[1]);
   const Point p2 = geometry.point(vertices[2]);

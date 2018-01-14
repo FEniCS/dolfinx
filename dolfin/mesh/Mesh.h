@@ -118,10 +118,10 @@ public:
 
   /// Get cell connectivity.
   ///
-  /// @return std::vector<unsigned int>&
+  /// @return std::vector<std::uint32_t>&
   ///         Connectivity for all cells.
   ///
-  const std::vector<unsigned int>& cells() const
+  const std::vector<std::uint32_t>& cells() const
   {
     return _topology(_topology.dim(), 0)();
   }

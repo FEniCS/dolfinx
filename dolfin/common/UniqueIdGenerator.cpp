@@ -12,7 +12,7 @@ using namespace dolfin;
 dolfin::UniqueIdGenerator dolfin::UniqueIdGenerator::unique_id_generator;
 
 //-----------------------------------------------------------------------------
-UniqueIdGenerator::UniqueIdGenerator() : next_id(0)
+UniqueIdGenerator::UniqueIdGenerator() : _next_id(0)
 {
   // Do nothing
 }
@@ -20,10 +20,10 @@ UniqueIdGenerator::UniqueIdGenerator() : next_id(0)
 std::size_t UniqueIdGenerator::id()
 {
   // Get ID
-  const std::size_t _id = unique_id_generator.next_id;
+  const std::size_t _id = unique_id_generator._next_id;
 
   // Increment ID
-  ++unique_id_generator.next_id;
+  ++unique_id_generator._next_id;
 
   return _id;
 }

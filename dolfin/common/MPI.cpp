@@ -47,12 +47,12 @@ void dolfin::MPI::Comm::free()
 #endif
 }
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::Comm::rank() const
+std::uint32_t dolfin::MPI::Comm::rank() const
 {
   return dolfin::MPI::rank(_comm);
 }
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::Comm::size() const
+std::uint32_t dolfin::MPI::Comm::size() const
 {
 #ifdef HAS_MPI
   int size;
@@ -110,7 +110,7 @@ MPI_Info& dolfin::MPIInfo::operator*() { return info; }
 #endif
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::rank(const MPI_Comm comm)
+std::uint32_t dolfin::MPI::rank(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
   int rank;
@@ -121,7 +121,7 @@ unsigned int dolfin::MPI::rank(const MPI_Comm comm)
 #endif
 }
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::size(const MPI_Comm comm)
+std::uint32_t dolfin::MPI::size(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
   SubSystemsManager::init_mpi();
@@ -197,13 +197,13 @@ dolfin::MPI::compute_local_range(int process, std::int64_t N, int size)
     return {{process * n + r, process * n + r + n}};
 }
 //-----------------------------------------------------------------------------
-unsigned int dolfin::MPI::index_owner(const MPI_Comm comm, std::size_t index,
-                                      std::size_t N)
+std::uint32_t dolfin::MPI::index_owner(const MPI_Comm comm, std::size_t index,
+                                       std::size_t N)
 {
   dolfin_assert(index < N);
 
   // Get number of processes
-  const unsigned int _size = size(comm);
+  const std::uint32_t _size = size(comm);
 
   // Compute number of items per process and remainder
   const std::size_t n = N / _size;
@@ -279,7 +279,7 @@ dolfin::Table dolfin::MPI::all_reduce(const MPI_Comm comm,
   key[0].reserve(128);
   key[1].reserve(128);
   double* values_ptr = values_all.data();
-  for (unsigned int i = 0; i != MPI::size(comm); ++i)
+  for (std::uint32_t i = 0; i != MPI::size(comm); ++i)
   {
     std::stringstream keys_stream(keys_all[i]);
     while (std::getline(keys_stream, key[0], '\0'),

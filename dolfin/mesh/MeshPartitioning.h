@@ -82,7 +82,7 @@ private:
   static void distribute_cell_layer(
       MPI_Comm mpi_comm, const int num_regular_cells,
       const std::int64_t num_global_vertices,
-      std::map<std::int32_t, std::set<unsigned int>>& shared_cells,
+      std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
       boost::multi_array<std::int64_t, 2>& cell_vertices,
       std::vector<std::int64_t>& global_cell_indices,
       std::vector<int>& cell_partition);
@@ -91,12 +91,12 @@ private:
   // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH). Returns
   // the tuple (new_shared_cells, new_cell_vertices,new_global_cell_indices).
   static void reorder_cells_gps(
-      MPI_Comm mpi_comm, const unsigned int num_regular_cells,
+      MPI_Comm mpi_comm, const std::uint32_t num_regular_cells,
       const CellType& cell_type,
-      const std::map<std::int32_t, std::set<unsigned int>>& shared_cells,
+      const std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
       const boost::multi_array<std::int64_t, 2>& cell_vertices,
       const std::vector<std::int64_t>& global_cell_indices,
-      std::map<std::int32_t, std::set<unsigned int>>& reordered_shared_cells,
+      std::map<std::int32_t, std::set<std::uint32_t>>& reordered_shared_cells,
       boost::multi_array<std::int64_t, 2>& reordered_cell_vertices,
       std::vector<std::int64_t>& reordered_global_cell_indices);
 
@@ -127,14 +127,14 @@ private:
       boost::multi_array<std::int64_t, 2>& new_cell_vertices,
       std::vector<std::int64_t>& new_global_cell_indices,
       std::vector<int>& new_cell_partition,
-      std::map<std::int32_t, std::set<unsigned int>>& shared_cells);
+      std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells);
 
   // FIXME: Improve explaination
   // Utility to convert received_vertex_indices into
   // vertex sharing information
   static void build_shared_vertices(
       MPI_Comm mpi_comm,
-      std::map<std::int32_t, std::set<unsigned int>>& shared_vertices,
+      std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices,
       const std::map<std::int64_t, std::int32_t>&
           vertex_global_to_local_indices,
       const std::vector<std::vector<std::size_t>>& received_vertex_indices);
@@ -146,7 +146,7 @@ private:
       const std::vector<std::int64_t>& vertex_indices,
       boost::multi_array<double, 2>& new_vertex_coordinates,
       std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices,
-      std::map<std::int32_t, std::set<unsigned int>>& shared_vertices_local);
+      std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local);
 
   // Compute the local->global and global->local maps for all local vertices
   // on this process, from the global vertex indices on each local cell.

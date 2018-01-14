@@ -53,7 +53,7 @@ MeshTopology& MeshTopology::operator=(const MeshTopology& topology)
 //-----------------------------------------------------------------------------
 std::uint32_t MeshTopology::dim() const { return _num_entities.size() - 1; }
 //-----------------------------------------------------------------------------
-std::uint32_t MeshTopology::size(unsigned int dim) const
+std::uint32_t MeshTopology::size(std::uint32_t dim) const
 {
   if (_num_entities.empty())
     return 0;
@@ -62,7 +62,7 @@ std::uint32_t MeshTopology::size(unsigned int dim) const
   return _num_entities[dim];
 }
 //-----------------------------------------------------------------------------
-std::uint64_t MeshTopology::size_global(unsigned int dim) const
+std::uint64_t MeshTopology::size_global(std::uint32_t dim) const
 {
   if (_global_num_entities.empty())
     return 0;
@@ -72,7 +72,7 @@ std::uint64_t MeshTopology::size_global(unsigned int dim) const
 }
 //-----------------------------------------------------------------------------
 /*
-std::uint32_t MeshTopology::ghost_offset(unsigned int dim) const
+std::uint32_t MeshTopology::ghost_offset(std::uint32_t dim) const
 {
   if (_ghost_offset_index.empty())
     return 0;
@@ -133,15 +133,15 @@ void MeshTopology::init_global_indices(std::size_t dim, std::int64_t size)
   _global_indices[dim] = std::vector<std::int64_t>(size, -1);
 }
 //-----------------------------------------------------------------------------
-std::map<std::int32_t, std::set<unsigned int>>&
-MeshTopology::shared_entities(unsigned int dim)
+std::map<std::int32_t, std::set<std::uint32_t>>&
+MeshTopology::shared_entities(std::uint32_t dim)
 {
   dolfin_assert(dim <= this->dim());
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
-const std::map<std::int32_t, std::set<unsigned int>>&
-MeshTopology::shared_entities(unsigned int dim) const
+const std::map<std::int32_t, std::set<std::uint32_t>>&
+MeshTopology::shared_entities(std::uint32_t dim) const
 {
   auto e = _shared_entities.find(dim);
   if (e == _shared_entities.end())

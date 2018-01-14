@@ -50,7 +50,7 @@ bool MeshEntity::incident(const MeshEntity& entity) const
     return false;
 
   // Get list of entities for given topological dimension
-  const unsigned int* entities
+  const std::uint32_t* entities
       = _mesh->topology()(_dim, entity._dim)(_local_index);
   const std::size_t num_entities
       = _mesh->topology()(_dim, entity._dim).size(_local_index);
@@ -74,7 +74,7 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
   }
 
   // Get list of entities for given topological dimension
-  const unsigned int* entities
+  const std::uint32_t* entities
       = _mesh->topology()(_dim, entity._dim)(_local_index);
   const std::size_t num_entities
       = _mesh->topology()(_dim, entity._dim).size(_local_index);
@@ -122,7 +122,7 @@ Point MeshEntity::midpoint() const
   return p;
 }
 //-----------------------------------------------------------------------------
-unsigned int MeshEntity::owner() const
+std::uint32_t MeshEntity::owner() const
 {
   if (_dim != _mesh->topology().dim())
   {

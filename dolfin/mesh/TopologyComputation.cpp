@@ -178,10 +178,10 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
   const int num_vertices = cell_type.num_vertices(dim);
 
   // Create map from cell vertices to entity vertices
-  boost::multi_array<unsigned int, 2> e_vertices(
+  boost::multi_array<std::uint32_t, 2> e_vertices(
       boost::extents[num_entities][num_vertices]);
   const int num_vertices_per_cell = cell_type.num_vertices();
-  std::vector<unsigned int> v(num_vertices_per_cell);
+  std::vector<std::uint32_t> v(num_vertices_per_cell);
   std::iota(v.begin(), v.end(), 0);
   cell_type.create_entities(e_vertices, dim, v.data());
 
@@ -200,7 +200,7 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
   for (CellIterator c(mesh, "all"); !c.end(); ++c)
   {
     // Get vertices from cell
-    const unsigned int* vertices = c->entities(0);
+    const std::uint32_t* vertices = c->entities(0);
     dolfin_assert(vertices);
 
     // Iterate over entities of cell
@@ -376,11 +376,11 @@ void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
   connectivity.init(mesh.num_entities(d0), cell_type->num_entities(d1));
 
   // Make a map from the sorted d1 entity vertices to the d1 entity index
-  boost::unordered_map<std::vector<unsigned int>, unsigned int> entity_to_index;
+  boost::unordered_map<std::vector<std::uint32_t>, std::uint32_t> entity_to_index;
   entity_to_index.reserve(mesh.num_entities(d1));
 
   const std::size_t num_verts_d1 = mesh.type().num_vertices(d1);
-  std::vector<unsigned int> key(num_verts_d1);
+  std::vector<std::uint32_t> key(num_verts_d1);
   for (MeshEntityIterator e(mesh, d1, "all"); !e.end(); ++e)
   {
     std::partial_sort_copy(e->entities(0), e->entities(0) + num_verts_d1,
@@ -390,7 +390,7 @@ void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
 
   // Search for d1 entities of d0 in map, and recover index
   std::vector<std::size_t> entities;
-  boost::multi_array<unsigned int, 2> keys;
+  boost::multi_array<std::uint32_t, 2> keys;
   for (MeshEntityIterator e(mesh, d0, "all"); !e.end(); ++e)
   {
     entities.clear();

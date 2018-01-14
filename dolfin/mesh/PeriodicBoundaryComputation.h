@@ -27,7 +27,7 @@ public:
   /// on this process (local index) to its master entity (owning
   /// process, local index on owner). If a master entity is shared
   /// by processes, only one of the owning processes is returned.
-  static std::map<unsigned int, std::pair<unsigned int, unsigned int>>
+  static std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>
   compute_periodic_pairs(const Mesh& mesh, const SubDomain& sub_domain,
                          const std::size_t dim);
 
@@ -51,5 +51,3 @@ private:
                               const double tol);
 };
 }
-
-

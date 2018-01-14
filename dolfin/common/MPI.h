@@ -82,12 +82,12 @@ public:
     void reset(MPI_Comm comm);
 
     /// Return process rank for the communicator
-    unsigned int rank() const;
+    std::uint32_t rank() const;
 
     /// Return size of the group (number of processes) associated
     /// with the communicator. This function will also intialise MPI
     /// if it hasn't already been intialised.
-    unsigned int size() const;
+    std::uint32_t size() const;
 
     /// Set a barrier (synchronization point)
     void barrier() const;
@@ -101,11 +101,11 @@ public:
   };
 
   /// Return process rank for the communicator
-  static unsigned int rank(MPI_Comm comm);
+  static std::uint32_t rank(MPI_Comm comm);
 
   /// Return size of the group (number of processes) associated with
   /// the communicator
-  static unsigned int size(MPI_Comm comm);
+  static std::uint32_t size(MPI_Comm comm);
 
   /// Determine whether we should broadcast (based on current
   /// parallel policy)
@@ -133,33 +133,33 @@ public:
   /// Broadcast vector of value from broadcaster to all processes
   template <typename T>
   static void broadcast(MPI_Comm comm, std::vector<T>& value,
-                        unsigned int broadcaster = 0);
+                        std::uint32_t broadcaster = 0);
 
   /// Broadcast single primitive from broadcaster to all processes
   template <typename T>
-  static void broadcast(MPI_Comm comm, T& value, unsigned int broadcaster = 0);
+  static void broadcast(MPI_Comm comm, T& value, std::uint32_t broadcaster = 0);
 
   /// Scatter vector in_values[i] to process i
   template <typename T>
   static void
   scatter(MPI_Comm comm, const std::vector<std::vector<T>>& in_values,
-          std::vector<T>& out_value, unsigned int sending_process = 0);
+          std::vector<T>& out_value, std::uint32_t sending_process = 0);
 
   /// Scatter primitive in_values[i] to process i
   template <typename T>
   static void scatter(MPI_Comm comm, const std::vector<T>& in_values,
-                      T& out_value, unsigned int sending_process = 0);
+                      T& out_value, std::uint32_t sending_process = 0);
 
   /// Gather values on one process
   template <typename T>
   static void gather(MPI_Comm comm, const std::vector<T>& in_values,
                      std::vector<T>& out_values,
-                     unsigned int receiving_process = 0);
+                     std::uint32_t receiving_process = 0);
 
   /// Gather strings on one process
   static void gather(MPI_Comm comm, const std::string& in_values,
                      std::vector<std::string>& out_values,
-                     unsigned int receiving_process = 0);
+                     std::uint32_t receiving_process = 0);
 
   /// Gather values from all processes. Same data count from each
   /// process (wrapper for MPI_Allgather)
@@ -210,15 +210,15 @@ public:
   /// Send-receive data between processes (blocking)
   template <typename T>
   static void send_recv(MPI_Comm comm, const std::vector<T>& send_value,
-                        unsigned int dest, int send_tag,
-                        std::vector<T>& recv_value, unsigned int source,
+                        std::uint32_t dest, int send_tag,
+                        std::vector<T>& recv_value, std::uint32_t source,
                         int recv_tag);
 
   /// Send-receive data between processes
   template <typename T>
   static void send_recv(MPI_Comm comm, const std::vector<T>& send_value,
-                        unsigned int dest, std::vector<T>& recv_value,
-                        unsigned int source);
+                        std::uint32_t dest, std::vector<T>& recv_value,
+                        std::uint32_t source);
 
   /// Return local range for local process, splitting [0, N - 1] into
   /// size() portions of almost equal size
@@ -235,8 +235,8 @@ public:
   compute_local_range(int process, std::int64_t N, int size);
 
   /// Return which process owns index (inverse of local_range)
-  static unsigned int index_owner(MPI_Comm comm, std::size_t index,
-                                  std::size_t N);
+  static std::uint32_t index_owner(MPI_Comm comm, std::size_t index,
+                                   std::size_t N);
 
 #ifdef HAS_MPI
   /// Return average reduction operation; recognized by
@@ -302,7 +302,7 @@ inline MPI_Datatype MPI::mpi_type<long int>()
   return MPI_LONG;
 }
 template <>
-inline MPI_Datatype MPI::mpi_type<unsigned int>()
+inline MPI_Datatype MPI::mpi_type<std::uint32_t>()
 {
   return MPI_UNSIGNED;
 }
@@ -320,7 +320,7 @@ inline MPI_Datatype MPI::mpi_type<long long>()
 //---------------------------------------------------------------------------
 template <typename T>
 void dolfin::MPI::broadcast(MPI_Comm comm, std::vector<T>& value,
-                            unsigned int broadcaster)
+                            std::uint32_t broadcaster)
 {
 #ifdef HAS_MPI
   // Broadcast cast size
@@ -335,7 +335,7 @@ void dolfin::MPI::broadcast(MPI_Comm comm, std::vector<T>& value,
 }
 //---------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::broadcast(MPI_Comm comm, T& value, unsigned int broadcaster)
+void dolfin::MPI::broadcast(MPI_Comm comm, T& value, std::uint32_t broadcaster)
 {
 #ifdef HAS_MPI
   MPI_Bcast(&value, 1, mpi_type<T>(), broadcaster, comm);
@@ -498,7 +498,7 @@ template <typename T>
 void dolfin::MPI::scatter(MPI_Comm comm,
                           const std::vector<std::vector<T>>& in_values,
                           std::vector<T>& out_value,
-                          unsigned int sending_process)
+                          std::uint32_t sending_process)
 {
 #ifdef HAS_MPI
 
@@ -550,10 +550,9 @@ void dolfin::MPI::scatter(MPI_Comm comm,
 //---------------------------------------------------------------------------
 #ifndef DOXYGEN_IGNORE
 template <>
-inline void
-dolfin::MPI::scatter(MPI_Comm comm,
-                     const std::vector<std::vector<bool>>& in_values,
-                     std::vector<bool>& out_value, unsigned int sending_process)
+inline void dolfin::MPI::scatter(
+    MPI_Comm comm, const std::vector<std::vector<bool>>& in_values,
+    std::vector<bool>& out_value, std::uint32_t sending_process)
 {
 #ifdef HAS_MPI
   // Copy data
@@ -576,7 +575,7 @@ dolfin::MPI::scatter(MPI_Comm comm,
 //---------------------------------------------------------------------------
 template <typename T>
 void dolfin::MPI::scatter(MPI_Comm comm, const std::vector<T>& in_values,
-                          T& out_value, unsigned int sending_process)
+                          T& out_value, std::uint32_t sending_process)
 {
 #ifdef HAS_MPI
   if (MPI::rank(comm) == sending_process)
@@ -594,7 +593,7 @@ void dolfin::MPI::scatter(MPI_Comm comm, const std::vector<T>& in_values,
 template <typename T>
 void dolfin::MPI::gather(MPI_Comm comm, const std::vector<T>& in_values,
                          std::vector<T>& out_values,
-                         unsigned int receiving_process)
+                         std::uint32_t receiving_process)
 {
 #ifdef HAS_MPI
   const std::size_t comm_size = MPI::size(comm);
@@ -622,7 +621,7 @@ void dolfin::MPI::gather(MPI_Comm comm, const std::vector<T>& in_values,
 //---------------------------------------------------------------------------
 inline void dolfin::MPI::gather(MPI_Comm comm, const std::string& in_values,
                                 std::vector<std::string>& out_values,
-                                unsigned int receiving_process)
+                                std::uint32_t receiving_process)
 {
 #ifdef HAS_MPI
   const std::size_t comm_size = MPI::size(comm);
@@ -778,7 +777,7 @@ T dolfin::MPI::max(MPI_Comm comm, const T& value)
 {
 #ifdef HAS_MPI
   // Enforce cast to MPI_Op; this is needed because template dispatch may
-  // not recognize this is possible, e.g. C-enum to unsigned int in SGI MPT
+  // not recognize this is possible, e.g. C-enum to std::uint32_t in SGI MPT
   MPI_Op op = static_cast<MPI_Op>(MPI_MAX);
   return all_reduce(comm, value, op);
 #else
@@ -791,7 +790,7 @@ T dolfin::MPI::min(MPI_Comm comm, const T& value)
 {
 #ifdef HAS_MPI
   // Enforce cast to MPI_Op; this is needed because template dispatch may
-  // not recognize this is possible, e.g. C-enum to unsigned int in SGI MPT
+  // not recognize this is possible, e.g. C-enum to std::uint32_t in SGI MPT
   MPI_Op op = static_cast<MPI_Op>(MPI_MIN);
   return all_reduce(comm, value, op);
 #else
@@ -804,7 +803,7 @@ T dolfin::MPI::sum(MPI_Comm comm, const T& value)
 {
 #ifdef HAS_MPI
   // Enforce cast to MPI_Op; this is needed because template dispatch may
-  // not recognize this is possible, e.g. C-enum to unsigned int in SGI MPT
+  // not recognize this is possible, e.g. C-enum to std::uint32_t in SGI MPT
   MPI_Op op = static_cast<MPI_Op>(MPI_SUM);
   return all_reduce(comm, value, op);
 #else
@@ -825,8 +824,8 @@ T dolfin::MPI::avg(MPI_Comm comm, const T& value)
 //---------------------------------------------------------------------------
 template <typename T>
 void dolfin::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
-                            unsigned int dest, int send_tag,
-                            std::vector<T>& recv_value, unsigned int source,
+                            std::uint32_t dest, int send_tag,
+                            std::vector<T>& recv_value, std::uint32_t source,
                             int recv_tag)
 {
 #ifdef HAS_MPI
@@ -849,8 +848,8 @@ void dolfin::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
 //---------------------------------------------------------------------------
 template <typename T>
 void dolfin::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
-                            unsigned int dest, std::vector<T>& recv_value,
-                            unsigned int source)
+                            std::uint32_t dest, std::vector<T>& recv_value,
+                            std::uint32_t source)
 {
   MPI::send_recv(comm, send_value, dest, 0, recv_value, source, 0);
 }
@@ -870,5 +869,3 @@ Table dolfin::MPI::avg(MPI_Comm, const Table&);
 #endif
 //---------------------------------------------------------------------------
 }
-
-
