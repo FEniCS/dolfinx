@@ -6,16 +6,15 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
-#include <utility>
-
 #include "MeshConnectivity.h"
 #include "MeshGeometry.h"
 #include "MeshTopology.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/fem/fem_utils.h>
+#include <memory>
+#include <string>
+#include <utility>
 
 namespace dolfin
 {
@@ -89,20 +88,6 @@ public:
   ///         Number of vertices.
   ///
   std::int64_t num_vertices() const { return _topology.size(0); }
-
-  /// Get number of edges in mesh.
-  ///
-  /// @return std::size_t
-  ///         Number of edges.
-  ///
-  std::int64_t num_edges() const { return _topology.size(1); }
-
-  /// Get number of faces in mesh.
-  ///
-  /// @return std::size_t
-  ///         Number of faces.
-  ///
-  std::int64_t num_faces() const { return _topology.size(2); }
 
   /// Get number of facets in mesh.
   ///

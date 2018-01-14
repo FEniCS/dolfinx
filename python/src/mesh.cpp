@@ -162,8 +162,6 @@ void mesh(py::module& m)
       .def("num_entities", &dolfin::Mesh::num_entities,
            "Number of mesh entities")
       .def("num_vertices", &dolfin::Mesh::num_vertices, "Number of vertices")
-      .def("num_edges", &dolfin::Mesh::num_edges, "Number of edges")
-      .def("num_faces", &dolfin::Mesh::num_faces, "Number of faces")
       .def("num_facets", &dolfin::Mesh::num_facets, "Number of facets")
       .def("num_cells", &dolfin::Mesh::num_cells, "Number of cells")
       .def("ordered", &dolfin::Mesh::ordered)

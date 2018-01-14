@@ -4,24 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <algorithm>
-#include <boost/multi_array.hpp>
-#include <cstdint>
-#include <iterator>
-#include <map>
-#include <memory>
-#include <numeric>
-#include <set>
-
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/Timer.h>
-#include <dolfin/geometry/Point.h>
-#include <dolfin/graph/GraphBuilder.h>
-#include <dolfin/graph/ParMETIS.h>
-#include <dolfin/graph/SCOTCH.h>
-#include <dolfin/log/log.h>
-#include <dolfin/parameter/GlobalParameters.h>
-
+#include "MeshPartitioning.h"
 #include "CellType.h"
 #include "DistributedMeshTools.h"
 #include "Facet.h"
@@ -31,38 +14,27 @@
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
 #include "MeshFunction.h"
-#include "MeshPartitioning.h"
 #include "MeshTopology.h"
 #include "MeshValueCollection.h"
 #include "Vertex.h"
+#include <algorithm>
+#include <boost/multi_array.hpp>
+#include <cstdint>
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
+#include <dolfin/geometry/Point.h>
+#include <dolfin/graph/GraphBuilder.h>
+#include <dolfin/graph/ParMETIS.h>
+#include <dolfin/graph/SCOTCH.h>
+#include <dolfin/log/log.h>
+#include <dolfin/parameter/GlobalParameters.h>
+#include <iterator>
+#include <map>
+#include <memory>
+#include <numeric>
+#include <set>
 
 using namespace dolfin;
-
-// Explicitly instantiate some templated functions to help the Python
-// wrappers
-template void MeshPartitioning::build_mesh_value_collection(
-    const Mesh& mesh,
-    const std::vector<std::pair<std::pair<std::size_t, std::size_t>,
-                                std::size_t>>& local_value_data,
-    MeshValueCollection<std::size_t>& mesh_values);
-
-template void MeshPartitioning::build_mesh_value_collection(
-    const Mesh& mesh,
-    const std::vector<std::pair<std::pair<std::size_t, std::size_t>, int>>&
-        local_value_data,
-    MeshValueCollection<int>& mesh_values);
-
-template void MeshPartitioning::build_mesh_value_collection(
-    const Mesh& mesh,
-    const std::vector<std::pair<std::pair<std::size_t, std::size_t>, double>>&
-        local_value_data,
-    MeshValueCollection<double>& mesh_values);
-
-template void MeshPartitioning::build_mesh_value_collection(
-    const Mesh& mesh,
-    const std::vector<std::pair<std::pair<std::size_t, std::size_t>, bool>>&
-        local_value_data,
-    MeshValueCollection<bool>& mesh_values);
 
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
