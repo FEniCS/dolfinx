@@ -45,28 +45,6 @@ void SubDomain::map(Eigen::Ref<const Eigen::VectorXd> x,
                "boundary conditions)");
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark_cells(Mesh& mesh, std::size_t sub_domain,
-                           bool check_midpoint) const
-{
-  mark(mesh, mesh.topology().dim(), sub_domain, check_midpoint);
-}
-//-----------------------------------------------------------------------------
-void SubDomain::mark_facets(Mesh& mesh, std::size_t sub_domain,
-                            bool check_midpoint) const
-{
-  mark(mesh, mesh.topology().dim() - 1, sub_domain, check_midpoint);
-}
-//-----------------------------------------------------------------------------
-void SubDomain::mark(Mesh& mesh, std::size_t dim, std::size_t sub_domain,
-                     bool check_midpoint) const
-{
-  dolfin_not_implemented();
-  // dolfin_assert(mesh.domains().markers(dim));
-  // dolfin_error("Not yet updated (SubDomain::mark) ");
-  //  apply_markers(mesh.domains().markers(dim), dim, sub_domain, mesh,
-  //                check_midpoint);
-}
-//-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<std::size_t>& sub_domains,
                      std::size_t sub_domain, bool check_midpoint) const
 {

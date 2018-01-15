@@ -60,44 +60,6 @@ public:
   virtual void map(Eigen::Ref<const Eigen::VectorXd> x,
                    Eigen::Ref<Eigen::VectorXd> y) const;
 
-  //--- Marking of Mesh ---
-
-  /// Set subdomain markers (std::size_t) on cells for given subdomain number
-  ///
-  /// @param    mesh (_Mesh_)
-  ///         The mesh to be marked.
-  /// @param    sub_domain (std::size_t)
-  ///         The subdomain number.
-  /// @param    check_midpoint (bool)
-  ///         Flag for whether midpoint of cell should be checked (default).
-  void mark_cells(Mesh& mesh, std::size_t sub_domain,
-                  bool check_midpoint = true) const;
-
-  /// Set subdomain markers (std::size_t) on facets for given subdomain number
-  ///
-  /// @param    mesh (_Mesh_)
-  ///         The mesh to be marked.
-  /// @param    sub_domain (std::size_t)
-  ///         The subdomain number.
-  /// @param    check_midpoint (bool)
-  ///         Flag for whether midpoint of cell should be checked (default).
-  void mark_facets(Mesh& mesh, std::size_t sub_domain,
-                   bool check_midpoint = true) const;
-
-  /// Set subdomain markers (std::size_t) for given topological dimension
-  /// and subdomain number
-  ///
-  /// @param    mesh (_Mesh_)
-  ///         The mesh to be marked.
-  /// @param    dim (std::size_t)
-  ///         The topological dimension of entities to be marked.
-  /// @param    sub_domain (std::size_t)
-  ///         The subdomain number.
-  /// @param    check_midpoint (bool)
-  ///         Flag for whether midpoint of cell should be checked (default).
-  void mark(Mesh& mesh, std::size_t dim, std::size_t sub_domain,
-            bool check_midpoint = true) const;
-
   //--- Marking of MeshFunction ---
 
   /// Set subdomain markers (std::size_t) for given subdomain number
@@ -244,5 +206,3 @@ private:
   mutable std::size_t _geometric_dimension;
 };
 }
-
-
