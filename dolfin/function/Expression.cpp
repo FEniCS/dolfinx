@@ -97,9 +97,32 @@ void Expression::restrict(double* w, const FiniteElement& element,
                           const double* coordinate_dofs,
                           const ufc::cell& ufc_cell) const
 {
-  // Evaluate dofs to get the expansion coefficients
-  element.evaluate_dofs(w, *this, coordinate_dofs, ufc_cell.orientation,
-                        ufc_cell);
+  // Not working for Hdiv, Hcurl elements etc.
+  const std::string family(element.ufc_element()->family());
+  if (family != "Lagrange")
+    dolfin_not_implemented();
+
+  // Get evaluation points
+  const std::size_t vs = value_size();
+  const std::size_t ndofs = element.space_dimension();
+  const std::size_t gdim = element.geometric_dimension();
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      eval_points(ndofs/vs, gdim);
+  element.ufc_element()->tabulate_dof_coordinates(eval_points.data(),
+                                                  coordinate_dofs);
+
+  // Storage for evaluation values
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      eval_values(ndofs/vs, vs);
+
+  // FIXME: should evaluate all at once
+  for (unsigned int i = 0; i != ndofs/vs; ++i)
+    eval(eval_values.row(i), eval_points.row(i));
+
+  // Copy for affine mapping - need to add Piola transform for other elements
+  std::copy(eval_values.data(), eval_values.data() + ndofs, w);
+
+  // FIXME: add transforms here
 }
 //-----------------------------------------------------------------------------
 void Expression::compute_vertex_values(std::vector<double>& vertex_values,

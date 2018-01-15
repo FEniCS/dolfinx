@@ -402,8 +402,28 @@ void Function::restrict(double* w, const FiniteElement& element,
   }
   else
   {
-    // Restrict as UFC function (by calling eval)
-    element.evaluate_dofs(w, *this, coordinate_dofs, ufc_cell.orientation,
+    // Implement callback ufc::function
+    class function_evaluation : public ufc::function {
+    public:
+      function_evaluation(const Function *f) : _f(f) {}
+
+      void evaluate(double *values, const double *coordinates,
+                    const ufc::cell &ufc_cell) const {
+        dolfin_assert(values);
+        dolfin_assert(coordinates);
+
+        // Wrap data
+        Eigen::Map<Eigen::VectorXd> _values(values, _f->value_size());
+        Eigen::Map<const Eigen::VectorXd> x(coordinates,
+                                            ufc_cell.geometric_dimension);
+        // Redirect to eval
+        _f->eval(_values, x, ufc_cell);
+      }
+
+      const Function *_f;
+    } f(this);
+
+    element.evaluate_dofs(w, f, coordinate_dofs, ufc_cell.orientation,
                           ufc_cell);
   }
 }

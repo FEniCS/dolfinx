@@ -41,12 +41,9 @@ void function(py::module& m)
       .def_readonly("mesh_identifier", &ufc::cell::mesh_identifier)
       .def_readonly("index", &ufc::cell::index);
 
-  // ufc::function
-  py::class_<ufc::function, std::shared_ptr<ufc::function>>(m, "ufc_function");
-
   // dolfin::GenericFunction
   py::class_<dolfin::GenericFunction, std::shared_ptr<dolfin::GenericFunction>,
-             ufc::function, dolfin::Variable>(m, "GenericFunction")
+             dolfin::Variable>(m, "GenericFunction")
       .def("value_dimension", &dolfin::GenericFunction::value_dimension)
       .def("value_size", &dolfin::GenericFunction::value_size)
       .def("value_rank", &dolfin::GenericFunction::value_rank)

@@ -46,17 +46,3 @@ std::size_t GenericFunction::value_size() const
   return size;
 }
 //-----------------------------------------------------------------------------
-void GenericFunction::evaluate(double* values, const double* coordinates,
-                               const ufc::cell& cell) const
-{
-  dolfin_assert(values);
-  dolfin_assert(coordinates);
-
-  // Wrap data
-  Eigen::Map<Eigen::VectorXd> _values(values, value_size());
-  Eigen::Map<const Eigen::VectorXd> x(coordinates, cell.geometric_dimension);
-
-  // Redirect to eval
-  eval(_values, x, cell);
-}
-//-----------------------------------------------------------------------------
