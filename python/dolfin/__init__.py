@@ -93,7 +93,6 @@ from .common.plotting import plot
 from .fem.assembling import (assemble_system,
                              SystemAssembler, assemble_local)
 from .fem.form import Form
-from .fem.norms import norm, errornorm
 from .fem.dirichletbc import DirichletBC, AutoSubDomain
 from .fem.interpolation import interpolate
 from .fem.projection import project
@@ -112,8 +111,6 @@ from .function.specialfunctions import (MeshCoordinates, FacetArea, FacetNormal,
                                         MinCellEdgeLength, MaxCellEdgeLength,
                                         MinFacetEdgeLength, MaxFacetEdgeLength)
 from .function.expression import Expression, UserExpression, CompiledExpression
-
-from .generation.builtin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
 
 # experimental
 from .jit.pybind11jit import compile_cpp_code
