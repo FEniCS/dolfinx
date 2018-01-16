@@ -39,8 +39,8 @@ void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
   eval(values, x);
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
-                      Eigen::Ref<const Eigen::VectorXd> x) const
+void Expression::eval(Eigen::Ref<Eigen::MatrixXd> values,
+                      Eigen::Ref<const Eigen::MatrixXd> x) const
 {
   dolfin_error("Expression.cpp", "evaluate expression",
                "Missing eval() function (must be overloaded)");
@@ -100,27 +100,32 @@ void Expression::restrict(double* w, const FiniteElement& element,
   // Not working for Hdiv, Hcurl elements etc.
   const std::string family(element.ufc_element()->family());
   if (family != "Lagrange")
-    dolfin_not_implemented();
+    warning("This will probably crash or give wrong results for non-Lagrange elements.");
 
   // Get evaluation points
   const std::size_t vs = value_size();
-  const std::size_t ndofs = element.space_dimension();
+  const std::size_t sd = element.space_dimension();
   const std::size_t gdim = element.geometric_dimension();
+
+  std::size_t ndofs = sd;
+  if (family == "Lagrange")
+    ndofs /= vs;
+
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      eval_points(ndofs/vs, gdim);
+      eval_points(ndofs, gdim);
   element.ufc_element()->tabulate_dof_coordinates(eval_points.data(),
                                                   coordinate_dofs);
 
   // Storage for evaluation values
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      eval_values(ndofs/vs, vs);
+      eval_values(ndofs, vs);
 
-  // FIXME: should evaluate all at once
-  for (unsigned int i = 0; i != ndofs/vs; ++i)
+  // FIXME: should evaluate all at once (maybe needs RowMajor matrix)
+  for (unsigned int i = 0; i != ndofs; ++i)
     eval(eval_values.row(i), eval_points.row(i));
 
   // Copy for affine mapping - need to add Piola transform for other elements
-  std::copy(eval_values.data(), eval_values.data() + ndofs, w);
+  std::copy(eval_values.data(), eval_values.data() + sd, w);
 
   // FIXME: add transforms here
 }

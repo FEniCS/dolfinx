@@ -63,14 +63,14 @@ public:
                     Eigen::Ref<const Eigen::VectorXd> x,
                     const ufc::cell& cell) const override;
 
-  /// Evaluate at given point.
+  /// Evaluate at given points.
   ///
-  /// @param values (Eigen::Ref<Eigen::VectorXd>)
-  ///         The values at the point.
-  /// @param x (Eigen::Ref<const Eigen::VectorXd>)
-  ///         The coordinates of the point.
-  virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x) const override;
+  /// @param values (Eigen::Ref<Eigen::MatrixXd>)
+  ///         The values at the points.
+  /// @param x (Eigen::Ref<const Eigen::MatrixXd>)
+  ///         The coordinates of the points.
+  virtual void eval(Eigen::Ref<Eigen::MatrixXd> values,
+                    Eigen::Ref<const Eigen::MatrixXd> x) const override;
 
   /// Return value rank.
   ///

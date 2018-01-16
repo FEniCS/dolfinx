@@ -136,14 +136,14 @@ public:
   ///         The vector of expansion coefficients (const).
   std::shared_ptr<const PETScVector> vector() const;
 
-  /// Evaluate function at given coordinates
+  /// Evaluate function at given set of coordinates
   ///
-  /// @param    values (Eigen::Ref<Eigen::VectorXd> values)
+  /// @param    values (Eigen::Ref<Eigen::MatrixXd> values)
   ///         The values.
-  /// @param    x (Eigen::Ref<const Eigen::VectorXd> x)
+  /// @param    x (Eigen::Ref<const Eigen::MatrixXd> x)
   ///         The coordinates.
-  void eval(Eigen::Ref<Eigen::VectorXd> values,
-            Eigen::Ref<const Eigen::VectorXd> x) const override;
+  void eval(Eigen::Ref<Eigen::MatrixXd> values,
+            Eigen::Ref<const Eigen::MatrixXd> x) const override;
 
   /// Evaluate function at given coordinates in given cell
   ///
@@ -275,5 +275,3 @@ private:
   bool _allow_extrapolation;
 };
 }
-
-

@@ -80,11 +80,12 @@ std::vector<double> Constant::values() const
   return _values;
 }
 //-----------------------------------------------------------------------------
-void Constant::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x) const
+void Constant::eval(Eigen::Ref<Eigen::MatrixXd> values,
+                    Eigen::Ref<const Eigen::MatrixXd> x) const
 {
   // Copy values
-  std::copy(_values.begin(), _values.end(), values.data());
+  for (unsigned int i = 0; i != values.rows(); ++i)
+    std::copy(_values.begin(), _values.end(), values.row(i).data());
 }
 //-----------------------------------------------------------------------------
 std::string Constant::str(bool verbose) const

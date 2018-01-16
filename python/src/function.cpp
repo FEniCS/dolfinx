@@ -67,8 +67,8 @@ void function(py::module& m)
                & dolfin::GenericFunction::eval,
            "Evaluate GenericFunction (cell version)")
       .def("eval",
-           (void (dolfin::GenericFunction::*)(Eigen::Ref<Eigen::VectorXd>,
-                                              Eigen::Ref<const Eigen::VectorXd>)
+           (void (dolfin::GenericFunction::*)(Eigen::Ref<Eigen::MatrixXd>,
+                                              Eigen::Ref<const Eigen::MatrixXd>)
                 const)
                & dolfin::GenericFunction::eval,
            py::arg("values"), py::arg("x"), "Evaluate GenericFunction")
@@ -114,8 +114,8 @@ void function(py::module& m)
   {
     using dolfin::Expression::Expression;
 
-    void eval(Eigen::Ref<Eigen::VectorXd> values,
-              Eigen::Ref<const Eigen::VectorXd> x) const override
+    void eval(Eigen::Ref<Eigen::MatrixXd> values,
+              Eigen::Ref<const Eigen::MatrixXd> x) const override
     {
       PYBIND11_OVERLOAD(void, dolfin::Expression, eval, values, x);
     }

@@ -44,7 +44,7 @@ namespace dolfin
             {constructor}
        }}
 
-       void eval(Eigen::Ref<Eigen::VectorXd> values, Eigen::Ref<const Eigen::VectorXd> x) const override
+       void eval(Eigen::Ref<Eigen::MatrixXd> values, Eigen::Ref<const Eigen::MatrixXd> xin) const override
        {{
 {statement}
        }}
@@ -89,12 +89,12 @@ extern "C" DLL_EXPORT dolfin::Expression * create_{classname}()
     log(LogLevel.TRACE, "Calling dijitso just-in-time (JIT) compiler for Expression.")
 
     statements = class_data["statements"]
-    statement = ""
+    statement = "          auto x = xin.row(0);\n"
     if isinstance(statements, str):
-        statement += "          values[0] = " + statements + ";\n"
+        statement += "          values(0, 0) = " + statements + ";\n"
     else:
         for i, val in enumerate(statements):
-            statement += "          values[" + str(i) + "] = " + val + ";\n"
+            statement += "          values(0 ," + str(i) + ") = " + val + ";\n"
 
     constructor = ""
     members = ""
