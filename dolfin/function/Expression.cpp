@@ -112,7 +112,7 @@ void Expression::restrict(double* w, const FiniteElement& element,
     ndofs /= vs;
 
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      eval_points(ndofs, gdim);
+      eval_points(sd, gdim);
   element.ufc_element()->tabulate_dof_coordinates(eval_points.data(),
                                                   coordinate_dofs);
 
