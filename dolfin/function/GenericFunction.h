@@ -57,9 +57,9 @@ public:
                     Eigen::Ref<const Eigen::VectorXd> x,
                     const ufc::cell& cell) const;
 
-  /// Evaluate at given points
-  virtual void eval(Eigen::Ref<Eigen::MatrixXd> values,
-                    Eigen::Ref<const Eigen::MatrixXd> x) const;
+  /// Evaluate at given point
+  virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
+                    Eigen::Ref<const Eigen::VectorXd> x) const;
 
   /// Restrict function to local cell (compute expansion coefficients w)
   virtual void restrict(double* w, const FiniteElement& element,

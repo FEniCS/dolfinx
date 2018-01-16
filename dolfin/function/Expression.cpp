@@ -39,8 +39,8 @@ void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
   eval(values, x);
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<Eigen::MatrixXd> values,
-                      Eigen::Ref<const Eigen::MatrixXd> x) const
+void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
+                      Eigen::Ref<const Eigen::VectorXd> x) const
 {
   dolfin_error("Expression.cpp", "evaluate expression",
                "Missing eval() function (must be overloaded)");
@@ -122,7 +122,9 @@ void Expression::restrict(double* w, const FiniteElement& element,
 
   // FIXME: should evaluate all at once (maybe needs RowMajor matrix)
   for (unsigned int i = 0; i != ndofs; ++i)
-    eval(eval_values.row(i), eval_points.row(i));
+  {
+    eval(eval_values.row(i), eval_points.row(i), ufc_cell);
+  }
 
   // Copy for affine mapping - need to add Piola transform for other elements
   std::copy(eval_values.data(), eval_values.data() + sd, w);
