@@ -401,11 +401,13 @@ void Function::restrict(double* w, const FiniteElement& element,
     _vector->get_local(w, dofs.size(), dofs.data());
   }
   else
-  {
-    // Restrict as UFC function (by calling eval)
-    element.evaluate_dofs(w, *this, coordinate_dofs, ufc_cell.orientation,
-                          ufc_cell);
-  }
+    dolfin_not_implemented();
+
+  //  {
+  //    // Restrict as UFC function (by calling eval)
+  //    element.evaluate_dofs(w, *this, coordinate_dofs, ufc_cell.orientation,
+  //                          ufc_cell);
+  //  }
 }
 //-----------------------------------------------------------------------------
 void Function::compute_vertex_values(std::vector<double>& vertex_values,
