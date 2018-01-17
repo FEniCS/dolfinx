@@ -1,26 +1,12 @@
 // Copyright (C) 2010 Garth N. Wells, 2015 Jan Blechta
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2013-09-08
-// Last changed:
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfin/parameter/GlobalParameters.h>
-#include <dolfin/log/LogManager.h>
 #include "Timer.h"
+#include <dolfin/log/LogManager.h>
+#include <dolfin/parameter/GlobalParameters.h>
 
 using namespace dolfin;
 
@@ -37,21 +23,17 @@ Timer::Timer(std::string task) : _task(task)
 //-----------------------------------------------------------------------------
 Timer::~Timer()
 {
- if (!_timer.is_stopped())
-   stop();
+  if (!_timer.is_stopped())
+    stop();
 }
 //-----------------------------------------------------------------------------
-void Timer::start()
-{
-  _timer.start();
-}
+void Timer::start() { _timer.start(); }
 //-----------------------------------------------------------------------------
 void Timer::resume()
 {
   if (_task.size() > 0)
   {
-    dolfin_error("Timer.cpp",
-                 "resume timing",
+    dolfin_error("Timer.cpp", "resume timing",
                  "Resuming is not well-defined for logging timer. "
                  "Only non-logging timer can be resumed");
   }
@@ -70,8 +52,8 @@ double Timer::stop()
 std::tuple<double, double, double> Timer::elapsed() const
 {
   const auto elapsed = _timer.elapsed();
-  const double wall   = static_cast<double>(elapsed.wall  ) * 1e-9;
-  const double user   = static_cast<double>(elapsed.user  ) * 1e-9;
+  const double wall = static_cast<double>(elapsed.wall) * 1e-9;
+  const double user = static_cast<double>(elapsed.user) * 1e-9;
   const double system = static_cast<double>(elapsed.system) * 1e-9;
   return std::make_tuple(wall, user, system);
 }

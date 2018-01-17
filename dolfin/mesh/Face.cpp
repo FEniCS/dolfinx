@@ -1,28 +1,12 @@
 // Copyright (C) 2006 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Garth N. Wells, 2011.
-//
-// First added:  2006-06-02
-// Last changed: 2011-02-26
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfin/geometry/Point.h>
-#include "Cell.h"
 #include "Face.h"
+#include "Cell.h"
+#include <dolfin/geometry/Point.h>
 
 using namespace dolfin;
 
@@ -42,7 +26,6 @@ double Face::area() const
 
     // Return the generalized volume (area)
     return cell.volume();
-
   }
   else
   {
@@ -68,15 +51,17 @@ Point Face::normal() const
   const std::size_t tD = _mesh->topology().dim();
   const std::size_t gD = _mesh->geometry().dim();
 
-  // Check for when Cell has the same topological dimension as Face and we are in R^2
+  // Check for when Cell has the same topological dimension as Face and we are
+  // in R^2
   if (tD == 2 && gD == 2)
   {
-    dolfin_error("Face.cpp",
-                 "compute Face normal",
-                 "Don't know how to compute Face normal for a Face in a 2D mesh embedded in R^2.");
+    dolfin_error("Face.cpp", "compute Face normal",
+                 "Don't know how to compute Face normal for a Face in a 2D "
+                 "mesh embedded in R^2.");
   }
 
-  // Check for when Cell has the same topological dimension as Face and we are in R^3
+  // Check for when Cell has the same topological dimension as Face and we are
+  // in R^3
   if (tD == 2 && gD == 3)
   {
     dolfin_not_implemented();

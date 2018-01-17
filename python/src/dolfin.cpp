@@ -1,49 +1,37 @@
 // Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <dolfin/log/log.h>
 #include <iostream>
 #include <pybind11/pybind11.h>
-#include <dolfin/log/log.h>
 
 namespace py = pybind11;
 
 namespace dolfin_wrappers
 {
-  // common
-  void common(py::module& m);
-  void mpi(py::module& m);
+// common
+void common(py::module& m);
+void mpi(py::module& m);
 
-  // log
-  void log(py::module& m);
+// log
+void log(py::module& m);
 
-  void function(py::module& m);
-  void fem(py::module& m);
+void function(py::module& m);
+void fem(py::module& m);
 
-  void generation(py::module& m);
-  void geometry(py::module& m);
-  void graph(py::module& m);
-  void io(py::module& m);
-  void la(py::module& m);
-  void math(py::module& m);
-  void mesh(py::module& m);
-  void nls(py::module& m);
-  void parameter(py::module& m);
+void generation(py::module& m);
+void geometry(py::module& m);
+void graph(py::module& m);
+void io(py::module& m);
+void la(py::module& m);
+void math(py::module& m);
+void mesh(py::module& m);
+void nls(py::module& m);
+void parameter(py::module& m);
 }
-
 
 PYBIND11_MODULE(cpp, m)
 {
@@ -63,8 +51,7 @@ PYBIND11_MODULE(cpp, m)
   dolfin_wrappers::log(log);
 
   // Create function submodule [function]
-  py::module function = m.def_submodule("function",
-                                        "Function module");
+  py::module function = m.def_submodule("function", "Function module");
   dolfin_wrappers::function(function);
 
   // Create math submodule [math]
@@ -84,13 +71,12 @@ PYBIND11_MODULE(cpp, m)
   dolfin_wrappers::fem(fem);
 
   // Create generation submodule [generation]
-  py::module generation = m.def_submodule("generation",
-                                          "Mesh generation module");
+  py::module generation
+      = m.def_submodule("generation", "Mesh generation module");
   dolfin_wrappers::generation(generation);
 
   // Create geometry submodule
-  py::module geometry = m.def_submodule("geometry",
-                                        "Geometry module");
+  py::module geometry = m.def_submodule("geometry", "Geometry module");
   dolfin_wrappers::geometry(geometry);
 
   // Create io submodule
@@ -111,5 +97,4 @@ PYBIND11_MODULE(cpp, m)
 
   // FIXME: these are just for the transition
   m.def("warning", [](std::string message) { dolfin::warning(message); });
-
 }

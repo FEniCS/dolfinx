@@ -1,25 +1,8 @@
 // Copyright (C) 2003-2016 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Ola Skavhaug, 2007, 2009.
-// Modified by Garth N. Wells, 2011.
-//
-// First added:  2003-03-13
-// Last changed: 2016-06-10
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 
 #include <fstream>
@@ -37,12 +20,12 @@
 #include <unistd.h>
 #endif
 
-#include <dolfin/common/constants.h>
-#include <dolfin/common/defines.h>
-#include <dolfin/common/MPI.h>
-#include <dolfin/parameter/GlobalParameters.h>
 #include "LogLevel.h"
 #include "Logger.h"
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/constants.h>
+#include <dolfin/common/defines.h>
+#include <dolfin/parameter/GlobalParameters.h>
 
 using namespace dolfin;
 
@@ -53,7 +36,7 @@ void _monitor_memory_usage(dolfin::Logger* logger)
   dolfin_assert(logger);
 
   // Open statm
-  //std::fstream
+  // std::fstream
 
   // Get process ID and page size
   const std::size_t pid = getpid();
@@ -84,16 +67,17 @@ void _monitor_memory_usage(dolfin::Logger* logger)
     statm.close();
 
     // Convert to MB and report memory usage
-    const size_t num_mb = num_pages*page_size / (1024*1024);
+    const size_t num_mb = num_pages * page_size / (1024 * 1024);
     logger->_report_memory_usage(num_mb);
   }
 }
 #endif
 
 //-----------------------------------------------------------------------------
-Logger::Logger() : _active(true), _log_level(INFO), _indentation_level(0),
-                   logstream(&std::cout), _maximum_memory_usage(-1),
-                   _mpi_comm(MPI_COMM_WORLD)
+Logger::Logger()
+    : _active(true), _log_level(INFO), _indentation_level(0),
+      logstream(&std::cout), _maximum_memory_usage(-1),
+      _mpi_comm(MPI_COMM_WORLD)
 {
   // Do nothing
 }
@@ -138,10 +122,8 @@ void Logger::error(std::string msg) const
   throw std::runtime_error(s);
 }
 //-----------------------------------------------------------------------------
-void Logger::dolfin_error(std::string location,
-                          std::string task,
-                          std::string reason,
-                          int mpi_rank) const
+void Logger::dolfin_error(std::string location, std::string task,
+                          std::string reason, int mpi_rank) const
 {
 
   if (mpi_rank < 0)
@@ -149,48 +131,59 @@ void Logger::dolfin_error(std::string location,
   std::string _mpi_rank = std::to_string(mpi_rank);
 
   std::stringstream s;
-  s << std::endl << std::endl
-    << "*** "
-    << "-------------------------------------------------------------------------"
+  s << std::endl
     << std::endl
-    << "*** DOLFIN encountered an error. If you are not able to resolve this issue"
+    << "*** "
+    << "-----------------------------------------------------------------------"
+       "--"
+    << std::endl
+    << "*** DOLFIN encountered an error. If you are not able to resolve this "
+       "issue"
     << std::endl
     << "*** using the information listed below, you can ask for help at"
     << std::endl
     << "***" << std::endl
-    << "***     fenics-support@googlegroups.com"
-    << std::endl
+    << "***     fenics-support@googlegroups.com" << std::endl
     << "***" << std::endl
-    << "*** Remember to include the error message listed below and, if possible,"
+    << "*** Remember to include the error message listed below and, if "
+       "possible,"
     << std::endl
     << "*** include a *minimal* running example to reproduce the error."
     << std::endl
     << "***" << std::endl
     << "*** "
-    << "-------------------------------------------------------------------------"
+    << "-----------------------------------------------------------------------"
+       "--"
     << std::endl
-    << "*** " << "Error:   Unable to " << task << "." << std::endl
-    << "*** " << "Reason:  " << reason << "." << std::endl
-    << "*** " << "Where:   This error was encountered inside " << location << "."
-    << std::endl
-    << "*** " << "Process: " << _mpi_rank << std::endl
-    << "*** " << std::endl
-    << "*** " << "DOLFIN version: " << dolfin_version()  << std::endl
-    << "*** " << "Git changeset:  " << git_commit_hash() << std::endl
     << "*** "
-    << "-------------------------------------------------------------------------"
+    << "Error:   Unable to " << task << "." << std::endl
+    << "*** "
+    << "Reason:  " << reason << "." << std::endl
+    << "*** "
+    << "Where:   This error was encountered inside " << location << "."
+    << std::endl
+    << "*** "
+    << "Process: " << _mpi_rank << std::endl
+    << "*** " << std::endl
+    << "*** "
+    << "DOLFIN version: " << dolfin_version() << std::endl
+    << "*** "
+    << "Git changeset:  " << git_commit_hash() << std::endl
+    << "*** "
+    << "-----------------------------------------------------------------------"
+       "--"
     << std::endl;
 
   throw std::runtime_error(s.str());
 }
 //-----------------------------------------------------------------------------
-void Logger::deprecation(std::string feature,
-                         std::string version_deprecated,
+void Logger::deprecation(std::string feature, std::string version_deprecated,
                          std::string message) const
 {
   std::stringstream s;
   s << "*** "
-    << "-------------------------------------------------------------------------"
+    << "-----------------------------------------------------------------------"
+       "--"
     << std::endl
     << "*** Warning: " << feature << " has been deprecated in FEniCS version "
     << version_deprecated << "." << std::endl
@@ -198,14 +191,15 @@ void Logger::deprecation(std::string feature,
     << std::endl
     << "*** " << message << std::endl
     << "*** "
-    << "-------------------------------------------------------------------------"
+    << "-----------------------------------------------------------------------"
+       "--"
     << std::endl;
 
-  #ifdef DOLFIN_DEPRECATION_ERROR
+#ifdef DOLFIN_DEPRECATION_ERROR
   error(s.str());
-  #else
+#else
   write(WARNING, s.str());
-  #endif
+#endif
 }
 //-----------------------------------------------------------------------------
 void Logger::begin(std::string msg, int log_level)
@@ -215,47 +209,35 @@ void Logger::begin(std::string msg, int log_level)
   _indentation_level++;
 }
 //-----------------------------------------------------------------------------
-void Logger::end()
-{
-  _indentation_level--;
-}
+void Logger::end() { _indentation_level--; }
 //-----------------------------------------------------------------------------
 void Logger::progress(std::string title, double p) const
 {
   std::stringstream line;
   line << title << " [";
 
-  const int N = DOLFIN_TERM_WIDTH - title.size() - 12 - 2*_indentation_level;
-  const int n = static_cast<int>(p*static_cast<double>(N));
+  const int N = DOLFIN_TERM_WIDTH - title.size() - 12 - 2 * _indentation_level;
+  const int n = static_cast<int>(p * static_cast<double>(N));
 
   for (int i = 0; i < n; i++)
     line << '=';
   if (n < N)
     line << '>';
-  for (int i = n+1; i < N; i++)
+  for (int i = n + 1; i < N; i++)
     line << ' ';
 
   line << std::setiosflags(std::ios::fixed);
   line << std::setprecision(1);
-  line << "] " << 100.0*p << '%';
+  line << "] " << 100.0 * p << '%';
 
   write(PROGRESS, line.str());
 }
 //-----------------------------------------------------------------------------
-void Logger::set_output_stream(std::ostream& ostream)
-{
-  logstream = &ostream;
-}
+void Logger::set_output_stream(std::ostream& ostream) { logstream = &ostream; }
 //-----------------------------------------------------------------------------
-void Logger::set_log_active(bool active)
-{
-  _active = active;
-}
+void Logger::set_log_active(bool active) { _active = active; }
 //-----------------------------------------------------------------------------
-void Logger::set_log_level(int log_level)
-{
-  _log_level = log_level;
-}
+void Logger::set_log_level(int log_level) { _log_level = log_level; }
 //-----------------------------------------------------------------------------
 void Logger::set_indentation_level(std::size_t indentation_level)
 {
@@ -265,16 +247,14 @@ void Logger::set_indentation_level(std::size_t indentation_level)
 void Logger::register_timing(std::string task,
                              std::tuple<double, double, double> elapsed)
 {
-  dolfin_assert(elapsed >=
-    std::make_tuple(double(0.0), double(0.0), double(0.0)));
+  dolfin_assert(elapsed
+                >= std::make_tuple(double(0.0), double(0.0), double(0.0)));
 
   // Print a message
   std::stringstream line;
-  line << "Elapsed wall, usr, sys time: "
-       << std::get<0>(elapsed) << ", "
-       << std::get<1>(elapsed) << ", "
-       << std::get<2>(elapsed)
-       << " ("  << task << ")";
+  line << "Elapsed wall, usr, sys time: " << std::get<0>(elapsed) << ", "
+       << std::get<1>(elapsed) << ", " << std::get<2>(elapsed) << " (" << task
+       << ")";
   log(line.str(), TRACE);
 
   // Store values for summary
@@ -314,12 +294,11 @@ void Logger::list_timings(TimingClear clear, std::set<TimingType> type)
 }
 //-----------------------------------------------------------------------------
 std::map<TimingType, std::string> Logger::_TimingType_descr
-  = { { TimingType::wall,   "wall" },
-      { TimingType::user,   "usr"  },
-      { TimingType::system, "sys"  } };
+    = {{TimingType::wall, "wall"},
+       {TimingType::user, "usr"},
+       {TimingType::system, "sys"}};
 //-----------------------------------------------------------------------------
-Table Logger::timings(TimingClear clear,
-                      std::set<TimingType> type)
+Table Logger::timings(TimingClear clear, std::set<TimingType> type)
 {
   // Generate timing table
   Table table("Summary of timings");
@@ -327,9 +306,8 @@ Table Logger::timings(TimingClear clear,
   {
     const std::string task = it.first;
     const std::size_t num_timings = std::get<0>(it.second);
-    const std::vector<double> times { std::get<1>(it.second),
-                                      std::get<2>(it.second),
-                                      std::get<3>(it.second) };
+    const std::vector<double> times{
+        std::get<1>(it.second), std::get<2>(it.second), std::get<3>(it.second)};
     table(task, "reps") = num_timings;
     for (const auto& t : type)
     {
@@ -338,7 +316,6 @@ Table Logger::timings(TimingClear clear,
       table(task, Logger::_TimingType_descr[t] + " avg") = average_time;
       table(task, Logger::_TimingType_descr[t] + " tot") = total_time;
     }
-
   }
 
   // Clear timings
@@ -349,7 +326,7 @@ Table Logger::timings(TimingClear clear,
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::size_t, double, double, double>
-  Logger::timing(std::string task, TimingClear clear)
+Logger::timing(std::string task, TimingClear clear)
 {
   // Find timing
   auto it = _timings.find(task);
@@ -357,9 +334,7 @@ std::tuple<std::size_t, double, double, double>
   {
     std::stringstream line;
     line << "No timings registered for task \"" << task << "\".";
-    dolfin_error("Logger.cpp",
-                 "extract timing for task",
-                 line.str());
+    dolfin_error("Logger.cpp", "extract timing for task", line.str());
   }
   // Prepare for return for the case of reset
   const auto result = it->second;
@@ -373,11 +348,11 @@ std::tuple<std::size_t, double, double, double>
 //-----------------------------------------------------------------------------
 void Logger::monitor_memory_usage()
 {
-  #ifndef __linux__
+#ifndef __linux__
   warning("Unable to initialize memory monitor; only available on GNU/Linux.");
   return;
 
-  #else
+#else
 
   // Check that thread has not already been started
   if (_thread_monitor_memory_usage)
@@ -387,9 +362,10 @@ void Logger::monitor_memory_usage()
   }
 
   // Create thread
-  _thread_monitor_memory_usage.reset(new std::thread(std::bind(&_monitor_memory_usage, this)));
+  _thread_monitor_memory_usage.reset(
+      new std::thread(std::bind(&_monitor_memory_usage, this)));
 
-  #endif
+#endif
 }
 //-----------------------------------------------------------------------------
 void Logger::_report_memory_usage(size_t num_mb)
@@ -397,8 +373,8 @@ void Logger::_report_memory_usage(size_t num_mb)
   std::stringstream s;
   s << "Memory usage: " << num_mb << " MB";
   log(s.str());
-  _maximum_memory_usage = std::max(_maximum_memory_usage,
-                                   static_cast<long int>(num_mb));
+  _maximum_memory_usage
+      = std::max(_maximum_memory_usage, static_cast<long int>(num_mb));
 }
 //-----------------------------------------------------------------------------
 void Logger::__debug(std::string msg) const

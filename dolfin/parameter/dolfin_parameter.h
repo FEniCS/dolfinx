@@ -1,10 +1,7 @@
-#ifndef __DOLFIN_PARAMETER_H
-#define __DOLFIN_PARAMETER_H
+#pragma once
 
 /// DOLFIN parameter interface
 
+#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/parameter/Parameter.h>
 #include <dolfin/parameter/Parameters.h>
-#include <dolfin/parameter/GlobalParameters.h>
-
-#endif

@@ -1,47 +1,35 @@
 // Copyright (C) 2004-2016 Johan Hoffman, Johan Jansson, Anders Logg
-// and Garth N. Wells
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Garth N. Wells 2005-2010
-// Modified by Martin Sandve Alnes 2008
-// Modified by Johannes Ring 2011.
-// Modified by Fredrik Valdmanis 2011-2012
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #ifdef HAS_PETSC
 
+#include "PETScVector.h"
+#include "SparsityPattern.h"
 #include <cmath>
 #include <cstddef>
 #include <cstring>
-#include <numeric>
-#include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
-#include "SparsityPattern.h"
-#include "PETScVector.h"
+#include <numeric>
 
 using namespace dolfin;
 
 namespace
 {
-  const std::map<std::string, NormType> norm_types
-  = { {"l1",   NORM_1}, {"l2",   NORM_2},  {"linf", NORM_INFINITY} };
+const std::map<std::string, NormType> norm_types
+    = {{"l1", NORM_1}, {"l2", NORM_2}, {"linf", NORM_INFINITY}};
 }
 
-#define CHECK_ERROR(NAME) do { if (ierr != 0) petsc_error(ierr, __FILE__, NAME); } while(0)
+#define CHECK_ERROR(NAME)                                                      \
+  do                                                                           \
+  {                                                                            \
+    if (ierr != 0)                                                             \
+      petsc_error(ierr, __FILE__, NAME);                                       \
+  } while (0)
 
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(MPI_Comm comm) : _x(nullptr)
@@ -60,7 +48,7 @@ PETScVector::PETScVector(const PETScVector& v) : _x(nullptr)
 {
   dolfin_assert(v._x);
 
-  // Create new vector
+  // Duplicate vector
   PetscErrorCode ierr;
   ierr = VecDuplicate(v._x, &_x);
   CHECK_ERROR("VecDuplicate");
@@ -77,11 +65,6 @@ PETScVector::~PETScVector()
 {
   if (_x)
     VecDestroy(&_x);
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<PETScVector> PETScVector::copy() const
-{
-  return std::make_shared<PETScVector>(*this);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(std::size_t N)
@@ -102,8 +85,7 @@ void PETScVector::init(std::array<std::int64_t, 2> range,
 {
   if (!_x)
   {
-    dolfin_error("PETScVector.h",
-                 "initialize vector",
+    dolfin_error("PETScVector.h", "initialize vector",
                  "Underlying PETSc Vec has not been initialized");
   }
 
@@ -115,7 +97,7 @@ void PETScVector::init(std::array<std::int64_t, 2> range,
 
   // Get local size
   dolfin_assert(range[1] >= range[0]);
-  const std::size_t local_size = block_size*(range[1] - range[0]);
+  const std::size_t local_size = block_size * (range[1] - range[0]);
 
   // Set vector size
   ierr = VecSetSizes(_x, local_size, PETSC_DECIDE);
@@ -161,8 +143,7 @@ void PETScVector::init(std::array<std::int64_t, 2> range,
   }
   else if (!ghost_indices.empty())
   {
-    dolfin_error("PETScVector.cpp",
-                 "initialize vector",
+    dolfin_error("PETScVector.cpp", "initialize vector",
                  "Sequential PETSc Vec objects cannot have ghost entries");
   }
 
@@ -171,10 +152,9 @@ void PETScVector::init(std::array<std::int64_t, 2> range,
   if (!local_to_global_map.empty())
   {
     // Create PETSc local-to-global map
-    ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, block_size,
-                                        local_to_global_map.size(),
-                                        local_to_global_map.data(),
-                                        PETSC_COPY_VALUES, &petsc_local_to_global);
+    ierr = ISLocalToGlobalMappingCreate(
+        PETSC_COMM_SELF, block_size, local_to_global_map.size(),
+        local_to_global_map.data(), PETSC_COPY_VALUES, &petsc_local_to_global);
     CHECK_ERROR("ISLocalToGlobalMappingCreate");
   }
   else
@@ -184,8 +164,9 @@ void PETScVector::init(std::array<std::int64_t, 2> range,
     std::iota(map.begin(), map.end(), range[0]);
 
     // Create PETSc local-to-global map
-    ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, block_size, map.size(), map.data(),
-                                        PETSC_COPY_VALUES, &petsc_local_to_global);
+    ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, block_size, map.size(),
+                                        map.data(), PETSC_COPY_VALUES,
+                                        &petsc_local_to_global);
     CHECK_ERROR("ISLocalToGlobalMappingCreate");
   }
 
@@ -279,8 +260,7 @@ void PETScVector::set_local(const std::vector<double>& values)
   const std::size_t local_size = _local_range[1] - _local_range[0];
   if (values.size() != local_size)
   {
-    dolfin_error("PETScVector.cpp",
-                 "set local values of PETSc vector",
+    dolfin_error("PETScVector.cpp", "set local values of PETSc vector",
                  "Size of values array is not equal to local vector size");
   }
 
@@ -303,8 +283,7 @@ void PETScVector::add_local(const std::vector<double>& values)
   const std::size_t local_size = _local_range[1] - _local_range[0];
   if (values.size() != local_size)
   {
-    dolfin_error("PETScVector.cpp",
-                 "add local values to PETSc vector",
+    dolfin_error("PETScVector.cpp", "add local values to PETSc vector",
                  "Size of values array is not equal to local vector size");
   }
 
@@ -321,7 +300,7 @@ void PETScVector::add_local(const std::vector<double>& values)
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(double* block, std::size_t m,
-			    const dolfin::la_index_t* rows) const
+                            const dolfin::la_index_t* rows) const
 {
   if (m == 0)
     return;
@@ -436,10 +415,7 @@ void PETScVector::zero()
   this->apply();
 }
 //-----------------------------------------------------------------------------
-bool PETScVector::empty() const
-{
-  return this->size() == 0;
-}
+bool PETScVector::empty() const { return this->size() == 0; }
 //-----------------------------------------------------------------------------
 bool PETScVector::owns_index(std::size_t i) const
 {
@@ -448,13 +424,13 @@ bool PETScVector::owns_index(std::size_t i) const
   return _i >= _local_range[0] && _i < _local_range[1];
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator= (const PETScVector& v)
+const PETScVector& PETScVector::operator=(const PETScVector& v)
 {
   _x = v._x;
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator= (double a)
+const PETScVector& PETScVector::operator=(double a)
 {
   dolfin_assert(_x);
   PetscErrorCode ierr = VecSet(_x, a);
@@ -485,13 +461,13 @@ void PETScVector::update_ghost_values()
   CHECK_ERROR("VecGhostRestoreLocalForm");
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator+= (const PETScVector& x)
+const PETScVector& PETScVector::operator+=(const PETScVector& x)
 {
   axpy(1.0, x);
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator+= (double a)
+const PETScVector& PETScVector::operator+=(double a)
 {
   dolfin_assert(_x);
   PetscErrorCode ierr = VecShift(_x, a);
@@ -503,20 +479,20 @@ const PETScVector& PETScVector::operator+= (double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator-= (const PETScVector& x)
+const PETScVector& PETScVector::operator-=(const PETScVector& x)
 {
   axpy(-1.0, x);
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator-= (double a)
+const PETScVector& PETScVector::operator-=(double a)
 {
   dolfin_assert(_x);
   (*this) += -a;
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator*= (const double a)
+const PETScVector& PETScVector::operator*=(const double a)
 {
   dolfin_assert(_x);
   PetscErrorCode ierr = VecScale(_x, a);
@@ -528,7 +504,7 @@ const PETScVector& PETScVector::operator*= (const double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator*= (const PETScVector& v)
+const PETScVector& PETScVector::operator*=(const PETScVector& v)
 {
   dolfin_assert(_x);
   dolfin_assert(v._x);
@@ -548,11 +524,11 @@ const PETScVector& PETScVector::operator*= (const PETScVector& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator/= (const double a)
+const PETScVector& PETScVector::operator/=(const double a)
 {
   dolfin_assert(_x);
   dolfin_assert(a != 0.0);
-  const double b = 1.0/a;
+  const double b = 1.0 / a;
   (*this) *= b;
   return *this;
 }
@@ -574,8 +550,7 @@ void PETScVector::axpy(double a, const PETScVector& y)
   dolfin_assert(y._x);
   if (size() != y.size())
   {
-    dolfin_error("PETScVector.cpp",
-                 "perform axpy operation with PETSc vector",
+    dolfin_error("PETScVector.cpp", "perform axpy operation with PETSc vector",
                  "Vectors are not of the same size");
   }
 
@@ -601,14 +576,12 @@ double PETScVector::norm(std::string norm_type) const
   dolfin_assert(_x);
   if (norm_types.count(norm_type) == 0)
   {
-    dolfin_error("PETScVector.cpp",
-                 "compute norm of PETSc vector",
+    dolfin_error("PETScVector.cpp", "compute norm of PETSc vector",
                  "Unknown norm type (\"%s\")", norm_type.c_str());
   }
 
   double value = 0.0;
-  PetscErrorCode ierr = VecNorm(_x, norm_types.find(norm_type)->second,
-                                &value);
+  PetscErrorCode ierr = VecNorm(_x, norm_types.find(norm_type)->second, &value);
   CHECK_ERROR("VecNorm");
   return value;
 }
@@ -692,8 +665,7 @@ void PETScVector::gather(PETScVector& y,
   // Check that passed vector is local
   if (MPI::size(y.mpi_comm()) != 1)
   {
-    dolfin_error("PETScVector.cpp",
-                 "gather vector entries",
+    dolfin_error("PETScVector.cpp", "gather vector entries",
                  "Gather vector must be a local vector (MPI_COMM_SELF)");
   }
 
@@ -704,8 +676,7 @@ void PETScVector::gather(PETScVector& y,
   // Check that passed vector has correct size
   if (y.size() != n)
   {
-    dolfin_error("PETScVector.cpp",
-                 "gather vector entries",
+    dolfin_error("PETScVector.cpp", "gather vector entries",
                  "Gather vector must be empty or of correct size "
                  "(same as provided indices)");
   }
@@ -724,19 +695,16 @@ void PETScVector::gather(PETScVector& y,
   ierr = ISCreateGeneral(PETSC_COMM_SELF, n, global_indices.data(),
                          PETSC_COPY_VALUES, &from);
   CHECK_ERROR("ISCreateGeneral");
-  ierr = ISCreateStride(PETSC_COMM_SELF, n, 0 , 1, &to);
+  ierr = ISCreateStride(PETSC_COMM_SELF, n, 0, 1, &to);
   CHECK_ERROR("ISCreateStride");
-
 
   // Perform scatter
   VecScatter scatter;
   ierr = VecScatterCreate(_x, from, y.vec(), to, &scatter);
   CHECK_ERROR("VecScatterCreate");
-  ierr = VecScatterBegin(scatter, _x, y.vec(), INSERT_VALUES,
-                         SCATTER_FORWARD);
+  ierr = VecScatterBegin(scatter, _x, y.vec(), INSERT_VALUES, SCATTER_FORWARD);
   CHECK_ERROR("VecScatterBegin");
-  ierr = VecScatterEnd(scatter, _x, y.vec(), INSERT_VALUES,
-                       SCATTER_FORWARD);
+  ierr = VecScatterEnd(scatter, _x, y.vec(), INSERT_VALUES, SCATTER_FORWARD);
   CHECK_ERROR("VecScatterEnd");
 
   // Clean up
@@ -791,9 +759,9 @@ void PETScVector::set_options_prefix(std::string options_prefix)
 {
   if (!_x)
   {
-    dolfin_error("PETScVector.cpp",
-                 "setting PETSc options prefix",
-                 "Cannot set options prefix since PETSc Vec has not been initialized");
+    dolfin_error(
+        "PETScVector.cpp", "setting PETSc options prefix",
+        "Cannot set options prefix since PETSc Vec has not been initialized");
   }
 
   // Set PETSc options prefix
@@ -805,9 +773,9 @@ std::string PETScVector::get_options_prefix() const
 {
   if (!_x)
   {
-    dolfin_error("PETScVector.cpp",
-                 "get PETSc options prefix",
-                 "Cannot get options prefix since PETSc Vec has not been initialized");
+    dolfin_error(
+        "PETScVector.cpp", "get PETSc options prefix",
+        "Cannot get options prefix since PETSc Vec has not been initialized");
   }
 
   const char* prefix = nullptr;
@@ -829,10 +797,7 @@ void PETScVector::set_from_options()
   CHECK_ERROR("VecSetFromOptions");
 }
 //-----------------------------------------------------------------------------
-Vec PETScVector::vec() const
-{
-  return _x;
-}
+Vec PETScVector::vec() const { return _x; }
 //-----------------------------------------------------------------------------
 void PETScVector::reset(Vec vec)
 {

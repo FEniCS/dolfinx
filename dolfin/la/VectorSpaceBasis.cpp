@@ -1,33 +1,20 @@
 // Copyright (C) 2013 Patrick E. Farrell
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2013-05-29
-// Last changed: 2013-05-29
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "VectorSpaceBasis.h"
+#include "PETScVector.h"
 #include <cmath>
 #include <dolfin/common/constants.h>
-#include "PETScVector.h"
-#include "VectorSpaceBasis.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-VectorSpaceBasis::VectorSpaceBasis(const std::vector<std::shared_ptr<
-                                   PETScVector>> basis) : _basis(basis)
+VectorSpaceBasis::VectorSpaceBasis(
+    const std::vector<std::shared_ptr<PETScVector>> basis)
+    : _basis(basis)
 {
   // Do nothing
 }
@@ -41,14 +28,13 @@ void VectorSpaceBasis::orthonormalize(double tol)
     // orthonormalized vectors
     for (std::size_t j = 0; j < i; ++j)
     {
-      const double dot_ij =_basis[i]->dot(*_basis[j]);
+      const double dot_ij = _basis[i]->dot(*_basis[j]);
       _basis[i]->axpy(-dot_ij, *_basis[j]);
     }
 
     if (_basis[i]->norm("l2") < tol)
     {
-      dolfin_error("VectorSpaceBasis.cpp",
-                   "orthonormalize vector basis",
+      dolfin_error("VectorSpaceBasis.cpp", "orthonormalize vector basis",
                    "Vector space has linear dependency");
     }
 
@@ -105,13 +91,10 @@ void VectorSpaceBasis::orthogonalize(PETScVector& x) const
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t VectorSpaceBasis::dim() const
-{
-  return _basis.size();
-}
+std::size_t VectorSpaceBasis::dim() const { return _basis.size(); }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const PETScVector>
-VectorSpaceBasis::operator[] (std::size_t i) const
+std::shared_ptr<const PETScVector> VectorSpaceBasis::
+operator[](std::size_t i) const
 {
   dolfin_assert(i < _basis.size());
   return _basis[i];

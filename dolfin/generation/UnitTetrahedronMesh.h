@@ -1,51 +1,31 @@
 // Copyright (C) 2010 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Benjamin Kehlet 2012
-//
-// First added:  2010-10-19
-// Last changed: 2012-11-09
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifndef __UNIT_TETRAHEDRON_MESH_H
-#define __UNIT_TETRAHEDRON_MESH_H
+#pragma once
 
 #include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
 
-  /// A mesh consisting of a single tetrahedron with vertices at
-  ///
-  ///   (0, 0, 0)
-  ///   (1, 0, 0)
-  ///   (0, 1, 0)
-  ///   (0, 0, 1)
-  ///
-  /// This class is useful for testing.
+/// A mesh consisting of a single tetrahedron with vertices at
+///
+///   (0, 0, 0)
+///   (1, 0, 0)
+///   (0, 1, 0)
+///   (0, 0, 1)
+///
+/// This class is useful for testing.
 
-  class UnitTetrahedronMesh
-  {
-  public:
-
-    /// Create mesh of unit tetrahedron
-    static Mesh create();
-
-  };
-
+class UnitTetrahedronMesh
+{
+public:
+  /// Create mesh of unit tetrahedron
+  static Mesh create();
+};
 }
 
-#endif
+

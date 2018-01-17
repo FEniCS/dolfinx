@@ -1,31 +1,15 @@
 // Copyright (C) 2013 Chris N Richardson
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-//
-// First added:  2012-06-01
-// Last changed: 2014-11-24
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #ifdef HAS_HDF5
 
-#include <string>
-#include <boost/lexical_cast.hpp>
-
-#include "HDF5Interface.h"
 #include "HDF5Attribute.h"
+#include "HDF5Interface.h"
+#include <boost/lexical_cast.hpp>
+#include <string>
 
 using namespace dolfin;
 
@@ -37,7 +21,7 @@ HDF5Attribute::vector_to_string(const std::vector<T>& vector_value) const
   std::string value;
   value = "";
   const std::size_t nlast = vector_value.size() - 1;
-  for(std::size_t i = 0; i < nlast; ++i)
+  for (std::size_t i = 0; i < nlast; ++i)
     value += boost::lexical_cast<std::string>(vector_value[i]) + ", ";
   value += boost::lexical_cast<std::string>(vector_value[nlast]);
   return value;
@@ -49,20 +33,17 @@ void HDF5Attribute::set_value(const std::string attribute_name,
 {
   if (!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
   {
-    dolfin_error("HDF5Attribute.cpp",
-                 "set attribute on dataset",
+    dolfin_error("HDF5Attribute.cpp", "set attribute on dataset",
                  "Dataset does not exist");
   }
 
-  if (HDF5Interface::has_attribute(hdf5_file_id, dataset_name,
-                                   attribute_name))
+  if (HDF5Interface::has_attribute(hdf5_file_id, dataset_name, attribute_name))
   {
-    HDF5Interface::delete_attribute(hdf5_file_id, dataset_name,
-                                    attribute_name);
+    HDF5Interface::delete_attribute(hdf5_file_id, dataset_name, attribute_name);
   }
 
-  HDF5Interface::add_attribute(hdf5_file_id, dataset_name,
-                               attribute_name, attribute_value);
+  HDF5Interface::add_attribute(hdf5_file_id, dataset_name, attribute_name,
+                               attribute_value);
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -71,16 +52,13 @@ void HDF5Attribute::get_value(const std::string attribute_name,
 {
   if (!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
   {
-    dolfin_error("HDF5Attribute.cpp",
-                 "get attribute of dataset",
+    dolfin_error("HDF5Attribute.cpp", "get attribute of dataset",
                  "Dataset does not exist");
   }
 
-  if (!HDF5Interface::has_attribute(hdf5_file_id, dataset_name,
-                                    attribute_name))
+  if (!HDF5Interface::has_attribute(hdf5_file_id, dataset_name, attribute_name))
   {
-    dolfin_error("HDF5Attribute.cpp",
-                 "get attribute of dataset",
+    dolfin_error("HDF5Attribute.cpp", "get attribute of dataset",
                  "Attribute does not exist");
   }
 
@@ -88,8 +66,7 @@ void HDF5Attribute::get_value(const std::string attribute_name,
                                attribute_value);
 }
 //-----------------------------------------------------------------------------
-void HDF5Attribute::set(const std::string attribute_name,
-                        const double value)
+void HDF5Attribute::set(const std::string attribute_name, const double value)
 {
   set_value(attribute_name, value);
 }
@@ -118,8 +95,7 @@ void HDF5Attribute::set(const std::string attribute_name,
   set_value(attribute_name, value);
 }
 //-----------------------------------------------------------------------------
-void HDF5Attribute::get(const std::string attribute_name,
-                        double& value) const
+void HDF5Attribute::get(const std::string attribute_name, double& value) const
 {
   get_value(attribute_name, value);
 }
@@ -193,9 +169,9 @@ const std::string HDF5Attribute::str() const
 {
   std::string str_result;
   std::vector<std::string> attrs
-    = HDF5Interface::list_attributes(hdf5_file_id, dataset_name);
-  for(std::vector<std::string>::iterator s = attrs.begin();
-      s != attrs.end(); ++s)
+      = HDF5Interface::list_attributes(hdf5_file_id, dataset_name);
+  for (std::vector<std::string>::iterator s = attrs.begin(); s != attrs.end();
+       ++s)
   {
     str_result += *s + " ";
   }

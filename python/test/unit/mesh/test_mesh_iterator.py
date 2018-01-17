@@ -33,7 +33,7 @@ def test_vertex_iterators():
         mesh.init(0, i)
 
     # Test connectivity
-    cons = [(i, mesh.topology()(0,i)) for i in range(4)]
+    cons = [(i, mesh.topology()(0, i)) for i in range(4)]
 
     # Test writability
     for i, con in cons:
@@ -58,6 +58,7 @@ def test_vertex_iterators():
     #assert end_point[1] + 2 == mesh.coordinates()[-1,1]
     #assert end_point[2] + 2 == mesh.coordinates()[-1,2]
 
+
 def test_edge_iterators():
     "Iterate over edges"
 
@@ -66,7 +67,7 @@ def test_edge_iterators():
         mesh.init(1, i)
 
     # Test connectivity
-    cons = [(i, mesh.topology()(1,i)) for i in range(4)]
+    cons = [(i, mesh.topology()(1, i)) for i in range(4)]
 
     # Test writability
     for i, con in cons:
@@ -81,7 +82,8 @@ def test_edge_iterators():
         for j, con in cons:
             assert numpy.all(con(i) == e.entities(j))
 
-    assert n == mesh.num_edges()
+    assert n == mesh.num_entities(1)
+
 
 def test_face_iterator():
     "Iterate over faces"
@@ -91,7 +93,7 @@ def test_face_iterator():
         mesh.init(2, i)
 
     # Test connectivity
-    cons = [(i, mesh.topology()(2,i)) for i in range(4)]
+    cons = [(i, mesh.topology()(2, i)) for i in range(4)]
 
     # Test writability
     for i, con in cons:
@@ -106,7 +108,8 @@ def test_face_iterator():
         for j, con in cons:
             assert numpy.all(con(i) == f.entities(j))
 
-    assert n == mesh.num_faces()
+    assert n == mesh.num_entities(2)
+
 
 def test_facet_iterators():
     "Iterate over facets"
@@ -116,6 +119,7 @@ def test_facet_iterators():
         n += 1
     assert n == mesh.num_facets()
 
+
 def test_cell_iterators():
     "Iterate over cells"
     mesh = UnitCubeMesh(MPI.comm_world, 5, 5, 5)
@@ -123,7 +127,7 @@ def test_cell_iterators():
         mesh.init(3, i)
 
     # Test connectivity
-    cons = [(i, mesh.topology()(3,i)) for i in range(4)]
+    cons = [(i, mesh.topology()(3, i)) for i in range(4)]
 
     # Test writability
     for i, con in cons:
@@ -140,6 +144,7 @@ def test_cell_iterators():
 
     assert n == mesh.num_cells()
 
+
 def test_mixed_iterators():
     "Iterate over vertices of cells"
 
@@ -148,4 +153,4 @@ def test_mixed_iterators():
     for c in Cells(mesh):
         for v in VertexRange(c):
             n += 1
-    assert n == 4*mesh.num_cells()
+    assert n == 4 * mesh.num_cells()

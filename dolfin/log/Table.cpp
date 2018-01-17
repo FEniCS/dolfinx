@@ -1,31 +1,16 @@
 // Copyright (C) 2008-2011 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2008-07-19
-// Last changed: 2011-11-15
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-
+#include "Table.h"
 #include <dolfin/common/constants.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/log.h>
-#include "Table.h"
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
 using namespace dolfin;
 
@@ -33,7 +18,7 @@ typedef std::vector<std::string>::const_iterator iterator;
 
 //-----------------------------------------------------------------------------
 Table::Table(std::string title, bool right_justify)
-  :  _right_justify(right_justify)
+    : _right_justify(right_justify)
 {
   rename(title, label());
   // Do nothing
@@ -44,7 +29,7 @@ Table::~Table()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-TableEntry Table::operator() (std::string row, std::string col)
+TableEntry Table::operator()(std::string row, std::string col)
 {
   TableEntry entry(row, col, *this);
   return entry;
@@ -100,15 +85,14 @@ void Table::set(std::string row, std::string col, std::string value)
 std::string Table::get(std::string row, std::string col) const
 {
   std::pair<std::string, std::string> key(row, col);
-  std::map<std::pair<std::string, std::string>, std::string>::const_iterator
-    it = values.find(key);
+  std::map<std::pair<std::string, std::string>, std::string>::const_iterator it
+      = values.find(key);
 
   if (it == values.end())
   {
-    dolfin_error("Table.cpp",
-                 "access table value",
-                 "Missing table value for entry (\"%s\", \"%s\")",
-                 row.c_str(), col.c_str());
+    dolfin_error("Table.cpp", "access table value",
+                 "Missing table value for entry (\"%s\", \"%s\")", row.c_str(),
+                 col.c_str());
   }
 
   return it->second;
@@ -117,15 +101,14 @@ std::string Table::get(std::string row, std::string col) const
 double Table::get_value(std::string row, std::string col) const
 {
   std::pair<std::string, std::string> key(row, col);
-  std::map<std::pair<std::string, std::string>, double>::const_iterator
-    it = dvalues.find(key);
+  std::map<std::pair<std::string, std::string>, double>::const_iterator it
+      = dvalues.find(key);
 
   if (it == dvalues.end())
   {
-    dolfin_error("Table.cpp",
-                 "access table value",
-                 "Missing double value for entry (\"%s\", \"%s\")",
-                 row.c_str(), col.c_str());
+    dolfin_error("Table.cpp", "access table value",
+                 "Missing double value for entry (\"%s\", \"%s\")", row.c_str(),
+                 col.c_str());
   }
 
   return it->second;
@@ -171,7 +154,7 @@ Table Table::operator- (const Table& table) const
 }
 */
 //-----------------------------------------------------------------------------
-const Table& Table::operator= (const Table& table)
+const Table& Table::operator=(const Table& table)
 {
   rename(table.name(), label());
   _right_justify = table._right_justify;
@@ -212,7 +195,7 @@ std::string Table::str(bool verbose) const
         col_sizes[j + 1] = std::max(col_sizes[j + 1], value.size());
       }
     }
-    std::size_t row_size = 2*col_sizes.size() + 1;
+    std::size_t row_size = 2 * col_sizes.size() + 1;
     for (std::size_t j = 0; j < col_sizes.size(); j++)
       row_size += col_sizes[j];
 
@@ -254,14 +237,16 @@ std::string Table::str(bool verbose) const
       {
         if (_right_justify)
         {
-          for (std::size_t k = 0; k < col_sizes[j + 1] - tvalues[i][j].size(); k++)
+          for (std::size_t k = 0; k < col_sizes[j + 1] - tvalues[i][j].size();
+               k++)
             s << " ";
           s << "  " << tvalues[i][j];
         }
         else
         {
           s << "  " << tvalues[i][j];
-          for (std::size_t k = 0; k < col_sizes[j + 1] - tvalues[i][j].size(); k++)
+          for (std::size_t k = 0; k < col_sizes[j + 1] - tvalues[i][j].size();
+               k++)
             s << " ";
         }
       }
@@ -317,7 +302,7 @@ std::string Table::str_latex() const
 }
 //-----------------------------------------------------------------------------
 TableEntry::TableEntry(std::string row, std::string col, Table& table)
-  : _row(row), _col(col), _table(table)
+    : _row(row), _col(col), _table(table)
 {
   // Do nothing
 }
@@ -327,32 +312,29 @@ TableEntry::~TableEntry()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const TableEntry& TableEntry::operator= (std::size_t value)
+const TableEntry& TableEntry::operator=(std::size_t value)
 {
   _table.set(_row, _col, value);
   return *this;
 }
 //-----------------------------------------------------------------------------
-const TableEntry& TableEntry::operator= (int value)
+const TableEntry& TableEntry::operator=(int value)
 {
   _table.set(_row, _col, value);
   return *this;
 }
 //-----------------------------------------------------------------------------
-const TableEntry& TableEntry::operator= (double value)
+const TableEntry& TableEntry::operator=(double value)
 {
   _table.set(_row, _col, value);
   return *this;
 }
 //-----------------------------------------------------------------------------
-const TableEntry& TableEntry::operator= (std::string value)
+const TableEntry& TableEntry::operator=(std::string value)
 {
   _table.set(_row, _col, value);
   return *this;
 }
 //-----------------------------------------------------------------------------
-TableEntry::operator std::string() const
-{
-  return _table.get(_row, _col);
-}
+TableEntry::operator std::string() const { return _table.get(_row, _col); }
 //-----------------------------------------------------------------------------

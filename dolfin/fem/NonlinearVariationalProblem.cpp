@@ -1,38 +1,24 @@
 // Copyright (C) 2011 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Corrado Maurini, 2013.
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "NonlinearVariationalProblem.h"
+#include "DirichletBC.h"
+#include "Form.h"
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
-#include "Form.h"
-#include "DirichletBC.h"
-#include "NonlinearVariationalProblem.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NonlinearVariationalProblem::NonlinearVariationalProblem(
-  std::shared_ptr<const Form> F,
-  std::shared_ptr<Function> u,
-  std::vector<std::shared_ptr<const DirichletBC>> bcs,
-  std::shared_ptr<const Form> J)
-  : _residual(F), _jacobian(J), _u(u), _bcs(bcs)
+    std::shared_ptr<const Form> F, std::shared_ptr<Function> u,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    std::shared_ptr<const Form> J)
+    : _residual(F), _jacobian(J), _u(u), _bcs(bcs)
 {
   // Check forms
   check_forms();
@@ -44,8 +30,9 @@ void NonlinearVariationalProblem::set_bounds(const Function& lb_func,
   this->set_bounds(lb_func.vector(), ub_func.vector());
 }
 //-----------------------------------------------------------------------------
-void NonlinearVariationalProblem::set_bounds(std::shared_ptr<const PETScVector> lb,
-                                             std::shared_ptr<const PETScVector> ub)
+void NonlinearVariationalProblem::set_bounds(
+    std::shared_ptr<const PETScVector> lb,
+    std::shared_ptr<const PETScVector> ub)
 {
   dolfin_assert(lb);
   dolfin_assert(ub);
@@ -63,10 +50,7 @@ std::shared_ptr<const Form> NonlinearVariationalProblem::jacobian_form() const
   return _jacobian;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<Function> NonlinearVariationalProblem::solution()
-{
-  return _u;
-}
+std::shared_ptr<Function> NonlinearVariationalProblem::solution() { return _u; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const Function> NonlinearVariationalProblem::solution() const
 {
@@ -113,10 +97,10 @@ void NonlinearVariationalProblem::check_forms() const
   dolfin_assert(_residual);
   if (_residual->rank() != 1)
   {
-   dolfin_error("NonlinearVariationalProblem.cpp",
-                "define nonlinear variational problem F(u; v) = 0 for all v",
-                "Expecting the residual F to be a linear form (not rank %d)",
-                _residual->rank());
+    dolfin_error("NonlinearVariationalProblem.cpp",
+                 "define nonlinear variational problem F(u; v) = 0 for all v",
+                 "Expecting the residual F to be a linear form (not rank %d)",
+                 _residual->rank());
   }
 
   // Check rank of Jacobian J
@@ -136,7 +120,7 @@ void NonlinearVariationalProblem::check_forms() const
   dolfin_assert(_u);
   const auto trial_space = _u->function_space();
   dolfin_assert(trial_space);
-  for (const auto bc: _bcs)
+  for (const auto bc : _bcs)
   {
     dolfin_assert(bc);
     const auto bc_space = bc->function_space();

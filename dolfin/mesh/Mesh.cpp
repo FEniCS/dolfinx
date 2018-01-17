@@ -1,39 +1,10 @@
 // Copyright (C) 2006-2016 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Johan Hoffman 2007
-// Modified by Garth N. Wells 2007-2011
-// Modified by Niclas Jansson 2008
-// Modified by Kristoffer Selim 2008
-// Modified by Andre Massing 2009-2010
-// Modified by Johannes Ring 2012
-// Modified by Marie E. Rognes 2012
-// Modified by Mikael Mortensen 2012
-// Modified by Jan Blechta 2013
-//
-// First added:  2006-05-09
-// Last changed: 2016-05-05
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/Timer.h>
-#include <dolfin/common/utils.h>
-#include <dolfin/function/Expression.h>
-#include <dolfin/log/log.h>
-#include <dolfin/geometry/BoundingBoxTree.h>
+#include "Mesh.h"
 #include "Cell.h"
 #include "DistributedMeshTools.h"
 #include "Facet.h"
@@ -42,29 +13,33 @@
 #include "MeshPartitioning.h"
 #include "TopologyComputation.h"
 #include "Vertex.h"
-#include "Mesh.h"
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
+#include <dolfin/common/utils.h>
+#include <dolfin/function/Expression.h>
+#include <dolfin/geometry/BoundingBoxTree.h>
+#include <dolfin/log/log.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm) : Variable("mesh", "DOLFIN mesh"),
-                            _ordered(false),
-                            _mpi_comm(comm), _ghost_mode("none")
+Mesh::Mesh(MPI_Comm comm)
+    : Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
+      _ghost_mode("none")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
-                               _ordered(false),
-                               _mpi_comm(mesh.mpi_comm()),
-                               _ghost_mode("none")
+Mesh::Mesh(const Mesh& mesh)
+    : Variable("mesh", "DOLFIN mesh"), _ordered(false),
+      _mpi_comm(mesh.mpi_comm()), _ghost_mode("none")
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
-  : Variable("mesh", "DOLFIN mesh"),
-  _ordered(false), _mpi_comm(comm), _ghost_mode("none")
+    : Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
+      _ghost_mode("none")
 {
   const std::string ghost_mode = parameters["ghost_mode"];
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data, ghost_mode);
@@ -120,9 +95,9 @@ std::size_t Mesh::init(std::size_t dim) const
   // Check that mesh is ordered
   if (!ordered())
   {
-    dolfin_error("Mesh.cpp",
-                 "initialize mesh entities",
-                 "Mesh is not ordered according to the UFC numbering convention. Consider calling mesh.order()");
+    dolfin_error("Mesh.cpp", "initialize mesh entities",
+                 "Mesh is not ordered according to the UFC numbering "
+                 "convention. Consider calling mesh.order()");
   }
 
   // Compute connectivity
@@ -158,9 +133,9 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   // Check that mesh is ordered
   if (!ordered())
   {
-    dolfin_error("Mesh.cpp",
-                 "initialize mesh connectivity",
-                 "Mesh is not ordered according to the UFC numbering convention. Consider calling mesh.order()");
+    dolfin_error("Mesh.cpp", "initialize mesh connectivity",
+                 "Mesh is not ordered according to the UFC numbering "
+                 "convention. Consider calling mesh.order()");
   }
 
   // Compute connectivity
@@ -281,7 +256,7 @@ std::size_t Mesh::hash() const
   const std::size_t kg = hash_global(_mpi_comm.comm(), kg_local);
 
   // Compute hash based on the Cantor pairing function
-  return (kt + kg)*(kt + kg + 1)/2 + kg;
+  return (kt + kg) * (kt + kg + 1) / 2 + kg;
 }
 //-----------------------------------------------------------------------------
 std::string Mesh::str(bool verbose) const
@@ -300,12 +275,10 @@ std::string Mesh::str(bool verbose) const
     if (_cell_type)
       cell_type = _cell_type->description(true);
 
-    s << "<Mesh of topological dimension "
-      << topology().dim() << " ("
-      << cell_type << ") with "
-      << num_vertices() << " vertices and "
-      << num_cells() << " cells, "
-      << (_ordered ? "ordered" : "unordered") << ">";
+    s << "<Mesh of topological dimension " << topology().dim() << " ("
+      << cell_type << ") with " << num_vertices() << " vertices and "
+      << num_cells() << " cells, " << (_ordered ? "ordered" : "unordered")
+      << ">";
   }
 
   return s.str();
@@ -313,8 +286,7 @@ std::string Mesh::str(bool verbose) const
 //-----------------------------------------------------------------------------
 std::string Mesh::ghost_mode() const
 {
-  dolfin_assert(_ghost_mode == "none"
-                || _ghost_mode == "shared_vertex"
+  dolfin_assert(_ghost_mode == "none" || _ghost_mode == "shared_vertex"
                 || _ghost_mode == "shared_facet");
   return _ghost_mode;
 }

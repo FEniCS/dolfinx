@@ -1,31 +1,18 @@
 // Copyright (C) 2009-2012 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <sstream>
-#include <stdio.h>
+#include "Parameters.h"
+#include "Parameter.h"
 #include <boost/program_options.hpp>
-
-#include <dolfin/log/log.h>
+#include <dolfin/common/SubSystemsManager.h>
+#include <dolfin/common/utils.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/Table.h>
-#include <dolfin/common/utils.h>
-#include <dolfin/common/SubSystemsManager.h>
-#include "Parameter.h"
-#include "Parameters.h"
+#include <dolfin/log/log.h>
+#include <sstream>
 
 using namespace dolfin;
 namespace po = boost::program_options;
@@ -37,20 +24,11 @@ Parameters::Parameters(std::string key) : _key(key)
   Parameter::check_key(key);
 }
 //-----------------------------------------------------------------------------
-Parameters::~Parameters()
-{
-  clear();
-}
+Parameters::~Parameters() { clear(); }
 //-----------------------------------------------------------------------------
-Parameters::Parameters(const Parameters& parameters)
-{
-  *this = parameters;
-}
+Parameters::Parameters(const Parameters& parameters) { *this = parameters; }
 //-----------------------------------------------------------------------------
-std::string Parameters::name() const
-{
-  return _key;
-}
+std::string Parameters::name() const { return _key; }
 //-----------------------------------------------------------------------------
 void Parameters::rename(std::string key)
 {
@@ -72,10 +50,9 @@ void Parameters::add_unset(std::string key, Parameter::Type type)
   auto e = _parameters.insert({key, Parameter(key, type)});
   if (!e.second)
   {
-    dolfin_error("Parameters.cpp",
-                 "add parameter",
-                 "Parameter(s) \"%s.%s\" already defined",
-                 this->name().c_str(), key.c_str());
+    dolfin_error("Parameters.cpp", "add parameter",
+                 "Parameter(s) \"%s.%s\" already defined", this->name().c_str(),
+                 key.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -84,23 +61,20 @@ void Parameters::add(std::string key, int value)
   auto e = _parameters.insert({key, Parameter(key, value)});
   if (!e.second)
   {
-    dolfin_error("Parameters.cpp",
-                 "add parameter",
-                 "Parameter(s) \"%s.%s\" already defined",
-                 this->name().c_str(), key.c_str());
+    dolfin_error("Parameters.cpp", "add parameter",
+                 "Parameter(s) \"%s.%s\" already defined", this->name().c_str(),
+                 key.c_str());
   }
 }
 //-----------------------------------------------------------------------------
-void Parameters::add(std::string key, int value,
-                     int min_value, int max_value)
+void Parameters::add(std::string key, int value, int min_value, int max_value)
 {
   auto e = _parameters.insert({key, Parameter(key, value)});
   if (!e.second)
   {
-    dolfin_error("Parameters.cpp",
-                 "add parameter",
-                 "Parameter(s) \"%s.%s\" already defined",
-                 this->name().c_str(), key.c_str());
+    dolfin_error("Parameters.cpp", "add parameter",
+                 "Parameter(s) \"%s.%s\" already defined", this->name().c_str(),
+                 key.c_str());
   }
 
   // Set range
@@ -112,23 +86,21 @@ void Parameters::add(std::string key, double value)
   auto e = _parameters.insert({key, Parameter(key, value)});
   if (!e.second)
   {
-    dolfin_error("Parameters.cpp",
-                 "add parameter",
-                 "Parameter(s) \"%s.%s\" already defined",
-                 this->name().c_str(), key.c_str());
+    dolfin_error("Parameters.cpp", "add parameter",
+                 "Parameter(s) \"%s.%s\" already defined", this->name().c_str(),
+                 key.c_str());
   }
 }
 //-----------------------------------------------------------------------------
-void Parameters::add(std::string key, double value,
-                     double min_value, double max_value)
+void Parameters::add(std::string key, double value, double min_value,
+                     double max_value)
 {
   auto e = _parameters.insert({key, Parameter(key, value)});
   if (!e.second)
   {
-    dolfin_error("Parameters.cpp",
-                 "add parameter",
-                 "Parameter(s) \"%s.%s\" already defined",
-                 this->name().c_str(), key.c_str());
+    dolfin_error("Parameters.cpp", "add parameter",
+                 "Parameter(s) \"%s.%s\" already defined", this->name().c_str(),
+                 key.c_str());
   }
 
   // Set range
@@ -140,10 +112,9 @@ void Parameters::add(std::string key, std::string value)
   auto e = _parameters.insert({key, Parameter(key, value)});
   if (!e.second)
   {
-    dolfin_error("Parameters.cpp",
-                 "add parameter",
-                 "Parameter(s) \"%s.%s\" already defined",
-                 this->name().c_str(), key.c_str());
+    dolfin_error("Parameters.cpp", "add parameter",
+                 "Parameter(s) \"%s.%s\" already defined", this->name().c_str(),
+                 key.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -155,10 +126,9 @@ void Parameters::add(std::string key, const char* value)
   auto e = _parameters.insert({key, Parameter(key, value)});
   if (!e.second)
   {
-    dolfin_error("Parameters.cpp",
-                 "add parameter",
-                 "Parameter \"%s.%s\" already defined",
-                 this->name().c_str(), key.c_str());
+    dolfin_error("Parameters.cpp", "add parameter",
+                 "Parameter \"%s.%s\" already defined", this->name().c_str(),
+                 key.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -168,10 +138,9 @@ void Parameters::add(std::string key, std::string value,
   auto e = _parameters.insert({key, Parameter(key, value)});
   if (!e.second)
   {
-    dolfin_error("Parameters.cpp",
-                 "add parameter",
-                 "Parameter \"%s.%s\" already defined",
-                 this->name().c_str(), key.c_str());
+    dolfin_error("Parameters.cpp", "add parameter",
+                 "Parameter \"%s.%s\" already defined", this->name().c_str(),
+                 key.c_str());
   }
 
   boost::get<Parameter>(e.first->second).set_range(range);
@@ -186,10 +155,9 @@ void Parameters::add(std::string key, const char* value,
   auto e = _parameters.insert({key, Parameter(key, value)});
   if (!e.second)
   {
-    dolfin_error("Parameters.cpp",
-                 "add parameter",
-                 "Parameter \"%s.%s\" already defined",
-                 this->name().c_str(), key.c_str());
+    dolfin_error("Parameters.cpp", "add parameter",
+                 "Parameter \"%s.%s\" already defined", this->name().c_str(),
+                 key.c_str());
   }
 
   // Set range
@@ -201,20 +169,18 @@ void Parameters::add(std::string key, bool value)
   auto e = _parameters.insert({key, Parameter(key, value)});
   if (!e.second)
   {
-    dolfin_error("Parameters.cpp",
-                 "add parameter",
-                 "Parameter \"%s.%s\" already defined",
-                 this->name().c_str(), key.c_str());
+    dolfin_error("Parameters.cpp", "add parameter",
+                 "Parameter \"%s.%s\" already defined", this->name().c_str(),
+                 key.c_str());
   }
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(const Parameters& parameters)
 {
-  auto e =_parameters.insert({parameters.name(), Parameters(parameters)});
+  auto e = _parameters.insert({parameters.name(), Parameters(parameters)});
   if (!e.second)
   {
-    dolfin_error("Parameters.cpp",
-                 "add parameter set",
+    dolfin_error("Parameters.cpp", "add parameter set",
                  "Parameter set \"%s.%s\" already defined",
                  this->name().c_str(), parameters.name().c_str());
   }
@@ -227,8 +193,7 @@ void Parameters::remove(std::string key)
 
   if (num_removed == 0)
   {
-    dolfin_error("Parameters.cpp",
-                 "remove parameter or parameter set",
+    dolfin_error("Parameters.cpp", "remove parameter or parameter set",
                  "No parameter or parameter set \"%s.%s\" defined",
                  this->name().c_str(), key.c_str());
   }
@@ -245,7 +210,8 @@ void Parameters::parse(int argc, char* argv[])
 void Parameters::update(const Parameters& parameters)
 {
   // Update the parameters
-  for (auto it = parameters._parameters.begin(); it != parameters._parameters.end(); ++it)
+  for (auto it = parameters._parameters.begin();
+       it != parameters._parameters.end(); ++it)
   {
     // If have a parameter set
     if (it->second.which() == 1)
@@ -264,16 +230,20 @@ void Parameters::update(const Parameters& parameters)
       if (this_it == _parameters.end())
       {
         // This set does not have a parameter that is present in 'other'
-        warning("Ignoring unknown parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
-                other_p.key().c_str(), parameters.name().c_str(), name().c_str());
+        warning("Ignoring unknown parameter \"%s\" in parameter set \"%s\" "
+                "when updating parameter set \"%s\".",
+                other_p.key().c_str(), parameters.name().c_str(),
+                name().c_str());
       }
       else
       {
         // Skip unset parameters
         if (!other_p.is_set())
         {
-          //warning("Ignoring unset parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
-          //        other.key().c_str(), parameters.name().c_str(), name().c_str());
+          // warning("Ignoring unset parameter \"%s\" in parameter set \"%s\"
+          // when updating parameter set \"%s\".",
+          //        other.key().c_str(), parameters.name().c_str(),
+          //        name().c_str());
         }
         else
         {
@@ -284,90 +254,85 @@ void Parameters::update(const Parameters& parameters)
       }
     }
   }
-
 }
 //-----------------------------------------------------------------------------
-Parameter& Parameters::operator[] (std::string key)
+Parameter& Parameters::operator[](std::string key)
 {
   auto p = _parameters.find(key);
   if (p == _parameters.end())
   {
-    dolfin_error("Parameters.cpp",
-                 "access parameter",
-                 "Parameter \"%s.%s\" not defined",
-                 this->name().c_str(), key.c_str());
+    dolfin_error("Parameters.cpp", "access parameter",
+                 "Parameter \"%s.%s\" not defined", this->name().c_str(),
+                 key.c_str());
   }
   else if (p->second.which() != 0)
   {
-    dolfin_error("Parameters.cpp",
-                 "access parameter",
-                 "Key '" + key + "' is for a Parameters object (not a Parameter)");
+    dolfin_error("Parameters.cpp", "access parameter",
+                 "Key '" + key
+                     + "' is for a Parameters object (not a Parameter)");
   }
 
   return boost::get<Parameter>(p->second);
 }
 //-----------------------------------------------------------------------------
-const Parameter& Parameters::operator[] (std::string key) const
+const Parameter& Parameters::operator[](std::string key) const
 {
   auto p = _parameters.find(key);
   if (p == _parameters.end())
   {
-    dolfin_error("Parameters.cpp",
-                 "access parameter",
-                 "Parameter \"%s.%s\" not defined",
-                 this->name().c_str(), key.c_str());
+    dolfin_error("Parameters.cpp", "access parameter",
+                 "Parameter \"%s.%s\" not defined", this->name().c_str(),
+                 key.c_str());
   }
   else if (p->second.which() != 0)
   {
-    dolfin_error("Parameters.cpp",
-                 "access parameter",
-                 "Key '" + key + "' is for a Parameters object (not a Parameter)");
+    dolfin_error("Parameters.cpp", "access parameter",
+                 "Key '" + key
+                     + "' is for a Parameters object (not a Parameter)");
   }
 
   return boost::get<Parameter>(p->second);
 }
 //-----------------------------------------------------------------------------
-Parameters& Parameters::operator() (std::string key)
+Parameters& Parameters::operator()(std::string key)
 {
   auto p = _parameters.find(key);
   if (p == _parameters.end())
   {
-    dolfin_error("Parameters.cpp",
-                 "access parameter set",
-                 "Parameter set \"%s.%s\" not defined",
-                 this->name().c_str(), key.c_str());
+    dolfin_error("Parameters.cpp", "access parameter set",
+                 "Parameter set \"%s.%s\" not defined", this->name().c_str(),
+                 key.c_str());
   }
   else if (p->second.which() != 1)
   {
-    dolfin_error("Parameters.cpp",
-                 "access parameters",
-                 "Key '" + key + "' is for a Parameter object (not a Parameters)");
+    dolfin_error("Parameters.cpp", "access parameters",
+                 "Key '" + key
+                     + "' is for a Parameter object (not a Parameters)");
   }
 
   return boost::get<Parameters>(p->second);
 }
 //-----------------------------------------------------------------------------
-const Parameters& Parameters::operator() (std::string key) const
+const Parameters& Parameters::operator()(std::string key) const
 {
   auto p = _parameters.find(key);
   if (p == _parameters.end())
   {
-    dolfin_error("Parameters.cpp",
-                 "access parameter set",
-                 "Parameter set \"%s.%s\" not defined",
-                 this->name().c_str(), key.c_str());
+    dolfin_error("Parameters.cpp", "access parameter set",
+                 "Parameter set \"%s.%s\" not defined", this->name().c_str(),
+                 key.c_str());
   }
   else if (p->second.which() != 1)
   {
-    dolfin_error("Parameters.cpp",
-                 "access parameters",
-                 "Key '" + key + "' is for a Parameter object (not a Parameters)");
+    dolfin_error("Parameters.cpp", "access parameters",
+                 "Key '" + key
+                     + "' is for a Parameter object (not a Parameters)");
   }
 
   return boost::get<Parameters>(p->second);
 }
 //-----------------------------------------------------------------------------
-const Parameters& Parameters::operator= (const Parameters& parameters)
+const Parameters& Parameters::operator=(const Parameters& parameters)
 {
   // Copy key
   _key = parameters._key;
@@ -448,8 +413,8 @@ std::string Parameters::str(bool verbose) const
   }
   else
   {
-    s << "<Parameter set \"" << name() << "\" containing "
-      << _parameters.size() << " parameter(s) and parameter set(s)>";
+    s << "<Parameter set \"" << name() << "\" containing " << _parameters.size()
+      << " parameter(s) and parameter set(s)>";
   }
 
   return s.str();
@@ -466,8 +431,10 @@ void Parameters::parse_common(int argc, char* argv[])
 
   // Read command-line arguments into po::variables_map
   po::variables_map vm;
-  const po::parsed_options parsed
-    = po::command_line_parser(argc, argv).options(desc).allow_unregistered().run();
+  const po::parsed_options parsed = po::command_line_parser(argc, argv)
+                                        .options(desc)
+                                        .allow_unregistered()
+                                        .run();
   po::store(parsed, vm);
   po::notify(vm);
 
@@ -517,10 +484,11 @@ void Parameters::parse_petsc(int argc, char* argv[])
 }
 //-----------------------------------------------------------------------------
 void Parameters::add_parameter_set_to_po(po::options_description& desc,
-                                         const Parameters &parameters,
+                                         const Parameters& parameters,
                                          std::string base_name) const
 {
-  for (auto it = parameters._parameters.begin(); it != parameters._parameters.end(); ++it)
+  for (auto it = parameters._parameters.begin();
+       it != parameters._parameters.end(); ++it)
   {
     if (it->second.which() == 0)
     {
@@ -544,7 +512,7 @@ void Parameters::add_parameter_set_to_po(po::options_description& desc,
       else if (p.type_str() == "string")
       {
         desc.add_options()(param_name.c_str(), po::value<std::string>(),
-                         p.description().c_str());
+                           p.description().c_str());
       }
     }
   }
@@ -564,7 +532,8 @@ void Parameters::read_vm(po::variables_map& vm, Parameters& parameters,
                          std::string base_name)
 {
   // Read values from po::variables_map
-  for (auto it = parameters._parameters.begin(); it != parameters._parameters.end(); ++it)
+  for (auto it = parameters._parameters.begin();
+       it != parameters._parameters.end(); ++it)
   {
     if (it->second.which() == 0)
     {
@@ -632,6 +601,6 @@ boost::optional<Parameters&> Parameters::find_parameter_set(std::string key)
 //-----------------------------------------------------------------------------
 namespace dolfin
 {
-  Parameters empty_parameters("empty");
+Parameters empty_parameters("empty");
 }
 //-----------------------------------------------------------------------------

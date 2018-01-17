@@ -27,7 +27,7 @@ def build_nullspace(V, x):
     """Function to build null space for 3D elasticity"""
 
     # Create list of vectors for null space
-    nullspace_basis = [x.copy() for i in range(6)]
+    nullspace_basis = [PETScVector(x) for i in range(6)]
 
     # Build translational null space basis
     V.sub(0).dofmap().set(nullspace_basis[0], 1.0);

@@ -1,58 +1,43 @@
 // Copyright (C) 2003-2012 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Garth N. Wells 2005-2010
-// Modified by Martin Sandve Alnes 2008-2014
-// Modified by Andre Massing 2009
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <algorithm>
 #include <map>
 #include <utility>
 #include <vector>
 
+#include "Expression.h"
+#include "Function.h"
+#include "FunctionSpace.h"
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/fem/DirichletBC.h>
+#include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
-#include <dolfin/geometry/BoundingBoxTree.h>
-#include "Expression.h"
-#include "FunctionSpace.h"
-#include "Function.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
-  : _function_space(V), _allow_extrapolation(false)
+    : _function_space(V), _allow_extrapolation(false)
 {
   // Check that we don't have a subspace
   if (!V->component().empty())
   {
-    dolfin_error("Function.cpp",
-                 "create function",
-                 "Cannot be created from subspace. Consider collapsing the function space");
+    dolfin_error("Function.cpp", "create function",
+                 "Cannot be created from subspace. Consider collapsing the "
+                 "function space");
   }
 
   // Initialize vector
@@ -61,7 +46,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V,
                    std::shared_ptr<PETScVector> x)
-  : _function_space(V), _vector(x), _allow_extrapolation(false)
+    : _function_space(V), _vector(x), _allow_extrapolation(false)
 {
   // We do not check for a subspace since this constructor is used for
   // creating subfunctions
@@ -83,7 +68,7 @@ Function::Function(const Function& v) : _allow_extrapolation(false)
     this->_function_space = v._function_space;
 
     // Copy vector
-    this->_vector = v._vector->copy();
+    this->_vector = std::make_shared<PETScVector>(*v._vector);
   }
   else
   {
@@ -98,7 +83,7 @@ Function::Function(const Function& v) : _allow_extrapolation(false)
     std::size_t i = 0;
     for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
     {
-      new_rows[i]   = entry->first;
+      new_rows[i] = entry->first;
       old_rows[i++] = entry->second;
     }
 
@@ -186,7 +171,7 @@ const Function& Function::operator= (const Function& v)
 }
 */
 //-----------------------------------------------------------------------------
-const Function& Function::operator= (const Expression& v)
+const Function& Function::operator=(const Expression& v)
 {
   interpolate(v);
   return *this;
@@ -207,9 +192,7 @@ void Function::operator=(const FunctionAXPY& axpy)
 {
   if (axpy.pairs().size() == 0)
   {
-    dolfin_error("Function.cpp",
-                 "assign function",
-                 "FunctionAXPY is empty.");
+    dolfin_error("Function.cpp", "assign function", "FunctionAXPY is empty.");
   }
 
   // Make an initial assign and scale
@@ -219,9 +202,9 @@ void Function::operator=(const FunctionAXPY& axpy)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  std::vector<std::pair<double, std::shared_ptr<const Function>>>
-    ::const_iterator it;
-  for (it = axpy.pairs().begin()+1; it != axpy.pairs().end(); it++)
+  std::vector<std::pair<double,
+                        std::shared_ptr<const Function>>>::const_iterator it;
+  for (it = axpy.pairs().begin() + 1; it != axpy.pairs().end(); it++)
   {
     dolfin_assert(it->second);
     dolfin_assert(it->second->vector());
@@ -237,8 +220,7 @@ std::shared_ptr<PETScVector> Function::vector()
   // Check that this is not a sub function.
   if (_vector->size() != _function_space->dofmap()->global_dimension())
   {
-    dolfin_error("Function.cpp",
-                 "access vector of degrees of freedom",
+    dolfin_error("Function.cpp", "access vector of degrees of freedom",
                  "Cannot access a non-const vector from a subfunction");
   }
 
@@ -264,7 +246,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
 
   // Get index of first cell containing point
   unsigned int id
-    = mesh.bounding_box_tree()->compute_first_entity_collision(point);
+      = mesh.bounding_box_tree()->compute_first_entity_collision(point);
 
   // If not found, use the closest cell
   if (id == std::numeric_limits<unsigned int>::max())
@@ -272,15 +254,16 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
     // Check if the closest cell is within DOLFIN_EPS. This we can
     // allow without _allow_extrapolation
     std::pair<unsigned int, double> close
-      = mesh.bounding_box_tree()->compute_closest_entity(point);
+        = mesh.bounding_box_tree()->compute_closest_entity(point);
 
     if (_allow_extrapolation or close.second < DOLFIN_EPS)
       id = close.first;
     else
     {
-      dolfin_error("Function.cpp",
-                   "evaluate function at point",
-                   "The point is not inside the domain. Consider calling \"Function::set_allow_extrapolation(true)\" on this Function to allow extrapolation");
+      dolfin_error("Function.cpp", "evaluate function at point",
+                   "The point is not inside the domain. Consider calling "
+                   "\"Function::set_allow_extrapolation(true)\" on this "
+                   "Function to allow extrapolation");
     }
   }
 
@@ -316,8 +299,8 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
   dolfin_cell.get_coordinate_dofs(coordinate_dofs);
 
   // Restrict function to cell
-  restrict(coefficients.data(), element, dolfin_cell,
-           coordinate_dofs.data(), ufc_cell);
+  restrict(coefficients.data(), element, dolfin_cell, coordinate_dofs.data(),
+           ufc_cell);
 
   // Create work vector for basis
   std::vector<double> basis(value_size_loc);
@@ -329,12 +312,11 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
   // Compute linear combination
   for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
-    element.evaluate_basis(i, basis.data(), x.data(),
-                           coordinate_dofs.data(),
+    element.evaluate_basis(i, basis.data(), x.data(), coordinate_dofs.data(),
                            ufc_cell.orientation);
 
     for (std::size_t j = 0; j < value_size_loc; ++j)
-      values[j] += coefficients[i]*basis[j];
+      values[j] += coefficients[i] * basis[j];
   }
 }
 //-----------------------------------------------------------------------------
@@ -389,7 +371,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
   // Check if UFC cell comes from mesh, otherwise
   // find the cell which contains the point
   dolfin_assert(ufc_cell.mesh_identifier >= 0);
-  if (ufc_cell.mesh_identifier == (int) mesh.id())
+  if (ufc_cell.mesh_identifier == (int)mesh.id())
   {
     const Cell cell(mesh, ufc_cell.index);
     eval(values, x, cell, ufc_cell);
@@ -399,8 +381,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(double* w, const FiniteElement& element,
-                        const Cell& dolfin_cell,
-                        const double* coordinate_dofs,
+                        const Cell& dolfin_cell, const double* coordinate_dofs,
                         const ufc::cell& ufc_cell) const
 {
   dolfin_assert(w);
@@ -438,8 +419,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   if (&mesh != _function_space->mesh().get()
       && mesh.hash() != _function_space->mesh()->hash())
   {
-    dolfin_error("Function.cpp",
-                 "interpolate function values at vertices",
+    dolfin_error("Function.cpp", "interpolate function values at vertices",
                  "Non-matching mesh");
   }
 
@@ -449,16 +429,16 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
 
   // Local data for interpolation on each cell
   const std::size_t num_cell_vertices
-    = mesh.type().num_vertices(mesh.topology().dim());
+      = mesh.type().num_vertices(mesh.topology().dim());
 
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = value_size();
 
   // Resize Array for holding vertex values
-  vertex_values.resize(value_size_loc*(mesh.num_vertices()));
+  vertex_values.resize(value_size_loc * (mesh.num_vertices()));
 
   // Create vector to hold cell vertex values
-  std::vector<double> cell_vertex_values(value_size_loc*num_cell_vertices);
+  std::vector<double> cell_vertex_values(value_size_loc * num_cell_vertices);
 
   // Create vector for expansion coefficients
   std::vector<double> coefficients(element.space_dimension());
@@ -478,18 +458,18 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
              ufc_cell);
 
     // Interpolate values at the vertices
-    element.interpolate_vertex_values(cell_vertex_values.data(),
-                                      coefficients.data(),
-                                      coordinate_dofs.data(),
-                                      ufc_cell.orientation);
+    element.interpolate_vertex_values(
+        cell_vertex_values.data(), coefficients.data(), coordinate_dofs.data(),
+        ufc_cell.orientation);
 
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
       for (std::size_t i = 0; i < value_size_loc; ++i)
       {
-        const std::size_t local_index  = vertex.pos()*value_size_loc + i;
-        const std::size_t global_index = i*mesh.num_vertices()+vertex->index();
+        const std::size_t local_index = vertex.pos() * value_size_loc + i;
+        const std::size_t global_index
+            = i * mesh.num_vertices() + vertex->index();
         vertex_values[global_index] = cell_vertex_values[local_index];
       }
     }
@@ -531,7 +511,8 @@ void Function::init_vector()
   // Create layout for initialising tensor
   //std::shared_ptr<TensorLayout> tensor_layout;
   //tensor_layout = factory.create_layout(comm, 1);
-  auto tensor_layout = std::make_shared<TensorLayout>(comm, 0, TensorLayout::Sparsity::DENSE);
+  auto tensor_layout = std::make_shared<TensorLayout>(comm, 0,
+  TensorLayout::Sparsity::DENSE);
 
   dolfin_assert(tensor_layout);
   dolfin_assert(!tensor_layout->sparsity_pattern());
@@ -540,13 +521,15 @@ void Function::init_vector()
 
   // Create vector of dofs
   if (!_vector)
-    _vector = std::make_shared<PETScVector>(_function_space->mesh()->mpi_comm());
+    _vector =
+  std::make_shared<PETScVector>(_function_space->mesh()->mpi_comm());
   dolfin_assert(_vector);
   if (!_vector->empty())
   {
     dolfin_error("Function.cpp",
                  "initialize vector of degrees of freedom for function",
-                 "Cannot re-initialize a non-empty vector. Consider creating a new function");
+                 "Cannot re-initialize a non-empty vector. Consider creating a
+  new function");
 
   }
   _vector->init(*tensor_layout);
@@ -561,26 +544,30 @@ void Function::init_vector()
   std::size_t bs = index_map->block_size();
 
   // Build local-to-global map (blocks)
-  std::vector<dolfin::la_index_t> local_to_global(index_map->size(IndexMap::MapSize::ALL));
+  std::vector<dolfin::la_index_t> local_to_global(
+      index_map->size(IndexMap::MapSize::ALL));
   for (std::size_t i = 0; i < local_to_global.size(); ++i)
     local_to_global[i] = index_map->local_to_global(i);
 
   // Build list of ghosts (global block indices)
   const std::size_t nowned = index_map->size(IndexMap::MapSize::OWNED);
-  dolfin_assert(nowned + index_map->size(IndexMap::MapSize::UNOWNED) == local_to_global.size());
-  std::vector<dolfin::la_index_t> ghosts(local_to_global.begin() + nowned, local_to_global.end());
+  dolfin_assert(nowned + index_map->size(IndexMap::MapSize::UNOWNED)
+                == local_to_global.size());
+  std::vector<dolfin::la_index_t> ghosts(local_to_global.begin() + nowned,
+                                         local_to_global.end());
 
   // Create vector of dofs
   if (!_vector)
-    _vector = std::make_shared<PETScVector>(_function_space->mesh()->mpi_comm());
+    _vector
+        = std::make_shared<PETScVector>(_function_space->mesh()->mpi_comm());
   dolfin_assert(_vector);
 
   if (!_vector->empty())
   {
     dolfin_error("Function.cpp",
                  "initialize vector of degrees of freedom for function",
-                 "Cannot re-initialize a non-empty vector. Consider creating a new function");
-
+                 "Cannot re-initialize a non-empty vector. Consider creating a "
+                 "new function");
   }
 
   _vector->init(index_map->local_range(), local_to_global, ghosts, bs);

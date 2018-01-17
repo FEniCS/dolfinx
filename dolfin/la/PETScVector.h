@@ -1,244 +1,213 @@
 // Copyright (C) 2004-2016 Johan Hoffman, Johan Jansson, Anders Logg
-// and Garth N. Wells
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Garth N. Wells, 2005-2010.
-// Modified by Kent-Andre Mardal, 2008.
-// Modified by Ola Skavhaug, 2008.
-// Modified by Martin Alnæs, 2008.
-// Modified by Fredrik Valdmanis, 2011.
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
 #ifdef HAS_PETSC
 
+#include "IndexMap.h"
+#include "PETScObject.h"
 #include <array>
 #include <cstdint>
-#include <memory>
-#include <string>
-
-#include <petscsys.h>
-#include <petscvec.h>
-
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/types.h>
-#include "PETScObject.h"
-#include "IndexMap.h"
+#include <memory>
+#include <petscsys.h>
+#include <petscvec.h>
+#include <string>
 
 namespace dolfin
 {
 
-  /// A simple vector class based on PETSc.
-  ///
-  /// It is a simple wrapper for a PETSc vector pointer (Vec)
-  /// implementing the GenericTensor interface.
-  ///
-  /// The interface is intentionally simple. For advanced usage,
-  /// access the PETSc Vec pointer using the function vec() and
-  /// use the standard PETSc interface.
+/// A simple vector class based on PETSc.
+///
+/// It is a simple wrapper for a PETSc vector pointer (Vec)
+/// implementing the GenericTensor interface.
+///
+/// The interface is intentionally simple. For advanced usage,
+/// access the PETSc Vec pointer using the function vec() and
+/// use the standard PETSc interface.
 
-  class PETScVector : public PETScObject
-  {
-  public:
+class PETScVector : public PETScObject
+{
+public:
+  /// Create empty vector on an MPI communicator
+  explicit PETScVector(MPI_Comm comm);
 
-    /// Create empty vector on an MPI communicator
-    explicit PETScVector(MPI_Comm comm);
+  /// Copy constructor
+  PETScVector(const PETScVector& x);
 
-    /// Copy constructor
-    PETScVector(const PETScVector& x);
+  /// Create vector wrapper of PETSc Vec pointer. The reference
+  /// counter of the Vec will be increased, and decreased upon
+  /// destruction of this object.
+  explicit PETScVector(Vec x);
 
-    /// Create vector wrapper of PETSc Vec pointer. The reference
-    /// counter of the Vec will be increased, and decreased upon
-    /// destruction of this object.
-    explicit PETScVector(Vec x);
+  /// Destructor
+  virtual ~PETScVector();
 
-    /// Destructor
-    virtual ~PETScVector();
+  /// Initialize vector to global size N
+  void init(std::size_t N);
 
-    /// Return copy of vector
-    std::shared_ptr<PETScVector> copy() const;
+  /// Initialize vector with given ownership range
+  void init(std::array<std::int64_t, 2> range);
 
-    /// Initialize vector to global size N
-    void init(std::size_t N);
+  /// Initialize vector with given ownership range and with ghost
+  /// values
+  void init(std::array<std::int64_t, 2> range,
+            const std::vector<la_index_t>& local_to_global_map,
+            const std::vector<la_index_t>& ghost_indices, int block_size);
 
-    /// Initialize vector with given ownership range
-    void init(std::array<std::int64_t, 2> range);
+  /// Return size of vector
+  std::int64_t size() const;
 
-    /// Initialize vector with given ownership range and with ghost
-    /// values
-    void init(std::array<std::int64_t, 2> range,
-                      const std::vector<la_index_t>& local_to_global_map,
-                      const std::vector<la_index_t>& ghost_indices,
-                      int block_size);
+  /// Return local size of vector
+  std::size_t local_size() const;
 
-    /// Return size of vector
-    std::int64_t size() const;
+  /// Return ownership range of a vector
+  std::array<std::int64_t, 2> local_range() const;
 
-    /// Return local size of vector
-    std::size_t local_size() const;
+  /// Set all entries to zero and keep any sparse structure
+  void zero();
 
-    /// Return ownership range of a vector
-    std::array<std::int64_t, 2> local_range() const;
+  /// Finalize assembly of tensor
+  void apply();
 
-    /// Set all entries to zero and keep any sparse structure
-    void zero();
+  /// Return MPI communicator
+  MPI_Comm mpi_comm() const;
 
-    /// Finalize assembly of tensor
-    void apply();
+  /// Return informal string representation (pretty-print)
+  std::string str(bool verbose) const;
 
-    /// Return MPI communicator
-    MPI_Comm mpi_comm() const;
+  /// Return true if vector is empty
+  bool empty() const;
 
-    /// Return informal string representation (pretty-print)
-    std::string str(bool verbose) const;
+  /// Determine whether global vector index is owned by this process
+  bool owns_index(std::size_t i) const;
 
-    /// Return true if vector is empty
-    bool empty() const;
+  /// Get block of values using global indices (all values must be
+  /// owned by local process, ghosts cannot be accessed)
+  void get(double* block, std::size_t m, const dolfin::la_index_t* rows) const;
 
-    /// Determine whether global vector index is owned by this process
-    bool owns_index(std::size_t i) const;
+  /// Get block of values using local indices
+  void get_local(double* block, std::size_t m,
+                 const dolfin::la_index_t* rows) const;
 
-    /// Get block of values using global indices (all values must be
-    /// owned by local process, ghosts cannot be accessed)
-    void get(double* block, std::size_t m,
-             const dolfin::la_index_t* rows) const;
+  /// Set block of values using global indices
+  void set(const double* block, std::size_t m, const dolfin::la_index_t* rows);
 
-    /// Get block of values using local indices
-    void get_local(double* block, std::size_t m,
-                   const dolfin::la_index_t* rows) const;
+  /// Set block of values using local indices
+  void set_local(const double* block, std::size_t m,
+                 const dolfin::la_index_t* rows);
 
-    /// Set block of values using global indices
-    void set(const double* block, std::size_t m,
-             const dolfin::la_index_t* rows);
+  /// Add block of values using global indices
+  void add(const double* block, std::size_t m, const dolfin::la_index_t* rows);
 
-    /// Set block of values using local indices
-    void set_local(const double* block, std::size_t m,
-                   const dolfin::la_index_t* rows);
+  /// Add block of values using local indices
+  void add_local(const double* block, std::size_t m,
+                 const dolfin::la_index_t* rows);
 
-    /// Add block of values using global indices
-    void add(const double* block, std::size_t m,
-             const dolfin::la_index_t* rows);
+  /// Get all values on local process
+  void get_local(std::vector<double>& values) const;
 
-    /// Add block of values using local indices
-    void add_local(const double* block, std::size_t m,
-                   const dolfin::la_index_t* rows);
+  /// Set all values on local process
+  void set_local(const std::vector<double>& values);
 
-    /// Get all values on local process
-    void get_local(std::vector<double>& values) const;
+  /// Add values to each entry on local process
+  void add_local(const std::vector<double>& values);
 
-    /// Set all values on local process
-    void set_local(const std::vector<double>& values);
+  /// Gather entries (given by global indices) into local
+  /// (MPI_COMM_SELF) vector x. Provided x must be empty or of
+  /// correct dimension (same as provided indices).  This operation
+  /// is collective.
+  void gather(PETScVector& y,
+              const std::vector<dolfin::la_index_t>& indices) const;
 
-    /// Add values to each entry on local process
-    void add_local(const std::vector<double>& values);
+  /// Gather entries (given by global indices) into x.  This
+  /// operation is collective
+  void gather(std::vector<double>& x,
+              const std::vector<dolfin::la_index_t>& indices) const;
 
-    /// Gather entries (given by global indices) into local
-    /// (MPI_COMM_SELF) vector x. Provided x must be empty or of
-    /// correct dimension (same as provided indices).  This operation
-    /// is collective.
-    void gather(PETScVector& y,
-                const std::vector<dolfin::la_index_t>& indices) const;
+  /// Gather all entries into x on process 0.
+  /// This operation is collective
+  void gather_on_zero(std::vector<double>& x) const;
 
-    /// Gather entries (given by global indices) into x.  This
-    /// operation is collective
-    void gather(std::vector<double>& x,
-                const std::vector<dolfin::la_index_t>& indices) const;
+  /// Add multiple of given vector (AXPY operation)
+  void axpy(double a, const PETScVector& x);
 
-    /// Gather all entries into x on process 0.
-    /// This operation is collective
-    void gather_on_zero(std::vector<double>& x) const;
+  /// Replace all entries in the vector by their absolute values
+  void abs();
 
-    /// Add multiple of given vector (AXPY operation)
-    void axpy(double a, const PETScVector& x);
+  /// Return dot product with given vector
+  double dot(const PETScVector& v) const;
 
-    /// Replace all entries in the vector by their absolute values
-    void abs();
+  /// Return norm of vector
+  double norm(std::string norm_type) const;
 
-    /// Return dot product with given vector
-    double dot(const PETScVector& v) const;
+  /// Return minimum value of vector
+  double min() const;
 
-    /// Return norm of vector
-    double norm(std::string norm_type) const;
+  /// Return maximum value of vector
+  double max() const;
 
-    /// Return minimum value of vector
-    double min() const;
+  /// Return sum of values of vector
+  double sum() const;
 
-    /// Return maximum value of vector
-    double max() const;
+  /// Multiply vector by given number
+  const PETScVector& operator*=(double a);
 
-    /// Return sum of values of vector
-    double sum() const;
+  /// Multiply vector by another vector pointwise
+  const PETScVector& operator*=(const PETScVector& x);
 
-    /// Multiply vector by given number
-    const PETScVector& operator*= (double a);
+  /// Divide vector by given number
+  const PETScVector& operator/=(double a);
 
-    /// Multiply vector by another vector pointwise
-    const PETScVector& operator*= (const PETScVector& x);
+  /// Add given vector
+  const PETScVector& operator+=(const PETScVector& x);
 
-    /// Divide vector by given number
-    const PETScVector& operator/= (double a);
+  /// Add number to all components of a vector
+  const PETScVector& operator+=(double a);
 
-    /// Add given vector
-    const PETScVector& operator+= (const PETScVector& x);
+  /// Subtract given vector
+  const PETScVector& operator-=(const PETScVector& x);
 
-    /// Add number to all components of a vector
-    const PETScVector& operator+= (double a);
+  /// Subtract number from all components of a vector
+  const PETScVector& operator-=(double a);
 
-    /// Subtract given vector
-    const PETScVector& operator-= (const PETScVector& x);
+  /// Assignment operator
+  const PETScVector& operator=(const PETScVector& x);
 
-    /// Subtract number from all components of a vector
-    const PETScVector& operator-= (double a);
+  /// Assignment operator
+  const PETScVector& operator=(double a);
 
-    /// Assignment operator
-    const PETScVector& operator= (const PETScVector& x);
+  /// Update values shared from remote processes
+  void update_ghost_values();
 
-    /// Assignment operator
-    const PETScVector& operator= (double a);
+  /// Sets the prefix used by PETSc when searching the options
+  /// database
+  void set_options_prefix(std::string options_prefix);
 
-    /// Update values shared from remote processes
-    void update_ghost_values();
+  /// Returns the prefix used by PETSc when searching the options
+  /// database
+  std::string get_options_prefix() const;
 
-    /// Sets the prefix used by PETSc when searching the options
-    /// database
-    void set_options_prefix(std::string options_prefix);
+  /// Call PETSc function VecSetFromOptions on the underlying Vec
+  /// object
+  void set_from_options();
 
-    /// Returns the prefix used by PETSc when searching the options
-    /// database
-    std::string get_options_prefix() const;
+  /// Return pointer to PETSc Vec object
+  Vec vec() const;
 
-    /// Call PETSc function VecSetFromOptions on the underlying Vec
-    /// object
-    void set_from_options();
+  /// Switch underlying PETSc object. Intended for internal library
+  /// usage.
+  void reset(Vec vec);
 
-    /// Return pointer to PETSc Vec object
-    Vec vec() const;
-
-    /// Switch underlying PETSc object. Intended for internal library
-    /// usage.
-    void reset(Vec vec);
-
-  private:
-
-    // PETSc Vec pointer
-    Vec _x;
-
-  };
-
+private:
+  // PETSc Vec pointer
+  Vec _x;
+};
 }
 
 #endif

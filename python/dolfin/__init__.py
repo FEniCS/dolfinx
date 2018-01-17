@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
+# Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
+#
+# This file is part of DOLFIN (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+
 """Main module for DOLFIN"""
 
 # flake8: noqa
 
-# Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
-#
-# Distributed under the terms of the GNU Lesser Public License (LGPL),
-# either version 3 of the License, or (at your option) any later
-# version.
-
-import sys
-
 # Store dl open flags to restore them after import
+import sys
 stored_dlopen_flags = sys.getdlopenflags()
 
 # Developer note: below is related to OpenMPI
@@ -94,7 +93,6 @@ from .common.plotting import plot
 from .fem.assembling import (assemble_system,
                              SystemAssembler, assemble_local)
 from .fem.form import Form
-from .fem.norms import norm, errornorm
 from .fem.dirichletbc import DirichletBC, AutoSubDomain
 from .fem.interpolation import interpolate
 from .fem.projection import project

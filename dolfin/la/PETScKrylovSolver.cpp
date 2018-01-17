@@ -1,106 +1,86 @@
 // Copyright (C) 2014 Johan Jansson and Garth N. Wells
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Anders Logg 2005-2012
-// Modified by Garth N. Wells 2005-2010
-// Modified by Fredrik Valdmanis 2011
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #ifdef HAS_PETSC
 
-#include <petsclog.h>
-
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/Timer.h>
-#include <dolfin/fem/PETScDMCollection.h>
+#include "PETScKrylovSolver.h"
 #include "PETScBaseMatrix.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "VectorSpaceBasis.h"
-#include "PETScKrylovSolver.h"
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
+#include <dolfin/fem/PETScDMCollection.h>
+#include <petsclog.h>
 
 using namespace dolfin;
 
 namespace
 {
-  // Map from method string to PETSc (for subset of PETSc solvers)
-  const std::map<std::string, const KSPType> _methods
-  = { {"default",  ""},
-      {"cg",         KSPCG},
-      {"gmres",      KSPGMRES},
-      {"minres",     KSPMINRES},
-      {"tfqmr",      KSPTFQMR},
-      {"richardson", KSPRICHARDSON},
-      {"bicgstab",   KSPBCGS},
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 7 && PETSC_VERSION_RELEASE == 1
-      {"nash",       KSPNASH},
-      {"stcg",       KSPSTCG}
+// Map from method string to PETSc (for subset of PETSc solvers)
+const std::map<std::string, const KSPType> _methods = {
+    {"default", ""},       {"cg", KSPCG},       {"gmres", KSPGMRES},
+    {"minres", KSPMINRES}, {"tfqmr", KSPTFQMR}, {"richardson", KSPRICHARDSON},
+    {"bicgstab", KSPBCGS},
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 7                       \
+    && PETSC_VERSION_RELEASE == 1
+    {"nash", KSPNASH},     {"stcg", KSPSTCG}
 #endif
-  };
+};
 
-  // Map from method string to description
-  const std::map<std::string, std::string> _methods_descr
-  =
-  { {"default",    "default Krylov method"},
-    {"cg",         "Conjugate gradient method"},
-    {"gmres",      "Generalized minimal residual method"},
-    {"minres",     "Minimal residual method"},
-    {"tfqmr",      "Transpose-free quasi-minimal residual method"},
-    {"richardson", "Richardson method"},
-    {"bicgstab",   "Biconjugate gradient stabilized method"} };
+// Map from method string to description
+const std::map<std::string, std::string> _methods_descr
+    = {{"default", "default Krylov method"},
+       {"cg", "Conjugate gradient method"},
+       {"gmres", "Generalized minimal residual method"},
+       {"minres", "Minimal residual method"},
+       {"tfqmr", "Transpose-free quasi-minimal residual method"},
+       {"richardson", "Richardson method"},
+       {"bicgstab", "Biconjugate gradient stabilized method"}};
 
-  // Mapping from preconditioner string to PETSc
-  const std::map<std::string, const PCType> _pc_methods
-  = { {"default",          ""},
-      {"ilu",              PCILU},
-      {"icc",              PCICC},
-      {"jacobi",           PCJACOBI},
-      {"bjacobi",          PCBJACOBI},
-      {"sor",              PCSOR},
-      {"additive_schwarz", PCASM},
-      {"gamg",             PCGAMG},
-      {"petsc_amg",        PCGAMG},  // Remove
-      {"amg",              PCGAMG},
+// Mapping from preconditioner string to PETSc
+const std::map<std::string, const PCType> _pc_methods
+    = {{"default", ""},
+       {"ilu", PCILU},
+       {"icc", PCICC},
+       {"jacobi", PCJACOBI},
+       {"bjacobi", PCBJACOBI},
+       {"sor", PCSOR},
+       {"additive_schwarz", PCASM},
+       {"gamg", PCGAMG},
+       {"petsc_amg", PCGAMG}, // Remove
+       {"amg", PCGAMG},
 #if PETSC_HAVE_HYPRE
-      {"hypre_amg",        PCHYPRE},
-      {"hypre_euclid",     PCHYPRE},
+       {"hypre_amg", PCHYPRE},
+       {"hypre_euclid", PCHYPRE},
 #endif
 #if PETSC_HAVE_ML
-      {"ml_amg",           PCML},  // Remove (ML is no longer maintained)
+       {"ml_amg", PCML}, // Remove (ML is no longer maintained)
 #endif
-      {"none",             PCNONE} };
+       {"none", PCNONE}};
 
-  // Mapping from preconditioner string to description string
-  const std::map<std::string, std::string> _pc_methods_descr
-  = { {"default",          "default preconditioner (preconditioner determined by backend)"},
-      {"ilu",              "Incomplete LU factorization"},
-      {"icc",              "Incomplete Cholesky factorization"},
-      {"jacobi",           "Jacobi iteration"},
-      {"sor",              "Successive over-relaxation"},
-      {"petsc_amg",        "PETSc smoothed aggregation algebraic multigrid"}, // remove
-      {"amg",              "PETSc smoothed aggregation algebraic multigrid"}, // remove
-      {"gamg",             "PETSc smoothed aggregation algebraic multigrid"},
+// Mapping from preconditioner string to description string
+const std::map<std::string, std::string> _pc_methods_descr = {
+    {"default",
+     "default preconditioner (preconditioner determined by backend)"},
+    {"ilu", "Incomplete LU factorization"},
+    {"icc", "Incomplete Cholesky factorization"},
+    {"jacobi", "Jacobi iteration"},
+    {"sor", "Successive over-relaxation"},
+    {"petsc_amg", "PETSc smoothed aggregation algebraic multigrid"}, // remove
+    {"amg", "PETSc smoothed aggregation algebraic multigrid"},       // remove
+    {"gamg", "PETSc smoothed aggregation algebraic multigrid"},
 #if PETSC_HAVE_HYPRE
-      {"hypre_amg",        "Hypre algebraic multigrid (BoomerAMG)"},
-      {"hypre_euclid",     "Hypre parallel incomplete LU factorization"},
+    {"hypre_amg", "Hypre algebraic multigrid (BoomerAMG)"},
+    {"hypre_euclid", "Hypre parallel incomplete LU factorization"},
 #endif
 #if PETSC_HAVE_ML
-      {"ml_amg",           "ML algebraic multigrid"},  // Remove (ML is no longer maintained)
+    {"ml_amg", "ML algebraic multigrid"}, // Remove (ML is no longer maintained)
 #endif
-      {"none",             "No preconditioner"} };
+    {"none", "No preconditioner"}};
 }
 
 //-----------------------------------------------------------------------------
@@ -115,15 +95,16 @@ std::map<std::string, std::string> PETScKrylovSolver::preconditioners()
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm, std::string method,
-                                     std::string preconditioner) : _ksp(NULL)
+                                     std::string preconditioner)
+    : _ksp(NULL)
 {
-   // Check that the requested Krylov method is known
+  // Check that the requested Krylov method is known
   auto method_krylov = _methods.find(method);
   if (method_krylov == _methods.end())
   {
-    dolfin_error("PETScKrylovSolver.cpp",
-                 "create PETSc Krylov solver",
-                 "Unknown Krylov method \"%s\". Use the PETSc options systems for advanced solver configuration",
+    dolfin_error("PETScKrylovSolver.cpp", "create PETSc Krylov solver",
+                 "Unknown Krylov method \"%s\". Use the PETSc options systems "
+                 "for advanced solver configuration",
                  method.c_str());
   }
 
@@ -131,9 +112,9 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm, std::string method,
   auto method_pc = _pc_methods.find(preconditioner);
   if (method_pc == _pc_methods.end())
   {
-    dolfin_error("PETScKrylovSolver.cpp",
-                 "create PETSc Krylov solver",
-                 "Unknown preconditioner method \"%s\". Use the PETSc options systems for advanced solver configuration",
+    dolfin_error("PETScKrylovSolver.cpp", "create PETSc Krylov solver",
+                 "Unknown preconditioner method \"%s\". Use the PETSc options "
+                 "systems for advanced solver configuration",
                  method.c_str());
   }
 
@@ -141,13 +122,15 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm, std::string method,
 
   // Create PETSc KSP object
   ierr = KSPCreate(comm, &_ksp);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPCreate");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "KSPCreate");
 
   // Set Krylov solver type (if specified by user)
   if (method != "default")
   {
     ierr = KSPSetType(_ksp, method_krylov->second);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetType");
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "KSPSetType");
   }
 
   // Set preconditioner type (if specified by user)
@@ -156,25 +139,29 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm, std::string method,
     // Get preconditoner
     PC pc;
     ierr = KSPGetPC(_ksp, &pc);
-    if (ierr != 0) dolfin::PETScObject::petsc_error(ierr, __FILE__, "KSPGetPC");
+    if (ierr != 0)
+      dolfin::PETScObject::petsc_error(ierr, __FILE__, "KSPGetPC");
 
     // Set preconditioner
     ierr = PCSetType(pc, method_pc->second);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCSetType");
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "PCSetType");
 
     // Treat Hypre cases
     if (preconditioner.find("hypre") != std::string::npos)
     {
-      #if PETSC_HAVE_HYPRE
+#if PETSC_HAVE_HYPRE
       if (preconditioner == "hypre_amg")
       {
         ierr = PCHYPRESetType(pc, "boomeramg");
-        if (ierr != 0) petsc_error(ierr, __FILE__, "PCHYPRESetType");
+        if (ierr != 0)
+          petsc_error(ierr, __FILE__, "PCHYPRESetType");
       }
       else if (preconditioner == "hypre_euclid")
       {
         ierr = PCHYPRESetType(pc, "euclid");
-        if (ierr != 0) petsc_error(ierr, __FILE__, "PCHYPRESetType");
+        if (ierr != 0)
+          petsc_error(ierr, __FILE__, "PCHYPRESetType");
       }
       else
       {
@@ -182,20 +169,21 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm, std::string method,
         // earlier)
         throw std::runtime_error("Hypre preconditioner not supported.");
       }
-       #endif
+#endif
     }
   }
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(KSP ksp) : _ksp(ksp),
-                                                preconditioner_set(true)
+PETScKrylovSolver::PETScKrylovSolver(KSP ksp)
+    : _ksp(ksp), preconditioner_set(true)
 {
   PetscErrorCode ierr;
   if (_ksp)
   {
     // Increment reference count since we holding a pointer to it
     ierr = PetscObjectReference((PetscObject)_ksp);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PetscObjectReference");
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "PetscObjectReference");
   }
   else
   {
@@ -227,7 +215,8 @@ void PETScKrylovSolver::set_operators(const PETScBaseMatrix& A,
 
   PetscErrorCode ierr;
   ierr = KSPSetOperators(_ksp, A.mat(), P.mat());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOperators");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
@@ -252,16 +241,19 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   {
     dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",
-                 "Non-matching dimensions for linear system (matrix has %ld rows and right-hand side vector has %ld rows)",
+                 "Non-matching dimensions for linear system (matrix has %ld "
+                 "rows and right-hand side vector has %ld rows)",
                  M, b.size());
   }
 
   /*
   // Write a message
-  const bool report = this->parameters["report"].is_set() ? this->parameters["report"] : false;
+  const bool report = this->parameters["report"].is_set() ?
+  this->parameters["report"] : false;
   if (report and dolfin::MPI::rank(this->mpi_comm()) == 0)
   {
-    info("Solving linear system of size %ld x %ld (PETSc Krylov solver).", M, N);
+    info("Solving linear system of size %ld x %ld (PETSc Krylov solver).", M,
+  N);
   }
 
   // Non-zero initial guess to true/false
@@ -285,10 +277,14 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
       or parameters["maximum_iterations"].is_set())
   {
     // Set tolerances
-    const double rtol = parameters["relative_tolerance"].is_set() ? (double)parameters["relative_tolerance"] : PETSC_DEFAULT;
-    const double atol = parameters["absolute_tolerance"].is_set() ? (double)parameters["absolute_tolerance"] : PETSC_DEFAULT;
-    const double dtol = parameters["divergence_limit"].is_set() ? (double)parameters["divergence_limit"] : PETSC_DEFAULT;
-    const int max_it  = parameters["maximum_iterations"].is_set() ? (int)parameters["maximum_iterations"] : PETSC_DEFAULT;
+    const double rtol = parameters["relative_tolerance"].is_set() ?
+  (double)parameters["relative_tolerance"] : PETSC_DEFAULT;
+    const double atol = parameters["absolute_tolerance"].is_set() ?
+  (double)parameters["absolute_tolerance"] : PETSC_DEFAULT;
+    const double dtol = parameters["divergence_limit"].is_set() ?
+  (double)parameters["divergence_limit"] : PETSC_DEFAULT;
+    const int max_it  = parameters["maximum_iterations"].is_set() ?
+  (int)parameters["maximum_iterations"] : PETSC_DEFAULT;
     set_tolerances(rtol, atol, dtol, max_it);
   }
 
@@ -308,7 +304,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
     // Zero the vector unless PETSc does it for us
     PetscBool nonzero_guess;
     ierr = KSPGetInitialGuessNonzero(_ksp, &nonzero_guess);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetInitialGuessNonzero");
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "KSPGetInitialGuessNonzero");
     if (nonzero_guess)
       x.zero();
   }
@@ -316,20 +313,22 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   // Solve linear system
   if (dolfin::MPI::rank(this->mpi_comm()) == 0)
   {
-    log(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.",
-        M, N);
+    log(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.", M,
+        N);
   }
 
   // Solve system
   if (!transpose)
   {
-    ierr =  KSPSolve(_ksp, b.vec(), x.vec());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
+    ierr = KSPSolve(_ksp, b.vec(), x.vec());
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "KSPSolve");
   }
   else
   {
-    ierr =  KSPSolveTranspose(_ksp, b.vec(), x.vec());
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
+    ierr = KSPSolveTranspose(_ksp, b.vec(), x.vec());
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "KSPSolve");
   }
 
   // Update ghost values in solution vector
@@ -338,13 +337,15 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   // Get the number of iterations
   PetscInt num_iterations = 0;
   ierr = KSPGetIterationNumber(_ksp, &num_iterations);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetIterationNumber");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "KSPGetIterationNumber");
 
   // Check if the solution converged and print error/warning if not
   // converged
   KSPConvergedReason reason;
   ierr = KSPGetConvergedReason(_ksp, &reason);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetConvergedReason");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "KSPGetConvergedReason");
   if (reason < 0)
   {
     /*
@@ -353,24 +354,28 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
     ierr = KSPGetResidualNorm(_ksp, &rnorm);
     if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetResidualNorm");
     const char *reason_str = KSPConvergedReasons[reason];
-    bool error_on_nonconvergence = this->parameters["error_on_nonconvergence"].is_set() ? this->parameters["error_on_nonconvergence"] : true;
+    bool error_on_nonconvergence =
+    this->parameters["error_on_nonconvergence"].is_set() ?
+    this->parameters["error_on_nonconvergence"] : true;
     if (error_on_nonconvergence)
     {
       dolfin_error("PETScKrylovSolver.cpp",
                    "solve linear system using PETSc Krylov solver",
-                   "Solution failed to converge in %i iterations (PETSc reason %s, residual norm ||r|| = %e)",
+                   "Solution failed to converge in %i iterations (PETSc reason
+    %s, residual norm ||r|| = %e)",
                    static_cast<int>(num_iterations), reason_str, rnorm);
     }
     else
     {
-      warning("Krylov solver did not converge in %i iterations (PETSc reason %s, residual norm ||r|| = %e).",
+      warning("Krylov solver did not converge in %i iterations (PETSc reason %s,
+    residual norm ||r|| = %e).",
               num_iterations, reason_str, rnorm);
     }
     */
   }
 
   // Report results
-  //if (report && dolfin::MPI::rank(this->mpi_comm()) == 0)
+  // if (report && dolfin::MPI::rank(this->mpi_comm()) == 0)
   //  write_report(num_iterations, reason);
 
   return num_iterations;
@@ -381,7 +386,8 @@ void PETScKrylovSolver::set_nonzero_guess(bool nonzero_guess)
   dolfin_assert(_ksp);
   const PetscBool _nonzero_guess = nonzero_guess ? PETSC_TRUE : PETSC_FALSE;
   PetscErrorCode ierr = KSPSetInitialGuessNonzero(_ksp, _nonzero_guess);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetIntialGuessNonzero");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "KSPSetIntialGuessNonzero");
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_reuse_preconditioner(bool reuse_pc)
@@ -389,16 +395,18 @@ void PETScKrylovSolver::set_reuse_preconditioner(bool reuse_pc)
   dolfin_assert(_ksp);
   const PetscBool _reuse_pc = reuse_pc ? PETSC_TRUE : PETSC_FALSE;
   PetscErrorCode ierr = KSPSetReusePreconditioner(_ksp, _reuse_pc);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetReusePreconditioner");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "KSPSetReusePreconditioner");
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_tolerances(double relative, double absolute,
                                        double diverged, int max_iter)
 {
   dolfin_assert(_ksp);
-  PetscErrorCode ierr = KSPSetTolerances(_ksp, relative, absolute, diverged,
-                                         max_iter);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetTolerances");
+  PetscErrorCode ierr
+      = KSPSetTolerances(_ksp, relative, absolute, diverged, max_iter);
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "KSPSetTolerances");
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_norm_type(norm_type type)
@@ -422,8 +430,7 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
     ksp_norm_type = KSP_NORM_NATURAL;
     break;
   default:
-    dolfin_error("PETScKrylovSolver.cpp",
-                 "set convergence norm type",
+    dolfin_error("PETScKrylovSolver.cpp", "set convergence norm type",
                  "Unknown norm type");
   }
 
@@ -467,8 +474,7 @@ PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type() const
   case KSP_NORM_DEFAULT:
     return norm_type::default_norm;
   default:
-    dolfin_error("PETScKrylovSolver.cpp",
-                 "set convergence norm type",
+    dolfin_error("PETScKrylovSolver.cpp", "set convergence norm type",
                  "Unknown norm type");
     return norm_type::none;
   }
@@ -480,20 +486,23 @@ void PETScKrylovSolver::monitor(bool monitor_convergence)
   PetscErrorCode ierr;
   if (monitor_convergence)
   {
-    PetscViewer viewer = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_ksp));
+    PetscViewer viewer
+        = PETSC_VIEWER_STDOUT_(PetscObjectComm((PetscObject)_ksp));
     PetscViewerFormat format = PETSC_VIEWER_DEFAULT;
-    PetscViewerAndFormat *vf;
-    PetscViewerAndFormatCreate(viewer,format,&vf);
-    ierr = KSPMonitorSet(_ksp,
-                         (PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*)) KSPMonitorTrueResidualNorm,
-                         vf,
-                         (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorSet");
+    PetscViewerAndFormat* vf;
+    PetscViewerAndFormatCreate(viewer, format, &vf);
+    ierr = KSPMonitorSet(
+        _ksp, (PetscErrorCode(*)(KSP, PetscInt, PetscReal,
+                                 void*))KSPMonitorTrueResidualNorm,
+        vf, (PetscErrorCode(*)(void**))PetscViewerAndFormatDestroy);
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "KSPMonitorSet");
   }
   else
   {
     ierr = KSPMonitorCancel(_ksp);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPMonitorCancel");
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "KSPMonitorCancel");
   }
 }
 //-----------------------------------------------------------------------------
@@ -502,7 +511,8 @@ void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
   // Set options prefix
   dolfin_assert(_ksp);
   PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, options_prefix.c_str());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
 std::string PETScKrylovSolver::get_options_prefix() const
@@ -510,7 +520,8 @@ std::string PETScKrylovSolver::get_options_prefix() const
   dolfin_assert(_ksp);
   const char* prefix = NULL;
   PetscErrorCode ierr = KSPGetOptionsPrefix(_ksp, &prefix);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetOptionsPrefix");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "KSPGetOptionsPrefix");
   return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
@@ -518,7 +529,8 @@ void PETScKrylovSolver::set_from_options() const
 {
   dolfin_assert(_ksp);
   PetscErrorCode ierr = KSPSetFromOptions(_ksp);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetFromOptions");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "KSPSetFromOptions");
 }
 //-----------------------------------------------------------------------------
 std::string PETScKrylovSolver::str(bool verbose) const
@@ -530,7 +542,8 @@ std::string PETScKrylovSolver::str(bool verbose) const
     warning("Verbose output for PETScKrylovSolver not implemented, calling \
 PETSc KSPView directly.");
     PetscErrorCode ierr = KSPView(_ksp, PETSC_VIEWER_STDOUT_WORLD);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPView");
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "KSPView");
   }
   else
     s << "<PETScKrylovSolver>";
@@ -546,10 +559,7 @@ MPI_Comm PETScKrylovSolver::mpi_comm() const
   return mpi_comm;
 }
 //-----------------------------------------------------------------------------
-KSP PETScKrylovSolver::ksp() const
-{
-  return _ksp;
-}
+KSP PETScKrylovSolver::ksp() const { return _ksp; }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type(std::string norm)
 {
@@ -565,8 +575,7 @@ PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type(std::string norm)
     return norm_type::natural;
   else
   {
-    dolfin_error("PETScKrylovSolver.cpp",
-                 "get norm type from enum",
+    dolfin_error("PETScKrylovSolver.cpp", "get norm type from enum",
                  "Unknown norm type \"%s\"", norm.c_str());
     return norm_type::none;
   }
@@ -602,13 +611,16 @@ void PETScKrylovSolver::write_report(int num_iterations,
   PCType pc_type;
 
   ierr = KSPGetType(_ksp, &ksp_type);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetType");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "KSPGetType");
 
   ierr = KSPGetPC(_ksp, &pc);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "KSPGetPC");
 
   ierr = PCGetType(pc, &pc_type);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "PCGetType");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "PCGetType");
 
   // If using additive Schwarz or block Jacobi, get 'sub' method which
   // is applied to each block
@@ -622,21 +634,26 @@ void PETScKrylovSolver::write_report(int num_iterations,
     if (pc_type_str == PCASM)
     {
       ierr = PCASMGetSubKSP(pc, NULL, NULL, &sub_ksp);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "PCASMGetSubKSP");
+      if (ierr != 0)
+        petsc_error(ierr, __FILE__, "PCASMGetSubKSP");
     }
     else if (pc_type_str == PCBJACOBI)
     {
       ierr = PCBJacobiGetSubKSP(pc, NULL, NULL, &sub_ksp);
-      if (ierr != 0) petsc_error(ierr, __FILE__, "PCBJacobiGetSubKSP");
+      if (ierr != 0)
+        petsc_error(ierr, __FILE__, "PCBJacobiGetSubKSP");
     }
     ierr = KSPGetType(*sub_ksp, &sub_ksp_type);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetType");
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "KSPGetType");
 
     ierr = KSPGetPC(*sub_ksp, &sub_pc);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetPC");
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "KSPGetPC");
 
     ierr = PCGetType(sub_pc, &sub_pc_type);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCGetType");
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "PCGetType");
   }
 
   // FIXME: Get preconditioner description from PETScPreconditioner
@@ -649,26 +666,29 @@ void PETScKrylovSolver::write_report(int num_iterations,
   }
   else
   {
-    log(PROGRESS, "PETSc Krylov solver (%s, %s) failed to converge in %d iterations.",
+    log(PROGRESS,
+        "PETSc Krylov solver (%s, %s) failed to converge in %d iterations.",
         ksp_type, pc_type, num_iterations);
   }
 
   if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)
   {
-    log(PROGRESS, "PETSc Krylov solver preconditioner (%s) submethods: (%s, %s)",
-        pc_type, sub_ksp_type, sub_pc_type);
+    log(PROGRESS,
+        "PETSc Krylov solver preconditioner (%s) submethods: (%s, %s)", pc_type,
+        sub_ksp_type, sub_pc_type);
   }
 
-  #if PETSC_HAVE_HYPRE
+#if PETSC_HAVE_HYPRE
   if (pc_type_str == PCHYPRE)
   {
     const char* hypre_sub_type;
     ierr = PCHYPREGetType(pc, &hypre_sub_type);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PCHYPREGetType");
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "PCHYPREGetType");
 
     log(PROGRESS, "  Hypre preconditioner method: %s", hypre_sub_type);
   }
-  #endif
+#endif
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
@@ -688,7 +708,8 @@ void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
   {
     dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",
-                 "Non-matching dimensions for linear system (matrix has %ld rows and right-hand side vector has %ld rows)",
+                 "Non-matching dimensions for linear system (matrix has %ld "
+                 "rows and right-hand side vector has %ld rows)",
                  A.size(0), b.size());
   }
 
@@ -697,7 +718,8 @@ void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
   {
     dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",
-                 "Non-matching dimensions for linear system (matrix has %ld columns and solution vector has %ld rows)",
+                 "Non-matching dimensions for linear system (matrix has %ld "
+                 "columns and solution vector has %ld rows)",
                  A.size(1), x.size());
   }
 }

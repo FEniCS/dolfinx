@@ -1,28 +1,17 @@
 // Copyright (C) 2005-2015 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <cmath>
 #include <boost/multi_array.hpp>
+#include <cmath>
 
-#include <dolfin/common/constants.h>
+#include "RectangleMesh.h"
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/constants.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshPartitioning.h>
-#include "RectangleMesh.h"
 
 using namespace dolfin;
 
@@ -40,11 +29,12 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
 
   // Check options
   if (diagonal != "left" && diagonal != "right" && diagonal != "right/left"
-          && diagonal != "left/right" && diagonal != "crossed")
+      && diagonal != "left/right" && diagonal != "crossed")
   {
-    dolfin_error("RectangleMesh.cpp",
-                 "create rectangle",
-                 "Unknown mesh diagonal definition: allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\"");
+    dolfin_error("RectangleMesh.cpp", "create rectangle",
+                 "Unknown mesh diagonal definition: allowed options are "
+                 "\"left\", \"right\", \"left/right\", \"right/left\" and "
+                 "\"crossed\"");
   }
 
   const Point& p0 = p[0];
@@ -66,16 +56,17 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
 
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS)
   {
-    dolfin_error("Rectangle.cpp",
-                 "create rectangle",
-                 "Rectangle seems to have zero width, height or depth. Consider checking your dimensions");
+    dolfin_error("Rectangle.cpp", "create rectangle",
+                 "Rectangle seems to have zero width, height or depth. "
+                 "Consider checking your dimensions");
   }
 
   if (nx < 1 || ny < 1)
   {
-    dolfin_error("RectangleMesh.cpp",
-                 "create rectangle",
-                 "Rectangle has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
+    dolfin_error("RectangleMesh.cpp", "create rectangle",
+                 "Rectangle has non-positive number of vertices in some "
+                 "dimension: number of vertices must be at least 1 in each "
+                 "dimension");
   }
 
   mesh.rename("mesh", "Mesh of the unit square (a,b) x (c,d)");
@@ -87,14 +78,14 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
   // Create vertices and cells:
   if (diagonal == "crossed")
   {
-    editor.init_vertices_global((nx + 1)*(ny + 1) + nx*ny,
-                                  (nx + 1)*(ny + 1) + nx*ny);
-    editor.init_cells_global(4*nx*ny, 4*nx*ny);
+    editor.init_vertices_global((nx + 1) * (ny + 1) + nx * ny,
+                                (nx + 1) * (ny + 1) + nx * ny);
+    editor.init_cells_global(4 * nx * ny, 4 * nx * ny);
   }
   else
   {
-    editor.init_vertices_global((nx + 1)*(ny + 1), (nx + 1)*(ny + 1));
-    editor.init_cells_global(2*nx*ny, 2*nx*ny);
+    editor.init_vertices_global((nx + 1) * (ny + 1), (nx + 1) * (ny + 1));
+    editor.init_cells_global(2 * nx * ny, 2 * nx * ny);
   }
 
   // Storage for vertices
@@ -104,10 +95,11 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
   std::size_t vertex = 0;
   for (std::size_t iy = 0; iy <= ny; iy++)
   {
-    x[1] = c + ((static_cast<double>(iy))*(d - c)/static_cast<double>(ny));
+    x[1] = c + ((static_cast<double>(iy)) * (d - c) / static_cast<double>(ny));
     for (std::size_t ix = 0; ix <= nx; ix++)
     {
-      x[0] = a + ((static_cast<double>(ix))*(b - a)/static_cast<double>(nx));
+      x[0]
+          = a + ((static_cast<double>(ix)) * (b - a) / static_cast<double>(nx));
       editor.add_vertex(vertex, x);
       vertex++;
     }
@@ -118,10 +110,14 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
   {
     for (std::size_t iy = 0; iy < ny; iy++)
     {
-      x[1] = c +(static_cast<double>(iy) + 0.5)*(d - c)/static_cast<double>(ny);
+      x[1] = c
+             + (static_cast<double>(iy) + 0.5) * (d - c)
+                   / static_cast<double>(ny);
       for (std::size_t ix = 0; ix < nx; ix++)
       {
-        x[0] = a + (static_cast<double>(ix) + 0.5)*(b - a)/static_cast<double>(nx);
+        x[0] = a
+               + (static_cast<double>(ix) + 0.5) * (b - a)
+                     / static_cast<double>(nx);
         editor.add_vertex(vertex, x);
         vertex++;
       }
@@ -137,17 +133,25 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
     {
       for (std::size_t ix = 0; ix < nx; ix++)
       {
-        const std::size_t v0 = iy*(nx + 1) + ix;
+        const std::size_t v0 = iy * (nx + 1) + ix;
         const std::size_t v1 = v0 + 1;
         const std::size_t v2 = v0 + (nx + 1);
         const std::size_t v3 = v1 + (nx + 1);
-        const std::size_t vmid = (nx + 1)*(ny + 1) + iy*nx + ix;
+        const std::size_t vmid = (nx + 1) * (ny + 1) + iy * nx + ix;
 
         // Note that v0 < v1 < v2 < v3 < vmid.
-        cells[0][0] = v0; cells[0][1] = v1; cells[0][2] = vmid;
-        cells[1][0] = v0; cells[1][1] = v2; cells[1][2] = vmid;
-        cells[2][0] = v1; cells[2][1] = v3; cells[2][2] = vmid;
-        cells[3][0] = v2; cells[3][1] = v3; cells[3][2] = vmid;
+        cells[0][0] = v0;
+        cells[0][1] = v1;
+        cells[0][2] = vmid;
+        cells[1][0] = v0;
+        cells[1][1] = v2;
+        cells[1][2] = vmid;
+        cells[2][0] = v1;
+        cells[2][1] = v3;
+        cells[2][2] = vmid;
+        cells[3][0] = v2;
+        cells[3][1] = v3;
+        cells[3][2] = vmid;
 
         // Add cells
         for (auto _cell = cells.begin(); _cell != cells.end(); ++_cell)
@@ -155,7 +159,8 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
       }
     }
   }
-  else if (diagonal == "left" || diagonal == "right" || diagonal == "right/left" || diagonal == "left/right")
+  else if (diagonal == "left" || diagonal == "right" || diagonal == "right/left"
+           || diagonal == "left/right")
   {
     std::string local_diagonal = diagonal;
     boost::multi_array<std::size_t, 2> cells(boost::extents[2][3]);
@@ -179,23 +184,31 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
 
       for (std::size_t ix = 0; ix < nx; ix++)
       {
-        const std::size_t v0 = iy*(nx + 1) + ix;
+        const std::size_t v0 = iy * (nx + 1) + ix;
         const std::size_t v1 = v0 + 1;
         const std::size_t v2 = v0 + (nx + 1);
         const std::size_t v3 = v1 + (nx + 1);
         std::vector<std::size_t> cell_data;
 
-        if(local_diagonal == "left")
+        if (local_diagonal == "left")
         {
-          cells[0][0] = v0; cells[0][1] = v1; cells[0][2] = v2;
-          cells[1][0] = v1; cells[1][1] = v2; cells[1][2] = v3;
+          cells[0][0] = v0;
+          cells[0][1] = v1;
+          cells[0][2] = v2;
+          cells[1][0] = v1;
+          cells[1][1] = v2;
+          cells[1][2] = v3;
           if (diagonal == "right/left" || diagonal == "left/right")
             local_diagonal = "right";
         }
         else
         {
-          cells[0][0] = v0; cells[0][1] = v1; cells[0][2] = v3;
-          cells[1][0] = v0; cells[1][1] = v2; cells[1][2] = v3;
+          cells[0][0] = v0;
+          cells[0][1] = v1;
+          cells[0][2] = v3;
+          cells[1][0] = v0;
+          cells[1][1] = v2;
+          cells[1][2] = v3;
           if (diagonal == "right/left" || diagonal == "left/right")
             local_diagonal = "left";
         }
@@ -233,8 +246,8 @@ void RectangleMesh::build_quad(Mesh& mesh, const std::array<Point, 2>& p,
   editor.open(mesh, CellType::Type::quadrilateral, 2, 2);
 
   // Create vertices and cells:
-  editor.init_vertices_global((nx + 1)*(ny + 1), (nx + 1)*(ny + 1));
-  editor.init_cells_global(nx*ny, nx*ny);
+  editor.init_vertices_global((nx + 1) * (ny + 1), (nx + 1) * (ny + 1));
+  editor.init_cells_global(nx * ny, nx * ny);
 
   // Storage for vertices
   Point x;
@@ -248,10 +261,11 @@ void RectangleMesh::build_quad(Mesh& mesh, const std::array<Point, 2>& p,
   std::size_t vertex = 0;
   for (std::size_t iy = 0; iy <= ny; iy++)
   {
-    x[1] = c + ((static_cast<double>(iy))*(d - c)/static_cast<double>(ny));
+    x[1] = c + ((static_cast<double>(iy)) * (d - c) / static_cast<double>(ny));
     for (std::size_t ix = 0; ix <= nx; ix++)
     {
-      x[0] = a + ((static_cast<double>(ix))*(b - a)/static_cast<double>(nx));
+      x[0]
+          = a + ((static_cast<double>(ix)) * (b - a) / static_cast<double>(nx));
       editor.add_vertex(vertex, x);
       vertex++;
     }
@@ -263,7 +277,7 @@ void RectangleMesh::build_quad(Mesh& mesh, const std::array<Point, 2>& p,
   for (std::size_t iy = 0; iy < ny; iy++)
     for (std::size_t ix = 0; ix < nx; ix++)
     {
-      v[0] = iy*(nx + 1) + ix;
+      v[0] = iy * (nx + 1) + ix;
       v[1] = v[0] + 1;
       v[2] = v[0] + (nx + 1);
       v[3] = v[1] + (nx + 1);
@@ -280,6 +294,5 @@ void RectangleMesh::build_quad(Mesh& mesh, const std::array<Point, 2>& p,
     MeshPartitioning::build_distributed_mesh(mesh);
     return;
   }
-
 }
 //-----------------------------------------------------------------------------

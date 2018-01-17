@@ -1,37 +1,22 @@
 // Copyright (C) 2006-2012 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Benjamin Kehlet, 2012
-//
-// First added:  2006-05-16
-// Last changed: 2014-02-06
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfin/log/log.h>
-#include <dolfin/geometry/Point.h>
+#include "MeshEditor.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
-#include "MeshEditor.h"
+#include <dolfin/geometry/Point.h>
+#include <dolfin/log/log.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshEditor::MeshEditor() : _mesh(0), _tdim(0), _gdim(0), _num_vertices(0),
-                           _num_cells(0), next_vertex(0), next_cell(0)
+MeshEditor::MeshEditor()
+    : _mesh(0), _tdim(0), _gdim(0), _num_vertices(0), _num_cells(0),
+      next_vertex(0), next_cell(0)
 {
   // Do nothing
 }
@@ -76,8 +61,7 @@ void MeshEditor::init_vertices_global(std::size_t num_local_vertices,
   // Check if we are currently editing a mesh
   if (!_mesh)
   {
-    dolfin_error("MeshEditor.cpp",
-                 "initialize vertices in mesh editor",
+    dolfin_error("MeshEditor.cpp", "initialize vertices in mesh editor",
                  "No mesh opened, unable to edit");
   }
 
@@ -95,12 +79,11 @@ void MeshEditor::init_entities()
   dolfin_assert(_tdim > 0);
   dolfin_assert(_mesh);
 
-  if (_mesh->topology().size(_tdim) == 0
-      or next_cell != _num_cells)
+  if (_mesh->topology().size(_tdim) == 0 or next_cell != _num_cells)
   {
-    dolfin_error("MeshEditor.cpp",
-                 "initialise topological entities",
-                 "It is required to add all cells before initialising other entities");
+    dolfin_error(
+        "MeshEditor.cpp", "initialise topological entities",
+        "It is required to add all cells before initialising other entities");
   }
 
   // Initialise entities required for this polynomial degree
@@ -122,8 +105,7 @@ void MeshEditor::init_cells_global(std::size_t num_local_cells,
   // Check if we are currently editing a mesh
   if (!_mesh)
   {
-    dolfin_error("MeshEditor.cpp",
-                 "initialize cells in mesh editor",
+    dolfin_error("MeshEditor.cpp", "initialize cells in mesh editor",
                  "No mesh opened, unable to edit");
   }
 
@@ -136,8 +118,7 @@ void MeshEditor::init_cells_global(std::size_t num_local_cells,
                                   _mesh->type().num_vertices(_tdim));
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(std::size_t local_index,
-                            std::size_t global_index,
+void MeshEditor::add_vertex(std::size_t local_index, std::size_t global_index,
                             const Point& p)
 {
   // Add vertex
@@ -156,7 +137,8 @@ void MeshEditor::add_vertex(std::size_t index, const Point& p)
 void MeshEditor::add_entity_point(std::size_t entity_dim, std::size_t order,
                                   std::size_t index, const Point& p)
 {
-  const std::size_t idx = _mesh->_geometry.get_entity_index(entity_dim, order, index);
+  const std::size_t idx
+      = _mesh->_geometry.get_entity_index(entity_dim, order, index);
   _mesh->_geometry.set(idx, p.coordinates());
 }
 //-----------------------------------------------------------------------------
@@ -176,16 +158,14 @@ void MeshEditor::add_vertex_common(std::size_t v, std::size_t gdim)
   // Check if we are currently editing a mesh
   if (!_mesh)
   {
-    dolfin_error("MeshEditor.cpp",
-                 "add vertex to mesh using mesh editor",
+    dolfin_error("MeshEditor.cpp", "add vertex to mesh using mesh editor",
                  "No mesh opened, unable to edit");
   }
 
   // Check that the dimension matches
   if (gdim != _gdim)
   {
-    dolfin_error("MeshEditor.cpp",
-                 "add vertex to mesh using mesh editor",
+    dolfin_error("MeshEditor.cpp", "add vertex to mesh using mesh editor",
                  "Illegal dimension for vertex coordinate (%d), expecting %d",
                  gdim, _gdim);
   }
@@ -193,17 +173,14 @@ void MeshEditor::add_vertex_common(std::size_t v, std::size_t gdim)
   // Check value of vertex index
   if (v >= _num_vertices)
   {
-    dolfin_error("MeshEditor.cpp",
-                 "add vertex to mesh using mesh editor",
-                 "Vertex index (%d) out of range [0, %d)",
-                 v, _num_vertices);
+    dolfin_error("MeshEditor.cpp", "add vertex to mesh using mesh editor",
+                 "Vertex index (%d) out of range [0, %d)", v, _num_vertices);
   }
 
   // Check if there is room for more vertices
   if (next_vertex >= _num_vertices)
   {
-    dolfin_error("MeshEditor.cpp",
-                 "add vertex to mesh using mesh editor",
+    dolfin_error("MeshEditor.cpp", "add vertex to mesh using mesh editor",
                  "Vertex list is full, %d vertices already specified",
                  _num_vertices);
   }
@@ -217,35 +194,29 @@ void MeshEditor::add_cell_common(std::size_t c, std::size_t tdim)
   // Check if we are currently editing a mesh
   if (!_mesh)
   {
-    dolfin_error("MeshEditor.cpp",
-                 "add cell to mesh using mesh editor",
+    dolfin_error("MeshEditor.cpp", "add cell to mesh using mesh editor",
                  "No mesh opened, unable to edit");
   }
 
   // Check that the dimension matches
   if (tdim != _tdim)
   {
-    dolfin_error("MeshEditor.cpp",
-                 "add cell to mesh using mesh editor",
+    dolfin_error("MeshEditor.cpp", "add cell to mesh using mesh editor",
                  "Illegal dimension for cell (%d), expecting %d", tdim, _tdim);
   }
 
   // Check value of cell index
   if (c >= _num_cells)
   {
-    dolfin_error("MeshEditor.cpp",
-                 "add cell to mesh using mesh editor",
-                 "Cell index (%d) out of range [0, %d)",
-                 c, _num_cells);
+    dolfin_error("MeshEditor.cpp", "add cell to mesh using mesh editor",
+                 "Cell index (%d) out of range [0, %d)", c, _num_cells);
   }
 
   // Check if there is room for more cells
   if (next_cell >= _num_cells)
   {
-    dolfin_error("MeshEditor.cpp",
-                 "add cell to mesh using mesh editor",
-                 "Cell list is full, %d cells already specified",
-                 _num_cells);
+    dolfin_error("MeshEditor.cpp", "add cell to mesh using mesh editor",
+                 "Cell list is full, %d cells already specified", _num_cells);
   }
 
   // Step to next cell

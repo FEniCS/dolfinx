@@ -1,246 +1,209 @@
 // Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson, Anders Logg
-// and Garth N. Wells
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Andy R. Terrel 2005
-// Modified by Garth N. Wells 2006-2009
-// Modified by Kent-Andre Mardal 2008
-// Modified by Ola Skavhaug 2008
-// Modified by Fredrik Valdmanis 2011
-//
-// First added:  2004-01-01
-// Last changed: 2012-08-22
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifndef __PETSC_MATRIX_H
-#define __PETSC_MATRIX_H
+#pragma once
 
 #ifdef HAS_PETSC
 
+#include "PETScBaseMatrix.h"
 #include <map>
 #include <memory>
-#include <string>
-
 #include <petscmat.h>
 #include <petscsys.h>
-#include <dolfin/common/ArrayView.h>
-#include "PETScBaseMatrix.h"
+#include <string>
 
 namespace dolfin
 {
 
-  class PETScVector;
-  class SparsityPattern;
-  class VectorSpaceBasis;
+class PETScVector;
+class SparsityPattern;
+class VectorSpaceBasis;
 
-  /// This class provides a simple matrix class based on PETSc.
-  /// It is a wrapper for a PETSc matrix pointer (Mat)
-  /// implementing the GenericMatrix interface.
-  ///
-  /// The interface is intentionally simple. For advanced usage,
-  /// access the PETSc Mat pointer using the function mat() and
-  /// use the standard PETSc interface.
+/// This class provides a simple matrix class based on PETSc.
+/// It is a wrapper for a PETSc matrix pointer (Mat)
+/// implementing the GenericMatrix interface.
+///
+/// The interface is intentionally simple. For advanced usage,
+/// access the PETSc Mat pointer using the function mat() and
+/// use the standard PETSc interface.
 
-  class PETScMatrix : public PETScBaseMatrix
+class PETScMatrix : public PETScBaseMatrix
+{
+public:
+  /// Create empty matrix
+  explicit PETScMatrix(MPI_Comm comm);
+
+  /// Create a wrapper around a PETSc Mat pointer. The Mat object
+  /// should have been created, e.g. via PETSc MatCreate.
+  explicit PETScMatrix(Mat A);
+
+  /// Copy constructor
+  PETScMatrix(const PETScMatrix& A);
+
+  /// Destructor
+  ~PETScMatrix();
+
+  //--- Implementation of the GenericTensor interface ---
+
+  /// Initialize zero tensor using sparsity pattern
+  void init(const SparsityPattern& sparsity_pattern);
+
+  /// Return true if empty
+  bool empty() const;
+
+  /// Return size of given dimension
+  std::int64_t size(std::size_t dim) const
   {
-  public:
+    return PETScBaseMatrix::size(dim);
+  }
 
-    /// Create empty matrix
-    explicit PETScMatrix(MPI_Comm comm);
+  /// Return local ownership range
+  std::array<std::int64_t, 2> local_range(std::size_t dim) const
+  {
+    return PETScBaseMatrix::local_range(dim);
+  }
 
-    /// Create a wrapper around a PETSc Mat pointer. The Mat object
-    /// should have been created, e.g. via PETSc MatCreate.
-    explicit PETScMatrix(Mat A);
+  /// Return number of non-zero entries in matrix (collective)
+  std::size_t nnz() const;
 
-    /// Copy constructor
-    PETScMatrix(const PETScMatrix& A);
+  /// Set all entries to zero and keep any sparse structure
+  void zero();
 
-    /// Destructor
-    ~PETScMatrix();
+  /// Finalize assembly of tensor. The following values are recognized
+  /// for the mode parameter:
+  ///
+  ///   add    - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
+  ///   insert - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
+  ///   flush  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
+  void apply(std::string mode);
 
-    //--- Implementation of the GenericTensor interface ---
+  /// Return MPI communicator
+  MPI_Comm mpi_comm() const;
 
-    /// Initialize zero tensor using sparsity pattern
-    void init(const SparsityPattern& sparsity_pattern);
+  /// Return informal string representation (pretty-print)
+  std::string str(bool verbose) const;
 
-    /// Return true if empty
-    bool empty() const;
+  /// Set block of values using local indices
+  void set_local(const double* block, const dolfin::la_index_t* num_rows,
+                 const dolfin::la_index_t* const* rows)
+  {
+    set_local(block, num_rows[0], rows[0], num_rows[1], rows[1]);
+  }
 
-    /// Return size of given dimension
-    std::int64_t size(std::size_t dim) const
-    { return PETScBaseMatrix::size(dim); }
+  /// Add block of values using local indices
+  void add_local(const double* block, const dolfin::la_index_t* num_rows,
+                 const dolfin::la_index_t* const* rows)
+  {
+    add_local(block, num_rows[0], rows[0], num_rows[1], rows[1]);
+  }
 
-    /// Return local ownership range
-    std::array<std::int64_t, 2> local_range(std::size_t dim) const
-    { return PETScBaseMatrix::local_range(dim); }
+  /// Initialize vector z to be compatible with the matrix-vector product
+  /// y = Ax. In the parallel case, both size and layout are
+  /// important.
+  ///
+  /// @param z (PETScVector&)
+  ///         Vector to initialise
+  /// @param  dim (std::size_t)
+  ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
+  void init_vector(PETScVector& z, std::size_t dim) const
+  {
+    PETScBaseMatrix::init_vector(z, dim);
+  }
 
-    /// Return number of non-zero entries in matrix (collective)
-    std::size_t nnz() const;
+  /// Get block of values
+  void get(double* block, std::size_t m, const dolfin::la_index_t* rows,
+           std::size_t n, const dolfin::la_index_t* cols) const;
 
-    /// Set all entries to zero and keep any sparse structure
-    void zero();
+  /// Set block of values using global indices
+  void set(const double* block, std::size_t m, const dolfin::la_index_t* rows,
+           std::size_t n, const dolfin::la_index_t* cols);
 
-    /// Finalize assembly of tensor. The following values are recognized
-    /// for the mode parameter:
-    ///
-    ///   add    - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
-    ///   insert - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
-    ///   flush  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
-    void apply(std::string mode);
+  /// Set block of values using local indices
+  void set_local(const double* block, std::size_t m,
+                 const dolfin::la_index_t* rows, std::size_t n,
+                 const dolfin::la_index_t* cols);
 
-    /// Return MPI communicator
-    MPI_Comm mpi_comm() const;
+  /// Add block of values using global indices
+  void add(const double* block, std::size_t m, const dolfin::la_index_t* rows,
+           std::size_t n, const dolfin::la_index_t* cols);
 
-    /// Return informal string representation (pretty-print)
-    std::string str(bool verbose) const;
+  /// Add block of values using local indices
+  void add_local(const double* block, std::size_t m,
+                 const dolfin::la_index_t* rows, std::size_t n,
+                 const dolfin::la_index_t* cols);
 
-    /// Set block of values using local indices
-    void set_local(const double* block,
-                   const dolfin::la_index_t* num_rows,
-                   const dolfin::la_index_t * const * rows)
-    { set_local(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
+  /// Add multiple of given matrix (AXPY operation)
+  void axpy(double a, const PETScMatrix& A, bool same_nonzero_pattern);
 
-    /// Add block of values using local indices
-    void add_local(const double* block,
-                   const dolfin::la_index_t* num_rows,
-                   const dolfin::la_index_t * const * rows)
-    { add_local(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
+  /// Return norm of matrix
+  double norm(std::string norm_type) const;
 
-    /// Add block of values using local indices
-    void add_local(const double* block,
-                   const std::vector<ArrayView<const dolfin::la_index_t>>& rows)
-    {
-      add_local(block, rows[0].size(), rows[0].data(),
-                rows[1].size(), rows[1].data());
-    }
+  /// Set given rows (global row indices) to zero
+  void zero(std::size_t m, const dolfin::la_index_t* rows);
 
-    //--- Implementation of the GenericMatrix interface --
+  /// Set given rows (local row indices) to zero
+  void zero_local(std::size_t m, const dolfin::la_index_t* rows);
 
-    /// Return copy of matrix
-    std::shared_ptr<PETScMatrix> copy() const;
+  /// Matrix-vector product, y = Ax
+  void mult(const PETScVector& x, PETScVector& y) const;
 
-    /// Initialize vector z to be compatible with the matrix-vector product
-    /// y = Ax. In the parallel case, both size and layout are
-    /// important.
-    ///
-    /// @param z (PETScVector&)
-    ///         Vector to initialise
-    /// @param  dim (std::size_t)
-    ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    void init_vector(PETScVector& z, std::size_t dim) const
-    { PETScBaseMatrix::init_vector(z, dim); }
+  /// Matrix-vector product, y = A^T x
+  void transpmult(const PETScVector& x, PETScVector& y) const;
 
-    /// Get block of values
-    void get(double* block,
-             std::size_t m, const dolfin::la_index_t* rows,
-             std::size_t n, const dolfin::la_index_t* cols) const;
+  /// Get diagonal of a matrix
+  void get_diagonal(PETScVector& x) const;
 
-    /// Set block of values using global indices
-    void set(const double* block,
-             std::size_t m, const dolfin::la_index_t* rows,
-             std::size_t n, const dolfin::la_index_t* cols);
+  /// Set diagonal of a matrix
+  void set_diagonal(const PETScVector& x);
 
-    /// Set block of values using local indices
-    void set_local(const double* block,
-                   std::size_t m, const dolfin::la_index_t* rows,
-                   std::size_t n, const dolfin::la_index_t* cols);
+  /// Multiply matrix by given number
+  const PETScMatrix& operator*=(double a);
 
-    /// Add block of values using global indices
-    void add(const double* block,
-             std::size_t m, const dolfin::la_index_t* rows,
-             std::size_t n, const dolfin::la_index_t* cols);
+  /// Divide matrix by given number
+  const PETScMatrix& operator/=(double a);
 
-    /// Add block of values using local indices
-    void add_local(const double* block,
-                   std::size_t m, const dolfin::la_index_t* rows,
-                   std::size_t n, const dolfin::la_index_t* cols);
+  /// Assignment operator
+  const PETScMatrix& operator=(const PETScMatrix& A);
 
-    /// Add multiple of given matrix (AXPY operation)
-    void axpy(double a, const PETScMatrix& A,
-              bool same_nonzero_pattern);
+  /// Test if matrix is symmetric
+  virtual bool is_symmetric(double tol) const;
 
-    /// Return norm of matrix
-    double norm(std::string norm_type) const;
+  //--- Special PETSc Functions ---
 
-    /// Set given rows (global row indices) to zero
-    void zero(std::size_t m, const dolfin::la_index_t* rows);
+  /// Sets the prefix used by PETSc when searching the options
+  /// database
+  void set_options_prefix(std::string options_prefix);
 
-    /// Set given rows (local row indices) to zero
-    void zero_local(std::size_t m, const dolfin::la_index_t* rows);
+  /// Returns the prefix used by PETSc when searching the options
+  /// database
+  std::string get_options_prefix() const;
 
-    /// Matrix-vector product, y = Ax
-    void mult(const PETScVector& x, PETScVector& y) const;
+  /// Call PETSc function MatSetFromOptions on the PETSc Mat object
+  void set_from_options();
 
-    /// Matrix-vector product, y = A^T x
-    void transpmult(const PETScVector& x, PETScVector& y) const;
+  /// Attach nullspace to matrix (typically used by Krylov solvers
+  /// when solving singular systems)
+  void set_nullspace(const VectorSpaceBasis& nullspace);
 
-    /// Get diagonal of a matrix
-    void get_diagonal(PETScVector& x) const;
+  /// Attach 'near' nullspace to matrix (used by preconditioners,
+  /// such as smoothed aggregation algerbraic multigrid)
+  void set_near_nullspace(const VectorSpaceBasis& nullspace);
 
-    /// Set diagonal of a matrix
-    void set_diagonal(const PETScVector& x);
+  /// Dump matrix to PETSc binary format
+  void binary_dump(std::string file_name) const;
 
-    /// Multiply matrix by given number
-    const PETScMatrix& operator*= (double a);
+private:
+  // Create PETSc nullspace object
+  MatNullSpace create_petsc_nullspace(const VectorSpaceBasis& nullspace) const;
 
-    /// Divide matrix by given number
-    const PETScMatrix& operator/= (double a);
-
-    /// Assignment operator
-    const PETScMatrix& operator= (const PETScMatrix& A);
-
-    /// Test if matrix is symmetric
-    virtual bool is_symmetric(double tol) const;
-
-    //--- Special PETSc Functions ---
-
-    /// Sets the prefix used by PETSc when searching the options
-    /// database
-    void set_options_prefix(std::string options_prefix);
-
-    /// Returns the prefix used by PETSc when searching the options
-    /// database
-    std::string get_options_prefix() const;
-
-    /// Call PETSc function MatSetFromOptions on the PETSc Mat object
-    void set_from_options();
-
-    /// Attach nullspace to matrix (typically used by Krylov solvers
-    /// when solving singular systems)
-    void set_nullspace(const VectorSpaceBasis& nullspace);
-
-    /// Attach 'near' nullspace to matrix (used by preconditioners,
-    /// such as smoothed aggregation algerbraic multigrid)
-    void set_near_nullspace(const VectorSpaceBasis& nullspace);
-
-    /// Dump matrix to PETSc binary format
-    void binary_dump(std::string file_name) const;
-
-  private:
-
-    // Create PETSc nullspace object
-    MatNullSpace create_petsc_nullspace(const VectorSpaceBasis& nullspace) const;
-
-    // PETSc norm types
-    static const std::map<std::string, NormType> norm_types;
-
-  };
-
+  // PETSc norm types
+  static const std::map<std::string, NormType> norm_types;
+};
 }
 
 #endif
 
-#endif
+

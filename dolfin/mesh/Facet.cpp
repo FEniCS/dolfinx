@@ -1,28 +1,14 @@
 // Copyright (C) 2006-2015 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Garth N. Wells 2011
-// Modified by Martin Alnaes, 2015
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfin/geometry/Point.h>
+#include "Facet.h"
 #include "Cell.h"
 #include "IntervalCell.h"
 #include "TriangleCell.h"
-#include "Facet.h"
+#include <dolfin/geometry/Point.h>
 
 using namespace dolfin;
 
@@ -49,7 +35,7 @@ double Facet::squared_distance(const Point& point) const
   {
     // Extract vertices
     const MeshGeometry& geometry = _mesh->geometry();
-    const unsigned int* vertices = entities(0);
+    const std::uint32_t* vertices = entities(0);
     const Point a = geometry.point(vertices[0]);
     const Point b = geometry.point(vertices[1]);
 
@@ -60,7 +46,7 @@ double Facet::squared_distance(const Point& point) const
   {
     // Extract vertices
     const MeshGeometry& geometry = _mesh->geometry();
-    const unsigned int* vertices = entities(0);
+    const std::uint32_t* vertices = entities(0);
     const Point a = geometry.point(vertices[0]);
     const Point b = geometry.point(vertices[1]);
     const Point c = geometry.point(vertices[2]);
@@ -69,8 +55,7 @@ double Facet::squared_distance(const Point& point) const
     return TriangleCell::squared_distance(point, a, b, c);
   }
 
-  dolfin_error("Facet.cpp",
-               "compute (squared) distance to facet",
+  dolfin_error("Facet.cpp", "compute (squared) distance to facet",
                "Not implemented for facets of dimension %d", _dim);
 
   return 0.0;

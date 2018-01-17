@@ -1,41 +1,25 @@
 // Copyright (C) 2006-2007 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Mikael Mortensen 2014
-//
-// First added:  2006-05-09
-// Last changed: 2014-01-09
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <sstream>
+#include "MeshConnectivity.h"
 #include <boost/functional/hash.hpp>
 #include <dolfin/log/log.h>
-#include "MeshConnectivity.h"
+#include <sstream>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshConnectivity::MeshConnectivity(std::size_t d0, std::size_t d1)
-  : _d0(d0), _d1(d1)
+    : _d0(d0), _d1(d1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshConnectivity::MeshConnectivity(const MeshConnectivity& connectivity)
-  : _d0(0), _d1(0)
+    : _d0(0), _d1(0)
 {
   *this = connectivity;
 }
@@ -45,8 +29,8 @@ MeshConnectivity::~MeshConnectivity()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const MeshConnectivity&
-MeshConnectivity::operator= (const MeshConnectivity& connectivity)
+const MeshConnectivity& MeshConnectivity::
+operator=(const MeshConnectivity& connectivity)
 {
   // Copy data
   _d0 = connectivity._d0;
@@ -71,7 +55,7 @@ void MeshConnectivity::init(std::size_t num_entities,
   clear();
 
   // Compute the total size
-  const std::size_t size = num_entities*num_connections;
+  const std::size_t size = num_entities * num_connections;
 
   // Allocate
   _connections.resize(size);
@@ -80,7 +64,7 @@ void MeshConnectivity::init(std::size_t num_entities,
 
   // Initialize data
   for (std::size_t e = 0; e < index_to_position.size(); e++)
-    index_to_position[e] = e*num_connections;
+    index_to_position[e] = e * num_connections;
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::init(std::vector<std::size_t>& num_connections)
@@ -108,8 +92,8 @@ void MeshConnectivity::set(std::size_t entity, std::size_t connection,
                            std::size_t pos)
 {
   dolfin_assert((entity + 1) < index_to_position.size());
-  dolfin_assert(pos < index_to_position[entity + 1]
-                - index_to_position[entity]);
+  dolfin_assert(pos
+                < index_to_position[entity + 1] - index_to_position[entity]);
   _connections[index_to_position[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
@@ -120,7 +104,7 @@ void MeshConnectivity::set(std::size_t entity, std::size_t* connections)
 
   // Copy data
   const std::size_t num_connections
-    = index_to_position[entity + 1] - index_to_position[entity];
+      = index_to_position[entity + 1] - index_to_position[entity];
   std::copy(connections, connections + num_connections,
             _connections.begin() + index_to_position[entity]);
 }

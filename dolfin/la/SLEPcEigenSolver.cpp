@@ -1,29 +1,18 @@
 // Copyright (C) 2005-2017 Garth N. Wells
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #ifdef HAS_SLEPC
 
-#include <slepcversion.h>
-#include <dolfin/log/log.h>
-#include <dolfin/common/MPI.h>
+#include "SLEPcEigenSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
-#include "SLEPcEigenSolver.h"
 #include "VectorSpaceBasis.h"
+#include <dolfin/common/MPI.h>
+#include <dolfin/log/log.h>
+#include <slepcversion.h>
 
 using namespace dolfin;
 
@@ -44,7 +33,8 @@ SLEPcEigenSolver::SLEPcEigenSolver(EPS eps) : _eps(eps)
   {
     // Increment reference count since we holding a pointer to it
     ierr = PetscObjectReference((PetscObject)_eps);
-    if (ierr != 0) petsc_error(ierr, __FILE__, "PetscObjectReference");
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "PetscObjectReference");
   }
   else
   {
@@ -115,11 +105,14 @@ void SLEPcEigenSolver::solve(std::int64_t n)
   {
     if (parameters["verbose"])
     {
-      PetscViewerAndFormat *vf;
-      PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD, PETSC_VIEWER_DEFAULT, &vf);
-      EPSMonitorSet(_eps,(PetscErrorCode (*)(EPS,PetscInt,PetscInt,PetscScalar*,PetscScalar*,
-                                             PetscReal*,PetscInt,void*))EPSMonitorAll,vf,
-                    (PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+      PetscViewerAndFormat* vf;
+      PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD,
+                                 PETSC_VIEWER_DEFAULT, &vf);
+      EPSMonitorSet(_eps,
+                    (PetscErrorCode(*)(EPS, PetscInt, PetscInt, PetscScalar*,
+                                       PetscScalar*, PetscReal*, PetscInt,
+                                       void*))EPSMonitorAll,
+                    vf, (PetscErrorCode(*)(void**))PetscViewerAndFormatDestroy);
     }
   }
 
@@ -138,8 +131,8 @@ void SLEPcEigenSolver::solve(std::int64_t n)
 
   EPSType eps_type = NULL;
   EPSGetType(_eps, &eps_type);
-  log(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.",
-      eps_type, num_iterations);
+  log(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.", eps_type,
+      num_iterations);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
@@ -162,9 +155,8 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
   }
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
-                                     PETScVector& r, PETScVector& c,
-                                     std::size_t i) const
+void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, PETScVector& r,
+                                     PETScVector& c, std::size_t i) const
 {
   dolfin_assert(_eps);
   const PetscInt ii = static_cast<PetscInt>(i);
@@ -204,7 +196,8 @@ std::size_t SLEPcEigenSolver::get_number_converged() const
   return num_conv;
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_deflation_space(const VectorSpaceBasis& deflation_space)
+void SLEPcEigenSolver::set_deflation_space(
+    const VectorSpaceBasis& deflation_space)
 {
   dolfin_assert(_eps);
 
@@ -217,9 +210,10 @@ void SLEPcEigenSolver::set_deflation_space(const VectorSpaceBasis& deflation_spa
     petsc_vecs[i] = deflation_space[i]->vec();
   }
 
-  PetscErrorCode ierr = EPSSetDeflationSpace(_eps, petsc_vecs.size(),
-                                             petsc_vecs.data());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetDeflationSpace");
+  PetscErrorCode ierr
+      = EPSSetDeflationSpace(_eps, petsc_vecs.size(), petsc_vecs.data());
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "EPSSetDeflationSpace");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_initial_space(const VectorSpaceBasis& initial_space)
@@ -235,9 +229,10 @@ void SLEPcEigenSolver::set_initial_space(const VectorSpaceBasis& initial_space)
     petsc_vecs[i] = initial_space[i]->vec();
   }
 
-  PetscErrorCode ierr = EPSSetInitialSpace(_eps, petsc_vecs.size(),
-                                           petsc_vecs.data());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetInitialSpace");
+  PetscErrorCode ierr
+      = EPSSetInitialSpace(_eps, petsc_vecs.size(), petsc_vecs.data());
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "EPSSetInitialSpace");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_options_prefix(std::string options_prefix)
@@ -245,7 +240,8 @@ void SLEPcEigenSolver::set_options_prefix(std::string options_prefix)
   // Set options prefix
   dolfin_assert(_eps);
   PetscErrorCode ierr = EPSSetOptionsPrefix(_eps, options_prefix.c_str());
-  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetOptionsPrefix");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "EPSSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
 std::string SLEPcEigenSolver::get_options_prefix() const
@@ -253,7 +249,8 @@ std::string SLEPcEigenSolver::get_options_prefix() const
   dolfin_assert(_eps);
   const char* prefix = NULL;
   PetscErrorCode ierr = EPSGetOptionsPrefix(_eps, &prefix);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSGetOptionsPrefix");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "EPSGetOptionsPrefix");
   return std::string(prefix);
 }
 //-----------------------------------------------------------------------------
@@ -261,7 +258,8 @@ void SLEPcEigenSolver::set_from_options() const
 {
   dolfin_assert(_eps);
   PetscErrorCode ierr = EPSSetFromOptions(_eps);
-  if (ierr != 0) petsc_error(ierr, __FILE__, "EPSSetFromOptions");
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "EPSSetFromOptions");
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::read_parameters()
@@ -275,10 +273,15 @@ void SLEPcEigenSolver::read_parameters()
   if (parameters["solver"].is_set())
     set_solver(parameters["solver"]);
 
-  if (parameters["tolerance"].is_set() or parameters["maximum_iterations"].is_set())
+  if (parameters["tolerance"].is_set()
+      or parameters["maximum_iterations"].is_set())
   {
-    const double tol = parameters["tolerance"].is_set() ? (double)parameters["tolerance"] : PETSC_DEFAULT;
-    const int max_it  = parameters["maximum_iterations"].is_set() ? (int)parameters["maximum_iterations"] : PETSC_DEFAULT;
+    const double tol = parameters["tolerance"].is_set()
+                           ? (double)parameters["tolerance"]
+                           : PETSC_DEFAULT;
+    const int max_it = parameters["maximum_iterations"].is_set()
+                           ? (int)parameters["maximum_iterations"]
+                           : PETSC_DEFAULT;
 
     set_tolerance(tol, max_it);
   }
@@ -292,9 +295,9 @@ void SLEPcEigenSolver::read_parameters()
     }
     else
     {
-      dolfin_error("SLEPcEigenSolver.cpp",
-                   "set spectral transform",
-                   "For an spectral transform, the spectral shift parameter must be set");
+      dolfin_error("SLEPcEigenSolver.cpp", "set spectral transform",
+                   "For an spectral transform, the spectral shift parameter "
+                   "must be set");
     }
   }
 }
@@ -386,8 +389,7 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
   }
   else
   {
-    dolfin_error("SLEPcEigenSolver.cpp",
-                 "set spectrum for SLEPc eigensolver",
+    dolfin_error("SLEPcEigenSolver.cpp", "set spectrum for SLEPc eigensolver",
                  "Unknown spectrum type (\"%s\")", spectrum.c_str());
   }
 
@@ -424,8 +426,7 @@ void SLEPcEigenSolver::set_solver(std::string solver)
     EPSSetType(_eps, EPSGD);
   else
   {
-    dolfin_error("SLEPcEigenSolver.cpp",
-                 "set solver for SLEPc eigensolver",
+    dolfin_error("SLEPcEigenSolver.cpp", "set solver for SLEPc eigensolver",
                  "Unknown solver type (\"%s\")", solver.c_str());
   }
 }
@@ -445,10 +446,7 @@ std::size_t SLEPcEigenSolver::get_iteration_number() const
   return num_iter;
 }
 //-----------------------------------------------------------------------------
-EPS SLEPcEigenSolver::eps() const
-{
-  return _eps;
-}
+EPS SLEPcEigenSolver::eps() const { return _eps; }
 //-----------------------------------------------------------------------------
 MPI_Comm SLEPcEigenSolver::mpi_comm() const
 {

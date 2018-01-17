@@ -1,32 +1,12 @@
 // Copyright (C) 2006-2011 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Kristoffer Selim 2008
-// Modified by Andre Massing 2010
-// Modified by Jan Blechta 2013
-//
-// First added:  2006-06-05
-// Last changed: 2016-06-10
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <algorithm>
 #include <array>
 
-#include <dolfin/geometry/Point.h>
-#include <dolfin/log/log.h>
 #include "Cell.h"
 #include "CellType.h"
 #include "HexahedronCell.h"
@@ -37,12 +17,14 @@
 #include "TetrahedronCell.h"
 #include "TriangleCell.h"
 #include "Vertex.h"
+#include <dolfin/geometry/Point.h>
+#include <dolfin/log/log.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 CellType::CellType(Type cell_type, Type facet_type)
-  : _cell_type(cell_type), _facet_type(facet_type)
+    : _cell_type(cell_type), _facet_type(facet_type)
 {
   // Do nothing
 }
@@ -54,7 +36,7 @@ CellType::~CellType()
 //-----------------------------------------------------------------------------
 CellType* CellType::create(Type type)
 {
-  switch ( type )
+  switch (type)
   {
   case Type::point:
     return new PointCell();
@@ -69,9 +51,8 @@ CellType* CellType::create(Type type)
   case Type::hexahedron:
     return new HexahedronCell();
   default:
-    dolfin_error("CellType.cpp",
-                 "create cell type",
-                 "Unknown cell type (%d)", type);
+    dolfin_error("CellType.cpp", "create cell type", "Unknown cell type (%d)",
+                 type);
   }
 
   return 0;
@@ -98,8 +79,7 @@ CellType::Type CellType::string2type(std::string type)
     return Type::hexahedron;
   else
   {
-    dolfin_error("CellType.cpp",
-                 "convert string to cell type",
+    dolfin_error("CellType.cpp", "convert string to cell type",
                  "Unknown cell type (\"%s\")", type.c_str());
   }
 
@@ -115,7 +95,7 @@ std::string CellType::type2string(Type type)
   case Type::interval:
     return "interval";
   case Type::triangle:
-   return "triangle";
+    return "triangle";
   case Type::tetrahedron:
     return "tetrahedron";
   case Type::quadrilateral:
@@ -123,8 +103,7 @@ std::string CellType::type2string(Type type)
   case Type::hexahedron:
     return "hexahedron";
   default:
-    dolfin_error("CellType.cpp",
-                 "convert cell type to string",
+    dolfin_error("CellType.cpp", "convert cell type to string",
                  "Unknown cell type (\"%d\")", type);
   }
 
@@ -139,7 +118,7 @@ CellType::Type CellType::entity_type(std::size_t i) const
     return _facet_type;
   else if (i == 1)
     return Type::interval;
- return Type::point;
+  return Type::point;
 }
 //-----------------------------------------------------------------------------
 double CellType::h(const MeshEntity& entity) const
@@ -151,7 +130,7 @@ double CellType::h(const MeshEntity& entity) const
   const int num_vertices = entity.num_entities(0);
 
   // Get the coordinates (Points) of the vertices
-  const unsigned int* vertices = entity.entities(0);
+  const std::uint32_t* vertices = entity.entities(0);
   dolfin_assert(vertices);
   std::array<Point, 8> points;
   dolfin_assert(num_vertices <= 8);
@@ -175,8 +154,7 @@ double CellType::inradius(const Cell& cell) const
   if (_cell_type != Type::interval && _cell_type != Type::triangle
       && _cell_type != Type::tetrahedron)
   {
-    dolfin_error("Cell.h",
-                 "compute cell inradius",
+    dolfin_error("Cell.h", "compute cell inradius",
                  "formula not implemented for non-simplicial cells");
   }
 
@@ -198,7 +176,7 @@ double CellType::inradius(const Cell& cell) const
   // See Jonathan Richard Shewchuk: What Is a Good Linear Finite
   // Element?, online:
   // http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
-  return d*V/A;
+  return d * V / A;
 }
 //-----------------------------------------------------------------------------
 double CellType::radius_ratio(const Cell& cell) const
@@ -209,11 +187,12 @@ double CellType::radius_ratio(const Cell& cell) const
   if (r == 0.0)
     return 0.0;
   else
-    return dim()*r/circumradius(cell);
+    return dim() * r / circumradius(cell);
 }
 //-----------------------------------------------------------------------------
-bool CellType::ordered(const Cell& cell, const std::vector<std::int64_t>&
-                       local_to_global_vertex_indices) const
+bool CellType::ordered(
+    const Cell& cell,
+    const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
   // Get mesh topology
   const MeshTopology& topology = cell.mesh().topology();
@@ -222,7 +201,7 @@ bool CellType::ordered(const Cell& cell, const std::vector<std::int64_t>&
 
   // Get vertices
   const std::size_t num_vertices = topology(dim, 0).size(c);
-  const unsigned int* vertices = topology(dim, 0)(c);
+  const std::uint32_t* vertices = topology(dim, 0)(c);
   dolfin_assert(vertices);
 
   // Check that vertices are in ascending order
@@ -242,20 +221,20 @@ bool CellType::ordered(const Cell& cell, const std::vector<std::int64_t>&
 
     // Get entities
     const std::size_t num_entities = topology(dim, d).size(c);
-    const unsigned int* entities = topology(dim, d)(c);
+    const std::uint32_t* entities = topology(dim, d)(c);
 
     // Iterate over entities
     for (std::size_t e = 1; e < num_entities; e++)
     {
       // Get vertices for first entity
-      const std::size_t  e0 = entities[e - 1];
-      const std::size_t  n0 = connectivity.size(e0);
-      const unsigned int* v0 = connectivity(e0);
+      const std::size_t e0 = entities[e - 1];
+      const std::size_t n0 = connectivity.size(e0);
+      const std::uint32_t* v0 = connectivity(e0);
 
       // Get vertices for second entity
-      const std::size_t  e1 = entities[e];
-      const std::size_t  n1 = connectivity.size(e1);
-      const unsigned int* v1 = connectivity(e1);
+      const std::size_t e1 = entities[e];
+      const std::size_t n1 = connectivity.size(e1);
+      const std::uint32_t* v1 = connectivity(e1);
 
       // Check ordering of entities
       if (!increasing(n0, v0, n1, v1, num_vertices, vertices,
@@ -267,10 +246,9 @@ bool CellType::ordered(const Cell& cell, const std::vector<std::int64_t>&
   return true;
 }
 //-----------------------------------------------------------------------------
-void CellType::sort_entities(std::size_t num_vertices,
-                             unsigned int* local_vertices,
-                             const std::vector<std::int64_t>&
-                             local_to_global_vertex_indices)
+void CellType::sort_entities(
+    std::size_t num_vertices, std::uint32_t* local_vertices,
+    const std::vector<std::int64_t>& local_to_global_vertex_indices)
 {
   // Two cases here, either sort vertices directly (when running in
   // serial) or sort based on the global indices (when running in
@@ -280,15 +258,17 @@ void CellType::sort_entities(std::size_t num_vertices,
   class GlobalSort
   {
   public:
-
     GlobalSort(const std::vector<std::int64_t>& local_to_global_vertex_indices)
-        : g(local_to_global_vertex_indices) {}
+        : g(local_to_global_vertex_indices)
+    {
+    }
 
-    bool operator() (const std::size_t& l, const std::size_t& r)
-    { return g[l] < g[r]; }
+    bool operator()(const std::size_t& l, const std::size_t& r)
+    {
+      return g[l] < g[r];
+    }
 
     const std::vector<std::int64_t>& g;
-
   };
 
   // Sort on global vertex indices
@@ -296,25 +276,25 @@ void CellType::sort_entities(std::size_t num_vertices,
   std::sort(local_vertices, local_vertices + num_vertices, global_sort);
 }
 //-----------------------------------------------------------------------------
-bool CellType::increasing(std::size_t num_vertices,
-                          const unsigned int* local_vertices,
-                          const std::vector<std::int64_t>&
-                          local_to_global_vertex_indices)
+bool CellType::increasing(
+    std::size_t num_vertices, const std::uint32_t* local_vertices,
+    const std::vector<std::int64_t>& local_to_global_vertex_indices)
 {
   // Two cases here, either check vertices directly (when running in serial)
   // or check based on the global indices (when running in parallel)
 
   for (std::size_t v = 1; v < num_vertices; v++)
-    if (local_to_global_vertex_indices[local_vertices[v - 1]] >= local_to_global_vertex_indices[local_vertices[v]])
+    if (local_to_global_vertex_indices[local_vertices[v - 1]]
+        >= local_to_global_vertex_indices[local_vertices[v]])
       return false;
   return true;
 }
 //-----------------------------------------------------------------------------
-bool CellType::increasing(std::size_t n0, const unsigned int* v0,
-                          std::size_t n1, const unsigned int* v1,
-                          std::size_t num_vertices,
-                          const unsigned int* local_vertices,
-               const std::vector<std::int64_t>& local_to_global_vertex_indices)
+bool CellType::increasing(
+    std::size_t n0, const std::uint32_t* v0, std::size_t n1,
+    const std::uint32_t* v1, std::size_t num_vertices,
+    const std::uint32_t* local_vertices,
+    const std::vector<std::int64_t>& local_to_global_vertex_indices)
 {
   dolfin_assert(n0 == n1);
   dolfin_assert(num_vertices > n0);

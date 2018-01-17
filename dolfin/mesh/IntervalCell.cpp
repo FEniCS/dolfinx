@@ -1,44 +1,22 @@
 // Copyright (C) 2006-2014 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Kristian Oelgaard 2007
-// Modified by Kristoffer Selim 2008
-// Modified by Marie E. Rognes 2011
-// Modified by August Johansson 2014
-//
-// First added:  2006-06-05
-// Last changed: 2016-05-05
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <algorithm>
-#include <dolfin/log/log.h>
-#include <dolfin/geometry/CollisionPredicates.h>
+#include "IntervalCell.h"
 #include "Cell.h"
 #include "MeshEditor.h"
 #include "MeshEntity.h"
 #include "MeshGeometry.h"
-#include "IntervalCell.h"
+#include <algorithm>
+#include <dolfin/geometry/CollisionPredicates.h>
+#include <dolfin/log/log.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::size_t IntervalCell::dim() const
-{
-  return 1;
-}
+std::size_t IntervalCell::dim() const { return 1; }
 //-----------------------------------------------------------------------------
 std::size_t IntervalCell::num_entities(std::size_t dim) const
 {
@@ -74,8 +52,9 @@ std::size_t IntervalCell::num_vertices(std::size_t dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::create_entities(boost::multi_array<unsigned int, 2>& e,
-                                   std::size_t dim, const unsigned int* v) const
+void IntervalCell::create_entities(boost::multi_array<std::uint32_t, 2>& e,
+                                   std::size_t dim,
+                                   const std::uint32_t* v) const
 {
   // For completeness, IntervalCell has two 'edges'
   dolfin_assert(dim == 0);
@@ -83,7 +62,8 @@ void IntervalCell::create_entities(boost::multi_array<unsigned int, 2>& e,
   // Resize data structure
   e.resize(boost::extents[2][1]);
   // Create the three edges
-  e[0][0] = v[0]; e[1][0] = v[1];
+  e[0][0] = v[0];
+  e[1][0] = v[1];
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::volume(const MeshEntity& interval) const
@@ -91,8 +71,7 @@ double IntervalCell::volume(const MeshEntity& interval) const
   // Check that we get an interval
   if (interval.dim() != 1)
   {
-    dolfin_error("IntervalCell.cpp",
-                 "compute volume (length) of interval cell",
+    dolfin_error("IntervalCell.cpp", "compute volume (length) of interval cell",
                  "Illegal mesh entity, not an interval");
   }
 
@@ -100,7 +79,7 @@ double IntervalCell::volume(const MeshEntity& interval) const
   const MeshGeometry& geometry = interval.mesh().geometry();
 
   // Get the coordinates of the two vertices
-  const unsigned int* vertices = interval.entities(0);
+  const std::uint32_t* vertices = interval.entities(0);
   const Point x0 = geometry.point(vertices[0]);
   const Point x1 = geometry.point(vertices[1]);
 
@@ -112,13 +91,12 @@ double IntervalCell::circumradius(const MeshEntity& interval) const
   // Check that we get an interval
   if (interval.dim() != 1)
   {
-    dolfin_error("IntervalCell.cpp",
-                 "compute diameter of interval cell",
+    dolfin_error("IntervalCell.cpp", "compute diameter of interval cell",
                  "Illegal mesh entity, not an interval");
   }
 
   // Circumradius is half the volume for an interval (line segment)
-  return volume(interval)/2.0;
+  return volume(interval) / 2.0;
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::squared_distance(const Cell& cell,
@@ -126,7 +104,7 @@ double IntervalCell::squared_distance(const Cell& cell,
 {
   // Get the vertices as points
   const MeshGeometry& geometry = cell.mesh().geometry();
-  const unsigned int* vertices = cell.entities(0);
+  const std::uint32_t* vertices = cell.entities(0);
   const Point a = geometry.point(vertices[0]);
   const Point b = geometry.point(vertices[1]);
 
@@ -134,13 +112,12 @@ double IntervalCell::squared_distance(const Cell& cell,
   return squared_distance(point, a, b);
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::squared_distance(const Point& point,
-                                      const Point& a,
+double IntervalCell::squared_distance(const Point& point, const Point& a,
                                       const Point& b)
 {
   // Compute vector
-  const Point v0  = point - a;
-  const Point v1  = point - b;
+  const Point v0 = point - a;
+  const Point v1 = point - b;
   const Point v01 = b - a;
 
   // Check if a is closest point (outside of interval)
@@ -149,12 +126,12 @@ double IntervalCell::squared_distance(const Point& point,
     return v0.dot(v0);
 
   // Check if b is closest point (outside the interval)
-  const double a1 = - v1.dot(v01);
+  const double a1 = -v1.dot(v01);
   if (a1 < 0.0)
     return v1.dot(v1);
 
   // Inside interval, so use Pythagoras to subtract length of projection
-  return std::max(v0.dot(v0) - a0*a0 / v01.dot(v01), 0.0);
+  return std::max(v0.dot(v0) - a0 * a0 / v01.dot(v01), 0.0);
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::normal(const Cell& cell, std::size_t facet,
@@ -169,7 +146,7 @@ Point IntervalCell::normal(const Cell& cell, std::size_t facet) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Get the two vertices as points
-  const unsigned int* vertices = cell.entities(0);
+  const std::uint32_t* vertices = cell.entities(0);
   Point p0 = geometry.point(vertices[0]);
   Point p1 = geometry.point(vertices[1]);
 
@@ -192,12 +169,11 @@ Point IntervalCell::cell_normal(const Cell& cell) const
   // Cell_normal only defined for gdim = 1, 2 for now
   const std::size_t gdim = geometry.dim();
   if (gdim > 2)
-    dolfin_error("IntervalCell.cpp",
-                 "compute cell normal",
+    dolfin_error("IntervalCell.cpp", "compute cell normal",
                  "Illegal geometric dimension (%d)", gdim);
 
   // Get the two vertices as points
-  const unsigned int* vertices = cell.entities(0);
+  const std::uint32_t* vertices = cell.entities(0);
   Point p0 = geometry.point(vertices[0]);
   Point p1 = geometry.point(vertices[1]);
 
@@ -216,9 +192,9 @@ double IntervalCell::facet_area(const Cell& cell, std::size_t facet) const
   return 1.0;
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::order(Cell& cell,
-                         const std::vector<std::int64_t>&
-                         local_to_global_vertex_indices) const
+void IntervalCell::order(
+    Cell& cell,
+    const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0
 
@@ -228,7 +204,7 @@ void IntervalCell::order(Cell& cell,
   // Sort local vertices in ascending order, connectivity 1 - 0
   if (!topology(1, 0).empty())
   {
-    unsigned int* cell_vertices = const_cast<unsigned int*>(cell.entities(0));
+    std::uint32_t* cell_vertices = const_cast<std::uint32_t*>(cell.entities(0));
     sort_entities(2, cell_vertices, local_to_global_vertex_indices);
   }
 }

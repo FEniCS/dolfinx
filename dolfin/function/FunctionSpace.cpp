@@ -1,30 +1,11 @@
 // Copyright (C) 2008-2009 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Kristoffer Selim, 2008.
-// Modified by Martin Alnes, 2008.
-// Modified by Garth N. Wells, 2008-2011.
-// Modified by Kent-Andre Mardal, 2009.
-// Modified by Ola Skavhaug, 2009.
-//
-// First added:  2008-09-11
-// Last changed: 2015-11-12
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <vector>
+#include "FunctionSpace.h"
+#include "GenericFunction.h"
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -32,8 +13,7 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
-#include "GenericFunction.h"
-#include "FunctionSpace.h"
+#include <vector>
 
 using namespace dolfin;
 
@@ -41,13 +21,13 @@ using namespace dolfin;
 FunctionSpace::FunctionSpace(std::shared_ptr<const Mesh> mesh,
                              std::shared_ptr<const FiniteElement> element,
                              std::shared_ptr<const GenericDofMap> dofmap)
-  : _mesh(mesh), _element(element), _dofmap(dofmap), _root_space_id(id())
+    : _mesh(mesh), _element(element), _dofmap(dofmap), _root_space_id(id())
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(std::shared_ptr<const Mesh> mesh)
-  : _mesh(mesh), _root_space_id(id())
+    : _mesh(mesh), _root_space_id(id())
 {
   // Do nothing
 }
@@ -67,15 +47,15 @@ void FunctionSpace::attach(std::shared_ptr<const FiniteElement> element,
                            std::shared_ptr<const GenericDofMap> dofmap)
 {
   _element = element;
-  _dofmap  = dofmap;
+  _dofmap = dofmap;
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
 {
   // Assign data (will be shared)
-  _mesh      = V._mesh;
-  _element   = V._element;
-  _dofmap    = V._dofmap;
+  _mesh = V._mesh;
+  _element = V._element;
+  _dofmap = V._dofmap;
   _component = V._component;
 
   // Call assignment operator for base class
@@ -87,9 +67,8 @@ const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
 bool FunctionSpace::operator==(const FunctionSpace& V) const
 {
   // Compare pointers to shared objects
-  return _element.get() == V._element.get() &&
-    _mesh.get() == V._mesh.get() &&
-    _dofmap.get() == V._dofmap.get();
+  return _element.get() == V._element.get() && _mesh.get() == V._mesh.get()
+         && _dofmap.get() == V._dofmap.get();
 }
 //-----------------------------------------------------------------------------
 bool FunctionSpace::operator!=(const FunctionSpace& V) const
@@ -98,10 +77,7 @@ bool FunctionSpace::operator!=(const FunctionSpace& V) const
   return !(*this == V);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const Mesh> FunctionSpace::mesh() const
-{
-  return _mesh;
-}
+std::shared_ptr<const Mesh> FunctionSpace::mesh() const { return _mesh; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FiniteElement> FunctionSpace::element() const
 {
@@ -146,7 +122,6 @@ void FunctionSpace::interpolate_from_any(PETScVector& expansion_coefficients,
                                      _dofmap->num_element_dofs(cell->index()),
                                      cell_dofs.data());
   }
-
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(PETScVector& expansion_coefficients,
@@ -159,10 +134,10 @@ void FunctionSpace::interpolate(PETScVector& expansion_coefficients,
   // Check that function ranks match
   if (_element->value_rank() != v.value_rank())
   {
-    dolfin_error("FunctionSpace.cpp",
-                 "interpolate function into function space",
-                 "Rank of function (%d) does not match rank of function space (%d)",
-                 v.value_rank(), element()->value_rank());
+    dolfin_error(
+        "FunctionSpace.cpp", "interpolate function into function space",
+        "Rank of function (%d) does not match rank of function space (%d)",
+        v.value_rank(), element()->value_rank());
   }
 
   // Check that function dims match
@@ -172,7 +147,8 @@ void FunctionSpace::interpolate(PETScVector& expansion_coefficients,
     {
       dolfin_error("FunctionSpace.cpp",
                    "interpolate function into function space",
-                   "Dimension %d of function (%d) does not match dimension %d of function space (%d)",
+                   "Dimension %d of function (%d) does not match dimension %d "
+                   "of function space (%d)",
                    i, v.value_dimension(i), i, element()->value_dimension(i));
     }
   }
@@ -211,7 +187,8 @@ FunctionSpace::sub(const std::vector<std::size_t>& component) const
   auto element = _element->extract_sub_element(component);
 
   // Extract sub dofmap
-  std::shared_ptr<GenericDofMap> dofmap(_dofmap->extract_sub_dofmap(component, *_mesh));
+  std::shared_ptr<GenericDofMap> dofmap(
+      _dofmap->extract_sub_dofmap(component, *_mesh));
 
   // Create new sub space
   auto new_sub_space = std::make_shared<FunctionSpace>(_mesh, element, dofmap);
@@ -220,13 +197,14 @@ FunctionSpace::sub(const std::vector<std::size_t>& component) const
   new_sub_space->_root_space_id = _root_space_id;
   auto& new_component = new_sub_space->_component;
   new_component.clear();
-  new_component.insert(new_component.end(), _component.begin(), _component.end());
+  new_component.insert(new_component.end(), _component.begin(),
+                       _component.end());
   new_component.insert(new_component.end(), component.begin(), component.end());
 
   // Insert new subspace into cache
-  _subspaces.insert(std::pair<std::vector<std::size_t>,
-                    std::shared_ptr<FunctionSpace>>(component,
-                                                    new_sub_space));
+  _subspaces.insert(
+      std::pair<std::vector<std::size_t>, std::shared_ptr<FunctionSpace>>(
+          component, new_sub_space));
 
   return new_sub_space;
 }
@@ -237,32 +215,28 @@ std::shared_ptr<FunctionSpace> FunctionSpace::collapse() const
   return collapse(collapsed_dofs);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<FunctionSpace>FunctionSpace::collapse(
-  std::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const
+std::shared_ptr<FunctionSpace> FunctionSpace::collapse(
+    std::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const
 {
   dolfin_assert(_mesh);
 
   if (_component.empty())
   {
-    dolfin_error("FunctionSpace.cpp",
-                 "collapse function space",
+    dolfin_error("FunctionSpace.cpp", "collapse function space",
                  "Function space is not a subspace");
   }
 
   // Create collapsed DofMap
-  std::shared_ptr<GenericDofMap>
-    collapsed_dofmap(_dofmap->collapse(collapsed_dofs, *_mesh));
+  std::shared_ptr<GenericDofMap> collapsed_dofmap(
+      _dofmap->collapse(collapsed_dofs, *_mesh));
 
   // Create new FunctionSpace and return
-  std::shared_ptr<FunctionSpace>
-    collapsed_sub_space(new FunctionSpace(_mesh, _element, collapsed_dofmap));
+  std::shared_ptr<FunctionSpace> collapsed_sub_space(
+      new FunctionSpace(_mesh, _element, collapsed_dofmap));
   return collapsed_sub_space;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> FunctionSpace::component() const
-{
-  return _component;
-}
+std::vector<std::size_t> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
 std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
 {
@@ -274,18 +248,19 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
 
   if (!_component.empty())
   {
-    dolfin_error("FunctionSpace.cpp",
-                 "tabulate_dof_coordinates",
-                 "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
+    dolfin_error(
+        "FunctionSpace.cpp", "tabulate_dof_coordinates",
+        "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
   }
 
   // Get local size
   dolfin_assert(_dofmap);
   std::size_t bs = _dofmap->block_size();
-  std::size_t local_size = bs*_dofmap->index_map()->size(IndexMap::MapSize::OWNED);
+  std::size_t local_size
+      = bs * _dofmap->index_map()->size(IndexMap::MapSize::OWNED);
 
   // Vector to hold coordinates and return
-  std::vector<double> x(gdim*local_size);
+  std::vector<double> x(gdim * local_size);
 
   // Loop over cells and tabulate dofs
   boost::multi_array<double, 2> coordinates;
@@ -305,13 +280,13 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
     {
       const dolfin::la_index_t dof = dofs[i];
-      if (dof < (dolfin::la_index_t) local_size)
+      if (dof < (dolfin::la_index_t)local_size)
       {
         const dolfin::la_index_t local_index = dof;
         for (std::size_t j = 0; j < gdim; ++j)
         {
-          dolfin_assert(gdim*local_index + j < x.size());
-          x[gdim*local_index + j] = coordinates[i][j];
+          dolfin_assert(gdim * local_index + j < x.size());
+          x[gdim * local_index + j] = coordinates[i][j];
         }
       }
     }
@@ -340,13 +315,13 @@ void FunctionSpace::set_x(PETScVector& x, double value,
 
     // Tabulate dof coordinates
     _element->tabulate_dof_coordinates(coordinates, coordinate_dofs, *cell);
-    dolfin_assert(coordinates.shape()[0] == (std::size_t) dofs.size());
+    dolfin_assert(coordinates.shape()[0] == (std::size_t)dofs.size());
     dolfin_assert(component < coordinates.shape()[1]);
 
     // Copy coordinate (it may be possible to avoid this)
     x_values.resize(dofs.size());
     for (std::size_t i = 0; i < coordinates.shape()[0]; ++i)
-      x_values[i] = value*coordinates[i][component];
+      x_values[i] = value * coordinates[i][component];
 
     // Set x[component] values in vector
     x.set_local(x_values.data(), dofs.size(), dofs.data());

@@ -1,31 +1,14 @@
 // Copyright (C) 2006 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Garth N. Wells, 2008.
-// Modified by Kristoffer Selim, 2008.
-//
-// First added:  2006-05-19
-// Last changed: 2010-04-29
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <sstream>
 #include <boost/functional/hash.hpp>
+#include <sstream>
 
-#include <dolfin/log/log.h>
 #include "MeshGeometry.h"
+#include <dolfin/log/log.h>
 
 using namespace dolfin;
 
@@ -45,7 +28,7 @@ MeshGeometry::~MeshGeometry()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
+const MeshGeometry& MeshGeometry::operator=(const MeshGeometry& geometry)
 {
   // Try init; may fail with non-matching _dim and _degree
   init(geometry._dim, geometry._degree);
@@ -59,7 +42,8 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
 //-----------------------------------------------------------------------------
 Point MeshGeometry::point(std::size_t n) const
 {
-  return Point(_dim, x(n));;
+  return Point(_dim, x(n));
+  ;
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::init(std::size_t dim, std::size_t degree)
@@ -67,22 +51,19 @@ void MeshGeometry::init(std::size_t dim, std::size_t degree)
   // Check input
   if (dim == 0)
   {
-    dolfin_error("MeshGeometry.cpp",
-                 "initialize mesh geometry",
+    dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
                  "Mesh geometry of dimension zero is not supported");
   }
   if (degree == 0)
   {
-    dolfin_error("MeshGeometry.cpp",
-                 "initialize mesh geometry",
+    dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
                  "Mesh geometry of degree zero is not supported");
   }
 
   // Avoid repeated initialization; would be a hell for UFL
   if (_dim > 0 && (_dim != dim || _degree != degree))
   {
-    dolfin_error("MeshGeometry.cpp",
-                 "initialize mesh geometry",
+    dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
                  "Mesh geometry cannot be reinitialized with different "
                  "dimension and/or degree");
   }
@@ -109,13 +90,12 @@ void MeshGeometry::init_entities(const std::vector<std::size_t>& num_entities)
       offset += num_entities[i];
     }
   }
-  coordinates.resize(_dim*offset);
+  coordinates.resize(_dim * offset);
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::set(std::size_t local_index,
-                       const double* x)
+void MeshGeometry::set(std::size_t local_index, const double* x)
 {
-  std::copy(x, x +_dim, coordinates.begin() + local_index*_dim);
+  std::copy(x, x + _dim, coordinates.begin() + local_index * _dim);
 }
 //-----------------------------------------------------------------------------
 std::size_t MeshGeometry::hash() const
@@ -143,8 +123,8 @@ std::string MeshGeometry::str(bool verbose) const
   }
   else
   {
-    s << "<MeshGeometry of dimension " << _dim << " and size "
-      << num_vertices() << ">";
+    s << "<MeshGeometry of dimension " << _dim << " and size " << num_vertices()
+      << ">";
   }
 
   return s.str();

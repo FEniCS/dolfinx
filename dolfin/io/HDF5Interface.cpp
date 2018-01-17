@@ -1,30 +1,14 @@
 // Copyright (C) 2012 Chris N. Richardson and Garth N. Wells
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Johannes Ring, 2012
-//
-// First Added: 2012-09-21
-// Last Changed: 2013-10-24
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "HDF5Interface.h"
+#include "HDF5File.h"
 #include <boost/filesystem.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
-#include "HDF5File.h"
-#include "HDF5Interface.h"
 
 #ifdef HAS_HDF5
 
@@ -35,8 +19,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
-                               const std::string mode,
-                               const bool use_mpi_io)
+                               const std::string mode, const bool use_mpi_io)
 {
   // Set parallel access with communicator
   const hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
@@ -44,17 +27,17 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
 #ifdef H5_HAVE_PARALLEL
   if (use_mpi_io)
   {
-    #ifdef HAS_MPI
+#ifdef HAS_MPI
     MPI_Info info;
     MPI_Info_create(&info);
     herr_t status = H5Pset_fapl_mpio(plist_id, mpi_comm, info);
     dolfin_assert(status != HDF5_FAIL);
     MPI_Info_free(&info);
-    #else
-    dolfin_error("HDF5Interface.cpp",
-                 "create HDF5 file",
-                 "Cannot use MPI-IO output if DOLFIN is not configured with MPI");
-    #endif
+#else
+    dolfin_error(
+        "HDF5Interface.cpp", "create HDF5 file",
+        "Cannot use MPI-IO output if DOLFIN is not configured with MPI");
+#endif
   }
 #endif
 
@@ -62,16 +45,14 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
   if (mode == "w")
   {
     // Create file for write, (overwriting existing file, if present)
-    file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT,
-                        plist_id);
+    file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
   }
   else
   {
     // Check that file exists
     if (!boost::filesystem::is_regular_file(filename))
     {
-      dolfin_error("HDF5Interface.cpp",
-                   "open HDF5 file",
+      dolfin_error("HDF5Interface.cpp", "open HDF5 file",
                    "File \"%s\" does not exist", filename.c_str());
     }
 
@@ -84,11 +65,9 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, plist_id);
     else
     {
-      dolfin_error("HDF5Interface.cpp",
-                   "open HDF5 file",
+      dolfin_error("HDF5Interface.cpp", "open HDF5 file",
                    "Unknown file mode \"%s\"", mode.c_str());
     }
-
   }
   dolfin_assert(file_id != HDF5_FAIL);
 
@@ -118,7 +97,7 @@ std::string HDF5Interface::get_filename(hid_t hdf5_file_handle)
   dolfin_assert(length > 0);
 
   // Allocate memory
-  std::vector<char> name(length +1);
+  std::vector<char> name(length + 1);
 
   // Retrive filename
   length = H5Fget_name(hdf5_file_handle, name.data(), length + 1);
@@ -127,16 +106,16 @@ std::string HDF5Interface::get_filename(hid_t hdf5_file_handle)
   return std::string(name.begin(), name.end());
 }
 //-----------------------------------------------------------------------------
-const std::string HDF5Interface::get_attribute_type(
-                  const hid_t hdf5_file_handle,
-                  const std::string dataset_path,
-                  const std::string attribute_name)
+const std::string
+HDF5Interface::get_attribute_type(const hid_t hdf5_file_handle,
+                                  const std::string dataset_path,
+                                  const std::string attribute_name)
 {
   herr_t status;
 
   // Open dataset or group by name
-  const hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_path.c_str(),
-                                H5P_DEFAULT);
+  const hid_t dset_id
+      = H5Oopen(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // Open attribute by name and get its type
@@ -196,8 +175,8 @@ void HDF5Interface::delete_attribute(const hid_t hdf5_file_handle,
   herr_t status;
 
   // Open dataset or group by name
-  const hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_path.c_str(),
-                                H5P_DEFAULT);
+  const hid_t dset_id
+      = H5Oopen(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // Delete attribute by name
@@ -212,7 +191,7 @@ void HDF5Interface::delete_attribute(const hid_t hdf5_file_handle,
 herr_t HDF5Interface::attribute_iteration_function(hid_t loc_id,
                                                    const char* name,
                                                    const H5A_info_t* info,
-                                                   void *str)
+                                                   void* str)
 {
   std::vector<std::string>* s = (std::vector<std::string>*)str;
   std::string attr_name(name);
@@ -225,15 +204,14 @@ HDF5Interface::list_attributes(const hid_t hdf5_file_handle,
                                const std::string dataset_path)
 {
   // Open dataset or group by name
-  const hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_path.c_str(),
-                                H5P_DEFAULT);
+  const hid_t dset_id
+      = H5Oopen(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
 
   hsize_t n = 0;
   std::vector<std::string> out_string;
   herr_t status = H5Aiterate2(dset_id, H5_INDEX_NAME, H5_ITER_INC, &n,
-                              attribute_iteration_function,
-                              (void *)&out_string);
+                              attribute_iteration_function, (void*)&out_string);
   dolfin_assert(status != HDF5_FAIL);
 
   // Close dataset or group
@@ -251,8 +229,8 @@ bool HDF5Interface::has_attribute(const hid_t hdf5_file_handle,
   htri_t has_attr;
 
   // Open dataset or group by name
-  const hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_path.c_str(),
-                                H5P_DEFAULT);
+  const hid_t dset_id
+      = H5Oopen(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // Check for attribute by name
@@ -273,7 +251,7 @@ bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
   hid_t lapl_id = H5Pcreate(H5P_LINK_ACCESS);
   htri_t link_status = H5Lexists(hdf5_file_handle, group_name.c_str(), lapl_id);
   dolfin_assert(link_status >= 0);
-  if(link_status==0)
+  if (link_status == 0)
   {
     // Close link access properties
     status = H5Pclose(lapl_id);
@@ -296,7 +274,8 @@ bool HDF5Interface::has_dataset(const hid_t hdf5_file_handle,
                                 const std::string dataset_path)
 {
   hid_t lapl_id = H5Pcreate(H5P_LINK_ACCESS);
-  htri_t link_status = H5Lexists(hdf5_file_handle, dataset_path.c_str(), lapl_id);
+  htri_t link_status
+      = H5Lexists(hdf5_file_handle, dataset_path.c_str(), lapl_id);
   dolfin_assert(link_status >= 0);
 
   // Close link access properties
@@ -343,8 +322,8 @@ int HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
                                 const std::string dataset_path)
 {
   // Open dataset
-  const hid_t dset_id = H5Dopen2(hdf5_file_handle, dataset_path.c_str(),
-                                 H5P_DEFAULT);
+  const hid_t dset_id
+      = H5Dopen2(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // Get the dataspace of the dataset
@@ -369,8 +348,8 @@ HDF5Interface::get_dataset_shape(const hid_t hdf5_file_handle,
                                  const std::string dataset_path)
 {
   // Open named dataset
-  const hid_t dset_id = H5Dopen2(hdf5_file_handle, dataset_path.c_str(),
-                                 H5P_DEFAULT);
+  const hid_t dset_id
+      = H5Dopen2(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // Get the dataspace of the dataset
@@ -446,9 +425,9 @@ void HDF5Interface::set_mpi_atomicity(const hid_t hdf5_file_handle,
 {
 #ifdef H5_HAVE_PARALLEL
   herr_t status = H5Fset_mpi_atomicity(hdf5_file_handle, atomic);
-  if (status == HDF5_FAIL) dolfin_error("HDF5Interface.cpp",
-                                        "set MPI atomicity flag",
-                                        "Setting the MPI atomicity flag failed");
+  if (status == HDF5_FAIL)
+    dolfin_error("HDF5Interface.cpp", "set MPI atomicity flag",
+                 "Setting the MPI atomicity flag failed");
 #endif
 }
 //-----------------------------------------------------------------------------
@@ -457,11 +436,11 @@ bool HDF5Interface::get_mpi_atomicity(const hid_t hdf5_file_handle)
   hbool_t atomic = false;
 #ifdef H5_HAVE_PARALLEL
   herr_t status = H5Fget_mpi_atomicity(hdf5_file_handle, &atomic);
-  if (status == HDF5_FAIL) dolfin_error("HDF5Interface.cpp",
-                                        "get MPI atomicity flag",
-                                        "Getting the MPI atomicity flag failed");
+  if (status == HDF5_FAIL)
+    dolfin_error("HDF5Interface.cpp", "get MPI atomicity flag",
+                 "Getting the MPI atomicity flag failed");
 #endif
-  return (bool) atomic;
+  return (bool)atomic;
 }
 //-----------------------------------------------------------------------------
 

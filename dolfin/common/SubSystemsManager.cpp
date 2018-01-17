@@ -1,24 +1,13 @@
 // Copyright (C) 2008-2017 Garth N. Wells, Anders Logg, Jan Blechta
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #ifdef HAS_MPI
 #define MPICH_IGNORE_CXX_SEEK 1
-#include <mpi.h>
 #include <iostream>
+#include <mpi.h>
 #endif
 
 #ifdef HAS_PETSC
@@ -31,10 +20,10 @@
 
 #include <boost/algorithm/string/trim.hpp>
 
+#include "SubSystemsManager.h"
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 #include <dolfin/parameter/GlobalParameters.h>
-#include "SubSystemsManager.h"
 
 using namespace dolfin;
 
@@ -49,20 +38,17 @@ SubSystemsManager& SubSystemsManager::singleton()
   return the_instance;
 }
 //-----------------------------------------------------------------------------
-SubSystemsManager::SubSystemsManager() : petsc_err_msg(""),
-  petsc_initialized(false), control_mpi(false)
+SubSystemsManager::SubSystemsManager()
+    : petsc_err_msg(""), petsc_initialized(false), control_mpi(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-SubSystemsManager::~SubSystemsManager()
-{
-  finalize();
-}
+SubSystemsManager::~SubSystemsManager() { finalize(); }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_mpi()
 {
-  #ifdef HAS_MPI
+#ifdef HAS_MPI
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
   if (mpi_initialized)
@@ -71,18 +57,18 @@ void SubSystemsManager::init_mpi()
   // Init MPI with highest level of thread support and take
   // responsibility
   std::string s("");
-  char* c = const_cast<char *>(s.c_str());
+  char* c = const_cast<char*>(s.c_str());
   SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE);
   singleton().control_mpi = true;
-  #else
-  // Do nothing
-  #endif
+#else
+// Do nothing
+#endif
 }
 //-----------------------------------------------------------------------------
 int SubSystemsManager::init_mpi(int argc, char* argv[],
                                 int required_thread_level)
 {
-  #ifdef HAS_MPI
+#ifdef HAS_MPI
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
   if (mpi_initialized)
@@ -94,30 +80,29 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
   singleton().control_mpi = true;
 
   return provided;
-  #else
+#else
   return -1;
-  #endif
+#endif
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc()
 {
-  #ifdef HAS_PETSC
+#ifdef HAS_PETSC
   // Dummy command-line arguments
   int argc = 0;
   char** argv = NULL;
 
   // Initialize PETSc
   init_petsc(argc, argv);
-  #else
-  dolfin_error("SubSystemsManager.cpp",
-               "initialize PETSc subsystem",
+#else
+  dolfin_error("SubSystemsManager.cpp", "initialize PETSc subsystem",
                "DOLFIN has not been configured with PETSc support");
-  #endif
+#endif
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc(int argc, char* argv[])
 {
-  #ifdef HAS_PETSC
+#ifdef HAS_PETSC
   if (singleton().petsc_initialized)
     return;
 
@@ -137,18 +122,19 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   if (!is_initialized)
     PetscInitialize(&argc, &argv, NULL, NULL);
 
-  #ifdef HAS_SLEPC
+#ifdef HAS_SLEPC
   SlepcInitialize(&argc, &argv, NULL, NULL);
-  #endif
+#endif
 
   // Avoid using default PETSc signal handler
-  //const bool use_petsc_signal_handler = parameters["use_petsc_signal_handler"];
-  //if (!use_petsc_signal_handler)
+  // const bool use_petsc_signal_handler =
+  // parameters["use_petsc_signal_handler"];
+  // if (!use_petsc_signal_handler)
   //  PetscPopSignalHandler();
 
   // Use our own error handler so we can pretty print errors from
   // PETSc
-  //PetscPushErrorHandler(PetscDolfinErrorHandler, nullptr);
+  // PetscPushErrorHandler(PetscDolfinErrorHandler, nullptr);
 
   // Remember that PETSc has been initialized
   singleton().petsc_initialized = true;
@@ -158,11 +144,10 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   if (mpi_initialized() && !mpi_init_status)
     singleton().control_mpi = false;
 
-  #else
-  dolfin_error("SubSystemsManager.cpp",
-               "initialize PETSc subsystem",
+#else
+  dolfin_error("SubSystemsManager.cpp", "initialize PETSc subsystem",
                "DOLFIN has not been configured with PETSc support");
-  #endif
+#endif
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize()
@@ -172,10 +157,7 @@ void SubSystemsManager::finalize()
   finalize_mpi();
 }
 //-----------------------------------------------------------------------------
-bool SubSystemsManager::responsible_mpi()
-{
-  return singleton().control_mpi;
-}
+bool SubSystemsManager::responsible_mpi() { return singleton().control_mpi; }
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::responsible_petsc()
 {
@@ -184,7 +166,7 @@ bool SubSystemsManager::responsible_petsc()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize_mpi()
 {
-  #ifdef HAS_MPI
+#ifdef HAS_MPI
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
 
@@ -200,23 +182,27 @@ void SubSystemsManager::finalize_mpi()
     else
     {
       // Use std::cout since log system may fail because MPI has been shut down.
-      std::cout << "DOLFIN is responsible for MPI, but it has been finalized elsewhere prematurely." << std::endl;
-      std::cout << "This is usually due to a bug in a 3rd party library, and can lead to unpredictable behaviour."
+      std::cout << "DOLFIN is responsible for MPI, but it has been finalized "
+                   "elsewhere prematurely."
                 << std::endl;
-      std::cout << "If using PyTrilinos, make sure that PyTrilinos modules are imported before the DOLFIN module."
+      std::cout << "This is usually due to a bug in a 3rd party library, and "
+                   "can lead to unpredictable behaviour."
+                << std::endl;
+      std::cout << "If using PyTrilinos, make sure that PyTrilinos modules are "
+                   "imported before the DOLFIN module."
                 << std::endl;
     }
 
     singleton().control_mpi = false;
   }
-  #else
-  // Do nothing
-  #endif
+#else
+// Do nothing
+#endif
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize_petsc()
 {
-  #ifdef HAS_PETSC
+#ifdef HAS_PETSC
   if (singleton().petsc_initialized)
   {
     if (!PetscFinalizeCalled)
@@ -225,47 +211,47 @@ void SubSystemsManager::finalize_petsc()
     }
     singleton().petsc_initialized = false;
 
-    #ifdef HAS_SLEPC
+#ifdef HAS_SLEPC
     SlepcFinalize();
-    #endif
+#endif
   }
-  #else
-  // Do nothing
-  #endif
+#else
+// Do nothing
+#endif
 }
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::mpi_initialized()
 {
-  // This function not affected if MPI_Finalize has been called. It
-  // returns true if MPI_Init has been called at any point, even if
-  // MPI_Finalize has been called.
+// This function not affected if MPI_Finalize has been called. It
+// returns true if MPI_Init has been called at any point, even if
+// MPI_Finalize has been called.
 
-  #ifdef HAS_MPI
+#ifdef HAS_MPI
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
   return mpi_initialized;
-  #else
+#else
   // DOLFIN is not configured for MPI (it might be through PETSc)
   return false;
-  #endif
+#endif
 }
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::mpi_finalized()
 {
-  #ifdef HAS_MPI
+#ifdef HAS_MPI
   int mpi_finalized;
   MPI_Finalized(&mpi_finalized);
   return mpi_finalized;
-  #else
+#else
   // DOLFIN is not configured for MPI (it might be through PETSc)
   return false;
-  #endif
+#endif
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_PETSC
 PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
-  MPI_Comm comm, int line, const char *fun, const char *file,
-  PetscErrorCode n, PetscErrorType p, const char *mess, void *ctx)
+    MPI_Comm comm, int line, const char* fun, const char* file,
+    PetscErrorCode n, PetscErrorType p, const char* mess, void* ctx)
 {
   // Store message for printing later (by PETScObject::petsc_error)
   // only if it's not empty message (passed by PETSc when repeating
@@ -280,9 +266,8 @@ PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
   PetscErrorMessage(n, &desc, nullptr);
 
   // Log detailed error info
-  log(TRACE,
-      "PetscDolfinErrorHandler: line '%d', function '%s', file '%s',\n"
-      "                       : error code '%d' (%s), message follows:",
+  log(TRACE, "PetscDolfinErrorHandler: line '%d', function '%s', file '%s',\n"
+             "                       : error code '%d' (%s), message follows:",
       line, fun, file, n, desc);
   // NOTE: don't put _mess as variadic argument; it might get trimmed
   log(TRACE, std::string(78, '-'));

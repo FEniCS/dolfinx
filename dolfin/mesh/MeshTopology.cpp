@@ -1,29 +1,15 @@
 // Copyright (C) 2006-2011 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2006-05-08
-// Last changed: 2014-07-02
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "MeshTopology.h"
+#include "MeshConnectivity.h"
+#include <dolfin/common/utils.h>
+#include <dolfin/log/log.h>
 #include <numeric>
 #include <sstream>
-#include <dolfin/log/log.h>
-#include <dolfin/common/utils.h>
-#include "MeshConnectivity.h"
-#include "MeshTopology.h"
 
 using namespace dolfin;
 
@@ -34,13 +20,13 @@ MeshTopology::MeshTopology() : Variable("topology", "mesh topology")
 }
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)
-  : Variable("topology", "mesh topology"),
-    _num_entities(topology._num_entities),
-    _ghost_offset_index(topology._ghost_offset_index),
-    _global_num_entities(topology._global_num_entities),
-    _global_indices(topology._global_indices),
-    _shared_entities(topology._shared_entities),
-    _connectivity(topology._connectivity)
+    : Variable("topology", "mesh topology"),
+      _num_entities(topology._num_entities),
+      _ghost_offset_index(topology._ghost_offset_index),
+      _global_num_entities(topology._global_num_entities),
+      _global_indices(topology._global_indices),
+      _shared_entities(topology._shared_entities),
+      _connectivity(topology._connectivity)
 {
   // Do nothing
 }
@@ -50,7 +36,7 @@ MeshTopology::~MeshTopology()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
+MeshTopology& MeshTopology::operator=(const MeshTopology& topology)
 {
   // FIXME: Call copy constructor?
 
@@ -65,12 +51,9 @@ MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
   return *this;
 }
 //-----------------------------------------------------------------------------
-std::uint32_t MeshTopology::dim() const
-{
-  return _num_entities.size() - 1;
-}
+std::uint32_t MeshTopology::dim() const { return _num_entities.size() - 1; }
 //-----------------------------------------------------------------------------
-std::uint32_t MeshTopology::size(unsigned int dim) const
+std::uint32_t MeshTopology::size(std::uint32_t dim) const
 {
   if (_num_entities.empty())
     return 0;
@@ -79,7 +62,7 @@ std::uint32_t MeshTopology::size(unsigned int dim) const
   return _num_entities[dim];
 }
 //-----------------------------------------------------------------------------
-std::uint64_t MeshTopology::size_global(unsigned int dim) const
+std::uint64_t MeshTopology::size_global(std::uint32_t dim) const
 {
   if (_global_num_entities.empty())
     return 0;
@@ -89,7 +72,7 @@ std::uint64_t MeshTopology::size_global(unsigned int dim) const
 }
 //-----------------------------------------------------------------------------
 /*
-std::uint32_t MeshTopology::ghost_offset(unsigned int dim) const
+std::uint32_t MeshTopology::ghost_offset(std::uint32_t dim) const
 {
   if (_ghost_offset_index.empty())
     return 0;
@@ -150,30 +133,26 @@ void MeshTopology::init_global_indices(std::size_t dim, std::int64_t size)
   _global_indices[dim] = std::vector<std::int64_t>(size, -1);
 }
 //-----------------------------------------------------------------------------
-std::map<std::int32_t, std::set<unsigned int>>&
-MeshTopology::shared_entities(unsigned int dim)
+std::map<std::int32_t, std::set<std::uint32_t>>&
+MeshTopology::shared_entities(std::uint32_t dim)
 {
   dolfin_assert(dim <= this->dim());
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
-const std::map<std::int32_t, std::set<unsigned int>>&
-MeshTopology::shared_entities(unsigned int dim) const
+const std::map<std::int32_t, std::set<std::uint32_t>>&
+MeshTopology::shared_entities(std::uint32_t dim) const
 {
   auto e = _shared_entities.find(dim);
   if (e == _shared_entities.end())
   {
-    dolfin_error("MeshTopology.cpp",
-                 "get shared mesh entities",
+    dolfin_error("MeshTopology.cpp", "get shared mesh entities",
                  "Shared mesh entities have not been computed for dim %d", dim);
   }
   return e->second;
 }
 //-----------------------------------------------------------------------------
-size_t MeshTopology::hash() const
-{
-  return (*this)(dim(), 0).hash();
-}
+size_t MeshTopology::hash() const { return (*this)(dim(), 0).hash(); }
 //-----------------------------------------------------------------------------
 std::string MeshTopology::str(bool verbose) const
 {

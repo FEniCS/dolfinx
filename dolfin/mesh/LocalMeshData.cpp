@@ -1,33 +1,17 @@
 // Copyright (C) 2008 Ola Skavhaug
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Anders Logg 2008-2011
-//
-// First added:  2008-11-28
-// Last changed: 2012-11-24
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <utility>
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/Timer.h>
-#include <dolfin/log/log.h>
+#include "LocalMeshData.h"
 #include "Cell.h"
 #include "Mesh.h"
 #include "Vertex.h"
-#include "LocalMeshData.h"
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
+#include <dolfin/log/log.h>
+#include <utility>
 
 using namespace dolfin;
 
@@ -60,9 +44,9 @@ void LocalMeshData::check() const
 {
   dolfin_assert(geometry.num_global_vertices != -1);
   dolfin_assert(topology.num_global_cells != -1);
-  dolfin_assert(topology.num_vertices_per_cell  != -1);
-  dolfin_assert(geometry.dim  != -1);
-  dolfin_assert(topology.dim  != -1);
+  dolfin_assert(topology.num_vertices_per_cell != -1);
+  dolfin_assert(geometry.dim != -1);
+  dolfin_assert(topology.dim != -1);
 }
 //-----------------------------------------------------------------------------
 std::string LocalMeshData::str(bool verbose) const
@@ -104,9 +88,8 @@ std::string LocalMeshData::str(bool verbose) const
   }
   else
   {
-    s << "<LocalMeshData with "
-      << geometry.vertex_coordinates.size() << " vertices (out of "
-      << geometry.num_global_vertices << ") and "
+    s << "<LocalMeshData with " << geometry.vertex_coordinates.size()
+      << " vertices (out of " << geometry.num_global_vertices << ") and "
       << topology.cell_vertices.shape()[0] << " cells (out of "
       << topology.num_global_cells << ")>";
   }
@@ -136,7 +119,8 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
   topology.cell_type = mesh.type().cell_type();
 
   // Get coordinates for all vertices stored on local processor
-  geometry.vertex_coordinates.resize(boost::extents[mesh.num_vertices()][geometry.dim]);
+  geometry.vertex_coordinates.resize(
+      boost::extents[mesh.num_vertices()][geometry.dim]);
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     const std::size_t index = vertex->index();
@@ -150,13 +134,15 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
     geometry.vertex_indices.push_back(vertex->index());
 
   // Get global vertex indices for all cells stored on local processor
-  topology.cell_vertices.resize(boost::extents[mesh.num_cells()][topology.num_vertices_per_cell]);
+  topology.cell_vertices.resize(
+      boost::extents[mesh.num_cells()][topology.num_vertices_per_cell]);
   topology.global_cell_indices.reserve(mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const std::size_t index = cell->index();
     topology.global_cell_indices.push_back(index);
-    std::copy(cell->entities(0), cell->entities(0) + topology.num_vertices_per_cell,
+    std::copy(cell->entities(0),
+              cell->entities(0) + topology.num_vertices_per_cell,
               topology.cell_vertices[index].begin());
   }
 }
@@ -184,12 +170,11 @@ void LocalMeshData::broadcast_mesh_data(const MPI_Comm mpi_comm)
     for (std::size_t p = 0; p < num_processes; p++)
     {
       const std::array<std::int64_t, 2> local_range
-        = MPI::local_range(mpi_comm, p, geometry.num_global_vertices);
+          = MPI::local_range(mpi_comm, p, geometry.num_global_vertices);
       log(TRACE, "Sending %d vertices to process %d, range is (%d, %d)",
-          local_range[1] - local_range[0], p, local_range[0],
-          local_range[1]);
+          local_range[1] - local_range[0], p, local_range[0], local_range[1]);
 
-      send_values[p].reserve(geometry.dim*(local_range[1] - local_range[0]));
+      send_values[p].reserve(geometry.dim * (local_range[1] - local_range[0]));
       for (std::int64_t i = local_range[0]; i < local_range[1]; i++)
       {
         send_values[p].insert(send_values[p].end(),
@@ -208,7 +193,7 @@ void LocalMeshData::broadcast_mesh_data(const MPI_Comm mpi_comm)
     for (std::size_t p = 0; p < num_processes; p++)
     {
       const std::array<std::int64_t, 2> local_range
-        = MPI::local_range(mpi_comm, p, geometry.num_global_vertices);
+          = MPI::local_range(mpi_comm, p, geometry.num_global_vertices);
       send_values[p].reserve(local_range[1] - local_range[0]);
       for (std::int64_t i = local_range[0]; i < local_range[1]; i++)
         send_values[p].push_back(geometry.vertex_indices[i]);
@@ -223,16 +208,17 @@ void LocalMeshData::broadcast_mesh_data(const MPI_Comm mpi_comm)
     for (std::size_t p = 0; p < num_processes; p++)
     {
       const std::array<std::int64_t, 2> local_range
-        = MPI::local_range(mpi_comm, p, topology.num_global_cells);
+          = MPI::local_range(mpi_comm, p, topology.num_global_cells);
       log(TRACE, "Sending %d cells to process %d, range is (%d, %d)",
           local_range[1] - local_range[0], p, local_range[0], local_range[1]);
       const std::size_t range = local_range[1] - local_range[0];
-      send_values[p].reserve(range*(topology.num_vertices_per_cell + 1));
+      send_values[p].reserve(range * (topology.num_vertices_per_cell + 1));
       for (std::int64_t i = local_range[0]; i < local_range[1]; i++)
       {
         send_values[p].push_back(topology.global_cell_indices[i]);
         send_values[p].insert(send_values[p].end(),
-                              topology.cell_vertices[i].begin(), topology.cell_vertices[i].end());
+                              topology.cell_vertices[i].begin(),
+                              topology.cell_vertices[i].end());
       }
     }
     std::vector<std::int64_t> values;
@@ -284,25 +270,25 @@ void LocalMeshData::receive_mesh_data(const MPI_Comm mpi_comm)
   }
 }
 //-----------------------------------------------------------------------------
-void
-LocalMeshData::Geometry::unpack_vertex_coordinates(const std::vector<double>& values)
+void LocalMeshData::Geometry::unpack_vertex_coordinates(
+    const std::vector<double>& values)
 {
   dolfin_assert(values.size() % dim == 0);
-  const std::size_t num_vertices = values.size()/dim;
+  const std::size_t num_vertices = values.size() / dim;
   vertex_coordinates.resize(boost::extents[num_vertices][dim]);
   for (std::size_t i = 0; i < num_vertices; i++)
   {
-    std::copy(values.begin() + i*dim, values.begin() + (i + 1)*dim,
+    std::copy(values.begin() + i * dim, values.begin() + (i + 1) * dim,
               vertex_coordinates[i].begin());
   }
 
   log(TRACE, "Received %d vertex coordinates", vertex_coordinates.size());
 }
 //-----------------------------------------------------------------------------
-void
-LocalMeshData::Topology::unpack_cell_vertices(const std::vector<std::int64_t>& values)
+void LocalMeshData::Topology::unpack_cell_vertices(
+    const std::vector<std::int64_t>& values)
 {
-  const std::size_t num_cells = values.size()/(num_vertices_per_cell + 1);
+  const std::size_t num_cells = values.size() / (num_vertices_per_cell + 1);
   dolfin_assert(values.size() % (num_vertices_per_cell + 1) == 0);
   cell_vertices.resize(boost::extents[num_cells][num_vertices_per_cell]);
   global_cell_indices.clear();
@@ -321,18 +307,21 @@ void LocalMeshData::reorder()
 {
   const int dim0 = topology.cell_vertices.shape()[0];
   const int dim1 = topology.cell_vertices.shape()[1];
-  dolfin_assert((int) topology.global_cell_indices.size() == dim0);
+  dolfin_assert((int)topology.global_cell_indices.size() == dim0);
 
   // Build a vector of first vertex index for each cell in vertex_indices
   std::vector<std::pair<std::int64_t, std::int32_t>> keys(dim0);
   for (int i = 0; i < dim0; ++i)
-    keys[i] = {*std::min_element(topology.cell_vertices[i].begin(), topology.cell_vertices[i].end()), i};
+    keys[i] = {*std::min_element(topology.cell_vertices[i].begin(),
+                                 topology.cell_vertices[i].end()),
+               i};
 
   // Sort
   std::sort(keys.begin(), keys.end());
 
   // Copy cell_vertices and cell local-to-global array
-  boost::multi_array<std::int64_t, 2> _cell_vertices(boost::extents[dim0][dim1]);
+  boost::multi_array<std::int64_t, 2> _cell_vertices(
+      boost::extents[dim0][dim1]);
   _cell_vertices = topology.cell_vertices;
   std::vector<std::int64_t> _global_cell_indices = topology.global_cell_indices;
 

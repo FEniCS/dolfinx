@@ -1,47 +1,30 @@
 // Copyright (C) 2007-2014 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Garth N. Wells, 2007-2010
-// Modified by Ola Skavhaug, 2007-2009
-// Modified by Kent-Andre Mardal, 2008
-// Modified by Johannes Ring, 2012
-// Modified by Martin Alnaes, 2014
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <array>
 #include <memory>
 #include <vector>
 
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/la/IndexMap.h>
-#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
+#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/log/log.h>
-#include <dolfin/common/MPI.h>
-#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
 
+#include "AssemblerBase.h"
 #include "FiniteElement.h"
 #include "Form.h"
 #include "GenericDofMap.h"
 #include "SparsityPatternBuilder.h"
-#include "AssemblerBase.h"
 
 using namespace dolfin;
 
@@ -51,8 +34,7 @@ void AssemblerBase::init_global_tensor(PETScVector& x, const Form& a)
   dolfin_assert(a.ufc_form());
   if (a.rank() != 1)
   {
-    dolfin_error("AssemblerBase.cpp",
-                 "intialise vector",
+    dolfin_error("AssemblerBase.cpp", "intialise vector",
                  "Form is not a linear form");
   }
 
@@ -66,11 +48,12 @@ void AssemblerBase::init_global_tensor(PETScVector& x, const Form& a)
 
     // FIXME: Do we need to sort out ghosts here
     // Build ghost
-    //std::vector<dolfin::la_index_t> ghosts;
+    // std::vector<dolfin::la_index_t> ghosts;
 
     // Build local-to-global index map
     int block_size = index_map->block_size();
-    std::vector<la_index_t> local_to_global(index_map->size(IndexMap::MapSize::ALL));
+    std::vector<la_index_t> local_to_global(
+        index_map->size(IndexMap::MapSize::ALL));
     for (std::size_t i = 0; i < local_to_global.size(); ++i)
       local_to_global[i] = index_map->local_to_global(i);
 
@@ -82,8 +65,7 @@ void AssemblerBase::init_global_tensor(PETScVector& x, const Form& a)
     // If tensor is not reset, check that dimensions are correct
     if (x.size() != dofmap->global_dimension())
     {
-      dolfin_error("AssemblerBase.cpp",
-                   "assemble form",
+      dolfin_error("AssemblerBase.cpp", "assemble form",
                    "Size of vector does not match form");
     }
   }
@@ -97,14 +79,14 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
   dolfin_assert(a.ufc_form());
   if (a.rank() != 2)
   {
-    dolfin_error("AssemblerBase.cpp",
-                 "intialise matrix",
+    dolfin_error("AssemblerBase.cpp", "intialise matrix",
                  "Form is not a bilinear form");
   }
 
   // Get dof maps
-  std::array<const GenericDofMap*, 2> dofmaps = {{a.function_space(0)->dofmap().get(),
-                                                 a.function_space(1)->dofmap().get()}};
+  std::array<const GenericDofMap*, 2> dofmaps
+      = {{a.function_space(0)->dofmap().get(),
+          a.function_space(1)->dofmap().get()}};
 
   // Get mesh
   dolfin_assert(a.mesh());
@@ -115,8 +97,8 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
     Timer t0("Build sparsity");
 
     // Get dimensions and mapping across processes for each dimension
-    std::array<std::shared_ptr<const IndexMap>, 2> index_maps = {{dofmaps[0]->index_map(),
-                                                                  dofmaps[1]->index_map()}};
+    std::array<std::shared_ptr<const IndexMap>, 2> index_maps
+        = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
 
     // Initialise tensor layout
     // FIXME: somewhere need to check block sizes are same on both axes
@@ -125,15 +107,13 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
     //            moreover the functions will tabulate directly using a
     //            correct int type
 
-    SparsityPattern pattern(A.mpi_comm(), 0) ;
+    SparsityPattern pattern(A.mpi_comm(), 0);
     pattern.init(index_maps, SparsityPattern::Ghosts::UNGHOSTED);
-    SparsityPatternBuilder::build(pattern,
-                                  mesh, dofmaps,
-                                  a.ufc_form()->has_cell_integrals(),
-                                  a.ufc_form()->has_interior_facet_integrals(),
-                                  a.ufc_form()->has_exterior_facet_integrals(),
-                                  a.ufc_form()->has_vertex_integrals(),
-                                  keep_diagonal);
+    SparsityPatternBuilder::build(
+        pattern, mesh, dofmaps, a.ufc_form()->has_cell_integrals(),
+        a.ufc_form()->has_interior_facet_integrals(),
+        a.ufc_form()->has_exterior_facet_integrals(),
+        a.ufc_form()->has_vertex_integrals(), keep_diagonal);
     t0.stop();
 
     // Initialize tensor
@@ -161,7 +141,7 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
       // Set zeros in dense rows in order of increasing column index
       const double block = 0.0;
       dolfin::la_index_t IJ[2];
-      for (std::size_t i: global_dofs)
+      for (std::size_t i : global_dofs)
       {
         const std::int64_t I = index_map_0.local_to_global_index(i);
         if (I >= row_range[0] && I < row_range[1])
@@ -180,8 +160,8 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
         A.apply("flush");
     }
 
-    // Insert zeros on the diagonal as diagonal entries may be
-    // prematurely optimised away by the linear algebra backend when
+    // Insert zeros on the diagonal as diagonal entries may be prematurely
+    // optimised away by the linear algebra backend when
     // calling PETScMatrix::apply, e.g. PETSc does this then errors
     // when matrices have no diagonal entry inserted.
     if (keep_diagonal)
@@ -211,8 +191,7 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
     {
       if (A.size(i) != dofmaps[i]->global_dimension())
       {
-        dolfin_error("AssemblerBase.cpp",
-                     "assemble form",
+        dolfin_error("AssemblerBase.cpp", "assemble form",
                      "Dim %d of tensor does not match form", i);
       }
     }
@@ -232,8 +211,8 @@ void AssemblerBase::check(const Form& a)
   // Extract mesh and coefficients
   dolfin_assert(a.mesh());
   const Mesh& mesh = *(a.mesh());
-  const std::vector<std::shared_ptr<const GenericFunction>>
-    coefficients = a.coefficients();
+  const std::vector<std::shared_ptr<const GenericFunction>> coefficients
+      = a.coefficients();
 
   // Check ghost mode for interior facet integrals in parallel
   if (a.ufc_form()->has_interior_facet_integrals()
@@ -242,8 +221,7 @@ void AssemblerBase::check(const Form& a)
     std::string ghost_mode = mesh.ghost_mode();
     if (!(ghost_mode == "shared_vertex" || ghost_mode == "shared_facet"))
     {
-      dolfin_error("AssemblerBase.cpp",
-                   "assemble form",
+      dolfin_error("AssemblerBase.cpp", "assemble form",
                    "Incorrect mesh ghost mode \"%s\" (expected "
                    "\"shared_vertex\" or \"shared_facet\" for "
                    "interior facet integrals in parallel)",
@@ -254,8 +232,7 @@ void AssemblerBase::check(const Form& a)
   // Check that we get the correct number of coefficients
   if (coefficients.size() != a.num_coefficients())
   {
-    dolfin_error("AssemblerBase.cpp",
-                 "assemble form",
+    dolfin_error("AssemblerBase.cpp", "assemble form",
                  "Incorrect number of coefficients (got %d but expecting %d)",
                  coefficients.size(), a.num_coefficients());
   }
@@ -265,15 +242,14 @@ void AssemblerBase::check(const Form& a)
   {
     if (!coefficients[i])
     {
-      dolfin_error("AssemblerBase.cpp",
-                   "assemble form",
-                   "Coefficient number %d (\"%s\") has not been set",
-                   i, a.coefficient_name(i).c_str());
+      dolfin_error("AssemblerBase.cpp", "assemble form",
+                   "Coefficient number %d (\"%s\") has not been set", i,
+                   a.coefficient_name(i).c_str());
     }
 
     // unique_ptr deletes its object when it exits its scope
-    std::unique_ptr<ufc::finite_element>
-      fe(a.ufc_form()->create_finite_element(i + a.rank()));
+    std::unique_ptr<ufc::finite_element> fe(
+        a.ufc_form()->create_finite_element(i + a.rank()));
 
     // Checks out-commented since they only work for Functions, not
     // Expressions
@@ -281,10 +257,11 @@ void AssemblerBase::check(const Form& a)
     const std::size_t fe_r = fe->value_rank();
     if (fe_r != r)
     {
-      dolfin_error("AssemblerBase.cpp",
-                   "assemble form",
-                   "Invalid value rank for coefficient %d (got %d but expecting %d). \
-You might have forgotten to specify the value rank correctly in an Expression subclass", i, r, fe_r);
+      dolfin_error(
+          "AssemblerBase.cpp", "assemble form",
+          "Invalid value rank for coefficient %d (got %d but expecting %d). \
+You might have forgotten to specify the value rank correctly in an Expression subclass",
+          i, r, fe_r);
     }
 
     for (std::size_t j = 0; j < r; ++j)
@@ -293,47 +270,47 @@ You might have forgotten to specify the value rank correctly in an Expression su
       const std::size_t fe_dim = fe->value_dimension(j);
       if (dim != fe_dim)
       {
-        dolfin_error("AssemblerBase.cpp",
-                     "assemble form",
-                     "Invalid value dimension %d for coefficient %d (got %d but expecting %d). \
-You might have forgotten to specify the value dimension correctly in an Expression subclass", j, i, dim, fe_dim);
+        dolfin_error(
+            "AssemblerBase.cpp", "assemble form",
+            "Invalid value dimension %d for coefficient %d (got %d but expecting %d). \
+You might have forgotten to specify the value dimension correctly in an Expression subclass",
+            j, i, dim, fe_dim);
       }
     }
   }
 
   // Check that the coordinate cell matches the mesh
-  std::unique_ptr<ufc::finite_element>
-    coordinate_element(a.ufc_form()->create_coordinate_finite_element());
+  std::unique_ptr<ufc::finite_element> coordinate_element(
+      a.ufc_form()->create_coordinate_finite_element());
   dolfin_assert(coordinate_element);
   dolfin_assert(coordinate_element->value_rank() == 1);
   if (coordinate_element->value_dimension(0) != mesh.geometry().dim())
   {
-    dolfin_error("AssemblerBase.cpp",
-                 "assemble form",
-                 "Geometric dimension of Mesh does not match value shape of coordinate element in form");
+    dolfin_error("AssemblerBase.cpp", "assemble form",
+                 "Geometric dimension of Mesh does not match value shape of "
+                 "coordinate element in form");
   }
 
   // Check that the coordinate element degree matches the mesh degree
   if (coordinate_element->degree() != mesh.geometry().degree())
   {
-    dolfin_error("AssemblerBase.cpp",
-                 "assemble form",
-                 "Mesh geometry degree does not match degree of coordinate element in form");
+    dolfin_error("AssemblerBase.cpp", "assemble form",
+                 "Mesh geometry degree does not match degree of coordinate "
+                 "element in form");
   }
 
   std::map<CellType::Type, ufc::shape> dolfin_to_ufc_shapes
-    = { {CellType::Type::interval, ufc::shape::interval},
-        {CellType::Type::triangle, ufc::shape::triangle},
-        {CellType::Type::tetrahedron, ufc::shape::tetrahedron},
-        {CellType::Type::quadrilateral, ufc::shape::quadrilateral},
-        {CellType::Type::hexahedron, ufc::shape::hexahedron} };
+      = {{CellType::Type::interval, ufc::shape::interval},
+         {CellType::Type::triangle, ufc::shape::triangle},
+         {CellType::Type::tetrahedron, ufc::shape::tetrahedron},
+         {CellType::Type::quadrilateral, ufc::shape::quadrilateral},
+         {CellType::Type::hexahedron, ufc::shape::hexahedron}};
 
   auto cell_type_pair = dolfin_to_ufc_shapes.find(mesh.type().cell_type());
   dolfin_assert(cell_type_pair != dolfin_to_ufc_shapes.end());
   if (coordinate_element->cell_shape() != cell_type_pair->second)
   {
-    dolfin_error("AssemblerBase.cpp",
-                 "assemble form",
+    dolfin_error("AssemblerBase.cpp", "assemble form",
                  "Mesh cell type does not match cell type of UFC form");
   }
 }

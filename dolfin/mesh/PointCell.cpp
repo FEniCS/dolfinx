@@ -1,43 +1,22 @@
 // Copyright (C) 2007-2008 Kristian B. Oelgaard
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Anders Logg 2008-2014
-// Modified by Kristoffer Sleim 2008
-// Modified by August Johansson 2014
-//
-// First added:  2007-12-12
-// Last changed: 2016-05-05
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfin/log/log.h>
-#include <dolfin/geometry/CollisionPredicates.h>
+#include "PointCell.h"
 #include "Cell.h"
 #include "Facet.h"
 #include "MeshEditor.h"
 #include "MeshEntity.h"
 #include "Vertex.h"
-#include "PointCell.h"
+#include <dolfin/geometry/CollisionPredicates.h>
+#include <dolfin/log/log.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::size_t PointCell::dim() const
-{
-  return 0;
-}
+std::size_t PointCell::dim() const { return 0; }
 //-----------------------------------------------------------------------------
 std::size_t PointCell::num_entities(std::size_t dim) const
 {
@@ -69,19 +48,16 @@ std::size_t PointCell::num_vertices(std::size_t dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void PointCell::create_entities(boost::multi_array<unsigned int, 2>& e,
-                                std::size_t dim,
-                                const unsigned int* v) const
+void PointCell::create_entities(boost::multi_array<std::uint32_t, 2>& e,
+                                std::size_t dim, const std::uint32_t* v) const
 {
-  dolfin_error("PointCell.cpp",
-               "create entities",
+  dolfin_error("PointCell.cpp", "create entities",
                "Entities on a point cell are not defined");
 }
 //-----------------------------------------------------------------------------
 double PointCell::volume(const MeshEntity& triangle) const
 {
-  dolfin_error("PointCell.cpp",
-               "compute volume of cell",
+  dolfin_error("PointCell.cpp", "compute volume of cell",
                "Volume of a point cell is not defined");
   return 0.0;
 }
@@ -89,8 +65,7 @@ double PointCell::volume(const MeshEntity& triangle) const
 
 double PointCell::circumradius(const MeshEntity& point) const
 {
-  dolfin_error("PointCell.cpp",
-               "find circumradious of cell",
+  dolfin_error("PointCell.cpp", "find circumradious of cell",
                "Circumradius of a point cell is not defined");
   return 0.0;
 }
@@ -104,16 +79,14 @@ double PointCell::squared_distance(const Cell& cell, const Point& point) const
 double PointCell::normal(const Cell& cell, std::size_t facet,
                          std::size_t i) const
 {
-  dolfin_error("PointCell.cpp",
-               "find component of normal vector of cell",
+  dolfin_error("PointCell.cpp", "find component of normal vector of cell",
                "Component %d of normal of a point cell is not defined", i);
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 Point PointCell::normal(const Cell& cell, std::size_t facet) const
 {
-  dolfin_error("PointCell.cpp",
-               "find normal vector of cell",
+  dolfin_error("PointCell.cpp", "find normal vector of cell",
                "Normal vector of a point cell is not defined");
   Point p;
   return p;
@@ -121,8 +94,7 @@ Point PointCell::normal(const Cell& cell, std::size_t facet) const
 //-----------------------------------------------------------------------------
 Point PointCell::cell_normal(const Cell& cell) const
 {
-  dolfin_error("PointCell.cpp",
-               "compute cell normal",
+  dolfin_error("PointCell.cpp", "compute cell normal",
                "Normal vector of a point cell is not defined");
   Point p;
   return p;
@@ -130,18 +102,16 @@ Point PointCell::cell_normal(const Cell& cell) const
 //-----------------------------------------------------------------------------
 double PointCell::facet_area(const Cell& cell, std::size_t facet) const
 {
-  dolfin_error("PointCell.cpp",
-               "find facet area of cell",
+  dolfin_error("PointCell.cpp", "find facet area of cell",
                "Facet area of a point cell is not defined");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 void PointCell::order(
-  Cell& cell,
-  const std::vector<std::int64_t>& local_to_global_vertex_indices) const
+    Cell& cell,
+    const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
-  dolfin_error("PointCell.cpp",
-               "order cell",
+  dolfin_error("PointCell.cpp", "order cell",
                "Ordering of a point cell is not defined");
 }
 //-----------------------------------------------------------------------------
@@ -164,8 +134,7 @@ std::string PointCell::description(bool plural) const
 //-----------------------------------------------------------------------------
 std::size_t PointCell::find_edge(std::size_t i, const Cell& cell) const
 {
-  dolfin_error("PointCell.cpp",
-               "find edge",
+  dolfin_error("PointCell.cpp", "find edge",
                "Edges are not defined for a point cell");
   return 0;
 }

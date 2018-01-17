@@ -1,29 +1,15 @@
 // Copyright (C) 2007-2012 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// First added:  2007-01-30
-// Last changed: 2012-06-25
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <vector>
-#include <memory>
-#include <dolfin/log/log.h>
+#include "MeshOrdering.h"
 #include "Cell.h"
 #include "Mesh.h"
-#include "MeshOrdering.h"
+#include <dolfin/log/log.h>
+#include <memory>
+#include <vector>
 
 using namespace dolfin;
 
@@ -39,7 +25,7 @@ void MeshOrdering::order(Mesh& mesh)
   // Get global vertex numbering
   dolfin_assert(mesh.topology().have_global_indices(0));
   const auto& local_to_global_vertex_indices
-    = mesh.topology().global_indices(0);
+      = mesh.topology().global_indices(0);
 
   // Skip ordering for dimension 0
   if (mesh.topology().dim() == 0)
@@ -59,7 +45,7 @@ bool MeshOrdering::ordered(const Mesh& mesh)
   // Get global vertex numbering
   dolfin_assert(mesh.topology().have_global_indices(0));
   const auto& local_to_global_vertex_indices
-    = mesh.topology().global_indices(0);
+      = mesh.topology().global_indices(0);
 
   // Check if all cells are ordered
   for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)

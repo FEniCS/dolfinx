@@ -46,7 +46,7 @@ def test_2DEdgeLength(square):
     """Iterate over edges and sum length."""
     length = 0.0
     square.init(1)
-    print (square.num_edges())
+    print(square.num_entities(1))
     for e in Edges(square):
         length += e.length()
     assert round(length - 19.07106781186544708362, 7) == 0
@@ -66,5 +66,5 @@ def test_EdgeDot(meshes):
     """Iterate over edges compute dot product with ."""
     meshes.init(1)
     for e in Edges(meshes):
-        dot = e.dot(e)/(e.length()**2)
+        dot = e.dot(e) / (e.length()**2)
         assert round(dot - 1.0, 7) == 0

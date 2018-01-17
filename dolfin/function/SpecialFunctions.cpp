@@ -1,37 +1,19 @@
 // Copyright (C) 2006-2011 Anders Logg
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Kristian B. Oelgaard, 2007, 2008.
-// Modified by Martin Sandve Alnes, 2008.
-// Modified by Garth N. Wells, 2008, 2009.
-//
-// First added:  2008-07-17
-// Last changed: 2011-11-16
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfin/log/log.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/Cell.h>
 #include "SpecialFunctions.h"
+#include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshCoordinates::MeshCoordinates(std::shared_ptr<const Mesh> mesh)
-  : Expression({mesh->geometry().dim()}), _mesh(mesh)
+    : Expression({mesh->geometry().dim()}), _mesh(mesh)
 {
   // Do nothing
 }
@@ -49,9 +31,9 @@ void MeshCoordinates::eval(Eigen::Ref<Eigen::VectorXd> values,
 }
 //-----------------------------------------------------------------------------
 FacetArea::FacetArea(std::shared_ptr<const Mesh> mesh)
-  : Expression({}), _mesh(mesh),
-    not_on_boundary("*** Warning: evaluating special function FacetArea on a "
-                    "non-facet domain, returning zero.")
+    : Expression({}), _mesh(mesh),
+      not_on_boundary("*** Warning: evaluating special function FacetArea on a "
+                      "non-facet domain, returning zero.")
 {
   // Do nothing
 }

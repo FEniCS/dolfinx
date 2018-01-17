@@ -1,25 +1,8 @@
 // Copyright (C) 2009-2011 Johan Hake
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
-// Modified by Anders Logg 2011, 2014
-// Modified by Garth N. Wells 2013
-//
-// First added:  2011-10-15
-// Last changed: 2014-08-11
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #ifdef HAS_PETSC
 #include <petscversion.h>
@@ -29,29 +12,20 @@
 #include <hdf5.h>
 #endif
 
-#include "types.h"
 #include "defines.h"
+#include "types.h"
 
 //-------------------------------------------------------------------------
-std::string dolfin::dolfin_version()
-{
-  return std::string(DOLFIN_VERSION);
-}
+std::string dolfin::dolfin_version() { return std::string(DOLFIN_VERSION); }
 //-------------------------------------------------------------------------
-std::string dolfin::ufc_signature()
-{
-  return std::string(UFC_SIGNATURE);
-}
+std::string dolfin::ufc_signature() { return std::string(UFC_SIGNATURE); }
 //-------------------------------------------------------------------------
 std::string dolfin::git_commit_hash()
 {
   return std::string(DOLFIN_GIT_COMMIT_HASH);
 }
 //-------------------------------------------------------------------------
-std::size_t dolfin::sizeof_la_index_t()
-{
-  return sizeof(dolfin::la_index_t);
-}
+std::size_t dolfin::sizeof_la_index_t() { return sizeof(dolfin::la_index_t); }
 //-------------------------------------------------------------------------
 bool dolfin::has_debug()
 {
