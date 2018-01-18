@@ -124,7 +124,20 @@ void Expression::restrict(double* w, const FiniteElement& element,
   for (unsigned int i = 0; i != ndofs; ++i)
   {
     eval(eval_values.row(i), eval_points.row(i), ufc_cell);
+    for (unsigned int j = 0; j != gdim; ++j)
+      std::cout << eval_points(i, j) << ", " ;
+    for (unsigned int j = 0; j != vs; ++j)
+      std::cout << eval_values(i, j) << " ";
+    std::cout <<" \n";
   }
+
+  std::cout << "data = ";
+  for (unsigned int i = 0; i != sd; ++i)
+    std::cout << eval_values.data()[i] << " ";
+  std::cout <<" \n";
+
+  // Transpose for vector values
+  eval_values.transposeInPlace();
 
   // Copy for affine mapping - need to add Piola transform for other elements
   std::copy(eval_values.data(), eval_values.data() + sd, w);
