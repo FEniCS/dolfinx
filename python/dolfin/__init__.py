@@ -93,7 +93,6 @@ from .common.plotting import plot
 from .fem.assembling import (assemble_system,
                              SystemAssembler, assemble_local)
 from .fem.form import Form
-from .fem.norms import norm, errornorm
 from .fem.dirichletbc import DirichletBC, AutoSubDomain
 from .fem.interpolation import interpolate
 from .fem.projection import project

@@ -10,6 +10,8 @@ from dolfin.cpp.geometry import Point
 from dolfin.cpp.mesh import CellType
 
 
+# FIXME: Remove, and use 'create' method
+
 def UnitIntervalMesh(comm, nx):
     return IntervalMesh.create(comm, nx, [0.0, 1.0])
 

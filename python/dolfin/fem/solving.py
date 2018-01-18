@@ -20,9 +20,7 @@ import dolfin.fem.formmanipulations as formmanipulations
 from dolfin.fem.formmanipulations import derivative
 import dolfin.la.solver
 
-__all__ = ["LinearVariationalProblem",
-           "LinearVariationalSolver",
-           "NonlinearVariationalProblem",
+__all__ = ["NonlinearVariationalProblem",
            "NonlinearVariationalSolver",
            "solve"]
 
@@ -33,37 +31,6 @@ __all__ = ["LinearVariationalProblem",
 
 # Problem classes need special handling since they involve JIT
 # compilation
-
-
-#class LocalSolver(cpp.fem.LocalSolver):
-#
-#    def __init__(self, a, L=None, solver_type=cpp.fem.LocalSolver.SolverType.LU):
-#        """Create a local (cell-wise) solver for a linear variational problem
-#        a(u, v) = L(v).
-#
-#        """
-#
-#        # Store input UFL forms and solution Function
-#        self.a_ufl = a
-#        self.L_ufl = L
-#
-#        # Wrap as DOLFIN forms
-#        a = Form(a)
-#        if L is None:
-#            # Initialize C++ base class
-#            cpp.fem.LocalSolver.__init__(self, a, solver_type)
-#        else:
-#            if L.empty():
-#                L = cpp.fem.Form(1, 0)
-#            else:
-#                L = Form(L)
-#
-#            # Initialize C++ base class
-#            cpp.fem.LocalSolver.__init__(self, a, L, solver_type)
-
-# FIXME: The import here are here to avoid a circular dependency
-# (ugly, should fix)
-# Solver classes are imported directly
 
 
 # Solve function handles both linear systems and variational problems
@@ -238,14 +205,6 @@ def _solve_varproblem(*args, **kwargs):
 
         solver.solve(u.vector(), b)
 
-        # Create problem
-#        problem = LinearVariationalProblem(eq.lhs, eq.rhs, u, bcs,
-#                                           form_compiler_parameters=form_compiler_parameters)
-        # Create solver and call solve
-#        solver = LinearVariationalSolver(problem)
-#        solver.parameters.update(solver_parameters)
-#        solver.solve()
-
     # Solve nonlinear variational problem
     else:
 
@@ -264,51 +223,6 @@ def _solve_varproblem(*args, **kwargs):
         solver = NonlinearVariationalSolver(problem)
         solver.parameters.update(solver_parameters)
         solver.solve()
-
-
-def _solve_varproblem_adaptive(*args, **kwargs):
-    "Solve variational problem a == L or F == 0 adaptively"
-
-    # Extract arguments
-    eq, u, bcs, J, tol, M, form_compiler_parameters, \
-        solver_parameters = _extract_args(*args, **kwargs)
-
-    print('eq.lhs = ', eq.lhs, ' eq.rhs=', eq.rhs)
-
-    # Check that we received the goal functional
-    if M is None:
-        raise RuntimeError("Cannot solve variational problem adaptively. Missing goal functional")
-
-    # Solve linear variational problem
-    if isinstance(eq.lhs, ufl.Form) and isinstance(eq.rhs, ufl.Form):
-
-        # Create problem
-        problem = LinearVariationalProblem(eq.lhs, eq.rhs, u, bcs,
-                                           form_compiler_parameters=form_compiler_parameters)
-
-        # Create solver and call solve
-        solver = AdaptiveLinearVariationalSolver(problem, M)
-        solver.parameters.update(solver_parameters)
-        solver.solve(tol)
-
-    # Solve nonlinear variational problem
-    else:
-
-        # Create Jacobian if missing
-        if J is None:
-            cpp.log.info("No Jacobian form specified for nonlinear variational problem.")
-            cpp.log.info("Differentiating residual form F to obtain Jacobian J = F'.")
-            F = eq.lhs
-            J = derivative(F, u)
-
-        # Create problem
-        problem = NonlinearVariationalProblem(eq.lhs, u, bcs, J,
-                                              form_compiler_parameters=form_compiler_parameters)
-
-        # Create solver and call solve
-        solver = AdaptiveNonlinearVariationalSolver(problem, M)
-        solver.parameters.update(solver_parameters)
-        solver.solve(tol)
 
 
 def _extract_args(*args, **kwargs):
