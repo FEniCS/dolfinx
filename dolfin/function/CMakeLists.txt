@@ -7,7 +7,6 @@ set(HEADERS
   Function.h
   FunctionSpace.h
   GenericFunction.h
-  SpecialFacetFunction.h
   SpecialFunctions.h
   PARENT_SCOPE)
 
@@ -19,6 +18,5 @@ set(SOURCES
   Function.cpp
   FunctionSpace.cpp
   GenericFunction.cpp
-  SpecialFacetFunction.cpp
   SpecialFunctions.cpp
   PARENT_SCOPE)
