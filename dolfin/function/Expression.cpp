@@ -152,7 +152,10 @@ void Expression::restrict(double* w, const FiniteElement& element,
     Eigen::Map<const Eigen::Matrix<double, 3, 2>> _coordinate_dofs(coordinate_dofs);
     compute_JK_triangle_2d(J, K, det, _coordinate_dofs);
 
-    std::cout << "K = " << K << "\n";
+    std::cout << "K = \n" << K << "\n";
+
+    std::cout << "K*values = \n" << K*eval_values*det << "\n";
+
 
   };
 
