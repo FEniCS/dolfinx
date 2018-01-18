@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Expression.h"
+#include "Transform.h"
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -107,6 +108,8 @@ void Expression::restrict(double* w, const FiniteElement& element,
   const std::size_t sd = element.space_dimension();
   const std::size_t gdim = element.geometric_dimension();
 
+  std::cout << family << " " << vs << " " << sd << " " << gdim << "\n";
+
   std::size_t ndofs = sd;
   if (family == "Lagrange")
     ndofs /= vs;
@@ -142,7 +145,19 @@ void Expression::restrict(double* w, const FiniteElement& element,
   // Copy for affine mapping - need to add Piola transform for other elements
   std::copy(eval_values.data(), eval_values.data() + sd, w);
 
-  // FIXME: add transforms here
+  if (family == "Raviart-Thomas")
+  {
+    Eigen::Matrix2d J, K;
+    double det;
+    Eigen::Map<const Eigen::Matrix<double, 3, 2>> _coordinate_dofs(coordinate_dofs);
+    compute_JK_triangle_2d(J, K, det, _coordinate_dofs);
+
+    std::cout << "K = " << K << "\n";
+
+  };
+
+
+  // FIXME: add transforms here - maybe do in generated code?
 }
 //-----------------------------------------------------------------------------
 void Expression::compute_vertex_values(std::vector<double>& vertex_values,
