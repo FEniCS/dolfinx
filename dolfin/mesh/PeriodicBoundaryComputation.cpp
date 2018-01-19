@@ -8,7 +8,7 @@
 #include "DistributedMeshTools.h"
 #include "Facet.h"
 #include "Mesh.h"
-#include "MeshEntityIterator.h"
+#include "MeshIterator.h"
 #include "SubDomain.h"
 #include <dolfin/log/log.h>
 #include <limits>
@@ -91,22 +91,22 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
   mesh.init(dim);
 
   std::vector<bool> visited(mesh.num_entities(dim), false);
-  for (FacetIterator f(mesh); !f.end(); ++f)
+  for (auto &f : Facets(mesh))
   {
     // Consider boundary entities only
-    const bool global_exterior_facet = (f->num_global_entities(tdim) == 1);
+    const bool global_exterior_facet = (f.num_global_entities(tdim) == 1);
     if (global_exterior_facet)
     {
-      for (MeshEntityIterator e(*f, dim); !e.end(); ++e)
+      for (auto &e : MeshEntityRange(f, dim))
       {
         // Avoid visiting entities more than once
-        if (visited[e->index()])
+        if (visited[e.index()])
           continue;
         else
-          visited[e->index()] = true;
+          visited[e.index()] = true;
 
         // Copy entity coordinate
-        const Point midpoint = e->midpoint();
+        const Point midpoint = e.midpoint();
         std::copy(midpoint.coordinates(), midpoint.coordinates() + gdim,
                   x.begin());
 
@@ -127,7 +127,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           }
 
           // Insert (midpoint coordinates, local index) into map
-          master_coord_to_entity_index.insert({x, e->index()});
+          master_coord_to_entity_index.insert({x, e.index()});
         }
         else
         {
@@ -155,7 +155,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           if (sub_domain.inside(_y, true))
           {
             // Store slave local index and midpoint coordinates
-            slave_entities.push_back(e->index());
+            slave_entities.push_back(e.index());
             slave_mapped_coords.push_back(y);
           }
         }

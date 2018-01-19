@@ -151,10 +151,10 @@ private:
 // Class represening a collection of entities of given dimension
 /// over a mesh. Provides  with begin() and end() methods for
 /// iterating over entities incident to a Mesh
-class MeshEntityRange
+class MeshEntities
 {
 public:
-  MeshEntityRange(const Mesh& mesh, int dim) : _mesh(mesh), _dim(dim) {}
+  MeshEntities(const Mesh& mesh, int dim) : _mesh(mesh), _dim(dim) {}
 
   const MeshIterator<MeshEntity> begin() const
   {
@@ -224,10 +224,10 @@ private:
 
 /// Class with begin() and end() methods for iterating over
 /// entities incident to a MeshEntity
-class EntityRange
+class MeshEntityRange
 {
 public:
-  EntityRange(const MeshEntity& e, int dim) : _entity(e), _dim(dim) {}
+  MeshEntityRange(const MeshEntity& e, int dim) : _entity(e), _dim(dim) {}
 
   const MeshEntityIteratorNew<MeshEntity> begin() const
   {
