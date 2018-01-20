@@ -147,23 +147,6 @@ private:
   const std::uint32_t* _connections;
 };
 
-
-class Cell;
-class Edge;
-class Face;
-class Facet;
-class Vertex;
-template <class T>
-class MeshRange;
-
-/// Convenience typedefs for tange of incident entities (of type T)
-/// over a MeshEntity
-typedef MeshRange<Cell> MeshCellRange;
-typedef MeshRange<Edge> MeshEdgeRange;
-typedef MeshRange<Face> MeshFaceRange;
-typedef MeshRange<Facet> MeshFacetRange;
-typedef MeshRange<Vertex> MeshVertexRange;
-
 template <class T>
 class MeshRange
 {
@@ -223,24 +206,7 @@ private:
 };
 
 
-
 // FIXME: Add method 'entities MeshEntity::items(std::size_t dim);'
-
-class Cell;
-class Edge;
-class Face;
-class Facet;
-class Vertex;
-template <class T>
-class EntityRange;
-
-/// Convenience typedefs for tange of incident entities (of type T)
-/// over a MeshEntity
-typedef EntityRange<Cell> CellRange;
-typedef EntityRange<Face> FaceRange;
-typedef EntityRange<Facet> FacetRange;
-typedef EntityRange<Vertex> VertexRange;
-typedef EntityRange<Edge> EdgeRange;
 
 /// Range of incident entities (of type T) over a MeshEntity
 template <class T>

@@ -91,7 +91,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
   mesh.init(dim);
 
   std::vector<bool> visited(mesh.num_entities(dim), false);
-  for (auto &f : MeshFacetRange(mesh))
+  for (auto &f : MeshRange<Facet>(mesh))
   {
     // Consider boundary entities only
     const bool global_exterior_facet = (f.num_global_entities(tdim) == 1);
