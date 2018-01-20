@@ -10,6 +10,7 @@
 #include "Mesh.h"
 #include "MeshConnectivity.h"
 #include "MeshEntityIterator.h"
+#include "MeshIterator.h"
 #include "MeshTopology.h"
 #include <algorithm>
 #include <boost/multi_array.hpp>
@@ -117,7 +118,11 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
   {
     std::vector<std::vector<std::size_t>> connectivity_dd(
         topology.size(d0), std::vector<std::size_t>(1));
-    for (MeshEntityIterator e(mesh, d0, "all"); !e.end(); ++e)
+    // Iterate over all entities including ghosts
+    const auto it_begin = MeshIterator<MeshEntity>(mesh, d0, 0);
+    const auto it_end = MeshIterator<MeshEntity>(
+                 mesh, d0, mesh.num_entities(d0));
+    for (auto e = it_begin; e != it_end; ++e)
       connectivity_dd[e->index()][0] = e->index();
     topology(d0, d0).set(connectivity_dd);
   }

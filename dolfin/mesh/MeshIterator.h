@@ -151,6 +151,7 @@ template <class T>
 class MeshRange
 {
 public:
+
   MeshRange(const Mesh& mesh) : _mesh(mesh) {}
 
   const MeshIterator<T> begin() const { return MeshIterator<T>(_mesh, 0); }

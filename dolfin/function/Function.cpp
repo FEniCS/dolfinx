@@ -23,6 +23,7 @@
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
 
@@ -465,14 +466,15 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
         ufc_cell.orientation);
 
     // Copy values to array of vertex values
-    for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
+    std::size_t local_index = 0;
+    for (auto &vertex : EntityRange<Vertex>(*cell))
     {
       for (std::size_t i = 0; i < value_size_loc; ++i)
       {
-        const std::size_t local_index = vertex.pos() * value_size_loc + i;
         const std::size_t global_index
-            = i * mesh.num_vertices() + vertex->index();
+            = i * mesh.num_vertices() + vertex.index();
         vertex_values[global_index] = cell_vertex_values[local_index];
+        ++local_index;
       }
     }
   }
