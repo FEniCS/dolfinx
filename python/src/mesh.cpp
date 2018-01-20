@@ -278,13 +278,6 @@ void mesh(py::module& m)
         return py::make_iterator(r.begin(), r.end());
       });
 
-  m.def("entities", [](dolfin::Mesh& mesh, std::size_t dim) {
-    return dolfin::MeshEntityIterator(mesh, dim);
-  });
-  m.def("entities", [](dolfin::MeshEntity& meshentity, std::size_t dim) {
-    return dolfin::MeshEntityIterator(meshentity, dim);
-  });
-
 // dolfin::MeshIterator (Cells, Facets, Faces, Edges, Vertices)
 #define MESHITERATOR_MACRO(TYPE, ENTITYNAME)                                   \
   py::class_<dolfin::MeshRange<dolfin::ENTITYNAME>, std::shared_ptr<dolfin::MeshRange<dolfin::ENTITYNAME>>>( \
