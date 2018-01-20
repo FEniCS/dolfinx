@@ -264,17 +264,17 @@ void mesh(py::module& m)
            },
            "Get cell vertex coordinates");
 
-  py::class_<dolfin::MeshEntityRange, std::shared_ptr<dolfin::MeshEntityRange>>(
-      m, "MeshEntities", "Range for iterative over entities of a Mesh")
+  py::class_<dolfin::MeshRange<dolfin::MeshEntity>, std::shared_ptr<dolfin::MeshRange<dolfin::MeshEntity>>>(
+      m, "MeshEntities", "Range for iteration over entities of a Mesh")
       .def(py::init<const dolfin::Mesh&, int>())
-      .def("__iter__", [](const dolfin::MeshEntityRange& r) {
+      .def("__iter__", [](const dolfin::MeshRange<dolfin::MeshEntity>& r) {
         return py::make_iterator(r.begin(), r.end());
       });
 
-  py::class_<dolfin::EntityRange, std::shared_ptr<dolfin::EntityRange>>(
-      m, "EntityRange", "Range for iterative over entities of another entity")
+  py::class_<dolfin::EntityRange<dolfin::MeshEntity>, std::shared_ptr<dolfin::EntityRange<dolfin::MeshEntity>>>(
+      m, "EntityRange", "Range for iteration over entities of another entity")
       .def(py::init<const dolfin::MeshEntity&, int>())
-      .def("__iter__", [](const dolfin::EntityRange& r) {
+      .def("__iter__", [](const dolfin::EntityRange<dolfin::MeshEntity>& r) {
         return py::make_iterator(r.begin(), r.end());
       });
 
@@ -287,11 +287,11 @@ void mesh(py::module& m)
 
 // dolfin::MeshIterator (Cells, Facets, Faces, Edges, Vertices)
 #define MESHITERATOR_MACRO(TYPE, ENTITYNAME)                                   \
-  py::class_<dolfin::TYPE, std::shared_ptr<dolfin::TYPE>>(                     \
+  py::class_<dolfin::MeshRange<dolfin::ENTITYNAME>, std::shared_ptr<dolfin::MeshRange<dolfin::ENTITYNAME>>>( \
       m, #TYPE,                                                                \
       "Range for iterating over entities of type " #ENTITYNAME " of a Mesh")   \
       .def(py::init<const dolfin::Mesh&>())                                    \
-      .def("__iter__", [](const dolfin::TYPE& c) {                             \
+      .def("__iter__", [](const dolfin::MeshRange<dolfin::ENTITYNAME>& c) {    \
         return py::make_iterator(c.begin(), c.end());                          \
       });
 
@@ -305,11 +305,11 @@ void mesh(py::module& m)
 // dolfin::MeshEntityIterator (CellRange, FacetRange, FaceRange, EdgeRange,
 // VertexRange)
 #define MESHENTITYITERATOR_MACRO(TYPE, ENTITYNAME)                             \
-  py::class_<dolfin::TYPE, std::shared_ptr<dolfin::TYPE>>(                     \
+  py::class_<dolfin::EntityRange<dolfin::ENTITYNAME>, std::shared_ptr<dolfin::EntityRange<dolfin::ENTITYNAME>>>( \
       m, #TYPE, "Range for iterating over entities of type " #ENTITYNAME       \
                 " incident to a MeshEntity")                                   \
       .def(py::init<const dolfin::MeshEntity&>())                              \
-      .def("__iter__", [](const dolfin::TYPE& c) {                             \
+      .def("__iter__", [](const dolfin::EntityRange<dolfin::ENTITYNAME>& c) {        \
         return py::make_iterator(c.begin(), c.end());                          \
       });
 
