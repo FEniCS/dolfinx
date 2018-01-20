@@ -15,6 +15,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 
 using namespace dolfin;
@@ -63,12 +64,12 @@ void SparsityPatternBuilder::build(
   // Build sparsity pattern for cell integrals
   if (cells)
   {
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    for (auto &cell : MeshRange<Cell>(mesh))
     {
       // Tabulate dofs for each dimension and get local dimensions
       for (std::size_t i = 0; i < 2; ++i)
       {
-        auto dmap = dofmaps[i]->cell_dofs(cell->index());
+        auto dmap = dofmaps[i]->cell_dofs(cell.index());
         dofs[i].set(dmap.size(), dmap.data());
       }
 
@@ -94,16 +95,16 @@ void SparsityPatternBuilder::build(
       local_to_local_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
     }
 
-    for (VertexIterator vert(mesh); !vert.end(); ++vert)
+    for (auto &vert : MeshRange<Vertex>(mesh))
     {
       // Get mesh cell to which mesh vertex belongs (pick first)
-      Cell mesh_cell(mesh, vert->entities(D)[0]);
+      Cell mesh_cell(mesh, vert.entities(D)[0]);
 
       // Check that cell is not a ghost
       dolfin_assert(!mesh_cell.is_ghost());
 
       // Get local index of vertex with respect to the cell
-      const std::size_t local_vertex = mesh_cell.index(*vert);
+      const std::size_t local_vertex = mesh_cell.index(vert);
       for (std::size_t i = 0; i < 2; ++i)
       {
         auto dmap = dofmaps[i]->cell_dofs(mesh_cell.index());
@@ -142,18 +143,18 @@ void SparsityPatternBuilder::build(
           "Consider calling mesh.order()");
     }
 
-    for (FacetIterator facet(mesh); !facet.end(); ++facet)
+    for (auto &facet : MeshRange<Facet>(mesh))
     {
       bool this_exterior_facet = false;
-      if (facet->num_global_entities(D) == 1)
+      if (facet.num_global_entities(D) == 1)
         this_exterior_facet = true;
 
       // Check facet type
       if (exterior_facets && this_exterior_facet && !cells)
       {
         // Get cells incident with facet
-        dolfin_assert(facet->num_entities(D) == 1);
-        Cell cell(mesh, facet->entities(D)[0]);
+        dolfin_assert(facet.num_entities(D) == 1);
+        Cell cell(mesh, facet.entities(D)[0]);
 
         // Tabulate dofs for each dimension and get local dimensions
         for (std::size_t i = 0; i < 2; ++i)
@@ -167,16 +168,16 @@ void SparsityPatternBuilder::build(
       }
       else if (interior_facets && !this_exterior_facet)
       {
-        if (facet->num_entities(D) == 1)
+        if (facet.num_entities(D) == 1)
         {
-          dolfin_assert(facet->is_ghost());
+          dolfin_assert(facet.is_ghost());
           continue;
         }
 
         // Get cells incident with facet
-        dolfin_assert(facet->num_entities(D) == 2);
-        Cell cell0(mesh, facet->entities(D)[0]);
-        Cell cell1(mesh, facet->entities(D)[1]);
+        dolfin_assert(facet.num_entities(D) == 2);
+        Cell cell0(mesh, facet.entities(D)[0]);
+        Cell cell1(mesh, facet.entities(D)[1]);
 
         // Tabulate dofs for each dimension on macro element
         for (std::size_t i = 0; i < 2; i++)

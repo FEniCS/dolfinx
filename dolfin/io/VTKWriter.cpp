@@ -15,7 +15,7 @@
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <fstream>
@@ -108,16 +108,16 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   std::vector<dolfin::la_index_t> dof_set;
   std::vector<std::size_t> offset(size + 1);
   std::vector<std::size_t>::iterator cell_offset = offset.begin();
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh))
   {
     // Tabulate dofs
-    auto dofs = dofmap.cell_dofs(cell->index());
-    for (std::size_t i = 0; i < dofmap.num_element_dofs(cell->index()); ++i)
+    auto dofs = dofmap.cell_dofs(cell.index());
+    for (std::size_t i = 0; i < dofmap.num_element_dofs(cell.index()); ++i)
       dof_set.push_back(dofs[i]);
 
     // Add local dimension to cell offset and increment
     *(cell_offset + 1)
-        = *(cell_offset) + dofmap.num_element_dofs(cell->index());
+        = *(cell_offset) + dofmap.num_element_dofs(cell.index());
     ++cell_offset;
   }
 
@@ -147,7 +147,7 @@ std::string VTKWriter::ascii_cell_data(const Mesh& mesh,
   ss << std::scientific;
   ss << std::setprecision(16);
   std::vector<std::size_t>::const_iterator cell_offset = offset.begin();
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (std::uint32_t i = 0; i != mesh.topology().ghost_offset(mesh.topology().dim()); ++i)
   {
     if (rank == 1 && data_dim == 2)
     {
@@ -202,9 +202,9 @@ std::string VTKWriter::base64_cell_data(const Mesh& mesh,
 
   std::vector<std::size_t>::const_iterator cell_offset = offset.begin();
   std::vector<double> data(num_total_data_points, 0);
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh))
   {
-    const std::size_t index = cell->index();
+    const std::size_t index = cell.index();
     for (std::size_t i = 0; i < data_dim; i++)
       data[index * num_data_per_point + i] = values[*cell_offset + i];
     ++cell_offset;
@@ -237,9 +237,9 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
   file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
        << "ascii"
        << "\">";
-  for (VertexIterator v(mesh); !v.end(); ++v)
+  for (auto &v : MeshRange<Vertex>(mesh))
   {
-    Point p = v->point();
+    Point p = v.point();
     file << p.x() << " " << p.y() << " " << p.z() << "  ";
   }
   file << "</DataArray>" << std::endl << "</Points>" << std::endl;
@@ -253,10 +253,10 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
   std::unique_ptr<CellType> celltype(
       CellType::create(mesh.type().entity_type(cell_dim)));
   const std::vector<std::int8_t> perm = celltype->vtk_mapping();
-  for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+  for (auto &c : MeshRange<MeshEntity>(mesh, cell_dim))
   {
-    for (unsigned int i = 0; i != c->num_entities(0); ++i)
-      file << c->entities(0)[perm[i]] << " ";
+    for (unsigned int i = 0; i != c.num_entities(0); ++i)
+      file << c.entities(0)[perm[i]] << " ";
     file << " ";
   }
   file << "</DataArray>" << std::endl;
@@ -307,9 +307,9 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
        << "\">" << std::endl;
   std::vector<double> vertex_data(3 * mesh.num_vertices());
   std::vector<double>::iterator vertex_entry = vertex_data.begin();
-  for (VertexIterator v(mesh); !v.end(); ++v)
+  for (auto &v : MeshRange<Vertex>(mesh))
   {
-    const Point p = v->point();
+    const Point p = v.point();
     *vertex_entry++ = p.x();
     *vertex_entry++ = p.y();
     *vertex_entry++ = p.z();
@@ -330,10 +330,10 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
   std::unique_ptr<CellType> celltype(
       CellType::create(mesh.type().entity_type(cell_dim)));
   const std::vector<std::int8_t> perm = celltype->vtk_mapping();
-  for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+  for (auto &c : MeshRange<MeshEntity>(mesh, cell_dim))
   {
-    for (unsigned int i = 0; i != c->num_entities(0); ++i)
-      *cell_entry++ = c->entities(0)[perm[i]];
+    for (unsigned int i = 0; i != c.num_entities(0); ++i)
+      *cell_entry++ = c.entities(0)[perm[i]];
   }
 
   // Create encoded stream

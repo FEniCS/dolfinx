@@ -15,7 +15,7 @@
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <iostream>
 
@@ -244,10 +244,10 @@ void HDF5Utility::cell_owners_in_range(
   global_owner.resize(range[1] - range[0]);
 
   std::vector<std::vector<std::size_t>> send_owned_global(num_processes);
-  for (CellIterator mesh_cell(mesh); !mesh_cell.end(); ++mesh_cell)
+  for (auto &mesh_cell : MeshRange<Cell>(mesh))
   {
-    const std::size_t global_i = mesh_cell->global_index();
-    const std::size_t local_i = mesh_cell->index();
+    const std::size_t global_i = mesh_cell.global_index();
+    const std::size_t local_i = mesh_cell.index();
     const std::size_t po_proc
         = MPI::index_owner(mpi_comm, global_i, n_global_cells);
     send_owned_global[po_proc].push_back(global_i);

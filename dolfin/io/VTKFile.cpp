@@ -19,6 +19,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <iomanip>
@@ -306,13 +307,13 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
     std::ostringstream ss;
     ss << std::scientific;
     ss << std::setprecision(16);
-    for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+    for (auto &vertex : MeshRange<Vertex>(mesh))
     {
       if (rank == 1 && dim == 2)
       {
         // Append 0.0 to 2D vectors to make them 3D
         for (std::size_t i = 0; i < 2; i++)
-          ss << values[vertex->index() + i * num_vertices] << " ";
+          ss << values[vertex.index() + i * num_vertices] << " ";
         ss << 0.0 << "  ";
       }
       else if (rank == 2 && dim == 4)
@@ -320,8 +321,8 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
         // Pad 2D tensors with 0.0 to make them 3D
         for (std::size_t i = 0; i < 2; i++)
         {
-          ss << values[vertex->index() + (2 * i + 0) * num_vertices] << " ";
-          ss << values[vertex->index() + (2 * i + 1) * num_vertices] << " ";
+          ss << values[vertex.index() + (2 * i + 0) * num_vertices] << " ";
+          ss << values[vertex.index() + (2 * i + 1) * num_vertices] << " ";
           ss << 0.0 << " ";
         }
         ss << 0.0 << " ";
@@ -332,7 +333,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
       {
         // Write all components
         for (std::size_t i = 0; i < dim; i++)
-          ss << values[vertex->index() + i * num_vertices] << " ";
+          ss << values[vertex.index() + i * num_vertices] << " ";
         ss << " ";
       }
     }
@@ -354,9 +355,9 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
     const std::size_t num_total_data_points = num_vertices * num_data_per_point;
 
     std::vector<double> data(num_total_data_points, 0);
-    for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+    for (auto &vertex : MeshRange<Vertex>(mesh))
     {
-      const std::size_t index = vertex->index();
+      const std::size_t index = vertex.index();
       for (std::size_t i = 0; i < dim; i++)
         data[index * num_data_per_point + i] = values[index + i * num_vertices];
     }
@@ -678,8 +679,8 @@ void VTKFile::mesh_function_write(T& meshfunction, double time)
      << "\"  format=\"ascii\">";
 
   // Write data
-  for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
-    fp << meshfunction[cell->index()] << " ";
+  for (auto &cell : MeshRange<MeshEntity>(mesh, cell_dim))
+    fp << meshfunction[cell.index()] << " ";
 
   // Write footers
   fp << "</DataArray>" << std::endl;
