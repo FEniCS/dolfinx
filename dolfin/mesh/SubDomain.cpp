@@ -140,7 +140,7 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh,
   bool on_boundary = false;
 
   // Compute sub domain markers
-  for (auto &entity : MeshEntities(mesh, dim))
+  for (auto &entity : MeshRange<MeshEntity>(mesh, dim))
   {
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
@@ -242,7 +242,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
   bool on_boundary = false;
 
   // Compute sub domain markers
-  for (auto &entity : MeshEntities(mesh, dim))
+  for (auto &entity : MeshRange<MeshEntity>(mesh, dim))
   {
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)

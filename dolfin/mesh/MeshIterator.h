@@ -137,7 +137,7 @@ public:
   T& operator*() { return _entity; }
 
   template <typename X>
-  friend class EntityRangeTyped;
+  friend class EntityRange;
 
 private:
   // MeshEntity
@@ -147,14 +147,56 @@ private:
   const std::uint32_t* _connections;
 };
 
+
+class Cell;
+class Edge;
+class Face;
+class Facet;
+class Vertex;
+template <class T>
+class MeshRange;
+
+/// Convenience typedefs for tange of incident entities (of type T)
+/// over a MeshEntity
+typedef MeshRange<Cell> MeshCellRange;
+typedef MeshRange<Edge> MeshEdgeRange;
+typedef MeshRange<Face> MeshFaceRange;
+typedef MeshRange<Facet> MeshFacetRange;
+typedef MeshRange<Vertex> MeshVertexRange;
+
+template <class T>
+class MeshRange
+{
+public:
+  MeshRange(const Mesh& mesh) : _mesh(mesh) {}
+
+  const MeshIterator<T> begin() const { return MeshIterator<T>(_mesh, 0); }
+
+  MeshIterator<T> begin() { return MeshIterator<T>(_mesh, 0); }
+
+  const MeshIterator<T> end() const
+  {
+    auto it = MeshIterator<T>(_mesh, 0);
+    std::size_t end = _mesh.topology().ghost_offset(it->dim());
+    it->_local_index = end;
+    return it;
+    // return MeshIteratorT<T>(_mesh, _mesh.topology().ghost_offset(_dim));
+  }
+
+private:
+  // Mesh being iterated over
+  const Mesh& _mesh;
+};
+
 // FIXME: handled ghosted meshes
 // Class represening a collection of entities of given dimension
 /// over a mesh. Provides  with begin() and end() methods for
 /// iterating over entities incident to a Mesh
-class MeshEntities
+template <>
+class MeshRange<MeshEntity>
 {
 public:
-  MeshEntities(const Mesh& mesh, int dim) : _mesh(mesh), _dim(dim) {}
+  MeshRange(const Mesh& mesh, int dim) : _mesh(mesh), _dim(dim) {}
 
   const MeshIterator<MeshEntity> begin() const
   {
@@ -180,54 +222,64 @@ private:
   const int _dim;
 };
 
+
+
+// FIXME: Add method 'entities MeshEntity::items(std::size_t dim);'
+
 class Cell;
 class Edge;
 class Face;
 class Facet;
 class Vertex;
 template <class T>
-class MeshEntityRangeTyped;
+class EntityRange;
 
 /// Convenience typedefs for tange of incident entities (of type T)
 /// over a MeshEntity
-typedef MeshEntityRangeTyped<Cell> Cells;
-typedef MeshEntityRangeTyped<Edge> Edges;
-typedef MeshEntityRangeTyped<Face> Faces;
-typedef MeshEntityRangeTyped<Facet> Facets;
-typedef MeshEntityRangeTyped<Vertex> Vertices;
+typedef EntityRange<Cell> CellRange;
+typedef EntityRange<Face> FaceRange;
+typedef EntityRange<Facet> FacetRange;
+typedef EntityRange<Vertex> VertexRange;
+typedef EntityRange<Edge> EdgeRange;
 
+/// Range of incident entities (of type T) over a MeshEntity
 template <class T>
-class MeshEntityRangeTyped
+class EntityRange
 {
 public:
-  MeshEntityRangeTyped(const Mesh& mesh) : _mesh(mesh) {}
+  EntityRange(const MeshEntity& e) : _entity(e) {}
 
-  const MeshIterator<T> begin() const { return MeshIterator<T>(_mesh, 0); }
-
-  MeshIterator<T> begin() { return MeshIterator<T>(_mesh, 0); }
-
-  const MeshIterator<T> end() const
+  const MeshEntityIteratorNew<T> begin() const
   {
-    auto it = MeshIterator<T>(_mesh, 0);
-    std::size_t end = _mesh.topology().ghost_offset(it->dim());
-    it->_local_index = end;
+    return MeshEntityIteratorNew<T>(_entity, 0);
+  }
+
+  MeshEntityIteratorNew<T> begin()
+  {
+    return MeshEntityIteratorNew<T>(_entity, 0);
+  }
+
+  const MeshEntityIteratorNew<T> end() const
+  {
+    auto it = MeshEntityIteratorNew<T>(_entity, 0);
+    std::size_t n = _entity.num_entities(it->dim());
+    it._connections = it._connections + n;
+    it->_local_index = *it._connections;
     return it;
-    // return MeshIteratorT<T>(_mesh, _mesh.topology().ghost_offset(_dim));
   }
 
 private:
-  // Mesh being iterated over
-  const Mesh& _mesh;
+  // MeshEntity being iterated over
+  const MeshEntity& _entity;
 };
-
-// FIXME: Add method 'entities MeshEntity::items(std::size_t dim);'
 
 /// Class with begin() and end() methods for iterating over
 /// entities incident to a MeshEntity
-class MeshEntityRange
+template <>
+class EntityRange<MeshEntity>
 {
 public:
-  MeshEntityRange(const MeshEntity& e, int dim) : _entity(e), _dim(dim) {}
+  EntityRange(const MeshEntity& e, int dim) : _entity(e), _dim(dim) {}
 
   const MeshEntityIteratorNew<MeshEntity> begin() const
   {
@@ -253,50 +305,4 @@ private:
   const int _dim;
 };
 
-class Cell;
-class Edge;
-class Face;
-class Facet;
-class Vertex;
-template <class T>
-class EntityRangeTyped;
-
-/// Convenience typedefs for tange of incident entities (of type T)
-/// over a MeshEntity
-typedef EntityRangeTyped<Cell> CellRange;
-typedef EntityRangeTyped<Face> FaceRange;
-typedef EntityRangeTyped<Facet> FacetRange;
-typedef EntityRangeTyped<Vertex> VertexRange;
-typedef EntityRangeTyped<Edge> EdgeRange;
-
-/// Range of incident entities (of type T) over a MeshEntity
-template <class T>
-class EntityRangeTyped
-{
-public:
-  EntityRangeTyped(const MeshEntity& e) : _entity(e) {}
-
-  const MeshEntityIteratorNew<T> begin() const
-  {
-    return MeshEntityIteratorNew<T>(_entity, 0);
-  }
-
-  MeshEntityIteratorNew<T> begin()
-  {
-    return MeshEntityIteratorNew<T>(_entity, 0);
-  }
-
-  const MeshEntityIteratorNew<T> end() const
-  {
-    auto it = MeshEntityIteratorNew<T>(_entity, 0);
-    std::size_t n = _entity.num_entities(it->dim());
-    it._connections = it._connections + n;
-    it->_local_index = *it._connections;
-    return it;
-  }
-
-private:
-  // MeshEntity being iterated over
-  const MeshEntity& _entity;
-};
 }

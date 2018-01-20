@@ -229,9 +229,9 @@ protected:
   friend class MeshEntityIterator;
 
   template <typename T>
-  friend class MeshEntityRangeTyped;
+  friend class MeshRange;
   template <typename T>
-  friend class EntityRangeTyped;
+  friend class EntityRange;
   template <typename T>
   friend class MeshIterator;
   template <typename T>
