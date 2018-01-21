@@ -715,8 +715,16 @@ void XDMFFile::write_mesh_value_collection(const MeshValueCollection<T>& mvc,
           = cell.entities(cell_dim)[p.first.second];
       cell = MeshEntity(*mesh, cell_dim, entity_local_idx);
     }
-    for (auto &v : EntityRange<Vertex>(cell))
-      topology_data.push_back(v.global_index());
+
+    // if cell is actually a vertex
+    if (cell.dim() == 0)
+      topology_data.push_back(cell.global_index());
+    else
+    {
+      for (auto &v : EntityRange<Vertex>(cell))
+        topology_data.push_back(v.global_index());
+    }
+
     value_data.push_back(p.second);
   }
 
