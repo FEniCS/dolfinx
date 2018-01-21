@@ -10,7 +10,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include "fem_utils.h"
 
@@ -114,10 +114,10 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
   std::size_t xi, vi;
 
   // Get/set cell-by-cell
-  for (CellIterator c(mesh); !c.end(); ++c)
+  for (auto &c : MeshRange<Cell>(mesh))
   {
     // Get/prepare values and dofs on cell
-    auto cell_dofs = dofmap.cell_dofs(c->index());
+    auto cell_dofs = dofmap.cell_dofs(c.index());
     values.resize(cell_dofs.size());
     if (setting)
       v.get_local(values.data(), cell_dofs.size(), cell_dofs.data());
@@ -128,7 +128,7 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
       // Get local-to-global entity mapping
       if (!coords_per_entity[dim])
         continue;
-      global_entities = c->entities(dim);
+      global_entities = c.entities(dim);
 
       for (std::size_t local_entity = 0;
            local_entity != num_local_entities[dim]; ++local_entity)
@@ -214,9 +214,11 @@ dolfin::fem::vertex_to_dof_map(const FunctionSpace& space)
   std::vector<dolfin::la_index_t> return_map(dofs_per_vertex
                                              * mesh.num_entities(0));
 
-  // Iterate over vertices
+  // Iterate over all vertices (including ghosts)
   std::size_t local_vertex_ind = 0;
-  for (VertexIterator vertex(mesh, "all"); !vertex.end(); ++vertex)
+  const auto v_begin = MeshIterator<Vertex>(mesh, 0);
+  const auto v_end = MeshIterator<Vertex>(mesh, mesh.num_entities(0));
+  for (auto vertex = v_begin; vertex != v_end; ++vertex)
   {
     // Get the first cell connected to the vertex
     const Cell cell(mesh, vertex->entities(top_dim)[0]);

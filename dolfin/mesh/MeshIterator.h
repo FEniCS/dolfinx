@@ -80,6 +80,9 @@ public:
   {
     // FIXME: Handle case when number of attached entities is zero?
 
+    // Asking for iterator over same dimension entity will fail
+    dolfin_assert(e.dim() != dim);
+
     // Get connectivity
     const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity.dim());
 
@@ -94,6 +97,9 @@ public:
       : _entity(e.mesh(), pos), _connections(nullptr)
   {
     // FIXME: Handle case when number of attached entities is zero?
+
+    // Asking for iterator over same dimension entity will fail
+    dolfin_assert(e.dim() != _entity.dim());
 
     // Get connectivity
     const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity.dim());

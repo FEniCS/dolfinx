@@ -2529,8 +2529,14 @@ void XDMFFile::remap_meshfunction_data(
   for (MeshEntityIterator cell(*mesh, cell_dim, "all"); !cell.end(); ++cell)
   {
     std::vector<std::int64_t> cell_topology;
-    for (auto &v : EntityRange<Vertex>(*cell))
-      cell_topology.push_back(v.global_index());
+    if (cell_dim == 0)
+      cell_topology.push_back(cell->global_index());
+    else
+    {
+      for (auto &v : EntityRange<Vertex>(*cell))
+        cell_topology.push_back(v.global_index());
+    }
+
     std::sort(cell_topology.begin(), cell_topology.end());
 
     // Use first vertex to decide where to send this request

@@ -20,7 +20,7 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 
 using namespace dolfin;
@@ -36,10 +36,10 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   Graph graph(n);
 
   // Build graph
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh))
   {
-    auto _dofs0 = dofmap0.cell_dofs(cell->index());
-    auto _dofs1 = dofmap1.cell_dofs(cell->index());
+    auto _dofs0 = dofmap0.cell_dofs(cell.index());
+    auto _dofs1 = dofmap1.cell_dofs(cell.index());
 
     ArrayView<const dolfin::la_index_t> dofs0(_dofs0.size(), _dofs0.data());
     ArrayView<const dolfin::la_index_t> dofs1(_dofs1.size(), _dofs1.data());
@@ -71,10 +71,9 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   Graph graph(num_vertices);
 
   // Build graph
-  for (MeshEntityIterator vertex_entity(mesh, coloring_type[0]);
-       !vertex_entity.end(); ++vertex_entity)
+  for (auto &vertex_entity : MeshRange<MeshEntity>(mesh, coloring_type[0]))
   {
-    const std::size_t vertex_entity_index = vertex_entity->index();
+    const std::size_t vertex_entity_index = vertex_entity.index();
 
     std::unordered_set<std::size_t> entity_list0;
     std::unordered_set<std::size_t> entity_list1;
@@ -88,10 +87,9 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
            entity_index != entity_list0.end(); ++entity_index)
       {
         const MeshEntity entity(mesh, coloring_type[level - 1], *entity_index);
-        for (MeshEntityIterator neighbor(entity, coloring_type[level]);
-             !neighbor.end(); ++neighbor)
+        for (auto &neighbor : EntityRange<MeshEntity>(entity, coloring_type[level]))
         {
-          entity_list1.insert(neighbor->index());
+          entity_list1.insert(neighbor.index());
         }
       }
       entity_list0 = entity_list1;
@@ -118,18 +116,15 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, std::size_t dim0,
   Graph graph(num_vertices);
 
   // Build graph
-  for (MeshEntityIterator colored_entity(mesh, dim0); !colored_entity.end();
-       ++colored_entity)
+  for (auto &colored_entity : MeshRange<MeshEntity>(mesh, dim0))
   {
-    const std::size_t colored_entity_index = colored_entity->index();
-    for (MeshEntityIterator entity(*colored_entity, dim1); !entity.end();
-         ++entity)
+    const std::size_t colored_entity_index = colored_entity.index();
+    for (auto &entity : EntityRange<MeshEntity>(colored_entity, dim1))
     {
-      for (MeshEntityIterator neighbor(*entity, dim0); !neighbor.end();
-           ++neighbor)
+      for (auto &neighbor : EntityRange<MeshEntity>(entity, dim0))
       {
-        if (colored_entity_index != neighbor->index())
-          graph[colored_entity_index].insert(neighbor->index());
+        if (colored_entity_index != neighbor.index())
+          graph[colored_entity_index].insert(neighbor.index());
       }
     }
   }

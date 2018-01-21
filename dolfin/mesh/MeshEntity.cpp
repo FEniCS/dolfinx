@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MeshEntity.h"
+#include "MeshIterator.h"
 #include "Mesh.h"
 #include "MeshTopology.h"
 #include "Vertex.h"
@@ -97,18 +98,18 @@ Point MeshEntity::midpoint() const
   if (_dim == 0)
     return _mesh->geometry().point(_local_index);
 
-  // Other wise iterate over incident vertices and compute average
+  // Otherwise iterate over incident vertices and compute average
   std::size_t num_vertices = 0;
 
   double x = 0.0;
   double y = 0.0;
   double z = 0.0;
 
-  for (VertexIterator v(*this); !v.end(); ++v)
+  for (auto &v : EntityRange<Vertex>(*this))
   {
-    x += v->point().x();
-    y += v->point().y();
-    z += v->point().z();
+    x += v.point().x();
+    y += v.point().y();
+    z += v.point().z();
     num_vertices++;
   }
 
