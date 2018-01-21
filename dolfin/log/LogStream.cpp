@@ -11,7 +11,6 @@
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
 
 using namespace dolfin;
 

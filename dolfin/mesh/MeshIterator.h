@@ -76,7 +76,7 @@ class MeshEntityIteratorNew : public std::iterator<std::forward_iterator_tag, T>
 public:
   // Constructor from MeshEntity and dimension
   MeshEntityIteratorNew(const MeshEntity& e, std::size_t dim, std::size_t pos)
-      : _entity(e.mesh(), dim, pos), _connections(nullptr)
+      : _entity(e.mesh(), dim, 0), _connections(nullptr)
   {
     // FIXME: Handle case when number of attached entities is zero?
 
@@ -94,7 +94,7 @@ public:
 
   // Constructor from MeshEntity
   MeshEntityIteratorNew(const MeshEntity& e, std::size_t pos)
-      : _entity(e.mesh(), pos), _connections(nullptr)
+      : _entity(e.mesh(), 0), _connections(nullptr)
   {
     // FIXME: Handle case when number of attached entities is zero?
 

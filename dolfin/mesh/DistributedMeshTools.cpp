@@ -10,6 +10,7 @@
 #include "Facet.h"
 #include "Mesh.h"
 #include "MeshEntityIterator.h"
+#include "MeshIterator.h"
 #include "MeshFunction.h"
 #include "Vertex.h"
 #include "dolfin/common/MPI.h"
@@ -41,8 +42,8 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
     // Set global entity numbers in mesh
     _mesh.topology().init(d, mesh.num_entities(d), mesh.num_entities(d));
     _mesh.topology().init_global_indices(d, mesh.num_entities(d));
-    for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
-      _mesh.topology().set_global_index(d, e->index(), e->index());
+    for (auto &e : MeshRange<MeshEntity>(mesh, d))
+      _mesh.topology().set_global_index(d, e.index(), e.index());
 
     return;
   }
@@ -136,8 +137,8 @@ std::size_t DistributedMeshTools::number_entities(
     {
       entity.second = local_index;
       entity.first = std::vector<std::size_t>();
-      for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
-        entity.first.push_back(vertex->global_index());
+      for (auto &vertex : EntityRange<Vertex>(*e))
+        entity.first.push_back(vertex.global_index());
       std::sort(entity.first.begin(), entity.first.end());
       entities.insert(entity);
     }
@@ -1018,8 +1019,8 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   if (mesh.topology().ghost_offset(D) == mesh.topology().size(D))
   {
     // Copy local values
-    for (FacetIterator f(mesh); !f.end(); ++f)
-      num_global_neighbors[f->index()] = f->num_entities(D);
+    for (auto &f : MeshRange<Facet>(mesh))
+      num_global_neighbors[f.index()] = f.num_entities(D);
 
     // All shared facets must have two cells, if no ghost cells
     for (auto f_it = shared_facets.begin(); f_it != shared_facets.end(); ++f_it)
@@ -1137,9 +1138,9 @@ void DistributedMeshTools::reorder_values_by_global_indices(
     for (CellIterator c(mesh, "ghost"); !c.end(); ++c)
     {
       const std::uint32_t cell_owner = c->owner();
-      for (VertexIterator v(*c); !v.end(); ++v)
-        if (!v->is_ghost() && cell_owner < mpi_rank)
-          non_local_vertices.insert(v->index());
+      for (auto &v : EntityRange<Vertex>(*c))
+        if (!v.is_ghost() && cell_owner < mpi_rank)
+          non_local_vertices.insert(v.index());
     }
   }
 
@@ -1151,12 +1152,12 @@ void DistributedMeshTools::reorder_values_by_global_indices(
   std::vector<double> reduced_data;
 
   // Remove clashing data with multiple copies on different processes
-  for (VertexIterator v(mesh); !v.end(); ++v)
+  for (auto &v : MeshRange<Vertex>(mesh))
   {
-    const std::size_t vidx = v->index();
+    const std::size_t vidx = v.index();
     if (non_local_vertices.find(vidx) == non_local_vertices.end())
     {
-      global_indices.push_back(v->global_index());
+      global_indices.push_back(v.global_index());
       reduced_data.insert(reduced_data.end(), data_array[vidx].begin(),
                           data_array[vidx].end());
     }

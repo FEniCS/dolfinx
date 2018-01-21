@@ -15,7 +15,6 @@ namespace dolfin
 
 class Variable;
 class MeshEntity;
-class MeshEntityIterator;
 class Point;
 
 /// This class provides functionality similar to standard C++
