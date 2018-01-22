@@ -89,9 +89,9 @@ public:
     if (e.dim() == dim)
     {
       dolfin_assert(pos < 2);
-      _index[0] = e.index();
-      _connections = &_index[0] + pos;
-      _entity._local_index = *_connections;
+      _connections = &e._local_index + pos;
+      _entity._local_index = e._local_index;
+      return;
     }
 
     // Get connectivity
@@ -112,9 +112,9 @@ public:
     if (e.dim() == _entity.dim())
     {
       dolfin_assert(pos < 2);
-      _index[0] = e.index();
-      _connections = &_index[0] + pos;
-      _entity._local_index = *_connections;
+      _connections = &e._local_index + pos;
+      _entity._local_index = e._local_index;
+      return;
     }
 
     // Get connectivity
@@ -141,7 +141,6 @@ public:
   MeshEntityIteratorNew& operator++()
   {
     ++_connections;
-    _entity._local_index = *_connections;
     return *this;
   }
 
@@ -155,9 +154,11 @@ public:
     return _connections != other._connections;
   }
 
-  T* operator->() { return &_entity; }
+  T* operator->()
+  { _entity._local_index = *_connections; return &_entity; }
 
-  T& operator*() { return _entity; }
+  T& operator*()
+  { _entity._local_index = *_connections; return _entity; }
 
   template <typename X>
   friend class EntityRange;
@@ -253,8 +254,10 @@ public:
   const MeshEntityIteratorNew<T> end() const
   {
     auto it = MeshEntityIteratorNew<T>(_entity, 0);
-    std::size_t n = _entity.num_entities(it->dim());
-    it._connections = it._connections + n;
+    std::size_t n = _entity.num_entities(it->_dim);
+    if (_entity._dim == it->_dim)
+       n = 1;
+    it._connections += n;
     return it;
   }
 
@@ -284,6 +287,8 @@ public:
   const MeshEntityIteratorNew<MeshEntity> end() const
   {
     std::size_t n = _entity.num_entities(_dim);
+    if (_entity._dim == _dim)
+      n = 1;
     return MeshEntityIteratorNew<MeshEntity>(_entity, _dim, n);
   }
 
@@ -292,7 +297,7 @@ private:
   const MeshEntity& _entity;
 
   // Dimension of incident entities
-  const int _dim;
+  const std::uint32_t _dim;
 };
 
 }

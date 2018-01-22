@@ -86,7 +86,7 @@ public:
   ///
   /// @return     std::size_t
   ///         The index.
-  std::size_t index() const { return _local_index; }
+  std::uint32_t index() const { return _local_index; }
 
   /// Return global index of mesh entity
   ///
@@ -245,9 +245,9 @@ protected:
   Mesh const* _mesh;
 
   // Topological dimension
-  std::size_t _dim;
+  std::uint32_t _dim;
 
   // Local index of entity within topological dimension
-  std::size_t _local_index;
+  std::uint32_t _local_index;
 };
 }
