@@ -133,7 +133,6 @@ public:
   const MeshEntityIteratorNew& operator=(const MeshEntityIteratorNew& m)
   {
     _entity = m._entity;
-    _index[0] = m._index[0];
     _connections = m._connections;
     return *this;
   }
@@ -166,8 +165,6 @@ public:
 private:
   // MeshEntity
   T _entity;
-
-  std::uint32_t _index[2];
 
   // Pointer to current entity index
   const std::uint32_t* _connections;
@@ -254,9 +251,8 @@ public:
   const MeshEntityIteratorNew<T> end() const
   {
     auto it = MeshEntityIteratorNew<T>(_entity, 0);
-    std::size_t n = _entity.num_entities(it->_dim);
-    if (_entity._dim == it->_dim)
-       n = 1;
+    std::size_t n = (_entity._dim == it->_dim) ?
+      1 : _entity.num_entities(it->_dim);
     it._connections += n;
     return it;
   }
@@ -286,9 +282,8 @@ public:
 
   const MeshEntityIteratorNew<MeshEntity> end() const
   {
-    std::size_t n = _entity.num_entities(_dim);
-    if (_entity._dim == _dim)
-      n = 1;
+    std::size_t n = (_entity._dim == _dim) ?
+      1 : _entity.num_entities(_dim);
     return MeshEntityIteratorNew<MeshEntity>(_entity, _dim, n);
   }
 
