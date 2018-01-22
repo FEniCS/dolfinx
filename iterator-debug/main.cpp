@@ -42,13 +42,13 @@ int main()
     std::size_t p = 0;
     boost::timer::cpu_timer t;
     //std::cout << "Start cell loop" << std::endl;
-    for (const auto &c : MeshEntityRange(*mesh, D))
+    for (const auto &c : MeshRange<MeshEntity>(*mesh, D))
     {
       //std::cout << "\n1. Create v list (range)" << std::endl;
       //const auto vert = entities<Vertex>(c, 0);
       //std::cout << "2. Start v loop (range)" << std::endl;
       //std::cout << "Start vertex loop" << std::endl;
-      for (const auto& v : EntityRange(c, 0))
+      for (const auto& v : EntityRange<MeshEntity>(c, 0))
       {
         //std::cout << "   vertex loop: " << v.index() << std::endl;
         p += v.index();
@@ -67,14 +67,14 @@ int main()
     std::size_t p = 0;
     boost::timer::cpu_timer t;
     //std::cout << "Start cell loop" << std::endl;
-    for (const auto &c : MeshEntityRangeTyped<Cell>(*mesh))
+    for (const auto &c : MeshRange<Cell>(*mesh))
     {
       //std::cout << "\n1. Create v list (range)" << std::endl;
       //const auto vert = entities<Vertex>(c, 0);
       //std::cout << "2. Start v loop (range)" << std::endl;
       //std::cout << "Start vertex loop" << std::endl;
       //for (const auto& v : EntityRange(c, 0))
-      for (const auto& v : VertexRange(c))
+      for (const auto& v : EntityRange<Vertex>(c))
       {
         //std::cout << "   vertex loop: " << v.index() << std::endl;
         p += v.index();
@@ -116,14 +116,14 @@ int main()
     std::size_t p = 0;
     boost::timer::cpu_timer t;
     //std::cout << "Start cell loop" << std::endl;
-    for (const auto &c : MeshEntityRangeTyped<Cell>(*mesh))
+    for (const auto &c : MeshRange<Cell>(*mesh))
     {
       //std::cout << "\n1. Create v list (range)" << std::endl;
       //const auto vert = entities<Vertex>(c, 0);
       //std::cout << "2. Start v loop (range)" << std::endl;
       //std::cout << "Start vertex loop" << std::endl;
       //for (const auto& v : EntityRange(c, 0))
-      for (const auto& v : EdgeRange(c))
+      for (const auto& v : EntityRange<Edge>(c))
       {
         //std::cout << "   vertex loop: " << v.index() << std::endl;
         p += v.index();
@@ -142,13 +142,13 @@ int main()
     std::size_t p = 0;
     boost::timer::cpu_timer t;
     //std::cout << "Start cell loop" << std::endl;
-    for (const auto &c : MeshEntityRange(*mesh, D))
+    for (const auto &c : MeshRange<MeshEntity>(*mesh, D))
     {
       //std::cout << "\n1. Create v list (range)" << std::endl;
       //const auto vert = entities<Vertex>(c, 0);
       //std::cout << "2. Start v loop (range)" << std::endl;
       //std::cout << "Start vertex loop" << std::endl;
-      for (const auto& v : EntityRange(c, 1))
+      for (const auto& v : EntityRange<MeshEntity>(c, 1))
       {
         //std::cout << "   vertex loop: " << v.index() << std::endl;
         p += v.index();
@@ -191,14 +191,14 @@ int main()
     std::size_t p = 0;
     boost::timer::cpu_timer t;
     //std::cout << "Start cell loop" << std::endl;
-    for (const auto &c : MeshEntityRangeTyped<Cell>(*mesh))
+    for (const auto &c : MeshRange<Cell>(*mesh))
     {
       //std::cout << "\n1. Create v list (range)" << std::endl;
       //const auto vert = entities<Vertex>(c, 0);
       //std::cout << "2. Start v loop (range)" << std::endl;
       //std::cout << "Start vertex loop" << std::endl;
       //for (const auto& v : EntityRange(c, 0))
-      for (const auto& v : FacetRange(c))
+      for (const auto& v : EntityRange<Facet>(c))
       {
         //std::cout << "   vertex loop: " << v.index() << std::endl;
         p += v.index();
@@ -217,13 +217,13 @@ int main()
     std::size_t p = 0;
     boost::timer::cpu_timer t;
     //std::cout << "Start cell loop" << std::endl;
-    for (const auto &c : MeshEntityRange(*mesh, D))
+    for (const auto &c : MeshRange<MeshEntity>(*mesh, D))
     {
       //std::cout << "\n1. Create v list (range)" << std::endl;
       //const auto vert = entities<Vertex>(c, 0);
       //std::cout << "2. Start v loop (range)" << std::endl;
       //std::cout << "Start vertex loop" << std::endl;
-      for (const auto& v : EntityRange(c, D - 1))
+      for (const auto& v : EntityRange<MeshEntity>(c, D - 1))
       {
         //std::cout << "   vertex loop: " << v.index() << std::endl;
         p += v.index();

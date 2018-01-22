@@ -1,3 +1,9 @@
+// Copyright (C) 2017-2018 Chris N. Richardson and Garth N. Wells
+//
+// This file is part of DOLFIN (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
+
 #pragma once
 
 #include "Mesh.h"
@@ -41,7 +47,7 @@ public:
   /// Increment iterator
   MeshIterator& operator++()
   {
-    _entity._local_index += 1;
+    ++_entity._local_index;
     return *this;
   }
 
@@ -80,8 +86,13 @@ public:
   {
     // FIXME: Handle case when number of attached entities is zero?
 
-    // Asking for iterator over same dimension entity will fail
-    dolfin_assert(e.dim() != dim);
+    if (e.dim() == dim)
+    {
+      dolfin_assert(pos < 2);
+      _index[0] = e.index();
+      _connections = &_index[0] + pos;
+      _entity._local_index = *_connections;
+    }
 
     // Get connectivity
     const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity.dim());
@@ -98,8 +109,13 @@ public:
   {
     // FIXME: Handle case when number of attached entities is zero?
 
-    // Asking for iterator over same dimension entity will fail
-    dolfin_assert(e.dim() != _entity.dim());
+    if (e.dim() == _entity.dim())
+    {
+      dolfin_assert(pos < 2);
+      _index[0] = e.index();
+      _connections = &_index[0] + pos;
+      _entity._local_index = *_connections;
+    }
 
     // Get connectivity
     const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity.dim());
@@ -117,6 +133,7 @@ public:
   const MeshEntityIteratorNew& operator=(const MeshEntityIteratorNew& m)
   {
     _entity = m._entity;
+    _index[0] = m._index[0];
     _connections = m._connections;
     return *this;
   }
@@ -149,6 +166,8 @@ private:
   // MeshEntity
   T _entity;
 
+  std::uint32_t _index[2];
+
   // Pointer to current entity index
   const std::uint32_t* _connections;
 };
@@ -170,7 +189,6 @@ public:
     std::size_t end = _mesh.topology().ghost_offset(it->dim());
     it->_local_index = end;
     return it;
-    // return MeshIteratorT<T>(_mesh, _mesh.topology().ghost_offset(_dim));
   }
 
 private:
@@ -237,7 +255,6 @@ public:
     auto it = MeshEntityIteratorNew<T>(_entity, 0);
     std::size_t n = _entity.num_entities(it->dim());
     it._connections = it._connections + n;
-    it->_local_index = *it._connections;
     return it;
   }
 
