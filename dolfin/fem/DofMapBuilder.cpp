@@ -583,16 +583,16 @@ void DofMapBuilder::build_local_ufc_dofmap(
   dofmap.resize(mesh.num_cells(),
                 std::vector<la_index_t>(ufc_dofmap.num_element_dofs()));
   std::vector<std::size_t> dof_holder(ufc_dofmap.num_element_dofs());
-  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Fill entity indices array
-    get_cell_entities_local(*cell, entity_indices, needs_entities);
+    get_cell_entities_local(cell, entity_indices, needs_entities);
 
     // Tabulate dofs for cell
     ufc_dofmap.tabulate_dofs(dof_holder.data(), num_mesh_entities,
                              entity_indices);
     std::copy(dof_holder.begin(), dof_holder.end(),
-              dofmap[cell->index()].begin());
+              dofmap[cell.index()].begin());
   }
 }
 //-----------------------------------------------------------------------------

@@ -170,12 +170,15 @@ private:
   const std::uint32_t* _connections;
 };
 
+/// Range type
+enum class MeshRangeType { REGULAR, ALL, GHOST };
+
 template <class T>
 class MeshRange
 {
 public:
 
-  MeshRange(const Mesh& mesh) : _mesh(mesh) {}
+  MeshRange(const Mesh& mesh, MeshRangeType type=MeshRangeType::REGULAR) : _mesh(mesh), _type(type) {}
 
   const MeshIterator<T> begin() const { return MeshIterator<T>(_mesh, 0); }
 
@@ -184,14 +187,21 @@ public:
   const MeshIterator<T> end() const
   {
     auto it = MeshIterator<T>(_mesh, 0);
-    std::size_t end = _mesh.topology().ghost_offset(it->dim());
-    it->_local_index = end;
+    if (_type == MeshRangeType::REGULAR)
+      it->_local_index
+        = _mesh.topology().ghost_offset(it->dim());
+    else
+      it->_local_index
+        = _mesh.topology().size(it->dim());
+
     return it;
   }
 
 private:
   // Mesh being iterated over
   const Mesh& _mesh;
+
+  MeshRangeType _type;
 };
 
 // FIXME: handled ghosted meshes
@@ -202,7 +212,10 @@ template <>
 class MeshRange<MeshEntity>
 {
 public:
-  MeshRange(const Mesh& mesh, int dim) : _mesh(mesh), _dim(dim) {}
+
+   MeshRange(const Mesh& mesh, int dim,
+             MeshRangeType type=MeshRangeType::REGULAR)
+   : _mesh(mesh), _dim(dim), _type(type) {}
 
   const MeshIterator<MeshEntity> begin() const
   {
@@ -216,8 +229,12 @@ public:
 
   const MeshIterator<MeshEntity> end() const
   {
+    if (_type == MeshRangeType::REGULAR)
+      return MeshIterator<MeshEntity>(_mesh, _dim,
+                     _mesh.topology().ghost_offset(_dim));
+
     return MeshIterator<MeshEntity>(_mesh, _dim,
-                                    _mesh.topology().ghost_offset(_dim));
+                                    _mesh.topology().size(_dim));
   }
 
 private:
@@ -226,6 +243,8 @@ private:
 
   // Dimension of MeshEntities
   const int _dim;
+
+  MeshRangeType _type;
 };
 
 
