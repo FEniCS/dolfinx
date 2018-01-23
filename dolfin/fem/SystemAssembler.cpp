@@ -26,6 +26,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
 
@@ -330,16 +331,16 @@ void SystemAssembler::cell_wise_assembly(
   // Iterate over all cells
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh))
   {
     // Check that cell is not a ghost
-    dolfin_assert(!cell->is_ghost());
+    dolfin_assert(!cell.is_ghost());
 
     // Get cell vertex coordinates
-    cell->get_coordinate_dofs(coordinate_dofs);
+    cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get UFC cell data
-    cell->get_cell_data(ufc_cell);
+    cell.get_cell_data(ufc_cell);
 
     // Loop over lhs and then rhs contributions
     for (std::size_t form = 0; form < 2; ++form)
@@ -357,14 +358,14 @@ void SystemAssembler::cell_wise_assembly(
       // Get cell integrals for sub domain (if any)
       if (use_cell_domains)
       {
-        const std::size_t domain = (*cell_domains)[*cell];
+        const std::size_t domain = (*cell_domains)[cell];
         cell_integrals[form] = ufc[form]->get_cell_integral(domain);
       }
 
       // Get local-to-global dof maps for cell
       for (std::size_t dim = 0; dim < rank; ++dim)
       {
-        auto dmap = dofmaps[form][dim]->cell_dofs(cell->index());
+        auto dmap = dofmaps[form][dim]->cell_dofs(cell.index());
         cell_dofs[form][dim].set(dmap.size(), dmap.data());
       }
 
@@ -381,7 +382,7 @@ void SystemAssembler::cell_wise_assembly(
       if (tensor_required)
       {
         // Update to current cell
-        ufc[form]->update(*cell, coordinate_dofs, ufc_cell,
+        ufc[form]->update(cell, coordinate_dofs, ufc_cell,
                           cell_integrals[form]->enabled_coefficients());
 
         // Tabulate cell tensor
@@ -395,16 +396,16 @@ void SystemAssembler::cell_wise_assembly(
       // Compute exterior facet integral if present
       if (has_exterior_facet_integrals)
       {
-        for (FacetIterator facet(*cell); !facet.end(); ++facet)
+        for (auto &facet : EntityRange<Facet>(cell))
         {
           // Only consider exterior facets
-          if (!facet->exterior())
+          if (!facet.exterior())
             continue;
 
           // Get exterior facet integrals for sub domain (if any)
           if (use_exterior_facet_domains)
           {
-            const std::size_t domain = (*exterior_facet_domains)[*facet];
+            const std::size_t domain = (*exterior_facet_domains)[facet];
             exterior_facet_integrals[form]
                 = ufc[form]->get_exterior_facet_integral(domain);
           }
@@ -414,7 +415,7 @@ void SystemAssembler::cell_wise_assembly(
             continue;
 
           // Extract local facet index
-          const std::size_t local_facet = cell->index(*facet);
+          const std::size_t local_facet = cell.index(facet);
 
           // Determine if tensor needs to be computed
           bool tensor_required;
@@ -431,9 +432,9 @@ void SystemAssembler::cell_wise_assembly(
           if (tensor_required)
           {
             // Update to current cell
-            cell->get_cell_data(ufc_cell);
+            cell.get_cell_data(ufc_cell);
             ufc[form]->update(
-                *cell, coordinate_dofs, ufc_cell,
+                cell, coordinate_dofs, ufc_cell,
                 exterior_facet_integrals[form]->enabled_coefficients());
 
             // Tabulate exterior facet tensor
@@ -545,21 +546,21 @@ void SystemAssembler::facet_wise_assembly(
   // Iterate over facets
   std::array<ufc::cell, 2> ufc_cell;
   std::array<std::vector<double>, 2> coordinate_dofs;
-  for (FacetIterator facet(mesh); !facet.end(); ++facet)
+  for (auto &facet : MeshRange<Facet>(mesh))
   {
     // Number of cells sharing facet
-    const std::size_t num_cells = facet->num_entities(D);
+    const std::size_t num_cells = facet.num_entities(D);
 
     // Check that facet is not a ghost
-    dolfin_assert(!facet->is_ghost());
+    dolfin_assert(!facet.is_ghost());
 
     // Interior facet
     if (num_cells == 2)
     {
       // Get cells incident with facet (which is 0 and 1 here is arbitrary)
-      dolfin_assert(facet->num_entities(D) == 2);
+      dolfin_assert(facet.num_entities(D) == 2);
       std::array<std::size_t, 2> cell_indices
-          = {{facet->entities(D)[0], facet->entities(D)[1]}};
+          = {{facet.entities(D)[0], facet.entities(D)[1]}};
 
       // Make sure cell marker for '+' side is larger than cell marker
       // for '-' side.  Note: by ffc convention, 0 is + and 1 is -
@@ -575,7 +576,7 @@ void SystemAssembler::facet_wise_assembly(
       {
         cell[c] = Cell(mesh, cell_indices[c]);
         cell_index[c] = cell[c].index();
-        local_facet[c] = cell[c].index(*facet);
+        local_facet[c] = cell[c].index(facet);
         cell[c].get_coordinate_dofs(coordinate_dofs[c]);
         cell[c].get_cell_data(ufc_cell[c], local_facet[c]);
 
@@ -636,7 +637,7 @@ void SystemAssembler::facet_wise_assembly(
         // Get facet integral for sub domain (if any)
         if (use_interior_facet_domains)
         {
-          const std::size_t domain = (*interior_facet_domains)[*facet];
+          const std::size_t domain = (*interior_facet_domains)[facet];
           interior_facet_integrals[form]
               = ufc[form]->get_interior_facet_integral(domain);
         }
@@ -746,7 +747,7 @@ void SystemAssembler::facet_wise_assembly(
     {
       // Get mesh cell to which mesh facet belongs (pick first, there
       // is only one)
-      Cell cell(mesh, facet->entities(mesh.topology().dim())[0]);
+      Cell cell(mesh, facet.entities(mesh.topology().dim())[0]);
 
       // Check of attached cell needs to be processed
       compute_cell_tensor[0] = !cell_tensor_computed[cell.index()];
@@ -767,7 +768,7 @@ void SystemAssembler::facet_wise_assembly(
         // Get exterior facet integrals for sub domain (if any)
         if (use_exterior_facet_domains)
         {
-          const std::size_t domain = (*exterior_facet_domains)[*facet];
+          const std::size_t domain = (*exterior_facet_domains)[facet];
           exterior_facet_integrals[form]
               = ufc[form]->get_exterior_facet_integral(domain);
         }
@@ -798,7 +799,7 @@ void SystemAssembler::facet_wise_assembly(
       // Compute cell/facet tensors
       compute_exterior_facet_tensor(
           data.Ae, ufc, ufc_cell[0], coordinate_dofs[0], tensor_required_cell,
-          tensor_required_facet, cell, *facet, cell_integrals,
+          tensor_required_facet, cell, facet, cell_integrals,
           exterior_facet_integrals, compute_cell_tensor[0]);
 
       // Modify local matrix/element for Dirichlet boundary conditions

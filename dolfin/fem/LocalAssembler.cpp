@@ -14,6 +14,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/MeshIterator.h>
 
 using namespace dolfin;
 
@@ -34,20 +35,21 @@ void LocalAssembler::assemble(
   if (ufc.form.has_exterior_facet_integrals()
       || ufc.form.has_interior_facet_integrals())
   {
-    for (FacetIterator facet(cell); !facet.end(); ++facet)
+    unsigned int local_facet = 0;
+    for (auto &facet : EntityRange<Facet>(cell))
     {
-      ufc_cell.local_facet = facet.pos();
-      const int Ncells = facet->num_entities(cell.dim());
+      ufc_cell.local_facet = local_facet;
+      const int Ncells = facet.num_entities(cell.dim());
       if (Ncells == 2)
       {
-        assemble_interior_facet(A, ufc, coordinate_dofs, ufc_cell, cell, *facet,
-                                facet.pos(), interior_facet_domains,
+        assemble_interior_facet(A, ufc, coordinate_dofs, ufc_cell, cell, facet,
+                                local_facet, interior_facet_domains,
                                 cell_domains);
       }
       else if (Ncells == 1)
       {
-        assemble_exterior_facet(A, ufc, coordinate_dofs, ufc_cell, cell, *facet,
-                                facet.pos(), exterior_facet_domains);
+        assemble_exterior_facet(A, ufc, coordinate_dofs, ufc_cell, cell, facet,
+                                local_facet, exterior_facet_domains);
       }
       else
       {
@@ -56,6 +58,7 @@ void LocalAssembler::assemble(
                      "facet with %d connected cells. Expected 1 or 2 cells",
                      Ncells);
       }
+      ++local_facet;
     }
   }
 

@@ -644,8 +644,8 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   for (MeshEntityIterator cell(*mesh, cell_dim, "all"); !cell.end(); ++cell)
   {
     std::vector<std::size_t> cell_topology;
-    for (VertexIterator v(*cell); !v.end(); ++v)
-      cell_topology.push_back(v->global_index());
+    for (auto &v : EntityRange<Vertex>(*cell))
+      cell_topology.push_back(v.global_index());
     std::sort(cell_topology.begin(), cell_topology.end());
 
     // Use first vertex to decide where to send this request

@@ -20,6 +20,7 @@
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/SubDomain.h>
@@ -411,9 +412,9 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
   modified_vertex_indices_global
       = std::vector<std::int64_t>(mesh.num_vertices(), -1);
 
-  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+  for (auto &vertex : MeshRange<Vertex>(mesh))
   {
-    const std::size_t local_index = vertex->index();
+    const std::size_t local_index = vertex.index();
     if (slave_vertex[local_index])
     {
       // Do nothing, will get new master index later
@@ -438,7 +439,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
       if (proc_num <= _min_sharing_rank)
       {
         // Re-number vertex
-        modified_vertex_indices_global[vertex->index()] = new_index;
+        modified_vertex_indices_global[vertex.index()] = new_index;
 
         // Add to list to communicate
         std::vector<std::pair<std::uint32_t, std::uint32_t>>::const_iterator p;
@@ -457,7 +458,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
       }
     }
     else
-      modified_vertex_indices_global[vertex->index()] = new_index++;
+      modified_vertex_indices_global[vertex.index()] = new_index++;
   }
 
   // Send number of owned entities to compute offset
@@ -1353,11 +1354,11 @@ void DofMapBuilder::compute_shared_nodes(
     if (c->is_ghost())
     {
       has_ghost_cells = true;
-      for (FacetIterator f(*c); !f.end(); ++f)
+      for (auto &f : EntityRange<Facet>(*c))
       {
-        if (!f->is_ghost())
+        if (!f.is_ghost())
         {
-          ufc_dofmap.tabulate_facet_dofs(facet_nodes.data(), c->index(*f));
+          ufc_dofmap.tabulate_facet_dofs(facet_nodes.data(), c->index(f));
           for (std::size_t i = 0; i < facet_nodes.size(); ++i)
           {
             std::size_t facet_node_local = cell_nodes[facet_nodes[i]];
