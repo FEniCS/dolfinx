@@ -114,10 +114,10 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
   vertex_values.resize(size * mesh.num_vertices());
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
-  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Iterate over cell vertices
-    for (auto &vertex : EntityRange<Vertex>(*cell))
+    for (auto &vertex : EntityRange<Vertex>(cell))
     {
       // Wrap coordinate data
       Eigen::Map<const Eigen::VectorXd> x(vertex.x(), mesh.geometry().dim());

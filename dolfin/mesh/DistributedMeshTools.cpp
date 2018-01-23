@@ -130,14 +130,14 @@ std::size_t DistributedMeshTools::number_entities(
   // map. Exclude any slave entities.
   std::map<std::vector<std::size_t>, std::uint32_t> entities;
   std::pair<std::vector<std::size_t>, std::uint32_t> entity;
-  for (MeshEntityIterator e(mesh, d, "all"); !e.end(); ++e)
+  for (auto &e : MeshRange<MeshEntity>(mesh, d, MeshRangeType::ALL))
   {
-    const std::size_t local_index = e->index();
+    const std::size_t local_index = e.index();
     if (!exclude[local_index])
     {
       entity.second = local_index;
       entity.first = std::vector<std::size_t>();
-      for (auto &vertex : EntityRange<Vertex>(*e))
+      for (auto &vertex : EntityRange<Vertex>(e))
         entity.first.push_back(vertex.global_index());
       std::sort(entity.first.begin(), entity.first.end());
       entities.insert(entity);
@@ -1038,22 +1038,22 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     // Map shared facets
     std::map<std::size_t, std::size_t> global_to_local_facet;
 
-    for (MeshEntityIterator f(mesh, D - 1, "all"); !f.end(); ++f)
+    for (auto &f : MeshRange<MeshEntity>(mesh, D - 1, MeshRangeType::ALL))
     {
       // Insert shared facets into mapping
-      if (f->is_shared())
-        global_to_local_facet.insert({f->global_index(), f->index()});
+      if (f.is_shared())
+        global_to_local_facet.insert({f.global_index(), f.index()});
       // Copy local values
-      const std::size_t n_cells = f->num_entities(D);
-      num_global_neighbors[f->index()] = n_cells;
+      const std::size_t n_cells = f.num_entities(D);
+      num_global_neighbors[f.index()] = n_cells;
 
-      if (f->is_ghost() && n_cells == 1)
+      if (f.is_ghost() && n_cells == 1)
       {
         // Singly attached ghost facet - check with owner of attached
         // cell
-        const Cell c(mesh, f->entities(D)[0]);
+        const Cell c(mesh, f.entities(D)[0]);
         dolfin_assert(c.is_ghost());
-        send_facet[c.owner()].push_back(f->global_index());
+        send_facet[c.owner()].push_back(f.global_index());
       }
     }
 
