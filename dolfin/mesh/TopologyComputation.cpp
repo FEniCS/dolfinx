@@ -9,7 +9,6 @@
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshConnectivity.h"
-#include "MeshEntityIterator.h"
 #include "MeshIterator.h"
 #include "MeshTopology.h"
 #include <algorithm>

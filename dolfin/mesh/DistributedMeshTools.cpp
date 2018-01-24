@@ -9,7 +9,6 @@
 #include "Cell.h"
 #include "Facet.h"
 #include "Mesh.h"
-#include "MeshEntityIterator.h"
 #include "MeshIterator.h"
 #include "MeshFunction.h"
 #include "Vertex.h"
@@ -1135,10 +1134,10 @@ void DistributedMeshTools::reorder_values_by_global_indices(
     // Iterate through ghost cells, adding non-ghost vertices which
     // are in lower rank process cells to a set for exclusion from
     // output
-    for (CellIterator c(mesh, "ghost"); !c.end(); ++c)
+    for (auto &c : MeshRange<Cell>(mesh, MeshRangeType::GHOST))
     {
-      const std::uint32_t cell_owner = c->owner();
-      for (auto &v : EntityRange<Vertex>(*c))
+      const std::uint32_t cell_owner = c.owner();
+      for (auto &v : EntityRange<Vertex>(c))
         if (!v.is_ghost() && cell_owner < mpi_rank)
           non_local_vertices.insert(v.index());
     }

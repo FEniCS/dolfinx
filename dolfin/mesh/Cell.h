@@ -11,7 +11,6 @@
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
 #include <ufc.h>
 
@@ -278,6 +277,4 @@ public:
   }
 };
 
-/// A CellIterator is a MeshEntityIterator of topological codimension 0.
-typedef MeshEntityIteratorBase<Cell> CellIterator;
 }

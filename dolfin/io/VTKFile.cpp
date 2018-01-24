@@ -18,7 +18,6 @@
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>

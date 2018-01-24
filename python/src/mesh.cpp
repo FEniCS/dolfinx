@@ -15,7 +15,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshEntity.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshGeometry.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -294,8 +293,6 @@ void mesh(py::module& m)
   MESHITERATOR_MACRO(Vertices, Vertex);
 #undef MESHITERATOR_MACRO
 
-// dolfin::MeshEntityIterator (CellRange, FacetRange, FaceRange, EdgeRange,
-// VertexRange)
 #define MESHENTITYITERATOR_MACRO(TYPE, ENTITYNAME)                             \
   py::class_<dolfin::EntityRange<dolfin::ENTITYNAME>, std::shared_ptr<dolfin::EntityRange<dolfin::ENTITYNAME>>>( \
       m, #TYPE, "Range for iterating over entities of type " #ENTITYNAME       \

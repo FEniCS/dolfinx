@@ -180,9 +180,30 @@ public:
 
   MeshRange(const Mesh& mesh, MeshRangeType type=MeshRangeType::REGULAR) : _mesh(mesh), _type(type) {}
 
-  const MeshIterator<T> begin() const { return MeshIterator<T>(_mesh, 0); }
+  const MeshIterator<T> begin() const
+  {
+    if (_type == MeshRangeType::GHOST)
+    {
+      auto it = MeshIterator<T>(_mesh, 0);
+      it->_local_index = _mesh.topology().ghost_offset(it->_dim);
+      return it;
+    }
 
-  MeshIterator<T> begin() { return MeshIterator<T>(_mesh, 0); }
+    return MeshIterator<T>(_mesh, 0);
+  }
+
+
+  MeshIterator<T> begin()
+  {
+    if (_type == MeshRangeType::GHOST)
+    {
+      auto it = MeshIterator<T>(_mesh, 0);
+      it->_local_index = _mesh.topology().ghost_offset(it->_dim);
+      return it;
+    }
+
+    return MeshIterator<T>(_mesh, 0);
+  }
 
   const MeshIterator<T> end() const
   {
@@ -219,11 +240,19 @@ public:
 
   const MeshIterator<MeshEntity> begin() const
   {
+    if (_type == MeshRangeType::GHOST)
+      return MeshIterator<MeshEntity>(_mesh, _dim,
+                             _mesh.topology().ghost_offset(_dim));
+
     return MeshIterator<MeshEntity>(_mesh, _dim, 0);
   }
 
   MeshIterator<MeshEntity> begin()
   {
+    if (_type == MeshRangeType::GHOST)
+      return MeshIterator<MeshEntity>(_mesh, _dim,
+                             _mesh.topology().ghost_offset(_dim));
+
     return MeshIterator<MeshEntity>(_mesh, _dim, 0);
   }
 

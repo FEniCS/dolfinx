@@ -26,7 +26,6 @@
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshPartitioning.h>
@@ -377,10 +376,10 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         // Iterate through ghost cells, adding non-ghost entities
         // which are in lower rank process cells to a set for
         // exclusion from output
-        for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
+        for (auto &c : MeshRange<MeshEntity>(mesh, tdim, MeshRangeType::GHOST))
         {
-          const unsigned int cell_owner = c->owner();
-          for (auto &ent : EntityRange<MeshEntity>(*c, cell_dim))
+          const unsigned int cell_owner = c.owner();
+          for (auto &ent : EntityRange<MeshEntity>(c, cell_dim))
             if (!ent.is_ghost() && cell_owner < mpi_rank)
               non_local_entities.insert(ent.index());
         }
@@ -641,10 +640,10 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   // directly to the right place
   std::vector<std::vector<std::size_t>> send_requests(num_processes);
   const std::size_t process_number = _mpi_comm.rank();
-  for (MeshEntityIterator cell(*mesh, cell_dim, "all"); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<MeshEntity>(*mesh, cell_dim, MeshRangeType::ALL))
   {
     std::vector<std::size_t> cell_topology;
-    for (auto &v : EntityRange<Vertex>(*cell))
+    for (auto &v : EntityRange<Vertex>(cell))
       cell_topology.push_back(v.global_index());
     std::sort(cell_topology.begin(), cell_topology.end());
 
@@ -652,7 +651,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
     std::size_t send_to_process
         = MPI::index_owner(_mpi_comm.comm(), cell_topology.front(), max_vertex);
     // Map to this process and local index by appending to send data
-    cell_topology.push_back(cell->index());
+    cell_topology.push_back(cell.index());
     cell_topology.push_back(process_number);
     send_requests[send_to_process].insert(send_requests[send_to_process].end(),
                                           cell_topology.begin(),
@@ -777,10 +776,10 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
       // Iterate through ghost cells, adding non-ghost entities which are
       // shared from lower rank process cells to a set for exclusion
       // from output
-      for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
+      for (auto &c : MeshRange<MeshEntity>(mesh, tdim, MeshRangeType::GHOST))
       {
-        const unsigned int cell_owner = c->owner();
-        for (auto &ent : EntityRange<MeshEntity>(*c, cell_dim))
+        const unsigned int cell_owner = c.owner();
+        for (auto &ent : EntityRange<MeshEntity>(c, cell_dim))
         {
           if (!ent.is_ghost() && cell_owner < mpi_rank)
             non_local_entities.insert(ent.index());

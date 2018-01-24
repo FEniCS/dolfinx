@@ -21,7 +21,6 @@
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
@@ -1070,21 +1069,21 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   node_local_to_global.resize(offset_local[1]);
 
   // Build dofmaps from ufc::dofmap
-  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Get reference to container for cell dofs
-    std::vector<la_index_t>& cell_nodes = node_dofmap[cell->index()];
+    std::vector<la_index_t>& cell_nodes = node_dofmap[cell.index()];
     cell_nodes.resize(local_dim);
 
     // Tabulate standard UFC dof map for first space (local)
-    get_cell_entities_local(*cell, entity_indices, needs_entities);
+    get_cell_entities_local(cell, entity_indices, needs_entities);
     dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(), num_mesh_entities_local,
                               entity_indices);
     std::copy(ufc_nodes_local.begin(), ufc_nodes_local.end(),
               cell_nodes.begin());
 
     // Tabulate standard UFC dof map for first space (global)
-    get_cell_entities_global(*cell, entity_indices, needs_entities);
+    get_cell_entities_global(cell, entity_indices, needs_entities);
     dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
                               num_mesh_entities_global_unconstrained,
                               entity_indices);
@@ -1189,21 +1188,21 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   node_local_to_global.resize(offset_local[1]);
 
   // Build dofmaps from ufc::dofmap
-  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Get reference to container for cell dofs
-    std::vector<la_index_t>& cell_nodes = node_dofmap[cell->index()];
+    std::vector<la_index_t>& cell_nodes = node_dofmap[cell.index()];
     cell_nodes.resize(local_dim);
 
     // Tabulate standard UFC dof map for first space (local)
-    get_cell_entities_local(*cell, entity_indices, needs_entities);
+    get_cell_entities_local(cell, entity_indices, needs_entities);
     dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(), num_mesh_entities_local,
                               entity_indices);
     std::copy(ufc_nodes_local.begin(), ufc_nodes_local.end(),
               cell_nodes.begin());
 
     // Tabulate standard UFC dof map for first space (global, constrained)
-    get_cell_entities_global_constrained(*cell, entity_indices,
+    get_cell_entities_global_constrained(cell, entity_indices,
                                          global_entity_indices, needs_entities);
     dofmaps[0]->tabulate_dofs(ufc_nodes_global_constrained.data(),
                               num_mesh_entities_global, entity_indices);
@@ -1221,10 +1220,10 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   std::vector<std::size_t> node_local_to_global_mod(offset_local[1]);
   node_ufc_local_to_local.resize(offset_local[1]);
   int counter = 0;
-  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Get nodes (local) on cell
-    std::vector<la_index_t>& cell_nodes = node_dofmap[cell->index()];
+    std::vector<la_index_t>& cell_nodes = node_dofmap[cell.index()];
     for (std::size_t i = 0; i < cell_nodes.size(); ++i)
     {
       dolfin_assert(cell_nodes[i] < (int)node_local_to_global.size());
@@ -1336,12 +1335,12 @@ void DofMapBuilder::compute_shared_nodes(
 
   // Mark dofs associated ghost cells as ghost dofs (provisionally)
   bool has_ghost_cells = false;
-  for (CellIterator c(mesh, "all"); !c.end(); ++c)
+  for (auto &c : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
-    const std::vector<la_index_t>& cell_nodes = node_dofmap[c->index()];
-    if (c->is_shared())
+    const std::vector<la_index_t>& cell_nodes = node_dofmap[c.index()];
+    if (c.is_shared())
     {
-      const int status = (c->is_ghost()) ? -3 : -2;
+      const int status = (c.is_ghost()) ? -3 : -2;
       for (std::size_t i = 0; i < cell_nodes.size(); ++i)
       {
         // Ensure not already set (for R space)
@@ -1351,14 +1350,14 @@ void DofMapBuilder::compute_shared_nodes(
     }
 
     // Change all non-ghost facet dofs of ghost cells to '0'
-    if (c->is_ghost())
+    if (c.is_ghost())
     {
       has_ghost_cells = true;
-      for (auto &f : EntityRange<Facet>(*c))
+      for (auto &f : EntityRange<Facet>(c))
       {
         if (!f.is_ghost())
         {
-          ufc_dofmap.tabulate_facet_dofs(facet_nodes.data(), c->index(f));
+          ufc_dofmap.tabulate_facet_dofs(facet_nodes.data(), c.index(f));
           for (std::size_t i = 0; i < facet_nodes.size(); ++i)
           {
             std::size_t facet_node_local = cell_nodes[facet_nodes[i]];
@@ -1373,21 +1372,21 @@ void DofMapBuilder::compute_shared_nodes(
     return;
 
   // Mark nodes on inter-process boundary
-  for (FacetIterator f(mesh, "all"); !f.end(); ++f)
+  for (auto &f : MeshRange<Facet>(mesh, MeshRangeType::ALL))
   {
     // Skip if facet is not shared
     // NOTE: second test is for periodic problems
-    if (!f->is_shared() and f->num_entities(D) == 2)
+    if (!f.is_shared() and f.num_entities(D) == 2)
       continue;
 
     // Get cell to which facet belongs (pick first)
-    const Cell cell0(mesh, f->entities(D)[0]);
+    const Cell cell0(mesh, f.entities(D)[0]);
 
     // Tabulate dofs (local) on cell
     const std::vector<la_index_t>& cell_nodes = node_dofmap[cell0.index()];
 
     // Tabulate which dofs are on the facet
-    ufc_dofmap.tabulate_facet_dofs(facet_nodes.data(), cell0.index(*f));
+    ufc_dofmap.tabulate_facet_dofs(facet_nodes.data(), cell0.index(f));
 
     // Mark boundary nodes and insert into map
     for (std::size_t i = 0; i < facet_nodes.size(); ++i)

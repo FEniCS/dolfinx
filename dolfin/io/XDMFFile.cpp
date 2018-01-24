@@ -26,7 +26,6 @@
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
@@ -1952,10 +1951,10 @@ std::set<std::uint32_t> XDMFFile::compute_nonlocal_entities(const Mesh& mesh,
   {
     // Iterate through ghost cells, adding non-ghost entities
     // which are in lower rank process cells
-    for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
+    for (auto &c : MeshRange<MeshEntity>(mesh, tdim, MeshRangeType::GHOST))
     {
-      const std::uint32_t cell_owner = c->owner();
-      for (auto &e : EntityRange<MeshEntity>(*c, cell_dim))
+      const std::uint32_t cell_owner = c.owner();
+      for (auto &e : EntityRange<MeshEntity>(c, cell_dim))
         if (!e.is_ghost() && cell_owner < mpi_rank)
           non_local_entities.insert(e.index());
     }
@@ -2534,14 +2533,14 @@ void XDMFFile::remap_meshfunction_data(
   // directly to the right place
   std::vector<std::vector<std::int64_t>> send_requests(num_processes);
   const std::size_t rank = MPI::rank(comm);
-  for (MeshEntityIterator cell(*mesh, cell_dim, "all"); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<MeshEntity>(*mesh, cell_dim, MeshRangeType::ALL))
   {
     std::vector<std::int64_t> cell_topology;
     if (cell_dim == 0)
-      cell_topology.push_back(cell->global_index());
+      cell_topology.push_back(cell.global_index());
     else
     {
-      for (auto &v : EntityRange<Vertex>(*cell))
+      for (auto &v : EntityRange<Vertex>(cell))
         cell_topology.push_back(v.global_index());
     }
 
@@ -2551,7 +2550,7 @@ void XDMFFile::remap_meshfunction_data(
     std::size_t send_to_process
         = MPI::index_owner(comm, cell_topology.front(), max_vertex);
     // Map to this process and local index by appending to send data
-    cell_topology.push_back(cell->index());
+    cell_topology.push_back(cell.index());
     cell_topology.push_back(rank);
     send_requests[send_to_process].insert(send_requests[send_to_process].end(),
                                           cell_topology.begin(),

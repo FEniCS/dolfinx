@@ -226,8 +226,6 @@ public:
 
 protected:
   // Friends
-  friend class MeshEntityIterator;
-
   template <typename T>
   friend class MeshRange;
   template <typename T>
@@ -236,10 +234,6 @@ protected:
   friend class MeshIterator;
   template <typename T>
   friend class MeshEntityIteratorNew;
-
-  template <typename T>
-  friend class MeshEntityIteratorBase;
-  friend class SubsetIterator;
 
   // The mesh
   Mesh const* _mesh;

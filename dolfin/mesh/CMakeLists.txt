@@ -13,8 +13,6 @@ set(HEADERS
   MeshConnectivity.h
   MeshEditor.h
   MeshEntity.h
-  MeshEntityIteratorBase.h
-  MeshEntityIterator.h
   MeshFunction.h
   MeshGeometry.h
   MeshIterator.h
