@@ -1583,7 +1583,8 @@ void XDMFFile::build_mesh_quadratic(
   for (std::uint32_t i = 0; i < num_cells; ++i)
   {
     std::uint32_t j = 0;
-    for (auto &e : EntityRange<Edge>(Cell(mesh, i)))
+    Cell cell(mesh, i);
+    for (auto &e : EntityRange<Edge>(cell))
     {
       // fixme: permute j
       const int32_t c
