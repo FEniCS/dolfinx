@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Expression.h"
-#include "Transform.h"
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
