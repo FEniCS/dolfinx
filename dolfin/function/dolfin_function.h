@@ -8,5 +8,4 @@
 #include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
-#include <dolfin/function/SpecialFacetFunction.h>
 #include <dolfin/function/SpecialFunctions.h>

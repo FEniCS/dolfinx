@@ -7,7 +7,6 @@
 #pragma once
 
 #include "MeshEntity.h"
-#include "MeshEntityIteratorBase.h"
 
 namespace dolfin
 {
@@ -68,8 +67,4 @@ public:
   double dot(const Edge& edge) const;
 };
 
-/// An EdgeIterator is a _MeshEntityIterator_ of topological dimension 1.
-typedef MeshEntityIteratorBase<Edge> EdgeIterator;
 }
-
-

@@ -8,7 +8,6 @@
 
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshEntityIteratorBase.h"
 #include "MeshGeometry.h"
 #include <dolfin/geometry/Point.h>
 
@@ -39,6 +38,4 @@ public:
   const double* x() const { return _mesh->geometry().x(_local_index); }
 };
 
-/// A VertexIterator is a MeshEntityIterator of topological dimension 0
-typedef MeshEntityIteratorBase<Vertex> VertexIterator;
 }

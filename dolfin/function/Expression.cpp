@@ -10,6 +10,7 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 
 using namespace dolfin;
@@ -174,13 +175,13 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
   vertex_values.resize(size * mesh.num_vertices());
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
-  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Iterate over cell vertices
-    for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
+    for (auto &vertex : EntityRange<Vertex>(cell))
     {
       // Wrap coordinate data
-      Eigen::Map<const Eigen::VectorXd> x(vertex->x(), mesh.geometry().dim());
+      Eigen::Map<const Eigen::VectorXd> x(vertex.x(), mesh.geometry().dim());
 
       // Evaluate at vertex
       eval(local_vertex_values, x);
@@ -189,7 +190,7 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
       for (std::size_t i = 0; i < size; i++)
       {
         const std::size_t global_index
-            = i * mesh.num_vertices() + vertex->index();
+            = i * mesh.num_vertices() + vertex.index();
         vertex_values[global_index] = local_vertex_values[i];
       }
     }

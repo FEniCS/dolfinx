@@ -13,6 +13,7 @@
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <vector>
 
@@ -84,17 +85,17 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   // Build sparsity pattern
   std::vector<dolfin::la_index_t> rows;
   std::vector<dolfin::la_index_t> cols;
-  for (EdgeIterator edge(mesh); !edge.end(); ++edge)
+  for (auto &edge : MeshRange<Edge>(mesh))
   {
     // Row index (global indices)
-    const std::int64_t row = local_to_global_map0[edge_to_dof[edge->index()]];
+    const std::int64_t row = local_to_global_map0[edge_to_dof[edge.index()]];
     rows.push_back(row);
 
     if (row >= local_range[0][0] and row < local_range[0][1])
     {
       // Column indices (global indices)
-      const Vertex v0(mesh, edge->entities(0)[0]);
-      const Vertex v1(mesh, edge->entities(0)[1]);
+      const Vertex v0(mesh, edge.entities(0)[0]);
+      const Vertex v1(mesh, edge.entities(0)[1]);
       std::size_t col0 = local_to_global_map1[vertex_to_dof[v0.index()]];
       std::size_t col1 = local_to_global_map1[vertex_to_dof[v1.index()]];
       cols.push_back(col0);
@@ -112,16 +113,16 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   A->init(pattern);
 
   // Build discrete gradient operator/matrix
-  for (EdgeIterator edge(mesh); !edge.end(); ++edge)
+  for (auto &edge : MeshRange<Edge>(mesh))
   {
     dolfin::la_index_t row;
     dolfin::la_index_t cols[2];
     double values[2];
 
-    row = local_to_global_map0[edge_to_dof[edge->index()]];
+    row = local_to_global_map0[edge_to_dof[edge.index()]];
 
-    Vertex v0(mesh, edge->entities(0)[0]);
-    Vertex v1(mesh, edge->entities(0)[1]);
+    Vertex v0(mesh, edge.entities(0)[0]);
+    Vertex v1(mesh, edge.entities(0)[1]);
 
     cols[0] = local_to_global_map1[vertex_to_dof[v0.index()]];
     cols[1] = local_to_global_map1[vertex_to_dof[v1.index()]];

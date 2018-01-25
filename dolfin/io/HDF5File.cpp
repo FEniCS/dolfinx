@@ -26,7 +26,7 @@
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
@@ -314,7 +314,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         else
           edge_mapping = {5, 2, 4, 3, 1, 0};
 
-        for (CellIterator c(mesh); !c.end(); ++c)
+        for (auto &c : MeshRange<Cell>(mesh))
         {
           // Add indices for vertices and edges
           for (unsigned int dim = 0; dim != 2; ++dim)
@@ -323,7 +323,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
             {
               std::size_t im = (dim == 0) ? i : edge_mapping[i];
               const std::size_t entity_index
-                  = (dim == tdim) ? c->index() : c->entities(dim)[im];
+                  = (dim == tdim) ? c.index() : c.entities(dim)[im];
               const std::size_t local_idx
                   = geom.get_entity_index(dim, 0, entity_index);
               topological_data.push_back(local_idx);
@@ -333,15 +333,15 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       }
       else if (cell_dim == 0)
       {
-        for (VertexIterator v(mesh); !v.end(); ++v)
-          topological_data.push_back(v->global_index());
+        for (auto &v : MeshRange<Vertex>(mesh))
+          topological_data.push_back(v.global_index());
       }
       else
       {
-        for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
-          for (unsigned int i = 0; i != c->num_entities(0); ++i)
+        for (auto &c : MeshRange<MeshEntity>(mesh, cell_dim))
+          for (unsigned int i = 0; i != c.num_entities(0); ++i)
           {
-            const unsigned int local_idx = c->entities(0)[perm[i]];
+            const unsigned int local_idx = c.entities(0)[perm[i]];
             topological_data.push_back(global_vertices[local_idx]);
           }
       }
@@ -376,34 +376,34 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         // Iterate through ghost cells, adding non-ghost entities
         // which are in lower rank process cells to a set for
         // exclusion from output
-        for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
+        for (auto &c : MeshRange<MeshEntity>(mesh, tdim, MeshRangeType::GHOST))
         {
-          const unsigned int cell_owner = c->owner();
-          for (MeshEntityIterator ent(*c, cell_dim); !ent.end(); ++ent)
-            if (!ent->is_ghost() && cell_owner < mpi_rank)
-              non_local_entities.insert(ent->index());
+          const unsigned int cell_owner = c.owner();
+          for (auto &ent : EntityRange<MeshEntity>(c, cell_dim))
+            if (!ent.is_ghost() && cell_owner < mpi_rank)
+              non_local_entities.insert(ent.index());
         }
       }
 
       if (cell_dim == 0)
       {
         // Special case for mesh of points
-        for (VertexIterator v(mesh); !v.end(); ++v)
+        for (auto &v : MeshRange<Vertex>(mesh))
         {
-          if (non_local_entities.find(v->index()) == non_local_entities.end())
-            topological_data.push_back(v->global_index());
+          if (non_local_entities.find(v.index()) == non_local_entities.end())
+            topological_data.push_back(v.global_index());
         }
       }
       else
       {
-        for (MeshEntityIterator ent(mesh, cell_dim); !ent.end(); ++ent)
+        for (auto &ent : MeshRange<MeshEntity>(mesh, cell_dim))
         {
           // If not excluded, add to topology
-          if (non_local_entities.find(ent->index()) == non_local_entities.end())
+          if (non_local_entities.find(ent.index()) == non_local_entities.end())
           {
-            for (unsigned int i = 0; i != ent->num_entities(0); ++i)
+            for (unsigned int i = 0; i != ent.num_entities(0); ++i)
             {
-              const unsigned int local_idx = ent->entities(0)[perm[i]];
+              const unsigned int local_idx = ent.entities(0)[perm[i]];
               topological_data.push_back(global_vertices[local_idx]);
             }
           }
@@ -500,8 +500,8 @@ void HDF5File::write(const MeshFunction<bool>& meshfunction,
   // HDF5 does not support a boolean type,
   // so copy to int with values 1 and 0
   MeshFunction<int> mf(mesh, cell_dim);
-  for (MeshEntityIterator cell(*mesh, cell_dim); !cell.end(); ++cell)
-    mf[cell->index()] = (meshfunction[cell->index()] ? 1 : 0);
+  for (auto &cell : MeshRange<MeshEntity>(*mesh, cell_dim))
+    mf[cell.index()] = (meshfunction[cell.index()] ? 1 : 0);
 
   write_mesh_function(mf, name);
 }
@@ -518,8 +518,8 @@ void HDF5File::read(MeshFunction<bool>& meshfunction,
   MeshFunction<int> mf(mesh, cell_dim);
   read_mesh_function(mf, name);
 
-  for (MeshEntityIterator cell(*mesh, cell_dim); !cell.end(); ++cell)
-    meshfunction[cell->index()] = (mf[cell->index()] != 0);
+  for (auto &cell : MeshRange<MeshEntity>(*mesh, cell_dim))
+    meshfunction[cell.index()] = (mf[cell.index()] != 0);
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -640,18 +640,18 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   // directly to the right place
   std::vector<std::vector<std::size_t>> send_requests(num_processes);
   const std::size_t process_number = _mpi_comm.rank();
-  for (MeshEntityIterator cell(*mesh, cell_dim, "all"); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<MeshEntity>(*mesh, cell_dim, MeshRangeType::ALL))
   {
     std::vector<std::size_t> cell_topology;
-    for (VertexIterator v(*cell); !v.end(); ++v)
-      cell_topology.push_back(v->global_index());
+    for (auto &v : EntityRange<Vertex>(cell))
+      cell_topology.push_back(v.global_index());
     std::sort(cell_topology.begin(), cell_topology.end());
 
     // Use first vertex to decide where to send this request
     std::size_t send_to_process
         = MPI::index_owner(_mpi_comm.comm(), cell_topology.front(), max_vertex);
     // Map to this process and local index by appending to send data
-    cell_topology.push_back(cell->index());
+    cell_topology.push_back(cell.index());
     cell_topology.push_back(process_number);
     send_requests[send_to_process].insert(send_requests[send_to_process].end(),
                                           cell_topology.begin(),
@@ -776,21 +776,21 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
       // Iterate through ghost cells, adding non-ghost entities which are
       // shared from lower rank process cells to a set for exclusion
       // from output
-      for (MeshEntityIterator c(mesh, tdim, "ghost"); !c.end(); ++c)
+      for (auto &c : MeshRange<MeshEntity>(mesh, tdim, MeshRangeType::GHOST))
       {
-        const unsigned int cell_owner = c->owner();
-        for (MeshEntityIterator ent(*c, cell_dim); !ent.end(); ++ent)
+        const unsigned int cell_owner = c.owner();
+        for (auto &ent : EntityRange<MeshEntity>(c, cell_dim))
         {
-          if (!ent->is_ghost() && cell_owner < mpi_rank)
-            non_local_entities.insert(ent->index());
+          if (!ent.is_ghost() && cell_owner < mpi_rank)
+            non_local_entities.insert(ent.index());
         }
       }
     }
 
-    for (MeshEntityIterator ent(mesh, cell_dim); !ent.end(); ++ent)
+    for (auto &ent : MeshRange<MeshEntity>(mesh, cell_dim))
     {
-      if (non_local_entities.find(ent->index()) == non_local_entities.end())
-        data_values.push_back(meshfunction[*ent]);
+      if (non_local_entities.find(ent.index()) == non_local_entities.end())
+        data_values.push_back(meshfunction[ent]);
     }
   }
 
@@ -1132,8 +1132,8 @@ void HDF5File::write_mesh_value_collection(
       const unsigned int entity_local_idx = cell.entities(dim)[p.first.second];
       cell = MeshEntity(*mesh, dim, entity_local_idx);
     }
-    for (VertexIterator v(cell); !v.end(); ++v)
-      topology.push_back(v->global_index());
+    for (auto &v : EntityRange<Vertex>(cell))
+      topology.push_back(v.global_index());
     value_data.push_back(p.second);
   }
 
@@ -1275,20 +1275,21 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
   std::vector<std::vector<std::size_t>> send_entities(num_processes);
   std::vector<std::vector<std::size_t>> recv_entities(num_processes);
 
-  for (MeshEntityIterator m(*mesh, dim); !m.end(); ++m)
+  for (auto &m : MeshRange<MeshEntity>(*mesh, dim))
   {
     if (dim == 0)
-      v[0] = m->global_index();
+      v[0] = m.global_index();
     else
     {
-      for (VertexIterator vtx(*m); !vtx.end(); ++vtx)
-        v[vtx.pos()] = vtx->global_index();
+      v.clear();
+      for (auto &vtx : EntityRange<Vertex>(m))
+        v.push_back(vtx.global_index());
       std::sort(v.begin(), v.end());
     }
 
     std::size_t dest
         = MPI::index_owner(_mpi_comm.comm(), v[0], global_vertex_range);
-    send_entities[dest].push_back(m->index());
+    send_entities[dest].push_back(m.index());
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
   }
 

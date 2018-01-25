@@ -13,6 +13,7 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <vector>
 
 using namespace dolfin;
@@ -104,22 +105,22 @@ void FunctionSpace::interpolate_from_any(PETScVector& expansion_coefficients,
   // Iterate over mesh and interpolate on each cell
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  for (CellIterator cell(*_mesh); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(*_mesh))
   {
     // Update to current cell
-    cell->get_coordinate_dofs(coordinate_dofs);
-    cell->get_cell_data(ufc_cell);
+    cell.get_coordinate_dofs(coordinate_dofs);
+    cell.get_cell_data(ufc_cell);
 
     // Restrict function to cell
-    v.restrict(cell_coefficients.data(), *_element, *cell,
+    v.restrict(cell_coefficients.data(), *_element, cell,
                coordinate_dofs.data(), ufc_cell);
 
     // Tabulate dofs
-    auto cell_dofs = _dofmap->cell_dofs(cell->index());
+    auto cell_dofs = _dofmap->cell_dofs(cell.index());
 
     // Copy dofs to vector
     expansion_coefficients.set_local(cell_coefficients.data(),
-                                     _dofmap->num_element_dofs(cell->index()),
+                                     _dofmap->num_element_dofs(cell.index()),
                                      cell_dofs.data());
   }
 }
@@ -265,16 +266,16 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
   // Loop over cells and tabulate dofs
   boost::multi_array<double, 2> coordinates;
   std::vector<double> coordinate_dofs;
-  for (CellIterator cell(*_mesh); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(*_mesh))
   {
     // Update UFC cell
-    cell->get_coordinate_dofs(coordinate_dofs);
+    cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get local-to-global map
-    auto dofs = _dofmap->cell_dofs(cell->index());
+    auto dofs = _dofmap->cell_dofs(cell.index());
 
     // Tabulate dof coordinates on cell
-    _element->tabulate_dof_coordinates(coordinates, coordinate_dofs, *cell);
+    _element->tabulate_dof_coordinates(coordinates, coordinate_dofs, cell);
 
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
@@ -305,16 +306,16 @@ void FunctionSpace::set_x(PETScVector& x, double value,
   std::vector<double> x_values;
   boost::multi_array<double, 2> coordinates;
   std::vector<double> coordinate_dofs;
-  for (CellIterator cell(*_mesh); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(*_mesh))
   {
     // Update UFC cell
-    cell->get_coordinate_dofs(coordinate_dofs);
+    cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get cell local-to-global map
-    auto dofs = _dofmap->cell_dofs(cell->index());
+    auto dofs = _dofmap->cell_dofs(cell.index());
 
     // Tabulate dof coordinates
-    _element->tabulate_dof_coordinates(coordinates, coordinate_dofs, *cell);
+    _element->tabulate_dof_coordinates(coordinates, coordinate_dofs, cell);
     dolfin_assert(coordinates.shape()[0] == (std::size_t)dofs.size());
     dolfin_assert(component < coordinates.shape()[1]);
 
@@ -347,10 +348,10 @@ std::string FunctionSpace::str(bool verbose) const
 void FunctionSpace::print_dofmap() const
 {
   dolfin_assert(_mesh);
-  for (CellIterator cell(*_mesh); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(*_mesh))
   {
-    auto dofs = _dofmap->cell_dofs(cell->index());
-    std::cout << cell->index() << ":";
+    auto dofs = _dofmap->cell_dofs(cell.index());
+    std::cout << cell.index() << ":";
     for (Eigen::Index i = 0; i < dofs.size(); i++)
       std::cout << " " << static_cast<std::size_t>(dofs[i]);
     std::cout << std::endl;

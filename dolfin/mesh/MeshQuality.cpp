@@ -7,6 +7,7 @@
 #include "MeshQuality.h"
 #include "Cell.h"
 #include "Mesh.h"
+#include "MeshIterator.h"
 #include "MeshFunction.h"
 #include "Vertex.h"
 #include <dolfin/common/MPI.h>
@@ -22,21 +23,20 @@ MeshQuality::radius_ratios(std::shared_ptr<const Mesh> mesh)
   MeshFunction<double> cf(mesh, mesh->topology().dim(), 0.0);
 
   // Compute radius ration
-  for (CellIterator cell(*mesh); !cell.end(); ++cell)
-    cf[*cell] = cell->radius_ratio();
+  for (auto &cell : MeshRange<Cell>(*mesh))
+    cf[cell] = cell.radius_ratio();
 
   return cf;
 }
 //-----------------------------------------------------------------------------
 std::pair<double, double> MeshQuality::radius_ratio_min_max(const Mesh& mesh)
 {
-  CellIterator cell(mesh);
-  double qmin = cell->radius_ratio();
-  double qmax = cell->radius_ratio();
-  for (; !cell.end(); ++cell)
+  double qmin = std::numeric_limits<double>::max();
+  double qmax = 0.0;
+  for (auto &cell : MeshRange<Cell>(mesh))
   {
-    qmin = std::min(qmin, cell->radius_ratio());
-    qmax = std::max(qmax, cell->radius_ratio());
+    qmin = std::min(qmin, cell.radius_ratio());
+    qmax = std::max(qmax, cell.radius_ratio());
   }
 
   qmin = MPI::min(mesh.mpi_comm(), qmin);
@@ -58,9 +58,9 @@ MeshQuality::radius_ratio_histogram_data(const Mesh& mesh, std::size_t num_bins)
   std::cout << num_bins << std::endl;
   std::cout << static_cast<double>(num_bins) << std::endl;
 
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh))
   {
-    const double ratio = cell->radius_ratio();
+    const double ratio = cell.radius_ratio();
 
     // Compute 'bin' index, and handle special case that ratio = 1.0
     const std::size_t slot
@@ -163,22 +163,16 @@ void MeshQuality::dihedral_angles(const Cell& cell,
 std::pair<double, double> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
 {
   // Get the maximum and minimum value of dihedral angles in cells across a mesh
-  // SHOULD ONLY WORK FOR 3D MESH
-  // CellIterator cell(mesh);
-
-  // Get the angles at each cell
-  // std::vector<double> angs;
-  // dihedral_angles(*cell, angs);
 
   // Get original min and max
   double d_ang_min = DOLFIN_PI + 1.0;
   double d_ang_max = -1.0;
 
   std::vector<double> angs(6);
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh))
   {
     // Get the angles from the next cell
-    dihedral_angles(*cell, angs);
+    dihedral_angles(cell, angs);
 
     // And then update the min and max
     d_ang_min
@@ -211,10 +205,10 @@ MeshQuality::dihedral_angles_histogram_data(const Mesh& mesh,
     bins[i] = static_cast<double>(i) * interval + interval / 2.0;
 
   std::vector<double> angs(6);
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh))
   {
     // this one should return the value of the angle
-    dihedral_angles(*cell, angs);
+    dihedral_angles(cell, angs);
 
     // Iterate through the collected vector
     for (std::size_t i = 0; i < angs.size(); i++)

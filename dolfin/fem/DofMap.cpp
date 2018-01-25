@@ -12,7 +12,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/LogStream.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/Vertex.h>
 
@@ -246,16 +246,16 @@ DofMap::entity_closure_dofs(const Mesh& mesh, std::size_t entity_dim) const
 
   // Iterate over entities
   std::size_t local_entity_ind = 0;
-  for (MeshEntityIterator entity(mesh, entity_dim); !entity.end(); ++entity)
+  for (auto &entity : MeshRange<MeshEntity>(mesh, entity_dim))
   {
     // Get the first cell connected to the entity
-    const Cell cell(mesh, entity->entities(top_dim)[0]);
+    const Cell cell(mesh, entity.entities(top_dim)[0]);
 
     // Find local entity number
     for (std::size_t local_i = 0; local_i < cell.num_entities(entity_dim);
          ++local_i)
     {
-      if (cell.entities(entity_dim)[local_i] == entity->index())
+      if (cell.entities(entity_dim)[local_i] == entity.index())
       {
         local_entity_ind = local_i;
         break;
@@ -275,7 +275,7 @@ DofMap::entity_closure_dofs(const Mesh& mesh, std::size_t entity_dim) const
       // Map dofs
       const dolfin::la_index_t global_dof
           = cell_dof_list[local_to_local_map[local_dof]];
-      entity_to_dofs[dofs_per_entity * entity->index() + local_dof]
+      entity_to_dofs[dofs_per_entity * entity.index() + local_dof]
           = global_dof;
     }
   }
@@ -359,16 +359,16 @@ DofMap::entity_dofs(const Mesh& mesh, std::size_t entity_dim) const
 
   // Iterate over entities
   std::size_t local_entity_ind = 0;
-  for (MeshEntityIterator entity(mesh, entity_dim); !entity.end(); ++entity)
+  for (auto &entity : MeshRange<MeshEntity>(mesh, entity_dim))
   {
     // Get the first cell connected to the entity
-    const Cell cell(mesh, entity->entities(top_dim)[0]);
+    const Cell cell(mesh, entity.entities(top_dim)[0]);
 
     // Find local entity number
     for (std::size_t local_i = 0; local_i < cell.num_entities(entity_dim);
          ++local_i)
     {
-      if (cell.entities(entity_dim)[local_i] == entity->index())
+      if (cell.entities(entity_dim)[local_i] == entity.index())
       {
         local_entity_ind = local_i;
         break;
@@ -387,7 +387,7 @@ DofMap::entity_dofs(const Mesh& mesh, std::size_t entity_dim) const
       // Map dofs
       const dolfin::la_index_t global_dof
           = cell_dof_list[local_to_local_map[local_dof]];
-      entity_to_dofs[dofs_per_entity * entity->index() + local_dof]
+      entity_to_dofs[dofs_per_entity * entity.index() + local_dof]
           = global_dof;
     }
   }
@@ -476,16 +476,16 @@ std::vector<dolfin::la_index_t> DofMap::dofs(const Mesh& mesh,
   if (dim < mesh.topology().dim())
   {
     std::vector<std::size_t> entity_dofs_local;
-    for (CellIterator c(mesh); !c.end(); ++c)
+    for (auto &c : MeshRange<Cell>(mesh))
     {
       // Get local-to-global dofmap for cell
-      const auto cell_dof_list = cell_dofs(c->index());
+      const auto cell_dof_list = cell_dofs(c.index());
 
       // Loop over all entities of dimension dim
-      for (MeshEntityIterator e(*c, dim); !e.end(); ++e)
+      unsigned int local_index = 0;
+      for (auto &e : EntityRange<MeshEntity>(c, dim))
       {
         // Tabulate cell-wise index of all dofs on entity
-        const std::size_t local_index = e.pos();
         tabulate_entity_dofs(entity_dofs_local, dim, local_index);
 
         // Get dof index and add to list
@@ -493,19 +493,21 @@ std::vector<dolfin::la_index_t> DofMap::dofs(const Mesh& mesh,
         {
           const std::size_t entity_dof_local = entity_dofs_local[i];
           const dolfin::la_index_t dof_index = cell_dof_list[entity_dof_local];
-          dolfin_assert(e->index() * num_dofs_per_entity + i < dof_list.size());
-          dof_list[e->index() * num_dofs_per_entity + i] = dof_index;
+          dolfin_assert(e.index() * num_dofs_per_entity + i < dof_list.size());
+          dof_list[e.index() * num_dofs_per_entity + i] = dof_index;
         }
+
+        ++local_index;
       }
     }
   }
   else
   {
     std::vector<std::size_t> entity_dofs_local;
-    for (CellIterator c(mesh); !c.end(); ++c)
+    for (auto &c : MeshRange<Cell>(mesh))
     {
       // Get local-to-global dofmap for cell
-      const auto cell_dof_list = cell_dofs(c->index());
+      const auto cell_dof_list = cell_dofs(c.index());
 
       // Tabulate cell-wise index of all dofs on entity
       tabulate_entity_dofs(entity_dofs_local, dim, 0);
@@ -515,8 +517,8 @@ std::vector<dolfin::la_index_t> DofMap::dofs(const Mesh& mesh,
       {
         const std::size_t entity_dof_local = entity_dofs_local[i];
         const dolfin::la_index_t dof_index = cell_dof_list[entity_dof_local];
-        dolfin_assert(c->index() * num_dofs_per_entity + i < dof_list.size());
-        dof_list[c->index() * num_dofs_per_entity + i] = dof_index;
+        dolfin_assert(c.index() * num_dofs_per_entity + i < dof_list.size());
+        dof_list[c.index() * num_dofs_per_entity + i] = dof_index;
       }
     }
   }

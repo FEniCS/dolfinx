@@ -7,7 +7,6 @@
 #pragma once
 
 #include "MeshEntity.h"
-#include "MeshEntityIteratorBase.h"
 
 namespace dolfin
 {
@@ -33,8 +32,4 @@ public:
   Point normal() const;
 };
 
-/// A FaceIterator is a MeshEntityIterator of topological dimension 2.
-typedef MeshEntityIteratorBase<Face> FaceIterator;
 }
-
-

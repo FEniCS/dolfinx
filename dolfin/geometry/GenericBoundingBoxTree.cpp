@@ -19,7 +19,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/MeshIterator.h>
 
 using namespace dolfin;
 
@@ -76,8 +76,8 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
   const std::size_t _gdim = gdim();
   const unsigned int num_leaves = mesh.num_entities(tdim);
   std::vector<double> leaf_bboxes(2 * _gdim * num_leaves);
-  for (MeshEntityIterator it(mesh, tdim); !it.end(); ++it)
-    compute_bbox_of_entity(leaf_bboxes.data() + 2 * _gdim * it->index(), *it,
+  for (auto &it : MeshRange<MeshEntity>(mesh, tdim))
+    compute_bbox_of_entity(leaf_bboxes.data() + 2 * _gdim * it.index(), it,
                            _gdim);
 
   // Create leaf partition (to be sorted)
@@ -675,8 +675,8 @@ void GenericBoundingBoxTree::build_point_search_tree(const Mesh& mesh) const
 
   // Create list of midpoints for all cells
   std::vector<Point> points;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-    points.push_back(cell->midpoint());
+  for (auto &cell : MeshRange<Cell>(mesh))
+    points.push_back(cell.midpoint());
 
   // Select implementation
   _point_search_tree = create(mesh.geometry().dim());

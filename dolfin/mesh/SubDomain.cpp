@@ -8,8 +8,8 @@
 #include "Facet.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshEntityIterator.h"
 #include "MeshFunction.h"
+#include "MeshIterator.h"
 #include "MeshValueCollection.h"
 #include "Vertex.h"
 #include <dolfin/common/RangedIndexSet.h>
@@ -140,20 +140,20 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh,
   bool on_boundary = false;
 
   // Compute sub domain markers
-  for (MeshEntityIterator entity(mesh, dim); !entity.end(); ++entity)
+  for (auto &entity : MeshRange<MeshEntity>(mesh, dim))
   {
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
-      on_boundary = (entity->num_global_entities(D) == 1);
+      on_boundary = (entity.num_global_entities(D) == 1);
     // Or, if entity is of topological dimension less than D - 1, check if any
     // connected
     // facet is on the boundary
     else if (dim < D - 1)
     {
       on_boundary = false;
-      for (std::size_t f(0); f < entity->num_entities(D - 1); ++f)
+      for (std::size_t f(0); f < entity.num_entities(D - 1); ++f)
       {
-        std::size_t facet_id = entity->entities(D - 1)[f];
+        std::size_t facet_id = entity.entities(D - 1)[f];
         Facet facet(mesh, facet_id);
         if (facet.num_global_entities(D) == 1)
         {
@@ -173,18 +173,18 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh,
     bool all_points_inside = true;
 
     // Check all incident vertices if dimension is > 0 (not a vertex)
-    if (entity->dim() > 0)
+    if (entity.dim() > 0)
     {
-      for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
+      for (auto &vertex : EntityRange<Vertex>(entity))
       {
-        if (is_visited.insert(vertex->index()))
+        if (is_visited.insert(vertex.index()))
         {
-          Eigen::Map<Eigen::VectorXd> x(const_cast<double*>(vertex->x()),
+          Eigen::Map<Eigen::VectorXd> x(const_cast<double*>(vertex.x()),
                                         _geometric_dimension);
-          is_inside[vertex->index()] = inside(x, on_boundary);
+          is_inside[vertex.index()] = inside(x, on_boundary);
         }
 
-        if (!is_inside[vertex->index()])
+        if (!is_inside[vertex.index()])
         {
           all_points_inside = false;
           break;
@@ -196,7 +196,7 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh,
     if (all_points_inside && check_midpoint)
     {
       Eigen::Map<Eigen::VectorXd> x(
-          const_cast<double*>(entity->midpoint().coordinates()),
+          const_cast<double*>(entity.midpoint().coordinates()),
           _geometric_dimension);
       if (!inside(x, on_boundary))
         all_points_inside = false;
@@ -204,7 +204,7 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh,
 
     // Mark entity with all vertices inside
     if (all_points_inside)
-      sub_domains.set_value(entity->index(), sub_domain);
+      sub_domains.set_value(entity.index(), sub_domain);
   }
 }
 //-----------------------------------------------------------------------------
@@ -242,20 +242,20 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
   bool on_boundary = false;
 
   // Compute sub domain markers
-  for (MeshEntityIterator entity(mesh, dim); !entity.end(); ++entity)
+  for (auto &entity : MeshRange<MeshEntity>(mesh, dim))
   {
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
-      on_boundary = (entity->num_global_entities(D) == 1);
+      on_boundary = (entity.num_global_entities(D) == 1);
     // Or, if entity is of topological dimension less than D - 1, check if any
     // connected
     // facet is on the boundary
     else if (dim < D - 1)
     {
       on_boundary = false;
-      for (std::size_t f(0); f < entity->num_entities(D - 1); ++f)
+      for (std::size_t f(0); f < entity.num_entities(D - 1); ++f)
       {
-        std::size_t facet_id = entity->entities(D - 1)[f];
+        std::size_t facet_id = entity.entities(D - 1)[f];
         Facet facet(mesh, facet_id);
         if (facet.num_global_entities(D) == 1)
         {
@@ -275,18 +275,18 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
     bool all_points_inside = true;
 
     // Check all incident vertices if dimension is > 0 (not a vertex)
-    if (entity->dim() > 0)
+    if (entity.dim() > 0)
     {
-      for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
+      for (auto &vertex : EntityRange<Vertex>(entity))
       {
-        if (is_visited.insert(vertex->index()))
+        if (is_visited.insert(vertex.index()))
         {
-          Eigen::Map<Eigen::VectorXd> x(const_cast<double*>(vertex->x()),
+          Eigen::Map<Eigen::VectorXd> x(const_cast<double*>(vertex.x()),
                                         _geometric_dimension);
-          is_inside[vertex->index()] = inside(x, on_boundary);
+          is_inside[vertex.index()] = inside(x, on_boundary);
         }
 
-        if (!is_inside[vertex->index()])
+        if (!is_inside[vertex.index()])
         {
           all_points_inside = false;
           break;
@@ -298,7 +298,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
     if (all_points_inside && check_midpoint)
     {
       Eigen::Map<Eigen::VectorXd> x(
-          const_cast<double*>(entity->midpoint().coordinates()),
+          const_cast<double*>(entity.midpoint().coordinates()),
           _geometric_dimension);
       if (!inside(x, on_boundary))
         all_points_inside = false;
@@ -306,7 +306,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
 
     // Mark entity with all vertices inside
     if (all_points_inside)
-      sub_domains[entity->index()] = sub_domain;
+      sub_domains[entity.index()] = sub_domain;
   }
 }
 //-----------------------------------------------------------------------------

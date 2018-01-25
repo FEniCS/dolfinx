@@ -7,6 +7,7 @@
 #include "LocalMeshData.h"
 #include "Cell.h"
 #include "Mesh.h"
+#include "MeshIterator.h"
 #include "Vertex.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
@@ -121,28 +122,28 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
   // Get coordinates for all vertices stored on local processor
   geometry.vertex_coordinates.resize(
       boost::extents[mesh.num_vertices()][geometry.dim]);
-  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+  for (auto &vertex : MeshRange<Vertex>(mesh))
   {
-    const std::size_t index = vertex->index();
-    std::copy(vertex->x(), vertex->x() + geometry.dim,
+    const std::size_t index = vertex.index();
+    std::copy(vertex.x(), vertex.x() + geometry.dim,
               geometry.vertex_coordinates[index].begin());
   }
 
   // Get global vertex indices for all vertices stored on local processor
   geometry.vertex_indices.reserve(mesh.num_vertices());
-  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-    geometry.vertex_indices.push_back(vertex->index());
+  for (auto &vertex : MeshRange<Vertex>(mesh))
+    geometry.vertex_indices.push_back(vertex.index());
 
   // Get global vertex indices for all cells stored on local processor
   topology.cell_vertices.resize(
       boost::extents[mesh.num_cells()][topology.num_vertices_per_cell]);
   topology.global_cell_indices.reserve(mesh.num_cells());
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh))
   {
-    const std::size_t index = cell->index();
+    const std::size_t index = cell.index();
     topology.global_cell_indices.push_back(index);
-    std::copy(cell->entities(0),
-              cell->entities(0) + topology.num_vertices_per_cell,
+    std::copy(cell.entities(0),
+              cell.entities(0) + topology.num_vertices_per_cell,
               topology.cell_vertices[index].begin());
   }
 }

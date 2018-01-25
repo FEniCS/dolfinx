@@ -10,7 +10,6 @@
 
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshEntityIteratorBase.h"
 #include "MeshTopology.h"
 #include <utility>
 #include <vector>
@@ -50,9 +49,4 @@ public:
   bool exterior() const;
 };
 
-/// A FacetIterator is a MeshEntityIterator of topological
-/// codimension 1.
-typedef MeshEntityIteratorBase<Facet> FacetIterator;
 }
-
-

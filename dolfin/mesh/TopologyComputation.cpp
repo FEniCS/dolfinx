@@ -9,7 +9,7 @@
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshConnectivity.h"
-#include "MeshEntityIterator.h"
+#include "MeshIterator.h"
 #include "MeshTopology.h"
 #include <algorithm>
 #include <boost/multi_array.hpp>
@@ -117,8 +117,9 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
   {
     std::vector<std::vector<std::size_t>> connectivity_dd(
         topology.size(d0), std::vector<std::size_t>(1));
-    for (MeshEntityIterator e(mesh, d0, "all"); !e.end(); ++e)
-      connectivity_dd[e->index()][0] = e->index();
+
+    for (auto &e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
+      connectivity_dd[e.index()][0] = e.index();
     topology(d0, d0).set(connectivity_dd);
   }
   else if (d0 < d1)
@@ -197,14 +198,14 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
 
   // Loop over cells to build list of keyed (by vertices) entities
   int entity_counter = 0;
-  for (CellIterator c(mesh, "all"); !c.end(); ++c)
+  for (auto &c : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Get vertices from cell
-    const std::uint32_t* vertices = c->entities(0);
+    const std::uint32_t* vertices = c.entities(0);
     dolfin_assert(vertices);
 
     // Iterate over entities of cell
-    const int cell_index = c->index();
+    const int cell_index = c.index();
     for (std::int8_t i = 0; i < num_entities; ++i)
     {
       // Get entity vertices
@@ -220,7 +221,7 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
       // Attach (local index, cell index), making local_index negative
       // if it is not a ghost cell. This ensures that non-ghosts come
       // before ghosts when sorted. The index is corrected later.
-      if (!c->is_ghost())
+      if (!c.is_ghost())
         std::get<1>(keyed_entities[entity_counter]) = {-i - 1, cell_index};
       else
         std::get<1>(keyed_entities[entity_counter]) = {i, cell_index};
@@ -346,9 +347,9 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
   std::vector<std::size_t> tmp(topology.size(d0), 0);
 
   // Count the number of connections
-  for (MeshEntityIterator e1(mesh, d1, "all"); !e1.end(); ++e1)
-    for (MeshEntityIterator e0(*e1, d0); !e0.end(); ++e0)
-      tmp[e0->index()]++;
+  for (auto &e1 : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
+    for (auto &e0 : EntityRange<MeshEntity>(e1, d0))
+      tmp[e0.index()]++;
 
   // Initialize the number of connections
   connectivity.init(tmp);
@@ -357,9 +358,9 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
   std::fill(tmp.begin(), tmp.end(), 0);
 
   // Add the connections
-  for (MeshEntityIterator e1(mesh, d1, "all"); !e1.end(); ++e1)
-    for (MeshEntityIterator e0(*e1, d0); !e0.end(); ++e0)
-      connectivity.set(e0->index(), e1->index(), tmp[e0->index()]++);
+  for (auto &e1 : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
+    for (auto &e0 : EntityRange<MeshEntity>(e1, d0))
+      connectivity.set(e0.index(), e1.index(), tmp[e0.index()]++);
 }
 //----------------------------------------------------------------------------
 void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
@@ -381,20 +382,20 @@ void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
 
   const std::size_t num_verts_d1 = mesh.type().num_vertices(d1);
   std::vector<std::uint32_t> key(num_verts_d1);
-  for (MeshEntityIterator e(mesh, d1, "all"); !e.end(); ++e)
+  for (auto &e : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
   {
-    std::partial_sort_copy(e->entities(0), e->entities(0) + num_verts_d1,
+    std::partial_sort_copy(e.entities(0), e.entities(0) + num_verts_d1,
                            key.begin(), key.end());
-    entity_to_index.insert({key, e->index()});
+    entity_to_index.insert({key, e.index()});
   }
 
   // Search for d1 entities of d0 in map, and recover index
   std::vector<std::size_t> entities;
   boost::multi_array<std::uint32_t, 2> keys;
-  for (MeshEntityIterator e(mesh, d0, "all"); !e.end(); ++e)
+  for (auto &e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
   {
     entities.clear();
-    cell_type->create_entities(keys, d1, e->entities(0));
+    cell_type->create_entities(keys, d1, e.entities(0));
     for (const auto& p : keys)
     {
       std::partial_sort_copy(p.begin(), p.end(), key.begin(), key.end());
@@ -402,7 +403,7 @@ void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
       dolfin_assert(it != entity_to_index.end());
       entities.push_back(it->second);
     }
-    connectivity.set(e->index(), entities.data());
+    connectivity.set(e.index(), entities.data());
   }
 }
 //-----------------------------------------------------------------------------

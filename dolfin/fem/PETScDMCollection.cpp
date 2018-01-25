@@ -17,6 +17,7 @@
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/log/log.h>
 #include <petscmat.h>
 
@@ -83,16 +84,16 @@ tabulate_coordinates_to_dofs(const FunctionSpace& V)
       = dofmap.ownership_range()[1] - dofmap.ownership_range()[0];
   RangedIndexSet already_visited(std::array<std::int64_t, 2>{{0, local_size}});
 
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh))
   {
     // Get cell coordinates
-    cell->get_coordinate_dofs(coordinate_dofs);
+    cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get local-to-global map
-    auto dofs = dofmap.cell_dofs(cell->index());
+    auto dofs = dofmap.cell_dofs(cell.index());
 
     // Tabulate dof coordinates on cell
-    element.tabulate_dof_coordinates(coordinates, coordinate_dofs, *cell);
+    element.tabulate_dof_coordinates(coordinates, coordinate_dofs, cell);
 
     // Map dofs into coords_to_dofs
     for (Eigen::Index i = 0; i < dofs.size(); ++i)

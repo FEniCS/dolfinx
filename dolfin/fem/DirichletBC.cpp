@@ -27,6 +27,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/SubDomain.h>
@@ -397,10 +398,10 @@ void DirichletBC::init_from_mesh_function(
 
   // Build set of boundary facets
   dolfin_assert(_facets.empty());
-  for (FacetIterator facet(mesh); !facet.end(); ++facet)
+  for (auto &facet : MeshRange<Facet>(mesh))
   {
-    if (sub_domains[*facet] == sub_domain)
-      _facets.push_back(facet->index());
+    if (sub_domains[facet] == sub_domain)
+      _facets.push_back(facet.index());
   }
 }
 //-----------------------------------------------------------------------------
@@ -571,19 +572,19 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
     std::vector<double> coordinate_dofs;
 
     // Loop the vertices associated with the facet
-    for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
+    for (auto &vertex : EntityRange<Vertex>(facet))
     {
       // Loop the cells associated with the vertex
-      for (CellIterator c(*vertex); !c.end(); ++c)
+      for (auto &c : EntityRange<Cell>(vertex))
       {
-        c->get_coordinate_dofs(coordinate_dofs);
-        c->get_cell_data(ufc_cell, local_facet);
+        c.get_coordinate_dofs(coordinate_dofs);
+        c.get_cell_data(ufc_cell, local_facet);
 
         bool tabulated = false;
         bool interpolated = false;
 
         // Tabulate dofs on cell
-        auto cell_dofs = dofmap.cell_dofs(c->index());
+        auto cell_dofs = dofmap.cell_dofs(c.index());
 
         // Loop over all dofs on cell
         for (int i = 0; i < cell_dofs.size(); ++i)
@@ -594,7 +595,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           if (!tabulated)
           {
             element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs,
-                                             *c);
+                                             c);
             tabulated = true;
           }
 
@@ -672,18 +673,18 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   {
     // First time around all cells must be iterated over.  Create map
     // from cells attached to boundary to local dofs.
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    for (auto &cell : MeshRange<Cell>(mesh))
     {
       // Update UFC cell
-      cell->get_coordinate_dofs(coordinate_dofs);
-      cell->get_cell_data(ufc_cell);
+      cell.get_coordinate_dofs(coordinate_dofs);
+      cell.get_cell_data(ufc_cell);
 
       // Tabulate coordinates of dofs on cell
       element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs,
-                                       *cell);
+                                       cell);
 
       // Tabulate dofs on cell
-      auto cell_dofs = dofmap.cell_dofs(cell->index());
+      auto cell_dofs = dofmap.cell_dofs(cell.index());
 
       // Interpolate function only once and only on cells where
       // necessary
@@ -691,7 +692,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 
       // Loop all dofs on cell
       std::vector<std::size_t> dofs;
-      for (std::size_t i = 0; i < dofmap.num_element_dofs(cell->index()); ++i)
+      for (std::size_t i = 0; i < dofmap.num_element_dofs(cell.index()); ++i)
       {
         const std::size_t global_dof = cell_dofs[i];
 
@@ -713,16 +714,16 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
           already_interpolated = true;
 
           // Restrict coefficient to cell
-          _g->restrict(data.w.data(), *_function_space->element(), *cell,
+          _g->restrict(data.w.data(), *_function_space->element(), cell,
                        coordinate_dofs.data(), ufc_cell);
 
           // Put cell index in storage for next time function is
           // called
-          _cells_to_localdofs.insert(std::make_pair(cell->index(), dofs));
+          _cells_to_localdofs.insert(std::make_pair(cell.index(), dofs));
         }
 
         // Add local dof to map
-        _cells_to_localdofs[cell->index()].push_back(i);
+        _cells_to_localdofs[cell.index()].push_back(i);
 
         // Set boundary value
         const double value = data.w[i];

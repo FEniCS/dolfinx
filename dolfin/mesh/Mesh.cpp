@@ -9,6 +9,7 @@
 #include "DistributedMeshTools.h"
 #include "Facet.h"
 #include "LocalMeshData.h"
+#include "MeshIterator.h"
 #include "MeshOrdering.h"
 #include "MeshPartitioning.h"
 #include "TopologyComputation.h"
@@ -212,8 +213,8 @@ std::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const
 double Mesh::hmin() const
 {
   double h = std::numeric_limits<double>::max();
-  for (CellIterator cell(*this); !cell.end(); ++cell)
-    h = std::min(h, cell->h());
+  for (auto &cell : MeshRange<Cell>(*this))
+    h = std::min(h, cell.h());
 
   return h;
 }
@@ -221,8 +222,8 @@ double Mesh::hmin() const
 double Mesh::hmax() const
 {
   double h = 0.0;
-  for (CellIterator cell(*this); !cell.end(); ++cell)
-    h = std::max(h, cell->h());
+  for (auto &cell : MeshRange<Cell>(*this))
+    h = std::max(h, cell.h());
 
   return h;
 }
@@ -230,8 +231,8 @@ double Mesh::hmax() const
 double Mesh::rmin() const
 {
   double r = std::numeric_limits<double>::max();
-  for (CellIterator cell(*this); !cell.end(); ++cell)
-    r = std::min(r, cell->inradius());
+  for (auto &cell : MeshRange<Cell>(*this))
+    r = std::min(r, cell.inradius());
 
   return r;
 }
@@ -239,8 +240,8 @@ double Mesh::rmin() const
 double Mesh::rmax() const
 {
   double r = 0.0;
-  for (CellIterator cell(*this); !cell.end(); ++cell)
-    r = std::max(r, cell->inradius());
+  for (auto &cell : MeshRange<Cell>(*this))
+    r = std::max(r, cell.inradius());
 
   return r;
 }

@@ -23,6 +23,7 @@
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
 
@@ -449,15 +450,15 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
+  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Update to current cell
-    cell->get_coordinate_dofs(coordinate_dofs);
-    cell->get_cell_data(ufc_cell);
+    cell.get_coordinate_dofs(coordinate_dofs);
+    cell.get_cell_data(ufc_cell);
 
     // Pick values from global vector
-    restrict(coefficients.data(), element, *cell, coordinate_dofs.data(),
-             ufc_cell);
+    restrict(coefficients.data(), element,
+             cell, coordinate_dofs.data(), ufc_cell);
 
     // Interpolate values at the vertices
     element.interpolate_vertex_values(
@@ -465,14 +466,15 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
         ufc_cell.orientation);
 
     // Copy values to array of vertex values
-    for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
+    std::size_t local_index = 0;
+    for (auto &vertex : EntityRange<Vertex>(cell))
     {
       for (std::size_t i = 0; i < value_size_loc; ++i)
       {
-        const std::size_t local_index = vertex.pos() * value_size_loc + i;
         const std::size_t global_index
-            = i * mesh.num_vertices() + vertex->index();
+            = i * mesh.num_vertices() + vertex.index();
         vertex_values[global_index] = cell_vertex_values[local_index];
+        ++local_index;
       }
     }
   }

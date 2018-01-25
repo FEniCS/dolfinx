@@ -12,7 +12,6 @@
 #include "Mesh.h"
 #include "MeshEditor.h"
 #include "MeshEntity.h"
-#include "MeshEntityIterator.h"
 #include "MeshFunction.h"
 #include "MeshTopology.h"
 #include "MeshValueCollection.h"
