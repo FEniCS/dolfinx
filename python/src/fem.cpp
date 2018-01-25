@@ -74,26 +74,26 @@ void fem(py::module& m)
       m, "FiniteElement", "DOLFIN FiniteElement object")
       .def(py::init<std::shared_ptr<const ufc::finite_element>>())
       .def("num_sub_elements", &dolfin::FiniteElement::num_sub_elements)
-      .def("evaluate_dofs",
-           [](const dolfin::FiniteElement& self, py::object f,
-              py::array_t<double> coordinate_dofs, int cell_orientation,
-              const dolfin::Cell& c) {
-             const ufc::function* _f = nullptr;
-             if (py::hasattr(f, "_cpp_object"))
-               _f = f.attr("_cpp_object").cast<ufc::function*>();
-             else
-               _f = f.cast<ufc::function*>();
+      // .def("evaluate_dofs",
+      //      [](const dolfin::FiniteElement& self, py::object f,
+      //         py::array_t<double> coordinate_dofs, int cell_orientation,
+      //         const dolfin::Cell& c) {
+      //        const ufc::function* _f = nullptr;
+      //        if (py::hasattr(f, "_cpp_object"))
+      //          _f = f.attr("_cpp_object").cast<ufc::function*>();
+      //        else
+      //          _f = f.cast<ufc::function*>();
 
-             ufc::cell ufc_cell;
-             c.get_cell_data(ufc_cell);
-             py::array_t<double, py::array::c_style> dofs(
-                 self.space_dimension());
-             self.evaluate_dofs(dofs.mutable_data(), *_f,
-                                coordinate_dofs.data(), cell_orientation,
-                                ufc_cell);
-             return dofs;
-           },
-           "Evaluate degrees of freedom on element for a given function")
+      //        ufc::cell ufc_cell;
+      //        c.get_cell_data(ufc_cell);
+      //        py::array_t<double, py::array::c_style> dofs(
+      //            self.space_dimension());
+      //        self.evaluate_dofs(dofs.mutable_data(), *_f,
+      //                           coordinate_dofs.data(), cell_orientation,
+      //                           ufc_cell);
+      //        return dofs;
+      //      },
+      //      "Evaluate degrees of freedom on element for a given function")
       .def("tabulate_dof_coordinates",
            [](const dolfin::FiniteElement& self, const dolfin::Cell& cell) {
              // Get cell vertex coordinates

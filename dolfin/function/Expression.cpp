@@ -144,22 +144,9 @@ void Expression::restrict(double* w, const FiniteElement& element,
   eval_values.transposeInPlace();
 
   // Copy for affine mapping - need to add Piola transform for other elements
-  std::copy(eval_values.data(), eval_values.data() + sd, w);
+  //  std::copy(eval_values.data(), eval_values.data() + sd, w);
 
-  if (family == "Raviart-Thomas")
-  {
-    Eigen::Matrix2d J, K;
-    double det;
-    Eigen::Map<const Eigen::Matrix<double, 3, 2>> _coordinate_dofs(coordinate_dofs);
-    compute_JK_triangle_2d(J, K, det, _coordinate_dofs);
-
-    std::cout << "K = \n" << K << "\n";
-
-    std::cout << "K*values = \n" << K*eval_values*det << "\n";
-
-
-  };
-
+  element.ufc_element()->map_dofs(w, eval_values.data(), coordinate_dofs, -1);
 
   // FIXME: add transforms here - maybe do in generated code?
 }
