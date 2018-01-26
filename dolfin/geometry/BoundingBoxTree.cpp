@@ -33,7 +33,7 @@ void BoundingBoxTree::build(const Mesh& mesh)
 void BoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
 {
 
-  _tree = GenericBoundingBoxTree::create(mesh.geometry().dim());
+  _tree.reset(new GenericBoundingBoxTree(mesh.geometry().dim()));
 
   // Build tree
   dolfin_assert(_tree);
@@ -45,22 +45,7 @@ void BoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::build(const std::vector<Point>& points, std::size_t gdim)
 {
-  // Select implementation
-  switch (gdim)
-  {
-  case 1:
-    _tree.reset(new BoundingBoxTree1D());
-    break;
-  case 2:
-    _tree.reset(new BoundingBoxTree2D());
-    break;
-  case 3:
-    _tree.reset(new BoundingBoxTree3D());
-    break;
-  default:
-    dolfin_error("BoundingBoxTree.cpp", "build bounding box tree",
-                 "Not implemented for geometric dimension %d", gdim);
-  }
+  _tree.reset(new GenericBoundingBoxTree(gdim));
 
   // Build tree
   dolfin_assert(_tree);
