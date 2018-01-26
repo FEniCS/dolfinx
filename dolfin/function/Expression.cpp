@@ -143,11 +143,11 @@ void Expression::restrict(double* w, const FiniteElement& element,
   eval_values.transposeInPlace();
 
   // Copy for affine mapping - need to add Piola transform for other elements
-  //  std::copy(eval_values.data(), eval_values.data() + sd, w);
+  if (family != "Lagrange")
+    element.ufc_element()->map_dofs(w, eval_values.data(), coordinate_dofs, -1);
+  else
+    std::copy(eval_values.data(), eval_values.data() + sd, w);
 
-  element.ufc_element()->map_dofs(w, eval_values.data(), coordinate_dofs, -1);
-
-  // FIXME: add transforms here - maybe do in generated code?
 }
 //-----------------------------------------------------------------------------
 void Expression::compute_vertex_values(std::vector<double>& vertex_values,
