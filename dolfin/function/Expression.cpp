@@ -111,8 +111,10 @@ void Expression::restrict(double* w, const FiniteElement& element,
   std::cout << family << " " << vs << " " << sd << " " << gdim << "\n";
 
   std::size_t ndofs = sd;
-  if (family == "Lagrange")
-    ndofs /= vs;
+
+  // FIXME: for Vector Lagrange elements (and probably Tensor too),
+  // this repeats the same evaluation points "gdim" times. Should only
+  // do them once, and remove the "mapping" (which is the identity).
 
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       eval_points(sd, gdim);
@@ -123,7 +125,7 @@ void Expression::restrict(double* w, const FiniteElement& element,
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       eval_values(ndofs, vs);
 
-  // FIXME: should evaluate all at once (maybe needs RowMajor matrix)
+  // FIXME: should evaluate all points at once (maybe needs RowMajor matrix)
   for (unsigned int i = 0; i != ndofs; ++i)
   {
     eval(eval_values.row(i), eval_points.row(i), ufc_cell);
@@ -142,11 +144,8 @@ void Expression::restrict(double* w, const FiniteElement& element,
   // Transpose for vector values
   eval_values.transposeInPlace();
 
-  // Copy for affine mapping - need to add Piola transform for other elements
-  if (family != "Lagrange")
-    element.ufc_element()->map_dofs(w, eval_values.data(), coordinate_dofs, -1);
-  else
-    std::copy(eval_values.data(), eval_values.data() + sd, w);
+  // Add mapping
+  element.ufc_element()->map_dofs(w, eval_values.data(), coordinate_dofs, -1);
 
 }
 //-----------------------------------------------------------------------------
