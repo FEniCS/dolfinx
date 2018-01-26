@@ -234,51 +234,54 @@ std::shared_ptr<const PETScVector> Function::vector() const
   return _vector;
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x) const
+void Function::eval(Eigen::Ref<RowMatrixXd> values,
+                    Eigen::Ref<const RowMatrixXd> x) const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
   const Mesh& mesh = *_function_space->mesh();
 
   // Find the cell that contains x
-  const double* _x = x.data();
-  const Point point(mesh.geometry().dim(), _x);
+  for (unsigned int i = 0; i != x.rows(); ++i)
+  {
+    const double* _x = x.row(i).data();
+    const Point point(mesh.geometry().dim(), _x);
 
-  // Get index of first cell containing point
-  unsigned int id
+    // Get index of first cell containing point
+    unsigned int id
       = mesh.bounding_box_tree()->compute_first_entity_collision(point);
 
-  // If not found, use the closest cell
-  if (id == std::numeric_limits<unsigned int>::max())
-  {
-    // Check if the closest cell is within DOLFIN_EPS. This we can
-    // allow without _allow_extrapolation
-    std::pair<unsigned int, double> close
+    // If not found, use the closest cell
+    if (id == std::numeric_limits<unsigned int>::max())
+    {
+      // Check if the closest cell is within DOLFIN_EPS. This we can
+      // allow without _allow_extrapolation
+      std::pair<unsigned int, double> close
         = mesh.bounding_box_tree()->compute_closest_entity(point);
 
-    if (_allow_extrapolation or close.second < DOLFIN_EPS)
-      id = close.first;
-    else
-    {
-      dolfin_error("Function.cpp", "evaluate function at point",
-                   "The point is not inside the domain. Consider calling "
-                   "\"Function::set_allow_extrapolation(true)\" on this "
-                   "Function to allow extrapolation");
+      if (_allow_extrapolation or close.second < DOLFIN_EPS)
+        id = close.first;
+      else
+      {
+        dolfin_error("Function.cpp", "evaluate function at point",
+                     "The point is not inside the domain. Consider calling "
+                     "\"Function::set_allow_extrapolation(true)\" on this "
+                     "Function to allow extrapolation");
+      }
     }
+
+    // Create cell that contains point
+    const Cell cell(mesh, id);
+    ufc::cell ufc_cell;
+    cell.get_cell_data(ufc_cell);
+
+    // Call evaluate function
+    eval(values.row(i), x.row(i), cell, ufc_cell);
   }
-
-  // Create cell that contains point
-  const Cell cell(mesh, id);
-  ufc::cell ufc_cell;
-  cell.get_cell_data(ufc_cell);
-
-  // Call evaluate function
-  eval(values, x, cell, ufc_cell);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x,
+void Function::eval(Eigen::Ref<RowMatrixXd> values,
+                    Eigen::Ref<const RowMatrixXd> x,
                     const Cell& dolfin_cell, const ufc::cell& ufc_cell) const
 {
   // Developer note: work arrays/vectors are re-created each time this
@@ -307,17 +310,19 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
   std::vector<double> basis(value_size_loc);
 
   // Initialise values
-  for (std::size_t j = 0; j < value_size_loc; ++j)
-    values[j] = 0.0;
+  values.setZero();
+  //  for (std::size_t j = 0; j < value_size_loc; ++j)
+  //    values[j] = 0.0;
 
   // Compute linear combination
+  std::size_t k = 1;
   for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
     element.evaluate_basis(i, basis.data(), x.data(), coordinate_dofs.data(),
                            ufc_cell.orientation);
 
     for (std::size_t j = 0; j < value_size_loc; ++j)
-      values[j] += coefficients[i] * basis[j];
+      values(k, j) += coefficients[i] * basis[j];
   }
 }
 //-----------------------------------------------------------------------------
@@ -361,8 +366,8 @@ std::vector<std::size_t> Function::value_shape() const
   return _shape;
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x,
+void Function::eval(Eigen::Ref<RowMatrixXd> values,
+                    Eigen::Ref<const RowMatrixXd> x,
                     const ufc::cell& ufc_cell) const
 {
   dolfin_assert(_function_space);

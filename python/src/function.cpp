@@ -53,22 +53,22 @@ void function(py::module& m)
       // FIXME: Add C++ version that takes a dolfin::Cell
       .def("eval",
            [](const dolfin::GenericFunction& self,
-              Eigen::Ref<Eigen::VectorXd> u,
-              Eigen::Ref<const Eigen::VectorXd> x, const dolfin::Cell& cell) {
+              Eigen::Ref<RowMatrixXd> u,
+              Eigen::Ref<const RowMatrixXd> x, const dolfin::Cell& cell) {
              ufc::cell ufc_cell;
              cell.get_cell_data(ufc_cell);
              self.eval(u, x, ufc_cell);
            },
            "Evaluate GenericFunction (cell version)")
       .def("eval",
-           (void (dolfin::GenericFunction::*)(Eigen::Ref<Eigen::VectorXd>,
-                                              Eigen::Ref<const Eigen::VectorXd>,
+           (void (dolfin::GenericFunction::*)(Eigen::Ref<RowMatrixXd>,
+                                              Eigen::Ref<const RowMatrixXd>,
                                               const ufc::cell&) const)
                & dolfin::GenericFunction::eval,
            "Evaluate GenericFunction (cell version)")
       .def("eval",
-           (void (dolfin::GenericFunction::*)(Eigen::Ref<Eigen::VectorXd>,
-                                              Eigen::Ref<const Eigen::VectorXd>)
+           (void (dolfin::GenericFunction::*)(Eigen::Ref<RowMatrixXd>,
+                                              Eigen::Ref<const RowMatrixXd>)
                 const)
                & dolfin::GenericFunction::eval,
            py::arg("values"), py::arg("x"), "Evaluate GenericFunction")
@@ -114,14 +114,14 @@ void function(py::module& m)
   {
     using dolfin::Expression::Expression;
 
-    void eval(Eigen::Ref<Eigen::VectorXd> values,
-              Eigen::Ref<const Eigen::VectorXd> x) const override
+    void eval(Eigen::Ref<RowMatrixXd> values,
+              Eigen::Ref<const RowMatrixXd> x) const override
     {
       PYBIND11_OVERLOAD(void, dolfin::Expression, eval, values, x);
     }
 
-    void eval(Eigen::Ref<Eigen::VectorXd> values,
-              Eigen::Ref<const Eigen::VectorXd> x,
+    void eval(Eigen::Ref<RowMatrixXd> values,
+              Eigen::Ref<const RowMatrixXd> x,
               const ufc::cell& cell) const override
     {
       PYBIND11_OVERLOAD_NAME(void, dolfin::Expression, "eval_cell", eval,

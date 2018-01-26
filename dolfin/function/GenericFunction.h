@@ -11,6 +11,8 @@
 #include <memory>
 #include <ufc.h>
 
+using RowMatrixXd = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
 namespace dolfin
 {
 
@@ -53,13 +55,13 @@ public:
   virtual std::vector<std::size_t> value_shape() const = 0;
 
   /// Evaluate at given point in given cell
-  virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x,
+  virtual void eval(Eigen::Ref<RowMatrixXd> values,
+                    Eigen::Ref<const RowMatrixXd> x,
                     const ufc::cell& cell) const;
 
   /// Evaluate at given point
-  virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x) const;
+  virtual void eval(Eigen::Ref<RowMatrixXd> values,
+                    Eigen::Ref<const RowMatrixXd> x) const;
 
   /// Restrict function to local cell (compute expansion coefficients w)
   virtual void restrict(double* w, const FiniteElement& element,

@@ -32,16 +32,16 @@ Expression::~Expression()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
-                      Eigen::Ref<const Eigen::VectorXd> x,
+void Expression::eval(Eigen::Ref<RowMatrixXd> values,
+                      Eigen::Ref<const RowMatrixXd> x,
                       const ufc::cell& cell) const
 {
   // Redirect to simple eval
   eval(values, x);
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
-                      Eigen::Ref<const Eigen::VectorXd> x) const
+void Expression::eval(Eigen::Ref<RowMatrixXd> values,
+                      Eigen::Ref<const RowMatrixXd> x) const
 {
   dolfin_error("Expression.cpp", "evaluate expression",
                "Missing eval() function (must be overloaded)");
@@ -124,15 +124,17 @@ void Expression::restrict(double* w, const FiniteElement& element,
       eval_values(ndofs, vs);
 
   // FIXME: should evaluate all points at once (maybe needs RowMajor matrix)
-  for (unsigned int i = 0; i != ndofs; ++i)
-  {
-    eval(eval_values.row(i), eval_points.row(i), ufc_cell);
-    for (unsigned int j = 0; j != gdim; ++j)
-      std::cout << eval_points(i, j) << ", " ;
-    for (unsigned int j = 0; j != vs; ++j)
-      std::cout << eval_values(i, j) << " ";
-    std::cout <<" \n";
-  }
+  eval(eval_values, eval_points, ufc_cell);
+
+  // for (unsigned int i = 0; i != ndofs; ++i)
+  // {
+  //   eval(eval_values.row(i), eval_points.row(i), ufc_cell);
+  //   for (unsigned int j = 0; j != gdim; ++j)
+  //     std::cout << eval_points(i, j) << ", " ;
+  //   for (unsigned int j = 0; j != vs; ++j)
+  //     std::cout << eval_values(i, j) << " ";
+  //   std::cout <<" \n";
+  // }
 
   std::cout << "data = ";
   for (unsigned int i = 0; i != sd; ++i)
