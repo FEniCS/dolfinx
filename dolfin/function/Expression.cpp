@@ -100,8 +100,6 @@ void Expression::restrict(double* w, const FiniteElement& element,
 {
   // Not working for Hdiv, Hcurl elements etc.
   const std::string family(element.ufc_element()->family());
-  if (family != "Lagrange")
-    warning("This will probably crash or give wrong results for non-Lagrange elements.");
 
   // Get evaluation points
   const std::size_t vs = value_size();
