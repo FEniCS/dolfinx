@@ -5,9 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "BoundingBoxTree.h"
-#include "BoundingBoxTree1D.h"
-#include "BoundingBoxTree2D.h"
-#include "BoundingBoxTree3D.h"
+#include "GenericBoundingBoxTree.h"
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>

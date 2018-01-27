@@ -10,11 +10,9 @@
 #define MAX_DIM 6
 
 #include "GenericBoundingBoxTree.h"
-#include "BoundingBoxTree1D.h" // used for internal point search tree
-#include "BoundingBoxTree2D.h" // used for internal point search tree
-#include "BoundingBoxTree3D.h" // used for internal point search tree
 #include "CollisionPredicates.h"
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/constants.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
