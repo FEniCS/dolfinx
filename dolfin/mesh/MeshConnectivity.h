@@ -102,7 +102,19 @@ public:
   }
 
   /// Set all connections for given entity
-  void set(std::size_t entity, std::size_t* connections);
+  template <typename T>
+  void set(std::size_t entity, T* connections)
+  {
+    dolfin_assert((entity + 1) < index_to_position.size());
+    dolfin_assert(connections);
+
+    // Copy data
+    const std::size_t num_connections
+      = index_to_position[entity + 1] - index_to_position[entity];
+    std::copy(connections, connections + num_connections,
+              _connections.begin() + index_to_position[entity]);
+  }
+
 
   /// Set all connections for all entities (T is a '2D' container, e.g. a
   /// std::vector<<std::vector<std::size_t>>,
@@ -160,5 +172,3 @@ private:
   std::vector<std::uint32_t> index_to_position;
 };
 }
-
-

@@ -203,5 +203,3 @@ private:
   std::vector<std::size_t> _vertices;
 };
 }
-
-

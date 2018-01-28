@@ -10,7 +10,6 @@
 #include "RectangleMesh.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/constants.h>
-#include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 
 using namespace dolfin;
@@ -51,8 +50,10 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
 
   const double a = x0;
   const double b = x1;
+  const double ab = (b - a) / static_cast<double>(nx);
   const double c = y0;
   const double d = y1;
+  const double cd = (d - c) / static_cast<double>(ny);
 
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS)
   {
@@ -71,37 +72,32 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
 
   mesh.rename("mesh", "Mesh of the unit square (a,b) x (c,d)");
 
-  // Open mesh for editing
-  MeshEditor editor;
-  editor.open(mesh, CellType::Type::triangle, 2, 2);
-
-  // Create vertices and cells:
+  // Create vertices and cells
+  std::size_t nv, nc;
   if (diagonal == "crossed")
   {
-    editor.init_vertices_global((nx + 1) * (ny + 1) + nx * ny,
-                                (nx + 1) * (ny + 1) + nx * ny);
-    editor.init_cells_global(4 * nx * ny, 4 * nx * ny);
+    nv = (nx + 1) * (ny + 1) + nx * ny;
+    nc = 4 * nx * ny;
   }
   else
   {
-    editor.init_vertices_global((nx + 1) * (ny + 1), (nx + 1) * (ny + 1));
-    editor.init_cells_global(2 * nx * ny, 2 * nx * ny);
+    nv = (nx + 1) * (ny + 1);
+    nc = 2 * nx * ny;
   }
 
-  // Storage for vertices
-  Point x;
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(nv, 2);
+  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(nc, 3);
 
-  // Create main vertices:
+  // Create main vertices
   std::size_t vertex = 0;
   for (std::size_t iy = 0; iy <= ny; iy++)
   {
-    x[1] = c + ((static_cast<double>(iy)) * (d - c) / static_cast<double>(ny));
+    const double x1 = c + cd * static_cast<double>(iy);
     for (std::size_t ix = 0; ix <= nx; ix++)
     {
-      x[0]
-          = a + ((static_cast<double>(ix)) * (b - a) / static_cast<double>(nx));
-      editor.add_vertex(vertex, x);
-      vertex++;
+      geom(vertex, 0) =  a + ab * static_cast<double>(ix);
+      geom(vertex, 1) = x1;
+      ++vertex;
     }
   }
 
@@ -110,16 +106,12 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
   {
     for (std::size_t iy = 0; iy < ny; iy++)
     {
-      x[1] = c
-             + (static_cast<double>(iy) + 0.5) * (d - c)
-                   / static_cast<double>(ny);
+      const double x1 = c + cd * (static_cast<double>(iy) + 0.5);
       for (std::size_t ix = 0; ix < nx; ix++)
       {
-        x[0] = a
-               + (static_cast<double>(ix) + 0.5) * (b - a)
-                     / static_cast<double>(nx);
-        editor.add_vertex(vertex, x);
-        vertex++;
+        geom(vertex, 0) = a + ab * (static_cast<double>(ix) + 0.5);
+        geom(vertex, 1) = x1;
+        ++vertex;
       }
     }
   }
@@ -128,7 +120,6 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
   std::size_t cell = 0;
   if (diagonal == "crossed")
   {
-    boost::multi_array<std::size_t, 2> cells(boost::extents[4][3]);
     for (std::size_t iy = 0; iy < ny; iy++)
     {
       for (std::size_t ix = 0; ix < nx; ix++)
@@ -140,22 +131,14 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
         const std::size_t vmid = (nx + 1) * (ny + 1) + iy * nx + ix;
 
         // Note that v0 < v1 < v2 < v3 < vmid.
-        cells[0][0] = v0;
-        cells[0][1] = v1;
-        cells[0][2] = vmid;
-        cells[1][0] = v0;
-        cells[1][1] = v2;
-        cells[1][2] = vmid;
-        cells[2][0] = v1;
-        cells[2][1] = v3;
-        cells[2][2] = vmid;
-        cells[3][0] = v2;
-        cells[3][1] = v3;
-        cells[3][2] = vmid;
-
-        // Add cells
-        for (auto _cell = cells.begin(); _cell != cells.end(); ++_cell)
-          editor.add_cell(cell++, *_cell);
+        topo.row(cell) << v0, v1, vmid;
+        ++cell;
+        topo.row(cell) << v0, v2, vmid;
+        ++cell;
+        topo.row(cell) << v1, v3, vmid;
+        ++cell;
+        topo.row(cell) << v2, v3, vmid;
+        ++cell;
       }
     }
   }
@@ -163,7 +146,6 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
            || diagonal == "left/right")
   {
     std::string local_diagonal = diagonal;
-    boost::multi_array<std::size_t, 2> cells(boost::extents[2][3]);
     for (std::size_t iy = 0; iy < ny; iy++)
     {
       // Set up alternating diagonal
@@ -192,34 +174,27 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
 
         if (local_diagonal == "left")
         {
-          cells[0][0] = v0;
-          cells[0][1] = v1;
-          cells[0][2] = v2;
-          cells[1][0] = v1;
-          cells[1][1] = v2;
-          cells[1][2] = v3;
+          topo.row(cell) << v0, v1, v2;
+          ++cell;
+          topo.row(cell) << v1, v2, v3;
+          ++cell;
           if (diagonal == "right/left" || diagonal == "left/right")
             local_diagonal = "right";
         }
         else
         {
-          cells[0][0] = v0;
-          cells[0][1] = v1;
-          cells[0][2] = v3;
-          cells[1][0] = v0;
-          cells[1][1] = v2;
-          cells[1][2] = v3;
+          topo.row(cell) << v0, v1, v3;
+          ++cell;
+          topo.row(cell) << v0, v2, v3;
+          ++cell;
           if (diagonal == "right/left" || diagonal == "left/right")
             local_diagonal = "left";
         }
-        editor.add_cell(cell++, cells[0]);
-        editor.add_cell(cell++, cells[1]);
       }
     }
   }
 
-  // Close mesh editor
-  editor.close();
+  mesh.create(CellType::Type::triangle, geom, topo);
 
   // Broadcast mesh according to parallel policy
   if (MPI::is_broadcaster(mesh.mpi_comm()))
@@ -242,51 +217,44 @@ void RectangleMesh::build_quad(Mesh& mesh, const std::array<Point, 2>& p,
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
 
-  MeshEditor editor;
-  editor.open(mesh, CellType::Type::quadrilateral, 2, 2);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom((nx+1)*(ny+1), 2);
+  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(nx*ny, 4);
 
-  // Create vertices and cells:
-  editor.init_vertices_global((nx + 1) * (ny + 1), (nx + 1) * (ny + 1));
-  editor.init_cells_global(nx * ny, nx * ny);
+  const double a = p[0][0];
+  const double b = p[1][0];
+  const double ab = (b - a) / static_cast<double>(nx);
 
-  // Storage for vertices
-  Point x;
+  const double c = p[0][1];
+  const double d = p[1][1];
+  const double cd = (d - c) / static_cast<double>(ny);
 
-  const double a = 0.0;
-  const double b = 1.0;
-  const double c = 0.0;
-  const double d = 1.0;
-
-  // Create main vertices:
+  // Create vertices
   std::size_t vertex = 0;
   for (std::size_t iy = 0; iy <= ny; iy++)
   {
-    x[1] = c + ((static_cast<double>(iy)) * (d - c) / static_cast<double>(ny));
+    double x1 = c + cd * static_cast<double>(iy);
     for (std::size_t ix = 0; ix <= nx; ix++)
     {
-      x[0]
-          = a + ((static_cast<double>(ix)) * (b - a) / static_cast<double>(nx));
-      editor.add_vertex(vertex, x);
-      vertex++;
+      geom(vertex, 0) = a + ab * static_cast<double>(ix);
+      geom(vertex, 1) = x1;
+      ++vertex;
     }
   }
 
   // Create rectangles
   std::size_t cell = 0;
-  std::vector<std::size_t> v(4);
   for (std::size_t iy = 0; iy < ny; iy++)
     for (std::size_t ix = 0; ix < nx; ix++)
     {
-      v[0] = iy * (nx + 1) + ix;
-      v[1] = v[0] + 1;
-      v[2] = v[0] + (nx + 1);
-      v[3] = v[1] + (nx + 1);
-      editor.add_cell(cell, v);
+      const std::size_t i0 = iy * (nx + 1);
+      topo(cell, 0) = i0 + ix;
+      topo(cell, 1) = i0 + ix + 1;
+      topo(cell, 2) = i0 + ix + nx + 1;
+      topo(cell, 3) = i0 + ix + nx + 2;
       ++cell;
     }
 
-  // Close mesh editor
-  editor.close();
+  mesh.create(CellType::Type::quadrilateral, geom, topo);
 
   // Broadcast mesh according to parallel policy
   if (MPI::is_broadcaster(mesh.mpi_comm()))

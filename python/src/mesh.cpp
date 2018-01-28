@@ -131,9 +131,10 @@ void mesh(py::module& m)
                                (std::int32_t)self.type().num_vertices(tdim)},
                               self.topology()(tdim, 0)().data());
            })
+    .def("create", &dolfin::Mesh::create)
       .def("geometry",
            (dolfin::MeshGeometry & (dolfin::Mesh::*)())
-               & dolfin::Mesh::geometry,
+               &dolfin::Mesh::geometry,
            py::return_value_policy::reference, "Mesh geometry")
       .def("hash", &dolfin::Mesh::hash)
       .def("hmax", &dolfin::Mesh::hmax)
