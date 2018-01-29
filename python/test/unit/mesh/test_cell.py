@@ -21,7 +21,7 @@ import pytest
 import numpy
 
 from dolfin import (UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    MPI, Cell, Mesh, MeshEditor, CellType, Point)
+                    MPI, Cell, Mesh, CellType, Point)
 from dolfin_utils.test import skip_in_parallel, skip_in_release
 
 
@@ -85,16 +85,10 @@ def test_volume_quadrilateralR2():
 def test_volume_quadrilateralR3(coordinates):
 
     mesh = Mesh(MPI.comm_world)
-    editor = MeshEditor()
-    editor.open(mesh, CellType.Type.quadrilateral, 2, 3)
-    editor.init_vertices_global(4, 4)
-    editor.init_cells_global(1, 1)
-    editor.add_vertex(0, Point(numpy.array(coordinates[0])))
-    editor.add_vertex(1, Point(numpy.array(coordinates[1])))
-    editor.add_vertex(2, Point(numpy.array(coordinates[2])))
-    editor.add_vertex(3, Point(numpy.array(coordinates[3])))
-    editor.add_cell(0,numpy.array([0, 1, 2, 3],dtype=numpy.uintp))
-    editor.close()
+    mesh.create(CellType.Type.quadrilateral,
+                numpy.array(coordinates, dtype=numpy.float64),
+                numpy.array([[0,1,2,3]], dtype=numpy.int32))
+
     mesh.init()
     cell = Cell(mesh, 0)
 
@@ -107,17 +101,14 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
 
     with pytest.raises(RuntimeError) as error:
         mesh = Mesh(MPI.comm_world)
-        editor = MeshEditor()
-        editor.open(mesh, CellType.Type.quadrilateral, 2, 3)
-        editor.init_vertices_global(4, 4)
-        editor.init_cells_global(1, 1)
         # Unit square cell scaled down by 'scaling' and the first vertex is distorted so that the vertices are clearly non coplanar
-        editor.add_vertex(0, Point(scaling, 0.5 * scaling, 0.6 * scaling))
-        editor.add_vertex(1, Point(0.0, scaling, 0.0))
-        editor.add_vertex(2, Point(0.0, 0.0, scaling))
-        editor.add_vertex(3, Point(0.0, scaling, scaling))
-        editor.add_cell(0,numpy.array([0, 1, 2, 3],dtype=numpy.uintp))
-        editor.close()
+        mesh.create(CellType.Type.quadrilateral,
+                    numpy.array([[scaling, 0.5 * scaling, 0.6 * scaling],
+                              [0.0, scaling, 0.0],
+                              [0.0, 0.0, scaling],
+                              [0.0, scaling, scaling]], dtype=numpy.float64),
+                    numpy.array([[0, 1, 2, 3]], dtype=numpy.int32))
+
         mesh.init()
         cell = Cell(mesh, 0)
         volume = cell.volume()
@@ -132,17 +123,13 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
 
     with pytest.raises(RuntimeError) as error:
         mesh = Mesh(MPI.comm_world)
-        editor = MeshEditor()
-        editor.open(mesh, CellType.Type.quadrilateral, 2, 3)
-        editor.init_vertices_global(4, 4)
-        editor.init_cells_global(1, 1)
         # Unit square cell scaled down by 'scaling' and the first vertex is distorted so that the vertices are clearly non coplanar
-        editor.add_vertex(0, Point(1.0, 0.5, 0.6))
-        editor.add_vertex(1, Point(0.0, scaling, 0.0))
-        editor.add_vertex(2, Point(0.0, 0.0, scaling))
-        editor.add_vertex(3, Point(0.0, 1.0, 1.0))
-        editor.add_cell(0,numpy.array([0, 1, 2, 3],dtype=numpy.uintp))
-        editor.close()
+        mesh.create(CellType.Type.quadrilateral,
+                    numpy.array([[1.0, 0.5, 0.6],
+                              [0.0, scaling, 0.0],
+                              [0.0, 0.0, scaling],
+                              [0.0, 1.0, 1.0]], dtype=numpy.float64),
+                    numpy.array([[0, 1, 2, 3]], dtype=numpy.int32))
         mesh.init()
         cell = Cell(mesh, 0)
         volume = cell.volume()
