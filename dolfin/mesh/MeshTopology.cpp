@@ -115,7 +115,6 @@ void MeshTopology::init(std::size_t dim, std::int32_t local_size,
   dolfin_assert(dim < _global_num_entities.size());
   _global_num_entities[dim] = global_size;
 
-  // FIXME: Remove this when ghost/halo cells are supported
   // If mesh is local, make shared vertices empty
   if (dim == 0 && (local_size == global_size))
     shared_entities(0);
