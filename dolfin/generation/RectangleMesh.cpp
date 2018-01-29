@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <boost/multi_array.hpp>
+#include <Eigen/Dense>
 #include <cmath>
 
 #include "RectangleMesh.h"
@@ -195,6 +195,7 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
   }
 
   mesh.create(CellType::Type::triangle, geom, topo);
+  mesh.order();
 
   // Broadcast mesh according to parallel policy
   if (MPI::is_broadcaster(mesh.mpi_comm()))

@@ -121,7 +121,7 @@ public:
   /// @return std::vector<std::uint32_t>&
   ///         Connectivity for all cells.
   ///
-  const std::vector<std::uint32_t>& cells() const
+  const std::vector<std::int32_t>& cells() const
   {
     return _topology(_topology.dim(), 0)();
   }
@@ -295,7 +295,7 @@ public:
   /// Fill empty Mesh from Eigen arrays (serial)
   void create(CellType::Type type,
               Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> geometry,
-              Eigen::Ref<const Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> topology);
+              Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> topology);
 
 
   // Friend in fem_utils.h

@@ -118,7 +118,7 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, std::size_t dim0,
   // Build graph
   for (auto &colored_entity : MeshRange<MeshEntity>(mesh, dim0))
   {
-    const std::size_t colored_entity_index = colored_entity.index();
+    const std::int32_t colored_entity_index = colored_entity.index();
     for (auto &entity : EntityRange<MeshEntity>(colored_entity, dim1))
     {
       for (auto &neighbor : EntityRange<MeshEntity>(entity, dim0))
@@ -222,9 +222,9 @@ std::int32_t GraphBuilder::compute_local_dual_graph_keyed(
       = MPI::global_offset(mpi_comm, num_local_cells, true);
 
   // Create map from cell vertices to entity vertices
-  boost::multi_array<unsigned int, 2> facet_vertices(
+  boost::multi_array<std::int32_t, 2> facet_vertices(
       boost::extents[num_facets_per_cell][num_vertices_per_facet]);
-  std::vector<unsigned int> v(num_vertices_per_cell);
+  std::vector<std::int32_t> v(num_vertices_per_cell);
   std::iota(v.begin(), v.end(), 0);
   cell_type.create_entities(facet_vertices, tdim - 1, v.data());
 

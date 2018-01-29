@@ -110,7 +110,7 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
   }
 
   std::vector<double> values;
-  const unsigned int* global_entities;
+  const std::int32_t* global_entities;
   std::size_t xi, vi;
 
   // Get/set cell-by-cell

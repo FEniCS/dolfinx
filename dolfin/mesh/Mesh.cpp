@@ -294,7 +294,7 @@ std::string Mesh::ghost_mode() const
 //-----------------------------------------------------------------------------
 void Mesh::create(CellType::Type type,
                   Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> geometry,
-                  Eigen::Ref<const Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> topology)
+                  Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> topology)
 {
   // Initialise geometry
   const std::size_t gdim = geometry.cols();
@@ -313,9 +313,12 @@ void Mesh::create(CellType::Type type,
 
   // Initialize mesh data
   // FIXME: sort out global indices for parallel
+  // This method assumes it is running in serial, and
+  // sets global indices accordingly.
 
   // Initialise vertices
   const std::size_t num_vertices = geometry.rows();
+
   _topology.init(0, num_vertices, num_vertices);
   _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);
@@ -330,11 +333,10 @@ void Mesh::create(CellType::Type type,
   _topology(tdim, 0).init(num_cells, _cell_type->num_vertices());
 
   // Add vertices
+  std::copy(geometry.data(), geometry.data() + gdim*num_vertices,
+            _geometry.x().begin());
   for (std::int32_t i = 0; i != geometry.rows(); ++i)
-  {
-    _geometry.set(i, geometry.data() + i * gdim);
     _topology.set_global_index(0, i, i);
-  }
 
   // Add cells
   for (std::int32_t i = 0; i != topology.rows(); ++i)

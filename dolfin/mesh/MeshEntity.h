@@ -86,7 +86,7 @@ public:
   ///
   /// @return     std::size_t
   ///         The index.
-  std::uint32_t index() const { return _local_index; }
+  std::int32_t index() const { return _local_index; }
 
   /// Return global index of mesh entity
   ///
@@ -139,9 +139,9 @@ public:
   ///
   /// @return     std::size_t
   ///         The index for incident mesh entities of given dimension.
-  const std::uint32_t* entities(std::size_t dim) const
+  const std::int32_t* entities(std::size_t dim) const
   {
-    const std::uint32_t* initialized_mesh_entities
+    const std::int32_t* initialized_mesh_entities
         = _mesh->topology()(_dim, dim)(_local_index);
     dolfin_assert(initialized_mesh_entities);
     return initialized_mesh_entities;
@@ -178,7 +178,7 @@ public:
   ///    True if entity is a ghost entity
   bool is_ghost() const
   {
-    return (_local_index >= _mesh->topology().ghost_offset(_dim));
+    return (_local_index >= (std::int32_t)_mesh->topology().ghost_offset(_dim));
   }
 
   /// Return set of sharing processes
@@ -242,6 +242,6 @@ protected:
   std::uint32_t _dim;
 
   // Local index of entity within topological dimension
-  std::uint32_t _local_index;
+  std::int32_t _local_index;
 };
 }

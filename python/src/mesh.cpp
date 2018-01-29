@@ -104,16 +104,10 @@ void mesh(py::module& m)
              return py::array_t<std::int64_t>(indices.size(), indices.data());
            })
       .def("have_shared_entities", &dolfin::MeshTopology::have_shared_entities)
-      .def(
-          "shared_entities",
-          (std::
-               map<std::int32_t,
-                   std::
-                       set<std::
-                               uint32_t>> & (dolfin::
-                                                 MeshTopology::*)(std::
-                                                                      uint32_t))
-              & dolfin::MeshTopology::shared_entities)
+      .def("shared_entities",
+          (std::map<std::int32_t, std::set<std::uint32_t>>&
+           (dolfin::MeshTopology::*)(std::uint32_t))
+              &dolfin::MeshTopology::shared_entities)
       .def("str", &dolfin::MeshTopology::str);
 
   // dolfin::Mesh
@@ -178,7 +172,7 @@ void mesh(py::module& m)
       m, "MeshConnectivity", "DOLFIN MeshConnectivity object")
       .def("__call__",
            [](const dolfin::MeshConnectivity& self, std::size_t i) {
-             return Eigen::Map<const Eigen::Matrix<std::uint32_t,
+             return Eigen::Map<const Eigen::Matrix<std::int32_t,
                                                    Eigen::Dynamic, 1>>(
                  self(i), self.size(i));
            },
@@ -197,7 +191,7 @@ void mesh(py::module& m)
       .def("dim", &dolfin::MeshEntity::dim, "Topological dimension")
       .def("mesh", &dolfin::MeshEntity::mesh, "Associated mesh")
       .def("index",
-           (std::uint32_t (dolfin::MeshEntity::*)() const)
+           (std::int32_t (dolfin::MeshEntity::*)() const)
                & dolfin::MeshEntity::index, "Index")
       .def("global_index", &dolfin::MeshEntity::global_index, "Global index")
       .def("num_entities", &dolfin::MeshEntity::num_entities,
@@ -206,7 +200,7 @@ void mesh(py::module& m)
            "Global number of incident entities of given dimension")
       .def("entities",
            [](dolfin::MeshEntity& self, std::size_t dim) {
-             return Eigen::Map<const Eigen::Matrix<std::uint32_t,
+             return Eigen::Map<const Eigen::Matrix<std::int32_t,
                                                    Eigen::Dynamic, 1>>(
                  self.entities(dim), self.num_entities(dim));
            })

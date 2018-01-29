@@ -710,7 +710,7 @@ void XDMFFile::write_mesh_value_collection(const MeshValueCollection<T>& mvc,
     MeshEntity cell = Cell(*mesh, p.first.first);
     if (cell_dim != tdim)
     {
-      const std::uint32_t entity_local_idx
+      const std::int32_t entity_local_idx
           = cell.entities(cell_dim)[p.first.second];
       cell = MeshEntity(*mesh, cell_dim, entity_local_idx);
     }
@@ -1989,7 +1989,7 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
       const auto& global_vertices = mesh.topology().global_indices(0);
       for (auto &c : MeshRange<MeshEntity>(mesh, cell_dim))
       {
-        const std::uint32_t* entities = c.entities(0);
+        const std::int32_t* entities = c.entities(0);
         for (std::uint32_t i = 0; i != c.num_entities(0); ++i)
           topology_data.push_back(global_vertices[entities[perm[i]]]);
       }
@@ -2020,7 +2020,7 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
         {
           for (std::uint32_t i = 0; i != e.num_entities(0); ++i)
           {
-            const std::uint32_t local_idx = e.entities(0)[perm[i]];
+            const std::int32_t local_idx = e.entities(0)[perm[i]];
             topology_data.push_back(global_vertices[local_idx]);
           }
         }

@@ -63,15 +63,15 @@ public:
   }
 
   /// Return array of connections for given entity
-  const std::uint32_t* operator()(std::size_t entity) const
+  const std::int32_t* operator()(std::size_t entity) const
   {
     return (entity + 1) < index_to_position.size()
-               ? &_connections[index_to_position[entity]]
-               : 0;
+      ? &_connections[index_to_position[entity]]
+      : 0;
   }
 
   /// Return contiguous array of connections for all entities
-  const std::vector<std::uint32_t>& operator()() const { return _connections; }
+  const std::vector<std::int32_t>& operator()() const { return _connections; }
 
   /// Clear all data
   void clear();
@@ -162,7 +162,7 @@ private:
   std::size_t _d0, _d1;
 
   // Connections for all entities stored as a contiguous array
-  std::vector<std::uint32_t> _connections;
+  std::vector<std::int32_t> _connections;
 
   // Global number of connections for all entities (possibly not
   // computed)
