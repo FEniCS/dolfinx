@@ -720,6 +720,25 @@ void la(py::module& m)
 
             self = value;
           })
+      .def("__setitem__", [](dolfin::PETScVector& self, py::slice slice, const
+                           py::array_t<double> x)
+         {
+           if (x.ndim() != 1)
+             throw py::index_error("Values to set must be a 1D array");
+
+           std::size_t start, stop, step, slicelength;
+           if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
+             throw py::error_already_set();
+           if (start != 0 or stop != self.size() or step != 1)
+             throw std::range_error("Only full slices are supported");
+
+           std::vector<double> values(x.data(), x.data() + x.size());
+           if (!values.empty())
+           {
+             self.set_local(values);
+             self.apply();
+           }
+         })
       .def("vec", &dolfin::PETScVector::vec,
            "Return underlying PETSc Vec object");
 

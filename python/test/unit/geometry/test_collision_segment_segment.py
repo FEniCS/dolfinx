@@ -28,13 +28,13 @@ import numpy as np
 @skip_in_parallel
 def create_mesh(a, b):
     editor = MeshEditor()
-    mesh = Mesh()
-    editor.open(mesh, "interval", 1, 2)
-    editor.init_cells(1)
-    editor.init_vertices(2)
+    mesh = Mesh(MPI.comm_world)
+    editor.open(mesh, CellType.Type.interval, 1, 2)
+    editor.init_cells_global(1, 1)
+    editor.init_vertices_global(2, 2)
     editor.add_cell(0, np.array( (0, 1), dtype='uint') )
-    editor.add_vertex(0, np.array( (a.x(), a.y()), dtype='float'))
-    editor.add_vertex(1, np.array( (b.x(), b.y()), dtype='float'))
+    editor.add_vertex(0, a)
+    editor.add_vertex(1, b)
     editor.close()
     return mesh;
 
