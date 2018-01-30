@@ -280,7 +280,7 @@ void MeshPartitioning::build(
 
   timer.stop();
 
-  // Build lcoal mesh from new_mesh_data
+  // Build local mesh from new_mesh_data
   build_local_mesh(mesh, new_global_cell_indices, new_cell_vertices,
                    mesh_data.topology.cell_type, mesh_data.topology.dim,
                    mesh_data.topology.num_global_cells, vertex_indices,

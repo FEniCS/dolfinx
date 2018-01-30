@@ -59,6 +59,7 @@ void mesh(py::module& m)
       .value("hexahedron", dolfin::CellType::Type::hexahedron);
 
   celltype.def("type2string", &dolfin::CellType::type2string)
+      .def("string2type", &dolfin::CellType::string2type)
       .def("cell_type", &dolfin::CellType::cell_type)
       .def("description", &dolfin::CellType::description);
 
