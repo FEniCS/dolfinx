@@ -28,10 +28,10 @@ import numpy as np
 @skip_in_parallel
 def create_triangular_mesh_3D(vertices, cells):
     editor = MeshEditor()
-    mesh = Mesh()
-    editor.open(mesh,"triangle", 2,3)
-    editor.init_cells(2)
-    editor.init_vertices(4)
+    mesh = Mesh(MPI.comm_world)
+    editor.open(mesh, CellType.Type.triangle, 2, 3)
+    editor.init_cells_global(2, 2)
+    editor.init_vertices_global(4, 4)
     editor.add_cell(0, cells[0])
     editor.add_cell(1, cells[1])
 
@@ -46,7 +46,7 @@ def create_triangular_mesh_3D(vertices, cells):
 def test_interval_collides_point():
     """Test if point collide with interval"""
 
-    mesh = UnitIntervalMesh(1)
+    mesh = UnitIntervalMesh(MPI.comm_world, 1)
     cell = Cell(mesh, 0)
 
     assert cell.collides(Point(0.5)) == True
@@ -120,7 +120,7 @@ def test_segment_collides_point_3D():
 def test_triangle_collides_point():
     """Tests if point collide with triangle"""
 
-    mesh = UnitSquareMesh(1, 1)
+    mesh = UnitSquareMesh(MPI.comm_world, 1, 1)
     cell = Cell(mesh, 0)
 
     assert cell.collides(Point(0.5)) == True
@@ -140,7 +140,7 @@ def test_degenerate_triangle_collides_point():
 @skip_in_parallel
 @pytest.mark.xfail(strict=True, raises=RuntimeError)
 def test_quadrilateral_collides_point():
-    mesh = UnitSquareMesh.create(1, 1, CellType.Type.quadrilateral)
+    mesh = UnitSquareMesh(MPI.comm_world, 1, 1, CellType.Type.quadrilateral)
     cell = Cell(mesh, 0)
     assert cell.collides(Point(0.5)) == True
     assert cell.collides(Point(1.5)) == False
@@ -149,7 +149,7 @@ def test_quadrilateral_collides_point():
 @pytest.mark.xfail(strict=True, raises=RuntimeError)
 def test_hexahedron_collides_point():
     """Test if point collide with hexahedron"""
-    mesh = UnitCubeMesh.create(1, 1, 1, CellType.Type.hexahedron)
+    mesh = UnitCubeMesh(MPI.comm_world, 1, 1, 1, CellType.Type.hexahedron)
     cell = Cell(mesh, 0)
 
     assert cell.collides(Point(0.5)) == True
@@ -162,10 +162,10 @@ def test_hexahedron_collides_point():
 def test_triangle_collides_triangle():
     """Test if triangle collide with triangle"""
 
-    m0 = UnitSquareMesh(8, 8)
+    m0 = UnitSquareMesh(MPI.comm_world, 8, 8)
     c0 = Cell(m0, 0)
 
-    m1 = UnitSquareMesh(8, 8)
+    m1 = UnitSquareMesh(MPI.comm_world, 8, 8)
     m1.translate(Point(0.1, 0.1))
     c1 = Cell(m1, 0)
     c2 = Cell(m1, 1)
@@ -230,7 +230,7 @@ def test_triangle_collides_point_3D():
 def test_tetrahedron_collides_point():
     """Test if point collide with tetrahedron"""
 
-    mesh = UnitCubeMesh(1, 1, 1)
+    mesh = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
     cell = Cell(mesh, 0)
 
     assert cell.collides(Point(0.5)) == True
@@ -241,7 +241,7 @@ def test_tetrahedron_collides_point():
 def test_tetrahedron_collides_triangle():
     """Test if point collide with tetrahedron"""
 
-    tetmesh = UnitCubeMesh(2, 2, 2)
+    tetmesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     vertices = [ np.array( (0, 0, 0.5), dtype='float'),
                  np.array( (1, 0, 0.5), dtype='float'),
                  np.array( (0, 1, 0.5), dtype='float'),
@@ -278,14 +278,14 @@ def test_tetrahedron_collides_triangle():
 def test_tetrahedron_collides_tetrahedron():
     """Test if point collide with tetrahedron"""
 
-    m0 = UnitCubeMesh(2, 2, 2)
+    m0 = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     c19 = Cell(m0, 19)
     c26 = Cell(m0, 26)
     c37 = Cell(m0, 37)
     c43 = Cell(m0, 43)
     c45 = Cell(m0, 45)
 
-    m1 = UnitCubeMesh(1,1,1)
+    m1 = UnitCubeMesh(MPI.comm_world, 1,1,1)
     m1.translate(Point(0.5, 0.5, 0.5))
     c3 = Cell(m0, 3)
     c5 = Cell(m1, 5)

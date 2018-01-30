@@ -50,7 +50,7 @@ def test_compute_collisions_point_2d():
                   2: set([136, 137])}
 
     p = Point(0.3, 0.3)
-    mesh = UnitSquareMesh(16, 16)
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     for dim in range(1, 3):
         tree = BoundingBoxTree()
         tree.build(mesh, dim)
@@ -124,8 +124,8 @@ def test_compute_collisions_tree_2d():
 
     for i, point in enumerate(points):
 
-        mesh_A = UnitSquareMesh(4, 4)
-        mesh_B = UnitSquareMesh(4, 4)
+        mesh_A = UnitSquareMesh(MPI.comm_world, 4, 4)
+        mesh_B = UnitSquareMesh(MPI.comm_world, 4, 4)
 
         mesh_B.translate(point)
 
@@ -193,7 +193,7 @@ def test_compute_entity_collisions_2d():
     reference = set([136, 137])
 
     p = Point(0.3, 0.3)
-    mesh = UnitSquareMesh(16, 16)
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
 
     tree = BoundingBoxTree()
     tree.build(mesh)
@@ -259,8 +259,8 @@ def test_compute_entity_collisions_tree_2d():
 
     for i, point in enumerate(points):
 
-        mesh_A = UnitSquareMesh(4, 4)
-        mesh_B = UnitSquareMesh(4, 4)
+        mesh_A = UnitSquareMesh(MPI.comm_world, 4, 4)
+        mesh_B = UnitSquareMesh(MPI.comm_world, 4, 4)
 
         mesh_B.translate(point)
 
@@ -331,7 +331,7 @@ def test_compute_first_collision_2d():
                   2: [136, 137]}
 
     p = Point(0.3, 0.3)
-    mesh = UnitSquareMesh(16, 16)
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     for dim in range(1, 3):
         tree = BoundingBoxTree()
         tree.build(mesh, dim)
@@ -397,7 +397,7 @@ def test_compute_first_entity_collision_2d():
     reference = [136, 137]
 
     p = Point(0.3, 0.3)
-    mesh = UnitSquareMesh(16, 16)
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     tree = BoundingBoxTree()
     tree.build(mesh)
     first = tree.compute_first_entity_collision(p)
@@ -450,7 +450,7 @@ def test_compute_closest_entity_2d():
     reference = (1, 1.0)
 
     p = Point(-1.0, 0.01)
-    mesh = UnitSquareMesh(16, 16)
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     tree = BoundingBoxTree()
     tree.build(mesh)
     entity, distance = tree.compute_closest_entity(p)

@@ -20,7 +20,7 @@
 import pytest
 
 from dolfin import intersect
-from dolfin import (UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, BoxMesh, CellType)
+from dolfin import (UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, CellType)
 from dolfin import Point, FunctionSpace, Expression, interpolate
 from dolfin import MPI
 
@@ -31,7 +31,7 @@ def test_mesh_point_1d():
     "Test mesh-point intersection in 1D"
 
     point = Point(0.1)
-    mesh = UnitIntervalMesh(16)
+    mesh = UnitIntervalMesh(MPI.comm_world, 16)
 
     intersection = intersect(mesh, point)
 
@@ -42,7 +42,7 @@ def test_mesh_point_2d_triangle():
     "Test mesh-point intersection in 2D for triangular mesh"
 
     point = Point(0.1, 0.2)
-    mesh = UnitSquareMesh(16, 16)
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
 
     intersection = intersect(mesh, point)
 
@@ -53,7 +53,7 @@ def test_mesh_point_3d_tetrahedron():
     "Test mesh-point intersection in 3D for tetrahedral mesh"
 
     point = Point(0.1, 0.2, 0.3)
-    mesh = UnitCubeMesh(8, 8, 8)
+    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
 
     intersection = intersect(mesh, point)
 
@@ -65,7 +65,7 @@ def test_mesh_point_2d_quadrilateral():
     "Test mesh-point intersection in 2D for quadrilateral mesh"
 
     point = Point(0.1, 0.2)
-    mesh = UnitSquareMesh.create(16, 16, CellType.Type.quadrilateral)
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16, CellType.Type.quadrilateral)
 
     intersection = intersect(mesh, point)
 
@@ -77,7 +77,7 @@ def test_mesh_point_3d_hexahedron():
     "Test mesh-point intersection in 3D for hexahedral mesh"
 
     point = Point(0.1, 0.2, 0.3)
-    mesh = UnitCubeMesh.create(8, 8, 8, CellType.Type.hexahedron)
+    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8, CellType.Type.hexahedron)
 
     intersection = intersect(mesh, point)
 
