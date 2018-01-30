@@ -98,24 +98,17 @@ void Expression::restrict(double* w, const FiniteElement& element,
                           const double* coordinate_dofs,
                           const ufc::cell& ufc_cell) const
 {
-  // Not working for Hdiv, Hcurl elements etc.
-  const std::string family(element.ufc_element()->family());
-
   // Get evaluation points
   const std::size_t vs = value_size();
-  const std::size_t sd = element.space_dimension();
+  const std::size_t ndofs = element.space_dimension();
   const std::size_t gdim = element.geometric_dimension();
-
-  std::cout << family << " " << vs << " " << sd << " " << gdim << "\n";
-
-  std::size_t ndofs = sd;
 
   // FIXME: for Vector Lagrange elements (and probably Tensor too),
   // this repeats the same evaluation points "gdim" times. Should only
   // do them once, and remove the "mapping" (which is the identity).
 
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      eval_points(sd, gdim);
+      eval_points(ndofs, gdim);
   element.ufc_element()->tabulate_dof_coordinates(eval_points.data(),
                                                   coordinate_dofs);
 
@@ -123,28 +116,16 @@ void Expression::restrict(double* w, const FiniteElement& element,
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       eval_values(ndofs, vs);
 
-  // FIXME: should evaluate all points at once (maybe needs RowMajor matrix)
+  // FIXME: should evaluate all points at once (using RowMajor matrix)
   for (unsigned int i = 0; i != ndofs; ++i)
-  {
     eval(eval_values.row(i), eval_points.row(i), ufc_cell);
-    for (unsigned int j = 0; j != gdim; ++j)
-      std::cout << eval_points(i, j) << ", " ;
-    for (unsigned int j = 0; j != vs; ++j)
-      std::cout << eval_values(i, j) << " ";
-    std::cout <<" \n";
-  }
-
-  std::cout << "data = ";
-  for (unsigned int i = 0; i != sd; ++i)
-    std::cout << eval_values.data()[i] << " ";
-  std::cout <<" \n";
 
   // Transpose for vector values
+  // FIXME: remove need for this
   eval_values.transposeInPlace();
 
-  // Add mapping
+  // Add mapping from generated code (this is identity for Lagrange elements)
   element.ufc_element()->map_dofs(w, eval_values.data(), coordinate_dofs, -1);
-
 }
 //-----------------------------------------------------------------------------
 void Expression::compute_vertex_values(std::vector<double>& vertex_values,
