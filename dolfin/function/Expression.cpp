@@ -105,7 +105,7 @@ void Expression::restrict(double* w, const FiniteElement& element,
 
   // FIXME: for Vector Lagrange elements (and probably Tensor too),
   // this repeats the same evaluation points "gdim" times. Should only
-  // do them once, and remove the "mapping" (which is the identity).
+  // do them once, and remove the "mapping" below (which is the identity).
 
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       eval_points(ndofs, gdim);
@@ -121,10 +121,12 @@ void Expression::restrict(double* w, const FiniteElement& element,
     eval(eval_values.row(i), eval_points.row(i), ufc_cell);
 
   // Transpose for vector values
-  // FIXME: remove need for this
+  // FIXME: remove need for this - needs work in ffc
   eval_values.transposeInPlace();
 
-  // Add mapping from generated code (this is identity for Lagrange elements)
+  // Apply a mapping to the reference element.
+  // FIXME: not needed for Lagrange elements, eliminate.
+  // See: ffc/uflacs/backends/ufc/evaluatedof.py:_change_variables()
   element.ufc_element()->map_dofs(w, eval_values.data(), coordinate_dofs, -1);
 }
 //-----------------------------------------------------------------------------
