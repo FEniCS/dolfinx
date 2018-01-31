@@ -25,7 +25,6 @@
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
@@ -1545,56 +1544,59 @@ void XDMFFile::build_mesh_quadratic(
   std::vector<double> geometry_data = get_dataset<double>(
       mesh.mpi_comm(), geometry_dataset_node, relative_path);
 
-  MeshEditor mesh_editor;
-  mesh_editor.open(mesh, cell_type.cell_type(), tdim, gdim, 2);
+  warning("XDMF quadratic mesh I/O is currently under revision");
+  dolfin_not_implemented();
 
-  mesh_editor.init_vertices_global(vertex_indices.size(),
-                                   vertex_indices.size());
-  int c = 0;
-  for (const auto& q : vertex_indices.set())
-  {
-    mesh_editor.add_vertex(c, Point(gdim, &geometry_data[q * gdim]));
-    ++c;
-  }
+  // MeshEditor mesh_editor;
+  // mesh_editor.open(mesh, cell_type.cell_type(), tdim, gdim, 2);
 
-  mesh_editor.init_cells_global(num_cells, num_cells);
-  std::vector<std::uint32_t> pts(num_vertices_per_cell);
-  for (int i = 0; i < num_cells; ++i)
-  {
-    for (int j = 0; j < num_vertices_per_cell; ++j)
-    {
-      pts[j] = std::lower_bound(vertex_indices.set().begin(),
-                                vertex_indices.set().end(),
-                                topology_data_array[i][j])
-               - vertex_indices.set().begin();
-    }
-    mesh_editor.add_cell(i, pts);
-  }
+  // mesh_editor.init_vertices_global(vertex_indices.size(),
+  //                                  vertex_indices.size());
+  // int c = 0;
+  // for (const auto& q : vertex_indices.set())
+  // {
+  //   mesh_editor.add_vertex(c, Point(gdim, &geometry_data[q * gdim]));
+  //   ++c;
+  // }
 
-  std::vector<std::size_t> edge_mapping;
-  if (tdim == 1)
-    edge_mapping = {0};
-  else if (tdim == 2)
-    edge_mapping = {1, 2, 0};
-  else
-    edge_mapping = {5, 4, 1, 3, 2, 0};
+  // mesh_editor.init_cells_global(num_cells, num_cells);
+  // std::vector<std::uint32_t> pts(num_vertices_per_cell);
+  // for (int i = 0; i < num_cells; ++i)
+  // {
+  //   for (int j = 0; j < num_vertices_per_cell; ++j)
+  //   {
+  //     pts[j] = std::lower_bound(vertex_indices.set().begin(),
+  //                               vertex_indices.set().end(),
+  //                               topology_data_array[i][j])
+  //              - vertex_indices.set().begin();
+  //   }
+  //   mesh_editor.add_cell(i, pts);
+  // }
 
-  mesh_editor.init_entities();
-  for (std::uint32_t i = 0; i < num_cells; ++i)
-  {
-    std::uint32_t j = 0;
-    Cell cell(mesh, i);
-    for (auto &e : EntityRange<Edge>(cell))
-    {
-      // fixme: permute j
-      const int32_t c
-          = topology_data_array[i][num_vertices_per_cell + edge_mapping[j]];
-      Point p(gdim, &geometry_data[c * gdim]);
-      mesh_editor.add_entity_point(1, 0, e.index(), p);
-      ++j;
-    }
-  }
-  mesh_editor.close();
+  // std::vector<std::size_t> edge_mapping;
+  // if (tdim == 1)
+  //   edge_mapping = {0};
+  // else if (tdim == 2)
+  //   edge_mapping = {1, 2, 0};
+  // else
+  //   edge_mapping = {5, 4, 1, 3, 2, 0};
+
+  // mesh_editor.init_entities();
+  // for (std::uint32_t i = 0; i < num_cells; ++i)
+  // {
+  //   std::uint32_t j = 0;
+  //   Cell cell(mesh, i);
+  //   for (auto &e : EntityRange<Edge>(cell))
+  //   {
+  //     // fixme: permute j
+  //     const int32_t c
+  //         = topology_data_array[i][num_vertices_per_cell + edge_mapping[j]];
+  //     Point p(gdim, &geometry_data[c * gdim]);
+  //     mesh_editor.add_entity_point(1, 0, e.index(), p);
+  //     ++j;
+  //   }
+  // }
+  // mesh_editor.close();
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::build_mesh(Mesh& mesh, const CellType& cell_type,

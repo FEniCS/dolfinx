@@ -13,7 +13,6 @@
 #include <dolfin/mesh/Face.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshGeometry.h>
@@ -391,27 +390,6 @@ void mesh(py::module& m)
   MESHVALUECOLLECTION_MACRO(double, double);
   MESHVALUECOLLECTION_MACRO(std::size_t, sizet);
 #undef MESHVALUECOLLECTION_MACRO
-
-  // dolfin::MeshEditor
-  py::class_<dolfin::MeshEditor, std::shared_ptr<dolfin::MeshEditor>>(
-      m, "MeshEditor", "DOLFIN MeshEditor object")
-      .def(py::init<>())
-      .def("open",
-           (void (dolfin::MeshEditor::*)(dolfin::Mesh&, dolfin::CellType::Type,
-                                         std::size_t, std::size_t, std::size_t))
-               & dolfin::MeshEditor::open,
-           py::arg("mesh"), py::arg("type"), py::arg("tdim"), py::arg("gdim"),
-           py::arg("degree") = 1)
-      .def("init_vertices_global", &dolfin::MeshEditor::init_vertices_global)
-      .def("init_cells_global", &dolfin::MeshEditor::init_cells_global)
-      .def("add_vertex",
-           (void (dolfin::MeshEditor::*)(std::size_t, const dolfin::Point&))
-               & dolfin::MeshEditor::add_vertex)
-      .def("add_cell",
-           (void (dolfin::MeshEditor::*)(std::size_t,
-                                         const std::vector<std::size_t>&))
-               & dolfin::MeshEditor::add_cell)
-      .def("close", &dolfin::MeshEditor::close, py::arg("order") = true);
 
   // dolfin::MeshQuality
   py::class_<dolfin::MeshQuality>(m, "MeshQuality", "DOLFIN MeshQuality class")
