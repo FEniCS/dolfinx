@@ -51,7 +51,7 @@ bool MeshEntity::incident(const MeshEntity& entity) const
     return false;
 
   // Get list of entities for given topological dimension
-  const std::uint32_t* entities
+  const std::int32_t* entities
       = _mesh->topology()(_dim, entity._dim)(_local_index);
   const std::size_t num_entities
       = _mesh->topology()(_dim, entity._dim).size(_local_index);
@@ -75,7 +75,7 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
   }
 
   // Get list of entities for given topological dimension
-  const std::uint32_t* entities
+  const std::int32_t* entities
       = _mesh->topology()(_dim, entity._dim)(_local_index);
   const std::size_t num_entities
       = _mesh->topology()(_dim, entity._dim).size(_local_index);
@@ -131,7 +131,7 @@ std::uint32_t MeshEntity::owner() const
                  "Entity ownership is only defined for cells");
   }
 
-  const std::size_t offset = _mesh->topology().ghost_offset(_dim);
+  const std::int32_t offset = _mesh->topology().ghost_offset(_dim);
   if (_local_index < offset)
   {
     dolfin_error("MeshEntity.cpp", "get ownership of entity",

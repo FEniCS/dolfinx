@@ -696,8 +696,8 @@ void GenericBoundingBoxTree::compute_bbox_of_entity(double* b,
 
   // Get mesh entity data
   const MeshGeometry& geometry = entity.mesh().geometry();
-  const size_t num_vertices = entity.num_entities(0);
-  const unsigned int* vertices = entity.entities(0);
+  const std::size_t num_vertices = entity.num_entities(0);
+  const std::int32_t* vertices = entity.entities(0);
   dolfin_assert(num_vertices >= 2);
 
   // Get coordinates for first vertex

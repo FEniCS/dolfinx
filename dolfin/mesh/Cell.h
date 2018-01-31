@@ -216,7 +216,7 @@ public:
     const std::size_t gdim = geom.dim();
     const std::size_t geom_degree = geom.degree();
     const std::size_t num_vertices = this->num_vertices();
-    const std::uint32_t* vertices = this->entities(0);
+    const std::int32_t* vertices = this->entities(0);
 
     if (geom_degree == 1)
     {
@@ -229,7 +229,7 @@ public:
     {
       const std::size_t tdim = _mesh->topology().dim();
       const std::size_t num_edges = this->num_entities(1);
-      const std::uint32_t* edges = this->entities(1);
+      const std::int32_t* edges = this->entities(1);
 
       coordinates.resize((num_vertices + num_edges) * gdim);
 
@@ -258,7 +258,7 @@ public:
   {
     const std::size_t gdim = _mesh->geometry().dim();
     const std::size_t num_vertices = this->num_vertices();
-    const std::uint32_t* vertices = this->entities(0);
+    const std::int32_t* vertices = this->entities(0);
     coordinates.resize(num_vertices * gdim);
     for (std::size_t i = 0; i < num_vertices; i++)
       for (std::size_t j = 0; j < gdim; j++)

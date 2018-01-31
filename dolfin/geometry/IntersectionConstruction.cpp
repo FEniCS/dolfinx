@@ -71,8 +71,8 @@ IntersectionConstruction::intersection(const MeshEntity& entity_0,
   // Get data
   const MeshGeometry& g0 = entity_0.mesh().geometry();
   const MeshGeometry& g1 = entity_1.mesh().geometry();
-  const unsigned int* v0 = entity_0.entities(0);
-  const unsigned int* v1 = entity_1.entities(0);
+  const std::int32_t* v0 = entity_0.entities(0);
+  const std::int32_t* v1 = entity_1.entities(0);
 
   // Pack data as vectors of points
   std::vector<Point> points_0(entity_0.dim() + 1);

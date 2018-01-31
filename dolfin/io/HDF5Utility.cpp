@@ -14,7 +14,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <iostream>
@@ -283,40 +282,25 @@ void HDF5Utility::build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data)
 {
   // NOTE: This function is only used when running in serial
 
-  // Create mesh for editing
-  MeshEditor editor;
-  dolfin_assert(mesh_data.topology.dim != 0);
-  editor.open(mesh, mesh_data.topology.cell_type, mesh_data.topology.dim,
-              mesh_data.geometry.dim);
+  // Copy topological data from int64_t to int32_t
+  std::unique_ptr<CellType> cell_type
+    (CellType::create(mesh_data.topology.cell_type));
+  Eigen::Matrix<std::int32_t, Eigen::Dynamic,
+                Eigen::Dynamic, Eigen::RowMajor>
+    topo(mesh_data.topology.num_global_cells,
+         cell_type->num_vertices());
+  std::copy(mesh_data.topology.cell_vertices.data(),
+            mesh_data.topology.cell_vertices.data() + topo.rows()*topo.cols(),
+            topo.data());
 
-  // Iterate over vertices and add to mesh
-  editor.init_vertices_global(mesh_data.geometry.num_global_vertices,
-                              mesh_data.geometry.num_global_vertices);
-  for (std::int64_t i = 0; i < mesh_data.geometry.num_global_vertices; ++i)
-  {
-    const std::size_t index = mesh_data.geometry.vertex_indices[i];
-    const std::vector<double> coords(
-        mesh_data.geometry.vertex_coordinates[i].begin(),
-        mesh_data.geometry.vertex_coordinates[i].end());
-    Point p(mesh_data.geometry.dim, coords.data());
-    editor.add_vertex(index, p);
-  }
+  Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
+                           Eigen::Dynamic, Eigen::RowMajor>>
+    geom(mesh_data.geometry.vertex_coordinates.data(),
+         mesh_data.geometry.num_global_vertices,
+         mesh_data.geometry.dim);
 
-  // Iterate over cells and add to mesh
-  editor.init_cells_global(mesh_data.topology.num_global_cells,
-                           mesh_data.topology.num_global_cells);
-
-  for (std::int64_t i = 0; i < mesh_data.topology.num_global_cells; ++i)
-  {
-    const std::size_t index = mesh_data.topology.global_cell_indices[i];
-    const std::vector<std::size_t> v(
-        mesh_data.topology.cell_vertices[i].begin(),
-        mesh_data.topology.cell_vertices[i].end());
-    editor.add_cell(index, v);
-  }
-
-  // Close mesh editor
-  editor.close();
+  mesh.create(mesh_data.topology.cell_type, geom, topo);
+  mesh.order();
 }
 //-----------------------------------------------------------------------------
 void HDF5Utility::set_local_vector_values(

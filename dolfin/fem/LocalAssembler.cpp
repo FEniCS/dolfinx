@@ -182,8 +182,8 @@ void LocalAssembler::assemble_interior_facet(
   // Get cells incident with facet (which is 0 and 1 here is
   // arbitrary)
   dolfin_assert(facet.num_entities(D) == 2);
-  std::size_t cell_index_plus = facet.entities(D)[0];
-  std::size_t cell_index_minus = facet.entities(D)[1];
+  std::int32_t cell_index_plus = facet.entities(D)[0];
+  std::int32_t cell_index_minus = facet.entities(D)[1];
   bool local_is_plus = cell_index_plus == cell.index();
 
   // The convention '+' = 0, '-' = 1 is from ffc

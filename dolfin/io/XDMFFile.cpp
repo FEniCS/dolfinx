@@ -710,7 +710,7 @@ void XDMFFile::write_mesh_value_collection(const MeshValueCollection<T>& mvc,
     MeshEntity cell = Cell(*mesh, p.first.first);
     if (cell_dim != tdim)
     {
-      const std::uint32_t entity_local_idx
+      const std::int32_t entity_local_idx
           = cell.entities(cell_dim)[p.first.second];
       cell = MeshEntity(*mesh, cell_dim, entity_local_idx);
     }
@@ -1604,68 +1604,42 @@ void XDMFFile::build_mesh(Mesh& mesh, const CellType& cell_type,
                           const pugi::xml_node& geometry_dataset_node,
                           const boost::filesystem::path& relative_path)
 {
-  MeshEditor mesh_editor;
+  // Get the data
+  dolfin_assert(topology_dataset_node);
+  std::vector<std::int32_t> topology_data = get_dataset<std::int32_t>
+    (mesh.mpi_comm(), topology_dataset_node, relative_path);
 
-  mesh_editor.open(mesh, cell_type.cell_type(), tdim, gdim);
+  const size_t num_vertices_per_cell = cell_type.num_vertices();
+  std::vector<std::int32_t> cell_topology_permuted(num_vertices_per_cell);
 
-  // Get topology data vector and add to mesh
+  // Load VTK permutation mapping specific to the cell type
+  const std::vector<std::int8_t> perm = cell_type.vtk_mapping();
+
+  Eigen::Map<Eigen::Matrix<std::int32_t, Eigen::Dynamic,
+                           Eigen::Dynamic, Eigen::RowMajor>>
+    topo(topology_data.data(), num_cells, num_vertices_per_cell);
+
+  // Iterate over each cell and read permuted topology
+  for (std::int64_t i = 0; i < num_cells; ++i)
   {
-    // Get the data
-    dolfin_assert(topology_dataset_node);
-    std::vector<std::int32_t> topology_data = get_dataset<std::int32_t>(
-        mesh.mpi_comm(), topology_dataset_node, relative_path);
-
-    // Check dims
-
-    // Prepare mesh editor for addition of cells
-    mesh_editor.init_cells_global(num_cells, num_cells);
-
-    // Prepare mesh editor for addition of cells, and add cell topology
-    const size_t num_vertices_per_cell = cell_type.num_vertices();
-    std::vector<size_t> cell_topology(num_vertices_per_cell);
-    std::vector<size_t> cell_topology_permuted(num_vertices_per_cell);
-
-    // Load VTK permutation mapping specific to the cell type
-    const std::vector<std::int8_t> perm = cell_type.vtk_mapping();
-
-    // Iterate over each cell and read permuted topology
-    for (std::int64_t i = 0; i < num_cells; ++i)
-    {
-      cell_topology.assign(topology_data.begin() + i * num_vertices_per_cell,
-                           topology_data.begin()
-                               + (i + 1) * num_vertices_per_cell);
-
-      // Apply permutation and store topology as permuted topology
-      for (std::uint32_t j = 0; j < num_vertices_per_cell; ++j)
-      {
-        cell_topology_permuted[j] = cell_topology[perm[j]];
-      }
-
-      mesh_editor.add_cell(i, cell_topology_permuted);
-    }
+    // Apply permutation and store topology as permuted topology
+    for (std::uint32_t j = 0; j < num_vertices_per_cell; ++j)
+      cell_topology_permuted[j] = topo(i, perm[j]);
+    std::copy(cell_topology_permuted.begin(),
+              cell_topology_permuted.end(),
+              topo.row(i).data());
   }
 
-  // Get geometry data vector and add to mesh
-  {
-    // Get geometry data
-    dolfin_assert(geometry_dataset_node);
-    std::vector<double> geometry_data = get_dataset<double>(
-        mesh.mpi_comm(), geometry_dataset_node, relative_path);
+  // Get geometry data
+  dolfin_assert(geometry_dataset_node);
+  std::vector<double> geometry_data = get_dataset<double>
+    (mesh.mpi_comm(), geometry_dataset_node, relative_path);
+  Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic,
+                           Eigen::Dynamic, Eigen::RowMajor>>
+    geom(geometry_data.data(), num_points, gdim);
 
-    // Check dims
-
-    // Prepare mesh editor for addition of points, and add points
-    mesh_editor.init_vertices_global(num_points, num_points);
-    Point p;
-    for (std::int64_t i = 0; i < num_points; ++i)
-    {
-      for (int j = 0; j < gdim; ++j)
-        p[j] = geometry_data[i * gdim + j];
-      mesh_editor.add_vertex(i, p);
-    }
-  }
-
-  mesh_editor.close();
+  mesh.create(cell_type.cell_type(), geom, topo);
+  mesh.order();
 }
 //----------------------------------------------------------------------------
 void XDMFFile::build_local_mesh_data(
@@ -1989,7 +1963,7 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
       const auto& global_vertices = mesh.topology().global_indices(0);
       for (auto &c : MeshRange<MeshEntity>(mesh, cell_dim))
       {
-        const std::uint32_t* entities = c.entities(0);
+        const std::int32_t* entities = c.entities(0);
         for (std::uint32_t i = 0; i != c.num_entities(0); ++i)
           topology_data.push_back(global_vertices[entities[perm[i]]]);
       }
@@ -2020,7 +1994,7 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
         {
           for (std::uint32_t i = 0; i != e.num_entities(0); ++i)
           {
-            const std::uint32_t local_idx = e.entities(0)[perm[i]];
+            const std::int32_t local_idx = e.entities(0)[perm[i]];
             topology_data.push_back(global_vertices[local_idx]);
           }
         }

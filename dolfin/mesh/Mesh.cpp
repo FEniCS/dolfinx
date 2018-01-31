@@ -292,3 +292,57 @@ std::string Mesh::ghost_mode() const
   return _ghost_mode;
 }
 //-----------------------------------------------------------------------------
+void Mesh::create(CellType::Type type,
+                  Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> geometry,
+                  Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> topology)
+{
+  // Initialise geometry
+  const std::size_t gdim = geometry.cols();
+  _geometry.init(gdim, 1);
+
+  // Set cell type
+  _cell_type.reset(CellType::create(type));
+  const std::size_t tdim = _cell_type->dim();
+  const std::int32_t nv = _cell_type->num_vertices();
+  dolfin_assert(nv == topology.cols());
+
+  // Initialize topological dimension
+  _topology.init(tdim);
+
+  _ordered = false;
+
+  // Initialize mesh data
+  // FIXME: sort out global indices for parallel
+  // This method assumes it is running in serial, and
+  // sets global indices accordingly.
+
+  // Initialise vertices
+  const std::size_t num_vertices = geometry.rows();
+
+  _topology.init(0, num_vertices, num_vertices);
+  _topology.init_ghost(0, num_vertices);
+  _topology.init_global_indices(0, num_vertices);
+  std::vector<std::size_t> num_vertex_points(1, num_vertices);
+  _geometry.init_entities(num_vertex_points);
+
+  // Initialise cells
+  const std::size_t num_cells = topology.rows();
+  _topology.init(tdim, num_cells, num_cells);
+  _topology.init_ghost(tdim, num_cells);
+  _topology.init_global_indices(tdim, num_cells);
+  _topology(tdim, 0).init(num_cells, _cell_type->num_vertices());
+
+  // Add vertices
+  std::copy(geometry.data(), geometry.data() + gdim*num_vertices,
+            _geometry.x().begin());
+  for (std::int32_t i = 0; i != geometry.rows(); ++i)
+    _topology.set_global_index(0, i, i);
+
+  // Add cells
+  for (std::int32_t i = 0; i != topology.rows(); ++i)
+  {
+    _topology(tdim, 0).set(i, topology.data() + i * nv);
+    _topology.set_global_index(tdim, i, i);
+  }
+}
+//-----------------------------------------------------------------------------

@@ -10,7 +10,6 @@
 #include "Facet.h"
 #include "LocalMeshData.h"
 #include "Mesh.h"
-#include "MeshEditor.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
 #include "MeshTopology.h"
@@ -281,7 +280,7 @@ void MeshPartitioning::build(
 
   timer.stop();
 
-  // Build lcoal mesh from new_mesh_data
+  // Build local mesh from new_mesh_data
   build_local_mesh(mesh, new_global_cell_indices, new_cell_vertices,
                    mesh_data.topology.cell_type, mesh_data.topology.dim,
                    mesh_data.topology.num_global_cells, vertex_indices,
@@ -1043,30 +1042,20 @@ void MeshPartitioning::build_local_mesh(
   log(PROGRESS, "Build local mesh during distributed mesh construction");
   Timer timer("Build local part of distributed mesh (from local mesh data)");
 
-  // Open mesh for editing
-  MeshEditor editor;
-  editor.open(mesh, cell_type, tdim, gdim);
-
-  // Add vertices
-  editor.init_vertices_global(vertex_coordinates.size(), num_global_vertices);
-  Point point(gdim);
-  dolfin_assert(vertex_indices.size() == vertex_coordinates.size());
-  for (std::size_t i = 0; i < vertex_coordinates.size(); ++i)
-  {
-    for (std::int8_t j = 0; j < gdim; ++j)
-      point[j] = vertex_coordinates[i][j];
-    editor.add_vertex(i, vertex_indices[i], point);
-  }
+  // Map over geometry data
+  Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
+                                 Eigen::Dynamic, Eigen::RowMajor>>
+    geom(vertex_coordinates.data(), vertex_coordinates.size(), gdim);
 
   // Create CellType
   std::unique_ptr<CellType> _cell_type(CellType::create(cell_type));
   dolfin_assert(_cell_type);
 
-  // Add cells
-  editor.init_cells_global(cell_global_vertices.size(), num_global_cells);
-
+  // Remap topology data to local indices
   const std::int8_t num_cell_vertices = _cell_type->num_vertices();
-  std::vector<std::size_t> cell(num_cell_vertices);
+  Eigen::Matrix<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    topo(cell_global_vertices.size(), num_cell_vertices);
+
   for (std::size_t i = 0; i < cell_global_vertices.size(); ++i)
   {
     for (std::int8_t j = 0; j < num_cell_vertices; ++j)
@@ -1074,15 +1063,23 @@ void MeshPartitioning::build_local_mesh(
       // Get local cell vertex
       auto iter = vertex_global_to_local.find(cell_global_vertices[i][j]);
       dolfin_assert(iter != vertex_global_to_local.end());
-      cell[j] = iter->second;
+      topo(i, j) = iter->second;
     }
-
-    editor.add_cell(i, global_cell_indices[i], cell);
   }
 
-  // Close mesh: Note that this must be done after creating the global
-  // vertex map or otherwise the ordering in mesh.close() will be
-  // wrong (based on local numbers).
-  editor.close();
+  // Copy data to mesh
+  mesh.create(cell_type, geom, topo);
+
+  // Set global indices for vertices
+  mesh.topology().init(0, vertex_indices.size(), num_global_vertices);
+  for (std::size_t i = 0; i < vertex_indices.size(); ++i)
+    mesh.topology().set_global_index(0, i, vertex_indices[i]);
+
+  // Set global indices for cells
+  mesh.topology().init(tdim, global_cell_indices.size(), num_global_cells);
+  for (std::size_t i = 0; i < cell_global_vertices.size(); ++i)
+    mesh.topology().set_global_index(tdim, i, global_cell_indices[i]);
+
+  mesh.order();
 }
 //-----------------------------------------------------------------------------
