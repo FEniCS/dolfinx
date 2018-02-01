@@ -70,7 +70,6 @@ from .cpp.parameter import Parameters, parameters
 
 # Import Python modules
 #from . import la
-from .cpp import math as math
 from . import mesh
 from . import parameter
 
