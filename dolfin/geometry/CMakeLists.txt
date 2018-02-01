@@ -1,7 +1,4 @@
 set(HEADERS
-  BoundingBoxTree1D.h
-  BoundingBoxTree2D.h
-  BoundingBoxTree3D.h
   BoundingBoxTree.h
   CGALExactArithmetic.h
   CollisionPredicates.h
