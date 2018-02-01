@@ -16,16 +16,21 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void BoxMesh::build_tet(Mesh& mesh, const std::array<Point, 2>& p,
+Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
                         std::array<std::size_t, 3> n)
 {
   Timer timer("Build BoxMesh");
 
-  // Receive mesh according to parallel policy
-  if (MPI::is_receiver(mesh.mpi_comm()))
+  // Receive mesh if not rank 0
+  if (dolfin::MPI::rank(comm) != 0)
   {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     geom(0, 3);
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     topo(0, 4);
+    Mesh mesh(comm, CellType::Type::tetrahedron, geom, topo);
     MeshPartitioning::build_distributed_mesh(mesh);
-    return;
+    return mesh;
   }
 
   // Extract data
@@ -68,8 +73,6 @@ void BoxMesh::build_tet(Mesh& mesh, const std::array<Point, 2>& p,
                                               "number of vertices must be at "
                                               "least 1 in each dimension");
   }
-
-  mesh.rename("mesh", "Mesh of the cuboid (a,b) x (c,d) x (e,f)");
 
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
                      geom((nx + 1) * (ny + 1) * (nz + 1), 3);
@@ -126,24 +129,25 @@ void BoxMesh::build_tet(Mesh& mesh, const std::array<Point, 2>& p,
     }
   }
 
-  mesh.create(CellType::Type::tetrahedron, geom, topo);
+  Mesh mesh(comm, CellType::Type::tetrahedron, geom, topo);
   mesh.order();
 
-  // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(mesh.mpi_comm()))
-  {
-    MeshPartitioning::build_distributed_mesh(mesh);
-    return;
-  }
+  MeshPartitioning::build_distributed_mesh(mesh);
+  return mesh;
 }
 //-----------------------------------------------------------------------------
-void BoxMesh::build_hex(Mesh& mesh, std::array<std::size_t, 3> n)
+Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
 {
-  // Receive mesh according to parallel policy
-  if (MPI::is_receiver(mesh.mpi_comm()))
+  // Receive mesh if not rank 0
+  if (dolfin::MPI::rank(comm) != 0)
   {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     geom(0, 3);
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     topo(0, 8);
+    Mesh mesh(comm, CellType::Type::hexahedron, geom, topo);
     MeshPartitioning::build_distributed_mesh(mesh);
-    return;
+    return mesh;
   }
 
   const std::size_t nx = n[0];
@@ -203,13 +207,8 @@ void BoxMesh::build_hex(Mesh& mesh, std::array<std::size_t, 3> n)
     }
   }
 
-  mesh.create(CellType::Type::hexahedron, geom, topo);
-
-  // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(mesh.mpi_comm()))
-  {
-    MeshPartitioning::build_distributed_mesh(mesh);
-    return;
-  }
+  Mesh mesh(comm, CellType::Type::hexahedron, geom, topo);
+  MeshPartitioning::build_distributed_mesh(mesh);
+  return mesh;
 }
 //-----------------------------------------------------------------------------

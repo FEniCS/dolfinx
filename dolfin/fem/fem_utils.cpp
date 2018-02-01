@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "fem_utils.h"
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
@@ -12,7 +13,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include "fem_utils.h"
 
 using namespace dolfin;
 
@@ -114,7 +114,7 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
   std::size_t xi, vi;
 
   // Get/set cell-by-cell
-  for (auto &c : MeshRange<Cell>(mesh))
+  for (auto& c : MeshRange<Cell>(mesh))
   {
     // Get/prepare values and dofs on cell
     auto cell_dofs = dofmap.cell_dofs(c.index());
@@ -275,6 +275,8 @@ void dolfin::fem::get_coordinates(Function& position,
 //-----------------------------------------------------------------------------
 Mesh dolfin::fem::create_mesh(Function& coordinates)
 {
+  // FIXME: This function is a mess
+
   dolfin_assert(coordinates.function_space());
   dolfin_assert(coordinates.function_space()->element());
   dolfin_assert(coordinates.function_space()->element()->ufc_element());

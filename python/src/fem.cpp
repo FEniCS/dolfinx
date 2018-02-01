@@ -445,11 +445,11 @@ void fem(py::module& m)
 #endif
 
   // FEM utils free functions
-  m.def("create_mesh", dolfin::fem::create_mesh);
-  m.def("create_mesh", [](const py::object u) {
-    auto _u = u.attr("_cpp_object").cast<dolfin::Function*>();
-    return dolfin::fem::create_mesh(*_u);
-  });
+  //m.def("create_mesh", dolfin::fem::create_mesh);
+  //m.def("create_mesh", [](const py::object u) {
+  //  auto _u = u.attr("_cpp_object").cast<dolfin::Function*>();
+  //  return dolfin::fem::create_mesh(*_u);
+  //});
 
   m.def("set_coordinates", &dolfin::fem::set_coordinates);
   m.def("set_coordinates",

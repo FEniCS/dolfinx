@@ -31,6 +31,66 @@ Mesh::Mesh(MPI_Comm comm)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+Mesh::Mesh(MPI_Comm comm, CellType::Type type,
+           Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>
+               geometry,
+           Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>
+               topology)
+    : Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
+      _ghost_mode("none")
+{
+  // Initialise geometry
+  const std::size_t gdim = geometry.cols();
+  _geometry.init(gdim, 1);
+
+  // Set cell type
+  _cell_type.reset(CellType::create(type));
+  const std::size_t tdim = _cell_type->dim();
+  const std::int32_t nv = _cell_type->num_vertices();
+  dolfin_assert(nv == topology.cols());
+
+  // Initialize topological dimension
+  _topology.init(tdim);
+
+  _ordered = false;
+
+  // Initialize mesh data
+  // FIXME: sort out global indices for parallel
+  // This method assumes it is running in serial, and
+  // sets global indices accordingly.
+
+  // Initialise vertices
+  const std::size_t num_vertices = geometry.rows();
+
+  _topology.init(0, num_vertices, num_vertices);
+  _topology.init_ghost(0, num_vertices);
+  _topology.init_global_indices(0, num_vertices);
+  std::vector<std::size_t> num_vertex_points(1, num_vertices);
+  _geometry.init_entities(num_vertex_points);
+
+  // Initialise cells
+  const std::size_t num_cells = topology.rows();
+  _topology.init(tdim, num_cells, num_cells);
+  _topology.init_ghost(tdim, num_cells);
+  _topology.init_global_indices(tdim, num_cells);
+  _topology(tdim, 0).init(num_cells, _cell_type->num_vertices());
+
+  // Add vertices
+  std::copy(geometry.data(), geometry.data() + gdim * num_vertices,
+            _geometry.x().begin());
+  for (std::int32_t i = 0; i != geometry.rows(); ++i)
+    _topology.set_global_index(0, i, i);
+
+  // Add cells
+  for (std::int32_t i = 0; i != topology.rows(); ++i)
+  {
+    _topology(tdim, 0).set(i, topology.data() + i * nv);
+    _topology.set_global_index(tdim, i, i);
+  }
+}
+//-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
     : Variable("mesh", "DOLFIN mesh"), _ordered(false),
       _mpi_comm(mesh.mpi_comm()), _ghost_mode("none")
@@ -213,7 +273,7 @@ std::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const
 double Mesh::hmin() const
 {
   double h = std::numeric_limits<double>::max();
-  for (auto &cell : MeshRange<Cell>(*this))
+  for (auto& cell : MeshRange<Cell>(*this))
     h = std::min(h, cell.h());
 
   return h;
@@ -222,7 +282,7 @@ double Mesh::hmin() const
 double Mesh::hmax() const
 {
   double h = 0.0;
-  for (auto &cell : MeshRange<Cell>(*this))
+  for (auto& cell : MeshRange<Cell>(*this))
     h = std::max(h, cell.h());
 
   return h;
@@ -231,7 +291,7 @@ double Mesh::hmax() const
 double Mesh::rmin() const
 {
   double r = std::numeric_limits<double>::max();
-  for (auto &cell : MeshRange<Cell>(*this))
+  for (auto& cell : MeshRange<Cell>(*this))
     r = std::min(r, cell.inradius());
 
   return r;
@@ -240,7 +300,7 @@ double Mesh::rmin() const
 double Mesh::rmax() const
 {
   double r = 0.0;
-  for (auto &cell : MeshRange<Cell>(*this))
+  for (auto& cell : MeshRange<Cell>(*this))
     r = std::max(r, cell.inradius());
 
   return r;
@@ -292,9 +352,14 @@ std::string Mesh::ghost_mode() const
   return _ghost_mode;
 }
 //-----------------------------------------------------------------------------
-void Mesh::create(CellType::Type type,
-                  Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> geometry,
-                  Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> topology)
+void Mesh::create(
+    CellType::Type type,
+    Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                   Eigen::RowMajor>>
+        geometry,
+    Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
+                                   Eigen::RowMajor>>
+        topology)
 {
   // Initialise geometry
   const std::size_t gdim = geometry.cols();
@@ -333,7 +398,7 @@ void Mesh::create(CellType::Type type,
   _topology(tdim, 0).init(num_cells, _cell_type->num_vertices());
 
   // Add vertices
-  std::copy(geometry.data(), geometry.data() + gdim*num_vertices,
+  std::copy(geometry.data(), geometry.data() + gdim * num_vertices,
             _geometry.x().begin());
   for (std::int32_t i = 0; i != geometry.rows(); ++i)
     _topology.set_global_index(0, i, i);

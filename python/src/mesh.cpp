@@ -112,11 +112,19 @@ void mesh(py::module& m)
 
   // dolfin::Mesh
   py::class_<dolfin::Mesh, std::shared_ptr<dolfin::Mesh>, dolfin::Variable>(
-      m, "Mesh", py::dynamic_attr(), "DOLFIN Mesh object")
-      .def(py::init<const dolfin::Mesh&>())
-      .def(py::init([](const MPICommWrapper comm) {
-        return std::unique_ptr<dolfin::Mesh>(new dolfin::Mesh(comm.get()));
-      }))
+    m, "Mesh", py::dynamic_attr(), "DOLFIN Mesh object")
+    .def(py::init<const dolfin::Mesh&>())
+    .def(py::init([](const MPICommWrapper comm) {
+          return std::make_unique<dolfin::Mesh>(comm.get());
+        }))
+    .def(py::init([](const MPICommWrapper comm, dolfin::CellType::Type type,
+                     Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>> geometry,
+                     Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic,
+                     Eigen::Dynamic, Eigen::RowMajor>>
+                     topology) {
+                    return std::make_unique<dolfin::Mesh>(comm.get(), type, geometry, topology);
+                  }))
       .def("bounding_box_tree", &dolfin::Mesh::bounding_box_tree)
       .def("cells",
            [](const dolfin::Mesh& self) {
@@ -125,7 +133,7 @@ void mesh(py::module& m)
                                (std::int32_t)self.type().num_vertices(tdim)},
                               self.topology()(tdim, 0)().data());
            })
-    .def("create", &dolfin::Mesh::create)
+    //.def("create", &dolfin::Mesh::create)
       .def("geometry",
            (dolfin::MeshGeometry & (dolfin::Mesh::*)())
                &dolfin::Mesh::geometry,

@@ -16,13 +16,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void IntervalMesh::build(Mesh& mesh, std::size_t nx, std::array<double, 2> x)
+Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x)
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver(mesh.mpi_comm()))
+  if (MPI::rank(comm) != 0)
   {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     geom(0, 1);
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     topo(0, 2);
+    Mesh mesh(comm, CellType::Type::interval, geom, topo);
     MeshPartitioning::build_distributed_mesh(mesh);
-    return;
+    return mesh;
   }
 
   const double a = x[0];
@@ -50,8 +55,6 @@ void IntervalMesh::build(Mesh& mesh, std::size_t nx, std::array<double, 2> x)
                  nx);
   }
 
-  mesh.rename("mesh", "Mesh of the interval (a, b)");
-
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom((nx + 1), 1);
   Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(nx, 2);
 
@@ -63,13 +66,8 @@ void IntervalMesh::build(Mesh& mesh, std::size_t nx, std::array<double, 2> x)
   for (std::size_t ix = 0; ix < nx; ix++)
     topo.row(ix) << ix, ix + 1;
 
-  mesh.create(CellType::Type::interval, geom, topo);
-
-  // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(mesh.mpi_comm()))
-  {
-    MeshPartitioning::build_distributed_mesh(mesh);
-    return;
-  }
+  Mesh mesh(comm, CellType::Type::interval, geom, topo);
+  MeshPartitioning::build_distributed_mesh(mesh);
+  return mesh;
 }
 //-----------------------------------------------------------------------------

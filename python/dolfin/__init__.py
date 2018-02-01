@@ -45,7 +45,6 @@ if has_hdf5():
 from .cpp import MPI
 from .cpp.function import (Expression, Constant, FunctionAXPY)
 from .cpp.fem import (FiniteElement, DofMap,
-                      get_coordinates, create_mesh, set_coordinates,
                       vertex_to_dof_map, dof_to_vertex_map,
                       PointSource, DiscreteOperators,
                       SparsityPatternBuilder)

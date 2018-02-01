@@ -37,15 +37,11 @@ public:
   /// @endcode
   static Mesh create(MPI_Comm comm, std::size_t n, std::array<double, 2> x)
   {
-    Mesh mesh(comm);
-    build(mesh, n, x);
-    return mesh;
+    return build(comm, n, x);
   }
 
 private:
   // Build mesh
-  static void build(Mesh& mesh, std::size_t n, std::array<double, 2> x);
+  static Mesh build(MPI_Comm comm, std::size_t n, std::array<double, 2> x);
 };
 }
-
-

@@ -4,10 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "RectangleMesh.h"
 #include <Eigen/Dense>
 #include <cmath>
-
-#include "RectangleMesh.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/MeshPartitioning.h>
@@ -15,15 +14,19 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
+Mesh RectangleMesh::build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
                               std::array<std::size_t, 2> n,
                               std::string diagonal)
 {
-  // Receive mesh according to parallel policy
-  if (MPI::is_receiver(mesh.mpi_comm()))
+  // Receive mesh if not rank 0
+  if (dolfin::MPI::rank(comm) != 0)
   {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+        0, 2);
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0, 3);
+    Mesh mesh(comm, CellType::Type::triangle, geom, topo);
     MeshPartitioning::build_distributed_mesh(mesh);
-    return;
+    return mesh;
   }
 
   // Check options
@@ -70,8 +73,6 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
                  "dimension");
   }
 
-  mesh.rename("mesh", "Mesh of the unit square (a,b) x (c,d)");
-
   // Create vertices and cells
   std::size_t nv, nc;
   if (diagonal == "crossed")
@@ -85,8 +86,10 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
     nc = 2 * nx * ny;
   }
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(nv, 2);
-  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(nc, 3);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+      nv, 2);
+  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(nc,
+                                                                           3);
 
   // Create main vertices
   std::size_t vertex = 0;
@@ -95,7 +98,7 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
     const double x1 = c + cd * static_cast<double>(iy);
     for (std::size_t ix = 0; ix <= nx; ix++)
     {
-      geom(vertex, 0) =  a + ab * static_cast<double>(ix);
+      geom(vertex, 0) = a + ab * static_cast<double>(ix);
       geom(vertex, 1) = x1;
       ++vertex;
     }
@@ -194,32 +197,33 @@ void RectangleMesh::build_tri(Mesh& mesh, const std::array<Point, 2>& p,
     }
   }
 
-  mesh.create(CellType::Type::triangle, geom, topo);
+  Mesh mesh(comm, CellType::Type::triangle, geom, topo);
   mesh.order();
 
-  // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(mesh.mpi_comm()))
-  {
-    MeshPartitioning::build_distributed_mesh(mesh);
-    return;
-  }
+  MeshPartitioning::build_distributed_mesh(mesh);
+  return mesh;
 }
 //-----------------------------------------------------------------------------
-void RectangleMesh::build_quad(Mesh& mesh, const std::array<Point, 2>& p,
+Mesh RectangleMesh::build_quad(MPI_Comm comm, const std::array<Point, 2>& p,
                                std::array<std::size_t, 2> n)
 {
-  // Receive mesh according to parallel policy
-  if (MPI::is_receiver(mesh.mpi_comm()))
+  // Receive mesh if not rank 0
+  if (dolfin::MPI::rank(comm) != 0)
   {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(0, 2);
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0, 4);
+    Mesh mesh(comm, CellType::Type::quadrilateral, geom, topo);
     MeshPartitioning::build_distributed_mesh(mesh);
-    return;
+    return mesh;
   }
 
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom((nx+1)*(ny+1), 2);
-  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(nx*ny, 4);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+      (nx + 1) * (ny + 1), 2);
+  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(
+      nx * ny, 4);
 
   const double a = p[0][0];
   const double b = p[1][0];
@@ -255,13 +259,8 @@ void RectangleMesh::build_quad(Mesh& mesh, const std::array<Point, 2>& p,
       ++cell;
     }
 
-  mesh.create(CellType::Type::quadrilateral, geom, topo);
-
-  // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(mesh.mpi_comm()))
-  {
-    MeshPartitioning::build_distributed_mesh(mesh);
-    return;
-  }
+  Mesh mesh(comm, CellType::Type::quadrilateral, geom, topo);
+  MeshPartitioning::build_distributed_mesh(mesh);
+  return mesh;
 }
 //-----------------------------------------------------------------------------

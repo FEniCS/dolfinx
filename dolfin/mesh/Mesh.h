@@ -56,8 +56,18 @@ class BoundingBoxTree;
 class Mesh : public Variable
 {
 public:
+  // FIXME: remove
   /// Create empty mesh
   Mesh(MPI_Comm comm);
+
+  /// Constructor
+  Mesh(MPI_Comm comm, CellType::Type type,
+       Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                      Eigen::RowMajor>>
+           geometry,
+       Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>
+           topology);
 
   /// Copy constructor.
   ///
@@ -292,12 +302,17 @@ public:
   /// library use.
   std::string ghost_mode() const;
 
+  // FIXME: remove
   /// Fill empty Mesh from Eigen arrays (serial)
   void create(CellType::Type type,
-              Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> geometry,
-              Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> topology);
+              Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>
+                  geometry,
+              Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>
+                  topology);
 
-
+  // FIXME: Remove
   // Friend in fem_utils.h
   friend Mesh fem::create_mesh(Function& coordinates);
 

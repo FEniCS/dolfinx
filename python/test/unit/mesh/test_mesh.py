@@ -41,7 +41,8 @@ def mesh1d():
 @fixture
 def mesh2d():
     # Create 2D mesh with one equilateral triangle
-    mesh2d = RectangleMesh.create(MPI.comm_world, [Point(0,0), Point(1,1)], [1, 1], CellType.Type.triangle, 'left')
+    mesh2d = RectangleMesh.create(MPI.comm_world, [Point(0,0), Point(1,1)],
+                                  [1, 1], CellType.Type.triangle, 'left')
     mesh2d.geometry().x()[3] += 0.5*(sqrt(3.0)-1.0)
     return mesh2d
 

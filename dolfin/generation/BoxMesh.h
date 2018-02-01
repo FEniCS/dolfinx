@@ -48,26 +48,26 @@ public:
   static Mesh create(MPI_Comm comm, const std::array<Point, 2>& p,
                      std::array<std::size_t, 3> n, CellType::Type cell_type)
   {
-    Mesh mesh(comm);
     if (cell_type == CellType::Type::tetrahedron)
-      build_tet(mesh, p, n);
+      return build_tet(comm, p, n);
     else if (cell_type == CellType::Type::hexahedron)
-      build_hex(mesh, n);
+      return build_hex(comm, n);
     else
     {
       dolfin_error("BoxMesh.h", "generate box mesh", "Wrong cell type '%d'",
                    cell_type);
     }
 
-    return mesh;
+    // Will never reach this point
+    return build_tet(comm, p, n);;
   }
 
 private:
   // Build mesh
-  static void build_tet(Mesh& mesh, const std::array<Point, 2>& p,
+  static Mesh build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
                         std::array<std::size_t, 3> n);
 
-  static void build_hex(Mesh& mesh, std::array<std::size_t, 3> n);
+  static Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n);
 };
 }
 

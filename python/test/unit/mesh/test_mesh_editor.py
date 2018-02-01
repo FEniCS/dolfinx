@@ -26,9 +26,8 @@ import numpy
 def test_triangle_mesh():
 
     # Create mesh object
-    mesh = Mesh(MPI.comm_world)
-    mesh.create(CellType.Type.triangle,
+    mesh = Mesh(MPI.comm_world, CellType.Type.triangle,
                 numpy.array([[0.0, 0.0],
                              [1.0, 0.0],
-                             [0.0, 1.0]], dtype=numpy.float64),
+                            [0.0, 1.0]], dtype=numpy.float64),
                 numpy.array([[0,1,2]], dtype=numpy.int32))
