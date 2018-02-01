@@ -24,15 +24,32 @@ class MeshEntity;
 
 class GenericBoundingBoxTree
 {
+private:
+  class less_x_bbox
+  {
+    /// Bounding boxes
+    const std::vector<double>& bboxes;
+    std::size_t _axis, _gdim;
+
+    /// Constructor
+  less_x_bbox(const std::vector<double>& bboxes, std::size_t  axis, std::size_t gdim)
+    : bboxes(bboxes), _axis(axis), _gdim(gdim) {}
+
+    /// Comparison operator
+    inline bool operator()(unsigned int i, unsigned int j)
+    {
+      const double* bi = bboxes.data() + 2 * _gdim * i;
+      const double* bj = bboxes.data() + 2 * _gdim * j;
+      return bi[_axis] + bi[_axis + _gdim] < bj[_axis] + bj[_axis + _gdim];
+    }
+  };
+
 public:
   /// Constructor
-  GenericBoundingBoxTree();
+  GenericBoundingBoxTree(std::size_t gdim);
 
   /// Destructor
-  virtual ~GenericBoundingBoxTree() {}
-
-  /// Factory function returning (empty) tree of appropriate dimension
-  static std::shared_ptr<GenericBoundingBoxTree> create(unsigned int dim);
+  ~GenericBoundingBoxTree() {}
 
   /// Build bounding box tree for mesh entities of given dimension
   void build(const Mesh& mesh, std::size_t tdim);
@@ -93,6 +110,9 @@ protected:
   /// Topological dimension of leaf entities
   std::size_t _tdim;
 
+  /// Geometric dimension of the BBT
+  std::size_t _gdim;
+
   /// List of bounding boxes (parent-child-entity relations)
   std::vector<BBox> _bboxes;
 
@@ -113,14 +133,13 @@ protected:
   /// Build bounding box tree for entities (recursive)
   unsigned int _build(const std::vector<double>& leaf_bboxes,
                       const std::vector<unsigned int>::iterator& begin,
-                      const std::vector<unsigned int>::iterator& end,
-                      std::size_t gdim);
+                      const std::vector<unsigned int>::iterator& end);
 
   /// Build bounding box tree for points (recursive)
   unsigned int _build(const std::vector<Point>& points,
                       const std::vector<unsigned int>::iterator& begin,
-                      const std::vector<unsigned int>::iterator& end,
-                      std::size_t gdim);
+                      const std::vector<unsigned int>::iterator& end);
+
 
   //--- Recursive search functions ---
 
@@ -169,8 +188,7 @@ protected:
   void build_point_search_tree(const Mesh& mesh) const;
 
   /// Compute bounding box of mesh entity
-  void compute_bbox_of_entity(double* b, const MeshEntity& entity,
-                              std::size_t gdim) const;
+  void compute_bbox_of_entity(double* b, const MeshEntity& entity) const;
 
   /// Sort points along given axis
   void sort_points(std::size_t axis, const std::vector<Point>& points,
@@ -179,15 +197,15 @@ protected:
                    const std::vector<unsigned int>::iterator& end);
 
   /// Add bounding box and coordinates
-  inline unsigned int add_bbox(const BBox& bbox, const double* b,
-                               std::size_t gdim)
+  inline unsigned int add_bbox(const BBox& bbox, const double* b)
   {
     // Add bounding box
     _bboxes.push_back(bbox);
 
     // Add bounding box coordinates
-    for (std::size_t i = 0; i < 2 * gdim; ++i)
-      _bbox_coordinates.push_back(b[i]);
+    //    for (std::size_t i = 0; i < 2 * _gdim; ++i)
+    //      _bbox_coordinates.push_back(b[i]);
+    _bbox_coordinates.insert(_bbox_coordinates.end(), b, b + 2 * _gdim);
 
     return _bboxes.size() - 1;
   }
@@ -199,17 +217,16 @@ protected:
   inline unsigned int num_bboxes() const { return _bboxes.size(); }
 
   /// Add bounding box and point coordinates
-  inline unsigned int add_point(const BBox& bbox, const Point& point,
-                                std::size_t gdim)
+  inline unsigned int add_point(const BBox& bbox, const Point& point)
   {
     // Add bounding box
     _bboxes.push_back(bbox);
 
     // Add point coordinates (twice)
     const double* x = point.coordinates();
-    for (std::size_t i = 0; i < gdim; ++i)
+    for (std::size_t i = 0; i < _gdim; ++i)
       _bbox_coordinates.push_back(x[i]);
-    for (std::size_t i = 0; i < gdim; ++i)
+    for (std::size_t i = 0; i < _gdim; ++i)
       _bbox_coordinates.push_back(x[i]);
 
     return _bboxes.size() - 1;
@@ -285,55 +302,48 @@ protected:
     }
   };
 
-  //--- Dimension-dependent functions to be implemented by subclass ---
-
-  /// Return geometric dimension
-  virtual std::size_t gdim() const = 0;
-
   /// Return bounding box coordinates for node
-  virtual const double* get_bbox_coordinates(unsigned int node) const = 0;
+  const double* get_bbox_coordinates(unsigned int node) const
+  {
+    return _bbox_coordinates.data() + 2 * _gdim * node;
+  }
 
   /// Check whether point (x) is in bounding box (node)
-  virtual bool point_in_bbox(const double* x, unsigned int node) const = 0;
+  bool point_in_bbox(const double* x, unsigned int node) const;
 
   /// Check whether bounding box (a) collides with bounding box (node)
-  virtual bool bbox_in_bbox(const double* a, unsigned int node) const = 0;
+  bool bbox_in_bbox(const double* a, unsigned int node) const;
 
   /// Compute squared distance between point and bounding box
-  virtual double compute_squared_distance_bbox(const double* x,
-                                               unsigned int node) const = 0;
+  double compute_squared_distance_bbox(const double* x,
+                                       unsigned int node) const;
 
   /// Compute squared distance between point and point
-  virtual double compute_squared_distance_point(const double* x,
-                                                unsigned int node) const = 0;
+  double compute_squared_distance_point(const double* x,
+                                                unsigned int node) const;
 
   /// Compute bounding box of bounding boxes
-  virtual void
+  void
   compute_bbox_of_bboxes(double* bbox, std::size_t& axis,
                          const std::vector<double>& leaf_bboxes,
                          const std::vector<unsigned int>::iterator& begin,
-                         const std::vector<unsigned int>::iterator& end)
-      = 0;
+                         const std::vector<unsigned int>::iterator& end);
 
   /// Compute bounding box of points
-  virtual void
+  void
   compute_bbox_of_points(double* bbox, std::size_t& axis,
                          const std::vector<Point>& points,
                          const std::vector<unsigned int>::iterator& begin,
-                         const std::vector<unsigned int>::iterator& end)
-      = 0;
+                         const std::vector<unsigned int>::iterator& end);
 
   /// Sort leaf bounding boxes along given axis
-  virtual void sort_bboxes(std::size_t axis,
-                           const std::vector<double>& leaf_bboxes,
-                           const std::vector<unsigned int>::iterator& begin,
-                           const std::vector<unsigned int>::iterator& middle,
-                           const std::vector<unsigned int>::iterator& end)
-      = 0;
+  void sort_bboxes(std::size_t axis,
+                   const std::vector<double>& leaf_bboxes,
+                   const std::vector<unsigned int>::iterator& begin,
+                   const std::vector<unsigned int>::iterator& middle,
+                   const std::vector<unsigned int>::iterator& end);
 
   /// Print out recursively, for debugging
   void tree_print(std::stringstream& s, unsigned int i);
 };
 }
-
-
