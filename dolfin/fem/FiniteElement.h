@@ -129,26 +129,6 @@ public:
                                                  cell_orientation);
   }
 
-  /// Evaluate linear functional for dof i on the function f
-  double evaluate_dof(std::size_t i, const ufc::function& function,
-                      const double* coordinate_dofs, int cell_orientation,
-                      const ufc::cell& c) const
-  {
-    dolfin_assert(_ufc_element);
-    return _ufc_element->evaluate_dof(i, function, coordinate_dofs,
-                                      cell_orientation, c);
-  }
-
-  /// Evaluate linear functionals for all dofs on the function f
-  void evaluate_dofs(double* values, const ufc::function& f,
-                     const double* coordinate_dofs, int cell_orientation,
-                     const ufc::cell& c) const
-  {
-    dolfin_assert(_ufc_element);
-    _ufc_element->evaluate_dofs(values, f, coordinate_dofs, cell_orientation,
-                                c);
-  }
-
   /// Interpolate vertex values from dof values
   /// @param vertex_values (double*)
   /// @param coefficients (double*)
@@ -231,4 +211,3 @@ private:
   std::size_t _hash;
 };
 }
-

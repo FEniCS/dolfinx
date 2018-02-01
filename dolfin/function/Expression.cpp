@@ -98,9 +98,36 @@ void Expression::restrict(double* w, const FiniteElement& element,
                           const double* coordinate_dofs,
                           const ufc::cell& ufc_cell) const
 {
-  // Evaluate dofs to get the expansion coefficients
-  element.evaluate_dofs(w, *this, coordinate_dofs, ufc_cell.orientation,
-                        ufc_cell);
+  // Get evaluation points
+  const std::size_t vs = value_size();
+  const std::size_t ndofs = element.space_dimension();
+  const std::size_t gdim = element.geometric_dimension();
+
+  // FIXME: for Vector Lagrange elements (and probably Tensor too),
+  // this repeats the same evaluation points "gdim" times. Should only
+  // do them once, and remove the "mapping" below (which is the identity).
+
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      eval_points(ndofs, gdim);
+  element.ufc_element()->tabulate_dof_coordinates(eval_points.data(),
+                                                  coordinate_dofs);
+
+  // Storage for evaluation values
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      eval_values(ndofs, vs);
+
+  // FIXME: should evaluate all points at once (using RowMajor matrix)
+  for (unsigned int i = 0; i != ndofs; ++i)
+    eval(eval_values.row(i), eval_points.row(i), ufc_cell);
+
+  // Transpose for vector values
+  // FIXME: remove need for this - needs work in ffc
+  eval_values.transposeInPlace();
+
+  // Apply a mapping to the reference element.
+  // FIXME: not needed for Lagrange elements, eliminate.
+  // See: ffc/uflacs/backends/ufc/evaluatedof.py:_change_variables()
+  element.ufc_element()->map_dofs(w, eval_values.data(), coordinate_dofs, -1);
 }
 //-----------------------------------------------------------------------------
 void Expression::compute_vertex_values(std::vector<double>& vertex_values,

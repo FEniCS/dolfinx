@@ -32,7 +32,7 @@ class FunctionSpace;
 /// Sub-classes may optionally implement the update() function that
 /// will be called prior to restriction when running in parallel.
 
-class GenericFunction : public ufc::function, public Variable
+class GenericFunction : public Variable
 {
 public:
   /// Constructor
@@ -82,18 +82,7 @@ public:
   /// Return value size (product of value dimensions)
   std::size_t value_size() const;
 
-  //--- Implementation of ufc::function interface ---
-
-  /// Evaluate function at given point in cell
-  /// @param values (double*)
-  /// @param coordinates (const double*)
-  /// @param cell (ufc::cell&)
-  virtual void evaluate(double* values, const double* coordinates,
-                        const ufc::cell& cell) const override;
-
   /// Pointer to FunctionSpace, if appropriate, otherwise NULL
   virtual std::shared_ptr<const FunctionSpace> function_space() const = 0;
 };
 }
-
-
