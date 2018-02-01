@@ -6,7 +6,6 @@
 
 #include <dolfin/function/Function.h>
 #include <dolfin/geometry/Point.h>
-#include <dolfin/io/HDF5Attribute.h>
 #include <dolfin/io/HDF5File.h>
 #include <dolfin/io/VTKFile.h>
 #include <dolfin/io/XDMFFile.h>
@@ -38,129 +37,6 @@ void io(py::module& m)
       });
 
 #ifdef HAS_HDF5
-  // dolfin::HDF5Attribute
-  py::class_<dolfin::HDF5Attribute, std::shared_ptr<dolfin::HDF5Attribute>>(
-      m, "HDF5Attribute")
-      //.def("__getitem__", [](const dolfin::HDF5Attribute& instance,
-      // std::string name){ return instance[name]; })
-      .def("__setitem__", [](dolfin::HDF5Attribute& instance, std::string name,
-                             std::string value) { instance.set(name, value); })
-      .def("__setitem__", [](dolfin::HDF5Attribute& instance, std::string name,
-                             double value) { instance.set(name, value); })
-      .def("__setitem__", [](dolfin::HDF5Attribute& instance, std::string name,
-                             std::size_t value) { instance.set(name, value); })
-      .def("__setitem__",
-           [](dolfin::HDF5Attribute& instance, std::string name,
-              py::array_t<double> values) {
-             std::vector<double> _values(values.shape()[0]);
-             std::copy_n(values.data(), _values.size(), _values.begin());
-             instance.set(name, _values);
-           })
-      .def("__setitem__",
-           [](dolfin::HDF5Attribute& instance, std::string name,
-              py::array_t<std::size_t> values) {
-             std::vector<std::size_t> _values(values.shape()[0]);
-             std::copy_n(values.data(), _values.size(), _values.begin());
-             instance.set(name, _values);
-           })
-
-      .def("__getitem__",
-           [](const dolfin::HDF5Attribute& instance, std::string name) {
-             const std::string type = instance.type_str(name);
-             if (type == "string")
-             {
-               std::string attr;
-               instance.get(name, attr);
-               return py::cast(attr);
-             }
-             else if (type == "float")
-             {
-               double attr;
-               instance.get(name, attr);
-               return py::cast(attr);
-             }
-             else if (type == "int")
-             {
-               std::size_t attr;
-               instance.get(name, attr);
-               return py::cast(attr);
-             }
-             else if (type == "vectorfloat")
-             {
-               std::vector<double> attr;
-               instance.get(name, attr);
-               return py::cast(attr);
-             }
-             else if (type == "vectorint")
-             {
-               std::vector<std::size_t> attr;
-               instance.get(name, attr);
-               return py::cast(attr);
-             }
-             else
-             {
-               throw std::runtime_error("HDF5 attribute type unknown.");
-               return py::object();
-             }
-           })
-      .def("__len__",
-           [](const dolfin::HDF5Attribute& self) {
-             return self.list_attributes().size();
-           })
-      .def("__contains__", [](const dolfin::HDF5Attribute& instance,
-                              std::string key) { return instance.exists(key); })
-      .def("to_dict",
-           [](const dolfin::HDF5Attribute& self) {
-             auto d = py::dict();
-             auto names = self.list_attributes();
-             for (auto name : names)
-             {
-               auto type = self.type_str(name);
-               if (type == "string")
-               {
-                 std::string a;
-                 self.get(name, a);
-                 d[name.c_str()] = py::str(a);
-               }
-               else if (type == "float")
-               {
-                 double a;
-                 self.get(name, a);
-                 d[name.c_str()] = py::float_(a);
-               }
-               else if (type == "int")
-               {
-                 // This is bad on the DOLFIN cpp side
-                 std::size_t a;
-                 self.get(name, a);
-                 d[name.c_str()] = py::int_(a);
-               }
-               else if (type == "vectorfloat")
-               {
-                 std::vector<double> a;
-                 self.get(name, a);
-
-                 py::array_t<double> data(a.size(), a.data());
-                 d[name.c_str()] = data;
-               }
-               else if (type == "vectorint")
-               {
-                 // This is bad on the DOLFIN cpp side
-                 std::vector<std::size_t> a;
-                 self.get(name, a);
-
-                 py::array_t<std::size_t> data(a.size(), a.data());
-                 d[name.c_str()] = data;
-               }
-               else
-                 throw std::runtime_error("Unsupported HDF5 attribute type");
-             }
-
-             return d;
-           })
-      .def("list_attributes", &dolfin::HDF5Attribute::list_attributes)
-      .def("type_str", &dolfin::HDF5Attribute::type_str);
-
   // dolfin::HDF5File
   py::class_<dolfin::HDF5File, std::shared_ptr<dolfin::HDF5File>,
              dolfin::Variable>(m, "HDF5File")
@@ -318,8 +194,7 @@ void io(py::module& m)
       .def("set_mpi_atomicity", &dolfin::HDF5File::set_mpi_atomicity)
       .def("get_mpi_atomicity", &dolfin::HDF5File::get_mpi_atomicity)
       // others
-      .def("has_dataset", &dolfin::HDF5File::has_dataset)
-      .def("attributes", &dolfin::HDF5File::attributes);
+    .def("has_dataset", &dolfin::HDF5File::has_dataset);
 
 #endif
 

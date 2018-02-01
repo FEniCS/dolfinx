@@ -25,8 +25,8 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
@@ -313,7 +313,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         else
           edge_mapping = {5, 2, 4, 3, 1, 0};
 
-        for (auto &c : MeshRange<Cell>(mesh))
+        for (auto& c : MeshRange<Cell>(mesh))
         {
           // Add indices for vertices and edges
           for (unsigned int dim = 0; dim != 2; ++dim)
@@ -332,12 +332,12 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       }
       else if (cell_dim == 0)
       {
-        for (auto &v : MeshRange<Vertex>(mesh))
+        for (auto& v : MeshRange<Vertex>(mesh))
           topological_data.push_back(v.global_index());
       }
       else
       {
-        for (auto &c : MeshRange<MeshEntity>(mesh, cell_dim))
+        for (auto& c : MeshRange<MeshEntity>(mesh, cell_dim))
           for (unsigned int i = 0; i != c.num_entities(0); ++i)
           {
             const unsigned int local_idx = c.entities(0)[perm[i]];
@@ -375,10 +375,10 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         // Iterate through ghost cells, adding non-ghost entities
         // which are in lower rank process cells to a set for
         // exclusion from output
-        for (auto &c : MeshRange<MeshEntity>(mesh, tdim, MeshRangeType::GHOST))
+        for (auto& c : MeshRange<MeshEntity>(mesh, tdim, MeshRangeType::GHOST))
         {
           const unsigned int cell_owner = c.owner();
-          for (auto &ent : EntityRange<MeshEntity>(c, cell_dim))
+          for (auto& ent : EntityRange<MeshEntity>(c, cell_dim))
             if (!ent.is_ghost() && cell_owner < mpi_rank)
               non_local_entities.insert(ent.index());
         }
@@ -387,7 +387,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       if (cell_dim == 0)
       {
         // Special case for mesh of points
-        for (auto &v : MeshRange<Vertex>(mesh))
+        for (auto& v : MeshRange<Vertex>(mesh))
         {
           if (non_local_entities.find(v.index()) == non_local_entities.end())
             topological_data.push_back(v.global_index());
@@ -395,7 +395,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       }
       else
       {
-        for (auto &ent : MeshRange<MeshEntity>(mesh, cell_dim))
+        for (auto& ent : MeshRange<MeshEntity>(mesh, cell_dim))
         {
           // If not excluded, add to topology
           if (non_local_entities.find(ent.index()) == non_local_entities.end())
@@ -499,7 +499,7 @@ void HDF5File::write(const MeshFunction<bool>& meshfunction,
   // HDF5 does not support a boolean type,
   // so copy to int with values 1 and 0
   MeshFunction<int> mf(mesh, cell_dim);
-  for (auto &cell : MeshRange<MeshEntity>(*mesh, cell_dim))
+  for (auto& cell : MeshRange<MeshEntity>(*mesh, cell_dim))
     mf[cell.index()] = (meshfunction[cell.index()] ? 1 : 0);
 
   write_mesh_function(mf, name);
@@ -517,7 +517,7 @@ void HDF5File::read(MeshFunction<bool>& meshfunction,
   MeshFunction<int> mf(mesh, cell_dim);
   read_mesh_function(mf, name);
 
-  for (auto &cell : MeshRange<MeshEntity>(*mesh, cell_dim))
+  for (auto& cell : MeshRange<MeshEntity>(*mesh, cell_dim))
     meshfunction[cell.index()] = (mf[cell.index()] != 0);
 }
 //-----------------------------------------------------------------------------
@@ -639,10 +639,10 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   // directly to the right place
   std::vector<std::vector<std::size_t>> send_requests(num_processes);
   const std::size_t process_number = _mpi_comm.rank();
-  for (auto &cell : MeshRange<MeshEntity>(*mesh, cell_dim, MeshRangeType::ALL))
+  for (auto& cell : MeshRange<MeshEntity>(*mesh, cell_dim, MeshRangeType::ALL))
   {
     std::vector<std::size_t> cell_topology;
-    for (auto &v : EntityRange<Vertex>(cell))
+    for (auto& v : EntityRange<Vertex>(cell))
       cell_topology.push_back(v.global_index());
     std::sort(cell_topology.begin(), cell_topology.end());
 
@@ -775,10 +775,10 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
       // Iterate through ghost cells, adding non-ghost entities which are
       // shared from lower rank process cells to a set for exclusion
       // from output
-      for (auto &c : MeshRange<MeshEntity>(mesh, tdim, MeshRangeType::GHOST))
+      for (auto& c : MeshRange<MeshEntity>(mesh, tdim, MeshRangeType::GHOST))
       {
         const unsigned int cell_owner = c.owner();
-        for (auto &ent : EntityRange<MeshEntity>(c, cell_dim))
+        for (auto& ent : EntityRange<MeshEntity>(c, cell_dim))
         {
           if (!ent.is_ghost() && cell_owner < mpi_rank)
             non_local_entities.insert(ent.index());
@@ -786,7 +786,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
       }
     }
 
-    for (auto &ent : MeshRange<MeshEntity>(mesh, cell_dim))
+    for (auto& ent : MeshRange<MeshEntity>(mesh, cell_dim))
     {
       if (non_local_entities.find(ent.index()) == non_local_entities.end())
         data_values.push_back(meshfunction[ent]);
@@ -808,13 +808,23 @@ void HDF5File::write(const Function& u, const std::string name,
   {
     write(u, name);
     const std::size_t vec_count = 1;
-    attributes(name).set("count", vec_count);
+
+    // if (!has_dataset(dataset_name))
+    //{
+    //  dolfin_error("HDF5File.cpp", "accessing attributes",
+    //               "Dataset \"%s\" not found", dataset_name.c_str());
+    //}
+
+    HDF5Attribute attribute(_hdf5_file_id, name);
+    attribute.set("count", vec_count);
+
     const std::string vec_name = name + "/vector_0";
-    attributes(vec_name).set("timestamp", timestamp);
+    HDF5Attribute attribute1(_hdf5_file_id, vec_name);
+    attribute1.set("timestamp", timestamp);
   }
   else
   {
-    HDF5Attribute attr = attributes(name);
+    HDF5Attribute attr(_hdf5_file_id, name);
     if (!attr.exists("count"))
     {
       dolfin_error(
@@ -831,7 +841,8 @@ void HDF5File::write(const Function& u, const std::string name,
 
     // Write new vector and save timestamp
     write(*u.vector(), vec_name);
-    attributes(vec_name).set("timestamp", timestamp);
+    HDF5Attribute attr1(_hdf5_file_id, vec_name);
+    attr1.set("timestamp", timestamp);
   }
 }
 //-----------------------------------------------------------------------------
@@ -1131,7 +1142,7 @@ void HDF5File::write_mesh_value_collection(
       const unsigned int entity_local_idx = cell.entities(dim)[p.first.second];
       cell = MeshEntity(*mesh, dim, entity_local_idx);
     }
-    for (auto &v : EntityRange<Vertex>(cell))
+    for (auto& v : EntityRange<Vertex>(cell))
       topology.push_back(v.global_index());
     value_data.push_back(p.second);
   }
@@ -1274,14 +1285,14 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
   std::vector<std::vector<std::size_t>> send_entities(num_processes);
   std::vector<std::vector<std::size_t>> recv_entities(num_processes);
 
-  for (auto &m : MeshRange<MeshEntity>(*mesh, dim))
+  for (auto& m : MeshRange<MeshEntity>(*mesh, dim))
   {
     if (dim == 0)
       v[0] = m.global_index();
     else
     {
       v.clear();
-      for (auto &vtx : EntityRange<Vertex>(m))
+      for (auto& vtx : EntityRange<Vertex>(m))
         v.push_back(vtx.global_index());
       std::sort(v.begin(), v.end());
     }
@@ -1894,6 +1905,7 @@ bool HDF5File::has_dataset(const std::string dataset_name) const
   return HDF5Interface::has_dataset(_hdf5_file_id, dataset_name);
 }
 //-----------------------------------------------------------------------------
+/*
 HDF5Attribute HDF5File::attributes(const std::string dataset_name)
 {
   dolfin_assert(_hdf5_file_id > 0);
@@ -1905,6 +1917,7 @@ HDF5Attribute HDF5File::attributes(const std::string dataset_name)
 
   return HDF5Attribute(_hdf5_file_id, dataset_name);
 }
+*/
 //-----------------------------------------------------------------------------
 void HDF5File::set_mpi_atomicity(bool atomic)
 {
