@@ -66,12 +66,12 @@ from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry,
                        PeriodicBoundaryComputation)
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver, OptimisationProblem)
-from .cpp.parameter import Parameters, parameters
+#from .cpp.parameter import Parameters, parameters
 
 # Import Python modules
 #from . import la
 from . import mesh
-from . import parameter
+#from . import parameter
 
 #from .common import timer
 #from .common.timer import Timer, timed

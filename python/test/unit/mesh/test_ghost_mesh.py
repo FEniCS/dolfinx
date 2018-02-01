@@ -22,9 +22,10 @@ import numpy
 from dolfin import *
 import os
 
-from dolfin_utils.test import (fixture, skip_in_parallel, xfail_in_parallel, cd_tempdir,
+from dolfin_utils.test import (fixture, skip_in_parallel,
+                               xfail_in_parallel, cd_tempdir,
                                pushpop_parameters)
-
+from dolfin.parameter import parameters
 
 # See https://bitbucket.org/fenics-project/dolfin/issues/579
 def xtest_ghost_vertex_1d(pushpop_parameters):
