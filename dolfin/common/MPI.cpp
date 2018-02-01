@@ -133,18 +133,6 @@ std::uint32_t dolfin::MPI::size(const MPI_Comm comm)
 #endif
 }
 //-----------------------------------------------------------------------------
-bool dolfin::MPI::is_broadcaster(const MPI_Comm comm)
-{
-  // Always broadcast from processor number 0
-  return size(comm) > 1 && rank(comm) == 0;
-}
-//-----------------------------------------------------------------------------
-bool dolfin::MPI::is_receiver(const MPI_Comm comm)
-{
-  // Always receive on processors with numbers > 0
-  return size(comm) > 1 && rank(comm) > 0;
-}
-//-----------------------------------------------------------------------------
 void dolfin::MPI::barrier(const MPI_Comm comm)
 {
 #ifdef HAS_MPI

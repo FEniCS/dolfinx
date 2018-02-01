@@ -65,8 +65,8 @@ LocalMeshValueCollection<T>::LocalMeshValueCollection(
   std::vector<std::vector<std::size_t>> send_indices;
   std::vector<std::vector<T>> send_v;
 
-  // Extract data on main process and split among processes
-  if (MPI::is_broadcaster(_mpi_comm.comm()))
+  // Extract data on process 0 and split among processes
+  if (MPI::rank(_mpi_comm.comm()) == 0)
   {
     // Get number of processes
     const std::size_t num_processes = MPI::size(_mpi_comm.comm());

@@ -26,8 +26,8 @@ LocalMeshData::LocalMeshData(const Mesh& mesh) : _mpi_comm(mesh.mpi_comm())
 {
   Timer timer("Build LocalMeshData from local Mesh");
 
-  // Extract data on main process and split among processes
-  if (MPI::is_broadcaster(mesh.mpi_comm()))
+  // Extract data on process 0 and split among processes
+  if (MPI::rank(mesh.mpi_comm()) == 0)
   {
     extract_mesh_data(mesh);
     broadcast_mesh_data(mesh.mpi_comm());
@@ -98,19 +98,8 @@ std::string LocalMeshData::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void LocalMeshData::clear()
-{
-  geometry.clear();
-  topology.clear();
-  domain_data.clear();
-}
-//-----------------------------------------------------------------------------
 void LocalMeshData::extract_mesh_data(const Mesh& mesh)
 {
-
-  // Clear old data
-  clear();
-
   // Set scalar data
   geometry.dim = mesh.geometry().dim();
   topology.dim = mesh.topology().dim();
@@ -122,7 +111,7 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
   // Get coordinates for all vertices stored on local processor
   geometry.vertex_coordinates.resize(
       boost::extents[mesh.num_vertices()][geometry.dim]);
-  for (auto &vertex : MeshRange<Vertex>(mesh))
+  for (auto& vertex : MeshRange<Vertex>(mesh))
   {
     const std::size_t index = vertex.index();
     std::copy(vertex.x(), vertex.x() + geometry.dim,
@@ -131,14 +120,14 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
 
   // Get global vertex indices for all vertices stored on local processor
   geometry.vertex_indices.reserve(mesh.num_vertices());
-  for (auto &vertex : MeshRange<Vertex>(mesh))
+  for (auto& vertex : MeshRange<Vertex>(mesh))
     geometry.vertex_indices.push_back(vertex.index());
 
   // Get global vertex indices for all cells stored on local processor
   topology.cell_vertices.resize(
       boost::extents[mesh.num_cells()][topology.num_vertices_per_cell]);
   topology.global_cell_indices.reserve(mesh.num_cells());
-  for (auto &cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<Cell>(mesh))
   {
     const std::size_t index = cell.index();
     topology.global_cell_indices.push_back(index);
@@ -313,9 +302,11 @@ void LocalMeshData::reorder()
   // Build a vector of first vertex index for each cell in vertex_indices
   std::vector<std::pair<std::int64_t, std::int32_t>> keys(dim0);
   for (int i = 0; i < dim0; ++i)
+  {
     keys[i] = {*std::min_element(topology.cell_vertices[i].begin(),
                                  topology.cell_vertices[i].end()),
                i};
+  }
 
   // Sort
   std::sort(keys.begin(), keys.end());
