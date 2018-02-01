@@ -12,7 +12,7 @@ from ffc import default_jit_parameters
 from dolfin.cpp.parameter import parameters, Parameters
 
 
-#__all__ = ("parameters", "Parameters")
+#__all__ = ["parameters", "Parameters"]
 
 
 #  Extend cpp.Parameters with a __getitem__ method
