@@ -12,7 +12,7 @@
 #include "MeshTopology.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/fem/fem_utils.h>
+#include <dolfin/fem/utils.h>
 #include <memory>
 #include <string>
 #include <utility>

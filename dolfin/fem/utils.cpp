@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "fem_utils.h"
+#include "utils.h"
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/Form.h>

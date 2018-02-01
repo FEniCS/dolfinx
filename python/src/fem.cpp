@@ -29,7 +29,7 @@
 #include <dolfin/fem/PointSource.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/fem/SystemAssembler.h>
-#include <dolfin/fem/fem_utils.h>
+#include <dolfin/fem/utils.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
@@ -425,8 +425,8 @@ void fem(py::module& m)
 #endif
 
   // FEM utils free functions
-  //m.def("create_mesh", dolfin::fem::create_mesh);
-  //m.def("create_mesh", [](const py::object u) {
+  // m.def("create_mesh", dolfin::fem::create_mesh);
+  // m.def("create_mesh", [](const py::object u) {
   //  auto _u = u.attr("_cpp_object").cast<dolfin::Function*>();
   //  return dolfin::fem::create_mesh(*_u);
   //});

@@ -5,7 +5,7 @@ set(HEADERS
   DofMapBuilder.h
   DofMap.h
   dolfin_fem.h
-  fem_utils.h
+  utils.h
   FiniteElement.h
   Form.h
   GenericDofMap.h
@@ -24,7 +24,7 @@ set(SOURCES
   DiscreteOperators.cpp
   DofMapBuilder.cpp
   DofMap.cpp
-  fem_utils.cpp
+  utils.cpp
   FiniteElement.cpp
   Form.cpp
   LocalAssembler.cpp

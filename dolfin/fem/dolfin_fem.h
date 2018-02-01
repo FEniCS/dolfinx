@@ -15,6 +15,4 @@
 #include <dolfin/fem/PointSource.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/fem/SystemAssembler.h>
-#include <dolfin/fem/fem_utils.h>
-
-
+#include <dolfin/fem/utils.h>
