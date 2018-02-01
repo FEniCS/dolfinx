@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "CellType.h"
 #include "MeshConnectivity.h"
 #include "MeshGeometry.h"
 #include "MeshTopology.h"
@@ -19,7 +20,6 @@
 namespace dolfin
 {
 
-class CellType;
 class GenericFunction;
 class LocalMeshData;
 class MeshEntity;
@@ -121,7 +121,7 @@ public:
   /// @return std::vector<std::uint32_t>&
   ///         Connectivity for all cells.
   ///
-  const std::vector<std::uint32_t>& cells() const
+  const std::vector<std::int32_t>& cells() const
   {
     return _topology(_topology.dim(), 0)();
   }
@@ -291,6 +291,12 @@ public:
   /// deprecation; the method is now intended for internal
   /// library use.
   std::string ghost_mode() const;
+
+  /// Fill empty Mesh from Eigen arrays (serial)
+  void create(CellType::Type type,
+              Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> geometry,
+              Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> topology);
+
 
   // Friend in fem_utils.h
   friend Mesh fem::create_mesh(Function& coordinates);

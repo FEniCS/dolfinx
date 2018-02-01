@@ -11,7 +11,6 @@
 #include <dolfin/mesh/LocalMeshValueCollection.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshConnectivity.h>
-#include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshGeometry.h>

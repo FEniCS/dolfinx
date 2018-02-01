@@ -13,7 +13,6 @@
 #include <dolfin/mesh/Face.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshGeometry.h>
@@ -59,6 +58,7 @@ void mesh(py::module& m)
       .value("hexahedron", dolfin::CellType::Type::hexahedron);
 
   celltype.def("type2string", &dolfin::CellType::type2string)
+      .def("string2type", &dolfin::CellType::string2type)
       .def("cell_type", &dolfin::CellType::cell_type)
       .def("description", &dolfin::CellType::description);
 
@@ -104,16 +104,10 @@ void mesh(py::module& m)
              return py::array_t<std::int64_t>(indices.size(), indices.data());
            })
       .def("have_shared_entities", &dolfin::MeshTopology::have_shared_entities)
-      .def(
-          "shared_entities",
-          (std::
-               map<std::int32_t,
-                   std::
-                       set<std::
-                               uint32_t>> & (dolfin::
-                                                 MeshTopology::*)(std::
-                                                                      uint32_t))
-              & dolfin::MeshTopology::shared_entities)
+      .def("shared_entities",
+          (std::map<std::int32_t, std::set<std::uint32_t>>&
+           (dolfin::MeshTopology::*)(std::uint32_t))
+              &dolfin::MeshTopology::shared_entities)
       .def("str", &dolfin::MeshTopology::str);
 
   // dolfin::Mesh
@@ -131,9 +125,10 @@ void mesh(py::module& m)
                                (std::int32_t)self.type().num_vertices(tdim)},
                               self.topology()(tdim, 0)().data());
            })
+    .def("create", &dolfin::Mesh::create)
       .def("geometry",
            (dolfin::MeshGeometry & (dolfin::Mesh::*)())
-               & dolfin::Mesh::geometry,
+               &dolfin::Mesh::geometry,
            py::return_value_policy::reference, "Mesh geometry")
       .def("hash", &dolfin::Mesh::hash)
       .def("hmax", &dolfin::Mesh::hmax)
@@ -177,7 +172,7 @@ void mesh(py::module& m)
       m, "MeshConnectivity", "DOLFIN MeshConnectivity object")
       .def("__call__",
            [](const dolfin::MeshConnectivity& self, std::size_t i) {
-             return Eigen::Map<const Eigen::Matrix<std::uint32_t,
+             return Eigen::Map<const Eigen::Matrix<std::int32_t,
                                                    Eigen::Dynamic, 1>>(
                  self(i), self.size(i));
            },
@@ -196,7 +191,7 @@ void mesh(py::module& m)
       .def("dim", &dolfin::MeshEntity::dim, "Topological dimension")
       .def("mesh", &dolfin::MeshEntity::mesh, "Associated mesh")
       .def("index",
-           (std::uint32_t (dolfin::MeshEntity::*)() const)
+           (std::int32_t (dolfin::MeshEntity::*)() const)
                & dolfin::MeshEntity::index, "Index")
       .def("global_index", &dolfin::MeshEntity::global_index, "Global index")
       .def("num_entities", &dolfin::MeshEntity::num_entities,
@@ -205,7 +200,7 @@ void mesh(py::module& m)
            "Global number of incident entities of given dimension")
       .def("entities",
            [](dolfin::MeshEntity& self, std::size_t dim) {
-             return Eigen::Map<const Eigen::Matrix<std::uint32_t,
+             return Eigen::Map<const Eigen::Matrix<std::int32_t,
                                                    Eigen::Dynamic, 1>>(
                  self.entities(dim), self.num_entities(dim));
            })
@@ -395,27 +390,6 @@ void mesh(py::module& m)
   MESHVALUECOLLECTION_MACRO(double, double);
   MESHVALUECOLLECTION_MACRO(std::size_t, sizet);
 #undef MESHVALUECOLLECTION_MACRO
-
-  // dolfin::MeshEditor
-  py::class_<dolfin::MeshEditor, std::shared_ptr<dolfin::MeshEditor>>(
-      m, "MeshEditor", "DOLFIN MeshEditor object")
-      .def(py::init<>())
-      .def("open",
-           (void (dolfin::MeshEditor::*)(dolfin::Mesh&, dolfin::CellType::Type,
-                                         std::size_t, std::size_t, std::size_t))
-               & dolfin::MeshEditor::open,
-           py::arg("mesh"), py::arg("type"), py::arg("tdim"), py::arg("gdim"),
-           py::arg("degree") = 1)
-      .def("init_vertices_global", &dolfin::MeshEditor::init_vertices_global)
-      .def("init_cells_global", &dolfin::MeshEditor::init_cells_global)
-      .def("add_vertex",
-           (void (dolfin::MeshEditor::*)(std::size_t, const dolfin::Point&))
-               & dolfin::MeshEditor::add_vertex)
-      .def("add_cell",
-           (void (dolfin::MeshEditor::*)(std::size_t,
-                                         const std::vector<std::size_t>&))
-               & dolfin::MeshEditor::add_cell)
-      .def("close", &dolfin::MeshEditor::close, py::arg("order") = true);
 
   // dolfin::MeshQuality
   py::class_<dolfin::MeshQuality>(m, "MeshQuality", "DOLFIN MeshQuality class")

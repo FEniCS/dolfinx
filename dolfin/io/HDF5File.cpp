@@ -25,7 +25,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshPartitioning.h>

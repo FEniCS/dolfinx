@@ -24,9 +24,6 @@ tuples, build and return a mesh.
 
     """
 
-    # Get dimensions
-    gdim = len(vertices[0])
-
     # Automatic choice of cellname for simplices
     if cellname == "simplex":
         num_cell_vertices = len(cells[0])
@@ -36,28 +33,11 @@ tuples, build and return a mesh.
                     4: "tetrahedron",
                     }[num_cell_vertices]
 
-    # Indirect error checking and determination of tdim via ufl
-    ufl_cell = ufl.Cell(cellname, gdim)
-    tdim = ufl_cell.topological_dimension()
-
     # Create mesh to return
-    mesh = Mesh()
-
-    # Open mesh in editor
-    me = MeshEditor()
-    me.open(mesh, cellname, tdim, gdim)
-
-    # Add vertices to mesh
-    me.init_vertices(len(vertices))
-    for i, v in enumerate(vertices):
-        me.add_vertex(i, numpy.array(v, dtype='float'))
-
-    # Add cells to mesh
-    me.init_cells(len(cells))
-    for i, c in enumerate(cells):
-        me.add_cell(i, numpy.array(c, dtype='uint'))
-
-    me.close()
+    mesh = Mesh(MPI.comm_world)
+    mesh.create(CellType.string2type(cellname),
+                numpy.array(vertices),
+                numpy.array(cells))
 
     return mesh
 
@@ -68,40 +48,12 @@ intervals.
 
     """
 
-    # Get dimensions
-    gdim = len(vertices[0])
-    tdim = 1
-
-    # Automatic choice of cellname for simplices
-    cellname = "interval"
-
-    # Indirect error checking and determination of tdim via ufl
-    ufl_cell = ufl.Cell(cellname, gdim)
-    assert tdim == ufl_cell.topological_dimension()
-
     # Create mesh to return
-    mesh = Mesh()
-
-    # Open mesh in editor
-    me = MeshEditor()
-    me.open(mesh, cellname, tdim, gdim)
-
-    # Add vertices to mesh
-    nv = len(vertices)
-    me.init_vertices(nv)
-
-    for i, v in enumerate(vertices):
-        me.add_vertex(i, numpy.array(v, dtype='float'))
-
-    # TODO: Systematically swap around vertex ordering to test cell orientation
-
-    # Add cells to mesh
-    me.init_cells(nv-1)
-    for i in range(nv-1):
-        c = (i, i+1)
-        me.add_cell(i, numpy.array(c, dtype='uint'))
-
-    me.close()
+    mesh = Mesh(MPI.comm_world)
+    cells = numpy.empty((len(vertices) - 1, 2), dtype=numpy.int32)
+    cells[:, 0] = numpy.arange(len(vertices) - 1)
+    cells[:, 1] = cells[:, 0] + 1
+    mesh.create(CellType.Type.interval, numpy.array(vertices), numpy.array(cells))
 
     return mesh
 

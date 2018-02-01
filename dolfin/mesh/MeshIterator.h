@@ -167,7 +167,7 @@ private:
   T _entity;
 
   // Pointer to current entity index
-  const std::uint32_t* _connections;
+  const std::int32_t* _connections;
 };
 
 /// Range type

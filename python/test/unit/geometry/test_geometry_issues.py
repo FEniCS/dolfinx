@@ -32,7 +32,7 @@ def test_issue_97():
 
     N = 2
     L = 1000
-    mesh = BoxMesh(Point(0, 0, 0), Point(L, L, L), N, N, N)
+    mesh = BoxMesh.create(MPI.comm_world, [Point(0, 0, 0), Point(L, L, L)], [N, N, N], CellType.Type.tetrahedron)
     V = FunctionSpace(mesh, 'CG', 1)
     v = interpolate(Expression('x[0]', degree=1), V)
     x = Point(0.5*L, 0.5*L, 0.5*L)
@@ -42,7 +42,7 @@ def test_issue_97():
 def test_issue_168():
     "Test from Torsten Wendav (issue #168)"
 
-    mesh = UnitCubeMesh(14, 14, 14)
+    mesh = UnitCubeMesh(MPI.comm_world, 14, 14, 14)
     V = FunctionSpace(mesh, "Lagrange", 1)
     v = Function(V)
     x = (0.75, 0.25, 0.125)
@@ -69,7 +69,7 @@ def test_segment_collides_point_3D_2():
 def _test_collision_robustness_2d(aspect, y, step):
     nx = 10
     ny = int(aspect*nx)
-    mesh = UnitSquareMesh(nx, ny, 'crossed')
+    mesh = RectangleMesh.create(MPI.comm_world, [Point(0,0), Point(1,1)], [nx, ny], CellType.Type.triangle, 'crossed')
     bb = mesh.bounding_box_tree()
 
     x = 0.0
@@ -84,7 +84,7 @@ def _test_collision_robustness_2d(aspect, y, step):
 def _test_collision_robustness_3d(aspect, y, z, step):
     nx = nz = 10
     ny = int(aspect*nx)
-    mesh = UnitCubeMesh(nx, ny, nz)
+    mesh = UnitCubeMesh(MPI.comm_world, nx, ny, nz)
     bb = mesh.bounding_box_tree()
 
     x = 0.0
@@ -117,16 +117,16 @@ def test_collision_robustness_very_slow():
 def test_points_on_line():
     """Test case from https://bitbucket.org/fenics-project/dolfin/issues/790"""
     big = 1e6
-    p1 = np.array((0.1, 0.06), dtype='float')
-    p3 = np.array((big*2.1, big*0.1), dtype='float')
-    p2 = np.array((0.0, big*3.0), dtype='float')
-    p0 = np.array((big*3.0, 0.0), dtype='float')
+    p1 = Point(np.array((0.1, 0.06), dtype='float'))
+    p3 = Point(np.array((big*2.1, big*0.1), dtype='float'))
+    p2 = Point(np.array((0.0, big*3.0), dtype='float'))
+    p0 = Point(np.array((big*3.0, 0.0), dtype='float'))
 
-    mesh = Mesh()
+    mesh = Mesh(MPI.comm_world)
     ed = MeshEditor()
-    ed.open(mesh, "triangle", 2, 2)
-    ed.init_cells(3)
-    ed.init_vertices(4)
+    ed.open(mesh, CellType.Type.triangle, 2, 2)
+    ed.init_cells_global(3, 3)
+    ed.init_vertices_global(4, 4)
     ed.add_vertex(0, p0)
     ed.add_vertex(1, p1)
     ed.add_vertex(2, p2)

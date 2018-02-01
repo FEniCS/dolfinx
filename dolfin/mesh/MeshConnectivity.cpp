@@ -44,7 +44,7 @@ operator=(const MeshConnectivity& connectivity)
 //-----------------------------------------------------------------------------
 void MeshConnectivity::clear()
 {
-  std::vector<std::uint32_t>().swap(_connections);
+  std::vector<std::int32_t>().swap(_connections);
   std::vector<std::uint32_t>().swap(index_to_position);
 }
 //-----------------------------------------------------------------------------
@@ -97,22 +97,10 @@ void MeshConnectivity::set(std::size_t entity, std::size_t connection,
   _connections[index_to_position[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::set(std::size_t entity, std::size_t* connections)
-{
-  dolfin_assert((entity + 1) < index_to_position.size());
-  dolfin_assert(connections);
-
-  // Copy data
-  const std::size_t num_connections
-      = index_to_position[entity + 1] - index_to_position[entity];
-  std::copy(connections, connections + num_connections,
-            _connections.begin() + index_to_position[entity]);
-}
-//-----------------------------------------------------------------------------
 std::size_t MeshConnectivity::hash() const
 {
   // Compute local hash key
-  boost::hash<std::vector<std::uint32_t>> uhash;
+  boost::hash<std::vector<std::int32_t>> uhash;
   return uhash(_connections);
 }
 //-----------------------------------------------------------------------------
