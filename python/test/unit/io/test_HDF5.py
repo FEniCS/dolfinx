@@ -22,7 +22,9 @@
 import pytest
 import os
 from dolfin import *
-from dolfin_utils.test import skip_if_not_HDF5, fixture, tempdir, xfail_with_serial_hdf5_in_parallel
+from dolfin_utils.test import (skip_if_not_HDF5, fixture, tempdir,
+                               xfail_with_serial_hdf5_in_parallel)
+from dolfin.la import PETScVector
 
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel

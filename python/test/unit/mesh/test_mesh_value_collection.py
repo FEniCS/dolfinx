@@ -22,7 +22,7 @@
 
 import numpy.random
 from dolfin import *
-
+from dolfin.log import info
 
 def test_assign_2D_cells():
     mesh = UnitSquareMesh(MPI.comm_world,3, 3)

@@ -19,7 +19,7 @@ import pytest
 import os
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture, tempdir
-
+from dolfin.math import near
 
 # Supported XDMF file encoding
 encodings = (XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII)
