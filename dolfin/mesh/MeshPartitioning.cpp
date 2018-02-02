@@ -1043,41 +1043,56 @@ void MeshPartitioning::build_local_mesh(
   log(PROGRESS, "Build local mesh during distributed mesh construction");
   Timer timer("Build local part of distributed mesh (from local mesh data)");
 
-  // Map over geometry data
-  Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                 Eigen::RowMajor>>
-      geom(vertex_coordinates.data(), vertex_coordinates.size(), gdim);
+  // Set cell type
+  mesh._cell_type.reset(CellType::create(cell_type));
+  dolfin_assert(tdim == (int)mesh._cell_type->dim());
 
-  // Create CellType
-  std::unique_ptr<CellType> _cell_type(CellType::create(cell_type));
-  dolfin_assert(_cell_type);
+  // Initialise geometry
+  mesh.geometry().init(gdim, 1);
 
-  // Remap topology data to local indices
-  const std::int8_t num_cell_vertices = _cell_type->num_vertices();
-  Eigen::Matrix<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      topo(cell_global_vertices.size(), num_cell_vertices);
+  // Initialize topological dimension
+  mesh.topology().init(tdim);
 
-  for (std::size_t i = 0; i < cell_global_vertices.size(); ++i)
+  // Initialise vertices
+  const std::size_t num_vertices = vertex_coordinates.size();
+  mesh.topology().init(0, num_vertices, num_global_vertices);
+  mesh.topology().init_ghost(0, num_vertices);
+  mesh.topology().init_global_indices(0, num_vertices);
+  std::vector<std::size_t> num_vertex_points(1, num_vertices);
+  mesh.geometry().init_entities(num_vertex_points);
+
+  // Initialise cells
+  const std::size_t num_cells = cell_global_vertices.size();
+  mesh.topology().init(tdim, num_cells, num_global_cells);
+  mesh.topology().init_ghost(tdim, num_cells);
+  mesh.topology().init_global_indices(tdim, num_cells);
+  mesh.topology()(tdim, 0).init(num_cells, mesh.type().num_vertices());
+
+  // Add vertices
+  std::copy(vertex_coordinates.data(),
+            vertex_coordinates.data() + gdim * num_vertices,
+            mesh.geometry().x().begin());
+
+  // Add cells, remapping topology data to local indices
+  const std::int8_t num_cell_vertices = mesh._cell_type->num_vertices();
+  std::vector<std::int64_t> cell_topology(num_cell_vertices);
+  for (std::size_t i = 0; i < num_cells; ++i)
   {
     for (std::int8_t j = 0; j < num_cell_vertices; ++j)
     {
       // Get local cell vertex
       auto iter = vertex_global_to_local.find(cell_global_vertices[i][j]);
       dolfin_assert(iter != vertex_global_to_local.end());
-      topo(i, j) = iter->second;
+      cell_topology[j] = iter->second;
     }
+    mesh.topology()(tdim, 0).set(i, cell_topology.data());
   }
 
-  // Copy data to mesh
-  mesh.create(cell_type, geom, topo);
-
   // Set global indices for vertices
-  mesh.topology().init(0, vertex_indices.size(), num_global_vertices);
   for (std::size_t i = 0; i < vertex_indices.size(); ++i)
     mesh.topology().set_global_index(0, i, vertex_indices[i]);
 
   // Set global indices for cells
-  mesh.topology().init(tdim, global_cell_indices.size(), num_global_cells);
   for (std::size_t i = 0; i < cell_global_vertices.size(); ++i)
     mesh.topology().set_global_index(tdim, i, global_cell_indices[i]);
 }

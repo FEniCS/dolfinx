@@ -26,7 +26,7 @@ MeshTopology::MeshTopology(const MeshTopology& topology)
       _global_num_entities(topology._global_num_entities),
       _global_indices(topology._global_indices),
       _shared_entities(topology._shared_entities),
-      _connectivity(topology._connectivity)
+      _cell_owner(topology._cell_owner), _connectivity(topology._connectivity)
 {
   // Do nothing
 }
@@ -46,6 +46,7 @@ MeshTopology& MeshTopology::operator=(const MeshTopology& topology)
   _ghost_offset_index = topology._ghost_offset_index;
   _global_indices = topology._global_indices;
   _shared_entities = topology._shared_entities;
+  _cell_owner = topology._cell_owner;
   _connectivity = topology._connectivity;
 
   return *this;

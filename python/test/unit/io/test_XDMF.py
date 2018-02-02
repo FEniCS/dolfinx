@@ -34,7 +34,7 @@ fe_3d_shapes = ["tetrahedron"]
 fe_families = ["CG", "DG"]
 fe_degrees = [0, 1, 3]
 mesh_tdims = [1, 2, 3]
-mesh_ns = [4, 11]
+mesh_ns = [4, 7]
 
 # Meshes tested
 def mesh_factory(tdim, n):
@@ -127,7 +127,7 @@ def test_save_and_load_3d_mesh(tempdir, encoding):
     if invalid_config(encoding):
         pytest.skip("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "mesh_3D.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mesh, encoding)
@@ -280,7 +280,7 @@ def test_save_3d_scalar(tempdir, encoding):
     if invalid_config(encoding):
         pytest.skip("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "u3.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     V = FunctionSpace(mesh, "Lagrange", 2)
     u = Function(V)
     u.vector()[:] = 1.0
@@ -323,7 +323,7 @@ def test_save_3d_vector_series(tempdir, encoding):
     if invalid_config(encoding):
         pytest.skip("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "u_3D.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
@@ -355,7 +355,7 @@ def test_save_3d_tensor(tempdir, encoding):
     if invalid_config(encoding):
         pytest.skip("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "u3t.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
 
@@ -413,7 +413,7 @@ def test_save_3D_cell_function(tempdir, encoding, data_type):
 
     dtype_str, dtype = data_type
 
-    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     mf = MeshFunction(dtype_str, mesh, mesh.topology().dim())
     mf.rename("cells", "cells")
     for cell in Cells(mesh):
@@ -472,7 +472,7 @@ def test_save_3D_facet_function(tempdir, encoding, data_type):
 
     dtype_str, dtype = data_type
 
-    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     mf = MeshFunction(dtype_str, mesh, mesh.topology().dim()-1)
     mf.rename("facets", "facets")
 
@@ -504,7 +504,7 @@ def test_save_3D_edge_function(tempdir, encoding, data_type):
 
     dtype_str, dtype = data_type
 
-    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     mf = MeshFunction(dtype_str, mesh, 1)
     mf.rename("edges", "edges")
     for edge in Edges(mesh):
@@ -551,7 +551,7 @@ def test_save_3D_vertex_function(tempdir, encoding, data_type):
     dtype_str, dtype = data_type
 
     filename = os.path.join(tempdir, "mf_vertex_3D_%s.xdmf" % dtype_str)
-    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     mf = MeshFunction(dtype_str, mesh, 0)
     for vertex in Vertices(mesh):
         mf[vertex] = dtype(vertex.index())
@@ -646,7 +646,7 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
 
     dtype_str, dtype = data_type
 
-    meshes = [UnitSquareMesh(MPI.comm_world, 32, 32), UnitCubeMesh(MPI.comm_world, 8, 8, 8)]
+    meshes = [UnitSquareMesh(MPI.comm_world, 12, 12), UnitCubeMesh(MPI.comm_world, 2, 2, 2)]
 
     for mesh in meshes:
         dim = mesh.topology().dim()
@@ -707,7 +707,7 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type):
 
     dtype_str, dtype = data_type
 
-    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     mesh.init()
     for d in range(mesh.geometry().dim() + 1):
         mesh.init_global(d)
