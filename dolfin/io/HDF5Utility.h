@@ -13,7 +13,6 @@
 
 namespace dolfin
 {
-class LocalMeshData;
 class GenericDofMap;
 class Mesh;
 class PETScVector;

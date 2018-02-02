@@ -23,7 +23,6 @@ namespace dolfin
 {
 // Forward declarations
 class CellType;
-class LocalMeshData;
 
 /// This class provides an interface to SCOTCH-PT (parallel version)
 
@@ -97,5 +96,3 @@ private:
                         std::map<std::int64_t, std::vector<int>>& ghost_procs);
 };
 }
-
-
