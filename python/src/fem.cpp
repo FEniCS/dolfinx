@@ -19,6 +19,7 @@
 #endif
 
 #include "casters.h"
+#include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>
 #include <dolfin/fem/DofMap.h>
@@ -233,6 +234,14 @@ void fem(py::module& m)
                       .cast<std::shared_ptr<const dolfin::GenericFunction>>();
         self.set_value(_u);
       });
+
+  // dolfin::fem::Assembler
+  py::class_<dolfin::fem::Assembler, std::shared_ptr<dolfin::fem::Assembler>>(
+      m, "Assembler",
+      "Assembler object for assembling forms into matrices and vectors")
+      .def(py::init<std::shared_ptr<const dolfin::Form>,
+                    std::shared_ptr<const dolfin::Form>,
+                    std::vector<std::shared_ptr<const dolfin::DirichletBC>>>());
 
   // dolfin::AssemblerBase
   py::class_<dolfin::AssemblerBase, std::shared_ptr<dolfin::AssemblerBase>>(

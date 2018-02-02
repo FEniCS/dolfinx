@@ -26,6 +26,15 @@ from dolfin.fem.form import Form
 __all__ = ["assemble_local", "SystemAssembler"]
 
 
+class Assembler:
+    def __init__(self, a, L, bcs=None, form_compiler_parameters=None):
+
+        self.a = a
+        self.L = L
+        self.bcs = bcs
+        self.assembler = None
+
+
 def _create_dolfin_form(form, form_compiler_parameters=None,
                         function_spaces=None):
     # First check if we got a cpp.Form
