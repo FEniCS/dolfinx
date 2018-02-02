@@ -12,9 +12,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Assembler::Assembler(std::shared_ptr<const Form> a,
-                     std::shared_ptr<const Form> L,
-                     std::vector<std::shared_ptr<const DirichletBC>> bcs)
+fem::Assembler::Assembler(
+    std::shared_ptr<const Form> a, std::shared_ptr<const Form> L,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs)
     : _a(a), _l(L), _bcs(bcs)
 {
   // Check rank of forms

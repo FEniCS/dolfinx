@@ -17,6 +17,9 @@ namespace dolfin
 class DirichletBC;
 class Form;
 
+namespace fem
+{
+
 class Assembler
 {
 public:
@@ -31,4 +34,5 @@ private:
   // Boundary conditions
   std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 };
+}
 }
