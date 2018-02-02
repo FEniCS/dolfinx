@@ -142,7 +142,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   }
 
   // Finalise matrix
-  A->apply("insert");
+  A->apply(PETScMatrix::AssemblyType::FINAL);
 
   return A;
 }

@@ -290,7 +290,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
 
     // Eventually wait with assembly flush for keep_diagonal
     if (!keep_diagonal)
-      A.apply("flush");
+      A.apply(PETScMatrix::AssemblyType::FLUSH);
   }
 
   // Insert zeros on the diagonal as diagonal entries may be
@@ -310,7 +310,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
       A.set(&block, 1, &_i, 1, &_i);
     }
 
-    A.apply("flush");
+    A.apply(PETScMatrix::AssemblyType::FLUSH);
   }
 
   // Delete sparsity pattern

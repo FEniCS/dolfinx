@@ -416,7 +416,7 @@ void PETScMatrix::set_diagonal(const PETScVector& x)
   PetscErrorCode ierr = MatDiagonalSet(_matA, x.vec(), INSERT_VALUES);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatDiagonalSet");
-  apply("insert");
+  apply(AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
 double PETScMatrix::norm(std::string norm_type) const
@@ -438,44 +438,23 @@ double PETScMatrix::norm(std::string norm_type) const
   return value;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::apply(std::string mode)
+void PETScMatrix::apply(AssemblyType type)
 {
   Timer timer("Apply (PETScMatrix)");
 
   dolfin_assert(_matA);
   PetscErrorCode ierr;
-  if (mode == "add")
-  {
-    ierr = MatAssemblyBegin(_matA, MAT_FINAL_ASSEMBLY);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatAssemblyBegin");
-    ierr = MatAssemblyEnd(_matA, MAT_FINAL_ASSEMBLY);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatAssemblyEnd");
-  }
-  else if (mode == "insert")
-  {
-    ierr = MatAssemblyBegin(_matA, MAT_FINAL_ASSEMBLY);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatAssemblyBegin");
-    ierr = MatAssemblyEnd(_matA, MAT_FINAL_ASSEMBLY);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatAssemblyEnd");
-  }
-  else if (mode == "flush")
-  {
-    ierr = MatAssemblyBegin(_matA, MAT_FLUSH_ASSEMBLY);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatAssemblyBegin");
-    ierr = MatAssemblyEnd(_matA, MAT_FLUSH_ASSEMBLY);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatAssemblyEnd");
-  }
-  else
-  {
-    dolfin_error("PETScMatrix.cpp", "apply changes to PETSc matrix",
-                 "Unknown apply mode \"%s\"", mode.c_str());
-  }
+
+  MatAssemblyType petsc_type = MAT_FINAL_ASSEMBLY;
+  if (type == AssemblyType::FLUSH)
+    petsc_type = MAT_FLUSH_ASSEMBLY;
+
+  ierr = MatAssemblyBegin(_matA, petsc_type);
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "MatAssemblyBegin");
+  ierr = MatAssemblyEnd(_matA, petsc_type);
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "MatAssemblyEnd");
 }
 //-----------------------------------------------------------------------------
 MPI_Comm PETScMatrix::mpi_comm() const { return PETScBaseMatrix::mpi_comm(); }

@@ -97,9 +97,19 @@ void fem::Assembler::assemble(PETScMatrix& A)
     cell_integral->tabulate_tensor(Ae.data(), ufc.w(), coordinate_dofs.data(),
                                    ufc_cell.orientation);
 
+    // Zero rows and columns with Dirichlet bcs
+
+    // Add to matrix
     A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
                 dmap1.data());
   }
+
+  // Place 1 on diagonal for
+
+
+  // FIXME: Put this elsewhere?
+  // Finalise matrix
+  A.apply(PETScMatrix::AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
 void fem::Assembler::assemble(PETScVector& b)
@@ -110,7 +120,7 @@ void fem::Assembler::assemble(PETScVector& b)
 
   // Get mesh from form
   assert(_l->mesh());
-  const Mesh& mesh = *(_l->mesh());
+  //const Mesh& mesh = *(_l->mesh());
 
   // FIXME: Remove UFC
   // Create data structures for local assembly data

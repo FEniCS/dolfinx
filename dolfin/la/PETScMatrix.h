@@ -72,13 +72,18 @@ public:
   /// Set all entries to zero and keep any sparse structure
   void zero();
 
+  enum class AssemblyType : std::int32_t
+  {
+    FINAL,
+    FLUSH
+  };
+
   /// Finalize assembly of tensor. The following values are recognized
   /// for the mode parameter:
   ///
-  ///   add    - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
-  ///   insert - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
-  ///   flush  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
-  void apply(std::string mode);
+  ///   FINAL    - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
+  ///   FLUSH  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
+  void apply(AssemblyType type);
 
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
@@ -205,5 +210,3 @@ private:
 }
 
 #endif
-
-
