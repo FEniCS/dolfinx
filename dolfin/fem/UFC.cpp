@@ -19,23 +19,7 @@ UFC::UFC(const Form& a)
     : form(*a.ufc_form()), coefficients(a.coefficients()), dolfin_form(a)
 {
   dolfin_assert(a.ufc_form());
-  init(a);
-}
-//-----------------------------------------------------------------------------
-UFC::UFC(const UFC& ufc)
-    : form(ufc.form), coefficients(ufc.dolfin_form.coefficients()),
-      dolfin_form(ufc.dolfin_form)
-{
-  this->init(ufc.dolfin_form);
-}
-//-----------------------------------------------------------------------------
-UFC::~UFC()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void UFC::init(const Form& a)
-{
+
   // Get function spaces for arguments
   std::vector<std::shared_ptr<const FunctionSpace>> V = a.function_spaces();
 
@@ -79,13 +63,6 @@ void UFC::init(const Form& a)
     vertex_integrals.push_back(std::shared_ptr<ufc::vertex_integral>(
         this->form.create_vertex_integral(i)));
 
-  // Create custom integrals
-  default_custom_integral = std::shared_ptr<ufc::custom_integral>(
-      this->form.create_default_custom_integral());
-  for (std::size_t i = 0; i < this->form.max_custom_subdomain_id(); i++)
-    custom_integrals.push_back(std::shared_ptr<ufc::custom_integral>(
-        this->form.create_custom_integral(i)));
-
   // Get maximum local dimensions
   std::vector<std::size_t> max_element_dofs;
   std::vector<std::size_t> max_macro_element_dofs;
@@ -127,6 +104,7 @@ void UFC::init(const Form& a)
     _macro_w[i].resize(n);
     macro_w_pointer[i] = _macro_w[i].data();
   }
+
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& c,

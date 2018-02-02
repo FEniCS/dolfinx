@@ -34,13 +34,10 @@ public:
   UFC(const Form& form);
 
   /// Copy constructor
-  UFC(const UFC& ufc);
+  UFC(const UFC& ufc) = delete;
 
   /// Destructor
-  ~UFC();
-
-  /// Initialise memory
-  void init(const Form& form);
+  ~UFC() = default;
 
   /// Update current cell
   void update(const Cell& cell, const std::vector<double>& coordinate_dofs0,
@@ -111,10 +108,6 @@ private:
   // proper fallback to default)
   std::vector<std::shared_ptr<ufc::vertex_integral>> vertex_integrals;
 
-  // Custom integrals (access through get_custom_integral to get
-  // proper fallback to default)
-  std::vector<std::shared_ptr<ufc::custom_integral>> custom_integrals;
-
 public:
   // Default cell integral
   std::shared_ptr<ufc::cell_integral> default_cell_integral;
@@ -127,9 +120,6 @@ public:
 
   // Default point integral
   std::shared_ptr<ufc::vertex_integral> default_vertex_integral;
-
-  // Default custom integral
-  std::shared_ptr<ufc::custom_integral> default_custom_integral;
 
   /// Get cell integral over a given domain, falling back to the
   /// default if necessary
@@ -185,23 +175,8 @@ public:
     return default_vertex_integral.get();
   }
 
-  /// Get custom integral over a given domain, falling back to the
-  /// default if necessary
-  ufc::custom_integral* get_custom_integral(std::size_t domain)
-  {
-    if (domain < form.max_custom_subdomain_id())
-    {
-      ufc::custom_integral* integral = custom_integrals[domain].get();
-      if (integral)
-        return integral;
-    }
-    return default_custom_integral.get();
-  }
-
   /// Form
   const ufc::form& form;
-
-  // FIXME AL: Check which data is actually used and remove the rest
 
   /// Local tensor
   std::vector<double> A;
