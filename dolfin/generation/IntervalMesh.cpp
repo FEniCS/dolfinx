@@ -8,24 +8,31 @@
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/constants.h"
 #include "dolfin/mesh/CellType.h"
-#include "dolfin/mesh/MeshEditor.h"
 #include "dolfin/mesh/MeshPartitioning.h"
+
+#include <Eigen/Dense>
 #include <cmath>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void IntervalMesh::build(Mesh& mesh, std::size_t nx, std::array<double, 2> x)
+Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x)
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver(mesh.mpi_comm()))
+  if (MPI::rank(comm) != 0)
   {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     geom(0, 1);
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     topo(0, 2);
+    Mesh mesh(comm, CellType::Type::interval, geom, topo);
     MeshPartitioning::build_distributed_mesh(mesh);
-    return;
+    return mesh;
   }
 
   const double a = x[0];
   const double b = x[1];
+  const double ab = (b - a) / static_cast<double>(nx);
 
   if (std::abs(a - b) < DOLFIN_EPS)
   {
@@ -48,40 +55,19 @@ void IntervalMesh::build(Mesh& mesh, std::size_t nx, std::array<double, 2> x)
                  nx);
   }
 
-  mesh.rename("mesh", "Mesh of the interval (a, b)");
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom((nx + 1), 1);
+  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(nx, 2);
 
-  // Open mesh for editing
-  MeshEditor editor;
-  editor.open(mesh, CellType::Type::interval, 1, 1);
-
-  // Create vertices and cells:
-  editor.init_vertices_global((nx + 1), (nx + 1));
-  editor.init_cells_global(nx, nx);
-
-  // Create main vertices:
+  // Create vertices
   for (std::size_t ix = 0; ix <= nx; ix++)
-  {
-    Point x(a + (static_cast<double>(ix) * (b - a) / static_cast<double>(nx)));
-    editor.add_vertex(ix, x);
-  }
+    geom(ix, 0) = a + ab * static_cast<double>(ix);
 
   // Create intervals
   for (std::size_t ix = 0; ix < nx; ix++)
-  {
-    std::vector<std::size_t> cell(2);
-    cell[0] = ix;
-    cell[1] = ix + 1;
-    editor.add_cell(ix, cell);
-  }
+    topo.row(ix) << ix, ix + 1;
 
-  // Close mesh editor
-  editor.close();
-
-  // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(mesh.mpi_comm()))
-  {
-    MeshPartitioning::build_distributed_mesh(mesh);
-    return;
-  }
+  Mesh mesh(comm, CellType::Type::interval, geom, topo);
+  MeshPartitioning::build_distributed_mesh(mesh);
+  return mesh;
 }
 //-----------------------------------------------------------------------------

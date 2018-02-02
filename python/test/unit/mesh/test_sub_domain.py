@@ -22,7 +22,7 @@ import numpy as np
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
 import pytest
-
+from dolfin.jit.pybind11jit import compile_cpp_code
 
 def test_compiled_subdomains():
     def noDefaultValues():

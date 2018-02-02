@@ -27,7 +27,7 @@ import gc
 import platform
 import decorator
 
-from dolfin import  parameters
+from dolfin.parameter import  parameters
 from dolfin import *
 
 # --- Test fixtures (use as is or as examples): ---
@@ -170,7 +170,8 @@ def _create_tempdir(request):
     basepath = os.path.join(testfiledir, outputname)
     path = os.path.join(basepath, function)
 
-    # Add a sequence number to avoid collisions when tests are otherwise parameterized
+    # Add a sequence number to avoid collisions when tests are
+    # otherwise parameterized
     if MPI.rank(MPI.comm_world) == 0:
         _create_tempdir._sequencenumber[path] += 1
         sequencenumber = _create_tempdir._sequencenumber[path]

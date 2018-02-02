@@ -21,6 +21,9 @@ smoothed aggregation algerbaric multigrid."""
 
 
 from dolfin import *
+from dolfin.la import (VectorSpaceBasis, PETScVector, PETScOptions,
+                       PETScKrylovSolver)
+
 import matplotlib.pyplot as plt
 
 def build_nullspace(V, x):

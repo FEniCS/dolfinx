@@ -107,14 +107,6 @@ public:
   /// the communicator
   static std::uint32_t size(MPI_Comm comm);
 
-  /// Determine whether we should broadcast (based on current
-  /// parallel policy)
-  static bool is_broadcaster(MPI_Comm comm);
-
-  /// Determine whether we should receive (based on current parallel
-  /// policy)
-  static bool is_receiver(MPI_Comm comm);
-
   /// Set a barrier (synchronization point)
   static void barrier(MPI_Comm comm);
 

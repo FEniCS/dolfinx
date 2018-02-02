@@ -25,7 +25,6 @@
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
@@ -119,8 +118,9 @@ void XDMFFile::write_checkpoint(const Function& u, std::string function_name,
   check_encoding(encoding);
   check_function_name(function_name);
 
-  log(PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
-                "time step %f.",
+  log(PROGRESS,
+      "Writing function \"%s\" to XDMF file \"%s\" with "
+      "time step %f.",
       function_name.c_str(), _filename.c_str(), time_step);
 
   // If XML file exists load it to member _xml_doc
@@ -710,7 +710,7 @@ void XDMFFile::write_mesh_value_collection(const MeshValueCollection<T>& mvc,
     MeshEntity cell = Cell(*mesh, p.first.first);
     if (cell_dim != tdim)
     {
-      const std::uint32_t entity_local_idx
+      const std::int32_t entity_local_idx
           = cell.entities(cell_dim)[p.first.second];
       cell = MeshEntity(*mesh, cell_dim, entity_local_idx);
     }
@@ -720,7 +720,7 @@ void XDMFFile::write_mesh_value_collection(const MeshValueCollection<T>& mvc,
       topology_data.push_back(cell.global_index());
     else
     {
-      for (auto &v : EntityRange<Vertex>(cell))
+      for (auto& v : EntityRange<Vertex>(cell))
         topology_data.push_back(v.global_index());
     }
 
@@ -858,14 +858,14 @@ void XDMFFile::read_mesh_value_collection(MeshValueCollection<T>& mvc,
   std::vector<std::vector<std::int32_t>> recv_entities(num_processes);
 
   std::vector<std::int32_t> v(num_verts_per_entity);
-  for (auto &m : MeshRange<MeshEntity>(*mesh, cell_dim))
+  for (auto& m : MeshRange<MeshEntity>(*mesh, cell_dim))
   {
     if (cell_dim == 0)
       v[0] = m.global_index();
     else
     {
       v.clear();
-      for (auto &vtx : EntityRange<Vertex>(m))
+      for (auto& vtx : EntityRange<Vertex>(m))
         v.push_back(vtx.global_index());
       std::sort(v.begin(), v.end());
     }
@@ -1101,7 +1101,7 @@ void XDMFFile::read(MeshFunction<bool>& meshfunction, std::string name)
   MeshFunction<std::size_t> mf(mesh, cell_dim);
   read_mesh_function(mf, name);
 
-  for (auto &cell : MeshRange<MeshEntity>(*mesh, cell_dim))
+  for (auto& cell : MeshRange<MeshEntity>(*mesh, cell_dim))
     meshfunction[cell.index()] = (mf[cell.index()] == 1);
 }
 //----------------------------------------------------------------------------
@@ -1317,6 +1317,12 @@ void XDMFFile::read(Mesh& mesh) const
   const auto cell_type_str = get_cell_type(topology_node);
   const int degree = cell_type_str.second;
 
+  if (degree == 2)
+  {
+    dolfin_error("XDMFFile.cpp", "read quadratic mesh",
+                 "XDMF quadratic I/O is under revision");
+  }
+
   // Get toplogical dimensions
   std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str.first));
   dolfin_assert(cell_type);
@@ -1356,34 +1362,16 @@ void XDMFFile::read(Mesh& mesh) const
   pugi::xml_node topology_data_node = topology_node.child("DataItem");
   dolfin_assert(topology_data_node);
 
-  if (_mpi_comm.size() == 1)
-  {
-    if (degree == 1)
-    {
-      build_mesh(mesh, *cell_type, num_points_global, num_cells_global, tdim,
-                 gdim, topology_data_node, geometry_data_node, parent_path);
-    }
-    else
-    {
-      dolfin_assert(degree == 2);
-      build_mesh_quadratic(mesh, *cell_type, num_points_global,
-                           num_cells_global, tdim, gdim, topology_data_node,
-                           geometry_data_node, parent_path);
-    }
-  }
-  else
-  {
-    // Build local mesh data structure
-    LocalMeshData local_mesh_data(_mpi_comm.comm());
-    build_local_mesh_data(local_mesh_data, *cell_type, num_points_global,
-                          num_cells_global, tdim, gdim, topology_data_node,
-                          geometry_data_node, parent_path);
-    local_mesh_data.check();
+  // Build local mesh data structure
+  LocalMeshData local_mesh_data(_mpi_comm.comm());
+  build_local_mesh_data(local_mesh_data, *cell_type, num_points_global,
+                        num_cells_global, tdim, gdim, topology_data_node,
+                        geometry_data_node, parent_path);
+  local_mesh_data.check();
 
-    // Build mesh
-    const std::string ghost_mode = dolfin::parameters["ghost_mode"];
-    MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data, ghost_mode);
-  }
+  // Build mesh
+  const std::string ghost_mode = dolfin::parameters["ghost_mode"];
+  MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data, ghost_mode);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::read_checkpoint(Function& u, std::string func_name,
@@ -1391,8 +1379,9 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
 {
   check_function_name(func_name);
 
-  log(PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
-                "counter %i.",
+  log(PROGRESS,
+      "Reading function \"%s\" from XDMF file \"%s\" with "
+      "counter %i.",
       func_name.c_str(), _filename.c_str(), counter);
 
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
@@ -1508,164 +1497,6 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
   HDF5Utility::set_local_vector_values(_mpi_comm.comm(), x, mesh, cells,
                                        cell_dofs, x_cell_dofs, vector,
                                        input_vector_range, dofmap);
-}
-//----------------------------------------------------------------------------
-void XDMFFile::build_mesh_quadratic(
-    Mesh& mesh, const CellType& cell_type, std::int64_t num_points,
-    std::int64_t num_cells, int tdim, int gdim,
-    const pugi::xml_node& topology_dataset_node,
-    const pugi::xml_node& geometry_dataset_node,
-    const boost::filesystem::path& relative_path)
-{
-  // Get the topology data
-  dolfin_assert(topology_dataset_node);
-  std::vector<std::int32_t> topology_data = get_dataset<std::int32_t>(
-      mesh.mpi_comm(), topology_dataset_node, relative_path);
-  dolfin_assert(topology_data.size() % num_cells == 0);
-  const int num_points_per_cell = topology_data.size() / num_cells;
-  const int num_vertices_per_cell = cell_type.num_entities(0);
-  const int num_edges_per_cell = cell_type.num_entities(1);
-  dolfin_assert(num_points_per_cell
-                == num_vertices_per_cell + num_edges_per_cell);
-
-  const boost::const_multi_array_ref<std::int32_t, 2> topology_data_array(
-      topology_data.data(), boost::extents[num_cells][num_points_per_cell]);
-
-  // Get set of indices for vertices
-  dolfin::Set<std::int32_t> vertex_indices;
-  for (std::uint32_t i = 0; i < num_cells; ++i)
-  {
-    for (int j = 0; j < num_vertices_per_cell; ++j)
-      vertex_indices.insert(topology_data_array[i][j]);
-  }
-  vertex_indices.sort();
-
-  // Get the geometry data
-  dolfin_assert(geometry_dataset_node);
-  std::vector<double> geometry_data = get_dataset<double>(
-      mesh.mpi_comm(), geometry_dataset_node, relative_path);
-
-  MeshEditor mesh_editor;
-  mesh_editor.open(mesh, cell_type.cell_type(), tdim, gdim, 2);
-
-  mesh_editor.init_vertices_global(vertex_indices.size(),
-                                   vertex_indices.size());
-  int c = 0;
-  for (const auto& q : vertex_indices.set())
-  {
-    mesh_editor.add_vertex(c, Point(gdim, &geometry_data[q * gdim]));
-    ++c;
-  }
-
-  mesh_editor.init_cells_global(num_cells, num_cells);
-  std::vector<std::uint32_t> pts(num_vertices_per_cell);
-  for (int i = 0; i < num_cells; ++i)
-  {
-    for (int j = 0; j < num_vertices_per_cell; ++j)
-    {
-      pts[j] = std::lower_bound(vertex_indices.set().begin(),
-                                vertex_indices.set().end(),
-                                topology_data_array[i][j])
-               - vertex_indices.set().begin();
-    }
-    mesh_editor.add_cell(i, pts);
-  }
-
-  std::vector<std::size_t> edge_mapping;
-  if (tdim == 1)
-    edge_mapping = {0};
-  else if (tdim == 2)
-    edge_mapping = {1, 2, 0};
-  else
-    edge_mapping = {5, 4, 1, 3, 2, 0};
-
-  mesh_editor.init_entities();
-  for (std::uint32_t i = 0; i < num_cells; ++i)
-  {
-    std::uint32_t j = 0;
-    Cell cell(mesh, i);
-    for (auto &e : EntityRange<Edge>(cell))
-    {
-      // fixme: permute j
-      const int32_t c
-          = topology_data_array[i][num_vertices_per_cell + edge_mapping[j]];
-      Point p(gdim, &geometry_data[c * gdim]);
-      mesh_editor.add_entity_point(1, 0, e.index(), p);
-      ++j;
-    }
-  }
-  mesh_editor.close();
-}
-//-----------------------------------------------------------------------------
-void XDMFFile::build_mesh(Mesh& mesh, const CellType& cell_type,
-                          std::int64_t num_points, std::int64_t num_cells,
-                          int tdim, int gdim,
-                          const pugi::xml_node& topology_dataset_node,
-                          const pugi::xml_node& geometry_dataset_node,
-                          const boost::filesystem::path& relative_path)
-{
-  MeshEditor mesh_editor;
-
-  mesh_editor.open(mesh, cell_type.cell_type(), tdim, gdim);
-
-  // Get topology data vector and add to mesh
-  {
-    // Get the data
-    dolfin_assert(topology_dataset_node);
-    std::vector<std::int32_t> topology_data = get_dataset<std::int32_t>(
-        mesh.mpi_comm(), topology_dataset_node, relative_path);
-
-    // Check dims
-
-    // Prepare mesh editor for addition of cells
-    mesh_editor.init_cells_global(num_cells, num_cells);
-
-    // Prepare mesh editor for addition of cells, and add cell topology
-    const size_t num_vertices_per_cell = cell_type.num_vertices();
-    std::vector<size_t> cell_topology(num_vertices_per_cell);
-    std::vector<size_t> cell_topology_permuted(num_vertices_per_cell);
-
-    // Load VTK permutation mapping specific to the cell type
-    const std::vector<std::int8_t> perm = cell_type.vtk_mapping();
-
-    // Iterate over each cell and read permuted topology
-    for (std::int64_t i = 0; i < num_cells; ++i)
-    {
-      cell_topology.assign(topology_data.begin() + i * num_vertices_per_cell,
-                           topology_data.begin()
-                               + (i + 1) * num_vertices_per_cell);
-
-      // Apply permutation and store topology as permuted topology
-      for (std::uint32_t j = 0; j < num_vertices_per_cell; ++j)
-      {
-        cell_topology_permuted[j] = cell_topology[perm[j]];
-      }
-
-      mesh_editor.add_cell(i, cell_topology_permuted);
-    }
-  }
-
-  // Get geometry data vector and add to mesh
-  {
-    // Get geometry data
-    dolfin_assert(geometry_dataset_node);
-    std::vector<double> geometry_data = get_dataset<double>(
-        mesh.mpi_comm(), geometry_dataset_node, relative_path);
-
-    // Check dims
-
-    // Prepare mesh editor for addition of points, and add points
-    mesh_editor.init_vertices_global(num_points, num_points);
-    Point p;
-    for (std::int64_t i = 0; i < num_points; ++i)
-    {
-      for (int j = 0; j < gdim; ++j)
-        p[j] = geometry_data[i * gdim + j];
-      mesh_editor.add_vertex(i, p);
-    }
-  }
-
-  mesh_editor.close();
 }
 //----------------------------------------------------------------------------
 void XDMFFile::build_local_mesh_data(
@@ -1921,7 +1752,7 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
 }
 //----------------------------------------------------------------------------
 std::set<std::uint32_t> XDMFFile::compute_nonlocal_entities(const Mesh& mesh,
-                                                           int cell_dim)
+                                                            int cell_dim)
 {
   // If not already numbered, number entities of
   // order cell_dim so we can get shared_entities
@@ -1952,10 +1783,10 @@ std::set<std::uint32_t> XDMFFile::compute_nonlocal_entities(const Mesh& mesh,
   {
     // Iterate through ghost cells, adding non-ghost entities
     // which are in lower rank process cells
-    for (auto &c : MeshRange<MeshEntity>(mesh, tdim, MeshRangeType::GHOST))
+    for (auto& c : MeshRange<MeshEntity>(mesh, tdim, MeshRangeType::GHOST))
     {
       const std::uint32_t cell_owner = c.owner();
-      for (auto &e : EntityRange<MeshEntity>(c, cell_dim))
+      for (auto& e : EntityRange<MeshEntity>(c, cell_dim))
         if (!e.is_ghost() && cell_owner < mpi_rank)
           non_local_entities.insert(e.index());
     }
@@ -1981,15 +1812,15 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
     // Simple case when nothing is shared between processes
     if (cell_dim == 0)
     {
-      for (auto &v : MeshRange<Vertex>(mesh))
+      for (auto& v : MeshRange<Vertex>(mesh))
         topology_data.push_back(v.global_index());
     }
     else
     {
       const auto& global_vertices = mesh.topology().global_indices(0);
-      for (auto &c : MeshRange<MeshEntity>(mesh, cell_dim))
+      for (auto& c : MeshRange<MeshEntity>(mesh, cell_dim))
       {
-        const std::uint32_t* entities = c.entities(0);
+        const std::int32_t* entities = c.entities(0);
         for (std::uint32_t i = 0; i != c.num_entities(0); ++i)
           topology_data.push_back(global_vertices[entities[perm[i]]]);
       }
@@ -2003,7 +1834,7 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
     if (cell_dim == 0)
     {
       // Special case for mesh of points
-      for (auto &v : MeshRange<Vertex>(mesh))
+      for (auto& v : MeshRange<Vertex>(mesh))
       {
         if (non_local_entities.find(v.index()) == non_local_entities.end())
           topology_data.push_back(v.global_index());
@@ -2013,14 +1844,14 @@ std::vector<T> XDMFFile::compute_topology_data(const Mesh& mesh, int cell_dim)
     {
       // Local-to-global map for point indices
       const auto& global_vertices = mesh.topology().global_indices(0);
-      for (auto &e : MeshRange<MeshEntity>(mesh, cell_dim))
+      for (auto& e : MeshRange<MeshEntity>(mesh, cell_dim))
       {
         // If not excluded, add to topology
         if (non_local_entities.find(e.index()) == non_local_entities.end())
         {
           for (std::uint32_t i = 0; i != e.num_entities(0); ++i)
           {
-            const std::uint32_t local_idx = e.entities(0)[perm[i]];
+            const std::int32_t local_idx = e.entities(0)[perm[i]];
             topology_data.push_back(global_vertices[local_idx]);
           }
         }
@@ -2057,7 +1888,7 @@ std::vector<T> XDMFFile::compute_quadratic_topology(const Mesh& mesh)
   std::vector<T> topology_data;
   topology_data.reserve(npoint * mesh.num_entities(tdim));
 
-  for (auto &c : MeshRange<Cell>(mesh))
+  for (auto& c : MeshRange<Cell>(mesh))
   {
     // Add indices for vertices and edges
     for (std::uint32_t dim = 0; dim != 2; ++dim)
@@ -2102,7 +1933,7 @@ std::vector<T> XDMFFile::compute_value_data(const MeshFunction<T>& meshfunction)
     std::set<std::uint32_t> non_local_entities
         = compute_nonlocal_entities(*mesh, cell_dim);
 
-    for (auto &e : MeshRange<MeshEntity>(*mesh, cell_dim))
+    for (auto& e : MeshRange<MeshEntity>(*mesh, cell_dim))
     {
       if (non_local_entities.find(e.index()) == non_local_entities.end())
         value_data.push_back(meshfunction[e]);
@@ -2534,14 +2365,14 @@ void XDMFFile::remap_meshfunction_data(
   // directly to the right place
   std::vector<std::vector<std::int64_t>> send_requests(num_processes);
   const std::size_t rank = MPI::rank(comm);
-  for (auto &cell : MeshRange<MeshEntity>(*mesh, cell_dim, MeshRangeType::ALL))
+  for (auto& cell : MeshRange<MeshEntity>(*mesh, cell_dim, MeshRangeType::ALL))
   {
     std::vector<std::int64_t> cell_topology;
     if (cell_dim == 0)
       cell_topology.push_back(cell.global_index());
     else
     {
-      for (auto &v : EntityRange<Vertex>(cell))
+      for (auto& v : EntityRange<Vertex>(cell))
         cell_topology.push_back(v.global_index());
     }
 
@@ -2793,7 +2624,7 @@ std::vector<double> XDMFFile::get_cell_data_values(const Function& u)
   std::vector<dolfin::la_index_t> dof_set;
   dof_set.reserve(local_size);
   const auto dofmap = u.function_space()->dofmap();
-  for (auto &cell : MeshRange<Cell>(*mesh))
+  for (auto& cell : MeshRange<Cell>(*mesh))
   {
     // Tabulate dofs
     auto dofs = dofmap->cell_dofs(cell.index());
@@ -2917,13 +2748,13 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
   if (dofmap->num_entity_dofs(1) == 0)
   {
     // P1
-    for (auto &cell : MeshRange<Cell>(*mesh))
+    for (auto& cell : MeshRange<Cell>(*mesh))
     {
       auto dofs = dofmap->cell_dofs(cell.index());
       std::size_t c = 0;
       for (std::size_t i = 0; i != value_size; ++i)
       {
-        for (auto &v : EntityRange<Vertex>(cell))
+        for (auto& v : EntityRange<Vertex>(cell))
         {
           const std::size_t v0 = v.index() * width;
           data_dofs[v0 + i] = dofs[c];
@@ -2937,7 +2768,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
     uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
 
     // Get midpoint values for Edge points
-    for (auto &e : MeshRange<Edge>(*mesh))
+    for (auto& e : MeshRange<Edge>(*mesh))
     {
       const std::size_t v0 = e.entities(0)[0];
       const std::size_t v1 = e.entities(0)[1];
@@ -2951,19 +2782,19 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
     // P2
     // Go over all cells inserting values
     // FIXME: a lot of duplication here
-    for (auto &cell : MeshRange<Cell>(*mesh))
+    for (auto& cell : MeshRange<Cell>(*mesh))
     {
       auto dofs = dofmap->cell_dofs(cell.index());
       std::size_t c = 0;
       for (std::size_t i = 0; i != value_size; ++i)
       {
-        for (auto &v : EntityRange<Vertex>(cell))
+        for (auto& v : EntityRange<Vertex>(cell))
         {
           const std::size_t v0 = v.index() * width;
           data_dofs[v0 + i] = dofs[c];
           ++c;
         }
-        for (auto &e : EntityRange<Edge>(cell))
+        for (auto& e : EntityRange<Edge>(cell))
         {
           const std::size_t e0 = (e.index() + mesh->num_entities(0)) * width;
           data_dofs[e0 + i] = dofs[c];

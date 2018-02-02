@@ -4,29 +4,34 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <boost/multi_array.hpp>
 #include <cmath>
+#include <Eigen/Dense>
 
 #include "BoxMesh.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
-#include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void BoxMesh::build_tet(Mesh& mesh, const std::array<Point, 2>& p,
+Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
                         std::array<std::size_t, 3> n)
 {
   Timer timer("Build BoxMesh");
 
-  // Receive mesh according to parallel policy
-  if (MPI::is_receiver(mesh.mpi_comm()))
+  // Receive mesh if not rank 0
+  if (dolfin::MPI::rank(comm) != 0)
   {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     geom(0, 3);
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     topo(0, 4);
+    Mesh mesh(comm, CellType::Type::tetrahedron, geom, topo);
+    mesh.order();
     MeshPartitioning::build_distributed_mesh(mesh);
-    return;
+    return mesh;
   }
 
   // Extract data
@@ -46,10 +51,13 @@ void BoxMesh::build_tet(Mesh& mesh, const std::array<Point, 2>& p,
 
   const double a = x0;
   const double b = x1;
+  const double ab = (b - a) / static_cast<double>(nx);
   const double c = y0;
   const double d = y1;
+  const double cd = (d - c) / static_cast<double>(ny);
   const double e = z0;
   const double f = z1;
+  const double ef = (f - e) / static_cast<double>(nz);
 
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS
       || std::abs(z0 - z1) < DOLFIN_EPS)
@@ -67,44 +75,34 @@ void BoxMesh::build_tet(Mesh& mesh, const std::array<Point, 2>& p,
                                               "least 1 in each dimension");
   }
 
-  mesh.rename("mesh", "Mesh of the cuboid (a,b) x (c,d) x (e,f)");
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     geom((nx + 1) * (ny + 1) * (nz + 1), 3);
+  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     topo(6 * nx * ny * nz, 4);
 
-  // Open mesh for editing
-  MeshEditor editor;
-  editor.open(mesh, CellType::Type::tetrahedron, 3, 3);
-
-  // Storage for vertex coordinates
-  Point x;
-
-  // Create vertices
-  editor.init_vertices_global((nx + 1) * (ny + 1) * (nz + 1),
-                              (nx + 1) * (ny + 1) * (nz + 1));
   std::size_t vertex = 0;
-  for (std::size_t iz = 0; iz <= nz; iz++)
+  for (std::size_t iz = 0; iz <= nz; ++iz)
   {
-    x[2] = e + (static_cast<double>(iz)) * (f - e) / static_cast<double>(nz);
-    for (std::size_t iy = 0; iy <= ny; iy++)
+    const double z = e + ef * static_cast<double>(iz);
+    for (std::size_t iy = 0; iy <= ny; ++iy)
     {
-      x[1] = c + (static_cast<double>(iy)) * (d - c) / static_cast<double>(ny);
-      for (std::size_t ix = 0; ix <= nx; ix++)
+      const double y = c + cd * static_cast<double>(iy);
+      for (std::size_t ix = 0; ix <= nx; ++ix)
       {
-        x[0]
-            = a + (static_cast<double>(ix)) * (b - a) / static_cast<double>(nx);
-        editor.add_vertex(vertex, vertex, x);
-        vertex++;
+        const double x = a + ab * static_cast<double>(ix);
+        geom.row(vertex) << x, y, z;
+        ++vertex;
       }
     }
   }
 
   // Create tetrahedra
-  editor.init_cells_global(6 * nx * ny * nz, 6 * nx * ny * nz);
   std::size_t cell = 0;
-  boost::multi_array<std::size_t, 2> cells(boost::extents[6][4]);
-  for (std::size_t iz = 0; iz < nz; iz++)
+  for (std::size_t iz = 0; iz < nz; ++iz)
   {
-    for (std::size_t iy = 0; iy < ny; iy++)
+    for (std::size_t iy = 0; iy < ny; ++iy)
     {
-      for (std::size_t ix = 0; ix < nx; ix++)
+      for (std::size_t ix = 0; ix < nx; ++ix)
       {
         const std::size_t v0 = iz * (nx + 1) * (ny + 1) + iy * (nx + 1) + ix;
         const std::size_t v1 = v0 + 1;
@@ -116,72 +114,51 @@ void BoxMesh::build_tet(Mesh& mesh, const std::array<Point, 2>& p,
         const std::size_t v7 = v3 + (nx + 1) * (ny + 1);
 
         // Note that v0 < v1 < v2 < v3 < vmid.
-        cells[0][0] = v0;
-        cells[0][1] = v1;
-        cells[0][2] = v3;
-        cells[0][3] = v7;
-        cells[1][0] = v0;
-        cells[1][1] = v1;
-        cells[1][2] = v7;
-        cells[1][3] = v5;
-        cells[2][0] = v0;
-        cells[2][1] = v5;
-        cells[2][2] = v7;
-        cells[2][3] = v4;
-        cells[3][0] = v0;
-        cells[3][1] = v3;
-        cells[3][2] = v2;
-        cells[3][3] = v7;
-        cells[4][0] = v0;
-        cells[4][1] = v6;
-        cells[4][2] = v4;
-        cells[4][3] = v7;
-        cells[5][0] = v0;
-        cells[5][1] = v2;
-        cells[5][2] = v6;
-        cells[5][3] = v7;
-
-        // Add cells
-        for (auto _cell = cells.begin(); _cell != cells.end(); ++_cell)
-          editor.add_cell(cell++, *_cell);
+        topo.row(cell) << v0, v1, v3, v7;
+        ++cell;
+        topo.row(cell) << v0, v1, v7, v5;
+        ++cell;
+        topo.row(cell) << v0, v5, v7, v4;
+        ++cell;
+        topo.row(cell) << v0, v3, v2, v7;
+        ++cell;
+        topo.row(cell) << v0, v6, v4, v7;
+        ++cell;
+        topo.row(cell) << v0, v2, v6, v7;
+        ++cell;
       }
     }
   }
 
-  // Close mesh editor
-  editor.close();
+  Mesh mesh(comm, CellType::Type::tetrahedron, geom, topo);
+  mesh.order();
 
-  // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(mesh.mpi_comm()))
-  {
-    MeshPartitioning::build_distributed_mesh(mesh);
-    return;
-  }
+  MeshPartitioning::build_distributed_mesh(mesh);
+  return mesh;
 }
 //-----------------------------------------------------------------------------
-void BoxMesh::build_hex(Mesh& mesh, std::array<std::size_t, 3> n)
+Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
 {
-  // Receive mesh according to parallel policy
-  if (MPI::is_receiver(mesh.mpi_comm()))
+  // Receive mesh if not rank 0
+  if (dolfin::MPI::rank(comm) != 0)
   {
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     geom(0, 3);
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     topo(0, 8);
+    Mesh mesh(comm, CellType::Type::hexahedron, geom, topo);
     MeshPartitioning::build_distributed_mesh(mesh);
-    return;
+    return mesh;
   }
 
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
   const std::size_t nz = n[2];
 
-  MeshEditor editor;
-  editor.open(mesh, CellType::Type::hexahedron, 3, 3);
-
-  // Create vertices and cells:
-  editor.init_vertices_global((nx + 1) * (ny + 1) * (nz + 1),
-                              (nx + 1) * (ny + 1) * (nz + 1));
-  editor.init_cells_global(nx * ny * nz, nx * ny * nz);
-
-  // Storage for vertices
-  Point x;
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     geom((nx + 1) * (ny + 1) * (nz + 1), 3);
+  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+                     topo(nx * ny * nz, 8);
 
   const double a = 0.0;
   const double b = 1.0;
@@ -192,54 +169,47 @@ void BoxMesh::build_hex(Mesh& mesh, std::array<std::size_t, 3> n)
 
   // Create main vertices:
   std::size_t vertex = 0;
-  for (std::size_t iz = 0; iz <= nz; iz++)
+  for (std::size_t iz = 0; iz <= nz; ++iz)
   {
-    x[2] = e + ((static_cast<double>(iz)) * (f - e) / static_cast<double>(nz));
-    for (std::size_t iy = 0; iy <= ny; iy++)
+    const double z = e + ((static_cast<double>(iz)) * (f - e) / static_cast<double>(nz));
+    for (std::size_t iy = 0; iy <= ny; ++iy)
     {
-      x[1]
+      const double y
           = c + ((static_cast<double>(iy)) * (d - c) / static_cast<double>(ny));
       for (std::size_t ix = 0; ix <= nx; ix++)
       {
-        x[0] = a + ((static_cast<double>(ix)) * (b - a)
-                    / static_cast<double>(nx));
-        editor.add_vertex(vertex, x);
-        vertex++;
+        const double x = a + ((static_cast<double>(ix)) * (b - a)
+                              / static_cast<double>(nx));
+        geom.row(vertex) << x, y, z;
+        ++vertex;
       }
     }
   }
 
   // Create cuboids
   std::size_t cell = 0;
-  std::vector<std::size_t> v(8);
-  for (std::size_t iz = 0; iz < nz; iz++)
+  for (std::size_t iz = 0; iz < nz; ++iz)
   {
-    for (std::size_t iy = 0; iy < ny; iy++)
+    for (std::size_t iy = 0; iy < ny; ++iy)
     {
-      for (std::size_t ix = 0; ix < nx; ix++)
+      for (std::size_t ix = 0; ix < nx; ++ix)
       {
-        v[0] = (iz * (ny + 1) + iy) * (nx + 1) + ix;
-        v[1] = v[0] + 1;
-        v[2] = v[0] + (nx + 1);
-        v[3] = v[1] + (nx + 1);
-        v[4] = v[0] + (nx + 1) * (ny + 1);
-        v[5] = v[1] + (nx + 1) * (ny + 1);
-        v[6] = v[2] + (nx + 1) * (ny + 1);
-        v[7] = v[3] + (nx + 1) * (ny + 1);
-        editor.add_cell(cell, v);
+        const std::size_t v0 = (iz * (ny + 1) + iy) * (nx + 1) + ix;
+        const std::size_t v1 = v0 + 1;
+        const std::size_t v2 = v0 + (nx + 1);
+        const std::size_t v3 = v1 + (nx + 1);
+        const std::size_t v4 = v0 + (nx + 1) * (ny + 1);
+        const std::size_t v5 = v1 + (nx + 1) * (ny + 1);
+        const std::size_t v6 = v2 + (nx + 1) * (ny + 1);
+        const std::size_t v7 = v3 + (nx + 1) * (ny + 1);
+        topo.row(cell) << v0, v1, v2, v3, v4, v5, v6, v7;
         ++cell;
       }
     }
   }
 
-  // Close mesh editor
-  editor.close();
-
-  // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster(mesh.mpi_comm()))
-  {
-    MeshPartitioning::build_distributed_mesh(mesh);
-    return;
-  }
+  Mesh mesh(comm, CellType::Type::hexahedron, geom, topo);
+  MeshPartitioning::build_distributed_mesh(mesh);
+  return mesh;
 }
 //-----------------------------------------------------------------------------

@@ -16,7 +16,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/mesh/LocalMeshData.h>
 
 #ifdef HAS_SCOTCH
 extern "C" {
@@ -435,6 +434,6 @@ void SCOTCH::partition(const MPI_Comm mpi_comm, CSRGraph<T>& local_graph,
   dolfin_error("SCOTCH.cpp", "partition mesh using SCOTCH",
                "DOLFIN has been configured without support for SCOTCH");
 }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 
 #endif

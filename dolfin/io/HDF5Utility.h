@@ -13,7 +13,6 @@
 
 namespace dolfin
 {
-class LocalMeshData;
 class GenericDofMap;
 class Mesh;
 class PETScVector;
@@ -61,10 +60,6 @@ public:
   static void cell_owners_in_range(
       std::vector<std::pair<std::size_t, std::size_t>>& global_owner,
       const Mesh& mesh);
-
-  /// Convert LocalMeshData structure to a Mesh, used when running
-  /// in serial
-  static void build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data);
 
   /// Missing docstring
   static void

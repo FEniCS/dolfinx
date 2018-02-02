@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MeshEntity.h"
-#include "MeshIterator.h"
 #include "Mesh.h"
+#include "MeshIterator.h"
 #include "MeshTopology.h"
 #include "Vertex.h"
 #include <dolfin/log/log.h>
@@ -51,7 +51,7 @@ bool MeshEntity::incident(const MeshEntity& entity) const
     return false;
 
   // Get list of entities for given topological dimension
-  const std::uint32_t* entities
+  const std::int32_t* entities
       = _mesh->topology()(_dim, entity._dim)(_local_index);
   const std::size_t num_entities
       = _mesh->topology()(_dim, entity._dim).size(_local_index);
@@ -75,7 +75,7 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
   }
 
   // Get list of entities for given topological dimension
-  const std::uint32_t* entities
+  const std::int32_t* entities
       = _mesh->topology()(_dim, entity._dim)(_local_index);
   const std::size_t num_entities
       = _mesh->topology()(_dim, entity._dim).size(_local_index);
@@ -105,7 +105,7 @@ Point MeshEntity::midpoint() const
   double y = 0.0;
   double z = 0.0;
 
-  for (auto &v : EntityRange<Vertex>(*this))
+  for (auto& v : EntityRange<Vertex>(*this))
   {
     x += v.point().x();
     y += v.point().y();
@@ -131,13 +131,15 @@ std::uint32_t MeshEntity::owner() const
                  "Entity ownership is only defined for cells");
   }
 
-  const std::size_t offset = _mesh->topology().ghost_offset(_dim);
+  const std::int32_t offset = _mesh->topology().ghost_offset(_dim);
   if (_local_index < offset)
   {
     dolfin_error("MeshEntity.cpp", "get ownership of entity",
                  "Ownership of non-ghost cells is local process");
   }
 
+  dolfin_assert((int)_mesh->topology().cell_owner().size()
+                > _local_index - offset);
   return _mesh->topology().cell_owner()[_local_index - offset];
 }
 //-----------------------------------------------------------------------------

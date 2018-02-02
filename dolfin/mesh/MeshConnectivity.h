@@ -63,7 +63,7 @@ public:
   }
 
   /// Return array of connections for given entity
-  const std::uint32_t* operator()(std::size_t entity) const
+  const std::int32_t* operator()(std::size_t entity) const
   {
     return (entity + 1) < index_to_position.size()
                ? &_connections[index_to_position[entity]]
@@ -71,7 +71,7 @@ public:
   }
 
   /// Return contiguous array of connections for all entities
-  const std::vector<std::uint32_t>& operator()() const { return _connections; }
+  const std::vector<std::int32_t>& operator()() const { return _connections; }
 
   /// Clear all data
   void clear();
@@ -102,7 +102,18 @@ public:
   }
 
   /// Set all connections for given entity
-  void set(std::size_t entity, std::size_t* connections);
+  template <typename T>
+  void set(std::size_t entity, T* connections)
+  {
+    dolfin_assert((entity + 1) < index_to_position.size());
+    dolfin_assert(connections);
+
+    // Copy data
+    const std::size_t num_connections
+        = index_to_position[entity + 1] - index_to_position[entity];
+    std::copy(connections, connections + num_connections,
+              _connections.begin() + index_to_position[entity]);
+  }
 
   /// Set all connections for all entities (T is a '2D' container, e.g. a
   /// std::vector<<std::vector<std::size_t>>,
@@ -150,7 +161,7 @@ private:
   std::size_t _d0, _d1;
 
   // Connections for all entities stored as a contiguous array
-  std::vector<std::uint32_t> _connections;
+  std::vector<std::int32_t> _connections;
 
   // Global number of connections for all entities (possibly not
   // computed)
@@ -160,5 +171,3 @@ private:
   std::vector<std::uint32_t> index_to_position;
 };
 }
-
-

@@ -559,7 +559,7 @@ void SystemAssembler::facet_wise_assembly(
     {
       // Get cells incident with facet (which is 0 and 1 here is arbitrary)
       dolfin_assert(facet.num_entities(D) == 2);
-      std::array<std::size_t, 2> cell_indices
+      std::array<std::int32_t, 2> cell_indices
           = {{facet.entities(D)[0], facet.entities(D)[1]}};
 
       // Make sure cell marker for '+' side is larger than cell marker

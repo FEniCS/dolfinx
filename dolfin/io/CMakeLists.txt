@@ -2,7 +2,6 @@ set(HEADERS
   base64.h
   dolfin_io.h
   Encoder.h
-  HDF5Attribute.h
   HDF5File.h
   HDF5Interface.h
   HDF5Utility.h
@@ -13,7 +12,6 @@ set(HEADERS
 
 set(SOURCES
   base64.cpp
-  HDF5Attribute.cpp
   HDF5File.cpp
   HDF5Interface.cpp
   HDF5Utility.cpp

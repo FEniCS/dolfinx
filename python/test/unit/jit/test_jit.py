@@ -21,11 +21,11 @@ import pytest
 import platform
 import dolfin
 from dolfin import *
-from dolfin_utils.test import (skip_if_not_PETSc, skip_if_not_SLEPc,
+from dolfin_utils.test import (skip_if_not_SLEPc,
                                skip_if_not_MPI, skip_in_serial,
                                skip_if_not_petsc4py)
 
-
+@pytest.mark.skip
 def test_nasty_jit_caching_bug():
 
     # This may result in something like "matrices are not aligned"
@@ -90,7 +90,6 @@ def test_mpi_pybind11():
         assert w1.underlying_comm() == w2.underlying_comm()
 
 
-@skip_if_not_PETSc
 def test_petsc():
     create_matrix_code = r'''
     #include <pybind11/pybind11.h>
@@ -185,7 +184,6 @@ def test_pass_array_double():
     assert abs(ans - 15) < 1e-15
 
 
-@skip_if_not_PETSc
 def test_compile_extension_module():
 
     # This test should do basically the same as the docstring of the
@@ -217,7 +215,7 @@ def test_compile_extension_module():
     vec = PETScVector(MPI.comm_world, 10)
     np_vec = vec.get_local()
     np_vec[:] = arange(len(np_vec))
-    vec.set_local(np_vec)
+    vec[:] = np_vec
     ext_module.PETSc_exp(vec)
     np_vec[:] = exp(np_vec)
     assert (np_vec == vec.get_local()).all()

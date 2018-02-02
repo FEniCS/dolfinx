@@ -66,5 +66,4 @@ public:
   /// @endcode
   double dot(const Edge& edge) const;
 };
-
 }

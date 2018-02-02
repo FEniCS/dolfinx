@@ -10,7 +10,6 @@
 #include "Facet.h"
 #include "LocalMeshData.h"
 #include "Mesh.h"
-#include "MeshEditor.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
 #include "MeshTopology.h"
@@ -117,6 +116,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // is necessary to distinguish between facets on an exterior
   // boundary and facets on a partition boundary (see
   // https://bugs.launchpad.net/dolfin/+bug/733834).
+
   DistributedMeshTools::init_facet_cell_connections(mesh);
 }
 //-----------------------------------------------------------------------------
@@ -281,7 +281,7 @@ void MeshPartitioning::build(
 
   timer.stop();
 
-  // Build lcoal mesh from new_mesh_data
+  // Build local mesh from new_mesh_data
   build_local_mesh(mesh, new_global_cell_indices, new_cell_vertices,
                    mesh_data.topology.cell_type, mesh_data.topology.dim,
                    mesh_data.topology.num_global_cells, vertex_indices,
@@ -1043,46 +1043,57 @@ void MeshPartitioning::build_local_mesh(
   log(PROGRESS, "Build local mesh during distributed mesh construction");
   Timer timer("Build local part of distributed mesh (from local mesh data)");
 
-  // Open mesh for editing
-  MeshEditor editor;
-  editor.open(mesh, cell_type, tdim, gdim);
+  // Set cell type
+  mesh._cell_type.reset(CellType::create(cell_type));
+  dolfin_assert(tdim == (int)mesh._cell_type->dim());
+
+  // Initialise geometry
+  mesh.geometry().init(gdim, 1);
+
+  // Initialize topological dimension
+  mesh.topology().init(tdim);
+
+  // Initialise vertices
+  const std::size_t num_vertices = vertex_coordinates.size();
+  mesh.topology().init(0, num_vertices, num_global_vertices);
+  mesh.topology().init_ghost(0, num_vertices);
+  mesh.topology().init_global_indices(0, num_vertices);
+  std::vector<std::size_t> num_vertex_points(1, num_vertices);
+  mesh.geometry().init_entities(num_vertex_points);
+
+  // Initialise cells
+  const std::size_t num_cells = cell_global_vertices.size();
+  mesh.topology().init(tdim, num_cells, num_global_cells);
+  mesh.topology().init_ghost(tdim, num_cells);
+  mesh.topology().init_global_indices(tdim, num_cells);
+  mesh.topology()(tdim, 0).init(num_cells, mesh.type().num_vertices());
 
   // Add vertices
-  editor.init_vertices_global(vertex_coordinates.size(), num_global_vertices);
-  Point point(gdim);
-  dolfin_assert(vertex_indices.size() == vertex_coordinates.size());
-  for (std::size_t i = 0; i < vertex_coordinates.size(); ++i)
-  {
-    for (std::int8_t j = 0; j < gdim; ++j)
-      point[j] = vertex_coordinates[i][j];
-    editor.add_vertex(i, vertex_indices[i], point);
-  }
+  std::copy(vertex_coordinates.data(),
+            vertex_coordinates.data() + gdim * num_vertices,
+            mesh.geometry().x().begin());
 
-  // Create CellType
-  std::unique_ptr<CellType> _cell_type(CellType::create(cell_type));
-  dolfin_assert(_cell_type);
-
-  // Add cells
-  editor.init_cells_global(cell_global_vertices.size(), num_global_cells);
-
-  const std::int8_t num_cell_vertices = _cell_type->num_vertices();
-  std::vector<std::size_t> cell(num_cell_vertices);
-  for (std::size_t i = 0; i < cell_global_vertices.size(); ++i)
+  // Add cells, remapping topology data to local indices
+  const std::int8_t num_cell_vertices = mesh._cell_type->num_vertices();
+  std::vector<std::int64_t> cell_topology(num_cell_vertices);
+  for (std::size_t i = 0; i < num_cells; ++i)
   {
     for (std::int8_t j = 0; j < num_cell_vertices; ++j)
     {
       // Get local cell vertex
       auto iter = vertex_global_to_local.find(cell_global_vertices[i][j]);
       dolfin_assert(iter != vertex_global_to_local.end());
-      cell[j] = iter->second;
+      cell_topology[j] = iter->second;
     }
-
-    editor.add_cell(i, global_cell_indices[i], cell);
+    mesh.topology()(tdim, 0).set(i, cell_topology.data());
   }
 
-  // Close mesh: Note that this must be done after creating the global
-  // vertex map or otherwise the ordering in mesh.close() will be
-  // wrong (based on local numbers).
-  editor.close();
+  // Set global indices for vertices
+  for (std::size_t i = 0; i < vertex_indices.size(); ++i)
+    mesh.topology().set_global_index(0, i, vertex_indices[i]);
+
+  // Set global indices for cells
+  for (std::size_t i = 0; i < cell_global_vertices.size(); ++i)
+    mesh.topology().set_global_index(tdim, i, global_cell_indices[i]);
 }
 //-----------------------------------------------------------------------------

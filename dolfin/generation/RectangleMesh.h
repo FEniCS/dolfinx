@@ -48,27 +48,27 @@ public:
                      std::array<std::size_t, 2> n, CellType::Type cell_type,
                      std::string diagonal = "right")
   {
-    Mesh mesh(comm);
     if (cell_type == CellType::Type::triangle)
-      build_tri(mesh, p, n, diagonal);
+      return build_tri(comm, p, n, diagonal);
     else if (cell_type == CellType::Type::quadrilateral)
-      build_quad(mesh, p, n);
+      return build_quad(comm, p, n);
     else
     {
       dolfin_error("RectangleMesh.h", "generate rectangle mesh",
                    "Wrong cell type '%d'", cell_type);
     }
 
-    return mesh;
+    // Will never reach this point
+    return build_quad(comm, p, n);
   }
 
 private:
   // Build mesh
-  static void build_tri(Mesh& mesh, const std::array<Point, 2>& p,
+  static Mesh build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
                         std::array<std::size_t, 2> n,
                         std::string diagonal = "right");
 
-  static void build_quad(Mesh& mesh, const std::array<Point, 2>& p,
+  static Mesh build_quad(MPI_Comm comm, const std::array<Point, 2>& p,
                          std::array<std::size_t, 2> n);
 };
 }

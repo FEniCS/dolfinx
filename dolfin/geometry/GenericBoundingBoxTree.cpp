@@ -10,11 +10,9 @@
 #define MAX_DIM 6
 
 #include "GenericBoundingBoxTree.h"
-#include "BoundingBoxTree1D.h" // used for internal point search tree
-#include "BoundingBoxTree2D.h" // used for internal point search tree
-#include "BoundingBoxTree3D.h" // used for internal point search tree
 #include "CollisionPredicates.h"
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/constants.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
@@ -24,32 +22,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GenericBoundingBoxTree::GenericBoundingBoxTree() : _tdim(0)
+GenericBoundingBoxTree::GenericBoundingBoxTree(std::size_t gdim)
+  : _tdim(0), _gdim(gdim)
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<GenericBoundingBoxTree>
-GenericBoundingBoxTree::create(unsigned int gdim)
-{
-  std::shared_ptr<GenericBoundingBoxTree> tree;
-
-  switch (gdim)
-  {
-  case 1:
-    tree.reset(new BoundingBoxTree1D());
-    break;
-  case 2:
-    tree.reset(new BoundingBoxTree2D());
-    break;
-  case 3:
-    tree.reset(new BoundingBoxTree3D());
-    break;
-  default:
-    dolfin_error("BoundingBoxTree.cpp", "build bounding box tree",
-                 "Not implemented for geometric dimension %d", gdim);
-  }
-  return tree;
 }
 //-----------------------------------------------------------------------------
 void GenericBoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
@@ -73,12 +49,10 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
   mesh.init(tdim);
 
   // Create bounding boxes for all entities (leaves)
-  const std::size_t _gdim = gdim();
   const unsigned int num_leaves = mesh.num_entities(tdim);
   std::vector<double> leaf_bboxes(2 * _gdim * num_leaves);
   for (auto &it : MeshRange<MeshEntity>(mesh, tdim))
-    compute_bbox_of_entity(leaf_bboxes.data() + 2 * _gdim * it.index(), it,
-                           _gdim);
+    compute_bbox_of_entity(leaf_bboxes.data() + 2 * _gdim * it.index(), it);
 
   // Create leaf partition (to be sorted)
   std::vector<unsigned int> leaf_partition(num_leaves);
@@ -86,7 +60,7 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
     leaf_partition[i] = i;
 
   // Recursively build the bounding box tree from the leaves
-  _build(leaf_bboxes, leaf_partition.begin(), leaf_partition.end(), _gdim);
+  _build(leaf_bboxes, leaf_partition.begin(), leaf_partition.end());
 
   log(PROGRESS, "Computed bounding box tree with %d nodes for %d entities.",
       num_bboxes(), num_leaves);
@@ -103,9 +77,8 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
     for (std::size_t i = 0; i != mpi_size; ++i)
       global_leaves[i] = i;
 
-    _global_tree = create(_gdim);
-    _global_tree->_build(recv_bbox, global_leaves.begin(), global_leaves.end(),
-                         _gdim);
+    _global_tree.reset(new GenericBoundingBoxTree(_gdim));
+    _global_tree->_build(recv_bbox, global_leaves.begin(), global_leaves.end());
 
     info("Computed global bounding box tree with %d boxes.",
          _global_tree->num_bboxes());
@@ -124,7 +97,7 @@ void GenericBoundingBoxTree::build(const std::vector<Point>& points)
     leaf_partition[i] = i;
 
   // Recursively build the bounding box tree from the leaves
-  _build(points, leaf_partition.begin(), leaf_partition.end(), gdim());
+  _build(points, leaf_partition.begin(), leaf_partition.end());
 
   info("Computed bounding box tree with %d nodes for %d points.", num_bboxes(),
        num_leaves);
@@ -312,8 +285,7 @@ void GenericBoundingBoxTree::clear()
 unsigned int
 GenericBoundingBoxTree::_build(const std::vector<double>& leaf_bboxes,
                                const std::vector<unsigned int>::iterator& begin,
-                               const std::vector<unsigned int>::iterator& end,
-                               std::size_t gdim)
+                               const std::vector<unsigned int>::iterator& end)
 {
   dolfin_assert(begin < end);
 
@@ -325,12 +297,12 @@ GenericBoundingBoxTree::_build(const std::vector<double>& leaf_bboxes,
   {
     // Get bounding box coordinates for leaf
     const unsigned int entity_index = *begin;
-    const double* b = leaf_bboxes.data() + 2 * gdim * entity_index;
+    const double* b = leaf_bboxes.data() + 2 * _gdim * entity_index;
 
     // Store bounding box data
     bbox.child_0 = num_bboxes(); // child_0 == node denotes a leaf
     bbox.child_1 = entity_index; // index of entity contained in leaf
-    return add_bbox(bbox, b, gdim);
+    return add_bbox(bbox, b);
   }
 
   // Compute bounding box of all bounding boxes
@@ -343,18 +315,17 @@ GenericBoundingBoxTree::_build(const std::vector<double>& leaf_bboxes,
   sort_bboxes(axis, leaf_bboxes, begin, middle, end);
 
   // Split bounding boxes into two groups and call recursively
-  bbox.child_0 = _build(leaf_bboxes, begin, middle, gdim);
-  bbox.child_1 = _build(leaf_bboxes, middle, end, gdim);
+  bbox.child_0 = _build(leaf_bboxes, begin, middle);
+  bbox.child_1 = _build(leaf_bboxes, middle, end);
 
   // Store bounding box data. Note that root box will be added last.
-  return add_bbox(bbox, b, gdim);
+  return add_bbox(bbox, b);
 }
 //-----------------------------------------------------------------------------
 unsigned int
 GenericBoundingBoxTree::_build(const std::vector<Point>& points,
                                const std::vector<unsigned int>::iterator& begin,
-                               const std::vector<unsigned int>::iterator& end,
-                               std::size_t gdim)
+                               const std::vector<unsigned int>::iterator& end)
 {
   dolfin_assert(begin < end);
 
@@ -368,7 +339,7 @@ GenericBoundingBoxTree::_build(const std::vector<Point>& points,
     const unsigned int point_index = *begin;
     bbox.child_0 = num_bboxes(); // child_0 == node denotes a leaf
     bbox.child_1 = point_index;  // index of entity contained in leaf
-    return add_point(bbox, points[point_index], gdim);
+    return add_point(bbox, points[point_index]);
   }
 
   // Compute bounding box of all points
@@ -381,11 +352,11 @@ GenericBoundingBoxTree::_build(const std::vector<Point>& points,
   sort_points(axis, points, begin, middle, end);
 
   // Split bounding boxes into two groups and call recursively
-  bbox.child_0 = _build(points, begin, middle, gdim);
-  bbox.child_1 = _build(points, middle, end, gdim);
+  bbox.child_0 = _build(points, begin, middle);
+  bbox.child_1 = _build(points, middle, end);
 
   // Store bounding box data. Note that root box will be added last.
-  return add_bbox(bbox, b, gdim);
+  return add_bbox(bbox, b);
 }
 //-----------------------------------------------------------------------------
 void GenericBoundingBoxTree::_compute_collisions(
@@ -679,7 +650,7 @@ void GenericBoundingBoxTree::build_point_search_tree(const Mesh& mesh) const
     points.push_back(cell.midpoint());
 
   // Select implementation
-  _point_search_tree = create(mesh.geometry().dim());
+  _point_search_tree.reset(new GenericBoundingBoxTree(mesh.geometry().dim()));
 
   // Build tree
   dolfin_assert(_point_search_tree);
@@ -687,29 +658,28 @@ void GenericBoundingBoxTree::build_point_search_tree(const Mesh& mesh) const
 }
 //-----------------------------------------------------------------------------
 void GenericBoundingBoxTree::compute_bbox_of_entity(double* b,
-                                                    const MeshEntity& entity,
-                                                    std::size_t gdim) const
+                                                    const MeshEntity& entity) const
 {
   // Get bounding box coordinates
   double* xmin = b;
-  double* xmax = b + gdim;
+  double* xmax = b + _gdim;
 
   // Get mesh entity data
   const MeshGeometry& geometry = entity.mesh().geometry();
-  const size_t num_vertices = entity.num_entities(0);
-  const unsigned int* vertices = entity.entities(0);
+  const std::size_t num_vertices = entity.num_entities(0);
+  const std::int32_t* vertices = entity.entities(0);
   dolfin_assert(num_vertices >= 2);
 
   // Get coordinates for first vertex
   const double* x = geometry.x(vertices[0]);
-  for (std::size_t j = 0; j < gdim; ++j)
+  for (std::size_t j = 0; j < _gdim; ++j)
     xmin[j] = xmax[j] = x[j];
 
   // Compute min and max over remaining vertices
   for (unsigned int i = 1; i < num_vertices; ++i)
   {
     const double* x = geometry.x(vertices[i]);
-    for (std::size_t j = 0; j < gdim; ++j)
+    for (std::size_t j = 0; j < _gdim; ++j)
     {
       xmin[j] = std::min(xmin[j], x[j]);
       xmax[j] = std::max(xmax[j], x[j]);
@@ -762,5 +732,179 @@ void GenericBoundingBoxTree::tree_print(std::stringstream& s, unsigned int i)
     tree_print(s, _bboxes[i].child_1);
     s << "}\n";
   }
+}
+//-----------------------------------------------------------------------------
+/// Sort leaf bounding boxes along given axis
+void GenericBoundingBoxTree::sort_bboxes
+(std::size_t axis, const std::vector<double>& leaf_bboxes,
+ const std::vector<unsigned int>::iterator& begin,
+ const std::vector<unsigned int>::iterator& middle,
+ const std::vector<unsigned int>::iterator& end)
+{
+  // Comparison lambda function with capture
+  auto cmp = [&gdim = _gdim, &leaf_bboxes, &axis](unsigned int i, unsigned int j)->bool
+  {
+    const double* bi = leaf_bboxes.data() + 2 * gdim * i + axis;
+    const double* bj = leaf_bboxes.data() + 2 * gdim * j + axis;
+    return (bi[0] + bi[gdim]) < (bj[0] + bj[gdim]);
+  };
+
+  std::nth_element(begin, middle, end, cmp);
+}
+//-----------------------------------------------------------------------------
+/// Compute bounding box of points
+void GenericBoundingBoxTree::compute_bbox_of_points(double* bbox, std::size_t& axis,
+                                                    const std::vector<Point>& points,
+                                                    const std::vector<unsigned int>::iterator& begin,
+                                                    const std::vector<unsigned int>::iterator& end)
+{
+  typedef std::vector<unsigned int>::const_iterator iterator;
+
+  // Get coordinates for first point
+  iterator it = begin;
+  const double* p = points[*it].coordinates();
+  for (unsigned int i = 0; i != _gdim; ++i)
+  {
+    bbox[i] = p[i];
+    bbox[i + _gdim] = p[i];
+  }
+
+  // Compute min and max over remaining points
+  for (; it != end; ++it)
+  {
+    const double* p = points[*it].coordinates();
+    for (unsigned int i = 0; i != _gdim; ++i)
+    {
+      bbox[i] = std::min(p[i], bbox[i]);
+      bbox[i+_gdim] = std::max(p[i], bbox[i+_gdim]);
+    }
+  }
+
+  // Compute longest axis
+  axis = 0;
+  double max_axis = bbox[_gdim] - bbox[0];
+  for (unsigned int i = 1; i != _gdim; ++i)
+    if ((bbox[_gdim + i] - bbox[i]) > max_axis)
+    {
+      max_axis = bbox[_gdim + i] - bbox[i];
+      axis = i;
+    }
+}
+//-----------------------------------------------------------------------------
+/// Compute bounding box of bounding boxes
+void GenericBoundingBoxTree::compute_bbox_of_bboxes(double* bbox, std::size_t& axis,
+                                                    const std::vector<double>& leaf_bboxes,
+                                                    const std::vector<unsigned int>::iterator& begin,
+                                                    const std::vector<unsigned int>::iterator& end)
+{
+  typedef std::vector<unsigned int>::const_iterator iterator;
+
+  // Get coordinates for first box
+  iterator it = begin;
+  const double* b = leaf_bboxes.data() + 2 *_gdim * (*it);
+  std::copy(b, b+2*_gdim, bbox);
+
+  // Compute min and max over remaining boxes
+  for (; it != end; ++it)
+  {
+    const double* b = leaf_bboxes.data() + 2 * _gdim * (*it);
+
+    for (unsigned int i = 0; i != _gdim; ++i)
+      bbox[i] = std::min(bbox[i], b[i]);
+    for (unsigned int i = _gdim; i != 2*_gdim; ++i)
+      bbox[i] = std::max(bbox[i], b[i]);
+  }
+
+  // Compute longest axis
+  axis = 0;
+  if (_gdim == 1)
+    return;
+
+  if (_gdim == 2)
+  {
+    const double x = bbox[2] - bbox[0];
+    const double y = bbox[3] - bbox[1];
+    if (y > x)
+      axis = 1;
+  }
+  else
+  {
+    const double x = bbox[3] - bbox[0];
+    const double y = bbox[4] - bbox[1];
+    const double z = bbox[5] - bbox[2];
+
+    if (x > y && x > z)
+      return;
+    else if (y > z)
+      axis = 1;
+    else
+      axis = 2;
+  }
+
+}
+//-----------------------------------------------------------------------------
+/// Compute squared distance between point and point
+double GenericBoundingBoxTree::compute_squared_distance_point(const double* x,
+                                      unsigned int node) const
+{
+  const double* p = _bbox_coordinates.data() + 2 * _gdim * node;
+  double d = 0.0;
+  for (unsigned int i = 0; i != _gdim; ++i)
+    d += (x[i] - p[i])*(x[i] - p[i]);
+
+  return d;
+}
+//-----------------------------------------------------------------------------
+/// Compute squared distance between point and bounding box
+double GenericBoundingBoxTree::compute_squared_distance_bbox(const double* x, unsigned int node) const
+{
+  // Note: Some else-if might be in order here but I assume the
+  // compiler can do a better job at optimizing/parallelizing this
+  // version. This is also the way the algorithm is presented in
+  // Ericsson.
+
+  const double* b = _bbox_coordinates.data() + 2 * _gdim * node;
+  double r2 = 0.0;
+
+  for (unsigned int i = 0; i != _gdim; ++i)
+  {
+    if (x[i] < b[i])
+      r2 += (x[i] - b[i]) * (x[i] - b[i]);
+  }
+  for (unsigned int i = 0; i != _gdim; ++i)
+  {
+    if (x[i] > b[i + _gdim])
+      r2 += (x[i] - b[i + _gdim]) * (x[i] - b[i + _gdim]);
+  }
+
+  return r2;
+}
+//-----------------------------------------------------------------------------
+/// Check whether bounding box (a) collides with bounding box (node)
+bool GenericBoundingBoxTree::bbox_in_bbox(const double* a, unsigned int node) const
+{
+  const double* b = _bbox_coordinates.data() + 2 * _gdim * node;
+
+  for (unsigned int i = 0; i != _gdim; ++i)
+  {
+    const double eps = DOLFIN_EPS_LARGE * (b[i + _gdim] - b[i]);
+    if (b[i] - eps > a[i + _gdim] or a[i] > b[i + _gdim] + eps)
+      return false;
+  }
+
+  return true;
+}
+//-----------------------------------------------------------------------------
+/// Check whether point (x) is in bounding box (node)
+bool GenericBoundingBoxTree::point_in_bbox(const double* x, const unsigned int node) const
+{
+  const double* b = _bbox_coordinates.data() + 6 * node;
+  for (unsigned int i = 0; i != _gdim; ++i)
+  {
+    const double eps = DOLFIN_EPS_LARGE * (b[i + _gdim] - b[i]);
+    if (b[i] - eps > x[i] or x[i] > b[i + _gdim] + eps)
+      return false;
+  }
+  return true;
 }
 //-----------------------------------------------------------------------------

@@ -22,7 +22,9 @@
 import pytest
 import os
 from dolfin import *
-from dolfin_utils.test import skip_if_not_HDF5, fixture, tempdir, xfail_with_serial_hdf5_in_parallel
+from dolfin_utils.test import (skip_if_not_HDF5, fixture, tempdir,
+                               xfail_with_serial_hdf5_in_parallel)
+from dolfin.la import PETScVector
 
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
@@ -92,7 +94,7 @@ def test_save_and_read_meshfunction_3D(tempdir):
     filename = os.path.join(tempdir, "meshfn-3d.h5")
 
     # Write to file
-    mesh = UnitCubeMesh(MPI.comm_world, 10, 10, 10)
+    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     mf_file = HDF5File(mesh.mpi_comm(), filename, "w")
 
     # save meshfuns to compare when reading back
@@ -119,7 +121,7 @@ def test_save_and_read_meshfunction_3D(tempdir):
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_mesh_value_collection(tempdir):
-    ndiv = 5
+    ndiv = 2
     filename = os.path.join(tempdir, "mesh_value_collection.h5")
     mesh = UnitCubeMesh(MPI.comm_world, ndiv, ndiv, ndiv)
 
@@ -150,7 +152,7 @@ def test_save_and_read_mesh_value_collection(tempdir):
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_mesh_value_collection_with_only_one_marked_entity(tempdir):
-    ndiv = 5
+    ndiv = 2
     filename = os.path.join(tempdir, "mesh_value_collection.h5")
     mesh = UnitCubeMesh(MPI.comm_world, ndiv, ndiv, ndiv)
     mvc = MeshValueCollection("size_t", mesh, 3)

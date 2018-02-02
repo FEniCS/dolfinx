@@ -37,7 +37,7 @@ from .cpp.common import (Variable, has_debug, has_hdf5, has_scotch,
                          has_petsc, has_petsc4py, has_parmetis,
                          has_slepc, has_slepc4py, git_commit_hash,
                          DOLFIN_EPS, DOLFIN_PI, TimingClear, TimingType,
-                         timing, timings, list_timings, SubSystemsManager)
+                         timing, timings, list_timings)
 
 if has_hdf5():
     from .cpp.io import HDF5File
@@ -45,49 +45,36 @@ if has_hdf5():
 from .cpp import MPI
 from .cpp.function import (Expression, Constant, FunctionAXPY)
 from .cpp.fem import (FiniteElement, DofMap,
-                      get_coordinates, create_mesh, set_coordinates,
-                      vertex_to_dof_map, dof_to_vertex_map,
-                      PointSource, DiscreteOperators,
-                      SparsityPatternBuilder)
+                      vertex_to_dof_map, dof_to_vertex_map)
 
 from .cpp.geometry import (BoundingBoxTree,
                            Point,
                            MeshPointIntersection,
                            intersect)
 from .cpp.generation import IntervalMesh, BoxMesh, RectangleMesh
-from .cpp.graph import GraphBuilder
 from .cpp.io import XDMFFile, VTKFile
-from .cpp.la import VectorSpaceBasis
-
-from .cpp.la import (PETScVector, PETScMatrix,
-                     PETScOptions, PETScLUSolver,
-                     PETScKrylovSolver)
-from .cpp.fem import PETScDMCollection
 
 if has_slepc():
     from .cpp.la import SLEPcEigenSolver
 
-from .cpp.la import (IndexMap, Scalar)
-from .cpp.log import (info, Table, set_log_level, get_log_level, LogLevel)
-from .cpp.math import ipow, near
 from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry,
                        CellType,
                        Cell, Facet, Face, Edge, Vertex, MeshEntity,
                        Cells, Facets, Faces, Edges, Vertices, MeshEntities,
                        CellRange, FacetRange, FaceRange, EdgeRange, VertexRange, EntityRange,
-                       SubDomain, MeshEditor, MeshQuality,
+                       SubDomain, MeshQuality,
                        PeriodicBoundaryComputation)
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver, OptimisationProblem)
-from .cpp.parameter import Parameters, parameters
+#from .cpp.parameter import Parameters, parameters
 
 # Import Python modules
-from . import la
+#from . import la
 from . import mesh
-from . import parameter
+#from . import parameter
 
-from .common import timer
-from .common.timer import Timer, timed
+#from .common import timer
+#from .common.timer import Timer, timed
 from .common.plotting import plot
 
 from .fem.assembling import (assemble_system,
@@ -112,12 +99,12 @@ from .function.specialfunctions import (MeshCoordinates, FacetArea, FacetNormal,
                                         MinFacetEdgeLength, MaxFacetEdgeLength)
 from .function.expression import Expression, UserExpression, CompiledExpression
 
-from .generation.builtin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
+from .generation import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
 
 # experimental
-from .jit.pybind11jit import compile_cpp_code
+#from .jit.pybind11jit import compile_cpp_code
 
-from .la import as_backend_type, la_index_dtype
+#from .la import la_index_dtype
 from .mesh.meshfunction import (MeshFunction)
 from .mesh.meshvaluecollection import MeshValueCollection
 from .mesh.subdomain import CompiledSubDomain

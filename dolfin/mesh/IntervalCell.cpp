@@ -6,7 +6,6 @@
 
 #include "IntervalCell.h"
 #include "Cell.h"
-#include "MeshEditor.h"
 #include "MeshEntity.h"
 #include "MeshGeometry.h"
 #include <algorithm>
@@ -52,9 +51,8 @@ std::size_t IntervalCell::num_vertices(std::size_t dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::create_entities(boost::multi_array<std::uint32_t, 2>& e,
-                                   std::size_t dim,
-                                   const std::uint32_t* v) const
+void IntervalCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
+                                   std::size_t dim, const std::int32_t* v) const
 {
   // For completeness, IntervalCell has two 'edges'
   dolfin_assert(dim == 0);
@@ -79,7 +77,7 @@ double IntervalCell::volume(const MeshEntity& interval) const
   const MeshGeometry& geometry = interval.mesh().geometry();
 
   // Get the coordinates of the two vertices
-  const std::uint32_t* vertices = interval.entities(0);
+  const std::int32_t* vertices = interval.entities(0);
   const Point x0 = geometry.point(vertices[0]);
   const Point x1 = geometry.point(vertices[1]);
 
@@ -104,7 +102,7 @@ double IntervalCell::squared_distance(const Cell& cell,
 {
   // Get the vertices as points
   const MeshGeometry& geometry = cell.mesh().geometry();
-  const std::uint32_t* vertices = cell.entities(0);
+  const std::int32_t* vertices = cell.entities(0);
   const Point a = geometry.point(vertices[0]);
   const Point b = geometry.point(vertices[1]);
 
@@ -146,7 +144,7 @@ Point IntervalCell::normal(const Cell& cell, std::size_t facet) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Get the two vertices as points
-  const std::uint32_t* vertices = cell.entities(0);
+  const std::int32_t* vertices = cell.entities(0);
   Point p0 = geometry.point(vertices[0]);
   Point p1 = geometry.point(vertices[1]);
 
@@ -173,7 +171,7 @@ Point IntervalCell::cell_normal(const Cell& cell) const
                  "Illegal geometric dimension (%d)", gdim);
 
   // Get the two vertices as points
-  const std::uint32_t* vertices = cell.entities(0);
+  const std::int32_t* vertices = cell.entities(0);
   Point p0 = geometry.point(vertices[0]);
   Point p1 = geometry.point(vertices[1]);
 
@@ -204,7 +202,7 @@ void IntervalCell::order(
   // Sort local vertices in ascending order, connectivity 1 - 0
   if (!topology(1, 0).empty())
   {
-    std::uint32_t* cell_vertices = const_cast<std::uint32_t*>(cell.entities(0));
+    std::int32_t* cell_vertices = const_cast<std::int32_t*>(cell.entities(0));
     sort_entities(2, cell_vertices, local_to_global_vertex_indices);
   }
 }

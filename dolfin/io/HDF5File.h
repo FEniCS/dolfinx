@@ -8,7 +8,6 @@
 
 #ifdef HAS_HDF5
 
-#include "HDF5Attribute.h"
 #include "HDF5Interface.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
@@ -29,7 +28,6 @@ template <typename T>
 class MeshFunction;
 template <typename T>
 class MeshValueCollection;
-class HDF5Attribute;
 
 class HDF5File : public Variable
 {
@@ -161,9 +159,6 @@ public:
 
   /// Check if dataset exists in HDF5 file
   bool has_dataset(const std::string dataset_name) const;
-
-  // Get/set attributes of an existing dataset
-  HDF5Attribute attributes(const std::string dataset_name);
 
   /// Set the MPI atomicity
   void set_mpi_atomicity(bool atomic);

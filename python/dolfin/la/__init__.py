@@ -10,21 +10,15 @@ from numpy import intc, int64
 import dolfin.cpp as cpp
 
 
+# Import pybind11 objects into dolfin.la
+from dolfin.cpp.la import VectorSpaceBasis
+from dolfin.cpp.la import (PETScMatrix, PETScVector, PETScLUSolver,
+                           PETScKrylovSolver, PETScOptions)
+
+
 def la_index_dtype():
     """Return the numpy dtype equivalent to the type of la_index"""
     return intc if cpp.common.sizeof_la_index() == 4 else int64
-
-
-def as_backend_type(x):
-    """Return Matrix and Vector backend instance. Not required for other
-    types as pybind11 automatically downcasts objects to the derived
-    type.
-
-    """
-    if isinstance(x, cpp.la.Vector) or isinstance(x, cpp.la.Matrix) or isinstance(x, cpp.la.LinearOperator):
-        return x.instance()
-    else:
-        return x
 
 
 # Extend PETScVector

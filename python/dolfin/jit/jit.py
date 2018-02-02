@@ -9,12 +9,13 @@ import pkgconfig
 import numpy
 import hashlib
 import dijitso
-import dolfin.cpp as cpp
+import ffc
 
+import dolfin.cpp as cpp
 from dolfin.cpp import MPI
 from functools import wraps
-import ffc
-from dolfin.cpp.parameter import parameters
+from dolfin.parameter import parameters
+
 
 # Get DOLFIN pkg-config data
 if pkgconfig.exists("dolfin"):

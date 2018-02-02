@@ -15,7 +15,6 @@ namespace dolfin
 {
 
 class Cell;
-class MeshEditor;
 class MeshEntity;
 template <typename T>
 class MeshFunction;
@@ -83,9 +82,9 @@ public:
 
   /// Create entities e of given topological dimension from
   /// vertices v
-  virtual void create_entities(boost::multi_array<unsigned int, 2>& e,
+  virtual void create_entities(boost::multi_array<std::int32_t, 2>& e,
                                std::size_t dim,
-                               const unsigned int* v) const = 0;
+                               const std::int32_t* v) const = 0;
 
   /// Compute (generalized) volume of mesh entity
   virtual double volume(const MeshEntity& entity) const = 0;
@@ -149,22 +148,20 @@ protected:
 
   /// Sort vertices based on global entity indices
   static void sort_entities(
-      std::size_t num_vertices, unsigned int* vertices,
+      std::size_t num_vertices, std::int32_t* vertices,
       const std::vector<std::int64_t>& local_to_global_vertex_indices);
 
 private:
   // Check if list of vertices is increasing
   static bool
-  increasing(std::size_t num_vertices, const unsigned int* vertices,
+  increasing(std::size_t num_vertices, const std::int32_t* vertices,
              const std::vector<std::int64_t>& local_to_global_vertex_indices);
 
   // Check that <entity e0 with vertices v0> <= <entity e1 with vertices v1>
   static bool
-  increasing(std::size_t n0, const unsigned int* v0, std::size_t n1,
-             const unsigned int* v1, std::size_t num_vertices,
-             const unsigned int* vertices,
+  increasing(std::size_t n0, const std::int32_t* v0, std::size_t n1,
+             const std::int32_t* v1, std::size_t num_vertices,
+             const std::int32_t* vertices,
              const std::vector<std::int64_t>& local_to_global_vertex_indices);
 };
 }
-
-

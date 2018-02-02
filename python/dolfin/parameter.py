@@ -7,9 +7,12 @@
 
 """FIXME: document"""
 
-import dolfin.cpp as cpp
+import dolfin.cpp
 from ffc import default_jit_parameters
 from dolfin.cpp.parameter import parameters, Parameters
+
+
+#__all__ = ["parameters", "Parameters"]
 
 
 #  Extend cpp.Parameters with a __getitem__ method
@@ -30,7 +33,7 @@ def __getitem__(self, key):
 # FIXME: This is probably better handled on the C++ side using
 # py::dict
 def update(self, params):
-    if isinstance(params, cpp.parameter.Parameters):
+    if isinstance(params, dolfin.cpp.parameter.Parameters):
         self._update(params)
     elif isinstance(params, dict):
         for key in params:
@@ -43,8 +46,8 @@ def update(self, params):
 
 
 # Extend the cpp.parameter.Parameters class and clean-up
-cpp.parameter.Parameters.__getitem__ = __getitem__
-cpp.parameter.Parameters.update = update
+dolfin.cpp.parameter.Parameters.__getitem__ = __getitem__
+dolfin.cpp.parameter.Parameters.update = update
 del __getitem__, update
 
 
@@ -54,7 +57,7 @@ def ffc_default_parameters():
 
     # FIXME: intialising MPI because setting parameters makes MPI
     # calls, possibly via the log systems. Needs to be fixed.
-    cpp.MPI.init()
+    dolfin.cpp.MPI.init()
 
     d = default_jit_parameters()
     p = Parameters("form_compiler")

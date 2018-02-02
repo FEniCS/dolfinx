@@ -20,7 +20,7 @@
 import pytest
 import numpy as np
 
-from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, UnitDiscMesh
+from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
 from dolfin import FunctionSpace, VectorFunctionSpace, Function, MPI
 from dolfin import UserExpression
 from dolfin import get_coordinates, set_coordinates, Mesh
@@ -30,12 +30,7 @@ from dolfin_utils.test import skip_in_parallel, fixture
 
 @fixture
 def meshes_p1():
-    return UnitIntervalMesh(10), UnitSquareMesh(3, 3), UnitCubeMesh(2, 2, 2)
-
-
-@fixture
-def meshes_p2():
-    return UnitDiscMesh.create(MPI.comm_world, 1, 2, 2), UnitDiscMesh.create(MPI.comm_world, 1, 2, 3)
+    return UnitIntervalMesh(MPI.comm_world, 10), UnitSquareMesh(MPI.comm_world, 3, 3), UnitCubeMesh(MPI.comm_world, 2, 2, 2)
 
 
 def _test_get_set_coordinates(mesh):
@@ -48,16 +43,16 @@ def _test_get_set_coordinates(mesh):
     _check_coords(mesh, c)
 
     # Backup and zero coords
-    coords = mesh.coordinates()
+    coords = mesh.geometry().x()
     coords_old = coords.copy()
     coords[:] = 0.0
-    assert np.all(mesh.coordinates() == 0.0)
+    assert np.all(mesh.geometry().x() == 0.0)
 
     # Set again to old value
     set_coordinates(mesh.geometry(), c)
 
     # Check
-    assert np.all(mesh.coordinates() == coords_old)
+    assert np.all(mesh.geometry().x() == coords_old)
 
 def _check_coords(mesh, c):
     # FIXME: This does not work for higher-order geometries although it should
@@ -70,18 +65,13 @@ def _check_coords(mesh, c):
             values[:] = x[:]
     x = X(domain=mesh, element=mesh.ufl_coordinate_element())
     x = interpolate(x, c.function_space())
-    x.vector()[:] -= c.vector()
-    assert np.isclose(x.vector().norm("l1"), 0.0)
+    vec = x.vector()
+    vec -= c.vector()
+    assert np.isclose(vec.norm("l1"), 0.0)
 
 
 def test_linear(meshes_p1):
     for mesh in meshes_p1:
-        _test_get_set_coordinates(mesh)
-
-
-@skip_in_parallel(reason="FunctionSpace(UnitDiscMesh) not working in parallel")
-def test_higher_order(meshes_p2):
-    for mesh in meshes_p2:
         _test_get_set_coordinates(mesh)
 
 

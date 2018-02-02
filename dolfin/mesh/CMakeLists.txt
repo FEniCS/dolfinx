@@ -11,7 +11,6 @@ set(HEADERS
   LocalMeshData.h
   LocalMeshValueCollection.h
   MeshConnectivity.h
-  MeshEditor.h
   MeshEntity.h
   MeshFunction.h
   MeshGeometry.h
@@ -43,7 +42,6 @@ set(SOURCES
   LocalMeshData.cpp
   MeshConnectivity.cpp
   Mesh.cpp
-  MeshEditor.cpp
   MeshEntity.cpp
   MeshFunction.cpp
   MeshGeometry.cpp
