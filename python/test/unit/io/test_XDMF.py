@@ -323,7 +323,7 @@ def test_save_3d_vector_series(tempdir, encoding):
     if invalid_config(encoding):
         pytest.skip("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "u_3D.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
+    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
