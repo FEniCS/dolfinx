@@ -720,25 +720,26 @@ void la(py::module& m)
 
             self = value;
           })
-      .def("__setitem__", [](dolfin::PETScVector& self, py::slice slice, const
-                           py::array_t<double> x)
-         {
-           if (x.ndim() != 1)
-             throw py::index_error("Values to set must be a 1D array");
+      .def(
+          "__setitem__",
+          [](dolfin::PETScVector& self, py::slice slice,
+             const py::array_t<double> x) {
+            if (x.ndim() != 1)
+              throw py::index_error("Values to set must be a 1D array");
 
-           std::size_t start, stop, step, slicelength;
-           if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
-             throw py::error_already_set();
-           if (start != 0 or stop != self.size() or step != 1)
-             throw std::range_error("Only full slices are supported");
+            std::size_t start, stop, step, slicelength;
+            if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
+              throw py::error_already_set();
+            if (start != 0 or stop != self.size() or step != 1)
+              throw std::range_error("Only full slices are supported");
 
-           std::vector<double> values(x.data(), x.data() + x.size());
-           if (!values.empty())
-           {
-             self.set_local(values);
-             self.apply();
-           }
-         })
+            std::vector<double> values(x.data(), x.data() + x.size());
+            if (!values.empty())
+            {
+              self.set_local(values);
+              self.apply();
+            }
+          })
       .def("vec", &dolfin::PETScVector::vec,
            "Return underlying PETSc Vec object");
 
@@ -764,6 +765,15 @@ void la(py::module& m)
       .def("set_options_prefix", &dolfin::PETScMatrix::set_options_prefix)
       .def("set_nullspace", &dolfin::PETScMatrix::set_nullspace)
       .def("set_near_nullspace", &dolfin::PETScMatrix::set_near_nullspace);
+/*
+.def("__sub__",
+     [](const dolfin::PETScMatrix& self, const dolfin::PETScMatrix& B) {
+       dolfin::PETScMatrix C(self);
+       C -= B;
+       return C;
+     },
+     py::is_operator());
+*/
 
 #endif
 

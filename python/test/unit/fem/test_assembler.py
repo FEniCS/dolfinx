@@ -47,4 +47,9 @@ def test_matrix_assembly():
 
     assembler = dolfin.fem.assembling.Assembler(a, L)
     A = assembler.assemble_matrix()
-    print(A.norm("frobenius"))
+
+    # Old assembler for reference (requires petsc4py)
+    B = dolfin.cpp.la.PETScMatrix(mesh.mpi_comm())
+    ass0 = dolfin.fem.assembling.SystemAssembler(a, L)
+    ass0.assemble(B)
+    assert pytest.approx(0.0, 1.0e-17) == (A.mat() - B.mat()).norm()
