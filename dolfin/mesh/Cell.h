@@ -276,5 +276,4 @@ public:
     ufc_cell.index = index();
   }
 };
-
 }

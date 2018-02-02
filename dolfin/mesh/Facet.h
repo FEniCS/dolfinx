@@ -48,5 +48,4 @@ public:
   /// calling this function.
   bool exterior() const;
 };
-
 }

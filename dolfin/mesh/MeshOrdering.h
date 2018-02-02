@@ -24,5 +24,3 @@ public:
   static bool ordered(const Mesh& mesh);
 };
 }
-
-

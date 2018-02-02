@@ -515,5 +515,3 @@ std::string MeshValueCollection<T>::str(bool verbose) const
 }
 //---------------------------------------------------------------------------
 }
-
-

@@ -7,8 +7,8 @@
 #include "MeshQuality.h"
 #include "Cell.h"
 #include "Mesh.h"
-#include "MeshIterator.h"
 #include "MeshFunction.h"
+#include "MeshIterator.h"
 #include "Vertex.h"
 #include <dolfin/common/MPI.h>
 #include <sstream>
@@ -23,7 +23,7 @@ MeshQuality::radius_ratios(std::shared_ptr<const Mesh> mesh)
   MeshFunction<double> cf(mesh, mesh->topology().dim(), 0.0);
 
   // Compute radius ration
-  for (auto &cell : MeshRange<Cell>(*mesh))
+  for (auto& cell : MeshRange<Cell>(*mesh))
     cf[cell] = cell.radius_ratio();
 
   return cf;
@@ -33,7 +33,7 @@ std::pair<double, double> MeshQuality::radius_ratio_min_max(const Mesh& mesh)
 {
   double qmin = std::numeric_limits<double>::max();
   double qmax = 0.0;
-  for (auto &cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<Cell>(mesh))
   {
     qmin = std::min(qmin, cell.radius_ratio());
     qmax = std::max(qmax, cell.radius_ratio());
@@ -58,7 +58,7 @@ MeshQuality::radius_ratio_histogram_data(const Mesh& mesh, std::size_t num_bins)
   std::cout << num_bins << std::endl;
   std::cout << static_cast<double>(num_bins) << std::endl;
 
-  for (auto &cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<Cell>(mesh))
   {
     const double ratio = cell.radius_ratio();
 
@@ -169,7 +169,7 @@ std::pair<double, double> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
   double d_ang_max = -1.0;
 
   std::vector<double> angs(6);
-  for (auto &cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<Cell>(mesh))
   {
     // Get the angles from the next cell
     dihedral_angles(cell, angs);
@@ -205,7 +205,7 @@ MeshQuality::dihedral_angles_histogram_data(const Mesh& mesh,
     bins[i] = static_cast<double>(i) * interval + interval / 2.0;
 
   std::vector<double> angs(6);
-  for (auto &cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<Cell>(mesh))
   {
     // this one should return the value of the angle
     dihedral_angles(cell, angs);

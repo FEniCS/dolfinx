@@ -159,7 +159,7 @@ private:
 
   // Check that <entity e0 with vertices v0> <= <entity e1 with vertices v1>
   static bool
-    increasing(std::size_t n0, const std::int32_t* v0, std::size_t n1,
+  increasing(std::size_t n0, const std::int32_t* v0, std::size_t n1,
              const std::int32_t* v1, std::size_t num_vertices,
              const std::int32_t* vertices,
              const std::vector<std::int64_t>& local_to_global_vertex_indices);

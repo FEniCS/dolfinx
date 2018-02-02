@@ -55,10 +55,9 @@ public:
   /// Compute map from local index of shared entity to list
   /// of sharing process and local index,
   /// i.e. (local index, [(sharing process p, local index on p)])
-  static std::
-      unordered_map<std::uint32_t,
-                    std::vector<std::pair<std::uint32_t, std::uint32_t>>>
-      compute_shared_entities(const Mesh& mesh, std::size_t d);
+  static std::unordered_map<
+      std::uint32_t, std::vector<std::pair<std::uint32_t, std::uint32_t>>>
+  compute_shared_entities(const Mesh& mesh, std::size_t d);
 
   /// Reorders the vertices in a distributed mesh according to
   /// their global index, and redistributes them evenly across processes

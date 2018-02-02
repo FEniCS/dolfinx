@@ -54,19 +54,6 @@ public:
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
-  /// Copy data from mesh
-  void extract_mesh_data(const Mesh& mesh);
-
-  /// Broadcast mesh data from main process (used when Mesh is created on one
-  /// process)
-  void broadcast_mesh_data(const MPI_Comm mpi_comm);
-
-  /// Receive mesh data from main process
-  void receive_mesh_data(const MPI_Comm mpi_comm);
-
-  /// Reorder cell data
-  void reorder();
-
   /// Holder for geometry data
   struct Geometry
   {
@@ -84,9 +71,6 @@ public:
 
     /// Global vertex indices for all vertices stored on local processor
     std::vector<std::int64_t> vertex_indices;
-
-    /// Unpack received vertex coordinates
-    void unpack_vertex_coordinates(const std::vector<double>& values);
   };
 
   /// Geometry data
@@ -123,9 +107,6 @@ public:
     //        and tdim
     /// Cell type
     CellType::Type cell_type;
-
-    /// Unpack received cell vertices
-    void unpack_cell_vertices(const std::vector<std::int64_t>& values);
   };
 
   /// Holder for topology data

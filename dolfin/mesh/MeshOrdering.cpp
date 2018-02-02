@@ -5,9 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MeshOrdering.h"
-#include "MeshIterator.h"
 #include "Cell.h"
 #include "Mesh.h"
+#include "MeshIterator.h"
 #include <dolfin/log/log.h>
 #include <memory>
 #include <vector>
@@ -33,7 +33,7 @@ void MeshOrdering::order(Mesh& mesh)
     return;
 
   // Iterate over all cells and order the mesh entities locally
-  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
     cell.order(local_to_global_vertex_indices);
 }
 //-----------------------------------------------------------------------------
@@ -49,7 +49,7 @@ bool MeshOrdering::ordered(const Mesh& mesh)
       = mesh.topology().global_indices(0);
 
   // Check if all cells are ordered
-  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     if (!cell.ordered(local_to_global_vertex_indices))
       return false;

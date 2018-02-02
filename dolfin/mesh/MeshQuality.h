@@ -78,5 +78,3 @@ public:
                                        std::size_t num_intervals = 100);
 };
 }
-
-

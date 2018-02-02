@@ -165,5 +165,3 @@ private:
   std::vector<double> coordinates;
 };
 }
-
-

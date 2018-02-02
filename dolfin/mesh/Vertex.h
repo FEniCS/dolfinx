@@ -37,5 +37,4 @@ public:
   /// Return array of vertex coordinates (const version)
   const double* x() const { return _mesh->geometry().x(_local_index); }
 };
-
 }
