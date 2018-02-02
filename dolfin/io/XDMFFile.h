@@ -390,14 +390,6 @@ private:
                           const std::vector<std::int64_t>& topology_data,
                           const std::vector<T>& value_data);
 
-  // Build mesh (serial)
-  static void build_mesh(Mesh& mesh, const CellType& cell_type,
-                         std::int64_t num_points, std::int64_t num_cells,
-                         int tdim, int gdim,
-                         const pugi::xml_node& topology_dataset_node,
-                         const pugi::xml_node& geometry_dataset_node,
-                         const boost::filesystem::path& parent_path);
-
   // Build local mesh data structure
   static void build_local_mesh_data(LocalMeshData& local_mesh_data,
                                     const CellType& cell_type,
@@ -406,14 +398,6 @@ private:
                                     const pugi::xml_node& topology_dataset_node,
                                     const pugi::xml_node& geometry_dataset_node,
                                     const boost::filesystem::path& parent_path);
-
-  static void
-  build_mesh_quadratic(Mesh& mesh, const CellType& cell_type,
-                       std::int64_t num_points, std::int64_t num_cells,
-                       int tdim, int gdim,
-                       const pugi::xml_node& topology_dataset_node,
-                       const pugi::xml_node& geometry_dataset_node,
-                       const boost::filesystem::path& relative_path);
 
   // Add mesh to XDMF xml_node (usually a Domain or Time Grid) and
   // write data
@@ -455,7 +439,7 @@ private:
   // duplicated on other processes and should not be output on this
   // process
   static std::set<std::uint32_t> compute_nonlocal_entities(const Mesh& mesh,
-                                                          int cell_dim);
+                                                           int cell_dim);
 
   // Return topology data on this process as a flat vector
   template <typename T>
