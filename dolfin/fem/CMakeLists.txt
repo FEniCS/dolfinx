@@ -1,4 +1,5 @@
 set(HEADERS
+  Assembler.h
   AssemblerBase.h
   DirichletBC.h
   DiscreteOperators.h
@@ -19,6 +20,7 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
+  Assembler.cpp
   AssemblerBase.cpp
   DirichletBC.cpp
   DiscreteOperators.cpp
