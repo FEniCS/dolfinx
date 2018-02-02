@@ -61,6 +61,15 @@ public:
   Mesh(MPI_Comm comm);
 
   /// Constructor
+  ///
+  /// @param comm (MPI_Comm)
+  ///
+  /// @param type (CellType::Type)
+  ///
+  /// @param geometry
+  ///         Matrix containing geometic points of the mesh
+  /// @param topology
+  ///         Matrix containing the vertex indices for the cells of the mesh
   Mesh(MPI_Comm comm, CellType::Type type,
        Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>>

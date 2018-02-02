@@ -25,15 +25,6 @@ class Mesh;
 /// correspond to a topologically connected mesh; it merely stores a
 /// list of vertex coordinates, a list of cell-vertex mappings and a
 /// list of global vertex numbers for the locally stored vertices.
-///
-/// It is typically used for parsing meshes in parallel from mesh
-/// XML files. After local mesh data has been parsed on each
-/// processor, a subsequent repartitioning takes place: first a
-/// geometric partitioning of the vertices followed by a
-/// redistribution of vertex and cell data, and then a topological
-/// partitioning again followed by redistribution of vertex and cell
-/// data, at that point corresponding to topologically connected
-/// meshes instead of local mesh data.
 
 class LocalMeshData : public Variable
 {

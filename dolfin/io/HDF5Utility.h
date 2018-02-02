@@ -62,10 +62,6 @@ public:
       std::vector<std::pair<std::size_t, std::size_t>>& global_owner,
       const Mesh& mesh);
 
-  /// Convert LocalMeshData structure to a Mesh, used when running
-  /// in serial
-  static void build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data);
-
   /// Missing docstring
   static void
   set_local_vector_values(MPI_Comm mpi_comm, PETScVector& x, const Mesh& mesh,
