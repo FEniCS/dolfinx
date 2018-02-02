@@ -25,15 +25,6 @@ class Mesh;
 /// correspond to a topologically connected mesh; it merely stores a
 /// list of vertex coordinates, a list of cell-vertex mappings and a
 /// list of global vertex numbers for the locally stored vertices.
-///
-/// It is typically used for parsing meshes in parallel from mesh
-/// XML files. After local mesh data has been parsed on each
-/// processor, a subsequent repartitioning takes place: first a
-/// geometric partitioning of the vertices followed by a
-/// redistribution of vertex and cell data, and then a topological
-/// partitioning again followed by redistribution of vertex and cell
-/// data, at that point corresponding to topologically connected
-/// meshes instead of local mesh data.
 
 class LocalMeshData : public Variable
 {
@@ -54,19 +45,6 @@ public:
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
-  /// Copy data from mesh
-  void extract_mesh_data(const Mesh& mesh);
-
-  /// Broadcast mesh data from main process (used when Mesh is created on one
-  /// process)
-  void broadcast_mesh_data(const MPI_Comm mpi_comm);
-
-  /// Receive mesh data from main process
-  void receive_mesh_data(const MPI_Comm mpi_comm);
-
-  /// Reorder cell data
-  void reorder();
-
   /// Holder for geometry data
   struct Geometry
   {
@@ -84,9 +62,6 @@ public:
 
     /// Global vertex indices for all vertices stored on local processor
     std::vector<std::int64_t> vertex_indices;
-
-    /// Unpack received vertex coordinates
-    void unpack_vertex_coordinates(const std::vector<double>& values);
   };
 
   /// Geometry data
@@ -123,9 +98,6 @@ public:
     //        and tdim
     /// Cell type
     CellType::Type cell_type;
-
-    /// Unpack received cell vertices
-    void unpack_cell_vertices(const std::vector<std::int64_t>& values);
   };
 
   /// Holder for topology data

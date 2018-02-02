@@ -140,15 +140,18 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   const Point x3 = geometry.point(vertices[3]);
 
   // Formula for volume from http://mathworld.wolfram.com
-  const double v
-      = (x0[0] * (x1[1] * x2[2] + x3[1] * x1[2] + x2[1] * x3[2] - x2[1] * x1[2]
-                  - x1[1] * x3[2] - x3[1] * x2[2])
-         - x1[0] * (x0[1] * x2[2] + x3[1] * x0[2] + x2[1] * x3[2]
-                    - x2[1] * x0[2] - x0[1] * x3[2] - x3[1] * x2[2])
-         + x2[0] * (x0[1] * x1[2] + x3[1] * x0[2] + x1[1] * x3[2]
-                    - x1[1] * x0[2] - x0[1] * x3[2] - x3[1] * x1[2])
-         - x3[0] * (x0[1] * x1[2] + x1[1] * x2[2] + x2[1] * x0[2]
-                    - x1[1] * x0[2] - x2[1] * x1[2] - x0[1] * x2[2]));
+  const double v = (x0[0]
+                        * (x1[1] * x2[2] + x3[1] * x1[2] + x2[1] * x3[2]
+                           - x2[1] * x1[2] - x1[1] * x3[2] - x3[1] * x2[2])
+                    - x1[0]
+                          * (x0[1] * x2[2] + x3[1] * x0[2] + x2[1] * x3[2]
+                             - x2[1] * x0[2] - x0[1] * x3[2] - x3[1] * x2[2])
+                    + x2[0]
+                          * (x0[1] * x1[2] + x3[1] * x0[2] + x1[1] * x3[2]
+                             - x1[1] * x0[2] - x0[1] * x3[2] - x3[1] * x1[2])
+                    - x3[0]
+                          * (x0[1] * x1[2] + x1[1] * x2[2] + x2[1] * x0[2]
+                             - x1[1] * x0[2] - x2[1] * x1[2] - x0[1] * x2[2]));
 
   return std::abs(v) / 6.0;
 }

@@ -1894,17 +1894,9 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
 
   t.stop();
 
-  // Build distributed mesh
-  // FIXME: Why is the mesh built into HDF5Utility? This should be in the mesh
-  // code.
-  if (_mpi_comm.size() == 1)
-    HDF5Utility::build_local_mesh(input_mesh, local_mesh_data);
-  else
-  {
-    const std::string ghost_mode = dolfin::parameters["ghost_mode"];
-    MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data,
-                                             ghost_mode);
-  }
+  const std::string ghost_mode = dolfin::parameters["ghost_mode"];
+  MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data,
+                                           ghost_mode);
 }
 //-----------------------------------------------------------------------------
 bool HDF5File::has_dataset(const std::string dataset_name) const
@@ -1924,6 +1916,6 @@ bool HDF5File::get_mpi_atomicity() const
   dolfin_assert(_hdf5_file_id > 0);
   return HDF5Interface::get_mpi_atomicity(_hdf5_file_id);
 }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 
 #endif

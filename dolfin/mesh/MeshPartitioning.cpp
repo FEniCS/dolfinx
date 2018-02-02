@@ -116,6 +116,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // is necessary to distinguish between facets on an exterior
   // boundary and facets on a partition boundary (see
   // https://bugs.launchpad.net/dolfin/+bug/733834).
+
   DistributedMeshTools::init_facet_cell_connections(mesh);
 }
 //-----------------------------------------------------------------------------
@@ -1043,9 +1044,9 @@ void MeshPartitioning::build_local_mesh(
   Timer timer("Build local part of distributed mesh (from local mesh data)");
 
   // Map over geometry data
-  Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
-                                 Eigen::Dynamic, Eigen::RowMajor>>
-    geom(vertex_coordinates.data(), vertex_coordinates.size(), gdim);
+  Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                 Eigen::RowMajor>>
+      geom(vertex_coordinates.data(), vertex_coordinates.size(), gdim);
 
   // Create CellType
   std::unique_ptr<CellType> _cell_type(CellType::create(cell_type));
@@ -1054,7 +1055,7 @@ void MeshPartitioning::build_local_mesh(
   // Remap topology data to local indices
   const std::int8_t num_cell_vertices = _cell_type->num_vertices();
   Eigen::Matrix<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-    topo(cell_global_vertices.size(), num_cell_vertices);
+      topo(cell_global_vertices.size(), num_cell_vertices);
 
   for (std::size_t i = 0; i < cell_global_vertices.size(); ++i)
   {
@@ -1079,7 +1080,5 @@ void MeshPartitioning::build_local_mesh(
   mesh.topology().init(tdim, global_cell_indices.size(), num_global_cells);
   for (std::size_t i = 0; i < cell_global_vertices.size(); ++i)
     mesh.topology().set_global_index(tdim, i, global_cell_indices[i]);
-
-  mesh.order();
 }
 //-----------------------------------------------------------------------------

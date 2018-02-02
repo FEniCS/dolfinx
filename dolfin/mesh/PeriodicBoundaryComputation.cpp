@@ -92,13 +92,13 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
   mesh.init(tdim - 1, dim);
 
   std::vector<bool> visited(mesh.num_entities(dim), false);
-  for (auto &f : MeshRange<Facet>(mesh))
+  for (auto& f : MeshRange<Facet>(mesh))
   {
     // Consider boundary entities only
     const bool global_exterior_facet = (f.num_global_entities(tdim) == 1);
     if (global_exterior_facet)
     {
-      for (auto &e : EntityRange<MeshEntity>(f, dim))
+      for (auto& e : EntityRange<MeshEntity>(f, dim))
       {
         // Avoid visiting entities more than once
         if (visited[e.index()])
@@ -300,9 +300,9 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
                      std::vector<std::pair<std::uint32_t, std::uint32_t>>>
       shared_entities_map
       = DistributedMeshTools::compute_shared_entities(*mesh, dim);
-  std::unordered_map<std::uint32_t,
-                     std::vector<std::pair<std::uint32_t, std::uint32_t>>>::
-      const_iterator e;
+  std::unordered_map<
+      std::uint32_t,
+      std::vector<std::pair<std::uint32_t, std::uint32_t>>>::const_iterator e;
   std::vector<std::vector<std::pair<std::uint32_t, std::uint32_t>>>
       shared_entities(mesh->num_entities(dim));
   for (e = shared_entities_map.begin(); e != shared_entities_map.end(); ++e)

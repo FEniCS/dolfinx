@@ -243,7 +243,7 @@ void HDF5Utility::cell_owners_in_range(
   global_owner.resize(range[1] - range[0]);
 
   std::vector<std::vector<std::size_t>> send_owned_global(num_processes);
-  for (auto &mesh_cell : MeshRange<Cell>(mesh))
+  for (auto& mesh_cell : MeshRange<Cell>(mesh))
   {
     const std::size_t global_i = mesh_cell.global_index();
     const std::size_t local_i = mesh_cell.index();
@@ -276,31 +276,6 @@ void HDF5Utility::cell_owners_in_range(
 
   // All cells in range should be accounted for
   dolfin_assert(count == range[1] - range[0]);
-}
-//-----------------------------------------------------------------------------
-void HDF5Utility::build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data)
-{
-  // NOTE: This function is only used when running in serial
-
-  // Copy topological data from int64_t to int32_t
-  std::unique_ptr<CellType> cell_type
-    (CellType::create(mesh_data.topology.cell_type));
-  Eigen::Matrix<std::int32_t, Eigen::Dynamic,
-                Eigen::Dynamic, Eigen::RowMajor>
-    topo(mesh_data.topology.num_global_cells,
-         cell_type->num_vertices());
-  std::copy(mesh_data.topology.cell_vertices.data(),
-            mesh_data.topology.cell_vertices.data() + topo.rows()*topo.cols(),
-            topo.data());
-
-  Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
-                           Eigen::Dynamic, Eigen::RowMajor>>
-    geom(mesh_data.geometry.vertex_coordinates.data(),
-         mesh_data.geometry.num_global_vertices,
-         mesh_data.geometry.dim);
-
-  mesh.create(mesh_data.topology.cell_type, geom, topo);
-  mesh.order();
 }
 //-----------------------------------------------------------------------------
 void HDF5Utility::set_local_vector_values(

@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MeshEntity.h"
-#include "MeshIterator.h"
 #include "Mesh.h"
+#include "MeshIterator.h"
 #include "MeshTopology.h"
 #include "Vertex.h"
 #include <dolfin/log/log.h>
@@ -105,7 +105,7 @@ Point MeshEntity::midpoint() const
   double y = 0.0;
   double z = 0.0;
 
-  for (auto &v : EntityRange<Vertex>(*this))
+  for (auto& v : EntityRange<Vertex>(*this))
   {
     x += v.point().x();
     y += v.point().y();

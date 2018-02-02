@@ -111,5 +111,3 @@ LocalMeshValueCollection<T>::LocalMeshValueCollection(
 }
 //---------------------------------------------------------------------------
 }
-
-

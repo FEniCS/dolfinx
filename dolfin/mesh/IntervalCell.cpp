@@ -52,8 +52,7 @@ std::size_t IntervalCell::num_vertices(std::size_t dim) const
 }
 //-----------------------------------------------------------------------------
 void IntervalCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
-                                   std::size_t dim,
-                                   const std::int32_t* v) const
+                                   std::size_t dim, const std::int32_t* v) const
 {
   // For completeness, IntervalCell has two 'edges'
   dolfin_assert(dim == 0);

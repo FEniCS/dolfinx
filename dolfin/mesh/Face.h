@@ -31,5 +31,4 @@ public:
   /// Compute normal to the face
   Point normal() const;
 };
-
 }

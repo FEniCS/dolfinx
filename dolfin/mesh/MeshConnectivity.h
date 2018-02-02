@@ -66,8 +66,8 @@ public:
   const std::int32_t* operator()(std::size_t entity) const
   {
     return (entity + 1) < index_to_position.size()
-      ? &_connections[index_to_position[entity]]
-      : 0;
+               ? &_connections[index_to_position[entity]]
+               : 0;
   }
 
   /// Return contiguous array of connections for all entities
@@ -110,11 +110,10 @@ public:
 
     // Copy data
     const std::size_t num_connections
-      = index_to_position[entity + 1] - index_to_position[entity];
+        = index_to_position[entity + 1] - index_to_position[entity];
     std::copy(connections, connections + num_connections,
               _connections.begin() + index_to_position[entity]);
   }
-
 
   /// Set all connections for all entities (T is a '2D' container, e.g. a
   /// std::vector<<std::vector<std::size_t>>,

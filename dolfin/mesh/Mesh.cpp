@@ -374,8 +374,6 @@ void Mesh::create(
   // Initialize topological dimension
   _topology.init(tdim);
 
-  _ordered = false;
-
   // Initialize mesh data
   // FIXME: sort out global indices for parallel
   // This method assumes it is running in serial, and

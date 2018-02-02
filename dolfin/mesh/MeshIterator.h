@@ -154,10 +154,16 @@ public:
   }
 
   T* operator->()
-  { _entity._local_index = *_connections; return &_entity; }
+  {
+    _entity._local_index = *_connections;
+    return &_entity;
+  }
 
   T& operator*()
-  { _entity._local_index = *_connections; return _entity; }
+  {
+    _entity._local_index = *_connections;
+    return _entity;
+  }
 
   template <typename X>
   friend class EntityRange;
@@ -171,14 +177,21 @@ private:
 };
 
 /// Range type
-enum class MeshRangeType { REGULAR, ALL, GHOST };
+enum class MeshRangeType
+{
+  REGULAR,
+  ALL,
+  GHOST
+};
 
 template <class T>
 class MeshRange
 {
 public:
-
-  MeshRange(const Mesh& mesh, MeshRangeType type=MeshRangeType::REGULAR) : _mesh(mesh), _type(type) {}
+  MeshRange(const Mesh& mesh, MeshRangeType type = MeshRangeType::REGULAR)
+      : _mesh(mesh), _type(type)
+  {
+  }
 
   const MeshIterator<T> begin() const
   {
@@ -191,7 +204,6 @@ public:
 
     return MeshIterator<T>(_mesh, 0);
   }
-
 
   MeshIterator<T> begin()
   {
@@ -209,11 +221,9 @@ public:
   {
     auto it = MeshIterator<T>(_mesh, 0);
     if (_type == MeshRangeType::REGULAR)
-      it->_local_index
-        = _mesh.topology().ghost_offset(it->dim());
+      it->_local_index = _mesh.topology().ghost_offset(it->dim());
     else
-      it->_local_index
-        = _mesh.topology().size(it->dim());
+      it->_local_index = _mesh.topology().size(it->dim());
 
     return it;
   }
@@ -233,16 +243,17 @@ template <>
 class MeshRange<MeshEntity>
 {
 public:
-
-   MeshRange(const Mesh& mesh, int dim,
-             MeshRangeType type=MeshRangeType::REGULAR)
-   : _mesh(mesh), _dim(dim), _type(type) {}
+  MeshRange(const Mesh& mesh, int dim,
+            MeshRangeType type = MeshRangeType::REGULAR)
+      : _mesh(mesh), _dim(dim), _type(type)
+  {
+  }
 
   const MeshIterator<MeshEntity> begin() const
   {
     if (_type == MeshRangeType::GHOST)
       return MeshIterator<MeshEntity>(_mesh, _dim,
-                             _mesh.topology().ghost_offset(_dim));
+                                      _mesh.topology().ghost_offset(_dim));
 
     return MeshIterator<MeshEntity>(_mesh, _dim, 0);
   }
@@ -251,7 +262,7 @@ public:
   {
     if (_type == MeshRangeType::GHOST)
       return MeshIterator<MeshEntity>(_mesh, _dim,
-                             _mesh.topology().ghost_offset(_dim));
+                                      _mesh.topology().ghost_offset(_dim));
 
     return MeshIterator<MeshEntity>(_mesh, _dim, 0);
   }
@@ -260,10 +271,9 @@ public:
   {
     if (_type == MeshRangeType::REGULAR)
       return MeshIterator<MeshEntity>(_mesh, _dim,
-                     _mesh.topology().ghost_offset(_dim));
+                                      _mesh.topology().ghost_offset(_dim));
 
-    return MeshIterator<MeshEntity>(_mesh, _dim,
-                                    _mesh.topology().size(_dim));
+    return MeshIterator<MeshEntity>(_mesh, _dim, _mesh.topology().size(_dim));
   }
 
 private:
@@ -275,7 +285,6 @@ private:
 
   MeshRangeType _type;
 };
-
 
 // FIXME: Add method 'entities MeshEntity::items(std::size_t dim);'
 
@@ -299,8 +308,8 @@ public:
   const MeshEntityIteratorNew<T> end() const
   {
     auto it = MeshEntityIteratorNew<T>(_entity, 0);
-    std::size_t n = (_entity._dim == it->_dim) ?
-      1 : _entity.num_entities(it->_dim);
+    std::size_t n
+        = (_entity._dim == it->_dim) ? 1 : _entity.num_entities(it->_dim);
     it._connections += n;
     return it;
   }
@@ -330,8 +339,7 @@ public:
 
   const MeshEntityIteratorNew<MeshEntity> end() const
   {
-    std::size_t n = (_entity._dim == _dim) ?
-      1 : _entity.num_entities(_dim);
+    std::size_t n = (_entity._dim == _dim) ? 1 : _entity.num_entities(_dim);
     return MeshEntityIteratorNew<MeshEntity>(_entity, _dim, n);
   }
 
@@ -342,5 +350,4 @@ private:
   // Dimension of incident entities
   const std::uint32_t _dim;
 };
-
 }
