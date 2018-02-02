@@ -16,6 +16,8 @@ namespace dolfin
 // Forward declarations
 class DirichletBC;
 class Form;
+class PETScMatrix;
+class PETScVector;
 
 namespace fem
 {
@@ -26,6 +28,12 @@ public:
   /// Constructor
   Assembler(std::shared_ptr<const Form> a, std::shared_ptr<const Form> L,
             std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
+  // Assemble matrix
+  void assemble(PETScMatrix& A);
+
+  // Assemble vector
+  void assemble(PETScVector& b);
 
 private:
   // Bilinear and linear forms

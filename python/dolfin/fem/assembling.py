@@ -34,6 +34,19 @@ class Assembler:
         self.bcs = bcs
         self.assembler = None
 
+    def assemble_matrix(self, A=None):
+        if self.assembler is None:
+            A_dolfin_form = _create_dolfin_form(self.a)
+            b_dolfin_form = _create_dolfin_form(self.L)
+            self.assembler = cpp.fem.SystemAssembler(A_dolfin_form, b_dolfin_form, [])
+
+        if A is None:
+            comm = A_dolfin_form.mesh().mpi_comm()
+            A = cpp.la.PETScMatrix(comm)
+
+        self.assembler.assemble(A)
+        return A
+
 
 def _create_dolfin_form(form, form_compiler_parameters=None,
                         function_spaces=None):

@@ -34,3 +34,17 @@ def test_initialisation():
     L = v*f*dx
 
     assembler = dolfin.fem.assembling.Assembler(a, L)
+
+
+def test_matrix_assembly():
+    mesh = dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 4, 4, 4)
+    V = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
+    v = dolfin.function.argument.TestFunction(V)
+    u = dolfin.function.argument.TrialFunction(V)
+    f = dolfin.function.constant.Constant(0.0)
+    a = v*u*dx
+    L = v*f*dx
+
+    assembler = dolfin.fem.assembling.Assembler(a, L)
+    A = assembler.assemble_matrix()
+    print(A.norm("frobenius"))

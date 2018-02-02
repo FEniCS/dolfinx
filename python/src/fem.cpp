@@ -241,7 +241,9 @@ void fem(py::module& m)
       "Assembler object for assembling forms into matrices and vectors")
       .def(py::init<std::shared_ptr<const dolfin::Form>,
                     std::shared_ptr<const dolfin::Form>,
-                    std::vector<std::shared_ptr<const dolfin::DirichletBC>>>());
+                    std::vector<std::shared_ptr<const dolfin::DirichletBC>>>())
+      .def("assemble", py::overload_cast<dolfin::PETScMatrix&>(
+                           &dolfin::fem::Assembler::assemble));
 
   // dolfin::AssemblerBase
   py::class_<dolfin::AssemblerBase, std::shared_ptr<dolfin::AssemblerBase>>(
