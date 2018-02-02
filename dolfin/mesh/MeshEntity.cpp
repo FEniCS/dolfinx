@@ -138,6 +138,8 @@ std::uint32_t MeshEntity::owner() const
                  "Ownership of non-ghost cells is local process");
   }
 
+  dolfin_assert((int)_mesh->topology().cell_owner().size()
+                > _local_index - offset);
   return _mesh->topology().cell_owner()[_local_index - offset];
 }
 //-----------------------------------------------------------------------------
