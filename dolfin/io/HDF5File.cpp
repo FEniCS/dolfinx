@@ -7,7 +7,6 @@
 #ifdef HAS_HDF5
 
 #include "HDF5File.h"
-#include "HDF5Attribute.h"
 #include "HDF5Interface.h"
 #include "HDF5Utility.h"
 #include <boost/filesystem.hpp>
@@ -809,23 +808,27 @@ void HDF5File::write(const Function& u, const std::string name,
     write(u, name);
     const std::size_t vec_count = 1;
 
-    // if (!has_dataset(dataset_name))
-    //{
-    //  dolfin_error("HDF5File.cpp", "accessing attributes",
-    //               "Dataset \"%s\" not found", dataset_name.c_str());
-    //}
+    // if (!HDF5Interface::has_dataset(_hdf5_file_id, name))
+    //  throw std::runtime_error("Setting attribute on dataset. Dataset does not
+    //  exist");
 
-    HDF5Attribute attribute(_hdf5_file_id, name);
-    attribute.set("count", vec_count);
+    // FIXME: is this check required?
+    if (HDF5Interface::has_attribute(_hdf5_file_id, name, "count"))
+      HDF5Interface::delete_attribute(_hdf5_file_id, name, "count");
+    HDF5Interface::add_attribute(_hdf5_file_id, name, "count", vec_count);
 
     const std::string vec_name = name + "/vector_0";
-    HDF5Attribute attribute1(_hdf5_file_id, vec_name);
-    attribute1.set("timestamp", timestamp);
+    // FIXME: is this check required?
+    if (HDF5Interface::has_attribute(_hdf5_file_id, vec_name, "timestamp"))
+      HDF5Interface::delete_attribute(_hdf5_file_id, vec_name, "timestamp");
+    HDF5Interface::add_attribute(_hdf5_file_id, vec_name, "timestamp",
+                                 timestamp);
   }
   else
   {
-    HDF5Attribute attr(_hdf5_file_id, name);
-    if (!attr.exists("count"))
+    // HDF5Attribute attr(_hdf5_file_id, name);
+
+    if (!HDF5Interface::has_attribute(_hdf5_file_id, name, "count"))
     {
       dolfin_error(
           "HDF5File.cpp", "append to series",
@@ -833,16 +836,21 @@ void HDF5File::write(const Function& u, const std::string name,
     }
 
     // Get count of vectors in dataset, and increment
-    std::size_t vec_count;
-    attr.get("count", vec_count);
+    std::size_t vec_count = 0;
+    HDF5Interface::get_attribute(_hdf5_file_id, name, "count", vec_count);
+
     std::string vec_name = name + "/vector_" + std::to_string(vec_count);
     ++vec_count;
-    attr.set("count", vec_count);
+    if (HDF5Interface::has_attribute(_hdf5_file_id, name, "count"))
+      HDF5Interface::delete_attribute(_hdf5_file_id, name, "count");
+    HDF5Interface::add_attribute(_hdf5_file_id, name, "count", vec_count);
 
     // Write new vector and save timestamp
     write(*u.vector(), vec_name);
-    HDF5Attribute attr1(_hdf5_file_id, vec_name);
-    attr1.set("timestamp", timestamp);
+    if (HDF5Interface::has_attribute(_hdf5_file_id, vec_name, "timestamp"))
+      HDF5Interface::delete_attribute(_hdf5_file_id, vec_name, "timestamp");
+    HDF5Interface::add_attribute(_hdf5_file_id, vec_name, "timestamp",
+                                 timestamp);
   }
 }
 //-----------------------------------------------------------------------------
@@ -1904,20 +1912,6 @@ bool HDF5File::has_dataset(const std::string dataset_name) const
   dolfin_assert(_hdf5_file_id > 0);
   return HDF5Interface::has_dataset(_hdf5_file_id, dataset_name);
 }
-//-----------------------------------------------------------------------------
-/*
-HDF5Attribute HDF5File::attributes(const std::string dataset_name)
-{
-  dolfin_assert(_hdf5_file_id > 0);
-  if (!has_dataset(dataset_name))
-  {
-    dolfin_error("HDF5File.cpp", "accessing attributes",
-                 "Dataset \"%s\" not found", dataset_name.c_str());
-  }
-
-  return HDF5Attribute(_hdf5_file_id, dataset_name);
-}
-*/
 //-----------------------------------------------------------------------------
 void HDF5File::set_mpi_atomicity(bool atomic)
 {
