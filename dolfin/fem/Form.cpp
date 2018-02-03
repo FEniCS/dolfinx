@@ -4,9 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <memory>
-#include <string>
-
 #include "Form.h"
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
@@ -16,6 +13,8 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <memory>
+#include <string>
 
 using namespace dolfin;
 

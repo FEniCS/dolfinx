@@ -88,5 +88,3 @@ private:
   std::vector<std::pair<double, std::shared_ptr<const Function>>> _pairs;
 };
 }
-
-

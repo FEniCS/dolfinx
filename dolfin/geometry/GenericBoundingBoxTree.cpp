@@ -697,7 +697,7 @@ void GenericBoundingBoxTree::sort_points(
   auto cmp = [&points, &axis](unsigned int i, unsigned int j) -> bool {
     const double* pi = points[i].coordinates();
     const double* pj = points[j].coordinates();
-    return pi[_axis] < pj[axis];
+    return pi[axis] < pj[axis];
   };
 
   std::nth_element(begin, middle, end, cmp);
