@@ -4,10 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "LocalAssembler.h"
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
-
-#include "LocalAssembler.h"
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/UFC.h>
@@ -36,7 +35,7 @@ void LocalAssembler::assemble(
       || ufc.form.has_interior_facet_integrals())
   {
     unsigned int local_facet = 0;
-    for (auto &facet : EntityRange<Facet>(cell))
+    for (auto& facet : EntityRange<Facet>(cell))
     {
       ufc_cell.local_facet = local_facet;
       const int Ncells = facet.num_entities(cell.dim());

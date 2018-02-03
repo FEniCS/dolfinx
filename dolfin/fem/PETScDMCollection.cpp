@@ -6,9 +6,8 @@
 
 #ifdef HAS_PETSC
 
-#include <boost/multi_array.hpp>
-
 #include "PETScDMCollection.h"
+#include <boost/multi_array.hpp>
 #include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -17,8 +16,8 @@
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <petscmat.h>
 
 using namespace dolfin;
@@ -84,7 +83,7 @@ tabulate_coordinates_to_dofs(const FunctionSpace& V)
       = dofmap.ownership_range()[1] - dofmap.ownership_range()[0];
   RangedIndexSet already_visited(std::array<std::int64_t, 2>{{0, local_size}});
 
-  for (auto &cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<Cell>(mesh))
   {
     // Get cell coordinates
     cell.get_coordinate_dofs(coordinate_dofs);

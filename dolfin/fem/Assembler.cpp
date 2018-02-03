@@ -57,11 +57,40 @@ void fem::Assembler::assemble(PETScMatrix& A)
   const std::size_t D = mesh.topology().dim();
   mesh.init(D);
 
+  // Function spaces for each axis
+  std::array<const FunctionSpace*, 2> spaces
+      = {{_a->function_space(0).get(), _a->function_space(1).get()}};
+
   // Collect pointers to dof maps
   std::array<const GenericDofMap*, 2> dofmaps
-      = {{ufc.dolfin_form.function_space(0)->dofmap().get(),
-          ufc.dolfin_form.function_space(1)->dofmap().get()}};
+      = {{spaces[0]->dofmap().get(), spaces[1]->dofmap().get()}};
 
+  // FIXME: For the matrix, we only need to know if there is a boundary
+  // condition on the entry. The value is not required.
+
+  // FIXME: Avoid duplication when spaces[0] == spaces[1]
+
+  // Collect boundary conditions by matrix axis
+  std::array<DirichletBC::Map, 2> boundary_values;
+  for (std::size_t i = 0; i < _bcs.size(); ++i)
+  {
+    assert(_bcs[i]);
+    assert(_bcs[i]->function_space());
+    for (std::size_t axis = 0; axis < 2; ++axis)
+    {
+      if (spaces[axis]->contains(*_bcs[i]->function_space()))
+      {
+        // FIXME: find way to avoid gather, or perform with a single
+        // gather
+        _bcs[i]->get_boundary_values(boundary_values[axis]);
+        if (MPI::size(mesh.mpi_comm()) > 1 and _bcs[i]->method() != "pointwise")
+          _bcs[i]->gather(boundary_values[axis]);
+      }
+    }
+  }
+
+  // FIXME: Switch to row-major
+  // Data structures used in assembly
   ufc::cell ufc_cell;
   Eigen::MatrixXd coordinate_dofs;
   Eigen::MatrixXd Ae;
@@ -97,7 +126,22 @@ void fem::Assembler::assemble(PETScMatrix& A)
     cell_integral->tabulate_tensor(Ae.data(), ufc.w(), coordinate_dofs.data(),
                                    ufc_cell.orientation);
 
-    // Zero rows and columns with Dirichlet bcs
+    // Zero rows/columns for Dirichlet bcs
+    for (int i = 0; i < Ae.rows(); ++i)
+    {
+      const std::size_t ii = dmap0[i];
+      DirichletBC::Map::const_iterator bc_value = boundary_values[0].find(ii);
+      if (bc_value != boundary_values[0].end())
+        Ae.row(i).setZero();
+    }
+    // Loop over columns
+    for (int j = 0; j < Ae.cols(); ++j)
+    {
+      const std::size_t jj = dmap1[j];
+      DirichletBC::Map::const_iterator bc_value = boundary_values[1].find(jj);
+      if (bc_value != boundary_values[1].end())
+        Ae.col(j).setZero();
+    }
 
     // Add to matrix
     A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
@@ -105,7 +149,6 @@ void fem::Assembler::assemble(PETScMatrix& A)
   }
 
   // Place 1 on diagonal for
-
 
   // FIXME: Put this elsewhere?
   // Finalise matrix
@@ -120,7 +163,7 @@ void fem::Assembler::assemble(PETScVector& b)
 
   // Get mesh from form
   assert(_l->mesh());
-  //const Mesh& mesh = *(_l->mesh());
+  // const Mesh& mesh = *(_l->mesh());
 
   // FIXME: Remove UFC
   // Create data structures for local assembly data

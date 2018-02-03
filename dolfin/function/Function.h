@@ -6,15 +6,14 @@
 
 #pragma once
 
+#include "FunctionAXPY.h"
+#include "GenericFunction.h"
 #include <Eigen/Dense>
+#include <dolfin/common/types.h>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "FunctionAXPY.h"
-#include "GenericFunction.h"
-#include <dolfin/common/types.h>
 
 namespace ufc
 {
@@ -275,5 +274,3 @@ private:
   bool _allow_extrapolation;
 };
 }
-
-

@@ -7,17 +7,16 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <dolfin/common/Variable.h>
+#include <dolfin/common/types.h>
+#include <dolfin/la/IndexMap.h>
+#include <dolfin/log/log.h>
 #include <map>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
-
-#include <dolfin/common/Variable.h>
-#include <dolfin/common/types.h>
-#include <dolfin/la/IndexMap.h>
-#include <dolfin/log/log.h>
 
 namespace ufc
 {
@@ -193,5 +192,3 @@ public:
   std::shared_ptr<const SubDomain> constrained_domain;
 };
 }
-
-

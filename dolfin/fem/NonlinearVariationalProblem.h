@@ -39,7 +39,6 @@ public:
       std::vector<std::shared_ptr<const DirichletBC>> bcs,
       std::shared_ptr<const Form> J = nullptr);
 
-
   /// Set the bounds for bound constrained solver
   void set_bounds(const Function& lb_func, const Function& ub_func);
 
@@ -96,5 +95,3 @@ private:
   std::shared_ptr<const PETScVector> _ub;
 };
 }
-
-

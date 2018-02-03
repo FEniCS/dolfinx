@@ -26,8 +26,8 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/SubDomain.h>
 
 using namespace dolfin;
@@ -331,7 +331,7 @@ void SystemAssembler::cell_wise_assembly(
   // Iterate over all cells
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  for (auto &cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<Cell>(mesh))
   {
     // Check that cell is not a ghost
     dolfin_assert(!cell.is_ghost());
@@ -396,7 +396,7 @@ void SystemAssembler::cell_wise_assembly(
       // Compute exterior facet integral if present
       if (has_exterior_facet_integrals)
       {
-        for (auto &facet : EntityRange<Facet>(cell))
+        for (auto& facet : EntityRange<Facet>(cell))
         {
           // Only consider exterior facets
           if (!facet.exterior())
@@ -546,7 +546,7 @@ void SystemAssembler::facet_wise_assembly(
   // Iterate over facets
   std::array<ufc::cell, 2> ufc_cell;
   std::array<std::vector<double>, 2> coordinate_dofs;
-  for (auto &facet : MeshRange<Facet>(mesh))
+  for (auto& facet : MeshRange<Facet>(mesh))
   {
     // Number of cells sharing facet
     const std::size_t num_cells = facet.num_entities(D);

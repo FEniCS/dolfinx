@@ -104,7 +104,6 @@ UFC::UFC(const Form& a)
     _macro_w[i].resize(n);
     macro_w_pointer[i] = _macro_w[i].data();
   }
-
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& c,

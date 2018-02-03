@@ -6,11 +6,10 @@
 
 #pragma once
 
+#include <dolfin/common/types.h>
 #include <map>
 #include <memory>
 #include <vector>
-
-#include <dolfin/common/types.h>
 
 // Forward declaration
 namespace ufc
@@ -324,5 +323,3 @@ private:
   const std::size_t _rank;
 };
 }
-
-
