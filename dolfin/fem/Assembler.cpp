@@ -50,9 +50,53 @@ fem::Assembler::Assembler(
 //-----------------------------------------------------------------------------
 void fem::Assembler::assemble(PETScMatrix& A, PETScVector& b)
 {
-  // Assemble A and b
-  this->assemble(A, *_a[0][0]);
-  this->assemble(b, *_l[0]);
+  if (!A.empty())
+  {
+    if (_a.size() > 1 or _a[0].size() > 1)
+    {
+      std::vector<Mat> petsc_mats;
+      std::vector<std::shared_ptr<PETScMatrix>> _mats;
+      for (auto row : _a)
+      {
+        for (auto block : row)
+        {
+          if (block)
+          {
+            auto mat = std::make_shared<PETScMatrix>(MPI_COMM_WORLD);
+            _mats.push_back(mat);
+            fem::init(*mat, *block);
+            petsc_mats.push_back(mat->mat());
+          }
+          else
+            petsc_mats.push_back(NULL);
+        }
+      }
+      // Intitialise block (MatNest) matrix
+      MatSetType(A.mat(), MATNEST);
+      MatNestSetSubMats(A.mat(), _a.size(), NULL, _a[0].size(), NULL,
+                        petsc_mats.data());
+    }
+    else
+      fem::init(A, *_a[0][0]);
+  }
+  else
+  {
+    // Extract block
+    // MatNestGetSubMat(Mat A,PetscInt idxm,PetscInt jdxm,Mat *sub)
+  }
+
+  // Assemble blocks (A)
+  for (std::size_t i = 0; i < _a.size(); ++i)
+  {
+    for (std::size_t j = 0; j < _a[i].size(); ++j)
+      this->assemble(A, *_a[i][j]);
+  }
+
+  // Assemble blocks (b)
+  for (auto row : _l)
+  {
+    this->assemble(b, *row);
+  }
 
   // const int mpi_size = dolfin::MPI::size(A.mpi_comm());
 
@@ -64,7 +108,8 @@ void fem::Assembler::assemble(PETScMatrix& A, PETScVector& b)
     assert(_bcs[i]->function_space());
     _bcs[i]->get_boundary_values(boundary_values);
 
-    // FIXME: this probably isn't required with MatZeroRowsColumnsLocal - check
+    // FIXME: this probably isn't required with MatZeroRowsColumnsLocal -
+    // check
     // if (mpi_size > 1 and _bcs[i]->method() != "pointwise")
     //  _bcs[i]->gather(boundary_values);
   }
