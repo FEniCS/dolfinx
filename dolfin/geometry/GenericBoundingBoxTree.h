@@ -19,31 +19,8 @@ namespace dolfin
 class Mesh;
 class MeshEntity;
 
-/// Base class for bounding box implementations (envelope-letter
-/// design)
-
 class GenericBoundingBoxTree
 {
-private:
-  class less_x_bbox
-  {
-    /// Bounding boxes
-    const std::vector<double>& bboxes;
-    std::size_t _axis, _gdim;
-
-    /// Constructor
-  less_x_bbox(const std::vector<double>& bboxes, std::size_t  axis, std::size_t gdim)
-    : bboxes(bboxes), _axis(axis), _gdim(gdim) {}
-
-    /// Comparison operator
-    inline bool operator()(unsigned int i, unsigned int j)
-    {
-      const double* bi = bboxes.data() + 2 * _gdim * i;
-      const double* bj = bboxes.data() + 2 * _gdim * j;
-      return bi[_axis] + bi[_axis + _gdim] < bj[_axis] + bj[_axis + _gdim];
-    }
-  };
-
 public:
   /// Constructor
   GenericBoundingBoxTree(std::size_t gdim);
@@ -95,7 +72,7 @@ public:
   /// Print out for debugging
   std::string str(bool verbose = false);
 
-protected:
+private:
   /// Bounding box data. Leaf nodes are indicated by setting child_0
   /// equal to the node itself. For leaf nodes, child_1 is set to the
   /// index of the entity contained in the leaf bounding box.
@@ -238,69 +215,6 @@ protected:
     // Leaf nodes are marked by setting child_0 equal to the node itself
     return bbox.child_0 == node;
   }
-
-  /// Comparison operator for sorting of points in x-direction. The
-  /// corresponding
-  /// comparison operators for bounding boxes are dimension-dependent
-  /// and are therefore implemented in the subclasses.
-  struct less_x_point
-  {
-    /// Points
-    const std::vector<Point>& points;
-
-    /// Constructor
-    less_x_point(const std::vector<Point>& points) : points(points) {}
-
-    /// Comparison operator
-    inline bool operator()(unsigned int i, unsigned int j)
-    {
-      const double* pi = points[i].coordinates();
-      const double* pj = points[j].coordinates();
-      return pi[0] < pj[0];
-    }
-  };
-
-  /// Comparison operator for sorting of points in y-direction. The
-  /// corresponding
-  /// comparison operators for bounding boxes are dimension-dependent
-  /// and are therefore implemented in the subclasses.
-  struct less_y_point
-  {
-    /// Points
-    const std::vector<Point>& points;
-
-    /// Constructor
-    less_y_point(const std::vector<Point>& points) : points(points) {}
-
-    /// Comparison operator
-    inline bool operator()(unsigned int i, unsigned int j)
-    {
-      const double* pi = points[i].coordinates();
-      const double* pj = points[j].coordinates();
-      return pi[1] < pj[1];
-    }
-  };
-
-  /// Comparison operator for sorting of points in z-direction. The
-  /// corresponding
-  /// comparison operators for bounding boxes are dimension-dependent
-  /// and are therefore implemented in the subclasses.
-  struct less_z_point
-  {
-    /// Points
-    const std::vector<Point>& points;
-
-    /// Constructor
-    less_z_point(const std::vector<Point>& points) : points(points) {}
-
-    /// Comparison operator
-    inline bool operator()(unsigned int i, unsigned int j)
-    {
-      const double* pi = points[i].coordinates();
-      const double* pj = points[j].coordinates();
-      return pi[2] < pj[2];
-    }
-  };
 
   /// Return bounding box coordinates for node
   const double* get_bbox_coordinates(unsigned int node) const
