@@ -6,7 +6,6 @@
 
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
-
 #include "LocalAssembler.h"
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/GenericDofMap.h>

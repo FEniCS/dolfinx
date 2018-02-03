@@ -411,7 +411,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
   modified_vertex_indices_global
       = std::vector<std::int64_t>(mesh.num_vertices(), -1);
 
-  for (auto &vertex : MeshRange<Vertex>(mesh))
+  for (auto& vertex : MeshRange<Vertex>(mesh))
   {
     const std::size_t local_index = vertex.index();
     if (slave_vertex[local_index])
@@ -582,7 +582,7 @@ void DofMapBuilder::build_local_ufc_dofmap(
   dofmap.resize(mesh.num_cells(),
                 std::vector<la_index_t>(ufc_dofmap.num_element_dofs()));
   std::vector<std::size_t> dof_holder(ufc_dofmap.num_element_dofs());
-  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Fill entity indices array
     get_cell_entities_local(cell, entity_indices, needs_entities);
@@ -1069,7 +1069,7 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   node_local_to_global.resize(offset_local[1]);
 
   // Build dofmaps from ufc::dofmap
-  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Get reference to container for cell dofs
     std::vector<la_index_t>& cell_nodes = node_dofmap[cell.index()];
@@ -1188,7 +1188,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   node_local_to_global.resize(offset_local[1]);
 
   // Build dofmaps from ufc::dofmap
-  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Get reference to container for cell dofs
     std::vector<la_index_t>& cell_nodes = node_dofmap[cell.index()];
@@ -1220,7 +1220,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   std::vector<std::size_t> node_local_to_global_mod(offset_local[1]);
   node_ufc_local_to_local.resize(offset_local[1]);
   int counter = 0;
-  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Get nodes (local) on cell
     std::vector<la_index_t>& cell_nodes = node_dofmap[cell.index()];
@@ -1335,7 +1335,7 @@ void DofMapBuilder::compute_shared_nodes(
 
   // Mark dofs associated ghost cells as ghost dofs (provisionally)
   bool has_ghost_cells = false;
-  for (auto &c : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& c : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     const std::vector<la_index_t>& cell_nodes = node_dofmap[c.index()];
     if (c.is_shared())
@@ -1353,7 +1353,7 @@ void DofMapBuilder::compute_shared_nodes(
     if (c.is_ghost())
     {
       has_ghost_cells = true;
-      for (auto &f : EntityRange<Facet>(c))
+      for (auto& f : EntityRange<Facet>(c))
       {
         if (!f.is_ghost())
         {
@@ -1372,7 +1372,7 @@ void DofMapBuilder::compute_shared_nodes(
     return;
 
   // Mark nodes on inter-process boundary
-  for (auto &f : MeshRange<Facet>(mesh, MeshRangeType::ALL))
+  for (auto& f : MeshRange<Facet>(mesh, MeshRangeType::ALL))
   {
     // Skip if facet is not shared
     // NOTE: second test is for periodic problems

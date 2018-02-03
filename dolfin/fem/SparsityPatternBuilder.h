@@ -29,5 +29,3 @@ public:
                     bool finalize = true);
 };
 }
-
-

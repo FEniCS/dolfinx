@@ -253,5 +253,3 @@ private:
   const Mesh* _mesh;
 };
 }
-
-
