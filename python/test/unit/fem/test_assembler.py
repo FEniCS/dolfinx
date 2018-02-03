@@ -37,19 +37,60 @@ def test_initialisation():
 
 
 def test_matrix_assembly():
-    mesh = dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 4, 4, 4)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 8, 8)
     V = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
     v = dolfin.function.argument.TestFunction(V)
     u = dolfin.function.argument.TrialFunction(V)
-    f = dolfin.function.constant.Constant(0.0)
+    f = dolfin.function.constant.Constant(1.0)
     a = v*u*dx
     L = v*f*dx
 
     assembler = dolfin.fem.assembling.Assembler(a, L)
-    A = assembler.assemble_matrix()
+    A, b = assembler.assemble()
 
     # Old assembler for reference (requires petsc4py)
     B = dolfin.cpp.la.PETScMatrix(mesh.mpi_comm())
+    c = dolfin.cpp.la.PETScVector(mesh.mpi_comm())
     ass0 = dolfin.fem.assembling.SystemAssembler(a, L)
-    ass0.assemble(B)
+    ass0.assemble(B, c)
+
     assert pytest.approx(0.0, 1.0e-17) == (A.mat() - B.mat()).norm()
+    assert pytest.approx(0.0, 1.0e-17) == (b.vec() - c.vec()).norm()
+
+    #b.vec().view()
+    #c.vec().view()
+
+    #A.mat().view()
+    #B.mat().view()
+    #print(c.vec().getArray())
+
+
+def test_matrix_assembly_bc():
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
+    V = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
+    v = dolfin.function.argument.TestFunction(V)
+    u = dolfin.function.argument.TrialFunction(V)
+    f = dolfin.function.constant.Constant(1.0)
+    a = v*u*dx
+    L = v*f*dx
+
+    # Define Dirichlet boundary (x = 0 or x = 1)
+    def boundary(x):
+        return x[0] < 1.0e-6 or x[0] > 1.0 - 1.0e-6
+
+    u0 = dolfin.function.constant.Constant(2.0)
+    bc = dolfin.fem.dirichletbc.DirichletBC(V, u0, boundary)
+
+    assembler = dolfin.fem.assembling.Assembler(a, L, [bc])
+    A, b = assembler.assemble()
+
+    # Old assembler for reference (requires petsc4py)
+    B = dolfin.cpp.la.PETScMatrix(mesh.mpi_comm())
+    c = dolfin.cpp.la.PETScVector(mesh.mpi_comm())
+    ass0 = dolfin.fem.assembling.SystemAssembler(a, L, [bc])
+    ass0.assemble(B, c)
+
+    b.vec().view()
+    c.vec().view()
+    A.mat().view()
+    B.mat().view()

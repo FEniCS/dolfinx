@@ -423,5 +423,3 @@ private:
   std::set<int> _neighbours;
 };
 }
-
-

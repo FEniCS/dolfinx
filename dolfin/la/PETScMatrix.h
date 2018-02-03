@@ -149,8 +149,8 @@ public:
   /// Set given rows (global row indices) to zero
   void zero(std::size_t m, const dolfin::la_index_t* rows);
 
-  /// Set given rows (local row indices) to zero
-  void zero_local(std::size_t m, const dolfin::la_index_t* rows);
+  /// Zero given rows (local row indices), and set diagonal
+  void zero_local(std::size_t m, const dolfin::la_index_t* rows, double diag);
 
   /// Matrix-vector product, y = Ax
   void mult(const PETScVector& x, PETScVector& y) const;

@@ -209,7 +209,10 @@ public:
 
   // FIXME: This function is part of a UFC transition
   /// Get cell coordinate dofs (not vertex coordinates)
-  void get_coordinate_dofs(Eigen::Ref<Eigen::MatrixXd> coordinates) const
+  void
+  get_coordinate_dofs(Eigen::Ref<Eigen::Matrix<double, Eigen::Dynamic,
+                                               Eigen::Dynamic, Eigen::RowMajor>>
+                          coordinates) const
   {
     const MeshGeometry& geom = _mesh->geometry();
     const std::size_t gdim = geom.dim();
@@ -228,7 +231,8 @@ public:
       }
     }
     else
-      throw std::runtime_error("Cannot get coordinate_dofs. Unsupported mesh degree");
+      throw std::runtime_error(
+          "Cannot get coordinate_dofs. Unsupported mesh degree");
   }
 
   // FIXME: This function is part of a UFC transition

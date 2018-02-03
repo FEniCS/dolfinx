@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <array>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -26,20 +27,31 @@ class Assembler
 {
 public:
   /// Constructor
-  Assembler(std::shared_ptr<const Form> a, std::shared_ptr<const Form> L,
+  Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
+            std::vector<std::shared_ptr<const Form>> L,
             std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Assemble matrix
-  void assemble(PETScMatrix& A);
+  // void assemble(PETScMatrix& A);
 
   // Assemble vector
-  void assemble(PETScVector& b);
+  // void assemble(PETScVector& b);
+
+  // Assemble matrix and vector
+  void assemble(PETScMatrix& A, PETScVector& b);
 
 private:
-  // Bilinear and linear forms
-  std::shared_ptr<const Form> _a, _l;
+  // Assemble matrix
+  static void assemble(PETScMatrix& A, const Form& a);
 
-  // Boundary conditions
+  // Assemble vector
+  static void assemble(PETScVector& b, const Form& L);
+
+  // Bilinear and linear forms
+  std::vector<std::vector<std::shared_ptr<const Form>>> _a;
+  std::vector<std::shared_ptr<const Form>> _l;
+
+  // Dirichlet boundary conditions
   std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 };
 }

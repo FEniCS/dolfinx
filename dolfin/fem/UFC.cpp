@@ -106,10 +106,12 @@ UFC::UFC(const Form& a)
   }
 }
 //-----------------------------------------------------------------------------
-void UFC::update(const Cell& c,
-                 Eigen::Ref<const Eigen::MatrixXd> coordinate_dofs,
-                 const ufc::cell& ufc_cell,
-                 const std::vector<bool>& enabled_coefficients)
+void UFC::update(
+    const Cell& c,
+    Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                   Eigen::RowMajor>>
+        coordinate_dofs,
+    const ufc::cell& ufc_cell, const std::vector<bool>& enabled_coefficients)
 {
   // Restrict coefficients to facet
   for (std::size_t i = 0; i < coefficients.size(); ++i)

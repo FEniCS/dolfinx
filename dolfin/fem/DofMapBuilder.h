@@ -186,5 +186,3 @@ private:
                                   const std::vector<bool>& needs_mesh_entities);
 };
 }
-
-

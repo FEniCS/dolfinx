@@ -44,5 +44,3 @@ private:
   std::size_t _number;
 };
 }
-
-

@@ -31,21 +31,28 @@ class Assembler:
 
         self.a = a
         self.L = L
-        self.bcs = bcs
+        if bcs is None:
+            self.bcs = []
+        else:
+            self.bcs = bcs
         self.assembler = None
 
-    def assemble_matrix(self, A=None):
+    def assemble(self, A=None, b=None):
         if self.assembler is None:
             A_dolfin_form = _create_dolfin_form(self.a)
             b_dolfin_form = _create_dolfin_form(self.L)
-            self.assembler = cpp.fem.SystemAssembler(A_dolfin_form, b_dolfin_form, [])
+            self.assembler = cpp.fem.Assembler([[A_dolfin_form]],
+                                               [b_dolfin_form], self.bcs)
 
         if A is None:
             comm = A_dolfin_form.mesh().mpi_comm()
             A = cpp.la.PETScMatrix(comm)
+        if b is None:
+            comm = b_dolfin_form.mesh().mpi_comm()
+            b = cpp.la.PETScVector(comm)
 
-        self.assembler.assemble(A)
-        return A
+        self.assembler.assemble(A, b)
+        return A, b
 
 
 def _create_dolfin_form(form, form_compiler_parameters=None,

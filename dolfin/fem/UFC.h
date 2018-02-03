@@ -46,7 +46,9 @@ public:
 
   /// Update current cell
   void update(const Cell& cell,
-              Eigen::Ref<const Eigen::MatrixXd> coordinate_dofs0,
+              Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>
+                  coordinate_dofs0,
               const ufc::cell& ufc_cell,
               const std::vector<bool>& enabled_coefficients);
 

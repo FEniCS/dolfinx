@@ -23,7 +23,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 GenericBoundingBoxTree::GenericBoundingBoxTree(std::size_t gdim)
-  : _tdim(0), _gdim(gdim)
+    : _tdim(0), _gdim(gdim)
 {
   // Do nothing
 }
@@ -51,7 +51,7 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
   // Create bounding boxes for all entities (leaves)
   const unsigned int num_leaves = mesh.num_entities(tdim);
   std::vector<double> leaf_bboxes(2 * _gdim * num_leaves);
-  for (auto &it : MeshRange<MeshEntity>(mesh, tdim))
+  for (auto& it : MeshRange<MeshEntity>(mesh, tdim))
     compute_bbox_of_entity(leaf_bboxes.data() + 2 * _gdim * it.index(), it);
 
   // Create leaf partition (to be sorted)
@@ -646,7 +646,7 @@ void GenericBoundingBoxTree::build_point_search_tree(const Mesh& mesh) const
 
   // Create list of midpoints for all cells
   std::vector<Point> points;
-  for (auto &cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<Cell>(mesh))
     points.push_back(cell.midpoint());
 
   // Select implementation
@@ -657,8 +657,8 @@ void GenericBoundingBoxTree::build_point_search_tree(const Mesh& mesh) const
   _point_search_tree->build(points);
 }
 //-----------------------------------------------------------------------------
-void GenericBoundingBoxTree::compute_bbox_of_entity(double* b,
-                                                    const MeshEntity& entity) const
+void GenericBoundingBoxTree::compute_bbox_of_entity(
+    double* b, const MeshEntity& entity) const
 {
   // Get bounding box coordinates
   double* xmin = b;
@@ -735,14 +735,16 @@ void GenericBoundingBoxTree::tree_print(std::stringstream& s, unsigned int i)
 }
 //-----------------------------------------------------------------------------
 /// Sort leaf bounding boxes along given axis
-void GenericBoundingBoxTree::sort_bboxes
-(std::size_t axis, const std::vector<double>& leaf_bboxes,
- const std::vector<unsigned int>::iterator& begin,
- const std::vector<unsigned int>::iterator& middle,
- const std::vector<unsigned int>::iterator& end)
+void GenericBoundingBoxTree::sort_bboxes(
+    std::size_t axis, const std::vector<double>& leaf_bboxes,
+    const std::vector<unsigned int>::iterator& begin,
+    const std::vector<unsigned int>::iterator& middle,
+    const std::vector<unsigned int>::iterator& end)
 {
   // Comparison lambda function with capture
-  auto cmp = [&gdim = _gdim, &leaf_bboxes, &axis](unsigned int i, unsigned int j)->bool
+  auto cmp =
+      [& gdim = _gdim, &leaf_bboxes, &axis ](unsigned int i, unsigned int j)
+          ->bool
   {
     const double* bi = leaf_bboxes.data() + 2 * gdim * i + axis;
     const double* bj = leaf_bboxes.data() + 2 * gdim * j + axis;
@@ -753,10 +755,10 @@ void GenericBoundingBoxTree::sort_bboxes
 }
 //-----------------------------------------------------------------------------
 /// Compute bounding box of points
-void GenericBoundingBoxTree::compute_bbox_of_points(double* bbox, std::size_t& axis,
-                                                    const std::vector<Point>& points,
-                                                    const std::vector<unsigned int>::iterator& begin,
-                                                    const std::vector<unsigned int>::iterator& end)
+void GenericBoundingBoxTree::compute_bbox_of_points(
+    double* bbox, std::size_t& axis, const std::vector<Point>& points,
+    const std::vector<unsigned int>::iterator& begin,
+    const std::vector<unsigned int>::iterator& end)
 {
   typedef std::vector<unsigned int>::const_iterator iterator;
 
@@ -776,7 +778,7 @@ void GenericBoundingBoxTree::compute_bbox_of_points(double* bbox, std::size_t& a
     for (unsigned int i = 0; i != _gdim; ++i)
     {
       bbox[i] = std::min(p[i], bbox[i]);
-      bbox[i+_gdim] = std::max(p[i], bbox[i+_gdim]);
+      bbox[i + _gdim] = std::max(p[i], bbox[i + _gdim]);
     }
   }
 
@@ -792,17 +794,17 @@ void GenericBoundingBoxTree::compute_bbox_of_points(double* bbox, std::size_t& a
 }
 //-----------------------------------------------------------------------------
 /// Compute bounding box of bounding boxes
-void GenericBoundingBoxTree::compute_bbox_of_bboxes(double* bbox, std::size_t& axis,
-                                                    const std::vector<double>& leaf_bboxes,
-                                                    const std::vector<unsigned int>::iterator& begin,
-                                                    const std::vector<unsigned int>::iterator& end)
+void GenericBoundingBoxTree::compute_bbox_of_bboxes(
+    double* bbox, std::size_t& axis, const std::vector<double>& leaf_bboxes,
+    const std::vector<unsigned int>::iterator& begin,
+    const std::vector<unsigned int>::iterator& end)
 {
   typedef std::vector<unsigned int>::const_iterator iterator;
 
   // Get coordinates for first box
   iterator it = begin;
-  const double* b = leaf_bboxes.data() + 2 *_gdim * (*it);
-  std::copy(b, b+2*_gdim, bbox);
+  const double* b = leaf_bboxes.data() + 2 * _gdim * (*it);
+  std::copy(b, b + 2 * _gdim, bbox);
 
   // Compute min and max over remaining boxes
   for (; it != end; ++it)
@@ -811,7 +813,7 @@ void GenericBoundingBoxTree::compute_bbox_of_bboxes(double* bbox, std::size_t& a
 
     for (unsigned int i = 0; i != _gdim; ++i)
       bbox[i] = std::min(bbox[i], b[i]);
-    for (unsigned int i = _gdim; i != 2*_gdim; ++i)
+    for (unsigned int i = _gdim; i != 2 * _gdim; ++i)
       bbox[i] = std::max(bbox[i], b[i]);
   }
 
@@ -840,23 +842,25 @@ void GenericBoundingBoxTree::compute_bbox_of_bboxes(double* bbox, std::size_t& a
     else
       axis = 2;
   }
-
 }
 //-----------------------------------------------------------------------------
 /// Compute squared distance between point and point
-double GenericBoundingBoxTree::compute_squared_distance_point(const double* x,
-                                      unsigned int node) const
+double
+GenericBoundingBoxTree::compute_squared_distance_point(const double* x,
+                                                       unsigned int node) const
 {
   const double* p = _bbox_coordinates.data() + 2 * _gdim * node;
   double d = 0.0;
   for (unsigned int i = 0; i != _gdim; ++i)
-    d += (x[i] - p[i])*(x[i] - p[i]);
+    d += (x[i] - p[i]) * (x[i] - p[i]);
 
   return d;
 }
 //-----------------------------------------------------------------------------
 /// Compute squared distance between point and bounding box
-double GenericBoundingBoxTree::compute_squared_distance_bbox(const double* x, unsigned int node) const
+double
+GenericBoundingBoxTree::compute_squared_distance_bbox(const double* x,
+                                                      unsigned int node) const
 {
   // Note: Some else-if might be in order here but I assume the
   // compiler can do a better job at optimizing/parallelizing this
@@ -881,7 +885,8 @@ double GenericBoundingBoxTree::compute_squared_distance_bbox(const double* x, un
 }
 //-----------------------------------------------------------------------------
 /// Check whether bounding box (a) collides with bounding box (node)
-bool GenericBoundingBoxTree::bbox_in_bbox(const double* a, unsigned int node) const
+bool GenericBoundingBoxTree::bbox_in_bbox(const double* a,
+                                          unsigned int node) const
 {
   const double* b = _bbox_coordinates.data() + 2 * _gdim * node;
 
@@ -896,7 +901,8 @@ bool GenericBoundingBoxTree::bbox_in_bbox(const double* a, unsigned int node) co
 }
 //-----------------------------------------------------------------------------
 /// Check whether point (x) is in bounding box (node)
-bool GenericBoundingBoxTree::point_in_bbox(const double* x, const unsigned int node) const
+bool GenericBoundingBoxTree::point_in_bbox(const double* x,
+                                           const unsigned int node) const
 {
   const double* b = _bbox_coordinates.data() + 6 * node;
   for (unsigned int i = 0; i != _gdim; ++i)
