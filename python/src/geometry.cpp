@@ -29,16 +29,16 @@ void geometry(py::module& m)
   // dolfin::BoundingBoxTree
   py::class_<dolfin::BoundingBoxTree, std::shared_ptr<dolfin::BoundingBoxTree>>(
       m, "BoundingBoxTree")
-      .def(py::init<>())
-      .def("build",
-           (void (dolfin::BoundingBoxTree::*)(const dolfin::Mesh&))
-               & dolfin::BoundingBoxTree::build)
+      .def(py::init<std::size_t>())
       .def("build",
            (void (dolfin::BoundingBoxTree::*)(const dolfin::Mesh&, std::size_t))
                & dolfin::BoundingBoxTree::build)
+      .def("build",
+           (void (dolfin::BoundingBoxTree::*)(const std::vector<dolfin::Point>&))
+               & dolfin::BoundingBoxTree::build)
       .def("compute_collisions",
-           (std::vector<unsigned int>(dolfin::BoundingBoxTree::*)(
-               const dolfin::Point&) const)
+           (std::vector<unsigned int>(dolfin::BoundingBoxTree::*)
+            (const dolfin::Point&) const)
                & dolfin::BoundingBoxTree::compute_collisions)
       .def(
           "compute_collisions",
@@ -47,19 +47,21 @@ void geometry(py::module& m)
               & dolfin::BoundingBoxTree::compute_collisions)
       .def("compute_entity_collisions",
            (std::vector<unsigned int>(dolfin::BoundingBoxTree::*)(
-               const dolfin::Point&) const)
+               const dolfin::Point&, const dolfin::Mesh&) const)
                & dolfin::BoundingBoxTree::compute_entity_collisions)
-      .def(
-          "compute_entity_collisions",
-          (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>(
-              dolfin::BoundingBoxTree::*)(const dolfin::BoundingBoxTree&) const)
+      .def("compute_entity_collisions",
+          (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>
+           (dolfin::BoundingBoxTree::*)
+           (const dolfin::BoundingBoxTree&, const dolfin::Mesh&, const dolfin::Mesh&) const)
               & dolfin::BoundingBoxTree::compute_entity_collisions)
       .def("compute_first_collision",
            &dolfin::BoundingBoxTree::compute_first_collision)
       .def("compute_first_entity_collision",
            &dolfin::BoundingBoxTree::compute_first_entity_collision)
       .def("compute_closest_entity",
-           &dolfin::BoundingBoxTree::compute_closest_entity);
+           &dolfin::BoundingBoxTree::compute_closest_entity)
+      .def("str", &dolfin::BoundingBoxTree::str);
+
 
   // dolfin::Point
   py::class_<dolfin::Point>(m, "Point")

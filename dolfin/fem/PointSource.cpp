@@ -78,7 +78,7 @@ void PointSource::distribute_sources(
     const Point& p = s.first;
     double magnitude = s.second;
 
-    unsigned int cell_index = tree->compute_first_entity_collision(p);
+    unsigned int cell_index = tree->compute_first_entity_collision(p, mesh);
     if (cell_index == std::numeric_limits<unsigned int>::max())
     {
       remote_points.insert(remote_points.end(), p.coordinates(),
@@ -106,7 +106,7 @@ void PointSource::distribute_sources(
   for (auto q = remote_points.begin(); q != remote_points.end(); q += 4)
   {
     Point p(*q, *(q + 1), *(q + 2));
-    unsigned int cell_index = tree->compute_first_entity_collision(p);
+    unsigned int cell_index = tree->compute_first_entity_collision(p, mesh);
     point_count.push_back(cell_index
                           != std::numeric_limits<unsigned int>::max());
   }
@@ -186,7 +186,7 @@ void PointSource::apply(PETScVector& b)
     Point& p = s.first;
     double magnitude = s.second;
 
-    unsigned int cell_index = tree->compute_first_entity_collision(p);
+    unsigned int cell_index = tree->compute_first_entity_collision(p, mesh);
 
     // Create cell
     Cell cell(mesh, static_cast<std::size_t>(cell_index));
@@ -312,7 +312,7 @@ void PointSource::apply(PETScMatrix& A)
     double magnitude = s.second;
 
     // Create cell
-    cell_index = tree->compute_first_entity_collision(p);
+    cell_index = tree->compute_first_entity_collision(p, *mesh);
     Cell cell(*mesh, static_cast<std::size_t>(cell_index));
 
     // Cell information
