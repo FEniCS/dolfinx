@@ -4,7 +4,6 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-
 """This module provides functionality for form assembly in Python,
 corresponding to the C++ assembly and PDE classes.
 
@@ -17,7 +16,6 @@ The C++ PDE classes are reimplemented in Python since the C++ classes
 rely on the dolfin::Form class which is not used on the Python side.
 
 """
-
 
 import ufl
 import dolfin.cpp as cpp
@@ -39,8 +37,10 @@ class Assembler:
 
     def assemble(self, A=None, b=None):
         if self.assembler is None:
-            a_forms = [[_create_dolfin_form(self.a[0][0]), _create_dolfin_form(self.a[0][1])],
-                       [_create_dolfin_form(self.a[1][0]), None]]
+            a_forms = [[
+                _create_dolfin_form(self.a[0][0]), _create_dolfin_form(
+                    self.a[0][1])
+            ], [_create_dolfin_form(self.a[1][0]), None]]
             L_forms = [_create_dolfin_form(self.L[0]), None]
             self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)
 
@@ -62,25 +62,29 @@ class Assembler:
         return A, b
 
 
-def _create_dolfin_form(form, form_compiler_parameters=None,
+def _create_dolfin_form(form,
+                        form_compiler_parameters=None,
                         function_spaces=None):
     # First check if we got a cpp.Form
     if isinstance(form, cpp.fem.Form):
 
         # Check that jit compilation has already happened
         if not hasattr(form, "_compiled_form"):
-            raise TypeError("Expected a dolfin form to have a _compiled_form attribute.")
+            raise TypeError(
+                "Expected a dolfin form to have a _compiled_form attribute.")
 
         # Warn that we don't use the parameters if we get any
         if form_compiler_parameters is not None:
-            cpp.warning("Ignoring form_compiler_parameters when passed a dolfin Form!")
+            cpp.warning(
+                "Ignoring form_compiler_parameters when passed a dolfin Form!")
         return form
     elif isinstance(form, ufl.Form):
-        return Form(form,
-                    form_compiler_parameters=form_compiler_parameters,
-                    function_spaces=function_spaces)
+        return Form(
+            form,
+            form_compiler_parameters=form_compiler_parameters,
+            function_spaces=function_spaces)
     else:
-        raise TypeError("Invalid form type %s" % (type(form),))
+        raise TypeError("Invalid form type %s" % (type(form), ))
 
 
 def assemble_local(form, cell, form_compiler_parameters=None):
@@ -99,10 +103,17 @@ def assemble_local(form, cell, form_compiler_parameters=None):
     return result
 
 
-def assemble_system(A_form, b_form, bcs=None, x0=None,
-                    form_compiler_parameters=None, add_values=False,
-                    finalize_tensor=True, keep_diagonal=False,
-                    A_tensor=None, b_tensor=None, backend=None):
+def assemble_system(A_form,
+                    b_form,
+                    bcs=None,
+                    x0=None,
+                    form_compiler_parameters=None,
+                    add_values=False,
+                    finalize_tensor=True,
+                    keep_diagonal=False,
+                    A_tensor=None,
+                    b_tensor=None,
+                    backend=None):
     """Assemble form(s) and apply any given boundary conditions in a
     symmetric fashion and return tensor(s).
 
@@ -186,7 +197,8 @@ def _create_tensor(mpi_comm, form, rank, backend, tensor):
         return tensor
 
     # Check backend argument
-    if (backend is not None) and (not isinstance(backend, cpp.la.GenericLinearAlgebraFactory)):
+    if (backend is not None) and (not isinstance(
+            backend, cpp.la.GenericLinearAlgebraFactory)):
         raise TypeError("Provide a GenericLinearAlgebraFactory as 'backend'")
 
     # Create tensor
@@ -209,7 +221,6 @@ def _create_tensor(mpi_comm, form, rank, backend, tensor):
 
 
 class SystemAssembler(cpp.fem.SystemAssembler):
-
     def __init__(self, A_form, b_form, bcs=None,
                  form_compiler_parameters=None):
         """

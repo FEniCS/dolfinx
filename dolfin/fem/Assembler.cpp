@@ -67,17 +67,10 @@ void fem::Assembler::assemble(PETScMatrix& A, PETScVector& b)
         {
           if (a)
           {
-            std::cout << "FE:        "
-                      << a->function_space(0)->element()->signature()
-                      << std::endl;
-            std::cout << "FE (test): "
-                      << _a[1][0]->function_space(0)->element()->signature()
-                      << std::endl;
-
             mats.push_back(std::make_shared<PETScMatrix>(MPI_COMM_WORLD));
-            std::cout << "Init matrix block" << std::endl;
+            std::cout << "-- Init matrix block" << std::endl;
             fem::init(*mats.back(), *a);
-            std::cout << "Mat size: " << mats.back()->size(0) << ", "
+            std::cout << "-- Mat size: " << mats.back()->size(0) << ", "
                       << mats.back()->size(1) << std::endl;
           }
           else
@@ -102,33 +95,41 @@ void fem::Assembler::assemble(PETScMatrix& A, PETScVector& b)
       MatNestSetSubMats(A.mat(), _a.size(), NULL, _a[0].size(), NULL,
                         petsc_mats.data());
       std::cout << "End set submats" << std::endl;
-      A.apply(PETScMatrix::AssemblyType::FINAL);
+      // A.apply(PETScMatrix::AssemblyType::FINAL);
     }
     else
       fem::init(A, *_a[0][0]);
   }
   else
   {
+    // Matrix already intialised
     throw std::runtime_error("Not implemented");
     // Extract block
     // MatNestGetSubMat(Mat A,PetscInt idxm,PetscInt jdxm,Mat *sub)
   }
 
   // Assemble blocks (A)
-  // for (std::size_t i = 0; i < _a.size(); ++i)
-  //{
-  //  for (std::size_t j = 0; j < _a[i].size(); ++j)
-  //    this->assemble(A, *_a[i][j]);
-  //}
-  return;
-
-  // Assemble blocks (b)
-  for (auto row : _l)
+  for (std::size_t i = 0; i < _a.size(); ++i)
   {
-    this->assemble(b, *row);
+    // MatNestGetSubMat(Mat A,PetscInt idxm,PetscInt jdxm,Mat *sub)
+    for (std::size_t j = 0; j < _a[i].size(); ++j)
+    {
+      if (_a[i][j])
+      {
+        Mat subA;
+        MatNestGetSubMat(A.mat(), i, j, &subA);
+        PETScMatrix mat(subA);
+        std::cout << "Assembling into matrix:" << i << ", " << j << std::endl;
+        this->assemble(mat, *_a[i][j]);
+        std::cout << "End assembling into matrix:" << i << ", " << j
+                  << std::endl;
+      }
+    }
   }
 
-  // const int mpi_size = dolfin::MPI::size(A.mpi_comm());
+  A.apply(PETScMatrix::AssemblyType::FINAL);
+
+  // ------
 
   // Build bcs and . . ..
   DirichletBC::Map boundary_values;
@@ -147,7 +148,13 @@ void fem::Assembler::assemble(PETScMatrix& A, PETScVector& b)
   // Create x vector with bcs (could this be a local vector?)
   PETScVector x(A.mpi_comm());
   A.init_vector(x, 1);
+
+  PETScVector _b(A.mpi_comm());
+  A.init_vector(_b, 0);
+  _b.zero();
+
   x.zero();
+  std::cout << "Testing x size: " << x.size() << std::endl;
   std::vector<double> _x;
   std::vector<la_index_t> dofs;
   for (auto bc : boundary_values)
@@ -158,9 +165,55 @@ void fem::Assembler::assemble(PETScMatrix& A, PETScVector& b)
   x.set_local(_x.data(), dofs.size(), dofs.data());
   x.apply();
 
-  // Apply Dirichlet boundary conditions
-  MatZeroRowsColumnsLocal(A.mat(), dofs.size(), dofs.data(), 1.0, x.vec(),
-                          b.vec());
+  std::cout << x.str(true) << std::endl;
+  std::cout << _b.str(true) << std::endl;
+
+  // std::cout << "Apply bcs to matrix" << std::endl;
+  // MatZeroRowsColumnsLocal(A.mat(), dofs.size(), dofs.data(), 1.0, x.vec(),
+  //                             _b.vec());
+  // std::cout << "End apply bcs to matrix" << std::endl;
+
+  return;
+
+  // // Assemble blocks (b)
+  // for (auto row : _l)
+  // {
+  //   this->assemble(b, *row);
+  // }
+
+  // // const int mpi_size = dolfin::MPI::size(A.mpi_comm());
+
+  // // Build bcs and . . ..
+  // DirichletBC::Map boundary_values;
+  // for (std::size_t i = 0; i < _bcs.size(); ++i)
+  // {
+  //   assert(_bcs[i]);
+  //   assert(_bcs[i]->function_space());
+  //   _bcs[i]->get_boundary_values(boundary_values);
+
+  //   // FIXME: this probably isn't required with MatZeroRowsColumnsLocal -
+  //   // check
+  //   // if (mpi_size > 1 and _bcs[i]->method() != "pointwise")
+  //   //  _bcs[i]->gather(boundary_values);
+  // }
+
+  // // Create x vector with bcs (could this be a local vector?)
+  // PETScVector x(A.mpi_comm());
+  // A.init_vector(x, 1);
+  // x.zero();
+  // std::vector<double> _x;
+  // std::vector<la_index_t> dofs;
+  // for (auto bc : boundary_values)
+  // {
+  //   dofs.push_back(bc.first);
+  //   _x.push_back(bc.second);
+  // }
+  // x.set_local(_x.data(), dofs.size(), dofs.data());
+  // x.apply();
+
+  // // Apply Dirichlet boundary conditions
+  // MatZeroRowsColumnsLocal(A.mat(), dofs.size(), dofs.data(), 1.0, x.vec(),
+  //                         b.vec());
 }
 //-----------------------------------------------------------------------------
 void fem::Assembler::assemble(PETScMatrix& A, const Form& a)
@@ -225,9 +278,20 @@ void fem::Assembler::assemble(PETScMatrix& A, const Form& a)
     cell_integral->tabulate_tensor(Ae.data(), ufc.w(), coordinate_dofs.data(),
                                    ufc_cell.orientation);
 
+    if (dmap0.size() != dmap1.size())
+    {
+      for (int i = 0; i < dmap0.size(); ++i)
+        std::cout << dmap0[i] << std::endl;
+      std::cout << "-------------------" << std::endl;
+      for (int j = 0; j < dmap1.size(); ++j)
+        std::cout << dmap1[j] << std::endl;
+    }
+
     // Add to matrix
+    std::cout << "add to mat" << std::endl;
     A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
                 dmap1.data());
+    std::cout << "post add to mat" << std::endl;
   }
 
   // FIXME: Put this elsewhere?

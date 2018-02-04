@@ -31,8 +31,8 @@ def test_initialisation():
     v = dolfin.function.argument.TestFunction(V)
     u = dolfin.function.argument.TrialFunction(V)
     f = dolfin.function.constant.Constant(0.0)
-    a = v*u*dx
-    L = v*f*dx
+    a = v * u * dx
+    L = v * f * dx
 
     assembler = dolfin.fem.assembling.Assembler(a, L)
 
@@ -43,8 +43,8 @@ def test_matrix_assembly():
     v = dolfin.function.argument.TestFunction(V)
     u = dolfin.function.argument.TrialFunction(V)
     f = dolfin.function.constant.Constant(1.0)
-    a = v*u*dx
-    L = v*f*dx
+    a = v * u * dx
+    L = v * f * dx
 
     assembler = dolfin.fem.assembling.Assembler(a, L)
     A, b = assembler.assemble()
@@ -72,8 +72,8 @@ def test_matrix_assembly_bc():
     v = dolfin.function.argument.TestFunction(V)
     u = dolfin.function.argument.TrialFunction(V)
     f = dolfin.function.constant.Constant(1.0)
-    a = v*u*dx
-    L = v*f*dx
+    a = v * u * dx
+    L = v * f * dx
 
     # Define Dirichlet boundary (x = 0 or x = 1)
     def boundary(x):
@@ -104,12 +104,14 @@ def test_matrix_assembly_block():
     #P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     #TH = P2 * P1
     #W = dolfin.function.functionspace.FunctionSpace(mesh, TH)
-    P2 = dolfin.function.functionspace.VectorFunctionSpace(mesh, "Lagrange", 2)
+    P2 = dolfin.function.functionspace.VectorFunctionSpace(mesh, "Lagrange", 1)
     P1 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
 
     # Define variational problem
-    u, p = dolfin.function.argument.TrialFunction(P2), dolfin.function.argument.TrialFunction(P1)
-    v, q = dolfin.function.argument.TestFunction(P2), dolfin.function.argument.TestFunction(P1)
+    u, p = dolfin.function.argument.TrialFunction(
+        P2), dolfin.function.argument.TrialFunction(P1)
+    v, q = dolfin.function.argument.TestFunction(
+        P2), dolfin.function.argument.TestFunction(P1)
     #(u, p) = dolfin.function.argument.TrialFunctions(W)
     #(v, q) = dolfin.function.argument.TestFunctions(W)
     f = dolfin.function.constant.Constant((0, 0))
@@ -117,20 +119,32 @@ def test_matrix_assembly_block():
     #a = (ufl.inner(ufl.grad(u), ufl.grad(v)) - ufl.div(v)*p + q*ufl.div(u))*dx
     #L = ufl.inner(f, v)*dx
 
-    a00 = ufl.inner(ufl.grad(u), ufl.grad(v))*dx
-    a01 = -ufl.div(v)*p*dx
-    a10 = q*ufl.div(u)*dx
+    a00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
+    a01 = -ufl.div(v) * p * dx
+    a10 = q * ufl.div(u) * dx
     a11 = None
 
-    L0 = ufl.inner(f, v)*dx
+    L0 = ufl.inner(f, v) * dx
     L1 = None
 
-    assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]], [L0, L1], [])
+    # Define Dirichlet boundary (x = 0 or x = 1)
+    def boundary(x):
+        return x[0] < 1.0e-6 or x[0] > 1.0 - 1.0e-6
+
+    u0 = dolfin.function.constant.Constant((2.0, 1.0))
+    bc = dolfin.fem.dirichletbc.DirichletBC(P2, u0, boundary)
+
+    assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]],
+                                                [L0, L1], [bc])
     A, b = assembler.assemble()
 
     A.mat().view()
+
     IS = A.mat().getNestISs()
-    print(len(IS))
-    print(IS[0][0].view())
+    #print(IS[0][0].view())
+    #print(IS[0][1].view())
     print(IS[0][1].view())
+    #print(IS[1][1].view())
     #print(A.mat().norm())
+
+    #A00 = A.mat().getLocalSubMatrix(0, 0)
