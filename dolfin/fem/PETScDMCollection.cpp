@@ -117,7 +117,7 @@ tabulate_coordinates_to_dofs(const FunctionSpace& V)
   }
   return coords_to_dofs;
 }
-}
+} // namespace
 
 //-----------------------------------------------------------------------------
 PETScDMCollection::PETScDMCollection(
@@ -352,7 +352,8 @@ PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
     for (unsigned int i = 0; i < n_points; ++i)
     {
       const Point curr_point(dim, &recv_found[p][i * dim]);
-      send_ids[p].push_back(treec->compute_first_entity_collision(curr_point));
+      send_ids[p].push_back(
+          treec->compute_first_entity_collision(curr_point, meshc));
     }
   }
   std::vector<std::vector<unsigned int>> recv_ids(mpi_size);
@@ -448,7 +449,7 @@ PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
 
   // Find closest cells for points that lie outside the domain and add
   // them to the lists
-  find_exterior_points(mpi_comm, treec, dim, data_size, exterior_points,
+  find_exterior_points(mpi_comm, meshc, treec, dim, data_size, exterior_points,
                        exterior_global_indices, global_row_indices, found_ids,
                        found_points);
 
@@ -608,8 +609,9 @@ PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
 }
 //-----------------------------------------------------------------------------
 void PETScDMCollection::find_exterior_points(
-    MPI_Comm mpi_comm, std::shared_ptr<const BoundingBoxTree> treec, int dim,
-    int data_size, const std::vector<double>& send_points,
+    MPI_Comm mpi_comm, const Mesh& meshc,
+    std::shared_ptr<const BoundingBoxTree> treec, int dim, int data_size,
+    const std::vector<double>& send_points,
     const std::vector<int>& send_indices, std::vector<int>& indices,
     std::vector<std::size_t>& cell_ids, std::vector<double>& points)
 {
@@ -644,7 +646,7 @@ void PETScDMCollection::find_exterior_points(
     {
       const Point curr_point(dim, &p[i * dim]);
       std::pair<unsigned int, double> find_point
-          = treec->compute_closest_entity(curr_point);
+          = treec->compute_closest_entity(curr_point, meshc);
       send_distance.push_back(find_point.second);
       ids.push_back(find_point.first);
     }

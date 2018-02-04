@@ -25,6 +25,7 @@ pipelines:
           - python3 -m pytest unit/io
           - mpirun -n 3 python3 -m pytest unit/io
           - python3 -m pytest unit/mesh
+          - python3 -m pytest unit/geometry/test_bounding_box_tree.py
 
           - cd ../demo
           - python3 ./generate-demo-files.py

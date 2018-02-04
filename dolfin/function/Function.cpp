@@ -246,7 +246,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
 
   // Get index of first cell containing point
   unsigned int id
-      = mesh.bounding_box_tree()->compute_first_entity_collision(point);
+    = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
 
   // If not found, use the closest cell
   if (id == std::numeric_limits<unsigned int>::max())
@@ -254,7 +254,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
     // Check if the closest cell is within DOLFIN_EPS. This we can
     // allow without _allow_extrapolation
     std::pair<unsigned int, double> close
-        = mesh.bounding_box_tree()->compute_closest_entity(point);
+      = mesh.bounding_box_tree()->compute_closest_entity(point, mesh);
 
     if (_allow_extrapolation or close.second < DOLFIN_EPS)
       id = close.first;
