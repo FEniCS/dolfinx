@@ -39,16 +39,23 @@ class Assembler:
 
     def assemble(self, A=None, b=None):
         if self.assembler is None:
-            A_dolfin_form = _create_dolfin_form(self.a)
-            b_dolfin_form = _create_dolfin_form(self.L)
-            self.assembler = cpp.fem.Assembler([[A_dolfin_form]],
-                                               [b_dolfin_form], self.bcs)
+            a_forms = [[_create_dolfin_form(self.a[0][0]), _create_dolfin_form(self.a[0][1])],
+                       [_create_dolfin_form(self.a[1][0]), None]]
+            L_forms = [_create_dolfin_form(self.L[0]), None]
+            self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)
+
+            #A_dolfin_form = _create_dolfin_form(self.a)
+            #b_dolfin_form = _create_dolfin_form(self.L)
+            #self.assembler = cpp.fem.Assembler([[A_dolfin_form]],
+            #                                   [b_dolfin_form], self.bcs)
 
         if A is None:
-            comm = A_dolfin_form.mesh().mpi_comm()
+            #comm = A_dolfin_form.mesh().mpi_comm()
+            comm = cpp.MPI.comm_world
             A = cpp.la.PETScMatrix(comm)
         if b is None:
-            comm = b_dolfin_form.mesh().mpi_comm()
+            #comm = b_dolfin_form.mesh().mpi_comm()
+            comm = cpp.MPI.comm_world
             b = cpp.la.PETScVector(comm)
 
         self.assembler.assemble(A, b)

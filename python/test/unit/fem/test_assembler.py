@@ -21,6 +21,7 @@ import pytest
 import os
 import numpy
 import dolfin
+import ufl
 from ufl import dx
 
 
@@ -94,3 +95,42 @@ def test_matrix_assembly_bc():
     c.vec().view()
     A.mat().view()
     B.mat().view()
+
+
+def test_matrix_assembly_block():
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 1, 1)
+
+    #P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    #P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    #TH = P2 * P1
+    #W = dolfin.function.functionspace.FunctionSpace(mesh, TH)
+    P2 = dolfin.function.functionspace.VectorFunctionSpace(mesh, "Lagrange", 2)
+    P1 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
+
+    # Define variational problem
+    u, p = dolfin.function.argument.TrialFunction(P2), dolfin.function.argument.TrialFunction(P1)
+    v, q = dolfin.function.argument.TestFunction(P2), dolfin.function.argument.TestFunction(P1)
+    #(u, p) = dolfin.function.argument.TrialFunctions(W)
+    #(v, q) = dolfin.function.argument.TestFunctions(W)
+    f = dolfin.function.constant.Constant((0, 0))
+
+    #a = (ufl.inner(ufl.grad(u), ufl.grad(v)) - ufl.div(v)*p + q*ufl.div(u))*dx
+    #L = ufl.inner(f, v)*dx
+
+    a00 = ufl.inner(ufl.grad(u), ufl.grad(v))*dx
+    a01 = -ufl.div(v)*p*dx
+    a10 = q*ufl.div(u)*dx
+    a11 = None
+
+    L0 = ufl.inner(f, v)*dx
+    L1 = None
+
+    assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]], [L0, L1], [])
+    A, b = assembler.assemble()
+
+    A.mat().view()
+    IS = A.mat().getNestISs()
+    print(len(IS))
+    print(IS[0][0].view())
+    print(IS[0][1].view())
+    #print(A.mat().norm())

@@ -50,47 +50,77 @@ fem::Assembler::Assembler(
 //-----------------------------------------------------------------------------
 void fem::Assembler::assemble(PETScMatrix& A, PETScVector& b)
 {
-  if (!A.empty())
+  // Check if matrix should be nested
+  const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
+
+  if (A.empty())
   {
-    if (_a.size() > 1 or _a[0].size() > 1)
+    // Initialise matrix
+    if (block_matrix)
     {
-      std::vector<Mat> petsc_mats;
-      std::vector<std::shared_ptr<PETScMatrix>> _mats;
-      for (auto row : _a)
+      std::cout << "Have block matrix" << std::endl;
+      // Loop over each form
+      std::vector<std::shared_ptr<PETScMatrix>> mats;
+      for (auto a_row : _a)
       {
-        for (auto block : row)
+        for (auto a : a_row)
         {
-          if (block)
+          if (a)
           {
-            auto mat = std::make_shared<PETScMatrix>(MPI_COMM_WORLD);
-            _mats.push_back(mat);
-            fem::init(*mat, *block);
-            petsc_mats.push_back(mat->mat());
+            std::cout << "FE:        "
+                      << a->function_space(0)->element()->signature()
+                      << std::endl;
+            std::cout << "FE (test): "
+                      << _a[1][0]->function_space(0)->element()->signature()
+                      << std::endl;
+
+            mats.push_back(std::make_shared<PETScMatrix>(MPI_COMM_WORLD));
+            std::cout << "Init matrix block" << std::endl;
+            fem::init(*mats.back(), *a);
+            std::cout << "Mat size: " << mats.back()->size(0) << ", "
+                      << mats.back()->size(1) << std::endl;
           }
           else
-            petsc_mats.push_back(NULL);
+            mats.push_back(NULL);
         }
       }
+
+      // Build list of PETSc Mat objects
+      std::vector<Mat> petsc_mats;
+      for (auto mat : mats)
+      {
+        if (mat)
+          petsc_mats.push_back(mat->mat());
+        else
+          petsc_mats.push_back(nullptr);
+      }
+
       // Intitialise block (MatNest) matrix
+      std::cout << "Set PETSc mat type" << std::endl;
       MatSetType(A.mat(), MATNEST);
+      std::cout << "Set submats" << std::endl;
       MatNestSetSubMats(A.mat(), _a.size(), NULL, _a[0].size(), NULL,
                         petsc_mats.data());
+      std::cout << "End set submats" << std::endl;
+      A.apply(PETScMatrix::AssemblyType::FINAL);
     }
     else
       fem::init(A, *_a[0][0]);
   }
   else
   {
+    throw std::runtime_error("Not implemented");
     // Extract block
     // MatNestGetSubMat(Mat A,PetscInt idxm,PetscInt jdxm,Mat *sub)
   }
 
   // Assemble blocks (A)
-  for (std::size_t i = 0; i < _a.size(); ++i)
-  {
-    for (std::size_t j = 0; j < _a[i].size(); ++j)
-      this->assemble(A, *_a[i][j]);
-  }
+  // for (std::size_t i = 0; i < _a.size(); ++i)
+  //{
+  //  for (std::size_t j = 0; j < _a[i].size(); ++j)
+  //    this->assemble(A, *_a[i][j]);
+  //}
+  return;
 
   // Assemble blocks (b)
   for (auto row : _l)
