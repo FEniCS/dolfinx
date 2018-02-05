@@ -25,7 +25,7 @@ import ufl
 from ufl import dx
 
 
-def test_initialisation():
+def xtest_initialisation():
     "Test intialisation of the assembler"
     mesh = dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 4, 4, 4)
     V = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
@@ -42,7 +42,7 @@ def test_initialisation():
     # arguments
 
 
-def test_matrix_assembly():
+def xtest_matrix_assembly():
     "Test basic assembly without Dirichlet boundary conditions"
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 8, 8)
     V = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
@@ -84,7 +84,6 @@ def test_matrix_assembly_bc():
     # Define Dirichlet boundary (x = 0 or x = 1)
     def boundary(x):
         return x[0] < 1.0e-6 or x[0] > 1.0 - 1.0e-6
-
     u0 = dolfin.function.constant.Constant(2.0)
     bc = dolfin.fem.dirichletbc.DirichletBC(V, u0, boundary)
 
@@ -99,8 +98,8 @@ def test_matrix_assembly_bc():
 
     b.vec().view()
     c.vec().view()
-    A.mat().view()
-    B.mat().view()
+    #A.mat().view()
+    #B.mat().view()
 
 
 def xtest_matrix_assembly_block():

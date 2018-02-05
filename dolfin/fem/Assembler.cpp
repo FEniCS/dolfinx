@@ -138,7 +138,12 @@ void fem::Assembler::assemble(PETScVector& b)
   this->assemble(b, *_l[0]);
 
   // Apply bcs to vector
-  apply_bc(b, _a[0], _bcs);
+  for (std::size_t i = 0; i < _l.size(); ++i)
+    for (std::size_t j = 0; j < _a[i].size(); ++j)
+      apply_bc(b, *_a[i][j], _bcs);
+
+
+  set_bc(b, *_l[0], _bcs);
 
   // // Assemble blocks (b)
   // for (auto row : _l)
@@ -352,51 +357,65 @@ void fem::Assembler::assemble(PETScVector& b, const Form& L)
 }
 //-----------------------------------------------------------------------------
 void fem::Assembler::apply_bc(
-    PETScVector& b, std::vector<std::shared_ptr<const Form>> a,
+    PETScVector& b, const Form& a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   // Get mesh from form
-  assert(a[0]->mesh());
-  const Mesh& mesh = *a[0]->mesh();
+  assert(a.mesh());
+  const Mesh& mesh = *a.mesh();
+
+  const std::size_t gdim = mesh.geometry().dim();
 
   // FIXME: Remove UFC
   // Create data structures for local assembly data
-  //UFC ufc(L);
+  // UFC ufc(L);
 
-  //const std::size_t gdim = mesh.geometry().dim();
-  //const std::size_t tdim = mesh.topology().dim();
-  //mesh.init(tdim);
+  // const std::size_t gdim = mesh.geometry().dim();
+  // const std::size_t tdim = mesh.topology().dim();
+  // mesh.init(tdim);
 
   // Collect pointers to dof maps
-  //auto dofmap = L.function_space(0)->dofmap();
+  // auto dofmap = L.function_space(0)->dofmap();
 
   // Data structures used in assembly
-  //ufc::cell ufc_cell;
-  //EigenMatrixD coordinate_dofs;
-  //Eigen::VectorXd be;
+  // ufc::cell ufc_cell;
+  // EigenMatrixD coordinate_dofs;
+  // Eigen::VectorXd be;
 
   // Get cell integral
-  //auto cell_integral = ufc.default_cell_integral;
+  // auto cell_integral = ufc.default_cell_integral;
 
-  /*
-  std::array<DirichletBC::Map> boundary_values;
+  // Get bcs
+  DirichletBC::Map boundary_values;
   for (std::size_t i = 0; i < bcs.size(); ++i)
   {
     assert(bcs[i]);
     assert(bcs[i]->function_space());
-    for (std::size_t axis = 0; axis < 2; ++axis)
+    if (a.function_space(1)->contains(*bcs[i]->function_space()))
     {
-      if (spaces[axis]->contains(*bcs[i]->function_space()))
-      {
-        // FIXME: find way to avoid gather, or perform with a single
-        // gather
-        bcs[i]->get_boundary_values(boundary_values[axis]);
-        if (MPI::size(mesh.mpi_comm()) > 1 and bcs[i]->method() != "pointwise")
-          bcs[i]->gather(boundary_values[axis]);
-      }
+      bcs[i]->get_boundary_values(boundary_values);
+      if (MPI::size(mesh.mpi_comm()) > 1 and bcs[i]->method() != "pointwise")
+        bcs[i]->gather(boundary_values);
     }
   }
-  */
+
+  std::array<const FunctionSpace*, 2> spaces
+      = {{a.function_space(0).get(), a.function_space(1).get()}};
+
+  // Get dofmap for columns a a[i]
+  auto dofmap0 = a.function_space(0)->dofmap();
+  auto dofmap1 = a.function_space(1)->dofmap();
+
+  ufc::cell ufc_cell;
+  EigenMatrixD Ae;
+  Eigen::VectorXd be;
+  EigenMatrixD coordinate_dofs;
+
+  // Create data structures for local assembly data
+  UFC ufc(a);
+
+  // Get cell integral
+  auto cell_integral = ufc.default_cell_integral;
 
   // Iterate over all cells
   for (auto& cell : MeshRange<Cell>(mesh))
@@ -404,36 +423,131 @@ void fem::Assembler::apply_bc(
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
 
-
-
     // Get cell vertex coordinates
-    //coordinate_dofs.resize(cell.num_vertices(), gdim);
-    //cell.get_coordinate_dofs(coordinate_dofs);
+    // coordinate_dofs.resize(cell.num_vertices(), gdim);
+    // cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get UFC cell data
-    //cell.get_cell_data(ufc_cell);
+    // cell.get_cell_data(ufc_cell);
 
     // Update UFC data to current cell
-    //ufc.update(cell, coordinate_dofs, ufc_cell,
+    // ufc.update(cell, coordinate_dofs, ufc_cell,
     //           cell_integral->enabled_coefficients());
 
     // Get dof maps for cell
-    //auto dmap = dofmap->cell_dofs(cell.index());
+    auto dmap1 = dofmap1->cell_dofs(cell.index());
+
+    // Check if bc is applied to cell
+    bool has_bc = false;
+    for (int i = 0; i < dmap1.size(); ++i)
+    {
+      const std::size_t ii = dmap1[i];
+      if (boundary_values.find(ii) != boundary_values.end())
+      {
+        has_bc = true;
+        break;
+      }
+    }
+
+    // std::cout << "Applying bcs" << std::endl;
+    if (!has_bc)
+      continue;
+    // std::cout << "  has bc" << std::endl;
+
+    // Get cell vertex coordinates
+    coordinate_dofs.resize(cell.num_vertices(), gdim);
+    cell.get_coordinate_dofs(coordinate_dofs);
+
+    // Get UFC cell data
+    cell.get_cell_data(ufc_cell);
+
+    // Update UFC data to current cell
+    ufc.update(cell, coordinate_dofs, ufc_cell,
+               cell_integral->enabled_coefficients());
 
     // Size data structure for assembly
-    //be.resize(dmap.size());
-    //be.setZero();
+    auto dmap0 = dofmap1->cell_dofs(cell.index());
+    Ae.resize(dmap0.size(), dmap1.size());
+    Ae.setZero();
+    cell_integral->tabulate_tensor(Ae.data(), ufc.w(), coordinate_dofs.data(),
+                                   ufc_cell.orientation);
+
+    // FIXME: Is this required?
+    // Zero Dirichlet rows in Ae
+    if (spaces[0] == spaces[1])
+    {
+      for (int i = 0; i < dmap0.size(); ++i)
+      {
+        const std::size_t ii = dmap0[i];
+        auto bc = boundary_values.find(ii);
+        if (bc != boundary_values.end())
+          Ae.row(i).setZero();
+      }
+    }
+
+    // Size data structure for assembly
+    be.resize(dmap0.size());
+    be.setZero();
+
+    for (int j = 0; j < dmap1.size(); ++j)
+    {
+      const std::size_t jj = dmap1[j];
+      auto bc = boundary_values.find(jj);
+      if (bc != boundary_values.end())
+      {
+        be -= Ae.col(j) * bc->second;
+      }
+    }
 
     // Compute cell matrix
-    //cell_integral->tabulate_tensor(be.data(), ufc.w(), coordinate_dofs.data(),
+    // cell_integral->tabulate_tensor(be.data(), ufc.w(),
+    // coordinate_dofs.data(),
     //                               ufc_cell.orientation);
 
     // Add to vector
-    //b.add_local(be.data(), dmap.size(), dmap.data());
+    b.add_local(be.data(), dmap0.size(), dmap0.data());
   }
 
   // FIXME: Put this elsewhere?
   // Finalise matrix
+  b.apply();
+}
+//-----------------------------------------------------------------------------
+void fem::Assembler::set_bc(PETScVector& b, const Form& L,
+                            std::vector<std::shared_ptr<const DirichletBC>> bcs)
+{
+  // Get mesh from form
+  assert(L.mesh());
+  const Mesh& mesh = *L.mesh();
+
+  auto V = L.function_space(0);
+
+
+  // Get bcs
+  DirichletBC::Map boundary_values;
+  for (std::size_t i = 0; i < bcs.size(); ++i)
+  {
+    assert(bcs[i]);
+    assert(bcs[i]->function_space());
+    if (V->contains(*bcs[i]->function_space()))
+    {
+      bcs[i]->get_boundary_values(boundary_values);
+      if (MPI::size(mesh.mpi_comm()) > 1 and bcs[i]->method() != "pointwise")
+        bcs[i]->gather(boundary_values);
+    }
+  }
+
+  std::vector<double> values;
+  values.reserve(boundary_values.size());
+  std::vector<la_index_t> rows;
+  rows.reserve(boundary_values.size());
+  for (auto bc : boundary_values)
+  {
+    rows.push_back(bc.first);
+    values.push_back(bc.second);
+  }
+
+  b.set_local(values.data(), values.size(), rows.data());
   b.apply();
 }
 //-----------------------------------------------------------------------------
