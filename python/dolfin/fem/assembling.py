@@ -37,18 +37,20 @@ class Assembler:
 
     def assemble(self, A=None, b=None):
         if self.assembler is None:
-            a_forms = [[
-                _create_dolfin_form(self.a[0][0]), _create_dolfin_form(
-                    self.a[0][1])
-            ], [_create_dolfin_form(self.a[1][0]), None]]
-            L_forms = [_create_dolfin_form(self.L[0]), None]
+            # Compile forms
+            try:
+                a_forms =  [[_create_dolfin_form(a) for a in row] for row in self.a]
+            except TypeError:
+                a_forms =  [[_create_dolfin_form(self.a)]]
+            try:
+                L_forms =  [_create_dolfin_form(L) for L in self.L]
+            except TypeError:
+                L_forms =  [_create_dolfin_form(self.L)]
+
+            # Create assembler
             self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)
 
-            #A_dolfin_form = _create_dolfin_form(self.a)
-            #b_dolfin_form = _create_dolfin_form(self.L)
-            #self.assembler = cpp.fem.Assembler([[A_dolfin_form]],
-            #                                   [b_dolfin_form], self.bcs)
-
+        # Create matrix/vector (if required)
         if A is None:
             #comm = A_dolfin_form.mesh().mpi_comm()
             comm = cpp.MPI.comm_world

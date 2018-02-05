@@ -32,20 +32,25 @@ public:
             std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Assemble matrix
-  // void assemble(PETScMatrix& A);
+  void assemble(PETScMatrix& A);
 
   // Assemble vector
-  // void assemble(PETScVector& b);
+  void assemble(PETScVector& b);
 
   // Assemble matrix and vector
   void assemble(PETScMatrix& A, PETScVector& b);
 
 private:
   // Assemble matrix
-  static void assemble(PETScMatrix& A, const Form& a);
+  static void assemble(PETScMatrix& A, const Form& a,
+                       std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Assemble vector
   static void assemble(PETScVector& b, const Form& L);
+
+  // Apply bcs to vector
+  static void apply_bc(PETScVector& b, std::vector<std::shared_ptr<const Form>> a,
+                       std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Bilinear and linear forms
   std::vector<std::vector<std::shared_ptr<const Form>>> _a;

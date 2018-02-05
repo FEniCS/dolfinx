@@ -26,6 +26,7 @@ from ufl import dx
 
 
 def test_initialisation():
+    "Test intialisation of the assembler"
     mesh = dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 4, 4, 4)
     V = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
     v = dolfin.function.argument.TestFunction(V)
@@ -35,9 +36,14 @@ def test_initialisation():
     L = v * f * dx
 
     assembler = dolfin.fem.assembling.Assembler(a, L)
+    assembler = dolfin.fem.assembling.Assembler([[a, a], [a, a]], [L, L])
+
+    # TODO: test that exceptions are raised for incorrect input
+    # arguments
 
 
 def test_matrix_assembly():
+    "Test basic assembly without Dirichlet boundary conditions"
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 8, 8)
     V = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
     v = dolfin.function.argument.TestFunction(V)
@@ -97,7 +103,7 @@ def test_matrix_assembly_bc():
     B.mat().view()
 
 
-def test_matrix_assembly_block():
+def xtest_matrix_assembly_block():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 1, 1)
 
     #P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)

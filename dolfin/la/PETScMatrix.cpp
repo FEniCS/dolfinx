@@ -107,8 +107,8 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
   sparsity_pattern.num_nonzeros_diagonal(num_nonzeros_diagonal);
   sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
 
-  if (block_size == 1)
-    std::cout << "*** mat size: " << m << ", " << n << std::endl;
+  //if (block_size == 1)
+  //  std::cout << "*** mat size: " << m << ", " << n << std::endl;
 
   // Set matrix size
   ierr = MatSetSizes(_matA, m, n, M, N);
@@ -158,7 +158,7 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
   // for (std::size_t i = 0; i < _map1.size(); ++i)
   //   _map1[i] = index_maps[1]->local_to_global(i);
 
-  std::cout << "Prep IS (0)" << std::endl;
+  //std::cout << "Prep IS (0)" << std::endl;
   for (std::size_t i = 0; i < index_maps[0]->size(IndexMap::MapSize::ALL); ++i)
   {
     std::size_t bs = block_sizes[0] / block_size;
@@ -169,7 +169,7 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
     }
   }
 
-  std::cout << "Prep IS (1)" << std::endl;
+  //std::cout << "Prep IS (1)" << std::endl;
   for (std::size_t i = 0; i < index_maps[1]->size(IndexMap::MapSize::ALL); ++i)
   {
     std::size_t bs = block_sizes[1] / block_size;
@@ -177,17 +177,17 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
     for (std::size_t j = 0; j < bs; ++j)
       _map1[i * bs + j] = bs * index + j;
   }
-  std::cout << "End Prep IS" << std::endl;
+  //std::cout << "End Prep IS" << std::endl;
 
-  if (block_size == 1)
-  {
-    std::cout << "** Local-to-global maps" << std::endl;
-    for (std::size_t i = 0; i < _map0.size(); ++i)
-      std::cout << "   " << _map0[i] << std::endl;
-    std::cout << "------------------" << std::endl;
-    for (std::size_t i = 0; i < _map1.size(); ++i)
-      std::cout << "   " << _map1[i] << std::endl;
-  }
+  // if (block_size == 1)
+  // {
+  //   std::cout << "** Local-to-global maps" << std::endl;
+  //   for (std::size_t i = 0; i < _map0.size(); ++i)
+  //     std::cout << "   " << _map0[i] << std::endl;
+  //   std::cout << "------------------" << std::endl;
+  //   for (std::size_t i = 0; i < _map1.size(); ++i)
+  //     std::cout << "   " << _map1[i] << std::endl;
+  // }
 
   // FIXME: In many cases the rows and columns could shared a common
   // local-to-global map
