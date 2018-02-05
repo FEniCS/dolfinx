@@ -137,12 +137,12 @@ void fem::Assembler::assemble(PETScVector& b)
   // Assemble vector
   this->assemble(b, *_l[0]);
 
-  // Apply bcs to vector
+  // Apply bcs to RHS of vector
   for (std::size_t i = 0; i < _l.size(); ++i)
     for (std::size_t j = 0; j < _a[i].size(); ++j)
       apply_bc(b, *_a[i][j], _bcs);
 
-
+  // Set bc values
   set_bc(b, *_l[0], _bcs);
 
   // // Assemble blocks (b)
@@ -366,25 +366,6 @@ void fem::Assembler::apply_bc(
 
   const std::size_t gdim = mesh.geometry().dim();
 
-  // FIXME: Remove UFC
-  // Create data structures for local assembly data
-  // UFC ufc(L);
-
-  // const std::size_t gdim = mesh.geometry().dim();
-  // const std::size_t tdim = mesh.topology().dim();
-  // mesh.init(tdim);
-
-  // Collect pointers to dof maps
-  // auto dofmap = L.function_space(0)->dofmap();
-
-  // Data structures used in assembly
-  // ufc::cell ufc_cell;
-  // EigenMatrixD coordinate_dofs;
-  // Eigen::VectorXd be;
-
-  // Get cell integral
-  // auto cell_integral = ufc.default_cell_integral;
-
   // Get bcs
   DirichletBC::Map boundary_values;
   for (std::size_t i = 0; i < bcs.size(); ++i)
@@ -399,8 +380,8 @@ void fem::Assembler::apply_bc(
     }
   }
 
-  std::array<const FunctionSpace*, 2> spaces
-      = {{a.function_space(0).get(), a.function_space(1).get()}};
+  //std::array<const FunctionSpace*, 2> spaces
+  //    = {{a.function_space(0).get(), a.function_space(1).get()}};
 
   // Get dofmap for columns a a[i]
   auto dofmap0 = a.function_space(0)->dofmap();
@@ -422,17 +403,6 @@ void fem::Assembler::apply_bc(
   {
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
-
-    // Get cell vertex coordinates
-    // coordinate_dofs.resize(cell.num_vertices(), gdim);
-    // cell.get_coordinate_dofs(coordinate_dofs);
-
-    // Get UFC cell data
-    // cell.get_cell_data(ufc_cell);
-
-    // Update UFC data to current cell
-    // ufc.update(cell, coordinate_dofs, ufc_cell,
-    //           cell_integral->enabled_coefficients());
 
     // Get dof maps for cell
     auto dmap1 = dofmap1->cell_dofs(cell.index());
@@ -474,6 +444,7 @@ void fem::Assembler::apply_bc(
 
     // FIXME: Is this required?
     // Zero Dirichlet rows in Ae
+    /*
     if (spaces[0] == spaces[1])
     {
       for (int i = 0; i < dmap0.size(); ++i)
@@ -484,6 +455,7 @@ void fem::Assembler::apply_bc(
           Ae.row(i).setZero();
       }
     }
+    */
 
     // Size data structure for assembly
     be.resize(dmap0.size());
@@ -498,11 +470,6 @@ void fem::Assembler::apply_bc(
         be -= Ae.col(j) * bc->second;
       }
     }
-
-    // Compute cell matrix
-    // cell_integral->tabulate_tensor(be.data(), ufc.w(),
-    // coordinate_dofs.data(),
-    //                               ufc_cell.orientation);
 
     // Add to vector
     b.add_local(be.data(), dmap0.size(), dmap0.data());
@@ -521,7 +488,6 @@ void fem::Assembler::set_bc(PETScVector& b, const Form& L,
   const Mesh& mesh = *L.mesh();
 
   auto V = L.function_space(0);
-
 
   // Get bcs
   DirichletBC::Map boundary_values;

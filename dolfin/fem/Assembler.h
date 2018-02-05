@@ -31,7 +31,8 @@ public:
             std::vector<std::shared_ptr<const Form>> L,
             std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-  // Assemble matrix
+  // Assemble matrix. Dirichlet rows/columns are zeroed, with '1' placed on
+  // diagonal
   void assemble(PETScMatrix& A);
 
   // Assemble vector
