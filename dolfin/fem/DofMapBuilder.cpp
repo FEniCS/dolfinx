@@ -63,7 +63,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = dofmap._ufc_dofmap->needs_mesh_entities(d);
+    needs_entities[d] = (dofmap._ufc_dofmap->num_entity_dofs(d) > 0);
 
   // For mesh entities required by UFC dofmap, compute number of
   // entities on this process
@@ -270,7 +270,7 @@ void DofMapBuilder::build_sub_map_view(
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = parent_ufc_dofmap.needs_mesh_entities(d);
+    needs_entities[d] = (parent_ufc_dofmap.num_entity_dofs(d) > 0);
 
   // Generate and number required mesh entities for local UFC map
   const std::vector<std::size_t> num_mesh_entities_local
@@ -558,7 +558,7 @@ void DofMapBuilder::build_local_ufc_dofmap(
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = ufc_dofmap.needs_mesh_entities(d);
+    needs_entities[d] = (ufc_dofmap.num_entity_dofs(d) > 0);
 
   // Generate and number required mesh entities (locally)
   std::vector<std::size_t> num_mesh_entities(D + 1, 0);
@@ -832,7 +832,7 @@ void DofMapBuilder::compute_global_dofs(
     bool global_dof = true;
     for (std::size_t d = 0; d < num_mesh_entities_local.size(); ++d)
     {
-      if (ufc_dofmap->needs_mesh_entities(d))
+      if (ufc_dofmap->num_entity_dofs(d) > 0)
       {
         global_dof = false;
         break;
@@ -1008,7 +1008,7 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = ufc_dofmap->needs_mesh_entities(d);
+    needs_entities[d] = (ufc_dofmap->num_entity_dofs(d) > 0);
 
   // Generate and number required mesh entities (local & global, and
   // constrained global)
@@ -1120,7 +1120,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = ufc_dofmap->needs_mesh_entities(d);
+    needs_entities[d] = (ufc_dofmap->num_entity_dofs(d) > 0);
 
   // Generate and number required mesh entities (local & global, and constrained
   // global)
