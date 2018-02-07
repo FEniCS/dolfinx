@@ -59,7 +59,6 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Sanity checks on UFC dofmap
   const std::size_t D = mesh.topology().dim();
   dolfin_assert(dofmap._ufc_dofmap);
-  dolfin_assert(dofmap._ufc_dofmap->topological_dimension() == D);
 
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
@@ -85,7 +84,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Determine and set dof block size (block size must be 1 if UFC map
   // is not re-ordered or if global dofs are present)
   const std::size_t bs = (global_dofs.empty() and reorder)
-                             ? compute_blocksize(*dofmap._ufc_dofmap)
+                             ? compute_blocksize(*dofmap._ufc_dofmap, D)
                              : 1;
 
   // Compute a 'node' dofmap based on a UFC dofmap. Returns:
@@ -373,10 +372,9 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
 
   // Get vertex sharing information (local index, [(sharing process p,
   // local index on p)])
-  const std::
-      unordered_map<std::uint32_t,
-                    std::vector<std::pair<std::uint32_t, std::uint32_t>>>&
-          shared_vertices
+  const std::unordered_map<
+      std::uint32_t, std::vector<std::pair<std::uint32_t, std::uint32_t>>>&
+      shared_vertices
       = DistributedMeshTools::compute_shared_entities(mesh, 0);
 
   // Mark shared vertices
@@ -945,7 +943,8 @@ std::shared_ptr<ufc::dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMapBuilder::compute_blocksize(const ufc::dofmap& ufc_dofmap)
+std::size_t DofMapBuilder::compute_blocksize(const ufc::dofmap& ufc_dofmap,
+                                             std::size_t tdim)
 {
   bool has_block_structure = false;
   if (ufc_dofmap.num_sub_dofmaps() > 1)
@@ -971,7 +970,7 @@ std::size_t DofMapBuilder::compute_blocksize(const ufc::dofmap& ufc_dofmap)
         std::unique_ptr<ufc::dofmap> ufc_sub_dofmap(
             ufc_dofmap.create_sub_dofmap(i));
         dolfin_assert(ufc_sub_dofmap);
-        for (std::size_t d = 0; d <= ufc_dofmap.topological_dimension(); ++d)
+        for (std::size_t d = 0; d <= tdim; ++d)
         {
           if (ufc_sub_dofmap->num_entity_dofs(d)
               != ufc_sub_dofmap0->num_entity_dofs(d))
