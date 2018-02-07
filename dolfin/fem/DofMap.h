@@ -371,10 +371,6 @@ private:
   // Friends
   friend class DofMapBuilder;
 
-  // Check dimensional consistency between UFC dofmap and the mesh
-  static void check_dimensional_consistency(const ufc::dofmap& dofmap,
-                                            const Mesh& mesh);
-
   // Check that mesh provides the entities needed by dofmap
   static void check_provided_entities(const ufc::dofmap& dofmap,
                                       const Mesh& mesh);

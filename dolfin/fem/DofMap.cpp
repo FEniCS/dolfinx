@@ -62,9 +62,6 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
 {
   dolfin_assert(_ufc_dofmap);
 
-  // Check for dimensional consistency between the dofmap and mesh
-  check_dimensional_consistency(*_ufc_dofmap, mesh);
-
   // Check that mesh has been ordered
   if (!mesh.ordered())
   {
