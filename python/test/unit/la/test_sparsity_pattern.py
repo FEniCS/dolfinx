@@ -68,22 +68,27 @@ def test_insert_local(mesh, V):
                                  True, False, False, False,
                                  False, init=False, finalize=True)
 
-    print("\nPattern:")
-    print(sp.str(True))
+    if (MPI.rank(mesh.mpi_comm()) == 0):
+        print("\nPattern:")
+        print(sp.str(True))
 
     local_range0 = sp.local_range(0)
     local_range1 = sp.local_range(1)
 
-    #sp1 = cpp.la.SparsityPattern([[sp, sp]], [[0], [0, local_range1[1]] ])
-    #print("\nPattern:")
-    #print(sp1.str(True))
+    #if (MPI.rank(mesh.mpi_comm()) == 0):
+    #    print(index_map.local_range())
+    ##    print(local_range0)
+    #    print(local_range1)
 
 
-    sp1 = cpp.la.SparsityPattern([ [sp], [sp] ], [0, local_range0[1]], [0])
-    print("\nPattern:")
-    print(sp1.str(True))
+    size0 = local_range0[1] - local_range0[0]
+    size1 = local_range1[1] - local_range1[0]
+    sp1 = cpp.la.SparsityPattern([ [sp], [sp] ], [0, size0], [0])
+    if (MPI.rank(mesh.mpi_comm()) == 0):
+        print("\nPattern:")
+        print(sp1.str(True))
 
-    #sp1 = cpp.la.SparsityPattern([[sp, sp]], [[0, local_range0[1]], [0, local_range1[1]] ])
+    #sp1 = cpp.la.SparsityPattern([[sp, sp]], [0], [0, size1])
     #print("\nPattern:")
     #print(sp1.str(True))
 

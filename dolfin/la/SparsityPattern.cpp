@@ -629,12 +629,12 @@ SparsityPattern::SparsityPattern(
   // Iterate over rows
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
-    std::cout << "Row: " << row << ", " << patterns.size() << std::endl;
+    //std::cout << "Row: " << row << ", " << patterns.size() << std::endl;
 
     // Get offset for rows (nodes)
     const std::size_t row_offset = offsets0[row];
 
-    std::cout << "Row offset: " << row_offset << std::endl;
+    //std::cout << "*** Row offset: " << row_offset << std::endl;
 
     // Iterate over columns of current row
     this->_diagonal.resize(this->_diagonal.size()
@@ -644,14 +644,14 @@ SparsityPattern::SparsityPattern(
       // Get offset for columns (edges)
       std::size_t col_offset = offsets1[col];
 
-      std::cout << "  Col offset: " << col_offset << std::endl;
+      //std::cout << "  Col offset: " << col_offset << std::endl;
 
       // Iterate over nodes in sparsity pattern
       if (patterns[row][col])
       {
         for (std::size_t k = 0; k < patterns[row][col]->_diagonal.size(); ++k)
         {
-          std::cout << "    node: " << k << std::endl;
+          //std::cout << "    node: " << k << std::endl;
 
           // Get nodes edges, and add offset
           // std::cout << "Get edges" << std::endl;
@@ -661,13 +661,17 @@ SparsityPattern::SparsityPattern(
           // std::cout << "Add offset " << std::endl;
           // for (auto e : edges)
           //  std::cout << "Pre-edge: "<< e << std::endl;
+          //std::cout << "Transform" << std::endl;
           std::transform(edges.begin(), edges.end(), edges.begin(),
                          std::bind2nd(std::plus<double>(), col_offset));
           // std::cout << "Add edges to pattern" << std::endl;
           // for (auto e : edges)
           //  std::cout << "Post-edge: "<< e << std::endl;
           // std::cout << "Insert into row: " << k + row_offset << std::endl;
+          //std::cout << "Insert: " << k << ", " << row_offset << std::endl;
+          assert(k + row_offset < this->_diagonal.size());
           this->_diagonal[k + row_offset].insert(edges.begin(), edges.end());
+          //std::cout << "Post Insert" << std::endl;
         }
       }
     }

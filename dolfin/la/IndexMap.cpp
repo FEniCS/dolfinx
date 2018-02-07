@@ -55,15 +55,6 @@ std::array<std::int64_t, 2> IndexMap::local_range() const
              (std::int64_t)_all_ranges[_rank + 1]}};
 }
 //-----------------------------------------------------------------------------
-/*
-std::pair<std::size_t, std::size_t> IndexMap::local_range() const
-{
-  auto block_range = local_block_range();
-  return std::make_pair(_block_size*block_range.first,
-                         _block_size*block_range.second);
-}
-*/
-//-----------------------------------------------------------------------------
 std::size_t IndexMap::size(const IndexMap::MapSize type) const
 {
   if (_all_ranges.size() == 0)

@@ -59,10 +59,6 @@ public:
   /// MapSize::UNOWNED, MapSize::ALL or MapSize::GLOBAL
   std::size_t size(MapSize type) const;
 
-  /// Get number of local indices of type MapSize::OWNED,
-  /// MapSize::UNOWNED, MapSize::ALL or MapSize::GLOBAL
-  // std::size_t size(MapSize type) const;
-
   /// Get local to global map for unowned blocks
   /// (local indexing beyond end of local range)
   const std::vector<std::size_t>& local_to_global_unowned() const;
