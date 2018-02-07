@@ -616,32 +616,61 @@ void SparsityPattern::info_statistics() const
   }
 }
 //-----------------------------------------------------------------------------
-SparsityPattern SparsityPattern::merge(
+SparsityPattern::SparsityPattern(
     const std::vector<std::vector<const SparsityPattern*>> patterns,
-    const std::vector<std::vector<std::int32_t>> offsets)
+    std::vector<std::int32_t> offsets0, std::vector<std::int32_t> offsets1)
+    : _primary_dim(0), _mpi_comm(MPI_COMM_WORLD)
 {
-  // Create sparsity pattern
-  SparsityPattern(MPI_COMM_WORLD, 0);
-
-  // std::array<std::shared_ptr<const IndexMap>, 2> _index_maps;
-
-  // std::vector<set_type> _diagonal;
-  // std::vector<set_type> _off_diagonal;
-
-  // set_type _full_rows;
-
-  // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
-  //std::vector<std::size_t> _non_local;
-
+  // FIXME: - Extend for parallel
+  //        - Add range/bound checks
+  //        - support null blocks
+  // Merge sparsity patterns
 
   // Iterate over rows
-  for (std::size_t i = 0; i < patterns.size(); ++i)
+  for (std::size_t row = 0; row < patterns.size(); ++row)
   {
+    std::cout << "Row: " << row << ", " << patterns.size() << std::endl;
 
+    // Get offset for rows (nodes)
+    const std::size_t row_offset = offsets0[row];
 
+    std::cout << "Row offset: " << row_offset << std::endl;
+
+    // Iterate over columns of current row
+    this->_diagonal.resize(this->_diagonal.size()
+                           + patterns[row][0]->_diagonal.size());
+    for (std::size_t col = 0; col < patterns[row].size(); ++col)
+    {
+      // Get offset for columns (edges)
+      std::size_t col_offset = offsets1[col];
+
+      std::cout << "  Col offset: " << col_offset << std::endl;
+
+      // Iterate over nodes in sparsity pattern
+      if (patterns[row][col])
+      {
+        for (std::size_t k = 0; k < patterns[row][col]->_diagonal.size(); ++k)
+        {
+          std::cout << "    node: " << k << std::endl;
+
+          // Get nodes edges, and add offset
+          // std::cout << "Get edges" << std::endl;
+          std::vector<std::size_t> edges
+              = patterns[row][col]->_diagonal[k].set();
+
+          // std::cout << "Add offset " << std::endl;
+          // for (auto e : edges)
+          //  std::cout << "Pre-edge: "<< e << std::endl;
+          std::transform(edges.begin(), edges.end(), edges.begin(),
+                         std::bind2nd(std::plus<double>(), col_offset));
+          // std::cout << "Add edges to pattern" << std::endl;
+          // for (auto e : edges)
+          //  std::cout << "Post-edge: "<< e << std::endl;
+          // std::cout << "Insert into row: " << k + row_offset << std::endl;
+          this->_diagonal[k + row_offset].insert(edges.begin(), edges.end());
+        }
+      }
+    }
   }
-
-  throw std::runtime_error("Not implemented");
-  return SparsityPattern(MPI_COMM_WORLD, 0);
 }
 //-----------------------------------------------------------------------------

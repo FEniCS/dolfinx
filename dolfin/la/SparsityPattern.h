@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <array>
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
@@ -49,6 +48,19 @@ public:
 
   /// Create empty sparsity pattern
   SparsityPattern(MPI_Comm comm, std::size_t primary_dim);
+
+  /// Create a new sparsity pattern by adding sub-patterns, e.g.
+  /// pattern =[ pattern00 ][ pattern 01]
+  ///          [ pattern10 ][ pattern 11]
+  SparsityPattern(
+      const std::vector<std::vector<const SparsityPattern*>> patterns,
+      std::vector<std::int32_t> offsets0, std::vector<std::int32_t> offsets1);
+
+  /// Create empty sparsity pattern
+  SparsityPattern(const SparsityPattern& pattern) = delete;
+
+  /// Destructor
+  ~SparsityPattern() {}
 
   /// Initialize sparsity pattern for a generic tensor
   void init(std::array<std::shared_ptr<const IndexMap>, 2> index_maps,
@@ -126,14 +138,6 @@ public:
 
   /// Require ghosts
   Ghosts is_ghosted() const { return _ghosted; }
-
-  // FIXME: Make this a constructor?
-  /// Create a new sparsity pattern by adding sub-patterns, e.g.
-  /// pattern =[ pattern00 ][ pattern 01]
-  ///          [ pattern10 ][ pattern 11]
-  static SparsityPattern
-  merge(const std::vector<std::vector<const SparsityPattern*>> patterns,
-        const std::vector<std::vector<std::int32_t>> offsets);
 
 private:
   // Other insertion methods will call this method providing the

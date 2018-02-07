@@ -21,6 +21,8 @@ class SparsityPattern;
 class SparsityPatternBuilder
 {
 public:
+
+  // FIXME: Simplify
   /// Build sparsity pattern for assembly of given bilinea form
   static void build(SparsityPattern& sparsity_pattern, const Mesh& mesh,
                     const std::array<const GenericDofMap*, 2> dofmaps,
