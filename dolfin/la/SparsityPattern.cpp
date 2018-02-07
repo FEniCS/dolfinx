@@ -616,3 +616,32 @@ void SparsityPattern::info_statistics() const
   }
 }
 //-----------------------------------------------------------------------------
+SparsityPattern SparsityPattern::merge(
+    const std::vector<std::vector<const SparsityPattern*>> patterns,
+    const std::vector<std::vector<std::int32_t>> offsets)
+{
+  // Create sparsity pattern
+  SparsityPattern(MPI_COMM_WORLD, 0);
+
+  // std::array<std::shared_ptr<const IndexMap>, 2> _index_maps;
+
+  // std::vector<set_type> _diagonal;
+  // std::vector<set_type> _off_diagonal;
+
+  // set_type _full_rows;
+
+  // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
+  //std::vector<std::size_t> _non_local;
+
+
+  // Iterate over rows
+  for (std::size_t i = 0; i < patterns.size(); ++i)
+  {
+
+
+  }
+
+  throw std::runtime_error("Not implemented");
+  return SparsityPattern(MPI_COMM_WORLD, 0);
+}
+//-----------------------------------------------------------------------------

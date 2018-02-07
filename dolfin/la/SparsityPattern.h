@@ -127,6 +127,14 @@ public:
   /// Require ghosts
   Ghosts is_ghosted() const { return _ghosted; }
 
+  // FIXME: Make this a constructor?
+  /// Create a new sparsity pattern by adding sub-patterns, e.g.
+  /// pattern =[ pattern00 ][ pattern 01]
+  ///          [ pattern10 ][ pattern 11]
+  static SparsityPattern
+  merge(const std::vector<std::vector<const SparsityPattern*>> patterns,
+        const std::vector<std::vector<std::int32_t>> offsets);
+
 private:
   // Other insertion methods will call this method providing the
   // appropriate mapping of the indices in the entries.
