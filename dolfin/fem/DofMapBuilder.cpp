@@ -117,8 +117,13 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   dofmap._cell_dimension = dofmap._ufc_dofmap->num_element_dofs();
 
   // Set global dimension
-  dofmap._global_dimension
-      = dofmap._ufc_dofmap->global_dimension(dofmap._num_mesh_entities_global);
+  dofmap._global_dimension = 0;
+  unsigned int d = 0;
+  for (auto& n : dofmap._num_mesh_entities_global)
+  {
+    dofmap._global_dimension += n * dofmap._ufc_dofmap->num_entity_dofs(d);
+    ++d;
+  }
 
   // Compute local UFC indices of any 'global' dofs, and re-map if
   // required, e.g., in case that dofmap is periodic
@@ -305,8 +310,14 @@ void DofMapBuilder::build_sub_map_view(
   sub_dofmap._num_mesh_entities_global
       = parent_dofmap._num_mesh_entities_global;
   dolfin_assert(!sub_dofmap._num_mesh_entities_global.empty());
-  sub_dofmap._global_dimension = sub_dofmap._ufc_dofmap->global_dimension(
-      sub_dofmap._num_mesh_entities_global);
+  sub_dofmap._global_dimension = 0;
+  unsigned int d = 0;
+  for (auto& n : sub_dofmap._num_mesh_entities_global)
+  {
+    sub_dofmap._global_dimension
+        += n * sub_dofmap._ufc_dofmap->num_entity_dofs(d);
+    ++d;
+  }
 
   // Copy data from parent
   // FIXME: Do we touch sub_dofmap.index_map() in this routine? If yes, then
@@ -841,8 +852,16 @@ void DofMapBuilder::compute_global_dofs(
 
     if (global_dof)
     {
+      unsigned int d = 0;
+      std::size_t ndofs = 0;
+      for (auto& n : num_mesh_entities_local)
+      {
+        ndofs += n * ufc_dofmap->num_entity_dofs(d);
+        ++d;
+      }
+
       // Check that we have just one dof
-      if (ufc_dofmap->global_dimension(num_mesh_entities_local) != 1)
+      if (ndofs != 1)
       {
         dolfin_error("DofMapBuilder.cpp", "compute global degrees of freedom",
                      "Global degree of freedom has dimension != 1");
@@ -877,10 +896,18 @@ void DofMapBuilder::compute_global_dofs(
 
       // Get offset
       if (sub_dofmap->num_sub_dofmaps() == 0)
-        offset_local += sub_dofmap->global_dimension(num_mesh_entities_local);
+      {
+        unsigned int d = 0;
+        for (auto& n : num_mesh_entities_local)
+        {
+          offset_local += n * sub_dofmap->num_entity_dofs(d);
+          ++d;
+        }
+      }
     }
   }
 }
+
 //-----------------------------------------------------------------------------
 std::shared_ptr<ufc::dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
     const ufc::dofmap& ufc_dofmap, std::size_t& offset,
@@ -918,7 +945,12 @@ std::shared_ptr<ufc::dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
     dolfin_assert(ufc_tmp_dofmap);
 
     // Get offset
-    offset += ufc_tmp_dofmap->global_dimension(num_mesh_entities);
+    unsigned int d = 0;
+    for (auto& n : num_mesh_entities)
+    {
+      offset += n * ufc_tmp_dofmap->num_entity_dofs(d);
+      ++d;
+    }
   }
 
   // Create UFC sub-system
@@ -1043,8 +1075,13 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   else
     dofmaps[0] = ufc_dofmap;
 
-  offset_local[block_size]
-      = ufc_dofmap->global_dimension(num_mesh_entities_local);
+  offset_local[block_size] = 0;
+  unsigned int d = 0;
+  for (auto& n : num_mesh_entities_local)
+  {
+    offset_local[block_size] += n * ufc_dofmap->num_entity_dofs(d);
+    ++d;
+  }
 
   num_mesh_entities_global = num_mesh_entities_global_unconstrained;
 
@@ -1122,8 +1159,8 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   for (std::size_t d = 0; d <= D; ++d)
     needs_entities[d] = (ufc_dofmap->num_entity_dofs(d) > 0);
 
-  // Generate and number required mesh entities (local & global, and constrained
-  // global)
+  // Generate and number required mesh entities (local & global, and
+  // constrained global)
   std::vector<std::size_t> num_mesh_entities_local(D + 1, 0);
   std::vector<std::size_t> num_mesh_entities_global_unconstrained(D + 1, 0);
   std::vector<bool> required_mesh_entities(D + 1, false);
@@ -1163,8 +1200,13 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   else
     dofmaps[0] = ufc_dofmap;
 
-  offset_local[block_size]
-      = ufc_dofmap->global_dimension(num_mesh_entities_local);
+  offset_local[block_size] = 0;
+  unsigned int d = 0;
+  for (auto& n : num_mesh_entities_local)
+  {
+    offset_local[block_size] += n * ufc_dofmap->num_entity_dofs(d);
+    ++d;
+  }
 
   // Allocate space for dof map
   node_dofmap.clear();
@@ -1661,7 +1703,8 @@ void DofMapBuilder::get_cell_entities_global(
       entity_indices[D][0] = cell.index();
   }
 }
-// TODO: The above and below functions are _very_ similar, can they be combined?
+// TODO: The above and below functions are _very_ similar, can they be
+// combined?
 //-----------------------------------------------------------------------------
 void DofMapBuilder::get_cell_entities_global_constrained(
     const Cell& cell, std::vector<std::vector<std::size_t>>& entity_indices,
@@ -1675,9 +1718,10 @@ void DofMapBuilder::get_cell_entities_global_constrained(
     {
       if (global_entity_indices[d].empty())
       {
-        dolfin_error(
-            "DofMapBuilder.cpp", "get_cell_entities_global_constrained",
-            "Missing global entity indices needed for cell entity tabulation.");
+        dolfin_error("DofMapBuilder.cpp",
+                     "get_cell_entities_global_constrained",
+                     "Missing global entity indices needed for cell entity "
+                     "tabulation.");
       }
       if (!global_entity_indices[d].empty()) // TODO: Can this be false? If so
                                              // the entity_indices array will
