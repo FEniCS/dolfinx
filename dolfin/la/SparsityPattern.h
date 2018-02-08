@@ -176,7 +176,8 @@ private:
   // complexity for dense rows)
   set_type _full_rows;
 
-  // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
+  // Cache for non-local entries stored as [i0, j0, i1, j1, ...]. Cleared after
+  // communication via apply()
   std::vector<std::size_t> _non_local;
 
   // Ghosted tensor (typically vector) required

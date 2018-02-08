@@ -628,27 +628,26 @@ SparsityPattern::SparsityPattern(
   //        - Check for compatible block sizes
 
   // Sum local sizes
-  std::size_t local_size0 = 0;
+  std::size_t local_size0(0), local_size1(0);
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
-    assert(patterns[row][0]);
-    local_size0
-        += patterns[row][0]->_index_maps[0]->size(IndexMap::MapSize::OWNED);
+    auto p = patterns[row][0];
+    assert(p);
+    local_size0 += p->_index_maps[0]->size(IndexMap::MapSize::OWNED);
   }
 
-  std::size_t local_size1 = 0;
   for (std::size_t col = 0; col < patterns[0].size(); ++col)
   {
-    assert(patterns[0][col]);
-    local_size1
-        += patterns[0][col]->_index_maps[1]->size(IndexMap::MapSize::OWNED);
+    auto p = patterns[0][col];
+    assert(p);
+    local_size1 += p->_index_maps[1]->size(IndexMap::MapSize::OWNED);
   }
 
-  assert(patterns[0][0]);
-  _index_maps[0]
-      = std::make_shared<IndexMap>(patterns[0][0]->mpi_comm(), local_size0, 1);
-  _index_maps[1]
-      = std::make_shared<IndexMap>(patterns[0][0]->mpi_comm(), local_size1, 1);
+  // Intialise Indexmaps for merged pattern
+  auto p00 = patterns[0][0];
+  assert(p00);
+  _index_maps[0] = std::make_shared<IndexMap>(p00->mpi_comm(), local_size0, 1);
+  _index_maps[1] = std::make_shared<IndexMap>(p00->mpi_comm(), local_size1, 1);
 
   // Merge sparsity patterns
 
