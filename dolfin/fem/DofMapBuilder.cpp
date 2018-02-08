@@ -162,7 +162,8 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
         node_graph0, shared_nodes, global_nodes0, node_local_to_global0, mesh,
         dofmap._global_dimension / bs);
 
-    dofmap._index_map->init(num_owned_nodes, bs);
+    dofmap._index_map
+        = std::make_shared<IndexMap>(mesh.mpi_comm(), num_owned_nodes, bs);
 
     // Sanity check
     dolfin_assert(
@@ -233,7 +234,9 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
         dofmap._ufc_local_to_local[i] = i;
     }
 
-    dofmap._index_map->init(dofmap._global_dimension, bs);
+    dofmap._index_map = std::make_shared<IndexMap>(
+        mesh.mpi_comm(), dofmap._global_dimension, bs);
+
     dofmap._shared_nodes.clear();
 
     // Store global nodes
@@ -372,9 +375,10 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
 
   // Get vertex sharing information (local index, [(sharing process p,
   // local index on p)])
-  const std::unordered_map<
-      std::uint32_t, std::vector<std::pair<std::uint32_t, std::uint32_t>>>&
-      shared_vertices
+  const std::
+      unordered_map<std::uint32_t,
+                    std::vector<std::pair<std::uint32_t, std::uint32_t>>>&
+          shared_vertices
       = DistributedMeshTools::compute_shared_entities(mesh, 0);
 
   // Mark shared vertices

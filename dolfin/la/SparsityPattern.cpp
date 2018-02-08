@@ -624,34 +624,61 @@ SparsityPattern::SparsityPattern(
   // FIXME: - Extend for parallel
   //        - Add range/bound checks
   //        - support null blocks
+  //        - Update IndexSets
+  //        - Check for compatible block sizes
+
+  // Sum local sizes
+  std::size_t local_size0 = 0;
+  for (std::size_t row = 0; row < patterns.size(); ++row)
+  {
+    assert(patterns[row][0]);
+    local_size0
+        += patterns[row][0]->_index_maps[0]->size(IndexMap::MapSize::OWNED);
+  }
+
+  std::size_t local_size1 = 0;
+  for (std::size_t col = 0; col < patterns[0].size(); ++col)
+  {
+    assert(patterns[0][col]);
+    local_size1
+        += patterns[0][col]->_index_maps[1]->size(IndexMap::MapSize::OWNED);
+  }
+
+  assert(patterns[0][0]);
+  _index_maps[0]
+      = std::make_shared<IndexMap>(patterns[0][0]->mpi_comm(), local_size0, 1);
+  _index_maps[1]
+      = std::make_shared<IndexMap>(patterns[0][0]->mpi_comm(), local_size1, 1);
+
   // Merge sparsity patterns
 
   // Iterate over rows
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
-    //std::cout << "Row: " << row << ", " << patterns.size() << std::endl;
+    // std::cout << "Row: " << row << ", " << patterns.size() << std::endl;
 
     // Get offset for rows (nodes)
     const std::size_t row_offset = offsets0[row];
 
-    //std::cout << "*** Row offset: " << row_offset << std::endl;
+    // std::cout << "*** Row offset: " << row_offset << std::endl;
 
     // Iterate over columns of current row
     this->_diagonal.resize(this->_diagonal.size()
                            + patterns[row][0]->_diagonal.size());
     for (std::size_t col = 0; col < patterns[row].size(); ++col)
     {
+      // FIXME: this need to be global
       // Get offset for columns (edges)
       std::size_t col_offset = offsets1[col];
 
-      //std::cout << "  Col offset: " << col_offset << std::endl;
+      // std::cout << "  Col offset: " << col_offset << std::endl;
 
       // Iterate over nodes in sparsity pattern
       if (patterns[row][col])
       {
         for (std::size_t k = 0; k < patterns[row][col]->_diagonal.size(); ++k)
         {
-          //std::cout << "    node: " << k << std::endl;
+          // std::cout << "    node: " << k << std::endl;
 
           // Get nodes edges, and add offset
           // std::cout << "Get edges" << std::endl;
@@ -661,17 +688,17 @@ SparsityPattern::SparsityPattern(
           // std::cout << "Add offset " << std::endl;
           // for (auto e : edges)
           //  std::cout << "Pre-edge: "<< e << std::endl;
-          //std::cout << "Transform" << std::endl;
+          // std::cout << "Transform" << std::endl;
           std::transform(edges.begin(), edges.end(), edges.begin(),
                          std::bind2nd(std::plus<double>(), col_offset));
           // std::cout << "Add edges to pattern" << std::endl;
           // for (auto e : edges)
           //  std::cout << "Post-edge: "<< e << std::endl;
           // std::cout << "Insert into row: " << k + row_offset << std::endl;
-          //std::cout << "Insert: " << k << ", " << row_offset << std::endl;
+          // std::cout << "Insert: " << k << ", " << row_offset << std::endl;
           assert(k + row_offset < this->_diagonal.size());
           this->_diagonal[k + row_offset].insert(edges.begin(), edges.end());
-          //std::cout << "Post Insert" << std::endl;
+          // std::cout << "Post Insert" << std::endl;
         }
       }
     }

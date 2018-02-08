@@ -21,8 +21,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh)
     : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-      _global_dimension(0), _ufc_offset(0),
-      _index_map(new IndexMap(mesh.mpi_comm()))
+      _global_dimension(0), _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -33,8 +32,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh)
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh,
                std::shared_ptr<const SubDomain> constrained_domain)
     : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-      _global_dimension(0), _ufc_offset(0),
-      _index_map(new IndexMap(mesh.mpi_comm()))
+      _global_dimension(0), _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -57,8 +55,7 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh)
     : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
-      _global_dimension(0), _ufc_offset(0),
-      _index_map(new IndexMap(mesh.mpi_comm()))
+      _global_dimension(0), _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -153,6 +150,7 @@ std::size_t DofMap::num_facet_dofs() const
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> DofMap::ownership_range() const
 {
+  assert(_index_map);
   auto block_range = _index_map->local_range();
   std::int64_t bs = _index_map->block_size();
   return {{bs * block_range[0], bs * block_range[1]}};
@@ -527,6 +525,7 @@ std::vector<dolfin::la_index_t> DofMap::dofs() const
   std::vector<la_index_t> _dofs;
   _dofs.reserve(_dofmap.size() * max_element_dofs());
 
+  assert(_index_map);
   const std::size_t bs = _index_map->block_size();
   const dolfin::la_index_t local_ownership_size
       = bs * _index_map->size(IndexMap::MapSize::OWNED);
@@ -568,6 +567,7 @@ void DofMap::tabulate_local_to_global_dofs(
 {
   // FIXME: use IndexMap::local_to_global_index?
 
+  assert(_index_map);
   const std::size_t bs = _index_map->block_size();
   const std::vector<std::size_t>& local_to_global_unowned
       = _index_map->local_to_global_unowned();

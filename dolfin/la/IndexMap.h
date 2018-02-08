@@ -34,23 +34,17 @@ public:
     GLOBAL = 3
   };
 
-  /// Index map with no data
-  explicit IndexMap(MPI_Comm mpi_comm);
-
   /// Create Index map with local_size owned blocks on this process, and blocks
   /// have size block_size.
   ///
   /// Collective
   IndexMap(MPI_Comm mpi_comm, std::size_t local_size, std::size_t block_size);
 
+  /// Index map with no data
+  IndexMap(const IndexMap& map) = delete;
+
   /// Destructor
   ~IndexMap();
-
-  /// Initialise IndexMap with local_size block owned on this process with
-  /// block_size.
-  ///
-  /// Collective
-  void init(std::size_t local_size, std::size_t block_size);
 
   /// Local range of block indices
   std::array<std::int64_t, 2> local_range() const;
@@ -140,5 +134,3 @@ inline std::size_t IndexMap::local_to_global_index(std::size_t i) const
   }
 }
 }
-
-
