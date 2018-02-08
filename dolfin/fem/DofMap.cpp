@@ -596,7 +596,7 @@ void DofMap::check_provided_entities(const ufc::dofmap& dofmap,
   // Check that we have all mesh entities
   for (std::size_t d = 0; d <= mesh.topology().dim(); ++d)
   {
-    if (dofmap.needs_mesh_entities(d) && mesh.num_entities(d) == 0)
+    if (dofmap.num_entity_dofs(d) > 0 && mesh.num_entities(d) == 0)
     {
       dolfin_error(
           "DofMap.cpp", "initialize mapping of degrees of freedom",
