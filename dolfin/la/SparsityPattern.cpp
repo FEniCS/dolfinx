@@ -617,14 +617,14 @@ void SparsityPattern::info_statistics() const
 }
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
-    const std::vector<std::vector<const SparsityPattern*>> patterns,
-    std::vector<std::int32_t> offsets0, std::vector<std::int32_t> offsets1)
+    const std::vector<std::vector<const SparsityPattern*>> patterns)
     : _primary_dim(0), _mpi_comm(MPI_COMM_WORLD)
 {
-  // FIXME: - Extend for parallel
+  // FIXME: - Extend for parallel [done, but need to check off-diagonal block
+  //          handling in parallel]
   //        - Add range/bound checks
-  //        - support null blocks
-  //        - Update IndexSets
+  //        - support null blocks (insist on null block having an IndexMap)
+  //        - Update IndexSets [done]
   //        - Check for compatible block sizes
 
   // Sum local sizes
@@ -649,58 +649,58 @@ SparsityPattern::SparsityPattern(
   _index_maps[0] = std::make_shared<IndexMap>(p00->mpi_comm(), local_size0, 1);
   _index_maps[1] = std::make_shared<IndexMap>(p00->mpi_comm(), local_size1, 1);
 
-  // Merge sparsity patterns
-
-  // Iterate over rows
+  // Iterate over block rows
+  std::size_t row_local_offset = 0;
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
-    // std::cout << "Row: " << row << ", " << patterns.size() << std::endl;
+    // Increase storage for nodes
+    assert(patterns[row][0]);
+    assert(patterns[row][0]->_index_maps[0]);
+    std::size_t row_size
+        = patterns[row][0]->_index_maps[0]->size(IndexMap::MapSize::OWNED);
+    assert(row_size == patterns[row][0]->_diagonal.size());
+    assert(row_size == patterns[row][0]->_off_diagonal.size());
+    this->_diagonal.resize(this->_diagonal.size() + row_size);
+    this->_off_diagonal.resize(this->_off_diagonal.size() + row_size);
 
-    // Get offset for rows (nodes)
-    const std::size_t row_offset = offsets0[row];
-
-    // std::cout << "*** Row offset: " << row_offset << std::endl;
-
-    // Iterate over columns of current row
-    this->_diagonal.resize(this->_diagonal.size()
-                           + patterns[row][0]->_diagonal.size());
+    // Iterate over block columns of current block row
+    std::size_t col_global_offset = 0;
     for (std::size_t col = 0; col < patterns[row].size(); ++col)
     {
-      // FIXME: this need to be global
-      // Get offset for columns (edges)
-      std::size_t col_offset = offsets1[col];
-
-      // std::cout << "  Col offset: " << col_offset << std::endl;
+      // Get pattern for this block
+      auto p = patterns[row][col];
+      assert(p);
 
       // Iterate over nodes in sparsity pattern
-      if (patterns[row][col])
+      for (std::size_t k = 0; k < p->_diagonal.size(); ++k)
       {
-        for (std::size_t k = 0; k < patterns[row][col]->_diagonal.size(); ++k)
-        {
-          // std::cout << "    node: " << k << std::endl;
+        // Diagonal block
+        std::vector<std::size_t> edges0 = p->_diagonal[k].set();
+        std::transform(edges0.begin(), edges0.end(), edges0.begin(),
+                       std::bind2nd(std::plus<double>(), col_global_offset));
+        assert(k + row_local_offset < this->_diagonal.size());
+        this->_diagonal[k + row_local_offset].insert(edges0.begin(),
+                                                     edges0.end());
 
-          // Get nodes edges, and add offset
-          // std::cout << "Get edges" << std::endl;
-          std::vector<std::size_t> edges
-              = patterns[row][col]->_diagonal[k].set();
-
-          // std::cout << "Add offset " << std::endl;
-          // for (auto e : edges)
-          //  std::cout << "Pre-edge: "<< e << std::endl;
-          // std::cout << "Transform" << std::endl;
-          std::transform(edges.begin(), edges.end(), edges.begin(),
-                         std::bind2nd(std::plus<double>(), col_offset));
-          // std::cout << "Add edges to pattern" << std::endl;
-          // for (auto e : edges)
-          //  std::cout << "Post-edge: "<< e << std::endl;
-          // std::cout << "Insert into row: " << k + row_offset << std::endl;
-          // std::cout << "Insert: " << k << ", " << row_offset << std::endl;
-          assert(k + row_offset < this->_diagonal.size());
-          this->_diagonal[k + row_offset].insert(edges.begin(), edges.end());
-          // std::cout << "Post Insert" << std::endl;
-        }
+        // Off-diagonal block
+        std::vector<std::size_t> edges1 = p->_off_diagonal[k].set();
+        std::transform(edges1.begin(), edges1.end(), edges1.begin(),
+                       std::bind2nd(std::plus<double>(), col_global_offset));
+        assert(k + row_local_offset < this->_off_diagonal.size());
+        this->_off_diagonal[k + row_local_offset].insert(edges1.begin(),
+                                                         edges1.end());
       }
+
+      // Increment global column offset
+      std::cout << "incr col: "
+                << p->_index_maps[1]->size(IndexMap::MapSize::GLOBAL)
+                << std::endl;
+      col_global_offset += p->_index_maps[1]->size(IndexMap::MapSize::GLOBAL);
+      std::cout << "Post ince: " << col_global_offset << std::endl;
     }
+
+    // Increment local row offset
+    row_local_offset += row_size;
   }
 }
 //-----------------------------------------------------------------------------

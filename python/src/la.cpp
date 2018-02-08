@@ -126,8 +126,7 @@ void la(py::module& m)
         return std::make_unique<dolfin::SparsityPattern>(comm.get(), dim);
       }))
       .def(py::init<const std::
-                        vector<std::vector<const dolfin::SparsityPattern*>>,
-                    std::vector<std::int32_t>, std::vector<std::int32_t>>())
+                        vector<std::vector<const dolfin::SparsityPattern*>>>())
       .def("init", &dolfin::SparsityPattern::init)
       .def("local_range", &dolfin::SparsityPattern::local_range)
       .def("apply", &dolfin::SparsityPattern::apply)

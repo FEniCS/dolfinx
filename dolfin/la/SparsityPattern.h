@@ -53,8 +53,7 @@ public:
   /// pattern =[ pattern00 ][ pattern 01]
   ///          [ pattern10 ][ pattern 11]
   SparsityPattern(
-      const std::vector<std::vector<const SparsityPattern*>> patterns,
-      std::vector<std::int32_t> offsets0, std::vector<std::int32_t> offsets1);
+      const std::vector<std::vector<const SparsityPattern*>> patterns);
 
   /// Create empty sparsity pattern
   SparsityPattern(const SparsityPattern& pattern) = delete;
@@ -166,8 +165,7 @@ private:
   std::array<std::shared_ptr<const IndexMap>, 2> _index_maps;
 
   // Sparsity patterns for diagonal and off-diagonal blocks
-  std::vector<set_type> _diagonal;
-  std::vector<set_type> _off_diagonal;
+  std::vector<set_type> _diagonal, _off_diagonal;
 
   // List of full rows (or columns, according to primary dimension).
   // Full rows are kept separately to circumvent quadratic scaling

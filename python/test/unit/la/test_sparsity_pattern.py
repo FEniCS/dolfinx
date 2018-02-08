@@ -64,34 +64,35 @@ def test_insert_local(mesh, V):
 
     sp = cpp.la.SparsityPattern(MPI.comm_world, 0)
     sp.init([index_map, index_map], cpp.la.SparsityPattern.Ghosts.UNGHOSTED)
-    cpp.fem.SparsityPatternBuilder.build(sp, mesh, [dm, dm],
-                                 True, False, False, False,
-                                 False, init=False, finalize=True)
+    cpp.fem.SparsityPatternBuilder.build(
+        sp,
+        mesh, [dm, dm],
+        True,
+        False,
+        False,
+        False,
+        False,
+        init=False,
+        finalize=True)
 
     if (MPI.rank(mesh.mpi_comm()) == 0):
         print("\nPattern:")
         print(sp.str(True))
-
-    local_range0 = sp.local_range(0)
-    local_range1 = sp.local_range(1)
 
     #if (MPI.rank(mesh.mpi_comm()) == 0):
     #    print(index_map.local_range())
     ##    print(local_range0)
     #    print(local_range1)
 
-
-    size0 = local_range0[1] - local_range0[0]
-    size1 = local_range1[1] - local_range1[0]
-    sp1 = cpp.la.SparsityPattern([ [sp], [sp] ], [0, size0], [0])
+    sp1 = cpp.la.SparsityPattern([[sp], [sp]])
     if (MPI.rank(mesh.mpi_comm()) == 0):
         print("\nPattern:")
         print(sp1.str(True))
 
-    #sp1 = cpp.la.SparsityPattern([[sp, sp]], [0], [0, size1])
-    #print("\nPattern:")
-    #print(sp1.str(True))
-
+    sp1 = cpp.la.SparsityPattern([[sp, sp]])
+    if (MPI.rank(mesh.mpi_comm()) == 0):
+        print("\nPattern:")
+        print(sp1.str(True))
 
     # Build sparse tensor layout
     #tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity.SPARSE)
@@ -132,7 +133,8 @@ def xtest_insert_global(mesh, V):
     # The codim (column) entries will be added to the same global entries
     # on each process.
     primary_codim_entries = np.array([0, 1, 2], dtype=np.intc)
-    entries = np.array([primary_dim_entries, primary_codim_entries], dtype=np.intc)
+    entries = np.array(
+        [primary_dim_entries, primary_codim_entries], dtype=np.intc)
 
     sp.insert_global(entries)
     sp.apply()
@@ -150,9 +152,13 @@ def xtest_insert_global(mesh, V):
     # Compare tabulated and sparsity pattern nnzs
     for local_row in range(len(nnz_d)):
         if local_range[0] <= local_row < local_range[1]:
-            assert nnz_d[local_row] == (nnz_on_diagonal if local_row in primary_dim_local_entries else 0)
+            assert nnz_d[local_row] == (
+                nnz_on_diagonal
+                if local_row in primary_dim_local_entries else 0)
         else:
-            assert nnz_od[local_row] == (nnz_off_diagonal if local_row in primary_dim_local_entries else 0)
+            assert nnz_od[local_row] == (
+                nnz_off_diagonal
+                if local_row in primary_dim_local_entries else 0)
 
 
 def xtest_insert_local_global(mesh, V):
@@ -174,7 +180,8 @@ def xtest_insert_local_global(mesh, V):
     # The codim (column) entries will be added to the same global entries
     # on each process.
     primary_codim_entries = np.array([0, 1, 2], dtype=np.intc)
-    entries = np.array([primary_dim_entries, primary_codim_entries], dtype=np.intc)
+    entries = np.array(
+        [primary_dim_entries, primary_codim_entries], dtype=np.intc)
 
     sp.insert_local_global(entries)
     sp.apply()
@@ -192,6 +199,10 @@ def xtest_insert_local_global(mesh, V):
     # Compare tabulated and sparsity pattern nnzs
     for local_row in range(len(nnz_d)):
         if local_range[0] <= local_row < local_range[1]:
-            assert nnz_d[local_row] == (nnz_on_diagonal if local_row in primary_dim_local_entries else 0)
+            assert nnz_d[local_row] == (
+                nnz_on_diagonal
+                if local_row in primary_dim_local_entries else 0)
         else:
-            assert nnz_od[local_row] == (nnz_off_diagonal if local_row in primary_dim_local_entries else 0)
+            assert nnz_od[local_row] == (
+                nnz_off_diagonal
+                if local_row in primary_dim_local_entries else 0)
