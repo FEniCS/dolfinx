@@ -79,13 +79,12 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
       = {V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
 
   // Initialise sparsity pattern
-  SparsityPattern pattern(mesh.mpi_comm(), 0);
-  pattern.init(index_maps, SparsityPattern::Ghosts::UNGHOSTED);
+  SparsityPattern pattern(mesh.mpi_comm(), index_maps, 0);
 
   // Build sparsity pattern
   std::vector<dolfin::la_index_t> rows;
   std::vector<dolfin::la_index_t> cols;
-  for (auto &edge : MeshRange<Edge>(mesh))
+  for (auto& edge : MeshRange<Edge>(mesh))
   {
     // Row index (global indices)
     const std::int64_t row = local_to_global_map0[edge_to_dof[edge.index()]];
@@ -113,7 +112,7 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
   A->init(pattern);
 
   // Build discrete gradient operator/matrix
-  for (auto &edge : MeshRange<Edge>(mesh))
+  for (auto& edge : MeshRange<Edge>(mesh))
   {
     dolfin::la_index_t row;
     dolfin::la_index_t cols[2];

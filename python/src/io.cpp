@@ -42,8 +42,8 @@ void io(py::module& m)
              dolfin::Variable>(m, "HDF5File")
       .def(py::init([](const MPICommWrapper comm, const std::string filename,
                        const std::string file_mode) {
-             return std::unique_ptr<dolfin::HDF5File>(
-                 new dolfin::HDF5File(comm.get(), filename, file_mode));
+             return std::make_unique<dolfin::HDF5File>(comm.get(), filename,
+                                                       file_mode);
            }),
            py::arg("comm"), py::arg("filename"), py::arg("file_mode"))
       .def("__enter__", [](dolfin::HDF5File& self) { return &self; })
@@ -194,7 +194,7 @@ void io(py::module& m)
       .def("set_mpi_atomicity", &dolfin::HDF5File::set_mpi_atomicity)
       .def("get_mpi_atomicity", &dolfin::HDF5File::get_mpi_atomicity)
       // others
-    .def("has_dataset", &dolfin::HDF5File::has_dataset);
+      .def("has_dataset", &dolfin::HDF5File::has_dataset);
 
 #endif
 
@@ -205,8 +205,7 @@ void io(py::module& m)
 
   xdmf_file
       .def(py::init([](const MPICommWrapper comm, std::string filename) {
-             return std::unique_ptr<dolfin::XDMFFile>(
-                 new dolfin::XDMFFile(comm.get(), filename));
+             return std::make_unique<dolfin::XDMFFile>(comm.get(), filename);
            }),
            py::arg("comm"), py::arg("filename"))
       .def(py::init<std::string>())

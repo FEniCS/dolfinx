@@ -59,12 +59,11 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Sanity checks on UFC dofmap
   const std::size_t D = mesh.topology().dim();
   dolfin_assert(dofmap._ufc_dofmap);
-  dolfin_assert(dofmap._ufc_dofmap->topological_dimension() == D);
 
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = dofmap._ufc_dofmap->needs_mesh_entities(d);
+    needs_entities[d] = (dofmap._ufc_dofmap->num_entity_dofs(d) > 0);
 
   // For mesh entities required by UFC dofmap, compute number of
   // entities on this process
@@ -85,7 +84,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Determine and set dof block size (block size must be 1 if UFC map
   // is not re-ordered or if global dofs are present)
   const std::size_t bs = (global_dofs.empty() and reorder)
-                             ? compute_blocksize(*dofmap._ufc_dofmap)
+                             ? compute_blocksize(*dofmap._ufc_dofmap, D)
                              : 1;
 
   // Compute a 'node' dofmap based on a UFC dofmap. Returns:
@@ -118,8 +117,13 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   dofmap._cell_dimension = dofmap._ufc_dofmap->num_element_dofs();
 
   // Set global dimension
-  dofmap._global_dimension
-      = dofmap._ufc_dofmap->global_dimension(dofmap._num_mesh_entities_global);
+  dofmap._global_dimension = 0;
+  unsigned int d = 0;
+  for (auto& n : dofmap._num_mesh_entities_global)
+  {
+    dofmap._global_dimension += n * dofmap._ufc_dofmap->num_entity_dofs(d);
+    ++d;
+  }
 
   // Compute local UFC indices of any 'global' dofs, and re-map if
   // required, e.g., in case that dofmap is periodic
@@ -163,7 +167,8 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
         node_graph0, shared_nodes, global_nodes0, node_local_to_global0, mesh,
         dofmap._global_dimension / bs);
 
-    dofmap._index_map->init(num_owned_nodes, bs);
+    dofmap._index_map
+        = std::make_shared<IndexMap>(mesh.mpi_comm(), num_owned_nodes, bs);
 
     // Sanity check
     dolfin_assert(
@@ -234,7 +239,9 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
         dofmap._ufc_local_to_local[i] = i;
     }
 
-    dofmap._index_map->init(dofmap._global_dimension, bs);
+    dofmap._index_map = std::make_shared<IndexMap>(
+        mesh.mpi_comm(), dofmap._global_dimension, bs);
+
     dofmap._shared_nodes.clear();
 
     // Store global nodes
@@ -271,7 +278,7 @@ void DofMapBuilder::build_sub_map_view(
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = parent_ufc_dofmap.needs_mesh_entities(d);
+    needs_entities[d] = (parent_ufc_dofmap.num_entity_dofs(d) > 0);
 
   // Generate and number required mesh entities for local UFC map
   const std::vector<std::size_t> num_mesh_entities_local
@@ -306,8 +313,14 @@ void DofMapBuilder::build_sub_map_view(
   sub_dofmap._num_mesh_entities_global
       = parent_dofmap._num_mesh_entities_global;
   dolfin_assert(!sub_dofmap._num_mesh_entities_global.empty());
-  sub_dofmap._global_dimension = sub_dofmap._ufc_dofmap->global_dimension(
-      sub_dofmap._num_mesh_entities_global);
+  sub_dofmap._global_dimension = 0;
+  unsigned int d = 0;
+  for (auto& n : sub_dofmap._num_mesh_entities_global)
+  {
+    sub_dofmap._global_dimension
+        += n * sub_dofmap._ufc_dofmap->num_entity_dofs(d);
+    ++d;
+  }
 
   // Copy data from parent
   // FIXME: Do we touch sub_dofmap.index_map() in this routine? If yes, then
@@ -560,7 +573,7 @@ void DofMapBuilder::build_local_ufc_dofmap(
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = ufc_dofmap.needs_mesh_entities(d);
+    needs_entities[d] = (ufc_dofmap.num_entity_dofs(d) > 0);
 
   // Generate and number required mesh entities (locally)
   std::vector<std::size_t> num_mesh_entities(D + 1, 0);
@@ -834,7 +847,7 @@ void DofMapBuilder::compute_global_dofs(
     bool global_dof = true;
     for (std::size_t d = 0; d < num_mesh_entities_local.size(); ++d)
     {
-      if (ufc_dofmap->needs_mesh_entities(d))
+      if (ufc_dofmap->num_entity_dofs(d) > 0)
       {
         global_dof = false;
         break;
@@ -843,8 +856,16 @@ void DofMapBuilder::compute_global_dofs(
 
     if (global_dof)
     {
+      unsigned int d = 0;
+      std::size_t ndofs = 0;
+      for (auto& n : num_mesh_entities_local)
+      {
+        ndofs += n * ufc_dofmap->num_entity_dofs(d);
+        ++d;
+      }
+
       // Check that we have just one dof
-      if (ufc_dofmap->global_dimension(num_mesh_entities_local) != 1)
+      if (ndofs != 1)
       {
         dolfin_error("DofMapBuilder.cpp", "compute global degrees of freedom",
                      "Global degree of freedom has dimension != 1");
@@ -879,10 +900,18 @@ void DofMapBuilder::compute_global_dofs(
 
       // Get offset
       if (sub_dofmap->num_sub_dofmaps() == 0)
-        offset_local += sub_dofmap->global_dimension(num_mesh_entities_local);
+      {
+        unsigned int d = 0;
+        for (auto& n : num_mesh_entities_local)
+        {
+          offset_local += n * sub_dofmap->num_entity_dofs(d);
+          ++d;
+        }
+      }
     }
   }
 }
+
 //-----------------------------------------------------------------------------
 std::shared_ptr<ufc::dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
     const ufc::dofmap& ufc_dofmap, std::size_t& offset,
@@ -920,7 +949,12 @@ std::shared_ptr<ufc::dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
     dolfin_assert(ufc_tmp_dofmap);
 
     // Get offset
-    offset += ufc_tmp_dofmap->global_dimension(num_mesh_entities);
+    unsigned int d = 0;
+    for (auto& n : num_mesh_entities)
+    {
+      offset += n * ufc_tmp_dofmap->num_entity_dofs(d);
+      ++d;
+    }
   }
 
   // Create UFC sub-system
@@ -945,7 +979,8 @@ std::shared_ptr<ufc::dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMapBuilder::compute_blocksize(const ufc::dofmap& ufc_dofmap)
+std::size_t DofMapBuilder::compute_blocksize(const ufc::dofmap& ufc_dofmap,
+                                             std::size_t tdim)
 {
   bool has_block_structure = false;
   if (ufc_dofmap.num_sub_dofmaps() > 1)
@@ -971,7 +1006,7 @@ std::size_t DofMapBuilder::compute_blocksize(const ufc::dofmap& ufc_dofmap)
         std::unique_ptr<ufc::dofmap> ufc_sub_dofmap(
             ufc_dofmap.create_sub_dofmap(i));
         dolfin_assert(ufc_sub_dofmap);
-        for (std::size_t d = 0; d <= ufc_dofmap.topological_dimension(); ++d)
+        for (std::size_t d = 0; d <= tdim; ++d)
         {
           if (ufc_sub_dofmap->num_entity_dofs(d)
               != ufc_sub_dofmap0->num_entity_dofs(d))
@@ -1009,7 +1044,7 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = ufc_dofmap->needs_mesh_entities(d);
+    needs_entities[d] = (ufc_dofmap->num_entity_dofs(d) > 0);
 
   // Generate and number required mesh entities (local & global, and
   // constrained global)
@@ -1044,8 +1079,13 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   else
     dofmaps[0] = ufc_dofmap;
 
-  offset_local[block_size]
-      = ufc_dofmap->global_dimension(num_mesh_entities_local);
+  offset_local[block_size] = 0;
+  unsigned int d = 0;
+  for (auto& n : num_mesh_entities_local)
+  {
+    offset_local[block_size] += n * ufc_dofmap->num_entity_dofs(d);
+    ++d;
+  }
 
   num_mesh_entities_global = num_mesh_entities_global_unconstrained;
 
@@ -1121,10 +1161,10 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = ufc_dofmap->needs_mesh_entities(d);
+    needs_entities[d] = (ufc_dofmap->num_entity_dofs(d) > 0);
 
-  // Generate and number required mesh entities (local & global, and constrained
-  // global)
+  // Generate and number required mesh entities (local & global, and
+  // constrained global)
   std::vector<std::size_t> num_mesh_entities_local(D + 1, 0);
   std::vector<std::size_t> num_mesh_entities_global_unconstrained(D + 1, 0);
   std::vector<bool> required_mesh_entities(D + 1, false);
@@ -1164,8 +1204,13 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   else
     dofmaps[0] = ufc_dofmap;
 
-  offset_local[block_size]
-      = ufc_dofmap->global_dimension(num_mesh_entities_local);
+  offset_local[block_size] = 0;
+  unsigned int d = 0;
+  for (auto& n : num_mesh_entities_local)
+  {
+    offset_local[block_size] += n * ufc_dofmap->num_entity_dofs(d);
+    ++d;
+  }
 
   // Allocate space for dof map
   node_dofmap.clear();
@@ -1662,7 +1707,8 @@ void DofMapBuilder::get_cell_entities_global(
       entity_indices[D][0] = cell.index();
   }
 }
-// TODO: The above and below functions are _very_ similar, can they be combined?
+// TODO: The above and below functions are _very_ similar, can they be
+// combined?
 //-----------------------------------------------------------------------------
 void DofMapBuilder::get_cell_entities_global_constrained(
     const Cell& cell, std::vector<std::vector<std::size_t>>& entity_indices,
@@ -1676,9 +1722,10 @@ void DofMapBuilder::get_cell_entities_global_constrained(
     {
       if (global_entity_indices[d].empty())
       {
-        dolfin_error(
-            "DofMapBuilder.cpp", "get_cell_entities_global_constrained",
-            "Missing global entity indices needed for cell entity tabulation.");
+        dolfin_error("DofMapBuilder.cpp",
+                     "get_cell_entities_global_constrained",
+                     "Missing global entity indices needed for cell entity "
+                     "tabulation.");
       }
       if (!global_entity_indices[d].empty()) // TODO: Can this be false? If so
                                              // the entity_indices array will

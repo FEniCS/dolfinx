@@ -21,8 +21,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh)
     : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-      _global_dimension(0), _ufc_offset(0),
-      _index_map(new IndexMap(mesh.mpi_comm()))
+      _global_dimension(0), _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -33,8 +32,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh)
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh,
                std::shared_ptr<const SubDomain> constrained_domain)
     : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-      _global_dimension(0), _ufc_offset(0),
-      _index_map(new IndexMap(mesh.mpi_comm()))
+      _global_dimension(0), _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -57,13 +55,9 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh)
     : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
-      _global_dimension(0), _ufc_offset(0),
-      _index_map(new IndexMap(mesh.mpi_comm()))
+      _global_dimension(0), _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
-
-  // Check for dimensional consistency between the dofmap and mesh
-  check_dimensional_consistency(*_ufc_dofmap, mesh);
 
   // Check that mesh has been ordered
   if (!mesh.ordered())
@@ -156,6 +150,7 @@ std::size_t DofMap::num_facet_dofs() const
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> DofMap::ownership_range() const
 {
+  assert(_index_map);
   auto block_range = _index_map->local_range();
   std::int64_t bs = _index_map->block_size();
   return {{bs * block_range[0], bs * block_range[1]}};
@@ -530,6 +525,7 @@ std::vector<dolfin::la_index_t> DofMap::dofs() const
   std::vector<la_index_t> _dofs;
   _dofs.reserve(_dofmap.size() * max_element_dofs());
 
+  assert(_index_map);
   const std::size_t bs = _index_map->block_size();
   const dolfin::la_index_t local_ownership_size
       = bs * _index_map->size(IndexMap::MapSize::OWNED);
@@ -571,6 +567,7 @@ void DofMap::tabulate_local_to_global_dofs(
 {
   // FIXME: use IndexMap::local_to_global_index?
 
+  assert(_index_map);
   const std::size_t bs = _index_map->block_size();
   const std::vector<std::size_t>& local_to_global_unowned
       = _index_map->local_to_global_unowned();
@@ -599,7 +596,7 @@ void DofMap::check_provided_entities(const ufc::dofmap& dofmap,
   // Check that we have all mesh entities
   for (std::size_t d = 0; d <= mesh.topology().dim(); ++d)
   {
-    if (dofmap.needs_mesh_entities(d) && mesh.num_entities(d) == 0)
+    if (dofmap.num_entity_dofs(d) > 0 && mesh.num_entities(d) == 0)
     {
       dolfin_error(
           "DofMap.cpp", "initialize mapping of degrees of freedom",
@@ -634,18 +631,5 @@ std::string DofMap::str(bool verbose) const
   }
 
   return s.str();
-}
-//-----------------------------------------------------------------------------
-void DofMap::check_dimensional_consistency(const ufc::dofmap& dofmap,
-                                           const Mesh& mesh)
-{
-  // Check topological dimension
-  if (dofmap.topological_dimension() != mesh.topology().dim())
-  {
-    dolfin_error("DofMap.cpp", "create mapping of degrees of freedom",
-                 "Topological dimension of the UFC dofmap (dim = %d) and the "
-                 "mesh (dim = %d) do not match",
-                 dofmap.topological_dimension(), mesh.topology().dim());
-  }
 }
 //-----------------------------------------------------------------------------
