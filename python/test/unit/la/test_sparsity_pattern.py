@@ -33,7 +33,7 @@ def count_on_and_off_diagonal_nnz(primary_codim_entries, local_range):
 
 @fixture
 def mesh():
-    return UnitSquareMesh(MPI.comm_world, 2, 2, CellType.Type.triangle)
+    return UnitSquareMesh(MPI.comm_world, 4, 4, CellType.Type.triangle)
 
 
 @fixture
