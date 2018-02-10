@@ -79,11 +79,12 @@ SparsityPattern::SparsityPattern(
     std::size_t row_size
         = patterns[row][0]->_index_maps[0]->size(IndexMap::MapSize::OWNED);
     assert(row_size == patterns[row][0]->_diagonal.size());
-    assert(row_size == patterns[row][0]->_off_diagonal.size());
     this->_diagonal.resize(this->_diagonal.size() + row_size);
     if (distributed)
+    {
+      assert(row_size == patterns[row][0]->_off_diagonal.size());
       this->_off_diagonal.resize(this->_off_diagonal.size() + row_size);
-
+    }
     // Iterate over block columns of current block row
     col_global_offset = 0;
     for (std::size_t col = 0; col < patterns[row].size(); ++col)
