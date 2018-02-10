@@ -113,21 +113,21 @@ void la(py::module& m)
       .value("GLOBAL", dolfin::IndexMap::MapSize::GLOBAL);
 
   // dolfin::SparsityPattern
-  py::class_<dolfin::SparsityPattern, std::shared_ptr<dolfin::SparsityPattern>>
-      sparsity_pattern(m, "SparsityPattern");
-
-  // dolfin::SparsityPattern enums
-  py::enum_<dolfin::SparsityPattern::Ghosts>(sparsity_pattern, "Ghosts")
-      .value("GHOSTED", dolfin::SparsityPattern::Ghosts::GHOSTED)
-      .value("UNGHOSTED", dolfin::SparsityPattern::Ghosts::UNGHOSTED);
-
-  sparsity_pattern
-      .def(py::init([](const MPICommWrapper comm, int dim) {
-        return std::make_unique<dolfin::SparsityPattern>(comm.get(), dim);
+  py::class_<dolfin::SparsityPattern, std::shared_ptr<dolfin::SparsityPattern>>(
+      m, "SparsityPattern")
+      .def(py::init(
+          [](const MPICommWrapper comm,
+             std::array<std::shared_ptr<const dolfin::IndexMap>, 2> index_maps,
+             int dim) {
+            return std::make_unique<dolfin::SparsityPattern>(comm.get(),
+                                                             index_maps, dim);
+          }))
+      .def(py::init([](
+          const MPICommWrapper comm,
+          const std::vector<std::vector<const dolfin::SparsityPattern*>>
+              patterns) {
+        return std::make_unique<dolfin::SparsityPattern>(comm.get(), patterns);
       }))
-      .def(py::init<const std::
-                        vector<std::vector<const dolfin::SparsityPattern*>>>())
-      .def("init", &dolfin::SparsityPattern::init)
       .def("local_range", &dolfin::SparsityPattern::local_range)
       .def("index_map", &dolfin::SparsityPattern::index_map)
       .def("apply", &dolfin::SparsityPattern::apply)
@@ -698,7 +698,7 @@ void la(py::module& m)
   // dolfin::Scalar
   py::class_<dolfin::Scalar, std::shared_ptr<dolfin::Scalar>>(m, "Scalar")
       .def(py::init([](const MPICommWrapper comm) {
-        return std::unique_ptr<dolfin::Scalar>(new dolfin::Scalar(comm.get()));
+        return std::make_unique<dolfin::Scalar>(comm.get());
       }))
       .def("add", &dolfin::Scalar::add)
       .def("apply", &dolfin::Scalar::apply)

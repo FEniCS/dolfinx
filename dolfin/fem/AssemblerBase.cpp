@@ -107,8 +107,7 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
     //            moreover the functions will tabulate directly using a
     //            correct int type
 
-    SparsityPattern pattern(A.mpi_comm(), 0);
-    pattern.init(index_maps, SparsityPattern::Ghosts::UNGHOSTED);
+    SparsityPattern pattern(A.mpi_comm(), index_maps, 0);
     SparsityPatternBuilder::build(
         pattern, mesh, dofmaps, a.ufc_form()->has_cell_integrals(),
         a.ufc_form()->has_interior_facet_integrals(),

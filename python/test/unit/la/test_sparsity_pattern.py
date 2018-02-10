@@ -41,29 +41,35 @@ def V(mesh):
     return FunctionSpace(mesh, "Lagrange", 1)
 
 
-#def test_str(mesh, V):
-#    dm = V.dofmap()
-#    index_map = dm.index_map()
-#
-#    # Build sparse tensor layout (for assembly of matrix)
-#    tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity.SPARSE)
-#    tl.init([index_map, index_map], TensorLayout.Ghosts.UNGHOSTED)
-#    sp = tl.sparsity_pattern()
-#    sp.init([index_map, index_map])
-#    SparsityPatternBuilder.build(sp, mesh, [dm, dm],
-#                                 True, False, False, False,
-#                                 False, init=False, finalize=True)
+def xtest_str(mesh, V):
+    dm = V.dofmap()
+    index_map = dm.index_map()
 
-#    sp.str(False)
-#    sp.str(True)
+    # Build sparse tensor layout (for assembly of matrix)
+    tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity.SPARSE)
+    tl.init([index_map, index_map], TensorLayout.Ghosts.UNGHOSTED)
+    sp = tl.sparsity_pattern()
+    sp.init([index_map, index_map])
+    SparsityPatternBuilder.build(
+        sp,
+        mesh, [dm, dm],
+        True,
+        False,
+        False,
+        False,
+        False,
+        init=False,
+        finalize=True)
+
+    sp.str(False)
+    sp.str(True)
 
 
 def test_insert_local(mesh, V):
     dm = V.dofmap()
     index_map = dm.index_map()
 
-    sp = cpp.la.SparsityPattern(MPI.comm_world, 0)
-    sp.init([index_map, index_map], cpp.la.SparsityPattern.Ghosts.UNGHOSTED)
+    sp = cpp.la.SparsityPattern(mesh.mpi_comm(), [index_map, index_map], 0)
     cpp.fem.SparsityPatternBuilder.build(
         sp,
         mesh, [dm, dm],
@@ -75,43 +81,20 @@ def test_insert_local(mesh, V):
         init=False,
         finalize=True)
 
-    if (MPI.rank(mesh.mpi_comm()) == 0):
-        print("\nPattern:")
-        print(sp.str(True))
-
-    #if (MPI.rank(mesh.mpi_comm()) == 0):
-    #    print(index_map.local_range())
-    ##    print(local_range0)
-    #    print(local_range1)
-
-    sp1 = cpp.la.SparsityPattern([[sp], [sp]])
+    sp1 = cpp.la.SparsityPattern(mesh.mpi_comm(), [[sp], [sp]])
     if (MPI.rank(mesh.mpi_comm()) == 0):
         print("\nPattern:")
         print(sp1.str(True))
 
-    sp1 = cpp.la.SparsityPattern([[sp, sp]])
+    sp1 = cpp.la.SparsityPattern(mesh.mpi_comm(), [[sp, sp]])
     if (MPI.rank(mesh.mpi_comm()) == 0):
         print("\nPattern:")
         print(sp1.str(True))
 
-    # Build sparse tensor layout
-    #tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity.SPARSE)
-    #tl.init([index_map, index_map], TensorLayout.Ghosts.UNGHOSTED)
-    #sp = tl.sparsity_pattern()
-    #sp.init([index_map, index_map])
-
-    #primary_dim_entries = [0, 1, 2]
-    #primary_codim_entries = [0, 1, 2]
-    #entries = np.array([primary_dim_entries, primary_codim_entries], dtype=np.intc)
-    #sp.insert_local(entries)
-
-    #sp.apply()
-
-    #assert len(primary_dim_entries) * len(primary_codim_entries) == sp.num_nonzeros()
-
-    #nnz_d = sp.num_nonzeros_diagonal()
-    #for local_row in range(len(nnz_d)):
-    #    assert nnz_d[local_row] == (len(primary_codim_entries) if local_row in primary_dim_entries else 0)
+    sp1 = cpp.la.SparsityPattern(mesh.mpi_comm(), [[sp, sp], [sp, sp]])
+    if (MPI.rank(mesh.mpi_comm()) == 0):
+        print("\nPattern:")
+        print(sp1.str(True))
 
 
 def xtest_insert_global(mesh, V):

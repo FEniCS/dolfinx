@@ -39,20 +39,16 @@ public:
     unsorted
   };
 
-  /// Ghosted or unghosted layout
-  enum class Ghosts : bool
-  {
-    GHOSTED = true,
-    UNGHOSTED = false
-  };
-
   /// Create empty sparsity pattern
-  SparsityPattern(MPI_Comm comm, std::size_t primary_dim);
+  SparsityPattern(MPI_Comm comm,
+                  std::array<std::shared_ptr<const IndexMap>, 2> index_maps,
+                  std::size_t primary_dim);
 
   /// Create a new sparsity pattern by adding sub-patterns, e.g.
   /// pattern =[ pattern00 ][ pattern 01]
   ///          [ pattern10 ][ pattern 11]
   SparsityPattern(
+      MPI_Comm comm,
       const std::vector<std::vector<const SparsityPattern*>> patterns);
 
   /// Create empty sparsity pattern
@@ -61,22 +57,16 @@ public:
   /// Destructor
   ~SparsityPattern() {}
 
-  /// Initialize sparsity pattern for a generic tensor
-  void init(std::array<std::shared_ptr<const IndexMap>, 2> index_maps,
-            Ghosts ghosted);
-
   /// Insert non-zero entries using global indices
-  void insert_global(
-      const std::array<ArrayView<const dolfin::la_index_t>, 2>& entries);
+  void insert_global(const std::array<ArrayView<const la_index_t>, 2>& entries);
 
   /// Insert non-zero entries using local (process-wise) indices
-  void insert_local(
-      const std::array<ArrayView<const dolfin::la_index_t>, 2>& entries);
+  void insert_local(const std::array<ArrayView<const la_index_t>, 2>& entries);
 
   /// Insert non-zero entries using local (process-wise) indices for
   /// the primary dimension and global indices for the co-dimension
   void insert_local_global(
-      const std::array<ArrayView<const dolfin::la_index_t>, 2>& entries);
+      const std::array<ArrayView<const la_index_t>, 2>& entries);
 
   /// Insert full rows (or columns, according to primary dimension)
   /// using local (process-wise) indices. This must be called before
@@ -91,11 +81,11 @@ public:
   /// Return local range for dimension dim
   std::array<std::size_t, 2> local_range(std::size_t dim) const;
 
-  /// Return local range for dimension dim
-  std::shared_ptr<const IndexMap> index_map(std::size_t i) const
+  /// Return index map for dimension dim
+  std::shared_ptr<const IndexMap> index_map(std::size_t dim) const
   {
-    dolfin_assert(i < 2);
-    return _index_maps[i];
+    dolfin_assert(dim < 2);
+    return _index_maps[dim];
   }
 
   /// Return number of local nonzeros
@@ -136,7 +126,7 @@ public:
   std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
 
   /// Require ghosts
-  Ghosts is_ghosted() const { return _ghosted; }
+  // Ghosts is_ghosted() const { return _ghosted; }
 
 private:
   // Other insertion methods will call this method providing the
@@ -145,11 +135,11 @@ private:
   // The primary dim entries must be local
   // The primary_codim entries must be global
   void insert_entries(
-      const std::array<ArrayView<const dolfin::la_index_t>, 2>& entries,
-      const std::function<dolfin::la_index_t(const dolfin::la_index_t,
-                                             const IndexMap&)>& primary_dim_map,
-      const std::function<dolfin::la_index_t(
-          const dolfin::la_index_t, const IndexMap&)>& primary_codim_map);
+      const std::array<ArrayView<const la_index_t>, 2>& entries,
+      const std::function<la_index_t(const la_index_t, const IndexMap&)>&
+          primary_dim_map,
+      const std::function<la_index_t(const la_index_t, const IndexMap&)>&
+          primary_codim_map);
 
   // Print some useful information
   void info_statistics() const;
@@ -177,8 +167,5 @@ private:
   // Cache for non-local entries stored as [i0, j0, i1, j1, ...]. Cleared after
   // communication via apply()
   std::vector<std::size_t> _non_local;
-
-  // Ghosted tensor (typically vector) required
-  Ghosts _ghosted = Ghosts::UNGHOSTED;
 };
 }
