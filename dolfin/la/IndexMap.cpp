@@ -71,13 +71,6 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-/*
-std::size_t IndexMap::size(const IndexMap::MapSize type) const
-{
-  return size_block()*_block_size;
-}
-*/
-//-----------------------------------------------------------------------------
 const std::vector<std::size_t>& IndexMap::local_to_global_unowned() const
 {
   return _local_to_global;
