@@ -131,6 +131,8 @@ void fem::Assembler::assemble(PETScMatrix& A)
       std::cout << "  Build merged sparsity pattern" << std::endl;
       SparsityPattern pattern(A.mpi_comm(), p);
 
+      std::cout << pattern.str(true) << std::endl;
+
       // Initialise matrix
       std::cout << "  Init parent matrix" << std::endl;
       A.init(pattern);
@@ -171,10 +173,12 @@ void fem::Assembler::assemble(PETScMatrix& A)
   else if (block_matrix)
   {
     std::cout << "Assembling block matrix (non-nested)" << std::endl;
-    PetscInt offset_row(0), offset_col(0);
+    std::int64_t offset_row = 0;
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
-      // MatNestGetSubMat(Mat A,PetscInt idxm,PetscInt jdxm,Mat *sub)
+
+      // Loop over columns
+      std::int64_t offset_col = 0;
       for (std::size_t j = 0; j < _a[i].size(); ++j)
       {
         if (_a[i][j])
@@ -186,8 +190,14 @@ void fem::Assembler::assemble(PETScMatrix& A)
 
           std::vector<PetscInt> index0(map0_size);
           std::vector<PetscInt> index1(map1_size);
-          std::iota(index0.begin(), index0.end(), 0);
-          std::iota(index1.begin(), index1.end(), 0);
+          std::iota(index0.begin(), index0.end(), offset_row);
+          std::iota(index1.begin(), index1.end(), offset_col);
+
+          std::cout << "Block: " << i << ", " << j << std::endl;
+          std::cout << "***** start index and size 0: " << offset_row << ", "
+                    << offset_row + index0.size() << std::endl;
+          std::cout << "***** start index and size 1: " << offset_col << ", "
+                    << offset_col + index1.size() << std::endl;
 
           IS is0, is1;
           ISCreateBlock(A.mpi_comm(), map0->block_size(), index0.size(),
@@ -198,12 +208,36 @@ void fem::Assembler::assemble(PETScMatrix& A)
           Mat subA;
           MatGetLocalSubMatrix(A.mat(), is0, is1, &subA);
           PETScMatrix mat(subA);
-          std::cout << "Assembling into matrix:" << i << ", " << j << std::endl;
-          this->assemble(mat, *_a[i][j], _bcs);
-          std::cout << "End assembling into matrix:" << i << ", " << j
+          std::cout << "Mat size: " << mat.size(0) << ", " << mat.size(1)
                     << std::endl;
+
+          double one = 10000.0;
+          PetscInt zero = 0;
+          std::cout << "   Add single entry" << std::endl;
+          mat.add_local(&one, 1, &zero, 1, &zero);
+
+          PetscInt onei = 1;
+          std::cout << "   Add single entry" << std::endl;
+          mat.add_local(&one, 1, &zero, 1, &onei);
+
+          // A.str(true);
+          // std::cout << "Assembling into matrix (non-nested):" << i << ", " <<
+          // j
+          //          << std::endl;
+          this->assemble(mat, *_a[i][j], _bcs);
+          // std::cout << "End assembling into matrix:" << i << ", " << j
+          //         << std::endl;
+
+          MatRestoreLocalSubMatrix(A.mat(), is0, is1, &subA);
+          ISDestroy(&is0);
+          ISDestroy(&is1);
+
+          offset_col += map1_size;
         }
       }
+      auto map0 = _a[i][0]->function_space(0)->dofmap()->index_map();
+      auto map0_size = map0->size(IndexMap::MapSize::ALL);
+      offset_row += map0_size;
     }
   }
   else
@@ -308,6 +342,7 @@ void fem::Assembler::assemble(
   // Iterate over all cells
   for (auto& cell : MeshRange<Cell>(mesh))
   {
+    std::cout << "Iterate over cells" << std::endl;
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
 
@@ -338,6 +373,7 @@ void fem::Assembler::assemble(
     // Dirichlet conditions
     // Note: could use zero dof indices to have PETSc do this
     // Zero rows/columns for Dirichlet bcs
+    /*
     for (int i = 0; i < Ae.rows(); ++i)
     {
       const std::size_t ii = dmap0[i];
@@ -353,18 +389,29 @@ void fem::Assembler::assemble(
       if (bc_value != boundary_values[1].end())
         Ae.col(j).setZero();
     }
+    */
 
     // Add to matrix
+    /*
+    std::cout << "Add to matrix: " << std::endl;
+    for (std::size_t i = 0; i < dmap0.size(); ++i)
+      std::cout << "  0: " << dmap0[i] << std::endl;
+    for (std::size_t i = 0; i < dmap1.size(); ++i)
+      std::cout << "  1: " << dmap1[i] << std::endl;
+  */
+
     A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
                 dmap1.data());
+    // std::cout << "Post add to matrix: " << std::endl;
   }
 
   // FIXME: Put this elsewhere?
   // Finalise matrix
-  A.apply(PETScMatrix::AssemblyType::FINAL);
+  //A.apply(PETScMatrix::AssemblyType::FINAL);
 
   // FIXME: Move this outside of function
   // Place '1' on diagonal for bc entries
+  /*
   if (spaces[0] == spaces[1])
   {
     std::vector<la_index_t> rows;
@@ -372,6 +419,7 @@ void fem::Assembler::assemble(
       rows.push_back(bc.first);
     A.zero_local(rows.size(), rows.data(), 1.0);
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void fem::Assembler::assemble(PETScVector& b, const Form& L)
