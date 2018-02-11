@@ -8,10 +8,12 @@
 #include "DirichletBC.h"
 #include "Form.h"
 #include "GenericDofMap.h"
+#include "SparsityPatternBuilder.h"
 #include "UFC.h"
 #include "utils.h"
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -51,44 +53,88 @@ fem::Assembler::Assembler(
 void fem::Assembler::assemble(PETScMatrix& A)
 {
   // Check if matrix should be nested
+  assert(!_a.empty());
+  const bool nested_matrix = false;
   const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
 
   if (A.empty())
   {
     // Initialise matrix
-    if (block_matrix)
+    if (nested_matrix)
     {
       // Loop over each form
       std::vector<std::shared_ptr<PETScMatrix>> mats;
+      std::vector<Mat> petsc_mats;
       for (auto a_row : _a)
       {
         for (auto a : a_row)
         {
           if (a)
           {
-            mats.push_back(std::make_shared<PETScMatrix>(MPI_COMM_WORLD));
+            mats.push_back(std::make_shared<PETScMatrix>(A.mpi_comm()));
+            petsc_mats.push_back(mats.back()->mat());
             fem::init(*mats.back(), *a);
           }
           else
-            mats.push_back(NULL);
+          {
+            mats.push_back(nullptr);
+            petsc_mats.push_back(nullptr);
+          }
         }
-      }
-
-      // Build list of PETSc Mat objects
-      std::vector<Mat> petsc_mats;
-      for (auto mat : mats)
-      {
-        if (mat)
-          petsc_mats.push_back(mat->mat());
-        else
-          petsc_mats.push_back(nullptr);
       }
 
       // Intitialise block (MatNest) matrix
       MatSetType(A.mat(), MATNEST);
       MatNestSetSubMats(A.mat(), _a.size(), NULL, _a[0].size(), NULL,
                         petsc_mats.data());
+
       // A.apply(PETScMatrix::AssemblyType::FINAL);
+    }
+    else if (block_matrix)
+    {
+      std::cout << "Initialising block matrix" << std::endl;
+
+      std::vector<std::vector<std::shared_ptr<SparsityPattern>>> patterns;
+      std::vector<std::vector<const SparsityPattern*>> p;
+      int irow = 0;
+      for (std::size_t row = 0; row < _a.size(); ++row)
+      {
+        patterns.resize(_a[row].size());
+        p.resize(_a[row].size());
+        for (std::size_t col = 0; col < _a[row].size(); ++col)
+        {
+          std::cout << "  Initialising block: " << row << ", " << col
+                    << std::endl;
+          auto map0 = _a[row][col]->function_space(0)->dofmap()->index_map();
+          auto map1 = _a[row][col]->function_space(1)->dofmap()->index_map();
+
+          std::cout << "  Push Initialising block: " << std::endl;
+          std::array<std::shared_ptr<const IndexMap>, 2> maps = {map0, map1};
+          auto test = std::make_shared<SparsityPattern>(A.mpi_comm(), maps, 0);
+          patterns[row].push_back(test);
+
+          // Build sparsity pattern
+          std::cout << "  Build sparsity pattern " << std::endl;
+          std::array<const GenericDofMap*, 2> dofmaps
+              = {_a[row][col]->function_space(0)->dofmap().get(),
+                 _a[row][col]->function_space(1)->dofmap().get()};
+          SparsityPatternBuilder::build(*patterns[row].back(),
+                                        *_a[row][col]->mesh(), dofmaps, true,
+                                        false, false, false, false);
+          std::cout << "  End Build sparsity pattern " << std::endl;
+          p[row].push_back(patterns[row].back().get());
+          std::cout << "  End push back sparsity pattern pointer " << std::endl;
+        }
+      }
+
+      // Create merged sparsity pattern
+      std::cout << "  Build merged sparsity pattern" << std::endl;
+      SparsityPattern pattern(A.mpi_comm(), p);
+
+      // Initialise matrix
+      std::cout << "  Init parent matrix" << std::endl;
+      A.init(pattern);
+      std::cout << "  Post init parent matrix" << std::endl;
     }
     else
       fem::init(A, *_a[0][0]);
@@ -102,7 +148,7 @@ void fem::Assembler::assemble(PETScMatrix& A)
   }
 
   // Assemble blocks (A)
-  if (block_matrix)
+  if (nested_matrix)
   {
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
@@ -122,15 +168,53 @@ void fem::Assembler::assemble(PETScMatrix& A)
       }
     }
   }
+  else if (block_matrix)
+  {
+    std::cout << "Assembling block matrix (non-nested)" << std::endl;
+    PetscInt offset_row(0), offset_col(0);
+    for (std::size_t i = 0; i < _a.size(); ++i)
+    {
+      // MatNestGetSubMat(Mat A,PetscInt idxm,PetscInt jdxm,Mat *sub)
+      for (std::size_t j = 0; j < _a[i].size(); ++j)
+      {
+        if (_a[i][j])
+        {
+          auto map0 = _a[i][j]->function_space(0)->dofmap()->index_map();
+          auto map1 = _a[i][j]->function_space(1)->dofmap()->index_map();
+          auto map0_size = map0->size(IndexMap::MapSize::ALL);
+          auto map1_size = map1->size(IndexMap::MapSize::ALL);
+
+          std::vector<PetscInt> index0(map0_size);
+          std::vector<PetscInt> index1(map1_size);
+          std::iota(index0.begin(), index0.end(), 0);
+          std::iota(index1.begin(), index1.end(), 0);
+
+          IS is0, is1;
+          ISCreateBlock(A.mpi_comm(), map0->block_size(), index0.size(),
+                        index0.data(), PETSC_COPY_VALUES, &is0);
+          ISCreateBlock(A.mpi_comm(), map1->block_size(), index1.size(),
+                        index1.data(), PETSC_COPY_VALUES, &is1);
+
+          Mat subA;
+          MatGetLocalSubMatrix(A.mat(), is0, is1, &subA);
+          PETScMatrix mat(subA);
+          std::cout << "Assembling into matrix:" << i << ", " << j << std::endl;
+          this->assemble(mat, *_a[i][j], _bcs);
+          std::cout << "End assembling into matrix:" << i << ", " << j
+                    << std::endl;
+        }
+      }
+    }
+  }
   else
   {
     this->assemble(A, *_a[0][0], _bcs);
   }
+
   A.apply(PETScMatrix::AssemblyType::FINAL);
 
-  return;
+  // return;
 }
-
 //-----------------------------------------------------------------------------
 void fem::Assembler::assemble(PETScVector& b)
 {
@@ -380,7 +464,7 @@ void fem::Assembler::apply_bc(
     }
   }
 
-  //std::array<const FunctionSpace*, 2> spaces
+  // std::array<const FunctionSpace*, 2> spaces
   //    = {{a.function_space(0).get(), a.function_space(1).get()}};
 
   // Get dofmap for columns a a[i]

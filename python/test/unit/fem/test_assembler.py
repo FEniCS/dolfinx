@@ -72,7 +72,7 @@ def xtest_matrix_assembly():
     #print(c.vec().getArray())
 
 
-def test_matrix_assembly_bc():
+def xtest_matrix_assembly_bc():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
     V = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
     v = dolfin.function.argument.TestFunction(V)
@@ -102,7 +102,7 @@ def test_matrix_assembly_bc():
     #B.mat().view()
 
 
-def xtest_matrix_assembly_block():
+def test_matrix_assembly_block():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 1, 1)
 
     #P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
@@ -127,10 +127,12 @@ def xtest_matrix_assembly_block():
     a00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
     a01 = -ufl.div(v) * p * dx
     a10 = q * ufl.div(u) * dx
-    a11 = None
+    a11 = dolfin.function.constant.Constant(0.0)* q * p * dx
+    #a11 = None
 
     L0 = ufl.inner(f, v) * dx
-    L1 = None
+    L1 = dolfin.function.constant.Constant(0.0)*q* dx
+    #L1 = None
 
     # Define Dirichlet boundary (x = 0 or x = 1)
     def boundary(x):

@@ -173,12 +173,10 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
 //-----------------------------------------------------------------------------
 void dolfin::fem::init(PETScVector& x, const Form& a)
 {
-  dolfin_assert(a.ufc_form());
+  assert(a.ufc_form());
   if (a.rank() != 1)
-  {
-    dolfin_error("AssemblerBase.cpp", "intialise vector",
-                 "Form is not a linear form");
-  }
+    throw std::runtime_error(
+        "Cannot intialise vector. Form is not a linear form");
 
   if (!x.empty())
     throw std::runtime_error("Cannot initialise layout of non-empty matrix");
@@ -200,7 +198,7 @@ void dolfin::fem::init(PETScVector& x, const Form& a)
   for (std::size_t i = 0; i < local_to_global.size(); ++i)
     local_to_global[i] = index_map->local_to_global(i);
 
-  // Initialize tensor
+  // Initialize vector
   x.init(index_map->local_range(), local_to_global, {}, block_size);
 }
 //-----------------------------------------------------------------------------
@@ -208,11 +206,11 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
 {
   bool keep_diagonal = false;
 
-  dolfin_assert(a.ufc_form());
+  assert(a.ufc_form());
   if (a.rank() != 2)
   {
-    dolfin_error("AssemblerBase.cpp", "intialise matrix",
-                 "Form is not a bilinear form");
+    throw std::runtime_error(
+        "Cannot initialise matrx. Form is not a bilinear form");
   }
 
   if (!A.empty())
@@ -229,17 +227,11 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
 
   Timer t0("Build sparsity");
 
-  // Get dimensions and mapping across processes for each dimension
+  // Get IndexMaps for each dimension
   std::array<std::shared_ptr<const IndexMap>, 2> index_maps
       = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
 
-  // Initialise tensor layout
-  // FIXME: somewhere need to check block sizes are same on both axes
-  // NOTE: Jan: that will be done on the backend side; IndexMap will
-  //            provide tabulate functions with arbitrary block size;
-  //            moreover the functions will tabulate directly using a
-  //            correct int type
-
+  // Create and build sparsity pattern
   SparsityPattern pattern(A.mpi_comm(), index_maps, 0);
   SparsityPatternBuilder::build(
       pattern, mesh, dofmaps, a.ufc_form()->has_cell_integrals(),
@@ -248,21 +240,20 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
       a.ufc_form()->has_vertex_integrals(), keep_diagonal);
   t0.stop();
 
-  // Initialize tensor
+  // Initialize matrix
   Timer t1("Init tensor");
   A.init(pattern);
   t1.stop();
 
   // Insert zeros to dense rows in increasing order of column index
   // to avoid CSR data reallocation when assembling in random order
-  // resulting in quadratic complexity; this ha<s to be done before
+  // resulting in quadratic complexity; this has to be done before
   // inserting to diagonal below
 
   // Tabulate indices of dense rows
   const std::size_t primary_dim = pattern.primary_dim();
   std::vector<std::size_t> global_dofs;
   dofmaps[primary_dim]->tabulate_global_dofs(global_dofs);
-
   if (global_dofs.size() > 0)
   {
     // Get local row range
@@ -292,10 +283,9 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
       A.apply(PETScMatrix::AssemblyType::FLUSH);
   }
 
+  // FIXME: Check if there is a PETSc function for this
   // Insert zeros on the diagonal as diagonal entries may be
-  // optimised away by the linear algebra backend when
-  // calling PETScMatrix::apply, e.g. PETSc does this then errors
-  // when matrices have no diagonal entry inserted.
+  // optimised away, e.g. when calling PETScMatrix::apply.
   if (keep_diagonal)
   {
     // Loop over rows and insert 0.0 on the diagonal
@@ -311,10 +301,6 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
 
     A.apply(PETScMatrix::AssemblyType::FLUSH);
   }
-
-  // Delete sparsity pattern
-  Timer t2("Delete sparsity");
-  t2.stop();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>
@@ -324,9 +310,7 @@ dolfin::fem::dof_to_vertex_map(const FunctionSpace& space)
   const std::vector<dolfin::la_index_t> vertex_map = vertex_to_dof_map(space);
   std::vector<std::size_t> return_map(vertex_map.size());
   for (std::size_t i = 0; i < vertex_map.size(); i++)
-  {
     return_map[vertex_map[i]] = i;
-  }
   return return_map;
 }
 //-----------------------------------------------------------------------------
@@ -374,7 +358,7 @@ dolfin::fem::vertex_to_dof_map(const FunctionSpace& space)
     // Get the first cell connected to the vertex
     const Cell cell(mesh, vertex->entities(top_dim)[0]);
 
-// Find local vertex number
+    // Find local vertex number
 #ifdef DEBUG
     bool vertex_found = false;
 #endif
