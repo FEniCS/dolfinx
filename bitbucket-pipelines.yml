@@ -17,10 +17,10 @@ pipelines:
           - make -j2
           - make install
 
-	  - cd ../demo/documented/poisson/cpp
-	  - ffc -l dolfin Poisson.ufl
-	  - cmake . && make && ./demo_poisson
-	  - cd ../../../..
+          - cd ../demo/documented/poisson/cpp
+          - ffc -l dolfin Poisson.ufl
+          - cmake . && make && ./demo_poisson
+          - cd ../../../..
 
           - cd python
           - pip3 install .
