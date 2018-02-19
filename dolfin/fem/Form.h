@@ -66,14 +66,6 @@ class MeshFunction;
 class Form
 {
 public:
-  /// Create form of given rank with given number of coefficients
-  ///
-  /// @param[in]    rank (std::size_t)
-  ///         The rank.
-  /// @param[in]    num_coefficients (std::size_t)
-  ///         The number of coefficients.
-  Form(std::size_t rank, std::size_t num_coefficients);
-
   /// Create form (shared data)
   ///
   /// @param[in] ufc_form (ufc::form)
@@ -105,16 +97,6 @@ public:
   /// @return std::size_t
   ///         The position of coefficient i in original ufl form coefficients.
   std::size_t original_coefficient_position(std::size_t i) const;
-
-  /// Return coloring type for colored assembly of form over a mesh
-  /// entity of a given dimension
-  ///
-  /// @param[in] entity_dim (std::size_t)
-  ///         Dimension.
-  ///
-  /// @return std::vector<std::size_t>
-  ///         Coloring type.
-  std::vector<std::size_t> coloring(std::size_t entity_dim) const;
 
   /// Set mesh, necessary for functionals when there are no function
   /// spaces
@@ -244,15 +226,6 @@ public:
   /// Check function spaces and coefficients
   void check() const;
 
-  /// Domain markers for cells
-  std::shared_ptr<const MeshFunction<std::size_t>> dx;
-  /// Domain markers for exterior facets
-  std::shared_ptr<const MeshFunction<std::size_t>> ds;
-  /// Domain markers for interior facets
-  std::shared_ptr<const MeshFunction<std::size_t>> dS;
-  /// Domain markers for vertices
-  std::shared_ptr<const MeshFunction<std::size_t>> dP;
-
 protected:
   // The UFC form
   std::shared_ptr<const ufc::form> _ufc_form;
@@ -265,6 +238,15 @@ protected:
 
   // The mesh (needed for functionals when we don't have any spaces)
   std::shared_ptr<const Mesh> _mesh;
+
+  /// Domain markers for cells
+  std::shared_ptr<const MeshFunction<std::size_t>> dx;
+  /// Domain markers for exterior facets
+  std::shared_ptr<const MeshFunction<std::size_t>> ds;
+  /// Domain markers for interior facets
+  std::shared_ptr<const MeshFunction<std::size_t>> dS;
+  /// Domain markers for vertices
+  std::shared_ptr<const MeshFunction<std::size_t>> dP;
 
 };
 }

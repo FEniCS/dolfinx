@@ -19,12 +19,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Form::Form(std::size_t rank, std::size_t num_coefficients)
-    : _function_spaces(rank), _coefficients(num_coefficients)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 Form::Form(std::shared_ptr<const ufc::form> ufc_form,
            std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
     : _ufc_form(ufc_form), _function_spaces(function_spaces),
@@ -40,44 +34,12 @@ Form::~Form()
 //-----------------------------------------------------------------------------
 std::size_t Form::rank() const { return _function_spaces.size(); }
 //-----------------------------------------------------------------------------
-std::size_t Form::num_coefficients() const
-{
-  if (!_ufc_form)
-    return _coefficients.size();
-  else
-  {
-    dolfin_assert(_ufc_form->num_coefficients() == _coefficients.size());
-    return _coefficients.size();
-  }
-}
+std::size_t Form::num_coefficients() const { return _coefficients.size(); }
 //-----------------------------------------------------------------------------
 std::size_t Form::original_coefficient_position(std::size_t i) const
 {
   dolfin_assert(_ufc_form);
   return _ufc_form->original_coefficient_position(i);
-}
-//-----------------------------------------------------------------------------
-std::vector<std::size_t> Form::coloring(std::size_t entity_dim) const
-{
-  warning("Form::coloring does not properly consider form type.");
-
-  // Get mesh
-  dolfin_assert(this->mesh());
-  const Mesh& mesh = *(this->mesh());
-  const std::size_t cell_dim = mesh.topology().dim();
-
-  std::vector<std::size_t> _coloring;
-  if (entity_dim == cell_dim)
-    _coloring = {{cell_dim, 0, cell_dim}};
-  else if (entity_dim == cell_dim - 1)
-    _coloring = {{cell_dim - 1, cell_dim, 0, cell_dim, cell_dim - 1}};
-  else
-  {
-    dolfin_error("Form.cpp", "color form for multicore computing",
-                 "Only cell and facet coloring are currently supported");
-  }
-
-  return _coloring;
 }
 //-----------------------------------------------------------------------------
 void Form::set_mesh(std::shared_ptr<const Mesh> mesh) { _mesh = mesh; }
@@ -114,7 +76,7 @@ std::shared_ptr<const Mesh> Form::mesh() const
     meshes.push_back(dP->mesh());
 
   // Extract meshes from coefficients. Note that this is only done
-  // when we don't already have a mesh sine it may otherwise conflict
+  // when we don't already have a mesh since it may otherwise conflict
   // with existing meshes (if coefficient is defined on another mesh).
   if (meshes.empty())
   {
