@@ -153,42 +153,6 @@ public:
   void set_coefficient(std::size_t i,
                        std::shared_ptr<const GenericFunction> coefficient);
 
-  /// Set coefficient with given name (shared pointer version)
-  ///
-  /// @param[in]    name (std::string)
-  ///         The name.
-  /// @param[in]    coefficient (_GenericFunction_)
-  ///         The coefficient.
-  void set_coefficient(std::string name,
-                       std::shared_ptr<const GenericFunction> coefficient);
-
-  /// Set all coefficients in given map. All coefficients in the
-  /// given map, which may contain only a subset of the coefficients
-  /// of the form, will be set.
-  ///
-  /// @param[in]    coefficients (std::map<std::string, _GenericFunction_>)
-  ///         The map of coefficients.
-  void
-  set_coefficients(std::map<std::string, std::shared_ptr<const GenericFunction>>
-                       coefficients);
-
-  /// Set some coefficients in given map. Each coefficient in the
-  /// given map will be set, if the name of the coefficient matches
-  /// the name of a coefficient in the form.
-  ///
-  /// This is useful when reusing the same coefficient map for
-  /// several forms, or when some part of the form has been
-  /// outcommented (for testing) in the UFL file, which means that
-  /// the coefficient and attaching it to the form does not need to
-  /// be outcommented in a C++ program using code from the generated
-  /// UFL file.
-  ///
-  /// @param[in] coefficients (std::map<std::string, _GenericFunction_>)
-  ///         The map of coefficients.
-  void set_some_coefficients(
-      std::map<std::string, std::shared_ptr<const GenericFunction>>
-          coefficients);
-
   /// Return coefficient with given number
   ///
   /// @param[in] i (std::size_t)
@@ -198,29 +162,11 @@ public:
   ///         The coefficient.
   std::shared_ptr<const GenericFunction> coefficient(std::size_t i) const;
 
-  /// Return coefficient with given name
-  ///
-  /// @param[in]    name (std::string)
-  ///         The name.
-  ///
-  /// @return     _GenericFunction_
-  ///         The coefficient.
-  std::shared_ptr<const GenericFunction> coefficient(std::string name) const;
-
   /// Return all coefficients
   ///
   /// @return     std::vector<_GenericFunction_>
   ///         All coefficients.
   std::vector<std::shared_ptr<const GenericFunction>> coefficients() const;
-
-  /// Return the number of the coefficient with this name
-  ///
-  /// @param[in]    name (std::string)
-  ///         The name.
-  ///
-  /// @return     std::size_t
-  ///         The number of the coefficient with the given name.
-  virtual std::size_t coefficient_number(const std::string& name) const;
 
   /// Return the name of the coefficient with this number
   ///
