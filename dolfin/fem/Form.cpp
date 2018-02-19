@@ -20,7 +20,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Form::Form(std::size_t rank, std::size_t num_coefficients)
-    : _function_spaces(rank), _coefficients(num_coefficients), _rank(rank)
+    : _function_spaces(rank), _coefficients(num_coefficients)
 {
   // Do nothing
 }
@@ -28,9 +28,9 @@ Form::Form(std::size_t rank, std::size_t num_coefficients)
 Form::Form(std::shared_ptr<const ufc::form> ufc_form,
            std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
     : _ufc_form(ufc_form), _function_spaces(function_spaces),
-      _coefficients(ufc_form->num_coefficients()), _rank(ufc_form->rank())
+      _coefficients(ufc_form->num_coefficients())
 {
-  // Do nothing
+  dolfin_assert(ufc_form->rank() == function_spaces.size());
 }
 //-----------------------------------------------------------------------------
 Form::~Form()
@@ -38,16 +38,7 @@ Form::~Form()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::size_t Form::rank() const
-{
-  if (!_ufc_form)
-    return _rank;
-  else
-  {
-    dolfin_assert(_ufc_form->rank() == _rank);
-    return _rank;
-  }
-}
+std::size_t Form::rank() const { return _function_spaces.size(); }
 //-----------------------------------------------------------------------------
 std::size_t Form::num_coefficients() const
 {

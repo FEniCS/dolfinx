@@ -320,9 +320,5 @@ protected:
   // The mesh (needed for functionals when we don't have any spaces)
   std::shared_ptr<const Mesh> _mesh;
 
-private:
-  const std::size_t _rank;
 };
 }
-
-
