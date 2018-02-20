@@ -25,6 +25,12 @@ Form::Form(std::shared_ptr<const ufc::form> ufc_form,
       _coefficients(ufc_form->num_coefficients())
 {
   dolfin_assert(ufc_form->rank() == function_spaces.size());
+
+  // Set _mesh from FunctionSpace and check they are the same
+  if (!function_spaces.empty())
+    _mesh = function_spaces[0]->mesh();
+  for (auto& f : function_spaces)
+    dolfin_assert(_mesh == f->mesh());
 }
 //-----------------------------------------------------------------------------
 Form::~Form()
@@ -42,74 +48,16 @@ std::size_t Form::original_coefficient_position(std::size_t i) const
   return _ufc_form->original_coefficient_position(i);
 }
 //-----------------------------------------------------------------------------
-void Form::set_mesh(std::shared_ptr<const Mesh> mesh) { _mesh = mesh; }
+void Form::set_mesh(std::shared_ptr<const Mesh> mesh)
+{
+  dolfin_assert(mesh);
+  _mesh = mesh;
+}
 //-----------------------------------------------------------------------------
 std::shared_ptr<const Mesh> Form::mesh() const
 {
-  // In the case when there are no function spaces (in the case of a
-  // a functional) the (generated) subclass must set the mesh directly
-  // by calling set_mesh().
-
-  // Extract meshes from function spaces
-  std::vector<std::shared_ptr<const Mesh>> meshes;
-  for (std::size_t i = 0; i < _function_spaces.size(); i++)
-  {
-    if (_function_spaces[i])
-    {
-      dolfin_assert(_function_spaces[i]->mesh());
-      meshes.push_back(_function_spaces[i]->mesh());
-    }
-  }
-
-  // Add common mesh if any
-  if (_mesh)
-    meshes.push_back(_mesh);
-
-  // Extract meshes from markers if any
-  if (dx)
-    meshes.push_back(dx->mesh());
-  if (ds)
-    meshes.push_back(ds->mesh());
-  if (dS)
-    meshes.push_back(dS->mesh());
-  if (dP)
-    meshes.push_back(dP->mesh());
-
-  // Extract meshes from coefficients. Note that this is only done
-  // when we don't already have a mesh since it may otherwise conflict
-  // with existing meshes (if coefficient is defined on another mesh).
-  if (meshes.empty())
-  {
-    for (std::size_t i = 0; i < _coefficients.size(); i++)
-    {
-      const Function* function
-          = dynamic_cast<const Function*>(&*_coefficients[i]);
-      if (function && function->function_space()->mesh())
-        meshes.push_back(function->function_space()->mesh());
-    }
-  }
-
-  // Check that we have at least one mesh
-  if (meshes.empty())
-  {
-    dolfin_error(
-        "Form.cpp", "extract mesh from form",
-        "No mesh was found. Try passing mesh to the assemble function");
-  }
-
-  // Check that all meshes are the same
-  for (std::size_t i = 1; i < meshes.size(); i++)
-  {
-    if (meshes[i] != meshes[i - 1])
-    {
-      dolfin_error("Form.cpp", "extract mesh from form",
-                   "Non-matching meshes for function spaces and/or measures");
-    }
-  }
-
-  // Return first mesh
-  dolfin_assert(meshes[0]);
-  return meshes[0];
+  dolfin_assert(_mesh);
+  return _mesh;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FunctionSpace> Form::function_space(std::size_t i) const
