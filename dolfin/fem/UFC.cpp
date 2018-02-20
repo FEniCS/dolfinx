@@ -37,8 +37,6 @@ void UFC::init(const Form& a)
   // Get function spaces for arguments
   std::vector<std::shared_ptr<const FunctionSpace>> V = a.function_spaces();
 
-  const ufc::form& form = *a.ufc_form();
-
   //
   // Initialise temporary space for element tensors
   //
@@ -46,30 +44,20 @@ void UFC::init(const Form& a)
   // FIXME: make Assembler responsible for this
 
   // Get maximum local dimensions
-  std::vector<std::size_t> max_element_dofs;
-  std::vector<std::size_t> max_macro_element_dofs;
-  std::size_t num_entries = 1;
-  std::size_t num_macro_entries = 1;
-  for (std::size_t i = 0; i < form.rank(); i++)
-  {
-    dolfin_assert(V[i]->dofmap());
-    num_entries *= V[i]->dofmap()->max_element_dofs();
-    num_macro_entries *= 2 * V[i]->dofmap()->max_element_dofs();
-  }
+  const std::size_t num_entries = a.max_element_tensor_size();
   A.resize(num_entries);
-  macro_A.resize(num_macro_entries);
+  macro_A.resize(num_entries * std::pow(2, a.rank()));
 
   //
   // Initialize storage for coefficient values
   //
-
-  std::size_t num_coeffs = form.num_coefficients();
+  std::size_t num_coeffs = a.num_coefficients();
 
   // Create finite elements for coefficients
   for (std::size_t i = 0; i < num_coeffs; i++)
   {
     std::shared_ptr<ufc::finite_element> element(
-        form.create_finite_element(form.rank() + i));
+        a.ufc_form()->create_finite_element(a.rank() + i));
     coefficient_elements.push_back(FiniteElement(element));
   }
 

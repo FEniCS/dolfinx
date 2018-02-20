@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Form.h"
+#include "GenericDofMap.h"
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -48,6 +49,17 @@ std::size_t Form::original_coefficient_position(std::size_t i) const
 {
   dolfin_assert(_ufc_form);
   return _ufc_form->original_coefficient_position(i);
+}
+//-----------------------------------------------------------------------------
+std::size_t Form::max_element_tensor_size() const
+{
+  std::size_t num_entries = 1;
+  for (const auto& V : _function_spaces)
+  {
+    dolfin_assert(V->dofmap());
+    num_entries *= V->dofmap()->max_element_dofs();
+  }
+  return num_entries;
 }
 //-----------------------------------------------------------------------------
 void Form::set_mesh(std::shared_ptr<const Mesh> mesh)

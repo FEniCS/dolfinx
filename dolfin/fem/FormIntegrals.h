@@ -215,7 +215,7 @@ public:
 
   unsigned int num_vertex_integrals() const { return _vertex_integrals.size(); }
 
-public:
+private:
   // Cell integrals
   std::vector<std::shared_ptr<ufc::cell_integral>> _cell_integrals;
 

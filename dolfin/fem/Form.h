@@ -99,6 +99,13 @@ public:
   ///         The position of coefficient i in original ufl form coefficients.
   std::size_t original_coefficient_position(std::size_t i) const;
 
+  /// Return the size of the element tensor, needed to create temporary space
+  /// for assemblers
+  ///
+  /// @return std::size_t
+  ///         The maximum number of values in a local element tensor
+  std::size_t max_element_tensor_size() const;
+
   /// Set mesh, necessary for functionals when there are no function
   /// spaces
   ///
