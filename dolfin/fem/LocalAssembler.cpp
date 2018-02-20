@@ -31,8 +31,8 @@ void LocalAssembler::assemble(
   assemble_cell(A, ufc, coordinate_dofs, ufc_cell, cell, cell_domains);
 
   // Assemble contributions from facet integrals
-  if (ufc.form.has_exterior_facet_integrals()
-      || ufc.form.has_interior_facet_integrals())
+  if (ufc.dolfin_form.integrals().num_exterior_facet_integrals() > 0
+      or ufc.dolfin_form.integrals().num_interior_facet_integrals() > 0)
   {
     unsigned int local_facet = 0;
     for (auto& facet : EntityRange<Facet>(cell))
@@ -62,7 +62,7 @@ void LocalAssembler::assemble(
   }
 
   // Check that there are no vertex integrals
-  if (ufc.form.has_vertex_integrals())
+  if (ufc.dolfin_form.integrals().num_vertex_integrals() > 0)
   {
     dolfin_error("LocalAssembler.cpp", "assemble local problem",
                  "Local problem contains vertex integrals which are not yet "
@@ -77,7 +77,7 @@ void LocalAssembler::assemble_cell(
     const MeshFunction<std::size_t>* cell_domains)
 {
   // Skip if there are no cell integrals
-  if (!ufc.form.has_cell_integrals())
+  if (ufc.dolfin_form.integrals().num_cell_integrals() == 0)
   {
     // Clear tensor here instead of in assemble() as a small speedup
     A.setZero();
@@ -85,11 +85,14 @@ void LocalAssembler::assemble_cell(
   }
 
   // Extract default cell integral
-  ufc::cell_integral* integral = ufc.default_cell_integral.get();
+  const ufc::cell_integral* integral
+      = ufc.dolfin_form.integrals().cell_integral().get();
 
   // Get integral for sub domain (if any)
   if (cell_domains && !cell_domains->empty())
-    integral = ufc.get_cell_integral((*cell_domains)[cell]);
+    integral = ufc.dolfin_form.integrals()
+                   .cell_integral((*cell_domains)[cell])
+                   .get();
 
   // Skip integral if zero
   if (!integral)
@@ -116,17 +119,18 @@ void LocalAssembler::assemble_exterior_facet(
     const MeshFunction<std::size_t>* exterior_facet_domains)
 {
   // Skip if there are no exterior facet integrals
-  if (!ufc.form.has_exterior_facet_integrals())
+  if (ufc.dolfin_form.integrals().num_exterior_facet_integrals() == 0)
     return;
 
   // Extract default exterior facet integral
-  ufc::exterior_facet_integral* integral
-      = ufc.default_exterior_facet_integral.get();
+  const ufc::exterior_facet_integral* integral
+      = ufc.dolfin_form.integrals().exterior_facet_integral().get();
 
   // Get integral for sub domain (if any)
   if (exterior_facet_domains && !exterior_facet_domains->empty())
-    integral
-        = ufc.get_exterior_facet_integral((*exterior_facet_domains)[facet]);
+    integral = ufc.dolfin_form.integrals()
+                   .exterior_facet_integral((*exterior_facet_domains)[facet])
+                   .get();
 
   // Skip integral if zero
   if (!integral)
@@ -158,17 +162,18 @@ void LocalAssembler::assemble_interior_facet(
     const MeshFunction<std::size_t>* cell_domains)
 {
   // Skip if there are no interior facet integrals
-  if (!ufc.form.has_interior_facet_integrals())
+  if (ufc.dolfin_form.integrals().num_interior_facet_integrals() == 0)
     return;
 
   // Extract default interior facet integral
-  ufc::interior_facet_integral* integral
-      = ufc.default_interior_facet_integral.get();
+  const ufc::interior_facet_integral* integral
+      = ufc.dolfin_form.integrals().interior_facet_integral().get();
 
   // Get integral for sub domain (if any)
   if (interior_facet_domains && !interior_facet_domains->empty())
-    integral
-        = ufc.get_interior_facet_integral((*interior_facet_domains)[facet]);
+    integral = ufc.dolfin_form.integrals()
+                   .interior_facet_integral((*interior_facet_domains)[facet])
+                   .get();
 
   // Skip integral if zero
   if (!integral)

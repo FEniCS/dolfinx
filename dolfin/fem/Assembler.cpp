@@ -96,7 +96,7 @@ void fem::Assembler::assemble(PETScMatrix& A)
 
       std::vector<std::vector<std::shared_ptr<SparsityPattern>>> patterns;
       std::vector<std::vector<const SparsityPattern*>> p;
-      int irow = 0;
+      //int irow = 0;
       for (std::size_t row = 0; row < _a.size(); ++row)
       {
         patterns.resize(_a[row].size());
@@ -337,7 +337,7 @@ void fem::Assembler::assemble(
   EigenMatrixD Ae;
 
   // Get cell integral
-  auto cell_integral = ufc.default_cell_integral;
+  auto cell_integral = ufc.dolfin_form.integrals().cell_integral();
 
   // Iterate over all cells
   for (auto& cell : MeshRange<Cell>(mesh))
@@ -448,7 +448,7 @@ void fem::Assembler::assemble(PETScVector& b, const Form& L)
   Eigen::VectorXd be;
 
   // Get cell integral
-  auto cell_integral = ufc.default_cell_integral;
+  auto cell_integral = ufc.dolfin_form.integrals().cell_integral();
 
   // Iterate over all cells
   for (auto& cell : MeshRange<Cell>(mesh))
@@ -528,7 +528,7 @@ void fem::Assembler::apply_bc(
   UFC ufc(a);
 
   // Get cell integral
-  auto cell_integral = ufc.default_cell_integral;
+  auto cell_integral = ufc.dolfin_form.integrals().cell_integral();
 
   // Iterate over all cells
   for (auto& cell : MeshRange<Cell>(mesh))
