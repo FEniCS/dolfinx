@@ -194,13 +194,8 @@ public:
   /// Form
   const ufc::form& form;
 
-  // FIXME AL: Check which data is actually used and remove the rest
-
   /// Local tensor
   std::vector<double> A;
-
-  /// Local tensor
-  std::vector<double> A_facet;
 
   /// Local tensor for macro element
   std::vector<double> macro_A;
@@ -208,12 +203,12 @@ public:
 private:
   // Coefficients (std::vector<double*> is used to interface with
   // UFC)
-  std::vector<std::vector<double>> _w;
+  std::vector<double> _w;
   std::vector<double*> w_pointer;
 
   // Coefficients on macro element (std::vector<double*> is used to
   // interface with UFC)
-  std::vector<std::vector<double>> _macro_w;
+  std::vector<double> _macro_w;
   std::vector<double*> macro_w_pointer;
 
   // Coefficient functions
@@ -224,5 +219,3 @@ public:
   const Form& dolfin_form;
 };
 }
-
-
