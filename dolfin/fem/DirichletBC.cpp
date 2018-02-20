@@ -27,8 +27,8 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
@@ -398,7 +398,7 @@ void DirichletBC::init_from_mesh_function(
 
   // Build set of boundary facets
   dolfin_assert(_facets.empty());
-  for (auto &facet : MeshRange<Facet>(mesh))
+  for (auto& facet : MeshRange<Facet>(mesh))
   {
     if (sub_domains[facet] == sub_domain)
       _facets.push_back(facet.index());
@@ -572,10 +572,10 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
     std::vector<double> coordinate_dofs;
 
     // Loop the vertices associated with the facet
-    for (auto &vertex : EntityRange<Vertex>(facet))
+    for (auto& vertex : EntityRange<Vertex>(facet))
     {
       // Loop the cells associated with the vertex
-      for (auto &c : EntityRange<Cell>(vertex))
+      for (auto& c : EntityRange<Cell>(vertex))
       {
         c.get_coordinate_dofs(coordinate_dofs);
         c.get_cell_data(ufc_cell, local_facet);
@@ -673,15 +673,14 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   {
     // First time around all cells must be iterated over.  Create map
     // from cells attached to boundary to local dofs.
-    for (auto &cell : MeshRange<Cell>(mesh))
+    for (auto& cell : MeshRange<Cell>(mesh))
     {
       // Update UFC cell
       cell.get_coordinate_dofs(coordinate_dofs);
       cell.get_cell_data(ufc_cell);
 
       // Tabulate coordinates of dofs on cell
-      element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs,
-                                       cell);
+      element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs, cell);
 
       // Tabulate dofs on cell
       auto cell_dofs = dofmap.cell_dofs(cell.index());

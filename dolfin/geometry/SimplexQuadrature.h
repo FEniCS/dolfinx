@@ -269,5 +269,3 @@ private:
   std::vector<double> _w;
 };
 }
-
-

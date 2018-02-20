@@ -51,7 +51,6 @@ public:
       MPI_Comm comm,
       const std::vector<std::vector<const SparsityPattern*>> patterns);
 
-  /// Create empty sparsity pattern
   SparsityPattern(const SparsityPattern& pattern) = delete;
 
   /// Destructor

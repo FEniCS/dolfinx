@@ -163,5 +163,3 @@ private:
                        const ArrayView<const dolfin::la_index_t>& dofs);
 };
 }
-
-

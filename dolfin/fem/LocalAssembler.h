@@ -6,10 +6,9 @@
 
 #pragma once
 
-#include <vector>
-
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
+#include <vector>
 
 namespace ufc
 {
@@ -95,5 +94,3 @@ public:
       );
 };
 }
-
-

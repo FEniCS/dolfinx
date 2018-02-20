@@ -7,7 +7,6 @@
 #pragma once
 
 #include "FormIntegrals.h"
-
 #include <dolfin/common/types.h>
 #include <map>
 #include <memory>
@@ -261,4 +260,4 @@ protected:
   /// Domain markers for vertices
   std::shared_ptr<const MeshFunction<std::size_t>> dP;
 };
-} // namespace dolfin
+}

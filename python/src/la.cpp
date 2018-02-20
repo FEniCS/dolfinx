@@ -824,6 +824,15 @@ void la(py::module& m)
       .def("set_options_prefix", &dolfin::PETScMatrix::set_options_prefix)
       .def("set_nullspace", &dolfin::PETScMatrix::set_nullspace)
       .def("set_near_nullspace", &dolfin::PETScMatrix::set_near_nullspace);
+/*
+.def("__sub__",
+     [](const dolfin::PETScMatrix& self, const dolfin::PETScMatrix& B) {
+       dolfin::PETScMatrix C(self);
+       C -= B;
+       return C;
+     },
+     py::is_operator());
+*/
 
 #endif
 

@@ -1,11 +1,12 @@
 set(HEADERS
+  Assembler.h
   AssemblerBase.h
   DirichletBC.h
   DiscreteOperators.h
   DofMapBuilder.h
   DofMap.h
   dolfin_fem.h
-  fem_utils.h
+  utils.h
   FiniteElement.h
   Form.h
   FormIntegrals.h
@@ -20,12 +21,13 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
+  Assembler.cpp
   AssemblerBase.cpp
   DirichletBC.cpp
   DiscreteOperators.cpp
   DofMapBuilder.cpp
   DofMap.cpp
-  fem_utils.cpp
+  utils.cpp
   FiniteElement.cpp
   Form.cpp
   LocalAssembler.cpp

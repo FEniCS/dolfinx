@@ -1,15 +1,20 @@
-// Copyright (C) 2013, 2015, 2016 Johan Hake, Jan Blechta
+// Copyright (C) 2013-2018 Johan Hake, Jan Blechta and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "fem_utils.h"
+#include "utils.h"
 #include <dolfin/common/ArrayView.h>
+#include <dolfin/common/Timer.h>
+#include <dolfin/fem/Form.h>
 #include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
+#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
@@ -166,6 +171,138 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
 }
 
 //-----------------------------------------------------------------------------
+void dolfin::fem::init(PETScVector& x, const Form& a)
+{
+  assert(a.ufc_form());
+  if (a.rank() != 1)
+    throw std::runtime_error(
+        "Cannot intialise vector. Form is not a linear form");
+
+  if (!x.empty())
+    throw std::runtime_error("Cannot initialise layout of non-empty matrix");
+
+  // Get dof map
+  auto dofmap = a.function_space(0)->dofmap();
+
+  // Get dimensions and mapping across processes for each dimension
+  auto index_map = dofmap->index_map();
+
+  // FIXME: Do we need to sort out ghosts here
+  // Build ghost
+  // std::vector<dolfin::la_index_t> ghosts;
+
+  // Build local-to-global index map
+  int block_size = index_map->block_size();
+  std::vector<la_index_t> local_to_global(
+      index_map->size(IndexMap::MapSize::ALL));
+  for (std::size_t i = 0; i < local_to_global.size(); ++i)
+    local_to_global[i] = index_map->local_to_global(i);
+
+  // Initialize vector
+  x.init(index_map->local_range(), local_to_global, {}, block_size);
+}
+//-----------------------------------------------------------------------------
+void dolfin::fem::init(PETScMatrix& A, const Form& a)
+{
+  bool keep_diagonal = false;
+
+  assert(a.ufc_form());
+  if (a.rank() != 2)
+  {
+    throw std::runtime_error(
+        "Cannot initialise matrx. Form is not a bilinear form");
+  }
+
+  if (!A.empty())
+    throw std::runtime_error("Cannot initialise layout of non-empty matrix");
+
+  // Get dof maps
+  std::array<const GenericDofMap*, 2> dofmaps
+      = {{a.function_space(0)->dofmap().get(),
+          a.function_space(1)->dofmap().get()}};
+
+  // Get mesh
+  dolfin_assert(a.mesh());
+  const Mesh& mesh = *(a.mesh());
+
+  Timer t0("Build sparsity");
+
+  // Get IndexMaps for each dimension
+  std::array<std::shared_ptr<const IndexMap>, 2> index_maps
+      = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
+
+  // Create and build sparsity pattern
+  SparsityPattern pattern(A.mpi_comm(), index_maps, 0);
+  SparsityPatternBuilder::build(
+      pattern, mesh, dofmaps, a.ufc_form()->has_cell_integrals(),
+      a.ufc_form()->has_interior_facet_integrals(),
+      a.ufc_form()->has_exterior_facet_integrals(),
+      a.ufc_form()->has_vertex_integrals(), keep_diagonal);
+  t0.stop();
+
+  // Initialize matrix
+  Timer t1("Init tensor");
+  A.init(pattern);
+  t1.stop();
+
+  // Insert zeros to dense rows in increasing order of column index
+  // to avoid CSR data reallocation when assembling in random order
+  // resulting in quadratic complexity; this has to be done before
+  // inserting to diagonal below
+
+  // Tabulate indices of dense rows
+  const std::size_t primary_dim = pattern.primary_dim();
+  std::vector<std::size_t> global_dofs;
+  dofmaps[primary_dim]->tabulate_global_dofs(global_dofs);
+  if (global_dofs.size() > 0)
+  {
+    // Get local row range
+    const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
+    const IndexMap& index_map_0 = *dofmaps[primary_dim]->index_map();
+    const auto row_range = A.local_range(primary_dim);
+
+    // Set zeros in dense rows in order of increasing column index
+    const double block = 0.0;
+    dolfin::la_index_t IJ[2];
+    for (std::size_t i : global_dofs)
+    {
+      const std::int64_t I = index_map_0.local_to_global_index(i);
+      if (I >= row_range[0] && I < row_range[1])
+      {
+        IJ[primary_dim] = I;
+        for (std::int64_t J = 0; J < A.size(primary_codim); J++)
+        {
+          IJ[primary_codim] = J;
+          A.set(&block, 1, &IJ[0], 1, &IJ[1]);
+        }
+      }
+    }
+
+    // Eventually wait with assembly flush for keep_diagonal
+    if (!keep_diagonal)
+      A.apply(PETScMatrix::AssemblyType::FLUSH);
+  }
+
+  // FIXME: Check if there is a PETSc function for this
+  // Insert zeros on the diagonal as diagonal entries may be
+  // optimised away, e.g. when calling PETScMatrix::apply.
+  if (keep_diagonal)
+  {
+    // Loop over rows and insert 0.0 on the diagonal
+    const double block = 0.0;
+    const auto row_range = A.local_range(0);
+    const std::int64_t range = std::min(row_range[1], A.size(1));
+
+    for (std::int64_t i = row_range[0]; i < range; i++)
+    {
+      const dolfin::la_index_t _i = i;
+      A.set(&block, 1, &_i, 1, &_i);
+    }
+
+    A.apply(PETScMatrix::AssemblyType::FLUSH);
+  }
+}
+//-----------------------------------------------------------------------------
 std::vector<std::size_t>
 dolfin::fem::dof_to_vertex_map(const FunctionSpace& space)
 {
@@ -173,9 +310,7 @@ dolfin::fem::dof_to_vertex_map(const FunctionSpace& space)
   const std::vector<dolfin::la_index_t> vertex_map = vertex_to_dof_map(space);
   std::vector<std::size_t> return_map(vertex_map.size());
   for (std::size_t i = 0; i < vertex_map.size(); i++)
-  {
     return_map[vertex_map[i]] = i;
-  }
   return return_map;
 }
 //-----------------------------------------------------------------------------
@@ -223,7 +358,7 @@ dolfin::fem::vertex_to_dof_map(const FunctionSpace& space)
     // Get the first cell connected to the vertex
     const Cell cell(mesh, vertex->entities(top_dim)[0]);
 
-// Find local vertex number
+    // Find local vertex number
 #ifdef DEBUG
     bool vertex_found = false;
 #endif

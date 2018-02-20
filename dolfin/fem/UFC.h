@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <memory>
 #include <ufc.h>
 #include <vector>
@@ -40,6 +41,14 @@ public:
 
   /// Initialise memory
   void init(const Form& form);
+
+  /// Update current cell
+  void update(const Cell& cell,
+              Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
+              Eigen::Dynamic, Eigen::RowMajor>>
+              coordinate_dofs0,
+              const ufc::cell& ufc_cell,
+              const std::vector<bool>& enabled_coefficients);
 
   /// Update current cell
   void update(const Cell& cell, const std::vector<double>& coordinate_dofs0,

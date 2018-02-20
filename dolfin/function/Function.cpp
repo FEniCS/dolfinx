@@ -4,14 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <algorithm>
-#include <map>
-#include <utility>
-#include <vector>
-
-#include "Expression.h"
 #include "Function.h"
+#include "Expression.h"
 #include "FunctionSpace.h"
+#include <algorithm>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
@@ -26,6 +22,9 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
+#include <map>
+#include <utility>
+#include <vector>
 
 using namespace dolfin;
 
@@ -450,15 +449,15 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Update to current cell
     cell.get_coordinate_dofs(coordinate_dofs);
     cell.get_cell_data(ufc_cell);
 
     // Pick values from global vector
-    restrict(coefficients.data(), element,
-             cell, coordinate_dofs.data(), ufc_cell);
+    restrict(coefficients.data(), element, cell, coordinate_dofs.data(),
+             ufc_cell);
 
     // Interpolate values at the vertices
     element.interpolate_vertex_values(
@@ -467,7 +466,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
 
     // Copy values to array of vertex values
     std::size_t local_index = 0;
-    for (auto &vertex : EntityRange<Vertex>(cell))
+    for (auto& vertex : EntityRange<Vertex>(cell))
     {
       for (std::size_t i = 0; i < value_size_loc; ++i)
       {

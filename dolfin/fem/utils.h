@@ -6,20 +6,29 @@
 
 #pragma once
 
-#include <vector>
-
 #include <dolfin/common/types.h>
+#include <vector>
 
 namespace dolfin
 {
 // Forward declarations
-class Mesh;
-class FunctionSpace;
+class Form;
 class Function;
+class FunctionSpace;
+class Mesh;
 class MeshGeometry;
+class PETScMatrix;
+class PETScVector;
 
 namespace fem
 {
+
+/// Initialise matrix. Matrix is not zeroed.
+void init(PETScMatrix& A, const Form& a);
+
+/// Initialise vector. Vector is not zeroed.
+void init(PETScVector& x, const Form& a);
+
 /// Return a map between dof indices and vertex indices
 ///
 /// Only works for FunctionSpace with dofs exclusively on vertices.

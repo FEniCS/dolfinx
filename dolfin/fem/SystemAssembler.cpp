@@ -272,7 +272,7 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
   if (finalize_tensor)
   {
     if (A)
-      A->apply("add");
+      A->apply(PETScMatrix::AssemblyType::FINAL);
     if (b)
       b->apply();
   }
