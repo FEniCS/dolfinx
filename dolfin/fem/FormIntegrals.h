@@ -41,14 +41,14 @@ public:
           std::shared_ptr<ufc::cell_integral>(_default_cell_integral));
     }
 
-    _cell_integrals.resize(ufc_form.max_cell_subdomain_id() + 1);
     for (std::size_t i = 0; i < ufc_form.max_cell_subdomain_id(); ++i)
     {
       std::cout << "Got a cell integral for domain " << i << "\n";
-      _cell_integrals[i + 1] = std::shared_ptr<ufc::cell_integral>(
-          ufc_form.create_cell_integral(i));
+      _cell_integrals.push_back(std::shared_ptr<ufc::cell_integral>(
+          ufc_form.create_cell_integral(i)));
     }
 
+    // Experimental function pointers for tabulate_tensor cell integral
     for (auto& ci : _cell_integrals)
       _cell_tabulate_tensor.push_back(std::bind(
           &ufc::cell_integral::tabulate_tensor, ci, std::placeholders::_1,
@@ -65,14 +65,12 @@ public:
               _default_exterior_facet_integral));
     }
 
-    _exterior_facet_integrals.resize(
-        ufc_form.max_exterior_facet_subdomain_id());
     for (std::size_t i = 0; i < ufc_form.max_exterior_facet_subdomain_id(); ++i)
     {
       std::cout << "Got an exterior integral for domain " << i << "\n";
-      _exterior_facet_integrals[i + 1]
-          = std::shared_ptr<ufc::exterior_facet_integral>(
-              ufc_form.create_exterior_facet_integral(i));
+      _exterior_facet_integrals.push_back(
+          std::shared_ptr<ufc::exterior_facet_integral>(
+              ufc_form.create_exterior_facet_integral(i)));
     }
 
     // Interior facet integrals
@@ -86,14 +84,12 @@ public:
               _default_interior_facet_integral));
     }
 
-    _interior_facet_integrals.resize(
-        ufc_form.max_interior_facet_subdomain_id());
     for (std::size_t i = 0; i < ufc_form.max_interior_facet_subdomain_id(); ++i)
     {
       std::cout << "Got an interior integral for domain " << i << "\n";
-      _interior_facet_integrals[i + 1]
-          = std::shared_ptr<ufc::interior_facet_integral>(
-              ufc_form.create_interior_facet_integral(i));
+      _interior_facet_integrals.push_back(
+          std::shared_ptr<ufc::interior_facet_integral>(
+              ufc_form.create_interior_facet_integral(i)));
     }
 
     // Vertex integrals
@@ -103,10 +99,11 @@ public:
       _vertex_integrals.push_back(
           std::shared_ptr<ufc::vertex_integral>(_default_vertex_integral));
 
-    _vertex_integrals.resize(ufc_form.max_vertex_subdomain_id());
     for (std::size_t i = 0; i < ufc_form.max_vertex_subdomain_id(); ++i)
-      _vertex_integrals[i + 1] = std::shared_ptr<ufc::vertex_integral>(
-          ufc_form.create_vertex_integral(i));
+    {
+      _vertex_integrals.push_back(std::shared_ptr<ufc::vertex_integral>(
+          ufc_form.create_vertex_integral(i)));
+    }
   }
 
   /// Default cell integral

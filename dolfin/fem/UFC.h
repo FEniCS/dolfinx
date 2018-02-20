@@ -53,20 +53,6 @@ public:
               const ufc::cell& ufc_cell1,
               const std::vector<bool>& enabled_coefficients);
 
-  /// Update current cell (TODO: Remove this when
-  /// PointIntegralSolver supports the version with
-  /// enabled_coefficients)
-  void update(const Cell& cell, const std::vector<double>& coordinate_dofs0,
-              const ufc::cell& ufc_cell);
-
-  /// Update current pair of cells for macro element (TODO: Remove
-  /// this when PointIntegralSolver supports the version with
-  /// enabled_coefficients)
-  void update(const Cell& cell0, const std::vector<double>& coordinate_dofs0,
-              const ufc::cell& ufc_cell0, const Cell& cell1,
-              const std::vector<double>& coordinate_dofs1,
-              const ufc::cell& ufc_cell1);
-
   /// Pointer to coefficient data. Used to support UFC interface.
   const double* const* w() const { return w_pointer.data(); }
 

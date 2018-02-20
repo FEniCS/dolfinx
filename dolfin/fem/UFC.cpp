@@ -39,39 +39,41 @@ void UFC::init(const Form& a)
 
   const ufc::form& form = *a.ufc_form();
 
+  //
+  // Initialise temporary space for element tensors
+  //
+
+  // FIXME: make Assembler responsible for this
+
+  // Get maximum local dimensions
+  std::vector<std::size_t> max_element_dofs;
+  std::vector<std::size_t> max_macro_element_dofs;
+  std::size_t num_entries = 1;
+  std::size_t num_macro_entries = 1;
+  for (std::size_t i = 0; i < form.rank(); i++)
+  {
+    dolfin_assert(V[i]->dofmap());
+    num_entries *= V[i]->dofmap()->max_element_dofs();
+    num_macro_entries *= 2 * V[i]->dofmap()->max_element_dofs();
+  }
+  A.resize(num_entries);
+  macro_A.resize(num_macro_entries);
+
+  //
+  // Initialize storage for coefficient values
+  //
+
+  std::size_t num_coeffs = form.num_coefficients();
+
   // Create finite elements for coefficients
-  for (std::size_t i = 0; i < form.num_coefficients(); i++)
+  for (std::size_t i = 0; i < num_coeffs; i++)
   {
     std::shared_ptr<ufc::finite_element> element(
         form.create_finite_element(form.rank() + i));
     coefficient_elements.push_back(FiniteElement(element));
   }
 
-  // Get maximum local dimensions
-  std::vector<std::size_t> max_element_dofs;
-  std::vector<std::size_t> max_macro_element_dofs;
-  for (std::size_t i = 0; i < form.rank(); i++)
-  {
-    dolfin_assert(V[i]->dofmap());
-    max_element_dofs.push_back(V[i]->dofmap()->max_element_dofs());
-    max_macro_element_dofs.push_back(2 * V[i]->dofmap()->max_element_dofs());
-  }
-
-  // Initialize local tensor
-  std::size_t num_entries = 1;
-  for (std::size_t i = 0; i < form.rank(); i++)
-    num_entries *= max_element_dofs[i];
-  A.resize(num_entries);
-
-  // Initialize local tensor for macro element
-  num_entries = 1;
-  for (std::size_t i = 0; i < form.rank(); i++)
-    num_entries *= max_macro_element_dofs[i];
-  macro_A.resize(num_entries);
-
-  // Initialize coefficients
-  std::size_t num_coeffs = form.num_coefficients();
-
+  // Calculate size and offsets for coefficient values
   std::vector<std::size_t> n = {0};
   for (std::size_t i = 0; i < num_coeffs; ++i)
     n.push_back(n.back() + coefficient_elements[i].space_dimension());
@@ -113,36 +115,6 @@ void UFC::update(const Cell& c0, const std::vector<double>& coordinate_dofs0,
   {
     if (!enabled_coefficients[i])
       continue;
-    dolfin_assert(coefficients[i]);
-    const std::size_t offset = coefficient_elements[i].space_dimension();
-    coefficients[i]->restrict(macro_w_pointer[i], coefficient_elements[i], c0,
-                              coordinate_dofs0.data(), ufc_cell0);
-    coefficients[i]->restrict(macro_w_pointer[i] + offset,
-                              coefficient_elements[i], c1,
-                              coordinate_dofs1.data(), ufc_cell1);
-  }
-}
-//-----------------------------------------------------------------------------
-void UFC::update(const Cell& c, const std::vector<double>& coordinate_dofs,
-                 const ufc::cell& ufc_cell)
-{
-  // Restrict coefficients to facet
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
-  {
-    dolfin_assert(coefficients[i]);
-    coefficients[i]->restrict(w_pointer[i], coefficient_elements[i], c,
-                              coordinate_dofs.data(), ufc_cell);
-  }
-}
-//-----------------------------------------------------------------------------
-void UFC::update(const Cell& c0, const std::vector<double>& coordinate_dofs0,
-                 const ufc::cell& ufc_cell0, const Cell& c1,
-                 const std::vector<double>& coordinate_dofs1,
-                 const ufc::cell& ufc_cell1)
-{
-  // Restrict coefficients to facet
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
-  {
     dolfin_assert(coefficients[i]);
     const std::size_t offset = coefficient_elements[i].space_dimension();
     coefficients[i]->restrict(macro_w_pointer[i], coefficient_elements[i], c0,
