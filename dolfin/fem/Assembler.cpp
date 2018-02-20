@@ -96,7 +96,7 @@ void fem::Assembler::assemble(PETScMatrix& A)
 
       std::vector<std::vector<std::shared_ptr<SparsityPattern>>> patterns;
       std::vector<std::vector<const SparsityPattern*>> p;
-      //int irow = 0;
+      // int irow = 0;
       for (std::size_t row = 0; row < _a.size(); ++row)
       {
         patterns.resize(_a[row].size());
@@ -109,15 +109,15 @@ void fem::Assembler::assemble(PETScMatrix& A)
           auto map1 = _a[row][col]->function_space(1)->dofmap()->index_map();
 
           std::cout << "  Push Initialising block: " << std::endl;
-          std::array<std::shared_ptr<const IndexMap>, 2> maps = {map0, map1};
+          std::array<std::shared_ptr<const IndexMap>, 2> maps = {{map0, map1}};
           auto test = std::make_shared<SparsityPattern>(A.mpi_comm(), maps, 0);
           patterns[row].push_back(test);
 
           // Build sparsity pattern
           std::cout << "  Build sparsity pattern " << std::endl;
           std::array<const GenericDofMap*, 2> dofmaps
-              = {_a[row][col]->function_space(0)->dofmap().get(),
-                 _a[row][col]->function_space(1)->dofmap().get()};
+              = {{_a[row][col]->function_space(0)->dofmap().get(),
+                  _a[row][col]->function_space(1)->dofmap().get()}};
           SparsityPatternBuilder::build(*patterns[row].back(),
                                         *_a[row][col]->mesh(), dofmaps, true,
                                         false, false, false, false);
@@ -407,7 +407,7 @@ void fem::Assembler::assemble(
 
   // FIXME: Put this elsewhere?
   // Finalise matrix
-  //A.apply(PETScMatrix::AssemblyType::FINAL);
+  // A.apply(PETScMatrix::AssemblyType::FINAL);
 
   // FIXME: Move this outside of function
   // Place '1' on diagonal for bc entries
