@@ -161,8 +161,8 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
   UFC A_ufc(*_a), b_ufc(*_l);
 
   // Raise error for Point integrals
-  if (_a->ufc_form()->has_vertex_integrals()
-      or _l->ufc_form()->has_vertex_integrals())
+  if (_a->integrals().num_vertex_integrals() > 0
+      or _l->integrals().num_vertex_integrals() > 0)
   {
     dolfin_error("SystemAssembler.cpp", "assemble system",
                  "Point integrals are not supported (yet)");
@@ -254,8 +254,8 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
   }
 
   // Check whether we should do cell-wise or facet-wise assembly
-  if (!ufc[0]->dolfin_form.ufc_form()->has_interior_facet_integrals()
-      && !ufc[1]->dolfin_form.ufc_form()->has_interior_facet_integrals())
+  if (ufc[0]->dolfin_form.integrals().num_interior_facet_integrals() == 0
+      && ufc[1]->dolfin_form.integrals().num_interior_facet_integrals() == 0)
   {
     // Assemble cell-wise (no interior facet integrals)
     cell_wise_assembly(tensors, ufc, data, boundary_values, cell_domains,
@@ -291,8 +291,8 @@ void SystemAssembler::cell_wise_assembly(
   // Initialize entities if using external facet integrals
   dolfin_assert(mesh.ordered());
   bool has_exterior_facet_integrals
-      = ufc[0]->dolfin_form.ufc_form()->has_exterior_facet_integrals()
-        or ufc[1]->dolfin_form.ufc_form()->has_exterior_facet_integrals();
+      = ufc[0]->dolfin_form.integrals().num_exterior_facet_integrals() > 0
+        or ufc[1]->dolfin_form.integrals().num_exterior_facet_integrals() > 0;
   if (has_exterior_facet_integrals)
   {
     // Compute facets and facet-cell connectivity if not already computed
@@ -314,12 +314,12 @@ void SystemAssembler::cell_wise_assembly(
 
   // Create pointers to hold integral objects
   std::array<const ufc::cell_integral*, 2> cell_integrals
-      = {{ufc[0]->default_cell_integral.get(),
-          ufc[1]->default_cell_integral.get()}};
+      = {{ufc[0]->dolfin_form.integrals().cell_integral().get(),
+          ufc[1]->dolfin_form.integrals().cell_integral().get()}};
 
   std::array<const ufc::exterior_facet_integral*, 2> exterior_facet_integrals
-      = {{ufc[0]->default_exterior_facet_integral.get(),
-          ufc[1]->default_exterior_facet_integral.get()}};
+      = {{ufc[0]->dolfin_form.integrals().exterior_facet_integral().get(),
+          ufc[1]->dolfin_form.integrals().exterior_facet_integral().get()}};
 
   // Check whether integrals are domain-dependent
   bool use_cell_domains = cell_domains && !cell_domains->empty();
@@ -360,7 +360,8 @@ void SystemAssembler::cell_wise_assembly(
       if (use_cell_domains)
       {
         const std::size_t domain = (*cell_domains)[cell];
-        cell_integrals[form] = ufc[form]->get_cell_integral(domain);
+        cell_integrals[form]
+            = ufc[form]->dolfin_form.integrals().cell_integral(domain).get();
       }
 
       // Get local-to-global dof maps for cell
@@ -408,7 +409,10 @@ void SystemAssembler::cell_wise_assembly(
           {
             const std::size_t domain = (*exterior_facet_domains)[facet];
             exterior_facet_integrals[form]
-                = ufc[form]->get_exterior_facet_integral(domain);
+                = ufc[form]
+                      ->dolfin_form.integrals()
+                      .exterior_facet_integral(domain)
+                      .get();
           }
 
           // Skip if there are no integrals
@@ -517,14 +521,14 @@ void SystemAssembler::facet_wise_assembly(
 
   // Holders for UFC integrals
   std::array<const ufc::cell_integral*, 2> cell_integrals
-      = {{ufc[0]->default_cell_integral.get(),
-          ufc[1]->default_cell_integral.get()}};
+      = {{ufc[0]->dolfin_form.integrals().cell_integral().get(),
+          ufc[1]->dolfin_form.integrals().cell_integral().get()}};
   std::array<const ufc::exterior_facet_integral*, 2> exterior_facet_integrals
-      = {{ufc[0]->default_exterior_facet_integral.get(),
-          ufc[1]->default_exterior_facet_integral.get()}};
+      = {{ufc[0]->dolfin_form.integrals().exterior_facet_integral().get(),
+          ufc[1]->dolfin_form.integrals().exterior_facet_integral().get()}};
   std::array<const ufc::interior_facet_integral*, 2> interior_facet_integrals
-      = {{ufc[0]->default_interior_facet_integral.get(),
-          ufc[1]->default_interior_facet_integral.get()}};
+      = {{ufc[0]->dolfin_form.integrals().interior_facet_integral().get(),
+          ufc[1]->dolfin_form.integrals().interior_facet_integral().get()}};
 
   // Check whether integrals are domain-dependent
   bool use_cell_domains = cell_domains && !cell_domains->empty();
@@ -639,8 +643,10 @@ void SystemAssembler::facet_wise_assembly(
         if (use_interior_facet_domains)
         {
           const std::size_t domain = (*interior_facet_domains)[facet];
-          interior_facet_integrals[form]
-              = ufc[form]->get_interior_facet_integral(domain);
+          interior_facet_integrals[form] = ufc[form]
+                                               ->dolfin_form.integrals()
+                                               .interior_facet_integral(domain)
+                                               .get();
         }
 
         // Check if facet tensor is required
@@ -669,7 +675,10 @@ void SystemAssembler::facet_wise_assembly(
             if (use_cell_domains)
             {
               const std::size_t domain = (*cell_domains)[cell[c]];
-              cell_integrals[form] = ufc[form]->get_cell_integral(domain);
+              cell_integrals[form] = ufc[form]
+                                         ->dolfin_form.integrals()
+                                         .cell_integral(domain)
+                                         .get();
             }
 
             // Check if facet tensor is required
@@ -719,7 +728,7 @@ void SystemAssembler::facet_wise_assembly(
       }
 
       const bool add_macro_element
-          = ufc[0]->dolfin_form.ufc_form()->has_interior_facet_integrals();
+          = ufc[0]->dolfin_form.integrals().num_interior_facet_integrals() > 0;
       if (A && add_macro_element)
       {
         std::vector<ArrayView<const la_index_t>> mdofs(macro_dofs[0].size());
@@ -763,15 +772,18 @@ void SystemAssembler::facet_wise_assembly(
         if (use_cell_domains)
         {
           const std::size_t domain = (*cell_domains)[cell];
-          cell_integrals[form] = ufc[form]->get_cell_integral(domain);
+          cell_integrals[form]
+              = ufc[form]->dolfin_form.integrals().cell_integral(domain).get();
         }
 
         // Get exterior facet integrals for sub domain (if any)
         if (use_exterior_facet_domains)
         {
           const std::size_t domain = (*exterior_facet_domains)[facet];
-          exterior_facet_integrals[form]
-              = ufc[form]->get_exterior_facet_integral(domain);
+          exterior_facet_integrals[form] = ufc[form]
+                                               ->dolfin_form.integrals()
+                                               .exterior_facet_integral(domain)
+                                               .get();
         }
 
         // Get local-to-global dof maps for cell

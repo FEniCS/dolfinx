@@ -6,11 +6,12 @@
 
 #pragma once
 
+#include "FormIntegrals.h"
+
+#include <dolfin/common/types.h>
 #include <map>
 #include <memory>
 #include <vector>
-
-#include <dolfin/common/types.h>
 
 // Forward declaration
 namespace ufc
@@ -226,9 +227,14 @@ public:
   /// Check function spaces and coefficients
   void check() const;
 
+  /// Access form integrals
+  const FormIntegrals& integrals() const { return _integrals; }
+
 protected:
   // The UFC form
   std::shared_ptr<const ufc::form> _ufc_form;
+
+  FormIntegrals _integrals;
 
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const FunctionSpace>> _function_spaces;
@@ -247,6 +253,5 @@ protected:
   std::shared_ptr<const MeshFunction<std::size_t>> dS;
   /// Domain markers for vertices
   std::shared_ptr<const MeshFunction<std::size_t>> dP;
-
 };
-}
+} // namespace dolfin

@@ -8,6 +8,7 @@ set(HEADERS
   fem_utils.h
   FiniteElement.h
   Form.h
+  FormIntegrals.h
   GenericDofMap.h
   LocalAssembler.h
   NonlinearVariationalProblem.h

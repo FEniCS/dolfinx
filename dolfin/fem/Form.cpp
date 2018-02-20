@@ -31,6 +31,8 @@ Form::Form(std::shared_ptr<const ufc::form> ufc_form,
     _mesh = function_spaces[0]->mesh();
   for (auto& f : function_spaces)
     dolfin_assert(_mesh == f->mesh());
+
+  _integrals.init(*ufc_form);
 }
 //-----------------------------------------------------------------------------
 Form::~Form()

@@ -47,45 +47,6 @@ void UFC::init(const Form& a)
     coefficient_elements.push_back(FiniteElement(element));
   }
 
-  // Create cell integrals
-  default_cell_integral = std::shared_ptr<ufc::cell_integral>(
-      form.create_default_cell_integral());
-  for (std::size_t i = 0; i < form.max_cell_subdomain_id(); i++)
-    cell_integrals.push_back(
-        std::shared_ptr<ufc::cell_integral>(form.create_cell_integral(i)));
-
-  // Create exterior facet integrals
-  default_exterior_facet_integral
-      = std::shared_ptr<ufc::exterior_facet_integral>(
-          form.create_default_exterior_facet_integral());
-  for (std::size_t i = 0; i < form.max_exterior_facet_subdomain_id(); i++)
-    exterior_facet_integrals.push_back(
-        std::shared_ptr<ufc::exterior_facet_integral>(
-            form.create_exterior_facet_integral(i)));
-
-  // Create interior facet integrals
-  default_interior_facet_integral
-      = std::shared_ptr<ufc::interior_facet_integral>(
-          form.create_default_interior_facet_integral());
-  for (std::size_t i = 0; i < form.max_interior_facet_subdomain_id(); i++)
-    interior_facet_integrals.push_back(
-        std::shared_ptr<ufc::interior_facet_integral>(
-            form.create_interior_facet_integral(i)));
-
-  // Create point integrals
-  default_vertex_integral = std::shared_ptr<ufc::vertex_integral>(
-      form.create_default_vertex_integral());
-  for (std::size_t i = 0; i < form.max_vertex_subdomain_id(); i++)
-    vertex_integrals.push_back(
-        std::shared_ptr<ufc::vertex_integral>(form.create_vertex_integral(i)));
-
-  // Create custom integrals
-  default_custom_integral = std::shared_ptr<ufc::custom_integral>(
-      form.create_default_custom_integral());
-  for (std::size_t i = 0; i < form.max_custom_subdomain_id(); i++)
-    custom_integrals.push_back(
-        std::shared_ptr<ufc::custom_integral>(form.create_custom_integral(i)));
-
   // Get maximum local dimensions
   std::vector<std::size_t> max_element_dofs;
   std::vector<std::size_t> max_macro_element_dofs;
