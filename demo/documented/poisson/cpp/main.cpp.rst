@@ -100,6 +100,9 @@ Then follows the definition of the coefficient functions (for
    // Source term (right-hand side)
    class Source : public Expression
    {
+   public:
+     Source() : Expression({}) {}
+
      void eval(Eigen::Ref<Eigen::VectorXd> values,
             Eigen::Ref<const Eigen::VectorXd> x) const
      {
@@ -112,6 +115,9 @@ Then follows the definition of the coefficient functions (for
    // Normal derivative (Neumann boundary condition)
    class dUdN : public Expression
    {
+   public:
+     dUdN() : Expression({}) {}
+
      void eval(Eigen::Ref<Eigen::VectorXd> values,
             Eigen::Ref<const Eigen::VectorXd> x) const
      {
@@ -143,8 +149,10 @@ the form file) defined relative to this mesh, we do as follows
 
 .. code-block:: cpp
 
-   int main()
+   int main(int argc, char *argv[])
    {
+     MPI_Init(&argc, &argv);
+
      // Create mesh and function space
      std::array<Point, 2> pt = {Point(0.,0.), Point(1.,1.)};
      auto mesh = std::make_shared<Mesh>(RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, CellType::Type::triangle));

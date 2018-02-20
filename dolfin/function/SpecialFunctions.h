@@ -52,5 +52,3 @@ private:
   mutable Event not_on_boundary;
 };
 }
-
-

@@ -66,14 +66,6 @@ class MeshFunction;
 class Form
 {
 public:
-  /// Create form of given rank with given number of coefficients
-  ///
-  /// @param[in]    rank (std::size_t)
-  ///         The rank.
-  /// @param[in]    num_coefficients (std::size_t)
-  ///         The number of coefficients.
-  Form(std::size_t rank, std::size_t num_coefficients);
-
   /// Create form (shared data)
   ///
   /// @param[in] ufc_form (ufc::form)
@@ -105,16 +97,6 @@ public:
   /// @return std::size_t
   ///         The position of coefficient i in original ufl form coefficients.
   std::size_t original_coefficient_position(std::size_t i) const;
-
-  /// Return coloring type for colored assembly of form over a mesh
-  /// entity of a given dimension
-  ///
-  /// @param[in] entity_dim (std::size_t)
-  ///         Dimension.
-  ///
-  /// @return std::vector<std::size_t>
-  ///         Coloring type.
-  std::vector<std::size_t> coloring(std::size_t entity_dim) const;
 
   /// Set mesh, necessary for functionals when there are no function
   /// spaces
@@ -153,42 +135,6 @@ public:
   void set_coefficient(std::size_t i,
                        std::shared_ptr<const GenericFunction> coefficient);
 
-  /// Set coefficient with given name (shared pointer version)
-  ///
-  /// @param[in]    name (std::string)
-  ///         The name.
-  /// @param[in]    coefficient (_GenericFunction_)
-  ///         The coefficient.
-  void set_coefficient(std::string name,
-                       std::shared_ptr<const GenericFunction> coefficient);
-
-  /// Set all coefficients in given map. All coefficients in the
-  /// given map, which may contain only a subset of the coefficients
-  /// of the form, will be set.
-  ///
-  /// @param[in]    coefficients (std::map<std::string, _GenericFunction_>)
-  ///         The map of coefficients.
-  void
-  set_coefficients(std::map<std::string, std::shared_ptr<const GenericFunction>>
-                       coefficients);
-
-  /// Set some coefficients in given map. Each coefficient in the
-  /// given map will be set, if the name of the coefficient matches
-  /// the name of a coefficient in the form.
-  ///
-  /// This is useful when reusing the same coefficient map for
-  /// several forms, or when some part of the form has been
-  /// outcommented (for testing) in the UFL file, which means that
-  /// the coefficient and attaching it to the form does not need to
-  /// be outcommented in a C++ program using code from the generated
-  /// UFL file.
-  ///
-  /// @param[in] coefficients (std::map<std::string, _GenericFunction_>)
-  ///         The map of coefficients.
-  void set_some_coefficients(
-      std::map<std::string, std::shared_ptr<const GenericFunction>>
-          coefficients);
-
   /// Return coefficient with given number
   ///
   /// @param[in] i (std::size_t)
@@ -198,29 +144,11 @@ public:
   ///         The coefficient.
   std::shared_ptr<const GenericFunction> coefficient(std::size_t i) const;
 
-  /// Return coefficient with given name
-  ///
-  /// @param[in]    name (std::string)
-  ///         The name.
-  ///
-  /// @return     _GenericFunction_
-  ///         The coefficient.
-  std::shared_ptr<const GenericFunction> coefficient(std::string name) const;
-
   /// Return all coefficients
   ///
   /// @return     std::vector<_GenericFunction_>
   ///         All coefficients.
   std::vector<std::shared_ptr<const GenericFunction>> coefficients() const;
-
-  /// Return the number of the coefficient with this name
-  ///
-  /// @param[in]    name (std::string)
-  ///         The name.
-  ///
-  /// @return     std::size_t
-  ///         The number of the coefficient with the given name.
-  virtual std::size_t coefficient_number(const std::string& name) const;
 
   /// Return the name of the coefficient with this number
   ///
@@ -298,15 +226,6 @@ public:
   /// Check function spaces and coefficients
   void check() const;
 
-  /// Domain markers for cells
-  std::shared_ptr<const MeshFunction<std::size_t>> dx;
-  /// Domain markers for exterior facets
-  std::shared_ptr<const MeshFunction<std::size_t>> ds;
-  /// Domain markers for interior facets
-  std::shared_ptr<const MeshFunction<std::size_t>> dS;
-  /// Domain markers for vertices
-  std::shared_ptr<const MeshFunction<std::size_t>> dP;
-
 protected:
   // The UFC form
   std::shared_ptr<const ufc::form> _ufc_form;
@@ -320,9 +239,14 @@ protected:
   // The mesh (needed for functionals when we don't have any spaces)
   std::shared_ptr<const Mesh> _mesh;
 
-private:
-  const std::size_t _rank;
+  /// Domain markers for cells
+  std::shared_ptr<const MeshFunction<std::size_t>> dx;
+  /// Domain markers for exterior facets
+  std::shared_ptr<const MeshFunction<std::size_t>> ds;
+  /// Domain markers for interior facets
+  std::shared_ptr<const MeshFunction<std::size_t>> dS;
+  /// Domain markers for vertices
+  std::shared_ptr<const MeshFunction<std::size_t>> dP;
+
 };
 }
-
-

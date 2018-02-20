@@ -113,15 +113,23 @@ void la(py::module& m)
       .value("GLOBAL", dolfin::IndexMap::MapSize::GLOBAL);
 
   // dolfin::SparsityPattern
-  py::class_<dolfin::SparsityPattern, std::shared_ptr<dolfin::SparsityPattern>>
-      sparsity_pattern(m, "SparsityPattern");
-
-  // dolfin::SparsityPattern enums
-  py::enum_<dolfin::SparsityPattern::Ghosts>(sparsity_pattern, "Ghosts")
-      .value("GHOSTED", dolfin::SparsityPattern::Ghosts::GHOSTED)
-      .value("UNGHOSTED", dolfin::SparsityPattern::Ghosts::UNGHOSTED);
-
-  sparsity_pattern.def("init", &dolfin::SparsityPattern::init)
+  py::class_<dolfin::SparsityPattern, std::shared_ptr<dolfin::SparsityPattern>>(
+      m, "SparsityPattern")
+      .def(py::init(
+          [](const MPICommWrapper comm,
+             std::array<std::shared_ptr<const dolfin::IndexMap>, 2> index_maps,
+             int dim) {
+            return std::make_unique<dolfin::SparsityPattern>(comm.get(),
+                                                             index_maps, dim);
+          }))
+      .def(py::init([](
+          const MPICommWrapper comm,
+          const std::vector<std::vector<const dolfin::SparsityPattern*>>
+              patterns) {
+        return std::make_unique<dolfin::SparsityPattern>(comm.get(), patterns);
+      }))
+      .def("local_range", &dolfin::SparsityPattern::local_range)
+      .def("index_map", &dolfin::SparsityPattern::index_map)
       .def("apply", &dolfin::SparsityPattern::apply)
       .def("str", &dolfin::SparsityPattern::str)
       .def("num_nonzeros", &dolfin::SparsityPattern::num_nonzeros)
@@ -186,7 +194,8 @@ void la(py::module& m)
 
   // dolfin::GenericTensor
   /*
-  py::class_<dolfin::GenericTensor, std::shared_ptr<dolfin::GenericTensor>>
+  py::class_<dolfin::GenericTensor,
+  std::shared_ptr<dolfin::GenericTensor>>
     (m, "GenericTensor", "DOLFIN GenericTensor object")
     .def("init", &dolfin::GenericTensor::init)
     .def("empty", &dolfin::GenericTensor::empty)
@@ -200,44 +209,55 @@ void la(py::module& m)
   */
   // dolfin::GenericMatrix
   /*
-  py::class_<dolfin::GenericMatrix, std::shared_ptr<dolfin::GenericMatrix>,
+  py::class_<dolfin::GenericMatrix,
+  std::shared_ptr<dolfin::GenericMatrix>,
              dolfin::GenericTensor>
-    (m, "GenericMatrix", py::dynamic_attr(), "DOLFIN GenericMatrix object")
+    (m, "GenericMatrix", py::dynamic_attr(), "DOLFIN GenericMatrix
+  object")
     //.def("init_vector", &dolfin::GenericMatrix::init_vector)
     //.def("axpy", &dolfin::GenericMatrix::axpy)
     //.def("mult", &dolfin::GenericMatrix::mult)
     //.def("transpmult", &dolfin::GenericMatrix::transpmult)
     // __ifoo__
-    .def("__imul__", &dolfin::GenericMatrix::operator*=, "Multiply by a scalar")
-    .def("__itruediv__", &dolfin::GenericMatrix::operator/=, py::is_operator(),
+    .def("__imul__", &dolfin::GenericMatrix::operator*=, "Multiply by a
+  scalar")
+    .def("__itruediv__", &dolfin::GenericMatrix::operator/=,
+  py::is_operator(),
   "Divide by a scalar")
     // Below is an examle of a hand-wrapped in-place operator. Note
     // the explicit return type (const reference). This is necessary
     // to avoid segfaults. Need to investigate more how pybind11
     // handles return types for operators.
-    //.def("__itruediv__", [](dolfin::GenericMatrix& self, double a) -> const
+    //.def("__itruediv__", [](dolfin::GenericMatrix& self, double a) ->
+  const
   dolfin::GenericMatrix&
     //     {
     //       self /= a;
     //       return self;
     //     }, py::is_operator(), "Divide by a scalar")
-    //.def("__iadd__", &dolfin::GenericMatrix::operator+=, py::is_operator(),
+    //.def("__iadd__", &dolfin::GenericMatrix::operator+=,
+  py::is_operator(),
   "Add Matrix")
-    //.def("__isub__", &dolfin::GenericMatrix::operator-=, py::is_operator(),
+    //.def("__isub__", &dolfin::GenericMatrix::operator-=,
+  py::is_operator(),
   "Subtract Matrix")
     // __add__
     //.def("__add__", [](const dolfin::GenericMatrix& self, const
   dolfin::GenericMatrix& B)
-    //     { auto C = self.copy(); (*C) += B; return C; }, py::is_operator())
+    //     { auto C = self.copy(); (*C) += B; return C; },
+  py::is_operator())
     // __sub__
     //.def("__sub__", [](const dolfin::GenericMatrix& self, const
   dolfin::GenericMatrix& B)
-    //     { auto C = self.copy(); (*C) -= B; return C; }, py::is_operator())
+    //     { auto C = self.copy(); (*C) -= B; return C; },
+  py::is_operator())
     // __mul__
     //.def("__mul__", [](const dolfin::GenericMatrix& self, double a)
-    //     { auto B = self.copy(); (*B) *= a; return B; }, py::is_operator())
+    //     { auto B = self.copy(); (*B) *= a; return B; },
+  py::is_operator())
     //.def("__rmul__", [](const dolfin::GenericMatrix& self, double a)
-    //     { auto B = self.copy(); (*B) *= a; return B; }, py::is_operator())
+    //     { auto B = self.copy(); (*B) *= a; return B; },
+  py::is_operator())
     //.def("__mul__", [](const dolfin::GenericMatrix& self, const
   dolfin::GenericVector& x)
     //     {
@@ -250,10 +270,12 @@ void la(py::module& m)
   py::array_t<double> x)
          {
            if (x.ndim() != 1)
-             throw py::index_error("NumPy must be a 1D array for multiplication
+             throw py::index_error("NumPy must be a 1D array for
+  multiplication
   by a GenericMatrix");
            if ((std::size_t) x.size() != self.size(1))
-             throw py::index_error("Length of array must match number of matrix
+             throw py::index_error("Length of array must match number of
+  matrix
   columns");
 
            auto _x = self.factory().create_vector(self.mpi_comm());
@@ -273,7 +295,8 @@ void la(py::module& m)
   matricds only)")
     // __div__
     //.def("__truediv__", [](const dolfin::GenericMatrix& self, double a)
-    //     { auto B = self.copy(); (*B) /= a; return B; }, py::is_operator())
+    //     { auto B = self.copy(); (*B) /= a; return B; },
+  py::is_operator())
     //
     //.def("copy", &dolfin::GenericMatrix::copy)
     .def("local_range", &dolfin::GenericMatrix::local_range)
@@ -283,20 +306,24 @@ void la(py::module& m)
     .def("apply", &dolfin::GenericMatrix::apply)
     //.def("get_diagonal", &dolfin::GenericMatrix::get_diagonal)
     //.def("set_diagonal", &dolfin::GenericMatrix::set_diagonal)
-    //.def("ident_zeros", &dolfin::GenericMatrix::ident_zeros, py::arg("tol") =
+    //.def("ident_zeros", &dolfin::GenericMatrix::ident_zeros,
+  py::arg("tol") =
   DOLFIN_EPS)
     //.def("ident", [](dolfin::GenericMatrix& self,
   std::vector<dolfin::la_index_t> rows)
     //     { self.ident(rows.size(), rows.data()); }, py::arg("rows"))
-    .def("get", [](dolfin::GenericMatrix& self, Eigen::Ref<RowMatrixXd> block,
+    .def("get", [](dolfin::GenericMatrix& self, Eigen::Ref<RowMatrixXd>
+  block,
                    const std::vector<dolfin::la_index_t> rows,
                    const std::vector<dolfin::la_index_t> cols)
          {
            if ((std::size_t) block.rows() != rows.size())
-             throw py::value_error("Block must have the same number of rows as
+             throw py::value_error("Block must have the same number of
+  rows as
   len(rows)");
            if ((std::size_t) block.cols() != cols.size())
-             throw py::value_error("Block must have the same number of columns
+             throw py::value_error("Block must have the same number of
+  columns
   as len(cols)");
            self.get((double *) block.data(), rows.size(), rows.data(),
                     cols.size(), cols.data());
@@ -307,22 +334,27 @@ void la(py::module& m)
                    const std::vector<dolfin::la_index_t> cols)
          {
            if ((std::size_t) block.rows() != rows.size())
-             throw py::value_error("Block must have the same number of rows as
+             throw py::value_error("Block must have the same number of
+  rows as
   len(rows)");
            if ((std::size_t) block.cols() != cols.size())
-             throw py::value_error("Block must have the same number of columns
+             throw py::value_error("Block must have the same number of
+  columns
   as len(cols)");
-           self.set((const double *) block.data(), rows.size(), rows.data(),
+           self.set((const double *) block.data(), rows.size(),
+  rows.data(),
                     cols.size(), cols.data());
          }, py::arg("block"), py::arg("rows"), py::arg("cols"))
-    .def("getrow", [](const dolfin::GenericMatrix& instance, std::size_t row)
+    .def("getrow", [](const dolfin::GenericMatrix& instance, std::size_t
+  row)
          {
            std::vector<double> values;
            std::vector<std::size_t> columns;
            instance.getrow(row, columns, values);
            auto _columns = py::array_t<std::size_t>(columns.size(),
   columns.data());
-           auto _values = py::array_t<double>(values.size(), values.data());
+           auto _values = py::array_t<double>(values.size(),
+  values.data());
            return std::make_pair(_columns, _values);
          }, py::arg("row"))
     .def("array", [](const dolfin::GenericMatrix& instance)
@@ -352,12 +384,15 @@ void la(py::module& m)
 
   /*
   // dolfin::GenericVector
-  py::class_<dolfin::GenericVector, std::shared_ptr<dolfin::GenericVector>,
+  py::class_<dolfin::GenericVector,
+  std::shared_ptr<dolfin::GenericVector>,
              dolfin::GenericTensor>
-    (m, "GenericVector", py::dynamic_attr(), "DOLFIN GenericVector object")
+    (m, "GenericVector", py::dynamic_attr(), "DOLFIN GenericVector
+  object")
     .def("init", (void (dolfin::GenericVector::*)(std::size_t))
   &dolfin::GenericVector::init)
-    .def("init", (void (dolfin::GenericVector::*)(const dolfin::TensorLayout&))
+    .def("init", (void (dolfin::GenericVector::*)(const
+  dolfin::TensorLayout&))
   &dolfin::GenericVector::init)
     .def("init", (void (dolfin::GenericVector::*)(std::pair<std::size_t,
   std::size_t>)) &dolfin::GenericVector::init)
@@ -370,10 +405,13 @@ void la(py::module& m)
   (dolfin::GenericVector::*)(const dolfin::GenericVector&))
          &dolfin::GenericVector::operator-=)
     .def("__sub__", [](dolfin::GenericVector& self, double a)
-         { auto u = self.copy(); (*u) -= a; return u; }, py::is_operator())
-    .def("__sub__", [](dolfin::GenericVector& self, const dolfin::GenericVector&
+         { auto u = self.copy(); (*u) -= a; return u; },
+  py::is_operator())
+    .def("__sub__", [](dolfin::GenericVector& self, const
+  dolfin::GenericVector&
   v)
-         { auto u = self.copy(); (*u) -= v; return u; }, py::is_operator())
+         { auto u = self.copy(); (*u) -= v; return u; },
+  py::is_operator())
     .def("__rsub__", [](dolfin::GenericVector& self, double a)
          { auto u = self.copy(); (*u) *= -1 ; (*u) += a; return u; },
   py::is_operator())
@@ -381,7 +419,8 @@ void la(py::module& m)
     .def("__itruediv__", (const dolfin::GenericVector&
   (dolfin::GenericVector::*)(double))
          &dolfin::GenericVector::operator/=)
-    .def("__truediv__", [](const dolfin::GenericVector& instance, double a)
+    .def("__truediv__", [](const dolfin::GenericVector& instance, double
+  a)
          { auto x = instance.copy(); *x /= a; return x; })
     // add
     .def("__iadd__", (const dolfin::GenericVector&
@@ -433,7 +472,8 @@ void la(py::module& m)
 
            return py::array_t<double>(values.size(), values.data());
          })
-    .def("__getitem__", [](const dolfin::GenericVector& self, py::array_t<bool>
+    .def("__getitem__", [](const dolfin::GenericVector& self,
+  py::array_t<bool>
   indices)
          {
            if (indices.ndim() != 1)
@@ -456,10 +496,12 @@ void la(py::module& m)
            }
 
            return py::array_t<double>(filtered.size(), filtered.data());
-         }, py::arg().noconvert())  // Use noconvert to avoid integers being
+         }, py::arg().noconvert())  // Use noconvert to avoid integers
+  being
   converted to bool
     .def("__getitem__", [](dolfin::GenericVector& self, double index)
-         { throw py::type_error("Cannot use float for GenericVector indexing
+         { throw py::type_error("Cannot use float for GenericVector
+  indexing
   with floats"); }, py::arg().noconvert())
     .def("__getitem__", [](dolfin::GenericVector& self,
   py::array_t<dolfin::la_index_t> indices)
@@ -469,7 +511,8 @@ void la(py::module& m)
            check_indices(indices, self.local_size());
 
            py::array_t<double> values(indices.size());
-           self.get_local(values.mutable_data(), values.size(), indices.data());
+           self.get_local(values.mutable_data(), values.size(),
+  indices.data());
            return values;
          })
     .def("__getitem__", [](dolfin::GenericVector& self, dolfin::la_index_t
@@ -486,37 +529,45 @@ void la(py::module& m)
            return self.getitem(index);
          })
     // __setitem__
-    .def("__setitem__", [](dolfin::GenericVector& self, py::slice slice, double
+    .def("__setitem__", [](dolfin::GenericVector& self, py::slice slice,
+  double
   value)
          {
            std::size_t start, stop, step, slicelength;
-           if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
+           if (!slice.compute(self.size(), &start, &stop, &step,
+  &slicelength))
              throw py::error_already_set();
            if (start != 0 or stop != self.size() or step != 1)
-             throw std::range_error("Only setting full slices for GenericVector
+             throw std::range_error("Only setting full slices for
+  GenericVector
   is supported");
 
            self = value;
          })
-    .def("__setitem__", [](dolfin::GenericVector& self, py::slice slice, const
+    .def("__setitem__", [](dolfin::GenericVector& self, py::slice slice,
+  const
   dolfin::GenericVector& x)
          {
            std::size_t start, stop, step, slicelength;
-           if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
+           if (!slice.compute(self.size(), &start, &stop, &step,
+  &slicelength))
              throw py::error_already_set();
            if (start != 0 or stop != self.size() or step != 1)
-             throw std::range_error("Only setting full slices for GenericVector
+             throw std::range_error("Only setting full slices for
+  GenericVector
   is supported");
            self = x;
          })
-    .def("__setitem__", [](dolfin::GenericVector& self, py::slice slice, const
+    .def("__setitem__", [](dolfin::GenericVector& self, py::slice slice,
+  const
   py::array_t<double> x)
          {
            if (x.ndim() != 1)
              throw py::index_error("Values to set must be a 1D array");
 
            std::size_t start, stop, step, slicelength;
-           if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
+           if (!slice.compute(self.size(), &start, &stop, &step,
+  &slicelength))
              throw py::error_already_set();
            if (start != 0 or stop != self.size() or step != 1)
              throw std::range_error("Only full slices are supported");
@@ -556,7 +607,8 @@ void la(py::module& m)
            self.set_local(x.data(), x.size(), indices.data());
            self.apply("insert");
          })
-    .def("__len__", [](dolfin::GenericVector& self) { return self.local_size();
+    .def("__len__", [](dolfin::GenericVector& self) { return
+  self.local_size();
   })
     .def("size",  (std::size_t (dolfin::GenericVector::*)() const)
   &dolfin::GenericVector::size)
@@ -565,7 +617,8 @@ void la(py::module& m)
                          const std::vector<dolfin::la_index_t>& rows)
          {
            py::array_t<double> data(rows.size());
-           instance.get_local(data.mutable_data(), rows.size(), rows.data());
+           instance.get_local(data.mutable_data(), rows.size(),
+  rows.data());
            return data;
          })
     .def("get_local", [](const dolfin::GenericVector& instance)
@@ -574,18 +627,21 @@ void la(py::module& m)
            instance.get_local(values);
            return py::array_t<double>(values.size(), values.data());
          })
-    .def("set_local", [](dolfin::GenericVector& instance, std::vector<double>
+    .def("set_local", [](dolfin::GenericVector& instance,
+  std::vector<double>
   values)
          {
            std::vector<dolfin::la_index_t> indices(values.size());
            std::iota(indices.begin(), indices.end(), 0);
-           instance.set_local(values.data(), values.size(), indices.data());
+           instance.set_local(values.data(), values.size(),
+  indices.data());
          })
     .def("add_local", [](dolfin::GenericVector& self, py::array_t<double>
   values)
          {
            assert(values.ndim() == 1);
-           dolfin::Array<double> _values(values.size(), values.mutable_data());
+           dolfin::Array<double> _values(values.size(),
+  values.mutable_data());
            self.add_local(_values);
          })
     .def("gather", [](const dolfin::GenericVector& instance,
@@ -595,7 +651,8 @@ void la(py::module& m)
     .def("gather", [](const dolfin::GenericVector& instance,
   py::array_t<dolfin::la_index_t> rows)
          {
-           std::vector<dolfin::la_index_t> _rows(rows.data(), rows.data() +
+           std::vector<dolfin::la_index_t> _rows(rows.data(), rows.data()
+  +
   rows.size());
            std::vector<double> values(rows.size());
            instance.gather(values, _rows);
@@ -617,7 +674,8 @@ void la(py::module& m)
     .def("axpy", &dolfin::GenericVector::axpy)
     .def("sum", (double (dolfin::GenericVector::*)() const)
   &dolfin::GenericVector::sum)
-    .def("sum", [](const dolfin::GenericVector& self, py::array_t<std::size_t>
+    .def("sum", [](const dolfin::GenericVector& self,
+  py::array_t<std::size_t>
   rows)
          { const dolfin::Array<std::size_t> _rows(rows.size(),
   rows.mutable_data()); return self.sum(_rows); })
@@ -632,14 +690,15 @@ void la(py::module& m)
   (dolfin::GenericVector::*)() const) &dolfin::GenericVector::local_range)
     .def("owns_index", &dolfin::GenericVector::owns_index)
     .def("apply", &dolfin::GenericVector::apply)
-    .def_property_readonly("__array_priority__", [](const dolfin::GenericVector&
+    .def_property_readonly("__array_priority__", [](const
+  dolfin::GenericVector&
   self){ return 0; });
   */
 
   // dolfin::Scalar
   py::class_<dolfin::Scalar, std::shared_ptr<dolfin::Scalar>>(m, "Scalar")
       .def(py::init([](const MPICommWrapper comm) {
-        return std::unique_ptr<dolfin::Scalar>(new dolfin::Scalar(comm.get()));
+        return std::make_unique<dolfin::Scalar>(comm.get());
       }))
       .def("add", &dolfin::Scalar::add)
       .def("apply", &dolfin::Scalar::apply)
@@ -715,30 +774,31 @@ void la(py::module& m)
             if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
               throw py::error_already_set();
             if (start != 0 or stop != self.size() or step != 1)
-              throw std::range_error(
-                  "Only setting full slices for GenericVector is supported");
+              throw std::range_error("Only setting full slices for "
+                                     "GenericVector is supported");
 
             self = value;
           })
-      .def("__setitem__", [](dolfin::PETScVector& self, py::slice slice, const
-                           py::array_t<double> x)
-         {
-           if (x.ndim() != 1)
-             throw py::index_error("Values to set must be a 1D array");
+      .def(
+          "__setitem__",
+          [](dolfin::PETScVector& self, py::slice slice,
+             const py::array_t<double> x) {
+            if (x.ndim() != 1)
+              throw py::index_error("Values to set must be a 1D array");
 
-           std::size_t start, stop, step, slicelength;
-           if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
-             throw py::error_already_set();
-           if (start != 0 or stop != self.size() or step != 1)
-             throw std::range_error("Only full slices are supported");
+            std::size_t start, stop, step, slicelength;
+            if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
+              throw py::error_already_set();
+            if (start != 0 or stop != self.size() or step != 1)
+              throw std::range_error("Only full slices are supported");
 
-           std::vector<double> values(x.data(), x.data() + x.size());
-           if (!values.empty())
-           {
-             self.set_local(values);
-             self.apply();
-           }
-         })
+            std::vector<double> values(x.data(), x.data() + x.size());
+            if (!values.empty())
+            {
+              self.set_local(values);
+              self.apply();
+            }
+          })
       .def("vec", &dolfin::PETScVector::vec,
            "Return underlying PETSc Vec object");
 
@@ -881,7 +941,8 @@ void la(py::module& m)
       .def("__getitem__", &dolfin::VectorSpaceBasis::operator[]);
 
   // la free functions
-  // m.def("has_linear_algebra_backend", &dolfin::has_linear_algebra_backend);
+  // m.def("has_linear_algebra_backend",
+  // &dolfin::has_linear_algebra_backend);
   // m.def("linear_algebra_backends", &dolfin::linear_algebra_backends);
   // m.def("has_krylov_solver_method", &dolfin::has_krylov_solver_method);
   // m.def("has_krylov_solver_preconditioner",

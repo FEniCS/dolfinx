@@ -203,8 +203,8 @@ void Function::operator=(const FunctionAXPY& axpy)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  std::vector<std::pair<double,
-                        std::shared_ptr<const Function>>>::const_iterator it;
+  std::vector<
+      std::pair<double, std::shared_ptr<const Function>>>::const_iterator it;
   for (it = axpy.pairs().begin() + 1; it != axpy.pairs().end(); it++)
   {
     dolfin_assert(it->second);
@@ -249,7 +249,7 @@ void Function::eval(Eigen::Ref<RowMatrixXd> values,
 
     // Get index of first cell containing point
     unsigned int id
-      = mesh.bounding_box_tree()->compute_first_entity_collision(point);
+        = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
 
     // If not found, use the closest cell
     if (id == std::numeric_limits<unsigned int>::max())
@@ -257,7 +257,7 @@ void Function::eval(Eigen::Ref<RowMatrixXd> values,
       // Check if the closest cell is within DOLFIN_EPS. This we can
       // allow without _allow_extrapolation
       std::pair<unsigned int, double> close
-        = mesh.bounding_box_tree()->compute_closest_entity(point);
+          = mesh.bounding_box_tree()->compute_closest_entity(point, mesh);
 
       if (_allow_extrapolation or close.second < DOLFIN_EPS)
         id = close.first;
@@ -281,8 +281,8 @@ void Function::eval(Eigen::Ref<RowMatrixXd> values,
 }
 //-----------------------------------------------------------------------------
 void Function::eval(Eigen::Ref<RowMatrixXd> values,
-                    Eigen::Ref<const RowMatrixXd> x,
-                    const Cell& dolfin_cell, const ufc::cell& ufc_cell) const
+                    Eigen::Ref<const RowMatrixXd> x, const Cell& dolfin_cell,
+                    const ufc::cell& ufc_cell) const
 {
   // Developer note: work arrays/vectors are re-created each time this
   //                 function is called for thread-safety
@@ -455,15 +455,15 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Update to current cell
     cell.get_coordinate_dofs(coordinate_dofs);
     cell.get_cell_data(ufc_cell);
 
     // Pick values from global vector
-    restrict(coefficients.data(), element,
-             cell, coordinate_dofs.data(), ufc_cell);
+    restrict(coefficients.data(), element, cell, coordinate_dofs.data(),
+             ufc_cell);
 
     // Interpolate values at the vertices
     element.interpolate_vertex_values(
@@ -472,7 +472,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
 
     // Copy values to array of vertex values
     std::size_t local_index = 0;
-    for (auto &vertex : EntityRange<Vertex>(cell))
+    for (auto& vertex : EntityRange<Vertex>(cell))
     {
       for (std::size_t i = 0; i < value_size_loc; ++i)
       {

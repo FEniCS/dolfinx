@@ -26,8 +26,8 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/SubDomain.h>
 
 using namespace dolfin;
@@ -161,7 +161,8 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
   UFC A_ufc(*_a), b_ufc(*_l);
 
   // Raise error for Point integrals
-  if (A_ufc.form.has_vertex_integrals() || b_ufc.form.has_vertex_integrals())
+  if (_a->ufc_form()->has_vertex_integrals()
+      or _l->ufc_form()->has_vertex_integrals())
   {
     dolfin_error("SystemAssembler.cpp", "assemble system",
                  "Point integrals are not supported (yet)");
@@ -253,8 +254,8 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
   }
 
   // Check whether we should do cell-wise or facet-wise assembly
-  if (!ufc[0]->form.has_interior_facet_integrals()
-      && !ufc[1]->form.has_interior_facet_integrals())
+  if (!ufc[0]->dolfin_form.ufc_form()->has_interior_facet_integrals()
+      && !ufc[1]->dolfin_form.ufc_form()->has_interior_facet_integrals())
   {
     // Assemble cell-wise (no interior facet integrals)
     cell_wise_assembly(tensors, ufc, data, boundary_values, cell_domains,
@@ -290,8 +291,8 @@ void SystemAssembler::cell_wise_assembly(
   // Initialize entities if using external facet integrals
   dolfin_assert(mesh.ordered());
   bool has_exterior_facet_integrals
-      = ufc[0]->form.has_exterior_facet_integrals()
-        || ufc[1]->form.has_exterior_facet_integrals();
+      = ufc[0]->dolfin_form.ufc_form()->has_exterior_facet_integrals()
+        or ufc[1]->dolfin_form.ufc_form()->has_exterior_facet_integrals();
   if (has_exterior_facet_integrals)
   {
     // Compute facets and facet-cell connectivity if not already computed
@@ -331,7 +332,7 @@ void SystemAssembler::cell_wise_assembly(
   // Iterate over all cells
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  for (auto &cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<Cell>(mesh))
   {
     // Check that cell is not a ghost
     dolfin_assert(!cell.is_ghost());
@@ -396,7 +397,7 @@ void SystemAssembler::cell_wise_assembly(
       // Compute exterior facet integral if present
       if (has_exterior_facet_integrals)
       {
-        for (auto &facet : EntityRange<Facet>(cell))
+        for (auto& facet : EntityRange<Facet>(cell))
         {
           // Only consider exterior facets
           if (!facet.exterior())
@@ -546,7 +547,7 @@ void SystemAssembler::facet_wise_assembly(
   // Iterate over facets
   std::array<ufc::cell, 2> ufc_cell;
   std::array<std::vector<double>, 2> coordinate_dofs;
-  for (auto &facet : MeshRange<Facet>(mesh))
+  for (auto& facet : MeshRange<Facet>(mesh))
   {
     // Number of cells sharing facet
     const std::size_t num_cells = facet.num_entities(D);
@@ -718,7 +719,7 @@ void SystemAssembler::facet_wise_assembly(
       }
 
       const bool add_macro_element
-          = ufc[0]->form.has_interior_facet_integrals();
+          = ufc[0]->dolfin_form.ufc_form()->has_interior_facet_integrals();
       if (A && add_macro_element)
       {
         std::vector<ArrayView<const la_index_t>> mdofs(macro_dofs[0].size());
@@ -990,8 +991,8 @@ void SystemAssembler::apply_bc(
   dolfin_assert(b);
 
   // Wrap matrix and vector using Eigen
-  Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                           Eigen::RowMajor>>
+  Eigen::Map<
+      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
       _matA(A, global_dofs0.size(), global_dofs1.size());
   Eigen::Map<Eigen::VectorXd> _b(b, global_dofs0.size());
 

@@ -120,7 +120,8 @@ private:
       const std::vector<std::size_t>& num_global_mesh_entities);
 
   // Compute block size, e.g. in 3D elasticity block_size = 3
-  static std::size_t compute_blocksize(const ufc::dofmap& ufc_dofmap);
+  static std::size_t compute_blocksize(const ufc::dofmap& ufc_dofmap,
+                                       std::size_t tdim);
 
   static void compute_constrained_mesh_indices(
       std::vector<std::vector<std::int64_t>>& global_entity_indices,
@@ -186,5 +187,3 @@ private:
                                   const std::vector<bool>& needs_mesh_entities);
 };
 }
-
-

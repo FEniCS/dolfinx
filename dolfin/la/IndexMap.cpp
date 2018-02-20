@@ -11,28 +11,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm mpi_comm)
-    : _mpi_comm(mpi_comm), _rank(MPI::rank(mpi_comm)), _block_size(1)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
                    std::size_t block_size)
-    : _mpi_comm(mpi_comm), _rank(MPI::rank(mpi_comm))
+    : _mpi_comm(mpi_comm), _rank(MPI::rank(mpi_comm)), _block_size(block_size)
 {
-  init(local_size, block_size);
-}
-//-----------------------------------------------------------------------------
-IndexMap::~IndexMap()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void IndexMap::init(std::size_t local_size, std::size_t block_size)
-{
-  _block_size = block_size;
-
   // Calculate offsets
   MPI::all_gather(_mpi_comm.comm(), local_size, _all_ranges);
 
@@ -41,6 +23,11 @@ void IndexMap::init(std::size_t local_size, std::size_t block_size)
     _all_ranges[i] += _all_ranges[i - 1];
 
   _all_ranges.insert(_all_ranges.begin(), 0);
+}
+//-----------------------------------------------------------------------------
+IndexMap::~IndexMap()
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
@@ -54,15 +41,6 @@ std::array<std::int64_t, 2> IndexMap::local_range() const
     return {{(std::int64_t)_all_ranges[_rank],
              (std::int64_t)_all_ranges[_rank + 1]}};
 }
-//-----------------------------------------------------------------------------
-/*
-std::pair<std::size_t, std::size_t> IndexMap::local_range() const
-{
-  auto block_range = local_block_range();
-  return std::make_pair(_block_size*block_range.first,
-                         _block_size*block_range.second);
-}
-*/
 //-----------------------------------------------------------------------------
 std::size_t IndexMap::size(const IndexMap::MapSize type) const
 {
@@ -92,13 +70,6 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
 
   return 0;
 }
-//-----------------------------------------------------------------------------
-/*
-std::size_t IndexMap::size(const IndexMap::MapSize type) const
-{
-  return size_block()*_block_size;
-}
-*/
 //-----------------------------------------------------------------------------
 const std::vector<std::size_t>& IndexMap::local_to_global_unowned() const
 {

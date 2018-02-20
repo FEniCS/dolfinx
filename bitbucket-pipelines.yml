@@ -17,12 +17,20 @@ pipelines:
           - make -j2
           - make install
 
-          - cd ../python
+          - cd ../demo/documented/poisson/cpp
+          - ffc -l dolfin Poisson.ufl
+          - cmake . && make && ./demo_poisson
+          - cd ../../../..
+
+          - cd python
           - pip3 install .
 
           - cd test
+          - python3 -m pytest unit/geometry/test_bounding_box_tree.py
           - python3 -m pytest unit/io
           - mpirun -n 3 python3 -m pytest unit/io
+          - python3 -m pytest unit/la/test_sparsity_pattern.py
+          - mpirun -n 3 python3 -m pytest unit/la/test_sparsity_pattern.py
           - python3 -m pytest unit/mesh
 
           - cd ../demo

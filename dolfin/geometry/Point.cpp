@@ -17,7 +17,6 @@ using namespace dolfin;
 const Point Point::cross(const Point& p) const
 {
   Point q;
-
   q._x[0] = _x[1] * p._x[2] - _x[2] * p._x[1];
   q._x[1] = _x[2] * p._x[0] - _x[0] * p._x[2];
   q._x[2] = _x[0] * p._x[1] - _x[1] * p._x[0];

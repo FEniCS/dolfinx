@@ -263,8 +263,8 @@ std::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const
   // Allocate and build tree if necessary
   if (!_tree)
   {
-    _tree.reset(new BoundingBoxTree());
-    _tree->build(*this);
+    _tree.reset(new BoundingBoxTree(geometry().dim()));
+    _tree->build(*this, topology().dim());
   }
 
   return _tree;
