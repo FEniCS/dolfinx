@@ -7,8 +7,11 @@
 #pragma once
 
 #include <dolfin/log/log.h>
-#include <iostream>
 #include <ufc.h>
+
+#include <functional>
+#include <iostream>
+#include <memory>
 #include <vector>
 
 namespace dolfin
