@@ -15,16 +15,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UFC::UFC(const Form& a)
-    : form(*a.ufc_form()), coefficients(a.coefficients()), dolfin_form(a)
+UFC::UFC(const Form& a) : coefficients(a.coefficients()), dolfin_form(a)
 {
   dolfin_assert(a.ufc_form());
   init(a);
 }
 //-----------------------------------------------------------------------------
 UFC::UFC(const UFC& ufc)
-    : form(ufc.form), coefficients(ufc.dolfin_form.coefficients()),
-      dolfin_form(ufc.dolfin_form)
+    : coefficients(ufc.dolfin_form.coefficients()), dolfin_form(ufc.dolfin_form)
 {
   this->init(ufc.dolfin_form);
 }
@@ -38,6 +36,8 @@ void UFC::init(const Form& a)
 {
   // Get function spaces for arguments
   std::vector<std::shared_ptr<const FunctionSpace>> V = a.function_spaces();
+
+  const ufc::form& form = *a.ufc_form();
 
   // Create finite elements for coefficients
   for (std::size_t i = 0; i < form.num_coefficients(); i++)
@@ -74,17 +74,17 @@ void UFC::init(const Form& a)
 
   // Create point integrals
   default_vertex_integral = std::shared_ptr<ufc::vertex_integral>(
-      this->form.create_default_vertex_integral());
-  for (std::size_t i = 0; i < this->form.max_vertex_subdomain_id(); i++)
-    vertex_integrals.push_back(std::shared_ptr<ufc::vertex_integral>(
-        this->form.create_vertex_integral(i)));
+      form.create_default_vertex_integral());
+  for (std::size_t i = 0; i < form.max_vertex_subdomain_id(); i++)
+    vertex_integrals.push_back(
+        std::shared_ptr<ufc::vertex_integral>(form.create_vertex_integral(i)));
 
   // Create custom integrals
   default_custom_integral = std::shared_ptr<ufc::custom_integral>(
-      this->form.create_default_custom_integral());
-  for (std::size_t i = 0; i < this->form.max_custom_subdomain_id(); i++)
-    custom_integrals.push_back(std::shared_ptr<ufc::custom_integral>(
-        this->form.create_custom_integral(i)));
+      form.create_default_custom_integral());
+  for (std::size_t i = 0; i < form.max_custom_subdomain_id(); i++)
+    custom_integrals.push_back(
+        std::shared_ptr<ufc::custom_integral>(form.create_custom_integral(i)));
 
   // Get maximum local dimensions
   std::vector<std::size_t> max_element_dofs;

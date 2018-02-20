@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "LocalAssembler.h"
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
-#include "LocalAssembler.h"
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/UFC.h>
@@ -31,11 +31,11 @@ void LocalAssembler::assemble(
   assemble_cell(A, ufc, coordinate_dofs, ufc_cell, cell, cell_domains);
 
   // Assemble contributions from facet integrals
-  if (ufc.form.has_exterior_facet_integrals()
-      || ufc.form.has_interior_facet_integrals())
+  if (ufc.dolfin_form.ufc_form()->has_exterior_facet_integrals()
+      || ufc.dolfin_form.ufc_form()->has_interior_facet_integrals())
   {
     unsigned int local_facet = 0;
-    for (auto &facet : EntityRange<Facet>(cell))
+    for (auto& facet : EntityRange<Facet>(cell))
     {
       ufc_cell.local_facet = local_facet;
       const int Ncells = facet.num_entities(cell.dim());
@@ -62,7 +62,7 @@ void LocalAssembler::assemble(
   }
 
   // Check that there are no vertex integrals
-  if (ufc.form.has_vertex_integrals())
+  if (ufc.dolfin_form.ufc_form()->has_vertex_integrals())
   {
     dolfin_error("LocalAssembler.cpp", "assemble local problem",
                  "Local problem contains vertex integrals which are not yet "
@@ -77,7 +77,7 @@ void LocalAssembler::assemble_cell(
     const MeshFunction<std::size_t>* cell_domains)
 {
   // Skip if there are no cell integrals
-  if (!ufc.form.has_cell_integrals())
+  if (!ufc.dolfin_form.ufc_form()->has_cell_integrals())
   {
     // Clear tensor here instead of in assemble() as a small speedup
     A.setZero();
@@ -116,7 +116,7 @@ void LocalAssembler::assemble_exterior_facet(
     const MeshFunction<std::size_t>* exterior_facet_domains)
 {
   // Skip if there are no exterior facet integrals
-  if (!ufc.form.has_exterior_facet_integrals())
+  if (!ufc.dolfin_form.ufc_form()->has_exterior_facet_integrals())
     return;
 
   // Extract default exterior facet integral
@@ -158,7 +158,7 @@ void LocalAssembler::assemble_interior_facet(
     const MeshFunction<std::size_t>* cell_domains)
 {
   // Skip if there are no interior facet integrals
-  if (!ufc.form.has_interior_facet_integrals())
+  if (!ufc.dolfin_form.ufc_form()->has_interior_facet_integrals())
     return;
 
   // Extract default interior facet integral

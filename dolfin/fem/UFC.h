@@ -128,7 +128,7 @@ public:
   /// default if necessary
   ufc::cell_integral* get_cell_integral(std::size_t domain)
   {
-    if (domain < form.max_cell_subdomain_id())
+    if (domain < cell_integrals.size())
     {
       ufc::cell_integral* integral = cell_integrals[domain].get();
       if (integral)
@@ -141,7 +141,7 @@ public:
   /// to the default if necessary
   ufc::exterior_facet_integral* get_exterior_facet_integral(std::size_t domain)
   {
-    if (domain < form.max_exterior_facet_subdomain_id())
+    if (domain < exterior_facet_integrals.size())
     {
       ufc::exterior_facet_integral* integral
           = exterior_facet_integrals[domain].get();
@@ -155,7 +155,7 @@ public:
   /// to the default if necessary
   ufc::interior_facet_integral* get_interior_facet_integral(std::size_t domain)
   {
-    if (domain < form.max_interior_facet_subdomain_id())
+    if (domain < interior_facet_integrals.size())
     {
       ufc::interior_facet_integral* integral
           = interior_facet_integrals[domain].get();
@@ -169,7 +169,7 @@ public:
   /// default if necessary
   ufc::vertex_integral* get_vertex_integral(std::size_t domain)
   {
-    if (domain < form.max_vertex_subdomain_id())
+    if (domain < vertex_integrals.size())
     {
       ufc::vertex_integral* integral = vertex_integrals[domain].get();
       if (integral)
@@ -182,7 +182,7 @@ public:
   /// default if necessary
   ufc::custom_integral* get_custom_integral(std::size_t domain)
   {
-    if (domain < form.max_custom_subdomain_id())
+    if (domain < custom_integrals.size())
     {
       ufc::custom_integral* integral = custom_integrals[domain].get();
       if (integral)
@@ -190,9 +190,6 @@ public:
     }
     return default_custom_integral.get();
   }
-
-  /// Form
-  const ufc::form& form;
 
   /// Local tensor
   std::vector<double> A;
