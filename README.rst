@@ -3,7 +3,7 @@ DOLFIN-X
 ========
 
 DOLFIN-X is an experimental version of FEniCS DOLFIN which is being actively developed,
-but is *not ready for production use*. Many new experimental features may come and go as
+but is **not ready for production use**. Many new experimental features may come and go as
 development proceeds.
 
 DOLFIN is the computational backend of FEniCS and implements the
