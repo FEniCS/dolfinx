@@ -19,6 +19,7 @@
 #endif
 
 #include "casters.h"
+#include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>
 #include <dolfin/fem/DofMap.h>
@@ -29,7 +30,7 @@
 #include <dolfin/fem/PointSource.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/fem/SystemAssembler.h>
-#include <dolfin/fem/fem_utils.h>
+#include <dolfin/fem/utils.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
@@ -234,6 +235,16 @@ void fem(py::module& m)
         self.set_value(_u);
       });
 
+  // dolfin::fem::Assembler
+  py::class_<dolfin::fem::Assembler, std::shared_ptr<dolfin::fem::Assembler>>(
+    m, "Assembler",
+    "Assembler object for assembling forms into matrices and vectors")
+    .def(py::init<std::vector<std::vector<std::shared_ptr<const dolfin::Form>>>,
+         std::vector<std::shared_ptr<const dolfin::Form>>,
+         std::vector<std::shared_ptr<const dolfin::DirichletBC>>>())
+    .def("assemble", py::overload_cast<dolfin::PETScMatrix&, dolfin::PETScVector&>(
+           &dolfin::fem::Assembler::assemble));
+
   // dolfin::AssemblerBase
   py::class_<dolfin::AssemblerBase, std::shared_ptr<dolfin::AssemblerBase>>(
       m, "AssemblerBase")
@@ -425,8 +436,8 @@ void fem(py::module& m)
 #endif
 
   // FEM utils free functions
-  //m.def("create_mesh", dolfin::fem::create_mesh);
-  //m.def("create_mesh", [](const py::object u) {
+  // m.def("create_mesh", dolfin::fem::create_mesh);
+  // m.def("create_mesh", [](const py::object u) {
   //  auto _u = u.attr("_cpp_object").cast<dolfin::Function*>();
   //  return dolfin::fem::create_mesh(*_u);
   //});

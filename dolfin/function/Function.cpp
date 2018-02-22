@@ -4,14 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <algorithm>
-#include <map>
-#include <utility>
-#include <vector>
-
-#include "Expression.h"
 #include "Function.h"
+#include "Expression.h"
 #include "FunctionSpace.h"
+#include <algorithm>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
@@ -26,6 +22,9 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
+#include <map>
+#include <utility>
+#include <vector>
 
 using namespace dolfin;
 

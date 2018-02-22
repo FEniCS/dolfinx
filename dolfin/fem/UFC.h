@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <memory>
 #include <ufc.h>
 #include <vector>
@@ -42,6 +43,14 @@ public:
   void init(const Form& form);
 
   /// Update current cell
+  void update(const Cell& cell,
+              Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
+              Eigen::Dynamic, Eigen::RowMajor>>
+              coordinate_dofs0,
+              const ufc::cell& ufc_cell,
+              const std::vector<bool>& enabled_coefficients);
+
+  /// Update current cell
   void update(const Cell& cell, const std::vector<double>& coordinate_dofs0,
               const ufc::cell& ufc_cell,
               const std::vector<bool>& enabled_coefficients);
@@ -52,20 +61,6 @@ public:
               const std::vector<double>& coordinate_dofs1,
               const ufc::cell& ufc_cell1,
               const std::vector<bool>& enabled_coefficients);
-
-  /// Update current cell (TODO: Remove this when
-  /// PointIntegralSolver supports the version with
-  /// enabled_coefficients)
-  void update(const Cell& cell, const std::vector<double>& coordinate_dofs0,
-              const ufc::cell& ufc_cell);
-
-  /// Update current pair of cells for macro element (TODO: Remove
-  /// this when PointIntegralSolver supports the version with
-  /// enabled_coefficients)
-  void update(const Cell& cell0, const std::vector<double>& coordinate_dofs0,
-              const ufc::cell& ufc_cell0, const Cell& cell1,
-              const std::vector<double>& coordinate_dofs1,
-              const ufc::cell& ufc_cell1);
 
   /// Pointer to coefficient data. Used to support UFC interface.
   const double* const* w() const { return w_pointer.data(); }
@@ -82,115 +77,6 @@ public:
   /// interface. Non-const version.
   double** macro_w() { return macro_w_pointer.data(); }
 
-private:
-  // Finite elements for coefficients
-  std::vector<FiniteElement> coefficient_elements;
-
-  // Cell integrals (access through get_cell_integral to get proper
-  // fallback to default)
-  std::vector<std::shared_ptr<ufc::cell_integral>> cell_integrals;
-
-  // Exterior facet integrals (access through
-  // get_exterior_facet_integral to get proper fallback to default)
-  std::vector<std::shared_ptr<ufc::exterior_facet_integral>>
-      exterior_facet_integrals;
-
-  // Interior facet integrals (access through
-  // get_interior_facet_integral to get proper fallback to default)
-  std::vector<std::shared_ptr<ufc::interior_facet_integral>>
-      interior_facet_integrals;
-
-  // Point integrals (access through get_vertex_integral to get
-  // proper fallback to default)
-  std::vector<std::shared_ptr<ufc::vertex_integral>> vertex_integrals;
-
-  // Custom integrals (access through get_custom_integral to get
-  // proper fallback to default)
-  std::vector<std::shared_ptr<ufc::custom_integral>> custom_integrals;
-
-public:
-  // Default cell integral
-  std::shared_ptr<ufc::cell_integral> default_cell_integral;
-
-  // Default exterior facet integral
-  std::shared_ptr<ufc::exterior_facet_integral> default_exterior_facet_integral;
-
-  // Default interior facet integral
-  std::shared_ptr<ufc::interior_facet_integral> default_interior_facet_integral;
-
-  // Default point integral
-  std::shared_ptr<ufc::vertex_integral> default_vertex_integral;
-
-  // Default custom integral
-  std::shared_ptr<ufc::custom_integral> default_custom_integral;
-
-  /// Get cell integral over a given domain, falling back to the
-  /// default if necessary
-  ufc::cell_integral* get_cell_integral(std::size_t domain)
-  {
-    if (domain < cell_integrals.size())
-    {
-      ufc::cell_integral* integral = cell_integrals[domain].get();
-      if (integral)
-        return integral;
-    }
-    return default_cell_integral.get();
-  }
-
-  /// Get exterior facet integral over a given domain, falling back
-  /// to the default if necessary
-  ufc::exterior_facet_integral* get_exterior_facet_integral(std::size_t domain)
-  {
-    if (domain < exterior_facet_integrals.size())
-    {
-      ufc::exterior_facet_integral* integral
-          = exterior_facet_integrals[domain].get();
-      if (integral)
-        return integral;
-    }
-    return default_exterior_facet_integral.get();
-  }
-
-  /// Get interior facet integral over a given domain, falling back
-  /// to the default if necessary
-  ufc::interior_facet_integral* get_interior_facet_integral(std::size_t domain)
-  {
-    if (domain < interior_facet_integrals.size())
-    {
-      ufc::interior_facet_integral* integral
-          = interior_facet_integrals[domain].get();
-      if (integral)
-        return integral;
-    }
-    return default_interior_facet_integral.get();
-  }
-
-  /// Get point integral over a given domain, falling back to the
-  /// default if necessary
-  ufc::vertex_integral* get_vertex_integral(std::size_t domain)
-  {
-    if (domain < vertex_integrals.size())
-    {
-      ufc::vertex_integral* integral = vertex_integrals[domain].get();
-      if (integral)
-        return integral;
-    }
-    return default_vertex_integral.get();
-  }
-
-  /// Get custom integral over a given domain, falling back to the
-  /// default if necessary
-  ufc::custom_integral* get_custom_integral(std::size_t domain)
-  {
-    if (domain < custom_integrals.size())
-    {
-      ufc::custom_integral* integral = custom_integrals[domain].get();
-      if (integral)
-        return integral;
-    }
-    return default_custom_integral.get();
-  }
-
   /// Local tensor
   std::vector<double> A;
 
@@ -198,6 +84,9 @@ public:
   std::vector<double> macro_A;
 
 private:
+  // Finite elements for coefficients
+  std::vector<FiniteElement> coefficient_elements;
+
   // Coefficients (std::vector<double*> is used to interface with
   // UFC)
   std::vector<double> _w;
@@ -215,4 +104,4 @@ public:
   /// The form
   const Form& dolfin_form;
 };
-}
+} // namespace dolfin

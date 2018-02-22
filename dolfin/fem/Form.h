@@ -6,11 +6,11 @@
 
 #pragma once
 
+#include "FormIntegrals.h"
+#include <dolfin/common/types.h>
 #include <map>
 #include <memory>
 #include <vector>
-
-#include <dolfin/common/types.h>
 
 // Forward declaration
 namespace ufc
@@ -97,6 +97,15 @@ public:
   /// @return std::size_t
   ///         The position of coefficient i in original ufl form coefficients.
   std::size_t original_coefficient_position(std::size_t i) const;
+
+  /// Return the size of the element tensor, needed to create temporary space
+  /// for assemblers. If the largest number of per-element dofs in FunctionSpace
+  /// i is N_i, then for a linear form this is N_0, and for a bilinear form,
+  /// N_0*N_1.
+  ///
+  /// @return std::size_t
+  ///         The maximum number of values in a local element tensor
+  std::size_t max_element_tensor_size() const;
 
   /// Set mesh, necessary for functionals when there are no function
   /// spaces
@@ -226,9 +235,14 @@ public:
   /// Check function spaces and coefficients
   void check() const;
 
+  /// Access form integrals
+  const FormIntegrals& integrals() const { return _integrals; }
+
 protected:
   // The UFC form
   std::shared_ptr<const ufc::form> _ufc_form;
+
+  FormIntegrals _integrals;
 
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const FunctionSpace>> _function_spaces;
@@ -247,6 +261,5 @@ protected:
   std::shared_ptr<const MeshFunction<std::size_t>> dS;
   /// Domain markers for vertices
   std::shared_ptr<const MeshFunction<std::size_t>> dP;
-
 };
 }

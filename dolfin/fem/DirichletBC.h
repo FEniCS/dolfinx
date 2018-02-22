@@ -7,15 +7,15 @@
 #pragma once
 
 #include <boost/multi_array.hpp>
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Variable.h>
+#include <dolfin/common/types.h>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/Variable.h>
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -26,7 +26,8 @@ class Facet;
 class PETScMatrix;
 class PETScVector;
 class SubDomain;
-template <typename T> class MeshFunction;
+template <typename T>
+class MeshFunction;
 
 /// Interface for setting (strong) Dirichlet boundary conditions.
 

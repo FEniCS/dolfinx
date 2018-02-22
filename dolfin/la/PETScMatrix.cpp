@@ -107,6 +107,9 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
   sparsity_pattern.num_nonzeros_diagonal(num_nonzeros_diagonal);
   sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
 
+  // if (block_size == 1)
+  //  std::cout << "*** mat size: " << m << ", " << n << std::endl;
+
   // Set matrix size
   ierr = MatSetSizes(_matA, m, n, M, N);
   if (ierr != 0)
@@ -118,7 +121,7 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetFromOptions");
 
-  // Build data to initialixe sparsity pattern (modify for block size)
+  // Build data to initialise sparsity pattern (modify for block size)
   std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.size()
                                                / block_size),
       _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.size() / block_size);
@@ -142,14 +145,49 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
     petsc_error(ierr, __FILE__, "MatXIJSetPreallocation");
 
   // Build local-to-global arrays
+  assert(block_sizes[0] % block_size == 0);
+  assert(block_sizes[1] % block_size == 0);
   std::vector<PetscInt> _map0, _map1;
-  _map0.resize(index_maps[0]->size(IndexMap::MapSize::ALL));
-  _map1.resize(index_maps[1]->size(IndexMap::MapSize::ALL));
+  _map0.resize(index_maps[0]->size(IndexMap::MapSize::ALL)
+               * (block_sizes[0] / block_size));
+  _map1.resize(index_maps[1]->size(IndexMap::MapSize::ALL)
+               * (block_sizes[1] / block_size));
 
-  for (std::size_t i = 0; i < _map0.size(); ++i)
-    _map0[i] = index_maps[0]->local_to_global(i);
-  for (std::size_t i = 0; i < _map1.size(); ++i)
-    _map1[i] = index_maps[1]->local_to_global(i);
+  // for (std::size_t i = 0; i < _map0.size(); ++i)
+  //   _map0[i] = index_maps[0]->local_to_global(i);
+  // for (std::size_t i = 0; i < _map1.size(); ++i)
+  //   _map1[i] = index_maps[1]->local_to_global(i);
+
+  // std::cout << "Prep IS (0)" << std::endl;
+  for (std::size_t i = 0; i < index_maps[0]->size(IndexMap::MapSize::ALL); ++i)
+  {
+    std::size_t bs = block_sizes[0] / block_size;
+    auto index = index_maps[0]->local_to_global(i);
+    for (std::size_t j = 0; j < bs; ++j)
+    {
+      _map0[i * bs + j] = bs * index + j;
+    }
+  }
+
+  // std::cout << "Prep IS (1)" << std::endl;
+  for (std::size_t i = 0; i < index_maps[1]->size(IndexMap::MapSize::ALL); ++i)
+  {
+    std::size_t bs = block_sizes[1] / block_size;
+    auto index = index_maps[1]->local_to_global(i);
+    for (std::size_t j = 0; j < bs; ++j)
+      _map1[i * bs + j] = bs * index + j;
+  }
+  // std::cout << "End Prep IS" << std::endl;
+
+  if (block_size == 1)
+  {
+    std::cout << "** Local-to-global maps" << std::endl;
+    for (std::size_t i = 0; i < _map0.size(); ++i)
+      std::cout << "   " << _map0[i] << std::endl;
+    std::cout << "------------------" << std::endl;
+    for (std::size_t i = 0; i < _map1.size(); ++i)
+      std::cout << "   " << _map1[i] << std::endl;
+  }
 
   // FIXME: In many cases the rows and columns could shared a common
   // local-to-global map
@@ -170,8 +208,10 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
     petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
 
   // Set matrix local-to-global maps
+  std::cout << "***** set local-to-global on mat" << std::endl;
   MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
                              petsc_local_to_global1);
+  std::cout << "***** end set local-to-global on mat" << std::endl;
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
 
@@ -319,13 +359,12 @@ void PETScMatrix::zero(std::size_t m, const dolfin::la_index_t* rows)
     petsc_error(ierr, __FILE__, "MatZeroRows");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index_t* rows)
+void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index_t* rows,
+                             double diag)
 {
   dolfin_assert(_matA);
-
   PetscErrorCode ierr;
-  PetscScalar null = 0.0;
-  ierr = MatZeroRowsLocal(_matA, static_cast<PetscInt>(m), rows, null, NULL,
+  ierr = MatZeroRowsLocal(_matA, static_cast<PetscInt>(m), rows, diag, NULL,
                           NULL);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatZeroRowsLocal");
@@ -416,7 +455,7 @@ void PETScMatrix::set_diagonal(const PETScVector& x)
   PetscErrorCode ierr = MatDiagonalSet(_matA, x.vec(), INSERT_VALUES);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatDiagonalSet");
-  apply("insert");
+  apply(AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
 double PETScMatrix::norm(std::string norm_type) const
@@ -438,44 +477,23 @@ double PETScMatrix::norm(std::string norm_type) const
   return value;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::apply(std::string mode)
+void PETScMatrix::apply(AssemblyType type)
 {
   Timer timer("Apply (PETScMatrix)");
 
   dolfin_assert(_matA);
   PetscErrorCode ierr;
-  if (mode == "add")
-  {
-    ierr = MatAssemblyBegin(_matA, MAT_FINAL_ASSEMBLY);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatAssemblyBegin");
-    ierr = MatAssemblyEnd(_matA, MAT_FINAL_ASSEMBLY);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatAssemblyEnd");
-  }
-  else if (mode == "insert")
-  {
-    ierr = MatAssemblyBegin(_matA, MAT_FINAL_ASSEMBLY);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatAssemblyBegin");
-    ierr = MatAssemblyEnd(_matA, MAT_FINAL_ASSEMBLY);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatAssemblyEnd");
-  }
-  else if (mode == "flush")
-  {
-    ierr = MatAssemblyBegin(_matA, MAT_FLUSH_ASSEMBLY);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatAssemblyBegin");
-    ierr = MatAssemblyEnd(_matA, MAT_FLUSH_ASSEMBLY);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatAssemblyEnd");
-  }
-  else
-  {
-    dolfin_error("PETScMatrix.cpp", "apply changes to PETSc matrix",
-                 "Unknown apply mode \"%s\"", mode.c_str());
-  }
+
+  MatAssemblyType petsc_type = MAT_FINAL_ASSEMBLY;
+  if (type == AssemblyType::FLUSH)
+    petsc_type = MAT_FLUSH_ASSEMBLY;
+
+  ierr = MatAssemblyBegin(_matA, petsc_type);
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "MatAssemblyBegin");
+  ierr = MatAssemblyEnd(_matA, petsc_type);
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "MatAssemblyEnd");
 }
 //-----------------------------------------------------------------------------
 MPI_Comm PETScMatrix::mpi_comm() const { return PETScBaseMatrix::mpi_comm(); }

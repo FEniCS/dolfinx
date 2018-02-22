@@ -376,7 +376,7 @@ void PointSource::apply(PETScMatrix& A)
                 dofs_per_cell1 * num_sub_spaces, dofs1.data());
   }
 
-  A.apply("add");
+  A.apply(PETScMatrix::AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
 void PointSource::check_space_supported(const FunctionSpace& V)

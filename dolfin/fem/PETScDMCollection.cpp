@@ -6,9 +6,8 @@
 
 #ifdef HAS_PETSC
 
-#include <boost/multi_array.hpp>
-
 #include "PETScDMCollection.h"
+#include <boost/multi_array.hpp>
 #include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
