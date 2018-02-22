@@ -93,78 +93,70 @@ def generate_cmake_files(subdirectory, generated_files):
     main_file_name = main_file_names[subdirectory]
     for root, dirs, files in os.walk(cwd + "/" + subdirectory):
 
+        cpp_files = set()
         executable_names = set()
 
-        # For 'cpp' directories, get list of .cpp files
-        if "cpp" in dirs:
-            cpp_files = set()
-            program_dir = root + "/cpp"
-            program_name = os.path.split(root)[-1]
+        program_dir = root
+        program_name = os.path.split(root)[-1]
 
-            skip = False
-            for exclude in exclude_projects :
-                if exclude in root :
-                    skip = True
+        skip = False
+        for exclude in exclude_projects :
+            if exclude in root :
+                skip = True
 
-            if skip :
-                print("Skipping custom CMakeLists.txt file:", root)
-                continue
+        if skip :
+            print("Skipping custom CMakeLists.txt file:", root)
+            continue
 
-            if executable_prefix == "bench_":
-                program_name = program_dir[program_dir.find("bench")+6:].replace(os.path.sep, "_")
+        name_forms = dict(
+            project_name=executable_prefix + program_name,
+            executables="NOT_SET",
+            target_libraries="NOT_SET")
+        for f in os.listdir(program_dir):
+            filename, extension = os.path.splitext(f)
+            if extension == ".cpp":
+                cpp_files.add(f)
+            if ".cpp.rst" in f:
+                cpp_files.add(filename)
 
-            name_forms = dict(
-                project_name=executable_prefix + program_name,
-                executables="NOT_SET",
-                target_libraries="NOT_SET")
-            for f in os.listdir(program_dir):
-                filename, extension = os.path.splitext(f)
-                if extension == ".cpp":
-                    cpp_files.add(f)
-                if ".cpp.rst" in f:
-                    cpp_files.add(filename)
+        # If no .cpp continue
+        if not cpp_files:
+            continue
 
-            # If no .cpp continue
-            if not cpp_files:
-                continue
+        # Name of demo and cpp source files
+        if not main_file_name.isdisjoint(cpp_files):
 
-            # Ensure deterministic output across py2/py3
-            cpp_files = sorted(cpp_files)
-
-            # Name of demo and cpp source files
-            if not main_file_name.isdisjoint(cpp_files):
-
-                # If directory contains a main file we assume that
-                # only one executable should be generated for this
-                # directory and all other .cpp files should be linked
-                # to this
-                name_forms["executables"] = executable_str % \
-                                            ("${PROJECT_NAME}",
-                                             ' '.join(cpp_files))
-                name_forms["target_libraries"] = target_link_libraries_str % \
-                                                 "${PROJECT_NAME}"
-            else:
-                # If no main file in source files, we assume each
-                # source should be compiled as an executable
-                name_forms["executables"] = "\n".join(\
-                    executable_str % (executable_prefix + f.replace(".cpp", ""), f) \
-                    for f in cpp_files)
-                name_forms["target_libraries"] = "\n".join(\
-                    target_link_libraries_str % (\
+            # If directory contains a main file we assume that
+            # only one executable should be generated for this
+            # directory and all other .cpp files should be linked
+            # to this
+            name_forms["executables"] = executable_str % \
+                                        ("${PROJECT_NAME}",
+                                         ' '.join(cpp_files))
+            name_forms["target_libraries"] = target_link_libraries_str % \
+                                             "${PROJECT_NAME}"
+        else:
+            # If no main file in source files, we assume each
+            # source should be compiled as an executable
+            name_forms["executables"] = "\n".join(\
+                        executable_str % (executable_prefix + f.replace(".cpp", ""), f) \
+                        for f in cpp_files)
+            name_forms["target_libraries"] = "\n".join(\
+                        target_link_libraries_str % (\
                         executable_prefix + f.replace(".cpp", "")) \
                     for f in cpp_files)
 
-            # Check for duplicate executable names
-            if program_name not in executable_names:
-                executable_names.add(program_name)
-            else:
-                print("Warning: duplicate executable names found when generating CMakeLists.txt files.")
+        # Check for duplicate executable names
+        if program_name not in executable_names:
+            executable_names.add(program_name)
+        else:
+            print("Warning: duplicate executable names found when generating CMakeLists.txt files.")
 
-            # Write file
-            filename = os.path.join(program_dir, "CMakeLists.txt")
-            generated_files.append(filename)
-            with open(filename, "w") as f:
-                f.write(cmakelists_str % name_forms)
+        # Write file
+        filename = os.path.join(program_dir, "CMakeLists.txt")
+        generated_files.append(filename)
+        with open(filename, "w") as f:
+            f.write(cmakelists_str % name_forms)
 
 
 # Generate CMakeLists.txt files for all subdirectories
