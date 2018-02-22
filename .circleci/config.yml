@@ -5,9 +5,6 @@ jobs:
       - image: quay.io/fenicsproject/dev-env:latest
     working_directory: /home/fenics/working
     steps:
-      - run:
-          name: Clone DOLFIN-X
-          command: git lfs clone https://bitbucket.org/"${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}".git .
       - checkout
       - run:
           name: Install/update dependencies  # Install with sudo as tests not run as superuser in circleci/python
