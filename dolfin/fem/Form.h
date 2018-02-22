@@ -99,7 +99,8 @@ public:
   std::size_t original_coefficient_position(std::size_t i) const;
 
   /// Return the size of the element tensor, needed to create temporary space
-  /// for assemblers
+  /// for assemblers. If the maximum number of cell dofs in FunctionSpace i is
+  /// N_i, then for a linear form this is N_0, and for a bilinear form, N_0*N_1
   ///
   /// @return std::size_t
   ///         The maximum number of values in a local element tensor
