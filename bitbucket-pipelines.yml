@@ -13,16 +13,17 @@ pipelines:
 
           - mkdir -p build
           - cd build
-          - cmake -DCMAKE_BUILD_TYPE=Developer ..
+          - cmake -DCMAKE_BUILD_TYPE=Developer ../cpp
           - make -j2
           - make install
 
-          - cd ../demo/documented/poisson/cpp
+          - cd ../cpp/demo/documented/poisson
           - ffc -l dolfin Poisson.ufl
-          - cmake . && make && ./demo_poisson
-          - cd ../../../..
+          - cmake .
+          - make
+          - ./demo_poisson
 
-          - cd python
+          - cd $BITBUCKET_CLONE_DIR/python
           - pip3 install .
 
           - cd test

@@ -1,4 +1,0 @@
-This directory contains data files used by the unit tests. Note that
-the files are not gzipped (no .gz extension). This is to prevent the
-files from being handled by Git LFS which otherwise handles .xml.gz
-files for this repository (as configured in .gitattributes).

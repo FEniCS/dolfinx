@@ -17,34 +17,22 @@
 dolfin/libdolfin.so*
 
 # FFC generated code in library
-/dolfin/ale/Poisson*D.h
-
-# FFC generated code in benchmarks
-/bench/fem/convergence/cpp/Poisson2D_1.cpp
-/bench/fem/convergence/cpp/Poisson2D_2.cpp
-/bench/fem/convergence/cpp/Poisson2D_3.cpp
-/bench/fem/convergence/cpp/Poisson2D_4.cpp
-/bench/fem/convergence/cpp/Poisson2D_5.cpp
-/bench/fem/convergence/cpp/Poisson3D_1.cpp
-/bench/fem/convergence/cpp/Poisson3D_2.cpp
-/bench/fem/convergence/cpp/Poisson3D_3.cpp
-/bench/fem/convergence/cpp/Poisson3D_4.cpp
+/cpp//dolfin/ale/Poisson*D.h
 
 # Log files
 *.log
 
 # Install directory
-/local
-/local.*
+/cpp/local
+/cpp/local.*
 
 # Documentation
-docstrings.i
 generated_rst_files
 mock_cpp_modules.py
-doxygen
-doc/source/demos
-doc/html
-doc/latex
+cpp/doxygen
+cpp/doc/source/demos
+cpp/doc/html
+cpp/doc/latex
 
 python/doc/source/demos
 python/doc/build
@@ -62,27 +50,25 @@ dolfin-config-version.cmake
 # Demos and tests
 build_demo.*
 test_*_tempdir
-/test/unit/cpp/mesh/*.{xml,m}
-/test/unit/cpp/parameter/*.{xml,xml.gz}
-/bench/**/**/cpp/forms/*.h
-/bench/**/**/cpp/*.h
+/cpp/test/unit/cpp/mesh/*.{xml,m}
+/cpp/test/unit/cpp/parameter/*.{xml,xml.gz}
 /python/demo/**/*.py
 /python/demo/**/*.xml
 /python/demo/undocumented/mesh-quality/mesh-quality.pdf
-/demo/**/*.ufl
-/demo/**/*.cpp
-/test/unit/cpp/**/*.xml
+/cpp/demo/**/*.ufl
+/cpp/demo/**/*.cpp
+/cpp/test/unit/cpp/**/*.xml
 /python/test/unit/**/*.xml
-/test/unit/cpp/function/Projection.h
-/test/unit/cpp/la/forms/ReactionDiffusion.h
-/test/unit/cpp/la/forms/ReactionDiffusionAction.h
-/test/unit/cpp/multimesh/MultiMeshStokes2D.h
+/cpp/test/unit/cpp/function/Projection.h
+/cpp/test/unit/cpp/la/forms/ReactionDiffusion.h
+/cpp/test/unit/cpp/la/forms/ReactionDiffusionAction.h
+/cpp/test/unit/cpp/multimesh/MultiMeshStokes2D.h
 .cache
 
 # FFC generated demo files
-demo/**/**/cpp/*.h
-demo/documented/cahn-hilliard/cpp/CahnHilliard2D.cpp
-demo/documented/cahn-hilliard/cpp/CahnHilliard3D.cpp
+cpp/demo/**/**/cpp/*.h
+cpp/demo/documented/cahn-hilliard/cpp/CahnHilliard2D.cpp
+cpp/demo/documented/cahn-hilliard/cpp/CahnHilliard3D.cpp
 
 # Temporaries
 *~
@@ -121,8 +107,8 @@ Makefile
 install_manifest.txt
 
 # Local build files
-/build
-/build.*/
+/cpp/build
+/cpp/build.*/
 
 # OS X files
 .DS_Store
