@@ -18,22 +18,7 @@ using namespace dolfin;
 UFC::UFC(const Form& a) : coefficients(a.coefficients()), dolfin_form(a)
 {
   dolfin_assert(a.ufc_form());
-  init(a);
-}
-//-----------------------------------------------------------------------------
-UFC::UFC(const UFC& ufc)
-    : coefficients(ufc.dolfin_form.coefficients()), dolfin_form(ufc.dolfin_form)
-{
-  this->init(ufc.dolfin_form);
-}
-//-----------------------------------------------------------------------------
-UFC::~UFC()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void UFC::init(const Form& a)
-{
+
   // Get function spaces for arguments
   std::vector<std::shared_ptr<const FunctionSpace>> V = a.function_spaces();
 
@@ -78,9 +63,9 @@ void UFC::init(const Form& a)
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& c,
- Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                 Eigen::RowMajor>>
-                 coordinate_dofs,
+                 Eigen::Ref<const Eigen::Matrix<
+                     double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+                     coordinate_dofs,
                  const ufc::cell& ufc_cell,
                  const std::vector<bool>& enabled_coefficients)
 {

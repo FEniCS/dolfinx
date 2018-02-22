@@ -33,14 +33,8 @@ public:
   /// Constructor
   UFC(const Form& form);
 
-  /// Copy constructor
-  UFC(const UFC& ufc);
-
   /// Destructor
-  ~UFC();
-
-  /// Initialise memory
-  void init(const Form& form);
+  ~UFC() {};
 
   /// Update current cell
   void update(const Cell& cell,
