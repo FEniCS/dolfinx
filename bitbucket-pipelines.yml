@@ -19,9 +19,8 @@ pipelines:
           - cd ../cpp/demo/documented/poisson/cpp
           - ffc -l dolfin Poisson.ufl
           - cmake . && make && ./demo_poisson
-          - cd ../../../..
 
-          - cd python
+          - cd $BITBUCKET_CLONE_DIR/python
           - pip3 install .
 
           - cd test
