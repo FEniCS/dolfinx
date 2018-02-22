@@ -15,7 +15,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UFC::UFC(const Form& a) : coefficients(a.coefficients()), dolfin_form(a)
+UFC::UFC(const Form& a) : dolfin_form(a)
 {
   dolfin_assert(a.ufc_form());
 
@@ -69,6 +69,8 @@ void UFC::update(const Cell& c,
                  const ufc::cell& ufc_cell,
                  const std::vector<bool>& enabled_coefficients)
 {
+  const auto& coefficients = dolfin_form.coefficients();
+
   // Restrict coefficients to facet
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
@@ -84,6 +86,7 @@ void UFC::update(const Cell& c, const std::vector<double>& coordinate_dofs,
                  const ufc::cell& ufc_cell,
                  const std::vector<bool>& enabled_coefficients)
 {
+  const auto& coefficients = dolfin_form.coefficients();
   // Restrict coefficients to facet
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
@@ -101,6 +104,7 @@ void UFC::update(const Cell& c0, const std::vector<double>& coordinate_dofs0,
                  const ufc::cell& ufc_cell1,
                  const std::vector<bool>& enabled_coefficients)
 {
+  const auto& coefficients = dolfin_form.coefficients();
   // Restrict coefficients to facet
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {

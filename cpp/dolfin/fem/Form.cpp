@@ -22,7 +22,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Form::Form(std::shared_ptr<const ufc::form> ufc_form,
            std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
-    : _ufc_form(ufc_form), _function_spaces(function_spaces),
+    : _ufc_form(ufc_form), _integrals(*ufc_form),
+      _function_spaces(function_spaces),
       _coefficients(ufc_form->num_coefficients())
 {
   dolfin_assert(ufc_form->rank() == function_spaces.size());
@@ -32,8 +33,6 @@ Form::Form(std::shared_ptr<const ufc::form> ufc_form,
     _mesh = function_spaces[0]->mesh();
   for (auto& f : function_spaces)
     dolfin_assert(_mesh == f->mesh());
-
-  _integrals.init(*ufc_form);
 }
 //-----------------------------------------------------------------------------
 Form::~Form()

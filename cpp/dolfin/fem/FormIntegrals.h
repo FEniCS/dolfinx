@@ -28,11 +28,9 @@ public:
     vertex
   };
 
-  FormIntegrals() {}
-
   /// Initialise the FormIntegrals from a ufc::form
   /// instantiating all the required integrals
-  void init(const ufc::form& ufc_form)
+  FormIntegrals(const ufc::form& ufc_form)
   {
     // Create cell integrals
     ufc::cell_integral* _default_cell_integral

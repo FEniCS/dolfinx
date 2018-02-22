@@ -91,9 +91,6 @@ private:
   std::vector<double> _macro_w;
   std::vector<double*> macro_w_pointer;
 
-  // Coefficient functions
-  const std::vector<std::shared_ptr<const GenericFunction>> coefficients;
-
 public:
   /// The form
   const Form& dolfin_form;
