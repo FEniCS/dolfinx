@@ -38,6 +38,16 @@ jobs:
       #- run:
       #    name: Run C++ regression tests (MPI)
       #    command: cd build && make -j2 demos && ctest -R demo -R mpi
+
+      - run:
+          name: Build and run C++ demos
+          command: |
+            cd cpp/demo/documented/poisson
+            ffc -l dolfin Poisson.ufl
+            cmake .
+            make
+            ./demo_poisson
+
       - run:
           name: Build Python interface
           command: |
@@ -46,6 +56,19 @@ jobs:
       - run:
           name: Build DOLFIN Python documentation
           command: cd python/doc && make html
+
+      - run:
+          name: Run Python unit tests
+          command: |
+            cd python/test
+            python3 -m pytest unit/fem/test_assembler.py
+            python3 -m pytest unit/geometry/test_bounding_box_tree.py
+            python3 -m pytest unit/io
+            mpirun -n 3 python3 -m pytest unit/io
+            python3 -m pytest unit/la/test_sparsity_pattern.py
+            mpirun -n 3 python3 -m pytest unit/la/test_sparsity_pattern.py
+            python3 -m pytest unit/mesh
+
       #- run:
       #    name: Run Python unit tests (serial)
       #    command: python3 -m pytest -n 2 python/test/unit/
