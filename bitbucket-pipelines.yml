@@ -17,7 +17,7 @@ pipelines:
           - make -j2
           - make install
 
-          - cd ../cpp/demo/documented/poisson/cpp
+          - cd ../cpp/demo/documented/poisson
           - ffc -l dolfin Poisson.ufl
           - cmake .
           - make
