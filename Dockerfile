@@ -64,7 +64,7 @@ RUN wget https://bootstrap.pypa.io/get-pip.py && \
 
 # Install PETSc from source
 RUN apt-get -qq update && \
-    apt-get -y install python && \
+    apt-get -y install bison flex python && \
     wget -nc --quiet https://bitbucket.org/petsc/petsc/get/v${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     cd petsc-src && \
