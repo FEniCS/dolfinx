@@ -1,0 +1,77 @@
+# Copyright (c) 2009 Mirko Maraldi and Garth N. Wells
+#
+# This file is part of DOLFIN.
+#
+# DOLFIN is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DOLFIN is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2009-01-22
+# Last changed: 2009-01-27
+#
+# The bilinear form and linear form for linear elastodynamics
+# using the generalised-alpha method
+#
+# Compile this form with FFC: ffc -l dolfin ElastoDynamics.ufl.
+
+element = VectorElement("Lagrange", triangle, 1)
+DG0     = FiniteElement("Discontinuous Lagrange", triangle, 0)
+
+# Test and trial functions
+r = TestFunction(element)
+u = TrialFunction(element)
+
+# Fields from previous time step
+u0      = Coefficient(element)   # displacement
+v0      = Coefficient(element)   # velocity
+a0      = Coefficient(element)   # acceleration
+p0      = Coefficient(element)   # external load
+
+# External forces
+f       = Coefficient(element)  # body forces
+p       = Coefficient(element)   # externally applied loads
+
+# Material parameters
+rho     = Coefficient(DG0)  # mass density
+eta     = Coefficient(DG0)  # damping coefficient
+lmbda   = Coefficient(DG0)  # Lame coefficient
+mu      = Coefficient(DG0)  # Lame coefficient
+
+# Time stepping parameters
+alpha_m = Coefficient(DG0)
+alpha_f = Coefficient(DG0)
+beta    = Coefficient(DG0)
+gamma   = Coefficient(DG0)
+dt      = Coefficient(DG0)
+
+factor_m1  = rho*(1.0-alpha_m)/(beta*dt*dt)
+factor_m2  = rho*(1.0-alpha_m)/(beta*dt)
+factor_m3  = rho*(1.0-alpha_m-2.0*beta)/(2.0*beta)
+
+factor_d1  = eta*(1.0-alpha_f)*gamma/(beta*dt)
+factor_d2  = eta*((1.0-alpha_f)*gamma-beta)/beta
+factor_d3  = eta*(gamma-2.0*beta)*(1.0-alpha_f)*dt/(2.0*beta)
+
+# Stress tensor
+def sigma(r):
+    return 2.0*mu*sym(grad(r)) + lmbda*tr(sym(grad(r)))*Identity(r.geometric_dimension())
+
+# Forms
+a = factor_m1*inner(r, u)*dx  \
+   +factor_d1*inner(r, u)*dx \
+   +(1.0-alpha_f)*inner(grad(r), sigma(u))*dx
+
+L =  factor_m1*inner(r, u0)*dx + factor_m2*inner(r, v0)*dx + factor_m3*inner(r, a0)*dx  \
+   + factor_d1*inner(r, u0)*dx + factor_d2*inner(r, v0)*dx + factor_d3*inner(r, a0)*dx  \
+   - alpha_f*inner(grad(r), sigma(u0))*dx \
+   + inner(r, f)*dx + (1.0-alpha_f)*inner(r, p)*ds(3) + alpha_f*inner(r, p0)*ds(3)
+

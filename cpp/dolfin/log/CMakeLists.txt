@@ -1,0 +1,19 @@
+set(HEADERS
+  dolfin_log.h
+  Event.h
+  Logger.h
+  log.h
+  LogLevel.h
+  LogManager.h
+  LogStream.h
+  Table.h
+  PARENT_SCOPE)
+
+set(SOURCES
+  Event.cpp
+  log.cpp
+  Logger.cpp
+  LogManager.cpp
+  LogStream.cpp
+  Table.cpp
+  PARENT_SCOPE)

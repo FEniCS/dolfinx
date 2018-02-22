@@ -1,0 +1,22 @@
+set(HEADERS
+  CoefficientAssigner.h
+  Constant.h
+  dolfin_function.h
+  Expression.h
+  FunctionAXPY.h
+  Function.h
+  FunctionSpace.h
+  GenericFunction.h
+  SpecialFunctions.h
+  PARENT_SCOPE)
+
+set(SOURCES
+  CoefficientAssigner.cpp
+  Constant.cpp
+  Expression.cpp
+  FunctionAXPY.cpp
+  Function.cpp
+  FunctionSpace.cpp
+  GenericFunction.cpp
+  SpecialFunctions.cpp
+  PARENT_SCOPE)

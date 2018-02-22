@@ -1,0 +1,85 @@
+
+This demo illustrates how to:
+
+* Maintain symmetry when assembling a system of symmetric equations
+  with essential (Dirichlet) boundary conditions
+* Use a iterative solver explicitly for solving a linear system of equations
+* Define a preconditioner explicitly using a form
+
+
+Strong form of the Stokes equations
+-----------------------------------
+
+The incompressible Stokes equations in strong form read: for a domain
+:math:`\Omega \subset \mathbb{R}^n`, find the velocity :math:`u` and
+the pressure :math:`p` satisfying
+
+.. math::
+   - \nabla \cdot (\nabla u + p I) &= f \quad {\rm in} \ \Omega, \\
+                    \nabla \cdot u &= 0 \quad {\rm in} \ \Omega. \\
+
+
+.. note::
+
+   The sign of the pressure has been flipped from the classical
+   definition. This is done in order to have a symmetric (but not
+   positive-definite) system of equations rather than a non-symmetric
+   (but positive-definite) system of equations.
+
+A typical set of boundary conditions on the boundary :math:`\partial
+\Omega = \Gamma_{D} \cup \Gamma_{N}` can be:
+
+.. math::
+                           u &= u_0 \quad {\rm on} \ \Gamma_{D}, \\
+      \nabla u \cdot n + p n &= g   \quad {\rm on} \ \Gamma_{N}. \\
+
+
+Weak form of the Stokes equations
+---------------------------------
+
+The Stokes equations can easily formulated in a mixed variational
+form; that is, a form where the two variables, the velocity and the
+pressure, are approximated simultaneously. Using the abstract
+framework, we have the problem: find :math:`(u, p) \in W` such that
+
+.. math::
+   a((u, p), (v, q)) = L((v, q))
+
+for all :math:`(v, q) \in W` where
+
+.. math::
+   a((u, p), (v, q))
+   &= \int_{\Omega} \nabla u \cdot \nabla v
+                    + \nabla \cdot v \ p
+                    + \nabla \cdot u \ q \, {\rm d} x, \\
+   L((v, q))
+   &= \int_{\Omega} f \cdot v \, {\rm d} x
+      + \int_{\partial \Omega_N} g \cdot v \, {\rm d} s. \\
+
+The space `W` should be a mixed (product) function space: :math:`W = V
+\times Q` such that :math:`u \in V` and :math:`q \in Q`.
+
+Preconditioning of the linear system of equations
+--------------------------------------------------
+
+For the resulting linear system of equations, the following form
+defines a suitable preconditioner:
+
+.. math::
+
+   b((u, p), (v, q)) = \int_{\Omega} \nabla u \cdot \nabla v + p \, q \, {\rm d} x
+
+
+Domain and boundary conditions
+------------------------------
+
+In this demo, we shall consider the following definitions of the input
+functions, the domain, and the boundaries:
+
+* :math:`\Omega = [0,1]^3`  (a unit cube)
+* :math:`\Omega_D = \{(x_0, x_1, x_2) \, | \, x_0 = 0 \, \text{or} \,
+  x_0 = 1 \, \text{or} \, x_1 = 0 \, \text{or} \, x_1 = 1 \}`
+* :math:`u_0 = (- \sin(\pi x_1), 0.0, 0.0)` for :math:`x_0 = 1` and
+  :math:`u_0 = (0.0, 0.0, 0.0)` otherwise
+* :math:`f = (0.0, 0.0, 0.0)`
+* :math:`g = (0.0, 0.0, 0.0)`

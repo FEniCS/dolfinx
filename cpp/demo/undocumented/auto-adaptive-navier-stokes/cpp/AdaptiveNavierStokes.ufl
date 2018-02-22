@@ -1,0 +1,51 @@
+# Copyright (C) 2010 Marie E. Rognes
+#
+# This file is part of DOLFIN.
+#
+# DOLFIN is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DOLFIN is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2010-11-01
+# Last changed: 2011-06-29
+#
+# Compile with ffc -e -l dolfin AdaptiveNavierStokes.ufl
+
+cell = triangle
+V = VectorElement("CG", cell, 2)
+Q = FiniteElement("CG", cell, 1)
+W = V * Q
+
+w = Coefficient(W)
+(u, p) = (as_vector((w[0], w[1])), w[2])
+(v, q) = TestFunctions(W)
+
+# Prescribed pressure
+T = FiniteElement("CG", cell, 1)
+p0 = Coefficient(T)
+
+# Prescribed viscosity
+nu = Constant(cell)
+
+# Define FacetNormal
+n = FacetNormal(cell)
+
+# Define variational form
+L = (nu*inner(grad(u), grad(v)) - p*div(v) + div(u)*q
+     + inner(v, grad(u)*u))*dx() \
+     + p0*dot(v, n)*ds()
+
+# Define goal functional
+M = w[0]*ds(0)
+
+# NB: Label the unknown
+unknown = w

@@ -1,0 +1,91 @@
+This demo solves the incompressible Navier-Stokes equations. It
+illustrates how to:
+
+* Implement a splitting method where different fields are coupled
+  via a set of partial differential equations
+* Use different iterative solvers and different preconditioners for
+  different steps of the solution process
+* Use time-dependent Expressions
+* Set boundary conditions based on geometric constraints
+* Perform time-stepping
+
+Equation and solution method
+----------------------------
+
+We consider the incompressible Navier-Stokes equations on a domain
+:math:`\Omega \subset \mathbb{R}^2`, consisting of a pair of momentum
+and continuity equations:
+
+.. math::
+
+    \dot{u} + \nabla u \cdot u - \nu \Delta u + \nabla p &= f, \\
+    \nabla \cdot u = 0.
+
+Here, :math:`u` is the unknown velocity, :math:`p` is the unknown
+pressure, :math:`\nu` is the kinematic viscosity, and :math:`f` is a
+given source. There exist many solution strategies for the
+incompressible Navier-Stokes equations. One of the oldest is the
+splitting method proposed by Chorin (1968) and Temam (1969), often
+refered to as Chorin's method.
+
+In Chorin's method, one first ignores the pressure in the momentum
+equation and computes the *tentative velocity* :math:`u_h^{\star}`
+according to:
+
+.. math::
+
+    \langle (u_h^{\star} - u_h^{n-1}) / \Delta t_n, v \rangle +
+    \langle \nabla u_h^{n-1} \cdot u_h^{n-1}, v \rangle +
+    \langle \nu \nabla u_h^{\star}, \nabla v \rangle =
+    \langle f, v \rangle .
+
+Here, :math:`\langle \cdot, \cdot \rangle` denotes the
+:math:`L^2(\Omega)` inner product.  Subsequently, the velocity is
+projected to the space of divergence free fields. This step may be
+obtained by subtracting the variational problem for the tentative
+velocity :math:`u_h^{\star}` from the incompressible Navier-Stokes
+equations and using the continuity equation. One obtains the following
+pair of equations for computing the velocity :math:`u_h^n` and
+pressure :math:`p_h^n` at time :math:`t = t_n` based on the tentative
+velocity :math:`u_h^{\star}`:
+
+.. math::
+
+    \langle \nabla p^n, \nabla q \rangle &=
+      - \langle \nabla \cdot u_h^{\star}, q \rangle / \Delta t_n, \\
+    \langle u_h^n, v \rangle &=
+       \langle u_h^{\star}, v \rangle - \Delta t_n \langle \nabla p^n, v \rangle.
+
+Problem definition
+------------------
+
+In this demo, we solve the incompressible Navier-Stokes equations on
+an L-shaped domain. The L-shape is the subset of the unit square
+obtained by removing the upper right quadrant.
+
+The flow is driven by an oscillating pressure
+:math:`p_{\mathrm{in}}(t) = \sin 3t` at the inflow :math:`y = 1` while
+the pressure is kept constant :math:`p_{\mathrm{out}} = 0` at the
+outflow :math:`x = 1`.
+
+At the inflow and outflow, we impose free flow ("do nothing") boundary
+conditions for the velocity and no-slip boundary conditions on the
+remaining boundary.
+
+The (kinematic) viscosity is set to :math:`\nu = 0.01`, the time step
+is :math:`\Delta t = 0.01` and the length of the time interval is
+:math:`T = 3`. The solution is computed using continuous vector-valued
+piecewise quadratics for the velocity, and continuous scalar piecewise
+linears for the pressure (the Taylor-Hood elements).
+
+With the above input the solution for the velocity :math:`u` and pressure
+:math:`p` will look as follows:
+
+.. image:: ../navier-stokes_u.png
+    :scale: 75
+    :align: center
+
+.. image:: ../navier-stokes_p.png
+    :scale: 75
+    :align: center
+

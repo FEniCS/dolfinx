@@ -1,0 +1,15 @@
+This demo illustrates:
+
+* How to define some of the different built-in meshes in DOLFIN
+
+Problem definition
+------------------
+
+The demo focuses on the built-in meshes. We will look at the following
+meshes:
+
+* :py:class:`UnitIntervalMesh <dolfin.cpp.mesh.UnitIntervalMesh>`
+* :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`
+* :py:class:`RectangleMesh <dolfin.cpp.mesh.RectangleMesh>`
+* :py:class:`UnitCubeMesh <dolfin.cpp.mesh.UnitCubeMesh>`
+* :py:class:`BoxMesh <dolfin.cpp.mesh.BoxMesh>`

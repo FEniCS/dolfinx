@@ -1,0 +1,61 @@
+#
+# This file sets up include directories, link directories, and
+# compiler settings for a project to use DOLFIN. It should not be
+# included directly, but rather through the DOLFIN_USE_FILE setting
+# obtained from DOLFINConfig.cmake.
+#
+
+if (NOT DOLFIN_USE_FILE_INCLUDED)
+  set(DOLFIN_USE_FILE_INCLUDED 1)
+
+  if(POLICY CMP0012)
+    cmake_policy(SET CMP0012 NEW)
+  endif()
+
+  # Require and use C++14
+  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+
+  # Add DOLFIN-installed FindFoo.cmake files to path
+  list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
+
+  # Check for Boost
+  set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
+  if (BOOST_ROOT)
+    set(Boost_NO_SYSTEM_PATHS on)
+  endif()
+
+  # Prevent FindBoost.cmake from looking for system Boost{foo}.cmake
+  # files
+  set(Boost_NO_BOOST_CMAKE true)
+
+  set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
+  find_package(Boost 1.48 QUIET REQUIRED COMPONENTS
+    @DOLFIN_BOOST_COMPONENTS_PUBLIC@)
+
+  if (@PETSC_FOUND@)
+    if (NOT PETSC::petsc)
+      set(DOLFIN_SKIP_BUILD_TESTS TRUE)
+      list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
+      find_package(PETSc REQUIRED QUIET)
+      endif()
+  endif()
+
+  if (@SLEPC_FOUND@)
+    if (NOT SLEPC::slepc)
+      set(DOLFIN_SKIP_BUILD_TESTS TRUE)
+      find_package(SLEPc REQUIRED QUIET)
+    endif()
+  endif()
+
+  # Add include directories needed to use DOLFIN
+  include_directories(${DOLFIN_INCLUDE_DIRS})
+
+  # Add compiler flags needed to use DOLFIN
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
+  #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${DOLFIN_LINK_FLAGS}")
+  #set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${DOLFIN_LINK_FLAGS}")
+  #set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${DOLFIN_LINK_FLAGS}")
+
+endif()

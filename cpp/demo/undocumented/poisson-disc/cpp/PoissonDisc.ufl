@@ -1,0 +1,53 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2015-2015 Martin Sandve Alnæs
+#
+# This file is part of DOLFIN.
+#
+# DOLFIN is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DOLFIN is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# The bilinear form a(u, v) and linear form L(v) for
+# Poisson's equation with quadratic isoparametric elements.
+#
+# Compile this form with FFC: ffc -r uflacs -l dolfin PoissonDisc.ufl
+
+# Solving
+# -laplace u = 1
+# u(r=1) = 0
+
+degree = 2
+cell = triangle
+
+coordinate_element = VectorElement("Lagrange", cell, degree)
+mesh = Mesh(coordinate_element)
+
+element = FiniteElement("Lagrange", cell, degree)
+V = FunctionSpace(mesh, element)
+
+u = TrialFunction(V)
+v = TestFunction(V)
+
+x = SpatialCoordinate(mesh)
+
+f = Coefficient(V)
+
+# Variational formulation
+a = dot(grad(u), grad(v))*dx
+L = f*v*dx
+
+# Exact solution
+uexact = (1.0 - x**2) / 4.0
+
+# Error norm functional
+uh = Coefficient(V)
+M = (uh - uexact)**2*dx

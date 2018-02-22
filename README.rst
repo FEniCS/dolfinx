@@ -2,9 +2,9 @@
 DOLFIN-X
 ========
 
-DOLFIN-X is an experimental version of FEniCS DOLFIN which is being actively developed,
-but is **not ready for production use**. Many new experimental features may come and go as
-development proceeds.
+DOLFIN-X is an experimental version of DOLFIN. It is being actively
+developed, but is **not ready for production use**. Many new
+experimental features may come and go as development proceeds.
 
 DOLFIN is the computational backend of FEniCS and implements the
 FEniCS Problem Solving Environment in Python and C++.
@@ -13,12 +13,26 @@ FEniCS Problem Solving Environment in Python and C++.
 Installation
 ============
 
-To build DOLFIN, run::
+C++ core
+--------
+
+To build and install the DOLFIN C++ core, in the `cpp/` directory,
+run::
 
   mkdir build
   cd build
   cmake ..
   make install
+
+Python
+------
+
+To install the Python interface, first install the C++ core, and then
+in the `python/` directory run::
+
+  pip install .
+
+(you may need to use `pip3`, depending on your system).
 
 For detailed instructions, see the file INSTALL.
 
