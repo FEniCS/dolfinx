@@ -20,7 +20,8 @@
 import pytest
 import platform
 import dolfin
-from dolfin import *
+from dolfin import MPI, compile_cpp_code
+from dolfin.la import PETScVector
 from dolfin_utils.test import (skip_if_not_SLEPc,
                                skip_if_not_MPI, skip_in_serial,
                                skip_if_not_petsc4py)

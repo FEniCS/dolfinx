@@ -36,10 +36,6 @@ def parse(package):
     for token in out.split():
         key = parse_map[token[1]]
         t = token[2:].strip()
-        if (key == 'define_macros'):
-            t = tuple(t.split('='))
-            if len(t) == 1:
-                t += '',
         result[key].append(t)
 
     return result
