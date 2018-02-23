@@ -21,7 +21,7 @@ ENV PETSC_VERSION=3.8.3 \
     OPENBLAS_NUM_THREADS=1 \
     OPENBLAS_VERBOSE=0
 
-# Utilities and libraries
+# Install dependencies available via apt-get
 RUN apt-get -qq update && \
     apt-get -y --with-new-pkgs \
     -o Dpkg::Options::="--force-confold" upgrade && \
@@ -47,10 +47,6 @@ RUN apt-get -qq update && \
     mpich \
     pkg-config \
     python3-dev \
-    python3-numpy \
-    python3-ply \
-    python3-pytest \
-    python3-scipy \
     wget \
     bash-completion && \
     apt-get clean && \
@@ -104,7 +100,7 @@ ENV SLEPC_DIR=/usr/local/slepc-32 \
     PETSC_DIR=/usr/local/petsc-32
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir mpi4py pkgconfig && \
+RUN pip3 install --no-cache-dir mpi4py numpy pkgconfig scipy && \
     pip3 install --no-cache-dir https://bitbucket.org/petsc/petsc4py/downloads/petsc4py-${PETSC4PY_VERSION}.tar.gz && \
     pip3 install --no-cache-dir https://bitbucket.org/slepc/slepc4py/downloads/slepc4py-${SLEPC4PY_VERSION}.tar.gz
 
@@ -125,6 +121,7 @@ RUN pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.gi
     pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/dijitso.git && \
     pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/ffcX.git
 
+# Install dolfinx
 RUN git clone https://bitbucket.org/fenics-project/dolfinX.git && \
     cd dolfinX && \
     mkdir build && \
