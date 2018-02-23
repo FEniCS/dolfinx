@@ -7,10 +7,10 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install/update dependencies  # Install with sudo as tests not run as superuser in circleci/python
+          name: Install/update Python dependencies
           command: pip3 install flake8 pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
       - run:
-          name: Install FEniCS dependencies
+          name: Install FEniCS Python components
           command: |
             if [ "${CIRCLE_BRANCH}" == "next" ] ; then export DEP_BRANCH_NAME="next" ; else export DEP_BRANCH_NAME="master" ; fi
             pip3 uninstall --yes fenics-fiat fenics-ufl fenics-dijitso fenics-ffc
@@ -44,7 +44,7 @@ jobs:
           name: Build and run C++ demos
           command: |
             cd cpp/demo/documented/poisson
-            ffc -l dolfin Poisson.ufl
+            python3 -m ffc -l dolfin Poisson.ufl
             cmake .
             make
             ./demo_poisson

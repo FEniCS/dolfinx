@@ -63,7 +63,7 @@ def compile_cpp_code(cpp_code):
     # Enable all macros from dolfin.pc
     dmacros = ()
     for dm in dolfin_pc['define_macros']:
-        if len(dm[1]) == 0:
+        if dm[1] is None:
             dmacros += ('-D' + dm[0],)
         else:
             dmacros += ('-D' + dm[0] + '=' + dm[1],)
