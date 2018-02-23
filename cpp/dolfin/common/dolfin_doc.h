@@ -4,8 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-/*! \mainpage DOLFIN Programmer's Reference
+/*! \mainpage DOLFIN-X Programmer's Reference
  *
- * This is the documentation of the DOLFIN C++ interface.
+ * This is the documentation of the DOLFIN-X C++ interface.
  *
  */

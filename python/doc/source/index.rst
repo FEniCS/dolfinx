@@ -1,5 +1,5 @@
-DOLFIN documentation
-====================
+DOLFIN-X documentation
+======================
 
 .. toctree::
    :maxdepth: 1
