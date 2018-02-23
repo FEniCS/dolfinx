@@ -58,7 +58,7 @@ jobs:
           name: Build DOLFIN Python documentation
           command: cd python/doc && make html
       - persist_to_workspace:
-          root:
+          root: ${CIRCLE_WORKING_DIRECTORY}
           paths:
             - python/doc/build/html/
 
