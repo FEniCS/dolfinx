@@ -2,65 +2,121 @@ version: 2
 jobs:
   build:
     docker:
-      - image: quay.io/fenicsproject/dev-env:latest
-    working_directory: /home/fenics/working
+      - image: quay.io/fenicsproject/dolfinx:latest
     steps:
-      - run:
-          name: Clone DOLFIN
-          command: git lfs clone https://bitbucket.org/"${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}".git .
       - checkout
       - run:
-          name: Install/update dependencies  # Install with sudo as tests not run as superuser in circleci/python
-          command: sudo pip3 install flake8 pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
+          name: Install/update Python dependencies
+          command: pip3 install flake8 pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
       - run:
-          name: Install FEniCS dependencies
+          name: Install FEniCS Python components
           command: |
             if [ "${CIRCLE_BRANCH}" == "next" ] ; then export DEP_BRANCH_NAME="next" ; else export DEP_BRANCH_NAME="master" ; fi
+            pip3 uninstall --yes fenics-fiat fenics-ufl fenics-dijitso fenics-ffc
             pip3 install git+https://bitbucket.org/fenics-project/fiat.git@"${DEP_BRANCH_NAME}"
             pip3 install git+https://bitbucket.org/fenics-project/ufl.git@"${DEP_BRANCH_NAME}"
             pip3 install git+https://bitbucket.org/fenics-project/dijitso.git@"${DEP_BRANCH_NAME}"
-            pip3 install git+https://bitbucket.org/fenics-project/ffc.git@"${DEP_BRANCH_NAME}"
-      - run:
-          name: Flake8 checks on pybind11 Python code
-          command: python3 -m flake8 python/dolfin
+            pip3 install git+https://bitbucket.org/fenics-project/ffcX.git@"${DEP_BRANCH_NAME}"
+      #- run:
+      #    name: Flake8 checks on pybind11 Python code
+      #    command: python3 -m flake8 python/dolfin
       - run:
           name: Build DOLFIN C++ documentation
-          command: cd doc && doxygen
+          command: cd cpp/doc && doxygen
       - run:
           name: Configure DOLFIN (C++)
-          command: mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Developer ../
+          command: mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Developer ../cpp/
       - run:
           name: Build DOLFIN and install (C++)
           command: cd build && make -j2 install
+      #- run:
+      #    name: Build and run C++ unit tests (serial)
+      #    command: cd build && make -j2 unittests && ctest -R unittests
+      #- run:
+      #    name: Build and run C++ regressions tests (serial)
+      #    command: cd build && make -j2 demos && ctest -j2 -R demo -R serial
+      #- run:
+      #    name: Run C++ regression tests (MPI)
+      #    command: cd build && make -j2 demos && ctest -R demo -R mpi
+
       - run:
-          name: Build and run C++ unit tests (serial)
-          command: cd build && make -j2 unittests && ctest -R unittests
-      - run:
-          name: Build and run C++ regressions tests (serial)
-          command: cd build && make -j2 demos && ctest -j2 -R demo -R serial
-      - run:
-          name: Run C++ regression tests (MPI)
-          command: cd build && make -j2 demos && ctest -R demo -R mpi
+          name: Build and run C++ demos
+          command: |
+            cd cpp/demo/documented/poisson
+            python3 -m ffc -l dolfin Poisson.ufl
+            cmake .
+            make
+            ./demo_poisson
+
       - run:
           name: Build Python interface
           command: |
             cd python
             pip3 -v install . --user
+
       - run:
           name: Build DOLFIN Python documentation
           command: cd python/doc && make html
+      - persist_to_workspace:
+          root: .
+          paths:
+            - python/doc/build/html/
+            - cpp/doc/html/
+
       - run:
-          name: Run Python unit tests (serial)
-          command: python3 -m pytest -n 2 python/test/unit/
+          name: Run Python unit tests
+          command: |
+            cd python/test
+            python3 -m pytest unit/fem/test_assembler.py
+            python3 -m pytest unit/geometry/test_bounding_box_tree.py
+            python3 -m pytest unit/io
+            mpirun -n 3 python3 -m pytest unit/io
+            python3 -m pytest unit/la/test_sparsity_pattern.py
+            mpirun -n 3 python3 -m pytest unit/la/test_sparsity_pattern.py
+            python3 -m pytest unit/mesh
+
+      #- run:
+      #    name: Run Python unit tests (serial)
+      #    command: python3 -m pytest -n 2 python/test/unit/
+      #- run:
+      #    name: Run Python unit tests (MPI)
+      #    command: mpirun -n 3 python3 -m pytest python/test/unit/
+      #- run:
+      #    name: Generate Python demo (regression) programs
+      #    command: python3 python/demo/generate-demo-files.py
+      #- run:
+      #    name: Run Python regression tests (serial)
+      #    command: python3 -m pytest -v -n2 python/demo/test.py
+      #- run:
+      #    name: Run Python regression tests (MPI)
+      #    command: python3 -m pytest -v python/demo/test.py --mpiexec=mpiexec --num-proc=3
+
+  pushdoc:
+    docker:
+      - image: circleci/python
+    working_directory: /tmp
+    steps:
+      - attach_workspace:
+          at: /tmp
       - run:
-          name: Run Python unit tests (MPI)
-          command: mpirun -n 3 python3 -m pytest python/test/unit/
+          name: Establish authenticity of fenicsproject.org
+          command: mkdir ~/.ssh && echo "fenicsproject.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFbD134YcxSNaHVyio0XPAvJYh8SF90xp/ARqfrbAwOmJaEPTl5CNXm6f3+Sy0k1QTp+j9WawiJON+4/FWQBTD4=" >> ~/.ssh/known_hosts
       - run:
-          name: Generate Python demo (regression) programs
-          command: python3 python/demo/generate-demo-files.py
+          name: Push Python API doc to fenicsproject.org
+          command: cd /tmp/python/doc/build/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/python/
       - run:
-          name: Run Python regression tests (serial)
-          command: python3 -m pytest -v -n2 python/demo/test.py
-      - run:
-          name: Run Python regression tests (MPI)
-          command: python3 -m pytest -v python/demo/test.py --mpiexec=mpiexec --num-proc=3
+          name: Push C++ API doc to fenicsproject.org
+          command: cd /tmp/cpp/doc/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
+
+workflows:
+  version: 2
+  build-and-pushdoc:
+    jobs:
+      - build
+      - pushdoc:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - master
