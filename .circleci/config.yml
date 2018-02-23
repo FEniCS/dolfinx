@@ -3,7 +3,6 @@ jobs:
   build:
     docker:
       - image: quay.io/fenicsproject/dolfinx:latest
-    working_directory: /home/fenics/working
     steps:
       - checkout
       - run:
@@ -54,9 +53,14 @@ jobs:
           command: |
             cd python
             pip3 -v install . --user
+
       - run:
           name: Build DOLFIN Python documentation
           command: cd python/doc && make html
+      - persist_to_workspace:
+          root:  $CIRCLE_WORKING_DIRECTORY
+          paths:
+            - python/doc/build/html/
 
       - run:
           name: Run Python unit tests
@@ -85,3 +89,28 @@ jobs:
       #- run:
       #    name: Run Python regression tests (MPI)
       #    command: python3 -m pytest -v python/demo/test.py --mpiexec=mpiexec --num-proc=3
+  pushdoc:
+    docker:
+      - image: circleci/python
+    working_directory: /tmp
+    steps:
+      - attach_workspace:
+          at: /tmp
+      - run:
+          name: Establish authenticity of fenicsproject.org
+          command: mkdir ~/.ssh && echo "fenicsproject.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFbD134YcxSNaHVyio0XPAvJYh8SF90xp/ARqfrbAwOmJaEPTl5CNXm6f3+Sy0k1QTp+j9WawiJON+4/FWQBTD4=" >> ~/.ssh/known_hosts
+      - run:
+          name: Push Python API doc to fenicsproject.org
+          command: cd /tmp/python/doc/build/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinX/dev/python/
+workflows:
+  version: 2
+  build-and-pushdoc:
+    jobs:
+      - build
+      - pushdoc:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - master
