@@ -103,10 +103,10 @@ jobs:
           command: mkdir ~/.ssh && echo "fenicsproject.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFbD134YcxSNaHVyio0XPAvJYh8SF90xp/ARqfrbAwOmJaEPTl5CNXm6f3+Sy0k1QTp+j9WawiJON+4/FWQBTD4=" >> ~/.ssh/known_hosts
       - run:
           name: Push Python API doc to fenicsproject.org
-          command: cd /tmp/python/doc/build/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinX/dev/python/
+          command: cd /tmp/python/doc/build/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/python/
       - run:
           name: Push C++ API doc to fenicsproject.org
-          command: cd /tmp/cpp/doc/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinX/dev/cpp/
+          command: cd /tmp/cpp/doc/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
 
 workflows:
   version: 2
