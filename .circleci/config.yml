@@ -61,6 +61,7 @@ jobs:
           root: .
           paths:
             - python/doc/build/html/
+            - cpp/doc/html/
 
       - run:
           name: Run Python unit tests
@@ -89,6 +90,7 @@ jobs:
       #- run:
       #    name: Run Python regression tests (MPI)
       #    command: python3 -m pytest -v python/demo/test.py --mpiexec=mpiexec --num-proc=3
+
   pushdoc:
     docker:
       - image: circleci/python
@@ -102,6 +104,10 @@ jobs:
       - run:
           name: Push Python API doc to fenicsproject.org
           command: cd /tmp/python/doc/build/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinX/dev/python/
+      - run:
+          name: Push C++ API doc to fenicsproject.org
+          command: cd /tmp/cpp/doc/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinX/dev/cpp/
+
 workflows:
   version: 2
   build-and-pushdoc:
