@@ -186,5 +186,6 @@ the :py:func:`plot <dolfin.common.plot.plot>` command: ::
 
     # Plot solution
     import matplotlib.pyplot as plt
-    plot(u)
+    import dolfin.plotting
+    dolfin.plotting.plot(u)
     plt.show()
