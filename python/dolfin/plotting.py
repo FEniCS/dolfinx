@@ -6,13 +6,12 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
-
 import dolfin
 import dolfin.cpp as cpp
 import ufl
 import numpy as np
 
-__all__ = ['plot']
+__all__ = ["plot"]
 
 _meshfunction_types = (cpp.mesh.MeshFunctionBool,
                        cpp.mesh.MeshFunctionInt,
@@ -128,7 +127,8 @@ def mplot_function(ax, f, **kwargs):
             return ax.plot(xp, Cp, *kwargs)
         # elif tdim == 1:  # FIXME: Plot embedded line
         else:
-            raise AttributeError('Matplotlib plotting backend only supports 2D mesh for scalar functions.')
+            raise AttributeError(
+                'Matplotlib plotting backend only supports 2D mesh for scalar functions.')
 
     elif f.value_rank() == 0:
         # Scalar function, interpolated to vertices
@@ -180,14 +180,16 @@ def mplot_function(ax, f, **kwargs):
             return p
         # elif tdim == 1: # FIXME: Plot embedded line
         else:
-            raise AttributeError('Matplotlib plotting backend only supports 2D mesh for scalar functions.')
+            raise AttributeError(
+                'Matplotlib plotting backend only supports 2D mesh for scalar functions.')
 
     elif f.value_rank() == 1:
         # Vector function, interpolated to vertices
         w0 = f.compute_vertex_values(mesh)
         nv = mesh.num_vertices()
         if len(w0) != gdim * nv:
-            raise AttributeError('Vector length must match geometric dimension.')
+            raise AttributeError(
+                'Vector length must match geometric dimension.')
         X = mesh.geometry().x()
         X = [X[:, i] for i in range(gdim)]
         U = [w0[i * nv: (i + 1) * nv] for i in range(gdim)]
@@ -229,7 +231,8 @@ def mplot_meshfunction(ax, obj, **kwargs):
     if tdim == 2 and d == 2:
         C = obj.array()
         triang = mesh2triang(mesh)
-        assert not kwargs.pop("facecolors", None), "Not expecting 'facecolors' in kwargs"
+        assert not kwargs.pop(
+            "facecolors", None), "Not expecting 'facecolors' in kwargs"
         return ax.tripcolor(triang, facecolors=C, **kwargs)
     else:
         # Return gracefully to make regression test pass without vtk
@@ -239,7 +242,8 @@ def mplot_meshfunction(ax, obj, **kwargs):
 
 
 def mplot_dirichletbc(ax, obj, **kwargs):
-    raise AttributeError("Matplotlib plotting backend doesn't handle DirichletBC.")
+    raise AttributeError(
+        "Matplotlib plotting backend doesn't handle DirichletBC.")
 
 
 def _plot_matplotlib(obj, mesh, kwargs):
@@ -323,7 +327,7 @@ def plot(object, *args, **kwargs):
             a :py:class:`Mesh <dolfin.cpp.Mesh>`, a :py:class:`MeshFunction
             <dolfin.cpp.MeshFunction>`, a :py:class:`Function
             <dolfin.functions.function.Function>`, a :py:class:`Expression`
-            <dolfin.cpp.Expression>, a :py:class:`DirichletBC`
+            <dolfin.Expression>, a :py:class:`DirichletBC`
             <dolfin.cpp.DirichletBC>, a :py:class:`FiniteElement
             <ufl.FiniteElement>`.
 
@@ -392,8 +396,10 @@ def plot(object, *args, **kwargs):
     mesh = kwargs.pop('mesh', None)
     if isinstance(object, cpp.mesh.Mesh):
         if mesh is not None and mesh.id() != object.id():
-            raise RuntimeError("Got different mesh in plot object and keyword argument")
+            raise RuntimeError(
+                "Got different mesh in plot object and keyword argument")
         mesh = object
+
     if mesh is None:
         if isinstance(object, cpp.function.Function):
             mesh = object.function_space().mesh()

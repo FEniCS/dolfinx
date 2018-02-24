@@ -24,9 +24,9 @@
 # Copy demo files into doc source tree and process with pylit
 import os
 import sys
-sys.path.append(os.getcwd())
-import rstprocess
-rstprocess.process()
+#sys.path.append(os.getcwd())
+#import rstprocess
+#rstprocess.process()
 
 # -- General configuration ------------------------------------------------
 
@@ -56,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'DOLFIN'
-copyright = '2017, FEniCS Project'
+copyright = '2018, FEniCS Project'
 author = 'FEniCS Project'
 
 # The version info for the project you're documenting, acts as replacement for
