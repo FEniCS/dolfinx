@@ -337,7 +337,7 @@ void fem::Assembler::assemble(
   EigenMatrixD Ae;
 
   // Get cell integral
-  auto cell_integral = ufc.dolfin_form.integrals().cell_integral();
+  auto cell_integral = a.integrals().cell_integral();
 
   // Iterate over all cells
   for (auto& cell : MeshRange<Cell>(mesh))
@@ -448,7 +448,7 @@ void fem::Assembler::assemble(PETScVector& b, const Form& L)
   Eigen::VectorXd be;
 
   // Get cell integral
-  auto cell_integral = ufc.dolfin_form.integrals().cell_integral();
+  auto cell_integral = L.integrals().cell_integral();
 
   // Iterate over all cells
   for (auto& cell : MeshRange<Cell>(mesh))
@@ -528,7 +528,7 @@ void fem::Assembler::apply_bc(
   UFC ufc(a);
 
   // Get cell integral
-  auto cell_integral = ufc.dolfin_form.integrals().cell_integral();
+  auto cell_integral = a.integrals().cell_integral();
 
   // Iterate over all cells
   for (auto& cell : MeshRange<Cell>(mesh))

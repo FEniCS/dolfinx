@@ -173,10 +173,9 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
 //-----------------------------------------------------------------------------
 void dolfin::fem::init(PETScVector& x, const Form& a)
 {
-  assert(a.ufc_form());
   if (a.rank() != 1)
     throw std::runtime_error(
-        "Cannot intialise vector. Form is not a linear form");
+        "Cannot initialise vector. Form is not a linear form");
 
   if (!x.empty())
     throw std::runtime_error("Cannot initialise layout of non-empty matrix");
@@ -205,8 +204,6 @@ void dolfin::fem::init(PETScVector& x, const Form& a)
 void dolfin::fem::init(PETScMatrix& A, const Form& a)
 {
   bool keep_diagonal = false;
-
-  assert(a.ufc_form());
   if (a.rank() != 2)
   {
     throw std::runtime_error(
@@ -234,10 +231,10 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
   // Create and build sparsity pattern
   SparsityPattern pattern(A.mpi_comm(), index_maps, 0);
   SparsityPatternBuilder::build(
-      pattern, mesh, dofmaps, a.ufc_form()->has_cell_integrals(),
-      a.ufc_form()->has_interior_facet_integrals(),
-      a.ufc_form()->has_exterior_facet_integrals(),
-      a.ufc_form()->has_vertex_integrals(), keep_diagonal);
+      pattern, mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
+      (a.integrals().num_interior_facet_integrals() > 0),
+      (a.integrals().num_exterior_facet_integrals() > 0),
+      (a.integrals().num_vertex_integrals() > 0), keep_diagonal);
   t0.stop();
 
   // Initialize matrix
