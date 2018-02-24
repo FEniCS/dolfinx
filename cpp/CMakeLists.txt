@@ -528,7 +528,6 @@ install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
   PATTERN "*.h"
   PATTERN "*.py"
   PATTERN "*.xml*"
-  PATTERN "*.off"
   PATTERN "CMakeFiles" EXCLUDE)
 
 #------------------------------------------------------------------------------
@@ -537,7 +536,7 @@ install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
 enable_testing()
 
 # Add target "unittests", but do not add to default target
-add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
+add_subdirectory(test/unit EXCLUDE_FROM_ALL)
 
 # Add demo but do not add to default target
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")

@@ -29,9 +29,9 @@ jobs:
       - run:
           name: Build DOLFIN and install (C++)
           command: cd build && make -j2 install
-      #- run:
-      #    name: Build and run C++ unit tests (serial)
-      #    command: cd build && make -j2 unittests && ctest -R unittests
+      - run:
+          name: Build and run C++ unit tests (serial)
+          command: cd build && make -j2 unittests && ctest -R unittests
       #- run:
       #    name: Build and run C++ regressions tests (serial)
       #    command: cd build && make -j2 demos && ctest -j2 -R demo -R serial
