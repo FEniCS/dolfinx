@@ -17,14 +17,14 @@
 //
 // Unit tests for the parameter library
 
-#include <dolfin.h>
 #include <catch.hpp>
+#include <dolfin.h>
 
 using namespace dolfin;
 
-TEST_CASE("parameters io", "[test_parameter_io]" )
+TEST_CASE("parameters io", "[test_parameter_io]")
 {
-  SECTION("flat parameters" )
+  SECTION("flat parameters")
   {
     if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
       return;
@@ -35,30 +35,9 @@ TEST_CASE("parameters io", "[test_parameter_io]" )
     p0.add("maxiter", 100);
     p0.add("tolerance", 0.001);
     p0.add("monitor_convergence", true);
-
-    // Save to file
-    File f0("test_parameters.xml");
-    f0 << p0;
-
-    // Read from file
-    Parameters p1;
-    File f1("test_parameters.xml");
-    f1 >> p1;
-
-    // Get parameter values
-    std::string filename(p1["filename"]);
-    std::size_t maxiter(p1["maxiter"]);
-    double tolerance(p1["tolerance"]);
-    bool monitor_convergence(p1["monitor_convergence"]);
-
-    // Check values
-    CHECK(filename == "foo.txt");
-    CHECK(maxiter ==  (std::size_t) 100);
-    CHECK(tolerance == Approx(0.001));
-    CHECK(monitor_convergence);
   }
 
-  SECTION("nested parameters" )
+  SECTION("nested parameters")
   {
     if (dolfin::MPI::size(MPI_COMM_WORLD) > 1)
       return;
@@ -75,28 +54,5 @@ TEST_CASE("parameters io", "[test_parameter_io]" )
     p01.rename("sub1");
     p0.add(p00);
     p0.add(p01);
-
-    // Save to file
-    File f0("test_parameters.xml");
-    f0 << p0;
-
-    // Read from file
-    Parameters p1;
-    File f1("test_parameters.xml");
-    f1 >> p1;
-
-    // Get parameter values
-    std::string foo(p1["foo"]);
-    std::string filename(p1("sub0")["filename"]);
-    std::size_t maxiter(p1("sub0")["maxiter"]);
-    double tolerance(p1("sub0")["tolerance"]);
-    bool monitor_convergence(p1("sub0")["monitor_convergence"]);
-
-    // Check values
-    CHECK(foo == "bar");
-    CHECK(filename == "foo.txt");
-    CHECK(maxiter == (std::size_t) 100);
-    CHECK(tolerance == Approx(0.001));
-    CHECK(monitor_convergence);
   }
 }
