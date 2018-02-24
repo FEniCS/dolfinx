@@ -34,7 +34,7 @@ class VTKFile
 {
 public:
   /// Create VTK file
-  VTKFile(const std::string filename, std::string encoding);
+  VTKFile(const std::string filename);
 
   // Destructor
   ~VTKFile();
@@ -125,13 +125,5 @@ private:
 
   void pvtu_write_mesh(pugi::xml_node xml_node) const;
 
-  // File encoding
-  const std::string _encoding;
-  std::string encode_string;
-
-  bool binary;
-  bool compress;
 };
 }
-
-
