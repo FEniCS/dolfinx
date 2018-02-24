@@ -138,13 +138,6 @@ if (DOLFIN_ENABLE_PARMETIS AND PARMETIS_FOUND)
   target_include_directories(dolfin SYSTEM PRIVATE ${PARMETIS_INCLUDE_DIRS})
 endif()
 
-# ZLIB
-if (DOLFIN_ENABLE_ZLIB AND ZLIB_FOUND)
-  target_compile_definitions(dolfin PUBLIC HAS_ZLIB)
-  target_link_libraries(dolfin PRIVATE ${ZLIB_LIBRARIES})
-  target_include_directories(dolfin SYSTEM PRIVATE ${ZLIB_INCLUDE_DIRS})
-endif()
-
 # MPI
 if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
   set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
