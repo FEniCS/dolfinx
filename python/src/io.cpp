@@ -31,7 +31,7 @@ void io(py::module& m)
 {
   // dolfin::VTKFile
   py::class_<dolfin::VTKFile, std::shared_ptr<dolfin::VTKFile>>(m, "VTKFile")
-      .def(py::init<std::string, std::string>())
+      .def(py::init<std::string>())
       .def("write", [](dolfin::VTKFile& instance, const dolfin::Mesh& mesh) {
         instance.write(mesh);
       });
