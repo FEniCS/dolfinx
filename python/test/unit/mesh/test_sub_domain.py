@@ -24,6 +24,7 @@ from dolfin_utils.test import skip_in_parallel
 import pytest
 from dolfin.jit.pybind11jit import compile_cpp_code
 
+
 def test_compiled_subdomains():
     def noDefaultValues():
         CompiledSubDomain("a")
@@ -132,20 +133,20 @@ def test_creation_and_marking():
                         AutoSubDomain(lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS)),
                        (AutoSubDomain(lambda x, on_boundary: x[0] < DOLFIN_EPS and on_boundary),
                         AutoSubDomain(lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS and on_boundary)),
-                       (CompiledSubDomain("near(x[0], a)", a=0.0),
-                        CompiledSubDomain("near(x[0], a)", a=1.0)),
-                       (CompiledSubDomain("near(x[0], a) and on_boundary", a=0.0),
-                        CompiledSubDomain("near(x[0], a) and on_boundary", a=1.0)),
-                       (CompiledSubDomain("near(x[0], 0.0)"),
-                        CompiledSubDomain("near(x[0], 1.0)")),
-                       (CompiledSubDomain("near(x[0], 0.0) and on_boundary"),
-                        CompiledSubDomain("near(x[0], 1.0) and on_boundary")),
+                       (CompiledSubDomain("std::abs(x[0]-a) < DOLFIN_EPS", a=0.0),
+                        CompiledSubDomain("std::abs(x[0]-a) < DOLFIN_EPS", a=1.0)),
+                       (CompiledSubDomain("std::abs(x[0]-a) < DOLFIN_EPS and on_boundary", a=0.0),
+                        CompiledSubDomain("std::abs(x[0]-a) < DOLFIN_EPS and on_boundary", a=1.0)),
+                       (CompiledSubDomain("std::abs(x[0]) < DOLFIN_EPS"),
+                        CompiledSubDomain("std::abs(x[0]-1.0) < DOLFIN_EPS")),
+                       (CompiledSubDomain("std::abs(x[0]) < DOLFIN_EPS and on_boundary"),
+                        CompiledSubDomain("std::abs(x[0]-1.0) < DOLFIN_EPS and on_boundary")),
                        #
                        (compiled_domain_module.Left(),
                         compiled_domain_module.Right()),
                        (compiled_domain_module.LeftOnBoundary(),
                         compiled_domain_module.RightOnBoundary())
-    ]
+                       ]
 
     empty = CompiledSubDomain("false")
     every = CompiledSubDomain("true")
@@ -160,8 +161,8 @@ def test_creation_and_marking():
 
         for left, right in subdomain_pairs:
             for t_dim, f_dim in [(0, 0),
-                                    (mesh.topology().dim()-1, dim - 1),
-                                    (mesh.topology().dim(), dim)]:
+                                 (mesh.topology().dim()-1, dim - 1),
+                                 (mesh.topology().dim(), dim)]:
                 f = MeshFunction("size_t", mesh, t_dim, 0)
 
                 left.mark(f, int(1))
@@ -180,15 +181,15 @@ def test_creation_and_marking():
                 # Check that the number of marked entities are at least the
                 # correct number (it can be larger in parallel)
                 assert all(value >= correct[dim, f_dim]
-                for value in [
-                        MPI.sum(mesh.mpi_comm(), float((f.array() == 2).sum())),
-                        MPI.sum(mesh.mpi_comm(), float((f.array() == 1).sum())),
+                           for value in [
+                    MPI.sum(mesh.mpi_comm(), float((f.array() == 2).sum())),
+                    MPI.sum(mesh.mpi_comm(), float((f.array() == 1).sum())),
                 ])
 
         for t_dim, f_dim in [(0, 0),
-                                (mesh.topology().dim()-1, dim-1),
-                                (mesh.topology().dim(), dim)]:
-            f = MeshFunction("size_t", mesh, t_dim, 0)#
+                             (mesh.topology().dim()-1, dim-1),
+                             (mesh.topology().dim(), dim)]:
+            f = MeshFunction("size_t", mesh, t_dim, 0)
 
             empty.mark(f, 1)
             every.mark(f, 2)
