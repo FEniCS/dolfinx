@@ -78,9 +78,6 @@ public:
   std::vector<double> macro_A;
 
 private:
-  // Finite elements for coefficients
-  std::vector<FiniteElement> coefficient_elements;
-
   // Coefficients (std::vector<double*> is used to interface with
   // UFC)
   std::vector<double> _w;
@@ -95,4 +92,4 @@ public:
   /// The form
   const Form& dolfin_form;
 };
-} // namespace dolfin
+}

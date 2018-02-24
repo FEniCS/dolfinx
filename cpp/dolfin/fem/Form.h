@@ -6,7 +6,9 @@
 
 #pragma once
 
+#include "FormCoefficients.h"
 #include "FormIntegrals.h"
+
 #include <dolfin/common/types.h>
 #include <map>
 #include <memory>
@@ -85,12 +87,6 @@ public:
   ///         The rank of the form.
   std::size_t rank() const;
 
-  /// Return number of coefficients
-  ///
-  /// @return std::size_t
-  ///         The number of coefficients.
-  std::size_t num_coefficients() const;
-
   /// Return original coefficient position for each coefficient (0
   /// <= i < n)
   ///
@@ -105,6 +101,8 @@ public:
   ///
   /// @return std::size_t
   ///         The maximum number of values in a local element tensor
+  ///
+  /// FIXME: remove this, Assembler should calculate or put in utils
   std::size_t max_element_tensor_size() const;
 
   /// Set mesh, necessary for functionals when there are no function
@@ -134,39 +132,6 @@ public:
   /// @return    std::vector<_FunctionSpace_>
   ///         Vector of function space shared pointers.
   std::vector<std::shared_ptr<const FunctionSpace>> function_spaces() const;
-
-  /// Set coefficient with given number (shared pointer version)
-  ///
-  /// @param[in]  i (std::size_t)
-  ///         The given number.
-  /// @param[in]    coefficient (_GenericFunction_)
-  ///         The coefficient.
-  void set_coefficient(std::size_t i,
-                       std::shared_ptr<const GenericFunction> coefficient);
-
-  /// Return coefficient with given number
-  ///
-  /// @param[in] i (std::size_t)
-  ///         Index
-  ///
-  /// @return     _GenericFunction_
-  ///         The coefficient.
-  std::shared_ptr<const GenericFunction> coefficient(std::size_t i) const;
-
-  /// Return all coefficients
-  ///
-  /// @return     std::vector<_GenericFunction_>
-  ///         All coefficients.
-  std::vector<std::shared_ptr<const GenericFunction>> coefficients() const;
-
-  /// Return the name of the coefficient with this number
-  ///
-  ///  @param[in]   i (std::size_t)
-  ///         The number
-  ///
-  /// @return     std::string
-  ///         The name of the coefficient with the given number.
-  virtual std::string coefficient_name(std::size_t i) const;
 
   /// Return cell domains (zero pointer if no domains have been
   /// specified)
@@ -226,23 +191,25 @@ public:
   void set_vertex_domains(
       std::shared_ptr<const MeshFunction<std::size_t>> vertex_domains);
 
-  /// Return UFC form shared pointer
-  ///
-  /// @return     ufc::form
-  ///         The UFC form.
-  std::shared_ptr<const ufc::form> ufc_form() const;
-
   /// Check function spaces and coefficients
   void check() const;
 
-  /// Access form integrals
+  /// Access coefficients
+  FormCoefficients& coeffs() { return _coeffs; }
+  const FormCoefficients& coeffs() const { return _coeffs; }
+
+  /// Access form integrals (const)
   const FormIntegrals& integrals() const { return _integrals; }
 
-protected:
+ private:
   // The UFC form
   std::shared_ptr<const ufc::form> _ufc_form;
 
+  // Integrals associated with the Form
   FormIntegrals _integrals;
+
+  // Coefficients associated with the Form
+  FormCoefficients _coeffs;
 
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const FunctionSpace>> _function_spaces;

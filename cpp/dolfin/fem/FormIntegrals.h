@@ -231,4 +231,4 @@ private:
   // Vertex integrals
   std::vector<std::shared_ptr<ufc::vertex_integral>> _vertex_integrals;
 };
-} // namespace dolfin
+}

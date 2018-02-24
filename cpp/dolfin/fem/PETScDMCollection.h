@@ -83,6 +83,6 @@ private:
   // The PETSc DM objects
   std::vector<DM> _dms;
 };
-} // namespace dolfin
+}
 
 #endif
