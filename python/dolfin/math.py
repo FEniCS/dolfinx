@@ -6,4 +6,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 # Import pybind11 wrapped code intp dolfin.math
+
+"""Assorted math functionality"""
+
 from dolfin.cpp.math import near  # noqa
+
+__all__ = ["near"]

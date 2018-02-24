@@ -5,5 +5,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+"""Logging module"""
+
 # Import pybind11 wrapped code intp dolfin.log
 from dolfin.cpp.log import info  # noqa
