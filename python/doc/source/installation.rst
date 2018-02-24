@@ -5,14 +5,6 @@ Installation
 ============
 
 
-Quick start
-===========
-
-You probably want to read the `FEniCS download and installation web
-page <https://fenicsproject.org/download/>`_ if you just want to get
-FEniCS installed as quickly as possible.
-
-
 Building from source
 ====================
 
@@ -20,12 +12,12 @@ Building from source
 Dependencies
 ------------
 
-DOLFIN requires a compiler that supports the C++11 standard.
+DOLFIN-X requires a compiler that supports the C++14 standard.
 
 The required and optional DOLFIN dependencies are listed below.
 
-Required
-^^^^^^^^
+Required for C++ core
+^^^^^^^^^^^^^^^^^^^^^
 
 - Boost (http://www.boost.org), with the following compiled Boost
   components
@@ -37,32 +29,23 @@ Required
 
 - CMake (https://cmake.org)
 - Eigen3 (http://eigen.tuxfamily.org)
-- FFC (https://bitbucket.org/fenics-project/ffc)
 - pkg-config (https://www.freedesktop.org/wiki/Software/pkg-config/)
 - Python (used by the build system)
-- zlib
-
-
-Required for Python interface
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-- Python (including header files)
-- SWIG (http://www.swig.org)
-- NumPy (http://www.numpy.org)
-- ply (https://github.com/dabeaz/ply)
-
-
-Optional
-^^^^^^^^
-
-- HDF5 (with MPI support enabled if building DOLFIN with MPI support)
+- HDF5 (with MPI support enabled)
 - MPI
 - ParMETIS [1]_
 - PETSc (strongly recommended) [2]_
 - SCOTCH and PT-SCOTCH [1]_
 - SLEPc
 - Suitesparse [1]_
-- Trilinos
+
+
+Required for Python interface
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Python (including header files)
+- pybind11 (https://github.com/pybind/pybind11)
+- NumPy (http://www.numpy.org)
 
 
 Optional for the Python interface
