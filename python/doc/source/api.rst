@@ -35,8 +35,6 @@ Python API reference
    dolfin.la
    dolfin.la.solver
 
-   dolfin.math
-
    dolfin.mesh
    dolfin.mesh.meshfunction
    dolfin.mesh.meshvaluecollection
