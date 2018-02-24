@@ -5,8 +5,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import dolfin.cpp as cpp
-from dolfin.fem.form import Form
+# import dolfin.cpp as cpp
+# from dolfin.fem.form import Form
 
 
 # __all__ = ["LocalSolver"]
