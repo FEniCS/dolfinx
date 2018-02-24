@@ -11,9 +11,9 @@ import dolfin.cpp as cpp
 
 
 # Import pybind11 objects into dolfin.la
-from dolfin.cpp.la import VectorSpaceBasis
-from dolfin.cpp.la import (PETScMatrix, PETScVector, PETScLUSolver,
-                           PETScKrylovSolver, PETScOptions)
+from dolfin.cpp.la import VectorSpaceBasis  # noqa
+from dolfin.cpp.la import (PETScMatrix, PETScVector, PETScLUSolver,  # noqa
+                           PETScKrylovSolver, PETScOptions)  # noqa
 
 
 def la_index_dtype():
