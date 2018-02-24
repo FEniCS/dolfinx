@@ -1,1 +1,1 @@
-from dolfin.cpp.log import info
+# from dolfin.cpp.log import info

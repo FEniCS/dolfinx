@@ -39,24 +39,25 @@ class Assembler:
         if self.assembler is None:
             # Compile forms
             try:
-                a_forms =  [[_create_dolfin_form(a) for a in row] for row in self.a]
+                a_forms = [[_create_dolfin_form(a)
+                            for a in row] for row in self.a]
             except TypeError:
-                a_forms =  [[_create_dolfin_form(self.a)]]
+                a_forms = [[_create_dolfin_form(self.a)]]
             try:
-                L_forms =  [_create_dolfin_form(L) for L in self.L]
+                L_forms = [_create_dolfin_form(L) for L in self.L]
             except TypeError:
-                L_forms =  [_create_dolfin_form(self.L)]
+                L_forms = [_create_dolfin_form(self.L)]
 
             # Create assembler
             self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)
 
         # Create matrix/vector (if required)
         if A is None:
-            #comm = A_dolfin_form.mesh().mpi_comm()
+            # comm = A_dolfin_form.mesh().mpi_comm()
             comm = cpp.MPI.comm_world
             A = cpp.la.PETScMatrix(comm)
         if b is None:
-            #comm = b_dolfin_form.mesh().mpi_comm()
+            # comm = b_dolfin_form.mesh().mpi_comm()
             comm = cpp.MPI.comm_world
             b = cpp.la.PETScVector(comm)
 
@@ -155,7 +156,7 @@ def assemble_system(A_form,
 
     # Create tensors
     comm_A = A_dolfin_form.mesh().mpi_comm()
-    comm_b = A_dolfin_form.mesh().mpi_comm()
+    # comm_b = A_dolfin_form.mesh().mpi_comm()
     if A_tensor is None:
         A_tensor = cpp.la.PETScMatrix(comm_A)
     if b_tensor is None:

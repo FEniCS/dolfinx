@@ -8,6 +8,7 @@
 import subprocess
 import os
 
+
 def pkgconfig_query(s):
     pkg_config_exe = os.environ.get('PKG_CONFIG', None) or 'pkg-config'
     cmd = [pkg_config_exe] + s.split()
@@ -17,8 +18,10 @@ def pkgconfig_query(s):
     rc = proc.returncode
     return (rc, out.rstrip().decode('utf-8'))
 
+
 def exists(pkg_name):
     return (pkgconfig_query("--exists " + pkg_name)[0] == 0)
+
 
 def parse(package):
     parse_map = {'D': 'define_macros',
@@ -26,7 +29,7 @@ def parse(package):
                  'L': 'library_dirs',
                  'l': 'libraries'}
 
-    result = {x:[] for x in parse_map.values()}
+    result = {x: [] for x in parse_map.values()}
 
     # Execute the query to pkg-config and clean the result.
     out = pkgconfig_query(package + ' --cflags --libs')[1]
