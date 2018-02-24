@@ -112,7 +112,6 @@ list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
-list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "HDF5")
 
 # Add options
@@ -326,14 +325,6 @@ if (DOLFIN_ENABLE_HDF5)
   set_package_properties(HDF5 PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
     URL "https://www.hdfgroup.org/HDF5")
-endif()
-
-# Check for zlib
-if (DOLFIN_ENABLE_ZLIB)
-  find_package(ZLIB)
-  set_package_properties(ZLIB PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Compression library"
-    URL "http://www.zlib.net")
 endif()
 
 # Check for geometry debugging

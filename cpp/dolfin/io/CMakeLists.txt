@@ -1,7 +1,5 @@
 set(HEADERS
-  base64.h
   dolfin_io.h
-  Encoder.h
   HDF5File.h
   HDF5Interface.h
   HDF5Utility.h
@@ -11,7 +9,6 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
-  base64.cpp
   HDF5File.cpp
   HDF5Interface.cpp
   HDF5Utility.cpp
