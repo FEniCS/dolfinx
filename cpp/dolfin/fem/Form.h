@@ -203,7 +203,7 @@ public:
 
  private:
   // The UFC form
-  std::shared_ptr<const ufc::form> _ufc_form;
+  //  std::shared_ptr<const ufc::form> _ufc_form;
 
   // Integrals associated with the Form
   FormIntegrals _integrals;
@@ -213,9 +213,6 @@ public:
 
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const FunctionSpace>> _function_spaces;
-
-  // Coefficients
-  std::vector<std::shared_ptr<const GenericFunction>> _coefficients;
 
   // The mesh (needed for functionals when we don't have any spaces)
   std::shared_ptr<const Mesh> _mesh;

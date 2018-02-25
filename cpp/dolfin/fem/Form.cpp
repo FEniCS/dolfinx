@@ -22,9 +22,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Form::Form(std::shared_ptr<const ufc::form> ufc_form,
            std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
-    : _ufc_form(ufc_form), _integrals(*ufc_form), _coeffs(*ufc_form),
-      _function_spaces(function_spaces),
-      _coefficients(ufc_form->num_coefficients())
+    : _integrals(*ufc_form), _coeffs(*ufc_form),
+      _function_spaces(function_spaces)
 {
   dolfin_assert(ufc_form->rank() == function_spaces.size());
 
@@ -46,8 +45,7 @@ std::size_t Form::rank() const { return _function_spaces.size(); }
 //-----------------------------------------------------------------------------
 std::size_t Form::original_coefficient_position(std::size_t i) const
 {
-  dolfin_assert(_ufc_form);
-  return _ufc_form->original_coefficient_position(i);
+  return _coeffs.original_position(i);
 }
 //-----------------------------------------------------------------------------
 std::size_t Form::max_element_tensor_size() const
@@ -132,23 +130,21 @@ void Form::set_vertex_domains(
 //-----------------------------------------------------------------------------
 void Form::check() const
 {
-  dolfin_assert(_ufc_form);
-
-  // Check argument function spaces
-  for (std::size_t i = 0; i < _function_spaces.size(); ++i)
-  {
-    std::unique_ptr<ufc::finite_element> element(
-        _ufc_form->create_finite_element(i));
-    dolfin_assert(element);
-    dolfin_assert(_function_spaces[i]->element());
-    if (element->signature() != _function_spaces[i]->element()->signature())
-    {
-      log(ERROR, "Expected element: %s", element->signature());
-      log(ERROR, "Input element:    %s",
-          _function_spaces[i]->element()->signature().c_str());
-      dolfin_error("Form.cpp", "assemble form",
-                   "Wrong type of function space for argument %d", i);
-    }
-  }
+  // // Check argument function spaces
+  // for (std::size_t i = 0; i < _function_spaces.size(); ++i)
+  // {
+  //   std::unique_ptr<ufc::finite_element> element(
+  //       _ufc_form->create_finite_element(i));
+  //   dolfin_assert(element);
+  //   dolfin_assert(_function_spaces[i]->element());
+  //   if (element->signature() != _function_spaces[i]->element()->signature())
+  //   {
+  //     log(ERROR, "Expected element: %s", element->signature());
+  //     log(ERROR, "Input element:    %s",
+  //         _function_spaces[i]->element()->signature().c_str());
+  //     dolfin_error("Form.cpp", "assemble form",
+  //                  "Wrong type of function space for argument %d", i);
+  //   }
+  // }
 }
 //-----------------------------------------------------------------------------

@@ -87,7 +87,18 @@ public:
   }
 
   /// Get the element for coefficient i
-  const FiniteElement& element(std::size_t i) const { return _elements[i]; }
+  const FiniteElement& element(std::size_t i) const
+  {
+    dolfin_assert(i < _elements.size());
+    return _elements[i];
+  }
+
+  /// Original position of coefficient in UFL form
+  const std::size_t original_position(std::size_t i) const
+  {
+    dolfin_assert(i < _original_pos.size());
+    return _original_pos[i];
+  }
 
 private:
   // Finite elements for coefficients
@@ -96,7 +107,7 @@ private:
   // GenericFunctions for the coefficients
   std::vector<std::shared_ptr<const GenericFunction>> _coefficients;
 
-  // Copy of 'original positions' in ufc form
+  // Copy of 'original positions' in UFL form
   std::vector<std::size_t> _original_pos;
 };
 }
