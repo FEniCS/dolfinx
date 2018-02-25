@@ -43,8 +43,3 @@ std::size_t dolfin::ipow(std::size_t a, std::size_t n)
   return p;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::near(double x, double x0, double eps)
-{
-  return x0 - eps <= x && x <= x0 + eps;
-}
-//-----------------------------------------------------------------------------
