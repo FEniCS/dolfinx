@@ -63,13 +63,15 @@ void UFC::update(const Cell& c,
                  const ufc::cell& ufc_cell,
                  const std::vector<bool>& enabled_coefficients)
 {
+  const auto& coefficients = dolfin_form.coeffs();
+
   // Restrict coefficients to cell
-  for (std::size_t i = 0; i < dolfin_form.coeffs().size(); ++i)
+  for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
     if (!enabled_coefficients[i])
       continue;
-    const auto coefficient = dolfin_form.coeffs().get(i);
-    const auto& element = dolfin_form.coeffs().element(i);
+    const auto coefficient = coefficients.get(i);
+    const auto& element = coefficients.element(i);
     coefficient->restrict(w_pointer[i], element, c, coordinate_dofs.data(),
                           ufc_cell);
   }
@@ -79,13 +81,15 @@ void UFC::update(const Cell& c, const std::vector<double>& coordinate_dofs,
                  const ufc::cell& ufc_cell,
                  const std::vector<bool>& enabled_coefficients)
 {
+  const auto& coefficients = dolfin_form.coeffs();
+
   // Restrict coefficients to cell
-  for (std::size_t i = 0; i < dolfin_form.coeffs().size(); ++i)
+  for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
     if (!enabled_coefficients[i])
       continue;
-    const auto coefficient = dolfin_form.coeffs().get(i);
-    const auto& element = dolfin_form.coeffs().element(i);
+    const auto coefficient = coefficients.get(i);
+    const auto& element = coefficients.element(i);
     coefficient->restrict(w_pointer[i], element, c, coordinate_dofs.data(),
                           ufc_cell);
   }
@@ -98,6 +102,7 @@ void UFC::update(const Cell& c0, const std::vector<double>& coordinate_dofs0,
                  const std::vector<bool>& enabled_coefficients)
 {
   const auto& coefficients = dolfin_form.coeffs();
+
   // Restrict coefficients to facet
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
