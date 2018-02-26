@@ -17,9 +17,9 @@
 
 import pytest
 import os
+import numpy as np
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture, tempdir
-from dolfin.math import near
 
 # Supported XDMF file encoding
 encodings = (XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII)
@@ -37,6 +37,8 @@ mesh_tdims = [1, 2, 3]
 mesh_ns = [4, 7]
 
 # Meshes tested
+
+
 def mesh_factory(tdim, n):
     if tdim == 1:
         return UnitIntervalMesh(MPI.comm_world, n)
@@ -147,7 +149,8 @@ def test_save_1d_scalar(tempdir, encoding):
     filename1 = os.path.join(tempdir, "u1.xdmf")
     filename2 = os.path.join(tempdir, "u1_.xdmf")
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
-    V = FunctionSpace(mesh, "Lagrange", 2)  # FIXME: This randomly hangs in parallel
+    # FIXME: This randomly hangs in parallel
+    V = FunctionSpace(mesh, "Lagrange", 2)
     u = Function(V)
     u.vector()[:] = 1.0
 
@@ -184,7 +187,7 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
         file.read_checkpoint(u_in, "u_out", 0)
 
     result = u_in.vector() - u_out.vector()
-    assert all([near(x, 0.0) for x in result.get_local()])
+    assert all([np.isclose(x, 0.0) for x in result.get_local()])
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -221,7 +224,7 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
         file.read_checkpoint(u_in, "u_out", 0)
 
     result = u_in.vector() - u_out.vector()
-    assert all([near(x, 0.0) for x in result.get_local()])
+    assert all([np.isclose(x, 0.0) for x in result.get_local()])
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -250,7 +253,7 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
 
     for i, p in enumerate(times):
         result = u_in[i].vector() - u_out[i].vector()
-        assert all([near(x, 0.0) for x in result.get_local()])
+        assert all([np.isclose(x, 0.0) for x in result.get_local()])
 
     # test reading last
     with XDMFFile(mesh.mpi_comm(), filename) as file:
@@ -258,7 +261,7 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
         file.read_checkpoint(u_in_last, "u_out", -1)
 
     result = u_out[-1].vector() - u_in_last.vector()
-    assert all([near(x, 0.0) for x in result.get_local()])
+    assert all([np.isclose(x, 0.0) for x in result.get_local()])
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -267,7 +270,8 @@ def test_save_2d_scalar(tempdir, encoding):
         pytest.skip("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "u2.xdmf")
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
-    V = FunctionSpace(mesh, "Lagrange", 2)  # FIXME: This randomly hangs in parallel
+    # FIXME: This randomly hangs in parallel
+    V = FunctionSpace(mesh, "Lagrange", 2)
     u = Function(V)
     u.vector()[:] = 1.0
 
@@ -432,6 +436,7 @@ def test_save_3D_cell_function(tempdir, encoding, data_type):
         diff += (mf_in[cell] - mf[cell])
     assert diff == 0
 
+
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
 def test_save_2D_facet_function(tempdir, encoding, data_type):
@@ -464,6 +469,7 @@ def test_save_2D_facet_function(tempdir, encoding, data_type):
         diff += (mf_in[facet] - mf[facet])
     assert diff == 0
 
+
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
 def test_save_3D_facet_function(tempdir, encoding, data_type):
@@ -495,6 +501,7 @@ def test_save_3D_facet_function(tempdir, encoding, data_type):
     for facet in Facets(mesh):
         diff += (mf_in[facet] - mf[facet])
     assert diff == 0
+
 
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
@@ -542,6 +549,7 @@ def test_save_2D_vertex_function(tempdir, encoding, data_type):
         diff += (mf_in[v] - mf[v])
     assert diff == 0
 
+
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
 def test_save_3D_vertex_function(tempdir, encoding, data_type):
@@ -559,6 +567,7 @@ def test_save_3D_vertex_function(tempdir, encoding, data_type):
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mf, encoding)
 
+
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_points_2D(tempdir, encoding):
     if invalid_config(encoding):
@@ -575,7 +584,7 @@ def test_save_points_2D(tempdir, encoding):
         file.write(points, encoding)
 
     with XDMFFile(mesh.mpi_comm(), os.path.join(tempdir,
-                  "points_values_2D.xdmf")) as file:
+                                                "points_values_2D.xdmf")) as file:
         file.write(points, vals, encoding)
 
 
@@ -632,7 +641,6 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
             xdmf.write(meshfn, encoding)
             xdmf.write(mvc, encoding)
 
-
         with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
             mvc = MeshValueCollection(dtype_str, mesh)
             xdmf.read(mvc, tag)
@@ -646,7 +654,8 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
 
     dtype_str, dtype = data_type
 
-    meshes = [UnitSquareMesh(MPI.comm_world, 12, 12), UnitCubeMesh(MPI.comm_world, 2, 2, 2)]
+    meshes = [UnitSquareMesh(MPI.comm_world, 12, 12),
+              UnitCubeMesh(MPI.comm_world, 2, 2, 2)]
 
     for mesh in meshes:
         dim = mesh.topology().dim()

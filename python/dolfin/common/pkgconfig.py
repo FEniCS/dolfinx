@@ -5,6 +5,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+"""Tools for querying pkg-config files"""
+
 import subprocess
 import os
 
