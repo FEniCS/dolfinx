@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2007-2015 Anders Logg
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)

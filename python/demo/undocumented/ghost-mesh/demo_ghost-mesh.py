@@ -1,6 +1,3 @@
-# very rough demo to test out ghost cells
-# run with mpirun
-#
 
 from dolfin import *
 import numpy as np
