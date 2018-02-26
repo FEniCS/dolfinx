@@ -6,19 +6,18 @@
 
 #pragma once
 
+#include "GenericDofMap.h"
 #include <Eigen/Dense>
 #include <cstdlib>
+#include <dolfin/common/IndexMap.h>
+#include <dolfin/common/types.h>
+#include <dolfin/mesh/Cell.h>
 #include <map>
 #include <memory>
 #include <ufc.h>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-
-#include "GenericDofMap.h"
-#include <dolfin/common/types.h>
-#include <dolfin/la/IndexMap.h>
-#include <dolfin/mesh/Cell.h>
 
 namespace dolfin
 {

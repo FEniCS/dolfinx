@@ -4,8 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <unordered_map>
-
 #include "DofMap.h"
 #include "DofMapBuilder.h"
 #include <dolfin/common/MPI.h>
@@ -15,6 +13,7 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/Vertex.h>
+#include <unordered_map>
 
 using namespace dolfin;
 

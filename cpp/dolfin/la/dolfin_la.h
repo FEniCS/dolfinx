@@ -2,7 +2,6 @@
 
 // DOLFIN la interface
 
-#include <dolfin/la/IndexMap.h>
 #include <dolfin/la/PETScBaseMatrix.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>

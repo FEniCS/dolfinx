@@ -7,9 +7,9 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
-#include <dolfin/la/IndexMap.h>
 #include <dolfin/log/log.h>
 #include <map>
 #include <memory>

@@ -4,13 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <memory>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <set>
-#include <string>
-#include <vector>
-
+#include <Eigen/Dense>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/common/Timer.h>
@@ -19,17 +14,22 @@
 #include <dolfin/common/defines.h>
 #include <dolfin/common/timing.h>
 #include <dolfin/log/Table.h>
+#include <memory>
+#include <pybind11/eigen.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <set>
+#include <string>
+#include <vector>
 
 #include "MPICommWrapper.h"
 #include "casters.h"
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
-{
+namespace dolfin_wrappers {
 // Interface for dolfin/common
-void common(py::module& m)
-{
+void common(py::module &m) {
   // dolfin::Variable
   py::class_<dolfin::Variable, std::shared_ptr<dolfin::Variable>>(
       m, "Variable", "Variable base class")
@@ -84,6 +84,29 @@ void common(py::module& m)
   m.attr("DOLFIN_EPS") = DOLFIN_EPS;
   m.attr("DOLFIN_PI") = DOLFIN_PI;
 
+  // dolfin::IndexMap
+  py::class_<dolfin::IndexMap, std::shared_ptr<dolfin::IndexMap>> index_map(
+      m, "IndexMap");
+  index_map.def("size", &dolfin::IndexMap::size)
+      .def("block_size", &dolfin::IndexMap::block_size, "Return block size")
+      .def("local_range", &dolfin::IndexMap::local_range)
+      .def("local_to_global_unowned",
+           [](dolfin::IndexMap &self) {
+             return Eigen::Map<
+                 const Eigen::Matrix<std::size_t, Eigen::Dynamic, 1>>(
+                 self.local_to_global_unowned().data(),
+                 self.local_to_global_unowned().size());
+           },
+           py::return_value_policy::reference_internal,
+           "Return view into unowned part of local-to-global map");
+
+  // dolfin::IndexMap enums
+  py::enum_<dolfin::IndexMap::MapSize>(index_map, "MapSize")
+      .value("ALL", dolfin::IndexMap::MapSize::ALL)
+      .value("OWNED", dolfin::IndexMap::MapSize::OWNED)
+      .value("UNOWNED", dolfin::IndexMap::MapSize::UNOWNED)
+      .value("GLOBAL", dolfin::IndexMap::MapSize::GLOBAL);
+
   // dolfin::Timer
   py::class_<dolfin::Timer, std::shared_ptr<dolfin::Timer>>(m, "Timer",
                                                             "Timer class")
@@ -124,9 +147,9 @@ void common(py::module& m)
                   (void (*)()) & dolfin::SubSystemsManager::init_petsc)
       .def_static("init_petsc",
                   [](std::vector<std::string> args) {
-                    std::vector<char*> argv(args.size());
+                    std::vector<char *> argv(args.size());
                     for (std::size_t i = 0; i < args.size(); ++i)
-                      argv[i] = const_cast<char*>(args[i].data());
+                      argv[i] = const_cast<char *>(args[i].data());
                     dolfin::SubSystemsManager::init_petsc(args.size(),
                                                           argv.data());
                   })
@@ -141,8 +164,7 @@ void common(py::module& m)
 }
 
 // Interface for MPI
-void mpi(py::module& m)
-{
+void mpi(py::module &m) {
 
 #ifndef HAS_PYBIND11_MPI4PY
   // Expose the MPICommWrapper directly since we cannot cast it to
@@ -172,9 +194,9 @@ void mpi(py::module& m)
       .def_static(
           "init",
           [](std::vector<std::string> args, int required_thread_level) -> int {
-            std::vector<char*> argv(args.size());
+            std::vector<char *> argv(args.size());
             for (std::size_t i = 0; i < args.size(); ++i)
-              argv[i] = const_cast<char*>(args[i].data());
+              argv[i] = const_cast<char *>(args[i].data());
             return dolfin::SubSystemsManager::init_mpi(args.size(), argv.data(),
                                                        required_thread_level);
           },

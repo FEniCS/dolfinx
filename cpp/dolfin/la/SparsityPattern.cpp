@@ -6,8 +6,8 @@
 
 #include "SparsityPattern.h"
 #include <algorithm>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/la/IndexMap.h>
 #include <dolfin/log/LogStream.h>
 
 using namespace dolfin;

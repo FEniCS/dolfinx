@@ -4,28 +4,26 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <array>
-#include <memory>
-#include <vector>
-
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/Timer.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/GenericFunction.h>
-#include <dolfin/la/IndexMap.h>
-#include <dolfin/la/PETScMatrix.h>
-#include <dolfin/la/PETScVector.h>
-#include <dolfin/la/SparsityPattern.h>
-#include <dolfin/log/log.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Mesh.h>
-
 #include "AssemblerBase.h"
 #include "FiniteElement.h"
 #include "Form.h"
 #include "GenericDofMap.h"
 #include "SparsityPatternBuilder.h"
 #include "utils.h"
+#include <array>
+#include <dolfin/common/IndexMap.h>
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/GenericFunction.h>
+#include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/PETScVector.h>
+#include <dolfin/la/SparsityPattern.h>
+#include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Mesh.h>
+#include <memory>
+#include <vector>
 
 using namespace dolfin;
 
