@@ -293,16 +293,16 @@ void fem(py::module &m) {
       .def(
           py::init<std::shared_ptr<const ufc::form>,
                    std::vector<std::shared_ptr<const dolfin::FunctionSpace>>>())
-      .def("num_coefficients",
-           [](const dolfin::Form &self) { return self.coeffs().size(); },
-           "Return number of coefficients in form")
+    //.def("num_coefficients",
+    //       [](const dolfin::Form &self) { return self.coeffs().size(); },
+    //       "Return number of coefficients in form")
       .def("original_coefficient_position",
            &dolfin::Form::original_coefficient_position)
-      .def("set_coefficient",
-           [](dolfin::Form &self, std::size_t i,
-              std::shared_ptr<const dolfin::GenericFunction> f) {
-             self.coeffs().set(i, f);
-           })
+    //.def("set_coefficient",
+    //       [](dolfin::Form &self, std::size_t i,
+    //          std::shared_ptr<const dolfin::GenericFunction> f) {
+    //         self.coeffs().set(i, f);
+    //       })
       .def("set_mesh", &dolfin::Form::set_mesh)
       .def("set_cell_domains", &dolfin::Form::set_cell_domains)
       .def("set_exterior_facet_domains",
