@@ -27,6 +27,9 @@ class Mesh;
 /// basis expansion coefficients and a finite element are created
 /// for each coefficient function.
 
+using EigenRowMatrixXd
+    = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
 class UFC
 {
 public:
@@ -34,13 +37,11 @@ public:
   UFC(const Form& form);
 
   /// Destructor
-  ~UFC() {};
+  ~UFC(){};
 
   /// Update current cell
   void update(const Cell& cell,
-              Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
-              Eigen::Dynamic, Eigen::RowMajor>>
-              coordinate_dofs0,
+              Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs0,
               const ufc::cell& ufc_cell,
               const std::vector<bool>& enabled_coefficients);
 
@@ -53,6 +54,14 @@ public:
   void update(const Cell& cell0, const std::vector<double>& coordinate_dofs0,
               const ufc::cell& ufc_cell0, const Cell& cell1,
               const std::vector<double>& coordinate_dofs1,
+              const ufc::cell& ufc_cell1,
+              const std::vector<bool>& enabled_coefficients);
+
+  /// Update current pair of cells for macro element
+  void update(const Cell& cell0,
+              Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs0,
+              const ufc::cell& ufc_cell0, const Cell& cell1,
+              Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs1,
               const ufc::cell& ufc_cell1,
               const std::vector<bool>& enabled_coefficients);
 

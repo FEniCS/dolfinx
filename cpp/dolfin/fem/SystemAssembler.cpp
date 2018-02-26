@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <Eigen/Dense>
 #include <algorithm>
 #include <array>
 
@@ -331,7 +330,8 @@ void SystemAssembler::cell_wise_assembly(
 
   // Iterate over all cells
   ufc::cell ufc_cell;
-  std::vector<double> coordinate_dofs;
+  EigenRowMatrixXd coordinate_dofs;
+
   for (auto& cell : MeshRange<Cell>(mesh))
   {
     // Check that cell is not a ghost
@@ -550,7 +550,7 @@ void SystemAssembler::facet_wise_assembly(
 
   // Iterate over facets
   std::array<ufc::cell, 2> ufc_cell;
-  std::array<std::vector<double>, 2> coordinate_dofs;
+  std::array<EigenRowMatrixXd, 2> coordinate_dofs;
   for (auto& facet : MeshRange<Facet>(mesh))
   {
     // Number of cells sharing facet
@@ -841,7 +841,7 @@ void SystemAssembler::facet_wise_assembly(
 //-----------------------------------------------------------------------------
 void SystemAssembler::compute_exterior_facet_tensor(
     std::array<std::vector<double>, 2>& Ae, std::array<UFC*, 2>& ufc,
-    ufc::cell& ufc_cell, std::vector<double>& coordinate_dofs,
+    ufc::cell& ufc_cell, Eigen::Ref<EigenRowMatrixXd> coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
     const std::array<bool, 2>& tensor_required_facet, const Cell& cell,
     const Facet& facet,
@@ -899,7 +899,7 @@ void SystemAssembler::compute_exterior_facet_tensor(
 //-----------------------------------------------------------------------------
 void SystemAssembler::compute_interior_facet_tensor(
     std::array<UFC*, 2>& ufc, std::array<ufc::cell, 2>& ufc_cell,
-    std::array<std::vector<double>, 2>& coordinate_dofs,
+    std::array<EigenRowMatrixXd, 2>& coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
     const std::array<bool, 2>& tensor_required_facet,
     const std::array<Cell, 2>& cell,

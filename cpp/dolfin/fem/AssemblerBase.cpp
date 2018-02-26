@@ -46,9 +46,6 @@ void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
 //-----------------------------------------------------------------------------
 void AssemblerBase::check(const Form& a)
 {
-  // Check the form
-  a.check();
-
   // Extract mesh and coefficients
   dolfin_assert(a.mesh());
   const Mesh& mesh = *(a.mesh());
@@ -70,7 +67,7 @@ void AssemblerBase::check(const Form& a)
 
   const auto& coefficients = a.coeffs();
 
-  // Check that all coefficients have valid value dimensions
+  // Check that all coefficients have been set
   for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
     if (!coefficients.get(i))

@@ -57,9 +57,7 @@ UFC::UFC(const Form& a) : dolfin_form(a)
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& c,
-                 Eigen::Ref<const Eigen::Matrix<
-                     double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-                     coordinate_dofs,
+                 Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs,
                  const ufc::cell& ufc_cell,
                  const std::vector<bool>& enabled_coefficients)
 {
@@ -98,6 +96,30 @@ void UFC::update(const Cell& c, const std::vector<double>& coordinate_dofs,
 void UFC::update(const Cell& c0, const std::vector<double>& coordinate_dofs0,
                  const ufc::cell& ufc_cell0, const Cell& c1,
                  const std::vector<double>& coordinate_dofs1,
+                 const ufc::cell& ufc_cell1,
+                 const std::vector<bool>& enabled_coefficients)
+{
+  const auto& coefficients = dolfin_form.coeffs();
+
+  // Restrict coefficients to facet
+  for (std::size_t i = 0; i < coefficients.size(); ++i)
+  {
+    if (!enabled_coefficients[i])
+      continue;
+    const auto coefficient = coefficients.get(i);
+    const auto& element = coefficients.element(i);
+    const std::size_t offset = element.space_dimension();
+    coefficient->restrict(macro_w_pointer[i], element, c0,
+                          coordinate_dofs0.data(), ufc_cell0);
+    coefficient->restrict(macro_w_pointer[i] + offset, element, c1,
+                          coordinate_dofs1.data(), ufc_cell1);
+  }
+}
+//-----------------------------------------------------------------------------
+void UFC::update(const Cell& c0,
+                 Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs0,
+                 const ufc::cell& ufc_cell0, const Cell& c1,
+                 Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs1,
                  const ufc::cell& ufc_cell1,
                  const std::vector<bool>& enabled_coefficients)
 {

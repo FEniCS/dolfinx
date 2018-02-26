@@ -191,20 +191,16 @@ public:
   void set_vertex_domains(
       std::shared_ptr<const MeshFunction<std::size_t>> vertex_domains);
 
-  /// Check function spaces and coefficients
-  void check() const;
-
-  /// Access coefficients
+  /// Access coefficients (non-const)
   FormCoefficients& coeffs() { return _coeffs; }
+
+  /// Access coefficients (const)
   const FormCoefficients& coeffs() const { return _coeffs; }
 
   /// Access form integrals (const)
   const FormIntegrals& integrals() const { return _integrals; }
 
  private:
-  // The UFC form
-  //  std::shared_ptr<const ufc::form> _ufc_form;
-
   // Integrals associated with the Form
   FormIntegrals _integrals;
 

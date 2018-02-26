@@ -27,7 +27,22 @@ Form::Form(std::shared_ptr<const ufc::form> ufc_form,
 {
   dolfin_assert(ufc_form->rank() == function_spaces.size());
 
-  // FIXME: check FunctionSpaces Elements match those of ufc_form
+  // Check argument function spaces
+  for (std::size_t i = 0; i < function_spaces.size(); ++i)
+  {
+    dolfin_assert(function_spaces[i]->element());
+    std::unique_ptr<ufc::finite_element> element(
+        ufc_form->create_finite_element(i));
+
+    if (element->signature() != function_spaces[i]->element()->signature())
+    {
+      log(ERROR, "Expected element: %s", element->signature());
+      log(ERROR, "Input element:    %s",
+          function_spaces[i]->element()->signature().c_str());
+      dolfin_error("Form.cpp", "create form",
+                   "Wrong type of function space for argument %d", i);
+    }
+  }
 
   // Set _mesh from FunctionSpace and check they are the same
   if (!function_spaces.empty())
@@ -126,25 +141,5 @@ void Form::set_vertex_domains(
     std::shared_ptr<const MeshFunction<std::size_t>> vertex_domains)
 {
   dP = vertex_domains;
-}
-//-----------------------------------------------------------------------------
-void Form::check() const
-{
-  // // Check argument function spaces
-  // for (std::size_t i = 0; i < _function_spaces.size(); ++i)
-  // {
-  //   std::unique_ptr<ufc::finite_element> element(
-  //       _ufc_form->create_finite_element(i));
-  //   dolfin_assert(element);
-  //   dolfin_assert(_function_spaces[i]->element());
-  //   if (element->signature() != _function_spaces[i]->element()->signature())
-  //   {
-  //     log(ERROR, "Expected element: %s", element->signature());
-  //     log(ERROR, "Input element:    %s",
-  //         _function_spaces[i]->element()->signature().c_str());
-  //     dolfin_error("Form.cpp", "assemble form",
-  //                  "Wrong type of function space for argument %d", i);
-  //   }
-  // }
 }
 //-----------------------------------------------------------------------------
