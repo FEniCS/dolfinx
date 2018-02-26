@@ -138,14 +138,14 @@ void MeshPartitioning::partition_cells(
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
   {
-    SCOTCH::compute_partition(
+    dolfin::graph::SCOTCH::compute_partition(
         mpi_comm, cell_partition, ghost_procs, mesh_data.topology.cell_vertices,
         mesh_data.topology.cell_weight, mesh_data.geometry.num_global_vertices,
         mesh_data.topology.num_global_cells, *cell_type);
   }
   else if (partitioner == "ParMETIS")
   {
-    ParMETIS::compute_partition(
+    dolfin::graph::ParMETIS::compute_partition(
         mpi_comm, cell_partition, ghost_procs, mesh_data.topology.cell_vertices,
         mesh_data.geometry.num_global_vertices, *cell_type);
   }
@@ -327,9 +327,9 @@ void MeshPartitioning::reorder_cells_gps(
   // Make dual graph from vertex indices, using GraphBuilder
   // FIXME: this should be reused later to add the facet-cell topology
   std::vector<std::vector<std::size_t>> local_graph;
-  GraphBuilder::FacetCellMap facet_cell_map;
-  GraphBuilder::compute_local_dual_graph(mpi_comm, cell_vertices, cell_type,
-                                         local_graph, facet_cell_map);
+  dolfin::graph::GraphBuilder::FacetCellMap facet_cell_map;
+  dolfin::graph::GraphBuilder::compute_local_dual_graph(
+      mpi_comm, cell_vertices, cell_type, local_graph, facet_cell_map);
 
   const std::size_t num_all_cells = cell_vertices.shape()[0];
   const std::size_t local_cell_offset
@@ -338,7 +338,7 @@ void MeshPartitioning::reorder_cells_gps(
   // Convert between graph types, removing offset
   // FIXME: make all graphs the same type
 
-  Graph g_dual;
+  dolfin::graph::Graph g_dual;
   // Ignore the ghost cells - they will not be reordered
   // FIXME: reorder ghost cells too
   for (std::uint32_t i = 0; i != num_regular_cells; ++i)
@@ -355,7 +355,7 @@ void MeshPartitioning::reorder_cells_gps(
     }
     g_dual.push_back(conn_set);
   }
-  std::vector<int> remap = SCOTCH::compute_gps(g_dual);
+  std::vector<int> remap = dolfin::graph::SCOTCH::compute_gps(g_dual);
 
   // Resize re-ordered cell topology arrray, and copy (copy iss
   // required because ghosts are not being re-ordered).
@@ -404,7 +404,7 @@ void MeshPartitioning::reorder_vertices_gps(
   Timer timer("Reorder vertices using GPS ordering");
 
   // Make local real graph (vertices are nodes, edges are edges)
-  Graph g(num_regular_vertices);
+  dolfin::graph::Graph g(num_regular_vertices);
   for (std::int32_t i = 0; i < num_regular_cells; ++i)
   {
     for (int j = 0; j < num_vertices_per_cell; ++j)
@@ -427,7 +427,7 @@ void MeshPartitioning::reorder_vertices_gps(
     }
   }
 
-  std::vector<int> remap = SCOTCH::compute_gps(g);
+  std::vector<int> remap = dolfin::graph::SCOTCH::compute_gps(g);
 
   // Remap global-to-local mapping for regular vertices only
   reordered_vertex_global_to_local = vertex_global_to_local;

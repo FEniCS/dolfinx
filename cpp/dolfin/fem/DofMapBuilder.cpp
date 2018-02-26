@@ -1485,7 +1485,7 @@ void DofMapBuilder::compute_node_reordering(
 
   // Build graph for re-ordering. Below block is scoped to clear
   // working data structures once graph is constructed.
-  Graph graph(owned_local_size);
+  dolfin::graph::Graph graph(owned_local_size);
 
   // Create contiguous local numbering for locally owned dofs
   std::size_t my_counter = 0;
@@ -1536,9 +1536,12 @@ void DofMapBuilder::compute_node_reordering(
       = dolfin::parameters["dof_ordering_library"];
   std::vector<int> node_remap;
   if (ordering_library == "Boost")
-    node_remap = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
+  {
+    node_remap
+        = dolfin::graph::BoostGraphOrdering::compute_cuthill_mckee(graph, true);
+  }
   else if (ordering_library == "SCOTCH")
-    node_remap = SCOTCH::compute_gps(graph);
+    node_remap = dolfin::graph::SCOTCH::compute_gps(graph);
   else if (ordering_library == "random")
   {
     // NOTE: Randomised dof ordering should only be used for

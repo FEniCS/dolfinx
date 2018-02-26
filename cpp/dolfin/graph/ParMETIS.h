@@ -20,6 +20,9 @@ namespace dolfin
 {
 class CellType;
 
+namespace graph
+{
+
 /// This class provides an interface to ParMETIS
 
 class ParMETIS
@@ -66,5 +69,4 @@ private:
 #endif
 };
 }
-
-
+}

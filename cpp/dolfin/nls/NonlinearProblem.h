@@ -13,6 +13,9 @@ namespace dolfin
 class PETScMatrix;
 class PETScVector;
 
+namespace nls
+{
+
 /// This is a base class for nonlinear problems which can return the
 /// nonlinear function F(u) and its Jacobian J = dF(u)/du.
 
@@ -52,4 +55,5 @@ public:
     // Do nothing if not supplied by the user
   }
 };
+}
 }

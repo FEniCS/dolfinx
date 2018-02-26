@@ -15,6 +15,9 @@ namespace dolfin
 class PETScMatrix;
 class PETScVector;
 
+namespace nls
+{
+
 /// This is a base class for nonlinear optimisation problems which
 /// return the real-valued objective function :math:`f(x)`, its
 /// gradient :math:`F(x) = f'(x)` and its Hessian :math:`J(x) =
@@ -59,4 +62,5 @@ public:
     // Do nothing if not supplied by the user
   }
 };
+}
 }

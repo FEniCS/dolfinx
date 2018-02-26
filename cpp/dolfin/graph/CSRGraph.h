@@ -11,6 +11,9 @@
 
 namespace dolfin
 {
+namespace graph
+{
+
 /// Compressed Sparse Row graph
 
 /// This class provides a Compressed Sparse Row Graph defined by a
@@ -181,4 +184,4 @@ private:
   dolfin::MPI::Comm _mpi_comm;
 };
 }
-
+}
