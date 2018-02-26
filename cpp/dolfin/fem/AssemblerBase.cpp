@@ -76,41 +76,6 @@ void AssemblerBase::check(const Form& a)
                    "Coefficient number %d has not been set", i);
     }
   }
-
-  // // Check that the coordinate cell matches the mesh
-  // std::unique_ptr<ufc::finite_element> coordinate_element(
-  //     a.ufc_form()->create_coordinate_finite_element());
-  // dolfin_assert(coordinate_element);
-  // dolfin_assert(coordinate_element->value_rank() == 1);
-  // if (coordinate_element->value_dimension(0) != mesh.geometry().dim())
-  // {
-  //   dolfin_error("AssemblerBase.cpp", "assemble form",
-  //                "Geometric dimension of Mesh does not match value shape of "
-  //                "coordinate element in form");
-  // }
-
-  // // Check that the coordinate element degree matches the mesh degree
-  // if (coordinate_element->degree() != mesh.geometry().degree())
-  // {
-  //   dolfin_error("AssemblerBase.cpp", "assemble form",
-  //                "Mesh geometry degree does not match degree of coordinate "
-  //                "element in form");
-  // }
-
-  // std::map<CellType::Type, ufc::shape> dolfin_to_ufc_shapes
-  //     = {{CellType::Type::interval, ufc::shape::interval},
-  //        {CellType::Type::triangle, ufc::shape::triangle},
-  //        {CellType::Type::tetrahedron, ufc::shape::tetrahedron},
-  //        {CellType::Type::quadrilateral, ufc::shape::quadrilateral},
-  //        {CellType::Type::hexahedron, ufc::shape::hexahedron}};
-
-  // auto cell_type_pair = dolfin_to_ufc_shapes.find(mesh.type().cell_type());
-  // dolfin_assert(cell_type_pair != dolfin_to_ufc_shapes.end());
-  // if (coordinate_element->cell_shape() != cell_type_pair->second)
-  // {
-  //   dolfin_error("AssemblerBase.cpp", "assemble form",
-  //                "Mesh cell type does not match cell type of UFC form");
-  // }
 }
 //-----------------------------------------------------------------------------
 std::string AssemblerBase::progress_message(std::size_t rank,
