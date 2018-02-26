@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (C) 2008-2012 Joachim B. Haga and Fredrik Valdmanis
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (C) 2017 Jan Blechta
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
