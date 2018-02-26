@@ -331,6 +331,7 @@ void SystemAssembler::cell_wise_assembly(
   // Iterate over all cells
   ufc::cell ufc_cell;
   EigenRowMatrixXd coordinate_dofs;
+  std::size_t gdim = mesh.geometry().dim();
 
   for (auto& cell : MeshRange<Cell>(mesh))
   {
@@ -338,6 +339,7 @@ void SystemAssembler::cell_wise_assembly(
     dolfin_assert(!cell.is_ghost());
 
     // Get cell vertex coordinates
+    coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get UFC cell data
@@ -551,6 +553,8 @@ void SystemAssembler::facet_wise_assembly(
   // Iterate over facets
   std::array<ufc::cell, 2> ufc_cell;
   std::array<EigenRowMatrixXd, 2> coordinate_dofs;
+  const std::size_t gdim = mesh.geometry().dim();
+
   for (auto& facet : MeshRange<Facet>(mesh))
   {
     // Number of cells sharing facet
@@ -582,6 +586,7 @@ void SystemAssembler::facet_wise_assembly(
         cell[c] = Cell(mesh, cell_indices[c]);
         cell_index[c] = cell[c].index();
         local_facet[c] = cell[c].index(facet);
+        coordinate_dofs[c].resize(cell[c].num_vertices(), gdim);
         cell[c].get_coordinate_dofs(coordinate_dofs[c]);
         cell[c].get_cell_data(ufc_cell[c], local_facet[c]);
 
