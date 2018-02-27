@@ -621,9 +621,9 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
     meshfn = MeshFunction(dtype_str, mesh, mesh.topology().dim(), False)
     meshfn.rename("volume_marker", "Volume Markers")
     for c in Cells(mesh):
-        if c.midpoint().y() > 0.1:
+        if c.midpoint()[1] > 0.1:
             meshfn[c] = dtype(1)
-        if c.midpoint().y() > 0.9:
+        if c.midpoint()[1] > 0.9:
             meshfn[c] = dtype(2)
 
     for mvc_dim in range(0, tdim + 1):
@@ -632,7 +632,7 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
         mvc.rename(tag, "BC")
         mesh.init(mvc_dim, tdim)
         for e in MeshEntities(mesh, mvc_dim):
-            if (e.midpoint().x() > 0.5):
+            if (e.midpoint()[0] > 0.5):
                 mvc.set_value(e.index(), dtype(1))
 
         filename = os.path.join(tempdir, "mvc_%d.xdmf" % mvc_dim)

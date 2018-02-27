@@ -199,7 +199,7 @@ double TriangleCell::squared_distance(const Point& point, const Point& a,
 
   // Subtract projection onto plane
   const double pn = (point - a).dot(n);
-  const Point p = point - pn * n;
+  const Point p = point - n * pn;
 
   // Check if point is in vertex region outside A
   const Point ap = p - a;
@@ -220,7 +220,7 @@ double TriangleCell::squared_distance(const Point& point, const Point& a,
   if (vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0)
   {
     const double v = d1 / (d1 - d3);
-    return p.squared_distance(a + v * ab) + pn * pn;
+    return p.squared_distance(a + ab * v) + pn * pn;
   }
 
   // Check if point is in vertex region outside C
@@ -236,7 +236,7 @@ double TriangleCell::squared_distance(const Point& point, const Point& a,
   if (vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0)
   {
     const double w = d2 / (d2 - d6);
-    return p.squared_distance(a + w * ac) + pn * pn;
+    return p.squared_distance(a + ac * w) + pn * pn;
   }
 
   // Check if point is in edge region of BC and if so compute
@@ -245,7 +245,7 @@ double TriangleCell::squared_distance(const Point& point, const Point& a,
   if (va <= 0.0 && (d4 - d3) >= 0.0 && (d5 - d6) >= 0.0)
   {
     const double w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
-    return p.squared_distance(b + w * (c - b)) + pn * pn;
+    return p.squared_distance(b + (c - b) * w) + pn * pn;
   }
 
   // Point is inside triangle so return distance to plane
@@ -296,7 +296,7 @@ Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
   Point t = p2 - p1;
   t /= t.norm();
   Point n = p2 - p0;
-  n -= n.dot(t) * t;
+  n -= t * n.dot(t);
 
   // Normalize
   n /= n.norm();

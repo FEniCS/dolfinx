@@ -19,6 +19,9 @@ using namespace dolfin;
 
 namespace
 {
+// Multiplication with scalar
+inline Point operator*(double a, const Point& p) { return p * a; }
+
 // Add points to vector
 template <typename T>
 inline void add(std::vector<T>& points, const std::vector<T>& _points)
@@ -570,8 +573,7 @@ std::vector<Point> IntersectionConstruction::_intersection_triangle_segment_3d(
       for (auto P : points_2d)
       {
         const double x
-            = p0[0]
-              + ((p0[1] - P[0]) * n[1] + (p0[2] - P[1]) * n[2]) / n[0];
+            = p0[0] + ((p0[1] - P[0]) * n[1] + (p0[2] - P[1]) * n[2]) / n[0];
         points.push_back(Point(x, P[0], P[1]));
       }
       break;
@@ -579,8 +581,7 @@ std::vector<Point> IntersectionConstruction::_intersection_triangle_segment_3d(
       for (auto P : points_2d)
       {
         const double y
-            = p0[1]
-              + ((p0[0] - P[0]) * n[0] + (p0[2] - P[1]) * n[2]) / n[1];
+            = p0[1] + ((p0[0] - P[0]) * n[0] + (p0[2] - P[1]) * n[2]) / n[1];
         points.push_back(Point(P[0], y, P[1]));
       }
       break;
@@ -588,8 +589,7 @@ std::vector<Point> IntersectionConstruction::_intersection_triangle_segment_3d(
       for (auto P : points_2d)
       {
         const double z
-            = p0[2]
-              + ((p0[0] - P[0]) * n[0] + (p0[1] - P[1]) * n[1]) / n[2];
+            = p0[2] + ((p0[0] - P[0]) * n[0] + (p0[1] - P[1]) * n[1]) / n[2];
         points.push_back(Point(P[0], P[1], z));
       }
     }

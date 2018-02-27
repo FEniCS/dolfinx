@@ -396,10 +396,10 @@ bool CollisionPredicates::_collides_segment_point_2d(const Point& p0,
   const double orientation = orient2d(p0, p1, point);
 
   const Point dp = p1 - p0;
-  const double segment_length = dp.squared_norm();
+  const double segment_length = dp.dot(dp);
 
-  return orientation == 0.0 && (point - p0).squared_norm() <= segment_length
-         && (point - p1).squared_norm() <= segment_length
+  return orientation == 0.0 && (point - p0).dot(point - p0) <= segment_length
+         && (point - p1).dot(point - p1) <= segment_length
          && dp.dot(p1 - point) >= 0.0 && dp.dot(point - p0) >= 0.0;
 }
 //-----------------------------------------------------------------------------
@@ -422,16 +422,16 @@ bool CollisionPredicates::_collides_segment_point_3d(const Point& p0,
 
     if (det_xz == 0.0)
     {
-      const std::array<std::array<double, 2>, 3> yz = {
-          {{{p0[1], p0[2]}}, {{p1[1], p1[2]}}, {{point[1], point[2]}}}};
+      const std::array<std::array<double, 2>, 3> yz
+          = {{{{p0[1], p0[2]}}, {{p1[1], p1[2]}}, {{point[1], point[2]}}}};
       const double det_yz = _orient2d(yz[0].data(), yz[1].data(), yz[2].data());
 
       if (det_yz == 0.0)
       {
         // Point is aligned with segment
-        const double length = (p0 - p1).squared_norm();
-        return (point - p0).squared_norm() <= length
-               and (point - p1).squared_norm() <= length;
+        const double length = (p0 - p1).dot(p0 - p1);
+        return (point - p0).dot(point - p0) <= length
+               and (point - p1).dot(point - p1) <= length;
       }
     }
   }
@@ -511,20 +511,20 @@ bool CollisionPredicates::_collides_segment_segment_3d(const Point& p0,
     if (v[0] == 0.0 and v[1] == 0.0 and v[2] == 0.0)
     {
       // Now we know that the segments are collinear
-      if ((p0 - q0).squared_norm() <= (q1 - q0).squared_norm()
-          and (p0 - q1).squared_norm() <= (q0 - q1).squared_norm())
+      if ((p0 - q0).dot(p0 - q0) <= (q1 - q0).dot(q1 - q0)
+          and (p0 - q1).dot(p0 - q1) <= (q0 - q1).dot(q0 - q1))
         return true;
 
-      if ((p1 - q0).squared_norm() <= (q1 - q0).squared_norm()
-          and (p1 - q1).squared_norm() <= (q0 - q1).squared_norm())
+      if ((p1 - q0).dot(p1 - q0) <= (q1 - q0).dot(q1 - q0)
+          and (p1 - q1).dot(p1 - q1) <= (q0 - q1).dot(q0 - q1))
         return true;
 
-      if ((q0 - p0).squared_norm() <= (p1 - p0).squared_norm()
-          and (q0 - p1).squared_norm() <= (p0 - p1).squared_norm())
+      if ((q0 - p0).dot(q0 - p0) <= (p1 - p0).dot(p1 - p0)
+          and (q0 - p1).dot(q0 - p1) <= (p0 - p1).dot(p0 - p1))
         return true;
 
-      if ((q1 - p0).squared_norm() <= (p1 - p0).squared_norm()
-          and (q1 - p1).squared_norm() <= (p0 - p1).squared_norm())
+      if ((q1 - p0).dot(q1 - p0) <= (p1 - p0).dot(p1 - p0)
+          and (q1 - p1).dot(q1 - p1) <= (p0 - p1).dot(p0 - p1))
         return true;
     }
   }
