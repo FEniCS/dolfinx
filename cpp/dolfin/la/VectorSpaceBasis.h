@@ -14,6 +14,9 @@ namespace dolfin
 
 class PETScVector;
 
+namespace la
+{
+
 /// This class defines a basis for vector spaces, typically used for
 /// expressing nullspaces of singular operators and 'near
 /// nullspaces' used in smoothed aggregation algebraic multigrid.
@@ -51,4 +54,5 @@ private:
   // Basis vectors
   const std::vector<std::shared_ptr<PETScVector>> _basis;
 };
+}
 }

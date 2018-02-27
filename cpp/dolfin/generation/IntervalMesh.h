@@ -13,12 +13,14 @@
 
 namespace dolfin
 {
+namespace generation
+{
 
 /// Interval mesh of the 1D line [a,b].  Given the number of cells
 /// (n) in the axial direction, the total number of intervals will
 /// be n and the total number of vertices will be (n + 1).
 
-class IntervalMesh : public Mesh
+class IntervalMesh
 {
 public:
   /// Factory
@@ -44,4 +46,5 @@ private:
   // Build mesh
   static Mesh build(MPI_Comm comm, std::size_t n, std::array<double, 2> x);
 };
+}
 }

@@ -21,7 +21,11 @@ namespace dolfin
 /// Forward declarations
 class PETScMatrix;
 class PETScVector;
+
+namespace la
+{
 class VectorSpaceBasis;
+}
 
 /// This class provides an eigenvalue solver for PETSc matrices. It
 /// is a wrapper for the SLEPc eigenvalue solver.
@@ -141,11 +145,11 @@ public:
 
   /// Set deflation space. The VectorSpaceBasis does not need to be
   /// orthonormal.
-  void set_deflation_space(const VectorSpaceBasis& deflation_space);
+  void set_deflation_space(const la::VectorSpaceBasis& deflation_space);
 
   /// Set inital space. The VectorSpaceBasis does not need to be
   /// orthonormal.
-  void set_initial_space(const VectorSpaceBasis& initial_space);
+  void set_initial_space(const la::VectorSpaceBasis& initial_space);
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database

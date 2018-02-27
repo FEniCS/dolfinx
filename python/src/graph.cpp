@@ -17,7 +17,7 @@ namespace py = pybind11;
 namespace dolfin_wrappers {
 void graph(py::module &m) {
   // dolfin::Set
-  py::class_<dolfin::Set<int>>(m, "DOLFINIntSet");
+  py::class_<dolfin::common::Set<int>>(m, "DOLFINIntSet");
 
   // dolfin::Graph
   py::class_<dolfin::graph::Graph>(m, "Graph");

@@ -10,6 +10,8 @@
 
 namespace dolfin
 {
+namespace generation
+{
 
 /// A mesh consisting of a single tetrahedron with vertices at
 ///
@@ -27,5 +29,4 @@ public:
   static Mesh create();
 };
 }
-
-
+}

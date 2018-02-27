@@ -13,6 +13,9 @@
 namespace dolfin
 {
 
+namespace common
+{
+
 /// This is a set-like data structure. It is not ordered and it is based
 /// a std::vector. It uses linear search, and can be faster than std::set
 // and std::unordered_set in some cases.
@@ -33,7 +36,7 @@ public:
   Set(std::vector<T>& x) : _x(x) { _x.clear(); }
 
   /// Copy constructor
-  Set(const dolfin::Set<T>& x) : _x(x._x) {}
+  Set(const dolfin::common::Set<T>& x) : _x(x._x) {}
 
   /// Destructor
   ~Set() {}
@@ -106,5 +109,4 @@ private:
   std::vector<T> _x;
 };
 }
-
-
+}

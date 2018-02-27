@@ -16,6 +16,9 @@ namespace dolfin
 
 class Mesh;
 
+namespace function
+{
+
 /// This Function represents the mesh coordinates on a given mesh.
 class MeshCoordinates : public Expression
 {
@@ -51,4 +54,5 @@ private:
   // Warning when evaluating on cells
   mutable Event not_on_boundary;
 };
+}
 }

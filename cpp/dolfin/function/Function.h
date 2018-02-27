@@ -98,7 +98,7 @@ public:
   /// *Arguments*
   ///     v (_FunctionAXPY_)
   ///         A linear combination of other Functions
-  void operator=(const FunctionAXPY& axpy);
+  void operator=(const function::FunctionAXPY& axpy);
 
   /// Extract subfunction (view into the Function)
   ///

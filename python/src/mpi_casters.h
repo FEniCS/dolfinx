@@ -19,7 +19,7 @@
 #define VERIFY_MPI4PY(func)                                                    \
   if (!func)                                                                   \
   {                                                                            \
-    dolfin::SubSystemsManager::init_mpi();                                     \
+    dolfin::common::SubSystemsManager::init_mpi();                             \
     int rc = import_mpi4py();                                                  \
     if (rc != 0)                                                               \
     {                                                                          \

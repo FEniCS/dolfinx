@@ -197,12 +197,12 @@ void function(py::module& m)
       .def("str", &dolfin::Constant::str);
 
   // dolfin::FacetArea
-  py::class_<dolfin::FacetArea, std::shared_ptr<dolfin::FacetArea>,
+  py::class_<dolfin::function::FacetArea, std::shared_ptr<dolfin::function::FacetArea>,
              dolfin::Expression, dolfin::GenericFunction>(m, "FacetArea")
       .def(py::init<std::shared_ptr<const dolfin::Mesh>>());
 
   // dolfin::MeshCoordinates
-  py::class_<dolfin::MeshCoordinates, std::shared_ptr<dolfin::MeshCoordinates>,
+  py::class_<dolfin::function::MeshCoordinates, std::shared_ptr<dolfin::function::MeshCoordinates>,
              dolfin::Expression, dolfin::GenericFunction>(m, "MeshCoordinates")
       .def(py::init<std::shared_ptr<const dolfin::Mesh>>());
 
@@ -222,7 +222,7 @@ void function(py::module& m)
                dolfin::Function::*)(const dolfin::Expression&))
                & dolfin::Function::operator=)
       .def("_assign",
-           (void (dolfin::Function::*)(const dolfin::FunctionAXPY&))
+           (void (dolfin::Function::*)(const dolfin::function::FunctionAXPY&))
                & dolfin::Function::operator=)
       .def("__call__",
            [](dolfin::Function& self, Eigen::Ref<const Eigen::VectorXd> x) {
@@ -269,12 +269,12 @@ void function(py::module& m)
   });
 
   // dolfin::FunctionAXPY
-  py::class_<dolfin::FunctionAXPY, std::shared_ptr<dolfin::FunctionAXPY>>
+  py::class_<dolfin::function::FunctionAXPY, std::shared_ptr<dolfin::function::FunctionAXPY>>
       function_axpy(m, "FunctionAXPY");
   function_axpy.def(py::init<std::shared_ptr<const dolfin::Function>, double>())
       .def(py::init<std::shared_ptr<const dolfin::Function>,
                     std::shared_ptr<const dolfin::Function>,
-                    dolfin::FunctionAXPY::Direction>())
+                    dolfin::function::FunctionAXPY::Direction>())
       .def(py::init<std::vector<std::pair<double,
                                           std::shared_ptr<const dolfin::
                                                               Function>>>>())
@@ -285,17 +285,17 @@ void function(py::module& m)
           a.push_back({p.first,
                        p.second.attr("_cpp_object")
                            .cast<std::shared_ptr<const dolfin::Function>>()});
-        return dolfin::FunctionAXPY(a);
+        return dolfin::function::FunctionAXPY(a);
       }))
       .def(py::init([](py::object f1, double a) {
         auto _f1 = f1.attr("_cpp_object")
                        .cast<std::shared_ptr<const dolfin::Function>>();
-        return dolfin::FunctionAXPY(_f1, a);
+        return dolfin::function::FunctionAXPY(_f1, a);
       }))
       .def(py::self + py::self)
       .def(py::self + std::shared_ptr<const dolfin::Function>())
       .def("__add__",
-           [](dolfin::FunctionAXPY& self, py::object f1) {
+           [](dolfin::function::FunctionAXPY& self, py::object f1) {
              return (self
                      + f1.attr("_cpp_object")
                            .cast<std::shared_ptr<const dolfin::Function>>());
@@ -303,7 +303,7 @@ void function(py::module& m)
       .def(py::self - py::self)
       .def(py::self - std::shared_ptr<const dolfin::Function>())
       .def("__sub__",
-           [](dolfin::FunctionAXPY& self, py::object f1) {
+           [](dolfin::function::FunctionAXPY& self, py::object f1) {
              return (self
                      - f1.attr("_cpp_object")
                            .cast<std::shared_ptr<const dolfin::Function>>());
@@ -312,11 +312,11 @@ void function(py::module& m)
       .def(py::self / float());
 
   // dolfin::FunctionAXPY enum
-  py::enum_<dolfin::FunctionAXPY::Direction>(function_axpy, "Direction")
-      .value("ADD_ADD", dolfin::FunctionAXPY::Direction::ADD_ADD)
-      .value("SUB_ADD", dolfin::FunctionAXPY::Direction::SUB_ADD)
-      .value("ADD_SUB", dolfin::FunctionAXPY::Direction::ADD_SUB)
-      .value("SUB_SUB", dolfin::FunctionAXPY::Direction::SUB_SUB);
+  py::enum_<dolfin::function::FunctionAXPY::Direction>(function_axpy, "Direction")
+      .value("ADD_ADD", dolfin::function::FunctionAXPY::Direction::ADD_ADD)
+      .value("SUB_ADD", dolfin::function::FunctionAXPY::Direction::SUB_ADD)
+      .value("ADD_SUB", dolfin::function::FunctionAXPY::Direction::ADD_SUB)
+      .value("SUB_SUB", dolfin::function::FunctionAXPY::Direction::SUB_SUB);
 
   // dolfin::FunctionSpace
   py::class_<dolfin::FunctionSpace, std::shared_ptr<dolfin::FunctionSpace>,

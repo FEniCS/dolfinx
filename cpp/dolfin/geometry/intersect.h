@@ -16,6 +16,9 @@ class Mesh;
 class Point;
 class MeshPointIntersection;
 
+namespace geometry
+{
+
 /// Compute and return intersection between _Mesh_ and _Point_.
 ///
 /// *Arguments*
@@ -30,5 +33,4 @@ class MeshPointIntersection;
 std::shared_ptr<const MeshPointIntersection> intersect(const Mesh& mesh,
                                                        const Point& point);
 }
-
-
+}

@@ -480,7 +480,7 @@ void Parameters::parse_petsc(int argc, char* argv[])
   }
   log(TRACE, s);
 
-  SubSystemsManager::init_petsc(argc, argv);
+  common::SubSystemsManager::init_petsc(argc, argv);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add_parameter_set_to_po(po::options_description& desc,

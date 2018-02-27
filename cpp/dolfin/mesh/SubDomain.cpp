@@ -16,6 +16,7 @@
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 SubDomain::SubDomain(const double map_tol)
@@ -131,8 +132,8 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh,
 
   // Speed up the computation by only checking each vertex once (or
   // twice if it is on the boundary for some but not all facets).
-  RangedIndexSet boundary_visited{{{0, mesh.num_vertices()}}};
-  RangedIndexSet interior_visited{{{0, mesh.num_vertices()}}};
+  common::RangedIndexSet boundary_visited{{{0, mesh.num_vertices()}}};
+  common::RangedIndexSet interior_visited{{{0, mesh.num_vertices()}}};
   std::vector<bool> boundary_inside(mesh.num_vertices());
   std::vector<bool> interior_inside(mesh.num_vertices());
 
@@ -164,7 +165,7 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh,
     }
 
     // Select the visited-cache to use for this entity
-    RangedIndexSet& is_visited
+    common::RangedIndexSet& is_visited
         = (on_boundary ? boundary_visited : interior_visited);
     std::vector<bool>& is_inside
         = (on_boundary ? boundary_inside : interior_inside);
@@ -233,8 +234,8 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
 
   // Speed up the computation by only checking each vertex once (or
   // twice if it is on the boundary for some but not all facets).
-  RangedIndexSet boundary_visited{{{0, mesh.num_vertices()}}};
-  RangedIndexSet interior_visited{{{0, mesh.num_vertices()}}};
+  common::RangedIndexSet boundary_visited{{{0, mesh.num_vertices()}}};
+  common::RangedIndexSet interior_visited{{{0, mesh.num_vertices()}}};
   std::vector<bool> boundary_inside(mesh.num_vertices());
   std::vector<bool> interior_inside(mesh.num_vertices());
 
@@ -266,7 +267,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
     }
 
     // Select the visited-cache to use for this entity
-    RangedIndexSet& is_visited
+    common::RangedIndexSet& is_visited
         = (on_boundary ? boundary_visited : interior_visited);
     std::vector<bool>& is_inside
         = (on_boundary ? boundary_inside : interior_inside);

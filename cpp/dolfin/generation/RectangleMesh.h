@@ -16,12 +16,15 @@
 namespace dolfin
 {
 
+namespace generation
+{
+
 /// Triangular mesh of the 2D rectangle spanned by two points p0 and
 /// p1. Given the number of cells (nx, ny) in each direction, the
 /// total number of triangles will be 2*nx*ny and the total number
 /// of vertices will be (nx + 1)*(ny + 1).
 
-class RectangleMesh : public Mesh
+class RectangleMesh
 {
 public:
   /// @param    comm (MPI_Comm)
@@ -72,5 +75,4 @@ private:
                          std::array<std::size_t, 2> n);
 };
 }
-
-
+}

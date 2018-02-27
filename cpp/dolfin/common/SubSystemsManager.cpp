@@ -25,7 +25,7 @@
 #include <dolfin/log/log.h>
 #include <dolfin/parameter/GlobalParameters.h>
 
-using namespace dolfin;
+using namespace dolfin::common;
 
 // Return singleton instance. Do NOT make the singleton a global
 // static object; the method here ensures that the singleton is

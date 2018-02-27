@@ -9,7 +9,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 
-using namespace dolfin;
+using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
 dolfin::Mesh UnitTetrahedronMesh::create()

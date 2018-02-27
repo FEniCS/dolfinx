@@ -22,7 +22,7 @@ class PETScObject
 {
 public:
   /// Constructor. Ensures that PETSc has been initialised.
-  PETScObject() { SubSystemsManager::init_petsc(); }
+  PETScObject() { common::SubSystemsManager::init_petsc(); }
 
   /// Destructor
   virtual ~PETScObject() {}

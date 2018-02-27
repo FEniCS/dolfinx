@@ -22,8 +22,8 @@ void PETScObject::petsc_error(int error_code, std::string filename,
   PetscErrorMessage(error_code, &desc, nullptr);
 
   // Fetch and clear PETSc error message
-  const std::string msg = SubSystemsManager::singleton().petsc_err_msg;
-  SubSystemsManager::singleton().petsc_err_msg = "";
+  const std::string msg = common::SubSystemsManager::singleton().petsc_err_msg;
+  common::SubSystemsManager::singleton().petsc_err_msg = "";
 
   // Log detailed error info
   log(TRACE, "PETSc error in '%s', '%s'", filename.c_str(),

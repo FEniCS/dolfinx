@@ -6,7 +6,6 @@
 
 #include <cmath>
 #include <Eigen/Dense>
-
 #include "BoxMesh.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
@@ -14,6 +13,7 @@
 #include <dolfin/mesh/MeshPartitioning.h>
 
 using namespace dolfin;
+using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
 Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,

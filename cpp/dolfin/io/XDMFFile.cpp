@@ -38,6 +38,7 @@
 #include <vector>
 
 using namespace dolfin;
+using namespace dolfin::io;
 
 //-----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)

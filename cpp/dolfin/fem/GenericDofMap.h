@@ -29,7 +29,11 @@ namespace dolfin
 class Cell;
 class PETScVector;
 class Mesh;
+
+namespace mesh
+{
 class SubDomain;
+}
 
 /// This class provides a generic interface for dof maps
 
@@ -189,6 +193,6 @@ public:
 
   /// Subdomain mapping constrained boundaries, e.g. periodic
   /// conditions
-  std::shared_ptr<const SubDomain> constrained_domain;
+  std::shared_ptr<const mesh::SubDomain> constrained_domain;
 };
 }

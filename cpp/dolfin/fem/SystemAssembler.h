@@ -31,8 +31,6 @@ namespace dolfin
 {
 
 // Forward declarations
-template <typename T>
-class ArrayView;
 class Cell;
 class Facet;
 class Form;
@@ -42,6 +40,12 @@ class PETScVector;
 template <typename T>
 class MeshFunction;
 class UFC;
+
+namespace common
+{
+template <typename T>
+class ArrayView;
+}
 
 /// This class provides an assembler for systems of the form Ax =
 /// b. It differs from the default DOLFIN assembler in that it
@@ -148,22 +152,24 @@ private:
   static void matrix_block_add(
       PETScMatrix& tensor, std::vector<double>& Ae,
       std::vector<double>& macro_A, const std::array<bool, 2>& add_local_tensor,
-      const std::array<std::vector<ArrayView<const la_index_t>>, 2>& cell_dofs);
+      const std::array<std::vector<common::ArrayView<const la_index_t>>, 2>&
+          cell_dofs);
 
-  static void apply_bc(double* A, double* b,
-                       const std::vector<DirichletBC::Map>& boundary_values,
-                       const ArrayView<const dolfin::la_index_t>& global_dofs0,
-                       const ArrayView<const dolfin::la_index_t>& global_dofs1);
+  static void
+  apply_bc(double* A, double* b,
+           const std::vector<DirichletBC::Map>& boundary_values,
+           const common::ArrayView<const dolfin::la_index_t>& global_dofs0,
+           const common::ArrayView<const dolfin::la_index_t>& global_dofs1);
 
   // Return true if cell has an Dirichlet/essential boundary
   // condition applied
   static bool has_bc(const DirichletBC::Map& boundary_values,
-                     const ArrayView<const dolfin::la_index_t>& dofs);
+                     const common::ArrayView<const dolfin::la_index_t>& dofs);
 
   // Return true if element matrix is required
   static bool
   cell_matrix_required(const PETScMatrix* A, const void* integral,
                        const std::vector<DirichletBC::Map>& boundary_values,
-                       const ArrayView<const dolfin::la_index_t>& dofs);
+                       const common::ArrayView<const dolfin::la_index_t>& dofs);
 };
 }

@@ -1,5 +1,14 @@
 #pragma once
 
+namespace dolfin
+{
+/*! \namespace dolfin::la
+    \brief Linear algebra interface
+
+    Interface to linear algebra data structures and solvers
+*/
+}
+
 // DOLFIN la interface
 
 #include <dolfin/la/PETScBaseMatrix.h>
