@@ -65,7 +65,7 @@ namespace dolfin
 
 extern "C" DLL_EXPORT dolfin::mesh::SubDomain * create_{classname}()
 {{
-  return new dolfin::mesh::{classname};
+  return new dolfin::{classname};
 }}
 
 """
