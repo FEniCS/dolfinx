@@ -94,24 +94,6 @@ public:
     return _x[i];
   }
 
-  /// Return x-coordinate
-  ///
-  /// @return    double
-  ///         The x-coordinate.
-  double x() const { return _x[0]; }
-
-  /// Return y-coordinate
-  ///
-  /// @return     double
-  ///         The y-coordinate.
-  double y() const { return _x[1]; }
-
-  /// Return z-coordinate
-  ///
-  /// @return    double
-  ///         The z-coordinate.
-  double z() const { return _x[2]; }
-
   /// Return coordinate array
   ///
   /// @return double*

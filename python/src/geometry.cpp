@@ -129,9 +129,6 @@ void geometry(py::module& m)
            },
            "Return copy of coordinate array")
       .def("norm", &dolfin::Point::norm)
-      .def("x", &dolfin::Point::x)
-      .def("y", &dolfin::Point::y)
-      .def("z", &dolfin::Point::z)
       .def("distance", &dolfin::Point::distance);
 
   // dolfin::MeshPointIntersection

@@ -22,9 +22,9 @@ double Edge::length() const
   const Point p0 = v0.point();
   const Point p1 = v1.point();
 
-  double length(sqrt((p1.x() - p0.x()) * (p1.x() - p0.x())
-                     + (p1.y() - p0.y()) * (p1.y() - p0.y())
-                     + (p1.z() - p0.z()) * (p1.z() - p0.z())));
+  double length(sqrt((p1[0] - p0[0]) * (p1[0] - p0[0])
+                     + (p1[1] - p0[1]) * (p1[1] - p0[1])
+                     + (p1[2] - p0[2]) * (p1[2] - p0[2])));
 
   return length;
 }

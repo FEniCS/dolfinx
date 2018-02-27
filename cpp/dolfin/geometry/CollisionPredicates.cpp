@@ -417,13 +417,13 @@ bool CollisionPredicates::_collides_segment_point_3d(const Point& p0,
   if (det_xy == 0.0)
   {
     const std::array<std::array<double, 2>, 3> xz
-        = {{{{p0.x(), p0.z()}}, {{p1.x(), p1.z()}}, {{point.x(), point.z()}}}};
+        = {{{{p0[0], p0[2]}}, {{p1[0], p1[2]}}, {{point[0], point[2]}}}};
     const double det_xz = _orient2d(xz[0].data(), xz[1].data(), xz[2].data());
 
     if (det_xz == 0.0)
     {
       const std::array<std::array<double, 2>, 3> yz = {
-          {{{p0.y(), p0.z()}}, {{p1.y(), p1.z()}}, {{point.y(), point.z()}}}};
+          {{{p0[1], p0[2]}}, {{p1[1], p1[2]}}, {{point[1], point[2]}}}};
       const double det_yz = _orient2d(yz[0].data(), yz[1].data(), yz[2].data());
 
       if (det_yz == 0.0)

@@ -193,7 +193,7 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
   for (auto& v : MeshRange<Vertex>(mesh))
   {
     Point p = v.point();
-    file << p.x() << " " << p.y() << " " << p.z() << "  ";
+    file << p[0] << " " << p[1] << " " << p[2] << "  ";
   }
   file << "</DataArray>" << std::endl << "</Points>" << std::endl;
 

@@ -177,7 +177,7 @@ Point IntervalCell::cell_normal(const Cell& cell) const
 
   // Define normal by rotating tangent counterclockwise
   Point t = p1 - p0;
-  Point n(-t.y(), t.x());
+  Point n(-t[1], t[0]);
 
   // Normalize
   n /= n.norm();

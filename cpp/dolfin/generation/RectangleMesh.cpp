@@ -49,10 +49,10 @@ Mesh RectangleMesh::build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
   const std::size_t ny = n[1];
 
   // Extract minimum and maximum coordinates
-  const double x0 = std::min(p0.x(), p1.x());
-  const double x1 = std::max(p0.x(), p1.x());
-  const double y0 = std::min(p0.y(), p1.y());
-  const double y1 = std::max(p0.y(), p1.y());
+  const double x0 = std::min(p0[0], p1[0]);
+  const double x1 = std::max(p0[0], p1[0]);
+  const double y0 = std::min(p0[1], p1[1]);
+  const double y1 = std::max(p0[1], p1[1]);
 
   const double a = x0;
   const double b = x1;
