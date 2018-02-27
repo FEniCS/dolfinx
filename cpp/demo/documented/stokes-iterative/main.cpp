@@ -25,20 +25,20 @@
 // Note that the sign for the pressure has been flipped for symmetry.
 //
 
-#include <dolfin.h>
 #include "Stokes.h"
 #include "StokesPreconditioner.h"
+#include <dolfin.h>
 
 using namespace dolfin;
 
-#if defined(HAS_PETSC) || defined(HAS_TRILINOS)
-
-int main()
+int main(int argc, char* argv[])
 {
+  MPI_Init(&argc, &argv);
+
   // Sub domain for left-hand side
   class Left : public SubDomain
   {
-    bool inside(const Array<double>& x, bool on_boundary) const
+    bool inside(Eigen::Ref<const Eigen::VectorXd> x, bool on_boundary) const
     {
       return x[0] < DOLFIN_EPS;
     }
@@ -47,7 +47,7 @@ int main()
   // Sub domain for right-hand side
   class Right : public SubDomain
   {
-    bool inside(const Array<double>& x, bool on_boundary) const
+    bool inside(Eigen::Ref<const Eigen::VectorXd> x, bool on_boundary) const
     {
       return std::abs(1.0 - x[0]) < DOLFIN_EPS;
     }
@@ -56,7 +56,7 @@ int main()
   // Sub domain for top and bottom
   class TopBottom : public SubDomain
   {
-    bool inside(const Array<double>& x, bool on_boundary) const
+    bool inside(Eigen::Ref<const Eigen::VectorXd> x, bool on_boundary) const
     {
       return std::abs(1.0 - x[1]) < DOLFIN_EPS || std::abs(x[1]) < DOLFIN_EPS;
     }
@@ -66,42 +66,21 @@ int main()
   class Inflow : public Expression
   {
   public:
+    Inflow() : Expression({3}) {}
 
-    Inflow() : Expression(3) {}
-
-    void eval(Array<double>& values, const Array<double>& x) const
+    void eval(Eigen::Ref<Eigen::VectorXd> values,
+              Eigen::Ref<const Eigen::VectorXd> x) const
     {
-      values[0] = -sin(x[1]*DOLFIN_PI);
+      values[0] = -sin(x[1] * DOLFIN_PI);
       values[1] = 0.0;
       values[2] = 0.0;
     }
-
   };
-
-  // Check for available preconditioners
-  if (!has_krylov_solver_preconditioner("amg"))
-  {
-    info("Sorry, this demo is only available when DOLFIN is compiled with AMG "
-	 "preconditioner, Hypre or ML.");
-    return 0;
-  }
-
-  // Check for available Krylov solvers
-  std::string krylov_method;
-  if (has_krylov_solver_method("minres"))
-    krylov_method = "minres";
-  else if (has_krylov_solver_method("tfqmr"))
-    krylov_method = "tfqmr";
-  else
-  {
-    info("Default linear algebra backend was not compiled with MINRES or TFQMR "
-         "Krylov subspace method. Terminating.");
-    return 0;
-  }
 
   // Create mesh
   auto mesh = std::make_shared<Mesh>(
-    UnitCubeMesh::create({{16, 16, 16}}, CellType::Type::hexahedron));
+      BoxMesh::create(MPI_COMM_WORLD, {{Point(0, 0, 0), Point(1, 1, 1)}},
+                      {{16, 16, 16}}, CellType::Type::hexahedron));
 
   // Create function space and subspaces
   auto W = std::make_shared<Stokes::FunctionSpace>(mesh);
@@ -109,65 +88,59 @@ int main()
   // Set-up infow boundary condition
   auto inflow_prfofile = std::make_shared<Inflow>();
   auto right = std::make_shared<Right>();
-  auto inflow = std::make_shared<DirichletBC>(W->sub(0), inflow_prfofile,
-                                              right);
+  auto inflow
+      = std::make_shared<DirichletBC>(W->sub({0}), inflow_prfofile, right);
 
   // Set-up no-slip boundary condition
-  auto zero_vector = std::make_shared<Constant>(0.0, 0.0, 0.0);
+  std::vector<double> zero_const = {0.0, 0.0, 0.0};
+  auto zero_vector = std::make_shared<Constant>(zero_const);
   auto top_bottom = std::make_shared<TopBottom>();
-  auto noslip = std::make_shared<DirichletBC>(W->sub(0), zero_vector,
-                                              top_bottom);
+  auto noslip
+      = std::make_shared<DirichletBC>(W->sub({0}), zero_vector, top_bottom);
 
   // Create forms for the Stokes problem
-  auto f = std::make_shared<Constant>(0.0, 0.0, 0.0);
-  Stokes::BilinearForm a(W, W);
-  Stokes::LinearForm L(W);
-  L.f = f;
+  auto f = std::make_shared<Constant>(zero_const);
+  auto a = std::make_shared<Stokes::BilinearForm>(W, W);
+  auto L = std::make_shared<Stokes::LinearForm>(W);
+  L->f = f;
 
   // Create solution function
   Function w(W);
 
   // Create form for the Stokes preconditioner
-  StokesPreconditioner::BilinearForm a_P(W, W);
+  auto a_P = std::make_shared<StokesPreconditioner::BilinearForm>(W, W);
 
   // Assemble precondtioner system (P, b_dummy)
-  auto P = std::make_shared<Matrix>();
-  Vector b;
-  assemble_system(*P, b, a_P, L, {inflow, noslip});
+  auto P = std::make_shared<PETScMatrix>(mesh->mpi_comm());
+  PETScVector b(mesh->mpi_comm());
+  SystemAssembler s1(a_P, L, {inflow, noslip});
+  s1.assemble(*P, b);
 
   // Assemble Stokes system (A, b)
-  auto A = std::make_shared<Matrix>();
-  assemble_system(*A, b, a, L, {inflow, noslip});
+  auto A = std::make_shared<PETScMatrix>(mesh->mpi_comm());
+  SystemAssembler s2(a, L, {inflow, noslip});
+  s2.assemble(*A, b);
 
   // Create Krylov solver with specified method and preconditioner
-  KrylovSolver solver(krylov_method, "amg");
+  PETScKrylovSolver solver(mesh->mpi_comm(), "minres", "amg");
 
   // Set operator (A) and precondtioner matrix (P)
-  solver.set_operators(A, P);
+  solver.set_operators(*A, *P);
 
   // Solve system
   solver.solve(*w.vector(), b);
   cout << "Soln norm: " << w.vector()->norm("l2") << endl;
 
   // Split solution
-  Function u = w[0];
-  Function p = w[1];
+  Function u; // = w[0];
+  Function p; // = w[1];
 
   // Save solution in VTK format
-  File ufile_pvd("velocity.pvd");
-  ufile_pvd << u;
-  File pfile_pvd("pressure.pvd");
-  pfile_pvd << p;
+  VTKFile ufile_pvd("velocity.pvd");
+  ufile_pvd.write(u);
+  VTKFile pfile_pvd("pressure.pvd");
+  pfile_pvd.write(p);
 
+  MPI_Finalize();
   return 0;
 }
-
-#else
-
-int main()
-{
-  info("DOLFIN has not been configured with Trilinos or PETSc. Exiting.");
-  return 0;
-}
-
-#endif
