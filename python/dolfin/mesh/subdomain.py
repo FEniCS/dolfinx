@@ -12,8 +12,6 @@ from dolfin.jit.jit import compile_class, _math_header
 
 def jit_generate(class_data, module_name, signature, parameters):
 
-
-    print("****", parameters)
     template_code = """
 // Based on https://gcc.gnu.org/wiki/Visibility
 #if defined _WIN32 || defined __CYGWIN__
