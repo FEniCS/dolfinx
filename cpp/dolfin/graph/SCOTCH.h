@@ -24,6 +24,9 @@ namespace dolfin
 // Forward declarations
 class CellType;
 
+namespace graph
+{
+
 /// This class provides an interface to SCOTCH-PT (parallel version)
 
 class SCOTCH
@@ -95,4 +98,5 @@ private:
                         std::vector<int>& cell_partition,
                         std::map<std::int64_t, std::vector<int>>& ghost_procs);
 };
+}
 }

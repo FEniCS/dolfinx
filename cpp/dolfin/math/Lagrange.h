@@ -6,12 +6,15 @@
 
 #pragma once
 
-#include <vector>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/Event.h>
+#include <vector>
 
 namespace dolfin
 {
+namespace math
+{
+
 /// Lagrange polynomial (basis) with given degree q determined by
 /// n = q + 1 nodal points.
 ///
@@ -95,5 +98,4 @@ private:
   Event instability_detected;
 };
 }
-
-
+}

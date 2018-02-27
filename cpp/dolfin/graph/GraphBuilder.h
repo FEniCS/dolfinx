@@ -11,6 +11,7 @@
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfin/common/MPI.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include <set>
 #include <utility>
 #include <vector>
@@ -22,6 +23,9 @@ namespace dolfin
 class CellType;
 class GenericDofMap;
 class Mesh;
+
+namespace graph
+{
 
 /// This class builds a Graph corresponding to various objects
 
@@ -53,7 +57,7 @@ public:
                      std::set<std::int64_t>& ghost_vertices);
 
 private:
-  friend class MeshPartitioning;
+  friend class dolfin::MeshPartitioning;
 
   typedef std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>
       FacetCellMap;
@@ -88,5 +92,4 @@ private:
       FacetCellMap& facet_cell_map, std::set<std::int64_t>& ghost_vertices);
 };
 }
-
-
+}

@@ -14,6 +14,9 @@
 namespace dolfin
 {
 
+namespace graph
+{
+
 /// This class computes graph re-orderings. It uses Boost Graph.
 
 class BoostGraphOrdering
@@ -45,5 +48,4 @@ private:
   static T build_csr_directed_graph(const X& graph);
 };
 }
-
-
+}
