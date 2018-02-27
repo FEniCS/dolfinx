@@ -1,6 +1,5 @@
 set(HEADERS
   dolfin_log.h
-  Event.h
   Logger.h
   log.h
   LogLevel.h
@@ -10,7 +9,6 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
-  Event.cpp
   log.cpp
   Logger.cpp
   LogManager.cpp

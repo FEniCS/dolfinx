@@ -8,7 +8,6 @@
 
 #include "Expression.h"
 #include <Eigen/Dense>
-#include <dolfin/log/Event.h>
 #include <memory>
 
 namespace dolfin
@@ -47,8 +46,5 @@ public:
 private:
   // The mesh
   std::shared_ptr<const Mesh> _mesh;
-
-  // Warning when evaluating on cells
-  mutable Event not_on_boundary;
 };
 }

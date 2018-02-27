@@ -7,7 +7,6 @@
 #pragma once
 
 #include <dolfin/common/Variable.h>
-#include <dolfin/log/Event.h>
 #include <vector>
 
 namespace dolfin
@@ -94,8 +93,6 @@ private:
 
   std::vector<double> points;
   std::vector<double> constants;
-
-  Event instability_detected;
 };
 }
 }

@@ -12,16 +12,13 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 dolfin::math::Lagrange::Lagrange(std::size_t q)
-    : _q(q), counter(0), points(q + 1, 0.0),
-      instability_detected("Warning: Lagrange polynomial is not numerically "
-                           "stable. The degree is too high.")
+    : _q(q), counter(0), points(q + 1, 0.0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 dolfin::math::Lagrange::Lagrange(const Lagrange& p)
-    : _q(p._q), counter(p.counter), points(p.points),
-      instability_detected(p.instability_detected)
+    : _q(p._q), counter(p.counter), points(p.points)
 {
   if (counter == size())
     init();
@@ -150,8 +147,8 @@ void dolfin::math::Lagrange::init()
       }
     }
 
-    if (std::abs(product) < DOLFIN_EPS)
-      instability_detected();
+    //if (std::abs(product) < DOLFIN_EPS)
+    //  instability_detected();
 
     constants[i] = 1.0 / product;
   }
