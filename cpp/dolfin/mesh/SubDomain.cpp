@@ -29,12 +29,12 @@ SubDomain::~SubDomain()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector<bool, Eigen::Dynamic>
+Eigen::Matrix<bool, Eigen::Dynamic, 1>
 SubDomain::inside(Eigen::Ref<const EigenRowMatrixXd> x, bool on_boundary) const
 {
   dolfin_error("SubDomain.cpp", "check whether point is inside subdomain",
                "Function inside() not implemented by user");
-  return false;
+  return Eigen::Matrix<bool, 0, 1>();
 }
 //-----------------------------------------------------------------------------
 void SubDomain::map(Eigen::Ref<const Eigen::VectorXd> x,
@@ -136,12 +136,6 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh,
   std::vector<bool> boundary_inside(mesh.num_vertices());
   std::vector<bool> interior_inside(mesh.num_vertices());
 
-  // Find out which vertices match the 'inside' condition
-  const std::vector<double>& x = mesh.geometry().x();
-  Eigen::Map<const Eigen::MatrixXd> vertex_coords(
-      x.data(), x.size() / _geometric_dimension, _geometric_dimension);
-  Eigen::Vector<bool, Eigen::Dynamic> vertex_inside = inside(vertex_coords);
-
   // Always false when marking cells
   bool on_boundary = false;
 
@@ -183,7 +177,14 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh,
     {
       for (auto& vertex : EntityRange<Vertex>(entity))
       {
-        if (!vertex_inside[vertex.index()])
+        if (is_visited.insert(vertex.index()))
+        {
+          Eigen::Map<Eigen::RowVectorXd> x(const_cast<double*>(vertex.x()),
+                                           _geometric_dimension);
+          is_inside[vertex.index()] = inside(x, on_boundary)[0];
+        }
+
+        if (!is_inside[vertex.index()])
         {
           all_points_inside = false;
           break;
@@ -194,10 +195,10 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh,
     // Check midpoint (works also in the case when we have a single vertex)
     if (all_points_inside && check_midpoint)
     {
-      Eigen::Map<Eigen::VectorXd> x(
+      Eigen::Map<Eigen::RowVectorXd> x(
           const_cast<double*>(entity.midpoint().coordinates()),
           _geometric_dimension);
-      if (!inside(x, on_boundary))
+      if (!inside(x, on_boundary)[0])
         all_points_inside = false;
     }
 
@@ -280,9 +281,9 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
       {
         if (is_visited.insert(vertex.index()))
         {
-          Eigen::Map<Eigen::VectorXd> x(const_cast<double*>(vertex.x()),
-                                        _geometric_dimension);
-          is_inside[vertex.index()] = inside(x, on_boundary);
+          Eigen::Map<Eigen::RowVectorXd> x(const_cast<double*>(vertex.x()),
+                                           _geometric_dimension);
+          is_inside[vertex.index()] = inside(x, on_boundary)[0];
         }
 
         if (!is_inside[vertex.index()])
@@ -296,10 +297,10 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
     // Check midpoint (works also in the case when we have a single vertex)
     if (all_points_inside && check_midpoint)
     {
-      Eigen::Map<Eigen::VectorXd> x(
+      Eigen::Map<Eigen::RowVectorXd> x(
           const_cast<double*>(entity.midpoint().coordinates()),
           _geometric_dimension);
-      if (!inside(x, on_boundary))
+      if (!inside(x, on_boundary)[0])
         all_points_inside = false;
     }
 

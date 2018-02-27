@@ -20,30 +20,33 @@
 
 # Begin demo
 
-
+import numpy as np
 from dolfin import *
 
 # Create classes for defining parts of the boundaries and the interior
 # of the domain
 class Left(SubDomain):
     def inside(self, x, on_boundary):
-        return near(x[0], 0.0)
+        return np.isclose(x[:,0], 0.0)
 
 class Right(SubDomain):
     def inside(self, x, on_boundary):
-        return near(x[0], 1.0)
+        return np.isclose(x[:,0], 1.0)
 
 class Bottom(SubDomain):
     def inside(self, x, on_boundary):
-        return near(x[1], 0.0)
+        return np.isclose(x[:,1], 0.0)
 
 class Top(SubDomain):
     def inside(self, x, on_boundary):
-        return near(x[1], 1.0)
+        return np.isclose(x[:,1], 1.0)
 
 class Obstacle(SubDomain):
     def inside(self, x, on_boundary):
-        return (between(x[1], (0.5, 0.7)) and between(x[0], (0.2, 1.0)))
+        print(x)
+        c1 = np.logical_and(x[:, 1] < 0.7, x[:, 1] > 0.5)
+        c2 = np.logical_and(x[:, 0] > 0.2, x[:, 0] < 1.0)
+        return np.logical_and(c1, c2)
 
 # Initialize sub-domain instances
 left = Left()
@@ -53,7 +56,7 @@ bottom = Bottom()
 obstacle = Obstacle()
 
 # Define mesh
-mesh = UnitSquareMesh(64, 64)
+mesh = UnitSquareMesh(MPI.comm_world, 64, 64)
 
 # Initialize mesh function for interior domains
 domains = MeshFunction("size_t", mesh, mesh.topology().dim())

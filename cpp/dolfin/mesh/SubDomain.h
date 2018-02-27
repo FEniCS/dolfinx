@@ -50,7 +50,7 @@ public:
   ///
   /// @return    bool
   ///         True for points inside the subdomain.
-  virtual Eigen::Vector<bool, Eigen::Dynamic>
+  virtual Eigen::Matrix<bool, Eigen::Dynamic, 1>
   inside(Eigen::Ref<const EigenRowMatrixXd> x, bool on_boundary) const;
 
   /// Map coordinate x in domain H to coordinate y in domain G (used for
