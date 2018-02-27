@@ -24,6 +24,11 @@ namespace dolfin
 
 class PETScVector;
 
+namespace mesh
+{
+  class SubDomain;
+}
+
 /// Degree-of-freedom map
 
 /// This class handles the mapping of degrees of freedom. It builds
@@ -48,10 +53,10 @@ public:
   ///         The ufc::dofmap.
   /// @param[in] mesh (Mesh)
   ///         The mesh.
-  /// @param[in] constrained_domain (SubDomain)
+  /// @param[in] constrained_domain (mesh::SubDomain)
   ///         The subdomain marking the constrained (tied) boundaries.
   DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh,
-         std::shared_ptr<const SubDomain> constrained_domain);
+         std::shared_ptr<const mesh::SubDomain> constrained_domain);
 
 private:
   // Create a sub-dofmap (a view) from parent_dofmap

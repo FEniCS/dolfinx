@@ -15,6 +15,9 @@ namespace dolfin
 
 class Mesh;
 
+namespace function
+{
+
 /// This Function represents the mesh coordinates on a given mesh.
 class MeshCoordinates : public Expression
 {
@@ -47,4 +50,5 @@ private:
   // The mesh
   std::shared_ptr<const Mesh> _mesh;
 };
+}
 }

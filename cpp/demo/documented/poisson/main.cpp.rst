@@ -132,7 +132,7 @@ boundary condition should be applied.
 .. code-block:: cpp
 
    // Sub domain for Dirichlet boundary condition
-   class DirichletBoundary : public SubDomain
+   class DirichletBoundary : public mesh::SubDomain
    {
      bool inside(Eigen::Ref<const Eigen::VectorXd> x, bool on_boundary) const
      {
@@ -155,7 +155,7 @@ the form file) defined relative to this mesh, we do as follows
 
      // Create mesh and function space
      std::array<Point, 2> pt = {Point(0.,0.), Point(1.,1.)};
-     auto mesh = std::make_shared<Mesh>(RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, CellType::Type::triangle));
+     auto mesh = std::make_shared<Mesh>(generation::RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, CellType::Type::triangle));
      auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created

@@ -24,9 +24,13 @@ namespace dolfin
 class DofMap;
 class Mesh;
 class IndexMap;
-class SubDomain;
 class UFC;
 class Cell;
+
+namespace mesh
+{
+class SubDomain;
+}
 
 /// Builds a DofMap on a Mesh
 
@@ -41,7 +45,7 @@ public:
   /// @param[in] dolfin_mesh
   /// @param[in] constrained_domain
   static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
-                    std::shared_ptr<const SubDomain> constrained_domain);
+                    std::shared_ptr<const mesh::SubDomain> constrained_domain);
 
   /// Build sub-dofmap. This is a view into the parent dofmap.
   ///
@@ -127,7 +131,7 @@ private:
       std::vector<std::vector<std::int64_t>>& global_entity_indices,
       std::vector<std::size_t>& num_mesh_entities_global,
       const std::vector<bool>& needs_mesh_entities, const Mesh& mesh,
-      const SubDomain& constrained_domain);
+      const mesh::SubDomain& constrained_domain);
 
   static std::shared_ptr<const ufc::dofmap>
   build_ufc_node_graph(std::vector<std::vector<la_index_t>>& node_dofmap,
@@ -135,7 +139,7 @@ private:
                        std::vector<std::size_t>& num_mesh_entities_global,
                        std::shared_ptr<const ufc::dofmap> ufc_dofmap,
                        const Mesh& mesh,
-                       std::shared_ptr<const SubDomain> constrained_domain,
+                       std::shared_ptr<const mesh::SubDomain> constrained_domain,
                        const std::size_t block_size);
 
   static std::shared_ptr<const ufc::dofmap> build_ufc_node_graph_constrained(
@@ -144,7 +148,7 @@ private:
       std::vector<int>& node_ufc_local_to_local,
       std::vector<std::size_t>& num_mesh_entities_global,
       std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh,
-      std::shared_ptr<const SubDomain> constrained_domain,
+      std::shared_ptr<const mesh::SubDomain> constrained_domain,
       const std::size_t block_size);
 
   // Mark shared nodes. Boundary nodes are assigned a random

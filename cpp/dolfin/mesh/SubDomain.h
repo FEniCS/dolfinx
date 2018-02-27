@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <dolfin/common/constants.h>
+#include <dolfin/fem/DirichletBC.h>
 #include <map>
 
 namespace dolfin
@@ -20,6 +21,9 @@ template <typename T>
 class MeshFunction;
 template <typename T>
 class MeshValueCollection;
+
+namespace mesh
+{
 
 /// This class defines the interface for definition of subdomains.
 /// Alternatively, subdomains may be defined by a _Mesh_ and a
@@ -198,11 +202,11 @@ private:
                      bool check_midpoint) const;
 
   // Friends
-  friend class DirichletBC;
-  friend class PeriodicBC;
+  friend class dolfin::DirichletBC;
 
   // Geometric dimension, needed for SWIG interface, will be set before
   // calls to inside() and map()
   mutable std::size_t _geometric_dimension;
 };
+}
 }

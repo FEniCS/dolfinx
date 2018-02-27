@@ -167,6 +167,6 @@ void geometry(py::module& m)
           &dolfin::IntersectionConstruction::intersection_triangle_segment_2d);
 
   // dolfin/geometry free functions
-  m.def("intersect", &dolfin::intersect);
+  m.def("intersect", &dolfin::geometry::intersect);
 }
 }

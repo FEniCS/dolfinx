@@ -343,7 +343,7 @@ void MeshPartitioning::reorder_cells_gps(
   // FIXME: reorder ghost cells too
   for (std::uint32_t i = 0; i != num_regular_cells; ++i)
   {
-    dolfin::Set<int> conn_set;
+    dolfin::common::Set<int> conn_set;
     for (auto q = local_graph[i].begin(); q != local_graph[i].end(); ++q)
     {
       dolfin_assert(*q >= local_cell_offset);

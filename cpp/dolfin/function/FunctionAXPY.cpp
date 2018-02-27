@@ -10,6 +10,7 @@
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
+using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
 FunctionAXPY::FunctionAXPY(std::shared_ptr<const Function> func, double scalar)

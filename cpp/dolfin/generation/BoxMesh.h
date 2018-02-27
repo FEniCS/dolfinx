@@ -16,12 +16,15 @@
 namespace dolfin
 {
 
+namespace generation
+{
+
 /// Tetrahedral mesh of the 3D rectangular prism spanned by two
 /// points p0 and p1. Given the number of cells (nx, ny, nz) in each
 /// direction, the total number of tetrahedra will be 6*nx*ny*nz and
 /// the total number of vertices will be (nx + 1)*(ny + 1)*(nz + 1).
 
-class BoxMesh : public Mesh
+class BoxMesh
 {
 public:
   /// Create a uniform finite element _Mesh_ over the rectangular
@@ -59,7 +62,8 @@ public:
     }
 
     // Will never reach this point
-    return build_tet(comm, p, n);;
+    return build_tet(comm, p, n);
+    ;
   }
 
 private:
@@ -70,5 +74,4 @@ private:
   static Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n);
 };
 }
-
-
+}

@@ -18,6 +18,7 @@
 #include <vector>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 // Comparison operator for hashing coordinates. Note that two
 // coordinates are considered equal if equal to within specified

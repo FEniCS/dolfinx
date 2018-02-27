@@ -29,6 +29,10 @@ class MeshFunction;
 template <typename T>
 class MeshValueCollection;
 
+namespace io
+{
+
+/// Interface to HDF5 files
 class HDF5File : public Variable
 {
 
@@ -252,5 +256,5 @@ void HDF5File::write_data(const std::string dataset_name,
 }
 //---------------------------------------------------------------------------
 }
-
+}
 #endif

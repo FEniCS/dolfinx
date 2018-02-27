@@ -81,7 +81,7 @@ tabulate_coordinates_to_dofs(const FunctionSpace& V)
   // Speed up the computations by only visiting (most) dofs once
   const std::int64_t local_size
       = dofmap.ownership_range()[1] - dofmap.ownership_range()[0];
-  RangedIndexSet already_visited(std::array<std::int64_t, 2>{{0, local_size}});
+  common::RangedIndexSet already_visited(std::array<std::int64_t, 2>{{0, local_size}});
 
   for (auto& cell : MeshRange<Cell>(mesh))
   {

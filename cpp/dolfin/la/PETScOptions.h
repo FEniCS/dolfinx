@@ -48,7 +48,7 @@ public:
   template <typename T>
   static void set(std::string option, const T value)
   {
-    SubSystemsManager::init_petsc();
+    common::SubSystemsManager::init_petsc();
 
     if (option[0] != '-')
       option = '-' + option;

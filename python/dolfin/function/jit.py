@@ -26,8 +26,8 @@ def jit_generate(class_data, module_name, signature, parameters):
     #define DLL_EXPORT __attribute__ ((visibility ("default")))
 #endif
 
+#include <dolfin/common/constants.h>
 #include <dolfin/function/Expression.h>
-#include <dolfin/math/basic.h>
 #include <Eigen/Dense>
 
 {math_header}

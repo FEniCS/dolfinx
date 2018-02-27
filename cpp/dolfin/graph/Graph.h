@@ -15,14 +15,13 @@
 
 namespace dolfin
 {
-
 namespace graph
 {
 
 /// Typedefs for simple graph data structures
 
 /// DOLFIN container for graphs
-typedef dolfin::Set<int> graph_set_type;
+typedef dolfin::common::Set<int> graph_set_type;
 /// Vector of unordered Sets
 typedef std::vector<graph_set_type> Graph;
 }

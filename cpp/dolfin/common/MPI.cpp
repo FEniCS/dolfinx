@@ -14,7 +14,7 @@ dolfin::MPI::Comm::Comm(MPI_Comm comm)
 {
 #ifdef HAS_MPI
   // Make sure MPI has been initialised
-  SubSystemsManager::init_mpi();
+  common::SubSystemsManager::init_mpi();
 
   // Duplicate communicator
   if (comm != MPI_COMM_NULL)
@@ -124,7 +124,7 @@ std::uint32_t dolfin::MPI::rank(const MPI_Comm comm)
 std::uint32_t dolfin::MPI::size(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
-  SubSystemsManager::init_mpi();
+  common::SubSystemsManager::init_mpi();
   int size;
   MPI_Comm_size(comm, &size);
   return size;

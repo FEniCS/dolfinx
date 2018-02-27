@@ -246,7 +246,7 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
 //-----------------------------------------------------------------------------
 bool PETScMatrix::empty() const
 {
-  auto sizes = PETScBaseMatrix::size();
+  auto sizes = la::PETScBaseMatrix::size();
   dolfin_assert((sizes[0] < 1 and sizes[1] < 1)
                 or (sizes[0] > 0 and sizes[1] > 0));
   return (sizes[0] < 1) and (sizes[1] < 1);
@@ -597,7 +597,7 @@ const PETScMatrix& PETScMatrix::operator=(const PETScMatrix& A)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_nullspace(const VectorSpaceBasis& nullspace)
+void PETScMatrix::set_nullspace(const la::VectorSpaceBasis& nullspace)
 {
   // Build PETSc nullspace
   MatNullSpace petsc_ns = create_petsc_nullspace(nullspace);
@@ -612,7 +612,7 @@ void PETScMatrix::set_nullspace(const VectorSpaceBasis& nullspace)
   MatNullSpaceDestroy(&petsc_ns);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_near_nullspace(const VectorSpaceBasis& nullspace)
+void PETScMatrix::set_near_nullspace(const la::VectorSpaceBasis& nullspace)
 {
   // Create PETSc nullspace
   MatNullSpace petsc_ns = create_petsc_nullspace(nullspace);
@@ -681,7 +681,7 @@ std::string PETScMatrix::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 MatNullSpace
-PETScMatrix::create_petsc_nullspace(const VectorSpaceBasis& nullspace) const
+PETScMatrix::create_petsc_nullspace(const la::VectorSpaceBasis& nullspace) const
 {
   PetscErrorCode ierr;
 

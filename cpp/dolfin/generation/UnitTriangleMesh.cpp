@@ -10,7 +10,7 @@
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 
-using namespace dolfin;
+using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
 dolfin::Mesh UnitTriangleMesh::create()

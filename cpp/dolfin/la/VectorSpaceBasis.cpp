@@ -10,6 +10,7 @@
 #include <dolfin/common/constants.h>
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 VectorSpaceBasis::VectorSpaceBasis(

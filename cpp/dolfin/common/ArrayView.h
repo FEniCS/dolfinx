@@ -11,6 +11,8 @@
 
 namespace dolfin
 {
+namespace common
+{
 
 /// This class provides a wrapper for a pointer to an array. It
 /// never owns the data, and will not be valid if the underlying
@@ -99,4 +101,5 @@ private:
   // Array data
   T* _x;
 };
+}
 }

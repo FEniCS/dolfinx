@@ -12,6 +12,7 @@
 #include <dolfin/mesh/MeshPartitioning.h>
 
 using namespace dolfin;
+using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
 Mesh RectangleMesh::build_tri(MPI_Comm comm, const std::array<Point, 2>& p,

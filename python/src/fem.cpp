@@ -187,7 +187,7 @@ void fem(py::module &m) {
              dolfin::GenericDofMap>(m, "DofMap", "DOLFIN DofMap object")
       .def(py::init<std::shared_ptr<const ufc::dofmap>, const dolfin::Mesh &>())
       .def(py::init<std::shared_ptr<const ufc::dofmap>, const dolfin::Mesh &,
-                    std::shared_ptr<const dolfin::SubDomain>>())
+                    std::shared_ptr<const dolfin::mesh::SubDomain>>())
       .def("ownership_range", &dolfin::DofMap::ownership_range)
       .def("cell_dofs", &dolfin::DofMap::cell_dofs);
 
@@ -206,7 +206,7 @@ void fem(py::module &m) {
       .def(py::init<const dolfin::DirichletBC &>())
       .def(py::init<std::shared_ptr<const dolfin::FunctionSpace>,
                     std::shared_ptr<const dolfin::GenericFunction>,
-                    std::shared_ptr<const dolfin::SubDomain>, std::string,
+                    std::shared_ptr<const dolfin::mesh::SubDomain>, std::string,
                     bool>(),
            py::arg("V"), py::arg("g"), py::arg("sub_domain"),
            py::arg("method") = "topological", py::arg("check_midpoint") = true)

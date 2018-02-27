@@ -25,11 +25,11 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh)
   dolfin_assert(_ufc_dofmap);
 
   // Call dofmap builder
-  DofMapBuilder::build(*this, mesh, std::shared_ptr<const SubDomain>());
+  DofMapBuilder::build(*this, mesh, std::shared_ptr<const mesh::SubDomain>());
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh,
-               std::shared_ptr<const SubDomain> constrained_domain)
+               std::shared_ptr<const mesh::SubDomain> constrained_domain)
     : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
       _global_dimension(0), _ufc_offset(0)
 {

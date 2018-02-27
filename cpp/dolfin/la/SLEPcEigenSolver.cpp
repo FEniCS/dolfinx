@@ -15,6 +15,7 @@
 #include <slepcversion.h>
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm)
@@ -197,7 +198,7 @@ std::size_t SLEPcEigenSolver::get_number_converged() const
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_deflation_space(
-    const VectorSpaceBasis& deflation_space)
+    const la::VectorSpaceBasis& deflation_space)
 {
   dolfin_assert(_eps);
 
@@ -216,7 +217,8 @@ void SLEPcEigenSolver::set_deflation_space(
     petsc_error(ierr, __FILE__, "EPSSetDeflationSpace");
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_initial_space(const VectorSpaceBasis& initial_space)
+void SLEPcEigenSolver::set_initial_space(
+    const la::VectorSpaceBasis& initial_space)
 {
   dolfin_assert(_eps);
 

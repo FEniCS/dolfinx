@@ -201,13 +201,13 @@ PETScKrylovSolver::~PETScKrylovSolver()
     KSPDestroy(&_ksp);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operator(const PETScBaseMatrix& A)
+void PETScKrylovSolver::set_operator(const la::PETScBaseMatrix& A)
 {
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operators(const PETScBaseMatrix& A,
-                                      const PETScBaseMatrix& P)
+void PETScKrylovSolver::set_operators(const la::PETScBaseMatrix& A,
+                                      const la::PETScBaseMatrix& P)
 {
   dolfin_assert(A.mat());
   dolfin_assert(P.mat());
@@ -230,7 +230,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   dolfin_assert(_A);
 
   // Create wrapper around PETSc Mat object
-  PETScBaseMatrix A(_A);
+  la::PETScBaseMatrix A(_A);
 
   PetscErrorCode ierr;
 
@@ -581,8 +581,8 @@ PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type(std::string norm)
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScKrylovSolver::_solve(const PETScBaseMatrix& A, PETScVector& x,
-                                      const PETScVector& b)
+std::size_t PETScKrylovSolver::_solve(const la::PETScBaseMatrix& A,
+                                      PETScVector& x, const PETScVector& b)
 {
   // Set operator
   dolfin_assert(_ksp);
@@ -691,7 +691,7 @@ void PETScKrylovSolver::write_report(int num_iterations,
 #endif
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,
+void PETScKrylovSolver::check_dimensions(const la::PETScBaseMatrix& A,
                                          const PETScVector& x,
                                          const PETScVector& b) const
 {
