@@ -39,11 +39,10 @@ For detailed instructions, see the file INSTALL.
 Documentation
 =============
 
-Documentation can be viewed at http://fenics-dolfin.readthedocs.org/.
+Documentation can be viewed at:
 
-.. image:: https://readthedocs.org/projects/fenics-dolfin/badge/?version=latest
-   :target: http://fenics.readthedocs.io/projects/dolfin/en/latest/?badge=latest
-   :alt: Documentation Status
+- https://fenicsproject.org/docs/dolfinx/dev/cpp/
+- https://fenicsproject.org/docs/dolfinx/dev/python/
 
 
 Automated testing
