@@ -13,6 +13,7 @@
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 std::size_t IntervalCell::dim() const { return 1; }

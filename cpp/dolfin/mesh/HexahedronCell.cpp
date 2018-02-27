@@ -176,34 +176,35 @@ double HexahedronCell::circumradius(const MeshEntity& cell) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double HexahedronCell::squared_distance(const Cell& cell,
+double HexahedronCell::squared_distance(const mesh::Cell& cell,
                                         const Point& point) const
 {
   dolfin_not_implemented();
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double HexahedronCell::normal(const Cell& cell, std::size_t facet,
+double HexahedronCell::normal(const mesh::Cell& cell, std::size_t facet,
                               std::size_t i) const
 {
   return normal(cell, facet)[i];
 }
 //-----------------------------------------------------------------------------
-Point HexahedronCell::normal(const Cell& cell, std::size_t facet) const
+Point HexahedronCell::normal(const mesh::Cell& cell, std::size_t facet) const
 {
   dolfin_not_implemented();
   Point p;
   return p;
 }
 //-----------------------------------------------------------------------------
-Point HexahedronCell::cell_normal(const Cell& cell) const
+Point HexahedronCell::cell_normal(const mesh::Cell& cell) const
 {
   dolfin_not_implemented();
   Point p;
   return p;
 }
 //-----------------------------------------------------------------------------
-double HexahedronCell::facet_area(const Cell& cell, std::size_t facet) const
+double HexahedronCell::facet_area(const mesh::Cell& cell,
+                                  std::size_t facet) const
 {
   // Create facet from the mesh and local facet number
   const Facet f(cell.mesh(), cell.entities(1)[facet]);
@@ -230,20 +231,21 @@ double HexahedronCell::facet_area(const Cell& cell, std::size_t facet) const
 }
 //-----------------------------------------------------------------------------
 void HexahedronCell::order(
-    Cell& cell,
+    mesh::Cell& cell,
     const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
   // Not implemented
   dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
-bool HexahedronCell::collides(const Cell& cell, const Point& point) const
+bool HexahedronCell::collides(const mesh::Cell& cell, const Point& point) const
 {
   dolfin_not_implemented();
   return false;
 }
 //-----------------------------------------------------------------------------
-bool HexahedronCell::collides(const Cell& cell, const MeshEntity& entity) const
+bool HexahedronCell::collides(const mesh::Cell& cell,
+                              const MeshEntity& entity) const
 {
   dolfin_not_implemented();
   return false;

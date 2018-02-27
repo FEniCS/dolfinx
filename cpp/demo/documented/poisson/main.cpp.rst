@@ -224,7 +224,7 @@ visualisation in an external program such as Paraview.
 .. code-block:: cpp
 
      // Save solution in VTK format
-     VTKFile file("poisson.pvd");
+     io::VTKFile file("poisson.pvd");
      file.write(u);
 
      return 0;

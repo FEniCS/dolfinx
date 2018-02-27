@@ -97,7 +97,7 @@ public:
     // FIXME: this should replace the need for num_vertices_per_cell
     //        and tdim
     /// Cell type
-    CellType::Type cell_type;
+    mesh::CellType::Type cell_type;
   };
 
   /// Holder for topology data

@@ -49,11 +49,12 @@ public:
   ///         auto mesh = BoxMesh::create({p0, p1}, {8, 8, 8});
   /// @endcode
   static Mesh create(MPI_Comm comm, const std::array<Point, 2>& p,
-                     std::array<std::size_t, 3> n, CellType::Type cell_type)
+                     std::array<std::size_t, 3> n,
+                     mesh::CellType::Type cell_type)
   {
-    if (cell_type == CellType::Type::tetrahedron)
+    if (cell_type == mesh::CellType::Type::tetrahedron)
       return build_tet(comm, p, n);
-    else if (cell_type == CellType::Type::hexahedron)
+    else if (cell_type == mesh::CellType::Type::hexahedron)
       return build_hex(comm, n);
     else
     {

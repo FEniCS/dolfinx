@@ -74,7 +74,7 @@ void fem(py::module &m) {
       .def(py::init<std::shared_ptr<const ufc::finite_element>>())
       .def("num_sub_elements", &dolfin::fem::FiniteElement::num_sub_elements)
       .def("tabulate_dof_coordinates",
-           [](const dolfin::fem::FiniteElement &self, const dolfin::Cell &cell) {
+           [](const dolfin::fem::FiniteElement &self, const dolfin::mesh::Cell &cell) {
              // Get cell vertex coordinates
              std::vector<double> coordinate_dofs;
              cell.get_coordinate_dofs(coordinate_dofs);

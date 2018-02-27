@@ -14,8 +14,10 @@ namespace dolfin
 {
 
 // Forward declarations
+namespace mesh
+{
 class Cell;
-
+}
 /// This class defines quadrature rules for simplices.
 
 class SimplexQuadrature
@@ -44,7 +46,7 @@ public:
   ///         A flattened array of quadrature points and a
   ///         corresponding array of quadrature weights.
   std::pair<std::vector<double>, std::vector<double>>
-  compute_quadrature_rule(const Cell& cell, std::size_t order) const;
+  compute_quadrature_rule(const mesh::Cell& cell, std::size_t order) const;
 
   /// Compute quadrature rule for simplex.
   ///

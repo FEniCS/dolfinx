@@ -14,11 +14,15 @@
 namespace dolfin
 {
 
-class Cell;
 class MeshEntity;
 template <typename T>
 class MeshFunction;
 class Point;
+
+namespace mesh
+{
+
+class Cell;
 
 /// This class provides a common interface for different cell types.
 /// Each cell type implements mesh functionality that is specific to
@@ -164,4 +168,5 @@ private:
              const std::int32_t* vertices,
              const std::vector<std::int64_t>& local_to_global_vertex_indices);
 };
+}
 }

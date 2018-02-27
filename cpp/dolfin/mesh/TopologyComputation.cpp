@@ -25,6 +25,7 @@
 #include <vector>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)

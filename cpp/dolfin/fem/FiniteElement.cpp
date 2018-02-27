@@ -21,7 +21,7 @@ FiniteElement::FiniteElement(std::shared_ptr<const ufc::finite_element> element)
 //-----------------------------------------------------------------------------
 void FiniteElement::tabulate_dof_coordinates(
     boost::multi_array<double, 2>& coordinates,
-    const std::vector<double>& coordinate_dofs, const Cell& cell) const
+    const std::vector<double>& coordinate_dofs, const mesh::Cell& cell) const
 {
   dolfin_assert(_ufc_element);
 

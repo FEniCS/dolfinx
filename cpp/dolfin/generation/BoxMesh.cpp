@@ -28,7 +28,7 @@ Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
                      geom(0, 3);
     Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
                      topo(0, 4);
-    Mesh mesh(comm, CellType::Type::tetrahedron, geom, topo);
+    Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
     mesh.order();
     MeshPartitioning::build_distributed_mesh(mesh);
     return mesh;
@@ -130,7 +130,7 @@ Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
     }
   }
 
-  Mesh mesh(comm, CellType::Type::tetrahedron, geom, topo);
+  Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
   mesh.order();
 
   MeshPartitioning::build_distributed_mesh(mesh);
@@ -146,7 +146,7 @@ Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
                      geom(0, 3);
     Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
                      topo(0, 8);
-    Mesh mesh(comm, CellType::Type::hexahedron, geom, topo);
+    Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
     MeshPartitioning::build_distributed_mesh(mesh);
     return mesh;
   }
@@ -208,7 +208,7 @@ Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
     }
   }
 
-  Mesh mesh(comm, CellType::Type::hexahedron, geom, topo);
+  Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
   MeshPartitioning::build_distributed_mesh(mesh);
   return mesh;
 }

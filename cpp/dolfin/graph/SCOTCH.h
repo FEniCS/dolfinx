@@ -6,23 +6,25 @@
 
 #pragma once
 
+#include "CSRGraph.h"
+#include "Graph.h"
+#include <boost/multi_array.hpp>
 #include <cstddef>
 #include <cstdint>
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Set.h>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "Graph.h"
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/Set.h>
-
-#include "CSRGraph.h"
-
 namespace dolfin
 {
 // Forward declarations
+namespace mesh
+{
 class CellType;
+}
 
 namespace graph
 {
@@ -53,7 +55,7 @@ public:
                     const std::vector<std::size_t>& cell_weight,
                     const std::int64_t num_global_vertices,
                     const std::int64_t num_global_cells,
-                    const CellType& cell_type);
+                    const mesh::CellType& cell_type);
 
   /// Compute reordering (map[old] -> new) using
   /// Gibbs-Poole-Stockmeyer (GPS) re-ordering

@@ -15,6 +15,7 @@
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 std::size_t TriangleCell::dim() const { return 2; }

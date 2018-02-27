@@ -25,6 +25,9 @@ class Mesh;
 template <typename T>
 class MeshFunction;
 
+namespace io
+{
+
 /// Output of meshes and functions in VTK format
 
 /// XML format for visualisation purposes. It is not suitable to
@@ -124,6 +127,6 @@ private:
   std::size_t counter;
 
   void pvtu_write_mesh(pugi::xml_node xml_node) const;
-
 };
+}
 }

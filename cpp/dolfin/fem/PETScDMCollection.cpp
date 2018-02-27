@@ -17,6 +17,7 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscmat.h>
 
@@ -81,9 +82,10 @@ tabulate_coordinates_to_dofs(const FunctionSpace& V)
   // Speed up the computations by only visiting (most) dofs once
   const std::int64_t local_size
       = dofmap.ownership_range()[1] - dofmap.ownership_range()[0];
-  common::RangedIndexSet already_visited(std::array<std::int64_t, 2>{{0, local_size}});
+  common::RangedIndexSet already_visited(
+      std::array<std::int64_t, 2>{{0, local_size}});
 
-  for (auto& cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(mesh))
   {
     // Get cell coordinates
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -490,7 +492,7 @@ PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
     Point curr_point(dim, &found_points[i * dim]);
 
     // Create coarse cell
-    Cell coarse_cell(meshc, static_cast<std::size_t>(id));
+    mesh::Cell coarse_cell(meshc, static_cast<std::size_t>(id));
     // Get dofs coordinates of the coarse cell
     coarse_cell.get_coordinate_dofs(coordinate_dofs);
 

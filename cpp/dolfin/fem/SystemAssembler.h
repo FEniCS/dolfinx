@@ -31,7 +31,6 @@ namespace dolfin
 {
 
 // Forward declarations
-class Cell;
 class Facet;
 class Form;
 class GenericDofMap;
@@ -45,6 +44,11 @@ namespace common
 {
 template <typename T>
 class ArrayView;
+}
+
+namespace mesh
+{
+class Cell;
 }
 
 namespace fem
@@ -127,7 +131,7 @@ private:
       std::array<std::vector<double>, 2>& Ae, std::array<UFC*, 2>& ufc,
       ufc::cell& ufc_cell, Eigen::Ref<EigenRowMatrixXd> coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
-      const std::array<bool, 2>& tensor_required_facet, const Cell& cell,
+      const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
       const Facet& facet,
       const std::array<const ufc::cell_integral*, 2>& cell_integrals,
       const std::array<const ufc::exterior_facet_integral*, 2>&
@@ -141,7 +145,7 @@ private:
       std::array<EigenRowMatrixXd, 2>& coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet,
-      const std::array<Cell, 2>& cell,
+      const std::array<mesh::Cell, 2>& cell,
       const std::array<std::size_t, 2>& local_facet, const bool facet_owner,
       const std::array<const ufc::cell_integral*, 2>& cell_integrals,
       const std::array<const ufc::interior_facet_integral*, 2>&

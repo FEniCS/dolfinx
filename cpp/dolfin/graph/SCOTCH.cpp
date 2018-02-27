@@ -4,18 +4,18 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "SCOTCH.h"
+#include "CSRGraph.h"
+#include "GraphBuilder.h"
 #include <algorithm>
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Set.h>
+#include <dolfin/common/Timer.h>
+#include <dolfin/mesh/CellType.h>
 #include <map>
 #include <numeric>
 #include <set>
 #include <string>
-
-#include "CSRGraph.h"
-#include "GraphBuilder.h"
-#include "SCOTCH.h"
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/Set.h>
-#include <dolfin/common/Timer.h>
 
 #ifdef HAS_SCOTCH
 extern "C" {
@@ -35,7 +35,7 @@ void dolfin::graph::SCOTCH::compute_partition(
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
     const std::vector<std::size_t>& cell_weight,
     const std::int64_t num_global_vertices, const std::int64_t num_global_cells,
-    const CellType& cell_type)
+    const mesh::CellType& cell_type)
 {
 
   // Create data structures to hold graph
@@ -393,7 +393,7 @@ void dolfin::graph::SCOTCH::compute_partition(
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
     const std::vector<std::size_t>& cell_weight,
     const std::int64_t num_global_vertices, const std::int64_t num_global_cells,
-    const CellType& cell_type)
+    const mesh::CellType& cell_type)
 {
   dolfin_error("SCOTCH.cpp", "partition mesh using SCOTCH",
                "DOLFIN has been configured without support for SCOTCH");

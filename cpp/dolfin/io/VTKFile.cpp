@@ -26,6 +26,7 @@
 #include <vector>
 
 using namespace dolfin;
+using namespace dolfin::io;
 
 //----------------------------------------------------------------------------
 VTKFile::VTKFile(const std::string filename) : _filename(filename), counter(0)

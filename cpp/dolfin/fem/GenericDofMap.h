@@ -26,7 +26,6 @@ class cell;
 namespace dolfin
 {
 
-class Cell;
 class PETScVector;
 class Mesh;
 

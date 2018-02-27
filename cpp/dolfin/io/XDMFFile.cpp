@@ -119,9 +119,8 @@ void XDMFFile::write_checkpoint(const Function& u, std::string function_name,
   check_encoding(encoding);
   check_function_name(function_name);
 
-  log(PROGRESS,
-      "Writing function \"%s\" to XDMF file \"%s\" with "
-      "time step %f.",
+  log(PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
+                "time step %f.",
       function_name.c_str(), _filename.c_str(), time_step);
 
   // If XML file exists load it to member _xml_doc
@@ -708,7 +707,7 @@ void XDMFFile::write_mesh_value_collection(const MeshValueCollection<T>& mvc,
   mesh->init(tdim, cell_dim);
   for (auto& p : values)
   {
-    MeshEntity cell = Cell(*mesh, p.first.first);
+    MeshEntity cell = mesh::Cell(*mesh, p.first.first);
     if (cell_dim != tdim)
     {
       const std::int32_t entity_local_idx
@@ -822,7 +821,8 @@ void XDMFFile::read_mesh_value_collection(MeshValueCollection<T>& mvc,
   // Get description of MVC cell type and dimension from topology node
   auto cell_type_str = get_cell_type(topology_node);
   dolfin_assert(cell_type_str.second == 1);
-  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str.first));
+  std::unique_ptr<mesh::CellType> cell_type(
+      mesh::CellType::create(cell_type_str.first));
   dolfin_assert(cell_type);
   const int cell_dim = cell_type->dim();
   const int num_verts_per_entity = cell_type->num_vertices();
@@ -1325,7 +1325,8 @@ void XDMFFile::read(Mesh& mesh) const
   }
 
   // Get toplogical dimensions
-  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str.first));
+  std::unique_ptr<mesh::CellType> cell_type(
+      mesh::CellType::create(cell_type_str.first));
   dolfin_assert(cell_type);
   const int tdim = cell_type->dim();
   const std::int64_t num_cells_global = get_num_cells(topology_node);
@@ -1380,9 +1381,8 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
 {
   check_function_name(func_name);
 
-  log(PROGRESS,
-      "Reading function \"%s\" from XDMF file \"%s\" with "
-      "counter %i.",
+  log(PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
+                "counter %i.",
       func_name.c_str(), _filename.c_str(), counter);
 
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
@@ -1501,7 +1501,7 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
 }
 //----------------------------------------------------------------------------
 void XDMFFile::build_local_mesh_data(
-    LocalMeshData& local_mesh_data, const CellType& cell_type,
+    LocalMeshData& local_mesh_data, const mesh::CellType& cell_type,
     std::int64_t num_points_global, std::int64_t num_cells_global, int tdim,
     int gdim, const pugi::xml_node& topology_dataset_node,
     const pugi::xml_node& geometry_dataset_node,
@@ -1884,12 +1884,12 @@ std::vector<T> XDMFFile::compute_quadratic_topology(const Mesh& mesh)
     edge_mapping = {5, 2, 4, 3, 1, 0};
 
   // Get number of points per cell
-  const CellType& celltype = mesh.type();
+  const mesh::CellType& celltype = mesh.type();
   std::size_t npoint = celltype.num_entities(0) + celltype.num_entities(1);
   std::vector<T> topology_data;
   topology_data.reserve(npoint * mesh.num_entities(tdim));
 
-  for (auto& c : MeshRange<Cell>(mesh))
+  for (auto& c : MeshRange<mesh::Cell>(mesh))
   {
     // Add indices for vertices and edges
     for (std::uint32_t dim = 0; dim != 2; ++dim)
@@ -2283,7 +2283,8 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction,
   // Get cell type and topology of MeshFunction (may be different from Mesh)
   const auto cell_type_str = get_cell_type(topology_node);
   dolfin_assert(cell_type_str.second == 1);
-  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str.first));
+  std::unique_ptr<mesh::CellType> cell_type(
+      mesh::CellType::create(cell_type_str.first));
   dolfin_assert(cell_type);
   const std::uint32_t num_vertices_per_cell = cell_type->num_entities(0);
   const std::uint32_t cell_dim = cell_type->dim();
@@ -2541,7 +2542,8 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
     pugi::xml_node topology_node = grid_node.child("Topology");
     dolfin_assert(topology_node);
     auto cell_type_str = get_cell_type(topology_node);
-    if (CellType::type2string(mesh->type().cell_type()) != cell_type_str.first)
+    if (mesh::CellType::type2string(mesh->type().cell_type())
+        != cell_type_str.first)
     {
       dolfin_error(
           "XDMFFile.cpp", "add MeshFunction to XDMF",
@@ -2625,7 +2627,7 @@ std::vector<double> XDMFFile::get_cell_data_values(const Function& u)
   std::vector<dolfin::la_index_t> dof_set;
   dof_set.reserve(local_size);
   const auto dofmap = u.function_space()->dofmap();
-  for (auto& cell : MeshRange<Cell>(*mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(*mesh))
   {
     // Tabulate dofs
     auto dofs = dofmap->cell_dofs(cell.index());
@@ -2749,7 +2751,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
   if (dofmap->num_entity_dofs(1) == 0)
   {
     // P1
-    for (auto& cell : MeshRange<Cell>(*mesh))
+    for (auto& cell : MeshRange<mesh::Cell>(*mesh))
     {
       auto dofs = dofmap->cell_dofs(cell.index());
       std::size_t c = 0;
@@ -2783,7 +2785,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
     // P2
     // Go over all cells inserting values
     // FIXME: a lot of duplication here
-    for (auto& cell : MeshRange<Cell>(*mesh))
+    for (auto& cell : MeshRange<mesh::Cell>(*mesh))
     {
       auto dofs = dofmap->cell_dofs(cell.index());
       std::size_t c = 0;
@@ -2867,18 +2869,19 @@ void XDMFFile::check_function_name(std::string function_name)
   }
 }
 //-----------------------------------------------------------------------------
-std::string XDMFFile::vtk_cell_type_str(CellType::Type cell_type, int order)
+std::string XDMFFile::vtk_cell_type_str(mesh::CellType::Type cell_type,
+                                        int order)
 {
   // FIXME: Move to CellType?
   switch (cell_type)
   {
-  case CellType::Type::point:
+  case mesh::CellType::Type::point:
     switch (order)
     {
     case 1:
       return "PolyVertex";
     }
-  case CellType::Type::interval:
+  case mesh::CellType::Type::interval:
     switch (order)
     {
     case 1:
@@ -2886,7 +2889,7 @@ std::string XDMFFile::vtk_cell_type_str(CellType::Type cell_type, int order)
     case 2:
       return "Edge_3";
     }
-  case CellType::Type::triangle:
+  case mesh::CellType::Type::triangle:
     switch (order)
     {
     case 1:
@@ -2894,7 +2897,7 @@ std::string XDMFFile::vtk_cell_type_str(CellType::Type cell_type, int order)
     case 2:
       return "Triangle_6";
     }
-  case CellType::Type::quadrilateral:
+  case mesh::CellType::Type::quadrilateral:
     switch (order)
     {
     case 1:
@@ -2902,7 +2905,7 @@ std::string XDMFFile::vtk_cell_type_str(CellType::Type cell_type, int order)
     case 2:
       return "Quad_8";
     }
-  case CellType::Type::tetrahedron:
+  case mesh::CellType::Type::tetrahedron:
     switch (order)
     {
     case 1:
@@ -2910,7 +2913,7 @@ std::string XDMFFile::vtk_cell_type_str(CellType::Type cell_type, int order)
     case 2:
       return "Tet_10";
     }
-  case CellType::Type::hexahedron:
+  case mesh::CellType::Type::hexahedron:
     switch (order)
     {
     case 1:

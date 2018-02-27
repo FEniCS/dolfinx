@@ -40,7 +40,8 @@ void generation(py::module &m) {
       .def_static("create",
                   [](const MPICommWrapper comm, std::array<dolfin::Point, 2> p,
                      std::array<std::size_t, 2> n,
-                     dolfin::CellType::Type cell_type, std::string diagonal) {
+                     dolfin::mesh::CellType::Type cell_type,
+                     std::string diagonal) {
                     return dolfin::generation::RectangleMesh::create(
                         comm.get(), p, n, cell_type, diagonal);
                   },
@@ -54,13 +55,14 @@ void generation(py::module &m) {
   // dolfin::BoxMesh
   py::class_<dolfin::generation::BoxMesh,
              std::shared_ptr<dolfin::generation::BoxMesh>>(m, "BoxMesh")
-      .def_static(
-          "create",
-          [](const MPICommWrapper comm, std::array<dolfin::Point, 2> p,
-             std::array<std::size_t, 3> n, dolfin::CellType::Type cell_type) {
-            return dolfin::generation::BoxMesh::create(comm.get(), p, n,
-                                                       cell_type);
-          },
-          py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("cell_type"));
+      .def_static("create",
+                  [](const MPICommWrapper comm, std::array<dolfin::Point, 2> p,
+                     std::array<std::size_t, 3> n,
+                     dolfin::mesh::CellType::Type cell_type) {
+                    return dolfin::generation::BoxMesh::create(comm.get(), p, n,
+                                                               cell_type);
+                  },
+                  py::arg("comm"), py::arg("p"), py::arg("n"),
+                  py::arg("cell_type"));
 }
 }

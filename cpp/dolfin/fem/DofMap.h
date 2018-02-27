@@ -12,7 +12,6 @@
 #include <cstdlib>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/Cell.h>
 #include <map>
 #include <memory>
 #include <ufc.h>

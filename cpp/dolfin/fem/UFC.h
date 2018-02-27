@@ -14,12 +14,16 @@
 namespace dolfin
 {
 
-class Cell;
 class FiniteElement;
 class Form;
 class FunctionSpace;
 class GenericFunction;
 class Mesh;
+
+namespace mesh
+{
+class Cell;
+}
 
 /// This class is a simple data structure that holds data used
 /// during assembly of a given UFC form. Data is created for each
@@ -40,27 +44,29 @@ public:
   ~UFC(){};
 
   /// Update current cell
-  void update(const Cell& cell,
+  void update(const mesh::Cell& cell,
               Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs0,
               const ufc::cell& ufc_cell,
               const std::vector<bool>& enabled_coefficients);
 
   /// Update current cell
-  void update(const Cell& cell, const std::vector<double>& coordinate_dofs0,
+  void update(const mesh::Cell& cell,
+              const std::vector<double>& coordinate_dofs0,
               const ufc::cell& ufc_cell,
               const std::vector<bool>& enabled_coefficients);
 
   /// Update current pair of cells for macro element
-  void update(const Cell& cell0, const std::vector<double>& coordinate_dofs0,
-              const ufc::cell& ufc_cell0, const Cell& cell1,
+  void update(const mesh::Cell& cell0,
+              const std::vector<double>& coordinate_dofs0,
+              const ufc::cell& ufc_cell0, const mesh::Cell& cell1,
               const std::vector<double>& coordinate_dofs1,
               const ufc::cell& ufc_cell1,
               const std::vector<bool>& enabled_coefficients);
 
   /// Update current pair of cells for macro element
-  void update(const Cell& cell0,
+  void update(const mesh::Cell& cell0,
               Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs0,
-              const ufc::cell& ufc_cell0, const Cell& cell1,
+              const ufc::cell& ufc_cell0, const mesh::Cell& cell1,
               Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs1,
               const ufc::cell& ufc_cell1,
               const std::vector<bool>& enabled_coefficients);

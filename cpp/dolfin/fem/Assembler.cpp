@@ -340,7 +340,7 @@ void fem::Assembler::assemble(
   auto cell_integral = a.integrals().cell_integral();
 
   // Iterate over all cells
-  for (auto& cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(mesh))
   {
     std::cout << "Iterate over cells" << std::endl;
     // Check that cell is not a ghost
@@ -451,7 +451,7 @@ void fem::Assembler::assemble(PETScVector& b, const Form& L)
   auto cell_integral = L.integrals().cell_integral();
 
   // Iterate over all cells
-  for (auto& cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
@@ -531,7 +531,7 @@ void fem::Assembler::apply_bc(
   auto cell_integral = a.integrals().cell_integral();
 
   // Iterate over all cells
-  for (auto& cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
     assert(!cell.is_ghost());

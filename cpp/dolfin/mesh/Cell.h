@@ -18,6 +18,9 @@
 namespace dolfin
 {
 
+namespace mesh
+{
+
 /// A Cell is a _MeshEntity_ of topological codimension 0.
 
 class Cell : public MeshEntity
@@ -303,4 +306,5 @@ public:
     ufc_cell.index = index();
   }
 };
+}
 }

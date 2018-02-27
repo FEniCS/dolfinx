@@ -14,6 +14,7 @@
 #include <sstream>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 dolfin::MeshFunction<double>

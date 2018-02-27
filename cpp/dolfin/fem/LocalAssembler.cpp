@@ -21,7 +21,7 @@ using namespace dolfin;
 void LocalAssembler::assemble(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
     UFC& ufc, const std::vector<double>& coordinate_dofs, ufc::cell& ufc_cell,
-    const Cell& cell, const MeshFunction<std::size_t>* cell_domains,
+    const mesh::Cell& cell, const MeshFunction<std::size_t>* cell_domains,
     const MeshFunction<std::size_t>* exterior_facet_domains,
     const MeshFunction<std::size_t>* interior_facet_domains)
 {
@@ -73,7 +73,7 @@ void LocalAssembler::assemble(
 void LocalAssembler::assemble_cell(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
     UFC& ufc, const std::vector<double>& coordinate_dofs,
-    const ufc::cell& ufc_cell, const Cell& cell,
+    const ufc::cell& ufc_cell, const mesh::Cell& cell,
     const MeshFunction<std::size_t>* cell_domains)
 {
   // Skip if there are no cell integrals
@@ -114,7 +114,7 @@ void LocalAssembler::assemble_cell(
 void LocalAssembler::assemble_exterior_facet(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
     UFC& ufc, const std::vector<double>& coordinate_dofs,
-    const ufc::cell& ufc_cell, const Cell& cell, const Facet& facet,
+    const ufc::cell& ufc_cell, const mesh::Cell& cell, const Facet& facet,
     const std::size_t local_facet,
     const MeshFunction<std::size_t>* exterior_facet_domains)
 {
@@ -156,7 +156,7 @@ void LocalAssembler::assemble_exterior_facet(
 void LocalAssembler::assemble_interior_facet(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
     UFC& ufc, const std::vector<double>& coordinate_dofs,
-    const ufc::cell& ufc_cell, const Cell& cell, const Facet& facet,
+    const ufc::cell& ufc_cell, const mesh::Cell& cell, const Facet& facet,
     const std::size_t local_facet,
     const MeshFunction<std::size_t>* interior_facet_domains,
     const MeshFunction<std::size_t>* cell_domains)
@@ -191,8 +191,8 @@ void LocalAssembler::assemble_interior_facet(
   bool local_is_plus = cell_index_plus == cell.index();
 
   // The convention '+' = 0, '-' = 1 is from ffc
-  const Cell cell0(mesh, cell_index_plus);
-  const Cell cell1(mesh, cell_index_minus);
+  const mesh::Cell cell0(mesh, cell_index_plus);
+  const mesh::Cell cell1(mesh, cell_index_minus);
 
   // Is this facet on a domain boundary?
   if (cell_domains && !cell_domains->empty()
@@ -202,7 +202,7 @@ void LocalAssembler::assemble_interior_facet(
   }
 
   // Get information about the adjacent cell
-  const Cell& cell_adj = local_is_plus ? cell1 : cell0;
+  const mesh::Cell& cell_adj = local_is_plus ? cell1 : cell0;
   std::vector<double> coordinate_dofs_adj;
   ufc::cell ufc_cell_adj;
   std::size_t local_facet_adj = cell_adj.index(facet);

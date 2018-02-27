@@ -19,7 +19,6 @@
 namespace dolfin
 {
 
-class CellType;
 class Function;
 class PETScVector;
 class LocalMeshData;
@@ -28,6 +27,11 @@ template <typename T>
 class MeshFunction;
 template <typename T>
 class MeshValueCollection;
+
+namespace mesh
+{
+class CellType;
+}
 
 namespace io
 {
@@ -106,7 +110,7 @@ public:
   /// file
   void read(Mesh& input_mesh, const std::string topology_path,
             const std::string geometry_path, const int gdim,
-            const CellType& cell_type,
+            const mesh::CellType& cell_type,
             const std::int64_t expected_num_global_cells,
             const std::int64_t expected_num_global_points,
             bool use_partition_from_file) const;

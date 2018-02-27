@@ -4,15 +4,15 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <algorithm>
-#include <array>
+#include "SystemAssembler.h"
 #include "AssemblerBase.h"
 #include "DirichletBC.h"
 #include "FiniteElement.h"
 #include "Form.h"
 #include "GenericDofMap.h"
-#include "SystemAssembler.h"
 #include "UFC.h"
+#include <algorithm>
+#include <array>
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
@@ -334,7 +334,7 @@ void SystemAssembler::cell_wise_assembly(
   EigenRowMatrixXd coordinate_dofs;
   std::size_t gdim = mesh.geometry().dim();
 
-  for (auto& cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
     dolfin_assert(!cell.is_ghost());
@@ -513,7 +513,7 @@ void SystemAssembler::facet_wise_assembly(
   cell_dofs[1][0].resize(1);
   cell_dofs[1][1].resize(1);
 
-  std::array<Cell, 2> cell;
+  std::array<mesh::Cell, 2> cell;
   std::array<std::size_t, 2> cell_index;
   std::array<std::size_t, 2> local_facet;
 
@@ -587,7 +587,7 @@ void SystemAssembler::facet_wise_assembly(
       // Get cells incident with facet and associated data
       for (std::size_t c = 0; c < 2; ++c)
       {
-        cell[c] = Cell(mesh, cell_indices[c]);
+        cell[c] = mesh::Cell(mesh, cell_indices[c]);
         cell_index[c] = cell[c].index();
         local_facet[c] = cell[c].index(facet);
         coordinate_dofs[c].resize(cell[c].num_vertices(), gdim);
@@ -768,7 +768,7 @@ void SystemAssembler::facet_wise_assembly(
     {
       // Get mesh cell to which mesh facet belongs (pick first, there
       // is only one)
-      Cell cell(mesh, facet.entities(mesh.topology().dim())[0]);
+      mesh::Cell cell(mesh, facet.entities(mesh.topology().dim())[0]);
 
       // Check of attached cell needs to be processed
       compute_cell_tensor[0] = !cell_tensor_computed[cell.index()];
@@ -855,7 +855,7 @@ void SystemAssembler::compute_exterior_facet_tensor(
     std::array<std::vector<double>, 2>& Ae, std::array<UFC*, 2>& ufc,
     ufc::cell& ufc_cell, Eigen::Ref<EigenRowMatrixXd> coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
-    const std::array<bool, 2>& tensor_required_facet, const Cell& cell,
+    const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
     const Facet& facet,
     const std::array<const ufc::cell_integral*, 2>& cell_integrals,
     const std::array<const ufc::exterior_facet_integral*, 2>&
@@ -914,7 +914,7 @@ void SystemAssembler::compute_interior_facet_tensor(
     std::array<EigenRowMatrixXd, 2>& coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
     const std::array<bool, 2>& tensor_required_facet,
-    const std::array<Cell, 2>& cell,
+    const std::array<mesh::Cell, 2>& cell,
     const std::array<std::size_t, 2>& local_facet, const bool facet_owner,
     const std::array<const ufc::cell_integral*, 2>& cell_integrals,
     const std::array<const ufc::interior_facet_integral*, 2>&

@@ -395,7 +395,7 @@ private:
 
   // Build local mesh data structure
   static void build_local_mesh_data(LocalMeshData& local_mesh_data,
-                                    const CellType& cell_type,
+                                    const mesh::CellType& cell_type,
                                     std::int64_t num_points,
                                     std::int64_t num_cells, int tdim, int gdim,
                                     const pugi::xml_node& topology_dataset_node,
@@ -522,7 +522,7 @@ private:
     return (encoding == XDMFFile::Encoding::HDF5) ? "HDF" : "XML";
   }
 
-  static std::string vtk_cell_type_str(CellType::Type cell_type, int order);
+  static std::string vtk_cell_type_str(mesh::CellType::Type cell_type, int order);
 
   // Return a string of the form "x y"
   template <typename X, typename Y>

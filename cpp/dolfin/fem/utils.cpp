@@ -119,7 +119,7 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
   std::size_t xi, vi;
 
   // Get/set cell-by-cell
-  for (auto& c : MeshRange<Cell>(mesh))
+  for (auto& c : MeshRange<mesh::Cell>(mesh))
   {
     // Get/prepare values and dofs on cell
     auto cell_dofs = dofmap.cell_dofs(c.index());
@@ -353,7 +353,7 @@ dolfin::fem::vertex_to_dof_map(const FunctionSpace& space)
   for (auto vertex = v_begin; vertex != v_end; ++vertex)
   {
     // Get the first cell connected to the vertex
-    const Cell cell(mesh, vertex->entities(top_dim)[0]);
+    const mesh::Cell cell(mesh, vertex->entities(top_dim)[0]);
 
     // Find local vertex number
 #ifdef DEBUG
@@ -423,7 +423,7 @@ Mesh dolfin::fem::create_mesh(Function& coordinates)
 
   mesh1._topology = mesh0._topology;
   if (mesh0._cell_type)
-    mesh1._cell_type.reset(CellType::create(mesh0._cell_type->cell_type()));
+    mesh1._cell_type.reset(mesh::CellType::create(mesh0._cell_type->cell_type()));
   else
     mesh1._cell_type.reset();
   mesh1._ordered = mesh0._ordered;

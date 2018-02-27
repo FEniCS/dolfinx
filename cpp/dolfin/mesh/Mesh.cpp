@@ -22,6 +22,7 @@
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm)
@@ -31,7 +32,7 @@ Mesh::Mesh(MPI_Comm comm)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm, CellType::Type type,
+Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>
                geometry,
@@ -46,7 +47,7 @@ Mesh::Mesh(MPI_Comm comm, CellType::Type type,
   _geometry.init(gdim, 1);
 
   // Set cell type
-  _cell_type.reset(CellType::create(type));
+  _cell_type.reset(mesh::CellType::create(type));
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t nv = _cell_type->num_vertices();
   dolfin_assert(nv == topology.cols());
@@ -117,7 +118,7 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   _topology = mesh._topology;
   _geometry = mesh._geometry;
   if (mesh._cell_type)
-    _cell_type.reset(CellType::create(mesh._cell_type->cell_type()));
+    _cell_type.reset(mesh::CellType::create(mesh._cell_type->cell_type()));
   else
     _cell_type.reset();
 

@@ -37,7 +37,7 @@ SimplexQuadrature::SimplexQuadrature(std::size_t tdim, std::size_t order)
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<double>>
-SimplexQuadrature::compute_quadrature_rule(const Cell& cell,
+SimplexQuadrature::compute_quadrature_rule(const mesh::Cell& cell,
                                            std::size_t order) const
 {
   // Extract dimensions

@@ -106,7 +106,7 @@ void dolfin::graph::ParMETIS::compute_partition(
     const MPI_Comm mpi_comm, std::vector<int>& cell_partition,
     std::map<std::int64_t, std::vector<int>>& ghost_procs,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
-    const std::size_t num_global_vertices, const CellType& cell_type,
+    const std::size_t num_global_vertices, const mesh::CellType& cell_type,
     const std::string mode)
 {
   // Duplicate MPI communicator (ParMETIS does not take const
@@ -413,7 +413,7 @@ void dolfin::graph::ParMETIS::compute_partition(
     const MPI_Comm mpi_comm, std::vector<int>& cell_partition,
     std::map<std::int64_t, std::vector<int>>& ghost_procs,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
-    const std::size_t num_global_vertices, const CellType& cell_type,
+    const std::size_t num_global_vertices, const mesh::CellType& cell_type,
     const std::string mode)
 {
   dolfin_error("ParMETIS.cpp", "compute mesh partitioning using ParMETIS",

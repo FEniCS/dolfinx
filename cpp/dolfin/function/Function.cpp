@@ -246,7 +246,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
 
   // Get index of first cell containing point
   unsigned int id
-    = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
+      = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
 
   // If not found, use the closest cell
   if (id == std::numeric_limits<unsigned int>::max())
@@ -254,7 +254,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
     // Check if the closest cell is within DOLFIN_EPS. This we can
     // allow without _allow_extrapolation
     std::pair<unsigned int, double> close
-      = mesh.bounding_box_tree()->compute_closest_entity(point, mesh);
+        = mesh.bounding_box_tree()->compute_closest_entity(point, mesh);
 
     if (_allow_extrapolation or close.second < DOLFIN_EPS)
       id = close.first;
@@ -268,7 +268,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
   }
 
   // Create cell that contains point
-  const Cell cell(mesh, id);
+  const mesh::Cell cell(mesh, id);
   ufc::cell ufc_cell;
   cell.get_cell_data(ufc_cell);
 
@@ -278,7 +278,8 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
 //-----------------------------------------------------------------------------
 void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
                     Eigen::Ref<const Eigen::VectorXd> x,
-                    const Cell& dolfin_cell, const ufc::cell& ufc_cell) const
+                    const mesh::Cell& dolfin_cell,
+                    const ufc::cell& ufc_cell) const
 {
   // Developer note: work arrays/vectors are re-created each time this
   //                 function is called for thread-safety
@@ -373,7 +374,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
   dolfin_assert(ufc_cell.mesh_identifier >= 0);
   if (ufc_cell.mesh_identifier == (int)mesh.id())
   {
-    const Cell cell(mesh, ufc_cell.index);
+    const mesh::Cell cell(mesh, ufc_cell.index);
     eval(values, x, cell, ufc_cell);
   }
   else
@@ -381,7 +382,8 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(double* w, const fem::FiniteElement& element,
-                        const Cell& dolfin_cell, const double* coordinate_dofs,
+                        const mesh::Cell& dolfin_cell,
+                        const double* coordinate_dofs,
                         const ufc::cell& ufc_cell) const
 {
   dolfin_assert(w);
@@ -449,7 +451,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  for (auto& cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : MeshRange<mesh::Cell>(mesh, MeshRangeType::ALL))
   {
     // Update to current cell
     cell.get_coordinate_dofs(coordinate_dofs);

@@ -1049,7 +1049,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
       {
         // Singly attached ghost facet - check with owner of attached
         // cell
-        const Cell c(mesh, f.entities(D)[0]);
+        const mesh::Cell c(mesh, f.entities(D)[0]);
         dolfin_assert(c.is_ghost());
         send_facet[c.owner()].push_back(f.global_index());
       }
@@ -1133,7 +1133,7 @@ void DistributedMeshTools::reorder_values_by_global_indices(
     // Iterate through ghost cells, adding non-ghost vertices which
     // are in lower rank process cells to a set for exclusion from
     // output
-    for (auto& c : MeshRange<Cell>(mesh, MeshRangeType::GHOST))
+    for (auto& c : MeshRange<mesh::Cell>(mesh, MeshRangeType::GHOST))
     {
       const std::uint32_t cell_owner = c.owner();
       for (auto& v : EntityRange<Vertex>(c))

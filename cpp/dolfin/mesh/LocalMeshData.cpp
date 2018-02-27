@@ -15,6 +15,7 @@
 #include <utility>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 LocalMeshData::LocalMeshData(const MPI_Comm mpi_comm) : _mpi_comm(mpi_comm)

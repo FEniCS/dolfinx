@@ -16,6 +16,9 @@ namespace dolfin
 class Function;
 class Mesh;
 
+namespace io
+{
+
 /// Write VTK Mesh representation
 
 class VTKWriter
@@ -42,4 +45,5 @@ private:
   // Get VTK cell type
   static std::uint8_t vtk_cell_type(const Mesh& mesh, std::size_t cell_dim);
 };
+}
 }

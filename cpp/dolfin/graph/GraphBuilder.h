@@ -20,12 +20,16 @@ namespace dolfin
 {
 
 // Forward declarations
-class CellType;
 class Mesh;
 
 namespace fem
 {
 class GenericDofMap;
+}
+
+namespace mesh
+{
+class CellType;
 }
 
 namespace graph
@@ -55,7 +59,7 @@ public:
   static std::pair<std::int32_t, std::int32_t>
   compute_dual_graph(const MPI_Comm mpi_comm,
                      const boost::multi_array<std::int64_t, 2>& cell_vertices,
-                     const CellType& cell_type,
+                     const mesh::CellType& cell_type,
                      const std::int64_t num_global_vertices,
                      std::vector<std::vector<std::size_t>>& local_graph,
                      std::set<std::int64_t>& ghost_vertices);
@@ -71,7 +75,7 @@ private:
   static std::int32_t compute_local_dual_graph(
       const MPI_Comm mpi_comm,
       const boost::multi_array<std::int64_t, 2>& cell_vertices,
-      const CellType& cell_type,
+      const mesh::CellType& cell_type,
       std::vector<std::vector<std::size_t>>& local_graph,
       FacetCellMap& facet_cell_map);
 
@@ -81,7 +85,7 @@ private:
   static std::int32_t compute_local_dual_graph_keyed(
       const MPI_Comm mpi_comm,
       const boost::multi_array<std::int64_t, 2>& cell_vertices,
-      const CellType& cell_type,
+      const mesh::CellType& cell_type,
       std::vector<std::vector<std::size_t>>& local_graph,
       FacetCellMap& facet_cell_map);
 
@@ -91,7 +95,7 @@ private:
   static std::int32_t compute_nonlocal_dual_graph(
       const MPI_Comm mpi_comm,
       const boost::multi_array<std::int64_t, 2>& cell_vertices,
-      const CellType& cell_type, const std::int64_t num_global_vertices,
+      const mesh::CellType& cell_type, const std::int64_t num_global_vertices,
       std::vector<std::vector<std::size_t>>& local_graph,
       FacetCellMap& facet_cell_map, std::set<std::int64_t>& ghost_vertices);
 };

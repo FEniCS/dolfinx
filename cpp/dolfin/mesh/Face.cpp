@@ -9,6 +9,7 @@
 #include <dolfin/geometry/Point.h>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 double Face::area() const

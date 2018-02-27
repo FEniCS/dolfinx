@@ -37,7 +37,7 @@ dolfin::graph::GraphBuilder::local_graph(const Mesh& mesh,
   Graph graph(n);
 
   // Build graph
-  for (auto& cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(mesh))
   {
     auto _dofs0 = dofmap0.cell_dofs(cell.index());
     auto _dofs1 = dofmap1.cell_dofs(cell.index());
@@ -141,7 +141,7 @@ std::pair<std::int32_t, std::int32_t>
 dolfin::graph::GraphBuilder::compute_dual_graph(
     const MPI_Comm mpi_comm,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
-    const CellType& cell_type, const std::int64_t num_global_vertices,
+    const mesh::CellType& cell_type, const std::int64_t num_global_vertices,
     std::vector<std::vector<std::size_t>>& local_graph,
     std::set<std::int64_t>& ghost_vertices)
 {
@@ -166,7 +166,7 @@ dolfin::graph::GraphBuilder::compute_dual_graph(
 std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph(
     const MPI_Comm mpi_comm,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
-    const CellType& cell_type,
+    const mesh::CellType& cell_type,
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map)
 {
@@ -201,7 +201,7 @@ template <int N>
 std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
     const MPI_Comm mpi_comm,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
-    const CellType& cell_type,
+    const mesh::CellType& cell_type,
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map)
 {
@@ -320,7 +320,7 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
 std::int32_t dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
     const MPI_Comm mpi_comm,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
-    const CellType& cell_type, const std::int64_t num_global_vertices,
+    const mesh::CellType& cell_type, const std::int64_t num_global_vertices,
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map, std::set<std::int64_t>& ghost_vertices)
 {

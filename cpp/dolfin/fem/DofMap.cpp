@@ -10,6 +10,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/LogStream.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/Vertex.h>
@@ -189,7 +190,7 @@ std::vector<dolfin::la_index_t> DofMap::entity_closure_dofs(
     MeshEntity entity(mesh, entity_dim, entity_indices[i]);
 
     // Get the first cell connected to the entity
-    const Cell cell(mesh, entity.entities(top_dim)[0]);
+    const mesh::Cell cell(mesh, entity.entities(top_dim)[0]);
 
     // Find local entity number
     for (std::size_t local_i = 0; local_i < cell.num_entities(entity_dim);
@@ -244,7 +245,7 @@ DofMap::entity_closure_dofs(const Mesh& mesh, std::size_t entity_dim) const
   for (auto& entity : MeshRange<MeshEntity>(mesh, entity_dim))
   {
     // Get the first cell connected to the entity
-    const Cell cell(mesh, entity.entities(top_dim)[0]);
+    const mesh::Cell cell(mesh, entity.entities(top_dim)[0]);
 
     // Find local entity number
     for (std::size_t local_i = 0; local_i < cell.num_entities(entity_dim);
@@ -302,7 +303,7 @@ DofMap::entity_dofs(const Mesh& mesh, std::size_t entity_dim,
     MeshEntity entity(mesh, entity_dim, entity_indices[i]);
 
     // Get the first cell connected to the entity
-    const Cell cell(mesh, entity.entities(top_dim)[0]);
+    const mesh::Cell cell(mesh, entity.entities(top_dim)[0]);
 
     // Find local entity number
     for (std::size_t local_i = 0; local_i < cell.num_entities(entity_dim);
@@ -356,7 +357,7 @@ DofMap::entity_dofs(const Mesh& mesh, std::size_t entity_dim) const
   for (auto& entity : MeshRange<MeshEntity>(mesh, entity_dim))
   {
     // Get the first cell connected to the entity
-    const Cell cell(mesh, entity.entities(top_dim)[0]);
+    const mesh::Cell cell(mesh, entity.entities(top_dim)[0]);
 
     // Find local entity number
     for (std::size_t local_i = 0; local_i < cell.num_entities(entity_dim);
@@ -469,7 +470,7 @@ std::vector<dolfin::la_index_t> DofMap::dofs(const Mesh& mesh,
   if (dim < mesh.topology().dim())
   {
     std::vector<std::size_t> entity_dofs_local;
-    for (auto& c : MeshRange<Cell>(mesh))
+    for (auto& c : MeshRange<mesh::Cell>(mesh))
     {
       // Get local-to-global dofmap for cell
       const auto cell_dof_list = cell_dofs(c.index());
@@ -497,7 +498,7 @@ std::vector<dolfin::la_index_t> DofMap::dofs(const Mesh& mesh,
   else
   {
     std::vector<std::size_t> entity_dofs_local;
-    for (auto& c : MeshRange<Cell>(mesh))
+    for (auto& c : MeshRange<mesh::Cell>(mesh))
     {
       // Get local-to-global dofmap for cell
       const auto cell_dof_list = cell_dofs(c.index());

@@ -74,7 +74,7 @@ public:
   ///         Matrix containing geometic points of the mesh
   /// @param topology
   ///         Matrix containing the vertex indices for the cells of the mesh
-  Mesh(MPI_Comm comm, CellType::Type type,
+  Mesh(MPI_Comm comm, mesh::CellType::Type type,
        Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>>
            geometry,
@@ -201,14 +201,14 @@ public:
   ///
   /// @return CellType&
   ///         The cell type object associated with the mesh.
-  CellType& type()
+  mesh::CellType& type()
   {
     dolfin_assert(_cell_type);
     return *_cell_type;
   }
 
   /// Get mesh cell type (const version).
-  const CellType& type() const
+  const mesh::CellType& type() const
   {
     dolfin_assert(_cell_type);
     return *_cell_type;
@@ -337,7 +337,7 @@ private:
   mutable std::shared_ptr<BoundingBoxTree> _tree;
 
   // Cell type
-  std::unique_ptr<CellType> _cell_type;
+  std::unique_ptr<mesh::CellType> _cell_type;
 
   // True if mesh has been ordered
   mutable bool _ordered;

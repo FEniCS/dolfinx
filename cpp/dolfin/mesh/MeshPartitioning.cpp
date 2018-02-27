@@ -33,6 +33,7 @@
 #include <set>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
@@ -131,8 +132,8 @@ void MeshPartitioning::partition_cells(
   cell_partition.clear();
   ghost_procs.clear();
 
-  std::unique_ptr<CellType> cell_type(
-      CellType::create(mesh_data.topology.cell_type));
+  std::unique_ptr<mesh::CellType> cell_type(
+      mesh::CellType::create(mesh_data.topology.cell_type));
   dolfin_assert(cell_type);
 
   // Compute cell partition using partitioner from parameter system
@@ -220,8 +221,8 @@ void MeshPartitioning::build(
   if (parameters["reorder_cells_gps"])
   {
     // Create CellType objects based on current cell type
-    std::unique_ptr<CellType> cell_type(
-        CellType::create(mesh_data.topology.cell_type));
+    std::unique_ptr<mesh::CellType> cell_type(
+        mesh::CellType::create(mesh_data.topology.cell_type));
     dolfin_assert(cell_type);
 
     // Allocate objects to hold re-ordering
@@ -1033,7 +1034,7 @@ void MeshPartitioning::build_shared_vertices(
 void MeshPartitioning::build_local_mesh(
     Mesh& mesh, const std::vector<std::int64_t>& global_cell_indices,
     const boost::multi_array<std::int64_t, 2>& cell_global_vertices,
-    const CellType::Type cell_type, const int tdim,
+    const mesh::CellType::Type cell_type, const int tdim,
     const std::int64_t num_global_cells,
     const std::vector<std::int64_t>& vertex_indices,
     const boost::multi_array<double, 2>& vertex_coordinates, const int gdim,
@@ -1044,7 +1045,7 @@ void MeshPartitioning::build_local_mesh(
   Timer timer("Build local part of distributed mesh (from local mesh data)");
 
   // Set cell type
-  mesh._cell_type.reset(CellType::create(cell_type));
+  mesh._cell_type.reset(mesh::CellType::create(cell_type));
   dolfin_assert(tdim == (int)mesh._cell_type->dim());
 
   // Initialise geometry

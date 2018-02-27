@@ -480,7 +480,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     const std::size_t cell_index = facet.entities(D)[0];
 
     // Create attached cell
-    const Cell cell(mesh, cell_index);
+    const mesh::Cell cell(mesh, cell_index);
 
     // Get local index of facet with respect to the cell
     const size_t facet_local_index = cell.index(facet);
@@ -562,7 +562,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
     const Facet facet(mesh, _facets[f]);
 
     // Create cell (get first attached cell)
-    const Cell cell(mesh, facet.entities(D)[0]);
+    const mesh::Cell cell(mesh, facet.entities(D)[0]);
 
     // Get local index of facet with respect to the cell
     const std::size_t local_facet = cell.index(facet);
@@ -575,7 +575,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
     for (auto& vertex : EntityRange<Vertex>(facet))
     {
       // Loop the cells associated with the vertex
-      for (auto& c : EntityRange<Cell>(vertex))
+      for (auto& c : EntityRange<mesh::Cell>(vertex))
       {
         c.get_coordinate_dofs(coordinate_dofs);
         c.get_cell_data(ufc_cell, local_facet);
@@ -673,7 +673,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   {
     // First time around all cells must be iterated over.  Create map
     // from cells attached to boundary to local dofs.
-    for (auto& cell : MeshRange<Cell>(mesh))
+    for (auto& cell : MeshRange<mesh::Cell>(mesh))
     {
       // Update UFC cell
       cell.get_coordinate_dofs(coordinate_dofs);
@@ -738,7 +738,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
          ++it)
     {
       // Get cell
-      const Cell cell(mesh, it->first);
+      const mesh::Cell cell(mesh, it->first);
 
       // Update UFC cell
       cell.get_coordinate_dofs(coordinate_dofs);

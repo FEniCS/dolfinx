@@ -16,6 +16,7 @@
 #define HDF5_MAXSTRLEN 80
 
 using namespace dolfin;
+using namespace dolfin::io;
 
 //-----------------------------------------------------------------------------
 hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,

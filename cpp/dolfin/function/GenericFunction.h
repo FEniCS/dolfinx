@@ -15,13 +15,17 @@ namespace dolfin
 {
 
 class Mesh;
-class Cell;
 class Point;
 class FunctionSpace;
 
 namespace fem
 {
 class FiniteElement;
+}
+
+namespace mesh
+{
+class Cell;
 }
 
 /// This is a common base class for functions. Functions can be
@@ -67,7 +71,7 @@ public:
 
   /// Restrict function to local cell (compute expansion coefficients w)
   virtual void restrict(double* w, const fem::FiniteElement& element,
-                        const Cell& dolfin_cell, const double* coordinate_dofs,
+                        const mesh::Cell& dolfin_cell, const double* coordinate_dofs,
                         const ufc::cell& ufc_cell) const = 0;
 
   /// Compute values at all mesh vertices

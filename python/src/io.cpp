@@ -29,10 +29,10 @@ namespace dolfin_wrappers
 
 void io(py::module& m)
 {
-  // dolfin::VTKFile
-  py::class_<dolfin::VTKFile, std::shared_ptr<dolfin::VTKFile>>(m, "VTKFile")
+  // dolfin::io::VTKFile
+  py::class_<dolfin::io::VTKFile, std::shared_ptr<dolfin::io::VTKFile>>(m, "VTKFile")
       .def(py::init<std::string>())
-      .def("write", [](dolfin::VTKFile& instance, const dolfin::Mesh& mesh) {
+      .def("write", [](dolfin::io::VTKFile& instance, const dolfin::Mesh& mesh) {
         instance.write(mesh);
       });
 

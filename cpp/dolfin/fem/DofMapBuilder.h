@@ -26,7 +26,6 @@ namespace dolfin
 class Mesh;
 class IndexMap;
 class UFC;
-class Cell;
 
 namespace fem
 {
@@ -35,6 +34,7 @@ class DofMap;
 
 namespace mesh
 {
+class Cell;
 class SubDomain;
 }
 
@@ -179,16 +179,18 @@ private:
       const std::set<std::size_t>& global_nodes, const MPI_Comm mpi_comm);
 
   static void
-  get_cell_entities_local(const Cell& cell,
+  get_cell_entities_local(const mesh::Cell& cell,
                           std::vector<std::vector<std::size_t>>& entity_indices,
                           const std::vector<bool>& needs_mesh_entities);
 
   static void get_cell_entities_global(
-      const Cell& cell, std::vector<std::vector<std::size_t>>& entity_indices,
+      const mesh::Cell& cell,
+      std::vector<std::vector<std::size_t>>& entity_indices,
       const std::vector<bool>& needs_mesh_entities);
 
   static void get_cell_entities_global_constrained(
-      const Cell& cell, std::vector<std::vector<std::size_t>>& entity_indices,
+      const mesh::Cell& cell,
+      std::vector<std::vector<std::size_t>>& entity_indices,
       const std::vector<std::vector<std::int64_t>>& global_entity_indices,
       const std::vector<bool>& needs_mesh_entities);
 

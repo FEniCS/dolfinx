@@ -50,11 +50,11 @@ void function(py::module& m)
       .def_property_readonly("value_shape",
                              &dolfin::GenericFunction::value_shape)
       // FIXME: Change eval function to return NumPy array
-      // FIXME: Add C++ version that takes a dolfin::Cell
+      // FIXME: Add C++ version that takes a dolfin::mesh::Cell
       .def("eval",
            [](const dolfin::GenericFunction& self,
               Eigen::Ref<Eigen::VectorXd> u,
-              Eigen::Ref<const Eigen::VectorXd> x, const dolfin::Cell& cell) {
+              Eigen::Ref<const Eigen::VectorXd> x, const dolfin::mesh::Cell& cell) {
              ufc::cell ufc_cell;
              cell.get_cell_data(ufc_cell);
              self.eval(u, x, ufc_cell);

@@ -248,7 +248,7 @@ MeshValueCollection<T>::MeshValueCollection(
       for (std::size_t i = 0; i < entity.num_entities(D); ++i)
       {
         // Create cell
-        const Cell cell(*_mesh, connectivity(entity_index)[i]);
+        const mesh::Cell cell(*_mesh, connectivity(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
@@ -298,7 +298,7 @@ operator=(const MeshFunction<T>& mesh_function)
       for (std::size_t i = 0; i < entity.num_entities(D); ++i)
       {
         // Create cell
-        const Cell cell(*_mesh, connectivity(entity_index)[i]);
+        const mesh::Cell cell(*_mesh, connectivity(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
@@ -434,7 +434,7 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
   dolfin_assert(!connectivity.empty());
   dolfin_assert(connectivity.size(entity_index) > 0);
   const MeshEntity entity(*_mesh, _dim, entity_index);
-  const Cell cell(*_mesh, connectivity(entity_index)[0]); // choose first
+  const mesh::Cell cell(*_mesh, connectivity(entity_index)[0]); // choose first
 
   // Find the local entity index
   const std::size_t local_entity = cell.index(entity);

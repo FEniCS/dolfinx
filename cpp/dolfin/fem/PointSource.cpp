@@ -4,13 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <limits>
-#include <memory>
-#include <vector>
-
+#include "PointSource.h"
 #include "FiniteElement.h"
 #include "GenericDofMap.h"
-#include "PointSource.h"
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScMatrix.h>
@@ -18,6 +14,9 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
+#include <limits>
+#include <memory>
+#include <vector>
 
 using namespace dolfin;
 
@@ -189,7 +188,7 @@ void PointSource::apply(PETScVector& b)
     unsigned int cell_index = tree->compute_first_entity_collision(p, mesh);
 
     // Create cell
-    Cell cell(mesh, static_cast<std::size_t>(cell_index));
+    mesh::Cell cell(mesh, static_cast<std::size_t>(cell_index));
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Evaluate all basis functions at the point()
@@ -313,7 +312,7 @@ void PointSource::apply(PETScMatrix& A)
 
     // Create cell
     cell_index = tree->compute_first_entity_collision(p, *mesh);
-    Cell cell(*mesh, static_cast<std::size_t>(cell_index));
+    mesh::Cell cell(*mesh, static_cast<std::size_t>(cell_index));
 
     // Cell information
     cell.get_coordinate_dofs(coordinate_dofs);

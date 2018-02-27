@@ -199,7 +199,7 @@ public:
   /// *Returns*
   ///     bool
   ///         True if the function space has the given cell.
-  bool has_cell(const Cell& cell) const { return &cell.mesh() == &(*_mesh); }
+  bool has_cell(const mesh::Cell& cell) const { return &cell.mesh() == &(*_mesh); }
 
   /// Check if function space has given element
   ///
