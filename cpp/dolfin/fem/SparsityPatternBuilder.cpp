@@ -43,7 +43,7 @@ void SparsityPatternBuilder::build(
   std::array<std::vector<dolfin::la_index_t>, 2> macro_dofs;
 
   // Create vector to point to dofs
-  std::array<ArrayView<const dolfin::la_index_t>, 2> dofs;
+  std::array<common::ArrayView<const dolfin::la_index_t>, 2> dofs;
 
   // Build sparsity pattern for reals (globally supported basis members)
   // NOTE: It is very important that this is done before other integrals
@@ -118,7 +118,7 @@ void SparsityPatternBuilder::build(
       }
 
       // Insert non-zeroes in sparsity pattern
-      std::array<ArrayView<const dolfin::la_index_t>, 2> global_dofs_p;
+      std::array<common::ArrayView<const dolfin::la_index_t>, 2> global_dofs_p;
       for (std::size_t i = 0; i < 2; ++i)
         global_dofs_p[i].set(global_dofs[i]);
       sparsity_pattern.insert_local(global_dofs_p);
@@ -223,9 +223,9 @@ void SparsityPatternBuilder::build(
     std::vector<dolfin::la_index_t> indices(
         bs * (diagonal_range - primary_range[0]));
     std::iota(indices.begin(), indices.end(), bs * primary_range[0]);
-    const std::array<ArrayView<const dolfin::la_index_t>, 2> diags = {
-        {ArrayView<const dolfin::la_index_t>(indices.size(), indices.data()),
-         ArrayView<const dolfin::la_index_t>(indices.size(), indices.data())}};
+    const std::array<common::ArrayView<const dolfin::la_index_t>, 2> diags = {
+        {common::ArrayView<const dolfin::la_index_t>(indices.size(), indices.data()),
+         common::ArrayView<const dolfin::la_index_t>(indices.size(), indices.data())}};
 
     sparsity_pattern.insert_global(diags);
   }

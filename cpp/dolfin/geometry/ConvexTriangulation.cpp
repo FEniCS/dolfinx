@@ -61,8 +61,8 @@ std::vector<Point> unique_points(const std::vector<Point>& input_points,
 // Check if q lies between p0 and p1. p0, p1 and q are assumed to be colinear
 bool is_between(Point p0, Point p1, Point q)
 {
-  const double sqnorm = (p1 - p0).squared_norm();
-  return (p0 - q).squared_norm() < sqnorm && (p1 - q).squared_norm() < sqnorm;
+  const double sqnorm = (p1 - p0).dot(p1 - p0);
+  return (p0 - q).dot(p0 - q) < sqnorm && (p1 - q).dot(p1 - q) < sqnorm;
 }
 //------------------------------------------------------------------------------
 // Return the indices to the points that forms the polygon that is

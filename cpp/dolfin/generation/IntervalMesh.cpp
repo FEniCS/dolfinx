@@ -9,11 +9,11 @@
 #include "dolfin/common/constants.h"
 #include "dolfin/mesh/CellType.h"
 #include "dolfin/mesh/MeshPartitioning.h"
-
 #include <Eigen/Dense>
 #include <cmath>
 
 using namespace dolfin;
+using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
 Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x)
@@ -21,10 +21,10 @@ Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x)
   // Receive mesh according to parallel policy
   if (MPI::rank(comm) != 0)
   {
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-                     geom(0, 1);
-    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-                     topo(0, 2);
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+        0, 1);
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
+                                                                             2);
     Mesh mesh(comm, CellType::Type::interval, geom, topo);
     MeshPartitioning::build_distributed_mesh(mesh);
     return mesh;
@@ -55,8 +55,10 @@ Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x)
                  nx);
   }
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom((nx + 1), 1);
-  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(nx, 2);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+      (nx + 1), 1);
+  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(nx,
+                                                                           2);
 
   // Create vertices
   for (std::size_t ix = 0; ix <= nx; ix++)

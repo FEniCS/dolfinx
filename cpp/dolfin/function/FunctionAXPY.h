@@ -15,6 +15,9 @@ namespace dolfin
 
 class Function;
 
+namespace function
+{
+
 /// This class represents a linear combination of functions. It is
 /// mostly used as an intermediate class for operations such as u =
 /// 3*u0 + 4*u1; where the rhs generates an FunctionAXPY.
@@ -87,4 +90,5 @@ private:
 
   std::vector<std::pair<double, std::shared_ptr<const Function>>> _pairs;
 };
+}
 }

@@ -139,7 +139,7 @@ SparsityPattern::SparsityPattern(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
-    const std::array<ArrayView<const la_index_t>, 2>& entries)
+    const std::array<common::ArrayView<const la_index_t>, 2>& entries)
 {
   // The primary_dim is global and must be mapped to local
   const auto primary_dim_map
@@ -160,7 +160,7 @@ void SparsityPattern::insert_global(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local(
-    const std::array<ArrayView<const la_index_t>, 2>& entries)
+    const std::array<common::ArrayView<const la_index_t>, 2>& entries)
 {
   // The primary_dim is local and stays the same
   const auto primary_dim_map
@@ -178,7 +178,7 @@ void SparsityPattern::insert_local(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local_global(
-    const std::array<ArrayView<const la_index_t>, 2>& entries)
+    const std::array<common::ArrayView<const la_index_t>, 2>& entries)
 {
   dolfin_assert(entries.size() == 2);
 
@@ -198,7 +198,7 @@ void SparsityPattern::insert_local_global(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_entries(
-    const std::array<ArrayView<const la_index_t>, 2>& entries,
+    const std::array<common::ArrayView<const la_index_t>, 2>& entries,
     const std::function<la_index_t(const la_index_t, const IndexMap&)>&
         primary_dim_map,
     const std::function<la_index_t(const la_index_t, const IndexMap&)>&
@@ -209,8 +209,8 @@ void SparsityPattern::insert_entries(
   const std::size_t primary_codim = (_primary_dim + 1) % 2;
   dolfin_assert(primary_codim < 2);
 
-  ArrayView<const la_index_t> map_i = entries[_primary_dim];
-  ArrayView<const la_index_t> map_j = entries[primary_codim];
+  common::ArrayView<const la_index_t> map_i = entries[_primary_dim];
+  common::ArrayView<const la_index_t> map_j = entries[primary_codim];
   const IndexMap& index_map0 = *_index_maps[_primary_dim];
   const IndexMap& index_map1 = *_index_maps[primary_codim];
 

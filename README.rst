@@ -46,25 +46,13 @@ Documentation can be viewed at http://fenics-dolfin.readthedocs.org/.
    :alt: Documentation Status
 
 
-Automated Testing
+Automated testing
 =================
 
 We use CircleCI to perform automated testing.
 
-.. image:: https://bitbucket-badges.useast.atlassian.io/badge/fenics-project/dolfin.svg
-   :target: https://bitbucket.org/fenics-project/dolfin/addon/pipelines/home
-   :alt: Pipelines Build Status
-
-
-Code Coverage
-=============
-
-Code coverage reports can be viewed at
-https://coveralls.io/bitbucket/fenics-project/dolfin.
-
-.. image:: https://coveralls.io/repos/bitbucket/fenics-project/dolfin/badge.svg?branch=master
-   :target: https://coveralls.io/bitbucket/fenics-project/dolfin?branch=master
-   :alt: Coverage Status
+.. image:: https://circleci.com/bb/fenics-project/dolfinx.svg?style=svg
+    :target: https://circleci.com/bb/fenics-project/dolfinx
 
 
 License

@@ -19,6 +19,9 @@ using namespace dolfin;
 
 namespace
 {
+// Multiplication with scalar
+inline Point operator*(double a, const Point& p) { return p * a; }
+
 // Add points to vector
 template <typename T>
 inline void add(std::vector<T>& points, const std::vector<T>& _points)
@@ -228,7 +231,7 @@ std::vector<Point>
 IntersectionConstruction::intersection_point_point_2d(const Point& p0,
                                                       const Point& q0)
 {
-  if (p0.x() == q0.x() && p0.y() == q0.y())
+  if (p0[0] == q0[0] && p0[1] == q0[1])
     return std::vector<Point>(1, p0);
   else
     return std::vector<Point>();
@@ -238,7 +241,7 @@ std::vector<Point>
 IntersectionConstruction::intersection_point_point_3d(const Point& p0,
                                                       const Point& q0)
 {
-  if (p0.x() == q0.x() && p0.y() == q0.y() && p0.z() == q0.z())
+  if (p0[0] == q0[0] && p0[1] == q0[1] && p0[2] == q0[2])
     return std::vector<Point>(1, p0);
   else
     return std::vector<Point>();
@@ -397,14 +400,14 @@ std::vector<Point> IntersectionConstruction::intersection_segment_segment_2d(
     case 0:
       for (auto p : points_1d)
       {
-        const double y = p0.y() + (p - p0.x()) * v.y() / v.x();
+        const double y = p0[1] + (p - p0[0]) * v[1] / v[0];
         points.push_back(Point(p, y));
       }
       break;
     default:
       for (auto p : points_1d)
       {
-        const double x = p0.x() + (p - p0.y()) * v.x() / v.y();
+        const double x = p0[0] + (p - p0[1]) * v[0] / v[1];
         points.push_back(Point(x, p));
       }
     }
@@ -416,7 +419,7 @@ std::vector<Point> IntersectionConstruction::intersection_segment_segment_2d(
 
   // Compute determinant needed for intersection computation
   const Point w = q1 - q0;
-  const double den = w.x() * v.y() - w.y() * v.x();
+  const double den = w[0] * v[1] - w[1] * v[0];
 
   // Figure out which one of the four points we want to use
   // as starting point for numerical robustness
@@ -570,27 +573,24 @@ std::vector<Point> IntersectionConstruction::_intersection_triangle_segment_3d(
       for (auto P : points_2d)
       {
         const double x
-            = p0.x()
-              + ((p0.y() - P.x()) * n.y() + (p0.z() - P.y()) * n.z()) / n.x();
-        points.push_back(Point(x, P.x(), P.y()));
+            = p0[0] + ((p0[1] - P[0]) * n[1] + (p0[2] - P[1]) * n[2]) / n[0];
+        points.push_back(Point(x, P[0], P[1]));
       }
       break;
     case 1:
       for (auto P : points_2d)
       {
         const double y
-            = p0.y()
-              + ((p0.x() - P.x()) * n.x() + (p0.z() - P.y()) * n.z()) / n.y();
-        points.push_back(Point(P.x(), y, P.y()));
+            = p0[1] + ((p0[0] - P[0]) * n[0] + (p0[2] - P[1]) * n[2]) / n[1];
+        points.push_back(Point(P[0], y, P[1]));
       }
       break;
     default:
       for (auto P : points_2d)
       {
         const double z
-            = p0.z()
-              + ((p0.x() - P.x()) * n.x() + (p0.y() - P.y()) * n.y()) / n.z();
-        points.push_back(Point(P.x(), P.y(), z));
+            = p0[2] + ((p0[0] - P[0]) * n[0] + (p0[1] - P[1]) * n[1]) / n[2];
+        points.push_back(Point(P[0], P[1], z));
       }
     }
 

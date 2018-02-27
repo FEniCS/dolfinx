@@ -25,9 +25,13 @@ class FunctionSpace;
 class Facet;
 class PETScMatrix;
 class PETScVector;
-class SubDomain;
 template <typename T>
 class MeshFunction;
+
+namespace mesh
+{
+class SubDomain;
+}
 
 /// Interface for setting (strong) Dirichlet boundary conditions.
 
@@ -108,7 +112,7 @@ public:
   ///         The function space
   /// @param[in] g (GenericFunction)
   ///         The value
-  /// @param[in] sub_domain (SubDomain)
+  /// @param[in] sub_domain (mesh::SubDomain)
   ///         The subdomain
   /// @param[in] method (std::string)
   ///         Optional argument: A string specifying
@@ -116,7 +120,7 @@ public:
   /// @param[in] check_midpoint (bool)
   DirichletBC(std::shared_ptr<const FunctionSpace> V,
               std::shared_ptr<const GenericFunction> g,
-              std::shared_ptr<const SubDomain> sub_domain,
+              std::shared_ptr<const mesh::SubDomain> sub_domain,
               std::string method = "topological", bool check_midpoint = true);
 
   /// Create boundary condition for subdomain specified by index
@@ -227,9 +231,9 @@ public:
 
   /// Return shared pointer to subdomain
   ///
-  /// @return SubDomain
+  /// @return mesh::SubDomain
   ///         Shared pointer to subdomain.
-  std::shared_ptr<const SubDomain> user_sub_domain() const;
+  std::shared_ptr<const mesh::SubDomain> user_sub_domain() const;
 
   /// Set value g for boundary condition, domain remains unchanged
   ///
@@ -267,7 +271,7 @@ private:
   void init_facets(const MPI_Comm mpi_comm) const;
 
   // Initialize sub domain markers from sub domain
-  void init_from_sub_domain(std::shared_ptr<const SubDomain> sub_domain) const;
+  void init_from_sub_domain(std::shared_ptr<const mesh::SubDomain> sub_domain) const;
 
   // Initialize sub domain markers from MeshFunction
   void init_from_mesh_function(const MeshFunction<std::size_t>& sub_domains,
@@ -308,7 +312,7 @@ private:
   static const std::set<std::string> methods;
 
   // User defined sub domain
-  std::shared_ptr<const SubDomain> _user_sub_domain;
+  std::shared_ptr<const mesh::SubDomain> _user_sub_domain;
 
   // Cached number of bc dofs, used for memory allocation on second use
   mutable std::size_t _num_dofs;

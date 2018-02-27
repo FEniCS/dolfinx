@@ -77,7 +77,7 @@ def test_creation_and_marking():
         #include<Eigen/Dense>
         #include<dolfin/mesh/SubDomain.h>
 
-        class Left : public dolfin::SubDomain
+        class Left : public dolfin::mesh::SubDomain
         {
         public:
 
@@ -87,7 +87,7 @@ def test_creation_and_marking():
           }
         };
 
-        class LeftOnBoundary : public dolfin::SubDomain
+        class LeftOnBoundary : public dolfin::mesh::SubDomain
         {
         public:
 
@@ -97,7 +97,7 @@ def test_creation_and_marking():
           }
         };
 
-        class Right : public dolfin::SubDomain
+        class Right : public dolfin::mesh::SubDomain
         {
         public:
 
@@ -107,7 +107,7 @@ def test_creation_and_marking():
           }
         };
 
-        class RightOnBoundary : public dolfin::SubDomain
+        class RightOnBoundary : public dolfin::mesh::SubDomain
         {
         public:
 
@@ -118,10 +118,10 @@ def test_creation_and_marking():
         };
 
     PYBIND11_MODULE(SIGNATURE, m) {
-       py::class_<Left, std::shared_ptr<Left>, dolfin::SubDomain>(m, "Left").def(py::init<>());
-       py::class_<Right, std::shared_ptr<Right>, dolfin::SubDomain>(m, "Right").def(py::init<>());
-       py::class_<LeftOnBoundary, std::shared_ptr<LeftOnBoundary>, dolfin::SubDomain>(m, "LeftOnBoundary").def(py::init<>());
-       py::class_<RightOnBoundary, std::shared_ptr<RightOnBoundary>, dolfin::SubDomain>(m, "RightOnBoundary").def(py::init<>());
+       py::class_<Left, std::shared_ptr<Left>, dolfin::mesh::SubDomain>(m, "Left").def(py::init<>());
+       py::class_<Right, std::shared_ptr<Right>, dolfin::mesh::SubDomain>(m, "Right").def(py::init<>());
+       py::class_<LeftOnBoundary, std::shared_ptr<LeftOnBoundary>, dolfin::mesh::SubDomain>(m, "LeftOnBoundary").def(py::init<>());
+       py::class_<RightOnBoundary, std::shared_ptr<RightOnBoundary>, dolfin::mesh::SubDomain>(m, "RightOnBoundary").def(py::init<>());
     }
     """
 

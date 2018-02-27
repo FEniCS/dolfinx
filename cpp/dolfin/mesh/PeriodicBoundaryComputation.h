@@ -16,7 +16,11 @@ namespace dolfin
 {
 
 class Mesh;
+
+namespace mesh
+{
 class SubDomain;
+}
 
 /// This class computes map from slave entity to master entity
 
@@ -28,7 +32,7 @@ public:
   /// process, local index on owner). If a master entity is shared
   /// by processes, only one of the owning processes is returned.
   static std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>
-  compute_periodic_pairs(const Mesh& mesh, const SubDomain& sub_domain,
+  compute_periodic_pairs(const Mesh& mesh, const mesh::SubDomain& sub_domain,
                          const std::size_t dim);
 
   /// This function returns a MeshFunction which marks mesh entities
@@ -41,7 +45,7 @@ public:
   /// It is useful for visualising and debugging the Expression::map
   /// function that is used to apply periodic boundary conditions.
   static MeshFunction<std::size_t>
-  masters_slaves(std::shared_ptr<const Mesh> mesh, const SubDomain& sub_domain,
+  masters_slaves(std::shared_ptr<const Mesh> mesh, const mesh::SubDomain& sub_domain,
                  const std::size_t dim);
 
 private:

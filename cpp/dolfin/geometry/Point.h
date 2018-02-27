@@ -94,24 +94,6 @@ public:
     return _x[i];
   }
 
-  /// Return x-coordinate
-  ///
-  /// @return    double
-  ///         The x-coordinate.
-  double x() const { return _x[0]; }
-
-  /// Return y-coordinate
-  ///
-  /// @return     double
-  ///         The y-coordinate.
-  double y() const { return _x[1]; }
-
-  /// Return z-coordinate
-  ///
-  /// @return    double
-  ///         The z-coordinate.
-  double z() const { return _x[2]; }
-
   /// Return coordinate array
   ///
   /// @return double*
@@ -136,8 +118,7 @@ public:
   /// @return Point
   Point operator+(const Point& p) const
   {
-    Point q(_x[0] + p._x[0], _x[1] + p._x[1], _x[2] + p._x[2]);
-    return q;
+    return Point(_x[0] + p._x[0], _x[1] + p._x[1], _x[2] + p._x[2]);
   }
 
   /// Compute difference of two points
@@ -145,8 +126,7 @@ public:
   /// @return Point
   Point operator-(const Point& p) const
   {
-    Point q(_x[0] - p._x[0], _x[1] - p._x[1], _x[2] - p._x[2]);
-    return q;
+    return Point(_x[0] - p._x[0], _x[1] - p._x[1], _x[2] - p._x[2]);
   }
 
   /// Add given point
@@ -168,17 +148,12 @@ public:
   }
 
   /// Unary minus
-  Point operator-()
-  {
-    Point p(-_x[0], -_x[1], -_x[2]);
-    return p;
-  }
+  Point operator-() { return Point(-_x[0], -_x[1], -_x[2]); }
 
   /// Multiplication with scalar
   Point operator*(double a) const
   {
-    Point p(a * _x[0], a * _x[1], a * _x[2]);
-    return p;
+    return Point(a * _x[0], a * _x[1], a * _x[2]);
   }
 
   /// Incremental multiplication with scalar
@@ -193,8 +168,7 @@ public:
   /// Division by scalar
   Point operator/(double a) const
   {
-    Point p(_x[0] / a, _x[1] / a, _x[2] / a);
-    return p;
+    return Point(_x[0] / a, _x[1] / a, _x[2] / a);
   }
 
   /// Incremental division by scalar
@@ -266,23 +240,6 @@ public:
     return std::sqrt(_x[0] * _x[0] + _x[1] * _x[1] + _x[2] * _x[2]);
   }
 
-  /// Compute norm of point representing a vector from the origin
-  ///
-  /// @return     double
-  ///         The squared (Euclidean) norm of the vector from the
-  ///         origin of the point.
-  ///
-  /// @code{.cpp}
-  ///
-  ///         Point p(1.0, 2.0, 2.0);
-  ///         info("%g", p.squared_norm());
-  ///
-  /// @endcode
-  double squared_norm() const
-  {
-    return _x[0] * _x[0] + _x[1] * _x[1] + _x[2] * _x[2];
-  }
-
   /// Compute cross product with given vector
   ///
   /// @param    p (_Point_)
@@ -335,9 +292,6 @@ private:
   std::array<double, 3> _x;
 };
 
-/// Multiplication with scalar
-inline Point operator*(double a, const Point& p) { return p * a; }
-
 /// Output of Point to stream
 inline std::ostream& operator<<(std::ostream& stream, const Point& point)
 {
@@ -345,5 +299,3 @@ inline std::ostream& operator<<(std::ostream& stream, const Point& point)
   return stream;
 }
 }
-
-

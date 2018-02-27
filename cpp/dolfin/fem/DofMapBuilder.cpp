@@ -32,7 +32,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
-                          std::shared_ptr<const SubDomain> constrained_domain)
+                          std::shared_ptr<const mesh::SubDomain> constrained_domain)
 {
   dolfin_assert(dofmap._ufc_dofmap);
 
@@ -1030,7 +1030,7 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
     std::vector<std::size_t>& node_local_to_global,
     std::vector<std::size_t>& num_mesh_entities_global,
     std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh,
-    std::shared_ptr<const SubDomain> constrained_domain,
+    std::shared_ptr<const mesh::SubDomain> constrained_domain,
     const std::size_t block_size)
 {
   dolfin_assert(ufc_dofmap);
@@ -1146,7 +1146,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
     std::vector<int>& node_ufc_local_to_local,
     std::vector<std::size_t>& num_mesh_entities_global,
     std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh,
-    std::shared_ptr<const SubDomain> constrained_domain,
+    std::shared_ptr<const mesh::SubDomain> constrained_domain,
     const std::size_t block_size)
 {
   dolfin_assert(ufc_dofmap);
@@ -1305,7 +1305,7 @@ void DofMapBuilder::compute_constrained_mesh_indices(
     std::vector<std::vector<std::int64_t>>& global_entity_indices,
     std::vector<std::size_t>& num_mesh_entities_global,
     const std::vector<bool>& needs_mesh_entities, const Mesh& mesh,
-    const SubDomain& constrained_domain)
+    const mesh::SubDomain& constrained_domain)
 {
   // Topological dimension
   const std::size_t D = mesh.topology().dim();

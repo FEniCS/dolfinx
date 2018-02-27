@@ -1,5 +1,15 @@
 #pragma once
 
+namespace dolfin
+{
+/*! \namespace dolfin::common
+    \brief Miscellaneous classes, functions and types
+
+    This namespace provides utility type functions for managing subsystems,
+   convenience classes and library-wide typedefs.
+*/
+}
+
 // DOLFIN common
 
 #include <dolfin/common/ArrayView.h>
@@ -14,5 +24,3 @@
 #include <dolfin/common/timing.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/version.h>
-
-

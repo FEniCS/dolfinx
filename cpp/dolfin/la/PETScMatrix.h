@@ -20,7 +20,11 @@ namespace dolfin
 
 class PETScVector;
 class SparsityPattern;
+
+namespace la
+{
 class VectorSpaceBasis;
+}
 
 /// This class provides a simple matrix class based on PETSc.
 /// It is a wrapper for a PETSc matrix pointer (Mat)
@@ -30,7 +34,7 @@ class VectorSpaceBasis;
 /// access the PETSc Mat pointer using the function mat() and
 /// use the standard PETSc interface.
 
-class PETScMatrix : public PETScBaseMatrix
+class PETScMatrix : public la::PETScBaseMatrix
 {
 public:
   /// Create empty matrix
@@ -191,18 +195,18 @@ public:
 
   /// Attach nullspace to matrix (typically used by Krylov solvers
   /// when solving singular systems)
-  void set_nullspace(const VectorSpaceBasis& nullspace);
+  void set_nullspace(const la::VectorSpaceBasis& nullspace);
 
   /// Attach 'near' nullspace to matrix (used by preconditioners,
   /// such as smoothed aggregation algerbraic multigrid)
-  void set_near_nullspace(const VectorSpaceBasis& nullspace);
+  void set_near_nullspace(const la::VectorSpaceBasis& nullspace);
 
   /// Dump matrix to PETSc binary format
   void binary_dump(std::string file_name) const;
 
 private:
   // Create PETSc nullspace object
-  MatNullSpace create_petsc_nullspace(const VectorSpaceBasis& nullspace) const;
+  MatNullSpace create_petsc_nullspace(const la::VectorSpaceBasis& nullspace) const;
 
   // PETSc norm types
   static const std::map<std::string, NormType> norm_types;

@@ -52,7 +52,7 @@ Point Point::rotate(const Point& k, double theta) const
 std::string Point::str(bool verbose) const
 {
   std::stringstream s;
-  s << "<Point x = " << x() << " y = " << y() << " z = " << z() << ">";
+  s << "<Point x0 = " << _x[0] << " x1 = " << _x[1] << " x2 = " << _x[2] << ">";
   return s.str();
 }
 //-----------------------------------------------------------------------------

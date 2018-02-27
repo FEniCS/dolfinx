@@ -43,7 +43,6 @@ class Top(SubDomain):
 
 class Obstacle(SubDomain):
     def inside(self, x, on_boundary):
-        print(x)
         c1 = np.logical_and(x[:, 1] < 0.7, x[:, 1] > 0.5)
         c2 = np.logical_and(x[:, 0] > 0.2, x[:, 0] < 1.0)
         return np.logical_and(c1, c2)
@@ -107,13 +106,13 @@ solve(a == L, u, bcs)
 # Evaluate integral of normal gradient over top boundary
 n = FacetNormal(mesh)
 m1 = dot(grad(u), n)*ds(2)
-v1 = assemble(m1)
-print("\int grad(u) * n ds(2) = ", v1)
+# v1 = assemble(m1)
+# print("\int grad(u) * n ds(2) = ", v1)
 
 # Evaluate integral of u over the obstacle
 m2 = u*dx(1)
-v2 = assemble(m2)
-print("\int u dx(1) = ", v2)
+# v2 = assemble(m2)
+# print("\int u dx(1) = ", v2)
 
 # Plot solution
 import matplotlib.pyplot as plt

@@ -37,10 +37,10 @@ namespace py = pybind11;
 namespace dolfin_wrappers {
 
 void mesh(py::module &m) {
-  // Make dolfin::SubDomain from pointer
+  // Make dolfin::mesh::SubDomain from pointer
   m.def("make_dolfin_subdomain", [](std::uintptr_t e) {
-    dolfin::SubDomain *p = reinterpret_cast<dolfin::SubDomain *>(e);
-    return std::shared_ptr<const dolfin::SubDomain>(p);
+    dolfin::mesh::SubDomain *p = reinterpret_cast<dolfin::mesh::SubDomain *>(e);
+    return std::shared_ptr<const dolfin::mesh::SubDomain>(p);
   });
 
   // dolfin::CellType
@@ -416,57 +416,56 @@ void mesh(py::module &m) {
 
   // dolfin::SubDomain trampoline class for user overloading from
   // Python
-  class PySubDomain : public dolfin::SubDomain {
-    using dolfin::SubDomain::SubDomain;
+  class PySubDomain : public dolfin::mesh::SubDomain {
+    using dolfin::mesh::SubDomain::SubDomain;
 
     VectorXb
     inside(Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>
                x,
            bool on_boundary) const override {
-      std::cout << "Inside = " << x.rows() << "x" << x.cols() << " \n";
-
-      PYBIND11_OVERLOAD(VectorXb, dolfin::SubDomain, inside, x, on_boundary);
+      PYBIND11_OVERLOAD(VectorXb, dolfin::mesh::SubDomain, inside, x,
+                        on_boundary);
     }
 
     void map(Eigen::Ref<const Eigen::VectorXd> x,
              Eigen::Ref<Eigen::VectorXd> y) const override {
-      PYBIND11_OVERLOAD(void, dolfin::SubDomain, map, x, y);
+      PYBIND11_OVERLOAD(void, dolfin::mesh::SubDomain, map, x, y);
     }
   };
 
-  // dolfin::SubDomain
-  py::class_<dolfin::SubDomain, std::shared_ptr<dolfin::SubDomain>,
+  // dolfin::mesh::SubDomain
+  py::class_<dolfin::mesh::SubDomain, std::shared_ptr<dolfin::mesh::SubDomain>,
              PySubDomain>(m, "SubDomain", "DOLFIN SubDomain object")
       .def(py::init<double>(), py::arg("map_tol") = DOLFIN_EPS)
       .def("inside",
-           (Eigen::Matrix<bool, Eigen::Dynamic, 1>(dolfin::SubDomain::*)(
+           (Eigen::Matrix<bool, Eigen::Dynamic, 1>(dolfin::mesh::SubDomain::*)(
                Eigen::Ref<const Eigen::Matrix<bool, Eigen::Dynamic,
                                               Eigen::Dynamic, Eigen::RowMajor>>,
                bool) const) &
-               dolfin::SubDomain::inside)
-      .def("map",
-           (void (dolfin::SubDomain::*)(Eigen::Ref<const Eigen::VectorXd>,
-                                        Eigen::Ref<Eigen::VectorXd>) const) &
-               dolfin::SubDomain::map)
-      .def("set_property", &dolfin::SubDomain::set_property)
-      .def("get_property", &dolfin::SubDomain::get_property)
+               dolfin::mesh::SubDomain::inside)
+      .def("map", (void (dolfin::mesh::SubDomain::*)(
+                      Eigen::Ref<const Eigen::VectorXd>,
+                      Eigen::Ref<Eigen::VectorXd>) const) &
+                      dolfin::mesh::SubDomain::map)
+      .def("set_property", &dolfin::mesh::SubDomain::set_property)
+      .def("get_property", &dolfin::mesh::SubDomain::get_property)
       .def("mark",
-           (void (dolfin::SubDomain::*)(dolfin::MeshFunction<std::size_t> &,
-                                        std::size_t, bool) const) &
-               dolfin::SubDomain::mark,
+           (void (dolfin::mesh::SubDomain::*)(
+               dolfin::MeshFunction<std::size_t> &, std::size_t, bool) const) &
+               dolfin::mesh::SubDomain::mark,
            py::arg("meshfunction"), py::arg("marker"),
            py::arg("check_midpoint") = true)
       .def("mark",
-           (void (dolfin::SubDomain::*)(dolfin::MeshFunction<double> &, double,
-                                        bool) const) &
-               dolfin::SubDomain::mark,
+           (void (dolfin::mesh::SubDomain::*)(dolfin::MeshFunction<double> &,
+                                              double, bool) const) &
+               dolfin::mesh::SubDomain::mark,
            py::arg("meshfunction"), py::arg("marker"),
            py::arg("check_midpoint") = true)
       .def("mark",
-           (void (dolfin::SubDomain::*)(dolfin::MeshFunction<bool> &, bool,
-                                        bool) const) &
-               dolfin::SubDomain::mark,
+           (void (dolfin::mesh::SubDomain::*)(dolfin::MeshFunction<bool> &,
+                                              bool, bool) const) &
+               dolfin::mesh::SubDomain::mark,
            py::arg("meshfunction"), py::arg("marker"),
            py::arg("check_midpoint") = true);
 

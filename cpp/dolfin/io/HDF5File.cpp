@@ -36,6 +36,7 @@
 #include <string>
 
 using namespace dolfin;
+using namespace dolfin::io;
 
 //-----------------------------------------------------------------------------
 HDF5File::HDF5File(MPI_Comm comm, const std::string filename,

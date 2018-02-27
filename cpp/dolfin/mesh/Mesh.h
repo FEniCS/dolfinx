@@ -24,8 +24,12 @@ class GenericFunction;
 class LocalMeshData;
 class MeshEntity;
 class Point;
-class SubDomain;
 class BoundingBoxTree;
+
+namespace mesh
+{
+class SubDomain;
+}
 
 /// A _Mesh_ consists of a set of connected and numbered mesh entities.
 ///

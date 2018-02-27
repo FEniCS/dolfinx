@@ -104,22 +104,22 @@ SimplexQuadrature::compute_quadrature_rule_interval(
   {
   case 1:
   {
-    det = coordinates[1].x() - coordinates[0].x();
+    det = coordinates[1][0] - coordinates[0][0];
     break;
   }
   case 2:
   {
-    const std::array<double, 2> J = {{coordinates[1].x() - coordinates[0].x(),
-                                      coordinates[1].y() - coordinates[0].y()}};
+    const std::array<double, 2> J = {{coordinates[1][0] - coordinates[0][0],
+                                      coordinates[1][1] - coordinates[0][1]}};
     const double det2 = J[0] * J[0] + J[1] * J[1];
     det = std::sqrt(det2);
     break;
   }
   case 3:
   {
-    const std::array<double, 3> J = {{coordinates[1].x() - coordinates[0].x(),
-                                      coordinates[1].y() - coordinates[0].y(),
-                                      coordinates[1].z() - coordinates[0].z()}};
+    const std::array<double, 3> J = {{coordinates[1][0] - coordinates[0][0],
+                                      coordinates[1][1] - coordinates[0][1],
+                                      coordinates[1][2] - coordinates[0][2]}};
     const double det2 = J[0] * J[0] + J[1] * J[1];
     det = std::sqrt(det2);
     break;
@@ -180,12 +180,12 @@ SimplexQuadrature::compute_quadrature_rule_triangle(
   }
   case 3:
   {
-    const std::array<double, 6> J = {{coordinates[1].x() - coordinates[0].x(),
-                                      coordinates[2].x() - coordinates[0].x(),
-                                      coordinates[1].y() - coordinates[0].y(),
-                                      coordinates[2].y() - coordinates[0].y(),
-                                      coordinates[1].z() - coordinates[0].z(),
-                                      coordinates[2].z() - coordinates[0].z()}};
+    const std::array<double, 6> J = {{coordinates[1][0] - coordinates[0][0],
+                                      coordinates[2][0] - coordinates[0][0],
+                                      coordinates[1][1] - coordinates[0][1],
+                                      coordinates[2][1] - coordinates[0][1],
+                                      coordinates[1][2] - coordinates[0][2],
+                                      coordinates[2][2] - coordinates[0][2]}};
     const double d_0 = J[2] * J[5] - J[4] * J[3];
     const double d_1 = J[4] * J[1] - J[0] * J[5];
     const double d_2 = J[0] * J[3] - J[2] * J[1];
@@ -243,15 +243,15 @@ SimplexQuadrature::compute_quadrature_rule_tetrahedron(
   {
   case 3:
   {
-    const std::array<double, 9> J = {{coordinates[1].x() - coordinates[0].x(),
-                                      coordinates[2].x() - coordinates[0].x(),
-                                      coordinates[3].x() - coordinates[0].x(),
-                                      coordinates[1].y() - coordinates[0].y(),
-                                      coordinates[2].y() - coordinates[0].y(),
-                                      coordinates[3].y() - coordinates[0].y(),
-                                      coordinates[1].z() - coordinates[0].z(),
-                                      coordinates[2].z() - coordinates[0].z(),
-                                      coordinates[3].z() - coordinates[0].z()}};
+    const std::array<double, 9> J = {{coordinates[1][0] - coordinates[0][0],
+                                      coordinates[2][0] - coordinates[0][0],
+                                      coordinates[3][0] - coordinates[0][0],
+                                      coordinates[1][1] - coordinates[0][1],
+                                      coordinates[2][1] - coordinates[0][1],
+                                      coordinates[3][1] - coordinates[0][1],
+                                      coordinates[1][2] - coordinates[0][2],
+                                      coordinates[2][2] - coordinates[0][2],
+                                      coordinates[3][2] - coordinates[0][2]}};
     const std::array<double, 3> d
         = {{J[4] * J[8] - J[5] * J[7], J[2] * J[7] - J[1] * J[8],
             J[1] * J[5] - J[2] * J[4]}};

@@ -21,7 +21,10 @@
 namespace dolfin
 {
 
+namespace io
+{
 class HDF5File;
+}
 
 /// This class wraps HDF5 function calls. HDF5 function calls should
 /// only appear in a member function of this class and not elsewhere
@@ -653,5 +656,3 @@ inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
 }
 
 #endif
-
-

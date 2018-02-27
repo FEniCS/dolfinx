@@ -17,7 +17,7 @@
 //
 // Unit tests for the function library
 
-#include "Projection.h"
+//#include "Projection.h"
 #include <catch.hpp>
 #include <dolfin.h>
 

@@ -197,7 +197,7 @@ Point QuadrilateralCell::normal(const Cell& cell, std::size_t facet) const
   Point t = p2 - p1;
   t /= t.norm();
   Point n = p2 - p0;
-  n -= n.dot(t) * t;
+  n -= t * n.dot(t);
 
   // Normalize
   n /= n.norm();

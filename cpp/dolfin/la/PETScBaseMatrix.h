@@ -24,6 +24,9 @@ namespace dolfin
 
 class PETScVector;
 
+namespace la
+{
+
 /// This class is a base class for matrices that can be used in
 /// PETScKrylovSolver.
 
@@ -79,5 +82,5 @@ protected:
   Mat _matA;
 };
 }
-
+}
 #endif

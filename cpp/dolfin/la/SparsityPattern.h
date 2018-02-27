@@ -29,7 +29,7 @@ class SparsityPattern
   // NOTE: Do not change this typedef without performing careful
   //       performance profiling
   /// Set type used for the rows of the sparsity pattern
-  typedef dolfin::Set<std::size_t> set_type;
+  typedef dolfin::common::Set<std::size_t> set_type;
 
 public:
   /// Whether SparsityPattern is sorted
@@ -57,15 +57,15 @@ public:
   ~SparsityPattern() {}
 
   /// Insert non-zero entries using global indices
-  void insert_global(const std::array<ArrayView<const la_index_t>, 2>& entries);
+  void insert_global(const std::array<common::ArrayView<const la_index_t>, 2>& entries);
 
   /// Insert non-zero entries using local (process-wise) indices
-  void insert_local(const std::array<ArrayView<const la_index_t>, 2>& entries);
+  void insert_local(const std::array<common::ArrayView<const la_index_t>, 2>& entries);
 
   /// Insert non-zero entries using local (process-wise) indices for
   /// the primary dimension and global indices for the co-dimension
   void insert_local_global(
-      const std::array<ArrayView<const la_index_t>, 2>& entries);
+      const std::array<common::ArrayView<const la_index_t>, 2>& entries);
 
   /// Insert full rows (or columns, according to primary dimension)
   /// using local (process-wise) indices. This must be called before
@@ -134,7 +134,7 @@ private:
   // The primary dim entries must be local
   // The primary_codim entries must be global
   void insert_entries(
-      const std::array<ArrayView<const la_index_t>, 2>& entries,
+      const std::array<common::ArrayView<const la_index_t>, 2>& entries,
       const std::function<la_index_t(const la_index_t, const IndexMap&)>&
           primary_dim_map,
       const std::function<la_index_t(const la_index_t, const IndexMap&)>&

@@ -9,7 +9,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 
-using namespace dolfin;
+using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
 MeshCoordinates::MeshCoordinates(std::shared_ptr<const Mesh> mesh)

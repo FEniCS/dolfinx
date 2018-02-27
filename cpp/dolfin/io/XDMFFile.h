@@ -41,9 +41,6 @@ namespace dolfin
 
 // Forward declarations
 class Function;
-#ifdef HAS_HDF5
-class HDF5File;
-#endif
 class LocalMeshData;
 class Mesh;
 template <typename T>
@@ -51,6 +48,12 @@ class MeshFunction;
 template <typename T>
 class MeshValueCollection;
 class Point;
+
+namespace io
+{
+#ifdef HAS_HDF5
+class HDF5File;
+#endif
 
 /// Read and write Mesh, Function, MeshFunction and other objects in XDMF
 
@@ -569,4 +572,5 @@ inline void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
   add_data_item(comm, xml_node, h5_id, h5_path, x_int, shape, number_type);
 }
 #endif
+}
 }

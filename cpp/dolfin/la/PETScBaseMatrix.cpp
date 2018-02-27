@@ -12,6 +12,7 @@
 #include <petscvec.h>
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 PETScBaseMatrix::PETScBaseMatrix(Mat A) : _matA(A)

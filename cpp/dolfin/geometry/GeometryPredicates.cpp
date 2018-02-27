@@ -69,21 +69,21 @@ bool GeometryPredicates::_is_degenerate_3d(const std::vector<Point>& simplex)
     return simplex[0] == simplex[1];
   case 3:
   {
-    const double ayz[2] = {simplex[0].y(), simplex[0].z()};
-    const double byz[2] = {simplex[1].y(), simplex[1].z()};
-    const double cyz[2] = {simplex[2].y(), simplex[2].z()};
+    const double ayz[2] = {simplex[0][1], simplex[0][2]};
+    const double byz[2] = {simplex[1][1], simplex[1][2]};
+    const double cyz[2] = {simplex[2][1], simplex[2][2]};
     if (_orient2d(ayz, byz, cyz) != 0.0)
       return false;
 
-    const double azx[2] = {simplex[0].z(), simplex[0].x()};
-    const double bzx[2] = {simplex[1].z(), simplex[1].x()};
-    const double czx[2] = {simplex[2].z(), simplex[2].x()};
+    const double azx[2] = {simplex[0][2], simplex[0][0]};
+    const double bzx[2] = {simplex[1][2], simplex[1][0]};
+    const double czx[2] = {simplex[2][2], simplex[2][0]};
     if (_orient2d(azx, bzx, czx) != 0.0)
       return false;
 
-    const double axy[2] = {simplex[0].x(), simplex[0].y()};
-    const double bxy[2] = {simplex[1].x(), simplex[1].y()};
-    const double cxy[2] = {simplex[2].x(), simplex[2].y()};
+    const double axy[2] = {simplex[0][0], simplex[0][1]};
+    const double bxy[2] = {simplex[1][0], simplex[1][1]};
+    const double cxy[2] = {simplex[2][0], simplex[2][1]};
     if (_orient2d(axy, bxy, cxy) != 0.0)
       return false;
 
@@ -106,11 +106,11 @@ bool GeometryPredicates::is_finite(const std::vector<Point>& simplex)
 {
   for (auto p : simplex)
   {
-    if (!std::isfinite(p.x()))
+    if (!std::isfinite(p[0]))
       return false;
-    if (!std::isfinite(p.y()))
+    if (!std::isfinite(p[1]))
       return false;
-    if (!std::isfinite(p.z()))
+    if (!std::isfinite(p[2]))
       return false;
   }
   return true;

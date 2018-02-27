@@ -119,7 +119,9 @@ public:
   /// Cell integral for domain i
   std::shared_ptr<const ufc::cell_integral> cell_integral(unsigned int i) const
   {
-    dolfin_assert(i <= _cell_integrals.size());
+    if ((i + 1) >= _cell_integrals.size())
+      return std::shared_ptr<const ufc::cell_integral>();
+
     return _cell_integrals[i + 1];
   }
 
@@ -168,7 +170,9 @@ public:
   std::shared_ptr<const ufc::exterior_facet_integral>
   exterior_facet_integral(unsigned int i) const
   {
-    dolfin_assert(i <= _exterior_facet_integrals.size());
+    if (i + 1 >= _exterior_facet_integrals.size())
+      return std::shared_ptr<const ufc::exterior_facet_integral>();
+
     return _exterior_facet_integrals[i + 1];
   }
 
@@ -191,7 +195,9 @@ public:
   std::shared_ptr<const ufc::interior_facet_integral>
   interior_facet_integral(unsigned int i) const
   {
-    dolfin_assert(i <= _interior_facet_integrals.size());
+    if (i + 1 >= _interior_facet_integrals.size())
+      return std::shared_ptr<const ufc::interior_facet_integral>();
+
     return _interior_facet_integrals[i + 1];
   }
 
@@ -213,7 +219,8 @@ public:
   std::shared_ptr<const ufc::vertex_integral>
   vertex_integral(unsigned int i) const
   {
-    dolfin_assert(i <= _vertex_integrals.size());
+    if (i + 1 >= _vertex_integrals.size())
+      return std::shared_ptr<const ufc::vertex_integral>();
     return _vertex_integrals[i + 1];
   }
 

@@ -112,7 +112,7 @@ void GeometryDebugging::init_plot()
 std::string GeometryDebugging::point2string(const Point& p)
 {
   std::stringstream s;
-  s << "(" << p.x() << "," << p.y() << "," << p.z() << ")";
+  s << "(" << p[0] << "," << p[1] << "," << p[2] << ")";
   return s.str();
 }
 //-----------------------------------------------------------------------------
@@ -124,18 +124,18 @@ std::string GeometryDebugging::simplex2string(const std::vector<Point>& simplex)
   std::stringstream s;
   s << "[";
   for (std::size_t i = 0; i < n - 1; i++)
-    s << simplex[i].x() << ",";
-  s << simplex[n - 1].x() << "]";
+    s << simplex[i][0] << ",";
+  s << simplex[n - 1][0] << "]";
   s << ",";
   s << "[";
   for (std::size_t i = 0; i < n - 1; i++)
-    s << simplex[i].y() << ",";
-  s << simplex[n - 1].y() << "]";
+    s << simplex[i][1] << ",";
+  s << simplex[n - 1][1] << "]";
   s << ",";
   s << "[";
   for (std::size_t i = 0; i < n - 1; i++)
-    s << simplex[i].z() << ",";
-  s << simplex[n - 1].z() << "]";
+    s << simplex[i][2] << ",";
+  s << simplex[n - 1][2] << "]";
 
   return s.str();
 }

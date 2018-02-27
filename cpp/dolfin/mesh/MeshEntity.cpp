@@ -107,9 +107,9 @@ Point MeshEntity::midpoint() const
 
   for (auto& v : EntityRange<Vertex>(*this))
   {
-    x += v.point().x();
-    y += v.point().y();
-    z += v.point().z();
+    x += v.point()[0];
+    y += v.point()[1];
+    z += v.point()[2];
     num_vertices++;
   }
 

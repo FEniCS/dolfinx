@@ -188,7 +188,7 @@ Function Function::sub(std::size_t i) const
   return Function(sub_space, _vector);
 }
 //-----------------------------------------------------------------------------
-void Function::operator=(const FunctionAXPY& axpy)
+void Function::operator=(const function::FunctionAXPY& axpy)
 {
   if (axpy.pairs().size() == 0)
   {

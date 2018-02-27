@@ -6,7 +6,6 @@
 
 #include <cmath>
 #include <Eigen/Dense>
-
 #include "BoxMesh.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
@@ -14,6 +13,7 @@
 #include <dolfin/mesh/MeshPartitioning.h>
 
 using namespace dolfin;
+using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
 Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
@@ -42,12 +42,12 @@ Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
   std::size_t nz = n[2];
 
   // Extract minimum and maximum coordinates
-  const double x0 = std::min(p0.x(), p1.x());
-  const double x1 = std::max(p0.x(), p1.x());
-  const double y0 = std::min(p0.y(), p1.y());
-  const double y1 = std::max(p0.y(), p1.y());
-  const double z0 = std::min(p0.z(), p1.z());
-  const double z1 = std::max(p0.z(), p1.z());
+  const double x0 = std::min(p0[0], p1[0]);
+  const double x1 = std::max(p0[0], p1[0]);
+  const double y0 = std::min(p0[1], p1[1]);
+  const double y1 = std::max(p0[1], p1[1]);
+  const double z0 = std::min(p0[2], p1[2]);
+  const double z1 = std::max(p0[2], p1[2]);
 
   const double a = x0;
   const double b = x1;

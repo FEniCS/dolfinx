@@ -140,27 +140,27 @@ void common(py::module &m) {
         });
 
   // dolfin::SubSystemsManager
-  py::class_<dolfin::SubSystemsManager,
-             std::unique_ptr<dolfin::SubSystemsManager, py::nodelete>>(
+  py::class_<dolfin::common::SubSystemsManager,
+             std::unique_ptr<dolfin::common::SubSystemsManager, py::nodelete>>(
       m, "SubSystemsManager")
       .def_static("init_petsc",
-                  (void (*)()) & dolfin::SubSystemsManager::init_petsc)
+                  (void (*)()) & dolfin::common::SubSystemsManager::init_petsc)
       .def_static("init_petsc",
                   [](std::vector<std::string> args) {
                     std::vector<char *> argv(args.size());
                     for (std::size_t i = 0; i < args.size(); ++i)
                       argv[i] = const_cast<char *>(args[i].data());
-                    dolfin::SubSystemsManager::init_petsc(args.size(),
+                    dolfin::common::SubSystemsManager::init_petsc(args.size(),
                                                           argv.data());
                   })
-      .def_static("finalize", &dolfin::SubSystemsManager::finalize)
+      .def_static("finalize", &dolfin::common::SubSystemsManager::finalize)
       .def_static("responsible_mpi",
-                  &dolfin::SubSystemsManager::responsible_mpi)
+                  &dolfin::common::SubSystemsManager::responsible_mpi)
       .def_static("responsible_petsc",
-                  &dolfin::SubSystemsManager::responsible_petsc)
+                  &dolfin::common::SubSystemsManager::responsible_petsc)
       .def_static("mpi_initialized",
-                  &dolfin::SubSystemsManager::mpi_initialized)
-      .def_static("mpi_finalized", &dolfin::SubSystemsManager::mpi_finalized);
+                  &dolfin::common::SubSystemsManager::mpi_initialized)
+      .def_static("mpi_finalized", &dolfin::common::SubSystemsManager::mpi_finalized);
 }
 
 // Interface for MPI
@@ -189,7 +189,7 @@ void mpi(py::module &m) {
           "comm_self", [](py::object) { return MPICommWrapper(MPI_COMM_SELF); })
       .def_property_readonly_static(
           "comm_null", [](py::object) { return MPICommWrapper(MPI_COMM_NULL); })
-      .def_static("init", (void (*)()) & dolfin::SubSystemsManager::init_mpi,
+      .def_static("init", (void (*)()) & dolfin::common::SubSystemsManager::init_mpi,
                   "Initialise MPI")
       .def_static(
           "init",
@@ -197,17 +197,17 @@ void mpi(py::module &m) {
             std::vector<char *> argv(args.size());
             for (std::size_t i = 0; i < args.size(); ++i)
               argv[i] = const_cast<char *>(args[i].data());
-            return dolfin::SubSystemsManager::init_mpi(args.size(), argv.data(),
+            return dolfin::common::SubSystemsManager::init_mpi(args.size(), argv.data(),
                                                        required_thread_level);
           },
           "Initialise MPI with command-line args and required level "
           "of thread support. Return provided thread level.")
-      .def_static("responsible", &dolfin::SubSystemsManager::responsible_mpi,
+      .def_static("responsible", &dolfin::common::SubSystemsManager::responsible_mpi,
                   "Return true if DOLFIN initialised MPI (and is therefore "
                   "responsible for finalization)")
-      .def_static("initialized", &dolfin::SubSystemsManager::mpi_initialized,
+      .def_static("initialized", &dolfin::common::SubSystemsManager::mpi_initialized,
                   "Check if MPI has been initialised")
-      .def_static("finalized", &dolfin::SubSystemsManager::mpi_finalized,
+      .def_static("finalized", &dolfin::common::SubSystemsManager::mpi_finalized,
                   "Check if MPI has been finalized")
       .def_static("barrier",
                   [](const MPICommWrapper comm) {
