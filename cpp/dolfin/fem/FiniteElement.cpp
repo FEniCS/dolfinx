@@ -10,6 +10,7 @@
 #include <dolfin/mesh/Cell.h>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(std::shared_ptr<const ufc::finite_element> element)

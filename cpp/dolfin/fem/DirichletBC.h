@@ -33,6 +33,9 @@ namespace mesh
 class SubDomain;
 }
 
+namespace fem
+{
+
 /// Interface for setting (strong) Dirichlet boundary conditions.
 
 ///
@@ -271,7 +274,8 @@ private:
   void init_facets(const MPI_Comm mpi_comm) const;
 
   // Initialize sub domain markers from sub domain
-  void init_from_sub_domain(std::shared_ptr<const mesh::SubDomain> sub_domain) const;
+  void
+  init_from_sub_domain(std::shared_ptr<const mesh::SubDomain> sub_domain) const;
 
   // Initialize sub domain markers from MeshFunction
   void init_from_mesh_function(const MeshFunction<std::size_t>& sub_domains,
@@ -350,4 +354,5 @@ private:
     boost::multi_array<double, 2> coordinates;
   };
 };
+}
 }

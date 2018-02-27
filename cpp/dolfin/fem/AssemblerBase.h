@@ -18,6 +18,9 @@ class PETScMatrix;
 class Form;
 class PETScVector;
 
+namespace fem
+{
+
 /// Provide some common functions used in assembler classes.
 class AssemblerBase
 {
@@ -65,5 +68,4 @@ protected:
                                       std::string integral_type);
 };
 }
-
-
+}

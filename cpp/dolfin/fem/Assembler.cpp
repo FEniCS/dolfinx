@@ -28,7 +28,7 @@ using EigenMatrixD
 fem::Assembler::Assembler(
     std::vector<std::vector<std::shared_ptr<const Form>>> a,
     std::vector<std::shared_ptr<const Form>> L,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs)
+    std::vector<std::shared_ptr<const fem::DirichletBC>> bcs)
     : _a(a), _l(L), _bcs(bcs)
 {
   // Check shape of a and L
@@ -115,7 +115,7 @@ void fem::Assembler::assemble(PETScMatrix& A)
 
           // Build sparsity pattern
           std::cout << "  Build sparsity pattern " << std::endl;
-          std::array<const GenericDofMap*, 2> dofmaps
+          std::array<const fem::GenericDofMap*, 2> dofmaps
               = {{_a[row][col]->function_space(0)->dofmap().get(),
                   _a[row][col]->function_space(1)->dofmap().get()}};
           SparsityPatternBuilder::build(*patterns[row].back(),
@@ -305,7 +305,7 @@ void fem::Assembler::assemble(
       = {{a.function_space(0).get(), a.function_space(1).get()}};
 
   // Collect pointers to dof maps
-  std::array<const GenericDofMap*, 2> dofmaps
+  std::array<const fem::GenericDofMap*, 2> dofmaps
       = {{spaces[0]->dofmap().get(), spaces[1]->dofmap().get()}};
 
   // FIXME: Move out of this function

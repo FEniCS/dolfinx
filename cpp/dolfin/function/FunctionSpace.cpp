@@ -20,8 +20,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(std::shared_ptr<const Mesh> mesh,
-                             std::shared_ptr<const FiniteElement> element,
-                             std::shared_ptr<const GenericDofMap> dofmap)
+                             std::shared_ptr<const fem::FiniteElement> element,
+                             std::shared_ptr<const fem::GenericDofMap> dofmap)
     : _mesh(mesh), _element(element), _dofmap(dofmap), _root_space_id(id())
 {
   // Do nothing
@@ -44,8 +44,8 @@ FunctionSpace::~FunctionSpace()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::attach(std::shared_ptr<const FiniteElement> element,
-                           std::shared_ptr<const GenericDofMap> dofmap)
+void FunctionSpace::attach(std::shared_ptr<const fem::FiniteElement> element,
+                           std::shared_ptr<const fem::GenericDofMap> dofmap)
 {
   _element = element;
   _dofmap = dofmap;
@@ -80,12 +80,12 @@ bool FunctionSpace::operator!=(const FunctionSpace& V) const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const Mesh> FunctionSpace::mesh() const { return _mesh; }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FiniteElement> FunctionSpace::element() const
+std::shared_ptr<const fem::FiniteElement> FunctionSpace::element() const
 {
   return _element;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const GenericDofMap> FunctionSpace::dofmap() const
+std::shared_ptr<const fem::GenericDofMap> FunctionSpace::dofmap() const
 {
   return _dofmap;
 }
@@ -188,7 +188,7 @@ FunctionSpace::sub(const std::vector<std::size_t>& component) const
   auto element = _element->extract_sub_element(component);
 
   // Extract sub dofmap
-  std::shared_ptr<GenericDofMap> dofmap(
+  std::shared_ptr<fem::GenericDofMap> dofmap(
       _dofmap->extract_sub_dofmap(component, *_mesh));
 
   // Create new sub space
@@ -228,7 +228,7 @@ std::shared_ptr<FunctionSpace> FunctionSpace::collapse(
   }
 
   // Create collapsed DofMap
-  std::shared_ptr<GenericDofMap> collapsed_dofmap(
+  std::shared_ptr<fem::GenericDofMap> collapsed_dofmap(
       _dofmap->collapse(collapsed_dofs, *_mesh));
 
   // Create new FunctionSpace and return

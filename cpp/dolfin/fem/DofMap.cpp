@@ -16,6 +16,7 @@
 #include <unordered_map>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh)

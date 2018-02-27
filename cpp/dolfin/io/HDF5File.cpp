@@ -865,7 +865,7 @@ void HDF5File::write(const Function& u, const std::string name)
   const Mesh& mesh = *u.function_space()->mesh();
 
   dolfin_assert(u.function_space()->dofmap());
-  const GenericDofMap& dofmap = *u.function_space()->dofmap();
+  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
 
   // FIXME:
   // Possibly sort cell_dofs into global cell order before writing?
@@ -1002,7 +1002,7 @@ void HDF5File::read(Function& u, const std::string name)
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
   dolfin_assert(u.function_space()->dofmap());
-  const GenericDofMap& dofmap = *u.function_space()->dofmap();
+  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
 
   // Get dimension of dataset
   const std::vector<std::int64_t> dataset_shape

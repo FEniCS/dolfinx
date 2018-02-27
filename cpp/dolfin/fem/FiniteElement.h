@@ -18,6 +18,9 @@ namespace dolfin
 
 class Cell;
 
+namespace fem
+{
+
 /// This is a wrapper for a UFC finite element (ufc::finite_element).
 
 class FiniteElement
@@ -210,4 +213,5 @@ private:
   // Simple hash of the signature string
   std::size_t _hash;
 };
+}
 }

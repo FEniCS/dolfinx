@@ -322,8 +322,8 @@ void function(py::module& m)
   py::class_<dolfin::FunctionSpace, std::shared_ptr<dolfin::FunctionSpace>,
              dolfin::Variable>(m, "FunctionSpace", py::dynamic_attr())
       .def(py::init<std::shared_ptr<dolfin::Mesh>,
-                    std::shared_ptr<dolfin::FiniteElement>,
-                    std::shared_ptr<dolfin::GenericDofMap>>())
+                    std::shared_ptr<dolfin::fem::FiniteElement>,
+                    std::shared_ptr<dolfin::fem::GenericDofMap>>())
       .def(py::init<const dolfin::FunctionSpace&>())
       .def("__eq__", &dolfin::FunctionSpace::operator==)
       .def("dim", &dolfin::FunctionSpace::dim)

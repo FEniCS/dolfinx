@@ -284,7 +284,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
   //                 function is called for thread-safety
 
   dolfin_assert(_function_space->element());
-  const FiniteElement& element = *_function_space->element();
+  const fem::FiniteElement& element = *_function_space->element();
 
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = value_size();
@@ -380,7 +380,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
     eval(values, x);
 }
 //-----------------------------------------------------------------------------
-void Function::restrict(double* w, const FiniteElement& element,
+void Function::restrict(double* w, const fem::FiniteElement& element,
                         const Cell& dolfin_cell, const double* coordinate_dofs,
                         const ufc::cell& ufc_cell) const
 {
@@ -393,7 +393,7 @@ void Function::restrict(double* w, const FiniteElement& element,
       && _function_space->has_cell(dolfin_cell))
   {
     // Get dofmap for cell
-    const GenericDofMap& dofmap = *_function_space->dofmap();
+    const fem::GenericDofMap& dofmap = *_function_space->dofmap();
     auto dofs = dofmap.cell_dofs(dolfin_cell.index());
 
     // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
@@ -427,7 +427,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
 
   // Get finite element
   dolfin_assert(_function_space->element());
-  const FiniteElement& element = *_function_space->element();
+  const fem::FiniteElement& element = *_function_space->element();
 
   // Local data for interpolation on each cell
   const std::size_t num_cell_vertices
@@ -493,7 +493,7 @@ void Function::init_vector()
   // Get dof map
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->dofmap());
-  const GenericDofMap& dofmap = *(_function_space->dofmap());
+  const fem::GenericDofMap& dofmap = *(_function_space->dofmap());
 
   // Check that function space is not a subspace (view)
   if (dofmap.is_view())

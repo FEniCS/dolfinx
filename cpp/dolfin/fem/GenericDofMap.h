@@ -35,6 +35,9 @@ namespace mesh
 class SubDomain;
 }
 
+namespace fem
+{
+
 /// This class provides a generic interface for dof maps
 
 class GenericDofMap : public Variable
@@ -195,4 +198,5 @@ public:
   /// conditions
   std::shared_ptr<const mesh::SubDomain> constrained_domain;
 };
+}
 }

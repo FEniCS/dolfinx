@@ -223,7 +223,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
     cell_based_dim *= mesh.topology().dim();
 
   dolfin_assert(u.function_space()->dofmap());
-  const GenericDofMap& dofmap = *u.function_space()->dofmap();
+  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
   if (dofmap.max_element_dofs() == cell_based_dim)
     VTKWriter::write_cell_data(u, vtu_filename);
   else

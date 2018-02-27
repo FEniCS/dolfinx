@@ -1214,7 +1214,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   // cell dofmaps (cell_dofs)
 
   dolfin_assert(u.function_space()->dofmap());
-  const GenericDofMap& dofmap = *u.function_space()->dofmap();
+  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
 
   const std::size_t tdim = mesh.topology().dim();
   std::vector<dolfin::la_index_t> cell_dofs;
@@ -1458,7 +1458,7 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
   dolfin_assert(u.function_space()->dofmap());
-  const GenericDofMap& dofmap = *u.function_space()->dofmap();
+  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
 
   // Read cell ordering
   std::vector<std::size_t> cells

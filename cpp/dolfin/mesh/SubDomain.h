@@ -202,7 +202,7 @@ private:
                      bool check_midpoint) const;
 
   // Friends
-  friend class dolfin::DirichletBC;
+  friend class dolfin::fem::DirichletBC;
 
   // Geometric dimension, needed for SWIG interface, will be set before
   // calls to inside() and map()

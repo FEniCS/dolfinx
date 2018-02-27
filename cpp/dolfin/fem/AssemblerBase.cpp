@@ -26,6 +26,7 @@
 #include <vector>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 void AssemblerBase::init_global_tensor(PETScVector& x, const Form& a)

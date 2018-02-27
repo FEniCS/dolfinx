@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "DofMapBuilder.h"
 #include "GenericDofMap.h"
 #include <Eigen/Dense>
 #include <cstdlib>
@@ -28,6 +29,9 @@ namespace mesh
 {
   class SubDomain;
 }
+
+namespace fem
+{
 
 /// Degree-of-freedom map
 
@@ -373,7 +377,7 @@ public:
 
 private:
   // Friends
-  friend class DofMapBuilder;
+  friend class fem::DofMapBuilder;
 
   // Check that mesh provides the entities needed by dofmap
   static void check_provided_entities(const ufc::dofmap& dofmap,
@@ -422,4 +426,5 @@ private:
   // Neighbours (processes that we share dofs with)
   std::set<int> _neighbours;
 };
+}
 }

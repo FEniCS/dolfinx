@@ -13,6 +13,7 @@
 #include "DofMap.h"
 #include "DofMapBuilder.h"
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/utils.h>
 #include <dolfin/graph/BoostGraphOrdering.h>
 #include <dolfin/graph/GraphBuilder.h>
 #include <dolfin/graph/SCOTCH.h>
@@ -26,13 +27,13 @@
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
 
-#include <dolfin/common/utils.h>
-
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
-                          std::shared_ptr<const mesh::SubDomain> constrained_domain)
+void DofMapBuilder::build(
+    fem::DofMap& dofmap, const Mesh& mesh,
+    std::shared_ptr<const mesh::SubDomain> constrained_domain)
 {
   dolfin_assert(dofmap._ufc_dofmap);
 
@@ -262,7 +263,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build_sub_map_view(
-    DofMap& sub_dofmap, const DofMap& parent_dofmap,
+    fem::DofMap& sub_dofmap, const fem::DofMap& parent_dofmap,
     const std::vector<std::size_t>& component, const Mesh& mesh)
 {
   // Note: Ownership range is set to zero since dofmap is a view

@@ -4,15 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <algorithm>
-#include <numeric>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
-#include <vector>
-
 #include "GraphBuilder.h"
+#include <algorithm>
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
@@ -22,14 +15,20 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
+#include <numeric>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 dolfin::graph::Graph
 dolfin::graph::GraphBuilder::local_graph(const Mesh& mesh,
-                                         const GenericDofMap& dofmap0,
-                                         const GenericDofMap& dofmap1)
+                                         const fem::GenericDofMap& dofmap0,
+                                         const fem::GenericDofMap& dofmap1)
 {
   Timer timer("Build local sparsity graph from dofmaps");
 
@@ -43,8 +42,10 @@ dolfin::graph::GraphBuilder::local_graph(const Mesh& mesh,
     auto _dofs0 = dofmap0.cell_dofs(cell.index());
     auto _dofs1 = dofmap1.cell_dofs(cell.index());
 
-    common::ArrayView<const dolfin::la_index_t> dofs0(_dofs0.size(), _dofs0.data());
-    common::ArrayView<const dolfin::la_index_t> dofs1(_dofs1.size(), _dofs1.data());
+    common::ArrayView<const dolfin::la_index_t> dofs0(_dofs0.size(),
+                                                      _dofs0.data());
+    common::ArrayView<const dolfin::la_index_t> dofs1(_dofs1.size(),
+                                                      _dofs1.data());
 
     for (auto node0 : dofs0)
       for (auto node1 : dofs1)
