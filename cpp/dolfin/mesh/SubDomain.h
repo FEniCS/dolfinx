@@ -11,6 +11,9 @@
 #include <dolfin/common/constants.h>
 #include <map>
 
+using EigenRowMatrixXd
+    = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
 namespace dolfin
 {
 
@@ -47,8 +50,8 @@ public:
   ///
   /// @return    bool
   ///         True for points inside the subdomain.
-  virtual bool inside(Eigen::Ref<const Eigen::VectorXd> x,
-                      bool on_boundary) const;
+  virtual Eigen::Vector<bool, Eigen::Dynamic>
+  inside(Eigen::Ref<const EigenRowMatrixXd> x, bool on_boundary) const;
 
   /// Map coordinate x in domain H to coordinate y in domain G (used for
   /// periodic boundary conditions)
