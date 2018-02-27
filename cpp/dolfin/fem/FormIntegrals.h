@@ -110,7 +110,9 @@ public:
   /// Default cell integral
   std::shared_ptr<const ufc::cell_integral> cell_integral() const
   {
-    dolfin_assert(!_cell_integrals.empty());
+    if (_cell_integrals.empty())
+      return std::shared_ptr<const ufc::cell_integral>();
+
     return _cell_integrals[0];
   }
 
@@ -179,7 +181,9 @@ public:
   std::shared_ptr<const ufc::interior_facet_integral>
   interior_facet_integral() const
   {
-    dolfin_assert(!_interior_facet_integrals.empty());
+    if (_interior_facet_integrals.empty())
+      return std::shared_ptr<const ufc::interior_facet_integral>();
+
     return _interior_facet_integrals[0];
   }
 
@@ -199,7 +203,9 @@ public:
   /// Default interior facet integral
   std::shared_ptr<const ufc::vertex_integral> vertex_integral() const
   {
-    dolfin_assert(!_vertex_integrals.empty());
+    if (_vertex_integrals.empty())
+      return std::shared_ptr<const ufc::vertex_integral>();
+
     return _vertex_integrals[0];
   }
 

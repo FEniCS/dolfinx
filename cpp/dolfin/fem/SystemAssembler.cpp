@@ -815,6 +815,7 @@ void SystemAssembler::facet_wise_assembly(
       }
 
       // Compute cell/facet tensors
+      coordinate_dofs[0].resize(cell.num_vertices(), gdim);
       compute_exterior_facet_tensor(
           data.Ae, ufc, ufc_cell[0], coordinate_dofs[0], tensor_required_cell,
           tensor_required_facet, cell, facet, cell_integrals,
