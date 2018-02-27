@@ -64,8 +64,8 @@ tabulate_coordinates_to_dofs(const FunctionSpace& V)
   dolfin_assert(V.dofmap());
   dolfin_assert(V.element());
   dolfin_assert(V.mesh());
-  const GenericDofMap& dofmap = *V.dofmap();
-  const FiniteElement& element = *V.element();
+  const fem::GenericDofMap& dofmap = *V.dofmap();
+  const fem::FiniteElement& element = *V.element();
   const Mesh& mesh = *V.mesh();
   std::vector<std::size_t> local_to_global;
   dofmap.tabulate_local_to_global_dofs(local_to_global);
@@ -214,8 +214,8 @@ PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
 
   // Initialise bounding box tree and dofmaps
   std::shared_ptr<BoundingBoxTree> treec = meshc.bounding_box_tree();
-  std::shared_ptr<const GenericDofMap> coarsemap = coarse_space.dofmap();
-  std::shared_ptr<const GenericDofMap> finemap = fine_space.dofmap();
+  std::shared_ptr<const fem::GenericDofMap> coarsemap = coarse_space.dofmap();
+  std::shared_ptr<const fem::GenericDofMap> finemap = fine_space.dofmap();
 
   // Create map from coordinates to dofs sharing that coordinate
   std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
@@ -233,11 +233,11 @@ PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
 
   // Get finite element for the coarse space. This will be needed to
   // evaluate the basis functions for each cell.
-  std::shared_ptr<const FiniteElement> el = coarse_space.element();
+  std::shared_ptr<const fem::FiniteElement> el = coarse_space.element();
 
   // Check that it is the same kind of element on each space.
   {
-    std::shared_ptr<const FiniteElement> elf = fine_space.element();
+    std::shared_ptr<const fem::FiniteElement> elf = fine_space.element();
     // Check that function ranks match
     if (el->value_rank() != elf->value_rank())
     {

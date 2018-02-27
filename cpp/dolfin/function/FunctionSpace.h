@@ -21,10 +21,14 @@ namespace dolfin
 {
 
 class Function;
-class GenericDofMap;
 class GenericFunction;
 class PETScVector;
 class Mesh;
+
+namespace fem
+{
+class GenericDofMap;
+}
 
 /// This class represents a finite element function space defined by
 /// a mesh, a finite element, and a local-to-global mapping of the
@@ -44,8 +48,8 @@ public:
   ///     dofmap (_GenericDofMap_)
   ///         The dofmap.
   FunctionSpace(std::shared_ptr<const Mesh> mesh,
-                std::shared_ptr<const FiniteElement> element,
-                std::shared_ptr<const GenericDofMap> dofmap);
+                std::shared_ptr<const fem::FiniteElement> element,
+                std::shared_ptr<const fem::GenericDofMap> dofmap);
 
 protected:
   /// Create empty function space for later initialization. This
@@ -78,8 +82,8 @@ protected:
   ///         The element.
   ///     dofmap (_GenericDofMap_)
   ///         The dofmap.
-  void attach(std::shared_ptr<const FiniteElement> element,
-              std::shared_ptr<const GenericDofMap> dofmap);
+  void attach(std::shared_ptr<const fem::FiniteElement> element,
+              std::shared_ptr<const fem::GenericDofMap> dofmap);
 
 public:
   /// Assignment operator
@@ -115,14 +119,14 @@ public:
   /// *Returns*
   ///     _FiniteElement_
   ///         The finite element.
-  std::shared_ptr<const FiniteElement> element() const;
+  std::shared_ptr<const fem::FiniteElement> element() const;
 
   /// Return dofmap
   ///
   /// *Returns*
   ///     _GenericDofMap_
   ///         The dofmap.
-  std::shared_ptr<const GenericDofMap> dofmap() const;
+  std::shared_ptr<const fem::GenericDofMap> dofmap() const;
 
   /// Return global dimension of the function space.
   /// Equivalent to dofmap()->global_dimension()
@@ -206,7 +210,7 @@ public:
   /// *Returns*
   ///     bool
   ///         True if the function space has the given element.
-  bool has_element(const FiniteElement& element) const
+  bool has_element(const fem::FiniteElement& element) const
   {
     return element.hash() == _element->hash();
   }
@@ -273,10 +277,10 @@ private:
   std::shared_ptr<const Mesh> _mesh;
 
   // The finite element
-  std::shared_ptr<const FiniteElement> _element;
+  std::shared_ptr<const fem::FiniteElement> _element;
 
   // The dofmap
-  std::shared_ptr<const GenericDofMap> _dofmap;
+  std::shared_ptr<const fem::GenericDofMap> _dofmap;
 
   // The component w.r.t. to root space
   std::vector<std::size_t> _component;

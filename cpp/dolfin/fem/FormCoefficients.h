@@ -32,7 +32,7 @@ public:
     {
       std::shared_ptr<ufc::finite_element> element(
           ufc_form.create_finite_element(ufc_form.rank() + i));
-      _elements.push_back(FiniteElement(element));
+      _elements.push_back(fem::FiniteElement(element));
       _original_pos.push_back(ufc_form.original_coefficient_position(i));
     }
   }
@@ -87,7 +87,7 @@ public:
   }
 
   /// Get the element for coefficient i
-  const FiniteElement& element(std::size_t i) const
+  const fem::FiniteElement& element(std::size_t i) const
   {
     dolfin_assert(i < _elements.size());
     return _elements[i];
@@ -102,7 +102,7 @@ public:
 
 private:
   // Finite elements for coefficients
-  std::vector<FiniteElement> _elements;
+  std::vector<fem::FiniteElement> _elements;
 
   // GenericFunctions for the coefficients
   std::vector<std::shared_ptr<const GenericFunction>> _coefficients;

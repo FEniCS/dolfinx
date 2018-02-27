@@ -97,7 +97,8 @@ void HDF5Utility::get_global_dof(
     const MPI_Comm mpi_comm,
     const std::vector<std::pair<std::size_t, std::size_t>>& cell_ownership,
     const std::vector<std::size_t>& remote_local_dofi,
-    const std::array<std::int64_t, 2> vector_range, const GenericDofMap& dofmap,
+    const std::array<std::int64_t, 2> vector_range,
+    const fem::GenericDofMap& dofmap,
     std::vector<dolfin::la_index_t>& global_dof)
 {
   const std::size_t num_processes = MPI::size(mpi_comm);
@@ -284,7 +285,7 @@ void HDF5Utility::set_local_vector_values(
     const std::vector<std::int64_t>& x_cell_dofs,
     const std::vector<double>& vector,
     const std::array<std::int64_t, 2> input_vector_range,
-    const GenericDofMap& dofmap)
+    const fem::GenericDofMap& dofmap)
 {
 
   // Calculate one (global cell, local_dof_index) to associate with

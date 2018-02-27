@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
 #include <map>
 #include <memory>
 #include <set>
@@ -21,16 +23,23 @@ class dofmap;
 namespace dolfin
 {
 
-class DofMap;
 class Mesh;
 class IndexMap;
 class UFC;
 class Cell;
 
+namespace fem
+{
+class DofMap;
+}
+
 namespace mesh
 {
 class SubDomain;
 }
+
+namespace fem
+{
 
 /// Builds a DofMap on a Mesh
 
@@ -44,7 +53,7 @@ public:
   /// @param[out] dofmap
   /// @param[in] dolfin_mesh
   /// @param[in] constrained_domain
-  static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
+  static void build(fem::DofMap& dofmap, const Mesh& dolfin_mesh,
                     std::shared_ptr<const mesh::SubDomain> constrained_domain);
 
   /// Build sub-dofmap. This is a view into the parent dofmap.
@@ -53,8 +62,8 @@ public:
   /// @param[in] parent_dofmap
   /// @param[in] component
   /// @param[in] mesh
-  static void build_sub_map_view(DofMap& sub_dofmap,
-                                 const DofMap& parent_dofmap,
+  static void build_sub_map_view(fem::DofMap& sub_dofmap,
+                                 const fem::DofMap& parent_dofmap,
                                  const std::vector<std::size_t>& component,
                                  const Mesh& mesh);
 
@@ -133,14 +142,13 @@ private:
       const std::vector<bool>& needs_mesh_entities, const Mesh& mesh,
       const mesh::SubDomain& constrained_domain);
 
-  static std::shared_ptr<const ufc::dofmap>
-  build_ufc_node_graph(std::vector<std::vector<la_index_t>>& node_dofmap,
-                       std::vector<std::size_t>& node_local_to_global,
-                       std::vector<std::size_t>& num_mesh_entities_global,
-                       std::shared_ptr<const ufc::dofmap> ufc_dofmap,
-                       const Mesh& mesh,
-                       std::shared_ptr<const mesh::SubDomain> constrained_domain,
-                       const std::size_t block_size);
+  static std::shared_ptr<const ufc::dofmap> build_ufc_node_graph(
+      std::vector<std::vector<la_index_t>>& node_dofmap,
+      std::vector<std::size_t>& node_local_to_global,
+      std::vector<std::size_t>& num_mesh_entities_global,
+      std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh,
+      std::shared_ptr<const mesh::SubDomain> constrained_domain,
+      const std::size_t block_size);
 
   static std::shared_ptr<const ufc::dofmap> build_ufc_node_graph_constrained(
       std::vector<std::vector<la_index_t>>& node_dofmap,
@@ -190,4 +198,5 @@ private:
   compute_num_mesh_entities_local(const Mesh& mesh,
                                   const std::vector<bool>& needs_mesh_entities);
 };
+}
 }

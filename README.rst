@@ -16,7 +16,7 @@ Installation
 C++ core
 --------
 
-To build and install the C++ core, in the `cpp/` directory, run::
+To build and install the C++ core, in the ``cpp/`` directory, run::
 
   mkdir build
   cd build
@@ -27,11 +27,11 @@ Python
 ------
 
 To install the Python interface, first install the C++ core, and then
-in the `python/` directory run::
+in the ``python/`` directory run::
 
   pip install .
 
-(you may need to use `pip3`, depending on your system).
+(you may need to use ``pip3``, depending on your system).
 
 For detailed instructions, see the file INSTALL.
 
@@ -39,11 +39,10 @@ For detailed instructions, see the file INSTALL.
 Documentation
 =============
 
-Documentation can be viewed at http://fenics-dolfin.readthedocs.org/.
+Documentation can be viewed at:
 
-.. image:: https://readthedocs.org/projects/fenics-dolfin/badge/?version=latest
-   :target: http://fenics.readthedocs.io/projects/dolfin/en/latest/?badge=latest
-   :alt: Documentation Status
+- https://fenicsproject.org/docs/dolfinx/dev/cpp/
+- https://fenicsproject.org/docs/dolfinx/dev/python/
 
 
 Automated testing
@@ -102,4 +101,4 @@ scientists and engineers distributed around the world. A list of
 authors can be found in the file AUTHORS. For more information about
 DOLFIN, visit
 
-  http://fenicsproject.org
+  https://fenicsproject.org

@@ -47,6 +47,9 @@ template <typename T>
 class ArrayView;
 }
 
+namespace fem
+{
+
 /// This class provides an assembler for systems of the form Ax =
 /// b. It differs from the default DOLFIN assembler in that it
 /// applies boundary conditions at the time of assembly, which
@@ -172,4 +175,5 @@ private:
                        const std::vector<DirichletBC::Map>& boundary_values,
                        const common::ArrayView<const dolfin::la_index_t>& dofs);
 };
+}
 }

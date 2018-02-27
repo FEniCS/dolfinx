@@ -16,7 +16,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 NonlinearVariationalProblem::NonlinearVariationalProblem(
     std::shared_ptr<const Form> F, std::shared_ptr<Function> u,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    std::vector<std::shared_ptr<const fem::DirichletBC>> bcs,
     std::shared_ptr<const Form> J)
     : _residual(F), _jacobian(J), _u(u), _bcs(bcs)
 {
@@ -57,7 +57,7 @@ std::shared_ptr<const Function> NonlinearVariationalProblem::solution() const
   return _u;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::shared_ptr<const DirichletBC>>
+std::vector<std::shared_ptr<const fem::DirichletBC>>
 NonlinearVariationalProblem::bcs() const
 {
   return _bcs;

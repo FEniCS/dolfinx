@@ -93,7 +93,7 @@ Expression::get_generic_function(std::string name) const
   return std::shared_ptr<GenericFunction>();
 }
 //-----------------------------------------------------------------------------
-void Expression::restrict(double* w, const FiniteElement& element,
+void Expression::restrict(double* w, const fem::FiniteElement& element,
                           const Cell& dolfin_cell,
                           const double* coordinate_dofs,
                           const ufc::cell& ufc_cell) const
@@ -141,10 +141,10 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
   vertex_values.resize(size * mesh.num_vertices());
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
-  for (auto &cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Iterate over cell vertices
-    for (auto &vertex : EntityRange<Vertex>(cell))
+    for (auto& vertex : EntityRange<Vertex>(cell))
     {
       // Wrap coordinate data
       Eigen::Map<const Eigen::VectorXd> x(vertex.x(), mesh.geometry().dim());

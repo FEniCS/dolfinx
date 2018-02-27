@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <array>
-
 #include "AssemblerBase.h"
 #include "DirichletBC.h"
 #include "FiniteElement.h"
@@ -30,6 +29,7 @@
 #include <dolfin/mesh/SubDomain.h>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(

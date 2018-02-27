@@ -178,8 +178,8 @@ as follows:
      // Define boundary condition
      auto u0 = std::make_shared<Constant>(0.0);
      auto boundary = std::make_shared<DirichletBoundary>();
-     std::vector<std::shared_ptr<const DirichletBC>> bc
-      = {std::make_shared<DirichletBC>(V, u0, boundary)};
+     std::vector<std::shared_ptr<const fem:: DirichletBC>> bc
+      = {std::make_shared<fem::DirichletBC>(V, u0, boundary)};
 
 
 Next, we define the variational formulation by initializing the
@@ -212,7 +212,7 @@ call the ``solve`` function with the arguments ``a == L``, ``u`` and
      auto A = std::make_shared<PETScMatrix>(MPI_COMM_WORLD);
      auto b = std::make_shared<PETScVector>(MPI_COMM_WORLD);
 
-     SystemAssembler assem(a, L, bc);
+     fem::SystemAssembler assem(a, L, bc);
      assem.assemble(*A);
      assem.assemble(*b);
 

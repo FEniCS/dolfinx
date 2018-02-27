@@ -18,6 +18,7 @@
 #include <vector>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 std::shared_ptr<PETScMatrix>

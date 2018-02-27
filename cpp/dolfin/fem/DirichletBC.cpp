@@ -4,16 +4,12 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <cinttypes>
-#include <cmath>
-#include <cstdlib>
-#include <map>
-#include <ufc.h>
-#include <utility>
-
 #include "DirichletBC.h"
 #include "FiniteElement.h"
 #include "GenericDofMap.h"
+#include <cinttypes>
+#include <cmath>
+#include <cstdlib>
 #include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
@@ -32,8 +28,12 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
+#include <map>
+#include <ufc.h>
+#include <utility>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 const std::set<std::string> DirichletBC::methods
     = {"topological", "geometric", "pointwise"};

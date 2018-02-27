@@ -7,15 +7,19 @@
 #pragma once
 
 #include "dolfin/common/types.h"
+#include <array>
 #include <string>
 #include <vector>
-#include <array>
 
 namespace dolfin
 {
-class GenericDofMap;
 class Mesh;
 class PETScVector;
+
+namespace fem
+{
+class GenericDofMap;
+}
 
 /// This class contains some algorithms which do not explicitly
 /// depend on the HDF5 file format, mostly to do with reorganising
@@ -47,7 +51,8 @@ public:
       MPI_Comm mpi_comm,
       const std::vector<std::pair<std::size_t, std::size_t>>& cell_ownership,
       const std::vector<std::size_t>& remote_local_dofi,
-      std::array<std::int64_t, 2> vector_range, const GenericDofMap& dofmap,
+      std::array<std::int64_t, 2> vector_range,
+      const fem::GenericDofMap& dofmap,
       std::vector<dolfin::la_index_t>& global_dof);
 
   /// Get cell owners for an arbitrary set of cells.
@@ -69,6 +74,6 @@ public:
                           const std::vector<std::int64_t>& x_cell_dofs,
                           const std::vector<double>& vector,
                           std::array<std::int64_t, 2> input_vector_range,
-                          const GenericDofMap& dofmap);
+                          const fem::GenericDofMap& dofmap);
 };
 }

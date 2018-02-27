@@ -15,7 +15,7 @@ jobs:
             pip3 install git+https://bitbucket.org/fenics-project/fiat.git
             pip3 install git+https://bitbucket.org/fenics-project/ufl.git
             pip3 install git+https://bitbucket.org/fenics-project/dijitso.git
-            pip3 install git+https://bitbucket.org/fenics-project/ffcX.git@garth/dolfin-namespace-update
+            pip3 install git+https://bitbucket.org/fenics-project/ffcX.git
       - run:
           name: Flake8 checks on Python code
           command: python3 -m flake8 python/dolfin

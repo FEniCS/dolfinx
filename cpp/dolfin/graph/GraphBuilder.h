@@ -21,8 +21,12 @@ namespace dolfin
 
 // Forward declarations
 class CellType;
-class GenericDofMap;
 class Mesh;
+
+namespace fem
+{
+class GenericDofMap;
+}
 
 namespace graph
 {
@@ -34,8 +38,8 @@ class GraphBuilder
 
 public:
   /// Build local graph from dofmap
-  static Graph local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
-                           const GenericDofMap& dofmap1);
+  static Graph local_graph(const Mesh& mesh, const fem::GenericDofMap& dofmap0,
+                           const fem::GenericDofMap& dofmap1);
 
   /// Build local graph from mesh (general version)
   static Graph local_graph(const Mesh& mesh,

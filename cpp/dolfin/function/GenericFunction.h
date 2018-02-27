@@ -17,8 +17,12 @@ namespace dolfin
 class Mesh;
 class Cell;
 class Point;
-class FiniteElement;
 class FunctionSpace;
+
+namespace fem
+{
+class FiniteElement;
+}
 
 /// This is a common base class for functions. Functions can be
 /// evaluated at a given point and they can be restricted to a given
@@ -62,7 +66,7 @@ public:
                     Eigen::Ref<const Eigen::VectorXd> x) const;
 
   /// Restrict function to local cell (compute expansion coefficients w)
-  virtual void restrict(double* w, const FiniteElement& element,
+  virtual void restrict(double* w, const fem::FiniteElement& element,
                         const Cell& dolfin_cell, const double* coordinate_dofs,
                         const ufc::cell& ufc_cell) const = 0;
 

@@ -16,8 +16,12 @@ namespace dolfin
 class Form;
 class Function;
 class FunctionSpace;
-class DirichletBC;
 class PETScVector;
+
+namespace fem
+{
+class DirichletBC;
+}
 
 /// This class represents a nonlinear variational problem:
 ///
@@ -36,7 +40,7 @@ public:
   /// method).
   NonlinearVariationalProblem(
       std::shared_ptr<const Form> F, std::shared_ptr<Function> u,
-      std::vector<std::shared_ptr<const DirichletBC>> bcs,
+      std::vector<std::shared_ptr<const fem::DirichletBC>> bcs,
       std::shared_ptr<const Form> J = nullptr);
 
   /// Set the bounds for bound constrained solver
@@ -59,7 +63,7 @@ public:
   std::shared_ptr<const Function> solution() const;
 
   /// Return boundary conditions
-  std::vector<std::shared_ptr<const DirichletBC>> bcs() const;
+  std::vector<std::shared_ptr<const fem::DirichletBC>> bcs() const;
 
   /// Return trial space
   std::shared_ptr<const FunctionSpace> trial_space() const;
@@ -87,7 +91,7 @@ private:
   std::shared_ptr<Function> _u;
 
   // The boundary conditions
-  std::vector<std::shared_ptr<const DirichletBC>> _bcs;
+  std::vector<std::shared_ptr<const fem::DirichletBC>> _bcs;
 
   // The lower and upper bounds (pointers may be null if not
   // provided)

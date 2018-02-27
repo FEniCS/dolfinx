@@ -38,7 +38,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename)
   dolfin_assert(u.function_space()->mesh());
   dolfin_assert(u.function_space()->dofmap());
   const Mesh& mesh = *u.function_space()->mesh();
-  const GenericDofMap& dofmap = *u.function_space()->dofmap();
+  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t num_cells = mesh.topology().ghost_offset(tdim);
 

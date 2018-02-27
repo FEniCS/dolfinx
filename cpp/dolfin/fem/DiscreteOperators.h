@@ -14,6 +14,9 @@ namespace dolfin
 class FunctionSpace;
 class PETScMatrix;
 
+namespace fem
+{
+
 /// Discrete gradient operators providing derivatives of functions
 
 /// This class computes discrete gradient operators (matrices) that
@@ -44,5 +47,4 @@ public:
                                                      const FunctionSpace& V1);
 };
 }
-
-
+}
