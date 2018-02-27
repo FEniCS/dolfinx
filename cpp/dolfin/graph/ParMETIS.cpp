@@ -24,7 +24,7 @@ namespace
 {
 // Create a dual graph from the cell-vertex topology using ParMETIS
 // built in ParMETIS_V3_Mesh2Dual
-CSRGraph<idx_t>
+dolfin::graph::CSRGraph<idx_t>
 dual_graph(MPI_Comm mpi_comm,
            const boost::multi_array<std::int64_t, 2>& cell_vertices,
            const int num_vertices_per_cell)
@@ -90,7 +90,8 @@ dual_graph(MPI_Comm mpi_comm,
   timer1.stop();
 
   // Build graph
-  CSRGraph<idx_t> csr_graph(mpi_comm, xadj, adjncy, num_local_cells);
+  dolfin::graph::CSRGraph<idx_t> csr_graph(mpi_comm, xadj, adjncy,
+                                           num_local_cells);
 
   // Clean up ParMETIS
   METIS_Free(xadj);
@@ -101,7 +102,7 @@ dual_graph(MPI_Comm mpi_comm,
 }
 
 //-----------------------------------------------------------------------------
-void ParMETIS::compute_partition(
+void dolfin::graph::ParMETIS::compute_partition(
     const MPI_Comm mpi_comm, std::vector<int>& cell_partition,
     std::map<std::int64_t, std::vector<int>>& ghost_procs,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
@@ -159,9 +160,9 @@ void ParMETIS::compute_partition(
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void ParMETIS::partition(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
-                         std::vector<int>& cell_partition,
-                         std::map<std::int64_t, std::vector<int>>& ghost_procs)
+void dolfin::graph::ParMETIS::partition(
+    MPI_Comm mpi_comm, CSRGraph<T>& csr_graph, std::vector<int>& cell_partition,
+    std::map<std::int64_t, std::vector<int>>& ghost_procs)
 {
   Timer timer("Compute graph partition (ParMETIS)");
 
@@ -308,8 +309,8 @@ void ParMETIS::partition(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
-                                    std::vector<int>& cell_partition)
+void dolfin::graph::ParMETIS::adaptive_repartition(
+    MPI_Comm mpi_comm, CSRGraph<T>& csr_graph, std::vector<int>& cell_partition)
 {
   Timer timer("Compute graph partition (ParMETIS Adaptive Repartition)");
 
@@ -356,8 +357,8 @@ void ParMETIS::adaptive_repartition(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void ParMETIS::refine(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
-                      std::vector<int>& cell_partition)
+void dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
+                                     std::vector<int>& cell_partition)
 {
   Timer timer("Compute graph partition (ParMETIS Refine)");
 
@@ -408,7 +409,7 @@ void ParMETIS::refine(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 #else
-void ParMETIS::compute_partition(
+void dolfin::graph::ParMETIS::compute_partition(
     const MPI_Comm mpi_comm, std::vector<int>& cell_partition,
     std::map<std::int64_t, std::vector<int>>& ghost_procs,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,

@@ -19,6 +19,9 @@ namespace dolfin
 
 class Mesh;
 
+namespace graph
+{
+
 /// This class colors a graph using the Boost Graph Library.
 
 class BoostGraphColoring
@@ -102,4 +105,5 @@ public:
     return num_colors;
   }
 };
+}
 }

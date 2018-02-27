@@ -17,8 +17,12 @@ namespace dolfin
 // Forward declarations
 class PETScMatrix;
 class PETScVector;
-class NonlinearProblem;
 class PETScKrylovSolver;
+
+namespace nls
+{
+
+class NonlinearProblem;
 
 /// This class defines a Newton solver for nonlinear systems of
 /// equations of the form :math:`F(x) = 0`.
@@ -208,4 +212,5 @@ private:
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;
 };
+}
 }

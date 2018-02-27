@@ -26,8 +26,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
-                                const GenericDofMap& dofmap1)
+dolfin::graph::Graph
+dolfin::graph::GraphBuilder::local_graph(const Mesh& mesh,
+                                         const GenericDofMap& dofmap0,
+                                         const GenericDofMap& dofmap1)
 {
   Timer timer("Build local sparsity graph from dofmaps");
 
@@ -36,7 +38,7 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   Graph graph(n);
 
   // Build graph
-  for (auto &cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<Cell>(mesh))
   {
     auto _dofs0 = dofmap0.cell_dofs(cell.index());
     auto _dofs1 = dofmap1.cell_dofs(cell.index());
@@ -53,8 +55,8 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   return graph;
 }
 //-----------------------------------------------------------------------------
-Graph GraphBuilder::local_graph(const Mesh& mesh,
-                                const std::vector<std::size_t>& coloring_type)
+dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
+    const Mesh& mesh, const std::vector<std::size_t>& coloring_type)
 {
   // Initialise mesh
   for (std::size_t i = 0; i < coloring_type.size(); ++i)
@@ -71,7 +73,7 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   Graph graph(num_vertices);
 
   // Build graph
-  for (auto &vertex_entity : MeshRange<MeshEntity>(mesh, coloring_type[0]))
+  for (auto& vertex_entity : MeshRange<MeshEntity>(mesh, coloring_type[0]))
   {
     const std::size_t vertex_entity_index = vertex_entity.index();
 
@@ -87,7 +89,8 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
            entity_index != entity_list0.end(); ++entity_index)
       {
         const MeshEntity entity(mesh, coloring_type[level - 1], *entity_index);
-        for (auto &neighbor : EntityRange<MeshEntity>(entity, coloring_type[level]))
+        for (auto& neighbor :
+             EntityRange<MeshEntity>(entity, coloring_type[level]))
         {
           entity_list1.insert(neighbor.index());
         }
@@ -103,8 +106,9 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   return graph;
 }
 //-----------------------------------------------------------------------------
-Graph GraphBuilder::local_graph(const Mesh& mesh, std::size_t dim0,
-                                std::size_t dim1)
+dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(const Mesh& mesh,
+                                                              std::size_t dim0,
+                                                              std::size_t dim1)
 {
   mesh.init(dim0);
   mesh.init(dim1);
@@ -116,12 +120,12 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, std::size_t dim0,
   Graph graph(num_vertices);
 
   // Build graph
-  for (auto &colored_entity : MeshRange<MeshEntity>(mesh, dim0))
+  for (auto& colored_entity : MeshRange<MeshEntity>(mesh, dim0))
   {
     const std::int32_t colored_entity_index = colored_entity.index();
-    for (auto &entity : EntityRange<MeshEntity>(colored_entity, dim1))
+    for (auto& entity : EntityRange<MeshEntity>(colored_entity, dim1))
     {
-      for (auto &neighbor : EntityRange<MeshEntity>(entity, dim0))
+      for (auto& neighbor : EntityRange<MeshEntity>(entity, dim0))
       {
         if (colored_entity_index != neighbor.index())
           graph[colored_entity_index].insert(neighbor.index());
@@ -132,7 +136,8 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, std::size_t dim0,
   return graph;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::int32_t, std::int32_t> GraphBuilder::compute_dual_graph(
+std::pair<std::int32_t, std::int32_t>
+dolfin::graph::GraphBuilder::compute_dual_graph(
     const MPI_Comm mpi_comm,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
     const CellType& cell_type, const std::int64_t num_global_vertices,
@@ -157,7 +162,7 @@ std::pair<std::int32_t, std::int32_t> GraphBuilder::compute_dual_graph(
   return {num_local_edges, num_nonlocal_edges};
 }
 //-----------------------------------------------------------------------------
-std::int32_t GraphBuilder::compute_local_dual_graph(
+std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph(
     const MPI_Comm mpi_comm,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
     const CellType& cell_type,
@@ -192,7 +197,7 @@ std::int32_t GraphBuilder::compute_local_dual_graph(
 }
 //-----------------------------------------------------------------------------
 template <int N>
-std::int32_t GraphBuilder::compute_local_dual_graph_keyed(
+std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
     const MPI_Comm mpi_comm,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
     const CellType& cell_type,
@@ -311,7 +316,7 @@ std::int32_t GraphBuilder::compute_local_dual_graph_keyed(
   return num_local_edges;
 }
 //-----------------------------------------------------------------------------
-std::int32_t GraphBuilder::compute_nonlocal_dual_graph(
+std::int32_t dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
     const MPI_Comm mpi_comm,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
     const CellType& cell_type, const std::int64_t num_global_vertices,

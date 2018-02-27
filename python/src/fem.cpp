@@ -137,9 +137,10 @@ void fem(py::module &m) {
       .def("dofs",
            (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)() const) &
                dolfin::GenericDofMap::dofs)
-      .def("dofs", (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)(
-                       const dolfin::Mesh &, std::size_t) const) &
-                       dolfin::GenericDofMap::dofs)
+      .def("dofs",
+           (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)(
+               const dolfin::Mesh &, std::size_t) const) &
+               dolfin::GenericDofMap::dofs)
       .def("entity_dofs",
            (std::vector<dolfin::la_index_t>(dolfin::GenericDofMap::*)(
                const dolfin::Mesh &, std::size_t) const) &
@@ -260,19 +261,21 @@ void fem(py::module &m) {
       .def(py::init<std::shared_ptr<const dolfin::Form>,
                     std::shared_ptr<const dolfin::Form>,
                     std::vector<std::shared_ptr<const dolfin::DirichletBC>>>())
-      .def("assemble", (void (dolfin::SystemAssembler::*)(
-                           dolfin::PETScMatrix &, dolfin::PETScVector &)) &
-                           dolfin::SystemAssembler::assemble)
+      .def("assemble",
+           (void (dolfin::SystemAssembler::*)(dolfin::PETScMatrix &,
+                                              dolfin::PETScVector &)) &
+               dolfin::SystemAssembler::assemble)
       .def("assemble",
            (void (dolfin::SystemAssembler::*)(dolfin::PETScMatrix &)) &
                dolfin::SystemAssembler::assemble)
       .def("assemble",
            (void (dolfin::SystemAssembler::*)(dolfin::PETScVector &)) &
                dolfin::SystemAssembler::assemble)
-      .def("assemble", (void (dolfin::SystemAssembler::*)(
-                           dolfin::PETScMatrix &, dolfin::PETScVector &,
-                           const dolfin::PETScVector &)) &
-                           dolfin::SystemAssembler::assemble)
+      .def("assemble",
+           (void (dolfin::SystemAssembler::*)(dolfin::PETScMatrix &,
+                                              dolfin::PETScVector &,
+                                              const dolfin::PETScVector &)) &
+               dolfin::SystemAssembler::assemble)
       .def("assemble",
            (void (dolfin::SystemAssembler::*)(dolfin::PETScVector &,
                                               const dolfin::PETScVector &)) &
@@ -363,10 +366,12 @@ void fem(py::module &m) {
       //.def(py::init<std::shared_ptr<const dolfin::FunctionSpace>,
       // std::shared_ptr<const dolfin::FunctionSpace>,
       //     const std::vector<std::pair<const dolfin::Point*, double>>>())
-      .def("apply", (void (dolfin::PointSource::*)(dolfin::PETScVector &)) &
-                        dolfin::PointSource::apply)
-      .def("apply", (void (dolfin::PointSource::*)(dolfin::PETScMatrix &)) &
-                        dolfin::PointSource::apply);
+      .def("apply",
+           (void (dolfin::PointSource::*)(dolfin::PETScVector &)) &
+               dolfin::PointSource::apply)
+      .def("apply",
+           (void (dolfin::PointSource::*)(dolfin::PETScMatrix &)) &
+               dolfin::PointSource::apply);
 
   // dolfin::NonlinearVariationalProblem
   py::class_<dolfin::NonlinearVariationalProblem,
@@ -377,10 +382,11 @@ void fem(py::module &m) {
                     std::vector<std::shared_ptr<const dolfin::DirichletBC>>,
                     std::shared_ptr<const dolfin::Form>>())
       // FIXME: is there a better way to handle the casting
-      .def("set_bounds", (void (dolfin::NonlinearVariationalProblem::*)(
-                             std::shared_ptr<const dolfin::PETScVector>,
-                             std::shared_ptr<const dolfin::PETScVector>)) &
-                             dolfin::NonlinearVariationalProblem::set_bounds)
+      .def("set_bounds",
+           (void (dolfin::NonlinearVariationalProblem::*)(
+               std::shared_ptr<const dolfin::PETScVector>,
+               std::shared_ptr<const dolfin::PETScVector>)) &
+               dolfin::NonlinearVariationalProblem::set_bounds)
       .def("set_bounds",
            (void (dolfin::NonlinearVariationalProblem::*)(
                const dolfin::Function &, const dolfin::Function &)) &
