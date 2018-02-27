@@ -24,7 +24,6 @@ def jit_generate(class_data, module_name, signature, parameters):
     #define DLL_EXPORT __attribute__ ((visibility ("default")))
 #endif
 
-#include <dolfin/math/basic.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <Eigen/Dense>
 
@@ -32,7 +31,7 @@ def jit_generate(class_data, module_name, signature, parameters):
 
 namespace dolfin
 {{
-  class {classname} : public SubDomain
+  class {classname} : public mesh::SubDomain
   {{
      public:
        {members}
@@ -62,9 +61,9 @@ namespace dolfin
   }};
 }}
 
-extern "C" DLL_EXPORT dolfin::SubDomain * create_{classname}()
+extern "C" DLL_EXPORT dolfin::mesh::SubDomain * create_{classname}()
 {{
-  return new dolfin::{classname};
+  return new dolfin::mesh::{classname};
 }}
 
 """
