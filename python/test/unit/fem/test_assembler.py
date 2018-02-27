@@ -83,7 +83,8 @@ def xtest_matrix_assembly_bc():
 
     # Define Dirichlet boundary (x = 0 or x = 1)
     def boundary(x):
-        return x[0] < 1.0e-6 or x[0] > 1.0 - 1.0e-6
+        return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
+
     u0 = dolfin.function.constant.Constant(2.0)
     bc = dolfin.fem.dirichletbc.DirichletBC(V, u0, boundary)
 
@@ -128,7 +129,7 @@ def test_matrix_assembly_block():
 
     # Define Dirichlet boundary (x = 0 or x = 1)
     def boundary(x):
-        return x[0] < 1.0e-6 or x[0] > 1.0 - 1.0e-6
+        return numpy.logical_or(x[:, 0] < 1.0e-6,  x[:, 0] > 1.0 - 1.0e-6)
 
     u0 = dolfin.function.constant.Constant(2.0)
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u0, boundary)
@@ -184,7 +185,7 @@ def xtest_matrix_assembly_block():
 
     # Define Dirichlet boundary (x = 0 or x = 1)
     def boundary(x):
-        return x[0] < 1.0e-6 or x[0] > 1.0 - 1.0e-6
+        return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
     u0 = dolfin.function.constant.Constant((2.0, 1.0))
     bc = dolfin.fem.dirichletbc.DirichletBC(P2, u0, boundary)
