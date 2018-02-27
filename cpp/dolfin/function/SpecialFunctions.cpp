@@ -31,9 +31,7 @@ void MeshCoordinates::eval(Eigen::Ref<Eigen::VectorXd> values,
 }
 //-----------------------------------------------------------------------------
 FacetArea::FacetArea(std::shared_ptr<const Mesh> mesh)
-    : Expression({}), _mesh(mesh),
-      not_on_boundary("*** Warning: evaluating special function FacetArea on a "
-                      "non-facet domain, returning zero.")
+    : Expression({}), _mesh(mesh)
 {
   // Do nothing
 }
@@ -52,7 +50,7 @@ void FacetArea::eval(Eigen::Ref<Eigen::VectorXd> values,
   }
   else
   {
-    not_on_boundary();
+    // not_on_boundary
     values[0] = 0.0;
   }
 }
