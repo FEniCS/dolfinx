@@ -11,8 +11,10 @@
 
 namespace dolfin
 {
-
+namespace common
+{
 class Variable;
+}
 namespace parameter
 {
 class Parameters;
@@ -33,7 +35,7 @@ void info(std::string msg, ...);
 void info(const parameter::Parameters& parameters, bool verbose = false);
 
 /// Print variable (using output of str() method)
-void info(const Variable& variable, bool verbose = false);
+void info(const common::Variable& variable, bool verbose = false);
 
 /// Print message to stream
 void info_stream(std::ostream& out, std::string msg);
@@ -181,5 +183,3 @@ void __dolfin_assert(std::string file, unsigned long line, std::string function,
 #else
 #define dolfin_assert(check)
 #endif
-
-

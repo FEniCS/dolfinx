@@ -29,7 +29,7 @@ class NonlinearProblem;
 /// This class defines a Newton solver for nonlinear systems of
 /// equations of the form :math:`F(x) = 0`.
 
-class NewtonSolver : public Variable
+class NewtonSolver : public common::Variable
 {
 public:
   /// Create nonlinear solver

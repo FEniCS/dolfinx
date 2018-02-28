@@ -85,7 +85,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const DirichletBC& bc) { *this = bc; }
-//-----------------------parame------------------------------------------------------
+//-----------------------------------------------------------------------------
 DirichletBC::~DirichletBC()
 {
   // Do nothing
@@ -105,7 +105,7 @@ const DirichletBC& DirichletBC::operator=(const DirichletBC& bc)
   _check_midpoint = bc._check_midpoint;
 
   // Call assignment operator for base class
-  Variable::operator=(bc);
+  common::Variable::operator=(bc);
 
   return *this;
 }
@@ -841,7 +841,8 @@ bool DirichletBC::on_facet(const double* coordinates,
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::check_arguments(la::PETScMatrix* A, la::PETScVector* b,
-                                  const la::PETScVector* x, std::size_t dim) const
+                                  const la::PETScVector* x,
+                                  std::size_t dim) const
 {
   dolfin_assert(_function_space);
 

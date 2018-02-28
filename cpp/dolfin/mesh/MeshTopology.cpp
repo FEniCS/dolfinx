@@ -15,13 +15,13 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-MeshTopology::MeshTopology() : Variable("topology", "mesh topology")
+MeshTopology::MeshTopology() : common::Variable("topology", "mesh topology")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)
-    : Variable("topology", "mesh topology"),
+    : common::Variable("topology", "mesh topology"),
       _num_entities(topology._num_entities),
       _ghost_offset_index(topology._ghost_offset_index),
       _global_num_entities(topology._global_num_entities),

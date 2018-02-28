@@ -26,7 +26,7 @@ using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm)
-    : Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
+    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
       _ghost_mode("none")
 {
   // Do nothing
@@ -39,7 +39,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>
                topology)
-    : Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
+    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
       _ghost_mode("none")
 {
   // Initialise geometry
@@ -93,14 +93,14 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-    : Variable("mesh", "DOLFIN mesh"), _ordered(false),
+    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false),
       _mpi_comm(mesh.mpi_comm()), _ghost_mode("none")
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
-    : Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
+    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
       _ghost_mode("none")
 {
   const std::string ghost_mode = parameters["ghost_mode"];

@@ -62,7 +62,7 @@ class SubDomain;
 /// such as all edges connected to a given vertex must also be
 /// explicitly created (in this case by a call to mesh.init(0, 1)).
 
-class Mesh : public Variable
+class Mesh : public common::Variable
 {
 public:
   // FIXME: remove

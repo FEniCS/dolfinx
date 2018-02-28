@@ -87,7 +87,7 @@ LogStream& LogStream::operator<<(std::complex<double> z)
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<<(const Variable& variable)
+LogStream& LogStream::operator<<(const common::Variable& variable)
 {
   buffer << variable.str(false);
   return *this;

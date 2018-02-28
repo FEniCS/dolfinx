@@ -28,7 +28,7 @@ class Mesh;
 /// list of vertex coordinates, a list of cell-vertex mappings and a
 /// list of global vertex numbers for the locally stored vertices.
 
-class LocalMeshData : public Variable
+class LocalMeshData : public common::Variable
 {
 public:
   /// Create empty local mesh data

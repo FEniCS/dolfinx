@@ -58,7 +58,7 @@ void dolfin::info(std::string msg, ...)
   LogManager::logger().log(buffer.get());
 }
 //-----------------------------------------------------------------------------
-void dolfin::info(const Variable& variable, bool verbose)
+void dolfin::info(const common::Variable& variable, bool verbose)
 {
   if (!LogManager::logger().is_active())
     return; // optimization

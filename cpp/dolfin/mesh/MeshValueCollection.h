@@ -31,7 +31,7 @@ namespace mesh
 /// means that data may be stored robustly to file.
 
 template <typename T>
-class MeshValueCollection : public Variable
+class MeshValueCollection : public common::Variable
 {
 public:
   /// Create empty mesh value collection
@@ -197,7 +197,7 @@ private:
 //---------------------------------------------------------------------------
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection()
-    : Variable("m", "unnamed MeshValueCollection"), _dim(-1)
+    : common::Variable("m", "unnamed MeshValueCollection"), _dim(-1)
 {
   // Do nothing
 }
@@ -212,7 +212,8 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh)
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
                                             std::size_t dim)
-    : Variable("m", "unnamed MeshValueCollection"), _mesh(mesh), _dim(dim)
+    : common::Variable("m", "unnamed MeshValueCollection"), _mesh(mesh),
+      _dim(dim)
 {
   // Do nothing
 }
@@ -220,8 +221,8 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(
     const MeshFunction<T>& mesh_function)
-    : Variable("m", "unnamed MeshValueCollection"), _mesh(mesh_function.mesh()),
-      _dim(mesh_function.dim())
+    : common::Variable("m", "unnamed MeshValueCollection"),
+      _mesh(mesh_function.mesh()), _dim(mesh_function.dim())
 {
   dolfin_assert(_mesh);
   const std::size_t D = _mesh->topology().dim();

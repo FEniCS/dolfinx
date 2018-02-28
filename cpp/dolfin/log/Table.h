@@ -31,7 +31,7 @@ class TableEntry;
 ///
 ///   info(table);
 
-class Table : public Variable
+class Table : public common::Variable
 {
 public:
   /// Create empty table

@@ -76,7 +76,7 @@ class HDF5File;
 /// XDMF is not suitable for checkpointing as it may decimate some
 /// data.
 
-class XDMFFile : public Variable
+class XDMFFile : public common::Variable
 {
 public:
   /// File encoding type

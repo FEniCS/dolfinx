@@ -47,7 +47,6 @@ private:
 /// This class provides utility functions for easy communication
 /// with MPI and handles cases when DOLFIN is not configured with
 /// MPI.
-
 class MPI
 {
 public:

@@ -30,14 +30,14 @@ void log(py::module &m) {
       .value("CRITICAL", dolfin::LogLevel::CRITICAL);
 
   // dolfin::Table
-  py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>, dolfin::Variable>(
-      m, "Table")
+  py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>,
+             dolfin::common::Variable>(m, "Table")
       .def(py::init<std::string>())
       .def("str", &dolfin::Table::str);
 
   // dolfin/log free functions
-  m.def("info", [](const dolfin::Variable &v) { dolfin::info(v); });
-  m.def("info", [](const dolfin::Variable &v, bool verbose) {
+  m.def("info", [](const dolfin::common::Variable &v) { dolfin::info(v); });
+  m.def("info", [](const dolfin::common::Variable &v, bool verbose) {
     dolfin::info(v, verbose);
   });
   m.def("info", [](std::string s) { dolfin::info(s); });

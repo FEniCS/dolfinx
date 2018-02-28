@@ -130,8 +130,9 @@ void fem(py::module &m) {
 
   // dolfin::fem::GenericDofMap
   py::class_<dolfin::fem::GenericDofMap,
-             std::shared_ptr<dolfin::fem::GenericDofMap>, dolfin::Variable>(
-      m, "GenericDofMap", "DOLFIN DofMap object")
+             std::shared_ptr<dolfin::fem::GenericDofMap>,
+             dolfin::common::Variable>(m, "GenericDofMap",
+                                       "DOLFIN DofMap object")
       .def("global_dimension", &dolfin::fem::GenericDofMap::global_dimension,
            "The dimension of the global finite element function space")
       .def("index_map", &dolfin::fem::GenericDofMap::index_map)
@@ -211,8 +212,9 @@ void fem(py::module &m) {
 
   // dolfin::fem::DirichletBC
   py::class_<dolfin::fem::DirichletBC,
-             std::shared_ptr<dolfin::fem::DirichletBC>, dolfin::Variable>(
-      m, "DirichletBC", "DOLFIN DirichletBC object")
+             std::shared_ptr<dolfin::fem::DirichletBC>,
+             dolfin::common::Variable>(m, "DirichletBC",
+                                       "DOLFIN DirichletBC object")
       .def(py::init<const dolfin::fem::DirichletBC &>())
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
                     std::shared_ptr<const dolfin::function::GenericFunction>,

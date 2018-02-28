@@ -13,7 +13,7 @@ using namespace dolfin;
 using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
-GenericFunction::GenericFunction() : Variable("u", "a function")
+GenericFunction::GenericFunction() : common::Variable("u", "a function")
 {
   // Do nothing
 }

@@ -781,7 +781,8 @@ void la(py::module &m) {
   // dolfin::la::PETScBaseMatrix
   py::class_<dolfin::la::PETScBaseMatrix,
              std::shared_ptr<dolfin::la::PETScBaseMatrix>,
-             dolfin::la::PETScObject, dolfin::Variable>(m, "PETScBaseMatrix")
+             dolfin::la::PETScObject, dolfin::common::Variable>(
+      m, "PETScBaseMatrix")
       .def("size",
            (std::int64_t(dolfin::la::PETScBaseMatrix::*)(std::size_t) const) &
                dolfin::la::PETScBaseMatrix::size)
@@ -884,8 +885,8 @@ void la(py::module &m) {
 #ifdef HAS_SLEPC
   // dolfin::la::SLEPcEigenSolver
   py::class_<dolfin::la::SLEPcEigenSolver,
-             std::shared_ptr<dolfin::la::SLEPcEigenSolver>, dolfin::Variable>(
-      m, "SLEPcEigenSolver")
+             std::shared_ptr<dolfin::la::SLEPcEigenSolver>,
+             dolfin::common::Variable>(m, "SLEPcEigenSolver")
       .def(py::init([](const MPICommWrapper comm) {
         return std::make_unique<dolfin::la::SLEPcEigenSolver>(comm.get());
       }))

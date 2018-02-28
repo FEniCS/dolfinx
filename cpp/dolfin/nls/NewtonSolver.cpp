@@ -36,7 +36,7 @@ parameter::Parameters dolfin::nls::NewtonSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 dolfin::nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
-    : Variable("Newton solver", "unnamed"), _newton_iteration(0),
+    : common::Variable("Newton solver", "unnamed"), _newton_iteration(0),
       _krylov_iterations(0), _relaxation_parameter(1.0), _residual(0.0),
       _residual0(0.0), _matA(new la::PETScMatrix(comm)),
       _matP(new la::PETScMatrix(comm)), _dx(new la::PETScVector(comm)),

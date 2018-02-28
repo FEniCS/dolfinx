@@ -44,7 +44,7 @@ namespace fem
 
 /// This class provides a generic interface for dof maps
 
-class GenericDofMap : public Variable
+class GenericDofMap : public common::Variable
 {
 public:
   /// Constructor

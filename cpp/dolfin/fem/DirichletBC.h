@@ -108,7 +108,7 @@ namespace fem
 /// supplied object (defining boundary subdomain) after first use may
 /// have no effect. But this is implementation and method specific.
 
-class DirichletBC : public Variable
+class DirichletBC : public common::Variable
 {
 
 public:
@@ -308,8 +308,8 @@ private:
 
   // Check arguments for compatibility of tensors and dofmap,
   // dim is means an axis to which bc applies
-  void check_arguments(la::PETScMatrix* A, la::PETScVector* b, const la::PETScVector* x,
-                       std::size_t dim) const;
+  void check_arguments(la::PETScMatrix* A, la::PETScVector* b,
+                       const la::PETScVector* x, std::size_t dim) const;
 
   // The function space (possibly a sub function space)
   std::shared_ptr<const function::FunctionSpace> _function_space;

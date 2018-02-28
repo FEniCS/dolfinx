@@ -13,6 +13,9 @@
 namespace dolfin
 {
 
+namespace common
+{
+
 /// Common base class for DOLFIN variables.
 
 class Variable
@@ -65,4 +68,5 @@ private:
   // Unique identifier
   const std::size_t unique_id;
 };
+}
 }

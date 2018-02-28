@@ -39,7 +39,7 @@ void io(py::module &m) {
 #ifdef HAS_HDF5
   // dolfin::io::HDF5File
   py::class_<dolfin::io::HDF5File, std::shared_ptr<dolfin::io::HDF5File>,
-             dolfin::Variable>(m, "HDF5File")
+             dolfin::common::Variable>(m, "HDF5File")
       .def(py::init([](const MPICommWrapper comm, const std::string filename,
                        const std::string file_mode) {
              return std::make_unique<dolfin::io::HDF5File>(comm.get(), filename,
@@ -203,7 +203,7 @@ void io(py::module &m) {
 
   // dolfin::io::XDMFFile
   py::class_<dolfin::io::XDMFFile, std::shared_ptr<dolfin::io::XDMFFile>,
-             dolfin::Variable>
+             dolfin::common::Variable>
       xdmf_file(m, "XDMFFile");
 
   xdmf_file

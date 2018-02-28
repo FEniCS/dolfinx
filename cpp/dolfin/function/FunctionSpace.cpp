@@ -62,7 +62,7 @@ const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
   _component = V._component;
 
   // Call assignment operator for base class
-  Variable::operator=(V);
+  common::Variable::operator=(V);
 
   return *this;
 }
@@ -98,8 +98,8 @@ std::int64_t FunctionSpace::dim() const
   return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate_from_any(la::PETScVector& expansion_coefficients,
-                                         const GenericFunction& v) const
+void FunctionSpace::interpolate_from_any(
+    la::PETScVector& expansion_coefficients, const GenericFunction& v) const
 {
   // Initialize local arrays
   std::vector<double> cell_coefficients(_dofmap->max_element_dofs());

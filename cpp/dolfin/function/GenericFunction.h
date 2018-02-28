@@ -41,7 +41,7 @@ class FunctionSpace;
 /// Sub-classes may optionally implement the update() function that
 /// will be called prior to restriction when running in parallel.
 
-class GenericFunction : public Variable
+class GenericFunction : public common::Variable
 {
 public:
   /// Constructor

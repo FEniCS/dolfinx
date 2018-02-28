@@ -32,7 +32,7 @@ class MeshEntity;
 /// domains or boolean markers for mesh refinement.
 
 template <typename T>
-class MeshFunction : public Variable
+class MeshFunction : public common::Variable
 {
 public:
   /// Create empty mesh function
@@ -283,14 +283,16 @@ MeshFunction<T>::MeshFunction() : MeshFunction(nullptr)
 //---------------------------------------------------------------------------
 template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh)
-    : Variable("f", "unnamed MeshFunction"), _mesh(mesh), _dim(0), _size(0)
+    : common::Variable("f", "unnamed MeshFunction"), _mesh(mesh), _dim(0),
+      _size(0)
 {
   // Do nothing
 }
 //---------------------------------------------------------------------------
 template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim)
-    : Variable("f", "unnamed MeshFunction"), _mesh(mesh), _dim(0), _size(0)
+    : common::Variable("f", "unnamed MeshFunction"), _mesh(mesh), _dim(0),
+      _size(0)
 {
   init(dim);
 }
@@ -307,7 +309,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim,
 template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
                               const MeshValueCollection<T>& value_collection)
-    : Variable("f", "unnamed MeshFunction"), _mesh(mesh),
+    : common::Variable("f", "unnamed MeshFunction"), _mesh(mesh),
       _dim(value_collection.dim()), _size(0)
 {
   *this = value_collection;
@@ -315,7 +317,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
 //---------------------------------------------------------------------------
 template <typename T>
 MeshFunction<T>::MeshFunction(const MeshFunction<T>& f)
-    : Variable("f", "unnamed MeshFunction"), _dim(0), _size(0)
+    : common::Variable("f", "unnamed MeshFunction"), _dim(0), _size(0)
 {
   *this = f;
 }

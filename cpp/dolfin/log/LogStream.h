@@ -13,7 +13,10 @@
 namespace dolfin
 {
 
+namespace common
+{
 class Variable;
+}
 
 namespace geometry
 {
@@ -65,9 +68,9 @@ public:
   LogStream& operator<<(std::complex<double> z);
 
   /// Output for variable (calling str() method)
-  LogStream& operator<<(const Variable& variable);
+  LogStream& operator<<(const common::Variable& variable);
 
-  /// Output for point (not subclass of Variable for efficiency)
+  /// Output for point (not subclass of common::Variable for efficiency)
   LogStream& operator<<(const geometry::Point& point);
 
   /// Set precisionPoi

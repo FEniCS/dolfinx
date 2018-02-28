@@ -43,7 +43,7 @@ class GenericFunction;
 /// a mesh, a finite element, and a local-to-global mapping of the
 /// degrees of freedom (dofmap).
 
-class FunctionSpace : public Variable
+class FunctionSpace : public common::Variable
 {
 public:
   /// Create function space for given mesh, element and dofmap

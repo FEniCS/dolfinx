@@ -103,7 +103,7 @@ class VectorSpaceBasis;
 /// transform and must be provided if a spectral transform is
 /// given. The possible values are real numbers.
 
-class SLEPcEigenSolver : public Variable, public PETScObject
+class SLEPcEigenSolver : public common::Variable, public PETScObject
 {
 public:
   /// Create eigenvalue solver

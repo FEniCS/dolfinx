@@ -28,7 +28,7 @@ class PETScVector;
 /// This class is a base class for matrices that can be used in
 /// PETScKrylovSolver.
 
-class PETScBaseMatrix : public PETScObject, public virtual Variable
+class PETScBaseMatrix : public PETScObject, public virtual common::Variable
 {
 public:
   /// Constructor

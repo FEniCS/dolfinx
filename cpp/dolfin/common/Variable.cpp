@@ -10,6 +10,7 @@
 #include <sstream>
 
 using namespace dolfin;
+using namespace dolfin::common;
 
 //-----------------------------------------------------------------------------
 Variable::Variable()
