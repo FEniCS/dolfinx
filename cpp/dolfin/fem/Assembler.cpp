@@ -20,15 +20,15 @@
 #include <string>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 using EigenMatrixD
     = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 //-----------------------------------------------------------------------------
-fem::Assembler::Assembler(
-    std::vector<std::vector<std::shared_ptr<const Form>>> a,
-    std::vector<std::shared_ptr<const Form>> L,
-    std::vector<std::shared_ptr<const fem::DirichletBC>> bcs)
+Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
+                     std::vector<std::shared_ptr<const Form>> L,
+                     std::vector<std::shared_ptr<const DirichletBC>> bcs)
     : _a(a), _l(L), _bcs(bcs)
 {
   // Check shape of a and L
@@ -50,7 +50,7 @@ fem::Assembler::Assembler(
   */
 }
 //-----------------------------------------------------------------------------
-void fem::Assembler::assemble(PETScMatrix& A)
+void Assembler::assemble(PETScMatrix& A)
 {
   // Check if matrix should be nested
   assert(!_a.empty());
@@ -73,7 +73,7 @@ void fem::Assembler::assemble(PETScMatrix& A)
           {
             mats.push_back(std::make_shared<PETScMatrix>(A.mpi_comm()));
             petsc_mats.push_back(mats.back()->mat());
-            fem::init(*mats.back(), *a);
+            init(*mats.back(), *a);
           }
           else
           {
@@ -115,7 +115,7 @@ void fem::Assembler::assemble(PETScMatrix& A)
 
           // Build sparsity pattern
           std::cout << "  Build sparsity pattern " << std::endl;
-          std::array<const fem::GenericDofMap*, 2> dofmaps
+          std::array<const GenericDofMap*, 2> dofmaps
               = {{_a[row][col]->function_space(0)->dofmap().get(),
                   _a[row][col]->function_space(1)->dofmap().get()}};
           SparsityPatternBuilder::build(*patterns[row].back(),
@@ -139,7 +139,7 @@ void fem::Assembler::assemble(PETScMatrix& A)
       std::cout << "  Post init parent matrix" << std::endl;
     }
     else
-      fem::init(A, *_a[0][0]);
+      init(A, *_a[0][0]);
   }
   else
   {
@@ -250,7 +250,7 @@ void fem::Assembler::assemble(PETScMatrix& A)
   // return;
 }
 //-----------------------------------------------------------------------------
-void fem::Assembler::assemble(PETScVector& b)
+void Assembler::assemble(PETScVector& b)
 {
   // Assemble vector
   this->assemble(b, *_l[0]);
@@ -270,7 +270,7 @@ void fem::Assembler::assemble(PETScVector& b)
   // }
 }
 //-----------------------------------------------------------------------------
-void fem::Assembler::assemble(PETScMatrix& A, PETScVector& b)
+void Assembler::assemble(PETScMatrix& A, PETScVector& b)
 {
   // TODO: pre common boundary condition data
 
@@ -281,12 +281,11 @@ void fem::Assembler::assemble(PETScMatrix& A, PETScVector& b)
   assemble(b);
 }
 //-----------------------------------------------------------------------------
-void fem::Assembler::assemble(
-    PETScMatrix& A, const Form& a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs)
+void Assembler::assemble(PETScMatrix& A, const Form& a,
+                         std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   if (A.empty())
-    fem::init(A, a);
+    init(A, a);
 
   // Get mesh from form
   assert(a.mesh());
@@ -305,7 +304,7 @@ void fem::Assembler::assemble(
       = {{a.function_space(0).get(), a.function_space(1).get()}};
 
   // Collect pointers to dof maps
-  std::array<const fem::GenericDofMap*, 2> dofmaps
+  std::array<const GenericDofMap*, 2> dofmaps
       = {{spaces[0]->dofmap().get(), spaces[1]->dofmap().get()}};
 
   // FIXME: Move out of this function
@@ -422,10 +421,10 @@ void fem::Assembler::assemble(
   */
 }
 //-----------------------------------------------------------------------------
-void fem::Assembler::assemble(PETScVector& b, const Form& L)
+void Assembler::assemble(PETScVector& b, const Form& L)
 {
   if (b.empty())
-    fem::init(b, L);
+    init(b, L);
 
   // Get mesh from form
   assert(L.mesh());
@@ -488,9 +487,8 @@ void fem::Assembler::assemble(PETScVector& b, const Form& L)
   b.apply();
 }
 //-----------------------------------------------------------------------------
-void fem::Assembler::apply_bc(
-    PETScVector& b, const Form& a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs)
+void Assembler::apply_bc(PETScVector& b, const Form& a,
+                         std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   // Get mesh from form
   assert(a.mesh());
@@ -612,8 +610,8 @@ void fem::Assembler::apply_bc(
   b.apply();
 }
 //-----------------------------------------------------------------------------
-void fem::Assembler::set_bc(PETScVector& b, const Form& L,
-                            std::vector<std::shared_ptr<const DirichletBC>> bcs)
+void Assembler::set_bc(PETScVector& b, const Form& L,
+                       std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   // Get mesh from form
   assert(L.mesh());

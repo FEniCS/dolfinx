@@ -32,13 +32,10 @@ namespace dolfin
 
 // Forward declarations
 class Facet;
-class Form;
-class GenericDofMap;
 class PETScMatrix;
 class PETScVector;
 template <typename T>
 class MeshFunction;
-class UFC;
 
 namespace common
 {
@@ -53,6 +50,9 @@ class Cell;
 
 namespace fem
 {
+class Form;
+class GenericDofMap;
+class UFC;
 
 /// This class provides an assembler for systems of the form Ax =
 /// b. It differs from the default DOLFIN assembler in that it

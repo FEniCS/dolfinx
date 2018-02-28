@@ -22,15 +22,9 @@ class dofmap;
 
 namespace dolfin
 {
-
 class Mesh;
 class IndexMap;
 class UFC;
-
-namespace fem
-{
-class DofMap;
-}
 
 namespace mesh
 {
@@ -40,6 +34,7 @@ class SubDomain;
 
 namespace fem
 {
+class DofMap;
 
 /// Builds a DofMap on a Mesh
 

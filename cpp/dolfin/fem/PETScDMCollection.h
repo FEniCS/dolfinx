@@ -6,8 +6,6 @@
 
 #pragma once
 
-#ifdef HAS_PETSC
-
 #include <dolfin/common/MPI.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/log/log.h>
@@ -23,6 +21,8 @@ class Mesh;
 class FunctionSpace;
 class BoundingBoxTree;
 
+namespace fem
+{
 /// This class builds and stores of collection of PETSc DM objects
 /// from a hierarchy of FunctionSpaces objects. The DM objects are
 /// used to construct multigrid solvers via PETSc.
@@ -84,5 +84,4 @@ private:
   std::vector<DM> _dms;
 };
 }
-
-#endif
+}

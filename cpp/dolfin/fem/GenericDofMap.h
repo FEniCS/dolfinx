@@ -7,14 +7,11 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
-#include <map>
 #include <memory>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -26,6 +23,7 @@ class cell;
 namespace dolfin
 {
 
+class IndexMap;
 class PETScVector;
 class Mesh;
 

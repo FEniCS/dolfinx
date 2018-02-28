@@ -208,9 +208,9 @@ call the ``solve`` function with the arguments ``a == L``, ``u`` and
      auto A = std::make_shared<PETScMatrix>(MPI_COMM_WORLD);
      auto b = std::make_shared<PETScVector>(MPI_COMM_WORLD);
 
-     fem::SystemAssembler assem(a, L, bc);
-     assem.assemble(*A);
-     assem.assemble(*b);
+     fem::SystemAssembler assembler(a, L, bc);
+     assembler.assemble(*A);
+     assembler.assemble(*b);
 
      PETScLUSolver lu(MPI_COMM_WORLD, A);
      lu.solve(*u.vector(), *b);

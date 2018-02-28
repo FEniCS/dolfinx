@@ -13,7 +13,6 @@ namespace dolfin
 {
 
 // Forward declarations
-class Form;
 class Function;
 class FunctionSpace;
 class PETScVector;
@@ -21,7 +20,7 @@ class PETScVector;
 namespace fem
 {
 class DirichletBC;
-}
+class Form;
 
 /// This class represents a nonlinear variational problem:
 ///
@@ -98,4 +97,5 @@ private:
   std::shared_ptr<const PETScVector> _lb;
   std::shared_ptr<const PETScVector> _ub;
 };
+}
 }

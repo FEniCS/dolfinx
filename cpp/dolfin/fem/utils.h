@@ -12,7 +12,6 @@
 namespace dolfin
 {
 // Forward declarations
-class Form;
 class Function;
 class FunctionSpace;
 class Mesh;
@@ -22,6 +21,7 @@ class PETScVector;
 
 namespace fem
 {
+class Form;
 
 /// Initialise matrix. Matrix is not zeroed.
 void init(PETScMatrix& A, const Form& a);

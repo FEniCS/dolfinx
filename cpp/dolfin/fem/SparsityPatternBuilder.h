@@ -17,7 +17,6 @@ class SparsityPattern;
 namespace fem
 {
 class GenericDofMap;
-}
 
 /// This class provides functions to compute the sparsity pattern
 /// based on DOF maps
@@ -25,7 +24,6 @@ class GenericDofMap;
 class SparsityPatternBuilder
 {
 public:
-
   // FIXME: Simplify
   /// Build sparsity pattern for assembly of given bilinea form
   static void build(SparsityPattern& sparsity_pattern, const Mesh& mesh,
@@ -34,4 +32,5 @@ public:
                     bool vertices, bool diagonal, bool init = true,
                     bool finalize = true);
 };
+}
 }

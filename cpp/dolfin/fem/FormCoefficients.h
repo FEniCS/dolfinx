@@ -9,14 +9,17 @@
 #include "FiniteElement.h"
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/log/log.h>
-#include <ufc.h>
-
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <ufc.h>
 #include <vector>
 
 namespace dolfin
+{
+class GenericFunction;
+
+namespace fem
 {
 
 class FormCoefficients
@@ -110,4 +113,5 @@ private:
   // Copy of 'original positions' in UFL form
   std::vector<std::size_t> _original_pos;
 };
+}
 }

@@ -7,14 +7,15 @@
 #pragma once
 
 #include <dolfin/log/log.h>
-#include <ufc.h>
-
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <ufc.h>
 #include <vector>
 
 namespace dolfin
+{
+namespace fem
 {
 
 class FormIntegrals
@@ -224,8 +225,8 @@ private:
   std::vector<std::shared_ptr<ufc::cell_integral>> _cell_integrals;
 
   // Function pointers to cell tabulate_tensor functions
-  std::vector<
-      std::function<void(double*, const double* const*, const double*, int)>>
+  std::vector<std::function<void(double*, const double* const*, const double*,
+                                 int)>>
       _cell_tabulate_tensor;
 
   // Exterior facet integrals
@@ -237,4 +238,5 @@ private:
   // Vertex integrals
   std::vector<std::shared_ptr<ufc::vertex_integral>> _vertex_integrals;
 };
+}
 }

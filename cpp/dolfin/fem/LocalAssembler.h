@@ -19,7 +19,6 @@ namespace dolfin
 {
 
 class Facet;
-class UFC;
 template <typename T>
 class MeshFunction;
 
@@ -27,6 +26,10 @@ namespace mesh
 {
 class Cell;
 }
+
+namespace fem
+{
+class UFC;
 
 /// Assembly of local cell tensors. Used by the adaptivity and
 /// LocalSolver functionality in dolfin. The local assembly
@@ -97,4 +100,5 @@ public:
       const MeshFunction<std::size_t>* cell_domains            ///< [in]
       );
 };
+}
 }

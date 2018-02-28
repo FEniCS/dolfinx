@@ -12,6 +12,7 @@
 #include <dolfin/la/PETScVector.h>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 NonlinearVariationalProblem::NonlinearVariationalProblem(

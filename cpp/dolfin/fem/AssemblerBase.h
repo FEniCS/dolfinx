@@ -15,11 +15,11 @@ namespace dolfin
 
 // Forward declarations
 class PETScMatrix;
-class Form;
 class PETScVector;
 
 namespace fem
 {
+class Form;
 
 /// Provide some common functions used in assembler classes.
 class AssemblerBase

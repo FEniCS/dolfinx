@@ -14,8 +14,6 @@
 namespace dolfin
 {
 
-class FiniteElement;
-class Form;
 class FunctionSpace;
 class GenericFunction;
 class Mesh;
@@ -24,6 +22,11 @@ namespace mesh
 {
 class Cell;
 }
+
+namespace fem
+{
+class FiniteElement;
+class Form;
 
 /// This class is a simple data structure that holds data used
 /// during assembly of a given UFC form. Data is created for each
@@ -107,4 +110,5 @@ public:
   /// The form
   const Form& dolfin_form;
 };
+}
 }

@@ -20,6 +20,9 @@ class PETScMatrix;
 class PETScVector;
 class Mesh;
 
+namespace fem
+{
+
 /// This class provides an easy mechanism for adding a point
 /// quantities (Dirac delta function) to variational problems. The
 /// associated function space must be scalar in order for the inner
@@ -66,4 +69,5 @@ private:
   // Source term - pair of points and magnitude
   std::vector<std::pair<Point, double>> _sources;
 };
+}
 }

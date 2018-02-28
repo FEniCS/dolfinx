@@ -19,6 +19,7 @@
 #include <vector>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,

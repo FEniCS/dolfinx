@@ -4,8 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifdef HAS_PETSC
-
 #include "PETScDMCollection.h"
 #include <boost/multi_array.hpp>
 #include <dolfin/common/RangedIndexSet.h>
@@ -22,6 +20,7 @@
 #include <petscmat.h>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 namespace
 {
@@ -759,4 +758,3 @@ PetscErrorCode PETScDMCollection::refine(DM dmc, MPI_Comm comm, DM* dmf)
   return DMGetFineDM(dmc, dmf);
 }
 //-----------------------------------------------------------------------------
-#endif

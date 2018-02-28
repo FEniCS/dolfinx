@@ -12,7 +12,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-CoefficientAssigner::CoefficientAssigner(Form& form, std::size_t number)
+CoefficientAssigner::CoefficientAssigner(fem::Form& form, std::size_t number)
     : _form(form), _number(number)
 {
   // Do nothing

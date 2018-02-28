@@ -26,7 +26,7 @@ class PETScVector;
 
 namespace mesh
 {
-  class SubDomain;
+class SubDomain;
 }
 
 namespace fem

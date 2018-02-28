@@ -14,6 +14,7 @@
 #include <dolfin/mesh/Cell.h>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 UFC::UFC(const Form& a) : dolfin_form(a)

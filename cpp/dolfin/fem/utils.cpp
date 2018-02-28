@@ -355,7 +355,7 @@ dolfin::fem::vertex_to_dof_map(const FunctionSpace& space)
     // Get the first cell connected to the vertex
     const mesh::Cell cell(mesh, vertex->entities(top_dim)[0]);
 
-    // Find local vertex number
+// Find local vertex number
 #ifdef DEBUG
     bool vertex_found = false;
 #endif
@@ -423,7 +423,8 @@ Mesh dolfin::fem::create_mesh(Function& coordinates)
 
   mesh1._topology = mesh0._topology;
   if (mesh0._cell_type)
-    mesh1._cell_type.reset(mesh::CellType::create(mesh0._cell_type->cell_type()));
+    mesh1._cell_type.reset(
+        mesh::CellType::create(mesh0._cell_type->cell_type()));
   else
     mesh1._cell_type.reset();
   mesh1._ordered = mesh0._ordered;

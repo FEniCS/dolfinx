@@ -12,8 +12,12 @@
 namespace dolfin
 {
 
-class Form;
 class GenericFunction;
+
+namespace fem
+{
+class Form;
+}
 
 /// This class is used for assignment of coefficients to
 /// forms, which allows magic like
@@ -28,7 +32,7 @@ class CoefficientAssigner
 {
 public:
   /// Create coefficient assigner for coefficient with given number
-  CoefficientAssigner(Form& form, std::size_t number);
+  CoefficientAssigner(fem::Form& form, std::size_t number);
 
   /// Destructor
   ~CoefficientAssigner();
@@ -38,7 +42,7 @@ public:
 
 private:
   // The form
-  Form& _form;
+  fem::Form& _form;
 
   // The number of the coefficient
   std::size_t _number;

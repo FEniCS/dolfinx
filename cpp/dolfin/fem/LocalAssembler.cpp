@@ -16,6 +16,7 @@
 #include <dolfin/mesh/MeshIterator.h>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //------------------------------------------------------------------------------
 void LocalAssembler::assemble(

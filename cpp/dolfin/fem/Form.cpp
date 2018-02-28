@@ -18,6 +18,7 @@
 #include <string>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 Form::Form(std::shared_ptr<const ufc::form> ufc_form,
