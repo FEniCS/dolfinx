@@ -22,7 +22,7 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-std::shared_ptr<PETScMatrix>
+std::shared_ptr<la::PETScMatrix>
 DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
                                   const function::FunctionSpace& V1)
 {
@@ -69,7 +69,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   V1.dofmap()->tabulate_local_to_global_dofs(local_to_global_map1);
 
   // Declare matrix
-  auto A = std::make_shared<PETScMatrix>(mesh.mpi_comm());
+  auto A = std::make_shared<la::PETScMatrix>(mesh.mpi_comm());
 
   // Initialize edge -> vertex connections
   mesh.init(1, 0);
@@ -81,7 +81,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
       = {V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
 
   // Initialise sparsity pattern
-  SparsityPattern pattern(mesh.mpi_comm(), index_maps, 0);
+  la::SparsityPattern pattern(mesh.mpi_comm(), index_maps, 0);
 
   // Build sparsity pattern
   std::vector<dolfin::la_index_t> rows;
@@ -143,7 +143,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   }
 
   // Finalise matrix
-  A->apply(PETScMatrix::AssemblyType::FINAL);
+  A->apply(la::PETScMatrix::AssemblyType::FINAL);
 
   return A;
 }

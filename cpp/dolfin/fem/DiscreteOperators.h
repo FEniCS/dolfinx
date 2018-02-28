@@ -11,11 +11,14 @@
 namespace dolfin
 {
 
-class PETScMatrix;
-
 namespace function
 {
 class FunctionSpace;
+}
+
+namespace la
+{
+class PETScMatrix;
 }
 
 namespace fem
@@ -46,8 +49,8 @@ public:
   /// @param[in] V1 (function::FunctionSpace&)
   ///  P1 Lagrange space
   ///
-  /// @return PETScMatrix
-  static std::shared_ptr<PETScMatrix>
+  /// @return la::PETScMatrix
+  static std::shared_ptr<la::PETScMatrix>
   build_gradient(const function::FunctionSpace& V0,
                  const function::FunctionSpace& V1);
 };

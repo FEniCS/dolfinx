@@ -47,7 +47,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V,
-                   std::shared_ptr<PETScVector> x)
+                   std::shared_ptr<la::PETScVector> x)
     : _function_space(V), _vector(x), _allow_extrapolation(false)
 {
   // We do not check for a subspace since this constructor is used for
@@ -70,7 +70,7 @@ Function::Function(const Function& v) : _allow_extrapolation(false)
     this->_function_space = v._function_space;
 
     // Copy vector
-    this->_vector = std::make_shared<PETScVector>(*v._vector);
+    this->_vector = std::make_shared<la::PETScVector>(*v._vector);
   }
   else
   {
@@ -214,7 +214,7 @@ void Function::operator=(const function::FunctionAXPY& axpy)
   }
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<PETScVector> Function::vector()
+std::shared_ptr<la::PETScVector> Function::vector()
 {
   dolfin_assert(_vector);
   dolfin_assert(_function_space->dofmap());
@@ -229,7 +229,7 @@ std::shared_ptr<PETScVector> Function::vector()
   return _vector;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const PETScVector> Function::vector() const
+std::shared_ptr<const la::PETScVector> Function::vector() const
 {
   dolfin_assert(_vector);
   return _vector;
@@ -529,7 +529,7 @@ void Function::init_vector()
   // Create vector of dofs
   if (!_vector)
     _vector =
-  std::make_shared<PETScVector>(_function_space->mesh()->mpi_comm());
+  std::make_shared<la::la::PETScVector>(_function_space->mesh()->mpi_comm());
   dolfin_assert(_vector);
   if (!_vector->empty())
   {
@@ -565,8 +565,8 @@ void Function::init_vector()
 
   // Create vector of dofs
   if (!_vector)
-    _vector
-        = std::make_shared<PETScVector>(_function_space->mesh()->mpi_comm());
+    _vector = std::make_shared<la::PETScVector>(
+        _function_space->mesh()->mpi_comm());
   dolfin_assert(_vector);
 
   if (!_vector->empty())

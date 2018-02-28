@@ -13,7 +13,10 @@
 
 namespace dolfin
 {
+namespace la
+{
 class PETScVector;
+}
 
 namespace fem
 {
@@ -75,7 +78,7 @@ public:
 
   /// Missing docstring
   static void
-  set_local_vector_values(MPI_Comm mpi_comm, PETScVector& x,
+  set_local_vector_values(MPI_Comm mpi_comm, la::PETScVector& x,
                           const mesh::Mesh& mesh,
                           const std::vector<size_t>& cells,
                           const std::vector<dolfin::la_index_t>& cell_dofs,

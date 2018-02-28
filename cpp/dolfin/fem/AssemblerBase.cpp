@@ -29,14 +29,14 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-void AssemblerBase::init_global_tensor(PETScVector& x, const Form& a)
+void AssemblerBase::init_global_tensor(la::PETScVector& x, const Form& a)
 {
   fem::init(x, a);
   if (!add_values)
     x.zero();
 }
 //-----------------------------------------------------------------------------
-void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
+void AssemblerBase::init_global_tensor(la::PETScMatrix& A, const Form& a)
 {
   fem::init(A, a);
   if (!add_values)

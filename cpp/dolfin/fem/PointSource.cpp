@@ -153,7 +153,7 @@ void PointSource::distribute_sources(
   }
 }
 //-----------------------------------------------------------------------------
-void PointSource::apply(PETScVector& b)
+void PointSource::apply(la::PETScVector& b)
 {
   // Applies local point sources.
   dolfin_assert(_function_space0);
@@ -219,7 +219,7 @@ void PointSource::apply(PETScVector& b)
   b.apply();
 }
 //-----------------------------------------------------------------------------
-void PointSource::apply(PETScMatrix& A)
+void PointSource::apply(la::PETScMatrix& A)
 {
   // Applies local point sources.
   dolfin_assert(_function_space0);
@@ -379,7 +379,7 @@ void PointSource::apply(PETScMatrix& A)
                 dofs_per_cell1 * num_sub_spaces, dofs1.data());
   }
 
-  A.apply(PETScMatrix::AssemblyType::FINAL);
+  A.apply(la::PETScMatrix::AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
 void PointSource::check_space_supported(const function::FunctionSpace& V)

@@ -94,8 +94,8 @@ void io(py::module &m) {
                dolfin::io::HDF5File::read,
            py::arg("meshfunction"), py::arg("name"))
       .def("read",
-           (void (dolfin::io::HDF5File::*)(dolfin::PETScVector &, std::string,
-                                           bool) const) &
+           (void (dolfin::io::HDF5File::*)(dolfin::la::PETScVector &,
+                                           std::string, bool) const) &
                dolfin::io::HDF5File::read,
            py::arg("vector"), py::arg("name"), py::arg("use_partitioning"))
       .def("read",
@@ -157,7 +157,7 @@ void io(py::module &m) {
                dolfin::io::HDF5File::write,
            py::arg("meshfunction"), py::arg("name"))
       .def("write",
-           (void (dolfin::io::HDF5File::*)(const dolfin::PETScVector &,
+           (void (dolfin::io::HDF5File::*)(const dolfin::la::PETScVector &,
                                            std::string)) &
                dolfin::io::HDF5File::write,
            py::arg("vector"), py::arg("name"))

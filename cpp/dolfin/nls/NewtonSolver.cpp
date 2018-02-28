@@ -38,9 +38,9 @@ Parameters dolfin::nls::NewtonSolver::default_parameters()
 dolfin::nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
     : Variable("Newton solver", "unnamed"), _newton_iteration(0),
       _krylov_iterations(0), _relaxation_parameter(1.0), _residual(0.0),
-      _residual0(0.0), _matA(new PETScMatrix(comm)),
-      _matP(new PETScMatrix(comm)), _dx(new PETScVector(comm)),
-      _b(new PETScVector(comm)), _mpi_comm(comm)
+      _residual0(0.0), _matA(new la::PETScMatrix(comm)),
+      _matP(new la::PETScMatrix(comm)), _dx(new la::PETScVector(comm)),
+      _b(new la::PETScVector(comm)), _mpi_comm(comm)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -53,7 +53,7 @@ dolfin::nls::NewtonSolver::~NewtonSolver()
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>
 dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
-                                 PETScVector& x)
+                                 la::PETScVector& x)
 {
   dolfin_assert(_matA);
   dolfin_assert(_b);
@@ -70,8 +70,8 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   const std::string pc_type = parameters["preconditioner"];
   if (!_solver)
   {
-    _solver = std::make_shared<PETScKrylovSolver>(x.mpi_comm(), solver_type,
-                                                  pc_type);
+    _solver = std::make_shared<la::PETScKrylovSolver>(x.mpi_comm(), solver_type,
+                                                      pc_type);
   }
   dolfin_assert(_solver);
 
@@ -208,7 +208,7 @@ double dolfin::nls::NewtonSolver::relative_residual() const
 }
 //-----------------------------------------------------------------------------
 bool dolfin::nls::NewtonSolver::converged(
-    const PETScVector& r, const NonlinearProblem& nonlinear_problem,
+    const la::PETScVector& r, const NonlinearProblem& nonlinear_problem,
     std::size_t newton_iteration)
 {
   const double rtol = parameters["relative_tolerance"];
@@ -240,7 +240,8 @@ bool dolfin::nls::NewtonSolver::converged(
 }
 //-----------------------------------------------------------------------------
 void dolfin::nls::NewtonSolver::solver_setup(
-    std::shared_ptr<const PETScMatrix> A, std::shared_ptr<const PETScMatrix> P,
+    std::shared_ptr<const la::PETScMatrix> A,
+    std::shared_ptr<const la::PETScMatrix> P,
     const NonlinearProblem& nonlinear_problem, std::size_t interation)
 {
   // Update Jacobian in linear solver (and preconditioner if given)
@@ -256,7 +257,7 @@ void dolfin::nls::NewtonSolver::solver_setup(
 }
 //-----------------------------------------------------------------------------
 void dolfin::nls::NewtonSolver::update_solution(
-    PETScVector& x, const PETScVector& dx, double relaxation_parameter,
+    la::PETScVector& x, const la::PETScVector& dx, double relaxation_parameter,
     const NonlinearProblem& nonlinear_problem, std::size_t interation)
 {
   if (relaxation_parameter == 1.0)

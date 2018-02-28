@@ -19,6 +19,7 @@
 #include <petscpc.h>
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 // Functions in anonymous namespace (local scope)
 namespace

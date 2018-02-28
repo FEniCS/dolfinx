@@ -23,7 +23,7 @@ using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build(
-    SparsityPattern& sparsity_pattern, const mesh::Mesh& mesh,
+    la::SparsityPattern& sparsity_pattern, const mesh::Mesh& mesh,
     const std::array<const fem::GenericDofMap*, 2> dofmaps, bool cells,
     bool interior_facets, bool exterior_facets, bool vertices, bool diagonal,
     bool init, bool finalize)

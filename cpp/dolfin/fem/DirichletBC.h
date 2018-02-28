@@ -19,9 +19,11 @@
 
 namespace dolfin
 {
-
+namespace la
+{
 class PETScMatrix;
 class PETScVector;
+}
 
 namespace function
 {
@@ -306,7 +308,7 @@ private:
 
   // Check arguments for compatibility of tensors and dofmap,
   // dim is means an axis to which bc applies
-  void check_arguments(PETScMatrix* A, PETScVector* b, const PETScVector* x,
+  void check_arguments(la::PETScMatrix* A, la::PETScVector* b, const la::PETScVector* x,
                        std::size_t dim) const;
 
   // The function space (possibly a sub function space)

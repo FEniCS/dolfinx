@@ -11,7 +11,10 @@
 namespace dolfin
 {
 
+namespace la
+{
 class SparsityPattern;
+}
 
 namespace mesh
 {
@@ -30,7 +33,7 @@ class SparsityPatternBuilder
 public:
   // FIXME: Simplify
   /// Build sparsity pattern for assembly of given bilinea form
-  static void build(SparsityPattern& sparsity_pattern, const mesh::Mesh& mesh,
+  static void build(la::SparsityPattern& sparsity_pattern, const mesh::Mesh& mesh,
                     const std::array<const fem::GenericDofMap*, 2> dofmaps,
                     bool cells, bool interior_facets, bool exterior_facets,
                     bool vertices, bool diagonal, bool init = true,

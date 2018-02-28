@@ -840,8 +840,8 @@ bool DirichletBC::on_facet(const double* coordinates,
   return false;
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::check_arguments(PETScMatrix* A, PETScVector* b,
-                                  const PETScVector* x, std::size_t dim) const
+void DirichletBC::check_arguments(la::PETScMatrix* A, la::PETScVector* b,
+                                  const la::PETScVector* x, std::size_t dim) const
 {
   dolfin_assert(_function_space);
 

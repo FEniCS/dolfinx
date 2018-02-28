@@ -12,6 +12,7 @@
 #include <petsc.h>
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 void PETScObject::petsc_error(int error_code, std::string filename,

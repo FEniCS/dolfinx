@@ -23,9 +23,10 @@ class cell;
 
 namespace dolfin
 {
-
-// Forward declarations
+namespace la
+{
 class PETScVector;
+}
 
 namespace mesh
 {
@@ -70,7 +71,7 @@ public:
   ///     x (_GenericVector_)
   ///         The vector.
   Function(std::shared_ptr<const FunctionSpace> V,
-           std::shared_ptr<PETScVector> x);
+           std::shared_ptr<la::PETScVector> x);
 
   /// Copy constructor
   ///
@@ -133,14 +134,14 @@ public:
   /// *Returns*
   ///     _GenericVector_
   ///         The vector of expansion coefficients.
-  std::shared_ptr<PETScVector> vector();
+  std::shared_ptr<la::PETScVector> vector();
 
   /// Return vector of expansion coefficients (const version)
   ///
   /// *Returns*
   ///     _GenericVector_
   ///         The vector of expansion coefficients (const).
-  std::shared_ptr<const PETScVector> vector() const;
+  std::shared_ptr<const la::PETScVector> vector() const;
 
   /// Evaluate function at given coordinates
   ///
@@ -276,7 +277,7 @@ private:
   std::shared_ptr<const FunctionSpace> _function_space;
 
   // The vector of expansion coefficients (local)
-  std::shared_ptr<PETScVector> _vector;
+  std::shared_ptr<la::PETScVector> _vector;
 
   // True if extrapolation should be allowed
   bool _allow_extrapolation;

@@ -279,7 +279,7 @@ void HDF5Utility::cell_owners_in_range(
 }
 //-----------------------------------------------------------------------------
 void HDF5Utility::set_local_vector_values(
-    const MPI_Comm mpi_comm, PETScVector& x, const mesh::Mesh& mesh,
+    const MPI_Comm mpi_comm, la::PETScVector& x, const mesh::Mesh& mesh,
     const std::vector<size_t>& cells,
     const std::vector<dolfin::la_index_t>& cell_dofs,
     const std::vector<std::int64_t>& x_cell_dofs,

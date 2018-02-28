@@ -32,8 +32,8 @@ void NonlinearVariationalProblem::set_bounds(const function::Function& lb_func,
 }
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::set_bounds(
-    std::shared_ptr<const PETScVector> lb,
-    std::shared_ptr<const PETScVector> ub)
+    std::shared_ptr<const la::PETScVector> lb,
+    std::shared_ptr<const la::PETScVector> ub)
 {
   dolfin_assert(lb);
   dolfin_assert(ub);
@@ -82,14 +82,14 @@ NonlinearVariationalProblem::test_space() const
   return _residual->function_space(0);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const PETScVector>
+std::shared_ptr<const la::PETScVector>
 NonlinearVariationalProblem::lower_bound() const
 {
   dolfin_assert(_lb);
   return _lb;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const PETScVector>
+std::shared_ptr<const la::PETScVector>
 NonlinearVariationalProblem::upper_bound() const
 {
   dolfin_assert(_ub);

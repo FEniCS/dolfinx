@@ -198,7 +198,7 @@ void PETScDMCollection::reset(int i)
   //  PetscObjectDereference((PetscObject)_dms[i]);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
+std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
     const function::FunctionSpace& coarse_space,
     const function::FunctionSpace& fine_space)
 {
@@ -603,7 +603,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
 
   // create shared pointer and return the pointer to the transfer
   // matrix
-  std::shared_ptr<PETScMatrix> ptr = std::make_shared<PETScMatrix>(I);
+  std::shared_ptr<la::PETScMatrix> ptr = std::make_shared<la::PETScMatrix>(I);
   ierr = MatDestroy(&I);
   CHKERRABORT(PETSC_COMM_WORLD, ierr);
   return ptr;
@@ -734,7 +734,7 @@ PetscErrorCode PETScDMCollection::create_interpolation(DM dmc, DM dmf, Mat* mat,
   // Build interpolation matrix (V0 to V1)
   dolfin_assert(V0);
   dolfin_assert(V1);
-  std::shared_ptr<PETScMatrix> P = create_transfer_matrix(*V0, *V1);
+  std::shared_ptr<la::PETScMatrix> P = create_transfer_matrix(*V0, *V1);
 
   // Copy PETSc matrix pointer and inrease reference count
   *mat = P->mat();

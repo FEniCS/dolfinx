@@ -17,19 +17,18 @@
 
 namespace dolfin
 {
-
-/// Forward declarations
-class PETScMatrix;
-class PETScVector;
-class PETScSNESSolver;
-class VectorSpaceBasis;
-
+namespace fem
+{
 class PETScDMCollection;
+}
 
 namespace la
 {
 class PETScBaseMatrix;
-}
+class PETScMatrix;
+class PETScVector;
+class VectorSpaceBasis;
+
 /// This class implements Krylov methods for linear systems of the
 /// form Ax = b. It is a wrapper for the Krylov solvers of PETSc.
 
@@ -68,7 +67,8 @@ public:
   /// Set operator and preconditioner matrix (PETScMatrix). This is
   /// memory-safe as PETSc will increase the reference count to the
   /// underlying PETSc objects.
-  void set_operators(const la::PETScBaseMatrix& A, const la::PETScBaseMatrix& P);
+  void set_operators(const la::PETScBaseMatrix& A,
+                     const la::PETScBaseMatrix& P);
 
   /// Solve linear system Ax = b and return number of iterations
   /// (A^t x = b if transpose is true)
@@ -161,5 +161,5 @@ private:
   bool preconditioner_set;
 };
 }
-
+}
 #endif

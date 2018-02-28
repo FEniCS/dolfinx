@@ -19,7 +19,10 @@
 
 namespace dolfin
 {
+namespace la
+{
 class PETScVector;
+}
 
 namespace fem
 {
@@ -146,11 +149,11 @@ public:
   /// vector of expansion coefficients
   ///
   /// *Arguments*
-  ///     expansion_coefficients (_PETScVector_)
+  ///     expansion_coefficients (_la::PETScVector_)
   ///         The expansion coefficients.
   ///     v (_GenericFunction_)
   ///         The function to be interpolated.
-  void interpolate(PETScVector& expansion_coefficients,
+  void interpolate(la::PETScVector& expansion_coefficients,
                    const GenericFunction& v) const;
 
   /// Extract subspace for component
@@ -253,7 +256,7 @@ public:
   /// operator, e.g. rigid body rotations.
   ///
   /// *Arguments*
-  ///     vector (_PETScVector_)
+  ///     vector (_la::PETScVector_)
   ///         The vector to set.
   ///     value (double)
   ///         The value to multiply to coordinate by.
@@ -261,7 +264,7 @@ public:
   ///         The coordinate index.
   ///     mesh (_mesh::Mesh_)
   ///         The mesh.
-  void set_x(PETScVector& x, double value, std::size_t component) const;
+  void set_x(la::PETScVector& x, double value, std::size_t component) const;
 
   /// Return informal string representation (pretty-print)
   ///
@@ -279,7 +282,7 @@ public:
 
 private:
   // General interpolation from any GenericFunction on any mesh
-  void interpolate_from_any(PETScVector& expansion_coefficients,
+  void interpolate_from_any(la::PETScVector& expansion_coefficients,
                             const GenericFunction& v) const;
 
   // The mesh

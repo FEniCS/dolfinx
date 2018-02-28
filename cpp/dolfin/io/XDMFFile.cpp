@@ -966,7 +966,8 @@ void XDMFFile::read_mesh_value_collection(mesh::MeshValueCollection<T>& mvc,
   }
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const std::vector<geometry::Point>& points, const Encoding encoding)
+void XDMFFile::write(const std::vector<geometry::Point>& points,
+                     const Encoding encoding)
 {
   // Check that encoding is supported
   check_encoding(encoding);
@@ -1257,7 +1258,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
                 cell_dofs, {num_cell_dofs_global, 1}, "UInt");
 
   // Get all local data
-  const PETScVector& u_vector = *u.vector();
+  const la::PETScVector& u_vector = *u.vector();
   std::vector<double> local_data;
   u_vector.get_local(local_data);
 
@@ -1499,7 +1500,7 @@ void XDMFFile::read_checkpoint(function::Function& u, std::string func_name,
   std::vector<double> vector = get_dataset<double>(
       _mpi_comm.comm(), vector_dataitem, parent_path, input_vector_range);
 
-  PETScVector& x = *u.vector();
+  la::PETScVector& x = *u.vector();
 
   HDF5Utility::set_local_vector_values(_mpi_comm.comm(), x, mesh, cells,
                                        cell_dofs, x_cell_dofs, vector,
@@ -2783,7 +2784,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const function::Function& u)
     }
 
     // Get the values at the vertex points
-    const PETScVector& uvec = *u.vector();
+    const la::PETScVector& uvec = *u.vector();
     uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
 
     // Get midpoint values for  mesh::Edge points
@@ -2822,7 +2823,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const function::Function& u)
       }
     }
 
-    const PETScVector& uvec = *u.vector();
+    const la::PETScVector& uvec = *u.vector();
     uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
   }
   else

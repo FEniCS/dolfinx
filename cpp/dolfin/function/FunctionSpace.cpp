@@ -98,7 +98,7 @@ std::int64_t FunctionSpace::dim() const
   return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate_from_any(PETScVector& expansion_coefficients,
+void FunctionSpace::interpolate_from_any(la::PETScVector& expansion_coefficients,
                                          const GenericFunction& v) const
 {
   // Initialize local arrays
@@ -127,7 +127,7 @@ void FunctionSpace::interpolate_from_any(PETScVector& expansion_coefficients,
   }
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(PETScVector& expansion_coefficients,
+void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
                                 const GenericFunction& v) const
 {
   dolfin_assert(_mesh);
@@ -298,7 +298,7 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
   return x;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::set_x(PETScVector& x, double value,
+void FunctionSpace::set_x(la::PETScVector& x, double value,
                           std::size_t component) const
 {
   dolfin_assert(_mesh);

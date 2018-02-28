@@ -17,6 +17,7 @@
 #include <petsclog.h>
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 namespace
 {
@@ -140,7 +141,7 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm, std::string method,
     PC pc;
     ierr = KSPGetPC(_ksp, &pc);
     if (ierr != 0)
-      dolfin::PETScObject::petsc_error(ierr, __FILE__, "KSPGetPC");
+      PETScObject::petsc_error(ierr, __FILE__, "KSPGetPC");
 
     // Set preconditioner
     ierr = PCSetType(pc, method_pc->second);

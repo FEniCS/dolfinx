@@ -21,6 +21,8 @@
 
 namespace dolfin
 {
+namespace la
+{
 
 /// A simple vector class based on PETSc.
 ///
@@ -209,5 +211,5 @@ private:
   Vec _x;
 };
 }
-
+}
 #endif

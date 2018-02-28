@@ -17,6 +17,7 @@
 #include <numeric>
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 namespace
 {

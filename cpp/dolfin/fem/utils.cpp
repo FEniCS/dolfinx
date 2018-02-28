@@ -173,7 +173,7 @@ void _get_set_coordinates(mesh::MeshGeometry& geometry,
 }
 
 //-----------------------------------------------------------------------------
-void dolfin::fem::init(PETScVector& x, const Form& a)
+void dolfin::fem::init(la::PETScVector& x, const Form& a)
 {
   if (a.rank() != 1)
     throw std::runtime_error(
@@ -203,7 +203,7 @@ void dolfin::fem::init(PETScVector& x, const Form& a)
   x.init(index_map->local_range(), local_to_global, {}, block_size);
 }
 //-----------------------------------------------------------------------------
-void dolfin::fem::init(PETScMatrix& A, const Form& a)
+void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
 {
   bool keep_diagonal = false;
   if (a.rank() != 2)
@@ -231,7 +231,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
       = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
 
   // Create and build sparsity pattern
-  SparsityPattern pattern(A.mpi_comm(), index_maps, 0);
+  la::SparsityPattern pattern(A.mpi_comm(), index_maps, 0);
   SparsityPatternBuilder::build(
       pattern, mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
       (a.integrals().num_interior_facet_integrals() > 0),
@@ -279,7 +279,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
 
     // Eventually wait with assembly flush for keep_diagonal
     if (!keep_diagonal)
-      A.apply(PETScMatrix::AssemblyType::FLUSH);
+      A.apply(la::PETScMatrix::AssemblyType::FLUSH);
   }
 
   // FIXME: Check if there is a PETSc function for this
@@ -298,7 +298,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
       A.set(&block, 1, &_i, 1, &_i);
     }
 
-    A.apply(PETScMatrix::AssemblyType::FLUSH);
+    A.apply(la::PETScMatrix::AssemblyType::FLUSH);
   }
 }
 //-----------------------------------------------------------------------------

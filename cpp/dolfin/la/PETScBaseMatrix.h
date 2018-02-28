@@ -21,11 +21,9 @@
 
 namespace dolfin
 {
-
-class PETScVector;
-
 namespace la
 {
+class PETScVector;
 
 /// This class is a base class for matrices that can be used in
 /// PETScKrylovSolver.

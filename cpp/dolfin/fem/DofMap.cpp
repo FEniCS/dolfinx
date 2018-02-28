@@ -552,7 +552,7 @@ std::vector<dolfin::la_index_t> DofMap::dofs() const
   return _dofs;
 }
 //-----------------------------------------------------------------------------
-void DofMap::set(PETScVector& x, double value) const
+void DofMap::set(la::PETScVector& x, double value) const
 {
   dolfin_assert(_dofmap.size() % _cell_dimension == 0);
   const std::size_t num_cells = _dofmap.size() / _cell_dimension;

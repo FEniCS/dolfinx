@@ -205,14 +205,14 @@ call the ``solve`` function with the arguments ``a == L``, ``u`` and
 
      // Compute solution
      function::Function u(V);
-     auto A = std::make_shared<PETScMatrix>(MPI_COMM_WORLD);
-     auto b = std::make_shared<PETScVector>(MPI_COMM_WORLD);
+     auto A = std::make_shared<la::PETScMatrix>(MPI_COMM_WORLD);
+     auto b = std::make_shared<la::PETScVector>(MPI_COMM_WORLD);
 
      fem::SystemAssembler assembler(a, L, bc);
      assembler.assemble(*A);
      assembler.assemble(*b);
 
-     PETScLUSolver lu(MPI_COMM_WORLD, A);
+     la::PETScLUSolver lu(MPI_COMM_WORLD, A);
      lu.solve(*u.vector(), *b);
 
 

@@ -9,6 +9,7 @@
 #include "PETScOptions.h"
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 void PETScOptions::set(std::string option)

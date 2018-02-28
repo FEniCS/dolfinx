@@ -14,10 +14,12 @@
 namespace dolfin
 {
 
-// Forward declarations
+namespace la
+{
 class PETScMatrix;
 class PETScVector;
 class PETScKrylovSolver;
+}
 
 namespace nls
 {
@@ -42,7 +44,7 @@ public:
   /// *Arguments*
   ///     nonlinear_function (_NonlinearProblem_)
   ///         The nonlinear problem.
-  ///     x (_PETScVector_)
+  ///     x (_la::PETScVector_)
   ///         The vector.
   ///
   /// *Returns*
@@ -50,7 +52,7 @@ public:
   ///         Pair of number of Newton iterations, and whether
   ///         iteration converged)
   std::pair<std::size_t, bool> solve(NonlinearProblem& nonlinear_function,
-                                     PETScVector& x);
+                                     la::PETScVector& x);
 
   /// Return current Newton iteration number
   ///
@@ -126,7 +128,7 @@ protected:
   /// this base criterion may be called from derived, both in C++ and Python.
   ///
   /// *Arguments*
-  ///     r (_PETScVector_)
+  ///     r (_la::PETScVector_)
   ///         Residual for criterion evaluation.
   ///     nonlinear_problem (_NonlinearProblem_)
   ///         The nonlinear problem.
@@ -136,7 +138,7 @@ protected:
   /// *Returns*
   ///     bool
   ///         Whether convergence occurred.
-  virtual bool converged(const PETScVector& r,
+  virtual bool converged(const la::PETScVector& r,
                          const NonlinearProblem& nonlinear_problem,
                          std::size_t iteration);
 
@@ -155,8 +157,8 @@ protected:
   ///         The nonlinear problem.
   ///     iteration (std::size_t)
   ///         Newton iteration number.
-  virtual void solver_setup(std::shared_ptr<const PETScMatrix> A,
-                            std::shared_ptr<const PETScMatrix> P,
+  virtual void solver_setup(std::shared_ptr<const la::PETScMatrix> A,
+                            std::shared_ptr<const la::PETScMatrix> P,
                             const NonlinearProblem& nonlinear_problem,
                             std::size_t iteration);
 
@@ -166,9 +168,9 @@ protected:
   ///   x -= relaxation_parameter*dx
   ///
   /// *Arguments*
-  ///     x (_PETScVector>_)
+  ///     x (_la::PETScVector>_)
   ///         The solution vector to be updated.
-  ///     dx (_PETScVector>_)
+  ///     dx (_la::PETScVector>_)
   ///         The update vector computed by Newton step.
   ///     relaxation_parameter (double)
   ///         Newton relaxation parameter.
@@ -176,7 +178,7 @@ protected:
   ///         The nonlinear problem.
   ///     iteration (std::size_t)
   ///         Newton iteration number.
-  virtual void update_solution(PETScVector& x, const PETScVector& dx,
+  virtual void update_solution(la::PETScVector& x, const la::PETScVector& dx,
                                double relaxation_parameter,
                                const NonlinearProblem& nonlinear_problem,
                                std::size_t iteration);
@@ -195,19 +197,19 @@ private:
   double _residual, _residual0;
 
   // Solver
-  std::shared_ptr<PETScKrylovSolver> _solver;
+  std::shared_ptr<la::PETScKrylovSolver> _solver;
 
   // Jacobian matrix
-  std::shared_ptr<PETScMatrix> _matA;
+  std::shared_ptr<la::PETScMatrix> _matA;
 
   // Preconditioner matrix
-  std::shared_ptr<PETScMatrix> _matP;
+  std::shared_ptr<la::PETScMatrix> _matP;
 
   // Solution vector
-  std::shared_ptr<PETScVector> _dx;
+  std::shared_ptr<la::PETScVector> _dx;
 
   // Residual vector
-  std::shared_ptr<PETScVector> _b;
+  std::shared_ptr<la::PETScVector> _b;
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;

@@ -229,7 +229,7 @@ void function(py::module &m) {
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>>(),
            "Create a function on the given function space")
       .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>,
-                    std::shared_ptr<dolfin::PETScVector>>())
+                    std::shared_ptr<dolfin::la::PETScVector>>())
       //.def("_assign", (const dolfin::function::Function&
       //(dolfin::function::Function::*)(const
       // dolfin::function::Function&))
@@ -278,7 +278,7 @@ void function(py::module &m) {
       // FIXME: A lot of error when using non-const version - misused
       // by Python interface?
       .def("vector",
-           (std::shared_ptr<const dolfin::PETScVector>(
+           (std::shared_ptr<const dolfin::la::PETScVector>(
                dolfin::function::Function::*)() const) &
                dolfin::function::Function::vector,
            "Return the vector associated with the finite element Function");

@@ -23,6 +23,9 @@ namespace common
 class IndexMap;
 }
 
+namespace la
+{
+
 /// This class implements a sparsity pattern data structure.  It is
 /// used by most linear algebra backends.
 
@@ -173,4 +176,5 @@ private:
   // communication via apply()
   std::vector<std::size_t> _non_local;
 };
+}
 }

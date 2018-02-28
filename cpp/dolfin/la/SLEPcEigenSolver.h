@@ -17,15 +17,11 @@
 
 namespace dolfin
 {
-
-/// Forward declarations
-class PETScMatrix;
-class PETScVector;
-
 namespace la
 {
+class PETScMatrix;
+class PETScVector;
 class VectorSpaceBasis;
-}
 
 /// This class provides an eigenvalue solver for PETSc matrices. It
 /// is a wrapper for the SLEPc eigenvalue solver.
@@ -207,5 +203,5 @@ private:
   EPS _eps;
 };
 }
-
+}
 #endif

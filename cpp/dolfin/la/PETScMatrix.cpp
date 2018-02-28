@@ -22,6 +22,7 @@
 #define dolfin_ceil_div(x, y) (x / y + int(x % y != 0))
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 const std::map<std::string, NormType> PETScMatrix::norm_types
     = {{"l1", NORM_1}, {"linf", NORM_INFINITY}, {"frobenius", NORM_FROBENIUS}};
@@ -62,7 +63,7 @@ PETScMatrix::~PETScMatrix()
   // Do nothing (PETSc matrix is destroyed in base class)
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
+void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
 {
   // Throw error if already initialised
   if (!empty())

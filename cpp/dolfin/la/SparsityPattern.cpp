@@ -11,6 +11,7 @@
 #include <dolfin/log/LogStream.h>
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(

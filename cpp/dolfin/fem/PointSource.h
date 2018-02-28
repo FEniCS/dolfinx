@@ -13,10 +13,11 @@
 
 namespace dolfin
 {
-
-// Forward declarations
+namespace la
+{
 class PETScMatrix;
 class PETScVector;
+}
 
 namespace function
 {
@@ -56,10 +57,10 @@ public:
   ~PointSource();
 
   /// Apply (add) point source to right-hand side vector
-  void apply(PETScVector& b);
+  void apply(la::PETScVector& b);
 
   /// Apply (add) point source to matrix
-  void apply(PETScMatrix& A);
+  void apply(la::PETScMatrix& A);
 
 private:
   // FIXME: This should probably be static
