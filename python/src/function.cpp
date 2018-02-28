@@ -75,7 +75,7 @@ void function(py::module &m) {
            py::arg("values"), py::arg("x"), "Evaluate GenericFunction")
       .def("compute_vertex_values",
            [](dolfin::function::GenericFunction &self,
-              const dolfin::Mesh &mesh) {
+              const dolfin::mesh::Mesh &mesh) {
              std::vector<double> values;
              self.compute_vertex_values(values, mesh);
              return py::array_t<double>(values.size(), values.data());
@@ -212,14 +212,14 @@ void function(py::module &m) {
              std::shared_ptr<dolfin::function::FacetArea>,
              dolfin::function::Expression, dolfin::function::GenericFunction>(
       m, "FacetArea")
-      .def(py::init<std::shared_ptr<const dolfin::Mesh>>());
+      .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>>());
 
-  // dolfin::MeshCoordinates
+  // dolfin::mesh::MeshCoordinates
   py::class_<dolfin::function::MeshCoordinates,
              std::shared_ptr<dolfin::function::MeshCoordinates>,
              dolfin::function::Expression, dolfin::function::GenericFunction>(
       m, "MeshCoordinates")
-      .def(py::init<std::shared_ptr<const dolfin::Mesh>>());
+      .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>>());
 
   // dolfin::function::Function
   py::class_<dolfin::function::Function,
@@ -356,7 +356,7 @@ void function(py::module &m) {
   py::class_<dolfin::function::FunctionSpace,
              std::shared_ptr<dolfin::function::FunctionSpace>,
              dolfin::Variable>(m, "FunctionSpace", py::dynamic_attr())
-      .def(py::init<std::shared_ptr<dolfin::Mesh>,
+      .def(py::init<std::shared_ptr<dolfin::mesh::Mesh>,
                     std::shared_ptr<dolfin::fem::FiniteElement>,
                     std::shared_ptr<dolfin::fem::GenericDofMap>>())
       .def(py::init<const dolfin::function::FunctionSpace &>())

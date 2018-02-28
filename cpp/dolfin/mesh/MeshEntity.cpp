@@ -12,6 +12,7 @@
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 void MeshEntity::init(const Mesh& mesh, std::size_t dim, std::size_t index)

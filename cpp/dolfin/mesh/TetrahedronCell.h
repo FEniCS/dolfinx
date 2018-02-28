@@ -12,15 +12,13 @@
 
 namespace dolfin
 {
-
 namespace mesh
 {
 class Cell;
-}
 
 /// This class implements functionality for tetrahedral cell meshes.
 
-class TetrahedronCell : public mesh::CellType
+class TetrahedronCell : public CellType
 {
 public:
   /// Specify cell type and facet type
@@ -91,4 +89,5 @@ private:
                               const Point& B, const Point& C,
                               const Point& D) const;
 };
+}
 }

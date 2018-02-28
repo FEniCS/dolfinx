@@ -19,6 +19,7 @@
 #include <boost/multi_array.hpp>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
@@ -39,7 +40,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
     // Set global entity numbers in mesh
     _mesh.topology().init(d, mesh.num_entities(d), mesh.num_entities(d));
     _mesh.topology().init_global_indices(d, mesh.num_entities(d));
-    for (auto& e : MeshRange<MeshEntity>(mesh, d))
+    for (auto& e : mesh::MeshRange<MeshEntity>(mesh, d))
       _mesh.topology().set_global_index(d, e.index(), e.index());
 
     return;
@@ -127,7 +128,7 @@ std::size_t DistributedMeshTools::number_entities(
   // map. Exclude any slave entities.
   std::map<std::vector<std::size_t>, std::uint32_t> entities;
   std::pair<std::vector<std::size_t>, std::uint32_t> entity;
-  for (auto& e : MeshRange<MeshEntity>(mesh, d, MeshRangeType::ALL))
+  for (auto& e : mesh::MeshRange<MeshEntity>(mesh, d, mesh::MeshRangeType::ALL))
   {
     const std::size_t local_index = e.index();
     if (!exclude[local_index])
@@ -1016,7 +1017,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   if (mesh.topology().ghost_offset(D) == mesh.topology().size(D))
   {
     // Copy local values
-    for (auto& f : MeshRange<Facet>(mesh))
+    for (auto& f : mesh::MeshRange<mesh::Facet>(mesh))
       num_global_neighbors[f.index()] = f.num_entities(D);
 
     // All shared facets must have two cells, if no ghost cells
@@ -1035,7 +1036,8 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     // Map shared facets
     std::map<std::size_t, std::size_t> global_to_local_facet;
 
-    for (auto& f : MeshRange<MeshEntity>(mesh, D - 1, MeshRangeType::ALL))
+    for (auto& f :
+         mesh::MeshRange<MeshEntity>(mesh, D - 1, mesh::MeshRangeType::ALL))
     {
       // Insert shared facets into mapping
       if (f.is_shared())
@@ -1065,7 +1067,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
       {
         auto map_it = global_to_local_facet.find(*r);
         dolfin_assert(map_it != global_to_local_facet.end());
-        const Facet local_facet(mesh, map_it->second);
+        const mesh::Facet local_facet(mesh, map_it->second);
         const std::size_t n_cells = local_facet.num_entities(D);
         send_response[p].push_back(n_cells);
       }
@@ -1132,7 +1134,8 @@ void DistributedMeshTools::reorder_values_by_global_indices(
     // Iterate through ghost cells, adding non-ghost vertices which
     // are in lower rank process cells to a set for exclusion from
     // output
-    for (auto& c : MeshRange<mesh::Cell>(mesh, MeshRangeType::GHOST))
+    for (auto& c :
+         mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::GHOST))
     {
       const std::uint32_t cell_owner = c.owner();
       for (auto& v : EntityRange<Vertex>(c))
@@ -1149,7 +1152,7 @@ void DistributedMeshTools::reorder_values_by_global_indices(
   std::vector<double> reduced_data;
 
   // Remove clashing data with multiple copies on different processes
-  for (auto& v : MeshRange<Vertex>(mesh))
+  for (auto& v : mesh::MeshRange<Vertex>(mesh))
   {
     const std::size_t vidx = v.index();
     if (non_local_vertices.find(vidx) == non_local_vertices.end())

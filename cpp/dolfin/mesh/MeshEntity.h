@@ -12,6 +12,8 @@
 namespace dolfin
 {
 
+namespace mesh
+{
 /// A MeshEntity represents a mesh entity associated with
 /// a specific topological dimension of some _Mesh_.
 
@@ -244,4 +246,5 @@ protected:
   // Local index of entity within topological dimension
   std::int32_t _local_index;
 };
+}
 }

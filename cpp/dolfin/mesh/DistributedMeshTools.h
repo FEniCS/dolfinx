@@ -18,6 +18,8 @@
 namespace dolfin
 {
 
+namespace mesh
+{
 class Mesh;
 
 /// This class provides various functionality for working with
@@ -55,9 +57,10 @@ public:
   /// Compute map from local index of shared entity to list
   /// of sharing process and local index,
   /// i.e. (local index, [(sharing process p, local index on p)])
-  static std::unordered_map<
-      std::uint32_t, std::vector<std::pair<std::uint32_t, std::uint32_t>>>
-  compute_shared_entities(const Mesh& mesh, std::size_t d);
+  static std::
+      unordered_map<std::uint32_t,
+                    std::vector<std::pair<std::uint32_t, std::uint32_t>>>
+      compute_shared_entities(const Mesh& mesh, std::size_t d);
 
   /// Reorders the vertices in a distributed mesh according to
   /// their global index, and redistributes them evenly across processes
@@ -149,4 +152,5 @@ private:
       const MPI_Comm mpi_comm, std::size_t num_local_entities,
       std::size_t num_processes, std::size_t process_number);
 };
+}
 }

@@ -93,12 +93,6 @@ LogStream& LogStream::operator<<(const Variable& variable)
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<<(const MeshEntity& entity)
-{
-  buffer << entity.str(false);
-  return *this;
-}
-//-----------------------------------------------------------------------------
 LogStream& LogStream::operator<<(const Point& point)
 {
   buffer << point.str(false);

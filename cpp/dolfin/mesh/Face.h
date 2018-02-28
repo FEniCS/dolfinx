@@ -14,6 +14,9 @@ namespace dolfin
 class Mesh;
 class Point;
 
+namespace mesh
+{
+
 /// A Face is a MeshEntity of topological dimension 2.
 
 class Face : public MeshEntity
@@ -31,4 +34,5 @@ public:
   /// Compute normal to the face
   Point normal() const;
 };
+}
 }

@@ -13,8 +13,10 @@
 
 namespace dolfin
 {
+namespace mesh
+{
 
-/// A Vertex is a MeshEntity of topological dimension 0.
+/// A Vertex is a MeshEntity of topological dimension 0.  {
 
 class Vertex : public MeshEntity
 {
@@ -37,4 +39,5 @@ public:
   /// Return array of vertex coordinates (const version)
   const double* x() const { return _mesh->geometry().x(_local_index); }
 };
+}
 }

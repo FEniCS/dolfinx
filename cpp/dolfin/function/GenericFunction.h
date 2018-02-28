@@ -15,7 +15,6 @@
 namespace dolfin
 {
 
-class Mesh;
 class Point;
 
 namespace fem
@@ -25,6 +24,7 @@ class FiniteElement;
 
 namespace mesh
 {
+class Mesh;
 class Cell;
 }
 
@@ -81,7 +81,7 @@ public:
 
   /// Compute values at all mesh vertices
   virtual void compute_vertex_values(std::vector<double>& vertex_values,
-                                     const Mesh& mesh) const = 0;
+                                     const mesh::Mesh& mesh) const = 0;
 
   //--- Optional functions to be implemented by sub-classes ---
 

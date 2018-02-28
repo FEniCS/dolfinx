@@ -13,7 +13,11 @@ namespace dolfin
 
 // Forward declarations
 class Point;
+
+namespace mesh
+{
 class MeshEntity;
+}
 
 /// This class implements algorithms for detecting pairwise
 /// collisions between mesh entities of varying dimensions.
@@ -34,7 +38,7 @@ public:
   /// *Returns*
   ///     bool
   ///         True iff entity collides with cell.
-  static bool collides(const MeshEntity& entity, const Point& point);
+  static bool collides(const mesh::MeshEntity& entity, const Point& point);
 
   /// Check whether two entities collide.
   ///
@@ -47,7 +51,8 @@ public:
   /// *Returns*
   ///     bool
   ///         True iff entity collides with cell.
-  static bool collides(const MeshEntity& entity_0, const MeshEntity& entity_1);
+  static bool collides(const mesh::MeshEntity& entity_0,
+                       const mesh::MeshEntity& entity_1);
 
   //--- Low-level collision detection predicates ---
 
@@ -210,5 +215,3 @@ private:
       const Point& q0, const Point& q1, const Point& q2, const Point& q3);
 };
 }
-
-

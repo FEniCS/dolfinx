@@ -27,7 +27,7 @@ using namespace dolfin;
 using namespace dolfin::io;
 
 //----------------------------------------------------------------------------
-void VTKWriter::write_mesh(const Mesh& mesh, std::size_t cell_dim,
+void VTKWriter::write_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
                            std::string filename)
 {
   write_ascii_mesh(mesh, cell_dim, filename);
@@ -39,7 +39,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   // For brevity
   dolfin_assert(u.function_space()->mesh());
   dolfin_assert(u.function_space()->dofmap());
-  const Mesh& mesh = *u.function_space()->mesh();
+  const mesh::Mesh& mesh = *u.function_space()->mesh();
   const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t num_cells = mesh.topology().ghost_offset(tdim);
@@ -101,7 +101,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   std::vector<dolfin::la_index_t> dof_set;
   std::vector<std::size_t> offset(size + 1);
   std::vector<std::size_t>::iterator cell_offset = offset.begin();
-  for (auto& cell : MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Tabulate dofs
     auto dofs = dofmap.cell_dofs(cell.index());
@@ -124,7 +124,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   fp << "</CellData> " << std::endl;
 }
 //----------------------------------------------------------------------------
-std::string VTKWriter::ascii_cell_data(const Mesh& mesh,
+std::string VTKWriter::ascii_cell_data(const mesh::Mesh& mesh,
                                        const std::vector<std::size_t>& offset,
                                        const std::vector<double>& values,
                                        std::size_t data_dim, std::size_t rank)
@@ -168,7 +168,7 @@ std::string VTKWriter::ascii_cell_data(const Mesh& mesh,
   return ss.str();
 }
 //----------------------------------------------------------------------------
-void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
+void VTKWriter::write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
                                  std::string filename)
 {
   const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
@@ -192,7 +192,7 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
   file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
        << "ascii"
        << "\">";
-  for (auto& v : MeshRange<Vertex>(mesh))
+  for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
   {
     Point p = v.point();
     file << p[0] << " " << p[1] << " " << p[2] << "  ";
@@ -208,7 +208,7 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
   std::unique_ptr<mesh::CellType> celltype(
       mesh::CellType::create(mesh.type().entity_type(cell_dim)));
   const std::vector<std::int8_t> perm = celltype->vtk_mapping();
-  for (auto& c : MeshRange<MeshEntity>(mesh, cell_dim))
+  for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
   {
     for (unsigned int i = 0; i != c.num_entities(0); ++i)
       file << c.entities(0)[perm[i]] << " ";
@@ -237,7 +237,8 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
   file.close();
 }
 //-----------------------------------------------------------------------------
-std::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh, std::size_t cell_dim)
+std::uint8_t VTKWriter::vtk_cell_type(const mesh::Mesh& mesh,
+                                      std::size_t cell_dim)
 {
   // Get cell type
   mesh::CellType::Type cell_type = mesh.type().entity_type(cell_dim);

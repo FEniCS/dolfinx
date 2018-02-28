@@ -11,15 +11,13 @@
 
 namespace dolfin
 {
-
 namespace mesh
 {
 class Cell;
-}
 
 /// This class implements functionality for quadrilaterial cells.
 
-class QuadrilateralCell : public mesh::CellType
+class QuadrilateralCell : public CellType
 {
 public:
   /// Specify cell type and facet type
@@ -79,4 +77,5 @@ public:
   /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
   std::vector<std::int8_t> vtk_mapping() const { return {0, 1, 3, 2}; }
 };
+}
 }

@@ -33,7 +33,7 @@ PointSource::PointSource(std::shared_ptr<const function::FunctionSpace> V,
   std::vector<std::pair<Point, double>> sources_copy = sources;
 
   // Distribute sources
-  const Mesh& mesh0 = *_function_space0->mesh();
+  const mesh::Mesh& mesh0 = *_function_space0->mesh();
   distribute_sources(mesh0, sources_copy);
 
   // Check that function space is supported
@@ -55,7 +55,7 @@ PointSource::PointSource(std::shared_ptr<const function::FunctionSpace> V0,
   std::vector<std::pair<Point, double>> sources_copy = sources;
 
   dolfin_assert(_function_space0->mesh());
-  const Mesh& mesh0 = *_function_space0->mesh();
+  const mesh::Mesh& mesh0 = *_function_space0->mesh();
   distribute_sources(mesh0, sources_copy);
 }
 //-----------------------------------------------------------------------------
@@ -65,7 +65,8 @@ PointSource::~PointSource()
 }
 //-----------------------------------------------------------------------------
 void PointSource::distribute_sources(
-    const Mesh& mesh, const std::vector<std::pair<Point, double>>& sources)
+    const mesh::Mesh& mesh,
+    const std::vector<std::pair<Point, double>>& sources)
 {
   // Take a list of points, and assign to correct process
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -162,7 +163,7 @@ void PointSource::apply(PETScVector& b)
   log(PROGRESS, "Applying point source to right-hand side vector.");
 
   dolfin_assert(_function_space0->mesh());
-  const Mesh& mesh = *_function_space0->mesh();
+  const mesh::Mesh& mesh = *_function_space0->mesh();
   const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
 
   // Variables for cell information

@@ -15,9 +15,10 @@ using namespace dolfin;
 using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
-Mesh RectangleMesh::build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
-                              std::array<std::size_t, 2> n,
-                              std::string diagonal)
+mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
+                                    const std::array<Point, 2>& p,
+                                    std::array<std::size_t, 2> n,
+                                    std::string diagonal)
 {
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
@@ -26,9 +27,9 @@ Mesh RectangleMesh::build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
         0, 2);
     Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
                                                                              3);
-    Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
+    mesh::Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
     mesh.order();
-    MeshPartitioning::build_distributed_mesh(mesh);
+    mesh::MeshPartitioning::build_distributed_mesh(mesh);
     return mesh;
   }
 
@@ -200,15 +201,16 @@ Mesh RectangleMesh::build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
     }
   }
 
-  Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
+  mesh::Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
   mesh.order();
 
-  MeshPartitioning::build_distributed_mesh(mesh);
+  mesh::MeshPartitioning::build_distributed_mesh(mesh);
   return mesh;
 }
 //-----------------------------------------------------------------------------
-Mesh RectangleMesh::build_quad(MPI_Comm comm, const std::array<Point, 2>& p,
-                               std::array<std::size_t, 2> n)
+mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
+                                     const std::array<Point, 2>& p,
+                                     std::array<std::size_t, 2> n)
 {
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
@@ -217,8 +219,8 @@ Mesh RectangleMesh::build_quad(MPI_Comm comm, const std::array<Point, 2>& p,
         0, 2);
     Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
                                                                              4);
-    Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
-    MeshPartitioning::build_distributed_mesh(mesh);
+    mesh::Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
+    mesh::MeshPartitioning::build_distributed_mesh(mesh);
     return mesh;
   }
 
@@ -264,8 +266,8 @@ Mesh RectangleMesh::build_quad(MPI_Comm comm, const std::array<Point, 2>& p,
       ++cell;
     }
 
-  Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
-  MeshPartitioning::build_distributed_mesh(mesh);
+  mesh::Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
+  mesh::MeshPartitioning::build_distributed_mesh(mesh);
   return mesh;
 }
 //-----------------------------------------------------------------------------

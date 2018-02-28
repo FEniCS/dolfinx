@@ -13,6 +13,8 @@
 
 namespace dolfin
 {
+namespace mesh
+{
 
 /// MeshGeometry stores the geometry imposed on a mesh.
 
@@ -163,4 +165,5 @@ private:
   // Coordinates for all points stored as a contiguous array
   std::vector<double> coordinates;
 };
+}
 }

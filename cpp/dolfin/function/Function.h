@@ -30,6 +30,7 @@ class PETScVector;
 namespace mesh
 {
 class Cell;
+class Mesh;
 }
 
 namespace function
@@ -238,10 +239,10 @@ public:
   ///
   /// @param    vertex_values (Array<double>)
   ///         The values at all vertices.
-  /// @param    mesh (_Mesh_)
+  /// @param    mesh (_mesh::Mesh_)
   ///         The mesh.
   virtual void compute_vertex_values(std::vector<double>& vertex_values,
-                                     const Mesh& mesh) const override;
+                                     const mesh::Mesh& mesh) const override;
 
   /// Compute values at all mesh vertices
   ///

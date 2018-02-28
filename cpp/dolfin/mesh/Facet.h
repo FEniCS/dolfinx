@@ -17,6 +17,9 @@
 namespace dolfin
 {
 
+namespace mesh
+{
+
 /// A Facet is a MeshEntity of topological codimension 1.
 
 class Facet : public MeshEntity
@@ -48,4 +51,5 @@ public:
   /// calling this function.
   bool exterior() const;
 };
+}
 }

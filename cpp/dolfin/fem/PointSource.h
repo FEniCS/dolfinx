@@ -17,11 +17,15 @@ namespace dolfin
 // Forward declarations
 class PETScMatrix;
 class PETScVector;
-class Mesh;
 
 namespace function
 {
 class FunctionSpace;
+}
+
+namespace mesh
+{
+class Mesh;
 }
 
 namespace fem
@@ -60,7 +64,7 @@ public:
 private:
   // FIXME: This should probably be static
   // Collective MPI method to distribute sources to correct processes
-  void distribute_sources(const Mesh& mesh,
+  void distribute_sources(const mesh::Mesh& mesh,
                           const std::vector<std::pair<Point, double>>& sources);
 
   // Check that function space is scalar

@@ -22,13 +22,16 @@ class form;
 namespace dolfin
 {
 
-class Mesh;
-template <typename T>
-class MeshFunction;
-
 namespace function
 {
 class FunctionSpace;
+}
+
+namespace mesh
+{
+class Mesh;
+template <typename T>
+class MeshFunction;
 }
 
 namespace fem
@@ -115,15 +118,15 @@ public:
   /// Set mesh, necessary for functionals when there are no function
   /// spaces
   ///
-  /// @param[in] mesh (_Mesh_)
+  /// @param[in] mesh (_mesh::Mesh_)
   ///         The mesh.
-  void set_mesh(std::shared_ptr<const Mesh> mesh);
+  void set_mesh(std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Extract common mesh from form
   ///
-  /// @return Mesh
+  /// @return mesh::Mesh
   ///         Shared pointer to the mesh.
-  std::shared_ptr<const Mesh> mesh() const;
+  std::shared_ptr<const mesh::Mesh> mesh() const;
 
   /// Return function space for given argument
   ///
@@ -145,60 +148,62 @@ public:
   /// Return cell domains (zero pointer if no domains have been
   /// specified)
   ///
-  /// @return     _MeshFunction_ <std::size_t>
+  /// @return     _mesh::MeshFunction_ <std::size_t>
   ///         The cell domains.
-  std::shared_ptr<const MeshFunction<std::size_t>> cell_domains() const;
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains() const;
 
   /// Return exterior facet domains (zero pointer if no domains have
   /// been specified)
   ///
-  /// @return     std::shared_ptr<_MeshFunction_ <std::size_t>>
+  /// @return     std::shared_ptr<_mesh::MeshFunction_ <std::size_t>>
   ///         The exterior facet domains.
-  std::shared_ptr<const MeshFunction<std::size_t>>
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>>
   exterior_facet_domains() const;
 
   /// Return interior facet domains (zero pointer if no domains have
   /// been specified)
   ///
-  /// @return     _MeshFunction_ <std::size_t>
+  /// @return     _mesh::MeshFunction_ <std::size_t>
   ///         The interior facet domains.
-  std::shared_ptr<const MeshFunction<std::size_t>>
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>>
   interior_facet_domains() const;
 
   /// Return vertex domains (zero pointer if no domains have been
   /// specified)
   ///
-  /// @return     _MeshFunction_ <std::size_t>
+  /// @return     _mesh::MeshFunction_ <std::size_t>
   ///         The vertex domains.
-  std::shared_ptr<const MeshFunction<std::size_t>> vertex_domains() const;
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> vertex_domains() const;
 
   /// Set cell domains
   ///
-  /// @param[in]    cell_domains (_MeshFunction_ <std::size_t>)
+  /// @param[in]    cell_domains (_mesh::MeshFunction_ <std::size_t>)
   ///         The cell domains.
   void set_cell_domains(
-      std::shared_ptr<const MeshFunction<std::size_t>> cell_domains);
+      std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains);
 
   /// Set exterior facet domains
   ///
-  ///  @param[in]   exterior_facet_domains (_MeshFunction_ <std::size_t>)
+  ///  @param[in]   exterior_facet_domains (_mesh::MeshFunction_ <std::size_t>)
   ///         The exterior facet domains.
   void set_exterior_facet_domains(
-      std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains);
+      std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+          exterior_facet_domains);
 
   /// Set interior facet domains
   ///
-  ///  @param[in]   interior_facet_domains (_MeshFunction_ <std::size_t>)
+  ///  @param[in]   interior_facet_domains (_mesh::MeshFunction_ <std::size_t>)
   ///         The interior facet domains.
   void set_interior_facet_domains(
-      std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains);
+      std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+          interior_facet_domains);
 
   /// Set vertex domains
   ///
-  ///  @param[in]   vertex_domains (_MeshFunction_ <std::size_t>)
+  ///  @param[in]   vertex_domains (_mesh::MeshFunction_ <std::size_t>)
   ///         The vertex domains.
   void set_vertex_domains(
-      std::shared_ptr<const MeshFunction<std::size_t>> vertex_domains);
+      std::shared_ptr<const mesh::MeshFunction<std::size_t>> vertex_domains);
 
   /// Access coefficients (non-const)
   FormCoefficients& coeffs() { return _coeffs; }
@@ -220,19 +225,19 @@ private:
   std::vector<std::shared_ptr<const function::FunctionSpace>> _function_spaces;
 
   // The mesh (needed for functionals when we don't have any spaces)
-  std::shared_ptr<const Mesh> _mesh;
+  std::shared_ptr<const mesh::Mesh> _mesh;
 
   // Domain markers for cells
-  std::shared_ptr<const MeshFunction<std::size_t>> dx;
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> dx;
 
   // Domain markers for exterior facets
-  std::shared_ptr<const MeshFunction<std::size_t>> ds;
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> ds;
 
   // Domain markers for interior facets
-  std::shared_ptr<const MeshFunction<std::size_t>> dS;
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> dS;
 
   // Domain markers for vertices
-  std::shared_ptr<const MeshFunction<std::size_t>> dP;
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> dP;
 };
 }
 }

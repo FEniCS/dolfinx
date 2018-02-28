@@ -12,7 +12,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshPointIntersection::MeshPointIntersection(const Mesh& mesh,
+MeshPointIntersection::MeshPointIntersection(const mesh::Mesh& mesh,
                                              const Point& point)
 {
   // Build bounding box tree

@@ -85,10 +85,10 @@ void SystemAssembler::check_arity(std::shared_ptr<const Form> a,
   }
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const MeshFunction<std::size_t>>
+std::shared_ptr<const mesh::MeshFunction<std::size_t>>
 _pick_one_meshfunction(std::string name,
-                       std::shared_ptr<const MeshFunction<std::size_t>> a,
-                       std::shared_ptr<const MeshFunction<std::size_t>> b)
+                       std::shared_ptr<const mesh::MeshFunction<std::size_t>> a,
+                       std::shared_ptr<const mesh::MeshFunction<std::size_t>> b)
 {
   if ((a && b) && a != b)
   {
@@ -121,22 +121,22 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
 
   // Get mesh
   dolfin_assert(_a->mesh());
-  const Mesh& mesh = *(_a->mesh());
+  const mesh::Mesh& mesh = *(_a->mesh());
   dolfin_assert(mesh.ordered());
 
   // Get cell domains
-  std::shared_ptr<const MeshFunction<std::size_t>> cell_domains
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains
       = _pick_one_meshfunction("cell_domains", _a->cell_domains(),
                                _l->cell_domains());
 
   // Get exterior facet domains
-  std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> exterior_facet_domains
       = _pick_one_meshfunction("exterior_facet_domains",
                                _a->exterior_facet_domains(),
                                _l->exterior_facet_domains());
 
   // Get interior facet domains
-  std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> interior_facet_domains
       = _pick_one_meshfunction("interior_facet_domains",
                                _a->interior_facet_domains(),
                                _l->interior_facet_domains());
@@ -280,12 +280,13 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
 void SystemAssembler::cell_wise_assembly(
     std::pair<PETScMatrix*, PETScVector*>& tensors, std::array<UFC*, 2>& ufc,
     Scratch& data, const std::vector<DirichletBC::Map>& boundary_values,
-    std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
-    std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains)
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains,
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+        exterior_facet_domains)
 {
   // Extract mesh
   dolfin_assert(ufc[0]->dolfin_form.mesh());
-  const Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
+  const mesh::Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
   // Initialize entities if using external facet integrals
   dolfin_assert(mesh.ordered());
@@ -334,7 +335,7 @@ void SystemAssembler::cell_wise_assembly(
   EigenRowMatrixXd coordinate_dofs;
   std::size_t gdim = mesh.geometry().dim();
 
-  for (auto& cell : MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
     dolfin_assert(!cell.is_ghost());
@@ -401,7 +402,7 @@ void SystemAssembler::cell_wise_assembly(
       // Compute exterior facet integral if present
       if (has_exterior_facet_integrals)
       {
-        for (auto& facet : EntityRange<Facet>(cell))
+        for (auto& facet : mesh::EntityRange<mesh::Facet>(cell))
         {
           // Only consider exterior facets
           if (!facet.exterior())
@@ -474,13 +475,15 @@ void SystemAssembler::cell_wise_assembly(
 void SystemAssembler::facet_wise_assembly(
     std::pair<PETScMatrix*, PETScVector*>& tensors, std::array<UFC*, 2>& ufc,
     Scratch& data, const std::vector<DirichletBC::Map>& boundary_values,
-    std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
-    std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains,
-    std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains)
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains,
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+        exterior_facet_domains,
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+        interior_facet_domains)
 {
   // Extract mesh
   dolfin_assert(ufc[0]->dolfin_form.mesh());
-  const Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
+  const mesh::Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
   // Sanity check of ghost mode (proper check in AssemblerBase::check)
   dolfin_assert(mesh.ghost_mode() == "shared_vertex"
@@ -559,7 +562,7 @@ void SystemAssembler::facet_wise_assembly(
   std::array<EigenRowMatrixXd, 2> coordinate_dofs;
   const std::size_t gdim = mesh.geometry().dim();
 
-  for (auto& facet : MeshRange<Facet>(mesh))
+  for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
     // Number of cells sharing facet
     const std::size_t num_cells = facet.num_entities(D);
@@ -856,7 +859,7 @@ void SystemAssembler::compute_exterior_facet_tensor(
     ufc::cell& ufc_cell, Eigen::Ref<EigenRowMatrixXd> coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
     const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
-    const Facet& facet,
+    const mesh::Facet& facet,
     const std::array<const ufc::cell_integral*, 2>& cell_integrals,
     const std::array<const ufc::exterior_facet_integral*, 2>&
         exterior_facet_integrals,

@@ -21,39 +21,40 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
-{
+namespace dolfin_wrappers {
 
-void geometry(py::module& m)
-{
+void geometry(py::module &m) {
   // dolfin::BoundingBoxTree
   py::class_<dolfin::BoundingBoxTree, std::shared_ptr<dolfin::BoundingBoxTree>>(
       m, "BoundingBoxTree")
       .def(py::init<std::size_t>())
       .def("build",
-           (void (dolfin::BoundingBoxTree::*)(const dolfin::Mesh&, std::size_t))
-               & dolfin::BoundingBoxTree::build)
+           (void (dolfin::BoundingBoxTree::*)(const dolfin::mesh::Mesh &,
+                                              std::size_t)) &
+               dolfin::BoundingBoxTree::build)
       .def("build",
-           (void (dolfin::BoundingBoxTree::*)(const std::vector<dolfin::Point>&))
-               & dolfin::BoundingBoxTree::build)
+           (void (dolfin::BoundingBoxTree::*)(
+               const std::vector<dolfin::Point> &)) &
+               dolfin::BoundingBoxTree::build)
       .def("compute_collisions",
-           (std::vector<unsigned int>(dolfin::BoundingBoxTree::*)
-            (const dolfin::Point&) const)
-               & dolfin::BoundingBoxTree::compute_collisions)
-      .def(
-          "compute_collisions",
-          (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>(
-              dolfin::BoundingBoxTree::*)(const dolfin::BoundingBoxTree&) const)
-              & dolfin::BoundingBoxTree::compute_collisions)
+           (std::vector<unsigned int>(dolfin::BoundingBoxTree::*)(
+               const dolfin::Point &) const) &
+               dolfin::BoundingBoxTree::compute_collisions)
+      .def("compute_collisions",
+           (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>(
+               dolfin::BoundingBoxTree::*)(const dolfin::BoundingBoxTree &)
+                const) &
+               dolfin::BoundingBoxTree::compute_collisions)
       .def("compute_entity_collisions",
            (std::vector<unsigned int>(dolfin::BoundingBoxTree::*)(
-               const dolfin::Point&, const dolfin::Mesh&) const)
-               & dolfin::BoundingBoxTree::compute_entity_collisions)
+               const dolfin::Point &, const dolfin::mesh::Mesh &) const) &
+               dolfin::BoundingBoxTree::compute_entity_collisions)
       .def("compute_entity_collisions",
-          (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>
-           (dolfin::BoundingBoxTree::*)
-           (const dolfin::BoundingBoxTree&, const dolfin::Mesh&, const dolfin::Mesh&) const)
-              & dolfin::BoundingBoxTree::compute_entity_collisions)
+           (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>(
+               dolfin::BoundingBoxTree::*)(const dolfin::BoundingBoxTree &,
+                                           const dolfin::mesh::Mesh &,
+                                           const dolfin::mesh::Mesh &) const) &
+               dolfin::BoundingBoxTree::compute_entity_collisions)
       .def("compute_first_collision",
            &dolfin::BoundingBoxTree::compute_first_collision)
       .def("compute_first_entity_collision",
@@ -61,7 +62,6 @@ void geometry(py::module& m)
       .def("compute_closest_entity",
            &dolfin::BoundingBoxTree::compute_closest_entity)
       .def("str", &dolfin::BoundingBoxTree::str);
-
 
   // dolfin::Point
   py::class_<dolfin::Point>(m, "Point")
@@ -76,13 +76,13 @@ void geometry(py::module& m)
         return dolfin::Point(b.shape[0], x.data());
       }))
       .def("__getitem__",
-           [](dolfin::Point& self, std::size_t index) {
+           [](dolfin::Point &self, std::size_t index) {
              if (index > 2)
                throw py::index_error("Out of range");
              return self[index];
            })
       .def("__getitem__",
-           [](const dolfin::Point& instance, py::slice slice) {
+           [](const dolfin::Point &instance, py::slice slice) {
              std::size_t start, stop, step, slicelength;
              if (!slice.compute(3, &start, &stop, &step, &slicelength))
                throw py::error_already_set();
@@ -93,13 +93,13 @@ void geometry(py::module& m)
              return py::array_t<double>(3, instance.coordinates());
            })
       .def("__setitem__",
-           [](dolfin::Point& self, std::size_t index, double value) {
+           [](dolfin::Point &self, std::size_t index, double value) {
              if (index > 2)
                throw py::index_error("Out of range");
              self[index] = value;
            })
       .def("__setitem__",
-           [](dolfin::Point& instance, py::slice slice,
+           [](dolfin::Point &instance, py::slice slice,
               py::array_t<double> values) {
              std::size_t start, stop, step, slicelength;
              if (!slice.compute(3, &start, &stop, &step, &slicelength))
@@ -115,7 +115,7 @@ void geometry(py::module& m)
                throw std::range_error(
                    "Can only assign vector of length 3 to a Point");
 
-             double* x = instance.coordinates();
+             double *x = instance.coordinates();
              std::copy_n(values.data(), 3, x);
            })
       .def(py::self + py::self)
@@ -124,7 +124,7 @@ void geometry(py::module& m)
       .def(py::self * float())
       .def(py::self / float())
       .def("array",
-           [](dolfin::Point& self) {
+           [](dolfin::Point &self) {
              return Eigen::Vector3d(self.coordinates());
            },
            "Return copy of coordinate array")

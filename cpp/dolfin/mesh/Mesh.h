@@ -20,8 +20,6 @@
 namespace dolfin
 {
 
-class LocalMeshData;
-class MeshEntity;
 class Point;
 class BoundingBoxTree;
 
@@ -32,8 +30,9 @@ class Function;
 
 namespace mesh
 {
+class LocalMeshData;
+class MeshEntity;
 class SubDomain;
-}
 
 /// A _Mesh_ consists of a set of connected and numbered mesh entities.
 ///
@@ -321,7 +320,7 @@ public:
 
   // FIXME: Remove
   // Friend in fem_utils.h
-  friend Mesh fem::create_mesh(function::Function& coordinates);
+  friend Mesh dolfin::fem::create_mesh(function::Function& coordinates);
 
 private:
   // Friends
@@ -352,4 +351,5 @@ private:
   // Ghost mode used for partitioning
   std::string _ghost_mode;
 };
+}
 }

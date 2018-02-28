@@ -14,8 +14,7 @@ namespace dolfin
 
 namespace mesh
 {
-  class Cell;
-}
+class Cell;
 
 /// This class implements functionality for hexahedral cell  meshes.
 
@@ -85,4 +84,5 @@ public:
     return {0, 1, 3, 2, 4, 5, 7, 6};
   }
 };
+}
 }

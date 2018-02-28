@@ -48,9 +48,9 @@ public:
   ///         Point p1(2, 2, 2);
   ///         auto mesh = BoxMesh::create({p0, p1}, {8, 8, 8});
   /// @endcode
-  static Mesh create(MPI_Comm comm, const std::array<Point, 2>& p,
-                     std::array<std::size_t, 3> n,
-                     mesh::CellType::Type cell_type)
+  static mesh::Mesh create(MPI_Comm comm, const std::array<Point, 2>& p,
+                           std::array<std::size_t, 3> n,
+                           mesh::CellType::Type cell_type)
   {
     if (cell_type == mesh::CellType::Type::tetrahedron)
       return build_tet(comm, p, n);
@@ -69,10 +69,10 @@ public:
 
 private:
   // Build mesh
-  static Mesh build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
-                        std::array<std::size_t, 3> n);
+  static mesh::Mesh build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
+                              std::array<std::size_t, 3> n);
 
-  static Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n);
+  static mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n);
 };
 }
 }

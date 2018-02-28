@@ -18,13 +18,12 @@ class cell;
 namespace dolfin
 {
 
-class Facet;
-template <typename T>
-class MeshFunction;
-
 namespace mesh
 {
 class Cell;
+class Facet;
+template <typename T>
+class MeshFunction;
 }
 
 namespace fem
@@ -45,17 +44,17 @@ public:
   /// Assemble a local tensor on a cell. Internally calls
   /// assemble_cell(), assemble_exterior_facet(),
   /// assemble_interior_facet().
-  static void
-  assemble(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                         Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
-           UFC& ufc,                          ///< [in]
-           const std::vector<double>& coordinate_dofs,              ///< [in]
-           ufc::cell& ufc_cell,                                     ///< [in]
-           const mesh::Cell& cell,                                  ///< [in]
-           const MeshFunction<std::size_t>* cell_domains,           ///< [in]
-           const MeshFunction<std::size_t>* exterior_facet_domains, ///< [in]
-           const MeshFunction<std::size_t>* interior_facet_domains  ///< [in]
-           );
+  static void assemble(
+      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                    Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
+      UFC& ufc,                          ///< [in]
+      const std::vector<double>& coordinate_dofs,                    ///< [in]
+      ufc::cell& ufc_cell,                                           ///< [in]
+      const mesh::Cell& cell,                                        ///< [in]
+      const mesh::MeshFunction<std::size_t>* cell_domains,           ///< [in]
+      const mesh::MeshFunction<std::size_t>* exterior_facet_domains, ///< [in]
+      const mesh::MeshFunction<std::size_t>* interior_facet_domains  ///< [in]
+      );
 
   /// Worker method called by assemble() to perform assembly of
   /// volume integrals (UFL measure dx).
@@ -63,10 +62,10 @@ public:
       Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
-      const std::vector<double>& coordinate_dofs,   ///< [in]
-      const ufc::cell& ufc_cell,                    ///< [in]
-      const mesh::Cell& cell,                       ///< [in]
-      const MeshFunction<std::size_t>* cell_domains ///< [in]
+      const std::vector<double>& coordinate_dofs,         ///< [in]
+      const ufc::cell& ufc_cell,                          ///< [in]
+      const mesh::Cell& cell,                             ///< [in]
+      const mesh::MeshFunction<std::size_t>* cell_domains ///< [in]
       );
 
   /// Worker method called by assemble() for each of the cell's
@@ -76,12 +75,12 @@ public:
       Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
-      const std::vector<double>& coordinate_dofs,             ///< [in]
-      const ufc::cell& ufc_cell,                              ///< [in]
-      const mesh::Cell& cell,                                 ///< [in]
-      const Facet& facet,                                     ///< [in]
-      const std::size_t local_facet,                          ///< [in]
-      const MeshFunction<std::size_t>* exterior_facet_domains ///< [in]
+      const std::vector<double>& coordinate_dofs,                   ///< [in]
+      const ufc::cell& ufc_cell,                                    ///< [in]
+      const mesh::Cell& cell,                                       ///< [in]
+      const mesh::Facet& facet,                                     ///< [in]
+      const std::size_t local_facet,                                ///< [in]
+      const mesh::MeshFunction<std::size_t>* exterior_facet_domains ///< [in]
       );
 
   /// Worker method called by assemble() for each of the cell's
@@ -91,13 +90,13 @@ public:
       Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
-      const std::vector<double>& coordinate_dofs,              ///< [in]
-      const ufc::cell& ufc_cell,                               ///< [in]
-      const mesh::Cell& cell,                                  ///< [in]
-      const Facet& facet,                                      ///< [in]
-      const std::size_t local_facet,                           ///< [in]
-      const MeshFunction<std::size_t>* interior_facet_domains, ///< [in]
-      const MeshFunction<std::size_t>* cell_domains            ///< [in]
+      const std::vector<double>& coordinate_dofs,                    ///< [in]
+      const ufc::cell& ufc_cell,                                     ///< [in]
+      const mesh::Cell& cell,                                        ///< [in]
+      const mesh::Facet& facet,                                      ///< [in]
+      const std::size_t local_facet,                                 ///< [in]
+      const mesh::MeshFunction<std::size_t>* interior_facet_domains, ///< [in]
+      const mesh::MeshFunction<std::size_t>* cell_domains            ///< [in]
       );
 };
 }

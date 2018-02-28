@@ -16,10 +16,8 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
-{
-void log(py::module& m)
-{
+namespace dolfin_wrappers {
+void log(py::module &m) {
 
   // dolfin::LogLevel enums
   py::enum_<dolfin::LogLevel>(m, "LogLevel", py::arithmetic())
@@ -38,15 +36,15 @@ void log(py::module& m)
       .def("str", &dolfin::Table::str);
 
   // dolfin/log free functions
-  m.def("info", [](const dolfin::Variable& v) { dolfin::info(v); });
-  m.def("info", [](const dolfin::Variable& v, bool verbose) {
+  m.def("info", [](const dolfin::Variable &v) { dolfin::info(v); });
+  m.def("info", [](const dolfin::Variable &v, bool verbose) {
     dolfin::info(v, verbose);
   });
   m.def("info", [](std::string s) { dolfin::info(s); });
-  m.def("info", [](const dolfin::Parameters& p, bool verbose) {
+  m.def("info", [](const dolfin::Parameters &p, bool verbose) {
     dolfin::info(p, verbose);
   });
-  m.def("info", [](const dolfin::Mesh& mesh,
+  m.def("info", [](const dolfin::mesh::Mesh &mesh,
                    bool verbose) { dolfin::info(mesh, verbose); },
         py::arg("mesh"), py::arg("verbose") = false);
   m.def("set_log_level", &dolfin::set_log_level);

@@ -16,6 +16,8 @@
 namespace dolfin
 {
 
+namespace mesh
+{
 class Mesh;
 
 /// This class stores mesh data on a local processor corresponding to a portion
@@ -110,4 +112,5 @@ private:
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;
 };
+}
 }

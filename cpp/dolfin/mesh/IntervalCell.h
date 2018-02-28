@@ -14,14 +14,12 @@
 namespace dolfin
 {
 
-class MeshEntity;
-template <typename T>
-class MeshFunction;
-
 namespace mesh
 {
 class Cell;
-}
+class MeshEntity;
+template <typename T>
+class MeshFunction;
 
 /// This class implements functionality for interval cell meshes.
 
@@ -94,4 +92,5 @@ public:
   /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
   std::vector<std::int8_t> vtk_mapping() const { return {0, 1}; }
 };
+}
 }

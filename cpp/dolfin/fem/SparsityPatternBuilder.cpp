@@ -23,7 +23,7 @@ using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build(
-    SparsityPattern& sparsity_pattern, const Mesh& mesh,
+    SparsityPattern& sparsity_pattern, const mesh::Mesh& mesh,
     const std::array<const fem::GenericDofMap*, 2> dofmaps, bool cells,
     bool interior_facets, bool exterior_facets, bool vertices, bool diagonal,
     bool init, bool finalize)
@@ -65,7 +65,7 @@ void SparsityPatternBuilder::build(
   // Build sparsity pattern for cell integrals
   if (cells)
   {
-    for (auto& cell : MeshRange<mesh::Cell>(mesh))
+    for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
     {
       // Tabulate dofs for each dimension and get local dimensions
       for (std::size_t i = 0; i < 2; ++i)
@@ -96,7 +96,7 @@ void SparsityPatternBuilder::build(
       local_to_local_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
     }
 
-    for (auto& vert : MeshRange<Vertex>(mesh))
+    for (auto& vert : mesh::MeshRange<mesh::Vertex>(mesh))
     {
       // Get mesh cell to which mesh vertex belongs (pick first)
       mesh::Cell mesh_cell(mesh, vert.entities(D)[0]);
@@ -138,13 +138,13 @@ void SparsityPatternBuilder::build(
     mesh.init(D - 1, D);
     if (!mesh.ordered())
     {
-      dolfin_error(
-          "SparsityPatternBuilder.cpp", "compute sparsity pattern",
-          "Mesh is not ordered according to the UFC numbering convention. "
-          "Consider calling mesh.order()");
+      dolfin_error("SparsityPatternBuilder.cpp", "compute sparsity pattern",
+                   "mesh::Mesh is not ordered according to the UFC numbering "
+                   "convention. "
+                   "Consider calling mesh.order()");
     }
 
-    for (auto& facet : MeshRange<Facet>(mesh))
+    for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
     {
       bool this_exterior_facet = false;
       if (facet.num_global_entities(D) == 1)

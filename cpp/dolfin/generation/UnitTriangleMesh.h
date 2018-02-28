@@ -25,7 +25,7 @@ class UnitTriangleMesh
 {
 public:
   /// Create mesh of unit triangle
-  static Mesh create();
+  static mesh::Mesh create();
 };
 }
 }

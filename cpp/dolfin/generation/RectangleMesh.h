@@ -44,13 +44,14 @@ public:
   ///         // set [-1,2] x [-1,2]
   ///         Point p0(-1, -1);
   ///         Point p1(2, 2);
-  ///         auto mesh = RectangleMesh::create(MPI_COMM_WORLD, {p0, p1}, {8,
+  ///         auto mesh = Rectanglemesh::Mesh::create(MPI_COMM_WORLD, {p0, p1},
+  ///         {8,
   ///         8});
   /// @endcode
-  static Mesh create(MPI_Comm comm, const std::array<Point, 2>& p,
-                     std::array<std::size_t, 2> n,
-                     mesh::CellType::Type cell_type,
-                     std::string diagonal = "right")
+  static mesh::Mesh create(MPI_Comm comm, const std::array<Point, 2>& p,
+                           std::array<std::size_t, 2> n,
+                           mesh::CellType::Type cell_type,
+                           std::string diagonal = "right")
   {
     if (cell_type == mesh::CellType::Type::triangle)
       return build_tri(comm, p, n, diagonal);
@@ -68,12 +69,12 @@ public:
 
 private:
   // Build mesh
-  static Mesh build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
-                        std::array<std::size_t, 2> n,
-                        std::string diagonal = "right");
+  static mesh::Mesh build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
+                              std::array<std::size_t, 2> n,
+                              std::string diagonal = "right");
 
-  static Mesh build_quad(MPI_Comm comm, const std::array<Point, 2>& p,
-                         std::array<std::size_t, 2> n);
+  static mesh::Mesh build_quad(MPI_Comm comm, const std::array<Point, 2>& p,
+                               std::array<std::size_t, 2> n);
 };
 }
 }

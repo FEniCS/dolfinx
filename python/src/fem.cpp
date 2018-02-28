@@ -144,24 +144,24 @@ void fem(py::module &m) {
                dolfin::fem::GenericDofMap::dofs)
       .def("dofs",
            (std::vector<dolfin::la_index_t>(dolfin::fem::GenericDofMap::*)(
-               const dolfin::Mesh &, std::size_t) const) &
+               const dolfin::mesh::Mesh &, std::size_t) const) &
                dolfin::fem::GenericDofMap::dofs)
       .def("entity_dofs",
            (std::vector<dolfin::la_index_t>(dolfin::fem::GenericDofMap::*)(
-               const dolfin::Mesh &, std::size_t) const) &
+               const dolfin::mesh::Mesh &, std::size_t) const) &
                dolfin::fem::GenericDofMap::entity_dofs)
       .def("entity_closure_dofs",
            (std::vector<dolfin::la_index_t>(dolfin::fem::GenericDofMap::*)(
-               const dolfin::Mesh &, std::size_t) const) &
+               const dolfin::mesh::Mesh &, std::size_t) const) &
                dolfin::fem::GenericDofMap::entity_closure_dofs)
       .def("entity_dofs",
            (std::vector<dolfin::la_index_t>(dolfin::fem::GenericDofMap::*)(
-               const dolfin::Mesh &, std::size_t,
+               const dolfin::mesh::Mesh &, std::size_t,
                const std::vector<std::size_t> &) const) &
                dolfin::fem::GenericDofMap::entity_dofs)
       .def("entity_closure_dofs",
            (std::vector<dolfin::la_index_t>(dolfin::fem::GenericDofMap::*)(
-               const dolfin::Mesh &, std::size_t,
+               const dolfin::mesh::Mesh &, std::size_t,
                const std::vector<std::size_t> &) const) &
                dolfin::fem::GenericDofMap::entity_closure_dofs)
       .def("num_entity_dofs", &dolfin::fem::GenericDofMap::num_entity_dofs)
@@ -191,8 +191,10 @@ void fem(py::module &m) {
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>,
              dolfin::fem::GenericDofMap>(m, "DofMap", "DOLFIN DofMap object")
-      .def(py::init<std::shared_ptr<const ufc::dofmap>, const dolfin::Mesh &>())
-      .def(py::init<std::shared_ptr<const ufc::dofmap>, const dolfin::Mesh &,
+      .def(py::init<std::shared_ptr<const ufc::dofmap>,
+                    const dolfin::mesh::Mesh &>())
+      .def(py::init<std::shared_ptr<const ufc::dofmap>,
+                    const dolfin::mesh::Mesh &,
                     std::shared_ptr<const dolfin::mesh::SubDomain>>())
       .def("ownership_range", &dolfin::fem::DofMap::ownership_range)
       .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs);
@@ -217,10 +219,11 @@ void fem(py::module &m) {
                     bool>(),
            py::arg("V"), py::arg("g"), py::arg("sub_domain"),
            py::arg("method") = "topological", py::arg("check_midpoint") = true)
-      .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
-                    std::shared_ptr<const dolfin::function::GenericFunction>,
-                    std::shared_ptr<const dolfin::MeshFunction<std::size_t>>,
-                    std::size_t, std::string>(),
+      .def(py::init<
+               std::shared_ptr<const dolfin::function::FunctionSpace>,
+               std::shared_ptr<const dolfin::function::GenericFunction>,
+               std::shared_ptr<const dolfin::mesh::MeshFunction<std::size_t>>,
+               std::size_t, std::string>(),
            py::arg("V"), py::arg("g"), py::arg("sub_domains"),
            py::arg("sub_domain"), py::arg("method") = "topological")
       .def("function_space", &dolfin::fem::DirichletBC::function_space)
@@ -466,7 +469,7 @@ void fem(py::module &m) {
   //});
 
   m.def("set_coordinates", &dolfin::fem::set_coordinates);
-  m.def("set_coordinates", [](dolfin::MeshGeometry &geometry,
+  m.def("set_coordinates", [](dolfin::mesh::MeshGeometry &geometry,
                               const py::object u) {
     auto _u = u.attr("_cpp_object").cast<const dolfin::function::Function *>();
     dolfin::fem::set_coordinates(geometry, *_u);
@@ -474,7 +477,7 @@ void fem(py::module &m) {
 
   m.def("get_coordinates", &dolfin::fem::get_coordinates);
   m.def("get_coordinates",
-        [](py::object u, const dolfin::MeshGeometry &geometry) {
+        [](py::object u, const dolfin::mesh::MeshGeometry &geometry) {
           auto _u = u.attr("_cpp_object").cast<dolfin::function::Function *>();
           return dolfin::fem::get_coordinates(*_u, geometry);
         });

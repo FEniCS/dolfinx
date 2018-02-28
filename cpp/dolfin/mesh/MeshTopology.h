@@ -16,6 +16,8 @@
 
 namespace dolfin
 {
+namespace mesh
+{
 
 /// MeshTopology stores the topology of a mesh, consisting of mesh
 /// entities and connectivity (incidence relations for the mesh
@@ -136,7 +138,7 @@ public:
   const std::vector<std::uint32_t>& cell_owner() const { return _cell_owner; }
 
   /// Return connectivity for given pair of topological dimensions
-  dolfin::MeshConnectivity& operator()(std::size_t d0, std::size_t d1)
+  MeshConnectivity& operator()(std::size_t d0, std::size_t d1)
   {
     dolfin_assert(d0 < _connectivity.size());
     dolfin_assert(d1 < _connectivity[d0].size());
@@ -144,8 +146,7 @@ public:
   }
 
   /// Return connectivity for given pair of topological dimensions
-  const dolfin::MeshConnectivity& operator()(std::size_t d0,
-                                             std::size_t d1) const
+  const MeshConnectivity& operator()(std::size_t d0, std::size_t d1) const
   {
     dolfin_assert(d0 < _connectivity.size());
     dolfin_assert(d1 < _connectivity[d0].size());
@@ -185,4 +186,5 @@ private:
   // Connectivity for pairs of topological dimensions
   std::vector<std::vector<MeshConnectivity>> _connectivity;
 };
+}
 }

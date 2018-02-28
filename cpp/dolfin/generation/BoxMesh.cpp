@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <cmath>
-#include <Eigen/Dense>
 #include "BoxMesh.h"
+#include <Eigen/Dense>
+#include <cmath>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
@@ -16,21 +16,21 @@ using namespace dolfin;
 using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
-Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
-                        std::array<std::size_t, 3> n)
+mesh::Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
+                              std::array<std::size_t, 3> n)
 {
   common::Timer timer("Build BoxMesh");
 
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-                     geom(0, 3);
-    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-                     topo(0, 4);
-    Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+        0, 3);
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
+                                                                             4);
+    mesh::Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
     mesh.order();
-    MeshPartitioning::build_distributed_mesh(mesh);
+    mesh::MeshPartitioning::build_distributed_mesh(mesh);
     return mesh;
   }
 
@@ -75,10 +75,10 @@ Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
                                               "least 1 in each dimension");
   }
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-                     geom((nx + 1) * (ny + 1) * (nz + 1), 3);
-  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-                     topo(6 * nx * ny * nz, 4);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+      (nx + 1) * (ny + 1) * (nz + 1), 3);
+  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(
+      6 * nx * ny * nz, 4);
 
   std::size_t vertex = 0;
   for (std::size_t iz = 0; iz <= nz; ++iz)
@@ -130,24 +130,24 @@ Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
     }
   }
 
-  Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
+  mesh::Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
   mesh.order();
 
-  MeshPartitioning::build_distributed_mesh(mesh);
+  mesh::MeshPartitioning::build_distributed_mesh(mesh);
   return mesh;
 }
 //-----------------------------------------------------------------------------
-Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
+mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
 {
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-                     geom(0, 3);
-    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-                     topo(0, 8);
-    Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
-    MeshPartitioning::build_distributed_mesh(mesh);
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+        0, 3);
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
+                                                                             8);
+    mesh::Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
+    mesh::MeshPartitioning::build_distributed_mesh(mesh);
     return mesh;
   }
 
@@ -155,10 +155,10 @@ Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
   const std::size_t ny = n[1];
   const std::size_t nz = n[2];
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-                     geom((nx + 1) * (ny + 1) * (nz + 1), 3);
-  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-                     topo(nx * ny * nz, 8);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+      (nx + 1) * (ny + 1) * (nz + 1), 3);
+  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(
+      nx * ny * nz, 8);
 
   const double a = 0.0;
   const double b = 1.0;
@@ -171,7 +171,8 @@ Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
   std::size_t vertex = 0;
   for (std::size_t iz = 0; iz <= nz; ++iz)
   {
-    const double z = e + ((static_cast<double>(iz)) * (f - e) / static_cast<double>(nz));
+    const double z
+        = e + ((static_cast<double>(iz)) * (f - e) / static_cast<double>(nz));
     for (std::size_t iy = 0; iy <= ny; ++iy)
     {
       const double y
@@ -208,8 +209,8 @@ Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
     }
   }
 
-  Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
-  MeshPartitioning::build_distributed_mesh(mesh);
+  mesh::Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
+  mesh::MeshPartitioning::build_distributed_mesh(mesh);
   return mesh;
 }
 //-----------------------------------------------------------------------------

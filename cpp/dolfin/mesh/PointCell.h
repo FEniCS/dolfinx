@@ -12,10 +12,11 @@
 
 namespace dolfin
 {
-
+namespace mesh
+{
 /// This class implements functionality for point cell meshes.
 
-class PointCell : public mesh::CellType
+class PointCell : public CellType
 {
 public:
   /// Specify cell type and facet type
@@ -85,4 +86,5 @@ private:
   // Find local index of edge i according to ordering convention
   std::size_t find_edge(std::size_t i, const mesh::Cell& cell) const;
 };
+}
 }

@@ -6,9 +6,6 @@
 
 #pragma once
 
-#include <map>
-#include <vector>
-
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
 #include "MeshConnectivity.h"
@@ -16,12 +13,15 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
+#include <map>
 #include <memory>
 #include <unordered_set>
+#include <vector>
 
 namespace dolfin
 {
-
+namespace mesh
+{
 class MeshEntity;
 
 /// A MeshFunction is a function that can be evaluated at a set of
@@ -588,4 +588,5 @@ std::string MeshFunction<T>::str(bool verbose) const
   return s.str();
 }
 //---------------------------------------------------------------------------
+}
 }

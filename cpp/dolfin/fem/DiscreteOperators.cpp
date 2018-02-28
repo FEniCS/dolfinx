@@ -31,7 +31,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
 
   // Get mesh
   dolfin_assert(V0.mesh());
-  const Mesh& mesh = *(V0.mesh());
+  const mesh::Mesh& mesh = *(V0.mesh());
 
   // Check that mesh is the same for both function spaces
   dolfin_assert(V1.mesh());
@@ -86,7 +86,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   // Build sparsity pattern
   std::vector<dolfin::la_index_t> rows;
   std::vector<dolfin::la_index_t> cols;
-  for (auto& edge : MeshRange<Edge>(mesh))
+  for (auto& edge : mesh::MeshRange<mesh::Edge>(mesh))
   {
     // Row index (global indices)
     const std::int64_t row = local_to_global_map0[edge_to_dof[edge.index()]];
@@ -95,8 +95,8 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
     if (row >= local_range[0][0] and row < local_range[0][1])
     {
       // Column indices (global indices)
-      const Vertex v0(mesh, edge.entities(0)[0]);
-      const Vertex v1(mesh, edge.entities(0)[1]);
+      const mesh::Vertex v0(mesh, edge.entities(0)[0]);
+      const mesh::Vertex v1(mesh, edge.entities(0)[1]);
       std::size_t col0 = local_to_global_map1[vertex_to_dof[v0.index()]];
       std::size_t col1 = local_to_global_map1[vertex_to_dof[v1.index()]];
       cols.push_back(col0);
@@ -114,7 +114,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   A->init(pattern);
 
   // Build discrete gradient operator/matrix
-  for (auto& edge : MeshRange<Edge>(mesh))
+  for (auto& edge : mesh::MeshRange<mesh::Edge>(mesh))
   {
     dolfin::la_index_t row;
     dolfin::la_index_t cols[2];
@@ -122,8 +122,8 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
 
     row = local_to_global_map0[edge_to_dof[edge.index()]];
 
-    Vertex v0(mesh, edge.entities(0)[0]);
-    Vertex v1(mesh, edge.entities(0)[1]);
+    mesh::Vertex v0(mesh, edge.entities(0)[0]);
+    mesh::Vertex v1(mesh, edge.entities(0)[1]);
 
     cols[0] = local_to_global_map1[vertex_to_dof[v0.index()]];
     cols[1] = local_to_global_map1[vertex_to_dof[v1.index()]];

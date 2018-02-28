@@ -14,15 +14,15 @@
 namespace dolfin
 {
 
-class MeshEntity;
-template <typename T>
-class MeshFunction;
 class Point;
 
 namespace mesh
 {
 
 class Cell;
+class MeshEntity;
+template <typename T>
+class MeshFunction;
 
 /// This class provides a common interface for different cell types.
 /// Each cell type implements mesh functionality that is specific to

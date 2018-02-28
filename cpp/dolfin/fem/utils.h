@@ -11,9 +11,6 @@
 
 namespace dolfin
 {
-// Forward declarations
-class Mesh;
-class MeshGeometry;
 class PETScMatrix;
 class PETScVector;
 
@@ -21,6 +18,12 @@ namespace function
 {
 class Function;
 class FunctionSpace;
+}
+
+namespace mesh
+{
+class Mesh;
+class MeshGeometry;
 }
 
 namespace fem
@@ -78,7 +81,7 @@ vertex_to_dof_map(const function::FunctionSpace& space);
 ///         Mesh geometry to be set
 /// @param    position (_Function_)
 ///         Vectorial Lagrange function with matching degree and mesh
-void set_coordinates(MeshGeometry& geometry,
+void set_coordinates(mesh::MeshGeometry& geometry,
                      const function::Function& position);
 
 /// Stores mesh coordinates into function
@@ -93,7 +96,7 @@ void set_coordinates(MeshGeometry& geometry,
 /// @param    geometry (_MeshGeometry_)
 ///         Mesh geometry to be stored
 void get_coordinates(function::Function& position,
-                     const MeshGeometry& geometry);
+                     const mesh::MeshGeometry& geometry);
 
 /// Creates mesh from coordinate function
 ///
@@ -113,6 +116,6 @@ void get_coordinates(function::Function& position,
 ///
 /// @return Mesh
 ///         The mesh
-Mesh create_mesh(function::Function& coordinates);
+mesh::Mesh create_mesh(function::Function& coordinates);
 }
 }

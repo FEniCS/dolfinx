@@ -26,7 +26,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 dolfin::graph::Graph
-dolfin::graph::GraphBuilder::local_graph(const Mesh& mesh,
+dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
                                          const fem::GenericDofMap& dofmap0,
                                          const fem::GenericDofMap& dofmap1)
 {
@@ -37,7 +37,7 @@ dolfin::graph::GraphBuilder::local_graph(const Mesh& mesh,
   Graph graph(n);
 
   // Build graph
-  for (auto& cell : MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     auto _dofs0 = dofmap0.cell_dofs(cell.index());
     auto _dofs1 = dofmap1.cell_dofs(cell.index());
@@ -57,7 +57,7 @@ dolfin::graph::GraphBuilder::local_graph(const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
-    const Mesh& mesh, const std::vector<std::size_t>& coloring_type)
+    const mesh::Mesh& mesh, const std::vector<std::size_t>& coloring_type)
 {
   // Initialise mesh
   for (std::size_t i = 0; i < coloring_type.size(); ++i)
@@ -74,7 +74,8 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
   Graph graph(num_vertices);
 
   // Build graph
-  for (auto& vertex_entity : MeshRange<MeshEntity>(mesh, coloring_type[0]))
+  for (auto& vertex_entity :
+       mesh::MeshRange<mesh::MeshEntity>(mesh, coloring_type[0]))
   {
     const std::size_t vertex_entity_index = vertex_entity.index();
 
@@ -89,9 +90,10 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
            = entity_list0.begin();
            entity_index != entity_list0.end(); ++entity_index)
       {
-        const MeshEntity entity(mesh, coloring_type[level - 1], *entity_index);
+        const mesh::MeshEntity entity(mesh, coloring_type[level - 1],
+                                      *entity_index);
         for (auto& neighbor :
-             EntityRange<MeshEntity>(entity, coloring_type[level]))
+             mesh::EntityRange<mesh::MeshEntity>(entity, coloring_type[level]))
         {
           entity_list1.insert(neighbor.index());
         }
@@ -107,9 +109,9 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
   return graph;
 }
 //-----------------------------------------------------------------------------
-dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(const Mesh& mesh,
-                                                              std::size_t dim0,
-                                                              std::size_t dim1)
+dolfin::graph::Graph
+dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
+                                         std::size_t dim0, std::size_t dim1)
 {
   mesh.init(dim0);
   mesh.init(dim1);
@@ -121,12 +123,13 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(const Mesh& mesh,
   Graph graph(num_vertices);
 
   // Build graph
-  for (auto& colored_entity : MeshRange<MeshEntity>(mesh, dim0))
+  for (auto& colored_entity : mesh::MeshRange<mesh::MeshEntity>(mesh, dim0))
   {
     const std::int32_t colored_entity_index = colored_entity.index();
-    for (auto& entity : EntityRange<MeshEntity>(colored_entity, dim1))
+    for (auto& entity :
+         mesh::EntityRange<mesh::MeshEntity>(colored_entity, dim1))
     {
-      for (auto& neighbor : EntityRange<MeshEntity>(entity, dim0))
+      for (auto& neighbor : mesh::EntityRange<mesh::MeshEntity>(entity, dim0))
       {
         if (colored_entity_index != neighbor.index())
           graph[colored_entity_index].insert(neighbor.index());

@@ -20,11 +20,15 @@
 namespace dolfin
 {
 class PETScVector;
-class Mesh;
 
 namespace fem
 {
 class GenericDofMap;
+}
+
+namespace mesh
+{
+class Mesh;
 }
 
 namespace function
@@ -43,13 +47,13 @@ public:
   /// (shared data)
   ///
   /// *Arguments*
-  ///     mesh (_Mesh_)
+  ///     mesh (_mesh::Mesh_)
   ///         The mesh.
   ///     element (_FiniteElement_)
   ///         The element.
   ///     dofmap (_GenericDofMap_)
   ///         The dofmap.
-  FunctionSpace(std::shared_ptr<const Mesh> mesh,
+  FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                 std::shared_ptr<const fem::FiniteElement> element,
                 std::shared_ptr<const fem::GenericDofMap> dofmap);
 
@@ -61,9 +65,9 @@ protected:
   /// FunctionSpace::attach(...).
   ///
   /// *Arguments*
-  ///     mesh (_Mesh_)
+  ///     mesh (_mesh::Mesh_)
   ///         The mesh.
-  explicit FunctionSpace(std::shared_ptr<const Mesh> mesh);
+  explicit FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh);
 
 public:
   /// Copy constructor
@@ -112,9 +116,9 @@ public:
   /// Return mesh
   ///
   /// *Returns*
-  ///     _Mesh_
+  ///     _mesh::Mesh_
   ///         The mesh.
-  std::shared_ptr<const Mesh> mesh() const;
+  std::shared_ptr<const mesh::Mesh> mesh() const;
 
   /// Return finite element
   ///
@@ -234,7 +238,7 @@ public:
   /// nullspace computations.
   ///
   /// *Arguments*
-  ///     mesh (_Mesh_)
+  ///     mesh (_mesh::Mesh_)
   ///         The mesh.
   ///
   /// *Returns*
@@ -255,7 +259,7 @@ public:
   ///         The value to multiply to coordinate by.
   ///     component (std::size_t)
   ///         The coordinate index.
-  ///     mesh (_Mesh_)
+  ///     mesh (_mesh::Mesh_)
   ///         The mesh.
   void set_x(PETScVector& x, double value, std::size_t component) const;
 
@@ -279,7 +283,7 @@ private:
                             const GenericFunction& v) const;
 
   // The mesh
-  std::shared_ptr<const Mesh> _mesh;
+  std::shared_ptr<const mesh::Mesh> _mesh;
 
   // The finite element
   std::shared_ptr<const fem::FiniteElement> _element;

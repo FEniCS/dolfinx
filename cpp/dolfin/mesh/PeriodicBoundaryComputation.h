@@ -14,13 +14,10 @@
 
 namespace dolfin
 {
-
-class Mesh;
-
 namespace mesh
 {
+class Mesh;
 class SubDomain;
-}
 
 /// This class computes map from slave entity to master entity
 
@@ -45,8 +42,8 @@ public:
   /// It is useful for visualising and debugging the Expression::map
   /// function that is used to apply periodic boundary conditions.
   static MeshFunction<std::size_t>
-  masters_slaves(std::shared_ptr<const Mesh> mesh, const mesh::SubDomain& sub_domain,
-                 const std::size_t dim);
+  masters_slaves(std::shared_ptr<const Mesh> mesh,
+                 const mesh::SubDomain& sub_domain, const std::size_t dim);
 
 private:
   // Return true is point lies within bounding box
@@ -54,4 +51,5 @@ private:
                               const std::vector<double>& bounding_box,
                               const double tol);
 };
+}
 }

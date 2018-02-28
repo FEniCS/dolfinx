@@ -17,7 +17,7 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-dolfin::MeshFunction<double>
+MeshFunction<double>
 MeshQuality::radius_ratios(std::shared_ptr<const Mesh> mesh)
 {
   // Create MeshFunction

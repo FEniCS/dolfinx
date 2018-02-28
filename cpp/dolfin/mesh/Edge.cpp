@@ -9,6 +9,7 @@
 #include <cmath>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 double Edge::length() const

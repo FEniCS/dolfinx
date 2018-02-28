@@ -132,7 +132,7 @@ void Expression::restrict(double* w, const fem::FiniteElement& element,
 }
 //-----------------------------------------------------------------------------
 void Expression::compute_vertex_values(std::vector<double>& vertex_values,
-                                       const Mesh& mesh) const
+                                       const mesh::Mesh& mesh) const
 {
   // Local data for vertex values
   const std::size_t size = value_size();
@@ -142,10 +142,10 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
   vertex_values.resize(size * mesh.num_vertices());
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
-  for (auto& cell : MeshRange<mesh::Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Iterate over cell vertices
-    for (auto& vertex : EntityRange<Vertex>(cell))
+    for (auto& vertex : mesh::EntityRange<mesh::Vertex>(cell))
     {
       // Wrap coordinate data
       Eigen::Map<const Eigen::VectorXd> x(vertex.x(), mesh.geometry().dim());

@@ -16,8 +16,11 @@ namespace dolfin
 {
 
 // Forward declarations
+namespace mesh
+{
 class Mesh;
 class MeshEntity;
+}
 
 class BoundingBoxTree
 {
@@ -29,7 +32,7 @@ public:
   ~BoundingBoxTree() {}
 
   /// Build bounding box tree for mesh entities of given dimension
-  void build(const Mesh& mesh, std::size_t tdim);
+  void build(const mesh::Mesh& mesh, std::size_t tdim);
 
   /// Build bounding box tree for point cloud
   void build(const std::vector<Point>& points);
@@ -42,8 +45,8 @@ public:
   compute_collisions(const BoundingBoxTree& tree) const;
 
   /// Compute all collisions between entities and _Point_
-  std::vector<unsigned int> compute_entity_collisions(const Point& point,
-                                                      const Mesh& mesh) const;
+  std::vector<unsigned int>
+  compute_entity_collisions(const Point& point, const mesh::Mesh& mesh) const;
 
   /// Compute all collisions between processes and _Point_
   /// returning a list of process ranks
@@ -53,18 +56,19 @@ public:
   /// Compute all collisions between entities and _BoundingBoxTree_
   std::pair<std::vector<unsigned int>, std::vector<unsigned int>>
   compute_entity_collisions(const BoundingBoxTree& tree,
-                            const Mesh& mesh_A, const Mesh& mesh_B) const;
+                            const mesh::Mesh& mesh_A,
+                            const mesh::Mesh& mesh_B) const;
 
   /// Compute first collision between bounding boxes and _Point_
   unsigned int compute_first_collision(const Point& point) const;
 
   /// Compute first collision between entities and _Point_
   unsigned int compute_first_entity_collision(const Point& point,
-                                              const Mesh& mesh) const;
+                                              const mesh::Mesh& mesh) const;
 
   /// Compute closest entity and distance to _Point_
   std::pair<unsigned int, double>
-  compute_closest_entity(const Point& point, const Mesh& mesh) const;
+  compute_closest_entity(const Point& point, const mesh::Mesh& mesh) const;
 
   /// Compute closest point and distance to _Point_
   std::pair<unsigned int, double>
@@ -75,22 +79,21 @@ public:
   bool collides(const Point& point) const
   {
     return compute_first_collision(point)
-      != std::numeric_limits<unsigned int>::max();
+           != std::numeric_limits<unsigned int>::max();
   }
 
   /// Determine if a point collides with an entity of the mesh
   /// (usually a cell)
-  bool collides_entity(const Point& point, const Mesh& mesh) const
+  bool collides_entity(const Point& point, const mesh::Mesh& mesh) const
   {
     return compute_first_entity_collision(point, mesh)
-      != std::numeric_limits<unsigned int>::max();
+           != std::numeric_limits<unsigned int>::max();
   }
 
   /// Print out for debugging
   std::string str(bool verbose = false);
 
 private:
-
   // Bounding box data structure. Leaf nodes are indicated by setting child_0
   // equal to the node itself. For leaf nodes, child_1 is set to the
   // index of the entity contained in the leaf bounding box.
@@ -117,7 +120,6 @@ private:
                       const std::vector<unsigned int>::iterator& begin,
                       const std::vector<unsigned int>::iterator& end);
 
-
   //--- Recursive search functions ---
 
   // Note that these functions are made static for consistency as
@@ -127,31 +129,32 @@ private:
   static void _compute_collisions(const BoundingBoxTree& tree,
                                   const Point& point, unsigned int node,
                                   std::vector<unsigned int>& entities,
-                                  const Mesh* mesh);
+                                  const mesh::Mesh* mesh);
 
   // Compute collisions with tree (recursive)
   static void _compute_collisions(const BoundingBoxTree& A,
-                                  const BoundingBoxTree& B,
-                                  unsigned int node_A, unsigned int node_B,
+                                  const BoundingBoxTree& B, unsigned int node_A,
+                                  unsigned int node_B,
                                   std::vector<unsigned int>& entities_A,
                                   std::vector<unsigned int>& entities_B,
-                                  const Mesh* mesh_A, const Mesh* mesh_B);
+                                  const mesh::Mesh* mesh_A,
+                                  const mesh::Mesh* mesh_B);
 
   // Compute first collision (recursive)
-  static unsigned int
-  _compute_first_collision(const BoundingBoxTree& tree,
-                           const Point& point, unsigned int node);
+  static unsigned int _compute_first_collision(const BoundingBoxTree& tree,
+                                               const Point& point,
+                                               unsigned int node);
 
   // Compute first entity collision (recursive)
   static unsigned int
   _compute_first_entity_collision(const BoundingBoxTree& tree,
                                   const Point& point, unsigned int node,
-                                  const Mesh& mesh);
+                                  const mesh::Mesh& mesh);
 
   // Compute closest entity (recursive)
   static void _compute_closest_entity(const BoundingBoxTree& tree,
                                       const Point& point, unsigned int node,
-                                      const Mesh& mesh,
+                                      const mesh::Mesh& mesh,
                                       unsigned int& closest_entity, double& R2);
 
   // Compute closest point (recursive)
@@ -162,10 +165,10 @@ private:
   //--- Utility functions ---
 
   // Compute point search tree if not already done
-  void build_point_search_tree(const Mesh& mesh) const;
+  void build_point_search_tree(const mesh::Mesh& mesh) const;
 
   // Compute bounding box of mesh entity
-  void compute_bbox_of_entity(double* b, const MeshEntity& entity) const;
+  void compute_bbox_of_entity(double* b, const mesh::MeshEntity& entity) const;
 
   // Sort points along given axis
   void sort_points(std::size_t axis, const std::vector<Point>& points,
@@ -231,25 +234,22 @@ private:
 
   // Compute squared distance between point and point
   double compute_squared_distance_point(const double* x,
-                                                unsigned int node) const;
+                                        unsigned int node) const;
 
   // Compute bounding box of bounding boxes
-  void
-  compute_bbox_of_bboxes(double* bbox, std::size_t& axis,
-                         const std::vector<double>& leaf_bboxes,
-                         const std::vector<unsigned int>::iterator& begin,
-                         const std::vector<unsigned int>::iterator& end);
+  void compute_bbox_of_bboxes(double* bbox, std::size_t& axis,
+                              const std::vector<double>& leaf_bboxes,
+                              const std::vector<unsigned int>::iterator& begin,
+                              const std::vector<unsigned int>::iterator& end);
 
   // Compute bounding box of points
-  void
-  compute_bbox_of_points(double* bbox, std::size_t& axis,
-                         const std::vector<Point>& points,
-                         const std::vector<unsigned int>::iterator& begin,
-                         const std::vector<unsigned int>::iterator& end);
+  void compute_bbox_of_points(double* bbox, std::size_t& axis,
+                              const std::vector<Point>& points,
+                              const std::vector<unsigned int>::iterator& begin,
+                              const std::vector<unsigned int>::iterator& end);
 
   // Sort leaf bounding boxes along given axis
-  void sort_bboxes(std::size_t axis,
-                   const std::vector<double>& leaf_bboxes,
+  void sort_bboxes(std::size_t axis, const std::vector<double>& leaf_bboxes,
                    const std::vector<unsigned int>::iterator& begin,
                    const std::vector<unsigned int>::iterator& middle,
                    const std::vector<unsigned int>::iterator& end);
@@ -276,6 +276,5 @@ private:
 
   // Global tree for mesh ownership of each process (same on all processes)
   std::shared_ptr<BoundingBoxTree> _global_tree;
-
 };
 }

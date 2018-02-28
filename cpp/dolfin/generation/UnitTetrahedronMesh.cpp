@@ -10,10 +10,11 @@
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 
+using namespace dolfin;
 using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
-dolfin::Mesh UnitTetrahedronMesh::create()
+mesh::Mesh UnitTetrahedronMesh::create()
 {
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
       4, 3);
@@ -26,6 +27,7 @@ dolfin::Mesh UnitTetrahedronMesh::create()
   // Create cell
   topo << 0, 1, 2, 3;
 
-  return Mesh(MPI_COMM_SELF, mesh::CellType::Type::tetrahedron, geom, topo);
+  return mesh::Mesh(MPI_COMM_SELF, mesh::CellType::Type::tetrahedron, geom,
+                    topo);
 }
 //-----------------------------------------------------------------------------

@@ -25,13 +25,13 @@ void graph(py::module &m) {
   // dolfin::GraphBuilder
   py::class_<dolfin::graph::GraphBuilder>(m, "GraphBuilder")
       .def_static("local_graph",
-                  [](const dolfin::Mesh &mesh,
+                  [](const dolfin::mesh::Mesh &mesh,
                      const std::vector<std::size_t> &coloring) {
                     return dolfin::graph::GraphBuilder::local_graph(mesh,
                                                                     coloring);
                   })
-      .def_static("local_graph", [](const dolfin::Mesh &mesh, std::size_t dim0,
-                                    std::size_t dim1) {
+      .def_static("local_graph", [](const dolfin::mesh::Mesh &mesh,
+                                    std::size_t dim0, std::size_t dim1) {
         return dolfin::graph::GraphBuilder::local_graph(mesh, dim0, dim1);
       });
 }

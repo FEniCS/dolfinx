@@ -14,6 +14,9 @@
 
 namespace dolfin
 {
+
+namespace mesh
+{
 // Developer note: This code is performance critical as it appears in
 // tight assembly loops. Any changes should be carefully profiled.
 //
@@ -350,4 +353,5 @@ private:
   // Dimension of incident entities
   const std::uint32_t _dim;
 };
+}
 }

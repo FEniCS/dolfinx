@@ -240,7 +240,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
-  const Mesh& mesh = *_function_space->mesh();
+  const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Find the cell that contains x
   const double* _x = x.data();
@@ -369,7 +369,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
-  const Mesh& mesh = *_function_space->mesh();
+  const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Check if UFC cell comes from mesh, otherwise
   // find the cell which contains the point
@@ -415,7 +415,7 @@ void Function::restrict(double* w, const fem::FiniteElement& element,
 }
 //-----------------------------------------------------------------------------
 void Function::compute_vertex_values(std::vector<double>& vertex_values,
-                                     const Mesh& mesh) const
+                                     const mesh::Mesh& mesh) const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
@@ -453,7 +453,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  for (auto& cell : MeshRange<mesh::Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Update to current cell
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -470,7 +470,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
 
     // Copy values to array of vertex values
     std::size_t local_index = 0;
-    for (auto& vertex : EntityRange<Vertex>(cell))
+    for (auto& vertex : mesh::EntityRange<mesh::Vertex>(cell))
     {
       for (std::size_t i = 0; i < value_size_loc; ++i)
       {

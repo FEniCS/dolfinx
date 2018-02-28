@@ -12,6 +12,7 @@
 #include <sstream>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology() : Variable("topology", "mesh topology")

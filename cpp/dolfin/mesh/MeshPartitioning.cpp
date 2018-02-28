@@ -1042,7 +1042,8 @@ void MeshPartitioning::build_local_mesh(
     const std::map<std::int64_t, std::int32_t>& vertex_global_to_local)
 {
   log(PROGRESS, "Build local mesh during distributed mesh construction");
-  common::Timer timer("Build local part of distributed mesh (from local mesh data)");
+  common::Timer timer(
+      "Build local part of distributed mesh (from local mesh data)");
 
   // Set cell type
   mesh._cell_type.reset(mesh::CellType::create(cell_type));

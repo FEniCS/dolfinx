@@ -290,7 +290,7 @@ void Assembler::assemble(PETScMatrix& A, const Form& a,
 
   // Get mesh from form
   assert(a.mesh());
-  const Mesh& mesh = *a.mesh();
+  const mesh::Mesh& mesh = *a.mesh();
 
   // FIXME: Remove UFC
   // Create data structures for local assembly data
@@ -340,7 +340,7 @@ void Assembler::assemble(PETScMatrix& A, const Form& a,
   auto cell_integral = a.integrals().cell_integral();
 
   // Iterate over all cells
-  for (auto& cell : MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     std::cout << "Iterate over cells" << std::endl;
     // Check that cell is not a ghost
@@ -429,7 +429,7 @@ void Assembler::assemble(PETScVector& b, const Form& L)
 
   // Get mesh from form
   assert(L.mesh());
-  const Mesh& mesh = *L.mesh();
+  const mesh::Mesh& mesh = *L.mesh();
 
   // FIXME: Remove UFC
   // Create data structures for local assembly data
@@ -451,7 +451,7 @@ void Assembler::assemble(PETScVector& b, const Form& L)
   auto cell_integral = L.integrals().cell_integral();
 
   // Iterate over all cells
-  for (auto& cell : MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
@@ -493,7 +493,7 @@ void Assembler::apply_bc(PETScVector& b, const Form& a,
 {
   // Get mesh from form
   assert(a.mesh());
-  const Mesh& mesh = *a.mesh();
+  const mesh::Mesh& mesh = *a.mesh();
 
   const std::size_t gdim = mesh.geometry().dim();
 
@@ -530,7 +530,7 @@ void Assembler::apply_bc(PETScVector& b, const Form& a,
   auto cell_integral = a.integrals().cell_integral();
 
   // Iterate over all cells
-  for (auto& cell : MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
@@ -616,7 +616,7 @@ void Assembler::set_bc(PETScVector& b, const Form& L,
 {
   // Get mesh from form
   assert(L.mesh());
-  const Mesh& mesh = *L.mesh();
+  const mesh::Mesh& mesh = *L.mesh();
 
   auto V = L.function_space(0);
 

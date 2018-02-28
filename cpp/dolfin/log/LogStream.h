@@ -64,10 +64,6 @@ public:
   /// Output for variable (calling str() method)
   LogStream& operator<<(const Variable& variable);
 
-  /// Output for mesh entity (not subclass of Variable for
-  /// efficiency)
-  LogStream& operator<<(const MeshEntity& entity);
-
   /// Output for point (not subclass of Variable for efficiency)
   LogStream& operator<<(const Point& point);
 

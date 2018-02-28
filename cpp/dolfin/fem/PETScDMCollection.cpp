@@ -66,7 +66,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   dolfin_assert(V.mesh());
   const fem::GenericDofMap& dofmap = *V.dofmap();
   const fem::FiniteElement& element = *V.element();
-  const Mesh& mesh = *V.mesh();
+  const mesh::Mesh& mesh = *V.mesh();
   std::vector<std::size_t> local_to_global;
   dofmap.tabulate_local_to_global_dofs(local_to_global);
 
@@ -84,7 +84,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   common::RangedIndexSet already_visited(
       std::array<std::int64_t, 2>{{0, local_size}});
 
-  for (auto& cell : MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Get cell coordinates
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -130,7 +130,7 @@ PETScDMCollection::PETScDMCollection(
     dolfin_assert(_spaces[i]);
     dolfin_assert(_spaces[i].get());
 
-    // Get MPI communicator from Mesh
+    // Get MPI communicator from mesh::Mesh
     dolfin_assert(_spaces[i]->mesh());
     MPI_Comm comm = _spaces[i]->mesh()->mpi_comm();
 
@@ -206,7 +206,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
 
   // Get coarse mesh and dimension of the domain
   dolfin_assert(coarse_space.mesh());
-  const Mesh meshc = *coarse_space.mesh();
+  const mesh::Mesh meshc = *coarse_space.mesh();
   std::size_t dim = meshc.geometry().dim();
 
   // MPI communicator, size and rank
@@ -610,7 +610,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
 }
 //-----------------------------------------------------------------------------
 void PETScDMCollection::find_exterior_points(
-    MPI_Comm mpi_comm, const Mesh& meshc,
+    MPI_Comm mpi_comm, const mesh::Mesh& meshc,
     std::shared_ptr<const BoundingBoxTree> treec, int dim, int data_size,
     const std::vector<double>& send_points,
     const std::vector<int>& send_indices, std::vector<int>& indices,

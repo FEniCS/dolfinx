@@ -18,7 +18,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 // High-level collision detection predicates
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::collides(const MeshEntity& entity, const Point& point)
+bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
+                                   const Point& point)
 {
   // Intersection is only implemented for simplex meshes
   if (!entity.mesh().type().is_simplex())
@@ -28,7 +29,7 @@ bool CollisionPredicates::collides(const MeshEntity& entity, const Point& point)
   }
 
   // Get data
-  const MeshGeometry& g = entity.mesh().geometry();
+  const mesh::MeshGeometry& g = entity.mesh().geometry();
   const int32_t* v = entity.entities(0);
   const std::size_t tdim = entity.mesh().topology().dim();
   const std::size_t gdim = entity.mesh().geometry().dim();
@@ -62,8 +63,8 @@ bool CollisionPredicates::collides(const MeshEntity& entity, const Point& point)
   return false;
 }
 //-----------------------------------------------------------------------------
-bool CollisionPredicates::collides(const MeshEntity& entity_0,
-                                   const MeshEntity& entity_1)
+bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
+                                   const mesh::MeshEntity& entity_1)
 {
   // Intersection is only implemented for simplex meshes
   if (!entity_0.mesh().type().is_simplex()
@@ -74,8 +75,8 @@ bool CollisionPredicates::collides(const MeshEntity& entity_0,
   }
 
   // Get data
-  const MeshGeometry& g0 = entity_0.mesh().geometry();
-  const MeshGeometry& g1 = entity_1.mesh().geometry();
+  const mesh::MeshGeometry& g0 = entity_0.mesh().geometry();
+  const mesh::MeshGeometry& g1 = entity_1.mesh().geometry();
   const std::int32_t* v0 = entity_0.entities(0);
   const std::int32_t* v1 = entity_1.entities(0);
   const std::size_t d0 = entity_0.dim();

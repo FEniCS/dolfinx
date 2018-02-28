@@ -18,15 +18,17 @@ class xml_node;
 
 namespace dolfin
 {
-
-class Mesh;
-template <typename T>
-class MeshFunction;
-
 namespace function
 {
 class Function;
 class GenericFunction;
+}
+
+namespace mesh
+{
+class Mesh;
+template <typename T>
+class MeshFunction;
 }
 
 namespace io
@@ -47,37 +49,37 @@ public:
   ~VTKFile();
 
   /// Output mesh
-  void write(const Mesh& mesh);
+  void write(const mesh::Mesh& mesh);
 
-  /// Output MeshFunction<bool>
-  void write(const MeshFunction<bool>& meshfunction);
+  /// Output mesh::MeshFunction<bool>
+  void write(const mesh::MeshFunction<bool>& meshfunction);
 
-  /// Output MeshFunction<std::size_t>
-  void write(const MeshFunction<std::size_t>& meshfunction);
+  /// Output mesh::MeshFunction<std::size_t>
+  void write(const mesh::MeshFunction<std::size_t>& meshfunction);
 
-  /// Output MeshFunction<int>
-  void write(const MeshFunction<int>& meshfunction);
+  /// Output mesh::MeshFunction<int>
+  void write(const mesh::MeshFunction<int>& meshfunction);
 
-  /// Output MeshFunction<double>
-  void write(const MeshFunction<double>& meshfunction);
+  /// Output mesh::MeshFunction<double>
+  void write(const mesh::MeshFunction<double>& meshfunction);
 
   /// Output function::Function
   void write(const function::Function& u);
 
-  /// Output Mesh and timestep
-  void write(const Mesh& mesh, double t);
+  /// Output mesh::Mesh and timestep
+  void write(const mesh::Mesh& mesh, double t);
 
-  /// Output MeshFunction and timestep
-  void write(const MeshFunction<int>& mesh, double t);
+  /// Output mesh::MeshFunction and timestep
+  void write(const mesh::MeshFunction<int>& mesh, double t);
 
-  /// Output MeshFunction and timestep
-  void write(const MeshFunction<std::size_t>& mf, double t);
+  /// Output mesh::MeshFunction and timestep
+  void write(const mesh::MeshFunction<std::size_t>& mf, double t);
 
-  /// Output MeshFunction and timestep
-  void write(const MeshFunction<double>& mf, double t);
+  /// Output mesh::MeshFunction and timestep
+  void write(const mesh::MeshFunction<double>& mf, double t);
 
-  /// Output MeshFunction and timestep
-  void write(const MeshFunction<bool>& mf, double t);
+  /// Output mesh::MeshFunction and timestep
+  void write(const mesh::MeshFunction<bool>& mf, double t);
 
   /// Output function::Function and timestep
   void write(const function::Function& u, double t);
@@ -85,16 +87,16 @@ public:
 private:
   void write_function(const function::Function& u, double time);
 
-  void write_mesh(const Mesh& mesh, double time);
+  void write_mesh(const mesh::Mesh& mesh, double time);
 
-  std::string init(const Mesh& mesh, std::size_t dim) const;
+  std::string init(const mesh::Mesh& mesh, std::size_t dim) const;
 
   void finalize(std::string vtu_filename, double time);
 
   void results_write(const function::Function& u, std::string file) const;
 
-  void write_point_data(const function::GenericFunction& u, const Mesh& mesh,
-                        std::string file) const;
+  void write_point_data(const function::GenericFunction& u,
+                        const mesh::Mesh& mesh, std::string file) const;
 
   void pvd_file_write(std::size_t step, double time, std::string file);
 

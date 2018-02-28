@@ -26,7 +26,7 @@ class UnitTetrahedronMesh
 {
 public:
   /// Create mesh of unit tetrahedron
-  static Mesh create();
+  static mesh::Mesh create();
 };
 }
 }

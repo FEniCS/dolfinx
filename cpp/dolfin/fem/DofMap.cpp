@@ -20,7 +20,8 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh)
+DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
+               const mesh::Mesh& mesh)
     : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
       _global_dimension(0), _ufc_offset(0)
 {
@@ -30,7 +31,8 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh)
   DofMapBuilder::build(*this, mesh, std::shared_ptr<const mesh::SubDomain>());
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh,
+DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
+               const mesh::Mesh& mesh,
                std::shared_ptr<const mesh::SubDomain> constrained_domain)
     : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
       _global_dimension(0), _ufc_offset(0)
@@ -45,7 +47,8 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
-               const std::vector<std::size_t>& component, const Mesh& mesh)
+               const std::vector<std::size_t>& component,
+               const mesh::Mesh& mesh)
     : _cell_dimension(0), _ufc_dofmap(0), _is_view(true), _global_dimension(0),
       _ufc_offset(0), _index_map(parent_dofmap._index_map)
 {
@@ -54,7 +57,7 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
-               const DofMap& dofmap_view, const Mesh& mesh)
+               const DofMap& dofmap_view, const mesh::Mesh& mesh)
     : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
       _global_dimension(0), _ufc_offset(0)
 {
@@ -65,7 +68,7 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   {
     dolfin_error(
         "DofMap.cpp", "create mapping of degrees of freedom",
-        "Mesh is not ordered according to the UFC numbering convention. "
+        "mesh::Mesh is not ordered according to the UFC numbering convention. "
         "Consider calling mesh.order()");
   }
 
@@ -165,7 +168,7 @@ const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const
 const std::set<int>& DofMap::neighbours() const { return _neighbours; }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index_t> DofMap::entity_closure_dofs(
-    const Mesh& mesh, std::size_t entity_dim,
+    const mesh::Mesh& mesh, std::size_t entity_dim,
     const std::vector<std::size_t>& entity_indices) const
 {
   // Get some dimensions
@@ -187,7 +190,7 @@ std::vector<dolfin::la_index_t> DofMap::entity_closure_dofs(
   std::size_t local_entity_ind = 0;
   for (std::size_t i = 0; i < num_marked_entities; ++i)
   {
-    MeshEntity entity(mesh, entity_dim, entity_indices[i]);
+    mesh::MeshEntity entity(mesh, entity_dim, entity_indices[i]);
 
     // Get the first cell connected to the entity
     const mesh::Cell cell(mesh, entity.entities(top_dim)[0]);
@@ -223,7 +226,8 @@ std::vector<dolfin::la_index_t> DofMap::entity_closure_dofs(
 }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index_t>
-DofMap::entity_closure_dofs(const Mesh& mesh, std::size_t entity_dim) const
+DofMap::entity_closure_dofs(const mesh::Mesh& mesh,
+                            std::size_t entity_dim) const
 {
   // Get some dimensions
   const std::size_t top_dim = mesh.topology().dim();
@@ -242,7 +246,7 @@ DofMap::entity_closure_dofs(const Mesh& mesh, std::size_t entity_dim) const
 
   // Iterate over entities
   std::size_t local_entity_ind = 0;
-  for (auto& entity : MeshRange<MeshEntity>(mesh, entity_dim))
+  for (auto& entity : mesh::MeshRange<mesh::MeshEntity>(mesh, entity_dim))
   {
     // Get the first cell connected to the entity
     const mesh::Cell cell(mesh, entity.entities(top_dim)[0]);
@@ -278,7 +282,7 @@ DofMap::entity_closure_dofs(const Mesh& mesh, std::size_t entity_dim) const
 }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index_t>
-DofMap::entity_dofs(const Mesh& mesh, std::size_t entity_dim,
+DofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
                     const std::vector<std::size_t>& entity_indices) const
 {
   // Get some dimensions
@@ -300,7 +304,7 @@ DofMap::entity_dofs(const Mesh& mesh, std::size_t entity_dim,
   std::size_t local_entity_ind = 0;
   for (std::size_t i = 0; i < num_marked_entities; ++i)
   {
-    MeshEntity entity(mesh, entity_dim, entity_indices[i]);
+    mesh::MeshEntity entity(mesh, entity_dim, entity_indices[i]);
 
     // Get the first cell connected to the entity
     const mesh::Cell cell(mesh, entity.entities(top_dim)[0]);
@@ -335,7 +339,7 @@ DofMap::entity_dofs(const Mesh& mesh, std::size_t entity_dim,
 }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index_t>
-DofMap::entity_dofs(const Mesh& mesh, std::size_t entity_dim) const
+DofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const
 {
   // Get some dimensions
   const std::size_t top_dim = mesh.topology().dim();
@@ -354,7 +358,7 @@ DofMap::entity_dofs(const Mesh& mesh, std::size_t entity_dim) const
 
   // Iterate over entities
   std::size_t local_entity_ind = 0;
-  for (auto& entity : MeshRange<MeshEntity>(mesh, entity_dim))
+  for (auto& entity : mesh::MeshRange<mesh::MeshEntity>(mesh, entity_dim))
   {
     // Get the first cell connected to the entity
     const mesh::Cell cell(mesh, entity.entities(top_dim)[0]);
@@ -427,7 +431,7 @@ std::shared_ptr<GenericDofMap> DofMap::copy() const
   return std::shared_ptr<GenericDofMap>(new DofMap(*this));
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericDofMap> DofMap::create(const Mesh& new_mesh) const
+std::shared_ptr<GenericDofMap> DofMap::create(const mesh::Mesh& new_mesh) const
 {
   // Get underlying UFC dof map
   std::shared_ptr<const ufc::dofmap> ufc_dof_map(_ufc_dofmap);
@@ -436,19 +440,19 @@ std::shared_ptr<GenericDofMap> DofMap::create(const Mesh& new_mesh) const
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericDofMap>
 DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
-                           const Mesh& mesh) const
+                           const mesh::Mesh& mesh) const
 {
   return std::shared_ptr<GenericDofMap>(new DofMap(*this, component, mesh));
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericDofMap>
 DofMap::collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
-                 const Mesh& mesh) const
+                 const mesh::Mesh& mesh) const
 {
   return std::shared_ptr<GenericDofMap>(new DofMap(collapsed_map, *this, mesh));
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index_t> DofMap::dofs(const Mesh& mesh,
+std::vector<dolfin::la_index_t> DofMap::dofs(const mesh::Mesh& mesh,
                                              std::size_t dim) const
 {
   // FIXME: This function requires a special case when dim ==
@@ -470,14 +474,14 @@ std::vector<dolfin::la_index_t> DofMap::dofs(const Mesh& mesh,
   if (dim < mesh.topology().dim())
   {
     std::vector<std::size_t> entity_dofs_local;
-    for (auto& c : MeshRange<mesh::Cell>(mesh))
+    for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
     {
       // Get local-to-global dofmap for cell
       const auto cell_dof_list = cell_dofs(c.index());
 
       // Loop over all entities of dimension dim
       unsigned int local_index = 0;
-      for (auto& e : EntityRange<MeshEntity>(c, dim))
+      for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, dim))
       {
         // Tabulate cell-wise index of all dofs on entity
         tabulate_entity_dofs(entity_dofs_local, dim, local_index);
@@ -498,7 +502,7 @@ std::vector<dolfin::la_index_t> DofMap::dofs(const Mesh& mesh,
   else
   {
     std::vector<std::size_t> entity_dofs_local;
-    for (auto& c : MeshRange<mesh::Cell>(mesh))
+    for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
     {
       // Get local-to-global dofmap for cell
       const auto cell_dof_list = cell_dofs(c.index());
@@ -593,7 +597,7 @@ void DofMap::tabulate_local_to_global_dofs(
 }
 //-----------------------------------------------------------------------------
 void DofMap::check_provided_entities(const ufc::dofmap& dofmap,
-                                     const Mesh& mesh)
+                                     const mesh::Mesh& mesh)
 {
   // Check that we have all mesh entities
   for (std::size_t d = 0; d <= mesh.topology().dim(); ++d)

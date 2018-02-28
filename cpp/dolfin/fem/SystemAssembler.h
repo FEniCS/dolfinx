@@ -30,11 +30,8 @@ namespace dolfin
 {
 
 // Forward declarations
-class Facet;
 class PETScMatrix;
 class PETScVector;
-template <typename T>
-class MeshFunction;
 
 namespace common
 {
@@ -50,6 +47,10 @@ class Function;
 namespace mesh
 {
 class Cell;
+class Facet;
+class Mesh;
+template <typename T>
+class MeshFunction;
 }
 
 namespace fem
@@ -120,15 +121,18 @@ private:
   static void cell_wise_assembly(
       std::pair<PETScMatrix*, PETScVector*>& tensors, std::array<UFC*, 2>& ufc,
       Scratch& data, const std::vector<DirichletBC::Map>& boundary_values,
-      std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
-      std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains);
+      std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains,
+      std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+          exterior_facet_domains);
 
   static void facet_wise_assembly(
       std::pair<PETScMatrix*, PETScVector*>& tensors, std::array<UFC*, 2>& ufc,
       Scratch& data, const std::vector<DirichletBC::Map>& boundary_values,
-      std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
-      std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains,
-      std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains);
+      std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains,
+      std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+          exterior_facet_domains,
+      std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+          interior_facet_domains);
 
   // Compute exterior facet (and possibly connected cell)
   // contribution
@@ -137,7 +141,7 @@ private:
       ufc::cell& ufc_cell, Eigen::Ref<EigenRowMatrixXd> coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
-      const Facet& facet,
+      const mesh::Facet& facet,
       const std::array<const ufc::cell_integral*, 2>& cell_integrals,
       const std::array<const ufc::exterior_facet_integral*, 2>&
           exterior_facet_integrals,

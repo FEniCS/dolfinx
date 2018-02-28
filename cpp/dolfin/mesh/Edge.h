@@ -10,6 +10,9 @@
 
 namespace dolfin
 {
+
+namespace mesh
+{
 class Mesh;
 
 /// An Edge is a _MeshEntity_ of topological dimension 1.
@@ -66,4 +69,5 @@ public:
   /// @endcode
   double dot(const Edge& edge) const;
 };
+}
 }

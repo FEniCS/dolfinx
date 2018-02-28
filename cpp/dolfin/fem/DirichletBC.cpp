@@ -53,7 +53,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::FunctionSpace> V,
     std::shared_ptr<const function::GenericFunction> g,
-    std::shared_ptr<const MeshFunction<std::size_t>> sub_domains,
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>> sub_domains,
     std::size_t sub_domain, std::string method)
     : _function_space(V), _g(g), _method(method), _num_dofs(0),
       _user_mesh_function(sub_domains), _user_sub_domain_marker(sub_domain),
@@ -313,36 +313,36 @@ void DirichletBC::check() const
   if (!_function_space->mesh()->ordered())
   {
     dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
-                 "Mesh is not ordered according to the UFC numbering "
+                 "mesh::Mesh is not ordered according to the UFC numbering "
                  "convention. Consider calling mesh.order()");
   }
 
-  // Check user supplied MeshFunction
+  // Check user supplied mesh::MeshFunction
   if (_user_mesh_function)
   {
-    // Check that Meshfunction is initialised
+    // Check that mesh::Meshfunction is initialised
     if (!_user_mesh_function->mesh())
     {
       dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
-                   "User MeshFunction is not initialized");
+                   "User mesh::MeshFunction is not initialized");
     }
 
-    // Check that Meshfunction is a FacetFunction
+    // Check that mesh::Meshfunction is a mesh::FacetFunction
     const std::size_t tdim = _user_mesh_function->mesh()->topology().dim();
     if (_user_mesh_function->dim() != tdim - 1)
     {
-      dolfin_error(
-          "DirichletBC.cpp", "create Dirichlet boundary condition",
-          "User MeshFunction is not a facet MeshFunction (dimension is wrong)");
+      dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
+                   "User mesh::MeshFunction is not a facet mesh::MeshFunction "
+                   "(dimension is wrong)");
     }
 
-    // Check that Meshfunction and function::FunctionSpace meshes match
+    // Check that mesh::Meshfunction and function::FunctionSpace meshes match
     dolfin_assert(_function_space->mesh());
     if (_user_mesh_function->mesh()->id() != _function_space->mesh()->id())
     {
-      dolfin_error(
-          "DirichletBC.cpp", "create Dirichlet boundary condition",
-          "User MeshFunction and function::FunctionSpace meshes are different");
+      dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
+                   "User mesh::MeshFunction and function::FunctionSpace meshes "
+                   "are different");
     }
   }
 }
@@ -366,19 +366,19 @@ void DirichletBC::init_from_sub_domain(
   dolfin_assert(_facets.empty());
 
   // FIXME: This can be made more efficient, we should be able to
-  // FIXME: extract the facets without first creating a MeshFunction on
+  // FIXME: extract the facets without first creating a mesh::MeshFunction on
   // FIXME: the entire mesh and then extracting the subset. This is done
   // FIXME: mainly for convenience (we may reuse mark() in SubDomain).
 
   dolfin_assert(_function_space->mesh());
-  std::shared_ptr<const Mesh> mesh = _function_space->mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
   dolfin_assert(mesh);
 
   // Create mesh function for sub domain markers on facets and mark
   // all facet as subdomain 1
   const std::size_t dim = mesh->topology().dim();
   _function_space->mesh()->init(dim - 1);
-  MeshFunction<std::size_t> sub_domains(mesh, dim - 1, 1);
+  mesh::MeshFunction<std::size_t> sub_domains(mesh, dim - 1, 1);
 
   // Set geometric dimension (needed for SWIG interface)
   sub_domain->_geometric_dimension = mesh->geometry().dim();
@@ -391,11 +391,12 @@ void DirichletBC::init_from_sub_domain(
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::init_from_mesh_function(
-    const MeshFunction<std::size_t>& sub_domains, std::size_t sub_domain) const
+    const mesh::MeshFunction<std::size_t>& sub_domains,
+    std::size_t sub_domain) const
 {
   // Get mesh
   dolfin_assert(_function_space->mesh());
-  const Mesh& mesh = *_function_space->mesh();
+  const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Make sure we have the facet - cell connectivity
   const std::size_t D = mesh.topology().dim();
@@ -403,7 +404,7 @@ void DirichletBC::init_from_mesh_function(
 
   // Build set of boundary facets
   dolfin_assert(_facets.empty());
-  for (auto& facet : MeshRange<Facet>(mesh))
+  for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
     if (sub_domains[facet] == sub_domain)
       _facets.push_back(facet.index());
@@ -441,7 +442,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 
   // Get mesh and dofmap
   dolfin_assert(_function_space->mesh());
-  const Mesh& mesh = *_function_space->mesh();
+  const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Extract the list of facets where the BC should be applied
   init_facets(mesh.mpi_comm());
@@ -478,7 +479,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   for (std::size_t f = 0; f < _facets.size(); ++f)
   {
     // Create facet
-    const Facet facet(mesh, _facets[f]);
+    const mesh::Facet facet(mesh, _facets[f]);
 
     // Get cell to which facet belongs.
     dolfin_assert(facet.num_entities(D) > 0);
@@ -523,7 +524,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 
   // Get mesh
   dolfin_assert(_function_space->mesh());
-  const Mesh& mesh = *_function_space->mesh();
+  const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Extract the list of facets where the BC *might* be applied
   init_facets(mesh.mpi_comm());
@@ -564,7 +565,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   for (std::size_t f = 0; f < _facets.size(); ++f)
   {
     // Create facet
-    const Facet facet(mesh, _facets[f]);
+    const mesh::Facet facet(mesh, _facets[f]);
 
     // Create cell (get first attached cell)
     const mesh::Cell cell(mesh, facet.entities(D)[0]);
@@ -577,10 +578,10 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
     std::vector<double> coordinate_dofs;
 
     // Loop the vertices associated with the facet
-    for (auto& vertex : EntityRange<Vertex>(facet))
+    for (auto& vertex : mesh::EntityRange<mesh::Vertex>(facet))
     {
       // Loop the cells associated with the vertex
-      for (auto& c : EntityRange<mesh::Cell>(vertex))
+      for (auto& c : mesh::EntityRange<mesh::Cell>(vertex))
       {
         c.get_coordinate_dofs(coordinate_dofs);
         c.get_cell_data(ufc_cell, local_facet);
@@ -655,7 +656,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   dolfin_assert(_function_space->mesh());
   const GenericDofMap& dofmap = *_function_space->dofmap();
   const FiniteElement& element = *_function_space->element();
-  const Mesh& mesh = *_function_space->mesh();
+  const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Geometric dim
   const std::size_t gdim = mesh.geometry().dim();
@@ -678,7 +679,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   {
     // First time around all cells must be iterated over.  Create map
     // from cells attached to boundary to local dofs.
-    for (auto& cell : MeshRange<mesh::Cell>(mesh))
+    for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
     {
       // Update UFC cell
       cell.get_coordinate_dofs(coordinate_dofs);
@@ -776,15 +777,16 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   _num_dofs = boundary_values.size();
 }
 //-----------------------------------------------------------------------------
-bool DirichletBC::on_facet(const double* coordinates, const Facet& facet) const
+bool DirichletBC::on_facet(const double* coordinates,
+                           const mesh::Facet& facet) const
 {
   // Check if the coordinates are on the same line as the line segment
   if (facet.dim() == 1)
   {
     // Create points
     Point p(coordinates[0], coordinates[1]);
-    const Point v0 = Vertex(facet.mesh(), facet.entities(0)[0]).point();
-    const Point v1 = Vertex(facet.mesh(), facet.entities(0)[1]).point();
+    const Point v0 = mesh::Vertex(facet.mesh(), facet.entities(0)[0]).point();
+    const Point v1 = mesh::Vertex(facet.mesh(), facet.entities(0)[1]).point();
 
     // Create vectors
     const Point v01 = v1 - v0;
@@ -804,9 +806,9 @@ bool DirichletBC::on_facet(const double* coordinates, const Facet& facet) const
   {
     // Create points
     const Point p(coordinates[0], coordinates[1], coordinates[2]);
-    const Point v0 = Vertex(facet.mesh(), facet.entities(0)[0]).point();
-    const Point v1 = Vertex(facet.mesh(), facet.entities(0)[1]).point();
-    const Point v2 = Vertex(facet.mesh(), facet.entities(0)[2]).point();
+    const Point v0 = mesh::Vertex(facet.mesh(), facet.entities(0)[0]).point();
+    const Point v1 = mesh::Vertex(facet.mesh(), facet.entities(0)[1]).point();
+    const Point v2 = mesh::Vertex(facet.mesh(), facet.entities(0)[2]).point();
 
     // Create vectors
     const Point v01 = v1 - v0;

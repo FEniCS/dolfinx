@@ -47,7 +47,7 @@ void AssemblerBase::check(const Form& a)
 {
   // Extract mesh and coefficients
   dolfin_assert(a.mesh());
-  const Mesh& mesh = *(a.mesh());
+  const mesh::Mesh& mesh = *(a.mesh());
 
   // Check ghost mode for interior facet integrals in parallel
   if (a.integrals().num_interior_facet_integrals() > 0

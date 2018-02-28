@@ -10,6 +10,7 @@
 #include <sstream>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 MeshGeometry::MeshGeometry() : _dim(0), _degree(1)

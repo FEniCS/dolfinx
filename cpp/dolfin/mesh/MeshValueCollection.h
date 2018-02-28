@@ -18,6 +18,8 @@
 
 namespace dolfin
 {
+namespace mesh
+{
 
 /// The MeshValueCollection class can be used to store data
 /// associated with a subset of the entities of a mesh of a given
@@ -514,4 +516,5 @@ std::string MeshValueCollection<T>::str(bool verbose) const
   return s.str();
 }
 //---------------------------------------------------------------------------
+}
 }
