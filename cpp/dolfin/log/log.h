@@ -13,7 +13,10 @@ namespace dolfin
 {
 
 class Variable;
+namespace parameter
+{
 class Parameters;
+}
 
 /// The DOLFIN log system provides the following set of functions for
 /// uniform handling of log messages, warnings and errors. In addition,
@@ -27,7 +30,7 @@ class Parameters;
 void info(std::string msg, ...);
 
 /// Print parameter (using output of str() method)
-void info(const Parameters& parameters, bool verbose = false);
+void info(const parameter::Parameters& parameters, bool verbose = false);
 
 /// Print variable (using output of str() method)
 void info(const Variable& variable, bool verbose = false);

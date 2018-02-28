@@ -65,7 +65,7 @@ void dolfin::info(const Variable& variable, bool verbose)
   info(variable.str(verbose));
 }
 //-----------------------------------------------------------------------------
-void dolfin::info(const Parameters& parameters, bool verbose)
+void dolfin::info(const dolfin::parameter::Parameters& parameters, bool verbose)
 {
   // Need separate function for Parameters since we can't make Parameters
   // a subclass of Variable (gives cyclic dependencies)

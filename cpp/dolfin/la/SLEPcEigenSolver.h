@@ -165,9 +165,9 @@ public:
   MPI_Comm mpi_comm() const;
 
   /// Default parameter values
-  static Parameters default_parameters()
+  static parameter::Parameters default_parameters()
   {
-    Parameters p("slepc_eigenvalue_solver");
+    parameter::Parameters p("slepc_eigenvalue_solver");
     p.add<std::string>("problem_type");
     p.add<std::string>("spectrum");
     p.add<std::string>("solver");

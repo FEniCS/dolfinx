@@ -102,7 +102,7 @@ public:
   /// *Returns*
   ///     _Parameters_
   ///         Parameter values.
-  static Parameters default_parameters();
+  static parameter::Parameters default_parameters();
 
   /// Set relaxation parameter. Default value 1.0 means full
   /// Newton method, value smaller than 1.0 relaxes the method

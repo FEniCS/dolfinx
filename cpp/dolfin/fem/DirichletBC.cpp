@@ -85,7 +85,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const DirichletBC& bc) { *this = bc; }
-//-----------------------------------------------------------------------------
+//-----------------------parame------------------------------------------------------
 DirichletBC::~DirichletBC()
 {
   // Do nothing

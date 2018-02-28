@@ -15,6 +15,7 @@
 #include <sstream>
 
 using namespace dolfin;
+using namespace dolfin::parameter;
 namespace po = boost::program_options;
 
 //-----------------------------------------------------------------------------

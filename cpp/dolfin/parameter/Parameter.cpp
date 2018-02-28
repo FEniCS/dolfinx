@@ -10,6 +10,7 @@
 #include <sstream>
 
 using namespace dolfin;
+using namespace dolfin::parameter;
 
 //-----------------------------------------------------------------------------
 Parameter::Parameter(std::string key, const char* x)

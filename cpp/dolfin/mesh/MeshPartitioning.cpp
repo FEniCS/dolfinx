@@ -44,7 +44,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
     LocalMeshData local_mesh_data(mesh);
 
     // Build distributed mesh
-    build_distributed_mesh(mesh, local_mesh_data, parameters["ghost_mode"]);
+    build_distributed_mesh(mesh, local_mesh_data, parameter::parameters["ghost_mode"]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   mesh._ghost_mode = ghost_mode;
 
   // Get mesh partitioner
-  const std::string partitioner = parameters["mesh_partitioner"];
+  const std::string partitioner = parameter::parameters["mesh_partitioner"];
 
   // MPI communicator
   MPI_Comm comm = mesh.mpi_comm();
@@ -218,7 +218,7 @@ void MeshPartitioning::build(
   }
 
 #ifdef HAS_SCOTCH
-  if (parameters["reorder_cells_gps"])
+  if (parameter::parameters["reorder_cells_gps"])
   {
     // Create CellType objects based on current cell type
     std::unique_ptr<mesh::CellType> cell_type(
@@ -236,7 +236,7 @@ void MeshPartitioning::build(
                       reordered_shared_cells, reordered_cell_vertices,
                       reordered_global_cell_indices);
 
-    // Update to re-ordered indices
+    // Update to paramre-ordered indices
     std::swap(shared_cells, reordered_shared_cells);
     std::swap(new_cell_vertices, reordered_cell_vertices);
     std::swap(new_global_cell_indices, reordered_global_cell_indices);
@@ -253,7 +253,7 @@ void MeshPartitioning::build(
       vertex_global_to_local);
 
 #ifdef HAS_SCOTCH
-  if (parameters["reorder_vertices_gps"])
+  if (parameter::parameters["reorder_vertices_gps"])
   {
     // Allocate objects to hold re-ordering
     std::vector<std::int64_t> reordered_vertex_indices;

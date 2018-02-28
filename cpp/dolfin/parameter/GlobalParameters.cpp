@@ -12,9 +12,10 @@
 #include <iostream>
 
 using namespace dolfin;
+using namespace dolfin::parameter;
 
 /// The global parameter database
-GlobalParameters dolfin::parameters;
+GlobalParameters dolfin::parameter::parameters;
 
 //-----------------------------------------------------------------------------
 GlobalParameters::GlobalParameters() : Parameters("dolfin")

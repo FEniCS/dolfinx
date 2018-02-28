@@ -18,9 +18,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Parameters dolfin::nls::NewtonSolver::default_parameters()
+parameter::Parameters dolfin::nls::NewtonSolver::default_parameters()
 {
-  Parameters p("newton_solver");
+  parameter::Parameters p("newton_solver");
 
   p.add("linear_solver", "default");
   p.add("preconditioner", "default");

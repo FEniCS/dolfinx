@@ -1378,7 +1378,7 @@ void XDMFFile::read(mesh::Mesh& mesh) const
   local_mesh_data.check();
 
   // Build mesh
-  const std::string ghost_mode = dolfin::parameters["ghost_mode"];
+  const std::string ghost_mode = parameter::parameters["ghost_mode"];
   mesh::MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data,
                                                  ghost_mode);
 }

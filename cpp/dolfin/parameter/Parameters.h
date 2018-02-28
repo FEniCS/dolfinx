@@ -25,6 +25,8 @@ class options_description;
 
 namespace dolfin
 {
+namespace parameter
+{
 
 /// This class stores a set of parameters. Each parameter is
 /// identified by a unique string (the key) and a value of some
@@ -307,5 +309,5 @@ public:
 /// Default empty parameters
 extern Parameters empty_parameters;
 }
-
+}
 

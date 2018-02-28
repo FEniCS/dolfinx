@@ -53,7 +53,7 @@ public:
   virtual std::string str(bool verbose) const;
 
   /// Parameters
-  Parameters parameters;
+  parameter::Parameters parameters;
 
 private:
   // Name

@@ -48,7 +48,7 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
   // _hdf5_file_id(0)
 
   // HDF5 chunking
-  parameters.add("chunking", false);
+  parameter::parameters.add("chunking", false);
 
   // Create directory, if required (create on rank 0)
   if (_mpi_comm.rank() == 0)
@@ -145,7 +145,7 @@ void HDF5File::write(const la::PETScVector& x, const std::string dataset_name)
 
   // Write data to file
   const auto local_range = x.local_range();
-  const bool chunking = parameters["chunking"];
+  const bool chunking = parameter::parameters["chunking"];
   const std::vector<std::int64_t> global_size(1, x.size());
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
   HDF5Interface::write_dataset(_hdf5_file_id, dataset_name, local_data,
@@ -1901,7 +1901,7 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
 
   t.stop();
 
-  const std::string ghost_mode = dolfin::parameters["ghost_mode"];
+  const std::string ghost_mode = parameter::parameters["ghost_mode"];
   mesh::MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data,
                                                  ghost_mode);
 }

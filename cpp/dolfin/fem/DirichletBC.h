@@ -263,9 +263,9 @@ public:
 
   /// Default parameter values
   /// @return Parameters
-  static Parameters default_parameters()
+  static parameter::Parameters default_parameters()
   {
-    Parameters p("dirichlet_bc");
+    parameter::Parameters p("dirichlet_bc");
     p.add("use_ident", true);
     p.add("check_dofmap_range", true);
     return p;

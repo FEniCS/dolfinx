@@ -54,7 +54,7 @@ void DofMapBuilder::build(
 
   // Check if UFC dofmap should not be re-ordered (only applicable in
   // serial)
-  const bool reorder_ufc = dolfin::parameters["reorder_dofs_serial"];
+  const bool reorder_ufc = dolfin::parameter::parameters["reorder_dofs_serial"];
   const bool reorder = (distributed or reorder_ufc) ? true : false;
 
   // Sanity checks on UFC dofmap
@@ -1535,7 +1535,7 @@ void DofMapBuilder::compute_node_reordering(
 
   // Reorder nodes
   const std::string ordering_library
-      = dolfin::parameters["dof_ordering_library"];
+      = dolfin::parameter::parameters["dof_ordering_library"];
   std::vector<int> node_remap;
   if (ordering_library == "Boost")
   {

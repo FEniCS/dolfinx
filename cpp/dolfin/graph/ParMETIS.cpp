@@ -325,7 +325,7 @@ void dolfin::graph::ParMETIS::adaptive_repartition(
   // better edge cut.
 
   common::Timer timer1("ParMETIS: call ParMETIS_V3_AdaptiveRepart");
-  const double itr = parameters["ParMETIS_repartitioning_weight"];
+  const double itr = parameter::parameters["ParMETIS_repartitioning_weight"];
   real_t _itr = itr;
   std::vector<idx_t> part(csr_graph.size());
   std::vector<idx_t> vsize(part.size(), 1);
