@@ -22,6 +22,7 @@
 
 import numpy as np
 from dolfin import *
+from dolfin.plotting import plot
 
 # Create classes for defining parts of the boundaries and the interior
 # of the domain
@@ -103,6 +104,9 @@ a, L = lhs(F), rhs(F)
 u = Function(V)
 solve(a == L, u, bcs)
 
+w = u.vector().get_local()
+print (w.min(), w.max())
+
 # Evaluate integral of normal gradient over top boundary
 n = FacetNormal(mesh)
 m1 = dot(grad(u), n)*ds(2)
@@ -120,8 +124,8 @@ plt.figure()
 plot(u, title="Solution u")
 
 # Plot solution and gradient
-plt.figure()
-plot(grad(u), title="Projected grad(u)")
+# plt.figure()
+# plot(grad(u), title="Projected grad(u)")
 
 # Show plots
 plt.show()
