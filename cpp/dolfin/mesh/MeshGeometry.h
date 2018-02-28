@@ -122,7 +122,7 @@ public:
     case 3:
       return (_degree - 3) * (_degree - 2) * (_degree - 1) / 6;
     }
-    dolfin_error("MeshGeometry.h", "calculate number of points",
+    log::dolfin_error("MeshGeometry.h", "calculate number of points",
                  "Entity dimension out of range");
     return 0;
   }

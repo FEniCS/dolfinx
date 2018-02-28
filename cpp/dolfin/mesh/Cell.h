@@ -58,7 +58,7 @@ public:
   ///
   ///         UnitSquare mesh(1, 1);
   ///         Cell cell(mesh, 0);
-  ///         info("%g", cell.volume());
+  ///         log::info("%g", cell.volume());
   ///
   /// @endcode
   double volume() const { return _mesh->type().volume(*this); }
@@ -72,7 +72,7 @@ public:
   ///
   ///         UnitSquareMesh mesh(1, 1);
   ///         Cell cell(mesh, 0);
-  ///         info("%g", cell.h());
+  ///         log::info("%g", cell.h());
   ///
   /// @endcode
   double h() const { return _mesh->type().h(*this); }
@@ -86,7 +86,7 @@ public:
   ///
   ///         UnitSquareMesh mesh(1, 1);
   ///         Cell cell(mesh, 0);
-  ///         info("%g", cell.circumradius());
+  ///         log::info("%g", cell.circumradius());
   ///
   /// @endcode
   double circumradius() const { return _mesh->type().circumradius(*this); }
@@ -100,7 +100,7 @@ public:
   ///
   ///         UnitSquareMesh mesh(1, 1);
   ///         Cell cell(mesh, 0);
-  ///         info("%g", cell.inradius());
+  ///         log::info("%g", cell.inradius());
   ///
   /// @endcode
   double inradius() const
@@ -124,7 +124,7 @@ public:
   ///
   ///         UnitSquareMesh mesh(1, 1);
   ///         Cell cell(mesh, 0);
-  ///         info("%g", cell.radius_ratio());
+  ///         log::info("%g", cell.radius_ratio());
   ///
   /// @endcode
   double radius_ratio() const
@@ -280,7 +280,7 @@ public:
     }
     else
     {
-      dolfin_error("Cell.h", "get coordinate_dofs", "Unsupported mesh degree");
+      log::dolfin_error("Cell.h", "get coordinate_dofs", "Unsupported mesh degree");
     }
   }
 

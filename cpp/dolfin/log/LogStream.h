@@ -23,6 +23,9 @@ namespace geometry
 class Point;
 }
 
+namespace log
+{
+
 /// This class provides functionality similar to standard C++
 /// streams (std::cout, std::endl) for output but working through
 /// the DOLFIN log system.
@@ -83,10 +86,11 @@ private:
   // Buffer
   std::stringstream buffer;
 };
+}
 
 /// dolfin::cout
-extern LogStream cout;
+extern log::LogStream cout;
 
 /// dolfin::endl;
-extern LogStream endl;
+extern log::LogStream endl;
 }

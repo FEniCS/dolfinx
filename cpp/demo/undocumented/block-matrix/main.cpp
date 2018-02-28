@@ -65,5 +65,5 @@ int main()
 
   // Multiply
   AA.mult(xx, yy);
-  info("||Ax|| = %g", y->norm("l2"));
+  log::info("||Ax|| = %g", y->norm("l2"));
 }

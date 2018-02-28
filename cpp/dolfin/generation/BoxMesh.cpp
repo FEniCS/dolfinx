@@ -62,14 +62,14 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<geometry::Point, 2
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS
       || std::abs(z0 - z1) < DOLFIN_EPS)
   {
-    dolfin_error("BoxMesh.cpp", "create box", "Box seems to have zero width, "
+    log::dolfin_error("BoxMesh.cpp", "create box", "Box seems to have zero width, "
                                               "height or depth. Consider "
                                               "checking your dimensions");
   }
 
   if (nx < 1 || ny < 1 || nz < 1)
   {
-    dolfin_error("BoxMesh.cpp", "create box", "BoxMesh has non-positive number "
+    log::dolfin_error("BoxMesh.cpp", "create box", "BoxMesh has non-positive number "
                                               "of vertices in some dimension: "
                                               "number of vertices must be at "
                                               "least 1 in each dimension");

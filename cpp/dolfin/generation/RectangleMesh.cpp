@@ -38,7 +38,7 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
   if (diagonal != "left" && diagonal != "right" && diagonal != "right/left"
       && diagonal != "left/right" && diagonal != "crossed")
   {
-    dolfin_error("RectangleMesh.cpp", "create rectangle",
+    log::dolfin_error("RectangleMesh.cpp", "create rectangle",
                  "Unknown mesh diagonal definition: allowed options are "
                  "\"left\", \"right\", \"left/right\", \"right/left\" and "
                  "\"crossed\"");
@@ -65,14 +65,14 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
 
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS)
   {
-    dolfin_error("Rectangle.cpp", "create rectangle",
+    log::dolfin_error("Rectangle.cpp", "create rectangle",
                  "Rectangle seems to have zero width, height or depth. "
                  "Consider checking your dimensions");
   }
 
   if (nx < 1 || ny < 1)
   {
-    dolfin_error("RectangleMesh.cpp", "create rectangle",
+    log::dolfin_error("RectangleMesh.cpp", "create rectangle",
                  "Rectangle has non-positive number of vertices in some "
                  "dimension: number of vertices must be at least 1 in each "
                  "dimension");

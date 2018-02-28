@@ -168,7 +168,7 @@ private:
   // List of full rows (or columns, according to primary dimension).
   // Full rows are kept separately to circumvent quadratic scaling
   // (caused by linear insertion time into dolfin::Set; std::set has
-  // logarithmic insertion, which would result in N log(N) overall
+  // logarithmic insertion, which would result in N log::log(N) overall
   // complexity for dense rows)
   set_type _full_rows;
 

@@ -37,7 +37,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   dolfin_assert(V1.mesh());
   if (&mesh != V1.mesh().get())
   {
-    dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
+    log::dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
                  "function spaces do not share the same mesh");
   }
 
@@ -45,14 +45,14 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   mesh.init(1);
   if (V0.dim() != mesh.num_entities_global(1))
   {
-    dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
+    log::dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
                  "function spaces is not a lowest-order edge space");
   }
 
   // Check that V1 is a linear nodal basis
   if (V1.dim() != mesh.num_entities_global(0))
   {
-    dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
+    log::dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
                  "function space is not a linear nodal function space");
   }
 

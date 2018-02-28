@@ -69,7 +69,7 @@ void SystemAssembler::check_arity(std::shared_ptr<const Form> a,
   {
     if (a->rank() != 2)
     {
-      dolfin_error("SystemAssembler.cpp", "assemble system",
+      log::dolfin_error("SystemAssembler.cpp", "assemble system",
                    "expected a bilinear form for a");
     }
   }
@@ -79,7 +79,7 @@ void SystemAssembler::check_arity(std::shared_ptr<const Form> a,
   {
     if (L->rank() != 1)
     {
-      dolfin_error("SystemAssembler.cpp", "assemble system",
+      log::dolfin_error("SystemAssembler.cpp", "assemble system",
                    "expected a linear form for L");
     }
   }
@@ -92,7 +92,7 @@ _pick_one_meshfunction(std::string name,
 {
   if ((a && b) && a != b)
   {
-    warning("Bilinear and linear forms do not have same %s subdomains in "
+    log::warning("Bilinear and linear forms do not have same %s subdomains in "
             "SystemAssembler. Taking %s subdomains from bilinear form",
             name.c_str(), name.c_str());
   }
@@ -152,7 +152,7 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   // Check that forms share a function space
   if (*_a->function_space(0) != *_l->function_space(0))
   {
-    dolfin_error("SystemAssembler.cpp", "assemble system",
+    log::dolfin_error("SystemAssembler.cpp", "assemble system",
                  "expected forms (a, L) to share a function::FunctionSpace");
   }
 
@@ -163,7 +163,7 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   if (_a->integrals().num_vertex_integrals() > 0
       or _l->integrals().num_vertex_integrals() > 0)
   {
-    dolfin_error("SystemAssembler.cpp", "assemble system",
+    log::dolfin_error("SystemAssembler.cpp", "assemble system",
                  "Point integrals are not supported (yet)");
   }
 
@@ -199,7 +199,7 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
     // Fetch bc on axis0
     if (axis0)
     {
-      log(TRACE, "System assembler: boundary condition %d applies to axis 0",
+      log::log(TRACE, "System assembler: boundary condition %d applies to axis 0",
           i);
       _bcs[i]->get_boundary_values(boundary_values[0]);
       if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
@@ -209,7 +209,7 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
     // Fetch bc on axis1
     if (axis1)
     {
-      log(TRACE, "System assembler: boundary condition %d applies to axis 1",
+      log::log(TRACE, "System assembler: boundary condition %d applies to axis 1",
           i);
       _bcs[i]->get_boundary_values(boundary_values[1]);
       if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
@@ -218,7 +218,7 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
 
     if (!axis0 && !axis1)
     {
-      log(TRACE,
+      log::log(TRACE,
           "System assembler: ignoring inapplicable boundary condition %d", i);
     }
   }

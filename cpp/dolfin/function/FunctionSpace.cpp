@@ -137,7 +137,7 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
   // Check that function ranks match
   if (_element->value_rank() != v.value_rank())
   {
-    dolfin_error(
+    log::dolfin_error(
         "FunctionSpace.cpp", "interpolate function into function space",
         "Rank of function (%d) does not match rank of function space (%d)",
         v.value_rank(), element()->value_rank());
@@ -148,7 +148,7 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
   {
     if (_element->value_dimension(i) != v.value_dimension(i))
     {
-      dolfin_error("FunctionSpace.cpp",
+      log::dolfin_error("FunctionSpace.cpp",
                    "interpolate function into function space",
                    "Dimension %d of function (%d) does not match dimension %d "
                    "of function space (%d)",
@@ -159,7 +159,7 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
   // Initialize vector of expansion coefficients
   if (expansion_coefficients.size() != _dofmap->global_dimension())
   {
-    dolfin_error("FunctionSpace.cpp",
+    log::dolfin_error("FunctionSpace.cpp",
                  "interpolate function into function space",
                  "Wrong size of vector");
   }
@@ -225,7 +225,7 @@ std::shared_ptr<FunctionSpace> FunctionSpace::collapse(
 
   if (_component.empty())
   {
-    dolfin_error("FunctionSpace.cpp", "collapse function space",
+    log::dolfin_error("FunctionSpace.cpp", "collapse function space",
                  "Function space is not a subspace");
   }
 
@@ -251,7 +251,7 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
 
   if (!_component.empty())
   {
-    dolfin_error(
+    log::dolfin_error(
         "FunctionSpace.cpp", "tabulate_dof_coordinates",
         "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
   }

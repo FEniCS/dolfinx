@@ -134,7 +134,7 @@ void PointSource::distribute_sources(
     }
     if (!found)
     {
-      dolfin_error(
+      log::dolfin_error(
           "PointSource.cpp", "apply point source to vector",
           "The point is outside of the domain"); // (%s)", p.str().c_str());
     }
@@ -159,10 +159,10 @@ void PointSource::apply(la::PETScVector& b)
   dolfin_assert(_function_space0);
   if (_function_space1)
   {
-    dolfin_error("PointSource.cpp", "apply point source to vector",
+    log::dolfin_error("PointSource.cpp", "apply point source to vector",
                  "Can only have one function space for a vector");
   }
-  log(PROGRESS, "Applying point source to right-hand side vector.");
+  log::log(PROGRESS, "Applying point source to right-hand side vector.");
 
   dolfin_assert(_function_space0->mesh());
   const mesh::Mesh& mesh = *_function_space0->mesh();
@@ -232,14 +232,14 @@ void PointSource::apply(la::PETScMatrix& A)
   if (_function_space0->element()->signature()
       != _function_space1->element()->signature())
   {
-    dolfin_error("PointSource.cpp", "apply point source to matrix",
+    log::dolfin_error("PointSource.cpp", "apply point source to matrix",
                  "The elemnts are different. Not currently implemented");
   }
 
   std::shared_ptr<const function::FunctionSpace> V0 = _function_space0;
   std::shared_ptr<const function::FunctionSpace> V1 = _function_space1;
 
-  log(PROGRESS, "Applying point source to matrix.");
+  log::log(PROGRESS, "Applying point source to matrix.");
 
   dolfin_assert(V0->mesh());
   dolfin_assert(V0->element());
@@ -296,14 +296,14 @@ void PointSource::apply(la::PETScMatrix& A)
       if (V0->sub({0})->element()->signature()
           != V0->sub({n})->element()->signature())
       {
-        dolfin_error(
+        log::dolfin_error(
             "PointSource.cpp", "apply point source to matrix",
             "The mixed elements are not the same. Not currently implemented");
       }
 
       if (V0->sub({n})->element()->num_sub_elements() > 1)
       {
-        dolfin_error("PointSource.cpp", "apply point source to matrix",
+        log::dolfin_error("PointSource.cpp", "apply point source to matrix",
                      "Have vector elements. Not currently implemented");
       }
     }
@@ -387,7 +387,7 @@ void PointSource::check_space_supported(const function::FunctionSpace& V)
   dolfin_assert(V.element());
   if (V.element()->value_rank() > 1)
   {
-    dolfin_error("PointSource.cpp", "create point source",
+    log::dolfin_error("PointSource.cpp", "create point source",
                  "function::Function must have rank 0 or 1");
   }
 }

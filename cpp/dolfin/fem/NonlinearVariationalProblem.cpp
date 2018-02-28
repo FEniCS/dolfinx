@@ -102,7 +102,7 @@ void NonlinearVariationalProblem::check_forms() const
   dolfin_assert(_residual);
   if (_residual->rank() != 1)
   {
-    dolfin_error("NonlinearVariationalProblem.cpp",
+    log::dolfin_error("NonlinearVariationalProblem.cpp",
                  "define nonlinear variational problem F(u; v) = 0 for all v",
                  "Expecting the residual F to be a linear form (not rank %d)",
                  _residual->rank());
@@ -111,7 +111,7 @@ void NonlinearVariationalProblem::check_forms() const
   // Check rank of Jacobian J
   if (_jacobian && _jacobian->rank() != 2)
   {
-    dolfin_error("NonlinearVariationalProblem.cpp",
+    log::dolfin_error("NonlinearVariationalProblem.cpp",
                  "define nonlinear variational problem F(u; v) = 0 for all v",
                  "Expecting the Jacobian J to be a bilinear form (not rank %d)",
                  _jacobian->rank());
@@ -132,7 +132,7 @@ void NonlinearVariationalProblem::check_forms() const
     dolfin_assert(bc_space);
     if (!trial_space->contains(*bc_space))
     {
-      dolfin_error("NonlinearVariationalProblem.cpp",
+      log::dolfin_error("NonlinearVariationalProblem.cpp",
                    "define nonlinear variational problem F(u; v) = 0 for all v",
                    "Expecting the boundary conditions to to live on (a "
                    "subspace of) the trial space");

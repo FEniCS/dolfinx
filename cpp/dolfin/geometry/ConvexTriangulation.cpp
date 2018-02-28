@@ -177,7 +177,7 @@ ConvexTriangulation::triangulate(const std::vector<Point>& p, std::size_t gdim,
     return triangulate_graham_scan_3d(p);
   }
 
-  dolfin_error("ConvexTriangulation.cpp", "triangulate convex polyhedron",
+  log::dolfin_error("ConvexTriangulation.cpp", "triangulate convex polyhedron",
                "Triangulation of polyhedron of topological dimension %u and "
                "geometric dimension %u not implemented",
                tdim, gdim);
@@ -196,7 +196,7 @@ ConvexTriangulation::_triangulate_1d(const std::vector<Point>& p,
 
   if (gdim != 2)
   {
-    dolfin_error("ConvexTriangulation.cpp", "triangulate topological 1d",
+    log::dolfin_error("ConvexTriangulation.cpp", "triangulate topological 1d",
                  "Function is only implemented for gdim = 2");
   }
 
@@ -226,7 +226,7 @@ ConvexTriangulation::_triangulate_1d(const std::vector<Point>& p,
     std::vector<std::vector<Point>> t = {{average}};
     return t;
 
-    dolfin_error("ConvexTriangulation.cpp", "triangulate convex polyhedron",
+    log::dolfin_error("ConvexTriangulation.cpp", "triangulate convex polyhedron",
                  "A convex polyhedron of topological dimension 1 can not have "
                  "more than 2 points");
   }
@@ -402,7 +402,7 @@ ConvexTriangulation::_triangulate_graham_scan_3d(
 
 #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
                 if (cgal_tet_is_degenerate(cand))
-                  dolfin_error("ConvexTriangulation.cpp",
+                  log::dolfin_error("ConvexTriangulation.cpp",
                                "triangulation 3d points", "tet is degenerate");
 
 #endif
@@ -448,14 +448,14 @@ ConvexTriangulation::_triangulate_graham_scan_3d(
 #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
                   if (cgal_tet_is_degenerate(triangulation.back()))
                   {
-                    dolfin_error("ConvexTriangulation.cpp:544",
+                    log::dolfin_error("ConvexTriangulation.cpp:544",
                                  "triangulation 3d points",
                                  "tet is degenerate");
                   }
 
                   if (cgal_triangulation_overlap(triangulation))
                   {
-                    dolfin_error("ConvexTriangulation.cpp:544",
+                    log::dolfin_error("ConvexTriangulation.cpp:544",
                                  "triangulation 3d points",
                                  "now triangulation overlaps");
                   }
@@ -497,12 +497,12 @@ ConvexTriangulation::triangulate_graham_scan_3d(const std::vector<Point>& pm)
 #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
 
   if (cgal_triangulation_has_degenerate(triangulation))
-    dolfin_error("ConvexTriangulation.cpp", "verify convex triangulation",
+    log::dolfin_error("ConvexTriangulation.cpp", "verify convex triangulation",
                  "triangulation contains degenerate tetrahedron");
 
   if (cgal_triangulation_overlap(triangulation))
   {
-    dolfin_error("ConvexTriangulation.cpp", "verify convex triangulation",
+    log::dolfin_error("ConvexTriangulation.cpp", "verify convex triangulation",
                  "tetrahedrons overlap");
   }
 
@@ -518,7 +518,7 @@ ConvexTriangulation::triangulate_graham_scan_3d(const std::vector<Point>& pm)
   const double reference_volume = cgal_polyhedron_volume(pm);
 
   if (std::abs(volume - reference_volume) > DOLFIN_EPS)
-    dolfin_error("ConvexTriangulation.cpp", "verifying convex triangulation",
+    log::dolfin_error("ConvexTriangulation.cpp", "verifying convex triangulation",
                  "computed volume %f, but reference volume is %f", volume,
                  reference_volume);
 

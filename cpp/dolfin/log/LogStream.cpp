@@ -13,6 +13,7 @@
 #include <dolfin/mesh/MeshEntity.h>
 
 using namespace dolfin;
+using namespace dolfin::log;
 
 // Definition of the global dolfin::cout and dolfin::endl variables
 LogStream dolfin::cout(LogStream::Type::COUT);
@@ -34,7 +35,7 @@ LogStream& LogStream::operator<<(const LogStream& stream)
   if (stream._type == Type::ENDL)
   {
     // Send buffer to log system
-    info(buffer.str());
+    log::info(buffer.str());
 
     // Reset buffer
     buffer.str("");

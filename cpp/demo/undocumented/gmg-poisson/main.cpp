@@ -109,7 +109,7 @@ int main()
   solver.solve(*u.vector(), b);
 
 #else
-  info("This demo requires DOLFIN to be configured with PETSc");
+  log::info("This demo requires DOLFIN to be configured with PETSc");
 #endif
 
   return 0;

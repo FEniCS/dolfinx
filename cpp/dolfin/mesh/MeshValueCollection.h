@@ -379,7 +379,7 @@ bool MeshValueCollection<T>::set_value(std::size_t cell_index,
   dolfin_assert(_dim >= 0);
   if (!_mesh)
   {
-    dolfin_error(
+    log::dolfin_error(
         "MeshValueCollection.h", "set value",
         "A mesh has not been associated with this MeshValueCollection");
   }
@@ -402,7 +402,7 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
 {
   if (!_mesh)
   {
-    dolfin_error(
+    log::dolfin_error(
         "MeshValueCollection.h", "set value",
         "A mesh has not been associated with this MeshValueCollection");
   }
@@ -470,7 +470,7 @@ T MeshValueCollection<T>::get_value(std::size_t cell_index,
 
   if (it == _values.end())
   {
-    dolfin_error("MeshValueCollection.h", "extract value",
+    log::dolfin_error("MeshValueCollection.h", "extract value",
                  "No value stored for cell index: %d and local index: %d",
                  cell_index, local_entity);
   }
@@ -505,7 +505,7 @@ std::string MeshValueCollection<T>::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    warning(
+    log::warning(
         "Verbose output of MeshValueCollection must be implemented manually.");
   }
   else

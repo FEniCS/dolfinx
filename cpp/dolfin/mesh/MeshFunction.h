@@ -482,7 +482,7 @@ void MeshFunction<T>::init(std::size_t dim)
 {
   if (!_mesh)
   {
-    dolfin_error("MeshFunction.h", "initialize mesh function",
+    log::dolfin_error("MeshFunction.h", "initialize mesh function",
                  "Mesh has not been specified for mesh function");
   }
   _mesh->init(dim);
@@ -494,7 +494,7 @@ void MeshFunction<T>::init(std::size_t dim, std::size_t size)
 {
   if (!_mesh)
   {
-    dolfin_error("MeshFunction.h", "initialize mesh function",
+    log::dolfin_error("MeshFunction.h", "initialize mesh function",
                  "Mesh has not been specified for mesh function");
   }
   _mesh->init(dim);
@@ -572,7 +572,7 @@ std::string MeshFunction<T>::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    warning("Verbose output of MeshFunctions must be implemented manually.");
+    log::warning("Verbose output of MeshFunctions must be implemented manually.");
 
     // This has been disabled as it severely restricts the ease with which
     // templated MeshFunctions can be used, e.g. it is not possible to

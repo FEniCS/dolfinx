@@ -60,7 +60,7 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
       boost::filesystem::create_directories(path.parent_path());
       if (!boost::filesystem::is_directory(path.parent_path()))
       {
-        dolfin_error("HDF5File.cpp", "open file",
+        log::dolfin_error("HDF5File.cpp", "open file",
                      "Could not create directory \"%s\"",
                      path.parent_path().string().c_str());
       }
@@ -75,7 +75,7 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
 #ifndef H5_HAVE_PARALLEL
   if (mpi_io)
   {
-    dolfin_error("HDF5File.cpp", "open HDF5 file",
+    log::dolfin_error("HDF5File.cpp", "open HDF5 file",
                  "HDF5 has not been compiled with support for MPI");
   }
 #endif
@@ -169,7 +169,7 @@ void HDF5File::read(la::PETScVector& x, const std::string dataset_name,
   // Check for data set exists
   if (!HDF5Interface::has_dataset(_hdf5_file_id, dataset_name))
   {
-    dolfin_error("HDF5File.cpp", "read vector from file",
+    log::dolfin_error("HDF5File.cpp", "read vector from file",
                  "Data set with name \"%s\" does not exist",
                  dataset_name.c_str());
   }
@@ -179,7 +179,7 @@ void HDF5File::read(la::PETScVector& x, const std::string dataset_name,
       = HDF5Interface::dataset_rank(_hdf5_file_id, dataset_name);
 
   if (rank != 1)
-    warning("Reading non-scalar data in HDF5 Vector");
+    log::warning("Reading non-scalar data in HDF5 Vector");
 
   // Get global dataset size
   const std::vector<std::int64_t> data_shape
@@ -203,7 +203,7 @@ void HDF5File::read(la::PETScVector& x, const std::string dataset_name,
       // Check that number of MPI processes matches partitioning
       if (_mpi_comm.size() != partitions.size())
       {
-        dolfin_error("HDF5File.cpp", "read vector from file",
+        log::dolfin_error("HDF5File.cpp", "read vector from file",
                      "Different number of processes used when writing. Cannot "
                      "restore partitioning");
       }
@@ -221,7 +221,7 @@ void HDF5File::read(la::PETScVector& x, const std::string dataset_name,
   }
   else if ((std::int64_t)x.size() != data_shape[0])
   {
-    dolfin_error("HDF5File.cpp", "read vector from file",
+    log::dolfin_error("HDF5File.cpp", "read vector from file",
                  "Size mis-match between vector in file and input vector");
   }
 
@@ -536,7 +536,7 @@ void HDF5File::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, topology_name))
   {
-    dolfin_error("HDF5File.cpp", "read topology dataset",
+    log::dolfin_error("HDF5File.cpp", "read topology dataset",
                  "Dataset \"%s\" not found", topology_name.c_str());
   }
 
@@ -544,7 +544,7 @@ void HDF5File::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
   const std::string coordinates_name = mesh_name + "/coordinates";
   if (!HDF5Interface::has_dataset(_hdf5_file_id, coordinates_name))
   {
-    dolfin_error("HDF5File.cpp", "read coordinates dataset",
+    log::dolfin_error("HDF5File.cpp", "read coordinates dataset",
                  "Dataset \"%s\" not found", coordinates_name.c_str());
   }
 
@@ -552,7 +552,7 @@ void HDF5File::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
   const std::string values_name = mesh_name + "/values";
   if (!HDF5Interface::has_dataset(_hdf5_file_id, values_name))
   {
-    dolfin_error("HDF5File.cpp", "read values dataset",
+    log::dolfin_error("HDF5File.cpp", "read values dataset",
                  "Dataset \"%s\" not found", values_name.c_str());
   }
 
@@ -576,7 +576,7 @@ void HDF5File::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
   // Otherwise, pre-existing mesh::MeshFunction must have correct dimension
   if (cell_dim != meshfunction.dim())
   {
-    dolfin_error("HDF5File.cpp", "read meshfunction topology",
+    log::dolfin_error("HDF5File.cpp", "read meshfunction topology",
                  "Cell dimension mismatch");
   }
 
@@ -585,7 +585,7 @@ void HDF5File::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
 
   if (num_global_cells != mesh->num_entities_global(cell_dim))
   {
-    dolfin_error("HDF5File.cpp", "read meshfunction topology",
+    log::dolfin_error("HDF5File.cpp", "read meshfunction topology",
                  "Mesh dimension mismatch");
   }
 
@@ -730,7 +730,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
 {
   if (meshfunction.size() == 0)
   {
-    dolfin_error("HDF5File.cpp", "save empty mesh::MeshFunction",
+    log::dolfin_error("HDF5File.cpp", "save empty mesh::MeshFunction",
                  "No values in mesh::MeshFunction");
   }
 
@@ -836,7 +836,7 @@ void HDF5File::write(const function::Function& u, const std::string name,
 
     if (!HDF5Interface::has_attribute(_hdf5_file_id, name, "count"))
     {
-      dolfin_error(
+      log::dolfin_error(
           "HDF5File.cpp", "append to series",
           "Function dataset does not contain a series 'count' attribute");
     }
@@ -961,27 +961,27 @@ void HDF5File::read(function::Function& u, const std::string name)
   // Check datasets exist
   if (!HDF5Interface::has_group(_hdf5_file_id, basename))
   {
-    dolfin_error("HDF5File.cpp", "read function from file",
+    log::dolfin_error("HDF5File.cpp", "read function from file",
                  "Group with name \"%s\" does not exist", name.c_str());
   }
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, cells_dataset_name))
   {
-    dolfin_error("HDF5File.cpp", "read function from file",
+    log::dolfin_error("HDF5File.cpp", "read function from file",
                  "Dataset with name \"%s\" does not exist",
                  cells_dataset_name.c_str());
   }
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, cell_dofs_dataset_name))
   {
-    dolfin_error("HDF5File.cpp", "read function from file",
+    log::dolfin_error("HDF5File.cpp", "read function from file",
                  "Dataset with name \"%s\" does not exist",
                  cell_dofs_dataset_name.c_str());
   }
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, x_cell_dofs_dataset_name))
   {
-    dolfin_error("HDF5File.cpp", "read function from file",
+    log::dolfin_error("HDF5File.cpp", "read function from file",
                  "Dataset with name \"%s\" does not exist",
                  x_cell_dofs_dataset_name.c_str());
   }
@@ -997,7 +997,7 @@ void HDF5File::read(function::Function& u, const std::string name)
 
     if (!HDF5Interface::has_dataset(_hdf5_file_id, vector_dataset_name))
     {
-      dolfin_error("HDF5File.cpp", "read function from file",
+      log::dolfin_error("HDF5File.cpp", "read function from file",
                    "Dataset with name \"%s\" does not exist", tmp_name.c_str());
     }
   }
@@ -1015,7 +1015,7 @@ void HDF5File::read(function::Function& u, const std::string name)
   const std::int64_t num_global_cells = dataset_shape[0];
   if (mesh.num_entities_global(mesh.topology().dim()) != num_global_cells)
   {
-    dolfin_error("HDF5File.cpp", "read function::Function from file",
+    log::dolfin_error("HDF5File.cpp", "read function::Function from file",
                  "Number of global cells does not match");
   }
 
@@ -1223,13 +1223,13 @@ void HDF5File::read_mesh_value_collection(mesh::MeshValueCollection<T>& mesh_vc,
 
   if (!HDF5Interface::has_group(_hdf5_file_id, name))
   {
-    dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
+    log::dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
                  "Group \"%s\" not found in file", name.c_str());
   }
 
   if (HDF5Interface::has_dataset(_hdf5_file_id, name + "/cells"))
   {
-    warning("Found old mesh::MeshValueCollection format");
+    log::warning("Found old mesh::MeshValueCollection format");
     read_mesh_value_collection_old(mesh_vc, name);
     return;
   }
@@ -1251,13 +1251,13 @@ void HDF5File::read_mesh_value_collection(mesh::MeshValueCollection<T>& mesh_vc,
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, values_name))
   {
-    dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
+    log::dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
                  "Dataset \"%s\" not found in file", values_name.c_str());
   }
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, topology_name))
   {
-    dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
+    log::dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
                  "Dataset \"%s\" not found in file", topology_name.c_str());
   }
 
@@ -1376,7 +1376,7 @@ void HDF5File::read_mesh_value_collection(mesh::MeshValueCollection<T>& mesh_vc,
 
       if (map_it == entity_map.end())
       {
-        dolfin_error("HDF5File.cpp", "find entity in map",
+        log::dolfin_error("HDF5File.cpp", "find entity in map",
                      "Error reading mesh::MeshValueCollection");
       }
       for (auto p = map_it->second.begin(); p != map_it->second.end(); p += 2)
@@ -1413,7 +1413,7 @@ void HDF5File::read_mesh_value_collection_old(
   mesh_vc.clear();
   if (!HDF5Interface::has_group(_hdf5_file_id, name))
   {
-    dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
+    log::dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
                  "Group \"%s\" not found in file", name.c_str());
   }
 
@@ -1426,19 +1426,19 @@ void HDF5File::read_mesh_value_collection_old(
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, values_name))
   {
-    dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
+    log::dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
                  "Dataset \"%s\" not found in file", values_name.c_str());
   }
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, entities_name))
   {
-    dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
+    log::dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
                  "Dataset \"%s\" not found in file", entities_name.c_str());
   }
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, cells_name))
   {
-    dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
+    log::dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
                  "Dataset \"%s\" not found in file", cells_name.c_str());
   }
 
@@ -1598,7 +1598,7 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string data_path,
   const std::string topology_path = data_path + "/topology";
   if (!HDF5Interface::has_dataset(_hdf5_file_id, topology_path))
   {
-    dolfin_error("HDF5File.cpp", "read topology dataset",
+    log::dolfin_error("HDF5File.cpp", "read topology dataset",
                  "Dataset \"%s\" not found", topology_path.c_str());
   }
 
@@ -1619,7 +1619,7 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string data_path,
   const std::string geometry_path = data_path + "/coordinates";
   if (!HDF5Interface::has_dataset(_hdf5_file_id, geometry_path))
   {
-    dolfin_error("HDF5File.cpp", "read coordinates dataset",
+    log::dolfin_error("HDF5File.cpp", "read coordinates dataset",
                  "Dataset \"%s\" not found", geometry_path.c_str());
   }
 
@@ -1629,13 +1629,13 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string data_path,
   dolfin_assert(coords_shape.size() < 3);
   if (coords_shape.size() == 1)
   {
-    dolfin_error("HDF5File.cpp", "get geometric dimension",
+    log::dolfin_error("HDF5File.cpp", "get geometric dimension",
                  "Cannot determine geometric dimension from one-dimensional "
                  "array storage in HDF5 file");
   }
   else if (coords_shape.size() > 2)
   {
-    dolfin_error("HDF5File.cpp", "get geometric dimension",
+    log::dolfin_error("HDF5File.cpp", "get geometric dimension",
                  "Cannot determine geometric dimension from high-rank array "
                  "storage in HDF5 file");
   }
@@ -1687,7 +1687,7 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
                                  cell_type_str);
     if (cell_type.cell_type() != mesh::CellType::string2type(cell_type_str))
     {
-      dolfin_error("HDF5File.cpp", "read topology data",
+      log::dolfin_error("HDF5File.cpp", "read topology data",
                    "Inconsistency between expected cell type and cell type "
                    "attribie in HDF file");
     }
@@ -1706,13 +1706,13 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
     num_global_cells = topology_shape[0];
     if (topology_shape[1] != num_vertices_per_cell)
     {
-      dolfin_error("HDF5File.cpp", "read topology data",
+      log::dolfin_error("HDF5File.cpp", "read topology data",
                    "Topology in HDF5 file has inconsistent size");
     }
   }
   else
   {
-    dolfin_error("HDF5File.cpp", "read coordinate data",
+    log::dolfin_error("HDF5File.cpp", "read coordinate data",
                  "Topology in HDF5 file has wrong shape");
   }
 
@@ -1722,7 +1722,7 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
     // Check number of cells for consistency with expected number of cells
     if (num_global_cells != expected_num_global_cells)
     {
-      dolfin_error("HDF5File.cpp", "read cell data",
+      log::dolfin_error("HDF5File.cpp", "read cell data",
                    "Inconsistentcy between expected number of cells and number "
                    "of cells in topology in HDF5 file");
     }
@@ -1761,7 +1761,7 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
   else
   {
     if (use_partition_from_file)
-      warning("Could not use partition from file: wrong size");
+      log::warning("Could not use partition from file: wrong size");
 
     // Divide up cells approximately equally between processes
     cell_range = MPI::local_range(_mpi_comm.comm(), num_global_cells);
@@ -1845,7 +1845,7 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
   }
   else
   {
-    dolfin_error("HDF5File.cpp", "read coordinate data",
+    log::dolfin_error("HDF5File.cpp", "read coordinate data",
                  "Topology in HDF5 file has wrong shape");
   }
 
@@ -1856,7 +1856,7 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
     if (local_mesh_data.geometry.num_global_vertices
         != expected_num_global_points)
     {
-      dolfin_error("HDF5File.cpp", "read vertex data",
+      log::dolfin_error("HDF5File.cpp", "read vertex data",
                    "Inconsistentcy between expected number of vertices and "
                    "number of vertices in geometry in HDF5 file");
     }

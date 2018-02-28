@@ -37,7 +37,7 @@ void _check_coordinates(const mesh::MeshGeometry& geometry,
       != std::string("Lagrange"))
 
   {
-    dolfin_error("fem_utils.cpp",
+    log::dolfin_error("fem_utils.cpp",
                  "set/get mesh geometry coordinates from/to function",
                  "expecting 'Lagrange' finite element family rather than '%s'",
                  position.function_space()->element()->ufc_element()->family());
@@ -45,14 +45,14 @@ void _check_coordinates(const mesh::MeshGeometry& geometry,
 
   if (position.value_rank() != 1)
   {
-    dolfin_error(
+    log::dolfin_error(
         "fem_utils.cpp", "set/get mesh geometry coordinates from/to function",
         "function has incorrect value rank %d, need 1", position.value_rank());
   }
 
   if (position.value_dimension(0) != geometry.dim())
   {
-    dolfin_error("fem_utils.cpp",
+    log::dolfin_error("fem_utils.cpp",
                  "set/get mesh geometry coordinates from/to function",
                  "function value dimension %d and geometry dimension %d "
                  "do not match",
@@ -62,7 +62,7 @@ void _check_coordinates(const mesh::MeshGeometry& geometry,
   if (position.function_space()->element()->ufc_element()->degree()
       != geometry.degree())
   {
-    dolfin_error("fem_utils.cpp",
+    log::dolfin_error("fem_utils.cpp",
                  "set/get mesh geometry coordinates from/to function",
                  "function degree %d and geometry degree %d do not match",
                  position.function_space()->element()->ufc_element()->degree(),
@@ -324,7 +324,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
 
   if (dofmap.is_view())
   {
-    dolfin_error("fem_utils.cpp", "tabulate vertex to dof map",
+    log::dolfin_error("fem_utils.cpp", "tabulate vertex to dof map",
                  "Cannot tabulate vertex_to_dof_map for a subspace");
   }
 
@@ -337,7 +337,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   const std::size_t vert_per_cell = mesh.topology()(top_dim, 0).size(0);
   if (vert_per_cell * dofs_per_vertex != dofmap.max_element_dofs())
   {
-    dolfin_error("DofMap.cpp", "tabulate dof to vertex map",
+    log::dolfin_error("DofMap.cpp", "tabulate dof to vertex map",
                  "Can only tabulate dofs on vertices");
   }
 

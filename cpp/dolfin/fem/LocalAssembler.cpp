@@ -53,7 +53,7 @@ void LocalAssembler::assemble(
       }
       else
       {
-        dolfin_error("LocalAssembler.cpp", "assemble local problem",
+        log::dolfin_error("LocalAssembler.cpp", "assemble local problem",
                      "Cell <-> facet connectivity not initialized, found "
                      "facet with %d connected cells. Expected 1 or 2 cells",
                      Ncells);
@@ -65,7 +65,7 @@ void LocalAssembler::assemble(
   // Check that there are no vertex integrals
   if (ufc.dolfin_form.integrals().num_vertex_integrals() > 0)
   {
-    dolfin_error("LocalAssembler.cpp", "assemble local problem",
+    log::dolfin_error("LocalAssembler.cpp", "assemble local problem",
                  "Local problem contains vertex integrals which are not yet "
                  "supported by LocalAssembler");
   }

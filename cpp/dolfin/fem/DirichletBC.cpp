@@ -191,7 +191,7 @@ void DirichletBC::gather(Map& boundary_values) const
       if (it == local_to_global.end())
       {
         // Throw error if dof is not in local map
-        dolfin_error("DirichletBC.cpp", "gather boundary values",
+        log::dolfin_error("DirichletBC.cpp", "gather boundary values",
                      "Cannot find dof in local_to_global_unowned array");
       }
       else
@@ -271,14 +271,14 @@ void DirichletBC::check() const
   // Check for common errors, message below might be cryptic
   if (_g->value_rank() == 0 && element.value_rank() == 1)
   {
-    dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
+    log::dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
                  "Expecting a vector-valued boundary value but given function "
                  "is scalar");
   }
 
   if (_g->value_rank() == 1 && element.value_rank() == 0)
   {
-    dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
+    log::dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
                  "Expecting a scalar boundary value but given function is "
                  "vector-valued");
   }
@@ -286,7 +286,7 @@ void DirichletBC::check() const
   // Check that value shape of boundary value
   if (_g->value_rank() != element.value_rank())
   {
-    dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
+    log::dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
                  "Illegal value rank (%d), expecting (%d)", _g->value_rank(),
                  element.value_rank());
   }
@@ -295,7 +295,7 @@ void DirichletBC::check() const
   {
     if (_g->value_dimension(i) != element.value_dimension(i))
     {
-      dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
+      log::dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
                    "Illegal value dimension (%d), expecting (%d)",
                    _g->value_dimension(i), element.value_dimension(i));
     }
@@ -304,7 +304,7 @@ void DirichletBC::check() const
   // Check that boundary condition method is known
   if (methods.count(_method) == 0)
   {
-    dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
+    log::dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
                  "unknown method (\"%s\")", _method.c_str());
   }
 
@@ -312,7 +312,7 @@ void DirichletBC::check() const
   dolfin_assert(_function_space->mesh());
   if (!_function_space->mesh()->ordered())
   {
-    dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
+    log::dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
                  "mesh::Mesh is not ordered according to the UFC numbering "
                  "convention. Consider calling mesh.order()");
   }
@@ -323,7 +323,7 @@ void DirichletBC::check() const
     // Check that mesh::Meshfunction is initialised
     if (!_user_mesh_function->mesh())
     {
-      dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
+      log::dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
                    "User mesh::MeshFunction is not initialized");
     }
 
@@ -331,7 +331,7 @@ void DirichletBC::check() const
     const std::size_t tdim = _user_mesh_function->mesh()->topology().dim();
     if (_user_mesh_function->dim() != tdim - 1)
     {
-      dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
+      log::dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
                    "User mesh::MeshFunction is not a facet mesh::MeshFunction "
                    "(dimension is wrong)");
     }
@@ -340,7 +340,7 @@ void DirichletBC::check() const
     dolfin_assert(_function_space->mesh());
     if (_user_mesh_function->mesh()->id() != _function_space->mesh()->id())
     {
-      dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
+      log::dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
                    "User mesh::MeshFunction and function::FunctionSpace meshes "
                    "are different");
     }
@@ -429,7 +429,7 @@ void DirichletBC::compute_bc(Map& boundary_values, LocalData& data,
     compute_bc_pointwise(boundary_values, data);
   else
   {
-    dolfin_error("DirichletBC.cpp", "compute boundary conditions",
+    log::dolfin_error("DirichletBC.cpp", "compute boundary conditions",
                  "Unknown method for application of boundary conditions");
   }
 }
@@ -451,7 +451,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   if (_facets.empty())
   {
     if (MPI::size(mesh.mpi_comm()) == 1)
-      warning("Found no facets matching domain for boundary condition.");
+      log::warning("Found no facets matching domain for boundary condition.");
     return;
   }
 
@@ -533,7 +533,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   if (_facets.empty())
   {
     if (MPI::size(mesh.mpi_comm()) == 1)
-      warning("Found no facets matching domain for boundary condition.");
+      log::warning("Found no facets matching domain for boundary condition.");
     return;
   }
 
@@ -546,7 +546,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   const FiniteElement& element = *_function_space->element();
 
   // Initialize facets, needed for geometric search
-  log(TRACE, "Computing facets, needed for geometric application of boundary "
+  log::log(TRACE, "Computing facets, needed for geometric application of boundary "
              "conditions.");
   mesh.init(mesh.topology().dim() - 1);
 
@@ -642,7 +642,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 {
   if (!_user_sub_domain)
   {
-    dolfin_error("DirichletBC.cpp",
+    log::dolfin_error("DirichletBC.cpp",
                  "compute Dirichlet boundary values, pointwise search",
                  "A SubDomain is required for pointwise search");
   }
@@ -834,7 +834,7 @@ bool DirichletBC::on_facet(const double* coordinates,
       return false;
   }
 
-  dolfin_error("DirichletBC.cpp", "determine if given point is on facet",
+  log::dolfin_error("DirichletBC.cpp", "determine if given point is on facet",
                "Not implemented for given facet dimension");
 
   return false;
@@ -849,7 +849,7 @@ void DirichletBC::check_arguments(la::PETScMatrix* A, la::PETScVector* b,
   // Check matrix and vector dimensions
   if (A && x && A->size(1) != x->size())
   {
-    dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
+    log::dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
                  "Matrix dimension (%d columns) does not match x vector "
                  "dimension (%d) for application of boundary conditions",
                  A->size(1), x->size());
@@ -857,7 +857,7 @@ void DirichletBC::check_arguments(la::PETScMatrix* A, la::PETScVector* b,
 
   if (A && b && A->size(0) != b->size())
   {
-    dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
+    log::dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
                  "Matrix dimension (%d rows) does not match b vector dimension "
                  "(%d) for application of boundary conditions",
                  A->size(0), b->size());
@@ -866,7 +866,7 @@ void DirichletBC::check_arguments(la::PETScMatrix* A, la::PETScVector* b,
   // Check the system is square if (x && b)
   if (x && b && x->size() != b->size())
   {
-    dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
+    log::dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
                  "Dimensions of x vector(%d) and b vector (%d) do not match "
                  "for application of boundary conditions to square system",
                  x->size(), b->size());
@@ -875,7 +875,7 @@ void DirichletBC::check_arguments(la::PETScMatrix* A, la::PETScVector* b,
   // Check dimension of function space is not "too big"
   if (A && A->size(dim) < _function_space->dim())
   {
-    dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
+    log::dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
                  "Dimension of function space (%d) too large for application "
                  "of boundary conditions to linear system (%d %s)",
                  _function_space->dim(), A->size(dim),
@@ -891,7 +891,7 @@ void DirichletBC::check_arguments(la::PETScMatrix* A, la::PETScVector* b,
     // Check rows onwership matches dofmap (if applying bc to rows)
     if (dim == 0 && A && A->local_range(0) != dofmap_range)
     {
-      dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
+      log::dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
                    "Dofmap ownership range (%d,%d) does not match matrix row "
                    "range (%d,%d)",
                    dofmap_range[0], dofmap_range[1], A->local_range(0)[0],
@@ -901,7 +901,7 @@ void DirichletBC::check_arguments(la::PETScMatrix* A, la::PETScVector* b,
     // Check rows onwership matches b
     if (A && b && A->local_range(0) != b->local_range())
     {
-      dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
+      log::dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
                    "Matrix row range (%d,%d) does not match b vector local "
                    "range (%d,%d)",
                    A->local_range(0)[0], A->local_range(0)[1],
@@ -911,7 +911,7 @@ void DirichletBC::check_arguments(la::PETScMatrix* A, la::PETScVector* b,
     // Check rows onwership matches x
     if (A && x && A->local_range(0) != x->local_range())
     {
-      dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
+      log::dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
                    "Matrix row range (%d,%d) does not match x vector local "
                    "range (%d,%d)",
                    A->local_range(0)[0], A->local_range(0)[1],
@@ -921,7 +921,7 @@ void DirichletBC::check_arguments(la::PETScMatrix* A, la::PETScVector* b,
     // Check that x vector has right ownership
     if (x && x->local_range() != dofmap_range)
     {
-      dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
+      log::dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
                    "Dofmap ownership range (%d,%d) does not match x vector "
                    "local range (%d,%d)",
                    dofmap_range[0], dofmap_range[1], x->local_range()[0],
@@ -931,7 +931,7 @@ void DirichletBC::check_arguments(la::PETScMatrix* A, la::PETScVector* b,
     // Check that vectors have same ownership if (x && b)
     if (x && b && x->local_range() != b->local_range())
     {
-      dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
+      log::dolfin_error("BoundaryCondition.cpp", "apply boundary condition",
                    "x vector local range (%d,%d) does not match b vector local "
                    "range (%d,%d)",
                    x->local_range()[0], x->local_range()[1],

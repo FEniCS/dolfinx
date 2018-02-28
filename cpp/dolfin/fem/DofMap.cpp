@@ -66,7 +66,7 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   // Check that mesh has been ordered
   if (!mesh.ordered())
   {
-    dolfin_error(
+    log::dolfin_error(
         "DofMap.cpp", "create mapping of degrees of freedom",
         "mesh::Mesh is not ordered according to the UFC numbering convention. "
         "Consider calling mesh.order()");
@@ -604,7 +604,7 @@ void DofMap::check_provided_entities(const ufc::dofmap& dofmap,
   {
     if (dofmap.num_entity_dofs(d) > 0 && mesh.num_entities(d) == 0)
     {
-      dolfin_error(
+      log::dolfin_error(
           "DofMap.cpp", "initialize mapping of degrees of freedom",
           "Missing entities of dimension %d. Try calling mesh.init(%d)", d, d);
     }

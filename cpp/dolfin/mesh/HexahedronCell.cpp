@@ -31,7 +31,7 @@ std::size_t HexahedronCell::num_entities(std::size_t dim) const
   case 3:
     return 1; // cells
   default:
-    dolfin_error("HexahedronCell.cpp",
+    log::dolfin_error("HexahedronCell.cpp",
                  "access number of entities of hexahedron cell",
                  "Illegal topological dimension (%d)", dim);
   }
@@ -52,7 +52,7 @@ std::size_t HexahedronCell::num_vertices(std::size_t dim) const
   case 3:
     return 8; // cells
   default:
-    dolfin_error("HexahedronCell.cpp",
+    log::dolfin_error("HexahedronCell.cpp",
                  "access number of vertices for subsimplex of hexahedron cell",
                  "Illegal topological dimension (%d)", dim);
   }
@@ -128,7 +128,7 @@ void HexahedronCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
     e[5][3] = v[7];
     break;
   default:
-    dolfin_error(
+    log::dolfin_error(
         "HexahedronCell.cpp", "create entities of tetrahedron cell",
         "Don't know how to create entities of topological dimension %d", dim);
   }
@@ -138,7 +138,7 @@ double HexahedronCell::volume(const MeshEntity& cell) const
 {
   if (cell.dim() != 2)
   {
-    dolfin_error("HexahedronCell.cpp", "compute volume (area) of cell",
+    log::dolfin_error("HexahedronCell.cpp", "compute volume (area) of cell",
                  "Illegal mesh entity");
   }
 
@@ -154,7 +154,7 @@ double HexahedronCell::volume(const MeshEntity& cell) const
   const geometry::Point p4 = geometry.point(vertices[4]);
   const geometry::Point p5 = geometry.point(vertices[5]);
 
-  dolfin_error("HexahedronCell.cpp", "compute volume of hexahedron",
+  log::dolfin_error("HexahedronCell.cpp", "compute volume of hexahedron",
                "Not implemented");
 
   return 0.0;
@@ -165,12 +165,12 @@ double HexahedronCell::circumradius(const MeshEntity& cell) const
   // Check that we get a cell
   if (cell.dim() != 2)
   {
-    dolfin_error("HexahedronCell.cpp",
+    log::dolfin_error("HexahedronCell.cpp",
                  "compute circumradius of hexahedron cell",
                  "Illegal mesh entity");
   }
 
-  dolfin_error("HexahedronCell.cpp", "compute circumradius of hexahedron cell",
+  log::dolfin_error("HexahedronCell.cpp", "compute circumradius of hexahedron cell",
                "Don't know how to compute diameter");
 
   dolfin_not_implemented();

@@ -34,7 +34,7 @@ void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
 void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
                            Eigen::Ref<const Eigen::VectorXd> x) const
 {
-  dolfin_error("GenericFunction.cpp", "evaluate function (Eigen version)",
+  log::dolfin_error("GenericFunction.cpp", "evaluate function (Eigen version)",
                "Missing eval() function (must be overloaded)");
 }
 //-----------------------------------------------------------------------------

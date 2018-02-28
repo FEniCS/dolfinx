@@ -120,9 +120,9 @@ public:
     // Check key name
     if (has_parameter(key))
     {
-      dolfin_error("Parameters.cpp", "add parameter",
-                   "Parameter \"%s.%s\" already defined", this->name().c_str(),
-                   key.c_str());
+      log::dolfin_error("Parameters.cpp", "add parameter",
+                        "Parameter \"%s.%s\" already defined",
+                        this->name().c_str(), key.c_str());
     }
 
     // Add parameter. Check for bool must come before check for
@@ -137,8 +137,8 @@ public:
       _parameters.insert({key, Parameter(key, Parameter::Type::Float)});
     else
     {
-      dolfin_error("Parameters.cpp", "add parameter",
-                   "Parameter type not supported");
+      log::dolfin_error("Parameters.cpp", "add parameter",
+                        "Parameter type not supported");
     }
   }
 
@@ -151,9 +151,9 @@ public:
     // Check key name
     if (has_parameter(key))
     {
-      dolfin_error("Parameters.cpp", "add parameter",
-                   "Parameter \"%s.%s\" already defined", this->name().c_str(),
-                   key.c_str());
+      log::dolfin_error("Parameters.cpp", "add parameter",
+                        "Parameter \"%s.%s\" already defined",
+                        this->name().c_str(), key.c_str());
     }
 
     // Add parameter
@@ -168,9 +168,9 @@ public:
     // Check key name
     if (has_parameter(key))
     {
-      dolfin_error("Parameters.cpp", "add parameter",
-                   "Parameter \"%s.%s\" already defined", this->name().c_str(),
-                   key.c_str());
+      log::dolfin_error("Parameters.cpp", "add parameter",
+                        "Parameter \"%s.%s\" already defined",
+                        this->name().c_str(), key.c_str());
     }
 
     // Add parameter
@@ -310,4 +310,3 @@ public:
 extern Parameters empty_parameters;
 }
 }
-

@@ -78,7 +78,7 @@ std::size_t DistributedMeshTools::number_entities(
   // from mesh global numbering, e.g. when computing mesh entity
   // numbering for problems with periodic boundary conditions.
 
-  log(PROGRESS,
+  log::log(PROGRESS,
       "Number mesh entities for distributed mesh (for specified vertex ids).",
       d);
   common::Timer timer(
@@ -88,7 +88,7 @@ std::size_t DistributedMeshTools::number_entities(
   // mesh construction)
   if (d == 0)
   {
-    dolfin_error("MeshPartitioning.cpp", "number mesh entities",
+    log::dolfin_error("MeshPartitioning.cpp", "number mesh entities",
                  "Global vertex indices exist at input. Cannot be renumbered");
   }
 
@@ -101,7 +101,7 @@ std::size_t DistributedMeshTools::number_entities(
     return mesh.num_entities_global(d);
 
     /*
-    dolfin_error("MeshPartitioning.cpp",
+    log::dolfin_error("MeshPartitioning.cpp",
                  "number mesh entities",
                  "Global cell indices exist at input. Cannot be renumbered");
     */
@@ -256,7 +256,7 @@ std::size_t DistributedMeshTools::number_entities(
             << " received illegal entity given by ";
         msg << " with global index " << global_index;
         msg << " from process " << p;
-        dolfin_error("MeshPartitioning.cpp", "number mesh entities", msg.str());
+        log::dolfin_error("MeshPartitioning.cpp", "number mesh entities", msg.str());
       }
 
       const std::size_t local_entity_index = recv_entity->second.local_index;
@@ -342,7 +342,7 @@ DistributedMeshTools::locate_off_process_entities(
 
   if (dim == 0)
   {
-    warning("DistributedMeshTools::host_processes has not been tested for "
+    log::warning("DistributedMeshTools::host_processes has not been tested for "
             "vertices.");
   }
 
@@ -352,7 +352,7 @@ DistributedMeshTools::locate_off_process_entities(
   // Check that entity is a vertex or a cell
   if (dim != 0 && dim != D)
   {
-    dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
+    log::dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
                  "This version of DistributedMeshTools::host_processes is only "
                  "for vertices or cells");
   }
@@ -360,14 +360,14 @@ DistributedMeshTools::locate_off_process_entities(
   // Check that global numbers have been computed.
   if (!mesh.topology().have_global_indices(dim))
   {
-    dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
+    log::dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
                  "Global mesh entity numbers have not been computed");
   }
 
   // Check that global numbers have been computed.
   if (!mesh.topology().have_global_indices(D))
   {
-    dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
+    log::dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
                  "Global mesh entity numbers have not been computed");
   }
 
@@ -479,7 +479,7 @@ DistributedMeshTools::locate_off_process_entities(
   const std::size_t number_expected = test_set.size();
   if (number_expected != processes.size())
   {
-    dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
+    log::dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
                  "Sanity check failed");
   }
 
@@ -490,7 +490,7 @@ std::unordered_map<std::uint32_t,
                    std::vector<std::pair<std::uint32_t, std::uint32_t>>>
 DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
 {
-  log(PROGRESS, "Compute shared mesh entities of dimension %d.", d);
+  log::log(PROGRESS, "Compute shared mesh entities of dimension %d.", d);
   common::Timer timer("Computed shared mesh entities");
 
   // MPI communicator
@@ -644,7 +644,7 @@ void DistributedMeshTools::compute_entity_ownership(
     std::vector<std::size_t>& owned_entities,
     std::array<std::map<Entity, EntityData>, 2>& shared_entities)
 {
-  log(PROGRESS, "Compute ownership for mesh entities of dimension %d.", d);
+  log::log(PROGRESS, "Compute ownership for mesh entities of dimension %d.", d);
   common::Timer timer("Compute mesh entity ownership");
 
   // Build global-to-local indices map for shared vertices

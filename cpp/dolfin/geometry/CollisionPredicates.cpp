@@ -24,7 +24,7 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
   // Intersection is only implemented for simplex meshes
   if (!entity.mesh().type().is_simplex())
   {
-    dolfin_error("Cell.cpp", "intersect cell and point",
+    log::dolfin_error("Cell.cpp", "intersect cell and point",
                  "Intersection is only implemented for simplex meshes");
   }
 
@@ -57,7 +57,7 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
     return collides_tetrahedron_point_3d(g.point(v[0]), g.point(v[1]),
                                          g.point(v[2]), g.point(v[3]), point);
 
-  dolfin_error("CollisionPredicates.cpp", "compute entity-point collision",
+  log::dolfin_error("CollisionPredicates.cpp", "compute entity-point collision",
                "Not implemented for dimensions %d / %d", tdim, gdim);
 
   return false;
@@ -70,7 +70,7 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
   if (!entity_0.mesh().type().is_simplex()
       || !entity_1.mesh().type().is_simplex())
   {
-    dolfin_error("Cell.cpp", "intersect cell and point",
+    log::dolfin_error("Cell.cpp", "intersect cell and point",
                  "intersection is only implemented for simplex meshes");
   }
 
@@ -133,7 +133,7 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
         g1.point(v1[0]), g1.point(v1[1]), g1.point(v1[2]), g1.point(v1[3]));
   }
 
-  dolfin_error("CollisionPredicates.cpp", "compute entity-entity collision",
+  log::dolfin_error("CollisionPredicates.cpp", "compute entity-entity collision",
                "Not implemented for topological dimensions %d / %d and "
                "geometrical dimension %d",
                d0, d1, gdim);
@@ -157,7 +157,7 @@ bool CollisionPredicates::collides_segment_point(const Point& p0,
   case 3:
     return collides_segment_point_3d(p0, p1, point);
   default:
-    dolfin_error("CollisionPredicates.cpp", "call collides_segment_point",
+    log::dolfin_error("CollisionPredicates.cpp", "call collides_segment_point",
                  "Unknown dimension (only implemented for dimension 2 and 3");
   }
   return false;
@@ -178,7 +178,7 @@ bool CollisionPredicates::collides_segment_segment(const Point& p0,
   case 3:
     return collides_segment_segment_3d(p0, p1, q0, q1);
   default:
-    dolfin_error("CollisionPredicates.cpp",
+    log::dolfin_error("CollisionPredicates.cpp",
                  "compute segment-segment collision ",
                  "Unknown dimension (Implemented for dimension 1, 2 and 3)");
   }
@@ -198,7 +198,7 @@ bool CollisionPredicates::collides_triangle_point(const Point& p0,
   case 3:
     return collides_triangle_point_3d(p0, p1, p2, point);
   default:
-    dolfin_error("CollisionPredicates.cpp", "compute triangle-point collision ",
+    log::dolfin_error("CollisionPredicates.cpp", "compute triangle-point collision ",
                  "Implemented only for dimension 2 and 3.");
   }
   return false;
@@ -215,7 +215,7 @@ bool CollisionPredicates::collides_triangle_segment(
   case 3:
     return collides_triangle_segment_3d(p0, p1, p2, q0, q1);
   default:
-    dolfin_error("CollisionPredicates.cpp",
+    log::dolfin_error("CollisionPredicates.cpp",
                  "compute triangle-segment collision ",
                  "Implmented only for dimension 2 and 3.");
   }
@@ -233,7 +233,7 @@ bool CollisionPredicates::collides_triangle_triangle(
   case 3:
     return collides_triangle_triangle_3d(p0, p1, p2, q0, q1, q2);
   default:
-    dolfin_error("CollisionPredicates.cpp",
+    log::dolfin_error("CollisionPredicates.cpp",
                  "compute triangle-triangle collision ",
                  "Implmented only for dimension 2 and 3.");
   }
@@ -828,7 +828,7 @@ bool CollisionPredicates::_collides_tetrahedron_point_3d(const Point& p0,
   }
   else
   {
-    dolfin_error("CollisionPredicates.cpp",
+    log::dolfin_error("CollisionPredicates.cpp",
                  "compute tetrahedron point collision",
                  "Not implemented for degenerate tetrahedron");
   }

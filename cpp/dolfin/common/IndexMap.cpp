@@ -35,7 +35,7 @@ std::array<std::int64_t, 2> IndexMap::local_range() const
 {
   if (_all_ranges.size() == 0)
   {
-    warning("Asking for size of uninitialised range");
+    log::warning("Asking for size of uninitialised range");
     return {{0, 0}};
   }
   else
@@ -47,7 +47,7 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
 {
   if (_all_ranges.size() == 0)
   {
-    warning("Asking for size of uninitialised range");
+    log::warning("Asking for size of uninitialised range");
     return 0;
   }
 
@@ -65,7 +65,7 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
     return unowned_size;
   else
   {
-    dolfin_error("IndexMap.cpp", "get size",
+    log::dolfin_error("IndexMap.cpp", "get size",
                  "Unrecognised option for IndexMap::MapSize");
   }
 

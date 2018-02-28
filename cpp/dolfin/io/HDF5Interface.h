@@ -171,7 +171,7 @@ private:
   template <typename T>
   static hid_t hdf5_type()
   {
-    dolfin_error("HDF5Interface.cpp", "get HDF5 primitive data type",
+    log::dolfin_error("HDF5Interface.cpp", "get HDF5 primitive data type",
                  "No specialised function for this data type");
     return 0;
   }
@@ -210,7 +210,7 @@ inline hid_t HDF5Interface::hdf5_type<std::size_t>()
   else if (sizeof(std::size_t) == sizeof(unsigned int))
     return H5T_NATIVE_UINT;
   else
-    dolfin_error("HDF5Interface.h", "determine size of std::size_t",
+    log::dolfin_error("HDF5Interface.h", "determine size of std::size_t",
                  "std::size_t is not the same size as long or int");
   return 0;
 }
@@ -227,7 +227,7 @@ inline void HDF5Interface::write_dataset(
 
   if (rank > 2)
   {
-    dolfin_error("HDF5Interface.cpp", "write dataset to HDF5 file",
+    log::dolfin_error("HDF5Interface.cpp", "write dataset to HDF5 file",
                  "Only rank 1 and rank 2 dataset are supported");
   }
 
@@ -302,7 +302,7 @@ inline void HDF5Interface::write_dataset(
     status = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
     dolfin_assert(status != HDF5_FAIL);
 #else
-    dolfin_error("HDF5Interface.h", "use MPI",
+    log::dolfin_error("HDF5Interface.h", "use MPI",
                  "HDF5 library has not been configured with MPI");
 #endif
   }
@@ -356,7 +356,7 @@ inline void HDF5Interface::read_dataset(const hid_t file_handle,
   dolfin_assert(rank >= 0);
 
   if (rank > 2)
-    warning("HDF5Interface::read_dataset untested for rank > 2.");
+    log::warning("HDF5Interface::read_dataset untested for rank > 2.");
 
   // Allocate data for shape
   std::vector<hsize_t> shape(rank);

@@ -147,7 +147,7 @@ MeshTopology::shared_entities(std::uint32_t dim) const
   auto e = _shared_entities.find(dim);
   if (e == _shared_entities.end())
   {
-    dolfin_error("MeshTopology.cpp", "get shared mesh entities",
+    log::dolfin_error("MeshTopology.cpp", "get shared mesh entities",
                  "Shared mesh entities have not been computed for dim %d", dim);
   }
   return e->second;

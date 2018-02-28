@@ -37,7 +37,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
   // Check that we don't have a subspace
   if (!V->component().empty())
   {
-    dolfin_error("Function.cpp", "create function",
+    log::dolfin_error("Function.cpp", "create function",
                  "Cannot be created from subspace. Consider collapsing the "
                  "function space");
   }
@@ -194,7 +194,7 @@ void Function::operator=(const function::FunctionAXPY& axpy)
 {
   if (axpy.pairs().size() == 0)
   {
-    dolfin_error("Function.cpp", "assign function", "FunctionAXPY is empty.");
+    log::dolfin_error("Function.cpp", "assign function", "FunctionAXPY is empty.");
   }
 
   // Make an initial assign and scale
@@ -222,7 +222,7 @@ std::shared_ptr<la::PETScVector> Function::vector()
   // Check that this is not a sub function.
   if (_vector->size() != _function_space->dofmap()->global_dimension())
   {
-    dolfin_error("Function.cpp", "access vector of degrees of freedom",
+    log::dolfin_error("Function.cpp", "access vector of degrees of freedom",
                  "Cannot access a non-const vector from a subfunction");
   }
 
@@ -262,7 +262,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
       id = close.first;
     else
     {
-      dolfin_error("Function.cpp", "evaluate function at point",
+      log::dolfin_error("Function.cpp", "evaluate function at point",
                    "The point is not inside the domain. Consider calling "
                    "\"Function::set_allow_extrapolation(true)\" on this "
                    "Function to allow extrapolation");
@@ -425,7 +425,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   if (&mesh != _function_space->mesh().get()
       && mesh.hash() != _function_space->mesh()->hash())
   {
-    dolfin_error("Function.cpp", "interpolate function values at vertices",
+    log::dolfin_error("Function.cpp", "interpolate function values at vertices",
                  "Non-matching mesh");
   }
 
@@ -502,7 +502,7 @@ void Function::init_vector()
   // Check that function space is not a subspace (view)
   if (dofmap.is_view())
   {
-    dolfin_error("Function.cpp",
+    log::dolfin_error("Function.cpp",
                  "initialize vector of degrees of freedom for function",
                  "Cannot be created from subspace. Consider collapsing the "
                  "function space");
@@ -533,7 +533,7 @@ void Function::init_vector()
   dolfin_assert(_vector);
   if (!_vector->empty())
   {
-    dolfin_error("Function.cpp",
+    log::dolfin_error("Function.cpp",
                  "initialize vector of degrees of freedom for function",
                  "Cannot re-initialize a non-empty vector. Consider creating a
   new function");
@@ -571,7 +571,7 @@ void Function::init_vector()
 
   if (!_vector->empty())
   {
-    dolfin_error("Function.cpp",
+    log::dolfin_error("Function.cpp",
                  "initialize vector of degrees of freedom for function",
                  "Cannot re-initialize a non-empty vector. Consider creating a "
                  "new function");

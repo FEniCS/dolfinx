@@ -20,6 +20,9 @@ namespace parameter
 class Parameters;
 }
 
+namespace log
+{
+
 /// The DOLFIN log system provides the following set of functions for
 /// uniform handling of log messages, warnings and errors. In addition,
 /// macros are provided for debug messages and dolfin_assertions.
@@ -128,6 +131,7 @@ void __debug(std::string file, unsigned long line, std::string function,
 void __dolfin_assert(std::string file, unsigned long line, std::string function,
                      std::string check);
 }
+}
 
 // The following three macros are the only "functions" in DOLFIN
 // named dolfin_foo. Other functions can be placed inside the
@@ -137,34 +141,35 @@ void __dolfin_assert(std::string file, unsigned long line, std::string function,
 #define dolfin_debug(msg)                                                      \
   do                                                                           \
   {                                                                            \
-    dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg);                    \
+    dolfin::log::__debug(__FILE__, __LINE__, __FUNCTION__, msg);               \
   } while (false)
 #define dolfin_debug1(msg, a0)                                                 \
   do                                                                           \
   {                                                                            \
-    dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0);                \
+    dolfin::log::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0);           \
   } while (false)
 #define dolfin_debug2(msg, a0, a1)                                             \
   do                                                                           \
   {                                                                            \
-    dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1);            \
+    dolfin::log::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1);       \
   } while (false)
 #define dolfin_debug3(msg, a0, a1, a2)                                         \
   do                                                                           \
   {                                                                            \
-    dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2);        \
+    dolfin::log::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2);   \
   } while (false)
 #define dolfin_debug4(msg, a0, a1, a2, a3)                                     \
   do                                                                           \
   {                                                                            \
-    dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2, a3);    \
+    dolfin::log::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2,    \
+                         a3);                                                  \
   } while (false)
 
 // Not implemented error, reporting function name and line number
 #define dolfin_not_implemented()                                               \
   do                                                                           \
   {                                                                            \
-    dolfin::dolfin_error(                                                      \
+    dolfin::log::dolfin_error(                                                 \
         "log.h", "perform call to DOLFIN function",                            \
         "The function %s has not been implemented (in %s line %d)",            \
         __FUNCTION__, __FILE__, __LINE__);                                     \
@@ -177,7 +182,7 @@ void __dolfin_assert(std::string file, unsigned long line, std::string function,
   {                                                                            \
     if (!(check))                                                              \
     {                                                                          \
-      dolfin::__dolfin_assert(__FILE__, __LINE__, __FUNCTION__, #check);       \
+      dolfin::log::__dolfin_assert(__FILE__, __LINE__, __FUNCTION__, #check);  \
     }                                                                          \
   } while (false)
 #else

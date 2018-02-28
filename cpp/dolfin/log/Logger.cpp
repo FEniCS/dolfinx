@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -28,10 +27,11 @@
 #include <dolfin/parameter/GlobalParameters.h>
 
 using namespace dolfin;
+using namespace dolfin::log;
 
 // Function for monitoring memory usage, called by thread
 #ifdef __linux__
-void _monitor_memory_usage(dolfin::Logger* logger)
+void _monitor_memory_usage(dolfin::log::Logger* logger)
 {
   dolfin_assert(logger);
 
@@ -125,7 +125,6 @@ void Logger::error(std::string msg) const
 void Logger::dolfin_error(std::string location, std::string task,
                           std::string reason, int mpi_rank) const
 {
-
   if (mpi_rank < 0)
     mpi_rank = dolfin::MPI::rank(_mpi_comm);
   std::string _mpi_rank = std::to_string(mpi_rank);
@@ -300,7 +299,7 @@ std::map<TimingType, std::string> Logger::_TimingType_descr
 //-----------------------------------------------------------------------------
 Table Logger::timings(TimingClear clear, std::set<TimingType> type)
 {
-  // Generate timing table
+  // Generate log::timing table
   Table table("Summary of timings");
   for (auto& it : _timings)
   {
@@ -334,7 +333,7 @@ Logger::timing(std::string task, TimingClear clear)
   {
     std::stringstream line;
     line << "No timings registered for task \"" << task << "\".";
-    dolfin_error("Logger.cpp", "extract timing for task", line.str());
+    log::dolfin_error("Logger.cpp", "extract timing for task", line.str());
   }
   // Prepare for return for the case of reset
   const auto result = it->second;
@@ -349,7 +348,8 @@ Logger::timing(std::string task, TimingClear clear)
 void Logger::monitor_memory_usage()
 {
 #ifndef __linux__
-  warning("Unable to initialize memory monitor; only available on GNU/Linux.");
+  log::warning(
+      "Unable to initialize memory monitor; only available on GNU/Linux.");
   return;
 
 #else
@@ -392,7 +392,7 @@ void Logger::__dolfin_assert(std::string file, unsigned long line,
   task << "complete call to function " << function << "()";
   std::stringstream reason;
   reason << "Assertion " << check << " failed";
-  dolfin_error(location.str(), task.str(), reason.str());
+  log::dolfin_error(location.str(), task.str(), reason.str());
 }
 //-----------------------------------------------------------------------------
 void Logger::write(int log_level, std::string msg) const
@@ -404,7 +404,8 @@ void Logger::write(int log_level, std::string msg) const
   const std::size_t rank = dolfin::MPI::rank(_mpi_comm);
 
   // Check if we want output on root process only
-  const bool std_out_all_processes = parameter::parameters["std_out_all_processes"];
+  const bool std_out_all_processes
+      = parameter::parameters["std_out_all_processes"];
   if (rank > 0 && !std_out_all_processes && log_level < WARNING)
     return;
 

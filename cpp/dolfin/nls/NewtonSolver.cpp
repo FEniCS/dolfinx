@@ -98,7 +98,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   }
   else
   {
-    dolfin_error("NewtonSolver.cpp", "check for convergence",
+    log::dolfin_error("NewtonSolver.cpp", "check for convergence",
                  "The convergence criterion %s is unknown, known criteria are "
                  "'residual' or 'incremental'",
                  convergence_criterion.c_str());
@@ -146,7 +146,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     }
     else
     {
-      dolfin_error("NewtonSolver.cpp", "check for convergence",
+      log::dolfin_error("NewtonSolver.cpp", "check for convergence",
                    "The convergence criterion %s is unknown, known criteria "
                    "are 'residual' or 'incremental'",
                    convergence_criterion.c_str());
@@ -157,7 +157,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   {
     if (_mpi_comm.rank() == 0)
     {
-      info("Newton solver finished in %d iterations and %d linear solver "
+      log::info("Newton solver finished in %d iterations and %d linear solver "
            "iterations.",
            _newton_iteration, _krylov_iterations);
     }
@@ -169,20 +169,20 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     {
       if (_newton_iteration == maxiter)
       {
-        dolfin_error("NewtonSolver.cpp",
+        log::dolfin_error("NewtonSolver.cpp",
                      "solve nonlinear system with NewtonSolver",
                      "Newton solver did not converge because maximum number of "
                      "iterations reached");
       }
       else
       {
-        dolfin_error("NewtonSolver.cpp",
+        log::dolfin_error("NewtonSolver.cpp",
                      "solve nonlinear system with NewtonSolver",
                      "Newton solver did not converge");
       }
     }
     else
-      warning("Newton solver did not converge.");
+      log::warning("Newton solver did not converge.");
   }
 
   return std::make_pair(_newton_iteration, newton_converged);
@@ -227,7 +227,7 @@ bool dolfin::nls::NewtonSolver::converged(
   // Output iteration number and residual
   if (report && _mpi_comm.rank() == 0)
   {
-    info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = %.3e (tol "
+    log::info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = %.3e (tol "
          "= %.3e)",
          newton_iteration, _residual, atol, relative_residual, rtol);
   }
@@ -248,7 +248,7 @@ void dolfin::nls::NewtonSolver::solver_setup(
   if (_matP->empty())
   {
     _solver->set_operator(*A);
-    log(TRACE, "NewtonSolver: using Jacobian as preconditioner matrix");
+    log::log(TRACE, "NewtonSolver: using Jacobian as preconditioner matrix");
   }
   else
   {

@@ -138,7 +138,7 @@ void SparsityPatternBuilder::build(
     mesh.init(D - 1, D);
     if (!mesh.ordered())
     {
-      dolfin_error("SparsityPatternBuilder.cpp", "compute sparsity pattern",
+      log::dolfin_error("SparsityPatternBuilder.cpp", "compute sparsity pattern",
                    "mesh::Mesh is not ordered according to the UFC numbering "
                    "convention. "
                    "Consider calling mesh.order()");

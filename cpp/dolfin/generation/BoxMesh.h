@@ -58,7 +58,7 @@ public:
       return build_hex(comm, n);
     else
     {
-      dolfin_error("BoxMesh.h", "generate box mesh", "Wrong cell type '%d'",
+      log::dolfin_error("BoxMesh.h", "generate box mesh", "Wrong cell type '%d'",
                    cell_type);
     }
 

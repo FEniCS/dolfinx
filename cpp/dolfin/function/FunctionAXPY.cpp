@@ -36,7 +36,7 @@ FunctionAXPY::FunctionAXPY(std::shared_ptr<const Function> func0,
 
   if (*func0->function_space() != *func1->function_space())
   {
-    dolfin_error("FunctionAXPY.cpp", "Construct FunctionAXPY",
+    log::dolfin_error("FunctionAXPY.cpp", "Construct FunctionAXPY",
                  "Expected Functions to be in the same FunctionSpace");
   }
 
@@ -59,7 +59,7 @@ FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy,
   if (_pairs.size() > 0
       and *_pairs[0].second->function_space() != *func->function_space())
   {
-    dolfin_error("FunctionAXPY.cpp", "Construct FunctionAXPY",
+    log::dolfin_error("FunctionAXPY.cpp", "Construct FunctionAXPY",
                  "Expected Functions to have the same FunctionSpace");
   }
 
@@ -126,7 +126,7 @@ void FunctionAXPY::_register(const FunctionAXPY& axpy, double scale)
       and *_pairs[0].second->function_space()
               != *axpy._pairs[0].second->function_space())
   {
-    dolfin_error("FunctionAXPY.cpp", "Construct FunctionAXPY",
+    log::dolfin_error("FunctionAXPY.cpp", "Construct FunctionAXPY",
                  "Expected Functions to have the same FunctionSpace");
   }
 

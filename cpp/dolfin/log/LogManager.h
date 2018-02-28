@@ -11,6 +11,9 @@
 namespace dolfin
 {
 
+namespace log
+{
+
 /// Logger initialisation
 
 class LogManager
@@ -20,5 +23,5 @@ public:
   static Logger& logger();
 };
 }
-
+}
 

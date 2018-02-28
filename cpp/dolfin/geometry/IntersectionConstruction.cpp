@@ -211,7 +211,7 @@ std::vector<Point> IntersectionConstruction::intersection(
   }
 
   // We should not reach this point
-  dolfin_error("IntersectionConstruction.cpp", "compute intersection",
+  log::dolfin_error("IntersectionConstruction.cpp", "compute intersection",
                "Unexpected intersection: %d-%d in %d dimensions", d0, d1, gdim);
 
   return std::vector<Point>();

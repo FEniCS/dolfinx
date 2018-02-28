@@ -29,7 +29,7 @@ class TableEntry;
 ///   table("Tpetra", "Assemble") = 0.012;
 ///   table("Tpetra", "Solve")    = 0.018;
 ///
-///   info(table);
+///   log::info(table);
 
 class Table : public common::Variable
 {

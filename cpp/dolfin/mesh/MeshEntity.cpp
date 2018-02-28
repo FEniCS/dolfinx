@@ -34,7 +34,7 @@ void MeshEntity::init(const Mesh& mesh, std::size_t dim, std::size_t index)
     return;
 
   // Illegal index range
-  dolfin_error(
+  log::dolfin_error(
       "MeshEntity.cpp", "create mesh entity",
       "Mesh entity index %d out of range [0, %d] for entity of dimension %d",
       index, _mesh->num_entities(dim), dim);
@@ -71,7 +71,7 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
   // Must be in the same mesh to be incident
   if (_mesh != entity._mesh)
   {
-    dolfin_error("MeshEntity.cpp", "compute index of mesh entity",
+    log::dolfin_error("MeshEntity.cpp", "compute index of mesh entity",
                  "Mesh entity is defined on a different mesh");
   }
 
@@ -87,7 +87,7 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
       return i;
 
   // Entity was not found
-  dolfin_error("MeshEntity.cpp", "compute index of mesh entity",
+  log::dolfin_error("MeshEntity.cpp", "compute index of mesh entity",
                "Mesh entity was not found");
 
   return 0;
@@ -128,14 +128,14 @@ std::uint32_t MeshEntity::owner() const
 {
   if (_dim != _mesh->topology().dim())
   {
-    dolfin_error("MeshEntity.cpp", "get ownership of entity",
+    log::dolfin_error("MeshEntity.cpp", "get ownership of entity",
                  "Entity ownership is only defined for cells");
   }
 
   const std::int32_t offset = _mesh->topology().ghost_offset(_dim);
   if (_local_index < offset)
   {
-    dolfin_error("MeshEntity.cpp", "get ownership of entity",
+    log::dolfin_error("MeshEntity.cpp", "get ownership of entity",
                  "Ownership of non-ghost cells is local process");
   }
 
@@ -147,7 +147,7 @@ std::uint32_t MeshEntity::owner() const
 std::string MeshEntity::str(bool verbose) const
 {
   if (verbose)
-    warning("Verbose output for MeshEntityIterator not implemented.");
+    log::warning("Verbose output for MeshEntityIterator not implemented.");
 
   std::stringstream s;
   s << "<Mesh entity " << index() << " of topological dimension " << dim()

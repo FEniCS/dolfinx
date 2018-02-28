@@ -56,7 +56,7 @@ double Facet::squared_distance(const geometry::Point& point) const
     return TriangleCell::squared_distance(point, a, b, c);
   }
 
-  dolfin_error("Facet.cpp", "compute (squared) distance to facet",
+  log::dolfin_error("Facet.cpp", "compute (squared) distance to facet",
                "Not implemented for facets of dimension %d", _dim);
 
   return 0.0;

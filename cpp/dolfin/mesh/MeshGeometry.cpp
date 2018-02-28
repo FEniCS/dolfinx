@@ -51,19 +51,19 @@ void MeshGeometry::init(std::size_t dim, std::size_t degree)
   // Check input
   if (dim == 0)
   {
-    dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
+    log::dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
                  "Mesh geometry of dimension zero is not supported");
   }
   if (degree == 0)
   {
-    dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
+    log::dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
                  "Mesh geometry of degree zero is not supported");
   }
 
   // Avoid repeated initialization; would be a hell for UFL
   if (_dim > 0 && (_dim != dim || _degree != degree))
   {
-    dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
+    log::dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
                  "Mesh geometry cannot be reinitialized with different "
                  "dimension and/or degree");
   }

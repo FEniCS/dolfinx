@@ -133,7 +133,7 @@ void MeshQuality::dihedral_angles(const Cell& cell,
 {
   if (cell.dim() != 3)
   {
-    dolfin_error("MeshQuality.cpp", "calculate dihedral angles",
+    log::dolfin_error("MeshQuality.cpp", "calculate dihedral angles",
                  "Only works for 3D cells");
   }
 

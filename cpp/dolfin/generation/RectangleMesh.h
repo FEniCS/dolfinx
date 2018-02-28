@@ -63,7 +63,7 @@ public:
       return build_quad(comm, p, n);
     else
     {
-      dolfin_error("RectangleMesh.h", "generate rectangle mesh",
+      log::dolfin_error("RectangleMesh.h", "generate rectangle mesh",
                    "Wrong cell type '%d'", cell_type);
     }
 

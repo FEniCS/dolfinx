@@ -242,7 +242,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
     // Check that function ranks match
     if (el->value_rank() != elf->value_rank())
     {
-      dolfin_error("create_transfer_matrix", "Creating interpolation matrix",
+      log::dolfin_error("create_transfer_matrix", "Creating interpolation matrix",
                    "Ranks of function spaces do not match: %d, %d.",
                    el->value_rank(), elf->value_rank());
     }
@@ -252,7 +252,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
     {
       if (el->value_dimension(i) != elf->value_dimension(i))
       {
-        dolfin_error("create_transfer_matrix", "Creating interpolation matrix",
+        log::dolfin_error("create_transfer_matrix", "Creating interpolation matrix",
                      "Dimension %d of function space (%d) does not match "
                      "dimension %d of function space (%d)",
                      i, el->value_dimension(i), i, elf->value_dimension(i));

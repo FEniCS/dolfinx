@@ -31,7 +31,7 @@ std::size_t TriangleCell::num_entities(std::size_t dim) const
   case 2:
     return 1; // cells
   default:
-    dolfin_error("TriangleCell.cpp",
+    log::dolfin_error("TriangleCell.cpp",
                  "access number of entities of triangle cell",
                  "Illegal topological dimension (%d)", dim);
   }
@@ -50,7 +50,7 @@ std::size_t TriangleCell::num_vertices(std::size_t dim) const
   case 2:
     return 3; // cells
   default:
-    dolfin_error("TriangleCell.cpp",
+    log::dolfin_error("TriangleCell.cpp",
                  "access number of vertices for subsimplex of triangle cell",
                  "Illegal topological dimension (%d)", dim);
   }
@@ -64,7 +64,7 @@ void TriangleCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
   // We only need to know how to create edges
   if (dim != 1)
   {
-    dolfin_error(
+    log::dolfin_error(
         "TriangleCell.cpp", "create entities of triangle cell",
         "Don't know how to create entities of topological dimension %d", dim);
   }
@@ -86,7 +86,7 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   // Check that we get a triangle
   if (triangle.dim() != 2)
   {
-    dolfin_error("TriangleCell.cpp", "compute volume (area) of triangle cell",
+    log::dolfin_error("TriangleCell.cpp", "compute volume (area) of triangle cell",
                  "Illegal mesh entity, not a triangle");
   }
 
@@ -123,7 +123,7 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   }
   else
   {
-    dolfin_error("TriangleCell.cpp", "compute volume of triangle",
+    log::dolfin_error("TriangleCell.cpp", "compute volume of triangle",
                  "Only know how to compute volume when embedded in R^2 or R^3");
   }
 
@@ -135,7 +135,7 @@ double TriangleCell::circumradius(const MeshEntity& triangle) const
   // Check that we get a triangle
   if (triangle.dim() != 2)
   {
-    dolfin_error("TriangleCell.cpp", "compute diameter of triangle cell",
+    log::dolfin_error("TriangleCell.cpp", "compute diameter of triangle cell",
                  "Illegal mesh entity, not a triangle");
   }
 
@@ -144,7 +144,7 @@ double TriangleCell::circumradius(const MeshEntity& triangle) const
 
   // Only know how to compute the diameter when embedded in R^2 or R^3
   if (geometry.dim() != 2 && geometry.dim() != 3)
-    dolfin_error(
+    log::dolfin_error(
         "TriangleCell.cpp", "compute diameter of triangle",
         "Only know how to compute diameter when embedded in R^2 or R^3");
 
@@ -274,7 +274,7 @@ geometry::Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
   // could be removed, unless it is here for some other reason.
   if (cell.mesh().geometry().dim() != 2)
   {
-    dolfin_error("TriangleCell.cpp", "find normal",
+    log::dolfin_error("TriangleCell.cpp", "find normal",
                  "Normal vector is not defined in dimension %d (only defined "
                  "when the triangle is in R^2",
                  cell.mesh().geometry().dim());
@@ -316,7 +316,7 @@ geometry::Point TriangleCell::cell_normal(const Cell& cell) const
   const std::size_t gdim = geometry.dim();
   if (gdim > 3)
   {
-    dolfin_error("TriangleCell.cpp", "compute cell normal",
+    log::dolfin_error("TriangleCell.cpp", "compute cell normal",
                  "Illegal geometric dimension (%d)", gdim);
   }
 
@@ -456,7 +456,7 @@ std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
   }
 
   // We should not reach this
-  dolfin_error("TriangleCell.cpp", "find specified edge in cell",
+  log::dolfin_error("TriangleCell.cpp", "find specified edge in cell",
                "Edge really not found");
   return 0;
 }

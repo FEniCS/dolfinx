@@ -32,7 +32,7 @@ SimplexQuadrature::SimplexQuadrature(std::size_t tdim, std::size_t order)
     setup_qr_reference_tetrahedron(order);
     break;
   default:
-    dolfin_error("SimplexQuadrature.cpp",
+    log::dolfin_error("SimplexQuadrature.cpp",
                  "setup quadrature rule for reference simplex",
                  "Only implemented for topological dimension 1, 2, 3");
   }
@@ -82,7 +82,7 @@ SimplexQuadrature::compute_quadrature_rule(
     return compute_quadrature_rule_tetrahedron(coordinates, gdim, order);
     break;
   default:
-    dolfin_error("SimplexQuadrature.cpp", "compute quadrature rule for simplex",
+    log::dolfin_error("SimplexQuadrature.cpp", "compute quadrature rule for simplex",
                  "Only implemented for topological dimension 1, 2, 3");
   };
 
@@ -95,7 +95,7 @@ SimplexQuadrature::compute_quadrature_rule_interval(
     const std::vector<Point>& coordinates, std::size_t gdim,
     std::size_t order) const
 {
-  log(PROGRESS, "Create quadrature rule using given interval coordinates");
+  log::log(PROGRESS, "Create quadrature rule using given interval coordinates");
 
   std::pair<std::vector<double>, std::vector<double>> quadrature_rule;
 
@@ -127,7 +127,7 @@ SimplexQuadrature::compute_quadrature_rule_interval(
     break;
   }
   default:
-    dolfin_error("SimplexQuadrature.cpp",
+    log::dolfin_error("SimplexQuadrature.cpp",
                  "compute quadrature rule for interval",
                  "Not implemented for dimension %d", gdim);
   }
@@ -165,7 +165,7 @@ SimplexQuadrature::compute_quadrature_rule_triangle(
     const std::vector<Point>& coordinates, std::size_t gdim,
     std::size_t order) const
 {
-  log(PROGRESS, "Create quadrature rule using given triangle coordinates");
+  log::log(PROGRESS, "Create quadrature rule using given triangle coordinates");
 
   std::pair<std::vector<double>, std::vector<double>> quadrature_rule;
 
@@ -197,7 +197,7 @@ SimplexQuadrature::compute_quadrature_rule_triangle(
     break;
   }
   default:
-    dolfin_error("SimplexQuadrature.cpp",
+    log::dolfin_error("SimplexQuadrature.cpp",
                  "compute quadrature rule for triangle",
                  "Not implemented for dimension ", gdim);
   }
@@ -234,7 +234,7 @@ SimplexQuadrature::compute_quadrature_rule_tetrahedron(
     const std::vector<Point>& coordinates, std::size_t gdim,
     std::size_t order) const
 {
-  log(PROGRESS, "Create quadrature rule using given tetrahedron coordinates");
+  log::log(PROGRESS, "Create quadrature rule using given tetrahedron coordinates");
 
   std::pair<std::vector<double>, std::vector<double>> quadrature_rule;
 
@@ -261,7 +261,7 @@ SimplexQuadrature::compute_quadrature_rule_tetrahedron(
     break;
   }
   default:
-    dolfin_error("SimplexQuadrature.cpp",
+    log::dolfin_error("SimplexQuadrature.cpp",
                  "compute quadrature rule for tetrahedron",
                  "Not implemented for dimension ", gdim);
   }
@@ -307,7 +307,7 @@ std::vector<std::size_t> SimplexQuadrature::compress(
     return std::vector<std::size_t>();
   }
 
-  log(PROGRESS, "Compressing %d quadrature points down to %d", qr.second.size(),
+  log::log(PROGRESS, "Compressing %d quadrature points down to %d", qr.second.size(),
       N_compressed_min);
 
   // Copy the input qr since we'll overwrite the input
@@ -501,7 +501,7 @@ void SimplexQuadrature::setup_qr_reference_tetrahedron(std::size_t order)
 
     break;
   default:
-    dolfin_error("SimplexQuadrature.cpp",
+    log::dolfin_error("SimplexQuadrature.cpp",
                  "compute quadrature rule for tetrahedron",
                  "Not implemented for order ", order);
   }
@@ -752,7 +752,7 @@ void SimplexQuadrature::dunavant_rule(std::size_t rule,
     }
     else
     {
-      dolfin_error("SimplexQuadrature.cpp",
+      log::dolfin_error("SimplexQuadrature.cpp",
                    "compute quadrature rule for triangle",
                    "Dunavant rule not implemented for suborder ", suborder[s]);
     }
@@ -1085,7 +1085,7 @@ std::vector<std::size_t> SimplexQuadrature::dunavant_suborder(int rule,
   }
   else
   {
-    dolfin_error("SimplexQuadrature.cpp",
+    log::dolfin_error("SimplexQuadrature.cpp",
                  "compute quadrature rule for triangle",
                  "dunavant_suborder not implemented for rule ", rule);
   }
@@ -1218,7 +1218,7 @@ std::size_t SimplexQuadrature::dunavant_suborder_num(int rule)
   }
   else
   {
-    dolfin_error("SimplexQuadrature.cpp",
+    log::dolfin_error("SimplexQuadrature.cpp",
                  "compute quadrature rule for triangle",
                  "dunavant_suborder_num not implemented for rule ", rule);
   }
@@ -1357,7 +1357,7 @@ void SimplexQuadrature::dunavant_subrule(std::size_t rule,
   }
   else
   {
-    dolfin_error("SimplexQuadrature.cpp",
+    log::dolfin_error("SimplexQuadrature.cpp",
                  "compute quadrature rule for triangle",
                  "dunavant_subrule not implemented for rule ", rule);
   }
@@ -2944,7 +2944,7 @@ int SimplexQuadrature::i4_modp(int i, int j)
 
   if (j == 0)
   {
-    dolfin_error("SimplexQuadrature.cpp",
+    log::dolfin_error("SimplexQuadrature.cpp",
                  "compute quadrature rule for triangle",
                  "i4_modp must have non-zero j, which is here ", j);
   }
