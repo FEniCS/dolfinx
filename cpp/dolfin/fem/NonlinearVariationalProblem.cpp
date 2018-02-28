@@ -12,10 +12,11 @@
 #include <dolfin/la/PETScVector.h>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 NonlinearVariationalProblem::NonlinearVariationalProblem(
-    std::shared_ptr<const Form> F, std::shared_ptr<Function> u,
+    std::shared_ptr<const Form> F, std::shared_ptr<function::Function> u,
     std::vector<std::shared_ptr<const fem::DirichletBC>> bcs,
     std::shared_ptr<const Form> J)
     : _residual(F), _jacobian(J), _u(u), _bcs(bcs)
@@ -24,8 +25,8 @@ NonlinearVariationalProblem::NonlinearVariationalProblem(
   check_forms();
 }
 //-----------------------------------------------------------------------------
-void NonlinearVariationalProblem::set_bounds(const Function& lb_func,
-                                             const Function& ub_func)
+void NonlinearVariationalProblem::set_bounds(const function::Function& lb_func,
+                                             const function::Function& ub_func)
 {
   this->set_bounds(lb_func.vector(), ub_func.vector());
 }
@@ -50,9 +51,13 @@ std::shared_ptr<const Form> NonlinearVariationalProblem::jacobian_form() const
   return _jacobian;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<Function> NonlinearVariationalProblem::solution() { return _u; }
+std::shared_ptr<function::Function> NonlinearVariationalProblem::solution()
+{
+  return _u;
+}
 //-----------------------------------------------------------------------------
-std::shared_ptr<const Function> NonlinearVariationalProblem::solution() const
+std::shared_ptr<const function::Function>
+NonlinearVariationalProblem::solution() const
 {
   return _u;
 }
@@ -63,14 +68,14 @@ NonlinearVariationalProblem::bcs() const
   return _bcs;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FunctionSpace>
+std::shared_ptr<const function::FunctionSpace>
 NonlinearVariationalProblem::trial_space() const
 {
   dolfin_assert(_u);
   return _u->function_space();
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FunctionSpace>
+std::shared_ptr<const function::FunctionSpace>
 NonlinearVariationalProblem::test_space() const
 {
   dolfin_assert(_residual);

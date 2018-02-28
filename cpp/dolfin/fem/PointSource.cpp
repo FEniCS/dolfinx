@@ -4,13 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <limits>
-#include <memory>
-#include <vector>
-
+#include "PointSource.h"
 #include "FiniteElement.h"
 #include "GenericDofMap.h"
-#include "PointSource.h"
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScMatrix.h>
@@ -18,11 +14,15 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
+#include <limits>
+#include <memory>
+#include <vector>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
+PointSource::PointSource(std::shared_ptr<const function::FunctionSpace> V,
                          const std::vector<std::pair<Point, double>> sources)
     : _function_space0(V)
 {
@@ -40,8 +40,8 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
   check_space_supported(*V);
 }
 //-----------------------------------------------------------------------------
-PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
-                         std::shared_ptr<const FunctionSpace> V1,
+PointSource::PointSource(std::shared_ptr<const function::FunctionSpace> V0,
+                         std::shared_ptr<const function::FunctionSpace> V1,
                          const std::vector<std::pair<Point, double>> sources)
     : _function_space0(V0), _function_space1(V1)
 {
@@ -189,7 +189,7 @@ void PointSource::apply(PETScVector& b)
     unsigned int cell_index = tree->compute_first_entity_collision(p, mesh);
 
     // Create cell
-    Cell cell(mesh, static_cast<std::size_t>(cell_index));
+    mesh::Cell cell(mesh, static_cast<std::size_t>(cell_index));
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Evaluate all basis functions at the point()
@@ -233,8 +233,8 @@ void PointSource::apply(PETScMatrix& A)
                  "The elemnts are different. Not currently implemented");
   }
 
-  std::shared_ptr<const FunctionSpace> V0 = _function_space0;
-  std::shared_ptr<const FunctionSpace> V1 = _function_space1;
+  std::shared_ptr<const function::FunctionSpace> V0 = _function_space0;
+  std::shared_ptr<const function::FunctionSpace> V1 = _function_space1;
 
   log(PROGRESS, "Applying point source to matrix.");
 
@@ -313,7 +313,7 @@ void PointSource::apply(PETScMatrix& A)
 
     // Create cell
     cell_index = tree->compute_first_entity_collision(p, *mesh);
-    Cell cell(*mesh, static_cast<std::size_t>(cell_index));
+    mesh::Cell cell(*mesh, static_cast<std::size_t>(cell_index));
 
     // Cell information
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -379,13 +379,13 @@ void PointSource::apply(PETScMatrix& A)
   A.apply(PETScMatrix::AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
-void PointSource::check_space_supported(const FunctionSpace& V)
+void PointSource::check_space_supported(const function::FunctionSpace& V)
 {
   dolfin_assert(V.element());
   if (V.element()->value_rank() > 1)
   {
     dolfin_error("PointSource.cpp", "create point source",
-                 "Function must have rank 0 or 1");
+                 "function::Function must have rank 0 or 1");
   }
 }
 //-----------------------------------------------------------------------------

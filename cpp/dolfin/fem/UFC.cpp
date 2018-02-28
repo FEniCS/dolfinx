@@ -9,16 +9,19 @@
 #include "Form.h"
 #include "GenericDofMap.h"
 #include <dolfin/common/types.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/GenericFunction.h>
+#include <dolfin/mesh/Cell.h>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 UFC::UFC(const Form& a) : dolfin_form(a)
 {
   // Get function spaces for arguments
-  std::vector<std::shared_ptr<const FunctionSpace>> V = a.function_spaces();
+  std::vector<std::shared_ptr<const function::FunctionSpace>> V
+      = a.function_spaces();
 
   //
   // Initialise temporary space for element tensors
@@ -56,7 +59,7 @@ UFC::UFC(const Form& a) : dolfin_form(a)
   }
 }
 //-----------------------------------------------------------------------------
-void UFC::update(const Cell& c,
+void UFC::update(const mesh::Cell& c,
                  Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs,
                  const ufc::cell& ufc_cell,
                  const std::vector<bool>& enabled_coefficients)
@@ -75,7 +78,8 @@ void UFC::update(const Cell& c,
   }
 }
 //-----------------------------------------------------------------------------
-void UFC::update(const Cell& c, const std::vector<double>& coordinate_dofs,
+void UFC::update(const mesh::Cell& c,
+                 const std::vector<double>& coordinate_dofs,
                  const ufc::cell& ufc_cell,
                  const std::vector<bool>& enabled_coefficients)
 {
@@ -93,8 +97,9 @@ void UFC::update(const Cell& c, const std::vector<double>& coordinate_dofs,
   }
 }
 //-----------------------------------------------------------------------------
-void UFC::update(const Cell& c0, const std::vector<double>& coordinate_dofs0,
-                 const ufc::cell& ufc_cell0, const Cell& c1,
+void UFC::update(const mesh::Cell& c0,
+                 const std::vector<double>& coordinate_dofs0,
+                 const ufc::cell& ufc_cell0, const mesh::Cell& c1,
                  const std::vector<double>& coordinate_dofs1,
                  const ufc::cell& ufc_cell1,
                  const std::vector<bool>& enabled_coefficients)
@@ -116,9 +121,9 @@ void UFC::update(const Cell& c0, const std::vector<double>& coordinate_dofs0,
   }
 }
 //-----------------------------------------------------------------------------
-void UFC::update(const Cell& c0,
+void UFC::update(const mesh::Cell& c0,
                  Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs0,
-                 const ufc::cell& ufc_cell0, const Cell& c1,
+                 const ufc::cell& ufc_cell0, const mesh::Cell& c1,
                  Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs1,
                  const ufc::cell& ufc_cell1,
                  const std::vector<bool>& enabled_coefficients)

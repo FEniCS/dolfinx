@@ -6,8 +6,6 @@
 
 #pragma once
 
-#ifdef HAS_PETSC
-
 #include <dolfin/common/MPI.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/log/log.h>
@@ -20,11 +18,17 @@ namespace dolfin
 {
 
 class Mesh;
-class FunctionSpace;
 class BoundingBoxTree;
 
+namespace function
+{
+class FunctionSpace;
+}
+
+namespace fem
+{
 /// This class builds and stores of collection of PETSc DM objects
-/// from a hierarchy of FunctionSpaces objects. The DM objects are
+/// from a hierarchy of function::FunctionSpaces objects. The DM objects are
 /// used to construct multigrid solvers via PETSc.
 ///
 /// Warning: This classs is highly experimental and will change
@@ -33,10 +37,11 @@ class PETScDMCollection : public PETScObject
 {
 public:
   /// Construct PETScDMCollection from a vector of
-  /// FunctionSpaces. The vector of FunctionSpaces is stored from
+  /// function::FunctionSpaces. The vector of function::FunctionSpaces is stored
+  /// from
   /// coarse to fine.
-  PETScDMCollection(
-      std::vector<std::shared_ptr<const FunctionSpace>> function_spaces);
+  PETScDMCollection(std::vector<std::shared_ptr<const function::FunctionSpace>>
+                        function_spaces);
 
   /// Destructor
   ~PETScDMCollection();
@@ -55,8 +60,8 @@ public:
   /// Create the interpolation matrix from the coarse to the fine
   /// space (prolongation matrix)
   static std::shared_ptr<PETScMatrix>
-  create_transfer_matrix(const FunctionSpace& coarse_space,
-                         const FunctionSpace& fine_space);
+  create_transfer_matrix(const function::FunctionSpace& coarse_space,
+                         const function::FunctionSpace& fine_space);
 
 private:
   // Find the nearest cells to points which lie outside the domain
@@ -76,13 +81,12 @@ private:
   static PetscErrorCode coarsen(DM dmf, MPI_Comm comm, DM* dmc);
   static PetscErrorCode refine(DM dmc, MPI_Comm comm, DM* dmf);
 
-  // The FunctionSpaces associated with each level, starting with
+  // The function::FunctionSpaces associated with each level, starting with
   // the coarest space
-  std::vector<std::shared_ptr<const FunctionSpace>> _spaces;
+  std::vector<std::shared_ptr<const function::FunctionSpace>> _spaces;
 
   // The PETSc DM objects
   std::vector<DM> _dms;
 };
 }
-
-#endif
+}

@@ -13,6 +13,7 @@
 #include <vector>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 void MeshOrdering::order(Mesh& mesh)

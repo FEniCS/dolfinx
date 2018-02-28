@@ -45,7 +45,7 @@ void FacetArea::eval(Eigen::Ref<Eigen::VectorXd> values,
 
   if (cell.local_facet >= 0)
   {
-    Cell c(*_mesh, cell.index);
+    mesh::Cell c(*_mesh, cell.index);
     values[0] = c.facet_area(cell.local_facet);
   }
   else

@@ -4,15 +4,15 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <algorithm>
-#include <array>
+#include "SystemAssembler.h"
 #include "AssemblerBase.h"
 #include "DirichletBC.h"
 #include "FiniteElement.h"
 #include "Form.h"
 #include "GenericDofMap.h"
-#include "SystemAssembler.h"
 #include "UFC.h"
+#include <algorithm>
+#include <array>
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
@@ -100,10 +100,10 @@ _pick_one_meshfunction(std::string name,
 }
 //-----------------------------------------------------------------------------
 bool SystemAssembler::check_functionspace_for_bc(
-    std::shared_ptr<const FunctionSpace> fs, std::size_t bc_index)
+    std::shared_ptr<const function::FunctionSpace> fs, std::size_t bc_index)
 {
   dolfin_assert(_bcs[bc_index]);
-  std::shared_ptr<const FunctionSpace> bc_function_space
+  std::shared_ptr<const function::FunctionSpace> bc_function_space
       = _bcs[bc_index]->function_space();
   dolfin_assert(bc_function_space);
 
@@ -117,7 +117,7 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
   dolfin_assert(_l);
 
   // Set timer
-  Timer timer("Assemble system");
+  common::Timer timer("Assemble system");
 
   // Get mesh
   dolfin_assert(_a->mesh());
@@ -153,7 +153,7 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
   if (*_a->function_space(0) != *_l->function_space(0))
   {
     dolfin_error("SystemAssembler.cpp", "assemble system",
-                 "expected forms (a, L) to share a FunctionSpace");
+                 "expected forms (a, L) to share a function::FunctionSpace");
   }
 
   // Create data structures for local assembly data
@@ -190,7 +190,7 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
   std::vector<DirichletBC::Map> boundary_values(rectangular ? 2 : 1);
   for (std::size_t i = 0; i < _bcs.size(); ++i)
   {
-    // Match the FunctionSpace of the BC
+    // Match the function::FunctionSpace of the BC
     // with the (possible sub-)FunctionSpace on each axis of _a.
     bool axis0 = check_functionspace_for_bc(_a->function_space(0), i);
     bool axis1
@@ -334,7 +334,7 @@ void SystemAssembler::cell_wise_assembly(
   EigenRowMatrixXd coordinate_dofs;
   std::size_t gdim = mesh.geometry().dim();
 
-  for (auto& cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
     dolfin_assert(!cell.is_ghost());
@@ -513,7 +513,7 @@ void SystemAssembler::facet_wise_assembly(
   cell_dofs[1][0].resize(1);
   cell_dofs[1][1].resize(1);
 
-  std::array<Cell, 2> cell;
+  std::array<mesh::Cell, 2> cell;
   std::array<std::size_t, 2> cell_index;
   std::array<std::size_t, 2> local_facet;
 
@@ -587,7 +587,7 @@ void SystemAssembler::facet_wise_assembly(
       // Get cells incident with facet and associated data
       for (std::size_t c = 0; c < 2; ++c)
       {
-        cell[c] = Cell(mesh, cell_indices[c]);
+        cell[c] = mesh::Cell(mesh, cell_indices[c]);
         cell_index[c] = cell[c].index();
         local_facet[c] = cell[c].index(facet);
         coordinate_dofs[c].resize(cell[c].num_vertices(), gdim);
@@ -768,7 +768,7 @@ void SystemAssembler::facet_wise_assembly(
     {
       // Get mesh cell to which mesh facet belongs (pick first, there
       // is only one)
-      Cell cell(mesh, facet.entities(mesh.topology().dim())[0]);
+      mesh::Cell cell(mesh, facet.entities(mesh.topology().dim())[0]);
 
       // Check of attached cell needs to be processed
       compute_cell_tensor[0] = !cell_tensor_computed[cell.index()];
@@ -855,7 +855,7 @@ void SystemAssembler::compute_exterior_facet_tensor(
     std::array<std::vector<double>, 2>& Ae, std::array<UFC*, 2>& ufc,
     ufc::cell& ufc_cell, Eigen::Ref<EigenRowMatrixXd> coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
-    const std::array<bool, 2>& tensor_required_facet, const Cell& cell,
+    const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
     const Facet& facet,
     const std::array<const ufc::cell_integral*, 2>& cell_integrals,
     const std::array<const ufc::exterior_facet_integral*, 2>&
@@ -914,7 +914,7 @@ void SystemAssembler::compute_interior_facet_tensor(
     std::array<EigenRowMatrixXd, 2>& coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
     const std::array<bool, 2>& tensor_required_facet,
-    const std::array<Cell, 2>& cell,
+    const std::array<mesh::Cell, 2>& cell,
     const std::array<std::size_t, 2>& local_facet, const bool facet_owner,
     const std::array<const ufc::cell_integral*, 2>& cell_integrals,
     const std::array<const ufc::interior_facet_integral*, 2>&
@@ -1023,7 +1023,7 @@ void SystemAssembler::apply_bc(
 
   if (boundary_values.size() == 1)
   {
-    // Square matrix with same FunctionSpace on each axis
+    // Square matrix with same function::FunctionSpace on each axis
     // Loop over columns/rows
     for (int i = 0; i < _matA.cols(); ++i)
     {
@@ -1056,7 +1056,8 @@ void SystemAssembler::apply_bc(
     //
     //        Essentially we need to detect if _a->function_space(0) and
     //        _a->function_space(1) share the common super space (use
-    //        FunctionSpace::_root_space_id). In that case dof ids are shared
+    //        function::FunctionSpace::_root_space_id). In that case dof ids are
+    //        shared
     //        and matrix has diagonal. Otherwise it does not have diagonal.
 
     // Loop over rows first

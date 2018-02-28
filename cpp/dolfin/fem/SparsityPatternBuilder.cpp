@@ -4,10 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <algorithm>
-
 #include "SparsityPatternBuilder.h"
+#include <algorithm>
 #include <dolfin/common/ArrayView.h>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/SparsityPattern.h>
@@ -19,6 +19,7 @@
 #include <dolfin/mesh/Vertex.h>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build(
@@ -30,7 +31,7 @@ void SparsityPatternBuilder::build(
   // Get index maps
   dolfin_assert(dofmaps[0]);
   dolfin_assert(dofmaps[1]);
-  std::array<std::shared_ptr<const IndexMap>, 2> index_maps
+  std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
 
   // FIXME: Should check that index maps are matching
@@ -64,7 +65,7 @@ void SparsityPatternBuilder::build(
   // Build sparsity pattern for cell integrals
   if (cells)
   {
-    for (auto &cell : MeshRange<Cell>(mesh))
+    for (auto& cell : MeshRange<mesh::Cell>(mesh))
     {
       // Tabulate dofs for each dimension and get local dimensions
       for (std::size_t i = 0; i < 2; ++i)
@@ -95,10 +96,10 @@ void SparsityPatternBuilder::build(
       local_to_local_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
     }
 
-    for (auto &vert : MeshRange<Vertex>(mesh))
+    for (auto& vert : MeshRange<Vertex>(mesh))
     {
       // Get mesh cell to which mesh vertex belongs (pick first)
-      Cell mesh_cell(mesh, vert.entities(D)[0]);
+      mesh::Cell mesh_cell(mesh, vert.entities(D)[0]);
 
       // Check that cell is not a ghost
       dolfin_assert(!mesh_cell.is_ghost());
@@ -143,7 +144,7 @@ void SparsityPatternBuilder::build(
           "Consider calling mesh.order()");
     }
 
-    for (auto &facet : MeshRange<Facet>(mesh))
+    for (auto& facet : MeshRange<Facet>(mesh))
     {
       bool this_exterior_facet = false;
       if (facet.num_global_entities(D) == 1)
@@ -154,7 +155,7 @@ void SparsityPatternBuilder::build(
       {
         // Get cells incident with facet
         dolfin_assert(facet.num_entities(D) == 1);
-        Cell cell(mesh, facet.entities(D)[0]);
+        mesh::Cell cell(mesh, facet.entities(D)[0]);
 
         // Tabulate dofs for each dimension and get local dimensions
         for (std::size_t i = 0; i < 2; ++i)
@@ -176,8 +177,8 @@ void SparsityPatternBuilder::build(
 
         // Get cells incident with facet
         dolfin_assert(facet.num_entities(D) == 2);
-        Cell cell0(mesh, facet.entities(D)[0]);
-        Cell cell1(mesh, facet.entities(D)[1]);
+        mesh::Cell cell0(mesh, facet.entities(D)[0]);
+        mesh::Cell cell1(mesh, facet.entities(D)[1]);
 
         // Tabulate dofs for each dimension on macro element
         for (std::size_t i = 0; i < 2; i++)
@@ -211,7 +212,7 @@ void SparsityPatternBuilder::build(
     const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
     const auto primary_range = index_maps[primary_dim]->local_range();
     const std::size_t secondary_range
-        = index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
+        = index_maps[primary_codim]->size(common::IndexMap::MapSize::GLOBAL);
     const std::size_t diagonal_range
         = std::min((std::size_t)primary_range[1], secondary_range);
 
@@ -223,9 +224,11 @@ void SparsityPatternBuilder::build(
     std::vector<dolfin::la_index_t> indices(
         bs * (diagonal_range - primary_range[0]));
     std::iota(indices.begin(), indices.end(), bs * primary_range[0]);
-    const std::array<common::ArrayView<const dolfin::la_index_t>, 2> diags = {
-        {common::ArrayView<const dolfin::la_index_t>(indices.size(), indices.data()),
-         common::ArrayView<const dolfin::la_index_t>(indices.size(), indices.data())}};
+    const std::array<common::ArrayView<const dolfin::la_index_t>, 2> diags
+        = {{common::ArrayView<const dolfin::la_index_t>(indices.size(),
+                                                        indices.data()),
+            common::ArrayView<const dolfin::la_index_t>(indices.size(),
+                                                        indices.data())}};
 
     sparsity_pattern.insert_global(diags);
   }

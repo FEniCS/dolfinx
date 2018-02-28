@@ -386,7 +386,7 @@ std::string Parameters::str(bool verbose) const
     s << str(false) << std::endl << std::endl;
     if (_parameters.empty())
     {
-      s << name() << indent("(empty)");
+      s << name() << common::indent("(empty)");
       return s.str();
     }
 
@@ -403,12 +403,13 @@ std::string Parameters::str(bool verbose) const
         t(p.key(), "change") = p.change_count();
       }
     }
-    s << indent(t.str(true));
+    s << common::indent(t.str(true));
 
     for (auto it = _parameters.begin(); it != _parameters.end(); ++it)
     {
       if (it->second.which() == 1)
-        s << "\n\n" << indent(boost::get<Parameters>(it->second).str(verbose));
+        s << "\n\n"
+          << common::indent(boost::get<Parameters>(it->second).str(verbose));
     }
   }
   else

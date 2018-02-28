@@ -15,10 +15,17 @@ namespace dolfin
 {
 
 // Forward declarations
-class FunctionSpace;
 class PETScMatrix;
 class PETScVector;
 class Mesh;
+
+namespace function
+{
+class FunctionSpace;
+}
+
+namespace fem
+{
 
 /// This class provides an easy mechanism for adding a point
 /// quantities (Dirac delta function) to variational problems. The
@@ -33,12 +40,12 @@ class PointSource
 {
 public:
   /// Create point sources at given points of given magnitudes
-  PointSource(std::shared_ptr<const FunctionSpace> V,
+  PointSource(std::shared_ptr<const function::FunctionSpace> V,
               const std::vector<std::pair<Point, double>> sources);
 
   /// Create point sources at given points of given magnitudes
-  PointSource(std::shared_ptr<const FunctionSpace> V0,
-              std::shared_ptr<const FunctionSpace> V1,
+  PointSource(std::shared_ptr<const function::FunctionSpace> V0,
+              std::shared_ptr<const function::FunctionSpace> V1,
               const std::vector<std::pair<Point, double>> sources);
 
   /// Destructor
@@ -57,13 +64,14 @@ private:
                           const std::vector<std::pair<Point, double>>& sources);
 
   // Check that function space is scalar
-  static void check_space_supported(const FunctionSpace& V);
+  static void check_space_supported(const function::FunctionSpace& V);
 
   // The function spaces
-  std::shared_ptr<const FunctionSpace> _function_space0;
-  std::shared_ptr<const FunctionSpace> _function_space1;
+  std::shared_ptr<const function::FunctionSpace> _function_space0;
+  std::shared_ptr<const function::FunctionSpace> _function_space1;
 
   // Source term - pair of points and magnitude
   std::vector<std::pair<Point, double>> _sources;
 };
+}
 }

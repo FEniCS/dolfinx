@@ -13,8 +13,15 @@
 namespace dolfin
 {
 
-class Function;
 class Mesh;
+
+namespace function
+{
+class Function;
+}
+
+namespace io
+{
 
 /// Write VTK Mesh representation
 
@@ -26,7 +33,7 @@ public:
                          std::string file);
 
   /// Cell data writer
-  static void write_cell_data(const Function& u, std::string file);
+  static void write_cell_data(const function::Function& u, std::string file);
 
 private:
   // Write cell data (ascii)
@@ -42,4 +49,5 @@ private:
   // Get VTK cell type
   static std::uint8_t vtk_cell_type(const Mesh& mesh, std::size_t cell_dim);
 };
+}
 }

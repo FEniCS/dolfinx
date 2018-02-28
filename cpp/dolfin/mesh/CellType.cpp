@@ -4,11 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <algorithm>
-#include <array>
-
-#include "Cell.h"
 #include "CellType.h"
+#include "Cell.h"
 #include "HexahedronCell.h"
 #include "IntervalCell.h"
 #include "MeshFunction.h"
@@ -17,10 +14,13 @@
 #include "TetrahedronCell.h"
 #include "TriangleCell.h"
 #include "Vertex.h"
+#include <algorithm>
+#include <array>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 CellType::CellType(Type cell_type, Type facet_type)

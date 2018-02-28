@@ -9,7 +9,6 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/GenericFunction.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -18,10 +17,12 @@
 #include <string>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-Form::Form(std::shared_ptr<const ufc::form> ufc_form,
-           std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
+Form::Form(
+    std::shared_ptr<const ufc::form> ufc_form,
+    std::vector<std::shared_ptr<const function::FunctionSpace>> function_spaces)
     : _integrals(*ufc_form), _coeffs(*ufc_form),
       _function_spaces(function_spaces)
 {
@@ -44,7 +45,7 @@ Form::Form(std::shared_ptr<const ufc::form> ufc_form,
     }
   }
 
-  // Set _mesh from FunctionSpace and check they are the same
+  // Set _mesh from function::FunctionSpace and check they are the same
   if (!function_spaces.empty())
     _mesh = function_spaces[0]->mesh();
   for (auto& f : function_spaces)
@@ -86,13 +87,15 @@ std::shared_ptr<const Mesh> Form::mesh() const
   return _mesh;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FunctionSpace> Form::function_space(std::size_t i) const
+std::shared_ptr<const function::FunctionSpace>
+Form::function_space(std::size_t i) const
 {
   dolfin_assert(i < _function_spaces.size());
   return _function_spaces[i];
 }
 //-----------------------------------------------------------------------------
-std::vector<std::shared_ptr<const FunctionSpace>> Form::function_spaces() const
+std::vector<std::shared_ptr<const function::FunctionSpace>>
+Form::function_spaces() const
 {
   return _function_spaces;
 }

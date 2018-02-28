@@ -112,7 +112,7 @@ FunctionAXPY FunctionAXPY::operator-(const FunctionAXPY& axpy) const
   return FunctionAXPY(*this, axpy, Direction::ADD_SUB);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::pair<double, std::shared_ptr<const Function>>>&
+const std::vector<std::pair<double, std::shared_ptr<const function::Function>>>&
 FunctionAXPY::pairs() const
 {
   return _pairs;

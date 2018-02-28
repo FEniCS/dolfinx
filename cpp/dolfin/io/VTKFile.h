@@ -19,11 +19,18 @@ class xml_node;
 namespace dolfin
 {
 
-class Function;
-class GenericFunction;
 class Mesh;
 template <typename T>
 class MeshFunction;
+
+namespace function
+{
+class Function;
+class GenericFunction;
+}
+
+namespace io
+{
 
 /// Output of meshes and functions in VTK format
 
@@ -54,8 +61,8 @@ public:
   /// Output MeshFunction<double>
   void write(const MeshFunction<double>& meshfunction);
 
-  /// Output Function
-  void write(const Function& u);
+  /// Output function::Function
+  void write(const function::Function& u);
 
   /// Output Mesh and timestep
   void write(const Mesh& mesh, double t);
@@ -72,11 +79,11 @@ public:
   /// Output MeshFunction and timestep
   void write(const MeshFunction<bool>& mf, double t);
 
-  /// Output Function and timestep
-  void write(const Function& u, double t);
+  /// Output function::Function and timestep
+  void write(const function::Function& u, double t);
 
 private:
-  void write_function(const Function& u, double time);
+  void write_function(const function::Function& u, double time);
 
   void write_mesh(const Mesh& mesh, double time);
 
@@ -84,9 +91,9 @@ private:
 
   void finalize(std::string vtu_filename, double time);
 
-  void results_write(const Function& u, std::string file) const;
+  void results_write(const function::Function& u, std::string file) const;
 
-  void write_point_data(const GenericFunction& u, const Mesh& mesh,
+  void write_point_data(const function::GenericFunction& u, const Mesh& mesh,
                         std::string file) const;
 
   void pvd_file_write(std::size_t step, double time, std::string file);
@@ -99,7 +106,8 @@ private:
   void pvtu_write_mesh(const std::string pvtu_filename,
                        const std::size_t num_processes) const;
 
-  void pvtu_write(const Function& u, const std::string pvtu_filename) const;
+  void pvtu_write(const function::Function& u,
+                  const std::string pvtu_filename) const;
 
   void vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
                        std::string file) const;
@@ -124,6 +132,6 @@ private:
   std::size_t counter;
 
   void pvtu_write_mesh(pugi::xml_node xml_node) const;
-
 };
+}
 }

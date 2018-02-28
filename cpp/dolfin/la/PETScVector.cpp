@@ -385,7 +385,7 @@ void PETScVector::add_local(const double* block, std::size_t m,
 //-----------------------------------------------------------------------------
 void PETScVector::apply()
 {
-  Timer timer("Apply (PETScVector)");
+  common::Timer timer("Apply (PETScVector)");
   dolfin_assert(_x);
   PetscErrorCode ierr;
   ierr = VecAssemblyBegin(_x);

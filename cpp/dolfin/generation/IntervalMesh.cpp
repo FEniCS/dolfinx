@@ -25,7 +25,7 @@ Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x)
         0, 1);
     Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
                                                                              2);
-    Mesh mesh(comm, CellType::Type::interval, geom, topo);
+    Mesh mesh(comm, mesh::CellType::Type::interval, geom, topo);
     MeshPartitioning::build_distributed_mesh(mesh);
     return mesh;
   }
@@ -68,7 +68,7 @@ Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x)
   for (std::size_t ix = 0; ix < nx; ix++)
     topo.row(ix) << ix, ix + 1;
 
-  Mesh mesh(comm, CellType::Type::interval, geom, topo);
+  Mesh mesh(comm, mesh::CellType::Type::interval, geom, topo);
   MeshPartitioning::build_distributed_mesh(mesh);
   return mesh;
 }

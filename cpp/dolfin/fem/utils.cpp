@@ -6,6 +6,7 @@
 
 #include "utils.h"
 #include <dolfin/common/ArrayView.h>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -23,7 +24,8 @@ using namespace dolfin;
 
 namespace
 {
-void _check_coordinates(const MeshGeometry& geometry, const Function& position)
+void _check_coordinates(const MeshGeometry& geometry,
+                        const function::Function& position)
 {
   dolfin_assert(position.function_space());
   dolfin_assert(position.function_space()->mesh());
@@ -70,7 +72,7 @@ void _check_coordinates(const MeshGeometry& geometry, const Function& position)
 
 // This helper function sets geometry from position (if setting) or
 // stores geometry into position (otherwise)
-void _get_set_coordinates(MeshGeometry& geometry, Function& position,
+void _get_set_coordinates(MeshGeometry& geometry, function::Function& position,
                           const bool setting)
 {
   auto& x = geometry.x();
@@ -119,7 +121,7 @@ void _get_set_coordinates(MeshGeometry& geometry, Function& position,
   std::size_t xi, vi;
 
   // Get/set cell-by-cell
-  for (auto& c : MeshRange<Cell>(mesh))
+  for (auto& c : MeshRange<mesh::Cell>(mesh))
   {
     // Get/prepare values and dofs on cell
     auto cell_dofs = dofmap.cell_dofs(c.index());
@@ -193,7 +195,7 @@ void dolfin::fem::init(PETScVector& x, const Form& a)
   // Build local-to-global index map
   int block_size = index_map->block_size();
   std::vector<la_index_t> local_to_global(
-      index_map->size(IndexMap::MapSize::ALL));
+      index_map->size(common::IndexMap::MapSize::ALL));
   for (std::size_t i = 0; i < local_to_global.size(); ++i)
     local_to_global[i] = index_map->local_to_global(i);
 
@@ -222,10 +224,10 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
   dolfin_assert(a.mesh());
   const Mesh& mesh = *(a.mesh());
 
-  Timer t0("Build sparsity");
+  common::Timer t0("Build sparsity");
 
-  // Get IndexMaps for each dimension
-  std::array<std::shared_ptr<const IndexMap>, 2> index_maps
+  // Get common::IndexMaps for each dimension
+  std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
 
   // Create and build sparsity pattern
@@ -238,7 +240,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
   t0.stop();
 
   // Initialize matrix
-  Timer t1("Init tensor");
+  common::Timer t1("Init tensor");
   A.init(pattern);
   t1.stop();
 
@@ -255,7 +257,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
   {
     // Get local row range
     const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
-    const IndexMap& index_map_0 = *dofmaps[primary_dim]->index_map();
+    const common::IndexMap& index_map_0 = *dofmaps[primary_dim]->index_map();
     const auto row_range = A.local_range(primary_dim);
 
     // Set zeros in dense rows in order of increasing column index
@@ -301,7 +303,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>
-dolfin::fem::dof_to_vertex_map(const FunctionSpace& space)
+dolfin::fem::dof_to_vertex_map(const function::FunctionSpace& space)
 {
   // Get vertex_to_dof_map and invert it
   const std::vector<dolfin::la_index_t> vertex_map = vertex_to_dof_map(space);
@@ -312,7 +314,7 @@ dolfin::fem::dof_to_vertex_map(const FunctionSpace& space)
 }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index_t>
-dolfin::fem::vertex_to_dof_map(const FunctionSpace& space)
+dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
 {
   // Get the mesh
   dolfin_assert(space.mesh());
@@ -353,9 +355,9 @@ dolfin::fem::vertex_to_dof_map(const FunctionSpace& space)
   for (auto vertex = v_begin; vertex != v_end; ++vertex)
   {
     // Get the first cell connected to the vertex
-    const Cell cell(mesh, vertex->entities(top_dim)[0]);
+    const mesh::Cell cell(mesh, vertex->entities(top_dim)[0]);
 
-    // Find local vertex number
+// Find local vertex number
 #ifdef DEBUG
     bool vertex_found = false;
 #endif
@@ -392,20 +394,21 @@ dolfin::fem::vertex_to_dof_map(const FunctionSpace& space)
 }
 //-----------------------------------------------------------------------------
 void dolfin::fem::set_coordinates(MeshGeometry& geometry,
-                                  const Function& position)
+                                  const function::Function& position)
 {
   _check_coordinates(geometry, position);
-  _get_set_coordinates(geometry, const_cast<Function&>(position), true);
+  _get_set_coordinates(geometry, const_cast<function::Function&>(position),
+                       true);
 }
 //-----------------------------------------------------------------------------
-void dolfin::fem::get_coordinates(Function& position,
+void dolfin::fem::get_coordinates(function::Function& position,
                                   const MeshGeometry& geometry)
 {
   _check_coordinates(geometry, position);
   _get_set_coordinates(const_cast<MeshGeometry&>(geometry), position, false);
 }
 //-----------------------------------------------------------------------------
-Mesh dolfin::fem::create_mesh(Function& coordinates)
+Mesh dolfin::fem::create_mesh(function::Function& coordinates)
 {
   // FIXME: This function is a mess
 
@@ -423,7 +426,8 @@ Mesh dolfin::fem::create_mesh(Function& coordinates)
 
   mesh1._topology = mesh0._topology;
   if (mesh0._cell_type)
-    mesh1._cell_type.reset(CellType::create(mesh0._cell_type->cell_type()));
+    mesh1._cell_type.reset(
+        mesh::CellType::create(mesh0._cell_type->cell_type()));
   else
     mesh1._cell_type.reset();
   mesh1._ordered = mesh0._ordered;

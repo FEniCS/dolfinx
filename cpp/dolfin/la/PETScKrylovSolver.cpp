@@ -222,7 +222,7 @@ void PETScKrylovSolver::set_operators(const la::PETScBaseMatrix& A,
 std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
                                      bool transpose)
 {
-  Timer timer("PETSc Krylov solver");
+  common::Timer timer("PETSc Krylov solver");
 
   // Get PETSc operators
   Mat _A, _P;

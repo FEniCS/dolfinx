@@ -14,14 +14,14 @@ using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(std::shared_ptr<const ufc::finite_element> element)
-    : _ufc_element(element), _hash(dolfin::hash_local(signature()))
+    : _ufc_element(element), _hash(common::hash_local(signature()))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::tabulate_dof_coordinates(
     boost::multi_array<double, 2>& coordinates,
-    const std::vector<double>& coordinate_dofs, const Cell& cell) const
+    const std::vector<double>& coordinate_dofs, const mesh::Cell& cell) const
 {
   dolfin_assert(_ufc_element);
 

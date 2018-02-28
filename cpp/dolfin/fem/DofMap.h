@@ -12,7 +12,6 @@
 #include <cstdlib>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/Cell.h>
 #include <map>
 #include <memory>
 #include <ufc.h>
@@ -27,7 +26,7 @@ class PETScVector;
 
 namespace mesh
 {
-  class SubDomain;
+class SubDomain;
 }
 
 namespace fem
@@ -352,7 +351,10 @@ public:
   void set(PETScVector& x, double value) const;
 
   /// Return the map (const access)
-  std::shared_ptr<const IndexMap> index_map() const { return _index_map; }
+  std::shared_ptr<const common::IndexMap> index_map() const
+  {
+    return _index_map;
+  }
 
   /// Return the block size for dof maps with components, typically
   /// used for vector valued functions.
@@ -418,7 +420,7 @@ private:
 
   // Object containing information about dof distribution across
   // processes
-  std::shared_ptr<IndexMap> _index_map;
+  std::shared_ptr<common::IndexMap> _index_map;
 
   // List of processes that share a given dof
   std::unordered_map<int, std::vector<int>> _shared_nodes;

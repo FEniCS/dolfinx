@@ -25,11 +25,17 @@ namespace dolfin
 {
 
 // Forward declarations
+class PETScVector;
+
+namespace mesh
+{
 class Cell;
+}
+
+namespace function
+{
 class Expression;
 class FunctionSpace;
-class PETScVector;
-class SubDomain;
 
 /// This class represents a function :math:`u_h` in a finite
 /// element function space :math:`V_h`, given by
@@ -156,8 +162,8 @@ public:
   /// @param    ufc_cell (ufc::cell)
   ///         The ufc::cell.
   void eval(Eigen::Ref<Eigen::VectorXd> values,
-            Eigen::Ref<const Eigen::VectorXd> x,
-            const dolfin::Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
+            Eigen::Ref<const Eigen::VectorXd> x, const mesh::Cell& dolfin_cell,
+            const ufc::cell& ufc_cell) const;
 
   /// Interpolate function (on possibly non-matching meshes)
   ///
@@ -224,7 +230,8 @@ public:
   /// @param    ufc_cell (ufc::cell).
   ///         The ufc::cell.
   virtual void restrict(double* w, const fem::FiniteElement& element,
-                        const Cell& dolfin_cell, const double* coordinate_dofs,
+                        const mesh::Cell& dolfin_cell,
+                        const double* coordinate_dofs,
                         const ufc::cell& ufc_cell) const override;
 
   /// Compute values at all mesh vertices
@@ -273,4 +280,5 @@ private:
   // True if extrapolation should be allowed
   bool _allow_extrapolation;
 };
+}
 }

@@ -4,11 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <boost/functional/hash.hpp>
-#include <sstream>
-
 #include "MeshGeometry.h"
+#include <boost/functional/hash.hpp>
 #include <dolfin/log/log.h>
+#include <sstream>
 
 using namespace dolfin;
 

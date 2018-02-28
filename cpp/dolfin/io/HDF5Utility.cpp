@@ -18,6 +18,7 @@
 #include <iostream>
 
 using namespace dolfin;
+using namespace dolfin::io;
 
 //-----------------------------------------------------------------------------
 void HDF5Utility::map_gdof_to_cell(
@@ -243,7 +244,7 @@ void HDF5Utility::cell_owners_in_range(
   global_owner.resize(range[1] - range[0]);
 
   std::vector<std::vector<std::size_t>> send_owned_global(num_processes);
-  for (auto& mesh_cell : MeshRange<Cell>(mesh))
+  for (auto& mesh_cell : MeshRange<mesh::Cell>(mesh))
   {
     const std::size_t global_i = mesh_cell.global_index();
     const std::size_t local_i = mesh_cell.index();

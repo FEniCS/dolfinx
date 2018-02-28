@@ -7,6 +7,7 @@
 #include "UnitTetrahedronMesh.h"
 #include <Eigen/Dense>
 #include <dolfin/common/MPI.h>
+#include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 
 using namespace dolfin::generation;
@@ -25,6 +26,6 @@ dolfin::Mesh UnitTetrahedronMesh::create()
   // Create cell
   topo << 0, 1, 2, 3;
 
-  return Mesh(MPI_COMM_SELF, CellType::Type::tetrahedron, geom, topo);
+  return Mesh(MPI_COMM_SELF, mesh::CellType::Type::tetrahedron, geom, topo);
 }
 //-----------------------------------------------------------------------------

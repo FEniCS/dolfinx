@@ -40,7 +40,6 @@ namespace dolfin
 {
 
 // Forward declarations
-class Function;
 class LocalMeshData;
 class Mesh;
 template <typename T>
@@ -49,13 +48,19 @@ template <typename T>
 class MeshValueCollection;
 class Point;
 
+namespace function
+{
+class Function;
+}
+
 namespace io
 {
 #ifdef HAS_HDF5
 class HDF5File;
 #endif
 
-/// Read and write Mesh, Function, MeshFunction and other objects in XDMF
+/// Read and write Mesh, function::Function, MeshFunction and other objects in
+/// XDMF
 
 /// This class supports the output of meshes and functions in XDMF
 /// (http://www.xdmf.org) format. It creates an XML file that
@@ -116,7 +121,7 @@ public:
   ///
   void write(const Mesh& mesh, Encoding encoding = default_encoding);
 
-  /// Save a Function to XDMF file for checkpointing, using an
+  /// Save a function::Function to XDMF file for checkpointing, using an
   /// associated HDF5 file, or storing the data inline as XML.
   ///
   /// If the file where we would like to write exists, then
@@ -137,11 +142,11 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write_checkpoint(const Function& u, std::string function_name,
+  void write_checkpoint(const function::Function& u, std::string function_name,
                         double time_step = 0.0,
                         Encoding encoding = default_encoding);
 
-  /// Save a Function to XDMF file for visualisation, using an
+  /// Save a function::Function to XDMF file for visualisation, using an
   /// associated HDF5 file, or storing the data inline as XML.
   ///
   /// @param    u (_Function_)
@@ -149,9 +154,9 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const Function& u, Encoding encoding = default_encoding);
+  void write(const function::Function& u, Encoding encoding = default_encoding);
 
-  /// Save a Function with timestamp to XDMF file for visualisation,
+  /// Save a function::Function with timestamp to XDMF file for visualisation,
   /// using an associated HDF5 file, or storing the data inline as
   /// XML.
   ///
@@ -175,7 +180,8 @@ public:
   /// @param   encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const Function& u, double t, Encoding encoding = default_encoding);
+  void write(const function::Function& u, double t,
+             Encoding encoding = default_encoding);
 
   /// Save MeshFunction to file using an associated HDF5 file, or
   /// storing the data inline as XML.
@@ -299,8 +305,8 @@ public:
   /// Read a function from the XDMF file. Supplied function must
   /// come with already initialized and compatible function space.
   ///
-  /// Functions saved as time-series must be addressed through
-  /// (integer) internal counter and function name. Function name
+  /// function::Functions saved as time-series must be addressed through
+  /// (integer) internal counter and function name. function::Function name
   /// is a name of function that was saved. Counter stands for
   /// the number of function from time-series, e.g. counter=0
   /// refers to first saved function regardless of its time-step value.
@@ -316,7 +322,7 @@ public:
   ///         python array position key, i.e. counter = -2 points to the
   ///         function before the last one.
   ///
-  void read_checkpoint(Function& u, std::string func_name,
+  void read_checkpoint(function::Function& u, std::string func_name,
                        std::int64_t counter = -1);
 
   /// Read first MeshFunction from file
@@ -395,7 +401,7 @@ private:
 
   // Build local mesh data structure
   static void build_local_mesh_data(LocalMeshData& local_mesh_data,
-                                    const CellType& cell_type,
+                                    const mesh::CellType& cell_type,
                                     std::int64_t num_points,
                                     std::int64_t num_cells, int tdim, int gdim,
                                     const pugi::xml_node& topology_dataset_node,
@@ -409,7 +415,7 @@ private:
 
   // Add function to a XML node
   static void add_function(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                           std::string h5_path, const Function& u,
+                           std::string h5_path, const function::Function& u,
                            std::string function_name, const Mesh& mesh);
 
   // Add set of points to XDMF xml_node and write data
@@ -493,21 +499,21 @@ private:
   // Get data width - normally the same as u.value_size(), but
   // expand for 2D vector/tensor because XDMF presents everything as
   // 3D
-  static std::int64_t get_padded_width(const Function& u);
+  static std::int64_t get_padded_width(const function::Function& u);
 
-  // Returns true for DG0 Functions
-  static bool has_cell_centred_data(const Function& u);
+  // Returns true for DG0 function::Functions
+  static bool has_cell_centred_data(const function::Function& u);
 
   // Get point data values for linear or quadratic mesh into
   // flattened 2D array
-  static std::vector<double> get_point_data_values(const Function& u);
+  static std::vector<double> get_point_data_values(const function::Function& u);
 
   // Get point data values collocated at P2 geometry points
   // (vertices and edges) flattened as a 2D array
-  static std::vector<double> get_p2_data_values(const Function& u);
+  static std::vector<double> get_p2_data_values(const function::Function& u);
 
   // Get cell data values as a flattened 2D array
-  static std::vector<double> get_cell_data_values(const Function& u);
+  static std::vector<double> get_cell_data_values(const function::Function& u);
 
   // Check whether the requested encoding is supported
   void check_encoding(Encoding encoding) const;
@@ -522,7 +528,8 @@ private:
     return (encoding == XDMFFile::Encoding::HDF5) ? "HDF" : "XML";
   }
 
-  static std::string vtk_cell_type_str(CellType::Type cell_type, int order);
+  static std::string vtk_cell_type_str(mesh::CellType::Type cell_type,
+                                       int order);
 
   // Return a string of the form "x y"
   template <typename X, typename Y>

@@ -74,8 +74,8 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
 
   PetscErrorCode ierr;
 
-  // Get IndexMaps
-  std::array<std::shared_ptr<const IndexMap>, 2> index_maps
+  // Get common::IndexMaps
+  std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{sparsity_pattern.index_map(0), sparsity_pattern.index_map(1)}};
 
   // Get block sizes
@@ -84,9 +84,9 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
 
   // Get global dimensions and local range
   const std::size_t M
-      = block_sizes[0] * index_maps[0]->size(IndexMap::MapSize::GLOBAL);
+      = block_sizes[0] * index_maps[0]->size(common::IndexMap::MapSize::GLOBAL);
   const std::size_t N
-      = block_sizes[1] * index_maps[1]->size(IndexMap::MapSize::GLOBAL);
+      = block_sizes[1] * index_maps[1]->size(common::IndexMap::MapSize::GLOBAL);
 
   const std::array<std::int64_t, 2> row_range = index_maps[0]->local_range();
   const std::array<std::int64_t, 2> col_range = index_maps[1]->local_range();
@@ -148,9 +148,9 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
   assert(block_sizes[0] % block_size == 0);
   assert(block_sizes[1] % block_size == 0);
   std::vector<PetscInt> _map0, _map1;
-  _map0.resize(index_maps[0]->size(IndexMap::MapSize::ALL)
+  _map0.resize(index_maps[0]->size(common::IndexMap::MapSize::ALL)
                * (block_sizes[0] / block_size));
-  _map1.resize(index_maps[1]->size(IndexMap::MapSize::ALL)
+  _map1.resize(index_maps[1]->size(common::IndexMap::MapSize::ALL)
                * (block_sizes[1] / block_size));
 
   // for (std::size_t i = 0; i < _map0.size(); ++i)
@@ -159,7 +159,7 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
   //   _map1[i] = index_maps[1]->local_to_global(i);
 
   // std::cout << "Prep IS (0)" << std::endl;
-  for (std::size_t i = 0; i < index_maps[0]->size(IndexMap::MapSize::ALL); ++i)
+  for (std::size_t i = 0; i < index_maps[0]->size(common::IndexMap::MapSize::ALL); ++i)
   {
     std::size_t bs = block_sizes[0] / block_size;
     auto index = index_maps[0]->local_to_global(i);
@@ -170,7 +170,7 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
   }
 
   // std::cout << "Prep IS (1)" << std::endl;
-  for (std::size_t i = 0; i < index_maps[1]->size(IndexMap::MapSize::ALL); ++i)
+  for (std::size_t i = 0; i < index_maps[1]->size(common::IndexMap::MapSize::ALL); ++i)
   {
     std::size_t bs = block_sizes[1] / block_size;
     auto index = index_maps[1]->local_to_global(i);
@@ -479,7 +479,7 @@ double PETScMatrix::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::apply(AssemblyType type)
 {
-  Timer timer("Apply (PETScMatrix)");
+  common::Timer timer("Apply (PETScMatrix)");
 
   dolfin_assert(_matA);
   PetscErrorCode ierr;

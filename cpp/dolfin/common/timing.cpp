@@ -13,11 +13,15 @@
 
 namespace dolfin
 {
+namespace common
+{
 Timer __global_timer;
 Timer __tic_timer;
 }
+}
 
 using namespace dolfin;
+using namespace dolfin::common;
 
 //-----------------------------------------------------------------------
 void dolfin::tic() { __tic_timer.start(); }

@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "CellType.h"
 #include "DistributedMeshTools.h"
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
@@ -32,6 +31,10 @@ template <typename T>
 class MeshValueCollection;
 class LocalMeshData;
 
+namespace mesh
+{
+class CellType;
+}
 /// This class partitions and distributes a mesh based on
 /// partitioned local mesh data.The local mesh data will also be
 /// repartitioned and redistributed during the computation of the
@@ -92,7 +95,7 @@ private:
   // the tuple (new_shared_cells, new_cell_vertices,new_global_cell_indices).
   static void reorder_cells_gps(
       MPI_Comm mpi_comm, const std::uint32_t num_regular_cells,
-      const CellType& cell_type,
+      const mesh::CellType& cell_type,
       const std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
       const boost::multi_array<std::int64_t, 2>& cell_vertices,
       const std::vector<std::int64_t>& global_cell_indices,
@@ -162,7 +165,7 @@ private:
   static void build_local_mesh(
       Mesh& mesh, const std::vector<std::int64_t>& global_cell_indices,
       const boost::multi_array<std::int64_t, 2>& cell_global_vertices,
-      const CellType::Type cell_type, const int tdim,
+      const mesh::CellType::Type cell_type, const int tdim,
       const std::int64_t num_global_cells,
       const std::vector<std::int64_t>& vertex_indices,
       const boost::multi_array<double, 2>& vertex_coordinates, const int gdim,

@@ -8,6 +8,7 @@
 #include "Expression.h"
 #include "FunctionSpace.h"
 #include <algorithm>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
@@ -27,6 +28,7 @@
 #include <vector>
 
 using namespace dolfin;
+using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
@@ -246,7 +248,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
 
   // Get index of first cell containing point
   unsigned int id
-    = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
+      = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
 
   // If not found, use the closest cell
   if (id == std::numeric_limits<unsigned int>::max())
@@ -254,7 +256,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
     // Check if the closest cell is within DOLFIN_EPS. This we can
     // allow without _allow_extrapolation
     std::pair<unsigned int, double> close
-      = mesh.bounding_box_tree()->compute_closest_entity(point, mesh);
+        = mesh.bounding_box_tree()->compute_closest_entity(point, mesh);
 
     if (_allow_extrapolation or close.second < DOLFIN_EPS)
       id = close.first;
@@ -268,7 +270,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
   }
 
   // Create cell that contains point
-  const Cell cell(mesh, id);
+  const mesh::Cell cell(mesh, id);
   ufc::cell ufc_cell;
   cell.get_cell_data(ufc_cell);
 
@@ -278,7 +280,8 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
 //-----------------------------------------------------------------------------
 void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
                     Eigen::Ref<const Eigen::VectorXd> x,
-                    const Cell& dolfin_cell, const ufc::cell& ufc_cell) const
+                    const mesh::Cell& dolfin_cell,
+                    const ufc::cell& ufc_cell) const
 {
   // Developer note: work arrays/vectors are re-created each time this
   //                 function is called for thread-safety
@@ -373,7 +376,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
   dolfin_assert(ufc_cell.mesh_identifier >= 0);
   if (ufc_cell.mesh_identifier == (int)mesh.id())
   {
-    const Cell cell(mesh, ufc_cell.index);
+    const mesh::Cell cell(mesh, ufc_cell.index);
     eval(values, x, cell, ufc_cell);
   }
   else
@@ -381,7 +384,8 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(double* w, const fem::FiniteElement& element,
-                        const Cell& dolfin_cell, const double* coordinate_dofs,
+                        const mesh::Cell& dolfin_cell,
+                        const double* coordinate_dofs,
                         const ufc::cell& ufc_cell) const
 {
   dolfin_assert(w);
@@ -449,7 +453,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  for (auto& cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : MeshRange<mesh::Cell>(mesh, MeshRangeType::ALL))
   {
     // Update to current cell
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -488,7 +492,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values)
 //-----------------------------------------------------------------------------
 void Function::init_vector()
 {
-  Timer timer("Init dof vector");
+  common::Timer timer("Init dof vector");
 
   // Get dof map
   dolfin_assert(_function_space);
@@ -506,7 +510,7 @@ void Function::init_vector()
 
   // Get index map
   /*
-  std::shared_ptr<const IndexMap> index_map = dofmap.index_map();
+  std::shared_ptr<const common::IndexMap> index_map = dofmap.index_map();
   dolfin_assert(index_map);
 
   MPI_Comm comm = _function_space->mesh()->mpi_comm();
@@ -540,7 +544,7 @@ void Function::init_vector()
   */
 
   // Get index map
-  std::shared_ptr<const IndexMap> index_map = dofmap.index_map();
+  std::shared_ptr<const common::IndexMap> index_map = dofmap.index_map();
   dolfin_assert(index_map);
 
   // Get block size
@@ -548,13 +552,13 @@ void Function::init_vector()
 
   // Build local-to-global map (blocks)
   std::vector<dolfin::la_index_t> local_to_global(
-      index_map->size(IndexMap::MapSize::ALL));
+      index_map->size(common::IndexMap::MapSize::ALL));
   for (std::size_t i = 0; i < local_to_global.size(); ++i)
     local_to_global[i] = index_map->local_to_global(i);
 
   // Build list of ghosts (global block indices)
-  const std::size_t nowned = index_map->size(IndexMap::MapSize::OWNED);
-  dolfin_assert(nowned + index_map->size(IndexMap::MapSize::UNOWNED)
+  const std::size_t nowned = index_map->size(common::IndexMap::MapSize::OWNED);
+  dolfin_assert(nowned + index_map->size(common::IndexMap::MapSize::UNOWNED)
                 == local_to_global.size());
   std::vector<dolfin::la_index_t> ghosts(local_to_global.begin() + nowned,
                                          local_to_global.end());

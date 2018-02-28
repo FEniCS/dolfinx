@@ -48,12 +48,13 @@ public:
   ///         8});
   /// @endcode
   static Mesh create(MPI_Comm comm, const std::array<Point, 2>& p,
-                     std::array<std::size_t, 2> n, CellType::Type cell_type,
+                     std::array<std::size_t, 2> n,
+                     mesh::CellType::Type cell_type,
                      std::string diagonal = "right")
   {
-    if (cell_type == CellType::Type::triangle)
+    if (cell_type == mesh::CellType::Type::triangle)
       return build_tri(comm, p, n, diagonal);
-    else if (cell_type == CellType::Type::quadrilateral)
+    else if (cell_type == mesh::CellType::Type::quadrilateral)
       return build_quad(comm, p, n);
     else
     {

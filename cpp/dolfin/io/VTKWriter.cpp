@@ -24,6 +24,7 @@
 #include <vector>
 
 using namespace dolfin;
+using namespace dolfin::io;
 
 //----------------------------------------------------------------------------
 void VTKWriter::write_mesh(const Mesh& mesh, std::size_t cell_dim,
@@ -32,7 +33,8 @@ void VTKWriter::write_mesh(const Mesh& mesh, std::size_t cell_dim,
   write_ascii_mesh(mesh, cell_dim, filename);
 }
 //----------------------------------------------------------------------------
-void VTKWriter::write_cell_data(const Function& u, std::string filename)
+void VTKWriter::write_cell_data(const function::Function& u,
+                                std::string filename)
 {
   // For brevity
   dolfin_assert(u.function_space()->mesh());
@@ -44,7 +46,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename)
 
   std::string encode_string = "ascii";
 
-  // Get rank of Function
+  // Get rank of function::Function
   const std::size_t rank = u.value_rank();
   if (rank > 2)
   {
@@ -99,7 +101,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename)
   std::vector<dolfin::la_index_t> dof_set;
   std::vector<std::size_t> offset(size + 1);
   std::vector<std::size_t>::iterator cell_offset = offset.begin();
-  for (auto& cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(mesh))
   {
     // Tabulate dofs
     auto dofs = dofmap.cell_dofs(cell.index());
@@ -203,8 +205,8 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
        << "ascii"
        << "\">";
 
-  std::unique_ptr<CellType> celltype(
-      CellType::create(mesh.type().entity_type(cell_dim)));
+  std::unique_ptr<mesh::CellType> celltype(
+      mesh::CellType::create(mesh.type().entity_type(cell_dim)));
   const std::vector<std::int8_t> perm = celltype->vtk_mapping();
   for (auto& c : MeshRange<MeshEntity>(mesh, cell_dim))
   {
@@ -238,21 +240,21 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
 std::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh, std::size_t cell_dim)
 {
   // Get cell type
-  CellType::Type cell_type = mesh.type().entity_type(cell_dim);
+  mesh::CellType::Type cell_type = mesh.type().entity_type(cell_dim);
 
   // Determine VTK cell type
   std::uint8_t vtk_cell_type = 0;
-  if (cell_type == CellType::Type::tetrahedron)
+  if (cell_type == mesh::CellType::Type::tetrahedron)
     vtk_cell_type = 10;
-  else if (cell_type == CellType::Type::hexahedron)
+  else if (cell_type == mesh::CellType::Type::hexahedron)
     vtk_cell_type = 12;
-  else if (cell_type == CellType::Type::quadrilateral)
+  else if (cell_type == mesh::CellType::Type::quadrilateral)
     vtk_cell_type = 9;
-  else if (cell_type == CellType::Type::triangle)
+  else if (cell_type == mesh::CellType::Type::triangle)
     vtk_cell_type = 5;
-  else if (cell_type == CellType::Type::interval)
+  else if (cell_type == mesh::CellType::Type::interval)
     vtk_cell_type = 3;
-  else if (cell_type == CellType::Type::point)
+  else if (cell_type == mesh::CellType::Type::point)
     vtk_cell_type = 1;
   else
   {

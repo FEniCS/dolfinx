@@ -9,6 +9,7 @@
 #include <limits>
 
 using namespace dolfin;
+using namespace dolfin::common;
 
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::size_t local_size,

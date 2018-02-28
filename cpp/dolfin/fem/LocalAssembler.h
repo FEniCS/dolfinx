@@ -18,11 +18,18 @@ class cell;
 namespace dolfin
 {
 
-class Cell;
 class Facet;
-class UFC;
 template <typename T>
 class MeshFunction;
+
+namespace mesh
+{
+class Cell;
+}
+
+namespace fem
+{
+class UFC;
 
 /// Assembly of local cell tensors. Used by the adaptivity and
 /// LocalSolver functionality in dolfin. The local assembly
@@ -44,7 +51,7 @@ public:
            UFC& ufc,                          ///< [in]
            const std::vector<double>& coordinate_dofs,              ///< [in]
            ufc::cell& ufc_cell,                                     ///< [in]
-           const Cell& cell,                                        ///< [in]
+           const mesh::Cell& cell,                                  ///< [in]
            const MeshFunction<std::size_t>* cell_domains,           ///< [in]
            const MeshFunction<std::size_t>* exterior_facet_domains, ///< [in]
            const MeshFunction<std::size_t>* interior_facet_domains  ///< [in]
@@ -58,7 +65,7 @@ public:
       UFC& ufc,                          ///< [in]
       const std::vector<double>& coordinate_dofs,   ///< [in]
       const ufc::cell& ufc_cell,                    ///< [in]
-      const Cell& cell,                             ///< [in]
+      const mesh::Cell& cell,                       ///< [in]
       const MeshFunction<std::size_t>* cell_domains ///< [in]
       );
 
@@ -71,7 +78,7 @@ public:
       UFC& ufc,                          ///< [in]
       const std::vector<double>& coordinate_dofs,             ///< [in]
       const ufc::cell& ufc_cell,                              ///< [in]
-      const Cell& cell,                                       ///< [in]
+      const mesh::Cell& cell,                                 ///< [in]
       const Facet& facet,                                     ///< [in]
       const std::size_t local_facet,                          ///< [in]
       const MeshFunction<std::size_t>* exterior_facet_domains ///< [in]
@@ -86,11 +93,12 @@ public:
       UFC& ufc,                          ///< [in]
       const std::vector<double>& coordinate_dofs,              ///< [in]
       const ufc::cell& ufc_cell,                               ///< [in]
-      const Cell& cell,                                        ///< [in]
+      const mesh::Cell& cell,                                  ///< [in]
       const Facet& facet,                                      ///< [in]
       const std::size_t local_facet,                           ///< [in]
       const MeshFunction<std::size_t>* interior_facet_domains, ///< [in]
       const MeshFunction<std::size_t>* cell_domains            ///< [in]
       );
 };
+}
 }

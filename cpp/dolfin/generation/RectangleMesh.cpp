@@ -26,7 +26,7 @@ Mesh RectangleMesh::build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
         0, 2);
     Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
                                                                              3);
-    Mesh mesh(comm, CellType::Type::triangle, geom, topo);
+    Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
     mesh.order();
     MeshPartitioning::build_distributed_mesh(mesh);
     return mesh;
@@ -200,7 +200,7 @@ Mesh RectangleMesh::build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
     }
   }
 
-  Mesh mesh(comm, CellType::Type::triangle, geom, topo);
+  Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
   mesh.order();
 
   MeshPartitioning::build_distributed_mesh(mesh);
@@ -217,7 +217,7 @@ Mesh RectangleMesh::build_quad(MPI_Comm comm, const std::array<Point, 2>& p,
         0, 2);
     Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
                                                                              4);
-    Mesh mesh(comm, CellType::Type::quadrilateral, geom, topo);
+    Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
     MeshPartitioning::build_distributed_mesh(mesh);
     return mesh;
   }
@@ -264,7 +264,7 @@ Mesh RectangleMesh::build_quad(MPI_Comm comm, const std::array<Point, 2>& p,
       ++cell;
     }
 
-  Mesh mesh(comm, CellType::Type::quadrilateral, geom, topo);
+  Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
   MeshPartitioning::build_distributed_mesh(mesh);
   return mesh;
 }

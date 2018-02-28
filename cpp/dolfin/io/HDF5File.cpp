@@ -246,7 +246,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 {
   // FIXME: break up this function
 
-  Timer t0("HDF5: write mesh to file");
+  common::Timer t0("HDF5: write mesh to file");
 
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
@@ -254,8 +254,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
   dolfin_assert(_hdf5_file_id > 0);
 
-  CellType::Type cell_type = mesh.type().entity_type(cell_dim);
-  std::unique_ptr<CellType> celltype(CellType::create(cell_type));
+  mesh::CellType::Type cell_type = mesh.type().entity_type(cell_dim);
+  std::unique_ptr<mesh::CellType> celltype(mesh::CellType::create(cell_type));
   std::size_t num_cell_points = 0;
   for (std::size_t i = 0; i <= cell_dim; ++i)
     num_cell_points += mesh.geometry().num_entity_coordinates(i)
@@ -313,7 +313,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         else
           edge_mapping = {5, 2, 4, 3, 1, 0};
 
-        for (auto& c : MeshRange<Cell>(mesh))
+        for (auto& c : MeshRange<mesh::Cell>(mesh))
         {
           // Add indices for vertices and edges
           for (unsigned int dim = 0; dim != 2; ++dim)
@@ -438,7 +438,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 
     // Add cell type attribute
     HDF5Interface::add_attribute(_hdf5_file_id, topology_dataset, "celltype",
-                                 CellType::type2string(cell_type));
+                                 mesh::CellType::type2string(cell_type));
 
     // Add partitioning attribute to dataset
     std::vector<std::size_t> partitions;
@@ -800,7 +800,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   write_data(name + "/values", data_values, global_size, mpi_io);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write(const Function& u, const std::string name,
+void HDF5File::write(const function::Function& u, const std::string name,
                      double timestamp)
 {
   dolfin_assert(_hdf5_file_id > 0);
@@ -855,9 +855,9 @@ void HDF5File::write(const Function& u, const std::string name,
   }
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write(const Function& u, const std::string name)
+void HDF5File::write(const function::Function& u, const std::string name)
 {
-  Timer t0("HDF5: write Function");
+  common::Timer t0("HDF5: write function::Function");
   dolfin_assert(_hdf5_file_id > 0);
 
   // Get mesh and dofmap
@@ -926,9 +926,9 @@ void HDF5File::write(const Function& u, const std::string name)
   write(*u.vector(), name + "/vector_0");
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(Function& u, const std::string name)
+void HDF5File::read(function::Function& u, const std::string name)
 {
-  Timer t0("HDF5: read Function");
+  common::Timer t0("HDF5: read function::Function");
   dolfin_assert(_hdf5_file_id > 0);
 
   // FIXME: This routine is long and involves a lot of MPI, but it
@@ -998,7 +998,7 @@ void HDF5File::read(Function& u, const std::string name)
   }
 
   // Get existing mesh and dofmap - these should be pre-existing
-  // and set up by user when defining the Function
+  // and set up by user when defining the function::Function
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
   dolfin_assert(u.function_space()->dofmap());
@@ -1010,7 +1010,7 @@ void HDF5File::read(Function& u, const std::string name)
   const std::int64_t num_global_cells = dataset_shape[0];
   if (mesh.num_entities_global(mesh.topology().dim()) != num_global_cells)
   {
-    dolfin_error("HDF5File.cpp", "read Function from file",
+    dolfin_error("HDF5File.cpp", "read function::Function from file",
                  "Number of global cells does not match");
   }
 
@@ -1131,8 +1131,8 @@ void HDF5File::write_mesh_value_collection(
   const std::map<std::pair<std::size_t, std::size_t>, T>& values
       = mesh_values.values();
 
-  std::unique_ptr<CellType> entity_type(
-      CellType::create(mesh->type().entity_type(dim)));
+  std::unique_ptr<mesh::CellType> entity_type(
+      mesh::CellType::create(mesh->type().entity_type(dim)));
   const std::size_t num_vertices_per_entity
       = (dim == 0) ? 1 : entity_type->num_vertices();
 
@@ -1145,7 +1145,7 @@ void HDF5File::write_mesh_value_collection(
   mesh->init(tdim, dim);
   for (auto& p : values)
   {
-    MeshEntity cell = Cell(*mesh, p.first.first);
+    MeshEntity cell = mesh::Cell(*mesh, p.first.first);
     if (dim != tdim)
     {
       const unsigned int entity_local_idx = cell.entities(dim)[p.first.second];
@@ -1213,7 +1213,7 @@ template <typename T>
 void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
                                           const std::string name) const
 {
-  Timer t1("HDF5: read mesh value collection");
+  common::Timer t1("HDF5: read mesh value collection");
   dolfin_assert(_hdf5_file_id > 0);
 
   if (!HDF5Interface::has_group(_hdf5_file_id, name))
@@ -1233,8 +1233,8 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
   HDF5Interface::get_attribute(_hdf5_file_id, name, "dimension", dim);
   std::shared_ptr<const Mesh> mesh = mesh_vc.mesh();
   dolfin_assert(mesh);
-  std::unique_ptr<CellType> entity_type(
-      CellType::create(mesh->type().entity_type(dim)));
+  std::unique_ptr<mesh::CellType> entity_type(
+      mesh::CellType::create(mesh->type().entity_type(dim)));
   const std::size_t num_verts_per_entity = entity_type->num_entities(0);
 
   // Reset MeshValueCollection
@@ -1402,7 +1402,7 @@ template <typename T>
 void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
                                               const std::string name) const
 {
-  Timer t1("HDF5: read mesh value collection");
+  common::Timer t1("HDF5: read mesh value collection");
   dolfin_assert(_hdf5_file_id > 0);
 
   mesh_vc.clear();
@@ -1606,7 +1606,8 @@ void HDF5File::read(Mesh& input_mesh, const std::string data_path,
   }
 
   // Create CellType from string
-  std::unique_ptr<CellType> cell_type(CellType::create(cell_type_str));
+  std::unique_ptr<mesh::CellType> cell_type(
+      mesh::CellType::create(cell_type_str));
   dolfin_assert(cell_type);
 
   // Check that coordinate data set is found in HDF5 file
@@ -1644,14 +1645,14 @@ void HDF5File::read(Mesh& input_mesh, const std::string data_path,
 //-----------------------------------------------------------------------------
 void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
                     const std::string geometry_path, const int gdim,
-                    const CellType& cell_type,
+                    const mesh::CellType& cell_type,
                     const std::int64_t expected_num_global_cells,
                     const std::int64_t expected_num_global_points,
                     bool use_partition_from_file) const
 {
   // FIXME: This function is too big. Split up.
 
-  Timer t("HDF5: read mesh");
+  common::Timer t("HDF5: read mesh");
   dolfin_assert(_hdf5_file_id > 0);
 
   // Create structure to store local mesh
@@ -1679,7 +1680,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
     std::string cell_type_str;
     HDF5Interface::get_attribute(_hdf5_file_id, topology_path, "celltype",
                                  cell_type_str);
-    if (cell_type.cell_type() != CellType::string2type(cell_type_str))
+    if (cell_type.cell_type() != mesh::CellType::string2type(cell_type_str))
     {
       dolfin_error("HDF5File.cpp", "read topology data",
                    "Inconsistency between expected cell type and cell type "
@@ -1917,6 +1918,6 @@ bool HDF5File::get_mpi_atomicity() const
   dolfin_assert(_hdf5_file_id > 0);
   return HDF5Interface::get_mpi_atomicity(_hdf5_file_id);
 }
-  //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 #endif

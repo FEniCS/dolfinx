@@ -16,6 +16,8 @@
 
 namespace dolfin
 {
+namespace common
+{
 
 /// Indent string block
 std::string indent(std::string block);
@@ -79,5 +81,6 @@ std::size_t hash_global(const MPI_Comm mpi_comm, const T& x)
   // Broadcast hash key to all processes
   MPI::broadcast(mpi_comm, global_hash);
   return global_hash;
+}
 }
 }

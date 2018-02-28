@@ -6,15 +6,14 @@
 
 #pragma once
 
+#include "AssemblerBase.h"
+#include "DirichletBC.h"
 #include <Eigen/Dense>
 #include <array>
 #include <map>
 #include <memory>
 #include <utility>
 #include <vector>
-
-#include "AssemblerBase.h"
-#include "DirichletBC.h"
 
 namespace ufc
 {
@@ -31,15 +30,11 @@ namespace dolfin
 {
 
 // Forward declarations
-class Cell;
 class Facet;
-class Form;
-class GenericDofMap;
 class PETScMatrix;
 class PETScVector;
 template <typename T>
 class MeshFunction;
-class UFC;
 
 namespace common
 {
@@ -47,8 +42,21 @@ template <typename T>
 class ArrayView;
 }
 
+namespace function
+{
+class Function;
+}
+
+namespace mesh
+{
+class Cell;
+}
+
 namespace fem
 {
+class Form;
+class GenericDofMap;
+class UFC;
 
 /// This class provides an assembler for systems of the form Ax =
 /// b. It differs from the default DOLFIN assembler in that it
@@ -95,9 +103,10 @@ private:
   static void check_arity(std::shared_ptr<const Form> a,
                           std::shared_ptr<const Form> L);
 
-  // Check if _bcs[bc_index] is part of FunctionSpace fs
-  bool check_functionspace_for_bc(std::shared_ptr<const FunctionSpace> fs,
-                                  std::size_t bc_index);
+  // Check if _bcs[bc_index] is part of function::FunctionSpace fs
+  bool
+  check_functionspace_for_bc(std::shared_ptr<const function::FunctionSpace> fs,
+                             std::size_t bc_index);
 
   // Assemble system
   void assemble(PETScMatrix* A, PETScVector* b, const PETScVector* x0);
@@ -127,7 +136,7 @@ private:
       std::array<std::vector<double>, 2>& Ae, std::array<UFC*, 2>& ufc,
       ufc::cell& ufc_cell, Eigen::Ref<EigenRowMatrixXd> coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
-      const std::array<bool, 2>& tensor_required_facet, const Cell& cell,
+      const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
       const Facet& facet,
       const std::array<const ufc::cell_integral*, 2>& cell_integrals,
       const std::array<const ufc::exterior_facet_integral*, 2>&
@@ -141,7 +150,7 @@ private:
       std::array<EigenRowMatrixXd, 2>& coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet,
-      const std::array<Cell, 2>& cell,
+      const std::array<mesh::Cell, 2>& cell,
       const std::array<std::size_t, 2>& local_facet, const bool facet_owner,
       const std::array<const ufc::cell_integral*, 2>& cell_integrals,
       const std::array<const ufc::interior_facet_integral*, 2>&

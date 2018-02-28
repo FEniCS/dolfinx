@@ -13,6 +13,7 @@
 #include <string>
 
 using namespace dolfin;
+using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
 Constant::Constant(double value) : Expression({}), _values(1, value)
@@ -114,7 +115,7 @@ std::string Constant::str(bool verbose) const
         ossv << _values[0];
       }
     }
-    oss << indent(ossv.str());
+    oss << common::indent(ossv.str());
   }
 
   return oss.str();

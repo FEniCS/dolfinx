@@ -21,6 +21,9 @@ namespace fem
 class GenericDofMap;
 }
 
+namespace io
+{
+
 /// This class contains some algorithms which do not explicitly
 /// depend on the HDF5 file format, mostly to do with reorganising
 /// Mesh entities with MPI
@@ -76,4 +79,5 @@ public:
                           std::array<std::int64_t, 2> input_vector_range,
                           const fem::GenericDofMap& dofmap);
 };
+}
 }

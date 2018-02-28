@@ -22,24 +22,23 @@ class dofmap;
 
 namespace dolfin
 {
-
 class Mesh;
-class IndexMap;
-class UFC;
-class Cell;
 
-namespace fem
+namespace common
 {
-class DofMap;
+class IndexMap;
 }
 
 namespace mesh
 {
+class Cell;
 class SubDomain;
 }
 
 namespace fem
 {
+class DofMap;
+class UFC;
 
 /// Builds a DofMap on a Mesh
 
@@ -170,7 +169,7 @@ private:
                        const ufc::dofmap& ufc_dofmap, const Mesh& mesh);
 
   static void compute_node_reordering(
-      IndexMap& index_map, std::vector<int>& old_to_new_local,
+      common::IndexMap& index_map, std::vector<int>& old_to_new_local,
       const std::unordered_map<int, std::vector<int>>&
           node_to_sharing_processes,
       const std::vector<std::size_t>& old_local_to_global,
@@ -179,16 +178,18 @@ private:
       const std::set<std::size_t>& global_nodes, const MPI_Comm mpi_comm);
 
   static void
-  get_cell_entities_local(const Cell& cell,
+  get_cell_entities_local(const mesh::Cell& cell,
                           std::vector<std::vector<std::size_t>>& entity_indices,
                           const std::vector<bool>& needs_mesh_entities);
 
   static void get_cell_entities_global(
-      const Cell& cell, std::vector<std::vector<std::size_t>>& entity_indices,
+      const mesh::Cell& cell,
+      std::vector<std::vector<std::size_t>>& entity_indices,
       const std::vector<bool>& needs_mesh_entities);
 
   static void get_cell_entities_global_constrained(
-      const Cell& cell, std::vector<std::vector<std::size_t>>& entity_indices,
+      const mesh::Cell& cell,
+      std::vector<std::vector<std::size_t>>& entity_indices,
       const std::vector<std::vector<std::int64_t>>& global_entity_indices,
       const std::vector<bool>& needs_mesh_entities);
 

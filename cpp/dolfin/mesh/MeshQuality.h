@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "Cell.h"
+#include "MeshFunction.h"
 #include <boost/multi_array.hpp>
 #include <dolfin/common/constants.h>
 #include <memory>
@@ -18,6 +18,11 @@ namespace dolfin
 {
 
 class Mesh;
+
+namespace mesh
+{
+class Cell;
+}
 
 /// The class provides functions to quantify mesh quality
 
@@ -62,7 +67,8 @@ public:
                                                        = 50);
 
   /// Get internal dihedral angles of a tetrahedral cell
-  static void dihedral_angles(const Cell& cell, std::vector<double>& dh_angle);
+  static void dihedral_angles(const mesh::Cell& cell,
+                              std::vector<double>& dh_angle);
 
   /// Get internal minimum and maximum dihedral angles of a 3D mesh
   static std::pair<double, double> dihedral_angles_min_max(const Mesh& mesh);

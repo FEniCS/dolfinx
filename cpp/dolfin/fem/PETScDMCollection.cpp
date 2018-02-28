@@ -4,8 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifdef HAS_PETSC
-
 #include "PETScDMCollection.h"
 #include <boost/multi_array.hpp>
 #include <dolfin/common/RangedIndexSet.h>
@@ -17,10 +15,12 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscmat.h>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 namespace
 {
@@ -55,7 +55,7 @@ struct lt_coordinate
 };
 
 std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
-tabulate_coordinates_to_dofs(const FunctionSpace& V)
+tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
 {
   std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
       coords_to_dofs(lt_coordinate(1.0e-12));
@@ -81,9 +81,10 @@ tabulate_coordinates_to_dofs(const FunctionSpace& V)
   // Speed up the computations by only visiting (most) dofs once
   const std::int64_t local_size
       = dofmap.ownership_range()[1] - dofmap.ownership_range()[0];
-  common::RangedIndexSet already_visited(std::array<std::int64_t, 2>{{0, local_size}});
+  common::RangedIndexSet already_visited(
+      std::array<std::int64_t, 2>{{0, local_size}});
 
-  for (auto& cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(mesh))
   {
     // Get cell coordinates
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -121,7 +122,7 @@ tabulate_coordinates_to_dofs(const FunctionSpace& V)
 
 //-----------------------------------------------------------------------------
 PETScDMCollection::PETScDMCollection(
-    std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
+    std::vector<std::shared_ptr<const function::FunctionSpace>> function_spaces)
     : _spaces(function_spaces), _dms(function_spaces.size(), nullptr)
 {
   for (std::size_t i = 0; i < _spaces.size(); ++i)
@@ -197,9 +198,9 @@ void PETScDMCollection::reset(int i)
   //  PetscObjectDereference((PetscObject)_dms[i]);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<PETScMatrix>
-PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
-                                          const FunctionSpace& fine_space)
+std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
+    const function::FunctionSpace& coarse_space,
+    const function::FunctionSpace& fine_space)
 {
   // FIXME: refactor and split up
 
@@ -490,7 +491,7 @@ PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
     Point curr_point(dim, &found_points[i * dim]);
 
     // Create coarse cell
-    Cell coarse_cell(meshc, static_cast<std::size_t>(id));
+    mesh::Cell coarse_cell(meshc, static_cast<std::size_t>(id));
     // Get dofs coordinates of the coarse cell
     coarse_cell.get_coordinate_dofs(coordinate_dofs);
 
@@ -707,11 +708,11 @@ void PETScDMCollection::find_exterior_points(
 PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
 {
   // Get DOLFIN FunctiobSpace from the PETSc DM object
-  std::shared_ptr<FunctionSpace>* V;
+  std::shared_ptr<function::FunctionSpace>* V;
   DMShellGetContext(dm, (void**)&V);
 
   // Create Vector
-  Function u(*V);
+  function::Function u(*V);
   *vec = u.vector()->vec();
 
   // FIXME: Does increasing the reference count lead to a memory leak?
@@ -724,9 +725,9 @@ PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
 PetscErrorCode PETScDMCollection::create_interpolation(DM dmc, DM dmf, Mat* mat,
                                                        Vec* vec)
 {
-  // Get DOLFIN FunctionSpaces from PETSc DM objects (V0 is coarse
+  // Get DOLFIN function::FunctionSpaces from PETSc DM objects (V0 is coarse
   // space, V1 is fine space)
-  FunctionSpace *V0(nullptr), *V1(nullptr);
+  function::FunctionSpace *V0(nullptr), *V1(nullptr);
   DMShellGetContext(dmc, (void**)&V0);
   DMShellGetContext(dmf, (void**)&V1);
 
@@ -757,4 +758,3 @@ PetscErrorCode PETScDMCollection::refine(DM dmc, MPI_Comm comm, DM* dmf)
   return DMGetFineDM(dmc, dmf);
 }
 //-----------------------------------------------------------------------------
-#endif

@@ -375,7 +375,7 @@ void BoundingBoxTree::_compute_collisions(const BoundingBoxTree& tree,
     if (mesh)
     {
       // Get cell
-      Cell cell(*mesh, entity_index);
+      mesh::Cell cell(*mesh, entity_index);
       if (CollisionPredicates::collides(cell, point))
         entities.push_back(entity_index);
     }
@@ -422,8 +422,8 @@ void BoundingBoxTree::_compute_collisions(
     if (mesh_A)
     {
       dolfin_assert(mesh_B);
-      Cell cell_A(*mesh_A, entity_index_A);
-      Cell cell_B(*mesh_B, entity_index_B);
+      mesh::Cell cell_A(*mesh_A, entity_index_A);
+      mesh::Cell cell_B(*mesh_B, entity_index_B);
       if (CollisionPredicates::collides(cell_A, cell_B))
       {
         entities_A.push_back(entity_index_A);
@@ -535,7 +535,7 @@ unsigned int BoundingBoxTree::_compute_first_entity_collision(
     // Get entity (child_1 denotes entity index for leaves)
     dolfin_assert(tree._tdim == mesh.topology().dim());
     const unsigned int entity_index = bbox.child_1;
-    Cell cell(mesh, entity_index);
+    mesh::Cell cell(mesh, entity_index);
 
     // Check entity
     if (CollisionPredicates::collides(cell, point))
@@ -579,7 +579,7 @@ void BoundingBoxTree::_compute_closest_entity(
     // Get entity (child_1 denotes entity index for leaves)
     dolfin_assert(tree._tdim == mesh.topology().dim());
     const unsigned int entity_index = bbox.child_1;
-    Cell cell(mesh, entity_index);
+    mesh::Cell cell(mesh, entity_index);
 
     // If entity is closer than best result so far, then return it
     const double r2 = cell.squared_distance(point);
@@ -643,7 +643,7 @@ void BoundingBoxTree::build_point_search_tree(const Mesh& mesh) const
 
   // Create list of midpoints for all cells
   std::vector<Point> points;
-  for (auto& cell : MeshRange<Cell>(mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(mesh))
     points.push_back(cell.midpoint());
 
   // Select implementation
