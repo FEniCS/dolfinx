@@ -138,8 +138,9 @@ boundary condition should be applied.
      inside(Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
             Eigen::Dynamic, Eigen::RowMajor>> x, bool on_boundary) const
      {
-       Eigen::Matrix<bool, 1, 1> result;
-       result << (x(0, 0) < DOLFIN_EPS or x(0, 0) > 1.0 - DOLFIN_EPS);
+       Eigen::Matrix<bool, Eigen::Dynamic, 1> result(x.rows());
+       for (unsigned int i = 0; i != x.rows(); ++i)
+         result[i] = (x(i, 0) < DOLFIN_EPS or x(i, 0) > 1.0 - DOLFIN_EPS);
        return result;
      }
    };

@@ -153,6 +153,7 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh,
   Eigen::Map<const EigenRowMatrixXd> x(
       mesh.geometry().x().data(), mesh.num_entities(0), _geometric_dimension);
   EigenVectorXb all_inside = inside(x, false);
+  dolfin_assert(all_inside.rows() == x.rows());
 
   // Check all boundary vertices for "inside" with "on_boundary=true"
   EigenRowMatrixXd x_bound(count, _geometric_dimension);
@@ -160,6 +161,8 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh,
     if (boundary_vertex[i] != -1)
       x_bound.row(boundary_vertex[i]) = x.row(i);
   EigenVectorXb bound_inside = inside(x_bound, true);
+  dolfin_assert(bound_inside.rows() == x_bound.rows());
+
   // Copy values back to vector, now -1="not on boundary anyway", 1="inside",
   // 0="not inside"
   for (std::int32_t i = 0; i != mesh.num_entities(0); ++i)
