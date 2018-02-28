@@ -10,11 +10,9 @@
 #include <dolfin/log/Table.h>
 #include <string>
 
-/// This comment in in timing.h but I think it is providing
-/// a doxygen docstring for the whole dolfin namespace... FIXME.
-
 namespace dolfin
 {
+
 /// Parameter specifying whether to clear timing(s):
 ///   * ``TimingClear::keep``
 ///   * ``TimingClear::clear``
@@ -111,5 +109,3 @@ void dump_timings_to_xml(std::string filename, TimingClear clear);
 std::tuple<std::size_t, double, double, double> timing(std::string task,
                                                        TimingClear clear);
 }
-
-
