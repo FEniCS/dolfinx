@@ -80,12 +80,6 @@ public:
   order(mesh::Cell& cell,
         const std::vector<std::int64_t>& local_to_global_vertex_indices) const;
 
-  /// Check whether given point collides with cell
-  virtual bool collides(const mesh::Cell& cell, const Point& point) const;
-
-  /// Check whether given entity collides with cell
-  virtual bool collides(const mesh::Cell& cell, const MeshEntity& entity) const;
-
   /// Return description of cell type
   std::string description(bool plural) const;
 

@@ -208,16 +208,6 @@ void IntervalCell::order(
   }
 }
 //-----------------------------------------------------------------------------
-bool IntervalCell::collides(const Cell& cell, const Point& point) const
-{
-  return CollisionPredicates::collides(cell, point);
-}
-//-----------------------------------------------------------------------------
-bool IntervalCell::collides(const Cell& cell, const MeshEntity& entity) const
-{
-  return CollisionPredicates::collides(cell, entity);
-}
-//-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const
 {
   if (plural)

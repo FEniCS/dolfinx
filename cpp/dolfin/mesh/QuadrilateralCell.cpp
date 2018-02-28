@@ -260,19 +260,6 @@ void QuadrilateralCell::order(
   // FIXME - probably not appropriate for quad cells.
 }
 //-----------------------------------------------------------------------------
-bool QuadrilateralCell::collides(const Cell& cell, const Point& point) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool QuadrilateralCell::collides(const Cell& cell,
-                                 const MeshEntity& entity) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-//-----------------------------------------------------------------------------
 std::string QuadrilateralCell::description(bool plural) const
 {
   if (plural)

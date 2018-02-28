@@ -239,19 +239,6 @@ void HexahedronCell::order(
   dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
-bool HexahedronCell::collides(const mesh::Cell& cell, const Point& point) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool HexahedronCell::collides(const mesh::Cell& cell,
-                              const MeshEntity& entity) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-//-----------------------------------------------------------------------------
 std::string HexahedronCell::description(bool plural) const
 {
   if (plural)

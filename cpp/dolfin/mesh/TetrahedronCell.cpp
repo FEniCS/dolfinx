@@ -502,16 +502,6 @@ void TetrahedronCell::order(
   }
 }
 //-----------------------------------------------------------------------------
-bool TetrahedronCell::collides(const Cell& cell, const Point& point) const
-{
-  return CollisionPredicates::collides(cell, point);
-}
-//-----------------------------------------------------------------------------
-bool TetrahedronCell::collides(const Cell& cell, const MeshEntity& entity) const
-{
-  return CollisionPredicates::collides(cell, entity);
-}
-//-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const
 {
   if (plural)
