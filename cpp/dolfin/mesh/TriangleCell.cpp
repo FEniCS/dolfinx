@@ -11,7 +11,6 @@
 #include "Vertex.h"
 #include <algorithm>
 #include <cmath>
-#include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
@@ -32,8 +31,8 @@ std::size_t TriangleCell::num_entities(std::size_t dim) const
     return 1; // cells
   default:
     log::dolfin_error("TriangleCell.cpp",
-                 "access number of entities of triangle cell",
-                 "Illegal topological dimension (%d)", dim);
+                      "access number of entities of triangle cell",
+                      "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -50,9 +49,10 @@ std::size_t TriangleCell::num_vertices(std::size_t dim) const
   case 2:
     return 3; // cells
   default:
-    log::dolfin_error("TriangleCell.cpp",
-                 "access number of vertices for subsimplex of triangle cell",
-                 "Illegal topological dimension (%d)", dim);
+    log::dolfin_error(
+        "TriangleCell.cpp",
+        "access number of vertices for subsimplex of triangle cell",
+        "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -86,8 +86,9 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   // Check that we get a triangle
   if (triangle.dim() != 2)
   {
-    log::dolfin_error("TriangleCell.cpp", "compute volume (area) of triangle cell",
-                 "Illegal mesh entity, not a triangle");
+    log::dolfin_error("TriangleCell.cpp",
+                      "compute volume (area) of triangle cell",
+                      "Illegal mesh entity, not a triangle");
   }
 
   // Get mesh geometry
@@ -123,8 +124,9 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   }
   else
   {
-    log::dolfin_error("TriangleCell.cpp", "compute volume of triangle",
-                 "Only know how to compute volume when embedded in R^2 or R^3");
+    log::dolfin_error(
+        "TriangleCell.cpp", "compute volume of triangle",
+        "Only know how to compute volume when embedded in R^2 or R^3");
   }
 
   return 0.0;
@@ -136,7 +138,7 @@ double TriangleCell::circumradius(const MeshEntity& triangle) const
   if (triangle.dim() != 2)
   {
     log::dolfin_error("TriangleCell.cpp", "compute diameter of triangle cell",
-                 "Illegal mesh entity, not a triangle");
+                      "Illegal mesh entity, not a triangle");
   }
 
   // Get mesh geometry
@@ -274,10 +276,11 @@ geometry::Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
   // could be removed, unless it is here for some other reason.
   if (cell.mesh().geometry().dim() != 2)
   {
-    log::dolfin_error("TriangleCell.cpp", "find normal",
-                 "Normal vector is not defined in dimension %d (only defined "
-                 "when the triangle is in R^2",
-                 cell.mesh().geometry().dim());
+    log::dolfin_error(
+        "TriangleCell.cpp", "find normal",
+        "Normal vector is not defined in dimension %d (only defined "
+        "when the triangle is in R^2",
+        cell.mesh().geometry().dim());
   }
 
   // Get global index of opposite vertex
@@ -317,7 +320,7 @@ geometry::Point TriangleCell::cell_normal(const Cell& cell) const
   if (gdim > 3)
   {
     log::dolfin_error("TriangleCell.cpp", "compute cell normal",
-                 "Illegal geometric dimension (%d)", gdim);
+                      "Illegal geometric dimension (%d)", gdim);
   }
 
   // Get the three vertices as points
@@ -420,17 +423,6 @@ void TriangleCell::order(
   }
 }
 //-----------------------------------------------------------------------------
-bool TriangleCell::collides(const Cell& cell,
-                            const geometry::Point& point) const
-{
-  return geometry::CollisionPredicates::collides(cell, point);
-}
-//-----------------------------------------------------------------------------
-bool TriangleCell::collides(const Cell& cell, const MeshEntity& entity) const
-{
-  return geometry::CollisionPredicates::collides(cell, entity);
-}
-//-----------------------------------------------------------------------------
 std::string TriangleCell::description(bool plural) const
 {
   if (plural)
@@ -457,7 +449,7 @@ std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
 
   // We should not reach this
   log::dolfin_error("TriangleCell.cpp", "find specified edge in cell",
-               "Edge really not found");
+                    "Edge really not found");
   return 0;
 }
 //-----------------------------------------------------------------------------

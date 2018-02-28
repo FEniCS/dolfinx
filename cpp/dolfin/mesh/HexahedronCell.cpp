@@ -32,8 +32,8 @@ std::size_t HexahedronCell::num_entities(std::size_t dim) const
     return 1; // cells
   default:
     log::dolfin_error("HexahedronCell.cpp",
-                 "access number of entities of hexahedron cell",
-                 "Illegal topological dimension (%d)", dim);
+                      "access number of entities of hexahedron cell",
+                      "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -52,9 +52,10 @@ std::size_t HexahedronCell::num_vertices(std::size_t dim) const
   case 3:
     return 8; // cells
   default:
-    log::dolfin_error("HexahedronCell.cpp",
-                 "access number of vertices for subsimplex of hexahedron cell",
-                 "Illegal topological dimension (%d)", dim);
+    log::dolfin_error(
+        "HexahedronCell.cpp",
+        "access number of vertices for subsimplex of hexahedron cell",
+        "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -139,7 +140,7 @@ double HexahedronCell::volume(const MeshEntity& cell) const
   if (cell.dim() != 2)
   {
     log::dolfin_error("HexahedronCell.cpp", "compute volume (area) of cell",
-                 "Illegal mesh entity");
+                      "Illegal mesh entity");
   }
 
   // Get mesh geometry
@@ -155,7 +156,7 @@ double HexahedronCell::volume(const MeshEntity& cell) const
   const geometry::Point p5 = geometry.point(vertices[5]);
 
   log::dolfin_error("HexahedronCell.cpp", "compute volume of hexahedron",
-               "Not implemented");
+                    "Not implemented");
 
   return 0.0;
 }
@@ -166,12 +167,13 @@ double HexahedronCell::circumradius(const MeshEntity& cell) const
   if (cell.dim() != 2)
   {
     log::dolfin_error("HexahedronCell.cpp",
-                 "compute circumradius of hexahedron cell",
-                 "Illegal mesh entity");
+                      "compute circumradius of hexahedron cell",
+                      "Illegal mesh entity");
   }
 
-  log::dolfin_error("HexahedronCell.cpp", "compute circumradius of hexahedron cell",
-               "Don't know how to compute diameter");
+  log::dolfin_error("HexahedronCell.cpp",
+                    "compute circumradius of hexahedron cell",
+                    "Don't know how to compute diameter");
 
   dolfin_not_implemented();
   return 0.0;
@@ -190,7 +192,8 @@ double HexahedronCell::normal(const mesh::Cell& cell, std::size_t facet,
   return normal(cell, facet)[i];
 }
 //-----------------------------------------------------------------------------
-geometry::Point HexahedronCell::normal(const mesh::Cell& cell, std::size_t facet) const
+geometry::Point HexahedronCell::normal(const mesh::Cell& cell,
+                                       std::size_t facet) const
 {
   dolfin_not_implemented();
   return geometry::Point();
@@ -235,19 +238,6 @@ void HexahedronCell::order(
 {
   // Not implemented
   dolfin_not_implemented();
-}
-//-----------------------------------------------------------------------------
-bool HexahedronCell::collides(const mesh::Cell& cell, const geometry::Point& point) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool HexahedronCell::collides(const mesh::Cell& cell,
-                              const MeshEntity& entity) const
-{
-  dolfin_not_implemented();
-  return false;
 }
 //-----------------------------------------------------------------------------
 std::string HexahedronCell::description(bool plural) const

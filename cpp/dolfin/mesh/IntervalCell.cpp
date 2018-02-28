@@ -9,7 +9,6 @@
 #include "MeshEntity.h"
 #include "MeshGeometry.h"
 #include <algorithm>
-#include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
@@ -28,8 +27,8 @@ std::size_t IntervalCell::num_entities(std::size_t dim) const
     return 1; // cells
   default:
     log::dolfin_error("IntervalCell.cpp",
-                 "access number of entities of interval cell",
-                 "Illegal topological dimension (%d)", dim);
+                      "access number of entities of interval cell",
+                      "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -44,9 +43,10 @@ std::size_t IntervalCell::num_vertices(std::size_t dim) const
   case 1:
     return 2; // cells
   default:
-    log::dolfin_error("IntervalCell.cpp",
-                 "access number of vertices for subsimplex of interval cell",
-                 "Illegal topological dimension (%d)", dim);
+    log::dolfin_error(
+        "IntervalCell.cpp",
+        "access number of vertices for subsimplex of interval cell",
+        "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -70,8 +70,9 @@ double IntervalCell::volume(const MeshEntity& interval) const
   // Check that we get an interval
   if (interval.dim() != 1)
   {
-    log::dolfin_error("IntervalCell.cpp", "compute volume (length) of interval cell",
-                 "Illegal mesh entity, not an interval");
+    log::dolfin_error("IntervalCell.cpp",
+                      "compute volume (length) of interval cell",
+                      "Illegal mesh entity, not an interval");
   }
 
   // Get mesh geometry
@@ -91,7 +92,7 @@ double IntervalCell::circumradius(const MeshEntity& interval) const
   if (interval.dim() != 1)
   {
     log::dolfin_error("IntervalCell.cpp", "compute diameter of interval cell",
-                 "Illegal mesh entity, not an interval");
+                      "Illegal mesh entity, not an interval");
   }
 
   // Circumradius is half the volume for an interval (line segment)
@@ -170,7 +171,7 @@ geometry::Point IntervalCell::cell_normal(const Cell& cell) const
   const std::size_t gdim = geometry.dim();
   if (gdim > 2)
     log::dolfin_error("IntervalCell.cpp", "compute cell normal",
-                 "Illegal geometric dimension (%d)", gdim);
+                      "Illegal geometric dimension (%d)", gdim);
 
   // Get the two vertices as points
   const std::int32_t* vertices = cell.entities(0);
@@ -207,17 +208,6 @@ void IntervalCell::order(
     std::int32_t* cell_vertices = const_cast<std::int32_t*>(cell.entities(0));
     sort_entities(2, cell_vertices, local_to_global_vertex_indices);
   }
-}
-//-----------------------------------------------------------------------------
-bool IntervalCell::collides(const Cell& cell,
-                            const geometry::Point& point) const
-{
-  return geometry::CollisionPredicates::collides(cell, point);
-}
-//-----------------------------------------------------------------------------
-bool IntervalCell::collides(const Cell& cell, const MeshEntity& entity) const
-{
-  return geometry::CollisionPredicates::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const

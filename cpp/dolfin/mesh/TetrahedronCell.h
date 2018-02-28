@@ -8,8 +8,8 @@
 
 #include "CellType.h"
 #include <boost/multi_array.hpp>
-#include <vector>
 #include <dolfin/geometry/Point.h>
+#include <vector>
 
 namespace dolfin
 {
@@ -48,7 +48,8 @@ public:
   double circumradius(const MeshEntity& tetrahedron) const;
 
   /// Compute squared distance to given point
-  double squared_distance(const mesh::Cell& cell, const geometry::Point& point) const;
+  double squared_distance(const mesh::Cell& cell,
+                          const geometry::Point& point) const;
 
   /// Compute component i of normal of given facet with respect to
   /// the cell
@@ -68,12 +69,6 @@ public:
   order(mesh::Cell& cell,
         const std::vector<std::int64_t>& local_to_global_vertex_indices) const;
 
-  /// Check whether given point collides with cell
-  bool collides(const mesh::Cell& cell, const geometry::Point& point) const;
-
-  /// Check whether given entity collides with cell
-  bool collides(const mesh::Cell& cell, const MeshEntity& entity) const;
-
   /// Return description of cell type
   std::string description(bool plural) const;
 
@@ -86,8 +81,10 @@ private:
 
   // Check whether point is outside region defined by facet ABC.
   // The fourth vertex is needed to define the orientation.
-  bool point_outside_of_plane(const geometry::Point& point, const geometry::Point& A,
-                              const geometry::Point& B, const geometry::Point& C,
+  bool point_outside_of_plane(const geometry::Point& point,
+                              const geometry::Point& A,
+                              const geometry::Point& B,
+                              const geometry::Point& C,
                               const geometry::Point& D) const;
 };
 }

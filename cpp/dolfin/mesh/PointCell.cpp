@@ -9,7 +9,6 @@
 #include "Facet.h"
 #include "MeshEntity.h"
 #include "Vertex.h"
-#include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
@@ -26,8 +25,8 @@ std::size_t PointCell::num_entities(std::size_t dim) const
     return 1; // vertices
   default:
     log::dolfin_error("PointCell.cpp",
-                 "extract number of entities of given dimension in cell",
-                 "Illegal topological dimension %d for point", dim);
+                      "extract number of entities of given dimension in cell",
+                      "Illegal topological dimension %d for point", dim);
   }
 
   return 0;
@@ -41,8 +40,8 @@ std::size_t PointCell::num_vertices(std::size_t dim) const
     return 1; // vertices
   default:
     log::dolfin_error("PointCell.cpp",
-                 "extract number of vertices of given dimension in cell",
-                 "Illegal topological dimension %d for point", dim);
+                      "extract number of vertices of given dimension in cell",
+                      "Illegal topological dimension %d for point", dim);
   }
 
   return 0;
@@ -52,13 +51,13 @@ void PointCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
                                 std::size_t dim, const std::int32_t* v) const
 {
   log::dolfin_error("PointCell.cpp", "create entities",
-               "Entities on a point cell are not defined");
+                    "Entities on a point cell are not defined");
 }
 //-----------------------------------------------------------------------------
 double PointCell::volume(const MeshEntity& triangle) const
 {
   log::dolfin_error("PointCell.cpp", "compute volume of cell",
-               "Volume of a point cell is not defined");
+                    "Volume of a point cell is not defined");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
@@ -66,11 +65,12 @@ double PointCell::volume(const MeshEntity& triangle) const
 double PointCell::circumradius(const MeshEntity& point) const
 {
   log::dolfin_error("PointCell.cpp", "find circumradious of cell",
-               "Circumradius of a point cell is not defined");
+                    "Circumradius of a point cell is not defined");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double PointCell::squared_distance(const Cell& cell, const geometry::Point& point) const
+double PointCell::squared_distance(const Cell& cell,
+                                   const geometry::Point& point) const
 {
   dolfin_not_implemented();
   return 0.0;
@@ -80,28 +80,28 @@ double PointCell::normal(const Cell& cell, std::size_t facet,
                          std::size_t i) const
 {
   log::dolfin_error("PointCell.cpp", "find component of normal vector of cell",
-               "Component %d of normal of a point cell is not defined", i);
+                    "Component %d of normal of a point cell is not defined", i);
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 geometry::Point PointCell::normal(const Cell& cell, std::size_t facet) const
 {
   log::dolfin_error("PointCell.cpp", "find normal vector of cell",
-               "Normal vector of a point cell is not defined");
+                    "Normal vector of a point cell is not defined");
   return geometry::Point();
 }
 //-----------------------------------------------------------------------------
 geometry::Point PointCell::cell_normal(const Cell& cell) const
 {
   log::dolfin_error("PointCell.cpp", "compute cell normal",
-               "Normal vector of a point cell is not defined");
+                    "Normal vector of a point cell is not defined");
   return geometry::Point();
 }
 //-----------------------------------------------------------------------------
 double PointCell::facet_area(const Cell& cell, std::size_t facet) const
 {
   log::dolfin_error("PointCell.cpp", "find facet area of cell",
-               "Facet area of a point cell is not defined");
+                    "Facet area of a point cell is not defined");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
@@ -110,17 +110,7 @@ void PointCell::order(
     const std::vector<std::int64_t>& local_to_global_vertex_indices) const
 {
   log::dolfin_error("PointCell.cpp", "order cell",
-               "Ordering of a point cell is not defined");
-}
-//-----------------------------------------------------------------------------
-bool PointCell::collides(const Cell& cell, const geometry::Point& point) const
-{
-  return geometry::CollisionPredicates::collides(cell, point);
-}
-//-----------------------------------------------------------------------------
-bool PointCell::collides(const Cell& cell, const MeshEntity& entity) const
-{
-  return geometry::CollisionPredicates::collides(cell, entity);
+                    "Ordering of a point cell is not defined");
 }
 //-----------------------------------------------------------------------------
 std::string PointCell::description(bool plural) const
@@ -133,7 +123,7 @@ std::string PointCell::description(bool plural) const
 std::size_t PointCell::find_edge(std::size_t i, const Cell& cell) const
 {
   log::dolfin_error("PointCell.cpp", "find edge",
-               "Edges are not defined for a point cell");
+                    "Edges are not defined for a point cell");
   return 0;
 }
 //-----------------------------------------------------------------------------
