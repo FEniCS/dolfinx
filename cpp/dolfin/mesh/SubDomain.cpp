@@ -130,70 +130,65 @@ void SubDomain::apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh,
   // Set geometric dimension (needed for SWIG interface)
   _geometric_dimension = mesh.geometry().dim();
 
-  // Speed up the computation by only checking each vertex once (or
-  // twice if it is on the boundary for some but not all facets).
-  common::RangedIndexSet boundary_visited{{{0, mesh.num_vertices()}}};
-  common::RangedIndexSet interior_visited{{{0, mesh.num_vertices()}}};
-  std::vector<bool> boundary_inside(mesh.num_vertices());
-  std::vector<bool> interior_inside(mesh.num_vertices());
+  // Find all vertices on boundary
+  // Set all to -1 (interior) to start with
+  // If a vertex is on the boundary, give it an index from [0, count)
+  std::vector<std::int32_t> boundary_vertex(mesh.num_entities(0), -1);
+  std::size_t count = 0;
+  for (auto& facet : MeshRange<Facet>(mesh))
+  {
+    if (facet.num_global_entities(D) == 1)
+    {
+      const std::int32_t* v = facet.entities(0);
+      for (unsigned int i = 0; i != facet.num_entities(0); ++i)
+        if (boundary_vertex[v[i]] == -1)
+        {
+          boundary_vertex[v[i]] = count;
+          ++count;
+        }
+    }
+  }
 
-  // Always false when marking cells
-  bool on_boundary = false;
+  // Check all vertices for "inside" with "on_boundary=false"
+  Eigen::Map<const EigenRowMatrixXd> x(
+      mesh.geometry().x().data(), mesh.num_entities(0), _geometric_dimension);
+  EigenVectorXb all_inside = inside(x, false);
+
+  // Check all boundary vertices for "inside" with "on_boundary=true"
+  EigenRowMatrixXd x_bound(count, _geometric_dimension);
+  for (std::int32_t i = 0; i != mesh.num_entities(0); ++i)
+    if (boundary_vertex[i] != -1)
+      x_bound.row(boundary_vertex[i]) = x.row(i);
+  EigenVectorXb bound_inside = inside(x_bound, true);
+  // Copy values back to vector, now -1="not on boundary anyway", 1="inside",
+  // 0="not inside"
+  for (std::int32_t i = 0; i != mesh.num_entities(0); ++i)
+    if (boundary_vertex[i] != -1)
+      boundary_vertex[i] = bound_inside(boundary_vertex[i]) ? 1 : 0;
 
   // Compute sub domain markers
   for (auto& entity : MeshRange<MeshEntity>(mesh, dim))
   {
-    // Check if entity is on the boundary if entity is a facet
-    if (dim == D - 1)
-      on_boundary = (entity.num_global_entities(D) == 1);
-    // Or, if entity is of topological dimension less than D - 1, check if any
-    // connected
-    // facet is on the boundary
-    else if (dim < D - 1)
-    {
-      on_boundary = false;
-      for (std::size_t f = 0; f < entity.num_entities(D - 1); ++f)
-      {
-        std::size_t facet_id = entity.entities(D - 1)[f];
-        Facet facet(mesh, facet_id);
-        if (facet.num_global_entities(D) == 1)
-        {
-          on_boundary = true;
-          break;
-        }
-      }
-    }
-
-    // Select the visited-cache to use for this entity
-    common::RangedIndexSet& is_visited
-        = (on_boundary ? boundary_visited : interior_visited);
-    std::vector<bool>& is_inside
-        = (on_boundary ? boundary_inside : interior_inside);
-
-    // Start by assuming all points are inside
+    // An Entity is on_boundary if all its vertices are on the boundary
+    bool on_boundary = true;
+    // Assuming it is on boundary, also check if all points are "inside"
     bool all_points_inside = true;
-
-    // Check all incident vertices if dimension is > 0 (not a vertex)
-    if (entity.dim() > 0)
+    // Assuming it is not on boundary, check points in "all_inside" array
+    bool all_points_inside_nobound = true;
+    for (const auto& v : EntityRange<Vertex>(entity))
     {
-      for (auto& vertex : EntityRange<Vertex>(entity))
-      {
-        if (is_visited.insert(vertex.index()))
-        {
-          Eigen::Map<Eigen::RowVectorXd> x(const_cast<double*>(vertex.x()),
-                                           _geometric_dimension);
-          is_inside[vertex.index()] = inside(x, on_boundary)[0];
-        }
-
-        if (!is_inside[vertex.index()])
-        {
-          all_points_inside = false;
-          break;
-        }
-      }
+      const auto& idx = v.index();
+      on_boundary &= (boundary_vertex[idx] != -1);
+      all_points_inside &= (boundary_vertex[idx] == 1);
+      all_points_inside_nobound &= all_inside[idx];
     }
+
+    // In the case of not being on the boundary, use other criterion
+    if (!on_boundary)
+      all_points_inside = all_points_inside_nobound;
 
     // Check midpoint (works also in the case when we have a single vertex)
+    // FIXME: refactor for efficiency
     if (all_points_inside && check_midpoint)
     {
       Eigen::Map<Eigen::RowVectorXd> x(

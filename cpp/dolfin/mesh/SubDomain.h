@@ -9,11 +9,9 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <map>
-
-using EigenRowMatrixXd
-    = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 namespace dolfin
 {
