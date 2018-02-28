@@ -4,14 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <cstdlib>
-#include <memory>
-#include <random>
-#include <ufc.h>
-#include <utility>
-
-#include "DofMap.h"
 #include "DofMapBuilder.h"
+#include "DofMap.h"
+#include <cstdlib>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/graph/BoostGraphOrdering.h>
@@ -27,6 +22,10 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
+#include <memory>
+#include <random>
+#include <ufc.h>
+#include <utility>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -39,7 +38,7 @@ void DofMapBuilder::build(
   dolfin_assert(dofmap._ufc_dofmap);
 
   // Start timer for dofmap initialization
-  Timer t0("Init dofmap");
+  common::Timer t0("Init dofmap");
 
   // Check that mesh has been ordered
   if (!mesh.ordered())
@@ -169,13 +168,13 @@ void DofMapBuilder::build(
         node_graph0, shared_nodes, global_nodes0, node_local_to_global0, mesh,
         dofmap._global_dimension / bs);
 
-    dofmap._index_map
-        = std::make_shared<IndexMap>(mesh.mpi_comm(), num_owned_nodes, bs);
+    dofmap._index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(),
+                                                           num_owned_nodes, bs);
 
     // Sanity check
     dolfin_assert(
         MPI::sum(mesh.mpi_comm(),
-                 bs * dofmap._index_map->size(IndexMap::MapSize::OWNED))
+                 bs * dofmap._index_map->size(common::IndexMap::MapSize::OWNED))
         == (std::size_t)dofmap._global_dimension);
 
     // Compute node re-ordering for process index locality and spatial
@@ -241,7 +240,7 @@ void DofMapBuilder::build(
         dofmap._ufc_local_to_local[i] = i;
     }
 
-    dofmap._index_map = std::make_shared<IndexMap>(
+    dofmap._index_map = std::make_shared<common::IndexMap>(
         mesh.mpi_comm(), dofmap._global_dimension, bs);
 
     dofmap._shared_nodes.clear();
@@ -1038,7 +1037,7 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
   dolfin_assert(ufc_dofmap);
 
   // Start timer for dofmap initialization
-  Timer t0("Init dofmap from UFC dofmap");
+  common::Timer t0("Init dofmap from UFC dofmap");
 
   // Topological dimension
   const std::size_t D = mesh.topology().dim();
@@ -1155,7 +1154,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
   dolfin_assert(constrained_domain);
 
   // Start timer for dofmap initialization
-  Timer t0("Init dofmap from UFC dofmap");
+  common::Timer t0("Init dofmap from UFC dofmap");
 
   // Topological dimension
   const std::size_t D = mesh.topology().dim();
@@ -1448,7 +1447,7 @@ void DofMapBuilder::compute_shared_nodes(
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_node_reordering(
-    IndexMap& index_map, std::vector<int>& old_to_new_local,
+    common::IndexMap& index_map, std::vector<int>& old_to_new_local,
     const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
     const std::vector<std::size_t>& old_local_to_global,
     const std::vector<std::vector<la_index_t>>& node_dofmap,

@@ -9,6 +9,7 @@
 #include <dolfin/parameter/GlobalParameters.h>
 
 using namespace dolfin;
+using namespace dolfin::common;
 
 //-----------------------------------------------------------------------------
 Timer::Timer() : _task("")

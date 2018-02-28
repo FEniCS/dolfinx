@@ -8,6 +8,7 @@
 #include "Expression.h"
 #include "FunctionSpace.h"
 #include <algorithm>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
@@ -491,7 +492,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values)
 //-----------------------------------------------------------------------------
 void Function::init_vector()
 {
-  Timer timer("Init dof vector");
+  common::Timer timer("Init dof vector");
 
   // Get dof map
   dolfin_assert(_function_space);
@@ -509,7 +510,7 @@ void Function::init_vector()
 
   // Get index map
   /*
-  std::shared_ptr<const IndexMap> index_map = dofmap.index_map();
+  std::shared_ptr<const common::IndexMap> index_map = dofmap.index_map();
   dolfin_assert(index_map);
 
   MPI_Comm comm = _function_space->mesh()->mpi_comm();
@@ -543,7 +544,7 @@ void Function::init_vector()
   */
 
   // Get index map
-  std::shared_ptr<const IndexMap> index_map = dofmap.index_map();
+  std::shared_ptr<const common::IndexMap> index_map = dofmap.index_map();
   dolfin_assert(index_map);
 
   // Get block size
@@ -551,13 +552,13 @@ void Function::init_vector()
 
   // Build local-to-global map (blocks)
   std::vector<dolfin::la_index_t> local_to_global(
-      index_map->size(IndexMap::MapSize::ALL));
+      index_map->size(common::IndexMap::MapSize::ALL));
   for (std::size_t i = 0; i < local_to_global.size(); ++i)
     local_to_global[i] = index_map->local_to_global(i);
 
   // Build list of ghosts (global block indices)
-  const std::size_t nowned = index_map->size(IndexMap::MapSize::OWNED);
-  dolfin_assert(nowned + index_map->size(IndexMap::MapSize::UNOWNED)
+  const std::size_t nowned = index_map->size(common::IndexMap::MapSize::OWNED);
+  dolfin_assert(nowned + index_map->size(common::IndexMap::MapSize::UNOWNED)
                 == local_to_global.size());
   std::vector<dolfin::la_index_t> ghosts(local_to_global.begin() + nowned,
                                          local_to_global.end());

@@ -246,7 +246,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 {
   // FIXME: break up this function
 
-  Timer t0("HDF5: write mesh to file");
+  common::Timer t0("HDF5: write mesh to file");
 
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
@@ -857,7 +857,7 @@ void HDF5File::write(const function::Function& u, const std::string name,
 //-----------------------------------------------------------------------------
 void HDF5File::write(const function::Function& u, const std::string name)
 {
-  Timer t0("HDF5: write function::Function");
+  common::Timer t0("HDF5: write function::Function");
   dolfin_assert(_hdf5_file_id > 0);
 
   // Get mesh and dofmap
@@ -928,7 +928,7 @@ void HDF5File::write(const function::Function& u, const std::string name)
 //-----------------------------------------------------------------------------
 void HDF5File::read(function::Function& u, const std::string name)
 {
-  Timer t0("HDF5: read function::Function");
+  common::Timer t0("HDF5: read function::Function");
   dolfin_assert(_hdf5_file_id > 0);
 
   // FIXME: This routine is long and involves a lot of MPI, but it
@@ -1213,7 +1213,7 @@ template <typename T>
 void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
                                           const std::string name) const
 {
-  Timer t1("HDF5: read mesh value collection");
+  common::Timer t1("HDF5: read mesh value collection");
   dolfin_assert(_hdf5_file_id > 0);
 
   if (!HDF5Interface::has_group(_hdf5_file_id, name))
@@ -1402,7 +1402,7 @@ template <typename T>
 void HDF5File::read_mesh_value_collection_old(MeshValueCollection<T>& mesh_vc,
                                               const std::string name) const
 {
-  Timer t1("HDF5: read mesh value collection");
+  common::Timer t1("HDF5: read mesh value collection");
   dolfin_assert(_hdf5_file_id > 0);
 
   mesh_vc.clear();
@@ -1652,7 +1652,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string topology_path,
 {
   // FIXME: This function is too big. Split up.
 
-  Timer t("HDF5: read mesh");
+  common::Timer t("HDF5: read mesh");
   dolfin_assert(_hdf5_file_id > 0);
 
   // Create structure to store local mesh

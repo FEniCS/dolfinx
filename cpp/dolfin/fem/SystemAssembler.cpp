@@ -117,7 +117,7 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
   dolfin_assert(_l);
 
   // Set timer
-  Timer timer("Assemble system");
+  common::Timer timer("Assemble system");
 
   // Get mesh
   dolfin_assert(_a->mesh());

@@ -18,7 +18,10 @@
 namespace dolfin
 {
 
+namespace common
+{
 class IndexMap;
+}
 
 /// This class implements a sparsity pattern data structure.  It is
 /// used by most linear algebra backends.
@@ -40,9 +43,10 @@ public:
   };
 
   /// Create empty sparsity pattern
-  SparsityPattern(MPI_Comm comm,
-                  std::array<std::shared_ptr<const IndexMap>, 2> index_maps,
-                  std::size_t primary_dim);
+  SparsityPattern(
+      MPI_Comm comm,
+      std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps,
+      std::size_t primary_dim);
 
   /// Create a new sparsity pattern by adding sub-patterns, e.g.
   /// pattern =[ pattern00 ][ pattern 01]
@@ -57,10 +61,12 @@ public:
   ~SparsityPattern() {}
 
   /// Insert non-zero entries using global indices
-  void insert_global(const std::array<common::ArrayView<const la_index_t>, 2>& entries);
+  void insert_global(
+      const std::array<common::ArrayView<const la_index_t>, 2>& entries);
 
   /// Insert non-zero entries using local (process-wise) indices
-  void insert_local(const std::array<common::ArrayView<const la_index_t>, 2>& entries);
+  void insert_local(
+      const std::array<common::ArrayView<const la_index_t>, 2>& entries);
 
   /// Insert non-zero entries using local (process-wise) indices for
   /// the primary dimension and global indices for the co-dimension
@@ -81,7 +87,7 @@ public:
   std::array<std::size_t, 2> local_range(std::size_t dim) const;
 
   /// Return index map for dimension dim
-  std::shared_ptr<const IndexMap> index_map(std::size_t dim) const
+  std::shared_ptr<const common::IndexMap> index_map(std::size_t dim) const
   {
     dolfin_assert(dim < 2);
     return _index_maps[dim];
@@ -135,10 +141,10 @@ private:
   // The primary_codim entries must be global
   void insert_entries(
       const std::array<common::ArrayView<const la_index_t>, 2>& entries,
-      const std::function<la_index_t(const la_index_t, const IndexMap&)>&
-          primary_dim_map,
-      const std::function<la_index_t(const la_index_t, const IndexMap&)>&
-          primary_codim_map);
+      const std::function<la_index_t(const la_index_t,
+                                     const common::IndexMap&)>& primary_dim_map,
+      const std::function<la_index_t(
+          const la_index_t, const common::IndexMap&)>& primary_codim_map);
 
   // Print some useful information
   void info_statistics() const;
@@ -150,8 +156,8 @@ private:
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;
 
-  // IndexMaps for each dimension
-  std::array<std::shared_ptr<const IndexMap>, 2> _index_maps;
+  // common::IndexMaps for each dimension
+  std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
   // Sparsity patterns for diagonal and off-diagonal blocks
   std::vector<set_type> _diagonal, _off_diagonal;

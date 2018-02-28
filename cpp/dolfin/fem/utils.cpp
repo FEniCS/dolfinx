@@ -6,6 +6,7 @@
 
 #include "utils.h"
 #include <dolfin/common/ArrayView.h>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -194,7 +195,7 @@ void dolfin::fem::init(PETScVector& x, const Form& a)
   // Build local-to-global index map
   int block_size = index_map->block_size();
   std::vector<la_index_t> local_to_global(
-      index_map->size(IndexMap::MapSize::ALL));
+      index_map->size(common::IndexMap::MapSize::ALL));
   for (std::size_t i = 0; i < local_to_global.size(); ++i)
     local_to_global[i] = index_map->local_to_global(i);
 
@@ -223,10 +224,10 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
   dolfin_assert(a.mesh());
   const Mesh& mesh = *(a.mesh());
 
-  Timer t0("Build sparsity");
+  common::Timer t0("Build sparsity");
 
-  // Get IndexMaps for each dimension
-  std::array<std::shared_ptr<const IndexMap>, 2> index_maps
+  // Get common::IndexMaps for each dimension
+  std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
 
   // Create and build sparsity pattern
@@ -239,7 +240,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
   t0.stop();
 
   // Initialize matrix
-  Timer t1("Init tensor");
+  common::Timer t1("Init tensor");
   A.init(pattern);
   t1.stop();
 
@@ -256,7 +257,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
   {
     // Get local row range
     const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
-    const IndexMap& index_map_0 = *dofmaps[primary_dim]->index_map();
+    const common::IndexMap& index_map_0 = *dofmaps[primary_dim]->index_map();
     const auto row_range = A.local_range(primary_dim);
 
     // Set zeros in dense rows in order of increasing column index

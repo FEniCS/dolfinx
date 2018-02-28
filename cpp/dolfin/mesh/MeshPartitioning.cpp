@@ -71,7 +71,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 {
   log(PROGRESS, "Building distributed mesh");
 
-  Timer timer("Build distributed mesh from local mesh data");
+  common::Timer timer("Build distributed mesh from local mesh data");
 
   // Store used ghost mode
   // NOTE: This is the only place in DOLFIN which eventually sets
@@ -166,7 +166,7 @@ void MeshPartitioning::build(
   // Distribute cells
   log(PROGRESS, "Distribute mesh (cell and vertices)");
 
-  Timer timer("Distribute mesh (cells and vertices)");
+  common::Timer timer("Distribute mesh (cells and vertices)");
 
   // Sanity check
   dolfin_assert(mesh._ghost_mode == ghost_mode);
@@ -323,7 +323,7 @@ void MeshPartitioning::reorder_cells_gps(
 {
   log(PROGRESS, "Re-order cells during distributed mesh construction");
 
-  Timer timer("Reorder cells using GPS ordering");
+  common::Timer timer("Reorder cells using GPS ordering");
 
   // Make dual graph from vertex indices, using GraphBuilder
   // FIXME: this should be reused later to add the facet-cell topology
@@ -402,7 +402,7 @@ void MeshPartitioning::reorder_vertices_gps(
   // "vertex_indices" and "vertex_global_to_local" are modified.
 
   log(PROGRESS, "Re-order vertices during distributed mesh construction");
-  Timer timer("Reorder vertices using GPS ordering");
+  common::Timer timer("Reorder vertices using GPS ordering");
 
   // Make local real graph (vertices are nodes, edges are edges)
   dolfin::graph::Graph g(num_regular_vertices);
@@ -458,7 +458,7 @@ void MeshPartitioning::distribute_cell_layer(
     std::vector<std::int64_t>& global_cell_indices,
     std::vector<int>& cell_partition)
 {
-  Timer timer("Distribute cell layer");
+  common::Timer timer("Distribute cell layer");
 
   const int mpi_size = MPI::size(mpi_comm);
   const int mpi_rank = MPI::rank(mpi_comm);
@@ -667,7 +667,7 @@ std::int32_t MeshPartitioning::distribute_cells(
 
   log(PROGRESS, "Distribute cells during distributed mesh construction");
 
-  Timer timer("Distribute cells");
+  common::Timer timer("Distribute cells");
 
   const std::size_t mpi_size = MPI::size(mpi_comm);
   const std::size_t mpi_rank = MPI::rank(mpi_comm);
@@ -870,7 +870,7 @@ void MeshPartitioning::distribute_vertices(
   // send its vertices.
 
   log(PROGRESS, "Distribute vertices during distributed mesh construction");
-  Timer timer("Distribute vertices");
+  common::Timer timer("Distribute vertices");
 
   // Get number of processes
   const int mpi_size = MPI::size(mpi_comm);
@@ -1042,7 +1042,7 @@ void MeshPartitioning::build_local_mesh(
     const std::map<std::int64_t, std::int32_t>& vertex_global_to_local)
 {
   log(PROGRESS, "Build local mesh during distributed mesh construction");
-  Timer timer("Build local part of distributed mesh (from local mesh data)");
+  common::Timer timer("Build local part of distributed mesh (from local mesh data)");
 
   // Set cell type
   mesh._cell_type.reset(mesh::CellType::create(cell_type));

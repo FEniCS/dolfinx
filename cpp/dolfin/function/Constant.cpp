@@ -115,7 +115,7 @@ std::string Constant::str(bool verbose) const
         ossv << _values[0];
       }
     }
-    oss << indent(ossv.str());
+    oss << common::indent(ossv.str());
   }
 
   return oss.str();

@@ -112,7 +112,7 @@ const DirichletBC& DirichletBC::operator=(const DirichletBC& bc)
 //-----------------------------------------------------------------------------
 void DirichletBC::gather(Map& boundary_values) const
 {
-  Timer timer("DirichletBC gather");
+  common::Timer timer("DirichletBC gather");
 
   dolfin_assert(_function_space->mesh());
   MPI_Comm mpi_comm = _function_space->mesh()->mpi_comm();
@@ -349,7 +349,7 @@ void DirichletBC::check() const
 //-----------------------------------------------------------------------------
 void DirichletBC::init_facets(const MPI_Comm mpi_comm) const
 {
-  Timer timer("DirichletBC init facets");
+  common::Timer timer("DirichletBC init facets");
 
   if (MPI::max(mpi_comm, _facets.size()) > 0)
     return;
@@ -413,7 +413,7 @@ void DirichletBC::init_from_mesh_function(
 void DirichletBC::compute_bc(Map& boundary_values, LocalData& data,
                              std::string method) const
 {
-  Timer timer("DirichletBC compute bc");
+  common::Timer timer("DirichletBC compute bc");
 
   // Set method if default
   if (method == "default")

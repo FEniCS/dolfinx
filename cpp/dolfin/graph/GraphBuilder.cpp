@@ -30,7 +30,7 @@ dolfin::graph::GraphBuilder::local_graph(const Mesh& mesh,
                                          const fem::GenericDofMap& dofmap0,
                                          const fem::GenericDofMap& dofmap1)
 {
-  Timer timer("Build local sparsity graph from dofmaps");
+  common::Timer timer("Build local sparsity graph from dofmaps");
 
   // Create empty graph
   const std::size_t n = dofmap0.global_dimension();
@@ -205,7 +205,7 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map)
 {
-  Timer timer("Compute local part of mesh dual graph");
+  common::Timer timer("Compute local part of mesh dual graph");
 
   const std::int8_t tdim = cell_type.dim();
   const std::int32_t num_local_cells = cell_vertices.shape()[0];
@@ -325,7 +325,7 @@ std::int32_t dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
     FacetCellMap& facet_cell_map, std::set<std::int64_t>& ghost_vertices)
 {
   log(PROGRESS, "Build nonlocal part of mesh dual graph");
-  Timer timer("Compute non-local part of mesh dual graph");
+  common::Timer timer("Compute non-local part of mesh dual graph");
 
   // Get number of MPI processes, and return if mesh is not distributed
   const int num_processes = MPI::size(mpi_comm);

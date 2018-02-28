@@ -23,9 +23,13 @@ class cell;
 namespace dolfin
 {
 
-class IndexMap;
 class PETScVector;
 class Mesh;
+
+namespace common
+{
+class IndexMap;
+}
 
 namespace mesh
 {
@@ -167,7 +171,7 @@ public:
   virtual void set(PETScVector& x, double value) const = 0;
 
   /// Index map (const access)
-  virtual std::shared_ptr<const IndexMap> index_map() const = 0;
+  virtual std::shared_ptr<const common::IndexMap> index_map() const = 0;
 
   /// Tabulate map between local (process) and global dof indices
   virtual void tabulate_local_to_global_dofs(

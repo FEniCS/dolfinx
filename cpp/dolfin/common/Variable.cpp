@@ -13,21 +13,22 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Variable::Variable()
-    : _name("x"), _label("unnamed data"), unique_id(UniqueIdGenerator::id())
+    : _name("x"), _label("unnamed data"),
+      unique_id(common::UniqueIdGenerator::id())
 
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Variable::Variable(const std::string name, const std::string label)
-    : _name(name), _label(label), unique_id(UniqueIdGenerator::id())
+    : _name(name), _label(label), unique_id(common::UniqueIdGenerator::id())
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Variable::Variable(const Variable& variable)
     : _name(variable._name), _label(variable._label),
-      unique_id(UniqueIdGenerator::id())
+      unique_id(common::UniqueIdGenerator::id())
 {
   // Do nothing
 }

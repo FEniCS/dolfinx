@@ -26,7 +26,6 @@ namespace dolfin
 
 // Forward declarations
 class PETScVector;
-class SubDomain;
 
 namespace mesh
 {

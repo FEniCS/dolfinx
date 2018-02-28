@@ -109,7 +109,8 @@ void Assembler::assemble(PETScMatrix& A)
           auto map1 = _a[row][col]->function_space(1)->dofmap()->index_map();
 
           std::cout << "  Push Initialising block: " << std::endl;
-          std::array<std::shared_ptr<const IndexMap>, 2> maps = {{map0, map1}};
+          std::array<std::shared_ptr<const common::IndexMap>, 2> maps
+              = {{map0, map1}};
           auto test = std::make_shared<SparsityPattern>(A.mpi_comm(), maps, 0);
           patterns[row].push_back(test);
 
@@ -185,8 +186,8 @@ void Assembler::assemble(PETScMatrix& A)
         {
           auto map0 = _a[i][j]->function_space(0)->dofmap()->index_map();
           auto map1 = _a[i][j]->function_space(1)->dofmap()->index_map();
-          auto map0_size = map0->size(IndexMap::MapSize::ALL);
-          auto map1_size = map1->size(IndexMap::MapSize::ALL);
+          auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
+          auto map1_size = map1->size(common::IndexMap::MapSize::ALL);
 
           std::vector<PetscInt> index0(map0_size);
           std::vector<PetscInt> index1(map1_size);
@@ -236,7 +237,7 @@ void Assembler::assemble(PETScMatrix& A)
         }
       }
       auto map0 = _a[i][0]->function_space(0)->dofmap()->index_map();
-      auto map0_size = map0->size(IndexMap::MapSize::ALL);
+      auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
       offset_row += map0_size;
     }
   }

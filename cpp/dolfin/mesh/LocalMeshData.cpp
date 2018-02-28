@@ -25,7 +25,7 @@ LocalMeshData::LocalMeshData(const MPI_Comm mpi_comm) : _mpi_comm(mpi_comm)
 //-----------------------------------------------------------------------------
 LocalMeshData::LocalMeshData(const Mesh& mesh) : _mpi_comm(mesh.mpi_comm())
 {
-  Timer timer("Build LocalMeshData from local Mesh");
+  common::Timer timer("Build LocalMeshData from local Mesh");
 
   const std::size_t gdim = mesh.geometry().dim();
   geometry.num_global_vertices = mesh.num_entities_global(0);

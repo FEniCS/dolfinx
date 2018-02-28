@@ -314,8 +314,8 @@ std::size_t Mesh::hash() const
   const std::size_t kg_local = _geometry.hash();
 
   // Compute global hash
-  const std::size_t kt = hash_global(_mpi_comm.comm(), kt_local);
-  const std::size_t kg = hash_global(_mpi_comm.comm(), kg_local);
+  const std::size_t kt = common::hash_global(_mpi_comm.comm(), kt_local);
+  const std::size_t kg = common::hash_global(_mpi_comm.comm(), kg_local);
 
   // Compute hash based on the Cantor pairing function
   return (kt + kg) * (kt + kg + 1) / 2 + kg;
@@ -328,8 +328,8 @@ std::string Mesh::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
 
-    s << indent(_geometry.str(true));
-    s << indent(_topology.str(true));
+    s << common::indent(_geometry.str(true));
+    s << common::indent(_topology.str(true));
   }
   else
   {

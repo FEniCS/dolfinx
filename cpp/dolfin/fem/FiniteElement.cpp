@@ -14,7 +14,7 @@ using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(std::shared_ptr<const ufc::finite_element> element)
-    : _ufc_element(element), _hash(dolfin::hash_local(signature()))
+    : _ufc_element(element), _hash(common::hash_local(signature()))
 {
   // Do nothing
 }

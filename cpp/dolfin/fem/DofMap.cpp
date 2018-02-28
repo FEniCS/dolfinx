@@ -529,7 +529,7 @@ std::vector<dolfin::la_index_t> DofMap::dofs() const
   assert(_index_map);
   const std::size_t bs = _index_map->block_size();
   const dolfin::la_index_t local_ownership_size
-      = bs * _index_map->size(IndexMap::MapSize::OWNED);
+      = bs * _index_map->size(common::IndexMap::MapSize::OWNED);
   const std::size_t global_offset = bs * _index_map->local_range()[0];
 
   // Insert all dofs into a vector (will contain duplicates)
@@ -566,15 +566,16 @@ void DofMap::set(PETScVector& x, double value) const
 void DofMap::tabulate_local_to_global_dofs(
     std::vector<std::size_t>& local_to_global_map) const
 {
-  // FIXME: use IndexMap::local_to_global_index?
+  // FIXME: use common::IndexMap::local_to_global_index?
 
   assert(_index_map);
   const std::size_t bs = _index_map->block_size();
   const std::vector<std::size_t>& local_to_global_unowned
       = _index_map->local_to_global_unowned();
   const std::size_t local_ownership_size
-      = bs * _index_map->size(IndexMap::MapSize::OWNED);
-  local_to_global_map.resize(bs * _index_map->size(IndexMap::MapSize::ALL));
+      = bs * _index_map->size(common::IndexMap::MapSize::OWNED);
+  local_to_global_map.resize(
+      bs * _index_map->size(common::IndexMap::MapSize::ALL));
 
   const std::size_t global_offset = bs * _index_map->local_range()[0];
   for (std::size_t i = 0; i < local_ownership_size; ++i)

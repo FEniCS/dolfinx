@@ -192,7 +192,7 @@ std::string MeshTopology::str(bool verbose) const
       {
         if (_connectivity[d0][d1].empty())
           continue;
-        s << indent(_connectivity[d0][d1].str(true));
+        s << common::indent(_connectivity[d0][d1].str(true));
         s << std::endl;
       }
     }

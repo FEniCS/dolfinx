@@ -7,6 +7,7 @@
 #include "DiscreteOperators.h"
 #include <array>
 #include <dolfin/common/ArrayView.h>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
@@ -74,7 +75,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   mesh.init(1, 0);
 
   // Copy index maps from dofmaps
-  std::array<std::shared_ptr<const IndexMap>, 2> index_maps
+  std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{V0.dofmap()->index_map(), V1.dofmap()->index_map()}};
   std::vector<std::array<std::int64_t, 2>> local_range
       = {V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};

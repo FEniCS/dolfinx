@@ -1689,7 +1689,7 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Add dimensions attribute
   data_item_node.append_attribute("Dimensions")
-      = container_to_string(shape, " ", 16).c_str();
+      = common::container_to_string(shape, " ", 16).c_str();
 
   // Set type for topology data (needed by XDMF to prevent default to float)
   if (!number_type.empty())
@@ -1701,7 +1701,7 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
     data_item_node.append_attribute("Format") = "XML";
     dolfin_assert(shape.size() == 2);
     data_item_node.append_child(pugi::node_pcdata)
-        .set_value(container_to_string(x, " ", 16, shape[1]).c_str());
+        .set_value(common::container_to_string(x, " ", 16, shape[1]).c_str());
   }
   else
   {

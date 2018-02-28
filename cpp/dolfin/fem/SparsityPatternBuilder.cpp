@@ -31,7 +31,7 @@ void SparsityPatternBuilder::build(
   // Get index maps
   dolfin_assert(dofmaps[0]);
   dolfin_assert(dofmaps[1]);
-  std::array<std::shared_ptr<const IndexMap>, 2> index_maps
+  std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
 
   // FIXME: Should check that index maps are matching
@@ -212,7 +212,7 @@ void SparsityPatternBuilder::build(
     const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
     const auto primary_range = index_maps[primary_dim]->local_range();
     const std::size_t secondary_range
-        = index_maps[primary_codim]->size(IndexMap::MapSize::GLOBAL);
+        = index_maps[primary_codim]->size(common::IndexMap::MapSize::GLOBAL);
     const std::size_t diagonal_range
         = std::min((std::size_t)primary_range[1], secondary_range);
 

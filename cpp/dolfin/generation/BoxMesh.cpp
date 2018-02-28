@@ -19,7 +19,7 @@ using namespace dolfin::generation;
 Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
                         std::array<std::size_t, 3> n)
 {
-  Timer timer("Build BoxMesh");
+  common::Timer timer("Build BoxMesh");
 
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)

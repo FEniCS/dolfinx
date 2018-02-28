@@ -127,7 +127,7 @@ void VTKFile::write_function(const function::Function& u, double time)
 //----------------------------------------------------------------------------
 void VTKFile::write_mesh(const Mesh& mesh, double time)
 {
-  Timer t("Write mesh to PVD/VTK file");
+  common::Timer t("Write mesh to PVD/VTK file");
 
   // Get MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
