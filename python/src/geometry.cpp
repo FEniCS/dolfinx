@@ -7,10 +7,7 @@
 #include <Eigen/Dense>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/CollisionPredicates.h>
-#include <dolfin/geometry/IntersectionConstruction.h>
-#include <dolfin/geometry/MeshPointIntersection.h>
 #include <dolfin/geometry/Point.h>
-#include <dolfin/geometry/intersect.h>
 #include <dolfin/mesh/Mesh.h>
 #include <memory>
 #include <pybind11/eigen.h>
@@ -28,14 +25,12 @@ void geometry(py::module &m) {
   py::class_<dolfin::BoundingBoxTree, std::shared_ptr<dolfin::BoundingBoxTree>>(
       m, "BoundingBoxTree")
       .def(py::init<std::size_t>())
-      .def("build",
-           (void (dolfin::BoundingBoxTree::*)(const dolfin::mesh::Mesh &,
-                                              std::size_t)) &
-               dolfin::BoundingBoxTree::build)
-      .def("build",
-           (void (dolfin::BoundingBoxTree::*)(
-               const std::vector<dolfin::Point> &)) &
-               dolfin::BoundingBoxTree::build)
+      .def("build", (void (dolfin::BoundingBoxTree::*)(
+                        const dolfin::mesh::Mesh &, std::size_t)) &
+                        dolfin::BoundingBoxTree::build)
+      .def("build", (void (dolfin::BoundingBoxTree::*)(
+                        const std::vector<dolfin::Point> &)) &
+                        dolfin::BoundingBoxTree::build)
       .def("compute_collisions",
            (std::vector<unsigned int>(dolfin::BoundingBoxTree::*)(
                const dolfin::Point &) const) &
@@ -131,13 +126,6 @@ void geometry(py::module &m) {
       .def("norm", &dolfin::Point::norm)
       .def("distance", &dolfin::Point::distance);
 
-  // dolfin::MeshPointIntersection
-  py::class_<dolfin::MeshPointIntersection,
-             std::shared_ptr<dolfin::MeshPointIntersection>>(
-      m, "MeshPointIntersection")
-      .def("intersected_cells",
-           &dolfin::MeshPointIntersection::intersected_cells);
-
   // These classes are wrapped only to be able to write tests in python.
   // They are not imported into the dolfin namespace in python, but must be
   // accessed through
@@ -151,19 +139,5 @@ void geometry(py::module &m) {
                   &dolfin::CollisionPredicates::collides_triangle_triangle_2d)
       .def_static("collides_segment_segment_2d",
                   &dolfin::CollisionPredicates::collides_segment_segment_2d);
-
-  py::class_<dolfin::IntersectionConstruction>(m, "IntersectionConstruction")
-      .def_static(
-          "intersection_triangle_triangle_2d",
-          &dolfin::IntersectionConstruction::intersection_triangle_triangle_2d)
-      .def_static(
-          "intersection_segment_segment_2d",
-          &dolfin::IntersectionConstruction::intersection_segment_segment_2d)
-      .def_static(
-          "intersection_triangle_segment_2d",
-          &dolfin::IntersectionConstruction::intersection_triangle_segment_2d);
-
-  // dolfin/geometry free functions
-  m.def("intersect", &dolfin::geometry::intersect);
 }
-}
+} // namespace dolfin_wrappers
