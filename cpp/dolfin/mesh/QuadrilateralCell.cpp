@@ -99,10 +99,10 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
 
   // Get the coordinates of the four vertices
   const std::int32_t* vertices = cell.entities(0);
-  const Point p0 = geometry.point(vertices[0]);
-  const Point p1 = geometry.point(vertices[1]);
-  const Point p2 = geometry.point(vertices[2]);
-  const Point p3 = geometry.point(vertices[3]);
+  const geometry::Point p0 = geometry.point(vertices[0]);
+  const geometry::Point p1 = geometry.point(vertices[1]);
+  const geometry::Point p2 = geometry.point(vertices[2]);
+  const geometry::Point p3 = geometry.point(vertices[3]);
 
   if (geometry.dim() != 2 && geometry.dim() != 3)
   {
@@ -110,7 +110,7 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
                  "Only know how to compute volume in R^2 or R^3");
   }
 
-  const Point c = (p0 - p3).cross(p1 - p2);
+  const geometry::Point c = (p0 - p3).cross(p1 - p2);
   const double volume = 0.5 * c.norm();
 
   if (geometry.dim() == 3)
@@ -152,7 +152,7 @@ double QuadrilateralCell::circumradius(const MeshEntity& cell) const
 }
 //-----------------------------------------------------------------------------
 double QuadrilateralCell::squared_distance(const Cell& cell,
-                                           const Point& point) const
+                                           const geometry::Point& point) const
 {
   dolfin_not_implemented();
   return 0.0;
@@ -164,7 +164,7 @@ double QuadrilateralCell::normal(const Cell& cell, std::size_t facet,
   return normal(cell, facet)[i];
 }
 //-----------------------------------------------------------------------------
-Point QuadrilateralCell::normal(const Cell& cell, std::size_t facet) const
+geometry::Point QuadrilateralCell::normal(const Cell& cell, std::size_t facet) const
 {
 
   // Make sure we have facets
@@ -190,14 +190,14 @@ Point QuadrilateralCell::normal(const Cell& cell, std::size_t facet) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the three vertices
-  const Point p0 = geometry.point(v0);
-  const Point p1 = geometry.point(v1);
-  const Point p2 = geometry.point(v2);
+  const geometry::Point p0 = geometry.point(v0);
+  const geometry::Point p1 = geometry.point(v1);
+  const geometry::Point p2 = geometry.point(v2);
 
   // Subtract projection of p2 - p0 onto p2 - p1
-  Point t = p2 - p1;
+  geometry::Point t = p2 - p1;
   t /= t.norm();
-  Point n = p2 - p0;
+  geometry::Point n = p2 - p0;
   n -= t * n.dot(t);
 
   // Normalize
@@ -206,7 +206,7 @@ Point QuadrilateralCell::normal(const Cell& cell, std::size_t facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
-Point QuadrilateralCell::cell_normal(const Cell& cell) const
+geometry::Point QuadrilateralCell::cell_normal(const Cell& cell) const
 {
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
@@ -219,14 +219,14 @@ Point QuadrilateralCell::cell_normal(const Cell& cell) const
 
   // Get the three vertices as points
   const std::int32_t* vertices = cell.entities(0);
-  const Point p0 = geometry.point(vertices[0]);
-  const Point p1 = geometry.point(vertices[1]);
-  const Point p2 = geometry.point(vertices[2]);
+  const geometry::Point p0 = geometry.point(vertices[0]);
+  const geometry::Point p1 = geometry.point(vertices[1]);
+  const geometry::Point p2 = geometry.point(vertices[2]);
 
   // Defined cell normal via cross product of first two edges:
-  const Point v01 = p1 - p0;
-  const Point v02 = p2 - p0;
-  Point n = v01.cross(v02);
+  const geometry::Point v01 = p1 - p0;
+  const geometry::Point v02 = p2 - p0;
+  geometry::Point n = v01.cross(v02);
 
   // Normalize
   n /= n.norm();
@@ -246,8 +246,8 @@ double QuadrilateralCell::facet_area(const Cell& cell, std::size_t facet) const
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
 
-  const Point p0 = geometry.point(v0);
-  const Point p1 = geometry.point(v1);
+  const geometry::Point p0 = geometry.point(v0);
+  const geometry::Point p1 = geometry.point(v1);
 
   return (p0 - p1).norm();
 }
@@ -260,7 +260,7 @@ void QuadrilateralCell::order(
   // FIXME - probably not appropriate for quad cells.
 }
 //-----------------------------------------------------------------------------
-bool QuadrilateralCell::collides(const Cell& cell, const Point& point) const
+bool QuadrilateralCell::collides(const Cell& cell, const geometry::Point& point) const
 {
   dolfin_not_implemented();
   return false;

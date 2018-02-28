@@ -14,9 +14,6 @@
 
 namespace dolfin
 {
-
-class Point;
-
 namespace fem
 {
 class FiniteElement;

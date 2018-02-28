@@ -40,9 +40,9 @@ const MeshGeometry& MeshGeometry::operator=(const MeshGeometry& geometry)
   return *this;
 }
 //-----------------------------------------------------------------------------
-Point MeshGeometry::point(std::size_t n) const
+geometry::Point MeshGeometry::point(std::size_t n) const
 {
-  return Point(_dim, x(n));
+  return geometry::Point(_dim, x(n));
   ;
 }
 //-----------------------------------------------------------------------------

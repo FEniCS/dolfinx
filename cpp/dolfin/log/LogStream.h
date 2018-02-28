@@ -14,8 +14,11 @@ namespace dolfin
 {
 
 class Variable;
-class MeshEntity;
+
+namespace geometry
+{
 class Point;
+}
 
 /// This class provides functionality similar to standard C++
 /// streams (std::cout, std::endl) for output but working through
@@ -65,9 +68,9 @@ public:
   LogStream& operator<<(const Variable& variable);
 
   /// Output for point (not subclass of Variable for efficiency)
-  LogStream& operator<<(const Point& point);
+  LogStream& operator<<(const geometry::Point& point);
 
-  /// Set precision
+  /// Set precisionPoi
   void setprecision(std::streamsize n);
 
 private:

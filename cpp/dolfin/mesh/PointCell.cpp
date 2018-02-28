@@ -70,7 +70,7 @@ double PointCell::circumradius(const MeshEntity& point) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double PointCell::squared_distance(const Cell& cell, const Point& point) const
+double PointCell::squared_distance(const Cell& cell, const geometry::Point& point) const
 {
   dolfin_not_implemented();
   return 0.0;
@@ -84,20 +84,18 @@ double PointCell::normal(const Cell& cell, std::size_t facet,
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-Point PointCell::normal(const Cell& cell, std::size_t facet) const
+geometry::Point PointCell::normal(const Cell& cell, std::size_t facet) const
 {
   dolfin_error("PointCell.cpp", "find normal vector of cell",
                "Normal vector of a point cell is not defined");
-  Point p;
-  return p;
+  return geometry::Point();
 }
 //-----------------------------------------------------------------------------
-Point PointCell::cell_normal(const Cell& cell) const
+geometry::Point PointCell::cell_normal(const Cell& cell) const
 {
   dolfin_error("PointCell.cpp", "compute cell normal",
                "Normal vector of a point cell is not defined");
-  Point p;
-  return p;
+  return geometry::Point();
 }
 //-----------------------------------------------------------------------------
 double PointCell::facet_area(const Cell& cell, std::size_t facet) const
@@ -115,14 +113,14 @@ void PointCell::order(
                "Ordering of a point cell is not defined");
 }
 //-----------------------------------------------------------------------------
-bool PointCell::collides(const Cell& cell, const Point& point) const
+bool PointCell::collides(const Cell& cell, const geometry::Point& point) const
 {
-  return CollisionPredicates::collides(cell, point);
+  return geometry::CollisionPredicates::collides(cell, point);
 }
 //-----------------------------------------------------------------------------
 bool PointCell::collides(const Cell& cell, const MeshEntity& entity) const
 {
-  return CollisionPredicates::collides(cell, entity);
+  return geometry::CollisionPredicates::collides(cell, entity);
 }
 //-----------------------------------------------------------------------------
 std::string PointCell::description(bool plural) const

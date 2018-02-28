@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "Point.h"
 #include <Eigen/Dense>
 #include <vector>
 
@@ -18,6 +17,11 @@ namespace mesh
 {
 class Cell;
 }
+
+namespace geometry
+{
+class Point;
+
 /// This class defines quadrature rules for simplices.
 
 class SimplexQuadrature
@@ -270,4 +274,5 @@ private:
   std::vector<std::vector<double>> _p;
   std::vector<double> _w;
 };
+}
 }

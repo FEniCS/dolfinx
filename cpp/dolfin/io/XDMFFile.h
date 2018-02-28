@@ -38,11 +38,14 @@ class xml_document;
 
 namespace dolfin
 {
-class Point;
-
 namespace function
 {
 class Function;
+}
+
+namespace geometry
+{
+class Point;
 }
 
 namespace mesh
@@ -277,25 +280,25 @@ public:
   /// Save a cloud of points to file using an associated HDF5 file,
   /// or storing the data inline as XML.
   ///
-  /// @param    points (_std::vector<Point>_)
+  /// @param    points (_std::vector<geometry::Point>_)
   ///         A list of points to save.
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const std::vector<Point>& points,
+  void write(const std::vector<geometry::Point>& points,
              Encoding encoding = default_encoding);
 
   /// Save a cloud of points, with scalar values using an associated
   /// HDF5 file, or storing the data inline as XML.
   ///
-  /// @param   points (_std::vector<Point>_)
+  /// @param   points (_std::vector<geometry::Point>_)
   ///         A list of points to save.
   /// @param    values (_std::vector<double>_)
   ///         A list of values at each point.
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const std::vector<Point>& points,
+  void write(const std::vector<geometry::Point>& points,
              const std::vector<double>& values,
              Encoding encoding = default_encoding);
 
@@ -428,7 +431,7 @@ private:
 
   // Add set of points to XDMF xml_node and write data
   static void add_points(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                         const std::vector<Point>& points);
+                         const std::vector<geometry::Point>& points);
 
   // Add topology node to xml_node (includes writing data to XML or  HDF5
   // file)

@@ -18,6 +18,9 @@ namespace mesh
 class MeshEntity;
 }
 
+namespace geometry
+{
+
 /// This class implements algorithms for computing pairwise
 /// intersections of simplices. The computed intersection is always
 /// convex and represented as a set of points s.t. the intersection
@@ -227,4 +230,5 @@ private:
       const Point& p0, const Point& p1, const Point& p2, const Point& p3,
       const Point& q0, const Point& q1, const Point& q2, const Point& q3);
 };
+}
 }

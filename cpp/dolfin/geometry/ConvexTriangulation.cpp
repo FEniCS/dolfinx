@@ -8,17 +8,16 @@
 #include <dolfin/common/constants.h>
 #include <set>
 #include <tuple>
-
 #include "CollisionPredicates.h"
 #include "ConvexTriangulation.h"
 #include "GeometryPredicates.h"
 #include "GeometryTools.h"
 #include "IntersectionConstruction.h"
 #include "predicates.h"
-
 #include "CGALExactArithmetic.h"
 
 using namespace dolfin;
+using namespace dolfin::geometry;
 
 //-----------------------------------------------------------------------------
 namespace

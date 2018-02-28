@@ -784,14 +784,16 @@ bool DirichletBC::on_facet(const double* coordinates,
   if (facet.dim() == 1)
   {
     // Create points
-    Point p(coordinates[0], coordinates[1]);
-    const Point v0 = mesh::Vertex(facet.mesh(), facet.entities(0)[0]).point();
-    const Point v1 = mesh::Vertex(facet.mesh(), facet.entities(0)[1]).point();
+    geometry::Point p(coordinates[0], coordinates[1]);
+    const geometry::Point v0
+        = mesh::Vertex(facet.mesh(), facet.entities(0)[0]).point();
+    const geometry::Point v1
+        = mesh::Vertex(facet.mesh(), facet.entities(0)[1]).point();
 
     // Create vectors
-    const Point v01 = v1 - v0;
-    const Point vp0 = v0 - p;
-    const Point vp1 = v1 - p;
+    const geometry::Point v01 = v1 - v0;
+    const geometry::Point vp0 = v0 - p;
+    const geometry::Point vp1 = v1 - p;
 
     // Check if the length of the sum of the two line segments vp0 and
     // vp1 is equal to the total length of the facet
@@ -805,17 +807,20 @@ bool DirichletBC::on_facet(const double* coordinates,
   else if (facet.dim() == 2)
   {
     // Create points
-    const Point p(coordinates[0], coordinates[1], coordinates[2]);
-    const Point v0 = mesh::Vertex(facet.mesh(), facet.entities(0)[0]).point();
-    const Point v1 = mesh::Vertex(facet.mesh(), facet.entities(0)[1]).point();
-    const Point v2 = mesh::Vertex(facet.mesh(), facet.entities(0)[2]).point();
+    const geometry::Point p(coordinates[0], coordinates[1], coordinates[2]);
+    const geometry::Point v0
+        = mesh::Vertex(facet.mesh(), facet.entities(0)[0]).point();
+    const geometry::Point v1
+        = mesh::Vertex(facet.mesh(), facet.entities(0)[1]).point();
+    const geometry::Point v2
+        = mesh::Vertex(facet.mesh(), facet.entities(0)[2]).point();
 
     // Create vectors
-    const Point v01 = v1 - v0;
-    const Point v02 = v2 - v0;
-    const Point vp0 = v0 - p;
-    const Point vp1 = v1 - p;
-    const Point vp2 = v2 - p;
+    const geometry::Point v01 = v1 - v0;
+    const geometry::Point v02 = v2 - v0;
+    const geometry::Point vp0 = v0 - p;
+    const geometry::Point vp1 = v1 - p;
+    const geometry::Point vp2 = v2 - p;
 
     // Check if the sum of the area of the sub triangles is equal to
     // the total area of the facet

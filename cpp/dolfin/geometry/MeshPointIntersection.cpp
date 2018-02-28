@@ -10,6 +10,7 @@
 #include <dolfin/mesh/Cell.h>
 
 using namespace dolfin;
+using namespace dolfin::geometry;
 
 //-----------------------------------------------------------------------------
 MeshPointIntersection::MeshPointIntersection(const mesh::Mesh& mesh,

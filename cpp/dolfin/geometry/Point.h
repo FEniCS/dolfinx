@@ -14,6 +14,9 @@
 
 namespace dolfin
 {
+namespace geometry
+{
+
 /// A Point represents a point in :math:`\mathbb{R}^3` with
 /// coordinates :math:`x, y, z,` or alternatively, a vector in
 /// :math:`\mathbb{R}^3`, supporting standard operations like the
@@ -291,11 +294,12 @@ public:
 private:
   std::array<double, 3> _x;
 };
-
+}
+}
 /// Output of Point to stream
-inline std::ostream& operator<<(std::ostream& stream, const Point& point)
+inline std::ostream& operator<<(std::ostream& stream, const dolfin::geometry::Point& point)
 {
   stream << point.str(false);
   return stream;
 }
-}
+

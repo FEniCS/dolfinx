@@ -147,12 +147,12 @@ double HexahedronCell::volume(const MeshEntity& cell) const
 
   // Get the coordinates of the four vertices
   const std::int32_t* vertices = cell.entities(0);
-  const Point p0 = geometry.point(vertices[0]);
-  const Point p1 = geometry.point(vertices[1]);
-  const Point p2 = geometry.point(vertices[2]);
-  const Point p3 = geometry.point(vertices[3]);
-  const Point p4 = geometry.point(vertices[4]);
-  const Point p5 = geometry.point(vertices[5]);
+  const geometry::Point p0 = geometry.point(vertices[0]);
+  const geometry::Point p1 = geometry.point(vertices[1]);
+  const geometry::Point p2 = geometry.point(vertices[2]);
+  const geometry::Point p3 = geometry.point(vertices[3]);
+  const geometry::Point p4 = geometry.point(vertices[4]);
+  const geometry::Point p5 = geometry.point(vertices[5]);
 
   dolfin_error("HexahedronCell.cpp", "compute volume of hexahedron",
                "Not implemented");
@@ -178,7 +178,7 @@ double HexahedronCell::circumradius(const MeshEntity& cell) const
 }
 //-----------------------------------------------------------------------------
 double HexahedronCell::squared_distance(const mesh::Cell& cell,
-                                        const Point& point) const
+                                        const geometry::Point& point) const
 {
   dolfin_not_implemented();
   return 0.0;
@@ -190,18 +190,16 @@ double HexahedronCell::normal(const mesh::Cell& cell, std::size_t facet,
   return normal(cell, facet)[i];
 }
 //-----------------------------------------------------------------------------
-Point HexahedronCell::normal(const mesh::Cell& cell, std::size_t facet) const
+geometry::Point HexahedronCell::normal(const mesh::Cell& cell, std::size_t facet) const
 {
   dolfin_not_implemented();
-  Point p;
-  return p;
+  return geometry::Point();
 }
 //-----------------------------------------------------------------------------
-Point HexahedronCell::cell_normal(const mesh::Cell& cell) const
+geometry::Point HexahedronCell::cell_normal(const mesh::Cell& cell) const
 {
   dolfin_not_implemented();
-  Point p;
-  return p;
+  return geometry::Point();
 }
 //-----------------------------------------------------------------------------
 double HexahedronCell::facet_area(const mesh::Cell& cell,
@@ -221,10 +219,10 @@ double HexahedronCell::facet_area(const mesh::Cell& cell,
 
   // Need to check points are co-planar
 
-  const Point p0 = geometry.point(v0);
-  const Point p1 = geometry.point(v1);
-  const Point p2 = geometry.point(v2);
-  const Point p3 = geometry.point(v3);
+  const geometry::Point p0 = geometry.point(v0);
+  const geometry::Point p1 = geometry.point(v1);
+  const geometry::Point p2 = geometry.point(v2);
+  const geometry::Point p3 = geometry.point(v3);
 
   dolfin_not_implemented();
 
@@ -239,7 +237,7 @@ void HexahedronCell::order(
   dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
-bool HexahedronCell::collides(const mesh::Cell& cell, const Point& point) const
+bool HexahedronCell::collides(const mesh::Cell& cell, const geometry::Point& point) const
 {
   dolfin_not_implemented();
   return false;

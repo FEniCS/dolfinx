@@ -332,15 +332,16 @@ void io(py::module &m) {
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
       // Points
       .def("write",
-           (void (dolfin::io::XDMFFile::*)(const std::vector<dolfin::Point> &,
-                                           dolfin::io::XDMFFile::Encoding)) &
+           (void (dolfin::io::XDMFFile::*)(
+               const std::vector<dolfin::geometry::Point> &,
+               dolfin::io::XDMFFile::Encoding)) &
                dolfin::io::XDMFFile::write,
            py::arg("points"),
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
       .def("write",
-           (void (dolfin::io::XDMFFile::*)(const std::vector<dolfin::Point> &,
-                                           const std::vector<double> &,
-                                           dolfin::io::XDMFFile::Encoding)) &
+           (void (dolfin::io::XDMFFile::*)(
+               const std::vector<dolfin::geometry::Point> &,
+               const std::vector<double> &, dolfin::io::XDMFFile::Encoding)) &
                dolfin::io::XDMFFile::write,
            py::arg("points"), py::arg("values"),
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)

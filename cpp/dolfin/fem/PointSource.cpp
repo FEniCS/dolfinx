@@ -22,15 +22,16 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-PointSource::PointSource(std::shared_ptr<const function::FunctionSpace> V,
-                         const std::vector<std::pair<Point, double>> sources)
+PointSource::PointSource(
+    std::shared_ptr<const function::FunctionSpace> V,
+    const std::vector<std::pair<geometry::Point, double>> sources)
     : _function_space0(V)
 {
   // Checking meshes exist
   dolfin_assert(_function_space0->mesh());
 
   // Copy sources
-  std::vector<std::pair<Point, double>> sources_copy = sources;
+  std::vector<std::pair<geometry::Point, double>> sources_copy = sources;
 
   // Distribute sources
   const mesh::Mesh& mesh0 = *_function_space0->mesh();
@@ -40,9 +41,10 @@ PointSource::PointSource(std::shared_ptr<const function::FunctionSpace> V,
   check_space_supported(*V);
 }
 //-----------------------------------------------------------------------------
-PointSource::PointSource(std::shared_ptr<const function::FunctionSpace> V0,
-                         std::shared_ptr<const function::FunctionSpace> V1,
-                         const std::vector<std::pair<Point, double>> sources)
+PointSource::PointSource(
+    std::shared_ptr<const function::FunctionSpace> V0,
+    std::shared_ptr<const function::FunctionSpace> V1,
+    const std::vector<std::pair<geometry::Point, double>> sources)
     : _function_space0(V0), _function_space1(V1)
 {
   // Check that function spaces are supported
@@ -52,7 +54,7 @@ PointSource::PointSource(std::shared_ptr<const function::FunctionSpace> V0,
   check_space_supported(*V1);
 
   // Copy sources
-  std::vector<std::pair<Point, double>> sources_copy = sources;
+  std::vector<std::pair<geometry::Point, double>> sources_copy = sources;
 
   dolfin_assert(_function_space0->mesh());
   const mesh::Mesh& mesh0 = *_function_space0->mesh();
@@ -66,17 +68,17 @@ PointSource::~PointSource()
 //-----------------------------------------------------------------------------
 void PointSource::distribute_sources(
     const mesh::Mesh& mesh,
-    const std::vector<std::pair<Point, double>>& sources)
+    const std::vector<std::pair<geometry::Point, double>>& sources)
 {
   // Take a list of points, and assign to correct process
   const MPI_Comm mpi_comm = mesh.mpi_comm();
-  const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
+  const std::shared_ptr<geometry::BoundingBoxTree> tree = mesh.bounding_box_tree();
 
   // Collect up any points/values which are not local
   std::vector<double> remote_points;
   for (auto& s : sources)
   {
-    const Point& p = s.first;
+    const geometry::Point& p = s.first;
     double magnitude = s.second;
 
     unsigned int cell_index = tree->compute_first_entity_collision(p, mesh);
@@ -106,7 +108,7 @@ void PointSource::distribute_sources(
   std::vector<int> point_count;
   for (auto q = remote_points.begin(); q != remote_points.end(); q += 4)
   {
-    Point p(*q, *(q + 1), *(q + 2));
+    geometry::Point p(*q, *(q + 1), *(q + 2));
     unsigned int cell_index = tree->compute_first_entity_collision(p, mesh);
     point_count.push_back(cell_index
                           != std::numeric_limits<unsigned int>::max());
@@ -143,7 +145,7 @@ void PointSource::distribute_sources(
   {
     if (point_count_all[mpi_rank][i] == 1)
     {
-      const Point p(*q, *(q + 1), *(q + 2));
+      const geometry::Point p(*q, *(q + 1), *(q + 2));
       double val = *(q + 3);
       _sources.push_back({p, val});
     }
@@ -164,7 +166,7 @@ void PointSource::apply(PETScVector& b)
 
   dolfin_assert(_function_space0->mesh());
   const mesh::Mesh& mesh = *_function_space0->mesh();
-  const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
+  const std::shared_ptr<geometry::BoundingBoxTree> tree = mesh.bounding_box_tree();
 
   // Variables for cell information
   std::vector<double> coordinate_dofs;
@@ -184,7 +186,7 @@ void PointSource::apply(PETScVector& b)
 
   for (auto& s : _sources)
   {
-    Point& p = s.first;
+    geometry::Point& p = s.first;
     double magnitude = s.second;
 
     unsigned int cell_index = tree->compute_first_entity_collision(p, mesh);
@@ -247,7 +249,7 @@ void PointSource::apply(PETScMatrix& A)
 
   const auto mesh = V0->mesh();
 
-  const std::shared_ptr<BoundingBoxTree> tree = mesh->bounding_box_tree();
+  const std::shared_ptr<geometry::BoundingBoxTree> tree = mesh->bounding_box_tree();
   unsigned int cell_index;
 
   // Variables for cell information
@@ -309,7 +311,7 @@ void PointSource::apply(PETScMatrix& A)
 
   for (auto& s : _sources)
   {
-    Point& p = s.first;
+    geometry::Point& p = s.first;
     double magnitude = s.second;
 
     // Create cell

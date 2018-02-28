@@ -6,7 +6,6 @@
 
 #include "GenericFunction.h"
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <string>
 

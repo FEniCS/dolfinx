@@ -7,15 +7,14 @@
 #pragma once
 
 #include "MeshEntity.h"
+#include <dolfin/geometry/Point.h>
 
 namespace dolfin
 {
 
-class Mesh;
-class Point;
-
 namespace mesh
 {
+class Mesh;
 
 /// A Face is a MeshEntity of topological dimension 2.
 
@@ -32,7 +31,7 @@ public:
   double area() const;
 
   /// Compute normal to the face
-  Point normal() const;
+  geometry::Point normal() const;
 };
 }
 }

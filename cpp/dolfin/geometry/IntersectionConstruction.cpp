@@ -7,7 +7,6 @@
 #include "IntersectionConstruction.h"
 #include "CGALExactArithmetic.h"
 #include "CollisionPredicates.h"
-#include "GeometryDebugging.h"
 #include "GeometryPredicates.h"
 #include "GeometryTools.h"
 #include "predicates.h"
@@ -16,6 +15,7 @@
 #include <iomanip>
 
 using namespace dolfin;
+using namespace dolfin::geometry;
 
 namespace
 {

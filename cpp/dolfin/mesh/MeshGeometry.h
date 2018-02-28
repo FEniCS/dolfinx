@@ -98,7 +98,7 @@ public:
   const std::vector<double>& x() const { return coordinates; }
 
   /// Return coordinate with local index n as a 3D point value
-  Point point(std::size_t n) const;
+  geometry::Point point(std::size_t n) const;
 
   /// Initialize coordinate list to given dimension and degree
   void init(std::size_t dim, std::size_t degree);

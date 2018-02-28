@@ -343,7 +343,8 @@ void fem(py::module &m) {
       .def(
           py::init([](
               py::object V,
-              const std::vector<std::pair<dolfin::Point, double>> values) {
+              const std::vector<std::pair<dolfin::geometry::Point, double>>
+                  values) {
             std::shared_ptr<const dolfin::function::FunctionSpace> _V;
             if (py::hasattr(V, "_cpp_object"))
               _V =
@@ -358,7 +359,8 @@ void fem(py::module &m) {
       .def(
           py::init([](
               py::object V0, py::object V1,
-              const std::vector<std::pair<dolfin::Point, double>> values) {
+              const std::vector<std::pair<dolfin::geometry::Point, double>>
+                  values) {
             std::shared_ptr<const dolfin::function::FunctionSpace> _V0, _V1;
             if (py::hasattr(V0, "_cpp_object"))
               _V0 =
@@ -380,19 +382,20 @@ void fem(py::module &m) {
       //
       //.def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
       // const
-      // dolfin::Point&, double>(),
+      // dolfin::geometry::Point&, double>(),
       //     py::arg("V"), py::arg("p"), py::arg("value"))
       //.def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
       // std::shared_ptr<const dolfin::function::FunctionSpace>, const
-      // dolfin::Point&,
+      // dolfin::geometry::Point&,
       // double>(),
       //     py::arg("V0"), py::arg("V1"), py::arg("p"), py::arg("value"))
       //.def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
       // const
-      // std::vector<std::pair<const dolfin::Point*, double>>>())
+      // std::vector<std::pair<const dolfin::geometry::Point*, double>>>())
       //.def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
       // std::shared_ptr<const dolfin::function::FunctionSpace>,
-      //     const std::vector<std::pair<const dolfin::Point*, double>>>())
+      //     const std::vector<std::pair<const dolfin::geometry::Point*,
+      //     double>>>())
       .def("apply",
            (void (dolfin::fem::PointSource::*)(dolfin::PETScVector &)) &
                dolfin::fem::PointSource::apply)

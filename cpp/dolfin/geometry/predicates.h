@@ -3,7 +3,8 @@
 
 namespace dolfin
 {
-
+namespace geometry
+{
 class Point;
 
 /// Initialize tolerances for exact arithmetic
@@ -39,5 +40,4 @@ public:
   PredicateInitialization() { exactinit(); }
 };
 }
-
-
+}

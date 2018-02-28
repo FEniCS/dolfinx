@@ -5,15 +5,15 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CollisionPredicates.h"
+#include "CGALExactArithmetic.h"
 #include "GeometryTools.h"
 #include "Point.h"
 #include "predicates.h"
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/MeshEntity.h>
 
-#include "CGALExactArithmetic.h"
-
 using namespace dolfin;
+using namespace dolfin::geometry;
 
 //-----------------------------------------------------------------------------
 // High-level collision detection predicates

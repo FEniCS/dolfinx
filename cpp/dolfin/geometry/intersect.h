@@ -10,11 +10,6 @@
 
 namespace dolfin
 {
-
-// Forward declarations
-class Point;
-class MeshPointIntersection;
-
 namespace mesh
 {
 class Mesh;
@@ -22,6 +17,9 @@ class Mesh;
 
 namespace geometry
 {
+
+class Point;
+class MeshPointIntersection;
 
 /// Compute and return intersection between _Mesh_ and _Point_.
 ///

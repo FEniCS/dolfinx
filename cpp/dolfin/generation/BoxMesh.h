@@ -28,14 +28,14 @@ class BoxMesh
 {
 public:
   /// Create a uniform finite element _Mesh_ over the rectangular
-  /// prism spanned by the two _Point_s p0 and p1. The order of the
+  /// prism spanned by the two _geometry::Point_s p0 and p1. The order of the
   /// two points is not important in terms of minimum and maximum
   /// coordinates.
   ///
   /// @param comm (MPI_Comm)
   ///         MPI communicator
-  /// @param p (std::array<_Point_, 2>)
-  ///         Points of box.
+  /// @param p (std::array<_geometry::Point_, 2>)
+  ///         geometry::Points of box.
   /// @param n (std::array<double, 3> )
   ///         Number of cells in each direction.
   /// @param cell_type
@@ -44,11 +44,11 @@ public:
   /// @code{.cpp}
   ///         // Mesh with 8 cells in each direction on the
   ///         // set [-1,2] x [-1,2] x [-1,2].
-  ///         Point p0(-1, -1, -1);
-  ///         Point p1(2, 2, 2);
+  ///         geometry::Point p0(-1, -1, -1);
+  ///         geometry::Point p1(2, 2, 2);
   ///         auto mesh = BoxMesh::create({p0, p1}, {8, 8, 8});
   /// @endcode
-  static mesh::Mesh create(MPI_Comm comm, const std::array<Point, 2>& p,
+  static mesh::Mesh create(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
                            std::array<std::size_t, 3> n,
                            mesh::CellType::Type cell_type)
   {
@@ -69,7 +69,7 @@ public:
 
 private:
   // Build mesh
-  static mesh::Mesh build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
+  static mesh::Mesh build_tet(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
                               std::array<std::size_t, 3> n);
 
   static mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n);

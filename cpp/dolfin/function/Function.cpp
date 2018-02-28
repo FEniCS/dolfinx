@@ -244,7 +244,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
 
   // Find the cell that contains x
   const double* _x = x.data();
-  const Point point(mesh.geometry().dim(), _x);
+  const geometry::Point point(mesh.geometry().dim(), _x);
 
   // Get index of first cell containing point
   unsigned int id

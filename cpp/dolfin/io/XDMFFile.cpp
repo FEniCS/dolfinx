@@ -966,7 +966,7 @@ void XDMFFile::read_mesh_value_collection(mesh::MeshValueCollection<T>& mvc,
   }
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const std::vector<Point>& points, const Encoding encoding)
+void XDMFFile::write(const std::vector<geometry::Point>& points, const Encoding encoding)
 {
   // Check that encoding is supported
   check_encoding(encoding);
@@ -1003,7 +1003,7 @@ void XDMFFile::write(const std::vector<Point>& points, const Encoding encoding)
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
-                          const std::vector<Point>& points)
+                          const std::vector<geometry::Point>& points)
 {
   xdmf_node.append_attribute("Version") = "3.0";
   xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
@@ -1039,7 +1039,7 @@ void XDMFFile::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
   add_data_item(comm, geometry_node, h5_id, "/Points/coordinates", x, shape);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::write(const std::vector<Point>& points,
+void XDMFFile::write(const std::vector<geometry::Point>& points,
                      const std::vector<double>& values, const Encoding encoding)
 {
   // Write clouds of points to XDMF/HDF5 with values

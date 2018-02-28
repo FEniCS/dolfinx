@@ -132,7 +132,7 @@ double CellType::h(const MeshEntity& entity) const
   // Get the coordinates (Points) of the vertices
   const std::int32_t* vertices = entity.entities(0);
   dolfin_assert(vertices);
-  std::array<Point, 8> points;
+  std::array<geometry::Point, 8> points;
   dolfin_assert(num_vertices <= 8);
   for (int i = 0; i < num_vertices; ++i)
     points[i] = geometry.point(vertices[i]);

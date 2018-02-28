@@ -10,13 +10,14 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/geometry/Point.h>
 
 using namespace dolfin;
 using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
-                                    const std::array<Point, 2>& p,
+                                    const std::array<geometry::Point, 2>& p,
                                     std::array<std::size_t, 2> n,
                                     std::string diagonal)
 {
@@ -43,8 +44,8 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
                  "\"crossed\"");
   }
 
-  const Point& p0 = p[0];
-  const Point& p1 = p[1];
+  const geometry::Point& p0 = p[0];
+  const geometry::Point& p1 = p[1];
 
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
@@ -209,7 +210,7 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
-                                     const std::array<Point, 2>& p,
+                                     const std::array<geometry::Point, 2>& p,
                                      std::array<std::size_t, 2> n)
 {
   // Receive mesh if not rank 0

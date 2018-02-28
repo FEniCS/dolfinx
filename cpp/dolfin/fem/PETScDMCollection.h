@@ -17,7 +17,10 @@
 namespace dolfin
 {
 
+namespace geometry
+{
 class BoundingBoxTree;
+}
 
 namespace function
 {
@@ -70,7 +73,7 @@ public:
 private:
   // Find the nearest cells to points which lie outside the domain
   static void find_exterior_points(MPI_Comm mpi_comm, const mesh::Mesh& meshc,
-                                   std::shared_ptr<const BoundingBoxTree> treec,
+                                   std::shared_ptr<const geometry::BoundingBoxTree> treec,
                                    int dim, int data_size,
                                    const std::vector<double>& send_points,
                                    const std::vector<int>& send_indices,

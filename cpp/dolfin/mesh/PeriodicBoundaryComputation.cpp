@@ -108,7 +108,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           visited[e.index()] = true;
 
         // Copy entity coordinate
-        const Point midpoint = e.midpoint();
+        const geometry::Point midpoint = e.midpoint();
         std::copy(midpoint.coordinates(), midpoint.coordinates() + gdim,
                   x.begin());
 

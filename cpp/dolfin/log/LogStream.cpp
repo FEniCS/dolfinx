@@ -93,7 +93,7 @@ LogStream& LogStream::operator<<(const Variable& variable)
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<<(const Point& point)
+LogStream& LogStream::operator<<(const geometry::Point& point)
 {
   buffer << point.str(false);
   return *this;

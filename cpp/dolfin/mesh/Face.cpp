@@ -44,7 +44,7 @@ double Face::area() const
   }
 }
 //-----------------------------------------------------------------------------
-Point Face::normal() const
+geometry::Point Face::normal() const
 {
   dolfin_assert(_mesh);
   dolfin_assert(_mesh->ordered());

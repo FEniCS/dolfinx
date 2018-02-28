@@ -93,7 +93,7 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-Point MeshEntity::midpoint() const
+geometry::Point MeshEntity::midpoint() const
 {
   // Special case: a vertex is its own midpoint (don't check neighbors)
   if (_dim == 0)
@@ -120,7 +120,7 @@ Point MeshEntity::midpoint() const
   y /= double(num_vertices);
   z /= double(num_vertices);
 
-  Point p(x, y, z);
+  geometry::Point p(x, y, z);
   return p;
 }
 //-----------------------------------------------------------------------------

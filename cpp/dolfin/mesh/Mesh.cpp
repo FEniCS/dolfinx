@@ -259,12 +259,12 @@ bool Mesh::ordered() const
   return _ordered;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const
+std::shared_ptr<geometry::BoundingBoxTree> Mesh::bounding_box_tree() const
 {
   // Allocate and build tree if necessary
   if (!_tree)
   {
-    _tree.reset(new BoundingBoxTree(geometry().dim()));
+    _tree.reset(new geometry::BoundingBoxTree(geometry().dim()));
     _tree->build(*this, topology().dim());
   }
 

@@ -141,7 +141,7 @@ public:
   ///         The point.
   /// @return     double
   ///         The squared distance to the point.
-  double squared_distance(const Point& point) const
+  double squared_distance(const geometry::Point& point) const
   {
     return _mesh->type().squared_distance(*this, point);
   }
@@ -152,7 +152,7 @@ public:
   ///         The point.
   /// @return     double
   ///         The distance to the point.
-  double distance(const Point& point) const
+  double distance(const geometry::Point& point) const
   {
     return sqrt(squared_distance(point));
   }
@@ -162,18 +162,21 @@ public:
   /// @param    facet
   ///         Index of facet.
   ///
-  /// @return Point
+  /// @return geometry::Point
   ///         Normal of the facet.
-  Point normal(std::size_t facet) const
+  geometry::Point normal(std::size_t facet) const
   {
     return _mesh->type().normal(*this, facet);
   }
 
   /// Compute normal to cell itself (viewed as embedded in 3D)
   ///
-  /// @return Point
+  /// @return geometry::Point
   ///         Normal of the cell
-  Point cell_normal() const { return _mesh->type().cell_normal(*this); }
+  geometry::Point cell_normal() const
+  {
+    return _mesh->type().cell_normal(*this);
+  }
 
   /// Compute the area/length of given facet with respect to the cell
   ///

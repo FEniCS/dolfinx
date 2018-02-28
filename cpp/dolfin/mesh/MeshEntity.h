@@ -170,9 +170,9 @@ public:
 
   /// Compute midpoint of cell
   ///
-  /// @return Point
+  /// @return geometry::Point
   ///         The midpoint of the cell.
-  Point midpoint() const;
+  geometry::Point midpoint() const;
 
   /// Determine whether an entity is a 'ghost' from another
   /// process

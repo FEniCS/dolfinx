@@ -29,6 +29,9 @@
 // Check that results from DOLFIN and CGAL match
 namespace dolfin
 {
+namespace geometry
+{
+
 //---------------------------------------------------------------------------
 // Functions to compare results between DOLFIN and CGAL
 //---------------------------------------------------------------------------
@@ -1026,6 +1029,5 @@ cgal_triangulation_overlap(std::vector<std::vector<Point>> triangulation)
 
 //-----------------------------------------------------------------------------
 }
+}
 #endif
-
-

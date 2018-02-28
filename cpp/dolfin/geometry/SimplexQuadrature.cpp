@@ -6,6 +6,7 @@
 
 #include "SimplexQuadrature.h"
 #include "predicates.h"
+#include "Point.h"
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -13,6 +14,7 @@
 #include <dolfin/mesh/MeshGeometry.h>
 
 using namespace dolfin;
+using namespace dolfin::geometry;
 
 //-----------------------------------------------------------------------------
 SimplexQuadrature::SimplexQuadrature(std::size_t tdim, std::size_t order)

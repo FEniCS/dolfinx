@@ -4,14 +4,16 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "GeometryPredicates.h"
+#include "CGALExactArithmetic.h"
+#include "Point.h"
+#include "predicates.h"
 #include <cmath>
 #include <dolfin/common/constants.h>
-
-#include "CGALExactArithmetic.h"
-#include "GeometryPredicates.h"
-#include "predicates.h"
+#include <dolfin/log/log.h>
 
 using namespace dolfin;
+using namespace dolfin::geometry;
 
 //-----------------------------------------------------------------------------
 bool GeometryPredicates::is_degenerate(const std::vector<Point>& simplex,

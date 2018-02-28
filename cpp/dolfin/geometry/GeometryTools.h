@@ -11,6 +11,8 @@
 
 namespace dolfin
 {
+namespace geometry
+{
 
 /// This class provides useful tools (functions) for computational geometry.
 
@@ -99,5 +101,4 @@ public:
   }
 };
 }
-
-
+}

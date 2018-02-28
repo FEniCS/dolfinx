@@ -46,23 +46,26 @@ public:
   double circumradius(const MeshEntity& triangle) const;
 
   /// Compute squared distance to given point (3D enabled)
-  double squared_distance(const mesh::Cell& cell, const Point& point) const;
+  double squared_distance(const mesh::Cell& cell,
+                          const geometry::Point& point) const;
 
   /// Compute squared distance to given point. This version takes
   /// the three vertex coordinates as 3D points. This makes it
   /// possible to reuse this function for computing the (squared)
   /// distance to a tetrahedron.
-  static double squared_distance(const Point& point, const Point& a,
-                                 const Point& b, const Point& c);
+  static double squared_distance(const geometry::Point& point,
+                                 const geometry::Point& a,
+                                 const geometry::Point& b,
+                                 const geometry::Point& c);
 
   /// Compute component i of normal of given facet with respect to the cell
   double normal(const mesh::Cell& cell, std::size_t facet, std::size_t i) const;
 
   /// Compute of given facet with respect to the cell
-  Point normal(const mesh::Cell& cell, std::size_t facet) const;
+  geometry::Point normal(const mesh::Cell& cell, std::size_t facet) const;
 
   /// Compute normal to given cell (viewed as embedded in 3D)
-  Point cell_normal(const mesh::Cell& cell) const;
+  geometry::Point cell_normal(const mesh::Cell& cell) const;
 
   /// Compute the area/length of given facet with respect to the cell
   double facet_area(const mesh::Cell& cell, std::size_t facet) const;
@@ -73,7 +76,7 @@ public:
         const std::vector<std::int64_t>& local_to_global_vertex_indices) const;
 
   /// Check whether given point collides with cell
-  bool collides(const mesh::Cell& cell, const Point& point) const;
+  bool collides(const mesh::Cell& cell, const geometry::Point& point) const;
 
   /// Check whether given entity collides with cell
   bool collides(const mesh::Cell& cell, const MeshEntity& entity) const;

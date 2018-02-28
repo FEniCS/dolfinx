@@ -154,7 +154,7 @@ the form file) defined relative to this mesh, we do as follows
      MPI_Init(&argc, &argv);
 
      // Create mesh and function space
-     std::array<Point, 2> pt = {Point(0.,0.), Point(1.,1.)};
+     std::array<geometry::Point, 2> pt = {geometry::Point(0.,0.), geometry::Point(1.,1.)};
      auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle));
      auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
