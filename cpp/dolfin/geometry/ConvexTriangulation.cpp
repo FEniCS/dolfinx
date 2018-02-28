@@ -4,17 +4,17 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <algorithm>
-#include <dolfin/common/constants.h>
-#include <set>
-#include <tuple>
-#include "CollisionPredicates.h"
 #include "ConvexTriangulation.h"
+#include "CGALExactArithmetic.h"
+#include "CollisionPredicates.h"
 #include "GeometryPredicates.h"
 #include "GeometryTools.h"
 #include "IntersectionConstruction.h"
 #include "predicates.h"
-#include "CGALExactArithmetic.h"
+#include <algorithm>
+#include <dolfin/common/constants.h>
+#include <set>
+#include <tuple>
 
 using namespace dolfin;
 using namespace dolfin::geometry;
@@ -25,10 +25,11 @@ namespace
 //-----------------------------------------------------------------------------
 // Create a unique list of points in the sense that |p-q| > tol in each
 // dimension
-std::vector<Point> unique_points(const std::vector<Point>& input_points,
-                                 std::size_t gdim, double tol)
+std::vector<geometry::Point>
+unique_points(const std::vector<geometry::Point>& input_points,
+              std::size_t gdim, double tol)
 {
-  std::vector<Point> points;
+  std::vector<geometry::Point> points;
 
   for (std::size_t i = 0; i < input_points.size(); ++i)
   {
@@ -58,7 +59,7 @@ std::vector<Point> unique_points(const std::vector<Point>& input_points,
 }
 //------------------------------------------------------------------------------
 // Check if q lies between p0 and p1. p0, p1 and q are assumed to be colinear
-bool is_between(Point p0, Point p1, Point q)
+bool is_between(geometry::Point p0, geometry::Point p1, geometry::Point q)
 {
   const double sqnorm = (p1 - p0).dot(p1 - p0);
   return (p0 - q).dot(p0 - q) < sqnorm && (p1 - q).dot(p1 - q) < sqnorm;
@@ -67,10 +68,11 @@ bool is_between(Point p0, Point p1, Point q)
 // Return the indices to the points that forms the polygon that is
 // the convex hull of the points. The points are assumed to be coplanar
 std::vector<std::pair<std::size_t, std::size_t>>
-compute_convex_hull_planar(const std::vector<Point>& points)
+compute_convex_hull_planar(const std::vector<geometry::Point>& points)
 {
   // FIXME: Ensure that 0, 1, 2 are not colinear
-  Point normal = GeometryTools::cross_product(points[0], points[1], points[2]);
+  geometry::Point normal
+      = GeometryTools::cross_product(points[0], points[1], points[2]);
   normal /= normal.norm();
 
   std::vector<std::pair<std::size_t, std::size_t>> edges;
@@ -82,7 +84,7 @@ compute_convex_hull_planar(const std::vector<Point>& points)
     for (std::size_t j = i + 1; j < points.size(); j++)
     {
       // Form at plane of i, j  and i + the normal of plane
-      const Point r = points[i] + normal;
+      const geometry::Point r = points[i] + normal;
 
       // search for the first point which is not in the
       // i, j, p plane to determine sign of orietation
