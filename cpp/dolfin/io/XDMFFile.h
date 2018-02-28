@@ -61,7 +61,8 @@ namespace io
 class HDF5File;
 #endif
 
-/// Read and write Mesh, function::Function, MeshFunction and other objects in
+/// Read and write mesh::Mesh, function::Function, mesh::MeshFunction and other
+/// objects in
 /// XDMF
 
 /// This class supports the output of meshes and functions in XDMF
@@ -116,7 +117,7 @@ public:
   /// file, or storing the data inline as XML Create function on
   /// given function space
   ///
-  /// @param    mesh (_mesh::Mesh_)
+  /// @param    mesh (_Mesh_)
   ///         A mesh to save.
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
@@ -188,7 +189,7 @@ public:
   /// Save mesh::MeshFunction to file using an associated HDF5 file, or
   /// storing the data inline as XML.
   ///
-  /// @param    meshfunction (_mesh::MeshFunction_)
+  /// @param    meshfunction (_MeshFunction_)
   ///         A meshfunction to save.
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
@@ -199,7 +200,7 @@ public:
   /// Save mesh::MeshFunction to file using an associated HDF5 file, or
   /// storing the data inline as XML.
   ///
-  /// @param    meshfunction (_mesh::MeshFunction_)
+  /// @param    meshfunction (_MeshFunction_)
   ///         A meshfunction to save.
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
@@ -210,7 +211,7 @@ public:
   /// Save mesh::MeshFunction to file using an associated HDF5 file, or
   /// storing the data inline as XML.
   ///
-  /// @param    meshfunction (_mesh::MeshFunction_)
+  /// @param    meshfunction (_MeshFunction_)
   ///         A meshfunction to save.
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
@@ -221,7 +222,7 @@ public:
   /// Save mesh::MeshFunction to file using an associated HDF5 file, or
   /// storing the data inline as XML.
   ///
-  /// @param    meshfunction (_mesh::MeshFunction_)
+  /// @param    meshfunction (_MeshFunction_)
   ///         A meshfunction to save.
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
@@ -232,7 +233,7 @@ public:
   /// Write out mesh value collection (subset) using an associated
   /// HDF5 file, or storing the data inline as XML.
   ///
-  /// @param mvc (_mesh::MeshValueCollection<bool>_)
+  /// @param mvc (_MeshValueCollection<bool>_)
   ///         mesh::MeshValueCollection to save
   /// @param encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
@@ -243,7 +244,7 @@ public:
   /// Write out mesh value collection (subset) using an associated
   /// HDF5 file, or storing the data inline as XML.
   ///
-  /// @param mvc (_mesh::MeshValueCollection<int>_)
+  /// @param mvc (_MeshValueCollection<int>_)
   ///         mesh::MeshValueCollection to save
   /// @param encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
@@ -254,7 +255,7 @@ public:
   /// Write out mesh value collection (subset) using an associated
   /// HDF5 file, or storing the data inline as XML.
   ///
-  /// @param  mvc (_mesh::MeshValueCollection<int>_)
+  /// @param  mvc (_MeshValueCollection<int>_)
   ///         mesh::MeshValueCollection to save
   /// @param  encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
@@ -265,7 +266,7 @@ public:
   /// Write out mesh value collection (subset) using an associated
   /// HDF5 file, or storing the data inline as XML.
   ///
-  /// @param mvc (_mesh::MeshValueCollection<double>_)
+  /// @param mvc (_MeshValueCollection<double>_)
   ///         mesh::MeshValueCollection to save
   /// @param encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
@@ -300,7 +301,7 @@ public:
 
   /// Read in the first mesh::Mesh in XDMF file
   ///
-  /// @param mesh (_mesh::Mesh_)
+  /// @param mesh (_Mesh_)
   ///        mesh::Mesh to fill from XDMF file
   void read(mesh::Mesh& mesh) const;
 
@@ -328,21 +329,21 @@ public:
                        std::int64_t counter = -1);
 
   /// Read first mesh::MeshFunction from file
-  /// @param meshfunction (_mesh::MeshFunction<bool>_)
+  /// @param meshfunction (_MeshFunction<bool>_)
   ///        mesh::MeshFunction to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
   void read(mesh::MeshFunction<bool>& meshfunction, std::string name = "");
 
   /// Read first mesh::MeshFunction from file
-  /// @param meshfunction (_mesh::MeshFunction<int>_)
+  /// @param meshfunction (_MeshFunction<int>_)
   ///        mesh::MeshFunction to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
   void read(mesh::MeshFunction<int>& meshfunction, std::string name = "");
 
   /// Read mesh::MeshFunction from file, optionally specifying dataset name
-  /// @param meshfunction (_mesh::MeshFunction<std::size_t>_)
+  /// @param meshfunction (_MeshFunction<std::size_t>_)
   ///        mesh::MeshFunction to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
@@ -350,7 +351,7 @@ public:
             std::string name = "");
 
   /// Read mesh::MeshFunction from file, optionally specifying dataset name
-  /// @param meshfunction (_mesh::MeshFunction<double>_)
+  /// @param meshfunction (_MeshFunction<double>_)
   ///        mesh::MeshFunction to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
@@ -358,7 +359,7 @@ public:
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
-  /// @param mvc (_mesh::MeshValueCollection<bool>_)
+  /// @param mvc (_MeshValueCollection<bool>_)
   ///        mesh::MeshValueCollection to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
@@ -366,7 +367,7 @@ public:
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
-  /// @param mvc (_mesh::MeshValueCollection<int>_)
+  /// @param mvc (_MeshValueCollection<int>_)
   ///        mesh::MeshValueCollection to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
@@ -374,7 +375,7 @@ public:
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
-  /// @param mvc (_mesh::MeshValueCollection<std::size_t>_)
+  /// @param mvc (_MeshValueCollection<std::size_t>_)
   ///        mesh::MeshValueCollection to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
@@ -382,7 +383,7 @@ public:
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
-  /// @param mvc (_mesh::MeshValueCollection<double>_)
+  /// @param mvc (_MeshValueCollection<double>_)
   ///        mesh::MeshValueCollection to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
