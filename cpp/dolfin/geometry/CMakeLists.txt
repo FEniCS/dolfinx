@@ -1,6 +1,5 @@
 set(HEADERS
   BoundingBoxTree.h
-  CGALExactArithmetic.h
   CollisionPredicates.h
   dolfin_geometry.h
   GeometryPredicates.h

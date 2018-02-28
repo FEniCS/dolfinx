@@ -5,15 +5,30 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CollisionPredicates.h"
-#include "GeometryTools.h"
 #include "Point.h"
 #include "predicates.h"
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/MeshEntity.h>
 
-#include "CGALExactArithmetic.h"
-
 using namespace dolfin;
+
+/// Compute numerically stable cross product (a - c) x (b - c)
+static inline Point cross_product(const Point& a, const Point& b,
+                                  const Point& c)
+{
+  // See Shewchuk Lecture Notes on Geometric Robustness
+  double ayz[2] = {a[1], a[2]};
+  double byz[2] = {b[1], b[2]};
+  double cyz[2] = {c[1], c[2]};
+  double azx[2] = {a[2], a[0]};
+  double bzx[2] = {b[2], b[0]};
+  double czx[2] = {c[2], c[0]};
+  double axy[2] = {a[0], a[1]};
+  double bxy[2] = {b[0], b[1]};
+  double cxy[2] = {c[0], c[1]};
+  return Point(_orient2d(ayz, byz, cyz), _orient2d(azx, bzx, czx),
+               _orient2d(axy, bxy, cxy));
+}
 
 //-----------------------------------------------------------------------------
 // High-level collision detection predicates
@@ -245,7 +260,6 @@ bool CollisionPredicates::collides_triangle_triangle(
 bool CollisionPredicates::collides_segment_point_1d(double p0, double p1,
                                                     double point)
 {
-  // FIXME: Skip CGAL for now
   return _collides_segment_point_1d(p0, p1, point);
 }
 //------------------------------------------------------------------------------
@@ -253,16 +267,14 @@ bool CollisionPredicates::collides_segment_point_2d(const Point& p0,
                                                     const Point& p1,
                                                     const Point& point)
 {
-  return CHECK_CGAL(_collides_segment_point_2d(p0, p1, point),
-                    cgal_collides_segment_point_2d(p0, p1, point));
+  return _collides_segment_point_2d(p0, p1, point);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_segment_point_3d(const Point& p0,
                                                     const Point& p1,
                                                     const Point& point)
 {
-  return CHECK_CGAL(_collides_segment_point_3d(p0, p1, point),
-                    cgal_collides_segment_point_3d(p0, p1, point));
+  return _collides_segment_point_3d(p0, p1, point);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_segment_segment_1d(double p0, double p1,
@@ -276,8 +288,7 @@ bool CollisionPredicates::collides_segment_segment_2d(const Point& p0,
                                                       const Point& q0,
                                                       const Point& q1)
 {
-  return CHECK_CGAL(_collides_segment_segment_2d(p0, p1, q0, q1),
-                    cgal_collides_segment_segment_2d(p0, p1, q0, q1));
+  return _collides_segment_segment_2d(p0, p1, q0, q1);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_segment_segment_3d(const Point& p0,
@@ -285,8 +296,7 @@ bool CollisionPredicates::collides_segment_segment_3d(const Point& p0,
                                                       const Point& q0,
                                                       const Point& q1)
 {
-  return CHECK_CGAL(_collides_segment_segment_3d(p0, p1, q0, q1),
-                    cgal_collides_segment_segment_3d(p0, p1, q0, q1));
+  return _collides_segment_segment_3d(p0, p1, q0, q1);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_triangle_point_2d(const Point& p0,
@@ -294,8 +304,7 @@ bool CollisionPredicates::collides_triangle_point_2d(const Point& p0,
                                                      const Point& p2,
                                                      const Point& point)
 {
-  return CHECK_CGAL(_collides_triangle_point_2d(p0, p1, p2, point),
-                    cgal_collides_triangle_point_2d(p0, p1, p2, point));
+  return _collides_triangle_point_2d(p0, p1, p2, point);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_triangle_point_3d(const Point& p0,
@@ -303,8 +312,7 @@ bool CollisionPredicates::collides_triangle_point_3d(const Point& p0,
                                                      const Point& p2,
                                                      const Point& point)
 {
-  return CHECK_CGAL(_collides_triangle_point_3d(p0, p1, p2, point),
-                    cgal_collides_triangle_point_3d(p0, p1, p2, point));
+  return _collides_triangle_point_3d(p0, p1, p2, point);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_triangle_segment_2d(const Point& p0,
@@ -313,8 +321,7 @@ bool CollisionPredicates::collides_triangle_segment_2d(const Point& p0,
                                                        const Point& q0,
                                                        const Point& q1)
 {
-  return CHECK_CGAL(_collides_triangle_segment_2d(p0, p1, p2, q0, q1),
-                    cgal_collides_triangle_segment_2d(p0, p1, p2, q0, q1));
+  return _collides_triangle_segment_2d(p0, p1, p2, q0, q1);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_triangle_segment_3d(const Point& p0,
@@ -323,24 +330,21 @@ bool CollisionPredicates::collides_triangle_segment_3d(const Point& p0,
                                                        const Point& q0,
                                                        const Point& q1)
 {
-  return CHECK_CGAL(_collides_triangle_segment_3d(p0, p1, p2, q0, q1),
-                    cgal_collides_triangle_segment_3d(p0, p1, p2, q0, q1));
+  return _collides_triangle_segment_3d(p0, p1, p2, q0, q1);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_triangle_triangle_2d(
     const Point& p0, const Point& p1, const Point& p2, const Point& q0,
     const Point& q1, const Point& q2)
 {
-  return CHECK_CGAL(_collides_triangle_triangle_2d(p0, p1, p2, q0, q1, q2),
-                    cgal_collides_triangle_triangle_2d(p0, p1, p2, q0, q1, q2));
+  return _collides_triangle_triangle_2d(p0, p1, p2, q0, q1, q2);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_triangle_triangle_3d(
     const Point& p0, const Point& p1, const Point& p2, const Point& q0,
     const Point& q1, const Point& q2)
 {
-  return CHECK_CGAL(_collides_triangle_triangle_3d(p0, p1, p2, q0, q1, q2),
-                    cgal_collides_triangle_triangle_3d(p0, p1, p2, q0, q1, q2));
+  return _collides_triangle_triangle_3d(p0, p1, p2, q0, q1, q2);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_tetrahedron_point_3d(const Point& p0,
@@ -349,35 +353,28 @@ bool CollisionPredicates::collides_tetrahedron_point_3d(const Point& p0,
                                                         const Point& p3,
                                                         const Point& point)
 {
-  return CHECK_CGAL(_collides_tetrahedron_point_3d(p0, p1, p2, p3, point),
-                    cgal_collides_tetrahedron_point_3d(p0, p1, p2, p3, point));
+  return _collides_tetrahedron_point_3d(p0, p1, p2, p3, point);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_tetrahedron_segment_3d(
     const Point& p0, const Point& p1, const Point& p2, const Point& p3,
     const Point& q0, const Point& q1)
 {
-  return CHECK_CGAL(
-      _collides_tetrahedron_segment_3d(p0, p1, p2, p3, q0, q1),
-      cgal_collides_tetrahedron_segment_3d(p0, p1, p2, p3, q0, q1));
+  return _collides_tetrahedron_segment_3d(p0, p1, p2, p3, q0, q1);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_tetrahedron_triangle_3d(
     const Point& p0, const Point& p1, const Point& p2, const Point& p3,
     const Point& q0, const Point& q1, const Point& q2)
 {
-  return CHECK_CGAL(
-      _collides_tetrahedron_triangle_3d(p0, p1, p2, p3, q0, q1, q2),
-      cgal_collides_tetrahedron_triangle_3d(p0, p1, p2, p3, q0, q1, q2));
+  return _collides_tetrahedron_triangle_3d(p0, p1, p2, p3, q0, q1, q2);
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_tetrahedron_tetrahedron_3d(
     const Point& p0, const Point& p1, const Point& p2, const Point& p3,
     const Point& q0, const Point& q1, const Point& q2, const Point& q3)
 {
-  return CHECK_CGAL(
-      _collides_tetrahedron_tetrahedron_3d(p0, p1, p2, p3, q0, q1, q2, q3),
-      cgal_collides_tetrahedron_tetrahedron_3d(p0, p1, p2, p3, q0, q1, q2, q3));
+  return _collides_tetrahedron_tetrahedron_3d(p0, p1, p2, p3, q0, q1, q2, q3);
 }
 //-----------------------------------------------------------------------------
 // Implementation of private members
@@ -505,10 +502,10 @@ bool CollisionPredicates::_collides_segment_segment_3d(const Point& p0,
   // that they can be parallel, or even collinear.
 
   // Check for collinearity
-  const Point u = GeometryTools::cross_product(p0, p1, q0);
+  const Point u = cross_product(p0, p1, q0);
   if (u[0] == 0.0 and u[1] == 0.0 and u[2] == 0.0)
   {
-    const Point v = GeometryTools::cross_product(p0, p1, q1);
+    const Point v = cross_product(p0, p1, q1);
     if (v[0] == 0.0 and v[1] == 0.0 and v[2] == 0.0)
     {
       // Now we know that the segments are collinear
@@ -596,11 +593,11 @@ bool CollisionPredicates::_collides_triangle_point_3d(const Point& p0,
     return false;
 
   // Use normal
-  const Point n = GeometryTools::cross_product(p0, p1, p2);
+  const Point n = cross_product(p0, p1, p2);
 
-  return !(n.dot(GeometryTools::cross_product(point, p0, p1)) < 0.0
-           or n.dot(GeometryTools::cross_product(point, p2, p0)) < 0.0
-           or n.dot(GeometryTools::cross_product(point, p1, p2)) < 0.0);
+  return !(n.dot(cross_product(point, p0, p1)) < 0.0
+           or n.dot(cross_product(point, p2, p0)) < 0.0
+           or n.dot(cross_product(point, p1, p2)) < 0.0);
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::_collides_triangle_segment_2d(const Point& p0,
