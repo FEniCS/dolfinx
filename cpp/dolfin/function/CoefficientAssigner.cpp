@@ -10,6 +10,7 @@
 #include <memory>
 
 using namespace dolfin;
+using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
 CoefficientAssigner::CoefficientAssigner(fem::Form& form, std::size_t number)

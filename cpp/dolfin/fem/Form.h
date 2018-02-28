@@ -22,11 +22,14 @@ class form;
 namespace dolfin
 {
 
-class FunctionSpace;
-class GenericFunction;
 class Mesh;
 template <typename T>
 class MeshFunction;
+
+namespace function
+{
+class FunctionSpace;
+}
 
 namespace fem
 {
@@ -74,10 +77,11 @@ public:
   ///
   /// @param[in] ufc_form (ufc::form)
   ///         The UFC form.
-  /// @param[in] function_spaces (std::vector<_FunctionSpace_>)
+  /// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
   ///         Vector of function spaces.
   Form(std::shared_ptr<const ufc::form> ufc_form,
-       std::vector<std::shared_ptr<const FunctionSpace>> function_spaces);
+       std::vector<std::shared_ptr<const function::FunctionSpace>>
+           function_spaces);
 
   /// Destructor
   virtual ~Form();
@@ -97,7 +101,8 @@ public:
   std::size_t original_coefficient_position(std::size_t i) const;
 
   /// Return the size of the element tensor, needed to create temporary space
-  /// for assemblers. If the largest number of per-element dofs in FunctionSpace
+  /// for assemblers. If the largest number of per-element dofs in
+  /// function::FunctionSpace
   /// i is N_i, then for a linear form this is N_0, and for a bilinear form,
   /// N_0*N_1.
   ///
@@ -125,15 +130,17 @@ public:
   /// @param  i (std::size_t)
   ///         Index
   ///
-  /// @return FunctionSpace
+  /// @return function::FunctionSpace
   ///         Function space shared pointer.
-  std::shared_ptr<const FunctionSpace> function_space(std::size_t i) const;
+  std::shared_ptr<const function::FunctionSpace>
+  function_space(std::size_t i) const;
 
   /// Return function spaces for arguments
   ///
-  /// @return    std::vector<_FunctionSpace_>
+  /// @return    std::vector<_function::FunctionSpace_>
   ///         Vector of function space shared pointers.
-  std::vector<std::shared_ptr<const FunctionSpace>> function_spaces() const;
+  std::vector<std::shared_ptr<const function::FunctionSpace>>
+  function_spaces() const;
 
   /// Return cell domains (zero pointer if no domains have been
   /// specified)
@@ -210,7 +217,7 @@ private:
   FormCoefficients _coeffs;
 
   // Function spaces (one for each argument)
-  std::vector<std::shared_ptr<const FunctionSpace>> _function_spaces;
+  std::vector<std::shared_ptr<const function::FunctionSpace>> _function_spaces;
 
   // The mesh (needed for functionals when we don't have any spaces)
   std::shared_ptr<const Mesh> _mesh;

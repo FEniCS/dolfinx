@@ -11,6 +11,7 @@
 #include <string>
 
 using namespace dolfin;
+using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
 GenericFunction::GenericFunction() : Variable("u", "a function")

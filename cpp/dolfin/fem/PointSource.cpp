@@ -22,7 +22,7 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
+PointSource::PointSource(std::shared_ptr<const function::FunctionSpace> V,
                          const std::vector<std::pair<Point, double>> sources)
     : _function_space0(V)
 {
@@ -40,8 +40,8 @@ PointSource::PointSource(std::shared_ptr<const FunctionSpace> V,
   check_space_supported(*V);
 }
 //-----------------------------------------------------------------------------
-PointSource::PointSource(std::shared_ptr<const FunctionSpace> V0,
-                         std::shared_ptr<const FunctionSpace> V1,
+PointSource::PointSource(std::shared_ptr<const function::FunctionSpace> V0,
+                         std::shared_ptr<const function::FunctionSpace> V1,
                          const std::vector<std::pair<Point, double>> sources)
     : _function_space0(V0), _function_space1(V1)
 {
@@ -233,8 +233,8 @@ void PointSource::apply(PETScMatrix& A)
                  "The elemnts are different. Not currently implemented");
   }
 
-  std::shared_ptr<const FunctionSpace> V0 = _function_space0;
-  std::shared_ptr<const FunctionSpace> V1 = _function_space1;
+  std::shared_ptr<const function::FunctionSpace> V0 = _function_space0;
+  std::shared_ptr<const function::FunctionSpace> V1 = _function_space1;
 
   log(PROGRESS, "Applying point source to matrix.");
 
@@ -379,13 +379,13 @@ void PointSource::apply(PETScMatrix& A)
   A.apply(PETScMatrix::AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
-void PointSource::check_space_supported(const FunctionSpace& V)
+void PointSource::check_space_supported(const function::FunctionSpace& V)
 {
   dolfin_assert(V.element());
   if (V.element()->value_rank() > 1)
   {
     dolfin_error("PointSource.cpp", "create point source",
-                 "Function must have rank 0 or 1");
+                 "function::Function must have rank 0 or 1");
   }
 }
 //-----------------------------------------------------------------------------

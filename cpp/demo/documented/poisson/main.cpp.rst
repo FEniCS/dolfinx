@@ -98,10 +98,10 @@ Then follows the definition of the coefficient functions (for
 .. code-block:: cpp
 
    // Source term (right-hand side)
-   class Source : public Expression
+   class Source : public function::Expression
    {
    public:
-     Source() : Expression({}) {}
+     Source() : function::Expression({}) {}
 
      void eval(Eigen::Ref<Eigen::VectorXd> values,
             Eigen::Ref<const Eigen::VectorXd> x) const
@@ -113,10 +113,10 @@ Then follows the definition of the coefficient functions (for
    };
 
    // Normal derivative (Neumann boundary condition)
-   class dUdN : public Expression
+   class dUdN : public function::Expression
    {
    public:
-     dUdN() : Expression({}) {}
+     dUdN() : function::Expression({}) {}
 
      void eval(Eigen::Ref<Eigen::VectorXd> values,
             Eigen::Ref<const Eigen::VectorXd> x) const
@@ -172,7 +172,7 @@ as follows:
 .. code-block:: cpp
 
      // Define boundary condition
-     auto u0 = std::make_shared<Constant>(0.0);
+     auto u0 = std::make_shared<function::Constant>(0.0);
      auto boundary = std::make_shared<DirichletBoundary>();
      std::vector<std::shared_ptr<const fem:: DirichletBC>> bc
       = {std::make_shared<fem::DirichletBC>(V, u0, boundary)};
@@ -204,7 +204,7 @@ call the ``solve`` function with the arguments ``a == L``, ``u`` and
 .. code-block:: cpp
 
      // Compute solution
-     Function u(V);
+     function::Function u(V);
      auto A = std::make_shared<PETScMatrix>(MPI_COMM_WORLD);
      auto b = std::make_shared<PETScVector>(MPI_COMM_WORLD);
 

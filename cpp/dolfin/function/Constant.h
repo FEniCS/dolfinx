@@ -14,6 +14,9 @@ namespace dolfin
 {
 class Mesh;
 
+namespace function
+{
+
 /// This class represents a constant-valued expression.
 
 class Constant : public Expression
@@ -82,4 +85,5 @@ private:
   // Values of constant function
   std::vector<double> _values;
 };
+}
 }

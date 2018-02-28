@@ -13,7 +13,6 @@
 
 namespace dolfin
 {
-class Function;
 
 /// MeshGeometry stores the geometry imposed on a mesh.
 

@@ -23,7 +23,8 @@ using namespace dolfin;
 
 namespace
 {
-void _check_coordinates(const MeshGeometry& geometry, const Function& position)
+void _check_coordinates(const MeshGeometry& geometry,
+                        const function::Function& position)
 {
   dolfin_assert(position.function_space());
   dolfin_assert(position.function_space()->mesh());
@@ -70,7 +71,7 @@ void _check_coordinates(const MeshGeometry& geometry, const Function& position)
 
 // This helper function sets geometry from position (if setting) or
 // stores geometry into position (otherwise)
-void _get_set_coordinates(MeshGeometry& geometry, Function& position,
+void _get_set_coordinates(MeshGeometry& geometry, function::Function& position,
                           const bool setting)
 {
   auto& x = geometry.x();
@@ -301,7 +302,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>
-dolfin::fem::dof_to_vertex_map(const FunctionSpace& space)
+dolfin::fem::dof_to_vertex_map(const function::FunctionSpace& space)
 {
   // Get vertex_to_dof_map and invert it
   const std::vector<dolfin::la_index_t> vertex_map = vertex_to_dof_map(space);
@@ -312,7 +313,7 @@ dolfin::fem::dof_to_vertex_map(const FunctionSpace& space)
 }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index_t>
-dolfin::fem::vertex_to_dof_map(const FunctionSpace& space)
+dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
 {
   // Get the mesh
   dolfin_assert(space.mesh());
@@ -392,20 +393,21 @@ dolfin::fem::vertex_to_dof_map(const FunctionSpace& space)
 }
 //-----------------------------------------------------------------------------
 void dolfin::fem::set_coordinates(MeshGeometry& geometry,
-                                  const Function& position)
+                                  const function::Function& position)
 {
   _check_coordinates(geometry, position);
-  _get_set_coordinates(geometry, const_cast<Function&>(position), true);
+  _get_set_coordinates(geometry, const_cast<function::Function&>(position),
+                       true);
 }
 //-----------------------------------------------------------------------------
-void dolfin::fem::get_coordinates(Function& position,
+void dolfin::fem::get_coordinates(function::Function& position,
                                   const MeshGeometry& geometry)
 {
   _check_coordinates(geometry, position);
   _get_set_coordinates(const_cast<MeshGeometry&>(geometry), position, false);
 }
 //-----------------------------------------------------------------------------
-Mesh dolfin::fem::create_mesh(Function& coordinates)
+Mesh dolfin::fem::create_mesh(function::Function& coordinates)
 {
   // FIXME: This function is a mess
 

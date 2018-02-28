@@ -100,10 +100,10 @@ _pick_one_meshfunction(std::string name,
 }
 //-----------------------------------------------------------------------------
 bool SystemAssembler::check_functionspace_for_bc(
-    std::shared_ptr<const FunctionSpace> fs, std::size_t bc_index)
+    std::shared_ptr<const function::FunctionSpace> fs, std::size_t bc_index)
 {
   dolfin_assert(_bcs[bc_index]);
-  std::shared_ptr<const FunctionSpace> bc_function_space
+  std::shared_ptr<const function::FunctionSpace> bc_function_space
       = _bcs[bc_index]->function_space();
   dolfin_assert(bc_function_space);
 
@@ -153,7 +153,7 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
   if (*_a->function_space(0) != *_l->function_space(0))
   {
     dolfin_error("SystemAssembler.cpp", "assemble system",
-                 "expected forms (a, L) to share a FunctionSpace");
+                 "expected forms (a, L) to share a function::FunctionSpace");
   }
 
   // Create data structures for local assembly data
@@ -190,7 +190,7 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
   std::vector<DirichletBC::Map> boundary_values(rectangular ? 2 : 1);
   for (std::size_t i = 0; i < _bcs.size(); ++i)
   {
-    // Match the FunctionSpace of the BC
+    // Match the function::FunctionSpace of the BC
     // with the (possible sub-)FunctionSpace on each axis of _a.
     bool axis0 = check_functionspace_for_bc(_a->function_space(0), i);
     bool axis1
@@ -1023,7 +1023,7 @@ void SystemAssembler::apply_bc(
 
   if (boundary_values.size() == 1)
   {
-    // Square matrix with same FunctionSpace on each axis
+    // Square matrix with same function::FunctionSpace on each axis
     // Loop over columns/rows
     for (int i = 0; i < _matA.cols(); ++i)
     {
@@ -1056,7 +1056,8 @@ void SystemAssembler::apply_bc(
     //
     //        Essentially we need to detect if _a->function_space(0) and
     //        _a->function_space(1) share the common super space (use
-    //        FunctionSpace::_root_space_id). In that case dof ids are shared
+    //        function::FunctionSpace::_root_space_id). In that case dof ids are
+    //        shared
     //        and matrix has diagonal. Otherwise it does not have diagonal.
 
     // Loop over rows first

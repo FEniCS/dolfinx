@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FunctionSpace.h"
+#include "Function.h"
 #include "GenericFunction.h"
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -17,6 +18,7 @@
 #include <vector>
 
 using namespace dolfin;
+using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(std::shared_ptr<const Mesh> mesh,
@@ -105,7 +107,7 @@ void FunctionSpace::interpolate_from_any(PETScVector& expansion_coefficients,
   // Iterate over mesh and interpolate on each cell
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  for (auto &cell : MeshRange<mesh::Cell>(*_mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(*_mesh))
   {
     // Update to current cell
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -266,7 +268,7 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
   // Loop over cells and tabulate dofs
   boost::multi_array<double, 2> coordinates;
   std::vector<double> coordinate_dofs;
-  for (auto &cell : MeshRange<mesh::Cell>(*_mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(*_mesh))
   {
     // Update UFC cell
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -306,7 +308,7 @@ void FunctionSpace::set_x(PETScVector& x, double value,
   std::vector<double> x_values;
   boost::multi_array<double, 2> coordinates;
   std::vector<double> coordinate_dofs;
-  for (auto &cell : MeshRange<mesh::Cell>(*_mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(*_mesh))
   {
     // Update UFC cell
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -348,7 +350,7 @@ std::string FunctionSpace::str(bool verbose) const
 void FunctionSpace::print_dofmap() const
 {
   dolfin_assert(_mesh);
-  for (auto &cell : MeshRange<mesh::Cell>(*_mesh))
+  for (auto& cell : MeshRange<mesh::Cell>(*_mesh))
   {
     auto dofs = _dofmap->cell_dofs(cell.index());
     std::cout << cell.index() << ":";

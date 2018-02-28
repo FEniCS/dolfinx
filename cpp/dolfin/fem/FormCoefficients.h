@@ -17,7 +17,11 @@
 
 namespace dolfin
 {
+
+namespace function
+{
 class GenericFunction;
+}
 
 namespace fem
 {
@@ -44,7 +48,8 @@ public:
   std::size_t size() const { return _coefficients.size(); }
 
   /// Set a coefficient to be a GenericFunction
-  void set(std::size_t i, std::shared_ptr<const GenericFunction> coefficient)
+  void set(std::size_t i,
+           std::shared_ptr<const function::GenericFunction> coefficient)
   {
     dolfin_assert(i < _coefficients.size());
     _coefficients[i] = coefficient;
@@ -83,7 +88,7 @@ public:
   }
 
   /// Get the GenericFunction coefficient i
-  std::shared_ptr<const GenericFunction> get(std::size_t i) const
+  std::shared_ptr<const function::GenericFunction> get(std::size_t i) const
   {
     dolfin_assert(i < _coefficients.size());
     return _coefficients[i];
@@ -108,7 +113,7 @@ private:
   std::vector<fem::FiniteElement> _elements;
 
   // GenericFunctions for the coefficients
-  std::vector<std::shared_ptr<const GenericFunction>> _coefficients;
+  std::vector<std::shared_ptr<const function::GenericFunction>> _coefficients;
 
   // Copy of 'original positions' in UFL form
   std::vector<std::size_t> _original_pos;

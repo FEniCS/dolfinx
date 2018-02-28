@@ -10,13 +10,13 @@
 #include <dolfin/common/Variable.h>
 #include <memory>
 #include <ufc.h>
+#include <vector>
 
 namespace dolfin
 {
 
 class Mesh;
 class Point;
-class FunctionSpace;
 
 namespace fem
 {
@@ -27,6 +27,10 @@ namespace mesh
 {
 class Cell;
 }
+
+namespace function
+{
+class FunctionSpace;
 
 /// This is a common base class for functions. Functions can be
 /// evaluated at a given point and they can be restricted to a given
@@ -71,7 +75,8 @@ public:
 
   /// Restrict function to local cell (compute expansion coefficients w)
   virtual void restrict(double* w, const fem::FiniteElement& element,
-                        const mesh::Cell& dolfin_cell, const double* coordinate_dofs,
+                        const mesh::Cell& dolfin_cell,
+                        const double* coordinate_dofs,
                         const ufc::cell& ufc_cell) const = 0;
 
   /// Compute values at all mesh vertices
@@ -93,4 +98,5 @@ public:
   /// Pointer to FunctionSpace, if appropriate, otherwise NULL
   virtual std::shared_ptr<const FunctionSpace> function_space() const = 0;
 };
+}
 }

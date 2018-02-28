@@ -19,7 +19,6 @@
 namespace dolfin
 {
 
-class Function;
 class PETScVector;
 class LocalMeshData;
 class Mesh;
@@ -27,6 +26,11 @@ template <typename T>
 class MeshFunction;
 template <typename T>
 class MeshValueCollection;
+
+namespace function
+{
+class Function;
+}
 
 namespace mesh
 {
@@ -77,20 +81,21 @@ public:
   void write(const Mesh& mesh, const std::size_t cell_dim,
              const std::string name);
 
-  /// Write Function to file in a format suitable for re-reading
-  void write(const Function& u, const std::string name);
+  /// Write function::Function to file in a format suitable for re-reading
+  void write(const function::Function& u, const std::string name);
 
-  /// Write Function to file with a timestamp
-  void write(const Function& u, const std::string name, double timestamp);
+  /// Write function::Function to file with a timestamp
+  void write(const function::Function& u, const std::string name,
+             double timestamp);
 
-  /// Read Function from file and distribute data according to the
-  /// Mesh and dofmap associated with the Function.  If the 'name'
-  /// refers to a HDF5 group, then it is assumed that the Function
+  /// Read function::Function from file and distribute data according to the
+  /// Mesh and dofmap associated with the function::Function.  If the 'name'
+  /// refers to a HDF5 group, then it is assumed that the function::Function
   /// data is stored in the datasets within that group.  If the
   /// 'name' refers to a HDF5 dataset within a group, then it is
-  /// assumed that it is a Vector, and the Function will be filled
+  /// assumed that it is a Vector, and the function::Function will be filled
   /// from that Vector
-  void read(Function& u, const std::string name);
+  void read(function::Function& u, const std::string name);
 
   /// Read Mesh from file, using attribute data (e.g., cell type)
   /// stored in the HDF5 file. Optionally re-use any partition data

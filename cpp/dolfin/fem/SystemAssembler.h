@@ -6,15 +6,14 @@
 
 #pragma once
 
+#include "AssemblerBase.h"
+#include "DirichletBC.h"
 #include <Eigen/Dense>
 #include <array>
 #include <map>
 #include <memory>
 #include <utility>
 #include <vector>
-
-#include "AssemblerBase.h"
-#include "DirichletBC.h"
 
 namespace ufc
 {
@@ -41,6 +40,11 @@ namespace common
 {
 template <typename T>
 class ArrayView;
+}
+
+namespace function
+{
+class Function;
 }
 
 namespace mesh
@@ -99,9 +103,10 @@ private:
   static void check_arity(std::shared_ptr<const Form> a,
                           std::shared_ptr<const Form> L);
 
-  // Check if _bcs[bc_index] is part of FunctionSpace fs
-  bool check_functionspace_for_bc(std::shared_ptr<const FunctionSpace> fs,
-                                  std::size_t bc_index);
+  // Check if _bcs[bc_index] is part of function::FunctionSpace fs
+  bool
+  check_functionspace_for_bc(std::shared_ptr<const function::FunctionSpace> fs,
+                             std::size_t bc_index);
 
   // Assemble system
   void assemble(PETScMatrix* A, PETScVector* b, const PETScVector* x0);

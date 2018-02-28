@@ -20,13 +20,17 @@
 namespace dolfin
 {
 
-class GenericFunction;
-class FunctionSpace;
 class Facet;
 class PETScMatrix;
 class PETScVector;
 template <typename T>
 class MeshFunction;
+
+namespace function
+{
+class GenericFunction;
+class FunctionSpace;
+}
 
 namespace mesh
 {
@@ -121,8 +125,8 @@ public:
   ///         Optional argument: A string specifying
   ///         the method to identify dofs
   /// @param[in] check_midpoint (bool)
-  DirichletBC(std::shared_ptr<const FunctionSpace> V,
-              std::shared_ptr<const GenericFunction> g,
+  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
+              std::shared_ptr<const function::GenericFunction> g,
               std::shared_ptr<const mesh::SubDomain> sub_domain,
               std::string method = "topological", bool check_midpoint = true);
 
@@ -139,8 +143,8 @@ public:
   /// @param[in] method (std::string)
   ///         Optional argument: A string specifying the
   ///         method to identify dofs.
-  DirichletBC(std::shared_ptr<const FunctionSpace> V,
-              std::shared_ptr<const GenericFunction> g,
+  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
+              std::shared_ptr<const function::GenericFunction> g,
               std::shared_ptr<const MeshFunction<std::size_t>> sub_domains,
               std::size_t sub_domain, std::string method = "topological");
 
@@ -156,9 +160,9 @@ public:
   /// @param[in] method (std::string)
   ///         Optional argument: A string specifying the
   ///         method to identify dofs.
-  DirichletBC(std::shared_ptr<const FunctionSpace> V,
-              std::shared_ptr<const GenericFunction> g, std::size_t sub_domain,
-              std::string method = "topological");
+  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
+              std::shared_ptr<const function::GenericFunction> g,
+              std::size_t sub_domain, std::string method = "topological");
 
   /// Create boundary condition for subdomain by boundary markers
   /// (cells, local facet numbers)
@@ -172,8 +176,8 @@ public:
   /// @param[in] method (std::string)
   ///         Optional argument: A string specifying the
   ///         method to identify dofs.
-  DirichletBC(std::shared_ptr<const FunctionSpace> V,
-              std::shared_ptr<const GenericFunction> g,
+  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
+              std::shared_ptr<const function::GenericFunction> g,
               const std::vector<std::size_t>& markers,
               std::string method = "topological");
 
@@ -221,7 +225,7 @@ public:
   ///
   /// @return FunctionSpace
   ///         The function space to which boundary conditions are applied.
-  std::shared_ptr<const FunctionSpace> function_space() const
+  std::shared_ptr<const function::FunctionSpace> function_space() const
   {
     return _function_space;
   }
@@ -230,7 +234,7 @@ public:
   ///
   /// @return GenericFunction
   ///         The boundary values.
-  std::shared_ptr<const GenericFunction> value() const;
+  std::shared_ptr<const function::GenericFunction> value() const;
 
   /// Return shared pointer to subdomain
   ///
@@ -242,7 +246,7 @@ public:
   ///
   /// @param[in] g (GenericFucntion)
   ///         The value.
-  void set_value(std::shared_ptr<const GenericFunction> g);
+  void set_value(std::shared_ptr<const function::GenericFunction> g);
 
   /// Set value to 0.0
   void homogenize();
@@ -304,10 +308,10 @@ private:
                        std::size_t dim) const;
 
   // The function space (possibly a sub function space)
-  std::shared_ptr<const FunctionSpace> _function_space;
+  std::shared_ptr<const function::FunctionSpace> _function_space;
 
   // The function
-  std::shared_ptr<const GenericFunction> _g;
+  std::shared_ptr<const function::GenericFunction> _g;
 
   // Search method
   std::string _method;
@@ -342,7 +346,7 @@ private:
   {
   public:
     // Constructor
-    LocalData(const FunctionSpace& V);
+    LocalData(const function::FunctionSpace& V);
 
     // Coefficients
     std::vector<double> w;

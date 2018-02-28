@@ -18,13 +18,16 @@ class Mesh;
 
 namespace fem
 {
-  class FiniteElement;
+class FiniteElement;
 }
 
 namespace mesh
 {
-  class Cell;
+class Cell;
 }
+
+namespace function
+{
 
 /// This class represents a user-defined expression. Expressions can
 /// be used as coefficients in variational forms or interpolated
@@ -122,7 +125,7 @@ public:
   /// Property getter for type "GenericFunction"
   /// Used in pybind11 Python interface to get the value of a python attribute
   ///
-  virtual std::shared_ptr<dolfin::GenericFunction>
+  virtual std::shared_ptr<GenericFunction>
   get_generic_function(std::string name) const;
 
   /// Restrict function to local cell (compute expansion coefficients w).
@@ -138,7 +141,8 @@ public:
   /// @param    ufc_cell (ufc::cell)
   ///         The ufc::cell.
   virtual void restrict(double* w, const fem::FiniteElement& element,
-                        const mesh::Cell& dolfin_cell, const double* coordinate_dofs,
+                        const mesh::Cell& dolfin_cell,
+                        const double* coordinate_dofs,
                         const ufc::cell& ufc_cell) const override;
 
   /// Compute values at all mesh vertices.
@@ -161,4 +165,5 @@ private:
   // Value shape
   std::vector<std::size_t> _value_shape;
 };
+}
 }

@@ -800,7 +800,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   write_data(name + "/values", data_values, global_size, mpi_io);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write(const Function& u, const std::string name,
+void HDF5File::write(const function::Function& u, const std::string name,
                      double timestamp)
 {
   dolfin_assert(_hdf5_file_id > 0);
@@ -855,9 +855,9 @@ void HDF5File::write(const Function& u, const std::string name,
   }
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write(const Function& u, const std::string name)
+void HDF5File::write(const function::Function& u, const std::string name)
 {
-  Timer t0("HDF5: write Function");
+  Timer t0("HDF5: write function::Function");
   dolfin_assert(_hdf5_file_id > 0);
 
   // Get mesh and dofmap
@@ -926,9 +926,9 @@ void HDF5File::write(const Function& u, const std::string name)
   write(*u.vector(), name + "/vector_0");
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(Function& u, const std::string name)
+void HDF5File::read(function::Function& u, const std::string name)
 {
-  Timer t0("HDF5: read Function");
+  Timer t0("HDF5: read function::Function");
   dolfin_assert(_hdf5_file_id > 0);
 
   // FIXME: This routine is long and involves a lot of MPI, but it
@@ -998,7 +998,7 @@ void HDF5File::read(Function& u, const std::string name)
   }
 
   // Get existing mesh and dofmap - these should be pre-existing
-  // and set up by user when defining the Function
+  // and set up by user when defining the function::Function
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
   dolfin_assert(u.function_space()->dofmap());
@@ -1010,7 +1010,7 @@ void HDF5File::read(Function& u, const std::string name)
   const std::int64_t num_global_cells = dataset_shape[0];
   if (mesh.num_entities_global(mesh.topology().dim()) != num_global_cells)
   {
-    dolfin_error("HDF5File.cpp", "read Function from file",
+    dolfin_error("HDF5File.cpp", "read function::Function from file",
                  "Number of global cells does not match");
   }
 
@@ -1606,7 +1606,8 @@ void HDF5File::read(Mesh& input_mesh, const std::string data_path,
   }
 
   // Create CellType from string
-  std::unique_ptr<mesh::CellType> cell_type(mesh::CellType::create(cell_type_str));
+  std::unique_ptr<mesh::CellType> cell_type(
+      mesh::CellType::create(cell_type_str));
   dolfin_assert(cell_type);
 
   // Check that coordinate data set is found in HDF5 file

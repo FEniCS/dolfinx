@@ -55,7 +55,7 @@ struct lt_coordinate
 };
 
 std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
-tabulate_coordinates_to_dofs(const FunctionSpace& V)
+tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
 {
   std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
       coords_to_dofs(lt_coordinate(1.0e-12));
@@ -122,7 +122,7 @@ tabulate_coordinates_to_dofs(const FunctionSpace& V)
 
 //-----------------------------------------------------------------------------
 PETScDMCollection::PETScDMCollection(
-    std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
+    std::vector<std::shared_ptr<const function::FunctionSpace>> function_spaces)
     : _spaces(function_spaces), _dms(function_spaces.size(), nullptr)
 {
   for (std::size_t i = 0; i < _spaces.size(); ++i)
@@ -198,9 +198,9 @@ void PETScDMCollection::reset(int i)
   //  PetscObjectDereference((PetscObject)_dms[i]);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<PETScMatrix>
-PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
-                                          const FunctionSpace& fine_space)
+std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
+    const function::FunctionSpace& coarse_space,
+    const function::FunctionSpace& fine_space)
 {
   // FIXME: refactor and split up
 
@@ -708,11 +708,11 @@ void PETScDMCollection::find_exterior_points(
 PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
 {
   // Get DOLFIN FunctiobSpace from the PETSc DM object
-  std::shared_ptr<FunctionSpace>* V;
+  std::shared_ptr<function::FunctionSpace>* V;
   DMShellGetContext(dm, (void**)&V);
 
   // Create Vector
-  Function u(*V);
+  function::Function u(*V);
   *vec = u.vector()->vec();
 
   // FIXME: Does increasing the reference count lead to a memory leak?
@@ -725,9 +725,9 @@ PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
 PetscErrorCode PETScDMCollection::create_interpolation(DM dmc, DM dmf, Mat* mat,
                                                        Vec* vec)
 {
-  // Get DOLFIN FunctionSpaces from PETSc DM objects (V0 is coarse
+  // Get DOLFIN function::FunctionSpaces from PETSc DM objects (V0 is coarse
   // space, V1 is fine space)
-  FunctionSpace *V0(nullptr), *V1(nullptr);
+  function::FunctionSpace *V0(nullptr), *V1(nullptr);
   DMShellGetContext(dmc, (void**)&V0);
   DMShellGetContext(dmf, (void**)&V1);
 

@@ -300,7 +300,7 @@ void Assembler::assemble(PETScMatrix& A, const Form& a,
   mesh.init(tdim);
 
   // Function spaces for each axis
-  std::array<const FunctionSpace*, 2> spaces
+  std::array<const function::FunctionSpace*, 2> spaces
       = {{a.function_space(0).get(), a.function_space(1).get()}};
 
   // Collect pointers to dof maps
@@ -510,7 +510,7 @@ void Assembler::apply_bc(PETScVector& b, const Form& a,
     }
   }
 
-  // std::array<const FunctionSpace*, 2> spaces
+  // std::array<const function::FunctionSpace*, 2> spaces
   //    = {{a.function_space(0).get(), a.function_space(1).get()}};
 
   // Get dofmap for columns a a[i]

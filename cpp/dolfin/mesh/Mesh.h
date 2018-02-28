@@ -20,11 +20,15 @@
 namespace dolfin
 {
 
-class GenericFunction;
 class LocalMeshData;
 class MeshEntity;
 class Point;
 class BoundingBoxTree;
+
+namespace function
+{
+class Function;
+}
 
 namespace mesh
 {
@@ -317,7 +321,7 @@ public:
 
   // FIXME: Remove
   // Friend in fem_utils.h
-  friend Mesh fem::create_mesh(Function& coordinates);
+  friend Mesh fem::create_mesh(function::Function& coordinates);
 
 private:
   // Friends

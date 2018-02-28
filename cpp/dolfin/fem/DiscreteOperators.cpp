@@ -22,8 +22,8 @@ using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 std::shared_ptr<PETScMatrix>
-DiscreteOperators::build_gradient(const FunctionSpace& V0,
-                                  const FunctionSpace& V1)
+DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
+                                  const function::FunctionSpace& V1)
 {
   // TODO: This function would be significantly simplified if it was
   // easier to build matrix sparsity patterns.
@@ -103,9 +103,9 @@ DiscreteOperators::build_gradient(const FunctionSpace& V0,
     }
   }
 
-  const std::array<common::ArrayView<const dolfin::la_index_t>, 2> entries
-      = {{common::ArrayView<const dolfin::la_index_t>(rows.size(), rows.data()),
-          common::ArrayView<const dolfin::la_index_t>(cols.size(), cols.data())}};
+  const std::array<common::ArrayView<const dolfin::la_index_t>, 2> entries = {
+      {common::ArrayView<const dolfin::la_index_t>(rows.size(), rows.data()),
+       common::ArrayView<const dolfin::la_index_t>(cols.size(), cols.data())}};
   pattern.insert_global(entries);
   pattern.apply();
 

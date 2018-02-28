@@ -33,7 +33,8 @@ void VTKWriter::write_mesh(const Mesh& mesh, std::size_t cell_dim,
   write_ascii_mesh(mesh, cell_dim, filename);
 }
 //----------------------------------------------------------------------------
-void VTKWriter::write_cell_data(const Function& u, std::string filename)
+void VTKWriter::write_cell_data(const function::Function& u,
+                                std::string filename)
 {
   // For brevity
   dolfin_assert(u.function_space()->mesh());
@@ -45,7 +46,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename)
 
   std::string encode_string = "ascii";
 
-  // Get rank of Function
+  // Get rank of function::Function
   const std::size_t rank = u.value_rank();
   if (rank > 2)
   {

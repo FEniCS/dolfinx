@@ -13,6 +13,7 @@
 #include <dolfin/mesh/Vertex.h>
 
 using namespace dolfin;
+using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
 Expression::Expression(std::vector<std::size_t> value_shape)

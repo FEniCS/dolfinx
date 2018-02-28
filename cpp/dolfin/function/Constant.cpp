@@ -13,6 +13,7 @@
 #include <string>
 
 using namespace dolfin;
+using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
 Constant::Constant(double value) : Expression({}), _values(1, value)

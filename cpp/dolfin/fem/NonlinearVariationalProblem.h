@@ -13,9 +13,13 @@ namespace dolfin
 {
 
 // Forward declarations
+class PETScVector;
+
+namespace function
+{
 class Function;
 class FunctionSpace;
-class PETScVector;
+}
 
 namespace fem
 {
@@ -38,12 +42,13 @@ public:
   /// nonlinear solver that relies on the Jacobian (using Newton's
   /// method).
   NonlinearVariationalProblem(
-      std::shared_ptr<const Form> F, std::shared_ptr<Function> u,
+      std::shared_ptr<const Form> F, std::shared_ptr<function::Function> u,
       std::vector<std::shared_ptr<const fem::DirichletBC>> bcs,
       std::shared_ptr<const Form> J = nullptr);
 
   /// Set the bounds for bound constrained solver
-  void set_bounds(const Function& lb_func, const Function& ub_func);
+  void set_bounds(const function::Function& lb_func,
+                  const function::Function& ub_func);
 
   /// Set the bounds for bound constrained solver
   void set_bounds(std::shared_ptr<const PETScVector> lb,
@@ -56,19 +61,19 @@ public:
   std::shared_ptr<const Form> jacobian_form() const;
 
   /// Return solution variable
-  std::shared_ptr<Function> solution();
+  std::shared_ptr<function::Function> solution();
 
   /// Return solution variable (const version)
-  std::shared_ptr<const Function> solution() const;
+  std::shared_ptr<const function::Function> solution() const;
 
   /// Return boundary conditions
   std::vector<std::shared_ptr<const fem::DirichletBC>> bcs() const;
 
   /// Return trial space
-  std::shared_ptr<const FunctionSpace> trial_space() const;
+  std::shared_ptr<const function::FunctionSpace> trial_space() const;
 
   /// Return test space
-  std::shared_ptr<const FunctionSpace> test_space() const;
+  std::shared_ptr<const function::FunctionSpace> test_space() const;
 
   /// Return lower bound
   std::shared_ptr<const PETScVector> lower_bound() const;
@@ -87,7 +92,7 @@ private:
   std::shared_ptr<const Form> _jacobian;
 
   // The solution
-  std::shared_ptr<Function> _u;
+  std::shared_ptr<function::Function> _u;
 
   // The boundary conditions
   std::vector<std::shared_ptr<const fem::DirichletBC>> _bcs;

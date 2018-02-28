@@ -61,7 +61,7 @@ void VTKFile::write(const MeshFunction<double>& meshfunction)
   mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
-void VTKFile::write(const Function& u) { write_function(u, counter); }
+void VTKFile::write(const function::Function& u) { write_function(u, counter); }
 //----------------------------------------------------------------------------
 void VTKFile::write(const Mesh& mesh, double time) { write_mesh(mesh, time); }
 //----------------------------------------------------------------------------
@@ -85,9 +85,12 @@ void VTKFile::write(const MeshFunction<bool>& mf, double time)
   mesh_function_write(mf, time);
 }
 //----------------------------------------------------------------------------
-void VTKFile::write(const Function& u, double time) { write_function(u, time); }
+void VTKFile::write(const function::Function& u, double time)
+{
+  write_function(u, time);
+}
 //----------------------------------------------------------------------------
-void VTKFile::write_function(const Function& u, double time)
+void VTKFile::write_function(const function::Function& u, double time)
 {
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
@@ -182,9 +185,10 @@ void VTKFile::finalize(std::string vtu_filename, double time)
   counter++;
 }
 //----------------------------------------------------------------------------
-void VTKFile::results_write(const Function& u, std::string vtu_filename) const
+void VTKFile::results_write(const function::Function& u,
+                            std::string vtu_filename) const
 {
-  // Get rank of Function
+  // Get rank of function::Function
   const std::size_t rank = u.value_rank();
   if (rank > 2)
   {
@@ -231,8 +235,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
     write_point_data(u, mesh, vtu_filename);
 }
 //----------------------------------------------------------------------------
-void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
-                               std::string vtu_filename) const
+void VTKFile::write_point_data(const function::GenericFunction& u,
+                               const Mesh& mesh, std::string vtu_filename) const
 {
   const std::size_t rank = u.value_rank();
   const std::size_t num_vertices = mesh.num_vertices();
@@ -483,7 +487,8 @@ void VTKFile::pvtu_write_mesh(const std::string fname,
   xml_doc.save_file(fname.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_write(const Function& u, const std::string fname) const
+void VTKFile::pvtu_write(const function::Function& u,
+                         const std::string fname) const
 {
   dolfin_assert(u.function_space()->element());
   const std::size_t rank = u.function_space()->element()->value_rank();

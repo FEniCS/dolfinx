@@ -13,8 +13,12 @@
 namespace dolfin
 {
 
-class Function;
 class Mesh;
+
+namespace function
+{
+class Function;
+}
 
 namespace io
 {
@@ -29,7 +33,7 @@ public:
                          std::string file);
 
   /// Cell data writer
-  static void write_cell_data(const Function& u, std::string file);
+  static void write_cell_data(const function::Function& u, std::string file);
 
 private:
   // Write cell data (ascii)

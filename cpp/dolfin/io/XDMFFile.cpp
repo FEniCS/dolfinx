@@ -49,7 +49,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
   // turned off if the mesh remains constant.
   parameters.add("rewrite_function_mesh", true);
 
-  // Functions share the same mesh for the same time step. The files
+  // function::Functions share the same mesh for the same time step. The files
   // produced are smaller and work better in Paraview
   parameters.add("functions_share_mesh", false);
 
@@ -113,8 +113,9 @@ void XDMFFile::write(const Mesh& mesh, const Encoding encoding)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_checkpoint(const Function& u, std::string function_name,
-                                double time_step, const Encoding encoding)
+void XDMFFile::write_checkpoint(const function::Function& u,
+                                std::string function_name, double time_step,
+                                const Encoding encoding)
 {
   check_encoding(encoding);
   check_function_name(function_name);
@@ -275,14 +276,14 @@ void XDMFFile::write_checkpoint(const Function& u, std::string function_name,
 #endif
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const Function& u, const Encoding encoding)
+void XDMFFile::write(const function::Function& u, const Encoding encoding)
 {
   check_encoding(encoding);
 
   // If counter is non-zero, a time series has been saved before
   if (_counter != 0)
   {
-    dolfin_error("XDMFFile.cpp", "write Function to XDMF",
+    dolfin_error("XDMFFile.cpp", "write function::Function to XDMF",
                  "Not writing a time series");
   }
 
@@ -322,7 +323,7 @@ void XDMFFile::write(const Function& u, const Encoding encoding)
   pugi::xml_node grid_node = domain_node.child("Grid");
   dolfin_assert(grid_node);
 
-  // Get Function data values and shape
+  // Get function::Function data values and shape
   std::vector<double> data_values;
   bool cell_centred = has_cell_centred_data(u);
 
@@ -364,7 +365,7 @@ void XDMFFile::write(const Function& u, const Encoding encoding)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const Function& u, double time_step,
+void XDMFFile::write(const function::Function& u, double time_step,
                      const Encoding encoding)
 {
   check_encoding(encoding);
@@ -482,7 +483,7 @@ void XDMFFile::write(const Function& u, double time_step,
     time_node.append_attribute("Value") = time_step_str.c_str();
   }
 
-  // Get Function data values and shape
+  // Get function::Function data values and shape
   std::vector<double> data_values;
   bool cell_centred = has_cell_centred_data(u);
 
@@ -1147,7 +1148,8 @@ void XDMFFile::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
 }
 //----------------------------------------------------------------------------
 void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
-                            hid_t h5_id, std::string h5_path, const Function& u,
+                            hid_t h5_id, std::string h5_path,
+                            const function::Function& u,
                             std::string function_name, const Mesh& mesh)
 {
   log(PROGRESS, "Adding function to node \"%s\"", xml_node.path('/').c_str());
@@ -1376,7 +1378,7 @@ void XDMFFile::read(Mesh& mesh) const
   MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data, ghost_mode);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::read_checkpoint(Function& u, std::string func_name,
+void XDMFFile::read_checkpoint(function::Function& u, std::string func_name,
                                std::int64_t counter)
 {
   check_function_name(func_name);
@@ -1454,7 +1456,7 @@ void XDMFFile::read_checkpoint(Function& u, std::string func_name,
   // Read dataitems
 
   // Get existing mesh and dofmap - these should be pre-existing
-  // and set up by user when defining the Function
+  // and set up by user when defining the function::Function
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
   dolfin_assert(u.function_space()->dofmap());
@@ -2609,7 +2611,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction,
   ++_counter;
 }
 //-----------------------------------------------------------------------------
-std::vector<double> XDMFFile::get_cell_data_values(const Function& u)
+std::vector<double> XDMFFile::get_cell_data_values(const function::Function& u)
 {
   dolfin_assert(u.function_space()->dofmap());
   dolfin_assert(u.vector());
@@ -2672,7 +2674,7 @@ std::vector<double> XDMFFile::get_cell_data_values(const Function& u)
   return data_values;
 }
 //-----------------------------------------------------------------------------
-std::int64_t XDMFFile::get_padded_width(const Function& u)
+std::int64_t XDMFFile::get_padded_width(const function::Function& u)
 {
   std::int64_t width = u.value_size();
   std::int64_t rank = u.value_rank();
@@ -2683,7 +2685,7 @@ std::int64_t XDMFFile::get_padded_width(const Function& u)
   return width;
 }
 //-----------------------------------------------------------------------------
-bool XDMFFile::has_cell_centred_data(const Function& u)
+bool XDMFFile::has_cell_centred_data(const function::Function& u)
 {
   // Test for cell-centred data
   std::size_t cell_based_dim = 1;
@@ -2692,7 +2694,7 @@ bool XDMFFile::has_cell_centred_data(const Function& u)
   return (u.function_space()->dofmap()->max_element_dofs() == cell_based_dim);
 }
 //-----------------------------------------------------------------------------
-std::vector<double> XDMFFile::get_point_data_values(const Function& u)
+std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
 {
   const auto mesh = u.function_space()->mesh();
 
@@ -2731,7 +2733,7 @@ std::vector<double> XDMFFile::get_point_data_values(const Function& u)
   return data_values;
 }
 //-----------------------------------------------------------------------------
-std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
+std::vector<double> XDMFFile::get_p2_data_values(const function::Function& u)
 {
   const auto mesh = u.function_space()->mesh();
   dolfin_assert(mesh->geometry().degree() == 2);
@@ -2747,7 +2749,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
   dolfin_assert(u.function_space()->dofmap());
   const auto dofmap = u.function_space()->dofmap();
 
-  // Function can be P1 or P2
+  // function::Function can be P1 or P2
   if (dofmap->num_entity_dofs(1) == 0)
   {
     // P1
@@ -2811,9 +2813,9 @@ std::vector<double> XDMFFile::get_p2_data_values(const Function& u)
   }
   else
   {
-    dolfin_error(
-        "XDMFFile.cpp", "get point values for Function",
-        "Function appears not to be defined on a P1 or P2 type FunctionSpace");
+    dolfin_error("XDMFFile.cpp", "get point values for function::Function",
+                 "Function appears not to be defined on a P1 or P2 type "
+                 "function::FunctionSpace");
   }
 
   // Blank out empty values of 2D vector and tensor
