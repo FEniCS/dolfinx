@@ -235,7 +235,7 @@ protected:
   template <typename T>
   friend class MeshIterator;
   template <typename T>
-  friend class MeshEntityIteratorNew;
+  friend class MeshEntityIterator;
 
   // The mesh
   Mesh const* _mesh;
