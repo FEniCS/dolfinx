@@ -472,8 +472,10 @@ void mesh(py::module &m) {
   py::class_<dolfin::mesh::SubDomain, std::shared_ptr<dolfin::mesh::SubDomain>,
              PySubDomain>(m, "SubDomain", "DOLFIN SubDomain object")
       .def(py::init<double>(), py::arg("map_tol") = DOLFIN_EPS)
-      .def("inside", &dolfin::mesh::SubDomain::inside)
-      .def("map", &dolfin::mesh::SubDomain::map)
+      .def("inside", &dolfin::mesh::SubDomain::inside, py::arg("x").noconvert(),
+           py::arg("on_boundary"))
+      .def("map", &dolfin::mesh::SubDomain::map, py::arg("x").noconvert(),
+           py::arg("y").noconvert())
       .def("mark", &dolfin::mesh::SubDomain::mark<std::size_t>,
            py::arg("meshfunction"), py::arg("marker"),
            py::arg("check_midpoint") = true)
