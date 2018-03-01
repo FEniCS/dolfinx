@@ -7,7 +7,7 @@ jobs:
       - checkout
       - run:
           name: Install/update Python dependencies
-          command: pip3 install flake8 pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
+          command: pip3 install flake8 matplotlib pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
       - run:
           name: Install FEniCS Python components
           command: |
