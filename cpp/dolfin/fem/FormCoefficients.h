@@ -63,7 +63,7 @@ public:
     const std::size_t fe_r = _elements[i].value_rank();
     if (fe_r != r)
     {
-      dolfin_error(
+      log::dolfin_error(
           "FormCoefficients.h", "set coefficient",
           "Invalid value rank for coefficient %d (got %d but expecting %d). "
           "You might have forgotten to specify the value rank correctly in an "
@@ -77,7 +77,7 @@ public:
       const std::size_t fe_dim = _elements[i].value_dimension(j);
       if (dim != fe_dim)
       {
-        dolfin_error("FormCoefficients.h", "set coefficient",
+        log::dolfin_error("FormCoefficients.h", "set coefficient",
                      "Invalid value dimension %d for coefficient %d (got %d "
                      "but expecting %d). "
                      "You might have forgotten to specify the value dimension "

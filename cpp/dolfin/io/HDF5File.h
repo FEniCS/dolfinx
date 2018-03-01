@@ -11,19 +11,25 @@
 #include "HDF5Interface.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/geometry/Point.h>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace dolfin
 {
-
+namespace la
+{
 class PETScVector;
+}
 
 namespace function
 {
 class Function;
+}
+
+namespace geometry
+{
+class Point;
 }
 
 namespace mesh
@@ -40,7 +46,7 @@ namespace io
 {
 
 /// Interface to HDF5 files
-class HDF5File : public Variable
+class HDF5File : public common::Variable
 {
 
 public:
@@ -59,17 +65,18 @@ public:
   void flush();
 
   /// Write points to file
-  void write(const std::vector<Point>& points, const std::string name);
+  void write(const std::vector<geometry::Point>& points,
+             const std::string name);
 
   /// Write simple vector of double to file
   void write(const std::vector<double>& values, const std::string name);
 
   /// Write Vector to file in a format suitable for re-reading
-  void write(const PETScVector& x, const std::string name);
+  void write(const la::PETScVector& x, const std::string name);
 
   /// Read vector from file and optionally re-use any partitioning
   /// that is available in the file
-  void read(PETScVector& x, const std::string dataset_name,
+  void read(la::PETScVector& x, const std::string dataset_name,
             const bool use_partition_from_file) const;
 
   /// Write Mesh to file in a format suitable for re-reading

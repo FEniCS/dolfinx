@@ -10,14 +10,14 @@
 
 namespace dolfin
 {
-
-// Forward declarations
-class Point;
-
 namespace mesh
 {
 class MeshEntity;
 }
+
+namespace geometry
+{
+class Point;
 
 /// This class implements algorithms for detecting pairwise
 /// collisions between mesh entities of varying dimensions.
@@ -155,4 +155,5 @@ public:
       const Point& p0, const Point& p1, const Point& p2, const Point& p3,
       const Point& q0, const Point& q1, const Point& q2, const Point& q3);
 };
+}
 }

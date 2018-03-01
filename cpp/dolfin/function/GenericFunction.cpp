@@ -6,7 +6,6 @@
 
 #include "GenericFunction.h"
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <string>
 
@@ -14,7 +13,7 @@ using namespace dolfin;
 using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
-GenericFunction::GenericFunction() : Variable("u", "a function")
+GenericFunction::GenericFunction() : common::Variable("u", "a function")
 {
   // Do nothing
 }
@@ -35,7 +34,7 @@ void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
 void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
                            Eigen::Ref<const Eigen::VectorXd> x) const
 {
-  dolfin_error("GenericFunction.cpp", "evaluate function (Eigen version)",
+  log::dolfin_error("GenericFunction.cpp", "evaluate function (Eigen version)",
                "Missing eval() function (must be overloaded)");
 }
 //-----------------------------------------------------------------------------

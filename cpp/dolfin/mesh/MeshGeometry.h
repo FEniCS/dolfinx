@@ -98,7 +98,7 @@ public:
   const std::vector<double>& x() const { return coordinates; }
 
   /// Return coordinate with local index n as a 3D point value
-  Point point(std::size_t n) const;
+  geometry::Point point(std::size_t n) const;
 
   /// Initialize coordinate list to given dimension and degree
   void init(std::size_t dim, std::size_t degree);
@@ -122,7 +122,7 @@ public:
     case 3:
       return (_degree - 3) * (_degree - 2) * (_degree - 1) / 6;
     }
-    dolfin_error("MeshGeometry.h", "calculate number of points",
+    log::dolfin_error("MeshGeometry.h", "calculate number of points",
                  "Entity dimension out of range");
     return 0;
   }

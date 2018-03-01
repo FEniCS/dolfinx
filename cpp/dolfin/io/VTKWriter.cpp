@@ -50,7 +50,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   const std::size_t rank = u.value_rank();
   if (rank > 2)
   {
-    dolfin_error("VTKFile.cpp", "write data to VTK file",
+    log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                  "Don't know how to handle vector function with dimension "
                  "other than 2 or 3");
   }
@@ -73,7 +73,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   {
     if (!(data_dim == 2 || data_dim == 3))
     {
-      dolfin_error("VTKWriter.cpp", "write data to VTK file",
+      log::dolfin_error("VTKWriter.cpp", "write data to VTK file",
                    "Don't know how to handle vector function with dimension "
                    "other than 2 or 3");
     }
@@ -85,7 +85,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   {
     if (!(data_dim == 4 || data_dim == 9))
     {
-      dolfin_error("VTKFile.cpp", "write data to VTK file",
+      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                    "Don't know how to handle tensor function with dimension "
                    "other than 4 or 9");
     }
@@ -182,7 +182,7 @@ void VTKWriter::write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   file.precision(16);
   if (!file.is_open())
   {
-    dolfin_error("VTKWriter.cpp", "write mesh to VTK file"
+    log::dolfin_error("VTKWriter.cpp", "write mesh to VTK file"
                                   "Unable to open file \"%s\"",
                  filename.c_str());
   }
@@ -194,7 +194,7 @@ void VTKWriter::write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "\">";
   for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
   {
-    Point p = v.point();
+    geometry::Point p = v.point();
     file << p[0] << " " << p[1] << " " << p[2] << "  ";
   }
   file << "</DataArray>" << std::endl << "</Points>" << std::endl;
@@ -259,7 +259,7 @@ std::uint8_t VTKWriter::vtk_cell_type(const mesh::Mesh& mesh,
     vtk_cell_type = 1;
   else
   {
-    dolfin_error("VTKWriter.cpp", "write data to VTK file",
+    log::dolfin_error("VTKWriter.cpp", "write data to VTK file",
                  "Unknown cell type (%d)", cell_type);
   }
 

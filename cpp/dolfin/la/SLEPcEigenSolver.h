@@ -17,15 +17,11 @@
 
 namespace dolfin
 {
-
-/// Forward declarations
-class PETScMatrix;
-class PETScVector;
-
 namespace la
 {
+class PETScMatrix;
+class PETScVector;
 class VectorSpaceBasis;
-}
 
 /// This class provides an eigenvalue solver for PETSc matrices. It
 /// is a wrapper for the SLEPc eigenvalue solver.
@@ -107,7 +103,7 @@ class VectorSpaceBasis;
 /// transform and must be provided if a spectral transform is
 /// given. The possible values are real numbers.
 
-class SLEPcEigenSolver : public Variable, public PETScObject
+class SLEPcEigenSolver : public common::Variable, public PETScObject
 {
 public:
   /// Create eigenvalue solver
@@ -169,9 +165,9 @@ public:
   MPI_Comm mpi_comm() const;
 
   /// Default parameter values
-  static Parameters default_parameters()
+  static parameter::Parameters default_parameters()
   {
-    Parameters p("slepc_eigenvalue_solver");
+    parameter::Parameters p("slepc_eigenvalue_solver");
     p.add<std::string>("problem_type");
     p.add<std::string>("spectrum");
     p.add<std::string>("solver");
@@ -207,5 +203,5 @@ private:
   EPS _eps;
 };
 }
-
+}
 #endif

@@ -95,7 +95,7 @@ void SubSystemsManager::init_petsc()
   // Initialize PETSc
   init_petsc(argc, argv);
 #else
-  dolfin_error("SubSystemsManager.cpp", "initialize PETSc subsystem",
+  log::dolfin_error("SubSystemsManager.cpp", "initialize PETSc subsystem",
                "DOLFIN has not been configured with PETSc support");
 #endif
 }
@@ -115,7 +115,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 
   // Print message if PETSc is initialised with command line arguments
   if (argc > 1)
-    log(TRACE, "Initializing PETSc with given command-line arguments.");
+    log::log(TRACE, "Initializing PETSc with given command-line arguments.");
 
   PetscBool is_initialized;
   PetscInitialized(&is_initialized);
@@ -145,7 +145,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
     singleton().control_mpi = false;
 
 #else
-  dolfin_error("SubSystemsManager.cpp", "initialize PETSc subsystem",
+  log::dolfin_error("SubSystemsManager.cpp", "initialize PETSc subsystem",
                "DOLFIN has not been configured with PETSc support");
 #endif
 }
@@ -266,13 +266,13 @@ PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
   PetscErrorMessage(n, &desc, nullptr);
 
   // Log detailed error info
-  log(TRACE, "PetscDolfinErrorHandler: line '%d', function '%s', file '%s',\n"
+  log::log(TRACE, "PetscDolfinErrorHandler: line '%d', function '%s', file '%s',\n"
              "                       : error code '%d' (%s), message follows:",
       line, fun, file, n, desc);
   // NOTE: don't put _mess as variadic argument; it might get trimmed
-  log(TRACE, std::string(78, '-'));
-  log(TRACE, _mess);
-  log(TRACE, std::string(78, '-'));
+  log::log(TRACE, std::string(78, '-'));
+  log::log(TRACE, _mess);
+  log::log(TRACE, std::string(78, '-'));
 
   // Continue with error handling
   PetscFunctionReturn(n);

@@ -30,7 +30,7 @@ namespace mesh
 /// i), where dim is the topological dimension and i is the index of
 /// the entity within that topological dimension.
 
-class MeshTopology : public Variable
+class MeshTopology : public common::Variable
 {
 public:
   /// Create empty mesh topology

@@ -432,7 +432,7 @@ class Function(ufl.Coefficient):
 
     def __float__(self):
         # FIXME: this could be made simple on the C++ (in particular,
-        # with dolfin::Scalar)
+        # with dolfin::la::Scalar)
         if self.ufl_shape != ():
             raise RuntimeError("Cannot convert nonscalar function to float.")
         elm = self.ufl_element()

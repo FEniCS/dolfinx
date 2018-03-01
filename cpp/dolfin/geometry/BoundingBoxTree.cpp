@@ -20,6 +20,7 @@
 #include <dolfin/mesh/MeshIterator.h>
 
 using namespace dolfin;
+using namespace dolfin::geometry;
 
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(std::size_t gdim) : _tdim(0), _gdim(gdim)
@@ -32,7 +33,7 @@ void BoundingBoxTree::build(const mesh::Mesh& mesh, std::size_t tdim)
   // Check dimension
   if (tdim < 1 or tdim > mesh.topology().dim())
   {
-    dolfin_error("BoundingBoxTree.cpp", "compute bounding box tree",
+    log::dolfin_error("BoundingBoxTree.cpp", "compute bounding box tree",
                  "Dimension must be a number between 1 and %d",
                  mesh.topology().dim());
   }
@@ -61,7 +62,7 @@ void BoundingBoxTree::build(const mesh::Mesh& mesh, std::size_t tdim)
   // Recursively build the bounding box tree from the leaves
   _build(leaf_bboxes, leaf_partition.begin(), leaf_partition.end());
 
-  log(PROGRESS, "Computed bounding box tree with %d nodes for %d entities.",
+  log::log(PROGRESS, "Computed bounding box tree with %d nodes for %d entities.",
       num_bboxes(), num_leaves);
 
   const std::size_t mpi_size = MPI::size(mesh.mpi_comm());
@@ -79,7 +80,7 @@ void BoundingBoxTree::build(const mesh::Mesh& mesh, std::size_t tdim)
     _global_tree.reset(new BoundingBoxTree(_gdim));
     _global_tree->_build(recv_bbox, global_leaves.begin(), global_leaves.end());
 
-    info("Computed global bounding box tree with %d boxes.",
+    log::info("Computed global bounding box tree with %d boxes.",
          _global_tree->num_bboxes());
   }
 }
@@ -98,7 +99,7 @@ void BoundingBoxTree::build(const std::vector<Point>& points)
   // Recursively build the bounding box tree from the leaves
   _build(points, leaf_partition.begin(), leaf_partition.end());
 
-  info("Computed bounding box tree with %d nodes for %d points.", num_bboxes(),
+  log::info("Computed bounding box tree with %d nodes for %d points.", num_bboxes(),
        num_leaves);
 }
 //-----------------------------------------------------------------------------
@@ -137,7 +138,7 @@ BoundingBoxTree::compute_entity_collisions(const Point& point,
   // Point in entity only implemented for cells. Consider extending this.
   if (_tdim != mesh.topology().dim())
   {
-    dolfin_error("BoundingBoxTree.cpp",
+    log::dolfin_error("BoundingBoxTree.cpp",
                  "compute collision between point and mesh entities",
                  "Point-in-entity is only implemented for cells");
   }
@@ -195,7 +196,7 @@ BoundingBoxTree::compute_first_entity_collision(const Point& point,
   // Point in entity only implemented for cells. Consider extending this.
   if (_tdim != mesh.topology().dim())
   {
-    dolfin_error("BoundingBoxTree.cpp",
+    log::dolfin_error("BoundingBoxTree.cpp",
                  "compute collision between point and mesh entities",
                  "Point-in-entity is only implemented for cells");
   }
@@ -211,7 +212,7 @@ BoundingBoxTree::compute_closest_entity(const Point& point,
   // Closest entity only implemented for cells. Consider extending this.
   if (_tdim != mesh.topology().dim())
   {
-    dolfin_error("BoundingBoxTree.cpp", "compute closest entity of point",
+    log::dolfin_error("BoundingBoxTree.cpp", "compute closest entity of point",
                  "Closest-entity is only implemented for cells");
   }
 
@@ -248,7 +249,7 @@ BoundingBoxTree::compute_closest_point(const Point& point) const
   // Closest point only implemented for point cloud
   if (_tdim != 0)
   {
-    dolfin_error("BoundingBoxTree.cpp", "compute closest point",
+    log::dolfin_error("BoundingBoxTree.cpp", "compute closest point",
                  "Search tree has not been built for point cloud");
   }
 
@@ -639,7 +640,7 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
   // Don't build search tree if it already exists
   if (_point_search_tree)
     return;
-  info("Building point search tree to accelerate distance queries.");
+  log::info("Building point search tree to accelerate distance queries.");
 
   // Create list of midpoints for all cells
   std::vector<Point> points;

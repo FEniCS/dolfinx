@@ -18,7 +18,7 @@ using namespace dolfin::mesh;
 //-----------------------------------------------------------------------------
 void MeshOrdering::order(Mesh& mesh)
 {
-  log(TRACE, "Ordering mesh.");
+  log::log(TRACE, "Ordering mesh.");
 
   // Special case
   if (mesh.num_cells() == 0)

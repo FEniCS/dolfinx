@@ -38,13 +38,13 @@ int main(int argc, char* argv[])
   parameters["linear_algebra_backend"] = "Eigen";
 
   // Print global DOLFIN parameters
-  info(parameters, true);
+  log::info(parameters, true);
   cout << endl;
 
   // Read parameters from file
   File file("parameters.xml");
   file >> parameters;
-  info(parameters, true);
+  log::info(parameters, true);
   cout << endl;
 
   //--- Demo of nested parameter sets ---
@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
   cout << endl;
 
   // Print application parameters
-  info(application_parameters, true);
+  log::info(application_parameters, true);
   cout << endl;
 
   //--- Demo of Krylov solver parameters ---
@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
   solver.parameters["relative_tolerance"] = 1e-20;
 
   // Print Krylov solver parameters
-  info(solver.parameters, true);
+  log::info(solver.parameters, true);
   cout << endl;
 
   //--- Demo of updating a parameter set ---
@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
 
   // Update application parameters
   application_parameters.update(parameter_subset);
-  info(application_parameters, true);
+  log::info(application_parameters, true);
 
   return 0;
 }

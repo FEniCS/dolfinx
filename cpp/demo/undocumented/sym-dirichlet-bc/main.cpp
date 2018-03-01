@@ -124,7 +124,7 @@ int main()
   table("Symmetric", "Assembly time") = toc();
 
   // Display summary
-  info(table);
+  log::info(table);
 
   // Solve system
   LUSolver solver;

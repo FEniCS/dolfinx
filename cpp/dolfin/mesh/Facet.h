@@ -7,9 +7,9 @@
 #pragma once
 
 #include <memory>
-
 #include "Mesh.h"
 #include "MeshEntity.h"
+#include <dolfin/geometry/Point.h>
 #include "MeshTopology.h"
 #include <utility>
 #include <vector>
@@ -35,15 +35,15 @@ public:
   ~Facet() {}
 
   /// Compute normal to the facet
-  Point normal() const;
+  geometry::Point normal() const;
 
   /// Compute squared distance to given point.
   ///
-  /// @param     point (_Point_)
+  /// @param     point (_geometry::Point_)
   ///         The point.
   /// @return     double
   ///         The squared distance to the point.
-  double squared_distance(const Point& point) const;
+  double squared_distance(const geometry::Point& point) const;
 
   /// Return true if facet is an exterior facet (relative to global mesh,
   /// so this function will return false for facets on partition

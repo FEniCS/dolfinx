@@ -16,7 +16,7 @@ using namespace dolfin;
 using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
-mesh::Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
+mesh::Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
                               std::array<std::size_t, 3> n)
 {
   common::Timer timer("Build BoxMesh");
@@ -35,8 +35,8 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
   }
 
   // Extract data
-  const Point& p0 = p[0];
-  const Point& p1 = p[1];
+  const geometry::Point& p0 = p[0];
+  const geometry::Point& p1 = p[1];
   std::size_t nx = n[0];
   std::size_t ny = n[1];
   std::size_t nz = n[2];
@@ -62,14 +62,14 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<Point, 2>& p,
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS
       || std::abs(z0 - z1) < DOLFIN_EPS)
   {
-    dolfin_error("BoxMesh.cpp", "create box", "Box seems to have zero width, "
+    log::dolfin_error("BoxMesh.cpp", "create box", "Box seems to have zero width, "
                                               "height or depth. Consider "
                                               "checking your dimensions");
   }
 
   if (nx < 1 || ny < 1 || nz < 1)
   {
-    dolfin_error("BoxMesh.cpp", "create box", "BoxMesh has non-positive number "
+    log::dolfin_error("BoxMesh.cpp", "create box", "BoxMesh has non-positive number "
                                               "of vertices in some dimension: "
                                               "number of vertices must be at "
                                               "least 1 in each dimension");

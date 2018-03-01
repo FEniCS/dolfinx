@@ -21,8 +21,10 @@
 
 namespace dolfin
 {
-
+namespace la
+{
 class PETScVector;
+}
 
 namespace mesh
 {
@@ -346,11 +348,11 @@ public:
   /// function is typically used to construct the null space of a
   /// matrix operator.
   ///
-  /// @param  x (PETScVector)
+  /// @param  x (la::PETScVector)
   ///         The vector to set.
   /// @param  value (double)
   ///         The value to set.
-  void set(PETScVector& x, double value) const;
+  void set(la::PETScVector& x, double value) const;
 
   /// Return the map (const access)
   std::shared_ptr<const common::IndexMap> index_map() const

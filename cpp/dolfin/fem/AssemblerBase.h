@@ -12,10 +12,11 @@
 
 namespace dolfin
 {
-
-// Forward declarations
+namespace la
+{
 class PETScMatrix;
 class PETScVector;
+}
 
 namespace fem
 {
@@ -56,8 +57,8 @@ public:
   ///  GenericTensor to assemble into
   /// @param[in] a (Form&)
   ///  Form to assemble from
-  void init_global_tensor(PETScVector& A, const Form& a);
-  void init_global_tensor(PETScMatrix& A, const Form& a);
+  void init_global_tensor(la::PETScVector& A, const Form& a);
+  void init_global_tensor(la::PETScMatrix& A, const Form& a);
 
 protected:
   /// Check form

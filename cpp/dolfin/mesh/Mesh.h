@@ -20,8 +20,10 @@
 namespace dolfin
 {
 
-class Point;
+namespace geometry
+{
 class BoundingBoxTree;
+}
 
 namespace function
 {
@@ -60,7 +62,7 @@ class SubDomain;
 /// such as all edges connected to a given vertex must also be
 /// explicitly created (in this case by a call to mesh.init(0, 1)).
 
-class Mesh : public Variable
+class Mesh : public common::Variable
 {
 public:
   // FIXME: remove
@@ -198,7 +200,7 @@ public:
   /// sharing of the bounding box tree data structure.
   ///
   /// @return std::shared_ptr<BoundingBoxTree>
-  std::shared_ptr<BoundingBoxTree> bounding_box_tree() const;
+  std::shared_ptr<geometry::BoundingBoxTree> bounding_box_tree() const;
 
   /// Get mesh cell type.
   ///
@@ -337,7 +339,7 @@ private:
   // Bounding box tree used to compute collisions between the mesh
   // and other objects. The tree is initialized to a zero pointer
   // and is allocated and built when bounding_box_tree() is called.
-  mutable std::shared_ptr<BoundingBoxTree> _tree;
+  mutable std::shared_ptr<geometry::BoundingBoxTree> _tree;
 
   // Cell type
   std::unique_ptr<mesh::CellType> _cell_type;

@@ -28,10 +28,11 @@ using EigenRowMatrixXd
 
 namespace dolfin
 {
-
-// Forward declarations
+namespace la
+{
 class PETScMatrix;
 class PETScVector;
+}
 
 namespace common
 {
@@ -72,23 +73,23 @@ public:
                   std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   /// Assemble system (A, b)
-  void assemble(PETScMatrix& A, PETScVector& b);
+  void assemble(la::PETScMatrix& A, la::PETScVector& b);
 
   /// Assemble matrix A
-  void assemble(PETScMatrix& A);
+  void assemble(la::PETScMatrix& A);
 
   /// Assemble vector b
-  void assemble(PETScVector& b);
+  void assemble(la::PETScVector& b);
 
   /// Assemble system (A, b) for (negative) increment dx, where x =
   /// x0 - dx is solution to system a == -L subject to bcs.
   /// Suitable for use inside a (quasi-)Newton solver.
-  void assemble(PETScMatrix& A, PETScVector& b, const PETScVector& x0);
+  void assemble(la::PETScMatrix& A, la::PETScVector& b, const la::PETScVector& x0);
 
   /// Assemble rhs vector b for (negative) increment dx, where x =
   /// x0 - dx is solution to system a == -L subject to bcs.
   /// Suitable for use inside a (quasi-)Newton solver.
-  void assemble(PETScVector& b, const PETScVector& x0);
+  void assemble(la::PETScVector& b, const la::PETScVector& x0);
 
 private:
   // Class to hold temporary data
@@ -110,7 +111,7 @@ private:
                              std::size_t bc_index);
 
   // Assemble system
-  void assemble(PETScMatrix* A, PETScVector* b, const PETScVector* x0);
+  void assemble(la::PETScMatrix* A, la::PETScVector* b, const la::PETScVector* x0);
 
   // Bilinear and linear forms
   std::shared_ptr<const Form> _a, _l;
@@ -119,14 +120,14 @@ private:
   std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 
   static void cell_wise_assembly(
-      std::pair<PETScMatrix*, PETScVector*>& tensors, std::array<UFC*, 2>& ufc,
+      std::pair<la::PETScMatrix*, la::PETScVector*>& tensors, std::array<UFC*, 2>& ufc,
       Scratch& data, const std::vector<DirichletBC::Map>& boundary_values,
       std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains,
       std::shared_ptr<const mesh::MeshFunction<std::size_t>>
           exterior_facet_domains);
 
   static void facet_wise_assembly(
-      std::pair<PETScMatrix*, PETScVector*>& tensors, std::array<UFC*, 2>& ufc,
+      std::pair<la::PETScMatrix*, la::PETScVector*>& tensors, std::array<UFC*, 2>& ufc,
       Scratch& data, const std::vector<DirichletBC::Map>& boundary_values,
       std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains,
       std::shared_ptr<const mesh::MeshFunction<std::size_t>>
@@ -166,7 +167,7 @@ private:
   // Modified matrix insertion for case when rhs has facet integrals
   // and lhs has no facet integrals
   static void matrix_block_add(
-      PETScMatrix& tensor, std::vector<double>& Ae,
+      la::PETScMatrix& tensor, std::vector<double>& Ae,
       std::vector<double>& macro_A, const std::array<bool, 2>& add_local_tensor,
       const std::array<std::vector<common::ArrayView<const la_index_t>>, 2>&
           cell_dofs);
@@ -184,7 +185,7 @@ private:
 
   // Return true if element matrix is required
   static bool
-  cell_matrix_required(const PETScMatrix* A, const void* integral,
+  cell_matrix_required(const la::PETScMatrix* A, const void* integral,
                        const std::vector<DirichletBC::Map>& boundary_values,
                        const common::ArrayView<const dolfin::la_index_t>& dofs);
 };

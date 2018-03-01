@@ -11,9 +11,11 @@
 
 namespace dolfin
 {
+namespace la
+{
 class PETScMatrix;
 class PETScVector;
-
+}
 namespace function
 {
 class Function;
@@ -31,10 +33,10 @@ namespace fem
 class Form;
 
 /// Initialise matrix. Matrix is not zeroed.
-void init(PETScMatrix& A, const Form& a);
+void init(la::PETScMatrix& A, const Form& a);
 
 /// Initialise vector. Vector is not zeroed.
-void init(PETScVector& x, const Form& a);
+void init(la::PETScVector& x, const Form& a);
 
 /// Return a map between dof indices and vertex indices
 ///

@@ -13,12 +13,13 @@
 
 namespace dolfin
 {
-
+namespace geometry
+{
 class Point;
+}
 
 namespace mesh
 {
-
 class Cell;
 class MeshEntity;
 template <typename T>
@@ -107,17 +108,17 @@ public:
 
   /// Compute squared distance to given point
   virtual double squared_distance(const Cell& cell,
-                                  const Point& point) const = 0;
+                                  const geometry::Point& point) const = 0;
 
   /// Compute component i of normal of given facet with respect to the cell
   virtual double normal(const Cell& cell, std::size_t facet,
                         std::size_t i) const = 0;
 
   /// Compute of given facet with respect to the cell
-  virtual Point normal(const Cell& cell, std::size_t facet) const = 0;
+  virtual geometry::Point normal(const Cell& cell, std::size_t facet) const = 0;
 
   /// Compute normal to given cell (viewed as embedded in 3D)
-  virtual Point cell_normal(const Cell& cell) const = 0;
+  virtual geometry::Point cell_normal(const Cell& cell) const = 0;
 
   /// Compute the area/length of given facet with respect to the cell
   virtual double facet_area(const Cell& cell, std::size_t facet) const = 0;

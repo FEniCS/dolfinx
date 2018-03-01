@@ -15,6 +15,8 @@
 
 namespace dolfin
 {
+namespace parameter
+{
 
 /// Base class for parameters.
 
@@ -220,4 +222,4 @@ protected:
   std::string _description;
 };
 }
-
+}

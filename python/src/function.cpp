@@ -42,7 +42,7 @@ void function(py::module &m) {
   // zunction
   py::class_<dolfin::function::GenericFunction,
              std::shared_ptr<dolfin::function::GenericFunction>,
-             dolfin::Variable>(m, "GenericFunction")
+             dolfin::common::Variable>(m, "GenericFunction")
       .def("value_dimension",
            &dolfin::function::GenericFunction::value_dimension)
       .def("value_size", &dolfin::function::GenericFunction::value_size)
@@ -229,7 +229,7 @@ void function(py::module &m) {
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>>(),
            "Create a function on the given function space")
       .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>,
-                    std::shared_ptr<dolfin::PETScVector>>())
+                    std::shared_ptr<dolfin::la::PETScVector>>())
       //.def("_assign", (const dolfin::function::Function&
       //(dolfin::function::Function::*)(const
       // dolfin::function::Function&))
@@ -278,7 +278,7 @@ void function(py::module &m) {
       // FIXME: A lot of error when using non-const version - misused
       // by Python interface?
       .def("vector",
-           (std::shared_ptr<const dolfin::PETScVector>(
+           (std::shared_ptr<const dolfin::la::PETScVector>(
                dolfin::function::Function::*)() const) &
                dolfin::function::Function::vector,
            "Return the vector associated with the finite element Function");
@@ -355,7 +355,7 @@ void function(py::module &m) {
   // dolfin::function::FunctionSpace
   py::class_<dolfin::function::FunctionSpace,
              std::shared_ptr<dolfin::function::FunctionSpace>,
-             dolfin::Variable>(m, "FunctionSpace", py::dynamic_attr())
+             dolfin::common::Variable>(m, "FunctionSpace", py::dynamic_attr())
       .def(py::init<std::shared_ptr<dolfin::mesh::Mesh>,
                     std::shared_ptr<dolfin::fem::FiniteElement>,
                     std::shared_ptr<dolfin::fem::GenericDofMap>>())

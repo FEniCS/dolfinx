@@ -198,7 +198,7 @@ void PETScDMCollection::reset(int i)
   //  PetscObjectDereference((PetscObject)_dms[i]);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
+std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
     const function::FunctionSpace& coarse_space,
     const function::FunctionSpace& fine_space)
 {
@@ -214,7 +214,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
   const unsigned int mpi_size = MPI::size(mpi_comm);
 
   // Initialise bounding box tree and dofmaps
-  std::shared_ptr<BoundingBoxTree> treec = meshc.bounding_box_tree();
+  std::shared_ptr<geometry::BoundingBoxTree> treec = meshc.bounding_box_tree();
   std::shared_ptr<const fem::GenericDofMap> coarsemap = coarse_space.dofmap();
   std::shared_ptr<const fem::GenericDofMap> finemap = fine_space.dofmap();
 
@@ -242,7 +242,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
     // Check that function ranks match
     if (el->value_rank() != elf->value_rank())
     {
-      dolfin_error("create_transfer_matrix", "Creating interpolation matrix",
+      log::dolfin_error("create_transfer_matrix", "Creating interpolation matrix",
                    "Ranks of function spaces do not match: %d, %d.",
                    el->value_rank(), elf->value_rank());
     }
@@ -252,7 +252,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
     {
       if (el->value_dimension(i) != elf->value_dimension(i))
       {
-        dolfin_error("create_transfer_matrix", "Creating interpolation matrix",
+        log::dolfin_error("create_transfer_matrix", "Creating interpolation matrix",
                      "Dimension %d of function space (%d) does not match "
                      "dimension %d of function space (%d)",
                      i, el->value_dimension(i), i, elf->value_dimension(i));
@@ -310,7 +310,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
   for (const auto& map_it : coords_to_dofs)
   {
     const std::vector<double>& _x = map_it.first;
-    Point curr_point(dim, _x.data());
+    geometry::Point curr_point(dim, _x.data());
 
     // Compute which processes' BBoxes contain the fine point
     found_ranks = treec->compute_process_collisions(curr_point);
@@ -352,7 +352,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
     unsigned int n_points = recv_found[p].size() / dim;
     for (unsigned int i = 0; i < n_points; ++i)
     {
-      const Point curr_point(dim, &recv_found[p][i * dim]);
+      const geometry::Point curr_point(dim, &recv_found[p][i * dim]);
       send_ids[p].push_back(
           treec->compute_first_entity_collision(curr_point, meshc));
     }
@@ -488,7 +488,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
   {
     // Get coarse cell id and point
     unsigned int id = found_ids[i];
-    Point curr_point(dim, &found_points[i * dim]);
+    geometry::Point curr_point(dim, &found_points[i * dim]);
 
     // Create coarse cell
     mesh::Cell coarse_cell(meshc, static_cast<std::size_t>(id));
@@ -603,7 +603,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
 
   // create shared pointer and return the pointer to the transfer
   // matrix
-  std::shared_ptr<PETScMatrix> ptr = std::make_shared<PETScMatrix>(I);
+  std::shared_ptr<la::PETScMatrix> ptr = std::make_shared<la::PETScMatrix>(I);
   ierr = MatDestroy(&I);
   CHKERRABORT(PETSC_COMM_WORLD, ierr);
   return ptr;
@@ -611,7 +611,7 @@ std::shared_ptr<PETScMatrix> PETScDMCollection::create_transfer_matrix(
 //-----------------------------------------------------------------------------
 void PETScDMCollection::find_exterior_points(
     MPI_Comm mpi_comm, const mesh::Mesh& meshc,
-    std::shared_ptr<const BoundingBoxTree> treec, int dim, int data_size,
+    std::shared_ptr<const geometry::BoundingBoxTree> treec, int dim, int data_size,
     const std::vector<double>& send_points,
     const std::vector<int>& send_indices, std::vector<int>& indices,
     std::vector<std::size_t>& cell_ids, std::vector<double>& points)
@@ -645,7 +645,7 @@ void PETScDMCollection::find_exterior_points(
     unsigned int n_points = p.size() / dim;
     for (unsigned int i = 0; i < n_points; ++i)
     {
-      const Point curr_point(dim, &p[i * dim]);
+      const geometry::Point curr_point(dim, &p[i * dim]);
       std::pair<unsigned int, double> find_point
           = treec->compute_closest_entity(curr_point, meshc);
       send_distance.push_back(find_point.second);
@@ -734,7 +734,7 @@ PetscErrorCode PETScDMCollection::create_interpolation(DM dmc, DM dmf, Mat* mat,
   // Build interpolation matrix (V0 to V1)
   dolfin_assert(V0);
   dolfin_assert(V1);
-  std::shared_ptr<PETScMatrix> P = create_transfer_matrix(*V0, *V1);
+  std::shared_ptr<la::PETScMatrix> P = create_transfer_matrix(*V0, *V1);
 
   // Copy PETSc matrix pointer and inrease reference count
   *mat = P->mat();

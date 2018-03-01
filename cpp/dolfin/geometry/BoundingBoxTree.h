@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <dolfin/geometry/Point.h>
 #include <memory>
-#include <set>
 #include <sstream>
 #include <vector>
+#include <limits>
+#include <dolfin/geometry/Point.h>
 
 namespace dolfin
 {
@@ -21,6 +21,9 @@ namespace mesh
 class Mesh;
 class MeshEntity;
 }
+
+namespace geometry
+{
 
 class BoundingBoxTree
 {
@@ -277,4 +280,5 @@ private:
   // Global tree for mesh ownership of each process (same on all processes)
   std::shared_ptr<BoundingBoxTree> _global_tree;
 };
+}
 }

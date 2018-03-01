@@ -11,7 +11,8 @@
 
 namespace dolfin
 {
-
+namespace la
+{
 /// This class represents a real-valued scalar quantity and
 /// implements the GenericTensor interface for scalars.
 
@@ -66,4 +67,5 @@ private:
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;
 };
+}
 }

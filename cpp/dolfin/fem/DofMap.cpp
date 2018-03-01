@@ -66,7 +66,7 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   // Check that mesh has been ordered
   if (!mesh.ordered())
   {
-    dolfin_error(
+    log::dolfin_error(
         "DofMap.cpp", "create mapping of degrees of freedom",
         "mesh::Mesh is not ordered according to the UFC numbering convention. "
         "Consider calling mesh.order()");
@@ -552,7 +552,7 @@ std::vector<dolfin::la_index_t> DofMap::dofs() const
   return _dofs;
 }
 //-----------------------------------------------------------------------------
-void DofMap::set(PETScVector& x, double value) const
+void DofMap::set(la::PETScVector& x, double value) const
 {
   dolfin_assert(_dofmap.size() % _cell_dimension == 0);
   const std::size_t num_cells = _dofmap.size() / _cell_dimension;
@@ -604,7 +604,7 @@ void DofMap::check_provided_entities(const ufc::dofmap& dofmap,
   {
     if (dofmap.num_entity_dofs(d) > 0 && mesh.num_entities(d) == 0)
     {
-      dolfin_error(
+      log::dolfin_error(
           "DofMap.cpp", "initialize mapping of degrees of freedom",
           "Missing entities of dimension %d. Try calling mesh.init(%d)", d, d);
     }

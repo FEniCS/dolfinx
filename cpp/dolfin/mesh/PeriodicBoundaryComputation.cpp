@@ -108,7 +108,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           visited[e.index()] = true;
 
         // Copy entity coordinate
-        const Point midpoint = e.midpoint();
+        const geometry::Point midpoint = e.midpoint();
         std::copy(midpoint.coordinates(), midpoint.coordinates() + gdim,
                   x.begin());
 
@@ -147,7 +147,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           {
             if (std::isnan(y[i]))
             {
-              dolfin_error("PeriodicBoundaryComputation.cpp",
+              log::dolfin_error("PeriodicBoundaryComputation.cpp",
                            "periodic boundary mapping",
                            "Need to set coordinate %d in sub_domain.map", i);
             }

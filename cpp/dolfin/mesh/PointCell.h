@@ -8,6 +8,7 @@
 
 #include "CellType.h"
 #include <boost/multi_array.hpp>
+#include <dolfin/geometry/Point.h>
 #include <vector>
 
 namespace dolfin
@@ -20,7 +21,7 @@ class PointCell : public CellType
 {
 public:
   /// Specify cell type and facet type
-  PointCell() : mesh::CellType(Type::point, Type::point) {}
+  PointCell() : CellType(Type::point, Type::point) {}
 
   /// Check if cell is a simplex
   bool is_simplex() const { return true; }
@@ -51,17 +52,18 @@ public:
   double circumradius(const MeshEntity& point) const;
 
   /// Compute squared distance to given point
-  double squared_distance(const mesh::Cell& cell, const Point& point) const;
+  double squared_distance(const mesh::Cell& cell,
+                          const geometry::Point& point) const;
 
   /// Compute component i of normal of given facet with respect to
   /// the cell
   double normal(const mesh::Cell& cell, std::size_t facet, std::size_t i) const;
 
   /// Compute of given facet with respect to the cell
-  Point normal(const mesh::Cell& cell, std::size_t facet) const;
+  geometry::Point normal(const mesh::Cell& cell, std::size_t facet) const;
 
   /// Compute normal to given cell (viewed as embedded in 1D)
-  Point cell_normal(const mesh::Cell& cell) const;
+  geometry::Point cell_normal(const mesh::Cell& cell) const;
 
   /// Compute the area/length of given facet with respect to the
   /// cell
@@ -69,12 +71,6 @@ public:
 
   /// Order entities locally
   void order(mesh::Cell& cell) const;
-
-  /// Check whether given point is contained in cell
-  bool collides(const mesh::Cell& cell, const Point& point) const;
-
-  /// Check whether given entity collides with cell
-  bool collides(const mesh::Cell& cell, const MeshEntity& entity) const;
 
   /// Return description of cell type
   std::string description(bool plural) const;

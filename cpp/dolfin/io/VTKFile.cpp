@@ -124,7 +124,7 @@ void VTKFile::write_function(const function::Function& u, double time)
   // Finalise and write pvd files
   finalize(vtu_filename, time);
 
-  log(TRACE, "Saved function %s (%s) to file %s in VTK format.",
+  log::log(TRACE, "Saved function %s (%s) to file %s in VTK format.",
       u.name().c_str(), u.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
@@ -155,7 +155,7 @@ void VTKFile::write_mesh(const mesh::Mesh& mesh, double time)
   // Finalise
   finalize(vtu_filename, time);
 
-  log(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
+  log::log(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
       mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
@@ -195,7 +195,7 @@ void VTKFile::results_write(const function::Function& u,
   const std::size_t rank = u.value_rank();
   if (rank > 2)
   {
-    dolfin_error(
+    log::dolfin_error(
         "VTKFile.cpp", "write data to VTK file",
         "Only scalar, vector and tensor functions can be saved in VTK format");
   }
@@ -208,7 +208,7 @@ void VTKFile::results_write(const function::Function& u,
   {
     if (!(dim == 2 || dim == 3))
     {
-      dolfin_error("VTKFile.cpp", "write data to VTK file",
+      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                    "Don't know how to handle vector function with dimension "
                    "other than 2 or 3");
     }
@@ -217,7 +217,7 @@ void VTKFile::results_write(const function::Function& u,
   {
     if (!(dim == 4 || dim == 9))
     {
-      dolfin_error("VTKFile.cpp", "write data to VTK file",
+      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                    "Don't know how to handle tensor function with dimension "
                    "other than 4 or 9");
     }
@@ -340,7 +340,7 @@ void VTKFile::pvd_file_write(std::size_t step, double time, std::string fname)
     pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
     if (!result)
     {
-      dolfin_error("VTKFile.cpp", "write data to VTK file",
+      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                    "XML parsing error when reading from existing file");
     }
   }
@@ -416,7 +416,7 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
     rank_type = "Vectors";
     if (!(dim == 2 || dim == 3))
     {
-      dolfin_error("VTKFile.cpp", "write data to VTK file",
+      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                    "Don't know how to handle vector function with dimension "
                    "other than 2 or 3");
     }
@@ -427,7 +427,7 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
     rank_type = "Tensors";
     if (!(dim == 4 || dim == 9))
     {
-      dolfin_error("VTKFile.cpp", "write data to VTK file",
+      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                    "Don't know how to handle tensor function with dimension "
                    "other than 4 or 9");
     }
@@ -435,7 +435,7 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
   }
   else
   {
-    dolfin_error("VTKFile.cpp", "write data to VTK file",
+    log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                  "Cannot handle XML output of rank %d", rank);
   }
 
@@ -498,7 +498,7 @@ void VTKFile::pvtu_write(const function::Function& u,
   const std::size_t rank = u.function_space()->element()->value_rank();
   if (rank > 2)
   {
-    dolfin_error(
+    log::dolfin_error(
         "VTKFile.cpp", "write data to VTK file",
         "Only scalar, vector and tensor functions can be saved in VTK format");
   }
@@ -531,7 +531,7 @@ void VTKFile::vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
   file.precision(16);
   if (!file.is_open())
   {
-    dolfin_error("VTKFile.cpp", "write data to VTK file",
+    log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                  "Unable to open file \"%s\"", _filename.c_str());
   }
 
@@ -554,7 +554,7 @@ void VTKFile::vtk_header_close(std::string vtu_filename) const
   file.precision(16);
   if (!file.is_open())
   {
-    dolfin_error("VTKFile.cpp", "write data to VTK file",
+    log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                  "Unable to open file \"%s\"", _filename.c_str());
   }
 
@@ -640,7 +640,7 @@ void VTKFile::mesh_function_write(T& meshfunction, double time)
   // Write pvd files
   finalize(vtu_filename, time);
 
-  log(TRACE, "Saved mesh function %s (%s) to file %s in VTK format.",
+  log::log(TRACE, "Saved mesh function %s (%s) to file %s in VTK format.",
       mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
@@ -650,7 +650,7 @@ void VTKFile::clear_file(std::string file) const
   std::ofstream _file(file.c_str(), std::ios::trunc);
   if (!_file.is_open())
   {
-    dolfin_error("VTKFile.cpp", "clear VTK file", "Unable to open file \"%s\"",
+    log::dolfin_error("VTKFile.cpp", "clear VTK file", "Unable to open file \"%s\"",
                  file.c_str());
   }
   _file.close();

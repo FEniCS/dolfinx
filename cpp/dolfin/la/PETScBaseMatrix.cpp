@@ -22,7 +22,7 @@ PETScBaseMatrix::PETScBaseMatrix(Mat A) : _matA(A)
     PetscObjectReference((PetscObject)_matA);
   else
   {
-    dolfin_error(
+    log::dolfin_error(
         "PETScBaseMatrix.cpp", "initialize with PETSc Mat pointer",
         "Cannot wrap PETSc Mat objects that have not been initialized");
   }
@@ -38,7 +38,7 @@ PETScBaseMatrix::~PETScBaseMatrix()
 //-----------------------------------------------------------------------------
 PETScBaseMatrix::PETScBaseMatrix(const PETScBaseMatrix& A)
 {
-  dolfin_error("PETScBaseMatrix.cpp", "copy constructor",
+  log::dolfin_error("PETScBaseMatrix.cpp", "copy constructor",
                "PETScBaseMatrix does not provide a copy constructor");
 }
 //-----------------------------------------------------------------------------
@@ -46,7 +46,7 @@ std::int64_t PETScBaseMatrix::size(std::size_t dim) const
 {
   if (dim > 1)
   {
-    dolfin_error("PETScBaseMatrix.cpp", "access size of PETSc matrix",
+    log::dolfin_error("PETScBaseMatrix.cpp", "access size of PETSc matrix",
                  "Illegal axis (%d), must be 0 or 1", dim);
   }
 
@@ -76,7 +76,7 @@ std::array<std::int64_t, 2> PETScBaseMatrix::local_range(std::size_t dim) const
   dolfin_assert(dim <= 1);
   if (dim == 1)
   {
-    dolfin_error("PETScBaseMatrix.cpp",
+    log::dolfin_error("PETScBaseMatrix.cpp",
                  "access local column range for PETSc matrix",
                  "Only local row range is available for PETSc matrices");
   }
@@ -110,7 +110,7 @@ void PETScBaseMatrix::init_vector(PETScVector& z, std::size_t dim) const
   }
   else
   {
-    dolfin_error("PETScBaseMatrix.cpp",
+    log::dolfin_error("PETScBaseMatrix.cpp",
                  "initialize PETSc vector to match PETSc matrix",
                  "Dimension must be 0 or 1, not %d", dim);
   }

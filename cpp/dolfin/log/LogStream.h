@@ -13,9 +13,18 @@
 namespace dolfin
 {
 
+namespace common
+{
 class Variable;
-class MeshEntity;
+}
+
+namespace geometry
+{
 class Point;
+}
+
+namespace log
+{
 
 /// This class provides functionality similar to standard C++
 /// streams (std::cout, std::endl) for output but working through
@@ -62,12 +71,12 @@ public:
   LogStream& operator<<(std::complex<double> z);
 
   /// Output for variable (calling str() method)
-  LogStream& operator<<(const Variable& variable);
+  LogStream& operator<<(const common::Variable& variable);
 
-  /// Output for point (not subclass of Variable for efficiency)
-  LogStream& operator<<(const Point& point);
+  /// Output for point (not subclass of common::Variable for efficiency)
+  LogStream& operator<<(const geometry::Point& point);
 
-  /// Set precision
+  /// Set precisionPoi
   void setprecision(std::streamsize n);
 
 private:
@@ -77,10 +86,11 @@ private:
   // Buffer
   std::stringstream buffer;
 };
+}
 
 /// dolfin::cout
-extern LogStream cout;
+extern log::LogStream cout;
 
 /// dolfin::endl;
-extern LogStream endl;
+extern log::LogStream endl;
 }

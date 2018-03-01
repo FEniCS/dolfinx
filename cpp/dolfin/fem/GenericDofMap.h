@@ -23,7 +23,10 @@ class cell;
 namespace dolfin
 {
 
+namespace la
+{
 class PETScVector;
+}
 
 namespace common
 {
@@ -41,7 +44,7 @@ namespace fem
 
 /// This class provides a generic interface for dof maps
 
-class GenericDofMap : public Variable
+class GenericDofMap : public common::Variable
 {
 public:
   /// Constructor
@@ -169,7 +172,7 @@ public:
   /// layout of vector must be consistent with dof map range. This
   /// function is typically used to construct the null space of a
   /// matrix operator
-  virtual void set(PETScVector& x, double value) const = 0;
+  virtual void set(la::PETScVector& x, double value) const = 0;
 
   /// Index map (const access)
   virtual std::shared_ptr<const common::IndexMap> index_map() const = 0;

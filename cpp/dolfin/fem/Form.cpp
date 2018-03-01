@@ -37,10 +37,10 @@ Form::Form(
 
     if (element->signature() != function_spaces[i]->element()->signature())
     {
-      log(ERROR, "Expected element: %s", element->signature());
-      log(ERROR, "Input element:    %s",
+      log::log(ERROR, "Expected element: %s", element->signature());
+      log::log(ERROR, "Input element:    %s",
           function_spaces[i]->element()->signature().c_str());
-      dolfin_error("Form.cpp", "create form",
+      log::dolfin_error("Form.cpp", "create form",
                    "Wrong type of function space for argument %d", i);
     }
   }

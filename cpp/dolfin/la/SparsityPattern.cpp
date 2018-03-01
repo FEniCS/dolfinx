@@ -11,6 +11,7 @@
 #include <dolfin/log/LogStream.h>
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
@@ -22,7 +23,7 @@ SparsityPattern::SparsityPattern(
   // Check that primary dimension is valid
   if (_primary_dim > 1)
   {
-    dolfin_error(
+    log::dolfin_error(
         "SparsityPattern.cpp", "primary dimension for sparsity pattern storage",
         "Primary dimension must be less than 2 (0=row major, 1=column major");
   }
@@ -441,7 +442,7 @@ void SparsityPattern::apply()
   const std::size_t proc_number = _mpi_comm.rank();
 
   // Print some useful information
-  if (get_log_level() <= DBG)
+  if (log::get_log_level() <= DBG)
     info_statistics();
 
   // Communicate non-local blocks if any
@@ -510,7 +511,7 @@ void SparsityPattern::apply()
       // Sanity check
       if (I < local_range0[0] or I >= (la_index_t)(bs0 * local_range0[1]))
       {
-        dolfin_error("SparsityPattern.cpp", "apply changes to sparsity pattern",
+        log::dolfin_error("SparsityPattern.cpp", "apply changes to sparsity pattern",
                      "Received illegal sparsity pattern entry for row/column "
                      "%d, not in range [%d, %d]",
                      I, local_range0[0], local_range0[1]);

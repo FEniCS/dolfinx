@@ -14,6 +14,9 @@
 
 namespace dolfin
 {
+namespace geometry
+{
+
 /// A Point represents a point in :math:`\mathbb{R}^3` with
 /// coordinates :math:`x, y, z,` or alternatively, a vector in
 /// :math:`\mathbb{R}^3`, supporting standard operations like the
@@ -215,7 +218,7 @@ public:
   ///
   ///         Point p1(0, 4, 0);
   ///         Point p2(2, 0, 4);
-  ///         info("%g", p1.distance(p2));
+  ///         log::info("%g", p1.distance(p2));
   ///
   /// @endcode
   inline double distance(const Point& p) const
@@ -232,7 +235,7 @@ public:
   /// @code{.cpp}
   ///
   ///         Point p(1.0, 2.0, 2.0);
-  ///         info("%g", p.norm());
+  ///         log::info("%g", p.norm());
   ///
   /// @endcode
   double norm() const
@@ -261,7 +264,7 @@ public:
   ///
   ///         Point p1(1.0, 4.0, 8.0);
   ///         Point p2(2.0, 0.0, 0.0);
-  ///         info("%g", p1.dot(p2));
+  ///         log::info("%g", p1.dot(p2));
   ///
   /// @endcode
   double dot(const Point& p) const;
@@ -291,11 +294,12 @@ public:
 private:
   std::array<double, 3> _x;
 };
-
+}
+}
 /// Output of Point to stream
-inline std::ostream& operator<<(std::ostream& stream, const Point& point)
+inline std::ostream& operator<<(std::ostream& stream, const dolfin::geometry::Point& point)
 {
   stream << point.str(false);
   return stream;
 }
-}
+

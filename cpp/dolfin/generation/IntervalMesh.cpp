@@ -37,21 +37,21 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
 
   if (std::abs(a - b) < DOLFIN_EPS)
   {
-    dolfin_error(
+    log::dolfin_error(
         "Interval.cpp", "create interval",
         "Length of interval is zero. Consider checking your dimensions");
   }
 
   if (b < a)
   {
-    dolfin_error("Interval.cpp", "create interval",
+    log::dolfin_error("Interval.cpp", "create interval",
                  "Length of interval is negative. Consider checking the order "
                  "of your arguments");
   }
 
   if (nx < 1)
   {
-    dolfin_error("Interval.cpp", "create interval",
+    log::dolfin_error("Interval.cpp", "create interval",
                  "Number of points on interval is (%d), it must be at least 1",
                  nx);
   }

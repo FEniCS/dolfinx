@@ -140,7 +140,7 @@ void dolfin::math::Lagrange::init()
       {
         if (std::abs(points[i] - points[j]) < DOLFIN_EPS)
         {
-          dolfin_error("Lagrange.cpp", "create Lagrange polynomial",
+          log::dolfin_error("Lagrange.cpp", "create Lagrange polynomial",
                        "Nodal points are not distinct");
         }
         product *= points[i] - points[j];

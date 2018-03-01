@@ -29,14 +29,14 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-void AssemblerBase::init_global_tensor(PETScVector& x, const Form& a)
+void AssemblerBase::init_global_tensor(la::PETScVector& x, const Form& a)
 {
   fem::init(x, a);
   if (!add_values)
     x.zero();
 }
 //-----------------------------------------------------------------------------
-void AssemblerBase::init_global_tensor(PETScMatrix& A, const Form& a)
+void AssemblerBase::init_global_tensor(la::PETScMatrix& A, const Form& a)
 {
   fem::init(A, a);
   if (!add_values)
@@ -56,7 +56,7 @@ void AssemblerBase::check(const Form& a)
     std::string ghost_mode = mesh.ghost_mode();
     if (!(ghost_mode == "shared_vertex" || ghost_mode == "shared_facet"))
     {
-      dolfin_error("AssemblerBase.cpp", "assemble form",
+      log::dolfin_error("AssemblerBase.cpp", "assemble form",
                    "Incorrect mesh ghost mode \"%s\" (expected "
                    "\"shared_vertex\" or \"shared_facet\" for "
                    "interior facet integrals in parallel)",
@@ -71,7 +71,7 @@ void AssemblerBase::check(const Form& a)
   {
     if (!coefficients.get(i))
     {
-      dolfin_error("AssemblerBase.cpp", "assemble form",
+      log::dolfin_error("AssemblerBase.cpp", "assemble form",
                    "Coefficient number %d has not been set", i);
     }
   }

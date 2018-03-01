@@ -32,7 +32,7 @@ namespace math
 ///   p(1,x) = x       (zero at x = 0, one at x = 1)
 ///
 
-class Lagrange : public Variable
+class Lagrange : public common::Variable
 {
 public:
   /// Constructor

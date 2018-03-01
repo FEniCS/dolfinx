@@ -39,7 +39,7 @@ void io(py::module &m) {
 #ifdef HAS_HDF5
   // dolfin::io::HDF5File
   py::class_<dolfin::io::HDF5File, std::shared_ptr<dolfin::io::HDF5File>,
-             dolfin::Variable>(m, "HDF5File")
+             dolfin::common::Variable>(m, "HDF5File")
       .def(py::init([](const MPICommWrapper comm, const std::string filename,
                        const std::string file_mode) {
              return std::make_unique<dolfin::io::HDF5File>(comm.get(), filename,
@@ -94,8 +94,8 @@ void io(py::module &m) {
                dolfin::io::HDF5File::read,
            py::arg("meshfunction"), py::arg("name"))
       .def("read",
-           (void (dolfin::io::HDF5File::*)(dolfin::PETScVector &, std::string,
-                                           bool) const) &
+           (void (dolfin::io::HDF5File::*)(dolfin::la::PETScVector &,
+                                           std::string, bool) const) &
                dolfin::io::HDF5File::read,
            py::arg("vector"), py::arg("name"), py::arg("use_partitioning"))
       .def("read",
@@ -157,7 +157,7 @@ void io(py::module &m) {
                dolfin::io::HDF5File::write,
            py::arg("meshfunction"), py::arg("name"))
       .def("write",
-           (void (dolfin::io::HDF5File::*)(const dolfin::PETScVector &,
+           (void (dolfin::io::HDF5File::*)(const dolfin::la::PETScVector &,
                                            std::string)) &
                dolfin::io::HDF5File::write,
            py::arg("vector"), py::arg("name"))
@@ -203,7 +203,7 @@ void io(py::module &m) {
 
   // dolfin::io::XDMFFile
   py::class_<dolfin::io::XDMFFile, std::shared_ptr<dolfin::io::XDMFFile>,
-             dolfin::Variable>
+             dolfin::common::Variable>
       xdmf_file(m, "XDMFFile");
 
   xdmf_file
@@ -332,15 +332,16 @@ void io(py::module &m) {
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
       // Points
       .def("write",
-           (void (dolfin::io::XDMFFile::*)(const std::vector<dolfin::Point> &,
-                                           dolfin::io::XDMFFile::Encoding)) &
+           (void (dolfin::io::XDMFFile::*)(
+               const std::vector<dolfin::geometry::Point> &,
+               dolfin::io::XDMFFile::Encoding)) &
                dolfin::io::XDMFFile::write,
            py::arg("points"),
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
       .def("write",
-           (void (dolfin::io::XDMFFile::*)(const std::vector<dolfin::Point> &,
-                                           const std::vector<double> &,
-                                           dolfin::io::XDMFFile::Encoding)) &
+           (void (dolfin::io::XDMFFile::*)(
+               const std::vector<dolfin::geometry::Point> &,
+               const std::vector<double> &, dolfin::io::XDMFFile::Encoding)) &
                dolfin::io::XDMFFile::write,
            py::arg("points"), py::arg("values"),
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)

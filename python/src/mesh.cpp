@@ -74,8 +74,9 @@ void mesh(py::module &m) {
 
   // dolfin::mesh::MeshTopology class
   py::class_<dolfin::mesh::MeshTopology,
-             std::shared_ptr<dolfin::mesh::MeshTopology>, dolfin::Variable>(
-      m, "MeshTopology", "DOLFIN MeshTopology object")
+             std::shared_ptr<dolfin::mesh::MeshTopology>,
+             dolfin::common::Variable>(m, "MeshTopology",
+                                       "DOLFIN MeshTopology object")
       .def("dim", &dolfin::mesh::MeshTopology::dim, "Topological dimension")
       .def("init",
            (void (dolfin::mesh::MeshTopology::*)(std::size_t)) &
@@ -116,8 +117,8 @@ void mesh(py::module &m) {
 
   // dolfin::mesh::Mesh
   py::class_<dolfin::mesh::Mesh, std::shared_ptr<dolfin::mesh::Mesh>,
-             dolfin::Variable>(m, "Mesh", py::dynamic_attr(),
-                               "DOLFIN Mesh object")
+             dolfin::common::Variable>(m, "Mesh", py::dynamic_attr(),
+                                       "DOLFIN Mesh object")
       .def(py::init<const dolfin::mesh::Mesh &>())
       .def(py::init([](const MPICommWrapper comm) {
         return std::make_unique<dolfin::mesh::Mesh>(comm.get());
@@ -344,8 +345,8 @@ void mesh(py::module &m) {
 #define MESHFUNCTION_MACRO(SCALAR, SCALAR_NAME)                                \
   py::class_<dolfin::mesh::MeshFunction<SCALAR>,                               \
              std::shared_ptr<dolfin::mesh::MeshFunction<SCALAR>>,              \
-             dolfin::Variable>(m, "MeshFunction" #SCALAR_NAME,                 \
-                               "DOLFIN MeshFunction object")                   \
+             dolfin::common::Variable>(m, "MeshFunction" #SCALAR_NAME,         \
+                                       "DOLFIN MeshFunction object")           \
       .def(py::init([](std::shared_ptr<const dolfin::mesh::Mesh> mesh,         \
                        std::size_t dim) {                                      \
         return dolfin::mesh::MeshFunction<SCALAR>(mesh, dim, 0);               \
@@ -393,8 +394,8 @@ void mesh(py::module &m) {
 #define MESHVALUECOLLECTION_MACRO(SCALAR, SCALAR_NAME)                         \
   py::class_<dolfin::mesh::MeshValueCollection<SCALAR>,                        \
              std::shared_ptr<dolfin::mesh::MeshValueCollection<SCALAR>>,       \
-             dolfin::Variable>(m, "MeshValueCollection_" #SCALAR_NAME,         \
-                               "DOLFIN MeshValueCollection object")            \
+             dolfin::common::Variable>(m, "MeshValueCollection_" #SCALAR_NAME, \
+                                       "DOLFIN MeshValueCollection object")    \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>>())              \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>, std::size_t>()) \
       .def("dim", &dolfin::mesh::MeshValueCollection<SCALAR>::dim)             \

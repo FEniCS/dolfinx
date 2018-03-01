@@ -148,7 +148,7 @@ dolfin::graph::GraphBuilder::compute_dual_graph(
     std::vector<std::vector<std::size_t>>& local_graph,
     std::set<std::int64_t>& ghost_vertices)
 {
-  log(PROGRESS, "Build mesh dual graph");
+  log::log(PROGRESS, "Build mesh dual graph");
 
   // Compute local part of dual graph
   FacetCellMap facet_cell_map;
@@ -173,7 +173,7 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph(
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map)
 {
-  log(PROGRESS, "Build local part of mesh dual graph");
+  log::log(PROGRESS, "Build local part of mesh dual graph");
 
   const std::int8_t tdim = cell_type.dim();
   const std::int8_t num_entity_vertices = cell_type.num_vertices(tdim - 1);
@@ -193,7 +193,7 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph(
     return compute_local_dual_graph_keyed<4>(mpi_comm, cell_vertices, cell_type,
                                              local_graph, facet_cell_map);
   default:
-    dolfin_error("GraphBuilder.cpp", "compute local part of dual graph",
+    log::dolfin_error("GraphBuilder.cpp", "compute local part of dual graph",
                  "Entities with %d vertices not supported",
                  num_entity_vertices);
     return 0;
@@ -327,7 +327,7 @@ std::int32_t dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map, std::set<std::int64_t>& ghost_vertices)
 {
-  log(PROGRESS, "Build nonlocal part of mesh dual graph");
+  log::log(PROGRESS, "Build nonlocal part of mesh dual graph");
   common::Timer timer("Compute non-local part of mesh dual graph");
 
   // Get number of MPI processes, and return if mesh is not distributed

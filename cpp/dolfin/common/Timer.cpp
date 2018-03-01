@@ -34,7 +34,7 @@ void Timer::resume()
 {
   if (_task.size() > 0)
   {
-    dolfin_error("Timer.cpp", "resume timing",
+    log::dolfin_error("Timer.cpp", "resume timing",
                  "Resuming is not well-defined for logging timer. "
                  "Only non-logging timer can be resumed");
   }
@@ -46,7 +46,7 @@ double Timer::stop()
   _timer.stop();
   const auto elapsed = this->elapsed();
   if (_task.size() > 0)
-    LogManager::logger().register_timing(_task, elapsed);
+    log::LogManager::logger().register_timing(_task, elapsed);
   return std::get<0>(elapsed);
 }
 //-----------------------------------------------------------------------------

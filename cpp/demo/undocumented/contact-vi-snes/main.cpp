@@ -132,7 +132,7 @@ int main()
   cout << out.second;
   if (out.second != true)
   {
-    warning("This demo is a complex nonlinear problem. Convergence is not guaranteed when modifying parameters.");
+    log::warning("This demo is a complex nonlinear problem. Convergence is not guaranteed when modifying parameters.");
   }
 
   // Save solution in VTK format

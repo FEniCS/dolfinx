@@ -47,7 +47,6 @@ private:
 /// This class provides utility functions for easy communication
 /// with MPI and handles cases when DOLFIN is not configured with
 /// MPI.
-
 class MPI
 {
 public:
@@ -240,7 +239,7 @@ private:
 #ifndef HAS_MPI
   static void error_no_mpi(const char* where)
   {
-    dolfin_error("MPI.h", where,
+    log::dolfin_error("MPI.h", where,
                  "DOLFIN has been configured without MPI support");
   }
 #endif
@@ -255,7 +254,7 @@ private:
   static MPI_Datatype mpi_type()
   {
     static_assert(dependent_false<T>::value, "Unknown MPI type");
-    dolfin_error("MPI.h", "perform MPI operation", "MPI data type unknown");
+    log::dolfin_error("MPI.h", "perform MPI operation", "MPI data type unknown");
     return MPI_CHAR;
   }
 #endif
@@ -807,7 +806,7 @@ template <typename T>
 T dolfin::MPI::avg(MPI_Comm comm, const T& value)
 {
 #ifdef HAS_MPI
-  dolfin_error("MPI.h", "perform average reduction",
+  log::dolfin_error("MPI.h", "perform average reduction",
                "Not implemented for this type");
 #else
   return value;
@@ -833,7 +832,7 @@ void dolfin::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
                mpi_type<T>(), dest, send_tag, recv_value.data(), recv_size,
                mpi_type<T>(), source, recv_tag, comm, &mpi_status);
 #else
-  dolfin_error("MPI.h", "call MPI::send_recv",
+  log::dolfin_error("MPI.h", "call MPI::send_recv",
                "DOLFIN has been configured without MPI support");
 #endif
 }

@@ -37,7 +37,7 @@ void _check_coordinates(const mesh::MeshGeometry& geometry,
       != std::string("Lagrange"))
 
   {
-    dolfin_error("fem_utils.cpp",
+    log::dolfin_error("fem_utils.cpp",
                  "set/get mesh geometry coordinates from/to function",
                  "expecting 'Lagrange' finite element family rather than '%s'",
                  position.function_space()->element()->ufc_element()->family());
@@ -45,14 +45,14 @@ void _check_coordinates(const mesh::MeshGeometry& geometry,
 
   if (position.value_rank() != 1)
   {
-    dolfin_error(
+    log::dolfin_error(
         "fem_utils.cpp", "set/get mesh geometry coordinates from/to function",
         "function has incorrect value rank %d, need 1", position.value_rank());
   }
 
   if (position.value_dimension(0) != geometry.dim())
   {
-    dolfin_error("fem_utils.cpp",
+    log::dolfin_error("fem_utils.cpp",
                  "set/get mesh geometry coordinates from/to function",
                  "function value dimension %d and geometry dimension %d "
                  "do not match",
@@ -62,7 +62,7 @@ void _check_coordinates(const mesh::MeshGeometry& geometry,
   if (position.function_space()->element()->ufc_element()->degree()
       != geometry.degree())
   {
-    dolfin_error("fem_utils.cpp",
+    log::dolfin_error("fem_utils.cpp",
                  "set/get mesh geometry coordinates from/to function",
                  "function degree %d and geometry degree %d do not match",
                  position.function_space()->element()->ufc_element()->degree(),
@@ -173,7 +173,7 @@ void _get_set_coordinates(mesh::MeshGeometry& geometry,
 }
 
 //-----------------------------------------------------------------------------
-void dolfin::fem::init(PETScVector& x, const Form& a)
+void dolfin::fem::init(la::PETScVector& x, const Form& a)
 {
   if (a.rank() != 1)
     throw std::runtime_error(
@@ -203,7 +203,7 @@ void dolfin::fem::init(PETScVector& x, const Form& a)
   x.init(index_map->local_range(), local_to_global, {}, block_size);
 }
 //-----------------------------------------------------------------------------
-void dolfin::fem::init(PETScMatrix& A, const Form& a)
+void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
 {
   bool keep_diagonal = false;
   if (a.rank() != 2)
@@ -231,7 +231,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
       = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
 
   // Create and build sparsity pattern
-  SparsityPattern pattern(A.mpi_comm(), index_maps, 0);
+  la::SparsityPattern pattern(A.mpi_comm(), index_maps, 0);
   SparsityPatternBuilder::build(
       pattern, mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
       (a.integrals().num_interior_facet_integrals() > 0),
@@ -279,7 +279,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
 
     // Eventually wait with assembly flush for keep_diagonal
     if (!keep_diagonal)
-      A.apply(PETScMatrix::AssemblyType::FLUSH);
+      A.apply(la::PETScMatrix::AssemblyType::FLUSH);
   }
 
   // FIXME: Check if there is a PETSc function for this
@@ -298,7 +298,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
       A.set(&block, 1, &_i, 1, &_i);
     }
 
-    A.apply(PETScMatrix::AssemblyType::FLUSH);
+    A.apply(la::PETScMatrix::AssemblyType::FLUSH);
   }
 }
 //-----------------------------------------------------------------------------
@@ -324,7 +324,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
 
   if (dofmap.is_view())
   {
-    dolfin_error("fem_utils.cpp", "tabulate vertex to dof map",
+    log::dolfin_error("fem_utils.cpp", "tabulate vertex to dof map",
                  "Cannot tabulate vertex_to_dof_map for a subspace");
   }
 
@@ -337,7 +337,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   const std::size_t vert_per_cell = mesh.topology()(top_dim, 0).size(0);
   if (vert_per_cell * dofs_per_vertex != dofmap.max_element_dofs())
   {
-    dolfin_error("DofMap.cpp", "tabulate dof to vertex map",
+    log::dolfin_error("DofMap.cpp", "tabulate dof to vertex map",
                  "Can only tabulate dofs on vertices");
   }
 

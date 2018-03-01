@@ -17,6 +17,9 @@
 
 namespace dolfin
 {
+namespace la
+{
+
 /// These class provides static functions that permit users to set
 /// and retrieve PETSc options via the PETSc option/parameter
 /// system. The option must not be prefixed by '-', e.g.
@@ -67,6 +70,6 @@ public:
   static void clear();
 };
 }
-
+}
 #endif
 

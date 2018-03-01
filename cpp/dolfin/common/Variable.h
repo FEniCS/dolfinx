@@ -13,6 +13,9 @@
 namespace dolfin
 {
 
+namespace common
+{
+
 /// Common base class for DOLFIN variables.
 
 class Variable
@@ -53,7 +56,7 @@ public:
   virtual std::string str(bool verbose) const;
 
   /// Parameters
-  Parameters parameters;
+  parameter::Parameters parameters;
 
 private:
   // Name
@@ -65,4 +68,5 @@ private:
   // Unique identifier
   const std::size_t unique_id;
 };
+}
 }
