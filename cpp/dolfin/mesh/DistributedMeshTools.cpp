@@ -4,8 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <boost/multi_array.hpp>
-
+#include "DistributedMeshTools.h"
 #include "Cell.h"
 #include "Facet.h"
 #include "Mesh.h"
@@ -17,15 +16,15 @@
 #include "dolfin/graph/Graph.h"
 #include "dolfin/graph/SCOTCH.h"
 #include "dolfin/log/log.h"
-
-#include "DistributedMeshTools.h"
+#include <boost/multi_array.hpp>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
 {
-  Timer timer("Number distributed mesh entities");
+  common::Timer timer("Number distributed mesh entities");
 
   // Return if global entity indices have already been calculated
   if (mesh.topology().have_global_indices(d))
@@ -41,7 +40,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
     // Set global entity numbers in mesh
     _mesh.topology().init(d, mesh.num_entities(d), mesh.num_entities(d));
     _mesh.topology().init_global_indices(d, mesh.num_entities(d));
-    for (auto& e : MeshRange<MeshEntity>(mesh, d))
+    for (auto& e : mesh::MeshRange<MeshEntity>(mesh, d))
       _mesh.topology().set_global_index(d, e.index(), e.index());
 
     return;
@@ -79,17 +78,17 @@ std::size_t DistributedMeshTools::number_entities(
   // from mesh global numbering, e.g. when computing mesh entity
   // numbering for problems with periodic boundary conditions.
 
-  log(PROGRESS,
+  log::log(PROGRESS,
       "Number mesh entities for distributed mesh (for specified vertex ids).",
       d);
-  Timer timer(
+  common::Timer timer(
       "Number mesh entities for distributed mesh (for specified vertex ids)");
 
   // Check that we're not re-numbering vertices (these are fixed at
   // mesh construction)
   if (d == 0)
   {
-    dolfin_error("MeshPartitioning.cpp", "number mesh entities",
+    log::dolfin_error("MeshPartitioning.cpp", "number mesh entities",
                  "Global vertex indices exist at input. Cannot be renumbered");
   }
 
@@ -102,7 +101,7 @@ std::size_t DistributedMeshTools::number_entities(
     return mesh.num_entities_global(d);
 
     /*
-    dolfin_error("MeshPartitioning.cpp",
+    log::dolfin_error("MeshPartitioning.cpp",
                  "number mesh entities",
                  "Global cell indices exist at input. Cannot be renumbered");
     */
@@ -129,7 +128,7 @@ std::size_t DistributedMeshTools::number_entities(
   // map. Exclude any slave entities.
   std::map<std::vector<std::size_t>, std::uint32_t> entities;
   std::pair<std::vector<std::size_t>, std::uint32_t> entity;
-  for (auto& e : MeshRange<MeshEntity>(mesh, d, MeshRangeType::ALL))
+  for (auto& e : mesh::MeshRange<MeshEntity>(mesh, d, mesh::MeshRangeType::ALL))
   {
     const std::size_t local_index = e.index();
     if (!exclude[local_index])
@@ -257,7 +256,7 @@ std::size_t DistributedMeshTools::number_entities(
             << " received illegal entity given by ";
         msg << " with global index " << global_index;
         msg << " from process " << p;
-        dolfin_error("MeshPartitioning.cpp", "number mesh entities", msg.str());
+        log::dolfin_error("MeshPartitioning.cpp", "number mesh entities", msg.str());
       }
 
       const std::size_t local_entity_index = recv_entity->second.local_index;
@@ -339,11 +338,11 @@ DistributedMeshTools::locate_off_process_entities(
     const std::vector<std::size_t>& entity_indices, std::size_t dim,
     const Mesh& mesh)
 {
-  Timer timer("Locate off-process entities");
+  common::Timer timer("Locate off-process entities");
 
   if (dim == 0)
   {
-    warning("DistributedMeshTools::host_processes has not been tested for "
+    log::warning("DistributedMeshTools::host_processes has not been tested for "
             "vertices.");
   }
 
@@ -353,7 +352,7 @@ DistributedMeshTools::locate_off_process_entities(
   // Check that entity is a vertex or a cell
   if (dim != 0 && dim != D)
   {
-    dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
+    log::dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
                  "This version of DistributedMeshTools::host_processes is only "
                  "for vertices or cells");
   }
@@ -361,14 +360,14 @@ DistributedMeshTools::locate_off_process_entities(
   // Check that global numbers have been computed.
   if (!mesh.topology().have_global_indices(dim))
   {
-    dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
+    log::dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
                  "Global mesh entity numbers have not been computed");
   }
 
   // Check that global numbers have been computed.
   if (!mesh.topology().have_global_indices(D))
   {
-    dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
+    log::dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
                  "Global mesh entity numbers have not been computed");
   }
 
@@ -480,7 +479,7 @@ DistributedMeshTools::locate_off_process_entities(
   const std::size_t number_expected = test_set.size();
   if (number_expected != processes.size())
   {
-    dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
+    log::dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
                  "Sanity check failed");
   }
 
@@ -491,8 +490,8 @@ std::unordered_map<std::uint32_t,
                    std::vector<std::pair<std::uint32_t, std::uint32_t>>>
 DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
 {
-  log(PROGRESS, "Compute shared mesh entities of dimension %d.", d);
-  Timer timer("Computed shared mesh entities");
+  log::log(PROGRESS, "Compute shared mesh entities of dimension %d.", d);
+  common::Timer timer("Computed shared mesh entities");
 
   // MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -501,8 +500,9 @@ DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
   // Return empty set if running in serial
   if (MPI::size(mpi_comm) == 1)
   {
-    return std::unordered_map<
-        std::uint32_t, std::vector<std::pair<std::uint32_t, std::uint32_t>>>();
+    return std::
+        unordered_map<std::uint32_t,
+                      std::vector<std::pair<std::uint32_t, std::uint32_t>>>();
   }
 
   // Initialize entities of dimension d
@@ -569,9 +569,9 @@ DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
     if (recv_entities[p].size() > 0)
     {
       // Get global-to-local map for neighbour process
-      std::unordered_map<
-          std::size_t,
-          std::unordered_map<std::size_t, std::size_t>>::const_iterator it
+      std::unordered_map<std::size_t,
+                         std::unordered_map<std::size_t,
+                                            std::size_t>>::const_iterator it
           = global_to_local.find(sending_proc);
       dolfin_assert(it != global_to_local.end());
       const std::unordered_map<std::size_t, std::size_t>&
@@ -644,8 +644,8 @@ void DistributedMeshTools::compute_entity_ownership(
     std::vector<std::size_t>& owned_entities,
     std::array<std::map<Entity, EntityData>, 2>& shared_entities)
 {
-  log(PROGRESS, "Compute ownership for mesh entities of dimension %d.", d);
-  Timer timer("Compute mesh entity ownership");
+  log::log(PROGRESS, "Compute ownership for mesh entities of dimension %d.", d);
+  common::Timer timer("Compute mesh entity ownership");
 
   // Build global-to-local indices map for shared vertices
   std::map<std::size_t, std::set<std::uint32_t>> shared_vertices;
@@ -1017,7 +1017,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   if (mesh.topology().ghost_offset(D) == mesh.topology().size(D))
   {
     // Copy local values
-    for (auto& f : MeshRange<Facet>(mesh))
+    for (auto& f : mesh::MeshRange<mesh::Facet>(mesh))
       num_global_neighbors[f.index()] = f.num_entities(D);
 
     // All shared facets must have two cells, if no ghost cells
@@ -1036,7 +1036,8 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     // Map shared facets
     std::map<std::size_t, std::size_t> global_to_local_facet;
 
-    for (auto& f : MeshRange<MeshEntity>(mesh, D - 1, MeshRangeType::ALL))
+    for (auto& f :
+         mesh::MeshRange<MeshEntity>(mesh, D - 1, mesh::MeshRangeType::ALL))
     {
       // Insert shared facets into mapping
       if (f.is_shared())
@@ -1049,7 +1050,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
       {
         // Singly attached ghost facet - check with owner of attached
         // cell
-        const Cell c(mesh, f.entities(D)[0]);
+        const mesh::Cell c(mesh, f.entities(D)[0]);
         dolfin_assert(c.is_ghost());
         send_facet[c.owner()].push_back(f.global_index());
       }
@@ -1066,7 +1067,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
       {
         auto map_it = global_to_local_facet.find(*r);
         dolfin_assert(map_it != global_to_local_facet.end());
-        const Facet local_facet(mesh, map_it->second);
+        const mesh::Facet local_facet(mesh, map_it->second);
         const std::size_t n_cells = local_facet.num_entities(D);
         send_response[p].push_back(n_cells);
       }
@@ -1101,7 +1102,7 @@ DistributedMeshTools::reorder_vertices_by_global_indices(const Mesh& mesh)
 void DistributedMeshTools::reorder_values_by_global_indices(
     const Mesh& mesh, std::vector<double>& data, const std::size_t width)
 {
-  Timer t("DistributedMeshTools: reorder vertex values");
+  common::Timer t("DistributedMeshTools: reorder vertex values");
 
   dolfin_assert(mesh.num_vertices() * width == data.size());
 
@@ -1133,7 +1134,8 @@ void DistributedMeshTools::reorder_values_by_global_indices(
     // Iterate through ghost cells, adding non-ghost vertices which
     // are in lower rank process cells to a set for exclusion from
     // output
-    for (auto& c : MeshRange<Cell>(mesh, MeshRangeType::GHOST))
+    for (auto& c :
+         mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::GHOST))
     {
       const std::uint32_t cell_owner = c.owner();
       for (auto& v : EntityRange<Vertex>(c))
@@ -1150,7 +1152,7 @@ void DistributedMeshTools::reorder_values_by_global_indices(
   std::vector<double> reduced_data;
 
   // Remove clashing data with multiple copies on different processes
-  for (auto& v : MeshRange<Vertex>(mesh))
+  for (auto& v : mesh::MeshRange<Vertex>(mesh))
   {
     const std::size_t vidx = v.index();
     if (non_local_vertices.find(vidx) == non_local_vertices.end())
@@ -1181,8 +1183,9 @@ void DistributedMeshTools::reorder_values_by_global_indices(
   // Calculate size of overall global vector by finding max index value
   // anywhere
   const std::size_t global_vector_size
-      = MPI::max(mpi_comm, *std::max_element(global_indices.begin(),
-                                             global_indices.end()))
+      = MPI::max(
+            mpi_comm,
+            *std::max_element(global_indices.begin(), global_indices.end()))
         + 1;
 
   // Send unwanted values off process

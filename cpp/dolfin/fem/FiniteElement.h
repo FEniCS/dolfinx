@@ -16,7 +16,13 @@
 namespace dolfin
 {
 
+namespace mesh
+{
 class Cell;
+}
+
+namespace fem
+{
 
 /// This is a wrapper for a UFC finite element (ufc::finite_element).
 
@@ -153,7 +159,7 @@ public:
   ///         The cell.
   void tabulate_dof_coordinates(boost::multi_array<double, 2>& coordinates,
                                 const std::vector<double>& coordinate_dofs,
-                                const Cell& cell) const;
+                                const mesh::Cell& cell) const;
 
   /// Return the number of sub elements (for a mixed element)
   /// @return std::size_t
@@ -210,4 +216,5 @@ private:
   // Simple hash of the signature string
   std::size_t _hash;
 };
+}
 }

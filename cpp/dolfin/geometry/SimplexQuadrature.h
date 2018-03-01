@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "Point.h"
 #include <Eigen/Dense>
 #include <vector>
 
@@ -14,7 +13,14 @@ namespace dolfin
 {
 
 // Forward declarations
+namespace mesh
+{
 class Cell;
+}
+
+namespace geometry
+{
+class Point;
 
 /// This class defines quadrature rules for simplices.
 
@@ -44,7 +50,7 @@ public:
   ///         A flattened array of quadrature points and a
   ///         corresponding array of quadrature weights.
   std::pair<std::vector<double>, std::vector<double>>
-  compute_quadrature_rule(const Cell& cell, std::size_t order) const;
+  compute_quadrature_rule(const mesh::Cell& cell, std::size_t order) const;
 
   /// Compute quadrature rule for simplex.
   ///
@@ -268,4 +274,5 @@ private:
   std::vector<std::vector<double>> _p;
   std::vector<double> _w;
 };
+}
 }

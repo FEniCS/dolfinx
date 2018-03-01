@@ -9,12 +9,13 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <dolfin/common/constants.h>
+#include <dolfin/fem/DirichletBC.h>
 #include <map>
 
 namespace dolfin
 {
-
-// Forward declarations
+namespace mesh
+{
 class Mesh;
 template <typename T>
 class MeshFunction;
@@ -198,11 +199,11 @@ private:
                      bool check_midpoint) const;
 
   // Friends
-  friend class DirichletBC;
-  friend class PeriodicBC;
+  friend class dolfin::fem::DirichletBC;
 
   // Geometric dimension, needed for SWIG interface, will be set before
   // calls to inside() and map()
   mutable std::size_t _geometric_dimension;
 };
+}
 }

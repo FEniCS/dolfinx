@@ -70,15 +70,15 @@ from .cpp.nls import (NonlinearProblem, NewtonSolver, OptimisationProblem)
 
 # Import Python modules
 #from . import la
-from . import mesh
+# from . import mesh
 #from . import parameter
 
 #from .common import timer
 #from .common.timer import Timer, timed
-from .common.plotting import plot
 
-from .fem.assembling import (assemble_system,
-                             SystemAssembler, assemble_local)
+# from .fem.assembling import (assemble_system,
+#                             SystemAssembler, assemble_local)
+
 from .fem.form import Form
 from .fem.dirichletbc import DirichletBC, AutoSubDomain
 from .fem.interpolation import interpolate
@@ -102,7 +102,7 @@ from .function.expression import Expression, UserExpression, CompiledExpression
 from .generation import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
 
 # experimental
-#from .jit.pybind11jit import compile_cpp_code
+from .jit.pybind11jit import compile_cpp_code
 
 #from .la import la_index_dtype
 from .mesh.meshfunction import (MeshFunction)

@@ -4,13 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <memory>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <set>
-#include <string>
-#include <vector>
-
+#include <Eigen/Dense>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/common/Timer.h>
@@ -19,25 +14,31 @@
 #include <dolfin/common/defines.h>
 #include <dolfin/common/timing.h>
 #include <dolfin/log/Table.h>
+#include <memory>
+#include <pybind11/eigen.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <set>
+#include <string>
+#include <vector>
 
 #include "MPICommWrapper.h"
 #include "casters.h"
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
-{
+namespace dolfin_wrappers {
 // Interface for dolfin/common
-void common(py::module& m)
-{
-  // dolfin::Variable
-  py::class_<dolfin::Variable, std::shared_ptr<dolfin::Variable>>(
-      m, "Variable", "Variable base class")
-      .def("id", &dolfin::Variable::id)
-      .def("name", &dolfin::Variable::name)
-      .def("label", &dolfin::Variable::label)
-      .def("rename", &dolfin::Variable::rename)
-      .def_readwrite("parameters", &dolfin::Variable::parameters);
+void common(py::module &m) {
+  // dolfin::common::Variable
+  py::class_<dolfin::common::Variable,
+             std::shared_ptr<dolfin::common::Variable>>(m, "Variable",
+                                                        "Variable base class")
+      .def("id", &dolfin::common::Variable::id)
+      .def("name", &dolfin::common::Variable::name)
+      .def("label", &dolfin::common::Variable::label)
+      .def("rename", &dolfin::common::Variable::rename)
+      .def_readwrite("parameters", &dolfin::common::Variable::parameters);
 
   // From dolfin/common/defines.h
   m.def("has_debug", &dolfin::has_debug);
@@ -84,17 +85,42 @@ void common(py::module& m)
   m.attr("DOLFIN_EPS") = DOLFIN_EPS;
   m.attr("DOLFIN_PI") = DOLFIN_PI;
 
-  // dolfin::Timer
-  py::class_<dolfin::Timer, std::shared_ptr<dolfin::Timer>>(m, "Timer",
-                                                            "Timer class")
+  // dolfin::common::IndexMap
+  py::class_<dolfin::common::IndexMap,
+             std::shared_ptr<dolfin::common::IndexMap>>
+      index_map(m, "IndexMap");
+  index_map.def("size", &dolfin::common::IndexMap::size)
+      .def("block_size", &dolfin::common::IndexMap::block_size,
+           "Return block size")
+      .def("local_range", &dolfin::common::IndexMap::local_range)
+      .def("local_to_global_unowned",
+           [](dolfin::common::IndexMap &self) {
+             return Eigen::Map<
+                 const Eigen::Matrix<std::size_t, Eigen::Dynamic, 1>>(
+                 self.local_to_global_unowned().data(),
+                 self.local_to_global_unowned().size());
+           },
+           py::return_value_policy::reference_internal,
+           "Return view into unowned part of local-to-global map");
+
+  // dolfin::common::IndexMap enums
+  py::enum_<dolfin::common::IndexMap::MapSize>(index_map, "MapSize")
+      .value("ALL", dolfin::common::IndexMap::MapSize::ALL)
+      .value("OWNED", dolfin::common::IndexMap::MapSize::OWNED)
+      .value("UNOWNED", dolfin::common::IndexMap::MapSize::UNOWNED)
+      .value("GLOBAL", dolfin::common::IndexMap::MapSize::GLOBAL);
+
+  // dolfin::common::Timer
+  py::class_<dolfin::common::Timer, std::shared_ptr<dolfin::common::Timer>>(
+      m, "Timer", "Timer class")
       .def(py::init<>())
       .def(py::init<std::string>())
-      .def("start", &dolfin::Timer::start, "Start timer")
-      .def("stop", &dolfin::Timer::stop, "Stop timer")
-      .def("resume", &dolfin::Timer::resume)
-      .def("elapsed", &dolfin::Timer::elapsed);
+      .def("start", &dolfin::common::Timer::start, "Start timer")
+      .def("stop", &dolfin::common::Timer::stop, "Stop timer")
+      .def("resume", &dolfin::common::Timer::resume)
+      .def("elapsed", &dolfin::common::Timer::elapsed);
 
-  // dolfin::Timer enums
+  // dolfin::common::Timer enums
   py::enum_<dolfin::TimingClear>(m, "TimingClear")
       .value("clear", dolfin::TimingClear::clear)
       .value("keep", dolfin::TimingClear::keep);
@@ -117,32 +143,32 @@ void common(py::module& m)
         });
 
   // dolfin::SubSystemsManager
-  py::class_<dolfin::SubSystemsManager,
-             std::unique_ptr<dolfin::SubSystemsManager, py::nodelete>>(
+  py::class_<dolfin::common::SubSystemsManager,
+             std::unique_ptr<dolfin::common::SubSystemsManager, py::nodelete>>(
       m, "SubSystemsManager")
       .def_static("init_petsc",
-                  (void (*)()) & dolfin::SubSystemsManager::init_petsc)
+                  (void (*)()) & dolfin::common::SubSystemsManager::init_petsc)
       .def_static("init_petsc",
                   [](std::vector<std::string> args) {
-                    std::vector<char*> argv(args.size());
+                    std::vector<char *> argv(args.size());
                     for (std::size_t i = 0; i < args.size(); ++i)
-                      argv[i] = const_cast<char*>(args[i].data());
-                    dolfin::SubSystemsManager::init_petsc(args.size(),
-                                                          argv.data());
+                      argv[i] = const_cast<char *>(args[i].data());
+                    dolfin::common::SubSystemsManager::init_petsc(args.size(),
+                                                                  argv.data());
                   })
-      .def_static("finalize", &dolfin::SubSystemsManager::finalize)
+      .def_static("finalize", &dolfin::common::SubSystemsManager::finalize)
       .def_static("responsible_mpi",
-                  &dolfin::SubSystemsManager::responsible_mpi)
+                  &dolfin::common::SubSystemsManager::responsible_mpi)
       .def_static("responsible_petsc",
-                  &dolfin::SubSystemsManager::responsible_petsc)
+                  &dolfin::common::SubSystemsManager::responsible_petsc)
       .def_static("mpi_initialized",
-                  &dolfin::SubSystemsManager::mpi_initialized)
-      .def_static("mpi_finalized", &dolfin::SubSystemsManager::mpi_finalized);
+                  &dolfin::common::SubSystemsManager::mpi_initialized)
+      .def_static("mpi_finalized",
+                  &dolfin::common::SubSystemsManager::mpi_finalized);
 }
 
 // Interface for MPI
-void mpi(py::module& m)
-{
+void mpi(py::module &m) {
 
 #ifndef HAS_PYBIND11_MPI4PY
   // Expose the MPICommWrapper directly since we cannot cast it to
@@ -167,25 +193,29 @@ void mpi(py::module& m)
           "comm_self", [](py::object) { return MPICommWrapper(MPI_COMM_SELF); })
       .def_property_readonly_static(
           "comm_null", [](py::object) { return MPICommWrapper(MPI_COMM_NULL); })
-      .def_static("init", (void (*)()) & dolfin::SubSystemsManager::init_mpi,
+      .def_static("init",
+                  (void (*)()) & dolfin::common::SubSystemsManager::init_mpi,
                   "Initialise MPI")
       .def_static(
           "init",
           [](std::vector<std::string> args, int required_thread_level) -> int {
-            std::vector<char*> argv(args.size());
+            std::vector<char *> argv(args.size());
             for (std::size_t i = 0; i < args.size(); ++i)
-              argv[i] = const_cast<char*>(args[i].data());
-            return dolfin::SubSystemsManager::init_mpi(args.size(), argv.data(),
-                                                       required_thread_level);
+              argv[i] = const_cast<char *>(args[i].data());
+            return dolfin::common::SubSystemsManager::init_mpi(
+                args.size(), argv.data(), required_thread_level);
           },
           "Initialise MPI with command-line args and required level "
           "of thread support. Return provided thread level.")
-      .def_static("responsible", &dolfin::SubSystemsManager::responsible_mpi,
+      .def_static("responsible",
+                  &dolfin::common::SubSystemsManager::responsible_mpi,
                   "Return true if DOLFIN initialised MPI (and is therefore "
                   "responsible for finalization)")
-      .def_static("initialized", &dolfin::SubSystemsManager::mpi_initialized,
+      .def_static("initialized",
+                  &dolfin::common::SubSystemsManager::mpi_initialized,
                   "Check if MPI has been initialised")
-      .def_static("finalized", &dolfin::SubSystemsManager::mpi_finalized,
+      .def_static("finalized",
+                  &dolfin::common::SubSystemsManager::mpi_finalized,
                   "Check if MPI has been finalized")
       .def_static("barrier",
                   [](const MPICommWrapper comm) {

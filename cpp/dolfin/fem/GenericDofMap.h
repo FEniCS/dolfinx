@@ -9,12 +9,9 @@
 #include <Eigen/Dense>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
-#include <dolfin/la/IndexMap.h>
 #include <dolfin/log/log.h>
-#include <map>
 #include <memory>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -26,14 +23,28 @@ class cell;
 namespace dolfin
 {
 
-class Cell;
+namespace la
+{
 class PETScVector;
+}
+
+namespace common
+{
+class IndexMap;
+}
+
+namespace mesh
+{
 class Mesh;
 class SubDomain;
+}
+
+namespace fem
+{
 
 /// This class provides a generic interface for dof maps
 
-class GenericDofMap : public Variable
+class GenericDofMap : public common::Variable
 {
 public:
   /// Constructor
@@ -94,23 +105,23 @@ public:
   /// Return the dof indices associated with entities of given dimension and
   /// entity indices
   virtual std::vector<dolfin::la_index_t>
-  entity_dofs(const Mesh& mesh, std::size_t entity_dim,
+  entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
               const std::vector<std::size_t>& entity_indices) const = 0;
 
   /// Return the dof indices associated with all entities of given dimension
   virtual std::vector<dolfin::la_index_t>
-  entity_dofs(const Mesh& mesh, std::size_t entity_dim) const = 0;
+  entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const = 0;
 
   /// Return the dof indices associated with the closure of entities of
   /// given dimension and entity indices
   virtual std::vector<dolfin::la_index_t>
-  entity_closure_dofs(const Mesh& mesh, std::size_t entity_dim,
+  entity_closure_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
                       const std::vector<std::size_t>& entity_indices) const = 0;
 
   /// Return the dof indices associated with the closure of all entities of
   /// given dimension
   virtual std::vector<dolfin::la_index_t>
-  entity_closure_dofs(const Mesh& mesh, std::size_t entity_dim) const = 0;
+  entity_closure_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const = 0;
 
   /// Tabulate local-local facet dofs
   virtual void tabulate_facet_dofs(std::vector<std::size_t>& element_dofs,
@@ -136,21 +147,22 @@ public:
   virtual std::shared_ptr<GenericDofMap> copy() const = 0;
 
   /// Create a new dof map on new mesh
-  virtual std::shared_ptr<GenericDofMap> create(const Mesh& new_mesh) const = 0;
+  virtual std::shared_ptr<GenericDofMap>
+  create(const mesh::Mesh& new_mesh) const = 0;
 
   /// Extract sub dofmap component
   virtual std::shared_ptr<GenericDofMap>
   extract_sub_dofmap(const std::vector<std::size_t>& component,
-                     const Mesh& mesh) const = 0;
+                     const mesh::Mesh& mesh) const = 0;
 
   /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
   virtual std::shared_ptr<GenericDofMap>
   collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
-           const Mesh& mesh) const = 0;
+           const mesh::Mesh& mesh) const = 0;
 
   /// Return list of dof indices on this process that belong to mesh
   /// entities of dimension dim
-  virtual std::vector<dolfin::la_index_t> dofs(const Mesh& mesh,
+  virtual std::vector<dolfin::la_index_t> dofs(const mesh::Mesh& mesh,
                                                std::size_t dim) const = 0;
 
   /// Return list of global dof indices on this process
@@ -160,10 +172,10 @@ public:
   /// layout of vector must be consistent with dof map range. This
   /// function is typically used to construct the null space of a
   /// matrix operator
-  virtual void set(PETScVector& x, double value) const = 0;
+  virtual void set(la::PETScVector& x, double value) const = 0;
 
   /// Index map (const access)
-  virtual std::shared_ptr<const IndexMap> index_map() const = 0;
+  virtual std::shared_ptr<const common::IndexMap> index_map() const = 0;
 
   /// Tabulate map between local (process) and global dof indices
   virtual void tabulate_local_to_global_dofs(
@@ -189,6 +201,7 @@ public:
 
   /// Subdomain mapping constrained boundaries, e.g. periodic
   /// conditions
-  std::shared_ptr<const SubDomain> constrained_domain;
+  std::shared_ptr<const mesh::SubDomain> constrained_domain;
 };
+}
 }

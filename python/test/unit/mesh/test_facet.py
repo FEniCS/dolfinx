@@ -25,7 +25,7 @@ def test_normal():
     mesh.init(1)
     for facet in Facets(mesh):
         n = facet.normal()
-        nx, ny, nz = n.x(), n.y(), n.z()
+        nx, ny, nz = n[0], n[1], n[2]
         assert isinstance(nx, float)
         assert isinstance(ny, float)
         assert isinstance(nz, float)

@@ -13,6 +13,9 @@
 namespace dolfin
 {
 
+namespace common
+{
+
 /// A timer can be used for timing tasks. The basic usage is
 ///
 ///   Timer timer("Assembling over cells");
@@ -64,5 +67,4 @@ private:
   boost::timer::cpu_timer _timer;
 };
 }
-
-
+}

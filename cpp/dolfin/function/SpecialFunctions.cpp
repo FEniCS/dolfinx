@@ -9,10 +9,10 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 
-using namespace dolfin;
+using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
-MeshCoordinates::MeshCoordinates(std::shared_ptr<const Mesh> mesh)
+MeshCoordinates::MeshCoordinates(std::shared_ptr<const mesh::Mesh> mesh)
     : Expression({mesh->geometry().dim()}), _mesh(mesh)
 {
   // Do nothing
@@ -30,10 +30,8 @@ void MeshCoordinates::eval(Eigen::Ref<Eigen::VectorXd> values,
     values[i] = x[i];
 }
 //-----------------------------------------------------------------------------
-FacetArea::FacetArea(std::shared_ptr<const Mesh> mesh)
-    : Expression({}), _mesh(mesh),
-      not_on_boundary("*** Warning: evaluating special function FacetArea on a "
-                      "non-facet domain, returning zero.")
+FacetArea::FacetArea(std::shared_ptr<const mesh::Mesh> mesh)
+    : Expression({}), _mesh(mesh)
 {
   // Do nothing
 }
@@ -47,12 +45,12 @@ void FacetArea::eval(Eigen::Ref<Eigen::VectorXd> values,
 
   if (cell.local_facet >= 0)
   {
-    Cell c(*_mesh, cell.index);
+    mesh::Cell c(*_mesh, cell.index);
     values[0] = c.facet_area(cell.local_facet);
   }
   else
   {
-    not_on_boundary();
+    // not_on_boundary
     values[0] = 0.0;
   }
 }

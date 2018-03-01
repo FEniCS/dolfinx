@@ -12,7 +12,8 @@
 
 namespace dolfin
 {
-
+namespace function
+{
 class Function;
 
 /// This class represents a linear combination of functions. It is
@@ -87,4 +88,5 @@ private:
 
   std::vector<std::pair<double, std::shared_ptr<const Function>>> _pairs;
 };
+}
 }

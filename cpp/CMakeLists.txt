@@ -112,7 +112,6 @@ list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
-list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "HDF5")
 
 # Add options
@@ -328,14 +327,6 @@ if (DOLFIN_ENABLE_HDF5)
     URL "https://www.hdfgroup.org/HDF5")
 endif()
 
-# Check for zlib
-if (DOLFIN_ENABLE_ZLIB)
-  find_package(ZLIB)
-  set_package_properties(ZLIB PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Compression library"
-    URL "http://www.zlib.net")
-endif()
-
 # Check for geometry debugging
 if (DOLFIN_ENABLE_GEOMETRY_DEBUGGING)
   message(STATUS "Enabling geometry debugging")
@@ -537,7 +528,6 @@ install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
   PATTERN "*.h"
   PATTERN "*.py"
   PATTERN "*.xml*"
-  PATTERN "*.off"
   PATTERN "CMakeFiles" EXCLUDE)
 
 #------------------------------------------------------------------------------
@@ -546,7 +536,7 @@ install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
 enable_testing()
 
 # Add target "unittests", but do not add to default target
-add_subdirectory(test/unit/cpp EXCLUDE_FROM_ALL)
+add_subdirectory(test/unit EXCLUDE_FROM_ALL)
 
 # Add demo but do not add to default target
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")

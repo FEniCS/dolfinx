@@ -9,6 +9,7 @@
 #include "PETScOptions.h"
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 void PETScOptions::set(std::string option)
@@ -38,7 +39,7 @@ void PETScOptions::set(std::string option, std::string value)
 //-----------------------------------------------------------------------------
 void PETScOptions::clear(std::string option)
 {
-  SubSystemsManager::init_petsc();
+  common::SubSystemsManager::init_petsc();
 
   if (option[0] != '-')
     option = '-' + option;
@@ -51,7 +52,7 @@ void PETScOptions::clear(std::string option)
 //-----------------------------------------------------------------------------
 void PETScOptions::clear()
 {
-  SubSystemsManager::init_petsc();
+  common::SubSystemsManager::init_petsc();
   PetscErrorCode ierr = PetscOptionsClear(NULL);
   if (ierr != 0)
     PETScObject::petsc_error(ierr, __FILE__, "PetscOptionsClear");

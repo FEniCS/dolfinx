@@ -14,14 +14,14 @@ dolfin::MPI::Comm::Comm(MPI_Comm comm)
 {
 #ifdef HAS_MPI
   // Make sure MPI has been initialised
-  SubSystemsManager::init_mpi();
+  common::SubSystemsManager::init_mpi();
 
   // Duplicate communicator
   if (comm != MPI_COMM_NULL)
   {
     int err = MPI_Comm_dup(comm, &_comm);
     if (err != MPI_SUCCESS)
-      dolfin::error("Duplication of MPI communicator failed (MPI_Comm_dup");
+      log::error("Duplication of MPI communicator failed (MPI_Comm_dup");
   }
   else
     _comm = MPI_COMM_NULL;
@@ -124,7 +124,7 @@ std::uint32_t dolfin::MPI::rank(const MPI_Comm comm)
 std::uint32_t dolfin::MPI::size(const MPI_Comm comm)
 {
 #ifdef HAS_MPI
-  SubSystemsManager::init_mpi();
+  common::SubSystemsManager::init_mpi();
   int size;
   MPI_Comm_size(comm, &size);
   return size;
@@ -257,7 +257,7 @@ dolfin::Table dolfin::MPI::all_reduce(const MPI_Comm comm,
         y = x;
     };
   else
-    dolfin_error("MPI.h", "perform reduction of Table",
+    log::dolfin_error("MPI.h", "perform reduction of Table",
                  "MPI::reduce(comm, table, %d) not implemented", op);
 
   // Construct dvalues map from obtained data

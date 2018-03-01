@@ -17,6 +17,7 @@
 #include <numeric>
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 namespace
 {
@@ -85,7 +86,7 @@ void PETScVector::init(std::array<std::int64_t, 2> range,
 {
   if (!_x)
   {
-    dolfin_error("PETScVector.h", "initialize vector",
+    log::dolfin_error("PETScVector.h", "initialize vector",
                  "Underlying PETSc Vec has not been initialized");
   }
 
@@ -143,7 +144,7 @@ void PETScVector::init(std::array<std::int64_t, 2> range,
   }
   else if (!ghost_indices.empty())
   {
-    dolfin_error("PETScVector.cpp", "initialize vector",
+    log::dolfin_error("PETScVector.cpp", "initialize vector",
                  "Sequential PETSc Vec objects cannot have ghost entries");
   }
 
@@ -260,7 +261,7 @@ void PETScVector::set_local(const std::vector<double>& values)
   const std::size_t local_size = _local_range[1] - _local_range[0];
   if (values.size() != local_size)
   {
-    dolfin_error("PETScVector.cpp", "set local values of PETSc vector",
+    log::dolfin_error("PETScVector.cpp", "set local values of PETSc vector",
                  "Size of values array is not equal to local vector size");
   }
 
@@ -283,7 +284,7 @@ void PETScVector::add_local(const std::vector<double>& values)
   const std::size_t local_size = _local_range[1] - _local_range[0];
   if (values.size() != local_size)
   {
-    dolfin_error("PETScVector.cpp", "add local values to PETSc vector",
+    log::dolfin_error("PETScVector.cpp", "add local values to PETSc vector",
                  "Size of values array is not equal to local vector size");
   }
 
@@ -385,7 +386,7 @@ void PETScVector::add_local(const double* block, std::size_t m,
 //-----------------------------------------------------------------------------
 void PETScVector::apply()
 {
-  Timer timer("Apply (PETScVector)");
+  common::Timer timer("Apply (PETScVector)");
   dolfin_assert(_x);
   PetscErrorCode ierr;
   ierr = VecAssemblyBegin(_x);
@@ -510,7 +511,7 @@ const PETScVector& PETScVector::operator*=(const PETScVector& v)
   dolfin_assert(v._x);
   if (size() != v.size())
   {
-    dolfin_error("PETScVector.cpp",
+    log::dolfin_error("PETScVector.cpp",
                  "perform point-wise multiplication with PETSc vector",
                  "Vectors are not of the same size");
   }
@@ -550,7 +551,7 @@ void PETScVector::axpy(double a, const PETScVector& y)
   dolfin_assert(y._x);
   if (size() != y.size())
   {
-    dolfin_error("PETScVector.cpp", "perform axpy operation with PETSc vector",
+    log::dolfin_error("PETScVector.cpp", "perform axpy operation with PETSc vector",
                  "Vectors are not of the same size");
   }
 
@@ -576,7 +577,7 @@ double PETScVector::norm(std::string norm_type) const
   dolfin_assert(_x);
   if (norm_types.count(norm_type) == 0)
   {
-    dolfin_error("PETScVector.cpp", "compute norm of PETSc vector",
+    log::dolfin_error("PETScVector.cpp", "compute norm of PETSc vector",
                  "Unknown norm type (\"%s\")", norm_type.c_str());
   }
 
@@ -665,7 +666,7 @@ void PETScVector::gather(PETScVector& y,
   // Check that passed vector is local
   if (MPI::size(y.mpi_comm()) != 1)
   {
-    dolfin_error("PETScVector.cpp", "gather vector entries",
+    log::dolfin_error("PETScVector.cpp", "gather vector entries",
                  "Gather vector must be a local vector (MPI_COMM_SELF)");
   }
 
@@ -676,7 +677,7 @@ void PETScVector::gather(PETScVector& y,
   // Check that passed vector has correct size
   if (y.size() != n)
   {
-    dolfin_error("PETScVector.cpp", "gather vector entries",
+    log::dolfin_error("PETScVector.cpp", "gather vector entries",
                  "Gather vector must be empty or of correct size "
                  "(same as provided indices)");
   }
@@ -759,7 +760,7 @@ void PETScVector::set_options_prefix(std::string options_prefix)
 {
   if (!_x)
   {
-    dolfin_error(
+    log::dolfin_error(
         "PETScVector.cpp", "setting PETSc options prefix",
         "Cannot set options prefix since PETSc Vec has not been initialized");
   }
@@ -773,7 +774,7 @@ std::string PETScVector::get_options_prefix() const
 {
   if (!_x)
   {
-    dolfin_error(
+    log::dolfin_error(
         "PETScVector.cpp", "get PETSc options prefix",
         "Cannot get options prefix since PETSc Vec has not been initialized");
   }
@@ -788,7 +789,7 @@ void PETScVector::set_from_options()
 {
   if (!_x)
   {
-    dolfin_error("PETScVector.cpp",
+    log::dolfin_error("PETScVector.cpp",
                  "call VecSetFromOptions on PETSc Vec object",
                  "Vec object has not been initialized");
   }

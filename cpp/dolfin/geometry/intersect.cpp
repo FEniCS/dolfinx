@@ -10,19 +10,19 @@
 #include <dolfin/mesh/Mesh.h>
 
 using namespace dolfin;
+using namespace dolfin::geometry;
 
 //-----------------------------------------------------------------------------
 std::shared_ptr<const MeshPointIntersection>
-dolfin::intersect(const Mesh& mesh, const Point& point)
+dolfin::geometry::intersect(const mesh::Mesh& mesh, const Point& point)
 {
   // Intersection is only implemented for simplex meshes
   if (!mesh.type().is_simplex())
   {
-    dolfin_error("intersect.cpp", "intersect mesh and point",
+    log::dolfin_error("intersect.cpp", "intersect mesh and point",
                  "Intersection is only implemented for simplex meshes");
   }
 
-  return std::shared_ptr<const MeshPointIntersection>(
-      new MeshPointIntersection(mesh, point));
+  return std::make_shared<const MeshPointIntersection>(mesh, point);
 }
 //-----------------------------------------------------------------------------

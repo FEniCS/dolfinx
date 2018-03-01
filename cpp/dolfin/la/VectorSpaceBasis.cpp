@@ -10,6 +10,7 @@
 #include <dolfin/common/constants.h>
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 VectorSpaceBasis::VectorSpaceBasis(
@@ -34,7 +35,7 @@ void VectorSpaceBasis::orthonormalize(double tol)
 
     if (_basis[i]->norm("l2") < tol)
     {
-      dolfin_error("VectorSpaceBasis.cpp", "orthonormalize vector basis",
+      log::dolfin_error("VectorSpaceBasis.cpp", "orthonormalize vector basis",
                    "Vector space has linear dependency");
     }
 

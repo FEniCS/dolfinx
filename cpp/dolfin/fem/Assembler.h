@@ -13,15 +13,17 @@
 
 namespace dolfin
 {
-
-// Forward declarations
-class DirichletBC;
-class Form;
+namespace la
+{
 class PETScMatrix;
 class PETScVector;
+}
 
 namespace fem
 {
+// Forward declarations
+class DirichletBC;
+class Form;
 
 class Assembler
 {
@@ -33,30 +35,30 @@ public:
 
   // Assemble matrix. Dirichlet rows/columns are zeroed, with '1' placed on
   // diagonal
-  void assemble(PETScMatrix& A);
+  void assemble(la::PETScMatrix& A);
 
   // Assemble vector
-  void assemble(PETScVector& b);
+  void assemble(la::PETScVector& b);
 
   // Assemble matrix and vector
-  void assemble(PETScMatrix& A, PETScVector& b);
+  void assemble(la::PETScMatrix& A, la::PETScVector& b);
 
 private:
   // Assemble matrix. Dirichlet rows/columns are zeroed, with '1' placed on
   // diagonal
-  static void assemble(PETScMatrix& A, const Form& a,
+  static void assemble(la::PETScMatrix& A, const Form& a,
                        std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Assemble vector
-  static void assemble(PETScVector& b, const Form& L);
+  static void assemble(la::PETScVector& b, const Form& L);
 
   // Apply bcs to vector (b <- b - Ax, where x holds prescribed boundary
   // values)
-  static void apply_bc(PETScVector& b, const Form& a,
+  static void apply_bc(la::PETScVector& b, const Form& a,
                        std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Set bcs (set entries of b to be equal to boundary value)
-  static void set_bc(PETScVector& b, const Form& L,
+  static void set_bc(la::PETScVector& b, const Form& L,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Bilinear and linear forms

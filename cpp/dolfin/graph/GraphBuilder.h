@@ -11,17 +11,26 @@
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfin/common/MPI.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include <set>
 #include <utility>
 #include <vector>
 
 namespace dolfin
 {
-
-// Forward declarations
-class CellType;
+namespace fem
+{
 class GenericDofMap;
+}
+
+namespace mesh
+{
+class CellType;
 class Mesh;
+}
+
+namespace graph
+{
 
 /// This class builds a Graph corresponding to various objects
 
@@ -30,15 +39,16 @@ class GraphBuilder
 
 public:
   /// Build local graph from dofmap
-  static Graph local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
-                           const GenericDofMap& dofmap1);
+  static Graph local_graph(const mesh::Mesh& mesh,
+                           const fem::GenericDofMap& dofmap0,
+                           const fem::GenericDofMap& dofmap1);
 
   /// Build local graph from mesh (general version)
-  static Graph local_graph(const Mesh& mesh,
+  static Graph local_graph(const mesh::Mesh& mesh,
                            const std::vector<std::size_t>& coloring_type);
 
   /// Build local graph (specialized version)
-  static Graph local_graph(const Mesh& mesh, std::size_t dim0,
+  static Graph local_graph(const mesh::Mesh& mesh, std::size_t dim0,
                            std::size_t dim1);
 
   /// Build distributed dual graph (cell-cell connections) from
@@ -47,13 +57,13 @@ public:
   static std::pair<std::int32_t, std::int32_t>
   compute_dual_graph(const MPI_Comm mpi_comm,
                      const boost::multi_array<std::int64_t, 2>& cell_vertices,
-                     const CellType& cell_type,
+                     const mesh::CellType& cell_type,
                      const std::int64_t num_global_vertices,
                      std::vector<std::vector<std::size_t>>& local_graph,
                      std::set<std::int64_t>& ghost_vertices);
 
 private:
-  friend class MeshPartitioning;
+  friend class mesh::MeshPartitioning;
 
   typedef std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>
       FacetCellMap;
@@ -63,7 +73,7 @@ private:
   static std::int32_t compute_local_dual_graph(
       const MPI_Comm mpi_comm,
       const boost::multi_array<std::int64_t, 2>& cell_vertices,
-      const CellType& cell_type,
+      const mesh::CellType& cell_type,
       std::vector<std::vector<std::size_t>>& local_graph,
       FacetCellMap& facet_cell_map);
 
@@ -73,7 +83,7 @@ private:
   static std::int32_t compute_local_dual_graph_keyed(
       const MPI_Comm mpi_comm,
       const boost::multi_array<std::int64_t, 2>& cell_vertices,
-      const CellType& cell_type,
+      const mesh::CellType& cell_type,
       std::vector<std::vector<std::size_t>>& local_graph,
       FacetCellMap& facet_cell_map);
 
@@ -83,10 +93,9 @@ private:
   static std::int32_t compute_nonlocal_dual_graph(
       const MPI_Comm mpi_comm,
       const boost::multi_array<std::int64_t, 2>& cell_vertices,
-      const CellType& cell_type, const std::int64_t num_global_vertices,
+      const mesh::CellType& cell_type, const std::int64_t num_global_vertices,
       std::vector<std::vector<std::size_t>>& local_graph,
       FacetCellMap& facet_cell_map, std::set<std::int64_t>& ghost_vertices);
 };
 }
-
-
+}

@@ -6,12 +6,14 @@
 
 #pragma once
 
-#include "Point.h"
-#include <dolfin/log/LogStream.h>
 #include <vector>
 
 namespace dolfin
 {
+
+namespace geometry
+{
+class Point;
 
 /// This class implements geometric predicates, i.e. function that
 /// return either true or false.
@@ -45,5 +47,4 @@ private:
   static bool _is_degenerate_3d(const std::vector<Point>& simplex);
 };
 }
-
-
+}

@@ -25,6 +25,8 @@ class options_description;
 
 namespace dolfin
 {
+namespace parameter
+{
 
 /// This class stores a set of parameters. Each parameter is
 /// identified by a unique string (the key) and a value of some
@@ -118,9 +120,9 @@ public:
     // Check key name
     if (has_parameter(key))
     {
-      dolfin_error("Parameters.cpp", "add parameter",
-                   "Parameter \"%s.%s\" already defined", this->name().c_str(),
-                   key.c_str());
+      log::dolfin_error("Parameters.cpp", "add parameter",
+                        "Parameter \"%s.%s\" already defined",
+                        this->name().c_str(), key.c_str());
     }
 
     // Add parameter. Check for bool must come before check for
@@ -135,8 +137,8 @@ public:
       _parameters.insert({key, Parameter(key, Parameter::Type::Float)});
     else
     {
-      dolfin_error("Parameters.cpp", "add parameter",
-                   "Parameter type not supported");
+      log::dolfin_error("Parameters.cpp", "add parameter",
+                        "Parameter type not supported");
     }
   }
 
@@ -149,9 +151,9 @@ public:
     // Check key name
     if (has_parameter(key))
     {
-      dolfin_error("Parameters.cpp", "add parameter",
-                   "Parameter \"%s.%s\" already defined", this->name().c_str(),
-                   key.c_str());
+      log::dolfin_error("Parameters.cpp", "add parameter",
+                        "Parameter \"%s.%s\" already defined",
+                        this->name().c_str(), key.c_str());
     }
 
     // Add parameter
@@ -166,9 +168,9 @@ public:
     // Check key name
     if (has_parameter(key))
     {
-      dolfin_error("Parameters.cpp", "add parameter",
-                   "Parameter \"%s.%s\" already defined", this->name().c_str(),
-                   key.c_str());
+      log::dolfin_error("Parameters.cpp", "add parameter",
+                        "Parameter \"%s.%s\" already defined",
+                        this->name().c_str(), key.c_str());
     }
 
     // Add parameter
@@ -307,5 +309,4 @@ public:
 /// Default empty parameters
 extern Parameters empty_parameters;
 }
-
-
+}

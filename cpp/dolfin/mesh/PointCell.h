@@ -8,11 +8,13 @@
 
 #include "CellType.h"
 #include <boost/multi_array.hpp>
+#include <dolfin/geometry/Point.h>
 #include <vector>
 
 namespace dolfin
 {
-
+namespace mesh
+{
 /// This class implements functionality for point cell meshes.
 
 class PointCell : public CellType
@@ -40,7 +42,7 @@ public:
 
   /// Order entities locally (connectivity 1-0, 2-0, 2-1)
   void
-  order(Cell& cell,
+  order(mesh::Cell& cell,
         const std::vector<std::int64_t>& local_to_global_vertex_indices) const;
 
   /// Compute (generalized) volume (area) of triangle
@@ -50,30 +52,25 @@ public:
   double circumradius(const MeshEntity& point) const;
 
   /// Compute squared distance to given point
-  double squared_distance(const Cell& cell, const Point& point) const;
+  double squared_distance(const mesh::Cell& cell,
+                          const geometry::Point& point) const;
 
   /// Compute component i of normal of given facet with respect to
   /// the cell
-  double normal(const Cell& cell, std::size_t facet, std::size_t i) const;
+  double normal(const mesh::Cell& cell, std::size_t facet, std::size_t i) const;
 
   /// Compute of given facet with respect to the cell
-  Point normal(const Cell& cell, std::size_t facet) const;
+  geometry::Point normal(const mesh::Cell& cell, std::size_t facet) const;
 
   /// Compute normal to given cell (viewed as embedded in 1D)
-  Point cell_normal(const Cell& cell) const;
+  geometry::Point cell_normal(const mesh::Cell& cell) const;
 
   /// Compute the area/length of given facet with respect to the
   /// cell
-  double facet_area(const Cell& cell, std::size_t facet) const;
+  double facet_area(const mesh::Cell& cell, std::size_t facet) const;
 
   /// Order entities locally
-  void order(Cell& cell) const;
-
-  /// Check whether given point is contained in cell
-  bool collides(const Cell& cell, const Point& point) const;
-
-  /// Check whether given entity collides with cell
-  bool collides(const Cell& cell, const MeshEntity& entity) const;
+  void order(mesh::Cell& cell) const;
 
   /// Return description of cell type
   std::string description(bool plural) const;
@@ -83,6 +80,7 @@ public:
 
 private:
   // Find local index of edge i according to ordering convention
-  std::size_t find_edge(std::size_t i, const Cell& cell) const;
+  std::size_t find_edge(std::size_t i, const mesh::Cell& cell) const;
 };
+}
 }

@@ -10,17 +10,18 @@
 #include <dolfin/mesh/Cell.h>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(std::shared_ptr<const ufc::finite_element> element)
-    : _ufc_element(element), _hash(dolfin::hash_local(signature()))
+    : _ufc_element(element), _hash(common::hash_local(signature()))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::tabulate_dof_coordinates(
     boost::multi_array<double, 2>& coordinates,
-    const std::vector<double>& coordinate_dofs, const Cell& cell) const
+    const std::vector<double>& coordinate_dofs, const mesh::Cell& cell) const
 {
   dolfin_assert(_ufc_element);
 
@@ -44,7 +45,7 @@ std::shared_ptr<FiniteElement> FiniteElement::extract_sub_element(
   // Recursively extract sub element
   std::shared_ptr<FiniteElement> sub_finite_element
       = extract_sub_element(*this, component);
-  log(DBG, "Extracted finite element for sub system: %s",
+  log::log(DBG, "Extracted finite element for sub system: %s",
       sub_finite_element->signature().c_str());
 
   return sub_finite_element;
@@ -57,21 +58,21 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   // Check if there are any sub systems
   if (finite_element.num_sub_elements() == 0)
   {
-    dolfin_error("FiniteElement.cpp", "extract subsystem of finite element",
+    log::dolfin_error("FiniteElement.cpp", "extract subsystem of finite element",
                  "There are no subsystems");
   }
 
   // Check that a sub system has been specified
   if (component.empty())
   {
-    dolfin_error("FiniteElement.cpp", "extract subsystem of finite element",
+    log::dolfin_error("FiniteElement.cpp", "extract subsystem of finite element",
                  "No system was specified");
   }
 
   // Check the number of available sub systems
   if (component[0] >= finite_element.num_sub_elements())
   {
-    dolfin_error("FiniteElement.cpp", "extract subsystem of finite element",
+    log::dolfin_error("FiniteElement.cpp", "extract subsystem of finite element",
                  "Requested subsystem (%d) out of range [0, %d)", component[0],
                  finite_element.num_sub_elements());
   }

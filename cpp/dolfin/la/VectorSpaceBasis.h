@@ -11,7 +11,8 @@
 
 namespace dolfin
 {
-
+namespace la
+{
 class PETScVector;
 
 /// This class defines a basis for vector spaces, typically used for
@@ -51,4 +52,5 @@ private:
   // Basis vectors
   const std::vector<std::shared_ptr<PETScVector>> _basis;
 };
+}
 }

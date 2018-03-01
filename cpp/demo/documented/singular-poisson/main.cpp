@@ -128,7 +128,7 @@ int main()
   Vector residual(*u.vector());
   A->mult(*u.vector(), residual);
   residual.axpy(-1.0, b);
-  info("Norm of residual: %lf", residual.norm("l2"));
+  log::info("Norm of residual: %lf", residual.norm("l2"));
 
   // Write out solution to XDMF file.
   XDMFFile("u.xdmf").write(u);

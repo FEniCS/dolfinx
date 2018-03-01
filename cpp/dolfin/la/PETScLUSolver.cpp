@@ -19,6 +19,7 @@
 #include <petscpc.h>
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 // Functions in anonymous namespace (local scope)
 namespace
@@ -119,7 +120,7 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm,
   {
     if (A->size(0) != A->size(1))
     {
-      dolfin_error("PETScLUSolver.cpp", "create PETSc LU solver",
+      log::dolfin_error("PETScLUSolver.cpp", "create PETSc LU solver",
                    "Cannot LU factorize non-square PETSc matrix");
     }
 
@@ -206,7 +207,7 @@ std::size_t PETScLUSolver::solve(PETScVector& x, const PETScVector& b,
     PETScBaseMatrix A(_A);
 
     const MatSolverPackage solver_type = get_solver_package_type(_solver.ksp());
-    log(PROGRESS,"Solving linear system of size %ld x %ld (PETSc LU solver,
+    log::log(PROGRESS,"Solving linear system of size %ld x %ld (PETSc LU solver,
   %s).",
         A.size(0), A.size(1), solver_type);
   }
@@ -234,7 +235,7 @@ std::string PETScLUSolver::str(bool verbose) const
 
   if (verbose)
   {
-    warning("Verbose output for PETScLUSolver not implemented, calling PETSc "
+    log::warning("Verbose output for PETScLUSolver not implemented, calling PETSc "
             "KSPView directly.");
     PetscErrorCode ierr = KSPView(_solver.ksp(), PETSC_VIEWER_STDOUT_WORLD);
     if (ierr != 0)
@@ -254,7 +255,7 @@ const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
   // Check package string
   if (lumethods.count(method) == 0)
   {
-    dolfin_error("PETScLUSolver.cpp",
+    log::dolfin_error("PETScLUSolver.cpp",
                  "solve linear system using PETSc LU solver",
                  "Unknown LU method \"%s\"", method.c_str());
   }
@@ -271,7 +272,7 @@ const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
       method = "superlu_dist";
 #else
       method = "petsc";
-      warning("Using PETSc native LU solver. Consider configuring PETSc with "
+      log::warning("Using PETSc native LU solver. Consider configuring PETSc with "
               "an efficient LU solver (e.g. Umfpack, SuperLU_dist).");
 #endif
     }
@@ -281,7 +282,7 @@ const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
       method = "superlu_dist";
 #else
       method = "petsc";
-      warning("Using PETSc native LU solver. Consider configuring PETSc with "
+      log::warning("Using PETSc native LU solver. Consider configuring PETSc with "
               "an efficient LU solver (e.g. SuperLU_dist).");
 #endif
     }
@@ -300,7 +301,7 @@ const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
       method = "superlu_dist";
 #else
       method = "petsc";
-      warning("Using PETSc native LU solver. Consider configuring PETSc with "
+      log::warning("Using PETSc native LU solver. Consider configuring PETSc with "
               "an efficient LU solver (e.g. UMFPACK, MUMPS).");
 #endif
     }
@@ -313,7 +314,7 @@ const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
 #elif PETSC_HAVE_PASTIX
       method = "pastix";
 #else
-      dolfin_error("PETScLUSolver.cpp",
+      log::dolfin_error("PETScLUSolver.cpp",
                    "solve linear system using PETSc LU solver",
                    "No suitable solver for parallel LU found. Consider "
                    "configuring PETSc with MUMPS or SuperLU_dist");

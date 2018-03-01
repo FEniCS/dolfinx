@@ -81,15 +81,6 @@ bool dolfin::has_parmetis()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_zlib()
-{
-#ifdef HAS_ZLIB
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
 bool dolfin::has_hdf5()
 {
 #ifdef HAS_HDF5

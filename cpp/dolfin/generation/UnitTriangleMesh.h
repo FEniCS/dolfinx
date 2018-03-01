@@ -10,6 +10,8 @@
 
 namespace dolfin
 {
+namespace generation
+{
 
 /// A mesh consisting of a single triangle with vertices at
 ///
@@ -23,8 +25,7 @@ class UnitTriangleMesh
 {
 public:
   /// Create mesh of unit triangle
-  static Mesh create();
+  static mesh::Mesh create();
 };
 }
-
-
+}

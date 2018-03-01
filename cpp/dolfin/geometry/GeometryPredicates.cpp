@@ -4,14 +4,16 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "GeometryPredicates.h"
+#include "CGALExactArithmetic.h"
+#include "Point.h"
+#include "predicates.h"
 #include <cmath>
 #include <dolfin/common/constants.h>
-
-#include "CGALExactArithmetic.h"
-#include "GeometryPredicates.h"
-#include "predicates.h"
+#include <dolfin/log/log.h>
 
 using namespace dolfin;
+using namespace dolfin::geometry;
 
 //-----------------------------------------------------------------------------
 bool GeometryPredicates::is_degenerate(const std::vector<Point>& simplex,
@@ -24,7 +26,7 @@ bool GeometryPredicates::is_degenerate(const std::vector<Point>& simplex,
   case 3:
     return is_degenerate_3d(simplex);
   default:
-    dolfin_error("GeometryPredicates.cpp", "is_degenerate",
+    log::dolfin_error("GeometryPredicates.cpp", "is_degenerate",
                  "Unkonwn dimension (only implemented for dimension 2 and 3");
   }
   return false;
@@ -34,7 +36,7 @@ bool GeometryPredicates::_is_degenerate_2d(const std::vector<Point>& simplex)
 {
   if (simplex.size() < 2 or simplex.size() > 3)
   {
-    info("Degenerate 2D simplex with %d vertices.", simplex.size());
+    log::info("Degenerate 2D simplex with %d vertices.", simplex.size());
     return true;
   }
 
@@ -47,7 +49,7 @@ bool GeometryPredicates::_is_degenerate_2d(const std::vector<Point>& simplex)
   }
 
   // Shouldn't get here
-  dolfin_error(
+  log::dolfin_error(
       "GeometryPredicates.h", "call _is_degenerate_2d",
       "Only implemented for simplices of tdim 0, 1 and 2, not tdim = %d",
       simplex.size() - 1);
@@ -59,7 +61,7 @@ bool GeometryPredicates::_is_degenerate_3d(const std::vector<Point>& simplex)
 {
   if (simplex.size() < 2 or simplex.size() > 4)
   {
-    info("Degenerate 3D simplex with %d vertices.", simplex.size());
+    log::info("Degenerate 3D simplex with %d vertices.", simplex.size());
     return true;
   }
 
@@ -69,21 +71,21 @@ bool GeometryPredicates::_is_degenerate_3d(const std::vector<Point>& simplex)
     return simplex[0] == simplex[1];
   case 3:
   {
-    const double ayz[2] = {simplex[0].y(), simplex[0].z()};
-    const double byz[2] = {simplex[1].y(), simplex[1].z()};
-    const double cyz[2] = {simplex[2].y(), simplex[2].z()};
+    const double ayz[2] = {simplex[0][1], simplex[0][2]};
+    const double byz[2] = {simplex[1][1], simplex[1][2]};
+    const double cyz[2] = {simplex[2][1], simplex[2][2]};
     if (_orient2d(ayz, byz, cyz) != 0.0)
       return false;
 
-    const double azx[2] = {simplex[0].z(), simplex[0].x()};
-    const double bzx[2] = {simplex[1].z(), simplex[1].x()};
-    const double czx[2] = {simplex[2].z(), simplex[2].x()};
+    const double azx[2] = {simplex[0][2], simplex[0][0]};
+    const double bzx[2] = {simplex[1][2], simplex[1][0]};
+    const double czx[2] = {simplex[2][2], simplex[2][0]};
     if (_orient2d(azx, bzx, czx) != 0.0)
       return false;
 
-    const double axy[2] = {simplex[0].x(), simplex[0].y()};
-    const double bxy[2] = {simplex[1].x(), simplex[1].y()};
-    const double cxy[2] = {simplex[2].x(), simplex[2].y()};
+    const double axy[2] = {simplex[0][0], simplex[0][1]};
+    const double bxy[2] = {simplex[1][0], simplex[1][1]};
+    const double cxy[2] = {simplex[2][0], simplex[2][1]};
     if (_orient2d(axy, bxy, cxy) != 0.0)
       return false;
 
@@ -94,7 +96,7 @@ bool GeometryPredicates::_is_degenerate_3d(const std::vector<Point>& simplex)
   }
 
   // Shouldn't get here
-  dolfin_error(
+  log::dolfin_error(
       "GeometryPredicates.h", "call _is_degenerate_3d",
       "Only implemented for simplices of tdim 0, 1, 2 and 3, not tdim = %d",
       simplex.size() - 1);
@@ -106,11 +108,11 @@ bool GeometryPredicates::is_finite(const std::vector<Point>& simplex)
 {
   for (auto p : simplex)
   {
-    if (!std::isfinite(p.x()))
+    if (!std::isfinite(p[0]))
       return false;
-    if (!std::isfinite(p.y()))
+    if (!std::isfinite(p[1]))
       return false;
-    if (!std::isfinite(p.z()))
+    if (!std::isfinite(p[2]))
       return false;
   }
   return true;
@@ -183,7 +185,7 @@ bool GeometryPredicates::convex_hull_is_degenerate(
     return false;
   }
 
-  dolfin_error("GeometryPredicates.h", "call convex_hull_is_degenerate",
+  log::dolfin_error("GeometryPredicates.h", "call convex_hull_is_degenerate",
                "Only fully implemented for gdim == 3, not gdim = %d", gdim);
   return false;
 }

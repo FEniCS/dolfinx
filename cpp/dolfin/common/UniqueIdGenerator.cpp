@@ -7,9 +7,11 @@
 #include "UniqueIdGenerator.h"
 
 using namespace dolfin;
+using namespace dolfin::common;
 
 // Initialise static data
-dolfin::UniqueIdGenerator dolfin::UniqueIdGenerator::unique_id_generator;
+dolfin::common::UniqueIdGenerator
+    dolfin::common::UniqueIdGenerator::unique_id_generator;
 
 //-----------------------------------------------------------------------------
 UniqueIdGenerator::UniqueIdGenerator() : _next_id(0)

@@ -61,14 +61,9 @@ def compile_cpp_code(cpp_code):
     params['build']['cxxflags'] += ('-fno-lto',)
 
     # Enable all macros from dolfin.pc
-    dmacros = ()
-    for dm in dolfin_pc['define_macros']:
-        if dm[1] is None:
-            dmacros += ('-D' + dm[0],)
-        else:
-            dmacros += ('-D' + dm[0] + '=' + dm[1],)
+    dmacros = ['-D' + dm for dm in dolfin_pc['define_macros']]
 
-    params['build']['cxxflags'] += dmacros
+    params['build']['cxxflags'] += tuple(dmacros)
 
     # This seems to be needed by OSX but not in Linux
     # FIXME: probably needed for other libraries too

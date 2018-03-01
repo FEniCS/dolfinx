@@ -13,6 +13,7 @@
 #include <dolfin/mesh/Vertex.h>
 
 using namespace dolfin;
+using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
 Expression::Expression(std::vector<std::size_t> value_shape)
@@ -32,19 +33,19 @@ Expression::~Expression()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<RowMatrixXd> values,
-                      Eigen::Ref<const RowMatrixXd> x,
+void Expression::eval(Eigen::Ref<EigenRowMatrixXd> values,
+                      Eigen::Ref<const EigenRowMatrixXd> x,
                       const ufc::cell& cell) const
 {
   // Redirect to simple eval
   eval(values, x);
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<RowMatrixXd> values,
-                      Eigen::Ref<const RowMatrixXd> x) const
+void Expression::eval(Eigen::Ref<EigenRowMatrixXd> values,
+                      Eigen::Ref<const EigenRowMatrixXd> x) const
 {
-  dolfin_error("Expression.cpp", "evaluate expression",
-               "Missing eval() function (must be overloaded)");
+  log::dolfin_error("Expression.cpp", "evaluate expression",
+                    "Missing eval() function (must be overloaded)");
 }
 //-----------------------------------------------------------------------------
 std::size_t Expression::value_rank() const { return _value_shape.size(); }
@@ -53,9 +54,10 @@ std::size_t Expression::value_dimension(std::size_t i) const
 {
   if (i >= _value_shape.size())
   {
-    dolfin_error("Expression.cpp", "evaluate expression",
-                 "Illegal axis %d for value dimension for value of rank %d", i,
-                 _value_shape.size());
+    log::dolfin_error(
+        "Expression.cpp", "evaluate expression",
+        "Illegal axis %d for value dimension for value of rank %d", i,
+        _value_shape.size());
   }
   return _value_shape[i];
 }
@@ -67,34 +69,34 @@ std::vector<std::size_t> Expression::value_shape() const
 //-----------------------------------------------------------------------------
 void Expression::set_property(std::string name, double value)
 {
-  dolfin_error("Expression.cpp", "set property",
-               "This method should be overloaded in the derived class");
+  log::dolfin_error("Expression.cpp", "set property",
+                    "This method should be overloaded in the derived class");
 }
 //-----------------------------------------------------------------------------
 double Expression::get_property(std::string name) const
 {
-  dolfin_error("Expression.cpp", "get property",
-               "This method should be overloaded in the derived class");
+  log::dolfin_error("Expression.cpp", "get property",
+                    "This method should be overloaded in the derived class");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 void Expression::set_generic_function(std::string name,
                                       std::shared_ptr<GenericFunction>)
 {
-  dolfin_error("Expression.cpp", "set property",
-               "This method should be overloaded in the derived class");
+  log::dolfin_error("Expression.cpp", "set property",
+                    "This method should be overloaded in the derived class");
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericFunction>
 Expression::get_generic_function(std::string name) const
 {
-  dolfin_error("Expression.cpp", "get property",
-               "This method should be overloaded in the derived class");
+  log::dolfin_error("Expression.cpp", "get property",
+                    "This method should be overloaded in the derived class");
   return std::shared_ptr<GenericFunction>();
 }
 //-----------------------------------------------------------------------------
-void Expression::restrict(double* w, const FiniteElement& element,
-                          const Cell& dolfin_cell,
+void Expression::restrict(double* w, const fem::FiniteElement& element,
+                          const mesh::Cell& dolfin_cell,
                           const double* coordinate_dofs,
                           const ufc::cell& ufc_cell) const
 {
@@ -130,7 +132,7 @@ void Expression::restrict(double* w, const FiniteElement& element,
 }
 //-----------------------------------------------------------------------------
 void Expression::compute_vertex_values(std::vector<double>& vertex_values,
-                                       const Mesh& mesh) const
+                                       const mesh::Mesh& mesh) const
 {
   // Local data for vertex values
   const std::size_t size = value_size();
@@ -140,10 +142,10 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
   vertex_values.resize(size * mesh.num_vertices());
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
-  for (auto& cell : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Iterate over cell vertices
-    for (auto& vertex : EntityRange<Vertex>(cell))
+    for (auto& vertex : mesh::EntityRange<mesh::Vertex>(cell))
     {
       // Wrap coordinate data
       Eigen::Map<const Eigen::VectorXd> x(vertex.x(), mesh.geometry().dim());

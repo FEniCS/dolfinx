@@ -9,7 +9,7 @@
 #include <sstream>
 
 //-----------------------------------------------------------------------------
-std::string dolfin::indent(std::string block)
+std::string dolfin::common::indent(std::string block)
 {
   std::string indentation("  ");
   std::stringstream s;

@@ -22,6 +22,7 @@
 #define dolfin_ceil_div(x, y) (x / y + int(x % y != 0))
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 const std::map<std::string, NormType> PETScMatrix::norm_types
     = {{"l1", NORM_1}, {"linf", NORM_INFINITY}, {"frobenius", NORM_FROBENIUS}};
@@ -62,20 +63,20 @@ PETScMatrix::~PETScMatrix()
   // Do nothing (PETSc matrix is destroyed in base class)
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
+void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
 {
   // Throw error if already initialised
   if (!empty())
   {
-    dolfin_error("PETScMatrix.cpp", "init PETSc matrix",
+    log::dolfin_error("PETScMatrix.cpp", "init PETSc matrix",
                  "PETScMatrix may not be initialized more than once.");
     MatDestroy(&_matA);
   }
 
   PetscErrorCode ierr;
 
-  // Get IndexMaps
-  std::array<std::shared_ptr<const IndexMap>, 2> index_maps
+  // Get common::IndexMaps
+  std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{sparsity_pattern.index_map(0), sparsity_pattern.index_map(1)}};
 
   // Get block sizes
@@ -84,9 +85,9 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
 
   // Get global dimensions and local range
   const std::size_t M
-      = block_sizes[0] * index_maps[0]->size(IndexMap::MapSize::GLOBAL);
+      = block_sizes[0] * index_maps[0]->size(common::IndexMap::MapSize::GLOBAL);
   const std::size_t N
-      = block_sizes[1] * index_maps[1]->size(IndexMap::MapSize::GLOBAL);
+      = block_sizes[1] * index_maps[1]->size(common::IndexMap::MapSize::GLOBAL);
 
   const std::array<std::int64_t, 2> row_range = index_maps[0]->local_range();
   const std::array<std::int64_t, 2> col_range = index_maps[1]->local_range();
@@ -97,7 +98,7 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
   int block_size = block_sizes[0];
   if (block_sizes[0] != block_sizes[1])
   {
-    warning("Non-matching block size in PETscMatrix::init. This code needs "
+    log::warning("Non-matching block size in PETscMatrix::init. This code needs "
             "checking.");
     block_size = 1;
   }
@@ -148,9 +149,9 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
   assert(block_sizes[0] % block_size == 0);
   assert(block_sizes[1] % block_size == 0);
   std::vector<PetscInt> _map0, _map1;
-  _map0.resize(index_maps[0]->size(IndexMap::MapSize::ALL)
+  _map0.resize(index_maps[0]->size(common::IndexMap::MapSize::ALL)
                * (block_sizes[0] / block_size));
-  _map1.resize(index_maps[1]->size(IndexMap::MapSize::ALL)
+  _map1.resize(index_maps[1]->size(common::IndexMap::MapSize::ALL)
                * (block_sizes[1] / block_size));
 
   // for (std::size_t i = 0; i < _map0.size(); ++i)
@@ -159,7 +160,7 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
   //   _map1[i] = index_maps[1]->local_to_global(i);
 
   // std::cout << "Prep IS (0)" << std::endl;
-  for (std::size_t i = 0; i < index_maps[0]->size(IndexMap::MapSize::ALL); ++i)
+  for (std::size_t i = 0; i < index_maps[0]->size(common::IndexMap::MapSize::ALL); ++i)
   {
     std::size_t bs = block_sizes[0] / block_size;
     auto index = index_maps[0]->local_to_global(i);
@@ -170,7 +171,7 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
   }
 
   // std::cout << "Prep IS (1)" << std::endl;
-  for (std::size_t i = 0; i < index_maps[1]->size(IndexMap::MapSize::ALL); ++i)
+  for (std::size_t i = 0; i < index_maps[1]->size(common::IndexMap::MapSize::ALL); ++i)
   {
     std::size_t bs = block_sizes[1] / block_size;
     auto index = index_maps[1]->local_to_global(i);
@@ -246,7 +247,7 @@ void PETScMatrix::init(const SparsityPattern& sparsity_pattern)
 //-----------------------------------------------------------------------------
 bool PETScMatrix::empty() const
 {
-  auto sizes = PETScBaseMatrix::size();
+  auto sizes = la::PETScBaseMatrix::size();
   dolfin_assert((sizes[0] < 1 and sizes[1] < 1)
                 or (sizes[0] > 0 and sizes[1] > 0));
   return (sizes[0] < 1) and (sizes[1] < 1);
@@ -376,7 +377,7 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
 
   if (this->size(1) != x.size())
   {
-    dolfin_error("PETScMatrix.cpp",
+    log::dolfin_error("PETScMatrix.cpp",
                  "compute matrix-vector product with PETSc matrix",
                  "Non-matching dimensions for matrix-vector product");
   }
@@ -387,7 +388,7 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
 
   if (size(0) != y.size())
   {
-    dolfin_error("PETScMatrix.cpp",
+    log::dolfin_error("PETScMatrix.cpp",
                  "compute matrix-vector product with PETSc matrix",
                  "Vector for matrix-vector result has wrong size");
   }
@@ -403,7 +404,7 @@ void PETScMatrix::transpmult(const PETScVector& x, PETScVector& y) const
 
   if (size(0) != x.size())
   {
-    dolfin_error("PETScMatrix.cpp",
+    log::dolfin_error("PETScMatrix.cpp",
                  "compute transpose matrix-vector product with PETSc matrix",
                  "Non-matching dimensions for transpose matrix-vector product");
   }
@@ -414,7 +415,7 @@ void PETScMatrix::transpmult(const PETScVector& x, PETScVector& y) const
 
   if (size(1) != y.size())
   {
-    dolfin_error("PETScMatrix.cpp",
+    log::dolfin_error("PETScMatrix.cpp",
                  "compute transpose matrix-vector product with PETSc matrix",
                  "Vector for transpose matrix-vector result has wrong size");
   }
@@ -430,7 +431,7 @@ void PETScMatrix::get_diagonal(PETScVector& x) const
 
   if (size(1) != size(0) || size(0) != x.size())
   {
-    dolfin_error(
+    log::dolfin_error(
         "PETScMatrix.cpp", "get diagonal of a PETSc matrix",
         "Matrix and vector dimensions don't match for matrix-vector set");
   }
@@ -447,7 +448,7 @@ void PETScMatrix::set_diagonal(const PETScVector& x)
 
   if (size(1) != size(0) || size(0) != x.size())
   {
-    dolfin_error(
+    log::dolfin_error(
         "PETScMatrix.cpp", "set diagonal of a PETSc matrix",
         "Matrix and vector dimensions don't match for matrix-vector set");
   }
@@ -465,7 +466,7 @@ double PETScMatrix::norm(std::string norm_type) const
   // Check that norm is known
   if (norm_types.count(norm_type) == 0)
   {
-    dolfin_error("PETScMatrix.cpp", "compute norm of PETSc matrix",
+    log::dolfin_error("PETScMatrix.cpp", "compute norm of PETSc matrix",
                  "Unknown norm type (\"%s\")", norm_type.c_str());
   }
 
@@ -479,7 +480,7 @@ double PETScMatrix::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::apply(AssemblyType type)
 {
-  Timer timer("Apply (PETScMatrix)");
+  common::Timer timer("Apply (PETScMatrix)");
 
   dolfin_assert(_matA);
   PetscErrorCode ierr;
@@ -565,7 +566,7 @@ const PETScMatrix& PETScMatrix::operator=(const PETScMatrix& A)
   {
     if (_matA)
     {
-      dolfin_error("PETScMatrix.cpp", "assign to PETSc matrix",
+      log::dolfin_error("PETScMatrix.cpp", "assign to PETSc matrix",
                    "PETScMatrix may not be initialized more than once.");
       MatDestroy(&_matA);
     }
@@ -580,11 +581,11 @@ const PETScMatrix& PETScMatrix::operator=(const PETScMatrix& A)
       PetscObjectGetReference((PetscObject)_matA, &ref_count);
       if (ref_count > 1)
       {
-        dolfin_error(
+        log::dolfin_error(
             "PETScMatrix.cpp", "assign to PETSc matrix",
             "More than one object points to the underlying PETSc object");
       }
-      dolfin_error("PETScMatrix.cpp", "assign to PETSc matrix",
+      log::dolfin_error("PETScMatrix.cpp", "assign to PETSc matrix",
                    "PETScMatrix may not be initialized more than once.");
       MatDestroy(&_matA);
     }
@@ -597,7 +598,7 @@ const PETScMatrix& PETScMatrix::operator=(const PETScMatrix& A)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_nullspace(const VectorSpaceBasis& nullspace)
+void PETScMatrix::set_nullspace(const la::VectorSpaceBasis& nullspace)
 {
   // Build PETSc nullspace
   MatNullSpace petsc_ns = create_petsc_nullspace(nullspace);
@@ -612,7 +613,7 @@ void PETScMatrix::set_nullspace(const VectorSpaceBasis& nullspace)
   MatNullSpaceDestroy(&petsc_ns);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_near_nullspace(const VectorSpaceBasis& nullspace)
+void PETScMatrix::set_near_nullspace(const la::VectorSpaceBasis& nullspace)
 {
   // Create PETSc nullspace
   MatNullSpace petsc_ns = create_petsc_nullspace(nullspace);
@@ -655,7 +656,7 @@ std::string PETScMatrix::str(bool verbose) const
   std::stringstream s;
   if (verbose)
   {
-    warning("Verbose output for PETScMatrix not implemented, calling PETSc "
+    log::warning("Verbose output for PETScMatrix not implemented, calling PETSc "
             "MatView directly.");
 
     // FIXME: Maybe this could be an option?
@@ -681,7 +682,7 @@ std::string PETScMatrix::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 MatNullSpace
-PETScMatrix::create_petsc_nullspace(const VectorSpaceBasis& nullspace) const
+PETScMatrix::create_petsc_nullspace(const la::VectorSpaceBasis& nullspace) const
 {
   PetscErrorCode ierr;
 

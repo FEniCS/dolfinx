@@ -13,8 +13,19 @@
 
 namespace dolfin
 {
+namespace fem
+{
+class FiniteElement;
+}
 
+namespace mesh
+{
+class Cell;
 class Mesh;
+}
+
+namespace function
+{
 
 /// This class represents a user-defined expression. Expressions can
 /// be used as coefficients in variational forms or interpolated
@@ -59,8 +70,8 @@ public:
   ///         The coordinates of the point.
   /// @param    cell (ufc::cell)
   ///         The cell which contains the given point.
-  virtual void eval(Eigen::Ref<RowMatrixXd> values,
-                    Eigen::Ref<const RowMatrixXd> x,
+  virtual void eval(Eigen::Ref<EigenRowMatrixXd> values,
+                    Eigen::Ref<const EigenRowMatrixXd> x,
                     const ufc::cell& cell) const override;
 
   /// Evaluate at given point.
@@ -69,8 +80,8 @@ public:
   ///         The values at the point.
   /// @param x (Eigen::Ref<const Eigen::VectorXd>)
   ///         The coordinates of the point.
-  virtual void eval(Eigen::Ref<RowMatrixXd> values,
-                    Eigen::Ref<const RowMatrixXd> x) const override;
+  virtual void eval(Eigen::Ref<EigenRowMatrixXd> values,
+                    Eigen::Ref<const EigenRowMatrixXd> x) const override;
 
   /// Return value rank.
   ///
@@ -112,7 +123,7 @@ public:
   /// Property getter for type "GenericFunction"
   /// Used in pybind11 Python interface to get the value of a python attribute
   ///
-  virtual std::shared_ptr<dolfin::GenericFunction>
+  virtual std::shared_ptr<GenericFunction>
   get_generic_function(std::string name) const;
 
   /// Restrict function to local cell (compute expansion coefficients w).
@@ -127,8 +138,9 @@ public:
   ///         The coordinates
   /// @param    ufc_cell (ufc::cell)
   ///         The ufc::cell.
-  virtual void restrict(double* w, const FiniteElement& element,
-                        const Cell& dolfin_cell, const double* coordinate_dofs,
+  virtual void restrict(double* w, const fem::FiniteElement& element,
+                        const mesh::Cell& dolfin_cell,
+                        const double* coordinate_dofs,
                         const ufc::cell& ufc_cell) const override;
 
   /// Compute values at all mesh vertices.
@@ -138,7 +150,7 @@ public:
   /// @param    mesh (Mesh)
   ///         The mesh.
   virtual void compute_vertex_values(std::vector<double>& vertex_values,
-                                     const Mesh& mesh) const override;
+                                     const mesh::Mesh& mesh) const override;
 
   /// Return shared pointer to function space (NULL)
   /// Expression does not have a FunctionSpace
@@ -151,4 +163,5 @@ private:
   // Value shape
   std::vector<std::size_t> _value_shape;
 };
+}
 }

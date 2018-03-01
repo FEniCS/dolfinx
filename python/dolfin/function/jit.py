@@ -26,15 +26,15 @@ def jit_generate(class_data, module_name, signature, parameters):
     #define DLL_EXPORT __attribute__ ((visibility ("default")))
 #endif
 
+#include <dolfin/common/constants.h>
 #include <dolfin/function/Expression.h>
-#include <dolfin/math/basic.h>
 #include <Eigen/Dense>
 
 {math_header}
 
 namespace dolfin
 {{
-  class {classname} : public dolfin::Expression
+  class {classname} : public dolfin::function::Expression
   {{
      public:
        {members}
@@ -66,13 +66,13 @@ namespace dolfin
        return 0.0;
        }}
 
-       void set_generic_function(std::string name, std::shared_ptr<dolfin::GenericFunction> _value) override
+       void set_generic_function(std::string name, std::shared_ptr<dolfin::function::GenericFunction> _value) override
        {{
 {set_generic_function}
        throw std::runtime_error("No such property");
        }}
 
-       std::shared_ptr<dolfin::GenericFunction> get_generic_function(std::string name) const override
+       std::shared_ptr<dolfin::function::GenericFunction> get_generic_function(std::string name) const override
        {{
 {get_generic_function}
        throw std::runtime_error("No such property");
@@ -81,7 +81,7 @@ namespace dolfin
   }};
 }}
 
-extern "C" DLL_EXPORT dolfin::Expression * create_{classname}()
+extern "C" DLL_EXPORT dolfin::function::Expression * create_{classname}()
 {{
   return new dolfin::{classname};
 }}
@@ -116,7 +116,7 @@ extern "C" DLL_EXPORT dolfin::Expression * create_{classname}()
             set_props += _set_props.format(key_name=k, name=k)
             get_props += _get_props.format(key_name=k, name=k)
         elif hasattr(value, "_cpp_object"):
-            members += "std::shared_ptr<dolfin::GenericFunction> generic_function_{key};\n".format(key=k)
+            members += "std::shared_ptr<dolfin::function::GenericFunction> generic_function_{key};\n".format(key=k)
             set_generic_function += _set_props.format(key_name=k,
                                                       name="generic_function_" + k)
             get_generic_function += _get_props.format(key_name=k,

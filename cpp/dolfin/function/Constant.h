@@ -14,6 +14,9 @@ namespace dolfin
 {
 class Mesh;
 
+namespace function
+{
+
 /// This class represents a constant-valued expression.
 
 class Constant : public Expression
@@ -73,8 +76,8 @@ public:
 
   //--- Implementation of Expression interface ---
 
-  void eval(Eigen::Ref<RowMatrixXd> values,
-            Eigen::Ref<const RowMatrixXd> x) const override;
+  void eval(Eigen::Ref<EigenRowMatrixXd> values,
+            Eigen::Ref<const EigenRowMatrixXd> x) const override;
 
   virtual std::string str(bool verbose) const override;
 
@@ -82,4 +85,5 @@ private:
   // Values of constant function
   std::vector<double> _values;
 };
+}
 }

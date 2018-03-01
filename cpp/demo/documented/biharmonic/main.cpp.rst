@@ -124,9 +124,10 @@ function ``Expression::eval`` overloaded:
   // Source term
   class Source : public Expression
   {
-  public:
+   public:
+     Source() : Expression({}) {}
 
-    void eval(Array<double>& values, const Array<double>& x) const
+    void eval(Eigen::Ref<Eigen::VectorXd> values, Eigen::Ref<const Eigen::VectorXd> x) const
     {
       values[0] = 4.0*std::pow(DOLFIN_PI, 4)*
         std::sin(DOLFIN_PI*x[0])*std::sin(DOLFIN_PI*x[1]);
@@ -142,22 +143,25 @@ boundary:
   // Sub domain for Dirichlet boundary condition
   class DirichletBoundary : public SubDomain
   {
-    bool inside(const Array<double>& x, bool on_boundary) const
+    bool inside(Eigen::Ref<const Eigen::VectorXd> x, bool on_boundary) const
     { return on_boundary; }
   };
 
-The main part of the program is begun, and a mesh is created with 32
+The main part of the program is begun, and a mesh is created with 33
 vertices in each direction:
 
 .. code-block:: cpp
 
-  int main()
+  int main(int argc, char *argv[])
   {
+    MPI_Init(&argc, &argv);
+
     // Make mesh ghosted for evaluation of DG terms
     parameters["ghost_mode"] = "shared_facet";
 
     // Create mesh
-    auto mesh = std::make_shared<UnitSquareMesh>(32, 32);
+    auto mesh = std::make_shared<Mesh>(RectangleMesh::create(MPI_COMM_WORLD,
+     {Point(0.0, 0.0), Point(1.0, 1.0)}, {32, 32}, CellType::Type::triangle));
 
 The source function, a function for the cell size and the penalty term
 are declared:
@@ -186,7 +190,7 @@ boundary (``DirichletBoundary``), and using these, together with
     // Define boundary condition
     auto u0 = std::make_shared<Constant>(0.0);
     auto boundary = std::make_shared<DirichletBoundary>();
-    DirichletBC bc(V, u0, boundary);
+    auto bc = std::make_shared<DirichletBC>(V, u0, boundary);
 
 Using the function space ``V``, the bilinear and linear forms are
 created, and function are attached:
@@ -194,9 +198,9 @@ created, and function are attached:
 .. code-block:: cpp
 
     // Define variational problem
-    Biharmonic::BilinearForm a(V, V);
-    Biharmonic::LinearForm L(V);
-    a.alpha = alpha; L.f = f;
+    auto a = std::make_shared<Biharmonic::BilinearForm>(V, V);
+    auto L = std::make_shared<Biharmonic::LinearForm>(V);
+    a->alpha = alpha; L->f = f;
 
 A :cpp:class:`Function` is created to hold the solution and the
 problem is solved:
@@ -205,15 +209,22 @@ problem is solved:
 
     // Compute solution
     Function u(V);
-    solve(a == L, u, bc);
+    SystemAssembler assembler(a, L, {{bc}});
+    auto A = std::make_shared<PETScMatrix>(mesh->mpi_comm());
+    auto b = std::make_shared<PETScVector>(mesh->mpi_comm());
+    assembler.assemble(*A);
+    assembler.assemble(*b);
 
-The solution is then written to a file in VTK format:
+    PETScLUSolver lu(mesh->mpi_comm(), A);
+    lu.solve(*u.vector(), *b);
+
+The solution is then written to a file in XDMF format:
 
 .. code-block:: cpp
 
-    // Save solution in VTK format
-    File file("biharmonic.pvd");
-    file << u;
+    // Save solution in XDMF format
+    XDMFFile file(mesh->mpi_comm(), "biharmonic.xdmf");
+    file.write(u);
 
     return 0;
   }

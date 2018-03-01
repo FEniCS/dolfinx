@@ -8,20 +8,24 @@
 
 #include "Expression.h"
 #include <Eigen/Dense>
-#include <dolfin/log/Event.h>
 #include <memory>
 
 namespace dolfin
 {
-
+namespace mesh
+{
 class Mesh;
+}
+
+namespace function
+{
 
 /// This Function represents the mesh coordinates on a given mesh.
 class MeshCoordinates : public Expression
 {
 public:
   /// Constructor
-  explicit MeshCoordinates(std::shared_ptr<const Mesh> mesh);
+  explicit MeshCoordinates(std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Evaluate function
   void eval(Eigen::Ref<Eigen::VectorXd> values,
@@ -29,7 +33,7 @@ public:
 
 private:
   // The mesh
-  std::shared_ptr<const Mesh> _mesh;
+  std::shared_ptr<const mesh::Mesh> _mesh;
 };
 
 /// This function represents the area/length of a cell facet on a
@@ -38,7 +42,7 @@ class FacetArea : public Expression
 {
 public:
   /// Constructor
-  explicit FacetArea(std::shared_ptr<const Mesh> mesh);
+  explicit FacetArea(std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Evaluate function
   void eval(Eigen::Ref<Eigen::VectorXd> values,
@@ -46,9 +50,7 @@ public:
 
 private:
   // The mesh
-  std::shared_ptr<const Mesh> _mesh;
-
-  // Warning when evaluating on cells
-  mutable Event not_on_boundary;
+  std::shared_ptr<const mesh::Mesh> _mesh;
 };
+}
 }

@@ -1,6 +1,5 @@
 set(HEADERS
   dolfin_la.h
-  IndexMap.h
   PETScBaseMatrix.h
   PETScKrylovSolver.h
   PETScLUSolver.h
@@ -15,7 +14,6 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
-  IndexMap.cpp
   PETScBaseMatrix.cpp
   PETScKrylovSolver.cpp
   PETScLUSolver.cpp

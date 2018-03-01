@@ -6,10 +6,8 @@
 
 #pragma once
 
-#ifdef HAS_PETSC
-
 #include <dolfin/common/MPI.h>
-#include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/PETScObject.h>
 #include <dolfin/log/log.h>
 #include <memory>
 #include <petscdm.h>
@@ -19,24 +17,44 @@
 namespace dolfin
 {
 
-class Mesh;
-class FunctionSpace;
+namespace geometry
+{
 class BoundingBoxTree;
+}
+
+namespace la
+{
+class PETScMatrix;
+}
+
+namespace function
+{
+class FunctionSpace;
+}
+
+namespace mesh
+{
+class Mesh;
+}
+
+namespace fem
+{
 
 /// This class builds and stores of collection of PETSc DM objects
-/// from a hierarchy of FunctionSpaces objects. The DM objects are
+/// from a hierarchy of function::FunctionSpaces objects. The DM objects are
 /// used to construct multigrid solvers via PETSc.
 ///
 /// Warning: This classs is highly experimental and will change
 
-class PETScDMCollection : public PETScObject
+class PETScDMCollection : public la::PETScObject
 {
 public:
   /// Construct PETScDMCollection from a vector of
-  /// FunctionSpaces. The vector of FunctionSpaces is stored from
+  /// function::FunctionSpaces. The vector of function::FunctionSpaces is stored
+  /// from
   /// coarse to fine.
-  PETScDMCollection(
-      std::vector<std::shared_ptr<const FunctionSpace>> function_spaces);
+  PETScDMCollection(std::vector<std::shared_ptr<const function::FunctionSpace>>
+                        function_spaces);
 
   /// Destructor
   ~PETScDMCollection();
@@ -54,20 +72,18 @@ public:
 
   /// Create the interpolation matrix from the coarse to the fine
   /// space (prolongation matrix)
-  static std::shared_ptr<PETScMatrix>
-  create_transfer_matrix(const FunctionSpace& coarse_space,
-                         const FunctionSpace& fine_space);
+  static std::shared_ptr<la::PETScMatrix>
+  create_transfer_matrix(const function::FunctionSpace& coarse_space,
+                         const function::FunctionSpace& fine_space);
 
 private:
   // Find the nearest cells to points which lie outside the domain
-  static void find_exterior_points(MPI_Comm mpi_comm, const Mesh& meshc,
-                                   std::shared_ptr<const BoundingBoxTree> treec,
-                                   int dim, int data_size,
-                                   const std::vector<double>& send_points,
-                                   const std::vector<int>& send_indices,
-                                   std::vector<int>& indices,
-                                   std::vector<std::size_t>& cell_ids,
-                                   std::vector<double>& points);
+  static void find_exterior_points(
+      MPI_Comm mpi_comm, const mesh::Mesh& meshc,
+      std::shared_ptr<const geometry::BoundingBoxTree> treec, int dim,
+      int data_size, const std::vector<double>& send_points,
+      const std::vector<int>& send_indices, std::vector<int>& indices,
+      std::vector<std::size_t>& cell_ids, std::vector<double>& points);
 
   // Pointers to functions that are used in PETSc DM call-backs
   static PetscErrorCode create_global_vector(DM dm, Vec* vec);
@@ -76,13 +92,12 @@ private:
   static PetscErrorCode coarsen(DM dmf, MPI_Comm comm, DM* dmc);
   static PetscErrorCode refine(DM dmc, MPI_Comm comm, DM* dmf);
 
-  // The FunctionSpaces associated with each level, starting with
+  // The function::FunctionSpaces associated with each level, starting with
   // the coarest space
-  std::vector<std::shared_ptr<const FunctionSpace>> _spaces;
+  std::vector<std::shared_ptr<const function::FunctionSpace>> _spaces;
 
   // The PETSc DM objects
   std::vector<DM> _dms;
 };
-} // namespace dolfin
-
-#endif
+}
+}

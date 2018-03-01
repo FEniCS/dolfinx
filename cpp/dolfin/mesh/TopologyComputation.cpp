@@ -25,11 +25,12 @@
 #include <vector>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
 {
-  log(TRACE, "Computing mesh entities of dimension %d", dim);
+  log::log(TRACE, "Computing mesh entities of dimension %d", dim);
 
   // Check if entities have already been computed
   const MeshTopology& topology = mesh.topology();
@@ -40,7 +41,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
     // Make sure we really have the connectivity
     if ((ce.empty() && dim != topology.dim()) || (ev.empty() && dim != 0))
     {
-      dolfin_error("TopologyComputation.cpp", "compute topological entities",
+      log::dolfin_error("TopologyComputation.cpp", "compute topological entities",
                    "Entities of topological dimension %d exist but "
                    "connectivity is missing",
                    dim);
@@ -62,7 +63,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   case 4:
     return TopologyComputation::compute_entities_by_key_matching<4>(mesh, dim);
   default:
-    dolfin_error("TopologyComputation.cpp", "compute topological entities",
+    log::dolfin_error("TopologyComputation.cpp", "compute topological entities",
                  "Entities with %d vertices not supported",
                  num_entity_vertices);
     return 0;
@@ -84,7 +85,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
   // Each of these functions assume a set of preconditions that we
   // need to satisfy.
 
-  log(TRACE, "Requesting connectivity %d - %d.", d0, d1);
+  log::log(TRACE, "Requesting connectivity %d - %d.", d0, d1);
 
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
@@ -109,8 +110,8 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
     return;
 
   // Start timer
-  Timer timer("Compute connectivity " + std::to_string(d0) + "-"
-              + std::to_string(d1));
+  common::Timer timer("Compute connectivity " + std::to_string(d0) + "-"
+                      + std::to_string(d1));
 
   // Decide how to compute the connectivity
   if (d0 == d1)
@@ -118,7 +119,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
     std::vector<std::vector<std::size_t>> connectivity_dd(
         topology.size(d0), std::vector<std::size_t>(1));
 
-    for (auto &e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
+    for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
       connectivity_dd[e.index()][0] = e.index();
     topology(d0, d0).set(connectivity_dd);
   }
@@ -151,7 +152,7 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
     // Make sure we really have the connectivity
     if ((ce.empty() && dim != (int)topology.dim()) || (ev.empty() && dim != 0))
     {
-      dolfin_error("TopologyComputation.cpp", "compute topological entities",
+      log::dolfin_error("TopologyComputation.cpp", "compute topological entities",
                    "Entities of topological dimension %d exist but "
                    "connectivity is missing",
                    dim);
@@ -162,14 +163,14 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
   // Make sure connectivity does not already exist
   if (!ce.empty() || !ev.empty())
   {
-    dolfin_error("TopologyComputation.cpp", "compute topological entities",
+    log::dolfin_error("TopologyComputation.cpp", "compute topological entities",
                  "Connectivity for topological dimension %d exists but "
                  "entities are missing",
                  dim);
   }
 
   // Start timer
-  Timer timer("Compute entities dim = " + std::to_string(dim));
+  common::Timer timer("Compute entities dim = " + std::to_string(dim));
 
   // Get cell type
   const CellType& cell_type = mesh.type();
@@ -198,7 +199,7 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
 
   // Loop over cells to build list of keyed (by vertices) entities
   int entity_counter = 0;
-  for (auto &c : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& c : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Get vertices from cell
     const std::int32_t* vertices = c.entities(0);
@@ -334,7 +335,7 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
   //   3. Iterate again over entities of dimension d1 and add connections
   //      for each entity of dimension d0
 
-  log(TRACE, "Computing mesh connectivity %d - %d from transpose.", d0, d1);
+  log::log(TRACE, "Computing mesh connectivity %d - %d from transpose.", d0, d1);
 
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
@@ -347,8 +348,8 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
   std::vector<std::size_t> tmp(topology.size(d0), 0);
 
   // Count the number of connections
-  for (auto &e1 : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
-    for (auto &e0 : EntityRange<MeshEntity>(e1, d0))
+  for (auto& e1 : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
+    for (auto& e0 : EntityRange<MeshEntity>(e1, d0))
       tmp[e0.index()]++;
 
   // Initialize the number of connections
@@ -358,8 +359,8 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
   std::fill(tmp.begin(), tmp.end(), 0);
 
   // Add the connections
-  for (auto &e1 : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
-    for (auto &e0 : EntityRange<MeshEntity>(e1, d0))
+  for (auto& e1 : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
+    for (auto& e0 : EntityRange<MeshEntity>(e1, d0))
       connectivity.set(e0.index(), e1.index(), tmp[e0.index()]++);
 }
 //----------------------------------------------------------------------------
@@ -382,7 +383,7 @@ void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
 
   const std::size_t num_verts_d1 = mesh.type().num_vertices(d1);
   std::vector<std::int32_t> key(num_verts_d1);
-  for (auto &e : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
+  for (auto& e : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
   {
     std::partial_sort_copy(e.entities(0), e.entities(0) + num_verts_d1,
                            key.begin(), key.end());
@@ -392,7 +393,7 @@ void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
   // Search for d1 entities of d0 in map, and recover index
   std::vector<std::size_t> entities;
   boost::multi_array<std::int32_t, 2> keys;
-  for (auto &e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
+  for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
   {
     entities.clear();
     cell_type->create_entities(keys, d1, e.entities(0));

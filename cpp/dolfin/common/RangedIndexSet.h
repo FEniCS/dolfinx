@@ -14,6 +14,9 @@
 namespace dolfin
 {
 
+namespace common
+{
+
 /// This class provides an special-purpose data structure for
 /// testing if a given index within a range is set.
 ///
@@ -75,5 +78,4 @@ private:
   std::vector<bool> _is_set;
 };
 }
-
-
+}

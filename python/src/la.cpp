@@ -15,7 +15,7 @@
 #endif
 
 #include "casters.h"
-#include <dolfin/la/IndexMap.h>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/PETScMatrix.h>
@@ -28,13 +28,10 @@
 
 namespace py = pybind11;
 
-namespace
-{
+namespace {
 template <typename T>
-void check_indices(const py::array_t<T>& x, std::int64_t local_size)
-{
-  for (std::int64_t i = 0; i < (std::int64_t)x.size(); ++i)
-  {
+void check_indices(const py::array_t<T> &x, std::int64_t local_size) {
+  for (std::int64_t i = 0; i < (std::int64_t)x.size(); ++i) {
     std::int64_t _x = *(x.data() + i);
     if (_x < 0 or !(_x < local_size))
       throw py::index_error("Vector index out of range");
@@ -43,21 +40,19 @@ void check_indices(const py::array_t<T>& x, std::int64_t local_size)
 
 // Linear operator trampoline class
 template <typename LinearOperatorBase>
-class PyLinearOperator : public LinearOperatorBase
-{
+class PyLinearOperator : public LinearOperatorBase {
   using LinearOperatorBase::LinearOperatorBase;
 
   // pybdind11 has some issues when passing by reference (due to
   // the return value policy), so the below is non-standard.  See
   // https://github.com/pybind/pybind11/issues/250.
 
-  std::size_t size(std::size_t dim) const
-  {
+  std::size_t size(std::size_t dim) const {
     PYBIND11_OVERLOAD_PURE(std::size_t, LinearOperatorBase, size, );
   }
 
-  void mult(const dolfin::PETScVector& x, dolfin::PETScVector& y) const
-  {
+  void mult(const dolfin::la::PETScVector &x,
+            dolfin::la::PETScVector &y) const {
     PYBIND11_OVERLOAD_INT(void, LinearOperatorBase, "mult", &x, &y);
   }
 };
@@ -65,90 +60,65 @@ class PyLinearOperator : public LinearOperatorBase
 // Linear operator trampoline class (with pure virtual 'mult'
 // function)
 template <typename LinearOperatorBase>
-class PyLinearOperatorPure : public LinearOperatorBase
-{
+class PyLinearOperatorPure : public LinearOperatorBase {
   using LinearOperatorBase::LinearOperatorBase;
 
-  std::size_t size(std::size_t dim) const
-  {
+  std::size_t size(std::size_t dim) const {
     PYBIND11_OVERLOAD_PURE(std::size_t, LinearOperatorBase, size, );
   }
 
-  void mult(const dolfin::PETScVector& x, dolfin::PETScVector& y) const
-  {
+  void mult(const dolfin::la::PETScVector &x,
+            dolfin::la::PETScVector &y) const {
     PYBIND11_OVERLOAD_INT(void, LinearOperatorBase, "mult", &x, &y);
     py::pybind11_fail("Tried to call pure virtual function \'mult\'");
   }
 };
 }
 
-namespace dolfin_wrappers
-{
-using RowMatrixXd
-    = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+namespace dolfin_wrappers {
+using RowMatrixXd =
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-void la(py::module& m)
-{
-  // dolfin::IndexMap
-  py::class_<dolfin::IndexMap, std::shared_ptr<dolfin::IndexMap>> index_map(
-      m, "IndexMap");
-  index_map.def("size", &dolfin::IndexMap::size)
-      .def("block_size", &dolfin::IndexMap::block_size, "Return block size")
-      .def("local_range", &dolfin::IndexMap::local_range)
-      .def("local_to_global_unowned",
-           [](dolfin::IndexMap& self) {
-             return Eigen::Map<const Eigen::Matrix<std::size_t, Eigen::Dynamic,
-                                                   1>>(
-                 self.local_to_global_unowned().data(),
-                 self.local_to_global_unowned().size());
-           },
-           py::return_value_policy::reference_internal,
-           "Return view into unowned part of local-to-global map");
-
-  // dolfin::IndexMap enums
-  py::enum_<dolfin::IndexMap::MapSize>(index_map, "MapSize")
-      .value("ALL", dolfin::IndexMap::MapSize::ALL)
-      .value("OWNED", dolfin::IndexMap::MapSize::OWNED)
-      .value("UNOWNED", dolfin::IndexMap::MapSize::UNOWNED)
-      .value("GLOBAL", dolfin::IndexMap::MapSize::GLOBAL);
-
-  // dolfin::SparsityPattern
-  py::class_<dolfin::SparsityPattern, std::shared_ptr<dolfin::SparsityPattern>>(
-      m, "SparsityPattern")
+void la(py::module &m) {
+  // dolfin::la::SparsityPattern
+  py::class_<dolfin::la::SparsityPattern,
+             std::shared_ptr<dolfin::la::SparsityPattern>>(m, "SparsityPattern")
       .def(py::init(
           [](const MPICommWrapper comm,
-             std::array<std::shared_ptr<const dolfin::IndexMap>, 2> index_maps,
+             std::array<std::shared_ptr<const dolfin::common::IndexMap>, 2>
+                 index_maps,
              int dim) {
-            return std::make_unique<dolfin::SparsityPattern>(comm.get(),
-                                                             index_maps, dim);
+            return std::make_unique<dolfin::la::SparsityPattern>(
+                comm.get(), index_maps, dim);
           }))
-      .def(py::init([](
-          const MPICommWrapper comm,
-          const std::vector<std::vector<const dolfin::SparsityPattern*>>
-              patterns) {
-        return std::make_unique<dolfin::SparsityPattern>(comm.get(), patterns);
-      }))
-      .def("local_range", &dolfin::SparsityPattern::local_range)
-      .def("index_map", &dolfin::SparsityPattern::index_map)
-      .def("apply", &dolfin::SparsityPattern::apply)
-      .def("str", &dolfin::SparsityPattern::str)
-      .def("num_nonzeros", &dolfin::SparsityPattern::num_nonzeros)
+      .def(py::init(
+          [](const MPICommWrapper comm,
+             const std::vector<std::vector<const dolfin::la::SparsityPattern *>>
+                 patterns) {
+            return std::make_unique<dolfin::la::SparsityPattern>(comm.get(),
+                                                                 patterns);
+          }))
+      .def("local_range", &dolfin::la::SparsityPattern::local_range)
+      .def("index_map", &dolfin::la::SparsityPattern::index_map)
+      .def("apply", &dolfin::la::SparsityPattern::apply)
+      .def("str", &dolfin::la::SparsityPattern::str)
+      .def("num_nonzeros", &dolfin::la::SparsityPattern::num_nonzeros)
       .def("num_nonzeros_diagonal",
-           [](const dolfin::SparsityPattern& instance) {
+           [](const dolfin::la::SparsityPattern &instance) {
              std::vector<std::size_t> num_nonzeros;
              instance.num_nonzeros_diagonal(num_nonzeros);
              return py::array_t<std::size_t>(num_nonzeros.size(),
                                              num_nonzeros.data());
            })
       .def("num_nonzeros_off_diagonal",
-           [](const dolfin::SparsityPattern& instance) {
+           [](const dolfin::la::SparsityPattern &instance) {
              std::vector<std::size_t> num_nonzeros;
              instance.num_nonzeros_off_diagonal(num_nonzeros);
              return py::array_t<std::size_t>(num_nonzeros.size(),
                                              num_nonzeros.data());
            })
       .def("num_local_nonzeros",
-           [](const dolfin::SparsityPattern& instance) {
+           [](const dolfin::la::SparsityPattern &instance) {
              std::vector<std::size_t> num_nonzeros;
              instance.num_local_nonzeros(num_nonzeros);
              return py::array_t<std::size_t>(num_nonzeros.size(),
@@ -157,38 +127,38 @@ void la(py::module& m)
       // FIXME: Switch EigenMap in DOLFIN interface when SWIG is dropped
       .def(
           "insert_local",
-          [](dolfin::SparsityPattern& self,
+          [](dolfin::la::SparsityPattern &self,
              std::array<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>, 2>
                  entries) {
-            std::array<dolfin::ArrayView<const dolfin::la_index_t>, 2> e
-                = {dolfin::ArrayView<const dolfin::la_index_t>(
-                       entries[0].size(), &entries[0][0]),
-                   dolfin::ArrayView<const dolfin::la_index_t>(
-                       entries[1].size(), &entries[1][0])};
+            std::array<dolfin::common::ArrayView<const dolfin::la_index_t>, 2>
+                e = {dolfin::common::ArrayView<const dolfin::la_index_t>(
+                         entries[0].size(), &entries[0][0]),
+                     dolfin::common::ArrayView<const dolfin::la_index_t>(
+                         entries[1].size(), &entries[1][0])};
             self.insert_local(e);
           })
       .def(
           "insert_global",
-          [](dolfin::SparsityPattern& self,
+          [](dolfin::la::SparsityPattern &self,
              std::array<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>, 2>
                  entries) {
-            std::array<dolfin::ArrayView<const dolfin::la_index_t>, 2> e
-                = {dolfin::ArrayView<const dolfin::la_index_t>(
-                       entries[0].size(), &entries[0][0]),
-                   dolfin::ArrayView<const dolfin::la_index_t>(
-                       entries[1].size(), &entries[1][0])};
+            std::array<dolfin::common::ArrayView<const dolfin::la_index_t>, 2>
+                e = {dolfin::common::ArrayView<const dolfin::la_index_t>(
+                         entries[0].size(), &entries[0][0]),
+                     dolfin::common::ArrayView<const dolfin::la_index_t>(
+                         entries[1].size(), &entries[1][0])};
             self.insert_global(e);
           })
       .def(
           "insert_local_global",
-          [](dolfin::SparsityPattern& self,
+          [](dolfin::la::SparsityPattern &self,
              std::array<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>, 2>
                  entries) {
-            std::array<dolfin::ArrayView<const dolfin::la_index_t>, 2> e
-                = {dolfin::ArrayView<const dolfin::la_index_t>(
-                       entries[0].size(), &entries[0][0]),
-                   dolfin::ArrayView<const dolfin::la_index_t>(
-                       entries[1].size(), &entries[1][0])};
+            std::array<dolfin::common::ArrayView<const dolfin::la_index_t>, 2>
+                e = {dolfin::common::ArrayView<const dolfin::la_index_t>(
+                         entries[0].size(), &entries[0][0]),
+                     dolfin::common::ArrayView<const dolfin::la_index_t>(
+                         entries[1].size(), &entries[1][0])};
             self.insert_local_global(e);
           });
 
@@ -695,81 +665,88 @@ void la(py::module& m)
   self){ return 0; });
   */
 
-  // dolfin::Scalar
-  py::class_<dolfin::Scalar, std::shared_ptr<dolfin::Scalar>>(m, "Scalar")
+  // dolfin::la::Scalar
+  py::class_<dolfin::la::Scalar, std::shared_ptr<dolfin::la::Scalar>>(m,
+                                                                      "Scalar")
       .def(py::init([](const MPICommWrapper comm) {
-        return std::make_unique<dolfin::Scalar>(comm.get());
+        return std::make_unique<dolfin::la::Scalar>(comm.get());
       }))
-      .def("add", &dolfin::Scalar::add)
-      .def("apply", &dolfin::Scalar::apply)
+      .def("add", &dolfin::la::Scalar::add)
+      .def("apply", &dolfin::la::Scalar::apply)
       .def("mpi_comm",
-           [](dolfin::Scalar& self) { return MPICommWrapper(self.mpi_comm()); })
-      .def("value", &dolfin::Scalar::value);
+           [](dolfin::la::Scalar &self) {
+             return MPICommWrapper(self.mpi_comm());
+           })
+      .def("value", &dolfin::la::Scalar::value);
 
 #ifdef HAS_PETSC
-  py::class_<dolfin::PETScOptions>(m, "PETScOptions")
-      .def_static("set", (void (*)(std::string)) & dolfin::PETScOptions::set)
+  py::class_<dolfin::la::PETScOptions>(m, "PETScOptions")
       .def_static("set",
-                  (void (*)(std::string, bool)) & dolfin::PETScOptions::set)
+                  (void (*)(std::string)) & dolfin::la::PETScOptions::set)
       .def_static("set",
-                  (void (*)(std::string, int)) & dolfin::PETScOptions::set)
+                  (void (*)(std::string, bool)) & dolfin::la::PETScOptions::set)
       .def_static("set",
-                  (void (*)(std::string, double)) & dolfin::PETScOptions::set)
+                  (void (*)(std::string, int)) & dolfin::la::PETScOptions::set)
       .def_static("set",
-                  (void (*)(std::string, std::string))
-                      & dolfin::PETScOptions::set)
+                  (void (*)(std::string, double)) &
+                      dolfin::la::PETScOptions::set)
+      .def_static("set",
+                  (void (*)(std::string, std::string)) &
+                      dolfin::la::PETScOptions::set)
       .def_static("clear",
-                  (void (*)(std::string)) & dolfin::PETScOptions::clear)
-      .def_static("clear", (void (*)()) & dolfin::PETScOptions::clear);
+                  (void (*)(std::string)) & dolfin::la::PETScOptions::clear)
+      .def_static("clear", (void (*)()) & dolfin::la::PETScOptions::clear);
 
-  // dolfin::PETScObject
-  py::class_<dolfin::PETScObject, std::shared_ptr<dolfin::PETScObject>>(
+  // dolfin::la::PETScObject
+  py::class_<dolfin::la::PETScObject, std::shared_ptr<dolfin::la::PETScObject>>(
       m, "PETScObject");
 
-  // dolfin::PETScVector
-  py::class_<dolfin::PETScVector, std::shared_ptr<dolfin::PETScVector>,
-             dolfin::PETScObject>(m, "PETScVector", "DOLFIN PETScVector object")
+  // dolfin::la::PETScVector
+  py::class_<dolfin::la::PETScVector, std::shared_ptr<dolfin::la::PETScVector>,
+             dolfin::la::PETScObject>(m, "PETScVector",
+                                      "DOLFIN PETScVector object")
       .def(py::init([](const MPICommWrapper comm) {
-        return std::make_unique<dolfin::PETScVector>(comm.get());
+        return std::make_unique<dolfin::la::PETScVector>(comm.get());
       }))
       .def(py::init([](const MPICommWrapper comm, std::size_t N) {
-        auto _x = std::make_unique<dolfin::PETScVector>(comm.get());
+        auto _x = std::make_unique<dolfin::la::PETScVector>(comm.get());
         _x->init(N);
         return _x;
       }))
       .def(py::init<Vec>())
-      .def(py::init<const dolfin::PETScVector>())
-      .def("apply", &dolfin::PETScVector::apply)
-      .def("norm", &dolfin::PETScVector::norm)
-      .def("get_options_prefix", &dolfin::PETScVector::get_options_prefix)
-      .def("set_options_prefix", &dolfin::PETScVector::set_options_prefix)
-      .def("update_ghost_values", &dolfin::PETScVector::update_ghost_values)
+      .def(py::init<const dolfin::la::PETScVector>())
+      .def("apply", &dolfin::la::PETScVector::apply)
+      .def("norm", &dolfin::la::PETScVector::norm)
+      .def("get_options_prefix", &dolfin::la::PETScVector::get_options_prefix)
+      .def("set_options_prefix", &dolfin::la::PETScVector::set_options_prefix)
+      .def("update_ghost_values", &dolfin::la::PETScVector::update_ghost_values)
       .def("size",
-           (std::size_t(dolfin::PETScVector::*)() const)
-               & dolfin::PETScVector::size)
+           (std::size_t(dolfin::la::PETScVector::*)() const) &
+               dolfin::la::PETScVector::size)
       .def("__add__",
-           [](const dolfin::PETScVector& self, const dolfin::PETScVector& x) {
-             auto y = std::make_shared<dolfin::PETScVector>(self);
+           [](const dolfin::la::PETScVector &self,
+              const dolfin::la::PETScVector &x) {
+             auto y = std::make_shared<dolfin::la::PETScVector>(self);
              *y += x;
              return y;
            },
            py::is_operator())
       .def("__sub__",
-           [](dolfin::PETScVector& self, const dolfin::PETScVector& x) {
-             auto y = std::make_shared<dolfin::PETScVector>(self);
+           [](dolfin::la::PETScVector &self, const dolfin::la::PETScVector &x) {
+             auto y = std::make_shared<dolfin::la::PETScVector>(self);
              *y -= x;
              return y;
            },
            py::is_operator())
       .def("get_local",
-           [](const dolfin::PETScVector& self) {
+           [](const dolfin::la::PETScVector &self) {
              std::vector<double> values;
              self.get_local(values);
              return py::array_t<double>(values.size(), values.data());
            })
       .def(
           "__setitem__",
-          [](dolfin::PETScVector& self, py::slice slice, double value) {
+          [](dolfin::la::PETScVector &self, py::slice slice, double value) {
             std::size_t start, stop, step, slicelength;
             if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
               throw py::error_already_set();
@@ -781,7 +758,7 @@ void la(py::module& m)
           })
       .def(
           "__setitem__",
-          [](dolfin::PETScVector& self, py::slice slice,
+          [](dolfin::la::PETScVector &self, py::slice slice,
              const py::array_t<double> x) {
             if (x.ndim() != 1)
               throw py::index_error("Values to set must be a 1D array");
@@ -793,41 +770,42 @@ void la(py::module& m)
               throw std::range_error("Only full slices are supported");
 
             std::vector<double> values(x.data(), x.data() + x.size());
-            if (!values.empty())
-            {
+            if (!values.empty()) {
               self.set_local(values);
               self.apply();
             }
           })
-      .def("vec", &dolfin::PETScVector::vec,
+      .def("vec", &dolfin::la::PETScVector::vec,
            "Return underlying PETSc Vec object");
 
-  // dolfin::PETScBaseMatrix
-  py::class_<dolfin::PETScBaseMatrix, std::shared_ptr<dolfin::PETScBaseMatrix>,
-             dolfin::PETScObject, dolfin::Variable>(m, "PETScBaseMatrix")
+  // dolfin::la::PETScBaseMatrix
+  py::class_<dolfin::la::PETScBaseMatrix,
+             std::shared_ptr<dolfin::la::PETScBaseMatrix>,
+             dolfin::la::PETScObject, dolfin::common::Variable>(
+      m, "PETScBaseMatrix")
       .def("size",
-           (std::int64_t(dolfin::PETScBaseMatrix::*)(std::size_t) const)
-               & dolfin::PETScBaseMatrix::size)
-      .def("mat", &dolfin::PETScBaseMatrix::mat,
+           (std::int64_t(dolfin::la::PETScBaseMatrix::*)(std::size_t) const) &
+               dolfin::la::PETScBaseMatrix::size)
+      .def("mat", &dolfin::la::PETScBaseMatrix::mat,
            "Return underlying PETSc Mat object");
 
-  // dolfin::PETScMatrix
-  py::class_<dolfin::PETScMatrix, std::shared_ptr<dolfin::PETScMatrix>,
-             dolfin::PETScBaseMatrix>(m, "PETScMatrix",
-                                      "DOLFIN PETScMatrix object")
+  // dolfin::la::PETScMatrix
+  py::class_<dolfin::la::PETScMatrix, std::shared_ptr<dolfin::la::PETScMatrix>,
+             dolfin::la::PETScBaseMatrix>(m, "PETScMatrix",
+                                          "DOLFIN PETScMatrix object")
       .def(py::init([](const MPICommWrapper comm) {
-        return std::make_unique<dolfin::PETScMatrix>(comm.get());
+        return std::make_unique<dolfin::la::PETScMatrix>(comm.get());
       }))
       .def(py::init<Mat>())
-      .def("norm", &dolfin::PETScMatrix::norm)
-      .def("get_options_prefix", &dolfin::PETScMatrix::get_options_prefix)
-      .def("set_options_prefix", &dolfin::PETScMatrix::set_options_prefix)
-      .def("set_nullspace", &dolfin::PETScMatrix::set_nullspace)
-      .def("set_near_nullspace", &dolfin::PETScMatrix::set_near_nullspace);
+      .def("norm", &dolfin::la::PETScMatrix::norm)
+      .def("get_options_prefix", &dolfin::la::PETScMatrix::get_options_prefix)
+      .def("set_options_prefix", &dolfin::la::PETScMatrix::set_options_prefix)
+      .def("set_nullspace", &dolfin::la::PETScMatrix::set_nullspace)
+      .def("set_near_nullspace", &dolfin::la::PETScMatrix::set_near_nullspace);
 /*
 .def("__sub__",
-     [](const dolfin::PETScMatrix& self, const dolfin::PETScMatrix& B) {
-       dolfin::PETScMatrix C(self);
+     [](const dolfin::la::PETScMatrix& self, const dolfin::la::PETScMatrix& B) {
+       dolfin::la::PETScMatrix C(self);
        C -= B;
        return C;
      },
@@ -837,117 +815,129 @@ void la(py::module& m)
 #endif
 
 #ifdef HAS_PETSC
-  // dolfin::PETScLUSolver
-  py::class_<dolfin::PETScLUSolver, std::shared_ptr<dolfin::PETScLUSolver>>(
+  // dolfin::la::PETScLUSolver
+  py::class_<dolfin::la::PETScLUSolver,
+             std::shared_ptr<dolfin::la::PETScLUSolver>>(
       m, "PETScLUSolver", "DOLFIN PETScLUSolver object")
-      .def(py::init([](const MPICommWrapper comm,
-                       std::string method = "default") {
-             return std::make_unique<dolfin::PETScLUSolver>(comm.get(), method);
-           }),
+      .def(py::init(
+               [](const MPICommWrapper comm, std::string method = "default") {
+                 return std::make_unique<dolfin::la::PETScLUSolver>(comm.get(),
+                                                                    method);
+               }),
            py::arg("comm"), py::arg("method") = "default")
-      .def("set_operator", &dolfin::PETScLUSolver::set_operator)
-      .def("get_options_prefix", &dolfin::PETScLUSolver::get_options_prefix)
-      .def("set_options_prefix", &dolfin::PETScLUSolver::set_options_prefix)
+      .def("set_operator", &dolfin::la::PETScLUSolver::set_operator)
+      .def("get_options_prefix", &dolfin::la::PETScLUSolver::get_options_prefix)
+      .def("set_options_prefix", &dolfin::la::PETScLUSolver::set_options_prefix)
       .def("solve",
-           (std::size_t(dolfin::PETScLUSolver::*)(dolfin::PETScVector&,
-                                                  const dolfin::PETScVector&))
-               & dolfin::PETScLUSolver::solve)
-      .def("ksp", &dolfin::PETScLUSolver::ksp);
+           (std::size_t(dolfin::la::PETScLUSolver::*)(
+               dolfin::la::PETScVector &, const dolfin::la::PETScVector &)) &
+               dolfin::la::PETScLUSolver::solve)
+      .def("ksp", &dolfin::la::PETScLUSolver::ksp);
 #endif
 
 #ifdef HAS_PETSC
-  // dolfin::PETScKrylovSolver
-  py::class_<dolfin::PETScKrylovSolver,
-             std::shared_ptr<dolfin::PETScKrylovSolver>>
+  // dolfin::la::PETScKrylovSolver
+  py::class_<dolfin::la::PETScKrylovSolver,
+             std::shared_ptr<dolfin::la::PETScKrylovSolver>>
       petsc_ks(m, "PETScKrylovSolver", "DOLFIN PETScKrylovSolver object");
 
   petsc_ks
       .def(py::init([](const MPICommWrapper comm, std::string method,
                        std::string pc) {
-             return std::unique_ptr<dolfin::PETScKrylovSolver>(
-                 new dolfin::PETScKrylovSolver(comm.get(), method, pc));
+             return std::unique_ptr<dolfin::la::PETScKrylovSolver>(
+                 new dolfin::la::PETScKrylovSolver(comm.get(), method, pc));
            }),
            py::arg("comm"), py::arg("method") = "default",
            py::arg("pc") = "default")
       .def(py::init<KSP>())
-      .def("get_options_prefix", &dolfin::PETScKrylovSolver::get_options_prefix)
-      .def("set_options_prefix", &dolfin::PETScKrylovSolver::set_options_prefix)
+      .def("get_options_prefix",
+           &dolfin::la::PETScKrylovSolver::get_options_prefix)
+      .def("set_options_prefix",
+           &dolfin::la::PETScKrylovSolver::set_options_prefix)
       .def("get_norm_type",
-           (dolfin::PETScKrylovSolver::norm_type(dolfin::PETScKrylovSolver::*)()
-                const)
-               & dolfin::PETScKrylovSolver::get_norm_type)
-      .def("set_norm_type", &dolfin::PETScKrylovSolver::set_norm_type)
-      .def("set_operator", &dolfin::PETScKrylovSolver::set_operator)
-      .def("set_operators", &dolfin::PETScKrylovSolver::set_operators)
-      .def("solve", &dolfin::PETScKrylovSolver::solve, "Solve linear system",
-           py::arg("x"), py::arg("b"), py::arg("transpose") = false)
-      .def("set_from_options", &dolfin::PETScKrylovSolver::set_from_options)
+           (dolfin::la::PETScKrylovSolver::norm_type(
+               dolfin::la::PETScKrylovSolver::*)() const) &
+               dolfin::la::PETScKrylovSolver::get_norm_type)
+      .def("set_norm_type", &dolfin::la::PETScKrylovSolver::set_norm_type)
+      .def("set_operator", &dolfin::la::PETScKrylovSolver::set_operator)
+      .def("set_operators", &dolfin::la::PETScKrylovSolver::set_operators)
+      .def("solve", &dolfin::la::PETScKrylovSolver::solve,
+           "Solve linear system", py::arg("x"), py::arg("b"),
+           py::arg("transpose") = false)
+      .def("set_from_options", &dolfin::la::PETScKrylovSolver::set_from_options)
       .def("set_reuse_preconditioner",
-           &dolfin::PETScKrylovSolver::set_reuse_preconditioner)
-      .def("set_dm", &dolfin::PETScKrylovSolver::set_dm)
-      .def("set_dm_active", &dolfin::PETScKrylovSolver::set_dm_active)
-      .def("ksp", &dolfin::PETScKrylovSolver::ksp);
+           &dolfin::la::PETScKrylovSolver::set_reuse_preconditioner)
+      .def("set_dm", &dolfin::la::PETScKrylovSolver::set_dm)
+      .def("set_dm_active", &dolfin::la::PETScKrylovSolver::set_dm_active)
+      .def("ksp", &dolfin::la::PETScKrylovSolver::ksp);
 
-  py::enum_<dolfin::PETScKrylovSolver::norm_type>(petsc_ks, "norm_type")
-      .value("none", dolfin::PETScKrylovSolver::norm_type::none)
-      .value("default_norm", dolfin::PETScKrylovSolver::norm_type::default_norm)
+  py::enum_<dolfin::la::PETScKrylovSolver::norm_type>(petsc_ks, "norm_type")
+      .value("none", dolfin::la::PETScKrylovSolver::norm_type::none)
+      .value("default_norm",
+             dolfin::la::PETScKrylovSolver::norm_type::default_norm)
       .value("preconditioned",
-             dolfin::PETScKrylovSolver::norm_type::preconditioned)
+             dolfin::la::PETScKrylovSolver::norm_type::preconditioned)
       .value("unpreconditioned",
-             dolfin::PETScKrylovSolver::norm_type::unpreconditioned)
-      .value("natural", dolfin::PETScKrylovSolver::norm_type::natural);
+             dolfin::la::PETScKrylovSolver::norm_type::unpreconditioned)
+      .value("natural", dolfin::la::PETScKrylovSolver::norm_type::natural);
 #endif
 
 #ifdef HAS_SLEPC
-  // dolfin::SLEPcEigenSolver
-  py::class_<dolfin::SLEPcEigenSolver,
-             std::shared_ptr<dolfin::SLEPcEigenSolver>, dolfin::Variable>(
-      m, "SLEPcEigenSolver")
+  // dolfin::la::SLEPcEigenSolver
+  py::class_<dolfin::la::SLEPcEigenSolver,
+             std::shared_ptr<dolfin::la::SLEPcEigenSolver>,
+             dolfin::common::Variable>(m, "SLEPcEigenSolver")
       .def(py::init([](const MPICommWrapper comm) {
-        return std::make_unique<dolfin::SLEPcEigenSolver>(comm.get());
+        return std::make_unique<dolfin::la::SLEPcEigenSolver>(comm.get());
       }))
-      .def("set_options_prefix", &dolfin::SLEPcEigenSolver::set_options_prefix)
-      .def("set_from_options", &dolfin::SLEPcEigenSolver::set_from_options)
-      .def("set_operators", &dolfin::SLEPcEigenSolver::set_operators)
-      .def("get_options_prefix", &dolfin::SLEPcEigenSolver::get_options_prefix)
+      .def("set_options_prefix",
+           &dolfin::la::SLEPcEigenSolver::set_options_prefix)
+      .def("set_from_options", &dolfin::la::SLEPcEigenSolver::set_from_options)
+      .def("set_operators", &dolfin::la::SLEPcEigenSolver::set_operators)
+      .def("get_options_prefix",
+           &dolfin::la::SLEPcEigenSolver::get_options_prefix)
       .def("get_number_converged",
-           &dolfin::SLEPcEigenSolver::get_number_converged)
+           &dolfin::la::SLEPcEigenSolver::get_number_converged)
       .def("set_deflation_space",
-           &dolfin::SLEPcEigenSolver::set_deflation_space)
-      .def("set_initial_space", &dolfin::SLEPcEigenSolver::set_initial_space)
+           &dolfin::la::SLEPcEigenSolver::set_deflation_space)
+      .def("set_initial_space",
+           &dolfin::la::SLEPcEigenSolver::set_initial_space)
       .def("solve",
-           (void (dolfin::SLEPcEigenSolver::*)())
-               & dolfin::SLEPcEigenSolver::solve)
+           (void (dolfin::la::SLEPcEigenSolver::*)()) &
+               dolfin::la::SLEPcEigenSolver::solve)
       .def("solve",
-           (void (dolfin::SLEPcEigenSolver::*)(std::int64_t))
-               & dolfin::SLEPcEigenSolver::solve)
+           (void (dolfin::la::SLEPcEigenSolver::*)(std::int64_t)) &
+               dolfin::la::SLEPcEigenSolver::solve)
       .def("get_eigenvalue",
-           [](dolfin::SLEPcEigenSolver& self, std::size_t i) {
+           [](dolfin::la::SLEPcEigenSolver &self, std::size_t i) {
              double lr, lc;
              self.get_eigenvalue(lr, lc, i);
              return py::make_tuple(lr, lc);
            })
-      .def("get_eigenpair", [](dolfin::SLEPcEigenSolver& self, std::size_t i) {
-        double lr, lc;
-        dolfin::PETScVector r(self.mpi_comm()), c(self.mpi_comm());
-        self.get_eigenpair(lr, lc, r, c, i);
-        return py::make_tuple(lr, lc, r, c);
-      });
+      .def("get_eigenpair",
+           [](dolfin::la::SLEPcEigenSolver &self, std::size_t i) {
+             double lr, lc;
+             dolfin::la::PETScVector r(self.mpi_comm()), c(self.mpi_comm());
+             self.get_eigenpair(lr, lc, r, c, i);
+             return py::make_tuple(lr, lc, r, c);
+           });
 #endif
 
-  // dolfin::VectorSpaceBasis
-  py::class_<dolfin::VectorSpaceBasis,
-             std::shared_ptr<dolfin::VectorSpaceBasis>>(m, "VectorSpaceBasis")
-      .def(py::init<const std::vector<std::shared_ptr<dolfin::PETScVector>>>())
-      .def("is_orthonormal", &dolfin::VectorSpaceBasis::is_orthonormal,
+  // dolfin::la::VectorSpaceBasis
+  py::class_<dolfin::la::VectorSpaceBasis,
+             std::shared_ptr<dolfin::la::VectorSpaceBasis>>(m,
+                                                            "VectorSpaceBasis")
+      .def(py::init<
+           const std::vector<std::shared_ptr<dolfin::la::PETScVector>>>())
+      .def("is_orthonormal", &dolfin::la::VectorSpaceBasis::is_orthonormal,
            py::arg("tol") = 1.0e-10)
-      .def("is_orthogonal", &dolfin::VectorSpaceBasis::is_orthogonal,
+      .def("is_orthogonal", &dolfin::la::VectorSpaceBasis::is_orthogonal,
            py::arg("tol") = 1.0e-10)
-      .def("orthogonalize", &dolfin::VectorSpaceBasis::orthogonalize)
-      .def("orthonormalize", &dolfin::VectorSpaceBasis::orthonormalize,
+      .def("orthogonalize", &dolfin::la::VectorSpaceBasis::orthogonalize)
+      .def("orthonormalize", &dolfin::la::VectorSpaceBasis::orthonormalize,
            py::arg("tol") = 1.0e-10)
-      .def("dim", &dolfin::VectorSpaceBasis::dim)
-      .def("__getitem__", &dolfin::VectorSpaceBasis::operator[]);
+      .def("dim", &dolfin::la::VectorSpaceBasis::dim)
+      .def("__getitem__", &dolfin::la::VectorSpaceBasis::operator[]);
 
   // la free functions
   // m.def("has_linear_algebra_backend",

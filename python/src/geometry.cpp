@@ -21,50 +21,52 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
-{
+namespace dolfin_wrappers {
 
-void geometry(py::module& m)
-{
-  // dolfin::BoundingBoxTree
-  py::class_<dolfin::BoundingBoxTree, std::shared_ptr<dolfin::BoundingBoxTree>>(
+void geometry(py::module &m) {
+  // dolfin::geometry::BoundingBoxTree
+  py::class_<dolfin::geometry::BoundingBoxTree,
+             std::shared_ptr<dolfin::geometry::BoundingBoxTree>>(
       m, "BoundingBoxTree")
       .def(py::init<std::size_t>())
       .def("build",
-           (void (dolfin::BoundingBoxTree::*)(const dolfin::Mesh&, std::size_t))
-               & dolfin::BoundingBoxTree::build)
+           (void (dolfin::geometry::BoundingBoxTree::*)(
+               const dolfin::mesh::Mesh &, std::size_t)) &
+               dolfin::geometry::BoundingBoxTree::build)
       .def("build",
-           (void (dolfin::BoundingBoxTree::*)(const std::vector<dolfin::Point>&))
-               & dolfin::BoundingBoxTree::build)
+           (void (dolfin::geometry::BoundingBoxTree::*)(
+               const std::vector<dolfin::geometry::Point> &)) &
+               dolfin::geometry::BoundingBoxTree::build)
       .def("compute_collisions",
-           (std::vector<unsigned int>(dolfin::BoundingBoxTree::*)
-            (const dolfin::Point&) const)
-               & dolfin::BoundingBoxTree::compute_collisions)
-      .def(
-          "compute_collisions",
-          (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>(
-              dolfin::BoundingBoxTree::*)(const dolfin::BoundingBoxTree&) const)
-              & dolfin::BoundingBoxTree::compute_collisions)
+           (std::vector<unsigned int>(dolfin::geometry::BoundingBoxTree::*)(
+               const dolfin::geometry::Point &) const) &
+               dolfin::geometry::BoundingBoxTree::compute_collisions)
+      .def("compute_collisions",
+           (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>(
+               dolfin::geometry::BoundingBoxTree::*)(
+               const dolfin::geometry::BoundingBoxTree &) const) &
+               dolfin::geometry::BoundingBoxTree::compute_collisions)
       .def("compute_entity_collisions",
-           (std::vector<unsigned int>(dolfin::BoundingBoxTree::*)(
-               const dolfin::Point&, const dolfin::Mesh&) const)
-               & dolfin::BoundingBoxTree::compute_entity_collisions)
+           (std::vector<unsigned int>(dolfin::geometry::BoundingBoxTree::*)(
+               const dolfin::geometry::Point &, const dolfin::mesh::Mesh &)
+                const) &
+               dolfin::geometry::BoundingBoxTree::compute_entity_collisions)
       .def("compute_entity_collisions",
-          (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>
-           (dolfin::BoundingBoxTree::*)
-           (const dolfin::BoundingBoxTree&, const dolfin::Mesh&, const dolfin::Mesh&) const)
-              & dolfin::BoundingBoxTree::compute_entity_collisions)
+           (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>(
+               dolfin::geometry::BoundingBoxTree::*)(
+               const dolfin::geometry::BoundingBoxTree &,
+               const dolfin::mesh::Mesh &, const dolfin::mesh::Mesh &) const) &
+               dolfin::geometry::BoundingBoxTree::compute_entity_collisions)
       .def("compute_first_collision",
-           &dolfin::BoundingBoxTree::compute_first_collision)
+           &dolfin::geometry::BoundingBoxTree::compute_first_collision)
       .def("compute_first_entity_collision",
-           &dolfin::BoundingBoxTree::compute_first_entity_collision)
+           &dolfin::geometry::BoundingBoxTree::compute_first_entity_collision)
       .def("compute_closest_entity",
-           &dolfin::BoundingBoxTree::compute_closest_entity)
-      .def("str", &dolfin::BoundingBoxTree::str);
+           &dolfin::geometry::BoundingBoxTree::compute_closest_entity)
+      .def("str", &dolfin::geometry::BoundingBoxTree::str);
 
-
-  // dolfin::Point
-  py::class_<dolfin::Point>(m, "Point")
+  // dolfin::geometry::Point
+  py::class_<dolfin::geometry::Point>(m, "Point")
       .def(py::init<>())
       .def(py::init<double, double, double>())
       .def(py::init<double, double>())
@@ -73,16 +75,16 @@ void geometry(py::module& m)
         auto b = x.request();
         assert(b.shape.size() == 1);
         assert(b.shape[0] <= 3);
-        return dolfin::Point(b.shape[0], x.data());
+        return dolfin::geometry::Point(b.shape[0], x.data());
       }))
       .def("__getitem__",
-           [](dolfin::Point& self, std::size_t index) {
+           [](dolfin::geometry::Point &self, std::size_t index) {
              if (index > 2)
                throw py::index_error("Out of range");
              return self[index];
            })
       .def("__getitem__",
-           [](const dolfin::Point& instance, py::slice slice) {
+           [](const dolfin::geometry::Point &instance, py::slice slice) {
              std::size_t start, stop, step, slicelength;
              if (!slice.compute(3, &start, &stop, &step, &slicelength))
                throw py::error_already_set();
@@ -93,13 +95,13 @@ void geometry(py::module& m)
              return py::array_t<double>(3, instance.coordinates());
            })
       .def("__setitem__",
-           [](dolfin::Point& self, std::size_t index, double value) {
+           [](dolfin::geometry::Point &self, std::size_t index, double value) {
              if (index > 2)
                throw py::index_error("Out of range");
              self[index] = value;
            })
       .def("__setitem__",
-           [](dolfin::Point& instance, py::slice slice,
+           [](dolfin::geometry::Point &instance, py::slice slice,
               py::array_t<double> values) {
              std::size_t start, stop, step, slicelength;
              if (!slice.compute(3, &start, &stop, &step, &slicelength))
@@ -115,7 +117,7 @@ void geometry(py::module& m)
                throw std::range_error(
                    "Can only assign vector of length 3 to a Point");
 
-             double* x = instance.coordinates();
+             double *x = instance.coordinates();
              std::copy_n(values.data(), 3, x);
            })
       .def(py::self + py::self)
@@ -124,49 +126,51 @@ void geometry(py::module& m)
       .def(py::self * float())
       .def(py::self / float())
       .def("array",
-           [](dolfin::Point& self) {
+           [](dolfin::geometry::Point &self) {
              return Eigen::Vector3d(self.coordinates());
            },
            "Return copy of coordinate array")
-      .def("norm", &dolfin::Point::norm)
-      .def("x", &dolfin::Point::x)
-      .def("y", &dolfin::Point::y)
-      .def("z", &dolfin::Point::z)
-      .def("distance", &dolfin::Point::distance);
+      .def("norm", &dolfin::geometry::Point::norm)
+      .def("distance", &dolfin::geometry::Point::distance);
 
-  // dolfin::MeshPointIntersection
-  py::class_<dolfin::MeshPointIntersection,
-             std::shared_ptr<dolfin::MeshPointIntersection>>(
+  // dolfin::geometry::MeshPointIntersection
+  py::class_<dolfin::geometry::MeshPointIntersection,
+             std::shared_ptr<dolfin::geometry::MeshPointIntersection>>(
       m, "MeshPointIntersection")
       .def("intersected_cells",
-           &dolfin::MeshPointIntersection::intersected_cells);
+           &dolfin::geometry::MeshPointIntersection::intersected_cells);
 
   // These classes are wrapped only to be able to write tests in python.
   // They are not imported into the dolfin namespace in python, but must be
   // accessed through
   // dolfin.cpp.geometry
-  py::class_<dolfin::CollisionPredicates>(m, "CollisionPredicates")
-      .def_static("collides_segment_point_2d",
-                  &dolfin::CollisionPredicates::collides_segment_point_2d)
-      .def_static("collides_triangle_point_2d",
-                  &dolfin::CollisionPredicates::collides_triangle_point_2d)
-      .def_static("collides_triangle_triangle_2d",
-                  &dolfin::CollisionPredicates::collides_triangle_triangle_2d)
-      .def_static("collides_segment_segment_2d",
-                  &dolfin::CollisionPredicates::collides_segment_segment_2d);
+  py::class_<dolfin::geometry::CollisionPredicates>(m, "CollisionPredicates")
+      .def_static(
+          "collides_segment_point_2d",
+          &dolfin::geometry::CollisionPredicates::collides_segment_point_2d)
+      .def_static(
+          "collides_triangle_point_2d",
+          &dolfin::geometry::CollisionPredicates::collides_triangle_point_2d)
+      .def_static(
+          "collides_triangle_triangle_2d",
+          &dolfin::geometry::CollisionPredicates::collides_triangle_triangle_2d)
+      .def_static(
+          "collides_segment_segment_2d",
+          &dolfin::geometry::CollisionPredicates::collides_segment_segment_2d);
 
-  py::class_<dolfin::IntersectionConstruction>(m, "IntersectionConstruction")
-      .def_static(
-          "intersection_triangle_triangle_2d",
-          &dolfin::IntersectionConstruction::intersection_triangle_triangle_2d)
-      .def_static(
-          "intersection_segment_segment_2d",
-          &dolfin::IntersectionConstruction::intersection_segment_segment_2d)
-      .def_static(
-          "intersection_triangle_segment_2d",
-          &dolfin::IntersectionConstruction::intersection_triangle_segment_2d);
+  py::class_<dolfin::geometry::IntersectionConstruction>(
+      m, "IntersectionConstruction")
+      .def_static("intersection_triangle_triangle_2d",
+                  &dolfin::geometry::IntersectionConstruction::
+                      intersection_triangle_triangle_2d)
+      .def_static("intersection_segment_segment_2d",
+                  &dolfin::geometry::IntersectionConstruction::
+                      intersection_segment_segment_2d)
+      .def_static("intersection_triangle_segment_2d",
+                  &dolfin::geometry::IntersectionConstruction::
+                      intersection_triangle_segment_2d);
 
   // dolfin/geometry free functions
-  m.def("intersect", &dolfin::intersect);
+  m.def("intersect", &dolfin::geometry::intersect);
 }
 }

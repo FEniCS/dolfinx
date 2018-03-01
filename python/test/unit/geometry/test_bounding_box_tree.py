@@ -58,7 +58,7 @@ def test_compute_collisions_point_2d():
         for e in entities:
             ent = MeshEntity(mesh, dim, e)
             mp = ent.midpoint()
-            x = (mp.x(), mp.y())
+            x = (mp[0], mp[1])
             print("test: {}".format(x))
         #assert set(entities) == reference[dim]
 
@@ -100,7 +100,7 @@ def test_compute_collisions_tree_1d():
         mesh_B = UnitIntervalMesh(MPI.comm_world, 16)
 
         bgeom = mesh_B.geometry().x()
-        bgeom += point.x()
+        bgeom += point[0]
 
         tree_A = BoundingBoxTree(1)
         tree_A.build(mesh_A, 1)
@@ -238,7 +238,7 @@ def test_compute_entity_collisions_tree_1d():
         mesh_B = UnitIntervalMesh(MPI.comm_world, 16)
 
         bgeom = mesh_B.geometry().x()
-        bgeom += point.x()
+        bgeom += point[0]
 
         tree_A = BoundingBoxTree(1)
         tree_A.build(mesh_A, 1)

@@ -6,9 +6,6 @@
 
 #pragma once
 
-#include <map>
-#include <vector>
-
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
 #include "MeshConnectivity.h"
@@ -16,12 +13,15 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
+#include <map>
 #include <memory>
 #include <unordered_set>
+#include <vector>
 
 namespace dolfin
 {
-
+namespace mesh
+{
 class MeshEntity;
 
 /// A MeshFunction is a function that can be evaluated at a set of
@@ -32,7 +32,7 @@ class MeshEntity;
 /// domains or boolean markers for mesh refinement.
 
 template <typename T>
-class MeshFunction : public Variable
+class MeshFunction : public common::Variable
 {
 public:
   /// Create empty mesh function
@@ -283,14 +283,16 @@ MeshFunction<T>::MeshFunction() : MeshFunction(nullptr)
 //---------------------------------------------------------------------------
 template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh)
-    : Variable("f", "unnamed MeshFunction"), _mesh(mesh), _dim(0), _size(0)
+    : common::Variable("f", "unnamed MeshFunction"), _mesh(mesh), _dim(0),
+      _size(0)
 {
   // Do nothing
 }
 //---------------------------------------------------------------------------
 template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim)
-    : Variable("f", "unnamed MeshFunction"), _mesh(mesh), _dim(0), _size(0)
+    : common::Variable("f", "unnamed MeshFunction"), _mesh(mesh), _dim(0),
+      _size(0)
 {
   init(dim);
 }
@@ -307,7 +309,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim,
 template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
                               const MeshValueCollection<T>& value_collection)
-    : Variable("f", "unnamed MeshFunction"), _mesh(mesh),
+    : common::Variable("f", "unnamed MeshFunction"), _mesh(mesh),
       _dim(value_collection.dim()), _size(0)
 {
   *this = value_collection;
@@ -315,7 +317,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
 //---------------------------------------------------------------------------
 template <typename T>
 MeshFunction<T>::MeshFunction(const MeshFunction<T>& f)
-    : Variable("f", "unnamed MeshFunction"), _dim(0), _size(0)
+    : common::Variable("f", "unnamed MeshFunction"), _dim(0), _size(0)
 {
   *this = f;
 }
@@ -480,7 +482,7 @@ void MeshFunction<T>::init(std::size_t dim)
 {
   if (!_mesh)
   {
-    dolfin_error("MeshFunction.h", "initialize mesh function",
+    log::dolfin_error("MeshFunction.h", "initialize mesh function",
                  "Mesh has not been specified for mesh function");
   }
   _mesh->init(dim);
@@ -492,7 +494,7 @@ void MeshFunction<T>::init(std::size_t dim, std::size_t size)
 {
   if (!_mesh)
   {
-    dolfin_error("MeshFunction.h", "initialize mesh function",
+    log::dolfin_error("MeshFunction.h", "initialize mesh function",
                  "Mesh has not been specified for mesh function");
   }
   _mesh->init(dim);
@@ -570,7 +572,7 @@ std::string MeshFunction<T>::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    warning("Verbose output of MeshFunctions must be implemented manually.");
+    log::warning("Verbose output of MeshFunctions must be implemented manually.");
 
     // This has been disabled as it severely restricts the ease with which
     // templated MeshFunctions can be used, e.g. it is not possible to
@@ -588,4 +590,5 @@ std::string MeshFunction<T>::str(bool verbose) const
   return s.str();
 }
 //---------------------------------------------------------------------------
+}
 }

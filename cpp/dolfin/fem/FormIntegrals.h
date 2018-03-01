@@ -7,14 +7,15 @@
 #pragma once
 
 #include <dolfin/log/log.h>
-#include <ufc.h>
-
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <ufc.h>
 #include <vector>
 
 namespace dolfin
+{
+namespace fem
 {
 
 class FormIntegrals
@@ -110,7 +111,9 @@ public:
   /// Default cell integral
   std::shared_ptr<const ufc::cell_integral> cell_integral() const
   {
-    dolfin_assert(!_cell_integrals.empty());
+    if (_cell_integrals.empty())
+      return std::shared_ptr<const ufc::cell_integral>();
+
     return _cell_integrals[0];
   }
 
@@ -179,7 +182,9 @@ public:
   std::shared_ptr<const ufc::interior_facet_integral>
   interior_facet_integral() const
   {
-    dolfin_assert(!_interior_facet_integrals.empty());
+    if (_interior_facet_integrals.empty())
+      return std::shared_ptr<const ufc::interior_facet_integral>();
+
     return _interior_facet_integrals[0];
   }
 
@@ -199,7 +204,9 @@ public:
   /// Default interior facet integral
   std::shared_ptr<const ufc::vertex_integral> vertex_integral() const
   {
-    dolfin_assert(!_vertex_integrals.empty());
+    if (_vertex_integrals.empty())
+      return std::shared_ptr<const ufc::vertex_integral>();
+
     return _vertex_integrals[0];
   }
 
@@ -218,8 +225,8 @@ private:
   std::vector<std::shared_ptr<ufc::cell_integral>> _cell_integrals;
 
   // Function pointers to cell tabulate_tensor functions
-  std::vector<
-      std::function<void(double*, const double* const*, const double*, int)>>
+  std::vector<std::function<void(double*, const double* const*, const double*,
+                                 int)>>
       _cell_tabulate_tensor;
 
   // Exterior facet integrals
@@ -231,4 +238,5 @@ private:
   // Vertex integrals
   std::vector<std::shared_ptr<ufc::vertex_integral>> _vertex_integrals;
 };
-} // namespace dolfin
+}
+}

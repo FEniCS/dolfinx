@@ -9,6 +9,8 @@
 namespace dolfin
 {
 
+namespace mesh
+{
 class Mesh;
 
 /// This class implements the ordering of mesh entities according to
@@ -23,4 +25,5 @@ public:
   /// Check if mesh is ordered
   static bool ordered(const Mesh& mesh);
 };
+}
 }
