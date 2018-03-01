@@ -6,6 +6,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install/update apt dependencies
+          command: apt-get -y update && apt-get -y install python3-tk
+      - run:
           name: Install/update Python dependencies
           command: pip3 install flake8 matplotlib pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
       - run:
