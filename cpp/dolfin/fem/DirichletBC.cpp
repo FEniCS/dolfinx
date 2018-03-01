@@ -386,9 +386,6 @@ void DirichletBC::init_from_sub_domain(
   _function_space->mesh()->init(dim - 1);
   mesh::MeshFunction<std::size_t> sub_domains(mesh, dim - 1, 1);
 
-  // Set geometric dimension (needed for SWIG interface)
-  sub_domain->_geometric_dimension = mesh->geometry().dim();
-
   // Mark the sub domain as sub domain 0
   sub_domain->mark(sub_domains, (std::size_t)0, _check_midpoint);
 

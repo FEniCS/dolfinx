@@ -37,11 +37,6 @@ namespace py = pybind11;
 namespace dolfin_wrappers {
 
 void mesh(py::module &m) {
-  // Make dolfin::mesh::SubDomain from pointer
-  m.def("make_dolfin_subdomain", [](std::uintptr_t e) {
-    dolfin::mesh::SubDomain *p = reinterpret_cast<dolfin::mesh::SubDomain *>(e);
-    return std::shared_ptr<const dolfin::mesh::SubDomain>(p);
-  });
 
   // dolfin::mesh::CellType
   py::class_<dolfin::mesh::CellType> celltype(m, "CellType");

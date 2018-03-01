@@ -19,8 +19,7 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-SubDomain::SubDomain(const double map_tol)
-    : map_tolerance(map_tol), _geometric_dimension(0)
+SubDomain::SubDomain(const double map_tol) : map_tolerance(map_tol)
 {
   // Do nothing
 }
@@ -47,18 +46,6 @@ void SubDomain::map(Eigen::Ref<const Eigen::VectorXd> x,
       "boundary conditions)");
 }
 //-----------------------------------------------------------------------------
-std::size_t SubDomain::geometric_dimension() const
-{
-  // Check that dim has been set
-  if (_geometric_dimension == 0)
-  {
-    log::dolfin_error("SubDomain.cpp", "get geometric dimension",
-                      "Dimension of subdomain has not been specified");
-  }
-
-  return _geometric_dimension;
-}
-//-----------------------------------------------------------------------------
 template <typename T>
 void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
                               std::size_t dim, T sub_domain, const Mesh& mesh,
@@ -70,6 +57,8 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
   log::log(TRACE, "Computing sub domain markers for sub domain %d.",
            sub_domain);
 
+  auto gdim = mesh.geometry().dim();
+
   // Compute connectivities for boundary detection, if necessary
   const std::size_t D = mesh.topology().dim();
   if (dim < D)
@@ -79,9 +68,6 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
       mesh.init(dim, D - 1);
     mesh.init(D - 1, D);
   }
-
-  // Set geometric dimension (needed for SWIG interface)
-  _geometric_dimension = mesh.geometry().dim();
 
   // Speed up the computation by only checking each vertex once (or
   // twice if it is on the boundary for some but not all facets).
@@ -134,7 +120,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
         if (is_visited.insert(vertex.index()))
         {
           Eigen::Map<Eigen::RowVectorXd> x(const_cast<double*>(vertex.x()),
-                                           _geometric_dimension);
+                                           gdim);
           is_inside[vertex.index()] = inside(x, on_boundary)[0];
         }
 
@@ -150,8 +136,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
     if (all_points_inside && check_midpoint)
     {
       Eigen::Map<Eigen::RowVectorXd> x(
-          const_cast<double*>(entity.midpoint().coordinates()),
-          _geometric_dimension);
+          const_cast<double*>(entity.midpoint().coordinates()), gdim);
       if (!inside(x, on_boundary)[0])
         all_points_inside = false;
     }
