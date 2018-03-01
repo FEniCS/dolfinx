@@ -492,6 +492,9 @@ void mesh(py::module &m) {
            py::arg("marker"), py::arg("check_midpoint") = true)
       .def("mark", &dolfin::mesh::SubDomain::mark<double>,
            py::arg("meshfunction"), py::arg("marker"),
+           py::arg("check_midpoint") = true)
+      .def("mark", &dolfin::mesh::SubDomain::mark<std::size_t>,
+           py::arg("meshfunction"), py::arg("marker"),
            py::arg("check_midpoint") = true);
 
   // dolfin::mesh::PeriodicBoundaryComputation
