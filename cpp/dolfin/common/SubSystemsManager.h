@@ -15,6 +15,9 @@
 namespace dolfin
 {
 
+namespace common
+{
+
 /// This is a singleton class which manages the initialisation and
 /// finalisation of various sub systems, such as MPI and PETSc.
 
@@ -94,5 +97,4 @@ private:
   bool control_mpi;
 };
 }
-
-
+}

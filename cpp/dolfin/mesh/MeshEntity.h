@@ -12,6 +12,8 @@
 namespace dolfin
 {
 
+namespace mesh
+{
 /// A MeshEntity represents a mesh entity associated with
 /// a specific topological dimension of some _Mesh_.
 
@@ -168,9 +170,9 @@ public:
 
   /// Compute midpoint of cell
   ///
-  /// @return Point
+  /// @return geometry::Point
   ///         The midpoint of the cell.
-  Point midpoint() const;
+  geometry::Point midpoint() const;
 
   /// Determine whether an entity is a 'ghost' from another
   /// process
@@ -233,7 +235,7 @@ protected:
   template <typename T>
   friend class MeshIterator;
   template <typename T>
-  friend class MeshEntityIteratorNew;
+  friend class MeshEntityIterator;
 
   // The mesh
   Mesh const* _mesh;
@@ -244,4 +246,5 @@ protected:
   // Local index of entity within topological dimension
   std::int32_t _local_index;
 };
+}
 }

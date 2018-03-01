@@ -10,6 +10,9 @@
 
 namespace dolfin
 {
+
+namespace mesh
+{
 class Mesh;
 
 /// An Edge is a _MeshEntity_ of topological dimension 1.
@@ -43,7 +46,7 @@ public:
   ///
   ///         UnitSquare mesh(2, 2);
   ///         Edge edge(mesh, 0);
-  ///         info("%g", edge.length());
+  ///         log::info("%g", edge.length());
   ///
   /// @endcode
   double length() const;
@@ -61,9 +64,10 @@ public:
   ///         UnitSquare mesh(2, 2);
   ///         Edge edge1(mesh, 0);
   ///         Edge edge2(mesh, 1);
-  ///         info("%g", edge1.dot(edge2));
+  ///         log::info("%g", edge1.dot(edge2));
   ///
   /// @endcode
   double dot(const Edge& edge) const;
 };
+}
 }

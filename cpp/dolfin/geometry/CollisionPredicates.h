@@ -10,10 +10,14 @@
 
 namespace dolfin
 {
-
-// Forward declarations
-class Point;
+namespace mesh
+{
 class MeshEntity;
+}
+
+namespace geometry
+{
+class Point;
 
 /// This class implements algorithms for detecting pairwise
 /// collisions between mesh entities of varying dimensions.
@@ -34,7 +38,7 @@ public:
   /// *Returns*
   ///     bool
   ///         True iff entity collides with cell.
-  static bool collides(const MeshEntity& entity, const Point& point);
+  static bool collides(const mesh::MeshEntity& entity, const Point& point);
 
   /// Check whether two entities collide.
   ///
@@ -47,7 +51,8 @@ public:
   /// *Returns*
   ///     bool
   ///         True iff entity collides with cell.
-  static bool collides(const MeshEntity& entity_0, const MeshEntity& entity_1);
+  static bool collides(const mesh::MeshEntity& entity_0,
+                       const mesh::MeshEntity& entity_1);
 
   //--- Low-level collision detection predicates ---
 
@@ -149,66 +154,6 @@ public:
   static bool collides_tetrahedron_tetrahedron_3d(
       const Point& p0, const Point& p1, const Point& p2, const Point& p3,
       const Point& q0, const Point& q1, const Point& q2, const Point& q3);
-
-private:
-  // Implementation of collision detection predicates
-
-  static bool _collides_segment_point_1d(double p0, double p1, double point);
-
-  static bool _collides_segment_point_2d(const Point& p0, const Point& p1,
-                                         const Point& point);
-
-  static bool _collides_segment_point_3d(const Point& p0, const Point& p1,
-                                         const Point& point);
-
-  static bool _collides_segment_segment_1d(double p0, double p1, double q0,
-                                           double q1);
-
-  static bool _collides_segment_segment_2d(const Point& p0, const Point& p1,
-                                           const Point& q0, const Point& q1);
-
-  static bool _collides_segment_segment_3d(const Point& p0, const Point& p1,
-                                           const Point& q0, const Point& q1);
-
-  static bool _collides_triangle_point_2d(const Point& p0, const Point& p1,
-                                          const Point& p2, const Point& point);
-
-  static bool _collides_triangle_point_3d(const Point& p0, const Point& p1,
-                                          const Point& p2, const Point& point);
-
-  static bool _collides_triangle_segment_2d(const Point& p0, const Point& p1,
-                                            const Point& p2, const Point& q0,
-                                            const Point& q1);
-
-  static bool _collides_triangle_segment_3d(const Point& p0, const Point& p1,
-                                            const Point& p2, const Point& q0,
-                                            const Point& q1);
-
-  static bool _collides_triangle_triangle_2d(const Point& p0, const Point& p1,
-                                             const Point& p2, const Point& q0,
-                                             const Point& q1, const Point& q2);
-
-  static bool _collides_triangle_triangle_3d(const Point& p0, const Point& p1,
-                                             const Point& p2, const Point& q0,
-                                             const Point& q1, const Point& q2);
-
-  static bool _collides_tetrahedron_point_3d(const Point& p0, const Point& p1,
-                                             const Point& p2, const Point& p3,
-                                             const Point& point);
-
-  static bool _collides_tetrahedron_segment_3d(const Point& p0, const Point& p1,
-                                               const Point& p2, const Point& p3,
-                                               const Point& q0,
-                                               const Point& q1);
-
-  static bool _collides_tetrahedron_triangle_3d(
-      const Point& p0, const Point& p1, const Point& p2, const Point& p3,
-      const Point& q0, const Point& q1, const Point& q2);
-
-  static bool _collides_tetrahedron_tetrahedron_3d(
-      const Point& p0, const Point& p1, const Point& p2, const Point& p3,
-      const Point& q0, const Point& q1, const Point& q2, const Point& q3);
 };
 }
-
-
+}

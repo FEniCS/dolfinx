@@ -13,6 +13,9 @@
 namespace dolfin
 {
 
+namespace common
+{
+
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of N+1
 /// block indices [0, 1, . . ., N] that are distributed across processes M
@@ -132,5 +135,6 @@ inline std::size_t IndexMap::local_to_global_index(std::size_t i) const
     dolfin_assert((std::size_t)index < _local_to_global.size());
     return _block_size * _local_to_global[index] + component;
   }
+}
 }
 }

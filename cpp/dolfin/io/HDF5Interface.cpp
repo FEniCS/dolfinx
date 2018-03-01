@@ -16,6 +16,7 @@
 #define HDF5_MAXSTRLEN 80
 
 using namespace dolfin;
+using namespace dolfin::io;
 
 //-----------------------------------------------------------------------------
 hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
@@ -34,7 +35,7 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
     dolfin_assert(status != HDF5_FAIL);
     MPI_Info_free(&info);
 #else
-    dolfin_error(
+    log::dolfin_error(
         "HDF5Interface.cpp", "create HDF5 file",
         "Cannot use MPI-IO output if DOLFIN is not configured with MPI");
 #endif
@@ -52,7 +53,7 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
     // Check that file exists
     if (!boost::filesystem::is_regular_file(filename))
     {
-      dolfin_error("HDF5Interface.cpp", "open HDF5 file",
+      log::dolfin_error("HDF5Interface.cpp", "open HDF5 file",
                    "File \"%s\" does not exist", filename.c_str());
     }
 
@@ -65,7 +66,7 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, plist_id);
     else
     {
-      dolfin_error("HDF5Interface.cpp", "open HDF5 file",
+      log::dolfin_error("HDF5Interface.cpp", "open HDF5 file",
                    "Unknown file mode \"%s\"", mode.c_str());
     }
   }
@@ -426,7 +427,7 @@ void HDF5Interface::set_mpi_atomicity(const hid_t hdf5_file_handle,
 #ifdef H5_HAVE_PARALLEL
   herr_t status = H5Fset_mpi_atomicity(hdf5_file_handle, atomic);
   if (status == HDF5_FAIL)
-    dolfin_error("HDF5Interface.cpp", "set MPI atomicity flag",
+    log::dolfin_error("HDF5Interface.cpp", "set MPI atomicity flag",
                  "Setting the MPI atomicity flag failed");
 #endif
 }
@@ -437,7 +438,7 @@ bool HDF5Interface::get_mpi_atomicity(const hid_t hdf5_file_handle)
 #ifdef H5_HAVE_PARALLEL
   herr_t status = H5Fget_mpi_atomicity(hdf5_file_handle, &atomic);
   if (status == HDF5_FAIL)
-    dolfin_error("HDF5Interface.cpp", "get MPI atomicity flag",
+    log::dolfin_error("HDF5Interface.cpp", "get MPI atomicity flag",
                  "Getting the MPI atomicity flag failed");
 #endif
   return (bool)atomic;

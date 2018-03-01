@@ -1,5 +1,14 @@
 #pragma once
 
+namespace dolfin
+{
+/*! \namespace dolfin::fem
+    \brief Finite element method functionality
+
+    Classes and algorithms for finite element method operations, e.g. assembly.
+*/
+}
+
 // DOLFIN fem interface
 
 #include <dolfin/fem/AssemblerBase.h>

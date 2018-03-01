@@ -90,7 +90,7 @@ std::string Table::get(std::string row, std::string col) const
 
   if (it == values.end())
   {
-    dolfin_error("Table.cpp", "access table value",
+    log::dolfin_error("Table.cpp", "access table value",
                  "Missing table value for entry (\"%s\", \"%s\")", row.c_str(),
                  col.c_str());
   }
@@ -106,7 +106,7 @@ double Table::get_value(std::string row, std::string col) const
 
   if (it == dvalues.end())
   {
-    dolfin_error("Table.cpp", "access table value",
+    log::dolfin_error("Table.cpp", "access table value",
                  "Missing double value for entry (\"%s\", \"%s\")", row.c_str(),
                  col.c_str());
   }
@@ -120,7 +120,7 @@ Table Table::operator+ (const Table& table) const
   // Check table sizes
   if (rows.size() != table.rows.size() || cols.size() != table.cols.size())
   {
-    dolfin_error("Table.cpp",
+    log::dolfin_error("Table.cpp",
                  "add tables",
                  "Dimension mismatch for addition of tables");
   }
@@ -139,7 +139,7 @@ Table Table::operator- (const Table& table) const
   // Check table sizes
   if (rows.size() != table.rows.size() || cols.size() != table.cols.size())
   {
-    dolfin_error("Table.cpp",
+    log::dolfin_error("Table.cpp",
                  "subtract tables",
                  "Dimension mismatch for addition of tables");
   }

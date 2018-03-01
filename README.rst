@@ -16,7 +16,7 @@ Installation
 C++ core
 --------
 
-To build and install the C++ core, in the `cpp/` directory, run::
+To build and install the C++ core, in the ``cpp/`` directory, run::
 
   mkdir build
   cd build
@@ -27,11 +27,11 @@ Python
 ------
 
 To install the Python interface, first install the C++ core, and then
-in the `python/` directory run::
+in the ``python/`` directory run::
 
   pip install .
 
-(you may need to use `pip3`, depending on your system).
+(you may need to use ``pip3``, depending on your system).
 
 For detailed instructions, see the file INSTALL.
 
@@ -39,32 +39,19 @@ For detailed instructions, see the file INSTALL.
 Documentation
 =============
 
-Documentation can be viewed at http://fenics-dolfin.readthedocs.org/.
+Documentation can be viewed at:
 
-.. image:: https://readthedocs.org/projects/fenics-dolfin/badge/?version=latest
-   :target: http://fenics.readthedocs.io/projects/dolfin/en/latest/?badge=latest
-   :alt: Documentation Status
+- https://fenicsproject.org/docs/dolfinx/dev/cpp/
+- https://fenicsproject.org/docs/dolfinx/dev/python/
 
 
-Automated Testing
+Automated testing
 =================
 
 We use CircleCI to perform automated testing.
 
-.. image:: https://bitbucket-badges.useast.atlassian.io/badge/fenics-project/dolfin.svg
-   :target: https://bitbucket.org/fenics-project/dolfin/addon/pipelines/home
-   :alt: Pipelines Build Status
-
-
-Code Coverage
-=============
-
-Code coverage reports can be viewed at
-https://coveralls.io/bitbucket/fenics-project/dolfin.
-
-.. image:: https://coveralls.io/repos/bitbucket/fenics-project/dolfin/badge.svg?branch=master
-   :target: https://coveralls.io/bitbucket/fenics-project/dolfin?branch=master
-   :alt: Coverage Status
+.. image:: https://circleci.com/bb/fenics-project/dolfinx.svg?style=svg
+    :target: https://circleci.com/bb/fenics-project/dolfinx
 
 
 License
@@ -114,4 +101,4 @@ scientists and engineers distributed around the world. A list of
 authors can be found in the file AUTHORS. For more information about
 DOLFIN, visit
 
-  http://fenicsproject.org
+  https://fenicsproject.org

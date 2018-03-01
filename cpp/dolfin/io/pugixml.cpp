@@ -44,23 +44,23 @@
 #include <new>
 
 #ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4127) // conditional expression is constant
-#pragma warning(                                                               \
+#pragma log::warning(push)
+#pragma log::warning(disable : 4127) // conditional expression is constant
+#pragma log::warning(                                                               \
     disable : 4324) // structure was padded due to __declspec(align())
-#pragma warning(disable : 4611) // interaction between '_setjmp' and C++ object
+#pragma log::warning(disable : 4611) // interaction between '_setjmp' and C++ object
                                 // destruction is non-portable
-#pragma warning(disable : 4702) // unreachable code
-#pragma warning(disable : 4996) // this function or variable may be unsafe
-#pragma warning(disable : 4793) // function compiled as native: presence of
+#pragma log::warning(disable : 4702) // unreachable code
+#pragma log::warning(disable : 4996) // this function or variable may be unsafe
+#pragma log::warning(disable : 4793) // function compiled as native: presence of
                                 // '_setjmp' makes a function unmanaged
 #endif
 
 #ifdef __INTEL_COMPILER
-#pragma warning(disable : 177) // function was declared but never referenced
-#pragma warning(disable : 279) // controlling expression is constant
-#pragma warning(disable : 1478 1786) // function was declared "deprecated"
-#pragma warning(                                                               \
+#pragma log::warning(disable : 177) // function was declared but never referenced
+#pragma log::warning(disable : 279) // controlling expression is constant
+#pragma log::warning(disable : 1478 1786) // function was declared "deprecated"
+#pragma log::warning(                                                               \
     disable : 1684) // conversion from pointer to same-sized integral type
 #endif
 
@@ -13740,7 +13740,7 @@ PUGI__FN xpath_node xml_node::select_single_node(const xpath_query& query) const
 // so popping warning state at the end of translation unit leads to warnings in
 // the middle.
 #if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
-#pragma warning(pop)
+#pragma log::warning(pop)
 #endif
 
 // Undefine all local macros (makes sure we're not leaking macros in header-only

@@ -19,33 +19,46 @@
 
 namespace dolfin
 {
-
-class Function;
-class GenericDofMap;
-class GenericFunction;
+namespace la
+{
 class PETScVector;
+}
+
+namespace fem
+{
+class GenericDofMap;
+}
+
+namespace mesh
+{
 class Mesh;
+}
+
+namespace function
+{
+class Function;
+class GenericFunction;
 
 /// This class represents a finite element function space defined by
 /// a mesh, a finite element, and a local-to-global mapping of the
 /// degrees of freedom (dofmap).
 
-class FunctionSpace : public Variable
+class FunctionSpace : public common::Variable
 {
 public:
   /// Create function space for given mesh, element and dofmap
   /// (shared data)
   ///
   /// *Arguments*
-  ///     mesh (_Mesh_)
+  ///     mesh (_mesh::Mesh_)
   ///         The mesh.
   ///     element (_FiniteElement_)
   ///         The element.
   ///     dofmap (_GenericDofMap_)
   ///         The dofmap.
-  FunctionSpace(std::shared_ptr<const Mesh> mesh,
-                std::shared_ptr<const FiniteElement> element,
-                std::shared_ptr<const GenericDofMap> dofmap);
+  FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
+                std::shared_ptr<const fem::FiniteElement> element,
+                std::shared_ptr<const fem::GenericDofMap> dofmap);
 
 protected:
   /// Create empty function space for later initialization. This
@@ -55,9 +68,9 @@ protected:
   /// FunctionSpace::attach(...).
   ///
   /// *Arguments*
-  ///     mesh (_Mesh_)
+  ///     mesh (_mesh::Mesh_)
   ///         The mesh.
-  explicit FunctionSpace(std::shared_ptr<const Mesh> mesh);
+  explicit FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh);
 
 public:
   /// Copy constructor
@@ -78,8 +91,8 @@ protected:
   ///         The element.
   ///     dofmap (_GenericDofMap_)
   ///         The dofmap.
-  void attach(std::shared_ptr<const FiniteElement> element,
-              std::shared_ptr<const GenericDofMap> dofmap);
+  void attach(std::shared_ptr<const fem::FiniteElement> element,
+              std::shared_ptr<const fem::GenericDofMap> dofmap);
 
 public:
   /// Assignment operator
@@ -106,23 +119,23 @@ public:
   /// Return mesh
   ///
   /// *Returns*
-  ///     _Mesh_
+  ///     _mesh::Mesh_
   ///         The mesh.
-  std::shared_ptr<const Mesh> mesh() const;
+  std::shared_ptr<const mesh::Mesh> mesh() const;
 
   /// Return finite element
   ///
   /// *Returns*
   ///     _FiniteElement_
   ///         The finite element.
-  std::shared_ptr<const FiniteElement> element() const;
+  std::shared_ptr<const fem::FiniteElement> element() const;
 
   /// Return dofmap
   ///
   /// *Returns*
   ///     _GenericDofMap_
   ///         The dofmap.
-  std::shared_ptr<const GenericDofMap> dofmap() const;
+  std::shared_ptr<const fem::GenericDofMap> dofmap() const;
 
   /// Return global dimension of the function space.
   /// Equivalent to dofmap()->global_dimension()
@@ -136,11 +149,11 @@ public:
   /// vector of expansion coefficients
   ///
   /// *Arguments*
-  ///     expansion_coefficients (_PETScVector_)
+  ///     expansion_coefficients (_la::PETScVector_)
   ///         The expansion coefficients.
   ///     v (_GenericFunction_)
   ///         The function to be interpolated.
-  void interpolate(PETScVector& expansion_coefficients,
+  void interpolate(la::PETScVector& expansion_coefficients,
                    const GenericFunction& v) const;
 
   /// Extract subspace for component
@@ -195,7 +208,10 @@ public:
   /// *Returns*
   ///     bool
   ///         True if the function space has the given cell.
-  bool has_cell(const Cell& cell) const { return &cell.mesh() == &(*_mesh); }
+  bool has_cell(const mesh::Cell& cell) const
+  {
+    return &cell.mesh() == &(*_mesh);
+  }
 
   /// Check if function space has given element
   ///
@@ -206,7 +222,7 @@ public:
   /// *Returns*
   ///     bool
   ///         True if the function space has the given element.
-  bool has_element(const FiniteElement& element) const
+  bool has_element(const fem::FiniteElement& element) const
   {
     return element.hash() == _element->hash();
   }
@@ -225,7 +241,7 @@ public:
   /// nullspace computations.
   ///
   /// *Arguments*
-  ///     mesh (_Mesh_)
+  ///     mesh (_mesh::Mesh_)
   ///         The mesh.
   ///
   /// *Returns*
@@ -240,15 +256,15 @@ public:
   /// operator, e.g. rigid body rotations.
   ///
   /// *Arguments*
-  ///     vector (_PETScVector_)
+  ///     vector (_la::PETScVector_)
   ///         The vector to set.
   ///     value (double)
   ///         The value to multiply to coordinate by.
   ///     component (std::size_t)
   ///         The coordinate index.
-  ///     mesh (_Mesh_)
+  ///     mesh (_mesh::Mesh_)
   ///         The mesh.
-  void set_x(PETScVector& x, double value, std::size_t component) const;
+  void set_x(la::PETScVector& x, double value, std::size_t component) const;
 
   /// Return informal string representation (pretty-print)
   ///
@@ -266,17 +282,17 @@ public:
 
 private:
   // General interpolation from any GenericFunction on any mesh
-  void interpolate_from_any(PETScVector& expansion_coefficients,
+  void interpolate_from_any(la::PETScVector& expansion_coefficients,
                             const GenericFunction& v) const;
 
   // The mesh
-  std::shared_ptr<const Mesh> _mesh;
+  std::shared_ptr<const mesh::Mesh> _mesh;
 
   // The finite element
-  std::shared_ptr<const FiniteElement> _element;
+  std::shared_ptr<const fem::FiniteElement> _element;
 
   // The dofmap
-  std::shared_ptr<const GenericDofMap> _dofmap;
+  std::shared_ptr<const fem::GenericDofMap> _dofmap;
 
   // The component w.r.t. to root space
   std::vector<std::size_t> _component;
@@ -288,4 +304,5 @@ private:
   mutable std::map<std::vector<std::size_t>, std::weak_ptr<FunctionSpace>>
       _subspaces;
 };
+}
 }

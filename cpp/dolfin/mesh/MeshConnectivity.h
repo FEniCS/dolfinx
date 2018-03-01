@@ -11,6 +11,8 @@
 
 namespace dolfin
 {
+namespace mesh
+{
 
 /// Mesh connectivity stores a sparse data structure of connections
 /// (incidence relations) between mesh entities for a fixed pair of
@@ -170,4 +172,5 @@ private:
   // Position of first connection for each entity (using local index)
   std::vector<std::uint32_t> index_to_position;
 };
+}
 }

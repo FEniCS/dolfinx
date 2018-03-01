@@ -9,9 +9,9 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/log.h>
-#include <dolfin/math/basic.h>
 
 using namespace dolfin;
+using namespace dolfin::geometry;
 
 //-----------------------------------------------------------------------------
 const Point Point::cross(const Point& p) const
@@ -53,7 +53,7 @@ Point Point::rotate(const Point& k, double theta) const
 std::string Point::str(bool verbose) const
 {
   std::stringstream s;
-  s << "<Point x = " << x() << " y = " << y() << " z = " << z() << ">";
+  s << "<Point x0 = " << _x[0] << " x1 = " << _x[1] << " x2 = " << _x[2] << ">";
   return s.str();
 }
 //-----------------------------------------------------------------------------

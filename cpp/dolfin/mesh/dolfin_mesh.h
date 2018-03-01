@@ -1,5 +1,14 @@
 #pragma once
 
+namespace dolfin
+{
+/*! \namespace dolfin::mesh
+    \brief Mesh data structures
+
+    Representations of meshes and support for operations on meshes.
+*/
+}
+
 // DOLFIN mesh interface
 
 #include <dolfin/mesh/Cell.h>

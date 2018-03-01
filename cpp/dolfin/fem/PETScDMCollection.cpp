@@ -4,8 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifdef HAS_PETSC
-
 #include "PETScDMCollection.h"
 #include <boost/multi_array.hpp>
 #include <dolfin/common/RangedIndexSet.h>
@@ -17,10 +15,12 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscmat.h>
 
 using namespace dolfin;
+using namespace dolfin::fem;
 
 namespace
 {
@@ -55,7 +55,7 @@ struct lt_coordinate
 };
 
 std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
-tabulate_coordinates_to_dofs(const FunctionSpace& V)
+tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
 {
   std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
       coords_to_dofs(lt_coordinate(1.0e-12));
@@ -64,9 +64,9 @@ tabulate_coordinates_to_dofs(const FunctionSpace& V)
   dolfin_assert(V.dofmap());
   dolfin_assert(V.element());
   dolfin_assert(V.mesh());
-  const GenericDofMap& dofmap = *V.dofmap();
-  const FiniteElement& element = *V.element();
-  const Mesh& mesh = *V.mesh();
+  const fem::GenericDofMap& dofmap = *V.dofmap();
+  const fem::FiniteElement& element = *V.element();
+  const mesh::Mesh& mesh = *V.mesh();
   std::vector<std::size_t> local_to_global;
   dofmap.tabulate_local_to_global_dofs(local_to_global);
 
@@ -81,9 +81,10 @@ tabulate_coordinates_to_dofs(const FunctionSpace& V)
   // Speed up the computations by only visiting (most) dofs once
   const std::int64_t local_size
       = dofmap.ownership_range()[1] - dofmap.ownership_range()[0];
-  RangedIndexSet already_visited(std::array<std::int64_t, 2>{{0, local_size}});
+  common::RangedIndexSet already_visited(
+      std::array<std::int64_t, 2>{{0, local_size}});
 
-  for (auto& cell : MeshRange<Cell>(mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Get cell coordinates
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -121,7 +122,7 @@ tabulate_coordinates_to_dofs(const FunctionSpace& V)
 
 //-----------------------------------------------------------------------------
 PETScDMCollection::PETScDMCollection(
-    std::vector<std::shared_ptr<const FunctionSpace>> function_spaces)
+    std::vector<std::shared_ptr<const function::FunctionSpace>> function_spaces)
     : _spaces(function_spaces), _dms(function_spaces.size(), nullptr)
 {
   for (std::size_t i = 0; i < _spaces.size(); ++i)
@@ -129,7 +130,7 @@ PETScDMCollection::PETScDMCollection(
     dolfin_assert(_spaces[i]);
     dolfin_assert(_spaces[i].get());
 
-    // Get MPI communicator from Mesh
+    // Get MPI communicator from mesh::Mesh
     dolfin_assert(_spaces[i]->mesh());
     MPI_Comm comm = _spaces[i]->mesh()->mpi_comm();
 
@@ -197,15 +198,15 @@ void PETScDMCollection::reset(int i)
   //  PetscObjectDereference((PetscObject)_dms[i]);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<PETScMatrix>
-PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
-                                          const FunctionSpace& fine_space)
+std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
+    const function::FunctionSpace& coarse_space,
+    const function::FunctionSpace& fine_space)
 {
   // FIXME: refactor and split up
 
   // Get coarse mesh and dimension of the domain
   dolfin_assert(coarse_space.mesh());
-  const Mesh meshc = *coarse_space.mesh();
+  const mesh::Mesh meshc = *coarse_space.mesh();
   std::size_t dim = meshc.geometry().dim();
 
   // MPI communicator, size and rank
@@ -213,9 +214,9 @@ PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
   const unsigned int mpi_size = MPI::size(mpi_comm);
 
   // Initialise bounding box tree and dofmaps
-  std::shared_ptr<BoundingBoxTree> treec = meshc.bounding_box_tree();
-  std::shared_ptr<const GenericDofMap> coarsemap = coarse_space.dofmap();
-  std::shared_ptr<const GenericDofMap> finemap = fine_space.dofmap();
+  std::shared_ptr<geometry::BoundingBoxTree> treec = meshc.bounding_box_tree();
+  std::shared_ptr<const fem::GenericDofMap> coarsemap = coarse_space.dofmap();
+  std::shared_ptr<const fem::GenericDofMap> finemap = fine_space.dofmap();
 
   // Create map from coordinates to dofs sharing that coordinate
   std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
@@ -233,15 +234,15 @@ PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
 
   // Get finite element for the coarse space. This will be needed to
   // evaluate the basis functions for each cell.
-  std::shared_ptr<const FiniteElement> el = coarse_space.element();
+  std::shared_ptr<const fem::FiniteElement> el = coarse_space.element();
 
   // Check that it is the same kind of element on each space.
   {
-    std::shared_ptr<const FiniteElement> elf = fine_space.element();
+    std::shared_ptr<const fem::FiniteElement> elf = fine_space.element();
     // Check that function ranks match
     if (el->value_rank() != elf->value_rank())
     {
-      dolfin_error("create_transfer_matrix", "Creating interpolation matrix",
+      log::dolfin_error("create_transfer_matrix", "Creating interpolation matrix",
                    "Ranks of function spaces do not match: %d, %d.",
                    el->value_rank(), elf->value_rank());
     }
@@ -251,7 +252,7 @@ PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
     {
       if (el->value_dimension(i) != elf->value_dimension(i))
       {
-        dolfin_error("create_transfer_matrix", "Creating interpolation matrix",
+        log::dolfin_error("create_transfer_matrix", "Creating interpolation matrix",
                      "Dimension %d of function space (%d) does not match "
                      "dimension %d of function space (%d)",
                      i, el->value_dimension(i), i, elf->value_dimension(i));
@@ -309,7 +310,7 @@ PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
   for (const auto& map_it : coords_to_dofs)
   {
     const std::vector<double>& _x = map_it.first;
-    Point curr_point(dim, _x.data());
+    geometry::Point curr_point(dim, _x.data());
 
     // Compute which processes' BBoxes contain the fine point
     found_ranks = treec->compute_process_collisions(curr_point);
@@ -351,7 +352,7 @@ PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
     unsigned int n_points = recv_found[p].size() / dim;
     for (unsigned int i = 0; i < n_points; ++i)
     {
-      const Point curr_point(dim, &recv_found[p][i * dim]);
+      const geometry::Point curr_point(dim, &recv_found[p][i * dim]);
       send_ids[p].push_back(
           treec->compute_first_entity_collision(curr_point, meshc));
     }
@@ -487,10 +488,10 @@ PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
   {
     // Get coarse cell id and point
     unsigned int id = found_ids[i];
-    Point curr_point(dim, &found_points[i * dim]);
+    geometry::Point curr_point(dim, &found_points[i * dim]);
 
     // Create coarse cell
-    Cell coarse_cell(meshc, static_cast<std::size_t>(id));
+    mesh::Cell coarse_cell(meshc, static_cast<std::size_t>(id));
     // Get dofs coordinates of the coarse cell
     coarse_cell.get_coordinate_dofs(coordinate_dofs);
 
@@ -602,15 +603,15 @@ PETScDMCollection::create_transfer_matrix(const FunctionSpace& coarse_space,
 
   // create shared pointer and return the pointer to the transfer
   // matrix
-  std::shared_ptr<PETScMatrix> ptr = std::make_shared<PETScMatrix>(I);
+  std::shared_ptr<la::PETScMatrix> ptr = std::make_shared<la::PETScMatrix>(I);
   ierr = MatDestroy(&I);
   CHKERRABORT(PETSC_COMM_WORLD, ierr);
   return ptr;
 }
 //-----------------------------------------------------------------------------
 void PETScDMCollection::find_exterior_points(
-    MPI_Comm mpi_comm, const Mesh& meshc,
-    std::shared_ptr<const BoundingBoxTree> treec, int dim, int data_size,
+    MPI_Comm mpi_comm, const mesh::Mesh& meshc,
+    std::shared_ptr<const geometry::BoundingBoxTree> treec, int dim, int data_size,
     const std::vector<double>& send_points,
     const std::vector<int>& send_indices, std::vector<int>& indices,
     std::vector<std::size_t>& cell_ids, std::vector<double>& points)
@@ -644,7 +645,7 @@ void PETScDMCollection::find_exterior_points(
     unsigned int n_points = p.size() / dim;
     for (unsigned int i = 0; i < n_points; ++i)
     {
-      const Point curr_point(dim, &p[i * dim]);
+      const geometry::Point curr_point(dim, &p[i * dim]);
       std::pair<unsigned int, double> find_point
           = treec->compute_closest_entity(curr_point, meshc);
       send_distance.push_back(find_point.second);
@@ -707,11 +708,11 @@ void PETScDMCollection::find_exterior_points(
 PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
 {
   // Get DOLFIN FunctiobSpace from the PETSc DM object
-  std::shared_ptr<FunctionSpace>* V;
+  std::shared_ptr<function::FunctionSpace>* V;
   DMShellGetContext(dm, (void**)&V);
 
   // Create Vector
-  Function u(*V);
+  function::Function u(*V);
   *vec = u.vector()->vec();
 
   // FIXME: Does increasing the reference count lead to a memory leak?
@@ -724,16 +725,16 @@ PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
 PetscErrorCode PETScDMCollection::create_interpolation(DM dmc, DM dmf, Mat* mat,
                                                        Vec* vec)
 {
-  // Get DOLFIN FunctionSpaces from PETSc DM objects (V0 is coarse
+  // Get DOLFIN function::FunctionSpaces from PETSc DM objects (V0 is coarse
   // space, V1 is fine space)
-  FunctionSpace *V0(nullptr), *V1(nullptr);
+  function::FunctionSpace *V0(nullptr), *V1(nullptr);
   DMShellGetContext(dmc, (void**)&V0);
   DMShellGetContext(dmf, (void**)&V1);
 
   // Build interpolation matrix (V0 to V1)
   dolfin_assert(V0);
   dolfin_assert(V1);
-  std::shared_ptr<PETScMatrix> P = create_transfer_matrix(*V0, *V1);
+  std::shared_ptr<la::PETScMatrix> P = create_transfer_matrix(*V0, *V1);
 
   // Copy PETSc matrix pointer and inrease reference count
   *mat = P->mat();
@@ -757,4 +758,3 @@ PetscErrorCode PETScDMCollection::refine(DM dmc, MPI_Comm comm, DM* dmf)
   return DMGetFineDM(dmc, dmf);
 }
 //-----------------------------------------------------------------------------
-#endif

@@ -22,23 +22,24 @@
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm)
-    : Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
+    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
       _ghost_mode("none")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm, CellType::Type type,
+Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>
                geometry,
            Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>
                topology)
-    : Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
+    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
       _ghost_mode("none")
 {
   // Initialise geometry
@@ -46,7 +47,7 @@ Mesh::Mesh(MPI_Comm comm, CellType::Type type,
   _geometry.init(gdim, 1);
 
   // Set cell type
-  _cell_type.reset(CellType::create(type));
+  _cell_type.reset(mesh::CellType::create(type));
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t nv = _cell_type->num_vertices();
   dolfin_assert(nv == topology.cols());
@@ -92,14 +93,14 @@ Mesh::Mesh(MPI_Comm comm, CellType::Type type,
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-    : Variable("mesh", "DOLFIN mesh"), _ordered(false),
+    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false),
       _mpi_comm(mesh.mpi_comm()), _ghost_mode("none")
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
-    : Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
+    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
       _ghost_mode("none")
 {
   const std::string ghost_mode = parameters["ghost_mode"];
@@ -117,7 +118,7 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   _topology = mesh._topology;
   _geometry = mesh._geometry;
   if (mesh._cell_type)
-    _cell_type.reset(CellType::create(mesh._cell_type->cell_type()));
+    _cell_type.reset(mesh::CellType::create(mesh._cell_type->cell_type()));
   else
     _cell_type.reset();
 
@@ -141,7 +142,7 @@ std::size_t Mesh::init(std::size_t dim) const
   // Skip if mesh is empty
   if (num_cells() == 0)
   {
-    warning("Mesh is empty, unable to create entities of dimension %d.", dim);
+    log::warning("Mesh is empty, unable to create entities of dimension %d.", dim);
     return 0;
   }
 
@@ -156,7 +157,7 @@ std::size_t Mesh::init(std::size_t dim) const
   // Check that mesh is ordered
   if (!ordered())
   {
-    dolfin_error("Mesh.cpp", "initialize mesh entities",
+    log::dolfin_error("Mesh.cpp", "initialize mesh entities",
                  "Mesh is not ordered according to the UFC numbering "
                  "convention. Consider calling mesh.order()");
   }
@@ -183,7 +184,7 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   // Skip if mesh is empty
   if (num_cells() == 0)
   {
-    warning("Mesh is empty, unable to create connectivity %d --> %d.", d0, d1);
+    log::warning("Mesh is empty, unable to create connectivity %d --> %d.", d0, d1);
     return;
   }
 
@@ -194,7 +195,7 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   // Check that mesh is ordered
   if (!ordered())
   {
-    dolfin_error("Mesh.cpp", "initialize mesh connectivity",
+    log::dolfin_error("Mesh.cpp", "initialize mesh connectivity",
                  "Mesh is not ordered according to the UFC numbering "
                  "convention. Consider calling mesh.order()");
   }
@@ -258,12 +259,12 @@ bool Mesh::ordered() const
   return _ordered;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const
+std::shared_ptr<geometry::BoundingBoxTree> Mesh::bounding_box_tree() const
 {
   // Allocate and build tree if necessary
   if (!_tree)
   {
-    _tree.reset(new BoundingBoxTree(geometry().dim()));
+    _tree.reset(new geometry::BoundingBoxTree(geometry().dim()));
     _tree->build(*this, topology().dim());
   }
 
@@ -313,8 +314,8 @@ std::size_t Mesh::hash() const
   const std::size_t kg_local = _geometry.hash();
 
   // Compute global hash
-  const std::size_t kt = hash_global(_mpi_comm.comm(), kt_local);
-  const std::size_t kg = hash_global(_mpi_comm.comm(), kg_local);
+  const std::size_t kt = common::hash_global(_mpi_comm.comm(), kt_local);
+  const std::size_t kg = common::hash_global(_mpi_comm.comm(), kg_local);
 
   // Compute hash based on the Cantor pairing function
   return (kt + kg) * (kt + kg + 1) / 2 + kg;
@@ -327,8 +328,8 @@ std::string Mesh::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
 
-    s << indent(_geometry.str(true));
-    s << indent(_topology.str(true));
+    s << common::indent(_geometry.str(true));
+    s << common::indent(_topology.str(true));
   }
   else
   {

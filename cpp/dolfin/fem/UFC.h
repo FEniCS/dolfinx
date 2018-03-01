@@ -14,18 +14,24 @@
 namespace dolfin
 {
 
+namespace mesh
+{
 class Cell;
+}
+
+namespace fem
+{
 class FiniteElement;
 class Form;
-class FunctionSpace;
-class GenericFunction;
-class Mesh;
 
 /// This class is a simple data structure that holds data used
 /// during assembly of a given UFC form. Data is created for each
 /// primary argument, that is, v_j for j < r. In addition, nodal
 /// basis expansion coefficients and a finite element are created
 /// for each coefficient function.
+
+using EigenRowMatrixXd
+    = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 class UFC
 {
@@ -34,25 +40,33 @@ public:
   UFC(const Form& form);
 
   /// Destructor
-  ~UFC() {};
+  ~UFC(){};
 
   /// Update current cell
-  void update(const Cell& cell,
-              Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
-              Eigen::Dynamic, Eigen::RowMajor>>
-              coordinate_dofs0,
+  void update(const mesh::Cell& cell,
+              Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs0,
               const ufc::cell& ufc_cell,
               const std::vector<bool>& enabled_coefficients);
 
   /// Update current cell
-  void update(const Cell& cell, const std::vector<double>& coordinate_dofs0,
+  void update(const mesh::Cell& cell,
+              const std::vector<double>& coordinate_dofs0,
               const ufc::cell& ufc_cell,
               const std::vector<bool>& enabled_coefficients);
 
   /// Update current pair of cells for macro element
-  void update(const Cell& cell0, const std::vector<double>& coordinate_dofs0,
-              const ufc::cell& ufc_cell0, const Cell& cell1,
+  void update(const mesh::Cell& cell0,
+              const std::vector<double>& coordinate_dofs0,
+              const ufc::cell& ufc_cell0, const mesh::Cell& cell1,
               const std::vector<double>& coordinate_dofs1,
+              const ufc::cell& ufc_cell1,
+              const std::vector<bool>& enabled_coefficients);
+
+  /// Update current pair of cells for macro element
+  void update(const mesh::Cell& cell0,
+              Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs0,
+              const ufc::cell& ufc_cell0, const mesh::Cell& cell1,
+              Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs1,
               const ufc::cell& ufc_cell1,
               const std::vector<bool>& enabled_coefficients);
 
@@ -78,9 +92,6 @@ public:
   std::vector<double> macro_A;
 
 private:
-  // Finite elements for coefficients
-  std::vector<FiniteElement> coefficient_elements;
-
   // Coefficients (std::vector<double*> is used to interface with
   // UFC)
   std::vector<double> _w;
@@ -95,4 +106,5 @@ public:
   /// The form
   const Form& dolfin_form;
 };
-} // namespace dolfin
+}
+}

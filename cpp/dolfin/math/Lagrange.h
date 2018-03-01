@@ -6,12 +6,14 @@
 
 #pragma once
 
-#include <vector>
 #include <dolfin/common/Variable.h>
-#include <dolfin/log/Event.h>
+#include <vector>
 
 namespace dolfin
 {
+namespace math
+{
+
 /// Lagrange polynomial (basis) with given degree q determined by
 /// n = q + 1 nodal points.
 ///
@@ -30,7 +32,7 @@ namespace dolfin
 ///   p(1,x) = x       (zero at x = 0, one at x = 1)
 ///
 
-class Lagrange : public Variable
+class Lagrange : public common::Variable
 {
 public:
   /// Constructor
@@ -91,9 +93,6 @@ private:
 
   std::vector<double> points;
   std::vector<double> constants;
-
-  Event instability_detected;
 };
 }
-
-
+}

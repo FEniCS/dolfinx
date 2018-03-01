@@ -9,12 +9,14 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/types.h>
+#include <dolfin/fem/DirichletBC.h>
 #include <map>
 
 namespace dolfin
 {
-
-// Forward declarations
+namespace mesh
+{
 class Mesh;
 template <typename T>
 class MeshFunction;
@@ -47,8 +49,8 @@ public:
   ///
   /// @return    bool
   ///         True for points inside the subdomain.
-  virtual bool inside(Eigen::Ref<const Eigen::VectorXd> x,
-                      bool on_boundary) const;
+  virtual Eigen::Matrix<bool, Eigen::Dynamic, 1>
+  inside(Eigen::Ref<const EigenRowMatrixXd> x, bool on_boundary) const;
 
   /// Map coordinate x in domain H to coordinate y in domain G (used for
   /// periodic boundary conditions)
@@ -198,11 +200,11 @@ private:
                      bool check_midpoint) const;
 
   // Friends
-  friend class DirichletBC;
-  friend class PeriodicBC;
+  friend class dolfin::fem::DirichletBC;
 
   // Geometric dimension, needed for SWIG interface, will be set before
   // calls to inside() and map()
   mutable std::size_t _geometric_dimension;
 };
+}
 }

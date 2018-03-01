@@ -98,30 +98,34 @@ Then follows the definition of the coefficient functions (for
 .. code-block:: cpp
 
    // Source term (right-hand side)
-   class Source : public Expression
+   class Source : public function::Expression
    {
    public:
-     Source() : Expression({}) {}
+     Source() : function::Expression({}) {}
 
-     void eval(Eigen::Ref<Eigen::VectorXd> values,
-            Eigen::Ref<const Eigen::VectorXd> x) const
+     void eval(Eigen::Ref<EigenRowMatrixXd> values,
+            Eigen::Ref<const EigenRowMatrixXd> x) const
      {
-       double dx = x[0] - 0.5;
-       double dy = x[1] - 0.5;
-       values[0] = 10*exp(-(dx*dx + dy*dy) / 0.02);
+     for (unsigned int i = 0; i != x.rows(); ++i)
+       {
+         double dx = x(i, 0) - 0.5;
+         double dy = x(i, 1) - 0.5;
+         values(i, 0) = 10*exp(-(dx*dx + dy*dy) / 0.02);
+       }
      }
    };
 
    // Normal derivative (Neumann boundary condition)
-   class dUdN : public Expression
+   class dUdN : public function::Expression
    {
    public:
-     dUdN() : Expression({}) {}
+     dUdN() : function::Expression({}) {}
 
-     void eval(Eigen::Ref<Eigen::VectorXd> values,
-            Eigen::Ref<const Eigen::VectorXd> x) const
+     void eval(Eigen::Ref<EigenRowMatrixXd> values,
+            Eigen::Ref<const EigenRowMatrixXd> x) const
      {
-       values[0] = sin(5*x[0]);
+       for (unsigned int i = 0; i != x.rows(); ++i)
+           values(i, 0) = sin(5*x(i, 0));
      }
    };
 
@@ -132,11 +136,16 @@ boundary condition should be applied.
 .. code-block:: cpp
 
    // Sub domain for Dirichlet boundary condition
-   class DirichletBoundary : public SubDomain
+   class DirichletBoundary : public mesh::SubDomain
    {
-     bool inside(Eigen::Ref<const Eigen::VectorXd> x, bool on_boundary) const
+     Eigen::Matrix<bool, Eigen::Dynamic, 1>
+     inside(Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
+            Eigen::Dynamic, Eigen::RowMajor>> x, bool on_boundary) const
      {
-       return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS;
+       Eigen::Matrix<bool, Eigen::Dynamic, 1> result(x.rows());
+       for (unsigned int i = 0; i != x.rows(); ++i)
+         result[i] = (x(i, 0) < DOLFIN_EPS or x(i, 0) > 1.0 - DOLFIN_EPS);
+       return result;
      }
    };
 
@@ -154,8 +163,8 @@ the form file) defined relative to this mesh, we do as follows
      MPI_Init(&argc, &argv);
 
      // Create mesh and function space
-     std::array<Point, 2> pt = {Point(0.,0.), Point(1.,1.)};
-     auto mesh = std::make_shared<Mesh>(RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, CellType::Type::triangle));
+     std::array<geometry::Point, 2> pt = {geometry::Point(0.,0.), geometry::Point(1.,1.)};
+     auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle));
      auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
@@ -172,10 +181,10 @@ as follows:
 .. code-block:: cpp
 
      // Define boundary condition
-     auto u0 = std::make_shared<Constant>(0.0);
+     auto u0 = std::make_shared<function::Constant>(0.0);
      auto boundary = std::make_shared<DirichletBoundary>();
-     std::vector<std::shared_ptr<const DirichletBC>> bc
-      = {std::make_shared<DirichletBC>(V, u0, boundary)};
+     std::vector<std::shared_ptr<const fem:: DirichletBC>> bc
+      = {std::make_shared<fem::DirichletBC>(V, u0, boundary)};
 
 
 Next, we define the variational formulation by initializing the
@@ -204,15 +213,15 @@ call the ``solve`` function with the arguments ``a == L``, ``u`` and
 .. code-block:: cpp
 
      // Compute solution
-     Function u(V);
-     auto A = std::make_shared<PETScMatrix>(MPI_COMM_WORLD);
-     auto b = std::make_shared<PETScVector>(MPI_COMM_WORLD);
+     function::Function u(V);
+     auto A = std::make_shared<la::PETScMatrix>(MPI_COMM_WORLD);
+     auto b = std::make_shared<la::PETScVector>(MPI_COMM_WORLD);
 
-     SystemAssembler assem(a, L, bc);
-     assem.assemble(*A);
-     assem.assemble(*b);
+     fem::SystemAssembler assembler(a, L, bc);
+     assembler.assemble(*A);
+     assembler.assemble(*b);
 
-     PETScLUSolver lu(MPI_COMM_WORLD, A);
+     la::PETScLUSolver lu(MPI_COMM_WORLD, A);
      lu.solve(*u.vector(), *b);
 
 
@@ -224,7 +233,7 @@ visualisation in an external program such as Paraview.
 .. code-block:: cpp
 
      // Save solution in VTK format
-     VTKFile file("poisson.pvd");
+     io::VTKFile file("poisson.pvd");
      file.write(u);
 
      return 0;

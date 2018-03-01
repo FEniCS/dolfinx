@@ -9,24 +9,25 @@
 #include "dolfin/common/constants.h"
 #include "dolfin/mesh/CellType.h"
 #include "dolfin/mesh/MeshPartitioning.h"
-
 #include <Eigen/Dense>
 #include <cmath>
 
 using namespace dolfin;
+using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
-Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x)
+mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
+                               std::array<double, 2> x)
 {
   // Receive mesh according to parallel policy
   if (MPI::rank(comm) != 0)
   {
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-                     geom(0, 1);
-    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-                     topo(0, 2);
-    Mesh mesh(comm, CellType::Type::interval, geom, topo);
-    MeshPartitioning::build_distributed_mesh(mesh);
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+        0, 1);
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
+                                                                             2);
+    mesh::Mesh mesh(comm, mesh::CellType::Type::interval, geom, topo);
+    mesh::MeshPartitioning::build_distributed_mesh(mesh);
     return mesh;
   }
 
@@ -36,27 +37,29 @@ Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x)
 
   if (std::abs(a - b) < DOLFIN_EPS)
   {
-    dolfin_error(
+    log::dolfin_error(
         "Interval.cpp", "create interval",
         "Length of interval is zero. Consider checking your dimensions");
   }
 
   if (b < a)
   {
-    dolfin_error("Interval.cpp", "create interval",
+    log::dolfin_error("Interval.cpp", "create interval",
                  "Length of interval is negative. Consider checking the order "
                  "of your arguments");
   }
 
   if (nx < 1)
   {
-    dolfin_error("Interval.cpp", "create interval",
+    log::dolfin_error("Interval.cpp", "create interval",
                  "Number of points on interval is (%d), it must be at least 1",
                  nx);
   }
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom((nx + 1), 1);
-  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(nx, 2);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+      (nx + 1), 1);
+  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(nx,
+                                                                           2);
 
   // Create vertices
   for (std::size_t ix = 0; ix <= nx; ix++)
@@ -66,8 +69,8 @@ Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x)
   for (std::size_t ix = 0; ix < nx; ix++)
     topo.row(ix) << ix, ix + 1;
 
-  Mesh mesh(comm, CellType::Type::interval, geom, topo);
-  MeshPartitioning::build_distributed_mesh(mesh);
+  mesh::Mesh mesh(comm, mesh::CellType::Type::interval, geom, topo);
+  mesh::MeshPartitioning::build_distributed_mesh(mesh);
   return mesh;
 }
 //-----------------------------------------------------------------------------

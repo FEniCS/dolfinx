@@ -11,23 +11,20 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Lagrange::Lagrange(std::size_t q)
-    : _q(q), counter(0), points(q + 1, 0.0),
-      instability_detected("Warning: Lagrange polynomial is not numerically "
-                           "stable. The degree is too high.")
+dolfin::math::Lagrange::Lagrange(std::size_t q)
+    : _q(q), counter(0), points(q + 1, 0.0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Lagrange::Lagrange(const Lagrange& p)
-    : _q(p._q), counter(p.counter), points(p.points),
-      instability_detected(p.instability_detected)
+dolfin::math::Lagrange::Lagrange(const Lagrange& p)
+    : _q(p._q), counter(p.counter), points(p.points)
 {
   if (counter == size())
     init();
 }
 //-----------------------------------------------------------------------------
-void Lagrange::set(std::size_t i, double x)
+void dolfin::math::Lagrange::set(std::size_t i, double x)
 {
   dolfin_assert(i <= _q);
 
@@ -38,19 +35,22 @@ void Lagrange::set(std::size_t i, double x)
     init();
 }
 //-----------------------------------------------------------------------------
-std::size_t Lagrange::size() const { return points.size(); }
+std::size_t dolfin::math::Lagrange::size() const { return points.size(); }
 //-----------------------------------------------------------------------------
-std::size_t Lagrange::degree() const { return _q; }
+std::size_t dolfin::math::Lagrange::degree() const { return _q; }
 //-----------------------------------------------------------------------------
-double Lagrange::point(std::size_t i) const
+double dolfin::math::Lagrange::point(std::size_t i) const
 {
   dolfin_assert(i < points.size());
   return points[i];
 }
 //-----------------------------------------------------------------------------
-double Lagrange::operator()(std::size_t i, double x) { return eval(i, x); }
+double dolfin::math::Lagrange::operator()(std::size_t i, double x)
+{
+  return eval(i, x);
+}
 //-----------------------------------------------------------------------------
-double Lagrange::eval(std::size_t i, double x)
+double dolfin::math::Lagrange::eval(std::size_t i, double x)
 {
   dolfin_assert(i < points.size());
 
@@ -64,7 +64,7 @@ double Lagrange::eval(std::size_t i, double x)
   return product;
 }
 //-----------------------------------------------------------------------------
-double Lagrange::ddx(std::size_t i, double x)
+double dolfin::math::Lagrange::ddx(std::size_t i, double x)
 {
   dolfin_assert(i < points.size());
 
@@ -93,7 +93,7 @@ double Lagrange::ddx(std::size_t i, double x)
     return prod * constants[i] * s;
 }
 //-----------------------------------------------------------------------------
-double Lagrange::dqdx(std::size_t i)
+double dolfin::math::Lagrange::dqdx(std::size_t i)
 {
   double product = constants[i];
   for (std::size_t j = 1; j <= _q; j++)
@@ -102,7 +102,7 @@ double Lagrange::dqdx(std::size_t i)
   return product;
 }
 //-----------------------------------------------------------------------------
-std::string Lagrange::str(bool verbose) const
+std::string dolfin::math::Lagrange::str(bool verbose) const
 {
   std::stringstream s;
 
@@ -121,7 +121,7 @@ std::string Lagrange::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void Lagrange::init()
+void dolfin::math::Lagrange::init()
 {
   // Note: this will be computed when n nodal points have been set,
   // assuming they are distinct. Precomputing the constants has a downside
@@ -140,15 +140,15 @@ void Lagrange::init()
       {
         if (std::abs(points[i] - points[j]) < DOLFIN_EPS)
         {
-          dolfin_error("Lagrange.cpp", "create Lagrange polynomial",
+          log::dolfin_error("Lagrange.cpp", "create Lagrange polynomial",
                        "Nodal points are not distinct");
         }
         product *= points[i] - points[j];
       }
     }
 
-    if (std::abs(product) < DOLFIN_EPS)
-      instability_detected();
+    //if (std::abs(product) < DOLFIN_EPS)
+    //  instability_detected();
 
     constants[i] = 1.0 / product;
   }

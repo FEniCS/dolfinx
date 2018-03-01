@@ -13,6 +13,7 @@
 #include <string>
 
 using namespace dolfin;
+using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
 Constant::Constant(double value) : Expression({}), _values(1, value)
@@ -48,8 +49,8 @@ const Constant& Constant::operator=(const Constant& constant)
   // Check value shape
   if (constant.value_shape() != value_shape())
   {
-    dolfin_error("Constant.cpp", "assign value to constant",
-                 "Value shape mismatch");
+    log::dolfin_error("Constant.cpp", "assign value to constant",
+                      "Value shape mismatch");
   }
 
   // Assign values
@@ -63,8 +64,8 @@ const Constant& Constant::operator=(double constant)
   // Check value shape
   if (!value_shape().empty())
   {
-    dolfin_error("Constant.cpp", "assign scalar value to constant",
-                 "Constant is not a scalar");
+    log::dolfin_error("Constant.cpp", "assign scalar value to constant",
+                      "Constant is not a scalar");
   }
 
   // Assign value
@@ -80,11 +81,13 @@ std::vector<double> Constant::values() const
   return _values;
 }
 //-----------------------------------------------------------------------------
-void Constant::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x) const
+void Constant::eval(Eigen::Ref<EigenRowMatrixXd> values,
+                    Eigen::Ref<const EigenRowMatrixXd> x) const
 {
   // Copy values
-  std::copy(_values.begin(), _values.end(), values.data());
+  for (unsigned int i = 0; i != values.rows(); ++i)
+    std::copy(_values.begin(), _values.end(),
+              values.data() + i * _values.size());
 }
 //-----------------------------------------------------------------------------
 std::string Constant::str(bool verbose) const
@@ -114,7 +117,7 @@ std::string Constant::str(bool verbose) const
         ossv << _values[0];
       }
     }
-    oss << indent(ossv.str());
+    oss << common::indent(ossv.str());
   }
 
   return oss.str();

@@ -23,13 +23,21 @@ class cell;
 
 namespace dolfin
 {
+namespace la
+{
+class PETScVector;
+}
 
-// Forward declarations
+namespace mesh
+{
 class Cell;
+class Mesh;
+}
+
+namespace function
+{
 class Expression;
 class FunctionSpace;
-class PETScVector;
-class SubDomain;
 
 /// This class represents a function :math:`u_h` in a finite
 /// element function space :math:`V_h`, given by
@@ -63,7 +71,7 @@ public:
   ///     x (_GenericVector_)
   ///         The vector.
   Function(std::shared_ptr<const FunctionSpace> V,
-           std::shared_ptr<PETScVector> x);
+           std::shared_ptr<la::PETScVector> x);
 
   /// Copy constructor
   ///
@@ -98,7 +106,7 @@ public:
   /// *Arguments*
   ///     v (_FunctionAXPY_)
   ///         A linear combination of other Functions
-  void operator=(const FunctionAXPY& axpy);
+  void operator=(const function::FunctionAXPY& axpy);
 
   /// Extract subfunction (view into the Function)
   ///
@@ -126,14 +134,14 @@ public:
   /// *Returns*
   ///     _GenericVector_
   ///         The vector of expansion coefficients.
-  std::shared_ptr<PETScVector> vector();
+  std::shared_ptr<la::PETScVector> vector();
 
   /// Return vector of expansion coefficients (const version)
   ///
   /// *Returns*
   ///     _GenericVector_
   ///         The vector of expansion coefficients (const).
-  std::shared_ptr<const PETScVector> vector() const;
+  std::shared_ptr<const la::PETScVector> vector() const;
 
   /// Evaluate function at given coordinates
   ///
@@ -141,8 +149,8 @@ public:
   ///         The values.
   /// @param    x (Eigen::Ref<const Eigen::VectorXd> x)
   ///         The coordinates.
-  void eval(Eigen::Ref<Eigen::VectorXd> values,
-            Eigen::Ref<const Eigen::VectorXd> x) const override;
+  void eval(Eigen::Ref<EigenRowMatrixXd> values,
+            Eigen::Ref<const EigenRowMatrixXd> x) const override;
 
   /// Evaluate function at given coordinates in given cell
   ///
@@ -155,9 +163,9 @@ public:
   ///         The cell.
   /// @param    ufc_cell (ufc::cell)
   ///         The ufc::cell.
-  void eval(Eigen::Ref<Eigen::VectorXd> values,
-            Eigen::Ref<const Eigen::VectorXd> x,
-            const dolfin::Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
+  void eval(Eigen::Ref<EigenRowMatrixXd> values,
+            Eigen::Ref<const EigenRowMatrixXd> x,
+            const mesh::Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
 
   /// Interpolate function (on possibly non-matching meshes)
   ///
@@ -207,8 +215,8 @@ public:
   ///         The coordinates of the point.
   /// @param    cell (ufc::cell)
   ///         The cell which contains the given point.
-  virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x,
+  virtual void eval(Eigen::Ref<EigenRowMatrixXd> values,
+                    Eigen::Ref<const EigenRowMatrixXd> x,
                     const ufc::cell& cell) const override;
 
   /// Restrict function to local cell (compute expansion coefficients w)
@@ -223,18 +231,19 @@ public:
   ///         The coordinates
   /// @param    ufc_cell (ufc::cell).
   ///         The ufc::cell.
-  virtual void restrict(double* w, const FiniteElement& element,
-                        const Cell& dolfin_cell, const double* coordinate_dofs,
+  virtual void restrict(double* w, const fem::FiniteElement& element,
+                        const mesh::Cell& dolfin_cell,
+                        const double* coordinate_dofs,
                         const ufc::cell& ufc_cell) const override;
 
   /// Compute values at all mesh vertices
   ///
   /// @param    vertex_values (Array<double>)
   ///         The values at all vertices.
-  /// @param    mesh (_Mesh_)
+  /// @param    mesh (_mesh::Mesh_)
   ///         The mesh.
   virtual void compute_vertex_values(std::vector<double>& vertex_values,
-                                     const Mesh& mesh) const override;
+                                     const mesh::Mesh& mesh) const override;
 
   /// Compute values at all mesh vertices
   ///
@@ -268,9 +277,10 @@ private:
   std::shared_ptr<const FunctionSpace> _function_space;
 
   // The vector of expansion coefficients (local)
-  std::shared_ptr<PETScVector> _vector;
+  std::shared_ptr<la::PETScVector> _vector;
 
   // True if extrapolation should be allowed
   bool _allow_extrapolation;
 };
+}
 }

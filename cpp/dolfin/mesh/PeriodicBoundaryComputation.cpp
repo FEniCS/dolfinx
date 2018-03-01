@@ -18,6 +18,7 @@
 #include <vector>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 // Comparison operator for hashing coordinates. Note that two
 // coordinates are considered equal if equal to within specified
@@ -107,12 +108,12 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           visited[e.index()] = true;
 
         // Copy entity coordinate
-        const Point midpoint = e.midpoint();
+        const geometry::Point midpoint = e.midpoint();
         std::copy(midpoint.coordinates(), midpoint.coordinates() + gdim,
                   x.begin());
 
         // Check if entity lies on a 'master' or 'slave' boundary
-        if (sub_domain.inside(_x, true))
+        if (sub_domain.inside(_x, true)[0])
         {
           // Build bounding box data for master entity midpoints
           if (x_min_max.empty())
@@ -146,14 +147,14 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           {
             if (std::isnan(y[i]))
             {
-              dolfin_error("PeriodicBoundaryComputation.cpp",
+              log::dolfin_error("PeriodicBoundaryComputation.cpp",
                            "periodic boundary mapping",
                            "Need to set coordinate %d in sub_domain.map", i);
             }
           }
 
           // Check if entity lies on a 'slave' boundary
-          if (sub_domain.inside(_y, true))
+          if (sub_domain.inside(_y, true)[0])
           {
             // Store slave local index and midpoint coordinates
             slave_entities.push_back(e.index());

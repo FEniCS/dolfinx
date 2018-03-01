@@ -33,6 +33,7 @@
 #include <set>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
@@ -43,7 +44,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
     LocalMeshData local_mesh_data(mesh);
 
     // Build distributed mesh
-    build_distributed_mesh(mesh, local_mesh_data, parameters["ghost_mode"]);
+    build_distributed_mesh(mesh, local_mesh_data, parameter::parameters["ghost_mode"]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -68,9 +69,9 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
                                               const LocalMeshData& local_data,
                                               const std::string ghost_mode)
 {
-  log(PROGRESS, "Building distributed mesh");
+  log::log(PROGRESS, "Building distributed mesh");
 
-  Timer timer("Build distributed mesh from local mesh data");
+  common::Timer timer("Build distributed mesh from local mesh data");
 
   // Store used ghost mode
   // NOTE: This is the only place in DOLFIN which eventually sets
@@ -78,7 +79,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   mesh._ghost_mode = ghost_mode;
 
   // Get mesh partitioner
-  const std::string partitioner = parameters["mesh_partitioner"];
+  const std::string partitioner = parameter::parameters["mesh_partitioner"];
 
   // MPI communicator
   MPI_Comm comm = mesh.mpi_comm();
@@ -105,7 +106,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   {
     // FIXME: need to generate ghost cell information here by doing a
     // facet-matching operation "GraphBuilder" style
-    dolfin_error("MeshPartitioning.cpp", "build ghost mesh",
+    log::dolfin_error("MeshPartitioning.cpp", "build ghost mesh",
                  "Ghost cell information not available");
   }
 
@@ -125,33 +126,33 @@ void MeshPartitioning::partition_cells(
     const std::string partitioner, std::vector<int>& cell_partition,
     std::map<std::int64_t, std::vector<int>>& ghost_procs)
 {
-  log(PROGRESS, "Compute partition of cells across processes");
+  log::log(PROGRESS, "Compute partition of cells across processes");
 
   // Clear data
   cell_partition.clear();
   ghost_procs.clear();
 
-  std::unique_ptr<CellType> cell_type(
-      CellType::create(mesh_data.topology.cell_type));
+  std::unique_ptr<mesh::CellType> cell_type(
+      mesh::CellType::create(mesh_data.topology.cell_type));
   dolfin_assert(cell_type);
 
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
   {
-    SCOTCH::compute_partition(
+    dolfin::graph::SCOTCH::compute_partition(
         mpi_comm, cell_partition, ghost_procs, mesh_data.topology.cell_vertices,
         mesh_data.topology.cell_weight, mesh_data.geometry.num_global_vertices,
         mesh_data.topology.num_global_cells, *cell_type);
   }
   else if (partitioner == "ParMETIS")
   {
-    ParMETIS::compute_partition(
+    dolfin::graph::ParMETIS::compute_partition(
         mpi_comm, cell_partition, ghost_procs, mesh_data.topology.cell_vertices,
         mesh_data.geometry.num_global_vertices, *cell_type);
   }
   else
   {
-    dolfin_error("MeshPartitioning.cpp", "compute cell partition",
+    log::dolfin_error("MeshPartitioning.cpp", "compute cell partition",
                  "Mesh partitioner '%s' is unknown.", partitioner.c_str());
   }
 }
@@ -163,9 +164,9 @@ void MeshPartitioning::build(
     const std::string ghost_mode)
 {
   // Distribute cells
-  log(PROGRESS, "Distribute mesh (cell and vertices)");
+  log::log(PROGRESS, "Distribute mesh (cell and vertices)");
 
-  Timer timer("Distribute mesh (cells and vertices)");
+  common::Timer timer("Distribute mesh (cells and vertices)");
 
   // Sanity check
   dolfin_assert(mesh._ghost_mode == ghost_mode);
@@ -217,11 +218,11 @@ void MeshPartitioning::build(
   }
 
 #ifdef HAS_SCOTCH
-  if (parameters["reorder_cells_gps"])
+  if (parameter::parameters["reorder_cells_gps"])
   {
     // Create CellType objects based on current cell type
-    std::unique_ptr<CellType> cell_type(
-        CellType::create(mesh_data.topology.cell_type));
+    std::unique_ptr<mesh::CellType> cell_type(
+        mesh::CellType::create(mesh_data.topology.cell_type));
     dolfin_assert(cell_type);
 
     // Allocate objects to hold re-ordering
@@ -235,7 +236,7 @@ void MeshPartitioning::build(
                       reordered_shared_cells, reordered_cell_vertices,
                       reordered_global_cell_indices);
 
-    // Update to re-ordered indices
+    // Update to paramre-ordered indices
     std::swap(shared_cells, reordered_shared_cells);
     std::swap(new_cell_vertices, reordered_cell_vertices);
     std::swap(new_global_cell_indices, reordered_global_cell_indices);
@@ -252,7 +253,7 @@ void MeshPartitioning::build(
       vertex_global_to_local);
 
 #ifdef HAS_SCOTCH
-  if (parameters["reorder_vertices_gps"])
+  if (parameter::parameters["reorder_vertices_gps"])
   {
     // Allocate objects to hold re-ordering
     std::vector<std::int64_t> reordered_vertex_indices;
@@ -320,16 +321,16 @@ void MeshPartitioning::reorder_cells_gps(
     boost::multi_array<std::int64_t, 2>& reordered_cell_vertices,
     std::vector<std::int64_t>& reordered_global_cell_indices)
 {
-  log(PROGRESS, "Re-order cells during distributed mesh construction");
+  log::log(PROGRESS, "Re-order cells during distributed mesh construction");
 
-  Timer timer("Reorder cells using GPS ordering");
+  common::Timer timer("Reorder cells using GPS ordering");
 
   // Make dual graph from vertex indices, using GraphBuilder
   // FIXME: this should be reused later to add the facet-cell topology
   std::vector<std::vector<std::size_t>> local_graph;
-  GraphBuilder::FacetCellMap facet_cell_map;
-  GraphBuilder::compute_local_dual_graph(mpi_comm, cell_vertices, cell_type,
-                                         local_graph, facet_cell_map);
+  dolfin::graph::GraphBuilder::FacetCellMap facet_cell_map;
+  dolfin::graph::GraphBuilder::compute_local_dual_graph(
+      mpi_comm, cell_vertices, cell_type, local_graph, facet_cell_map);
 
   const std::size_t num_all_cells = cell_vertices.shape()[0];
   const std::size_t local_cell_offset
@@ -338,12 +339,12 @@ void MeshPartitioning::reorder_cells_gps(
   // Convert between graph types, removing offset
   // FIXME: make all graphs the same type
 
-  Graph g_dual;
+  dolfin::graph::Graph g_dual;
   // Ignore the ghost cells - they will not be reordered
   // FIXME: reorder ghost cells too
   for (std::uint32_t i = 0; i != num_regular_cells; ++i)
   {
-    dolfin::Set<int> conn_set;
+    dolfin::common::Set<int> conn_set;
     for (auto q = local_graph[i].begin(); q != local_graph[i].end(); ++q)
     {
       dolfin_assert(*q >= local_cell_offset);
@@ -355,7 +356,7 @@ void MeshPartitioning::reorder_cells_gps(
     }
     g_dual.push_back(conn_set);
   }
-  std::vector<int> remap = SCOTCH::compute_gps(g_dual);
+  std::vector<int> remap = dolfin::graph::SCOTCH::compute_gps(g_dual);
 
   // Resize re-ordered cell topology arrray, and copy (copy iss
   // required because ghosts are not being re-ordered).
@@ -400,11 +401,11 @@ void MeshPartitioning::reorder_vertices_gps(
   // SCOTCH.
   // "vertex_indices" and "vertex_global_to_local" are modified.
 
-  log(PROGRESS, "Re-order vertices during distributed mesh construction");
-  Timer timer("Reorder vertices using GPS ordering");
+  log::log(PROGRESS, "Re-order vertices during distributed mesh construction");
+  common::Timer timer("Reorder vertices using GPS ordering");
 
   // Make local real graph (vertices are nodes, edges are edges)
-  Graph g(num_regular_vertices);
+  dolfin::graph::Graph g(num_regular_vertices);
   for (std::int32_t i = 0; i < num_regular_cells; ++i)
   {
     for (int j = 0; j < num_vertices_per_cell; ++j)
@@ -427,7 +428,7 @@ void MeshPartitioning::reorder_vertices_gps(
     }
   }
 
-  std::vector<int> remap = SCOTCH::compute_gps(g);
+  std::vector<int> remap = dolfin::graph::SCOTCH::compute_gps(g);
 
   // Remap global-to-local mapping for regular vertices only
   reordered_vertex_global_to_local = vertex_global_to_local;
@@ -457,7 +458,7 @@ void MeshPartitioning::distribute_cell_layer(
     std::vector<std::int64_t>& global_cell_indices,
     std::vector<int>& cell_partition)
 {
-  Timer timer("Distribute cell layer");
+  common::Timer timer("Distribute cell layer");
 
   const int mpi_size = MPI::size(mpi_comm);
   const int mpi_rank = MPI::rank(mpi_comm);
@@ -664,9 +665,9 @@ std::int32_t MeshPartitioning::distribute_cells(
   // destination(s) including its global index, and the cell owner
   // (for ghost cells this will be different from the destination)
 
-  log(PROGRESS, "Distribute cells during distributed mesh construction");
+  log::log(PROGRESS, "Distribute cells during distributed mesh construction");
 
-  Timer timer("Distribute cells");
+  common::Timer timer("Distribute cells");
 
   const std::size_t mpi_size = MPI::size(mpi_comm);
   const std::size_t mpi_rank = MPI::rank(mpi_comm);
@@ -684,7 +685,7 @@ std::int32_t MeshPartitioning::distribute_cells(
   {
     if (mesh_data.topology.cell_vertices[0].size() != num_cell_vertices)
     {
-      dolfin_error(
+      log::dolfin_error(
           "MeshPartitioning.cpp", "distribute cells",
           "Mismatch in number of cell vertices (%d != %d) on process %d",
           mesh_data.topology.cell_vertices[0].size(), num_cell_vertices,
@@ -868,8 +869,8 @@ void MeshPartitioning::distribute_vertices(
   // then distributed so that each process learns where it needs to
   // send its vertices.
 
-  log(PROGRESS, "Distribute vertices during distributed mesh construction");
-  Timer timer("Distribute vertices");
+  log::log(PROGRESS, "Distribute vertices during distributed mesh construction");
+  common::Timer timer("Distribute vertices");
 
   // Get number of processes
   const int mpi_size = MPI::size(mpi_comm);
@@ -967,7 +968,7 @@ void MeshPartitioning::build_shared_vertices(
     const std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
     const std::vector<std::vector<std::size_t>>& received_vertex_indices)
 {
-  log(PROGRESS, "Build shared vertices during distributed mesh construction");
+  log::log(PROGRESS, "Build shared vertices during distributed mesh construction");
 
   const int mpi_size = MPI::size(mpi_comm);
 
@@ -1033,18 +1034,19 @@ void MeshPartitioning::build_shared_vertices(
 void MeshPartitioning::build_local_mesh(
     Mesh& mesh, const std::vector<std::int64_t>& global_cell_indices,
     const boost::multi_array<std::int64_t, 2>& cell_global_vertices,
-    const CellType::Type cell_type, const int tdim,
+    const mesh::CellType::Type cell_type, const int tdim,
     const std::int64_t num_global_cells,
     const std::vector<std::int64_t>& vertex_indices,
     const boost::multi_array<double, 2>& vertex_coordinates, const int gdim,
     const std::int64_t num_global_vertices,
     const std::map<std::int64_t, std::int32_t>& vertex_global_to_local)
 {
-  log(PROGRESS, "Build local mesh during distributed mesh construction");
-  Timer timer("Build local part of distributed mesh (from local mesh data)");
+  log::log(PROGRESS, "Build local mesh during distributed mesh construction");
+  common::Timer timer(
+      "Build local part of distributed mesh (from local mesh data)");
 
   // Set cell type
-  mesh._cell_type.reset(CellType::create(cell_type));
+  mesh._cell_type.reset(mesh::CellType::create(cell_type));
   dolfin_assert(tdim == (int)mesh._cell_type->dim());
 
   // Initialise geometry

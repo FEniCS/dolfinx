@@ -14,9 +14,10 @@
 #include <sstream>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-dolfin::MeshFunction<double>
+MeshFunction<double>
 MeshQuality::radius_ratios(std::shared_ptr<const Mesh> mesh)
 {
   // Create MeshFunction
@@ -132,7 +133,7 @@ void MeshQuality::dihedral_angles(const Cell& cell,
 {
   if (cell.dim() != 3)
   {
-    dolfin_error("MeshQuality.cpp", "calculate dihedral angles",
+    log::dolfin_error("MeshQuality.cpp", "calculate dihedral angles",
                  "Only works for 3D cells");
   }
 
@@ -147,10 +148,10 @@ void MeshQuality::dihedral_angles(const Cell& cell,
     const std::size_t i1 = cell.entities(0)[edges[i][1]];
     const std::size_t i2 = cell.entities(0)[edges[5 - i][0]];
     const std::size_t i3 = cell.entities(0)[edges[5 - i][1]];
-    const Point p0 = Vertex(mesh, i0).point();
-    Point v1 = Vertex(mesh, i1).point() - p0;
-    Point v2 = Vertex(mesh, i2).point() - p0;
-    Point v3 = Vertex(mesh, i3).point() - p0;
+    const geometry::Point p0 = Vertex(mesh, i0).point();
+    geometry::Point v1 = Vertex(mesh, i1).point() - p0;
+    geometry::Point v2 = Vertex(mesh, i2).point() - p0;
+    geometry::Point v3 = Vertex(mesh, i3).point() - p0;
     v1 /= v1.norm();
     v2 /= v2.norm();
     v3 /= v3.norm();

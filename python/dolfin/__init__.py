@@ -47,10 +47,7 @@ from .cpp.function import (Expression, Constant, FunctionAXPY)
 from .cpp.fem import (FiniteElement, DofMap,
                       vertex_to_dof_map, dof_to_vertex_map)
 
-from .cpp.geometry import (BoundingBoxTree,
-                           Point,
-                           MeshPointIntersection,
-                           intersect)
+from .cpp.geometry import BoundingBoxTree, Point
 from .cpp.generation import IntervalMesh, BoxMesh, RectangleMesh
 from .cpp.io import XDMFFile, VTKFile
 

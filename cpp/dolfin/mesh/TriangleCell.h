@@ -12,6 +12,8 @@
 
 namespace dolfin
 {
+namespace mesh
+{
 
 /// This class implements functionality for triangular meshes.
 
@@ -44,37 +46,34 @@ public:
   double circumradius(const MeshEntity& triangle) const;
 
   /// Compute squared distance to given point (3D enabled)
-  double squared_distance(const Cell& cell, const Point& point) const;
+  double squared_distance(const mesh::Cell& cell,
+                          const geometry::Point& point) const;
 
   /// Compute squared distance to given point. This version takes
   /// the three vertex coordinates as 3D points. This makes it
   /// possible to reuse this function for computing the (squared)
   /// distance to a tetrahedron.
-  static double squared_distance(const Point& point, const Point& a,
-                                 const Point& b, const Point& c);
+  static double squared_distance(const geometry::Point& point,
+                                 const geometry::Point& a,
+                                 const geometry::Point& b,
+                                 const geometry::Point& c);
 
   /// Compute component i of normal of given facet with respect to the cell
-  double normal(const Cell& cell, std::size_t facet, std::size_t i) const;
+  double normal(const mesh::Cell& cell, std::size_t facet, std::size_t i) const;
 
   /// Compute of given facet with respect to the cell
-  Point normal(const Cell& cell, std::size_t facet) const;
+  geometry::Point normal(const mesh::Cell& cell, std::size_t facet) const;
 
   /// Compute normal to given cell (viewed as embedded in 3D)
-  Point cell_normal(const Cell& cell) const;
+  geometry::Point cell_normal(const mesh::Cell& cell) const;
 
   /// Compute the area/length of given facet with respect to the cell
-  double facet_area(const Cell& cell, std::size_t facet) const;
+  double facet_area(const mesh::Cell& cell, std::size_t facet) const;
 
   /// Order entities locally
   void
-  order(Cell& cell,
+  order(mesh::Cell& cell,
         const std::vector<std::int64_t>& local_to_global_vertex_indices) const;
-
-  /// Check whether given point collides with cell
-  bool collides(const Cell& cell, const Point& point) const;
-
-  /// Check whether given entity collides with cell
-  bool collides(const Cell& cell, const MeshEntity& entity) const;
 
   /// Return description of cell type
   std::string description(bool plural) const;
@@ -84,6 +83,7 @@ public:
 
 private:
   // Find local index of edge i according to ordering convention
-  std::size_t find_edge(std::size_t i, const Cell& cell) const;
+  std::size_t find_edge(std::size_t i, const mesh::Cell& cell) const;
 };
+}
 }

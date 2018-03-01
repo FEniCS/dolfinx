@@ -110,7 +110,7 @@ def test_save_and_read_mesh_value_collection(tempdir):
     filename = os.path.join(tempdir, "mesh_value_collection.h5")
     mesh = UnitCubeMesh(MPI.comm_world, ndiv, ndiv, ndiv)
 
-    point2list = lambda p : [ p.x(), p.y(), p.z() ]
+    point2list = lambda p : [ p[0], p[1], p[2] ]
 
     # write to file
     with HDF5File(mesh.mpi_comm(), filename, 'w') as f :

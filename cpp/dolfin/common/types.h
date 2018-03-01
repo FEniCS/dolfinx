@@ -11,6 +11,13 @@
 #include <petscsys.h>
 #endif
 
+#include <Eigen/Dense>
+
+// Some typedefs for common Eigen templates
+using EigenRowMatrixXd
+    = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+using EigenVectorXb = Eigen::Matrix<bool, Eigen::Dynamic, 1>;
+
 namespace dolfin
 {
 

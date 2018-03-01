@@ -20,12 +20,21 @@
 namespace dolfin
 {
 
-class GenericFunction;
+namespace geometry
+{
+class BoundingBoxTree;
+}
+
+namespace function
+{
+class Function;
+}
+
+namespace mesh
+{
 class LocalMeshData;
 class MeshEntity;
-class Point;
 class SubDomain;
-class BoundingBoxTree;
 
 /// A _Mesh_ consists of a set of connected and numbered mesh entities.
 ///
@@ -53,7 +62,7 @@ class BoundingBoxTree;
 /// such as all edges connected to a given vertex must also be
 /// explicitly created (in this case by a call to mesh.init(0, 1)).
 
-class Mesh : public Variable
+class Mesh : public common::Variable
 {
 public:
   // FIXME: remove
@@ -70,7 +79,7 @@ public:
   ///         Matrix containing geometic points of the mesh
   /// @param topology
   ///         Matrix containing the vertex indices for the cells of the mesh
-  Mesh(MPI_Comm comm, CellType::Type type,
+  Mesh(MPI_Comm comm, mesh::CellType::Type type,
        Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>>
            geometry,
@@ -191,20 +200,20 @@ public:
   /// sharing of the bounding box tree data structure.
   ///
   /// @return std::shared_ptr<BoundingBoxTree>
-  std::shared_ptr<BoundingBoxTree> bounding_box_tree() const;
+  std::shared_ptr<geometry::BoundingBoxTree> bounding_box_tree() const;
 
   /// Get mesh cell type.
   ///
   /// @return CellType&
   ///         The cell type object associated with the mesh.
-  CellType& type()
+  mesh::CellType& type()
   {
     dolfin_assert(_cell_type);
     return *_cell_type;
   }
 
   /// Get mesh cell type (const version).
-  const CellType& type() const
+  const mesh::CellType& type() const
   {
     dolfin_assert(_cell_type);
     return *_cell_type;
@@ -313,7 +322,7 @@ public:
 
   // FIXME: Remove
   // Friend in fem_utils.h
-  friend Mesh fem::create_mesh(Function& coordinates);
+  friend Mesh dolfin::fem::create_mesh(function::Function& coordinates);
 
 private:
   // Friends
@@ -330,10 +339,10 @@ private:
   // Bounding box tree used to compute collisions between the mesh
   // and other objects. The tree is initialized to a zero pointer
   // and is allocated and built when bounding_box_tree() is called.
-  mutable std::shared_ptr<BoundingBoxTree> _tree;
+  mutable std::shared_ptr<geometry::BoundingBoxTree> _tree;
 
   // Cell type
-  std::unique_ptr<CellType> _cell_type;
+  std::unique_ptr<mesh::CellType> _cell_type;
 
   // True if mesh has been ordered
   mutable bool _ordered;
@@ -344,4 +353,5 @@ private:
   // Ghost mode used for partitioning
   std::string _ghost_mode;
 };
+}
 }

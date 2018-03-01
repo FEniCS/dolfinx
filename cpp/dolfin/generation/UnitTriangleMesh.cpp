@@ -11,9 +11,10 @@
 #include <dolfin/mesh/MeshPartitioning.h>
 
 using namespace dolfin;
+using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
-dolfin::Mesh UnitTriangleMesh::create()
+mesh::Mesh UnitTriangleMesh::create()
 {
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
       3, 2);
@@ -25,6 +26,6 @@ dolfin::Mesh UnitTriangleMesh::create()
 
   topo << 0, 1, 2;
 
-  return Mesh(MPI_COMM_SELF, CellType::Type::triangle, geom, topo);
+  return mesh::Mesh(MPI_COMM_SELF, mesh::CellType::Type::triangle, geom, topo);
 }
 //-----------------------------------------------------------------------------

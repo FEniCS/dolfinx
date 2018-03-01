@@ -17,8 +17,8 @@
 
 namespace dolfin
 {
-
-/// Forward declarations
+namespace la
+{
 class PETScMatrix;
 class PETScVector;
 class VectorSpaceBasis;
@@ -103,7 +103,7 @@ class VectorSpaceBasis;
 /// transform and must be provided if a spectral transform is
 /// given. The possible values are real numbers.
 
-class SLEPcEigenSolver : public Variable, public PETScObject
+class SLEPcEigenSolver : public common::Variable, public PETScObject
 {
 public:
   /// Create eigenvalue solver
@@ -141,11 +141,11 @@ public:
 
   /// Set deflation space. The VectorSpaceBasis does not need to be
   /// orthonormal.
-  void set_deflation_space(const VectorSpaceBasis& deflation_space);
+  void set_deflation_space(const la::VectorSpaceBasis& deflation_space);
 
   /// Set inital space. The VectorSpaceBasis does not need to be
   /// orthonormal.
-  void set_initial_space(const VectorSpaceBasis& initial_space);
+  void set_initial_space(const la::VectorSpaceBasis& initial_space);
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database
@@ -165,9 +165,9 @@ public:
   MPI_Comm mpi_comm() const;
 
   /// Default parameter values
-  static Parameters default_parameters()
+  static parameter::Parameters default_parameters()
   {
-    Parameters p("slepc_eigenvalue_solver");
+    parameter::Parameters p("slepc_eigenvalue_solver");
     p.add<std::string>("problem_type");
     p.add<std::string>("spectrum");
     p.add<std::string>("solver");
@@ -203,5 +203,5 @@ private:
   EPS _eps;
 };
 }
-
+}
 #endif

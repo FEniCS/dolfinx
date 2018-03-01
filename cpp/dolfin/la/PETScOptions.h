@@ -17,6 +17,9 @@
 
 namespace dolfin
 {
+namespace la
+{
+
 /// These class provides static functions that permit users to set
 /// and retrieve PETSc options via the PETSc option/parameter
 /// system. The option must not be prefixed by '-', e.g.
@@ -48,7 +51,7 @@ public:
   template <typename T>
   static void set(std::string option, const T value)
   {
-    SubSystemsManager::init_petsc();
+    common::SubSystemsManager::init_petsc();
 
     if (option[0] != '-')
       option = '-' + option;
@@ -67,6 +70,6 @@ public:
   static void clear();
 };
 }
-
+}
 #endif
 

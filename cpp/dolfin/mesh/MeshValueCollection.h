@@ -18,6 +18,8 @@
 
 namespace dolfin
 {
+namespace mesh
+{
 
 /// The MeshValueCollection class can be used to store data
 /// associated with a subset of the entities of a mesh of a given
@@ -29,7 +31,7 @@ namespace dolfin
 /// means that data may be stored robustly to file.
 
 template <typename T>
-class MeshValueCollection : public Variable
+class MeshValueCollection : public common::Variable
 {
 public:
   /// Create empty mesh value collection
@@ -195,7 +197,7 @@ private:
 //---------------------------------------------------------------------------
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection()
-    : Variable("m", "unnamed MeshValueCollection"), _dim(-1)
+    : common::Variable("m", "unnamed MeshValueCollection"), _dim(-1)
 {
   // Do nothing
 }
@@ -210,7 +212,8 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh)
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
                                             std::size_t dim)
-    : Variable("m", "unnamed MeshValueCollection"), _mesh(mesh), _dim(dim)
+    : common::Variable("m", "unnamed MeshValueCollection"), _mesh(mesh),
+      _dim(dim)
 {
   // Do nothing
 }
@@ -218,8 +221,8 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(
     const MeshFunction<T>& mesh_function)
-    : Variable("m", "unnamed MeshValueCollection"), _mesh(mesh_function.mesh()),
-      _dim(mesh_function.dim())
+    : common::Variable("m", "unnamed MeshValueCollection"),
+      _mesh(mesh_function.mesh()), _dim(mesh_function.dim())
 {
   dolfin_assert(_mesh);
   const std::size_t D = _mesh->topology().dim();
@@ -248,7 +251,7 @@ MeshValueCollection<T>::MeshValueCollection(
       for (std::size_t i = 0; i < entity.num_entities(D); ++i)
       {
         // Create cell
-        const Cell cell(*_mesh, connectivity(entity_index)[i]);
+        const mesh::Cell cell(*_mesh, connectivity(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
@@ -298,7 +301,7 @@ operator=(const MeshFunction<T>& mesh_function)
       for (std::size_t i = 0; i < entity.num_entities(D); ++i)
       {
         // Create cell
-        const Cell cell(*_mesh, connectivity(entity_index)[i]);
+        const mesh::Cell cell(*_mesh, connectivity(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
@@ -376,7 +379,7 @@ bool MeshValueCollection<T>::set_value(std::size_t cell_index,
   dolfin_assert(_dim >= 0);
   if (!_mesh)
   {
-    dolfin_error(
+    log::dolfin_error(
         "MeshValueCollection.h", "set value",
         "A mesh has not been associated with this MeshValueCollection");
   }
@@ -399,7 +402,7 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
 {
   if (!_mesh)
   {
-    dolfin_error(
+    log::dolfin_error(
         "MeshValueCollection.h", "set value",
         "A mesh has not been associated with this MeshValueCollection");
   }
@@ -434,7 +437,7 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
   dolfin_assert(!connectivity.empty());
   dolfin_assert(connectivity.size(entity_index) > 0);
   const MeshEntity entity(*_mesh, _dim, entity_index);
-  const Cell cell(*_mesh, connectivity(entity_index)[0]); // choose first
+  const mesh::Cell cell(*_mesh, connectivity(entity_index)[0]); // choose first
 
   // Find the local entity index
   const std::size_t local_entity = cell.index(entity);
@@ -467,7 +470,7 @@ T MeshValueCollection<T>::get_value(std::size_t cell_index,
 
   if (it == _values.end())
   {
-    dolfin_error("MeshValueCollection.h", "extract value",
+    log::dolfin_error("MeshValueCollection.h", "extract value",
                  "No value stored for cell index: %d and local index: %d",
                  cell_index, local_entity);
   }
@@ -502,7 +505,7 @@ std::string MeshValueCollection<T>::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    warning(
+    log::warning(
         "Verbose output of MeshValueCollection must be implemented manually.");
   }
   else
@@ -514,4 +517,5 @@ std::string MeshValueCollection<T>::str(bool verbose) const
   return s.str();
 }
 //---------------------------------------------------------------------------
+}
 }

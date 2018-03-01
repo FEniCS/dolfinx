@@ -10,9 +10,10 @@
 #include <memory>
 
 using namespace dolfin;
+using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
-CoefficientAssigner::CoefficientAssigner(Form& form, std::size_t number)
+CoefficientAssigner::CoefficientAssigner(fem::Form& form, std::size_t number)
     : _form(form), _number(number)
 {
   // Do nothing
@@ -27,6 +28,6 @@ void CoefficientAssigner::
 operator=(std::shared_ptr<const GenericFunction> coefficient)
 {
   dolfin_assert(coefficient);
-  _form.set_coefficient(_number, coefficient);
+  _form.coeffs().set(_number, coefficient);
 }
 //-----------------------------------------------------------------------------

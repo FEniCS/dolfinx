@@ -10,14 +10,25 @@
 #include <dolfin/common/Variable.h>
 #include <memory>
 #include <ufc.h>
+#include <vector>
+
+using EigenRowMatrixXd = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 namespace dolfin
 {
+namespace fem
+{
+class FiniteElement;
+}
 
+namespace mesh
+{
 class Mesh;
 class Cell;
-class Point;
-class FiniteElement;
+}
+
+namespace function
+{
 class FunctionSpace;
 
 /// This is a common base class for functions. Functions can be
@@ -32,7 +43,7 @@ class FunctionSpace;
 /// Sub-classes may optionally implement the update() function that
 /// will be called prior to restriction when running in parallel.
 
-class GenericFunction : public Variable
+class GenericFunction : public common::Variable
 {
 public:
   /// Constructor
@@ -53,22 +64,23 @@ public:
   virtual std::vector<std::size_t> value_shape() const = 0;
 
   /// Evaluate at given point in given cell
-  virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x,
+  virtual void eval(Eigen::Ref<EigenRowMatrixXd> values,
+                    Eigen::Ref<const EigenRowMatrixXd> x,
                     const ufc::cell& cell) const;
 
   /// Evaluate at given point
-  virtual void eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x) const;
+  virtual void eval(Eigen::Ref<EigenRowMatrixXd> values,
+                    Eigen::Ref<const EigenRowMatrixXd> x) const;
 
   /// Restrict function to local cell (compute expansion coefficients w)
-  virtual void restrict(double* w, const FiniteElement& element,
-                        const Cell& dolfin_cell, const double* coordinate_dofs,
+  virtual void restrict(double* w, const fem::FiniteElement& element,
+                        const mesh::Cell& dolfin_cell,
+                        const double* coordinate_dofs,
                         const ufc::cell& ufc_cell) const = 0;
 
   /// Compute values at all mesh vertices
   virtual void compute_vertex_values(std::vector<double>& vertex_values,
-                                     const Mesh& mesh) const = 0;
+                                     const mesh::Mesh& mesh) const = 0;
 
   //--- Optional functions to be implemented by sub-classes ---
 
@@ -85,4 +97,5 @@ public:
   /// Pointer to FunctionSpace, if appropriate, otherwise NULL
   virtual std::shared_ptr<const FunctionSpace> function_space() const = 0;
 };
+}
 }

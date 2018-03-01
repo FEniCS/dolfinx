@@ -9,6 +9,7 @@ set(HEADERS
   utils.h
   FiniteElement.h
   Form.h
+  FormCoefficients.h
   FormIntegrals.h
   GenericDofMap.h
   LocalAssembler.h

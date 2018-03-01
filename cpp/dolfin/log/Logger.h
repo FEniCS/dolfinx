@@ -21,6 +21,9 @@
 namespace dolfin
 {
 
+namespace log
+{
+
 /// Handling of error messages, logging and informational display
 
 class Logger
@@ -155,4 +158,5 @@ private:
   // MPI Communicator
   MPI_Comm _mpi_comm;
 };
+}
 }

@@ -17,15 +17,17 @@
 
 namespace dolfin
 {
+namespace fem
+{
+class PETScDMCollection;
+}
 
-/// Forward declarations
+namespace la
+{
 class PETScBaseMatrix;
 class PETScMatrix;
 class PETScVector;
-class PETScSNESSolver;
 class VectorSpaceBasis;
-
-class PETScDMCollection;
 
 /// This class implements Krylov methods for linear systems of the
 /// form Ax = b. It is a wrapper for the Krylov solvers of PETSc.
@@ -60,12 +62,13 @@ public:
 
   /// Set operator (PETScMatrix). This is memory-safe as PETSc will
   /// increase the reference count to the underlying PETSc object.
-  void set_operator(const PETScBaseMatrix& A);
+  void set_operator(const la::PETScBaseMatrix& A);
 
   /// Set operator and preconditioner matrix (PETScMatrix). This is
   /// memory-safe as PETSc will increase the reference count to the
   /// underlying PETSc objects.
-  void set_operators(const PETScBaseMatrix& A, const PETScBaseMatrix& P);
+  void set_operators(const la::PETScBaseMatrix& A,
+                     const la::PETScBaseMatrix& P);
 
   /// Solve linear system Ax = b and return number of iterations
   /// (A^t x = b if transpose is true)
@@ -143,13 +146,13 @@ private:
   static PETScKrylovSolver::norm_type get_norm_type(std::string norm);
 
   // Solve linear system Ax = b and return number of iterations
-  std::size_t _solve(const PETScBaseMatrix& A, PETScVector& x,
+  std::size_t _solve(const la::PETScBaseMatrix& A, PETScVector& x,
                      const PETScVector& b);
 
   // Report the number of iterations
   void write_report(int num_iterations, KSPConvergedReason reason);
 
-  void check_dimensions(const PETScBaseMatrix& A, const PETScVector& x,
+  void check_dimensions(const la::PETScBaseMatrix& A, const PETScVector& x,
                         const PETScVector& b) const;
 
   // PETSc solver pointer
@@ -158,7 +161,5 @@ private:
   bool preconditioner_set;
 };
 }
-
+}
 #endif
-
-

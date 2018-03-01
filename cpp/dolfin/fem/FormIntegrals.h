@@ -7,14 +7,15 @@
 #pragma once
 
 #include <dolfin/log/log.h>
-#include <ufc.h>
-
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <ufc.h>
 #include <vector>
 
 namespace dolfin
+{
+namespace fem
 {
 
 class FormIntegrals
@@ -42,11 +43,17 @@ public:
           std::shared_ptr<ufc::cell_integral>(_default_cell_integral));
     }
 
-    for (std::size_t i = 0; i < ufc_form.max_cell_subdomain_id(); ++i)
+    const std::size_t num_cell_domains = ufc_form.max_cell_subdomain_id();
+    if (num_cell_domains > 0)
     {
-      std::cout << "Got a cell integral for domain " << i << "\n";
-      _cell_integrals.push_back(std::shared_ptr<ufc::cell_integral>(
-          ufc_form.create_cell_integral(i)));
+      _cell_integrals.resize(num_cell_domains + 1);
+
+      for (std::size_t i = 0; i < num_cell_domains; ++i)
+      {
+        std::cout << "Got a cell integral for domain " << i << "\n";
+        _cell_integrals[i + 1] = std::shared_ptr<ufc::cell_integral>(
+            ufc_form.create_cell_integral(i));
+      }
     }
 
     // Experimental function pointers for tabulate_tensor cell integral
@@ -66,12 +73,20 @@ public:
               _default_exterior_facet_integral));
     }
 
-    for (std::size_t i = 0; i < ufc_form.max_exterior_facet_subdomain_id(); ++i)
+    const std::size_t num_exterior_facet_domains
+        = ufc_form.max_exterior_facet_subdomain_id();
+
+    if (num_exterior_facet_domains > 0)
     {
-      std::cout << "Got an exterior integral for domain " << i << "\n";
-      _exterior_facet_integrals.push_back(
-          std::shared_ptr<ufc::exterior_facet_integral>(
-              ufc_form.create_exterior_facet_integral(i)));
+      _exterior_facet_integrals.resize(num_exterior_facet_domains + 1);
+
+      for (std::size_t i = 0; i < num_exterior_facet_domains; ++i)
+      {
+        std::cout << "Got an exterior integral for domain " << i << "\n";
+        _exterior_facet_integrals[i + 1]
+            = std::shared_ptr<ufc::exterior_facet_integral>(
+                ufc_form.create_exterior_facet_integral(i));
+      }
     }
 
     // Interior facet integrals
@@ -85,12 +100,19 @@ public:
               _default_interior_facet_integral));
     }
 
-    for (std::size_t i = 0; i < ufc_form.max_interior_facet_subdomain_id(); ++i)
+    const std::size_t num_interior_facet_domains
+        = ufc_form.max_interior_facet_subdomain_id();
+
+    if (num_interior_facet_domains > 0)
     {
-      std::cout << "Got an interior integral for domain " << i << "\n";
-      _interior_facet_integrals.push_back(
-          std::shared_ptr<ufc::interior_facet_integral>(
-              ufc_form.create_interior_facet_integral(i)));
+      _interior_facet_integrals.resize(num_interior_facet_domains + 1);
+      for (std::size_t i = 0; i < num_interior_facet_domains; ++i)
+      {
+        std::cout << "Got an interior integral for domain " << i << "\n";
+        _interior_facet_integrals[i + 1]
+            = std::shared_ptr<ufc::interior_facet_integral>(
+                ufc_form.create_interior_facet_integral(i));
+      }
     }
 
     // Vertex integrals
@@ -100,24 +122,35 @@ public:
       _vertex_integrals.push_back(
           std::shared_ptr<ufc::vertex_integral>(_default_vertex_integral));
 
-    for (std::size_t i = 0; i < ufc_form.max_vertex_subdomain_id(); ++i)
+    const std::size_t num_vertex_domains = ufc_form.max_vertex_subdomain_id();
+
+    if (num_vertex_domains > 0)
     {
-      _vertex_integrals.push_back(std::shared_ptr<ufc::vertex_integral>(
-          ufc_form.create_vertex_integral(i)));
+      _vertex_integrals.resize(num_vertex_domains + 1);
+      for (std::size_t i = 0; i < num_vertex_domains; ++i)
+      {
+        std::cout << "Got a vertex integral for domain " << i << "\n";
+        _vertex_integrals[i + 1] = std::shared_ptr<ufc::vertex_integral>(
+            ufc_form.create_vertex_integral(i));
+      }
     }
   }
 
   /// Default cell integral
   std::shared_ptr<const ufc::cell_integral> cell_integral() const
   {
-    dolfin_assert(!_cell_integrals.empty());
+    if (_cell_integrals.empty())
+      return std::shared_ptr<const ufc::cell_integral>();
+
     return _cell_integrals[0];
   }
 
   /// Cell integral for domain i
   std::shared_ptr<const ufc::cell_integral> cell_integral(unsigned int i) const
   {
-    dolfin_assert(i <= _cell_integrals.size());
+    if ((i + 1) >= _cell_integrals.size())
+      return std::shared_ptr<const ufc::cell_integral>();
+
     return _cell_integrals[i + 1];
   }
 
@@ -166,7 +199,9 @@ public:
   std::shared_ptr<const ufc::exterior_facet_integral>
   exterior_facet_integral(unsigned int i) const
   {
-    dolfin_assert(i <= _exterior_facet_integrals.size());
+    if (i + 1 >= _exterior_facet_integrals.size())
+      return std::shared_ptr<const ufc::exterior_facet_integral>();
+
     return _exterior_facet_integrals[i + 1];
   }
 
@@ -179,7 +214,9 @@ public:
   std::shared_ptr<const ufc::interior_facet_integral>
   interior_facet_integral() const
   {
-    dolfin_assert(!_interior_facet_integrals.empty());
+    if (_interior_facet_integrals.empty())
+      return std::shared_ptr<const ufc::interior_facet_integral>();
+
     return _interior_facet_integrals[0];
   }
 
@@ -187,7 +224,9 @@ public:
   std::shared_ptr<const ufc::interior_facet_integral>
   interior_facet_integral(unsigned int i) const
   {
-    dolfin_assert(i <= _interior_facet_integrals.size());
+    if (i + 1 >= _interior_facet_integrals.size())
+      return std::shared_ptr<const ufc::interior_facet_integral>();
+
     return _interior_facet_integrals[i + 1];
   }
 
@@ -199,7 +238,9 @@ public:
   /// Default interior facet integral
   std::shared_ptr<const ufc::vertex_integral> vertex_integral() const
   {
-    dolfin_assert(!_vertex_integrals.empty());
+    if (_vertex_integrals.empty())
+      return std::shared_ptr<const ufc::vertex_integral>();
+
     return _vertex_integrals[0];
   }
 
@@ -207,7 +248,8 @@ public:
   std::shared_ptr<const ufc::vertex_integral>
   vertex_integral(unsigned int i) const
   {
-    dolfin_assert(i <= _vertex_integrals.size());
+    if (i + 1 >= _vertex_integrals.size())
+      return std::shared_ptr<const ufc::vertex_integral>();
     return _vertex_integrals[i + 1];
   }
 
@@ -231,4 +273,5 @@ private:
   // Vertex integrals
   std::vector<std::shared_ptr<ufc::vertex_integral>> _vertex_integrals;
 };
-} // namespace dolfin
+}
+}

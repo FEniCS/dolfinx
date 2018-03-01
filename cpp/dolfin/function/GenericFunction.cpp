@@ -6,14 +6,14 @@
 
 #include "GenericFunction.h"
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <string>
 
 using namespace dolfin;
+using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
-GenericFunction::GenericFunction() : Variable("u", "a function")
+GenericFunction::GenericFunction() : common::Variable("u", "a function")
 {
   // Do nothing
 }
@@ -23,19 +23,19 @@ GenericFunction::~GenericFunction()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
-                           Eigen::Ref<const Eigen::VectorXd> x,
+void GenericFunction::eval(Eigen::Ref<EigenRowMatrixXd> values,
+                           Eigen::Ref<const EigenRowMatrixXd> x,
                            const ufc::cell& cell) const
 {
   // Redirect to simple eval
   eval(values, x);
 }
 //-----------------------------------------------------------------------------
-void GenericFunction::eval(Eigen::Ref<Eigen::VectorXd> values,
-                           Eigen::Ref<const Eigen::VectorXd> x) const
+void GenericFunction::eval(Eigen::Ref<EigenRowMatrixXd> values,
+                           Eigen::Ref<const EigenRowMatrixXd> x) const
 {
-  dolfin_error("GenericFunction.cpp", "evaluate function (Eigen version)",
-               "Missing eval() function (must be overloaded)");
+  log::dolfin_error("GenericFunction.cpp", "evaluate function (Eigen version)",
+                    "Missing eval() function (must be overloaded)");
 }
 //-----------------------------------------------------------------------------
 std::size_t GenericFunction::value_size() const

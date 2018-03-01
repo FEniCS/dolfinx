@@ -1,29 +1,16 @@
 set(HEADERS
   BoundingBoxTree.h
-  CGALExactArithmetic.h
   CollisionPredicates.h
-  ConvexTriangulation.h
   dolfin_geometry.h
-  GeometryDebugging.h
   GeometryPredicates.h
-  intersect.h
-  IntersectionConstruction.h
-  MeshPointIntersection.h
   Point.h
   predicates.h
-  SimplexQuadrature.h
   PARENT_SCOPE)
 
 set(SOURCES
   BoundingBoxTree.cpp
   CollisionPredicates.cpp
-  ConvexTriangulation.cpp
-  GeometryDebugging.cpp
   GeometryPredicates.cpp
-  intersect.cpp
-  IntersectionConstruction.cpp
-  MeshPointIntersection.cpp
   Point.cpp
   predicates.cpp
-  SimplexQuadrature.cpp
   PARENT_SCOPE)

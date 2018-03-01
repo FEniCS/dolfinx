@@ -86,9 +86,9 @@ def test_petsc():
     #include <dolfin.h>
     namespace dolfin
     {
-        std::shared_ptr<PETScMatrix> create_matrix(void) {
+        std::shared_ptr<la::PETScMatrix> create_matrix(void) {
             Mat I;
-            std::shared_ptr<PETScMatrix> ptr = std::make_shared<PETScMatrix>(I);
+            std::shared_ptr<la::PETScMatrix> ptr = std::make_shared<la::PETScMatrix>(I);
             return ptr;
         }
     }
@@ -187,7 +187,7 @@ def test_compile_extension_module():
       #include <petscvec.h>
       #include <dolfin/la/PETScVector.h>
 
-      void PETSc_exp(std::shared_ptr<dolfin::PETScVector> vec)
+      void PETSc_exp(std::shared_ptr<dolfin::la::PETScVector> vec)
       {
         Vec x = vec->vec();
         assert(x);

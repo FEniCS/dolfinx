@@ -19,15 +19,28 @@
 
 namespace dolfin
 {
-
-class GenericFunction;
-class FunctionSpace;
-class Facet;
+namespace la
+{
 class PETScMatrix;
 class PETScVector;
-class SubDomain;
+}
+
+namespace function
+{
+class GenericFunction;
+class FunctionSpace;
+}
+
+namespace mesh
+{
+class Facet;
 template <typename T>
 class MeshFunction;
+class SubDomain;
+}
+
+namespace fem
+{
 
 /// Interface for setting (strong) Dirichlet boundary conditions.
 
@@ -51,7 +64,7 @@ class MeshFunction;
 /// apply. This means that the mesh could be moved after the first
 /// apply and the boundary markers would still remain intact.
 ///
-/// Alternatively, the boundary may be specified by a _MeshFunction_
+/// Alternatively, the boundary may be specified by a _mesh::MeshFunction_
 /// over facets labeling all mesh facets together with a number that
 /// specifies which facets should be included in the boundary.
 ///
@@ -95,7 +108,7 @@ class MeshFunction;
 /// supplied object (defining boundary subdomain) after first use may
 /// have no effect. But this is implementation and method specific.
 
-class DirichletBC : public Variable
+class DirichletBC : public common::Variable
 {
 
 public:
@@ -108,15 +121,15 @@ public:
   ///         The function space
   /// @param[in] g (GenericFunction)
   ///         The value
-  /// @param[in] sub_domain (SubDomain)
+  /// @param[in] sub_domain (mesh::SubDomain)
   ///         The subdomain
   /// @param[in] method (std::string)
   ///         Optional argument: A string specifying
   ///         the method to identify dofs
   /// @param[in] check_midpoint (bool)
-  DirichletBC(std::shared_ptr<const FunctionSpace> V,
-              std::shared_ptr<const GenericFunction> g,
-              std::shared_ptr<const SubDomain> sub_domain,
+  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
+              std::shared_ptr<const function::GenericFunction> g,
+              std::shared_ptr<const mesh::SubDomain> sub_domain,
               std::string method = "topological", bool check_midpoint = true);
 
   /// Create boundary condition for subdomain specified by index
@@ -125,17 +138,18 @@ public:
   ///         The function space.
   /// @param[in] g (GenericFunction)
   ///         The value.
-  /// @param[in] sub_domains (MeshFnunction<std::size_t>)
+  /// @param[in] sub_domains (mesh::MeshFnunction<std::size_t>)
   ///         Subdomain markers
   /// @param[in] sub_domain (std::size_t)
   ///         The subdomain index (number)
   /// @param[in] method (std::string)
   ///         Optional argument: A string specifying the
   ///         method to identify dofs.
-  DirichletBC(std::shared_ptr<const FunctionSpace> V,
-              std::shared_ptr<const GenericFunction> g,
-              std::shared_ptr<const MeshFunction<std::size_t>> sub_domains,
-              std::size_t sub_domain, std::string method = "topological");
+  DirichletBC(
+      std::shared_ptr<const function::FunctionSpace> V,
+      std::shared_ptr<const function::GenericFunction> g,
+      std::shared_ptr<const mesh::MeshFunction<std::size_t>> sub_domains,
+      std::size_t sub_domain, std::string method = "topological");
 
   // TODO: Remove/deprecate this function
   /// Create boundary condition for boundary data included in the mesh
@@ -149,9 +163,9 @@ public:
   /// @param[in] method (std::string)
   ///         Optional argument: A string specifying the
   ///         method to identify dofs.
-  DirichletBC(std::shared_ptr<const FunctionSpace> V,
-              std::shared_ptr<const GenericFunction> g, std::size_t sub_domain,
-              std::string method = "topological");
+  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
+              std::shared_ptr<const function::GenericFunction> g,
+              std::size_t sub_domain, std::string method = "topological");
 
   /// Create boundary condition for subdomain by boundary markers
   /// (cells, local facet numbers)
@@ -165,8 +179,8 @@ public:
   /// @param[in] method (std::string)
   ///         Optional argument: A string specifying the
   ///         method to identify dofs.
-  DirichletBC(std::shared_ptr<const FunctionSpace> V,
-              std::shared_ptr<const GenericFunction> g,
+  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
+              std::shared_ptr<const function::GenericFunction> g,
               const std::vector<std::size_t>& markers,
               std::string method = "topological");
 
@@ -214,7 +228,7 @@ public:
   ///
   /// @return FunctionSpace
   ///         The function space to which boundary conditions are applied.
-  std::shared_ptr<const FunctionSpace> function_space() const
+  std::shared_ptr<const function::FunctionSpace> function_space() const
   {
     return _function_space;
   }
@@ -223,19 +237,19 @@ public:
   ///
   /// @return GenericFunction
   ///         The boundary values.
-  std::shared_ptr<const GenericFunction> value() const;
+  std::shared_ptr<const function::GenericFunction> value() const;
 
   /// Return shared pointer to subdomain
   ///
-  /// @return SubDomain
+  /// @return mesh::SubDomain
   ///         Shared pointer to subdomain.
-  std::shared_ptr<const SubDomain> user_sub_domain() const;
+  std::shared_ptr<const mesh::SubDomain> user_sub_domain() const;
 
   /// Set value g for boundary condition, domain remains unchanged
   ///
   /// @param[in] g (GenericFucntion)
   ///         The value.
-  void set_value(std::shared_ptr<const GenericFunction> g);
+  void set_value(std::shared_ptr<const function::GenericFunction> g);
 
   /// Set value to 0.0
   void homogenize();
@@ -249,9 +263,9 @@ public:
 
   /// Default parameter values
   /// @return Parameters
-  static Parameters default_parameters()
+  static parameter::Parameters default_parameters()
   {
-    Parameters p("dirichlet_bc");
+    parameter::Parameters p("dirichlet_bc");
     p.add("use_ident", true);
     p.add("check_dofmap_range", true);
     return p;
@@ -267,11 +281,13 @@ private:
   void init_facets(const MPI_Comm mpi_comm) const;
 
   // Initialize sub domain markers from sub domain
-  void init_from_sub_domain(std::shared_ptr<const SubDomain> sub_domain) const;
+  void
+  init_from_sub_domain(std::shared_ptr<const mesh::SubDomain> sub_domain) const;
 
-  // Initialize sub domain markers from MeshFunction
-  void init_from_mesh_function(const MeshFunction<std::size_t>& sub_domains,
-                               std::size_t sub_domain) const;
+  // Initialize sub domain markers from mesh::MeshFunction
+  void
+  init_from_mesh_function(const mesh::MeshFunction<std::size_t>& sub_domains,
+                          std::size_t sub_domain) const;
 
   // Compute dofs and values for application of boundary conditions
   // using given method
@@ -288,18 +304,18 @@ private:
   void compute_bc_pointwise(Map& boundary_values, LocalData& data) const;
 
   // Check if the point is in the same plane as the given facet
-  bool on_facet(const double* coordinates, const Facet& facet) const;
+  bool on_facet(const double* coordinates, const mesh::Facet& facet) const;
 
   // Check arguments for compatibility of tensors and dofmap,
   // dim is means an axis to which bc applies
-  void check_arguments(PETScMatrix* A, PETScVector* b, const PETScVector* x,
-                       std::size_t dim) const;
+  void check_arguments(la::PETScMatrix* A, la::PETScVector* b,
+                       const la::PETScVector* x, std::size_t dim) const;
 
   // The function space (possibly a sub function space)
-  std::shared_ptr<const FunctionSpace> _function_space;
+  std::shared_ptr<const function::FunctionSpace> _function_space;
 
   // The function
-  std::shared_ptr<const GenericFunction> _g;
+  std::shared_ptr<const function::GenericFunction> _g;
 
   // Search method
   std::string _method;
@@ -308,7 +324,7 @@ private:
   static const std::set<std::string> methods;
 
   // User defined sub domain
-  std::shared_ptr<const SubDomain> _user_sub_domain;
+  std::shared_ptr<const mesh::SubDomain> _user_sub_domain;
 
   // Cached number of bc dofs, used for memory allocation on second use
   mutable std::size_t _num_dofs;
@@ -321,7 +337,7 @@ private:
   mutable std::map<std::size_t, std::vector<std::size_t>> _cells_to_localdofs;
 
   // User defined mesh function
-  std::shared_ptr<const MeshFunction<std::size_t>> _user_mesh_function;
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> _user_mesh_function;
 
   // User defined sub domain marker for mesh or mesh function
   std::size_t _user_sub_domain_marker;
@@ -334,16 +350,17 @@ private:
   {
   public:
     // Constructor
-    LocalData(const FunctionSpace& V);
+    LocalData(const function::FunctionSpace& V);
 
     // Coefficients
     std::vector<double> w;
 
-    // Facet dofs
+    // mesh::Facet dofs
     std::vector<std::size_t> facet_dofs;
 
     // Coordinates for dofs
     boost::multi_array<double, 2> coordinates;
   };
 };
+}
 }

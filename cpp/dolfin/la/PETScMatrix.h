@@ -19,6 +19,9 @@ namespace dolfin
 {
 
 class PETScVector;
+
+namespace la
+{
 class SparsityPattern;
 class VectorSpaceBasis;
 
@@ -191,22 +194,22 @@ public:
 
   /// Attach nullspace to matrix (typically used by Krylov solvers
   /// when solving singular systems)
-  void set_nullspace(const VectorSpaceBasis& nullspace);
+  void set_nullspace(const la::VectorSpaceBasis& nullspace);
 
   /// Attach 'near' nullspace to matrix (used by preconditioners,
   /// such as smoothed aggregation algerbraic multigrid)
-  void set_near_nullspace(const VectorSpaceBasis& nullspace);
+  void set_near_nullspace(const la::VectorSpaceBasis& nullspace);
 
   /// Dump matrix to PETSc binary format
   void binary_dump(std::string file_name) const;
 
 private:
   // Create PETSc nullspace object
-  MatNullSpace create_petsc_nullspace(const VectorSpaceBasis& nullspace) const;
+  MatNullSpace create_petsc_nullspace(const la::VectorSpaceBasis& nullspace) const;
 
   // PETSc norm types
   static const std::map<std::string, NormType> norm_types;
 };
 }
-
+}
 #endif
