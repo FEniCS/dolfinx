@@ -9,7 +9,6 @@ import os
 import warnings
 import dolfin
 import dolfin.cpp as cpp
-import ufl
 import numpy as np
 
 __all__ = ["plot"]
@@ -252,8 +251,7 @@ def _plot_matplotlib(obj, mesh, kwargs):
     # Plotting is not working with all ufl cells
     if mesh.ufl_cell().cellname() not in ['interval', 'triangle', 'tetrahedron']:
         raise AttributeError(("Matplotlib plotting backend doesn't handle %s mesh.\n"
-                              "Possible options are saving the output to XDMF file "
-                              "or using 'x3dom' backend.") % mesh.ufl_cell().cellname())
+                              "Possible options are saving the output to XDMF file.") % mesh.ufl_cell().cellname())
 
     # Avoid importing pyplot until used
     try:
@@ -303,17 +301,6 @@ def _plot_matplotlib(obj, mesh, kwargs):
         return mplot_meshfunction(ax, obj, **kwargs)
     else:
         raise AttributeError('Failed to plot %s' % type(obj))
-
-
-def _plot_x3dom(obj, kwargs):
-    if not isinstance(obj, _x3dom_plottable_types):
-        cpp.warning("Don't know how to plot type %s." % type(obj))
-        return
-
-    x3dom = dolfin.X3DOM()
-    out = x3dom.html(obj)
-
-    return out
 
 
 def plot(object, *args, **kwargs):
@@ -404,7 +391,7 @@ def plot(object, *args, **kwargs):
         raise RuntimeError("Expecting a mesh as keyword argument")
 
     backend = kwargs.pop("backend", "matplotlib")
-    if backend not in ("matplotlib", "x3dom"):
+    if backend not in ("matplotlib"):
         raise RuntimeError("Plotting backend %s not recognised" % backend)
 
     # Try to project if object is not a standard plottable type
