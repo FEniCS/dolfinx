@@ -138,26 +138,26 @@ def mplot_function(ax, f, **kwargs):
             mode = kwargs.pop("mode", "contourf")
             if mode == "contourf":
                 levels = kwargs.pop("levels", 40)
-                return ax.tricontourf(mesh2triang(mesh), C, levels, **kwargs)
+                return ax.tricontourf(mesh2triang(mesh), C[:, 0], levels, **kwargs)
             elif mode == "color":
                 shading = kwargs.pop("shading", "gouraud")
-                return ax.tripcolor(mesh2triang(mesh), C, shading=shading,
+                return ax.tripcolor(mesh2triang(mesh), C[:, 0], shading=shading,
                                     **kwargs)
             elif mode == "warp":
                 from matplotlib import cm
                 cmap = kwargs.pop("cmap", cm.jet)
                 linewidths = kwargs.pop("linewidths", 0)
-                return ax.plot_trisurf(mesh2triang(mesh), C, cmap=cmap,
+                return ax.plot_trisurf(mesh2triang(mesh), C[:, 0], cmap=cmap,
                                        linewidths=linewidths, **kwargs)
             elif mode == "wireframe":
                 return ax.triplot(mesh2triang(mesh), **kwargs)
             elif mode == "contour":
-                return ax.tricontour(mesh2triang(mesh), C, **kwargs)
+                return ax.tricontour(mesh2triang(mesh), C[:, 0], **kwargs)
         elif gdim == 3 and tdim == 2:  # surface in 3d
             # FIXME: Not tested
             from matplotlib import cm
             cmap = kwargs.pop("cmap", cm.jet)
-            return ax.plot_trisurf(mesh2triang(mesh), C, cmap=cmap, **kwargs)
+            return ax.plot_trisurf(mesh2triang(mesh), C[:, 0], cmap=cmap, **kwargs)
         elif gdim == 3 and tdim == 3:
             # Volume
             # TODO: Isosurfaces?
@@ -168,7 +168,7 @@ def mplot_function(ax, f, **kwargs):
             x = mesh.geometry().x()[:, 0]
             ax.set_aspect('auto')
 
-            p = ax.plot(x, C, **kwargs)
+            p = ax.plot(x, C[:, 0], **kwargs)
 
             # Setting limits for Line2D objects
             # Must be done after generating plot to avoid ignoring function
@@ -185,14 +185,15 @@ def mplot_function(ax, f, **kwargs):
 
     elif f.value_rank() == 1:
         # Vector function, interpolated to vertices
-        w0 = f.compute_vertex_values(mesh)
+        #w0 = f.compute_vertex_values(mesh)
+        U = f.compute_vertex_values(mesh)
         nv = mesh.num_vertices()
         if len(w0) != gdim * nv:
             raise AttributeError(
                 'Vector length must match geometric dimension.')
         X = mesh.geometry().x()
         X = [X[:, i] for i in range(gdim)]
-        U = [w0[i * nv: (i + 1) * nv] for i in range(gdim)]
+        #U = [w0[i * nv: (i + 1) * nv] for i in range(gdim)]
 
         # Compute magnitude
         C = U[0]**2
