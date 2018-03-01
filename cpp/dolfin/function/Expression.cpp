@@ -33,19 +33,19 @@ Expression::~Expression()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
-                      Eigen::Ref<const Eigen::VectorXd> x,
+void Expression::eval(Eigen::Ref<EigenRowMatrixXd> values,
+                      Eigen::Ref<const EigenRowMatrixXd> x,
                       const ufc::cell& cell) const
 {
   // Redirect to simple eval
   eval(values, x);
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
-                      Eigen::Ref<const Eigen::VectorXd> x) const
+void Expression::eval(Eigen::Ref<EigenRowMatrixXd> values,
+                      Eigen::Ref<const EigenRowMatrixXd> x) const
 {
   log::dolfin_error("Expression.cpp", "evaluate expression",
-               "Missing eval() function (must be overloaded)");
+                    "Missing eval() function (must be overloaded)");
 }
 //-----------------------------------------------------------------------------
 std::size_t Expression::value_rank() const { return _value_shape.size(); }
@@ -54,9 +54,10 @@ std::size_t Expression::value_dimension(std::size_t i) const
 {
   if (i >= _value_shape.size())
   {
-    log::dolfin_error("Expression.cpp", "evaluate expression",
-                 "Illegal axis %d for value dimension for value of rank %d", i,
-                 _value_shape.size());
+    log::dolfin_error(
+        "Expression.cpp", "evaluate expression",
+        "Illegal axis %d for value dimension for value of rank %d", i,
+        _value_shape.size());
   }
   return _value_shape[i];
 }
@@ -69,13 +70,13 @@ std::vector<std::size_t> Expression::value_shape() const
 void Expression::set_property(std::string name, double value)
 {
   log::dolfin_error("Expression.cpp", "set property",
-               "This method should be overloaded in the derived class");
+                    "This method should be overloaded in the derived class");
 }
 //-----------------------------------------------------------------------------
 double Expression::get_property(std::string name) const
 {
   log::dolfin_error("Expression.cpp", "get property",
-               "This method should be overloaded in the derived class");
+                    "This method should be overloaded in the derived class");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
@@ -83,14 +84,14 @@ void Expression::set_generic_function(std::string name,
                                       std::shared_ptr<GenericFunction>)
 {
   log::dolfin_error("Expression.cpp", "set property",
-               "This method should be overloaded in the derived class");
+                    "This method should be overloaded in the derived class");
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericFunction>
 Expression::get_generic_function(std::string name) const
 {
   log::dolfin_error("Expression.cpp", "get property",
-               "This method should be overloaded in the derived class");
+                    "This method should be overloaded in the derived class");
   return std::shared_ptr<GenericFunction>();
 }
 //-----------------------------------------------------------------------------
@@ -117,9 +118,8 @@ void Expression::restrict(double* w, const fem::FiniteElement& element,
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       eval_values(ndofs, vs);
 
-  // FIXME: should evaluate all points at once (using RowMajor matrix)
-  for (unsigned int i = 0; i != ndofs; ++i)
-    eval(eval_values.row(i), eval_points.row(i), ufc_cell);
+  // Evaluate all points in one call
+  eval(eval_values, eval_points, ufc_cell);
 
   // Transpose for vector values
   // FIXME: remove need for this - needs work in ffc

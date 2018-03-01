@@ -103,12 +103,15 @@ Then follows the definition of the coefficient functions (for
    public:
      Source() : function::Expression({}) {}
 
-     void eval(Eigen::Ref<Eigen::VectorXd> values,
-            Eigen::Ref<const Eigen::VectorXd> x) const
+     void eval(Eigen::Ref<EigenRowMatrixXd> values,
+            Eigen::Ref<const EigenRowMatrixXd> x) const
      {
-       double dx = x[0] - 0.5;
-       double dy = x[1] - 0.5;
-       values[0] = 10*exp(-(dx*dx + dy*dy) / 0.02);
+     for (unsigned int i = 0; i != x.rows(); ++i)
+       {
+         double dx = x(i, 0) - 0.5;
+         double dy = x(i, 1) - 0.5;
+         values(i, 0) = 10*exp(-(dx*dx + dy*dy) / 0.02);
+       }
      }
    };
 
@@ -118,10 +121,11 @@ Then follows the definition of the coefficient functions (for
    public:
      dUdN() : function::Expression({}) {}
 
-     void eval(Eigen::Ref<Eigen::VectorXd> values,
-            Eigen::Ref<const Eigen::VectorXd> x) const
+     void eval(Eigen::Ref<EigenRowMatrixXd> values,
+            Eigen::Ref<const EigenRowMatrixXd> x) const
      {
-       values[0] = sin(5*x[0]);
+       for (unsigned int i = 0; i != x.rows(); ++i)
+           values(i, 0) = sin(5*x(i, 0));
      }
    };
 

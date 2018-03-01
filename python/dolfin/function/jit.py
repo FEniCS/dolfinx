@@ -44,9 +44,13 @@ namespace dolfin
             {constructor}
        }}
 
-       void eval(Eigen::Ref<Eigen::VectorXd> values, Eigen::Ref<const Eigen::VectorXd> x) const override
+       void eval(Eigen::Ref<EigenRowMatrixXd> values, Eigen::Ref<const EigenRowMatrixXd> _x) const override
        {{
-{statement}
+         for (unsigned int i = 0; i != _x.rows(); ++i)
+         {{
+            const auto x = _x.row(i);
+            {statement}
+         }}
        }}
 
        void set_property(std::string name, double _value) override
@@ -91,10 +95,10 @@ extern "C" DLL_EXPORT dolfin::function::Expression * create_{classname}()
     statements = class_data["statements"]
     statement = ""
     if isinstance(statements, str):
-        statement += "          values[0] = " + statements + ";\n"
+        statement += "          values(i, 0) = " + statements + ";\n"
     else:
-        for i, val in enumerate(statements):
-            statement += "          values[" + str(i) + "] = " + val + ";\n"
+        for j, val in enumerate(statements):
+            statement += "          values(i, " + str(j) + ") = " + val + ";\n"
 
     constructor = ""
     members = ""

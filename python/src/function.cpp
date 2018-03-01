@@ -24,6 +24,9 @@
 
 namespace py = pybind11;
 
+using EigenRowMatrixXd =
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
 namespace dolfin_wrappers {
 
 void function(py::module &m) {
@@ -39,7 +42,7 @@ void function(py::module &m) {
       .def_readonly("mesh_identifier", &ufc::cell::mesh_identifier)
       .def_readonly("index", &ufc::cell::index);
 
-  // zunction
+  // GenericFunction
   py::class_<dolfin::function::GenericFunction,
              std::shared_ptr<dolfin::function::GenericFunction>,
              dolfin::common::Variable>(m, "GenericFunction")
@@ -53,8 +56,8 @@ void function(py::module &m) {
       // FIXME: Add C++ version that takes a dolfin::mesh::Cell
       .def("eval",
            [](const dolfin::function::GenericFunction &self,
-              Eigen::Ref<Eigen::VectorXd> u,
-              Eigen::Ref<const Eigen::VectorXd> x,
+              Eigen::Ref<EigenRowMatrixXd> u,
+              Eigen::Ref<const EigenRowMatrixXd> x,
               const dolfin::mesh::Cell &cell) {
              ufc::cell ufc_cell;
              cell.get_cell_data(ufc_cell);
@@ -63,13 +66,13 @@ void function(py::module &m) {
            "Evaluate GenericFunction (cell version)")
       .def("eval",
            (void (dolfin::function::GenericFunction::*)(
-               Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<const Eigen::VectorXd>,
+               Eigen::Ref<EigenRowMatrixXd>, Eigen::Ref<const EigenRowMatrixXd>,
                const ufc::cell &) const) &
                dolfin::function::GenericFunction::eval,
            "Evaluate GenericFunction (cell version)")
       .def("eval",
            (void (dolfin::function::GenericFunction::*)(
-               Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<const Eigen::VectorXd>)
+               Eigen::Ref<EigenRowMatrixXd>, Eigen::Ref<const EigenRowMatrixXd>)
                 const) &
                dolfin::function::GenericFunction::eval,
            py::arg("values"), py::arg("x"), "Evaluate GenericFunction")
@@ -118,13 +121,13 @@ void function(py::module &m) {
   class PyExpression : public dolfin::function::Expression {
     using dolfin::function::Expression::Expression;
 
-    void eval(Eigen::Ref<Eigen::VectorXd> values,
-              Eigen::Ref<const Eigen::VectorXd> x) const override {
+    void eval(Eigen::Ref<EigenRowMatrixXd> values,
+              Eigen::Ref<const EigenRowMatrixXd> x) const override {
       PYBIND11_OVERLOAD(void, dolfin::function::Expression, eval, values, x);
     }
 
-    void eval(Eigen::Ref<Eigen::VectorXd> values,
-              Eigen::Ref<const Eigen::VectorXd> x,
+    void eval(Eigen::Ref<EigenRowMatrixXd> values,
+              Eigen::Ref<const EigenRowMatrixXd> x,
               const ufc::cell &cell) const override {
       PYBIND11_OVERLOAD_NAME(void, dolfin::function::Expression, "eval_cell",
                              eval, values, x, cell);
@@ -135,8 +138,9 @@ void function(py::module &m) {
   py::class_<dolfin::function::Expression, PyExpression,
              std::shared_ptr<dolfin::function::Expression>,
              dolfin::function::GenericFunction>(
-      m, "Expression", "An Expression is a function (field) that can appear as "
-                       "a coefficient in a form")
+      m, "Expression",
+      "An Expression is a function (field) that can appear as "
+      "a coefficient in a form")
       .def(py::init<std::vector<std::size_t>>())
       .def("__call__",
            [](const dolfin::function::Expression &self,
@@ -234,15 +238,13 @@ void function(py::module &m) {
       //(dolfin::function::Function::*)(const
       // dolfin::function::Function&))
       //     &dolfin::function::Function::operator=)
-      .def("_assign",
-           (const dolfin::function::Function &(
-               dolfin::function::Function::
-                   *)(const dolfin::function::Expression &)) &
-               dolfin::function::Function::operator=)
-      .def("_assign",
-           (void (dolfin::function::Function::*)(
-               const dolfin::function::FunctionAXPY &)) &
-               dolfin::function::Function::operator=)
+      .def("_assign", (const dolfin::function::Function &(
+                          dolfin::function::Function::
+                              *)(const dolfin::function::Expression &)) &
+                          dolfin::function::Function::operator=)
+      .def("_assign", (void (dolfin::function::Function::*)(
+                          const dolfin::function::FunctionAXPY &)) &
+                          dolfin::function::Function::operator=)
       .def("__call__",
            [](dolfin::function::Function &self,
               Eigen::Ref<const Eigen::VectorXd> x) {
@@ -387,4 +389,4 @@ void function(py::module &m) {
              return c;
            });
 }
-}
+} // namespace dolfin_wrappers

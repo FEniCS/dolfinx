@@ -37,9 +37,10 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
   // Check that we don't have a subspace
   if (!V->component().empty())
   {
-    log::dolfin_error("Function.cpp", "create function",
-                 "Cannot be created from subspace. Consider collapsing the "
-                 "function space");
+    log::dolfin_error(
+        "Function.cpp", "create function",
+        "Cannot be created from subspace. Consider collapsing the "
+        "function space");
   }
 
   // Initialize vector
@@ -194,7 +195,8 @@ void Function::operator=(const function::FunctionAXPY& axpy)
 {
   if (axpy.pairs().size() == 0)
   {
-    log::dolfin_error("Function.cpp", "assign function", "FunctionAXPY is empty.");
+    log::dolfin_error("Function.cpp", "assign function",
+                      "FunctionAXPY is empty.");
   }
 
   // Make an initial assign and scale
@@ -204,8 +206,8 @@ void Function::operator=(const function::FunctionAXPY& axpy)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  std::vector<std::pair<double,
-                        std::shared_ptr<const Function>>>::const_iterator it;
+  std::vector<
+      std::pair<double, std::shared_ptr<const Function>>>::const_iterator it;
   for (it = axpy.pairs().begin() + 1; it != axpy.pairs().end(); it++)
   {
     dolfin_assert(it->second);
@@ -223,7 +225,7 @@ std::shared_ptr<la::PETScVector> Function::vector()
   if (_vector->size() != _function_space->dofmap()->global_dimension())
   {
     log::dolfin_error("Function.cpp", "access vector of degrees of freedom",
-                 "Cannot access a non-const vector from a subfunction");
+                      "Cannot access a non-const vector from a subfunction");
   }
 
   return _vector;
@@ -235,51 +237,55 @@ std::shared_ptr<const la::PETScVector> Function::vector() const
   return _vector;
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x) const
+void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
+                    Eigen::Ref<const EigenRowMatrixXd> x) const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Find the cell that contains x
-  const double* _x = x.data();
-  const geometry::Point point(mesh.geometry().dim(), _x);
-
-  // Get index of first cell containing point
-  unsigned int id
-      = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
-
-  // If not found, use the closest cell
-  if (id == std::numeric_limits<unsigned int>::max())
+  for (unsigned int i = 0; i != x.rows(); ++i)
   {
-    // Check if the closest cell is within DOLFIN_EPS. This we can
-    // allow without _allow_extrapolation
-    std::pair<unsigned int, double> close
-        = mesh.bounding_box_tree()->compute_closest_entity(point, mesh);
+    const double* _x = x.row(i).data();
+    const geometry::Point point(mesh.geometry().dim(), _x);
 
-    if (_allow_extrapolation or close.second < DOLFIN_EPS)
-      id = close.first;
-    else
+    // Get index of first cell containing point
+    unsigned int id
+        = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
+
+    // If not found, use the closest cell
+    if (id == std::numeric_limits<unsigned int>::max())
     {
-      log::dolfin_error("Function.cpp", "evaluate function at point",
-                   "The point is not inside the domain. Consider calling "
-                   "\"Function::set_allow_extrapolation(true)\" on this "
-                   "Function to allow extrapolation");
+      // Check if the closest cell is within DOLFIN_EPS. This we can
+      // allow without _allow_extrapolation
+      std::pair<unsigned int, double> close
+          = mesh.bounding_box_tree()->compute_closest_entity(point, mesh);
+
+      if (_allow_extrapolation or close.second < DOLFIN_EPS)
+        id = close.first;
+      else
+      {
+        log::dolfin_error(
+            "Function.cpp", "evaluate function at point",
+            "The point is not inside the domain. Consider calling "
+            "\"Function::set_allow_extrapolation(true)\" on this "
+            "Function to allow extrapolation");
+      }
     }
+
+    // Create cell that contains point
+    const mesh::Cell cell(mesh, id);
+    ufc::cell ufc_cell;
+    cell.get_cell_data(ufc_cell);
+
+    // Call evaluate function
+    eval(values.row(i), x.row(i), cell, ufc_cell);
   }
-
-  // Create cell that contains point
-  const mesh::Cell cell(mesh, id);
-  ufc::cell ufc_cell;
-  cell.get_cell_data(ufc_cell);
-
-  // Call evaluate function
-  eval(values, x, cell, ufc_cell);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x,
+void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
+                    Eigen::Ref<const EigenRowMatrixXd> x,
                     const mesh::Cell& dolfin_cell,
                     const ufc::cell& ufc_cell) const
 {
@@ -309,17 +315,19 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
   std::vector<double> basis(value_size_loc);
 
   // Initialise values
-  for (std::size_t j = 0; j < value_size_loc; ++j)
-    values[j] = 0.0;
+  values.setZero();
+  //  for (std::size_t j = 0; j < value_size_loc; ++j)
+  //    values[j] = 0.0;
 
   // Compute linear combination
+  std::size_t k = 1;
   for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
     element.evaluate_basis(i, basis.data(), x.data(), coordinate_dofs.data(),
                            ufc_cell.orientation);
 
     for (std::size_t j = 0; j < value_size_loc; ++j)
-      values[j] += coefficients[i] * basis[j];
+      values(k, j) += coefficients[i] * basis[j];
   }
 }
 //-----------------------------------------------------------------------------
@@ -363,8 +371,8 @@ std::vector<std::size_t> Function::value_shape() const
   return _shape;
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
-                    Eigen::Ref<const Eigen::VectorXd> x,
+void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
+                    Eigen::Ref<const EigenRowMatrixXd> x,
                     const ufc::cell& ufc_cell) const
 {
   dolfin_assert(_function_space);
@@ -426,7 +434,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
       && mesh.hash() != _function_space->mesh()->hash())
   {
     log::dolfin_error("Function.cpp", "interpolate function values at vertices",
-                 "Non-matching mesh");
+                      "Non-matching mesh");
   }
 
   // Get finite element
@@ -502,10 +510,10 @@ void Function::init_vector()
   // Check that function space is not a subspace (view)
   if (dofmap.is_view())
   {
-    log::dolfin_error("Function.cpp",
-                 "initialize vector of degrees of freedom for function",
-                 "Cannot be created from subspace. Consider collapsing the "
-                 "function space");
+    log::dolfin_error(
+        "Function.cpp", "initialize vector of degrees of freedom for function",
+        "Cannot be created from subspace. Consider collapsing the "
+        "function space");
   }
 
   // Get index map
@@ -571,10 +579,10 @@ void Function::init_vector()
 
   if (!_vector->empty())
   {
-    log::dolfin_error("Function.cpp",
-                 "initialize vector of degrees of freedom for function",
-                 "Cannot re-initialize a non-empty vector. Consider creating a "
-                 "new function");
+    log::dolfin_error(
+        "Function.cpp", "initialize vector of degrees of freedom for function",
+        "Cannot re-initialize a non-empty vector. Consider creating a "
+        "new function");
   }
 
   _vector->init(index_map->local_range(), local_to_global, ghosts, bs);

@@ -76,8 +76,8 @@ public:
 
   //--- Implementation of Expression interface ---
 
-  void eval(Eigen::Ref<Eigen::VectorXd> values,
-            Eigen::Ref<const Eigen::VectorXd> x) const override;
+  void eval(Eigen::Ref<EigenRowMatrixXd> values,
+            Eigen::Ref<const EigenRowMatrixXd> x) const override;
 
   virtual std::string str(bool verbose) const override;
 
