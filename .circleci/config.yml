@@ -76,6 +76,15 @@ jobs:
             mpirun -n 3 python3 -m pytest unit/la/test_sparsity_pattern.py
             python3 -m pytest unit/mesh
 
+      - run:
+          name: Run Python demos (serial)
+          command: |
+            cd python/demo
+            export DOLFIN_NOPLOT=1
+            python3 ./generate-demo-files.py
+            python3 undocumented/elasticity/demo_elasticity.py
+            python3 documented/poisson/demo_poisson.py
+
       #- run:
       #    name: Run Python unit tests (serial)
       #    command: python3 -m pytest -n 2 python/test/unit/
