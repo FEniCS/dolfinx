@@ -185,8 +185,7 @@ def mplot_function(ax, f, **kwargs):
 
     elif f.value_rank() == 1:
         # Vector function, interpolated to vertices
-        #w0 = f.compute_vertex_values(mesh)
-        U = f.compute_vertex_values(mesh)
+        w0 = f.compute_vertex_values(mesh)
         nv = mesh.num_vertices()
         if len(w0) != gdim * nv:
             raise AttributeError(
