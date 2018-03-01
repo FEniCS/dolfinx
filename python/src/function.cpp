@@ -77,12 +77,9 @@ void function(py::module &m) {
                dolfin::function::GenericFunction::eval,
            py::arg("values"), py::arg("x"), "Evaluate GenericFunction")
       .def("compute_vertex_values",
-           [](dolfin::function::GenericFunction &self,
-              const dolfin::mesh::Mesh &mesh) {
-             std::vector<double> values;
-             self.compute_vertex_values(values, mesh);
-             return py::array_t<double>(values.size(), values.data());
-           },
+           py::overload_cast<const dolfin::mesh::Mesh &>(
+               &dolfin::function::GenericFunction::compute_vertex_values,
+               py::const_),
            "Compute values at all mesh vertices")
       .def("compute_vertex_values",
            [](dolfin::function::GenericFunction &self) {
@@ -94,11 +91,7 @@ void function(py::module &m) {
              if (!mesh)
                throw py::value_error("GenericFunction has no function space "
                                      "mesh. You must supply a mesh.");
-             std::vector<double> values;
-             self.compute_vertex_values(values, *mesh);
-             // FIXME: this causes a copy, we should rewrite the C++ interface
-             // to use Eigen when SWIG is removed
-             return py::array_t<double>(values.size(), values.data());
+             return self.compute_vertex_values(*mesh);
            },
            "Compute values at all mesh vertices by using the mesh "
            "function.function_space().mesh()")
@@ -138,9 +131,8 @@ void function(py::module &m) {
   py::class_<dolfin::function::Expression, PyExpression,
              std::shared_ptr<dolfin::function::Expression>,
              dolfin::function::GenericFunction>(
-      m, "Expression",
-      "An Expression is a function (field) that can appear as "
-      "a coefficient in a form")
+      m, "Expression", "An Expression is a function (field) that can appear as "
+                       "a coefficient in a form")
       .def(py::init<std::vector<std::size_t>>())
       .def("__call__",
            [](const dolfin::function::Expression &self,
@@ -238,13 +230,15 @@ void function(py::module &m) {
       //(dolfin::function::Function::*)(const
       // dolfin::function::Function&))
       //     &dolfin::function::Function::operator=)
-      .def("_assign", (const dolfin::function::Function &(
-                          dolfin::function::Function::
-                              *)(const dolfin::function::Expression &)) &
-                          dolfin::function::Function::operator=)
-      .def("_assign", (void (dolfin::function::Function::*)(
-                          const dolfin::function::FunctionAXPY &)) &
-                          dolfin::function::Function::operator=)
+      .def("_assign",
+           (const dolfin::function::Function &(
+               dolfin::function::Function::
+                   *)(const dolfin::function::Expression &)) &
+               dolfin::function::Function::operator=)
+      .def("_assign",
+           (void (dolfin::function::Function::*)(
+               const dolfin::function::FunctionAXPY &)) &
+               dolfin::function::Function::operator=)
       .def("__call__",
            [](dolfin::function::Function &self,
               Eigen::Ref<const Eigen::VectorXd> x) {

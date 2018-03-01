@@ -125,7 +125,7 @@ void VTKFile::write_function(const function::Function& u, double time)
   finalize(vtu_filename, time);
 
   log::log(TRACE, "Saved function %s (%s) to file %s in VTK format.",
-      u.name().c_str(), u.label().c_str(), _filename.c_str());
+           u.name().c_str(), u.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 void VTKFile::write_mesh(const mesh::Mesh& mesh, double time)
@@ -156,7 +156,7 @@ void VTKFile::write_mesh(const mesh::Mesh& mesh, double time)
   finalize(vtu_filename, time);
 
   log::log(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
-      mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
+           mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 std::string VTKFile::init(const mesh::Mesh& mesh, std::size_t cell_dim) const
@@ -208,18 +208,20 @@ void VTKFile::results_write(const function::Function& u,
   {
     if (!(dim == 2 || dim == 3))
     {
-      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
-                   "Don't know how to handle vector function with dimension "
-                   "other than 2 or 3");
+      log::dolfin_error(
+          "VTKFile.cpp", "write data to VTK file",
+          "Don't know how to handle vector function with dimension "
+          "other than 2 or 3");
     }
   }
   else if (rank == 2)
   {
     if (!(dim == 4 || dim == 9))
     {
-      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
-                   "Don't know how to handle tensor function with dimension "
-                   "other than 4 or 9");
+      log::dolfin_error(
+          "VTKFile.cpp", "write data to VTK file",
+          "Don't know how to handle tensor function with dimension "
+          "other than 4 or 9");
     }
   }
 
@@ -243,7 +245,6 @@ void VTKFile::write_point_data(const function::GenericFunction& u,
                                std::string vtu_filename) const
 {
   const std::size_t rank = u.value_rank();
-  const std::size_t num_vertices = mesh.num_vertices();
 
   // Get number of components
   const std::size_t dim = u.value_size();
@@ -252,13 +253,8 @@ void VTKFile::write_point_data(const function::GenericFunction& u,
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
   fp.precision(16);
 
-  // Allocate memory for function values at vertices
-  const std::size_t size = num_vertices * dim;
-  std::vector<double> values(size);
-
   // Get function values at vertices
-  u.compute_vertex_values(values, mesh);
-  dolfin_assert(values.size() == size);
+  auto values = u.compute_vertex_values(mesh);
 
   if (rank == 0)
   {
@@ -293,7 +289,7 @@ void VTKFile::write_point_data(const function::GenericFunction& u,
     {
       // Append 0.0 to 2D vectors to make them 3D
       for (std::size_t i = 0; i < 2; i++)
-        ss << values[vertex.index() + i * num_vertices] << " ";
+        ss << values(vertex.index(), i) << " ";
       ss << 0.0 << "  ";
     }
     else if (rank == 2 && dim == 4)
@@ -301,8 +297,8 @@ void VTKFile::write_point_data(const function::GenericFunction& u,
       // Pad 2D tensors with 0.0 to make them 3D
       for (std::size_t i = 0; i < 2; i++)
       {
-        ss << values[vertex.index() + (2 * i + 0) * num_vertices] << " ";
-        ss << values[vertex.index() + (2 * i + 1) * num_vertices] << " ";
+        ss << values(vertex.index(), (2 * i + 0)) << " ";
+        ss << values(vertex.index(), (2 * i + 1)) << " ";
         ss << 0.0 << " ";
       }
       ss << 0.0 << " ";
@@ -313,7 +309,7 @@ void VTKFile::write_point_data(const function::GenericFunction& u,
     {
       // Write all components
       for (std::size_t i = 0; i < dim; i++)
-        ss << values[vertex.index() + i * num_vertices] << " ";
+        ss << values(vertex.index(), i) << " ";
       ss << " ";
     }
   }
@@ -341,7 +337,7 @@ void VTKFile::pvd_file_write(std::size_t step, double time, std::string fname)
     if (!result)
     {
       log::dolfin_error("VTKFile.cpp", "write data to VTK file",
-                   "XML parsing error when reading from existing file");
+                        "XML parsing error when reading from existing file");
     }
   }
 
@@ -416,9 +412,10 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
     rank_type = "Vectors";
     if (!(dim == 2 || dim == 3))
     {
-      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
-                   "Don't know how to handle vector function with dimension "
-                   "other than 2 or 3");
+      log::dolfin_error(
+          "VTKFile.cpp", "write data to VTK file",
+          "Don't know how to handle vector function with dimension "
+          "other than 2 or 3");
     }
     num_components = 3;
   }
@@ -427,16 +424,17 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
     rank_type = "Tensors";
     if (!(dim == 4 || dim == 9))
     {
-      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
-                   "Don't know how to handle tensor function with dimension "
-                   "other than 4 or 9");
+      log::dolfin_error(
+          "VTKFile.cpp", "write data to VTK file",
+          "Don't know how to handle tensor function with dimension "
+          "other than 4 or 9");
     }
     num_components = 9;
   }
   else
   {
     log::dolfin_error("VTKFile.cpp", "write data to VTK file",
-                 "Cannot handle XML output of rank %d", rank);
+                      "Cannot handle XML output of rank %d", rank);
   }
 
   // Add function data
@@ -532,7 +530,7 @@ void VTKFile::vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
   if (!file.is_open())
   {
     log::dolfin_error("VTKFile.cpp", "write data to VTK file",
-                 "Unable to open file \"%s\"", _filename.c_str());
+                      "Unable to open file \"%s\"", _filename.c_str());
   }
 
   // Write headers
@@ -555,7 +553,7 @@ void VTKFile::vtk_header_close(std::string vtu_filename) const
   if (!file.is_open())
   {
     log::dolfin_error("VTKFile.cpp", "write data to VTK file",
-                 "Unable to open file \"%s\"", _filename.c_str());
+                      "Unable to open file \"%s\"", _filename.c_str());
   }
 
   // Close headers
@@ -641,7 +639,7 @@ void VTKFile::mesh_function_write(T& meshfunction, double time)
   finalize(vtu_filename, time);
 
   log::log(TRACE, "Saved mesh function %s (%s) to file %s in VTK format.",
-      mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
+           mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 void VTKFile::clear_file(std::string file) const
@@ -650,8 +648,8 @@ void VTKFile::clear_file(std::string file) const
   std::ofstream _file(file.c_str(), std::ios::trunc);
   if (!_file.is_open())
   {
-    log::dolfin_error("VTKFile.cpp", "clear VTK file", "Unable to open file \"%s\"",
-                 file.c_str());
+    log::dolfin_error("VTKFile.cpp", "clear VTK file",
+                      "Unable to open file \"%s\"", file.c_str());
   }
   _file.close();
 }

@@ -149,8 +149,8 @@ public:
   ///         The values at all vertices.
   /// @param    mesh (Mesh)
   ///         The mesh.
-  virtual void compute_vertex_values(std::vector<double>& vertex_values,
-                                     const mesh::Mesh& mesh) const override;
+  virtual EigenRowArrayXXd
+  compute_vertex_values(const mesh::Mesh& mesh) const override;
 
   /// Return shared pointer to function space (NULL)
   /// Expression does not have a FunctionSpace
