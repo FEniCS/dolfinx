@@ -472,17 +472,8 @@ void mesh(py::module &m) {
   py::class_<dolfin::mesh::SubDomain, std::shared_ptr<dolfin::mesh::SubDomain>,
              PySubDomain>(m, "SubDomain", "DOLFIN SubDomain object")
       .def(py::init<double>(), py::arg("map_tol") = DOLFIN_EPS)
-      .def("inside",
-           (Eigen::Matrix<bool, Eigen::Dynamic, 1>(dolfin::mesh::SubDomain::*)(
-               Eigen::Ref<const Eigen::Matrix<bool, Eigen::Dynamic,
-                                              Eigen::Dynamic, Eigen::RowMajor>>,
-               bool) const) &
-               dolfin::mesh::SubDomain::inside)
-      .def("map",
-           (void (dolfin::mesh::SubDomain::*)(Eigen::Ref<const Eigen::VectorXd>,
-                                              Eigen::Ref<Eigen::VectorXd>)
-                const) &
-               dolfin::mesh::SubDomain::map)
+      .def("inside", &dolfin::mesh::SubDomain::inside)
+      .def("map", &dolfin::mesh::SubDomain::map)
       .def("set_property", &dolfin::mesh::SubDomain::set_property)
       .def("get_property", &dolfin::mesh::SubDomain::get_property)
       .def("mark", &dolfin::mesh::SubDomain::mark<bool>,
