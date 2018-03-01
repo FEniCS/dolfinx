@@ -113,7 +113,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
                   x.begin());
 
         // Check if entity lies on a 'master' or 'slave' boundary
-        if (sub_domain.inside(_x, true))
+        if (sub_domain.inside(_x, true)[0])
         {
           // Build bounding box data for master entity midpoints
           if (x_min_max.empty())
@@ -154,7 +154,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           }
 
           // Check if entity lies on a 'slave' boundary
-          if (sub_domain.inside(_y, true))
+          if (sub_domain.inside(_y, true)[0])
           {
             // Store slave local index and midpoint coordinates
             slave_entities.push_back(e.index());

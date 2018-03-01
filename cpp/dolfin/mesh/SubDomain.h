@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/types.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <map>
 
@@ -48,8 +49,8 @@ public:
   ///
   /// @return    bool
   ///         True for points inside the subdomain.
-  virtual bool inside(Eigen::Ref<const Eigen::VectorXd> x,
-                      bool on_boundary) const;
+  virtual Eigen::Matrix<bool, Eigen::Dynamic, 1>
+  inside(Eigen::Ref<const EigenRowMatrixXd> x, bool on_boundary) const;
 
   /// Map coordinate x in domain H to coordinate y in domain G (used for
   /// periodic boundary conditions)

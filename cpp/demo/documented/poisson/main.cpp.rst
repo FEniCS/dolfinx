@@ -134,9 +134,14 @@ boundary condition should be applied.
    // Sub domain for Dirichlet boundary condition
    class DirichletBoundary : public mesh::SubDomain
    {
-     bool inside(Eigen::Ref<const Eigen::VectorXd> x, bool on_boundary) const
+     Eigen::Matrix<bool, Eigen::Dynamic, 1>
+     inside(Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
+            Eigen::Dynamic, Eigen::RowMajor>> x, bool on_boundary) const
      {
-       return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS;
+       Eigen::Matrix<bool, Eigen::Dynamic, 1> result(x.rows());
+       for (unsigned int i = 0; i != x.rows(); ++i)
+         result[i] = (x(i, 0) < DOLFIN_EPS or x(i, 0) > 1.0 - DOLFIN_EPS);
+       return result;
      }
    };
 

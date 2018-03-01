@@ -78,13 +78,11 @@ void mesh(py::module &m) {
              dolfin::common::Variable>(m, "MeshTopology",
                                        "DOLFIN MeshTopology object")
       .def("dim", &dolfin::mesh::MeshTopology::dim, "Topological dimension")
-      .def("init",
-           (void (dolfin::mesh::MeshTopology::*)(std::size_t)) &
-               dolfin::mesh::MeshTopology::init)
-      .def("init",
-           (void (dolfin::mesh::MeshTopology::*)(std::size_t, std::int32_t,
-                                                 std::int64_t)) &
-               dolfin::mesh::MeshTopology::init)
+      .def("init", (void (dolfin::mesh::MeshTopology::*)(std::size_t)) &
+                       dolfin::mesh::MeshTopology::init)
+      .def("init", (void (dolfin::mesh::MeshTopology::*)(
+                       std::size_t, std::int32_t, std::int64_t)) &
+                       dolfin::mesh::MeshTopology::init)
       .def("__call__",
            (const dolfin::mesh::MeshConnectivity &(
                dolfin::mesh::MeshTopology::*)(std::size_t, std::size_t) const) &
@@ -97,10 +95,9 @@ void mesh(py::module &m) {
       .def("have_global_indices",
            &dolfin::mesh::MeshTopology::have_global_indices)
       .def("ghost_offset", &dolfin::mesh::MeshTopology::ghost_offset)
-      .def("cell_owner",
-           (const std::vector<std::uint32_t> &(dolfin::mesh::MeshTopology::*)()
-                const) &
-               dolfin::mesh::MeshTopology::cell_owner)
+      .def("cell_owner", (const std::vector<std::uint32_t> &(
+                             dolfin::mesh::MeshTopology::*)() const) &
+                             dolfin::mesh::MeshTopology::cell_owner)
       .def("set_global_index", &dolfin::mesh::MeshTopology::set_global_index)
       .def("global_indices",
            [](const dolfin::mesh::MeshTopology &self, int dim) {
@@ -109,10 +106,9 @@ void mesh(py::module &m) {
            })
       .def("have_shared_entities",
            &dolfin::mesh::MeshTopology::have_shared_entities)
-      .def("shared_entities",
-           (std::map<std::int32_t, std::set<std::uint32_t>> &
-            (dolfin::mesh::MeshTopology::*)(std::uint32_t)) &
-               dolfin::mesh::MeshTopology::shared_entities)
+      .def("shared_entities", (std::map<std::int32_t, std::set<std::uint32_t>> &
+                               (dolfin::mesh::MeshTopology::*)(std::uint32_t)) &
+                                  dolfin::mesh::MeshTopology::shared_entities)
       .def("str", &dolfin::mesh::MeshTopology::str);
 
   // dolfin::mesh::Mesh
@@ -154,9 +150,8 @@ void mesh(py::module &m) {
       .def("init_global", &dolfin::mesh::Mesh::init_global)
       .def("init",
            (void (dolfin::mesh::Mesh::*)() const) & dolfin::mesh::Mesh::init)
-      .def("init",
-           (std::size_t(dolfin::mesh::Mesh::*)(std::size_t) const) &
-               dolfin::mesh::Mesh::init)
+      .def("init", (std::size_t(dolfin::mesh::Mesh::*)(std::size_t) const) &
+                       dolfin::mesh::Mesh::init)
       .def("init",
            (void (dolfin::mesh::Mesh::*)(std::size_t, std::size_t) const) &
                dolfin::mesh::Mesh::init)
@@ -198,9 +193,8 @@ void mesh(py::module &m) {
                  self(i), self.size(i));
            },
            py::return_value_policy::reference_internal)
-      .def("size",
-           (std::size_t(dolfin::mesh::MeshConnectivity::*)() const) &
-               dolfin::mesh::MeshConnectivity::size)
+      .def("size", (std::size_t(dolfin::mesh::MeshConnectivity::*)() const) &
+                       dolfin::mesh::MeshConnectivity::size)
       .def("size",
            (std::size_t(dolfin::mesh::MeshConnectivity::*)(std::size_t) const) &
                dolfin::mesh::MeshConnectivity::size);
@@ -326,8 +320,9 @@ void mesh(py::module &m) {
 #define MESHENTITYITERATOR_MACRO(TYPE, ENTITYNAME)                             \
   py::class_<dolfin::mesh::EntityRange<dolfin::ENTITYNAME>,                    \
              std::shared_ptr<dolfin::mesh::EntityRange<dolfin::ENTITYNAME>>>(  \
-      m, #TYPE, "Range for iterating over entities of type " #ENTITYNAME       \
-                " incident to a MeshEntity")                                   \
+      m, #TYPE,                                                                \
+      "Range for iterating over entities of type " #ENTITYNAME                 \
+      " incident to a MeshEntity")                                             \
       .def(py::init<const dolfin::mesh::MeshEntity &>())                       \
       .def("__iter__",                                                         \
            [](const dolfin::mesh::EntityRange<dolfin::ENTITYNAME> &c) {        \
@@ -446,14 +441,20 @@ void mesh(py::module &m) {
           "dihedral_angles_matplotlib_histogram",
           &dolfin::mesh::MeshQuality::dihedral_angles_matplotlib_histogram);
 
-  // dolfin::mesh::SubDomain trampoline class for user overloading from
+  using VectorXb = Eigen::Matrix<bool, Eigen::Dynamic, 1>;
+
+  // dolfin::SubDomain trampoline class for user overloading from
   // Python
   class PySubDomain : public dolfin::mesh::SubDomain {
     using dolfin::mesh::SubDomain::SubDomain;
 
-    bool inside(Eigen::Ref<const Eigen::VectorXd> x,
-                bool on_boundary) const override {
-      PYBIND11_OVERLOAD(bool, dolfin::mesh::SubDomain, inside, x, on_boundary);
+    VectorXb
+    inside(Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>
+               x,
+           bool on_boundary) const override {
+      PYBIND11_OVERLOAD(VectorXb, dolfin::mesh::SubDomain, inside, x,
+                        on_boundary);
     }
 
     void map(Eigen::Ref<const Eigen::VectorXd> x,
@@ -462,19 +463,20 @@ void mesh(py::module &m) {
     }
   };
 
-  // dolfin::SubDomian
+  // dolfin::mesh::SubDomain
   py::class_<dolfin::mesh::SubDomain, std::shared_ptr<dolfin::mesh::SubDomain>,
              PySubDomain>(m, "SubDomain", "DOLFIN SubDomain object")
       .def(py::init<double>(), py::arg("map_tol") = DOLFIN_EPS)
       .def("inside",
-           (bool (dolfin::mesh::SubDomain::*)(Eigen::Ref<const Eigen::VectorXd>,
-                                              bool) const) &
+           (Eigen::Matrix<bool, Eigen::Dynamic, 1>(dolfin::mesh::SubDomain::*)(
+               Eigen::Ref<const Eigen::Matrix<bool, Eigen::Dynamic,
+                                              Eigen::Dynamic, Eigen::RowMajor>>,
+               bool) const) &
                dolfin::mesh::SubDomain::inside)
-      .def("map",
-           (void (dolfin::mesh::SubDomain::*)(Eigen::Ref<const Eigen::VectorXd>,
-                                              Eigen::Ref<Eigen::VectorXd>)
-                const) &
-               dolfin::mesh::SubDomain::map)
+      .def("map", (void (dolfin::mesh::SubDomain::*)(
+                      Eigen::Ref<const Eigen::VectorXd>,
+                      Eigen::Ref<Eigen::VectorXd>) const) &
+                      dolfin::mesh::SubDomain::map)
       .def("set_property", &dolfin::mesh::SubDomain::set_property)
       .def("get_property", &dolfin::mesh::SubDomain::get_property)
       .def("mark",
@@ -506,4 +508,4 @@ void mesh(py::module &m) {
       .def_static("masters_slaves",
                   &dolfin::mesh::PeriodicBoundaryComputation::masters_slaves);
 }
-}
+} // namespace dolfin_wrappers

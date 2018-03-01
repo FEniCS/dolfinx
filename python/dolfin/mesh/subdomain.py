@@ -42,7 +42,8 @@ namespace dolfin
           }}
 
        // Return true for points inside the sub domain
-       bool inside(const Eigen::Ref<const Eigen::VectorXd> x, bool on_boundary) const final
+       Eigen::Matrix<bool, Eigen::Dynamic, 1> inside(const Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
+                                                     Eigen::Dynamic, Eigen::RowMajor>> x, bool on_boundary) const final
        {{
          return {inside};
        }}
