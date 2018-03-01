@@ -72,16 +72,16 @@ public:
   ///
   /// @param    sub_domains (MeshFunction<std::size_t>)
   ///         The subdomain markers.
-  /// @param    sub_domain (std::size_t)
-  ///         The subdomain number.
+  /// @param    value (T)
+  ///         The subdomain value.
   /// @param    check_midpoint (bool)
   ///         Flag for whether midpoint of cell should be checked (default).
   template <typename T>
-  void mark(MeshFunction<T>& sub_domains, std::size_t sub_domain,
+  void mark(MeshFunction<T>& sub_domains, T value,
             bool check_midpoint = true) const
   {
     assert(sub_domains.mesh());
-    mark(sub_domains, sub_domain, *sub_domains.mesh(), check_midpoint);
+    mark(sub_domains, value, *sub_domains.mesh(), check_midpoint);
   }
 
   //--- Marking of MeshValueCollection ---
