@@ -62,7 +62,7 @@ def build_nullspace(V, x):
 # XDMFFile(MPI.comm_world, "../pulley.xdmf").read(mesh)
 
 # mesh = UnitCubeMesh(2, 2, 2)
-mesh = BoxMesh.create(MPI.comm_world, [Point(0, 0, 0), Point(1, 1, 1)], [
+mesh = BoxMesh.create(MPI.comm_world, [Point(0, 0, 0), Point(2, 1, 1)], [
                       12, 12, 12], CellType.Type.tetrahedron)
 
 # Function to mark inner surface of pulley
@@ -82,7 +82,7 @@ rho = 10.0
 # Loading due to centripetal acceleration (rho*omega^2*x_i)
 # f = Expression(("rho*omega*omega*x[0]", "rho*omega*omega*x[1]", "0.0"),
 #               omega=omega, rho=rho, degree=2)
-f = Expression(("0.0", "1.0e8", "0.0"), degree=2)
+f = Expression(("0.0", "1.0e10", "0.0"), degree=2)
 
 # Elasticity parameters
 E = 1.0e9

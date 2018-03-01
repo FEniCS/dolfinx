@@ -6,6 +6,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
+import warnings
 import dolfin
 import dolfin.cpp as cpp
 import ufl
@@ -20,9 +21,7 @@ _meshfunction_types = (cpp.mesh.MeshFunctionBool,
 _matplotlib_plottable_types = (cpp.function.Function,
                                cpp.function.Expression, cpp.mesh.Mesh,
                                cpp.fem.DirichletBC) + _meshfunction_types
-_x3dom_plottable_types = (cpp.function.Function, cpp.mesh.Mesh)
-_all_plottable_types = tuple(set.union(set(_matplotlib_plottable_types),
-                                       set(_x3dom_plottable_types)))
+_all_plottable_types = tuple(set.union(set(_matplotlib_plottable_types)))
 
 
 def _has_matplotlib():
@@ -187,12 +186,12 @@ def mplot_function(ax, f, **kwargs):
         # Vector function, interpolated to vertices
         w0 = f.compute_vertex_values(mesh)
         nv = mesh.num_vertices()
-        if len(w0) != gdim * nv:
+        if w0.shape[1] != gdim:
             raise AttributeError(
                 'Vector length must match geometric dimension.')
         X = mesh.geometry().x()
         X = [X[:, i] for i in range(gdim)]
-        #U = [w0[i * nv: (i + 1) * nv] for i in range(gdim)]
+        U = [x for x in w0.T]
 
         # Compute magnitude
         C = U[0]**2
@@ -218,9 +217,8 @@ def mplot_function(ax, f, **kwargs):
                 return ax.tripcolor(triang, C, shading=shading, **kwargs)
             else:
                 # Return gracefully to make regression test pass without vtk
-                cpp.warning('Matplotlib plotting backend does not support '
-                            'displacement for %d in %d. Continuing without '
-                            'plotting...' % (tdim, gdim))
+                warnings.warn(
+                    'Matplotlib plotting backend does not support displacement for {} in {}}. Continuing without plotting.'.format(tdim, gdim))
                 return
 
 
@@ -382,11 +380,6 @@ def plot(object, *args, **kwargs):
         cpp.log.info("Matplotlib is required to plot from Python.")
         return
 
-    # Plot element
-    if isinstance(object, ufl.FiniteElementBase):
-        import ffc
-        return ffc.plot(object, *args, **kwargs)
-
     # For dolfin.function.Function, extract cpp_object
     if hasattr(object, "cpp_object"):
         object = object.cpp_object()
@@ -425,13 +418,11 @@ def plot(object, *args, **kwargs):
             object = object._cpp_object
         except Exception as e:
             msg = "Don't know how to plot given object:\n  %s\n" \
-                  "and projection failed:\n  %s" % (str(object), str(e))
+                "and projection failed:\n  %s" % (str(object), str(e))
             raise RuntimeError(msg)
 
     # Plot
     if backend == "matplotlib":
         return _plot_matplotlib(object, mesh, kwargs)
-    elif backend == "x3dom":
-        return _plot_x3dom(object, kwargs)
     else:
         assert False, "This code should not be reached."
