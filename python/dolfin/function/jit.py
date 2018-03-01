@@ -44,7 +44,7 @@ namespace dolfin
             {constructor}
        }}
 
-       void eval(Eigen::Ref<RowMatrixXd> values, Eigen::Ref<const RowMatrixXd> _x) const override
+       void eval(Eigen::Ref<EigenRowMatrixXd> values, Eigen::Ref<const EigenRowMatrixXd> _x) const override
        {{
          for (unsigned int i = 0; i != _x.rows(); ++i)
          {{
