@@ -109,9 +109,6 @@ class DirichletBC(cpp.fem.DirichletBC):
         if isinstance(args[2], cpp.mesh.SubDomain):
             self.sub_domain = args[2]
             args = args[:2] + (self.sub_domain,) + args[3:]
-        elif isinstance(args[2], str):
-            self.sub_domain = CompiledSubDomain(args[2])
-            args = args[:2] + (self.sub_domain,) + args[3:]
         elif isinstance(args[2], cpp.mesh.MeshFunctionSizet):
             pass
         else:
