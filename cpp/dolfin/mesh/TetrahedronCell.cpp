@@ -13,7 +13,6 @@
 #include <algorithm>
 #include <boost/multi_array.hpp>
 #include <cmath>
-#include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
@@ -36,8 +35,8 @@ std::size_t TetrahedronCell::num_entities(std::size_t dim) const
     return 1; // cells
   default:
     log::dolfin_error("TetrahedronCell.cpp",
-                 "access number of entities of tetrahedron cell",
-                 "Illegal topological dimension (%d)", dim);
+                      "access number of entities of tetrahedron cell",
+                      "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -56,9 +55,10 @@ std::size_t TetrahedronCell::num_vertices(std::size_t dim) const
   case 3:
     return 4; // cells
   default:
-    log::dolfin_error("TetrahedronCell.cpp",
-                 "access number of vertices for subsimplex of tetrahedron cell",
-                 "Illegal topological dimension (%d)", dim);
+    log::dolfin_error(
+        "TetrahedronCell.cpp",
+        "access number of vertices for subsimplex of tetrahedron cell",
+        "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -119,8 +119,9 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   // Check that we get a tetrahedron
   if (tetrahedron.dim() != 3)
   {
-    log::dolfin_error("TetrahedronCell.cpp", "compute volume of tetrahedron cell",
-                 "Illegal mesh entity, not a tetrahedron");
+    log::dolfin_error("TetrahedronCell.cpp",
+                      "compute volume of tetrahedron cell",
+                      "Illegal mesh entity, not a tetrahedron");
   }
 
   // Get mesh geometry
@@ -130,7 +131,7 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   if (geometry.dim() != 3)
   {
     log::dolfin_error("TetrahedronCell.cpp", "compute volume of tetrahedron",
-                 "Only know how to compute volume when embedded in R^3");
+                      "Only know how to compute volume when embedded in R^3");
   }
 
   // Get the coordinates of the four vertices
@@ -159,8 +160,9 @@ double TetrahedronCell::circumradius(const MeshEntity& tetrahedron) const
   // Check that we get a tetrahedron
   if (tetrahedron.dim() != 3)
   {
-    log::dolfin_error("TetrahedronCell.cpp", "compute diameter of tetrahedron cell",
-                 "Illegal mesh entity, not a tetrahedron");
+    log::dolfin_error("TetrahedronCell.cpp",
+                      "compute diameter of tetrahedron cell",
+                      "Illegal mesh entity, not a tetrahedron");
   }
 
   // Get mesh geometry
@@ -169,9 +171,10 @@ double TetrahedronCell::circumradius(const MeshEntity& tetrahedron) const
   // Only know how to compute the volume when embedded in R^3
   if (geometry.dim() != 3)
   {
-    log::dolfin_error("TetrahedronCell.cpp", "compute diameter",
-                 "Tetrahedron is not embedded in R^3, only know how to compute "
-                 "diameter in that case");
+    log::dolfin_error(
+        "TetrahedronCell.cpp", "compute diameter",
+        "Tetrahedron is not embedded in R^3, only know how to compute "
+        "diameter in that case");
   }
 
   // Get the coordinates of the four vertices
@@ -297,7 +300,7 @@ geometry::Point TetrahedronCell::normal(const Cell& cell,
 geometry::Point TetrahedronCell::cell_normal(const Cell& cell) const
 {
   log::dolfin_error("TetrahedronCell.cpp", "compute cell normal",
-               "cell_normal not implemented for TetrahedronCell");
+                    "cell_normal not implemented for TetrahedronCell");
 
   return geometry::Point();
 }
@@ -500,17 +503,6 @@ void TetrahedronCell::order(
   }
 }
 //-----------------------------------------------------------------------------
-bool TetrahedronCell::collides(const Cell& cell,
-                               const geometry::Point& point) const
-{
-  return geometry::CollisionPredicates::collides(cell, point);
-}
-//-----------------------------------------------------------------------------
-bool TetrahedronCell::collides(const Cell& cell, const MeshEntity& entity) const
-{
-  return geometry::CollisionPredicates::collides(cell, entity);
-}
-//-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const
 {
   if (plural)
@@ -543,7 +535,7 @@ std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
 
   // We should not reach this
   log::dolfin_error("TetrahedronCell.cpp", "find specified edge in cell",
-               "Edge really not found");
+                    "Edge really not found");
   return 0;
 }
 //-----------------------------------------------------------------------------

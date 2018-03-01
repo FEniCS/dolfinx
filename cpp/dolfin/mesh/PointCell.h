@@ -7,8 +7,8 @@
 #pragma once
 
 #include "CellType.h"
-#include <dolfin/geometry/Point.h>
 #include <boost/multi_array.hpp>
+#include <dolfin/geometry/Point.h>
 #include <vector>
 
 namespace dolfin
@@ -52,7 +52,8 @@ public:
   double circumradius(const MeshEntity& point) const;
 
   /// Compute squared distance to given point
-  double squared_distance(const mesh::Cell& cell, const geometry::Point& point) const;
+  double squared_distance(const mesh::Cell& cell,
+                          const geometry::Point& point) const;
 
   /// Compute component i of normal of given facet with respect to
   /// the cell
@@ -70,12 +71,6 @@ public:
 
   /// Order entities locally
   void order(mesh::Cell& cell) const;
-
-  /// Check whether given point is contained in cell
-  bool collides(const mesh::Cell& cell, const geometry::Point& point) const;
-
-  /// Check whether given entity collides with cell
-  bool collides(const mesh::Cell& cell, const MeshEntity& entity) const;
 
   /// Return description of cell type
   std::string description(bool plural) const;

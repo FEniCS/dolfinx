@@ -7,8 +7,8 @@
 #pragma once
 
 #include "CellType.h"
-#include <vector>
 #include <dolfin/geometry/Point.h>
+#include <vector>
 
 namespace dolfin
 {
@@ -51,7 +51,8 @@ public:
   double circumradius(const MeshEntity& triangle) const;
 
   /// Compute squared distance to given point (3D enabled)
-  double squared_distance(const mesh::Cell& cell, const geometry::Point& point) const;
+  double squared_distance(const mesh::Cell& cell,
+                          const geometry::Point& point) const;
 
   /// Compute component i of normal of given facet with respect to the cell
   double normal(const mesh::Cell& cell, std::size_t facet, std::size_t i) const;
@@ -69,12 +70,6 @@ public:
   void
   order(mesh::Cell& cell,
         const std::vector<std::int64_t>& local_to_global_vertex_indices) const;
-
-  /// Check whether given point collides with cell
-  bool collides(const mesh::Cell& cell, const geometry::Point& point) const;
-
-  /// Check whether given entity collides with cell
-  bool collides(const mesh::Cell& cell, const MeshEntity& entity) const;
 
   /// Return description of cell type
   std::string description(bool plural) const;

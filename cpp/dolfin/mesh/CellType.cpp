@@ -51,8 +51,8 @@ CellType* CellType::create(Type type)
   case Type::hexahedron:
     return new HexahedronCell();
   default:
-    log::dolfin_error("CellType.cpp", "create cell type", "Unknown cell type (%d)",
-                 type);
+    log::dolfin_error("CellType.cpp", "create cell type",
+                      "Unknown cell type (%d)", type);
   }
 
   return 0;
@@ -80,7 +80,7 @@ CellType::Type CellType::string2type(std::string type)
   else
   {
     log::dolfin_error("CellType.cpp", "convert string to cell type",
-                 "Unknown cell type (\"%s\")", type.c_str());
+                      "Unknown cell type (\"%s\")", type.c_str());
   }
 
   return Type::interval;
@@ -104,7 +104,7 @@ std::string CellType::type2string(Type type)
     return "hexahedron";
   default:
     log::dolfin_error("CellType.cpp", "convert cell type to string",
-                 "Unknown cell type (\"%d\")", type);
+                      "Unknown cell type (\"%d\")", type);
   }
 
   return "";
@@ -155,7 +155,7 @@ double CellType::inradius(const Cell& cell) const
       && _cell_type != Type::tetrahedron)
   {
     log::dolfin_error("Cell.h", "compute cell inradius",
-                 "formula not implemented for non-simplicial cells");
+                      "formula not implemented for non-simplicial cells");
   }
 
   // Pick dim
