@@ -106,18 +106,6 @@ public:
   ///         The geometric dimension.
   std::size_t geometric_dimension() const;
 
-  /// Property setter
-  ///
-  /// @param name
-  /// @param value
-  virtual void set_property(std::string name, double value);
-
-  /// Property getter
-  ///
-  /// @param name
-  /// @return double
-  virtual double get_property(std::string name) const;
-
   /// Return tolerance uses to find matching point via map function
   ///
   /// @return    double

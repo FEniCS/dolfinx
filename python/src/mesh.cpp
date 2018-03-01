@@ -474,17 +474,15 @@ void mesh(py::module &m) {
       .def(py::init<double>(), py::arg("map_tol") = DOLFIN_EPS)
       .def("inside", &dolfin::mesh::SubDomain::inside)
       .def("map", &dolfin::mesh::SubDomain::map)
-      .def("set_property", &dolfin::mesh::SubDomain::set_property)
-      .def("get_property", &dolfin::mesh::SubDomain::get_property)
+      .def("mark", &dolfin::mesh::SubDomain::mark<std::size_t>,
+           py::arg("meshfunction"), py::arg("marker"),
+           py::arg("check_midpoint") = true)
       .def("mark", &dolfin::mesh::SubDomain::mark<bool>,
            py::arg("meshfunction"), py::arg("marker"),
            py::arg("check_midpoint") = true)
       .def("mark", &dolfin::mesh::SubDomain::mark<int>, py::arg("meshfunction"),
            py::arg("marker"), py::arg("check_midpoint") = true)
       .def("mark", &dolfin::mesh::SubDomain::mark<double>,
-           py::arg("meshfunction"), py::arg("marker"),
-           py::arg("check_midpoint") = true)
-      .def("mark", &dolfin::mesh::SubDomain::mark<std::size_t>,
            py::arg("meshfunction"), py::arg("marker"),
            py::arg("check_midpoint") = true);
 

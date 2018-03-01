@@ -18,37 +18,10 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 
 
+import pytest
 import numpy as np
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel
-import pytest
-from dolfin.jit.pybind11jit import compile_cpp_code
-
-
-def xtest_compiled_subdomains():
-    def noDefaultValues():
-        CompiledSubDomain("a")
-
-    def wrongDefaultType():
-        CompiledSubDomain("a", a="1")
-
-    def wrongParameterNames():
-        CompiledSubDomain("foo", bar=1.0)
-
-    with pytest.raises(RuntimeError):
-        noDefaultValues()
-    with pytest.raises(TypeError):
-        wrongDefaultType()
-    with pytest.raises(RuntimeError):
-        wrongParameterNames()
-
-
-@skip_in_parallel
-def test_compiled_subdomains_compilation_failure():
-    def invalidCppCode():
-        CompiledSubDomain("/")
-    with pytest.raises(RuntimeError):
-        invalidCppCode()
 
 
 def test_creation_and_marking():
@@ -69,110 +42,14 @@ def test_creation_and_marking():
         def inside(self, x, on_boundary):
             return np.logical_and(x[:, 0] > 1.0 - DOLFIN_EPS, on_boundary)
 
-    cpp_code = """
-        #include<pybind11/pybind11.h>
-        #include<pybind11/eigen.h>
-        namespace py = pybind11;
-
-        #include<Eigen/Dense>
-        #include<dolfin/mesh/SubDomain.h>
-
-        class Left : public dolfin::mesh::SubDomain
-        {
-        public:
-
-          virtual Eigen::Matrix<bool, Eigen::Dynamic, 1> inside(Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
-                                         Eigen::Dynamic, Eigen::RowMajor>> x, bool on_boundary) const
-          {
-            Eigen::Matrix<bool, Eigen::Dynamic, 1> result(x.rows());
-            for (unsigned int i = 0; i < x.rows(); ++i)
-                result[i] = (x(i, 0) < DOLFIN_EPS);
-            return result;
-          }
-        };
-
-        class LeftOnBoundary : public dolfin::mesh::SubDomain
-        {
-        public:
-
-          virtual Eigen::Matrix<bool, Eigen::Dynamic, 1> inside(Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
-                                         Eigen::Dynamic, Eigen::RowMajor>> x, bool on_boundary) const
-          {
-            Eigen::Matrix<bool, Eigen::Dynamic, 1> result(x.rows());
-            for (unsigned int i = 0; i < x.rows(); ++i)
-                result[i] = (x(i, 0) < DOLFIN_EPS and on_boundary);
-            return result;
-          }
-        };
-
-        class Right : public dolfin::mesh::SubDomain
-        {
-        public:
-
-          virtual Eigen::Matrix<bool, Eigen::Dynamic, 1> inside(Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
-                                         Eigen::Dynamic, Eigen::RowMajor>> x, bool on_boundary) const
-          {
-            Eigen::Matrix<bool, Eigen::Dynamic, 1> result(x.rows());
-            for (unsigned int i = 0; i < x.rows(); ++i)
-                result[i] = (x(i, 0) > 1.0 - DOLFIN_EPS);
-            return result;
-          }
-        };
-
-        class RightOnBoundary : public dolfin::mesh::SubDomain
-        {
-        public:
-
-          virtual Eigen::Matrix<bool, Eigen::Dynamic, 1> inside(Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
-                                         Eigen::Dynamic, Eigen::RowMajor>> x, bool on_boundary) const
-          {
-            Eigen::Matrix<bool, Eigen::Dynamic, 1> result(x.rows());
-            for (unsigned int i = 0; i < x.rows(); ++i)
-                result[i] = (x(i, 0) > 1.0 - DOLFIN_EPS and on_boundary);
-            return result;
-          }
-        };
-
-    PYBIND11_MODULE(SIGNATURE, m) {
-       py::class_<Left, std::shared_ptr<Left>, dolfin::mesh::SubDomain>(m, "Left").def(py::init<>());
-       py::class_<Right, std::shared_ptr<Right>, dolfin::mesh::SubDomain>(m, "Right").def(py::init<>());
-       py::class_<LeftOnBoundary, std::shared_ptr<LeftOnBoundary>, dolfin::mesh::SubDomain>(m, "LeftOnBoundary").def(py::init<>());
-       py::class_<RightOnBoundary, std::shared_ptr<RightOnBoundary>, dolfin::mesh::SubDomain>(m, "RightOnBoundary").def(py::init<>());
-    }
-    """
-
-    compiled_domain_module = compile_cpp_code(cpp_code)
-
     subdomain_pairs = [(Left(), Right()),
-                       (LeftOnBoundary(), RightOnBoundary()),
-#                       (AutoSubDomain(lambda x, on_boundary: x[0] < DOLFIN_EPS),
-#                        AutoSubDomain(lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS)),
-#                       (AutoSubDomain(lambda x, on_boundary: x[0] < DOLFIN_EPS and on_boundary),
-#                        AutoSubDomain(lambda x, on_boundary: x[0] > 1.0 - DOLFIN_EPS and on_boundary)),
-#                       (CompiledSubDomain("std::abs(x[0]-a) < DOLFIN_EPS", a=0.0),
-#                        CompiledSubDomain("std::abs(x[0]-a) < DOLFIN_EPS", a=1.0)),
-#                       (CompiledSubDomain("std::abs(x[0]-a) < DOLFIN_EPS and on_boundary", a=0.0),
-#                        CompiledSubDomain("std::abs(x[0]-a) < DOLFIN_EPS and on_boundary", a=1.0)),
-#                       (CompiledSubDomain("std::abs(x[0]) < DOLFIN_EPS"),
-#                        CompiledSubDomain("std::abs(x[0]-1.0) < DOLFIN_EPS")),
-#                       (CompiledSubDomain("std::abs(x[0]) < DOLFIN_EPS and on_boundary"),
-#                        CompiledSubDomain("std::abs(x[0]-1.0) < DOLFIN_EPS and on_boundary")),
-                       #
-                       (compiled_domain_module.Left(),
-                        compiled_domain_module.Right()),
-                       (compiled_domain_module.LeftOnBoundary(),
-                        compiled_domain_module.RightOnBoundary())
-                       ]
-
-#    empty = CompiledSubDomain("false")
-#    every = CompiledSubDomain("true")
+                       (LeftOnBoundary(), RightOnBoundary())]
 
     for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh,
                                      UnitCubeMesh]):
         dim = ind + 1
         args = [10]*dim
         mesh = MeshClass(MPI.comm_world, *args)
-
         mesh.init()
 
         for left, right in subdomain_pairs:
@@ -181,7 +58,7 @@ def test_creation_and_marking():
                                  (mesh.topology().dim(), dim)]:
                 f = MeshFunction("size_t", mesh, t_dim, 0)
 
-                left.mark(f, int(1))
+                left.mark(f, 1)
                 right.mark(f, 2)
 
                 correct = {(1, 0): 1,
@@ -207,9 +84,19 @@ def test_creation_and_marking():
                              (mesh.topology().dim(), dim)]:
             f = MeshFunction("size_t", mesh, t_dim, 0)
 
-#            empty.mark(f, 1)
-#            every.mark(f, 2)
+            class AllTrue(SubDomain):
+                def inside(self, x, on_boundary):
+                    return np.full(x.shape[0], True)
+
+            class AllFalse(SubDomain):
+                def inside(self, x, on_boundary):
+                    return np.full(x.shape[0], False)
+
+            empty = AllFalse()
+            every = AllTrue()
+            empty.mark(f, 1)
+            every.mark(f, 2)
 
             # Check that the number of marked entities is correct
-#            assert sum(f.array() == 1) == 0
-#            assert sum(f.array() == 2) == mesh.num_entities(f_dim)
+            assert sum(f.array() == 1) == 0
+            assert sum(f.array() == 2) == mesh.num_entities(f_dim)

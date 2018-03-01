@@ -162,16 +162,3 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
   }
 }
 //-----------------------------------------------------------------------------
-void SubDomain::set_property(std::string name, double value)
-{
-  log::dolfin_error("SubDomain.cpp", "set parameter",
-                    "This method should be overloaded in the derived class");
-}
-//-----------------------------------------------------------------------------
-double SubDomain::get_property(std::string name) const
-{
-  log::dolfin_error("SubDomain.cpp", "get parameter",
-                    "This method should be overloaded in the derived class");
-  return 0.0;
-}
-//-----------------------------------------------------------------------------
