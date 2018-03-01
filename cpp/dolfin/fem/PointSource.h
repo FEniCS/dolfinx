@@ -13,15 +13,20 @@
 
 namespace dolfin
 {
-
-// Forward declarations
+namespace la
+{
 class PETScMatrix;
 class PETScVector;
-class Mesh;
+}
 
 namespace function
 {
 class FunctionSpace;
+}
+
+namespace mesh
+{
+class Mesh;
 }
 
 namespace fem
@@ -41,27 +46,28 @@ class PointSource
 public:
   /// Create point sources at given points of given magnitudes
   PointSource(std::shared_ptr<const function::FunctionSpace> V,
-              const std::vector<std::pair<Point, double>> sources);
+              const std::vector<std::pair<geometry::Point, double>> sources);
 
   /// Create point sources at given points of given magnitudes
   PointSource(std::shared_ptr<const function::FunctionSpace> V0,
               std::shared_ptr<const function::FunctionSpace> V1,
-              const std::vector<std::pair<Point, double>> sources);
+              const std::vector<std::pair<geometry::Point, double>> sources);
 
   /// Destructor
   ~PointSource();
 
   /// Apply (add) point source to right-hand side vector
-  void apply(PETScVector& b);
+  void apply(la::PETScVector& b);
 
   /// Apply (add) point source to matrix
-  void apply(PETScMatrix& A);
+  void apply(la::PETScMatrix& A);
 
 private:
   // FIXME: This should probably be static
   // Collective MPI method to distribute sources to correct processes
-  void distribute_sources(const Mesh& mesh,
-                          const std::vector<std::pair<Point, double>>& sources);
+  void distribute_sources(
+      const mesh::Mesh& mesh,
+      const std::vector<std::pair<geometry::Point, double>>& sources);
 
   // Check that function space is scalar
   static void check_space_supported(const function::FunctionSpace& V);
@@ -71,7 +77,7 @@ private:
   std::shared_ptr<const function::FunctionSpace> _function_space1;
 
   // Source term - pair of points and magnitude
-  std::vector<std::pair<Point, double>> _sources;
+  std::vector<std::pair<geometry::Point, double>> _sources;
 };
 }
 }

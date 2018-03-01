@@ -37,14 +37,16 @@ public:
   ///         // Create a mesh of 25 cells in the interval [-1,1]
   ///         IntervalMesh mesh(MPI_COMM_WORLD, 25, -1.0, 1.0);
   /// @endcode
-  static Mesh create(MPI_Comm comm, std::size_t n, std::array<double, 2> x)
+  static mesh::Mesh create(MPI_Comm comm, std::size_t n,
+                           std::array<double, 2> x)
   {
     return build(comm, n, x);
   }
 
 private:
   // Build mesh
-  static Mesh build(MPI_Comm comm, std::size_t n, std::array<double, 2> x);
+  static mesh::Mesh build(MPI_Comm comm, std::size_t n,
+                          std::array<double, 2> x);
 };
 }
 }

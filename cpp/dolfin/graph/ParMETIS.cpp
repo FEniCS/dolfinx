@@ -44,7 +44,7 @@ dual_graph(MPI_Comm mpi_comm,
   // Check that number of local graph nodes (cells) is > 0
   if (num_local_cells == 0)
   {
-    dolfin_error("ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
+    log::dolfin_error("ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
                  "ParMETIS cannot be used if a process has no cells (graph "
                  "nodes). Use SCOTCH to perform partitioning instead");
   }
@@ -152,7 +152,7 @@ void dolfin::graph::ParMETIS::compute_partition(
     refine(comm.comm(), *csr_graph, cell_partition);
   else
   {
-    dolfin_error("ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
+    log::dolfin_error("ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
                  "partition model %s is unknown. Must be \"partition\", "
                  "\"adactive_partition\" or \"refine\"",
                  mode.c_str());
@@ -325,7 +325,7 @@ void dolfin::graph::ParMETIS::adaptive_repartition(
   // better edge cut.
 
   common::Timer timer1("ParMETIS: call ParMETIS_V3_AdaptiveRepart");
-  const double itr = parameters["ParMETIS_repartitioning_weight"];
+  const double itr = parameter::parameters["ParMETIS_repartitioning_weight"];
   real_t _itr = itr;
   std::vector<idx_t> part(csr_graph.size());
   std::vector<idx_t> vsize(part.size(), 1);
@@ -416,7 +416,7 @@ void dolfin::graph::ParMETIS::compute_partition(
     const std::size_t num_global_vertices, const mesh::CellType& cell_type,
     const std::string mode)
 {
-  dolfin_error("ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
+  log::dolfin_error("ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
                "DOLFIN has been configured without support for ParMETIS");
 }
 //-----------------------------------------------------------------------------

@@ -73,6 +73,6 @@ int main()
   const double lift = assemble(L);
   const double drag = assemble(D);
 
-  info("Lift: %f", lift);
-  info("Drag: %f", drag);
+  log::info("Lift: %f", lift);
+  log::info("Drag: %f", drag);
 }

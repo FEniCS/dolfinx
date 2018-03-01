@@ -11,9 +11,13 @@
 
 namespace dolfin
 {
-
-// Forward declarations
+namespace mesh
+{
 class Mesh;
+}
+
+namespace geometry
+{
 class Point;
 
 /// This class represents an intersection between a _Mesh_ and a
@@ -24,7 +28,7 @@ class MeshPointIntersection
 {
 public:
   /// Compute intersection between mesh and point
-  MeshPointIntersection(const Mesh& mesh, const Point& point);
+  MeshPointIntersection(const mesh::Mesh& mesh, const Point& point);
 
   /// Destructor
   ~MeshPointIntersection();
@@ -40,5 +44,4 @@ private:
   std::vector<unsigned int> _intersected_cells;
 };
 }
-
-
+}

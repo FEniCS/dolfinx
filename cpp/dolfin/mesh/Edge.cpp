@@ -6,9 +6,11 @@
 
 #include "Edge.h"
 #include "Vertex.h"
+#include <dolfin/geometry/Point.h>
 #include <cmath>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 double Edge::length() const
@@ -19,8 +21,8 @@ double Edge::length() const
   const Vertex v0(*_mesh, vertices[0]);
   const Vertex v1(*_mesh, vertices[1]);
 
-  const Point p0 = v0.point();
-  const Point p1 = v1.point();
+  const geometry::Point p0 = v0.point();
+  const geometry::Point p1 = v1.point();
 
   double length(sqrt((p1[0] - p0[0]) * (p1[0] - p0[0])
                      + (p1[1] - p0[1]) * (p1[1] - p0[1])

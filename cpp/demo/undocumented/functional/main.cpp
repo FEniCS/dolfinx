@@ -56,8 +56,8 @@ int main()
   // Compute exact value
   double exact_value = 2.0 + 2.0*sin(1.0)*(1.0 - cos(1.0));
 
-  info("The energy norm of v is: %.15g", approximate_value);
-  info("It should be:            %.15g", exact_value);
+  log::info("The energy norm of v is: %.15g", approximate_value);
+  log::info("It should be:            %.15g", exact_value);
 
   return 0;
 }

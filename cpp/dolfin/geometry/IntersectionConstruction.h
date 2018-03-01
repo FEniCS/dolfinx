@@ -13,7 +13,13 @@
 namespace dolfin
 {
 // Forward declarations
+namespace mesh
+{
 class MeshEntity;
+}
+
+namespace geometry
+{
 
 /// This class implements algorithms for computing pairwise
 /// intersections of simplices. The computed intersection is always
@@ -26,17 +32,17 @@ public:
   /// Compute intersection of two entities.
   ///
   /// *Arguments*
-  ///     entity_0 (_MeshEntity_)
+  ///     entity_0 (_mesh::MeshEntity_)
   ///         The first entity.
-  ///     entity_1 (_MeshEntity_)
+  ///     entity_1 (_mesh::MeshEntity_)
   ///         The second entity.
   ///
   /// *Returns*
   ///     std::vector<Pointdouble>
   ///         A vector of points s.t. the intersection is the convex hull of
   ///         these points.
-  static std::vector<Point> intersection(const MeshEntity& entity_0,
-                                         const MeshEntity& entity_1);
+  static std::vector<Point> intersection(const mesh::MeshEntity& entity_0,
+                                         const mesh::MeshEntity& entity_1);
 
   /// Compute intersection of two entities.
   /// This version takes two vectors of points representing the entities.
@@ -225,5 +231,4 @@ private:
       const Point& q0, const Point& q1, const Point& q2, const Point& q3);
 };
 }
-
-
+}

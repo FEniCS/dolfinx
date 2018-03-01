@@ -19,12 +19,11 @@
 
 namespace dolfin
 {
-
-class Facet;
+namespace la
+{
 class PETScMatrix;
 class PETScVector;
-template <typename T>
-class MeshFunction;
+}
 
 namespace function
 {
@@ -34,6 +33,9 @@ class FunctionSpace;
 
 namespace mesh
 {
+class Facet;
+template <typename T>
+class MeshFunction;
 class SubDomain;
 }
 
@@ -62,7 +64,7 @@ namespace fem
 /// apply. This means that the mesh could be moved after the first
 /// apply and the boundary markers would still remain intact.
 ///
-/// Alternatively, the boundary may be specified by a _MeshFunction_
+/// Alternatively, the boundary may be specified by a _mesh::MeshFunction_
 /// over facets labeling all mesh facets together with a number that
 /// specifies which facets should be included in the boundary.
 ///
@@ -106,7 +108,7 @@ namespace fem
 /// supplied object (defining boundary subdomain) after first use may
 /// have no effect. But this is implementation and method specific.
 
-class DirichletBC : public Variable
+class DirichletBC : public common::Variable
 {
 
 public:
@@ -136,17 +138,18 @@ public:
   ///         The function space.
   /// @param[in] g (GenericFunction)
   ///         The value.
-  /// @param[in] sub_domains (MeshFnunction<std::size_t>)
+  /// @param[in] sub_domains (mesh::MeshFnunction<std::size_t>)
   ///         Subdomain markers
   /// @param[in] sub_domain (std::size_t)
   ///         The subdomain index (number)
   /// @param[in] method (std::string)
   ///         Optional argument: A string specifying the
   ///         method to identify dofs.
-  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-              std::shared_ptr<const function::GenericFunction> g,
-              std::shared_ptr<const MeshFunction<std::size_t>> sub_domains,
-              std::size_t sub_domain, std::string method = "topological");
+  DirichletBC(
+      std::shared_ptr<const function::FunctionSpace> V,
+      std::shared_ptr<const function::GenericFunction> g,
+      std::shared_ptr<const mesh::MeshFunction<std::size_t>> sub_domains,
+      std::size_t sub_domain, std::string method = "topological");
 
   // TODO: Remove/deprecate this function
   /// Create boundary condition for boundary data included in the mesh
@@ -260,9 +263,9 @@ public:
 
   /// Default parameter values
   /// @return Parameters
-  static Parameters default_parameters()
+  static parameter::Parameters default_parameters()
   {
-    Parameters p("dirichlet_bc");
+    parameter::Parameters p("dirichlet_bc");
     p.add("use_ident", true);
     p.add("check_dofmap_range", true);
     return p;
@@ -281,9 +284,10 @@ private:
   void
   init_from_sub_domain(std::shared_ptr<const mesh::SubDomain> sub_domain) const;
 
-  // Initialize sub domain markers from MeshFunction
-  void init_from_mesh_function(const MeshFunction<std::size_t>& sub_domains,
-                               std::size_t sub_domain) const;
+  // Initialize sub domain markers from mesh::MeshFunction
+  void
+  init_from_mesh_function(const mesh::MeshFunction<std::size_t>& sub_domains,
+                          std::size_t sub_domain) const;
 
   // Compute dofs and values for application of boundary conditions
   // using given method
@@ -300,12 +304,12 @@ private:
   void compute_bc_pointwise(Map& boundary_values, LocalData& data) const;
 
   // Check if the point is in the same plane as the given facet
-  bool on_facet(const double* coordinates, const Facet& facet) const;
+  bool on_facet(const double* coordinates, const mesh::Facet& facet) const;
 
   // Check arguments for compatibility of tensors and dofmap,
   // dim is means an axis to which bc applies
-  void check_arguments(PETScMatrix* A, PETScVector* b, const PETScVector* x,
-                       std::size_t dim) const;
+  void check_arguments(la::PETScMatrix* A, la::PETScVector* b,
+                       const la::PETScVector* x, std::size_t dim) const;
 
   // The function space (possibly a sub function space)
   std::shared_ptr<const function::FunctionSpace> _function_space;
@@ -333,7 +337,7 @@ private:
   mutable std::map<std::size_t, std::vector<std::size_t>> _cells_to_localdofs;
 
   // User defined mesh function
-  std::shared_ptr<const MeshFunction<std::size_t>> _user_mesh_function;
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> _user_mesh_function;
 
   // User defined sub domain marker for mesh or mesh function
   std::size_t _user_sub_domain_marker;
@@ -351,7 +355,7 @@ private:
     // Coefficients
     std::vector<double> w;
 
-    // Facet dofs
+    // mesh::Facet dofs
     std::vector<std::size_t> facet_dofs;
 
     // Coordinates for dofs

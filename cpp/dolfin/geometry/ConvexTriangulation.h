@@ -12,6 +12,9 @@
 namespace dolfin
 {
 
+namespace geometry
+{
+
 /// This class implements algorithms for triangulating convex
 /// domains represented as a set of points.
 
@@ -58,6 +61,5 @@ private:
   static std::vector<std::vector<Point>>
   _triangulate_graham_scan_3d(const std::vector<Point>& pm);
 };
-
-} // end namespace dolfin
-
+}
+}

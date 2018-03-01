@@ -7,7 +7,6 @@
 #include "IntersectionConstruction.h"
 #include "CGALExactArithmetic.h"
 #include "CollisionPredicates.h"
-#include "GeometryDebugging.h"
 #include "GeometryPredicates.h"
 #include "GeometryTools.h"
 #include "predicates.h"
@@ -16,6 +15,7 @@
 #include <iomanip>
 
 using namespace dolfin;
+using namespace dolfin::geometry;
 
 namespace
 {
@@ -68,12 +68,12 @@ std::vector<Point> to_points(const std::vector<double>& points)
 // High-level intersection construction functions
 //-----------------------------------------------------------------------------
 std::vector<Point>
-IntersectionConstruction::intersection(const MeshEntity& entity_0,
-                                       const MeshEntity& entity_1)
+IntersectionConstruction::intersection(const mesh::MeshEntity& entity_0,
+                                       const mesh::MeshEntity& entity_1)
 {
   // Get data
-  const MeshGeometry& g0 = entity_0.mesh().geometry();
-  const MeshGeometry& g1 = entity_1.mesh().geometry();
+  const mesh::MeshGeometry& g0 = entity_0.mesh().geometry();
+  const mesh::MeshGeometry& g1 = entity_1.mesh().geometry();
   const std::int32_t* v0 = entity_0.entities(0);
   const std::int32_t* v1 = entity_1.entities(0);
 
@@ -211,7 +211,7 @@ std::vector<Point> IntersectionConstruction::intersection(
   }
 
   // We should not reach this point
-  dolfin_error("IntersectionConstruction.cpp", "compute intersection",
+  log::dolfin_error("IntersectionConstruction.cpp", "compute intersection",
                "Unexpected intersection: %d-%d in %d dimensions", d0, d1, gdim);
 
   return std::vector<Point>();

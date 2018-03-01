@@ -30,7 +30,7 @@ using namespace dolfin::mesh;
 //-----------------------------------------------------------------------------
 std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
 {
-  log(TRACE, "Computing mesh entities of dimension %d", dim);
+  log::log(TRACE, "Computing mesh entities of dimension %d", dim);
 
   // Check if entities have already been computed
   const MeshTopology& topology = mesh.topology();
@@ -41,7 +41,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
     // Make sure we really have the connectivity
     if ((ce.empty() && dim != topology.dim()) || (ev.empty() && dim != 0))
     {
-      dolfin_error("TopologyComputation.cpp", "compute topological entities",
+      log::dolfin_error("TopologyComputation.cpp", "compute topological entities",
                    "Entities of topological dimension %d exist but "
                    "connectivity is missing",
                    dim);
@@ -63,7 +63,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   case 4:
     return TopologyComputation::compute_entities_by_key_matching<4>(mesh, dim);
   default:
-    dolfin_error("TopologyComputation.cpp", "compute topological entities",
+    log::dolfin_error("TopologyComputation.cpp", "compute topological entities",
                  "Entities with %d vertices not supported",
                  num_entity_vertices);
     return 0;
@@ -85,7 +85,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
   // Each of these functions assume a set of preconditions that we
   // need to satisfy.
 
-  log(TRACE, "Requesting connectivity %d - %d.", d0, d1);
+  log::log(TRACE, "Requesting connectivity %d - %d.", d0, d1);
 
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
@@ -152,7 +152,7 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
     // Make sure we really have the connectivity
     if ((ce.empty() && dim != (int)topology.dim()) || (ev.empty() && dim != 0))
     {
-      dolfin_error("TopologyComputation.cpp", "compute topological entities",
+      log::dolfin_error("TopologyComputation.cpp", "compute topological entities",
                    "Entities of topological dimension %d exist but "
                    "connectivity is missing",
                    dim);
@@ -163,7 +163,7 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
   // Make sure connectivity does not already exist
   if (!ce.empty() || !ev.empty())
   {
-    dolfin_error("TopologyComputation.cpp", "compute topological entities",
+    log::dolfin_error("TopologyComputation.cpp", "compute topological entities",
                  "Connectivity for topological dimension %d exists but "
                  "entities are missing",
                  dim);
@@ -335,7 +335,7 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
   //   3. Iterate again over entities of dimension d1 and add connections
   //      for each entity of dimension d0
 
-  log(TRACE, "Computing mesh connectivity %d - %d from transpose.", d0, d1);
+  log::log(TRACE, "Computing mesh connectivity %d - %d from transpose.", d0, d1);
 
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();

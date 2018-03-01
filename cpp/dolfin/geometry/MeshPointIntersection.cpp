@@ -10,9 +10,10 @@
 #include <dolfin/mesh/Cell.h>
 
 using namespace dolfin;
+using namespace dolfin::geometry;
 
 //-----------------------------------------------------------------------------
-MeshPointIntersection::MeshPointIntersection(const Mesh& mesh,
+MeshPointIntersection::MeshPointIntersection(const mesh::Mesh& mesh,
                                              const Point& point)
 {
   // Build bounding box tree

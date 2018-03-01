@@ -17,6 +17,7 @@
 #include <petsclog.h>
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 namespace
 {
@@ -102,7 +103,7 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm, std::string method,
   auto method_krylov = _methods.find(method);
   if (method_krylov == _methods.end())
   {
-    dolfin_error("PETScKrylovSolver.cpp", "create PETSc Krylov solver",
+    log::dolfin_error("PETScKrylovSolver.cpp", "create PETSc Krylov solver",
                  "Unknown Krylov method \"%s\". Use the PETSc options systems "
                  "for advanced solver configuration",
                  method.c_str());
@@ -112,7 +113,7 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm, std::string method,
   auto method_pc = _pc_methods.find(preconditioner);
   if (method_pc == _pc_methods.end())
   {
-    dolfin_error("PETScKrylovSolver.cpp", "create PETSc Krylov solver",
+    log::dolfin_error("PETScKrylovSolver.cpp", "create PETSc Krylov solver",
                  "Unknown preconditioner method \"%s\". Use the PETSc options "
                  "systems for advanced solver configuration",
                  method.c_str());
@@ -140,7 +141,7 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm, std::string method,
     PC pc;
     ierr = KSPGetPC(_ksp, &pc);
     if (ierr != 0)
-      dolfin::PETScObject::petsc_error(ierr, __FILE__, "KSPGetPC");
+      PETScObject::petsc_error(ierr, __FILE__, "KSPGetPC");
 
     // Set preconditioner
     ierr = PCSetType(pc, method_pc->second);
@@ -187,7 +188,7 @@ PETScKrylovSolver::PETScKrylovSolver(KSP ksp)
   }
   else
   {
-    dolfin_error("PETScKrylovSolver.cpp",
+    log::dolfin_error("PETScKrylovSolver.cpp",
                  "initialize PETScKrylovSolver with PETSc KSP object",
                  "PETSc KSP must be initialised (KSPCreate) before wrapping");
   }
@@ -239,7 +240,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   const std::int64_t N = A.size(1);
   if (M != b.size())
   {
-    dolfin_error("PETScKrylovSolver.cpp",
+    log::dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",
                  "Non-matching dimensions for linear system (matrix has %ld "
                  "rows and right-hand side vector has %ld rows)",
@@ -252,7 +253,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   this->parameters["report"] : false;
   if (report and dolfin::MPI::rank(this->mpi_comm()) == 0)
   {
-    info("Solving linear system of size %ld x %ld (PETSc Krylov solver).", M,
+    log::info("Solving linear system of size %ld x %ld (PETSc Krylov solver).", M,
   N);
   }
 
@@ -313,7 +314,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   // Solve linear system
   if (dolfin::MPI::rank(this->mpi_comm()) == 0)
   {
-    log(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.", M,
+    log::log(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.", M,
         N);
   }
 
@@ -359,7 +360,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
     this->parameters["error_on_nonconvergence"] : true;
     if (error_on_nonconvergence)
     {
-      dolfin_error("PETScKrylovSolver.cpp",
+      log::dolfin_error("PETScKrylovSolver.cpp",
                    "solve linear system using PETSc Krylov solver",
                    "Solution failed to converge in %i iterations (PETSc reason
     %s, residual norm ||r|| = %e)",
@@ -367,7 +368,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
     }
     else
     {
-      warning("Krylov solver did not converge in %i iterations (PETSc reason %s,
+      log::warning("Krylov solver did not converge in %i iterations (PETSc reason %s,
     residual norm ||r|| = %e).",
               num_iterations, reason_str, rnorm);
     }
@@ -430,7 +431,7 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
     ksp_norm_type = KSP_NORM_NATURAL;
     break;
   default:
-    dolfin_error("PETScKrylovSolver.cpp", "set convergence norm type",
+    log::dolfin_error("PETScKrylovSolver.cpp", "set convergence norm type",
                  "Unknown norm type");
   }
 
@@ -474,7 +475,7 @@ PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type() const
   case KSP_NORM_DEFAULT:
     return norm_type::default_norm;
   default:
-    dolfin_error("PETScKrylovSolver.cpp", "set convergence norm type",
+    log::dolfin_error("PETScKrylovSolver.cpp", "set convergence norm type",
                  "Unknown norm type");
     return norm_type::none;
   }
@@ -539,7 +540,7 @@ std::string PETScKrylovSolver::str(bool verbose) const
   std::stringstream s;
   if (verbose)
   {
-    warning("Verbose output for PETScKrylovSolver not implemented, calling \
+    log::warning("Verbose output for PETScKrylovSolver not implemented, calling \
 PETSc KSPView directly.");
     PetscErrorCode ierr = KSPView(_ksp, PETSC_VIEWER_STDOUT_WORLD);
     if (ierr != 0)
@@ -575,7 +576,7 @@ PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type(std::string norm)
     return norm_type::natural;
   else
   {
-    dolfin_error("PETScKrylovSolver.cpp", "get norm type from enum",
+    log::dolfin_error("PETScKrylovSolver.cpp", "get norm type from enum",
                  "Unknown norm type \"%s\"", norm.c_str());
     return norm_type::none;
   }
@@ -661,19 +662,19 @@ void PETScKrylovSolver::write_report(int num_iterations,
   // Report number of iterations and solver type
   if (reason >= 0)
   {
-    log(PROGRESS, "PETSc Krylov solver (%s, %s) converged in %d iterations.",
+    log::log(PROGRESS, "PETSc Krylov solver (%s, %s) converged in %d iterations.",
         ksp_type, pc_type, num_iterations);
   }
   else
   {
-    log(PROGRESS,
+    log::log(PROGRESS,
         "PETSc Krylov solver (%s, %s) failed to converge in %d iterations.",
         ksp_type, pc_type, num_iterations);
   }
 
   if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)
   {
-    log(PROGRESS,
+    log::log(PROGRESS,
         "PETSc Krylov solver preconditioner (%s) submethods: (%s, %s)", pc_type,
         sub_ksp_type, sub_pc_type);
   }
@@ -686,7 +687,7 @@ void PETScKrylovSolver::write_report(int num_iterations,
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "PCHYPREGetType");
 
-    log(PROGRESS, "  Hypre preconditioner method: %s", hypre_sub_type);
+    log::log(PROGRESS, "  Hypre preconditioner method: %s", hypre_sub_type);
   }
 #endif
 }
@@ -698,7 +699,7 @@ void PETScKrylovSolver::check_dimensions(const la::PETScBaseMatrix& A,
   // Check dimensions of A
   if (A.size(0) == 0 || A.size(1) == 0)
   {
-    dolfin_error("PETScKrylovSolver.cpp",
+    log::dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",
                  "Matrix does not have a nonzero number of rows and columns");
   }
@@ -706,7 +707,7 @@ void PETScKrylovSolver::check_dimensions(const la::PETScBaseMatrix& A,
   // Check dimensions of A vs b
   if (A.size(0) != b.size())
   {
-    dolfin_error("PETScKrylovSolver.cpp",
+    log::dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",
                  "Non-matching dimensions for linear system (matrix has %ld "
                  "rows and right-hand side vector has %ld rows)",
@@ -716,7 +717,7 @@ void PETScKrylovSolver::check_dimensions(const la::PETScBaseMatrix& A,
   // Check dimensions of A vs x
   if (!x.empty() && x.size() != A.size(1))
   {
-    dolfin_error("PETScKrylovSolver.cpp",
+    log::dolfin_error("PETScKrylovSolver.cpp",
                  "unable to solve linear system with PETSc Krylov solver",
                  "Non-matching dimensions for linear system (matrix has %ld "
                  "columns and solution vector has %ld rows)",

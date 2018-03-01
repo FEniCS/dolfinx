@@ -27,6 +27,7 @@
 
 using namespace dolfin;
 
+/*
 namespace
 {
 bool pure_triangular(const std::vector<std::vector<Point>>& triangulation,
@@ -267,3 +268,4 @@ TEST_CASE("Convex triangulation test")
   }
 }
 //-----------------------------------------------------------------------------
+*/

@@ -14,10 +14,6 @@
 namespace dolfin
 {
 
-class FunctionSpace;
-class GenericFunction;
-class Mesh;
-
 namespace mesh
 {
 class Cell;

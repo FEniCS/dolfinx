@@ -11,9 +11,10 @@
 
 namespace dolfin
 {
-
-// Forward declarations
+namespace la
+{
 class PETScVector;
+}
 
 namespace function
 {
@@ -51,8 +52,8 @@ public:
                   const function::Function& ub_func);
 
   /// Set the bounds for bound constrained solver
-  void set_bounds(std::shared_ptr<const PETScVector> lb,
-                  std::shared_ptr<const PETScVector> ub);
+  void set_bounds(std::shared_ptr<const la::PETScVector> lb,
+                  std::shared_ptr<const la::PETScVector> ub);
 
   /// Return residual form
   std::shared_ptr<const Form> residual_form() const;
@@ -76,10 +77,10 @@ public:
   std::shared_ptr<const function::FunctionSpace> test_space() const;
 
   /// Return lower bound
-  std::shared_ptr<const PETScVector> lower_bound() const;
+  std::shared_ptr<const la::PETScVector> lower_bound() const;
 
   /// Return upper bound
-  std::shared_ptr<const PETScVector> upper_bound() const;
+  std::shared_ptr<const la::PETScVector> upper_bound() const;
 
 private:
   // Check forms
@@ -99,8 +100,8 @@ private:
 
   // The lower and upper bounds (pointers may be null if not
   // provided)
-  std::shared_ptr<const PETScVector> _lb;
-  std::shared_ptr<const PETScVector> _ub;
+  std::shared_ptr<const la::PETScVector> _lb;
+  std::shared_ptr<const la::PETScVector> _ub;
 };
 }
 }

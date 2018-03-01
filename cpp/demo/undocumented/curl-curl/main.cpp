@@ -156,7 +156,7 @@ int main()
 
 int main()
 {
-  info("This demo requires DOLFIN to be configured with PETSc (with Hypre).");
+  log::info("This demo requires DOLFIN to be configured with PETSc (with Hypre).");
   return 0;
 }
 

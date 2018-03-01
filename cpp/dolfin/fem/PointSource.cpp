@@ -22,27 +22,29 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-PointSource::PointSource(std::shared_ptr<const function::FunctionSpace> V,
-                         const std::vector<std::pair<Point, double>> sources)
+PointSource::PointSource(
+    std::shared_ptr<const function::FunctionSpace> V,
+    const std::vector<std::pair<geometry::Point, double>> sources)
     : _function_space0(V)
 {
   // Checking meshes exist
   dolfin_assert(_function_space0->mesh());
 
   // Copy sources
-  std::vector<std::pair<Point, double>> sources_copy = sources;
+  std::vector<std::pair<geometry::Point, double>> sources_copy = sources;
 
   // Distribute sources
-  const Mesh& mesh0 = *_function_space0->mesh();
+  const mesh::Mesh& mesh0 = *_function_space0->mesh();
   distribute_sources(mesh0, sources_copy);
 
   // Check that function space is supported
   check_space_supported(*V);
 }
 //-----------------------------------------------------------------------------
-PointSource::PointSource(std::shared_ptr<const function::FunctionSpace> V0,
-                         std::shared_ptr<const function::FunctionSpace> V1,
-                         const std::vector<std::pair<Point, double>> sources)
+PointSource::PointSource(
+    std::shared_ptr<const function::FunctionSpace> V0,
+    std::shared_ptr<const function::FunctionSpace> V1,
+    const std::vector<std::pair<geometry::Point, double>> sources)
     : _function_space0(V0), _function_space1(V1)
 {
   // Check that function spaces are supported
@@ -52,10 +54,10 @@ PointSource::PointSource(std::shared_ptr<const function::FunctionSpace> V0,
   check_space_supported(*V1);
 
   // Copy sources
-  std::vector<std::pair<Point, double>> sources_copy = sources;
+  std::vector<std::pair<geometry::Point, double>> sources_copy = sources;
 
   dolfin_assert(_function_space0->mesh());
-  const Mesh& mesh0 = *_function_space0->mesh();
+  const mesh::Mesh& mesh0 = *_function_space0->mesh();
   distribute_sources(mesh0, sources_copy);
 }
 //-----------------------------------------------------------------------------
@@ -65,17 +67,18 @@ PointSource::~PointSource()
 }
 //-----------------------------------------------------------------------------
 void PointSource::distribute_sources(
-    const Mesh& mesh, const std::vector<std::pair<Point, double>>& sources)
+    const mesh::Mesh& mesh,
+    const std::vector<std::pair<geometry::Point, double>>& sources)
 {
   // Take a list of points, and assign to correct process
   const MPI_Comm mpi_comm = mesh.mpi_comm();
-  const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
+  const std::shared_ptr<geometry::BoundingBoxTree> tree = mesh.bounding_box_tree();
 
   // Collect up any points/values which are not local
   std::vector<double> remote_points;
   for (auto& s : sources)
   {
-    const Point& p = s.first;
+    const geometry::Point& p = s.first;
     double magnitude = s.second;
 
     unsigned int cell_index = tree->compute_first_entity_collision(p, mesh);
@@ -105,7 +108,7 @@ void PointSource::distribute_sources(
   std::vector<int> point_count;
   for (auto q = remote_points.begin(); q != remote_points.end(); q += 4)
   {
-    Point p(*q, *(q + 1), *(q + 2));
+    geometry::Point p(*q, *(q + 1), *(q + 2));
     unsigned int cell_index = tree->compute_first_entity_collision(p, mesh);
     point_count.push_back(cell_index
                           != std::numeric_limits<unsigned int>::max());
@@ -131,7 +134,7 @@ void PointSource::distribute_sources(
     }
     if (!found)
     {
-      dolfin_error(
+      log::dolfin_error(
           "PointSource.cpp", "apply point source to vector",
           "The point is outside of the domain"); // (%s)", p.str().c_str());
     }
@@ -142,7 +145,7 @@ void PointSource::distribute_sources(
   {
     if (point_count_all[mpi_rank][i] == 1)
     {
-      const Point p(*q, *(q + 1), *(q + 2));
+      const geometry::Point p(*q, *(q + 1), *(q + 2));
       double val = *(q + 3);
       _sources.push_back({p, val});
     }
@@ -150,20 +153,20 @@ void PointSource::distribute_sources(
   }
 }
 //-----------------------------------------------------------------------------
-void PointSource::apply(PETScVector& b)
+void PointSource::apply(la::PETScVector& b)
 {
   // Applies local point sources.
   dolfin_assert(_function_space0);
   if (_function_space1)
   {
-    dolfin_error("PointSource.cpp", "apply point source to vector",
+    log::dolfin_error("PointSource.cpp", "apply point source to vector",
                  "Can only have one function space for a vector");
   }
-  log(PROGRESS, "Applying point source to right-hand side vector.");
+  log::log(PROGRESS, "Applying point source to right-hand side vector.");
 
   dolfin_assert(_function_space0->mesh());
-  const Mesh& mesh = *_function_space0->mesh();
-  const std::shared_ptr<BoundingBoxTree> tree = mesh.bounding_box_tree();
+  const mesh::Mesh& mesh = *_function_space0->mesh();
+  const std::shared_ptr<geometry::BoundingBoxTree> tree = mesh.bounding_box_tree();
 
   // Variables for cell information
   std::vector<double> coordinate_dofs;
@@ -183,7 +186,7 @@ void PointSource::apply(PETScVector& b)
 
   for (auto& s : _sources)
   {
-    Point& p = s.first;
+    geometry::Point& p = s.first;
     double magnitude = s.second;
 
     unsigned int cell_index = tree->compute_first_entity_collision(p, mesh);
@@ -216,7 +219,7 @@ void PointSource::apply(PETScVector& b)
   b.apply();
 }
 //-----------------------------------------------------------------------------
-void PointSource::apply(PETScMatrix& A)
+void PointSource::apply(la::PETScMatrix& A)
 {
   // Applies local point sources.
   dolfin_assert(_function_space0);
@@ -229,14 +232,14 @@ void PointSource::apply(PETScMatrix& A)
   if (_function_space0->element()->signature()
       != _function_space1->element()->signature())
   {
-    dolfin_error("PointSource.cpp", "apply point source to matrix",
+    log::dolfin_error("PointSource.cpp", "apply point source to matrix",
                  "The elemnts are different. Not currently implemented");
   }
 
   std::shared_ptr<const function::FunctionSpace> V0 = _function_space0;
   std::shared_ptr<const function::FunctionSpace> V1 = _function_space1;
 
-  log(PROGRESS, "Applying point source to matrix.");
+  log::log(PROGRESS, "Applying point source to matrix.");
 
   dolfin_assert(V0->mesh());
   dolfin_assert(V0->element());
@@ -246,7 +249,7 @@ void PointSource::apply(PETScMatrix& A)
 
   const auto mesh = V0->mesh();
 
-  const std::shared_ptr<BoundingBoxTree> tree = mesh->bounding_box_tree();
+  const std::shared_ptr<geometry::BoundingBoxTree> tree = mesh->bounding_box_tree();
   unsigned int cell_index;
 
   // Variables for cell information
@@ -293,14 +296,14 @@ void PointSource::apply(PETScMatrix& A)
       if (V0->sub({0})->element()->signature()
           != V0->sub({n})->element()->signature())
       {
-        dolfin_error(
+        log::dolfin_error(
             "PointSource.cpp", "apply point source to matrix",
             "The mixed elements are not the same. Not currently implemented");
       }
 
       if (V0->sub({n})->element()->num_sub_elements() > 1)
       {
-        dolfin_error("PointSource.cpp", "apply point source to matrix",
+        log::dolfin_error("PointSource.cpp", "apply point source to matrix",
                      "Have vector elements. Not currently implemented");
       }
     }
@@ -308,7 +311,7 @@ void PointSource::apply(PETScMatrix& A)
 
   for (auto& s : _sources)
   {
-    Point& p = s.first;
+    geometry::Point& p = s.first;
     double magnitude = s.second;
 
     // Create cell
@@ -376,7 +379,7 @@ void PointSource::apply(PETScMatrix& A)
                 dofs_per_cell1 * num_sub_spaces, dofs1.data());
   }
 
-  A.apply(PETScMatrix::AssemblyType::FINAL);
+  A.apply(la::PETScMatrix::AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
 void PointSource::check_space_supported(const function::FunctionSpace& V)
@@ -384,7 +387,7 @@ void PointSource::check_space_supported(const function::FunctionSpace& V)
   dolfin_assert(V.element());
   if (V.element()->value_rank() > 1)
   {
-    dolfin_error("PointSource.cpp", "create point source",
+    log::dolfin_error("PointSource.cpp", "create point source",
                  "function::Function must have rank 0 or 1");
   }
 }

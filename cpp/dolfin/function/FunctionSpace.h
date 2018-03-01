@@ -19,12 +19,19 @@
 
 namespace dolfin
 {
+namespace la
+{
 class PETScVector;
-class Mesh;
+}
 
 namespace fem
 {
 class GenericDofMap;
+}
+
+namespace mesh
+{
+class Mesh;
 }
 
 namespace function
@@ -36,20 +43,20 @@ class GenericFunction;
 /// a mesh, a finite element, and a local-to-global mapping of the
 /// degrees of freedom (dofmap).
 
-class FunctionSpace : public Variable
+class FunctionSpace : public common::Variable
 {
 public:
   /// Create function space for given mesh, element and dofmap
   /// (shared data)
   ///
   /// *Arguments*
-  ///     mesh (_Mesh_)
+  ///     mesh (_mesh::Mesh_)
   ///         The mesh.
   ///     element (_FiniteElement_)
   ///         The element.
   ///     dofmap (_GenericDofMap_)
   ///         The dofmap.
-  FunctionSpace(std::shared_ptr<const Mesh> mesh,
+  FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                 std::shared_ptr<const fem::FiniteElement> element,
                 std::shared_ptr<const fem::GenericDofMap> dofmap);
 
@@ -61,9 +68,9 @@ protected:
   /// FunctionSpace::attach(...).
   ///
   /// *Arguments*
-  ///     mesh (_Mesh_)
+  ///     mesh (_mesh::Mesh_)
   ///         The mesh.
-  explicit FunctionSpace(std::shared_ptr<const Mesh> mesh);
+  explicit FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh);
 
 public:
   /// Copy constructor
@@ -112,9 +119,9 @@ public:
   /// Return mesh
   ///
   /// *Returns*
-  ///     _Mesh_
+  ///     _mesh::Mesh_
   ///         The mesh.
-  std::shared_ptr<const Mesh> mesh() const;
+  std::shared_ptr<const mesh::Mesh> mesh() const;
 
   /// Return finite element
   ///
@@ -142,11 +149,11 @@ public:
   /// vector of expansion coefficients
   ///
   /// *Arguments*
-  ///     expansion_coefficients (_PETScVector_)
+  ///     expansion_coefficients (_la::PETScVector_)
   ///         The expansion coefficients.
   ///     v (_GenericFunction_)
   ///         The function to be interpolated.
-  void interpolate(PETScVector& expansion_coefficients,
+  void interpolate(la::PETScVector& expansion_coefficients,
                    const GenericFunction& v) const;
 
   /// Extract subspace for component
@@ -234,7 +241,7 @@ public:
   /// nullspace computations.
   ///
   /// *Arguments*
-  ///     mesh (_Mesh_)
+  ///     mesh (_mesh::Mesh_)
   ///         The mesh.
   ///
   /// *Returns*
@@ -249,15 +256,15 @@ public:
   /// operator, e.g. rigid body rotations.
   ///
   /// *Arguments*
-  ///     vector (_PETScVector_)
+  ///     vector (_la::PETScVector_)
   ///         The vector to set.
   ///     value (double)
   ///         The value to multiply to coordinate by.
   ///     component (std::size_t)
   ///         The coordinate index.
-  ///     mesh (_Mesh_)
+  ///     mesh (_mesh::Mesh_)
   ///         The mesh.
-  void set_x(PETScVector& x, double value, std::size_t component) const;
+  void set_x(la::PETScVector& x, double value, std::size_t component) const;
 
   /// Return informal string representation (pretty-print)
   ///
@@ -275,11 +282,11 @@ public:
 
 private:
   // General interpolation from any GenericFunction on any mesh
-  void interpolate_from_any(PETScVector& expansion_coefficients,
+  void interpolate_from_any(la::PETScVector& expansion_coefficients,
                             const GenericFunction& v) const;
 
   // The mesh
-  std::shared_ptr<const Mesh> _mesh;
+  std::shared_ptr<const mesh::Mesh> _mesh;
 
   // The finite element
   std::shared_ptr<const fem::FiniteElement> _element;

@@ -24,7 +24,7 @@ using namespace dolfin;
 
 namespace
 {
-void _check_coordinates(const MeshGeometry& geometry,
+void _check_coordinates(const mesh::MeshGeometry& geometry,
                         const function::Function& position)
 {
   dolfin_assert(position.function_space());
@@ -37,7 +37,7 @@ void _check_coordinates(const MeshGeometry& geometry,
       != std::string("Lagrange"))
 
   {
-    dolfin_error("fem_utils.cpp",
+    log::dolfin_error("fem_utils.cpp",
                  "set/get mesh geometry coordinates from/to function",
                  "expecting 'Lagrange' finite element family rather than '%s'",
                  position.function_space()->element()->ufc_element()->family());
@@ -45,14 +45,14 @@ void _check_coordinates(const MeshGeometry& geometry,
 
   if (position.value_rank() != 1)
   {
-    dolfin_error(
+    log::dolfin_error(
         "fem_utils.cpp", "set/get mesh geometry coordinates from/to function",
         "function has incorrect value rank %d, need 1", position.value_rank());
   }
 
   if (position.value_dimension(0) != geometry.dim())
   {
-    dolfin_error("fem_utils.cpp",
+    log::dolfin_error("fem_utils.cpp",
                  "set/get mesh geometry coordinates from/to function",
                  "function value dimension %d and geometry dimension %d "
                  "do not match",
@@ -62,7 +62,7 @@ void _check_coordinates(const MeshGeometry& geometry,
   if (position.function_space()->element()->ufc_element()->degree()
       != geometry.degree())
   {
-    dolfin_error("fem_utils.cpp",
+    log::dolfin_error("fem_utils.cpp",
                  "set/get mesh geometry coordinates from/to function",
                  "function degree %d and geometry degree %d do not match",
                  position.function_space()->element()->ufc_element()->degree(),
@@ -72,8 +72,8 @@ void _check_coordinates(const MeshGeometry& geometry,
 
 // This helper function sets geometry from position (if setting) or
 // stores geometry into position (otherwise)
-void _get_set_coordinates(MeshGeometry& geometry, function::Function& position,
-                          const bool setting)
+void _get_set_coordinates(mesh::MeshGeometry& geometry,
+                          function::Function& position, const bool setting)
 {
   auto& x = geometry.x();
   auto& v = *position.vector();
@@ -121,7 +121,7 @@ void _get_set_coordinates(MeshGeometry& geometry, function::Function& position,
   std::size_t xi, vi;
 
   // Get/set cell-by-cell
-  for (auto& c : MeshRange<mesh::Cell>(mesh))
+  for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Get/prepare values and dofs on cell
     auto cell_dofs = dofmap.cell_dofs(c.index());
@@ -173,7 +173,7 @@ void _get_set_coordinates(MeshGeometry& geometry, function::Function& position,
 }
 
 //-----------------------------------------------------------------------------
-void dolfin::fem::init(PETScVector& x, const Form& a)
+void dolfin::fem::init(la::PETScVector& x, const Form& a)
 {
   if (a.rank() != 1)
     throw std::runtime_error(
@@ -203,7 +203,7 @@ void dolfin::fem::init(PETScVector& x, const Form& a)
   x.init(index_map->local_range(), local_to_global, {}, block_size);
 }
 //-----------------------------------------------------------------------------
-void dolfin::fem::init(PETScMatrix& A, const Form& a)
+void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
 {
   bool keep_diagonal = false;
   if (a.rank() != 2)
@@ -222,7 +222,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
 
   // Get mesh
   dolfin_assert(a.mesh());
-  const Mesh& mesh = *(a.mesh());
+  const mesh::Mesh& mesh = *(a.mesh());
 
   common::Timer t0("Build sparsity");
 
@@ -231,7 +231,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
       = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
 
   // Create and build sparsity pattern
-  SparsityPattern pattern(A.mpi_comm(), index_maps, 0);
+  la::SparsityPattern pattern(A.mpi_comm(), index_maps, 0);
   SparsityPatternBuilder::build(
       pattern, mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
       (a.integrals().num_interior_facet_integrals() > 0),
@@ -279,7 +279,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
 
     // Eventually wait with assembly flush for keep_diagonal
     if (!keep_diagonal)
-      A.apply(PETScMatrix::AssemblyType::FLUSH);
+      A.apply(la::PETScMatrix::AssemblyType::FLUSH);
   }
 
   // FIXME: Check if there is a PETSc function for this
@@ -298,7 +298,7 @@ void dolfin::fem::init(PETScMatrix& A, const Form& a)
       A.set(&block, 1, &_i, 1, &_i);
     }
 
-    A.apply(PETScMatrix::AssemblyType::FLUSH);
+    A.apply(la::PETScMatrix::AssemblyType::FLUSH);
   }
 }
 //-----------------------------------------------------------------------------
@@ -319,12 +319,12 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   // Get the mesh
   dolfin_assert(space.mesh());
   dolfin_assert(space.dofmap());
-  const Mesh& mesh = *space.mesh();
+  const mesh::Mesh& mesh = *space.mesh();
   const GenericDofMap& dofmap = *space.dofmap();
 
   if (dofmap.is_view())
   {
-    dolfin_error("fem_utils.cpp", "tabulate vertex to dof map",
+    log::dolfin_error("fem_utils.cpp", "tabulate vertex to dof map",
                  "Cannot tabulate vertex_to_dof_map for a subspace");
   }
 
@@ -337,7 +337,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   const std::size_t vert_per_cell = mesh.topology()(top_dim, 0).size(0);
   if (vert_per_cell * dofs_per_vertex != dofmap.max_element_dofs())
   {
-    dolfin_error("DofMap.cpp", "tabulate dof to vertex map",
+    log::dolfin_error("DofMap.cpp", "tabulate dof to vertex map",
                  "Can only tabulate dofs on vertices");
   }
 
@@ -350,8 +350,9 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
 
   // Iterate over all vertices (including ghosts)
   std::size_t local_vertex_ind = 0;
-  const auto v_begin = MeshIterator<Vertex>(mesh, 0);
-  const auto v_end = MeshIterator<Vertex>(mesh, mesh.num_entities(0));
+  const auto v_begin = mesh::MeshIterator<mesh::Vertex>(mesh, 0);
+  const auto v_end
+      = mesh::MeshIterator<mesh::Vertex>(mesh, mesh.num_entities(0));
   for (auto vertex = v_begin; vertex != v_end; ++vertex)
   {
     // Get the first cell connected to the vertex
@@ -393,7 +394,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   return return_map;
 }
 //-----------------------------------------------------------------------------
-void dolfin::fem::set_coordinates(MeshGeometry& geometry,
+void dolfin::fem::set_coordinates(mesh::MeshGeometry& geometry,
                                   const function::Function& position)
 {
   _check_coordinates(geometry, position);
@@ -402,13 +403,14 @@ void dolfin::fem::set_coordinates(MeshGeometry& geometry,
 }
 //-----------------------------------------------------------------------------
 void dolfin::fem::get_coordinates(function::Function& position,
-                                  const MeshGeometry& geometry)
+                                  const mesh::MeshGeometry& geometry)
 {
   _check_coordinates(geometry, position);
-  _get_set_coordinates(const_cast<MeshGeometry&>(geometry), position, false);
+  _get_set_coordinates(const_cast<mesh::MeshGeometry&>(geometry), position,
+                       false);
 }
 //-----------------------------------------------------------------------------
-Mesh dolfin::fem::create_mesh(function::Function& coordinates)
+mesh::Mesh dolfin::fem::create_mesh(function::Function& coordinates)
 {
   // FIXME: This function is a mess
 
@@ -417,8 +419,8 @@ Mesh dolfin::fem::create_mesh(function::Function& coordinates)
   dolfin_assert(coordinates.function_space()->element()->ufc_element());
 
   // Fetch old mesh and create new mesh
-  const Mesh& mesh0 = *(coordinates.function_space()->mesh());
-  Mesh mesh1(mesh0.mpi_comm());
+  const mesh::Mesh& mesh0 = *(coordinates.function_space()->mesh());
+  mesh::Mesh mesh1(mesh0.mpi_comm());
 
   // FIXME: Share this code with Mesh assignment operaror; a need
   //        to duplicate its code here is not maintainable

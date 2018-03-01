@@ -17,7 +17,6 @@
 
 namespace dolfin
 {
-
 namespace mesh
 {
 
@@ -59,7 +58,7 @@ public:
   ///
   ///         UnitSquare mesh(1, 1);
   ///         Cell cell(mesh, 0);
-  ///         info("%g", cell.volume());
+  ///         log::info("%g", cell.volume());
   ///
   /// @endcode
   double volume() const { return _mesh->type().volume(*this); }
@@ -73,7 +72,7 @@ public:
   ///
   ///         UnitSquareMesh mesh(1, 1);
   ///         Cell cell(mesh, 0);
-  ///         info("%g", cell.h());
+  ///         log::info("%g", cell.h());
   ///
   /// @endcode
   double h() const { return _mesh->type().h(*this); }
@@ -87,7 +86,7 @@ public:
   ///
   ///         UnitSquareMesh mesh(1, 1);
   ///         Cell cell(mesh, 0);
-  ///         info("%g", cell.circumradius());
+  ///         log::info("%g", cell.circumradius());
   ///
   /// @endcode
   double circumradius() const { return _mesh->type().circumradius(*this); }
@@ -101,7 +100,7 @@ public:
   ///
   ///         UnitSquareMesh mesh(1, 1);
   ///         Cell cell(mesh, 0);
-  ///         info("%g", cell.inradius());
+  ///         log::info("%g", cell.inradius());
   ///
   /// @endcode
   double inradius() const
@@ -125,7 +124,7 @@ public:
   ///
   ///         UnitSquareMesh mesh(1, 1);
   ///         Cell cell(mesh, 0);
-  ///         info("%g", cell.radius_ratio());
+  ///         log::info("%g", cell.radius_ratio());
   ///
   /// @endcode
   double radius_ratio() const
@@ -142,7 +141,7 @@ public:
   ///         The point.
   /// @return     double
   ///         The squared distance to the point.
-  double squared_distance(const Point& point) const
+  double squared_distance(const geometry::Point& point) const
   {
     return _mesh->type().squared_distance(*this, point);
   }
@@ -153,7 +152,7 @@ public:
   ///         The point.
   /// @return     double
   ///         The distance to the point.
-  double distance(const Point& point) const
+  double distance(const geometry::Point& point) const
   {
     return sqrt(squared_distance(point));
   }
@@ -163,18 +162,21 @@ public:
   /// @param    facet
   ///         Index of facet.
   ///
-  /// @return Point
+  /// @return geometry::Point
   ///         Normal of the facet.
-  Point normal(std::size_t facet) const
+  geometry::Point normal(std::size_t facet) const
   {
     return _mesh->type().normal(*this, facet);
   }
 
   /// Compute normal to cell itself (viewed as embedded in 3D)
   ///
-  /// @return Point
+  /// @return geometry::Point
   ///         Normal of the cell
-  Point cell_normal() const { return _mesh->type().cell_normal(*this); }
+  geometry::Point cell_normal() const
+  {
+    return _mesh->type().cell_normal(*this);
+  }
 
   /// Compute the area/length of given facet with respect to the cell
   ///
@@ -278,7 +280,7 @@ public:
     }
     else
     {
-      dolfin_error("Cell.h", "get coordinate_dofs", "Unsupported mesh degree");
+      log::dolfin_error("Cell.h", "get coordinate_dofs", "Unsupported mesh degree");
     }
   }
 

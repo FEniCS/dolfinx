@@ -50,7 +50,7 @@ Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
   */
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(PETScMatrix& A)
+void Assembler::assemble(la::PETScMatrix& A)
 {
   // Check if matrix should be nested
   assert(!_a.empty());
@@ -63,7 +63,7 @@ void Assembler::assemble(PETScMatrix& A)
     if (nested_matrix)
     {
       // Loop over each form
-      std::vector<std::shared_ptr<PETScMatrix>> mats;
+      std::vector<std::shared_ptr<la::PETScMatrix>> mats;
       std::vector<Mat> petsc_mats;
       for (auto a_row : _a)
       {
@@ -71,7 +71,7 @@ void Assembler::assemble(PETScMatrix& A)
         {
           if (a)
           {
-            mats.push_back(std::make_shared<PETScMatrix>(A.mpi_comm()));
+            mats.push_back(std::make_shared<la::PETScMatrix>(A.mpi_comm()));
             petsc_mats.push_back(mats.back()->mat());
             init(*mats.back(), *a);
           }
@@ -88,14 +88,14 @@ void Assembler::assemble(PETScMatrix& A)
       MatNestSetSubMats(A.mat(), _a.size(), NULL, _a[0].size(), NULL,
                         petsc_mats.data());
 
-      // A.apply(PETScMatrix::AssemblyType::FINAL);
+      // A.apply(la::PETScMatrix::AssemblyType::FINAL);
     }
     else if (block_matrix)
     {
       std::cout << "Initialising block matrix" << std::endl;
 
-      std::vector<std::vector<std::shared_ptr<SparsityPattern>>> patterns;
-      std::vector<std::vector<const SparsityPattern*>> p;
+      std::vector<std::vector<std::shared_ptr<la::SparsityPattern>>> patterns;
+      std::vector<std::vector<const la::SparsityPattern*>> p;
       // int irow = 0;
       for (std::size_t row = 0; row < _a.size(); ++row)
       {
@@ -111,7 +111,7 @@ void Assembler::assemble(PETScMatrix& A)
           std::cout << "  Push Initialising block: " << std::endl;
           std::array<std::shared_ptr<const common::IndexMap>, 2> maps
               = {{map0, map1}};
-          auto test = std::make_shared<SparsityPattern>(A.mpi_comm(), maps, 0);
+          auto test = std::make_shared<la::SparsityPattern>(A.mpi_comm(), maps, 0);
           patterns[row].push_back(test);
 
           // Build sparsity pattern
@@ -130,9 +130,7 @@ void Assembler::assemble(PETScMatrix& A)
 
       // Create merged sparsity pattern
       std::cout << "  Build merged sparsity pattern" << std::endl;
-      SparsityPattern pattern(A.mpi_comm(), p);
-
-      std::cout << pattern.str(true) << std::endl;
+      la::SparsityPattern pattern(A.mpi_comm(), p);
 
       // Initialise matrix
       std::cout << "  Init parent matrix" << std::endl;
@@ -162,7 +160,7 @@ void Assembler::assemble(PETScMatrix& A)
         {
           Mat subA;
           MatNestGetSubMat(A.mat(), i, j, &subA);
-          PETScMatrix mat(subA);
+          la::PETScMatrix mat(subA);
           std::cout << "Assembling into matrix:" << i << ", " << j << std::endl;
           this->assemble(mat, *_a[i][j], _bcs);
           std::cout << "End assembling into matrix:" << i << ", " << j
@@ -208,7 +206,7 @@ void Assembler::assemble(PETScMatrix& A)
 
           Mat subA;
           MatGetLocalSubMatrix(A.mat(), is0, is1, &subA);
-          PETScMatrix mat(subA);
+          la::PETScMatrix mat(subA);
           std::cout << "Mat size: " << mat.size(0) << ", " << mat.size(1)
                     << std::endl;
 
@@ -246,12 +244,12 @@ void Assembler::assemble(PETScMatrix& A)
     this->assemble(A, *_a[0][0], _bcs);
   }
 
-  A.apply(PETScMatrix::AssemblyType::FINAL);
+  A.apply(la::PETScMatrix::AssemblyType::FINAL);
 
   // return;
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(PETScVector& b)
+void Assembler::assemble(la::PETScVector& b)
 {
   // Assemble vector
   this->assemble(b, *_l[0]);
@@ -271,7 +269,7 @@ void Assembler::assemble(PETScVector& b)
   // }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(PETScMatrix& A, PETScVector& b)
+void Assembler::assemble(la::PETScMatrix& A, la::PETScVector& b)
 {
   // TODO: pre common boundary condition data
 
@@ -282,7 +280,7 @@ void Assembler::assemble(PETScMatrix& A, PETScVector& b)
   assemble(b);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(PETScMatrix& A, const Form& a,
+void Assembler::assemble(la::PETScMatrix& A, const Form& a,
                          std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   if (A.empty())
@@ -290,7 +288,7 @@ void Assembler::assemble(PETScMatrix& A, const Form& a,
 
   // Get mesh from form
   assert(a.mesh());
-  const Mesh& mesh = *a.mesh();
+  const mesh::Mesh& mesh = *a.mesh();
 
   // FIXME: Remove UFC
   // Create data structures for local assembly data
@@ -340,7 +338,7 @@ void Assembler::assemble(PETScMatrix& A, const Form& a,
   auto cell_integral = a.integrals().cell_integral();
 
   // Iterate over all cells
-  for (auto& cell : MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     std::cout << "Iterate over cells" << std::endl;
     // Check that cell is not a ghost
@@ -407,7 +405,7 @@ void Assembler::assemble(PETScMatrix& A, const Form& a,
 
   // FIXME: Put this elsewhere?
   // Finalise matrix
-  // A.apply(PETScMatrix::AssemblyType::FINAL);
+  // A.apply(la::PETScMatrix::AssemblyType::FINAL);
 
   // FIXME: Move this outside of function
   // Place '1' on diagonal for bc entries
@@ -422,14 +420,14 @@ void Assembler::assemble(PETScMatrix& A, const Form& a,
   */
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(PETScVector& b, const Form& L)
+void Assembler::assemble(la::PETScVector& b, const Form& L)
 {
   if (b.empty())
     init(b, L);
 
   // Get mesh from form
   assert(L.mesh());
-  const Mesh& mesh = *L.mesh();
+  const mesh::Mesh& mesh = *L.mesh();
 
   // FIXME: Remove UFC
   // Create data structures for local assembly data
@@ -451,7 +449,7 @@ void Assembler::assemble(PETScVector& b, const Form& L)
   auto cell_integral = L.integrals().cell_integral();
 
   // Iterate over all cells
-  for (auto& cell : MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
@@ -488,12 +486,12 @@ void Assembler::assemble(PETScVector& b, const Form& L)
   b.apply();
 }
 //-----------------------------------------------------------------------------
-void Assembler::apply_bc(PETScVector& b, const Form& a,
+void Assembler::apply_bc(la::PETScVector& b, const Form& a,
                          std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   // Get mesh from form
   assert(a.mesh());
-  const Mesh& mesh = *a.mesh();
+  const mesh::Mesh& mesh = *a.mesh();
 
   const std::size_t gdim = mesh.geometry().dim();
 
@@ -530,7 +528,7 @@ void Assembler::apply_bc(PETScVector& b, const Form& a,
   auto cell_integral = a.integrals().cell_integral();
 
   // Iterate over all cells
-  for (auto& cell : MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
@@ -611,12 +609,12 @@ void Assembler::apply_bc(PETScVector& b, const Form& a,
   b.apply();
 }
 //-----------------------------------------------------------------------------
-void Assembler::set_bc(PETScVector& b, const Form& L,
+void Assembler::set_bc(la::PETScVector& b, const Form& L,
                        std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   // Get mesh from form
   assert(L.mesh());
-  const Mesh& mesh = *L.mesh();
+  const mesh::Mesh& mesh = *L.mesh();
 
   auto V = L.function_space(0);
 

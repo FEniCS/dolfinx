@@ -38,7 +38,8 @@ void generation(py::module &m) {
              std::shared_ptr<dolfin::generation::RectangleMesh>>(
       m, "RectangleMesh")
       .def_static("create",
-                  [](const MPICommWrapper comm, std::array<dolfin::Point, 2> p,
+                  [](const MPICommWrapper comm,
+                     std::array<dolfin::geometry::Point, 2> p,
                      std::array<std::size_t, 2> n,
                      dolfin::mesh::CellType::Type cell_type,
                      std::string diagonal) {
@@ -56,7 +57,8 @@ void generation(py::module &m) {
   py::class_<dolfin::generation::BoxMesh,
              std::shared_ptr<dolfin::generation::BoxMesh>>(m, "BoxMesh")
       .def_static("create",
-                  [](const MPICommWrapper comm, std::array<dolfin::Point, 2> p,
+                  [](const MPICommWrapper comm,
+                     std::array<dolfin::geometry::Point, 2> p,
                      std::array<std::size_t, 3> n,
                      dolfin::mesh::CellType::Type cell_type) {
                     return dolfin::generation::BoxMesh::create(comm.get(), p, n,

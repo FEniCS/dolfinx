@@ -22,7 +22,7 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-std::shared_ptr<PETScMatrix>
+std::shared_ptr<la::PETScMatrix>
 DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
                                   const function::FunctionSpace& V1)
 {
@@ -31,13 +31,13 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
 
   // Get mesh
   dolfin_assert(V0.mesh());
-  const Mesh& mesh = *(V0.mesh());
+  const mesh::Mesh& mesh = *(V0.mesh());
 
   // Check that mesh is the same for both function spaces
   dolfin_assert(V1.mesh());
   if (&mesh != V1.mesh().get())
   {
-    dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
+    log::dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
                  "function spaces do not share the same mesh");
   }
 
@@ -45,14 +45,14 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   mesh.init(1);
   if (V0.dim() != mesh.num_entities_global(1))
   {
-    dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
+    log::dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
                  "function spaces is not a lowest-order edge space");
   }
 
   // Check that V1 is a linear nodal basis
   if (V1.dim() != mesh.num_entities_global(0))
   {
-    dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
+    log::dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
                  "function space is not a linear nodal function space");
   }
 
@@ -69,7 +69,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   V1.dofmap()->tabulate_local_to_global_dofs(local_to_global_map1);
 
   // Declare matrix
-  auto A = std::make_shared<PETScMatrix>(mesh.mpi_comm());
+  auto A = std::make_shared<la::PETScMatrix>(mesh.mpi_comm());
 
   // Initialize edge -> vertex connections
   mesh.init(1, 0);
@@ -81,12 +81,12 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
       = {V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
 
   // Initialise sparsity pattern
-  SparsityPattern pattern(mesh.mpi_comm(), index_maps, 0);
+  la::SparsityPattern pattern(mesh.mpi_comm(), index_maps, 0);
 
   // Build sparsity pattern
   std::vector<dolfin::la_index_t> rows;
   std::vector<dolfin::la_index_t> cols;
-  for (auto& edge : MeshRange<Edge>(mesh))
+  for (auto& edge : mesh::MeshRange<mesh::Edge>(mesh))
   {
     // Row index (global indices)
     const std::int64_t row = local_to_global_map0[edge_to_dof[edge.index()]];
@@ -95,8 +95,8 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
     if (row >= local_range[0][0] and row < local_range[0][1])
     {
       // Column indices (global indices)
-      const Vertex v0(mesh, edge.entities(0)[0]);
-      const Vertex v1(mesh, edge.entities(0)[1]);
+      const mesh::Vertex v0(mesh, edge.entities(0)[0]);
+      const mesh::Vertex v1(mesh, edge.entities(0)[1]);
       std::size_t col0 = local_to_global_map1[vertex_to_dof[v0.index()]];
       std::size_t col1 = local_to_global_map1[vertex_to_dof[v1.index()]];
       cols.push_back(col0);
@@ -114,7 +114,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   A->init(pattern);
 
   // Build discrete gradient operator/matrix
-  for (auto& edge : MeshRange<Edge>(mesh))
+  for (auto& edge : mesh::MeshRange<mesh::Edge>(mesh))
   {
     dolfin::la_index_t row;
     dolfin::la_index_t cols[2];
@@ -122,8 +122,8 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
 
     row = local_to_global_map0[edge_to_dof[edge.index()]];
 
-    Vertex v0(mesh, edge.entities(0)[0]);
-    Vertex v1(mesh, edge.entities(0)[1]);
+    mesh::Vertex v0(mesh, edge.entities(0)[0]);
+    mesh::Vertex v1(mesh, edge.entities(0)[1]);
 
     cols[0] = local_to_global_map1[vertex_to_dof[v0.index()]];
     cols[1] = local_to_global_map1[vertex_to_dof[v1.index()]];
@@ -143,7 +143,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   }
 
   // Finalise matrix
-  A->apply(PETScMatrix::AssemblyType::FINAL);
+  A->apply(la::PETScMatrix::AssemblyType::FINAL);
 
   return A;
 }

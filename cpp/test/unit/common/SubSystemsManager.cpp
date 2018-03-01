@@ -33,7 +33,7 @@ namespace
     char **argv = NULL;
     PetscInitialize(&argc, &argv, NULL, NULL);
 
-    dolfin::PETScVector(MPI_COMM_WORLD);
+    dolfin::la::PETScVector(MPI_COMM_WORLD);
 #endif
   }
 }

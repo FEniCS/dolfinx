@@ -62,8 +62,8 @@ int main()
   solve(a == L, g);
 
   // Evaluate user-defined function f
-  info("f(x) = %g", (*f)(x));
+  log::info("f(x) = %g", (*f)(x));
 
   // Evaluate discrete function g (projection of f)
-  info("g(x) = %g", g(x));
+  log::info("g(x) = %g", g(x));
 }

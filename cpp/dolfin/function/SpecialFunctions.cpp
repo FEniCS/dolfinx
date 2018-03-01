@@ -12,7 +12,7 @@
 using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
-MeshCoordinates::MeshCoordinates(std::shared_ptr<const Mesh> mesh)
+MeshCoordinates::MeshCoordinates(std::shared_ptr<const mesh::Mesh> mesh)
     : Expression({mesh->geometry().dim()}), _mesh(mesh)
 {
   // Do nothing
@@ -30,7 +30,7 @@ void MeshCoordinates::eval(Eigen::Ref<Eigen::VectorXd> values,
     values[i] = x[i];
 }
 //-----------------------------------------------------------------------------
-FacetArea::FacetArea(std::shared_ptr<const Mesh> mesh)
+FacetArea::FacetArea(std::shared_ptr<const mesh::Mesh> mesh)
     : Expression({}), _mesh(mesh)
 {
   // Do nothing

@@ -12,6 +12,7 @@
 #include <petsc.h>
 
 using namespace dolfin;
+using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 void PETScObject::petsc_error(int error_code, std::string filename,
@@ -26,16 +27,16 @@ void PETScObject::petsc_error(int error_code, std::string filename,
   common::SubSystemsManager::singleton().petsc_err_msg = "";
 
   // Log detailed error info
-  log(TRACE, "PETSc error in '%s', '%s'", filename.c_str(),
+  log::log(TRACE, "PETSc error in '%s', '%s'", filename.c_str(),
       petsc_function.c_str());
-  log(TRACE, "PETSc error code '%d' (%s), message follows:", error_code, desc);
+  log::log(TRACE, "PETSc error code '%d' (%s), message follows:", error_code, desc);
   // NOTE: don't put msg as variadic argument; it might get trimmed
-  log(TRACE, std::string(78, '-'));
-  log(TRACE, msg);
-  log(TRACE, std::string(78, '-'));
+  log::log(TRACE, std::string(78, '-'));
+  log::log(TRACE, msg);
+  log::log(TRACE, std::string(78, '-'));
 
   // Raise exception with standard error message
-  dolfin_error(filename,
+  log::dolfin_error(filename,
                "successfully call PETSc function '" + petsc_function + "'",
                "PETSc error code is: %d (%s)", error_code, desc);
 }

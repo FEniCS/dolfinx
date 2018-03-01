@@ -11,7 +11,6 @@
 #include "Vertex.h"
 #include <algorithm>
 #include <cmath>
-#include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
@@ -31,9 +30,9 @@ std::size_t TriangleCell::num_entities(std::size_t dim) const
   case 2:
     return 1; // cells
   default:
-    dolfin_error("TriangleCell.cpp",
-                 "access number of entities of triangle cell",
-                 "Illegal topological dimension (%d)", dim);
+    log::dolfin_error("TriangleCell.cpp",
+                      "access number of entities of triangle cell",
+                      "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -50,9 +49,10 @@ std::size_t TriangleCell::num_vertices(std::size_t dim) const
   case 2:
     return 3; // cells
   default:
-    dolfin_error("TriangleCell.cpp",
-                 "access number of vertices for subsimplex of triangle cell",
-                 "Illegal topological dimension (%d)", dim);
+    log::dolfin_error(
+        "TriangleCell.cpp",
+        "access number of vertices for subsimplex of triangle cell",
+        "Illegal topological dimension (%d)", dim);
   }
 
   return 0;
@@ -64,7 +64,7 @@ void TriangleCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
   // We only need to know how to create edges
   if (dim != 1)
   {
-    dolfin_error(
+    log::dolfin_error(
         "TriangleCell.cpp", "create entities of triangle cell",
         "Don't know how to create entities of topological dimension %d", dim);
   }
@@ -86,8 +86,9 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   // Check that we get a triangle
   if (triangle.dim() != 2)
   {
-    dolfin_error("TriangleCell.cpp", "compute volume (area) of triangle cell",
-                 "Illegal mesh entity, not a triangle");
+    log::dolfin_error("TriangleCell.cpp",
+                      "compute volume (area) of triangle cell",
+                      "Illegal mesh entity, not a triangle");
   }
 
   // Get mesh geometry
@@ -95,9 +96,9 @@ double TriangleCell::volume(const MeshEntity& triangle) const
 
   // Get the coordinates of the three vertices
   const std::int32_t* vertices = triangle.entities(0);
-  const Point x0 = geometry.point(vertices[0]);
-  const Point x1 = geometry.point(vertices[1]);
-  const Point x2 = geometry.point(vertices[2]);
+  const geometry::Point x0 = geometry.point(vertices[0]);
+  const geometry::Point x1 = geometry.point(vertices[1]);
+  const geometry::Point x2 = geometry.point(vertices[2]);
 
   if (geometry.dim() == 2)
   {
@@ -123,8 +124,9 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   }
   else
   {
-    dolfin_error("TriangleCell.cpp", "compute volume of triangle",
-                 "Only know how to compute volume when embedded in R^2 or R^3");
+    log::dolfin_error(
+        "TriangleCell.cpp", "compute volume of triangle",
+        "Only know how to compute volume when embedded in R^2 or R^3");
   }
 
   return 0.0;
@@ -135,8 +137,8 @@ double TriangleCell::circumradius(const MeshEntity& triangle) const
   // Check that we get a triangle
   if (triangle.dim() != 2)
   {
-    dolfin_error("TriangleCell.cpp", "compute diameter of triangle cell",
-                 "Illegal mesh entity, not a triangle");
+    log::dolfin_error("TriangleCell.cpp", "compute diameter of triangle cell",
+                      "Illegal mesh entity, not a triangle");
   }
 
   // Get mesh geometry
@@ -144,15 +146,15 @@ double TriangleCell::circumradius(const MeshEntity& triangle) const
 
   // Only know how to compute the diameter when embedded in R^2 or R^3
   if (geometry.dim() != 2 && geometry.dim() != 3)
-    dolfin_error(
+    log::dolfin_error(
         "TriangleCell.cpp", "compute diameter of triangle",
         "Only know how to compute diameter when embedded in R^2 or R^3");
 
   // Get the coordinates of the three vertices
   const std::int32_t* vertices = triangle.entities(0);
-  const Point p0 = geometry.point(vertices[0]);
-  const Point p1 = geometry.point(vertices[1]);
-  const Point p2 = geometry.point(vertices[2]);
+  const geometry::Point p0 = geometry.point(vertices[0]);
+  const geometry::Point p1 = geometry.point(vertices[1]);
+  const geometry::Point p2 = geometry.point(vertices[2]);
 
   // FIXME: Assuming 3D coordinates, could be more efficient if
   // FIXME: if we assumed 2D coordinates in 2D
@@ -168,24 +170,26 @@ double TriangleCell::circumradius(const MeshEntity& triangle) const
 }
 //-----------------------------------------------------------------------------
 double TriangleCell::squared_distance(const Cell& cell,
-                                      const Point& point) const
+                                      const geometry::Point& point) const
 {
   // Get the vertices as points
   const MeshGeometry& geometry = cell.mesh().geometry();
   const std::int32_t* vertices = cell.entities(0);
-  const Point a = geometry.point(vertices[0]);
-  const Point b = geometry.point(vertices[1]);
-  const Point c = geometry.point(vertices[2]);
+  const geometry::Point a = geometry.point(vertices[0]);
+  const geometry::Point b = geometry.point(vertices[1]);
+  const geometry::Point c = geometry.point(vertices[2]);
 
   // Call function to compute squared distance
   return squared_distance(point, a, b, c);
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::squared_distance(const Point& point, const Point& a,
-                                      const Point& b, const Point& c)
+double TriangleCell::squared_distance(const geometry::Point& point,
+                                      const geometry::Point& a,
+                                      const geometry::Point& b,
+                                      const geometry::Point& c)
 {
   // Algorithm from Real-time collision detection by Christer Ericson:
-  // ClosestPtPointTriangle on page 141, Section 5.1.5.
+  // ClosestPtgeometry::PointTriangle on page 141, Section 5.1.5.
   //
   // Algorithm modified to handle triangles embedded in 3D.
   //
@@ -193,24 +197,24 @@ double TriangleCell::squared_distance(const Point& point, const Point& a,
   // only return the distance to that point.
 
   // Compute normal to plane defined by triangle
-  const Point ab = b - a;
-  const Point ac = c - a;
-  Point n = ab.cross(ac);
+  const geometry::Point ab = b - a;
+  const geometry::Point ac = c - a;
+  geometry::Point n = ab.cross(ac);
   n /= n.norm();
 
   // Subtract projection onto plane
   const double pn = (point - a).dot(n);
-  const Point p = point - n * pn;
+  const geometry::Point p = point - n * pn;
 
   // Check if point is in vertex region outside A
-  const Point ap = p - a;
+  const geometry::Point ap = p - a;
   const double d1 = ab.dot(ap);
   const double d2 = ac.dot(ap);
   if (d1 <= 0.0 && d2 <= 0.0)
     return p.squared_distance(a) + pn * pn;
 
   // Check if point is in vertex region outside B
-  const Point bp = p - b;
+  const geometry::Point bp = p - b;
   const double d3 = ab.dot(bp);
   const double d4 = ac.dot(bp);
   if (d3 >= 0.0 && d4 <= d3)
@@ -225,7 +229,7 @@ double TriangleCell::squared_distance(const Point& point, const Point& a,
   }
 
   // Check if point is in vertex region outside C
-  const Point cp = p - c;
+  const geometry::Point cp = p - c;
   const double d5 = ab.dot(cp);
   const double d6 = ac.dot(cp);
   if (d6 >= 0.0 && d5 <= d6)
@@ -259,7 +263,7 @@ double TriangleCell::normal(const Cell& cell, std::size_t facet,
   return normal(cell, facet)[i];
 }
 //-----------------------------------------------------------------------------
-Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
+geometry::Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
 {
   // Make sure we have facets
   cell.mesh().init(2, 1);
@@ -272,10 +276,11 @@ Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
   // could be removed, unless it is here for some other reason.
   if (cell.mesh().geometry().dim() != 2)
   {
-    dolfin_error("TriangleCell.cpp", "find normal",
-                 "Normal vector is not defined in dimension %d (only defined "
-                 "when the triangle is in R^2",
-                 cell.mesh().geometry().dim());
+    log::dolfin_error(
+        "TriangleCell.cpp", "find normal",
+        "Normal vector is not defined in dimension %d (only defined "
+        "when the triangle is in R^2",
+        cell.mesh().geometry().dim());
   }
 
   // Get global index of opposite vertex
@@ -289,14 +294,14 @@ Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the three vertices
-  const Point p0 = geometry.point(v0);
-  const Point p1 = geometry.point(v1);
-  const Point p2 = geometry.point(v2);
+  const geometry::Point p0 = geometry.point(v0);
+  const geometry::Point p1 = geometry.point(v1);
+  const geometry::Point p2 = geometry.point(v2);
 
   // Subtract projection of p2 - p0 onto p2 - p1
-  Point t = p2 - p1;
+  geometry::Point t = p2 - p1;
   t /= t.norm();
-  Point n = p2 - p0;
+  geometry::Point n = p2 - p0;
   n -= t * n.dot(t);
 
   // Normalize
@@ -305,7 +310,7 @@ Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
-Point TriangleCell::cell_normal(const Cell& cell) const
+geometry::Point TriangleCell::cell_normal(const Cell& cell) const
 {
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
@@ -314,20 +319,20 @@ Point TriangleCell::cell_normal(const Cell& cell) const
   const std::size_t gdim = geometry.dim();
   if (gdim > 3)
   {
-    dolfin_error("TriangleCell.cpp", "compute cell normal",
-                 "Illegal geometric dimension (%d)", gdim);
+    log::dolfin_error("TriangleCell.cpp", "compute cell normal",
+                      "Illegal geometric dimension (%d)", gdim);
   }
 
   // Get the three vertices as points
   const std::int32_t* vertices = cell.entities(0);
-  const Point p0 = geometry.point(vertices[0]);
-  const Point p1 = geometry.point(vertices[1]);
-  const Point p2 = geometry.point(vertices[2]);
+  const geometry::Point p0 = geometry.point(vertices[0]);
+  const geometry::Point p1 = geometry.point(vertices[1]);
+  const geometry::Point p2 = geometry.point(vertices[2]);
 
   // Defined cell normal via cross product of first two edges:
-  const Point v01 = p1 - p0;
-  const Point v02 = p2 - p0;
-  Point n = v01.cross(v02);
+  const geometry::Point v01 = p1 - p0;
+  const geometry::Point v02 = p2 - p0;
+  geometry::Point n = v01.cross(v02);
 
   // Normalize
   n /= n.norm();
@@ -348,8 +353,8 @@ double TriangleCell::facet_area(const Cell& cell, std::size_t facet) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the two vertices
-  const Point p0 = geometry.point(v0);
-  const Point p1 = geometry.point(v1);
+  const geometry::Point p0 = geometry.point(v0);
+  const geometry::Point p1 = geometry.point(v1);
 
   return p1.distance(p0);
 }
@@ -418,16 +423,6 @@ void TriangleCell::order(
   }
 }
 //-----------------------------------------------------------------------------
-bool TriangleCell::collides(const Cell& cell, const Point& point) const
-{
-  return CollisionPredicates::collides(cell, point);
-}
-//-----------------------------------------------------------------------------
-bool TriangleCell::collides(const Cell& cell, const MeshEntity& entity) const
-{
-  return CollisionPredicates::collides(cell, entity);
-}
-//-----------------------------------------------------------------------------
 std::string TriangleCell::description(bool plural) const
 {
   if (plural)
@@ -453,8 +448,8 @@ std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
   }
 
   // We should not reach this
-  dolfin_error("TriangleCell.cpp", "find specified edge in cell",
-               "Edge really not found");
+  log::dolfin_error("TriangleCell.cpp", "find specified edge in cell",
+                    "Edge really not found");
   return 0;
 }
 //-----------------------------------------------------------------------------

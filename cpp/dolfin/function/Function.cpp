@@ -37,7 +37,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
   // Check that we don't have a subspace
   if (!V->component().empty())
   {
-    dolfin_error("Function.cpp", "create function",
+    log::dolfin_error("Function.cpp", "create function",
                  "Cannot be created from subspace. Consider collapsing the "
                  "function space");
   }
@@ -47,7 +47,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V,
-                   std::shared_ptr<PETScVector> x)
+                   std::shared_ptr<la::PETScVector> x)
     : _function_space(V), _vector(x), _allow_extrapolation(false)
 {
   // We do not check for a subspace since this constructor is used for
@@ -70,7 +70,7 @@ Function::Function(const Function& v) : _allow_extrapolation(false)
     this->_function_space = v._function_space;
 
     // Copy vector
-    this->_vector = std::make_shared<PETScVector>(*v._vector);
+    this->_vector = std::make_shared<la::PETScVector>(*v._vector);
   }
   else
   {
@@ -194,7 +194,7 @@ void Function::operator=(const function::FunctionAXPY& axpy)
 {
   if (axpy.pairs().size() == 0)
   {
-    dolfin_error("Function.cpp", "assign function", "FunctionAXPY is empty.");
+    log::dolfin_error("Function.cpp", "assign function", "FunctionAXPY is empty.");
   }
 
   // Make an initial assign and scale
@@ -214,7 +214,7 @@ void Function::operator=(const function::FunctionAXPY& axpy)
   }
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<PETScVector> Function::vector()
+std::shared_ptr<la::PETScVector> Function::vector()
 {
   dolfin_assert(_vector);
   dolfin_assert(_function_space->dofmap());
@@ -222,14 +222,14 @@ std::shared_ptr<PETScVector> Function::vector()
   // Check that this is not a sub function.
   if (_vector->size() != _function_space->dofmap()->global_dimension())
   {
-    dolfin_error("Function.cpp", "access vector of degrees of freedom",
+    log::dolfin_error("Function.cpp", "access vector of degrees of freedom",
                  "Cannot access a non-const vector from a subfunction");
   }
 
   return _vector;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const PETScVector> Function::vector() const
+std::shared_ptr<const la::PETScVector> Function::vector() const
 {
   dolfin_assert(_vector);
   return _vector;
@@ -240,11 +240,11 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
-  const Mesh& mesh = *_function_space->mesh();
+  const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Find the cell that contains x
   const double* _x = x.data();
-  const Point point(mesh.geometry().dim(), _x);
+  const geometry::Point point(mesh.geometry().dim(), _x);
 
   // Get index of first cell containing point
   unsigned int id
@@ -262,7 +262,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
       id = close.first;
     else
     {
-      dolfin_error("Function.cpp", "evaluate function at point",
+      log::dolfin_error("Function.cpp", "evaluate function at point",
                    "The point is not inside the domain. Consider calling "
                    "\"Function::set_allow_extrapolation(true)\" on this "
                    "Function to allow extrapolation");
@@ -369,7 +369,7 @@ void Function::eval(Eigen::Ref<Eigen::VectorXd> values,
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
-  const Mesh& mesh = *_function_space->mesh();
+  const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Check if UFC cell comes from mesh, otherwise
   // find the cell which contains the point
@@ -415,7 +415,7 @@ void Function::restrict(double* w, const fem::FiniteElement& element,
 }
 //-----------------------------------------------------------------------------
 void Function::compute_vertex_values(std::vector<double>& vertex_values,
-                                     const Mesh& mesh) const
+                                     const mesh::Mesh& mesh) const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
@@ -425,7 +425,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   if (&mesh != _function_space->mesh().get()
       && mesh.hash() != _function_space->mesh()->hash())
   {
-    dolfin_error("Function.cpp", "interpolate function values at vertices",
+    log::dolfin_error("Function.cpp", "interpolate function values at vertices",
                  "Non-matching mesh");
   }
 
@@ -453,7 +453,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  for (auto& cell : MeshRange<mesh::Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Update to current cell
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -470,7 +470,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
 
     // Copy values to array of vertex values
     std::size_t local_index = 0;
-    for (auto& vertex : EntityRange<Vertex>(cell))
+    for (auto& vertex : mesh::EntityRange<mesh::Vertex>(cell))
     {
       for (std::size_t i = 0; i < value_size_loc; ++i)
       {
@@ -502,7 +502,7 @@ void Function::init_vector()
   // Check that function space is not a subspace (view)
   if (dofmap.is_view())
   {
-    dolfin_error("Function.cpp",
+    log::dolfin_error("Function.cpp",
                  "initialize vector of degrees of freedom for function",
                  "Cannot be created from subspace. Consider collapsing the "
                  "function space");
@@ -529,11 +529,11 @@ void Function::init_vector()
   // Create vector of dofs
   if (!_vector)
     _vector =
-  std::make_shared<PETScVector>(_function_space->mesh()->mpi_comm());
+  std::make_shared<la::la::PETScVector>(_function_space->mesh()->mpi_comm());
   dolfin_assert(_vector);
   if (!_vector->empty())
   {
-    dolfin_error("Function.cpp",
+    log::dolfin_error("Function.cpp",
                  "initialize vector of degrees of freedom for function",
                  "Cannot re-initialize a non-empty vector. Consider creating a
   new function");
@@ -565,13 +565,13 @@ void Function::init_vector()
 
   // Create vector of dofs
   if (!_vector)
-    _vector
-        = std::make_shared<PETScVector>(_function_space->mesh()->mpi_comm());
+    _vector = std::make_shared<la::PETScVector>(
+        _function_space->mesh()->mpi_comm());
   dolfin_assert(_vector);
 
   if (!_vector->empty())
   {
-    dolfin_error("Function.cpp",
+    log::dolfin_error("Function.cpp",
                  "initialize vector of degrees of freedom for function",
                  "Cannot re-initialize a non-empty vector. Consider creating a "
                  "new function");

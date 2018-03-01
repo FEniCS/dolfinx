@@ -30,14 +30,15 @@ namespace py = pybind11;
 namespace dolfin_wrappers {
 // Interface for dolfin/common
 void common(py::module &m) {
-  // dolfin::Variable
-  py::class_<dolfin::Variable, std::shared_ptr<dolfin::Variable>>(
-      m, "Variable", "Variable base class")
-      .def("id", &dolfin::Variable::id)
-      .def("name", &dolfin::Variable::name)
-      .def("label", &dolfin::Variable::label)
-      .def("rename", &dolfin::Variable::rename)
-      .def_readwrite("parameters", &dolfin::Variable::parameters);
+  // dolfin::common::Variable
+  py::class_<dolfin::common::Variable,
+             std::shared_ptr<dolfin::common::Variable>>(m, "Variable",
+                                                        "Variable base class")
+      .def("id", &dolfin::common::Variable::id)
+      .def("name", &dolfin::common::Variable::name)
+      .def("label", &dolfin::common::Variable::label)
+      .def("rename", &dolfin::common::Variable::rename)
+      .def_readwrite("parameters", &dolfin::common::Variable::parameters);
 
   // From dolfin/common/defines.h
   m.def("has_debug", &dolfin::has_debug);

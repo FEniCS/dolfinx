@@ -4,7 +4,6 @@ set(HEADERS
   CollisionPredicates.h
   ConvexTriangulation.h
   dolfin_geometry.h
-  GeometryDebugging.h
   GeometryPredicates.h
   intersect.h
   IntersectionConstruction.h
@@ -18,7 +17,6 @@ set(SOURCES
   BoundingBoxTree.cpp
   CollisionPredicates.cpp
   ConvexTriangulation.cpp
-  GeometryDebugging.cpp
   GeometryPredicates.cpp
   intersect.cpp
   IntersectionConstruction.cpp

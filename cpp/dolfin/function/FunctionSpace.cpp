@@ -21,7 +21,7 @@ using namespace dolfin;
 using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(std::shared_ptr<const Mesh> mesh,
+FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                              std::shared_ptr<const fem::FiniteElement> element,
                              std::shared_ptr<const fem::GenericDofMap> dofmap)
     : _mesh(mesh), _element(element), _dofmap(dofmap), _root_space_id(id())
@@ -29,7 +29,7 @@ FunctionSpace::FunctionSpace(std::shared_ptr<const Mesh> mesh,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(std::shared_ptr<const Mesh> mesh)
+FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh)
     : _mesh(mesh), _root_space_id(id())
 {
   // Do nothing
@@ -62,7 +62,7 @@ const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
   _component = V._component;
 
   // Call assignment operator for base class
-  Variable::operator=(V);
+  common::Variable::operator=(V);
 
   return *this;
 }
@@ -80,7 +80,7 @@ bool FunctionSpace::operator!=(const FunctionSpace& V) const
   return !(*this == V);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const Mesh> FunctionSpace::mesh() const { return _mesh; }
+std::shared_ptr<const mesh::Mesh> FunctionSpace::mesh() const { return _mesh; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const fem::FiniteElement> FunctionSpace::element() const
 {
@@ -98,8 +98,8 @@ std::int64_t FunctionSpace::dim() const
   return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate_from_any(PETScVector& expansion_coefficients,
-                                         const GenericFunction& v) const
+void FunctionSpace::interpolate_from_any(
+    la::PETScVector& expansion_coefficients, const GenericFunction& v) const
 {
   // Initialize local arrays
   std::vector<double> cell_coefficients(_dofmap->max_element_dofs());
@@ -107,7 +107,7 @@ void FunctionSpace::interpolate_from_any(PETScVector& expansion_coefficients,
   // Iterate over mesh and interpolate on each cell
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
-  for (auto& cell : MeshRange<mesh::Cell>(*_mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Update to current cell
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -127,7 +127,7 @@ void FunctionSpace::interpolate_from_any(PETScVector& expansion_coefficients,
   }
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(PETScVector& expansion_coefficients,
+void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
                                 const GenericFunction& v) const
 {
   dolfin_assert(_mesh);
@@ -137,7 +137,7 @@ void FunctionSpace::interpolate(PETScVector& expansion_coefficients,
   // Check that function ranks match
   if (_element->value_rank() != v.value_rank())
   {
-    dolfin_error(
+    log::dolfin_error(
         "FunctionSpace.cpp", "interpolate function into function space",
         "Rank of function (%d) does not match rank of function space (%d)",
         v.value_rank(), element()->value_rank());
@@ -148,7 +148,7 @@ void FunctionSpace::interpolate(PETScVector& expansion_coefficients,
   {
     if (_element->value_dimension(i) != v.value_dimension(i))
     {
-      dolfin_error("FunctionSpace.cpp",
+      log::dolfin_error("FunctionSpace.cpp",
                    "interpolate function into function space",
                    "Dimension %d of function (%d) does not match dimension %d "
                    "of function space (%d)",
@@ -159,7 +159,7 @@ void FunctionSpace::interpolate(PETScVector& expansion_coefficients,
   // Initialize vector of expansion coefficients
   if (expansion_coefficients.size() != _dofmap->global_dimension())
   {
-    dolfin_error("FunctionSpace.cpp",
+    log::dolfin_error("FunctionSpace.cpp",
                  "interpolate function into function space",
                  "Wrong size of vector");
   }
@@ -225,7 +225,7 @@ std::shared_ptr<FunctionSpace> FunctionSpace::collapse(
 
   if (_component.empty())
   {
-    dolfin_error("FunctionSpace.cpp", "collapse function space",
+    log::dolfin_error("FunctionSpace.cpp", "collapse function space",
                  "Function space is not a subspace");
   }
 
@@ -251,7 +251,7 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
 
   if (!_component.empty())
   {
-    dolfin_error(
+    log::dolfin_error(
         "FunctionSpace.cpp", "tabulate_dof_coordinates",
         "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
   }
@@ -268,7 +268,7 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
   // Loop over cells and tabulate dofs
   boost::multi_array<double, 2> coordinates;
   std::vector<double> coordinate_dofs;
-  for (auto& cell : MeshRange<mesh::Cell>(*_mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Update UFC cell
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -298,7 +298,7 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
   return x;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::set_x(PETScVector& x, double value,
+void FunctionSpace::set_x(la::PETScVector& x, double value,
                           std::size_t component) const
 {
   dolfin_assert(_mesh);
@@ -308,7 +308,7 @@ void FunctionSpace::set_x(PETScVector& x, double value,
   std::vector<double> x_values;
   boost::multi_array<double, 2> coordinates;
   std::vector<double> coordinate_dofs;
-  for (auto& cell : MeshRange<mesh::Cell>(*_mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Update UFC cell
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -350,7 +350,7 @@ std::string FunctionSpace::str(bool verbose) const
 void FunctionSpace::print_dofmap() const
 {
   dolfin_assert(_mesh);
-  for (auto& cell : MeshRange<mesh::Cell>(*_mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     auto dofs = _dofmap->cell_dofs(cell.index());
     std::cout << cell.index() << ":";

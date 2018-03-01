@@ -39,48 +39,51 @@ VTKFile::~VTKFile()
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void VTKFile::write(const Mesh& mesh) { write_mesh(mesh, counter); }
+void VTKFile::write(const mesh::Mesh& mesh) { write_mesh(mesh, counter); }
 //----------------------------------------------------------------------------
-void VTKFile::write(const MeshFunction<bool>& meshfunction)
+void VTKFile::write(const mesh::MeshFunction<bool>& meshfunction)
 {
   mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
-void VTKFile::write(const MeshFunction<std::size_t>& meshfunction)
+void VTKFile::write(const mesh::MeshFunction<std::size_t>& meshfunction)
 {
   mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
-void VTKFile::write(const MeshFunction<int>& meshfunction)
+void VTKFile::write(const mesh::MeshFunction<int>& meshfunction)
 {
   mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
-void VTKFile::write(const MeshFunction<double>& meshfunction)
+void VTKFile::write(const mesh::MeshFunction<double>& meshfunction)
 {
   mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
 void VTKFile::write(const function::Function& u) { write_function(u, counter); }
 //----------------------------------------------------------------------------
-void VTKFile::write(const Mesh& mesh, double time) { write_mesh(mesh, time); }
+void VTKFile::write(const mesh::Mesh& mesh, double time)
+{
+  write_mesh(mesh, time);
+}
 //----------------------------------------------------------------------------
-void VTKFile::write(const MeshFunction<int>& mf, double time)
+void VTKFile::write(const mesh::MeshFunction<int>& mf, double time)
 {
   mesh_function_write(mf, time);
 }
 //----------------------------------------------------------------------------
-void VTKFile::write(const MeshFunction<std::size_t>& mf, double time)
+void VTKFile::write(const mesh::MeshFunction<std::size_t>& mf, double time)
 {
   mesh_function_write(mf, time);
 }
 //----------------------------------------------------------------------------
-void VTKFile::write(const MeshFunction<double>& mf, double time)
+void VTKFile::write(const mesh::MeshFunction<double>& mf, double time)
 {
   mesh_function_write(mf, time);
 }
 //----------------------------------------------------------------------------
-void VTKFile::write(const MeshFunction<bool>& mf, double time)
+void VTKFile::write(const mesh::MeshFunction<bool>& mf, double time)
 {
   mesh_function_write(mf, time);
 }
@@ -93,7 +96,7 @@ void VTKFile::write(const function::Function& u, double time)
 void VTKFile::write_function(const function::Function& u, double time)
 {
   dolfin_assert(u.function_space()->mesh());
-  const Mesh& mesh = *u.function_space()->mesh();
+  const mesh::Mesh& mesh = *u.function_space()->mesh();
 
   // Get MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -121,11 +124,11 @@ void VTKFile::write_function(const function::Function& u, double time)
   // Finalise and write pvd files
   finalize(vtu_filename, time);
 
-  log(TRACE, "Saved function %s (%s) to file %s in VTK format.",
+  log::log(TRACE, "Saved function %s (%s) to file %s in VTK format.",
       u.name().c_str(), u.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
-void VTKFile::write_mesh(const Mesh& mesh, double time)
+void VTKFile::write_mesh(const mesh::Mesh& mesh, double time)
 {
   common::Timer t("Write mesh to PVD/VTK file");
 
@@ -152,11 +155,11 @@ void VTKFile::write_mesh(const Mesh& mesh, double time)
   // Finalise
   finalize(vtu_filename, time);
 
-  log(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
+  log::log(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
       mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
-std::string VTKFile::init(const Mesh& mesh, std::size_t cell_dim) const
+std::string VTKFile::init(const mesh::Mesh& mesh, std::size_t cell_dim) const
 {
   // Get MPI communicators
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -192,7 +195,7 @@ void VTKFile::results_write(const function::Function& u,
   const std::size_t rank = u.value_rank();
   if (rank > 2)
   {
-    dolfin_error(
+    log::dolfin_error(
         "VTKFile.cpp", "write data to VTK file",
         "Only scalar, vector and tensor functions can be saved in VTK format");
   }
@@ -205,7 +208,7 @@ void VTKFile::results_write(const function::Function& u,
   {
     if (!(dim == 2 || dim == 3))
     {
-      dolfin_error("VTKFile.cpp", "write data to VTK file",
+      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                    "Don't know how to handle vector function with dimension "
                    "other than 2 or 3");
     }
@@ -214,7 +217,7 @@ void VTKFile::results_write(const function::Function& u,
   {
     if (!(dim == 4 || dim == 9))
     {
-      dolfin_error("VTKFile.cpp", "write data to VTK file",
+      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                    "Don't know how to handle tensor function with dimension "
                    "other than 4 or 9");
     }
@@ -222,7 +225,7 @@ void VTKFile::results_write(const function::Function& u,
 
   // Test for cell-based element type
   dolfin_assert(u.function_space()->mesh());
-  const Mesh& mesh = *u.function_space()->mesh();
+  const mesh::Mesh& mesh = *u.function_space()->mesh();
   std::size_t cell_based_dim = 1;
   for (std::size_t i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
@@ -236,7 +239,8 @@ void VTKFile::results_write(const function::Function& u,
 }
 //----------------------------------------------------------------------------
 void VTKFile::write_point_data(const function::GenericFunction& u,
-                               const Mesh& mesh, std::string vtu_filename) const
+                               const mesh::Mesh& mesh,
+                               std::string vtu_filename) const
 {
   const std::size_t rank = u.value_rank();
   const std::size_t num_vertices = mesh.num_vertices();
@@ -283,7 +287,7 @@ void VTKFile::write_point_data(const function::GenericFunction& u,
   std::ostringstream ss;
   ss << std::scientific;
   ss << std::setprecision(16);
-  for (auto& vertex : MeshRange<Vertex>(mesh))
+  for (auto& vertex : mesh::MeshRange<mesh::Vertex>(mesh))
   {
     if (rank == 1 && dim == 2)
     {
@@ -336,7 +340,7 @@ void VTKFile::pvd_file_write(std::size_t step, double time, std::string fname)
     pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
     if (!result)
     {
-      dolfin_error("VTKFile.cpp", "write data to VTK file",
+      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                    "XML parsing error when reading from existing file");
     }
   }
@@ -360,7 +364,7 @@ void VTKFile::pvd_file_write(std::size_t step, double time, std::string fname)
 //----------------------------------------------------------------------------
 void VTKFile::pvtu_write_mesh(pugi::xml_node xml_node) const
 {
-  // Vertex data
+  // mesh::Vertex data
   pugi::xml_node vertex_data_node = xml_node.append_child("PPoints");
   pugi::xml_node data_node = vertex_data_node.append_child("PDataArray");
   data_node.append_attribute("type") = "Float64";
@@ -396,7 +400,7 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
   pugi::xml_node grid_node = vtk_node.append_child("PUnstructuredGrid");
   grid_node.append_attribute("GhostLevel") = 0;
 
-  // Mesh
+  // mesh::Mesh
   pvtu_write_mesh(grid_node);
 
   // Get type based on rank
@@ -412,7 +416,7 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
     rank_type = "Vectors";
     if (!(dim == 2 || dim == 3))
     {
-      dolfin_error("VTKFile.cpp", "write data to VTK file",
+      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                    "Don't know how to handle vector function with dimension "
                    "other than 2 or 3");
     }
@@ -423,7 +427,7 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
     rank_type = "Tensors";
     if (!(dim == 4 || dim == 9))
     {
-      dolfin_error("VTKFile.cpp", "write data to VTK file",
+      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                    "Don't know how to handle tensor function with dimension "
                    "other than 4 or 9");
     }
@@ -431,7 +435,7 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
   }
   else
   {
-    dolfin_error("VTKFile.cpp", "write data to VTK file",
+    log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                  "Cannot handle XML output of rank %d", rank);
   }
 
@@ -472,7 +476,7 @@ void VTKFile::pvtu_write_mesh(const std::string fname,
   pugi::xml_node grid_node = vtk_node.append_child("PUnstructuredGrid");
   grid_node.append_attribute("GhostLevel") = 0;
 
-  // Mesh
+  // mesh::Mesh
   pvtu_write_mesh(grid_node);
 
   // Write vtu file list
@@ -494,7 +498,7 @@ void VTKFile::pvtu_write(const function::Function& u,
   const std::size_t rank = u.function_space()->element()->value_rank();
   if (rank > 2)
   {
-    dolfin_error(
+    log::dolfin_error(
         "VTKFile.cpp", "write data to VTK file",
         "Only scalar, vector and tensor functions can be saved in VTK format");
   }
@@ -504,7 +508,7 @@ void VTKFile::pvtu_write(const function::Function& u,
 
   // Get mesh
   dolfin_assert(u.function_space()->mesh());
-  const Mesh& mesh = *(u.function_space()->mesh());
+  const mesh::Mesh& mesh = *(u.function_space()->mesh());
 
   // Test for cell-based element type
   std::string data_type = "point";
@@ -527,7 +531,7 @@ void VTKFile::vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
   file.precision(16);
   if (!file.is_open())
   {
-    dolfin_error("VTKFile.cpp", "write data to VTK file",
+    log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                  "Unable to open file \"%s\"", _filename.c_str());
   }
 
@@ -550,7 +554,7 @@ void VTKFile::vtk_header_close(std::string vtu_filename) const
   file.precision(16);
   if (!file.is_open())
   {
-    dolfin_error("VTKFile.cpp", "write data to VTK file",
+    log::dolfin_error("VTKFile.cpp", "write data to VTK file",
                  "Unable to open file \"%s\"", _filename.c_str());
   }
 
@@ -593,7 +597,7 @@ std::string VTKFile::vtu_name(const int process, const int num_processes,
 template <typename T>
 void VTKFile::mesh_function_write(T& meshfunction, double time)
 {
-  const Mesh& mesh = *meshfunction.mesh();
+  const mesh::Mesh& mesh = *meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
   // Update vtu file name and clear file
@@ -610,7 +614,7 @@ void VTKFile::mesh_function_write(T& meshfunction, double time)
      << "\"  format=\"ascii\">";
 
   // Write data
-  for (auto& cell : MeshRange<MeshEntity>(mesh, cell_dim))
+  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
     fp << meshfunction[cell.index()] << " ";
 
   // Write footers
@@ -636,7 +640,7 @@ void VTKFile::mesh_function_write(T& meshfunction, double time)
   // Write pvd files
   finalize(vtu_filename, time);
 
-  log(TRACE, "Saved mesh function %s (%s) to file %s in VTK format.",
+  log::log(TRACE, "Saved mesh function %s (%s) to file %s in VTK format.",
       mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
@@ -646,7 +650,7 @@ void VTKFile::clear_file(std::string file) const
   std::ofstream _file(file.c_str(), std::ios::trunc);
   if (!_file.is_open())
   {
-    dolfin_error("VTKFile.cpp", "clear VTK file", "Unable to open file \"%s\"",
+    log::dolfin_error("VTKFile.cpp", "clear VTK file", "Unable to open file \"%s\"",
                  file.c_str());
   }
   _file.close();

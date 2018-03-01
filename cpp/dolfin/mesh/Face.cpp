@@ -44,7 +44,7 @@ double Face::area() const
   }
 }
 //-----------------------------------------------------------------------------
-Point Face::normal() const
+geometry::Point Face::normal() const
 {
   dolfin_assert(_mesh);
   dolfin_assert(_mesh->ordered());
@@ -56,7 +56,7 @@ Point Face::normal() const
   // in R^2
   if (tD == 2 && gD == 2)
   {
-    dolfin_error("Face.cpp", "compute Face normal",
+    log::dolfin_error("Face.cpp", "compute Face normal",
                  "Don't know how to compute Face normal for a Face in a 2D "
                  "mesh embedded in R^2.");
   }

@@ -11,11 +11,9 @@
 
 namespace dolfin
 {
-
-class PETScVector;
-
 namespace la
 {
+class PETScVector;
 
 /// This class defines a basis for vector spaces, typically used for
 /// expressing nullspaces of singular operators and 'near

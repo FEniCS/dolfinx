@@ -17,7 +17,8 @@
 #include <string>
 
 // Temporary fix for PETSc master
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 8 && PETSC_VERSION_SUBMINOR >= 3 && PETSC_VERSION_RELEASE == 0
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 8                       \
+    && PETSC_VERSION_SUBMINOR >= 3 && PETSC_VERSION_RELEASE == 0
 #define MatSolverPackage MatSolverType
 #define PCFactorSetMatSolverPackage PCFactorSetMatSolverType
 #define PCFactorGetMatSolverPackage PCFactorGetMatSolverType
@@ -25,7 +26,8 @@
 
 namespace dolfin
 {
-/// Forward declarations
+namespace la
+{
 class PETScLinearOperator;
 class PETScMatrix;
 class PETScVector;
@@ -101,5 +103,5 @@ private:
   PETScKrylovSolver _solver;
 };
 }
-
+}
 #endif

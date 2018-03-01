@@ -10,6 +10,7 @@
 #include <sstream>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 MeshConnectivity::MeshConnectivity(std::size_t d0, std::size_t d1)

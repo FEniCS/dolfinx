@@ -4,21 +4,20 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "ConvexTriangulation.h"
+#include "CGALExactArithmetic.h"
+#include "CollisionPredicates.h"
+#include "GeometryPredicates.h"
+#include "GeometryTools.h"
+#include "IntersectionConstruction.h"
+#include "predicates.h"
 #include <algorithm>
 #include <dolfin/common/constants.h>
 #include <set>
 #include <tuple>
 
-#include "CollisionPredicates.h"
-#include "ConvexTriangulation.h"
-#include "GeometryPredicates.h"
-#include "GeometryTools.h"
-#include "IntersectionConstruction.h"
-#include "predicates.h"
-
-#include "CGALExactArithmetic.h"
-
 using namespace dolfin;
+using namespace dolfin::geometry;
 
 //-----------------------------------------------------------------------------
 namespace
@@ -26,10 +25,11 @@ namespace
 //-----------------------------------------------------------------------------
 // Create a unique list of points in the sense that |p-q| > tol in each
 // dimension
-std::vector<Point> unique_points(const std::vector<Point>& input_points,
-                                 std::size_t gdim, double tol)
+std::vector<geometry::Point>
+unique_points(const std::vector<geometry::Point>& input_points,
+              std::size_t gdim, double tol)
 {
-  std::vector<Point> points;
+  std::vector<geometry::Point> points;
 
   for (std::size_t i = 0; i < input_points.size(); ++i)
   {
@@ -59,7 +59,7 @@ std::vector<Point> unique_points(const std::vector<Point>& input_points,
 }
 //------------------------------------------------------------------------------
 // Check if q lies between p0 and p1. p0, p1 and q are assumed to be colinear
-bool is_between(Point p0, Point p1, Point q)
+bool is_between(geometry::Point p0, geometry::Point p1, geometry::Point q)
 {
   const double sqnorm = (p1 - p0).dot(p1 - p0);
   return (p0 - q).dot(p0 - q) < sqnorm && (p1 - q).dot(p1 - q) < sqnorm;
@@ -68,10 +68,11 @@ bool is_between(Point p0, Point p1, Point q)
 // Return the indices to the points that forms the polygon that is
 // the convex hull of the points. The points are assumed to be coplanar
 std::vector<std::pair<std::size_t, std::size_t>>
-compute_convex_hull_planar(const std::vector<Point>& points)
+compute_convex_hull_planar(const std::vector<geometry::Point>& points)
 {
   // FIXME: Ensure that 0, 1, 2 are not colinear
-  Point normal = GeometryTools::cross_product(points[0], points[1], points[2]);
+  geometry::Point normal
+      = GeometryTools::cross_product(points[0], points[1], points[2]);
   normal /= normal.norm();
 
   std::vector<std::pair<std::size_t, std::size_t>> edges;
@@ -83,7 +84,7 @@ compute_convex_hull_planar(const std::vector<Point>& points)
     for (std::size_t j = i + 1; j < points.size(); j++)
     {
       // Form at plane of i, j  and i + the normal of plane
-      const Point r = points[i] + normal;
+      const geometry::Point r = points[i] + normal;
 
       // search for the first point which is not in the
       // i, j, p plane to determine sign of orietation
@@ -176,7 +177,7 @@ ConvexTriangulation::triangulate(const std::vector<Point>& p, std::size_t gdim,
     return triangulate_graham_scan_3d(p);
   }
 
-  dolfin_error("ConvexTriangulation.cpp", "triangulate convex polyhedron",
+  log::dolfin_error("ConvexTriangulation.cpp", "triangulate convex polyhedron",
                "Triangulation of polyhedron of topological dimension %u and "
                "geometric dimension %u not implemented",
                tdim, gdim);
@@ -195,7 +196,7 @@ ConvexTriangulation::_triangulate_1d(const std::vector<Point>& p,
 
   if (gdim != 2)
   {
-    dolfin_error("ConvexTriangulation.cpp", "triangulate topological 1d",
+    log::dolfin_error("ConvexTriangulation.cpp", "triangulate topological 1d",
                  "Function is only implemented for gdim = 2");
   }
 
@@ -225,7 +226,7 @@ ConvexTriangulation::_triangulate_1d(const std::vector<Point>& p,
     std::vector<std::vector<Point>> t = {{average}};
     return t;
 
-    dolfin_error("ConvexTriangulation.cpp", "triangulate convex polyhedron",
+    log::dolfin_error("ConvexTriangulation.cpp", "triangulate convex polyhedron",
                  "A convex polyhedron of topological dimension 1 can not have "
                  "more than 2 points");
   }
@@ -401,7 +402,7 @@ ConvexTriangulation::_triangulate_graham_scan_3d(
 
 #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
                 if (cgal_tet_is_degenerate(cand))
-                  dolfin_error("ConvexTriangulation.cpp",
+                  log::dolfin_error("ConvexTriangulation.cpp",
                                "triangulation 3d points", "tet is degenerate");
 
 #endif
@@ -447,14 +448,14 @@ ConvexTriangulation::_triangulate_graham_scan_3d(
 #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
                   if (cgal_tet_is_degenerate(triangulation.back()))
                   {
-                    dolfin_error("ConvexTriangulation.cpp:544",
+                    log::dolfin_error("ConvexTriangulation.cpp:544",
                                  "triangulation 3d points",
                                  "tet is degenerate");
                   }
 
                   if (cgal_triangulation_overlap(triangulation))
                   {
-                    dolfin_error("ConvexTriangulation.cpp:544",
+                    log::dolfin_error("ConvexTriangulation.cpp:544",
                                  "triangulation 3d points",
                                  "now triangulation overlaps");
                   }
@@ -496,12 +497,12 @@ ConvexTriangulation::triangulate_graham_scan_3d(const std::vector<Point>& pm)
 #ifdef DOLFIN_ENABLE_GEOMETRY_DEBUGGING
 
   if (cgal_triangulation_has_degenerate(triangulation))
-    dolfin_error("ConvexTriangulation.cpp", "verify convex triangulation",
+    log::dolfin_error("ConvexTriangulation.cpp", "verify convex triangulation",
                  "triangulation contains degenerate tetrahedron");
 
   if (cgal_triangulation_overlap(triangulation))
   {
-    dolfin_error("ConvexTriangulation.cpp", "verify convex triangulation",
+    log::dolfin_error("ConvexTriangulation.cpp", "verify convex triangulation",
                  "tetrahedrons overlap");
   }
 
@@ -517,7 +518,7 @@ ConvexTriangulation::triangulate_graham_scan_3d(const std::vector<Point>& pm)
   const double reference_volume = cgal_polyhedron_volume(pm);
 
   if (std::abs(volume - reference_volume) > DOLFIN_EPS)
-    dolfin_error("ConvexTriangulation.cpp", "verifying convex triangulation",
+    log::dolfin_error("ConvexTriangulation.cpp", "verifying convex triangulation",
                  "computed volume %f, but reference volume is %f", volume,
                  reference_volume);
 

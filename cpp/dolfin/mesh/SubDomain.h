@@ -15,16 +15,13 @@
 
 namespace dolfin
 {
-
-// Forward declarations
+namespace mesh
+{
 class Mesh;
 template <typename T>
 class MeshFunction;
 template <typename T>
 class MeshValueCollection;
-
-namespace mesh
-{
 
 /// This class defines the interface for definition of subdomains.
 /// Alternatively, subdomains may be defined by a _Mesh_ and a

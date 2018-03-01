@@ -19,12 +19,11 @@ namespace dolfin
 {
 
 class PETScVector;
-class SparsityPattern;
 
 namespace la
 {
+class SparsityPattern;
 class VectorSpaceBasis;
-}
 
 /// This class provides a simple matrix class based on PETSc.
 /// It is a wrapper for a PETSc matrix pointer (Mat)
@@ -34,7 +33,7 @@ class VectorSpaceBasis;
 /// access the PETSc Mat pointer using the function mat() and
 /// use the standard PETSc interface.
 
-class PETScMatrix : public la::PETScBaseMatrix
+class PETScMatrix : public PETScBaseMatrix
 {
 public:
   /// Create empty matrix
@@ -212,5 +211,5 @@ private:
   static const std::map<std::string, NormType> norm_types;
 };
 }
-
+}
 #endif

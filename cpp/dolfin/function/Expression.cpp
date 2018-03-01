@@ -44,7 +44,7 @@ void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
 void Expression::eval(Eigen::Ref<Eigen::VectorXd> values,
                       Eigen::Ref<const Eigen::VectorXd> x) const
 {
-  dolfin_error("Expression.cpp", "evaluate expression",
+  log::dolfin_error("Expression.cpp", "evaluate expression",
                "Missing eval() function (must be overloaded)");
 }
 //-----------------------------------------------------------------------------
@@ -54,7 +54,7 @@ std::size_t Expression::value_dimension(std::size_t i) const
 {
   if (i >= _value_shape.size())
   {
-    dolfin_error("Expression.cpp", "evaluate expression",
+    log::dolfin_error("Expression.cpp", "evaluate expression",
                  "Illegal axis %d for value dimension for value of rank %d", i,
                  _value_shape.size());
   }
@@ -68,13 +68,13 @@ std::vector<std::size_t> Expression::value_shape() const
 //-----------------------------------------------------------------------------
 void Expression::set_property(std::string name, double value)
 {
-  dolfin_error("Expression.cpp", "set property",
+  log::dolfin_error("Expression.cpp", "set property",
                "This method should be overloaded in the derived class");
 }
 //-----------------------------------------------------------------------------
 double Expression::get_property(std::string name) const
 {
-  dolfin_error("Expression.cpp", "get property",
+  log::dolfin_error("Expression.cpp", "get property",
                "This method should be overloaded in the derived class");
   return 0.0;
 }
@@ -82,14 +82,14 @@ double Expression::get_property(std::string name) const
 void Expression::set_generic_function(std::string name,
                                       std::shared_ptr<GenericFunction>)
 {
-  dolfin_error("Expression.cpp", "set property",
+  log::dolfin_error("Expression.cpp", "set property",
                "This method should be overloaded in the derived class");
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericFunction>
 Expression::get_generic_function(std::string name) const
 {
-  dolfin_error("Expression.cpp", "get property",
+  log::dolfin_error("Expression.cpp", "get property",
                "This method should be overloaded in the derived class");
   return std::shared_ptr<GenericFunction>();
 }
@@ -132,7 +132,7 @@ void Expression::restrict(double* w, const fem::FiniteElement& element,
 }
 //-----------------------------------------------------------------------------
 void Expression::compute_vertex_values(std::vector<double>& vertex_values,
-                                       const Mesh& mesh) const
+                                       const mesh::Mesh& mesh) const
 {
   // Local data for vertex values
   const std::size_t size = value_size();
@@ -142,10 +142,10 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
   vertex_values.resize(size * mesh.num_vertices());
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
-  for (auto& cell : MeshRange<mesh::Cell>(mesh, MeshRangeType::ALL))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Iterate over cell vertices
-    for (auto& vertex : EntityRange<Vertex>(cell))
+    for (auto& vertex : mesh::EntityRange<mesh::Vertex>(cell))
     {
       // Wrap coordinate data
       Eigen::Map<const Eigen::VectorXd> x(vertex.x(), mesh.geometry().dim());

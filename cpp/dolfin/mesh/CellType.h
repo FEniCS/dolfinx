@@ -13,16 +13,17 @@
 
 namespace dolfin
 {
-
-class MeshEntity;
-template <typename T>
-class MeshFunction;
+namespace geometry
+{
 class Point;
+}
 
 namespace mesh
 {
-
 class Cell;
+class MeshEntity;
+template <typename T>
+class MeshFunction;
 
 /// This class provides a common interface for different cell types.
 /// Each cell type implements mesh functionality that is specific to
@@ -107,17 +108,17 @@ public:
 
   /// Compute squared distance to given point
   virtual double squared_distance(const Cell& cell,
-                                  const Point& point) const = 0;
+                                  const geometry::Point& point) const = 0;
 
   /// Compute component i of normal of given facet with respect to the cell
   virtual double normal(const Cell& cell, std::size_t facet,
                         std::size_t i) const = 0;
 
   /// Compute of given facet with respect to the cell
-  virtual Point normal(const Cell& cell, std::size_t facet) const = 0;
+  virtual geometry::Point normal(const Cell& cell, std::size_t facet) const = 0;
 
   /// Compute normal to given cell (viewed as embedded in 3D)
-  virtual Point cell_normal(const Cell& cell) const = 0;
+  virtual geometry::Point cell_normal(const Cell& cell) const = 0;
 
   /// Compute the area/length of given facet with respect to the cell
   virtual double facet_area(const Cell& cell, std::size_t facet) const = 0;
@@ -133,12 +134,6 @@ public:
   bool ordered(
       const Cell& cell,
       const std::vector<std::int64_t>& local_to_global_vertex_indices) const;
-
-  /// Check whether given point collides with cell
-  virtual bool collides(const Cell& cell, const Point& point) const = 0;
-
-  /// Check whether given entity collides with cell
-  virtual bool collides(const Cell& cell, const MeshEntity& entity) const = 0;
 
   /// Return description of cell type
   virtual std::string description(bool plural) const = 0;

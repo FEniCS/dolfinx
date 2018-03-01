@@ -22,9 +22,9 @@ using namespace dolfin::fem;
 void LocalAssembler::assemble(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
     UFC& ufc, const std::vector<double>& coordinate_dofs, ufc::cell& ufc_cell,
-    const mesh::Cell& cell, const MeshFunction<std::size_t>* cell_domains,
-    const MeshFunction<std::size_t>* exterior_facet_domains,
-    const MeshFunction<std::size_t>* interior_facet_domains)
+    const mesh::Cell& cell, const mesh::MeshFunction<std::size_t>* cell_domains,
+    const mesh::MeshFunction<std::size_t>* exterior_facet_domains,
+    const mesh::MeshFunction<std::size_t>* interior_facet_domains)
 {
   cell.get_cell_data(ufc_cell);
 
@@ -36,7 +36,7 @@ void LocalAssembler::assemble(
       or ufc.dolfin_form.integrals().num_interior_facet_integrals() > 0)
   {
     unsigned int local_facet = 0;
-    for (auto& facet : EntityRange<Facet>(cell))
+    for (auto& facet : mesh::EntityRange<mesh::Facet>(cell))
     {
       ufc_cell.local_facet = local_facet;
       const int Ncells = facet.num_entities(cell.dim());
@@ -53,7 +53,7 @@ void LocalAssembler::assemble(
       }
       else
       {
-        dolfin_error("LocalAssembler.cpp", "assemble local problem",
+        log::dolfin_error("LocalAssembler.cpp", "assemble local problem",
                      "Cell <-> facet connectivity not initialized, found "
                      "facet with %d connected cells. Expected 1 or 2 cells",
                      Ncells);
@@ -65,7 +65,7 @@ void LocalAssembler::assemble(
   // Check that there are no vertex integrals
   if (ufc.dolfin_form.integrals().num_vertex_integrals() > 0)
   {
-    dolfin_error("LocalAssembler.cpp", "assemble local problem",
+    log::dolfin_error("LocalAssembler.cpp", "assemble local problem",
                  "Local problem contains vertex integrals which are not yet "
                  "supported by LocalAssembler");
   }
@@ -75,7 +75,7 @@ void LocalAssembler::assemble_cell(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
     UFC& ufc, const std::vector<double>& coordinate_dofs,
     const ufc::cell& ufc_cell, const mesh::Cell& cell,
-    const MeshFunction<std::size_t>* cell_domains)
+    const mesh::MeshFunction<std::size_t>* cell_domains)
 {
   // Skip if there are no cell integrals
   if (ufc.dolfin_form.integrals().num_cell_integrals() == 0)
@@ -115,9 +115,9 @@ void LocalAssembler::assemble_cell(
 void LocalAssembler::assemble_exterior_facet(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
     UFC& ufc, const std::vector<double>& coordinate_dofs,
-    const ufc::cell& ufc_cell, const mesh::Cell& cell, const Facet& facet,
+    const ufc::cell& ufc_cell, const mesh::Cell& cell, const mesh::Facet& facet,
     const std::size_t local_facet,
-    const MeshFunction<std::size_t>* exterior_facet_domains)
+    const mesh::MeshFunction<std::size_t>* exterior_facet_domains)
 {
   // Skip if there are no exterior facet integrals
   if (ufc.dolfin_form.integrals().num_exterior_facet_integrals() == 0)
@@ -157,10 +157,10 @@ void LocalAssembler::assemble_exterior_facet(
 void LocalAssembler::assemble_interior_facet(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
     UFC& ufc, const std::vector<double>& coordinate_dofs,
-    const ufc::cell& ufc_cell, const mesh::Cell& cell, const Facet& facet,
+    const ufc::cell& ufc_cell, const mesh::Cell& cell, const mesh::Facet& facet,
     const std::size_t local_facet,
-    const MeshFunction<std::size_t>* interior_facet_domains,
-    const MeshFunction<std::size_t>* cell_domains)
+    const mesh::MeshFunction<std::size_t>* interior_facet_domains,
+    const mesh::MeshFunction<std::size_t>* cell_domains)
 {
   // Skip if there are no interior facet integrals
   if (ufc.dolfin_form.integrals().num_interior_facet_integrals() == 0)
@@ -181,7 +181,7 @@ void LocalAssembler::assemble_interior_facet(
     return;
 
   // Extract mesh
-  const Mesh& mesh = cell.mesh();
+  const mesh::Mesh& mesh = cell.mesh();
   const std::size_t D = mesh.topology().dim();
 
   // Get cells incident with facet (which is 0 and 1 here is

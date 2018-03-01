@@ -19,6 +19,8 @@
 
 namespace dolfin
 {
+namespace mesh
+{
 // Developer note: MeshFunction and MeshValueCollection cannot
 // appear in the implementations that appear in this file of the
 // templated functions as this leads to a circular
@@ -30,11 +32,8 @@ class MeshFunction;
 template <typename T>
 class MeshValueCollection;
 class LocalMeshData;
-
-namespace mesh
-{
 class CellType;
-}
+
 /// This class partitions and distributes a mesh based on
 /// partitioned local mesh data.The local mesh data will also be
 /// repartitioned and redistributed during the computation of the
@@ -173,4 +172,5 @@ private:
       const std::map<std::int64_t, std::int32_t>&
           vertex_global_to_local_indices);
 };
+}
 }

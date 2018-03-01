@@ -37,10 +37,10 @@ Form::Form(
 
     if (element->signature() != function_spaces[i]->element()->signature())
     {
-      log(ERROR, "Expected element: %s", element->signature());
-      log(ERROR, "Input element:    %s",
+      log::log(ERROR, "Expected element: %s", element->signature());
+      log::log(ERROR, "Input element:    %s",
           function_spaces[i]->element()->signature().c_str());
-      dolfin_error("Form.cpp", "create form",
+      log::dolfin_error("Form.cpp", "create form",
                    "Wrong type of function space for argument %d", i);
     }
   }
@@ -75,13 +75,13 @@ std::size_t Form::max_element_tensor_size() const
   return num_entries;
 }
 //-----------------------------------------------------------------------------
-void Form::set_mesh(std::shared_ptr<const Mesh> mesh)
+void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
 {
   dolfin_assert(mesh);
   _mesh = mesh;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const Mesh> Form::mesh() const
+std::shared_ptr<const mesh::Mesh> Form::mesh() const
 {
   dolfin_assert(_mesh);
   return _mesh;
@@ -100,48 +100,52 @@ Form::function_spaces() const
   return _function_spaces;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const MeshFunction<std::size_t>> Form::cell_domains() const
+std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+Form::cell_domains() const
 {
   return dx;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const MeshFunction<std::size_t>>
+std::shared_ptr<const mesh::MeshFunction<std::size_t>>
 Form::exterior_facet_domains() const
 {
   return ds;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const MeshFunction<std::size_t>>
+std::shared_ptr<const mesh::MeshFunction<std::size_t>>
 Form::interior_facet_domains() const
 {
   return dS;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const MeshFunction<std::size_t>> Form::vertex_domains() const
+std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+Form::vertex_domains() const
 {
   return dP;
 }
 //-----------------------------------------------------------------------------
 void Form::set_cell_domains(
-    std::shared_ptr<const MeshFunction<std::size_t>> cell_domains)
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains)
 {
   dx = cell_domains;
 }
 //-----------------------------------------------------------------------------
 void Form::set_exterior_facet_domains(
-    std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains)
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+        exterior_facet_domains)
 {
   ds = exterior_facet_domains;
 }
 //-----------------------------------------------------------------------------
 void Form::set_interior_facet_domains(
-    std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains)
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+        interior_facet_domains)
 {
   dS = interior_facet_domains;
 }
 //-----------------------------------------------------------------------------
 void Form::set_vertex_domains(
-    std::shared_ptr<const MeshFunction<std::size_t>> vertex_domains)
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>> vertex_domains)
 {
   dP = vertex_domains;
 }

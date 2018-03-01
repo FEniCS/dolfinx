@@ -30,7 +30,7 @@ TEST_CASE("parameters io", "[test_parameter_io]")
       return;
 
     // Create some parameters
-    Parameters p0("test");
+    parameter::Parameters p0("test");
     p0.add("filename", "foo.txt");
     p0.add("maxiter", 100);
     p0.add("tolerance", 0.001);
@@ -43,14 +43,14 @@ TEST_CASE("parameters io", "[test_parameter_io]")
       return;
 
     // Create some nested parameters
-    Parameters p0("test");
-    Parameters p00("sub0");
+    parameter::Parameters p0("test");
+    parameter::Parameters p00("sub0");
     p00.add("filename", "foo.txt");
     p00.add("maxiter", 100);
     p00.add("tolerance", 0.001);
     p00.add("monitor_convergence", true);
     p0.add("foo", "bar");
-    Parameters p01(p00);
+    parameter::Parameters p01(p00);
     p01.rename("sub1");
     p0.add(p00);
     p0.add(p01);

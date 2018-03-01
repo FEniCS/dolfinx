@@ -14,10 +14,6 @@
 
 namespace dolfin
 {
-
-class Mesh;
-class Point;
-
 namespace fem
 {
 class FiniteElement;
@@ -25,6 +21,7 @@ class FiniteElement;
 
 namespace mesh
 {
+class Mesh;
 class Cell;
 }
 
@@ -44,7 +41,7 @@ class FunctionSpace;
 /// Sub-classes may optionally implement the update() function that
 /// will be called prior to restriction when running in parallel.
 
-class GenericFunction : public Variable
+class GenericFunction : public common::Variable
 {
 public:
   /// Constructor
@@ -81,7 +78,7 @@ public:
 
   /// Compute values at all mesh vertices
   virtual void compute_vertex_values(std::vector<double>& vertex_values,
-                                     const Mesh& mesh) const = 0;
+                                     const mesh::Mesh& mesh) const = 0;
 
   //--- Optional functions to be implemented by sub-classes ---
 

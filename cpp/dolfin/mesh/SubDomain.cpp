@@ -33,7 +33,7 @@ SubDomain::~SubDomain()
 Eigen::Matrix<bool, Eigen::Dynamic, 1>
 SubDomain::inside(Eigen::Ref<const EigenRowMatrixXd> x, bool on_boundary) const
 {
-  dolfin_error("SubDomain.cpp", "check whether point is inside subdomain",
+  log::dolfin_error("SubDomain.cpp", "check whether point is inside subdomain",
                "Function inside() not implemented by user");
   return Eigen::Matrix<bool, 0, 1>();
 }
@@ -41,7 +41,7 @@ SubDomain::inside(Eigen::Ref<const EigenRowMatrixXd> x, bool on_boundary) const
 void SubDomain::map(Eigen::Ref<const Eigen::VectorXd> x,
                     Eigen::Ref<Eigen::VectorXd> y) const
 {
-  dolfin_error("SubDomain.cpp", "map points within subdomain",
+  log::dolfin_error("SubDomain.cpp", "map points within subdomain",
                "Function map() not implemented by user. (Required for periodic "
                "boundary conditions)");
 }
@@ -101,7 +101,7 @@ std::size_t SubDomain::geometric_dimension() const
   // Check that dim has been set
   if (_geometric_dimension == 0)
   {
-    dolfin_error("SubDomain.cpp", "get geometric dimension",
+    log::dolfin_error("SubDomain.cpp", "get geometric dimension",
                  "Dimension of subdomain has not been specified");
   }
 
@@ -112,7 +112,7 @@ template <typename S, typename T>
 void SubDomain::apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh,
                               bool check_midpoint) const
 {
-  log(TRACE, "Computing sub domain markers for sub domain %d.", sub_domain);
+  log::log(TRACE, "Computing sub domain markers for sub domain %d.", sub_domain);
 
   // Get the dimension of the entities we are marking
   const std::size_t dim = sub_domains.dim();
@@ -215,7 +215,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
   // FIXME: This function can probably be folded into the above
   //        function operator[] in std::map and MeshFunction.
 
-  log(TRACE, "Computing sub domain markers for sub domain %d.", sub_domain);
+  log::log(TRACE, "Computing sub domain markers for sub domain %d.", sub_domain);
 
   // Compute connectivities for boundary detection, if necessary
   const std::size_t D = mesh.topology().dim();
@@ -311,13 +311,13 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
 //-----------------------------------------------------------------------------
 void SubDomain::set_property(std::string name, double value)
 {
-  dolfin_error("SubDomain.cpp", "set parameter",
+  log::dolfin_error("SubDomain.cpp", "set parameter",
                "This method should be overloaded in the derived class");
 }
 //-----------------------------------------------------------------------------
 double SubDomain::get_property(std::string name) const
 {
-  dolfin_error("SubDomain.cpp", "get parameter",
+  log::dolfin_error("SubDomain.cpp", "get parameter",
                "This method should be overloaded in the derived class");
   return 0.0;
 }

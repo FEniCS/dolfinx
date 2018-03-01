@@ -18,10 +18,6 @@
 
 namespace dolfin
 {
-
-// Forward declarations
-class Mesh;
-
 namespace fem
 {
 class GenericDofMap;
@@ -30,6 +26,7 @@ class GenericDofMap;
 namespace mesh
 {
 class CellType;
+class Mesh;
 }
 
 namespace graph
@@ -42,15 +39,16 @@ class GraphBuilder
 
 public:
   /// Build local graph from dofmap
-  static Graph local_graph(const Mesh& mesh, const fem::GenericDofMap& dofmap0,
+  static Graph local_graph(const mesh::Mesh& mesh,
+                           const fem::GenericDofMap& dofmap0,
                            const fem::GenericDofMap& dofmap1);
 
   /// Build local graph from mesh (general version)
-  static Graph local_graph(const Mesh& mesh,
+  static Graph local_graph(const mesh::Mesh& mesh,
                            const std::vector<std::size_t>& coloring_type);
 
   /// Build local graph (specialized version)
-  static Graph local_graph(const Mesh& mesh, std::size_t dim0,
+  static Graph local_graph(const mesh::Mesh& mesh, std::size_t dim0,
                            std::size_t dim1);
 
   /// Build distributed dual graph (cell-cell connections) from
@@ -65,7 +63,7 @@ public:
                      std::set<std::int64_t>& ghost_vertices);
 
 private:
-  friend class dolfin::MeshPartitioning;
+  friend class mesh::MeshPartitioning;
 
   typedef std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>
       FacetCellMap;

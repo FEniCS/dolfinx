@@ -16,13 +16,10 @@
 
 namespace dolfin
 {
-
-class Mesh;
-
 namespace mesh
 {
 class Cell;
-}
+class Mesh;
 
 /// The class provides functions to quantify mesh quality
 
@@ -83,4 +80,5 @@ public:
   dihedral_angles_matplotlib_histogram(const Mesh& mesh,
                                        std::size_t num_intervals = 100);
 };
+}
 }

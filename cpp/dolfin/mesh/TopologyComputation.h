@@ -12,6 +12,8 @@
 namespace dolfin
 {
 
+namespace mesh
+{
 class Mesh;
 
 /// This class implements a set of basic algorithms that automate
@@ -52,4 +54,5 @@ private:
   // Direct lookup of entity from vertices in a map
   static void compute_from_map(Mesh& mesh, std::size_t d0, std::size_t d1);
 };
+}
 }

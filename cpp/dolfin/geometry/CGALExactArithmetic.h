@@ -29,6 +29,9 @@
 // Check that results from DOLFIN and CGAL match
 namespace dolfin
 {
+namespace geometry
+{
+
 //---------------------------------------------------------------------------
 // Functions to compare results between DOLFIN and CGAL
 //---------------------------------------------------------------------------
@@ -44,7 +47,7 @@ inline bool check_cgal(bool result_dolfin, bool result_cgal,
     s_cgal << result_cgal;
 
     // Issue error
-    dolfin_error(
+    log::dolfin_error(
         "CGALExactArithmetic.h", "verify geometric predicate with exact types",
         "Error in predicate %s\n DOLFIN: %s\n CGAL: %s", function.c_str(),
         s_dolfin.str().c_str(), s_cgal.str().c_str());
@@ -60,7 +63,7 @@ cgal_intersection_check(const std::vector<Point>& dolfin_result,
 {
   if (dolfin_result.size() != cgal_result.size())
   {
-    dolfin_error("CGALExactArithmetic.h", "verify intersection",
+    log::dolfin_error("CGALExactArithmetic.h", "verify intersection",
                  "size of point set differs (%d vs %d)", dolfin_result.size(),
                  cgal_result.size());
   }
@@ -78,7 +81,7 @@ cgal_intersection_check(const std::vector<Point>& dolfin_result,
     }
 
     if (!found)
-      dolfin_error(
+      log::dolfin_error(
           "CGALExactArithmetic.h", "verify intersection construction result",
           "Point (%f, %f, %f) in dolfin result not found in cgal result", p1[0],
           p1[1], p1[2]);
@@ -318,7 +321,7 @@ inline std::vector<std::vector<dolfin::Point>>
 triangulate_polygon_3d(const std::vector<dolfin::Point>& points)
 {
   // FIXME
-  dolfin::dolfin_error("CGALExactArithmetic.h", "triangulate_polygon_3d",
+  dolfin::log::dolfin_error("CGALExactArithmetic.h", "triangulate_polygon_3d",
                        "Not implemented");
   return std::vector<std::vector<dolfin::Point>>();
 }
@@ -515,7 +518,7 @@ inline std::vector<Point> cgal_intersection_segment_segment_2d(const Point& p0,
     }
     else
     {
-      dolfin_error("CGALExactArithmetic.h",
+      log::dolfin_error("CGALExactArithmetic.h",
                    "cgal_intersection_segment_segment_2d",
                    "Unexpected behavior");
     }
@@ -547,7 +550,7 @@ inline std::vector<Point> cgal_intersection_segment_segment_3d(const Point& p0,
     }
     else
     {
-      dolfin_error("CGALExactArithmetic.h",
+      log::dolfin_error("CGALExactArithmetic.h",
                    "cgal_intersection_segment_segment_3d",
                    "Unexpected behavior");
     }
@@ -596,7 +599,7 @@ inline std::vector<Point> cgal_intersection_triangle_segment_2d(const Point& p0,
     }
     else
     {
-      dolfin_error("CGALExactArithmetic.h",
+      log::dolfin_error("CGALExactArithmetic.h",
                    "cgal_intersection_triangle_segment_2d",
                    "Unexpected behavior");
     }
@@ -625,7 +628,7 @@ inline std::vector<Point> cgal_intersection_triangle_segment_3d(const Point& p0,
       return convert_from_cgal(*s);
     else
     {
-      dolfin_error("CGALExactArithmetic.h",
+      log::dolfin_error("CGALExactArithmetic.h",
                    "cgal_intersection_triangle_segment_3d",
                    "Unexpected behavior");
     }
@@ -689,7 +692,7 @@ cgal_intersection_triangle_triangle_2d(const Point& p0, const Point& p1,
     }
     else
     {
-      dolfin_error("CGALExactArithmetic.h",
+      log::dolfin_error("CGALExactArithmetic.h",
                    "cgal_intersection_triangle_triangle_2d",
                    "Unexpected behavior");
     }
@@ -697,7 +700,7 @@ cgal_intersection_triangle_triangle_2d(const Point& p0, const Point& p1,
     // NB: the parsing can return triangulation of size 0, for example
     // if it detected a triangle but it was found to be flat.
     /* if (triangulation.size() == 0) */
-    /*   dolfin_error("CGALExactArithmetic.h", */
+    /*   log::dolfin_error("CGALExactArithmetic.h", */
     /*                "find intersection of two triangles in
      * cgal_intersection_triangle_triangle function", */
     /*                "no intersection found"); */
@@ -743,7 +746,7 @@ cgal_intersection_triangle_triangle_3d(const Point& p0, const Point& p1,
     }
     else
     {
-      dolfin_error("CGALExactArithmetic.h",
+      log::dolfin_error("CGALExactArithmetic.h",
                    "cgal_intersection_triangle_triangle_3d",
                    "Unexpected behavior");
     }
@@ -823,7 +826,7 @@ inline std::vector<Point> cgal_intersection_tetrahedron_triangle(
   // Polyhedron_3 is only top dim 2?
 
   // Shouldn't get here
-  dolfin_error("CGALExactArithmetic.h",
+  log::dolfin_error("CGALExactArithmetic.h",
                "cgal_intersection_tetrahedron_triangle", "Not implemented");
 
   return std::vector<Point>();
@@ -840,7 +843,7 @@ inline std::vector<std::vector<Point>> cgal_triangulate_tetrahedron_triangle(
       = cgal_intersection_tetrahedron_triangle(p0, p1, p2, p3, q0, q1, q2);
 
   // Shouldn't get here
-  dolfin_error("CGALExactArithmetic.h",
+  log::dolfin_error("CGALExactArithmetic.h",
                "cgal_triangulation_tetrahedron_triangle", "Not implemented");
 
   return std::vector<std::vector<Point>>();
@@ -886,7 +889,7 @@ inline bool cgal_is_degenerate_2d(const std::vector<Point>& s)
 {
   if (s.size() < 2 or s.size() > 3)
   {
-    info("Degenerate 2D simplex with %d vertices.", s.size());
+    log::info("Degenerate 2D simplex with %d vertices.", s.size());
     return true;
   }
 
@@ -899,7 +902,7 @@ inline bool cgal_is_degenerate_2d(const std::vector<Point>& s)
   }
 
   // Shouldn't get here
-  dolfin_error(
+  log::dolfin_error(
       "CGALExactArithmetic.h", "call cgal_is_degenerate_2d",
       "Only implemented for simplices of tdim 0, 1 and 2, not tdim = %d",
       s.size() - 1);
@@ -911,7 +914,7 @@ inline bool cgal_is_degenerate_3d(const std::vector<Point>& s)
 {
   if (s.size() < 2 or s.size() > 4)
   {
-    info("Degenerate 3D simplex with %d vertices.", s.size());
+    log::info("Degenerate 3D simplex with %d vertices.", s.size());
     return true;
   }
 
@@ -926,7 +929,7 @@ inline bool cgal_is_degenerate_3d(const std::vector<Point>& s)
   }
 
   // Shouldn't get here
-  dolfin_error(
+  log::dolfin_error(
       "CGALExactArithmetic.h", "call cgal_is_degenerate_3d",
       "Only implemented for simplices of tdim 0, 1, 2 and 3, not tdim = %d",
       s.size() - 1);
@@ -1026,6 +1029,5 @@ cgal_triangulation_overlap(std::vector<std::vector<Point>> triangulation)
 
 //-----------------------------------------------------------------------------
 }
+}
 #endif
-
-

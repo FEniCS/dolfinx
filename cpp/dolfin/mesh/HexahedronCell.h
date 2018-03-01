@@ -7,6 +7,7 @@
 #pragma once
 
 #include "CellType.h"
+#include <dolfin/geometry/Point.h>
 #include <vector>
 
 namespace dolfin
@@ -14,8 +15,7 @@ namespace dolfin
 
 namespace mesh
 {
-  class Cell;
-}
+class Cell;
 
 /// This class implements functionality for hexahedral cell  meshes.
 
@@ -51,16 +51,17 @@ public:
   double circumradius(const MeshEntity& triangle) const;
 
   /// Compute squared distance to given point (3D enabled)
-  double squared_distance(const mesh::Cell& cell, const Point& point) const;
+  double squared_distance(const mesh::Cell& cell,
+                          const geometry::Point& point) const;
 
   /// Compute component i of normal of given facet with respect to the cell
   double normal(const mesh::Cell& cell, std::size_t facet, std::size_t i) const;
 
   /// Compute of given facet with respect to the cell
-  Point normal(const mesh::Cell& cell, std::size_t facet) const;
+  geometry::Point normal(const mesh::Cell& cell, std::size_t facet) const;
 
   /// Compute normal to given cell (viewed as embedded in 3D)
-  Point cell_normal(const mesh::Cell& cell) const;
+  geometry::Point cell_normal(const mesh::Cell& cell) const;
 
   /// Compute the area/length of given facet with respect to the cell
   double facet_area(const mesh::Cell& cell, std::size_t facet) const;
@@ -69,12 +70,6 @@ public:
   void
   order(mesh::Cell& cell,
         const std::vector<std::int64_t>& local_to_global_vertex_indices) const;
-
-  /// Check whether given point collides with cell
-  bool collides(const mesh::Cell& cell, const Point& point) const;
-
-  /// Check whether given entity collides with cell
-  bool collides(const mesh::Cell& cell, const MeshEntity& entity) const;
 
   /// Return description of cell type
   std::string description(bool plural) const;
@@ -85,4 +80,5 @@ public:
     return {0, 1, 3, 2, 4, 5, 7, 6};
   }
 };
+}
 }

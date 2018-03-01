@@ -10,14 +10,16 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/geometry/Point.h>
 
 using namespace dolfin;
 using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
-Mesh RectangleMesh::build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
-                              std::array<std::size_t, 2> n,
-                              std::string diagonal)
+mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
+                                    const std::array<geometry::Point, 2>& p,
+                                    std::array<std::size_t, 2> n,
+                                    std::string diagonal)
 {
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
@@ -26,9 +28,9 @@ Mesh RectangleMesh::build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
         0, 2);
     Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
                                                                              3);
-    Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
+    mesh::Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
     mesh.order();
-    MeshPartitioning::build_distributed_mesh(mesh);
+    mesh::MeshPartitioning::build_distributed_mesh(mesh);
     return mesh;
   }
 
@@ -36,14 +38,14 @@ Mesh RectangleMesh::build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
   if (diagonal != "left" && diagonal != "right" && diagonal != "right/left"
       && diagonal != "left/right" && diagonal != "crossed")
   {
-    dolfin_error("RectangleMesh.cpp", "create rectangle",
+    log::dolfin_error("RectangleMesh.cpp", "create rectangle",
                  "Unknown mesh diagonal definition: allowed options are "
                  "\"left\", \"right\", \"left/right\", \"right/left\" and "
                  "\"crossed\"");
   }
 
-  const Point& p0 = p[0];
-  const Point& p1 = p[1];
+  const geometry::Point& p0 = p[0];
+  const geometry::Point& p1 = p[1];
 
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
@@ -63,14 +65,14 @@ Mesh RectangleMesh::build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
 
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS)
   {
-    dolfin_error("Rectangle.cpp", "create rectangle",
+    log::dolfin_error("Rectangle.cpp", "create rectangle",
                  "Rectangle seems to have zero width, height or depth. "
                  "Consider checking your dimensions");
   }
 
   if (nx < 1 || ny < 1)
   {
-    dolfin_error("RectangleMesh.cpp", "create rectangle",
+    log::dolfin_error("RectangleMesh.cpp", "create rectangle",
                  "Rectangle has non-positive number of vertices in some "
                  "dimension: number of vertices must be at least 1 in each "
                  "dimension");
@@ -200,15 +202,16 @@ Mesh RectangleMesh::build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
     }
   }
 
-  Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
+  mesh::Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
   mesh.order();
 
-  MeshPartitioning::build_distributed_mesh(mesh);
+  mesh::MeshPartitioning::build_distributed_mesh(mesh);
   return mesh;
 }
 //-----------------------------------------------------------------------------
-Mesh RectangleMesh::build_quad(MPI_Comm comm, const std::array<Point, 2>& p,
-                               std::array<std::size_t, 2> n)
+mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
+                                     const std::array<geometry::Point, 2>& p,
+                                     std::array<std::size_t, 2> n)
 {
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
@@ -217,8 +220,8 @@ Mesh RectangleMesh::build_quad(MPI_Comm comm, const std::array<Point, 2>& p,
         0, 2);
     Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
                                                                              4);
-    Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
-    MeshPartitioning::build_distributed_mesh(mesh);
+    mesh::Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
+    mesh::MeshPartitioning::build_distributed_mesh(mesh);
     return mesh;
   }
 
@@ -264,8 +267,8 @@ Mesh RectangleMesh::build_quad(MPI_Comm comm, const std::array<Point, 2>& p,
       ++cell;
     }
 
-  Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
-  MeshPartitioning::build_distributed_mesh(mesh);
+  mesh::Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
+  mesh::MeshPartitioning::build_distributed_mesh(mesh);
   return mesh;
 }
 //-----------------------------------------------------------------------------

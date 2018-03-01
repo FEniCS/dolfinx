@@ -14,7 +14,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 #include <iostream>
 
 using namespace dolfin;
@@ -159,7 +158,7 @@ void HDF5Utility::get_global_dof(
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::size_t, std::size_t>>
-HDF5Utility::cell_owners(const Mesh& mesh,
+HDF5Utility::cell_owners(const mesh::Mesh& mesh,
                          const std::vector<std::size_t>& cells)
 {
   // MPI communicator
@@ -229,7 +228,7 @@ HDF5Utility::cell_owners(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 void HDF5Utility::cell_owners_in_range(
     std::vector<std::pair<std::size_t, std::size_t>>& global_owner,
-    const Mesh& mesh)
+    const mesh::Mesh& mesh)
 {
   // MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -244,7 +243,7 @@ void HDF5Utility::cell_owners_in_range(
   global_owner.resize(range[1] - range[0]);
 
   std::vector<std::vector<std::size_t>> send_owned_global(num_processes);
-  for (auto& mesh_cell : MeshRange<mesh::Cell>(mesh))
+  for (auto& mesh_cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     const std::size_t global_i = mesh_cell.global_index();
     const std::size_t local_i = mesh_cell.index();
@@ -280,7 +279,7 @@ void HDF5Utility::cell_owners_in_range(
 }
 //-----------------------------------------------------------------------------
 void HDF5Utility::set_local_vector_values(
-    const MPI_Comm mpi_comm, PETScVector& x, const Mesh& mesh,
+    const MPI_Comm mpi_comm, la::PETScVector& x, const mesh::Mesh& mesh,
     const std::vector<size_t>& cells,
     const std::vector<dolfin::la_index_t>& cell_dofs,
     const std::vector<std::int64_t>& x_cell_dofs,

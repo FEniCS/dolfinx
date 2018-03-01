@@ -41,22 +41,22 @@ SystemAssembler::SystemAssembler(
   check_arity(_a, _l);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(PETScMatrix& A, PETScVector& b)
+void SystemAssembler::assemble(la::PETScMatrix& A, la::PETScVector& b)
 {
   assemble(&A, &b, NULL);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(PETScMatrix& A) { assemble(&A, NULL, NULL); }
+void SystemAssembler::assemble(la::PETScMatrix& A) { assemble(&A, NULL, NULL); }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(PETScVector& b) { assemble(NULL, &b, NULL); }
+void SystemAssembler::assemble(la::PETScVector& b) { assemble(NULL, &b, NULL); }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(PETScMatrix& A, PETScVector& b,
-                               const PETScVector& x0)
+void SystemAssembler::assemble(la::PETScMatrix& A, la::PETScVector& b,
+                               const la::PETScVector& x0)
 {
   assemble(&A, &b, &x0);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(PETScVector& b, const PETScVector& x0)
+void SystemAssembler::assemble(la::PETScVector& b, const la::PETScVector& x0)
 {
   assemble(NULL, &b, &x0);
 }
@@ -69,7 +69,7 @@ void SystemAssembler::check_arity(std::shared_ptr<const Form> a,
   {
     if (a->rank() != 2)
     {
-      dolfin_error("SystemAssembler.cpp", "assemble system",
+      log::dolfin_error("SystemAssembler.cpp", "assemble system",
                    "expected a bilinear form for a");
     }
   }
@@ -79,20 +79,20 @@ void SystemAssembler::check_arity(std::shared_ptr<const Form> a,
   {
     if (L->rank() != 1)
     {
-      dolfin_error("SystemAssembler.cpp", "assemble system",
+      log::dolfin_error("SystemAssembler.cpp", "assemble system",
                    "expected a linear form for L");
     }
   }
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const MeshFunction<std::size_t>>
+std::shared_ptr<const mesh::MeshFunction<std::size_t>>
 _pick_one_meshfunction(std::string name,
-                       std::shared_ptr<const MeshFunction<std::size_t>> a,
-                       std::shared_ptr<const MeshFunction<std::size_t>> b)
+                       std::shared_ptr<const mesh::MeshFunction<std::size_t>> a,
+                       std::shared_ptr<const mesh::MeshFunction<std::size_t>> b)
 {
   if ((a && b) && a != b)
   {
-    warning("Bilinear and linear forms do not have same %s subdomains in "
+    log::warning("Bilinear and linear forms do not have same %s subdomains in "
             "SystemAssembler. Taking %s subdomains from bilinear form",
             name.c_str(), name.c_str());
   }
@@ -110,8 +110,8 @@ bool SystemAssembler::check_functionspace_for_bc(
   return fs->contains(*bc_function_space);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
-                               const PETScVector* x0)
+void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
+                               const la::PETScVector* x0)
 {
   dolfin_assert(_a);
   dolfin_assert(_l);
@@ -121,22 +121,22 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
 
   // Get mesh
   dolfin_assert(_a->mesh());
-  const Mesh& mesh = *(_a->mesh());
+  const mesh::Mesh& mesh = *(_a->mesh());
   dolfin_assert(mesh.ordered());
 
   // Get cell domains
-  std::shared_ptr<const MeshFunction<std::size_t>> cell_domains
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains
       = _pick_one_meshfunction("cell_domains", _a->cell_domains(),
                                _l->cell_domains());
 
   // Get exterior facet domains
-  std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> exterior_facet_domains
       = _pick_one_meshfunction("exterior_facet_domains",
                                _a->exterior_facet_domains(),
                                _l->exterior_facet_domains());
 
   // Get interior facet domains
-  std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> interior_facet_domains
       = _pick_one_meshfunction("interior_facet_domains",
                                _a->interior_facet_domains(),
                                _l->interior_facet_domains());
@@ -152,7 +152,7 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
   // Check that forms share a function space
   if (*_a->function_space(0) != *_l->function_space(0))
   {
-    dolfin_error("SystemAssembler.cpp", "assemble system",
+    log::dolfin_error("SystemAssembler.cpp", "assemble system",
                  "expected forms (a, L) to share a function::FunctionSpace");
   }
 
@@ -163,7 +163,7 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
   if (_a->integrals().num_vertex_integrals() > 0
       or _l->integrals().num_vertex_integrals() > 0)
   {
-    dolfin_error("SystemAssembler.cpp", "assemble system",
+    log::dolfin_error("SystemAssembler.cpp", "assemble system",
                  "Point integrals are not supported (yet)");
   }
 
@@ -177,7 +177,7 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
     init_global_tensor(*b, *_l);
 
   // Gather tensors
-  std::pair<PETScMatrix*, PETScVector*> tensors(A, b);
+  std::pair<la::PETScMatrix*, la::PETScVector*> tensors(A, b);
 
   // Allocate data
   Scratch data(*_a, *_l);
@@ -199,7 +199,7 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
     // Fetch bc on axis0
     if (axis0)
     {
-      log(TRACE, "System assembler: boundary condition %d applies to axis 0",
+      log::log(TRACE, "System assembler: boundary condition %d applies to axis 0",
           i);
       _bcs[i]->get_boundary_values(boundary_values[0]);
       if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
@@ -209,7 +209,7 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
     // Fetch bc on axis1
     if (axis1)
     {
-      log(TRACE, "System assembler: boundary condition %d applies to axis 1",
+      log::log(TRACE, "System assembler: boundary condition %d applies to axis 1",
           i);
       _bcs[i]->get_boundary_values(boundary_values[1]);
       if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
@@ -218,7 +218,7 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
 
     if (!axis0 && !axis1)
     {
-      log(TRACE,
+      log::log(TRACE,
           "System assembler: ignoring inapplicable boundary condition %d", i);
     }
   }
@@ -271,21 +271,22 @@ void SystemAssembler::assemble(PETScMatrix* A, PETScVector* b,
   if (finalize_tensor)
   {
     if (A)
-      A->apply(PETScMatrix::AssemblyType::FINAL);
+      A->apply(la::PETScMatrix::AssemblyType::FINAL);
     if (b)
       b->apply();
   }
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::cell_wise_assembly(
-    std::pair<PETScMatrix*, PETScVector*>& tensors, std::array<UFC*, 2>& ufc,
+    std::pair<la::PETScMatrix*, la::PETScVector*>& tensors, std::array<UFC*, 2>& ufc,
     Scratch& data, const std::vector<DirichletBC::Map>& boundary_values,
-    std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
-    std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains)
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains,
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+        exterior_facet_domains)
 {
   // Extract mesh
   dolfin_assert(ufc[0]->dolfin_form.mesh());
-  const Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
+  const mesh::Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
   // Initialize entities if using external facet integrals
   dolfin_assert(mesh.ordered());
@@ -326,15 +327,15 @@ void SystemAssembler::cell_wise_assembly(
   bool use_exterior_facet_domains
       = exterior_facet_domains && !exterior_facet_domains->empty();
 
-  PETScMatrix* A = tensors.first;
-  PETScVector* b = tensors.second;
+  la::PETScMatrix* A = tensors.first;
+  la::PETScVector* b = tensors.second;
 
   // Iterate over all cells
   ufc::cell ufc_cell;
   EigenRowMatrixXd coordinate_dofs;
   std::size_t gdim = mesh.geometry().dim();
 
-  for (auto& cell : MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
     dolfin_assert(!cell.is_ghost());
@@ -401,7 +402,7 @@ void SystemAssembler::cell_wise_assembly(
       // Compute exterior facet integral if present
       if (has_exterior_facet_integrals)
       {
-        for (auto& facet : EntityRange<Facet>(cell))
+        for (auto& facet : mesh::EntityRange<mesh::Facet>(cell))
         {
           // Only consider exterior facets
           if (!facet.exterior())
@@ -472,15 +473,17 @@ void SystemAssembler::cell_wise_assembly(
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::facet_wise_assembly(
-    std::pair<PETScMatrix*, PETScVector*>& tensors, std::array<UFC*, 2>& ufc,
+    std::pair<la::PETScMatrix*, la::PETScVector*>& tensors, std::array<UFC*, 2>& ufc,
     Scratch& data, const std::vector<DirichletBC::Map>& boundary_values,
-    std::shared_ptr<const MeshFunction<std::size_t>> cell_domains,
-    std::shared_ptr<const MeshFunction<std::size_t>> exterior_facet_domains,
-    std::shared_ptr<const MeshFunction<std::size_t>> interior_facet_domains)
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains,
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+        exterior_facet_domains,
+    std::shared_ptr<const mesh::MeshFunction<std::size_t>>
+        interior_facet_domains)
 {
   // Extract mesh
   dolfin_assert(ufc[0]->dolfin_form.mesh());
-  const Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
+  const mesh::Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
   // Sanity check of ghost mode (proper check in AssemblerBase::check)
   dolfin_assert(mesh.ghost_mode() == "shared_vertex"
@@ -551,15 +554,15 @@ void SystemAssembler::facet_wise_assembly(
   std::array<bool, 2> compute_cell_tensor = {{true, true}};
   std::vector<bool> cell_tensor_computed(mesh.num_cells(), false);
 
-  PETScMatrix* A = tensors.first;
-  PETScVector* b = tensors.second;
+  la::PETScMatrix* A = tensors.first;
+  la::PETScVector* b = tensors.second;
 
   // Iterate over facets
   std::array<ufc::cell, 2> ufc_cell;
   std::array<EigenRowMatrixXd, 2> coordinate_dofs;
   const std::size_t gdim = mesh.geometry().dim();
 
-  for (auto& facet : MeshRange<Facet>(mesh))
+  for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
     // Number of cells sharing facet
     const std::size_t num_cells = facet.num_entities(D);
@@ -856,7 +859,7 @@ void SystemAssembler::compute_exterior_facet_tensor(
     ufc::cell& ufc_cell, Eigen::Ref<EigenRowMatrixXd> coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
     const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
-    const Facet& facet,
+    const mesh::Facet& facet,
     const std::array<const ufc::cell_integral*, 2>& cell_integrals,
     const std::array<const ufc::exterior_facet_integral*, 2>&
         exterior_facet_integrals,
@@ -981,7 +984,7 @@ void SystemAssembler::compute_interior_facet_tensor(
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::matrix_block_add(
-    PETScMatrix& tensor, std::vector<double>& Ae, std::vector<double>& macro_A,
+    la::PETScMatrix& tensor, std::vector<double>& Ae, std::vector<double>& macro_A,
     const std::array<bool, 2>& add_local_tensor,
     const std::array<std::vector<common::ArrayView<const la_index_t>>, 2>&
         cell_dofs)
@@ -1100,7 +1103,7 @@ bool SystemAssembler::has_bc(
 }
 //-----------------------------------------------------------------------------
 bool SystemAssembler::cell_matrix_required(
-    const PETScMatrix* A, const void* integral,
+    const la::PETScMatrix* A, const void* integral,
     const std::vector<DirichletBC::Map>& boundary_values,
     const common::ArrayView<const dolfin::la_index_t>& dofs)
 {

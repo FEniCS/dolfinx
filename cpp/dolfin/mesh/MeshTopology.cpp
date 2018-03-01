@@ -12,15 +12,16 @@
 #include <sstream>
 
 using namespace dolfin;
+using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-MeshTopology::MeshTopology() : Variable("topology", "mesh topology")
+MeshTopology::MeshTopology() : common::Variable("topology", "mesh topology")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)
-    : Variable("topology", "mesh topology"),
+    : common::Variable("topology", "mesh topology"),
       _num_entities(topology._num_entities),
       _ghost_offset_index(topology._ghost_offset_index),
       _global_num_entities(topology._global_num_entities),
@@ -146,7 +147,7 @@ MeshTopology::shared_entities(std::uint32_t dim) const
   auto e = _shared_entities.find(dim);
   if (e == _shared_entities.end())
   {
-    dolfin_error("MeshTopology.cpp", "get shared mesh entities",
+    log::dolfin_error("MeshTopology.cpp", "get shared mesh entities",
                  "Shared mesh entities have not been computed for dim %d", dim);
   }
   return e->second;

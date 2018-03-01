@@ -15,7 +15,8 @@
 
 namespace dolfin
 {
-
+namespace mesh
+{
 //-----------------------------------------------------------------------------
 template <>
 std::string MeshFunction<double>::str(bool verbose) const
@@ -53,4 +54,5 @@ std::string MeshFunction<std::size_t>::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+}
 }

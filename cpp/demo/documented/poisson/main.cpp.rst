@@ -159,8 +159,8 @@ the form file) defined relative to this mesh, we do as follows
      MPI_Init(&argc, &argv);
 
      // Create mesh and function space
-     std::array<Point, 2> pt = {Point(0.,0.), Point(1.,1.)};
-     auto mesh = std::make_shared<Mesh>(generation::RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle));
+     std::array<geometry::Point, 2> pt = {geometry::Point(0.,0.), geometry::Point(1.,1.)};
+     auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle));
      auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
@@ -210,14 +210,14 @@ call the ``solve`` function with the arguments ``a == L``, ``u`` and
 
      // Compute solution
      function::Function u(V);
-     auto A = std::make_shared<PETScMatrix>(MPI_COMM_WORLD);
-     auto b = std::make_shared<PETScVector>(MPI_COMM_WORLD);
+     auto A = std::make_shared<la::PETScMatrix>(MPI_COMM_WORLD);
+     auto b = std::make_shared<la::PETScVector>(MPI_COMM_WORLD);
 
      fem::SystemAssembler assembler(a, L, bc);
      assembler.assemble(*A);
      assembler.assemble(*b);
 
-     PETScLUSolver lu(MPI_COMM_WORLD, A);
+     la::PETScLUSolver lu(MPI_COMM_WORLD, A);
      lu.solve(*u.vector(), *b);
 
 

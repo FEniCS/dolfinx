@@ -13,6 +13,8 @@
 
 namespace dolfin
 {
+namespace la
+{
 
 /// This class calls SubSystemsManager to initialise PETSc.
 ///
@@ -32,5 +34,5 @@ public:
                           std::string petsc_function);
 };
 }
-
+}
 #endif

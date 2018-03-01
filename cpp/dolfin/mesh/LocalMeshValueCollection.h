@@ -15,6 +15,8 @@
 namespace dolfin
 {
 
+namespace mesh
+{
 template <typename T>
 class MeshValueCollection;
 
@@ -110,4 +112,5 @@ LocalMeshValueCollection<T>::LocalMeshValueCollection(
   }
 }
 //---------------------------------------------------------------------------
+}
 }

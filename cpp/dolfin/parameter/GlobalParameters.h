@@ -10,6 +10,8 @@
 
 namespace dolfin
 {
+namespace parameter
+{
 
 /// This class defines the global DOLFIN parameter database.
 
@@ -91,5 +93,5 @@ public:
 /// The global parameter database
 extern GlobalParameters parameters;
 }
-
+}
 

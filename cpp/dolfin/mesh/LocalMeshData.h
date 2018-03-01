@@ -16,6 +16,8 @@
 namespace dolfin
 {
 
+namespace mesh
+{
 class Mesh;
 
 /// This class stores mesh data on a local processor corresponding to a portion
@@ -26,7 +28,7 @@ class Mesh;
 /// list of vertex coordinates, a list of cell-vertex mappings and a
 /// list of global vertex numbers for the locally stored vertices.
 
-class LocalMeshData : public Variable
+class LocalMeshData : public common::Variable
 {
 public:
   /// Create empty local mesh data
@@ -110,4 +112,5 @@ private:
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;
 };
+}
 }

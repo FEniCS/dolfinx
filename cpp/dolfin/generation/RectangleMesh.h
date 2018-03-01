@@ -16,6 +16,10 @@
 namespace dolfin
 {
 
+namespace geometry
+{
+  class Point;
+}
 namespace generation
 {
 
@@ -29,7 +33,7 @@ class RectangleMesh
 public:
   /// @param    comm (MPI_Comm)
   ///         MPI communicator
-  /// @param    p (std::array<_Point_, 2>)
+  /// @param    p (std::array<_geometry::Point_, 2>)
   ///         Vertex points.
   /// @param    n (std::array<std::size_t, 2>)
   ///         Number of cells in each direction
@@ -42,15 +46,16 @@ public:
   ///
   ///         // Mesh with 8 cells in each direction on the
   ///         // set [-1,2] x [-1,2]
-  ///         Point p0(-1, -1);
-  ///         Point p1(2, 2);
-  ///         auto mesh = RectangleMesh::create(MPI_COMM_WORLD, {p0, p1}, {8,
+  ///         geometry::Point p0(-1, -1);
+  ///         geometry::Point p1(2, 2);
+  ///         auto mesh = Rectanglemesh::Mesh::create(MPI_COMM_WORLD, {p0, p1},
+  ///         {8,
   ///         8});
   /// @endcode
-  static Mesh create(MPI_Comm comm, const std::array<Point, 2>& p,
-                     std::array<std::size_t, 2> n,
-                     mesh::CellType::Type cell_type,
-                     std::string diagonal = "right")
+  static mesh::Mesh create(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
+                           std::array<std::size_t, 2> n,
+                           mesh::CellType::Type cell_type,
+                           std::string diagonal = "right")
   {
     if (cell_type == mesh::CellType::Type::triangle)
       return build_tri(comm, p, n, diagonal);
@@ -58,7 +63,7 @@ public:
       return build_quad(comm, p, n);
     else
     {
-      dolfin_error("RectangleMesh.h", "generate rectangle mesh",
+      log::dolfin_error("RectangleMesh.h", "generate rectangle mesh",
                    "Wrong cell type '%d'", cell_type);
     }
 
@@ -68,12 +73,12 @@ public:
 
 private:
   // Build mesh
-  static Mesh build_tri(MPI_Comm comm, const std::array<Point, 2>& p,
-                        std::array<std::size_t, 2> n,
-                        std::string diagonal = "right");
+  static mesh::Mesh build_tri(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
+                              std::array<std::size_t, 2> n,
+                              std::string diagonal = "right");
 
-  static Mesh build_quad(MPI_Comm comm, const std::array<Point, 2>& p,
-                         std::array<std::size_t, 2> n);
+  static mesh::Mesh build_quad(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
+                               std::array<std::size_t, 2> n);
 };
 }
 }

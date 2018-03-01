@@ -12,9 +12,10 @@
 #include <iostream>
 
 using namespace dolfin;
+using namespace dolfin::parameter;
 
 /// The global parameter database
-GlobalParameters dolfin::parameters;
+GlobalParameters dolfin::parameter::parameters;
 
 //-----------------------------------------------------------------------------
 GlobalParameters::GlobalParameters() : Parameters("dolfin")
@@ -30,7 +31,7 @@ GlobalParameters::~GlobalParameters()
 //-----------------------------------------------------------------------------
 void GlobalParameters::parse(int argc, char* argv[])
 {
-  log(TRACE, "Parsing command-line arguments.");
+  log::log(TRACE, "Parsing command-line arguments.");
 
   // Extract DOLFIN and PETSc arguments
   std::vector<std::string> args_dolfin;
@@ -60,7 +61,7 @@ void GlobalParameters::parse(int argc, char* argv[])
         current->push_back(arg);
       else
       {
-        dolfin_error("GlobalParameters.cpp", "parse command-line options",
+        log::dolfin_error("GlobalParameters.cpp", "parse command-line options",
                      "Illegal command-line options");
       }
     }
