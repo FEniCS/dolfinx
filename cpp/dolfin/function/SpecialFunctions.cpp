@@ -18,16 +18,15 @@ MeshCoordinates::MeshCoordinates(std::shared_ptr<const mesh::Mesh> mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshCoordinates::eval(Eigen::Ref<Eigen::VectorXd> values,
-                           Eigen::Ref<const Eigen::VectorXd> x,
+void MeshCoordinates::eval(Eigen::Ref<EigenRowMatrixXd> values,
+                           Eigen::Ref<const EigenRowMatrixXd> x,
                            const ufc::cell& cell) const
 {
   dolfin_assert(_mesh);
   dolfin_assert(cell.geometric_dimension == _mesh->geometry().dim());
-  dolfin_assert((unsigned int)x.size() == _mesh->geometry().dim());
+  dolfin_assert((unsigned int)x.cols() == _mesh->geometry().dim());
 
-  for (std::size_t i = 0; i < cell.geometric_dimension; ++i)
-    values[i] = x[i];
+  values = x;
 }
 //-----------------------------------------------------------------------------
 FacetArea::FacetArea(std::shared_ptr<const mesh::Mesh> mesh)
@@ -36,22 +35,25 @@ FacetArea::FacetArea(std::shared_ptr<const mesh::Mesh> mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FacetArea::eval(Eigen::Ref<Eigen::VectorXd> values,
-                     Eigen::Ref<const Eigen::VectorXd> x,
+void FacetArea::eval(Eigen::Ref<EigenRowMatrixXd> values,
+                     Eigen::Ref<const EigenRowMatrixXd> x,
                      const ufc::cell& cell) const
 {
   dolfin_assert(_mesh);
   dolfin_assert(cell.geometric_dimension == _mesh->geometry().dim());
 
-  if (cell.local_facet >= 0)
+  for (std::size_t i = 0; i != x.rows(); ++i)
   {
-    mesh::Cell c(*_mesh, cell.index);
-    values[0] = c.facet_area(cell.local_facet);
-  }
-  else
-  {
-    // not_on_boundary
-    values[0] = 0.0;
+    if (cell.local_facet >= 0)
+    {
+      mesh::Cell c(*_mesh, cell.index);
+      values(i, 0) = c.facet_area(cell.local_facet);
+    }
+    else
+    {
+      // not_on_boundary
+      values(i, 0) = 0.0;
+    }
   }
 }
 //-----------------------------------------------------------------------------
