@@ -42,7 +42,7 @@ void FacetArea::eval(Eigen::Ref<EigenRowMatrixXd> values,
   dolfin_assert(_mesh);
   dolfin_assert(cell.geometric_dimension == _mesh->geometry().dim());
 
-  for (std::size_t i = 0; i != x.rows(); ++i)
+  for (unsigned int i = 0; i != x.rows(); ++i)
   {
     if (cell.local_facet >= 0)
     {
