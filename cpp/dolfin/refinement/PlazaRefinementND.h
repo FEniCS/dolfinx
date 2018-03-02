@@ -1,5 +1,10 @@
 // Copyright (C) 2014-2018 Chris Richardson
 //
+// This file is part of DOLFIN (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
+
+#include<vector>
 
 #pragma once
 

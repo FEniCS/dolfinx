@@ -1,5 +1,8 @@
 // Copyright (C) 2013-2018 Chris Richardson
 //
+// This file is part of DOLFIN (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <boost/multi_array.hpp>
 #include <dolfin/common/MPI.h>

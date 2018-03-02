@@ -140,10 +140,9 @@ void fem(py::module &m) {
       .def("off_process_owner", &dolfin::fem::GenericDofMap::off_process_owner)
       .def("shared_nodes", &dolfin::fem::GenericDofMap::shared_nodes)
       .def("cell_dofs", &dolfin::fem::GenericDofMap::cell_dofs)
-      .def("dofs",
-           (std::vector<dolfin::la_index_t>(dolfin::fem::GenericDofMap::*)()
-                const) &
-               dolfin::fem::GenericDofMap::dofs)
+      .def("dofs", (std::vector<dolfin::la_index_t>(
+                       dolfin::fem::GenericDofMap::*)() const) &
+                       dolfin::fem::GenericDofMap::dofs)
       .def("dofs",
            (std::vector<dolfin::la_index_t>(dolfin::fem::GenericDofMap::*)(
                const dolfin::mesh::Mesh &, std::size_t) const) &
@@ -290,11 +289,10 @@ void fem(py::module &m) {
       .def("assemble",
            (void (dolfin::fem::SystemAssembler::*)(dolfin::la::PETScVector &)) &
                dolfin::fem::SystemAssembler::assemble)
-      .def("assemble",
-           (void (dolfin::fem::SystemAssembler::*)(
-               dolfin::la::PETScMatrix &, dolfin::la::PETScVector &,
-               const dolfin::la::PETScVector &)) &
-               dolfin::fem::SystemAssembler::assemble)
+      .def("assemble", (void (dolfin::fem::SystemAssembler::*)(
+                           dolfin::la::PETScMatrix &, dolfin::la::PETScVector &,
+                           const dolfin::la::PETScVector &)) &
+                           dolfin::fem::SystemAssembler::assemble)
       .def("assemble",
            (void (dolfin::fem::SystemAssembler::*)(
                dolfin::la::PETScVector &, const dolfin::la::PETScVector &)) &
@@ -344,10 +342,10 @@ void fem(py::module &m) {
       // FIXME: consolidate down to one intialiser when switching from
       // SWIG to pybind11
       .def(
-          py::init([](
-              py::object V,
-              const std::vector<std::pair<dolfin::geometry::Point, double>>
-                  values) {
+          py::init([](py::object V,
+                      const std::vector<
+                          std::pair<dolfin::geometry::Point, double>>
+                          values) {
             std::shared_ptr<const dolfin::function::FunctionSpace> _V;
             if (py::hasattr(V, "_cpp_object"))
               _V =
@@ -360,10 +358,10 @@ void fem(py::module &m) {
           }),
           py::arg("V"), py::arg("values"))
       .def(
-          py::init([](
-              py::object V0, py::object V1,
-              const std::vector<std::pair<dolfin::geometry::Point, double>>
-                  values) {
+          py::init([](py::object V0, py::object V1,
+                      const std::vector<
+                          std::pair<dolfin::geometry::Point, double>>
+                          values) {
             std::shared_ptr<const dolfin::function::FunctionSpace> _V0, _V1;
             if (py::hasattr(V0, "_cpp_object"))
               _V0 =
