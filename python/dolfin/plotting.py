@@ -6,9 +6,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
+import warnings
 import dolfin
 import dolfin.cpp as cpp
-import ufl
 import numpy as np
 
 __all__ = ["plot"]
@@ -20,9 +20,7 @@ _meshfunction_types = (cpp.mesh.MeshFunctionBool,
 _matplotlib_plottable_types = (cpp.function.Function,
                                cpp.function.Expression, cpp.mesh.Mesh,
                                cpp.fem.DirichletBC) + _meshfunction_types
-_x3dom_plottable_types = (cpp.function.Function, cpp.mesh.Mesh)
-_all_plottable_types = tuple(set.union(set(_matplotlib_plottable_types),
-                                       set(_x3dom_plottable_types)))
+_all_plottable_types = tuple(set.union(set(_matplotlib_plottable_types)))
 
 
 def _has_matplotlib():
@@ -138,26 +136,26 @@ def mplot_function(ax, f, **kwargs):
             mode = kwargs.pop("mode", "contourf")
             if mode == "contourf":
                 levels = kwargs.pop("levels", 40)
-                return ax.tricontourf(mesh2triang(mesh), C, levels, **kwargs)
+                return ax.tricontourf(mesh2triang(mesh), C[:, 0], levels, **kwargs)
             elif mode == "color":
                 shading = kwargs.pop("shading", "gouraud")
-                return ax.tripcolor(mesh2triang(mesh), C, shading=shading,
+                return ax.tripcolor(mesh2triang(mesh), C[:, 0], shading=shading,
                                     **kwargs)
             elif mode == "warp":
                 from matplotlib import cm
                 cmap = kwargs.pop("cmap", cm.jet)
                 linewidths = kwargs.pop("linewidths", 0)
-                return ax.plot_trisurf(mesh2triang(mesh), C, cmap=cmap,
+                return ax.plot_trisurf(mesh2triang(mesh), C[:, 0], cmap=cmap,
                                        linewidths=linewidths, **kwargs)
             elif mode == "wireframe":
                 return ax.triplot(mesh2triang(mesh), **kwargs)
             elif mode == "contour":
-                return ax.tricontour(mesh2triang(mesh), C, **kwargs)
+                return ax.tricontour(mesh2triang(mesh), C[:, 0], **kwargs)
         elif gdim == 3 and tdim == 2:  # surface in 3d
             # FIXME: Not tested
             from matplotlib import cm
             cmap = kwargs.pop("cmap", cm.jet)
-            return ax.plot_trisurf(mesh2triang(mesh), C, cmap=cmap, **kwargs)
+            return ax.plot_trisurf(mesh2triang(mesh), C[:, 0], cmap=cmap, **kwargs)
         elif gdim == 3 and tdim == 3:
             # Volume
             # TODO: Isosurfaces?
@@ -168,7 +166,7 @@ def mplot_function(ax, f, **kwargs):
             x = mesh.geometry().x()[:, 0]
             ax.set_aspect('auto')
 
-            p = ax.plot(x, C, **kwargs)
+            p = ax.plot(x, C[:, 0], **kwargs)
 
             # Setting limits for Line2D objects
             # Must be done after generating plot to avoid ignoring function
@@ -187,12 +185,12 @@ def mplot_function(ax, f, **kwargs):
         # Vector function, interpolated to vertices
         w0 = f.compute_vertex_values(mesh)
         nv = mesh.num_vertices()
-        if len(w0) != gdim * nv:
+        if w0.shape[1] != gdim:
             raise AttributeError(
                 'Vector length must match geometric dimension.')
         X = mesh.geometry().x()
         X = [X[:, i] for i in range(gdim)]
-        U = [w0[i * nv: (i + 1) * nv] for i in range(gdim)]
+        U = [x for x in w0.T]
 
         # Compute magnitude
         C = U[0]**2
@@ -218,9 +216,8 @@ def mplot_function(ax, f, **kwargs):
                 return ax.tripcolor(triang, C, shading=shading, **kwargs)
             else:
                 # Return gracefully to make regression test pass without vtk
-                cpp.warning('Matplotlib plotting backend does not support '
-                            'displacement for %d in %d. Continuing without '
-                            'plotting...' % (tdim, gdim))
+                warnings.warn(
+                    'Matplotlib plotting backend does not support displacement for {} in {}}. Continuing without plotting.'.format(tdim, gdim))
                 return
 
 
@@ -254,8 +251,7 @@ def _plot_matplotlib(obj, mesh, kwargs):
     # Plotting is not working with all ufl cells
     if mesh.ufl_cell().cellname() not in ['interval', 'triangle', 'tetrahedron']:
         raise AttributeError(("Matplotlib plotting backend doesn't handle %s mesh.\n"
-                              "Possible options are saving the output to XDMF file "
-                              "or using 'x3dom' backend.") % mesh.ufl_cell().cellname())
+                              "Possible options are saving the output to XDMF file.") % mesh.ufl_cell().cellname())
 
     # Avoid importing pyplot until used
     try:
@@ -305,17 +301,6 @@ def _plot_matplotlib(obj, mesh, kwargs):
         return mplot_meshfunction(ax, obj, **kwargs)
     else:
         raise AttributeError('Failed to plot %s' % type(obj))
-
-
-def _plot_x3dom(obj, kwargs):
-    if not isinstance(obj, _x3dom_plottable_types):
-        cpp.warning("Don't know how to plot type %s." % type(obj))
-        return
-
-    x3dom = dolfin.X3DOM()
-    out = x3dom.html(obj)
-
-    return out
 
 
 def plot(object, *args, **kwargs):
@@ -382,11 +367,6 @@ def plot(object, *args, **kwargs):
         cpp.log.info("Matplotlib is required to plot from Python.")
         return
 
-    # Plot element
-    if isinstance(object, ufl.FiniteElementBase):
-        import ffc
-        return ffc.plot(object, *args, **kwargs)
-
     # For dolfin.function.Function, extract cpp_object
     if hasattr(object, "cpp_object"):
         object = object.cpp_object()
@@ -411,7 +391,7 @@ def plot(object, *args, **kwargs):
         raise RuntimeError("Expecting a mesh as keyword argument")
 
     backend = kwargs.pop("backend", "matplotlib")
-    if backend not in ("matplotlib", "x3dom"):
+    if backend not in ("matplotlib"):
         raise RuntimeError("Plotting backend %s not recognised" % backend)
 
     # Try to project if object is not a standard plottable type
@@ -425,13 +405,11 @@ def plot(object, *args, **kwargs):
             object = object._cpp_object
         except Exception as e:
             msg = "Don't know how to plot given object:\n  %s\n" \
-                  "and projection failed:\n  %s" % (str(object), str(e))
+                "and projection failed:\n  %s" % (str(object), str(e))
             raise RuntimeError(msg)
 
     # Plot
     if backend == "matplotlib":
         return _plot_matplotlib(object, mesh, kwargs)
-    elif backend == "x3dom":
-        return _plot_x3dom(object, kwargs)
     else:
         assert False, "This code should not be reached."

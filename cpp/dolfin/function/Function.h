@@ -164,8 +164,8 @@ public:
   /// @param    ufc_cell (ufc::cell)
   ///         The ufc::cell.
   void eval(Eigen::Ref<EigenRowMatrixXd> values,
-            Eigen::Ref<const EigenRowMatrixXd> x,
-            const mesh::Cell& dolfin_cell, const ufc::cell& ufc_cell) const;
+            Eigen::Ref<const EigenRowMatrixXd> x, const mesh::Cell& dolfin_cell,
+            const ufc::cell& ufc_cell) const;
 
   /// Interpolate function (on possibly non-matching meshes)
   ///
@@ -242,14 +242,14 @@ public:
   ///         The values at all vertices.
   /// @param    mesh (_mesh::Mesh_)
   ///         The mesh.
-  virtual void compute_vertex_values(std::vector<double>& vertex_values,
-                                     const mesh::Mesh& mesh) const override;
+  virtual EigenRowArrayXXd
+  compute_vertex_values(const mesh::Mesh& mesh) const override;
 
   /// Compute values at all mesh vertices
   ///
   /// @param    vertex_values (Array<double>)
   ///         The values at all vertices.
-  void compute_vertex_values(std::vector<double>& vertex_values);
+  EigenRowArrayXXd compute_vertex_values() const;
 
   /// Allow extrapolation when evaluating the Function
   ///
