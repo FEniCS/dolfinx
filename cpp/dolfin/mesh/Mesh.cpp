@@ -142,7 +142,8 @@ std::size_t Mesh::init(std::size_t dim) const
   // Skip if mesh is empty
   if (num_cells() == 0)
   {
-    log::warning("Mesh is empty, unable to create entities of dimension %d.", dim);
+    log::warning("Mesh is empty, unable to create entities of dimension %d.",
+                 dim);
     return 0;
   }
 
@@ -158,8 +159,8 @@ std::size_t Mesh::init(std::size_t dim) const
   if (!ordered())
   {
     log::dolfin_error("Mesh.cpp", "initialize mesh entities",
-                 "Mesh is not ordered according to the UFC numbering "
-                 "convention. Consider calling mesh.order()");
+                      "Mesh is not ordered according to the UFC numbering "
+                      "convention. Consider calling mesh.order()");
   }
 
   // Compute connectivity
@@ -184,7 +185,8 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   // Skip if mesh is empty
   if (num_cells() == 0)
   {
-    log::warning("Mesh is empty, unable to create connectivity %d --> %d.", d0, d1);
+    log::warning("Mesh is empty, unable to create connectivity %d --> %d.", d0,
+                 d1);
     return;
   }
 
@@ -196,8 +198,8 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   if (!ordered())
   {
     log::dolfin_error("Mesh.cpp", "initialize mesh connectivity",
-                 "Mesh is not ordered according to the UFC numbering "
-                 "convention. Consider calling mesh.order()");
+                      "Mesh is not ordered according to the UFC numbering "
+                      "convention. Consider calling mesh.order()");
   }
 
   // Compute connectivity
