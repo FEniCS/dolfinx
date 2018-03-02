@@ -76,6 +76,7 @@ Poisson equation step-by-step.
 
 First, the :py:mod:`dolfin` module is imported: ::
 
+    import numpy as np
     from dolfin import *
 
 We begin by defining a mesh of the domain and a finite element
@@ -109,7 +110,7 @@ small number (such as machine precision).) ::
 
     # Define Dirichlet boundary (x = 0 or x = 1)
     def boundary(x):
-        return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
+        return np.logical_or(x[:, 0] < DOLFIN_EPS, x[:, 0] > 1.0 - DOLFIN_EPS)
 
 Now, the Dirichlet boundary condition can be created using the class
 :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>`. A

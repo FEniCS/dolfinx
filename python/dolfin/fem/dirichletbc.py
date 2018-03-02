@@ -10,7 +10,6 @@
 import types
 import ufl
 import dolfin.cpp as cpp
-from dolfin.mesh.subdomain import CompiledSubDomain
 from dolfin.function.constant import Constant
 from dolfin.function.functionspace import FunctionSpace
 from dolfin.fem.projection import project
@@ -57,7 +56,8 @@ class DirichletBC(cpp.fem.DirichletBC):
         # Copy constructor
         if len(args) == 1:
             if not isinstance(args[0], cpp.fem.DirichletBC):
-                raise RuntimeError("Expecting a DirichleBC as only argument for copy constructor")
+                raise RuntimeError(
+                    "Expecting a DirichleBC as only argument for copy constructor")
 
             # Initialize base class
             cpp.fem.DirichletBC.__init__(self, args[0])
@@ -74,7 +74,8 @@ class DirichletBC(cpp.fem.DirichletBC):
             # Check if we have a UFL expression or a concrete type
             if not hasattr(args[1], "_cpp_object"):
                 if isinstance(args[1], ufl.classes.Expr):
-                    expr = project(args[1], args[0])  # FIXME: This should really be interpolaton (project is expensive)
+                    # FIXME: This should really be interpolaton (project is expensive)
+                    expr = project(args[1], args[0])
                 else:
                     expr = Constant(args[1])
                 args = args[:1] + (expr,) + args[2:]
@@ -107,9 +108,6 @@ class DirichletBC(cpp.fem.DirichletBC):
         # Create SubDomain object
         if isinstance(args[2], cpp.mesh.SubDomain):
             self.sub_domain = args[2]
-            args = args[:2] + (self.sub_domain,) + args[3:]
-        elif isinstance(args[2], str):
-            self.sub_domain = CompiledSubDomain(args[2])
             args = args[:2] + (self.sub_domain,) + args[3:]
         elif isinstance(args[2], cpp.mesh.MeshFunctionSizet):
             pass

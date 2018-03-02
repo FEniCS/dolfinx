@@ -18,6 +18,14 @@ using EigenRowMatrixXd
     = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 using EigenVectorXb = Eigen::Matrix<bool, Eigen::Dynamic, 1>;
 
+using EigenArrayXb = Eigen::Array<bool, Eigen::Dynamic, 1, Eigen::RowMajor>;
+using EigenRowArrayXXb
+    = Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
+using EigenArrayXd = Eigen::Array<double, Eigen::Dynamic, 1, Eigen::RowMajor>;
+using EigenRowArrayXXd
+    = Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
 namespace dolfin
 {
 

@@ -356,7 +356,7 @@ void fem(py::module &m) {
             else
               _V = V.cast<std::shared_ptr<dolfin::function::FunctionSpace>>();
 
-            return dolfin::fem::PointSource(_V, values);
+            return std::make_unique<dolfin::fem::PointSource>(_V, values);
           }),
           py::arg("V"), py::arg("values"))
       .def(
@@ -379,26 +379,9 @@ void fem(py::module &m) {
             else
               _V1 = V1.cast<std::shared_ptr<dolfin::function::FunctionSpace>>();
 
-            return dolfin::fem::PointSource(_V0, _V1, values);
+            return std::make_unique<dolfin::fem::PointSource>(_V0, _V1, values);
           }),
           py::arg("V0"), py::arg("V1"), py::arg("values"))
-      //
-      //.def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
-      // const
-      // dolfin::geometry::Point&, double>(),
-      //     py::arg("V"), py::arg("p"), py::arg("value"))
-      //.def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
-      // std::shared_ptr<const dolfin::function::FunctionSpace>, const
-      // dolfin::geometry::Point&,
-      // double>(),
-      //     py::arg("V0"), py::arg("V1"), py::arg("p"), py::arg("value"))
-      //.def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
-      // const
-      // std::vector<std::pair<const dolfin::geometry::Point*, double>>>())
-      //.def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
-      // std::shared_ptr<const dolfin::function::FunctionSpace>,
-      //     const std::vector<std::pair<const dolfin::geometry::Point*,
-      //     double>>>())
       .def("apply",
            (void (dolfin::fem::PointSource::*)(dolfin::la::PETScVector &)) &
                dolfin::fem::PointSource::apply)

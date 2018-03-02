@@ -21,7 +21,8 @@ from dolfin.parameter import parameters
 if pkgconfig.exists("dolfin"):
     dolfin_pc = pkgconfig.parse("dolfin")
 else:
-    raise RuntimeError("Could not find DOLFIN pkg-config file. Please make sure appropriate paths are set.")
+    raise RuntimeError(
+        "Could not find DOLFIN pkg-config file. Please make sure appropriate paths are set.")
 
 
 # Copied over from site-packages
@@ -130,7 +131,7 @@ def compile_class(cpp_data):
     """Compile a user C(++) string or set of statements to a Python object
 
     cpp_data is a dict containing:
-      "name": must be "expression" or "subdomain"
+      "name": must be "expression"
       "statements": must be a string, or list/tuple of strings
       "properties": a dict of float properties
       "jit_generate": callable (generates cpp code with this dict as input)
@@ -144,13 +145,14 @@ def compile_class(cpp_data):
     params['build']['lib_dirs'] = dolfin_pc["library_dirs"]
 
     name = cpp_data['name']
-    if name not in ('subdomain', 'expression'):
-        raise ValueError("DOLFIN JIT only for SubDomain and Expression")
+    if name not in ('expression'):
+        raise ValueError("DOLFIN JIT only for Expression")
     statements = cpp_data['statements']
     properties = cpp_data['properties']
 
     if not isinstance(statements, (str, tuple, list)):
-        raise RuntimeError("Expression must be a string, or a list or tuple of strings")
+        raise RuntimeError(
+            "Expression must be a string, or a list or tuple of strings")
 
     # Flatten tuple of tuples (2D array) and get value_shape
     statement_array = numpy.array(statements)
@@ -172,17 +174,15 @@ def compile_class(cpp_data):
     try:
         module, signature = dijitso_jit(cpp_data, module_name, params,
                                         generate=cpp_data['jit_generate'])
-        submodule = dijitso.extract_factory_function(module, "create_" + module_name)()
+        submodule = dijitso.extract_factory_function(
+            module, "create_" + module_name)()
     except Exception:
         raise RuntimeError("Unable to compile C++ code with dijitso")
 
-    if name == 'expression':
-        python_object = cpp.function.make_dolfin_expression(submodule)
-    else:
-        python_object = cpp.mesh.make_dolfin_subdomain(submodule)
+    python_object = cpp.function.make_dolfin_expression(submodule)
 
     # Set properties to initial values
-    # FIXME: maybe remove from here (do it in Expression and SubDomain instead)
+    # FIXME: maybe remove from here (do it in Expression instead)
     for k, v in properties.items():
         python_object.set_property(k, v)
 
