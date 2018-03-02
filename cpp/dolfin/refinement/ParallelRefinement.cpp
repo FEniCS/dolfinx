@@ -4,20 +4,16 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <boost/multi_array.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
-#include <dolfin/mesh/Vertex.h>
-#include <dolfin/parameter/GlobalParameters.h>
 #include <map>
-#include <unordered_map>
 #include <vector>
 
 #include "ParallelRefinement.h"
@@ -30,7 +26,6 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
     : _mesh(mesh),
       shared_edges(
           mesh::DistributedMeshTools::compute_shared_entities(_mesh, 1)),
-      local_edge_to_new_vertex(new std::map<std::size_t, std::size_t>()),
       marked_edges(mesh.num_entities(1), false),
       marked_for_update(MPI::size(mesh.mpi_comm()))
 {
@@ -72,7 +67,7 @@ void ParallelRefinement::mark_all()
   marked_edges.assign(_mesh.num_entities(1), true);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const std::map<std::size_t, std::size_t>>
+const std::map<std::size_t, std::size_t>&
 ParallelRefinement::edge_to_new_vertex() const
 {
   return local_edge_to_new_vertex;
@@ -170,7 +165,7 @@ void ParallelRefinement::create_new_vertices()
         const geometry::Point& midpoint = mesh::Edge(_mesh, local_i).midpoint();
         for (std::size_t j = 0; j < gdim; ++j)
           new_vertex_coordinates.push_back(midpoint[j]);
-        (*local_edge_to_new_vertex)[local_i] = n++;
+        local_edge_to_new_vertex[local_i] = n++;
       }
     }
   }
@@ -185,7 +180,7 @@ void ParallelRefinement::create_new_vertices()
   // sent off-process.  Add offset to map, and collect up any shared
   // new vertices that need to send the new index off-process
   std::vector<std::vector<std::size_t>> values_to_send(mpi_size);
-  for (auto& local_edge : *local_edge_to_new_vertex)
+  for (auto& local_edge : local_edge_to_new_vertex)
   {
     // Add global_offset to map, to get new global index of new
     // vertices
@@ -212,7 +207,7 @@ void ParallelRefinement::create_new_vertices()
 
   // Add received remote global vertex indices to map
   for (auto q = received_values.begin(); q != received_values.end(); q += 2)
-    (*local_edge_to_new_vertex)[*q] = *(q + 1);
+    local_edge_to_new_vertex[*q] = *(q + 1);
 
   // Attach global indices to each vertex, old and new, and sort
   // them across processes into this order
@@ -299,34 +294,10 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
         MPI::rank(_mesh.mpi_comm()));
   }
 
-  const std::string ghost_mode = dolfin::parameter::parameters["ghost_mode"];
   mesh::Mesh new_mesh(_mesh.mpi_comm());
   mesh::MeshPartitioning::build_distributed_mesh(new_mesh, mesh_data,
-                                                 ghost_mode);
+                                                 _mesh.ghost_mode());
   return new_mesh;
-}
-//-----------------------------------------------------------------------------
-void ParallelRefinement::new_cell(const mesh::Cell& cell)
-{
-  for (const auto& v : mesh::EntityRange<mesh::Vertex>(cell))
-    new_cell_topology.push_back(v.global_index());
-}
-//-----------------------------------------------------------------------------
-void ParallelRefinement::new_cell(const std::size_t i0, const std::size_t i1,
-                                  const std::size_t i2, const std::size_t i3)
-{
-  new_cell_topology.push_back(i0);
-  new_cell_topology.push_back(i1);
-  new_cell_topology.push_back(i2);
-  new_cell_topology.push_back(i3);
-}
-//-----------------------------------------------------------------------------
-void ParallelRefinement::new_cell(const std::size_t i0, const std::size_t i1,
-                                  const std::size_t i2)
-{
-  new_cell_topology.push_back(i0);
-  new_cell_topology.push_back(i1);
-  new_cell_topology.push_back(i2);
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::new_cells(const std::vector<std::size_t>& idx)

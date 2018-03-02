@@ -8,14 +8,12 @@
 
 #include <limits>
 #include <map>
-#include <set>
 #include <vector>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Face.h>
-#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
@@ -94,7 +92,8 @@ void PlazaRefinementND::get_tetrahedra(
 {
   tet_set.clear();
 
-  // Connectivity matrix
+  // Connectivity matrix for ten possible points (4 vertices + 6 edge midpoints)
+  // ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5}
   // Only need upper triangle, but sometimes it is easier just to insert
   // both entries (j,i) and (i,j).
   boost::multi_array<bool, 2> conn(boost::extents[10][10]);
@@ -112,18 +111,23 @@ void PlazaRefinementND::get_tetrahedra(
 
     if (marked_edges[ei])
     {
-      // Connect to edge end vertices
+      // Connect edge midpoint to its end vertices
 
       // Only add upper-triangular connections
       conn[v1][ei + 4] = true;
       conn[v0][ei + 4] = true;
 
-      // Edge has two attached facets in cell
-      // which have the same numbering as the
-      // vertices which are not in the edge
+      // Each edge has two attached facets, in the original cell.
+      // The numbering of the attached facets is the same as the
+      // two vertices which are not in the edge
+
+      // Opposite edge indices sum to 5
+      // Get index of opposite edge
+      const std::size_t e_opp = 5 - ei;
+
+      // For each facet attached to the edge
       for (unsigned int j = 0; j != 2; ++j)
       {
-        const std::size_t e_opp = 5 - ei;
         const std::size_t fj = edges[e_opp][j];
         const std::size_t le_j = longest_edge[fj];
 
@@ -131,7 +135,6 @@ void PlazaRefinementND::get_tetrahedra(
         {
           const std::size_t fk = edges[e_opp][1 - j];
           const std::size_t le_k = longest_edge[fk];
-
           // This is longest edge - connect to opposite vertex
 
           // Only add upper-triangular connection
@@ -369,7 +372,7 @@ void PlazaRefinementND::do_refine(mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
   // Make new vertices in parallel
   p_ref.create_new_vertices();
   const std::map<std::size_t, std::size_t>& new_vertex_map
-      = *(p_ref.edge_to_new_vertex());
+      = p_ref.edge_to_new_vertex();
 
   std::vector<std::size_t> parent_cell;
   std::vector<std::size_t> indices(num_cell_vertices + num_cell_edges);
@@ -380,19 +383,22 @@ void PlazaRefinementND::do_refine(mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
     // 2D, 4+6 in 3D
-    std::size_t j = 0;
+    unsigned int j = 0;
     for (const auto& v : mesh::EntityRange<mesh::Vertex>(cell))
       indices[j++] = v.global_index();
 
     marked_edge_list = p_ref.marked_edge_list(cell);
     if (marked_edge_list.size() == 0)
     {
-      p_ref.new_cell(cell);
+      // Copy over existing Cell to new topology
+      std::vector<std::size_t> cell_topology;
+      for (const auto& v : mesh::EntityRange<mesh::Vertex>(cell))
+        cell_topology.push_back(v.global_index());
+      p_ref.new_cells(cell_topology);
       parent_cell.push_back(cell.index());
     }
     else
     {
-      indices.resize(num_cell_vertices + num_cell_edges);
       // Get the marked edge indices for new vertices and make bool
       // vector of marked edges
       std::vector<bool> markers(num_cell_edges, false);
