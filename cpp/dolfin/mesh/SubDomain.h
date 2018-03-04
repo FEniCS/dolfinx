@@ -54,8 +54,8 @@ public:
   ///
   /// @return    bool
   ///         True for points inside the subdomain.
-  virtual Eigen::Matrix<bool, Eigen::Dynamic, 1>
-  inside(Eigen::Ref<const EigenRowMatrixXd> x, bool on_boundary) const;
+  virtual EigenArrayXb
+  inside(Eigen::Ref<const EigenRowArrayXXd> x, bool on_boundary) const;
 
   /// Map coordinate x in domain H to coordinate y in domain G (used for
   /// periodic boundary conditions)
@@ -158,19 +158,19 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
   auto gdim = mesh.geometry().dim();
 
   // Check all vertices for "inside" (on_boundary==false)
-  Eigen::Map<const EigenRowMatrixXd> x(mesh.geometry().x().data(),
+  Eigen::Map<const EigenRowArrayXXd> x(mesh.geometry().x().data(),
                                        mesh.num_entities(0), gdim);
   EigenVectorXb all_inside = inside(x, false);
   assert(all_inside.rows() == x.rows());
 
   // Check all boundary vertices for "inside" (on_boundary==true)
-  EigenRowMatrixXd x_bound(count, gdim);
+  EigenRowArrayXXd x_bound(count, gdim);
   for (std::int32_t i = 0; i != mesh.num_entities(0); ++i)
   {
     if (boundary_vertex[i] != -1)
       x_bound.row(boundary_vertex[i]) = x.row(i);
   }
-  EigenVectorXb bound_inside = inside(x_bound, true);
+  EigenArrayXb bound_inside = inside(x_bound, true);
   assert(bound_inside.rows() == x_bound.rows());
 
   // Copy values back to vector, now -1="not on boundary anyway",
@@ -210,8 +210,7 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
     // FIXME: refactor for efficiency
     if (all_points_inside && check_midpoint)
     {
-      Eigen::Map<Eigen::RowVectorXd> x(
-          const_cast<double*>(entity.midpoint().coordinates()), gdim);
+      Eigen::Map<EigenRowArrayXd> x(entity.midpoint().coordinates(), gdim);
       if (!inside(x, on_boundary)[0])
         all_points_inside = false;
     }

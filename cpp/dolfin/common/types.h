@@ -13,21 +13,24 @@
 
 #include <Eigen/Dense>
 
+namespace dolfin
+{
+
 // Some typedefs for common Eigen templates
 using EigenRowMatrixXd
     = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 using EigenVectorXb = Eigen::Matrix<bool, Eigen::Dynamic, 1>;
 
-using EigenArrayXb = Eigen::Array<bool, Eigen::Dynamic, 1, Eigen::RowMajor>;
+// bool Arrays
+using EigenArrayXb = Eigen::Array<bool, Eigen::Dynamic, 1>;
 using EigenRowArrayXXb
     = Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-using EigenArrayXd = Eigen::Array<double, Eigen::Dynamic, 1, Eigen::RowMajor>;
+// double Arrays
+using EigenArrayXd = Eigen::Array<double, Eigen::Dynamic, 1>;
+using EigenRowArrayXd = Eigen::Array<double, 1, Eigen::Dynamic>;
 using EigenRowArrayXXd
     = Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-
-namespace dolfin
-{
 
 /// Index type for compatibility with linear algebra backend(s)
 #ifdef HAS_PETSC

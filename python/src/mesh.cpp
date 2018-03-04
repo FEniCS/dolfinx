@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <dolfin/common/Variable.h>
+#include <dolfin/common/types.h>
 #include <dolfin/function/Expression.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/mesh/Cell.h>
@@ -441,20 +442,15 @@ void mesh(py::module &m) {
           "dihedral_angles_matplotlib_histogram",
           &dolfin::mesh::MeshQuality::dihedral_angles_matplotlib_histogram);
 
-  using VectorXb = Eigen::Matrix<bool, Eigen::Dynamic, 1>;
-
   // dolfin::SubDomain trampoline class for user overloading from
   // Python
   class PySubDomain : public dolfin::mesh::SubDomain {
     using dolfin::mesh::SubDomain::SubDomain;
 
-    VectorXb
-    inside(Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>
-               x,
-           bool on_boundary) const override {
-      PYBIND11_OVERLOAD(VectorXb, dolfin::mesh::SubDomain, inside, x,
-                        on_boundary);
+    dolfin::EigenArrayXb inside(Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
+                                bool on_boundary) const override {
+      PYBIND11_OVERLOAD(dolfin::EigenArrayXb, dolfin::mesh::SubDomain, inside,
+                        x, on_boundary);
     }
 
     void map(Eigen::Ref<const Eigen::VectorXd> x,
