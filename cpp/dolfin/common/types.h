@@ -27,8 +27,8 @@ using EigenRowArrayXXb
     = Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 // double Arrays
-using EigenArrayXd = Eigen::Array<double, Eigen::Dynamic, 1>;
-using EigenRowArrayXd = Eigen::Array<double, 1, Eigen::Dynamic>;
+using EigenArrayXd = Eigen::Array<double, Eigen::Dynamic, 1, Eigen::RowMajor>;
+using EigenRowArrayXd = Eigen::Array<double, 1, Eigen::Dynamic, Eigen::RowMajor>;
 using EigenRowArrayXXd
     = Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
