@@ -117,7 +117,7 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
   if (geometry.dim() == 3)
   {
     // Vertices are coplanar if det(p1-p0 | p3-p0 | p2-p0) is zero
-    Eigen::Matrix3d m;
+    Eigen::Matrix<double, 3, 3, Eigen::RowMajor> m;
     m.row(0) << (p1 - p0)[0], (p1 - p0)[1], (p1 - p0)[2];
     m.row(1) << (p3 - p0)[0], (p3 - p0)[1], (p3 - p0)[2];
     m.row(2) << (p2 - p0)[0], (p2 - p0)[1], (p2 - p0)[2];

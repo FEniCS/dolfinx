@@ -29,16 +29,16 @@ SubDomain::~SubDomain()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EigenArrayXb
-SubDomain::inside(Eigen::Ref<const EigenRowArrayXXd> x, bool on_boundary) const
+EigenArrayXb SubDomain::inside(Eigen::Ref<const EigenRowArrayXXd> x,
+                               bool on_boundary) const
 {
   log::dolfin_error("SubDomain.cpp", "check whether point is inside subdomain",
                     "Function inside() not implemented by user");
   return EigenArrayXb();
 }
 //-----------------------------------------------------------------------------
-void SubDomain::map(Eigen::Ref<const Eigen::VectorXd> x,
-                    Eigen::Ref<Eigen::VectorXd> y) const
+void SubDomain::map(Eigen::Ref<const EigenArrayXd> x,
+                    Eigen::Ref<EigenArrayXd> y) const
 {
   log::dolfin_error(
       "SubDomain.cpp", "map points within subdomain",

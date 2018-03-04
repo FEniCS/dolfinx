@@ -63,8 +63,7 @@ void mesh(py::module &m) {
       .def("dim", &dolfin::mesh::MeshGeometry::dim, "Geometrical dimension")
       .def("degree", &dolfin::mesh::MeshGeometry::degree, "Degree")
       .def("x", [](dolfin::mesh::MeshGeometry &self) {
-        return Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>(
+        return Eigen::Map<dolfin::EigenRowArrayXXd>(
             self.x().data(), self.num_points(), self.dim());
       });
 
@@ -119,17 +118,13 @@ void mesh(py::module &m) {
       .def(py::init([](const MPICommWrapper comm) {
         return std::make_unique<dolfin::mesh::Mesh>(comm.get());
       }))
-      .def(py::init(
-          [](const MPICommWrapper comm, dolfin::mesh::CellType::Type type,
-             Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
-                                            Eigen::Dynamic, Eigen::RowMajor>>
-                 geometry,
-             Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic,
-                                            Eigen::Dynamic, Eigen::RowMajor>>
-                 topology) {
-            return std::make_unique<dolfin::mesh::Mesh>(comm.get(), type,
-                                                        geometry, topology);
-          }))
+      .def(py::init([](const MPICommWrapper comm,
+                       dolfin::mesh::CellType::Type type,
+                       Eigen::Ref<const dolfin::EigenRowArrayXXd> geometry,
+                       Eigen::Ref<const dolfin::EigenRowArrayXXi32> topology) {
+        return std::make_unique<dolfin::mesh::Mesh>(comm.get(), type, geometry,
+                                                    topology);
+      }))
       .def("bounding_box_tree", &dolfin::mesh::Mesh::bounding_box_tree)
       .def("cells",
            [](const dolfin::mesh::Mesh &self) {
@@ -189,9 +184,8 @@ void mesh(py::module &m) {
       m, "MeshConnectivity", "DOLFIN MeshConnectivity object")
       .def("__call__",
            [](const dolfin::mesh::MeshConnectivity &self, std::size_t i) {
-             return Eigen::Map<
-                 const Eigen::Matrix<std::int32_t, Eigen::Dynamic, 1>>(
-                 self(i), self.size(i));
+             return Eigen::Map<const dolfin::EigenArrayXi32>(self(i),
+                                                             self.size(i));
            },
            py::return_value_policy::reference_internal)
       .def("size",
@@ -221,8 +215,7 @@ void mesh(py::module &m) {
            "Global number of incident entities of given dimension")
       .def("entities",
            [](dolfin::mesh::MeshEntity &self, std::size_t dim) {
-             return Eigen::Map<
-                 const Eigen::Matrix<std::int32_t, Eigen::Dynamic, 1>>(
+             return Eigen::Map<const dolfin::EigenArrayXi32>(
                  self.entities(dim), self.num_entities(dim));
            })
       .def("midpoint", &dolfin::mesh::MeshEntity::midpoint,
@@ -376,7 +369,7 @@ void mesh(py::module &m) {
       .def("set_all", &dolfin::mesh::MeshFunction<SCALAR>::set_all)            \
       .def("where_equal", &dolfin::mesh::MeshFunction<SCALAR>::where_equal)    \
       .def("array", [](dolfin::mesh::MeshFunction<SCALAR> &self) {             \
-        return Eigen::Map<Eigen::Matrix<SCALAR, Eigen::Dynamic, 1>>(           \
+        return Eigen::Map<Eigen::Array<SCALAR, Eigen::Dynamic, 1>>(            \
             self.values(), self.size());                                       \
       })
 
@@ -453,8 +446,8 @@ void mesh(py::module &m) {
                         x, on_boundary);
     }
 
-    void map(Eigen::Ref<const Eigen::VectorXd> x,
-             Eigen::Ref<Eigen::VectorXd> y) const override {
+    void map(Eigen::Ref<const dolfin::EigenArrayXd> x,
+             Eigen::Ref<dolfin::EigenArrayXd> y) const override {
       PYBIND11_OVERLOAD(void, dolfin::mesh::SubDomain, map, x, y);
     }
   };

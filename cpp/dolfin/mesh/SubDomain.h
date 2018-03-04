@@ -54,18 +54,18 @@ public:
   ///
   /// @return    bool
   ///         True for points inside the subdomain.
-  virtual EigenArrayXb
-  inside(Eigen::Ref<const EigenRowArrayXXd> x, bool on_boundary) const;
+  virtual EigenArrayXb inside(Eigen::Ref<const EigenRowArrayXXd> x,
+                              bool on_boundary) const;
 
   /// Map coordinate x in domain H to coordinate y in domain G (used for
   /// periodic boundary conditions)
   ///
-  /// @param   x (Eigen::Ref<const Eigen::VectorXd>)
+  /// @param   x (Eigen::Ref<const EigenArrayXd>)
   ///         The coordinates in domain H.
-  /// @param    y (Eigen::Ref<Eigen::VectorXd>)
+  /// @param    y (Eigen::Ref<EigenArrayXd>)
   ///         The coordinates in domain G.
-  virtual void map(Eigen::Ref<const Eigen::VectorXd> x,
-                   Eigen::Ref<Eigen::VectorXd> y) const;
+  virtual void map(Eigen::Ref<const EigenArrayXd> x,
+                   Eigen::Ref<EigenArrayXd> y) const;
 
   //--- Marking of MeshFunction ---
 
@@ -160,7 +160,7 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
   // Check all vertices for "inside" (on_boundary==false)
   Eigen::Map<const EigenRowArrayXXd> x(mesh.geometry().x().data(),
                                        mesh.num_entities(0), gdim);
-  EigenVectorXb all_inside = inside(x, false);
+  EigenArrayXb all_inside = inside(x, false);
   assert(all_inside.rows() == x.rows());
 
   // Check all boundary vertices for "inside" (on_boundary==true)

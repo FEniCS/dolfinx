@@ -10,6 +10,7 @@
 #include "Mesh.h"
 #include "MeshIterator.h"
 #include "SubDomain.h"
+#include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include <limits>
 #include <map>
@@ -73,8 +74,8 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
   std::vector<double> y(gdim);
 
   // Wrap x and y (view of x and y)
-  Eigen::Map<Eigen::VectorXd> _x(x.data(), gdim);
-  Eigen::Map<Eigen::VectorXd> _y(y.data(), gdim);
+  Eigen::Map<EigenArrayXd> _x(x.data(), gdim);
+  Eigen::Map<EigenArrayXd> _y(y.data(), gdim);
 
   std::vector<std::size_t> slave_entities;
   std::vector<std::vector<double>> slave_mapped_coords;
@@ -148,8 +149,9 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
             if (std::isnan(y[i]))
             {
               log::dolfin_error("PeriodicBoundaryComputation.cpp",
-                           "periodic boundary mapping",
-                           "Need to set coordinate %d in sub_domain.map", i);
+                                "periodic boundary mapping",
+                                "Need to set coordinate %d in sub_domain.map",
+                                i);
             }
           }
 
@@ -301,9 +303,9 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
                      std::vector<std::pair<std::uint32_t, std::uint32_t>>>
       shared_entities_map
       = DistributedMeshTools::compute_shared_entities(*mesh, dim);
-  std::unordered_map<
-      std::uint32_t,
-      std::vector<std::pair<std::uint32_t, std::uint32_t>>>::const_iterator e;
+  std::unordered_map<std::uint32_t,
+                     std::vector<std::pair<std::uint32_t, std::uint32_t>>>::
+      const_iterator e;
   std::vector<std::vector<std::pair<std::uint32_t, std::uint32_t>>>
       shared_entities(mesh->num_entities(dim));
   for (e = shared_entities_map.begin(); e != shared_entities_map.end(); ++e)
