@@ -206,8 +206,8 @@ void Function::operator=(const function::FunctionAXPY& axpy)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  std::vector<
-      std::pair<double, std::shared_ptr<const Function>>>::const_iterator it;
+  std::vector<std::pair<double,
+                        std::shared_ptr<const Function>>>::const_iterator it;
   for (it = axpy.pairs().begin() + 1; it != axpy.pairs().end(); it++)
   {
     dolfin_assert(it->second);
@@ -422,8 +422,7 @@ void Function::restrict(double* w, const fem::FiniteElement& element,
   //  }
 }
 //-----------------------------------------------------------------------------
-void Function::compute_vertex_values(std::vector<double>& vertex_values,
-                                     const mesh::Mesh& mesh) const
+EigenRowArrayXXd Function::compute_vertex_values(const mesh::Mesh& mesh) const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
@@ -449,7 +448,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   const std::size_t value_size_loc = value_size();
 
   // Resize Array for holding vertex values
-  vertex_values.resize(value_size_loc * (mesh.num_vertices()));
+  EigenRowArrayXXd vertex_values(mesh.num_vertices(), value_size_loc);
 
   // Create vector to hold cell vertex values
   std::vector<double> cell_vertex_values(value_size_loc * num_cell_vertices);
@@ -482,20 +481,23 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
     {
       for (std::size_t i = 0; i < value_size_loc; ++i)
       {
-        const std::size_t global_index
-            = i * mesh.num_vertices() + vertex.index();
-        vertex_values[global_index] = cell_vertex_values[local_index];
+        // const std::size_t global_index
+        //    = i * mesh.num_vertices() + vertex.index();
+        // vertex_values[global_index] = cell_vertex_values[local_index];
+        vertex_values(vertex.index(), i) = cell_vertex_values[local_index];
         ++local_index;
       }
     }
   }
+
+  return vertex_values;
 }
 //-----------------------------------------------------------------------------
-void Function::compute_vertex_values(std::vector<double>& vertex_values)
+EigenRowArrayXXd Function::compute_vertex_values() const
 {
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->mesh());
-  compute_vertex_values(vertex_values, *_function_space->mesh());
+  assert(_function_space);
+  assert(_function_space->mesh());
+  return compute_vertex_values(*_function_space->mesh());
 }
 //-----------------------------------------------------------------------------
 void Function::init_vector()

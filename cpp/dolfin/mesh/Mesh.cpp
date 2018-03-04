@@ -33,12 +33,8 @@ Mesh::Mesh(MPI_Comm comm)
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
-           Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>
-               geometry,
-           Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>
-               topology)
+           Eigen::Ref<const EigenRowArrayXXd> geometry,
+           Eigen::Ref<const EigenRowArrayXXi32> topology)
     : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
       _ghost_mode("none")
 {

@@ -12,6 +12,7 @@
 #include "MeshTopology.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/common/types.h>
 #include <dolfin/fem/utils.h>
 #include <memory>
 #include <string>
@@ -80,12 +81,8 @@ public:
   /// @param topology
   ///         Matrix containing the vertex indices for the cells of the mesh
   Mesh(MPI_Comm comm, mesh::CellType::Type type,
-       Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>>
-           geometry,
-       Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>>
-           topology);
+       Eigen::Ref<const EigenRowArrayXXd> geometry,
+       Eigen::Ref<const EigenRowArrayXXi32> topology);
 
   /// Copy constructor.
   ///
