@@ -24,8 +24,9 @@ import numpy.random
 from dolfin import *
 from dolfin.log import info
 
+
 def test_assign_2D_cells():
-    mesh = UnitSquareMesh(MPI.comm_world,3, 3)
+    mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     ncells = mesh.num_cells()
     f = MeshValueCollection("int", mesh, 2)
     all_new = True
@@ -48,7 +49,7 @@ def test_assign_2D_cells():
 
 
 def test_assign_2D_facets():
-    mesh = UnitSquareMesh(MPI.comm_world,3, 3)
+    mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.init(2, 1)
     ncells = mesh.num_cells()
     f = MeshValueCollection("int", mesh, 1)
@@ -71,7 +72,7 @@ def test_assign_2D_facets():
 
 
 def test_assign_2D_vertices():
-    mesh = UnitSquareMesh(MPI.comm_world,3, 3)
+    mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.init(2, 0)
     ncells = mesh.num_cells()
     f = MeshValueCollection("int", mesh, 0)
@@ -94,9 +95,9 @@ def test_assign_2D_vertices():
 
 
 def test_mesh_function_assign_2D_cells():
-    mesh = UnitSquareMesh(MPI.comm_world,3, 3)
+    mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     ncells = mesh.num_cells()
-    f = MeshFunction("int", mesh, mesh.topology().dim())
+    f = MeshFunction("int", mesh, mesh.topology().dim(), 0)
     for cell in Cells(mesh):
         f[cell] = ncells - cell.index()
 
@@ -105,7 +106,7 @@ def test_mesh_function_assign_2D_cells():
     assert ncells == f.size()
     assert ncells == g.size()
 
-    f2 = MeshFunction("int", mesh, g)
+    f2 = MeshFunction("int", mesh, g, 0)
 
     for cell in Cells(mesh):
         value = ncells - cell.index()
@@ -121,7 +122,7 @@ def test_mesh_function_assign_2D_cells():
         value = ncells_global - global_indices[cell.index()]
         h.set_value(cell.index(), int(value))
 
-    f3 = MeshFunction("int", mesh, h)
+    f3 = MeshFunction("int", mesh, h, 0)
 
     values = f3.array()
     values[values > ncells_global] = 0.
@@ -133,7 +134,7 @@ def test_mesh_function_assign_2D_cells():
 
 
 def test_mesh_function_assign_2D_facets():
-    mesh = UnitSquareMesh(MPI.comm_world,3, 3)
+    mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.init(1)
     f = MeshFunction("int", mesh, mesh.topology().dim()-1, 25)
     for cell in Cells(mesh):
@@ -148,7 +149,7 @@ def test_mesh_function_assign_2D_facets():
         for i, facet in enumerate(FacetRange(cell)):
             assert 25 == g.get_value(cell.index(), i)
 
-    f2 = MeshFunction("int", mesh, g)
+    f2 = MeshFunction("int", mesh, g, 0)
 
     for cell in Cells(mesh):
         for i, facet in enumerate(FacetRange(cell)):
@@ -156,7 +157,7 @@ def test_mesh_function_assign_2D_facets():
 
 
 def test_mesh_function_assign_2D_vertices():
-    mesh = UnitSquareMesh(MPI.comm_world,3, 3)
+    mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.init(0)
     f = MeshFunction("int", mesh, 0, 25)
     g = MeshValueCollection("int", mesh, 0)
@@ -164,7 +165,7 @@ def test_mesh_function_assign_2D_vertices():
     assert mesh.num_vertices() == f.size()
     assert mesh.num_cells()*3 == g.size()
 
-    f2 = MeshFunction("int", mesh, g)
+    f2 = MeshFunction("int", mesh, g, 0)
 
     for cell in Cells(mesh):
         for i, vert in enumerate(VertexRange(cell)):

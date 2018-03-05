@@ -34,9 +34,11 @@ template <typename T>
 class MeshValueCollection : public common::Variable
 {
 public:
-  /// Create empty mesh value collection
-  ///
-  MeshValueCollection();
+  /// Copy constructor
+  MeshValueCollection(const MeshValueCollection<T>& mvc) = default;
+
+  /// Move constructor
+  MeshValueCollection(MeshValueCollection<T>&& mvc) = default;
 
   /// Create an empty mesh value collection on a given mesh
   ///
@@ -60,7 +62,7 @@ public:
   MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
   /// Destructor
-  ~MeshValueCollection() {}
+  ~MeshValueCollection() = default;
 
   /// Assignment operator
   ///
@@ -75,7 +77,8 @@ public:
   ///         A _MeshValueCollection_ object used to construct a
   ///         MeshValueCollection.
   MeshValueCollection<T>&
-  operator=(const MeshValueCollection<T>& mesh_value_collection);
+  operator=(const MeshValueCollection<T>& mesh_value_collection)
+      = default;
 
   /// Initialise MeshValueCollection with mesh and dimension
   ///
@@ -117,6 +120,7 @@ public:
   ///         The size.
   std::size_t size() const;
 
+  // FIXME: remove
   /// Set marker value for given entity defined by a cell index and
   /// a local entity index
   ///
@@ -194,13 +198,6 @@ private:
 
 //---------------------------------------------------------------------------
 // Implementation of MeshValueCollection
-//---------------------------------------------------------------------------
-template <typename T>
-MeshValueCollection<T>::MeshValueCollection()
-    : common::Variable("m", "unnamed MeshValueCollection"), _dim(-1)
-{
-  // Do nothing
-}
 //---------------------------------------------------------------------------
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh)
@@ -313,17 +310,6 @@ operator=(const MeshFunction<T>& mesh_function)
       }
     }
   }
-
-  return *this;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-MeshValueCollection<T>& MeshValueCollection<T>::
-operator=(const MeshValueCollection<T>& mesh_value_collection)
-{
-  _mesh = mesh_value_collection._mesh;
-  _dim = mesh_value_collection.dim();
-  _values = mesh_value_collection.values();
 
   return *this;
 }

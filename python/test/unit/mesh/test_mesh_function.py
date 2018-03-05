@@ -48,7 +48,7 @@ def funcs(mesh):
     for tp in tps:
         for name in names:
             funcs[(tp, name)] = eval(
-                "MeshFunction('%s', mesh, %d)" % (tp, name))
+                "MeshFunction('%s', mesh, %d, 0)" % (tp, name))
     return funcs
 
 
@@ -59,7 +59,7 @@ def cube():
 
 @fixture
 def f(cube):
-    return MeshFunction('int', cube, 0)
+    return MeshFunction('int', cube, 0, 0)
 
 
 def test_size(tp, name, funcs, mesh):
@@ -93,16 +93,16 @@ def test_setvalues(tp, funcs, name):
 def test_Create(cube):
     """Create MeshFunctions."""
 
-    v = MeshFunction("size_t", cube, 0)
+    v = MeshFunction("size_t", cube, 0, 0)
     assert v.size() == cube.num_vertices()
 
-    v = MeshFunction("size_t", cube, 1)
+    v = MeshFunction("size_t", cube, 1, 0)
     assert v.size() == cube.num_entities(1)
 
-    v = MeshFunction("size_t", cube, 2)
+    v = MeshFunction("size_t", cube, 2, 0)
     assert v.size() == cube.num_facets()
 
-    v = MeshFunction("size_t", cube, 3)
+    v = MeshFunction("size_t", cube, 3, 0)
     assert v.size() == cube.num_cells()
 
 
@@ -137,14 +137,14 @@ def test_Assign(f, cube):
 def test_meshfunction_where_equal():
     mesh = UnitSquareMesh(MPI.comm_self, 2, 2)
 
-    cf = MeshFunction("size_t", mesh, mesh.topology().dim())
+    cf = MeshFunction("size_t", mesh, mesh.topology().dim(), 0)
     cf.set_all(1)
     cf[0] = 3
     cf[3] = 3
     assert list(cf.where_equal(3)) == [0, 3]
     assert list(cf.where_equal(1)) == [1, 2, 4, 5, 6, 7]
 
-    ff = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
+    ff = MeshFunction("size_t", mesh, mesh.topology().dim() - 1, 100)
     ff.set_all(0)
     ff[0] = 1
     ff[2] = 3
@@ -153,7 +153,7 @@ def test_meshfunction_where_equal():
     assert list(ff.where_equal(3)) == [2, 3]
     assert list(ff.where_equal(0)) == [1] + list(range(4, ff.size()))
 
-    vf = MeshFunction("size_t", mesh, 0)
+    vf = MeshFunction("size_t", mesh, 0, 0)
     vf.set_all(3)
     vf[1] = 1
     vf[2] = 1

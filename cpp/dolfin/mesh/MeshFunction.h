@@ -335,7 +335,7 @@ const T& MeshFunction<T>::operator[](std::size_t index) const
 template <typename T>
 MeshFunction<T>& MeshFunction<T>::operator=(const T& value)
 {
-  _values = value;
+  std::fill(_values.begin(), _values.end(), value);
   return *this;
 }
 //---------------------------------------------------------------------------

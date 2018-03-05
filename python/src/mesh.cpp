@@ -362,6 +362,8 @@ void mesh(py::module &m) {
       .def("ufl_id", &dolfin::mesh::MeshFunction<SCALAR>::id)                  \
       .def("mesh", &dolfin::mesh::MeshFunction<SCALAR>::mesh)                  \
       .def("set_values", &dolfin::mesh::MeshFunction<SCALAR>::set_values)      \
+      .def("set_all", [](dolfin::mesh::MeshFunction<SCALAR> &self,             \
+                         const SCALAR &value) { self = value; })               \
       .def("where_equal", &dolfin::mesh::MeshFunction<SCALAR>::where_equal)    \
       .def("array", [](dolfin::mesh::MeshFunction<SCALAR> &self) {             \
         return Eigen::Map<Eigen::Array<SCALAR, Eigen::Dynamic, 1>>(            \

@@ -30,13 +30,16 @@ public:
   MeshConnectivity(std::size_t d0, std::size_t d1);
 
   /// Copy constructor
-  MeshConnectivity(const MeshConnectivity& connectivity);
+  MeshConnectivity(const MeshConnectivity& connectivity) = default;
+
+  /// Move constructor
+  MeshConnectivity(MeshConnectivity&& connectivity) = default;
 
   /// Destructor
-  ~MeshConnectivity();
+  ~MeshConnectivity() = default;
 
   /// Assignment
-  const MeshConnectivity& operator=(const MeshConnectivity& connectivity);
+  MeshConnectivity& operator=(const MeshConnectivity& connectivity) = default;
 
   /// Return true if the total number of connections is equal to zero
   bool empty() const { return _connections.empty(); }
