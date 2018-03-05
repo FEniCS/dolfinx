@@ -25,6 +25,59 @@ using namespace dolfin;
 using namespace dolfin::refinement;
 
 //-----------------------------------------------------------------------------
+mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
+{
+  if (mesh.type().cell_type() != mesh::CellType::Type::triangle
+      and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
+  {
+    log::dolfin_error("PlazaRefinementND.cpp", "refine mesh",
+                      "Cell type %s not supported",
+                      mesh.type().description(false).c_str());
+  }
+
+  common::Timer t0("PLAZA: refine");
+  mesh::Mesh new_mesh(mesh.mpi_comm());
+  std::vector<std::int32_t> long_edge;
+  std::vector<bool> edge_ratio_ok;
+  face_long_edge(long_edge, edge_ratio_ok, mesh);
+
+  ParallelRefinement p_ref(mesh);
+  p_ref.mark_all();
+
+  compute_refinement(new_mesh, mesh, p_ref, long_edge, edge_ratio_ok,
+                     redistribute);
+  return new_mesh;
+}
+//-----------------------------------------------------------------------------
+mesh::Mesh
+PlazaRefinementND::refine(const mesh::Mesh& mesh,
+                          const mesh::MeshFunction<bool>& refinement_marker,
+                          bool redistribute)
+{
+  if (mesh.type().cell_type() != mesh::CellType::Type::triangle
+      and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
+  {
+    log::dolfin_error("PlazaRefinementND.cpp", "refine mesh",
+                      "Cell type %s not supported",
+                      mesh.type().description(false).c_str());
+  }
+
+  common::Timer t0("PLAZA: refine");
+  mesh::Mesh new_mesh(mesh.mpi_comm());
+  std::vector<std::int32_t> long_edge;
+  std::vector<bool> edge_ratio_ok;
+  face_long_edge(long_edge, edge_ratio_ok, mesh);
+
+  ParallelRefinement p_ref(mesh);
+  p_ref.mark(refinement_marker);
+
+  enforce_rules(p_ref, mesh, long_edge);
+
+  compute_refinement(new_mesh, mesh, p_ref, long_edge, edge_ratio_ok,
+                     redistribute);
+  return new_mesh;
+}
+//-----------------------------------------------------------------------------
 void PlazaRefinementND::get_simplices(
     std::vector<std::size_t>& simplex_set,
     const std::vector<bool>& marked_edges,
@@ -287,83 +340,10 @@ void PlazaRefinementND::enforce_rules(
   }
 }
 //-----------------------------------------------------------------------------
-void PlazaRefinementND::refine(mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
-                               bool redistribute)
-{
-  if (mesh.type().cell_type() != mesh::CellType::Type::triangle
-      and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
-  {
-    log::dolfin_error("PlazaRefinementND.cpp", "refine mesh",
-                      "Cell type %s not supported",
-                      mesh.type().description(false).c_str());
-  }
-
-  common::Timer t0("PLAZA: refine");
-  std::vector<std::int32_t> long_edge;
-  std::vector<bool> edge_ratio_ok;
-  face_long_edge(long_edge, edge_ratio_ok, mesh);
-
-  ParallelRefinement p_ref(mesh);
-  p_ref.mark_all();
-
-  do_refine(new_mesh, mesh, p_ref, long_edge, edge_ratio_ok, redistribute);
-}
-//-----------------------------------------------------------------------------
-void PlazaRefinementND::refine(
-    mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
-    const mesh::MeshFunction<bool>& refinement_marker, bool redistribute)
-{
-  if (mesh.type().cell_type() != mesh::CellType::Type::triangle
-      and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
-  {
-    log::dolfin_error("PlazaRefinementND.cpp", "refine mesh",
-                      "Cell type %s not supported",
-                      mesh.type().description(false).c_str());
-  }
-
-  common::Timer t0("PLAZA: refine");
-  std::vector<std::int32_t> long_edge;
-  std::vector<bool> edge_ratio_ok;
-  face_long_edge(long_edge, edge_ratio_ok, mesh);
-
-  ParallelRefinement p_ref(mesh);
-  p_ref.mark(refinement_marker);
-
-  enforce_rules(p_ref, mesh, long_edge);
-
-  do_refine(new_mesh, mesh, p_ref, long_edge, edge_ratio_ok, redistribute);
-}
-//-----------------------------------------------------------------------------
-void PlazaRefinementND::refine(
-    mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
-    const mesh::MeshFunction<bool>& refinement_marker)
-{
-  if (mesh.type().cell_type() != mesh::CellType::Type::triangle
-      and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
-  {
-    log::dolfin_error("PlazaRefinementND.cpp", "refine mesh",
-                      "Cell type %s not supported",
-                      mesh.type().description(false).c_str());
-  }
-
-  common::Timer t0("PLAZA: refine");
-  std::vector<std::int32_t> long_edge;
-  std::vector<bool> edge_ratio_ok;
-  face_long_edge(long_edge, edge_ratio_ok, mesh);
-
-  ParallelRefinement p_ref(mesh);
-  p_ref.mark(refinement_marker);
-
-  enforce_rules(p_ref, mesh, long_edge);
-
-  do_refine(new_mesh, mesh, p_ref, long_edge, edge_ratio_ok, false);
-}
-//-----------------------------------------------------------------------------
-void PlazaRefinementND::do_refine(mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
-                                  ParallelRefinement& p_ref,
-                                  const std::vector<std::int32_t>& long_edge,
-                                  const std::vector<bool>& edge_ratio_ok,
-                                  bool redistribute)
+void PlazaRefinementND::compute_refinement(
+    mesh::Mesh& new_mesh, const mesh::Mesh& mesh, ParallelRefinement& p_ref,
+    const std::vector<std::int32_t>& long_edge,
+    const std::vector<bool>& edge_ratio_ok, bool redistribute)
 {
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t num_cell_edges = tdim * 3 - 3;

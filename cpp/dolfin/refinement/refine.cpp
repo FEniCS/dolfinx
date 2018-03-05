@@ -26,8 +26,7 @@ mesh::Mesh dolfin::refinement::refine(const mesh::Mesh& mesh, bool redistribute)
                       "Refinement only defined for simplices");
   }
 
-  mesh::Mesh refined_mesh(mesh.mpi_comm());
-  PlazaRefinementND::refine(refined_mesh, mesh, redistribute);
+  auto refined_mesh = PlazaRefinementND::refine(mesh, redistribute);
 
   // Report the number of refined cells
   const std::size_t D = mesh.topology().dim();
@@ -52,8 +51,8 @@ dolfin::refinement::refine(const mesh::Mesh& mesh,
                       "Refinement only defined for simplices");
   }
 
-  mesh::Mesh refined_mesh(mesh.mpi_comm());
-  PlazaRefinementND::refine(refined_mesh, mesh, cell_markers, redistribute);
+  auto refined_mesh
+      = PlazaRefinementND::refine(mesh, cell_markers, redistribute);
 
   // Report the number of refined cells
   const std::size_t D = mesh.topology().dim();
