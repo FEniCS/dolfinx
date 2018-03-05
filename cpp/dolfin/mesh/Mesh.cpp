@@ -98,6 +98,7 @@ Mesh::Mesh(const Mesh& mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+/*
 Mesh::Mesh(Mesh&& mesh)
     : common::Variable(mesh.name(), mesh.label()),
       _topology(std::move(mesh._topology)),
@@ -109,6 +110,7 @@ Mesh::Mesh(Mesh&& mesh)
 {
   // Do nothing
 }
+*/
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
     : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
