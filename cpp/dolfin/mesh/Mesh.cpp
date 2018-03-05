@@ -98,6 +98,18 @@ Mesh::Mesh(const Mesh& mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+Mesh::Mesh(Mesh&& mesh)
+    : common::Variable(mesh.name(), mesh.label()),
+      _topology(std::move(mesh._topology)),
+      _geometry(std::move(mesh._geometry)),
+      _cell_type(CellType::create(mesh._cell_type->cell_type())),
+      _ordered(std::move(mesh._ordered)),
+      _mpi_comm(mesh._mpi_comm),
+      _ghost_mode(std::move(mesh._ghost_mode))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
     : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
       _ghost_mode("none")

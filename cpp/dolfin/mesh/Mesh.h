@@ -90,6 +90,12 @@ public:
   ///         Object to be copied.
   Mesh(const Mesh& mesh);
 
+  /// Move constructor.
+  ///
+  /// @param mesh (Mesh)
+  ///         Object to be moved.
+  Mesh(Mesh&& mesh);
+
   /// Create a distributed mesh from local (per process) data.
   ///
   /// @param comm (MPI_Comm)
