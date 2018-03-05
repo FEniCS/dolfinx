@@ -54,7 +54,8 @@ public:
   /// @param value_collection (_MeshValueCollection_)
   ///         The mesh value collection for the mesh function data.
   MeshFunction(std::shared_ptr<const Mesh> mesh,
-               const MeshValueCollection<T>& value_collection);
+               const MeshValueCollection<T>& value_collection,
+               const T& default_value);
 
   /// Copy constructor
   ///
@@ -77,12 +78,6 @@ public:
   /// @param f (_MeshFunction_)
   ///         A _MeshFunction_ object to assign to another MeshFunction.
   MeshFunction<T>& operator=(const MeshFunction<T>& f) = default;
-
-  /// Assignment operator
-  ///
-  /// @param mesh (_MeshValueCollection_)
-  ///         A _MeshValueCollection_ object used to construct a MeshFunction.
-  MeshFunction<T>& operator=(const MeshValueCollection<T>& mesh);
 
   /// Return mesh associated with mesh function
   ///
@@ -152,7 +147,7 @@ public:
 
   /// Set all values to given value
   /// @param value (T)
-  const MeshFunction<T>& operator=(const T& value);
+  MeshFunction<T>& operator=(const T& value);
 
   /// Set value at given index
   ///
@@ -226,21 +221,16 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim,
 //---------------------------------------------------------------------------
 template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
-                              const MeshValueCollection<T>& value_collection)
+                              const MeshValueCollection<T>& value_collection,
+                              const T& default_value)
     : common::Variable("f", "unnamed MeshFunction"), _mesh(mesh),
       _dim(value_collection.dim())
 {
-  *this = value_collection;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-MeshFunction<T>& MeshFunction<T>::
-operator=(const MeshValueCollection<T>& mesh_value_collection)
-{
-  _dim = mesh_value_collection.dim();
   dolfin_assert(_mesh);
   _mesh->init(_dim);
-  _values.resize(_mesh->topology().size(_dim));
+
+  // Initialise values with default
+  _values.resize(_mesh->topology().size(_dim), default_value);
 
   // Get mesh connectivity D --> d
   const std::size_t d = _dim;
@@ -252,20 +242,17 @@ operator=(const MeshValueCollection<T>& mesh_value_collection)
   const MeshConnectivity& connectivity = _mesh->topology()(D, d);
   dolfin_assert(!connectivity.empty());
 
-  // Set MeshFunction with default value
-  // set_all(std::numeric_limits<T>::max());
-
   // Iterate over all values
   std::unordered_set<std::size_t> entities_values_set;
   typename std::map<std::pair<std::size_t, std::size_t>, T>::const_iterator it;
   const std::map<std::pair<std::size_t, std::size_t>, T>& values
-      = mesh_value_collection.values();
+      = value_collection.values();
   for (it = values.begin(); it != values.end(); ++it)
   {
     // Get value collection entry data
     const std::size_t cell_index = it->first.first;
     const std::size_t local_entity = it->first.second;
-    const T value = it->second;
+    const T& value = it->second;
 
     std::size_t entity_index = 0;
     if (d != D)
@@ -290,10 +277,10 @@ operator=(const MeshValueCollection<T>& mesh_value_collection)
 
   // Check that all values have been set, if not issue a debug message
   if (entities_values_set.size() != _values.size())
+  {
     dolfin_debug(
         "Mesh value collection does not contain all values for all entities");
-
-  return *this;
+  }
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -360,11 +347,9 @@ const T& MeshFunction<T>::operator[](std::size_t index) const
 }
 //---------------------------------------------------------------------------
 template <typename T>
-const MeshFunction<T>& MeshFunction<T>::operator=(const T& value)
+MeshFunction<T>& MeshFunction<T>::operator=(const T& value)
 {
   _values = value;
-  // std::fill(_values.begin(), _values.end(), value);
-  // set_all(value);
   return *this;
 }
 //---------------------------------------------------------------------------

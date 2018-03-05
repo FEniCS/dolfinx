@@ -339,7 +339,8 @@ void mesh(py::module &m) {
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>, std::size_t,    \
                     SCALAR>())                                                 \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>,                 \
-                    const dolfin::mesh::MeshValueCollection<SCALAR> &>())      \
+                    const dolfin::mesh::MeshValueCollection<SCALAR> &,         \
+                    const SCALAR &>())                                         \
       .def("__getitem__",                                                      \
            (const SCALAR &(dolfin::mesh::MeshFunction<SCALAR>::*)(std::size_t) \
                 const) &                                                       \
