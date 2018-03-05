@@ -27,13 +27,16 @@ public:
   MeshGeometry();
 
   /// Copy constructor
-  MeshGeometry(const MeshGeometry& geometry);
+  MeshGeometry(const MeshGeometry&) = default;
+
+  /// Move constructor
+  MeshGeometry(MeshGeometry&&) = default;
 
   /// Destructor
   ~MeshGeometry();
 
   /// Assignment
-  const MeshGeometry& operator=(const MeshGeometry& geometry);
+  MeshGeometry& operator=(const MeshGeometry&) = default;
 
   /// Return Euclidean dimension of coordinate system
   std::size_t dim() const { return _dim; }

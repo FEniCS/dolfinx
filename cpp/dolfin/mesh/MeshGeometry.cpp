@@ -18,32 +18,14 @@ MeshGeometry::MeshGeometry() : _dim(0), _degree(1)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MeshGeometry::MeshGeometry(const MeshGeometry& geometry) : _dim(0)
-{
-  *this = geometry;
-}
-//-----------------------------------------------------------------------------
 MeshGeometry::~MeshGeometry()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const MeshGeometry& MeshGeometry::operator=(const MeshGeometry& geometry)
-{
-  // Try init; may fail with non-matching _dim and _degree
-  init(geometry._dim, geometry._degree);
-
-  // Copy remaining data
-  coordinates = geometry.coordinates;
-  entity_offsets = geometry.entity_offsets;
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
 geometry::Point MeshGeometry::point(std::size_t n) const
 {
   return geometry::Point(_dim, x(n));
-  ;
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::init(std::size_t dim, std::size_t degree)
