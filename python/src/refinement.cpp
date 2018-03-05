@@ -16,7 +16,7 @@ namespace dolfin_wrappers {
 void refinement(py::module &m) {
   // dolfin::refinement::refine
   m.def("refine", [](dolfin::mesh::Mesh &mesh, bool redistribute) {
-    auto new_mesh = std::make_unique<dolfin::mesh::Mesh>(mesh.mpi_comm());
+    auto new_mesh = std::make_shared<dolfin::mesh::Mesh>(mesh.mpi_comm());
     dolfin::refinement::refine(*new_mesh, mesh, redistribute);
     return new_mesh;
   });
