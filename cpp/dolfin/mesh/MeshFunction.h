@@ -35,15 +35,6 @@ template <typename T>
 class MeshFunction : public common::Variable
 {
 public:
-  /// Create empty mesh function
-  MeshFunction();
-
-  /// Create empty mesh function on given mesh
-  ///
-  /// @param mesh (Mesh)
-  ///         The mesh to create mesh function on.
-  explicit MeshFunction(std::shared_ptr<const Mesh> mesh);
-
   /// Create mesh function of given dimension on given mesh
   ///
   /// @param     mesh (Mesh)
@@ -280,20 +271,6 @@ std::string MeshFunction<std::size_t>::str(bool verbose) const;
 
 //---------------------------------------------------------------------------
 // Implementation of MeshFunction
-//---------------------------------------------------------------------------
-template <typename T>
-MeshFunction<T>::MeshFunction() : MeshFunction(nullptr)
-{
-  // Do nothing
-}
-//---------------------------------------------------------------------------
-template <typename T>
-MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh)
-    : common::Variable("f", "unnamed MeshFunction"), _mesh(mesh), _dim(0),
-      _size(0)
-{
-  // Do nothing
-}
 //---------------------------------------------------------------------------
 template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim)
