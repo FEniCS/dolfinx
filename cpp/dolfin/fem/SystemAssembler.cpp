@@ -522,7 +522,8 @@ void SystemAssembler::facet_wise_assembly(
   cell_dofs[1][0].resize(1);
   cell_dofs[1][1].resize(1);
 
-  std::array<mesh::Cell, 2> cell;
+  // std::array<mesh::Cell, 2> cell;
+  std::array<mesh::Cell, 2> cell = {{mesh::Cell(mesh, 0), mesh::Cell(mesh, 0)}};
   std::array<std::size_t, 2> cell_index;
   std::array<std::size_t, 2> local_facet;
 

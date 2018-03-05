@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <memory>
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include <dolfin/geometry/Point.h>
 #include "MeshTopology.h"
+#include <dolfin/geometry/Point.h>
+#include <memory>
 #include <utility>
 #include <vector>
 

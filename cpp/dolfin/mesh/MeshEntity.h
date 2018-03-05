@@ -20,9 +20,6 @@ namespace mesh
 class MeshEntity
 {
 public:
-  /// Default constructor
-  MeshEntity() : _mesh(nullptr), _dim(0), _local_index(0) {}
-
   /// Constructor
   ///
   /// @param   mesh (_Mesh_)

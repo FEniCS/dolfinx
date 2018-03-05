@@ -26,10 +26,6 @@ namespace mesh
 class Cell : public MeshEntity
 {
 public:
-  // FIXME: can thos be removed?
-  /// Create empty cell
-  Cell() : MeshEntity() {}
-
   /// Create cell on given mesh with given index
   ///
   /// @param    mesh
