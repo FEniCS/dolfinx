@@ -88,7 +88,7 @@ public:
   /// Use vertex and topology data to partition new mesh across processes
   /// @param redistribute (bool)
   /// @returns mesh (mesh::Mesh)
-  mesh::Mesh partition(bool redistribute) const;
+  void partition(mesh::Mesh& mesh, bool redistribute) const;
 
   /// Build local mesh from internal data when not running in parallel
   /// @param new_mesh (_mesh::Mesh_)

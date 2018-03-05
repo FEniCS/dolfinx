@@ -39,7 +39,8 @@ public:
   ///  @returns mesh::Mesh
   ///     New mesh
   ///
-  static mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute);
+  static void refine(mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
+                     bool redistribute);
 
   /// Refine with markers, optionally redistributing
   ///
@@ -53,9 +54,9 @@ public:
   /// @param redistribute
   ///     Flag to call the Mesh Partitioner to redistribute after refinement
   ///
-  static mesh::Mesh refine(const mesh::Mesh& mesh,
-                           const mesh::MeshFunction<bool>& refinement_marker,
-                           bool redistribute);
+  static void refine(mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
+                     const mesh::MeshFunction<bool>& refinement_marker,
+                     bool redistribute);
 
   /// Get the subdivision of an original simplex into smaller
   /// simplices, for a given set of marked edges, and the

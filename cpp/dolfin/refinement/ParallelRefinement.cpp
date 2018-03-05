@@ -234,8 +234,8 @@ mesh::Mesh ParallelRefinement::build_local() const
 
   Eigen::Map<const EigenRowArrayXXd> geometry(new_vertex_coordinates.data(),
                                               num_vertices, gdim);
-  Eigen::Map<const EigenRowArrayXXi32>
-      topology(new_cell_topology.data(), num_cells, num_cell_vertices);
+  Eigen::Map<const EigenRowArrayXXi32> topology(new_cell_topology.data(),
+                                                num_cells, num_cell_vertices);
 
   mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.type().cell_type(), geometry,
                   topology);
@@ -243,7 +243,8 @@ mesh::Mesh ParallelRefinement::build_local() const
   return mesh;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh ParallelRefinement::partition(bool redistribute) const
+void ParallelRefinement::partition(mesh::Mesh& new_mesh,
+                                   bool redistribute) const
 {
   mesh::LocalMeshData mesh_data(_mesh.mpi_comm());
   mesh_data.topology.dim = _mesh.topology().dim();
@@ -293,10 +294,8 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
         MPI::rank(_mesh.mpi_comm()));
   }
 
-  mesh::Mesh new_mesh(_mesh.mpi_comm());
   mesh::MeshPartitioning::build_distributed_mesh(new_mesh, mesh_data,
                                                  _mesh.ghost_mode());
-  return new_mesh;
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::new_cells(const std::vector<std::size_t>& idx)

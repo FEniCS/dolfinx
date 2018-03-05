@@ -35,7 +35,8 @@ namespace refinement
 ///         mesh = refine(mesh);
 /// @endcode
 ///
-mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute = true);
+void refine(mesh::Mesh& refined_mesh, const mesh::Mesh& mesh,
+            bool redistribute = true);
 
 /// Create locally refined mesh
 ///
@@ -64,9 +65,9 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute = true);
 ///         mesh = refine(mesh, cell_markers);
 /// @endcode
 ///
-mesh::Mesh refine(const mesh::Mesh& mesh,
-                  const mesh::MeshFunction<bool>& cell_markers,
-                  bool redistribute = true);
+void refine(mesh::Mesh& refined_mesh, const mesh::Mesh& mesh,
+            const mesh::MeshFunction<bool>& cell_markers,
+            bool redistribute = true);
 
 } // namespace refinement
 } // namespace dolfin

@@ -25,7 +25,8 @@ using namespace dolfin;
 using namespace dolfin::refinement;
 
 //-----------------------------------------------------------------------------
-mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
+void PlazaRefinementND::refine(mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
+                               bool redistribute)
 {
   if (mesh.type().cell_type() != mesh::CellType::Type::triangle
       and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
@@ -36,7 +37,6 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
   }
 
   common::Timer t0("PLAZA: refine");
-  mesh::Mesh new_mesh(mesh.mpi_comm());
   std::vector<std::int32_t> long_edge;
   std::vector<bool> edge_ratio_ok;
   face_long_edge(long_edge, edge_ratio_ok, mesh);
@@ -46,13 +46,11 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
 
   compute_refinement(new_mesh, mesh, p_ref, long_edge, edge_ratio_ok,
                      redistribute);
-  return new_mesh;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh
-PlazaRefinementND::refine(const mesh::Mesh& mesh,
-                          const mesh::MeshFunction<bool>& refinement_marker,
-                          bool redistribute)
+void PlazaRefinementND::refine(
+    mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
+    const mesh::MeshFunction<bool>& refinement_marker, bool redistribute)
 {
   if (mesh.type().cell_type() != mesh::CellType::Type::triangle
       and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
@@ -63,7 +61,6 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
   }
 
   common::Timer t0("PLAZA: refine");
-  mesh::Mesh new_mesh(mesh.mpi_comm());
   std::vector<std::int32_t> long_edge;
   std::vector<bool> edge_ratio_ok;
   face_long_edge(long_edge, edge_ratio_ok, mesh);
@@ -75,7 +72,6 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
 
   compute_refinement(new_mesh, mesh, p_ref, long_edge, edge_ratio_ok,
                      redistribute);
-  return new_mesh;
 }
 //-----------------------------------------------------------------------------
 void PlazaRefinementND::get_simplices(
@@ -432,6 +428,6 @@ void PlazaRefinementND::compute_refinement(
   if (serial)
     new_mesh = p_ref.build_local();
   else
-    new_mesh = p_ref.partition(redistribute);
+    p_ref.partition(new_mesh, redistribute);
 }
 //-----------------------------------------------------------------------------
