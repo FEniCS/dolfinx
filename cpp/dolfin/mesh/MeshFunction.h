@@ -10,13 +10,13 @@
 #include "Mesh.h"
 #include "MeshConnectivity.h"
 #include "MeshEntity.h"
+#include <boost/container/vector.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 #include <map>
 #include <memory>
 #include <unordered_set>
-#include <vector>
 
 namespace dolfin
 {
@@ -77,7 +77,13 @@ public:
   ///
   /// @param f (_MeshFunction_)
   ///         The object to be copied.
-  MeshFunction(const MeshFunction<T>& f);
+  MeshFunction(const MeshFunction<T>& f) = default;
+
+  /// Move constructor
+  ///
+  /// @param f (_MeshFunction_)
+  ///         The object to be moved.
+  MeshFunction(MeshFunction<T>&& f) = default;
 
   /// Destructor
   ~MeshFunction() = default;
@@ -87,7 +93,7 @@ public:
   ///
   /// @param f (_MeshFunction_)
   ///         A _MeshFunction_ object to assign to another MeshFunction.
-  MeshFunction<T>& operator=(const MeshFunction<T>& f);
+  MeshFunction<T>& operator=(const MeshFunction<T>& f) = default;
 
   /// Assignment operator
   ///
@@ -255,7 +261,7 @@ private:
   // Values at the set of mesh entities. We don't use a
   // std::vector<T> here because it has trouble with bool, which C++
   // specialises.
-  std::unique_ptr<T[]> _values;
+  boost::container::vector<T> _values;
 
   // The mesh
   std::shared_ptr<const Mesh> _mesh;
@@ -313,26 +319,6 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
       _dim(value_collection.dim()), _size(0)
 {
   *this = value_collection;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-MeshFunction<T>::MeshFunction(const MeshFunction<T>& f)
-    : common::Variable("f", "unnamed MeshFunction"), _dim(0), _size(0)
-{
-  *this = f;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-MeshFunction<T>& MeshFunction<T>::operator=(const MeshFunction<T>& f)
-{
-  if (_size != f._size)
-    _values.reset(new T[f._size]);
-  _mesh = f._mesh;
-  _dim = f._dim;
-  _size = f._size;
-  std::copy(f._values.get(), f._values.get() + _size, _values.get());
-
-  return *this;
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -425,19 +411,18 @@ std::size_t MeshFunction<T>::size() const
 template <typename T>
 const T* MeshFunction<T>::values() const
 {
-  return _values.get();
+  return _values.data();
 }
 //---------------------------------------------------------------------------
 template <typename T>
 T* MeshFunction<T>::values()
 {
-  return _values.get();
+  return _values.data();
 }
 //---------------------------------------------------------------------------
 template <typename T>
 T& MeshFunction<T>::operator[](const MeshEntity& entity)
 {
-  dolfin_assert(_values);
   dolfin_assert(&entity.mesh() == _mesh.get());
   dolfin_assert(entity.dim() == _dim);
   dolfin_assert((std::uint32_t)entity.index() < _size);
@@ -447,7 +432,6 @@ T& MeshFunction<T>::operator[](const MeshEntity& entity)
 template <typename T>
 const T& MeshFunction<T>::operator[](const MeshEntity& entity) const
 {
-  dolfin_assert(_values);
   dolfin_assert(&entity.mesh() == _mesh.get());
   dolfin_assert(entity.dim() == _dim);
   dolfin_assert((std::uint32_t)entity.index() < _size);
@@ -457,7 +441,6 @@ const T& MeshFunction<T>::operator[](const MeshEntity& entity) const
 template <typename T>
 T& MeshFunction<T>::operator[](std::size_t index)
 {
-  dolfin_assert(_values);
   dolfin_assert(index < _size);
   return _values[index];
 }
@@ -465,7 +448,6 @@ T& MeshFunction<T>::operator[](std::size_t index)
 template <typename T>
 const T& MeshFunction<T>::operator[](std::size_t index) const
 {
-  dolfin_assert(_values);
   dolfin_assert(index < _size);
   return _values[index];
 }
@@ -483,7 +465,7 @@ void MeshFunction<T>::init(std::size_t dim)
   if (!_mesh)
   {
     log::dolfin_error("MeshFunction.h", "initialize mesh function",
-                 "Mesh has not been specified for mesh function");
+                      "Mesh has not been specified for mesh function");
   }
   _mesh->init(dim);
   init(_mesh, dim, _mesh->num_entities(dim));
@@ -495,7 +477,7 @@ void MeshFunction<T>::init(std::size_t dim, std::size_t size)
   if (!_mesh)
   {
     log::dolfin_error("MeshFunction.h", "initialize mesh function",
-                 "Mesh has not been specified for mesh function");
+                      "Mesh has not been specified for mesh function");
   }
   _mesh->init(dim);
   init(_mesh, dim, size);
@@ -520,8 +502,7 @@ void MeshFunction<T>::init(std::shared_ptr<const Mesh> mesh, std::size_t dim,
   dolfin_assert(mesh->num_entities(dim) == (std::int64_t)size);
 
   // Initialize data
-  if (_size != size)
-    _values.reset(new T[size]);
+  _values.resize(size);
   _mesh = mesh;
   _dim = dim;
   _size = size;
@@ -530,7 +511,6 @@ void MeshFunction<T>::init(std::shared_ptr<const Mesh> mesh, std::size_t dim,
 template <typename T>
 void MeshFunction<T>::set_value(std::size_t index, const T& value)
 {
-  dolfin_assert(_values);
   dolfin_assert(index < _size);
   _values[index] = value;
 }
@@ -538,23 +518,20 @@ void MeshFunction<T>::set_value(std::size_t index, const T& value)
 template <typename T>
 void MeshFunction<T>::set_values(const std::vector<T>& values)
 {
-  dolfin_assert(_values);
   dolfin_assert(_size == values.size());
-  std::copy(values.begin(), values.end(), _values.get());
+  std::copy(values.begin(), values.end(), _values.begin());
 }
 //---------------------------------------------------------------------------
 template <typename T>
 void MeshFunction<T>::set_all(const T& value)
 {
-  dolfin_assert(_values);
-  std::fill(_values.get(), _values.get() + _size, value);
+  std::fill(_values.begin(), _values.end(), value);
 }
 //---------------------------------------------------------------------------
 template <typename T>
 std::vector<std::size_t> MeshFunction<T>::where_equal(T value)
 {
-  dolfin_assert(_values);
-  std::size_t n = std::count(_values.get(), _values.get() + _size, value);
+  std::size_t n = std::count(_values.begin(), _values.end(), value);
   std::vector<std::size_t> indices;
   indices.reserve(n);
   for (std::size_t i = 0; i < size(); ++i)
@@ -572,14 +549,8 @@ std::string MeshFunction<T>::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    log::warning("Verbose output of MeshFunctions must be implemented manually.");
-
-    // This has been disabled as it severely restricts the ease with which
-    // templated MeshFunctions can be used, e.g. it is not possible to
-    // template over std::vector.
-
-    // for (std::size_t i = 0; i < _size; i++)
-    //  s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
+    log::warning(
+        "Verbose output of MeshFunctions must be implemented manually.");
   }
   else
   {
