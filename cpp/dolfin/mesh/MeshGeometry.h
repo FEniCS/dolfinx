@@ -33,7 +33,7 @@ public:
   MeshGeometry(MeshGeometry&&) = default;
 
   /// Destructor
-  ~MeshGeometry();
+  ~MeshGeometry() = default;
 
   /// Assignment
   MeshGeometry& operator=(const MeshGeometry&) = default;
@@ -126,7 +126,7 @@ public:
       return (_degree - 3) * (_degree - 2) * (_degree - 1) / 6;
     }
     log::dolfin_error("MeshGeometry.h", "calculate number of points",
-                 "Entity dimension out of range");
+                      "Entity dimension out of range");
     return 0;
   }
 

@@ -41,8 +41,17 @@ public:
   {
   }
 
+  /// Copy constructor
+  Cell(const Cell& cell) = default;
+
+  /// Move constructor
+  Cell(Cell&& cell) = default;
+
   /// Destructor
-  ~Cell() {}
+  ~Cell() = default;
+
+  /// Assignement operator
+  Cell& operator=(const Cell& cell) = default;
 
   /// Return type of cell
   CellType::Type type() const { return _mesh->type().cell_type(); }

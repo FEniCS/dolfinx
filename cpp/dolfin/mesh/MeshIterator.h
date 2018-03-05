@@ -303,10 +303,7 @@ public:
     return MeshEntityIterator<T>(_entity, 0);
   }
 
-  MeshEntityIterator<T> begin()
-  {
-    return MeshEntityIterator<T>(_entity, 0);
-  }
+  MeshEntityIterator<T> begin() { return MeshEntityIterator<T>(_entity, 0); }
 
   const MeshEntityIterator<T> end() const
   {
