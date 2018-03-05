@@ -323,7 +323,6 @@ public:
 
 private:
   // Friends
-  friend class MeshEditor;
   friend class TopologyComputation;
   friend class MeshPartitioning;
 

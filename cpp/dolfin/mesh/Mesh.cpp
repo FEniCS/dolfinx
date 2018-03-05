@@ -89,10 +89,13 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false),
-      _mpi_comm(mesh.mpi_comm()), _ghost_mode("none")
+    : common::Variable(mesh.name(), mesh.label()), _topology(mesh._topology),
+      _geometry(mesh._geometry),
+      _cell_type(CellType::create(mesh._cell_type->cell_type())),
+      _ordered(mesh._ordered), _mpi_comm(mesh.mpi_comm()),
+      _ghost_mode(mesh._ghost_mode)
 {
-  *this = mesh;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
