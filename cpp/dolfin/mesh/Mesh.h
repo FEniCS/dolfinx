@@ -94,7 +94,7 @@ public:
   ///
   /// @param mesh (Mesh)
   ///         Object to be moved.
-  //Mesh(Mesh&& mesh);
+  Mesh(Mesh&& mesh);
 
   /// Create a distributed mesh from local (per process) data.
   ///
