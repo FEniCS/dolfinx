@@ -1104,7 +1104,7 @@ void XDMFFile::read(mesh::MeshFunction<bool>& meshfunction, std::string name)
   dolfin_assert(mesh);
 
   const std::size_t cell_dim = meshfunction.dim();
-  mesh::MeshFunction<std::size_t> mf(mesh, cell_dim);
+  mesh::MeshFunction<std::size_t> mf(mesh, cell_dim, -1);
   read_mesh_function(mf, name);
 
   for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim))

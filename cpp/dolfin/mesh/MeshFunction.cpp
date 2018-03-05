@@ -27,12 +27,12 @@ std::string MeshFunction<double>::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
 
-    for (std::size_t i = 0; i < _size; i++)
+    for (std::size_t i = 0; i < _values.size(); i++)
       s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
   }
   else
     s << "<MeshFunction of topological dimension " << _dim << " containing "
-      << _size << " values>";
+      << _values.size() << " values>";
   return s.str();
 }
 //-----------------------------------------------------------------------------
@@ -45,12 +45,12 @@ std::string MeshFunction<std::size_t>::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
 
-    for (std::size_t i = 0; i < _size; i++)
+    for (std::size_t i = 0; i < _values.size(); i++)
       s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
   }
   else
     s << "<MeshFunction of topological dimension " << _dim << " containing "
-      << _size << " values>";
+      << _values.size() << " values>";
   return s.str();
 }
 //-----------------------------------------------------------------------------

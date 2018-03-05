@@ -502,7 +502,7 @@ void HDF5File::write(const mesh::MeshFunction<bool>& meshfunction,
 
   // HDF5 does not support a boolean type,
   // so copy to int with values 1 and 0
-  mesh::MeshFunction<int> mf(mesh, cell_dim);
+  mesh::MeshFunction<int> mf(mesh, cell_dim, -1);
   for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim))
     mf[cell.index()] = (meshfunction[cell.index()] ? 1 : 0);
 
@@ -518,7 +518,7 @@ void HDF5File::read(mesh::MeshFunction<bool>& meshfunction,
   const std::size_t cell_dim = meshfunction.dim();
 
   // HDF5 does not support bool, so use int instead
-  mesh::MeshFunction<int> mf(mesh, cell_dim);
+  mesh::MeshFunction<int> mf(mesh, cell_dim, -1);
   read_mesh_function(mf, name);
 
   for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim))
@@ -529,6 +529,8 @@ template <typename T>
 void HDF5File::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
                                   const std::string mesh_name) const
 {
+  // FIXME: change to return MeshFunction
+
   std::shared_ptr<const mesh::Mesh> mesh = meshfunction.mesh();
   dolfin_assert(mesh);
   dolfin_assert(_hdf5_file_id > 0);
@@ -568,11 +570,6 @@ void HDF5File::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
   const std::int64_t num_global_cells = topology_shape[0];
   const std::size_t vertices_per_cell = topology_shape[1];
   const std::size_t cell_dim = vertices_per_cell - 1;
-
-  // Initialise if called from mesh::MeshFunction constructor with filename
-  // argument
-  if (meshfunction.size() == 0)
-    meshfunction.init(cell_dim);
 
   // Otherwise, pre-existing mesh::MeshFunction must have correct dimension
   if (cell_dim != meshfunction.dim())

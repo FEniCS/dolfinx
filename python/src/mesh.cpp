@@ -336,10 +336,6 @@ void mesh(py::module &m) {
              std::shared_ptr<dolfin::mesh::MeshFunction<SCALAR>>,              \
              dolfin::common::Variable>(m, "MeshFunction" #SCALAR_NAME,         \
                                        "DOLFIN MeshFunction object")           \
-      .def(py::init([](std::shared_ptr<const dolfin::mesh::Mesh> mesh,         \
-                       std::size_t dim) {                                      \
-        return dolfin::mesh::MeshFunction<SCALAR>(mesh, dim, 0);               \
-      }))                                                                      \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>, std::size_t,    \
                     SCALAR>())                                                 \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>,                 \
@@ -362,11 +358,9 @@ void mesh(py::module &m) {
       .def("__len__", &dolfin::mesh::MeshFunction<SCALAR>::size)               \
       .def("dim", &dolfin::mesh::MeshFunction<SCALAR>::dim)                    \
       .def("size", &dolfin::mesh::MeshFunction<SCALAR>::size)                  \
-      .def("id", &dolfin::mesh::MeshFunction<SCALAR>::id)                      \
       .def("ufl_id", &dolfin::mesh::MeshFunction<SCALAR>::id)                  \
       .def("mesh", &dolfin::mesh::MeshFunction<SCALAR>::mesh)                  \
       .def("set_values", &dolfin::mesh::MeshFunction<SCALAR>::set_values)      \
-      .def("set_all", &dolfin::mesh::MeshFunction<SCALAR>::set_all)            \
       .def("where_equal", &dolfin::mesh::MeshFunction<SCALAR>::where_equal)    \
       .def("array", [](dolfin::mesh::MeshFunction<SCALAR> &self) {             \
         return Eigen::Map<Eigen::Array<SCALAR, Eigen::Dynamic, 1>>(            \
