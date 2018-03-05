@@ -80,7 +80,7 @@ public:
   MeshFunction(const MeshFunction<T>& f);
 
   /// Destructor
-  ~MeshFunction() {}
+  ~MeshFunction() = default;
 
   /// Assign mesh function to other mesh function
   /// Assignment operator

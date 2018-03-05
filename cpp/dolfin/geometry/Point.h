@@ -65,10 +65,16 @@ public:
   ///
   /// @param    p (_Point_)
   ///         The object to be copied.
-  Point(const Point& p) : _x({{p._x[0], p._x[1], p._x[2]}}) {}
+  Point(const Point& p) = default;
+
+  /// Move constructor
+  ///
+  /// @param    p (_Point_)
+  ///         The object to be moves.
+  Point(Point&& p) = default;
 
   /// Destructor
-  ~Point() {}
+  ~Point() = default;
 
   /// Return address of coordinate in direction i
   ///
@@ -184,11 +190,7 @@ public:
   }
 
   /// Assignment operator
-  const Point& operator=(const Point& p)
-  {
-    _x = {{p._x[0], p._x[1], p._x[2]}};
-    return *this;
-  }
+  Point& operator=(const Point& p) = default;
 
   /// Equal to operator
   bool operator==(const Point& p) const { return _x == p._x; }

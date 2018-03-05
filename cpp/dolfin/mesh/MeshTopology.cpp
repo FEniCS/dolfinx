@@ -20,39 +20,6 @@ MeshTopology::MeshTopology() : common::Variable("topology", "mesh topology")
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MeshTopology::MeshTopology(const MeshTopology& topology)
-    : common::Variable("topology", "mesh topology"),
-      _num_entities(topology._num_entities),
-      _ghost_offset_index(topology._ghost_offset_index),
-      _global_num_entities(topology._global_num_entities),
-      _global_indices(topology._global_indices),
-      _shared_entities(topology._shared_entities),
-      _cell_owner(topology._cell_owner), _connectivity(topology._connectivity)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-MeshTopology::~MeshTopology()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-MeshTopology& MeshTopology::operator=(const MeshTopology& topology)
-{
-  // FIXME: Call copy constructor?
-
-  // Private data
-  _num_entities = topology._num_entities;
-  _global_num_entities = topology._global_num_entities;
-  _ghost_offset_index = topology._ghost_offset_index;
-  _global_indices = topology._global_indices;
-  _shared_entities = topology._shared_entities;
-  _cell_owner = topology._cell_owner;
-  _connectivity = topology._connectivity;
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
 std::uint32_t MeshTopology::dim() const { return _num_entities.size() - 1; }
 //-----------------------------------------------------------------------------
 std::uint32_t MeshTopology::size(std::uint32_t dim) const
@@ -148,7 +115,8 @@ MeshTopology::shared_entities(std::uint32_t dim) const
   if (e == _shared_entities.end())
   {
     log::dolfin_error("MeshTopology.cpp", "get shared mesh entities",
-                 "Shared mesh entities have not been computed for dim %d", dim);
+                      "Shared mesh entities have not been computed for dim %d",
+                      dim);
   }
   return e->second;
 }

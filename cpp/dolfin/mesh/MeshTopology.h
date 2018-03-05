@@ -36,15 +36,17 @@ public:
   /// Create empty mesh topology
   MeshTopology();
 
-  // FIXME: use default copy constructor
   /// Copy constructor
-  MeshTopology(const MeshTopology& topology);
+  MeshTopology(const MeshTopology& topology) = default;
+
+  /// Move constructor
+  MeshTopology(MeshTopology&& topology) = default;
 
   /// Destructor
-  ~MeshTopology();
+  ~MeshTopology() = default;
 
   /// Assignment
-  MeshTopology& operator=(const MeshTopology& topology);
+  MeshTopology& operator=(const MeshTopology& topology) = default;
 
   /// Return topological dimension
   std::uint32_t dim() const;
