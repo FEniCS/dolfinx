@@ -232,10 +232,9 @@ mesh::Mesh ParallelRefinement::build_local() const
   dolfin_assert(new_cell_topology.size() % num_cell_vertices == 0);
   const std::size_t num_cells = new_cell_topology.size() / num_cell_vertices;
 
-  Eigen::Map<const EigenRowMatrixXd> geometry(new_vertex_coordinates.data(),
+  Eigen::Map<const EigenRowArrayXXd> geometry(new_vertex_coordinates.data(),
                                               num_vertices, gdim);
-  Eigen::Map<const Eigen::Matrix<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
-                                 Eigen::RowMajor>>
+  Eigen::Map<const EigenRowArrayXXi32>
       topology(new_cell_topology.data(), num_cells, num_cell_vertices);
 
   mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.type().cell_type(), geometry,
