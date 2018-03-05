@@ -471,8 +471,8 @@ T MeshValueCollection<T>::get_value(std::size_t cell_index,
   if (it == _values.end())
   {
     log::dolfin_error("MeshValueCollection.h", "extract value",
-                 "No value stored for cell index: %d and local index: %d",
-                 cell_index, local_entity);
+                      "No value stored for cell index: %d and local index: %d",
+                      cell_index, local_entity);
   }
 
   return it->second;

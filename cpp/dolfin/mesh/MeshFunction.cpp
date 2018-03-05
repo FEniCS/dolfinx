@@ -5,13 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MeshFunction.h"
-#include "LocalMeshValueCollection.h"
-#include "Mesh.h"
-#include "MeshEntity.h"
-#include "MeshPartitioning.h"
-#include "MeshValueCollection.h"
 #include <sstream>
-#include <string>
 
 namespace dolfin
 {

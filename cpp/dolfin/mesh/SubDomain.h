@@ -217,7 +217,7 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
 
     // Mark entity with all vertices inside
     if (all_points_inside)
-      sub_domains.set_value(entity.index(), sub_domain);
+      sub_domains[entity.index()] = sub_domain;
   }
 }
 //-----------------------------------------------------------------------------

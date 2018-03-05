@@ -149,20 +149,6 @@ public:
   /// @param value (T)
   MeshFunction<T>& operator=(const T& value);
 
-  /// Set value at given index
-  ///
-  /// @param index (std::size_t)
-  ///         The index.
-  /// @param value (T)
-  ///         The value.
-  void set_value(std::size_t index, const T& value);
-
-  /// Compatibility function for use in SubDomains
-  void set_value(std::size_t index, const T& value, const Mesh& mesh)
-  {
-    set_value(index, value);
-  }
-
   /// Set values
   ///
   /// @param values (std::vector<T>)
@@ -351,13 +337,6 @@ MeshFunction<T>& MeshFunction<T>::operator=(const T& value)
 {
   _values = value;
   return *this;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void MeshFunction<T>::set_value(std::size_t index, const T& value)
-{
-  dolfin_assert(index < _values.size());
-  _values[index] = value;
 }
 //---------------------------------------------------------------------------
 template <typename T>
