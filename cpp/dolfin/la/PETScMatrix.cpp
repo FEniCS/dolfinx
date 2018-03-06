@@ -4,8 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifdef HAS_PETSC
-
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "SparsityPattern.h"
@@ -69,7 +67,7 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
   if (!empty())
   {
     log::dolfin_error("PETScMatrix.cpp", "init PETSc matrix",
-                 "PETScMatrix may not be initialized more than once.");
+                      "PETScMatrix may not be initialized more than once.");
     MatDestroy(&_matA);
   }
 
@@ -98,8 +96,9 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
   int block_size = block_sizes[0];
   if (block_sizes[0] != block_sizes[1])
   {
-    log::warning("Non-matching block size in PETscMatrix::init. This code needs "
-            "checking.");
+    log::warning(
+        "Non-matching block size in PETscMatrix::init. This code needs "
+        "checking.");
     block_size = 1;
   }
 
@@ -160,7 +159,8 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
   //   _map1[i] = index_maps[1]->local_to_global(i);
 
   // std::cout << "Prep IS (0)" << std::endl;
-  for (std::size_t i = 0; i < index_maps[0]->size(common::IndexMap::MapSize::ALL); ++i)
+  for (std::size_t i = 0;
+       i < index_maps[0]->size(common::IndexMap::MapSize::ALL); ++i)
   {
     std::size_t bs = block_sizes[0] / block_size;
     auto index = index_maps[0]->local_to_global(i);
@@ -171,7 +171,8 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
   }
 
   // std::cout << "Prep IS (1)" << std::endl;
-  for (std::size_t i = 0; i < index_maps[1]->size(common::IndexMap::MapSize::ALL); ++i)
+  for (std::size_t i = 0;
+       i < index_maps[1]->size(common::IndexMap::MapSize::ALL); ++i)
   {
     std::size_t bs = block_sizes[1] / block_size;
     auto index = index_maps[1]->local_to_global(i);
@@ -180,6 +181,7 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
   }
   // std::cout << "End Prep IS" << std::endl;
 
+  /*
   if (block_size == 1)
   {
     std::cout << "** Local-to-global maps" << std::endl;
@@ -189,6 +191,7 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
     for (std::size_t i = 0; i < _map1.size(); ++i)
       std::cout << "   " << _map1[i] << std::endl;
   }
+  */
 
   // FIXME: In many cases the rows and columns could shared a common
   // local-to-global map
@@ -378,8 +381,8 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
   if (this->size(1) != x.size())
   {
     log::dolfin_error("PETScMatrix.cpp",
-                 "compute matrix-vector product with PETSc matrix",
-                 "Non-matching dimensions for matrix-vector product");
+                      "compute matrix-vector product with PETSc matrix",
+                      "Non-matching dimensions for matrix-vector product");
   }
 
   // Resize RHS if empty
@@ -389,8 +392,8 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
   if (size(0) != y.size())
   {
     log::dolfin_error("PETScMatrix.cpp",
-                 "compute matrix-vector product with PETSc matrix",
-                 "Vector for matrix-vector result has wrong size");
+                      "compute matrix-vector product with PETSc matrix",
+                      "Vector for matrix-vector result has wrong size");
   }
 
   PetscErrorCode ierr = MatMult(_matA, x.vec(), y.vec());
@@ -404,9 +407,10 @@ void PETScMatrix::transpmult(const PETScVector& x, PETScVector& y) const
 
   if (size(0) != x.size())
   {
-    log::dolfin_error("PETScMatrix.cpp",
-                 "compute transpose matrix-vector product with PETSc matrix",
-                 "Non-matching dimensions for transpose matrix-vector product");
+    log::dolfin_error(
+        "PETScMatrix.cpp",
+        "compute transpose matrix-vector product with PETSc matrix",
+        "Non-matching dimensions for transpose matrix-vector product");
   }
 
   // Resize RHS if empty
@@ -415,9 +419,10 @@ void PETScMatrix::transpmult(const PETScVector& x, PETScVector& y) const
 
   if (size(1) != y.size())
   {
-    log::dolfin_error("PETScMatrix.cpp",
-                 "compute transpose matrix-vector product with PETSc matrix",
-                 "Vector for transpose matrix-vector result has wrong size");
+    log::dolfin_error(
+        "PETScMatrix.cpp",
+        "compute transpose matrix-vector product with PETSc matrix",
+        "Vector for transpose matrix-vector result has wrong size");
   }
 
   PetscErrorCode ierr = MatMultTranspose(_matA, x.vec(), y.vec());
@@ -467,7 +472,7 @@ double PETScMatrix::norm(std::string norm_type) const
   if (norm_types.count(norm_type) == 0)
   {
     log::dolfin_error("PETScMatrix.cpp", "compute norm of PETSc matrix",
-                 "Unknown norm type (\"%s\")", norm_type.c_str());
+                      "Unknown norm type (\"%s\")", norm_type.c_str());
   }
 
   double value = 0.0;
@@ -567,7 +572,7 @@ const PETScMatrix& PETScMatrix::operator=(const PETScMatrix& A)
     if (_matA)
     {
       log::dolfin_error("PETScMatrix.cpp", "assign to PETSc matrix",
-                   "PETScMatrix may not be initialized more than once.");
+                        "PETScMatrix may not be initialized more than once.");
       MatDestroy(&_matA);
     }
     _matA = NULL;
@@ -586,7 +591,7 @@ const PETScMatrix& PETScMatrix::operator=(const PETScMatrix& A)
             "More than one object points to the underlying PETSc object");
       }
       log::dolfin_error("PETScMatrix.cpp", "assign to PETSc matrix",
-                   "PETScMatrix may not be initialized more than once.");
+                        "PETScMatrix may not be initialized more than once.");
       MatDestroy(&_matA);
     }
 
@@ -656,8 +661,9 @@ std::string PETScMatrix::str(bool verbose) const
   std::stringstream s;
   if (verbose)
   {
-    log::warning("Verbose output for PETScMatrix not implemented, calling PETSc "
-            "MatView directly.");
+    log::warning(
+        "Verbose output for PETScMatrix not implemented, calling PETSc "
+        "MatView directly.");
 
     // FIXME: Maybe this could be an option?
     dolfin_assert(_matA);
@@ -708,5 +714,3 @@ PETScMatrix::create_petsc_nullspace(const la::VectorSpaceBasis& nullspace) const
   return petsc_nullspace;
 }
 //-----------------------------------------------------------------------------
-
-#endif
