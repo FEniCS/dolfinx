@@ -43,7 +43,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       _num_dofs(0), _check_midpoint(check_midpoint)
 {
   check();
-  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
@@ -56,7 +55,6 @@ DirichletBC::DirichletBC(
       _check_midpoint(true)
 {
   check();
-  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
@@ -66,7 +64,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       _user_sub_domain_marker(sub_domain), _check_midpoint(true)
 {
   check();
-  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
@@ -76,7 +73,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       _facets(markers), _user_sub_domain_marker(0), _check_midpoint(true)
 {
   check();
-  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::gather(Map& boundary_values) const

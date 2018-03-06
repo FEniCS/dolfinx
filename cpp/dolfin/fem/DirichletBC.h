@@ -12,8 +12,6 @@
 #include <dolfin/common/types.h>
 #include <map>
 #include <memory>
-#include <set>
-#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -269,16 +267,6 @@ public:
   ///         "geometric" or "pointwise").
   Method method() const;
 
-  /// Default parameter values
-  /// @return Parameters
-  static parameter::Parameters default_parameters()
-  {
-    parameter::Parameters p("dirichlet_bc");
-    p.add("use_ident", true);
-    p.add("check_dofmap_range", true);
-    return p;
-  }
-
 private:
   class LocalData;
 
@@ -317,9 +305,6 @@ private:
 
   // Search method
   Method _method;
-
-  // Possible search methods
-  static const std::set<std::string> methods;
 
   // User defined sub domain
   std::shared_ptr<const mesh::SubDomain> _user_sub_domain;
