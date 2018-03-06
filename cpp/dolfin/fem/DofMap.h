@@ -74,11 +74,14 @@ private:
          const DofMap& dofmap_view, const mesh::Mesh& mesh);
 
   // Copy constructor
-  DofMap(const DofMap& dofmap);
+  DofMap(const DofMap& dofmap) = default;
 
 public:
+  /// Move constructor
+  DofMap(DofMap&& dofmap) = default;
+
   /// Destructor
-  ~DofMap();
+  ~DofMap() = default;
 
   /// True iff dof map is a view into another map
   ///

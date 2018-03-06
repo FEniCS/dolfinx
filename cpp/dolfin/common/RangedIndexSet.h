@@ -7,8 +7,8 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 #include <cstddef>
-#include <dolfin/log/log.h>
 #include <vector>
 
 namespace dolfin
@@ -43,7 +43,7 @@ public:
   /// Check is the set contains the given index.
   bool has_index(std::int64_t i) const
   {
-    dolfin_assert(in_range(i));
+    assert(in_range(i));
     return _is_set[i - _range[0]];
   }
 
@@ -51,7 +51,7 @@ public:
   /// was inserted (i.e., the index was not already in the set).
   bool insert(std::int64_t i)
   {
-    dolfin_assert(in_range(i));
+    assert(in_range(i));
     std::vector<bool>::reference entry = _is_set[i - _range[0]];
     if (entry)
       return false;
@@ -65,13 +65,9 @@ public:
   /// Erase an index from the set.
   void erase(std::int64_t i)
   {
-    dolfin_assert(in_range(i));
+    assert(in_range(i));
     _is_set[i - _range[0]] = false;
   }
-
-  /// Erase all indices from the set.
-  // void clear()
-  //{ std::fill(_is_set.begin(), _is_set.end(), false); }
 
 private:
   const std::array<std::int64_t, 2> _range;
