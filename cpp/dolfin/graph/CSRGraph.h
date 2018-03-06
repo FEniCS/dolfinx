@@ -105,7 +105,7 @@ public:
   }
 
   /// Destructor
-  ~CSRGraph() {}
+  ~CSRGraph() = default;
 
   /// Vector containing all edges for all local nodes
   /// ("adjncy" in ParMETIS)

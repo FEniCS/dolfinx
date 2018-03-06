@@ -64,11 +64,6 @@ LocalMeshData::LocalMeshData(const Mesh& mesh) : _mpi_comm(mesh.mpi_comm())
   }
 }
 //-----------------------------------------------------------------------------
-LocalMeshData::~LocalMeshData()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 void LocalMeshData::check() const
 {
   dolfin_assert(geometry.num_global_vertices != -1);

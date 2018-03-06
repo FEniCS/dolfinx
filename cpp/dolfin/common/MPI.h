@@ -58,17 +58,14 @@ public:
     /// Duplicate communicator and wrap duplicate
     Comm(MPI_Comm comm);
 
-    // The disabling of the below is turned off because the SWIG
-    // docstring generator fails on it.
-
     // Disable default constructor
-    // Comm() = default;
+    Comm() = delete;
 
     // Disable copy constructor
-    // Comm(const Comm& comm) = delete;
+    //Comm(const Comm& comm) = delete;
 
     // Disable assignment operator
-    // void operator=(Comm const &comm) = delete;
+    Comm& operator=(const Comm& comm) = delete;
 
     /// Destructor (frees wrapped communicator)
     ~Comm();

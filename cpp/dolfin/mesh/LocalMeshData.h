@@ -34,11 +34,20 @@ public:
   /// Create empty local mesh data
   explicit LocalMeshData(const MPI_Comm mpi_comm);
 
+  // Disable copy constructor
+  LocalMeshData(const LocalMeshData& data) = delete;
+
+  /// Move constructor
+  LocalMeshData(LocalMeshData&& data) = default;
+
   /// Create local mesh data from a given mesh
   explicit LocalMeshData(const Mesh& mesh);
 
   /// Destructor
-  ~LocalMeshData();
+  ~LocalMeshData() = default;
+
+  // Disable assignement operator
+  LocalMeshData& operator=(const LocalMeshData& data) = delete;
 
   /// Check that all essential data has been initialized, and throw error if
   /// there is a problem
@@ -50,19 +59,24 @@ public:
   /// Holder for geometry data
   struct Geometry
   {
-    /// Constructor
+    // Constructors
     Geometry() : dim(-1), num_global_vertices(-1) {}
+    Geometry(const Geometry& g) = default;
+    Geometry(Geometry&& g) = default;
 
-    /// Geometric dimension
+    // Destructor
+    ~Geometry() = default;
+
+    // Geometric dimension
     int dim;
 
-    /// Global number of vertices
+    // Global number of vertices
     std::int64_t num_global_vertices;
 
-    /// Coordinates for all vertices stored on local processor
+    // Coordinates for all vertices stored on local processor
     boost::multi_array<double, 2> vertex_coordinates;
 
-    /// Global vertex indices for all vertices stored on local processor
+    // Global vertex indices for all vertices stored on local processor
     std::vector<std::int64_t> vertex_indices;
   };
 
@@ -72,28 +86,33 @@ public:
   /// Holder for topology data
   struct Topology
   {
-    /// Constructor
+    // Constructor
     Topology() : dim(-1), num_global_cells(-1) {}
+    Topology(const Topology& g) = default;
+    Topology(Topology&& g) = default;
 
-    /// Topological dimension
+    // Destructor
+    ~Topology() = default;
+
+    // Topological dimension
     int dim;
 
-    /// Global number of cells
+    // Global number of cells
     std::int64_t num_global_cells;
 
-    /// Number of vertices per cell
+    // Number of vertices per cell
     int num_vertices_per_cell;
 
-    /// Global vertex indices for all cells stored on local processor
+    // Global vertex indices for all cells stored on local processor
     boost::multi_array<std::int64_t, 2> cell_vertices;
 
-    /// Global cell numbers for all cells stored on local processor
+    // Global cell numbers for all cells stored on local processor
     std::vector<std::int64_t> global_cell_indices;
 
-    /// Optional process owner for each cell in global_cell_indices
+    // Optional process owner for each cell in global_cell_indices
     std::vector<int> cell_partition;
 
-    /// Optional weight for each cell for partitioning
+    // Optional weight for each cell for partitioning
     std::vector<std::size_t> cell_weight;
 
     // FIXME: this should replace the need for num_vertices_per_cell
