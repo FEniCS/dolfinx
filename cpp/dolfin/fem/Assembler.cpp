@@ -11,6 +11,7 @@
 #include "SparsityPatternBuilder.h"
 #include "UFC.h"
 #include "utils.h"
+#include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/SparsityPattern.h>
@@ -22,15 +23,23 @@
 using namespace dolfin;
 using namespace dolfin::fem;
 
-using EigenMatrixD
-    = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-
 //-----------------------------------------------------------------------------
 Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
                      std::vector<std::shared_ptr<const Form>> L,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs)
-    : _a(a), _l(L), _bcs(bcs)
+    : _l(L), _bcs(bcs)
 {
+  assert(!a.empty());
+  assert(!a[0].empty());
+  _a.resize(boost::extents[a.size()][a[0].size()]);
+  for (std::size_t row = 0; row < a.size(); ++row)
+  {
+    for (std::size_t col = 0; col < a[row].size(); ++col)
+    {
+      _a[row][col] = a[row][col];
+    }
+  }
+
   // Check shape of a and L
 
   // Check rank of forms
@@ -50,43 +59,46 @@ Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
   */
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(la::PETScMatrix& A)
+void Assembler::assemble(la::PETScMatrix& A, BlockType type)
 {
   // Check if matrix should be nested
   assert(!_a.empty());
   const bool nested_matrix = false;
-  const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
+  const bool block_matrix = _a.num_elements() > 1;
 
   if (A.empty())
   {
-    // Initialise matrix
+    // Initialise matrix empty matrix
+
     if (nested_matrix)
     {
-      // Loop over each form
-      std::vector<std::shared_ptr<la::PETScMatrix>> mats;
-      std::vector<Mat> petsc_mats;
-      for (auto a_row : _a)
+      // Loop over each form and create matrix
+      boost::multi_array<std::shared_ptr<la::PETScMatrix>, 2> mats(
+          boost::extents[_a.shape()[0]][_a.shape()[1]]);
+      boost::multi_array<Mat, 2> petsc_mats(
+          boost::extents[_a.shape()[0]][_a.shape()[1]]);
+      for (std::size_t i = 0; i < _a.shape()[0]; ++i)
       {
-        for (auto a : a_row)
+        for (std::size_t j = 0; j < _a.shape()[1]; ++j)
         {
-          if (a)
+          if (_a[i][j])
           {
-            mats.push_back(std::make_shared<la::PETScMatrix>(A.mpi_comm()));
-            petsc_mats.push_back(mats.back()->mat());
-            init(*mats.back(), *a);
+            mats[i][j] = std::make_shared<la::PETScMatrix>(A.mpi_comm());
+            petsc_mats[i][j] = mats[i][j]->mat();
+            init(*mats[i][j], *_a[i][j]);
           }
           else
           {
-            mats.push_back(nullptr);
-            petsc_mats.push_back(nullptr);
+            mats[i][j] = nullptr;
+            petsc_mats[i][j] = nullptr;
           }
         }
       }
 
       // Intitialise block (MatNest) matrix
       MatSetType(A.mat(), MATNEST);
-      MatNestSetSubMats(A.mat(), _a.size(), NULL, _a[0].size(), NULL,
-                        petsc_mats.data());
+      MatNestSetSubMats(A.mat(), petsc_mats.shape()[0], NULL,
+                        petsc_mats.shape()[1], NULL, petsc_mats.data());
 
       // A.apply(la::PETScMatrix::AssemblyType::FINAL);
     }
@@ -94,14 +106,15 @@ void Assembler::assemble(la::PETScMatrix& A)
     {
       std::cout << "Initialising block matrix" << std::endl;
 
-      std::vector<std::vector<std::shared_ptr<la::SparsityPattern>>> patterns;
-      std::vector<std::vector<const la::SparsityPattern*>> p;
-      // int irow = 0;
-      for (std::size_t row = 0; row < _a.size(); ++row)
+      boost::multi_array<std::shared_ptr<la::SparsityPattern>, 2> patterns(
+          boost::extents[_a.shape()[0]][_a.shape()[1]]);
+      boost::multi_array<const la::SparsityPattern*, 2> p(
+          boost::extents[_a.shape()[0]][_a.shape()[1]]);
+      // std::vector<std::vector<const la::SparsityPattern*>> p;
+      for (std::size_t row = 0; row < _a.shape()[0]; ++row)
       {
-        patterns.resize(_a[row].size());
-        p.resize(_a[row].size());
-        for (std::size_t col = 0; col < _a[row].size(); ++col)
+        // p.resize(_a[row].size());
+        for (std::size_t col = 0; col < _a.shape()[1]; ++col)
         {
           std::cout << "  Initialising block: " << row << ", " << col
                     << std::endl;
@@ -111,20 +124,19 @@ void Assembler::assemble(la::PETScMatrix& A)
           std::cout << "  Push Initialising block: " << std::endl;
           std::array<std::shared_ptr<const common::IndexMap>, 2> maps
               = {{map0, map1}};
-          auto test
+          patterns[row][col]
               = std::make_shared<la::SparsityPattern>(A.mpi_comm(), maps, 0);
-          patterns[row].push_back(test);
 
           // Build sparsity pattern
           std::cout << "  Build sparsity pattern " << std::endl;
           std::array<const GenericDofMap*, 2> dofmaps
               = {{_a[row][col]->function_space(0)->dofmap().get(),
                   _a[row][col]->function_space(1)->dofmap().get()}};
-          SparsityPatternBuilder::build(*patterns[row].back(),
+          SparsityPatternBuilder::build(*patterns[row][col],
                                         *_a[row][col]->mesh(), dofmaps, true,
                                         false, false, false, false);
           std::cout << "  End Build sparsity pattern " << std::endl;
-          p[row].push_back(patterns[row].back().get());
+          p[row][col] = patterns[row][col].get();
           std::cout << "  End push back sparsity pattern pointer " << std::endl;
         }
       }
@@ -139,7 +151,10 @@ void Assembler::assemble(la::PETScMatrix& A)
       std::cout << "  Post init parent matrix" << std::endl;
     }
     else
+    {
+      // Initialise matrix
       init(A, *_a[0][0]);
+    }
   }
   else
   {
@@ -335,8 +350,8 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 
   // Data structures used in assembly
   ufc::cell ufc_cell;
-  EigenMatrixD coordinate_dofs;
-  EigenMatrixD Ae;
+  EigenRowArrayXXd coordinate_dofs;
+  EigenRowArrayXXd Ae;
 
   // Get cell integral
   auto cell_integral = a.integrals().cell_integral();
@@ -446,8 +461,8 @@ void Assembler::assemble(la::PETScVector& b, const Form& L)
 
   // Data structures used in assembly
   ufc::cell ufc_cell;
-  EigenMatrixD coordinate_dofs;
-  Eigen::VectorXd be;
+  EigenRowArrayXXd coordinate_dofs;
+  EigenArrayXd be;
 
   // Get cell integral
   auto cell_integral = L.integrals().cell_integral();
@@ -524,9 +539,9 @@ void Assembler::apply_bc(la::PETScVector& b, const Form& a,
   auto dofmap1 = a.function_space(1)->dofmap();
 
   ufc::cell ufc_cell;
-  EigenMatrixD Ae;
-  Eigen::VectorXd be;
-  EigenMatrixD coordinate_dofs;
+  EigenRowArrayXXd Ae;
+  EigenArrayXd be;
+  EigenRowArrayXXd coordinate_dofs;
 
   // Create data structures for local assembly data
   UFC ufc(a);

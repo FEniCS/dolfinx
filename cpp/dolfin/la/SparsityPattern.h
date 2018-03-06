@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <boost/multi_array.hpp>
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
@@ -54,9 +55,8 @@ public:
   /// Create a new sparsity pattern by adding sub-patterns, e.g.
   /// pattern =[ pattern00 ][ pattern 01]
   ///          [ pattern10 ][ pattern 11]
-  SparsityPattern(
-      MPI_Comm comm,
-      const std::vector<std::vector<const SparsityPattern*>> patterns);
+  SparsityPattern(MPI_Comm comm,
+                  const boost::multi_array<const SparsityPattern*, 2> patterns);
 
   SparsityPattern(const SparsityPattern& pattern) = delete;
 

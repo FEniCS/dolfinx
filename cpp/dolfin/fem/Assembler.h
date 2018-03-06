@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <boost/multi_array.hpp>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -28,6 +29,12 @@ class Form;
 class Assembler
 {
 public:
+  enum class BlockType
+  {
+    monolithic,
+    nested
+  };
+
   /// Constructor
   Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
             std::vector<std::shared_ptr<const Form>> L,
@@ -35,7 +42,7 @@ public:
 
   // Assemble matrix. Dirichlet rows/columns are zeroed, with '1' placed on
   // diagonal
-  void assemble(la::PETScMatrix& A);
+  void assemble(la::PETScMatrix& A, BlockType type = BlockType::nested);
 
   // Assemble vector
   void assemble(la::PETScVector& b);
@@ -62,7 +69,7 @@ private:
                      std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Bilinear and linear forms
-  std::vector<std::vector<std::shared_ptr<const Form>>> _a;
+  boost::multi_array<std::shared_ptr<const Form>, 2> _a;
   std::vector<std::shared_ptr<const Form>> _l;
 
   // Dirichlet boundary conditions

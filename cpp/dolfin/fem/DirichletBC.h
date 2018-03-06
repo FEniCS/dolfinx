@@ -61,10 +61,6 @@ namespace fem
 /// over facets labeling all mesh facets together with a number that
 /// specifies which facets should be included in the boundary.
 ///
-/// The third option is to attach the boundary information to the
-/// mesh. This is handled automatically when exporting a mesh from
-/// for example VMTK.
-///
 /// The 'method' variable may be used to specify the type of method
 /// used to identify degrees of freedom on the boundary. Available
 /// methods are: topological approach (default), geometric approach,
