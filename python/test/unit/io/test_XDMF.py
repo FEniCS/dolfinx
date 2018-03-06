@@ -642,7 +642,7 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
             xdmf.write(mvc, encoding)
 
         with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-            mvc = MeshValueCollection(dtype_str, mesh)
+            mvc = MeshValueCollection(dtype_str, mesh,  mvc_dim)
             xdmf.read(mvc, tag)
 
 
