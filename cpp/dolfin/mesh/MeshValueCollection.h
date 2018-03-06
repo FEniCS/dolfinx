@@ -40,12 +40,6 @@ public:
   /// Move constructor
   MeshValueCollection(MeshValueCollection<T>&& mvc) = default;
 
-  /// Create an empty mesh value collection on a given mesh
-  ///
-  /// @param    mesh (_Mesh_)
-  ///         The mesh.
-  explicit MeshValueCollection(std::shared_ptr<const Mesh> mesh);
-
   /// Create a mesh value collection from a MeshFunction
   ///
   /// @param    mesh_function (MeshFunction<T>)
@@ -66,13 +60,6 @@ public:
 
   /// Assignment operator
   ///
-  /// @param    mesh_function (_MeshFunction_)
-  ///         A _MeshFunction_ object used to construct a
-  ///         MeshValueCollection.
-  MeshValueCollection<T>& operator=(const MeshFunction<T>& mesh_function);
-
-  /// Assignment operator
-  ///
   /// @param    mesh_value_collection (_MeshValueCollection_)
   ///         A _MeshValueCollection_ object used to construct a
   ///         MeshValueCollection.
@@ -80,21 +67,12 @@ public:
   operator=(const MeshValueCollection<T>& mesh_value_collection)
       = default;
 
-  /// Initialise MeshValueCollection with mesh and dimension
+  /// Assignment operator
   ///
-  /// @param    mesh (_mesh))
-  ///         The mesh on which the value collection is defined
-  /// @param    dim (std::size_t)
-  ///         The mesh entity dimension for the mesh value collection.
-  void init(std::shared_ptr<const Mesh> mesh, std::size_t dim);
-
-  /// Set dimension. This function should not generally be used. It is
-  /// for reading MeshValueCollections as the dimension is not
-  /// generally known at construction.
-  ///
-  /// @param    dim (std::size_t)
-  ///         The mesh entity dimension for the mesh value collection.
-  void init(std::size_t dim);
+  /// @param    mesh_function (_MeshFunction_)
+  ///         A _MeshFunction_ object used to construct a
+  ///         MeshValueCollection.
+  MeshValueCollection<T>& operator=(const MeshFunction<T>& mesh_function);
 
   /// Return topological dimension
   ///
@@ -198,13 +176,6 @@ private:
 
 //---------------------------------------------------------------------------
 // Implementation of MeshValueCollection
-//---------------------------------------------------------------------------
-template <typename T>
-MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh)
-    : _mesh(mesh), _dim(-1)
-{
-  // Do nothing
-}
 //---------------------------------------------------------------------------
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
@@ -312,24 +283,6 @@ operator=(const MeshFunction<T>& mesh_function)
   }
 
   return *this;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void MeshValueCollection<T>::init(std::shared_ptr<const Mesh> mesh,
-                                  std::size_t dim)
-{
-  mesh->init(dim);
-  _mesh = mesh;
-  _dim = dim;
-  _values.clear();
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void MeshValueCollection<T>::init(std::size_t dim)
-{
-  dolfin_assert(_mesh);
-  dolfin_assert(_dim < 0);
-  _dim = dim;
 }
 //---------------------------------------------------------------------------
 template <typename T>

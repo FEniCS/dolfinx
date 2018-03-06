@@ -382,7 +382,6 @@ void mesh(py::module &m) {
              std::shared_ptr<dolfin::mesh::MeshValueCollection<SCALAR>>,       \
              dolfin::common::Variable>(m, "MeshValueCollection_" #SCALAR_NAME, \
                                        "DOLFIN MeshValueCollection object")    \
-      .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>>())              \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>, std::size_t>()) \
       .def("dim", &dolfin::mesh::MeshValueCollection<SCALAR>::dim)             \
       .def("size", &dolfin::mesh::MeshValueCollection<SCALAR>::size)           \

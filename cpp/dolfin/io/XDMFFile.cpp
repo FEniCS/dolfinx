@@ -764,10 +764,9 @@ void XDMFFile::write_mesh_value_collection(
 void XDMFFile::read(mesh::MeshValueCollection<bool>& mvc, std::string name)
 {
   // Bool is not really supported, so copy from int
-  mesh::MeshValueCollection<int> mvc_int(mvc.mesh());
+  mesh::MeshValueCollection<int> mvc_int(mvc.mesh(), mvc.dim());
   read_mesh_value_collection(mvc_int, name);
 
-  mvc.init(mvc.mesh(), mvc_int.dim());
   for (const auto& p : mvc_int.values())
     mvc.set_value(p.first.first, p.first.second, (bool)p.second);
 }
@@ -843,7 +842,6 @@ void XDMFFile::read_mesh_value_collection(mesh::MeshValueCollection<T>& mvc,
   std::shared_ptr<const mesh::Mesh> mesh = mvc.mesh();
   dolfin_assert(mesh);
   mvc.clear();
-  mvc.init(mesh, cell_dim);
 
   // Read values associated with each mesh::MeshEntity described by topology
   pugi::xml_node attribute_node = grid_node.child("Attribute");
