@@ -203,8 +203,11 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
       log::log(TRACE,
                "System assembler: boundary condition %d applies to axis 0", i);
       _bcs[i]->get_boundary_values(boundary_values[0]);
-      if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
+      if (MPI::size(mesh.mpi_comm()) > 1
+          && _bcs[i]->method() != DirichletBC::Method::pointwise)
+      {
         _bcs[i]->gather(boundary_values[0]);
+      }
     }
 
     // Fetch bc on axis1
@@ -213,8 +216,11 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
       log::log(TRACE,
                "System assembler: boundary condition %d applies to axis 1", i);
       _bcs[i]->get_boundary_values(boundary_values[1]);
-      if (MPI::size(mesh.mpi_comm()) > 1 && _bcs[i]->method() != "pointwise")
+      if (MPI::size(mesh.mpi_comm()) > 1
+          && _bcs[i]->method() != DirichletBC::Method::pointwise)
+      {
         _bcs[i]->gather(boundary_values[1]);
+      }
     }
 
     if (!axis0 && !axis1)

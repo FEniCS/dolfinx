@@ -111,7 +111,8 @@ void Assembler::assemble(la::PETScMatrix& A)
           std::cout << "  Push Initialising block: " << std::endl;
           std::array<std::shared_ptr<const common::IndexMap>, 2> maps
               = {{map0, map1}};
-          auto test = std::make_shared<la::SparsityPattern>(A.mpi_comm(), maps, 0);
+          auto test
+              = std::make_shared<la::SparsityPattern>(A.mpi_comm(), maps, 0);
           patterns[row].push_back(test);
 
           // Build sparsity pattern
@@ -323,8 +324,11 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
         // FIXME: find way to avoid gather, or perform with a single
         // gather
         bcs[i]->get_boundary_values(boundary_values[axis]);
-        if (MPI::size(mesh.mpi_comm()) > 1 and bcs[i]->method() != "pointwise")
+        if (MPI::size(mesh.mpi_comm()) > 1
+            and bcs[i]->method() != DirichletBC::Method::pointwise)
+        {
           bcs[i]->gather(boundary_values[axis]);
+        }
       }
     }
   }
@@ -504,8 +508,11 @@ void Assembler::apply_bc(la::PETScVector& b, const Form& a,
     if (a.function_space(1)->contains(*bcs[i]->function_space()))
     {
       bcs[i]->get_boundary_values(boundary_values);
-      if (MPI::size(mesh.mpi_comm()) > 1 and bcs[i]->method() != "pointwise")
+      if (MPI::size(mesh.mpi_comm()) > 1
+          and bcs[i]->method() != DirichletBC::Method::pointwise)
+      {
         bcs[i]->gather(boundary_values);
+      }
     }
   }
 
@@ -627,8 +634,11 @@ void Assembler::set_bc(la::PETScVector& b, const Form& L,
     if (V->contains(*bcs[i]->function_space()))
     {
       bcs[i]->get_boundary_values(boundary_values);
-      if (MPI::size(mesh.mpi_comm()) > 1 and bcs[i]->method() != "pointwise")
+      if (MPI::size(mesh.mpi_comm()) > 1
+          and bcs[i]->method() != DirichletBC::Method::pointwise)
+      {
         bcs[i]->gather(boundary_values);
+      }
     }
   }
 
