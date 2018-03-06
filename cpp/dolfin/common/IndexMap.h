@@ -43,11 +43,14 @@ public:
   /// Collective
   IndexMap(MPI_Comm mpi_comm, std::size_t local_size, std::size_t block_size);
 
-  /// Index map with no data
-  IndexMap(const IndexMap& map) = delete;
+  /// Copy constructor
+  IndexMap(const IndexMap& map) = default;
+
+  /// Move constructor
+  IndexMap(IndexMap&& map) = default;
 
   /// Destructor
-  ~IndexMap();
+  ~IndexMap() = default;
 
   /// Local range of block indices
   std::array<std::int64_t, 2> local_range() const;

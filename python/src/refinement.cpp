@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Chris N. Richardson
+// Copyright (C) 2018 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -14,12 +14,11 @@ namespace py = pybind11;
 namespace dolfin_wrappers {
 
 void refinement(py::module &m) {
+
   // dolfin::refinement::refine
-  m.def("refine", [](dolfin::mesh::Mesh &mesh, bool redistribute) {
-    auto new_mesh = std::make_shared<dolfin::mesh::Mesh>(mesh.mpi_comm());
-    dolfin::refinement::refine(*new_mesh, mesh, redistribute);
-    return new_mesh;
-  });
+  m.def("refine", py::overload_cast<const dolfin::mesh::Mesh &, bool>(
+                      &dolfin::refinement::refine),
+        py::arg("mesh"), py::arg("redistribute") = true);
 }
 
 } // namespace dolfin_wrappers

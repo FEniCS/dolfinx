@@ -25,8 +25,7 @@ using namespace dolfin;
 using namespace dolfin::refinement;
 
 //-----------------------------------------------------------------------------
-void PlazaRefinementND::refine(mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
-                               bool redistribute)
+mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
 {
   if (mesh.type().cell_type() != mesh::CellType::Type::triangle
       and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
@@ -44,13 +43,14 @@ void PlazaRefinementND::refine(mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
   ParallelRefinement p_ref(mesh);
   p_ref.mark_all();
 
-  compute_refinement(new_mesh, mesh, p_ref, long_edge, edge_ratio_ok,
-                     redistribute);
+  return compute_refinement(mesh, p_ref, long_edge, edge_ratio_ok,
+                            redistribute);
 }
 //-----------------------------------------------------------------------------
-void PlazaRefinementND::refine(
-    mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
-    const mesh::MeshFunction<bool>& refinement_marker, bool redistribute)
+mesh::Mesh
+PlazaRefinementND::refine(const mesh::Mesh& mesh,
+                          const mesh::MeshFunction<bool>& refinement_marker,
+                          bool redistribute)
 {
   if (mesh.type().cell_type() != mesh::CellType::Type::triangle
       and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
@@ -70,8 +70,8 @@ void PlazaRefinementND::refine(
 
   enforce_rules(p_ref, mesh, long_edge);
 
-  compute_refinement(new_mesh, mesh, p_ref, long_edge, edge_ratio_ok,
-                     redistribute);
+  return compute_refinement(mesh, p_ref, long_edge, edge_ratio_ok,
+                            redistribute);
 }
 //-----------------------------------------------------------------------------
 void PlazaRefinementND::get_simplices(
@@ -336,8 +336,8 @@ void PlazaRefinementND::enforce_rules(
   }
 }
 //-----------------------------------------------------------------------------
-void PlazaRefinementND::compute_refinement(
-    mesh::Mesh& new_mesh, const mesh::Mesh& mesh, ParallelRefinement& p_ref,
+mesh::Mesh PlazaRefinementND::compute_refinement(
+    const mesh::Mesh& mesh, ParallelRefinement& p_ref,
     const std::vector<std::int32_t>& long_edge,
     const std::vector<bool>& edge_ratio_ok, bool redistribute)
 {
@@ -426,8 +426,12 @@ void PlazaRefinementND::compute_refinement(
 
   const bool serial = (dolfin::MPI::size(mesh.mpi_comm()) == 1);
   if (serial)
-    new_mesh = p_ref.build_local();
+    return p_ref.build_local();
   else
+  {
+    mesh::Mesh new_mesh(mesh.mpi_comm());
     p_ref.partition(new_mesh, redistribute);
+    return new_mesh;
+  }
 }
 //-----------------------------------------------------------------------------

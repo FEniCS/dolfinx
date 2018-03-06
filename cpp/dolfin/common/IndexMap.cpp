@@ -26,11 +26,6 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
   _all_ranges.insert(_all_ranges.begin(), 0);
 }
 //-----------------------------------------------------------------------------
-IndexMap::~IndexMap()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
 {
   if (_all_ranges.size() == 0)

@@ -100,27 +100,6 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   }
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const DofMap& dofmap) : _index_map(dofmap._index_map)
-{
-  // Copy data
-  _dofmap = dofmap._dofmap;
-  _cell_dimension = dofmap._cell_dimension;
-  _ufc_dofmap = dofmap._ufc_dofmap;
-  _num_mesh_entities_global = dofmap._num_mesh_entities_global;
-  _ufc_local_to_local = dofmap._ufc_local_to_local;
-  _is_view = dofmap._is_view;
-  _global_dimension = dofmap._global_dimension;
-  _ufc_offset = dofmap._ufc_offset;
-  _shared_nodes = dofmap._shared_nodes;
-  _neighbours = dofmap._neighbours;
-  constrained_domain = dofmap.constrained_domain;
-}
-//-----------------------------------------------------------------------------
-DofMap::~DofMap()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 std::int64_t DofMap::global_dimension() const { return _global_dimension; }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_element_dofs(std::size_t cell_index) const

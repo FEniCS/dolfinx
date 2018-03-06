@@ -26,7 +26,7 @@ namespace refinement
 /// Data structure and methods for refining meshes in parallel
 
 /// ParallelRefinement encapsulates two main features:
-/// a distributed MeshFunction defined over the mesh edes,
+/// a distributed MeshFunction defined over the mesh edges,
 /// which can be updated across processes,
 /// and storage for local mesh data, which can be used
 /// to construct the new Mesh
