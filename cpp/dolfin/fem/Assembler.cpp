@@ -167,10 +167,10 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType type)
   // Assemble blocks (A)
   if (nested_matrix)
   {
-    for (std::size_t i = 0; i < _a.size(); ++i)
+    for (std::size_t i = 0; i < _a.shape()[0]; ++i)
     {
       // MatNestGetSubMat(Mat A,PetscInt idxm,PetscInt jdxm,Mat *sub)
-      for (std::size_t j = 0; j < _a[i].size(); ++j)
+      for (std::size_t j = 0; j < _a.shape()[1]; ++j)
       {
         if (_a[i][j])
         {
@@ -189,12 +189,12 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType type)
   {
     std::cout << "Assembling block matrix (non-nested)" << std::endl;
     std::int64_t offset_row = 0;
-    for (std::size_t i = 0; i < _a.size(); ++i)
+    for (std::size_t i = 0; i < _a.shape()[0]; ++i)
     {
 
       // Loop over columns
       std::int64_t offset_col = 0;
-      for (std::size_t j = 0; j < _a[i].size(); ++j)
+      for (std::size_t j = 0; j < _a.shape()[1]; ++j)
       {
         if (_a[i][j])
         {
