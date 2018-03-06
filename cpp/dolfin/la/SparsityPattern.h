@@ -60,8 +60,11 @@ public:
 
   SparsityPattern(const SparsityPattern& pattern) = delete;
 
+  /// Move constructor
+  SparsityPattern(SparsityPattern&& pattern) = default;
+
   /// Destructor
-  ~SparsityPattern() {}
+  ~SparsityPattern() = default;
 
   /// Insert non-zero entries using global indices
   void insert_global(

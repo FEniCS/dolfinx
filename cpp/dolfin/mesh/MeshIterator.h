@@ -40,6 +40,9 @@ public:
   /// Copy constructor
   MeshIterator(const MeshIterator& it) = default;
 
+  /// Move constructor
+  MeshIterator(MeshIterator&& it) = default;
+
   /// Copy assignment
   const MeshIterator& operator=(const MeshIterator& m)
   {
@@ -131,6 +134,9 @@ public:
 
   /// Copy constructor
   MeshEntityIterator(const MeshEntityIterator& it) = default;
+
+  /// Move constructor
+  MeshEntityIterator(MeshEntityIterator&& it) = default;
 
   // Copy assignment
   const MeshEntityIterator& operator=(const MeshEntityIterator& m)

@@ -31,8 +31,11 @@ public:
   LocalMeshValueCollection(MPI_Comm comm, const MeshValueCollection<T>& values,
                            std::size_t dim);
 
+  /// Move constructor
+  LocalMeshValueCollection(LocalMeshValueCollection&& lmvc) = default;
+
   /// Destructor
-  ~LocalMeshValueCollection() {}
+  ~LocalMeshValueCollection() = default;
 
   /// Return dimension of cell entity
   std::size_t dim() const { return _dim; }

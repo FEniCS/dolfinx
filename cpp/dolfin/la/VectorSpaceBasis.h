@@ -25,8 +25,14 @@ public:
   /// Constructor
   VectorSpaceBasis(const std::vector<std::shared_ptr<PETScVector>> basis);
 
+  /// Delete copy constructor
+  VectorSpaceBasis(const VectorSpaceBasis& basis) = delete;
+
+  /// Move constructor
+  VectorSpaceBasis(VectorSpaceBasis&& basis) = default;
+
   /// Destructor
-  ~VectorSpaceBasis() {}
+  ~VectorSpaceBasis() = default;
 
   /// Apply the Gram-Schmidt process to orthonormalize the
   /// basis. Throws an error if a (near) linear dependency is
