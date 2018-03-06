@@ -39,8 +39,7 @@ public:
   ///  @returns mesh::Mesh
   ///     New mesh
   ///
-  static void refine(mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
-                     bool redistribute);
+  static mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute);
 
   /// Refine with markers, optionally redistributing
   ///
@@ -54,9 +53,9 @@ public:
   /// @param redistribute
   ///     Flag to call the Mesh Partitioner to redistribute after refinement
   ///
-  static void refine(mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
-                     const mesh::MeshFunction<bool>& refinement_marker,
-                     bool redistribute);
+  static mesh::Mesh refine(const mesh::Mesh& mesh,
+                           const mesh::MeshFunction<bool>& refinement_marker,
+                           bool redistribute);
 
   /// Get the subdivision of an original simplex into smaller
   /// simplices, for a given set of marked edges, and the
@@ -96,11 +95,10 @@ private:
                              const std::vector<std::int32_t>& longest_edge);
 
   // Convenient interface for both uniform and marker refinement
-  static void compute_refinement(mesh::Mesh& new_mesh, const mesh::Mesh& mesh,
-                                 ParallelRefinement& p_ref,
-                                 const std::vector<std::int32_t>& long_edge,
-                                 const std::vector<bool>& edge_ratio_ok,
-                                 bool redistribute);
+  static mesh::Mesh
+  compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
+                     const std::vector<std::int32_t>& long_edge,
+                     const std::vector<bool>& edge_ratio_ok, bool redistribute);
 
   // Propagate edge markers according to rules (longest edge
   // of each face must be marked, if any edge of face is marked)
