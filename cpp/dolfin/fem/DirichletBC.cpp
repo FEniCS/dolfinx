@@ -59,15 +59,6 @@ DirichletBC::DirichletBC(
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                          std::shared_ptr<const function::GenericFunction> g,
-                         std::size_t sub_domain, Method method)
-    : _function_space(V), _g(g), _method(method), _num_dofs(0),
-      _user_sub_domain_marker(sub_domain), _check_midpoint(true)
-{
-  check();
-}
-//-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-                         std::shared_ptr<const function::GenericFunction> g,
                          const std::vector<std::size_t>& markers, Method method)
     : _function_space(V), _g(g), _method(method), _num_dofs(0),
       _facets(markers), _user_sub_domain_marker(0), _check_midpoint(true)

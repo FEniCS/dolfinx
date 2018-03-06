@@ -151,22 +151,6 @@ public:
       std::shared_ptr<const mesh::MeshFunction<std::size_t>> sub_domains,
       std::size_t sub_domain, Method method = Method::topological);
 
-  // TODO: Remove/deprecate this function
-  /// Create boundary condition for boundary data included in the mesh
-  ///
-  /// @param[in] V (FunctionSpace)
-  ///         The function space.
-  /// @param[in]  g (GenericFunction)
-  ///         The value.
-  /// @param[in] sub_domain (std::size_t)
-  ///         The subdomain index (number)
-  /// @param[in] method (std::string)
-  ///         Optional argument: A string specifying the
-  ///         method to identify dofs.
-  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-              std::shared_ptr<const function::GenericFunction> g,
-              std::size_t sub_domain, Method method = Method::topological);
-
   /// Create boundary condition for subdomain by boundary markers
   /// (cells, local facet numbers)
   ///
