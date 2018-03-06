@@ -103,7 +103,7 @@ Mesh::Mesh(Mesh&& mesh)
     : common::Variable(std::move(mesh)), _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
       _cell_type(CellType::create(mesh._cell_type->cell_type())),
-      _ordered(std::move(mesh._ordered)), _mpi_comm(mesh.mpi_comm()),
+      _ordered(std::move(mesh._ordered)), _mpi_comm(std::move(mesh._mpi_comm)),
       _ghost_mode(std::move(mesh._ghost_mode))
 {
   // Do nothing

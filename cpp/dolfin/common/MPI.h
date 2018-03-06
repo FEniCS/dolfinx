@@ -58,11 +58,11 @@ public:
     /// Duplicate communicator and wrap duplicate
     Comm(MPI_Comm comm);
 
-    // Disable default constructor
-    Comm() = delete;
+    // Copy constructor
+    Comm(const Comm& comm);
 
-    // Disable copy constructor
-    //Comm(const Comm& comm) = delete;
+    /// Move constructor
+    Comm(Comm&& comm);
 
     // Disable assignment operator
     Comm& operator=(const Comm& comm) = delete;

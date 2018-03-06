@@ -32,6 +32,17 @@ dolfin::MPI::Comm::Comm(MPI_Comm comm)
   std::vector<double> x = {{1.0, 3.0}};
 }
 //-----------------------------------------------------------------------------
+dolfin::MPI::Comm::Comm(const Comm& comm) : Comm(comm._comm)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+dolfin::MPI::Comm::Comm(Comm&& comm)
+{
+  this->_comm = comm._comm;
+  comm._comm = MPI_COMM_NULL;
+}
+//-----------------------------------------------------------------------------
 dolfin::MPI::Comm::~Comm() { free(); }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::Comm::free()
@@ -258,7 +269,7 @@ dolfin::Table dolfin::MPI::all_reduce(const MPI_Comm comm,
     };
   else
     log::dolfin_error("MPI.h", "perform reduction of Table",
-                 "MPI::reduce(comm, table, %d) not implemented", op);
+                      "MPI::reduce(comm, table, %d) not implemented", op);
 
   // Construct dvalues map from obtained data
   std::map<std::array<std::string, 2>, double> dvalues_all;

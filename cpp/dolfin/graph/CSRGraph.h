@@ -104,6 +104,12 @@ public:
     calculate_node_distribution();
   }
 
+  /// Copy constructor
+  CSRGraph(const CSRGraph& g) = default;
+
+  /// Move constructor
+  CSRGraph(CSRGraph&& g) = default;
+
   /// Destructor
   ~CSRGraph() = default;
 
