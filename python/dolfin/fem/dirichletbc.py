@@ -118,7 +118,8 @@ class DirichletBC(cpp.fem.DirichletBC):
         if isinstance(args[-1], str):
             method = args[-1]
         else:
-            method = kwargs.pop("method", "topological")
+            method = kwargs.pop(
+                "method", cpp.fem.DirichletBC.Method.topological)
             args += (method,)
         check_midpoint = kwargs.pop("check_midpoint", None)
         if check_midpoint is not None:
