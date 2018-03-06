@@ -143,18 +143,6 @@ double HexahedronCell::volume(const MeshEntity& cell) const
                       "Illegal mesh entity");
   }
 
-  // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
-
-  // Get the coordinates of the four vertices
-  const std::int32_t* vertices = cell.entities(0);
-  const geometry::Point p0 = geometry.point(vertices[0]);
-  const geometry::Point p1 = geometry.point(vertices[1]);
-  const geometry::Point p2 = geometry.point(vertices[2]);
-  const geometry::Point p3 = geometry.point(vertices[3]);
-  const geometry::Point p4 = geometry.point(vertices[4]);
-  const geometry::Point p5 = geometry.point(vertices[5]);
-
   log::dolfin_error("HexahedronCell.cpp", "compute volume of hexahedron",
                     "Not implemented");
 
@@ -208,25 +196,6 @@ geometry::Point HexahedronCell::cell_normal(const mesh::Cell& cell) const
 double HexahedronCell::facet_area(const mesh::Cell& cell,
                                   std::size_t facet) const
 {
-  // Create facet from the mesh and local facet number
-  const Facet f(cell.mesh(), cell.entities(1)[facet]);
-
-  // Get global index of vertices on the facet
-  const std::size_t v0 = f.entities(0)[0];
-  const std::size_t v1 = f.entities(0)[1];
-  const std::size_t v2 = f.entities(0)[2];
-  const std::size_t v3 = f.entities(0)[3];
-
-  // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
-
-  // Need to check points are co-planar
-
-  const geometry::Point p0 = geometry.point(v0);
-  const geometry::Point p1 = geometry.point(v1);
-  const geometry::Point p2 = geometry.point(v2);
-  const geometry::Point p3 = geometry.point(v3);
-
   dolfin_not_implemented();
 
   return 0.0;
