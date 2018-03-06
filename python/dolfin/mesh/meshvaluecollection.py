@@ -14,11 +14,8 @@ _meshvaluecollection_types = {"bool": cpp.mesh.MeshValueCollection_bool,
 
 
 class MeshValueCollection(object):
-    def __new__(cls, value_type, mesh, dim=None):
+    def __new__(cls, value_type, mesh, dim):
         if value_type not in _meshvaluecollection_types.keys():
             raise KeyError("MeshValueCollection type not recognised")
         mvc = _meshvaluecollection_types[value_type]
-        if dim is not None:
-            return mvc(mesh, dim)
-        else:
-            return mvc(mesh)
+        return mvc(mesh, dim)
