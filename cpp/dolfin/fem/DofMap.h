@@ -126,18 +126,6 @@ public:
   ///         Number of dofs associated with given entity dimension
   virtual std::size_t num_entity_dofs(std::size_t entity_dim) const;
 
-  /// Return the number of dofs for the closure of an entity of given dimension
-  ///
-  /// *Arguments*
-  ///     entity_dim (std::size_t)
-  ///         Entity dimension
-  ///
-  /// *Returns*
-  ///     std::size_t
-  ///         Number of dofs associated with closure of an entity of given
-  ///         dimension
-  virtual std::size_t num_entity_closure_dofs(std::size_t entity_dim) const;
-
   /// Return number of facet dofs
   ///
   /// @return     std::size_t
@@ -223,32 +211,6 @@ public:
   std::vector<dolfin::la_index_t> entity_dofs(const mesh::Mesh& mesh,
                                               std::size_t entity_dim) const;
 
-  /// Return the dof indices associated with the closure of entities of
-  /// given dimension and entity indices
-  ///
-  /// *Arguments*
-  ///     entity_dim (std::size_t)
-  ///         Entity dimension.
-  ///     entity_indices (std::vector<dolfin::la_index_t>&)
-  ///         Entity indices to get dofs for.
-  /// *Returns*
-  ///     std::vector<dolfin::la_index_t>
-  ///         Dof indices associated with selected entities and their closure.
-  std::vector<dolfin::la_index_t>
-  entity_closure_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
-                      const std::vector<std::size_t>& entity_indices) const;
-
-  /// Return the dof indices associated with the closure of all entities of
-  /// given dimension
-  ///
-  /// @param  mesh (mesh::Mesh)
-  ///         mesh::Mesh
-  /// @param  entity_dim (std::size_t)
-  ///         Entity dimension.
-  /// @return  std::vector<dolfin::la_index_t>
-  ///         Dof indices associated with selected entities and their closure.
-  std::vector<dolfin::la_index_t>
-  entity_closure_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const;
 
   /// Tabulate local-local facet dofs
   ///
@@ -271,18 +233,6 @@ public:
                             std::size_t entity_dim,
                             std::size_t cell_entity_index) const;
 
-  /// Tabulate local-local mapping of dofs on closure of entity (dim,
-  /// local_entity)
-  ///
-  /// @param   element_dofs (std::size_t)
-  ///         Degrees of freedom on a single element.
-  /// @param   entity_dim (std::size_t)
-  ///         The entity dimension.
-  /// @param    cell_entity_index (std::size_t)
-  ///         The local entity index on the cell.
-  void tabulate_entity_closure_dofs(std::vector<std::size_t>& element_dofs,
-                                    std::size_t entity_dim,
-                                    std::size_t cell_entity_index) const;
 
   /// Tabulate globally supported dofs
   ///
@@ -295,12 +245,6 @@ public:
     std::copy(_global_nodes.cbegin(), _global_nodes.cend(),
               element_dofs.begin());
   }
-
-  /// Create a copy of the dof map
-  ///
-  /// @return     DofMap
-  ///         The Dofmap copy.
-  std::shared_ptr<GenericDofMap> copy() const;
 
   /// Create a copy of the dof map on a new mesh
   ///
