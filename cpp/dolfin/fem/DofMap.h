@@ -296,12 +296,6 @@ public:
               element_dofs.begin());
   }
 
-  /// Create a copy of the dof map
-  ///
-  /// @return     DofMap
-  ///         The Dofmap copy.
-  std::shared_ptr<GenericDofMap> copy() const;
-
   /// Create a copy of the dof map on a new mesh
   ///
   /// @param     new_mesh (_mesh::Mesh_)
