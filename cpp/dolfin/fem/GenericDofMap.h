@@ -106,10 +106,6 @@ public:
   /// Tabulate globally supported dofs
   virtual void tabulate_global_dofs(std::vector<std::size_t>& dofs) const = 0;
 
-  /// Create a new dof map on new mesh
-  virtual std::shared_ptr<GenericDofMap>
-  create(const mesh::Mesh& new_mesh) const = 0;
-
   /// Extract sub dofmap component
   virtual std::shared_ptr<GenericDofMap>
   extract_sub_dofmap(const std::vector<std::size_t>& component,
@@ -122,11 +118,8 @@ public:
 
   /// Return list of dof indices on this process that belong to mesh
   /// entities of dimension dim
-  virtual std::vector<dolfin::la_index_t> dofs(const mesh::Mesh& mesh,
-                                               std::size_t dim) const = 0;
-
-  /// Return list of global dof indices on this process
-  virtual std::vector<dolfin::la_index_t> dofs() const = 0;
+  std::vector<dolfin::la_index_t> dofs(const mesh::Mesh& mesh,
+                                       std::size_t dim) const;
 
   /// Set dof entries in vector to a specified value. Parallel
   /// layout of vector must be consistent with dof map range. This
@@ -148,10 +141,6 @@ public:
 
   /// Return set of processes that share dofs with the this process
   virtual const std::set<int>& neighbours() const = 0;
-
-  /// Clear any data required to build sub-dofmaps (this is to
-  /// reduce memory use)
-  virtual void clear_sub_map_data() = 0;
 
   /// Return informal string representation (pretty-print)
   virtual std::string str(bool verbose) const = 0;

@@ -31,6 +31,7 @@ set(SOURCES
   utils.cpp
   FiniteElement.cpp
   Form.cpp
+  GenericDofMap.cpp
   LocalAssembler.cpp
   NonlinearVariationalProblem.cpp
   PointSource.cpp

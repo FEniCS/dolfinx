@@ -162,14 +162,6 @@ public:
   ///         The set of processes
   const std::set<int>& neighbours() const;
 
-  /// Clear any data required to build sub-dofmaps (this is to
-  /// reduce memory use)
-  void clear_sub_map_data()
-  {
-    // std::vector<int>().swap(_ufc_local_to_local);
-    _ufc_local_to_local.clear();
-  }
-
   /// Local-to-global mapping of dofs on a cell
   ///
   /// @param     cell_index (std::size_t)
@@ -246,15 +238,6 @@ public:
               element_dofs.begin());
   }
 
-  /// Create a copy of the dof map on a new mesh
-  ///
-  /// @param     new_mesh (_mesh::Mesh_)
-  ///         The new mesh to create the dof map on.
-  ///
-  ///  @return    DofMap
-  ///         The new Dofmap copy.
-  std::shared_ptr<GenericDofMap> create(const mesh::Mesh& new_mesh) const;
-
   /// Extract subdofmap component
   ///
   /// @param     component (std::vector<std::size_t>)
@@ -280,15 +263,6 @@ public:
   std::shared_ptr<GenericDofMap>
   collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
            const mesh::Mesh& mesh) const;
-
-  // FIXME: Document this function properly
-  /// Return list of dof indices on this process that belong to mesh
-  /// entities of dimension dim
-  std::vector<dolfin::la_index_t> dofs(const mesh::Mesh& mesh,
-                                       std::size_t dim) const;
-
-  // FIXME: Document this function
-  std::vector<dolfin::la_index_t> dofs() const;
 
   /// Set dof entries in vector to a specified value. Parallel layout
   /// of vector must be consistent with dof map range. This

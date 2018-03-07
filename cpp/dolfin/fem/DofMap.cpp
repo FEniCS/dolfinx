@@ -272,13 +272,6 @@ void DofMap::tabulate_entity_dofs(std::vector<std::size_t>& element_dofs,
                                     cell_entity_index);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericDofMap> DofMap::create(const mesh::Mesh& new_mesh) const
-{
-  // Get underlying UFC dof map
-  std::shared_ptr<const ufc::dofmap> ufc_dof_map(_ufc_dofmap);
-  return std::shared_ptr<GenericDofMap>(new DofMap(ufc_dof_map, new_mesh));
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<GenericDofMap>
 DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
                            const mesh::Mesh& mesh) const
@@ -291,106 +284,6 @@ DofMap::collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                  const mesh::Mesh& mesh) const
 {
   return std::shared_ptr<GenericDofMap>(new DofMap(collapsed_map, *this, mesh));
-}
-//-----------------------------------------------------------------------------
-std::vector<dolfin::la_index_t> DofMap::dofs(const mesh::Mesh& mesh,
-                                             std::size_t dim) const
-{
-  // FIXME: This function requires a special case when dim ==
-  // mesh.topology().dim() because of they way DOLFIN handles d-d
-  // connectivity. Change DOLFIN behaviour.
-
-  // Check number of dofs per entity (on cell cell)
-  const std::size_t num_dofs_per_entity = num_entity_dofs(dim);
-
-  // Return empty vector if not dofs on requested entity
-  if (num_dofs_per_entity == 0)
-    return std::vector<dolfin::la_index_t>();
-
-  // Vector to hold list of dofs
-  std::vector<dolfin::la_index_t> dof_list(mesh.num_entities(dim)
-                                           * num_dofs_per_entity);
-
-  // Iterate over cells
-  if (dim < mesh.topology().dim())
-  {
-    std::vector<std::size_t> entity_dofs_local;
-    for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
-    {
-      // Get local-to-global dofmap for cell
-      const auto cell_dof_list = cell_dofs(c.index());
-
-      // Loop over all entities of dimension dim
-      unsigned int local_index = 0;
-      for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, dim))
-      {
-        // Tabulate cell-wise index of all dofs on entity
-        tabulate_entity_dofs(entity_dofs_local, dim, local_index);
-
-        // Get dof index and add to list
-        for (std::size_t i = 0; i < entity_dofs_local.size(); ++i)
-        {
-          const std::size_t entity_dof_local = entity_dofs_local[i];
-          const dolfin::la_index_t dof_index = cell_dof_list[entity_dof_local];
-          dolfin_assert(e.index() * num_dofs_per_entity + i < dof_list.size());
-          dof_list[e.index() * num_dofs_per_entity + i] = dof_index;
-        }
-
-        ++local_index;
-      }
-    }
-  }
-  else
-  {
-    std::vector<std::size_t> entity_dofs_local;
-    for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
-    {
-      // Get local-to-global dofmap for cell
-      const auto cell_dof_list = cell_dofs(c.index());
-
-      // Tabulate cell-wise index of all dofs on entity
-      tabulate_entity_dofs(entity_dofs_local, dim, 0);
-
-      // Get dof index and add to list
-      for (std::size_t i = 0; i < entity_dofs_local.size(); ++i)
-      {
-        const std::size_t entity_dof_local = entity_dofs_local[i];
-        const dolfin::la_index_t dof_index = cell_dof_list[entity_dof_local];
-        dolfin_assert(c.index() * num_dofs_per_entity + i < dof_list.size());
-        dof_list[c.index() * num_dofs_per_entity + i] = dof_index;
-      }
-    }
-  }
-
-  return dof_list;
-}
-//-----------------------------------------------------------------------------
-std::vector<dolfin::la_index_t> DofMap::dofs() const
-{
-  // Create vector to hold dofs
-  std::vector<la_index_t> _dofs;
-  _dofs.reserve(_dofmap.size() * max_element_dofs());
-
-  assert(_index_map);
-  const std::size_t bs = _index_map->block_size();
-  const dolfin::la_index_t local_ownership_size
-      = bs * _index_map->size(common::IndexMap::MapSize::OWNED);
-  const std::size_t global_offset = bs * _index_map->local_range()[0];
-
-  // Insert all dofs into a vector (will contain duplicates)
-  for (auto dof : _dofmap)
-  {
-    if (dof >= 0 && dof < local_ownership_size)
-      _dofs.push_back(dof + global_offset);
-  }
-
-  // Sort dofs (required to later remove duplicates)
-  std::sort(_dofs.begin(), _dofs.end());
-
-  // Remove duplicates
-  _dofs.erase(std::unique(_dofs.begin(), _dofs.end()), _dofs.end());
-
-  return _dofs;
 }
 //-----------------------------------------------------------------------------
 void DofMap::set(la::PETScVector& x, double value) const
