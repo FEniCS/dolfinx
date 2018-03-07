@@ -37,10 +37,10 @@ void _check_coordinates(const mesh::MeshGeometry& geometry,
       != std::string("Lagrange"))
 
   {
-    log::dolfin_error("fem_utils.cpp",
-                 "set/get mesh geometry coordinates from/to function",
-                 "expecting 'Lagrange' finite element family rather than '%s'",
-                 position.function_space()->element()->ufc_element()->family());
+    log::dolfin_error(
+        "fem_utils.cpp", "set/get mesh geometry coordinates from/to function",
+        "expecting 'Lagrange' finite element family rather than '%s'",
+        position.function_space()->element()->ufc_element()->family());
   }
 
   if (position.value_rank() != 1)
@@ -53,20 +53,20 @@ void _check_coordinates(const mesh::MeshGeometry& geometry,
   if (position.value_dimension(0) != geometry.dim())
   {
     log::dolfin_error("fem_utils.cpp",
-                 "set/get mesh geometry coordinates from/to function",
-                 "function value dimension %d and geometry dimension %d "
-                 "do not match",
-                 position.value_dimension(0), geometry.dim());
+                      "set/get mesh geometry coordinates from/to function",
+                      "function value dimension %d and geometry dimension %d "
+                      "do not match",
+                      position.value_dimension(0), geometry.dim());
   }
 
   if (position.function_space()->element()->ufc_element()->degree()
       != geometry.degree())
   {
-    log::dolfin_error("fem_utils.cpp",
-                 "set/get mesh geometry coordinates from/to function",
-                 "function degree %d and geometry degree %d do not match",
-                 position.function_space()->element()->ufc_element()->degree(),
-                 geometry.degree());
+    log::dolfin_error(
+        "fem_utils.cpp", "set/get mesh geometry coordinates from/to function",
+        "function degree %d and geometry degree %d do not match",
+        position.function_space()->element()->ufc_element()->degree(),
+        geometry.degree());
   }
 }
 
@@ -203,6 +203,88 @@ void dolfin::fem::init(la::PETScVector& x, const Form& a)
   x.init(index_map->local_range(), local_to_global, {}, block_size);
 }
 //-----------------------------------------------------------------------------
+void fem::init_nest(la::PETScMatrix& A,
+                    std::vector<std::vector<const fem::Form*>> a)
+{
+  // FIXME: check that a is square
+
+  // Block shape
+  const auto shape = boost::extents[a.size()][a[0].size()];
+
+  // Loop over each form and create matrix
+  boost::multi_array<std::shared_ptr<la::PETScMatrix>, 2> mats(shape);
+  boost::multi_array<Mat, 2> petsc_mats(shape);
+  for (std::size_t i = 0; i < a.size(); ++i)
+  {
+    for (std::size_t j = 0; j < a[i].size(); ++j)
+    {
+      if (a[i][j])
+      {
+        mats[i][j] = std::make_shared<la::PETScMatrix>(A.mpi_comm());
+        petsc_mats[i][j] = mats[i][j]->mat();
+        init(*mats[i][j], *a[i][j]);
+      }
+      else
+        petsc_mats[i][j] = nullptr;
+    }
+  }
+
+  // Initialise block (MatNest) matrix
+  MatSetType(A.mat(), MATNEST);
+  MatNestSetSubMats(A.mat(), petsc_mats.shape()[0], NULL, petsc_mats.shape()[1],
+                    NULL, petsc_mats.data());
+}
+//-----------------------------------------------------------------------------
+void fem::init_monolithic(la::PETScMatrix& A,
+                          std::vector<std::vector<const fem::Form*>> a)
+{
+  // FIXME: handle null blocks
+
+  std::cout << "Initialising block matrix" << std::endl;
+
+  // Block shape
+  const auto shape = boost::extents[a.size()][a[0].size()];
+
+  boost::multi_array<std::shared_ptr<la::SparsityPattern>, 2> patterns(shape);
+  std::vector<std::vector<const la::SparsityPattern*>> p(
+      a.size(), std::vector<const la::SparsityPattern*>(a[0].size()));
+  for (std::size_t row = 0; row < a.size(); ++row)
+  {
+    for (std::size_t col = 0; col < a[row].size(); ++col)
+    {
+      std::cout << "  Initialising block: " << row << ", " << col << std::endl;
+      auto map0 = a[row][col]->function_space(0)->dofmap()->index_map();
+      auto map1 = a[row][col]->function_space(1)->dofmap()->index_map();
+
+      std::cout << "  Push Initialising block: " << std::endl;
+      std::array<std::shared_ptr<const common::IndexMap>, 2> maps
+          = {{map0, map1}};
+      patterns[row][col]
+          = std::make_shared<la::SparsityPattern>(A.mpi_comm(), maps, 0);
+
+      // Build sparsity pattern
+      std::cout << "  Build sparsity pattern " << std::endl;
+      std::array<const GenericDofMap*, 2> dofmaps
+          = {{a[row][col]->function_space(0)->dofmap().get(),
+              a[row][col]->function_space(1)->dofmap().get()}};
+      SparsityPatternBuilder::build(*patterns[row][col], *a[row][col]->mesh(),
+                                    dofmaps, true, false, false, false, false);
+      std::cout << "  End Build sparsity pattern " << std::endl;
+      p[row][col] = patterns[row][col].get();
+      std::cout << "  End push back sparsity pattern pointer " << std::endl;
+    }
+  }
+
+  // Create merged sparsity pattern
+  std::cout << "  Build merged sparsity pattern" << std::endl;
+  la::SparsityPattern pattern(A.mpi_comm(), p);
+
+  // Initialise matrix
+  std::cout << "  Init parent matrix" << std::endl;
+  A.init(pattern);
+  std::cout << "  Post init parent matrix" << std::endl;
+}
+//-----------------------------------------------------------------------------
 void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
 {
   bool keep_diagonal = false;
@@ -325,7 +407,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   if (dofmap.is_view())
   {
     log::dolfin_error("fem_utils.cpp", "tabulate vertex to dof map",
-                 "Cannot tabulate vertex_to_dof_map for a subspace");
+                      "Cannot tabulate vertex_to_dof_map for a subspace");
   }
 
   // Initialize vertex to cell connections
@@ -338,7 +420,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   if (vert_per_cell * dofs_per_vertex != dofmap.max_element_dofs())
   {
     log::dolfin_error("DofMap.cpp", "tabulate dof to vertex map",
-                 "Can only tabulate dofs on vertices");
+                      "Can only tabulate dofs on vertices");
   }
 
   // Allocate data for tabulating local to local map

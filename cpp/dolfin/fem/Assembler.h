@@ -69,7 +69,7 @@ private:
                      std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Bilinear and linear forms
-  boost::multi_array<std::shared_ptr<const Form>, 2> _a;
+  std::vector<std::vector<std::shared_ptr<const Form>>> _a;
   std::vector<std::shared_ptr<const Form>> _l;
 
   // Dirichlet boundary conditions

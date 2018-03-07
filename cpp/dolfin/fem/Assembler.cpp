@@ -27,18 +27,12 @@ using namespace dolfin::fem;
 Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
                      std::vector<std::shared_ptr<const Form>> L,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs)
-    : _l(L), _bcs(bcs)
+    : _a(a), _l(L), _bcs(bcs)
 {
   assert(!a.empty());
   assert(!a[0].empty());
-  _a.resize(boost::extents[a.size()][a[0].size()]);
-  for (std::size_t row = 0; row < a.size(); ++row)
-  {
-    for (std::size_t col = 0; col < a[row].size(); ++col)
-    {
-      _a[row][col] = a[row][col];
-    }
-  }
+
+  // FIXME: check that a is square
 
   // Check shape of a and L
 
@@ -64,124 +58,49 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType type)
   // Check if matrix should be nested
   assert(!_a.empty());
   const bool use_nested_matrix = false;
-  const bool block_matrix = _a.num_elements() > 1;
-
-  // Block shape
-  const auto shape = boost::extents[_a.shape()[0]][_a.shape()[1]];
+  const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
 
   if (A.empty())
   {
-    // Initialise matrix empty matrix
+    // Initialise matrix if empty
 
+    // Build array of pointers to forms
+    std::vector<std::vector<const Form*>> forms(
+        _a.size(), std::vector<const Form*>(_a[0].size()));
+    for (std::size_t i = 0; i < _a.size(); ++i)
+      for (std::size_t j = 0; j < _a[i].size(); ++j)
+        forms[i][j] = _a[i][j].get();
+
+    // Initialise matrix
     if (use_nested_matrix)
-    {
-      // Loop over each form and create matrix
-      boost::multi_array<std::shared_ptr<la::PETScMatrix>, 2> mats(shape);
-      boost::multi_array<Mat, 2> petsc_mats(shape);
-      for (std::size_t i = 0; i < _a.shape()[0]; ++i)
-      {
-        for (std::size_t j = 0; j < _a.shape()[1]; ++j)
-        {
-          if (_a[i][j])
-          {
-            mats[i][j] = std::make_shared<la::PETScMatrix>(A.mpi_comm());
-            petsc_mats[i][j] = mats[i][j]->mat();
-            init(*mats[i][j], *_a[i][j]);
-          }
-          else
-          {
-            mats[i][j] = nullptr;
-            petsc_mats[i][j] = nullptr;
-          }
-        }
-      }
-
-      // Intitialise block (MatNest) matrix
-      MatSetType(A.mat(), MATNEST);
-      MatNestSetSubMats(A.mat(), petsc_mats.shape()[0], NULL,
-                        petsc_mats.shape()[1], NULL, petsc_mats.data());
-
-      // A.apply(la::PETScMatrix::AssemblyType::FINAL);
-    }
+      fem::init_nest(A, forms);
     else if (block_matrix)
-    {
-      std::cout << "Initialising block matrix" << std::endl;
-
-      boost::multi_array<std::shared_ptr<la::SparsityPattern>, 2> patterns(
-          shape);
-      std::vector<std::vector<const la::SparsityPattern*>> p(
-          _a.shape()[0],
-          std::vector<const la::SparsityPattern*>(_a.shape()[1]));
-      for (std::size_t row = 0; row < _a.shape()[0]; ++row)
-      {
-        // p.resize(_a[row].size());
-        for (std::size_t col = 0; col < _a.shape()[1]; ++col)
-        {
-          std::cout << "  Initialising block: " << row << ", " << col
-                    << std::endl;
-          auto map0 = _a[row][col]->function_space(0)->dofmap()->index_map();
-          auto map1 = _a[row][col]->function_space(1)->dofmap()->index_map();
-
-          std::cout << "  Push Initialising block: " << std::endl;
-          std::array<std::shared_ptr<const common::IndexMap>, 2> maps
-              = {{map0, map1}};
-          patterns[row][col]
-              = std::make_shared<la::SparsityPattern>(A.mpi_comm(), maps, 0);
-
-          // Build sparsity pattern
-          std::cout << "  Build sparsity pattern " << std::endl;
-          std::array<const GenericDofMap*, 2> dofmaps
-              = {{_a[row][col]->function_space(0)->dofmap().get(),
-                  _a[row][col]->function_space(1)->dofmap().get()}};
-          SparsityPatternBuilder::build(*patterns[row][col],
-                                        *_a[row][col]->mesh(), dofmaps, true,
-                                        false, false, false, false);
-          std::cout << "  End Build sparsity pattern " << std::endl;
-          p[row][col] = patterns[row][col].get();
-          std::cout << "  End push back sparsity pattern pointer " << std::endl;
-        }
-      }
-
-      // Create merged sparsity pattern
-      std::cout << "  Build merged sparsity pattern" << std::endl;
-      la::SparsityPattern pattern(A.mpi_comm(), p);
-
-      // Initialise matrix
-      std::cout << "  Init parent matrix" << std::endl;
-      A.init(pattern);
-      std::cout << "  Post init parent matrix" << std::endl;
-    }
+      fem::init_monolithic(A, forms);
     else
-    {
-      // Initialise matrix
       init(A, *_a[0][0]);
-    }
-  }
-  else
-  {
-    // Matrix already intialised
-    throw std::runtime_error("Not implemented");
-    // Extract block
-    // MatNestGetSubMat(Mat A,PetscInt idxm,PetscInt jdxm,Mat *sub)
   }
 
-  // Assemble blocks (A)
+  // Assemble matrix
+
   if (use_nested_matrix)
   {
-    for (std::size_t i = 0; i < _a.shape()[0]; ++i)
+    for (std::size_t i = 0; i < _a.size(); ++i)
     {
-      // MatNestGetSubMat(Mat A,PetscInt idxm,PetscInt jdxm,Mat *sub)
-      for (std::size_t j = 0; j < _a.shape()[1]; ++j)
+      for (std::size_t j = 0; j < _a[i].size(); ++j)
       {
         if (_a[i][j])
         {
           Mat subA;
           MatNestGetSubMat(A.mat(), i, j, &subA);
           la::PETScMatrix mat(subA);
-          std::cout << "Assembling into matrix:" << i << ", " << j << std::endl;
+          //std::cout << "Assembling into matrix:" << i << ", " << j << std::endl;
           this->assemble(mat, *_a[i][j], _bcs);
-          std::cout << "End assembling into matrix:" << i << ", " << j
-                    << std::endl;
+          //std::cout << "End assembling into matrix:" << i << ", " << j
+          //          << std::endl;
+        }
+        else
+        {
+          // Null block, do nothing
         }
       }
     }
@@ -190,12 +109,11 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType type)
   {
     std::cout << "Assembling block matrix (non-nested)" << std::endl;
     std::int64_t offset_row = 0;
-    for (std::size_t i = 0; i < _a.shape()[0]; ++i)
+    for (std::size_t i = 0; i < _a.size(); ++i)
     {
-
       // Loop over columns
       std::int64_t offset_col = 0;
-      for (std::size_t j = 0; j < _a.shape()[1]; ++j)
+      for (std::size_t j = 0; j < _a[i].size(); ++j)
       {
         if (_a[i][j])
         {
@@ -237,7 +155,8 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType type)
           mat.add_local(&one, 1, &zero, 1, &onei);
 
           // A.str(true);
-          // std::cout << "Assembling into matrix (non-nested):" << i << ", " <<
+          // std::cout << "Assembling into matrix (non-nested):" << i << ", "
+          // <<
           // j
           //          << std::endl;
           this->assemble(mat, *_a[i][j], _bcs);
