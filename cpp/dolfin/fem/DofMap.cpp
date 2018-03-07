@@ -405,11 +405,6 @@ void DofMap::tabulate_entity_closure_dofs(
                                             cell_entity_index);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericDofMap> DofMap::copy() const
-{
-  return std::shared_ptr<GenericDofMap>(new DofMap(*this));
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<GenericDofMap> DofMap::create(const mesh::Mesh& new_mesh) const
 {
   // Get underlying UFC dof map
