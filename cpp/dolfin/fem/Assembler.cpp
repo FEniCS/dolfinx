@@ -63,20 +63,21 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType type)
 {
   // Check if matrix should be nested
   assert(!_a.empty());
-  const bool nested_matrix = false;
+  const bool use_nested_matrix = false;
   const bool block_matrix = _a.num_elements() > 1;
+
+  // Block shape
+  const auto shape = boost::extents[_a.shape()[0]][_a.shape()[1]];
 
   if (A.empty())
   {
     // Initialise matrix empty matrix
 
-    if (nested_matrix)
+    if (use_nested_matrix)
     {
       // Loop over each form and create matrix
-      boost::multi_array<std::shared_ptr<la::PETScMatrix>, 2> mats(
-          boost::extents[_a.shape()[0]][_a.shape()[1]]);
-      boost::multi_array<Mat, 2> petsc_mats(
-          boost::extents[_a.shape()[0]][_a.shape()[1]]);
+      boost::multi_array<std::shared_ptr<la::PETScMatrix>, 2> mats(shape);
+      boost::multi_array<Mat, 2> petsc_mats(shape);
       for (std::size_t i = 0; i < _a.shape()[0]; ++i)
       {
         for (std::size_t j = 0; j < _a.shape()[1]; ++j)
@@ -107,10 +108,10 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType type)
       std::cout << "Initialising block matrix" << std::endl;
 
       boost::multi_array<std::shared_ptr<la::SparsityPattern>, 2> patterns(
-          boost::extents[_a.shape()[0]][_a.shape()[1]]);
-      boost::multi_array<const la::SparsityPattern*, 2> p(
-          boost::extents[_a.shape()[0]][_a.shape()[1]]);
-      // std::vector<std::vector<const la::SparsityPattern*>> p;
+          shape);
+      std::vector<std::vector<const la::SparsityPattern*>> p(
+          _a.shape()[0],
+          std::vector<const la::SparsityPattern*>(_a.shape()[1]));
       for (std::size_t row = 0; row < _a.shape()[0]; ++row)
       {
         // p.resize(_a[row].size());
@@ -165,7 +166,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType type)
   }
 
   // Assemble blocks (A)
-  if (nested_matrix)
+  if (use_nested_matrix)
   {
     for (std::size_t i = 0; i < _a.shape()[0]; ++i)
     {
