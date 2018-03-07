@@ -258,14 +258,6 @@ public:
   /// used for vector valued functions.
   int block_size() const { return _index_map->block_size(); }
 
-  /// Compute the map from local (this process) dof indices to
-  /// global dof indices.
-  ///
-  /// @param     local_to_global_map (_std::vector<std::size_t>_)
-  ///         The local-to-global map to fill.
-  void tabulate_local_to_global_dofs(
-      std::vector<std::size_t>& local_to_global_map) const;
-
   /// Return informal string representation (pretty-print)
   ///
   /// @param     verbose (bool)

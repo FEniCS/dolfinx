@@ -37,7 +37,7 @@ namespace mesh
 {
 class Mesh;
 class SubDomain;
-}
+} // namespace mesh
 
 namespace fem
 {
@@ -90,8 +90,8 @@ public:
               const std::vector<std::size_t>& entity_indices) const;
 
   /// Return the dof indices associated with all entities of given dimension
-  std::vector<dolfin::la_index_t>
-  entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const;
+  std::vector<dolfin::la_index_t> entity_dofs(const mesh::Mesh& mesh,
+                                              std::size_t entity_dim) const;
 
   /// Tabulate local-local facet dofs
   virtual void tabulate_facet_dofs(std::vector<std::size_t>& element_dofs,
@@ -131,8 +131,8 @@ public:
   virtual std::shared_ptr<const common::IndexMap> index_map() const = 0;
 
   /// Tabulate map between local (process) and global dof indices
-  virtual void tabulate_local_to_global_dofs(
-      std::vector<std::size_t>& local_to_global_map) const = 0;
+  void tabulate_local_to_global_dofs(
+      std::vector<std::size_t>& local_to_global_map) const;
 
   /// Return map from shared nodes to the processes (not including
   /// the current process) that share it.
@@ -152,5 +152,5 @@ public:
   /// conditions
   std::shared_ptr<const mesh::SubDomain> constrained_domain;
 };
-}
-}
+} // namespace fem
+} // namespace dolfin

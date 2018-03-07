@@ -1,5 +1,6 @@
 
 #include "GenericDofMap.h"
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <vector>
@@ -7,6 +8,35 @@
 using namespace dolfin;
 using namespace dolfin::fem;
 
+void GenericDofMap::tabulate_local_to_global_dofs(
+    std::vector<std::size_t>& local_to_global_map) const
+{
+  // FIXME: use common::IndexMap::local_to_global_index?
+
+  const auto idxmap = index_map();
+  assert(idxmap);
+  const std::size_t bs = idxmap->block_size();
+  const std::vector<std::size_t>& local_to_global_unowned
+      = idxmap->local_to_global_unowned();
+  const std::size_t local_ownership_size
+      = bs * idxmap->size(common::IndexMap::MapSize::OWNED);
+  local_to_global_map.resize(bs * idxmap->size(common::IndexMap::MapSize::ALL));
+
+  const std::size_t global_offset = bs * idxmap->local_range()[0];
+  for (std::size_t i = 0; i < local_ownership_size; ++i)
+    local_to_global_map[i] = i + global_offset;
+
+  for (std::size_t node = 0; node < idxmap->local_to_global_unowned().size();
+       ++node)
+  {
+    for (std::size_t component = 0; component < bs; ++component)
+    {
+      local_to_global_map[bs * node + component + local_ownership_size]
+          = bs * local_to_global_unowned[node] + component;
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 std::vector<dolfin::la_index_t> GenericDofMap::dofs(const mesh::Mesh& mesh,
                                                     std::size_t dim) const
 {
