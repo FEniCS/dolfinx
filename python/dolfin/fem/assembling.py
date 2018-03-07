@@ -35,7 +35,7 @@ class Assembler:
             self.bcs = bcs
         self.assembler = None
 
-    def assemble(self, A=None, b=None):
+    def assemble(self, A=None, b=None, mat_type=cpp.fem.Assembler.BlockType.monolithic):
         if self.assembler is None:
             # Compile forms
             try:
@@ -61,7 +61,9 @@ class Assembler:
             comm = cpp.MPI.comm_world
             b = cpp.la.PETScVector(comm)
 
-        self.assembler.assemble(A, b)
+        #self.assembler.assemble(A, b)
+        self.assembler.assemble(A, mat_type)
+        self.assembler.assemble(b)
         return A, b
 
 

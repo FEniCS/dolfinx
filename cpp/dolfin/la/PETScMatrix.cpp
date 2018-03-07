@@ -212,10 +212,10 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
     petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
 
   // Set matrix local-to-global maps
-  std::cout << "***** set local-to-global on mat" << std::endl;
+  // std::cout << "***** set local-to-global on mat" << std::endl;
   MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
                              petsc_local_to_global1);
-  std::cout << "***** end set local-to-global on mat" << std::endl;
+  // std::cout << "***** end set local-to-global on mat" << std::endl;
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
 
@@ -368,8 +368,9 @@ void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index_t* rows,
 {
   dolfin_assert(_matA);
   PetscErrorCode ierr;
-  ierr = MatZeroRowsLocal(_matA, static_cast<PetscInt>(m), rows, diag, NULL,
-                          NULL);
+  std::cout << "Testing m: " << m << std::endl;
+  std::cout << "Testing r: " <<rows[0] << std::endl;
+  ierr = MatZeroRowsLocal(_matA, m, rows, diag, NULL, NULL);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatZeroRowsLocal");
 }

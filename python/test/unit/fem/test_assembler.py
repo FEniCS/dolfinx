@@ -109,13 +109,12 @@ def test_matrix_assembly_block():
     V0 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
     V1 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
 
+
     # Define variational problem
     u, p = dolfin.function.argument.TrialFunction(
         V0), dolfin.function.argument.TrialFunction(V1)
     v, q = dolfin.function.argument.TestFunction(
         V0), dolfin.function.argument.TestFunction(V1)
-    #(u, p) = dolfin.function.argument.TrialFunctions(W)
-    #(v, q) = dolfin.function.argument.TestFunctions(W)
     f = dolfin.function.constant.Constant(0)
 
     a00 = u*v*dx
@@ -127,27 +126,72 @@ def test_matrix_assembly_block():
     L0 = f*v * dx
     L1 = dolfin.function.constant.Constant(0.0)*q * dx
 
+
     # Define Dirichlet boundary (x = 0 or x = 1)
     def boundary(x):
+        #tmp = numpy.logical_or(x[:, 0] < 1.0e-6,  x[:, 0] > 1.0 - 1.0e-6)
+        tmp = x[:, 0] < 1.0e6
+        print("*********************")
+        print(tmp)
+
         return numpy.logical_or(x[:, 0] < 1.0e-6,  x[:, 0] > 1.0 - 1.0e-6)
 
-    u0 = dolfin.function.constant.Constant(2.0)
-    bc = dolfin.fem.dirichletbc.DirichletBC(V1, u0, boundary)
+    u_bc = dolfin.function.constant.Constant(2.0)
+    bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]],
                                                 [L0, L1], [bc])
-    A, b = assembler.assemble()
+    #A, b = assembler.assemble()
+    #A.mat().view()
+    #print(A.mat().norm())
 
+    #print("--------------------")
+
+    A, b = assembler.assemble(mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
+    A.mat().view()
+    print(A.mat().norm())
+
+    print("--------------------")
+
+    A, b = assembler.assemble(mat_type=dolfin.cpp.fem.Assembler.BlockType.nested)
     A.mat().view()
 
-    #IS = A.mat().getNestISs()
+    #print(A.mat().norm())
+
+    IS = A.mat().getNestISs()
     # print(IS[0][0].view())
     # print(IS[0][1].view())
     # print(IS[0][1].view())
     # print(IS[1][1].view())
     # print(A.mat().norm())
 
-    #A00 = A.mat().getLocalSubMatrix(0, 0)
+    A00 = A.mat().getLocalSubMatrix(IS[0][0], IS[0][0])
+    A00.view()
+
+    # Monolithic version
+
+    P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    E = P0 * P1
+    W = dolfin.function.functionspace.FunctionSpace(mesh, E)
+
+    u0, u1 = dolfin.function.argument.TrialFunctions(W)
+    v0, v1 = dolfin.function.argument.TestFunctions(W)
+
+    a = u0*v0*dx + u1*v1*dx + u0*v1*dx + u1*v0*dx
+    L = f*v0*ufl.dx
+
+    print("--- Monolithic version")
+    bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
+    assembler1 = dolfin.fem.assembling.Assembler([[a]], [L], [bc])
+    A, b = assembler1.assemble(mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
+    A.mat().view()
+    #print(A.mat().norm())
+
+    # Reference assembler
+    #A, b = dolfin.fem.assembling.assemble_system(a, L, bc)
+    #A.mat().view()
+    #print(A.mat().norm())
 
 
 def xtest_matrix_assembly_block():
