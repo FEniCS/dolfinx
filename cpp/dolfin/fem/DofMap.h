@@ -177,33 +177,6 @@ public:
                                          1>>(&_dofmap[index], _cell_dimension);
   }
 
-  /// Return the dof indices associated with entities of given dimension and
-  /// entity indices
-  ///
-  /// *Arguments*
-  ///     entity_dim (std::size_t)
-  ///         Entity dimension.
-  ///     entity_indices (std::vector<dolfin::la_index_t>&)
-  ///         Entity indices to get dofs for.
-  /// *Returns*
-  ///     std::vector<dolfin::la_index_t>
-  ///         Dof indices associated with selected entities.
-  std::vector<dolfin::la_index_t>
-  entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
-              const std::vector<std::size_t>& entity_indices) const;
-
-  /// Return the dof indices associated with all entities of given dimension
-  ///
-  /// *Arguments*
-  ///     entity_dim (std::size_t)
-  ///         Entity dimension.
-  /// *Returns*
-  ///     std::vector<dolfin::la_index_t>
-  ///         Dof indices associated with selected entities.
-  std::vector<dolfin::la_index_t> entity_dofs(const mesh::Mesh& mesh,
-                                              std::size_t entity_dim) const;
-
-
   /// Tabulate local-local facet dofs
   ///
   /// @param    element_dofs (std::size_t)

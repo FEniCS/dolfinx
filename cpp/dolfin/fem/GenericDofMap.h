@@ -85,13 +85,13 @@ public:
 
   /// Return the dof indices associated with entities of given dimension and
   /// entity indices
-  virtual std::vector<dolfin::la_index_t>
+  std::vector<dolfin::la_index_t>
   entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
-              const std::vector<std::size_t>& entity_indices) const = 0;
+              const std::vector<std::size_t>& entity_indices) const;
 
   /// Return the dof indices associated with all entities of given dimension
-  virtual std::vector<dolfin::la_index_t>
-  entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const = 0;
+  std::vector<dolfin::la_index_t>
+  entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const;
 
   /// Tabulate local-local facet dofs
   virtual void tabulate_facet_dofs(std::vector<std::size_t>& element_dofs,
