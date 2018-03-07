@@ -237,7 +237,6 @@ void fem::init_nest(la::PETScMatrix& A,
 //-----------------------------------------------------------------------------
 void fem::init_nest(la::PETScVector& x, std::vector<const fem::Form*> L)
 {
-
   // Loop over each form and create vector
   std::vector<std::shared_ptr<la::PETScVector>> vecs(L.size());
   std::vector<Vec> petsc_vecs(L.size());
@@ -257,7 +256,6 @@ void fem::init_nest(la::PETScVector& x, std::vector<const fem::Form*> L)
   Vec y;
   VecCreateNest(x.mpi_comm(), petsc_vecs.size(), NULL, petsc_vecs.data(), &y);
   x.reset(y);
-
   VecDestroy(&y);
 
   /*
@@ -323,7 +321,7 @@ void fem::init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L)
   //      "Cannot initialise vector. Form is not a linear form");
 
   if (!x.empty())
-    throw std::runtime_error("Cannot initialise layout of non-empty matrix");
+    throw std::runtime_error("Cannot initialise non-empty vector");
 
   // FIXME: handle null blocks
   // FIXME: handle mixed block sizes

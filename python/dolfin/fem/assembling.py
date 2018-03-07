@@ -61,7 +61,7 @@ class Assembler:
             comm = cpp.MPI.comm_world
             b = cpp.la.PETScVector(comm)
 
-        #self.assembler.assemble(A, b)
+        # self.assembler.assemble(A, b)
         self.assembler.assemble(A, mat_type)
         self.assembler.assemble(b, mat_type)
         return A, b
