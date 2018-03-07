@@ -206,8 +206,8 @@ void Function::operator=(const function::FunctionAXPY& axpy)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  std::vector<std::pair<double,
-                        std::shared_ptr<const Function>>>::const_iterator it;
+  std::vector<
+      std::pair<double, std::shared_ptr<const Function>>>::const_iterator it;
   for (it = axpy.pairs().begin() + 1; it != axpy.pairs().end(); it++)
   {
     dolfin_assert(it->second);
@@ -298,7 +298,7 @@ void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = value_size();
 
-  dolfin_assert((std::size_t)values.size() == value_size_loc);
+  dolfin_assert((std::size_t)values.cols() == value_size_loc);
 
   // Create work vector for expansion coefficients
   std::vector<double> coefficients(element.space_dimension());
@@ -316,11 +316,11 @@ void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
 
   // Initialise values
   values.setZero();
-  //  for (std::size_t j = 0; j < value_size_loc; ++j)
-  //    values[j] = 0.0;
 
   // Compute linear combination
-  std::size_t k = 1;
+  std::size_t k = 0;
+  dolfin_assert(values.rows() == 1 and x.rows() == 1);
+
   for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
     element.evaluate_basis(i, basis.data(), x.data(), coordinate_dofs.data(),
