@@ -63,7 +63,7 @@ class Assembler:
 
         #self.assembler.assemble(A, b)
         self.assembler.assemble(A, mat_type)
-        self.assembler.assemble(b)
+        self.assembler.assemble(b, mat_type)
         return A, b
 
 

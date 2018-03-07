@@ -235,6 +235,37 @@ void fem::init_nest(la::PETScMatrix& A,
                     NULL, petsc_mats.data());
 }
 //-----------------------------------------------------------------------------
+void fem::init_nest(la::PETScVector& x, std::vector<const fem::Form*> L)
+{
+
+  // Loop over each form and create vector
+  std::vector<std::shared_ptr<la::PETScVector>> vecs(L.size());
+  std::vector<Vec> petsc_vecs(L.size());
+  for (std::size_t i = 0; i < L.size(); ++i)
+  {
+    if (L[i])
+    {
+      vecs[i] = std::make_shared<la::PETScVector>(x.mpi_comm());
+      petsc_vecs[i] = vecs[i]->vec();
+      init(*vecs[i], *L[i]);
+    }
+    else
+      petsc_vecs[i] = nullptr;
+  }
+
+  // Create nested (VecNest) vector
+  Vec y;
+  VecCreateNest(x.mpi_comm(), petsc_vecs.size(), NULL, petsc_vecs.data(), &y);
+  x.reset(y);
+
+  VecDestroy(&y);
+
+  /*
+  VecSetType(x.vec(), VECNEST);
+  VecNestSetSubVecs(x.vec(), petsc_vecs.size(), NULL, petsc_vecs.data());
+  */
+}
+//-----------------------------------------------------------------------------
 void fem::init_monolithic(la::PETScMatrix& A,
                           std::vector<std::vector<const fem::Form*>> a)
 {
@@ -283,6 +314,41 @@ void fem::init_monolithic(la::PETScMatrix& A,
   std::cout << "  Init parent matrix" << std::endl;
   A.init(pattern);
   std::cout << "  Post init parent matrix" << std::endl;
+}
+//-----------------------------------------------------------------------------
+void fem::init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L)
+{
+  // if (a.rank() != 1)
+  //  throw std::runtime_error(
+  //      "Cannot initialise vector. Form is not a linear form");
+
+  if (!x.empty())
+    throw std::runtime_error("Cannot initialise layout of non-empty matrix");
+
+  // FIXME: handle null blocks
+  // FIXME: handle mixed block sizes
+
+  std::size_t local_size = 0;
+  for (std::size_t i = 0; i < L.size(); ++i)
+  {
+    auto map = L[i]->function_space(0)->dofmap()->index_map();
+    local_size += map->size(common::IndexMap::MapSize::OWNED);
+    // int block_size = map->block_size();
+  }
+
+  // Create map for combined problem
+  common::IndexMap map(x.mpi_comm(), local_size, 1);
+
+  std::vector<la_index_t> local_to_global(
+      map.size(common::IndexMap::MapSize::ALL));
+  for (std::size_t i = 0; i < local_to_global.size(); ++i)
+  {
+    local_to_global[i] = map.local_to_global(i);
+    std::cout << "l2g: " << i << ", " << local_to_global[i] << std::endl;
+  }
+
+  // Initialize vector
+  x.init(map.local_range(), local_to_global, {}, 1);
 }
 //-----------------------------------------------------------------------------
 void dolfin::fem::init(la::PETScMatrix& A, const Form& a)

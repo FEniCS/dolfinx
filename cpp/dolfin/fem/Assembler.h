@@ -45,7 +45,7 @@ public:
   void assemble(la::PETScMatrix& A, BlockType type = BlockType::nested);
 
   // Assemble vector
-  void assemble(la::PETScVector& b);
+  void assemble(la::PETScVector& b, BlockType type = BlockType::nested);
 
   // Assemble matrix and vector
   void assemble(la::PETScMatrix& A, la::PETScVector& b);

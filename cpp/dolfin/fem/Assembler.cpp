@@ -58,10 +58,6 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   // Check if matrix should be nested
   assert(!_a.empty());
   const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
-  if (block_matrix)
-  {
-    std::cout << "*** test: " << _a.size() << ", " << _a[0].size() << std::endl;
-  }
 
   if (A.empty())
   {
@@ -76,20 +72,11 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 
     // Initialise matrix
     if (block_type == BlockType::nested)
-    {
-      std::cout << "NNNNNNNNNNNNNNNNNNNNNNNNNN" << std::endl;
       fem::init_nest(A, forms);
-    }
     else if (block_matrix and block_type == BlockType::monolithic)
-    {
-      std::cout << "MMMMMMMMMMMMMMMMMMMMMMMMMM" << std::endl;
       fem::init_monolithic(A, forms);
-    }
     else
-    {
-      std::cout << "SSSSSSSSSSSSSSSSSSSSSSSSS" << std::endl;
       init(A, *_a[0][0]);
-    }
   }
 
   // Get matrix type
@@ -158,26 +145,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           Mat subA;
           MatGetLocalSubMatrix(A.mat(), is0, is1, &subA);
           la::PETScMatrix mat(subA);
-          // std::cout << "Mat size: " << mat.size(0) << ", " << mat.size(1)
-          //           << std::endl;
-
-          // double one = 10000.0;
-          // PetscInt zero = 0;
-          // // std::cout << "   Add single entry" << std::endl;
-          // mat.add_local(&one, 1, &zero, 1, &zero);
-
-          // PetscInt onei = 1;
-          // // std::cout << "   Add single entry" << std::endl;
-          // mat.add_local(&one, 1, &zero, 1, &onei);
-
-          // A.str(true);
-          // std::cout << "Assembling into matrix (non-nested):" << i << ", "
-          // <<
-          // j
-          //          << std::endl;
           this->assemble(mat, *_a[i][j], _bcs);
-          // std::cout << "End assembling into matrix:" << i << ", " << j
-          //         << std::endl;
 
           MatRestoreLocalSubMatrix(A.mat(), is0, is1, &subA);
           ISDestroy(&is0);
@@ -199,8 +167,104 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   A.apply(la::PETScMatrix::AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(la::PETScVector& b)
+void Assembler::assemble(la::PETScVector& b, BlockType block_type)
 {
+  // Check if matrix should be nested
+  assert(!_l.empty());
+  const bool block_vector = _l.size() > 1;
+
+  if (b.empty())
+  {
+    // Initialise matrix if empty
+
+    // Build array of pointers to forms
+    std::vector<const Form*> forms(_a.size());
+    for (std::size_t i = 0; i < _l.size(); ++i)
+      forms[i] = _l[i].get();
+
+    // Initialise vector
+    if (block_type == BlockType::nested)
+    {
+      std::cout << "Init block vector (nested)" << std::endl;
+      fem::init_nest(b, forms);
+      std::cout << "End init block vector (nested)" << std::endl;
+    }
+    else if (block_vector and block_type == BlockType::monolithic)
+    {
+      std::cout << "Init block vector (non-nested)" << std::endl;
+      fem::init_monolithic(b, forms);
+    }
+    else
+      init(b, *_l[0]);
+  }
+
+  // Get vector type
+  VecType vec_type;
+  VecGetType(b.vec(), &vec_type);
+  bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
+  // std::cout << "VVVVVVV: " << vec_type << std::endl;
+
+  // if (strcmp(vec_type, VECMPI) == 0)
+
+  if (is_vecnest)
+  {
+    for (std::size_t i = 0; i < _l.size(); ++i)
+    {
+      // Get subvector
+      Vec sub_b;
+      VecNestGetSubVec(b.vec(), i, &sub_b);
+      if (_l[i])
+      {
+        la::PETScVector vec(sub_b);
+        std::cout << "Assemble RHS (nest)" << std::endl;
+        this->assemble(vec, *_l[i]);
+      }
+      else
+      {
+        // FIXME: Figure out how to check that vector block is null
+        // Null block, do nothing
+      }
+    }
+  }
+  else if (block_vector)
+  {
+    std::cout << "Assembling block vector (non-nested)" << std::endl;
+    std::int64_t offset = 0;
+    for (std::size_t i = 0; i < _l.size(); ++i)
+    {
+      if (_l[i])
+      {
+        auto map = _l[i]->function_space(0)->dofmap()->index_map();
+        auto map_size = map->size(common::IndexMap::MapSize::ALL);
+
+        std::vector<PetscInt> index(map_size);
+        std::iota(index.begin(), index.end(), offset);
+
+        IS is;
+        ISCreateBlock(b.mpi_comm(), map->block_size(), index.size(),
+                      index.data(), PETSC_COPY_VALUES, &is);
+
+        Vec sub_b;
+        std::cout << "*** get subvector" << std::endl;
+        VecGetSubVector(b.vec(), is, &sub_b);
+        std::cout << "*** end get subvector" << std::endl;
+
+        la::PETScVector vec(sub_b);
+        this->assemble(vec, *_l[i]);
+
+        VecRestoreSubVector(b.vec(), is, &sub_b);
+        ISDestroy(&is);
+
+        offset += map_size;
+      }
+    }
+  }
+  else
+  {
+    this->assemble(b, *_l[0]);
+  }
+
+  /*
   // Assemble vector
   this->assemble(b, *_l[0]);
 
@@ -211,6 +275,7 @@ void Assembler::assemble(la::PETScVector& b)
 
   // Set bc values
   set_bc(b, *_l[0], _bcs);
+  `*/
 
   // // Assemble blocks (b)
   // for (auto row : _l)
@@ -233,8 +298,7 @@ void Assembler::assemble(la::PETScMatrix& A, la::PETScVector& b)
 void Assembler::assemble(la::PETScMatrix& A, const Form& a,
                          std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
-  if (A.empty())
-    init(A, a);
+  assert(!A.empty());
 
   // Get mesh from form
   assert(a.mesh());
@@ -264,16 +328,12 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   std::array<DirichletBC::Map, 2> boundary_values;
   for (std::size_t i = 0; i < bcs.size(); ++i)
   {
-    std::cout << "Checking bcs: " << i << std::endl;
     assert(bcs[i]);
     assert(bcs[i]->function_space());
     for (std::size_t axis = 0; axis < 2; ++axis)
     {
-      std::cout << "  Axis: " << axis << std::endl;
       if (spaces[axis]->contains(*bcs[i]->function_space()))
       {
-        std::cout << "     Spaces match: " << std::endl;
-
         // FIXME: find way to avoid gather, or perform with a single
         // gather
         bcs[i]->get_boundary_values(boundary_values[axis]);
@@ -283,10 +343,10 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
           bcs[i]->gather(boundary_values[axis]);
         }
       }
-      else
-      {
-        std::cout << "     No spaces match: " << std::endl;
-      }
+      // else
+      // {
+      //   std::cout << "     No spaces match: " << std::endl;
+      // }
     }
   }
 
@@ -385,8 +445,8 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScVector& b, const Form& L)
 {
-  if (b.empty())
-    init(b, L);
+  // if (b.empty())
+  //  init(b, L);
 
   // Get mesh from form
   assert(L.mesh());
@@ -441,6 +501,7 @@ void Assembler::assemble(la::PETScVector& b, const Form& L)
                                    ufc_cell.orientation);
 
     // Add to vector
+    std::cout << "Adding to vector: " << be(0) << ", " << dmap[0] << std::endl;
     b.add_local(be.data(), dmap.size(), dmap.data());
   }
 

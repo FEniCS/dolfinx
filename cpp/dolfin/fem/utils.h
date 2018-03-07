@@ -39,9 +39,15 @@ void init(la::PETScMatrix& A, const Form& a);
 void init_nest(la::PETScMatrix& A,
                std::vector<std::vector<const fem::Form*>> a);
 
+/// Initialise nested (VecNest) vector. Vector is not zeroed.
+void init_nest(la::PETScVector& x, std::vector<const fem::Form*> L);
+
 /// Initialise monolithic  matrix. Matrix is not zeroed.
 void init_monolithic(la::PETScMatrix& A,
                      std::vector<std::vector<const fem::Form*>> a);
+
+/// Initialise monolithic vector. Vector is not zeroed.
+void init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L);
 
 /// Initialise vector. Vector is not zeroed.
 void init(la::PETScVector& x, const Form& a);

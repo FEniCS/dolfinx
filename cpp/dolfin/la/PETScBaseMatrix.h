@@ -6,8 +6,6 @@
 
 #pragma once
 
-#ifdef HAS_PETSC
-
 #include "PETScObject.h"
 #include "PETScVector.h"
 #include <cinttypes>
@@ -81,4 +79,3 @@ protected:
 };
 }
 }
-#endif

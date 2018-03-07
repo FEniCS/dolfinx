@@ -4,8 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifdef HAS_PETSC
-
 #include "PETScVector.h"
 #include "SparsityPattern.h"
 #include <cmath>
@@ -87,7 +85,7 @@ void PETScVector::init(std::array<std::int64_t, 2> range,
   if (!_x)
   {
     log::dolfin_error("PETScVector.h", "initialize vector",
-                 "Underlying PETSc Vec has not been initialized");
+                      "Underlying PETSc Vec has not been initialized");
   }
 
   PetscErrorCode ierr;
@@ -145,7 +143,7 @@ void PETScVector::init(std::array<std::int64_t, 2> range,
   else if (!ghost_indices.empty())
   {
     log::dolfin_error("PETScVector.cpp", "initialize vector",
-                 "Sequential PETSc Vec objects cannot have ghost entries");
+                      "Sequential PETSc Vec objects cannot have ghost entries");
   }
 
   // Build local-to-global map
@@ -262,7 +260,7 @@ void PETScVector::set_local(const std::vector<double>& values)
   if (values.size() != local_size)
   {
     log::dolfin_error("PETScVector.cpp", "set local values of PETSc vector",
-                 "Size of values array is not equal to local vector size");
+                      "Size of values array is not equal to local vector size");
   }
 
   if (local_size == 0)
@@ -285,7 +283,7 @@ void PETScVector::add_local(const std::vector<double>& values)
   if (values.size() != local_size)
   {
     log::dolfin_error("PETScVector.cpp", "add local values to PETSc vector",
-                 "Size of values array is not equal to local vector size");
+                      "Size of values array is not equal to local vector size");
   }
 
   if (local_size == 0)
@@ -512,8 +510,8 @@ const PETScVector& PETScVector::operator*=(const PETScVector& v)
   if (size() != v.size())
   {
     log::dolfin_error("PETScVector.cpp",
-                 "perform point-wise multiplication with PETSc vector",
-                 "Vectors are not of the same size");
+                      "perform point-wise multiplication with PETSc vector",
+                      "Vectors are not of the same size");
   }
 
   PetscErrorCode ierr = VecPointwiseMult(_x, _x, v._x);
@@ -551,8 +549,9 @@ void PETScVector::axpy(double a, const PETScVector& y)
   dolfin_assert(y._x);
   if (size() != y.size())
   {
-    log::dolfin_error("PETScVector.cpp", "perform axpy operation with PETSc vector",
-                 "Vectors are not of the same size");
+    log::dolfin_error("PETScVector.cpp",
+                      "perform axpy operation with PETSc vector",
+                      "Vectors are not of the same size");
   }
 
   PetscErrorCode ierr = VecAXPY(_x, a, y._x);
@@ -578,7 +577,7 @@ double PETScVector::norm(std::string norm_type) const
   if (norm_types.count(norm_type) == 0)
   {
     log::dolfin_error("PETScVector.cpp", "compute norm of PETSc vector",
-                 "Unknown norm type (\"%s\")", norm_type.c_str());
+                      "Unknown norm type (\"%s\")", norm_type.c_str());
   }
 
   double value = 0.0;
@@ -667,7 +666,7 @@ void PETScVector::gather(PETScVector& y,
   if (MPI::size(y.mpi_comm()) != 1)
   {
     log::dolfin_error("PETScVector.cpp", "gather vector entries",
-                 "Gather vector must be a local vector (MPI_COMM_SELF)");
+                      "Gather vector must be a local vector (MPI_COMM_SELF)");
   }
 
   // Initialize vector if empty
@@ -678,8 +677,8 @@ void PETScVector::gather(PETScVector& y,
   if (y.size() != n)
   {
     log::dolfin_error("PETScVector.cpp", "gather vector entries",
-                 "Gather vector must be empty or of correct size "
-                 "(same as provided indices)");
+                      "Gather vector must be empty or of correct size "
+                      "(same as provided indices)");
   }
 
   // Prepare data for index sets (global indices)
@@ -790,8 +789,8 @@ void PETScVector::set_from_options()
   if (!_x)
   {
     log::dolfin_error("PETScVector.cpp",
-                 "call VecSetFromOptions on PETSc Vec object",
-                 "Vec object has not been initialized");
+                      "call VecSetFromOptions on PETSc Vec object",
+                      "Vec object has not been initialized");
   }
 
   PetscErrorCode ierr = VecSetFromOptions(_x);
@@ -815,5 +814,3 @@ void PETScVector::reset(Vec vec)
   CHECK_ERROR("PetscObjectReference");
 }
 //-----------------------------------------------------------------------------
-
-#endif

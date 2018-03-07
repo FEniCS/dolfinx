@@ -6,8 +6,6 @@
 
 #pragma once
 
-#ifdef HAS_PETSC
-
 #include "PETScObject.h"
 #include <array>
 #include <cstdint>
@@ -212,4 +210,3 @@ private:
 };
 }
 }
-#endif
