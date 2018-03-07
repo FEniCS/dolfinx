@@ -115,6 +115,7 @@ def test_matrix_assembly_block():
     v, q = dolfin.function.argument.TestFunction(
         V0), dolfin.function.argument.TestFunction(V1)
     f = dolfin.function.constant.Constant(-1.0)
+    g = dolfin.function.constant.Constant(1.0)
 
     a00 = u*v*dx
     a01 = v*p * dx
@@ -123,7 +124,7 @@ def test_matrix_assembly_block():
     # a11 = None
 
     L0 = f*v * dx
-    L1 = dolfin.function.constant.Constant(1.0)*q * dx
+    L1 = g*q * dx
 
     # Define Dirichlet boundary (x = 0 or x = 1)
     def boundary(x):
@@ -176,8 +177,6 @@ def test_matrix_assembly_block():
     A11 = A.mat().getLocalSubMatrix(IS[0][1], IS[1][1])
     A11.view()
 
-    return
-
     # Monolithic version
 
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
@@ -189,7 +188,7 @@ def test_matrix_assembly_block():
     v0, v1 = dolfin.function.argument.TestFunctions(W)
 
     a = u0*v0*dx + u1*v1*dx + u0*v1*dx + u1*v0*dx
-    L = f*v0*ufl.dx
+    L = f*v0*ufl.dx + g*v1*dx
 
     print("--- Monolithic version")
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
@@ -197,6 +196,7 @@ def test_matrix_assembly_block():
     A, b = assembler1.assemble(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
     A.mat().view()
+    b.vec().view()
     # print(A.mat().norm())
 
     # Reference assembler
