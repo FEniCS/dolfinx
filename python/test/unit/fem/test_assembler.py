@@ -144,13 +144,13 @@ def test_matrix_assembly_block():
     # A.mat().view()
     # print(A.mat().norm())
 
-    # print("--------------------")
+    print("--------------------")
 
-    # A, b = assembler.assemble(
-    #     mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    # A.mat().view()
-    # print(A.mat().norm())
-    # return
+    A, b = assembler.assemble(
+        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
+    A.mat().view()
+    b.vec().view()
+    return
 
     print("--------------------")
 

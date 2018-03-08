@@ -202,9 +202,6 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
   VecType vec_type;
   VecGetType(b.vec(), &vec_type);
   bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
-  // std::cout << "VVVVVVV: " << vec_type << std::endl;
-
-  // if (strcmp(vec_type, VECMPI) == 0)
 
   if (is_vecnest)
   {
@@ -248,8 +245,34 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
         std::cout << "*** get subvector" << std::endl;
         VecGetSubVector(b.vec(), is, &sub_b);
         std::cout << "*** end get subvector" << std::endl;
-
         la::PETScVector vec(sub_b);
+
+        // FIXME: Does it pick up the block size?
+
+        // FIXME: Update for parallel
+        // Attach local-to-global map
+
+        // Fill vector with [i0 + 0, i0 + 1, i0 +2, . . .]
+        std::vector<PetscInt> local_to_global_map(vec.size());
+        std::iota(local_to_global_map.begin(), local_to_global_map.end(), 1);
+
+        // Create PETSc local-to-global map
+        ISLocalToGlobalMapping petsc_local_to_global;
+        // PetscErrorCode ierr = 0;
+        ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, 1,
+                                     local_to_global_map.size(),
+                                     local_to_global_map.data(),
+                                     PETSC_COPY_VALUES, &petsc_local_to_global);
+        // CHECK_ERROR("ISLocalToGlobalMappingCreate");
+
+        // Apply local-to-global map to vector
+        VecSetLocalToGlobalMapping(sub_b, petsc_local_to_global);
+        // CHECK_ERROR("VecSetLocalToGlobalMapping");
+
+        // Clean-up PETSc local-to-global map
+        ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
+        // CHECK_ERROR("ISLocalToGlobalMappingDestroy");
+
         this->assemble(vec, *_l[i]);
 
         VecRestoreSubVector(b.vec(), is, &sub_b);
