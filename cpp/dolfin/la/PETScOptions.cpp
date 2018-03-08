@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifdef HAS_PETSC
 
 #include "PETScOptions.h"
 
@@ -45,15 +44,14 @@ void PETScOptions::clear(std::string option)
   PetscErrorCode ierr;
   ierr = PetscOptionsClearValue(NULL, option.c_str());
   if (ierr != 0)
-    PETScObject::petsc_error(ierr, __FILE__, "PetscOptionsClearValue");
+    petsc_error(ierr, __FILE__, "PetscOptionsClearValue");
 }
 //-----------------------------------------------------------------------------
 void PETScOptions::clear()
 {
   PetscErrorCode ierr = PetscOptionsClear(NULL);
   if (ierr != 0)
-    PETScObject::petsc_error(ierr, __FILE__, "PetscOptionsClear");
+    petsc_error(ierr, __FILE__, "PetscOptionsClear");
 }
 //-----------------------------------------------------------------------------
 
-#endif

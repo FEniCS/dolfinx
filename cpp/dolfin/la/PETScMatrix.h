@@ -6,8 +6,6 @@
 
 #pragma once
 
-#ifdef HAS_PETSC
-
 #include "PETScBaseMatrix.h"
 #include <map>
 #include <memory>
@@ -205,11 +203,11 @@ public:
 
 private:
   // Create PETSc nullspace object
-  MatNullSpace create_petsc_nullspace(const la::VectorSpaceBasis& nullspace) const;
+  MatNullSpace
+  create_petsc_nullspace(const la::VectorSpaceBasis& nullspace) const;
 
   // PETSc norm types
   static const std::map<std::string, NormType> norm_types;
 };
 }
 }
-#endif

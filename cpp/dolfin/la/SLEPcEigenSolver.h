@@ -8,7 +8,6 @@
 
 #ifdef HAS_SLEPC
 
-#include "PETScObject.h"
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/types.h"
 #include <memory>
@@ -103,7 +102,7 @@ class VectorSpaceBasis;
 /// transform and must be provided if a spectral transform is
 /// given. The possible values are real numbers.
 
-class SLEPcEigenSolver : public common::Variable, public PETScObject
+class SLEPcEigenSolver : public common::Variable
 {
 public:
   /// Create eigenvalue solver

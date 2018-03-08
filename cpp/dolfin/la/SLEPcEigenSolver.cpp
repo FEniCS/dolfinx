@@ -10,6 +10,7 @@
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "VectorSpaceBasis.h"
+#include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include <slepcversion.h>
@@ -39,9 +40,10 @@ SLEPcEigenSolver::SLEPcEigenSolver(EPS eps) : _eps(eps)
   }
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp",
-                 "initialize SLEPcEigenSolver with SLEPc EPS object",
-                 "SLEPc EPS must be initialised (EPSCreate) before wrapping");
+    log::dolfin_error(
+        "SLEPcEigenSolver.cpp",
+        "initialize SLEPcEigenSolver with SLEPc EPS object",
+        "SLEPc EPS must be initialised (EPSCreate) before wrapping");
   }
 
   // Set default parameter values
@@ -132,8 +134,8 @@ void SLEPcEigenSolver::solve(std::int64_t n)
 
   EPSType eps_type = NULL;
   EPSGetType(_eps, &eps_type);
-  log::log(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.", eps_type,
-      num_iterations);
+  log::log(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.",
+           eps_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
@@ -151,8 +153,8 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
   else
   {
     log::dolfin_error("SLEPcEigenSolver.cpp",
-                 "extract eigenvalue from SLEPc eigenvalue solver",
-                 "Requested eigenvalue (%d) has not been computed", i);
+                      "extract eigenvalue from SLEPc eigenvalue solver",
+                      "Requested eigenvalue (%d) has not been computed", i);
   }
 }
 //-----------------------------------------------------------------------------
@@ -184,8 +186,8 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, PETScVector& r,
   else
   {
     log::dolfin_error("SLEPcEigenSolver.cpp",
-                 "extract eigenpair from SLEPc eigenvalue solver",
-                 "Requested eigenpair (%d) has not been computed", i);
+                      "extract eigenpair from SLEPc eigenvalue solver",
+                      "Requested eigenpair (%d) has not been computed", i);
   }
 }
 //-----------------------------------------------------------------------------
@@ -297,9 +299,10 @@ void SLEPcEigenSolver::read_parameters()
     }
     else
     {
-      log::dolfin_error("SLEPcEigenSolver.cpp", "set spectral transform",
-                   "For an spectral transform, the spectral shift parameter "
-                   "must be set");
+      log::dolfin_error(
+          "SLEPcEigenSolver.cpp", "set spectral transform",
+          "For an spectral transform, the spectral shift parameter "
+          "must be set");
     }
   }
 }
@@ -324,8 +327,8 @@ void SLEPcEigenSolver::set_problem_type(std::string type)
   else
   {
     log::dolfin_error("SLEPcEigenSolver.cpp",
-                 "set problem type for SLEPc eigensolver",
-                 "Unknown problem type (\"%s\")", type.c_str());
+                      "set problem type for SLEPc eigensolver",
+                      "Unknown problem type (\"%s\")", type.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -346,8 +349,8 @@ void SLEPcEigenSolver::set_spectral_transform(std::string transform,
   else
   {
     log::dolfin_error("SLEPcEigenSolver.cpp",
-                 "set spectral transform for SLEPc eigensolver",
-                 "Unknown transform (\"%s\")", transform.c_str());
+                      "set spectral transform for SLEPc eigensolver",
+                      "Unknown transform (\"%s\")", transform.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -391,8 +394,9 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
   }
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp", "set spectrum for SLEPc eigensolver",
-                 "Unknown spectrum type (\"%s\")", spectrum.c_str());
+    log::dolfin_error("SLEPcEigenSolver.cpp",
+                      "set spectrum for SLEPc eigensolver",
+                      "Unknown spectrum type (\"%s\")", spectrum.c_str());
   }
 
   // FIXME: Need to add some test here as most algorithms only compute
@@ -428,8 +432,9 @@ void SLEPcEigenSolver::set_solver(std::string solver)
     EPSSetType(_eps, EPSGD);
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp", "set solver for SLEPc eigensolver",
-                 "Unknown solver type (\"%s\")", solver.c_str());
+    log::dolfin_error("SLEPcEigenSolver.cpp",
+                      "set solver for SLEPc eigensolver",
+                      "Unknown solver type (\"%s\")", solver.c_str());
   }
 }
 //-----------------------------------------------------------------------------

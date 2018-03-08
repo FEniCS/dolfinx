@@ -6,9 +6,7 @@
 
 #pragma once
 
-#ifdef HAS_PETSC
-
-#include "PETScObject.h"
+#include "utils.h"
 #include <boost/lexical_cast.hpp>
 #include <dolfin/log/log.h>
 #include <petscoptions.h>
@@ -57,7 +55,7 @@ public:
     ierr = PetscOptionsSetValue(
         NULL, option.c_str(), boost::lexical_cast<std::string>(value).c_str());
     if (ierr != 0)
-      PETScObject::petsc_error(ierr, __FILE__, "PetscOptionsSetValue");
+      petsc_error(ierr, __FILE__, "PetscOptionsSetValue");
   }
 
   /// Clear a PETSc option
@@ -68,4 +66,3 @@ public:
 };
 }
 }
-#endif

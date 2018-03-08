@@ -7,7 +7,6 @@
 #pragma once
 
 #include <dolfin/common/MPI.h>
-#include <dolfin/la/PETScObject.h>
 #include <dolfin/log/log.h>
 #include <memory>
 #include <petscdm.h>
@@ -46,7 +45,7 @@ namespace fem
 ///
 /// Warning: This classs is highly experimental and will change
 
-class PETScDMCollection : public la::PETScObject
+class PETScDMCollection
 {
 public:
   /// Construct PETScDMCollection from a vector of

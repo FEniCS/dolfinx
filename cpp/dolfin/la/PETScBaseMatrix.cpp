@@ -4,10 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifdef HAS_PETSC
-
 #include "PETScBaseMatrix.h"
 #include "PETScVector.h"
+#include "utils.h"
 #include <dolfin/log/log.h>
 #include <petscvec.h>
 
@@ -39,7 +38,7 @@ PETScBaseMatrix::~PETScBaseMatrix()
 PETScBaseMatrix::PETScBaseMatrix(const PETScBaseMatrix& A)
 {
   log::dolfin_error("PETScBaseMatrix.cpp", "copy constructor",
-               "PETScBaseMatrix does not provide a copy constructor");
+                    "PETScBaseMatrix does not provide a copy constructor");
 }
 //-----------------------------------------------------------------------------
 std::int64_t PETScBaseMatrix::size(std::size_t dim) const
@@ -47,7 +46,7 @@ std::int64_t PETScBaseMatrix::size(std::size_t dim) const
   if (dim > 1)
   {
     log::dolfin_error("PETScBaseMatrix.cpp", "access size of PETSc matrix",
-                 "Illegal axis (%d), must be 0 or 1", dim);
+                      "Illegal axis (%d), must be 0 or 1", dim);
   }
 
   dolfin_assert(_matA);
@@ -77,8 +76,8 @@ std::array<std::int64_t, 2> PETScBaseMatrix::local_range(std::size_t dim) const
   if (dim == 1)
   {
     log::dolfin_error("PETScBaseMatrix.cpp",
-                 "access local column range for PETSc matrix",
-                 "Only local row range is available for PETSc matrices");
+                      "access local column range for PETSc matrix",
+                      "Only local row range is available for PETSc matrices");
   }
 
   dolfin_assert(_matA);
@@ -111,8 +110,8 @@ void PETScBaseMatrix::init_vector(PETScVector& z, std::size_t dim) const
   else
   {
     log::dolfin_error("PETScBaseMatrix.cpp",
-                 "initialize PETSc vector to match PETSc matrix",
-                 "Dimension must be 0 or 1, not %d", dim);
+                      "initialize PETSc vector to match PETSc matrix",
+                      "Dimension must be 0 or 1, not %d", dim);
   }
 
   // Associate new PETSc Vec with z (this will increase the reference
@@ -131,5 +130,3 @@ MPI_Comm PETScBaseMatrix::mpi_comm() const
   return mpi_comm;
 }
 //-----------------------------------------------------------------------------
-
-#endif
