@@ -4,12 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifdef HAS_PETSC
-
 #include "PETScLUSolver.h"
 #include "PETScMatrix.h"
-#include "PETScObject.h"
 #include "PETScVector.h"
+#include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
@@ -121,14 +119,14 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm,
     if (A->size(0) != A->size(1))
     {
       log::dolfin_error("PETScLUSolver.cpp", "create PETSc LU solver",
-                   "Cannot LU factorize non-square PETSc matrix");
+                        "Cannot LU factorize non-square PETSc matrix");
     }
 
     dolfin_assert(A->mat());
     PetscBool symm_is_set = PETSC_FALSE;
     ierr = MatIsSymmetricKnown(A->mat(), &symm_is_set, &is_symmetric);
     if (ierr != 0)
-      PETScObject::petsc_error(ierr, __FILE__, "MatIsSymmetricKnown");
+      petsc_error(ierr, __FILE__, "MatIsSymmetricKnown");
   }
 
   // Select solver package
@@ -140,39 +138,39 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm,
   // Make solver preconditioner only
   ierr = KSPSetType(ksp, KSPPREONLY);
   if (ierr != 0)
-    PETScObject::petsc_error(ierr, __FILE__, "KSPSetType");
+    petsc_error(ierr, __FILE__, "KSPSetType");
 
   // Get PC
   PC pc;
   ierr = KSPGetPC(ksp, &pc);
   if (ierr != 0)
-    PETScObject::petsc_error(ierr, __FILE__, "KSPGetPC");
+    petsc_error(ierr, __FILE__, "KSPGetPC");
 
   // Set PC type to LU or PCCHOLESKY (depending on matrix symmetry)
   if (is_symmetric == PETSC_TRUE and solver_has_cholesky(solver_package))
   {
     ierr = PCSetType(pc, PCCHOLESKY);
     if (ierr != 0)
-      PETScObject::petsc_error(ierr, __FILE__, "PCSetType");
+      petsc_error(ierr, __FILE__, "PCSetType");
   }
   else
   {
     ierr = PCSetType(pc, PCLU);
     if (ierr != 0)
-      PETScObject::petsc_error(ierr, __FILE__, "PCSetType");
+      petsc_error(ierr, __FILE__, "PCSetType");
   }
 
   // Set LU solver package
   ierr = PCFactorSetMatSolverPackage(pc, solver_package);
   if (ierr != 0)
-    PETScObject::petsc_error(ierr, __FILE__, "PCFactorSetMatSolverPackage");
+    petsc_error(ierr, __FILE__, "PCFactorSetMatSolverPackage");
 
   // Set operator
   if (A)
   {
     ierr = KSPSetOperators(ksp, A->mat(), A->mat());
     if (ierr != 0)
-      PETScObject::petsc_error(ierr, __FILE__, "KSPSetOperators");
+      petsc_error(ierr, __FILE__, "KSPSetOperators");
   }
 }
 //-----------------------------------------------------------------------------
@@ -235,11 +233,12 @@ std::string PETScLUSolver::str(bool verbose) const
 
   if (verbose)
   {
-    log::warning("Verbose output for PETScLUSolver not implemented, calling PETSc "
-            "KSPView directly.");
+    log::warning(
+        "Verbose output for PETScLUSolver not implemented, calling PETSc "
+        "KSPView directly.");
     PetscErrorCode ierr = KSPView(_solver.ksp(), PETSC_VIEWER_STDOUT_WORLD);
     if (ierr != 0)
-      PETScObject::petsc_error(ierr, __FILE__, "KSPView");
+      petsc_error(ierr, __FILE__, "KSPView");
   }
   else
     s << "<PETScLUSolver>";
@@ -256,8 +255,8 @@ const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
   if (lumethods.count(method) == 0)
   {
     log::dolfin_error("PETScLUSolver.cpp",
-                 "solve linear system using PETSc LU solver",
-                 "Unknown LU method \"%s\"", method.c_str());
+                      "solve linear system using PETSc LU solver",
+                      "Unknown LU method \"%s\"", method.c_str());
   }
 
   // Choose appropriate 'default' solver
@@ -272,8 +271,9 @@ const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
       method = "superlu_dist";
 #else
       method = "petsc";
-      log::warning("Using PETSc native LU solver. Consider configuring PETSc with "
-              "an efficient LU solver (e.g. Umfpack, SuperLU_dist).");
+      log::warning(
+          "Using PETSc native LU solver. Consider configuring PETSc with "
+          "an efficient LU solver (e.g. Umfpack, SuperLU_dist).");
 #endif
     }
     else
@@ -282,8 +282,9 @@ const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
       method = "superlu_dist";
 #else
       method = "petsc";
-      log::warning("Using PETSc native LU solver. Consider configuring PETSc with "
-              "an efficient LU solver (e.g. SuperLU_dist).");
+      log::warning(
+          "Using PETSc native LU solver. Consider configuring PETSc with "
+          "an efficient LU solver (e.g. SuperLU_dist).");
 #endif
     }
 #else
@@ -301,8 +302,9 @@ const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
       method = "superlu_dist";
 #else
       method = "petsc";
-      log::warning("Using PETSc native LU solver. Consider configuring PETSc with "
-              "an efficient LU solver (e.g. UMFPACK, MUMPS).");
+      log::warning(
+          "Using PETSc native LU solver. Consider configuring PETSc with "
+          "an efficient LU solver (e.g. UMFPACK, MUMPS).");
 #endif
     }
     else
@@ -315,9 +317,9 @@ const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
       method = "pastix";
 #else
       log::dolfin_error("PETScLUSolver.cpp",
-                   "solve linear system using PETSc LU solver",
-                   "No suitable solver for parallel LU found. Consider "
-                   "configuring PETSc with MUMPS or SuperLU_dist");
+                        "solve linear system using PETSc LU solver",
+                        "No suitable solver for parallel LU found. Consider "
+                        "configuring PETSc with MUMPS or SuperLU_dist");
 #endif
     }
 #endif
@@ -328,5 +330,3 @@ const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
   return it->second;
 }
 //-----------------------------------------------------------------------------
-
-#endif

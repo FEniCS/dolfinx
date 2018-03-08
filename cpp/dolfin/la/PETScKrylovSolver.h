@@ -6,9 +6,6 @@
 
 #pragma once
 
-#ifdef HAS_PETSC
-
-#include "PETScObject.h"
 #include <dolfin/common/types.h>
 #include <map>
 #include <memory>
@@ -32,7 +29,7 @@ class VectorSpaceBasis;
 /// This class implements Krylov methods for linear systems of the
 /// form Ax = b. It is a wrapper for the Krylov solvers of PETSc.
 
-class PETScKrylovSolver : public PETScObject
+class PETScKrylovSolver
 {
 public:
   /// Norm types used in convergence testing. Not all solvers types
@@ -162,4 +159,3 @@ private:
 };
 }
 }
-#endif

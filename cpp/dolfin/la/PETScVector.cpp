@@ -6,6 +6,7 @@
 
 #include "PETScVector.h"
 #include "SparsityPattern.h"
+#include "utils.h"
 #include <cmath>
 #include <cstddef>
 #include <cstring>

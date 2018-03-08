@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "PETScObject.h"
 #include <array>
 #include <cstdint>
 #include <dolfin/common/ArrayView.h>
@@ -31,7 +30,7 @@ namespace la
 /// access the PETSc Vec pointer using the function vec() and
 /// use the standard PETSc interface.
 
-class PETScVector : public PETScObject
+class PETScVector
 {
 public:
   /// Create empty vector on an MPI communicator
