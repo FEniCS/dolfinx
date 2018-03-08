@@ -316,7 +316,7 @@ void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
   values.setZero();
 
   // Compute linear combination for each row of x
-  for (std::size_t k = 0; k < x.rows(); ++k)
+  for (unsigned int k = 0; k < x.rows(); ++k)
     for (std::size_t i = 0; i < element.space_dimension(); ++i)
     {
       element.evaluate_basis(i, basis.data(), x.data() + k * x.cols(),
@@ -445,7 +445,7 @@ EigenRowArrayXXd Function::compute_vertex_values(const mesh::Mesh& mesh) const
   // Interpolate vertex values on each cell (using last computed value
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
-  std::vector<double> coordinate_dofs;
+  std::vector<double> coordinate_dofs(mesh.geometry().dim());
   Eigen::Map<EigenRowMatrixXd> x(coordinate_dofs.data(), num_cell_vertices,
                                  mesh.geometry().dim());
   EigenRowMatrixXd values(num_cell_vertices, value_size_loc);
