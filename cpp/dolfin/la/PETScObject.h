@@ -8,7 +8,6 @@
 
 #ifdef HAS_PETSC
 
-#include <dolfin/common/SubSystemsManager.h>
 #include <string>
 
 namespace dolfin
@@ -16,15 +15,11 @@ namespace dolfin
 namespace la
 {
 
-/// This class calls SubSystemsManager to initialise PETSc.
-///
 /// All PETSc objects must be derived from this class.
 
 class PETScObject
 {
 public:
-  /// Constructor. Ensures that PETSc has been initialised.
-  PETScObject() { common::SubSystemsManager::init_petsc(); }
 
   /// Destructor
   virtual ~PETScObject() {}

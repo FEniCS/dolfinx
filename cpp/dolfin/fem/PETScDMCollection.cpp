@@ -19,6 +19,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscmat.h>
+#include <petscdmshell.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;

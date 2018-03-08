@@ -10,7 +10,6 @@
 
 #include "PETScObject.h"
 #include <boost/lexical_cast.hpp>
-#include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/log/log.h>
 #include <petscoptions.h>
 #include <string>
@@ -51,8 +50,6 @@ public:
   template <typename T>
   static void set(std::string option, const T value)
   {
-    common::SubSystemsManager::init_petsc();
-
     if (option[0] != '-')
       option = '-' + option;
 
@@ -72,4 +69,3 @@ public:
 }
 }
 #endif
-
