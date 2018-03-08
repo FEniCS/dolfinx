@@ -135,7 +135,7 @@ EigenRowArrayXXd Expression::compute_vertex_values(const mesh::Mesh& mesh) const
 {
   // Local data for vertex values
   const std::size_t size = value_size();
-  Eigen::VectorXd local_vertex_values(size);
+  Eigen::RowVectorXd local_vertex_values(size);
 
   // Resize vertex_values
   EigenRowArrayXXd vertex_values(mesh.num_vertices(), size);

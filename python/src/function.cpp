@@ -131,13 +131,14 @@ void function(py::module &m) {
   py::class_<dolfin::function::Expression, PyExpression,
              std::shared_ptr<dolfin::function::Expression>,
              dolfin::function::GenericFunction>(
-      m, "Expression", "An Expression is a function (field) that can appear as "
-                       "a coefficient in a form")
+      m, "Expression",
+      "An Expression is a function (field) that can appear as "
+      "a coefficient in a form")
       .def(py::init<std::vector<std::size_t>>())
       .def("__call__",
            [](const dolfin::function::Expression &self,
-              Eigen::Ref<const Eigen::VectorXd> x) {
-             Eigen::VectorXd f(self.value_size());
+              Eigen::Ref<const EigenRowMatrixXd> x) {
+             EigenRowMatrixXd f(x.rows(), self.value_size());
              self.eval(f, x);
              return f;
            })
@@ -230,19 +231,17 @@ void function(py::module &m) {
       //(dolfin::function::Function::*)(const
       // dolfin::function::Function&))
       //     &dolfin::function::Function::operator=)
-      .def("_assign",
-           (const dolfin::function::Function &(
-               dolfin::function::Function::
-                   *)(const dolfin::function::Expression &)) &
-               dolfin::function::Function::operator=)
-      .def("_assign",
-           (void (dolfin::function::Function::*)(
-               const dolfin::function::FunctionAXPY &)) &
-               dolfin::function::Function::operator=)
+      .def("_assign", (const dolfin::function::Function &(
+                          dolfin::function::Function::
+                              *)(const dolfin::function::Expression &)) &
+                          dolfin::function::Function::operator=)
+      .def("_assign", (void (dolfin::function::Function::*)(
+                          const dolfin::function::FunctionAXPY &)) &
+                          dolfin::function::Function::operator=)
       .def("__call__",
            [](dolfin::function::Function &self,
-              Eigen::Ref<const Eigen::VectorXd> x) {
-             Eigen::VectorXd values(self.value_size());
+              Eigen::Ref<const EigenRowMatrixXd> x) {
+             EigenRowMatrixXd values(x.rows(), self.value_size());
              self.eval(values, x);
              return values;
            })
