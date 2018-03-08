@@ -30,7 +30,7 @@ from dolfin_utils.test import fixture
 
 @fixture
 def mesh():
-    return UnitCubeMesh(8, 8, 8)
+    return UnitCubeMesh(MPI.comm_world, 8, 8, 8)
 
 
 @fixture
@@ -112,66 +112,29 @@ def test_inclusion(V, Q):
     assert Q.contains(Q.sub(1))
     assert Q.contains(Q.sub(0).sub(0))
     assert Q.contains(Q.sub(0).sub(1))
-    assert Q.contains(Q.extract_sub_space((0, 0)))
-    assert Q.contains(Q.extract_sub_space((0, 1)))
-    assert Q.contains(Q.extract_sub_space((1,)))
 
     assert not Q.sub(0).contains(Q)
     assert Q.sub(0).contains(Q.sub(0))
     assert not Q.sub(0).contains(Q.sub(1))
     assert Q.sub(0).contains(Q.sub(0).sub(0))
     assert Q.sub(0).contains(Q.sub(0).sub(1))
-    assert Q.sub(0).contains(Q.extract_sub_space((0, 0)))
-    assert Q.sub(0).contains(Q.extract_sub_space((0, 1)))
-    assert not Q.sub(0).contains(Q.extract_sub_space((1,)))
 
     assert not Q.sub(1).contains(Q)
     assert not Q.sub(1).contains(Q.sub(0))
     assert Q.sub(1).contains(Q.sub(1))
     assert not Q.sub(1).contains(Q.sub(0).sub(0))
     assert not Q.sub(1).contains(Q.sub(0).sub(1))
-    assert not Q.sub(1).contains(Q.extract_sub_space((0, 0)))
-    assert not Q.sub(1).contains(Q.extract_sub_space((0, 1)))
-    assert Q.sub(1).contains(Q.extract_sub_space((1,)))
 
     assert not Q.sub(0).sub(0).contains(Q)
     assert not Q.sub(0).sub(0).contains(Q.sub(0))
     assert not Q.sub(0).sub(0).contains(Q.sub(1))
     assert Q.sub(0).sub(0).contains(Q.sub(0).sub(0))
     assert not Q.sub(0).sub(0).contains(Q.sub(0).sub(1))
-    assert Q.sub(0).sub(0).contains(Q.extract_sub_space((0, 0)))
-    assert not Q.sub(0).sub(0).contains(Q.extract_sub_space((0, 1)))
-    assert not Q.sub(0).sub(0).contains(Q.extract_sub_space((1,)))
-
-
-def test_boundary(mesh):
-    bmesh = BoundaryMesh(mesh, "exterior")
-    Vb = FunctionSpace(bmesh, "DG", 0)
-    Wb = VectorFunctionSpace(bmesh, "CG", 1)
-    assert Vb.dim() == 768
-    assert Wb.dim() == 1158
 
 
 def test_not_equal(W, V, W2, V2):
     assert W != V
     assert W2 != V2
-
-
-def test_sub_equality(W, Q):
-    assert W.sub(0) == W.sub(0)
-    assert W.sub(0) != W.sub(1)
-    assert W.sub(0) == W.extract_sub_space([0])
-    assert W.sub(1) == W.extract_sub_space([1])
-    assert Q.sub(0) == Q.extract_sub_space([0])
-
-
-def test_in_operator(f, g, V, V2, W, W2):
-    assert f in V
-    assert f in V2
-    assert g in W
-    assert g in W2
-    with pytest.raises(RuntimeError):
-        mesh() in V
 
 
 def test_collapse(W, V):
@@ -185,7 +148,7 @@ def test_collapse(W, V):
     assert Vc.dofmap().cell_dofs(0)[0] == V.dofmap().cell_dofs(0)[0]
     f0 = Function(V)
     f1 = Function(Vc)
-    assert len(f0.vector()) == len(f1.vector())
+    assert f0.vector().size() == f1.vector().size()
 
 
 def test_argument_equality(mesh, V, V2, W, W2):
@@ -193,7 +156,7 @@ def test_argument_equality(mesh, V, V2, W, W2):
     function spaces.
 
     """
-    mesh2 = UnitCubeMesh(8, 8, 8)
+    mesh2 = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     V3 = FunctionSpace(mesh2, 'CG', 1)
     W3 = VectorFunctionSpace(mesh2, 'CG', 1)
 

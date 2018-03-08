@@ -71,6 +71,7 @@ jobs:
           command: |
             cd python/test
             python3 -m pytest unit/fem/test_assembler.py
+            python3 -m pytest unit/function
             python3 -m pytest unit/geometry/test_bounding_box_tree.py
             python3 -m pytest unit/io
             python3 -m pytest unit/jit

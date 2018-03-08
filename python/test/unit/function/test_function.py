@@ -19,13 +19,16 @@
 
 import pytest
 from dolfin import *
+from dolfin.cpp.generation import UnitTriangleMesh
+from dolfin.parameter import parameters
+import numpy
 import ufl
 
 from dolfin_utils.test import skip_in_parallel, pushpop_parameters, fixture
 
 @fixture
 def mesh():
-    return UnitCubeMesh(8, 8, 8)
+    return UnitCubeMesh(MPI.comm_world, 3, 3, 3)
 
 
 @fixture
@@ -51,16 +54,6 @@ def test_name_argument(W):
     assert str(v) == "v"
 
 
-def test_in_function_space(W):
-    u = Function(W)
-    v = Function(W)
-    assert u in W
-    assert u in u.function_space()
-    assert u in v.function_space()
-    for i, usub in enumerate(u.split()):
-        assert usub in W.sub(i)
-
-
 def test_compute_vertex_values(V, W, mesh):
     from numpy import zeros, all, array
     u = Function(V)
@@ -78,7 +71,7 @@ def test_compute_vertex_values(V, W, mesh):
 
     assert all(u_values == u_values2)
 
-
+@pytest.mark.skip
 def test_assign(V, W):
     from ufl.algorithms import replace
 
@@ -99,43 +92,43 @@ def test_assign(V, W):
 
         uu = Function(V0)
         uu.assign(2*u)
-        assert uu.vector().sum() == u0.vector().sum()
+        assert uu.vector().get_local().sum() == u0.vector().get_local().sum()
 
         uu = Function(V1)
         uu.assign(3*u)
-        assert uu.vector().sum() == u1.vector().sum()
+        assert uu.vector().get_local().sum() == u1.vector().get_local().sum()
 
         # Test complex assignment
         expr = 3*u - 4*u1 - 0.1*4*u*4 + u2 + 3*u0/3./0.5
         expr_scalar = 3 - 4*3 - 0.1*4*4+4. + 3*2./3./0.5
         uu.assign(expr)
-        assert (round(uu.vector().sum() -
+        assert (round(uu.vector().get_local().sum() -
                       float(expr_scalar*uu.vector().size()), 7) == 0)
 
         # Test expression scaling
         expr = 3*expr
         expr_scalar *= 3
         uu.assign(expr)
-        assert (round(uu.vector().sum() -
+        assert (round(uu.vector().get_local().sum() -
                       float(expr_scalar*uu.vector().size()), 7) == 0)
 
         # Test expression scaling
         expr = expr/4.5
         expr_scalar /= 4.5
         uu.assign(expr)
-        assert (round(uu.vector().sum() -
+        assert (round(uu.vector().get_local().sum() -
                       float(expr_scalar*uu.vector().size()), 7) == 0)
 
         # Test self assignment
         expr = 3*u - Constant(5)*u2 + u1 - 5*u
         expr_scalar = 3 - 5*4. + 3. - 5
         u.assign(expr)
-        assert (round(u.vector().sum() -
+        assert (round(u.vector().get_local().sum() -
                       float(expr_scalar*u.vector().size()), 7) == 0)
 
         # Test zero assignment
         u.assign(-u2/2 + 2*u1 - u1/0.5 + u2*0.5)
-        assert round(u.vector().sum() - 0.0, 7) == 0
+        assert round(u.vector().get_local().sum() - 0.0, 7) == 0
 
         # Test errounious assignments
         uu = Function(V1)
@@ -153,7 +146,7 @@ def test_assign(V, W):
             with pytest.raises(RuntimeError):
                 uu.assign(4*u*u1)
 
-
+@pytest.mark.skip
 def test_axpy(V, W):
     for V0, V1, vector_space in [(V, W, False), (W, V, True)]:
         u = Function(V0)
@@ -172,7 +165,7 @@ def test_axpy(V, W):
         u.assign(axpy)
         expr_scalar = 3*2
 
-        assert (round(u.vector().sum() -
+        assert (round(u.vector().get_local().sum() -
                       float(expr_scalar*u.vector().size()), 7) == 0)
 
         axpy = FunctionAXPY([(2.0, u1), (3.0, u2)])
@@ -180,21 +173,21 @@ def test_axpy(V, W):
         u.assign(axpy)
         expr_scalar = 3*2+3*4.0
 
-        assert (round(u.vector().sum() -
+        assert (round(u.vector().get_local().sum() -
                       float(expr_scalar*u.vector().size()), 7) == 0)
 
         axpy = axpy*3.0
         u.assign(axpy)
         expr_scalar *= 3.0
 
-        assert (round(u.vector().sum() -
+        assert (round(u.vector().get_local().sum() -
                       float(expr_scalar*u.vector().size()), 7) == 0)
 
         axpy0 = axpy/5.0
         u.assign(axpy0)
         expr_scalar0 = expr_scalar/5.0
 
-        assert (round(u.vector().sum() -
+        assert (round(u.vector().get_local().sum() -
                       float(expr_scalar0*u.vector().size()), 7) == 0)
 
         axpy1 = axpy0+axpy
@@ -233,6 +226,7 @@ def test_axpy(V, W):
         with pytest.raises(RuntimeError):
             axpy + u
 
+@pytest.mark.skip
 def test_call(R, V, W, mesh):
     from numpy import zeros, all, array
     u0 = Function(R)
@@ -248,7 +242,7 @@ def test_call(R, V, W, mesh):
     u2.interpolate(e1)
 
     p0 = (Vertex(mesh, 0).point() + Vertex(mesh, 1).point())/2.0
-    x0 = (mesh.coordinates()[0] + mesh.coordinates()[1])/2.0
+    x0 = (mesh.geometry().x()[0] + mesh.geometry().x()[1])/2.0
     x1 = tuple(x0)
 
     assert round(u0(*x1) - u0(x0), 7) == 0
@@ -271,25 +265,7 @@ def test_call(R, V, W, mesh):
 
 def test_constant_float_conversion():
     c = Constant(3.45)
-    assert float(c) == 3.45
-
-
-def test_real_function_float_conversion1(R):
-    c = Function(R)
-    assert float(c) == 0.0
-
-
-def test_real_function_float_conversion2(R):
-    c = Function(R)
-    c.assign(Constant(2.34))
-    assert float(c) == 2.34
-
-
-def test_real_function_float_conversion3(R):
-    c = Function(R)
-    c.vector()[:] = 1.23
-    assert float(c) == 1.23
-
+    assert float(c.values()[0]) == 3.45
 
 def test_scalar_conditions(R):
     c = Function(R)
@@ -332,47 +308,53 @@ def test_interpolation_jit_rank0(V):
     f = Expression("1.0", degree=0)
     w = interpolate(f, V)
     x = w.vector()
-    assert x.max() == 1
-    assert x.min() == 1
+    assert MPI.max(MPI.comm_world, x.get_local().max()) == 1
+    assert MPI.min(MPI.comm_world, x.get_local().min()) == 1
 
 
 @skip_in_parallel
 def test_extrapolation(V, pushpop_parameters):
-    original_parameters = parameters["allow_extrapolation"]
+
+    print("a1")
 
     f0 = Function(V)
+
     with pytest.raises(RuntimeError):
         f0.__call__((0., 0, -1))
+    print("a1a")
 
-    mesh1 = UnitSquareMesh(3, 3)
+    mesh1 = UnitSquareMesh(MPI.comm_world, 3, 3)
     V1 = FunctionSpace(mesh1, "CG", 1)
 
     mesh2 = UnitTriangleMesh.create()
     V2 = FunctionSpace(mesh2, "CG", 1)
 
-    parameters["allow_extrapolation"] = True
     f1 = Function(V1)
+    f1.set_allow_extrapolation(True)
     f1.vector()[:] = 1.0
-    assert round(f1(0., -1) - 1.0, 7) == 0
+    assert round(f1([0., -1])[0] - 1.0, 7) == 0
 
-    parameters["allow_extrapolation"] = False
+    print("a2a")
+
     f2 = Function(V2)
+    f2.set_allow_extrapolation(False)
     with pytest.raises(RuntimeError):
         f2.__call__((0., -1.))
 
-    parameters["allow_extrapolation"] = True
     f3 = Function(V2)
+    f3.set_allow_extrapolation(True)
     f3.vector()[:] = 1.0
-    assert round(f3(0., -1) - 1.0, 7) == 0
+    assert round(f3((0., -1))[0] - 1.0, 7) == 0
 
-    parameters["allow_extrapolation"] = original_parameters
 
     f1 = Function(V1)
     f1.set_allow_extrapolation(True)
     f1.vector()[:] = 1.0
-    assert round(f1(0., -1) - 1.0, 7) == 0
+    assert round(f1((0., -1))[0] - 1.0, 7) == 0
 
     f2 = Function(V2)
+
+    print("a2")
 
     f2.set_allow_extrapolation(False)
     with pytest.raises(RuntimeError):
@@ -380,7 +362,7 @@ def test_extrapolation(V, pushpop_parameters):
 
     f2.set_allow_extrapolation(True)
     f2.vector()[:] = 1.0
-    assert round(f2(0., -1) - 1.0, 7) == 0
+    assert round(f2((0., -1))[0] - 1.0, 7) == 0
 
     f2.set_allow_extrapolation(True)
     assert f2.get_allow_extrapolation() is True
@@ -391,28 +373,28 @@ def test_extrapolation(V, pushpop_parameters):
 @skip_in_parallel
 def test_near_evaluations(R, mesh):
     # Test that we allow point evaluation that are slightly outside
-    parameters["allow_extrapolation"] = False
 
     u0 = Function(R)
+    u0.set_allow_extrapolation(False)
     u0.vector()[:] = 1.0
-    a = Vertex(mesh, 0).point()
+    a = Vertex(mesh, 0).point().array()
     offset = 0.99*DOLFIN_EPS
 
-    a_shift_x = Point(a[0] - offset, a[1], a[2])
-    assert round(u0(a) - u0(a_shift_x), 7) == 0
+    a_shift_x = Point(a[0] - offset, a[1], a[2]).array()
+    assert round(u0(a)[0] - u0(a_shift_x)[0], 7) == 0
 
     a_shift_xyz = Point(a[0] - offset / sqrt(3),
                         a[1] - offset / sqrt(3),
-                        a[2] - offset / sqrt(3))
-    assert round(u0(a) - u0(a_shift_xyz), 7) == 0
+                        a[2] - offset / sqrt(3)).array()
+    assert round(u0(a)[0] - u0(a_shift_xyz)[0], 7) == 0
 
 
 def test_interpolation_jit_rank1(W):
     f = Expression(("1.0", "1.0", "1.0"), degree=0)
     w = interpolate(f, W)
     x = w.vector()
-    assert x.max() == 1
-    assert x.min() == 1
+    assert x.get_local().max() == 1
+    assert x.get_local().min() == 1
 
 
 @skip_in_parallel
@@ -420,13 +402,13 @@ def test_interpolation_old(V, W, mesh):
 
     class F0(UserExpression):
         def eval(self, values, x):
-            values[0] = 1.0
+            values[:, 0] = 1.0
 
     class F1(UserExpression):
         def eval(self, values, x):
-            values[0] = 1.0
-            values[1] = 1.0
-            values[2] = 1.0
+            values[:, 0] = 1.0
+            values[:, 1] = 1.0
+            values[:, 2] = 1.0
 
         def value_shape(self):
             return (3,)
@@ -434,7 +416,7 @@ def test_interpolation_old(V, W, mesh):
     # Scalar interpolation
     f0 = F0(degree=0)
     f = Function(V)
-    f.interpolate(f0)
+    f = interpolate(f0, V)
     assert round(f.vector().norm("l1") - mesh.num_vertices(), 7) == 0
 
     # Vector interpolation

@@ -26,12 +26,13 @@ import ufl
 import dolfin
 from dolfin_utils.test import skip_in_parallel
 
+@pytest.mark.skip
 @skip_in_parallel
 def testFacetArea():
 
-    references = [(UnitIntervalMesh(1), 2, 2),\
-                  (UnitSquareMesh(1,1), 4, 4),\
-                  (UnitCubeMesh(1,1,1), 6, 3)]
+    references = [(UnitIntervalMesh(MPI.comm_world, 1), 2, 2),\
+                  (UnitSquareMesh(MPI.comm_world, 1,1), 4, 4),\
+                  (UnitCubeMesh(MPI.comm_world, 1,1,1), 6, 3)]
     for mesh, surface, ref_int in references:
         c = Constant(1, mesh.ufl_cell()) # FIXME
         c0 = ufl.FacetArea(mesh)
