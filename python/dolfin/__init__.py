@@ -120,4 +120,4 @@ from ufl.formoperators import action
 
 
 # Initialise PETSc
-dolfin.common.SubSystems.init_petsc()
+cpp.common.SubSystemsManager.init_petsc()
