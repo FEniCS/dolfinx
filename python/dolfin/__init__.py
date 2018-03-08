@@ -117,3 +117,7 @@ from ufl import (FiniteElement, TensorElement, VectorElement,
                  as_tensor, as_matrix, system, outer, dev, skew,
                  elem_mult, elem_div, elem_pow, elem_op, erf)
 from ufl.formoperators import action
+
+
+# Initialise PETSc
+cpp.common.SubSystemsManager.init_petsc()

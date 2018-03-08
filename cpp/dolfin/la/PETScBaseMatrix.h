@@ -6,9 +6,6 @@
 
 #pragma once
 
-#ifdef HAS_PETSC
-
-#include "PETScObject.h"
 #include "PETScVector.h"
 #include <cinttypes>
 #include <cstddef>
@@ -28,7 +25,7 @@ class PETScVector;
 /// This class is a base class for matrices that can be used in
 /// PETScKrylovSolver.
 
-class PETScBaseMatrix : public PETScObject, public virtual common::Variable
+class PETScBaseMatrix : public virtual common::Variable
 {
 public:
   /// Constructor
@@ -81,4 +78,3 @@ protected:
 };
 }
 }
-#endif

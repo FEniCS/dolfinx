@@ -6,7 +6,6 @@
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/la/PETScMatrix.h>
-#include <dolfin/la/PETScObject.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/nls/NonlinearProblem.h>

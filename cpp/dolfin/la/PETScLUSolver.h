@@ -6,8 +6,6 @@
 
 #pragma once
 
-#ifdef HAS_PETSC
-
 #include "PETScKrylovSolver.h"
 #include <dolfin/common/MPI.h>
 #include <map>
@@ -104,4 +102,3 @@ private:
 };
 }
 }
-#endif

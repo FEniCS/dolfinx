@@ -159,7 +159,7 @@ the form file) defined relative to this mesh, we do as follows
 
    int main(int argc, char *argv[])
    {
-     MPI_Init(&argc, &argv);
+     common::SubSystemsManager::init_petsc(argc, argv);
 
      // Create mesh and function space
      std::array<geometry::Point, 2> pt = {geometry::Point(0.,0.), geometry::Point(1.,1.)};

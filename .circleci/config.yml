@@ -19,6 +19,7 @@ jobs:
             pip3 install git+https://bitbucket.org/fenics-project/ufl.git
             pip3 install git+https://bitbucket.org/fenics-project/dijitso.git
             pip3 install git+https://bitbucket.org/fenics-project/ffcX.git
+            rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
       - run:
           name: Flake8 checks on Python code
           command: python3 -m flake8 python/dolfin
