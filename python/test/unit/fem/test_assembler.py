@@ -160,22 +160,25 @@ def test_matrix_assembly_block():
     A.mat().view()
     b.vec().view()
 
-    IS = A.mat().getNestISs()
-    # print(A.mat().norm())
-    # print(IS[0][0].view())
-    # print(IS[0][1].view())
-    # print(IS[0][1].view())
-    # print(IS[1][1].view())
-    # print(A.mat().norm())
+    try:
+        IS = A.mat().getNestISs()
+        # print(A.mat().norm())
+        # print(IS[0][0].view())
+        # print(IS[0][1].view())
+        # print(IS[0][1].view())
+        # print(IS[1][1].view())
+        # print(A.mat().norm())
 
-    A00 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][0])
-    A00.view()
-    A01 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][1])
-    A01.view()
-    A10 = A.mat().getLocalSubMatrix(IS[0][1], IS[1][0])
-    A10.view()
-    A11 = A.mat().getLocalSubMatrix(IS[0][1], IS[1][1])
-    A11.view()
+        A00 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][0])
+        A00.view()
+        A01 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][1])
+        A01.view()
+        A10 = A.mat().getLocalSubMatrix(IS[0][1], IS[1][0])
+        A10.view()
+        A11 = A.mat().getLocalSubMatrix(IS[0][1], IS[1][1])
+        A11.view()
+    except AttributeError:
+        print("Recent version of petsc4py required to get MatNest IS.")
 
     # Monolithic version
 
