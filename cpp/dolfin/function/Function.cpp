@@ -436,10 +436,6 @@ EigenRowArrayXXd Function::compute_vertex_values(const mesh::Mesh& mesh) const
                       "Non-matching mesh");
   }
 
-  // Get finite element
-  dolfin_assert(_function_space->element());
-  const fem::FiniteElement& element = *_function_space->element();
-
   // Local data for interpolation on each cell
   const std::size_t num_cell_vertices
       = mesh.type().num_vertices(mesh.topology().dim());
@@ -450,43 +446,29 @@ EigenRowArrayXXd Function::compute_vertex_values(const mesh::Mesh& mesh) const
   // Resize Array for holding vertex values
   EigenRowArrayXXd vertex_values(mesh.num_vertices(), value_size_loc);
 
-  // Create vector to hold cell vertex values
-  std::vector<double> cell_vertex_values(value_size_loc * num_cell_vertices);
-
-  // Create vector for expansion coefficients
-  std::vector<double> coefficients(element.space_dimension());
-
   // Interpolate vertex values on each cell (using last computed value
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
+  Eigen::Map<EigenRowMatrixXd> x(coordinate_dofs.data(), num_cell_vertices,
+                                 mesh.geometry().dim());
+  EigenRowMatrixXd values(num_cell_vertices, value_size_loc);
+
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Update to current cell
-    cell.get_coordinate_dofs(coordinate_dofs);
     cell.get_cell_data(ufc_cell);
+    cell.get_coordinate_dofs(coordinate_dofs);
 
-    // Pick values from global vector
-    restrict(coefficients.data(), element, cell, coordinate_dofs.data(),
-             ufc_cell);
-
-    // Interpolate values at the vertices
-    element.interpolate_vertex_values(
-        cell_vertex_values.data(), coefficients.data(), coordinate_dofs.data(),
-        ufc_cell.orientation);
+    // Call evaluate function
+    eval(values, x, cell, ufc_cell);
 
     // Copy values to array of vertex values
     std::size_t local_index = 0;
     for (auto& vertex : mesh::EntityRange<mesh::Vertex>(cell))
     {
-      for (std::size_t i = 0; i < value_size_loc; ++i)
-      {
-        // const std::size_t global_index
-        //    = i * mesh.num_vertices() + vertex.index();
-        // vertex_values[global_index] = cell_vertex_values[local_index];
-        vertex_values(vertex.index(), i) = cell_vertex_values[local_index];
-        ++local_index;
-      }
+      vertex_values.row(vertex.index()) = values.row(local_index);
+      ++local_index;
     }
   }
 
