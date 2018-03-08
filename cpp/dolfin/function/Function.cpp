@@ -289,9 +289,7 @@ void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
                     const mesh::Cell& dolfin_cell,
                     const ufc::cell& ufc_cell) const
 {
-  // Developer note: work arrays/vectors are re-created each time this
-  //                 function is called for thread-safety
-
+  dolfin_assert(x.rows() == values.rows());
   dolfin_assert(_function_space->element());
   const fem::FiniteElement& element = *_function_space->element();
 
@@ -317,18 +315,16 @@ void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
   // Initialise values
   values.setZero();
 
-  // Compute linear combination
-  std::size_t k = 0;
-  dolfin_assert(values.rows() == 1 and x.rows() == 1);
+  // Compute linear combination for each row of x
+  for (std::size_t k = 0; k < x.rows(); ++k)
+    for (std::size_t i = 0; i < element.space_dimension(); ++i)
+    {
+      element.evaluate_basis(i, basis.data(), x.data() + k * x.cols(),
+                             coordinate_dofs.data(), ufc_cell.orientation);
 
-  for (std::size_t i = 0; i < element.space_dimension(); ++i)
-  {
-    element.evaluate_basis(i, basis.data(), x.data(), coordinate_dofs.data(),
-                           ufc_cell.orientation);
-
-    for (std::size_t j = 0; j < value_size_loc; ++j)
-      values(k, j) += coefficients[i] * basis[j];
-  }
+      for (std::size_t j = 0; j < value_size_loc; ++j)
+        values(k, j) += coefficients[i] * basis[j];
+    }
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(const GenericFunction& v)
