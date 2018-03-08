@@ -16,7 +16,6 @@ namespace dolfin
 #include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScObject.h>
-#include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/SLEPcEigenSolver.h>
 #include <dolfin/la/Scalar.h>
