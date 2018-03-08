@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-
 #include "PETScOptions.h"
 
 using namespace dolfin;
@@ -54,4 +53,3 @@ void PETScOptions::clear()
     petsc_error(ierr, __FILE__, "PetscOptionsClear");
 }
 //-----------------------------------------------------------------------------
-
