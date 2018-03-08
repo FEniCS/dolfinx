@@ -445,16 +445,14 @@ EigenRowArrayXXd Function::compute_vertex_values(const mesh::Mesh& mesh) const
   // Interpolate vertex values on each cell (using last computed value
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
-  std::vector<double> coordinate_dofs(mesh.geometry().dim());
-  Eigen::Map<EigenRowMatrixXd> x(coordinate_dofs.data(), num_cell_vertices,
-                                 mesh.geometry().dim());
+  EigenRowMatrixXd x(num_cell_vertices, mesh.geometry().dim());
   EigenRowMatrixXd values(num_cell_vertices, value_size_loc);
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Update to current cell
     cell.get_cell_data(ufc_cell);
-    cell.get_coordinate_dofs(coordinate_dofs);
+    cell.get_coordinate_dofs(x);
 
     // Call evaluate function
     eval(values, x, cell, ufc_cell);

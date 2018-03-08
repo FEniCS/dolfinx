@@ -65,7 +65,8 @@ def test_compute_vertex_values(V, W, mesh):
     u_values = u.compute_vertex_values(mesh)
     v_values = v.compute_vertex_values(mesh)
 
-    assert all(u_values == 1)
+    u_ones = numpy.ones_like(u_values, dtype=numpy.float64)
+    assert all(numpy.isclose(u_values, u_ones))
 
     u_values2 = u.compute_vertex_values()
 
