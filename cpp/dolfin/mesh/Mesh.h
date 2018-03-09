@@ -35,7 +35,6 @@ namespace mesh
 {
 class LocalMeshData;
 class MeshEntity;
-class SubDomain;
 
 /// A _Mesh_ consists of a set of connected and numbered mesh entities.
 ///
@@ -77,9 +76,9 @@ public:
   /// @param type (CellType::Type)
   ///
   /// @param points
-  ///         Matrix containing geometic points of the mesh
+  ///         Array of vertex points
   /// @param cells
-  ///         Matrix containing the vertex indices for the cells of the mesh
+  ///         Array of cells (containing the vertex indices for each cell)
   Mesh(MPI_Comm comm, mesh::CellType::Type type,
        Eigen::Ref<const EigenRowArrayXXd> points,
        Eigen::Ref<const EigenRowArrayXXi32> cells);
