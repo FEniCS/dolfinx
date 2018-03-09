@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <dolfin/common/types.h>
 #include <Eigen/Dense>
 #include <memory>
 #include <ufc.h>
@@ -29,9 +30,6 @@ class Form;
 /// primary argument, that is, v_j for j < r. In addition, nodal
 /// basis expansion coefficients and a finite element are created
 /// for each coefficient function.
-
-using EigenRowMatrixXd
-    = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 class UFC
 {

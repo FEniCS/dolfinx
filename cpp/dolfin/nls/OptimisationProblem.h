@@ -20,9 +20,8 @@ namespace nls
 {
 
 /// This is a base class for nonlinear optimisation problems which
-/// return the real-valued objective function :math:`f(x)`, its
-/// gradient :math:`F(x) = f'(x)` and its Hessian :math:`J(x) =
-/// f''(x)`
+/// return the real-valued objective function \f$f(x)\f$, its
+/// gradient \f$F(x) = f'(x)\f$ and its Hessian \f$J(x) = f''(x)\f$
 
 class OptimisationProblem : public NonlinearProblem
 {

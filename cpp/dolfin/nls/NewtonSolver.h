@@ -27,7 +27,7 @@ namespace nls
 class NonlinearProblem;
 
 /// This class defines a Newton solver for nonlinear systems of
-/// equations of the form :math:`F(x) = 0`.
+/// equations of the form \f$F(x) = 0\f$.
 
 class NewtonSolver : public common::Variable
 {

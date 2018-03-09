@@ -53,6 +53,8 @@ public:
   ///         The mesh to create mesh function on.
   /// @param value_collection (_MeshValueCollection_)
   ///         The mesh value collection for the mesh function data.
+  /// @param default_value (T)
+  ///         The default value, if unset in value_collection
   MeshFunction(std::shared_ptr<const Mesh> mesh,
                const MeshValueCollection<T>& value_collection,
                const T& default_value);

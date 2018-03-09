@@ -76,9 +76,9 @@ public:
   ///
   /// @param type (CellType::Type)
   ///
-  /// @param geometry
+  /// @param points
   ///         Matrix containing geometic points of the mesh
-  /// @param topology
+  /// @param cells
   ///         Matrix containing the vertex indices for the cells of the mesh
   Mesh(MPI_Comm comm, mesh::CellType::Type type,
        Eigen::Ref<const EigenRowArrayXXd> points,
@@ -323,8 +323,8 @@ public:
   /// library use.
   std::string ghost_mode() const;
 
-  // FIXME: Remove
-  // Friend in fem_utils.h
+  /// FIXME: Remove
+  /// Friend in fem_utils.h
   friend Mesh dolfin::fem::create_mesh(function::Function& coordinates);
 
 private:

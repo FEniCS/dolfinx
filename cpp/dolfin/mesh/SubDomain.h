@@ -99,7 +99,7 @@ public:
   ///         Flag for whether midpoint of cell should be checked (default).
   template <typename S, typename T>
   void mark(S& sub_domains, T sub_domain, const Mesh& mesh,
-            bool check_mapply_idpoint) const;
+            bool check_midpoint) const;
 
   /// Return tolerance uses to find matching point via map function
   ///

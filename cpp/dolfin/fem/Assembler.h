@@ -25,6 +25,7 @@ namespace fem
 class DirichletBC;
 class Form;
 
+/// Assembly of LHS and RHS Forms with DirichletBC boundary conditions applied
 class Assembler
 {
 public:
@@ -33,14 +34,14 @@ public:
             std::vector<std::shared_ptr<const Form>> L,
             std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-  // Assemble matrix. Dirichlet rows/columns are zeroed, with '1' placed on
-  // diagonal
+  /// Assemble matrix. Dirichlet rows/columns are zeroed, with '1' placed on
+  /// diagonal
   void assemble(la::PETScMatrix& A);
 
-  // Assemble vector
+  /// Assemble vector
   void assemble(la::PETScVector& b);
 
-  // Assemble matrix and vector
+  /// Assemble matrix and vector
   void assemble(la::PETScMatrix& A, la::PETScVector& b);
 
 private:
