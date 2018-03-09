@@ -157,22 +157,26 @@ def test_matrix_assembly_block():
 
     A, b = assembler.assemble(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.nested)
-    A.mat().view()
-    b.vec().view()
+    # A.mat().view()
+    # b.vec().view()
 
+    return
     IS = A.mat().getNestISs()
 
     try:
         IS = A.mat().getNestISs()
+        print(IS)
         IS[0][0].view()
-        IS[0][1].view()
-        IS[0][1].view()
-        IS[1][1].view()
+        IS[1][0].view()
+        # IS[1][0].view()
+        # IS[1][1].view()
         # print(A.mat().norm())
 
-        # A00 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][0])
+        print("*** get sub mat")
+        #A00 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][0])
         # A00.view()
-        # A01 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][1])
+        #A01 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][1])
+        print("******")
         # A01.view()
         # A10 = A.mat().getLocalSubMatrix(IS[0][1], IS[1][0])
         # A10.view()

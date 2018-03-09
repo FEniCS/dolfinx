@@ -74,7 +74,19 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 
     // Initialise matrix
     if (block_type == BlockType::nested)
+    {
       fem::init_nest(A, forms);
+
+      //A.apply(la::PETScMatrix::AssemblyType::FINAL);
+      //IS isr[2], isc[2];
+      //MatNestGetLocalISs(A.mat(), isr, isc);
+      
+      //MPI::barrier(MPI_COMM_WORLD);
+      //ISView(isr[0], PETSC_VIEWER_STDOUT_WORLD);
+      //MPI::barrier(MPI_COMM_WORLD);
+      //ISView(isc[0], PETSC_VIEWER_STDOUT_WORLD);
+
+    }
     else if (block_matrix and block_type == BlockType::monolithic)
       fem::init_monolithic(A, forms);
     else
@@ -86,12 +98,14 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   // Get matrix type
   MatType mat_type;
   MatGetType(A.mat(), &mat_type);
-  bool is_matnest = strcmp(mat_type, MATNEST) == 0 ? true : false;
+  const bool is_matnest = strcmp(mat_type, MATNEST) == 0 ? true : false;
+  //const bool is_matnest = false;
 
   // Assemble matrix
 
   if (is_matnest)
   {
+    std::cout << "Nested assembly" << std::endl;
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
       for (std::size_t j = 0; j < _a[i].size(); ++j)
@@ -105,6 +119,8 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
         {
           la::PETScMatrix mat(subA);
           this->assemble(mat, *_a[i][j], _bcs);
+
+          //std::cout << "!!!!Post nest assemble" << std::endl;
         }
         else
         {
@@ -113,9 +129,29 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
         }
       }
     }
-  }
-  else if (block_matrix)
-  {
+    
+    //A.apply(la::PETScMatrix::AssemblyType::FINAL);
+    IS isr[2], isc[2];
+    MatNestGetLocalISs(A.mat(), isr, isc);
+    MPI::barrier(MPI_COMM_WORLD);
+    std::cout << "1. Index set extracted from nested matrix" << std::endl;
+
+    //MPI_Comm test_comm = MPI_COMM_NULL;
+    //PetscObjectGetComm((PetscObject)(isr[0]), &test_comm);
+    //std::cout << "1b. comm size: " << MPI::size(test_comm)  << std::endl;
+    
+    MPI::barrier(MPI_COMM_WORLD);
+    ISView(isr[0], PETSC_VIEWER_STDOUT_SELF);
+    //ISView(isc[0], PETSC_VIEWER_STDOUT_WORLD);
+    MPI::barrier(MPI_COMM_WORLD);
+
+    //Mat testA;
+    //MatGetLocalSubMatrix(A.mat(), isr[0], isc[0], &testA);
+    //MatRestoreLocalSubMatrix(A.mat(), isr[0], isc[0], &testA);
+    std::cout << "End test local mat" << std::endl;
+  //}Index set extracted from nested matrix
+  //else if (block_matrix or is_matnest)
+  //{
     // std::cout << "Assembling block matrix (non-nested)" << std::endl;
     std::int64_t offset_row = 0;
     for (std::size_t i = 0; i < _a.size(); ++i)
@@ -131,6 +167,9 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
           auto map1_size = map1->size(common::IndexMap::MapSize::ALL);
 
+          if ( i == 0 and j == 0)
+            std::cout << "**** map size: " << map0_size << std::endl;
+
           std::vector<PetscInt> index0(map0_size);
           std::vector<PetscInt> index1(map1_size);
           std::iota(index0.begin(), index0.end(), offset_row);
@@ -143,22 +182,33 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           //           << offset_col + index1.size() << std::endl;
 
           IS is0, is1;
-          ISCreateBlock(A.mpi_comm(), map0->block_size(), index0.size(),
+          //ISCreateBlock(A.mpi_comm(), map0->block_size(), index0.size(),
+          //              index0.data(), PETSC_COPY_VALUES, &is0);
+          //ISCreateBlock(A.mpi_comm(), map1->block_size(), index1.size(),
+          //              index1.data(), PETSC_COPY_VALUES, &is1);
+          ISCreateGeneral(MPI_COMM_SELF, index0.size(),
                         index0.data(), PETSC_COPY_VALUES, &is0);
-          ISCreateBlock(A.mpi_comm(), map1->block_size(), index1.size(),
+          ISCreateGeneral(MPI_COMM_SELF, index1.size(),
                         index1.data(), PETSC_COPY_VALUES, &is1);
+
+          MPI::barrier(MPI_COMM_WORLD);
+          ISView(is0, PETSC_VIEWER_STDOUT_SELF);
+          //ISView(is1, PETSC_VIEWER_STDOUT_WORLD);
+          MPI::barrier(MPI_COMM_WORLD);
 
           Mat subA;
           std::cout << "Get submat (non-nest): " << i << ", " << j << std::endl;
           MatGetLocalSubMatrix(A.mat(), is0, is1, &subA);
-          la::PETScMatrix mat(subA);
           std::cout << "End Get submat (non-nest): " << i << ", " << j
                     << std::endl;
+
+          la::PETScMatrix mat(subA);
           this->assemble(mat, *_a[i][j], _bcs);
 
           MatRestoreLocalSubMatrix(A.mat(), is0, is1, &subA);
           ISDestroy(&is0);
           ISDestroy(&is1);
+          std::cout << "Cleanup IS" << std::endl;
 
           offset_col += map1_size;
         }
