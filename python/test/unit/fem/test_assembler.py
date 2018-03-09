@@ -104,7 +104,7 @@ def xtest_matrix_assembly_bc():
 
 
 def test_matrix_assembly_block():
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 1, 1)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
 
     V0 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
     V1 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
@@ -128,11 +128,8 @@ def test_matrix_assembly_block():
 
     # Define Dirichlet boundary (x = 0 or x = 1)
     def boundary(x):
-        # tmp = numpy.logical_or(x[:, 0] < 1.0e-6,  x[:, 0] > 1.0 - 1.0e-6)
-        tmp = x[:, 0] < 1.0e6
-        print("*********************")
-        print(tmp)
-
+        #tmp = numpy.logical_or(x[:, 0] < 1.0e-6,  x[:, 0] > 1.0 - 1.0e-6)
+        #tmp = x[:, 0] < 1.0e6
         return numpy.logical_or(x[:, 0] < 1.0e-6,  x[:, 0] > 1.0 - 1.0e-6)
 
     u_bc = dolfin.function.constant.Constant(2.0)
@@ -146,39 +143,45 @@ def test_matrix_assembly_block():
 
     print("--------------------")
 
-    A, b = assembler.assemble(
-        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    A.mat().view()
-    b.vec().view()
-    return
+    # Monolithic blocked
+
+    # A, b = assembler.assemble(
+    #    mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
+    # A.mat().view()
+    # b.vec().view()
+    # return
 
     print("--------------------")
 
-    # Nested version
+    # Nested
+
     A, b = assembler.assemble(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.nested)
     A.mat().view()
     b.vec().view()
 
+    IS = A.mat().getNestISs()
+
     try:
         IS = A.mat().getNestISs()
-        # print(A.mat().norm())
-        # print(IS[0][0].view())
-        # print(IS[0][1].view())
-        # print(IS[0][1].view())
-        # print(IS[1][1].view())
+        IS[0][0].view()
+        IS[0][1].view()
+        IS[0][1].view()
+        IS[1][1].view()
         # print(A.mat().norm())
 
-        A00 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][0])
-        A00.view()
-        A01 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][1])
-        A01.view()
-        A10 = A.mat().getLocalSubMatrix(IS[0][1], IS[1][0])
-        A10.view()
-        A11 = A.mat().getLocalSubMatrix(IS[0][1], IS[1][1])
-        A11.view()
+        # A00 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][0])
+        # A00.view()
+        # A01 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][1])
+        # A01.view()
+        # A10 = A.mat().getLocalSubMatrix(IS[0][1], IS[1][0])
+        # A10.view()
+        # A11 = A.mat().getLocalSubMatrix(IS[0][1], IS[1][1])
+        # A11.view()
     except AttributeError:
         print("Recent version of petsc4py required to get MatNest IS.")
+
+    return
 
     # Monolithic version
 

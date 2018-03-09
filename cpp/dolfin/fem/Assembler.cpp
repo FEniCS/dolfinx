@@ -61,6 +61,8 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 
   if (A.empty())
   {
+    std::cout << "Init matrix" << std::endl;
+
     // Initialise matrix if empty
 
     // Build array of pointers to forms
@@ -77,12 +79,14 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
       fem::init_monolithic(A, forms);
     else
       init(A, *_a[0][0]);
+
+    std::cout << "End init matrix" << std::endl;
   }
 
   // Get matrix type
   MatType mat_type;
   MatGetType(A.mat(), &mat_type);
-  bool is_matnest = mat_type == MATNEST ? true : false;
+  bool is_matnest = strcmp(mat_type, MATNEST) == 0 ? true : false;
 
   // Assemble matrix
 
@@ -94,7 +98,9 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
       {
         // Get submatrix
         Mat subA;
+        std::cout << "Get submat (nest): " << i << ", " << j << std::endl;
         MatNestGetSubMat(A.mat(), i, j, &subA);
+        std::cout << "End get submat (nest): " << i << ", " << j << std::endl;
         if (_a[i][j])
         {
           la::PETScMatrix mat(subA);
@@ -143,8 +149,11 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
                         index1.data(), PETSC_COPY_VALUES, &is1);
 
           Mat subA;
+          std::cout << "Get submat (non-nest): " << i << ", " << j << std::endl;
           MatGetLocalSubMatrix(A.mat(), is0, is1, &subA);
           la::PETScMatrix mat(subA);
+          std::cout << "End Get submat (non-nest): " << i << ", " << j
+                    << std::endl;
           this->assemble(mat, *_a[i][j], _bcs);
 
           MatRestoreLocalSubMatrix(A.mat(), is0, is1, &subA);

@@ -221,8 +221,9 @@ void fem::init_nest(la::PETScMatrix& A,
       if (a[i][j])
       {
         mats[i][j] = std::make_shared<la::PETScMatrix>(A.mpi_comm());
-        petsc_mats[i][j] = mats[i][j]->mat();
         init(*mats[i][j], *a[i][j]);
+
+        petsc_mats[i][j] = mats[i][j]->mat();
       }
       else
         petsc_mats[i][j] = nullptr;
@@ -245,8 +246,9 @@ void fem::init_nest(la::PETScVector& x, std::vector<const fem::Form*> L)
     if (L[i])
     {
       vecs[i] = std::make_shared<la::PETScVector>(x.mpi_comm());
-      petsc_vecs[i] = vecs[i]->vec();
       init(*vecs[i], *L[i]);
+
+      petsc_vecs[i] = vecs[i]->vec();
     }
     else
       petsc_vecs[i] = nullptr;
