@@ -157,7 +157,7 @@ double dolfin::geometry::orient3d(const Point& a, const Point& b,
 
 #define INEXACT /* Nothing */
 /* #define INEXACT volatile */
-
+#define REAL double /* float or double */
 #define REALPRINT doubleprint
 #define REALRAND doublerand
 #define NARROWRAND narrowdoublerand
@@ -1749,7 +1749,8 @@ REAL orient2dadapt(const REAL* pa, const REAL* pb, const REAL* pc,
   return (D[Dlength - 1]);
 }
 
-REAL dolfin::geometry::_orient2d(const REAL* pa, const REAL* pb, const REAL* pc)
+double dolfin::geometry::_orient2d(const double* pa, const double* pb,
+                                   const double* pc)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -2524,8 +2525,8 @@ REAL orient3dadapt(const REAL* pa, const REAL* pb, const REAL* pc,
   return finnow[finlength - 1];
 }
 
-REAL dolfin::geometry::_orient3d(const REAL* pa, const REAL* pb, const REAL* pc,
-                                 const REAL* pd)
+double dolfin::geometry::_orient3d(const double* pa, const double* pb,
+                                   const double* pc, const double* pd)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */

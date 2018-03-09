@@ -43,8 +43,6 @@ public:
 
   /// Refine with markers, optionally redistributing
   ///
-  /// @param new_mesh
-  ///    New Mesh
   /// @param mesh
   ///    Input mesh to be refined
   /// @param refinement_marker
@@ -52,6 +50,8 @@ public:
   ///    refinement
   /// @param redistribute
   ///     Flag to call the Mesh Partitioner to redistribute after refinement
+  /// @returns mesh::Mesh
+  ///    New Mesh
   ///
   static mesh::Mesh refine(const mesh::Mesh& mesh,
                            const mesh::MeshFunction<bool>& refinement_marker,
