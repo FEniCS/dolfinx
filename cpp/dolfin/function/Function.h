@@ -80,10 +80,10 @@ public:
   /// Destructor
   virtual ~Function() = default;
 
-  /// Assignment from function
-  ///
-  /// @param v (_Function_)
-  ///         Another function.
+  // Assignment from function
+  //
+  // @param v (_Function_)
+  //         Another function.
   // const Function& operator= (const Function& v);
 
   /// Assignment from linear combination of function
