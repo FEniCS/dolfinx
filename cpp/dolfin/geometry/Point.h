@@ -17,9 +17,9 @@ namespace dolfin
 namespace geometry
 {
 
-/// A Point represents a point in :math:`\mathbb{R}^3` with
-/// coordinates :math:`x, y, z,` or alternatively, a vector in
-/// :math:`\mathbb{R}^3`, supporting standard operations like the
+/// A Point represents a point in \f$ \mathbb{R}^3 \f$ with
+/// coordinates (x, y, z) or alternatively, a vector in
+/// \f$ \mathbb{R}^3 \f$, supporting standard operations like the
 /// norm, distances, scalar and vector products etc.
 
 class Point
@@ -304,4 +304,3 @@ inline std::ostream& operator<<(std::ostream& stream, const dolfin::geometry::Po
   stream << point.str(false);
   return stream;
 }
-

@@ -39,15 +39,12 @@ namespace function
 class Expression;
 class FunctionSpace;
 
-/// This class represents a function :math:`u_h` in a finite
-/// element function space :math:`V_h`, given by
+/// This class represents a function \f$ u_h \f$ in a finite
+/// element function space \f$ V_h \f$, given by
 ///
-/// .. math::
-///
-///     u_h = \sum_{i=1}^{n} U_i \phi_i
-///
-/// where :math:`\{\phi_i\}_{i=1}^{n}` is a basis for :math:`V_h`,
-/// and :math:`U` is a vector of expansion coefficients for :math:`u_h`.
+/// \f[     u_h = \sum_{i=1}^{n} U_i \phi_i \f]
+/// where \f$ \{\phi_i\}_{i=1}^{n} \f$ is a basis for \f$ V_h \f$,
+/// and \f$ U \f$ is a vector of expansion coefficients for \f$ u_h \f$.
 
 class Function : public GenericFunction
 {

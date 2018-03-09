@@ -14,14 +14,14 @@ namespace la
 {
 class PETScMatrix;
 class PETScVector;
-}
+} // namespace la
 
 namespace nls
 {
 
 /// This is a base class for nonlinear optimisation problems which
-/// return the real-valued objective function \f$f(x)\f$, its
-/// gradient \f$F(x) = f'(x)\f$ and its Hessian \f$J(x) = f''(x)\f$
+/// return the real-valued objective function \f$ f(x) \f$, its
+/// gradient \f$ F(x) = f'(x) \f$ and its Hessian \f$ J(x) = f''(x) \f$
 
 class OptimisationProblem : public NonlinearProblem
 {
@@ -32,7 +32,7 @@ public:
   /// Destructor
   virtual ~OptimisationProblem() {}
 
-  /// Compute the objective function :math:`f(x)`
+  /// Compute the objective function \f$f(x)\f$
   virtual double f(const la::PETScVector& x) = 0;
 
   /// Function called by the solver before requesting F, J or J_pc.
@@ -44,10 +44,10 @@ public:
     // Do nothing if not supplied by the user
   }
 
-  /// Compute the gradient :math:`F(x) = f'(x)`
+  /// Compute the gradient \f$ F(x) = f'(x) \f$
   virtual void F(la::PETScVector& b, const la::PETScVector& x) = 0;
 
-  /// Compute the Hessian :math:`J(x) = f''(x)`
+  /// Compute the Hessian \f$ J(x) = f''(x) \f$
   virtual void J(la::PETScMatrix& A, const la::PETScVector& x) = 0;
 
   /// Compute J_pc used to precondition J. Not implementing this
@@ -62,5 +62,5 @@ public:
     // Do nothing if not supplied by the user
   }
 };
-}
-}
+} // namespace nls
+} // namespace dolfin

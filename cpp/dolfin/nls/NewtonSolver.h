@@ -38,8 +38,8 @@ public:
   /// Destructor
   virtual ~NewtonSolver();
 
-  /// Solve abstract nonlinear problem :math:`F(x) = 0` for given
-  /// :math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
+  /// Solve abstract nonlinear problem \f$`F(x) = 0\f$ for given
+  /// \f$F\f$ and Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
   ///
   /// *Arguments*
   ///     nonlinear_function (_NonlinearProblem_)
