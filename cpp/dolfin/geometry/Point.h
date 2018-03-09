@@ -81,8 +81,7 @@ public:
   /// @param    i (std::size_t)
   ///         Direction.
   ///
-  /// *Returns*
-  /// @return    double
+  /// @returns    double
   ///         Address of coordinate in the given direction.
   double& operator[](std::size_t i)
   {
@@ -117,8 +116,7 @@ public:
 
   /// Return copy of coordinate array
   ///
-  /// *Returns*
-  ///     list of double
+  /// @returns std::array<double, 3>
   ///         The coordinates.
   std::array<double, 3> array() const { return _x; }
 

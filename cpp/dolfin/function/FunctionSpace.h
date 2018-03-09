@@ -49,12 +49,11 @@ public:
   /// Create function space for given mesh, element and dofmap
   /// (shared data)
   ///
-  /// *Arguments*
-  ///     mesh (_mesh::Mesh_)
+  /// @param    mesh (_mesh::Mesh_)
   ///         The mesh.
-  ///     element (_FiniteElement_)
+  /// @param    element (_FiniteElement_)
   ///         The element.
-  ///     dofmap (_GenericDofMap_)
+  /// @param    dofmap (_GenericDofMap_)
   ///         The dofmap.
   FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                 std::shared_ptr<const fem::FiniteElement> element,
@@ -67,16 +66,14 @@ protected:
   /// class. Data can be attached to the base class using
   /// FunctionSpace::attach(...).
   ///
-  /// *Arguments*
-  ///     mesh (_mesh::Mesh_)
+  /// @param    mesh (_mesh::Mesh_)
   ///         The mesh.
   explicit FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh);
 
 public:
   /// Copy constructor
   ///
-  /// *Arguments*
-  ///     V (_FunctionSpace_)
+  /// @param    V (_FunctionSpace_)
   ///         The object to be copied.
   FunctionSpace(const FunctionSpace& V);
 
@@ -86,10 +83,9 @@ public:
 protected:
   /// Attach data to an empty function space
   ///
-  /// *Arguments*
-  ///     element (_FiniteElement_)
+  /// @param    element (_FiniteElement_)
   ///         The element.
-  ///     dofmap (_GenericDofMap_)
+  /// @param    dofmap (_GenericDofMap_)
   ///         The dofmap.
   void attach(std::shared_ptr<const fem::FiniteElement> element,
               std::shared_ptr<const fem::GenericDofMap> dofmap);
@@ -97,116 +93,99 @@ protected:
 public:
   /// Assignment operator
   ///
-  /// *Arguments*
-  ///     V (_FunctionSpace_)
+  /// @param    V (_FunctionSpace_)
   ///         Another function space.
   const FunctionSpace& operator=(const FunctionSpace& V);
 
   /// Equality operator
   ///
-  /// *Arguments*
-  ///     V (_FunctionSpace_)
+  /// @param    V (_FunctionSpace_)
   ///         Another function space.
   bool operator==(const FunctionSpace& V) const;
 
   /// Inequality operator
   ///
-  /// *Arguments*
-  ///     V (_FunctionSpace_)
+  /// @param   V (_FunctionSpace_)
   ///         Another function space.
   bool operator!=(const FunctionSpace& V) const;
 
   /// Return mesh
   ///
-  /// *Returns*
-  ///     _mesh::Mesh_
+  /// @returns  _mesh::Mesh_
   ///         The mesh.
   std::shared_ptr<const mesh::Mesh> mesh() const;
 
   /// Return finite element
   ///
-  /// *Returns*
-  ///     _FiniteElement_
+  /// @returns _FiniteElement_
   ///         The finite element.
   std::shared_ptr<const fem::FiniteElement> element() const;
 
   /// Return dofmap
   ///
-  /// *Returns*
-  ///     _GenericDofMap_
+  /// @returns _GenericDofMap_
   ///         The dofmap.
   std::shared_ptr<const fem::GenericDofMap> dofmap() const;
 
   /// Return global dimension of the function space.
   /// Equivalent to dofmap()->global_dimension()
   ///
-  /// *Returns*
-  ///     std::size_t
+  /// @returns    std::size_t
   ///         The dimension of the function space.
   std::int64_t dim() const;
 
   /// Interpolate function v into function space, returning the
   /// vector of expansion coefficients
   ///
-  /// *Arguments*
-  ///     expansion_coefficients (_la::PETScVector_)
+  /// @param   expansion_coefficients (_la::PETScVector_)
   ///         The expansion coefficients.
-  ///     v (_GenericFunction_)
+  /// @param    v (_GenericFunction_)
   ///         The function to be interpolated.
   void interpolate(la::PETScVector& expansion_coefficients,
                    const GenericFunction& v) const;
 
   /// Extract subspace for component
   ///
-  /// *Arguments*
-  ///     component (std::vector<std::size_t>)
+  /// @param    component (std::vector<std::size_t>)
   ///         The component.
   ///
-  /// *Returns*
-  ///     _FunctionSpace_
+  /// @returns    _FunctionSpace_
   ///         The subspace.
   std::shared_ptr<FunctionSpace>
   sub(const std::vector<std::size_t>& component) const;
 
   /// Check whether V is subspace of this, or this itself
   ///
-  /// *Arguments*
-  ///     V (_FunctionSpace_)
+  /// @param    V (_FunctionSpace_)
   ///         The space to be tested for inclusion.
   ///
-  /// *Returns*
-  ///     bool
+  /// @returns    bool
   ///         True if V is contained or equal to this.
   bool contains(const FunctionSpace& V) const;
 
   /// Collapse a subspace and return a new function space
   ///
-  /// *Returns*
-  ///     _FunctionSpace_
+  /// @returns    _FunctionSpace_
   ///         The new function space.
   std::shared_ptr<FunctionSpace> collapse() const;
 
   /// Collapse a subspace and return a new function space and a map
   /// from new to old dofs
   ///
-  /// *Arguments*
-  ///     collapsed_dofs (std::unordered_map<std::size_t, std::size_t>)
+  /// @param    collapsed_dofs (std::unordered_map<std::size_t, std::size_t>)
   ///         The map from new to old dofs.
   ///
-  /// *Returns*
-  ///     _FunctionSpace_
+  /// @returns    _FunctionSpace_
   ///       The new function space.
   std::shared_ptr<FunctionSpace>
   collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const;
 
   /// Check if function space has given cell
   ///
-  /// *Arguments*
-  ///     cell (_Cell_)
+  /// @param    cell (_Cell_)
   ///         The cell.
   ///
-  /// *Returns*
-  ///     bool
+  /// @returns    bool
   ///         True if the function space has the given cell.
   bool has_cell(const mesh::Cell& cell) const
   {
@@ -215,12 +194,10 @@ public:
 
   /// Check if function space has given element
   ///
-  /// *Arguments*
-  ///     element (_FiniteElement_)
+  /// @param    element (_FiniteElement_)
   ///         The finite element.
   ///
-  /// *Returns*
-  ///     bool
+  /// @returns    bool
   ///         True if the function space has the given element.
   bool has_element(const fem::FiniteElement& element) const
   {
@@ -230,8 +207,7 @@ public:
   /// Return component w.r.t. to root superspace, i.e.
   ///   W.sub(1).sub(0) == [1, 0].
   ///
-  /// *Returns*
-  ///     std::vector<std::size_t>
+  /// @returns   std::vector<std::size_t>
   ///         The component (w.r.t to root superspace).
   std::vector<std::size_t> component() const;
 
@@ -240,12 +216,7 @@ public:
   /// spatial coordinates of dofs, for example for re-partitioning or
   /// nullspace computations.
   ///
-  /// *Arguments*
-  ///     mesh (_mesh::Mesh_)
-  ///         The mesh.
-  ///
-  /// *Returns*
-  ///     std::vector<double>
+  /// @returns    std::vector<double>
   ///         The dof coordinates (x0, y0, x1, y1, . . .)
   std::vector<double> tabulate_dof_coordinates() const;
 
@@ -255,25 +226,20 @@ public:
   /// typically used to construct the null space of a matrix
   /// operator, e.g. rigid body rotations.
   ///
-  /// *Arguments*
-  ///     vector (_la::PETScVector_)
+  /// @param x (_la::PETScVector_)
   ///         The vector to set.
-  ///     value (double)
+  /// @param value (double)
   ///         The value to multiply to coordinate by.
-  ///     component (std::size_t)
+  /// @param component (std::size_t)
   ///         The coordinate index.
-  ///     mesh (_mesh::Mesh_)
-  ///         The mesh.
   void set_x(la::PETScVector& x, double value, std::size_t component) const;
 
   /// Return informal string representation (pretty-print)
   ///
-  /// *Arguments*
-  ///     verbose (bool)
+  /// @param    verbose (bool)
   ///         Flag to turn on additional output.
   ///
-  /// *Returns*
-  ///     std::string
+  /// @returns    std::string
   ///         An informal representation of the function space.
   std::string str(bool verbose) const;
 

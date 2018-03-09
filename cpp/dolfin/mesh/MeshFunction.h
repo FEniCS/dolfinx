@@ -159,11 +159,9 @@ public:
 
   /// Get indices where meshfunction is equal to given value
   ///
-  /// *Arguments*
-  ///     value (T)
+  /// @param value (T)
   ///         The value.
-  /// *Returns*
-  ///     std::vector<T>
+  /// @returns std::vector<T>
   ///         The indices.
   std::vector<std::size_t> where_equal(T value);
 

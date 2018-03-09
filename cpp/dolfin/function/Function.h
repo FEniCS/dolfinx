@@ -53,8 +53,7 @@ public:
 
   /// Create function on given function space
   ///
-  /// *Arguments*
-  ///     V (_FunctionSpace_)
+  /// @param V (_FunctionSpace_)
   ///         The function space.
   explicit Function(std::shared_ptr<const FunctionSpace> V);
 
@@ -62,10 +61,9 @@ public:
   ///
   /// *Warning: This constructor is intended for internal library use only*
   ///
-  /// *Arguments*
-  ///     V (_FunctionSpace_)
+  /// @param V (_FunctionSpace_)
   ///         The function space.
-  ///     x (_GenericVector_)
+  /// @param x (_GenericVector_)
   ///         The vector.
   Function(std::shared_ptr<const FunctionSpace> V,
            std::shared_ptr<la::PETScVector> x);
@@ -76,8 +74,7 @@ public:
   /// FunctionSpace of v and copies the degree-of-freedom vector. If v
   /// is a sub-Function, the new Function is a collapsed version of v.
   ///
-  /// *Arguments*
-  ///     v (_Function_)
+  /// @param v (_Function_)
   ///         The object to be copied.
   Function(const Function& v);
 
@@ -86,39 +83,33 @@ public:
 
   /// Assignment from function
   ///
-  /// *Arguments*
-  ///     v (_Function_)
+  /// @param v (_Function_)
   ///         Another function.
   // const Function& operator= (const Function& v);
 
   /// Assignment from expression using interpolation
   ///
-  /// *Arguments*
-  ///     v (_Expression_)
+  /// @param v (_Expression_)
   ///         The expression.
   const Function& operator=(const Expression& v);
 
   /// Assignment from linear combination of function
   ///
-  /// *Arguments*
-  ///     v (_FunctionAXPY_)
+  /// @param axpy (_FunctionAXPY_)
   ///         A linear combination of other Functions
   void operator=(const function::FunctionAXPY& axpy);
 
   /// Extract subfunction (view into the Function)
   ///
-  /// *Arguments*
-  ///     i (std::size_t)
+  /// @param i (std::size_t)
   ///         Index of subfunction.
-  /// *Returns*
-  ///     _Function_
+  /// @returns    _Function_
   ///         The subfunction.
   Function sub(std::size_t i) const;
 
   /// Return shared pointer to function space
   ///
-  /// *Returns*
-  ///     _FunctionSpace_
+  /// @returns _FunctionSpace_
   ///         Return the shared pointer.
   virtual std::shared_ptr<const FunctionSpace> function_space() const override
   {
@@ -128,15 +119,13 @@ public:
 
   /// Return vector of expansion coefficients (non-const version)
   ///
-  /// *Returns*
-  ///     _GenericVector_
+  /// @returns  _PETScVector_
   ///         The vector of expansion coefficients.
   std::shared_ptr<la::PETScVector> vector();
 
   /// Return vector of expansion coefficients (const version)
   ///
-  /// *Returns*
-  ///     _GenericVector_
+  /// @returns _PETScVector_
   ///         The vector of expansion coefficients (const).
   std::shared_ptr<const la::PETScVector> vector() const;
 
@@ -151,7 +140,6 @@ public:
 
   /// Evaluate function at given coordinates in given cell
   ///
-  /// *Arguments*
   /// @param    values (Eigen::Ref<Eigen::VectorXd>)
   ///         The values.
   /// @param    x (Eigen::Ref<const Eigen::VectorXd>)
@@ -172,8 +160,7 @@ public:
 
   /// Extrapolate function (from a possibly lower-degree function space)
   ///
-  /// *Arguments*
-  ///     v (_Function_)
+  /// @param    v (_Function_)
   ///         The function to be extrapolated.
   void extrapolate(const Function& v);
 
@@ -181,26 +168,22 @@ public:
 
   /// Return value rank
   ///
-  /// *Returns*
-  ///     std::size_t
+  /// @returns std::size_t
   ///         The value rank.
   virtual std::size_t value_rank() const override;
 
   /// Return value dimension for given axis
   ///
-  /// *Arguments*
-  ///     i (std::size_t)
+  /// @param    i (std::size_t)
   ///         The index of the axis.
   ///
-  /// *Returns*
-  ///     std::size_t
+  /// @returns    std::size_t
   ///         The value dimension.
   virtual std::size_t value_dimension(std::size_t i) const override;
 
   /// Return value shape
   ///
-  /// *Returns*
-  ///     std::vector<std::size_t>
+  /// @returns std::vector<std::size_t>
   ///         The value shape.
   virtual std::vector<std::size_t> value_shape() const override;
 

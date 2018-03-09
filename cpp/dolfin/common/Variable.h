@@ -50,8 +50,7 @@ public:
 
   /// Get unique identifier.
   ///
-  /// *Returns*
-  ///     _std::size_t_
+  /// @returns _std::size_t_
   ///         The unique integer identifier associated with the object.
   std::size_t id() const { return unique_id; }
 
