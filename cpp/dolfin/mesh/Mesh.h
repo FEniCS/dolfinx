@@ -35,7 +35,6 @@ namespace mesh
 {
 class LocalMeshData;
 class MeshEntity;
-class SubDomain;
 
 /// A _Mesh_ consists of a set of connected and numbered mesh entities.
 ///
@@ -76,13 +75,13 @@ public:
   ///
   /// @param type (CellType::Type)
   ///
-  /// @param geometry
-  ///         Matrix containing geometic points of the mesh
-  /// @param topology
-  ///         Matrix containing the vertex indices for the cells of the mesh
+  /// @param points
+  ///         Array of vertex points
+  /// @param cells
+  ///         Array of cells (containing the vertex indices for each cell)
   Mesh(MPI_Comm comm, mesh::CellType::Type type,
-       Eigen::Ref<const EigenRowArrayXXd> geometry,
-       Eigen::Ref<const EigenRowArrayXXi32> topology);
+       Eigen::Ref<const EigenRowArrayXXd> points,
+       Eigen::Ref<const EigenRowArrayXXi32> cells);
 
   /// Copy constructor.
   ///
@@ -323,8 +322,8 @@ public:
   /// library use.
   std::string ghost_mode() const;
 
-  // FIXME: Remove
-  // Friend in fem_utils.h
+  /// FIXME: Remove
+  /// Friend in fem_utils.h
   friend Mesh dolfin::fem::create_mesh(function::Function& coordinates);
 
 private:

@@ -50,21 +50,21 @@ private:
 class MPI
 {
 public:
-  // Create a duplicate MPI communicator and manage lifetime of the
-  // communicator
+  /// A duplicate MPI communicator and manage lifetime of the
+  /// communicator
   class Comm
   {
   public:
     /// Duplicate communicator and wrap duplicate
     Comm(MPI_Comm comm);
 
-    // Copy constructor
+    /// Copy constructor
     Comm(const Comm& comm);
 
     /// Move constructor
     Comm(Comm&& comm);
 
-    // Disable assignment operator
+    /// Disable assignment operator
     Comm& operator=(const Comm& comm) = delete;
 
     /// Destructor (frees wrapped communicator)

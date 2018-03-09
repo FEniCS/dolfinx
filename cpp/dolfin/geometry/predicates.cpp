@@ -11,16 +11,18 @@ double dolfin::geometry::orient1d(double a, double b, double x)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double dolfin::geometry::orient2d(const Point& a, const Point& b, const Point& c)
+double dolfin::geometry::orient2d(const Point& a, const Point& b,
+                                  const Point& c)
 {
-  return dolfin::geometry::_orient2d(a.coordinates(), b.coordinates(), c.coordinates());
+  return dolfin::geometry::_orient2d(a.coordinates(), b.coordinates(),
+                                     c.coordinates());
 }
 //-----------------------------------------------------------------------------
-double dolfin::geometry::orient3d(const Point& a, const Point& b, const Point& c,
-                        const Point& d)
+double dolfin::geometry::orient3d(const Point& a, const Point& b,
+                                  const Point& c, const Point& d)
 {
-  return dolfin::geometry::_orient3d(a.coordinates(), b.coordinates(), c.coordinates(),
-                           d.coordinates());
+  return dolfin::geometry::_orient3d(a.coordinates(), b.coordinates(),
+                                     c.coordinates(), d.coordinates());
 }
 //-----------------------------------------------------------------------------
 
@@ -155,7 +157,6 @@ double dolfin::geometry::orient3d(const Point& a, const Point& b, const Point& c
 
 #define INEXACT /* Nothing */
 /* #define INEXACT volatile */
-
 #define REAL double /* float or double */
 #define REALPRINT doubleprint
 #define REALRAND doublerand
@@ -1748,7 +1749,8 @@ REAL orient2dadapt(const REAL* pa, const REAL* pb, const REAL* pc,
   return (D[Dlength - 1]);
 }
 
-REAL dolfin::geometry::_orient2d(const REAL* pa, const REAL* pb, const REAL* pc)
+double dolfin::geometry::_orient2d(const double* pa, const double* pb,
+                                   const double* pc)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -2136,13 +2138,16 @@ REAL orient3dadapt(const REAL* pa, const REAL* pb, const REAL* pc,
   }
 
   errbound = o3derrboundC * permanent + resulterrbound * Absolute(det);
-  det += (adz * ((bdx * cdytail + cdy * bdxtail)
+  det += (adz
+              * ((bdx * cdytail + cdy * bdxtail)
                  - (bdy * cdxtail + cdx * bdytail))
           + adztail * (bdx * cdy - bdy * cdx))
-         + (bdz * ((cdx * adytail + ady * cdxtail)
+         + (bdz
+                * ((cdx * adytail + ady * cdxtail)
                    - (cdy * adxtail + adx * cdytail))
             + bdztail * (cdx * ady - cdy * adx))
-         + (cdz * ((adx * bdytail + bdy * adxtail)
+         + (cdz
+                * ((adx * bdytail + bdy * adxtail)
                    - (ady * bdxtail + bdx * adytail))
             + cdztail * (adx * bdy - ady * bdx));
   if ((det >= errbound) || (-det >= errbound))
@@ -2520,8 +2525,8 @@ REAL orient3dadapt(const REAL* pa, const REAL* pb, const REAL* pc,
   return finnow[finlength - 1];
 }
 
-REAL dolfin::geometry::_orient3d(const REAL* pa, const REAL* pb, const REAL* pc,
-                       const REAL* pd)
+double dolfin::geometry::_orient3d(const double* pa, const double* pb,
+                                   const double* pc, const double* pd)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -2576,5 +2581,5 @@ namespace geometry
 {
 /// Initialize the predicate
 PredicateInitialization predicate_initialization;
-}
-}
+} // namespace geometry
+} // namespace dolfin

@@ -104,6 +104,7 @@ public:
   /// map type used by DirichletBC
   typedef std::unordered_map<std::size_t, double> Map;
 
+  /// Method of boundary condition application
   enum class Method
   {
     topological,

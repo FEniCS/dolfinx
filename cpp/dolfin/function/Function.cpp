@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Function.h"
-#include "Expression.h"
 #include "FunctionSpace.h"
 #include <algorithm>
 #include <dolfin/common/IndexMap.h>
@@ -31,8 +30,7 @@ using namespace dolfin;
 using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
-Function::Function(std::shared_ptr<const FunctionSpace> V)
-    : _function_space(V), _allow_extrapolation(false)
+Function::Function(std::shared_ptr<const FunctionSpace> V) : _function_space(V)
 {
   // Check that we don't have a subspace
   if (!V->component().empty())
@@ -49,7 +47,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V,
                    std::shared_ptr<la::PETScVector> x)
-    : _function_space(V), _vector(x), _allow_extrapolation(false)
+    : _function_space(V), _vector(x)
 {
   // We do not check for a subspace since this constructor is used for
   // creating subfunctions
@@ -59,7 +57,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
   dolfin_assert(V->dofmap()->global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const Function& v) : _allow_extrapolation(false)
+Function::Function(const Function& v)
 {
   // Make a copy of all the data, or if v is a sub-function, then we
   // collapse the dof map and copy only the relevant entries from the
@@ -108,11 +106,6 @@ Function::Function(const Function& v) : _allow_extrapolation(false)
                              new_rows.data());
     this->_vector->apply();
   }
-}
-//-----------------------------------------------------------------------------
-Function::~Function()
-{
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 /*
@@ -174,12 +167,6 @@ const Function& Function::operator= (const Function& v)
 }
 */
 //-----------------------------------------------------------------------------
-const Function& Function::operator=(const Expression& v)
-{
-  interpolate(v);
-  return *this;
-}
-//-----------------------------------------------------------------------------
 Function Function::sub(std::size_t i) const
 {
   // Extract function subspace
@@ -206,8 +193,8 @@ void Function::operator=(const function::FunctionAXPY& axpy)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  std::vector<
-      std::pair<double, std::shared_ptr<const Function>>>::const_iterator it;
+  std::vector<std::pair<double,
+                        std::shared_ptr<const Function>>>::const_iterator it;
   for (it = axpy.pairs().begin() + 1; it != axpy.pairs().end(); it++)
   {
     dolfin_assert(it->second);
@@ -262,15 +249,12 @@ void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
       std::pair<unsigned int, double> close
           = mesh.bounding_box_tree()->compute_closest_entity(point, mesh);
 
-      if (_allow_extrapolation or close.second < DOLFIN_EPS)
+      if (close.second < DOLFIN_EPS)
         id = close.first;
       else
       {
-        log::dolfin_error(
-            "Function.cpp", "evaluate function at point",
-            "The point is not inside the domain. Consider calling "
-            "\"Function::set_allow_extrapolation(true)\" on this "
-            "Function to allow extrapolation");
+        log::dolfin_error("Function.cpp", "evaluate function at point",
+                          "The point is not inside the domain.");
       }
     }
 
@@ -334,13 +318,6 @@ void Function::interpolate(const GenericFunction& v)
 
   // Interpolate
   _function_space->interpolate(*_vector, v);
-}
-//-----------------------------------------------------------------------------
-void Function::extrapolate(const Function& v)
-{
-  dolfin_not_implemented();
-  // Was in "adaptivity"
-  //  Extrapolation::extrapolate(*this, v);
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_rank() const

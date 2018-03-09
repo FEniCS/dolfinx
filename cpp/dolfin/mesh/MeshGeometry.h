@@ -146,9 +146,8 @@ public:
 
   /// Hash of coordinate values
   ///
-  /// *Returns*
-  ///     std::size_t
-  ///         A tree-hashed value of the coordinates over all MPI processes
+  /// @returns std::size_t
+  ///    A tree-hashed value of the coordinates over all MPI processes
   ///
   std::size_t hash() const;
 

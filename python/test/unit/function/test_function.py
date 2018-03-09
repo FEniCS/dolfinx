@@ -26,6 +26,7 @@ import ufl
 
 from dolfin_utils.test import skip_in_parallel, pushpop_parameters, fixture
 
+
 @fixture
 def mesh():
     return UnitCubeMesh(MPI.comm_world, 3, 3, 3)
@@ -71,6 +72,7 @@ def test_compute_vertex_values(V, W, mesh):
     u_values2 = u.compute_vertex_values()
 
     assert all(u_values == u_values2)
+
 
 @pytest.mark.skip
 def test_assign(V, W):
@@ -146,6 +148,7 @@ def test_assign(V, W):
                 uu.assign(4/u0)
             with pytest.raises(RuntimeError):
                 uu.assign(4*u*u1)
+
 
 @pytest.mark.skip
 def test_axpy(V, W):
@@ -227,6 +230,7 @@ def test_axpy(V, W):
         with pytest.raises(RuntimeError):
             axpy + u
 
+
 @pytest.mark.skip
 def test_call(R, V, W, mesh):
     from numpy import zeros, all, array
@@ -264,9 +268,11 @@ def test_call(R, V, W, mesh):
     with pytest.raises(TypeError):
         u0([0, 0])
 
+
 def test_constant_float_conversion():
     c = Constant(3.45)
     assert float(c.values()[0]) == 3.45
+
 
 def test_scalar_conditions(R):
     c = Function(R)
@@ -314,69 +320,10 @@ def test_interpolation_jit_rank0(V):
 
 
 @skip_in_parallel
-def test_extrapolation(V, pushpop_parameters):
-
-    print("a1")
-
-    f0 = Function(V)
-
-    with pytest.raises(RuntimeError):
-        f0.__call__((0., 0, -1))
-    print("a1a")
-
-    mesh1 = UnitSquareMesh(MPI.comm_world, 3, 3)
-    V1 = FunctionSpace(mesh1, "CG", 1)
-
-    mesh2 = UnitTriangleMesh.create()
-    V2 = FunctionSpace(mesh2, "CG", 1)
-
-    f1 = Function(V1)
-    f1.set_allow_extrapolation(True)
-    f1.vector()[:] = 1.0
-    assert round(f1([0., -1])[0] - 1.0, 7) == 0
-
-    print("a2a")
-
-    f2 = Function(V2)
-    f2.set_allow_extrapolation(False)
-    with pytest.raises(RuntimeError):
-        f2.__call__((0., -1.))
-
-    f3 = Function(V2)
-    f3.set_allow_extrapolation(True)
-    f3.vector()[:] = 1.0
-    assert round(f3((0., -1))[0] - 1.0, 7) == 0
-
-
-    f1 = Function(V1)
-    f1.set_allow_extrapolation(True)
-    f1.vector()[:] = 1.0
-    assert round(f1((0., -1))[0] - 1.0, 7) == 0
-
-    f2 = Function(V2)
-
-    print("a2")
-
-    f2.set_allow_extrapolation(False)
-    with pytest.raises(RuntimeError):
-        f2.__call__((0., -1.))
-
-    f2.set_allow_extrapolation(True)
-    f2.vector()[:] = 1.0
-    assert round(f2((0., -1))[0] - 1.0, 7) == 0
-
-    f2.set_allow_extrapolation(True)
-    assert f2.get_allow_extrapolation() is True
-    f2.set_allow_extrapolation(False)
-    assert f2.get_allow_extrapolation() is False
-
-
-@skip_in_parallel
 def test_near_evaluations(R, mesh):
     # Test that we allow point evaluation that are slightly outside
 
     u0 = Function(R)
-    u0.set_allow_extrapolation(False)
     u0.vector()[:] = 1.0
     a = Vertex(mesh, 0).point().array()
     offset = 0.99*DOLFIN_EPS

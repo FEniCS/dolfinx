@@ -145,10 +145,10 @@ public:
 
   /// Compute values at all mesh vertices.
   ///
-  /// @param    vertex_values (Array<double>)
-  ///         The values at all vertices.
   /// @param    mesh (Mesh)
   ///         The mesh.
+  /// @returns    vertex_values (EigenRowArrayXXd)
+  ///         The values at all vertices.
   virtual EigenRowArrayXXd
   compute_vertex_values(const mesh::Mesh& mesh) const override;
 
