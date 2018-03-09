@@ -36,7 +36,6 @@ class Mesh;
 
 namespace function
 {
-class Expression;
 class FunctionSpace;
 
 /// This class represents a function \f$ u_h \f$ in a finite
@@ -79,19 +78,13 @@ public:
   Function(const Function& v);
 
   /// Destructor
-  virtual ~Function();
+  virtual ~Function() = default;
 
   /// Assignment from function
   ///
   /// @param v (_Function_)
   ///         Another function.
   // const Function& operator= (const Function& v);
-
-  /// Assignment from expression using interpolation
-  ///
-  /// @param v (_Expression_)
-  ///         The expression.
-  const Function& operator=(const Expression& v);
 
   /// Assignment from linear combination of function
   ///
@@ -157,12 +150,6 @@ public:
   /// @param    v (GenericFunction)
   ///         The function to be interpolated.
   void interpolate(const GenericFunction& v);
-
-  /// Extrapolate function (from a possibly lower-degree function space)
-  ///
-  /// @param    v (_Function_)
-  ///         The function to be extrapolated.
-  void extrapolate(const Function& v);
 
   //--- Implementation of GenericFunction interface ---
 
@@ -231,21 +218,6 @@ public:
   ///         The values at all vertices.
   EigenRowArrayXXd compute_vertex_values() const;
 
-  /// Allow extrapolation when evaluating the Function
-  ///
-  /// @param allow_extrapolation (bool)
-  ///         Whether or not permit extrapolation.
-  void set_allow_extrapolation(bool allow_extrapolation)
-  {
-    _allow_extrapolation = allow_extrapolation;
-  }
-
-  /// Check if extrapolation is permitted when evaluating the Function
-  ///
-  /// @return bool
-  ///         True if extrapolation is permitted, otherwise false
-  bool get_allow_extrapolation() const { return _allow_extrapolation; }
-
 private:
   // Friends
   friend class FunctionAssigner;
@@ -258,9 +230,6 @@ private:
 
   // The vector of expansion coefficients (local)
   std::shared_ptr<la::PETScVector> _vector;
-
-  // True if extrapolation should be allowed
-  bool _allow_extrapolation;
 };
 }
 }

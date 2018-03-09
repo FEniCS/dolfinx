@@ -131,9 +131,8 @@ void function(py::module &m) {
   py::class_<dolfin::function::Expression, PyExpression,
              std::shared_ptr<dolfin::function::Expression>,
              dolfin::function::GenericFunction>(
-      m, "Expression",
-      "An Expression is a function (field) that can appear as "
-      "a coefficient in a form")
+      m, "Expression", "An Expression is a function (field) that can appear as "
+                       "a coefficient in a form")
       .def(py::init<std::vector<std::size_t>>())
       .def("__call__",
            [](const dolfin::function::Expression &self,
@@ -231,13 +230,10 @@ void function(py::module &m) {
       //(dolfin::function::Function::*)(const
       // dolfin::function::Function&))
       //     &dolfin::function::Function::operator=)
-      .def("_assign", (const dolfin::function::Function &(
-                          dolfin::function::Function::
-                              *)(const dolfin::function::Expression &)) &
-                          dolfin::function::Function::operator=)
-      .def("_assign", (void (dolfin::function::Function::*)(
-                          const dolfin::function::FunctionAXPY &)) &
-                          dolfin::function::Function::operator=)
+      .def("_assign",
+           (void (dolfin::function::Function::*)(
+               const dolfin::function::FunctionAXPY &)) &
+               dolfin::function::Function::operator=)
       .def("__call__",
            [](dolfin::function::Function &self,
               Eigen::Ref<const EigenRowMatrixXd> x) {
@@ -245,17 +241,8 @@ void function(py::module &m) {
              self.eval(values, x);
              return values;
            })
-      .def("extrapolate", &dolfin::function::Function::extrapolate)
-      .def("extrapolate",
-           [](dolfin::function::Function &instance, const py::object v) {
-             auto _v =
-                 v.attr("_cpp_object").cast<dolfin::function::Function *>();
-             instance.extrapolate(*_v);
-           })
       .def("sub", &dolfin::function::Function::sub,
            "Return sub-function (view into parent Function")
-      .def("get_allow_extrapolation",
-           &dolfin::function::Function::get_allow_extrapolation)
       .def("interpolate",
            (void (dolfin::function::Function::*)(
                const dolfin::function::GenericFunction &)) &
@@ -268,8 +255,6 @@ void function(py::module &m) {
              instance.interpolate(*_v);
            },
            "Interpolate the function u")
-      .def("set_allow_extrapolation",
-           &dolfin::function::Function::set_allow_extrapolation)
       // FIXME: A lot of error when using non-const version - misused
       // by Python interface?
       .def("vector",
