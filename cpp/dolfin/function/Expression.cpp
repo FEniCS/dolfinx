@@ -153,8 +153,7 @@ EigenRowArrayXXd Expression::compute_vertex_values(const mesh::Mesh& mesh) const
       eval(local_vertex_values, x);
 
       // Copy to array
-      for (std::size_t i = 0; i < size; i++)
-        vertex_values(vertex.index(), i) = local_vertex_values[i];
+      vertex_values.row(vertex.index()) = local_vertex_values;
     }
   }
 

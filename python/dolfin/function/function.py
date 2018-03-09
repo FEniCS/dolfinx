@@ -259,76 +259,22 @@ class Function(ufl.Coefficient):
             # Scalar evaluation
             return self(*x)
 
-    def __call__(self, *args, **kwargs):
-        # GNW: This function is copied from the old DOLFIN Python
-        # code. It is far too complicated. There is no need to provide
-        # so many ways of doing the same thing.
-        #
-        # Deprecate as many options as possible, and maybe share with
-        # dolfin.expression.Expresssion.
-
-        if len(args) == 0:
-            raise TypeError("expected at least 1 argument")
-
-        # Test for ufl restriction
-        if len(args) == 1 and isinstance(args[0], str):
-            if args[0] in ('+', '-'):
-                return ufl.Coefficient.__call__(self, *args)
-
-        # Test for ufl mapping
-        if len(args) == 2 and isinstance(args[1], dict) and self in args[1]:
-            return ufl.Coefficient.__call__(self, *args)
-
-        # Some help variables
-        value_size = ufl.product(self.ufl_element().value_shape())
-
-        # If values (return argument) is passed, check the type and length
-        values = kwargs.get("values", None)
-        if values is not None:
-            if not isinstance(values, np.ndarray):
-                raise TypeError("expected a NumPy array for 'values'")
-            if len(values) != value_size or \
-               not np.issubdtype(values.dtype, 'd'):
-                raise TypeError("expected a double NumPy array of length"
-                                " %d for return values." % value_size)
-            values_provided = True
-        else:
-            values_provided = False
-            values = np.zeros(value_size, dtype='d')
-
-        # Get the geometric dimension we live in
-        dim = self.ufl_domain().geometric_dimension()
+    def __call__(self, *args):
 
         # Assume all args are x argument
-        x = args
+        x = np.array(args)
 
-        # If only one x argument has been provided, unpack it if it's
-        # an iterable
-        if len(x) == 1:
-            if isinstance(x[0], cpp.geometry.Point):
-                x = [x[0][i] for i in range(dim)]
-            elif hasattr(x[0], '__iter__'):
-                x = x[0]
-
-        # Convert it to an 1D numpy array
-        try:
-            x = np.fromiter(x, 'd')
-        except (TypeError, ValueError, AssertionError):
-            raise TypeError("expected scalar arguments for the coordinates")
-
-        if len(x) == 0:
-            raise TypeError("coordinate argument too short")
-
-        if len(x) != dim:
-            raise TypeError("expected the geometry argument to be of "
-                            "length %d" % dim)
+        value_size = ufl.product(self.ufl_element().value_shape())
+        values = np.empty((1, value_size))
 
         # The actual evaluation
         self._cpp_object.eval(values, x)
 
         # If scalar return statement, return scalar value.
-        if value_size == 1 and not values_provided:
+        if value_size == 1:
             return values[0]
+
+        print("Returning values: ", values)
 
         return values
 

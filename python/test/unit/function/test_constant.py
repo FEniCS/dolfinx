@@ -2,23 +2,9 @@
 
 # Copyright (C) 2007 Anders Logg
 #
-# This file is part of DOLFIN.
+# This file is part of DOLFIN (https://www.fenicsproject.org)
 #
-# DOLFIN is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# DOLFIN is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public License
-# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# First added:  2007-05-24
-# Last changed: 2011-01-28
+# SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
 from numpy import array
@@ -70,7 +56,7 @@ def testGrad():
     assert zero == gradient(c3)
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (8, 8, 8)), (UnitCubeMesh.create, (8, 8, 8, CellType.Type.hexahedron))])
+@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (MPI.comm_world, 3, 3, 3)), (UnitCubeMesh, (MPI.comm_world, 3, 3, 3, CellType.Type.hexahedron))])
 def test_compute_vertex_values(mesh_factory):
     from numpy import zeros, all, array
 
@@ -80,17 +66,11 @@ def test_compute_vertex_values(mesh_factory):
     e0 = Constant(1)
     e1 = Constant((1, 2, 3))
 
-    # e0_values = zeros(mesh.num_vertices(),dtype='d')
-    # e1_values = zeros(mesh.num_vertices()*3,dtype='d')
-
     e0_values = e0.compute_vertex_values(mesh)
     e1_values = e1.compute_vertex_values(mesh)
 
     assert all(e0_values == 1)
-    assert all(e1_values[:mesh.num_vertices()] == 1)
-    assert all(e1_values[mesh.num_vertices():mesh.num_vertices()*2] == 2)
-    assert all(e1_values[mesh.num_vertices()*2:mesh.num_vertices()*3] == 3)
-
+    assert all(e1_values == [1, 2, 3])
 
 def test_values():
     import numpy as np
