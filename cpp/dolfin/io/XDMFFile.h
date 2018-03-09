@@ -65,8 +65,7 @@ class HDF5File;
 #endif
 
 /// Read and write mesh::Mesh, function::Function, mesh::MeshFunction and other
-/// objects in
-/// XDMF
+/// objects in XDMF
 
 /// This class supports the output of meshes and functions in XDMF
 /// (http://www.xdmf.org) format. It creates an XML file that

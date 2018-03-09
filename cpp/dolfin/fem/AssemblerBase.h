@@ -52,12 +52,18 @@ public:
   ///     if the matrix is finalised.
   bool keep_diagonal;
 
-  /// Initialize global tensor
-  /// @param[out] A (GenericTensor&)
+  /// Initialize global tensor (PETScVector)
+  /// @param[out] b (PETScVector&)
+  ///  GenericTensor to assemble into
+  /// @param[in] L (Form&)
+  ///  Form to assemble from
+  void init_global_tensor(la::PETScVector& b, const Form& L);
+
+  /// Initialize global tensor (PETScMatrix)
+  /// @param[out] A (PETScMatrix&)
   ///  GenericTensor to assemble into
   /// @param[in] a (Form&)
   ///  Form to assemble from
-  void init_global_tensor(la::PETScVector& A, const Form& a);
   void init_global_tensor(la::PETScMatrix& A, const Form& a);
 
 protected:

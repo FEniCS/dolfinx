@@ -15,3 +15,4 @@
 #include <dolfin/mesh/dolfin_mesh.h>
 #include <dolfin/nls/dolfin_nls.h>
 #include <dolfin/parameter/dolfin_parameter.h>
+#include <dolfin/refinement/dolfin_refinement.h>

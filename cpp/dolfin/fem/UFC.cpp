@@ -60,7 +60,7 @@ UFC::UFC(const Form& a) : dolfin_form(a)
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const mesh::Cell& c,
-                 Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs,
+                 Eigen::Ref<const dolfin::EigenRowArrayXXd> coordinate_dofs,
                  const ufc::cell& ufc_cell,
                  const std::vector<bool>& enabled_coefficients)
 {
@@ -122,9 +122,9 @@ void UFC::update(const mesh::Cell& c0,
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const mesh::Cell& c0,
-                 Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs0,
+                 Eigen::Ref<const dolfin::EigenRowArrayXXd> coordinate_dofs0,
                  const ufc::cell& ufc_cell0, const mesh::Cell& c1,
-                 Eigen::Ref<const EigenRowMatrixXd> coordinate_dofs1,
+                 Eigen::Ref<const dolfin::EigenRowArrayXXd> coordinate_dofs1,
                  const ufc::cell& ufc_cell1,
                  const std::vector<bool>& enabled_coefficients)
 {

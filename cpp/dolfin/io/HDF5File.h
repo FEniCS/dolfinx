@@ -46,6 +46,7 @@ namespace io
 {
 
 /// Interface to HDF5 files
+
 class HDF5File : public common::Variable
 {
 

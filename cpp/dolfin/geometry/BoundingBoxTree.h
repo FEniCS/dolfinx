@@ -25,14 +25,16 @@ class MeshEntity;
 namespace geometry
 {
 
+/// Axis-Aligned Bounding Box Tree, used to find entities in a collection
+/// (often a mesh::Mesh)
+
 class BoundingBoxTree
 {
 public:
   /// Constructor
   BoundingBoxTree(std::size_t gdim);
 
-  /// Destructor
-  ~BoundingBoxTree() {}
+  ~BoundingBoxTree() = default;
 
   /// Build bounding box tree for mesh entities of given dimension
   void build(const mesh::Mesh& mesh, std::size_t tdim);
