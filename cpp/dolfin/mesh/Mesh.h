@@ -81,8 +81,8 @@ public:
   /// @param topology
   ///         Matrix containing the vertex indices for the cells of the mesh
   Mesh(MPI_Comm comm, mesh::CellType::Type type,
-       Eigen::Ref<const EigenRowArrayXXd> geometry,
-       Eigen::Ref<const EigenRowArrayXXi32> topology);
+       Eigen::Ref<const EigenRowArrayXXd> points,
+       Eigen::Ref<const EigenRowArrayXXi32> cells);
 
   /// Copy constructor.
   ///

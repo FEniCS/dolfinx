@@ -20,7 +20,7 @@ MeshGeometry::MeshGeometry() : _dim(0), _degree(1)
 //-----------------------------------------------------------------------------
 geometry::Point MeshGeometry::point(std::size_t n) const
 {
-  return geometry::Point(_dim, x(n));
+  return geometry::Point(_dim, this->x(n));
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::init(std::size_t dim, std::size_t degree)
