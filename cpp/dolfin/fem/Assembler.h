@@ -30,6 +30,7 @@ class Form;
 class Assembler
 {
 public:
+  /// Assembly type for block forms
   enum class BlockType
   {
     monolithic,
@@ -41,11 +42,11 @@ public:
             std::vector<std::shared_ptr<const Form>> L,
             std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-  // Assemble matrix. Dirichlet rows/columns are zeroed, with '1' placed on
-  // diagonal
+  /// Assemble matrix. Dirichlet rows/columns are zeroed, with '1' placed on
+  /// diagonal
   void assemble(la::PETScMatrix& A, BlockType type = BlockType::nested);
 
-  // Assemble vector
+  /// Assemble vector
   void assemble(la::PETScVector& b, BlockType type = BlockType::nested);
 
   /// Assemble matrix and vector
