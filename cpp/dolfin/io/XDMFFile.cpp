@@ -120,8 +120,9 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   check_encoding(encoding);
   check_function_name(function_name);
 
-  log::log(PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
-                     "time step %f.",
+  log::log(PROGRESS,
+           "Writing function \"%s\" to XDMF file \"%s\" with "
+           "time step %f.",
            function_name.c_str(), _filename.c_str(), time_step);
 
   // If XML file exists load it to member _xml_doc
@@ -1380,8 +1381,8 @@ void XDMFFile::read(mesh::Mesh& mesh) const
 
   // Build mesh
   const std::string ghost_mode = parameter::parameters["ghost_mode"];
-  mesh::MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data,
-                                                 ghost_mode);
+  mesh = mesh::MeshPartitioning::build_distributed_mesh(local_mesh_data,
+                                                        ghost_mode);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::read_checkpoint(function::Function& u, std::string func_name,
@@ -1389,8 +1390,9 @@ void XDMFFile::read_checkpoint(function::Function& u, std::string func_name,
 {
   check_function_name(func_name);
 
-  log::log(PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
-                     "counter %i.",
+  log::log(PROGRESS,
+           "Reading function \"%s\" from XDMF file \"%s\" with "
+           "counter %i.",
            func_name.c_str(), _filename.c_str(), counter);
 
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
@@ -2153,7 +2155,8 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
     }
 
     // Retrieve data
-    data_vector = HDF5Interface::read_dataset<T>(h5_file.h5_id(), paths[1], range);
+    data_vector
+        = HDF5Interface::read_dataset<T>(h5_file.h5_id(), paths[1], range);
 #else
     // Should never reach this point
     log::dolfin_error("XDMFFile.cpp", "get dataset",

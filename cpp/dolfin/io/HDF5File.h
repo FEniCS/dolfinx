@@ -9,6 +9,8 @@
 #include "HDF5Interface.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/function/Function.h>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -22,7 +24,8 @@ class PETScVector;
 
 namespace function
 {
-class Function;
+// class Function;
+class FunctionSpace;
 }
 
 namespace geometry
@@ -101,14 +104,15 @@ public:
   /// 'name' refers to a HDF5 dataset within a group, then it is
   /// assumed that it is a Vector, and the function::Function will be filled
   /// from that Vector
-  void read(function::Function& u, const std::string name);
+  function::Function read(std::shared_ptr<const function::FunctionSpace> V,
+                          const std::string name);
 
   /// Read mesh::Mesh from file, using attribute data (e.g., cell type)
   /// stored in the HDF5 file. Optionally re-use any partition data
   /// in the file. This function requires all necessary data for
   /// constructing a mesh::Mesh to be present in the HDF5 file.
-  void read(mesh::Mesh& mesh, const std::string data_path,
-            bool use_partition_from_file) const;
+  mesh::Mesh read_mesh(MPI_Comm, const std::string data_path,
+                       bool use_partition_from_file) const;
 
   /// Construct mesh::Mesh with paths to topology and geometry datasets,
   /// and providing essential meta-data, e.g. geometric dimension
@@ -119,12 +123,12 @@ public:
   /// This function is typically called when using the XDMF format,
   /// in which case the meta data has already been read from an XML
   /// file
-  void read(mesh::Mesh& input_mesh, const std::string topology_path,
-            const std::string geometry_path, const int gdim,
-            const mesh::CellType& cell_type,
-            const std::int64_t expected_num_global_cells,
-            const std::int64_t expected_num_global_points,
-            bool use_partition_from_file) const;
+  mesh::Mesh read_mesh(MPI_Comm comm, const std::string topology_path,
+                       const std::string geometry_path, const int gdim,
+                       const mesh::CellType& cell_type,
+                       const std::int64_t expected_num_global_cells,
+                       const std::int64_t expected_num_global_points,
+                       bool use_partition_from_file) const;
 
   /// Write mesh::MeshFunction to file in a format suitable for re-reading
   void write(const mesh::MeshFunction<std::size_t>& meshfunction,

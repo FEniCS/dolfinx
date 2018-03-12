@@ -36,7 +36,6 @@ void io(py::module &m) {
              instance.write(mesh);
            });
 
-#ifdef HAS_HDF5
   // dolfin::io::HDF5File
   py::class_<dolfin::io::HDF5File, std::shared_ptr<dolfin::io::HDF5File>,
              dolfin::common::Variable>(m, "HDF5File")
@@ -52,10 +51,12 @@ void io(py::module &m) {
       .def("close", &dolfin::io::HDF5File::close)
       .def("flush", &dolfin::io::HDF5File::flush)
       // read
-      .def("read",
-           (void (dolfin::io::HDF5File::*)(dolfin::mesh::Mesh &, std::string,
-                                           bool) const) &
-               dolfin::io::HDF5File::read)
+      .def("read_mesh",
+           [](dolfin::io::HDF5File &self, const MPICommWrapper comm,
+              const std::string data_path, bool use_partition_from_file) {
+             return self.read_mesh(comm.get(), data_path,
+                                   use_partition_from_file);
+           })
       .def("read",
            (void (dolfin::io::HDF5File::*)(
                dolfin::mesh::MeshValueCollection<bool> &, std::string) const) &
@@ -98,11 +99,13 @@ void io(py::module &m) {
                                            std::string, bool) const) &
                dolfin::io::HDF5File::read,
            py::arg("vector"), py::arg("name"), py::arg("use_partitioning"))
+      /*
       .def("read",
-           (void (dolfin::io::HDF5File::*)(dolfin::function::Function &,
-                                           const std::string)) &
+           (dolfin::function::Function(dolfin::io::HDF5File::*)(
+               std::shared_ptr<const dolfin::function::FunctionSpace>,
+               const std::string)) &
                dolfin::io::HDF5File::read,
-           py::arg("u"), py::arg("name"))
+           py::arg("V"), py::arg("name"))
       .def("read",
            [](dolfin::io::HDF5File &self, py::object u, std::string name) {
              try {
@@ -114,11 +117,11 @@ void io(py::module &m) {
              }
            },
            py::arg("u"), py::arg("name"))
+     */
       // write
-      .def("write",
-           (void (dolfin::io::HDF5File::*)(const dolfin::mesh::Mesh &,
-                                           std::string)) &
-               dolfin::io::HDF5File::write)
+      .def("write", (void (dolfin::io::HDF5File::*)(const dolfin::mesh::Mesh &,
+                                                    std::string)) &
+                        dolfin::io::HDF5File::write)
       .def("write",
            (void (dolfin::io::HDF5File::*)(
                const dolfin::mesh::MeshValueCollection<bool> &, std::string)) &
@@ -198,8 +201,6 @@ void io(py::module &m) {
       .def("get_mpi_atomicity", &dolfin::io::HDF5File::get_mpi_atomicity)
       // others
       .def("has_dataset", &dolfin::io::HDF5File::has_dataset);
-
-#endif
 
   // dolfin::io::XDMFFile
   py::class_<dolfin::io::XDMFFile, std::shared_ptr<dolfin::io::XDMFFile>,
@@ -425,4 +426,4 @@ void io(py::module &m) {
            },
            py::arg("u"), py::arg("name"), py::arg("counter") = -1);
 }
-}
+} // namespace dolfin_wrappers

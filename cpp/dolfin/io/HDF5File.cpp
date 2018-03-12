@@ -924,7 +924,9 @@ void HDF5File::write(const function::Function& u, const std::string name)
   write(*u.vector(), name + "/vector_0");
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(function::Function& u, const std::string name)
+function::Function
+HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
+               const std::string name)
 {
   common::Timer t0("HDF5: read function::Function");
   dolfin_assert(_hdf5_file_id > 0);
@@ -996,6 +998,9 @@ void HDF5File::read(function::Function& u, const std::string name)
     }
   }
 
+  // Create function
+  function::Function u(V);
+
   // Get existing mesh and dofmap - these should be pre-existing
   // and set up by user when defining the function::Function
   dolfin_assert(u.function_space()->mesh());
@@ -1054,6 +1059,8 @@ void HDF5File::read(function::Function& u, const std::string name)
   HDF5Utility::set_local_vector_values(
       _mpi_comm.comm(), x, mesh, input_cells, input_cell_dofs, x_cell_dofs,
       input_values, input_vector_range, dofmap);
+
+  return u;
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const mesh::MeshValueCollection<std::size_t>& mesh_values,
@@ -1568,8 +1575,8 @@ void HDF5File::read_mesh_value_collection_old(
   }
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(mesh::Mesh& input_mesh, const std::string data_path,
-                    bool use_partition_from_file) const
+mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
+                               bool use_partition_from_file) const
 {
   dolfin_assert(_hdf5_file_id > 0);
 
@@ -1625,16 +1632,16 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string data_path,
   int gdim = coords_shape[1];
 
   // Build mesh from data in HDF5 file
-  read(input_mesh, topology_path, geometry_path, gdim, *cell_type, -1,
-       coords_shape[0], use_partition_from_file);
+  return read_mesh(comm, topology_path, geometry_path, gdim, *cell_type, -1,
+                   coords_shape[0], use_partition_from_file);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
-                    const std::string geometry_path, const int gdim,
-                    const mesh::CellType& cell_type,
-                    const std::int64_t expected_num_global_cells,
-                    const std::int64_t expected_num_global_points,
-                    bool use_partition_from_file) const
+mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
+                               const std::string geometry_path, const int gdim,
+                               const mesh::CellType& cell_type,
+                               const std::int64_t expected_num_global_cells,
+                               const std::int64_t expected_num_global_points,
+                               bool use_partition_from_file) const
 {
   // FIXME: This function is too big. Split up.
 
@@ -1642,7 +1649,7 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
   dolfin_assert(_hdf5_file_id > 0);
 
   // Create structure to store local mesh
-  mesh::LocalMeshData local_mesh_data(_mpi_comm.comm());
+  mesh::LocalMeshData local_mesh_data(comm);
   local_mesh_data.geometry.dim = gdim;
 
   // --- Topology ---
@@ -1883,8 +1890,8 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
   t.stop();
 
   const std::string ghost_mode = parameter::parameters["ghost_mode"];
-  mesh::MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data,
-                                                 ghost_mode);
+  return mesh::MeshPartitioning::build_distributed_mesh(local_mesh_data,
+                                                        ghost_mode);
 }
 //-----------------------------------------------------------------------------
 bool HDF5File::has_dataset(const std::string dataset_name) const
