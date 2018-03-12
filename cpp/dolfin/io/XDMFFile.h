@@ -41,6 +41,7 @@ namespace dolfin
 namespace function
 {
 class Function;
+class FunctionSpace;
 }
 
 namespace geometry
@@ -305,7 +306,7 @@ public:
   ///
   /// @param mesh (_Mesh_)
   ///        mesh::Mesh to fill from XDMF file
-  void read(mesh::Mesh& mesh) const;
+  mesh::Mesh read_mesh(MPI_Comm comm) const;
 
   /// Read a function from the XDMF file. Supplied function must
   /// come with already initialized and compatible function space.
@@ -327,8 +328,9 @@ public:
   ///         python array position key, i.e. counter = -2 points to the
   ///         function before the last one.
   ///
-  void read_checkpoint(function::Function& u, std::string func_name,
-                       std::int64_t counter = -1);
+  function::Function
+  read_checkpoint(std::shared_ptr<const function::FunctionSpace>,
+                  std::string func_name, std::int64_t counter = -1);
 
   /// Read first mesh::MeshFunction from file
   /// @param meshfunction (_MeshFunction<bool>_)
@@ -464,10 +466,6 @@ private:
   template <typename T>
   static std::vector<T> compute_topology_data(const mesh::Mesh& mesh,
                                               int cell_dim);
-
-  // Return quadratic topology for mesh::Mesh of degree 2
-  template <typename T>
-  static std::vector<T> compute_quadratic_topology(const mesh::Mesh& mesh);
 
   // Return data which is local
   template <typename T>

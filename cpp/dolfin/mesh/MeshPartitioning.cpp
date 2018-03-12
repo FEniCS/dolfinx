@@ -44,7 +44,8 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
     LocalMeshData local_mesh_data(mesh);
 
     // Build distributed mesh
-    build_distributed_mesh(mesh, local_mesh_data, parameter::parameters["ghost_mode"]);
+    mesh = build_distributed_mesh(local_mesh_data,
+                                  parameter::parameters["ghost_mode"]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -61,17 +62,23 @@ void MeshPartitioning::build_distributed_mesh(
     local_mesh_data.topology.cell_partition = cell_destinations;
 
     // Build distributed mesh
-    build_distributed_mesh(mesh, local_mesh_data, ghost_mode);
+    mesh = build_distributed_mesh(local_mesh_data, ghost_mode);
   }
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
-                                              const LocalMeshData& local_data,
-                                              const std::string ghost_mode)
+mesh::Mesh
+MeshPartitioning::build_distributed_mesh(const LocalMeshData& local_data,
+                                         const std::string ghost_mode)
 {
   log::log(PROGRESS, "Building distributed mesh");
 
   common::Timer timer("Build distributed mesh from local mesh data");
+
+  // MPI communicator
+  MPI_Comm comm = local_data.mpi_comm();
+
+  mesh::Mesh mesh(comm);
+  mesh._ordered = local_data.topology.ordered;
 
   // Store used ghost mode
   // NOTE: This is the only place in DOLFIN which eventually sets
@@ -80,9 +87,6 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 
   // Get mesh partitioner
   const std::string partitioner = parameter::parameters["mesh_partitioner"];
-
-  // MPI communicator
-  MPI_Comm comm = mesh.mpi_comm();
 
   // Compute cell partitioning or use partitioning provided in local_data
   std::vector<int> cell_partition;
@@ -107,7 +111,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
     // FIXME: need to generate ghost cell information here by doing a
     // facet-matching operation "GraphBuilder" style
     log::dolfin_error("MeshPartitioning.cpp", "build ghost mesh",
-                 "Ghost cell information not available");
+                      "Ghost cell information not available");
   }
 
   // Build mesh from local mesh data and provided cell partition
@@ -119,6 +123,8 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // https://bugs.launchpad.net/dolfin/+bug/733834).
 
   DistributedMeshTools::init_facet_cell_connections(mesh);
+
+  return mesh;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition_cells(
@@ -153,7 +159,7 @@ void MeshPartitioning::partition_cells(
   else
   {
     log::dolfin_error("MeshPartitioning.cpp", "compute cell partition",
-                 "Mesh partitioner '%s' is unknown.", partitioner.c_str());
+                      "Mesh partitioner '%s' is unknown.", partitioner.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -869,7 +875,8 @@ void MeshPartitioning::distribute_vertices(
   // then distributed so that each process learns where it needs to
   // send its vertices.
 
-  log::log(PROGRESS, "Distribute vertices during distributed mesh construction");
+  log::log(PROGRESS,
+           "Distribute vertices during distributed mesh construction");
   common::Timer timer("Distribute vertices");
 
   // Get number of processes
@@ -968,7 +975,8 @@ void MeshPartitioning::build_shared_vertices(
     const std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
     const std::vector<std::vector<std::size_t>>& received_vertex_indices)
 {
-  log::log(PROGRESS, "Build shared vertices during distributed mesh construction");
+  log::log(PROGRESS,
+           "Build shared vertices during distributed mesh construction");
 
   const int mpi_size = MPI::size(mpi_comm);
 
@@ -1050,7 +1058,7 @@ void MeshPartitioning::build_local_mesh(
   dolfin_assert(tdim == (int)mesh._cell_type->dim());
 
   // Initialise geometry
-  mesh.geometry().init(gdim, 1);
+  mesh.geometry().init(gdim, 1, vertex_coordinates.shape()[0]);
 
   // Initialize topological dimension
   mesh.topology().init(tdim);
@@ -1060,8 +1068,6 @@ void MeshPartitioning::build_local_mesh(
   mesh.topology().init(0, num_vertices, num_global_vertices);
   mesh.topology().init_ghost(0, num_vertices);
   mesh.topology().init_global_indices(0, num_vertices);
-  std::vector<std::size_t> num_vertex_points(1, num_vertices);
-  mesh.geometry().init_entities(num_vertex_points);
 
   // Initialise cells
   const std::size_t num_cells = cell_global_vertices.size();

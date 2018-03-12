@@ -57,8 +57,8 @@ public:
 
   /// Build a distributed mesh from 'local mesh data' that is
   /// distributed across processes
-  static void build_distributed_mesh(Mesh& mesh, const LocalMeshData& data,
-                                     const std::string ghost_mode);
+  static mesh::Mesh build_distributed_mesh(const LocalMeshData& data,
+                                           const std::string ghost_mode);
 
 private:
   // Compute cell partitioning from local mesh data. Returns a

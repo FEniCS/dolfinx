@@ -243,8 +243,7 @@ mesh::Mesh ParallelRefinement::build_local() const
   return mesh;
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::partition(mesh::Mesh& new_mesh,
-                                   bool redistribute) const
+mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 {
   mesh::LocalMeshData mesh_data(_mesh.mpi_comm());
   mesh_data.topology.dim = _mesh.topology().dim();
@@ -294,8 +293,8 @@ void ParallelRefinement::partition(mesh::Mesh& new_mesh,
         MPI::rank(_mesh.mpi_comm()));
   }
 
-  mesh::MeshPartitioning::build_distributed_mesh(new_mesh, mesh_data,
-                                                 _mesh.ghost_mode());
+  return mesh::MeshPartitioning::build_distributed_mesh(mesh_data,
+                                                        _mesh.ghost_mode());
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::new_cells(const std::vector<std::size_t>& idx)

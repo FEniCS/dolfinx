@@ -110,7 +110,7 @@ public:
   ///
   /// @param mesh (Mesh)
   ///         Another Mesh object.
-  const Mesh& operator=(const Mesh& mesh);
+  Mesh& operator=(const Mesh& mesh);
 
   /// Get number of vertices in mesh.
   ///
@@ -321,10 +321,6 @@ public:
   /// deprecation; the method is now intended for internal
   /// library use.
   std::string ghost_mode() const;
-
-  /// FIXME: Remove
-  /// Friend in fem_utils.h
-  friend Mesh dolfin::fem::create_mesh(function::Function& coordinates);
 
 private:
   // Friends

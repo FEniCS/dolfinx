@@ -265,6 +265,7 @@ mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
     }
 
   mesh::Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
+  mesh.order();
   mesh::MeshPartitioning::build_distributed_mesh(mesh);
   return mesh;
 }

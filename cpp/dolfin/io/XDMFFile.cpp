@@ -1286,7 +1286,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
                 {num_cells_global, 1}, "UInt");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::read(mesh::Mesh& mesh) const
+mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
 {
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
   // of the HDF5 files(s) and the XDMF is not opened from its own directory)
@@ -1380,12 +1380,13 @@ void XDMFFile::read(mesh::Mesh& mesh) const
 
   // Build mesh
   const std::string ghost_mode = parameter::parameters["ghost_mode"];
-  mesh::MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data,
-                                                 ghost_mode);
+  return mesh::MeshPartitioning::build_distributed_mesh(local_mesh_data,
+                                                        ghost_mode);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::read_checkpoint(function::Function& u, std::string func_name,
-                               std::int64_t counter)
+function::Function
+XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
+                          std::string func_name, std::int64_t counter)
 {
   check_function_name(func_name);
 
@@ -1463,10 +1464,11 @@ void XDMFFile::read_checkpoint(function::Function& u, std::string func_name,
 
   // Get existing mesh and dofmap - these should be pre-existing
   // and set up by user when defining the function::Function
-  dolfin_assert(u.function_space()->mesh());
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
-  dolfin_assert(u.function_space()->dofmap());
-  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
+  assert(V);
+  dolfin_assert(V->mesh());
+  const mesh::Mesh& mesh = *V->mesh();
+  dolfin_assert(V->dofmap());
+  const fem::GenericDofMap& dofmap = *V->dofmap();
 
   // Read cell ordering
   std::vector<std::size_t> cells
@@ -1501,11 +1503,13 @@ void XDMFFile::read_checkpoint(function::Function& u, std::string func_name,
   std::vector<double> vector = get_dataset<double>(
       _mpi_comm.comm(), vector_dataitem, parent_path, input_vector_range);
 
-  la::PETScVector& x = *u.vector();
-
-  HDF5Utility::set_local_vector_values(_mpi_comm.comm(), x, mesh, cells,
-                                       cell_dofs, x_cell_dofs, vector,
+  function::Function u(V);
+  assert(u.vector());
+  HDF5Utility::set_local_vector_values(_mpi_comm.comm(), *u.vector(), mesh,
+                                       cells, cell_dofs, x_cell_dofs, vector,
                                        input_vector_range, dofmap);
+
+  return u;
 }
 //----------------------------------------------------------------------------
 void XDMFFile::build_local_mesh_data(
@@ -1619,7 +1623,8 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   if (degree == 1)
     topology_data = compute_topology_data<T>(mesh, cell_dim);
   else
-    topology_data = compute_quadratic_topology<T>(mesh);
+    log::dolfin_error("XDMFFile.cpp", "compute topology",
+                      "Unsupported geometry degree");
 
   // Add topology DataItem node
   const std::string group_name = path_prefix + "/" + mesh.name();
@@ -1742,7 +1747,7 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
         = {{offset, offset + local_shape0}};
 
     const bool use_mpi_io = (MPI::size(comm) > 1);
-    HDF5Interface::write_dataset(h5_id, h5_path, x, local_range, shape,
+    HDF5Interface::write_dataset(h5_id, h5_path, x.data(), local_range, shape,
                                  use_mpi_io, false);
 
     // Add partitioning attribute to dataset
@@ -1870,51 +1875,6 @@ std::vector<T> XDMFFile::compute_topology_data(const mesh::Mesh& mesh,
     }
   }
 
-  return topology_data;
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-std::vector<T> XDMFFile::compute_quadratic_topology(const mesh::Mesh& mesh)
-{
-  const mesh::MeshGeometry& geom = mesh.geometry();
-
-  if (geom.degree() != 2 or MPI::size(mesh.mpi_comm()) != 1)
-  {
-    log::dolfin_error("XDMFFile.cpp", "create topology data",
-                      "XDMF quadratic mesh only supported in serial");
-  }
-
-  const std::size_t tdim = mesh.topology().dim();
-  std::vector<std::size_t> edge_mapping;
-  if (tdim == 1)
-    edge_mapping = {0};
-  else if (tdim == 2)
-    edge_mapping = {2, 0, 1};
-  else
-    edge_mapping = {5, 2, 4, 3, 1, 0};
-
-  // Get number of points per cell
-  const mesh::CellType& celltype = mesh.type();
-  std::size_t npoint = celltype.num_entities(0) + celltype.num_entities(1);
-  std::vector<T> topology_data;
-  topology_data.reserve(npoint * mesh.num_entities(tdim));
-
-  for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
-  {
-    // Add indices for vertices and edges
-    for (std::uint32_t dim = 0; dim != 2; ++dim)
-    {
-      for (std::uint32_t i = 0; i != celltype.num_entities(dim); ++i)
-      {
-        std::size_t im = (dim == 0) ? i : edge_mapping[i];
-        const std::size_t entity_index
-            = (dim == tdim) ? c.index() : c.entities(dim)[im];
-        const std::size_t local_idx
-            = geom.get_entity_index(dim, 0, entity_index);
-        topology_data.push_back(local_idx);
-      }
-    }
-  }
   return topology_data;
 }
 //-----------------------------------------------------------------------------
@@ -2153,7 +2113,8 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
     }
 
     // Retrieve data
-    HDF5Interface::read_dataset(h5_file.h5_id(), paths[1], range, data_vector);
+    data_vector
+        = HDF5Interface::read_dataset<T>(h5_file.h5_id(), paths[1], range);
 #else
     // Should never reach this point
     log::dolfin_error("XDMFFile.cpp", "get dataset",

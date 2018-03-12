@@ -20,6 +20,7 @@ import os
 import numpy as np
 from dolfin import *
 from dolfin_utils.test import skip_in_parallel, fixture, tempdir
+import dolfin.io
 
 # Supported XDMF file encoding
 encodings = (XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII)
@@ -80,9 +81,8 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mesh, encoding)
 
-    mesh2 = Mesh(MPI.comm_world)
     with XDMFFile(MPI.comm_world, filename) as file:
-        file.read(mesh2)
+        mesh2 = file.read_mesh(MPI.comm_world)
     assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
     dim = mesh.topology().dim()
     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
@@ -98,9 +98,8 @@ def test_save_and_load_2d_mesh(tempdir, encoding):
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mesh, encoding)
 
-    mesh2 = Mesh(MPI.comm_world)
     with XDMFFile(MPI.comm_world, filename) as file:
-        file.read(mesh2)
+        mesh2 = file.read_mesh(MPI.comm_world)
     assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
     dim = mesh.topology().dim()
     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
@@ -116,9 +115,8 @@ def test_save_and_load_2d_quad_mesh(tempdir, encoding):
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mesh, encoding)
 
-    mesh2 = Mesh(MPI.comm_world)
     with XDMFFile(MPI.comm_world, filename) as file:
-        file.read(mesh2)
+        mesh2 = file.read_mesh(MPI.comm_world)
     assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
     dim = mesh.topology().dim()
     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
@@ -134,9 +132,8 @@ def test_save_and_load_3d_mesh(tempdir, encoding):
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mesh, encoding)
 
-    mesh2 = Mesh(MPI.comm_world)
     with XDMFFile(MPI.comm_world, filename) as file:
-        file.read(mesh2)
+        mesh2 = file.read_mesh(MPI.comm_world)
     assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
     dim = mesh.topology().dim()
     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
@@ -184,7 +181,7 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
         file.write_checkpoint(u_out, "u_out", 0, encoding)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        file.read_checkpoint(u_in, "u_out", 0)
+        u_in = file.read_checkpoint(V, "u_out", 0)
 
     result = u_in.vector() - u_out.vector()
     assert all([np.isclose(x, 0.0) for x in result.get_local()])
@@ -221,7 +218,7 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
         file.write_checkpoint(u_out, "u_out", 0, encoding)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        file.read_checkpoint(u_in, "u_out", 0)
+        u_in = file.read_checkpoint(V, "u_out", 0)
 
     result = u_in.vector() - u_out.vector()
     assert all([np.isclose(x, 0.0) for x in result.get_local()])
@@ -248,8 +245,7 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         for i, p in enumerate(times):
-            u_in[i] = Function(V)
-            file.read_checkpoint(u_in[i], "u_out", i)
+            u_in[i] = file.read_checkpoint(V, "u_out", i)
 
     for i, p in enumerate(times):
         result = u_in[i].vector() - u_out[i].vector()
@@ -257,8 +253,7 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
 
     # test reading last
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        u_in_last = Function(V)
-        file.read_checkpoint(u_in_last, "u_out", -1)
+        u_in_last = file.read_checkpoint(V, "u_out", -1)
 
     result = u_out[-1].vector() - u_in_last.vector()
     assert all([np.isclose(x, 0.0) for x in result.get_local()])

@@ -85,53 +85,5 @@ dof_to_vertex_map(const function::FunctionSpace& space);
 ///         The vertex to dof map
 std::vector<dolfin::la_index_t>
 vertex_to_dof_map(const function::FunctionSpace& space);
-
-/// Sets mesh coordinates from function
-///
-/// Mesh connectivities d-0, d-1, ..., d-r are built on function mesh
-/// (where d is topological dimension of the mesh and r is maximal
-/// dimension of entity associated with any coordinate node). Consider
-/// clearing unneeded connectivities when finished.
-///
-/// @param   geometry (_MeshGeometry_)
-///         Mesh geometry to be set
-/// @param    position (_Function_)
-///         Vectorial Lagrange function with matching degree and mesh
-void set_coordinates(mesh::MeshGeometry& geometry,
-                     const function::Function& position);
-
-/// Stores mesh coordinates into function
-///
-/// Mesh connectivities d-0, d-1, ..., d-r are built on function mesh
-/// (where d is topological dimension of the mesh and r is maximal
-/// dimension of entity associated with any coordinate node). Consider
-/// clearing unneeded connectivities when finished.
-///
-/// @param   position (_Function_)
-///         Vectorial Lagrange function with matching degree and mesh
-/// @param    geometry (_MeshGeometry_)
-///         Mesh geometry to be stored
-void get_coordinates(function::Function& position,
-                     const mesh::MeshGeometry& geometry);
-
-/// Creates mesh from coordinate function
-///
-/// Topology is given by underlying mesh of the function space and
-/// geometry is given by function values. Hence resulting mesh
-/// geometry has a degree of the function space degree. Geometry of
-/// function mesh is ignored.
-///
-/// Mesh connectivities d-0, d-1, ..., d-r are built on function mesh
-/// (where d is topological dimension of the mesh and r is maximal
-/// dimension of entity associated with any coordinate node). Consider
-/// clearing unneeded connectivities when finished.
-///
-/// @param coordinates
-/// (_Function_)
-///         Vector Lagrange function of any degree
-///
-/// @return Mesh
-///         The mesh
-mesh::Mesh create_mesh(function::Function& coordinates);
 }
 }
