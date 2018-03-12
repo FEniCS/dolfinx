@@ -38,7 +38,7 @@ void io(py::module &m) {
 
   // dolfin::io::HDF5File
   py::class_<dolfin::io::HDF5File, std::shared_ptr<dolfin::io::HDF5File>,
-             dolfin::common::Variable>(m, "HDF5File")
+             dolfin::common::Variable>(m, py::dynamic_attr(), "HDF5File")
       .def(py::init([](const MPICommWrapper comm, const std::string filename,
                        const std::string file_mode) {
              return std::make_unique<dolfin::io::HDF5File>(comm.get(), filename,
