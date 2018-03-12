@@ -1742,7 +1742,7 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
         = {{offset, offset + local_shape0}};
 
     const bool use_mpi_io = (MPI::size(comm) > 1);
-    HDF5Interface::write_dataset(h5_id, h5_path, x, local_range, shape,
+    HDF5Interface::write_dataset(h5_id, h5_path, x.data(), local_range, shape,
                                  use_mpi_io, false);
 
     // Add partitioning attribute to dataset
@@ -2153,7 +2153,7 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
     }
 
     // Retrieve data
-    HDF5Interface::read_dataset(h5_file.h5_id(), paths[1], range, data_vector);
+    data_vector = HDF5Interface::read_dataset<T>(h5_file.h5_id(), paths[1], range);
 #else
     // Should never reach this point
     log::dolfin_error("XDMFFile.cpp", "get dataset",

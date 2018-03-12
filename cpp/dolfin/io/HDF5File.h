@@ -6,8 +6,6 @@
 
 #pragma once
 
-#ifdef HAS_HDF5
-
 #include "HDF5Interface.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
@@ -274,10 +272,9 @@ void HDF5File::write_data(const std::string dataset_name,
   if (dset_name[0] != '/')
     dset_name = "/" + dataset_name;
 
-  HDF5Interface::write_dataset(_hdf5_file_id, dset_name, data, range,
+  HDF5Interface::write_dataset(_hdf5_file_id, dset_name, data.data(), range,
                                global_size, use_mpi_io, chunking);
 }
 //---------------------------------------------------------------------------
 }
 }
-#endif

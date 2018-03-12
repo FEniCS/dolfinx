@@ -4,8 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifdef HAS_HDF5
-
 #include "HDF5File.h"
 #include "HDF5Interface.h"
 #include "HDF5Utility.h"
@@ -148,7 +146,7 @@ void HDF5File::write(const la::PETScVector& x, const std::string dataset_name)
   const bool chunking = parameters["chunking"];
   const std::vector<std::int64_t> global_size(1, x.size());
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
-  HDF5Interface::write_dataset(_hdf5_file_id, dataset_name, local_data,
+  HDF5Interface::write_dataset(_hdf5_file_id, dataset_name, local_data.data(),
                                local_range, global_size, mpi_io, chunking);
 
   // Add partitioning attribute to dataset
@@ -230,8 +228,8 @@ void HDF5File::read(la::PETScVector& x, const std::string dataset_name,
   const std::array<std::int64_t, 2> local_range = x.local_range();
 
   // Read data from file
-  std::vector<double> data;
-  HDF5Interface::read_dataset(_hdf5_file_id, dataset_name, local_range, data);
+  std::vector<double> data = HDF5Interface::read_dataset<double>(
+      _hdf5_file_id, dataset_name, local_range);
 
   // Set data
   x.set_local(data);
@@ -593,18 +591,15 @@ void HDF5File::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
   const std::size_t num_read_cells = cell_range[1] - cell_range[0];
 
   // Read a block of cells
-  std::vector<std::size_t> topology_data;
-  topology_data.reserve(num_read_cells * vertices_per_cell);
-  HDF5Interface::read_dataset(_hdf5_file_id, topology_name, cell_range,
-                              topology_data);
+  std::vector<std::size_t> topology_data
+      = HDF5Interface::read_dataset<std::size_t>(_hdf5_file_id, topology_name,
+                                                 cell_range);
 
   boost::multi_array_ref<std::size_t, 2> topology_array(
       topology_data.data(), boost::extents[num_read_cells][vertices_per_cell]);
 
-  std::vector<T> value_data;
-  value_data.reserve(num_read_cells);
-  HDF5Interface::read_dataset(_hdf5_file_id, values_name, cell_range,
-                              value_data);
+  std::vector<T> value_data
+      = HDF5Interface::read_dataset<T>(_hdf5_file_id, values_name, cell_range);
 
   // Now send the read data to each process on the basis of the first
   // vertex of the entity, since we do not know the global_index
@@ -1023,21 +1018,21 @@ void HDF5File::read(function::Function& u, const std::string name)
       = MPI::local_range(_mpi_comm.comm(), num_global_cells);
 
   // Read cells
-  std::vector<std::size_t> input_cells;
-  HDF5Interface::read_dataset(_hdf5_file_id, cells_dataset_name, cell_range,
-                              input_cells);
+  std::vector<std::size_t> input_cells
+      = HDF5Interface::read_dataset<std::size_t>(
+          _hdf5_file_id, cells_dataset_name, cell_range);
 
   // Overlap reads of DOF indices, to get full range on each process
-  std::vector<std::int64_t> x_cell_dofs;
-  HDF5Interface::read_dataset(_hdf5_file_id, x_cell_dofs_dataset_name,
-                              {{cell_range[0], cell_range[1] + 1}},
-                              x_cell_dofs);
+  std::vector<std::int64_t> x_cell_dofs
+      = HDF5Interface::read_dataset<std::int64_t>(
+          _hdf5_file_id, x_cell_dofs_dataset_name,
+          {{cell_range[0], cell_range[1] + 1}});
 
   // Read cell-DOF maps
-  std::vector<dolfin::la_index_t> input_cell_dofs;
-  HDF5Interface::read_dataset(_hdf5_file_id, cell_dofs_dataset_name,
-                              {{x_cell_dofs.front(), x_cell_dofs.back()}},
-                              input_cell_dofs);
+  std::vector<dolfin::la_index_t> input_cell_dofs
+      = HDF5Interface::read_dataset<dolfin::la_index_t>(
+          _hdf5_file_id, cell_dofs_dataset_name,
+          {{x_cell_dofs.front(), x_cell_dofs.back()}});
 
   la::PETScVector& x = *u.vector();
 
@@ -1048,9 +1043,8 @@ void HDF5File::read(function::Function& u, const std::string name)
   const std::array<std::int64_t, 2> input_vector_range
       = MPI::local_range(_mpi_comm.comm(), vector_shape[0]);
 
-  std::vector<double> input_values;
-  HDF5Interface::read_dataset(_hdf5_file_id, vector_dataset_name,
-                              input_vector_range, input_values);
+  std::vector<double> input_values = HDF5Interface::read_dataset<double>(
+      _hdf5_file_id, vector_dataset_name, input_vector_range);
 
   // HDF5Utility::set_local_vector_values(_mpi_comm.comm(), x, mesh,
   // input_cells,
@@ -1270,17 +1264,13 @@ void HDF5File::read_mesh_value_collection(mesh::MeshValueCollection<T>& mesh_vc,
   // Divide range between processes
   const std::array<std::int64_t, 2> data_range
       = MPI::local_range(_mpi_comm.comm(), values_shape[0]);
-  const std::size_t local_size = data_range[1] - data_range[0];
 
   // Read local range of values and entities
-  std::vector<T> values_data;
-  values_data.reserve(local_size);
-  HDF5Interface::read_dataset(_hdf5_file_id, values_name, data_range,
-                              values_data);
-  std::vector<std::size_t> topology_data;
-  topology_data.reserve(local_size * num_verts_per_entity);
-  HDF5Interface::read_dataset(_hdf5_file_id, topology_name, data_range,
-                              topology_data);
+  std::vector<T> values_data
+      = HDF5Interface::read_dataset<T>(_hdf5_file_id, values_name, data_range);
+  std::vector<std::size_t> topology_data
+      = HDF5Interface::read_dataset<std::size_t>(_hdf5_file_id, topology_name,
+                                                 data_range);
 
   /// Basically need to tabulate all entities by vertex, and get their
   /// local index, transmit them to a 'sorting' host.  Also send the
@@ -1462,18 +1452,15 @@ void HDF5File::read_mesh_value_collection_old(
   {
     // read on all processes
     const std::array<std::int64_t, 2> range = {{0, values_shape[0]}};
-    const std::size_t local_size = range[1] - range[0];
 
-    std::vector<T> values_data;
-    values_data.reserve(local_size);
-    HDF5Interface::read_dataset(_hdf5_file_id, values_name, range, values_data);
-    std::vector<std::size_t> entities_data;
-    entities_data.reserve(local_size);
-    HDF5Interface::read_dataset(_hdf5_file_id, entities_name, range,
-                                entities_data);
-    std::vector<std::size_t> cells_data;
-    cells_data.reserve(local_size);
-    HDF5Interface::read_dataset(_hdf5_file_id, cells_name, range, cells_data);
+    std::vector<T> values_data
+        = HDF5Interface::read_dataset<T>(_hdf5_file_id, values_name, range);
+    std::vector<std::size_t> entities_data
+        = HDF5Interface::read_dataset<std::size_t>(_hdf5_file_id, entities_name,
+                                                   range);
+    std::vector<std::size_t> cells_data
+        = HDF5Interface::read_dataset<std::size_t>(_hdf5_file_id, cells_name,
+                                                   range);
 
     // Get global mapping to restore values
     const mesh::Mesh& mesh = *mesh_vc.mesh();
@@ -1530,21 +1517,16 @@ void HDF5File::read_mesh_value_collection_old(
     // Divide range between processes
     const std::array<std::int64_t, 2> data_range
         = MPI::local_range(_mpi_comm.comm(), values_shape[0]);
-    const std::size_t local_size = data_range[1] - data_range[0];
 
     // Read local range of values, entities and cells
-    std::vector<T> values_data;
-    values_data.reserve(local_size);
-    HDF5Interface::read_dataset(_hdf5_file_id, values_name, data_range,
-                                values_data);
-    std::vector<std::size_t> entities_data;
-    entities_data.reserve(local_size);
-    HDF5Interface::read_dataset(_hdf5_file_id, entities_name, data_range,
-                                entities_data);
-    std::vector<std::size_t> cells_data;
-    cells_data.reserve(local_size);
-    HDF5Interface::read_dataset(_hdf5_file_id, cells_name, data_range,
-                                cells_data);
+    std::vector<T> values_data = HDF5Interface::read_dataset<T>(
+        _hdf5_file_id, values_name, data_range);
+    std::vector<std::size_t> entities_data
+        = HDF5Interface::read_dataset<std::size_t>(_hdf5_file_id, entities_name,
+                                                   data_range);
+    std::vector<std::size_t> cells_data
+        = HDF5Interface::read_dataset<std::size_t>(_hdf5_file_id, cells_name,
+                                                   data_range);
 
     std::vector<std::pair<std::size_t, std::size_t>> cell_ownership;
     cell_ownership = HDF5Utility::cell_owners(mesh, cells_data);
@@ -1783,10 +1765,9 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
   }
 
   // Read a block of cells
-  std::vector<std::int64_t> topology_data;
-  topology_data.reserve(num_local_cells * num_vertices_per_cell);
-  HDF5Interface::read_dataset(_hdf5_file_id, topology_path, cell_data_range,
-                              topology_data);
+  std::vector<std::int64_t> topology_data
+      = HDF5Interface::read_dataset<std::int64_t>(_hdf5_file_id, topology_path,
+                                                  cell_data_range);
 
   // FIXME: explain this more clearly.
   // Reconstruct mesh_name from topology_name - needed for
@@ -1801,9 +1782,8 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
   const std::string cell_indices_name = mesh_name + "/cell_indices";
   if (HDF5Interface::has_dataset(_hdf5_file_id, cell_indices_name))
   {
-    global_cell_indices.reserve(num_local_cells);
-    HDF5Interface::read_dataset(_hdf5_file_id, cell_indices_name, cell_range,
-                                global_cell_indices);
+    global_cell_indices = HDF5Interface::read_dataset<std::int64_t>(
+        _hdf5_file_id, cell_indices_name, cell_range);
   }
   else
   {
@@ -1826,8 +1806,10 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
   for (int i = 0; i != num_local_cells; ++i)
   {
     for (int j = 0; j != num_vertices_per_cell; ++j)
+    {
       local_mesh_data.topology.cell_vertices[i][j]
           = topology_data_array[i][perm[j]];
+    }
   }
 
   // --- Coordinates ---
@@ -1882,10 +1864,8 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
 
   // Read vertex data to temporary vector
   {
-    std::vector<double> coordinates_data;
-    coordinates_data.reserve(num_local_vertices * gdim);
-    HDF5Interface::read_dataset(_hdf5_file_id, geometry_path, vertex_data_range,
-                                coordinates_data);
+    std::vector<double> coordinates_data = HDF5Interface::read_dataset<double>(
+        _hdf5_file_id, geometry_path, vertex_data_range);
 
     // Copy to boost::multi_array
     local_mesh_data.geometry.vertex_coordinates.resize(
@@ -1929,5 +1909,3 @@ bool HDF5File::get_mpi_atomicity() const
   return HDF5Interface::get_mpi_atomicity(_hdf5_file_id);
 }
 //-----------------------------------------------------------------------------
-
-#endif
