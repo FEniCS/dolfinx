@@ -103,9 +103,9 @@ public:
 
   /// Get a named attribute of a dataset of known type
   template <typename T>
-  static void
-  get_attribute(const hid_t hdf5_file_handle, const std::string dataset_path,
-                const std::string attribute_name, T& attribute_value);
+  static T get_attribute(const hid_t hdf5_file_handle,
+                         const std::string dataset_path,
+                         const std::string attribute_name);
 
   /// Add attribute to dataset or group
   template <typename T>
@@ -410,10 +410,9 @@ HDF5Interface::read_dataset(const hid_t file_handle,
 }
 //---------------------------------------------------------------------------
 template <typename T>
-inline void HDF5Interface::get_attribute(hid_t hdf5_file_handle,
-                                         const std::string dataset_path,
-                                         const std::string attribute_name,
-                                         T& attribute_value)
+inline T HDF5Interface::get_attribute(hid_t hdf5_file_handle,
+                                      const std::string dataset_path,
+                                      const std::string attribute_name)
 {
   herr_t status;
 
@@ -429,6 +428,7 @@ inline void HDF5Interface::get_attribute(hid_t hdf5_file_handle,
   dolfin_assert(attr_type != HDF5_FAIL);
 
   // Specific code for each type of data template
+  T attribute_value;
   get_attribute_value(attr_type, attr_id, attribute_value);
 
   // Close attribute type
@@ -442,6 +442,8 @@ inline void HDF5Interface::get_attribute(hid_t hdf5_file_handle,
   // Close dataset or group
   status = H5Oclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
+
+  return attribute_value;
 }
 //--------------------------------------------------------------------------
 template <typename T>

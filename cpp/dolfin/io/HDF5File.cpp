@@ -194,9 +194,9 @@ void HDF5File::read(la::PETScVector& x, const std::string dataset_name,
     if (use_partition_from_file)
     {
       // Get partition from file
-      std::vector<std::size_t> partitions;
-      HDF5Interface::get_attribute(_hdf5_file_id, dataset_name, "partition",
-                                   partitions);
+      std::vector<std::size_t> partitions
+          = HDF5Interface::get_attribute<std::vector<std::size_t>>(
+              _hdf5_file_id, dataset_name, "partition");
 
       // Check that number of MPI processes matches partitioning
       if (_mpi_comm.size() != partitions.size())
@@ -835,8 +835,8 @@ void HDF5File::write(const function::Function& u, const std::string name,
     }
 
     // Get count of vectors in dataset, and increment
-    std::size_t vec_count = 0;
-    HDF5Interface::get_attribute(_hdf5_file_id, name, "count", vec_count);
+    std::size_t vec_count = HDF5Interface::get_attribute<std::size_t>(
+        _hdf5_file_id, name, "count");
 
     std::string vec_name = name + "/vector_" + std::to_string(vec_count);
     ++vec_count;
@@ -1227,8 +1227,8 @@ void HDF5File::read_mesh_value_collection(mesh::MeshValueCollection<T>& mesh_vc,
     return;
   }
 
-  std::size_t dim = 0;
-  HDF5Interface::get_attribute(_hdf5_file_id, name, "dimension", dim);
+  std::size_t dim = HDF5Interface::get_attribute<std::size_t>(
+      _hdf5_file_id, name, "dimension");
   std::shared_ptr<const mesh::Mesh> mesh = mesh_vc.mesh();
   dolfin_assert(mesh);
   std::unique_ptr<mesh::CellType> entity_type(
@@ -1405,9 +1405,6 @@ void HDF5File::read_mesh_value_collection_old(
     log::dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
                       "Group \"%s\" not found in file", name.c_str());
   }
-
-  std::size_t dim = 0;
-  HDF5Interface::get_attribute(_hdf5_file_id, name, "dimension", dim);
 
   const std::string values_name = name + "/values";
   const std::string entities_name = name + "/entities";
@@ -1588,8 +1585,8 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string data_path,
   std::string cell_type_str;
   if (HDF5Interface::has_attribute(_hdf5_file_id, topology_path, "celltype"))
   {
-    HDF5Interface::get_attribute(_hdf5_file_id, topology_path, "celltype",
-                                 cell_type_str);
+    cell_type_str = HDF5Interface::get_attribute<std::string>(
+        _hdf5_file_id, topology_path, "celltype");
   }
 
   // Create CellType from string
@@ -1666,9 +1663,8 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
   // type passed into this function
   if (HDF5Interface::has_attribute(_hdf5_file_id, topology_path, "celltype"))
   {
-    std::string cell_type_str;
-    HDF5Interface::get_attribute(_hdf5_file_id, topology_path, "celltype",
-                                 cell_type_str);
+    std::string cell_type_str = HDF5Interface::get_attribute<std::string>(
+        _hdf5_file_id, topology_path, "celltype");
     if (cell_type.cell_type() != mesh::CellType::string2type(cell_type_str))
     {
       log::dolfin_error(
@@ -1722,8 +1718,8 @@ void HDF5File::read(mesh::Mesh& input_mesh, const std::string topology_path,
   std::vector<std::int64_t> cell_partitions;
   if (HDF5Interface::has_attribute(_hdf5_file_id, topology_path, "partition"))
   {
-    HDF5Interface::get_attribute(_hdf5_file_id, topology_path, "partition",
-                                 cell_partitions);
+    cell_partitions = HDF5Interface::get_attribute<std::vector<std::int64_t>>(
+        _hdf5_file_id, topology_path, "partition");
   }
 
   // Prepare range of cells to read on this process
