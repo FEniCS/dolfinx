@@ -44,13 +44,8 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
     LocalMeshData local_mesh_data(mesh);
 
     // Build distributed mesh
-<<<<<<< HEAD
     mesh = build_distributed_mesh(local_mesh_data,
                                   parameter::parameters["ghost_mode"]);
-=======
-    build_distributed_mesh(mesh, local_mesh_data,
-                           parameter::parameters["ghost_mode"]);
->>>>>>> origin/master
   }
 }
 //-----------------------------------------------------------------------------
