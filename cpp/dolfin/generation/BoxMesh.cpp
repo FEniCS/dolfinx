@@ -31,8 +31,7 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
                                                                              4);
     mesh::Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
     mesh.order();
-    mesh::MeshPartitioning::build_distributed_mesh(mesh);
-    return mesh;
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
   }
 
   // Extract data
@@ -136,8 +135,10 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
   mesh::Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
   mesh.order();
 
-  mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  return mesh;
+  if (dolfin::MPI::size(comm) > 0)
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+  else
+    return mesh;
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
@@ -149,8 +150,7 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
     EigenRowArrayXXi32 topo(0, 8);
 
     mesh::Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
-    mesh::MeshPartitioning::build_distributed_mesh(mesh);
-    return mesh;
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
   }
 
   const std::size_t nx = n[0];
@@ -210,7 +210,10 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
   }
 
   mesh::Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
-  mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  return mesh;
+
+  if (dolfin::MPI::size(comm) > 0)
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+  else
+    return mesh;
 }
 //-----------------------------------------------------------------------------

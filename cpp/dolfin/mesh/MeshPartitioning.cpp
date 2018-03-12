@@ -36,34 +36,28 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
+mesh::Mesh MeshPartitioning::build_distributed_mesh(const Mesh& mesh)
 {
-  if (MPI::size(mesh.mpi_comm()) > 1)
-  {
-    // Create and distribute local mesh data
-    LocalMeshData local_mesh_data(mesh);
+  // Create and distribute local mesh data
+  LocalMeshData local_mesh_data(mesh);
 
-    // Build distributed mesh
-    mesh = build_distributed_mesh(local_mesh_data,
-                                  parameter::parameters["ghost_mode"]);
-  }
+  // Build distributed mesh
+  return build_distributed_mesh(local_mesh_data,
+                                parameter::parameters["ghost_mode"]);
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::build_distributed_mesh(
-    Mesh& mesh, const std::vector<int>& cell_destinations,
+mesh::Mesh MeshPartitioning::build_distributed_mesh(
+    const Mesh& mesh, const std::vector<int>& cell_destinations,
     const std::string ghost_mode)
 {
-  if (MPI::size(mesh.mpi_comm()) > 1)
-  {
-    // Create and distribute local mesh data
-    LocalMeshData local_mesh_data(mesh);
+  // Create and distribute local mesh data
+  LocalMeshData local_mesh_data(mesh);
 
-    // Attach cell destinations
-    local_mesh_data.topology.cell_partition = cell_destinations;
+  // Attach cell destinations
+  local_mesh_data.topology.cell_partition = cell_destinations;
 
-    // Build distributed mesh
-    mesh = build_distributed_mesh(local_mesh_data, ghost_mode);
-  }
+  // Build distributed mesh
+  return build_distributed_mesh(local_mesh_data, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh
