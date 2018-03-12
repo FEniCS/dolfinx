@@ -89,7 +89,7 @@ public:
   struct Topology
   {
     /// Constructor
-    Topology() : dim(-1), num_global_cells(-1) {}
+    Topology() : dim(-1), ordered(false), num_global_cells(-1) {}
     /// Default copy Constructor
     Topology(const Topology& g) = default;
     /// Default move Constructor
@@ -100,6 +100,9 @@ public:
 
     /// Topological dimension
     int dim;
+
+    /// Ordered
+    bool ordered;
 
     /// Global number of cells
     std::int64_t num_global_cells;

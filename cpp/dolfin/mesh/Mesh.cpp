@@ -114,7 +114,7 @@ Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
       _ghost_mode("none")
 {
   const std::string ghost_mode = parameters["ghost_mode"];
-  MeshPartitioning::build_distributed_mesh(*this, local_mesh_data, ghost_mode);
+  *this = MeshPartitioning::build_distributed_mesh(local_mesh_data, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()

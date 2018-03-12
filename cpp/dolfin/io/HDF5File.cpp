@@ -1854,12 +1854,8 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
   t.stop();
 
   const std::string ghost_mode = parameter::parameters["ghost_mode"];
-  mesh::Mesh mesh(comm);
-  mesh::MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data,
-                                                 ghost_mode);
-  return mesh;
-  // return mesh::MeshPartitioning::build_distributed_mesh(local_mesh_data,
-  //                                                      ghost_mode);
+  return mesh::MeshPartitioning::build_distributed_mesh(local_mesh_data,
+                                                        ghost_mode);
 }
 //-----------------------------------------------------------------------------
 bool HDF5File::has_dataset(const std::string dataset_name) const

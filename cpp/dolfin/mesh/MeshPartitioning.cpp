@@ -44,8 +44,8 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
     LocalMeshData local_mesh_data(mesh);
 
     // Build distributed mesh
-    build_distributed_mesh(mesh, local_mesh_data,
-                           parameter::parameters["ghost_mode"]);
+    mesh = build_distributed_mesh(local_mesh_data,
+                                  parameter::parameters["ghost_mode"]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -62,17 +62,23 @@ void MeshPartitioning::build_distributed_mesh(
     local_mesh_data.topology.cell_partition = cell_destinations;
 
     // Build distributed mesh
-    build_distributed_mesh(mesh, local_mesh_data, ghost_mode);
+    mesh = build_distributed_mesh(local_mesh_data, ghost_mode);
   }
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
-                                              const LocalMeshData& local_data,
-                                              const std::string ghost_mode)
+mesh::Mesh
+MeshPartitioning::build_distributed_mesh(const LocalMeshData& local_data,
+                                         const std::string ghost_mode)
 {
   log::log(PROGRESS, "Building distributed mesh");
 
   common::Timer timer("Build distributed mesh from local mesh data");
+
+  // MPI communicator
+  MPI_Comm comm = local_data.mpi_comm();
+
+  mesh::Mesh mesh(comm);
+  mesh._ordered = local_data.topology.ordered;
 
   // Store used ghost mode
   // NOTE: This is the only place in DOLFIN which eventually sets
@@ -81,9 +87,6 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 
   // Get mesh partitioner
   const std::string partitioner = parameter::parameters["mesh_partitioner"];
-
-  // MPI communicator
-  MPI_Comm comm = mesh.mpi_comm();
 
   // Compute cell partitioning or use partitioning provided in local_data
   std::vector<int> cell_partition;
@@ -120,6 +123,8 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // https://bugs.launchpad.net/dolfin/+bug/733834).
 
   DistributedMeshTools::init_facet_cell_connections(mesh);
+
+  return mesh;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition_cells(

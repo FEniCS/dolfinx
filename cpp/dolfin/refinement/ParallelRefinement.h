@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include<cstdint>
+#include <cstdint>
+#include <dolfin/mesh/Mesh.h>
 #include <unordered_map>
 #include <vector>
 
@@ -88,7 +89,7 @@ public:
   /// Use vertex and topology data to partition new mesh across processes
   /// @param mesh (mesh::Mesh)
   /// @param redistribute (bool)
-  void partition(mesh::Mesh& mesh, bool redistribute) const;
+  mesh::Mesh partition(bool redistribute) const;
 
   /// Build local mesh from internal data when not running in parallel
   /// @returns new_mesh (_mesh::Mesh_)
