@@ -294,8 +294,8 @@ void ParallelRefinement::partition(mesh::Mesh& new_mesh,
         MPI::rank(_mesh.mpi_comm()));
   }
 
-  new_mesh = mesh::MeshPartitioning::build_distributed_mesh(mesh_data,
-                                                            _mesh.ghost_mode());
+  mesh::MeshPartitioning::build_distributed_mesh(new_mesh, mesh_data,
+                                                 _mesh.ghost_mode());
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::new_cells(const std::vector<std::size_t>& idx)

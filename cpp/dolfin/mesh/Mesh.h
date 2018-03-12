@@ -110,7 +110,7 @@ public:
   ///
   /// @param mesh (Mesh)
   ///         Another Mesh object.
-  const Mesh& operator=(const Mesh& mesh);
+  Mesh& operator=(const Mesh& mesh);
 
   /// Get number of vertices in mesh.
   ///

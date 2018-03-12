@@ -120,9 +120,8 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   check_encoding(encoding);
   check_function_name(function_name);
 
-  log::log(PROGRESS,
-           "Writing function \"%s\" to XDMF file \"%s\" with "
-           "time step %f.",
+  log::log(PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
+                     "time step %f.",
            function_name.c_str(), _filename.c_str(), time_step);
 
   // If XML file exists load it to member _xml_doc
@@ -1381,8 +1380,12 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
 
   // Build mesh
   const std::string ghost_mode = parameter::parameters["ghost_mode"];
-  return mesh::MeshPartitioning::build_distributed_mesh(local_mesh_data,
-                                                        ghost_mode);
+  mesh::Mesh mesh(comm);
+  mesh::MeshPartitioning::build_distributed_mesh(mesh, local_mesh_data,
+                                                 ghost_mode);
+  return mesh;
+  // return mesh::MeshPartitioning::build_distributed_mesh(local_mesh_data,
+  //                                                      ghost_mode);
 }
 //----------------------------------------------------------------------------
 function::Function
@@ -1391,9 +1394,8 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
 {
   check_function_name(func_name);
 
-  log::log(PROGRESS,
-           "Reading function \"%s\" from XDMF file \"%s\" with "
-           "counter %i.",
+  log::log(PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
+                     "counter %i.",
            func_name.c_str(), _filename.c_str(), counter);
 
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
