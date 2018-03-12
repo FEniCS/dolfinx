@@ -322,10 +322,6 @@ public:
   /// library use.
   std::string ghost_mode() const;
 
-  /// FIXME: Remove
-  /// Friend in fem_utils.h
-  friend Mesh dolfin::fem::create_mesh(function::Function& coordinates);
-
 private:
   // Friends
   friend class TopologyComputation;

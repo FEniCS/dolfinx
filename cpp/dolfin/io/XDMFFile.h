@@ -467,10 +467,6 @@ private:
   static std::vector<T> compute_topology_data(const mesh::Mesh& mesh,
                                               int cell_dim);
 
-  // Return quadratic topology for mesh::Mesh of degree 2
-  template <typename T>
-  static std::vector<T> compute_quadratic_topology(const mesh::Mesh& mesh);
-
   // Return data which is local
   template <typename T>
   std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction);

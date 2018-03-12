@@ -40,7 +40,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 {
   // Initialise geometry
   const std::size_t gdim = points.cols();
-  _geometry.init(gdim, 1);
+  _geometry.init(gdim, 1, points.rows());
 
   // Set cell type
   _cell_type.reset(mesh::CellType::create(type));
@@ -64,8 +64,6 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   _topology.init(0, num_vertices, num_vertices);
   _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);
-  std::vector<std::size_t> num_vertex_points(1, num_vertices);
-  _geometry.init_entities(num_vertex_points);
 
   // Initialise cells
   const std::size_t num_cells = cells.rows();
@@ -78,7 +76,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   std::vector<double>& _x = _geometry.x();
   for (std::size_t v = 0; v < num_vertices; ++v)
     for (std::size_t i = 0; i < gdim; ++i)
-      _x[v*gdim + i] = points(v, i);
+      _x[v * gdim + i] = points(v, i);
 
   for (std::int32_t i = 0; i != points.rows(); ++i)
     _topology.set_global_index(0, i, i);

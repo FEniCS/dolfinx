@@ -44,8 +44,13 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
     LocalMeshData local_mesh_data(mesh);
 
     // Build distributed mesh
+<<<<<<< HEAD
     mesh = build_distributed_mesh(local_mesh_data,
                                   parameter::parameters["ghost_mode"]);
+=======
+    build_distributed_mesh(mesh, local_mesh_data,
+                           parameter::parameters["ghost_mode"]);
+>>>>>>> origin/master
   }
 }
 //-----------------------------------------------------------------------------
@@ -1058,7 +1063,7 @@ void MeshPartitioning::build_local_mesh(
   dolfin_assert(tdim == (int)mesh._cell_type->dim());
 
   // Initialise geometry
-  mesh.geometry().init(gdim, 1);
+  mesh.geometry().init(gdim, 1, vertex_coordinates.shape()[0]);
 
   // Initialize topological dimension
   mesh.topology().init(tdim);
@@ -1068,8 +1073,6 @@ void MeshPartitioning::build_local_mesh(
   mesh.topology().init(0, num_vertices, num_global_vertices);
   mesh.topology().init_ghost(0, num_vertices);
   mesh.topology().init_global_indices(0, num_vertices);
-  std::vector<std::size_t> num_vertex_points(1, num_vertices);
-  mesh.geometry().init_entities(num_vertex_points);
 
   // Initialise cells
   const std::size_t num_cells = cell_global_vertices.size();
