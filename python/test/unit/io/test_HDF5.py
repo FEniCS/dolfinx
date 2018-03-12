@@ -58,9 +58,8 @@ def test_save_and_read_vector(tempdir):
         vector_file.write(x, "/my_vector")
 
     # Read from file
-    y = PETScVector(MPI.comm_world)
     with HDF5File(MPI.comm_world, filename, "r") as vector_file:
-        vector_file.read(y, "/my_vector", False)
+        y = vector_file.read_vector(MPI.comm_world, "/my_vector", False)
         assert y.size() == x.size()
         assert (x - y).norm("l1") == 0.0
 

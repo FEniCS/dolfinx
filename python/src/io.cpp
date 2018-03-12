@@ -58,6 +58,12 @@ void io(py::module &m) {
              return self.read_mesh(comm.get(), data_path,
                                    use_partition_from_file);
            })
+      .def("read_vector",
+           [](dolfin::io::HDF5File &self, const MPICommWrapper comm,
+              const std::string data_path, bool use_partition_from_file) {
+             return self.read_vector(comm.get(), data_path,
+                                     use_partition_from_file);
+           })
       .def("read",
            (void (dolfin::io::HDF5File::*)(
                dolfin::mesh::MeshValueCollection<bool> &, std::string) const) &
@@ -95,11 +101,6 @@ void io(py::module &m) {
                                            std::string) const) &
                dolfin::io::HDF5File::read,
            py::arg("meshfunction"), py::arg("name"))
-      .def("read",
-           (void (dolfin::io::HDF5File::*)(dolfin::la::PETScVector &,
-                                           std::string, bool) const) &
-               dolfin::io::HDF5File::read,
-           py::arg("vector"), py::arg("name"), py::arg("use_partitioning"))
       .def("read", py::overload_cast<
                        std::shared_ptr<const dolfin::function::FunctionSpace>,
                        const std::string>(&dolfin::io::HDF5File::read),
@@ -369,9 +370,10 @@ void io(py::module &m) {
   // XDFMFile::read
   xdmf_file
       // Mesh
-      .def("read",
-           (void (dolfin::io::XDMFFile::*)(dolfin::mesh::Mesh &) const) &
-               dolfin::io::XDMFFile::read)
+      .def("read_mesh",
+           [](dolfin::io::XDMFFile &self, const MPICommWrapper comm) {
+             return self.read_mesh(comm.get());
+           })
       // MeshFunction
       .def("read",
            (void (dolfin::io::XDMFFile::*)(dolfin::mesh::MeshFunction<bool> &,
@@ -415,15 +417,7 @@ void io(py::module &m) {
                dolfin::io::XDMFFile::read,
            py::arg("mvc"), py::arg("name") = "")
       //
-      .def("read_checkpoint", &dolfin::io::XDMFFile::read_checkpoint,
-           py::arg("u"), py::arg("name"), py::arg("counter") = -1)
-      .def("read_checkpoint",
-           [](dolfin::io::XDMFFile &instance, py::object u, std::string name,
-              std::int64_t counter) {
-             auto _u =
-                 u.attr("_cpp_object").cast<dolfin::function::Function *>();
-             instance.read_checkpoint(*_u, name, counter);
-           },
-           py::arg("u"), py::arg("name"), py::arg("counter") = -1);
+      .def("_read_checkpoint", &dolfin::io::XDMFFile::read_checkpoint,
+           py::arg("V"), py::arg("name"), py::arg("counter") = -1);
 }
 } // namespace dolfin_wrappers

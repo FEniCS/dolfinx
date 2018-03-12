@@ -120,9 +120,8 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   check_encoding(encoding);
   check_function_name(function_name);
 
-  log::log(PROGRESS,
-           "Writing function \"%s\" to XDMF file \"%s\" with "
-           "time step %f.",
+  log::log(PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
+                     "time step %f.",
            function_name.c_str(), _filename.c_str(), time_step);
 
   // If XML file exists load it to member _xml_doc
@@ -1287,7 +1286,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
                 {num_cells_global, 1}, "UInt");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::read(mesh::Mesh& mesh) const
+mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
 {
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
   // of the HDF5 files(s) and the XDMF is not opened from its own directory)
@@ -1381,18 +1380,18 @@ void XDMFFile::read(mesh::Mesh& mesh) const
 
   // Build mesh
   const std::string ghost_mode = parameter::parameters["ghost_mode"];
-  mesh = mesh::MeshPartitioning::build_distributed_mesh(local_mesh_data,
+  return mesh::MeshPartitioning::build_distributed_mesh(local_mesh_data,
                                                         ghost_mode);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::read_checkpoint(function::Function& u, std::string func_name,
-                               std::int64_t counter)
+function::Function
+XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
+                          std::string func_name, std::int64_t counter)
 {
   check_function_name(func_name);
 
-  log::log(PROGRESS,
-           "Reading function \"%s\" from XDMF file \"%s\" with "
-           "counter %i.",
+  log::log(PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
+                     "counter %i.",
            func_name.c_str(), _filename.c_str(), counter);
 
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
@@ -1465,10 +1464,11 @@ void XDMFFile::read_checkpoint(function::Function& u, std::string func_name,
 
   // Get existing mesh and dofmap - these should be pre-existing
   // and set up by user when defining the function::Function
-  dolfin_assert(u.function_space()->mesh());
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
-  dolfin_assert(u.function_space()->dofmap());
-  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
+  assert(V);
+  dolfin_assert(V->mesh());
+  const mesh::Mesh& mesh = *V->mesh();
+  dolfin_assert(V->dofmap());
+  const fem::GenericDofMap& dofmap = *V->dofmap();
 
   // Read cell ordering
   std::vector<std::size_t> cells
@@ -1503,11 +1503,13 @@ void XDMFFile::read_checkpoint(function::Function& u, std::string func_name,
   std::vector<double> vector = get_dataset<double>(
       _mpi_comm.comm(), vector_dataitem, parent_path, input_vector_range);
 
-  la::PETScVector& x = *u.vector();
-
-  HDF5Utility::set_local_vector_values(_mpi_comm.comm(), x, mesh, cells,
-                                       cell_dofs, x_cell_dofs, vector,
+  function::Function u(V);
+  assert(u.vector());
+  HDF5Utility::set_local_vector_values(_mpi_comm.comm(), *u.vector(), mesh,
+                                       cells, cell_dofs, x_cell_dofs, vector,
                                        input_vector_range, dofmap);
+
+  return u;
 }
 //----------------------------------------------------------------------------
 void XDMFFile::build_local_mesh_data(

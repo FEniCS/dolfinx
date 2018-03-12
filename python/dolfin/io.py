@@ -14,9 +14,19 @@ import dolfin.function.function
 def read_function(self, V, name):
     # Read cpp function
     u_cpp = self.read(V._cpp_object, name)
-    return dolfin.function.function.Function(u_cpp)
+    return dolfin.function.function.Function(V, u_cpp.vector())
 
 
 cpp.io.HDF5File.read_function = read_function
-
 del read_function
+
+
+def read_checkpoint(self, V, name, counter=-1):
+    # Read cpp function
+    u_cpp = self._read_checkpoint(V._cpp_object, name, counter)
+    return dolfin.function.function.Function(V, u_cpp.vector())
+
+
+cpp.io.XDMFFile.read_checkpoint = read_checkpoint
+
+del read_checkpoint

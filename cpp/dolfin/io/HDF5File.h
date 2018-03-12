@@ -10,6 +10,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/la/PETScVector.h>
 #include <memory>
 #include <string>
 #include <utility>
@@ -78,8 +79,8 @@ public:
 
   /// Read vector from file and optionally re-use any partitioning
   /// that is available in the file
-  void read(la::PETScVector& x, const std::string dataset_name,
-            const bool use_partition_from_file) const;
+  la::PETScVector read_vector(MPI_Comm comm, const std::string dataset_name,
+                              const bool use_partition_from_file) const;
 
   /// Write Mesh to file in a format suitable for re-reading
   void write(const mesh::Mesh& mesh, const std::string name);

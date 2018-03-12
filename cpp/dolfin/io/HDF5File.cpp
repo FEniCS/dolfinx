@@ -159,8 +159,9 @@ void HDF5File::write(const la::PETScVector& x, const std::string dataset_name)
                                partitions);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(la::PETScVector& x, const std::string dataset_name,
-                    const bool use_partition_from_file) const
+la::PETScVector HDF5File::read_vector(MPI_Comm comm,
+                                      const std::string dataset_name,
+                                      const bool use_partition_from_file) const
 {
   dolfin_assert(_hdf5_file_id > 0);
 
@@ -187,42 +188,34 @@ void HDF5File::read(la::PETScVector& x, const std::string dataset_name,
   dolfin_assert(data_shape.size() == 1
                 or (data_shape.size() == 2 and data_shape[1] == 1));
 
-  // Check input vector, and re-size if not already sized
-  if (x.empty())
+  // Initialize vector
+  la::PETScVector x(comm);
+  if (use_partition_from_file)
   {
-    // Initialize vector
-    if (use_partition_from_file)
+    // Get partition from file
+    std::vector<std::size_t> partitions
+        = HDF5Interface::get_attribute<std::vector<std::size_t>>(
+            _hdf5_file_id, dataset_name, "partition");
+
+    // Check that number of MPI processes matches partitioning
+    if (_mpi_comm.size() != partitions.size())
     {
-      // Get partition from file
-      std::vector<std::size_t> partitions
-          = HDF5Interface::get_attribute<std::vector<std::size_t>>(
-              _hdf5_file_id, dataset_name, "partition");
-
-      // Check that number of MPI processes matches partitioning
-      if (_mpi_comm.size() != partitions.size())
-      {
-        log::dolfin_error(
-            "HDF5File.cpp", "read vector from file",
-            "Different number of processes used when writing. Cannot "
-            "restore partitioning");
-      }
-
-      // Add global size at end of partition vectors
-      partitions.push_back(data_shape[0]);
-
-      // Initialise vector
-      const std::size_t process_num = _mpi_comm.rank();
-      x.init({{(std::int64_t)partitions[process_num],
-               (std::int64_t)partitions[process_num + 1]}});
+      log::dolfin_error(
+          "HDF5File.cpp", "read vector from file",
+          "Different number of processes used when writing. Cannot "
+          "restore partitioning");
     }
-    else
-      x.init(data_shape[0]);
+
+    // Add global size at end of partition vectors
+    partitions.push_back(data_shape[0]);
+
+    // Initialise vector
+    const std::size_t process_num = _mpi_comm.rank();
+    x.init({{(std::int64_t)partitions[process_num],
+             (std::int64_t)partitions[process_num + 1]}});
   }
-  else if ((std::int64_t)x.size() != data_shape[0])
-  {
-    log::dolfin_error("HDF5File.cpp", "read vector from file",
-                      "Size mis-match between vector in file and input vector");
-  }
+  else
+    x.init(data_shape[0]);
 
   // Get local range
   const std::array<std::int64_t, 2> local_range = x.local_range();
@@ -234,6 +227,8 @@ void HDF5File::read(la::PETScVector& x, const std::string dataset_name,
   // Set data
   x.set_local(data);
   x.apply();
+
+  return x;
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const mesh::Mesh& mesh, const std::string name)
