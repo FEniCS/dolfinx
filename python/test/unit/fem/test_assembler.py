@@ -128,8 +128,6 @@ def test_matrix_assembly_block():
 
     # Define Dirichlet boundary (x = 0 or x = 1)
     def boundary(x):
-        #tmp = numpy.logical_or(x[:, 0] < 1.0e-6,  x[:, 0] > 1.0 - 1.0e-6)
-        #tmp = x[:, 0] < 1.0e6
         return numpy.logical_or(x[:, 0] < 1.0e-6,  x[:, 0] > 1.0 - 1.0e-6)
 
     u_bc = dolfin.function.constant.Constant(2.0)
@@ -145,11 +143,11 @@ def test_matrix_assembly_block():
 
     # Monolithic blocked
 
-    # A, b = assembler.assemble(
-    #    mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    # A.mat().view()
-    # b.vec().view()
-    # return
+    A, b = assembler.assemble(
+       mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
+    A.mat().view()
+    b.vec().view()
+    return
 
     print("--------------------")
 
@@ -161,6 +159,7 @@ def test_matrix_assembly_block():
     # b.vec().view()
 
     return
+
     IS = A.mat().getNestISs()
 
     try:

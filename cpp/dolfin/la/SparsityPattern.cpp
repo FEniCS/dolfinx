@@ -132,6 +132,8 @@ SparsityPattern::SparsityPattern(
     row_local_offset += row_size;
   }
 
+  // FIXME: Need to add unowned entries
+
   // Intialise common::IndexMaps for merged pattern
   auto p00 = patterns[0][0];
   assert(p00);
@@ -511,10 +513,11 @@ void SparsityPattern::apply()
       // Sanity check
       if (I < local_range0[0] or I >= (la_index_t)(bs0 * local_range0[1]))
       {
-        log::dolfin_error("SparsityPattern.cpp", "apply changes to sparsity pattern",
-                     "Received illegal sparsity pattern entry for row/column "
-                     "%d, not in range [%d, %d]",
-                     I, local_range0[0], local_range0[1]);
+        log::dolfin_error(
+            "SparsityPattern.cpp", "apply changes to sparsity pattern",
+            "Received illegal sparsity pattern entry for row/column "
+            "%d, not in range [%d, %d]",
+            I, local_range0[0], local_range0[1]);
       }
 
       // Get local I index

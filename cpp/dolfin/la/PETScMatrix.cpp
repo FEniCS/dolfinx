@@ -4,11 +4,11 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "utils.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "SparsityPattern.h"
 #include "VectorSpaceBasis.h"
+#include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
@@ -160,6 +160,7 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
   //   _map1[i] = index_maps[1]->local_to_global(i);
 
   // std::cout << "Prep IS (0)" << std::endl;
+  MPI::barrier(MPI_COMM_WORLD);
   for (std::size_t i = 0;
        i < index_maps[0]->size(common::IndexMap::MapSize::ALL); ++i)
   {
@@ -168,8 +169,18 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
     for (std::size_t j = 0; j < bs; ++j)
     {
       _map0[i * bs + j] = bs * index + j;
+      if (MPI::rank(MPI_COMM_WORLD) == 0)
+      {
+        std::cout << "l2g: " << _map0[i * bs + j] << ", "
+                  << index_maps[0]->size(common::IndexMap::MapSize::ALL) << ", "
+                  << index_maps[0]->size(common::IndexMap::MapSize::OWNED)
+                  << ", "
+                  << index_maps[0]->size(common::IndexMap::MapSize::UNOWNED)
+                  << std::endl;
+      }
     }
   }
+  MPI::barrier(MPI_COMM_WORLD);
 
   // std::cout << "Prep IS (1)" << std::endl;
   for (std::size_t i = 0;
@@ -370,7 +381,7 @@ void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index_t* rows,
   dolfin_assert(_matA);
   PetscErrorCode ierr;
   std::cout << "Testing m: " << m << std::endl;
-  std::cout << "Testing r: " <<rows[0] << std::endl;
+  std::cout << "Testing r: " << rows[0] << std::endl;
   ierr = MatZeroRowsLocal(_matA, m, rows, diag, NULL, NULL);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatZeroRowsLocal");

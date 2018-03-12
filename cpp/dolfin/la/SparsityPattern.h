@@ -139,6 +139,10 @@ public:
   /// Require ghosts
   // Ghosts is_ghosted() const { return _ghosted; }
 
+  // common::IndexMaps for each dimension
+  std::vector<std::vector<std::shared_ptr<const common::IndexMap>>>
+      index_maps_test;
+
 private:
   // Other insertion methods will call this method providing the
   // appropriate mapping of the indices in the entries.

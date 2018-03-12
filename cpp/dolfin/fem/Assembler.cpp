@@ -77,15 +77,14 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
     {
       fem::init_nest(A, forms);
 
-      //A.apply(la::PETScMatrix::AssemblyType::FINAL);
-      //IS isr[2], isc[2];
-      //MatNestGetLocalISs(A.mat(), isr, isc);
-      
-      //MPI::barrier(MPI_COMM_WORLD);
-      //ISView(isr[0], PETSC_VIEWER_STDOUT_WORLD);
-      //MPI::barrier(MPI_COMM_WORLD);
-      //ISView(isc[0], PETSC_VIEWER_STDOUT_WORLD);
+      // A.apply(la::PETScMatrix::AssemblyType::FINAL);
+      // IS isr[2], isc[2];
+      // MatNestGetLocalISs(A.mat(), isr, isc);
 
+      // MPI::barrier(MPI_COMM_WORLD);
+      // ISView(isr[0], PETSC_VIEWER_STDOUT_WORLD);
+      // MPI::barrier(MPI_COMM_WORLD);
+      // ISView(isc[0], PETSC_VIEWER_STDOUT_WORLD);
     }
     else if (block_matrix and block_type == BlockType::monolithic)
       fem::init_monolithic(A, forms);
@@ -98,29 +97,24 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   // Get matrix type
   MatType mat_type;
   MatGetType(A.mat(), &mat_type);
-  const bool is_matnest = strcmp(mat_type, MATNEST) == 0 ? true : false;
-  //const bool is_matnest = false;
+  // const bool is_matnest = strcmp(mat_type, MATNEST) == 0 ? true : false;
+  const bool is_matnest = false;
 
   // Assemble matrix
 
   if (is_matnest)
   {
-    std::cout << "Nested assembly" << std::endl;
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
       for (std::size_t j = 0; j < _a[i].size(); ++j)
       {
         // Get submatrix
         Mat subA;
-        std::cout << "Get submat (nest): " << i << ", " << j << std::endl;
         MatNestGetSubMat(A.mat(), i, j, &subA);
-        std::cout << "End get submat (nest): " << i << ", " << j << std::endl;
         if (_a[i][j])
         {
           la::PETScMatrix mat(subA);
           this->assemble(mat, *_a[i][j], _bcs);
-
-          //std::cout << "!!!!Post nest assemble" << std::endl;
         }
         else
         {
@@ -129,81 +123,93 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
         }
       }
     }
-    
-    //A.apply(la::PETScMatrix::AssemblyType::FINAL);
-    IS isr[2], isc[2];
-    MatNestGetLocalISs(A.mat(), isr, isc);
-    MPI::barrier(MPI_COMM_WORLD);
-    std::cout << "1. Index set extracted from nested matrix" << std::endl;
-
-    //MPI_Comm test_comm = MPI_COMM_NULL;
-    //PetscObjectGetComm((PetscObject)(isr[0]), &test_comm);
-    //std::cout << "1b. comm size: " << MPI::size(test_comm)  << std::endl;
-    
-    MPI::barrier(MPI_COMM_WORLD);
-    ISView(isr[0], PETSC_VIEWER_STDOUT_SELF);
-    //ISView(isc[0], PETSC_VIEWER_STDOUT_WORLD);
-    MPI::barrier(MPI_COMM_WORLD);
-
-    //Mat testA;
-    //MatGetLocalSubMatrix(A.mat(), isr[0], isc[0], &testA);
-    //MatRestoreLocalSubMatrix(A.mat(), isr[0], isc[0], &testA);
-    std::cout << "End test local mat" << std::endl;
-  //}Index set extracted from nested matrix
-  //else if (block_matrix or is_matnest)
-  //{
-    // std::cout << "Assembling block matrix (non-nested)" << std::endl;
+  }
+  else if (block_matrix)
+  {
+    std::cout << "Assembling block matrix (non-nested)" << std::endl;
     std::int64_t offset_row = 0;
+    std::int64_t offset_row_unowned = 0;
+
+    std::size_t row_range = 0;
+    for (std::size_t i = 0; i < _a.size(); ++i)
+    {
+      auto map0 = _a[i][0]->function_space(0)->dofmap()->index_map();
+      auto map0_size = map0->size(common::IndexMap::MapSize::OWNED);
+      row_range += map0_size;
+    }
+
+    std::size_t col_range = 0;
+    for (std::size_t j = 0; j < _a[0].size(); ++j)
+    {
+      auto map1 = _a[0][j]->function_space(1)->dofmap()->index_map();
+      auto map1_size = map1->size(common::IndexMap::MapSize::OWNED);
+      col_range += map1_size;
+    }
+
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
       // Loop over columns
       std::int64_t offset_col = 0;
+      std::int64_t offset_col_unowned = 0;
       for (std::size_t j = 0; j < _a[i].size(); ++j)
       {
         if (_a[i][j])
         {
           auto map0 = _a[i][j]->function_space(0)->dofmap()->index_map();
           auto map1 = _a[i][j]->function_space(1)->dofmap()->index_map();
-          auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
-          auto map1_size = map1->size(common::IndexMap::MapSize::ALL);
+          // auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
+          // auto map1_size = map1->size(common::IndexMap::MapSize::ALL);
+          auto map0_size = map0->size(common::IndexMap::MapSize::OWNED);
+          auto map1_size = map1->size(common::IndexMap::MapSize::OWNED);
 
-          if ( i == 0 and j == 0)
-            std::cout << "**** map size: " << map0_size << std::endl;
+          auto map0_size_unowned
+              = map0->size(common::IndexMap::MapSize::UNOWNED);
+          auto map1_size_unowned
+              = map1->size(common::IndexMap::MapSize::UNOWNED);
 
-          std::vector<PetscInt> index0(map0_size);
-          std::vector<PetscInt> index1(map1_size);
+          // if (i == 0 and j == 0)
+          //  std::cout << "**** map size: " << map0_size << std::endl;
+
+          std::vector<PetscInt> index0(map0_size + map0_size_unowned);
+          std::vector<PetscInt> index1(map1_size + map1_size_unowned);
           std::iota(index0.begin(), index0.end(), offset_row);
           std::iota(index1.begin(), index1.end(), offset_col);
 
-          // std::cout << "Block: " << i << ", " << j << std::endl;
-          // std::cout << "***** start index and size 0: " << offset_row << ", "
-          //           << offset_row + index0.size() << std::endl;
-          // std::cout << "***** start index and size 1: " << offset_col << ", "
-          //           << offset_col + index1.size() << std::endl;
+          for (std::size_t e = 0; e < map0_size_unowned; ++e)
+          {
+            std::cout << "Row range: " << row_range << std::endl;
+            index0[e + map0_size] = row_range + offset_row_unowned + e;
+          }
+          for (std::size_t e = 0; e < map1_size_unowned; ++e)
+            index1[e + map1_size] = col_range + offset_col_unowned + e;
 
+          if (MPI::rank(MPI_COMM_WORLD) == 0)
+          {
+            for (auto v : index0)
+              std::cout << "Row range: " << v << ", " << row_range << std::endl;
+          }
+
+          // Create local ISs
           IS is0, is1;
-          //ISCreateBlock(A.mpi_comm(), map0->block_size(), index0.size(),
-          //              index0.data(), PETSC_COPY_VALUES, &is0);
-          //ISCreateBlock(A.mpi_comm(), map1->block_size(), index1.size(),
-          //              index1.data(), PETSC_COPY_VALUES, &is1);
-          ISCreateGeneral(MPI_COMM_SELF, index0.size(),
+          ISCreateBlock(MPI_COMM_SELF, map0->block_size(), index0.size(),
                         index0.data(), PETSC_COPY_VALUES, &is0);
-          ISCreateGeneral(MPI_COMM_SELF, index1.size(),
+          ISCreateBlock(MPI_COMM_SELF, map1->block_size(), index1.size(),
                         index1.data(), PETSC_COPY_VALUES, &is1);
 
-          MPI::barrier(MPI_COMM_WORLD);
-          ISView(is0, PETSC_VIEWER_STDOUT_SELF);
-          //ISView(is1, PETSC_VIEWER_STDOUT_WORLD);
-          MPI::barrier(MPI_COMM_WORLD);
-
           Mat subA;
+          MPI::barrier(MPI_COMM_WORLD);
           std::cout << "Get submat (non-nest): " << i << ", " << j << std::endl;
+          MPI::barrier(MPI_COMM_WORLD);
           MatGetLocalSubMatrix(A.mat(), is0, is1, &subA);
+          MPI::barrier(MPI_COMM_WORLD);
           std::cout << "End Get submat (non-nest): " << i << ", " << j
                     << std::endl;
+          MPI::barrier(MPI_COMM_WORLD);
 
+          MPI::barrier(MPI_COMM_WORLD);
           la::PETScMatrix mat(subA);
           this->assemble(mat, *_a[i][j], _bcs);
+          MPI::barrier(MPI_COMM_WORLD);
 
           MatRestoreLocalSubMatrix(A.mat(), is0, is1, &subA);
           ISDestroy(&is0);
@@ -211,11 +217,15 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           std::cout << "Cleanup IS" << std::endl;
 
           offset_col += map1_size;
+          offset_col_unowned += map1_size_unowned;
         }
       }
       auto map0 = _a[i][0]->function_space(0)->dofmap()->index_map();
-      auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
+      // auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
+      auto map0_size = map0->size(common::IndexMap::MapSize::OWNED);
+      auto map0_size_unowned = map0->size(common::IndexMap::MapSize::UNOWNED);
       offset_row += map0_size;
+      offset_row_unowned += map0_size_unowned;
     }
   }
   else
