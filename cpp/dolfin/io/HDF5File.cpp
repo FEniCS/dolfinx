@@ -258,10 +258,7 @@ void HDF5File::write(const mesh::Mesh& mesh, std::size_t cell_dim,
 
   mesh::CellType::Type cell_type = mesh.type().entity_type(cell_dim);
   std::unique_ptr<mesh::CellType> celltype(mesh::CellType::create(cell_type));
-  std::size_t num_cell_points = 0;
-  for (std::size_t i = 0; i <= cell_dim; ++i)
-    num_cell_points += mesh.geometry().num_entity_coordinates(i)
-                       * celltype->num_entities(i);
+  std::size_t num_cell_points = celltype->num_entities(0);
 
   // ---------- Vertices (coordinates)
   {
@@ -301,39 +298,11 @@ void HDF5File::write(const mesh::Mesh& mesh, std::size_t cell_dim,
       // process.
       if (mesh.geometry().degree() > 1)
       {
-        const mesh::MeshGeometry& geom = mesh.geometry();
-
-        // Only cope with quadratic for now
-        dolfin_assert(geom.degree() == 2);
-        // FIXME: make it work in parallel
-        dolfin_assert(!mpi_io);
-
-        std::vector<std::size_t> edge_mapping;
-        if (tdim == 1)
-          edge_mapping = {0};
-        else if (tdim == 2)
-          edge_mapping = {2, 0, 1};
-        else
-          edge_mapping = {5, 2, 4, 3, 1, 0};
-
-        for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
-        {
-          // Add indices for vertices and edges
-          for (unsigned int dim = 0; dim != 2; ++dim)
-          {
-            for (unsigned int i = 0; i != celltype->num_entities(dim); ++i)
-            {
-              std::size_t im = (dim == 0) ? i : edge_mapping[i];
-              const std::size_t entity_index
-                  = (dim == tdim) ? c.index() : c.entities(dim)[im];
-              const std::size_t local_idx
-                  = geom.get_entity_index(dim, 0, entity_index);
-              topological_data.push_back(local_idx);
-            }
-          }
-        }
+        log::dolfin_error("HDF5File.cpp", "write mesh",
+                          "Unsupported geometry degree");
       }
-      else if (cell_dim == 0)
+
+      if (cell_dim == 0)
       {
         for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
           topological_data.push_back(v.global_index());
@@ -1928,6 +1897,6 @@ bool HDF5File::get_mpi_atomicity() const
   dolfin_assert(_hdf5_file_id > 0);
   return HDF5Interface::get_mpi_atomicity(_hdf5_file_id);
 }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 
 #endif

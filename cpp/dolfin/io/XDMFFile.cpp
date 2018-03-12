@@ -120,8 +120,9 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   check_encoding(encoding);
   check_function_name(function_name);
 
-  log::log(PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
-                     "time step %f.",
+  log::log(PROGRESS,
+           "Writing function \"%s\" to XDMF file \"%s\" with "
+           "time step %f.",
            function_name.c_str(), _filename.c_str(), time_step);
 
   // If XML file exists load it to member _xml_doc
@@ -1389,8 +1390,9 @@ void XDMFFile::read_checkpoint(function::Function& u, std::string func_name,
 {
   check_function_name(func_name);
 
-  log::log(PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
-                     "counter %i.",
+  log::log(PROGRESS,
+           "Reading function \"%s\" from XDMF file \"%s\" with "
+           "counter %i.",
            func_name.c_str(), _filename.c_str(), counter);
 
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
@@ -1619,7 +1621,8 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   if (degree == 1)
     topology_data = compute_topology_data<T>(mesh, cell_dim);
   else
-    topology_data = compute_quadratic_topology<T>(mesh);
+    log::dolfin_error("XDMFFile.cpp", "compute topology",
+                      "Unsupported geometry degree");
 
   // Add topology DataItem node
   const std::string group_name = path_prefix + "/" + mesh.name();
@@ -1870,51 +1873,6 @@ std::vector<T> XDMFFile::compute_topology_data(const mesh::Mesh& mesh,
     }
   }
 
-  return topology_data;
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-std::vector<T> XDMFFile::compute_quadratic_topology(const mesh::Mesh& mesh)
-{
-  const mesh::MeshGeometry& geom = mesh.geometry();
-
-  if (geom.degree() != 2 or MPI::size(mesh.mpi_comm()) != 1)
-  {
-    log::dolfin_error("XDMFFile.cpp", "create topology data",
-                      "XDMF quadratic mesh only supported in serial");
-  }
-
-  const std::size_t tdim = mesh.topology().dim();
-  std::vector<std::size_t> edge_mapping;
-  if (tdim == 1)
-    edge_mapping = {0};
-  else if (tdim == 2)
-    edge_mapping = {2, 0, 1};
-  else
-    edge_mapping = {5, 2, 4, 3, 1, 0};
-
-  // Get number of points per cell
-  const mesh::CellType& celltype = mesh.type();
-  std::size_t npoint = celltype.num_entities(0) + celltype.num_entities(1);
-  std::vector<T> topology_data;
-  topology_data.reserve(npoint * mesh.num_entities(tdim));
-
-  for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
-  {
-    // Add indices for vertices and edges
-    for (std::uint32_t dim = 0; dim != 2; ++dim)
-    {
-      for (std::uint32_t i = 0; i != celltype.num_entities(dim); ++i)
-      {
-        std::size_t im = (dim == 0) ? i : edge_mapping[i];
-        const std::size_t entity_index
-            = (dim == tdim) ? c.index() : c.entities(dim)[im];
-        const std::size_t local_idx
-            = geom.get_entity_index(dim, 0, entity_index);
-        topology_data.push_back(local_idx);
-      }
-    }
-  }
   return topology_data;
 }
 //-----------------------------------------------------------------------------

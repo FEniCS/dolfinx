@@ -260,27 +260,6 @@ public:
         for (std::size_t j = 0; j < gdim; ++j)
           coordinates[i * gdim + j] = geom.x(vertices[i])[j];
     }
-    else if (geom_degree == 2)
-    {
-      const std::size_t tdim = _mesh->topology().dim();
-      const std::size_t num_edges = this->num_entities(1);
-      const std::int32_t* edges = this->entities(1);
-
-      coordinates.resize((num_vertices + num_edges) * gdim);
-
-      for (std::size_t i = 0; i < num_vertices; ++i)
-        for (std::size_t j = 0; j < gdim; j++)
-          coordinates[i * gdim + j] = geom.x(vertices[i])[j];
-
-      for (std::size_t i = 0; i < num_edges; ++i)
-      {
-        const std::size_t entity_index = (tdim == 1) ? index() : edges[i];
-        const std::size_t point_index
-            = geom.get_entity_index(1, 0, entity_index);
-        for (std::size_t j = 0; j < gdim; ++j)
-          coordinates[(i + num_vertices) * gdim + j] = geom.x(point_index)[j];
-      }
-    }
     else
     {
       log::dolfin_error("Cell.h", "get coordinate_dofs",
