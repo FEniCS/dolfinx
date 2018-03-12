@@ -25,6 +25,7 @@ from dolfin import *
 from dolfin_utils.test import (skip_if_not_HDF5, fixture, tempdir,
                                xfail_with_serial_hdf5_in_parallel)
 from dolfin.la import PETScVector
+import dolfin.io as io
 
 
 @skip_if_not_HDF5
@@ -200,7 +201,7 @@ def test_save_and_read_function(tempdir):
 
     # Read back from file
     hdf5_file = HDF5File(mesh.mpi_comm(), filename, "r")
-    hdf5_file.read(F1, "/function")
+    F1 = hdf5_file.read_function(Q, "/function")
     result = F0.vector() - F1.vector()
     assert len(result.get_local().nonzero()[0]) == 0
     hdf5_file.close()

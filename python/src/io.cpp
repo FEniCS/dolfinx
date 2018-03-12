@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/io/HDF5File.h>
 #include <dolfin/io/VTKFile.h>
@@ -38,7 +39,7 @@ void io(py::module &m) {
 
   // dolfin::io::HDF5File
   py::class_<dolfin::io::HDF5File, std::shared_ptr<dolfin::io::HDF5File>,
-             dolfin::common::Variable>(m, py::dynamic_attr(), "HDF5File")
+             dolfin::common::Variable>(m, "HDF5File", py::dynamic_attr())
       .def(py::init([](const MPICommWrapper comm, const std::string filename,
                        const std::string file_mode) {
              return std::make_unique<dolfin::io::HDF5File>(comm.get(), filename,
@@ -99,13 +100,11 @@ void io(py::module &m) {
                                            std::string, bool) const) &
                dolfin::io::HDF5File::read,
            py::arg("vector"), py::arg("name"), py::arg("use_partitioning"))
-      /*
-      .def("read",
-           (dolfin::function::Function(dolfin::io::HDF5File::*)(
-               std::shared_ptr<const dolfin::function::FunctionSpace>,
-               const std::string)) &
-               dolfin::io::HDF5File::read,
+      .def("read", py::overload_cast<
+                       std::shared_ptr<const dolfin::function::FunctionSpace>,
+                       const std::string>(&dolfin::io::HDF5File::read),
            py::arg("V"), py::arg("name"))
+      /*
       .def("read",
            [](dolfin::io::HDF5File &self, py::object u, std::string name) {
              try {
@@ -119,9 +118,10 @@ void io(py::module &m) {
            py::arg("u"), py::arg("name"))
      */
       // write
-      .def("write", (void (dolfin::io::HDF5File::*)(const dolfin::mesh::Mesh &,
-                                                    std::string)) &
-                        dolfin::io::HDF5File::write)
+      .def("write",
+           (void (dolfin::io::HDF5File::*)(const dolfin::mesh::Mesh &,
+                                           std::string)) &
+               dolfin::io::HDF5File::write)
       .def("write",
            (void (dolfin::io::HDF5File::*)(
                const dolfin::mesh::MeshValueCollection<bool> &, std::string)) &

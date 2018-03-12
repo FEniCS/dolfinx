@@ -6,16 +6,17 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import dolfin.cpp as cpp
-import . function.function
+import dolfin.function.function
 
 # Functions to extend cpp.io.HDF5File with
+
 
 def read_function(self, V, name):
     # Read cpp function
     u_cpp = self.read(V._cpp_object, name)
-    return function.function.Function(c_cpp)
+    return dolfin.function.function.Function(u_cpp)
+
 
 cpp.io.HDF5File.read_function = read_function
 
 del read_function
-
