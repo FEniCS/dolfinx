@@ -11,6 +11,11 @@
 
 namespace dolfin
 {
+namespace common
+{
+class IndexMap;
+}
+
 namespace la
 {
 class PETScMatrix;
@@ -85,5 +90,9 @@ dof_to_vertex_map(const function::FunctionSpace& space);
 ///         The vertex to dof map
 std::vector<dolfin::la_index_t>
 vertex_to_dof_map(const function::FunctionSpace& space);
+
+/// Get new global index in 'spliced' indices
+std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
+                             const unsigned int field, const unsigned int n);
 }
 }

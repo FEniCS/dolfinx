@@ -93,10 +93,12 @@ private:
   // excessive)
   unsigned int _rank;
 
+public:
   // FIXME: This could get big for large process counts
   // Range of ownership of index for all processes
   std::vector<std::size_t> _all_ranges;
 
+private:
   // Local to global map for off-process entries
   std::vector<std::size_t> _local_to_global;
 

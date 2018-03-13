@@ -145,46 +145,47 @@ def test_matrix_assembly_block():
 
     A, b = assembler.assemble(
        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    A.mat().view()
-    b.vec().view()
-    return
+    # A.mat().view()
+    # b.vec().view()
+    norm = A.mat().norm()
+    if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
+        print("Norm (block, non-nest)", norm)
 
+    dolfin.MPI.barrier(mesh.mpi_comm())
     print("--------------------")
+    dolfin.MPI.barrier(mesh.mpi_comm())
 
     # Nested
 
+    dolfin.MPI.barrier(mesh.mpi_comm())
     A, b = assembler.assemble(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.nested)
+    dolfin.MPI.barrier(mesh.mpi_comm())
+
     # A.mat().view()
     # b.vec().view()
 
-    return
+    # try:
+    #     IS = A.mat().getNestISs()
+    #     print(IS)
+    #     IS[0][0].view()
+    #     IS[1][0].view()
+    #     # IS[1][0].view()
+    #     # IS[1][1].view()
+    #     # print(A.mat().norm())
 
-    IS = A.mat().getNestISs()
-
-    try:
-        IS = A.mat().getNestISs()
-        print(IS)
-        IS[0][0].view()
-        IS[1][0].view()
-        # IS[1][0].view()
-        # IS[1][1].view()
-        # print(A.mat().norm())
-
-        print("*** get sub mat")
-        #A00 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][0])
-        # A00.view()
-        #A01 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][1])
-        print("******")
-        # A01.view()
-        # A10 = A.mat().getLocalSubMatrix(IS[0][1], IS[1][0])
-        # A10.view()
-        # A11 = A.mat().getLocalSubMatrix(IS[0][1], IS[1][1])
-        # A11.view()
-    except AttributeError:
-        print("Recent version of petsc4py required to get MatNest IS.")
-
-    return
+    #     print("*** get sub mat")
+    #     # A00 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][0])
+    #     # A00.view()
+    #     # A01 = A.mat().getLocalSubMatrix(IS[0][0], IS[1][1])
+    #     print("******")
+    #     # A01.view()
+    #     # A10 = A.mat().getLocalSubMatrix(IS[0][1], IS[1][0])
+    #     # A10.view()
+    #     # A11 = A.mat().getLocalSubMatrix(IS[0][1], IS[1][1])
+    #     # A11.view()
+    # except AttributeError:
+    #     print("Recent version of petsc4py required to get MatNest IS.")
 
     # Monolithic version
 
@@ -199,14 +200,23 @@ def test_matrix_assembly_block():
     a = u0*v0*dx + u1*v1*dx + u0*v1*dx + u1*v0*dx
     L = f*v0*ufl.dx + g*v1*dx
 
-    print("--- Monolithic version")
+    dolfin.MPI.barrier(mesh.mpi_comm())
+    print("--- Monolithic version --")
+    dolfin.MPI.barrier(mesh.mpi_comm())
+
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
     assembler1 = dolfin.fem.assembling.Assembler([[a]], [L], [bc])
+
+    dolfin.MPI.barrier(mesh.mpi_comm())
     A, b = assembler1.assemble(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    A.mat().view()
-    b.vec().view()
-    # print(A.mat().norm())
+    dolfin.MPI.barrier(mesh.mpi_comm())
+
+    # A.mat().view()
+    # b.vec().view()
+    norm = A.mat().norm()
+    if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
+        print("Norm (monolithic)", norm)
 
     # Reference assembler
     # A, b = dolfin.fem.assembling.assemble_system(a, L, bc)

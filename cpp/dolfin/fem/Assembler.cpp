@@ -93,43 +93,43 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
       // Local-to-global maps
       std::vector<PetscInt> _map0, _map1;
 
-      // Rows
-      std::size_t row_offset = 0;
+      // Build list of index maps
+      std::vector<const common::IndexMap*> maps0, maps1;
+      for (std::size_t i = 0; i < _a.size(); ++i)
+      {
+        auto map = _a[i][0]->function_space(0)->dofmap()->index_map();
+        maps0.push_back(map.get());
+      }
+      for (std::size_t i = 0; i < _a[0].size(); ++i)
+      {
+        auto map = _a[0][i]->function_space(1)->dofmap()->index_map();
+        maps1.push_back(map.get());
+      }
+
+      // Row local-to-global map
       for (std::size_t i = 0; i < _a.size(); ++i)
       {
         auto map = _a[i][0]->function_space(0)->dofmap()->index_map();
         for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL);
              ++k)
         {
-          std::size_t bs = 1;
-          auto index = map->local_to_global(k);
-          for (std::size_t j = 0; j < bs; ++j)
-          {
-            //_map0[i * bs + j] = bs * index + j;
-            _map0.push_back(bs * index + j + row_offset);
-          }
+          auto index_k = map->local_to_global(k);
+          std::size_t index = get_global_index(maps0, i, index_k);
+          _map0.push_back(index);
         }
-        // row_offset += map->size(common::IndexMap::MapSize::ALL);
-        row_offset += map->size(common::IndexMap::MapSize::OWNED);
       }
 
-      std::size_t col_offset = 0;
+      // Columns local-to-global map
       for (std::size_t i = 0; i < _a[0].size(); ++i)
       {
         auto map = _a[0][i]->function_space(1)->dofmap()->index_map();
         for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL);
              ++k)
         {
-          std::size_t bs = 1;
-          auto index = map->local_to_global(k);
-          for (std::size_t j = 0; j < bs; ++j)
-          {
-            //_map0[i * bs + j] = bs * index + j;
-            _map1.push_back(bs * index + j + col_offset);
-          }
+          auto index_k = map->local_to_global(k);
+          std::size_t index = get_global_index(maps1, i, index_k);
+          _map1.push_back(index);
         }
-        // col_offset += map->size(common::IndexMap::MapSize::ALL);
-        col_offset += map->size(common::IndexMap::MapSize::OWNED);
       }
 
       // Create PETSc local-to-global map/index set
@@ -148,7 +148,10 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
       std::cout << "End init matrix (non-nested block)" << std::endl;
     }
     else
+    {
+      std::cout << "Init monollithic matrix" << std::endl;
       init(A, *_a[0][0]);
+    }
 
     std::cout << "End init matrix" << std::endl;
   }
@@ -217,9 +220,9 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 
     if (MPI::rank(MPI_COMM_WORLD) == 0)
     {
-      std::cout << "IS---------------------" << std::endl;
+      std::cout << "IS0---------------------" << std::endl;
       ISLocalToGlobalMappingView(rmap, PETSC_VIEWER_STDOUT_SELF);
-      std::cout << "IS---------------------" << std::endl;
+      std::cout << "IS0---------------------" << std::endl;
     }
 
     // ISLocalToGlobalMappingView(cmap, PETSC_VIEWER_STDOUT_SELF);
@@ -305,6 +308,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   }
   else
   {
+    std::cout << "Assemble monollithic matrix" << std::endl;
     this->assemble(A, *_a[0][0], _bcs);
   }
 

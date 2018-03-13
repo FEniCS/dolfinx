@@ -392,3 +392,28 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   return return_map;
 }
 //-----------------------------------------------------------------------------
+std::size_t
+dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
+                              const unsigned int field, const unsigned int n)
+{
+  // Get process that owns index
+  int owner = maps[field]->global_block_index_owner(n);
+
+  // Process offset
+  std::size_t offset = 0;
+  for (int p = 0; p < owner; ++p)
+  {
+    for (std::size_t j = 0; j < maps.size(); ++j)
+    {
+      if (j != field)
+        offset += maps[j]->_all_ranges[p + 1];
+    }
+  }
+
+  // Local offset
+  for (unsigned int i = 0; i < field; ++i)
+    offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner]);
+
+  return n + offset;
+}
+//-----------------------------------------------------------------------------
