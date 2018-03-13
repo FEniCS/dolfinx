@@ -201,7 +201,7 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
   mesh::Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
   mesh.order();
 
-  if (dolfin::MPI::size(comm) > 0)
+  if (dolfin::MPI::size(comm) > 1)
     return mesh::MeshPartitioning::build_distributed_mesh(mesh);
   else
     return mesh;
@@ -267,7 +267,7 @@ mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
   mesh::Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
   mesh.order();
 
-  if (dolfin::MPI::size(comm) > 0)
+  if (dolfin::MPI::size(comm) > 1)
     return mesh::MeshPartitioning::build_distributed_mesh(mesh);
   else
     return mesh;

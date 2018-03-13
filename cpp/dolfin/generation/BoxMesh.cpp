@@ -135,7 +135,7 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
   mesh::Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
   mesh.order();
 
-  if (dolfin::MPI::size(comm) > 0)
+  if (dolfin::MPI::size(comm) > 1)
     return mesh::MeshPartitioning::build_distributed_mesh(mesh);
   else
     return mesh;
@@ -211,7 +211,7 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
 
   mesh::Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
 
-  if (dolfin::MPI::size(comm) > 0)
+  if (dolfin::MPI::size(comm) > 1)
     return mesh::MeshPartitioning::build_distributed_mesh(mesh);
   else
     return mesh;
