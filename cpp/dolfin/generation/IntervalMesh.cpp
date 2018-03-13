@@ -25,8 +25,7 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
     EigenRowArrayXXd geom(0, 1);
     EigenRowArrayXXi32 topo(0, 2);
     mesh::Mesh mesh(comm, mesh::CellType::Type::interval, geom, topo);
-    mesh::MeshPartitioning::build_distributed_mesh(mesh);
-    return mesh;
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
   }
 
   const double a = x[0];
@@ -67,7 +66,10 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
     topo.row(ix) << ix, ix + 1;
 
   mesh::Mesh mesh(comm, mesh::CellType::Type::interval, geom, topo);
-  mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  return mesh;
+
+  if (dolfin::MPI::size(comm) > 1)
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+  else
+    return mesh;
 }
 //-----------------------------------------------------------------------------
