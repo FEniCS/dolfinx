@@ -56,14 +56,13 @@ void error(std::string msg, ...);
 
 /// Print error message. Prefer this to the above generic error message.
 ///
-/// *Arguments*
-///     location (std::string)
+/// @param    location (std::string)
 ///         Name of the file from which the error message was generated.
-///     task (std::string)
+/// @param    task (std::string)
 ///         Name of the task that failed.
 ///         Note that this string should begin with lowercase.
 ///         Note that this string should not be punctuated.
-///     reason (std::string)
+/// @param    reason (std::string)
 ///         A format string explaining the reason for the failure.
 ///         Note that this string should begin with uppercase.
 ///         Note that this string should not be punctuated.
@@ -78,12 +77,11 @@ void dolfin_error(std::string location, std::string task, std::string reason,
 
 /// Issue deprecation warning for removed feature
 ///
-/// *Arguments*
-///     feature (std::string)
+/// @param    feature (std::string)
 ///        Name of the feature that has been removed.
-///     version_deprecated (std::string)
+/// @param    version_deprecated (std::string)
 ///        Version number of the release in which the feature is deprecated.
-///     message (std::string)
+/// @param    message (std::string)
 ///        A format string explaining the deprecation.
 void deprecation(std::string feature, std::string version_deprecated,
                  std::string message, ...);

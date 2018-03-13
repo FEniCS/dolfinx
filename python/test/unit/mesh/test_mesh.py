@@ -238,10 +238,9 @@ def test_hash():
 def test_MeshXML2D(cd_tempdir):
     """Write and read 2D mesh to/from file"""
     mesh_out = UnitSquareMesh(MPI.comm_world, 3, 3)
-    mesh_in = Mesh(MPI.comm_world)
     file = XDMFFile(mesh_out.mpi_comm(), "unitsquare.xdmf")
     file.write(mesh_out, XDMFFile.Encoding.ASCII)
-    file.read(mesh_in)
+    mesh_in = file.read_mesh(MPI.comm_world)
     assert mesh_in.num_vertices() == 16
 
 
@@ -249,10 +248,9 @@ def test_MeshXML2D(cd_tempdir):
 def test_MeshXML3D(cd_tempdir):
     """Write and read 3D mesh to/from file"""
     mesh_out = UnitCubeMesh(MPI.comm_world, 3, 3, 3)
-    mesh_in = Mesh(MPI.comm_world)
     file = XDMFFile(mesh_out.mpi_comm(), "unitcube.xdmf")
     file.write(mesh_out, XDMFFile.Encoding.ASCII)
-    file.read(mesh_in)
+    mesh_in = file.read_mesh(MPI.comm_world)
     assert mesh_in.num_vertices() == 64
 
 

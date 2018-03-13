@@ -26,6 +26,8 @@ class GenericFunction;
 namespace fem
 {
 
+/// Storage for the coefficients of a Form consisting
+/// of GenericFunctions and the Elements they are defined on
 class FormCoefficients
 {
 public:

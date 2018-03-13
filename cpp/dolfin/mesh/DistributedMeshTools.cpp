@@ -78,7 +78,8 @@ std::size_t DistributedMeshTools::number_entities(
   // from mesh global numbering, e.g. when computing mesh entity
   // numbering for problems with periodic boundary conditions.
 
-  log::log(PROGRESS,
+  log::log(
+      PROGRESS,
       "Number mesh entities for distributed mesh (for specified vertex ids).",
       d);
   common::Timer timer(
@@ -88,8 +89,9 @@ std::size_t DistributedMeshTools::number_entities(
   // mesh construction)
   if (d == 0)
   {
-    log::dolfin_error("MeshPartitioning.cpp", "number mesh entities",
-                 "Global vertex indices exist at input. Cannot be renumbered");
+    log::dolfin_error(
+        "MeshPartitioning.cpp", "number mesh entities",
+        "Global vertex indices exist at input. Cannot be renumbered");
   }
 
   // Check that we're not re-numbering cells (these are fixed at mesh
@@ -256,7 +258,8 @@ std::size_t DistributedMeshTools::number_entities(
             << " received illegal entity given by ";
         msg << " with global index " << global_index;
         msg << " from process " << p;
-        log::dolfin_error("MeshPartitioning.cpp", "number mesh entities", msg.str());
+        log::dolfin_error("MeshPartitioning.cpp", "number mesh entities",
+                          msg.str());
       }
 
       const std::size_t local_entity_index = recv_entity->second.local_index;
@@ -343,7 +346,7 @@ DistributedMeshTools::locate_off_process_entities(
   if (dim == 0)
   {
     log::warning("DistributedMeshTools::host_processes has not been tested for "
-            "vertices.");
+                 "vertices.");
   }
 
   // Mesh topology dim
@@ -352,23 +355,24 @@ DistributedMeshTools::locate_off_process_entities(
   // Check that entity is a vertex or a cell
   if (dim != 0 && dim != D)
   {
-    log::dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
-                 "This version of DistributedMeshTools::host_processes is only "
-                 "for vertices or cells");
+    log::dolfin_error(
+        "DistributedMeshTools.cpp", "compute off-process indices",
+        "This version of DistributedMeshTools::host_processes is only "
+        "for vertices or cells");
   }
 
   // Check that global numbers have been computed.
   if (!mesh.topology().have_global_indices(dim))
   {
     log::dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
-                 "Global mesh entity numbers have not been computed");
+                      "Global mesh entity numbers have not been computed");
   }
 
   // Check that global numbers have been computed.
   if (!mesh.topology().have_global_indices(D))
   {
     log::dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
-                 "Global mesh entity numbers have not been computed");
+                      "Global mesh entity numbers have not been computed");
   }
 
   // Get global cell entity indices on this process
@@ -480,7 +484,7 @@ DistributedMeshTools::locate_off_process_entities(
   if (number_expected != processes.size())
   {
     log::dolfin_error("DistributedMeshTools.cpp", "compute off-process indices",
-                 "Sanity check failed");
+                      "Sanity check failed");
   }
 
   return processes;

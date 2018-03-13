@@ -428,10 +428,6 @@ mesh::Mesh PlazaRefinementND::compute_refinement(
   if (serial)
     return p_ref.build_local();
   else
-  {
-    mesh::Mesh new_mesh(mesh.mpi_comm());
-    p_ref.partition(new_mesh, redistribute);
-    return new_mesh;
-  }
+    return p_ref.partition(redistribute);
 }
 //-----------------------------------------------------------------------------

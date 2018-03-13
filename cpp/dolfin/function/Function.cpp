@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Function.h"
-#include "Expression.h"
 #include "FunctionSpace.h"
 #include <algorithm>
 #include <dolfin/common/IndexMap.h>
@@ -31,8 +30,7 @@ using namespace dolfin;
 using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
-Function::Function(std::shared_ptr<const FunctionSpace> V)
-    : _function_space(V), _allow_extrapolation(false)
+Function::Function(std::shared_ptr<const FunctionSpace> V) : _function_space(V)
 {
   // Check that we don't have a subspace
   if (!V->component().empty())
@@ -49,7 +47,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V,
                    std::shared_ptr<la::PETScVector> x)
-    : _function_space(V), _vector(x), _allow_extrapolation(false)
+    : _function_space(V), _vector(x)
 {
   // We do not check for a subspace since this constructor is used for
   // creating subfunctions
@@ -59,7 +57,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
   dolfin_assert(V->dofmap()->global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const Function& v) : _allow_extrapolation(false)
+Function::Function(const Function& v)
 {
   // Make a copy of all the data, or if v is a sub-function, then we
   // collapse the dof map and copy only the relevant entries from the
@@ -108,11 +106,6 @@ Function::Function(const Function& v) : _allow_extrapolation(false)
                              new_rows.data());
     this->_vector->apply();
   }
-}
-//-----------------------------------------------------------------------------
-Function::~Function()
-{
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 /*
@@ -174,12 +167,6 @@ const Function& Function::operator= (const Function& v)
 }
 */
 //-----------------------------------------------------------------------------
-const Function& Function::operator=(const Expression& v)
-{
-  interpolate(v);
-  return *this;
-}
-//-----------------------------------------------------------------------------
 Function Function::sub(std::size_t i) const
 {
   // Extract function subspace
@@ -206,8 +193,8 @@ void Function::operator=(const function::FunctionAXPY& axpy)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  std::vector<
-      std::pair<double, std::shared_ptr<const Function>>>::const_iterator it;
+  std::vector<std::pair<double,
+                        std::shared_ptr<const Function>>>::const_iterator it;
   for (it = axpy.pairs().begin() + 1; it != axpy.pairs().end(); it++)
   {
     dolfin_assert(it->second);
@@ -262,15 +249,12 @@ void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
       std::pair<unsigned int, double> close
           = mesh.bounding_box_tree()->compute_closest_entity(point, mesh);
 
-      if (_allow_extrapolation or close.second < DOLFIN_EPS)
+      if (close.second < DOLFIN_EPS)
         id = close.first;
       else
       {
-        log::dolfin_error(
-            "Function.cpp", "evaluate function at point",
-            "The point is not inside the domain. Consider calling "
-            "\"Function::set_allow_extrapolation(true)\" on this "
-            "Function to allow extrapolation");
+        log::dolfin_error("Function.cpp", "evaluate function at point",
+                          "The point is not inside the domain.");
       }
     }
 
@@ -289,9 +273,7 @@ void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
                     const mesh::Cell& dolfin_cell,
                     const ufc::cell& ufc_cell) const
 {
-  // Developer note: work arrays/vectors are re-created each time this
-  //                 function is called for thread-safety
-
+  dolfin_assert(x.rows() == values.rows());
   dolfin_assert(_function_space->element());
   const fem::FiniteElement& element = *_function_space->element();
 
@@ -317,18 +299,16 @@ void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
   // Initialise values
   values.setZero();
 
-  // Compute linear combination
-  std::size_t k = 0;
-  dolfin_assert(values.rows() == 1 and x.rows() == 1);
+  // Compute linear combination for each row of x
+  for (unsigned int k = 0; k < x.rows(); ++k)
+    for (std::size_t i = 0; i < element.space_dimension(); ++i)
+    {
+      element.evaluate_basis(i, basis.data(), x.data() + k * x.cols(),
+                             coordinate_dofs.data(), ufc_cell.orientation);
 
-  for (std::size_t i = 0; i < element.space_dimension(); ++i)
-  {
-    element.evaluate_basis(i, basis.data(), x.data(), coordinate_dofs.data(),
-                           ufc_cell.orientation);
-
-    for (std::size_t j = 0; j < value_size_loc; ++j)
-      values(k, j) += coefficients[i] * basis[j];
-  }
+      for (std::size_t j = 0; j < value_size_loc; ++j)
+        values(k, j) += coefficients[i] * basis[j];
+    }
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(const GenericFunction& v)
@@ -338,13 +318,6 @@ void Function::interpolate(const GenericFunction& v)
 
   // Interpolate
   _function_space->interpolate(*_vector, v);
-}
-//-----------------------------------------------------------------------------
-void Function::extrapolate(const Function& v)
-{
-  dolfin_not_implemented();
-  // Was in "adaptivity"
-  //  Extrapolation::extrapolate(*this, v);
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_rank() const
@@ -436,10 +409,6 @@ EigenRowArrayXXd Function::compute_vertex_values(const mesh::Mesh& mesh) const
                       "Non-matching mesh");
   }
 
-  // Get finite element
-  dolfin_assert(_function_space->element());
-  const fem::FiniteElement& element = *_function_space->element();
-
   // Local data for interpolation on each cell
   const std::size_t num_cell_vertices
       = mesh.type().num_vertices(mesh.topology().dim());
@@ -450,43 +419,27 @@ EigenRowArrayXXd Function::compute_vertex_values(const mesh::Mesh& mesh) const
   // Resize Array for holding vertex values
   EigenRowArrayXXd vertex_values(mesh.num_vertices(), value_size_loc);
 
-  // Create vector to hold cell vertex values
-  std::vector<double> cell_vertex_values(value_size_loc * num_cell_vertices);
-
-  // Create vector for expansion coefficients
-  std::vector<double> coefficients(element.space_dimension());
-
   // Interpolate vertex values on each cell (using last computed value
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
-  std::vector<double> coordinate_dofs;
+  EigenRowMatrixXd x(num_cell_vertices, mesh.geometry().dim());
+  EigenRowMatrixXd values(num_cell_vertices, value_size_loc);
+
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Update to current cell
-    cell.get_coordinate_dofs(coordinate_dofs);
     cell.get_cell_data(ufc_cell);
+    cell.get_coordinate_dofs(x);
 
-    // Pick values from global vector
-    restrict(coefficients.data(), element, cell, coordinate_dofs.data(),
-             ufc_cell);
-
-    // Interpolate values at the vertices
-    element.interpolate_vertex_values(
-        cell_vertex_values.data(), coefficients.data(), coordinate_dofs.data(),
-        ufc_cell.orientation);
+    // Call evaluate function
+    eval(values, x, cell, ufc_cell);
 
     // Copy values to array of vertex values
     std::size_t local_index = 0;
     for (auto& vertex : mesh::EntityRange<mesh::Vertex>(cell))
     {
-      for (std::size_t i = 0; i < value_size_loc; ++i)
-      {
-        // const std::size_t global_index
-        //    = i * mesh.num_vertices() + vertex.index();
-        // vertex_values[global_index] = cell_vertex_values[local_index];
-        vertex_values(vertex.index(), i) = cell_vertex_values[local_index];
-        ++local_index;
-      }
+      vertex_values.row(vertex.index()) = values.row(local_index);
+      ++local_index;
     }
   }
 

@@ -109,14 +109,12 @@ void Expression::restrict(double* w, const fem::FiniteElement& element,
   // this repeats the same evaluation points "gdim" times. Should only
   // do them once, and remove the "mapping" below (which is the identity).
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      eval_points(ndofs, gdim);
+  EigenRowArrayXXd eval_points(ndofs, gdim);
   element.ufc_element()->tabulate_dof_coordinates(eval_points.data(),
                                                   coordinate_dofs);
 
   // Storage for evaluation values
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      eval_values(ndofs, vs);
+  EigenRowArrayXXd eval_values(ndofs, vs);
 
   // Evaluate all points in one call
   eval(eval_values, eval_points, ufc_cell);
@@ -153,8 +151,7 @@ EigenRowArrayXXd Expression::compute_vertex_values(const mesh::Mesh& mesh) const
       eval(local_vertex_values, x);
 
       // Copy to array
-      for (std::size_t i = 0; i < size; i++)
-        vertex_values(vertex.index(), i) = local_vertex_values[i];
+      vertex_values.row(vertex.index()) = local_vertex_values;
     }
   }
 

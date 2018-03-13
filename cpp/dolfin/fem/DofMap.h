@@ -85,8 +85,7 @@ public:
 
   /// True iff dof map is a view into another map
   ///
-  /// *Returns*
-  ///     bool
+  /// @returns bool
   ///         True if the dof map is a sub-dof map (a view into
   ///         another map).
   bool is_view() const { return _is_view; }
@@ -94,8 +93,7 @@ public:
   /// Return the dimension of the global finite element function
   /// space. Use index_map()->size() to get the local dimension.
   ///
-  /// *Returns*
-  ///     std::int64_t
+  /// @returns std::int64_t
   ///         The dimension of the global finite element function space.
   std::int64_t global_dimension() const;
 

@@ -20,10 +20,11 @@ MeshGeometry::MeshGeometry() : _dim(0), _degree(1)
 //-----------------------------------------------------------------------------
 geometry::Point MeshGeometry::point(std::size_t n) const
 {
-  return geometry::Point(_dim, x(n));
+  return geometry::Point(_dim, this->x(n));
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::init(std::size_t dim, std::size_t degree)
+void MeshGeometry::init(std::size_t dim, std::size_t degree,
+                        std::size_t num_points)
 {
   // Check input
   if (dim == 0)
@@ -48,26 +49,9 @@ void MeshGeometry::init(std::size_t dim, std::size_t degree)
   // Save dimension and degree
   _dim = dim;
   _degree = degree;
-}
-//-----------------------------------------------------------------------------
-void MeshGeometry::init_entities(const std::vector<std::size_t>& num_entities)
-{
-  // Check some kind of initialisation has been done
-  dolfin_assert(_dim > 0);
 
-  // Calculate offset into coordinates for each block of points
-  std::size_t offset = 0;
-  entity_offsets.resize(num_entities.size());
-  for (std::size_t i = 0; i != num_entities.size(); ++i)
-  {
-    entity_offsets[i].clear();
-    for (std::size_t j = 0; j != num_entity_coordinates(i); ++j)
-    {
-      entity_offsets[i].push_back(offset);
-      offset += num_entities[i];
-    }
-  }
-  coordinates.resize(_dim * offset);
+  // Resize geometry
+  coordinates.resize(num_points * dim);
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::set(std::size_t local_index, const double* x)

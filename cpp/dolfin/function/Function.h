@@ -36,18 +36,14 @@ class Mesh;
 
 namespace function
 {
-class Expression;
 class FunctionSpace;
 
-/// This class represents a function :math:`u_h` in a finite
-/// element function space :math:`V_h`, given by
+/// This class represents a function \f$ u_h \f$ in a finite
+/// element function space \f$ V_h \f$, given by
 ///
-/// .. math::
-///
-///     u_h = \sum_{i=1}^{n} U_i \phi_i
-///
-/// where :math:`\{\phi_i\}_{i=1}^{n}` is a basis for :math:`V_h`,
-/// and :math:`U` is a vector of expansion coefficients for :math:`u_h`.
+/// \f[     u_h = \sum_{i=1}^{n} U_i \phi_i \f]
+/// where \f$ \{\phi_i\}_{i=1}^{n} \f$ is a basis for \f$ V_h \f$,
+/// and \f$ U \f$ is a vector of expansion coefficients for \f$ u_h \f$.
 
 class Function : public GenericFunction
 {
@@ -56,8 +52,7 @@ public:
 
   /// Create function on given function space
   ///
-  /// *Arguments*
-  ///     V (_FunctionSpace_)
+  /// @param V (_FunctionSpace_)
   ///         The function space.
   explicit Function(std::shared_ptr<const FunctionSpace> V);
 
@@ -65,10 +60,9 @@ public:
   ///
   /// *Warning: This constructor is intended for internal library use only*
   ///
-  /// *Arguments*
-  ///     V (_FunctionSpace_)
+  /// @param V (_FunctionSpace_)
   ///         The function space.
-  ///     x (_GenericVector_)
+  /// @param x (_GenericVector_)
   ///         The vector.
   Function(std::shared_ptr<const FunctionSpace> V,
            std::shared_ptr<la::PETScVector> x);
@@ -79,49 +73,36 @@ public:
   /// FunctionSpace of v and copies the degree-of-freedom vector. If v
   /// is a sub-Function, the new Function is a collapsed version of v.
   ///
-  /// *Arguments*
-  ///     v (_Function_)
+  /// @param v (_Function_)
   ///         The object to be copied.
   Function(const Function& v);
 
   /// Destructor
-  virtual ~Function();
+  virtual ~Function() = default;
 
-  /// Assignment from function
-  ///
-  /// *Arguments*
-  ///     v (_Function_)
-  ///         Another function.
+  // Assignment from function
+  //
+  // @param v (_Function_)
+  //         Another function.
   // const Function& operator= (const Function& v);
-
-  /// Assignment from expression using interpolation
-  ///
-  /// *Arguments*
-  ///     v (_Expression_)
-  ///         The expression.
-  const Function& operator=(const Expression& v);
 
   /// Assignment from linear combination of function
   ///
-  /// *Arguments*
-  ///     v (_FunctionAXPY_)
+  /// @param axpy (_FunctionAXPY_)
   ///         A linear combination of other Functions
   void operator=(const function::FunctionAXPY& axpy);
 
   /// Extract subfunction (view into the Function)
   ///
-  /// *Arguments*
-  ///     i (std::size_t)
+  /// @param i (std::size_t)
   ///         Index of subfunction.
-  /// *Returns*
-  ///     _Function_
+  /// @returns    _Function_
   ///         The subfunction.
   Function sub(std::size_t i) const;
 
   /// Return shared pointer to function space
   ///
-  /// *Returns*
-  ///     _FunctionSpace_
+  /// @returns _FunctionSpace_
   ///         Return the shared pointer.
   virtual std::shared_ptr<const FunctionSpace> function_space() const override
   {
@@ -131,15 +112,13 @@ public:
 
   /// Return vector of expansion coefficients (non-const version)
   ///
-  /// *Returns*
-  ///     _GenericVector_
+  /// @returns  _PETScVector_
   ///         The vector of expansion coefficients.
   std::shared_ptr<la::PETScVector> vector();
 
   /// Return vector of expansion coefficients (const version)
   ///
-  /// *Returns*
-  ///     _GenericVector_
+  /// @returns _PETScVector_
   ///         The vector of expansion coefficients (const).
   std::shared_ptr<const la::PETScVector> vector() const;
 
@@ -154,7 +133,6 @@ public:
 
   /// Evaluate function at given coordinates in given cell
   ///
-  /// *Arguments*
   /// @param    values (Eigen::Ref<Eigen::VectorXd>)
   ///         The values.
   /// @param    x (Eigen::Ref<const Eigen::VectorXd>)
@@ -173,37 +151,26 @@ public:
   ///         The function to be interpolated.
   void interpolate(const GenericFunction& v);
 
-  /// Extrapolate function (from a possibly lower-degree function space)
-  ///
-  /// *Arguments*
-  ///     v (_Function_)
-  ///         The function to be extrapolated.
-  void extrapolate(const Function& v);
-
   //--- Implementation of GenericFunction interface ---
 
   /// Return value rank
   ///
-  /// *Returns*
-  ///     std::size_t
+  /// @returns std::size_t
   ///         The value rank.
   virtual std::size_t value_rank() const override;
 
   /// Return value dimension for given axis
   ///
-  /// *Arguments*
-  ///     i (std::size_t)
+  /// @param    i (std::size_t)
   ///         The index of the axis.
   ///
-  /// *Returns*
-  ///     std::size_t
+  /// @returns    std::size_t
   ///         The value dimension.
   virtual std::size_t value_dimension(std::size_t i) const override;
 
   /// Return value shape
   ///
-  /// *Returns*
-  ///     std::vector<std::size_t>
+  /// @returns std::vector<std::size_t>
   ///         The value shape.
   virtual std::vector<std::size_t> value_shape() const override;
 
@@ -238,33 +205,18 @@ public:
 
   /// Compute values at all mesh vertices
   ///
-  /// @param    vertex_values (Array<double>)
-  ///         The values at all vertices.
   /// @param    mesh (_mesh::Mesh_)
   ///         The mesh.
+  /// @returns  vertex_values (EigenRowArrayXXd)
+  ///         The values at all vertices.
   virtual EigenRowArrayXXd
   compute_vertex_values(const mesh::Mesh& mesh) const override;
 
   /// Compute values at all mesh vertices
   ///
-  /// @param    vertex_values (Array<double>)
+  /// @returns    vertex_values (EigenRowArrayXXd)
   ///         The values at all vertices.
   EigenRowArrayXXd compute_vertex_values() const;
-
-  /// Allow extrapolation when evaluating the Function
-  ///
-  /// @param allow_extrapolation (bool)
-  ///         Whether or not permit extrapolation.
-  void set_allow_extrapolation(bool allow_extrapolation)
-  {
-    _allow_extrapolation = allow_extrapolation;
-  }
-
-  /// Check if extrapolation is permitted when evaluating the Function
-  ///
-  /// @return bool
-  ///         True if extrapolation is permitted, otherwise false
-  bool get_allow_extrapolation() const { return _allow_extrapolation; }
 
 private:
   // Friends
@@ -278,9 +230,6 @@ private:
 
   // The vector of expansion coefficients (local)
   std::shared_ptr<la::PETScVector> _vector;
-
-  // True if extrapolation should be allowed
-  bool _allow_extrapolation;
 };
 }
 }

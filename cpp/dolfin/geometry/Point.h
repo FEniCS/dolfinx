@@ -17,9 +17,9 @@ namespace dolfin
 namespace geometry
 {
 
-/// A Point represents a point in :math:`\mathbb{R}^3` with
-/// coordinates :math:`x, y, z,` or alternatively, a vector in
-/// :math:`\mathbb{R}^3`, supporting standard operations like the
+/// A Point represents a point in \f$ \mathbb{R}^3 \f$ with
+/// coordinates (x, y, z) or alternatively, a vector in
+/// \f$ \mathbb{R}^3 \f$, supporting standard operations like the
 /// norm, distances, scalar and vector products etc.
 
 class Point
@@ -81,8 +81,7 @@ public:
   /// @param    i (std::size_t)
   ///         Direction.
   ///
-  /// *Returns*
-  /// @return    double
+  /// @returns    double
   ///         Address of coordinate in the given direction.
   double& operator[](std::size_t i)
   {
@@ -117,8 +116,7 @@ public:
 
   /// Return copy of coordinate array
   ///
-  /// *Returns*
-  ///     list of double
+  /// @returns std::array<double, 3>
   ///         The coordinates.
   std::array<double, 3> array() const { return _x; }
 
@@ -304,4 +302,3 @@ inline std::ostream& operator<<(std::ostream& stream, const dolfin::geometry::Po
   stream << point.str(false);
   return stream;
 }
-

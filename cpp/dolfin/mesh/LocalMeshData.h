@@ -59,24 +59,26 @@ public:
   /// Holder for geometry data
   struct Geometry
   {
-    // Constructors
+    /// Constructor
     Geometry() : dim(-1), num_global_vertices(-1) {}
+    /// Default copy constructor
     Geometry(const Geometry& g) = default;
+    /// Default move constructor
     Geometry(Geometry&& g) = default;
 
-    // Destructor
+    /// Destructor
     ~Geometry() = default;
 
-    // Geometric dimension
+    /// Geometric dimension
     int dim;
 
-    // Global number of vertices
+    /// Global number of vertices
     std::int64_t num_global_vertices;
 
-    // Coordinates for all vertices stored on local processor
+    /// Coordinates for all vertices stored on local processor
     boost::multi_array<double, 2> vertex_coordinates;
 
-    // Global vertex indices for all vertices stored on local processor
+    /// Global vertex indices for all vertices stored on local processor
     std::vector<std::int64_t> vertex_indices;
   };
 
@@ -86,33 +88,38 @@ public:
   /// Holder for topology data
   struct Topology
   {
-    // Constructor
-    Topology() : dim(-1), num_global_cells(-1) {}
+    /// Constructor
+    Topology() : dim(-1), ordered(false), num_global_cells(-1) {}
+    /// Default copy Constructor
     Topology(const Topology& g) = default;
+    /// Default move Constructor
     Topology(Topology&& g) = default;
 
-    // Destructor
+    /// Destructor
     ~Topology() = default;
 
-    // Topological dimension
+    /// Topological dimension
     int dim;
 
-    // Global number of cells
+    /// Ordered
+    bool ordered;
+
+    /// Global number of cells
     std::int64_t num_global_cells;
 
-    // Number of vertices per cell
+    /// Number of vertices per cell
     int num_vertices_per_cell;
 
-    // Global vertex indices for all cells stored on local processor
+    /// Global vertex indices for all cells stored on local processor
     boost::multi_array<std::int64_t, 2> cell_vertices;
 
-    // Global cell numbers for all cells stored on local processor
+    /// Global cell numbers for all cells stored on local processor
     std::vector<std::int64_t> global_cell_indices;
 
-    // Optional process owner for each cell in global_cell_indices
+    /// Optional process owner for each cell in global_cell_indices
     std::vector<int> cell_partition;
 
-    // Optional weight for each cell for partitioning
+    /// Optional weight for each cell for partitioning
     std::vector<std::size_t> cell_weight;
 
     // FIXME: this should replace the need for num_vertices_per_cell

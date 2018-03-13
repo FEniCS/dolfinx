@@ -48,27 +48,24 @@ double time();
 /// Return a summary of timings and tasks in a _Table_, optionally clearing
 /// stored timings
 ///
-/// *Arguments*
-///     clear (TimingClear)
+/// @param    clear (TimingClear)
 ///         * ``TimingClear::clear`` resets stored timings
 ///         * ``TimingClear::keep`` leaves stored timings intact
-///     type (std::set<TimingType>)
+/// @param    type (std::set<TimingType>)
 ///         subset of ``{ TimingType::wall, TimingType::user,
 ///         TimingType::system }``
 ///
-/// *Returns*
-///     _Table_
+/// @returns    _Table_
 ///         _Table_ with timings
 Table timings(TimingClear clear, std::set<TimingType> type);
 
 /// List a summary of timings and tasks, optionally clearing stored timings.
 /// ``MPI_AVG`` reduction is printed. Collective on ``MPI_COMM_WORLD``.
 ///
-/// *Arguments*
-///     clear (TimingClear)
+/// @param    clear (TimingClear)
 ///         * ``TimingClear::clear`` resets stored timings
 ///         * ``TimingClear::keep`` leaves stored timings intact
-///     type (std::set<TimingType>)
+/// @param    type (std::set<TimingType>)
 ///         subset of ``{ TimingType::wall, TimingType::user,
 ///         TimingType::system }``
 void list_timings(TimingClear clear, std::set<TimingType> type);
@@ -80,11 +77,10 @@ void list_timings(TimingClear clear, std::set<TimingType> type);
 /// stored timings. ``MPI_MAX``, ``MPI_MIN`` and ``MPI_AVG`` reductions are
 /// stored. Collective on ``MPI_COMM_WORLD``.
 ///
-/// *Arguments*
-///     filename (std::string)
+/// @param    filename (std::string)
 ///         output filename; must have ``.xml`` suffix; existing file
 ///         is silently overwritten
-///     clear (TimingClear)
+/// @param    clear (TimingClear)
 ///         * ``TimingClear::clear`` resets stored timings
 ///         * ``TimingClear::keep`` leaves stored timings intact
 void dump_timings_to_xml(std::string filename, TimingClear clear);
@@ -96,15 +92,13 @@ void dump_timings_to_xml(std::string filename, TimingClear clear);
 /// total system time) for given task, optionally clearing
 /// all timings for the task
 ///
-/// *Arguments*
-///     task (std::string)
+/// @param    task (std::string)
 ///         name of a task
-///     clear (TimingClear)
+/// @param    clear (TimingClear)
 ///         * ``TimingClear::clear`` resets stored timings
 ///         * ``TimingClear::keep`` leaves stored timings intact
 ///
-/// *Returns*
-///     std::tuple<std::size_t, double, double, double>
+/// @returns    std::tuple<std::size_t, double, double, double>
 ///         (count, total wall time, total user time, total system time)
 std::tuple<std::size_t, double, double, double> timing(std::string task,
                                                        TimingClear clear);
