@@ -193,8 +193,8 @@ void Function::operator=(const function::FunctionAXPY& axpy)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  std::vector<std::pair<double,
-                        std::shared_ptr<const Function>>>::const_iterator it;
+  std::vector<
+      std::pair<double, std::shared_ptr<const Function>>>::const_iterator it;
   for (it = axpy.pairs().begin() + 1; it != axpy.pairs().end(); it++)
   {
     dolfin_assert(it->second);
@@ -283,7 +283,7 @@ void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
   dolfin_assert((std::size_t)values.cols() == value_size_loc);
 
   // Create work vector for expansion coefficients
-  std::vector<double> coefficients(element.space_dimension());
+  Eigen::RowVectorXd coefficients(element.space_dimension());
 
   // Cell coordinates (re-allocated inside function for thread safety)
   std::vector<double> coordinate_dofs;
@@ -293,22 +293,17 @@ void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
   restrict(coefficients.data(), element, dolfin_cell, coordinate_dofs.data(),
            ufc_cell);
 
-  // Create work vector for basis
-  std::vector<double> basis(value_size_loc);
-
-  // Initialise values
-  values.setZero();
+  // Create work space for basis
+  EigenRowMatrixXd basis(element.space_dimension(), value_size_loc);
 
   // Compute linear combination for each row of x
   for (unsigned int k = 0; k < x.rows(); ++k)
-    for (std::size_t i = 0; i < element.space_dimension(); ++i)
-    {
-      element.evaluate_basis(i, basis.data(), x.data() + k * x.cols(),
-                             coordinate_dofs.data(), ufc_cell.orientation);
+  {
+    element.evaluate_basis_all(basis.data(), x.row(k).data(),
+                               coordinate_dofs.data(), ufc_cell.orientation);
 
-      for (std::size_t j = 0; j < value_size_loc; ++j)
-        values(k, j) += coefficients[i] * basis[j];
-    }
+    values.row(k) = coefficients * basis;
+  }
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(const GenericFunction& v)
