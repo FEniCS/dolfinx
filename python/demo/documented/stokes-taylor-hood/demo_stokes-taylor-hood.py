@@ -6,37 +6,16 @@ src/demo/mesh/subdomains."""
 
 # Copyright (C) 2007 Kristian B. Oelgaard
 #
-# This file is part of DOLFIN.
+# This file is part of DOLFIN (https://www.fenicsproject.org)
 #
-# DOLFIN is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# DOLFIN is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public License
-# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# Modified by Anders Logg, 2008-2009.
-#
-# First added:  2007-11-16
-# Last changed: 2009-11-26
-# Begin demo
+# SPDX-License-Identifier:    LGPL-3.0-or-later
 
-
-import matplotlib.pyplot as plt
 from dolfin import *
 
-
 # Load mesh and subdomains
-mesh = Mesh(MPI.comm_world)
-xdmf = XDMFFile(mesh.mpi_comm(), "../dolfin_fine.xdmf")
-xdmf.read(mesh)
-sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
+xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
+mesh = xdmf.read_mesh(MPI.comm_world)
+sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim() - 1, 0)
 xdmf.read(sub_domains)
 
 # Define function spaces
@@ -76,7 +55,7 @@ solve(a == L, w, bcs)
 print("Norm of velocity coefficient vector: %.15g" % u.vector().norm("l2"))
 print("Norm of pressure coefficient vector: %.15g" % p.vector().norm("l2"))
 
-# # Split the mixed solution using a shallow copy
+# Split the mixed solution
 (u, p) = w.split()
 
 # Save solution in VTK format
@@ -87,11 +66,13 @@ with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
     pfile_xdmf.write(p)
 
 # Plot solution
-#plt.figure()
-#plot(u, title="velocity")
+import matplotlib.pyplot as plt
+from dolfin.plotting import plot
+plt.figure()
+plot(u, title="velocity")
 
-#plt.figure()
-#plot(p, title="pressure")
+plt.figure()
+plot(p, title="pressure")
 
 # Display plots
-#plt.show()
+plt.show()
