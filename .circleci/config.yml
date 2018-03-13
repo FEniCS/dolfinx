@@ -90,6 +90,7 @@ jobs:
             python3 undocumented/elasticity/demo_elasticity.py
             python3 documented/poisson/demo_poisson.py
             cd documented/stokes-taylor-hood
+            export MPLBACKEND="agg"
             python3 demo_stokes-taylor-hood.py
 
       #- run:
