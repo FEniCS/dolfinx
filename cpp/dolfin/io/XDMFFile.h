@@ -304,8 +304,10 @@ public:
 
   /// Read in the first mesh::Mesh in XDMF file
   ///
-  /// @param mesh (_Mesh_)
-  ///        mesh::Mesh to fill from XDMF file
+  /// @param comm (MPI_Comm)
+  ///        MPI Communicator
+  /// @returns mesh::Mesh
+  ///        Mesh
   mesh::Mesh read_mesh(MPI_Comm comm) const;
 
   /// Read a function from the XDMF file. Supplied function must
@@ -317,8 +319,8 @@ public:
   /// the number of function from time-series, e.g. counter=0
   /// refers to first saved function regardless of its time-step value.
   ///
-  /// @param    u (_Function_)
-  ///         A function to read.
+  /// @param    V (std::shared_ptr<function::FunctionSpace>)
+  ///         FunctionSpace
   /// @param    func_name (_string_)
   ///         A name of a function to read. Must be the same on all processes
   ///         in parallel.
@@ -327,9 +329,10 @@ public:
   ///         is -1 which points to last saved function. Counter works same as
   ///         python array position key, i.e. counter = -2 points to the
   ///         function before the last one.
-  ///
+  /// @returns function::Function
+  ///         Function
   function::Function
-  read_checkpoint(std::shared_ptr<const function::FunctionSpace>,
+  read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                   std::string func_name, std::int64_t counter = -1);
 
   /// Read first mesh::MeshFunction from file

@@ -87,12 +87,12 @@ public:
   void new_cells(const std::vector<std::size_t>& idx);
 
   /// Use vertex and topology data to partition new mesh across processes
-  /// @param mesh (mesh::Mesh)
   /// @param redistribute (bool)
+  /// @returns mesh::Mesh
   mesh::Mesh partition(bool redistribute) const;
 
   /// Build local mesh from internal data when not running in parallel
-  /// @returns new_mesh (_mesh::Mesh_)
+  /// @returns mesh::Mesh
   mesh::Mesh build_local() const;
 
 private:
