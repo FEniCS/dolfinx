@@ -71,8 +71,31 @@ SparsityPattern::SparsityPattern(
 
   const bool distributed = MPI::size(comm) > 1;
 
+  std::size_t row_global_offset = 0;
+  std::size_t row_local_size = 0;
+  for (std::size_t row = 0; row < patterns.size(); ++row)
+  {
+    assert(patterns[row][0]);
+    assert(patterns[row][0]->_index_maps[0]);
+    auto local_range = patterns[row][0]->_index_maps[0]->local_range();
+    row_global_offset += local_range[0];
+    row_local_size += (local_range[1] - local_range[0]);
+  }
+
+  std::size_t main_col_global_offset = 0;
+  std::size_t col_local_size = 0;
+  for (std::size_t col = 0; col < patterns[0].size(); ++col)
+  {
+    assert(patterns[0][col]);
+    assert(patterns[0][col]->_index_maps[1]);
+    auto local_range = patterns[0][col]->_index_maps[1]->local_range();
+    main_col_global_offset += local_range[0];
+    col_local_size += (local_range[1] - local_range[0]);
+  }
+
   // Iterate over block rows
-  std::size_t row_local_offset(0), col_global_offset(0);
+  std::size_t row_local_offset = 0;
+  // std::size_t col_global_offset = 0;
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
     // Increase storage for nodes
@@ -87,8 +110,9 @@ SparsityPattern::SparsityPattern(
       assert(row_size == patterns[row][0]->_off_diagonal.size());
       this->_off_diagonal.resize(this->_off_diagonal.size() + row_size);
     }
+
     // Iterate over block columns of current block row
-    col_global_offset = 0;
+    std::size_t col_global_offset = main_col_global_offset;
     for (std::size_t col = 0; col < patterns[row].size(); ++col)
     {
       // Get pattern for this block
@@ -97,8 +121,10 @@ SparsityPattern::SparsityPattern(
 
       // Check that
       if (!p->_non_local.empty())
+      {
         throw std::runtime_error("Sub-sparsity pattern has not been finalised "
                                  "(apply needs to be called)");
+      }
 
       // Iterate over nodes in sparsity pattern
       for (std::size_t k = 0; k < p->_diagonal.size(); ++k)
@@ -125,7 +151,7 @@ SparsityPattern::SparsityPattern(
 
       // Increment global column offset
       col_global_offset
-          += p->_index_maps[1]->size(common::IndexMap::MapSize::GLOBAL);
+          += p->_index_maps[1]->size(common::IndexMap::MapSize::OWNED);
     }
 
     // Increment local row offset
@@ -137,10 +163,10 @@ SparsityPattern::SparsityPattern(
   // Intialise common::IndexMaps for merged pattern
   auto p00 = patterns[0][0];
   assert(p00);
-  _index_maps[0] = std::make_shared<common::IndexMap>(p00->mpi_comm(),
-                                                      row_local_offset, 1);
-  _index_maps[1] = std::make_shared<common::IndexMap>(p00->mpi_comm(),
-                                                      col_global_offset, 1);
+  _index_maps[0]
+      = std::make_shared<common::IndexMap>(p00->mpi_comm(), row_local_size, 1);
+  _index_maps[1]
+      = std::make_shared<common::IndexMap>(p00->mpi_comm(), col_local_size, 1);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
