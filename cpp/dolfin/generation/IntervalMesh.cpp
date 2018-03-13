@@ -67,7 +67,7 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
 
   mesh::Mesh mesh(comm, mesh::CellType::Type::interval, geom, topo);
 
-  if (dolfin::MPI::size(comm) > 0)
+  if (dolfin::MPI::size(comm) > 1)
     return mesh::MeshPartitioning::build_distributed_mesh(mesh);
   else
     return mesh;
