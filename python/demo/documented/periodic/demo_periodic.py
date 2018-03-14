@@ -1,34 +1,8 @@
-# This demo program solves Poisson's equation
-#
-#     - div grad u(x, y) = f(x, y)
-#
-# on the unit square with homogeneous Dirichlet boundary conditions
-# at y = 0, 1 and periodic boundary conditions at x = 0, 1.
-#
-# Original implementation: ../cpp/main.cpp by Anders Logg
-#
 # Copyright (C) 2007 Kristian B. Oelgaard
 #
-# This file is part of DOLFIN.
+# This file is part of DOLFIN (https://www.fenicsproject.org)
 #
-# DOLFIN is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# DOLFIN is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public License
-# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-#
-# Modified by Anders Logg 2011
-#
-# First added:  2007-11-15
-# Last changed: 2012-11-12
-# Begin demo
+# SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import matplotlib.pyplot as plt
 from dolfin import *
