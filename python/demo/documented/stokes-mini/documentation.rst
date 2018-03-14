@@ -9,7 +9,7 @@ This demo is implemented in a single Python file,
 :download:`demo_stokes-mini.py`, which contains both the variational
 form and the solver.
 
-.. include:: ../common.txt
+# .. include:: ../common.txt
 
 Implementation
 --------------

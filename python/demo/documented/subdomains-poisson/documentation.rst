@@ -12,7 +12,7 @@ yourself with the :ref:`Poisson demo
 <demo_pde_poisson_python_documentation>` before studying this example,
 as some of the more standard steps will be described in less detail.
 
-.. include:: ../common.txt
+# .. include:: ../common.txt
 
 Implementation
 --------------
