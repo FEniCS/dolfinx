@@ -10,13 +10,13 @@
 #include "Mesh.h"
 #include "MeshConnectivity.h"
 #include "MeshEntity.h"
+#include <boost/container/vector.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 #include <map>
 #include <memory>
 #include <unordered_set>
-#include <vector>
 
 namespace dolfin
 {
@@ -35,23 +35,6 @@ template <typename T>
 class MeshFunction : public common::Variable
 {
 public:
-  /// Create empty mesh function
-  MeshFunction();
-
-  /// Create empty mesh function on given mesh
-  ///
-  /// @param mesh (Mesh)
-  ///         The mesh to create mesh function on.
-  explicit MeshFunction(std::shared_ptr<const Mesh> mesh);
-
-  /// Create mesh function of given dimension on given mesh
-  ///
-  /// @param     mesh (Mesh)
-  ///         The mesh to create mesh function on.
-  /// @param     dim (std::size_t)
-  ///         The mesh entity dimension for the mesh function.
-  MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim);
-
   /// Create mesh of given dimension on given mesh and initialize
   /// to a value
   ///
@@ -70,30 +53,33 @@ public:
   ///         The mesh to create mesh function on.
   /// @param value_collection (_MeshValueCollection_)
   ///         The mesh value collection for the mesh function data.
+  /// @param default_value (T)
+  ///         The default value, if unset in value_collection
   MeshFunction(std::shared_ptr<const Mesh> mesh,
-               const MeshValueCollection<T>& value_collection);
+               const MeshValueCollection<T>& value_collection,
+               const T& default_value);
 
   /// Copy constructor
   ///
   /// @param f (_MeshFunction_)
   ///         The object to be copied.
-  MeshFunction(const MeshFunction<T>& f);
+  MeshFunction(const MeshFunction<T>& f) = default;
+
+  /// Move constructor
+  ///
+  /// @param f (_MeshFunction_)
+  ///         The object to be moved.
+  MeshFunction(MeshFunction<T>&& f) = default;
 
   /// Destructor
-  ~MeshFunction() {}
+  ~MeshFunction() = default;
 
   /// Assign mesh function to other mesh function
   /// Assignment operator
   ///
   /// @param f (_MeshFunction_)
   ///         A _MeshFunction_ object to assign to another MeshFunction.
-  MeshFunction<T>& operator=(const MeshFunction<T>& f);
-
-  /// Assignment operator
-  ///
-  /// @param mesh (_MeshValueCollection_)
-  ///         A _MeshValueCollection_ object used to construct a MeshFunction.
-  MeshFunction<T>& operator=(const MeshValueCollection<T>& mesh);
+  MeshFunction<T>& operator=(const MeshFunction<T>& f) = default;
 
   /// Return mesh associated with mesh function
   ///
@@ -106,12 +92,6 @@ public:
   /// @return std::size_t
   ///         The dimension.
   std::size_t dim() const;
-
-  /// Return true if empty
-  ///
-  /// @return bool
-  ///         True if empty.
-  bool empty() const;
 
   /// Return size (number of entities)
   ///
@@ -169,56 +149,7 @@ public:
 
   /// Set all values to given value
   /// @param value (T)
-  const MeshFunction<T>& operator=(const T& value);
-
-  /// Initialize mesh function for given topological dimension
-  ///
-  /// @param dim (std::size_t)
-  ///         The dimension.
-  void init(std::size_t dim);
-
-  /// Initialize mesh function for given topological dimension of
-  /// given size
-  ///
-  /// @param dim (std::size_t)
-  ///         The dimension.
-  /// @param size (std::size_t)
-  ///         The size.
-  void init(std::size_t dim, std::size_t size);
-
-  /// Initialize mesh function for given topological dimension
-  ///
-  /// @param mesh (_Mesh_)
-  ///         The mesh.
-  /// @param dim (std::size_t)
-  ///         The dimension.
-  void init(std::shared_ptr<const Mesh> mesh, std::size_t dim);
-
-  /// Initialize mesh function for given topological dimension of
-  /// given size (shared_ptr version)
-  ///
-  /// @param mesh (_Mesh_)
-  ///         The mesh.
-  /// @param dim (std::size_t)
-  ///         The dimension.
-  /// @param size (std::size_t)
-  ///         The size.
-  void init(std::shared_ptr<const Mesh> mesh, std::size_t dim,
-            std::size_t size);
-
-  /// Set value at given index
-  ///
-  /// @param index (std::size_t)
-  ///         The index.
-  /// @param value (T)
-  ///         The value.
-  void set_value(std::size_t index, const T& value);
-
-  /// Compatibility function for use in SubDomains
-  void set_value(std::size_t index, const T& value, const Mesh& mesh)
-  {
-    set_value(index, value);
-  }
+  MeshFunction<T>& operator=(const T& value);
 
   /// Set values
   ///
@@ -226,19 +157,11 @@ public:
   ///         The values.
   void set_values(const std::vector<T>& values);
 
-  /// Set all values to given value
-  ///
-  /// @param value (T)
-  ///         The value to set all values to.
-  void set_all(const T& value);
-
   /// Get indices where meshfunction is equal to given value
   ///
-  /// *Arguments*
-  ///     value (T)
+  /// @param value (T)
   ///         The value.
-  /// *Returns*
-  ///     std::vector<T>
+  /// @returns std::vector<T>
   ///         The indices.
   std::vector<std::size_t> where_equal(T value);
 
@@ -255,16 +178,13 @@ private:
   // Values at the set of mesh entities. We don't use a
   // std::vector<T> here because it has trouble with bool, which C++
   // specialises.
-  std::unique_ptr<T[]> _values;
+  boost::container::vector<T> _values;
 
   // The mesh
   std::shared_ptr<const Mesh> _mesh;
 
   // Topological dimension
   std::size_t _dim;
-
-  // Number of mesh entities
-  std::size_t _size;
 };
 
 template <>
@@ -276,72 +196,27 @@ std::string MeshFunction<std::size_t>::str(bool verbose) const;
 // Implementation of MeshFunction
 //---------------------------------------------------------------------------
 template <typename T>
-MeshFunction<T>::MeshFunction() : MeshFunction(nullptr)
-{
-  // Do nothing
-}
-//---------------------------------------------------------------------------
-template <typename T>
-MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh)
-    : common::Variable("f", "unnamed MeshFunction"), _mesh(mesh), _dim(0),
-      _size(0)
-{
-  // Do nothing
-}
-//---------------------------------------------------------------------------
-template <typename T>
-MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim)
-    : common::Variable("f", "unnamed MeshFunction"), _mesh(mesh), _dim(0),
-      _size(0)
-{
-  init(dim);
-}
-//---------------------------------------------------------------------------
-template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim,
                               const T& value)
-    : MeshFunction(mesh, dim)
-
+    : _mesh(mesh), _dim(dim)
 {
-  set_all(value);
+  assert(mesh);
+  mesh->init(dim);
+  _values.resize(mesh->num_entities(dim), value);
 }
 //---------------------------------------------------------------------------
 template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
-                              const MeshValueCollection<T>& value_collection)
+                              const MeshValueCollection<T>& value_collection,
+                              const T& default_value)
     : common::Variable("f", "unnamed MeshFunction"), _mesh(mesh),
-      _dim(value_collection.dim()), _size(0)
+      _dim(value_collection.dim())
 {
-  *this = value_collection;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-MeshFunction<T>::MeshFunction(const MeshFunction<T>& f)
-    : common::Variable("f", "unnamed MeshFunction"), _dim(0), _size(0)
-{
-  *this = f;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-MeshFunction<T>& MeshFunction<T>::operator=(const MeshFunction<T>& f)
-{
-  if (_size != f._size)
-    _values.reset(new T[f._size]);
-  _mesh = f._mesh;
-  _dim = f._dim;
-  _size = f._size;
-  std::copy(f._values.get(), f._values.get() + _size, _values.get());
-
-  return *this;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-MeshFunction<T>& MeshFunction<T>::
-operator=(const MeshValueCollection<T>& mesh_value_collection)
-{
-  _dim = mesh_value_collection.dim();
-  init(_dim);
   dolfin_assert(_mesh);
+  _mesh->init(_dim);
+
+  // Initialise values with default
+  _values.resize(_mesh->topology().size(_dim), default_value);
 
   // Get mesh connectivity D --> d
   const std::size_t d = _dim;
@@ -353,20 +228,17 @@ operator=(const MeshValueCollection<T>& mesh_value_collection)
   const MeshConnectivity& connectivity = _mesh->topology()(D, d);
   dolfin_assert(!connectivity.empty());
 
-  // Set MeshFunction with default value
-  set_all(std::numeric_limits<T>::max());
-
   // Iterate over all values
   std::unordered_set<std::size_t> entities_values_set;
   typename std::map<std::pair<std::size_t, std::size_t>, T>::const_iterator it;
   const std::map<std::pair<std::size_t, std::size_t>, T>& values
-      = mesh_value_collection.values();
+      = value_collection.values();
   for (it = values.begin(); it != values.end(); ++it)
   {
     // Get value collection entry data
     const std::size_t cell_index = it->first.first;
     const std::size_t local_entity = it->first.second;
-    const T value = it->second;
+    const T& value = it->second;
 
     std::size_t entity_index = 0;
     if (d != D)
@@ -382,7 +254,7 @@ operator=(const MeshValueCollection<T>& mesh_value_collection)
     }
 
     // Set value for entity
-    dolfin_assert(entity_index < _size);
+    dolfin_assert(entity_index < _values.size());
     _values[entity_index] = value;
 
     // Add entity index to set (used to check that all values are set)
@@ -390,11 +262,11 @@ operator=(const MeshValueCollection<T>& mesh_value_collection)
   }
 
   // Check that all values have been set, if not issue a debug message
-  if (entities_values_set.size() != _size)
+  if (entities_values_set.size() != _values.size())
+  {
     dolfin_debug(
         "Mesh value collection does not contain all values for all entities");
-
-  return *this;
+  }
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -411,150 +283,73 @@ std::size_t MeshFunction<T>::dim() const
 }
 //---------------------------------------------------------------------------
 template <typename T>
-bool MeshFunction<T>::empty() const
-{
-  return _size == 0;
-}
-//---------------------------------------------------------------------------
-template <typename T>
 std::size_t MeshFunction<T>::size() const
 {
-  return _size;
+  return _values.size();
 }
 //---------------------------------------------------------------------------
 template <typename T>
 const T* MeshFunction<T>::values() const
 {
-  return _values.get();
+  return _values.data();
 }
 //---------------------------------------------------------------------------
 template <typename T>
 T* MeshFunction<T>::values()
 {
-  return _values.get();
+  return _values.data();
 }
 //---------------------------------------------------------------------------
 template <typename T>
 T& MeshFunction<T>::operator[](const MeshEntity& entity)
 {
-  dolfin_assert(_values);
   dolfin_assert(&entity.mesh() == _mesh.get());
   dolfin_assert(entity.dim() == _dim);
-  dolfin_assert((std::uint32_t)entity.index() < _size);
+  dolfin_assert((std::uint32_t)entity.index() < _values.size());
   return _values[entity.index()];
 }
 //---------------------------------------------------------------------------
 template <typename T>
 const T& MeshFunction<T>::operator[](const MeshEntity& entity) const
 {
-  dolfin_assert(_values);
   dolfin_assert(&entity.mesh() == _mesh.get());
   dolfin_assert(entity.dim() == _dim);
-  dolfin_assert((std::uint32_t)entity.index() < _size);
+  dolfin_assert((std::uint32_t)entity.index() < _values.size());
   return _values[entity.index()];
 }
 //---------------------------------------------------------------------------
 template <typename T>
 T& MeshFunction<T>::operator[](std::size_t index)
 {
-  dolfin_assert(_values);
-  dolfin_assert(index < _size);
+  dolfin_assert(index < _values.size());
   return _values[index];
 }
 //---------------------------------------------------------------------------
 template <typename T>
 const T& MeshFunction<T>::operator[](std::size_t index) const
 {
-  dolfin_assert(_values);
-  dolfin_assert(index < _size);
+  dolfin_assert(index < _values.size());
   return _values[index];
 }
 //---------------------------------------------------------------------------
 template <typename T>
-const MeshFunction<T>& MeshFunction<T>::operator=(const T& value)
+MeshFunction<T>& MeshFunction<T>::operator=(const T& value)
 {
-  set_all(value);
+  std::fill(_values.begin(), _values.end(), value);
   return *this;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void MeshFunction<T>::init(std::size_t dim)
-{
-  if (!_mesh)
-  {
-    log::dolfin_error("MeshFunction.h", "initialize mesh function",
-                 "Mesh has not been specified for mesh function");
-  }
-  _mesh->init(dim);
-  init(_mesh, dim, _mesh->num_entities(dim));
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void MeshFunction<T>::init(std::size_t dim, std::size_t size)
-{
-  if (!_mesh)
-  {
-    log::dolfin_error("MeshFunction.h", "initialize mesh function",
-                 "Mesh has not been specified for mesh function");
-  }
-  _mesh->init(dim);
-  init(_mesh, dim, size);
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void MeshFunction<T>::init(std::shared_ptr<const Mesh> mesh, std::size_t dim)
-{
-  dolfin_assert(mesh);
-  mesh->init(dim);
-  init(mesh, dim, mesh->num_entities(dim));
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void MeshFunction<T>::init(std::shared_ptr<const Mesh> mesh, std::size_t dim,
-                           std::size_t size)
-{
-  dolfin_assert(mesh);
-
-  // Initialize mesh for entities of given dimension
-  mesh->init(dim);
-  dolfin_assert(mesh->num_entities(dim) == (std::int64_t)size);
-
-  // Initialize data
-  if (_size != size)
-    _values.reset(new T[size]);
-  _mesh = mesh;
-  _dim = dim;
-  _size = size;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void MeshFunction<T>::set_value(std::size_t index, const T& value)
-{
-  dolfin_assert(_values);
-  dolfin_assert(index < _size);
-  _values[index] = value;
 }
 //---------------------------------------------------------------------------
 template <typename T>
 void MeshFunction<T>::set_values(const std::vector<T>& values)
 {
-  dolfin_assert(_values);
-  dolfin_assert(_size == values.size());
-  std::copy(values.begin(), values.end(), _values.get());
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void MeshFunction<T>::set_all(const T& value)
-{
-  dolfin_assert(_values);
-  std::fill(_values.get(), _values.get() + _size, value);
+  dolfin_assert(_values.size() == values.size());
+  std::copy(values.begin(), values.end(), _values.begin());
 }
 //---------------------------------------------------------------------------
 template <typename T>
 std::vector<std::size_t> MeshFunction<T>::where_equal(T value)
 {
-  dolfin_assert(_values);
-  std::size_t n = std::count(_values.get(), _values.get() + _size, value);
+  std::size_t n = std::count(_values.begin(), _values.end(), value);
   std::vector<std::size_t> indices;
   indices.reserve(n);
   for (std::size_t i = 0; i < size(); ++i)
@@ -572,14 +367,8 @@ std::string MeshFunction<T>::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    log::warning("Verbose output of MeshFunctions must be implemented manually.");
-
-    // This has been disabled as it severely restricts the ease with which
-    // templated MeshFunctions can be used, e.g. it is not possible to
-    // template over std::vector.
-
-    // for (std::size_t i = 0; i < _size; i++)
-    //  s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
+    log::warning(
+        "Verbose output of MeshFunctions must be implemented manually.");
   }
   else
   {

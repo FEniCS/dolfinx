@@ -16,7 +16,8 @@ using namespace dolfin;
 using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
-mesh::Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
+mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
+                              const std::array<geometry::Point, 2>& p,
                               std::array<std::size_t, 3> n)
 {
   common::Timer timer("Build BoxMesh");
@@ -30,8 +31,7 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<geometry::Point, 2
                                                                              4);
     mesh::Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
     mesh.order();
-    mesh::MeshPartitioning::build_distributed_mesh(mesh);
-    return mesh;
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
   }
 
   // Extract data
@@ -62,17 +62,19 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<geometry::Point, 2
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS
       || std::abs(z0 - z1) < DOLFIN_EPS)
   {
-    log::dolfin_error("BoxMesh.cpp", "create box", "Box seems to have zero width, "
-                                              "height or depth. Consider "
-                                              "checking your dimensions");
+    log::dolfin_error("BoxMesh.cpp", "create box",
+                      "Box seems to have zero width, "
+                      "height or depth. Consider "
+                      "checking your dimensions");
   }
 
   if (nx < 1 || ny < 1 || nz < 1)
   {
-    log::dolfin_error("BoxMesh.cpp", "create box", "BoxMesh has non-positive number "
-                                              "of vertices in some dimension: "
-                                              "number of vertices must be at "
-                                              "least 1 in each dimension");
+    log::dolfin_error("BoxMesh.cpp", "create box",
+                      "BoxMesh has non-positive number "
+                      "of vertices in some dimension: "
+                      "number of vertices must be at "
+                      "least 1 in each dimension");
   }
 
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
@@ -133,8 +135,10 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm, const std::array<geometry::Point, 2
   mesh::Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
   mesh.order();
 
-  mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  return mesh;
+  if (dolfin::MPI::size(comm) > 1)
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+  else
+    return mesh;
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
@@ -142,23 +146,19 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
-        0, 3);
-    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
-                                                                             8);
+    EigenRowArrayXXd geom(0, 3);
+    EigenRowArrayXXi32 topo(0, 8);
+
     mesh::Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
-    mesh::MeshPartitioning::build_distributed_mesh(mesh);
-    return mesh;
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
   }
 
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
   const std::size_t nz = n[2];
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
-      (nx + 1) * (ny + 1) * (nz + 1), 3);
-  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(
-      nx * ny * nz, 8);
+  EigenRowArrayXXd geom((nx + 1) * (ny + 1) * (nz + 1), 3);
+  EigenRowArrayXXi32 topo(nx * ny * nz, 8);
 
   const double a = 0.0;
   const double b = 1.0;
@@ -210,7 +210,10 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
   }
 
   mesh::Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
-  mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  return mesh;
+
+  if (dolfin::MPI::size(comm) > 1)
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+  else
+    return mesh;
 }
 //-----------------------------------------------------------------------------

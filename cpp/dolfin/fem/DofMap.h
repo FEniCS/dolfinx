@@ -74,16 +74,18 @@ private:
          const DofMap& dofmap_view, const mesh::Mesh& mesh);
 
   // Copy constructor
-  DofMap(const DofMap& dofmap);
+  DofMap(const DofMap& dofmap) = default;
 
 public:
+  /// Move constructor
+  DofMap(DofMap&& dofmap) = default;
+
   /// Destructor
-  ~DofMap();
+  ~DofMap() = default;
 
   /// True iff dof map is a view into another map
   ///
-  /// *Returns*
-  ///     bool
+  /// @returns bool
   ///         True if the dof map is a sub-dof map (a view into
   ///         another map).
   bool is_view() const { return _is_view; }
@@ -91,8 +93,7 @@ public:
   /// Return the dimension of the global finite element function
   /// space. Use index_map()->size() to get the local dimension.
   ///
-  /// *Returns*
-  ///     std::int64_t
+  /// @returns std::int64_t
   ///         The dimension of the global finite element function space.
   std::int64_t global_dimension() const;
 
@@ -122,18 +123,6 @@ public:
   /// @return     std::size_t
   ///         Number of dofs associated with given entity dimension
   virtual std::size_t num_entity_dofs(std::size_t entity_dim) const;
-
-  /// Return the number of dofs for the closure of an entity of given dimension
-  ///
-  /// *Arguments*
-  ///     entity_dim (std::size_t)
-  ///         Entity dimension
-  ///
-  /// *Returns*
-  ///     std::size_t
-  ///         Number of dofs associated with closure of an entity of given
-  ///         dimension
-  virtual std::size_t num_entity_closure_dofs(std::size_t entity_dim) const;
 
   /// Return number of facet dofs
   ///
@@ -171,14 +160,6 @@ public:
   ///         The set of processes
   const std::set<int>& neighbours() const;
 
-  /// Clear any data required to build sub-dofmaps (this is to
-  /// reduce memory use)
-  void clear_sub_map_data()
-  {
-    // std::vector<int>().swap(_ufc_local_to_local);
-    _ufc_local_to_local.clear();
-  }
-
   /// Local-to-global mapping of dofs on a cell
   ///
   /// @param     cell_index (std::size_t)
@@ -193,59 +174,6 @@ public:
     return Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic,
                                          1>>(&_dofmap[index], _cell_dimension);
   }
-
-  /// Return the dof indices associated with entities of given dimension and
-  /// entity indices
-  ///
-  /// *Arguments*
-  ///     entity_dim (std::size_t)
-  ///         Entity dimension.
-  ///     entity_indices (std::vector<dolfin::la_index_t>&)
-  ///         Entity indices to get dofs for.
-  /// *Returns*
-  ///     std::vector<dolfin::la_index_t>
-  ///         Dof indices associated with selected entities.
-  std::vector<dolfin::la_index_t>
-  entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
-              const std::vector<std::size_t>& entity_indices) const;
-
-  /// Return the dof indices associated with all entities of given dimension
-  ///
-  /// *Arguments*
-  ///     entity_dim (std::size_t)
-  ///         Entity dimension.
-  /// *Returns*
-  ///     std::vector<dolfin::la_index_t>
-  ///         Dof indices associated with selected entities.
-  std::vector<dolfin::la_index_t> entity_dofs(const mesh::Mesh& mesh,
-                                              std::size_t entity_dim) const;
-
-  /// Return the dof indices associated with the closure of entities of
-  /// given dimension and entity indices
-  ///
-  /// *Arguments*
-  ///     entity_dim (std::size_t)
-  ///         Entity dimension.
-  ///     entity_indices (std::vector<dolfin::la_index_t>&)
-  ///         Entity indices to get dofs for.
-  /// *Returns*
-  ///     std::vector<dolfin::la_index_t>
-  ///         Dof indices associated with selected entities and their closure.
-  std::vector<dolfin::la_index_t>
-  entity_closure_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
-                      const std::vector<std::size_t>& entity_indices) const;
-
-  /// Return the dof indices associated with the closure of all entities of
-  /// given dimension
-  ///
-  /// @param  mesh (mesh::Mesh)
-  ///         mesh::Mesh
-  /// @param  entity_dim (std::size_t)
-  ///         Entity dimension.
-  /// @return  std::vector<dolfin::la_index_t>
-  ///         Dof indices associated with selected entities and their closure.
-  std::vector<dolfin::la_index_t>
-  entity_closure_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const;
 
   /// Tabulate local-local facet dofs
   ///
@@ -268,18 +196,6 @@ public:
                             std::size_t entity_dim,
                             std::size_t cell_entity_index) const;
 
-  /// Tabulate local-local mapping of dofs on closure of entity (dim,
-  /// local_entity)
-  ///
-  /// @param   element_dofs (std::size_t)
-  ///         Degrees of freedom on a single element.
-  /// @param   entity_dim (std::size_t)
-  ///         The entity dimension.
-  /// @param    cell_entity_index (std::size_t)
-  ///         The local entity index on the cell.
-  void tabulate_entity_closure_dofs(std::vector<std::size_t>& element_dofs,
-                                    std::size_t entity_dim,
-                                    std::size_t cell_entity_index) const;
 
   /// Tabulate globally supported dofs
   ///
@@ -292,21 +208,6 @@ public:
     std::copy(_global_nodes.cbegin(), _global_nodes.cend(),
               element_dofs.begin());
   }
-
-  /// Create a copy of the dof map
-  ///
-  /// @return     DofMap
-  ///         The Dofmap copy.
-  std::shared_ptr<GenericDofMap> copy() const;
-
-  /// Create a copy of the dof map on a new mesh
-  ///
-  /// @param     new_mesh (_mesh::Mesh_)
-  ///         The new mesh to create the dof map on.
-  ///
-  ///  @return    DofMap
-  ///         The new Dofmap copy.
-  std::shared_ptr<GenericDofMap> create(const mesh::Mesh& new_mesh) const;
 
   /// Extract subdofmap component
   ///
@@ -334,15 +235,6 @@ public:
   collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
            const mesh::Mesh& mesh) const;
 
-  // FIXME: Document this function properly
-  /// Return list of dof indices on this process that belong to mesh
-  /// entities of dimension dim
-  std::vector<dolfin::la_index_t> dofs(const mesh::Mesh& mesh,
-                                       std::size_t dim) const;
-
-  // FIXME: Document this function
-  std::vector<dolfin::la_index_t> dofs() const;
-
   /// Set dof entries in vector to a specified value. Parallel layout
   /// of vector must be consistent with dof map range. This
   /// function is typically used to construct the null space of a
@@ -363,14 +255,6 @@ public:
   /// Return the block size for dof maps with components, typically
   /// used for vector valued functions.
   int block_size() const { return _index_map->block_size(); }
-
-  /// Compute the map from local (this process) dof indices to
-  /// global dof indices.
-  ///
-  /// @param     local_to_global_map (_std::vector<std::size_t>_)
-  ///         The local-to-global map to fill.
-  void tabulate_local_to_global_dofs(
-      std::vector<std::size_t>& local_to_global_map) const;
 
   /// Return informal string representation (pretty-print)
   ///

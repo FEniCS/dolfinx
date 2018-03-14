@@ -20,9 +20,6 @@ namespace mesh
 class MeshEntity
 {
 public:
-  /// Default Constructor
-  MeshEntity() : _mesh(nullptr), _dim(0), _local_index(0) {}
-
   /// Constructor
   ///
   /// @param   mesh (_Mesh_)
@@ -37,8 +34,17 @@ public:
     // Do nothing
   }
 
+  /// Copy constructor
+  MeshEntity(const MeshEntity& e) = default;
+
+  /// Move constructor
+  MeshEntity(MeshEntity&& e) = default;
+
   /// Destructor
-  ~MeshEntity();
+  ~MeshEntity() = default;
+
+  /// Assignement operator
+  MeshEntity& operator=(const MeshEntity& e) = default;
 
   /// Initialize mesh entity with given data
   ///

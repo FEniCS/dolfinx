@@ -4,12 +4,12 @@ set(HEADERS
   PETScKrylovSolver.h
   PETScLUSolver.h
   PETScMatrix.h
-  PETScObject.h
   PETScOptions.h
   PETScVector.h
   Scalar.h
   SLEPcEigenSolver.h
   SparsityPattern.h
+  utils.h
   VectorSpaceBasis.h
   PARENT_SCOPE)
 
@@ -18,10 +18,10 @@ set(SOURCES
   PETScKrylovSolver.cpp
   PETScLUSolver.cpp
   PETScMatrix.cpp
-  PETScObject.cpp
   PETScOptions.cpp
   PETScVector.cpp
   SLEPcEigenSolver.cpp
   SparsityPattern.cpp
+  utils.cpp
   VectorSpaceBasis.cpp
   PARENT_SCOPE)

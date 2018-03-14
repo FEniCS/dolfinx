@@ -16,7 +16,7 @@ from dolfin_utils.test import fixture, skip_in_parallel
 
 @fixture
 def mesh():
-    return UnitCubeMesh(8, 8, 8)
+    return UnitCubeMesh(MPI.comm_world, 8, 8, 8)
 
 
 @fixture
@@ -35,8 +35,8 @@ def test_arbitrary_eval(mesh):
             values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
     f0 = F0(name="f0", label="My expression", degree=2)
-    f1 = Expression("a*sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
-                    degree=2, a=1., name="f1")
+#    f1 = Expression("a*sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
+#                    degree=2, a=1., name="f1")
     x = array([0.31, 0.32, 0.33])
     u00 = zeros(1)
     u01 = zeros(1)
@@ -86,7 +86,7 @@ def test_arbitrary_eval(mesh):
         PETScOptions.set("mat_mumps_icntl_14", 40)
 
     x = (mesh.coordinates()[0]+mesh.coordinates()[1])/2
-    f2 = Expression("1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
+#    f2 = Expression("1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
     V2 = FunctionSpace(mesh, 'CG', 2)
     g0 = interpolate(f2, V=V2)
     g1 = project(f2, V=V2)
@@ -157,7 +157,7 @@ def test_overload_and_call_back(V, mesh):
 
     e0 = F0(degree=2)
     e1 = F1(mesh, degree=2)
-    e2 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
+#    e2 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
 
     u0 = interpolate(e0, V)
     u1 = interpolate(e1, V)
@@ -180,7 +180,7 @@ def test_wrong_eval():
             values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
     f0 = F0(degree=2)
-    f1 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
+#    f1 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
 
     for f in [f0, f1]:
         with pytest.raises(TypeError):
@@ -223,7 +223,7 @@ def test_no_write_to_const_array():
             x[0] = 1.0
             values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
-    mesh = UnitCubeMesh(3, 3, 3)
+    mesh = UnitCubeMesh(MPI.comm_world, 3, 3, 3)
     f1 = F1(degree=1)
     with pytest.raises(Exception):
         assemble(f1*dx(mesh))
@@ -243,7 +243,7 @@ def test_compute_vertex_values(mesh):
     assert all(e1_values[mesh.num_vertices():mesh.num_vertices()*2] == 2)
     assert all(e1_values[mesh.num_vertices()*2:mesh.num_vertices()*3] == 3)
 
-
+@pytest.mark.skip
 def test_runtime_exceptions():
 
     def noDefaultValues():

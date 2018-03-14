@@ -18,9 +18,13 @@ namespace dolfin
 namespace fem
 {
 
+/// Integrals of a Form, including those defined over cells,
+/// interior and exterior facets, and vertices.
 class FormIntegrals
 {
 public:
+
+  /// Type of integral
   enum class Type
   {
     cell,
@@ -154,12 +158,14 @@ public:
     return _cell_integrals[i + 1];
   }
 
+  /// Get the function for 'tabulate_tensor' for cell integral i
   const std::function<void(double*, const double* const*, const double*, int)>&
   cell_tabulate_tensor(int i) const
   {
     return _cell_tabulate_tensor[i];
   }
 
+  /// Set the function for 'tabulate_tensor' for cell integral i
   void set_cell_tabulate_tensor(int i, void (*fn)(double*, const double* const*,
                                                   const double*, int))
   {
@@ -167,6 +173,7 @@ public:
     _cell_tabulate_tensor[i] = fn;
   }
 
+  /// Number of integrals of given type
   unsigned int count(FormIntegrals::Type t) const
   {
     switch (t)
@@ -183,6 +190,7 @@ public:
     return 0;
   }
 
+  /// Number of cell integrals
   unsigned int num_cell_integrals() const { return _cell_integrals.size(); }
 
   /// Default exterior facet integral
@@ -205,6 +213,7 @@ public:
     return _exterior_facet_integrals[i + 1];
   }
 
+  /// Number of exterior facet integrals
   unsigned int num_exterior_facet_integrals() const
   {
     return _exterior_facet_integrals.size();
@@ -230,6 +239,7 @@ public:
     return _interior_facet_integrals[i + 1];
   }
 
+  /// Number of interior facet integrals
   unsigned int num_interior_facet_integrals() const
   {
     return _interior_facet_integrals.size();
@@ -253,6 +263,7 @@ public:
     return _vertex_integrals[i + 1];
   }
 
+  /// Number of vertex integrals
   unsigned int num_vertex_integrals() const { return _vertex_integrals.size(); }
 
 private:

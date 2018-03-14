@@ -62,22 +62,31 @@ void GlobalParameters::parse(int argc, char* argv[])
       else
       {
         log::dolfin_error("GlobalParameters.cpp", "parse command-line options",
-                     "Illegal command-line options");
+                          "Illegal command-line options");
       }
     }
   }
 
   // Copy to argv lists
-  char** argv_dolfin = new char*[args_dolfin.size()];
+  std::vector<std::size_t> n = {0};
+  for (std::size_t i = 0; i < args_dolfin.size(); ++i)
+    n.push_back(n.back() + args_dolfin[i].size() + 1);
+  std::vector<char> argv_dolfin_data(n.back());
+  std::vector<char*> argv_dolfin(args_dolfin.size());
   for (std::size_t i = 0; i < args_dolfin.size(); ++i)
   {
-    argv_dolfin[i] = new char[args_dolfin[i].size() + 1];
+    argv_dolfin[i] = argv_dolfin_data.data() + n[i];
     sprintf(argv_dolfin[i], "%s", args_dolfin[i].c_str());
   }
-  char** argv_petsc = new char*[args_petsc.size()];
+
+  n = {0};
+  for (std::size_t i = 0; i < args_petsc.size(); ++i)
+    n.push_back(n.back() + args_petsc[i].size() + 1);
+  std::vector<char> argv_petsc_data(n.back());
+  std::vector<char*> argv_petsc(args_petsc.size());
   for (std::size_t i = 0; i < args_petsc.size(); ++i)
   {
-    argv_petsc[i] = new char[args_petsc[i].size() + 1];
+    argv_petsc[i] = argv_petsc_data.data() + n[i];
     sprintf(argv_petsc[i], "%s", args_petsc[i].c_str());
   }
 
@@ -96,15 +105,7 @@ void GlobalParameters::parse(int argc, char* argv[])
   }
 
   // Parse DOLFIN and PETSc options
-  parse_common(args_dolfin.size(), argv_dolfin);
-  parse_petsc(args_petsc.size(), argv_petsc);
-
-  // Cleanup
-  for (std::size_t i = 0; i < args_dolfin.size(); ++i)
-    delete[] argv_dolfin[i];
-  for (std::size_t i = 0; i < args_petsc.size(); ++i)
-    delete[] argv_petsc[i];
-  delete[] argv_dolfin;
-  delete[] argv_petsc;
+  parse_common(args_dolfin.size(), argv_dolfin.data());
+  parse_petsc(args_petsc.size(), argv_petsc.data());
 }
 //-----------------------------------------------------------------------------

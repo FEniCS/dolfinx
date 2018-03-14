@@ -6,6 +6,7 @@
 
 #include "PETScDMCollection.h"
 #include <boost/multi_array.hpp>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -18,6 +19,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscmat.h>
+#include <petscdmshell.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -229,8 +231,9 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   std::size_t N = coarse_space.dim();
 
   // Local dimension of the dofs and of the transfer matrix
-  std::size_t m = finemap->dofs().size();
-  std::size_t n = coarsemap->dofs().size();
+  std::size_t m = finemap->index_map()->size(common::IndexMap::MapSize::OWNED);
+  std::size_t n
+      = coarsemap->index_map()->size(common::IndexMap::MapSize::OWNED);
 
   // Get finite element for the coarse space. This will be needed to
   // evaluate the basis functions for each cell.
@@ -242,9 +245,10 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
     // Check that function ranks match
     if (el->value_rank() != elf->value_rank())
     {
-      log::dolfin_error("create_transfer_matrix", "Creating interpolation matrix",
-                   "Ranks of function spaces do not match: %d, %d.",
-                   el->value_rank(), elf->value_rank());
+      log::dolfin_error("create_transfer_matrix",
+                        "Creating interpolation matrix",
+                        "Ranks of function spaces do not match: %d, %d.",
+                        el->value_rank(), elf->value_rank());
     }
 
     // Check that function dims match
@@ -252,10 +256,11 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
     {
       if (el->value_dimension(i) != elf->value_dimension(i))
       {
-        log::dolfin_error("create_transfer_matrix", "Creating interpolation matrix",
-                     "Dimension %d of function space (%d) does not match "
-                     "dimension %d of function space (%d)",
-                     i, el->value_dimension(i), i, elf->value_dimension(i));
+        log::dolfin_error(
+            "create_transfer_matrix", "Creating interpolation matrix",
+            "Dimension %d of function space (%d) does not match "
+            "dimension %d of function space (%d)",
+            i, el->value_dimension(i), i, elf->value_dimension(i));
       }
     }
   }
@@ -611,8 +616,8 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
 //-----------------------------------------------------------------------------
 void PETScDMCollection::find_exterior_points(
     MPI_Comm mpi_comm, const mesh::Mesh& meshc,
-    std::shared_ptr<const geometry::BoundingBoxTree> treec, int dim, int data_size,
-    const std::vector<double>& send_points,
+    std::shared_ptr<const geometry::BoundingBoxTree> treec, int dim,
+    int data_size, const std::vector<double>& send_points,
     const std::vector<int>& send_indices, std::vector<int>& indices,
     std::vector<std::size_t>& cell_ids, std::vector<double>& points)
 {

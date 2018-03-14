@@ -34,15 +34,11 @@ template <typename T>
 class MeshValueCollection : public common::Variable
 {
 public:
-  /// Create empty mesh value collection
-  ///
-  MeshValueCollection();
+  /// Copy constructor
+  MeshValueCollection(const MeshValueCollection<T>& mvc) = default;
 
-  /// Create an empty mesh value collection on a given mesh
-  ///
-  /// @param    mesh (_Mesh_)
-  ///         The mesh.
-  explicit MeshValueCollection(std::shared_ptr<const Mesh> mesh);
+  /// Move constructor
+  MeshValueCollection(MeshValueCollection<T>&& mvc) = default;
 
   /// Create a mesh value collection from a MeshFunction
   ///
@@ -60,14 +56,7 @@ public:
   MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
   /// Destructor
-  ~MeshValueCollection() {}
-
-  /// Assignment operator
-  ///
-  /// @param    mesh_function (_MeshFunction_)
-  ///         A _MeshFunction_ object used to construct a
-  ///         MeshValueCollection.
-  MeshValueCollection<T>& operator=(const MeshFunction<T>& mesh_function);
+  ~MeshValueCollection() = default;
 
   /// Assignment operator
   ///
@@ -75,23 +64,15 @@ public:
   ///         A _MeshValueCollection_ object used to construct a
   ///         MeshValueCollection.
   MeshValueCollection<T>&
-  operator=(const MeshValueCollection<T>& mesh_value_collection);
+  operator=(const MeshValueCollection<T>& mesh_value_collection)
+      = default;
 
-  /// Initialise MeshValueCollection with mesh and dimension
+  /// Assignment operator
   ///
-  /// @param    mesh (_mesh))
-  ///         The mesh on which the value collection is defined
-  /// @param    dim (std::size_t)
-  ///         The mesh entity dimension for the mesh value collection.
-  void init(std::shared_ptr<const Mesh> mesh, std::size_t dim);
-
-  /// Set dimension. This function should not generally be used. It is
-  /// for reading MeshValueCollections as the dimension is not
-  /// generally known at construction.
-  ///
-  /// @param    dim (std::size_t)
-  ///         The mesh entity dimension for the mesh value collection.
-  void init(std::size_t dim);
+  /// @param    mesh_function (_MeshFunction_)
+  ///         A _MeshFunction_ object used to construct a
+  ///         MeshValueCollection.
+  MeshValueCollection<T>& operator=(const MeshFunction<T>& mesh_function);
 
   /// Return topological dimension
   ///
@@ -117,6 +98,7 @@ public:
   ///         The size.
   std::size_t size() const;
 
+  // FIXME: remove
   /// Set marker value for given entity defined by a cell index and
   /// a local entity index
   ///
@@ -194,20 +176,6 @@ private:
 
 //---------------------------------------------------------------------------
 // Implementation of MeshValueCollection
-//---------------------------------------------------------------------------
-template <typename T>
-MeshValueCollection<T>::MeshValueCollection()
-    : common::Variable("m", "unnamed MeshValueCollection"), _dim(-1)
-{
-  // Do nothing
-}
-//---------------------------------------------------------------------------
-template <typename T>
-MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh)
-    : _mesh(mesh), _dim(-1)
-{
-  // Do nothing
-}
 //---------------------------------------------------------------------------
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
@@ -315,35 +283,6 @@ operator=(const MeshFunction<T>& mesh_function)
   }
 
   return *this;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-MeshValueCollection<T>& MeshValueCollection<T>::
-operator=(const MeshValueCollection<T>& mesh_value_collection)
-{
-  _mesh = mesh_value_collection._mesh;
-  _dim = mesh_value_collection.dim();
-  _values = mesh_value_collection.values();
-
-  return *this;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void MeshValueCollection<T>::init(std::shared_ptr<const Mesh> mesh,
-                                  std::size_t dim)
-{
-  mesh->init(dim);
-  _mesh = mesh;
-  _dim = dim;
-  _values.clear();
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void MeshValueCollection<T>::init(std::size_t dim)
-{
-  dolfin_assert(_mesh);
-  dolfin_assert(_dim < 0);
-  _dim = dim;
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -471,8 +410,8 @@ T MeshValueCollection<T>::get_value(std::size_t cell_index,
   if (it == _values.end())
   {
     log::dolfin_error("MeshValueCollection.h", "extract value",
-                 "No value stored for cell index: %d and local index: %d",
-                 cell_index, local_entity);
+                      "No value stored for cell index: %d and local index: %d",
+                      cell_index, local_entity);
   }
 
   return it->second;

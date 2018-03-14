@@ -697,14 +697,9 @@ void la(py::module &m) {
                   (void (*)(std::string)) & dolfin::la::PETScOptions::clear)
       .def_static("clear", (void (*)()) & dolfin::la::PETScOptions::clear);
 
-  // dolfin::la::PETScObject
-  py::class_<dolfin::la::PETScObject, std::shared_ptr<dolfin::la::PETScObject>>(
-      m, "PETScObject");
-
   // dolfin::la::PETScVector
-  py::class_<dolfin::la::PETScVector, std::shared_ptr<dolfin::la::PETScVector>,
-             dolfin::la::PETScObject>(m, "PETScVector",
-                                      "DOLFIN PETScVector object")
+  py::class_<dolfin::la::PETScVector, std::shared_ptr<dolfin::la::PETScVector>>(
+      m, "PETScVector", "DOLFIN PETScVector object")
       .def(py::init([](const MPICommWrapper comm) {
         return std::make_unique<dolfin::la::PETScVector>(comm.get());
       }))
@@ -781,8 +776,7 @@ void la(py::module &m) {
   // dolfin::la::PETScBaseMatrix
   py::class_<dolfin::la::PETScBaseMatrix,
              std::shared_ptr<dolfin::la::PETScBaseMatrix>,
-             dolfin::la::PETScObject, dolfin::common::Variable>(
-      m, "PETScBaseMatrix")
+             dolfin::common::Variable>(m, "PETScBaseMatrix")
       .def("size",
            (std::int64_t(dolfin::la::PETScBaseMatrix::*)(std::size_t) const) &
                dolfin::la::PETScBaseMatrix::size)

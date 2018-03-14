@@ -19,30 +19,6 @@ MeshConnectivity::MeshConnectivity(std::size_t d0, std::size_t d1)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MeshConnectivity::MeshConnectivity(const MeshConnectivity& connectivity)
-    : _d0(0), _d1(0)
-{
-  *this = connectivity;
-}
-//-----------------------------------------------------------------------------
-MeshConnectivity::~MeshConnectivity()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-const MeshConnectivity& MeshConnectivity::
-operator=(const MeshConnectivity& connectivity)
-{
-  // Copy data
-  _d0 = connectivity._d0;
-  _d1 = connectivity._d1;
-  _connections = connectivity._connections;
-  _num_global_connections = connectivity._num_global_connections;
-  index_to_position = connectivity.index_to_position;
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
 void MeshConnectivity::clear()
 {
   std::vector<std::int32_t>().swap(_connections);

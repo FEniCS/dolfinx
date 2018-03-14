@@ -6,8 +6,6 @@
 
 #pragma once
 
-#ifdef HAS_HDF5
-
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -44,6 +42,7 @@ public:
   /// interruption
   static void flush_file(const hid_t hdf5_file_handle);
 
+  /// Get filename
   static std::string get_filename(hid_t hdf5_file_handle);
 
   /// Write data to existing HDF file as defined by range blocks on
@@ -55,8 +54,7 @@ public:
   /// use_chunking: whether using chunking or not
   template <typename T>
   static void write_dataset(const hid_t file_handle,
-                            const std::string dataset_path,
-                            const std::vector<T>& data,
+                            const std::string dataset_path, const T* data,
                             const std::array<std::int64_t, 2> range,
                             const std::vector<std::int64_t> global_size,
                             bool use_mpio, bool use_chunking);
@@ -66,9 +64,9 @@ public:
   /// processor data: a flattened 1D array of values. If range = {-1, -1},
   /// then all data is read on this process.
   template <typename T>
-  static void
-  read_dataset(const hid_t file_handle, const std::string dataset_path,
-               const std::array<std::int64_t, 2> range, std::vector<T>& data);
+  static std::vector<T> read_dataset(const hid_t file_handle,
+                                     const std::string dataset_path,
+                                     const std::array<std::int64_t, 2> range);
 
   /// Check for existence of group in HDF5 file
   static bool has_group(const hid_t hdf5_file_handle,
@@ -106,9 +104,9 @@ public:
 
   /// Get a named attribute of a dataset of known type
   template <typename T>
-  static void
-  get_attribute(const hid_t hdf5_file_handle, const std::string dataset_path,
-                const std::string attribute_name, T& attribute_value);
+  static T get_attribute(const hid_t hdf5_file_handle,
+                         const std::string dataset_path,
+                         const std::string attribute_name);
 
   /// Add attribute to dataset or group
   template <typename T>
@@ -126,7 +124,7 @@ public:
                             const std::string dataset_path,
                             const std::string attribute_name);
 
-  // List attributes of dataset or group
+  /// List attributes of dataset or group
   static const std::vector<std::string>
   list_attributes(const hid_t hdf5_file_handle, const std::string dataset_path);
 
@@ -172,11 +170,11 @@ private:
   static hid_t hdf5_type()
   {
     log::dolfin_error("HDF5Interface.cpp", "get HDF5 primitive data type",
-                 "No specialised function for this data type");
+                      "No specialised function for this data type");
     return 0;
   }
 };
-
+#ifndef DOXYGEN_IGNORE
 //---------------------------------------------------------------------------
 template <>
 inline hid_t HDF5Interface::hdf5_type<float>()
@@ -211,14 +209,14 @@ inline hid_t HDF5Interface::hdf5_type<std::size_t>()
     return H5T_NATIVE_UINT;
   else
     log::dolfin_error("HDF5Interface.h", "determine size of std::size_t",
-                 "std::size_t is not the same size as long or int");
+                      "std::size_t is not the same size as long or int");
   return 0;
 }
 //---------------------------------------------------------------------------
 template <typename T>
 inline void HDF5Interface::write_dataset(
-    const hid_t file_handle, const std::string dataset_path,
-    const std::vector<T>& data, const std::array<std::int64_t, 2> range,
+    const hid_t file_handle, const std::string dataset_path, const T* data,
+    const std::array<std::int64_t, 2> range,
     const std::vector<int64_t> global_size, bool use_mpi_io, bool use_chunking)
 {
   // Data rank
@@ -228,7 +226,7 @@ inline void HDF5Interface::write_dataset(
   if (rank > 2)
   {
     log::dolfin_error("HDF5Interface.cpp", "write dataset to HDF5 file",
-                 "Only rank 1 and rank 2 dataset are supported");
+                      "Only rank 1 and rank 2 dataset are supported");
   }
 
   // Get HDF5 data type
@@ -303,13 +301,12 @@ inline void HDF5Interface::write_dataset(
     dolfin_assert(status != HDF5_FAIL);
 #else
     log::dolfin_error("HDF5Interface.h", "use MPI",
-                 "HDF5 library has not been configured with MPI");
+                      "HDF5 library has not been configured with MPI");
 #endif
   }
 
   // Write local dataset into selected hyperslab
-  status
-      = H5Dwrite(dset_id, h5type, memspace, filespace1, plist_id, data.data());
+  status = H5Dwrite(dset_id, h5type, memspace, filespace1, plist_id, data);
   dolfin_assert(status != HDF5_FAIL);
 
   if (use_chunking)
@@ -337,10 +334,10 @@ inline void HDF5Interface::write_dataset(
 }
 //---------------------------------------------------------------------------
 template <typename T>
-inline void HDF5Interface::read_dataset(const hid_t file_handle,
-                                        const std::string dataset_path,
-                                        const std::array<std::int64_t, 2> range,
-                                        std::vector<T>& data)
+inline std::vector<T>
+HDF5Interface::read_dataset(const hid_t file_handle,
+                            const std::string dataset_path,
+                            const std::array<std::int64_t, 2> range)
 {
   // Open the dataset
   const hid_t dset_id
@@ -386,11 +383,11 @@ inline void HDF5Interface::read_dataset(const hid_t file_handle,
   const hid_t memspace = H5Screate_simple(rank, count.data(), NULL);
   dolfin_assert(memspace != HDF5_FAIL);
 
-  // Resize local data to read into
+  // Create local data to read into
   std::size_t data_size = 1;
   for (std::size_t i = 0; i < count.size(); ++i)
     data_size *= count[i];
-  data.resize(data_size);
+  std::vector<T> data(data_size);
 
   // Read data on each process
   const hid_t h5type = hdf5_type<T>();
@@ -409,13 +406,14 @@ inline void HDF5Interface::read_dataset(const hid_t file_handle,
   // Close dataset
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
+
+  return data;
 }
 //---------------------------------------------------------------------------
 template <typename T>
-inline void HDF5Interface::get_attribute(hid_t hdf5_file_handle,
-                                         const std::string dataset_path,
-                                         const std::string attribute_name,
-                                         T& attribute_value)
+inline T HDF5Interface::get_attribute(hid_t hdf5_file_handle,
+                                      const std::string dataset_path,
+                                      const std::string attribute_name)
 {
   herr_t status;
 
@@ -431,6 +429,7 @@ inline void HDF5Interface::get_attribute(hid_t hdf5_file_handle,
   dolfin_assert(attr_type != HDF5_FAIL);
 
   // Specific code for each type of data template
+  T attribute_value;
   get_attribute_value(attr_type, attr_id, attribute_value);
 
   // Close attribute type
@@ -444,6 +443,8 @@ inline void HDF5Interface::get_attribute(hid_t hdf5_file_handle,
   // Close dataset or group
   status = H5Oclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
+
+  return attribute_value;
 }
 //--------------------------------------------------------------------------
 template <typename T>
@@ -652,6 +653,6 @@ inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
   dolfin_assert(status != HDF5_FAIL);
 }
 //---------------------------------------------------------------------------
-}
-}
 #endif
+}
+}

@@ -50,25 +50,22 @@ private:
 class MPI
 {
 public:
-  // Create a duplicate MPI communicator and manage lifetime of the
-  // communicator
+  /// A duplicate MPI communicator and manage lifetime of the
+  /// communicator
   class Comm
   {
   public:
     /// Duplicate communicator and wrap duplicate
     Comm(MPI_Comm comm);
 
-    // The disabling of the below is turned off because the SWIG
-    // docstring generator fails on it.
+    /// Copy constructor
+    Comm(const Comm& comm);
 
-    // Disable default constructor
-    // Comm() = default;
+    /// Move constructor
+    Comm(Comm&& comm);
 
-    // Disable copy constructor
-    // Comm(const Comm& comm) = delete;
-
-    // Disable assignment operator
-    // void operator=(Comm const &comm) = delete;
+    /// Disable assignment operator
+    Comm& operator=(const Comm& comm) = delete;
 
     /// Destructor (frees wrapped communicator)
     ~Comm();

@@ -6,8 +6,11 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install/update apt dependencies
+          command: apt-get -y update && apt-get -y install python3-tk
+      - run:
           name: Install/update Python dependencies
-          command: pip3 install flake8 pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
+          command: pip3 install flake8 matplotlib pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
       - run:
           name: Install FEniCS Python components
           command: |
@@ -16,6 +19,7 @@ jobs:
             pip3 install git+https://bitbucket.org/fenics-project/ufl.git
             pip3 install git+https://bitbucket.org/fenics-project/dijitso.git
             pip3 install git+https://bitbucket.org/fenics-project/ffcX.git
+            rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
       - run:
           name: Flake8 checks on Python code
           command: python3 -m flake8 python/dolfin
@@ -68,6 +72,7 @@ jobs:
           command: |
             cd python/test
             python3 -m pytest unit/fem/test_assembler.py
+            python3 -m pytest unit/function
             python3 -m pytest unit/geometry/test_bounding_box_tree.py
             python3 -m pytest unit/io
             python3 -m pytest unit/jit
@@ -75,6 +80,18 @@ jobs:
             python3 -m pytest unit/la/test_sparsity_pattern.py
             mpirun -n 3 python3 -m pytest unit/la/test_sparsity_pattern.py
             python3 -m pytest unit/mesh
+
+      - run:
+          name: Run Python demos (serial)
+          command: |
+            cd python/demo
+            export DOLFIN_NOPLOT=1
+            python3 ./generate-demo-files.py
+            python3 undocumented/elasticity/demo_elasticity.py
+            python3 documented/poisson/demo_poisson.py
+            cd documented/stokes-taylor-hood
+            export MPLBACKEND="agg"
+            python3 demo_stokes-taylor-hood.py
 
       #- run:
       #    name: Run Python unit tests (serial)

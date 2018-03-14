@@ -11,6 +11,7 @@
 #include "MeshEntity.h"
 #include "MeshFunction.h"
 #include <Eigen/Dense>
+#include <dolfin/common/types.h>
 #include <dolfin/geometry/Point.h>
 #include <memory>
 #include <ufc.h>
@@ -25,10 +26,6 @@ namespace mesh
 class Cell : public MeshEntity
 {
 public:
-  // FIXME: can thos be removed?
-  /// Create empty cell
-  Cell() : MeshEntity() {}
-
   /// Create cell on given mesh with given index
   ///
   /// @param    mesh
@@ -40,8 +37,17 @@ public:
   {
   }
 
+  /// Copy constructor
+  Cell(const Cell& cell) = default;
+
+  /// Move constructor
+  Cell(Cell&& cell) = default;
+
   /// Destructor
-  ~Cell() {}
+  ~Cell() = default;
+
+  /// Assignement operator
+  Cell& operator=(const Cell& cell) = default;
 
   /// Return type of cell
   CellType::Type type() const { return _mesh->type().cell_type(); }
@@ -214,10 +220,7 @@ public:
 
   // FIXME: This function is part of a UFC transition
   /// Get cell coordinate dofs (not vertex coordinates)
-  void
-  get_coordinate_dofs(Eigen::Ref<Eigen::Matrix<double, Eigen::Dynamic,
-                                               Eigen::Dynamic, Eigen::RowMajor>>
-                          coordinates) const
+  void get_coordinate_dofs(Eigen::Ref<EigenRowArrayXXd> coordinates) const
   {
     const MeshGeometry& geom = _mesh->geometry();
     const std::size_t gdim = geom.dim();
@@ -257,30 +260,10 @@ public:
         for (std::size_t j = 0; j < gdim; ++j)
           coordinates[i * gdim + j] = geom.x(vertices[i])[j];
     }
-    else if (geom_degree == 2)
-    {
-      const std::size_t tdim = _mesh->topology().dim();
-      const std::size_t num_edges = this->num_entities(1);
-      const std::int32_t* edges = this->entities(1);
-
-      coordinates.resize((num_vertices + num_edges) * gdim);
-
-      for (std::size_t i = 0; i < num_vertices; ++i)
-        for (std::size_t j = 0; j < gdim; j++)
-          coordinates[i * gdim + j] = geom.x(vertices[i])[j];
-
-      for (std::size_t i = 0; i < num_edges; ++i)
-      {
-        const std::size_t entity_index = (tdim == 1) ? index() : edges[i];
-        const std::size_t point_index
-            = geom.get_entity_index(1, 0, entity_index);
-        for (std::size_t j = 0; j < gdim; ++j)
-          coordinates[(i + num_vertices) * gdim + j] = geom.x(point_index)[j];
-      }
-    }
     else
     {
-      log::dolfin_error("Cell.h", "get coordinate_dofs", "Unsupported mesh degree");
+      log::dolfin_error("Cell.h", "get coordinate_dofs",
+                        "Unsupported mesh degree");
     }
   }
 

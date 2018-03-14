@@ -12,18 +12,11 @@
 #include <dolfin/common/types.h>
 #include <map>
 #include <memory>
-#include <set>
-#include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace dolfin
 {
-namespace la
-{
-class PETScMatrix;
-class PETScVector;
-}
 
 namespace function
 {
@@ -115,6 +108,14 @@ public:
   /// map type used by DirichletBC
   typedef std::unordered_map<std::size_t, double> Map;
 
+  /// Method of boundary condition application
+  enum class Method
+  {
+    topological,
+    geometric,
+    pointwise
+  };
+
   /// Create boundary condition for subdomain
   ///
   /// @param[in] V (FunctionSpace)
@@ -130,7 +131,7 @@ public:
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
               std::shared_ptr<const function::GenericFunction> g,
               std::shared_ptr<const mesh::SubDomain> sub_domain,
-              std::string method = "topological", bool check_midpoint = true);
+              Method method = Method::topological, bool check_midpoint = true);
 
   /// Create boundary condition for subdomain specified by index
   ///
@@ -149,23 +150,7 @@ public:
       std::shared_ptr<const function::FunctionSpace> V,
       std::shared_ptr<const function::GenericFunction> g,
       std::shared_ptr<const mesh::MeshFunction<std::size_t>> sub_domains,
-      std::size_t sub_domain, std::string method = "topological");
-
-  // TODO: Remove/deprecate this function
-  /// Create boundary condition for boundary data included in the mesh
-  ///
-  /// @param[in] V (FunctionSpace)
-  ///         The function space.
-  /// @param[in]  g (GenericFunction)
-  ///         The value.
-  /// @param[in] sub_domain (std::size_t)
-  ///         The subdomain index (number)
-  /// @param[in] method (std::string)
-  ///         Optional argument: A string specifying the
-  ///         method to identify dofs.
-  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-              std::shared_ptr<const function::GenericFunction> g,
-              std::size_t sub_domain, std::string method = "topological");
+      std::size_t sub_domain, Method method = Method::topological);
 
   /// Create boundary condition for subdomain by boundary markers
   /// (cells, local facet numbers)
@@ -182,22 +167,28 @@ public:
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
               std::shared_ptr<const function::GenericFunction> g,
               const std::vector<std::size_t>& markers,
-              std::string method = "topological");
+              Method method = Method::topological);
 
   /// Copy constructor. Either cached DOF data are copied.
   ///
   /// @param[in] bc (DirichletBC&)
   ///         The object to be copied.
-  DirichletBC(const DirichletBC& bc);
+  DirichletBC(const DirichletBC& bc) = default;
+
+  /// Move constructor
+  DirichletBC(DirichletBC&& bc) = default;
 
   /// Destructor
-  ~DirichletBC();
+  ~DirichletBC() = default;
 
   /// Assignment operator. Either cached DOF data are assigned.
   ///
   /// @param[in] bc (DirichletBC)
   ///         Another DirichletBC object.
-  const DirichletBC& operator=(const DirichletBC& bc);
+  DirichletBC& operator=(const DirichletBC& bc) = default;
+
+  /// Move assignment operator
+  DirichletBC& operator=(DirichletBC&& bc) = default;
 
   /// Get Dirichlet dofs and values. If a method other than 'pointwise' is
   /// used in parallel, the map may not be complete for local vertices since
@@ -259,17 +250,7 @@ public:
   /// @return std::string
   ///         Method used for computing Dirichlet dofs ("topological",
   ///         "geometric" or "pointwise").
-  std::string method() const;
-
-  /// Default parameter values
-  /// @return Parameters
-  static parameter::Parameters default_parameters()
-  {
-    parameter::Parameters p("dirichlet_bc");
-    p.add("use_ident", true);
-    p.add("check_dofmap_range", true);
-    return p;
-  }
+  Method method() const;
 
 private:
   class LocalData;
@@ -289,11 +270,6 @@ private:
   init_from_mesh_function(const mesh::MeshFunction<std::size_t>& sub_domains,
                           std::size_t sub_domain) const;
 
-  // Compute dofs and values for application of boundary conditions
-  // using given method
-  void compute_bc(Map& boundary_values, LocalData& data,
-                  std::string method) const;
-
   // Compute boundary values for facet (topological approach)
   void compute_bc_topological(Map& boundary_values, LocalData& data) const;
 
@@ -306,11 +282,6 @@ private:
   // Check if the point is in the same plane as the given facet
   bool on_facet(const double* coordinates, const mesh::Facet& facet) const;
 
-  // Check arguments for compatibility of tensors and dofmap,
-  // dim is means an axis to which bc applies
-  void check_arguments(la::PETScMatrix* A, la::PETScVector* b,
-                       const la::PETScVector* x, std::size_t dim) const;
-
   // The function space (possibly a sub function space)
   std::shared_ptr<const function::FunctionSpace> _function_space;
 
@@ -318,10 +289,7 @@ private:
   std::shared_ptr<const function::GenericFunction> _g;
 
   // Search method
-  std::string _method;
-
-  // Possible search methods
-  static const std::set<std::string> methods;
+  Method _method;
 
   // User defined sub domain
   std::shared_ptr<const mesh::SubDomain> _user_sub_domain;

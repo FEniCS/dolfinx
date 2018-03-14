@@ -16,7 +16,7 @@ namespace dolfin
 namespace mesh
 {
 
-/// A Vertex is a MeshEntity of topological dimension 0.  {
+/// A Vertex is a MeshEntity of topological dimension 0.
 
 class Vertex : public MeshEntity
 {
@@ -27,8 +27,14 @@ public:
   /// Create vertex from mesh entity
   Vertex(MeshEntity& entity) : MeshEntity(entity.mesh(), 0, entity.index()) {}
 
+  /// Copy constructor
+  Vertex(const Vertex& v) = default;
+
+  /// Move constructor
+  Vertex(Vertex&& v) = default;
+
   /// Destructor
-  ~Vertex() {}
+  ~Vertex() = default;
 
   /// Return value of vertex coordinate i
   double x(std::size_t i) const { return _mesh->geometry().x(_local_index, i); }

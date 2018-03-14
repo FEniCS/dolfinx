@@ -22,156 +22,6 @@
 
 using namespace dolfin;
 
-namespace
-{
-void _check_coordinates(const mesh::MeshGeometry& geometry,
-                        const function::Function& position)
-{
-  dolfin_assert(position.function_space());
-  dolfin_assert(position.function_space()->mesh());
-  dolfin_assert(position.function_space()->dofmap());
-  dolfin_assert(position.function_space()->element());
-  dolfin_assert(position.function_space()->element()->ufc_element());
-
-  if (position.function_space()->element()->ufc_element()->family()
-      != std::string("Lagrange"))
-
-  {
-    log::dolfin_error("fem_utils.cpp",
-                 "set/get mesh geometry coordinates from/to function",
-                 "expecting 'Lagrange' finite element family rather than '%s'",
-                 position.function_space()->element()->ufc_element()->family());
-  }
-
-  if (position.value_rank() != 1)
-  {
-    log::dolfin_error(
-        "fem_utils.cpp", "set/get mesh geometry coordinates from/to function",
-        "function has incorrect value rank %d, need 1", position.value_rank());
-  }
-
-  if (position.value_dimension(0) != geometry.dim())
-  {
-    log::dolfin_error("fem_utils.cpp",
-                 "set/get mesh geometry coordinates from/to function",
-                 "function value dimension %d and geometry dimension %d "
-                 "do not match",
-                 position.value_dimension(0), geometry.dim());
-  }
-
-  if (position.function_space()->element()->ufc_element()->degree()
-      != geometry.degree())
-  {
-    log::dolfin_error("fem_utils.cpp",
-                 "set/get mesh geometry coordinates from/to function",
-                 "function degree %d and geometry degree %d do not match",
-                 position.function_space()->element()->ufc_element()->degree(),
-                 geometry.degree());
-  }
-}
-
-// This helper function sets geometry from position (if setting) or
-// stores geometry into position (otherwise)
-void _get_set_coordinates(mesh::MeshGeometry& geometry,
-                          function::Function& position, const bool setting)
-{
-  auto& x = geometry.x();
-  auto& v = *position.vector();
-  const auto& dofmap = *position.function_space()->dofmap();
-  const auto& mesh = *position.function_space()->mesh();
-  const auto tdim = mesh.topology().dim();
-  const auto gdim = mesh.geometry().dim();
-
-  std::vector<std::size_t> num_local_entities(tdim + 1);
-  std::vector<std::size_t> coords_per_entity(tdim + 1);
-  std::vector<std::vector<std::vector<std::size_t>>> local_to_local(tdim + 1);
-  std::vector<std::vector<std::size_t>> offsets(tdim + 1);
-
-  for (std::size_t dim = 0; dim <= tdim; ++dim)
-  {
-    // Get number local entities
-    num_local_entities[dim] = mesh.type().num_entities(dim);
-
-    // Get local-to-local mapping of dofs
-    local_to_local[dim].resize(num_local_entities[dim]);
-    for (std::size_t local_ind = 0; local_ind != num_local_entities[dim];
-         ++local_ind)
-      dofmap.tabulate_entity_dofs(local_to_local[dim][local_ind], dim,
-                                  local_ind);
-
-    // Get entity offsets; could be retrieved directly from geometry
-    coords_per_entity[dim] = geometry.num_entity_coordinates(dim);
-    for (std::size_t coord_ind = 0; coord_ind != coords_per_entity[dim];
-         ++coord_ind)
-    {
-      const auto offset = geometry.get_entity_index(dim, coord_ind, 0);
-      offsets[dim].push_back(offset);
-    }
-  }
-
-  // Initialize needed connectivities
-  for (std::size_t dim = 0; dim <= tdim; ++dim)
-  {
-    if (coords_per_entity[dim] > 0)
-      mesh.init(tdim, dim);
-  }
-
-  std::vector<double> values;
-  const std::int32_t* global_entities;
-  std::size_t xi, vi;
-
-  // Get/set cell-by-cell
-  for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
-  {
-    // Get/prepare values and dofs on cell
-    auto cell_dofs = dofmap.cell_dofs(c.index());
-    values.resize(cell_dofs.size());
-    if (setting)
-      v.get_local(values.data(), cell_dofs.size(), cell_dofs.data());
-
-    // Iterate over all entities on cell
-    for (std::size_t dim = 0; dim <= tdim; ++dim)
-    {
-      // Get local-to-global entity mapping
-      if (!coords_per_entity[dim])
-        continue;
-      global_entities = c.entities(dim);
-
-      for (std::size_t local_entity = 0;
-           local_entity != num_local_entities[dim]; ++local_entity)
-      {
-        for (std::size_t local_dof = 0; local_dof != coords_per_entity[dim];
-             ++local_dof)
-        {
-          for (std::size_t component = 0; component != gdim; ++component)
-          {
-            // Compute indices
-            xi = gdim
-                     * (offsets[dim][local_dof] + global_entities[local_entity])
-                 + component;
-            vi = local_to_local[dim][local_entity]
-                               [gdim * local_dof + component];
-
-            // Set one or other
-            if (setting)
-              x[xi] = values[vi];
-            else
-              values[vi] = x[xi];
-          }
-        }
-      }
-    }
-
-    // Store cell contribution to dof vector (if getting)
-    if (!setting)
-      v.set_local(values.data(), cell_dofs.size(), cell_dofs.data());
-  }
-
-  if (!setting)
-    v.apply();
-}
-}
-
 //-----------------------------------------------------------------------------
 void dolfin::fem::init(la::PETScVector& x, const Form& a)
 {
@@ -325,7 +175,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   if (dofmap.is_view())
   {
     log::dolfin_error("fem_utils.cpp", "tabulate vertex to dof map",
-                 "Cannot tabulate vertex_to_dof_map for a subspace");
+                      "Cannot tabulate vertex_to_dof_map for a subspace");
   }
 
   // Initialize vertex to cell connections
@@ -338,7 +188,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   if (vert_per_cell * dofs_per_vertex != dofmap.max_element_dofs())
   {
     log::dolfin_error("DofMap.cpp", "tabulate dof to vertex map",
-                 "Can only tabulate dofs on vertices");
+                      "Can only tabulate dofs on vertices");
   }
 
   // Allocate data for tabulating local to local map
@@ -392,64 +242,5 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
 
   // Return the map
   return return_map;
-}
-//-----------------------------------------------------------------------------
-void dolfin::fem::set_coordinates(mesh::MeshGeometry& geometry,
-                                  const function::Function& position)
-{
-  _check_coordinates(geometry, position);
-  _get_set_coordinates(geometry, const_cast<function::Function&>(position),
-                       true);
-}
-//-----------------------------------------------------------------------------
-void dolfin::fem::get_coordinates(function::Function& position,
-                                  const mesh::MeshGeometry& geometry)
-{
-  _check_coordinates(geometry, position);
-  _get_set_coordinates(const_cast<mesh::MeshGeometry&>(geometry), position,
-                       false);
-}
-//-----------------------------------------------------------------------------
-mesh::Mesh dolfin::fem::create_mesh(function::Function& coordinates)
-{
-  // FIXME: This function is a mess
-
-  dolfin_assert(coordinates.function_space());
-  dolfin_assert(coordinates.function_space()->element());
-  dolfin_assert(coordinates.function_space()->element()->ufc_element());
-
-  // Fetch old mesh and create new mesh
-  const mesh::Mesh& mesh0 = *(coordinates.function_space()->mesh());
-  mesh::Mesh mesh1(mesh0.mpi_comm());
-
-  // FIXME: Share this code with Mesh assignment operaror; a need
-  //        to duplicate its code here is not maintainable
-  // Assign all data except geometry
-
-  mesh1._topology = mesh0._topology;
-  if (mesh0._cell_type)
-    mesh1._cell_type.reset(
-        mesh::CellType::create(mesh0._cell_type->cell_type()));
-  else
-    mesh1._cell_type.reset();
-  mesh1._ordered = mesh0._ordered;
-  mesh1._ghost_mode = mesh0._ghost_mode;
-
-  // Rename
-  mesh1.rename(mesh0.name(), mesh0.label());
-
-  // Prepare a new geometry
-  mesh1.geometry().init(
-      mesh0.geometry().dim(),
-      coordinates.function_space()->element()->ufc_element()->degree());
-  std::vector<std::size_t> num_entities(mesh0.topology().dim() + 1);
-  for (std::size_t dim = 0; dim <= mesh0.topology().dim(); ++dim)
-    num_entities[dim] = mesh0.topology().size(dim);
-  mesh1.geometry().init_entities(num_entities);
-
-  // Assign coordinates
-  set_coordinates(mesh1.geometry(), coordinates);
-
-  return mesh1;
 }
 //-----------------------------------------------------------------------------

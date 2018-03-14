@@ -37,7 +37,7 @@ namespace mesh
 {
 class Mesh;
 class SubDomain;
-}
+} // namespace mesh
 
 namespace fem
 {
@@ -58,22 +58,6 @@ public:
   virtual std::int64_t global_dimension() const = 0;
 
   /// Return the dimension of the local finite element function
-  /// space on a cell (deprecated API)
-  std::size_t cell_dimension(std::size_t index) const
-  {
-    // TODO: Add deprecation warning
-    return num_element_dofs(index);
-  }
-
-  /// Return the maximum dimension of the local finite element
-  /// function space (deprecated API)
-  std::size_t max_cell_dimension() const
-  {
-    // TODO: Add deprecation warning
-    return max_element_dofs();
-  }
-
-  /// Return the dimension of the local finite element function
   /// space on a cell
   virtual std::size_t num_element_dofs(std::size_t index) const = 0;
 
@@ -83,9 +67,6 @@ public:
 
   /// Return the number of dofs for a given entity dimension
   virtual std::size_t num_entity_dofs(std::size_t entity_dim) const = 0;
-
-  /// Return the number of dofs for closure of entity of given dimension
-  virtual std::size_t num_entity_closure_dofs(std::size_t entity_dim) const = 0;
 
   /// Return number of facet dofs
   virtual std::size_t num_facet_dofs() const = 0;
@@ -104,24 +85,13 @@ public:
 
   /// Return the dof indices associated with entities of given dimension and
   /// entity indices
-  virtual std::vector<dolfin::la_index_t>
+  std::vector<dolfin::la_index_t>
   entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
-              const std::vector<std::size_t>& entity_indices) const = 0;
+              const std::vector<std::size_t>& entity_indices) const;
 
   /// Return the dof indices associated with all entities of given dimension
-  virtual std::vector<dolfin::la_index_t>
-  entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const = 0;
-
-  /// Return the dof indices associated with the closure of entities of
-  /// given dimension and entity indices
-  virtual std::vector<dolfin::la_index_t>
-  entity_closure_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
-                      const std::vector<std::size_t>& entity_indices) const = 0;
-
-  /// Return the dof indices associated with the closure of all entities of
-  /// given dimension
-  virtual std::vector<dolfin::la_index_t>
-  entity_closure_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const = 0;
+  std::vector<dolfin::la_index_t> entity_dofs(const mesh::Mesh& mesh,
+                                              std::size_t entity_dim) const;
 
   /// Tabulate local-local facet dofs
   virtual void tabulate_facet_dofs(std::vector<std::size_t>& element_dofs,
@@ -133,22 +103,8 @@ public:
                                     std::size_t entity_dim,
                                     std::size_t cell_entity_index) const = 0;
 
-  /// Tabulate the local-to-local mapping of dofs on closure of entity
-  /// (dim, local_entity)
-  virtual void
-  tabulate_entity_closure_dofs(std::vector<std::size_t>& element_dofs,
-                               std::size_t entity_dim,
-                               std::size_t cell_entity_index) const = 0;
-
   /// Tabulate globally supported dofs
   virtual void tabulate_global_dofs(std::vector<std::size_t>& dofs) const = 0;
-
-  /// Create a copy of the dof map
-  virtual std::shared_ptr<GenericDofMap> copy() const = 0;
-
-  /// Create a new dof map on new mesh
-  virtual std::shared_ptr<GenericDofMap>
-  create(const mesh::Mesh& new_mesh) const = 0;
 
   /// Extract sub dofmap component
   virtual std::shared_ptr<GenericDofMap>
@@ -162,11 +118,8 @@ public:
 
   /// Return list of dof indices on this process that belong to mesh
   /// entities of dimension dim
-  virtual std::vector<dolfin::la_index_t> dofs(const mesh::Mesh& mesh,
-                                               std::size_t dim) const = 0;
-
-  /// Return list of global dof indices on this process
-  virtual std::vector<dolfin::la_index_t> dofs() const = 0;
+  std::vector<dolfin::la_index_t> dofs(const mesh::Mesh& mesh,
+                                       std::size_t dim) const;
 
   /// Set dof entries in vector to a specified value. Parallel
   /// layout of vector must be consistent with dof map range. This
@@ -178,8 +131,8 @@ public:
   virtual std::shared_ptr<const common::IndexMap> index_map() const = 0;
 
   /// Tabulate map between local (process) and global dof indices
-  virtual void tabulate_local_to_global_dofs(
-      std::vector<std::size_t>& local_to_global_map) const = 0;
+  void tabulate_local_to_global_dofs(
+      std::vector<std::size_t>& local_to_global_map) const;
 
   /// Return map from shared nodes to the processes (not including
   /// the current process) that share it.
@@ -188,10 +141,6 @@ public:
 
   /// Return set of processes that share dofs with the this process
   virtual const std::set<int>& neighbours() const = 0;
-
-  /// Clear any data required to build sub-dofmaps (this is to
-  /// reduce memory use)
-  virtual void clear_sub_map_data() = 0;
 
   /// Return informal string representation (pretty-print)
   virtual std::string str(bool verbose) const = 0;
@@ -203,5 +152,5 @@ public:
   /// conditions
   std::shared_ptr<const mesh::SubDomain> constrained_domain;
 };
-}
-}
+} // namespace fem
+} // namespace dolfin

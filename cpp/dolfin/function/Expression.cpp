@@ -109,14 +109,12 @@ void Expression::restrict(double* w, const fem::FiniteElement& element,
   // this repeats the same evaluation points "gdim" times. Should only
   // do them once, and remove the "mapping" below (which is the identity).
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      eval_points(ndofs, gdim);
+  EigenRowArrayXXd eval_points(ndofs, gdim);
   element.ufc_element()->tabulate_dof_coordinates(eval_points.data(),
                                                   coordinate_dofs);
 
   // Storage for evaluation values
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      eval_values(ndofs, vs);
+  EigenRowArrayXXd eval_values(ndofs, vs);
 
   // Evaluate all points in one call
   eval(eval_values, eval_points, ufc_cell);
@@ -131,15 +129,14 @@ void Expression::restrict(double* w, const fem::FiniteElement& element,
   element.ufc_element()->map_dofs(w, eval_values.data(), coordinate_dofs, -1);
 }
 //-----------------------------------------------------------------------------
-void Expression::compute_vertex_values(std::vector<double>& vertex_values,
-                                       const mesh::Mesh& mesh) const
+EigenRowArrayXXd Expression::compute_vertex_values(const mesh::Mesh& mesh) const
 {
   // Local data for vertex values
   const std::size_t size = value_size();
-  Eigen::VectorXd local_vertex_values(size);
+  Eigen::RowVectorXd local_vertex_values(size);
 
   // Resize vertex_values
-  vertex_values.resize(size * mesh.num_vertices());
+  EigenRowArrayXXd vertex_values(mesh.num_vertices(), size);
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
@@ -154,14 +151,11 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
       eval(local_vertex_values, x);
 
       // Copy to array
-      for (std::size_t i = 0; i < size; i++)
-      {
-        const std::size_t global_index
-            = i * mesh.num_vertices() + vertex.index();
-        vertex_values[global_index] = local_vertex_values[i];
-      }
+      vertex_values.row(vertex.index()) = local_vertex_values;
     }
   }
+
+  return vertex_values;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FunctionSpace> Expression::function_space() const

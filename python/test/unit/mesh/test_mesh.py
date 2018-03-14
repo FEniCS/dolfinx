@@ -28,7 +28,7 @@ def mesh1d():
 @fixture
 def mesh2d():
     # Create 2D mesh with one equilateral triangle
-    mesh2d = RectangleMesh.create(MPI.comm_world, [Point(0,0), Point(1,1)],
+    mesh2d = RectangleMesh.create(MPI.comm_world, [Point(0, 0), Point(1, 1)],
                                   [1, 1], CellType.Type.triangle, 'left')
     mesh2d.geometry().x()[3] += 0.5*(sqrt(3.0)-1.0)
     return mesh2d
@@ -93,7 +93,7 @@ def mesh():
 
 @fixture
 def f(mesh):
-    return MeshFunction('int', mesh, 0)
+    return MeshFunction('int', mesh, 0, 0)
 
 
 def test_UFLCell(interval, square, rectangle, cube, box):
@@ -225,10 +225,9 @@ def test_hash():
 def test_MeshXML2D(cd_tempdir):
     """Write and read 2D mesh to/from file"""
     mesh_out = UnitSquareMesh(MPI.comm_world, 3, 3)
-    mesh_in = Mesh(MPI.comm_world)
     file = XDMFFile(mesh_out.mpi_comm(), "unitsquare.xdmf")
     file.write(mesh_out, XDMFFile.Encoding.ASCII)
-    file.read(mesh_in)
+    mesh_in = file.read_mesh(MPI.comm_world)
     assert mesh_in.num_vertices() == 16
 
 
@@ -236,10 +235,9 @@ def test_MeshXML2D(cd_tempdir):
 def test_MeshXML3D(cd_tempdir):
     """Write and read 3D mesh to/from file"""
     mesh_out = UnitCubeMesh(MPI.comm_world, 3, 3, 3)
-    mesh_in = Mesh(MPI.comm_world)
     file = XDMFFile(mesh_out.mpi_comm(), "unitcube.xdmf")
     file.write(mesh_out, XDMFFile.Encoding.ASCII)
-    file.read(mesh_in)
+    mesh_in = file.read_mesh(MPI.comm_world)
     assert mesh_in.num_vertices() == 64
 
 
@@ -333,6 +331,7 @@ def test_rmin_rmax(mesh1d, mesh2d, mesh3d):
 
 # - Facilities to run tests on combination of meshes
 
+
 ghost_mode = set_parameters_fixture("ghost_mode", [
     "none",
     "shared_facet",
@@ -358,6 +357,8 @@ mesh_factories_broken_shared_entities = [
 ]
 
 # FIXME: Fix this xfail
+
+
 def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
     """Xfail when mesh_factory on quads/hexes uses
     shared_vertex mode. Needs implementing.
@@ -397,9 +398,10 @@ def test_shared_entities(mesh_factory, ghost_mode):
         # Check that sum(local-shared) = global count
         rank = MPI.rank(mesh.mpi_comm())
         ct = sum(1 for val in shared_entities.values() if list(val)[0] < rank)
-        num_entities_global = MPI.sum(mesh.mpi_comm(), mesh.num_entities(shared_dim) - ct)
+        num_entities_global = MPI.sum(
+            mesh.mpi_comm(), mesh.num_entities(shared_dim) - ct)
 
-        assert num_entities_global ==  mesh.num_entities_global(shared_dim)
+        assert num_entities_global == mesh.num_entities_global(shared_dim)
 
 
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
@@ -477,7 +479,8 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
             for e in MeshEntities(mesh, d):
 
                 # Get global indices
-                subentities_indices = [e1.global_index() for e1 in EntityRange(e, d1)]
+                subentities_indices = [e1.global_index()
+                                       for e1 in EntityRange(e, d1)]
                 assert subentities_indices.count(-1) == 0
 
                 # Check that d1-subentities of d-entity have increasing indices

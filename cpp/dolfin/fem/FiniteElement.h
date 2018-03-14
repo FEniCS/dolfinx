@@ -135,20 +135,6 @@ public:
                                                  cell_orientation);
   }
 
-  /// Interpolate vertex values from dof values
-  /// @param vertex_values (double*)
-  /// @param coefficients (double*)
-  /// @param coordinate_dofs (const double*)
-  /// @param cell_orientation (int)
-  void interpolate_vertex_values(double* vertex_values, double* coefficients,
-                                 const double* coordinate_dofs,
-                                 int cell_orientation) const
-  {
-    dolfin_assert(_ufc_element);
-    _ufc_element->interpolate_vertex_values(vertex_values, coefficients,
-                                            coordinate_dofs, cell_orientation);
-  }
-
   /// Tabulate the coordinates of all dofs on an element
   ///
   /// @param[in,out]    coordinates (boost::multi_array<double, 2>)

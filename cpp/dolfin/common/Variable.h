@@ -30,8 +30,11 @@ public:
   /// Copy constructor
   Variable(const Variable& variable);
 
+  /// Move constructor
+  Variable(Variable&& variable) = default;
+
   /// Destructor
-  virtual ~Variable();
+  virtual ~Variable() = default;
 
   /// Assignment operator
   const Variable& operator=(const Variable& variable);
@@ -47,8 +50,7 @@ public:
 
   /// Get unique identifier.
   ///
-  /// *Returns*
-  ///     _std::size_t_
+  /// @returns _std::size_t_
   ///         The unique integer identifier associated with the object.
   std::size_t id() const { return unique_id; }
 

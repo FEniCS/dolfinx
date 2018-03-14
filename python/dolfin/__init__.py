@@ -63,18 +63,6 @@ from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry,
                        PeriodicBoundaryComputation)
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver, OptimisationProblem)
-#from .cpp.parameter import Parameters, parameters
-
-# Import Python modules
-#from . import la
-# from . import mesh
-#from . import parameter
-
-#from .common import timer
-#from .common.timer import Timer, timed
-
-# from .fem.assembling import (assemble_system,
-#                             SystemAssembler, assemble_local)
 
 from .fem.form import Form
 from .fem.dirichletbc import DirichletBC, AutoSubDomain
@@ -102,9 +90,8 @@ from .generation import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
 from .jit.pybind11jit import compile_cpp_code
 
 #from .la import la_index_dtype
-from .mesh.meshfunction import (MeshFunction)
-from .mesh.meshvaluecollection import MeshValueCollection
-from .mesh.subdomain import CompiledSubDomain
+from .mesh import MeshFunction
+from .mesh import MeshValueCollection
 
 # Import from ufl
 from ufl import (FiniteElement, TensorElement, VectorElement,
@@ -118,3 +105,7 @@ from ufl import (FiniteElement, TensorElement, VectorElement,
                  as_tensor, as_matrix, system, outer, dev, skew,
                  elem_mult, elem_div, elem_pow, elem_op, erf)
 from ufl.formoperators import action
+
+
+# Initialise PETSc
+cpp.common.SubSystemsManager.init_petsc()

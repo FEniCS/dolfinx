@@ -33,24 +33,20 @@ Mesh::Mesh(MPI_Comm comm)
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
-           Eigen::Ref<const Eigen::Matrix<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>
-               geometry,
-           Eigen::Ref<const Eigen::Matrix<std::int32_t, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>
-               topology)
+           Eigen::Ref<const EigenRowArrayXXd> points,
+           Eigen::Ref<const EigenRowArrayXXi32> cells)
     : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
       _ghost_mode("none")
 {
   // Initialise geometry
-  const std::size_t gdim = geometry.cols();
-  _geometry.init(gdim, 1);
+  const std::size_t gdim = points.cols();
+  _geometry.init(gdim, 1, points.rows());
 
   // Set cell type
   _cell_type.reset(mesh::CellType::create(type));
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t nv = _cell_type->num_vertices();
-  dolfin_assert(nv == topology.cols());
+  dolfin_assert(nv == cells.cols());
 
   // Initialize topological dimension
   _topology.init(tdim);
@@ -63,40 +59,54 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // sets global indices accordingly.
 
   // Initialise vertices
-  const std::size_t num_vertices = geometry.rows();
+  const std::size_t num_vertices = points.rows();
 
   _topology.init(0, num_vertices, num_vertices);
   _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);
-  std::vector<std::size_t> num_vertex_points(1, num_vertices);
-  _geometry.init_entities(num_vertex_points);
 
   // Initialise cells
-  const std::size_t num_cells = topology.rows();
+  const std::size_t num_cells = cells.rows();
   _topology.init(tdim, num_cells, num_cells);
   _topology.init_ghost(tdim, num_cells);
   _topology.init_global_indices(tdim, num_cells);
   _topology(tdim, 0).init(num_cells, _cell_type->num_vertices());
 
-  // Add vertices
-  std::copy(geometry.data(), geometry.data() + gdim * num_vertices,
-            _geometry.x().begin());
-  for (std::int32_t i = 0; i != geometry.rows(); ++i)
+  // Add vertices (do not use points.data(), since we might have a view)
+  std::vector<double>& _x = _geometry.x();
+  for (std::size_t v = 0; v < num_vertices; ++v)
+    for (std::size_t i = 0; i < gdim; ++i)
+      _x[v * gdim + i] = points(v, i);
+
+  for (std::int32_t i = 0; i != points.rows(); ++i)
     _topology.set_global_index(0, i, i);
 
   // Add cells
-  for (std::int32_t i = 0; i != topology.rows(); ++i)
+  for (std::int32_t i = 0; i != cells.rows(); ++i)
   {
-    _topology(tdim, 0).set(i, topology.data() + i * nv);
+    _topology(tdim, 0).set(i, cells.data() + i * nv);
     _topology.set_global_index(tdim, i, i);
   }
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false),
-      _mpi_comm(mesh.mpi_comm()), _ghost_mode("none")
+    : common::Variable(mesh.name(), mesh.label()), _topology(mesh._topology),
+      _geometry(mesh._geometry),
+      _cell_type(CellType::create(mesh._cell_type->cell_type())),
+      _ordered(mesh._ordered), _mpi_comm(mesh.mpi_comm()),
+      _ghost_mode(mesh._ghost_mode)
 {
-  *this = mesh;
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+Mesh::Mesh(Mesh&& mesh)
+    : common::Variable(std::move(mesh)), _topology(std::move(mesh._topology)),
+      _geometry(std::move(mesh._geometry)),
+      _cell_type(CellType::create(mesh._cell_type->cell_type())),
+      _ordered(std::move(mesh._ordered)), _mpi_comm(std::move(mesh._mpi_comm)),
+      _ghost_mode(std::move(mesh._ghost_mode))
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
@@ -104,7 +114,7 @@ Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
       _ghost_mode("none")
 {
   const std::string ghost_mode = parameters["ghost_mode"];
-  MeshPartitioning::build_distributed_mesh(*this, local_mesh_data, ghost_mode);
+  *this = MeshPartitioning::build_distributed_mesh(local_mesh_data, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()
@@ -112,7 +122,7 @@ Mesh::~Mesh()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const Mesh& Mesh::operator=(const Mesh& mesh)
+Mesh& Mesh::operator=(const Mesh& mesh)
 {
   // Assign data
   _topology = mesh._topology;
@@ -142,7 +152,8 @@ std::size_t Mesh::init(std::size_t dim) const
   // Skip if mesh is empty
   if (num_cells() == 0)
   {
-    log::warning("Mesh is empty, unable to create entities of dimension %d.", dim);
+    log::warning("Mesh is empty, unable to create entities of dimension %d.",
+                 dim);
     return 0;
   }
 
@@ -158,8 +169,8 @@ std::size_t Mesh::init(std::size_t dim) const
   if (!ordered())
   {
     log::dolfin_error("Mesh.cpp", "initialize mesh entities",
-                 "Mesh is not ordered according to the UFC numbering "
-                 "convention. Consider calling mesh.order()");
+                      "Mesh is not ordered according to the UFC numbering "
+                      "convention. Consider calling mesh.order()");
   }
 
   // Compute connectivity
@@ -184,7 +195,8 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   // Skip if mesh is empty
   if (num_cells() == 0)
   {
-    log::warning("Mesh is empty, unable to create connectivity %d --> %d.", d0, d1);
+    log::warning("Mesh is empty, unable to create connectivity %d --> %d.", d0,
+                 d1);
     return;
   }
 
@@ -196,8 +208,8 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   if (!ordered())
   {
     log::dolfin_error("Mesh.cpp", "initialize mesh connectivity",
-                 "Mesh is not ordered according to the UFC numbering "
-                 "convention. Consider calling mesh.order()");
+                      "Mesh is not ordered according to the UFC numbering "
+                      "convention. Consider calling mesh.order()");
   }
 
   // Compute connectivity

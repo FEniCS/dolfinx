@@ -6,8 +6,6 @@
 
 #pragma once
 
-#ifdef HAS_PETSC
-
 #include "PETScBaseMatrix.h"
 #include <map>
 #include <memory>
@@ -75,6 +73,9 @@ public:
   /// Set all entries to zero and keep any sparse structure
   void zero();
 
+  /// Assembly type
+  ///   FINAL - corresponds to PETSc MAT_FINAL_ASSEMBLY
+  ///   FLUSH - corresponds to PETSc MAT_FLUSH_ASSEMBLY
   enum class AssemblyType : std::int32_t
   {
     FINAL,
@@ -83,7 +84,7 @@ public:
 
   /// Finalize assembly of tensor. The following values are recognized
   /// for the mode parameter:
-  ///
+  /// @param type
   ///   FINAL    - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
   ///   FLUSH  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
   void apply(AssemblyType type);
@@ -205,11 +206,11 @@ public:
 
 private:
   // Create PETSc nullspace object
-  MatNullSpace create_petsc_nullspace(const la::VectorSpaceBasis& nullspace) const;
+  MatNullSpace
+  create_petsc_nullspace(const la::VectorSpaceBasis& nullspace) const;
 
   // PETSc norm types
   static const std::map<std::string, NormType> norm_types;
 };
 }
 }
-#endif

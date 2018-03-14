@@ -29,27 +29,23 @@ public:
 
   /// Check whether entity collides with point.
   ///
-  /// *Arguments*
-  ///     entity (_MeshEntity_)
+  /// @param     entity (_MeshEntity_)
   ///         The entity.
-  ///     point (_Point_)
+  /// @param    point (_Point_)
   ///         The point.
   ///
-  /// *Returns*
-  ///     bool
+  /// @returns    bool
   ///         True iff entity collides with cell.
   static bool collides(const mesh::MeshEntity& entity, const Point& point);
 
   /// Check whether two entities collide.
   ///
-  /// *Arguments*
-  ///     entity_0 (_MeshEntity_)
+  /// @param     entity_0 (_MeshEntity_)
   ///         The first entity.
-  ///     entity_1 (_MeshEntity_)
+  /// @param    entity_1 (_MeshEntity_)
   ///         The second entity.
   ///
-  /// *Returns*
-  ///     bool
+  /// @returns    bool
   ///         True iff entity collides with cell.
   static bool collides(const mesh::MeshEntity& entity_0,
                        const mesh::MeshEntity& entity_1);

@@ -13,21 +13,22 @@ from dolfin.la import PETScVector
 
 ghost_mode = set_parameters_fixture("ghost_mode", ["shared_vertex", "none"])
 
+
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
 def test_xdmf_cell_scalar_ghost(cd_tempdir, ghost_mode):
     n = 8
     mesh = UnitSquareMesh(MPI.comm_world, n, n)
 
-    print(mesh)
+    # print(mesh)
 
-    Q = FunctionSpace(mesh, "DG", 0)
-    F = Function(Q)
-    E = Expression("x[0]", degree=1)
-    F.interpolate(E)
+    #Q = FunctionSpace(mesh, "DG", 0)
+    #F = Function(Q)
+    #E = Expression("x[0]", degree=1)
+    # F.interpolate(E)
 
-    with XDMFFile(mesh.mpi_comm(), "dg0.xdmf") as xdmf:
-        xdmf.write(F)
+    # with XDMFFile(mesh.mpi_comm(), "dg0.xdmf") as xdmf:
+    #    xdmf.write(F)
 
     # with HDF5File(mesh.mpi_comm(), "dg0.h5", "r") as hdf:
     #     vec = PETScVector(mesh.mpi_comm())

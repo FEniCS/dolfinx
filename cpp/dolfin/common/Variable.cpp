@@ -34,11 +34,6 @@ Variable::Variable(const Variable& variable)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Variable::~Variable()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 const Variable& Variable::operator=(const Variable& variable)
 {
   // Assign everything but unique_id

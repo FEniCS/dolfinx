@@ -9,8 +9,8 @@
 #include <cmath>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/constants.h>
-#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/geometry/Point.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 
 using namespace dolfin;
 using namespace dolfin::generation;
@@ -24,14 +24,11 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
-        0, 2);
-    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
-                                                                             3);
+    EigenRowArrayXXd geom(0, 2);
+    EigenRowArrayXXi32 topo(0, 3);
     mesh::Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
     mesh.order();
-    mesh::MeshPartitioning::build_distributed_mesh(mesh);
-    return mesh;
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
   }
 
   // Check options
@@ -39,9 +36,9 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
       && diagonal != "left/right" && diagonal != "crossed")
   {
     log::dolfin_error("RectangleMesh.cpp", "create rectangle",
-                 "Unknown mesh diagonal definition: allowed options are "
-                 "\"left\", \"right\", \"left/right\", \"right/left\" and "
-                 "\"crossed\"");
+                      "Unknown mesh diagonal definition: allowed options are "
+                      "\"left\", \"right\", \"left/right\", \"right/left\" and "
+                      "\"crossed\"");
   }
 
   const geometry::Point& p0 = p[0];
@@ -66,16 +63,17 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS)
   {
     log::dolfin_error("Rectangle.cpp", "create rectangle",
-                 "Rectangle seems to have zero width, height or depth. "
-                 "Consider checking your dimensions");
+                      "Rectangle seems to have zero width, height or depth. "
+                      "Consider checking your dimensions");
   }
 
   if (nx < 1 || ny < 1)
   {
-    log::dolfin_error("RectangleMesh.cpp", "create rectangle",
-                 "Rectangle has non-positive number of vertices in some "
-                 "dimension: number of vertices must be at least 1 in each "
-                 "dimension");
+    log::dolfin_error(
+        "RectangleMesh.cpp", "create rectangle",
+        "Rectangle has non-positive number of vertices in some "
+        "dimension: number of vertices must be at least 1 in each "
+        "dimension");
   }
 
   // Create vertices and cells
@@ -91,10 +89,8 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
     nc = 2 * nx * ny;
   }
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
-      nv, 2);
-  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(nc,
-                                                                           3);
+  EigenRowArrayXXd geom(nv, 2);
+  EigenRowArrayXXi32 topo(nc, 3);
 
   // Create main vertices
   std::size_t vertex = 0;
@@ -205,8 +201,10 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
   mesh::Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
   mesh.order();
 
-  mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  return mesh;
+  if (dolfin::MPI::size(comm) > 1)
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+  else
+    return mesh;
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
@@ -221,8 +219,7 @@ mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
     Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
                                                                              4);
     mesh::Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
-    mesh::MeshPartitioning::build_distributed_mesh(mesh);
-    return mesh;
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
   }
 
   const std::size_t nx = n[0];
@@ -268,7 +265,11 @@ mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
     }
 
   mesh::Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
-  mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  return mesh;
+  mesh.order();
+
+  if (dolfin::MPI::size(comm) > 1)
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+  else
+    return mesh;
 }
 //-----------------------------------------------------------------------------

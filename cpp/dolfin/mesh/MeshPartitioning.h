@@ -46,19 +46,20 @@ class MeshPartitioning
 {
 public:
   /// Build a distributed mesh from a local mesh on process 0
-  static void build_distributed_mesh(Mesh& mesh);
+  static mesh::Mesh build_distributed_mesh(const Mesh& mesh);
 
   /// Build a distributed mesh from a local mesh on process 0, with
   /// distribution of cells supplied (destination processes for each
   /// cell)
-  static void build_distributed_mesh(Mesh& mesh,
-                                     const std::vector<int>& cell_partition,
-                                     const std::string ghost_mode);
+  static mesh::Mesh
+  build_distributed_mesh(const Mesh& mesh,
+                         const std::vector<int>& cell_partition,
+                         const std::string ghost_mode);
 
   /// Build a distributed mesh from 'local mesh data' that is
   /// distributed across processes
-  static void build_distributed_mesh(Mesh& mesh, const LocalMeshData& data,
-                                     const std::string ghost_mode);
+  static mesh::Mesh build_distributed_mesh(const LocalMeshData& data,
+                                           const std::string ghost_mode);
 
 private:
   // Compute cell partitioning from local mesh data. Returns a

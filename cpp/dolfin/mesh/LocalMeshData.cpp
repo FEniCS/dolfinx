@@ -46,6 +46,7 @@ LocalMeshData::LocalMeshData(const Mesh& mesh) : _mpi_comm(mesh.mpi_comm())
   // Whatever process 0 says, copy to others
   MPI::broadcast(mpi_comm(), topology.num_global_cells);
   topology.dim = tdim;
+  topology.ordered = mesh.ordered();
   topology.num_vertices_per_cell = mesh.type().num_vertices();
   topology.cell_type = mesh.type().cell_type();
   topology.cell_vertices.resize(
@@ -62,11 +63,6 @@ LocalMeshData::LocalMeshData(const Mesh& mesh) : _mpi_comm(mesh.mpi_comm())
     for (int j = 0; j != topology.num_vertices_per_cell; ++j)
       topology.cell_vertices[i][j] = geometry.vertex_indices[v[j]];
   }
-}
-//-----------------------------------------------------------------------------
-LocalMeshData::~LocalMeshData()
-{
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void LocalMeshData::check() const

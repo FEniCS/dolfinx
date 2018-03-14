@@ -40,6 +40,9 @@ public:
   /// Copy constructor
   MeshIterator(const MeshIterator& it) = default;
 
+  /// Move constructor
+  MeshIterator(MeshIterator&& it) = default;
+
   /// Copy assignment
   const MeshIterator& operator=(const MeshIterator& m)
   {
@@ -83,7 +86,7 @@ template <class T>
 class MeshEntityIterator : public std::iterator<std::forward_iterator_tag, T>
 {
 public:
-  // Constructor from MeshEntity and dimension
+  /// Constructor from MeshEntity and dimension
   MeshEntityIterator(const MeshEntity& e, std::size_t dim, std::size_t pos)
       : _entity(e.mesh(), dim, 0), _connections(nullptr)
   {
@@ -106,7 +109,7 @@ public:
     _entity._local_index = *_connections;
   }
 
-  // Constructor from MeshEntity
+  /// Constructor from MeshEntity
   MeshEntityIterator(const MeshEntity& e, std::size_t pos)
       : _entity(e.mesh(), 0), _connections(nullptr)
   {
@@ -132,7 +135,10 @@ public:
   /// Copy constructor
   MeshEntityIterator(const MeshEntityIterator& it) = default;
 
-  // Copy assignment
+  /// Move constructor
+  MeshEntityIterator(MeshEntityIterator&& it) = default;
+
+  /// Copy assignment
   const MeshEntityIterator& operator=(const MeshEntityIterator& m)
   {
     _entity = m._entity;
@@ -140,28 +146,33 @@ public:
     return *this;
   }
 
+  /// Increment iterator
   MeshEntityIterator& operator++()
   {
     ++_connections;
     return *this;
   }
 
+  /// Equality operator
   bool operator==(const MeshEntityIterator& other) const
   {
     return _connections == other._connections;
   }
 
+  /// Inequality operator
   bool operator!=(const MeshEntityIterator& other) const
   {
     return _connections != other._connections;
   }
 
+  /// Dereference operator
   T* operator->()
   {
     _entity._local_index = *_connections;
     return &_entity;
   }
 
+  /// Indirection operator
   T& operator*()
   {
     _entity._local_index = *_connections;
@@ -187,15 +198,20 @@ enum class MeshRangeType
   GHOST
 };
 
+/// Representation of a collection of entities of type T
+/// over a mesh. Provides begin() and end() methods for
+/// iterating over entities of the Mesh
 template <class T>
 class MeshRange
 {
 public:
+  /// Constructor
   MeshRange(const Mesh& mesh, MeshRangeType type = MeshRangeType::REGULAR)
       : _mesh(mesh), _type(type)
   {
   }
 
+  /// MeshIterator of type T pointing to start of range (const)
   const MeshIterator<T> begin() const
   {
     if (_type == MeshRangeType::GHOST)
@@ -208,6 +224,7 @@ public:
     return MeshIterator<T>(_mesh, 0);
   }
 
+  /// MeshIterator of type T pointing to start of range (non-const)
   MeshIterator<T> begin()
   {
     if (_type == MeshRangeType::GHOST)
@@ -220,6 +237,7 @@ public:
     return MeshIterator<T>(_mesh, 0);
   }
 
+  /// MeshIterator of type T pointing to end of range (const)
   const MeshIterator<T> end() const
   {
     auto it = MeshIterator<T>(_mesh, 0);
@@ -238,20 +256,21 @@ private:
   MeshRangeType _type;
 };
 
-// FIXME: handled ghosted meshes
-// Class represening a collection of entities of given dimension
-/// over a mesh. Provides  with begin() and end() methods for
-/// iterating over entities incident to a Mesh
+/// Representation of a collection of entities of given dimension
+/// over a mesh. Provides begin() and end() methods for
+/// iterating over entities of the Mesh
 template <>
 class MeshRange<MeshEntity>
 {
 public:
+  /// Constructor
   MeshRange(const Mesh& mesh, int dim,
             MeshRangeType type = MeshRangeType::REGULAR)
       : _mesh(mesh), _dim(dim), _type(type)
   {
   }
 
+  /// MeshIterator of MeshEntity pointing to start of range (const)
   const MeshIterator<MeshEntity> begin() const
   {
     if (_type == MeshRangeType::GHOST)
@@ -261,6 +280,7 @@ public:
     return MeshIterator<MeshEntity>(_mesh, _dim, 0);
   }
 
+  /// MeshIterator of MeshEntity pointing to start of range (non-const)
   MeshIterator<MeshEntity> begin()
   {
     if (_type == MeshRangeType::GHOST)
@@ -270,6 +290,7 @@ public:
     return MeshIterator<MeshEntity>(_mesh, _dim, 0);
   }
 
+  /// MeshIterator of MeshEntity pointing to end of range (const)
   const MeshIterator<MeshEntity> end() const
   {
     if (_type == MeshRangeType::REGULAR)
@@ -296,18 +317,19 @@ template <class T>
 class EntityRange
 {
 public:
+  /// Constructor
   EntityRange(const MeshEntity& e) : _entity(e) {}
 
+  /// MeshEntityIterator of type T pointing to start of range (const)
   const MeshEntityIterator<T> begin() const
   {
     return MeshEntityIterator<T>(_entity, 0);
   }
 
-  MeshEntityIterator<T> begin()
-  {
-    return MeshEntityIterator<T>(_entity, 0);
-  }
+  /// MeshEntityIterator of type T pointing to start of range (non-const)
+  MeshEntityIterator<T> begin() { return MeshEntityIterator<T>(_entity, 0); }
 
+  /// MeshEntityIterator of type T pointing to end of range (const)
   const MeshEntityIterator<T> end() const
   {
     auto it = MeshEntityIterator<T>(_entity, 0);
@@ -328,18 +350,22 @@ template <>
 class EntityRange<MeshEntity>
 {
 public:
+  /// Constructor
   EntityRange(const MeshEntity& e, int dim) : _entity(e), _dim(dim) {}
 
+  /// MeshEntityIterator of MeshEntity pointing to start of range (const)
   const MeshEntityIterator<MeshEntity> begin() const
   {
     return MeshEntityIterator<MeshEntity>(_entity, _dim, 0);
   }
 
+  /// MeshEntityIterator of MeshEntity pointing to start of range (non-const)
   MeshEntityIterator<MeshEntity> begin()
   {
     return MeshEntityIterator<MeshEntity>(_entity, _dim, 0);
   }
 
+  /// MeshEntityIterator of MeshEntity pointing to end of range (const)
   const MeshEntityIterator<MeshEntity> end() const
   {
     std::size_t n = (_entity._dim == _dim) ? 1 : _entity.num_entities(_dim);
@@ -353,5 +379,5 @@ private:
   // Dimension of incident entities
   const std::uint32_t _dim;
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

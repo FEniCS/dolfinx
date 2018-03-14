@@ -27,13 +27,16 @@ public:
   MeshGeometry();
 
   /// Copy constructor
-  MeshGeometry(const MeshGeometry& geometry);
+  MeshGeometry(const MeshGeometry&) = default;
+
+  /// Move constructor
+  MeshGeometry(MeshGeometry&&) = default;
 
   /// Destructor
-  ~MeshGeometry();
+  ~MeshGeometry() = default;
 
   /// Assignment
-  const MeshGeometry& operator=(const MeshGeometry& geometry);
+  MeshGeometry& operator=(const MeshGeometry&) = default;
 
   /// Return Euclidean dimension of coordinate system
   std::size_t dim() const { return _dim; }
@@ -45,12 +48,6 @@ public:
   std::size_t num_vertices() const
   {
     dolfin_assert(coordinates.size() % _dim == 0);
-    if (_degree > 1)
-    {
-      dolfin_assert(entity_offsets.size() > 1);
-      dolfin_assert(entity_offsets[1].size() > 0);
-      return entity_offsets[1][0];
-    }
     return coordinates.size() / _dim;
   }
 
@@ -101,51 +98,21 @@ public:
   geometry::Point point(std::size_t n) const;
 
   /// Initialize coordinate list to given dimension and degree
-  void init(std::size_t dim, std::size_t degree);
-
-  /// Initialise entities. To be called after init
-  void init_entities(const std::vector<std::size_t>& num_entities);
-
-  /// Get the number of coordinate points per entity for this degree
-  std::size_t num_entity_coordinates(std::size_t entity_dim) const
-  {
-    // Calculate the number of points per entity for Lagrange
-    // elements
-    switch (entity_dim)
-    {
-    case 0:
-      return 1;
-    case 1:
-      return (_degree - 1);
-    case 2:
-      return (_degree - 2) * (_degree - 1) / 2;
-    case 3:
-      return (_degree - 3) * (_degree - 2) * (_degree - 1) / 6;
-    }
-    log::dolfin_error("MeshGeometry.h", "calculate number of points",
-                 "Entity dimension out of range");
-    return 0;
-  }
-
-  /// Get the index for an entity point in coordinates
-  std::size_t get_entity_index(std::size_t entity_dim, std::size_t order,
-                               std::size_t index) const
-  {
-    dolfin_assert(entity_dim < entity_offsets.size());
-    dolfin_assert(order < entity_offsets[entity_dim].size());
-    const std::size_t idx = (entity_offsets[entity_dim][order] + index);
-    dolfin_assert(idx * _dim < coordinates.size());
-    return idx;
-  }
+  /// @param dim
+  ///   Geometric dimension
+  /// @param degree
+  ///   Geometric degree
+  /// @param num_points
+  ///   Number of points
+  void init(std::size_t dim, std::size_t degree, std::size_t num_points);
 
   /// Set value of coordinate
   void set(std::size_t local_index, const double* x);
 
   /// Hash of coordinate values
   ///
-  /// *Returns*
-  ///     std::size_t
-  ///         A tree-hashed value of the coordinates over all MPI processes
+  /// @returns std::size_t
+  ///    A tree-hashed value of the coordinates over all MPI processes
   ///
   std::size_t hash() const;
 
@@ -158,9 +125,6 @@ private:
 
   // Polynomial degree (1 = linear, 2 = quadratic etc.)
   std::size_t _degree;
-
-  // Offsets to storage for coordinate points for each entity type
-  std::vector<std::vector<std::size_t>> entity_offsets;
 
   // Coordinates for all points stored as a contiguous array
   std::vector<double> coordinates;

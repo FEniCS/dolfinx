@@ -22,13 +22,10 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
   // Receive mesh according to parallel policy
   if (MPI::rank(comm) != 0)
   {
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
-        0, 1);
-    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
-                                                                             2);
+    EigenRowArrayXXd geom(0, 1);
+    EigenRowArrayXXi32 topo(0, 2);
     mesh::Mesh mesh(comm, mesh::CellType::Type::interval, geom, topo);
-    mesh::MeshPartitioning::build_distributed_mesh(mesh);
-    return mesh;
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
   }
 
   const double a = x[0];
@@ -44,22 +41,21 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
 
   if (b < a)
   {
-    log::dolfin_error("Interval.cpp", "create interval",
-                 "Length of interval is negative. Consider checking the order "
-                 "of your arguments");
+    log::dolfin_error(
+        "Interval.cpp", "create interval",
+        "Length of interval is negative. Consider checking the order "
+        "of your arguments");
   }
 
   if (nx < 1)
   {
-    log::dolfin_error("Interval.cpp", "create interval",
-                 "Number of points on interval is (%d), it must be at least 1",
-                 nx);
+    log::dolfin_error(
+        "Interval.cpp", "create interval",
+        "Number of points on interval is (%d), it must be at least 1", nx);
   }
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
-      (nx + 1), 1);
-  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(nx,
-                                                                           2);
+  EigenRowArrayXXd geom((nx + 1), 1);
+  EigenRowArrayXXi32 topo(nx, 2);
 
   // Create vertices
   for (std::size_t ix = 0; ix <= nx; ix++)
@@ -70,7 +66,10 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
     topo.row(ix) << ix, ix + 1;
 
   mesh::Mesh mesh(comm, mesh::CellType::Type::interval, geom, topo);
-  mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  return mesh;
+
+  if (dolfin::MPI::size(comm) > 1)
+    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+  else
+    return mesh;
 }
 //-----------------------------------------------------------------------------

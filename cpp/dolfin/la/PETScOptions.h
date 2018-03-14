@@ -6,11 +6,8 @@
 
 #pragma once
 
-#ifdef HAS_PETSC
-
-#include "PETScObject.h"
+#include "utils.h"
 #include <boost/lexical_cast.hpp>
-#include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/log/log.h>
 #include <petscoptions.h>
 #include <string>
@@ -51,8 +48,6 @@ public:
   template <typename T>
   static void set(std::string option, const T value)
   {
-    common::SubSystemsManager::init_petsc();
-
     if (option[0] != '-')
       option = '-' + option;
 
@@ -60,7 +55,7 @@ public:
     ierr = PetscOptionsSetValue(
         NULL, option.c_str(), boost::lexical_cast<std::string>(value).c_str());
     if (ierr != 0)
-      PETScObject::petsc_error(ierr, __FILE__, "PetscOptionsSetValue");
+      petsc_error(ierr, __FILE__, "PetscOptionsSetValue");
   }
 
   /// Clear a PETSc option
@@ -71,5 +66,3 @@ public:
 };
 }
 }
-#endif
-

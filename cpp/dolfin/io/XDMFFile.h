@@ -41,6 +41,7 @@ namespace dolfin
 namespace function
 {
 class Function;
+class FunctionSpace;
 }
 
 namespace geometry
@@ -65,8 +66,7 @@ class HDF5File;
 #endif
 
 /// Read and write mesh::Mesh, function::Function, mesh::MeshFunction and other
-/// objects in
-/// XDMF
+/// objects in XDMF
 
 /// This class supports the output of meshes and functions in XDMF
 /// (http://www.xdmf.org) format. It creates an XML file that
@@ -304,9 +304,11 @@ public:
 
   /// Read in the first mesh::Mesh in XDMF file
   ///
-  /// @param mesh (_Mesh_)
-  ///        mesh::Mesh to fill from XDMF file
-  void read(mesh::Mesh& mesh) const;
+  /// @param comm (MPI_Comm)
+  ///        MPI Communicator
+  /// @returns mesh::Mesh
+  ///        Mesh
+  mesh::Mesh read_mesh(MPI_Comm comm) const;
 
   /// Read a function from the XDMF file. Supplied function must
   /// come with already initialized and compatible function space.
@@ -317,8 +319,8 @@ public:
   /// the number of function from time-series, e.g. counter=0
   /// refers to first saved function regardless of its time-step value.
   ///
-  /// @param    u (_Function_)
-  ///         A function to read.
+  /// @param    V (std::shared_ptr<function::FunctionSpace>)
+  ///         FunctionSpace
   /// @param    func_name (_string_)
   ///         A name of a function to read. Must be the same on all processes
   ///         in parallel.
@@ -327,9 +329,11 @@ public:
   ///         is -1 which points to last saved function. Counter works same as
   ///         python array position key, i.e. counter = -2 points to the
   ///         function before the last one.
-  ///
-  void read_checkpoint(function::Function& u, std::string func_name,
-                       std::int64_t counter = -1);
+  /// @returns function::Function
+  ///         Function
+  function::Function
+  read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
+                  std::string func_name, std::int64_t counter = -1);
 
   /// Read first mesh::MeshFunction from file
   /// @param meshfunction (_MeshFunction<bool>_)
@@ -465,10 +469,6 @@ private:
   template <typename T>
   static std::vector<T> compute_topology_data(const mesh::Mesh& mesh,
                                               int cell_dim);
-
-  // Return quadratic topology for mesh::Mesh of degree 2
-  template <typename T>
-  static std::vector<T> compute_quadratic_topology(const mesh::Mesh& mesh);
 
   // Return data which is local
   template <typename T>

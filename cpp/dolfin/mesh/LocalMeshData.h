@@ -34,11 +34,20 @@ public:
   /// Create empty local mesh data
   explicit LocalMeshData(const MPI_Comm mpi_comm);
 
+  // Disable copy constructor
+  LocalMeshData(const LocalMeshData& data) = delete;
+
+  /// Move constructor
+  LocalMeshData(LocalMeshData&& data) = default;
+
   /// Create local mesh data from a given mesh
   explicit LocalMeshData(const Mesh& mesh);
 
   /// Destructor
-  ~LocalMeshData();
+  ~LocalMeshData() = default;
+
+  // Disable assignement operator
+  LocalMeshData& operator=(const LocalMeshData& data) = delete;
 
   /// Check that all essential data has been initialized, and throw error if
   /// there is a problem
@@ -52,6 +61,13 @@ public:
   {
     /// Constructor
     Geometry() : dim(-1), num_global_vertices(-1) {}
+    /// Default copy constructor
+    Geometry(const Geometry& g) = default;
+    /// Default move constructor
+    Geometry(Geometry&& g) = default;
+
+    /// Destructor
+    ~Geometry() = default;
 
     /// Geometric dimension
     int dim;
@@ -73,10 +89,20 @@ public:
   struct Topology
   {
     /// Constructor
-    Topology() : dim(-1), num_global_cells(-1) {}
+    Topology() : dim(-1), ordered(false), num_global_cells(-1) {}
+    /// Default copy Constructor
+    Topology(const Topology& g) = default;
+    /// Default move Constructor
+    Topology(Topology&& g) = default;
+
+    /// Destructor
+    ~Topology() = default;
 
     /// Topological dimension
     int dim;
+
+    /// Ordered
+    bool ordered;
 
     /// Global number of cells
     std::int64_t num_global_cells;
