@@ -169,15 +169,16 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
     for (std::size_t j = 0; j < bs; ++j)
     {
       _map0[i * bs + j] = bs * index + j;
-      if (MPI::rank(MPI_COMM_WORLD) == 1)
-      {
-        std::cout << "l2g: " << _map0[i * bs + j] << ", "
-                  << index_maps[0]->size(common::IndexMap::MapSize::ALL) << ", "
-                  << index_maps[0]->size(common::IndexMap::MapSize::OWNED)
-                  << ", "
-                  << index_maps[0]->size(common::IndexMap::MapSize::UNOWNED)
-                  << std::endl;
-      }
+      // if (MPI::rank(MPI_COMM_WORLD) == 1)
+      // {
+      //   std::cout << "l2g: " << _map0[i * bs + j] << ", "
+      //             << index_maps[0]->size(common::IndexMap::MapSize::ALL) <<
+      //             ", "
+      //             << index_maps[0]->size(common::IndexMap::MapSize::OWNED)
+      //             << ", "
+      //             << index_maps[0]->size(common::IndexMap::MapSize::UNOWNED)
+      //             << std::endl;
+      // }
     }
   }
   MPI::barrier(MPI_COMM_WORLD);

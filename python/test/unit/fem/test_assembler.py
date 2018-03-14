@@ -133,11 +133,9 @@ def test_matrix_assembly_block():
     u_bc = dolfin.function.constant.Constant(2.0)
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
+    # Create assembler
     assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]],
                                                 [L0, L1], [bc])
-    # A, b = assembler.assemble()
-    # A.mat().view()
-    # print(A.mat().norm())
 
     print("--------------------")
 
@@ -155,7 +153,7 @@ def test_matrix_assembly_block():
     print("--------------------")
     dolfin.MPI.barrier(mesh.mpi_comm())
 
-    # Nested
+    # Nested (MatNest)
 
     dolfin.MPI.barrier(mesh.mpi_comm())
     A, b = assembler.assemble(

@@ -121,7 +121,7 @@ void fem::init_monolithic(la::PETScMatrix& A,
 {
   // FIXME: handle null blocks
 
-  std::cout << "Initialising block matrix" << std::endl;
+  // std::cout << "Initialising block matrix" << std::endl;
 
   // Block shape
   const auto shape = boost::extents[a.size()][a[0].size()];
@@ -133,37 +133,38 @@ void fem::init_monolithic(la::PETScMatrix& A,
   {
     for (std::size_t col = 0; col < a[row].size(); ++col)
     {
-      std::cout << "  Initialising block: " << row << ", " << col << std::endl;
+      // std::cout << "  Initialising block: " << row << ", " << col <<
+      // std::endl;
       auto map0 = a[row][col]->function_space(0)->dofmap()->index_map();
       auto map1 = a[row][col]->function_space(1)->dofmap()->index_map();
 
-      std::cout << "  Push Initialising block: " << std::endl;
+      // std::cout << "  Push Initialising block: " << std::endl;
       std::array<std::shared_ptr<const common::IndexMap>, 2> maps
           = {{map0, map1}};
       patterns[row][col]
           = std::make_shared<la::SparsityPattern>(A.mpi_comm(), maps, 0);
 
       // Build sparsity pattern
-      std::cout << "  Build sparsity pattern " << std::endl;
+      // std::cout << "  Build sparsity pattern " << std::endl;
       std::array<const GenericDofMap*, 2> dofmaps
           = {{a[row][col]->function_space(0)->dofmap().get(),
               a[row][col]->function_space(1)->dofmap().get()}};
       SparsityPatternBuilder::build(*patterns[row][col], *a[row][col]->mesh(),
                                     dofmaps, true, false, false, false, false);
-      std::cout << "  End Build sparsity pattern " << std::endl;
+      // std::cout << "  End Build sparsity pattern " << std::endl;
       p[row][col] = patterns[row][col].get();
-      std::cout << "  End push back sparsity pattern pointer " << std::endl;
+      // std::cout << "  End push back sparsity pattern pointer " << std::endl;
     }
   }
 
   // Create merged sparsity pattern
-  std::cout << "  Build merged sparsity pattern" << std::endl;
+  // std::cout << "  Build merged sparsity pattern" << std::endl;
   la::SparsityPattern pattern(A.mpi_comm(), p);
 
   // Initialise matrix
-  std::cout << "  Init parent matrix" << std::endl;
+  // std::cout << "  Init parent matrix" << std::endl;
   A.init(pattern);
-  std::cout << "  Post init parent matrix" << std::endl;
+  // std::cout << "  Post init parent matrix" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void fem::init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L)
@@ -194,7 +195,7 @@ void fem::init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L)
   for (std::size_t i = 0; i < local_to_global.size(); ++i)
   {
     local_to_global[i] = map.local_to_global(i);
-    std::cout << "l2g: " << i << ", " << local_to_global[i] << std::endl;
+    // std::cout << "l2g: " << i << ", " << local_to_global[i] << std::endl;
   }
 
   // Initialize vector
@@ -399,10 +400,11 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
   // Get process that owns index
   int owner = maps[field]->global_block_index_owner(n);
 
-  // Process offset
+  // Processes offset
   std::size_t offset = 0;
   for (int p = 0; p < owner; ++p)
   {
+    // Sum over each field
     for (std::size_t j = 0; j < maps.size(); ++j)
     {
       if (j != field)
@@ -410,7 +412,7 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
     }
   }
 
-  // Local offset
+  // Local (process) offset
   for (unsigned int i = 0; i < field; ++i)
     offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner]);
 
