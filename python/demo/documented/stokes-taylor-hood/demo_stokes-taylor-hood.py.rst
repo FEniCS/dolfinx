@@ -1,4 +1,3 @@
-.. Documentation for the DOLFIN Stokes problem with Taylor-Hood elements demo
 
 .. _demo_pde_stokes-taylor-hood_python_documentation:
 
