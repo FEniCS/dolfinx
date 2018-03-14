@@ -40,6 +40,16 @@ def adjoint(form, reordered_arguments=None):
 
 
 adjoint.__doc__ = ufl.adjoint.__doc__
+adjoint.__doc__ = """
+UFL form operator:
+    Given a combined bilinear form, compute the adjoint form by
+    changing the ordering (count) of the test and trial functions.
+
+    By default, new ``Argument`` objects will be created with
+    opposite ordering. However, if the adjoint form is to
+    be added to other forms later, their arguments must match.
+    In that case, the user must provide a tuple *reordered_arguments* = (u2,v2).
+"""
 
 
 def derivative(form, u, du=None, coefficient_derivatives=None):

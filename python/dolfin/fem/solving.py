@@ -135,7 +135,7 @@ def solve(*args, **kwargs):
 
         info(NonlinearVariationalSolver.default_parameters(), True)
 
-    *4. Solving linear/nonlinear variational problems adaptively
+    *4. Solving linear/nonlinear variational problems adaptively*
 
     Linear and nonlinear variational problems maybe solved adaptively,
     with automated goal-oriented error control. The automated error

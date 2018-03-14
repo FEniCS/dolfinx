@@ -52,19 +52,19 @@ class Timer(cpp.common.Timer):
 
 
 def timed(task):
-    """Decorator for timing functions. Usage::
+    """
+Decorator for timing functions. Usage::
 
-        @timed(\"Do Foo\")
-        def do_foo(*args, **kwargs):
-            # Do something costly
-            pass
+    @timed(\"Do Foo\")
+    def do_foo(*args, **kwargs):
+        # Do something costly
+        pass
 
-        do_foo()
+    do_foo()
+    list_timings(TimingClear.keep, [TimingType.wall, TimingType.user])
 
-        list_timings(TimingClear.keep, [TimingType.wall, TimingType.user])
-
-        t = timing(\"Do Foo\", TimingClear.clear)
-        print("Do foo wall time: %s" % t[1])
+    t = timing(\"Do Foo\", TimingClear.clear)
+    print("Do foo wall time: %s" % t[1])
     """
 
     def decorator(func):
