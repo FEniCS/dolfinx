@@ -17,7 +17,7 @@ in the given order.
 .. 2. Solving nonlinear PDEs: :doc:`Solving a nonlinear Poisson equation
    <demos/nonlinear-poisson/demo_nonlinear-poisson.py>`
 
-.. 3. Using mixed elements: :doc:`Solving the Stokes equations
+3. Using mixed elements: :doc:`Solving the Stokes equations
    <demos/stokes-taylor-hood/demo_stokes-taylor-hood.py>`
 
 .. 4. Using iterative linear solvers: :doc:`Solving the Stokes equations
