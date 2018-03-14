@@ -105,13 +105,6 @@ void io(py::module &m) {
                        std::shared_ptr<const dolfin::function::FunctionSpace>,
                        const std::string>(&dolfin::io::HDF5File::read),
            py::arg("V"), py::arg("name"))
-      .def("read",
-           [](dolfin::io::HDF5File &self, py::object u, std::string name) {
-             auto _u =
-                 u.attr("_cpp_object").cast<dolfin::function::Function *>();
-             self.read(*_u, name);
-           },
-           py::arg("u"), py::arg("name"))
       // write
       .def("write",
            (void (dolfin::io::HDF5File::*)(const dolfin::mesh::Mesh &,
@@ -292,25 +285,25 @@ void io(py::module &m) {
            py::arg("mvc"),
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
        // Points
-      .def("write", [](dolfin::XDMFFile& instance, py::list points,
-                       dolfin::XDMFFile::Encoding encoding)
+      .def("write", [](dolfin::io::XDMFFile& instance, py::list points,
+                       dolfin::io::XDMFFile::Encoding encoding)
            {
-             auto _points = points.cast<std::vector<dolfin::Point>>();
+             auto _points = points.cast<std::vector<dolfin::geometry::Point>>();
              instance.write(_points, encoding);
            },
            py::arg("points"),
-           py::arg("encoding")=dolfin::XDMFFile::Encoding::HDF5)
+           py::arg("encoding")=dolfin::io::XDMFFile::Encoding::HDF5)
       // Points with values
-      .def("write", [](dolfin::XDMFFile& instance, py::list points,
+      .def("write", [](dolfin::io::XDMFFile& instance, py::list points,
                        std::vector<double>& values,
-                       dolfin::XDMFFile::Encoding encoding)
+                       dolfin::io::XDMFFile::Encoding encoding)
            {
-             auto _points = points.cast<std::vector<dolfin::Point>>();
+             auto _points = points.cast<std::vector<dolfin::geometry::Point>>();
              instance.write(_points, values, encoding);
            },
            py::arg("points"),
            py::arg("values"),
-           py::arg("encoding")=dolfin::XDMFFile::Encoding::HDF5)
+           py::arg("encoding")=dolfin::io::XDMFFile::Encoding::HDF5)
       // py:object / dolfin.function.function.Function
       .def("write",
            [](dolfin::io::XDMFFile &instance, const py::object u,
