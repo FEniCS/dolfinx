@@ -42,6 +42,7 @@ public:
   /// interruption
   static void flush_file(const hid_t hdf5_file_handle);
 
+  /// Get filename
   static std::string get_filename(hid_t hdf5_file_handle);
 
   /// Write data to existing HDF file as defined by range blocks on
@@ -123,7 +124,7 @@ public:
                             const std::string dataset_path,
                             const std::string attribute_name);
 
-  // List attributes of dataset or group
+  /// List attributes of dataset or group
   static const std::vector<std::string>
   list_attributes(const hid_t hdf5_file_handle, const std::string dataset_path);
 
@@ -173,7 +174,7 @@ private:
     return 0;
   }
 };
-
+#ifndef DOXYGEN_IGNORE
 //---------------------------------------------------------------------------
 template <>
 inline hid_t HDF5Interface::hdf5_type<float>()
@@ -652,5 +653,6 @@ inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
   dolfin_assert(status != HDF5_FAIL);
 }
 //---------------------------------------------------------------------------
+#endif
 }
 }

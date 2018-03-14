@@ -196,6 +196,7 @@ public:
   /// Get the MPI atomicity
   bool get_mpi_atomicity() const;
 
+  /// Get the file ID
   hid_t h5_id() const { return _hdf5_file_id; }
 
 private:
