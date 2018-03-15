@@ -126,11 +126,10 @@ specifies the :py:class:`FunctionSpace
 <dolfin.cpp.function.FunctionSpace>`. Since we have a
 mixed function space, we write
 ``W.sub(0)`` for the velocity component of the space, and
-``W.sub(1)`` for the pressure componnen of the space.
+``W.sub(1)`` for the pressure component of the space.
 The second argument specifies the value on the Dirichlet
-boundary. The last two arguments specify the marking of the subdomains;
-``sub_domains`` contains the subdomain markers and the number given as
-the last argument is the subdomain index.
+boundary. The last two arguments specify the marking of the subdomains:
+``sub_domains`` contains the subdomain markers, and the final argument is the subdomain index.
 
 The bilinear and linear forms corresponding to the weak mixed
 formulation of the Stokes equations are defined as follows::
@@ -144,7 +143,7 @@ formulation of the Stokes equations are defined as follows::
 
 We also need to create a :py:class:`Function
 <dolfin.cpp.function.Function>` to store the solution(s). The (full)
-solution will be stored in w, which we initialize using the mixed
+solution will be stored in ``w``, which we initialize using the mixed
 function space ``W``. The actual
 computation is performed by calling solve with the arguments ``a``,
 ``L``, ``w`` and ``bcs``. The separate components ``u`` and ``p`` of
@@ -167,7 +166,7 @@ We can calculate the :math:`L^2` norms of u and p as follows::
     print("Norm of velocity coefficient vector: %.15g" % u.vector().norm("l2"))
     print("Norm of pressure coefficient vector: %.15g" % p.vector().norm("l2"))
 
-Finally, we can store to file and plot the solutions::
+Finally, we can save and plot the solutions::
 
     # Save solution in XDMF format
     with XDMFFile(MPI.comm_world, "velocity.xdmf") as ufile_xdmf:
