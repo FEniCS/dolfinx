@@ -61,8 +61,8 @@ jobs:
       - run:
           name: Build DOLFIN Python documentation
           command: |
-	    cd python/demo && python3 ./generate-demo-files.py
-	    cd ../doc && make html
+            cd python/demo && python3 ./generate-demo-files.py
+            cd ../doc && make html
       - persist_to_workspace:
           root: .
           paths:
