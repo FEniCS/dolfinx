@@ -105,19 +105,6 @@ void io(py::module &m) {
                        std::shared_ptr<const dolfin::function::FunctionSpace>,
                        const std::string>(&dolfin::io::HDF5File::read),
            py::arg("V"), py::arg("name"))
-      /*
-      .def("read",
-           [](dolfin::io::HDF5File &self, py::object u, std::string name) {
-             try {
-               auto _u =
-                   u.attr("_cpp_object").cast<dolfin::function::Function *>();
-               self.read(*_u, name);
-             } catch (const std::exception &e) {
-               // Do nothing, pybind11 will try next function
-             }
-           },
-           py::arg("u"), py::arg("name"))
-     */
       // write
       .def("write",
            (void (dolfin::io::HDF5File::*)(const dolfin::mesh::Mesh &,
@@ -177,25 +164,17 @@ void io(py::module &m) {
            py::arg("u"), py::arg("name"), py::arg("t"))
       .def("write",
            [](dolfin::io::HDF5File &self, py::object u, std::string name) {
-             try {
-               auto _u =
-                   u.attr("_cpp_object").cast<dolfin::function::Function *>();
-               self.write(*_u, name);
-             } catch (const std::exception &e) {
-               // Do nothing, pybind11 will try next function
-             }
+             auto _u =
+                 u.attr("_cpp_object").cast<dolfin::function::Function *>();
+             self.write(*_u, name);
            },
            py::arg("u"), py::arg("name"))
       .def("write",
            [](dolfin::io::HDF5File &self, py::object u, std::string name,
               double t) {
-             try {
-               auto _u =
-                   u.attr("_cpp_object").cast<dolfin::function::Function *>();
-               self.write(*_u, name, t);
-             } catch (const std::exception &e) {
-               // Do nothing, pybind11 will try next function
-             }
+             auto _u =
+                 u.attr("_cpp_object").cast<dolfin::function::Function *>();
+             self.write(*_u, name, t);
            },
            py::arg("u"), py::arg("name"), py::arg("t"))
       .def("set_mpi_atomicity", &dolfin::io::HDF5File::set_mpi_atomicity)
@@ -305,47 +284,44 @@ void io(py::module &m) {
                dolfin::io::XDMFFile::write,
            py::arg("mvc"),
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
-      // py:object / dolfin.function.Function
+       // Points
+      .def("write", [](dolfin::io::XDMFFile& instance, py::list points,
+                       dolfin::io::XDMFFile::Encoding encoding)
+           {
+             auto _points = points.cast<std::vector<dolfin::geometry::Point>>();
+             instance.write(_points, encoding);
+           },
+           py::arg("points"),
+           py::arg("encoding")=dolfin::io::XDMFFile::Encoding::HDF5)
+      // Points with values
+      .def("write", [](dolfin::io::XDMFFile& instance, py::list points,
+                       std::vector<double>& values,
+                       dolfin::io::XDMFFile::Encoding encoding)
+           {
+             auto _points = points.cast<std::vector<dolfin::geometry::Point>>();
+             instance.write(_points, values, encoding);
+           },
+           py::arg("points"),
+           py::arg("values"),
+           py::arg("encoding")=dolfin::io::XDMFFile::Encoding::HDF5)
+      // py:object / dolfin.function.function.Function
       .def("write",
            [](dolfin::io::XDMFFile &instance, const py::object u,
               dolfin::io::XDMFFile::Encoding encoding) {
-             try {
-               auto _u =
-                   u.attr("_cpp_object").cast<dolfin::function::Function &>();
-               instance.write(_u, encoding);
-             } catch (const std::exception &e) {
-               // Do nothing, pybind11 will try next function
-             }
+             auto _u =
+                 u.attr("_cpp_object").cast<dolfin::function::Function *>();
+             instance.write(*_u, encoding);
            },
            py::arg("u"),
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
       .def("write",
            [](dolfin::io::XDMFFile &instance, const py::object u, double t,
               dolfin::io::XDMFFile::Encoding encoding) {
-             try {
-               auto _u =
-                   u.attr("_cpp_object").cast<dolfin::function::Function *>();
-               instance.write(*_u, t, encoding);
-             } catch (const std::exception &e) {
-               // Do nothing, pybind11 will try next function
-             }
+             auto _u =
+                 u.attr("_cpp_object").cast<dolfin::function::Function *>();
+             instance.write(*_u, t, encoding);
            },
            py::arg("u"), py::arg("t"),
-           py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
-      // Points
-      .def("write",
-           (void (dolfin::io::XDMFFile::*)(
-               const std::vector<dolfin::geometry::Point> &,
-               dolfin::io::XDMFFile::Encoding)) &
-               dolfin::io::XDMFFile::write,
-           py::arg("points"),
-           py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
-      .def("write",
-           (void (dolfin::io::XDMFFile::*)(
-               const std::vector<dolfin::geometry::Point> &,
-               const std::vector<double> &, dolfin::io::XDMFFile::Encoding)) &
-               dolfin::io::XDMFFile::write,
-           py::arg("points"), py::arg("values"),
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
       // Check points
       .def("write_checkpoint",
