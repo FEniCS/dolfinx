@@ -88,12 +88,20 @@ jobs:
           command: |
             cd python/demo
             export DOLFIN_NOPLOT=1
+            export MPLBACKEND="agg"
             python3 ./generate-demo-files.py
             python3 undocumented/elasticity/demo_elasticity.py
             python3 documented/poisson/demo_poisson.py
             cd documented/stokes-taylor-hood
-            export MPLBACKEND="agg"
             python3 demo_stokes-taylor-hood.py
+
+      - run:
+          name: Run Python demos (MPI)
+          command: |
+            cd python/demo
+            export MPLBACKEND="agg"
+            export DOLFIN_NOPLOT=1
+            mpirun -np 3 python3 documented/poisson/demo_poisson.py
 
       #- run:
       #    name: Run Python unit tests (serial)
