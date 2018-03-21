@@ -74,10 +74,11 @@ private:
 
   // Build a distributed mesh from local mesh data with a computed
   // partition
-  static void build(Mesh& mesh, const LocalMeshData& data,
-                    const std::vector<int>& cell_partition,
-                    const std::map<std::int64_t, std::vector<int>>& ghost_procs,
-                    const std::string ghost_mode);
+  static mesh::Mesh
+  build(const MPI_Comm& comm, const LocalMeshData& data,
+        const std::vector<int>& cell_partition,
+        const std::map<std::int64_t, std::vector<int>>& ghost_procs,
+        const std::string ghost_mode);
 
   // FIXME: Improve this docstring
   // Distribute a layer of cells attached by vertex to boundary updating
@@ -160,10 +161,11 @@ private:
       std::vector<std::int64_t>& vertex_indices,
       std::map<std::int64_t, std::int32_t>& vertex_global_to_local);
 
-  // FIXME: Improve pre-conditions explaination
+  // FIXME: Improve pre-conditions explanation
   // Build mesh
-  static void build_local_mesh(
-      Mesh& mesh, const std::vector<std::int64_t>& global_cell_indices,
+  static mesh::Mesh build_local_mesh(
+      const MPI_Comm& comm,
+      const std::vector<std::int64_t>& global_cell_indices,
       const boost::multi_array<std::int64_t, 2>& cell_global_vertices,
       const mesh::CellType::Type cell_type, const int tdim,
       const std::int64_t num_global_cells,
@@ -173,5 +175,5 @@ private:
       const std::map<std::int64_t, std::int32_t>&
           vertex_global_to_local_indices);
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin
