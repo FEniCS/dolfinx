@@ -1043,26 +1043,26 @@ mesh::Mesh MeshPartitioning::build_local_mesh(
       "Build local part of distributed mesh (from local mesh data)");
 
   const std::size_t num_vertices = vertex_coordinates.shape()[0];
-  Eigen::Map<const EigenRowArrayXXd> _points(vertex_coordinates.data(),
-                                             num_vertices, gdim);
+  Eigen::Map<const EigenRowArrayXXd> points(vertex_coordinates.data(),
+                                            num_vertices, gdim);
 
   // Add cells, remapping topology data to local indices
   std::unique_ptr<mesh::CellType> cell_t(mesh::CellType::create(cell_type));
   const std::int8_t num_cell_vertices = cell_t->num_vertices();
   const std::size_t num_cells = cell_global_vertices.size();
-  EigenRowArrayXXi32 _cells(num_cells, num_cell_vertices);
-  for (std::size_t i = 0; i < num_cells; ++i)
+  EigenRowArrayXXi32 cells(num_cells, num_cell_vertices);
+  for (std::uint32_t i = 0; i < num_cells; ++i)
   {
     for (std::int8_t j = 0; j < num_cell_vertices; ++j)
     {
       // Get local cell vertex
       auto iter = vertex_global_to_local.find(cell_global_vertices[i][j]);
       dolfin_assert(iter != vertex_global_to_local.end());
-      _cells(i, j) = iter->second;
+      cells(i, j) = iter->second;
     }
   }
 
-  mesh::Mesh mesh(comm, cell_type, _points, _cells);
+  mesh::Mesh mesh(comm, cell_type, points, cells);
 
   // Initialise global indices
   mesh.topology().init(0, num_vertices, num_global_vertices);
