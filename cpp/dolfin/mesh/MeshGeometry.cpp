@@ -13,7 +13,7 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-MeshGeometry::MeshGeometry() : _dim(0), _degree(1)
+MeshGeometry::MeshGeometry(std::size_t dim) : _dim(dim), _degree(1)
 {
   // Do nothing
 }
@@ -23,35 +23,18 @@ geometry::Point MeshGeometry::point(std::size_t n) const
   return geometry::Point(_dim, this->x(n));
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::init(std::size_t dim, std::size_t degree,
-                        std::size_t num_points)
+void MeshGeometry::init(std::size_t degree, std::size_t num_points)
 {
-  // Check input
-  if (dim == 0)
-  {
-    log::dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
-                      "Mesh geometry of dimension zero is not supported");
-  }
   if (degree == 0)
   {
     log::dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
                       "Mesh geometry of degree zero is not supported");
   }
 
-  // Avoid repeated initialization; would be a hell for UFL
-  if (_dim > 0 && (_dim != dim || _degree != degree))
-  {
-    log::dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
-                      "Mesh geometry cannot be reinitialized with different "
-                      "dimension and/or degree");
-  }
-
-  // Save dimension and degree
-  _dim = dim;
   _degree = degree;
 
   // Resize geometry
-  coordinates.resize(num_points * dim);
+  coordinates.resize(num_points * _dim);
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::set(std::size_t local_index, const double* x)

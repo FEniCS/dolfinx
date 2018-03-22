@@ -25,22 +25,15 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm)
-    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
-      _ghost_mode("none")
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            Eigen::Ref<const EigenRowArrayXXd> points,
            Eigen::Ref<const EigenRowArrayXXi32> cells)
-    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
-      _ghost_mode("none")
+    : common::Variable("mesh", "DOLFIN mesh"), _geometry(points.cols()),
+      _ordered(false), _mpi_comm(comm), _ghost_mode("none")
 {
   // Initialise geometry
   const std::size_t gdim = points.cols();
-  _geometry.init(gdim, 1, points.rows());
+  _geometry.init(1, points.rows());
 
   // Set cell type
   _cell_type.reset(mesh::CellType::create(type));
@@ -107,14 +100,6 @@ Mesh::Mesh(Mesh&& mesh)
       _ghost_mode(std::move(mesh._ghost_mode))
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
-    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
-      _ghost_mode("none")
-{
-  const std::string ghost_mode = parameters["ghost_mode"];
-  *this = MeshPartitioning::build_distributed_mesh(local_mesh_data, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()
