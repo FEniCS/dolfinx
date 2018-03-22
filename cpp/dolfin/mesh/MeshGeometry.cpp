@@ -13,28 +13,16 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-MeshGeometry::MeshGeometry(std::size_t dim) : _dim(dim), _degree(1)
+MeshGeometry::MeshGeometry(std::size_t dim, std::size_t num_points)
+    : _dim(dim), _degree(1)
 {
-  // Do nothing
+  // Resize geometry
+  coordinates.resize(num_points * _dim);
 }
 //-----------------------------------------------------------------------------
 geometry::Point MeshGeometry::point(std::size_t n) const
 {
   return geometry::Point(_dim, this->x(n));
-}
-//-----------------------------------------------------------------------------
-void MeshGeometry::init(std::size_t degree, std::size_t num_points)
-{
-  if (degree == 0)
-  {
-    log::dolfin_error("MeshGeometry.cpp", "initialize mesh geometry",
-                      "Mesh geometry of degree zero is not supported");
-  }
-
-  _degree = degree;
-
-  // Resize geometry
-  coordinates.resize(num_points * _dim);
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::set(std::size_t local_index, const double* x)
