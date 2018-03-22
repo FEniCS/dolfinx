@@ -63,7 +63,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   Eigen::Map<EigenRowArrayXXd> _x(_geometry.x().data(), num_vertices, gdim);
   _x = points;
 
-  for (std::int32_t i = 0; i != num_vertices; ++i)
+  for (std::uint32_t i = 0; i != num_vertices; ++i)
     _topology.set_global_index(0, i, i);
 
   // Add cells
