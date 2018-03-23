@@ -34,7 +34,9 @@ class MeshTopology : public common::Variable
 {
 public:
   /// Create empty mesh topology
-  MeshTopology();
+  /// @param dim
+  ///   Topological dimension
+  MeshTopology(std::size_t dim);
 
   /// Copy constructor
   MeshTopology(const MeshTopology& topology) = default;
@@ -70,9 +72,6 @@ public:
 
   /// Clear data for given pair of topological dimensions
   void clear(std::size_t d0, std::size_t d1);
-
-  /// Initialize topology of given maximum dimension
-  void init(std::size_t dim);
 
   /// Set number of local entities (local_size) and global entities
   /// (global_size) for given topological dimension dim

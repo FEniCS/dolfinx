@@ -1064,7 +1064,7 @@ mesh::Mesh MeshPartitioning::build_local_mesh(
 
   mesh::Mesh mesh(comm, cell_type, points, cells);
 
-  // Initialise global indices
+  // Reset global indices
   mesh.topology().init(0, num_vertices, num_global_vertices);
   mesh.topology().init(tdim, num_cells, num_global_cells);
 
