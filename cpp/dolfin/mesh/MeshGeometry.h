@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <dolfin/common/types.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <string>
@@ -24,7 +25,7 @@ class MeshGeometry
 {
 public:
   /// Create empty set of coordinates
-  MeshGeometry(std::size_t dim, std::size_t num_points);
+  MeshGeometry(Eigen::Ref<const EigenRowArrayXXd> points);
 
   /// Copy constructor
   MeshGeometry(const MeshGeometry&) = default;
@@ -120,5 +121,5 @@ private:
   // Coordinates for all points stored as a contiguous array
   std::vector<double> coordinates;
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin
