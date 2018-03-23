@@ -42,9 +42,6 @@ public:
   /// Return Euclidean dimension of coordinate system
   std::size_t dim() const { return _dim; }
 
-  /// Return polynomial degree of coordinate field
-  std::size_t degree() const { return _degree; }
-
   /// Return the number of vertex coordinates
   std::size_t num_vertices() const
   {
@@ -114,9 +111,6 @@ public:
 private:
   // Euclidean dimension
   std::size_t _dim;
-
-  // Polynomial degree (1 = linear, 2 = quadratic etc.)
-  std::size_t _degree;
 
   // Coordinates for all points stored as a contiguous array
   std::vector<double> coordinates;

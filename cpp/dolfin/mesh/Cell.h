@@ -224,23 +224,16 @@ public:
   {
     const MeshGeometry& geom = _mesh->geometry();
     const std::size_t gdim = geom.dim();
-    const std::size_t geom_degree = geom.degree();
     const std::size_t num_vertices = this->num_vertices();
     const std::int32_t* vertices = this->entities(0);
 
-    if (geom_degree == 1)
+    coordinates.resize(num_vertices, gdim);
+    for (std::size_t i = 0; i < num_vertices; ++i)
     {
-      coordinates.resize(num_vertices, gdim);
-      for (std::size_t i = 0; i < num_vertices; ++i)
-      {
-        const double* x = geom.x(vertices[i]);
-        for (std::size_t j = 0; j < gdim; ++j)
-          coordinates(i, j) = x[j];
-      }
+      const double* x = geom.x(vertices[i]);
+      for (std::size_t j = 0; j < gdim; ++j)
+        coordinates(i, j) = x[j];
     }
-    else
-      throw std::runtime_error(
-          "Cannot get coordinate_dofs. Unsupported mesh degree");
   }
 
   // FIXME: This function is part of a UFC transition
@@ -249,22 +242,13 @@ public:
   {
     const MeshGeometry& geom = _mesh->geometry();
     const std::size_t gdim = geom.dim();
-    const std::size_t geom_degree = geom.degree();
     const std::size_t num_vertices = this->num_vertices();
     const std::int32_t* vertices = this->entities(0);
 
-    if (geom_degree == 1)
-    {
-      coordinates.resize(num_vertices * gdim);
-      for (std::size_t i = 0; i < num_vertices; ++i)
-        for (std::size_t j = 0; j < gdim; ++j)
-          coordinates[i * gdim + j] = geom.x(vertices[i])[j];
-    }
-    else
-    {
-      log::dolfin_error("Cell.h", "get coordinate_dofs",
-                        "Unsupported mesh degree");
-    }
+    coordinates.resize(num_vertices * gdim);
+    for (std::size_t i = 0; i < num_vertices; ++i)
+      for (std::size_t j = 0; j < gdim; ++j)
+        coordinates[i * gdim + j] = geom.x(vertices[i])[j];
   }
 
   // FIXME: This function is part of a UFC transition

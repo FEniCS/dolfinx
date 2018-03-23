@@ -14,7 +14,7 @@ using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 MeshGeometry::MeshGeometry(Eigen::Ref<const EigenRowArrayXXd> points)
-    : _dim(points.cols()), _degree(1)
+    : _dim(points.cols())
 {
   // Resize geometry
   coordinates.resize(points.rows() * _dim);

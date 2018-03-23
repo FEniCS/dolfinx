@@ -289,11 +289,6 @@ void HDF5File::write(const mesh::Mesh& mesh, std::size_t cell_dim,
     {
       // Usual case, with cell output, and/or none shared with another
       // process.
-      if (mesh.geometry().degree() > 1)
-      {
-        log::dolfin_error("HDF5File.cpp", "write mesh",
-                          "Unsupported geometry degree");
-      }
 
       if (cell_dim == 0)
       {

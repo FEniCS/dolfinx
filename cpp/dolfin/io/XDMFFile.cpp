@@ -120,8 +120,9 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   check_encoding(encoding);
   check_function_name(function_name);
 
-  log::log(PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
-                     "time step %f.",
+  log::log(PROGRESS,
+           "Writing function \"%s\" to XDMF file \"%s\" with "
+           "time step %f.",
            function_name.c_str(), _filename.c_str(), time_step);
 
   // If XML file exists load it to member _xml_doc
@@ -328,16 +329,10 @@ void XDMFFile::write(const function::Function& u, const Encoding encoding)
   std::vector<double> data_values;
   bool cell_centred = has_cell_centred_data(u);
 
-  const int degree = mesh.geometry().degree();
   if (cell_centred)
     data_values = get_cell_data_values(u);
   else
-  {
-    if (degree == 1)
-      data_values = get_point_data_values(u);
-    else
-      data_values = get_p2_data_values(u);
-  }
+    data_values = get_point_data_values(u);
 
   // Add attribute node
   pugi::xml_node attribute_node = grid_node.append_child("Attribute");
@@ -351,9 +346,7 @@ void XDMFFile::write(const function::Function& u, const Encoding encoding)
   std::int64_t width = get_padded_width(u);
   dolfin_assert(data_values.size() % width == 0);
 
-  const std::int64_t num_points
-      = (degree == 2) ? (mesh.num_entities(0) + mesh.num_entities(1))
-                      : mesh.num_entities_global(0);
+  const std::int64_t num_points = mesh.num_entities_global(0);
   const std::int64_t num_values
       = cell_centred ? mesh.num_entities_global(mesh.topology().dim())
                      : num_points;
@@ -685,8 +678,9 @@ void XDMFFile::write_mesh_value_collection(
 
   // Add topology node and attributes
   const std::size_t cell_dim = mvc.dim();
-  const std::string vtk_cell_str = vtk_cell_type_str(
-      mesh->type().entity_type(cell_dim), mesh->geometry().degree());
+  const std::size_t degree = 1;
+  const std::string vtk_cell_str
+      = vtk_cell_type_str(mesh->type().entity_type(cell_dim), degree);
   const std::int64_t num_vertices_per_cell
       = mesh->type().num_vertices(cell_dim);
 
@@ -1390,8 +1384,9 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
 {
   check_function_name(func_name);
 
-  log::log(PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
-                     "counter %i.",
+  log::log(PROGRESS,
+           "Reading function \"%s\" from XDMF file \"%s\" with "
+           "counter %i.",
            func_name.c_str(), _filename.c_str(), counter);
 
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
@@ -1598,14 +1593,9 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Get number of cells (global) and vertices per cell from mesh
   const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
   int num_nodes_per_cell = mesh.type().num_vertices(cell_dim);
-  const int degree = mesh.geometry().degree();
-  if (degree == 2)
-  {
-    dolfin_assert(cell_dim == (int)mesh.topology().dim());
-    num_nodes_per_cell += mesh.type().num_entities(1);
-  }
 
   // Get VTK string for cell type
+  const std::size_t degree = 1;
   const std::string vtk_cell_str
       = vtk_cell_type_str(mesh.type().entity_type(cell_dim), degree);
 
@@ -1619,12 +1609,7 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Compute packed topology data
   std::vector<T> topology_data;
 
-  dolfin_assert(degree == 1 or degree == 2);
-  if (degree == 1)
-    topology_data = compute_topology_data<T>(mesh, cell_dim);
-  else
-    log::dolfin_error("XDMFFile.cpp", "compute topology",
-                      "Unsupported geometry degree");
+  topology_data = compute_topology_data<T>(mesh, cell_dim);
 
   // Add topology DataItem node
   const std::string group_name = path_prefix + "/" + mesh.name();
@@ -1645,11 +1630,7 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Compute number of points (global) in mesh (equal to number of vertices
   // for affine meshes)
-  const int degree = mesh_geometry.degree();
-  dolfin_assert(degree == 1 or degree == 2);
-  const std::int64_t num_points
-      = (degree == 1) ? mesh.num_entities_global(0)
-                      : (mesh.num_entities(0) + mesh.num_entities(1));
+  const std::int64_t num_points = mesh.num_entities_global(0);
 
   // Add geometry node and attributes
   pugi::xml_node geometry_node = xml_node.append_child("Geometry");
@@ -1659,11 +1640,8 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 
   // Pack geometry data
-  std::vector<double> x;
-  if (degree == 1)
-    x = mesh::DistributedMeshTools::reorder_vertices_by_global_indices(mesh);
-  else
-    x = mesh_geometry.x();
+  std::vector<double> x
+      = mesh::DistributedMeshTools::reorder_vertices_by_global_indices(mesh);
 
   // XDMF does not support 1D, so handle as special case
   if (gdim == 1)
@@ -2677,7 +2655,6 @@ bool XDMFFile::has_cell_centred_data(const function::Function& u)
 std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
 {
   const auto mesh = u.function_space()->mesh();
-  dolfin_assert(mesh->geometry().degree() == 1);
 
   auto data_values = u.compute_vertex_values(*mesh);
 
@@ -2722,7 +2699,6 @@ std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
 std::vector<double> XDMFFile::get_p2_data_values(const function::Function& u)
 {
   const auto mesh = u.function_space()->mesh();
-  dolfin_assert(mesh->geometry().degree() == 2);
 
   const std::size_t value_size = u.value_size();
   const std::size_t value_rank = u.value_rank();
