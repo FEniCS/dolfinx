@@ -25,23 +25,13 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm)
-    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
-      _ghost_mode("none")
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            Eigen::Ref<const EigenRowArrayXXd> points,
            Eigen::Ref<const EigenRowArrayXXi32> cells)
-    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
+    : common::Variable("mesh", "DOLFIN mesh"),
+      _geometry(points.cols(), points.rows()), _ordered(false), _mpi_comm(comm),
       _ghost_mode("none")
 {
-  // Initialise geometry
-  const std::size_t gdim = points.cols();
-  _geometry.init(gdim, 1, points.rows());
-
   // Set cell type
   _cell_type.reset(mesh::CellType::create(type));
   const std::size_t tdim = _cell_type->dim();
@@ -50,17 +40,13 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Initialize topological dimension
   _topology.init(tdim);
-
   _ordered = false;
 
   // Initialize mesh data
   // FIXME: sort out global indices for parallel
   // This method assumes it is running in serial, and
   // sets global indices accordingly.
-
-  // Initialise vertices
   const std::size_t num_vertices = points.rows();
-
   _topology.init(0, num_vertices, num_vertices);
   _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);
@@ -72,13 +58,12 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   _topology.init_global_indices(tdim, num_cells);
   _topology(tdim, 0).init(num_cells, _cell_type->num_vertices());
 
-  // Add vertices (do not use points.data(), since we might have a view)
-  std::vector<double>& _x = _geometry.x();
-  for (std::size_t v = 0; v < num_vertices; ++v)
-    for (std::size_t i = 0; i < gdim; ++i)
-      _x[v * gdim + i] = points(v, i);
+  // Initialise vertices
+  const std::size_t gdim = points.cols();
+  Eigen::Map<EigenRowArrayXXd> _x(_geometry.x().data(), num_vertices, gdim);
+  _x = points;
 
-  for (std::int32_t i = 0; i != points.rows(); ++i)
+  for (std::uint32_t i = 0; i != num_vertices; ++i)
     _topology.set_global_index(0, i, i);
 
   // Add cells
@@ -107,14 +92,6 @@ Mesh::Mesh(Mesh&& mesh)
       _ghost_mode(std::move(mesh._ghost_mode))
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data)
-    : common::Variable("mesh", "DOLFIN mesh"), _ordered(false), _mpi_comm(comm),
-      _ghost_mode("none")
-{
-  const std::string ghost_mode = parameters["ghost_mode"];
-  *this = MeshPartitioning::build_distributed_mesh(local_mesh_data, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()

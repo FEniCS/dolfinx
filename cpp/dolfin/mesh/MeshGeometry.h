@@ -24,7 +24,7 @@ class MeshGeometry
 {
 public:
   /// Create empty set of coordinates
-  MeshGeometry();
+  MeshGeometry(std::size_t dim, std::size_t num_points);
 
   /// Copy constructor
   MeshGeometry(const MeshGeometry&) = default;
@@ -96,15 +96,6 @@ public:
 
   /// Return coordinate with local index n as a 3D point value
   geometry::Point point(std::size_t n) const;
-
-  /// Initialize coordinate list to given dimension and degree
-  /// @param dim
-  ///   Geometric dimension
-  /// @param degree
-  ///   Geometric degree
-  /// @param num_points
-  ///   Number of points
-  void init(std::size_t dim, std::size_t degree, std::size_t num_points);
 
   /// Set value of coordinate
   void set(std::size_t local_index, const double* x);

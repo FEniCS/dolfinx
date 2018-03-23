@@ -10,7 +10,10 @@
 # Copy demo files into doc source tree and process with pylit
 import os
 import sys
-#sys.path.append(os.getcwd())
+import shutil
+shutil.rmtree("demos", True)
+shutil.copytree("../../demo/documented", "demos")
+
 #import rstprocess
 #rstprocess.process()
 

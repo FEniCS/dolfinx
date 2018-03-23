@@ -17,7 +17,7 @@ in the given order.
 .. 2. Solving nonlinear PDEs: :doc:`Solving a nonlinear Poisson equation
    <demos/nonlinear-poisson/demo_nonlinear-poisson.py>`
 
-.. 3. Using mixed elements: :doc:`Solving the Stokes equations
+3. Using mixed elements: :doc:`Solving the Stokes equations
    <demos/stokes-taylor-hood/demo_stokes-taylor-hood.py>`
 
 .. 4. Using iterative linear solvers: :doc:`Solving the Stokes equations
@@ -52,3 +52,4 @@ All documented demos
    demos/neumann-poisson/demo_neumann-poisson.py.rst
    demos/nonmatching-interpolation/demo_nonmatching-interpolation.py.rst
    demos/stokes-iterative/demo_stokes-iterative.py.rst
+   demos/stokes-taylor-hood/demo_stokes-taylor-hood.py.rst

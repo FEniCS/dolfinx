@@ -71,14 +71,6 @@ MeshPartitioning::build_distributed_mesh(const LocalMeshData& local_data,
   // MPI communicator
   MPI_Comm comm = local_data.mpi_comm();
 
-  mesh::Mesh mesh(comm);
-  mesh._ordered = local_data.topology.ordered;
-
-  // Store used ghost mode
-  // NOTE: This is the only place in DOLFIN which eventually sets
-  //       mesh._ghost_mode != "none"
-  mesh._ghost_mode = ghost_mode;
-
   // Get mesh partitioner
   const std::string partitioner = parameter::parameters["mesh_partitioner"];
 
@@ -109,7 +101,14 @@ MeshPartitioning::build_distributed_mesh(const LocalMeshData& local_data,
   }
 
   // Build mesh from local mesh data and provided cell partition
-  build(mesh, local_data, cell_partition, ghost_procs, ghost_mode);
+  mesh::Mesh mesh
+      = build(comm, local_data, cell_partition, ghost_procs, ghost_mode);
+
+  // Store used ghost mode
+  // NOTE: This is the only place in DOLFIN which eventually sets
+  //       mesh._ghost_mode != "none"
+  mesh._ghost_mode = ghost_mode;
+  mesh._ordered = local_data.topology.ordered;
 
   // Initialise number of globally connected cells to each facet. This
   // is necessary to distinguish between facets on an exterior
@@ -157,8 +156,8 @@ void MeshPartitioning::partition_cells(
   }
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::build(
-    Mesh& mesh, const LocalMeshData& mesh_data,
+mesh::Mesh MeshPartitioning::build(
+    const MPI_Comm& comm, const LocalMeshData& mesh_data,
     const std::vector<int>& cell_partition,
     const std::map<std::int64_t, std::vector<int>>& ghost_procs,
     const std::string ghost_mode)
@@ -167,9 +166,6 @@ void MeshPartitioning::build(
   log::log(PROGRESS, "Distribute mesh (cell and vertices)");
 
   common::Timer timer("Distribute mesh (cells and vertices)");
-
-  // Sanity check
-  dolfin_assert(mesh._ghost_mode == ghost_mode);
 
   // Topological dimension
   const int tdim = mesh_data.topology.dim;
@@ -195,16 +191,15 @@ void MeshPartitioning::build(
   // receive cells that belong to this process. Also compute auxiliary
   // data related to sharing,
   const std::int32_t num_regular_cells = distribute_cells(
-      mesh.mpi_comm(), mesh_data, cell_partition, ghost_procs,
-      new_cell_vertices, new_global_cell_indices, new_cell_partition,
-      shared_cells);
+      comm, mesh_data, cell_partition, ghost_procs, new_cell_vertices,
+      new_global_cell_indices, new_cell_partition, shared_cells);
 
   if (ghost_mode == "shared_vertex")
   {
     // Send/receive additional cells defined by connectivity to the shared
     // vertices.
-    distribute_cell_layer(mesh.mpi_comm(), num_regular_cells,
-                          num_global_vertices, shared_cells, new_cell_vertices,
+    distribute_cell_layer(comm, num_regular_cells, num_global_vertices,
+                          shared_cells, new_cell_vertices,
                           new_global_cell_indices, new_cell_partition);
   }
   else if (ghost_mode == "none")
@@ -231,8 +226,8 @@ void MeshPartitioning::build(
     std::vector<std::int64_t> reordered_global_cell_indices;
 
     // Re-order cells
-    reorder_cells_gps(mesh.mpi_comm(), num_regular_cells, *cell_type,
-                      shared_cells, new_cell_vertices, new_global_cell_indices,
+    reorder_cells_gps(comm, num_regular_cells, *cell_type, shared_cells,
+                      new_cell_vertices, new_global_cell_indices,
                       reordered_shared_cells, reordered_cell_vertices,
                       reordered_global_cell_indices);
 
@@ -248,9 +243,9 @@ void MeshPartitioning::build(
   // end of the local range
   std::vector<std::int64_t> vertex_indices;
   std::map<std::int64_t, std::int32_t> vertex_global_to_local;
-  const std::int32_t num_regular_vertices = compute_vertex_mapping(
-      mesh.mpi_comm(), num_regular_cells, new_cell_vertices, vertex_indices,
-      vertex_global_to_local);
+  const std::int32_t num_regular_vertices
+      = compute_vertex_mapping(comm, num_regular_cells, new_cell_vertices,
+                               vertex_indices, vertex_global_to_local);
 
 #ifdef HAS_SCOTCH
   if (parameter::parameters["reorder_vertices_gps"])
@@ -260,9 +255,8 @@ void MeshPartitioning::build(
     std::map<std::int64_t, std::int32_t> reordered_vertex_global_to_local;
 
     // Re-order vertices
-    reorder_vertices_gps(mesh.mpi_comm(), num_regular_vertices,
-                         num_regular_cells, num_cell_vertices,
-                         new_cell_vertices, vertex_indices,
+    reorder_vertices_gps(comm, num_regular_vertices, num_regular_cells,
+                         num_cell_vertices, new_cell_vertices, vertex_indices,
                          vertex_global_to_local, reordered_vertex_indices,
                          reordered_vertex_global_to_local);
 
@@ -276,19 +270,18 @@ void MeshPartitioning::build(
   // sharing processes of their destinations
   std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices;
   boost::multi_array<double, 2> vertex_coordinates;
-  distribute_vertices(mesh.mpi_comm(), mesh_data, vertex_indices,
-                      vertex_coordinates, vertex_global_to_local,
-                      shared_vertices);
+  distribute_vertices(comm, mesh_data, vertex_indices, vertex_coordinates,
+                      vertex_global_to_local, shared_vertices);
 
   timer.stop();
 
   // Build local mesh from new_mesh_data
-  build_local_mesh(mesh, new_global_cell_indices, new_cell_vertices,
-                   mesh_data.topology.cell_type, mesh_data.topology.dim,
-                   mesh_data.topology.num_global_cells, vertex_indices,
-                   vertex_coordinates, mesh_data.geometry.dim,
-                   mesh_data.geometry.num_global_vertices,
-                   vertex_global_to_local);
+  mesh::Mesh mesh = build_local_mesh(
+      comm, new_global_cell_indices, new_cell_vertices,
+      mesh_data.topology.cell_type, mesh_data.topology.dim,
+      mesh_data.topology.num_global_cells, vertex_indices, vertex_coordinates,
+      mesh_data.geometry.dim, mesh_data.geometry.num_global_vertices,
+      vertex_global_to_local);
 
   // Fix up some of the ancilliary data about sharing and ownership
   // now that the mesh has been initialised
@@ -309,6 +302,8 @@ void MeshPartitioning::build(
   // Assign map of shared cells and vertices
   mesh.topology().shared_entities(mesh_data.topology.dim) = shared_cells;
   mesh.topology().shared_entities(0) = shared_vertices;
+
+  return mesh;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::reorder_cells_gps(
@@ -1033,8 +1028,8 @@ void MeshPartitioning::build_shared_vertices(
   }
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::build_local_mesh(
-    Mesh& mesh, const std::vector<std::int64_t>& global_cell_indices,
+mesh::Mesh MeshPartitioning::build_local_mesh(
+    const MPI_Comm& comm, const std::vector<std::int64_t>& global_cell_indices,
     const boost::multi_array<std::int64_t, 2>& cell_global_vertices,
     const mesh::CellType::Type cell_type, const int tdim,
     const std::int64_t num_global_cells,
@@ -1047,48 +1042,31 @@ void MeshPartitioning::build_local_mesh(
   common::Timer timer(
       "Build local part of distributed mesh (from local mesh data)");
 
-  // Set cell type
-  mesh._cell_type.reset(mesh::CellType::create(cell_type));
-  dolfin_assert(tdim == (int)mesh._cell_type->dim());
-
-  // Initialise geometry
-  mesh.geometry().init(gdim, 1, vertex_coordinates.shape()[0]);
-
-  // Initialize topological dimension
-  mesh.topology().init(tdim);
-
-  // Initialise vertices
-  const std::size_t num_vertices = vertex_coordinates.size();
-  mesh.topology().init(0, num_vertices, num_global_vertices);
-  mesh.topology().init_ghost(0, num_vertices);
-  mesh.topology().init_global_indices(0, num_vertices);
-
-  // Initialise cells
-  const std::size_t num_cells = cell_global_vertices.size();
-  mesh.topology().init(tdim, num_cells, num_global_cells);
-  mesh.topology().init_ghost(tdim, num_cells);
-  mesh.topology().init_global_indices(tdim, num_cells);
-  mesh.topology()(tdim, 0).init(num_cells, mesh.type().num_vertices());
-
-  // Add vertices
-  std::copy(vertex_coordinates.data(),
-            vertex_coordinates.data() + gdim * num_vertices,
-            mesh.geometry().x().begin());
+  const std::size_t num_vertices = vertex_coordinates.shape()[0];
+  Eigen::Map<const EigenRowArrayXXd> points(vertex_coordinates.data(),
+                                            num_vertices, gdim);
 
   // Add cells, remapping topology data to local indices
-  const std::int8_t num_cell_vertices = mesh._cell_type->num_vertices();
-  std::vector<std::int64_t> cell_topology(num_cell_vertices);
-  for (std::size_t i = 0; i < num_cells; ++i)
+  std::unique_ptr<mesh::CellType> cell_t(mesh::CellType::create(cell_type));
+  const std::int8_t num_cell_vertices = cell_t->num_vertices();
+  const std::size_t num_cells = cell_global_vertices.size();
+  EigenRowArrayXXi32 cells(num_cells, num_cell_vertices);
+  for (std::uint32_t i = 0; i < num_cells; ++i)
   {
     for (std::int8_t j = 0; j < num_cell_vertices; ++j)
     {
       // Get local cell vertex
       auto iter = vertex_global_to_local.find(cell_global_vertices[i][j]);
       dolfin_assert(iter != vertex_global_to_local.end());
-      cell_topology[j] = iter->second;
+      cells(i, j) = iter->second;
     }
-    mesh.topology()(tdim, 0).set(i, cell_topology.data());
   }
+
+  mesh::Mesh mesh(comm, cell_type, points, cells);
+
+  // Initialise global indices
+  mesh.topology().init(0, num_vertices, num_global_vertices);
+  mesh.topology().init(tdim, num_cells, num_global_cells);
 
   // Set global indices for vertices
   for (std::size_t i = 0; i < vertex_indices.size(); ++i)
@@ -1097,5 +1075,7 @@ void MeshPartitioning::build_local_mesh(
   // Set global indices for cells
   for (std::size_t i = 0; i < cell_global_vertices.size(); ++i)
     mesh.topology().set_global_index(tdim, i, global_cell_indices[i]);
+
+  return mesh;
 }
 //-----------------------------------------------------------------------------

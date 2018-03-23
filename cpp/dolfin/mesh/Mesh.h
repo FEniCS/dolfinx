@@ -65,10 +65,6 @@ class MeshEntity;
 class Mesh : public common::Variable
 {
 public:
-  // FIXME: remove
-  /// Create empty mesh
-  Mesh(MPI_Comm comm);
-
   /// Constructor
   ///
   /// @param comm (MPI_Comm)
@@ -94,14 +90,6 @@ public:
   /// @param mesh (Mesh)
   ///         Object to be moved.
   Mesh(Mesh&& mesh);
-
-  /// Create a distributed mesh from local (per process) data.
-  ///
-  /// @param comm (MPI_Comm)
-  ///         MPI communicator for the mesh.
-  /// @param local_mesh_data (LocalMeshData)
-  ///         Data from which to build the mesh.
-  Mesh(MPI_Comm comm, LocalMeshData& local_mesh_data);
 
   /// Destructor.
   ~Mesh();
