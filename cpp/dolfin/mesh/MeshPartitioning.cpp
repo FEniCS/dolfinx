@@ -269,7 +269,8 @@ mesh::Mesh MeshPartitioning::build(
   // Send vertices to processes that need them, informing all
   // sharing processes of their destinations
   std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices;
-  boost::multi_array<double, 2> vertex_coordinates;
+  EigenRowArrayXXd vertex_coordinates(vertex_indices.size(),
+                                      mesh_data.geometry.dim);
   distribute_vertices(comm, mesh_data, vertex_indices, vertex_coordinates,
                       vertex_global_to_local, shared_vertices);
 
@@ -852,7 +853,7 @@ std::int32_t MeshPartitioning::compute_vertex_mapping(
 void MeshPartitioning::distribute_vertices(
     const MPI_Comm mpi_comm, const LocalMeshData& mesh_data,
     const std::vector<std::int64_t>& vertex_indices,
-    boost::multi_array<double, 2>& vertex_coordinates,
+    Eigen::Ref<EigenRowArrayXXd> vertex_coordinates,
     std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
     std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local)
 {
@@ -938,9 +939,6 @@ void MeshPartitioning::distribute_vertices(
     num_received_vertices += received_vertex_coordinates[p].size() / gdim;
   dolfin_assert(num_received_vertices == vertex_indices.size());
 
-  // Initialise coordinates array
-  vertex_coordinates.resize(boost::extents[vertex_indices.size()][gdim]);
-
   // Store coordinates according to global_to_local mapping
   for (int p = 0; p < mpi_size; ++p)
   {
@@ -952,7 +950,7 @@ void MeshPartitioning::distribute_vertices(
       dolfin_assert(v != vertex_global_to_local.end());
       dolfin_assert(vertex_indices[v->second] == global_vertex_index);
       for (int j = 0; j < gdim; ++j)
-        vertex_coordinates[v->second][j]
+        vertex_coordinates(v->second, j)
             = received_vertex_coordinates[p][i * gdim + j];
     }
   }
@@ -1034,17 +1032,13 @@ mesh::Mesh MeshPartitioning::build_local_mesh(
     const mesh::CellType::Type cell_type, const int tdim,
     const std::int64_t num_global_cells,
     const std::vector<std::int64_t>& vertex_indices,
-    const boost::multi_array<double, 2>& vertex_coordinates, const int gdim,
+    Eigen::Ref<const EigenRowArrayXXd> vertex_coordinates, const int gdim,
     const std::int64_t num_global_vertices,
     const std::map<std::int64_t, std::int32_t>& vertex_global_to_local)
 {
   log::log(PROGRESS, "Build local mesh during distributed mesh construction");
   common::Timer timer(
       "Build local part of distributed mesh (from local mesh data)");
-
-  const std::size_t num_vertices = vertex_coordinates.shape()[0];
-  Eigen::Map<const EigenRowArrayXXd> points(vertex_coordinates.data(),
-                                            num_vertices, gdim);
 
   // Add cells, remapping topology data to local indices
   std::unique_ptr<mesh::CellType> cell_t(mesh::CellType::create(cell_type));
@@ -1062,9 +1056,10 @@ mesh::Mesh MeshPartitioning::build_local_mesh(
     }
   }
 
-  mesh::Mesh mesh(comm, cell_type, points, cells);
+  mesh::Mesh mesh(comm, cell_type, vertex_coordinates, cells);
 
   // Reset global indices
+  const std::size_t num_vertices = vertex_coordinates.rows();
   mesh.topology().init(0, num_vertices, num_global_vertices);
   mesh.topology().init(tdim, num_cells, num_global_cells);
 

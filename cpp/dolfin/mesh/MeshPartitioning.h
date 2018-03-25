@@ -148,7 +148,7 @@ private:
   static void distribute_vertices(
       const MPI_Comm mpi_comm, const LocalMeshData& mesh_data,
       const std::vector<std::int64_t>& vertex_indices,
-      boost::multi_array<double, 2>& new_vertex_coordinates,
+      Eigen::Ref<EigenRowArrayXXd> new_vertex_coordinates,
       std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices,
       std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local);
 
@@ -170,7 +170,7 @@ private:
       const mesh::CellType::Type cell_type, const int tdim,
       const std::int64_t num_global_cells,
       const std::vector<std::int64_t>& vertex_indices,
-      const boost::multi_array<double, 2>& vertex_coordinates, const int gdim,
+      Eigen::Ref<const EigenRowArrayXXd> vertex_coordinates, const int gdim,
       const std::int64_t num_global_vertices,
       const std::map<std::int64_t, std::int32_t>&
           vertex_global_to_local_indices);
