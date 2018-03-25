@@ -61,7 +61,6 @@ void mesh(py::module &m) {
              std::shared_ptr<dolfin::mesh::MeshGeometry>>(
       m, "MeshGeometry", "DOLFIN MeshGeometry object")
       .def("dim", &dolfin::mesh::MeshGeometry::dim, "Geometrical dimension")
-      .def("degree", &dolfin::mesh::MeshGeometry::degree, "Degree")
       .def("x", [](dolfin::mesh::MeshGeometry &self) {
         return Eigen::Map<dolfin::EigenRowArrayXXd>(
             self.x().data(), self.num_points(), self.dim());
