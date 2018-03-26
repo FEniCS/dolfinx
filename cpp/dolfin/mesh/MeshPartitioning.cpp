@@ -892,6 +892,16 @@ void MeshPartitioning::distribute_vertices(
     send_vertex_indices[location].push_back(required_vertex);
   }
 
+  std::size_t offset = 0;
+  for (unsigned int i = 0; i != mpi_size; ++i)
+  {
+    send_vertex_indices[i].push_back(offset);
+    offset += (send_vertex_indices[i].size() - 1);
+  }
+
+  std::stringstream s;
+  s << mpi_rank << ":";
+
   // Convenience reference
   const std::vector<std::vector<std::size_t>>& vertex_location
       = send_vertex_indices;
@@ -901,15 +911,60 @@ void MeshPartitioning::distribute_vertices(
   std::vector<std::vector<std::size_t>> received_vertex_indices;
   MPI::all_to_all(mpi_comm, send_vertex_indices, received_vertex_indices);
 
-  // Redistribute received_vertex_indices as vertex sharing
+  // Extract remote offsets for sending data with MPI_Put
+  std::vector<std::size_t> remote_offsets;
+  for (auto& p : received_vertex_indices)
+  {
+    remote_offsets.push_back(p.back());
+    p.pop_back();
+  }
+
+  // Array to receive data into with RMA
+  EigenRowArrayXXd receive_coord_data(vertex_indices.size(), gdim);
+  MPI_Win win;
+  MPI_Win_create(receive_coord_data.data(),
+                 sizeof(double) * vertex_indices.size() * gdim, sizeof(double),
+                 MPI_INFO_NULL, mpi_comm, &win);
+  MPI_Win_fence(0, win);
+
+  // Put data to remote with RMA
+  // Distribute vertex coordinates
+  std::vector<double> send_vertex_data;
+  const std::pair<std::size_t, std::size_t> local_vertex_range
+      = {ranges[mpi_rank], ranges[mpi_rank + 1]};
+  std::size_t buffer_offset = 0;
+  for (int p = 0; p < mpi_size; ++p)
+  {
+    for (auto q = received_vertex_indices[p].begin();
+         q != received_vertex_indices[p].end(); ++q)
+    {
+      dolfin_assert(*q >= local_vertex_range.first
+                    && *q < local_vertex_range.second);
+
+      const std::size_t location = *q - local_vertex_range.first;
+      send_vertex_data.insert(
+          send_vertex_data.end(),
+          mesh_data.geometry.vertex_coordinates[location].begin(),
+          mesh_data.geometry.vertex_coordinates[location].end());
+    }
+
+    MPI_Put(send_vertex_data.data() + buffer_offset, send_vertex_data.size(),
+            MPI_DOUBLE, p, remote_offsets[p] * gdim, send_vertex_data.size(),
+            MPI_DOUBLE, win);
+    buffer_offset = send_vertex_data.size();
+  }
+
+  // Meanwhile, redistribute received_vertex_indices as vertex sharing
   // information
   build_shared_vertices(mpi_comm, shared_vertices_local, vertex_global_to_local,
                         received_vertex_indices);
 
+  // Synchronise and free RMA window
+  MPI_Win_fence(0, win);
+  MPI_Win_free(&win);
+
   // Distribute vertex coordinates
   std::vector<std::vector<double>> send_vertex_coordinates(mpi_size);
-  const std::pair<std::size_t, std::size_t> local_vertex_range
-      = {ranges[mpi_rank], ranges[mpi_rank + 1]};
   for (int p = 0; p < mpi_size; ++p)
   {
     send_vertex_coordinates[p].reserve(received_vertex_indices[p].size()
@@ -940,20 +995,27 @@ void MeshPartitioning::distribute_vertices(
   dolfin_assert(num_received_vertices == vertex_indices.size());
 
   // Store coordinates according to global_to_local mapping
+  unsigned int local_index = 0;
+
   for (int p = 0; p < mpi_size; ++p)
   {
-    for (std::size_t i = 0; i < received_vertex_coordinates[p].size() / gdim;
-         ++i)
+    Eigen::Map<const EigenRowArrayXXd> recv_coord(
+        received_vertex_coordinates[p].data(),
+        received_vertex_coordinates[p].size() / gdim, gdim);
+
+    for (std::size_t i = 0; i < recv_coord.rows(); ++i)
     {
       const std::int64_t global_vertex_index = vertex_location[p][i];
       auto v = vertex_global_to_local.find(global_vertex_index);
       dolfin_assert(v != vertex_global_to_local.end());
       dolfin_assert(vertex_indices[v->second] == global_vertex_index);
-      for (int j = 0; j < gdim; ++j)
-        vertex_coordinates(v->second, j)
-            = received_vertex_coordinates[p][i * gdim + j];
+      vertex_coordinates.row(v->second) = recv_coord.row(i);
+      s << receive_coord_data.row(local_index) - recv_coord.row(i) << "\n";
+      ++local_index;
     }
   }
+
+  std::cout << s.str();
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_shared_vertices(
