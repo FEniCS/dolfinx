@@ -193,8 +193,8 @@ void Function::operator=(const function::FunctionAXPY& axpy)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  std::vector<
-      std::pair<double, std::shared_ptr<const Function>>>::const_iterator it;
+  std::vector<std::pair<double,
+                        std::shared_ptr<const Function>>>::const_iterator it;
   for (it = axpy.pairs().begin() + 1; it != axpy.pairs().end(); it++)
   {
     dolfin_assert(it->second);
@@ -304,6 +304,28 @@ void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
 
     values.row(k) = coefficients * basis;
   }
+
+  // // Below is a sketch of the the 'new' implemention
+
+  // // Compute reference coordinates X, and J, detJ and K
+  // EigenRowArrayXXd X(x.rows(), element.topologival_dimension());
+  // cmap->compute_reference_geometry(X.data(), double* J, double* detJ, double*
+  // K,
+  //                                  x.rows(), x.data(),
+  //                                  coordinate_dofs.data(),
+  //                                  1);
+  // // compute_reference_coordinates(X.data(), X.rows(), x.data(),
+  // //                              const double* coordinate_dofs, 1);
+
+  // // Compute basis on reference element
+  // element.evaluate_reference_basis(double* reference_values, X.rows(), X);
+
+  // // Push basis forward to physical element
+  // element.transform_reference_basis_derivatives(
+  //     double* values, 0, x.rows(), reference_values, X, J, detJ, K);
+
+  // // Compute expansion
+  // // TODO
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(const GenericFunction& v)

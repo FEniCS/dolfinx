@@ -117,13 +117,6 @@ public:
                                            X.data());
   }
 
-  // transform_reference_basis_derivatives(double* values, std::size_t order,
-  //                                       std::size_t num_points,
-  //                                       const double* reference_values,
-  //                                       const double* X, const double* J,
-  //                                       const double* detJ, const double* K,
-  //                                       int cell_orientation) const = 0;
-
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
       double* values, std::size_t order, std::size_t num_points,

@@ -18,8 +18,8 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <petscmat.h>
 #include <petscdmshell.h>
+#include <petscmat.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -502,8 +502,10 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
 
     // Evaluate the basis functions of the coarse cells at the fine
     // point and store the values into temp_values
-    el->evaluate_basis_all(temp_values.data(), curr_point.coordinates(),
-                           coordinate_dofs.data(), -1);
+    throw std::runtime_error(
+        "PETScDMCollection needs updating for FiniteElement change");
+    // el->evaluate_basis_all(temp_values.data(), curr_point.coordinates(),
+    //                       coordinate_dofs.data(), -1);
 
     // Get the coarse dofs associated with this cell
     auto temp_dofs = coarsemap->cell_dofs(id);
