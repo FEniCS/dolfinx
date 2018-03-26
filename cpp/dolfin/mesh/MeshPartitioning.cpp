@@ -894,7 +894,7 @@ void MeshPartitioning::distribute_vertices(
 
   // Piggy-back local offset onto end of sending arrays
   std::size_t offset = 0;
-  for (unsigned int i = 0; i != mpi_size; ++i)
+  for (int i = 0; i != mpi_size; ++i)
   {
     send_vertex_indices[i].push_back(offset);
     offset += (send_vertex_indices[i].size() - 1);
