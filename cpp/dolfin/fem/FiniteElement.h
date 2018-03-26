@@ -93,13 +93,47 @@ public:
     return _ufc_element->value_dimension(i);
   }
 
-  /// Evaluate basis function i at given point in cell
-  void evaluate_basis(std::size_t i, double* values, const double* x,
-                      const double* coordinate_dofs, int cell_orientation) const
+  // /// Evaluate basis function i at given point in cell
+  // void evaluate_basis(std::size_t i, double* values, const double* x,
+  //                     const double* coordinate_dofs, int cell_orientation)
+  //                     const
+  // {
+  //   dolfin_assert(_ufc_element);
+  //   _ufc_element->evaluate_basis(i, values, x, coordinate_dofs,
+  //                                cell_orientation);
+  // }
+
+  /// Evaluate all basis functions at given point in cell
+  // void evaluate_reference_basis(double * reference_values,
+  //                               std::size_t num_points,
+  //                               const double * X) const final override
+  // reference_values[num_points][num_dofs][reference_value_size]
+  void
+  evaluate_reference_basis(double* reference_values, std::size_t num_points,
+                           const Eigen::Ref<const EigenRowArrayXXd> X) const
   {
     dolfin_assert(_ufc_element);
-    _ufc_element->evaluate_basis(i, values, x, coordinate_dofs,
-                                 cell_orientation);
+    _ufc_element->evaluate_reference_basis(reference_values, num_points,
+                                           X.data());
+  }
+
+  // transform_reference_basis_derivatives(double* values, std::size_t order,
+  //                                       std::size_t num_points,
+  //                                       const double* reference_values,
+  //                                       const double* X, const double* J,
+  //                                       const double* detJ, const double* K,
+  //                                       int cell_orientation) const = 0;
+
+  /// Push basis function (derivatives) forward to physical element
+  void transform_reference_basis_derivatives(
+      double* values, std::size_t order, std::size_t num_points,
+      const double* reference_values,
+      const Eigen::Ref<const EigenRowArrayXXd> X, const double* J,
+      const double* detJ, const double* K) const
+  {
+    dolfin_assert(_ufc_element);
+    _ufc_element->transform_reference_basis_derivatives(
+        values, order, num_points, reference_values, X.data(), J, detJ, K, 1);
   }
 
   /// Evaluate all basis functions at given point in cell
