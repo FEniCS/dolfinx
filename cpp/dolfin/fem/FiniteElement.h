@@ -113,27 +113,29 @@ public:
   }
 
   /// Evaluate order n derivatives of basis function i at given point in cell
-  void evaluate_basis_derivatives(std::uint32_t i, std::uint32_t n,
-                                  double* values, const double* x,
-                                  const double* coordinate_dofs,
-                                  int cell_orientation) const
-  {
-    dolfin_assert(_ufc_element);
-    _ufc_element->evaluate_basis_derivatives(i, n, values, x, coordinate_dofs,
-                                             cell_orientation);
-  }
+  // void evaluate_basis_derivatives(std::uint32_t i, std::uint32_t n,
+  //                                 double* values, const double* x,
+  //                                 const double* coordinate_dofs,
+  //                                 int cell_orientation) const
+  // {
+  //   dolfin_assert(_ufc_element);
+  //   _ufc_element->evaluate_basis_derivatives(i, n, values, x,
+  //   coordinate_dofs,
+  //                                            cell_orientation);
+  // }
 
   /// Evaluate order n derivatives of all basis functions at given
   /// point in cell
-  void evaluate_basis_derivatives_all(std::uint32_t n, double* values,
-                                      const double* x,
-                                      const double* coordinate_dofs,
-                                      int cell_orientation) const
-  {
-    dolfin_assert(_ufc_element);
-    _ufc_element->evaluate_basis_derivatives_all(n, values, x, coordinate_dofs,
-                                                 cell_orientation);
-  }
+  // void evaluate_basis_derivatives_all(std::uint32_t n, double* values,
+  //                                     const double* x,
+  //                                     const double* coordinate_dofs,
+  //                                     int cell_orientation) const
+  // {
+  //   dolfin_assert(_ufc_element);
+  //   _ufc_element->evaluate_basis_derivatives_all(n, values, x,
+  //   coordinate_dofs,
+  //                                                cell_orientation);
+  // }
 
   /// Tabulate the coordinates of all dofs on an element
   ///
