@@ -15,9 +15,22 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-MeshTopology::MeshTopology() : common::Variable("topology", "mesh topology")
+MeshTopology::MeshTopology(std::size_t dim)
+    : common::Variable("topology", "mesh topology")
 {
-  // Do nothing
+  // Initialize number of mesh entities
+  _num_entities = std::vector<std::int32_t>(dim + 1, 0);
+  _global_num_entities = std::vector<std::int64_t>(dim + 1, 0);
+  _ghost_offset_index = std::vector<std::size_t>(dim + 1, 0);
+
+  // Initialize storage for global indices
+  _global_indices.resize(dim + 1);
+
+  // Initialize mesh connectivity
+  _connectivity.resize(dim + 1);
+  for (std::size_t d0 = 0; d0 <= dim; d0++)
+    for (std::size_t d1 = 0; d1 <= dim; d1++)
+      _connectivity[d0].push_back(MeshConnectivity(d0, d1));
 }
 //-----------------------------------------------------------------------------
 std::uint32_t MeshTopology::dim() const { return _num_entities.size() - 1; }
@@ -56,23 +69,6 @@ void MeshTopology::clear(std::size_t d0, std::size_t d1)
   dolfin_assert(d0 < _connectivity.size());
   dolfin_assert(d1 < _connectivity[d0].size());
   _connectivity[d0][d1].clear();
-}
-//-----------------------------------------------------------------------------
-void MeshTopology::init(std::size_t dim)
-{
-  // Initialize number of mesh entities
-  _num_entities = std::vector<std::int32_t>(dim + 1, 0);
-  _global_num_entities = std::vector<std::int64_t>(dim + 1, 0);
-  _ghost_offset_index = std::vector<std::size_t>(dim + 1, 0);
-
-  // Initialize storage for global indices
-  _global_indices.resize(dim + 1);
-
-  // Initialize mesh connectivity
-  _connectivity.resize(dim + 1);
-  for (std::size_t d0 = 0; d0 <= dim; d0++)
-    for (std::size_t d1 = 0; d1 <= dim; d1++)
-      _connectivity[d0].push_back(MeshConnectivity(d0, d1));
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::init(std::size_t dim, std::int32_t local_size,

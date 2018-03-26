@@ -269,7 +269,8 @@ mesh::Mesh MeshPartitioning::build(
   // Send vertices to processes that need them, informing all
   // sharing processes of their destinations
   std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices;
-  boost::multi_array<double, 2> vertex_coordinates;
+  EigenRowArrayXXd vertex_coordinates(vertex_indices.size(),
+                                      mesh_data.geometry.dim);
   distribute_vertices(comm, mesh_data, vertex_indices, vertex_coordinates,
                       vertex_global_to_local, shared_vertices);
 
@@ -852,7 +853,7 @@ std::int32_t MeshPartitioning::compute_vertex_mapping(
 void MeshPartitioning::distribute_vertices(
     const MPI_Comm mpi_comm, const LocalMeshData& mesh_data,
     const std::vector<std::int64_t>& vertex_indices,
-    boost::multi_array<double, 2>& vertex_coordinates,
+    Eigen::Ref<EigenRowArrayXXd> vertex_coordinates,
     std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
     std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local)
 {
@@ -891,6 +892,14 @@ void MeshPartitioning::distribute_vertices(
     send_vertex_indices[location].push_back(required_vertex);
   }
 
+  // Piggy-back local offset onto end of sending arrays
+  std::size_t offset = 0;
+  for (int i = 0; i != mpi_size; ++i)
+  {
+    send_vertex_indices[i].push_back(offset);
+    offset += (send_vertex_indices[i].size() - 1);
+  }
+
   // Convenience reference
   const std::vector<std::vector<std::size_t>>& vertex_location
       = send_vertex_indices;
@@ -900,60 +909,81 @@ void MeshPartitioning::distribute_vertices(
   std::vector<std::vector<std::size_t>> received_vertex_indices;
   MPI::all_to_all(mpi_comm, send_vertex_indices, received_vertex_indices);
 
-  // Redistribute received_vertex_indices as vertex sharing
+  // Extract remote offsets for sending data with MPI_Put
+  std::vector<std::size_t> remote_offsets;
+  std::size_t num_received_indices = 0;
+  for (auto& p : received_vertex_indices)
+  {
+    remote_offsets.push_back(p.back());
+    p.pop_back();
+    num_received_indices += p.size();
+  }
+
+  // Pop offset off back of sending arrays too
+  for (auto& p : send_vertex_indices)
+    p.pop_back();
+
+  // Array to receive data into with RMA
+  EigenRowArrayXXd receive_coord_data(vertex_indices.size(), gdim);
+
+  // Create local RMA window
+  MPI_Win win;
+  MPI_Win_create(receive_coord_data.data(),
+                 sizeof(double) * vertex_indices.size() * gdim, sizeof(double),
+                 MPI_INFO_NULL, mpi_comm, &win);
+  MPI_Win_fence(0, win);
+
+  // Put data to remote with RMA
+  EigenRowArrayXXd send_coord_data(num_received_indices, gdim);
+  Eigen::Map<const EigenRowArrayXXd> mesh_data_vertices(
+      mesh_data.geometry.vertex_coordinates.data(),
+      mesh_data.geometry.vertex_coordinates.shape()[0],
+      mesh_data.geometry.vertex_coordinates.shape()[1]);
+
+  const std::pair<std::size_t, std::size_t> local_vertex_range
+      = {ranges[mpi_rank], ranges[mpi_rank + 1]};
+
+  std::size_t local_index = 0;
+  for (int p = 0; p < mpi_size; ++p)
+  {
+    const std::size_t local_index_0 = local_index;
+    for (const auto& q : received_vertex_indices[p])
+    {
+      dolfin_assert(q >= local_vertex_range.first
+                    && q < local_vertex_range.second);
+
+      const std::size_t location = q - local_vertex_range.first;
+      send_coord_data.row(local_index) = mesh_data_vertices.row(location);
+      ++local_index;
+    }
+
+    const std::size_t local_size = (local_index - local_index_0) * gdim;
+    MPI_Put(send_coord_data.data() + local_index_0 * gdim, local_size,
+            MPI_DOUBLE, p, remote_offsets[p] * gdim, local_size, MPI_DOUBLE,
+            win);
+  }
+
+  // Meanwhile, redistribute received_vertex_indices as vertex sharing
   // information
   build_shared_vertices(mpi_comm, shared_vertices_local, vertex_global_to_local,
                         received_vertex_indices);
 
-  // Distribute vertex coordinates
-  std::vector<std::vector<double>> send_vertex_coordinates(mpi_size);
-  const std::pair<std::size_t, std::size_t> local_vertex_range
-      = {ranges[mpi_rank], ranges[mpi_rank + 1]};
-  for (int p = 0; p < mpi_size; ++p)
-  {
-    send_vertex_coordinates[p].reserve(received_vertex_indices[p].size()
-                                       * gdim);
-    for (auto q = received_vertex_indices[p].begin();
-         q != received_vertex_indices[p].end(); ++q)
-    {
-      dolfin_assert(*q >= local_vertex_range.first
-                    && *q < local_vertex_range.second);
-
-      const std::size_t location = *q - local_vertex_range.first;
-      send_vertex_coordinates[p].insert(
-          send_vertex_coordinates[p].end(),
-          mesh_data.geometry.vertex_coordinates[location].begin(),
-          mesh_data.geometry.vertex_coordinates[location].end());
-    }
-  }
-
-  // Send actual coordinates to destinations
-  std::vector<std::vector<double>> received_vertex_coordinates;
-  MPI::all_to_all(mpi_comm, send_vertex_coordinates,
-                  received_vertex_coordinates);
-
-  // Count number of received local vertices and check it agrees with map
-  std::size_t num_received_vertices = 0;
-  for (int p = 0; p < mpi_size; ++p)
-    num_received_vertices += received_vertex_coordinates[p].size() / gdim;
-  dolfin_assert(num_received_vertices == vertex_indices.size());
-
-  // Initialise coordinates array
-  vertex_coordinates.resize(boost::extents[vertex_indices.size()][gdim]);
+  // Synchronise and free RMA window
+  MPI_Win_fence(0, win);
+  MPI_Win_free(&win);
 
   // Store coordinates according to global_to_local mapping
+  local_index = 0;
   for (int p = 0; p < mpi_size; ++p)
   {
-    for (std::size_t i = 0; i < received_vertex_coordinates[p].size() / gdim;
-         ++i)
+    for (const auto& global_vertex_index : vertex_location[p])
     {
-      const std::int64_t global_vertex_index = vertex_location[p][i];
       auto v = vertex_global_to_local.find(global_vertex_index);
       dolfin_assert(v != vertex_global_to_local.end());
-      dolfin_assert(vertex_indices[v->second] == global_vertex_index);
-      for (int j = 0; j < gdim; ++j)
-        vertex_coordinates[v->second][j]
-            = received_vertex_coordinates[p][i * gdim + j];
+      dolfin_assert(vertex_indices[v->second]
+                    == (std::int64_t)global_vertex_index);
+      vertex_coordinates.row(v->second) = receive_coord_data.row(local_index);
+      ++local_index;
     }
   }
 }
@@ -1034,17 +1064,13 @@ mesh::Mesh MeshPartitioning::build_local_mesh(
     const mesh::CellType::Type cell_type, const int tdim,
     const std::int64_t num_global_cells,
     const std::vector<std::int64_t>& vertex_indices,
-    const boost::multi_array<double, 2>& vertex_coordinates, const int gdim,
+    Eigen::Ref<const EigenRowArrayXXd> vertex_coordinates, const int gdim,
     const std::int64_t num_global_vertices,
     const std::map<std::int64_t, std::int32_t>& vertex_global_to_local)
 {
   log::log(PROGRESS, "Build local mesh during distributed mesh construction");
   common::Timer timer(
       "Build local part of distributed mesh (from local mesh data)");
-
-  const std::size_t num_vertices = vertex_coordinates.shape()[0];
-  Eigen::Map<const EigenRowArrayXXd> points(vertex_coordinates.data(),
-                                            num_vertices, gdim);
 
   // Add cells, remapping topology data to local indices
   std::unique_ptr<mesh::CellType> cell_t(mesh::CellType::create(cell_type));
@@ -1062,9 +1088,10 @@ mesh::Mesh MeshPartitioning::build_local_mesh(
     }
   }
 
-  mesh::Mesh mesh(comm, cell_type, points, cells);
+  mesh::Mesh mesh(comm, cell_type, vertex_coordinates, cells);
 
-  // Initialise global indices
+  // Reset global indices
+  const std::size_t num_vertices = vertex_coordinates.rows();
   mesh.topology().init(0, num_vertices, num_global_vertices);
   mesh.topology().init(tdim, num_cells, num_global_cells);
 

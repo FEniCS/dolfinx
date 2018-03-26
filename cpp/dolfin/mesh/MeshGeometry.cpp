@@ -13,11 +13,15 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-MeshGeometry::MeshGeometry(std::size_t dim, std::size_t num_points)
-    : _dim(dim), _degree(1)
+MeshGeometry::MeshGeometry(Eigen::Ref<const EigenRowArrayXXd> points)
+    : _dim(points.cols())
 {
   // Resize geometry
-  coordinates.resize(num_points * _dim);
+  coordinates.resize(points.rows() * _dim);
+
+  // Map and copy data
+  Eigen::Map<EigenRowArrayXXd> _x(coordinates.data(), points.rows(), _dim);
+  _x = points;
 }
 //-----------------------------------------------------------------------------
 geometry::Point MeshGeometry::point(std::size_t n) const

@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <dolfin/common/types.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <string>
@@ -24,7 +25,7 @@ class MeshGeometry
 {
 public:
   /// Create empty set of coordinates
-  MeshGeometry(std::size_t dim, std::size_t num_points);
+  MeshGeometry(Eigen::Ref<const EigenRowArrayXXd> points);
 
   /// Copy constructor
   MeshGeometry(const MeshGeometry&) = default;
@@ -40,9 +41,6 @@ public:
 
   /// Return Euclidean dimension of coordinate system
   std::size_t dim() const { return _dim; }
-
-  /// Return polynomial degree of coordinate field
-  std::size_t degree() const { return _degree; }
 
   /// Return the number of vertex coordinates
   std::size_t num_vertices() const
@@ -114,11 +112,8 @@ private:
   // Euclidean dimension
   std::size_t _dim;
 
-  // Polynomial degree (1 = linear, 2 = quadratic etc.)
-  std::size_t _degree;
-
   // Coordinates for all points stored as a contiguous array
   std::vector<double> coordinates;
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

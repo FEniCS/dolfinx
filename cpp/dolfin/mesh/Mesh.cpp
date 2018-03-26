@@ -29,55 +29,47 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            Eigen::Ref<const EigenRowArrayXXd> points,
            Eigen::Ref<const EigenRowArrayXXi32> cells)
     : common::Variable("mesh", "DOLFIN mesh"),
-      _geometry(points.cols(), points.rows()), _ordered(false), _mpi_comm(comm),
-      _ghost_mode("none")
+      _cell_type(mesh::CellType::create(type)), _topology(_cell_type->dim()),
+      _geometry(points), _ordered(false), _mpi_comm(comm), _ghost_mode("none")
 {
-  // Set cell type
-  _cell_type.reset(mesh::CellType::create(type));
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t nv = _cell_type->num_vertices();
   dolfin_assert(nv == cells.cols());
 
-  // Initialize topological dimension
-  _topology.init(tdim);
   _ordered = false;
 
   // Initialize mesh data
   // FIXME: sort out global indices for parallel
   // This method assumes it is running in serial, and
   // sets global indices accordingly.
+
+  // Initialise vertex topology
   const std::size_t num_vertices = points.rows();
   _topology.init(0, num_vertices, num_vertices);
   _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);
+  for (std::uint32_t i = 0; i != num_vertices; ++i)
+    _topology.set_global_index(0, i, i);
 
-  // Initialise cells
+  // Initialise cell topology
   const std::size_t num_cells = cells.rows();
   _topology.init(tdim, num_cells, num_cells);
   _topology.init_ghost(tdim, num_cells);
   _topology.init_global_indices(tdim, num_cells);
-  _topology(tdim, 0).init(num_cells, _cell_type->num_vertices());
-
-  // Initialise vertices
-  const std::size_t gdim = points.cols();
-  Eigen::Map<EigenRowArrayXXd> _x(_geometry.x().data(), num_vertices, gdim);
-  _x = points;
-
-  for (std::uint32_t i = 0; i != num_vertices; ++i)
-    _topology.set_global_index(0, i, i);
+  _topology(tdim, 0).init(num_cells, nv);
 
   // Add cells
   for (std::int32_t i = 0; i != cells.rows(); ++i)
   {
-    _topology(tdim, 0).set(i, cells.data() + i * nv);
+    _topology(tdim, 0).set(i, cells.row(i).data());
     _topology.set_global_index(tdim, i, i);
   }
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-    : common::Variable(mesh.name(), mesh.label()), _topology(mesh._topology),
-      _geometry(mesh._geometry),
+    : common::Variable(mesh.name(), mesh.label()),
       _cell_type(CellType::create(mesh._cell_type->cell_type())),
+      _topology(mesh._topology), _geometry(mesh._geometry),
       _ordered(mesh._ordered), _mpi_comm(mesh.mpi_comm()),
       _ghost_mode(mesh._ghost_mode)
 {
@@ -85,10 +77,11 @@ Mesh::Mesh(const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(Mesh&& mesh)
-    : common::Variable(std::move(mesh)), _topology(std::move(mesh._topology)),
-      _geometry(std::move(mesh._geometry)),
+    : common::Variable(std::move(mesh)),
       _cell_type(CellType::create(mesh._cell_type->cell_type())),
-      _ordered(std::move(mesh._ordered)), _mpi_comm(std::move(mesh._mpi_comm)),
+      _topology(std::move(mesh._topology)),
+      _geometry(std::move(mesh._geometry)), _ordered(std::move(mesh._ordered)),
+      _mpi_comm(std::move(mesh._mpi_comm)),
       _ghost_mode(std::move(mesh._ghost_mode))
 {
   // Do nothing

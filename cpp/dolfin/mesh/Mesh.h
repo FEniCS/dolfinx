@@ -315,6 +315,9 @@ private:
   friend class TopologyComputation;
   friend class MeshPartitioning;
 
+  // Cell type
+  std::unique_ptr<mesh::CellType> _cell_type;
+
   // Mesh topology
   MeshTopology _topology;
 
@@ -325,9 +328,6 @@ private:
   // and other objects. The tree is initialized to a zero pointer
   // and is allocated and built when bounding_box_tree() is called.
   mutable std::shared_ptr<geometry::BoundingBoxTree> _tree;
-
-  // Cell type
-  std::unique_ptr<mesh::CellType> _cell_type;
 
   // True if mesh has been ordered
   mutable bool _ordered;
