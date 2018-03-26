@@ -21,7 +21,6 @@ namespace dolfin
 #include <dolfin/fem/LocalAssembler.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
 #include <dolfin/fem/PETScDMCollection.h>
-#include <dolfin/fem/PointSource.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/fem/SystemAssembler.h>
 #include <dolfin/fem/utils.h>
