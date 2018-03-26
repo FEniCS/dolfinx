@@ -980,7 +980,8 @@ void MeshPartitioning::distribute_vertices(
     {
       auto v = vertex_global_to_local.find(global_vertex_index);
       dolfin_assert(v != vertex_global_to_local.end());
-      dolfin_assert(vertex_indices[v->second] == global_vertex_index);
+      dolfin_assert(vertex_indices[v->second]
+                    == (std::int64_t)global_vertex_index);
       vertex_coordinates.row(v->second) = receive_coord_data.row(local_index);
       ++local_index;
     }
