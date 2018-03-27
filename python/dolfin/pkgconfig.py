@@ -34,10 +34,10 @@ def exists(package):
 
 def parse(package):
     "Return a dict containing compile-time definitions"
-    parse_map = {'D': 'define_macros',
-                 'I': 'include_dirs',
-                 'L': 'library_dirs',
-                 'l': 'libraries'}
+    parse_map = {'-D': 'define_macros',
+                 '-I': 'include_dirs',
+                 '-L': 'library_dirs',
+                 '-l': 'libraries'}
 
     result = {x: [] for x in parse_map.values()}
 
@@ -47,8 +47,9 @@ def parse(package):
 
     # Iterate through each token in the output.
     for token in out.split():
-        key = parse_map[token[1]]
-        t = token[2:].strip()
-        result[key].append(t)
+        key = parse_map.get(token[:2])
+        if key:
+            t = token[2:].strip()
+            result[key].append(t)
 
     return result
