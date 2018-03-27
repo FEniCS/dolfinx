@@ -81,8 +81,8 @@ std::vector<double> Constant::values() const
   return _values;
 }
 //-----------------------------------------------------------------------------
-void Constant::eval(Eigen::Ref<EigenRowMatrixXd> values,
-                    Eigen::Ref<const EigenRowMatrixXd> x) const
+void Constant::eval(Eigen::Ref<EigenRowArrayXXd> values,
+                    Eigen::Ref<const EigenRowArrayXXd> x) const
 {
   // Copy values
   for (unsigned int i = 0; i != values.rows(); ++i)

@@ -23,16 +23,16 @@ GenericFunction::~GenericFunction()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void GenericFunction::eval(Eigen::Ref<EigenRowMatrixXd> values,
-                           Eigen::Ref<const EigenRowMatrixXd> x,
+void GenericFunction::eval(Eigen::Ref<EigenRowArrayXXd> values,
+                           Eigen::Ref<const EigenRowArrayXXd> x,
                            const ufc::cell& cell) const
 {
   // Redirect to simple eval
   eval(values, x);
 }
 //-----------------------------------------------------------------------------
-void GenericFunction::eval(Eigen::Ref<EigenRowMatrixXd> values,
-                           Eigen::Ref<const EigenRowMatrixXd> x) const
+void GenericFunction::eval(Eigen::Ref<EigenRowArrayXXd> values,
+                           Eigen::Ref<const EigenRowArrayXXd> x) const
 {
   log::dolfin_error("GenericFunction.cpp", "evaluate function (Eigen version)",
                     "Missing eval() function (must be overloaded)");

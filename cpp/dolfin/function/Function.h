@@ -128,8 +128,8 @@ public:
   ///         The values.
   /// @param    x (Eigen::Ref<const Eigen::VectorXd> x)
   ///         The coordinates.
-  void eval(Eigen::Ref<EigenRowMatrixXd> values,
-            Eigen::Ref<const EigenRowMatrixXd> x) const override;
+  void eval(Eigen::Ref<EigenRowArrayXXd> values,
+            Eigen::Ref<const EigenRowArrayXXd> x) const override;
 
   /// Evaluate function at given coordinates in given cell
   ///
@@ -141,8 +141,8 @@ public:
   ///         The cell.
   /// @param    ufc_cell (ufc::cell)
   ///         The ufc::cell.
-  void eval(Eigen::Ref<EigenRowMatrixXd> values,
-            Eigen::Ref<const EigenRowMatrixXd> x, const mesh::Cell& dolfin_cell,
+  void eval(Eigen::Ref<EigenRowArrayXXd> values,
+            Eigen::Ref<const EigenRowArrayXXd> x, const mesh::Cell& dolfin_cell,
             const ufc::cell& ufc_cell) const;
 
   /// Interpolate function (on possibly non-matching meshes)
@@ -182,8 +182,8 @@ public:
   ///         The coordinates of the point.
   /// @param    cell (ufc::cell)
   ///         The cell which contains the given point.
-  virtual void eval(Eigen::Ref<EigenRowMatrixXd> values,
-                    Eigen::Ref<const EigenRowMatrixXd> x,
+  virtual void eval(Eigen::Ref<EigenRowArrayXXd> values,
+                    Eigen::Ref<const EigenRowArrayXXd> x,
                     const ufc::cell& cell) const override;
 
   /// Restrict function to local cell (compute expansion coefficients w)

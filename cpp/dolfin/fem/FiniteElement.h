@@ -109,24 +109,45 @@ public:
   //                               const double * X) const final override
   // reference_values[num_points][num_dofs][reference_value_size]
   void
-  evaluate_reference_basis(double* reference_values, std::size_t num_points,
+  evaluate_reference_basis(boost::multi_array<double, 3>& reference_values,
                            const Eigen::Ref<const EigenRowArrayXXd> X) const
   {
-    dolfin_assert(_ufc_element);
-    _ufc_element->evaluate_reference_basis(reference_values, num_points,
+    assert(_ufc_element);
+    std::size_t num_points = X.rows();
+    _ufc_element->evaluate_reference_basis(reference_values.data(), num_points,
                                            X.data());
+  }
+
+  /// Push basis functions forward to physical element
+  void transform_reference_basis(
+      boost::multi_array<double, 3>& values,
+      const boost::multi_array<double, 3>& reference_values,
+      const Eigen::Ref<const EigenRowArrayXXd> X,
+      const boost::multi_array<double, 3>& J,
+      const Eigen::Ref<const EigenArrayXd> detJ,
+      const boost::multi_array<double, 3>& K) const
+  {
+    assert(_ufc_element);
+    std::size_t num_points = X.rows();
+    _ufc_element->transform_reference_basis_derivatives(
+        values.data(), 0, num_points, reference_values.data(), X.data(),
+        J.data(), detJ.data(), K.data(), 1);
   }
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
-      double* values, std::size_t order, std::size_t num_points,
-      const double* reference_values,
-      const Eigen::Ref<const EigenRowArrayXXd> X, const double* J,
-      const double* detJ, const double* K) const
+      boost::multi_array<double, 4>& values, std::size_t order,
+      const boost::multi_array<double, 4>& reference_values,
+      const Eigen::Ref<const EigenRowArrayXXd> X,
+      const boost::multi_array<double, 3>& J,
+      const Eigen::Ref<const EigenArrayXd> detJ,
+      const boost::multi_array<double, 3>& K) const
   {
-    dolfin_assert(_ufc_element);
+    assert(_ufc_element);
+    std::size_t num_points = X.rows();
     _ufc_element->transform_reference_basis_derivatives(
-        values, order, num_points, reference_values, X.data(), J, detJ, K, 1);
+        values.data(), order, num_points, reference_values.data(), X.data(),
+        J.data(), detJ.data(), K.data(), 1);
   }
 
   /// Evaluate all basis functions at given point in cell

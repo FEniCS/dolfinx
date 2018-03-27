@@ -33,16 +33,16 @@ Expression::~Expression()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<EigenRowMatrixXd> values,
-                      Eigen::Ref<const EigenRowMatrixXd> x,
+void Expression::eval(Eigen::Ref<EigenRowArrayXXd> values,
+                      Eigen::Ref<const EigenRowArrayXXd> x,
                       const ufc::cell& cell) const
 {
   // Redirect to simple eval
   eval(values, x);
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<EigenRowMatrixXd> values,
-                      Eigen::Ref<const EigenRowMatrixXd> x) const
+void Expression::eval(Eigen::Ref<EigenRowArrayXXd> values,
+                      Eigen::Ref<const EigenRowArrayXXd> x) const
 {
   log::dolfin_error("Expression.cpp", "evaluate expression",
                     "Missing eval() function (must be overloaded)");
