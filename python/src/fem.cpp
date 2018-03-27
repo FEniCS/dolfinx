@@ -27,7 +27,6 @@
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
 #include <dolfin/fem/PETScDMCollection.h>
-#include <dolfin/fem/PointSource.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/fem/SystemAssembler.h>
 #include <dolfin/fem/utils.h>
@@ -309,57 +308,6 @@ void fem(py::module &m) {
       .def("set_vertex_domains", &dolfin::fem::Form::set_vertex_domains)
       .def("rank", &dolfin::fem::Form::rank)
       .def("mesh", &dolfin::fem::Form::mesh);
-
-  // dolfin::fem::PointSource
-  py::class_<dolfin::fem::PointSource,
-             std::shared_ptr<dolfin::fem::PointSource>>(m, "PointSource")
-      // FIXME: consolidate down to one intialiser when switching from
-      // SWIG to pybind11
-      .def(
-          py::init([](
-              py::object V,
-              const std::vector<std::pair<dolfin::geometry::Point, double>>
-                  values) {
-            std::shared_ptr<const dolfin::function::FunctionSpace> _V;
-            if (py::hasattr(V, "_cpp_object"))
-              _V =
-                  V.attr("_cpp_object")
-                      .cast<std::shared_ptr<dolfin::function::FunctionSpace>>();
-            else
-              _V = V.cast<std::shared_ptr<dolfin::function::FunctionSpace>>();
-
-            return std::make_unique<dolfin::fem::PointSource>(_V, values);
-          }),
-          py::arg("V"), py::arg("values"))
-      .def(
-          py::init([](
-              py::object V0, py::object V1,
-              const std::vector<std::pair<dolfin::geometry::Point, double>>
-                  values) {
-            std::shared_ptr<const dolfin::function::FunctionSpace> _V0, _V1;
-            if (py::hasattr(V0, "_cpp_object"))
-              _V0 =
-                  V0.attr("_cpp_object")
-                      .cast<std::shared_ptr<dolfin::function::FunctionSpace>>();
-            else
-              _V0 = V0.cast<std::shared_ptr<dolfin::function::FunctionSpace>>();
-
-            if (py::hasattr(V1, "_cpp_object"))
-              _V1 =
-                  V1.attr("_cpp_object")
-                      .cast<std::shared_ptr<dolfin::function::FunctionSpace>>();
-            else
-              _V1 = V1.cast<std::shared_ptr<dolfin::function::FunctionSpace>>();
-
-            return std::make_unique<dolfin::fem::PointSource>(_V0, _V1, values);
-          }),
-          py::arg("V0"), py::arg("V1"), py::arg("values"))
-      .def("apply",
-           (void (dolfin::fem::PointSource::*)(dolfin::la::PETScVector &)) &
-               dolfin::fem::PointSource::apply)
-      .def("apply",
-           (void (dolfin::fem::PointSource::*)(dolfin::la::PETScMatrix &)) &
-               dolfin::fem::PointSource::apply);
 
   // dolfin::fem::NonlinearVariationalProblem
   py::class_<dolfin::fem::NonlinearVariationalProblem,
