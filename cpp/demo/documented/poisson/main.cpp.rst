@@ -166,6 +166,11 @@ the form file) defined relative to this mesh, we do as follows
      auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle));
      auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
+    // Attach 'coordinate mapping' to mesh
+    auto cmap = std::make_shared<poisson_coordinate_mapping_1>();
+    mesh->geometry().ufc_coord_mapping = cmap;
+
+
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
 using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
 takes three arguments: the function space the boundary condition

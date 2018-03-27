@@ -315,7 +315,10 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
     boost::multi_array<double, 3> J(boost::extents[num_points][gdim][tdim]);
     EigenArrayXd detJ(num_points);
     boost::multi_array<double, 3> K(boost::extents[num_points][tdim][gdim]);
+
+    // EigenRowArrayXXd X(x.rows(), tdim) ;
     EigenRowArrayXXd X(x.rows(), tdim);
+
     boost::multi_array<double, 3> basis_reference_values(
         boost::extents[num_points][space_dimension][reference_value_size]);
     boost::multi_array<double, 3> basis_values(
@@ -326,6 +329,11 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
                                      num_points, x.data(),
                                      coordinate_dofs.data(), 1);
 
+    std::cout << "Physical x: " << std::endl;
+    std::cout << x << std::endl;
+    std::cout << "Reference X: " << std::endl;
+    std::cout << X << std::endl;
+
     // // Compute basis on reference element
     element.evaluate_reference_basis(basis_reference_values, X);
 
@@ -334,11 +342,21 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
                                       J, detJ, K);
 
     // Compute expansion
+    std::cout << "Num points, space dim, value_size: " << num_points << ", "
+              << space_dimension << ", " << value_size << std::endl;
+    values.setZero();
     for (std::size_t p = 0; p < num_points; ++p)
     {
       for (std::size_t i = 0; i < space_dimension; ++i)
+      {
         for (std::size_t j = 0; j < value_size; ++j)
+        {
+          std::cout << "Loop: " << p << ", " << i << ", " << j << std::endl;
+          std::cout << "  Coeff, Basis: " << coefficients[i] << ", "
+                    << basis_values[p][i][j] << std::endl;
           values.row(p)[j] += coefficients[i] * basis_values[p][i][j];
+        }
+      }
     }
   }
   else
