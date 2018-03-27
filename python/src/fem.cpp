@@ -309,7 +309,8 @@ void fem(py::module &m) {
            &dolfin::fem::Form::set_interior_facet_domains)
       .def("set_vertex_domains", &dolfin::fem::Form::set_vertex_domains)
       .def("rank", &dolfin::fem::Form::rank)
-      .def("mesh", &dolfin::fem::Form::mesh);
+      .def("mesh", &dolfin::fem::Form::mesh)
+      .def("coordinate_mapping", &dolfin::fem::Form::coordinate_mapping);
 
   // dolfin::fem::NonlinearVariationalProblem
   py::class_<dolfin::fem::NonlinearVariationalProblem,
