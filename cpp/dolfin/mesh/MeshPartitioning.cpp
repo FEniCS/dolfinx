@@ -808,6 +808,8 @@ void MeshPartitioning::distribute_vertices(
     ranges[i] += ranges[i - 1];
   ranges.insert(ranges.begin(), 0);
 
+  // Send global indices to the processes that own them, also recording
+  // in local_indexing the original position on this process
   std::vector<std::vector<std::size_t>> send_vertex_indices(mpi_size);
   std::vector<std::vector<std::uint32_t>> local_indexing(mpi_size);
   for (unsigned int i = 0; i != vertex_indices.size(); ++i)
@@ -820,7 +822,9 @@ void MeshPartitioning::distribute_vertices(
     local_indexing[location].push_back(i);
   }
 
-  // Piggy-back local offset onto end of sending arrays
+  // Each remote process will put the requested point coordinates into a
+  // block of memory on the local process.
+  // Calculate offset position for each process, and attach to the sending data
   std::size_t offset = 0;
   for (int i = 0; i != mpi_size; ++i)
   {
@@ -828,12 +832,12 @@ void MeshPartitioning::distribute_vertices(
     offset += (send_vertex_indices[i].size() - 1);
   }
 
-  // Send required vertices to other processes, and receive
-  // vertices required by other processes.
+  // Send required vertex indices to other processes, and receive
+  // vertex indices required by other processes.
   std::vector<std::vector<std::size_t>> received_vertex_indices;
   MPI::all_to_all(mpi_comm, send_vertex_indices, received_vertex_indices);
 
-  // Extract remote offsets for sending data with MPI_Put
+  // Pop offsets off back of received data
   std::vector<std::size_t> remote_offsets;
   std::size_t num_received_indices = 0;
   for (auto& p : received_vertex_indices)
@@ -843,11 +847,14 @@ void MeshPartitioning::distribute_vertices(
     num_received_indices += p.size();
   }
 
-  // Pop offset off back of sending arrays too
+  // Pop offset off back of sending arrays too, achieving
+  // a clean transfer of the offset data from local to remote
   for (auto& p : send_vertex_indices)
     p.pop_back();
 
   // Array to receive data into with RMA
+  // This is a block of memory which all remote processes can write into, by
+  // using the offset (and size) transferred in previous all_to_all.
   EigenRowArrayXXd receive_coord_data(vertex_indices.size(), gdim);
 
   // Create local RMA window
@@ -857,7 +864,8 @@ void MeshPartitioning::distribute_vertices(
                  MPI_INFO_NULL, mpi_comm, &win);
   MPI_Win_fence(0, win);
 
-  // Put data to remote with RMA
+  // This memory block is to read from, and must remain in place until the
+  // transfer is complete (after next MPI_Win_fence)
   EigenRowArrayXXd send_coord_data(num_received_indices, gdim);
   Eigen::Map<const EigenRowArrayXXd> mesh_data_vertices(
       mesh_data.geometry.vertex_coordinates.data(),
@@ -866,7 +874,8 @@ void MeshPartitioning::distribute_vertices(
 
   const std::pair<std::size_t, std::size_t> local_vertex_range
       = {ranges[mpi_rank], ranges[mpi_rank + 1]};
-
+  // Convert global index to local index and put coordinate data in sending
+  // array
   std::size_t local_index = 0;
   for (int p = 0; p < mpi_size; ++p)
   {
@@ -897,11 +906,11 @@ void MeshPartitioning::distribute_vertices(
   MPI_Win_fence(0, win);
   MPI_Win_free(&win);
 
-  // Reorder coordinates according to global_to_local mapping
+  // Reorder coordinates according to local indexing
   local_index = 0;
-  for (int p = 0; p < mpi_size; ++p)
+  for (const auto& p : local_indexing)
   {
-    for (const auto& v : local_indexing[p])
+    for (const auto& v : p)
     {
       vertex_coordinates.row(v) = receive_coord_data.row(local_index);
       ++local_index;
@@ -924,8 +933,8 @@ void MeshPartitioning::build_shared_vertices(
   // Count number sharing each local vertex
   std::vector<std::int32_t> n_sharing(
       local_vertex_range.second - local_vertex_range.first, 0);
-  for (std::uint32_t p = 0; p < mpi_size; ++p)
-    for (const auto& q : received_vertex_indices[p])
+  for (const auto& p : received_vertex_indices)
+    for (const auto& q : p)
     {
       dolfin_assert(q >= local_vertex_range.first
                     and q < local_vertex_range.second);
@@ -933,8 +942,9 @@ void MeshPartitioning::build_shared_vertices(
       ++n_sharing[local_index];
     }
 
-  // Create an array of 'pointers' to shared entries (where p > 1)
-  // Set to 0 for unshared entries
+  // Create an array of 'pointers' to shared entries (where number shared, p >
+  // 1) Set to 0 for unshared entries Make space for two values: process number,
+  // and local index on that process
   std::vector<std::int32_t> offset;
   offset.reserve(n_sharing.size());
   std::int32_t index = 0;
@@ -953,11 +963,12 @@ void MeshPartitioning::build_shared_vertices(
   for (std::uint32_t p = 0; p < mpi_size; ++p)
     for (unsigned int i = 0; i < received_vertex_indices[p].size(); ++i)
     {
+      // Convert global to local index
       const std::size_t q = received_vertex_indices[p][i];
       const std::size_t local_index = q - local_vertex_range.first;
-      std::int32_t& location = offset[local_index];
       if (n_sharing[local_index] > 0)
       {
+        std::int32_t& location = offset[local_index];
         process_list[location] = p;
         ++location;
         process_list[location] = i;
@@ -990,6 +1001,7 @@ void MeshPartitioning::build_shared_vertices(
   std::vector<std::vector<std::size_t>> recv_sharing(mpi_size);
   MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
 
+  // Unpack and store to shared_vertices_local
   for (unsigned int p = 0; p < mpi_size; ++p)
   {
     const std::vector<std::uint32_t>& local_index_p = local_indexing[p];
@@ -1000,9 +1012,8 @@ void MeshPartitioning::build_shared_vertices(
       const std::uint32_t local_index = local_index_p[*(q + 1)];
       std::set<std::uint32_t> sharing_processes(q + 2, q + 2 + num_sharing);
 
-      dolfin_assert(shared_vertices_local.find(local_index)
-                    == shared_vertices_local.end());
-      shared_vertices_local.insert({local_index, sharing_processes});
+      auto it = shared_vertices_local.insert({local_index, sharing_processes});
+      dolfin_assert(it.second);
     }
   }
 }
