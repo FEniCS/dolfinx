@@ -103,8 +103,8 @@ Then follows the definition of the coefficient functions (for
    public:
      Source() : function::Expression({}) {}
 
-     void eval(Eigen::Ref<EigenRowMatrixXd> values,
-            Eigen::Ref<const EigenRowMatrixXd> x) const
+     void eval(Eigen::Ref<EigenRowArrayXXd> values,
+            Eigen::Ref<const EigenRowArrayXXd> x) const
      {
      for (unsigned int i = 0; i != x.rows(); ++i)
        {
@@ -121,8 +121,8 @@ Then follows the definition of the coefficient functions (for
    public:
      dUdN() : function::Expression({}) {}
 
-     void eval(Eigen::Ref<EigenRowMatrixXd> values,
-            Eigen::Ref<const EigenRowMatrixXd> x) const
+     void eval(Eigen::Ref<EigenRowArrayXXd> values,
+            Eigen::Ref<const EigenRowArrayXXd> x) const
      {
        for (unsigned int i = 0; i != x.rows(); ++i)
            values(i, 0) = sin(5*x(i, 0));
