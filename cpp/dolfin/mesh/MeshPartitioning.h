@@ -121,16 +121,15 @@ private:
       std::vector<int>& new_cell_partition,
       std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells);
 
-  // FIXME: Improve explaination
+  // FIXME: Improve explanation
   // Utility to convert received_vertex_indices into
   // vertex sharing information
   static void build_shared_vertices(
       MPI_Comm mpi_comm,
       std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices,
-      const std::map<std::int64_t, std::int32_t>&
-          vertex_global_to_local_indices,
       const std::vector<std::vector<std::size_t>>& received_vertex_indices,
-      const std::pair<std::size_t, std::size_t> local_vertex_range);
+      const std::pair<std::size_t, std::size_t> local_vertex_range,
+      const std::vector<std::vector<std::uint32_t>>& local_indexing);
 
   // FIXME: make clear what is computed
   // Distribute vertices and vertex sharing information
@@ -138,7 +137,6 @@ private:
       const MPI_Comm mpi_comm, const LocalMeshData& mesh_data,
       const std::vector<std::int64_t>& vertex_indices,
       Eigen::Ref<EigenRowArrayXXd> new_vertex_coordinates,
-      std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices,
       std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local);
 
   // Compute the local->global and global->local maps for all local vertices
@@ -148,7 +146,6 @@ private:
       MPI_Comm mpi_comm, const std::int32_t num_regular_cells,
       const boost::multi_array<std::int64_t, 2>& cell_vertices,
       std::vector<std::int64_t>& vertex_indices,
-      std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
       Eigen::Ref<EigenRowArrayXXi32> local_cell_vertices);
 
   // FIXME: Improve pre-conditions explanation
