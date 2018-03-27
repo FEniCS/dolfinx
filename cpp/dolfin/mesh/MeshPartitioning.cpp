@@ -811,12 +811,15 @@ void MeshPartitioning::distribute_vertices(
   ranges.insert(ranges.begin(), 0);
 
   std::vector<std::vector<std::size_t>> send_vertex_indices(mpi_size);
-  for (const auto& required_vertex : vertex_indices)
+  std::vector<std::vector<std::uint32_t>> local_indexing(mpi_size);
+  for (unsigned int i = 0; i != vertex_indices.size(); ++i)
   {
+    const std::size_t required_vertex = vertex_indices[i];
     const int location
         = std::upper_bound(ranges.begin(), ranges.end(), required_vertex)
           - ranges.begin() - 1;
     send_vertex_indices[location].push_back(required_vertex);
+    local_indexing[location].push_back(i);
   }
 
   // Piggy-back local offset onto end of sending arrays
@@ -827,11 +830,7 @@ void MeshPartitioning::distribute_vertices(
     offset += (send_vertex_indices[i].size() - 1);
   }
 
-  // Convenience reference
-  const std::vector<std::vector<std::size_t>>& vertex_location
-      = send_vertex_indices;
-
-  // Send required vertices to other processes, and receive back
+  // Send required vertices to other processes, and receive
   // vertices required by other processes.
   std::vector<std::vector<std::size_t>> received_vertex_indices;
   MPI::all_to_all(mpi_comm, send_vertex_indices, received_vertex_indices);
@@ -903,13 +902,9 @@ void MeshPartitioning::distribute_vertices(
   local_index = 0;
   for (int p = 0; p < mpi_size; ++p)
   {
-    for (const auto& global_vertex_index : vertex_location[p])
+    for (const auto& v : local_indexing[p])
     {
-      auto v = vertex_global_to_local.find(global_vertex_index);
-      dolfin_assert(v != vertex_global_to_local.end());
-      dolfin_assert(vertex_indices[v->second]
-                    == (std::int64_t)global_vertex_index);
-      vertex_coordinates.row(v->second) = receive_coord_data.row(local_index);
+      vertex_coordinates.row(v) = receive_coord_data.row(local_index);
       ++local_index;
     }
   }
@@ -940,19 +935,17 @@ void MeshPartitioning::build_shared_vertices(
     }
 
   // Create an array of 'pointers' to shared entries (where p > 1)
-  // Set to -1 for unshared entries
+  // Set to 0 for unshared entries
   std::vector<std::int32_t> offset;
   offset.reserve(n_sharing.size());
   std::int32_t index = 0;
-  for (const auto& p : n_sharing)
+  for (auto& p : n_sharing)
   {
     if (p == 1)
-      offset.push_back(-1);
-    else
-    {
-      offset.push_back(index);
-      index += p;
-    }
+      p = 0;
+
+    offset.push_back(index);
+    index += p;
   }
 
   // Fill with list of sharing processes
@@ -962,7 +955,7 @@ void MeshPartitioning::build_shared_vertices(
     {
       const std::size_t local_index = q - local_vertex_range.first;
       std::int32_t& location = offset[local_index];
-      if (location >= 0)
+      if (n_sharing[local_index] > 0)
       {
         process_list[location] = p;
         ++location;
@@ -976,7 +969,7 @@ void MeshPartitioning::build_shared_vertices(
   std::vector<std::vector<std::size_t>> send_sharing(mpi_size);
   for (unsigned int i = 0; i != n_sharing.size(); ++i)
   {
-    if (offset[i] >= 0)
+    if (n_sharing[i] > 0)
     {
       for (int j = 0; j < n_sharing[i]; ++j)
       {
@@ -990,45 +983,7 @@ void MeshPartitioning::build_shared_vertices(
     }
   }
 
-  // // Generate vertex sharing information
-  // std::map<std::size_t, std::vector<std::uint32_t>> vertex_to_proc;
-  // for (std::uint32_t p = 0; p < mpi_size; ++p)
-  // {
-  //   for (auto& q : received_vertex_indices[p])
-  //   {
-  //     auto map_it = vertex_to_proc.find(q);
-  //     if (map_it == vertex_to_proc.end())
-  //     {
-  //       std::vector<std::uint32_t> proc_set = {p};
-  //       vertex_to_proc.insert({q, proc_set});
-  //     }
-  //     else
-  //       map_it->second.push_back(p);
-  //   }
-  // }
-
-  // std::vector<std::vector<std::size_t>> send_sharing(mpi_size);
-  // for (auto map_it = vertex_to_proc.begin(); map_it !=
-  // vertex_to_proc.end();
-  //      ++map_it)
-  // {
-  //   if (map_it->second.size() != 1)
-  //   {
-  //     for (const auto& proc : map_it->second)
-  //     {
-  //       std::vector<std::size_t>& ss = send_sharing[proc];
-  //       ss.push_back(map_it->second.size() - 1);
-  //       ss.push_back(map_it->first);
-  //       for (const auto& p : map_it->second)
-  //       {
-  //         if (p != proc)
-  //           ss.push_back(p);
-  //       }
-  //     }
-  //   }
-  // }
-
-  // Receive as a flat array
+  // Receive as a flat array and unpack
   std::vector<std::size_t> recv_sharing(mpi_size);
   MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
 
