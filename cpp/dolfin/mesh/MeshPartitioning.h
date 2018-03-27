@@ -129,7 +129,8 @@ private:
       std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices,
       const std::map<std::int64_t, std::int32_t>&
           vertex_global_to_local_indices,
-      const std::vector<std::vector<std::size_t>>& received_vertex_indices);
+      const std::vector<std::vector<std::size_t>>& received_vertex_indices,
+      const std::pair<std::size_t, std::size_t> local_vertex_range);
 
   // FIXME: make clear what is computed
   // Distribute vertices and vertex sharing information

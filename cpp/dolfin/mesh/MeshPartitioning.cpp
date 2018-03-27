@@ -893,7 +893,7 @@ void MeshPartitioning::distribute_vertices(
   // Meanwhile, redistribute received_vertex_indices as vertex sharing
   // information
   build_shared_vertices(mpi_comm, shared_vertices_local, vertex_global_to_local,
-                        received_vertex_indices);
+                        received_vertex_indices, local_vertex_range);
 
   // Synchronise and free RMA window
   MPI_Win_fence(0, win);
@@ -919,50 +919,114 @@ void MeshPartitioning::build_shared_vertices(
     MPI_Comm mpi_comm,
     std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local,
     const std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
-    const std::vector<std::vector<std::size_t>>& received_vertex_indices)
+    const std::vector<std::vector<std::size_t>>& received_vertex_indices,
+    const std::pair<std::size_t, std::size_t> local_vertex_range)
 {
   log::log(PROGRESS,
            "Build shared vertices during distributed mesh construction");
 
   const std::uint32_t mpi_size = MPI::size(mpi_comm);
 
-  // Generate vertex sharing information
-  std::map<std::size_t, std::vector<std::uint32_t>> vertex_to_proc;
+  // Count number sharing each local vertex
+  std::vector<std::int32_t> n_sharing(
+      local_vertex_range.second - local_vertex_range.first, 0);
   for (std::uint32_t p = 0; p < mpi_size; ++p)
-  {
-    for (auto q = received_vertex_indices[p].begin();
-         q != received_vertex_indices[p].end(); ++q)
+    for (const auto& q : received_vertex_indices[p])
     {
-      auto map_it = vertex_to_proc.find(*q);
-      if (map_it == vertex_to_proc.end())
-      {
-        std::vector<std::uint32_t> proc_set = {p};
-        vertex_to_proc.insert({*q, proc_set});
-      }
-      else
-        map_it->second.push_back(p);
+      dolfin_assert(q >= local_vertex_range.first
+                    and q < local_vertex_range.second);
+      const std::size_t local_index = q - local_vertex_range.first;
+      ++n_sharing[local_index];
+    }
+
+  // Create an array of 'pointers' to shared entries (where p > 1)
+  // Set to -1 for unshared entries
+  std::vector<std::int32_t> offset;
+  offset.reserve(n_sharing.size());
+  std::int32_t index = 0;
+  for (const auto& p : n_sharing)
+  {
+    if (p == 1)
+      offset.push_back(-1);
+    else
+    {
+      offset.push_back(index);
+      index += p;
     }
   }
 
-  std::vector<std::vector<std::size_t>> send_sharing(mpi_size);
-  for (auto map_it = vertex_to_proc.begin(); map_it != vertex_to_proc.end();
-       ++map_it)
-  {
-    if (map_it->second.size() != 1)
+  // Fill with list of sharing processes
+  std::vector<std::int32_t> process_list(index);
+  for (std::uint32_t p = 0; p < mpi_size; ++p)
+    for (const auto& q : received_vertex_indices[p])
     {
-      for (const auto& proc : map_it->second)
+      const std::size_t local_index = q - local_vertex_range.first;
+      std::int32_t& location = offset[local_index];
+      if (location >= 0)
       {
-        std::vector<std::size_t>& ss = send_sharing[proc];
-        ss.push_back(map_it->second.size() - 1);
-        ss.push_back(map_it->first);
-        for (const auto& p : map_it->second)
-        {
-          if (p != proc)
-            ss.push_back(p);
-        }
+        process_list[location] = p;
+        ++location;
+      }
+    }
+
+  // Reset offsets
+  for (unsigned int i = 0; i != offset.size(); ++i)
+    offset[i] -= n_sharing[i];
+
+  std::vector<std::vector<std::size_t>> send_sharing(mpi_size);
+  for (unsigned int i = 0; i != n_sharing.size(); ++i)
+  {
+    if (offset[i] >= 0)
+    {
+      for (int j = 0; j < n_sharing[i]; ++j)
+      {
+        auto& ss = send_sharing[process_list[offset[i] + j]];
+        ss.push_back(n_sharing[i] - 1);
+        ss.push_back(i + local_vertex_range.first);
+        for (int k = 0; k < n_sharing[i]; ++k)
+          if (j != k)
+            ss.push_back(process_list[offset[i] + k]);
       }
     }
   }
+
+  // // Generate vertex sharing information
+  // std::map<std::size_t, std::vector<std::uint32_t>> vertex_to_proc;
+  // for (std::uint32_t p = 0; p < mpi_size; ++p)
+  // {
+  //   for (auto& q : received_vertex_indices[p])
+  //   {
+  //     auto map_it = vertex_to_proc.find(q);
+  //     if (map_it == vertex_to_proc.end())
+  //     {
+  //       std::vector<std::uint32_t> proc_set = {p};
+  //       vertex_to_proc.insert({q, proc_set});
+  //     }
+  //     else
+  //       map_it->second.push_back(p);
+  //   }
+  // }
+
+  // std::vector<std::vector<std::size_t>> send_sharing(mpi_size);
+  // for (auto map_it = vertex_to_proc.begin(); map_it !=
+  // vertex_to_proc.end();
+  //      ++map_it)
+  // {
+  //   if (map_it->second.size() != 1)
+  //   {
+  //     for (const auto& proc : map_it->second)
+  //     {
+  //       std::vector<std::size_t>& ss = send_sharing[proc];
+  //       ss.push_back(map_it->second.size() - 1);
+  //       ss.push_back(map_it->first);
+  //       for (const auto& p : map_it->second)
+  //       {
+  //         if (p != proc)
+  //           ss.push_back(p);
+  //       }
+  //     }
+  //   }
+  // }
 
   // Receive as a flat array
   std::vector<std::size_t> recv_sharing(mpi_size);
