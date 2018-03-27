@@ -76,7 +76,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   const std::size_t gdim = mesh.geometry().dim();
 
   // Loop over cells and tabulate dofs
-  boost::multi_array<double, 2> coordinates;
+  EigenRowArrayXXd coordinates;
   std::vector<double> coordinate_dofs;
   std::vector<double> coors(gdim);
 
@@ -108,7 +108,9 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
           continue;
 
         // Put coordinates in coors
-        std::copy(coordinates[i].begin(), coordinates[i].end(), coors.begin());
+        std::copy(coordinates.row(i).data(),
+                  coordinates.row(i).data() + coordinates.row(i).size(),
+                  coors.begin());
 
         // Add dof to list at this coord
         const auto ins = coords_to_dofs.insert({coors, {local_to_global[dof]}});

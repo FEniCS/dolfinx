@@ -23,6 +23,7 @@
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <map>
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 #include <vector>
 
@@ -312,27 +313,30 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
     std::size_t value_size = ufc_element->value_size();
     std::size_t space_dimension = ufc_element->space_dimension();
 
-    boost::multi_array<double, 3> J(boost::extents[num_points][gdim][tdim]);
+    Eigen::Tensor<double, 3, Eigen::RowMajor> J(num_points, gdim, tdim);
     EigenArrayXd detJ(num_points);
-    boost::multi_array<double, 3> K(boost::extents[num_points][tdim][gdim]);
+    Eigen::Tensor<double, 3, Eigen::RowMajor> K(num_points, tdim, gdim);
 
     // EigenRowArrayXXd X(x.rows(), tdim) ;
     EigenRowArrayXXd X(x.rows(), tdim);
 
-    boost::multi_array<double, 3> basis_reference_values(
-        boost::extents[num_points][space_dimension][reference_value_size]);
-    boost::multi_array<double, 3> basis_values(
-        boost::extents[num_points][space_dimension][value_size]);
+    // boost::multi_array<double, 3> basis_reference_values(
+    //     boost::extents[num_points][space_dimension][reference_value_size]);
+    Eigen::Tensor<double, 3, Eigen::RowMajor> basis_reference_values(
+        num_points, space_dimension, reference_value_size);
+
+    Eigen::Tensor<double, 3, Eigen::RowMajor> basis_values(
+        num_points, space_dimension, value_size);
 
     // Compute reference coordinates X, and J, detJ and K
     cmap->compute_reference_geometry(X.data(), J.data(), detJ.data(), K.data(),
                                      num_points, x.data(),
                                      coordinate_dofs.data(), 1);
 
-    std::cout << "Physical x: " << std::endl;
-    std::cout << x << std::endl;
-    std::cout << "Reference X: " << std::endl;
-    std::cout << X << std::endl;
+    // std::cout << "Physical x: " << std::endl;
+    // std::cout << x << std::endl;
+    // std::cout << "Reference X: " << std::endl;
+    // std::cout << X << std::endl;
 
     // // Compute basis on reference element
     element.evaluate_reference_basis(basis_reference_values, X);
@@ -342,8 +346,8 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
                                       J, detJ, K);
 
     // Compute expansion
-    std::cout << "Num points, space dim, value_size: " << num_points << ", "
-              << space_dimension << ", " << value_size << std::endl;
+    // std::cout << "Num points, space dim, value_size: " << num_points << ", "
+    //           << space_dimension << ", " << value_size << std::endl;
     values.setZero();
     for (std::size_t p = 0; p < num_points; ++p)
     {
@@ -351,10 +355,12 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
       {
         for (std::size_t j = 0; j < value_size; ++j)
         {
-          std::cout << "Loop: " << p << ", " << i << ", " << j << std::endl;
-          std::cout << "  Coeff, Basis: " << coefficients[i] << ", "
-                    << basis_values[p][i][j] << std::endl;
-          values.row(p)[j] += coefficients[i] * basis_values[p][i][j];
+          // std::cout << "Loop: " << p << ", " << i << ", " << j << std::endl;
+          // std::cout << "  Coeff, Basis: " << coefficients[i] << ", "
+          //           << basis_values(p, i, j) << std::endl;
+
+          // TODO: Find an Eigen shortcut fot this operation
+          values.row(p)[j] += coefficients[i] * basis_values(p, i, j);
         }
       }
     }

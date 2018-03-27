@@ -74,27 +74,29 @@ void fem(py::module &m) {
       m, "FiniteElement", "DOLFIN FiniteElement object")
       .def(py::init<std::shared_ptr<const ufc::finite_element>>())
       .def("num_sub_elements", &dolfin::fem::FiniteElement::num_sub_elements)
-      .def("tabulate_dof_coordinates",
-           [](const dolfin::fem::FiniteElement &self,
-              const dolfin::mesh::Cell &cell) {
-             // Get cell vertex coordinates
-             std::vector<double> coordinate_dofs;
-             cell.get_coordinate_dofs(coordinate_dofs);
+      // TODO: Update for change to Eigen::Tensor
+      //   .def("tabulate_dof_coordinates",
+      //        [](const dolfin::fem::FiniteElement &self,
+      //           const dolfin::mesh::Cell &cell) {
+      //          // Get cell vertex coordinates
+      //          std::vector<double> coordinate_dofs;
+      //          cell.get_coordinate_dofs(coordinate_dofs);
 
-             // Tabulate the coordinates
-             boost::multi_array<double, 2> _dof_coords;
-             self.tabulate_dof_coordinates(_dof_coords, coordinate_dofs, cell);
+      //          // Tabulate the coordinates
+      //          boost::multi_array<double, 2> _dof_coords;
+      //          self.tabulate_dof_coordinates(_dof_coords, coordinate_dofs,
+      //          cell);
 
-             // Copy data and return
-             typedef Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>
-                 EigenArray;
-             EigenArray dof_coords = Eigen::Map<EigenArray>(
-                 _dof_coords.data(), _dof_coords.shape()[0],
-                 _dof_coords.shape()[1]);
-             return dof_coords;
-           },
-           "Tabulate coordinates of dofs on cell")
+      //          // Copy data and return
+      //          typedef Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+      //                               Eigen::RowMajor>
+      //              EigenArray;
+      //          EigenArray dof_coords = Eigen::Map<EigenArray>(
+      //              _dof_coords.data(), _dof_coords.shape()[0],
+      //              _dof_coords.shape()[1]);
+      //          return dof_coords;
+      //        },
+      //        "Tabulate coordinates of dofs on cell")
       .def("space_dimension", &dolfin::fem::FiniteElement::space_dimension)
       .def("geometric_dimension",
            &dolfin::fem::FiniteElement::geometric_dimension)

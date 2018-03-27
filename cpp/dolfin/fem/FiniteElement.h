@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <boost/multi_array.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include <memory>
 #include <ufc.h>
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 
 namespace dolfin
@@ -108,9 +108,9 @@ public:
   //                               std::size_t num_points,
   //                               const double * X) const final override
   // reference_values[num_points][num_dofs][reference_value_size]
-  void
-  evaluate_reference_basis(boost::multi_array<double, 3>& reference_values,
-                           const Eigen::Ref<const EigenRowArrayXXd> X) const
+  void evaluate_reference_basis(
+      Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
+      const Eigen::Ref<const EigenRowArrayXXd> X) const
   {
     assert(_ufc_element);
     std::size_t num_points = X.rows();
@@ -120,12 +120,12 @@ public:
 
   /// Push basis functions forward to physical element
   void transform_reference_basis(
-      boost::multi_array<double, 3>& values,
-      const boost::multi_array<double, 3>& reference_values,
+      Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
       const Eigen::Ref<const EigenRowArrayXXd> X,
-      const boost::multi_array<double, 3>& J,
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
       const Eigen::Ref<const EigenArrayXd> detJ,
-      const boost::multi_array<double, 3>& K) const
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
   {
     assert(_ufc_element);
     std::size_t num_points = X.rows();
@@ -136,12 +136,12 @@ public:
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
-      boost::multi_array<double, 4>& values, std::size_t order,
-      const boost::multi_array<double, 4>& reference_values,
+      Eigen::Tensor<double, 4, Eigen::RowMajor>& values, std::size_t order,
+      const Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values,
       const Eigen::Ref<const EigenRowArrayXXd> X,
-      const boost::multi_array<double, 3>& J,
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
       const Eigen::Ref<const EigenArrayXd> detJ,
-      const boost::multi_array<double, 3>& K) const
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
   {
     assert(_ufc_element);
     std::size_t num_points = X.rows();
@@ -193,7 +193,7 @@ public:
   ///         The cell coordinates
   /// @param[in]    cell (Cell)
   ///         The cell.
-  void tabulate_dof_coordinates(boost::multi_array<double, 2>& coordinates,
+  void tabulate_dof_coordinates(Eigen::Ref<EigenRowArrayXXd> coordinates,
                                 const std::vector<double>& coordinate_dofs,
                                 const mesh::Cell& cell) const;
 

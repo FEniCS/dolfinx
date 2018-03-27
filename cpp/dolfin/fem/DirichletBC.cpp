@@ -542,7 +542,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 
           // Check if the coordinates are on current facet and thus on
           // boundary
-          if (!on_facet(&(data.coordinates[i][0]), facet))
+          if (!on_facet(data.coordinates.row(i), facet))
             continue;
 
           // Skip already checked dofs
@@ -593,9 +593,6 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   const FiniteElement& element = *_function_space->element();
   const mesh::Mesh& mesh = *_function_space->mesh();
 
-  // Geometric dim
-  const std::size_t gdim = mesh.geometry().dim();
-
   // Create UFC cell object
   ufc::cell ufc_cell;
 
@@ -645,8 +642,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 
         // Check if the coordinates are part of the sub domain (calls
         // user-defined 'inside' function)
-        Eigen::Map<EigenRowArrayXd> x(&data.coordinates[i][0], gdim);
-        if (!_user_sub_domain->inside(x, false)[0])
+        if (!_user_sub_domain->inside(data.coordinates.row(i), false)[0])
           continue;
 
         if (!already_interpolated)
@@ -712,7 +708,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   _num_dofs = boundary_values.size();
 }
 //-----------------------------------------------------------------------------
-bool DirichletBC::on_facet(const double* coordinates,
+bool DirichletBC::on_facet(const Eigen::Ref<EigenArrayXd> coordinates,
                            const mesh::Facet& facet) const
 {
   // Check if the coordinates are on the same line as the line segment
@@ -778,8 +774,7 @@ bool DirichletBC::on_facet(const double* coordinates,
 DirichletBC::LocalData::LocalData(const function::FunctionSpace& V)
     : w(V.dofmap()->max_element_dofs(), 0.0),
       facet_dofs(V.dofmap()->num_facet_dofs(), 0),
-      coordinates(boost::extents[V.dofmap()->max_element_dofs()]
-                                [V.mesh()->geometry().dim()])
+      coordinates(V.dofmap()->max_element_dofs(), V.mesh()->geometry().dim())
 {
   // Do nothing
 }
