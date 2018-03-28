@@ -277,6 +277,7 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
   assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
 
+  // FIXME: Should this throw an error instead?
   if (cell.mesh().id() != mesh.id())
   {
     eval(values, x);

@@ -90,6 +90,13 @@ divided into two triangles, we do as follows ::
     mesh = RectangleMesh.create(MPI.comm_world, [Point(0,0), Point(1,1)], [32, 32], CellType.Type.triangle)
     V = FunctionSpace(mesh, "Lagrange", 1)
 
+    from dolfin.jit.jit import ffc_jit
+    import dolfin.cpp
+    ufl_mesh = mesh.ufl_domain()
+    cmap = ffc_jit(ufl_mesh)
+    cmap = dolfin.cpp.fem.make_ufc_coordinate_mapping(cmap)
+    mesh.geometry().ufc_coord_mapping = cmap
+
 The second argument to :py:class:`FunctionSpace
 <dolfin.functions.functionspace.FunctionSpace>` is the finite element
 family, while the third argument specifies the polynomial
