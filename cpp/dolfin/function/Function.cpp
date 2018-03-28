@@ -277,7 +277,7 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
   assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
 
-  if (cell.mesh().id() == mesh.id())
+  if (cell.mesh().id() != mesh.id())
   {
     eval(values, x);
     return;
@@ -459,8 +459,8 @@ void Function::restrict(double* w, const fem::FiniteElement& element,
 //-----------------------------------------------------------------------------
 EigenRowArrayXXd Function::compute_vertex_values(const mesh::Mesh& mesh) const
 {
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->mesh());
+  assert(_function_space);
+  assert(_function_space->mesh());
 
   // Check that the mesh matches. Notice that the hash is only
   // compared if the pointers are not matching.
@@ -488,6 +488,7 @@ EigenRowArrayXXd Function::compute_vertex_values(const mesh::Mesh& mesh) const
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
+    // FIXME: This will break for higher-order cells?
     // Get coordinate
     cell.get_coordinate_dofs(x);
 
