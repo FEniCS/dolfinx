@@ -17,7 +17,7 @@ using namespace dolfin::generation;
 mesh::Mesh UnitTriangleMesh::create()
 {
   EigenRowArrayXXd geom(3, 2);
-  EigenRowArrayXXi32 topo(1, 3);
+  EigenRowArrayXXi64 topo(1, 3);
 
   // Create vertices
   geom << 0.0, 0.0, 1.0, 0.0, 0.0, 1.0;

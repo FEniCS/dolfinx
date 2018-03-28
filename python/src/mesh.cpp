@@ -61,11 +61,13 @@ void mesh(py::module &m) {
              std::shared_ptr<dolfin::mesh::MeshGeometry>>(
       m, "MeshGeometry", "DOLFIN MeshGeometry object")
       .def("dim", &dolfin::mesh::MeshGeometry::dim, "Geometrical dimension")
-      .def("x", [](dolfin::mesh::MeshGeometry &self) {
-        return Eigen::Map<dolfin::EigenRowArrayXXd>(
-            self.x().data(), self.num_points(), self.dim());
-      })
-      .def_readwrite("ufc_coord_mapping", &dolfin::mesh::MeshGeometry::ufc_coord_mapping);
+      .def("x",
+           [](dolfin::mesh::MeshGeometry &self) {
+             return Eigen::Map<dolfin::EigenRowArrayXXd>(
+                 self.x().data(), self.num_points(), self.dim());
+           })
+      .def_readwrite("ufc_coord_mapping",
+                     &dolfin::mesh::MeshGeometry::ufc_coord_mapping);
 
   // dolfin::mesh::MeshTopology class
   py::class_<dolfin::mesh::MeshTopology,
@@ -113,7 +115,7 @@ void mesh(py::module &m) {
       .def(py::init([](const MPICommWrapper comm,
                        dolfin::mesh::CellType::Type type,
                        Eigen::Ref<const dolfin::EigenRowArrayXXd> geometry,
-                       Eigen::Ref<const dolfin::EigenRowArrayXXi32> topology) {
+                       Eigen::Ref<const dolfin::EigenRowArrayXXi64> topology) {
         return std::make_unique<dolfin::mesh::Mesh>(comm.get(), type, geometry,
                                                     topology);
       }))

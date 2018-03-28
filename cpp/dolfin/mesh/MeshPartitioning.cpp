@@ -238,50 +238,26 @@ mesh::Mesh MeshPartitioning::build(
   }
 #endif
 
-  // Generate mapping from global to local indexing for vertices also
-  // calculating which vertices are 'ghost' and putting them at the
-  // end of the local range
-  std::vector<std::int64_t> global_vertex_indices;
   Eigen::Map<const EigenRowArrayXXi64> global_cell_vertices(
       new_cell_vertices.data(), new_cell_vertices.shape()[0],
       new_cell_vertices.shape()[1]);
-  EigenRowArrayXXi32 local_cell_vertices(global_cell_vertices.rows(),
-                                         global_cell_vertices.cols());
 
-  compute_vertex_mapping(comm, global_cell_vertices, global_vertex_indices,
-                         local_cell_vertices);
-
-  // Find highest index + 1 in local_cell_vertices of regular cells
-  std::int32_t num_regular_vertices
-      = *std::max_element(local_cell_vertices.data(),
-                          local_cell_vertices.data()
-                              + local_cell_vertices.cols() * num_regular_cells)
-        + 1;
-
-  // Send vertices to processes that need them, informing all
-  // sharing processes of their destinations
-  std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices;
-  EigenRowArrayXXd vertex_coordinates(global_vertex_indices.size(),
-                                      mesh_data.geometry.dim);
-
-  distribute_vertices(comm, mesh_data, global_vertex_indices,
-                      vertex_coordinates, shared_vertices);
+  Eigen::Map<const EigenRowArrayXXd> mesh_data_vertices(
+      mesh_data.geometry.vertex_coordinates.data(),
+      mesh_data.geometry.vertex_coordinates.shape()[0],
+      mesh_data.geometry.vertex_coordinates.shape()[1]);
 
   timer.stop();
 
   // Build local mesh from new_mesh_data
-  mesh::Mesh mesh(comm, mesh_data.topology.cell_type, vertex_coordinates,
-                  local_cell_vertices);
+  mesh::Mesh mesh(comm, mesh_data.topology.cell_type, mesh_data_vertices,
+                  global_cell_vertices);
 
   // Reset global indices
-  const std::size_t num_vertices = vertex_coordinates.rows();
-  const std::size_t num_cells = local_cell_vertices.rows();
+  const std::size_t num_vertices = mesh.num_entities(0);
+  const std::size_t num_cells = mesh.num_cells();
   mesh.topology().init(0, num_vertices, num_global_vertices);
   mesh.topology().init(tdim, num_cells, mesh_data.topology.num_global_cells);
-
-  // Set global indices for vertices
-  for (std::size_t i = 0; i < global_vertex_indices.size(); ++i)
-    mesh.topology().set_global_index(0, i, global_vertex_indices[i]);
 
   // Set global indices for cells
   for (std::size_t i = 0; i < new_global_cell_indices.size(); ++i)
@@ -300,12 +276,18 @@ mesh::Mesh MeshPartitioning::build(
   // Set the ghost cell offset
   mesh.topology().init_ghost(tdim, num_regular_cells);
 
+  // Find highest index + 1 in local_cell_vertices of regular cells
+  std::int32_t num_regular_vertices
+      = *std::max_element(mesh.topology()(tdim, 0)().data(),
+                          mesh.topology()(tdim, 0)().data()
+                              + global_cell_vertices.cols() * num_regular_cells)
+        + 1;
+
   // Set the ghost vertex offset
   mesh.topology().init_ghost(0, num_regular_vertices);
 
   // Assign map of shared cells and vertices
   mesh.topology().shared_entities(mesh_data.topology.dim) = shared_cells;
-  mesh.topology().shared_entities(0) = shared_vertices;
 
   return mesh;
 }
@@ -793,7 +775,8 @@ void MeshPartitioning::compute_vertex_mapping(
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_vertices(
-    const MPI_Comm mpi_comm, const LocalMeshData& mesh_data,
+    const MPI_Comm mpi_comm,
+    Eigen::Ref<const EigenRowArrayXXd> mesh_data_vertices,
     const std::vector<std::int64_t>& vertex_indices,
     Eigen::Ref<EigenRowArrayXXd> vertex_coordinates,
     std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local)
@@ -815,11 +798,11 @@ void MeshPartitioning::distribute_vertices(
   const int mpi_rank = MPI::rank(mpi_comm);
 
   // Get geometric dimension
-  const int gdim = mesh_data.geometry.dim;
+  const int gdim = mesh_data_vertices.cols();
 
   // Compute where (process number) the vertices we need are located
   std::vector<std::size_t> ranges(mpi_size);
-  MPI::all_gather(mpi_comm, mesh_data.geometry.vertex_indices.size(), ranges);
+  MPI::all_gather(mpi_comm, (std::size_t)mesh_data_vertices.rows(), ranges);
   for (std::uint32_t i = 1; i != ranges.size(); ++i)
     ranges[i] += ranges[i - 1];
   ranges.insert(ranges.begin(), 0);
@@ -883,10 +866,6 @@ void MeshPartitioning::distribute_vertices(
   // This memory block is to read from, and must remain in place until the
   // transfer is complete (after next MPI_Win_fence)
   EigenRowArrayXXd send_coord_data(num_received_indices, gdim);
-  Eigen::Map<const EigenRowArrayXXd> mesh_data_vertices(
-      mesh_data.geometry.vertex_coordinates.data(),
-      mesh_data.geometry.vertex_coordinates.shape()[0],
-      mesh_data.geometry.vertex_coordinates.shape()[1]);
 
   const std::pair<std::size_t, std::size_t> local_vertex_range
       = {ranges[mpi_rank], ranges[mpi_rank + 1]};

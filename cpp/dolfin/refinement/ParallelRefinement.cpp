@@ -234,7 +234,7 @@ mesh::Mesh ParallelRefinement::build_local() const
 
   Eigen::Map<const EigenRowArrayXXd> geometry(new_vertex_coordinates.data(),
                                               num_vertices, gdim);
-  Eigen::Map<const EigenRowArrayXXi32> topology(new_cell_topology.data(),
+  Eigen::Map<const EigenRowArrayXXi64> topology(new_cell_topology.data(),
                                                 num_cells, num_cell_vertices);
 
   mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.type().cell_type(), geometry,

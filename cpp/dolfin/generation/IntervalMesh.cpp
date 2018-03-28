@@ -23,7 +23,7 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
   if (MPI::rank(comm) != 0)
   {
     EigenRowArrayXXd geom(0, 1);
-    EigenRowArrayXXi32 topo(0, 2);
+    EigenRowArrayXXi64 topo(0, 2);
     mesh::Mesh mesh(comm, mesh::CellType::Type::interval, geom, topo);
     return mesh::MeshPartitioning::build_distributed_mesh(mesh);
   }
@@ -55,7 +55,7 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
   }
 
   EigenRowArrayXXd geom((nx + 1), 1);
-  EigenRowArrayXXi32 topo(nx, 2);
+  EigenRowArrayXXi64 topo(nx, 2);
 
   // Create vertices
   for (std::size_t ix = 0; ix <= nx; ix++)

@@ -61,6 +61,42 @@ public:
   static mesh::Mesh build_distributed_mesh(const LocalMeshData& data,
                                            const std::string ghost_mode);
 
+  /// Take the set of vertices
+  /// @param mpi_comm
+  ///   MPI Communicator
+  /// @param mesh_data_vertices
+  ///   Existing vertex coordinates array on each process before distribution
+  /// @param vertex_indices
+  ///   Global indices for vertices on this process
+  /// @param vertex_coordinates
+  ///   Output array of coordinates on this process after distribution
+  /// @param shared_vertices_local
+  ///   Output map from local index to set of sharing processes for each shared
+  ///   vertex
+  static void distribute_vertices(
+      const MPI_Comm mpi_comm,
+      Eigen::Ref<const EigenRowArrayXXd> mesh_data_vertices,
+      const std::vector<std::int64_t>& vertex_indices,
+      Eigen::Ref<EigenRowArrayXXd> vertex_coordinates,
+      std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local);
+
+  /// Compute mapping of globally indexed vertices to local indices
+  /// and remap topology accordingly
+  ///
+  /// @param mpi_comm
+  ///   MPI Communicator
+  /// @param cell_vertices
+  ///   Input cell topology (global indexing)
+  /// @param vertex_indices
+  ///   Output local-to-global map for vertex indices
+  /// @param local_cell_vertices
+  ///   Output cell topology (local indexing)
+  static void
+  compute_vertex_mapping(MPI_Comm mpi_comm,
+                         Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+                         std::vector<std::int64_t>& vertex_indices,
+                         Eigen::Ref<EigenRowArrayXXi32> local_cell_vertices);
+
 private:
   // Compute cell partitioning from local mesh data. Returns a
   // vector 'cell -> process' vector for cells in LocalMeshData, and
@@ -130,24 +166,6 @@ private:
       const std::vector<std::vector<std::size_t>>& received_vertex_indices,
       const std::pair<std::size_t, std::size_t> local_vertex_range,
       const std::vector<std::vector<std::uint32_t>>& local_indexing);
-
-  // FIXME: make clear what is computed
-  // Distribute vertices and vertex sharing information
-  static void distribute_vertices(
-      const MPI_Comm mpi_comm, const LocalMeshData& mesh_data,
-      const std::vector<std::int64_t>& vertex_indices,
-      Eigen::Ref<EigenRowArrayXXd> new_vertex_coordinates,
-      std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local);
-
-  // Compute the local->global and global->local maps for all local vertices
-  // on this process, from the global vertex indices on each local cell.
-  // Returns the number of regular (non-ghosted) vertices.
-  static void compute_vertex_mapping(
-      MPI_Comm mpi_comm,
-      Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-      std::vector<std::int64_t>& vertex_indices,
-      Eigen::Ref<EigenRowArrayXXi32> local_cell_vertices);
-
 };
 } // namespace mesh
 } // namespace dolfin
