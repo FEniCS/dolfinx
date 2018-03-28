@@ -26,7 +26,7 @@ namespace
 // built in ParMETIS_V3_Mesh2Dual
 dolfin::graph::CSRGraph<idx_t>
 dual_graph(MPI_Comm mpi_comm,
-           const boost::multi_array<std::int64_t, 2>& cell_vertices,
+           Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
            const int num_vertices_per_cell)
 {
   common::Timer timer("Build mesh dual graph (ParMETIS)");
@@ -38,8 +38,9 @@ dual_graph(MPI_Comm mpi_comm,
   const std::int32_t num_processes = dolfin::MPI::size(mpi_comm);
 
   // Get dimensions of local mesh_data
-  const std::int32_t num_local_cells = cell_vertices.size();
+  const std::int32_t num_local_cells = cell_vertices.rows();
   const std::int32_t num_cell_vertices = num_vertices_per_cell;
+  dolfin_assert((std::int32_t)cell_vertices.rows() == num_cell_vertices);
 
   // Check that number of local graph nodes (cells) is > 0
   if (num_local_cells == 0)
@@ -63,10 +64,9 @@ dual_graph(MPI_Comm mpi_comm,
   eind.assign(num_local_cells * num_cell_vertices, 0);
   for (std::int32_t i = 0; i < num_local_cells; i++)
   {
-    dolfin_assert((std::int32_t)cell_vertices[i].size() == num_cell_vertices);
     eptr[i] = i * num_cell_vertices;
     for (std::int32_t j = 0; j < num_cell_vertices; j++)
-      eind[eptr[i] + j] = cell_vertices[i][j];
+      eind[eptr[i] + j] = cell_vertices(i, j);
   }
   eptr[num_local_cells] = num_local_cells * num_cell_vertices;
 
@@ -104,8 +104,7 @@ dual_graph(MPI_Comm mpi_comm,
 
 //-----------------------------------------------------------------------------
 mesh::MeshPartition dolfin::graph::ParMETIS::compute_partition(
-    const MPI_Comm mpi_comm,
-    const boost::multi_array<std::int64_t, 2>& cell_vertices,
+    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const std::size_t num_global_vertices, const mesh::CellType& cell_type,
     const std::string mode)
 {
@@ -420,7 +419,7 @@ void dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
 //-----------------------------------------------------------------------------
 #else
 mesh::MeshPartition dolfin::graph::ParMETIS::compute_partition(
-    const boost::multi_array<std::int64_t, 2>& cell_vertices,
+    Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const std::size_t num_global_vertices, const mesh::CellType& cell_type,
     const std::string mode)
 {

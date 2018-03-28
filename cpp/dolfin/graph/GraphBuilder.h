@@ -11,6 +11,7 @@
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <set>
 #include <utility>
@@ -56,7 +57,7 @@ public:
   /// non-local edges)
   static std::pair<std::int32_t, std::int32_t>
   compute_dual_graph(const MPI_Comm mpi_comm,
-                     const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                     Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                      const mesh::CellType& cell_type,
                      const std::int64_t num_global_vertices,
                      std::vector<std::vector<std::size_t>>& local_graph,
@@ -72,7 +73,7 @@ private:
   // local edges in the graph (undirected)
   static std::int32_t compute_local_dual_graph(
       const MPI_Comm mpi_comm,
-      const boost::multi_array<std::int64_t, 2>& cell_vertices,
+      Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
       const mesh::CellType& cell_type,
       std::vector<std::vector<std::size_t>>& local_graph,
       FacetCellMap& facet_cell_map);
@@ -82,7 +83,7 @@ private:
   template <int N>
   static std::int32_t compute_local_dual_graph_keyed(
       const MPI_Comm mpi_comm,
-      const boost::multi_array<std::int64_t, 2>& cell_vertices,
+      Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
       const mesh::CellType& cell_type,
       std::vector<std::vector<std::size_t>>& local_graph,
       FacetCellMap& facet_cell_map);
@@ -92,7 +93,7 @@ private:
   // should be called before this function is called.
   static std::int32_t compute_nonlocal_dual_graph(
       const MPI_Comm mpi_comm,
-      const boost::multi_array<std::int64_t, 2>& cell_vertices,
+      Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
       const mesh::CellType& cell_type, const std::int64_t num_global_vertices,
       std::vector<std::vector<std::size_t>>& local_graph,
       FacetCellMap& facet_cell_map, std::set<std::int64_t>& ghost_vertices);

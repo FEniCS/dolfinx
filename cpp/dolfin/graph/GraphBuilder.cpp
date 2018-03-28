@@ -142,8 +142,7 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 std::pair<std::int32_t, std::int32_t>
 dolfin::graph::GraphBuilder::compute_dual_graph(
-    const MPI_Comm mpi_comm,
-    const boost::multi_array<std::int64_t, 2>& cell_vertices,
+    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const mesh::CellType& cell_type, const std::int64_t num_global_vertices,
     std::vector<std::vector<std::size_t>>& local_graph,
     std::set<std::int64_t>& ghost_vertices)
@@ -167,8 +166,7 @@ dolfin::graph::GraphBuilder::compute_dual_graph(
 }
 //-----------------------------------------------------------------------------
 std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph(
-    const MPI_Comm mpi_comm,
-    const boost::multi_array<std::int64_t, 2>& cell_vertices,
+    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const mesh::CellType& cell_type,
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map)
@@ -202,8 +200,7 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph(
 //-----------------------------------------------------------------------------
 template <int N>
 std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
-    const MPI_Comm mpi_comm,
-    const boost::multi_array<std::int64_t, 2>& cell_vertices,
+    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const mesh::CellType& cell_type,
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map)
@@ -211,14 +208,14 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
   common::Timer timer("Compute local part of mesh dual graph");
 
   const std::int8_t tdim = cell_type.dim();
-  const std::int32_t num_local_cells = cell_vertices.shape()[0];
+  const std::int32_t num_local_cells = cell_vertices.rows();
   const std::int8_t num_vertices_per_cell = cell_type.num_entities(0);
   const std::int8_t num_facets_per_cell = cell_type.num_entities(tdim - 1);
   const std::int8_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
 
   dolfin_assert(N == num_vertices_per_facet);
-  dolfin_assert(num_local_cells == (int)cell_vertices.shape()[0]);
-  dolfin_assert(num_vertices_per_cell == (int)cell_vertices.shape()[1]);
+  dolfin_assert(num_local_cells == (int)cell_vertices.rows());
+  dolfin_assert(num_vertices_per_cell == (int)cell_vertices.cols());
 
   local_graph.resize(num_local_cells);
   facet_cell_map.clear();
@@ -253,7 +250,7 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
       // Get list of facet vertices
       auto& facet = facets[counter].first;
       for (std::int8_t k = 0; k < N; ++k)
-        facet[k] = cell_vertices[i][facet_vertices[j][k]];
+        facet[k] = cell_vertices(i, facet_vertices[j][k]);
 
       // Sort facet vertices
       std::sort(facet.begin(), facet.end());
@@ -318,8 +315,7 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
 }
 //-----------------------------------------------------------------------------
 std::int32_t dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
-    const MPI_Comm mpi_comm,
-    const boost::multi_array<std::int64_t, 2>& cell_vertices,
+    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const mesh::CellType& cell_type, const std::int64_t num_global_vertices,
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map, std::set<std::int64_t>& ghost_vertices)
@@ -338,12 +334,12 @@ std::int32_t dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
   const int tdim = cell_type.dim();
 
   // List of cell vertices
-  const std::int32_t num_local_cells = cell_vertices.shape()[0];
+  const std::int32_t num_local_cells = cell_vertices.rows();
   const std::int8_t num_vertices_per_cell = cell_type.num_entities(0);
   const std::int8_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
 
-  dolfin_assert(num_local_cells == (int)cell_vertices.shape()[0]);
-  dolfin_assert(num_vertices_per_cell == (int)cell_vertices.shape()[1]);
+  dolfin_assert(num_local_cells == (int)cell_vertices.rows());
+  dolfin_assert(num_vertices_per_cell == (int)cell_vertices.cols());
 
   // Compute local edges (cell-cell connections) using global
   // (internal to this function, not the user numbering) numbering

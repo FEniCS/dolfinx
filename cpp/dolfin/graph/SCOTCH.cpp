@@ -31,8 +31,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 mesh::MeshPartition dolfin::graph::SCOTCH::compute_partition(
-    const MPI_Comm mpi_comm,
-    const boost::multi_array<std::int64_t, 2>& cell_vertices,
+    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const std::vector<std::size_t>& cell_weight,
     const std::int64_t num_global_vertices, const mesh::CellType& cell_type)
 {
@@ -390,8 +389,7 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
 #else
 //-----------------------------------------------------------------------------
 mesh::MeshPartition dolfin::graph::SCOTCH::compute_partition(
-    const MPI_Comm mpi_comm,
-    const boost::multi_array<std::int64_t, 2>& cell_vertices,
+    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const std::vector<std::size_t>& cell_weight,
     const std::int64_t num_global_vertices, const mesh::CellType& cell_type)
 {

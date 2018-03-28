@@ -15,6 +15,7 @@
 
 #include "CSRGraph.h"
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
 #include <dolfin/mesh/MeshPartition.h>
 
 namespace dolfin
@@ -44,7 +45,7 @@ public:
   /// can be advantageous to use "adaptive_repartition" or "refine".
   static mesh::MeshPartition
   compute_partition(const MPI_Comm mpi_comm,
-                    const boost::multi_array<std::int64_t, 2>& cell_vertices,
+                    Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                     const std::size_t num_global_vertices,
                     const mesh::CellType& cell_type,
                     const std::string mode = "partition");

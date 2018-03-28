@@ -102,19 +102,23 @@ MeshPartition MeshPartitioning::partition_cells(const MPI_Comm& mpi_comm,
       mesh::CellType::create(mesh_data.topology.cell_type));
   dolfin_assert(cell_type);
 
+  Eigen::Map<const EigenRowArrayXXi64> cell_vertices(
+      mesh_data.topology.cell_vertices.data(),
+      mesh_data.topology.cell_vertices.shape()[0],
+      mesh_data.topology.cell_vertices.shape()[1]);
+
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
   {
     return dolfin::graph::SCOTCH::compute_partition(
-        mpi_comm, mesh_data.topology.cell_vertices,
-        mesh_data.topology.cell_weight, mesh_data.geometry.num_global_vertices,
-        *cell_type);
+        mpi_comm, cell_vertices, mesh_data.topology.cell_weight,
+        mesh_data.geometry.num_global_vertices, *cell_type);
   }
   else if (partitioner == "ParMETIS")
   {
     return dolfin::graph::ParMETIS::compute_partition(
-        mpi_comm, mesh_data.topology.cell_vertices,
-        mesh_data.geometry.num_global_vertices, *cell_type);
+        mpi_comm, cell_vertices, mesh_data.geometry.num_global_vertices,
+        *cell_type);
   }
   else
   {
@@ -277,8 +281,12 @@ void MeshPartitioning::reorder_cells_gps(
   // FIXME: this should be reused later to add the facet-cell topology
   std::vector<std::vector<std::size_t>> local_graph;
   dolfin::graph::GraphBuilder::FacetCellMap facet_cell_map;
+
+  // FIXME: replace boost
+  Eigen::Map<const EigenRowArrayXXi64> eigen_cell_vertices(
+      cell_vertices.data(), cell_vertices.shape()[0], cell_vertices.shape()[1]);
   dolfin::graph::GraphBuilder::compute_local_dual_graph(
-      mpi_comm, cell_vertices, cell_type, local_graph, facet_cell_map);
+      mpi_comm, eigen_cell_vertices, cell_type, local_graph, facet_cell_map);
 
   const std::size_t num_all_cells = cell_vertices.shape()[0];
   const std::size_t local_cell_offset
