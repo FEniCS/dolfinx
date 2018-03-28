@@ -266,7 +266,7 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
   std::vector<double> x(gdim * local_size);
 
   // Loop over cells and tabulate dofs
-  EigenArrayXd coordinates;
+  EigenRowArrayXXd coordinates;
   std::vector<double> coordinate_dofs;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {

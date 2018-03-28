@@ -774,6 +774,7 @@ bool DirichletBC::on_facet(const Eigen::Ref<EigenArrayXd> coordinates,
 DirichletBC::LocalData::LocalData(const function::FunctionSpace& V)
     : w(V.dofmap()->max_element_dofs(), 0.0),
       facet_dofs(V.dofmap()->num_facet_dofs(), 0),
+      // FIXME: the below should not be max_element_dofs! It should be fixed.
       coordinates(V.dofmap()->max_element_dofs(), V.mesh()->geometry().dim())
 {
   // Do nothing

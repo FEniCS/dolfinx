@@ -24,7 +24,7 @@ void FiniteElement::tabulate_dof_coordinates(
 {
   dolfin_assert(_ufc_element);
 
-  // Check dimensions
+  // Resize if required
   const std::size_t dim = this->space_dimension();
   const std::size_t gdim = this->geometric_dimension();
   coordinates.resize(dim, gdim);

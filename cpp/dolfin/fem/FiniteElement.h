@@ -93,16 +93,6 @@ public:
     return _ufc_element->value_dimension(i);
   }
 
-  // /// Evaluate basis function i at given point in cell
-  // void evaluate_basis(std::size_t i, double* values, const double* x,
-  //                     const double* coordinate_dofs, int cell_orientation)
-  //                     const
-  // {
-  //   dolfin_assert(_ufc_element);
-  //   _ufc_element->evaluate_basis(i, values, x, coordinate_dofs,
-  //                                cell_orientation);
-  // }
-
   /// Evaluate all basis functions at given point in cell
   // void evaluate_reference_basis(double * reference_values,
   //                               std::size_t num_points,
@@ -160,35 +150,11 @@ public:
                                      cell_orientation);
   }
 
-  /// Evaluate order n derivatives of basis function i at given point in cell
-  // void evaluate_basis_derivatives(std::uint32_t i, std::uint32_t n,
-  //                                 double* values, const double* x,
-  //                                 const double* coordinate_dofs,
-  //                                 int cell_orientation) const
-  // {
-  //   dolfin_assert(_ufc_element);
-  //   _ufc_element->evaluate_basis_derivatives(i, n, values, x,
-  //   coordinate_dofs,
-  //                                            cell_orientation);
-  // }
-
-  /// Evaluate order n derivatives of all basis functions at given
-  /// point in cell
-  // void evaluate_basis_derivatives_all(std::uint32_t n, double* values,
-  //                                     const double* x,
-  //                                     const double* coordinate_dofs,
-  //                                     int cell_orientation) const
-  // {
-  //   dolfin_assert(_ufc_element);
-  //   _ufc_element->evaluate_basis_derivatives_all(n, values, x,
-  //   coordinate_dofs,
-  //                                                cell_orientation);
-  // }
-
   /// Tabulate the coordinates of all dofs on an element
   ///
-  /// @param[in,out]    coordinates (boost::multi_array<double, 2>)
-  ///         The coordinates of all dofs on a cell.
+  /// @param[in,out]    coordinates (Eigen::Ref<EigenRowArrayXXd>)
+  ///         The coordinates of all dofs on a cell. Must have correct size
+  ///         (num_dofs, gdim)
   /// @param[in]    coordinate_dofs (std::vector<double>)
   ///         The cell coordinates
   /// @param[in]    cell (Cell)
