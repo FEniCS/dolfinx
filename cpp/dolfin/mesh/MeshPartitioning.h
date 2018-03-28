@@ -148,17 +148,6 @@ private:
       std::vector<std::int64_t>& vertex_indices,
       Eigen::Ref<EigenRowArrayXXi32> local_cell_vertices);
 
-  // FIXME: Improve pre-conditions explanation
-  // Build mesh
-  static mesh::Mesh
-  build_local_mesh(const MPI_Comm& comm,
-                   const std::vector<std::int64_t>& global_cell_indices,
-                   Eigen::Ref<const EigenRowArrayXXi32> cells,
-                   const mesh::CellType::Type cell_type, const int tdim,
-                   const std::int64_t num_global_cells,
-                   const std::vector<std::int64_t>& vertex_indices,
-                   Eigen::Ref<const EigenRowArrayXXd> vertex_coordinates,
-                   const int gdim, const std::int64_t num_global_vertices);
 };
 } // namespace mesh
 } // namespace dolfin

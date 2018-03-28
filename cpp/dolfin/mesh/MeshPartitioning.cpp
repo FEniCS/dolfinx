@@ -241,30 +241,41 @@ mesh::Mesh MeshPartitioning::build(
   // Generate mapping from global to local indexing for vertices also
   // calculating which vertices are 'ghost' and putting them at the
   // end of the local range
-  std::vector<std::int64_t> vertex_indices;
+  std::vector<std::int64_t> global_vertex_indices;
   EigenRowArrayXXi32 local_cell_vertices(new_cell_vertices.shape()[0],
                                          new_cell_vertices.shape()[1]);
   const std::int32_t num_regular_vertices
       = compute_vertex_mapping(comm, num_regular_cells, new_cell_vertices,
-                               vertex_indices, local_cell_vertices);
+                               global_vertex_indices, local_cell_vertices);
 
   // Send vertices to processes that need them, informing all
   // sharing processes of their destinations
   std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices;
-  EigenRowArrayXXd vertex_coordinates(vertex_indices.size(),
+  EigenRowArrayXXd vertex_coordinates(global_vertex_indices.size(),
                                       mesh_data.geometry.dim);
 
-  distribute_vertices(comm, mesh_data, vertex_indices, vertex_coordinates,
-                      shared_vertices);
+  distribute_vertices(comm, mesh_data, global_vertex_indices,
+                      vertex_coordinates, shared_vertices);
 
   timer.stop();
 
   // Build local mesh from new_mesh_data
-  mesh::Mesh mesh = build_local_mesh(
-      comm, new_global_cell_indices, local_cell_vertices,
-      mesh_data.topology.cell_type, mesh_data.topology.dim,
-      mesh_data.topology.num_global_cells, vertex_indices, vertex_coordinates,
-      mesh_data.geometry.dim, mesh_data.geometry.num_global_vertices);
+  mesh::Mesh mesh(comm, mesh_data.topology.cell_type, vertex_coordinates,
+                  local_cell_vertices);
+
+  // Reset global indices
+  const std::size_t num_vertices = vertex_coordinates.rows();
+  const std::size_t num_cells = local_cell_vertices.rows();
+  mesh.topology().init(0, num_vertices, num_global_vertices);
+  mesh.topology().init(tdim, num_cells, mesh_data.topology.num_global_cells);
+
+  // Set global indices for vertices
+  for (std::size_t i = 0; i < global_vertex_indices.size(); ++i)
+    mesh.topology().set_global_index(0, i, global_vertex_indices[i]);
+
+  // Set global indices for cells
+  for (std::size_t i = 0; i < new_global_cell_indices.size(); ++i)
+    mesh.topology().set_global_index(tdim, i, new_global_cell_indices[i]);
 
   // Fix up some of the ancilliary data about sharing and ownership
   // now that the mesh has been initialised
@@ -1016,37 +1027,5 @@ void MeshPartitioning::build_shared_vertices(
       dolfin_assert(it.second);
     }
   }
-}
-//-----------------------------------------------------------------------------
-mesh::Mesh MeshPartitioning::build_local_mesh(
-    const MPI_Comm& comm, const std::vector<std::int64_t>& global_cell_indices,
-    Eigen::Ref<const EigenRowArrayXXi32> cells,
-    const mesh::CellType::Type cell_type, const int tdim,
-    const std::int64_t num_global_cells,
-    const std::vector<std::int64_t>& vertex_indices,
-    Eigen::Ref<const EigenRowArrayXXd> vertex_coordinates, const int gdim,
-    const std::int64_t num_global_vertices)
-{
-  log::log(PROGRESS, "Build local mesh during distributed mesh construction");
-  common::Timer timer(
-      "Build local part of distributed mesh (from local mesh data)");
-
-  mesh::Mesh mesh(comm, cell_type, vertex_coordinates, cells);
-
-  // Reset global indices
-  const std::size_t num_vertices = vertex_coordinates.rows();
-  const std::size_t num_cells = cells.rows();
-  mesh.topology().init(0, num_vertices, num_global_vertices);
-  mesh.topology().init(tdim, num_cells, num_global_cells);
-
-  // Set global indices for vertices
-  for (std::size_t i = 0; i < vertex_indices.size(); ++i)
-    mesh.topology().set_global_index(0, i, vertex_indices[i]);
-
-  // Set global indices for cells
-  for (std::size_t i = 0; i < global_cell_indices.size(); ++i)
-    mesh.topology().set_global_index(tdim, i, global_cell_indices[i]);
-
-  return mesh;
 }
 //-----------------------------------------------------------------------------
