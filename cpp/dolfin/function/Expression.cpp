@@ -35,7 +35,7 @@ Expression::~Expression()
 //-----------------------------------------------------------------------------
 void Expression::eval(Eigen::Ref<EigenRowArrayXXd> values,
                       Eigen::Ref<const EigenRowArrayXXd> x,
-                      const ufc::cell& cell) const
+                      const mesh::Cell& cell) const
 {
   // Redirect to simple eval
   eval(values, x);
@@ -96,9 +96,8 @@ Expression::get_generic_function(std::string name) const
 }
 //-----------------------------------------------------------------------------
 void Expression::restrict(double* w, const fem::FiniteElement& element,
-                          const mesh::Cell& dolfin_cell,
-                          const double* coordinate_dofs,
-                          const ufc::cell& ufc_cell) const
+                          const mesh::Cell& cell,
+                          const double* coordinate_dofs) const
 {
   // Get evaluation points
   const std::size_t vs = value_size();
@@ -117,7 +116,7 @@ void Expression::restrict(double* w, const fem::FiniteElement& element,
   EigenRowArrayXXd eval_values(ndofs, vs);
 
   // Evaluate all points in one call
-  eval(eval_values, eval_points, ufc_cell);
+  eval(eval_values, eval_points, cell);
 
   // Transpose for vector values
   // FIXME: remove need for this - needs work in ffc

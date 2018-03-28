@@ -14,7 +14,6 @@
 #include <dolfin/common/types.h>
 #include <dolfin/geometry/Point.h>
 #include <memory>
-#include <ufc.h>
 
 namespace dolfin
 {
@@ -33,7 +32,7 @@ public:
   /// @param    index
   ///         The index.
   Cell(const Mesh& mesh, std::size_t index)
-      : MeshEntity(mesh, mesh.topology().dim(), index)
+      : MeshEntity(mesh, mesh.topology().dim(), index), local_facet(-1)
   {
   }
 
@@ -218,6 +217,9 @@ public:
     return _mesh->type().ordered(*this, local_to_global_vertex_indices);
   }
 
+  /// Local facet index, used typically in eval functions
+  mutable int local_facet;
+
   // FIXME: This function is part of a UFC transition
   /// Get cell coordinate dofs (not vertex coordinates)
   void get_coordinate_dofs(Eigen::Ref<EigenRowArrayXXd> coordinates) const
@@ -262,17 +264,6 @@ public:
     for (std::size_t i = 0; i < num_vertices; i++)
       for (std::size_t j = 0; j < gdim; j++)
         coordinates[i * gdim + j] = _mesh->geometry().x(vertices[i])[j];
-  }
-
-  // FIXME: This function is part of a UFC transition
-  /// Fill UFC cell with miscellaneous data
-  void get_cell_data(ufc::cell& ufc_cell, int local_facet = -1) const
-  {
-    ufc_cell.geometric_dimension = _mesh->geometry().dim();
-    ufc_cell.local_facet = local_facet;
-    ufc_cell.orientation = -1;
-    ufc_cell.mesh_identifier = this->mesh().id();
-    ufc_cell.index = index();
   }
 };
 }

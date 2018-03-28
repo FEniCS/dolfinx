@@ -10,7 +10,6 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 #include <memory>
-#include <ufc.h>
 #include <vector>
 
 namespace dolfin
@@ -65,7 +64,7 @@ public:
   /// Evaluate at given point in given cell
   virtual void eval(Eigen::Ref<EigenRowArrayXXd> values,
                     Eigen::Ref<const EigenRowArrayXXd> x,
-                    const ufc::cell& cell) const;
+                    const mesh::Cell& cell) const;
 
   /// Evaluate at given point
   virtual void eval(Eigen::Ref<EigenRowArrayXXd> values,
@@ -73,9 +72,8 @@ public:
 
   /// Restrict function to local cell (compute expansion coefficients w)
   virtual void restrict(double* w, const fem::FiniteElement& element,
-                        const mesh::Cell& dolfin_cell,
-                        const double* coordinate_dofs,
-                        const ufc::cell& ufc_cell) const = 0;
+                        const mesh::Cell& cell,
+                        const double* coordinate_dofs) const = 0;
 
   /// Compute values at all mesh vertices
   virtual EigenRowArrayXXd

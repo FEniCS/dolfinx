@@ -30,15 +30,6 @@ void function(py::module &m) {
   // ufc::shape
   py::class_<ufc::shape>(m, "ufc_shape");
 
-  // ufc::cell
-  py::class_<ufc::cell, std::shared_ptr<ufc::cell>>(m, "ufc_cell")
-      .def_readonly("cell_shape", &ufc::cell::cell_shape)
-      .def_readonly("topological_dimension", &ufc::cell::topological_dimension)
-      .def_readonly("geometric_dimension", &ufc::cell::geometric_dimension)
-      .def_readonly("local_facet", &ufc::cell::local_facet)
-      .def_readonly("mesh_identifier", &ufc::cell::mesh_identifier)
-      .def_readonly("index", &ufc::cell::index);
-
   // GenericFunction
   py::class_<dolfin::function::GenericFunction,
              std::shared_ptr<dolfin::function::GenericFunction>,
@@ -55,18 +46,7 @@ void function(py::module &m) {
            [](const dolfin::function::GenericFunction &self,
               Eigen::Ref<dolfin::EigenRowArrayXXd> u,
               Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
-              const dolfin::mesh::Cell &cell) {
-             ufc::cell ufc_cell;
-             cell.get_cell_data(ufc_cell);
-             self.eval(u, x, ufc_cell);
-           },
-           "Evaluate GenericFunction (cell version)")
-      .def("eval",
-           (void (dolfin::function::GenericFunction::*)(
-               Eigen::Ref<dolfin::EigenRowArrayXXd>,
-               Eigen::Ref<const dolfin::EigenRowArrayXXd>, const ufc::cell &)
-                const) &
-               dolfin::function::GenericFunction::eval,
+              const dolfin::mesh::Cell &cell) { self.eval(u, x, cell); },
            "Evaluate GenericFunction (cell version)")
       .def("eval",
            (void (dolfin::function::GenericFunction::*)(
@@ -119,7 +99,7 @@ void function(py::module &m) {
 
     void eval(Eigen::Ref<dolfin::EigenRowArrayXXd> values,
               Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
-              const ufc::cell &cell) const override {
+              const dolfin::mesh::Cell &cell) const override {
       PYBIND11_OVERLOAD_NAME(void, dolfin::function::Expression, "eval_cell",
                              eval, values, x, cell);
     }
