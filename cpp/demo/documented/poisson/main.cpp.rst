@@ -103,8 +103,8 @@ Then follows the definition of the coefficient functions (for
    public:
      Source() : function::Expression({}) {}
 
-     void eval(Eigen::Ref<EigenRowMatrixXd> values,
-            Eigen::Ref<const EigenRowMatrixXd> x) const
+     void eval(Eigen::Ref<EigenRowArrayXXd> values,
+            Eigen::Ref<const EigenRowArrayXXd> x) const
      {
      for (unsigned int i = 0; i != x.rows(); ++i)
        {
@@ -121,8 +121,8 @@ Then follows the definition of the coefficient functions (for
    public:
      dUdN() : function::Expression({}) {}
 
-     void eval(Eigen::Ref<EigenRowMatrixXd> values,
-            Eigen::Ref<const EigenRowMatrixXd> x) const
+     void eval(Eigen::Ref<EigenRowArrayXXd> values,
+            Eigen::Ref<const EigenRowArrayXXd> x) const
      {
        for (unsigned int i = 0; i != x.rows(); ++i)
            values(i, 0) = sin(5*x(i, 0));
@@ -165,6 +165,11 @@ the form file) defined relative to this mesh, we do as follows
      std::array<geometry::Point, 2> pt = {geometry::Point(0.,0.), geometry::Point(1.,1.)};
      auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle));
      auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
+
+    // Attach 'coordinate mapping' to mesh
+    auto cmap = std::make_shared<poisson_coordinate_mapping_1>();
+    mesh->geometry().ufc_coord_mapping = cmap;
+
 
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
 using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`

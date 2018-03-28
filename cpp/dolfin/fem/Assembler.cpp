@@ -441,7 +441,6 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   }
 
   // Data structures used in assembly
-  ufc::cell ufc_cell;
   EigenRowArrayXXd coordinate_dofs;
   EigenRowArrayXXd Ae;
 
@@ -459,12 +458,8 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
     coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
-    // Get UFC cell data
-    cell.get_cell_data(ufc_cell);
-
     // Update UFC data to current cell
-    ufc.update(cell, coordinate_dofs, ufc_cell,
-               cell_integral->enabled_coefficients());
+    ufc.update(cell, coordinate_dofs, cell_integral->enabled_coefficients());
 
     // Get dof maps for cell
     auto dmap0 = dofmaps[0]->cell_dofs(cell.index());
@@ -476,7 +471,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 
     // Compute cell matrix
     cell_integral->tabulate_tensor(Ae.data(), ufc.w(), coordinate_dofs.data(),
-                                   ufc_cell.orientation);
+                                   1);
 
     // FIXME: Pass in list  of cells, and list of local dofs, with
     // Dirichlet conditions
@@ -554,7 +549,6 @@ void Assembler::assemble(la::PETScVector& b, const Form& L)
   auto dofmap = L.function_space(0)->dofmap();
 
   // Data structures used in assembly
-  ufc::cell ufc_cell;
   EigenRowArrayXXd coordinate_dofs;
   EigenArrayXd be;
 
@@ -571,12 +565,8 @@ void Assembler::assemble(la::PETScVector& b, const Form& L)
     coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
-    // Get UFC cell data
-    cell.get_cell_data(ufc_cell);
-
     // Update UFC data to current cell
-    ufc.update(cell, coordinate_dofs, ufc_cell,
-               cell_integral->enabled_coefficients());
+    ufc.update(cell, coordinate_dofs, cell_integral->enabled_coefficients());
 
     // Get dof maps for cell
     auto dmap = dofmap->cell_dofs(cell.index());
@@ -588,7 +578,7 @@ void Assembler::assemble(la::PETScVector& b, const Form& L)
 
     // Compute cell matrix
     cell_integral->tabulate_tensor(be.data(), ufc.w(), coordinate_dofs.data(),
-                                   ufc_cell.orientation);
+                                   1);
 
     // Add to vector
     // std::cout << "Adding to vector: " << be(0) << ", " << dmap[0] <<
@@ -634,7 +624,6 @@ void Assembler::apply_bc(la::PETScVector& b, const Form& a,
   auto dofmap0 = a.function_space(0)->dofmap();
   auto dofmap1 = a.function_space(1)->dofmap();
 
-  ufc::cell ufc_cell;
   EigenRowArrayXXd Ae;
   EigenArrayXd be;
   EigenRowArrayXXd coordinate_dofs;
@@ -675,19 +664,15 @@ void Assembler::apply_bc(la::PETScVector& b, const Form& a,
     coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
-    // Get UFC cell data
-    cell.get_cell_data(ufc_cell);
-
     // Update UFC data to current cell
-    ufc.update(cell, coordinate_dofs, ufc_cell,
-               cell_integral->enabled_coefficients());
+    ufc.update(cell, coordinate_dofs, cell_integral->enabled_coefficients());
 
     // Size data structure for assembly
     auto dmap0 = dofmap1->cell_dofs(cell.index());
     Ae.resize(dmap0.size(), dmap1.size());
     Ae.setZero();
     cell_integral->tabulate_tensor(Ae.data(), ufc.w(), coordinate_dofs.data(),
-                                   ufc_cell.orientation);
+                                   1);
 
     // FIXME: Is this required?
     // Zero Dirichlet rows in Ae

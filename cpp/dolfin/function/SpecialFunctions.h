@@ -14,6 +14,7 @@ namespace dolfin
 {
 namespace mesh
 {
+class Cell;
 class Mesh;
 }
 
@@ -28,8 +29,8 @@ public:
   explicit MeshCoordinates(std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Evaluate function
-  void eval(Eigen::Ref<EigenRowMatrixXd> values,
-            Eigen::Ref<const EigenRowMatrixXd> x, const ufc::cell& cell) const;
+  void eval(Eigen::Ref<EigenRowArrayXXd> values,
+            Eigen::Ref<const EigenRowArrayXXd> x, const mesh::Cell& cell) const;
 
 private:
   // The mesh
@@ -45,8 +46,8 @@ public:
   explicit FacetArea(std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Evaluate function
-  void eval(Eigen::Ref<EigenRowMatrixXd> values,
-            Eigen::Ref<const EigenRowMatrixXd> x, const ufc::cell& cell) const;
+  void eval(Eigen::Ref<EigenRowArrayXXd> values,
+            Eigen::Ref<const EigenRowArrayXXd> x, const mesh::Cell& cell) const;
 
 private:
   // The mesh

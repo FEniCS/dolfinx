@@ -15,12 +15,6 @@
 #include <utility>
 #include <vector>
 
-namespace ufc
-{
-// Forward declarations
-class cell;
-}
-
 namespace dolfin
 {
 namespace la
@@ -128,22 +122,8 @@ public:
   ///         The values.
   /// @param    x (Eigen::Ref<const Eigen::VectorXd> x)
   ///         The coordinates.
-  void eval(Eigen::Ref<EigenRowMatrixXd> values,
-            Eigen::Ref<const EigenRowMatrixXd> x) const override;
-
-  /// Evaluate function at given coordinates in given cell
-  ///
-  /// @param    values (Eigen::Ref<Eigen::VectorXd>)
-  ///         The values.
-  /// @param    x (Eigen::Ref<const Eigen::VectorXd>)
-  ///         The coordinates.
-  /// @param    dolfin_cell (_Cell_)
-  ///         The cell.
-  /// @param    ufc_cell (ufc::cell)
-  ///         The ufc::cell.
-  void eval(Eigen::Ref<EigenRowMatrixXd> values,
-            Eigen::Ref<const EigenRowMatrixXd> x, const mesh::Cell& dolfin_cell,
-            const ufc::cell& ufc_cell) const;
+  void eval(Eigen::Ref<EigenRowArrayXXd> values,
+            Eigen::Ref<const EigenRowArrayXXd> x) const override;
 
   /// Interpolate function (on possibly non-matching meshes)
   ///
@@ -180,11 +160,11 @@ public:
   ///         The values at the point.
   /// @param   x (Eigen::Ref<const Eigen::VectorXd>
   ///         The coordinates of the point.
-  /// @param    cell (ufc::cell)
+  /// @param    cell (mesh::Cell)
   ///         The cell which contains the given point.
-  virtual void eval(Eigen::Ref<EigenRowMatrixXd> values,
-                    Eigen::Ref<const EigenRowMatrixXd> x,
-                    const ufc::cell& cell) const override;
+  virtual void eval(Eigen::Ref<EigenRowArrayXXd> values,
+                    Eigen::Ref<const EigenRowArrayXXd> x,
+                    const mesh::Cell& cell) const override;
 
   /// Restrict function to local cell (compute expansion coefficients w)
   ///
@@ -192,16 +172,13 @@ public:
   ///         Expansion coefficients.
   /// @param    element (_FiniteElement_)
   ///         The element.
-  /// @param    dolfin_cell (_Cell_)
+  /// @param    cell (_Cell_)
   ///         The cell.
   /// @param  coordinate_dofs (double *)
   ///         The coordinates
-  /// @param    ufc_cell (ufc::cell).
-  ///         The ufc::cell.
   virtual void restrict(double* w, const fem::FiniteElement& element,
-                        const mesh::Cell& dolfin_cell,
-                        const double* coordinate_dofs,
-                        const ufc::cell& ufc_cell) const override;
+                        const mesh::Cell& cell,
+                        const double* coordinate_dofs) const override;
 
   /// Compute values at all mesh vertices
   ///

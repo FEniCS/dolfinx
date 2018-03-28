@@ -16,6 +16,8 @@
 #include <memory>
 #include <string>
 
+#include <ufc.h>
+
 using namespace dolfin;
 using namespace dolfin::fem;
 
@@ -26,6 +28,7 @@ Form::Form(
     : _integrals(*ufc_form), _coeffs(*ufc_form),
       _function_spaces(function_spaces)
 {
+  assert(ufc_form);
   dolfin_assert(ufc_form->rank() == function_spaces.size());
 
   // Check argument function spaces
@@ -39,9 +42,9 @@ Form::Form(
     {
       log::log(ERROR, "Expected element: %s", element->signature());
       log::log(ERROR, "Input element:    %s",
-          function_spaces[i]->element()->signature().c_str());
+               function_spaces[i]->element()->signature().c_str());
       log::dolfin_error("Form.cpp", "create form",
-                   "Wrong type of function space for argument %d", i);
+                        "Wrong type of function space for argument %d", i);
     }
   }
 
@@ -50,6 +53,9 @@ Form::Form(
     _mesh = function_spaces[0]->mesh();
   for (auto& f : function_spaces)
     dolfin_assert(_mesh == f->mesh());
+
+  _coord_mapping = std::shared_ptr<ufc::coordinate_mapping>(
+      ufc_form->create_coordinate_mapping());
 }
 //-----------------------------------------------------------------------------
 Form::~Form()

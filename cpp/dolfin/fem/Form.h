@@ -16,6 +16,7 @@
 // Forward declaration
 namespace ufc
 {
+class coordinate_mapping;
 class form;
 }
 
@@ -203,6 +204,12 @@ public:
   /// Access form integrals (const)
   const FormIntegrals& integrals() const { return _integrals; }
 
+  /// Get ufc::coordinate_mapping (experimental)
+  std::shared_ptr<const ufc::coordinate_mapping> coordinate_mapping() const
+  {
+    return _coord_mapping;
+  }
+
 private:
   // Integrals associated with the Form
   FormIntegrals _integrals;
@@ -227,6 +234,9 @@ private:
 
   // Domain markers for vertices
   std::shared_ptr<const mesh::MeshFunction<std::size_t>> dP;
+
+  // ufc::coordinate_mapping
+  std::shared_ptr<ufc::coordinate_mapping> _coord_mapping;
 };
 }
 }

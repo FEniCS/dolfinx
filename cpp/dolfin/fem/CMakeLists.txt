@@ -15,7 +15,6 @@ set(HEADERS
   LocalAssembler.h
   NonlinearVariationalProblem.h
   PETScDMCollection.h
-  PointSource.h
   SparsityPatternBuilder.h
   SystemAssembler.h
   UFC.h
@@ -34,7 +33,6 @@ set(SOURCES
   GenericDofMap.cpp
   LocalAssembler.cpp
   NonlinearVariationalProblem.cpp
-  PointSource.cpp
   PETScDMCollection.cpp
   SparsityPatternBuilder.cpp
   SystemAssembler.cpp

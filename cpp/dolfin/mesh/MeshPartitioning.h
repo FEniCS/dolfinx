@@ -104,18 +104,6 @@ private:
       boost::multi_array<std::int64_t, 2>& reordered_cell_vertices,
       std::vector<std::int64_t>& reordered_global_cell_indices);
 
-  // FIXME: make clearer what goes in and what comes out
-  // Reorder vertices by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH).
-  // Returns the pair (new_vertex_indices, new_vertex_global_to_local).
-  static void reorder_vertices_gps(
-      MPI_Comm mpi_comm, const std::int32_t num_regular_vertices,
-      const std::int32_t num_regular_cells, const int num_cell_vertices,
-      const boost::multi_array<std::int64_t, 2>& cell_vertices,
-      const std::vector<std::int64_t>& vertex_indices,
-      const std::map<std::int64_t, std::int32_t>& vertex_global_to_local,
-      std::vector<std::int64_t>& reordered_vertex_indices,
-      std::map<std::int64_t, std::int32_t>& reordered_vertex_global_to_local);
-
   // FIXME: Update, making clear exactly what is computed
   // This function takes the partition computed by the partitioner
   // (which tells us to which process each of the local cells stored in
@@ -133,15 +121,15 @@ private:
       std::vector<int>& new_cell_partition,
       std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells);
 
-  // FIXME: Improve explaination
+  // FIXME: Improve explanation
   // Utility to convert received_vertex_indices into
   // vertex sharing information
   static void build_shared_vertices(
       MPI_Comm mpi_comm,
       std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices,
-      const std::map<std::int64_t, std::int32_t>&
-          vertex_global_to_local_indices,
-      const std::vector<std::vector<std::size_t>>& received_vertex_indices);
+      const std::vector<std::vector<std::size_t>>& received_vertex_indices,
+      const std::pair<std::size_t, std::size_t> local_vertex_range,
+      const std::vector<std::vector<std::uint32_t>>& local_indexing);
 
   // FIXME: make clear what is computed
   // Distribute vertices and vertex sharing information
@@ -149,31 +137,17 @@ private:
       const MPI_Comm mpi_comm, const LocalMeshData& mesh_data,
       const std::vector<std::int64_t>& vertex_indices,
       Eigen::Ref<EigenRowArrayXXd> new_vertex_coordinates,
-      std::map<std::int64_t, std::int32_t>& vertex_global_to_local_indices,
       std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local);
 
   // Compute the local->global and global->local maps for all local vertices
   // on this process, from the global vertex indices on each local cell.
   // Returns the number of regular (non-ghosted) vertices.
-  static std::int32_t compute_vertex_mapping(
-      MPI_Comm mpi_comm, const std::int32_t num_regular_cells,
-      const boost::multi_array<std::int64_t, 2>& cell_vertices,
+  static void compute_vertex_mapping(
+      MPI_Comm mpi_comm,
+      Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
       std::vector<std::int64_t>& vertex_indices,
-      std::map<std::int64_t, std::int32_t>& vertex_global_to_local);
+      Eigen::Ref<EigenRowArrayXXi32> local_cell_vertices);
 
-  // FIXME: Improve pre-conditions explanation
-  // Build mesh
-  static mesh::Mesh build_local_mesh(
-      const MPI_Comm& comm,
-      const std::vector<std::int64_t>& global_cell_indices,
-      const boost::multi_array<std::int64_t, 2>& cell_global_vertices,
-      const mesh::CellType::Type cell_type, const int tdim,
-      const std::int64_t num_global_cells,
-      const std::vector<std::int64_t>& vertex_indices,
-      Eigen::Ref<const EigenRowArrayXXd> vertex_coordinates, const int gdim,
-      const std::int64_t num_global_vertices,
-      const std::map<std::int64_t, std::int32_t>&
-          vertex_global_to_local_indices);
 };
 } // namespace mesh
 } // namespace dolfin

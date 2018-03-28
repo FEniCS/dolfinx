@@ -8,7 +8,6 @@
 
 #include "GenericFunction.h"
 #include <Eigen/Dense>
-#include <ufc.h>
 #include <vector>
 
 namespace dolfin
@@ -68,11 +67,11 @@ public:
   ///         The values at the point.
   /// @param    x (Eigen::Ref<const Eigen::VectorXd>)
   ///         The coordinates of the point.
-  /// @param    cell (ufc::cell)
+  /// @param    cell (mesh::Cell)
   ///         The cell which contains the given point.
-  virtual void eval(Eigen::Ref<EigenRowMatrixXd> values,
-                    Eigen::Ref<const EigenRowMatrixXd> x,
-                    const ufc::cell& cell) const override;
+  virtual void eval(Eigen::Ref<EigenRowArrayXXd> values,
+                    Eigen::Ref<const EigenRowArrayXXd> x,
+                    const dolfin::mesh::Cell& cell) const override;
 
   /// Evaluate at given point.
   ///
@@ -80,8 +79,8 @@ public:
   ///         The values at the point.
   /// @param x (Eigen::Ref<const Eigen::VectorXd>)
   ///         The coordinates of the point.
-  virtual void eval(Eigen::Ref<EigenRowMatrixXd> values,
-                    Eigen::Ref<const EigenRowMatrixXd> x) const override;
+  virtual void eval(Eigen::Ref<EigenRowArrayXXd> values,
+                    Eigen::Ref<const EigenRowArrayXXd> x) const override;
 
   /// Return value rank.
   ///
@@ -136,12 +135,9 @@ public:
   ///         The cell.
   /// @param  coordinate_dofs (double*)
   ///         The coordinates
-  /// @param    ufc_cell (ufc::cell)
-  ///         The ufc::cell.
   virtual void restrict(double* w, const fem::FiniteElement& element,
                         const mesh::Cell& dolfin_cell,
-                        const double* coordinate_dofs,
-                        const ufc::cell& ufc_cell) const override;
+                        const double* coordinate_dofs) const override;
 
   /// Compute values at all mesh vertices.
   ///
