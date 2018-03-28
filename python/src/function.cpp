@@ -356,13 +356,6 @@ void function(py::module &m) {
       .def("set_x", &dolfin::function::FunctionSpace::set_x)
       .def("sub", &dolfin::function::FunctionSpace::sub)
       .def("tabulate_dof_coordinates",
-           [](const dolfin::function::FunctionSpace &self) {
-             const std::size_t gdim = self.element()->geometric_dimension();
-             std::vector<double> coords = self.tabulate_dof_coordinates();
-             assert(coords.size() % gdim == 0);
-
-             py::array_t<double> c({coords.size() / gdim, gdim}, coords.data());
-             return c;
-           });
+           &dolfin::function::FunctionSpace::tabulate_dof_coordinates);
 }
 } // namespace dolfin_wrappers

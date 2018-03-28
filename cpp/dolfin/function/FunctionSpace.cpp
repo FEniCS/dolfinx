@@ -241,7 +241,7 @@ std::shared_ptr<FunctionSpace> FunctionSpace::collapse(
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
-std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
+EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
 {
   // Geometric dimension
   dolfin_assert(_mesh);
@@ -262,8 +262,8 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
   std::size_t local_size
       = bs * _dofmap->index_map()->size(common::IndexMap::MapSize::OWNED);
 
-  // Vector to hold coordinates and return
-  std::vector<double> x(gdim * local_size);
+  // Arrray to hold coordinates and return
+  EigenRowArrayXXd x(local_size, gdim);
 
   // Loop over cells and tabulate dofs
   EigenRowArrayXXd coordinates(_element->space_dimension(), gdim);
@@ -284,14 +284,7 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
     {
       const dolfin::la_index_t dof = dofs[i];
       if (dof < (dolfin::la_index_t)local_size)
-      {
-        const dolfin::la_index_t local_index = dof;
-        for (std::size_t j = 0; j < gdim; ++j)
-        {
-          dolfin_assert(gdim * local_index + j < x.size());
-          x[gdim * local_index + j] = coordinates(i, j);
-        }
-      }
+        x.row(dof) = coordinates.row(i);
     }
   }
 
