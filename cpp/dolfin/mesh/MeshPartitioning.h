@@ -142,9 +142,9 @@ private:
   // Compute the local->global and global->local maps for all local vertices
   // on this process, from the global vertex indices on each local cell.
   // Returns the number of regular (non-ghosted) vertices.
-  static std::int32_t compute_vertex_mapping(
-      MPI_Comm mpi_comm, const std::int32_t num_regular_cells,
-      const boost::multi_array<std::int64_t, 2>& cell_vertices,
+  static void compute_vertex_mapping(
+      MPI_Comm mpi_comm,
+      Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
       std::vector<std::int64_t>& vertex_indices,
       Eigen::Ref<EigenRowArrayXXi32> local_cell_vertices);
 

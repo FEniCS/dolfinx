@@ -242,11 +242,21 @@ mesh::Mesh MeshPartitioning::build(
   // calculating which vertices are 'ghost' and putting them at the
   // end of the local range
   std::vector<std::int64_t> global_vertex_indices;
-  EigenRowArrayXXi32 local_cell_vertices(new_cell_vertices.shape()[0],
-                                         new_cell_vertices.shape()[1]);
-  const std::int32_t num_regular_vertices
-      = compute_vertex_mapping(comm, num_regular_cells, new_cell_vertices,
-                               global_vertex_indices, local_cell_vertices);
+  Eigen::Map<const EigenRowArrayXXi64> global_cell_vertices(
+      new_cell_vertices.data(), new_cell_vertices.shape()[0],
+      new_cell_vertices.shape()[1]);
+  EigenRowArrayXXi32 local_cell_vertices(global_cell_vertices.rows(),
+                                         global_cell_vertices.cols());
+
+  compute_vertex_mapping(comm, global_cell_vertices, global_vertex_indices,
+                         local_cell_vertices);
+
+  // Find highest index + 1 in local_cell_vertices of regular cells
+  std::int32_t num_regular_vertices
+      = *std::max_element(local_cell_vertices.data(),
+                          local_cell_vertices.data()
+                              + local_cell_vertices.cols() * num_regular_cells)
+        + 1;
 
   // Send vertices to processes that need them, informing all
   // sharing processes of their destinations
@@ -747,9 +757,8 @@ std::int32_t MeshPartitioning::distribute_cells(
   return local_count;
 }
 //-----------------------------------------------------------------------------
-std::int32_t MeshPartitioning::compute_vertex_mapping(
-    MPI_Comm mpi_comm, const std::int32_t num_regular_cells,
-    const boost::multi_array<std::int64_t, 2>& cell_vertices,
+void MeshPartitioning::compute_vertex_mapping(
+    MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     std::vector<std::int64_t>& vertex_indices,
     Eigen::Ref<EigenRowArrayXXi32> local_cell_vertices)
 {
@@ -757,34 +766,30 @@ std::int32_t MeshPartitioning::compute_vertex_mapping(
   vertex_indices.clear();
   vertex_global_to_local.clear();
 
-  const std::int32_t num_cells = cell_vertices.size();
-  const std::int32_t num_cell_vertices = cell_vertices.shape()[1];
+  const std::int32_t num_cells = cell_vertices.rows();
+  const std::int32_t num_cell_vertices = cell_vertices.cols();
 
   local_cell_vertices.resize(num_cells, num_cell_vertices);
 
-  // Get set of unique vertices from cells and start constructing a
-  // global_to_local map.  Ghost vertices will be at the end of the
-  // range (v >= num_regular_vertices).
+  // Get set of unique vertices from cells. Remap cell_vertices to
+  // local_cell_vertices, starting from 0. Record the global indices for
+  // each local vertex in vertex_indices.
+
   std::int32_t v = 0;
-  std::int32_t num_regular_vertices = 0;
   for (std::int32_t i = 0; i < num_cells; ++i)
   {
     for (std::int32_t j = 0; j < num_cell_vertices; ++j)
     {
-      std::int64_t q = cell_vertices[i][j];
+      std::int64_t q = cell_vertices(i, j);
       auto map_it = vertex_global_to_local.insert({q, v});
       local_cell_vertices(i, j) = map_it.first->second;
       if (map_it.second)
       {
         vertex_indices.push_back(q);
         ++v;
-        if (i < num_regular_cells)
-          num_regular_vertices = v;
       }
     }
   }
-
-  return num_regular_vertices;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_vertices(

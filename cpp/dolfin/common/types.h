@@ -35,6 +35,12 @@ using EigenRowArrayXi32 = Eigen::Array<std::int32_t, 1, Eigen::Dynamic>;
 using EigenRowArrayXXi32 = Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>;
 
+// int64 Arrays
+using EigenArrayXi64 = Eigen::Array<std::int64_t, Eigen::Dynamic, 1>;
+using EigenRowArrayXi64 = Eigen::Array<std::int64_t, 1, Eigen::Dynamic>;
+using EigenRowArrayXXi64 = Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>;
+
 /// Index type for compatibility with linear algebra backend(s)
 #ifdef HAS_PETSC
 typedef PetscInt la_index_t;
