@@ -29,7 +29,7 @@ public:
   {
     offset = {0};
 
-    for (std::int32_t i = 0; i != cell_partition.size(); ++i)
+    for (std::uint32_t i = 0; i != cell_partition.size(); ++i)
     {
       const auto it = ghost_procs.find(i);
       if (it == ghost_procs.end())
