@@ -38,7 +38,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   _ordered = false;
 
-  // FIXME: make a special case is serial (no mapping required)?
+  // FIXME: make a special case in serial (no mapping required)?
   std::vector<std::int64_t> global_vertex_indices;
   EigenRowArrayXXi32 local_cell_vertices(cells.rows(), cells.cols());
   MeshPartitioning::compute_vertex_mapping(comm, cells, global_vertex_indices,

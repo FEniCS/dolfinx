@@ -45,7 +45,6 @@ public:
   /// @param cell_vertices (const boost::multi_array<std::int64_t, 2>)
   /// @param cell_weight (const std::vector<std::size_t>)
   /// @param num_global_vertices (const std::int64_t)
-  /// @param num_global_cells (const std::int64_t)
   /// @param cell_type (const CellType)
   ///
   static void
@@ -54,7 +53,6 @@ public:
                     const boost::multi_array<std::int64_t, 2>& cell_vertices,
                     const std::vector<std::size_t>& cell_weight,
                     const std::int64_t num_global_vertices,
-                    const std::int64_t num_global_cells,
                     const mesh::CellType& cell_type);
 
   /// Compute reordering (map[old] -> new) using
@@ -96,7 +94,6 @@ private:
   static void partition(const MPI_Comm mpi_comm, CSRGraph<T>& local_graph,
                         const std::vector<std::size_t>& node_weights,
                         const std::set<std::int64_t>& ghost_vertices,
-                        const std::size_t num_global_vertices,
                         std::vector<int>& cell_partition,
                         std::map<std::int64_t, std::vector<int>>& ghost_procs);
 };

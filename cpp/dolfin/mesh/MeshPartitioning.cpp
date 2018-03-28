@@ -46,20 +46,6 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(const Mesh& mesh)
                                 parameter::parameters["ghost_mode"]);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh MeshPartitioning::build_distributed_mesh(
-    const Mesh& mesh, const std::vector<int>& cell_destinations,
-    const std::string ghost_mode)
-{
-  // Create and distribute local mesh data
-  LocalMeshData local_mesh_data(mesh);
-
-  // Attach cell destinations
-  local_mesh_data.topology.cell_partition = cell_destinations;
-
-  // Build distributed mesh
-  return build_distributed_mesh(local_mesh_data, ghost_mode);
-}
-//-----------------------------------------------------------------------------
 mesh::Mesh
 MeshPartitioning::build_distributed_mesh(const LocalMeshData& local_data,
                                          const std::string ghost_mode)
@@ -141,7 +127,7 @@ void MeshPartitioning::partition_cells(
     dolfin::graph::SCOTCH::compute_partition(
         mpi_comm, cell_partition, ghost_procs, mesh_data.topology.cell_vertices,
         mesh_data.topology.cell_weight, mesh_data.geometry.num_global_vertices,
-        mesh_data.topology.num_global_cells, *cell_type);
+        *cell_type);
   }
   else if (partitioner == "ParMETIS")
   {

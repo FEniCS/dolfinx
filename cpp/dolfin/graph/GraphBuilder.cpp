@@ -194,8 +194,8 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph(
                                              local_graph, facet_cell_map);
   default:
     log::dolfin_error("GraphBuilder.cpp", "compute local part of dual graph",
-                 "Entities with %d vertices not supported",
-                 num_entity_vertices);
+                      "Entities with %d vertices not supported",
+                      num_entity_vertices);
     return 0;
   }
 }
@@ -296,9 +296,6 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
     else
     {
       // No match, so add facet0 to map
-      // facet_cell_map.insert(facet_cell_map.end(),
-      // {std::vector<std::size_t>(facet0.begin(),
-      //    facet0.end()), cell_index0});
       facet_cell_map.push_back(
           {std::vector<std::size_t>(facet0.begin(), facet0.end()),
            cell_index0});
