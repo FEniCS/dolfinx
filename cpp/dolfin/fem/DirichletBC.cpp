@@ -28,7 +28,6 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
 #include <map>
-#include <ufc.h>
 #include <utility>
 
 using namespace dolfin;
@@ -400,8 +399,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   mesh.init(D);
   mesh.init(D - 1, D);
 
-  // Create UFC cell
-  ufc::cell ufc_cell;
+  // Coordinate dofs
   std::vector<double> coordinate_dofs;
 
   // Allocate space
@@ -427,11 +425,10 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 
     // Update UFC cell geometry data
     cell.get_coordinate_dofs(coordinate_dofs);
-    cell.get_cell_data(ufc_cell, facet_local_index);
 
     // Restrict coefficient to cell
     _g->restrict(data.w.data(), *_function_space->element(), cell,
-                 coordinate_dofs.data(), ufc_cell);
+                 coordinate_dofs.data());
 
     // Tabulate dofs on cell
     auto cell_dofs = dofmap.cell_dofs(cell.index());
@@ -506,10 +503,9 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
     const mesh::Cell cell(mesh, facet.entities(D)[0]);
 
     // Get local index of facet with respect to the cell
-    const std::size_t local_facet = cell.index(facet);
+    // const std::size_t local_facet = cell.index(facet);
 
-    // Create UFC cell object and vertex coordinate holder
-    ufc::cell ufc_cell;
+    // Create vertex coordinate holder
     std::vector<double> coordinate_dofs;
 
     // Loop the vertices associated with the facet
@@ -519,7 +515,6 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
       for (auto& c : mesh::EntityRange<mesh::Cell>(vertex))
       {
         c.get_coordinate_dofs(coordinate_dofs);
-        c.get_cell_data(ufc_cell, local_facet);
 
         bool tabulated = false;
         bool interpolated = false;
@@ -556,7 +551,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           if (!interpolated)
           {
             _g->restrict(data.w.data(), *_function_space->element(), cell,
-                         coordinate_dofs.data(), ufc_cell);
+                         coordinate_dofs.data());
             interpolated = true;
           }
 
@@ -593,9 +588,6 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   const FiniteElement& element = *_function_space->element();
   const mesh::Mesh& mesh = *_function_space->mesh();
 
-  // Create UFC cell object
-  ufc::cell ufc_cell;
-
   // Speed up the computations by only visiting (most) dofs once
   common::RangedIndexSet already_visited(
       dofmap.is_view() ? std::array<std::int64_t, 2>{{0, 0}}
@@ -613,9 +605,8 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     // from cells attached to boundary to local dofs.
     for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
     {
-      // Update UFC cell
+      // Get dof coordinates
       cell.get_coordinate_dofs(coordinate_dofs);
-      cell.get_cell_data(ufc_cell);
 
       // Tabulate coordinates of dofs on cell
       element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs, cell);
@@ -651,7 +642,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 
           // Restrict coefficient to cell
           _g->restrict(data.w.data(), *_function_space->element(), cell,
-                       coordinate_dofs.data(), ufc_cell);
+                       coordinate_dofs.data());
 
           // Put cell index in storage for next time function is
           // called
@@ -677,16 +668,15 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       // Get cell
       const mesh::Cell cell(mesh, it->first);
 
-      // Update UFC cell
+      // Get dof coordinates
       cell.get_coordinate_dofs(coordinate_dofs);
-      cell.get_cell_data(ufc_cell);
 
       // Tabulate coordinates of dofs on cell
       element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs, cell);
 
       // Restrict coefficient to cell
       _g->restrict(data.w.data(), *_function_space->element(), cell,
-                   coordinate_dofs.data(), ufc_cell);
+                   coordinate_dofs.data());
 
       // Tabulate dofs on cell
       auto cell_dofs = dofmap.cell_dofs(cell.index());

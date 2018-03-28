@@ -263,19 +263,26 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
 
     // Create cell that contains point
     const mesh::Cell cell(mesh, id);
-    ufc::cell ufc_cell;
-    cell.get_cell_data(ufc_cell);
 
     // Call evaluate function
-    eval(values.row(i), x.row(i), cell, ufc_cell);
+    eval(values.row(i), x.row(i), cell);
   }
 }
 //-----------------------------------------------------------------------------
 void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
                     Eigen::Ref<const EigenRowArrayXXd> x,
-                    const mesh::Cell& dolfin_cell,
-                    const ufc::cell& ufc_cell) const
+                    const mesh::Cell& cell) const
 {
+  assert(_function_space);
+  assert(_function_space->mesh());
+  const mesh::Mesh& mesh = *_function_space->mesh();
+
+  if (cell.mesh().id() == mesh.id())
+  {
+    eval(values, x);
+    return;
+  }
+
   dolfin_assert(x.rows() == values.rows());
   dolfin_assert(_function_space->element());
   const fem::FiniteElement& element = *_function_space->element();
@@ -285,14 +292,13 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
 
   // Cell coordinates (re-allocated inside function for thread safety)
   std::vector<double> coordinate_dofs;
-  dolfin_cell.get_coordinate_dofs(coordinate_dofs);
+  cell.get_coordinate_dofs(coordinate_dofs);
 
   // Restrict function to cell
-  restrict(coefficients.data(), element, dolfin_cell, coordinate_dofs.data(),
-           ufc_cell);
+  restrict(coefficients.data(), element, cell, coordinate_dofs.data());
 
   // Get coordinate mapping
-  auto cmap = _function_space->mesh()->geometry().ufc_coord_mapping;
+  auto cmap = mesh.geometry().ufc_coord_mapping;
   // assert(cmap);
   // if (!cmap)
   // {
@@ -305,8 +311,8 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
     // New implementation using ufc::coordinate_mappping
 
     std::size_t num_points = x.rows();
-    std::size_t gdim = _function_space->mesh()->geometry().dim();
-    std::size_t tdim = _function_space->mesh()->topology().dim();
+    std::size_t gdim = mesh.geometry().dim();
+    std::size_t tdim = mesh.topology().dim();
 
     auto ufc_element = _function_space->element()->ufc_element();
     std::size_t reference_value_size = ufc_element->reference_value_size();
@@ -381,7 +387,7 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
     for (unsigned int k = 0; k < x.rows(); ++k)
     {
       element.evaluate_basis_all(basis.data(), x.row(k).data(),
-                                 coordinate_dofs.data(), ufc_cell.orientation);
+                                 coordinate_dofs.data(), 1);
 
       values.row(k).matrix() = coefficients.matrix() * basis.matrix();
     }
@@ -421,30 +427,9 @@ std::vector<std::size_t> Function::value_shape() const
   return _shape;
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
-                    Eigen::Ref<const EigenRowArrayXXd> x,
-                    const ufc::cell& ufc_cell) const
-{
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->mesh());
-  const mesh::Mesh& mesh = *_function_space->mesh();
-
-  // Check if UFC cell comes from mesh, otherwise
-  // find the cell which contains the point
-  dolfin_assert(ufc_cell.mesh_identifier >= 0);
-  if (ufc_cell.mesh_identifier == (int)mesh.id())
-  {
-    const mesh::Cell cell(mesh, ufc_cell.index);
-    eval(values, x, cell, ufc_cell);
-  }
-  else
-    eval(values, x);
-}
-//-----------------------------------------------------------------------------
 void Function::restrict(double* w, const fem::FiniteElement& element,
                         const mesh::Cell& dolfin_cell,
-                        const double* coordinate_dofs,
-                        const ufc::cell& ufc_cell) const
+                        const double* coordinate_dofs) const
 {
   dolfin_assert(w);
   dolfin_assert(_function_space);
@@ -498,18 +483,16 @@ EigenRowArrayXXd Function::compute_vertex_values(const mesh::Mesh& mesh) const
 
   // Interpolate vertex values on each cell (using last computed value
   // if not continuous, e.g. discontinuous Galerkin methods)
-  ufc::cell ufc_cell;
   EigenRowArrayXXd x(num_cell_vertices, mesh.geometry().dim());
   EigenRowArrayXXd values(num_cell_vertices, value_size_loc);
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
-    // Update to current cell
-    cell.get_cell_data(ufc_cell);
+    // Get coordinate
     cell.get_coordinate_dofs(x);
 
     // Call evaluate function
-    eval(values, x, cell, ufc_cell);
+    eval(values, x, cell);
 
     // Copy values to array of vertex values
     std::size_t local_index = 0;

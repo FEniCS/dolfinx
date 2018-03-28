@@ -10,11 +10,6 @@
 #include <dolfin/common/types.h>
 #include <vector>
 
-namespace ufc
-{
-class cell;
-}
-
 namespace dolfin
 {
 
@@ -49,7 +44,6 @@ public:
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
       const std::vector<double>& coordinate_dofs,                    ///< [in]
-      ufc::cell& ufc_cell,                                           ///< [in]
       const mesh::Cell& cell,                                        ///< [in]
       const mesh::MeshFunction<std::size_t>* cell_domains,           ///< [in]
       const mesh::MeshFunction<std::size_t>* exterior_facet_domains, ///< [in]
@@ -63,7 +57,6 @@ public:
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
       const std::vector<double>& coordinate_dofs,         ///< [in]
-      const ufc::cell& ufc_cell,                          ///< [in]
       const mesh::Cell& cell,                             ///< [in]
       const mesh::MeshFunction<std::size_t>* cell_domains ///< [in]
       );
@@ -76,7 +69,6 @@ public:
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
       const std::vector<double>& coordinate_dofs,                   ///< [in]
-      const ufc::cell& ufc_cell,                                    ///< [in]
       const mesh::Cell& cell,                                       ///< [in]
       const mesh::Facet& facet,                                     ///< [in]
       const std::size_t local_facet,                                ///< [in]
@@ -91,7 +83,6 @@ public:
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
       const std::vector<double>& coordinate_dofs,                    ///< [in]
-      const ufc::cell& ufc_cell,                                     ///< [in]
       const mesh::Cell& cell,                                        ///< [in]
       const mesh::Facet& facet,                                      ///< [in]
       const std::size_t local_facet,                                 ///< [in]

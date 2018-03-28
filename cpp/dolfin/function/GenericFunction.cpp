@@ -25,7 +25,7 @@ GenericFunction::~GenericFunction()
 //-----------------------------------------------------------------------------
 void GenericFunction::eval(Eigen::Ref<EigenRowArrayXXd> values,
                            Eigen::Ref<const EigenRowArrayXXd> x,
-                           const ufc::cell& cell) const
+                           const mesh::Cell& cell) const
 {
   // Redirect to simple eval
   eval(values, x);

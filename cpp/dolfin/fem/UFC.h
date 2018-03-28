@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <dolfin/common/types.h>
 #include <Eigen/Dense>
+#include <dolfin/common/types.h>
 #include <memory>
 #include <ufc.h>
 #include <vector>
@@ -43,29 +43,25 @@ public:
   /// Update current cell
   void update(const mesh::Cell& cell,
               Eigen::Ref<const dolfin::EigenRowArrayXXd> coordinate_dofs0,
-              const ufc::cell& ufc_cell,
               const std::vector<bool>& enabled_coefficients);
 
   /// Update current cell
   void update(const mesh::Cell& cell,
               const std::vector<double>& coordinate_dofs0,
-              const ufc::cell& ufc_cell,
               const std::vector<bool>& enabled_coefficients);
 
   /// Update current pair of cells for macro element
   void update(const mesh::Cell& cell0,
               const std::vector<double>& coordinate_dofs0,
-              const ufc::cell& ufc_cell0, const mesh::Cell& cell1,
+              const mesh::Cell& cell1,
               const std::vector<double>& coordinate_dofs1,
-              const ufc::cell& ufc_cell1,
               const std::vector<bool>& enabled_coefficients);
 
   /// Update current pair of cells for macro element
   void update(const mesh::Cell& cell0,
               Eigen::Ref<const dolfin::EigenRowArrayXXd> coordinate_dofs0,
-              const ufc::cell& ufc_cell0, const mesh::Cell& cell1,
+              const mesh::Cell& cell1,
               Eigen::Ref<const dolfin::EigenRowArrayXXd> coordinate_dofs1,
-              const ufc::cell& ufc_cell1,
               const std::vector<bool>& enabled_coefficients);
 
   /// Pointer to coefficient data. Used to support UFC interface.
