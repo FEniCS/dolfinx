@@ -266,7 +266,7 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
   std::vector<double> x(gdim * local_size);
 
   // Loop over cells and tabulate dofs
-  EigenRowArrayXXd coordinates;
+  EigenRowArrayXXd coordinates(_element->space_dimension(), gdim);
   std::vector<double> coordinate_dofs;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
@@ -306,7 +306,8 @@ void FunctionSpace::set_x(la::PETScVector& x, double value,
   dolfin_assert(_element);
 
   std::vector<double> x_values;
-  EigenRowArrayXXd coordinates;
+  EigenRowArrayXXd coordinates(_element->space_dimension(),
+                               _mesh->geometry().dim());
   std::vector<double> coordinate_dofs;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
@@ -318,6 +319,7 @@ void FunctionSpace::set_x(la::PETScVector& x, double value,
 
     // Tabulate dof coordinates
     _element->tabulate_dof_coordinates(coordinates, coordinate_dofs, cell);
+
     assert(coordinates.rows() == dofs.size());
     assert(component < (std::size_t)coordinates.cols());
 

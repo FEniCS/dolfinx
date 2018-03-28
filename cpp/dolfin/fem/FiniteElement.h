@@ -153,7 +153,7 @@ public:
   /// Tabulate the coordinates of all dofs on an element
   ///
   /// @param[in,out]    coordinates (Eigen::Ref<EigenRowArrayXXd>)
-  ///         The coordinates of all dofs on a cell. Must have correct size
+  ///         The coordinates of all dofs on a cell. Must have correct size of
   ///         (num_dofs, gdim)
   /// @param[in]    coordinate_dofs (std::vector<double>)
   ///         The cell coordinates

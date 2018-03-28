@@ -76,7 +76,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   const std::size_t gdim = mesh.geometry().dim();
 
   // Loop over cells and tabulate dofs
-  EigenRowArrayXXd coordinates;
+  EigenRowArrayXXd coordinates(element.space_dimension(), gdim);
   std::vector<double> coordinate_dofs;
   std::vector<double> coors(gdim);
 
