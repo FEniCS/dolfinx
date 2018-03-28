@@ -294,11 +294,11 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
   // Get coordinate mapping
   auto cmap = _function_space->mesh()->geometry().ufc_coord_mapping;
   // assert(cmap);
-  // if (!cmap)
-  // {
-  //   throw std::runtime_error(
-  //       "ufc::coordinate_mapping has not been attached to mesh.");
-  // }
+  if (!cmap)
+  {
+    throw std::runtime_error(
+        "ufc::coordinate_mapping has not been attached to mesh.");
+  }
 
   if (cmap)
   {
