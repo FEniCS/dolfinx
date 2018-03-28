@@ -51,22 +51,38 @@ void fem(py::module &m) {
                                                         "UFC dofmap object");
   py::class_<ufc::form, std::shared_ptr<ufc::form>>(m, "ufc_form",
                                                     "UFC form object");
+  py::class_<ufc::coordinate_mapping, std::shared_ptr<ufc::coordinate_mapping>>(
+      m, "ufc_coordinate_mapping", "UFC coordinate_mapping object");
 
   // Function to convert pointers (from JIT usually) to UFC objects
-  m.def("make_ufc_finite_element", [](std::uintptr_t e) {
-    ufc::finite_element *p = reinterpret_cast<ufc::finite_element *>(e);
-    return std::shared_ptr<const ufc::finite_element>(p);
-  });
+  m.def("make_ufc_finite_element",
+        [](std::uintptr_t e) {
+          ufc::finite_element *p = reinterpret_cast<ufc::finite_element *>(e);
+          return std::shared_ptr<const ufc::finite_element>(p);
+        },
+        "Create a ufc::finite_element object from a pointer.");
 
-  m.def("make_ufc_dofmap", [](std::uintptr_t e) {
-    ufc::dofmap *p = reinterpret_cast<ufc::dofmap *>(e);
-    return std::shared_ptr<const ufc::dofmap>(p);
-  });
+  m.def("make_ufc_dofmap",
+        [](std::uintptr_t e) {
+          ufc::dofmap *p = reinterpret_cast<ufc::dofmap *>(e);
+          return std::shared_ptr<const ufc::dofmap>(p);
+        },
+        "Create a ufc::dofmap object from a pointer.");
 
-  m.def("make_ufc_form", [](std::uintptr_t e) {
-    ufc::form *p = reinterpret_cast<ufc::form *>(e);
-    return std::shared_ptr<const ufc::form>(p);
-  });
+  m.def("make_ufc_form",
+        [](std::uintptr_t e) {
+          ufc::form *p = reinterpret_cast<ufc::form *>(e);
+          return std::shared_ptr<const ufc::form>(p);
+        },
+        "Create a ufc::form object from a pointer.");
+
+  m.def("make_ufc_coordinate_mapping",
+        [](std::uintptr_t e) {
+          ufc::coordinate_mapping *p =
+              reinterpret_cast<ufc::coordinate_mapping *>(e);
+          return std::shared_ptr<const ufc::coordinate_mapping>(p);
+        },
+        "Create a ufc::coordinate_mapping object from a pointer.");
 
   // dolfin::fem::FiniteElement
   py::class_<dolfin::fem::FiniteElement,
