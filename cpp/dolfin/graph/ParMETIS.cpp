@@ -419,7 +419,7 @@ void dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
 //-----------------------------------------------------------------------------
 #else
 mesh::MeshPartition dolfin::graph::ParMETIS::compute_partition(
-    Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const std::size_t num_global_vertices, const mesh::CellType& cell_type,
     const std::string mode)
 {
