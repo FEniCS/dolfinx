@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
+#include <dolfin/mesh/MeshPartition.h>
 #include <map>
 #include <set>
 #include <string>
@@ -40,16 +41,14 @@ public:
   /// have an entry in ghost_procs pointing to the set of sharing
   /// process numbers.
   /// @param mpi_comm (MPI_Comm)
-  /// @param cell_partition (std::vector<int>)
-  /// @param ghost_procs (std::map<std::int64_t, std::vector<int>>)
   /// @param cell_vertices (const boost::multi_array<std::int64_t, 2>)
   /// @param cell_weight (const std::vector<std::size_t>)
   /// @param num_global_vertices (const std::int64_t)
   /// @param cell_type (const CellType)
+  /// @return mesh::MeshPartition
   ///
-  static void
-  compute_partition(const MPI_Comm mpi_comm, std::vector<int>& cell_partition,
-                    std::map<std::int64_t, std::vector<int>>& ghost_procs,
+  static mesh::MeshPartition
+  compute_partition(const MPI_Comm mpi_comm,
                     const boost::multi_array<std::int64_t, 2>& cell_vertices,
                     const std::vector<std::size_t>& cell_weight,
                     const std::int64_t num_global_vertices,
@@ -91,11 +90,10 @@ private:
   // local_graph is not const since we share the data with SCOTCH,
   // and the SCOTCH interface is not const-correct.
   template <typename T>
-  static void partition(const MPI_Comm mpi_comm, CSRGraph<T>& local_graph,
-                        const std::vector<std::size_t>& node_weights,
-                        const std::set<std::int64_t>& ghost_vertices,
-                        std::vector<int>& cell_partition,
-                        std::map<std::int64_t, std::vector<int>>& ghost_procs);
+  static mesh::MeshPartition
+  partition(const MPI_Comm mpi_comm, CSRGraph<T>& local_graph,
+            const std::vector<std::size_t>& node_weights,
+            const std::set<std::int64_t>& ghost_vertices);
 };
-}
-}
+} // namespace graph
+} // namespace dolfin

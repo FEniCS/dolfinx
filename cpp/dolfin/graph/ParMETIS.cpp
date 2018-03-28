@@ -44,9 +44,10 @@ dual_graph(MPI_Comm mpi_comm,
   // Check that number of local graph nodes (cells) is > 0
   if (num_local_cells == 0)
   {
-    log::dolfin_error("ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
-                 "ParMETIS cannot be used if a process has no cells (graph "
-                 "nodes). Use SCOTCH to perform partitioning instead");
+    log::dolfin_error(
+        "ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
+        "ParMETIS cannot be used if a process has no cells (graph "
+        "nodes). Use SCOTCH to perform partitioning instead");
   }
 
   // Communicate number of cells on each process between all processors
@@ -99,12 +100,11 @@ dual_graph(MPI_Comm mpi_comm,
 
   return csr_graph;
 }
-}
+} // namespace
 
 //-----------------------------------------------------------------------------
-void dolfin::graph::ParMETIS::compute_partition(
-    const MPI_Comm mpi_comm, std::vector<int>& cell_partition,
-    std::map<std::int64_t, std::vector<int>>& ghost_procs,
+mesh::MeshPartition dolfin::graph::ParMETIS::compute_partition(
+    const MPI_Comm mpi_comm,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
     const std::size_t num_global_vertices, const mesh::CellType& cell_type,
     const std::string mode)
@@ -144,26 +144,33 @@ void dolfin::graph::ParMETIS::compute_partition(
 
   // Partition graph
   dolfin_assert(csr_graph);
-  if (mode == "partition")
-    partition(comm.comm(), *csr_graph, cell_partition, ghost_procs);
-  else if (mode == "adaptive_repartition")
-    adaptive_repartition(comm.comm(), *csr_graph, cell_partition);
-  else if (mode == "refine")
-    refine(comm.comm(), *csr_graph, cell_partition);
-  else
-  {
-    log::dolfin_error("ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
-                 "partition model %s is unknown. Must be \"partition\", "
-                 "\"adactive_partition\" or \"refine\"",
-                 mode.c_str());
-  }
+
+  //  if (mode == "partition")
+
+  return partition(comm.comm(), *csr_graph);
+
+  //  else if (mode == "adaptive_repartition")
+  //    adaptive_repartition(comm.comm(), *csr_graph, cell_partition);
+  //  else if (mode == "refine")
+  //   refine(comm.comm(), *csr_graph, cell_partition);
+  // else
+  // {
+  //   log::dolfin_error("ParMETIS.cpp",
+  //                     "compute mesh partitioning using ParMETIS",
+  //                     "partition model %s is unknown. Must be \"partition\",
+  //                     "
+  //                     "\"adactive_partition\" or \"refine\"",
+  //                     mode.c_str());
+  // }
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void dolfin::graph::ParMETIS::partition(
-    MPI_Comm mpi_comm, CSRGraph<T>& csr_graph, std::vector<int>& cell_partition,
-    std::map<std::int64_t, std::vector<int>>& ghost_procs)
+mesh::MeshPartition dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm,
+                                                       CSRGraph<T>& csr_graph)
 {
+  std::vector<int> cell_partition;
+  std::map<std::int64_t, std::vector<int>> ghost_procs;
+
   common::Timer timer("Compute graph partition (ParMETIS)");
 
   // Options for ParMETIS
@@ -306,13 +313,16 @@ void dolfin::graph::ParMETIS::partition(
 
   // Copy cell partition data
   cell_partition.assign(part.begin(), part.end());
+
+  return mesh::MeshPartition(cell_partition, ghost_procs);
 }
 //-----------------------------------------------------------------------------
 template <typename T>
 void dolfin::graph::ParMETIS::adaptive_repartition(
     MPI_Comm mpi_comm, CSRGraph<T>& csr_graph, std::vector<int>& cell_partition)
 {
-  common::Timer timer("Compute graph partition (ParMETIS Adaptive Repartition)");
+  common::Timer timer(
+      "Compute graph partition (ParMETIS Adaptive Repartition)");
 
   // Options for ParMETIS
   idx_t options[4];
@@ -409,15 +419,13 @@ void dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 #else
-void dolfin::graph::ParMETIS::compute_partition(
-    const MPI_Comm mpi_comm, std::vector<int>& cell_partition,
-    std::map<std::int64_t, std::vector<int>>& ghost_procs,
+mesh::MeshPartition dolfin::graph::ParMETIS::compute_partition(
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
     const std::size_t num_global_vertices, const mesh::CellType& cell_type,
     const std::string mode)
 {
   log::dolfin_error("ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
-               "DOLFIN has been configured without support for ParMETIS");
+                    "DOLFIN has been configured without support for ParMETIS");
 }
 //-----------------------------------------------------------------------------
 #endif

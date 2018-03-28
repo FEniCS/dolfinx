@@ -30,9 +30,8 @@ using namespace dolfin;
 #ifdef HAS_SCOTCH
 
 //-----------------------------------------------------------------------------
-void dolfin::graph::SCOTCH::compute_partition(
-    const MPI_Comm mpi_comm, std::vector<int>& cell_partition,
-    std::map<std::int64_t, std::vector<int>>& ghost_procs,
+mesh::MeshPartition dolfin::graph::SCOTCH::compute_partition(
+    const MPI_Comm mpi_comm,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
     const std::vector<std::size_t>& cell_weight,
     const std::int64_t num_global_vertices, const mesh::CellType& cell_type)
@@ -55,8 +54,7 @@ void dolfin::graph::SCOTCH::compute_partition(
 
   // Compute partitions
   dolfin_assert(csr_graph);
-  partition(mpi_comm, *csr_graph, cell_weight, ghost_vertices, cell_partition,
-            ghost_procs);
+  return partition(mpi_comm, *csr_graph, cell_weight, ghost_vertices);
 }
 //-----------------------------------------------------------------------------
 std::vector<int> dolfin::graph::SCOTCH::compute_gps(const Graph& graph,
@@ -185,13 +183,15 @@ void dolfin::graph::SCOTCH::compute_reordering(
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void dolfin::graph::SCOTCH::partition(
-    const MPI_Comm mpi_comm, CSRGraph<T>& local_graph,
-    const std::vector<std::size_t>& node_weights,
-    const std::set<std::int64_t>& ghost_vertices,
-    std::vector<int>& cell_partition,
-    std::map<std::int64_t, std::vector<int>>& ghost_procs)
+mesh::MeshPartition
+dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
+                                 CSRGraph<T>& local_graph,
+                                 const std::vector<std::size_t>& node_weights,
+                                 const std::set<std::int64_t>& ghost_vertices)
 {
+  std::vector<int> cell_partition;
+  std::map<std::int64_t, std::vector<int>> ghost_procs;
+
   log::log(PROGRESS, "Compute graph partition using PT-SCOTCH");
   common::Timer timer("Compute graph partition (SCOTCH)");
 
@@ -383,13 +383,14 @@ void dolfin::graph::SCOTCH::partition(
   cell_partition.resize(vertlocnbr);
   std::copy(_cell_partition.begin(), _cell_partition.begin() + vertlocnbr,
             cell_partition.begin());
+
+  return mesh::MeshPartition(cell_partition, ghost_procs);
 }
 //-----------------------------------------------------------------------------
 #else
 //-----------------------------------------------------------------------------
-void dolfin::graph::SCOTCH::compute_partition(
-    const MPI_Comm mpi_comm, std::vector<int>& cell_partition,
-    std::map<std::int64_t, std::vector<int>>& ghost_procs,
+mesh::MeshPartition dolfin::graph::SCOTCH::compute_partition(
+    const MPI_Comm mpi_comm,
     const boost::multi_array<std::int64_t, 2>& cell_vertices,
     const std::vector<std::size_t>& cell_weight,
     const std::int64_t num_global_vertices, const mesh::CellType& cell_type)
@@ -425,12 +426,11 @@ void dolfin::graph::SCOTCH::compute_reordering(
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void dolfin::graph::SCOTCH::partition(
-    const MPI_Comm mpi_comm, CSRGraph<T>& local_graph,
-    const std::vector<std::size_t>& node_weights,
-    const std::set<std::int64_t>& ghost_vertices,
-    std::vector<int>& cell_partition,
-    std::map<std::int64_t, std::vector<int>>& ghost_procs)
+mesh::MeshPartition
+dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
+                                 CSRGraph<T>& local_graph,
+                                 const std::vector<std::size_t>& node_weights,
+                                 const std::set<std::int64_t>& ghost_vertices)
 {
   log::dolfin_error("SCOTCH.cpp", "partition mesh using SCOTCH",
                     "DOLFIN has been configured without support for SCOTCH");

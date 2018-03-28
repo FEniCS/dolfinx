@@ -9,6 +9,7 @@
 #include "DistributedMeshTools.h"
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
+#include "MeshPartition.h"
 #include <boost/multi_array.hpp>
 #include <cstdint>
 #include <dolfin/common/Set.h>
@@ -94,19 +95,15 @@ private:
   // vector 'cell -> process' vector for cells in LocalMeshData, and
   // a map 'local cell index -> processes' to which ghost cells must
   // be sent
-  static void
-  partition_cells(const MPI_Comm& mpi_comm, const LocalMeshData& mesh_data,
-                  const std::string partitioner,
-                  std::vector<int>& cell_partition,
-                  std::map<std::int64_t, std::vector<int>>& ghost_procs);
+  static MeshPartition partition_cells(const MPI_Comm& mpi_comm,
+                                       const LocalMeshData& mesh_data,
+                                       const std::string partitioner);
 
   // Build a distributed mesh from local mesh data with a computed
   // partition
-  static mesh::Mesh
-  build(const MPI_Comm& comm, const LocalMeshData& data,
-        const std::vector<int>& cell_partition,
-        const std::map<std::int64_t, std::vector<int>>& ghost_procs,
-        const std::string ghost_mode);
+  static mesh::Mesh build(const MPI_Comm& comm, const LocalMeshData& data,
+                          const std::string ghost_mode,
+                          const MeshPartition& mp);
 
   // FIXME: Improve this docstring
   // Distribute a layer of cells attached by vertex to boundary updating
@@ -142,8 +139,7 @@ private:
   // cells. Return the number of non-ghost cells on this process.
   static std::int32_t distribute_cells(
       const MPI_Comm mpi_comm, const LocalMeshData& data,
-      const std::vector<int>& cell_partition,
-      const std::map<std::int64_t, std::vector<int>>& ghost_procs,
+      const MeshPartition& mp,
       boost::multi_array<std::int64_t, 2>& new_cell_vertices,
       std::vector<std::int64_t>& new_global_cell_indices,
       std::vector<int>& new_cell_partition,
