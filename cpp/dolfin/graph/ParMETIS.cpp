@@ -425,6 +425,7 @@ mesh::MeshPartition dolfin::graph::ParMETIS::compute_partition(
 {
   log::dolfin_error("ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
                     "DOLFIN has been configured without support for ParMETIS");
+  return mesh::MeshPartition({}, {});
 }
 //-----------------------------------------------------------------------------
 #endif
