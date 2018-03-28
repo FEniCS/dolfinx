@@ -9,8 +9,14 @@
 #include <dolfin/common/types.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
+#include <memory>
 #include <string>
 #include <vector>
+
+namespace ufc
+{
+class coordinate_mapping;
+}
 
 namespace dolfin
 {
@@ -107,6 +113,9 @@ public:
 
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
+
+  /// Put ufc::coordinate_mapping here for now
+  std::shared_ptr<ufc::coordinate_mapping> ufc_coord_mapping;
 
 private:
   // Euclidean dimension

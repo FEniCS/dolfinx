@@ -28,8 +28,8 @@ public:
   explicit MeshCoordinates(std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Evaluate function
-  void eval(Eigen::Ref<EigenRowMatrixXd> values,
-            Eigen::Ref<const EigenRowMatrixXd> x, const ufc::cell& cell) const;
+  void eval(Eigen::Ref<EigenRowArrayXXd> values,
+            Eigen::Ref<const EigenRowArrayXXd> x, const ufc::cell& cell) const;
 
 private:
   // The mesh
@@ -45,8 +45,8 @@ public:
   explicit FacetArea(std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Evaluate function
-  void eval(Eigen::Ref<EigenRowMatrixXd> values,
-            Eigen::Ref<const EigenRowMatrixXd> x, const ufc::cell& cell) const;
+  void eval(Eigen::Ref<EigenRowArrayXXd> values,
+            Eigen::Ref<const EigenRowArrayXXd> x, const ufc::cell& cell) const;
 
 private:
   // The mesh

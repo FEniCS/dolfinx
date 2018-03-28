@@ -19,19 +19,14 @@ FiniteElement::FiniteElement(std::shared_ptr<const ufc::finite_element> element)
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::tabulate_dof_coordinates(
-    boost::multi_array<double, 2>& coordinates,
+    Eigen::Ref<EigenRowArrayXXd> coordinates,
     const std::vector<double>& coordinate_dofs, const mesh::Cell& cell) const
 {
   dolfin_assert(_ufc_element);
 
-  // Check dimensions
-  const std::size_t dim = this->space_dimension();
-  const std::size_t gdim = this->geometric_dimension();
-  if (coordinates.shape()[0] != dim or coordinates.shape()[1] != gdim)
-  {
-    boost::multi_array<double, 2>::extent_gen extents;
-    coordinates.resize(extents[dim][gdim]);
-  }
+  // Check sizes
+  assert((std::size_t)coordinates.rows() == this->space_dimension());
+  assert((std::size_t)coordinates.cols() == this->geometric_dimension());
 
   // Tabulate coordinates
   _ufc_element->tabulate_dof_coordinates(coordinates.data(),

@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <boost/multi_array.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include <memory>
 #include <ufc.h>
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 
 namespace dolfin
@@ -93,13 +93,51 @@ public:
     return _ufc_element->value_dimension(i);
   }
 
-  /// Evaluate basis function i at given point in cell
-  void evaluate_basis(std::size_t i, double* values, const double* x,
-                      const double* coordinate_dofs, int cell_orientation) const
+  /// Evaluate all basis functions at given point in cell
+  // void evaluate_reference_basis(double * reference_values,
+  //                               std::size_t num_points,
+  //                               const double * X) const final override
+  // reference_values[num_points][num_dofs][reference_value_size]
+  void evaluate_reference_basis(
+      Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
+      const Eigen::Ref<const EigenRowArrayXXd> X) const
   {
-    dolfin_assert(_ufc_element);
-    _ufc_element->evaluate_basis(i, values, x, coordinate_dofs,
-                                 cell_orientation);
+    assert(_ufc_element);
+    std::size_t num_points = X.rows();
+    _ufc_element->evaluate_reference_basis(reference_values.data(), num_points,
+                                           X.data());
+  }
+
+  /// Push basis functions forward to physical element
+  void transform_reference_basis(
+      Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
+      const Eigen::Ref<const EigenRowArrayXXd> X,
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
+      const Eigen::Ref<const EigenArrayXd> detJ,
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
+  {
+    assert(_ufc_element);
+    std::size_t num_points = X.rows();
+    _ufc_element->transform_reference_basis_derivatives(
+        values.data(), 0, num_points, reference_values.data(), X.data(),
+        J.data(), detJ.data(), K.data(), 1);
+  }
+
+  /// Push basis function (derivatives) forward to physical element
+  void transform_reference_basis_derivatives(
+      Eigen::Tensor<double, 4, Eigen::RowMajor>& values, std::size_t order,
+      const Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values,
+      const Eigen::Ref<const EigenRowArrayXXd> X,
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
+      const Eigen::Ref<const EigenArrayXd> detJ,
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
+  {
+    assert(_ufc_element);
+    std::size_t num_points = X.rows();
+    _ufc_element->transform_reference_basis_derivatives(
+        values.data(), order, num_points, reference_values.data(), X.data(),
+        J.data(), detJ.data(), K.data(), 1);
   }
 
   /// Evaluate all basis functions at given point in cell
@@ -112,38 +150,16 @@ public:
                                      cell_orientation);
   }
 
-  /// Evaluate order n derivatives of basis function i at given point in cell
-  void evaluate_basis_derivatives(std::uint32_t i, std::uint32_t n,
-                                  double* values, const double* x,
-                                  const double* coordinate_dofs,
-                                  int cell_orientation) const
-  {
-    dolfin_assert(_ufc_element);
-    _ufc_element->evaluate_basis_derivatives(i, n, values, x, coordinate_dofs,
-                                             cell_orientation);
-  }
-
-  /// Evaluate order n derivatives of all basis functions at given
-  /// point in cell
-  void evaluate_basis_derivatives_all(std::uint32_t n, double* values,
-                                      const double* x,
-                                      const double* coordinate_dofs,
-                                      int cell_orientation) const
-  {
-    dolfin_assert(_ufc_element);
-    _ufc_element->evaluate_basis_derivatives_all(n, values, x, coordinate_dofs,
-                                                 cell_orientation);
-  }
-
   /// Tabulate the coordinates of all dofs on an element
   ///
-  /// @param[in,out]    coordinates (boost::multi_array<double, 2>)
-  ///         The coordinates of all dofs on a cell.
+  /// @param[in,out]    coordinates (Eigen::Ref<EigenRowArrayXXd>)
+  ///         The coordinates of all dofs on a cell. Must have correct size of
+  ///         (num_dofs, gdim)
   /// @param[in]    coordinate_dofs (std::vector<double>)
   ///         The cell coordinates
   /// @param[in]    cell (Cell)
   ///         The cell.
-  void tabulate_dof_coordinates(boost::multi_array<double, 2>& coordinates,
+  void tabulate_dof_coordinates(Eigen::Ref<EigenRowArrayXXd> coordinates,
                                 const std::vector<double>& coordinate_dofs,
                                 const mesh::Cell& cell) const;
 

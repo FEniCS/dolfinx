@@ -216,9 +216,9 @@ public:
   /// spatial coordinates of dofs, for example for re-partitioning or
   /// nullspace computations.
   ///
-  /// @returns    std::vector<double>
-  ///         The dof coordinates (x0, y0, x1, y1, . . .)
-  std::vector<double> tabulate_dof_coordinates() const;
+  /// @returns    EigenRowArrayXXd
+  ///         The dof coordinates [([0, y0], [x1, y1], . . .)
+  EigenRowArrayXXd tabulate_dof_coordinates() const;
 
   /// Set dof entries in vector to value*x[i], where [x][i] is the
   /// coordinate of the dof spatial coordinate. Parallel layout of

@@ -70,8 +70,8 @@ public:
   ///         The coordinates of the point.
   /// @param    cell (ufc::cell)
   ///         The cell which contains the given point.
-  virtual void eval(Eigen::Ref<EigenRowMatrixXd> values,
-                    Eigen::Ref<const EigenRowMatrixXd> x,
+  virtual void eval(Eigen::Ref<EigenRowArrayXXd> values,
+                    Eigen::Ref<const EigenRowArrayXXd> x,
                     const ufc::cell& cell) const override;
 
   /// Evaluate at given point.
@@ -80,8 +80,8 @@ public:
   ///         The values at the point.
   /// @param x (Eigen::Ref<const Eigen::VectorXd>)
   ///         The coordinates of the point.
-  virtual void eval(Eigen::Ref<EigenRowMatrixXd> values,
-                    Eigen::Ref<const EigenRowMatrixXd> x) const override;
+  virtual void eval(Eigen::Ref<EigenRowArrayXXd> values,
+                    Eigen::Ref<const EigenRowArrayXXd> x) const override;
 
   /// Return value rank.
   ///

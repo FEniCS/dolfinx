@@ -23,8 +23,11 @@
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <map>
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 #include <vector>
+
+#include <ufc.h>
 
 using namespace dolfin;
 using namespace dolfin::function;
@@ -193,8 +196,8 @@ void Function::operator=(const function::FunctionAXPY& axpy)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  std::vector<
-      std::pair<double, std::shared_ptr<const Function>>>::const_iterator it;
+  std::vector<std::pair<double,
+                        std::shared_ptr<const Function>>>::const_iterator it;
   for (it = axpy.pairs().begin() + 1; it != axpy.pairs().end(); it++)
   {
     dolfin_assert(it->second);
@@ -224,8 +227,8 @@ std::shared_ptr<const la::PETScVector> Function::vector() const
   return _vector;
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
-                    Eigen::Ref<const EigenRowMatrixXd> x) const
+void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
+                    Eigen::Ref<const EigenRowArrayXXd> x) const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
@@ -268,19 +271,14 @@ void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
-                    Eigen::Ref<const EigenRowMatrixXd> x,
+void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
+                    Eigen::Ref<const EigenRowArrayXXd> x,
                     const mesh::Cell& dolfin_cell,
                     const ufc::cell& ufc_cell) const
 {
   dolfin_assert(x.rows() == values.rows());
   dolfin_assert(_function_space->element());
   const fem::FiniteElement& element = *_function_space->element();
-
-  // Compute in tensor (one for scalar function, . . .)
-  const std::size_t value_size_loc = value_size();
-
-  dolfin_assert((std::size_t)values.cols() == value_size_loc);
 
   // Create work vector for expansion coefficients
   Eigen::RowVectorXd coefficients(element.space_dimension());
@@ -293,16 +291,100 @@ void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
   restrict(coefficients.data(), element, dolfin_cell, coordinate_dofs.data(),
            ufc_cell);
 
-  // Create work space for basis
-  EigenRowMatrixXd basis(element.space_dimension(), value_size_loc);
+  // Get coordinate mapping
+  auto cmap = _function_space->mesh()->geometry().ufc_coord_mapping;
+  // assert(cmap);
+  // if (!cmap)
+  // {
+  //   throw std::runtime_error(
+  //       "ufc::coordinate_mapping has not been attached to mesh.");
+  // }
 
-  // Compute linear combination for each row of x
-  for (unsigned int k = 0; k < x.rows(); ++k)
+  if (cmap)
   {
-    element.evaluate_basis_all(basis.data(), x.row(k).data(),
-                               coordinate_dofs.data(), ufc_cell.orientation);
+    // New implementation using ufc::coordinate_mappping
 
-    values.row(k) = coefficients * basis;
+    std::size_t num_points = x.rows();
+    std::size_t gdim = _function_space->mesh()->geometry().dim();
+    std::size_t tdim = _function_space->mesh()->topology().dim();
+
+    auto ufc_element = _function_space->element()->ufc_element();
+    std::size_t reference_value_size = ufc_element->reference_value_size();
+    std::size_t value_size = ufc_element->value_size();
+    std::size_t space_dimension = ufc_element->space_dimension();
+
+    Eigen::Tensor<double, 3, Eigen::RowMajor> J(num_points, gdim, tdim);
+    EigenArrayXd detJ(num_points);
+    Eigen::Tensor<double, 3, Eigen::RowMajor> K(num_points, tdim, gdim);
+
+    // EigenRowArrayXXd X(x.rows(), tdim) ;
+    EigenRowArrayXXd X(x.rows(), tdim);
+
+    // boost::multi_array<double, 3> basis_reference_values(
+    //     boost::extents[num_points][space_dimension][reference_value_size]);
+    Eigen::Tensor<double, 3, Eigen::RowMajor> basis_reference_values(
+        num_points, space_dimension, reference_value_size);
+
+    Eigen::Tensor<double, 3, Eigen::RowMajor> basis_values(
+        num_points, space_dimension, value_size);
+
+    // Compute reference coordinates X, and J, detJ and K
+    cmap->compute_reference_geometry(X.data(), J.data(), detJ.data(), K.data(),
+                                     num_points, x.data(),
+                                     coordinate_dofs.data(), 1);
+
+    // std::cout << "Physical x: " << std::endl;
+    // std::cout << x << std::endl;
+    // std::cout << "Reference X: " << std::endl;
+    // std::cout << X << std::endl;
+
+    // // Compute basis on reference element
+    element.evaluate_reference_basis(basis_reference_values, X);
+
+    // // Push basis forward to physical element
+    element.transform_reference_basis(basis_values, basis_reference_values, X,
+                                      J, detJ, K);
+
+    // Compute expansion
+    // std::cout << "Num points, space dim, value_size: " << num_points << ", "
+    //           << space_dimension << ", " << value_size << std::endl;
+    values.setZero();
+    for (std::size_t p = 0; p < num_points; ++p)
+    {
+      for (std::size_t i = 0; i < space_dimension; ++i)
+      {
+        for (std::size_t j = 0; j < value_size; ++j)
+        {
+          // std::cout << "Loop: " << p << ", " << i << ", " << j << std::endl;
+          // std::cout << "  Coeff, Basis: " << coefficients[i] << ", "
+          //           << basis_values(p, i, j) << std::endl;
+
+          // TODO: Find an Eigen shortcut fot this operation
+          values.row(p)[j] += coefficients[i] * basis_values(p, i, j);
+        }
+      }
+    }
+  }
+  else
+  {
+    // Old implementation
+
+    // Compute in tensor (one for scalar function, . . .)
+    const std::size_t value_size_loc = value_size();
+
+    dolfin_assert((std::size_t)values.cols() == value_size_loc);
+
+    // Create work space for basis
+    EigenRowArrayXXd basis(element.space_dimension(), value_size_loc);
+
+    // Compute linear combination for each row of x
+    for (unsigned int k = 0; k < x.rows(); ++k)
+    {
+      element.evaluate_basis_all(basis.data(), x.row(k).data(),
+                                 coordinate_dofs.data(), ufc_cell.orientation);
+
+      values.row(k).matrix() = coefficients.matrix() * basis.matrix();
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -339,8 +421,8 @@ std::vector<std::size_t> Function::value_shape() const
   return _shape;
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<EigenRowMatrixXd> values,
-                    Eigen::Ref<const EigenRowMatrixXd> x,
+void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
+                    Eigen::Ref<const EigenRowArrayXXd> x,
                     const ufc::cell& ufc_cell) const
 {
   dolfin_assert(_function_space);
@@ -417,8 +499,8 @@ EigenRowArrayXXd Function::compute_vertex_values(const mesh::Mesh& mesh) const
   // Interpolate vertex values on each cell (using last computed value
   // if not continuous, e.g. discontinuous Galerkin methods)
   ufc::cell ufc_cell;
-  EigenRowMatrixXd x(num_cell_vertices, mesh.geometry().dim());
-  EigenRowMatrixXd values(num_cell_vertices, value_size_loc);
+  EigenRowArrayXXd x(num_cell_vertices, mesh.geometry().dim());
+  EigenRowArrayXXd values(num_cell_vertices, value_size_loc);
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {

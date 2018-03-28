@@ -18,8 +18,8 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <petscmat.h>
 #include <petscdmshell.h>
+#include <petscmat.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -76,7 +76,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   const std::size_t gdim = mesh.geometry().dim();
 
   // Loop over cells and tabulate dofs
-  boost::multi_array<double, 2> coordinates;
+  EigenRowArrayXXd coordinates(element.space_dimension(), gdim);
   std::vector<double> coordinate_dofs;
   std::vector<double> coors(gdim);
 
@@ -108,7 +108,9 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
           continue;
 
         // Put coordinates in coors
-        std::copy(coordinates[i].begin(), coordinates[i].end(), coors.begin());
+        std::copy(coordinates.row(i).data(),
+                  coordinates.row(i).data() + coordinates.row(i).size(),
+                  coors.begin());
 
         // Add dof to list at this coord
         const auto ins = coords_to_dofs.insert({coors, {local_to_global[dof]}});
@@ -502,8 +504,10 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
 
     // Evaluate the basis functions of the coarse cells at the fine
     // point and store the values into temp_values
-    el->evaluate_basis_all(temp_values.data(), curr_point.coordinates(),
-                           coordinate_dofs.data(), -1);
+    throw std::runtime_error(
+        "PETScDMCollection needs updating for FiniteElement change");
+    // el->evaluate_basis_all(temp_values.data(), curr_point.coordinates(),
+    //                       coordinate_dofs.data(), -1);
 
     // Get the coarse dofs associated with this cell
     auto temp_dofs = coarsemap->cell_dofs(id);

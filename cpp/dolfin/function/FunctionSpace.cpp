@@ -148,11 +148,11 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
   {
     if (_element->value_dimension(i) != v.value_dimension(i))
     {
-      log::dolfin_error("FunctionSpace.cpp",
-                   "interpolate function into function space",
-                   "Dimension %d of function (%d) does not match dimension %d "
-                   "of function space (%d)",
-                   i, v.value_dimension(i), i, element()->value_dimension(i));
+      log::dolfin_error(
+          "FunctionSpace.cpp", "interpolate function into function space",
+          "Dimension %d of function (%d) does not match dimension %d "
+          "of function space (%d)",
+          i, v.value_dimension(i), i, element()->value_dimension(i));
     }
   }
 
@@ -160,8 +160,8 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
   if (expansion_coefficients.size() != _dofmap->global_dimension())
   {
     log::dolfin_error("FunctionSpace.cpp",
-                 "interpolate function into function space",
-                 "Wrong size of vector");
+                      "interpolate function into function space",
+                      "Wrong size of vector");
   }
   expansion_coefficients.zero();
 
@@ -226,7 +226,7 @@ std::shared_ptr<FunctionSpace> FunctionSpace::collapse(
   if (_component.empty())
   {
     log::dolfin_error("FunctionSpace.cpp", "collapse function space",
-                 "Function space is not a subspace");
+                      "Function space is not a subspace");
   }
 
   // Create collapsed DofMap
@@ -241,7 +241,7 @@ std::shared_ptr<FunctionSpace> FunctionSpace::collapse(
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
-std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
+EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
 {
   // Geometric dimension
   dolfin_assert(_mesh);
@@ -262,11 +262,11 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
   std::size_t local_size
       = bs * _dofmap->index_map()->size(common::IndexMap::MapSize::OWNED);
 
-  // Vector to hold coordinates and return
-  std::vector<double> x(gdim * local_size);
+  // Arrray to hold coordinates and return
+  EigenRowArrayXXd x(local_size, gdim);
 
   // Loop over cells and tabulate dofs
-  boost::multi_array<double, 2> coordinates;
+  EigenRowArrayXXd coordinates(_element->space_dimension(), gdim);
   std::vector<double> coordinate_dofs;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
@@ -284,14 +284,7 @@ std::vector<double> FunctionSpace::tabulate_dof_coordinates() const
     {
       const dolfin::la_index_t dof = dofs[i];
       if (dof < (dolfin::la_index_t)local_size)
-      {
-        const dolfin::la_index_t local_index = dof;
-        for (std::size_t j = 0; j < gdim; ++j)
-        {
-          dolfin_assert(gdim * local_index + j < x.size());
-          x[gdim * local_index + j] = coordinates[i][j];
-        }
-      }
+        x.row(dof) = coordinates.row(i);
     }
   }
 
@@ -306,7 +299,8 @@ void FunctionSpace::set_x(la::PETScVector& x, double value,
   dolfin_assert(_element);
 
   std::vector<double> x_values;
-  boost::multi_array<double, 2> coordinates;
+  EigenRowArrayXXd coordinates(_element->space_dimension(),
+                               _mesh->geometry().dim());
   std::vector<double> coordinate_dofs;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
@@ -318,13 +312,14 @@ void FunctionSpace::set_x(la::PETScVector& x, double value,
 
     // Tabulate dof coordinates
     _element->tabulate_dof_coordinates(coordinates, coordinate_dofs, cell);
-    dolfin_assert(coordinates.shape()[0] == (std::size_t)dofs.size());
-    dolfin_assert(component < coordinates.shape()[1]);
+
+    assert(coordinates.rows() == dofs.size());
+    assert(component < (std::size_t)coordinates.cols());
 
     // Copy coordinate (it may be possible to avoid this)
     x_values.resize(dofs.size());
-    for (std::size_t i = 0; i < coordinates.shape()[0]; ++i)
-      x_values[i] = value * coordinates[i][component];
+    for (Eigen::Index i = 0; i < coordinates.rows(); ++i)
+      x_values[i] = value * coordinates(i, component);
 
     // Set x[component] values in vector
     x.set_local(x_values.data(), dofs.size(), dofs.data());

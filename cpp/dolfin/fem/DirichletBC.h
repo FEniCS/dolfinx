@@ -6,14 +6,13 @@
 
 #pragma once
 
-#include <boost/multi_array.hpp>
+#include <Eigen/Dense>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 #include <map>
 #include <memory>
 #include <unordered_map>
-#include <vector>
 
 namespace dolfin
 {
@@ -280,7 +279,7 @@ private:
   void compute_bc_pointwise(Map& boundary_values, LocalData& data) const;
 
   // Check if the point is in the same plane as the given facet
-  bool on_facet(const double* coordinates, const mesh::Facet& facet) const;
+  bool on_facet(const Eigen::Ref<EigenArrayXd>, const mesh::Facet& facet) const;
 
   // The function space (possibly a sub function space)
   std::shared_ptr<const function::FunctionSpace> _function_space;
@@ -327,7 +326,7 @@ private:
     std::vector<std::size_t> facet_dofs;
 
     // Coordinates for dofs
-    boost::multi_array<double, 2> coordinates;
+    EigenRowArrayXXd coordinates;
   };
 };
 }

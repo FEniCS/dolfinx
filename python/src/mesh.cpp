@@ -64,7 +64,8 @@ void mesh(py::module &m) {
       .def("x", [](dolfin::mesh::MeshGeometry &self) {
         return Eigen::Map<dolfin::EigenRowArrayXXd>(
             self.x().data(), self.num_points(), self.dim());
-      });
+      })
+      .def_readwrite("ufc_coord_mapping", &dolfin::mesh::MeshGeometry::ufc_coord_mapping);
 
   // dolfin::mesh::MeshTopology class
   py::class_<dolfin::mesh::MeshTopology,

@@ -24,9 +24,6 @@
 
 namespace py = pybind11;
 
-using EigenRowMatrixXd =
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-
 namespace dolfin_wrappers {
 
 void function(py::module &m) {
@@ -56,8 +53,8 @@ void function(py::module &m) {
       // FIXME: Add C++ version that takes a dolfin::mesh::Cell
       .def("eval",
            [](const dolfin::function::GenericFunction &self,
-              Eigen::Ref<EigenRowMatrixXd> u,
-              Eigen::Ref<const EigenRowMatrixXd> x,
+              Eigen::Ref<dolfin::EigenRowArrayXXd> u,
+              Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
               const dolfin::mesh::Cell &cell) {
              ufc::cell ufc_cell;
              cell.get_cell_data(ufc_cell);
@@ -66,14 +63,15 @@ void function(py::module &m) {
            "Evaluate GenericFunction (cell version)")
       .def("eval",
            (void (dolfin::function::GenericFunction::*)(
-               Eigen::Ref<EigenRowMatrixXd>, Eigen::Ref<const EigenRowMatrixXd>,
-               const ufc::cell &) const) &
+               Eigen::Ref<dolfin::EigenRowArrayXXd>,
+               Eigen::Ref<const dolfin::EigenRowArrayXXd>, const ufc::cell &)
+                const) &
                dolfin::function::GenericFunction::eval,
            "Evaluate GenericFunction (cell version)")
       .def("eval",
            (void (dolfin::function::GenericFunction::*)(
-               Eigen::Ref<EigenRowMatrixXd>, Eigen::Ref<const EigenRowMatrixXd>)
-                const) &
+               Eigen::Ref<dolfin::EigenRowArrayXXd>,
+               Eigen::Ref<const dolfin::EigenRowArrayXXd>) const) &
                dolfin::function::GenericFunction::eval,
            py::arg("values"), py::arg("x"), "Evaluate GenericFunction")
       .def("compute_vertex_values",
@@ -114,13 +112,13 @@ void function(py::module &m) {
   class PyExpression : public dolfin::function::Expression {
     using dolfin::function::Expression::Expression;
 
-    void eval(Eigen::Ref<EigenRowMatrixXd> values,
-              Eigen::Ref<const EigenRowMatrixXd> x) const override {
+    void eval(Eigen::Ref<dolfin::EigenRowArrayXXd> values,
+              Eigen::Ref<const dolfin::EigenRowArrayXXd> x) const override {
       PYBIND11_OVERLOAD(void, dolfin::function::Expression, eval, values, x);
     }
 
-    void eval(Eigen::Ref<EigenRowMatrixXd> values,
-              Eigen::Ref<const EigenRowMatrixXd> x,
+    void eval(Eigen::Ref<dolfin::EigenRowArrayXXd> values,
+              Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
               const ufc::cell &cell) const override {
       PYBIND11_OVERLOAD_NAME(void, dolfin::function::Expression, "eval_cell",
                              eval, values, x, cell);
@@ -136,8 +134,8 @@ void function(py::module &m) {
       .def(py::init<std::vector<std::size_t>>())
       .def("__call__",
            [](const dolfin::function::Expression &self,
-              Eigen::Ref<const EigenRowMatrixXd> x) {
-             EigenRowMatrixXd f(x.rows(), self.value_size());
+              Eigen::Ref<const dolfin::EigenRowArrayXXd> x) {
+             dolfin::EigenRowArrayXXd f(x.rows(), self.value_size());
              self.eval(f, x);
              return f;
            })
@@ -236,8 +234,8 @@ void function(py::module &m) {
                dolfin::function::Function::operator=)
       .def("__call__",
            [](dolfin::function::Function &self,
-              Eigen::Ref<const EigenRowMatrixXd> x) {
-             EigenRowMatrixXd values(x.rows(), self.value_size());
+              Eigen::Ref<const dolfin::EigenRowArrayXXd> x) {
+             dolfin::EigenRowArrayXXd values(x.rows(), self.value_size());
              self.eval(values, x);
              return values;
            })
@@ -358,13 +356,6 @@ void function(py::module &m) {
       .def("set_x", &dolfin::function::FunctionSpace::set_x)
       .def("sub", &dolfin::function::FunctionSpace::sub)
       .def("tabulate_dof_coordinates",
-           [](const dolfin::function::FunctionSpace &self) {
-             const std::size_t gdim = self.element()->geometric_dimension();
-             std::vector<double> coords = self.tabulate_dof_coordinates();
-             assert(coords.size() % gdim == 0);
-
-             py::array_t<double> c({coords.size() / gdim, gdim}, coords.data());
-             return c;
-           });
+           &dolfin::function::FunctionSpace::tabulate_dof_coordinates);
 }
 } // namespace dolfin_wrappers
