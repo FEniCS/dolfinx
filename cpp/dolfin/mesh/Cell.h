@@ -32,7 +32,7 @@ public:
   /// @param    index
   ///         The index.
   Cell(const Mesh& mesh, std::size_t index)
-      : MeshEntity(mesh, mesh.topology().dim(), index)
+      : MeshEntity(mesh, mesh.topology().dim(), index), local_facet(-1)
   {
   }
 
@@ -216,6 +216,9 @@ public:
   {
     return _mesh->type().ordered(*this, local_to_global_vertex_indices);
   }
+
+  /// Local facet index, used typically in eval functions
+  mutable int local_facet;
 
   // FIXME: This function is part of a UFC transition
   /// Get cell coordinate dofs (not vertex coordinates)

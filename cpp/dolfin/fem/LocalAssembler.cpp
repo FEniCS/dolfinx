@@ -36,6 +36,7 @@ void LocalAssembler::assemble(
     unsigned int local_facet = 0;
     for (auto& facet : mesh::EntityRange<mesh::Facet>(cell))
     {
+      cell.local_facet = local_facet;
       const int Ncells = facet.num_entities(cell.dim());
       if (Ncells == 2)
       {

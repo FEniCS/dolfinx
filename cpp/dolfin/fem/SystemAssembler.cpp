@@ -604,6 +604,7 @@ void SystemAssembler::facet_wise_assembly(
         local_facet[c] = cell[c].index(facet);
         coordinate_dofs[c].resize(cell[c].num_vertices(), gdim);
         cell[c].get_coordinate_dofs(coordinate_dofs[c]);
+        cell[c].local_facet = local_facet[c];
 
         compute_cell_tensor[c] = !cell_tensor_computed[cell_index[c]];
       }
@@ -878,6 +879,7 @@ void SystemAssembler::compute_exterior_facet_tensor(
 
   // Get cell data
   cell.get_coordinate_dofs(coordinate_dofs);
+  cell.local_facet = local_facet;
 
   // Loop over lhs and then rhs facet contributions
   for (std::size_t form = 0; form < 2; ++form)

@@ -38,22 +38,17 @@ void FacetArea::eval(Eigen::Ref<EigenRowArrayXXd> values,
                      Eigen::Ref<const EigenRowArrayXXd> x,
                      const mesh::Cell& cell) const
 {
-  throw std::runtime_error(
-      "FacetArea::eval needs updating for removal of ufc::cell.");
-  // dolfin_assert(_mesh);
+  dolfin_assert(_mesh);
 
-  // for (unsigned int i = 0; i != x.rows(); ++i)
-  // {
-  //   if (cell.local_facet >= 0)
-  //   {
-  //     mesh::Cell c(*_mesh, cell.index);
-  //     values(i, 0) = c.facet_area(cell.local_facet);
-  //   }
-  //   else
-  //   {
-  //     // not_on_boundary
-  //     values(i, 0) = 0.0;
-  //   }
-  // }
+  for (unsigned int i = 0; i != x.rows(); ++i)
+  {
+    if (cell.local_facet >= 0)
+      values(i, 0) = cell.facet_area(cell.local_facet);
+    else
+    {
+      // not_on_boundary
+      values(i, 0) = 0.0;
+    }
+  }
 }
 //-----------------------------------------------------------------------------

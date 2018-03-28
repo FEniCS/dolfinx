@@ -423,8 +423,9 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     // Get local index of facet with respect to the cell
     const size_t facet_local_index = cell.index(facet);
 
-    // Update UFC cell geometry data
+    // Get coordinate data and set local facet index
     cell.get_coordinate_dofs(coordinate_dofs);
+    cell.local_facet = facet_local_index;
 
     // Restrict coefficient to cell
     _g->restrict(data.w.data(), *_function_space->element(), cell,
@@ -514,6 +515,8 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
       // Loop the cells associated with the vertex
       for (auto& c : mesh::EntityRange<mesh::Cell>(vertex))
       {
+        // FIXME: setting the local facet here looks wrong
+        // c.local_facet = local_facet;
         c.get_coordinate_dofs(coordinate_dofs);
 
         bool tabulated = false;
