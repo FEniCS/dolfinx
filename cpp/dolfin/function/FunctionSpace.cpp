@@ -105,17 +105,15 @@ void FunctionSpace::interpolate_from_any(
   std::vector<double> cell_coefficients(_dofmap->max_element_dofs());
 
   // Iterate over mesh and interpolate on each cell
-  ufc::cell ufc_cell;
   std::vector<double> coordinate_dofs;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
-    // Update to current cell
+    // Get cell coordinate dofs
     cell.get_coordinate_dofs(coordinate_dofs);
-    cell.get_cell_data(ufc_cell);
 
     // Restrict function to cell
     v.restrict(cell_coefficients.data(), *_element, cell,
-               coordinate_dofs.data(), ufc_cell);
+               coordinate_dofs.data());
 
     // Tabulate dofs
     auto cell_dofs = _dofmap->cell_dofs(cell.index());

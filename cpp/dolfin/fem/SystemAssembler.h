@@ -17,7 +17,6 @@
 
 namespace ufc
 {
-class cell;
 class cell_integral;
 class exterior_facet_integral;
 class interior_facet_integral;
@@ -84,7 +83,8 @@ public:
   /// Assemble system (A, b) for (negative) increment dx, where x =
   /// x0 - dx is solution to system a == -L subject to bcs.
   /// Suitable for use inside a (quasi-)Newton solver.
-  void assemble(la::PETScMatrix& A, la::PETScVector& b, const la::PETScVector& x0);
+  void assemble(la::PETScMatrix& A, la::PETScVector& b,
+                const la::PETScVector& x0);
 
   /// Assemble rhs vector b for (negative) increment dx, where x =
   /// x0 - dx is solution to system a == -L subject to bcs.
@@ -111,7 +111,8 @@ private:
                              std::size_t bc_index);
 
   // Assemble system
-  void assemble(la::PETScMatrix* A, la::PETScVector* b, const la::PETScVector* x0);
+  void assemble(la::PETScMatrix* A, la::PETScVector* b,
+                const la::PETScVector* x0);
 
   // Bilinear and linear forms
   std::shared_ptr<const Form> _a, _l;
@@ -120,15 +121,17 @@ private:
   std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 
   static void cell_wise_assembly(
-      std::pair<la::PETScMatrix*, la::PETScVector*>& tensors, std::array<UFC*, 2>& ufc,
-      Scratch& data, const std::vector<DirichletBC::Map>& boundary_values,
+      std::pair<la::PETScMatrix*, la::PETScVector*>& tensors,
+      std::array<UFC*, 2>& ufc, Scratch& data,
+      const std::vector<DirichletBC::Map>& boundary_values,
       std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains,
       std::shared_ptr<const mesh::MeshFunction<std::size_t>>
           exterior_facet_domains);
 
   static void facet_wise_assembly(
-      std::pair<la::PETScMatrix*, la::PETScVector*>& tensors, std::array<UFC*, 2>& ufc,
-      Scratch& data, const std::vector<DirichletBC::Map>& boundary_values,
+      std::pair<la::PETScMatrix*, la::PETScVector*>& tensors,
+      std::array<UFC*, 2>& ufc, Scratch& data,
+      const std::vector<DirichletBC::Map>& boundary_values,
       std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains,
       std::shared_ptr<const mesh::MeshFunction<std::size_t>>
           exterior_facet_domains,
@@ -139,7 +142,7 @@ private:
   // contribution
   static void compute_exterior_facet_tensor(
       std::array<std::vector<double>, 2>& Ae, std::array<UFC*, 2>& ufc,
-      ufc::cell& ufc_cell, Eigen::Ref<EigenRowMatrixXd> coordinate_dofs,
+      Eigen::Ref<EigenRowMatrixXd> coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
       const mesh::Facet& facet,
@@ -151,7 +154,7 @@ private:
   // Compute interior facet (and possibly connected cell)
   // contribution
   static void compute_interior_facet_tensor(
-      std::array<UFC*, 2>& ufc, std::array<ufc::cell, 2>& ufc_cell,
+      std::array<UFC*, 2>& ufc,
       std::array<EigenRowMatrixXd, 2>& coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet,

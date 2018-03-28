@@ -14,6 +14,7 @@ namespace dolfin
 {
 namespace mesh
 {
+class Cell;
 class Mesh;
 }
 
@@ -29,7 +30,7 @@ public:
 
   /// Evaluate function
   void eval(Eigen::Ref<EigenRowArrayXXd> values,
-            Eigen::Ref<const EigenRowArrayXXd> x, const ufc::cell& cell) const;
+            Eigen::Ref<const EigenRowArrayXXd> x, const mesh::Cell& cell) const;
 
 private:
   // The mesh
@@ -46,7 +47,7 @@ public:
 
   /// Evaluate function
   void eval(Eigen::Ref<EigenRowArrayXXd> values,
-            Eigen::Ref<const EigenRowArrayXXd> x, const ufc::cell& cell) const;
+            Eigen::Ref<const EigenRowArrayXXd> x, const mesh::Cell& cell) const;
 
 private:
   // The mesh

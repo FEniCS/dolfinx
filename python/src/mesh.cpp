@@ -30,6 +30,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <ufc.h>
 
 #include "casters.h"
 
@@ -75,11 +76,13 @@ void mesh(py::module &m) {
              dolfin::common::Variable>(m, "MeshTopology",
                                        "DOLFIN MeshTopology object")
       .def("dim", &dolfin::mesh::MeshTopology::dim, "Topological dimension")
-      .def("init", (void (dolfin::mesh::MeshTopology::*)(std::size_t)) &
-                       dolfin::mesh::MeshTopology::init)
-      .def("init", (void (dolfin::mesh::MeshTopology::*)(
-                       std::size_t, std::int32_t, std::int64_t)) &
-                       dolfin::mesh::MeshTopology::init)
+      .def("init",
+           (void (dolfin::mesh::MeshTopology::*)(std::size_t)) &
+               dolfin::mesh::MeshTopology::init)
+      .def("init",
+           (void (dolfin::mesh::MeshTopology::*)(std::size_t, std::int32_t,
+                                                 std::int64_t)) &
+               dolfin::mesh::MeshTopology::init)
       .def("__call__",
            (const dolfin::mesh::MeshConnectivity &(
                dolfin::mesh::MeshTopology::*)(std::size_t, std::size_t) const) &
@@ -92,9 +95,10 @@ void mesh(py::module &m) {
       .def("have_global_indices",
            &dolfin::mesh::MeshTopology::have_global_indices)
       .def("ghost_offset", &dolfin::mesh::MeshTopology::ghost_offset)
-      .def("cell_owner", (const std::vector<std::uint32_t> &(
-                             dolfin::mesh::MeshTopology::*)() const) &
-                             dolfin::mesh::MeshTopology::cell_owner)
+      .def("cell_owner",
+           (const std::vector<std::uint32_t> &(dolfin::mesh::MeshTopology::*)()
+                const) &
+               dolfin::mesh::MeshTopology::cell_owner)
       .def("set_global_index", &dolfin::mesh::MeshTopology::set_global_index)
       .def("global_indices",
            [](const dolfin::mesh::MeshTopology &self, int dim) {
@@ -103,9 +107,10 @@ void mesh(py::module &m) {
            })
       .def("have_shared_entities",
            &dolfin::mesh::MeshTopology::have_shared_entities)
-      .def("shared_entities", (std::map<std::int32_t, std::set<std::uint32_t>> &
-                               (dolfin::mesh::MeshTopology::*)(std::uint32_t)) &
-                                  dolfin::mesh::MeshTopology::shared_entities)
+      .def("shared_entities",
+           (std::map<std::int32_t, std::set<std::uint32_t>> &
+            (dolfin::mesh::MeshTopology::*)(std::uint32_t)) &
+               dolfin::mesh::MeshTopology::shared_entities)
       .def("str", &dolfin::mesh::MeshTopology::str);
 
   // dolfin::mesh::Mesh
@@ -139,8 +144,9 @@ void mesh(py::module &m) {
       .def("init_global", &dolfin::mesh::Mesh::init_global)
       .def("init",
            (void (dolfin::mesh::Mesh::*)() const) & dolfin::mesh::Mesh::init)
-      .def("init", (std::size_t(dolfin::mesh::Mesh::*)(std::size_t) const) &
-                       dolfin::mesh::Mesh::init)
+      .def("init",
+           (std::size_t(dolfin::mesh::Mesh::*)(std::size_t) const) &
+               dolfin::mesh::Mesh::init)
       .def("init",
            (void (dolfin::mesh::Mesh::*)(std::size_t, std::size_t) const) &
                dolfin::mesh::Mesh::init)
@@ -181,8 +187,9 @@ void mesh(py::module &m) {
                                                              self.size(i));
            },
            py::return_value_policy::reference_internal)
-      .def("size", (std::size_t(dolfin::mesh::MeshConnectivity::*)() const) &
-                       dolfin::mesh::MeshConnectivity::size)
+      .def("size",
+           (std::size_t(dolfin::mesh::MeshConnectivity::*)() const) &
+               dolfin::mesh::MeshConnectivity::size)
       .def("size",
            (std::size_t(dolfin::mesh::MeshConnectivity::*)(std::size_t) const) &
                dolfin::mesh::MeshConnectivity::size);
@@ -307,9 +314,8 @@ void mesh(py::module &m) {
 #define MESHENTITYITERATOR_MACRO(TYPE, ENTITYNAME)                             \
   py::class_<dolfin::mesh::EntityRange<dolfin::ENTITYNAME>,                    \
              std::shared_ptr<dolfin::mesh::EntityRange<dolfin::ENTITYNAME>>>(  \
-      m, #TYPE,                                                                \
-      "Range for iterating over entities of type " #ENTITYNAME                 \
-      " incident to a MeshEntity")                                             \
+      m, #TYPE, "Range for iterating over entities of type " #ENTITYNAME       \
+                " incident to a MeshEntity")                                   \
       .def(py::init<const dolfin::mesh::MeshEntity &>())                       \
       .def("__iter__",                                                         \
            [](const dolfin::mesh::EntityRange<dolfin::ENTITYNAME> &c) {        \
