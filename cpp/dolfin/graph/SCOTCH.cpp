@@ -432,6 +432,7 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
 {
   log::dolfin_error("SCOTCH.cpp", "partition mesh using SCOTCH",
                     "DOLFIN has been configured without support for SCOTCH");
+  return mesh::MeshPartition({}, {});
 }
 //-----------------------------------------------------------------------------
 
