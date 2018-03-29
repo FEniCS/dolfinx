@@ -1374,6 +1374,7 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
 
   // Build mesh
   const std::string ghost_mode = parameter::parameters["ghost_mode"];
+
   return mesh::MeshPartitioning::build_distributed_mesh(local_mesh_data,
                                                         ghost_mode);
 }

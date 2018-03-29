@@ -54,21 +54,43 @@ public:
   static mesh::Mesh build_distributed_mesh(const LocalMeshData& data,
                                            const std::string ghost_mode);
 
+  /// Build distributed mesh from a set of points and cells on each local
+  /// process
+  /// @param comm
+  ///     MPI Communicator
+  /// @param type
+  ///     Cell type
+  /// @param points
+  ///     Geometric points on each process, numbered from process 0 upwards.
+  /// @param cells
+  ///     Topological cells with global vertex indexing. Each cell appears once
+  ///     only.
+  /// @param global_cell_indices
+  ///     Global index for each cell
+  /// @param ghost_mode
+  ///     Ghost mode
+  static mesh::Mesh
+  build_distributed_mesh(const MPI_Comm& comm, mesh::CellType::Type type,
+                         Eigen::Ref<const EigenRowArrayXXd> points,
+                         Eigen::Ref<const EigenRowArrayXXi64> cells,
+                         const std::vector<std::int64_t>& global_cell_indices,
+                         const std::string ghost_mode);
+
   /// Take the set of vertices
   /// @param mpi_comm
   ///   MPI Communicator
-  /// @param mesh_data_vertices
-  ///   Existing vertex coordinates array on each process before distribution
+  /// @param points
+  ///   Existing vertex coordinates array on each process before
+  ///   distribution
   /// @param vertex_indices
   ///   Global indices for vertices on this process
   /// @param vertex_coordinates
   ///   Output array of coordinates on this process after distribution
   /// @param shared_vertices_local
-  ///   Output map from local index to set of sharing processes for each shared
-  ///   vertex
+  ///   Output map from local index to set of sharing processes for each
+  ///   shared vertex
   static void distribute_vertices(
-      const MPI_Comm mpi_comm,
-      Eigen::Ref<const EigenRowArrayXXd> mesh_data_vertices,
+      const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXd> points,
       const std::vector<std::int64_t>& vertex_indices,
       Eigen::Ref<EigenRowArrayXXd> vertex_coordinates,
       std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local);
@@ -105,7 +127,7 @@ private:
   static mesh::Mesh build(const MPI_Comm& comm, mesh::CellType::Type type,
                           Eigen::Ref<const EigenRowArrayXXi64> cells,
                           Eigen::Ref<const EigenRowArrayXXd> points,
-                          const LocalMeshData& data,
+                          const std::vector<std::int64_t>& global_cell_indices,
                           const std::string ghost_mode,
                           const MeshPartition& mp);
 
