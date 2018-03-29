@@ -27,9 +27,9 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
   {
     EigenRowArrayXXd geom(0, 3);
     EigenRowArrayXXi64 topo(0, 4);
-    mesh::Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
-    mesh.order();
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+
+    return mesh::MeshPartitioning::build_distributed_mesh(
+        comm, mesh::CellType::Type::tetrahedron, geom, topo, {}, "none");
   }
 
   // Extract data
@@ -128,13 +128,8 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
     }
   }
 
-  mesh::Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
-  mesh.order();
-
-  if (dolfin::MPI::size(comm) > 1)
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  else
-    return mesh;
+  return mesh::MeshPartitioning::build_distributed_mesh(
+      comm, mesh::CellType::Type::tetrahedron, geom, topo, {}, "none");
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
@@ -145,8 +140,8 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
     EigenRowArrayXXd geom(0, 3);
     EigenRowArrayXXi64 topo(0, 8);
 
-    mesh::Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+    return mesh::MeshPartitioning::build_distributed_mesh(
+        comm, mesh::CellType::Type::hexahedron, geom, topo, {}, "none");
   }
 
   const std::size_t nx = n[0];
@@ -206,11 +201,7 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
     }
   }
 
-  mesh::Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
-
-  if (dolfin::MPI::size(comm) > 1)
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  else
-    return mesh;
+  return mesh::MeshPartitioning::build_distributed_mesh(
+      comm, mesh::CellType::Type::hexahedron, geom, topo, {}, "none");
 }
 //-----------------------------------------------------------------------------

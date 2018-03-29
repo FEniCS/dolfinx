@@ -26,9 +26,8 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
   {
     EigenRowArrayXXd geom(0, 2);
     EigenRowArrayXXi64 topo(0, 3);
-    mesh::Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
-    mesh.order();
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+    return mesh::MeshPartitioning::build_distributed_mesh(
+        comm, mesh::CellType::Type::triangle, geom, topo, {}, "none");
   }
 
   // Check options
@@ -198,13 +197,8 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
     }
   }
 
-  mesh::Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
-  mesh.order();
-
-  if (dolfin::MPI::size(comm) > 1)
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  else
-    return mesh;
+  return mesh::MeshPartitioning::build_distributed_mesh(
+      comm, mesh::CellType::Type::triangle, geom, topo, {}, "none");
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
@@ -216,8 +210,8 @@ mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
   {
     EigenRowArrayXXd geom(0, 2);
     EigenRowArrayXXi64 topo(0, 4);
-    mesh::Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+    return mesh::MeshPartitioning::build_distributed_mesh(
+        comm, mesh::CellType::Type::quadrilateral, geom, topo, {}, "none");
   }
 
   const std::size_t nx = n[0];
@@ -260,12 +254,7 @@ mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
       ++cell;
     }
 
-  mesh::Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
-  mesh.order();
-
-  if (dolfin::MPI::size(comm) > 1)
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  else
-    return mesh;
+  return mesh::MeshPartitioning::build_distributed_mesh(
+      comm, mesh::CellType::Type::quadrilateral, geom, topo, {}, "none");
 }
 //-----------------------------------------------------------------------------
