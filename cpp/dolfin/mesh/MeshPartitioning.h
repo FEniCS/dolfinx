@@ -124,10 +124,10 @@ private:
       MPI_Comm mpi_comm, const std::uint32_t num_regular_cells,
       const mesh::CellType& cell_type,
       const std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
-      const boost::multi_array<std::int64_t, 2>& cell_vertices,
+      Eigen::Ref<EigenRowArrayXXi64> global_cell_vertices,
       const std::vector<std::int64_t>& global_cell_indices,
       std::map<std::int32_t, std::set<std::uint32_t>>& reordered_shared_cells,
-      boost::multi_array<std::int64_t, 2>& reordered_cell_vertices,
+      Eigen::Ref<EigenRowArrayXXi64> reordered_cell_vertices,
       std::vector<std::int64_t>& reordered_global_cell_indices);
 
   // FIXME: Update, making clear exactly what is computed

@@ -192,6 +192,10 @@ mesh::Mesh MeshPartitioning::build(const MPI_Comm& comm,
     shared_cells.clear();
   }
 
+  Eigen::Map<EigenRowArrayXXi64> global_cell_vertices(
+      new_cell_vertices.data(), new_cell_vertices.shape()[0],
+      new_cell_vertices.shape()[1]);
+
 #ifdef HAS_SCOTCH
   if (parameter::parameters["reorder_cells_gps"])
   {
@@ -202,25 +206,22 @@ mesh::Mesh MeshPartitioning::build(const MPI_Comm& comm,
 
     // Allocate objects to hold re-ordering
     std::map<std::int32_t, std::set<std::uint32_t>> reordered_shared_cells;
-    boost::multi_array<std::int64_t, 2> reordered_cell_vertices;
+    EigenRowArrayXXi64 reordered_cell_vertices(global_cell_vertices.rows(),
+                                               global_cell_vertices.cols());
     std::vector<std::int64_t> reordered_global_cell_indices;
 
     // Re-order cells
     reorder_cells_gps(comm, num_regular_cells, *cell_type, shared_cells,
-                      new_cell_vertices, new_global_cell_indices,
+                      global_cell_vertices, new_global_cell_indices,
                       reordered_shared_cells, reordered_cell_vertices,
                       reordered_global_cell_indices);
 
     // Update to re-ordered indices
     std::swap(shared_cells, reordered_shared_cells);
-    std::swap(new_cell_vertices, reordered_cell_vertices);
+    global_cell_vertices = reordered_cell_vertices;
     std::swap(new_global_cell_indices, reordered_global_cell_indices);
   }
 #endif
-
-  Eigen::Map<const EigenRowArrayXXi64> global_cell_vertices(
-      new_cell_vertices.data(), new_cell_vertices.shape()[0],
-      new_cell_vertices.shape()[1]);
 
   Eigen::Map<const EigenRowArrayXXd> mesh_data_vertices(
       mesh_data.geometry.vertex_coordinates.data(),
@@ -276,10 +277,10 @@ void MeshPartitioning::reorder_cells_gps(
     MPI_Comm mpi_comm, const std::uint32_t num_regular_cells,
     const CellType& cell_type,
     const std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
-    const boost::multi_array<std::int64_t, 2>& cell_vertices,
+    Eigen::Ref<EigenRowArrayXXi64> global_cell_vertices,
     const std::vector<std::int64_t>& global_cell_indices,
     std::map<std::int32_t, std::set<std::uint32_t>>& reordered_shared_cells,
-    boost::multi_array<std::int64_t, 2>& reordered_cell_vertices,
+    Eigen::Ref<EigenRowArrayXXi64> reordered_cell_vertices,
     std::vector<std::int64_t>& reordered_global_cell_indices)
 {
   log::log(PROGRESS, "Re-order cells during distributed mesh construction");
@@ -291,13 +292,10 @@ void MeshPartitioning::reorder_cells_gps(
   std::vector<std::vector<std::size_t>> local_graph;
   dolfin::graph::GraphBuilder::FacetCellMap facet_cell_map;
 
-  // FIXME: replace boost
-  Eigen::Map<const EigenRowArrayXXi64> eigen_cell_vertices(
-      cell_vertices.data(), cell_vertices.shape()[0], cell_vertices.shape()[1]);
   dolfin::graph::GraphBuilder::compute_local_dual_graph(
-      mpi_comm, eigen_cell_vertices, cell_type, local_graph, facet_cell_map);
+      mpi_comm, global_cell_vertices, cell_type, local_graph, facet_cell_map);
 
-  const std::size_t num_all_cells = cell_vertices.shape()[0];
+  const std::size_t num_all_cells = global_cell_vertices.rows();
   const std::size_t local_cell_offset
       = MPI::global_offset(mpi_comm, num_all_cells, true);
 
@@ -323,21 +321,15 @@ void MeshPartitioning::reorder_cells_gps(
   }
   std::vector<int> remap = dolfin::graph::SCOTCH::compute_gps(g_dual);
 
-  // Resize re-ordered cell topology arrray, and copy (copy iss
-  // required because ghosts are not being re-ordered).
-  reordered_cell_vertices.resize(
-      boost::extents[cell_vertices.shape()[0]][cell_vertices.shape()[1]]);
-  reordered_cell_vertices = cell_vertices;
-
-  // Assign old gloabl indeices to re-ordered indices (since ghost
-  // will be be re-ordered, we need to copy them over)
-  reordered_global_cell_indices = global_cell_indices;
+  // Add direct mapping for any ghost cells (not reordered)
+  for (unsigned int j = remap.size(); j < global_cell_indices.size(); ++j)
+    remap.push_back(j);
 
   for (std::uint32_t i = 0; i != g_dual.size(); ++i)
   {
     // Remap data
     const std::uint32_t j = remap[i];
-    reordered_cell_vertices[j] = cell_vertices[i];
+    reordered_cell_vertices.row(j) = global_cell_vertices.row(i);
     reordered_global_cell_indices[j] = global_cell_indices[i];
   }
 
