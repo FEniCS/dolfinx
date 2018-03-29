@@ -223,16 +223,17 @@ public:
 
   // FIXME: Update for higher-order geometries
   /// Get cell coordinate dofs (not vertex coordinates)
-  void get_coordinate_dofs(Eigen::Ref<EigenRowArrayXXd> coordinates) const
+  // void get_coordinate_dofs(Eigen::Ref<EigenRowArrayXXd> coordinates) const
+  void get_coordinate_dofs(EigenRowArrayXXd& coordinates) const
   {
     const MeshGeometry& geom = _mesh->geometry();
     const std::size_t gdim = geom.dim();
     const std::size_t num_vertices = this->num_vertices();
     const std::int32_t* vertices = this->entities(0);
 
-    assert((std::size_t)coordinates.rows() == num_vertices);
-    assert((std::size_t)coordinates.cols() == gdim);
-
+    // assert((std::size_t)coordinates.rows() == num_vertices);
+    // assert((std::size_t)coordinates.cols() == gdim);
+    coordinates.resize(num_vertices, gdim);
     for (std::size_t i = 0; i < num_vertices; ++i)
     {
       const double* x = geom.x(vertices[i]);
