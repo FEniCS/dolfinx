@@ -309,6 +309,7 @@ void MeshPartitioning::reorder_cells_gps(
   for (unsigned int j = remap.size(); j < global_cell_indices.size(); ++j)
     remap.push_back(j);
 
+  reordered_global_cell_indices.resize(g_dual.size());
   for (std::uint32_t i = 0; i != g_dual.size(); ++i)
   {
     // Remap data
