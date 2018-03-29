@@ -41,6 +41,13 @@ using EigenRowArrayXi64 = Eigen::Array<std::int64_t, 1, Eigen::Dynamic>;
 using EigenRowArrayXXi64 = Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>;
 
+// double Matrices
+using EigenRowMatrixXd
+    = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
+// double Vectors
+using EigenVectorXd = Eigen::Matrix<double, Eigen::Dynamic, 1>;
+
 /// Index type for compatibility with linear algebra backend(s)
 #ifdef HAS_PETSC
 typedef PetscInt la_index_t;

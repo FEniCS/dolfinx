@@ -263,14 +263,14 @@ void mesh(py::module &m) {
       .def("normal", &dolfin::mesh::Cell::normal)
       .def("circumradius", &dolfin::mesh::Cell::circumradius)
       .def("radius_ratio", &dolfin::mesh::Cell::radius_ratio)
-      .def("volume", &dolfin::mesh::Cell::volume)
-      .def("get_vertex_coordinates",
-           [](const dolfin::mesh::Cell &self) {
-             std::vector<double> x;
-             self.get_vertex_coordinates(x);
-             return x;
-           },
-           "Get cell vertex coordinates");
+      .def("volume", &dolfin::mesh::Cell::volume);
+  //   .def("get_vertex_coordinates",
+  //        [](const dolfin::mesh::Cell &self) {
+  //          std::vector<double> x;
+  //          self.get_vertex_coordinates(x);
+  //          return x;
+  //        },
+  //        "Get cell vertex coordinates");
 
   py::class_<
       dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>,

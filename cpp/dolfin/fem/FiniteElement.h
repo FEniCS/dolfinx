@@ -163,6 +163,20 @@ public:
                                 const std::vector<double>& coordinate_dofs,
                                 const mesh::Cell& cell) const;
 
+  /// Tabulate the coordinates of all dofs on an element
+  ///
+  /// @param[in,out]    coordinates (Eigen::Ref<EigenRowArrayXXd>)
+  ///         The coordinates of all dofs on a cell. Must have correct size of
+  ///         (num_dofs, gdim)
+  /// @param[in]    coordinate_dofs (std::vector<double>)
+  ///         The cell coordinates
+  /// @param[in]    cell (Cell)
+  ///         The cell.
+  void
+  tabulate_dof_coordinates(Eigen::Ref<EigenRowArrayXXd> coordinates,
+                           const Eigen::Ref<EigenRowArrayXXd> coordinate_dofs,
+                           const mesh::Cell& cell) const;
+
   /// Return the number of sub elements (for a mixed element)
   /// @return std::size_t
   ///   number of sub-elements

@@ -342,7 +342,7 @@ void SystemAssembler::cell_wise_assembly(
   la::PETScVector* b = tensors.second;
 
   // Iterate over all cells
-  EigenRowMatrixXd coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs;
   std::size_t gdim = mesh.geometry().dim();
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
@@ -351,6 +351,7 @@ void SystemAssembler::cell_wise_assembly(
     dolfin_assert(!cell.is_ghost());
 
     // Get cell vertex coordinates
+    // FIXME: cell.num_vertices() is wrong for higher order geometries
     coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 

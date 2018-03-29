@@ -217,10 +217,11 @@ public:
     return _mesh->type().ordered(*this, local_to_global_vertex_indices);
   }
 
+  /// Note: This is a (likely temporary) replacement for ufc::cell::local_facet
   /// Local facet index, used typically in eval functions
   mutable int local_facet;
 
-  // FIXME: This function is part of a UFC transition
+  // FIXME: Update for higher-order geometries
   /// Get cell coordinate dofs (not vertex coordinates)
   void get_coordinate_dofs(Eigen::Ref<EigenRowArrayXXd> coordinates) const
   {
@@ -229,41 +230,15 @@ public:
     const std::size_t num_vertices = this->num_vertices();
     const std::int32_t* vertices = this->entities(0);
 
-    coordinates.resize(num_vertices, gdim);
+    assert((std::size_t)coordinates.rows() == num_vertices);
+    assert((std::size_t)coordinates.cols() == gdim);
+
     for (std::size_t i = 0; i < num_vertices; ++i)
     {
       const double* x = geom.x(vertices[i]);
       for (std::size_t j = 0; j < gdim; ++j)
         coordinates(i, j) = x[j];
     }
-  }
-
-  // FIXME: This function is part of a UFC transition
-  /// Get cell coordinate dofs (not vertex coordinates)
-  void get_coordinate_dofs(std::vector<double>& coordinates) const
-  {
-    const MeshGeometry& geom = _mesh->geometry();
-    const std::size_t gdim = geom.dim();
-    const std::size_t num_vertices = this->num_vertices();
-    const std::int32_t* vertices = this->entities(0);
-
-    coordinates.resize(num_vertices * gdim);
-    for (std::size_t i = 0; i < num_vertices; ++i)
-      for (std::size_t j = 0; j < gdim; ++j)
-        coordinates[i * gdim + j] = geom.x(vertices[i])[j];
-  }
-
-  // FIXME: This function is part of a UFC transition
-  /// Get cell vertex coordinates (not coordinate dofs)
-  void get_vertex_coordinates(std::vector<double>& coordinates) const
-  {
-    const std::size_t gdim = _mesh->geometry().dim();
-    const std::size_t num_vertices = this->num_vertices();
-    const std::int32_t* vertices = this->entities(0);
-    coordinates.resize(num_vertices * gdim);
-    for (std::size_t i = 0; i < num_vertices; i++)
-      for (std::size_t j = 0; j < gdim; j++)
-        coordinates[i * gdim + j] = _mesh->geometry().x(vertices[i])[j];
   }
 };
 }

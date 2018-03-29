@@ -292,7 +292,7 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
   Eigen::RowVectorXd coefficients(element.space_dimension());
 
   // Cell coordinates (re-allocated inside function for thread safety)
-  std::vector<double> coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs(cell.num_vertices(), mesh.geometry().dim());
   cell.get_coordinate_dofs(coordinate_dofs);
 
   // Restrict function to cell

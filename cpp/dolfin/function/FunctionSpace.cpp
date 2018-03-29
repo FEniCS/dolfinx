@@ -101,14 +101,19 @@ std::int64_t FunctionSpace::dim() const
 void FunctionSpace::interpolate_from_any(
     la::PETScVector& expansion_coefficients, const GenericFunction& v) const
 {
+  assert(_mesh);
+
+  std::size_t gdim = _mesh->geometry().dim();
+
   // Initialize local arrays
   std::vector<double> cell_coefficients(_dofmap->max_element_dofs());
 
   // Iterate over mesh and interpolate on each cell
-  std::vector<double> coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Get cell coordinate dofs
+    coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Restrict function to cell
@@ -265,10 +270,11 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
 
   // Loop over cells and tabulate dofs
   EigenRowArrayXXd coordinates(_element->space_dimension(), gdim);
-  std::vector<double> coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Update UFC cell
+    coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get local-to-global map
@@ -296,13 +302,15 @@ void FunctionSpace::set_x(la::PETScVector& x, double value,
   dolfin_assert(_dofmap);
   dolfin_assert(_element);
 
+  const std::size_t gdim = _mesh->geometry().dim();
   std::vector<double> x_values;
   EigenRowArrayXXd coordinates(_element->space_dimension(),
                                _mesh->geometry().dim());
-  std::vector<double> coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Update UFC cell
+    coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get cell local-to-global map

@@ -22,9 +22,6 @@
 using namespace dolfin;
 using namespace dolfin::fem;
 
-using EigenMatrixD
-    = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-
 //-----------------------------------------------------------------------------
 Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
                      std::vector<std::shared_ptr<const Form>> L,
@@ -334,8 +331,8 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   }
 
   // Data structures used in assembly
-  EigenMatrixD coordinate_dofs;
-  EigenMatrixD Ae;
+  EigenRowArrayXXd coordinate_dofs;
+  EigenRowMatrixXd Ae;
 
   // Get cell integral
   auto cell_integral = a.integrals().cell_integral();
@@ -440,8 +437,8 @@ void Assembler::assemble(la::PETScVector& b, const Form& L)
   auto dofmap = L.function_space(0)->dofmap();
 
   // Data structures used in assembly
-  EigenMatrixD coordinate_dofs;
-  Eigen::VectorXd be;
+  EigenRowArrayXXd coordinate_dofs;
+  EigenVectorXd be;
 
   // Get cell integral
   auto cell_integral = L.integrals().cell_integral();
@@ -513,9 +510,9 @@ void Assembler::apply_bc(la::PETScVector& b, const Form& a,
   auto dofmap0 = a.function_space(0)->dofmap();
   auto dofmap1 = a.function_space(1)->dofmap();
 
-  EigenMatrixD Ae;
-  Eigen::VectorXd be;
-  EigenMatrixD coordinate_dofs;
+  EigenRowMatrixXd Ae;
+  EigenVectorXd be;
+  EigenRowArrayXXd coordinate_dofs;
 
   // Create data structures for local assembly data
   UFC ufc(a);

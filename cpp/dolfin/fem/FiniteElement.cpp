@@ -33,6 +33,22 @@ void FiniteElement::tabulate_dof_coordinates(
                                          coordinate_dofs.data());
 }
 //-----------------------------------------------------------------------------
+void FiniteElement::tabulate_dof_coordinates(
+    Eigen::Ref<EigenRowArrayXXd> coordinates,
+    const Eigen::Ref<EigenRowArrayXXd> coordinate_dofs,
+    const mesh::Cell& cell) const
+{
+  dolfin_assert(_ufc_element);
+
+  // Check sizes
+  assert((std::size_t)coordinates.rows() == this->space_dimension());
+  assert((std::size_t)coordinates.cols() == this->geometric_dimension());
+
+  // Tabulate coordinates
+  _ufc_element->tabulate_dof_coordinates(coordinates.data(),
+                                         coordinate_dofs.data());
+}
+//-----------------------------------------------------------------------------
 std::shared_ptr<FiniteElement> FiniteElement::extract_sub_element(
     const std::vector<std::size_t>& component) const
 {

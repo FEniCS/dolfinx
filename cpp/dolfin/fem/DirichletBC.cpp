@@ -392,15 +392,16 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
 
-  // Topological dimension
+  // Topological and geometric dimension
   const std::size_t D = mesh.topology().dim();
+  const std::size_t gdim = mesh.geometry().dim();
 
   // Initialise facet-cell connectivity
   mesh.init(D);
   mesh.init(D - 1, D);
 
   // Coordinate dofs
-  std::vector<double> coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs;
 
   // Allocate space
   boundary_values.reserve(boundary_values.size()
@@ -424,6 +425,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     const size_t facet_local_index = cell.index(facet);
 
     // Get coordinate data and set local facet index
+    coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
     cell.local_facet = facet_local_index;
 
@@ -488,7 +490,9 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
       dofmap.is_view() ? std::array<std::int64_t, 2>{{0, 0}}
                        : dofmap.ownership_range());
 
+  // Topological and geometric dimensions
   const std::size_t D = mesh.topology().dim();
+  const std::size_t gdim = mesh.geometry().dim();
 
   // Allocate space using cached size
   if (_num_dofs > 0)
@@ -507,7 +511,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
     // const std::size_t local_facet = cell.index(facet);
 
     // Create vertex coordinate holder
-    std::vector<double> coordinate_dofs;
+    EigenRowArrayXXd coordinate_dofs;
 
     // Loop the vertices associated with the facet
     for (auto& vertex : mesh::EntityRange<mesh::Vertex>(facet))
@@ -517,6 +521,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
       {
         // FIXME: setting the local facet here looks wrong
         // c.local_facet = local_facet;
+        coordinate_dofs.resize(cell.num_vertices(), gdim);
         c.get_coordinate_dofs(coordinate_dofs);
 
         bool tabulated = false;
@@ -590,6 +595,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   const GenericDofMap& dofmap = *_function_space->dofmap();
   const FiniteElement& element = *_function_space->element();
   const mesh::Mesh& mesh = *_function_space->mesh();
+  const std::size_t gdim = mesh.geometry().dim();
 
   // Speed up the computations by only visiting (most) dofs once
   common::RangedIndexSet already_visited(
@@ -601,7 +607,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     boundary_values.reserve(boundary_values.size() + _num_dofs);
 
   // Iterate over cells
-  std::vector<double> coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs;
   if (MPI::max(mesh.mpi_comm(), _cells_to_localdofs.size()) == 0)
   {
     // First time around all cells must be iterated over.  Create map
@@ -609,6 +615,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
     {
       // Get dof coordinates
+      coordinate_dofs.resize(cell.num_vertices(), gdim);
       cell.get_coordinate_dofs(coordinate_dofs);
 
       // Tabulate coordinates of dofs on cell
@@ -672,6 +679,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       const mesh::Cell cell(mesh, it->first);
 
       // Get dof coordinates
+      coordinate_dofs.resize(cell.num_vertices(), gdim);
       cell.get_coordinate_dofs(coordinate_dofs);
 
       // Tabulate coordinates of dofs on cell
