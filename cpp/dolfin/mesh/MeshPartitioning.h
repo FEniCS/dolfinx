@@ -46,9 +46,6 @@ class CellType;
 class MeshPartitioning
 {
 public:
-  /// Build a distributed mesh from a local mesh on process 0
-  static mesh::Mesh build_distributed_mesh(const Mesh& mesh);
-
   /// Build a distributed mesh from 'local mesh data' that is
   /// distributed across processes
   static mesh::Mesh build_distributed_mesh(const LocalMeshData& data,

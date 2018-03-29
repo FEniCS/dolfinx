@@ -36,16 +36,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-mesh::Mesh MeshPartitioning::build_distributed_mesh(const Mesh& mesh)
-{
-  // Create and distribute local mesh data
-  LocalMeshData local_mesh_data(mesh);
-
-  // Build distributed mesh
-  return build_distributed_mesh(local_mesh_data,
-                                parameter::parameters["ghost_mode"]);
-}
-//-----------------------------------------------------------------------------
 mesh::Mesh
 MeshPartitioning::build_distributed_mesh(const LocalMeshData& local_data,
                                          const std::string ghost_mode)
