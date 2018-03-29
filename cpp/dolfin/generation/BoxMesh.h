@@ -64,7 +64,6 @@ public:
 
     // Will never reach this point
     return build_tet(comm, p, n);
-    ;
   }
 
 private:

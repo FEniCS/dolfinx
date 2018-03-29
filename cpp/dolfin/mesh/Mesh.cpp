@@ -27,7 +27,7 @@ using namespace dolfin::mesh;
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            Eigen::Ref<const EigenRowArrayXXd> points,
-           Eigen::Ref<const EigenRowArrayXXi32> cells)
+           Eigen::Ref<const EigenRowArrayXXi64> cells)
     : common::Variable("mesh", "DOLFIN mesh"),
       _cell_type(mesh::CellType::create(type)), _topology(_cell_type->dim()),
       _geometry(points), _ordered(false), _mpi_comm(comm), _ghost_mode("none")
@@ -38,21 +38,37 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   _ordered = false;
 
-  // Initialize mesh data
-  // FIXME: sort out global indices for parallel
-  // This method assumes it is running in serial, and
-  // sets global indices accordingly.
+  // FIXME: make a special case in serial (no mapping required)?
+  std::vector<std::int64_t> global_vertex_indices;
+  EigenRowArrayXXi32 local_cell_vertices(cells.rows(), cells.cols());
+  MeshPartitioning::compute_vertex_mapping(comm, cells, global_vertex_indices,
+                                           local_cell_vertices);
+
+  std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices;
+  EigenRowArrayXXd vertex_coordinates(global_vertex_indices.size(),
+                                      points.cols());
+
+  MeshPartitioning::distribute_vertices(comm, points, global_vertex_indices,
+                                        vertex_coordinates, shared_vertices);
+
+  // FIXME: Copy data into geometry
+  const std::size_t nvals
+      = vertex_coordinates.rows() * vertex_coordinates.cols();
+  _geometry.x().resize(nvals);
+  std::copy(vertex_coordinates.data(), vertex_coordinates.data() + nvals,
+            _geometry.x().begin());
 
   // Initialise vertex topology
-  const std::size_t num_vertices = points.rows();
+  const std::size_t num_vertices = vertex_coordinates.rows();
   _topology.init(0, num_vertices, num_vertices);
   _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);
-  for (std::uint32_t i = 0; i != num_vertices; ++i)
-    _topology.set_global_index(0, i, i);
+  for (std::size_t i = 0; i < global_vertex_indices.size(); ++i)
+    _topology.set_global_index(0, i, global_vertex_indices[i]);
+  _topology.shared_entities(0) = shared_vertices;
 
   // Initialise cell topology
-  const std::size_t num_cells = cells.rows();
+  const std::size_t num_cells = local_cell_vertices.rows();
   _topology.init(tdim, num_cells, num_cells);
   _topology.init_ghost(tdim, num_cells);
   _topology.init_global_indices(tdim, num_cells);
@@ -61,7 +77,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // Add cells
   for (std::int32_t i = 0; i != cells.rows(); ++i)
   {
-    _topology(tdim, 0).set(i, cells.row(i).data());
+    _topology(tdim, 0).set(i, local_cell_vertices.row(i).data());
     _topology.set_global_index(tdim, i, i);
   }
 }

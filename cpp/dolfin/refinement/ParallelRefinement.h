@@ -112,7 +112,7 @@ private:
   std::vector<double> new_vertex_coordinates;
 
   // New storage for all cells when creating new topology
-  std::vector<std::int32_t> new_cell_topology;
+  std::vector<std::int64_t> new_cell_topology;
 
   // Management of marked edges
   std::vector<bool> marked_edges;

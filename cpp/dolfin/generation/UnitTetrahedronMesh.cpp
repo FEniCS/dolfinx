@@ -17,7 +17,7 @@ using namespace dolfin::generation;
 mesh::Mesh UnitTetrahedronMesh::create()
 {
   EigenRowArrayXXd geom(4, 3);
-  EigenRowArrayXXi32 topo(1, 4);
+  EigenRowArrayXXi64 topo(1, 4);
 
   // Create vertices
   geom << 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;

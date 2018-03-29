@@ -25,13 +25,11 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
-        0, 3);
-    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
-                                                                             4);
-    mesh::Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
-    mesh.order();
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+    EigenRowArrayXXd geom(0, 3);
+    EigenRowArrayXXi64 topo(0, 4);
+
+    return mesh::MeshPartitioning::build_distributed_mesh(
+        comm, mesh::CellType::Type::tetrahedron, geom, topo, {}, "none");
   }
 
   // Extract data
@@ -77,10 +75,8 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
                       "least 1 in each dimension");
   }
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
-      (nx + 1) * (ny + 1) * (nz + 1), 3);
-  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(
-      6 * nx * ny * nz, 4);
+  EigenRowArrayXXd geom((nx + 1) * (ny + 1) * (nz + 1), 3);
+  EigenRowArrayXXi64 topo(6 * nx * ny * nz, 4);
 
   std::size_t vertex = 0;
   for (std::size_t iz = 0; iz <= nz; ++iz)
@@ -132,13 +128,8 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
     }
   }
 
-  mesh::Mesh mesh(comm, mesh::CellType::Type::tetrahedron, geom, topo);
-  mesh.order();
-
-  if (dolfin::MPI::size(comm) > 1)
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  else
-    return mesh;
+  return mesh::MeshPartitioning::build_distributed_mesh(
+      comm, mesh::CellType::Type::tetrahedron, geom, topo, {}, "none");
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
@@ -147,10 +138,10 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
   if (dolfin::MPI::rank(comm) != 0)
   {
     EigenRowArrayXXd geom(0, 3);
-    EigenRowArrayXXi32 topo(0, 8);
+    EigenRowArrayXXi64 topo(0, 8);
 
-    mesh::Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+    return mesh::MeshPartitioning::build_distributed_mesh(
+        comm, mesh::CellType::Type::hexahedron, geom, topo, {}, "none");
   }
 
   const std::size_t nx = n[0];
@@ -158,7 +149,7 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
   const std::size_t nz = n[2];
 
   EigenRowArrayXXd geom((nx + 1) * (ny + 1) * (nz + 1), 3);
-  EigenRowArrayXXi32 topo(nx * ny * nz, 8);
+  EigenRowArrayXXi64 topo(nx * ny * nz, 8);
 
   const double a = 0.0;
   const double b = 1.0;
@@ -179,8 +170,9 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
           = c + ((static_cast<double>(iy)) * (d - c) / static_cast<double>(ny));
       for (std::size_t ix = 0; ix <= nx; ix++)
       {
-        const double x = a + ((static_cast<double>(ix)) * (b - a)
-                              / static_cast<double>(nx));
+        const double x
+            = a
+              + ((static_cast<double>(ix)) * (b - a) / static_cast<double>(nx));
         geom.row(vertex) << x, y, z;
         ++vertex;
       }
@@ -209,11 +201,7 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
     }
   }
 
-  mesh::Mesh mesh(comm, mesh::CellType::Type::hexahedron, geom, topo);
-
-  if (dolfin::MPI::size(comm) > 1)
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  else
-    return mesh;
+  return mesh::MeshPartitioning::build_distributed_mesh(
+      comm, mesh::CellType::Type::hexahedron, geom, topo, {}, "none");
 }
 //-----------------------------------------------------------------------------

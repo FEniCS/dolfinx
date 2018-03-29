@@ -25,10 +25,9 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
   if (dolfin::MPI::rank(comm) != 0)
   {
     EigenRowArrayXXd geom(0, 2);
-    EigenRowArrayXXi32 topo(0, 3);
-    mesh::Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
-    mesh.order();
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+    EigenRowArrayXXi64 topo(0, 3);
+    return mesh::MeshPartitioning::build_distributed_mesh(
+        comm, mesh::CellType::Type::triangle, geom, topo, {}, "none");
   }
 
   // Check options
@@ -90,7 +89,7 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
   }
 
   EigenRowArrayXXd geom(nv, 2);
-  EigenRowArrayXXi32 topo(nc, 3);
+  EigenRowArrayXXi64 topo(nc, 3);
 
   // Create main vertices
   std::size_t vertex = 0;
@@ -198,13 +197,8 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
     }
   }
 
-  mesh::Mesh mesh(comm, mesh::CellType::Type::triangle, geom, topo);
-  mesh.order();
-
-  if (dolfin::MPI::size(comm) > 1)
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  else
-    return mesh;
+  return mesh::MeshPartitioning::build_distributed_mesh(
+      comm, mesh::CellType::Type::triangle, geom, topo, {}, "none");
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
@@ -214,21 +208,17 @@ mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
-        0, 2);
-    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(0,
-                                                                             4);
-    mesh::Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
+    EigenRowArrayXXd geom(0, 2);
+    EigenRowArrayXXi64 topo(0, 4);
+    return mesh::MeshPartitioning::build_distributed_mesh(
+        comm, mesh::CellType::Type::quadrilateral, geom, topo, {}, "none");
   }
 
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
-      (nx + 1) * (ny + 1), 2);
-  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> topo(
-      nx * ny, 4);
+  EigenRowArrayXXd geom((nx + 1) * (ny + 1), 2);
+  EigenRowArrayXXi64 topo(nx * ny, 4);
 
   const double a = p[0][0];
   const double b = p[1][0];
@@ -264,12 +254,7 @@ mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
       ++cell;
     }
 
-  mesh::Mesh mesh(comm, mesh::CellType::Type::quadrilateral, geom, topo);
-  mesh.order();
-
-  if (dolfin::MPI::size(comm) > 1)
-    return mesh::MeshPartitioning::build_distributed_mesh(mesh);
-  else
-    return mesh;
+  return mesh::MeshPartitioning::build_distributed_mesh(
+      comm, mesh::CellType::Type::quadrilateral, geom, topo, {}, "none");
 }
 //-----------------------------------------------------------------------------

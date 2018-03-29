@@ -11,7 +11,7 @@ from dolfin import *
 from dolfin_utils.test import *
 from dolfin.la import PETScVector
 
-ghost_mode = set_parameters_fixture("ghost_mode", ["shared_vertex", "none"])
+ghost_mode = set_parameters_fixture("ghost_mode", ["shared_facet", "none"])
 
 
 @skip_if_not_HDF5
