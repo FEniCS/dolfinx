@@ -20,9 +20,9 @@ FiniteElement::FiniteElement(std::shared_ptr<const ufc::finite_element> element)
 //-----------------------------------------------------------------------------
 void FiniteElement::tabulate_dof_coordinates(
     Eigen::Ref<EigenRowArrayXXd> coordinates,
-    const std::vector<double>& coordinate_dofs, const mesh::Cell& cell) const
+    const Eigen::Ref<EigenRowArrayXXd> coordinate_dofs) const
 {
-  dolfin_assert(_ufc_element);
+  assert(_ufc_element);
 
   // Check sizes
   assert((std::size_t)coordinates.rows() == this->space_dimension());
@@ -77,7 +77,7 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   // Create sub system
   std::shared_ptr<FiniteElement> sub_element
       = finite_element.create_sub_element(component[0]);
-  dolfin_assert(sub_element);
+  assert(sub_element);
 
   // Return sub system if sub sub system should not be extracted
   if (component.size() == 1)

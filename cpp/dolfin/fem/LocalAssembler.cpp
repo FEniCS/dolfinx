@@ -21,7 +21,7 @@ using namespace dolfin::fem;
 //------------------------------------------------------------------------------
 void LocalAssembler::assemble(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
-    UFC& ufc, const std::vector<double>& coordinate_dofs,
+    UFC& ufc, const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,
     const mesh::Cell& cell, const mesh::MeshFunction<std::size_t>* cell_domains,
     const mesh::MeshFunction<std::size_t>* exterior_facet_domains,
     const mesh::MeshFunction<std::size_t>* interior_facet_domains)
@@ -73,7 +73,7 @@ void LocalAssembler::assemble(
 //------------------------------------------------------------------------------
 void LocalAssembler::assemble_cell(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
-    UFC& ufc, const std::vector<double>& coordinate_dofs,
+    UFC& ufc, const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,
     const mesh::Cell& cell, const mesh::MeshFunction<std::size_t>* cell_domains)
 {
   // Skip if there are no cell integrals
@@ -115,7 +115,7 @@ void LocalAssembler::assemble_cell(
 //------------------------------------------------------------------------------
 void LocalAssembler::assemble_exterior_facet(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
-    UFC& ufc, const std::vector<double>& coordinate_dofs,
+    UFC& ufc, const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,
     const mesh::Cell& cell, const mesh::Facet& facet,
     const std::size_t local_facet,
     const mesh::MeshFunction<std::size_t>* exterior_facet_domains)
@@ -160,7 +160,7 @@ void LocalAssembler::assemble_exterior_facet(
 //------------------------------------------------------------------------------
 void LocalAssembler::assemble_interior_facet(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
-    UFC& ufc, const std::vector<double>& coordinate_dofs,
+    UFC& ufc, const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,
     const mesh::Cell& cell, const mesh::Facet& facet,
     const std::size_t local_facet,
     const mesh::MeshFunction<std::size_t>* interior_facet_domains,
@@ -190,6 +190,7 @@ void LocalAssembler::assemble_interior_facet(
   // Extract mesh
   const mesh::Mesh& mesh = cell.mesh();
   const std::size_t D = mesh.topology().dim();
+  const std::size_t gdim = mesh.geometry().dim();
 
   // Get cells incident with facet (which is 0 and 1 here is
   // arbitrary)
@@ -214,36 +215,44 @@ void LocalAssembler::assemble_interior_facet(
 
   // Get information about the adjacent cell
   const mesh::Cell& cell_adj = local_is_plus ? cell1 : cell0;
-  std::vector<double> coordinate_dofs_adj;
+  EigenRowArrayXXd coordinate_dofs_adj(cell_adj.num_vertices(), gdim);
   std::size_t local_facet_adj = cell_adj.index(facet);
   cell_adj.get_coordinate_dofs(coordinate_dofs_adj);
 
+  // FIXME: The below is really messy, and the 'fix' to make it work
+  // with Eigen now involves a copy
   // Get information about plus and minus cells
-  const std::vector<double>* coordinate_dofs0 = nullptr;
-  const std::vector<double>* coordinate_dofs1 = nullptr;
+  // const EigenRowArrayXXd* coordinate_dofs0 = nullptr;
+  // const EigenRowArrayXXd* coordinate_dofs1 = nullptr;
+  EigenRowArrayXXd coordinate_dofs0;
+  EigenRowArrayXXd coordinate_dofs1;
   std::size_t local_facet0, local_facet1;
   if (local_is_plus)
   {
-    coordinate_dofs0 = &coordinate_dofs;
-    coordinate_dofs1 = &coordinate_dofs_adj;
+    // coordinate_dofs0 = &coordinate_dofs;
+    // coordinate_dofs1 = &coordinate_dofs_adj;
+    coordinate_dofs0 = coordinate_dofs;
+    coordinate_dofs1 = coordinate_dofs_adj;
     local_facet0 = local_facet;
     local_facet1 = local_facet_adj;
   }
   else
   {
-    coordinate_dofs1 = &coordinate_dofs;
-    coordinate_dofs0 = &coordinate_dofs_adj;
+    // coordinate_dofs1 = &coordinate_dofs;
+    // coordinate_dofs0 = &coordinate_dofs_adj;
+    coordinate_dofs1 = coordinate_dofs;
+    coordinate_dofs0 = coordinate_dofs_adj;
     local_facet1 = local_facet;
     local_facet0 = local_facet_adj;
   }
 
   // Update to current pair of cells and facets
-  ufc.update(cell0, *coordinate_dofs0, cell1, *coordinate_dofs1,
+  ufc.update(cell0, coordinate_dofs0, cell1, coordinate_dofs1,
              integral->enabled_coefficients());
 
   // Tabulate interior facet tensor on macro element
   integral->tabulate_tensor(ufc.macro_A.data(), ufc.macro_w(),
-                            coordinate_dofs0->data(), coordinate_dofs1->data(),
+                            coordinate_dofs0.data(), coordinate_dofs1.data(),
                             local_facet0, local_facet1, 1, 1);
 
   // Stuff upper left quadrant (corresponding to cell_plus) or lower

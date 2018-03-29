@@ -7,7 +7,6 @@
 #pragma once
 
 #include <dolfin/common/types.h>
-#include <dolfin/log/log.h>
 #include <memory>
 #include <ufc.h>
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -15,11 +14,6 @@
 
 namespace dolfin
 {
-
-namespace mesh
-{
-class Cell;
-}
 
 namespace fem
 {
@@ -43,7 +37,7 @@ public:
   /// @return std::string
   std::string signature() const
   {
-    dolfin_assert(_ufc_element);
+    assert(_ufc_element);
     return _ufc_element->signature();
   }
 
@@ -51,7 +45,7 @@ public:
   /// @return ufc::shape
   ufc::shape cell_shape() const
   {
-    dolfin_assert(_ufc_element);
+    assert(_ufc_element);
     return _ufc_element->cell_shape();
   }
 
@@ -59,7 +53,7 @@ public:
   /// @return std::size_t
   std::size_t topological_dimension() const
   {
-    dolfin_assert(_ufc_element);
+    assert(_ufc_element);
     return _ufc_element->topological_dimension();
   }
 
@@ -67,7 +61,7 @@ public:
   /// @return std::uint32_t
   virtual std::uint32_t geometric_dimension() const
   {
-    dolfin_assert(_ufc_element);
+    assert(_ufc_element);
     return _ufc_element->geometric_dimension();
   }
 
@@ -75,28 +69,25 @@ public:
   /// @return std::size_t
   std::size_t space_dimension() const
   {
-    dolfin_assert(_ufc_element);
+    assert(_ufc_element);
     return _ufc_element->space_dimension();
   }
 
   /// Return the rank of the value space
   std::size_t value_rank() const
   {
-    dolfin_assert(_ufc_element);
+    assert(_ufc_element);
     return _ufc_element->value_rank();
   }
 
   /// Return the dimension of the value space for axis i
   std::size_t value_dimension(std::size_t i) const
   {
-    dolfin_assert(_ufc_element);
+    assert(_ufc_element);
     return _ufc_element->value_dimension(i);
   }
 
-  /// Evaluate all basis functions at given point in cell
-  // void evaluate_reference_basis(double * reference_values,
-  //                               std::size_t num_points,
-  //                               const double * X) const final override
+  /// Evaluate all basis functions at given point in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
   void evaluate_reference_basis(
       Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
@@ -140,35 +131,23 @@ public:
         J.data(), detJ.data(), K.data(), 1);
   }
 
-  /// Evaluate all basis functions at given point in cell
-  void evaluate_basis_all(double* values, const double* x,
-                          const double* coordinate_dofs,
-                          int cell_orientation) const
-  {
-    dolfin_assert(_ufc_element);
-    _ufc_element->evaluate_basis_all(values, x, coordinate_dofs,
-                                     cell_orientation);
-  }
-
   /// Tabulate the coordinates of all dofs on an element
   ///
   /// @param[in,out]    coordinates (Eigen::Ref<EigenRowArrayXXd>)
   ///         The coordinates of all dofs on a cell. Must have correct size of
   ///         (num_dofs, gdim)
-  /// @param[in]    coordinate_dofs (std::vector<double>)
-  ///         The cell coordinates
-  /// @param[in]    cell (Cell)
-  ///         The cell.
-  void tabulate_dof_coordinates(Eigen::Ref<EigenRowArrayXXd> coordinates,
-                                const std::vector<double>& coordinate_dofs,
-                                const mesh::Cell& cell) const;
+  /// @param[in]    coordinate_dofs (Eigen::Ref<EigenRowArrayXXd>)
+  ///         The cell dof coordinates
+  void tabulate_dof_coordinates(
+      Eigen::Ref<EigenRowArrayXXd> coordinates,
+      const Eigen::Ref<EigenRowArrayXXd> coordinate_dofs) const;
 
   /// Return the number of sub elements (for a mixed element)
   /// @return std::size_t
   ///   number of sub-elements
   std::size_t num_sub_elements() const
   {
-    dolfin_assert(_ufc_element);
+    assert(_ufc_element);
     return _ufc_element->num_sub_elements();
   }
 
@@ -181,7 +160,7 @@ public:
   /// element)
   std::shared_ptr<FiniteElement> create_sub_element(std::size_t i) const
   {
-    dolfin_assert(_ufc_element);
+    assert(_ufc_element);
     std::shared_ptr<ufc::finite_element> ufc_element(
         _ufc_element->create_sub_element(i));
     return std::make_shared<FiniteElement>(ufc_element);
@@ -190,7 +169,7 @@ public:
   /// Create a new class instance
   std::shared_ptr<FiniteElement> create() const
   {
-    dolfin_assert(_ufc_element);
+    assert(_ufc_element);
     std::shared_ptr<ufc::finite_element> ufc_element(_ufc_element->create());
     return std::make_shared<FiniteElement>(ufc_element);
   }

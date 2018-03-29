@@ -83,6 +83,7 @@ representing functions over mesh entities (such as over cells or over
 facets). Mesh and mesh functions can be read from file in the
 following way::
 
+    import dolfin
     from dolfin import *
 
     # Load mesh and subdomains
@@ -90,6 +91,10 @@ following way::
     mesh = xdmf.read_mesh(MPI.comm_world)
     sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim() - 1, 0)
     xdmf.read(sub_domains)
+
+    cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
+    mesh.geometry().ufc_coord_mapping = cmap
+
 
 Next, we define a :py:class:`FunctionSpace
 <dolfin.functions.functionspace.FunctionSpace>` built on a mixed

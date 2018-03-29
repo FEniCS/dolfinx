@@ -292,7 +292,7 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
   Eigen::RowVectorXd coefficients(element.space_dimension());
 
   // Cell coordinates (re-allocated inside function for thread safety)
-  std::vector<double> coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs(cell.num_vertices(), mesh.geometry().dim());
   cell.get_coordinate_dofs(coordinate_dofs);
 
   // Restrict function to cell
@@ -300,97 +300,70 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
 
   // Get coordinate mapping
   auto cmap = mesh.geometry().ufc_coord_mapping;
-  // assert(cmap);
-  // if (!cmap)
-  // {
-  //   throw std::runtime_error(
-  //       "ufc::coordinate_mapping has not been attached to mesh.");
-  // }
-
-  if (cmap)
+  if (!cmap)
   {
-    // New implementation using ufc::coordinate_mappping
-
-    std::size_t num_points = x.rows();
-    std::size_t gdim = mesh.geometry().dim();
-    std::size_t tdim = mesh.topology().dim();
-
-    auto ufc_element = _function_space->element()->ufc_element();
-    std::size_t reference_value_size = ufc_element->reference_value_size();
-    std::size_t value_size = ufc_element->value_size();
-    std::size_t space_dimension = ufc_element->space_dimension();
-
-    Eigen::Tensor<double, 3, Eigen::RowMajor> J(num_points, gdim, tdim);
-    EigenArrayXd detJ(num_points);
-    Eigen::Tensor<double, 3, Eigen::RowMajor> K(num_points, tdim, gdim);
-
-    // EigenRowArrayXXd X(x.rows(), tdim) ;
-    EigenRowArrayXXd X(x.rows(), tdim);
-
-    // boost::multi_array<double, 3> basis_reference_values(
-    //     boost::extents[num_points][space_dimension][reference_value_size]);
-    Eigen::Tensor<double, 3, Eigen::RowMajor> basis_reference_values(
-        num_points, space_dimension, reference_value_size);
-
-    Eigen::Tensor<double, 3, Eigen::RowMajor> basis_values(
-        num_points, space_dimension, value_size);
-
-    // Compute reference coordinates X, and J, detJ and K
-    cmap->compute_reference_geometry(X.data(), J.data(), detJ.data(), K.data(),
-                                     num_points, x.data(),
-                                     coordinate_dofs.data(), 1);
-
-    // std::cout << "Physical x: " << std::endl;
-    // std::cout << x << std::endl;
-    // std::cout << "Reference X: " << std::endl;
-    // std::cout << X << std::endl;
-
-    // // Compute basis on reference element
-    element.evaluate_reference_basis(basis_reference_values, X);
-
-    // // Push basis forward to physical element
-    element.transform_reference_basis(basis_values, basis_reference_values, X,
-                                      J, detJ, K);
-
-    // Compute expansion
-    // std::cout << "Num points, space dim, value_size: " << num_points << ", "
-    //           << space_dimension << ", " << value_size << std::endl;
-    values.setZero();
-    for (std::size_t p = 0; p < num_points; ++p)
-    {
-      for (std::size_t i = 0; i < space_dimension; ++i)
-      {
-        for (std::size_t j = 0; j < value_size; ++j)
-        {
-          // std::cout << "Loop: " << p << ", " << i << ", " << j << std::endl;
-          // std::cout << "  Coeff, Basis: " << coefficients[i] << ", "
-          //           << basis_values(p, i, j) << std::endl;
-
-          // TODO: Find an Eigen shortcut fot this operation
-          values.row(p)[j] += coefficients[i] * basis_values(p, i, j);
-        }
-      }
-    }
+    throw std::runtime_error(
+        "ufc::coordinate_mapping has not been attached to mesh.");
   }
-  else
+
+  std::size_t num_points = x.rows();
+  std::size_t gdim = mesh.geometry().dim();
+  std::size_t tdim = mesh.topology().dim();
+
+  auto ufc_element = _function_space->element()->ufc_element();
+  std::size_t reference_value_size = ufc_element->reference_value_size();
+  std::size_t value_size = ufc_element->value_size();
+  std::size_t space_dimension = ufc_element->space_dimension();
+
+  Eigen::Tensor<double, 3, Eigen::RowMajor> J(num_points, gdim, tdim);
+  EigenArrayXd detJ(num_points);
+  Eigen::Tensor<double, 3, Eigen::RowMajor> K(num_points, tdim, gdim);
+
+  // EigenRowArrayXXd X(x.rows(), tdim) ;
+  EigenRowArrayXXd X(x.rows(), tdim);
+
+  // boost::multi_array<double, 3> basis_reference_values(
+  //     boost::extents[num_points][space_dimension][reference_value_size]);
+  Eigen::Tensor<double, 3, Eigen::RowMajor> basis_reference_values(
+      num_points, space_dimension, reference_value_size);
+
+  Eigen::Tensor<double, 3, Eigen::RowMajor> basis_values(
+      num_points, space_dimension, value_size);
+
+  // Compute reference coordinates X, and J, detJ and K
+  cmap->compute_reference_geometry(X.data(), J.data(), detJ.data(), K.data(),
+                                   num_points, x.data(), coordinate_dofs.data(),
+                                   1);
+
+  // std::cout << "Physical x: " << std::endl;
+  // std::cout << x << std::endl;
+  // std::cout << "Reference X: " << std::endl;
+  // std::cout << X << std::endl;
+
+  // // Compute basis on reference element
+  element.evaluate_reference_basis(basis_reference_values, X);
+
+  // // Push basis forward to physical element
+  element.transform_reference_basis(basis_values, basis_reference_values, X, J,
+                                    detJ, K);
+
+  // Compute expansion
+  // std::cout << "Num points, space dim, value_size: " << num_points << ", "
+  //           << space_dimension << ", " << value_size << std::endl;
+  values.setZero();
+  for (std::size_t p = 0; p < num_points; ++p)
   {
-    // Old implementation
-
-    // Compute in tensor (one for scalar function, . . .)
-    const std::size_t value_size_loc = value_size();
-
-    dolfin_assert((std::size_t)values.cols() == value_size_loc);
-
-    // Create work space for basis
-    EigenRowArrayXXd basis(element.space_dimension(), value_size_loc);
-
-    // Compute linear combination for each row of x
-    for (unsigned int k = 0; k < x.rows(); ++k)
+    for (std::size_t i = 0; i < space_dimension; ++i)
     {
-      element.evaluate_basis_all(basis.data(), x.row(k).data(),
-                                 coordinate_dofs.data(), 1);
+      for (std::size_t j = 0; j < value_size; ++j)
+      {
+        // std::cout << "Loop: " << p << ", " << i << ", " << j << std::endl;
+        // std::cout << "  Coeff, Basis: " << coefficients[i] << ", "
+        //           << basis_values(p, i, j) << std::endl;
 
-      values.row(k).matrix() = coefficients.matrix() * basis.matrix();
+        // TODO: Find an Eigen shortcut fot this operation
+        values.row(p)[j] += coefficients[i] * basis_values(p, i, j);
+      }
     }
   }
 }

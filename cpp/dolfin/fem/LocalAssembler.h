@@ -43,7 +43,7 @@ public:
       Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
-      const std::vector<double>& coordinate_dofs,                    ///< [in]
+      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,     ///< [in]
       const mesh::Cell& cell,                                        ///< [in]
       const mesh::MeshFunction<std::size_t>* cell_domains,           ///< [in]
       const mesh::MeshFunction<std::size_t>* exterior_facet_domains, ///< [in]
@@ -56,9 +56,9 @@ public:
       Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
-      const std::vector<double>& coordinate_dofs,         ///< [in]
-      const mesh::Cell& cell,                             ///< [in]
-      const mesh::MeshFunction<std::size_t>* cell_domains ///< [in]
+      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs, ///< [in]
+      const mesh::Cell& cell,                                    ///< [in]
+      const mesh::MeshFunction<std::size_t>* cell_domains        ///< [in]
       );
 
   /// Worker method called by assemble() for each of the cell's
@@ -68,7 +68,7 @@ public:
       Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
-      const std::vector<double>& coordinate_dofs,                   ///< [in]
+      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,    ///< [in]
       const mesh::Cell& cell,                                       ///< [in]
       const mesh::Facet& facet,                                     ///< [in]
       const std::size_t local_facet,                                ///< [in]
@@ -82,7 +82,7 @@ public:
       Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
-      const std::vector<double>& coordinate_dofs,                    ///< [in]
+      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,     ///< [in]
       const mesh::Cell& cell,                                        ///< [in]
       const mesh::Facet& facet,                                      ///< [in]
       const std::size_t local_facet,                                 ///< [in]

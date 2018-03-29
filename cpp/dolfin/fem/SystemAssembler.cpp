@@ -342,8 +342,7 @@ void SystemAssembler::cell_wise_assembly(
   la::PETScVector* b = tensors.second;
 
   // Iterate over all cells
-  EigenRowMatrixXd coordinate_dofs;
-  std::size_t gdim = mesh.geometry().dim();
+  EigenRowArrayXXd coordinate_dofs;
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
@@ -351,7 +350,6 @@ void SystemAssembler::cell_wise_assembly(
     dolfin_assert(!cell.is_ghost());
 
     // Get cell vertex coordinates
-    coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Loop over lhs and then rhs contributions
@@ -568,8 +566,7 @@ void SystemAssembler::facet_wise_assembly(
   la::PETScVector* b = tensors.second;
 
   // Iterate over facets
-  std::array<EigenRowMatrixXd, 2> coordinate_dofs;
-  const std::size_t gdim = mesh.geometry().dim();
+  std::array<EigenRowArrayXXd, 2> coordinate_dofs;
 
   for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
@@ -602,7 +599,6 @@ void SystemAssembler::facet_wise_assembly(
         cell[c] = mesh::Cell(mesh, cell_indices[c]);
         cell_index[c] = cell[c].index();
         local_facet[c] = cell[c].index(facet);
-        coordinate_dofs[c].resize(cell[c].num_vertices(), gdim);
         cell[c].get_coordinate_dofs(coordinate_dofs[c]);
         cell[c].local_facet = local_facet[c];
 
@@ -833,7 +829,6 @@ void SystemAssembler::facet_wise_assembly(
       }
 
       // Compute cell/facet tensors
-      coordinate_dofs[0].resize(cell.num_vertices(), gdim);
       compute_exterior_facet_tensor(
           data.Ae, ufc, coordinate_dofs[0], tensor_required_cell,
           tensor_required_facet, cell, facet, cell_integrals,
@@ -865,7 +860,7 @@ void SystemAssembler::facet_wise_assembly(
 //-----------------------------------------------------------------------------
 void SystemAssembler::compute_exterior_facet_tensor(
     std::array<std::vector<double>, 2>& Ae, std::array<UFC*, 2>& ufc,
-    Eigen::Ref<EigenRowMatrixXd> coordinate_dofs,
+    EigenRowArrayXXd& coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
     const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
     const mesh::Facet& facet,
@@ -921,7 +916,7 @@ void SystemAssembler::compute_exterior_facet_tensor(
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::compute_interior_facet_tensor(
-    std::array<UFC*, 2>& ufc, std::array<EigenRowMatrixXd, 2>& coordinate_dofs,
+    std::array<UFC*, 2>& ufc, std::array<EigenRowArrayXXd, 2>& coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
     const std::array<bool, 2>& tensor_required_facet,
     const std::array<mesh::Cell, 2>& cell,

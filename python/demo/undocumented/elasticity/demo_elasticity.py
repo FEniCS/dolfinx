@@ -9,6 +9,7 @@ smoothed aggregation algerbaric multigrid."""
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import numpy as np
+import dolfin
 from dolfin import *
 from dolfin.la import (VectorSpaceBasis, PETScVector, PETScOptions,
                        PETScKrylovSolver)
@@ -53,6 +54,9 @@ def build_nullspace(V, x):
 # mesh = UnitCubeMesh(2, 2, 2)
 mesh = BoxMesh.create(MPI.comm_world, [Point(0, 0, 0), Point(2, 1, 1)], [
                       12, 12, 12], CellType.Type.tetrahedron)
+cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
+mesh.geometry().ufc_coord_mapping = cmap
+
 
 # Function to mark inner surface of pulley
 # def inner_surface(x, on_boundary):

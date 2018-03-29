@@ -22,9 +22,6 @@ class exterior_facet_integral;
 class interior_facet_integral;
 }
 
-using EigenRowMatrixXd
-    = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-
 namespace dolfin
 {
 namespace la
@@ -142,7 +139,7 @@ private:
   // contribution
   static void compute_exterior_facet_tensor(
       std::array<std::vector<double>, 2>& Ae, std::array<UFC*, 2>& ufc,
-      Eigen::Ref<EigenRowMatrixXd> coordinate_dofs,
+      EigenRowArrayXXd& coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
       const mesh::Facet& facet,
@@ -155,7 +152,7 @@ private:
   // contribution
   static void compute_interior_facet_tensor(
       std::array<UFC*, 2>& ufc,
-      std::array<EigenRowMatrixXd, 2>& coordinate_dofs,
+      std::array<EigenRowArrayXXd, 2>& coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet,
       const std::array<mesh::Cell, 2>& cell,
