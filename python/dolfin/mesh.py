@@ -38,10 +38,11 @@ class MeshValueCollection(object):
             return mvc(mesh)
 
 
-# Functions to extend cpp.mesh.Mesh with
+# Extend cpp.mesh.Mesh with some methods
 
 
 def ufl_cell(self):
+    """Return the UFL cell type"""
     return ufl.Cell(self.cell_name(),
                     geometric_dimension=self.geometry().dim())
 
@@ -72,43 +73,38 @@ def geometric_dimension(self):
     return self.geometry().dim()
 
 
-def _repr_html_(self):
-    return cpp.io.X3DOM.html(self)
-
-
-# Extend cpp.mesh.Mesh class, and clean-up
+# Extend cpp.mesh.Mesh class, and then clean-up
 cpp.mesh.Mesh.ufl_cell = ufl_cell
 cpp.mesh.Mesh.ufl_coordinate_element = ufl_coordinate_element
 cpp.mesh.Mesh.ufl_domain = ufl_domain
 cpp.mesh.Mesh.geometric_dimension = geometric_dimension
 
-cpp.mesh.Mesh._repr_html_ = _repr_html_
 
-del ufl_cell, ufl_coordinate_element, ufl_domain, geometric_dimension, _repr_html_
-
-
-def ufl_cell(mesh):
-    """Returns the ufl cell of the mesh."""
-    gdim = mesh.geometry().dim()
-    cellname = mesh.type().description(False)
-    return ufl.Cell(cellname, geometric_dimension=gdim)
+del ufl_cell, ufl_coordinate_element, ufl_domain, geometric_dimension
 
 
-def ufl_coordinate_element(mesh):
-    """Return the finite element of the coordinate vector field of this
-    domain.
-
-    """
-    cell = mesh.ufl_cell()
-    degree = 1
-    return ufl.VectorElement("Lagrange", cell, degree,
-                             dim=cell.geometric_dimension())
+# def ufl_cell(mesh):
+#     """Returns the ufl cell of the mesh."""
+#     gdim = mesh.geometry().dim()
+#     cellname = mesh.type().description(False)
+#     return ufl.Cell(cellname, geometric_dimension=gdim)
 
 
-def ufl_domain(mesh):
-    """Returns the ufl domain corresponding to the mesh."""
-    # Cache object to avoid recreating it a lot
-    if not hasattr(mesh, "_ufl_domain"):
-        mesh._ufl_domain = ufl.Mesh(mesh.ufl_coordinate_element(),
-                                    ufl_id=mesh.ufl_id(), cargo=mesh)
-    return mesh._ufl_domain
+# def ufl_coordinate_element(mesh):
+#     """Return the finite element of the coordinate vector field of this
+#     domain.
+
+#     """
+#     cell = mesh.ufl_cell()
+#     degree = 1
+#     return ufl.VectorElement("Lagrange", cell, degree,
+#                              dim=cell.geometric_dimension())
+
+
+# def ufl_domain(mesh):
+#     """Returns the ufl domain corresponding to the mesh."""
+#     # Cache object to avoid recreating it a lot
+#     if not hasattr(mesh, "_ufl_domain"):
+#         mesh._ufl_domain = ufl.Mesh(mesh.ufl_coordinate_element(),
+#                                     ufl_id=mesh.ufl_id(), cargo=mesh)
+#     return mesh._ufl_domain
