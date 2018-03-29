@@ -77,6 +77,7 @@ Poisson equation step-by-step.
 First, the :py:mod:`dolfin` module is imported: ::
 
     import numpy as np
+    import dolfin
     from dolfin import *
 
 We begin by defining a mesh of the domain and a finite element
