@@ -43,16 +43,12 @@ public:
   /// process numbers.
   /// @param mpi_comm (MPI_Comm)
   /// @param cell_vertices (const boost::multi_array<std::int64_t, 2>)
-  /// @param cell_weight (const std::vector<std::size_t>)
-  /// @param num_global_vertices (const std::int64_t)
   /// @param cell_type (const CellType)
   /// @return mesh::MeshPartition
   ///
   static mesh::MeshPartition
   compute_partition(const MPI_Comm mpi_comm,
                     Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-                    const std::vector<std::size_t>& cell_weight,
-                    const std::int64_t num_global_vertices,
                     const mesh::CellType& cell_type);
 
   /// Compute reordering (map[old] -> new) using

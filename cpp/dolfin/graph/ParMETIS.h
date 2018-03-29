@@ -46,7 +46,6 @@ public:
   static mesh::MeshPartition
   compute_partition(const MPI_Comm mpi_comm,
                     Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-                    const std::size_t num_global_vertices,
                     const mesh::CellType& cell_type,
                     const std::string mode = "partition");
 

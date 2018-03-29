@@ -95,9 +95,10 @@ private:
   // vector 'cell -> process' vector for cells in LocalMeshData, and
   // a map 'local cell index -> processes' to which ghost cells must
   // be sent
-  static MeshPartition partition_cells(const MPI_Comm& mpi_comm,
-                                       const LocalMeshData& mesh_data,
-                                       const std::string partitioner);
+  static MeshPartition
+  partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type cell_type,
+                  Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+                  const std::string partitioner);
 
   // Build a distributed mesh from local mesh data with a computed
   // partition
@@ -138,7 +139,9 @@ private:
   // A new LocalMeshData object is populated with the redistributed
   // cells. Return the number of non-ghost cells on this process.
   static std::int32_t distribute_cells(
-      const MPI_Comm mpi_comm, const LocalMeshData& data,
+      const MPI_Comm mpi_comm,
+      Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+      const std::vector<std::int64_t>& global_cell_indices,
       const MeshPartition& mp,
       boost::multi_array<std::int64_t, 2>& new_cell_vertices,
       std::vector<std::int64_t>& new_global_cell_indices,

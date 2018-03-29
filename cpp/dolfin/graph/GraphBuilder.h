@@ -59,7 +59,6 @@ public:
   compute_dual_graph(const MPI_Comm mpi_comm,
                      Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                      const mesh::CellType& cell_type,
-                     const std::int64_t num_global_vertices,
                      std::vector<std::vector<std::size_t>>& local_graph,
                      std::set<std::int64_t>& ghost_vertices);
 
@@ -94,7 +93,7 @@ private:
   static std::int32_t compute_nonlocal_dual_graph(
       const MPI_Comm mpi_comm,
       Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-      const mesh::CellType& cell_type, const std::int64_t num_global_vertices,
+      const mesh::CellType& cell_type,
       std::vector<std::vector<std::size_t>>& local_graph,
       FacetCellMap& facet_cell_map, std::set<std::int64_t>& ghost_vertices);
 };

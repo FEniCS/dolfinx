@@ -41,6 +41,21 @@ public:
     }
   }
 
+  /// Copy constructor
+  MeshPartition(const MeshPartition&) = default;
+
+  /// Move constructor
+  MeshPartition(MeshPartition&&) = default;
+
+  /// Destructor
+  ~MeshPartition() = default;
+
+  /// Copy Assignment
+  MeshPartition& operator=(const MeshPartition&) = default;
+
+  /// Move Assignment
+  MeshPartition& operator=(MeshPartition&&) = default;
+
   /// The number of sharing processes of a given cell
   /// @return std::uint32_t
   ///

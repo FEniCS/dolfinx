@@ -105,8 +105,7 @@ dual_graph(MPI_Comm mpi_comm,
 //-----------------------------------------------------------------------------
 mesh::MeshPartition dolfin::graph::ParMETIS::compute_partition(
     const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-    const std::size_t num_global_vertices, const mesh::CellType& cell_type,
-    const std::string mode)
+    const mesh::CellType& cell_type, const std::string mode)
 {
   // Duplicate MPI communicator (ParMETIS does not take const
   // arguments, so duplicate communicator to be sure it isn't changed)
@@ -135,8 +134,7 @@ mesh::MeshPartition dolfin::graph::ParMETIS::compute_partition(
     std::vector<std::vector<std::size_t>> local_graph;
     std::set<std::int64_t> ghost_vertices;
     GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type,
-                                     num_global_vertices, local_graph,
-                                     ghost_vertices);
+                                     local_graph, ghost_vertices);
 
     csr_graph = std::make_shared<CSRGraph<idx_t>>(mpi_comm, local_graph);
   }
@@ -420,8 +418,7 @@ void dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
 #else
 mesh::MeshPartition dolfin::graph::ParMETIS::compute_partition(
     const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-    const std::size_t num_global_vertices, const mesh::CellType& cell_type,
-    const std::string mode)
+    const mesh::CellType& cell_type, const std::string mode)
 {
   log::dolfin_error("ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
                     "DOLFIN has been configured without support for ParMETIS");

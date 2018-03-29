@@ -32,9 +32,11 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 mesh::MeshPartition dolfin::graph::SCOTCH::compute_partition(
     const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-    const std::vector<std::size_t>& cell_weight,
-    const std::int64_t num_global_vertices, const mesh::CellType& cell_type)
+    const mesh::CellType& cell_type)
 {
+
+  // FIXME: make a user interface for cell weight
+  const std::vector<std::size_t> cell_weight;
 
   // Create data structures to hold graph
   std::unique_ptr<CSRGraph<SCOTCH_Num>> csr_graph;
@@ -45,8 +47,7 @@ mesh::MeshPartition dolfin::graph::SCOTCH::compute_partition(
     // Compute dual graph (for this parition)
     std::vector<std::vector<std::size_t>> local_graph;
     GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type,
-                                     num_global_vertices, local_graph,
-                                     ghost_vertices);
+                                     local_graph, ghost_vertices);
 
     csr_graph.reset(new CSRGraph<SCOTCH_Num>(MPI_COMM_SELF, local_graph));
   }

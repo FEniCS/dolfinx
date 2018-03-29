@@ -143,7 +143,7 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
 std::pair<std::int32_t, std::int32_t>
 dolfin::graph::GraphBuilder::compute_dual_graph(
     const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-    const mesh::CellType& cell_type, const std::int64_t num_global_vertices,
+    const mesh::CellType& cell_type,
     std::vector<std::vector<std::size_t>>& local_graph,
     std::set<std::int64_t>& ghost_vertices)
 {
@@ -156,8 +156,8 @@ dolfin::graph::GraphBuilder::compute_dual_graph(
 
   // Compute nonlocal part
   std::int32_t num_nonlocal_edges = compute_nonlocal_dual_graph(
-      mpi_comm, cell_vertices, cell_type, num_global_vertices, local_graph,
-      facet_cell_map, ghost_vertices);
+      mpi_comm, cell_vertices, cell_type, local_graph, facet_cell_map,
+      ghost_vertices);
 
   // Shrink to fit
   local_graph.shrink_to_fit();
@@ -316,7 +316,7 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
 //-----------------------------------------------------------------------------
 std::int32_t dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
     const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-    const mesh::CellType& cell_type, const std::int64_t num_global_vertices,
+    const mesh::CellType& cell_type,
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map, std::set<std::int64_t>& ghost_vertices)
 {
@@ -347,6 +347,12 @@ std::int32_t dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
   // Get offset for this process
   const std::int64_t offset
       = MPI::global_offset(mpi_comm, num_local_cells, true);
+
+  // Get global range of vertex indices
+  const std::int64_t num_global_vertices
+      = MPI::max(mpi_comm,
+                 (cell_vertices.rows() > 0) ? cell_vertices.maxCoeff() : 0)
+        + 1;
 
   // Send facet-cell map to intermediary match-making processes
   std::vector<std::vector<std::size_t>> send_buffer(num_processes);
