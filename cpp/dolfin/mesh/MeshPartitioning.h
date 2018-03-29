@@ -102,7 +102,10 @@ private:
 
   // Build a distributed mesh from local mesh data with a computed
   // partition
-  static mesh::Mesh build(const MPI_Comm& comm, const LocalMeshData& data,
+  static mesh::Mesh build(const MPI_Comm& comm, mesh::CellType::Type type,
+                          Eigen::Ref<const EigenRowArrayXXi64> cells,
+                          Eigen::Ref<const EigenRowArrayXXd> points,
+                          const LocalMeshData& data,
                           const std::string ghost_mode,
                           const MeshPartition& mp);
 
@@ -142,8 +145,7 @@ private:
       const MPI_Comm mpi_comm,
       Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
       const std::vector<std::int64_t>& global_cell_indices,
-      const MeshPartition& mp,
-      boost::multi_array<std::int64_t, 2>& new_cell_vertices,
+      const MeshPartition& mp, EigenRowArrayXXi64& new_cell_vertices,
       std::vector<std::int64_t>& new_global_cell_indices,
       std::vector<int>& new_cell_partition,
       std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells);
