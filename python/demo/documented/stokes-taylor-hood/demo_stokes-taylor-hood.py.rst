@@ -166,6 +166,11 @@ We can calculate the :math:`L^2` norms of u and p as follows::
     print("Norm of velocity coefficient vector: %.15g" % u.vector().norm("l2"))
     print("Norm of pressure coefficient vector: %.15g" % p.vector().norm("l2"))
 
+    # Check pressure norm
+    pnorm = p.vector().norm("l2")
+    import numpy as np
+    assert np.isclose(pnorm, 4116.91298427)
+
 Finally, we can save and plot the solutions::
 
     # Save solution in XDMF format
