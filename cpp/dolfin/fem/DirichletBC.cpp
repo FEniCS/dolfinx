@@ -538,8 +538,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           // Tabulate coordinates if not already done
           if (!tabulated)
           {
-            element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs,
-                                             c);
+            element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs);
             tabulated = true;
           }
 
@@ -619,7 +618,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       cell.get_coordinate_dofs(coordinate_dofs);
 
       // Tabulate coordinates of dofs on cell
-      element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs, cell);
+      element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs);
 
       // Tabulate dofs on cell
       auto cell_dofs = dofmap.cell_dofs(cell.index());
@@ -683,7 +682,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       cell.get_coordinate_dofs(coordinate_dofs);
 
       // Tabulate coordinates of dofs on cell
-      element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs, cell);
+      element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs);
 
       // Restrict coefficient to cell
       _g->restrict(data.w.data(), *_function_space->element(), cell,

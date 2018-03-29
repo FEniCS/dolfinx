@@ -281,7 +281,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
     auto dofs = _dofmap->cell_dofs(cell.index());
 
     // Tabulate dof coordinates on cell
-    _element->tabulate_dof_coordinates(coordinates, coordinate_dofs, cell);
+    _element->tabulate_dof_coordinates(coordinates, coordinate_dofs);
 
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
@@ -317,7 +317,7 @@ void FunctionSpace::set_x(la::PETScVector& x, double value,
     auto dofs = _dofmap->cell_dofs(cell.index());
 
     // Tabulate dof coordinates
-    _element->tabulate_dof_coordinates(coordinates, coordinate_dofs, cell);
+    _element->tabulate_dof_coordinates(coordinates, coordinate_dofs);
 
     assert(coordinates.rows() == dofs.size());
     assert(component < (std::size_t)coordinates.cols());
