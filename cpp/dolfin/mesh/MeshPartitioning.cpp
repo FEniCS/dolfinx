@@ -93,7 +93,9 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(
   // NOTE: This is the only place in DOLFIN which eventually sets
   //       mesh._ghost_mode != "none"
   mesh._ghost_mode = ghost_mode;
-  mesh.order();
+
+  if (type == CellType::Type::triangle or type == CellType::Type::tetrahedron)
+    mesh.order();
 
   // Initialise number of globally connected cells to each facet. This
   // is necessary to distinguish between facets on an exterior
