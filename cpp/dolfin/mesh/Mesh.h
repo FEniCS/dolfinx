@@ -72,12 +72,13 @@ public:
   /// @param type (CellType::Type)
   ///
   /// @param points
-  ///         Array of vertex points
+  ///         Array of points
   /// @param cells
-  ///         Array of cells (containing the global vertex indices for each cell)
+  ///         Array of cells (containing the global 'vertex' indices for each
+  ///         cell)
   Mesh(MPI_Comm comm, mesh::CellType::Type type,
-       Eigen::Ref<const EigenRowArrayXXd> points,
-       Eigen::Ref<const EigenRowArrayXXi64> cells);
+       const Eigen::Ref<const EigenRowArrayXXd>& points,
+       const Eigen::Ref<const EigenRowArrayXXi64>& cells);
 
   /// Copy constructor.
   ///

@@ -66,8 +66,8 @@ MeshPartitioning::build_distributed_mesh(const LocalMeshData& local_data,
 //-----------------------------------------------------------------------------
 mesh::Mesh MeshPartitioning::build_distributed_mesh(
     const MPI_Comm& comm, mesh::CellType::Type type,
-    Eigen::Ref<const EigenRowArrayXXd> points,
-    Eigen::Ref<const EigenRowArrayXXi64> cells,
+    const Eigen::Ref<const EigenRowArrayXXd>& points,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cells,
     const std::vector<std::int64_t>& global_cell_indices,
     const std::string ghost_mode)
 {
@@ -109,7 +109,7 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(
 //-----------------------------------------------------------------------------
 MeshPartition MeshPartitioning::partition_cells(
     const MPI_Comm& mpi_comm, mesh::CellType::Type type,
-    Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const std::string partitioner)
 {
   log::log(PROGRESS, "Compute partition of cells across processes");
@@ -136,12 +136,12 @@ MeshPartition MeshPartitioning::partition_cells(
   return MeshPartition({}, {});
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh
-MeshPartitioning::build(const MPI_Comm& comm, mesh::CellType::Type type,
-                        Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-                        Eigen::Ref<const EigenRowArrayXXd> points,
-                        const std::vector<std::int64_t>& global_cell_indices,
-                        const std::string ghost_mode, const MeshPartition& mp)
+mesh::Mesh MeshPartitioning::build(
+    const MPI_Comm& comm, mesh::CellType::Type type,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
+    const Eigen::Ref<const EigenRowArrayXXd>& points,
+    const std::vector<std::int64_t>& global_cell_indices,
+    const std::string ghost_mode, const MeshPartition& mp)
 {
   // Distribute cells
   log::log(PROGRESS, "Distribute mesh cells");
@@ -531,7 +531,8 @@ void MeshPartitioning::distribute_cell_layer(
 }
 //-----------------------------------------------------------------------------
 std::int32_t MeshPartitioning::distribute_cells(
-    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const MPI_Comm mpi_comm,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const std::vector<std::int64_t>& global_cell_indices,
     const MeshPartition& mp, EigenRowArrayXXi64& new_cell_vertices,
     std::vector<std::int64_t>& new_global_cell_indices,
@@ -679,42 +680,44 @@ std::int32_t MeshPartitioning::distribute_cells(
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::compute_vertex_mapping(
-    MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-    std::vector<std::int64_t>& vertex_indices,
+    MPI_Comm mpi_comm,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
+    std::vector<std::int64_t>& vertex_local_to_global,
     Eigen::Ref<EigenRowArrayXXi32> local_cell_vertices)
 {
   std::map<std::int64_t, std::int32_t> vertex_global_to_local;
-  vertex_indices.clear();
+  vertex_local_to_global.clear();
   vertex_global_to_local.clear();
 
   const std::int32_t num_cells = cell_vertices.rows();
   const std::int32_t num_cell_vertices = cell_vertices.cols();
 
+  // Resize (this will fail is size is not already correct)
   local_cell_vertices.resize(num_cells, num_cell_vertices);
 
   // Get set of unique vertices from cells. Remap cell_vertices to
   // local_cell_vertices, starting from 0. Record the global indices for
   // each local vertex in vertex_indices.
 
-  std::int32_t v = 0;
-  for (std::int32_t i = 0; i < num_cells; ++i)
+  std::int32_t nv = 0;
+  for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    for (std::int32_t j = 0; j < num_cell_vertices; ++j)
+    for (std::int32_t v = 0; v < num_cell_vertices; ++v)
     {
-      std::int64_t q = cell_vertices(i, j);
-      auto map_it = vertex_global_to_local.insert({q, v});
-      local_cell_vertices(i, j) = map_it.first->second;
+      std::int64_t q = cell_vertices(c, v);
+      auto map_it = vertex_global_to_local.insert({q, nv});
+      local_cell_vertices(c, v) = map_it.first->second;
       if (map_it.second)
       {
-        vertex_indices.push_back(q);
-        ++v;
+        vertex_local_to_global.push_back(q);
+        ++nv;
       }
     }
   }
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_vertices(
-    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXd> points,
+    const MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& points,
     const std::vector<std::int64_t>& vertex_indices,
     Eigen::Ref<EigenRowArrayXXd> vertex_coordinates,
     std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local)

@@ -68,8 +68,8 @@ public:
   ///     Ghost mode
   static mesh::Mesh
   build_distributed_mesh(const MPI_Comm& comm, mesh::CellType::Type type,
-                         Eigen::Ref<const EigenRowArrayXXd> points,
-                         Eigen::Ref<const EigenRowArrayXXi64> cells,
+                         const Eigen::Ref<const EigenRowArrayXXd>& points,
+                         const Eigen::Ref<const EigenRowArrayXXi64>& cells,
                          const std::vector<std::int64_t>& global_cell_indices,
                          const std::string ghost_mode);
 
@@ -87,7 +87,7 @@ public:
   ///   Output map from local index to set of sharing processes for each
   ///   shared vertex
   static void distribute_vertices(
-      const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXd> points,
+      const MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& points,
       const std::vector<std::int64_t>& vertex_indices,
       Eigen::Ref<EigenRowArrayXXd> vertex_coordinates,
       std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local);
@@ -103,11 +103,11 @@ public:
   ///   Output local-to-global map for vertex indices
   /// @param local_cell_vertices
   ///   Output cell topology (local indexing)
-  static void
-  compute_vertex_mapping(MPI_Comm mpi_comm,
-                         Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-                         std::vector<std::int64_t>& vertex_indices,
-                         Eigen::Ref<EigenRowArrayXXi32> local_cell_vertices);
+  static void compute_vertex_mapping(
+      MPI_Comm mpi_comm,
+      const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
+      std::vector<std::int64_t>& vertex_local_to_global,
+      Eigen::Ref<EigenRowArrayXXi32> local_cell_vertices);
 
 private:
   // Compute cell partitioning from local mesh data. Returns a
@@ -116,14 +116,14 @@ private:
   // be sent
   static MeshPartition
   partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type cell_type,
-                  Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+                  const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
                   const std::string partitioner);
 
   // Build a distributed mesh from local mesh data with a computed
   // partition
   static mesh::Mesh build(const MPI_Comm& comm, mesh::CellType::Type type,
-                          Eigen::Ref<const EigenRowArrayXXi64> cells,
-                          Eigen::Ref<const EigenRowArrayXXd> points,
+                          const Eigen::Ref<const EigenRowArrayXXi64>& cells,
+                          const Eigen::Ref<const EigenRowArrayXXd>& points,
                           const std::vector<std::int64_t>& global_cell_indices,
                           const std::string ghost_mode,
                           const MeshPartition& mp);
@@ -162,7 +162,7 @@ private:
   // cells. Return the number of non-ghost cells on this process.
   static std::int32_t distribute_cells(
       const MPI_Comm mpi_comm,
-      Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+      const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
       const std::vector<std::int64_t>& global_cell_indices,
       const MeshPartition& mp, EigenRowArrayXXi64& new_cell_vertices,
       std::vector<std::int64_t>& new_global_cell_indices,

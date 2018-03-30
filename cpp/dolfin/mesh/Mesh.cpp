@@ -26,15 +26,15 @@ using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
-           Eigen::Ref<const EigenRowArrayXXd> points,
-           Eigen::Ref<const EigenRowArrayXXi64> cells)
+           const Eigen::Ref<const EigenRowArrayXXd>& points,
+           const Eigen::Ref<const EigenRowArrayXXi64>& cells)
     : common::Variable("mesh", "DOLFIN mesh"),
       _cell_type(mesh::CellType::create(type)), _topology(_cell_type->dim()),
       _geometry(points), _ordered(false), _mpi_comm(comm), _ghost_mode("none")
 {
   const std::size_t tdim = _cell_type->dim();
-  const std::int32_t nv = _cell_type->num_vertices();
-  dolfin_assert(nv == cells.cols());
+  const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
+  dolfin_assert(num_vertices_per_cell == cells.cols());
 
   _ordered = false;
 
@@ -72,7 +72,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   _topology.init(tdim, num_cells, num_cells);
   _topology.init_ghost(tdim, num_cells);
   _topology.init_global_indices(tdim, num_cells);
-  _topology(tdim, 0).init(num_cells, nv);
+  _topology(tdim, 0).init(num_cells, num_vertices_per_cell);
 
   // Add cells
   for (std::int32_t i = 0; i != cells.rows(); ++i)
