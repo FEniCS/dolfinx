@@ -55,7 +55,7 @@ def build_nullspace(V, x):
 mesh = BoxMesh.create(MPI.comm_world, [Point(0, 0, 0), Point(2, 1, 1)], [
                       12, 12, 12], CellType.Type.tetrahedron)
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
-mesh.geometry().ufc_coord_mapping = cmap
+mesh.geometry().coord_mapping = cmap
 
 
 # Function to mark inner surface of pulley

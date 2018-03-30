@@ -33,6 +33,19 @@ void FiniteElement::tabulate_dof_coordinates(
                                          coordinate_dofs.data());
 }
 //-----------------------------------------------------------------------------
+EigenRowArrayXXd FiniteElement::tabulate_reference_dof_coordinates() const
+{
+  assert(_ufc_element);
+
+  // Create array
+  EigenRowArrayXXd X(this->space_dimension(), this->topological_dimension());
+
+  // Tabulate coordinates
+  _ufc_element->tabulate_reference_dof_coordinates(X.data());
+
+  return X;
+}
+//-----------------------------------------------------------------------------
 std::shared_ptr<FiniteElement> FiniteElement::extract_sub_element(
     const std::vector<std::size_t>& component) const
 {

@@ -167,8 +167,8 @@ the form file) defined relative to this mesh, we do as follows
      auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
     // Attach 'coordinate mapping' to mesh
-    auto cmap = std::make_shared<poisson_coordinate_mapping_1>();
-    mesh->geometry().ufc_coord_mapping = cmap;
+    auto cmap = std::make_shared<fem::CoordinateMapping>(std::make_shared<poisson_coordinate_mapping_1>());
+    mesh->geometry().coord_mapping = cmap;
 
 
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created

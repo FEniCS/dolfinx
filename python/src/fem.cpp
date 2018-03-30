@@ -20,6 +20,7 @@
 
 #include "casters.h"
 #include <dolfin/fem/Assembler.h>
+#include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>
 #include <dolfin/fem/DofMap.h>
@@ -172,7 +173,7 @@ void fem(py::module &m) {
 
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>,
-             dolfin::fem::GenericDofMap>(m, "DofMap", "DOLFIN DofMap object")
+             dolfin::fem::GenericDofMap>(m, "DofMap", "DofMap object")
       .def(py::init<std::shared_ptr<const ufc::dofmap>,
                     const dolfin::mesh::Mesh &>())
       .def(py::init<std::shared_ptr<const ufc::dofmap>,
@@ -180,6 +181,11 @@ void fem(py::module &m) {
                     std::shared_ptr<const dolfin::mesh::SubDomain>>())
       .def("ownership_range", &dolfin::fem::DofMap::ownership_range)
       .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs);
+
+  py::class_<dolfin::fem::CoordinateMapping,
+             std::shared_ptr<dolfin::fem::CoordinateMapping>>(
+      m, "CoordinateMapping", "Coordinate mapping object")
+      .def(py::init<std::shared_ptr<const ufc::coordinate_mapping>>());
 
   // dolfin::fem::SparsityPatternBuilder
   py::class_<dolfin::fem::SparsityPatternBuilder>(m, "SparsityPatternBuilder")

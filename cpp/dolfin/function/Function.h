@@ -11,8 +11,6 @@
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <memory>
-#include <string>
-#include <utility>
 #include <vector>
 
 namespace dolfin

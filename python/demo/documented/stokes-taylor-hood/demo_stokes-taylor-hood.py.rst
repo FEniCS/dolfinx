@@ -93,7 +93,7 @@ following way::
     xdmf.read(sub_domains)
 
     cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
-    mesh.geometry().ufc_coord_mapping = cmap
+    mesh.geometry().coord_mapping = cmap
 
 
 Next, we define a :py:class:`FunctionSpace

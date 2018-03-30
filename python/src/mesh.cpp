@@ -6,6 +6,7 @@
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
+#include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/function/Expression.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/mesh/Cell.h>
@@ -67,8 +68,8 @@ void mesh(py::module &m) {
              return Eigen::Map<dolfin::EigenRowArrayXXd>(
                  self.x().data(), self.num_points(), self.dim());
            })
-      .def_readwrite("ufc_coord_mapping",
-                     &dolfin::mesh::MeshGeometry::ufc_coord_mapping);
+      .def_readwrite("coord_mapping",
+                     &dolfin::mesh::MeshGeometry::coord_mapping);
 
   // dolfin::mesh::MeshTopology class
   py::class_<dolfin::mesh::MeshTopology,
