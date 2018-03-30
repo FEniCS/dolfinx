@@ -679,34 +679,42 @@ std::int32_t MeshPartitioning::distribute_cells(
   return local_count;
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::compute_vertex_mapping(
+std::pair<std::vector<std::int64_t>, EigenRowArrayXXi32>
+MeshPartitioning::compute_vertex_mapping(
     MPI_Comm mpi_comm,
-    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    std::vector<std::int64_t>& vertex_local_to_global,
-    Eigen::Ref<EigenRowArrayXXi32> local_cell_vertices)
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices)
 {
-  std::map<std::int64_t, std::int32_t> vertex_global_to_local;
-  vertex_local_to_global.clear();
-  vertex_global_to_local.clear();
-
   const std::int32_t num_cells = cell_vertices.rows();
   const std::int32_t num_cell_vertices = cell_vertices.cols();
 
-  // Resize (this will fail is size is not already correct)
-  local_cell_vertices.resize(num_cells, num_cell_vertices);
+  // Cell vertices in local vertex indices
+  EigenRowArrayXXi32 local_cell_vertices(num_cells, num_cell_vertices);
+
+  // Local-to-global map for vertices
+  std::vector<std::int64_t> vertex_local_to_global;
 
   // Get set of unique vertices from cells. Remap cell_vertices to
   // local_cell_vertices, starting from 0. Record the global indices for
   // each local vertex in vertex_indices.
 
+  // Loop over cells
   std::int32_t nv = 0;
+  std::map<std::int64_t, std::int32_t> vertex_global_to_local;
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
+    // Loop over cell vertices
     for (std::int32_t v = 0; v < num_cell_vertices; ++v)
     {
+      // Get global cell index
       std::int64_t q = cell_vertices(c, v);
+
+      // Insert (global_vertex_index, local_vertex_index) into map
       auto map_it = vertex_global_to_local.insert({q, nv});
+
+      // Set local index in cell vertex list
       local_cell_vertices(c, v) = map_it.first->second;
+
+      // If global index seen for first time, add to local-toglobal map
       if (map_it.second)
       {
         vertex_local_to_global.push_back(q);
@@ -714,13 +722,14 @@ void MeshPartitioning::compute_vertex_mapping(
       }
     }
   }
+
+  return {vertex_local_to_global, local_cell_vertices};
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_vertices(
+std::pair<EigenRowArrayXXd, std::map<std::int32_t, std::set<std::uint32_t>>>
+MeshPartitioning::distribute_vertices(
     const MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& points,
-    const std::vector<std::int64_t>& vertex_indices,
-    Eigen::Ref<EigenRowArrayXXd> vertex_coordinates,
-    std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local)
+    const std::vector<std::int64_t>& global_vertex_indices)
 {
   // This function distributes all vertices (coordinates and
   // local-to-global mapping) according to the cells that are stored
@@ -729,6 +738,11 @@ void MeshPartitioning::distribute_vertices(
   // cells) and where those vertices are located. That information is
   // then distributed so that each process learns where it needs to
   // send its vertices.
+
+  // Create data structures that will be returned
+  EigenRowArrayXXd vertex_coordinates(global_vertex_indices.size(),
+                                      points.cols());
+  std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices_local;
 
   log::log(PROGRESS,
            "Distribute vertices during distributed mesh construction");
@@ -752,9 +766,9 @@ void MeshPartitioning::distribute_vertices(
   // in local_indexing the original position on this process
   std::vector<std::vector<std::size_t>> send_vertex_indices(mpi_size);
   std::vector<std::vector<std::uint32_t>> local_indexing(mpi_size);
-  for (unsigned int i = 0; i != vertex_indices.size(); ++i)
+  for (unsigned int i = 0; i != global_vertex_indices.size(); ++i)
   {
-    const std::size_t required_vertex = vertex_indices[i];
+    const std::size_t required_vertex = global_vertex_indices[i];
     const int location
         = std::upper_bound(ranges.begin(), ranges.end(), required_vertex)
           - ranges.begin() - 1;
@@ -795,13 +809,13 @@ void MeshPartitioning::distribute_vertices(
   // Array to receive data into with RMA
   // This is a block of memory which all remote processes can write into, by
   // using the offset (and size) transferred in previous all_to_all.
-  EigenRowArrayXXd receive_coord_data(vertex_indices.size(), gdim);
+  EigenRowArrayXXd receive_coord_data(global_vertex_indices.size(), gdim);
 
   // Create local RMA window
   MPI_Win win;
   MPI_Win_create(receive_coord_data.data(),
-                 sizeof(double) * vertex_indices.size() * gdim, sizeof(double),
-                 MPI_INFO_NULL, mpi_comm, &win);
+                 sizeof(double) * global_vertex_indices.size() * gdim,
+                 sizeof(double), MPI_INFO_NULL, mpi_comm, &win);
   MPI_Win_fence(0, win);
 
   // This memory block is to read from, and must remain in place until the
@@ -852,6 +866,8 @@ void MeshPartitioning::distribute_vertices(
       ++local_index;
     }
   }
+
+  return {vertex_coordinates, shared_vertices_local};
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_shared_vertices(

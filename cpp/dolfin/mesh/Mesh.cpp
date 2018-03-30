@@ -39,17 +39,18 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   _ordered = false;
 
   // FIXME: make a special case in serial (no mapping required)?
-  std::vector<std::int64_t> global_vertex_indices;
-  EigenRowArrayXXi32 local_cell_vertices(cells.rows(), cells.cols());
-  MeshPartitioning::compute_vertex_mapping(comm, cells, global_vertex_indices,
-                                           local_cell_vertices);
+  // Compute vertex local-to-global map from global indices, and computed cell
+  // topology using new local indices
+  const auto vmap_data = MeshPartitioning::compute_vertex_mapping(comm, cells);
+  const std::vector<std::int64_t>& global_vertex_indices = vmap_data.first;
+  const EigenRowArrayXXi32& local_cell_vertices = vmap_data.second;
 
-  std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices;
-  EigenRowArrayXXd vertex_coordinates(global_vertex_indices.size(),
-                                      points.cols());
-
-  MeshPartitioning::distribute_vertices(comm, points, global_vertex_indices,
-                                        vertex_coordinates, shared_vertices);
+  // FIXME: Add comment ????
+  const auto vdist = MeshPartitioning::distribute_vertices(
+      comm, points, global_vertex_indices);
+  const EigenRowArrayXXd& vertex_coordinates = vdist.first;
+  const std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices
+      = vdist.second;
 
   // FIXME: Copy data into geometry
   const std::size_t nvals

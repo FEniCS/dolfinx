@@ -73,7 +73,7 @@ public:
                          const std::vector<std::int64_t>& global_cell_indices,
                          const std::string ghost_mode);
 
-  /// Take the set of vertices
+  /// Take the set of vertices . . . . .
   /// @param mpi_comm
   ///   MPI Communicator
   /// @param points
@@ -81,16 +81,15 @@ public:
   ///   distribution
   /// @param vertex_indices
   ///   Global indices for vertices on this process
-  /// @param vertex_coordinates
-  ///   Output array of coordinates on this process after distribution
-  /// @param shared_vertices_local
-  ///   Output map from local index to set of sharing processes for each
-  ///   shared vertex
-  static void distribute_vertices(
-      const MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& points,
-      const std::vector<std::int64_t>& vertex_indices,
-      Eigen::Ref<EigenRowArrayXXd> vertex_coordinates,
-      std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local);
+  /// @return
+  ///   vertex_coordinates (array of coordinates on this process after
+  ///   distribution) and shared_vertices_local (map from local index to set of
+  ///   sharing processes for each shared vertex)
+  static std::pair<EigenRowArrayXXd,
+                   std::map<std::int32_t, std::set<std::uint32_t>>>
+  distribute_vertices(const MPI_Comm mpi_comm,
+                      const Eigen::Ref<const EigenRowArrayXXd>& points,
+                      const std::vector<std::int64_t>& global_vertex_indices);
 
   /// Compute mapping of globally indexed vertices to local indices
   /// and remap topology accordingly
@@ -99,15 +98,13 @@ public:
   ///   MPI Communicator
   /// @param cell_vertices
   ///   Input cell topology (global indexing)
-  /// @param vertex_indices
-  ///   Output local-to-global map for vertex indices
-  /// @param local_cell_vertices
-  ///   Output cell topology (local indexing)
-  static void compute_vertex_mapping(
+  /// @return
+  ///   Local-to-global map for vertices (std::vector<std::int64_t>) and cell
+  ///   topology in local indexing (EigenRowArrayXXi32)
+  static std::pair<std::vector<std::int64_t>, EigenRowArrayXXi32>
+  compute_vertex_mapping(
       MPI_Comm mpi_comm,
-      const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-      std::vector<std::int64_t>& vertex_local_to_global,
-      Eigen::Ref<EigenRowArrayXXi32> local_cell_vertices);
+      const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices);
 
 private:
   // Compute cell partitioning from local mesh data. Returns a
