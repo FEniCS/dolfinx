@@ -10,11 +10,12 @@
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
 #include "MeshPartition.h"
-#include <boost/multi_array.hpp>
 #include <cstdint>
 #include <dolfin/common/Set.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include <map>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -128,11 +129,18 @@ private:
   // FIXME: Improve this docstring
   // Distribute a layer of cells attached by vertex to boundary updating
   // new_mesh_data and shared_cells. Used when ghosting by vertex.
+  //   static void distribute_cell_layer(
+  //       MPI_Comm mpi_comm, const int num_regular_cells,
+  //       const std::int64_t num_global_vertices,
+  //       std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
+  //       boost::multi_array<std::int64_t, 2>& cell_vertices,
+  //       std::vector<std::int64_t>& global_cell_indices,
+  //       std::vector<int>& cell_partition);
   static void distribute_cell_layer(
       MPI_Comm mpi_comm, const int num_regular_cells,
       const std::int64_t num_global_vertices,
       std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
-      boost::multi_array<std::int64_t, 2>& cell_vertices,
+      EigenRowArrayXXi64& cell_vertices,
       std::vector<std::int64_t>& global_cell_indices,
       std::vector<int>& cell_partition);
 
