@@ -173,9 +173,8 @@ private:
   // FIXME: Improve explanation
   // Utility to convert received_vertex_indices into
   // vertex sharing information
-  static void build_shared_vertices(
+  static std::map<std::int32_t, std::set<std::uint32_t>> build_shared_vertices(
       MPI_Comm mpi_comm,
-      std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices,
       const std::vector<std::vector<std::size_t>>& received_vertex_indices,
       const std::pair<std::size_t, std::size_t> local_vertex_range,
       const std::vector<std::vector<std::uint32_t>>& local_indexing);

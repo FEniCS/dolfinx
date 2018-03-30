@@ -745,7 +745,6 @@ MeshPartitioning::distribute_vertices(
   // Create data structures that will be returned
   EigenRowArrayXXd vertex_coordinates(global_vertex_indices.size(),
                                       points.cols());
-  std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices_local;
 
   log::log(PROGRESS,
            "Distribute vertices during distributed mesh construction");
@@ -851,9 +850,9 @@ MeshPartitioning::distribute_vertices(
 
   // Meanwhile, redistribute received_vertex_indices as vertex sharing
   // information
-  build_shared_vertices(mpi_comm, shared_vertices_local,
-                        received_vertex_indices, local_vertex_range,
-                        local_indexing);
+  const std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices_local
+      = build_shared_vertices(mpi_comm, received_vertex_indices,
+                              local_vertex_range, local_indexing);
 
   // Synchronise and free RMA window
   MPI_Win_fence(0, win);
@@ -873,9 +872,9 @@ MeshPartitioning::distribute_vertices(
   return {vertex_coordinates, shared_vertices_local};
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::build_shared_vertices(
+std::map<std::int32_t, std::set<std::uint32_t>>
+MeshPartitioning::build_shared_vertices(
     MPI_Comm mpi_comm,
-    std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local,
     const std::vector<std::vector<std::size_t>>& received_vertex_indices,
     const std::pair<std::size_t, std::size_t> local_vertex_range,
     const std::vector<std::vector<std::uint32_t>>& local_indexing)
@@ -957,6 +956,7 @@ void MeshPartitioning::build_shared_vertices(
   MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
 
   // Unpack and store to shared_vertices_local
+  std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices_local;
   for (unsigned int p = 0; p < mpi_size; ++p)
   {
     const std::vector<std::uint32_t>& local_index_p = local_indexing[p];
@@ -971,5 +971,7 @@ void MeshPartitioning::build_shared_vertices(
       dolfin_assert(it.second);
     }
   }
+
+  return shared_vertices_local;
 }
 //-----------------------------------------------------------------------------
