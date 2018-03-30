@@ -11,6 +11,7 @@
 #include <map>
 #include <numeric>
 #include <set>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -32,13 +33,15 @@ public:
   static void number_entities(const Mesh& mesh, std::size_t d);
 
   /// Create global entity indices for entities of dimension d for
-  /// given global vertex indices.
-  static std::size_t number_entities(
+  /// given global vertex indices. Returns  global_entity_indices,
+  /// shared_entities, and XXXX?
+  static std::tuple<std::vector<std::int64_t>,
+                    std::map<std::int32_t, std::set<std::uint32_t>>,
+                    std::size_t>
+  number_entities(
       const Mesh& mesh,
       const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>&
           slave_entities,
-      std::vector<std::int64_t>& global_entity_indices,
-      std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities,
       std::size_t d);
 
   /// Compute number of cells connected to each facet

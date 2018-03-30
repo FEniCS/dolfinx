@@ -51,11 +51,17 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
       = _mesh.topology().shared_entities(d);
 
   // Number entities
+  // std::vector<std::int64_t> global_entity_indices;
+  // const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>
+  //     slave_entities;
+  // const std::size_t num_global_entities = number_entities(
+  //     mesh, slave_entities, global_entity_indices, shared_entities, d);
   std::vector<std::int64_t> global_entity_indices;
   const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>
       slave_entities;
-  const std::size_t num_global_entities = number_entities(
-      mesh, slave_entities, global_entity_indices, shared_entities, d);
+  std::size_t num_global_entities;
+  std::tie(global_entity_indices, shared_entities, num_global_entities)
+      = number_entities(mesh, slave_entities, d);
 
   // Set global entity numbers in mesh
   _mesh.topology().init(d, mesh.num_entities(d), num_global_entities);
@@ -64,12 +70,19 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
     _mesh.topology().set_global_index(d, i, global_entity_indices[i]);
 }
 //-----------------------------------------------------------------------------
-std::size_t DistributedMeshTools::number_entities(
+// std::size_t DistributedMeshTools::number_entities(
+//     const Mesh& mesh,
+//     const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>&
+//         slave_entities,
+//     std::vector<std::int64_t>& global_entity_indices,
+//     std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities,
+//     std::size_t d)
+std::tuple<std::vector<std::int64_t>,
+           std::map<std::int32_t, std::set<std::uint32_t>>, std::size_t>
+DistributedMeshTools::number_entities(
     const Mesh& mesh,
     const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>&
         slave_entities,
-    std::vector<std::int64_t>& global_entity_indices,
-    std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities,
     std::size_t d)
 {
   // Developer note: This function should use global_vertex_indices
@@ -84,6 +97,9 @@ std::size_t DistributedMeshTools::number_entities(
       d);
   common::Timer timer(
       "Number mesh entities for distributed mesh (for specified vertex ids)");
+
+  std::vector<std::int64_t> global_entity_indices;
+  std::map<std::int32_t, std::set<std::uint32_t>> shared_entities;
 
   // Check that we're not re-numbering vertices (these are fixed at
   // mesh construction)
@@ -100,7 +116,8 @@ std::size_t DistributedMeshTools::number_entities(
   {
     shared_entities.clear();
     global_entity_indices = mesh.topology().global_indices(d);
-    return mesh.num_entities_global(d);
+    return {global_entity_indices, shared_entities,
+            mesh.num_entities_global(d)};
 
     /*
     log::dolfin_error("MeshPartitioning.cpp",
@@ -332,8 +349,8 @@ std::size_t DistributedMeshTools::number_entities(
         = std::set<std::uint32_t>(ed.processes.begin(), ed.processes.end());
   }
 
-  // Return number of global entities
-  return num_global_entities.first;
+  // Return
+  return {global_entity_indices, shared_entities, num_global_entities.first};
 }
 //-----------------------------------------------------------------------------
 std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t>>>

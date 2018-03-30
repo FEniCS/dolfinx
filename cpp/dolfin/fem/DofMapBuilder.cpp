@@ -868,8 +868,9 @@ void DofMapBuilder::compute_global_dofs(
       // Check that we have just one dof
       if (ndofs != 1)
       {
-        log::dolfin_error("DofMapBuilder.cpp", "compute global degrees of freedom",
-                     "Global degree of freedom has dimension != 1");
+        log::dolfin_error("DofMapBuilder.cpp",
+                          "compute global degrees of freedom",
+                          "Global degree of freedom has dimension != 1");
       }
 
       // Create dummy entity_indices argument to tabulate single
@@ -884,8 +885,9 @@ void DofMapBuilder::compute_global_dofs(
           = global_dofs.insert(dof_local + offset_local);
       if (!ret.second)
       {
-        log::dolfin_error("DofMapBuilder.cpp", "compute global degrees of freedom",
-                     "Global degree of freedom already exists");
+        log::dolfin_error("DofMapBuilder.cpp",
+                          "compute global degrees of freedom",
+                          "Global degree of freedom already exists");
       }
     }
   }
@@ -922,23 +924,26 @@ std::shared_ptr<ufc::dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
   // Check if there are any sub systems
   if (ufc_dofmap.num_sub_dofmaps() == 0)
   {
-    log::dolfin_error("DofMap.cpp", "extract subsystem of degree of freedom mapping",
-                 "There are no subsystems");
+    log::dolfin_error("DofMap.cpp",
+                      "extract subsystem of degree of freedom mapping",
+                      "There are no subsystems");
   }
 
   // Check that a sub system has been specified
   if (component.empty())
   {
-    log::dolfin_error("DofMap.cpp", "extract subsystem of degree of freedom mapping",
-                 "No system was specified");
+    log::dolfin_error("DofMap.cpp",
+                      "extract subsystem of degree of freedom mapping",
+                      "No system was specified");
   }
 
   // Check the number of available sub systems
   if (component[0] >= ufc_dofmap.num_sub_dofmaps())
   {
-    log::dolfin_error("DofMap.cpp", "extract subsystem of degree of freedom mapping",
-                 "Requested subsystem (%d) out of range [0, %d)", component[0],
-                 ufc_dofmap.num_sub_dofmaps());
+    log::dolfin_error("DofMap.cpp",
+                      "extract subsystem of degree of freedom mapping",
+                      "Requested subsystem (%d) out of range [0, %d)",
+                      component[0], ufc_dofmap.num_sub_dofmaps());
   }
 
   // Add to offset if necessary
@@ -1351,11 +1356,17 @@ void DofMapBuilder::compute_constrained_mesh_indices(
       else
       {
         // Get number of entities
+        // std::map<std::int32_t, std::set<std::uint32_t>> shared_entities;
+        // const std::size_t num_entities
+        //     = mesh::DistributedMeshTools::number_entities(
+        //         mesh, slave_to_master_mesh_entities,
+        //         global_entity_indices[d],
+        //         shared_entities, d);
         std::map<std::int32_t, std::set<std::uint32_t>> shared_entities;
-        const std::size_t num_entities
+        std::size_t num_entities;
+        std::tie(global_entity_indices[d], shared_entities, num_entities)
             = mesh::DistributedMeshTools::number_entities(
-                mesh, slave_to_master_mesh_entities, global_entity_indices[d],
-                shared_entities, d);
+                mesh, slave_to_master_mesh_entities, d);
         num_mesh_entities_global[d] = num_entities;
       }
     }
@@ -1466,7 +1477,7 @@ void DofMapBuilder::compute_node_reordering(
       ++unowned_local_size;
     else
       log::dolfin_error("DofMap.cpp", "compute node reordering",
-                   "Invalid node ownership index.");
+                        "Invalid node ownership index.");
   }
   dolfin_assert((unowned_local_size + owned_local_size)
                 == node_ownership.size());
@@ -1556,8 +1567,8 @@ void DofMapBuilder::compute_node_reordering(
   else
   {
     log::dolfin_error("DofMapBuilder.cpp", "reorder degrees of freedom",
-                 "The requested ordering library '%s' is unknown",
-                 ordering_library.c_str());
+                      "The requested ordering library '%s' is unknown",
+                      ordering_library.c_str());
   }
 
   // Compute offset for owned nodes
@@ -1730,10 +1741,10 @@ void DofMapBuilder::get_cell_entities_global_constrained(
     {
       if (global_entity_indices[d].empty())
       {
-        log::dolfin_error("DofMapBuilder.cpp",
-                     "get_cell_entities_global_constrained",
-                     "Missing global entity indices needed for cell entity "
-                     "tabulation.");
+        log::dolfin_error(
+            "DofMapBuilder.cpp", "get_cell_entities_global_constrained",
+            "Missing global entity indices needed for cell entity "
+            "tabulation.");
       }
       if (!global_entity_indices[d].empty()) // TODO: Can this be false? If so
                                              // the entity_indices array will
