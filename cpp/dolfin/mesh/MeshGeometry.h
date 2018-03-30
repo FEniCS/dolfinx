@@ -42,8 +42,11 @@ public:
   /// Destructor
   ~MeshGeometry() = default;
 
-  /// Assignment
+  /// Copy Assignment
   MeshGeometry& operator=(const MeshGeometry&) = default;
+
+  /// Move Assignment
+  MeshGeometry& operator=(MeshGeometry&&) = default;
 
   /// Return Euclidean dimension of coordinate system
   std::size_t dim() const { return _dim; }

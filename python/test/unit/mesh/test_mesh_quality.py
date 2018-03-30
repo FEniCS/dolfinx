@@ -79,8 +79,8 @@ def test_radius_ratio_min_radius_ratio_max():
     # Create 3D mesh with regular tetrahedron and degenerate cells
     mesh3d = UnitCubeMesh(MPI.comm_self, 1, 1, 1)
     x = mesh3d.geometry().x()
-    x[2][0] = 1.0
-    x[7][1] = 0.0
+    x[6][0] = 1.0
+    x[3][1] = 0.0
     rmin, rmax = MeshQuality.radius_ratio_min_max(mesh1d)
     assert round(rmin - 0.0, 7) == 0
     assert round(rmax - 1.0, 7) == 0

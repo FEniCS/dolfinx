@@ -38,8 +38,8 @@ def mesh2d():
 def mesh3d():
     # Create 3D mesh with regular tetrahedron and degenerate cells
     mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
-    mesh3d.geometry().x()[2][0] = 1.0
-    mesh3d.geometry().x()[7][1] = 0.0
+    mesh3d.geometry().x()[6][0] = 1.0
+    mesh3d.geometry().x()[3][1] = 0.0
     return mesh3d
 
 
