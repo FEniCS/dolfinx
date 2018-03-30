@@ -126,6 +126,9 @@ private:
                           const std::string ghost_mode,
                           const MeshPartition& mp);
 
+  // FIXME: The code for this function is really bad. For example, it seems that
+  // cell_vertices carries data in which is used, and is then also modified
+  // (bad!)
   // FIXME: Improve this docstring
   // Distribute a layer of cells attached by vertex to boundary updating
   // new_mesh_data and shared_cells. Used when ghosting by vertex.
@@ -133,16 +136,9 @@ private:
   //       MPI_Comm mpi_comm, const int num_regular_cells,
   //       const std::int64_t num_global_vertices,
   //       std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
-  //       boost::multi_array<std::int64_t, 2>& cell_vertices,
+  //       EigenRowArrayXXi64& cell_vertices,
   //       std::vector<std::int64_t>& global_cell_indices,
   //       std::vector<int>& cell_partition);
-  static void distribute_cell_layer(
-      MPI_Comm mpi_comm, const int num_regular_cells,
-      const std::int64_t num_global_vertices,
-      std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
-      EigenRowArrayXXi64& cell_vertices,
-      std::vector<std::int64_t>& global_cell_indices,
-      std::vector<int>& cell_partition);
 
   // FIXME: make clearer what goes in and what comes out
   // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH). Returns
@@ -151,7 +147,7 @@ private:
       MPI_Comm mpi_comm, const std::uint32_t num_regular_cells,
       const mesh::CellType& cell_type,
       const std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
-      Eigen::Ref<EigenRowArrayXXi64> global_cell_vertices,
+      const Eigen::Ref<const EigenRowArrayXXi64>& global_cell_vertices,
       const std::vector<std::int64_t>& global_cell_indices,
       std::map<std::int32_t, std::set<std::uint32_t>>& reordered_shared_cells,
       Eigen::Ref<EigenRowArrayXXi64> reordered_cell_vertices,

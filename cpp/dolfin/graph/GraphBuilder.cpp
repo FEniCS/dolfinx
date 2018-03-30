@@ -142,7 +142,8 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 std::pair<std::int32_t, std::int32_t>
 dolfin::graph::GraphBuilder::compute_dual_graph(
-    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const MPI_Comm mpi_comm,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::CellType& cell_type,
     std::vector<std::vector<std::size_t>>& local_graph,
     std::set<std::int64_t>& ghost_vertices)
@@ -166,7 +167,8 @@ dolfin::graph::GraphBuilder::compute_dual_graph(
 }
 //-----------------------------------------------------------------------------
 std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph(
-    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const MPI_Comm mpi_comm,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::CellType& cell_type,
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map)
@@ -200,7 +202,8 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph(
 //-----------------------------------------------------------------------------
 template <int N>
 std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
-    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const MPI_Comm mpi_comm,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::CellType& cell_type,
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map)
@@ -315,7 +318,8 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
 }
 //-----------------------------------------------------------------------------
 std::int32_t dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
-    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const MPI_Comm mpi_comm,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::CellType& cell_type,
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map, std::set<std::int64_t>& ghost_vertices)
