@@ -1116,21 +1116,22 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   mesh.topology()(D - 1, D).set_global_size(num_global_neighbors);
 }
 //-----------------------------------------------------------------------------
-std::vector<double>
+EigenRowArrayXXd
 DistributedMeshTools::reorder_vertices_by_global_indices(const Mesh& mesh)
 {
-  std::vector<double> ordered_coordinates(mesh.geometry().x());
-  reorder_values_by_global_indices(mesh, ordered_coordinates,
-                                   mesh.geometry().dim());
-  return ordered_coordinates;
+  Eigen::Map<const EigenRowArrayXXd> ordered_coordinates(
+      mesh.geometry().x().data(),
+      mesh.geometry().x().size() / mesh.geometry().dim(),
+      mesh.geometry().dim());
+  return reorder_values_by_global_indices(mesh, ordered_coordinates);
 }
 //-----------------------------------------------------------------------------
-void DistributedMeshTools::reorder_values_by_global_indices(
-    const Mesh& mesh, std::vector<double>& data, const std::size_t width)
+EigenRowArrayXXd DistributedMeshTools::reorder_values_by_global_indices(
+    const Mesh& mesh, const Eigen::Ref<const EigenRowArrayXXd>& data)
 {
   common::Timer t("DistributedMeshTools: reorder vertex values");
 
-  dolfin_assert(mesh.num_vertices() * width == data.size());
+  dolfin_assert(mesh.num_vertices() == data.rows());
 
   // MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -1171,8 +1172,8 @@ void DistributedMeshTools::reorder_values_by_global_indices(
   }
 
   // Reference to data to send, reorganised as a 2D boost::multi_array
-  boost::multi_array_ref<double, 2> data_array(
-      data.data(), boost::extents[mesh.num_vertices()][width]);
+  // boost::multi_array_ref<double, 2> data_array(
+  //     data.data(), boost::extents[mesh.num_vertices()][width]);
 
   std::vector<std::int64_t> global_indices;
   std::vector<double> reduced_data;
@@ -1184,27 +1185,28 @@ void DistributedMeshTools::reorder_values_by_global_indices(
     if (non_local_vertices.find(vidx) == non_local_vertices.end())
     {
       global_indices.push_back(v.global_index());
-      reduced_data.insert(reduced_data.end(), data_array[vidx].begin(),
-                          data_array[vidx].end());
+      reduced_data.insert(reduced_data.end(), data.row(vidx).data(),
+                          data.row(vidx).data() + data.row(vidx).size());
     }
   }
 
-  data = reduced_data;
-  reorder_values_by_global_indices(mesh.mpi_comm(), data, width,
-                                   global_indices);
+  // data = reduced_data;
+  Eigen::Map<EigenRowArrayXXd> _reduced_data(
+      reduced_data.data(), reduced_data.size() / data.cols(), data.cols());
+  return reorder_values_by_global_indices(mesh.mpi_comm(), _reduced_data,
+                                          global_indices);
 }
 //-----------------------------------------------------------------------------
-void DistributedMeshTools::reorder_values_by_global_indices(
-    MPI_Comm mpi_comm, std::vector<double>& values, const std::size_t width,
+EigenRowArrayXXd DistributedMeshTools::reorder_values_by_global_indices(
+    MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& values,
     const std::vector<std::int64_t>& global_indices)
 {
-
   // Number of items to redistribute
   const std::size_t num_local_indices = global_indices.size();
-  dolfin_assert(width * num_local_indices == values.size());
+  dolfin_assert(num_local_indices == (std::size_t)values.rows());
 
-  boost::multi_array_ref<double, 2> vertex_array(
-      values.data(), boost::extents[num_local_indices][width]);
+  // boost::multi_array_ref<double, 2> vertex_array(
+  //     values.data(), boost::extents[num_local_indices][width]);
 
   // Calculate size of overall global vector by finding max index value
   // anywhere
@@ -1227,9 +1229,9 @@ void DistributedMeshTools::reorder_values_by_global_indices(
     const std::size_t process_i
         = MPI::index_owner(mpi_comm, global_i, global_vector_size);
     values_to_send0[process_i].push_back(global_i);
-    values_to_send1[process_i].insert(values_to_send1[process_i].end(),
-                                      vertex_array[i].begin(),
-                                      vertex_array[i].end());
+    values_to_send1[process_i].insert(
+        values_to_send1[process_i].end(), values.row(i).data(),
+        values.row(i).data() + values.row(i).size());
   }
 
   // Redistribute the values to the appropriate process - including
@@ -1244,17 +1246,21 @@ void DistributedMeshTools::reorder_values_by_global_indices(
   // them in the local partition of the global vector.
   const std::array<std::int64_t, 2> range
       = MPI::local_range(mpi_comm, global_vector_size);
-  values.resize((range[1] - range[0]) * width);
-  boost::multi_array_ref<double, 2> new_vertex_array(
-      values.data(), boost::extents[range[1] - range[0]][width]);
+  // values.resize((range[1] - range[0]) * width);
+  // boost::multi_array_ref<double, 2> new_vertex_array(
+  //     values.data(), boost::extents[range[1] - range[0]][width]);
+  EigenRowArrayXXd new_values(range[1] - range[0], values.cols());
 
+  const std::size_t width = values.cols();
   for (std::size_t j = 0; j != received_values0.size(); ++j)
   {
     const std::int64_t global_i = received_values0[j];
     dolfin_assert(global_i >= range[0] && global_i < range[1]);
     std::copy(received_values1.begin() + j * width,
               received_values1.begin() + (j + 1) * width,
-              new_vertex_array[global_i - range[0]].begin());
+              new_values.row(global_i - range[0]).data());
   }
+
+  return new_values;
 }
 //-----------------------------------------------------------------------------

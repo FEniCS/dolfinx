@@ -133,7 +133,7 @@ void ParallelRefinement::create_new_vertices()
   const std::size_t mpi_rank = MPI::rank(_mesh.mpi_comm());
 
   // Copy over existing mesh vertices
-  new_vertex_coordinates = _mesh.geometry().x();
+  _new_vertex_coordinates = _mesh.geometry().x();
 
   // Tally up unshared marked edges, and shared marked edges which are
   // owned on this process.  Index them sequentially from zero.
@@ -164,7 +164,7 @@ void ParallelRefinement::create_new_vertices()
       {
         const geometry::Point& midpoint = mesh::Edge(_mesh, local_i).midpoint();
         for (std::size_t j = 0; j < gdim; ++j)
-          new_vertex_coordinates.push_back(midpoint[j]);
+          _new_vertex_coordinates.push_back(midpoint[j]);
         local_edge_to_new_vertex[local_i] = n++;
       }
     }
@@ -216,23 +216,29 @@ void ParallelRefinement::create_new_vertices()
   for (std::size_t i = 0; i < num_new_vertices; i++)
     global_indices.push_back(i + global_offset);
 
-  mesh::DistributedMeshTools::reorder_values_by_global_indices(
-      _mesh.mpi_comm(), new_vertex_coordinates, _mesh.geometry().dim(),
-      global_indices);
+  Eigen::Map<EigenRowArrayXXd> old_tmp(_new_vertex_coordinates.data(),
+                                       _new_vertex_coordinates.size() / gdim,
+                                       gdim);
+  EigenRowArrayXXd tmp
+      = mesh::DistributedMeshTools::reorder_values_by_global_indices(
+          _mesh.mpi_comm(), old_tmp, global_indices);
+
+  _new_vertex_coordinates
+      = std::vector<double>(tmp.data(), tmp.data() + tmp.size());
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh ParallelRefinement::build_local() const
 {
   const std::size_t tdim = _mesh.topology().dim();
   const std::size_t gdim = _mesh.geometry().dim();
-  dolfin_assert(new_vertex_coordinates.size() % gdim == 0);
-  const std::size_t num_vertices = new_vertex_coordinates.size() / gdim;
+  dolfin_assert(_new_vertex_coordinates.size() % gdim == 0);
+  const std::size_t num_vertices = _new_vertex_coordinates.size() / gdim;
 
   const std::size_t num_cell_vertices = tdim + 1;
   dolfin_assert(new_cell_topology.size() % num_cell_vertices == 0);
   const std::size_t num_cells = new_cell_topology.size() / num_cell_vertices;
 
-  Eigen::Map<const EigenRowArrayXXd> geometry(new_vertex_coordinates.data(),
+  Eigen::Map<const EigenRowArrayXXd> geometry(_new_vertex_coordinates.data(),
                                               num_vertices, gdim);
   Eigen::Map<const EigenRowArrayXXi64> topology(new_cell_topology.data(),
                                                 num_cells, num_cell_vertices);
@@ -270,12 +276,12 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   std::copy(new_cell_topology.begin(), new_cell_topology.end(),
             mesh_data.topology.cell_vertices.data());
 
-  const std::size_t num_local_vertices = new_vertex_coordinates.size() / gdim;
+  const std::size_t num_local_vertices = _new_vertex_coordinates.size() / gdim;
   mesh_data.geometry.num_global_vertices
       = MPI::sum(_mesh.mpi_comm(), num_local_vertices);
   mesh_data.geometry.vertex_coordinates.resize(
       boost::extents[num_local_vertices][gdim]);
-  std::copy(new_vertex_coordinates.begin(), new_vertex_coordinates.end(),
+  std::copy(_new_vertex_coordinates.begin(), _new_vertex_coordinates.end(),
             mesh_data.geometry.vertex_coordinates.data());
 
   mesh_data.geometry.vertex_indices.resize(num_local_vertices);

@@ -8,6 +8,7 @@
 
 #include <array>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
 #include <map>
 #include <numeric>
 #include <set>
@@ -68,19 +69,21 @@ public:
   /// Reorders the vertices in a distributed mesh according to
   /// their global index, and redistributes them evenly across processes
   /// returning the coordinates as a local vector
-  static std::vector<double>
-  reorder_vertices_by_global_indices(const Mesh& mesh);
+  static EigenRowArrayXXd reorder_vertices_by_global_indices(const Mesh& mesh);
 
   /// Reorder the values (of given width) in data to be in global vertex
   /// index order on the Mesh, redistributing evenly across processes
-  static void reorder_values_by_global_indices(const Mesh& mesh,
-                                               std::vector<double>& data,
-                                               const std::size_t width);
+  static EigenRowArrayXXd reorder_values_by_global_indices(
+      const Mesh& mesh, const Eigen::Ref<const EigenRowArrayXXd>& data);
 
   /// Reorder the values of given width, according to explicit global
   /// indices, distributing evenly across processes
-  static void reorder_values_by_global_indices(
-      MPI_Comm mpi_comm, std::vector<double>& values, const std::size_t width,
+  //   static void reorder_values_by_global_indices(
+  //       MPI_Comm mpi_comm, std::vector<double>& values, const std::size_t
+  //       width,
+  //       const std::vector<std::int64_t>& global_indices);
+  static EigenRowArrayXXd reorder_values_by_global_indices(
+      MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& values,
       const std::vector<std::int64_t>& global_indices);
 
 private:

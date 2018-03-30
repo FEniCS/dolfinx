@@ -120,9 +120,8 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   check_encoding(encoding);
   check_function_name(function_name);
 
-  log::log(PROGRESS,
-           "Writing function \"%s\" to XDMF file \"%s\" with "
-           "time step %f.",
+  log::log(PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
+                     "time step %f.",
            function_name.c_str(), _filename.c_str(), time_step);
 
   // If XML file exists load it to member _xml_doc
@@ -1385,9 +1384,8 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
 {
   check_function_name(func_name);
 
-  log::log(PROGRESS,
-           "Reading function \"%s\" from XDMF file \"%s\" with "
-           "counter %i.",
+  log::log(PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
+                     "counter %i.",
            func_name.c_str(), _filename.c_str(), counter);
 
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
@@ -1641,8 +1639,9 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 
   // Pack geometry data
-  std::vector<double> x
+  EigenRowArrayXXd _x
       = mesh::DistributedMeshTools::reorder_vertices_by_global_indices(mesh);
+  std::vector<double> x(_x.data(), _x.data() + _x.size());
 
   // XDMF does not support 1D, so handle as special case
   if (gdim == 1)
@@ -2691,9 +2690,14 @@ std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
   // data_values Remove duplicates for vertex-based data in parallel
   if (MPI::size(mesh->mpi_comm()) > 1)
   {
-    mesh::DistributedMeshTools::reorder_values_by_global_indices(
-        *mesh, _data_values, width);
+    Eigen::Map<EigenRowArrayXXd> in_vals(_data_values.data(),
+                                         _data_values.size() / width, width);
+    EigenRowArrayXXd vals
+        = mesh::DistributedMeshTools::reorder_values_by_global_indices(*mesh,
+                                                                       in_vals);
+    _data_values = std::vector<double>(vals.data(), vals.data() + vals.size());
   }
+
   return _data_values;
 }
 //-----------------------------------------------------------------------------
