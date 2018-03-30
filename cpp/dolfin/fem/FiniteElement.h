@@ -142,6 +142,12 @@ public:
       Eigen::Ref<EigenRowArrayXXd> coordinates,
       const Eigen::Ref<EigenRowArrayXXd> coordinate_dofs) const;
 
+  /// Tabulate the reference coordinates of all dofs on an element
+  ///
+  /// @return    reference_coordinates (EigenRowArrayXXd)
+  ///         The coordinates of all dofs on the reference cell.
+  EigenRowArrayXXd tabulate_reference_dof_coordinates() const;
+
   /// Return the number of sub elements (for a mixed element)
   /// @return std::size_t
   ///   number of sub-elements

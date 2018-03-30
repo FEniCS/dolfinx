@@ -11,6 +11,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -299,7 +300,7 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
   restrict(coefficients.data(), element, cell, coordinate_dofs.data());
 
   // Get coordinate mapping
-  auto cmap = mesh.geometry().ufc_coord_mapping;
+  auto cmap = mesh.geometry().coord_mapping;
   if (!cmap)
   {
     throw std::runtime_error(
@@ -319,7 +320,6 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
   EigenArrayXd detJ(num_points);
   Eigen::Tensor<double, 3, Eigen::RowMajor> K(num_points, tdim, gdim);
 
-  // EigenRowArrayXXd X(x.rows(), tdim) ;
   EigenRowArrayXXd X(x.rows(), tdim);
 
   // boost::multi_array<double, 3> basis_reference_values(
@@ -331,9 +331,7 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
       num_points, space_dimension, value_size);
 
   // Compute reference coordinates X, and J, detJ and K
-  cmap->compute_reference_geometry(X.data(), J.data(), detJ.data(), K.data(),
-                                   num_points, x.data(), coordinate_dofs.data(),
-                                   1);
+  cmap->compute_reference_geometry(X, J, detJ, K, x, coordinate_dofs);
 
   // std::cout << "Physical x: " << std::endl;
   // std::cout << x << std::endl;

@@ -20,6 +20,11 @@ class coordinate_mapping;
 
 namespace dolfin
 {
+namespace fem
+{
+class CoordinateMapping;
+}
+
 namespace mesh
 {
 
@@ -117,8 +122,8 @@ public:
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
-  /// Put ufc::coordinate_mapping here for now
-  std::shared_ptr<ufc::coordinate_mapping> ufc_coord_mapping;
+  /// Put CoordinateMapping for now. Experimental.
+  std::shared_ptr<fem::CoordinateMapping> coord_mapping;
 
 private:
   // Euclidean dimension

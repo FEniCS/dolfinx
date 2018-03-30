@@ -72,16 +72,10 @@ def geometric_dimension(self):
     return self.geometry().dim()
 
 
-def _repr_html_(self):
-    return cpp.io.X3DOM.html(self)
-
-
 # Extend cpp.mesh.Mesh class, and clean-up
 cpp.mesh.Mesh.ufl_cell = ufl_cell
 cpp.mesh.Mesh.ufl_coordinate_element = ufl_coordinate_element
 cpp.mesh.Mesh.ufl_domain = ufl_domain
 cpp.mesh.Mesh.geometric_dimension = geometric_dimension
 
-cpp.mesh.Mesh._repr_html_ = _repr_html_
-
-del ufl_cell, ufl_coordinate_element, ufl_domain, geometric_dimension, _repr_html_
+del ufl_cell, ufl_coordinate_element, ufl_domain, geometric_dimension
