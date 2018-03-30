@@ -142,16 +142,16 @@ private:
 
   // FIXME: make clearer what goes in and what comes out
   // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH). Returns
-  // the tuple (new_shared_cells, new_cell_vertices,new_global_cell_indices).
-  static void reorder_cells_gps(
+  // the tuple (reordered_shared_cells, reordered_cell_vertices,
+  // reordered_global_cell_indices)
+  static std::tuple<std::map<std::int32_t, std::set<std::uint32_t>>,
+                    EigenRowArrayXXi64, std::vector<std::int64_t>>
+  reorder_cells_gps(
       MPI_Comm mpi_comm, const std::uint32_t num_regular_cells,
       const mesh::CellType& cell_type,
       const std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
       const Eigen::Ref<const EigenRowArrayXXi64>& global_cell_vertices,
-      const std::vector<std::int64_t>& global_cell_indices,
-      std::map<std::int32_t, std::set<std::uint32_t>>& reordered_shared_cells,
-      Eigen::Ref<EigenRowArrayXXi64> reordered_cell_vertices,
-      std::vector<std::int64_t>& reordered_global_cell_indices);
+      const std::vector<std::int64_t>& global_cell_indices);
 
   // FIXME: Update, making clear exactly what is computed
   // This function takes the partition computed by the partitioner
@@ -160,15 +160,17 @@ private:
   // to the appropriate owning process. Ghost cells are also sent,
   // along with the list of sharing processes.
   // A new LocalMeshData object is populated with the redistributed
-  // cells. Return the number of non-ghost cells on this process.
-  static std::int32_t distribute_cells(
-      const MPI_Comm mpi_comm,
-      const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-      const std::vector<std::int64_t>& global_cell_indices,
-      const PartitionData& mp, EigenRowArrayXXi64& new_cell_vertices,
-      std::vector<std::int64_t>& new_global_cell_indices,
-      std::vector<int>& new_cell_partition,
-      std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells);
+  // cells. Returns (new_cell_vertices, new_global_cell_indices,
+  // new_cell_partition, shared_cells, number of non-ghost cells on this
+  // process).
+  static std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>,
+                    std::vector<int>,
+                    std::map<std::int32_t, std::set<std::uint32_t>>,
+                    std::int32_t>
+  distribute_cells(const MPI_Comm mpi_comm,
+                   const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
+                   const std::vector<std::int64_t>& global_cell_indices,
+                   const PartitionData& mp);
 
   // FIXME: Improve explanation
   // Utility to convert received_vertex_indices into

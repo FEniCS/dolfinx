@@ -157,18 +157,17 @@ mesh::Mesh MeshPartitioning::build(
   const std::int64_t num_global_vertices = MPI::sum(comm, points.rows());
   const std::int64_t num_global_cells = MPI::sum(comm, cell_vertices.rows());
 
+  // Send cells to owning process according to mp cell partition, and
+  // receive cells that belong to this process. Also compute auxiliary
+  // data related to sharing.
   EigenRowArrayXXi64 new_cell_vertices;
   std::vector<std::int64_t> new_global_cell_indices;
   std::vector<int> new_cell_partition;
   std::map<std::int32_t, std::set<std::uint32_t>> shared_cells;
-
-  // Send cells to owning process according to mp cell partition, and
-  // receive cells that belong to this process. Also compute auxiliary
-  // data related to sharing.
-
-  const std::int32_t num_regular_cells = distribute_cells(
-      comm, cell_vertices, global_cell_indices, mp, new_cell_vertices,
-      new_global_cell_indices, new_cell_partition, shared_cells);
+  std::int32_t num_regular_cells;
+  std::tie(new_cell_vertices, new_global_cell_indices, new_cell_partition,
+           shared_cells, num_regular_cells)
+      = distribute_cells(comm, cell_vertices, global_cell_indices, mp);
 
   if (ghost_mode == "shared_vertex")
   {
@@ -195,15 +194,14 @@ mesh::Mesh MeshPartitioning::build(
   {
     // Allocate objects to hold re-ordering
     std::map<std::int32_t, std::set<std::uint32_t>> reordered_shared_cells;
-    EigenRowArrayXXi64 reordered_cell_vertices(new_cell_vertices.rows(),
-                                               new_cell_vertices.cols());
+    EigenRowArrayXXi64 reordered_cell_vertices;
     std::vector<std::int64_t> reordered_global_cell_indices;
 
     // Re-order cells
-    reorder_cells_gps(comm, num_regular_cells, *cell_type, shared_cells,
-                      new_cell_vertices, new_global_cell_indices,
-                      reordered_shared_cells, reordered_cell_vertices,
-                      reordered_global_cell_indices);
+    std::tie(reordered_shared_cells, reordered_cell_vertices,
+             reordered_global_cell_indices)
+        = reorder_cells_gps(comm, num_regular_cells, *cell_type, shared_cells,
+                            new_cell_vertices, new_global_cell_indices);
 
     // Update to re-ordered indices
     std::swap(shared_cells, reordered_shared_cells);
@@ -256,16 +254,19 @@ mesh::Mesh MeshPartitioning::build(
   return mesh;
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::reorder_cells_gps(
+std::tuple<std::map<std::int32_t, std::set<std::uint32_t>>, EigenRowArrayXXi64,
+           std::vector<std::int64_t>>
+MeshPartitioning::reorder_cells_gps(
     MPI_Comm mpi_comm, const std::uint32_t num_regular_cells,
     const CellType& cell_type,
     const std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
     const Eigen::Ref<const EigenRowArrayXXi64>& global_cell_vertices,
-    const std::vector<std::int64_t>& global_cell_indices,
-    std::map<std::int32_t, std::set<std::uint32_t>>& reordered_shared_cells,
-    Eigen::Ref<EigenRowArrayXXi64> reordered_cell_vertices,
-    std::vector<std::int64_t>& reordered_global_cell_indices)
+    const std::vector<std::int64_t>& global_cell_indices)
 {
+  std::cout
+      << "WARNING: this function is probably broken. It needs careful testing."
+      << std::endl;
+
   log::log(PROGRESS, "Re-order cells during distributed mesh construction");
 
   common::Timer timer("Reorder cells using GPS ordering");
@@ -308,7 +309,9 @@ void MeshPartitioning::reorder_cells_gps(
   for (unsigned int j = remap.size(); j < global_cell_indices.size(); ++j)
     remap.push_back(j);
 
-  reordered_global_cell_indices.resize(g_dual.size());
+  EigenRowArrayXXi64 reordered_cell_vertices(global_cell_vertices.rows(),
+                                             global_cell_vertices.cols());
+  std::vector<std::int64_t> reordered_global_cell_indices(g_dual.size());
   for (std::uint32_t i = 0; i != g_dual.size(); ++i)
   {
     // Remap data
@@ -317,8 +320,7 @@ void MeshPartitioning::reorder_cells_gps(
     reordered_global_cell_indices[j] = global_cell_indices[i];
   }
 
-  // Clear data
-  reordered_shared_cells.clear();
+  std::map<std::int32_t, std::set<std::uint32_t>> reordered_shared_cells;
   for (auto p = shared_cells.begin(); p != shared_cells.end(); ++p)
   {
     const std::uint32_t cell_index = p->first;
@@ -327,6 +329,9 @@ void MeshPartitioning::reorder_cells_gps(
     else
       reordered_shared_cells.insert(*p);
   }
+
+  return {reordered_shared_cells, reordered_cell_vertices,
+          reordered_global_cell_indices};
 }
 //-----------------------------------------------------------------------------
 // void MeshPartitioning::distribute_cell_layer(
@@ -533,14 +538,22 @@ void MeshPartitioning::reorder_cells_gps(
 //   cell_partition.shrink_to_fit();
 // }
 //-----------------------------------------------------------------------------
-std::int32_t MeshPartitioning::distribute_cells(
+// std::int32_t MeshPartitioning::distribute_cells(
+//     const MPI_Comm mpi_comm,
+//     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
+//     const std::vector<std::int64_t>& global_cell_indices,
+//     const PartitionData& mp,
+//     EigenRowArrayXXi64& new_cell_vertices,
+//     std::vector<std::int64_t>& new_global_cell_indices,
+//     std::vector<int>& new_cell_partition,
+//     std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells)
+std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>, std::vector<int>,
+           std::map<std::int32_t, std::set<std::uint32_t>>, std::int32_t>
+MeshPartitioning::distribute_cells(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const std::vector<std::int64_t>& global_cell_indices,
-    const PartitionData& mp, EigenRowArrayXXi64& new_cell_vertices,
-    std::vector<std::int64_t>& new_global_cell_indices,
-    std::vector<int>& new_cell_partition,
-    std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells)
+    const PartitionData& mp)
 {
   // This function takes the partition computed by the partitioner
   // stored in PartitionData mp. Some cells go to multiple
@@ -559,9 +572,6 @@ std::int32_t MeshPartitioning::distribute_cells(
   std::int64_t global_offset
       = MPI::global_offset(mpi_comm, cell_vertices.rows(), true);
   bool build_global_index = global_cell_indices.empty();
-
-  new_cell_partition.clear();
-  shared_cells.clear();
 
   // Get dimensions
   const std::size_t num_local_cells = cell_vertices.rows();
@@ -631,15 +641,16 @@ std::int32_t MeshPartitioning::distribute_cells(
 
   const std::size_t all_count = ghost_count + local_count;
 
-  new_cell_vertices.resize(all_count, num_cell_vertices);
-  new_global_cell_indices.resize(all_count);
-  new_cell_partition.resize(all_count);
+  EigenRowArrayXXi64 new_cell_vertices(all_count, num_cell_vertices);
+  std::vector<std::int64_t> new_global_cell_indices(all_count);
+  std::vector<int> new_cell_partition(all_count);
 
   // Unpack received data
   // Create a map from cells which are shared, to the remote processes
   // which share them - corral ghost cells to end of range
   std::size_t c = 0;
   std::size_t gc = local_count;
+  std::map<std::int32_t, std::set<std::uint32_t>> shared_cells;
   for (std::size_t p = 0; p < mpi_size; ++p)
   {
     std::vector<std::size_t>& received_data = received_cell_vertices[p];
@@ -677,9 +688,11 @@ std::int32_t MeshPartitioning::distribute_cells(
     }
   }
 
-  dolfin_assert(c == local_count);
-  dolfin_assert(gc == all_count);
-  return local_count;
+  assert(c == local_count);
+  assert(gc == all_count);
+
+  return {new_cell_vertices, new_global_cell_indices, new_cell_partition,
+          shared_cells, local_count};
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, EigenRowArrayXXi32>
@@ -780,7 +793,8 @@ MeshPartitioning::distribute_vertices(
 
   // Each remote process will put the requested point coordinates into a
   // block of memory on the local process.
-  // Calculate offset position for each process, and attach to the sending data
+  // Calculate offset position for each process, and attach to the sending
+  // data
   std::size_t offset = 0;
   for (int i = 0; i != mpi_size; ++i)
   {
@@ -897,7 +911,8 @@ MeshPartitioning::build_shared_vertices(
     }
 
   // Create an array of 'pointers' to shared entries (where number shared, p >
-  // 1) Set to 0 for unshared entries Make space for two values: process number,
+  // 1) Set to 0 for unshared entries Make space for two values: process
+  // number,
   // and local index on that process
   std::vector<std::int32_t> offset;
   offset.reserve(n_sharing.size());
