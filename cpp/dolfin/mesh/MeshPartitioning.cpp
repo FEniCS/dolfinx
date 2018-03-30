@@ -330,8 +330,8 @@ MeshPartitioning::reorder_cells_gps(
       reordered_shared_cells.insert(*p);
   }
 
-  return {reordered_shared_cells, reordered_cell_vertices,
-          reordered_global_cell_indices};
+  return {std::move(reordered_shared_cells), std::move(reordered_cell_vertices),
+          std::move(reordered_global_cell_indices)};
 }
 //-----------------------------------------------------------------------------
 // void MeshPartitioning::distribute_cell_layer(
@@ -538,15 +538,6 @@ MeshPartitioning::reorder_cells_gps(
 //   cell_partition.shrink_to_fit();
 // }
 //-----------------------------------------------------------------------------
-// std::int32_t MeshPartitioning::distribute_cells(
-//     const MPI_Comm mpi_comm,
-//     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-//     const std::vector<std::int64_t>& global_cell_indices,
-//     const PartitionData& mp,
-//     EigenRowArrayXXi64& new_cell_vertices,
-//     std::vector<std::int64_t>& new_global_cell_indices,
-//     std::vector<int>& new_cell_partition,
-//     std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells)
 std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>, std::vector<int>,
            std::map<std::int32_t, std::set<std::uint32_t>>, std::int32_t>
 MeshPartitioning::distribute_cells(
@@ -691,8 +682,8 @@ MeshPartitioning::distribute_cells(
   assert(c == local_count);
   assert(gc == all_count);
 
-  return {new_cell_vertices, new_global_cell_indices, new_cell_partition,
-          shared_cells, local_count};
+  return {std::move(new_cell_vertices), std::move(new_global_cell_indices),
+          std::move(new_cell_partition), std::move(shared_cells), local_count};
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, EigenRowArrayXXi32>
@@ -739,7 +730,7 @@ MeshPartitioning::compute_vertex_mapping(
     }
   }
 
-  return {vertex_local_to_global, local_cell_vertices};
+  return {std::move(vertex_local_to_global), std::move(local_cell_vertices)};
 }
 //-----------------------------------------------------------------------------
 std::pair<EigenRowArrayXXd, std::map<std::int32_t, std::set<std::uint32_t>>>
@@ -883,7 +874,7 @@ MeshPartitioning::distribute_vertices(
     }
   }
 
-  return {vertex_coordinates, shared_vertices_local};
+  return {std::move(vertex_coordinates), std::move(shared_vertices_local)};
 }
 //-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<std::uint32_t>>

@@ -88,11 +88,17 @@ private:
   // global indices)
   typedef std::vector<std::size_t> Entity;
 
-  // Data structure to mesh entity data
+  // Data structure for mesh entity data
   struct EntityData
   {
     // Constructor
     EntityData() : local_index(0) {}
+
+    // Move constructor
+    EntityData(EntityData&&) = default;
+
+    // Move assignment
+    EntityData& operator=(EntityData&&) = default;
 
     // Constructor  (index is local)
     explicit EntityData(std::uint32_t index) : local_index(index) {}
@@ -101,12 +107,14 @@ private:
     EntityData(std::uint32_t index, const std::vector<std::uint32_t>& procs)
         : local_index(index), processes(procs)
     {
+      // Do nothing
     }
 
     // Constructor  (index is local)
     EntityData(std::uint32_t index, std::uint32_t process)
         : local_index(index), processes(1, process)
     {
+      // Do nothing
     }
 
     // Local (this process) entity index
@@ -122,23 +130,25 @@ private:
   //       communicated to other processes)
   //  [2]: not owned but shared (will be numbered by another process,
   //       and number communicated to this processes)
-  static void compute_entity_ownership(
+  //  Returns (owned_entities,  shared_entities)
+  static std::pair<std::vector<std::size_t>,
+                   std::array<std::map<Entity, EntityData>, 2>>
+  compute_entity_ownership(
       const MPI_Comm mpi_comm,
       const std::map<std::vector<std::size_t>, std::uint32_t>& entities,
       const std::map<std::int32_t, std::set<std::uint32_t>>&
           shared_vertices_local,
-      const std::vector<std::int64_t>& global_vertex_indices, std::size_t d,
-      std::vector<std::size_t>& owned_entities,
-      std::array<std::map<Entity, EntityData>, 2>& shared_entities);
+      const std::vector<std::int64_t>& global_vertex_indices, std::size_t d);
 
   // Build preliminary 'guess' of shared entities. This function does
-  // not involve any inter-process communication.
-  static void compute_preliminary_entity_ownership(
+  // not involve any inter-process communication. Returns (owned_entities,
+  // entity_ownership);
+  static std::pair<std::vector<std::size_t>,
+                   std::array<std::map<Entity, EntityData>, 2>>
+  compute_preliminary_entity_ownership(
       const MPI_Comm mpi_comm,
       const std::map<std::size_t, std::set<std::uint32_t>>& shared_vertices,
-      const std::map<Entity, std::uint32_t>& entities,
-      std::vector<std::size_t>& owned_entities,
-      std::array<std::map<Entity, EntityData>, 2>& entity_ownership);
+      const std::map<Entity, std::uint32_t>& entities);
 
   // Communicate with other processes to finalise entity ownership
   static void compute_final_entity_ownership(

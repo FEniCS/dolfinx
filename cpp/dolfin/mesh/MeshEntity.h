@@ -46,6 +46,9 @@ public:
   /// Assignement operator
   MeshEntity& operator=(const MeshEntity& e) = default;
 
+  /// Move assignement operator
+  MeshEntity& operator=(MeshEntity&& e) = default;
+
   /// Initialize mesh entity with given data
   ///
   /// @param      mesh (_Mesh_)

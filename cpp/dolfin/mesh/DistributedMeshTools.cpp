@@ -70,13 +70,6 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
     _mesh.topology().set_global_index(d, i, global_entity_indices[i]);
 }
 //-----------------------------------------------------------------------------
-// std::size_t DistributedMeshTools::number_entities(
-//     const Mesh& mesh,
-//     const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>&
-//         slave_entities,
-//     std::vector<std::int64_t>& global_entity_indices,
-//     std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities,
-//     std::size_t d)
 std::tuple<std::vector<std::int64_t>,
            std::map<std::int32_t, std::set<std::uint32_t>>, std::size_t>
 DistributedMeshTools::number_entities(
@@ -116,7 +109,7 @@ DistributedMeshTools::number_entities(
   {
     shared_entities.clear();
     global_entity_indices = mesh.topology().global_indices(d);
-    return {global_entity_indices, shared_entities,
+    return {std::move(global_entity_indices), std::move(shared_entities),
             mesh.num_entities_global(d)};
 
     /*
@@ -176,9 +169,8 @@ DistributedMeshTools::number_entities(
   //       communicated to this processes)
   std::array<std::map<Entity, EntityData>, 2> entity_ownership;
   std::vector<std::size_t> owned_entities;
-  compute_entity_ownership(mpi_comm, entities, shared_vertices_local,
-                           global_vertex_indices, d, owned_entities,
-                           entity_ownership);
+  std::tie(owned_entities, entity_ownership) = compute_entity_ownership(
+      mpi_comm, entities, shared_vertices_local, global_vertex_indices, d);
 
   // Split shared entities for convenience
   const std::map<Entity, EntityData>& owned_shared_entities
@@ -350,7 +342,8 @@ DistributedMeshTools::number_entities(
   }
 
   // Return
-  return {global_entity_indices, shared_entities, num_global_entities.first};
+  return {std::move(global_entity_indices), std::move(shared_entities),
+          num_global_entities.first};
 }
 //-----------------------------------------------------------------------------
 std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t>>>
@@ -656,14 +649,17 @@ DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
   return shared_local_indices_map;
 }
 //-----------------------------------------------------------------------------
-void DistributedMeshTools::compute_entity_ownership(
+std::pair<std::vector<std::size_t>,
+          std::array<std::map<DistributedMeshTools::Entity,
+                              DistributedMeshTools::EntityData>,
+                     2>>
+DistributedMeshTools::compute_entity_ownership(
     const MPI_Comm mpi_comm,
     const std::map<std::vector<std::size_t>, std::uint32_t>& entities,
     const std::map<std::int32_t, std::set<std::uint32_t>>&
         shared_vertices_local,
-    const std::vector<std::int64_t>& global_vertex_indices, std::size_t d,
-    std::vector<std::size_t>& owned_entities,
-    std::array<std::map<Entity, EntityData>, 2>& shared_entities)
+    const std::vector<std::int64_t>& global_vertex_indices, std::size_t d)
+
 {
   log::log(PROGRESS, "Compute ownership for mesh entities of dimension %d.", d);
   common::Timer timer("Compute mesh entity ownership");
@@ -685,8 +681,11 @@ void DistributedMeshTools::compute_entity_ownership(
 
   // Compute preliminary ownership lists (shared_entities) without
   // communication
-  compute_preliminary_entity_ownership(mpi_comm, shared_vertices, entities,
-                                       owned_entities, shared_entities);
+  std::vector<std::size_t> owned_entities;
+  std::array<std::map<Entity, EntityData>, 2> shared_entities;
+  std::tie(owned_entities, shared_entities)
+      = compute_preliminary_entity_ownership(mpi_comm, shared_vertices,
+                                             entities);
 
   // Qualify boundary entities. We need to find out if the shared
   // (shared with lower ranked process) entities are entities of a
@@ -695,23 +694,26 @@ void DistributedMeshTools::compute_entity_ownership(
   // responsible for communicating values to the higher ranked
   // processes (if any).
   compute_final_entity_ownership(mpi_comm, owned_entities, shared_entities);
+
+  return {std::move(owned_entities), std::move(shared_entities)};
 }
 //-----------------------------------------------------------------------------
-void DistributedMeshTools::compute_preliminary_entity_ownership(
+std::pair<std::vector<std::size_t>,
+          std::array<std::map<DistributedMeshTools::Entity,
+                              DistributedMeshTools::EntityData>,
+                     2>>
+DistributedMeshTools::compute_preliminary_entity_ownership(
     const MPI_Comm mpi_comm,
     const std::map<std::size_t, std::set<std::uint32_t>>& shared_vertices,
-    const std::map<Entity, std::uint32_t>& entities,
-    std::vector<std::size_t>& owned_entities,
-    std::array<std::map<Entity, EntityData>, 2>& shared_entities)
+    const std::map<Entity, std::uint32_t>& entities)
 {
+  // Create  maps
+  std::vector<std::size_t> owned_entities;
+  std::array<std::map<Entity, EntityData>, 2> shared_entities;
+
   // Entities
   std::map<Entity, EntityData>& owned_shared_entities = shared_entities[0];
   std::map<Entity, EntityData>& unowned_shared_entities = shared_entities[1];
-
-  // Clear maps
-  owned_entities.clear();
-  owned_shared_entities.clear();
-  unowned_shared_entities.clear();
 
   // Get my process number
   const std::size_t process_number = MPI::rank(mpi_comm);
@@ -778,6 +780,8 @@ void DistributedMeshTools::compute_preliminary_entity_ownership(
           = EntityData(local_entity_index, entity_processes);
     }
   }
+
+  return {std::move(owned_entities), std::move(shared_entities)};
 }
 //-----------------------------------------------------------------------------
 void DistributedMeshTools::compute_final_entity_ownership(
@@ -983,6 +987,7 @@ bool DistributedMeshTools::is_shared(
     if (shared_vertices.find(*e) == shared_vertices.end())
       return false;
   }
+
   return true;
 }
 //-----------------------------------------------------------------------------
