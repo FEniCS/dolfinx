@@ -63,6 +63,7 @@ public:
                      std::set<std::int64_t>& ghost_vertices);
 
 private:
+  // FIXME: Stop putting this garbage in the code
   friend class mesh::MeshPartitioning;
 
   typedef std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>

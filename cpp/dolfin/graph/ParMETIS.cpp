@@ -103,7 +103,7 @@ dual_graph(MPI_Comm mpi_comm,
 } // namespace
 
 //-----------------------------------------------------------------------------
-mesh::MeshPartition dolfin::graph::ParMETIS::compute_partition(
+mesh::PartitionData dolfin::graph::ParMETIS::compute_partition(
     const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const mesh::CellType& cell_type, const std::string mode)
 {
@@ -162,7 +162,7 @@ mesh::MeshPartition dolfin::graph::ParMETIS::compute_partition(
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-mesh::MeshPartition dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm,
+mesh::PartitionData dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm,
                                                        CSRGraph<T>& csr_graph)
 {
   std::vector<int> cell_partition;
@@ -311,7 +311,7 @@ mesh::MeshPartition dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm,
   // Copy cell partition data
   cell_partition.assign(part.begin(), part.end());
 
-  return mesh::MeshPartition(cell_partition, ghost_procs);
+  return mesh::PartitionData(cell_partition, ghost_procs);
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -416,13 +416,13 @@ void dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 #else
-mesh::MeshPartition dolfin::graph::ParMETIS::compute_partition(
+mesh::PartitionData dolfin::graph::ParMETIS::compute_partition(
     const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const mesh::CellType& cell_type, const std::string mode)
 {
   log::dolfin_error("ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
                     "DOLFIN has been configured without support for ParMETIS");
-  return mesh::MeshPartition({}, {});
+  return mesh::PartitionData({}, {});
 }
 //-----------------------------------------------------------------------------
 #endif

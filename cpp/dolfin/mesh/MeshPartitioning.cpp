@@ -74,7 +74,7 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(
   // Get mesh partitioner
   const std::string partitioner = parameter::parameters["mesh_partitioner"];
   // Compute the cell partition
-  MeshPartition mp = partition_cells(comm, type, cells, partitioner);
+  PartitionData mp = partition_cells(comm, type, cells, partitioner);
 
   // Check that we have some ghost information.
   int all_ghosts = MPI::sum(comm, mp.num_ghosts());
@@ -106,7 +106,7 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(
   return mesh;
 }
 //-----------------------------------------------------------------------------
-MeshPartition MeshPartitioning::partition_cells(
+PartitionData MeshPartitioning::partition_cells(
     const MPI_Comm& mpi_comm, mesh::CellType::Type type,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const std::string partitioner)
@@ -132,7 +132,7 @@ MeshPartition MeshPartitioning::partition_cells(
     log::dolfin_error("MeshPartitioning.cpp", "compute cell partition",
                       "Mesh partitioner '%s' is unknown.", partitioner.c_str());
   }
-  return MeshPartition({}, {});
+  return PartitionData({}, {});
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh MeshPartitioning::build(
@@ -140,7 +140,7 @@ mesh::Mesh MeshPartitioning::build(
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const Eigen::Ref<const EigenRowArrayXXd>& points,
     const std::vector<std::int64_t>& global_cell_indices,
-    const std::string ghost_mode, const MeshPartition& mp)
+    const std::string ghost_mode, const PartitionData& mp)
 {
   // Distribute cells
   log::log(PROGRESS, "Distribute mesh cells");
@@ -537,13 +537,13 @@ std::int32_t MeshPartitioning::distribute_cells(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const std::vector<std::int64_t>& global_cell_indices,
-    const MeshPartition& mp, EigenRowArrayXXi64& new_cell_vertices,
+    const PartitionData& mp, EigenRowArrayXXi64& new_cell_vertices,
     std::vector<std::int64_t>& new_global_cell_indices,
     std::vector<int>& new_cell_partition,
     std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells)
 {
   // This function takes the partition computed by the partitioner
-  // stored in MeshPartition mp. Some cells go to multiple
+  // stored in PartitionData mp. Some cells go to multiple
   // destinations. Each cell is transmitted to its final
   // destination(s) including its global index, and the cell owner
   // (for ghost cells this will be different from the destination)

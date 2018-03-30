@@ -9,7 +9,7 @@
 #include "DistributedMeshTools.h"
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
-#include "MeshPartition.h"
+#include "PartitionData.h"
 #include <cstdint>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
@@ -112,7 +112,7 @@ private:
   // vector 'cell -> process' vector for cells in LocalMeshData, and
   // a map 'local cell index -> processes' to which ghost cells must
   // be sent
-  static MeshPartition
+  static PartitionData
   partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type cell_type,
                   const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
                   const std::string partitioner);
@@ -124,7 +124,7 @@ private:
                           const Eigen::Ref<const EigenRowArrayXXd>& points,
                           const std::vector<std::int64_t>& global_cell_indices,
                           const std::string ghost_mode,
-                          const MeshPartition& mp);
+                          const PartitionData& mp);
 
   // FIXME: The code for this function is really bad. For example, it seems that
   // cell_vertices carries data in which is used, and is then also modified
@@ -165,7 +165,7 @@ private:
       const MPI_Comm mpi_comm,
       const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
       const std::vector<std::int64_t>& global_cell_indices,
-      const MeshPartition& mp, EigenRowArrayXXi64& new_cell_vertices,
+      const PartitionData& mp, EigenRowArrayXXi64& new_cell_vertices,
       std::vector<std::int64_t>& new_global_cell_indices,
       std::vector<int>& new_cell_partition,
       std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells);

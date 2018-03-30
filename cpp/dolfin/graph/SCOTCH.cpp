@@ -18,8 +18,7 @@
 #include <string>
 
 #ifdef HAS_SCOTCH
-extern "C"
-{
+extern "C" {
 #include <ptscotch.h>
 #include <stdint.h>
 }
@@ -30,7 +29,7 @@ using namespace dolfin;
 #ifdef HAS_SCOTCH
 
 //-----------------------------------------------------------------------------
-mesh::MeshPartition dolfin::graph::SCOTCH::compute_partition(
+mesh::PartitionData dolfin::graph::SCOTCH::compute_partition(
     const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const mesh::CellType& cell_type)
 {
@@ -183,7 +182,7 @@ void dolfin::graph::SCOTCH::compute_reordering(
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-mesh::MeshPartition
+mesh::PartitionData
 dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
                                  CSRGraph<T>& local_graph,
                                  const std::vector<std::size_t>& node_weights,
@@ -384,12 +383,12 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
   std::copy(_cell_partition.begin(), _cell_partition.begin() + vertlocnbr,
             cell_partition.begin());
 
-  return mesh::MeshPartition(cell_partition, ghost_procs);
+  return mesh::PartitionData(cell_partition, ghost_procs);
 }
 //-----------------------------------------------------------------------------
 #else
 //-----------------------------------------------------------------------------
-mesh::MeshPartition dolfin::graph::SCOTCH::compute_partition(
+mesh::PartitionData dolfin::graph::SCOTCH::compute_partition(
     const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const std::vector<std::size_t>& cell_weight,
     const std::int64_t num_global_vertices, const mesh::CellType& cell_type)
@@ -425,7 +424,7 @@ void dolfin::graph::SCOTCH::compute_reordering(
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-mesh::MeshPartition
+mesh::PartitionData
 dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
                                  CSRGraph<T>& local_graph,
                                  const std::vector<std::size_t>& node_weights,
@@ -433,7 +432,7 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
 {
   log::dolfin_error("SCOTCH.cpp", "partition mesh using SCOTCH",
                     "DOLFIN has been configured without support for SCOTCH");
-  return mesh::MeshPartition({}, {});
+  return mesh::PartitionData({}, {});
 }
 //-----------------------------------------------------------------------------
 

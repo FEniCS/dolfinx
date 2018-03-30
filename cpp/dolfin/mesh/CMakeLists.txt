@@ -17,11 +17,11 @@ set(HEADERS
   MeshIterator.h
   Mesh.h
   MeshOrdering.h
-  MeshPartition.h
   MeshPartitioning.h
   MeshQuality.h
   MeshTopology.h
   MeshValueCollection.h
+  PartitionData.h
   PeriodicBoundaryComputation.h
   PointCell.h
   QuadrilateralCell.h
