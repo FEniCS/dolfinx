@@ -8,7 +8,6 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/geometry/Point.h>
-#include <dolfin/log/log.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -59,7 +58,7 @@ public:
   /// Return the number of vertex coordinates
   std::size_t num_vertices() const
   {
-    dolfin_assert(coordinates.size() % _dim == 0);
+    assert(coordinates.size() % _dim == 0);
     return coordinates.size() / _dim;
   }
 
@@ -67,36 +66,36 @@ public:
   /// any entity
   std::size_t num_points() const
   {
-    dolfin_assert(coordinates.size() % _dim == 0);
+    assert(coordinates.size() % _dim == 0);
     return coordinates.size() / _dim;
   }
 
   /// Get vertex coordinates
   const double* vertex_coordinates(std::size_t point_index)
   {
-    dolfin_assert(point_index < num_vertices());
+    assert(point_index < num_vertices());
     return &coordinates[point_index * _dim];
   }
 
   /// Get vertex coordinates
   const double* point_coordinates(std::size_t point_index)
   {
-    dolfin_assert(point_index * _dim < coordinates.size());
+    assert(point_index * _dim < coordinates.size());
     return &coordinates[point_index * _dim];
   }
 
   /// Return value of coordinate with local index n in direction i
   double x(std::size_t n, std::size_t i) const
   {
-    dolfin_assert((n * _dim + i) < coordinates.size());
-    dolfin_assert(i < _dim);
+    assert((n * _dim + i) < coordinates.size());
+    assert(i < _dim);
     return coordinates[n * _dim + i];
   }
 
   /// Return array of values for coordinate with local index n
   const double* x(std::size_t n) const
   {
-    dolfin_assert(n * _dim < coordinates.size());
+    assert(n * _dim < coordinates.size());
     return &coordinates[n * _dim];
   }
 
@@ -123,7 +122,7 @@ public:
   std::string str(bool verbose) const;
 
   /// Put CoordinateMapping for now. Experimental.
-  std::shared_ptr<fem::CoordinateMapping> coord_mapping;
+  std::shared_ptr<const fem::CoordinateMapping> coord_mapping;
 
 private:
   // Euclidean dimension

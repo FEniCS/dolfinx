@@ -23,12 +23,10 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
-#include <map>
+#include <unordered_map>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 #include <vector>
-
-#include <ufc.h>
 
 using namespace dolfin;
 using namespace dolfin::function;
@@ -304,7 +302,7 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
   if (!cmap)
   {
     throw std::runtime_error(
-        "ufc::coordinate_mapping has not been attached to mesh.");
+        "fem::CoordinateMapping has not been attached to mesh.");
   }
 
   std::size_t num_points = x.rows();
