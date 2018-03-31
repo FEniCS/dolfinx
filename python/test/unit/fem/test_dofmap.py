@@ -40,7 +40,7 @@ def test_tabulate_all_coordinates(mesh_factory):
     W1 = VectorElement("Lagrange", mesh.ufl_cell(), 1)
     W = FunctionSpace(mesh, W0*W1)
 
-    D = mesh.geometry().dim()
+    D = mesh.geometry.dim
     V_dofmap = V.dofmap()
     W_dofmap = W.dofmap()
 
@@ -415,7 +415,7 @@ def test_block_size(mesh):
             assert W.dofmap().block_size() == i
 
         V = VectorFunctionSpace(mesh, "Lagrange", 2)
-        assert V.dofmap().block_size() == mesh.geometry().dim()
+        assert V.dofmap().block_size() == mesh.geometry.dim
 
 
 def test_block_size_real(mesh):

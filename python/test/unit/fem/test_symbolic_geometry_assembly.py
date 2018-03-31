@@ -161,9 +161,9 @@ def square3d(request):
 @skip_in_parallel
 def test_line_meshes(line1d, line2d, line3d, rline1d, rline2d, rline3d):
     "Check some properties of the meshes created for these tests."
-    assert line1d.geometry().dim() == 1
-    assert line2d.geometry().dim() == 2
-    assert line3d.geometry().dim() == 3
+    assert line1d.geometry.dim == 1
+    assert line2d.geometry.dim == 2
+    assert line3d.geometry.dim == 3
     assert line1d.topology().dim() == 1
     assert line2d.topology().dim() == 1
     assert line3d.topology().dim() == 1
@@ -202,7 +202,7 @@ def test_manifold_line_geometry(mesh, uflacs_representation_only):
     assert uflacs_representation_only == "uflacs"
     assert parameters["form_compiler"]["representation"] == "uflacs"
 
-    gdim = mesh.geometry().dim()
+    gdim = mesh.geometry.dim
     tdim = mesh.topology().dim()
 
     # Create cell markers and integration measure
@@ -461,7 +461,7 @@ def test_manifold_point_evaluation(square3d, any_representation):
 def test_manifold_symbolic_geometry(square3d, uflacs_representation_only):
     mesh = square3d
     assert mesh.num_cells() == 2
-    gdim = mesh.geometry().dim()
+    gdim = mesh.geometry.dim
     tdim = mesh.topology().dim()
 
     area = sqrt(3.0)  # known area of mesh
@@ -683,7 +683,7 @@ def test_manifold_piola_mapped_functions(square3d, any_representation):
 def test_tetrahedron_symbolic_geometry(uflacs_representation_only):
     mesh = UnitCubeMesh(1, 1, 1)
     assert mesh.num_cells() == 6
-    gdim = mesh.geometry().dim()
+    gdim = mesh.geometry.dim
     tdim = mesh.topology().dim()
 
     area = 1.0  # known volume of mesh
@@ -768,7 +768,7 @@ def test_tetrahedron_symbolic_geometry(uflacs_representation_only):
 def test_triangle_symbolic_geometry(uflacs_representation_only):
     mesh = UnitSquareMesh(1, 1)
     assert mesh.num_cells() == 2
-    gdim = mesh.geometry().dim()
+    gdim = mesh.geometry.dim
     tdim = mesh.topology().dim()
 
     area = 1.0  # known volume of mesh

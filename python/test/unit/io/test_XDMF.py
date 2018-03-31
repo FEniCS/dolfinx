@@ -196,11 +196,11 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
     u_in = Function(V)
     u_out = Function(V)
 
-    if mesh.geometry().dim() == 1:
+    if mesh.geometry.dim == 1:
         u_out.interpolate(Expression(("x[0]", ), degree=1))
-    elif mesh.geometry().dim() == 2:
+    elif mesh.geometry.dim == 2:
         u_out.interpolate(Expression(("x[0]*x[1]", "x[0]"), degree=2))
-    elif mesh.geometry().dim() == 3:
+    elif mesh.geometry.dim == 3:
         u_out.interpolate(Expression(("x[0]*x[1]", "x[0]", "x[2]"), degree=2))
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
@@ -702,7 +702,7 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type):
 
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     mesh.init()
-    for d in range(mesh.geometry().dim() + 1):
+    for d in range(mesh.geometry.dim + 1):
         mesh.init_global(d)
 
     mvc_v = MeshValueCollection(dtype_str, mesh, 0)

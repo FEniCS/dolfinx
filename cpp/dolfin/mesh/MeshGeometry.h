@@ -60,7 +60,7 @@ public:
   std::size_t num_points() const { return _coordinates.rows(); }
 
   /// Return coordinate array for point with local index n
-  const Eigen::Ref<const EigenArrayXd> x(std::size_t n) const
+  Eigen::Ref<const EigenRowArrayXd> x(std::size_t n) const
   {
     return _coordinates.row(n);
   }

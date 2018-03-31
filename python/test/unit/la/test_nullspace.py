@@ -16,7 +16,7 @@ def build_elastic_nullspace(V, x):
     """Function to build nullspace for 2D/3D elasticity"""
 
     # Get geometric dim
-    gdim = V.mesh().geometry().dim()
+    gdim = V.mesh().geometry.dim
     assert gdim == 2 or gdim == 3
 
     # Set dimension of nullspace
@@ -77,7 +77,7 @@ def test_nullspace_orthogonal():
     for mesh in meshes:
         for p in range(1, 4):
             V = VectorFunctionSpace(mesh, 'CG', p)
-            zero = Constant([0.0]*mesh.geometry().dim())
+            zero = Constant([0.0]*mesh.geometry.dim)
             L = dot(TestFunction(V), zero)*dx
             x = assemble(L)
 

@@ -236,7 +236,7 @@ def test_call(R, V, W, mesh):
     u2.interpolate(e1)
 
     p0 = (Vertex(mesh, 0).point() + Vertex(mesh, 1).point())/2.0
-    x0 = (mesh.geometry().x()[0] + mesh.geometry().x()[1])/2.0
+    x0 = (mesh.geometry.x()[0] + mesh.geometry.x()[1])/2.0
     x1 = tuple(x0)
 
     assert round(u0(*x1) - u0(x0), 7) == 0
@@ -248,7 +248,7 @@ def test_call(R, V, W, mesh):
     assert all(u2(*x1) == u2(x0))
     assert all(u2(*x1) == u2(p0))
 
-    values = zeros(mesh.geometry().dim(), dtype='d')
+    values = zeros(mesh.geometry.dim, dtype='d')
     u2(p0, values=values)
     assert all(values == u2(x0))
 

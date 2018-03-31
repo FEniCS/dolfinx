@@ -95,7 +95,7 @@ def test_evaluate_dofs_manifolds_affine():
     f = Expression("x[0] + x[1]", degree=1)
     for V in elements:
         sdim = V.element().space_dimension()
-        gdim = V.mesh().geometry().dim()
+        gdim = V.mesh().geometry.dim
         coord = numpy.zeros(gdim, dtype="d")
         values0 = numpy.zeros(sdim, dtype="d")
         values1 = numpy.zeros(sdim, dtype="d")

@@ -62,17 +62,14 @@ void mesh(py::module &m) {
   py::class_<dolfin::mesh::MeshGeometry,
              std::shared_ptr<dolfin::mesh::MeshGeometry>>(m, "MeshGeometry",
                                                           "MeshGeometry object")
-      .def("dim", &dolfin::mesh::MeshGeometry::dim, "Geometric dimension")
-      //   .def("x", &dolfin::mesh::MeshGeometry::x,
-      //        py::return_value_policy::reference_internal,
-      //        "Return coordinates of a point")
-      .def("points", py::overload_cast<>(&dolfin::mesh::MeshGeometry::points),
+      .def_property_readonly("dim", &dolfin::mesh::MeshGeometry::dim,
+                             "Geometric dimension")
+      .def("x", &dolfin::mesh::MeshGeometry::x,
            py::return_value_policy::reference_internal,
-           "Return coordinates of all points")
-      //   .def_readonly("points",
-      //                 py::overload_cast<>(&dolfin::mesh::MeshGeometry::points),
-      //                 py::return_value_policy::reference_internal,
-      //                 "Return coordinates of all points")
+           "Return coordinates of a point")
+      .def_property_readonly(
+          "points", py::overload_cast<>(&dolfin::mesh::MeshGeometry::points),
+          "Return coordinates of all points")
       .def_readwrite("coord_mapping",
                      &dolfin::mesh::MeshGeometry::coord_mapping);
 
@@ -139,10 +136,9 @@ void mesh(py::module &m) {
                               self.topology()(tdim, 0)().data());
            })
       //.def("create", &dolfin::mesh::Mesh::create)
-      .def("geometry",
-           (dolfin::mesh::MeshGeometry & (dolfin::mesh::Mesh::*)()) &
-               dolfin::mesh::Mesh::geometry,
-           py::return_value_policy::reference, "Mesh geometry")
+      .def_property_readonly("geometry",
+                             py::overload_cast<>(&dolfin::mesh::Mesh::geometry),
+                             "Mesh geometry")
       .def("hash", &dolfin::mesh::Mesh::hash)
       .def("hmax", &dolfin::mesh::Mesh::hmax)
       .def("hmin", &dolfin::mesh::Mesh::hmin)

@@ -56,7 +56,7 @@ def K_M_vec(V_vec):
     u, v = TrialFunction(V_vec), TestFunction(V_vec)
     K_mat, M_mat = PETScMatrix(), PETScMatrix()
     x0 = PETScVector()
-    L = dot(Constant([0.0]*V_vec.mesh().geometry().dim()), v)*dx
+    L = dot(Constant([0.0]*V_vec.mesh().geometry.dim), v)*dx
     assemble_system(k(u, v), L, bcs=[], A_tensor=K_mat, b_tensor=x0)
     assemble_system(m(u, v), L, bcs=[], A_tensor=M_mat, b_tensor=x0)
     return K_mat, M_mat

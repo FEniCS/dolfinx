@@ -90,7 +90,7 @@ def test_pointsource_vector_fs(mesh, point):
     rank = MPI.rank(mesh.mpi_comm())
     V = VectorFunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
-    b = assemble(dot(Constant([0.0]*mesh.geometry().dim()), v)*dx)
+    b = assemble(dot(Constant([0.0]*mesh.geometry.dim), v)*dx)
     if rank == 0:
         ps = PointSource(V, point, 10.0)
     else:
@@ -231,7 +231,7 @@ def test_multi_ps_vector_node(mesh):
     """
 
     point = [0.0, 0.5, 1.0]
-    dim = mesh.geometry().dim()
+    dim = mesh.geometry.dim
     rank = MPI.rank(mesh.mpi_comm())
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
@@ -331,7 +331,7 @@ def test_multi_ps_matrix_node(mesh):
     u, v = TrialFunction(V), TestFunction(V)
     w = Function(V)
     A = assemble(Constant(0.0)*u*v*dx)
-    dim = mesh.geometry().dim()
+    dim = mesh.geometry.dim
 
     source = []
 
@@ -405,7 +405,7 @@ def test_multi_ps_matrix_node_vector_fs(mesh):
     u, v = TrialFunction(V), TestFunction(V)
     w = Function(V)
     A = assemble(Constant(0.0)*dot(u, v)*dx)
-    dim = mesh.geometry().dim()
+    dim = mesh.geometry.dim
 
     source = []
     point_coords = np.zeros(dim)
