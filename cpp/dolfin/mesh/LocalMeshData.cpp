@@ -34,7 +34,10 @@ LocalMeshData::LocalMeshData(const Mesh& mesh) : _mpi_comm(mesh.mpi_comm())
   geometry.dim = gdim;
   geometry.vertex_coordinates.resize(
       boost::extents[mesh.num_entities(0)][gdim]);
-  std::copy(mesh.geometry().x().begin(), mesh.geometry().x().end(),
+  // std::copy(mesh.geometry().x().begin(), mesh.geometry().x().end(),
+  //           geometry.vertex_coordinates.data());
+  std::copy(mesh.geometry().x().data(),
+            mesh.geometry().x().data() + mesh.geometry().x().size(),
             geometry.vertex_coordinates.data());
   geometry.vertex_indices.resize(mesh.num_entities(0));
   std::copy(mesh.topology().global_indices(0).begin(),

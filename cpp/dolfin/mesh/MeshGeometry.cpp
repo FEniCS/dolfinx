@@ -13,32 +13,35 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-MeshGeometry::MeshGeometry(Eigen::Ref<const EigenRowArrayXXd> points)
-    : _dim(points.cols())
+MeshGeometry::MeshGeometry(const Eigen::Ref<const EigenRowArrayXXd>& points)
+    : coordinates(points) //_dim(points.cols())
 {
-  // Resize geometry
-  coordinates.resize(points.rows() * _dim);
+  // // Resize geometry
+  // coordinates.resize(points.rows() * _dim);
 
-  // Map and copy data
-  Eigen::Map<EigenRowArrayXXd> _x(coordinates.data(), points.rows(), _dim);
-  _x = points;
+  // // Map and copy data
+  // Eigen::Map<EigenRowArrayXXd> _x(coordinates.data(), points.rows(), _dim);
+  // _x = points;
 }
 //-----------------------------------------------------------------------------
 geometry::Point MeshGeometry::point(std::size_t n) const
 {
-  return geometry::Point(_dim, this->x(n));
+  return geometry::Point(coordinates.cols(), this->x(n));
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::set(std::size_t local_index, const double* x)
-{
-  std::copy(x, x + _dim, coordinates.begin() + local_index * _dim);
-}
+// void MeshGeometry::set(std::size_t local_index, const double* x)
+// {
+//   std::copy(x, x + _dim, coordinates.begin() + local_index * _dim);
+// }
 //-----------------------------------------------------------------------------
 std::size_t MeshGeometry::hash() const
 {
   // Compute local hash
   boost::hash<std::vector<double>> dhash;
-  const std::size_t local_hash = dhash(coordinates);
+
+  std::vector<double> _x(coordinates.data(),
+                         coordinates.data() + coordinates.size());
+  const std::size_t local_hash = dhash(_x);
   return local_hash;
 }
 //-----------------------------------------------------------------------------
@@ -51,7 +54,7 @@ std::string MeshGeometry::str(bool verbose) const
     for (std::size_t i = 0; i < num_vertices(); i++)
     {
       s << "  " << i << ":";
-      for (std::size_t d = 0; d < _dim; d++)
+      for (Eigen::Index d = 0; d < coordinates.cols(); d++)
         s << " " << x(i, d);
       s << std::endl;
     }
@@ -59,8 +62,8 @@ std::string MeshGeometry::str(bool verbose) const
   }
   else
   {
-    s << "<MeshGeometry of dimension " << _dim << " and size " << num_vertices()
-      << ">";
+    s << "<MeshGeometry of dimension " << coordinates.cols() << " and size "
+      << num_vertices() << ">";
   }
 
   return s.str();

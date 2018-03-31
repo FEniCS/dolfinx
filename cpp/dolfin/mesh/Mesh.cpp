@@ -53,11 +53,11 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
       = vdist.second;
 
   // FIXME: Copy data into geometry
-  const std::size_t nvals
-      = vertex_coordinates.rows() * vertex_coordinates.cols();
-  _geometry.x().resize(nvals);
-  std::copy(vertex_coordinates.data(), vertex_coordinates.data() + nvals,
-            _geometry.x().begin());
+  // const std::size_t nvals
+  //     = vertex_coordinates.rows() * vertex_coordinates.cols();
+  // _geometry.x().resize(nvals);
+  // std::copy(vertex_coordinates.data(), vertex_coordinates.data() + nvals,
+  //           _geometry.x().begin());
 
   // Initialise vertex topology
   const std::size_t num_vertices = vertex_coordinates.rows();

@@ -259,17 +259,17 @@ void HDF5File::write(const mesh::Mesh& mesh, std::size_t cell_dim,
     const std::string coord_dataset = name + "/coordinates";
 
     // Copy coordinates and indices and remove off-process values
-    std::vector<double> vertex_coords;
+    EigenRowArrayXXd _vertex_coords;
     if (!mpi_io)
-      vertex_coords = mesh.geometry().x();
+      _vertex_coords = mesh.geometry().x();
     else
     {
       EigenRowArrayXXd _vertex_coords
           = mesh::DistributedMeshTools::reorder_vertices_by_global_indices(
               mesh);
-      vertex_coords = std::vector<double>(
-          _vertex_coords.data(), _vertex_coords.data() + _vertex_coords.size());
     }
+    std::vector<double> vertex_coords(
+        _vertex_coords.data(), _vertex_coords.data() + _vertex_coords.size());
 
     // Write coordinates out from each process
     std::vector<std::int64_t> global_size(2);

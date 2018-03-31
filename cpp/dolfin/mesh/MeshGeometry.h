@@ -34,8 +34,8 @@ namespace mesh
 class MeshGeometry
 {
 public:
-  /// Create empty set of coordinates
-  MeshGeometry(Eigen::Ref<const EigenRowArrayXXd> points);
+  /// Create set of coordinates
+  MeshGeometry(const Eigen::Ref<const EigenRowArrayXXd>& points);
 
   /// Copy constructor
   MeshGeometry(const MeshGeometry&) = default;
@@ -53,63 +53,69 @@ public:
   MeshGeometry& operator=(MeshGeometry&&) = default;
 
   /// Return Euclidean dimension of coordinate system
-  std::size_t dim() const { return _dim; }
+  std::size_t dim() const { return coordinates.cols(); }
 
   /// Return the number of vertex coordinates
   std::size_t num_vertices() const
   {
-    assert(coordinates.size() % _dim == 0);
-    return coordinates.size() / _dim;
+    return coordinates.rows();
+    // assert(csize() % _dim == 0);
+    // return coordinates.size() / _dim;
   }
 
   /// Return the total number of points in the geometry, located on
   /// any entity
   std::size_t num_points() const
   {
-    assert(coordinates.size() % _dim == 0);
-    return coordinates.size() / _dim;
+    return coordinates.rows();
+    // assert(coordinates.size() % _dim == 0);
+    // return coordinates.size() / _dim;
   }
 
   /// Get vertex coordinates
-  const double* vertex_coordinates(std::size_t point_index)
+  const double* vertex_coordinates(std::size_t point_index) const
   {
-    assert(point_index < num_vertices());
-    return &coordinates[point_index * _dim];
+    return coordinates.row(point_index).data();
+    // assert(point_index < num_vertices());
+    // return &coordinates[point_index * _dim];
   }
 
   /// Get vertex coordinates
   const double* point_coordinates(std::size_t point_index)
   {
-    assert(point_index * _dim < coordinates.size());
-    return &coordinates[point_index * _dim];
+    return coordinates.row(point_index).data();
+    // assert(point_index * _dim < coordinates.size());
+    // return &coordinates[point_index * _dim];
   }
 
   /// Return value of coordinate with local index n in direction i
   double x(std::size_t n, std::size_t i) const
   {
-    assert((n * _dim + i) < coordinates.size());
-    assert(i < _dim);
-    return coordinates[n * _dim + i];
+    return coordinates(n, i);
+    // assert((n * _dim + i) < coordinates.size());
+    // assert(i < _dim);
+    // return coordinates[n * _dim + i];
   }
 
   /// Return array of values for coordinate with local index n
   const double* x(std::size_t n) const
   {
-    assert(n * _dim < coordinates.size());
-    return &coordinates[n * _dim];
+    return coordinates.row(n).data();
+    // assert(n * _dim < coordinates.size());
+    // return &coordinates[n * _dim];
   }
 
   /// Return array of values for all coordinates
-  std::vector<double>& x() { return coordinates; }
+  EigenRowArrayXXd& x() { return coordinates; }
 
   /// Return array of values for all coordinates
-  const std::vector<double>& x() const { return coordinates; }
+  const EigenRowArrayXXd& x() const { return coordinates; }
 
   /// Return coordinate with local index n as a 3D point value
   geometry::Point point(std::size_t n) const;
 
   /// Set value of coordinate
-  void set(std::size_t local_index, const double* x);
+  // void set(std::size_t local_index, const double* x);
 
   /// Hash of coordinate values
   ///
@@ -126,10 +132,10 @@ public:
 
 private:
   // Euclidean dimension
-  std::size_t _dim;
+  // std::size_t _dim;
 
   // Coordinates for all points stored as a contiguous array
-  std::vector<double> coordinates;
+  EigenRowArrayXXd coordinates;
 };
 } // namespace mesh
 } // namespace dolfin
