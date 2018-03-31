@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Anders Logg
+// Copyright (C) 2006-2018 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //

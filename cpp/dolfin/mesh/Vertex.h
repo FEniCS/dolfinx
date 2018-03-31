@@ -44,7 +44,7 @@ public:
   }
 
   /// Return array of vertex coordinates (const version)
-  const Eigen::Ref<const EigenRowArrayXd> x() const
+  Eigen::Ref<const EigenRowArrayXd> x() const
   {
     return _mesh->geometry().points().row(_local_index);
   }

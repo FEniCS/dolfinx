@@ -11,16 +11,12 @@
 namespace py = pybind11;
 
 namespace dolfin_wrappers {
-// common
 void common(py::module &m);
 void mpi(py::module &m);
 
-// log
 void log(py::module &m);
-
 void function(py::module &m);
 void fem(py::module &m);
-
 void generation(py::module &m);
 void geometry(py::module &m);
 void graph(py::module &m);

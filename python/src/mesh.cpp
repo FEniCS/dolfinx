@@ -31,7 +31,6 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <ufc.h>
 
 #include "casters.h"
 
@@ -80,17 +79,10 @@ void mesh(py::module &m) {
                                        "DOLFIN MeshTopology object")
       .def_property_readonly("dim", &dolfin::mesh::MeshTopology::dim,
                              "Topological dimension")
-      .def("init",
-           (void (dolfin::mesh::MeshTopology::*)(std::size_t)) &
-               dolfin::mesh::MeshTopology::init)
-      .def("init",
-           (void (dolfin::mesh::MeshTopology::*)(std::size_t, std::int32_t,
-                                                 std::int64_t)) &
-               dolfin::mesh::MeshTopology::init)
-      .def("__call__",
-           (const dolfin::mesh::MeshConnectivity &(
-               dolfin::mesh::MeshTopology::*)(std::size_t, std::size_t) const) &
-               dolfin::mesh::MeshTopology::operator(),
+      .def("init", py::overload_cast<std::size_t, std::int32_t, std::int64_t>(
+                       &dolfin::mesh::MeshTopology::init))
+      .def("__call__", py::overload_cast<std::size_t, std::size_t>(
+                           &dolfin::mesh::MeshTopology::operator(), py::const_),
            py::return_value_policy::reference_internal)
       .def("size", &dolfin::mesh::MeshTopology::size)
       .def("hash", &dolfin::mesh::MeshTopology::hash)
@@ -100,9 +92,8 @@ void mesh(py::module &m) {
            &dolfin::mesh::MeshTopology::have_global_indices)
       .def("ghost_offset", &dolfin::mesh::MeshTopology::ghost_offset)
       .def("cell_owner",
-           (const std::vector<std::uint32_t> &(dolfin::mesh::MeshTopology::*)()
-                const) &
-               dolfin::mesh::MeshTopology::cell_owner)
+           py::overload_cast<>(&dolfin::mesh::MeshTopology::cell_owner,
+                               py::const_))
       .def("set_global_index", &dolfin::mesh::MeshTopology::set_global_index)
       .def("global_indices",
            [](const dolfin::mesh::MeshTopology &self, int dim) {
@@ -111,10 +102,8 @@ void mesh(py::module &m) {
            })
       .def("have_shared_entities",
            &dolfin::mesh::MeshTopology::have_shared_entities)
-      .def("shared_entities",
-           (std::map<std::int32_t, std::set<std::uint32_t>> &
-            (dolfin::mesh::MeshTopology::*)(std::uint32_t)) &
-               dolfin::mesh::MeshTopology::shared_entities)
+      .def("shared_entities", py::overload_cast<std::uint32_t>(
+                                  &dolfin::mesh::MeshTopology::shared_entities))
       .def("str", &dolfin::mesh::MeshTopology::str);
 
   // dolfin::mesh::Mesh
@@ -165,9 +154,7 @@ void mesh(py::module &m) {
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfin::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
-      .def("type",
-           (const dolfin::mesh::CellType &(dolfin::mesh::Mesh::*)() const) &
-               dolfin::mesh::Mesh::type,
+      .def("type", py::overload_cast<>(&dolfin::mesh::Mesh::type, py::const_),
            py::return_value_policy::reference)
       .def("ufl_id", [](const dolfin::mesh::Mesh &self) { return self.id(); })
       .def("cell_name", [](const dolfin::mesh::Mesh &self) {
@@ -184,12 +171,10 @@ void mesh(py::module &m) {
                                                              self.size(i));
            },
            py::return_value_policy::reference_internal)
-      .def("size",
-           (std::size_t(dolfin::mesh::MeshConnectivity::*)() const) &
-               dolfin::mesh::MeshConnectivity::size)
-      .def("size",
-           (std::size_t(dolfin::mesh::MeshConnectivity::*)(std::size_t) const) &
-               dolfin::mesh::MeshConnectivity::size);
+      .def("size", py::overload_cast<>(&dolfin::mesh::MeshConnectivity::size,
+                                       py::const_))
+      .def("size", py::overload_cast<std::size_t>(
+                       &dolfin::mesh::MeshConnectivity::size, py::const_));
 
   // dolfin::mesh::MeshEntity class
   py::class_<dolfin::mesh::MeshEntity,
@@ -200,8 +185,7 @@ void mesh(py::module &m) {
                              "Topological dimension")
       .def("mesh", &dolfin::mesh::MeshEntity::mesh, "Associated mesh")
       .def("index",
-           (std::int32_t(dolfin::mesh::MeshEntity::*)() const) &
-               dolfin::mesh::MeshEntity::index,
+           py::overload_cast<>(&dolfin::mesh::MeshEntity::index, py::const_),
            "Index")
       .def("global_index", &dolfin::mesh::MeshEntity::global_index,
            "Global index")
