@@ -66,14 +66,13 @@ void mesh(py::module &m) {
       //   .def("x", &dolfin::mesh::MeshGeometry::x,
       //        py::return_value_policy::reference_internal,
       //        "Return coordinates of a point")
-      //   .def("points",
-      //   py::overload_cast<>(&dolfin::mesh::MeshGeometry::points),
-      //        py::return_value_policy::reference_internal,
-      //        "Return coordinates of all points")
-      .def_readonly("points",
-                    py::overload_cast<>(&dolfin::mesh::MeshGeometry::points),
-                    py::return_value_policy::reference_internal,
-                    "Return coordinates of all points")
+      .def("points", py::overload_cast<>(&dolfin::mesh::MeshGeometry::points),
+           py::return_value_policy::reference_internal,
+           "Return coordinates of all points")
+      //   .def_readonly("points",
+      //                 py::overload_cast<>(&dolfin::mesh::MeshGeometry::points),
+      //                 py::return_value_policy::reference_internal,
+      //                 "Return coordinates of all points")
       .def_readwrite("coord_mapping",
                      &dolfin::mesh::MeshGeometry::coord_mapping);
 
