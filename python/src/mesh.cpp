@@ -136,23 +136,18 @@ void mesh(py::module &m) {
                                (std::int32_t)self.type().num_vertices(tdim)},
                               self.topology()(tdim, 0)().data());
            })
-      //.def("create", &dolfin::mesh::Mesh::create)
       .def_property_readonly("geometry",
                              py::overload_cast<>(&dolfin::mesh::Mesh::geometry),
                              "Mesh geometry")
       .def("hash", &dolfin::mesh::Mesh::hash)
       .def("hmax", &dolfin::mesh::Mesh::hmax)
       .def("hmin", &dolfin::mesh::Mesh::hmin)
-      .def("id", &dolfin::mesh::Mesh::id)
       .def("init_global", &dolfin::mesh::Mesh::init_global)
-      .def("init",
-           (void (dolfin::mesh::Mesh::*)() const) & dolfin::mesh::Mesh::init)
-      .def("init",
-           (std::size_t(dolfin::mesh::Mesh::*)(std::size_t) const) &
-               dolfin::mesh::Mesh::init)
-      .def("init",
-           (void (dolfin::mesh::Mesh::*)(std::size_t, std::size_t) const) &
-               dolfin::mesh::Mesh::init)
+      .def("init", py::overload_cast<>(&dolfin::mesh::Mesh::init, py::const_))
+      .def("init", py::overload_cast<std::size_t>(&dolfin::mesh::Mesh::init,
+                                                  py::const_))
+      .def("init", py::overload_cast<std::size_t, std::size_t>(
+                       &dolfin::mesh::Mesh::init, py::const_))
       .def("mpi_comm",
            [](dolfin::mesh::Mesh &self) {
              return MPICommWrapper(self.mpi_comm());
@@ -267,13 +262,6 @@ void mesh(py::module &m) {
       .def("circumradius", &dolfin::mesh::Cell::circumradius)
       .def("radius_ratio", &dolfin::mesh::Cell::radius_ratio)
       .def("volume", &dolfin::mesh::Cell::volume);
-  //   .def("get_vertex_coordinates",
-  //        [](const dolfin::mesh::Cell &self) {
-  //          std::vector<double> x;
-  //          self.get_vertex_coordinates(x);
-  //          return x;
-  //        },
-  //        "Get cell vertex coordinates");
 
   py::class_<
       dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>,
