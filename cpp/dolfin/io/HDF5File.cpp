@@ -264,7 +264,7 @@ void HDF5File::write(const mesh::Mesh& mesh, std::size_t cell_dim,
       _vertex_coords = mesh.geometry().x();
     else
     {
-      EigenRowArrayXXd _vertex_coords
+      _vertex_coords
           = mesh::DistributedMeshTools::reorder_vertices_by_global_indices(
               mesh);
     }

@@ -73,7 +73,7 @@ public:
   }
 
   /// Get vertex coordinates
-  const double* vertex_coordinates(std::size_t point_index) const
+  const double* vertex_coordinates(std::size_t point_index)
   {
     return coordinates.row(point_index).data();
     // assert(point_index < num_vertices());
