@@ -144,7 +144,7 @@ EigenRowArrayXXd Expression::compute_vertex_values(const mesh::Mesh& mesh) const
     for (auto& vertex : mesh::EntityRange<mesh::Vertex>(cell))
     {
       // Wrap coordinate data
-      Eigen::Map<const Eigen::VectorXd> x(vertex.x(), mesh.geometry().dim());
+      const Eigen::Ref<const Eigen::VectorXd> x = vertex.x();
 
       // Evaluate at vertex
       eval(local_vertex_values, x);

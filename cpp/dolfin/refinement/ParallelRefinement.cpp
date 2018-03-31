@@ -133,7 +133,6 @@ void ParallelRefinement::create_new_vertices()
   const std::size_t mpi_rank = MPI::rank(_mesh.mpi_comm());
 
   // Copy over existing mesh vertices
-  //_new_vertex_coordinates = _mesh.geometry().x();
   _new_vertex_coordinates = std::vector<double>(
       _mesh.geometry().points().data(),
       _mesh.geometry().points().data() + _mesh.geometry().points().size());

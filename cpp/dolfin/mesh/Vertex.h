@@ -9,6 +9,7 @@
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshGeometry.h"
+#include <dolfin/common/types.h>
 #include <dolfin/geometry/Point.h>
 
 namespace dolfin
@@ -36,9 +37,6 @@ public:
   /// Destructor
   ~Vertex() = default;
 
-  /// Return value of vertex coordinate i
-  double x(std::size_t i) const { return _mesh->geometry().x(_local_index, i); }
-
   /// Return vertex coordinates as a 3D point value
   geometry::Point point() const
   {
@@ -46,7 +44,10 @@ public:
   }
 
   /// Return array of vertex coordinates (const version)
-  const double* x() const { return _mesh->geometry().x(_local_index); }
+  const Eigen::Ref<const EigenRowArrayXd> x() const
+  {
+    return _mesh->geometry().points().row(_local_index);
+  }
 };
 }
 }

@@ -63,6 +63,9 @@ void mesh(py::module &m) {
              std::shared_ptr<dolfin::mesh::MeshGeometry>>(m, "MeshGeometry",
                                                           "MeshGeometry object")
       .def("dim", &dolfin::mesh::MeshGeometry::dim, "Geometric dimension")
+      //   .def("x", &dolfin::mesh::MeshGeometry::x,
+      //        py::return_value_policy::reference_internal,
+      //        "Return coordinates of a point")
       .def("points", py::overload_cast<>(&dolfin::mesh::MeshGeometry::points),
            py::return_value_policy::reference_internal,
            "Return coordinates of all points")

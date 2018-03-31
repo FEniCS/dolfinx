@@ -59,17 +59,14 @@ public:
   /// any entity
   std::size_t num_points() const { return _coordinates.rows(); }
 
-  /// Get point coordinates
-  const double* point_coordinates(std::size_t point_index)
+  /// Return coordinate array for point with local index n
+  const Eigen::Ref<const EigenArrayXd> x(std::size_t n) const
   {
-    return _coordinates.row(point_index).data();
+    return _coordinates.row(n);
   }
 
-  /// Return value of coordinate with local index n in direction i
-  double x(std::size_t n, std::size_t i) const { return _coordinates(n, i); }
-
-  /// Return array of values for coordinate with local index n
-  const double* x(std::size_t n) const { return _coordinates.row(n).data(); }
+  /// Return coordinate with local index n as a 3D point value
+  geometry::Point point(std::size_t n) const;
 
   // Should this return an Eigen::Ref?
   /// Return array of coordinates for all points
@@ -78,9 +75,6 @@ public:
   // Should this return an Eigen::Ref?
   /// Return array of coordinates for all points (const version)
   const EigenRowArrayXXd& points() const { return _coordinates; }
-
-  /// Return coordinate with local index n as a 3D point value
-  geometry::Point point(std::size_t n) const;
 
   /// Hash of coordinate values
   ///

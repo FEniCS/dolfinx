@@ -21,7 +21,7 @@ MeshGeometry::MeshGeometry(const Eigen::Ref<const EigenRowArrayXXd>& points)
 //-----------------------------------------------------------------------------
 geometry::Point MeshGeometry::point(std::size_t n) const
 {
-  return geometry::Point(_coordinates.cols(), this->x(n));
+  return geometry::Point(_coordinates.cols(), _coordinates.row(n).data());
 }
 //-----------------------------------------------------------------------------
 std::size_t MeshGeometry::hash() const
@@ -45,7 +45,7 @@ std::string MeshGeometry::str(bool verbose) const
     {
       s << "  " << i << ":";
       for (Eigen::Index d = 0; d < _coordinates.cols(); d++)
-        s << " " << x(i, d);
+        s << " " << _coordinates(i, d);
       s << std::endl;
     }
     s << std::endl;
