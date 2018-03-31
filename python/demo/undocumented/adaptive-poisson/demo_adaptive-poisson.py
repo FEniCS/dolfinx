@@ -68,7 +68,7 @@ for level in range(MAX_ITER):
         break
 
     # Mark cells for refinement
-    cell_markers = MeshFunction("bool", mesh, mesh.topology().dim())
+    cell_markers = MeshFunction("bool", mesh, mesh.topology.dim)
     gamma_0 = sorted(gamma, reverse=True)[int(len(gamma)*REFINE_RATIO)]
     gamma_0 = MPI.max(mesh.mpi_comm(), gamma_0)
     for c in cells(mesh):

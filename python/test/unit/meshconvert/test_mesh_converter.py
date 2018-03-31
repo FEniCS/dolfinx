@@ -456,7 +456,7 @@ class TestTriangle(Tester):
 
         # Create a size_t MeshFunction and assign the values based on the
         # converted Meshfunction
-        cf = MeshFunction("size_t", mesh, mesh.topology().dim())
+        cf = MeshFunction("size_t", mesh, mesh.topology.dim)
         cf.array()[mfun.array()==10.0] = 0
         cf.array()[mfun.array()==-10.0] = 1
 
@@ -477,7 +477,7 @@ class TestTriangle(Tester):
 
         # Measure the edge length of the two edge domains
         #edge_markers = mesh.domains().facet_domains()
-        edge_markers = mesh.domains().markers(mesh.topology().dim()-1)
+        edge_markers = mesh.domains().markers(mesh.topology.dim-1)
         self.assertTrue(edge_markers is not None)
         #length0 = reduce(add, (Edge(mesh, e.index()).length() \
         #                    for e in SubsetIterator(edge_markers, 0)), 0.0)

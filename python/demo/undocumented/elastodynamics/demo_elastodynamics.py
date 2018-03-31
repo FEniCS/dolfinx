@@ -115,7 +115,7 @@ p  = Traction(dt, t, False, degree=1)
 p0 = Traction(dt, t, True, degree=1)
 
 # Create mesh function over the cell facets
-boundary_subdomains = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
+boundary_subdomains = MeshFunction("size_t", mesh, mesh.topology.dim - 1)
 boundary_subdomains.set_all(0)
 force_boundary = AutoSubDomain(right)
 force_boundary.mark(boundary_subdomains, 3)

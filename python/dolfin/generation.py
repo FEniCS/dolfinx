@@ -17,7 +17,7 @@ from dolfin.cpp.mesh import CellType
 def UnitIntervalMesh(comm, nx):
     """Create a mesh on the unit interval"""
     mesh = IntervalMesh.create(comm, nx, [0.0, 1.0])
-    mesh.geometry().coord_mapping = dolfin.fem.create_coordinate_map(mesh)
+    mesh.geometry.coord_mapping = dolfin.fem.create_coordinate_map(mesh)
     return mesh
 
 
@@ -26,7 +26,7 @@ def UnitSquareMesh(comm, nx, ny, cell_type=CellType.Type.triangle):
     from dolfin.cpp.geometry import Point
     mesh = RectangleMesh.create(comm, [Point(0.0, 0.0), Point(1.0, 1.0)],
                                 [nx, ny], cell_type)
-    mesh.geometry().coord_mapping = dolfin.fem.create_coordinate_map(mesh)
+    mesh.geometry.coord_mapping = dolfin.fem.create_coordinate_map(mesh)
     return mesh
 
 
@@ -35,5 +35,5 @@ def UnitCubeMesh(comm, nx, ny, nz, cell_type=CellType.Type.tetrahedron):
     from dolfin.cpp.geometry import Point
     mesh = BoxMesh.create(comm, [Point(0.0, 0.0, 0.0), Point(1.0, 1.0, 1.0)],
                           [nx, ny, nz], cell_type)
-    mesh.geometry().coord_mapping = dolfin.fem.create_coordinate_map(mesh)
+    mesh.geometry.coord_mapping = dolfin.fem.create_coordinate_map(mesh)
     return mesh

@@ -29,7 +29,7 @@ mesh_B.translate(Point(x_B, y_B))
 mesh_C.translate(Point(x_C, y_C))
 
 # Create mesh function for plotting
-f = MeshFunction("size_t", mesh_A, mesh_A.topology().dim())
+f = MeshFunction("size_t", mesh_A, mesh_A.topology.dim)
 
 # Build bounding box trees for background mesh
 tree_A = BoundingBoxTree()

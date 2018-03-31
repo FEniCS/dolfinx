@@ -43,7 +43,7 @@ class MeshValueCollection(object):
 
 def ufl_cell(self):
     return ufl.Cell(self.cell_name(),
-                    geometric_dimension=self.geometry().dim())
+                    geometric_dimension=self.geometry.dim)
 
 
 def ufl_coordinate_element(self):
@@ -69,7 +69,7 @@ def ufl_domain(self):
 
 def geometric_dimension(self):
     """Returns geometric dimension for ufl interface"""
-    return self.geometry().dim()
+    return self.geometry.dim
 
 
 # Extend cpp.mesh.Mesh class, and clean-up

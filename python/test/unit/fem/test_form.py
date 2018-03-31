@@ -143,7 +143,7 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
 
     # Assemble over subset of mesh facets
     subdomain = CompiledSubDomain("near(x[1], 0.0)")
-    bottom = MeshFunction("size_t", square, square.topology().dim()-1)
+    bottom = MeshFunction("size_t", square, square.topology.dim-1)
     bottom.set_all(0)
     subdomain.mark(bottom, 1)
     dss = ds(subdomain_data=bottom)
@@ -153,7 +153,7 @@ def test_assemble_bilinear_1D_2D(square, V1, square_boundary):
 
     # Assemble over all cells of submesh created from subset of
     # boundary mesh
-    bottom2 = MeshFunction("size_t", square_boundary, square_boundary.topology().dim())
+    bottom2 = MeshFunction("size_t", square_boundary, square_boundary.topology.dim)
     bottom2.set_all(0)
     subdomain.mark(bottom2, 1)
     BV = FunctionSpace(SubMesh(square_boundary, bottom2, 1), "CG", 1)
@@ -185,7 +185,7 @@ def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
 
     # Assemble over subset of mesh facets
     subdomain = CompiledSubDomain("near(x[1], 0.0)")
-    bottom = MeshFunction("size_t", cube, cube.topology().dim()-1)
+    bottom = MeshFunction("size_t", cube, cube.topology.dim-1)
     bottom.set_all(0)
     subdomain.mark(bottom, 1)
     dss = ds(subdomain_data=bottom)
@@ -195,7 +195,7 @@ def test_assemble_bilinear_2D_3D(cube, V2, cube_boundary):
 
     # Assemble over all cells of submesh created from subset of
     # boundary mesh
-    bottom2 = MeshFunction("size_t", cube_boundary, cube_boundary.topology().dim())
+    bottom2 = MeshFunction("size_t", cube_boundary, cube_boundary.topology.dim)
     bottom2.set_all(0)
     subdomain.mark(bottom2, 1)
     BV = FunctionSpace(SubMesh(cube_boundary, bottom2, 1), "CG", 1)

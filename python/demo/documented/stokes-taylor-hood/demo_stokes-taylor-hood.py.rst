@@ -89,11 +89,11 @@ following way::
     # Load mesh and subdomains
     xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
     mesh = xdmf.read_mesh(MPI.comm_world)
-    sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim() - 1, 0)
+    sub_domains = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 0)
     xdmf.read(sub_domains)
 
     cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
-    mesh.geometry().coord_mapping = cmap
+    mesh.geometry.coord_mapping = cmap
 
 
 Next, we define a :py:class:`FunctionSpace

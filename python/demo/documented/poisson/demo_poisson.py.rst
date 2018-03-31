@@ -92,7 +92,7 @@ divided into two triangles, we do as follows ::
     V = FunctionSpace(mesh, "Lagrange", 1)
 
     cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
-    mesh.geometry().coord_mapping = cmap
+    mesh.geometry.coord_mapping = cmap
 
 The second argument to :py:class:`FunctionSpace
 <dolfin.functions.functionspace.FunctionSpace>` is the finite element

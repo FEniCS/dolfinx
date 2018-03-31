@@ -164,9 +164,9 @@ def test_line_meshes(line1d, line2d, line3d, rline1d, rline2d, rline3d):
     assert line1d.geometry.dim == 1
     assert line2d.geometry.dim == 2
     assert line3d.geometry.dim == 3
-    assert line1d.topology().dim() == 1
-    assert line2d.topology().dim() == 1
-    assert line3d.topology().dim() == 1
+    assert line1d.topology.dim == 1
+    assert line2d.topology.dim == 1
+    assert line3d.topology.dim == 1
 
 
 @skip_in_parallel
@@ -203,10 +203,10 @@ def test_manifold_line_geometry(mesh, uflacs_representation_only):
     assert parameters["form_compiler"]["representation"] == "uflacs"
 
     gdim = mesh.geometry.dim
-    tdim = mesh.topology().dim()
+    tdim = mesh.topology.dim
 
     # Create cell markers and integration measure
-    mf = MeshFunction("size_t", mesh, mesh.topology().dim())
+    mf = MeshFunction("size_t", mesh, mesh.topology.dim)
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
 
     # Create symbolic geometry for current mesh
@@ -309,7 +309,7 @@ def test_manifold_dg0_functions(square3d, any_representation):
     mesh = square3d
     area = sqrt(3.0)  # known area of mesh
 
-    mf = MeshFunction("size_t", mesh, mesh.topology().dim())
+    mf = MeshFunction("size_t", mesh, mesh.topology.dim)
     mf[0] = 0
     mf[1] = 1
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
@@ -359,7 +359,7 @@ def test_manifold_cg1_functions(square3d, any_representation):
     mesh = square3d
     area = sqrt(3.0)  # known area of mesh
 
-    mf = MeshFunction("size_t", mesh, mesh.topology().dim())
+    mf = MeshFunction("size_t", mesh, mesh.topology.dim)
     mf[0] = 0
     mf[1] = 1
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
@@ -462,13 +462,13 @@ def test_manifold_symbolic_geometry(square3d, uflacs_representation_only):
     mesh = square3d
     assert mesh.num_cells() == 2
     gdim = mesh.geometry.dim
-    tdim = mesh.topology().dim()
+    tdim = mesh.topology.dim
 
     area = sqrt(3.0)  # known area of mesh
     A = area/2.0  # area of single cell
     Aref = 0.5  # 0.5 is the area of the UFC reference triangle
 
-    mf = MeshFunction("size_t", mesh, mesh.topology().dim())
+    mf = MeshFunction("size_t", mesh, mesh.topology.dim)
     mf[0] = 0
     mf[1] = 1
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
@@ -583,7 +583,7 @@ def test_manifold_piola_mapped_functions(square3d, any_representation):
     area = sqrt(3.0)  # known area of mesh
     A = area/2.0
 
-    mf = MeshFunction("size_t", mesh, mesh.topology().dim())
+    mf = MeshFunction("size_t", mesh, mesh.topology.dim)
     mf[0] = 0
     mf[1] = 1
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
@@ -684,13 +684,13 @@ def test_tetrahedron_symbolic_geometry(uflacs_representation_only):
     mesh = UnitCubeMesh(1, 1, 1)
     assert mesh.num_cells() == 6
     gdim = mesh.geometry.dim
-    tdim = mesh.topology().dim()
+    tdim = mesh.topology.dim
 
     area = 1.0  # known volume of mesh
     A = area/6.0  # volume of single cell
     Aref = 1.0/6.0  # the volume of the UFC reference tetrahedron
 
-    mf = MeshFunction("size_t", mesh, mesh.topology().dim())
+    mf = MeshFunction("size_t", mesh, mesh.topology.dim)
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
 
     U0 = FunctionSpace(mesh, "DG", 0)
@@ -769,13 +769,13 @@ def test_triangle_symbolic_geometry(uflacs_representation_only):
     mesh = UnitSquareMesh(1, 1)
     assert mesh.num_cells() == 2
     gdim = mesh.geometry.dim
-    tdim = mesh.topology().dim()
+    tdim = mesh.topology.dim
 
     area = 1.0  # known volume of mesh
     A = area/2.0  # volume of single cell
     Aref = 1.0/2.0  # the volume of the UFC reference triangle
 
-    mf = MeshFunction("size_t", mesh, mesh.topology().dim())
+    mf = MeshFunction("size_t", mesh, mesh.topology.dim)
     dx = Measure("dx", domain=mesh, subdomain_data=mf)
 
     U0 = FunctionSpace(mesh, "DG", 0)
@@ -879,10 +879,10 @@ def test_geometric_quantities(uflacs_representation_only, mesh_factory):
 
     tdim = mesh.ufl_cell().topological_dimension()
 
-    cf = MeshFunction('size_t', mesh, mesh.topology().dim(), 0)
+    cf = MeshFunction('size_t', mesh, mesh.topology.dim, 0)
     dx = Measure("dx", domain=mesh, subdomain_data=cf)
 
-    ff = MeshFunction('size_t', mesh, mesh.topology().dim()-1, 0)
+    ff = MeshFunction('size_t', mesh, mesh.topology.dim-1, 0)
     ds = Measure("ds", domain=mesh, subdomain_data=ff)
     dS = Measure("dS", domain=mesh, subdomain_data=ff)
 

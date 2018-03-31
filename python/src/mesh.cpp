@@ -78,7 +78,8 @@ void mesh(py::module &m) {
              std::shared_ptr<dolfin::mesh::MeshTopology>,
              dolfin::common::Variable>(m, "MeshTopology",
                                        "DOLFIN MeshTopology object")
-      .def("dim", &dolfin::mesh::MeshTopology::dim, "Topological dimension")
+      .def_property_readonly("dim", &dolfin::mesh::MeshTopology::dim,
+                             "Topological dimension")
       .def("init",
            (void (dolfin::mesh::MeshTopology::*)(std::size_t)) &
                dolfin::mesh::MeshTopology::init)
@@ -166,10 +167,9 @@ void mesh(py::module &m) {
       .def("rmax", &dolfin::mesh::Mesh::rmax)
       .def("rmin", &dolfin::mesh::Mesh::rmin)
       .def("num_entities_global", &dolfin::mesh::Mesh::num_entities_global)
-      .def("topology",
-           (dolfin::mesh::MeshTopology & (dolfin::mesh::Mesh::*)()) &
-               dolfin::mesh::Mesh::topology,
-           "Mesh topology", py::return_value_policy::reference_internal)
+      .def_property_readonly(
+          "topology", py::overload_cast<>(&dolfin::mesh::Mesh::topology),
+          "Mesh topology", py::return_value_policy::reference_internal)
       .def("type",
            (const dolfin::mesh::CellType &(dolfin::mesh::Mesh::*)() const) &
                dolfin::mesh::Mesh::type,
@@ -201,7 +201,8 @@ void mesh(py::module &m) {
              std::shared_ptr<dolfin::mesh::MeshEntity>>(
       m, "MeshEntity", "DOLFIN MeshEntity object")
       .def(py::init<const dolfin::mesh::Mesh &, std::size_t, std::size_t>())
-      .def("dim", &dolfin::mesh::MeshEntity::dim, "Topological dimension")
+      .def_property_readonly("dim", &dolfin::mesh::MeshEntity::dim,
+                             "Topological dimension")
       .def("mesh", &dolfin::mesh::MeshEntity::mesh, "Associated mesh")
       .def("index",
            (std::int32_t(dolfin::mesh::MeshEntity::*)() const) &
@@ -358,7 +359,7 @@ void mesh(py::module &m) {
               const dolfin::mesh::MeshEntity &index,                           \
               SCALAR value) { self.operator[](index) = value; })               \
       .def("__len__", &dolfin::mesh::MeshFunction<SCALAR>::size)               \
-      .def("dim", &dolfin::mesh::MeshFunction<SCALAR>::dim)                    \
+      .def_property_readonly("dim", &dolfin::mesh::MeshFunction<SCALAR>::dim)  \
       .def("size", &dolfin::mesh::MeshFunction<SCALAR>::size)                  \
       .def("ufl_id", &dolfin::mesh::MeshFunction<SCALAR>::id)                  \
       .def("mesh", &dolfin::mesh::MeshFunction<SCALAR>::mesh)                  \
@@ -384,7 +385,8 @@ void mesh(py::module &m) {
              dolfin::common::Variable>(m, "MeshValueCollection_" #SCALAR_NAME, \
                                        "DOLFIN MeshValueCollection object")    \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>, std::size_t>()) \
-      .def("dim", &dolfin::mesh::MeshValueCollection<SCALAR>::dim)             \
+      .def_property_readonly("dim",                                            \
+                             &dolfin::mesh::MeshValueCollection<SCALAR>::dim)  \
       .def("size", &dolfin::mesh::MeshValueCollection<SCALAR>::size)           \
       .def("get_value", &dolfin::mesh::MeshValueCollection<SCALAR>::get_value) \
       .def("set_value",                                                        \

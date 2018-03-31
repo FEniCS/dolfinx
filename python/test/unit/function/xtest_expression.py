@@ -521,7 +521,7 @@ def test_doc_string_python_expressions(mesh):
         def eval(self, values, x):
             pass
 
-    cell_data = MeshFunction('size_t', square, square.topology().dim())
+    cell_data = MeshFunction('size_t', square, square.topology.dim)
 
     P1 = FiniteElement("Lagrange", square.ufl_cell(), 1)
     f3 = MyExpression2(square, cell_data, element=P1)

@@ -14,7 +14,7 @@ def test_build_from_mesh_simple():
     """Build mesh graph """
 
     mesh = UnitCubeMesh(MPI.comm_world, 16, 16, 16)
-    D = mesh.topology().dim()
+    D = mesh.topology.dim
     GraphBuilder.local_graph(mesh, D, 0)
     GraphBuilder.local_graph(mesh, D, 1)
     GraphBuilder.local_graph(mesh, 2, D)

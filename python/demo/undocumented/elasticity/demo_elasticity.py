@@ -55,7 +55,7 @@ def build_nullspace(V, x):
 mesh = BoxMesh.create(MPI.comm_world, [Point(0, 0, 0), Point(2, 1, 1)], [
                       12, 12, 12], CellType.Type.tetrahedron)
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
-mesh.geometry().coord_mapping = cmap
+mesh.geometry.coord_mapping = cmap
 
 
 # Function to mark inner surface of pulley
@@ -157,7 +157,7 @@ if MPI.rank(mesh.mpi_comm()) == 0:
 
 # Save colored mesh partitions in VTK format if running in parallel
 # if MPI.size(mesh.mpi_comm()) > 1:
-#    File("partitions.pvd") << MeshFunction("size_t", mesh, mesh.topology().dim(), \
+#    File("partitions.pvd") << MeshFunction("size_t", mesh, mesh.topology.dim, \
 #                                           MPI.rank(mesh.mpi_comm()))
 
 # Project and write stress field to post-processing file

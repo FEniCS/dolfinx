@@ -69,7 +69,7 @@ def test_compute_collisions_point_3d():
 
         # FIXME: Face and edges tests are excluded because test
         # mistakingly relies on the face and edge indices
-        tdim = mesh.topology().dim()
+        tdim = mesh.topology.dim
         if dim != tdim - 1 and dim != tdim - 2:
             assert set(entities) == reference[dim]
 
@@ -177,7 +177,7 @@ def test_compute_entity_collisions_1d():
     mesh = UnitIntervalMesh(MPI.comm_world, 16)
 
     tree = BoundingBoxTree(mesh.geometry.dim)
-    tree.build(mesh, mesh.topology().dim())
+    tree.build(mesh, mesh.topology.dim)
     entities = tree.compute_entity_collisions(p, mesh)
     assert set(entities) == reference
 
@@ -195,7 +195,7 @@ def test_compute_entity_collisions_2d():
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
 
     tree = BoundingBoxTree(mesh.geometry.dim)
-    tree.build(mesh, mesh.topology().dim())
+    tree.build(mesh, mesh.topology.dim)
     entities = tree.compute_entity_collisions(p, mesh)
     assert set(entities) == reference
 
@@ -213,7 +213,7 @@ def test_compute_entity_collisions_3d():
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
 
     tree = BoundingBoxTree(mesh.geometry.dim)
-    tree.build(mesh, mesh.topology().dim())
+    tree.build(mesh, mesh.topology.dim)
     entities = tree.compute_entity_collisions(p, mesh)
     assert set(entities) == reference
 
@@ -330,7 +330,7 @@ def test_compute_first_collision_1d():
 
     tree = mesh.bounding_box_tree()
     first = tree.compute_first_collision(p)
-    assert first in reference[mesh.topology().dim()]
+    assert first in reference[mesh.topology.dim]
 
 
 @skip_in_parallel
@@ -350,12 +350,12 @@ def test_compute_first_collision_2d():
 
         # FIXME: Facet test is excluded because it mistakingly relies in the
         # facet indices
-        if dim != mesh.topology().dim() - 1:
+        if dim != mesh.topology.dim - 1:
             assert first in reference[dim]
 
     tree = mesh.bounding_box_tree()
     first = tree.compute_first_collision(p)
-    assert first in reference[mesh.topology().dim()]
+    assert first in reference[mesh.topology.dim]
 
 
 @skip_in_parallel
@@ -377,13 +377,13 @@ def test_compute_first_collision_3d():
 
         # FIXME: Face and test is excluded because it mistakingly
         # relies in the facet indices
-        tdim = mesh.topology().dim()
+        tdim = mesh.topology.dim
         if dim != tdim - 1 and dim != tdim - 2:
             assert first in reference[dim]
 
     tree = mesh.bounding_box_tree()
     first = tree.compute_first_collision(p)
-    assert first in reference[mesh.topology().dim()]
+    assert first in reference[mesh.topology.dim]
 
 #--- compute_first_entity_collision with point ---
 
@@ -396,7 +396,7 @@ def test_compute_first_entity_collision_1d():
     p = Point(0.3)
     mesh = UnitIntervalMesh(MPI.comm_world, 16)
     tree = BoundingBoxTree(mesh.geometry.dim)
-    tree.build(mesh, mesh.topology().dim())
+    tree.build(mesh, mesh.topology.dim)
     first = tree.compute_first_entity_collision(p, mesh)
     assert first in reference
 
@@ -413,7 +413,7 @@ def test_compute_first_entity_collision_2d():
     p = Point(0.3, 0.3)
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     tree = BoundingBoxTree(mesh.geometry.dim)
-    tree.build(mesh, mesh.topology().dim())
+    tree.build(mesh, mesh.topology.dim)
     first = tree.compute_first_entity_collision(p, mesh)
     assert first in reference
 
@@ -430,7 +430,7 @@ def test_compute_first_entity_collision_3d():
     p = Point(0.3, 0.3, 0.3)
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     tree = BoundingBoxTree(mesh.geometry.dim)
-    tree.build(mesh, mesh.topology().dim())
+    tree.build(mesh, mesh.topology.dim)
     first = tree.compute_first_entity_collision(p, mesh)
     assert first in reference
 
@@ -449,7 +449,7 @@ def test_compute_closest_entity_1d():
     p = Point(-1.0)
     mesh = UnitIntervalMesh(MPI.comm_world, 16)
     tree = BoundingBoxTree(mesh.geometry.dim)
-    tree.build(mesh, mesh.topology().dim())
+    tree.build(mesh, mesh.topology.dim)
     entity, distance = tree.compute_closest_entity(p, mesh)
 
     assert entity == reference[0]
@@ -469,7 +469,7 @@ def test_compute_closest_entity_2d():
     p = Point(-1.0, 0.01)
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     tree = BoundingBoxTree(mesh.geometry.dim)
-    tree.build(mesh, mesh.topology().dim())
+    tree.build(mesh, mesh.topology.dim)
     entity, distance = tree.compute_closest_entity(p, mesh)
 
     assert entity == reference[0]
@@ -489,7 +489,7 @@ def test_compute_closest_entity_3d():
     p = Point(0.1, 0.05, -0.1)
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     tree = BoundingBoxTree(mesh.geometry.dim)
-    tree.build(mesh, mesh.topology().dim())
+    tree.build(mesh, mesh.topology.dim)
     entity, distance = tree.compute_closest_entity(p, mesh)
 
     assert entity == reference[0]

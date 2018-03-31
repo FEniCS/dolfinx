@@ -35,7 +35,7 @@ def test_linear_operator(backend):
             self.u = u
 
         def size(self, dim):
-            return self.u.function_space().dim()
+            return self.u.function_space().dim
 
         def mult(self, x, y):
 

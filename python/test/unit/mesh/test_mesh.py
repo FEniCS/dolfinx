@@ -111,7 +111,7 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
     def _check_ufl_domain(mesh):
         domain = mesh.ufl_domain()
         assert mesh.geometry.dim == domain.geometric_dimension()
-        assert mesh.topology().dim() == domain.topological_dimension()
+        assert mesh.topology.dim == domain.topological_dimension()
         assert mesh.ufl_cell() == domain.ufl_cell()
         assert mesh.id() == domain.ufl_id()
 
@@ -374,18 +374,18 @@ def test_shared_entities(mesh_factory, ghost_mode):
     func, args = mesh_factory
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
-    dim = mesh.topology().dim()
+    dim = mesh.topology.dim
 
     # FIXME: Implement a proper test
     for shared_dim in range(dim + 1):
         # Initialise global indices (if not already)
         mesh.init_global(shared_dim)
 
-        assert isinstance(mesh.topology().shared_entities(shared_dim), dict)
-        assert isinstance(mesh.topology().global_indices(shared_dim),
+        assert isinstance(mesh.topology.shared_entities(shared_dim), dict)
+        assert isinstance(mesh.topology.global_indices(shared_dim),
                           numpy.ndarray)
 
-        if mesh.topology().have_shared_entities(shared_dim):
+        if mesh.topology.have_shared_entities(shared_dim):
             for e in MeshEntities(mesh, shared_dim):
                 sharing = e.sharing_processes()
                 assert isinstance(sharing, set)
@@ -393,7 +393,7 @@ def test_shared_entities(mesh_factory, ghost_mode):
 
         n_entities = mesh.num_entities(shared_dim)
         n_global_entities = mesh.num_entities_global(shared_dim)
-        shared_entities = mesh.topology().shared_entities(shared_dim)
+        shared_entities = mesh.topology.shared_entities(shared_dim)
 
         # Check that sum(local-shared) = global count
         rank = MPI.rank(mesh.mpi_comm())
@@ -413,7 +413,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
     assert mesh.ordered()
-    tdim = mesh.topology().dim()
+    tdim = mesh.topology.dim
 
     # Create FIAT cell
     cell_name = CellType.type2string(mesh.type().cell_type())
@@ -457,7 +457,7 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
     assert mesh.ordered()
-    tdim = mesh.topology().dim()
+    tdim = mesh.topology.dim
 
     # Loop over pair of dimensions d, d1 with d>d1
     for d in range(tdim+1):
@@ -473,7 +473,7 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
             # Initialize d-d1 connectivity and d1 global indices
             mesh.init(d, d1)
             mesh.init_global(d1)
-            assert mesh.topology().have_global_indices(d1)
+            assert mesh.topology.have_global_indices(d1)
 
             # Loop over entities of dimension d
             for e in MeshEntities(mesh, d):
@@ -488,19 +488,19 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
 
 
 def test_mesh_topology_reference():
-    """Check that Mesh.topology() returns a reference rather
+    """Check that Mesh.topology returns a reference rather
     than copy"""
     mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
-    assert mesh.topology().id() == mesh.topology().id()
+    assert mesh.topology.id() == mesh.topology.id()
 
 
 def test_mesh_topology_lifetime():
-    """Check that lifetime of Mesh.topology() is bound to
+    """Check that lifetime of Mesh.topology is bound to
     underlying mesh object"""
     mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
 
     rc = sys.getrefcount(mesh)
-    topology = mesh.topology()
+    topology = mesh.topology
     assert sys.getrefcount(mesh) == rc + 1
     del topology
     assert sys.getrefcount(mesh) == rc
@@ -511,7 +511,7 @@ def test_mesh_connectivity_lifetime():
     underlying mesh topology object"""
     mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
     mesh.init(1, 2)
-    topology = mesh.topology()
+    topology = mesh.topology
 
     # Refcount checks on the MeshConnectivity object
     rc = sys.getrefcount(topology)

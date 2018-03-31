@@ -33,16 +33,16 @@ if(MPI.size(MPI.comm_world) == 1):
 mesh = UnitSquareMesh(8, 8)
 # mesh = refine(M)
 
-shared_vertices = np.fromiter(mesh.topology().shared_entities(0).keys(), dtype='uintc')
-shared_cells = mesh.topology().shared_entities(mesh.topology().dim())
+shared_vertices = np.fromiter(mesh.topology.shared_entities(0).keys(), dtype='uintc')
+shared_cells = mesh.topology.shared_entities(mesh.topology.dim)
 
-num_regular_vertices = mesh.topology().ghost_offset(0)
+num_regular_vertices = mesh.topology.ghost_offset(0)
 
-ghost_vertices = np.arange(num_regular_vertices, mesh.topology().size(0))
+ghost_vertices = np.arange(num_regular_vertices, mesh.topology.size(0))
 
 verts_note = []
 if (n == 0):
-    for k,val in mesh.topology().shared_entities(0).items():
+    for k,val in mesh.topology.shared_entities(0).items():
         vtx = Vertex(mesh, k)
         verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
 elif (n == 1):
@@ -61,7 +61,7 @@ x,y = mesh.coordinates().transpose()
 rank = MPI.rank(mesh.mpi_comm())
 
 cell_ownership = np.ones(mesh.num_cells(),dtype='int')*rank
-cell_owner = mesh.topology().cell_owner()
+cell_owner = mesh.topology.cell_owner()
 if len(cell_owner) > 0 :
     cell_ownership[-len(cell_owner):] = cell_owner
 
@@ -90,9 +90,9 @@ for c in cells(mesh, "all"):
     colors.append(cmap[cell_ownership[c.index()]])
     idx += 1
 
-num_regular_facets = mesh.topology().ghost_offset(1)
+num_regular_facets = mesh.topology.ghost_offset(1)
 facet_note = []
-shared_facets = mesh.topology().shared_entities(1)
+shared_facets = mesh.topology.shared_entities(1)
 for f in facets(mesh, "all"):
     if (f.num_global_entities(2) == 2):
         color='#ffff88'
@@ -138,7 +138,7 @@ for note in verts_note:
 for note in facet_note:
     plt.text(note[0], note[1], note[2], size=8, verticalalignment='center', backgroundcolor=note[3])
 
-# Q = MeshFunction("double", mesh, mesh.topology().dim()-1)
+# Q = MeshFunction("double", mesh, mesh.topology.dim-1)
 
 # # Save solution in XDMF format if available
 # xdmf = XDMFFile(mesh.mpi_comm(), "Q.xdmf")

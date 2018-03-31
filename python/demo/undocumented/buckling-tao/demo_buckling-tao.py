@@ -37,7 +37,7 @@ mu = Constant(E/(2.0*(1.0+nu)))
 lmbda = Constant(E*nu/((1.0+nu)*(1.0-2.0*nu)))
 
 # Compressible neo-Hookean model
-I = Identity(mesh.geometry().dim())
+I = Identity(mesh.geometry.dim)
 F = I + grad(u)
 C = F.T*F
 Ic = tr(C)
@@ -61,7 +61,7 @@ class Left(SubDomain):
 class Right(SubDomain):
     def inside(self, x, on_boundary):
         return on_boundary and near(x[0], 10)
-boundaries = MeshFunction("size_t", mesh, mesh.topology().dim()-1)
+boundaries = MeshFunction("size_t", mesh, mesh.topology.dim-1)
 boundaries.set_all(0)
 left = Left()
 left.mark(boundaries, 1)

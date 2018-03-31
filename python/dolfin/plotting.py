@@ -33,13 +33,13 @@ def _has_matplotlib():
 
 def mesh2triang(mesh):
     import matplotlib.tri as tri
-    xy = mesh.geometry().x()
+    xy = mesh.geometry.x()
     return tri.Triangulation(xy[:, 0], xy[:, 1], mesh.cells())
 
 
 def mplot_mesh(ax, mesh, **kwargs):
-    tdim = mesh.topology().dim()
-    gdim = mesh.geometry().dim()
+    tdim = mesh.topology.dim
+    gdim = mesh.geometry.dim
     if gdim == 2 and tdim == 2:
         color = kwargs.pop("color", '#808080')
         return ax.triplot(mesh2triang(mesh), color=color, **kwargs)
@@ -47,11 +47,11 @@ def mplot_mesh(ax, mesh, **kwargs):
         bmesh = cpp.mesh.BoundaryMesh(mesh, "exterior", order=False)
         mplot_mesh(ax, bmesh, **kwargs)
     elif gdim == 3 and tdim == 2:
-        xy = mesh.geometry().x()
+        xy = mesh.geometry.x()
         return ax.plot_trisurf(*[xy[:, i] for i in range(gdim)],
                                triangles=mesh.cells(), **kwargs)
     elif tdim == 1:
-        x = [mesh.geometry().x()[:, i] for i in range(gdim)]
+        x = [mesh.geometry.x()[:, i] for i in range(gdim)]
         if gdim == 1:
             x.append(np.zeros_like(x[0]))
             ax.set_yticks([])
@@ -84,8 +84,8 @@ def mplot_expression(ax, f, mesh, **kwargs):
 
 def mplot_function(ax, f, **kwargs):
     mesh = f.function_space().mesh()
-    gdim = mesh.geometry().dim()
-    tdim = mesh.topology().dim()
+    gdim = mesh.geometry.dim
+    tdim = mesh.topology.dim
 
     # Extract the function vector in a way that also works for
     # subfunctions
@@ -106,12 +106,12 @@ def mplot_function(ax, f, **kwargs):
             return ax.tripcolor(mesh2triang(mesh), C, **kwargs)
         elif gdim == 3 and tdim == 2:  # surface in 3d
             # FIXME: Not tested, probably broken
-            xy = mesh.geometry().x()
+            xy = mesh.geometry.x()
             shade = kwargs.pop("shade", True)
             return ax.plot_trisurf(mesh2triang(mesh), xy[:, 2], C, shade=shade,
                                    **kwargs)
         elif gdim == 1 and tdim == 1:
-            x = mesh.geometry().x()[:, 0]
+            x = mesh.geometry.x()[:, 0]
             nv = len(x)
             # Insert duplicate points to get piecewise constant plot
             xp = np.zeros(2 * nv - 2)
@@ -160,10 +160,10 @@ def mplot_function(ax, f, **kwargs):
             # Volume
             # TODO: Isosurfaces?
             # Vertex point cloud
-            X = [mesh.geometry().x()[:, i] for i in range(gdim)]
+            X = [mesh.geometry.x()[:, i] for i in range(gdim)]
             return ax.scatter(*X, c=C, **kwargs)
         elif gdim == 1 and tdim == 1:
-            x = mesh.geometry().x()[:, 0]
+            x = mesh.geometry.x()[:, 0]
             ax.set_aspect('auto')
 
             p = ax.plot(x, C[:, 0], **kwargs)
@@ -188,7 +188,7 @@ def mplot_function(ax, f, **kwargs):
         if w0.shape[1] != gdim:
             raise AttributeError(
                 'Vector length must match geometric dimension.')
-        X = mesh.geometry().x()
+        X = mesh.geometry.x()
         X = [X[:, i] for i in range(gdim)]
         U = [x for x in w0.T]
 
@@ -223,8 +223,8 @@ def mplot_function(ax, f, **kwargs):
 
 def mplot_meshfunction(ax, obj, **kwargs):
     mesh = obj.mesh()
-    tdim = mesh.topology().dim()
-    d = obj.dim()
+    tdim = mesh.topology.dim
+    d = obj.dim
     if tdim == 2 and d == 2:
         C = obj.array()
         triang = mesh2triang(mesh)
@@ -260,7 +260,7 @@ def _plot_matplotlib(obj, mesh, kwargs):
         cpp.warning("matplotlib.pyplot not available, cannot plot.")
         return
 
-    gdim = mesh.geometry().dim()
+    gdim = mesh.geometry.dim
     if gdim == 3 or kwargs.get("mode") in ("warp",):
         # Importing this toolkit has side effects enabling 3d support
         from mpl_toolkits.mplot3d import axes3d  # noqa

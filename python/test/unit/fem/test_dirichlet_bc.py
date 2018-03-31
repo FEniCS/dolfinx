@@ -69,11 +69,11 @@ def test_user_meshfunction_domains():
     V = FunctionSpace(mesh0, "CG", 1)
 
     DirichletBC(V, Constant(0.0), MeshFunction("size_t", mesh0, 1), 0)
-    DirichletBC(V, Constant(0.0), MeshFunction("size_t", mesh0, mesh0.topology().dim()-1), 0)
+    DirichletBC(V, Constant(0.0), MeshFunction("size_t", mesh0, mesh0.topology.dim-1), 0)
     with pytest.raises(RuntimeError):
-        DirichletBC(V, 0.0, MeshFunction("size_t", mesh0, mesh0.topology().dim()), 0)
+        DirichletBC(V, 0.0, MeshFunction("size_t", mesh0, mesh0.topology.dim), 0)
         DirichletBC(V, 0.0, MeshFunction("size_t", mesh0, 0), 0)
-        DirichletBC(V, 0.0, MeshFunction("size_t", mesh1, mesh1.topology().dim()-1), 0)
+        DirichletBC(V, 0.0, MeshFunction("size_t", mesh1, mesh1.topology.dim-1), 0)
 
 
 @skip_in_parallel
@@ -111,7 +111,7 @@ def test_zero():
 
     bc = DirichletBC(V, 0, "on_boundary")
 
-    # Create arbitrary matrix of size V.dim()
+    # Create arbitrary matrix of size V.dim
     #
     # Note: Identity matrix would suffice, but there doesn't seem
     # an easy way to construct it in dolfin
