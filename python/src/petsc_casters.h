@@ -99,4 +99,3 @@ PETSC_CASTER_MACRO(Vec, vec);
 #undef PETSC_CASTER_MACRO
 
 #endif
-

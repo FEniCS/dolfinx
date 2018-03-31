@@ -43,5 +43,3 @@ struct visit_helper<boost::variant>
 };
 }
 }
-
-

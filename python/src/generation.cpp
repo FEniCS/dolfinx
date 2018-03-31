@@ -21,9 +21,11 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers {
+namespace dolfin_wrappers
+{
 
-void generation(py::module &m) {
+void generation(py::module& m)
+{
   // dolfin::generation::IntervalMesh
   py::class_<dolfin::generation::IntervalMesh,
              std::shared_ptr<dolfin::generation::IntervalMesh>>(m,

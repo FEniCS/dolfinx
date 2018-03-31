@@ -8,9 +8,11 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers {
+namespace dolfin_wrappers
+{
 
-void math(py::module &m) {
+void math(py::module& m)
+{
   // dolfin/math free functions
 }
 }

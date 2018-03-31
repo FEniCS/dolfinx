@@ -11,12 +11,14 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers {
+namespace dolfin_wrappers
+{
 
-void refinement(py::module &m) {
+void refinement(py::module& m)
+{
 
   // dolfin::refinement::refine
-  m.def("refine", py::overload_cast<const dolfin::mesh::Mesh &, bool>(
+  m.def("refine", py::overload_cast<const dolfin::mesh::Mesh&, bool>(
                       &dolfin::refinement::refine),
         py::arg("mesh"), py::arg("redistribute") = true);
 }

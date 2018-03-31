@@ -27,9 +27,11 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers {
+namespace dolfin_wrappers
+{
 // Interface for dolfin/common
-void common(py::module &m) {
+void common(py::module& m)
+{
   // dolfin::common::Variable
   py::class_<dolfin::common::Variable,
              std::shared_ptr<dolfin::common::Variable>>(m, "Variable",
@@ -94,9 +96,9 @@ void common(py::module &m) {
            "Return block size")
       .def("local_range", &dolfin::common::IndexMap::local_range)
       .def("local_to_global_unowned",
-           [](dolfin::common::IndexMap &self) {
-             return Eigen::Map<
-                 const Eigen::Matrix<std::size_t, Eigen::Dynamic, 1>>(
+           [](dolfin::common::IndexMap& self) {
+             return Eigen::Map<const Eigen::Matrix<std::size_t, Eigen::Dynamic,
+                                                   1>>(
                  self.local_to_global_unowned().data(),
                  self.local_to_global_unowned().size());
            },
@@ -150,9 +152,9 @@ void common(py::module &m) {
                   (void (*)()) & dolfin::common::SubSystemsManager::init_petsc)
       .def_static("init_petsc",
                   [](std::vector<std::string> args) {
-                    std::vector<char *> argv(args.size());
+                    std::vector<char*> argv(args.size());
                     for (std::size_t i = 0; i < args.size(); ++i)
-                      argv[i] = const_cast<char *>(args[i].data());
+                      argv[i] = const_cast<char*>(args[i].data());
                     dolfin::common::SubSystemsManager::init_petsc(args.size(),
                                                                   argv.data());
                   })
@@ -168,7 +170,8 @@ void common(py::module &m) {
 }
 
 // Interface for MPI
-void mpi(py::module &m) {
+void mpi(py::module& m)
+{
 
 #ifndef HAS_PYBIND11_MPI4PY
   // Expose the MPICommWrapper directly since we cannot cast it to
@@ -199,9 +202,9 @@ void mpi(py::module &m) {
       .def_static(
           "init",
           [](std::vector<std::string> args, int required_thread_level) -> int {
-            std::vector<char *> argv(args.size());
+            std::vector<char*> argv(args.size());
             for (std::size_t i = 0; i < args.size(); ++i)
-              argv[i] = const_cast<char *>(args[i].data());
+              argv[i] = const_cast<char*>(args[i].data());
             return dolfin::common::SubSystemsManager::init_mpi(
                 args.size(), argv.data(), required_thread_level);
           },

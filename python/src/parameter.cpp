@@ -15,9 +15,11 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers {
+namespace dolfin_wrappers
+{
 
-void parameter(py::module &m) {
+void parameter(py::module& m)
+{
 
   // dolfin::parameter::Parameters
   py::class_<dolfin::parameter::Parameters,
@@ -27,8 +29,10 @@ void parameter(py::module &m) {
       .def(py::init<dolfin::parameter::Parameters>())
       .def(py::init([](std::string name, py::kwargs kwargs) {
         dolfin::parameter::Parameters p(name);
-        if (kwargs) {
-          for (auto item : kwargs) {
+        if (kwargs)
+        {
+          for (auto item : kwargs)
+          {
             std::string key = std::string(py::str(item.first));
             auto value = item.second;
             if (py::isinstance<py::str>(value))
@@ -39,12 +43,14 @@ void parameter(py::module &m) {
               p.add(key, value.cast<double>());
             else if (py::isinstance<dolfin::parameter::Parameters>(value))
               p.add(value.cast<dolfin::parameter::Parameters>());
-            else if (py::isinstance<py::tuple>(value)) {
+            else if (py::isinstance<py::tuple>(value))
+            {
               auto t = value.cast<py::tuple>();
               if (t.size() == 2)
                 p.add(key, t[0].cast<std::string>(),
                       t[1].cast<std::set<std::string>>());
-              if (t.size() == 3) {
+              if (t.size() == 3)
+              {
                 if (py::isinstance<py::float_>(t[0]))
                   p.add(key, t[0].cast<double>(), t[1].cast<double>(),
                         t[2].cast<double>());
@@ -55,7 +61,8 @@ void parameter(py::module &m) {
                   throw std::runtime_error("Unknown parameter type with range "
                                            "- expecting int or float");
               }
-            } else
+            }
+            else
               throw std::runtime_error("Unknown parameter type.");
           }
         }
@@ -64,65 +71,64 @@ void parameter(py::module &m) {
       }))
       // Use boost::variant to simplify
       .def("add",
-           (void (dolfin::parameter::Parameters::*)(std::string, std::string)) &
-               dolfin::parameter::Parameters::add)
+           (void (dolfin::parameter::Parameters::*)(std::string, std::string))
+               & dolfin::parameter::Parameters::add)
       .def("add",
            (void (dolfin::parameter::Parameters::*)(std::string, std::string,
-                                                    std::set<std::string>)) &
-               dolfin::parameter::Parameters::add)
+                                                    std::set<std::string>))
+               & dolfin::parameter::Parameters::add)
       .def("add",
-           (void (dolfin::parameter::Parameters::*)(std::string, bool)) &
-               dolfin::parameter::Parameters::add)
+           (void (dolfin::parameter::Parameters::*)(std::string, bool))
+               & dolfin::parameter::Parameters::add)
       .def("add",
-           (void (dolfin::parameter::Parameters::*)(std::string, int, int,
-                                                    int)) &
-               dolfin::parameter::Parameters::add)
+           (void (dolfin::parameter::Parameters::*)(std::string, int, int, int))
+               & dolfin::parameter::Parameters::add)
       .def("add",
-           (void (dolfin::parameter::Parameters::*)(std::string, int)) &
-               dolfin::parameter::Parameters::add)
+           (void (dolfin::parameter::Parameters::*)(std::string, int))
+               & dolfin::parameter::Parameters::add)
       .def("add",
-           (void (dolfin::parameter::Parameters::*)(std::string, double)) &
-               dolfin::parameter::Parameters::add)
+           (void (dolfin::parameter::Parameters::*)(std::string, double))
+               & dolfin::parameter::Parameters::add)
       .def("add",
            (void (dolfin::parameter::Parameters::*)(std::string, double, double,
-                                                    double)) &
-               dolfin::parameter::Parameters::add)
+                                                    double))
+               & dolfin::parameter::Parameters::add)
       .def("add",
            (void (dolfin::parameter::Parameters::*)(
-               const dolfin::parameter::Parameters &)) &
-               dolfin::parameter::Parameters::add)
+               const dolfin::parameter::Parameters&))
+               & dolfin::parameter::Parameters::add)
       // Support iterators
       .def("__len__", &dolfin::parameter::Parameters::size)
       .def("__iter__",
-           [](const dolfin::parameter::Parameters &p) {
+           [](const dolfin::parameter::Parameters& p) {
              return py::make_key_iterator(p.begin(), p.end());
            },
            py::keep_alive<0, 1>())
       .def("items",
-           [](const dolfin::parameter::Parameters &p) {
+           [](const dolfin::parameter::Parameters& p) {
              return py::make_iterator(p.begin(), p.end());
            },
            py::keep_alive<0, 1>())
       .def("keys",
-           [](const dolfin::parameter::Parameters &p) {
+           [](const dolfin::parameter::Parameters& p) {
              std::vector<std::string> keys;
-             for (auto &q : p)
+             for (auto& q : p)
                keys.push_back(q.first);
              return keys;
            })
       // These set_range function should be remove - they're just duplication
       .def("set_range",
-           [](dolfin::parameter::Parameters &self, std::string name, double min,
+           [](dolfin::parameter::Parameters& self, std::string name, double min,
               double max) { self[name].set_range(min, max); })
       .def("set_range",
-           [](dolfin::parameter::Parameters &self, std::string name, int min,
+           [](dolfin::parameter::Parameters& self, std::string name, int min,
               int max) { self[name].set_range(min, max); })
       .def("set_range",
-           [](dolfin::parameter::Parameters &self, std::string name,
+           [](dolfin::parameter::Parameters& self, std::string name,
               std::set<std::string> range) { self[name].set_range(range); })
       .def("get_range",
-           [](dolfin::parameter::Parameters &self, std::string key) {
-             const auto &p = self.find_parameter(key);
+           [](dolfin::parameter::Parameters& self, std::string key) {
+             const auto& p = self.find_parameter(key);
              std::set<std::string> range;
              p->get_range(range);
              return range;
@@ -135,14 +141,14 @@ void parameter(py::module &m) {
            &dolfin::parameter::Parameters::has_parameter_set)
       .def("_update", &dolfin::parameter::Parameters::update)
       .def("_get_parameter",
-           (dolfin::parameter::Parameter &
-            (dolfin::parameter::Parameters::*)(std::string)) &
-               dolfin::parameter::Parameters::operator[],
+           (dolfin::parameter::Parameter
+            & (dolfin::parameter::Parameters::*)(std::string))
+               & dolfin::parameter::Parameters::operator[],
            py::return_value_policy::reference)
       .def("_get_parameter_set",
-           (dolfin::parameter::Parameters &
-            (dolfin::parameter::Parameters::*)(std::string)) &
-               dolfin::parameter::Parameters::operator(),
+           (dolfin::parameter::Parameters
+            & (dolfin::parameter::Parameters::*)(std::string))
+               & dolfin::parameter::Parameters::operator(),
            py::return_value_policy::reference)
       /*
         // With boost::variant, need to figure out how to set the
@@ -184,7 +190,7 @@ void parameter(py::module &m) {
       // FIXME: Can these functions be consolidated. Maybe boost::variant can
       // help?
       .def("__setitem__",
-           [](dolfin::parameter::Parameters &self, std::string key,
+           [](dolfin::parameter::Parameters& self, std::string key,
               py::none value) {
              auto param = self.find_parameter(key);
              if (!param)
@@ -195,13 +201,13 @@ void parameter(py::module &m) {
            "Reset Parameter (mark as unset) by setting to None.")
       .def(
           "__setitem__",
-          [](dolfin::parameter::Parameters &self, std::string key, bool value) {
+          [](dolfin::parameter::Parameters& self, std::string key, bool value) {
             auto param = self.find_parameter(key);
             *param = value;
           },
           py::arg(), py::arg().noconvert())
       .def("__setitem__",
-           [](dolfin::parameter::Parameters &self, std::string key,
+           [](dolfin::parameter::Parameters& self, std::string key,
               std::string value) {
              auto param = self.find_parameter(key);
              if (!param)
@@ -210,51 +216,52 @@ void parameter(py::module &m) {
              *param = value;
            })
       .def("__setitem__",
-           [](dolfin::parameter::Parameters &self, std::string key, int value) {
+           [](dolfin::parameter::Parameters& self, std::string key, int value) {
              auto param = self.find_parameter(key);
              *param = value;
            })
       .def("__setitem__",
-           [](dolfin::parameter::Parameters &self, std::string key,
+           [](dolfin::parameter::Parameters& self, std::string key,
               double value) {
              auto param = self.find_parameter(key);
              *param = value;
            })
       .def("__setitem__",
-           [](dolfin::parameter::Parameters &self, std::string key,
-              const dolfin::parameter::Parameters &other) {
+           [](dolfin::parameter::Parameters& self, std::string key,
+              const dolfin::parameter::Parameters& other) {
              auto param = self.find_parameter_set(key);
              *param = other;
            })
-      .def("__getitem__", [](dolfin::parameter::Parameters &self,
+      .def("__getitem__", [](dolfin::parameter::Parameters& self,
                              std::string key) { return self[key]; })
       .def("parse",
-           [](dolfin::parameter::Parameters &self, py::list argv) {
+           [](dolfin::parameter::Parameters& self, py::list argv) {
              if (argv.size() == 0)
                argv = py::module::import("sys").attr("argv").cast<py::list>();
              int argc = argv.size();
-             std::vector<const char *> aptr;
+             std::vector<const char*> aptr;
              std::vector<std::string> a;
-             for (auto q : argv) {
+             for (auto q : argv)
+             {
                a.push_back(q.cast<std::string>());
                aptr.push_back(a.back().c_str());
              }
-             self.parse(argc, const_cast<char **>(aptr.data()));
+             self.parse(argc, const_cast<char**>(aptr.data()));
            },
            py::arg("argv") = py::list())
       .def("copy",
-           [](dolfin::parameter::Parameters &self) {
+           [](dolfin::parameter::Parameters& self) {
              return dolfin::parameter::Parameters(self);
            })
       .def("assign",
-           [](dolfin::parameter::Parameters &self,
-              dolfin::parameter::Parameters &other) { self = other; });
+           [](dolfin::parameter::Parameters& self,
+              dolfin::parameter::Parameters& other) { self = other; });
 
   // dolfin::parameter::Parameter
   py::class_<dolfin::parameter::Parameter,
              std::shared_ptr<dolfin::parameter::Parameter>>(m, "Parameter")
       .def("value",
-           [](const dolfin::parameter::Parameter &self) {
+           [](const dolfin::parameter::Parameter& self) {
              py::object value;
              if (self.is_set())
                value = py::cast(self.value());
@@ -263,14 +270,14 @@ void parameter(py::module &m) {
              return value;
            })
       .def("set_range",
-           (void (dolfin::parameter::Parameter::*)(double, double)) &
-               dolfin::parameter::Parameter::set_range)
+           (void (dolfin::parameter::Parameter::*)(double, double))
+               & dolfin::parameter::Parameter::set_range)
       .def("set_range",
-           (void (dolfin::parameter::Parameter::*)(int, int)) &
-               dolfin::parameter::Parameter::set_range)
+           (void (dolfin::parameter::Parameter::*)(int, int))
+               & dolfin::parameter::Parameter::set_range)
       .def("set_range",
-           (void (dolfin::parameter::Parameter::*)(std::set<std::string>)) &
-               dolfin::parameter::Parameter::set_range)
+           (void (dolfin::parameter::Parameter::*)(std::set<std::string>))
+               & dolfin::parameter::Parameter::set_range)
       .def("__str__", &dolfin::parameter::Parameter::value_str);
 
   // dolfin::parameter::GlobalParameters

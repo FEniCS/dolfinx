@@ -36,9 +36,11 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers {
+namespace dolfin_wrappers
+{
 
-void mesh(py::module &m) {
+void mesh(py::module& m)
+{
 
   // dolfin::mesh::CellType
   py::class_<dolfin::mesh::CellType> celltype(m, "CellType");
@@ -96,8 +98,8 @@ void mesh(py::module &m) {
                                py::const_))
       .def("set_global_index", &dolfin::mesh::MeshTopology::set_global_index)
       .def("global_indices",
-           [](const dolfin::mesh::MeshTopology &self, int dim) {
-             auto &indices = self.global_indices(dim);
+           [](const dolfin::mesh::MeshTopology& self, int dim) {
+             auto& indices = self.global_indices(dim);
              return py::array_t<std::int64_t>(indices.size(), indices.data());
            })
       .def("have_shared_entities",
@@ -119,7 +121,7 @@ void mesh(py::module &m) {
       }))
       .def("bounding_box_tree", &dolfin::mesh::Mesh::bounding_box_tree)
       .def("cells",
-           [](const dolfin::mesh::Mesh &self) {
+           [](const dolfin::mesh::Mesh& self) {
              const std::uint32_t tdim = self.topology().dim();
              return py::array({(std::int32_t)self.topology().size(tdim),
                                (std::int32_t)self.type().num_vertices(tdim)},
@@ -138,7 +140,7 @@ void mesh(py::module &m) {
       .def("init", py::overload_cast<std::size_t, std::size_t>(
                        &dolfin::mesh::Mesh::init, py::const_))
       .def("mpi_comm",
-           [](dolfin::mesh::Mesh &self) {
+           [](dolfin::mesh::Mesh& self) {
              return MPICommWrapper(self.mpi_comm());
            })
       .def("num_entities", &dolfin::mesh::Mesh::num_entities,
@@ -156,8 +158,8 @@ void mesh(py::module &m) {
           "Mesh topology", py::return_value_policy::reference_internal)
       .def("type", py::overload_cast<>(&dolfin::mesh::Mesh::type, py::const_),
            py::return_value_policy::reference)
-      .def("ufl_id", [](const dolfin::mesh::Mesh &self) { return self.id(); })
-      .def("cell_name", [](const dolfin::mesh::Mesh &self) {
+      .def("ufl_id", [](const dolfin::mesh::Mesh& self) { return self.id(); })
+      .def("cell_name", [](const dolfin::mesh::Mesh& self) {
         return dolfin::mesh::CellType::type2string(self.type().cell_type());
       });
 
@@ -166,7 +168,7 @@ void mesh(py::module &m) {
              std::shared_ptr<dolfin::mesh::MeshConnectivity>>(
       m, "MeshConnectivity", "DOLFIN MeshConnectivity object")
       .def("__call__",
-           [](const dolfin::mesh::MeshConnectivity &self, std::size_t i) {
+           [](const dolfin::mesh::MeshConnectivity& self, std::size_t i) {
              return Eigen::Map<const dolfin::EigenArrayXi32>(self(i),
                                                              self.size(i));
            },
@@ -180,7 +182,7 @@ void mesh(py::module &m) {
   py::class_<dolfin::mesh::MeshEntity,
              std::shared_ptr<dolfin::mesh::MeshEntity>>(
       m, "MeshEntity", "DOLFIN MeshEntity object")
-      .def(py::init<const dolfin::mesh::Mesh &, std::size_t, std::size_t>())
+      .def(py::init<const dolfin::mesh::Mesh&, std::size_t, std::size_t>())
       .def_property_readonly("dim", &dolfin::mesh::MeshEntity::dim,
                              "Topological dimension")
       .def("mesh", &dolfin::mesh::MeshEntity::mesh, "Associated mesh")
@@ -195,7 +197,7 @@ void mesh(py::module &m) {
            &dolfin::mesh::MeshEntity::num_global_entities,
            "Global number of incident entities of given dimension")
       .def("entities",
-           [](dolfin::mesh::MeshEntity &self, std::size_t dim) {
+           [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
              return Eigen::Map<const dolfin::EigenArrayXi32>(
                  self.entities(dim), self.num_entities(dim));
            })
@@ -205,39 +207,39 @@ void mesh(py::module &m) {
       .def("is_shared", &dolfin::mesh::MeshEntity::is_shared)
       .def("is_ghost", &dolfin::mesh::MeshEntity::is_ghost)
       .def("__str__",
-           [](dolfin::mesh::MeshEntity &self) { return self.str(false); });
+           [](dolfin::mesh::MeshEntity& self) { return self.str(false); });
 
   // dolfin::mesh::Vertex
   py::class_<dolfin::mesh::Vertex, std::shared_ptr<dolfin::mesh::Vertex>,
              dolfin::mesh::MeshEntity>(m, "Vertex", "DOLFIN Vertex object")
-      .def(py::init<const dolfin::mesh::Mesh &, std::size_t>())
+      .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def("point", &dolfin::mesh::Vertex::point);
 
   // dolfin::mesh::Edge
   py::class_<dolfin::mesh::Edge, std::shared_ptr<dolfin::mesh::Edge>,
              dolfin::mesh::MeshEntity>(m, "Edge", "DOLFIN Edge object")
-      .def(py::init<const dolfin::mesh::Mesh &, std::size_t>())
+      .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def("dot", &dolfin::mesh::Edge::dot)
       .def("length", &dolfin::mesh::Edge::length);
 
   // dolfin::mesh::Face
   py::class_<dolfin::mesh::Face, std::shared_ptr<dolfin::mesh::Face>,
              dolfin::mesh::MeshEntity>(m, "Face", "DOLFIN Face object")
-      .def(py::init<const dolfin::mesh::Mesh &, std::size_t>())
+      .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def("normal", &dolfin::mesh::Face::normal)
       .def("area", &dolfin::mesh::Face::area);
 
   // dolfin::mesh::Facet
   py::class_<dolfin::mesh::Facet, std::shared_ptr<dolfin::mesh::Facet>,
              dolfin::mesh::MeshEntity>(m, "Facet", "DOLFIN Facet object")
-      .def(py::init<const dolfin::mesh::Mesh &, std::size_t>())
+      .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def("exterior", &dolfin::mesh::Facet::exterior)
       .def("normal", &dolfin::mesh::Facet::normal);
 
   // dolfin::mesh::Cell
   py::class_<dolfin::mesh::Cell, std::shared_ptr<dolfin::mesh::Cell>,
              dolfin::mesh::MeshEntity>(m, "Cell", "DOLFIN Cell object")
-      .def(py::init<const dolfin::mesh::Mesh &, std::size_t>())
+      .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def("distance", &dolfin::mesh::Cell::distance)
       .def("facet_area", &dolfin::mesh::Cell::facet_area)
       .def("h", &dolfin::mesh::Cell::h)
@@ -247,23 +249,23 @@ void mesh(py::module &m) {
       .def("radius_ratio", &dolfin::mesh::Cell::radius_ratio)
       .def("volume", &dolfin::mesh::Cell::volume);
 
-  py::class_<
-      dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>,
-      std::shared_ptr<dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>>>(
+  py::class_<dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>,
+             std::
+                 shared_ptr<dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>>>(
       m, "MeshEntities", "Range for iteration over entities of a Mesh")
-      .def(py::init<const dolfin::mesh::Mesh &, int>())
+      .def(py::init<const dolfin::mesh::Mesh&, int>())
       .def("__iter__",
-           [](const dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity> &r) {
+           [](const dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>& r) {
              return py::make_iterator(r.begin(), r.end());
            });
 
-  py::class_<
-      dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>,
-      std::shared_ptr<dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>>>(
+  py::class_<dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>,
+             std::shared_ptr<dolfin::mesh::
+                                 EntityRange<dolfin::mesh::MeshEntity>>>(
       m, "EntityRange", "Range for iteration over entities of another entity")
-      .def(py::init<const dolfin::mesh::MeshEntity &, int>())
+      .def(py::init<const dolfin::mesh::MeshEntity&, int>())
       .def("__iter__",
-           [](const dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity> &r) {
+           [](const dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>& r) {
              return py::make_iterator(r.begin(), r.end());
            });
 
@@ -273,9 +275,9 @@ void mesh(py::module &m) {
              std::shared_ptr<dolfin::mesh::MeshRange<dolfin::ENTITYNAME>>>(    \
       m, #TYPE,                                                                \
       "Range for iterating over entities of type " #ENTITYNAME " of a Mesh")   \
-      .def(py::init<const dolfin::mesh::Mesh &>())                             \
+      .def(py::init<const dolfin::mesh::Mesh&>())                              \
       .def("__iter__",                                                         \
-           [](const dolfin::mesh::MeshRange<dolfin::ENTITYNAME> &c) {          \
+           [](const dolfin::mesh::MeshRange<dolfin::ENTITYNAME>& c) {          \
              return py::make_iterator(c.begin(), c.end());                     \
            });
 
@@ -291,9 +293,9 @@ void mesh(py::module &m) {
              std::shared_ptr<dolfin::mesh::EntityRange<dolfin::ENTITYNAME>>>(  \
       m, #TYPE, "Range for iterating over entities of type " #ENTITYNAME       \
                 " incident to a MeshEntity")                                   \
-      .def(py::init<const dolfin::mesh::MeshEntity &>())                       \
+      .def(py::init<const dolfin::mesh::MeshEntity&>())                        \
       .def("__iter__",                                                         \
-           [](const dolfin::mesh::EntityRange<dolfin::ENTITYNAME> &c) {        \
+           [](const dolfin::mesh::EntityRange<dolfin::ENTITYNAME>& c) {        \
              return py::make_iterator(c.begin(), c.end());                     \
            });
 
@@ -313,22 +315,23 @@ void mesh(py::module &m) {
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>, std::size_t,    \
                     SCALAR>())                                                 \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>,                 \
-                    const dolfin::mesh::MeshValueCollection<SCALAR> &,         \
-                    const SCALAR &>())                                         \
+                    const dolfin::mesh::MeshValueCollection<SCALAR>&,          \
+                    const SCALAR&>())                                          \
       .def("__getitem__",                                                      \
-           (const SCALAR &(dolfin::mesh::MeshFunction<SCALAR>::*)(std::size_t) \
-                const) &                                                       \
-               dolfin::mesh::MeshFunction<SCALAR>::operator[])                 \
+           (const SCALAR& (dolfin::mesh::MeshFunction<SCALAR>::*)(std::size_t) \
+                const)                                                         \
+               & dolfin::mesh::MeshFunction<SCALAR>::operator[])               \
       .def("__setitem__",                                                      \
-           [](dolfin::mesh::MeshFunction<SCALAR> &self, std::size_t index,     \
+           [](dolfin::mesh::MeshFunction<SCALAR>& self, std::size_t index,     \
               SCALAR value) { self.operator[](index) = value; })               \
       .def("__getitem__",                                                      \
-           (const SCALAR &(dolfin::mesh::MeshFunction<SCALAR>::                \
-                               *)(const dolfin::mesh::MeshEntity &)const) &    \
-               dolfin::mesh::MeshFunction<SCALAR>::operator[])                 \
+           (const SCALAR& (                                                    \
+               dolfin::mesh::MeshFunction<SCALAR>::*)(const dolfin::mesh::     \
+                                                          MeshEntity&)const)   \
+               & dolfin::mesh::MeshFunction<SCALAR>::operator[])               \
       .def("__setitem__",                                                      \
-           [](dolfin::mesh::MeshFunction<SCALAR> &self,                        \
-              const dolfin::mesh::MeshEntity &index,                           \
+           [](dolfin::mesh::MeshFunction<SCALAR>& self,                        \
+              const dolfin::mesh::MeshEntity& index,                           \
               SCALAR value) { self.operator[](index) = value; })               \
       .def("__len__", &dolfin::mesh::MeshFunction<SCALAR>::size)               \
       .def_property_readonly("dim", &dolfin::mesh::MeshFunction<SCALAR>::dim)  \
@@ -336,10 +339,10 @@ void mesh(py::module &m) {
       .def("ufl_id", &dolfin::mesh::MeshFunction<SCALAR>::id)                  \
       .def("mesh", &dolfin::mesh::MeshFunction<SCALAR>::mesh)                  \
       .def("set_values", &dolfin::mesh::MeshFunction<SCALAR>::set_values)      \
-      .def("set_all", [](dolfin::mesh::MeshFunction<SCALAR> &self,             \
-                         const SCALAR &value) { self = value; })               \
+      .def("set_all", [](dolfin::mesh::MeshFunction<SCALAR>& self,             \
+                         const SCALAR& value) { self = value; })               \
       .def("where_equal", &dolfin::mesh::MeshFunction<SCALAR>::where_equal)    \
-      .def("array", [](dolfin::mesh::MeshFunction<SCALAR> &self) {             \
+      .def("array", [](dolfin::mesh::MeshFunction<SCALAR>& self) {             \
         return Eigen::Map<Eigen::Array<SCALAR, Eigen::Dynamic, 1>>(            \
             self.values(), self.size());                                       \
       })
@@ -363,23 +366,24 @@ void mesh(py::module &m) {
       .def("get_value", &dolfin::mesh::MeshValueCollection<SCALAR>::get_value) \
       .def("set_value",                                                        \
            (bool (dolfin::mesh::MeshValueCollection<SCALAR>::*)(               \
-               std::size_t, const SCALAR &)) &                                 \
-               dolfin::mesh::MeshValueCollection<SCALAR>::set_value)           \
+               std::size_t, const SCALAR&))                                    \
+               & dolfin::mesh::MeshValueCollection<SCALAR>::set_value)         \
       .def("set_value",                                                        \
            (bool (dolfin::mesh::MeshValueCollection<SCALAR>::*)(               \
-               std::size_t, std::size_t, const SCALAR &)) &                    \
-               dolfin::mesh::MeshValueCollection<SCALAR>::set_value)           \
+               std::size_t, std::size_t, const SCALAR&))                       \
+               & dolfin::mesh::MeshValueCollection<SCALAR>::set_value)         \
       .def("values",                                                           \
-           (std::map<std::pair<std::size_t, std::size_t>, SCALAR> &            \
-            (dolfin::mesh::MeshValueCollection<SCALAR>::*)()) &                \
-               dolfin::mesh::MeshValueCollection<SCALAR>::values,              \
+           (std::map<std::pair<std::size_t, std::size_t>,                      \
+                     SCALAR> & (dolfin::mesh::                                 \
+                                    MeshValueCollection<SCALAR>::*)())         \
+               & dolfin::mesh::MeshValueCollection<SCALAR>::values,            \
            py::return_value_policy::reference)                                 \
       .def("assign",                                                           \
-           [](dolfin::mesh::MeshValueCollection<SCALAR> &self,                 \
-              const dolfin::mesh::MeshFunction<SCALAR> &mf) { self = mf; })    \
+           [](dolfin::mesh::MeshValueCollection<SCALAR>& self,                 \
+              const dolfin::mesh::MeshFunction<SCALAR>& mf) { self = mf; })    \
       .def("assign",                                                           \
-           [](dolfin::mesh::MeshValueCollection<SCALAR> &self,                 \
-              const dolfin::mesh::MeshValueCollection<SCALAR> &other) {        \
+           [](dolfin::mesh::MeshValueCollection<SCALAR>& self,                 \
+              const dolfin::mesh::MeshValueCollection<SCALAR>& other) {        \
              self = other;                                                     \
            })
 
@@ -408,17 +412,20 @@ void mesh(py::module &m) {
 
   // dolfin::SubDomain trampoline class for user overloading from
   // Python
-  class PySubDomain : public dolfin::mesh::SubDomain {
+  class PySubDomain : public dolfin::mesh::SubDomain
+  {
     using dolfin::mesh::SubDomain::SubDomain;
 
     dolfin::EigenArrayXb inside(Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
-                                bool on_boundary) const override {
+                                bool on_boundary) const override
+    {
       PYBIND11_OVERLOAD(dolfin::EigenArrayXb, dolfin::mesh::SubDomain, inside,
                         x, on_boundary);
     }
 
     void map(Eigen::Ref<const dolfin::EigenArrayXd> x,
-             Eigen::Ref<dolfin::EigenArrayXd> y) const override {
+             Eigen::Ref<dolfin::EigenArrayXd> y) const override
+    {
       PYBIND11_OVERLOAD(void, dolfin::mesh::SubDomain, map, x, y);
     }
   };

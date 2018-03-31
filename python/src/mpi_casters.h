@@ -66,4 +66,3 @@ public:
 
 #endif // HAS_PYBIND11_MPI4PY
 #endif // HAS_MPI
-
