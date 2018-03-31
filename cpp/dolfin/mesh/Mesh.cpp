@@ -58,6 +58,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // _geometry.x().resize(nvals);
   // std::copy(vertex_coordinates.data(), vertex_coordinates.data() + nvals,
   //           _geometry.x().begin());
+  _geometry.x() = vertex_coordinates;
 
   // Initialise vertex topology
   const std::size_t num_vertices = vertex_coordinates.rows();
