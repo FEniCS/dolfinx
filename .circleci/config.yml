@@ -89,7 +89,7 @@ jobs:
             cd python/test
             mpirun -n 3 python3 -m pytest unit/io
             mpirun -n 3 python3 -m pytest unit/la/test_sparsity_pattern.py
-            mpirun -n 3 python3 python3 -m pytest unit/mesh
+            mpirun -n 3 python3 -m pytest unit/mesh
       - run:
           name: Run Python demos (serial)
           command: |
