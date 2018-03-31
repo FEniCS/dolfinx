@@ -1119,10 +1119,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
 EigenRowArrayXXd
 DistributedMeshTools::reorder_vertices_by_global_indices(const Mesh& mesh)
 {
-  Eigen::Map<const EigenRowArrayXXd> ordered_coordinates(
-      mesh.geometry().x().data(),
-      mesh.geometry().x().size() / mesh.geometry().dim(),
-      mesh.geometry().dim());
+  const EigenRowArrayXXd& ordered_coordinates = mesh.geometry().points();
   return reorder_values_by_global_indices(mesh, ordered_coordinates);
 }
 //-----------------------------------------------------------------------------

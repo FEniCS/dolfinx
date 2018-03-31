@@ -190,6 +190,9 @@ public:
   /// Assignment operator
   Point& operator=(const Point& p) = default;
 
+  /// Move assignment operator
+  Point& operator=(Point&& p) = default;
+
   /// Equal to operator
   bool operator==(const Point& p) const { return _x == p._x; }
 
@@ -297,7 +300,8 @@ private:
 }
 }
 /// Output of Point to stream
-inline std::ostream& operator<<(std::ostream& stream, const dolfin::geometry::Point& point)
+inline std::ostream& operator<<(std::ostream& stream,
+                                const dolfin::geometry::Point& point)
 {
   stream << point.str(false);
   return stream;

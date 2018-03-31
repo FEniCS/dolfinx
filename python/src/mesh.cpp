@@ -60,14 +60,12 @@ void mesh(py::module &m) {
 
   // dolfin::mesh::MeshGeometry class
   py::class_<dolfin::mesh::MeshGeometry,
-             std::shared_ptr<dolfin::mesh::MeshGeometry>>(
-      m, "MeshGeometry", "DOLFIN MeshGeometry object")
-      .def("dim", &dolfin::mesh::MeshGeometry::dim, "Geometrical dimension")
-      .def("x",
-           [](dolfin::mesh::MeshGeometry &self) {
-             return Eigen::Map<dolfin::EigenRowArrayXXd>(
-                 self.x().data(), self.num_points(), self.dim());
-           })
+             std::shared_ptr<dolfin::mesh::MeshGeometry>>(m, "MeshGeometry",
+                                                          "MeshGeometry object")
+      .def("dim", &dolfin::mesh::MeshGeometry::dim, "Geometric dimension")
+      .def("points", py::overload_cast<>(&dolfin::mesh::MeshGeometry::points),
+           py::return_value_policy::reference_internal,
+           "Return coordinates of all points")
       .def_readwrite("coord_mapping",
                      &dolfin::mesh::MeshGeometry::coord_mapping);
 

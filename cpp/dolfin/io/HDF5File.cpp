@@ -261,7 +261,7 @@ void HDF5File::write(const mesh::Mesh& mesh, std::size_t cell_dim,
     // Copy coordinates and indices and remove off-process values
     EigenRowArrayXXd _vertex_coords;
     if (!mpi_io)
-      _vertex_coords = mesh.geometry().x();
+      _vertex_coords = mesh.geometry().points();
     else
     {
       _vertex_coords

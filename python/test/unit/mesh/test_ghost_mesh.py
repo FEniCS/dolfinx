@@ -15,6 +15,8 @@ from dolfin_utils.test import (fixture, skip_in_parallel,
 from dolfin.parameter import parameters
 
 # See https://bitbucket.org/fenics-project/dolfin/issues/579
+
+
 def xtest_ghost_vertex_1d(pushpop_parameters):
     parameters["ghost_mode"] = "shared_vertex"
     mesh = UnitIntervalMesh(MPI.comm_world, 20)
@@ -26,6 +28,7 @@ def xtest_ghost_facet_1d(pushpop_parameters):
     mesh = UnitIntervalMesh(MPI.comm_world, 20)
 
 
+@pytest.mark.xfail
 def test_ghost_2d(pushpop_parameters):
     modes = ["shared_vertex", "shared_facet"]
     for mode in modes:
@@ -51,11 +54,12 @@ def test_ghost_2d(pushpop_parameters):
 
         parameters["reorder_cells_gps"] = False
         parameters["reorder_vertices_gps"] = True
-        mesh = UnitSquareMesh(MPI.comm_world,N, N)
+        mesh = UnitSquareMesh(MPI.comm_world, N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
 
+@pytest.mark.xfail
 def test_ghost_3d(pushpop_parameters):
     modes = ["shared_vertex", "shared_facet"]
     for mode in modes:
@@ -63,27 +67,28 @@ def test_ghost_3d(pushpop_parameters):
         N = 2
         num_cells = 48
 
-        mesh = UnitCubeMesh(MPI.comm_world,N, N, N)
+        mesh = UnitCubeMesh(MPI.comm_world, N, N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
         parameters["reorder_cells_gps"] = True
         parameters["reorder_vertices_gps"] = False
-        mesh = UnitCubeMesh(MPI.comm_world,N, N, N)
+        mesh = UnitCubeMesh(MPI.comm_world, N, N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
         parameters["reorder_cells_gps"] = True
         parameters["reorder_vertices_gps"] = True
-        mesh = UnitCubeMesh(MPI.comm_world,N, N, N)
+        mesh = UnitCubeMesh(MPI.comm_world, N, N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
         parameters["reorder_cells_gps"] = False
         parameters["reorder_vertices_gps"] = True
-        mesh = UnitCubeMesh(MPI.comm_world,N, N, N)
+        mesh = UnitCubeMesh(MPI.comm_world, N, N, N)
         if MPI.size(mesh.mpi_comm()) > 1:
             assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
+
 
 @pytest.mark.xfail
 @pytest.mark.parametrize('gmode', ['shared_vertex', 'shared_facet', 'none'])

@@ -158,8 +158,7 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
   auto gdim = mesh.geometry().dim();
 
   // Check all vertices for "inside" (on_boundary==false)
-  Eigen::Map<const EigenRowArrayXXd> x(mesh.geometry().x().data(),
-                                       mesh.num_entities(0), gdim);
+  const EigenRowArrayXXd& x = mesh.geometry().points();
   EigenArrayXb all_inside = inside(x, false);
   assert(all_inside.rows() == x.rows());
 

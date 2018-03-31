@@ -135,8 +135,8 @@ void ParallelRefinement::create_new_vertices()
   // Copy over existing mesh vertices
   //_new_vertex_coordinates = _mesh.geometry().x();
   _new_vertex_coordinates = std::vector<double>(
-      _mesh.geometry().x().data(),
-      _mesh.geometry().x().data() + _mesh.geometry().x().size());
+      _mesh.geometry().points().data(),
+      _mesh.geometry().points().data() + _mesh.geometry().points().size());
 
   // Tally up unshared marked edges, and shared marked edges which are
   // owned on this process.  Index them sequentially from zero.

@@ -21,7 +21,7 @@ from dolfin_utils.test import cd_tempdir
 def mesh1d():
     # Create 1D mesh with degenerate cell
     mesh1d = UnitIntervalMesh(MPI.comm_world, 4)
-    mesh1d.geometry().x()[4] = mesh1d.geometry().x()[3]
+    mesh1d.geometry().points()[4] = mesh1d.geometry().points()[3]
     return mesh1d
 
 
@@ -30,7 +30,7 @@ def mesh2d():
     # Create 2D mesh with one equilateral triangle
     mesh2d = RectangleMesh.create(MPI.comm_world, [Point(0, 0), Point(1, 1)],
                                   [1, 1], CellType.Type.triangle, 'left')
-    mesh2d.geometry().x()[3] += 0.5*(sqrt(3.0)-1.0)
+    mesh2d.geometry().points()[3] += 0.5*(sqrt(3.0)-1.0)
     return mesh2d
 
 
@@ -38,8 +38,8 @@ def mesh2d():
 def mesh3d():
     # Create 3D mesh with regular tetrahedron and degenerate cells
     mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
-    mesh3d.geometry().x()[6][0] = 1.0
-    mesh3d.geometry().x()[3][1] = 0.0
+    mesh3d.geometry().points()[6][0] = 1.0
+    mesh3d.geometry().points()[3][1] = 0.0
     return mesh3d
 
 
@@ -268,7 +268,7 @@ def test_GetGeometricalDimension():
 def test_GetCoordinates():
     """Get coordinates of vertices"""
     mesh = UnitSquareMesh(MPI.comm_world, 5, 5)
-    assert len(mesh.geometry().x()) == 36
+    assert len(mesh.geometry().points()) == 36
 
 
 def test_GetCells():
