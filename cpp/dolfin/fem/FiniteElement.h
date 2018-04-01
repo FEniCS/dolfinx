@@ -57,14 +57,6 @@ public:
     return _ufc_element->topological_dimension();
   }
 
-  /// Return the geometric dimension of the cell shape
-  /// @return std::uint32_t
-  virtual std::uint32_t geometric_dimension() const
-  {
-    assert(_ufc_element);
-    return _ufc_element->geometric_dimension();
-  }
-
   /// Return the dimension of the finite element function space
   /// @return std::size_t
   std::size_t space_dimension() const

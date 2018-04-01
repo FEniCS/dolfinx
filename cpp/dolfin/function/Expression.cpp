@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Expression.h"
+#include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -95,22 +96,32 @@ Expression::get_generic_function(std::string name) const
   return std::shared_ptr<GenericFunction>();
 }
 //-----------------------------------------------------------------------------
-void Expression::restrict(double* w, const fem::FiniteElement& element,
-                          const mesh::Cell& cell,
-                          const double* coordinate_dofs) const
+void Expression::restrict(
+    double* w, const fem::FiniteElement& element, const mesh::Cell& cell,
+    const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
 {
   // Get evaluation points
   const std::size_t vs = value_size();
   const std::size_t ndofs = element.space_dimension();
-  const std::size_t gdim = element.geometric_dimension();
+  const std::size_t gdim = cell.mesh().geometry().dim();
 
   // FIXME: for Vector Lagrange elements (and probably Tensor too),
   // this repeats the same evaluation points "gdim" times. Should only
   // do them once, and remove the "mapping" below (which is the identity).
 
+  // Get dof coordinates on reference element
+  const EigenRowArrayXXd& X = element.dof_reference_coordinates();
+
+  // Get coordinate mapping
+  if (!cell.mesh().geometry().coord_mapping)
+  {
+    throw std::runtime_error(
+        "CoordinateMapping has not been attached to mesh.");
+  }
+  const fem::CoordinateMapping& cmap = *cell.mesh().geometry().coord_mapping;
+
   EigenRowArrayXXd eval_points(ndofs, gdim);
-  element.ufc_element()->tabulate_dof_coordinates(eval_points.data(),
-                                                  coordinate_dofs);
+  cmap.compute_physical_coordinates(eval_points, X, coordinate_dofs);
 
   // Storage for evaluation values
   EigenRowArrayXXd eval_values(ndofs, vs);
@@ -122,10 +133,12 @@ void Expression::restrict(double* w, const fem::FiniteElement& element,
   // FIXME: remove need for this - needs work in ffc
   eval_values.transposeInPlace();
 
+  // FIXME: *do not* use UFC directly
   // Apply a mapping to the reference element.
   // FIXME: not needed for Lagrange elements, eliminate.
   // See: ffc/uflacs/backends/ufc/evaluatedof.py:_change_variables()
-  element.ufc_element()->map_dofs(w, eval_values.data(), coordinate_dofs, -1);
+  element.ufc_element()->map_dofs(w, eval_values.data(), coordinate_dofs.data(),
+                                  -1);
 }
 //-----------------------------------------------------------------------------
 EigenRowArrayXXd Expression::compute_vertex_values(const mesh::Mesh& mesh) const

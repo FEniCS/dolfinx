@@ -117,8 +117,8 @@ void fem(py::module& m)
       //        },
       //        "Tabulate coordinates of dofs on cell")
       .def("space_dimension", &dolfin::fem::FiniteElement::space_dimension)
-      .def("geometric_dimension",
-           &dolfin::fem::FiniteElement::geometric_dimension)
+      .def("topological_dimension",
+           &dolfin::fem::FiniteElement::topological_dimension)
       .def("value_dimension", &dolfin::fem::FiniteElement::value_dimension)
       .def("signature", &dolfin::fem::FiniteElement::signature);
 

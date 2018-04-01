@@ -119,8 +119,7 @@ void FunctionSpace::interpolate_from_any(
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Restrict function to cell
-    v.restrict(cell_coefficients.data(), *_element, cell,
-               coordinate_dofs.data());
+    v.restrict(cell_coefficients.data(), *_element, cell, coordinate_dofs);
 
     // Tabulate dofs
     auto cell_dofs = _dofmap->cell_dofs(cell.index());
@@ -251,8 +250,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   // Geometric dimension
   assert(_mesh);
   assert(_element);
-  const std::size_t gdim = _element->geometric_dimension();
-  assert(gdim == _mesh->geometry().dim());
+  const std::size_t gdim = _mesh->geometry().dim();
 
   if (!_component.empty())
   {

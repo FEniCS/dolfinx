@@ -99,8 +99,7 @@ Function::Function(const Function& v)
     // Initial new vector (global)
     init_vector();
     assert(_function_space->dofmap());
-    assert(_vector->size()
-                  == _function_space->dofmap()->global_dimension());
+    assert(_vector->size() == _function_space->dofmap()->global_dimension());
 
     // FIXME (local): Check this for local or global
     // Set values in vector
@@ -295,7 +294,7 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
   cell.get_coordinate_dofs(coordinate_dofs);
 
   // Restrict function to cell
-  restrict(coefficients.data(), element, cell, coordinate_dofs.data());
+  restrict(coefficients.data(), element, cell, coordinate_dofs);
 
   // Get coordinate mapping
   auto cmap = mesh.geometry().coord_mapping;
@@ -397,9 +396,9 @@ std::vector<std::size_t> Function::value_shape() const
   return _shape;
 }
 //-----------------------------------------------------------------------------
-void Function::restrict(double* w, const fem::FiniteElement& element,
-                        const mesh::Cell& dolfin_cell,
-                        const double* coordinate_dofs) const
+void Function::restrict(
+    double* w, const fem::FiniteElement& element, const mesh::Cell& dolfin_cell,
+    const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
 {
   assert(w);
   assert(_function_space);
@@ -553,7 +552,7 @@ void Function::init_vector()
   // Build list of ghosts (global block indices)
   const std::size_t nowned = index_map->size(common::IndexMap::MapSize::OWNED);
   assert(nowned + index_map->size(common::IndexMap::MapSize::UNOWNED)
-                == local_to_global.size());
+         == local_to_global.size());
   std::vector<dolfin::la_index_t> ghosts(local_to_global.begin() + nowned,
                                          local_to_global.end());
 

@@ -174,9 +174,9 @@ public:
   ///         The cell.
   /// @param  coordinate_dofs (double *)
   ///         The coordinates
-  virtual void restrict(double* w, const fem::FiniteElement& element,
-                        const mesh::Cell& cell,
-                        const double* coordinate_dofs) const override;
+  virtual void restrict(
+      double* w, const fem::FiniteElement& element, const mesh::Cell& cell,
+      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const override;
 
   /// Compute values at all mesh vertices
   ///

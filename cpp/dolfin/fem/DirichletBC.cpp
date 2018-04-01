@@ -432,7 +432,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 
     // Restrict coefficient to cell
     _g->restrict(data.w.data(), *_function_space->element(), cell,
-                 coordinate_dofs.data());
+                 coordinate_dofs);
 
     // Tabulate dofs on cell
     auto cell_dofs = dofmap.cell_dofs(cell.index());
@@ -571,7 +571,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           if (!interpolated)
           {
             _g->restrict(data.w.data(), *_function_space->element(), cell,
-                         coordinate_dofs.data());
+                         coordinate_dofs);
             interpolated = true;
           }
 
@@ -675,7 +675,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 
           // Restrict coefficient to cell
           _g->restrict(data.w.data(), *_function_space->element(), cell,
-                       coordinate_dofs.data());
+                       coordinate_dofs);
 
           // Put cell index in storage for next time function is
           // called
@@ -710,7 +710,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 
       // Restrict coefficient to cell
       _g->restrict(data.w.data(), *_function_space->element(), cell,
-                   coordinate_dofs.data());
+                   coordinate_dofs);
 
       // Tabulate dofs on cell
       auto cell_dofs = dofmap.cell_dofs(cell.index());
