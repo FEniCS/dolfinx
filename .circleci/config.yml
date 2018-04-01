@@ -76,13 +76,13 @@ jobs:
           name: Run Python unit tests (serial)
           command: |
             cd python/test
-            python3 -m pytest unit/fem/test_assembler.py
-            python3 -m pytest unit/function
-            python3 -m pytest unit/geometry/test_bounding_box_tree.py
-            python3 -m pytest unit/io
-            python3 -m pytest unit/jit
-            python3 -m pytest unit/la/test_sparsity_pattern.py
-            python3 -m pytest unit/mesh
+            python3 -m pytest -n 2 unit/fem/test_assembler.py
+            python3 -m pytest -n 2 unit/function
+            python3 -m pytest -n 2 unit/geometry/test_bounding_box_tree.py
+            python3 -m pytest -n 2 unit/io
+            python3 -m pytest -n 2 unit/jit
+            python3 -m pytest -n 2 unit/la/test_sparsity_pattern.py
+            python3 -m pytest -n 2 unit/mesh
       - run:
           name: Run Python unit tests (MPI)
           command: |

@@ -515,13 +515,13 @@ def test_mesh_connectivity_lifetime():
 
     # Refcount checks on the MeshConnectivity object
     rc = sys.getrefcount(topology)
-    connectivity = topology(1, 2)
+    connectivity = topology.connectivity(1, 2)
     assert sys.getrefcount(topology) == rc + 1
     del connectivity
     assert sys.getrefcount(topology) == rc
 
     # Refcount checks on the returned connectivities array
-    conn = topology(1, 2)
+    conn = topology.connectivity(1, 2)
     rc = sys.getrefcount(conn)
     cells = conn(0)
     assert sys.getrefcount(conn) == rc + 1

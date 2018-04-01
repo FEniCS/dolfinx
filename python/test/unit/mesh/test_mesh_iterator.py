@@ -17,7 +17,7 @@ def test_vertex_iterators():
         mesh.init(0, i)
 
     # Test connectivity
-    cons = [(i, mesh.topology(0, i)) for i in range(4)]
+    cons = [(i, mesh.topology.connectivity(0, i)) for i in range(4)]
 
     # Test writability
     for i, con in cons:
@@ -51,7 +51,7 @@ def test_edge_iterators():
         mesh.init(1, i)
 
     # Test connectivity
-    cons = [(i, mesh.topology(1, i)) for i in range(4)]
+    cons = [(i, mesh.topology.connectivity(1, i)) for i in range(4)]
 
     # Test writability
     for i, con in cons:
@@ -77,7 +77,7 @@ def test_face_iterator():
         mesh.init(2, i)
 
     # Test connectivity
-    cons = [(i, mesh.topology(2, i)) for i in range(4)]
+    cons = [(i, mesh.topology.connectivity(2, i)) for i in range(4)]
 
     # Test writability
     for i, con in cons:
@@ -111,7 +111,7 @@ def test_cell_iterators():
         mesh.init(3, i)
 
     # Test connectivity
-    cons = [(i, mesh.topology(3, i)) for i in range(4)]
+    cons = [(i, mesh.topology.connectivity(3, i)) for i in range(4)]
 
     # Test writability
     for i, con in cons:

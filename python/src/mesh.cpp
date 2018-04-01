@@ -87,6 +87,10 @@ void mesh(py::module& m)
       //      py::overload_cast<std::size_t, std::size_t>(
       //          &dolfin::mesh::MeshTopology::connectivity, py::const_),
       //      py::return_value_policy::reference_internal)
+      .def("connectivity",
+           py::overload_cast<std::size_t, std::size_t>(
+               &dolfin::mesh::MeshTopology::connectivity, py::const_),
+           py::return_value_policy::reference_internal)
       .def("size", &dolfin::mesh::MeshTopology::size)
       .def("hash", &dolfin::mesh::MeshTopology::hash)
       .def("init_global_indices",
