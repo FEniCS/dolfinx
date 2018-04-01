@@ -139,7 +139,7 @@ public:
   const std::vector<std::uint32_t>& cell_owner() const { return _cell_owner; }
 
   /// Return connectivity for given pair of topological dimensions
-  MeshConnectivity& operator()(std::size_t d0, std::size_t d1)
+  MeshConnectivity& connectivity(std::size_t d0, std::size_t d1)
   {
     dolfin_assert(d0 < _connectivity.size());
     dolfin_assert(d1 < _connectivity[d0].size());
@@ -147,7 +147,7 @@ public:
   }
 
   /// Return connectivity for given pair of topological dimensions
-  const MeshConnectivity& operator()(std::size_t d0, std::size_t d1) const
+  const MeshConnectivity& connectivity(std::size_t d0, std::size_t d1) const
   {
     dolfin_assert(d0 < _connectivity.size());
     dolfin_assert(d1 < _connectivity[d0].size());

@@ -117,7 +117,10 @@ MeshTopology::shared_entities(std::uint32_t dim) const
   return e->second;
 }
 //-----------------------------------------------------------------------------
-size_t MeshTopology::hash() const { return (*this)(dim(), 0).hash(); }
+size_t MeshTopology::hash() const
+{
+  return this->connectivity(dim(), 0).hash();
+}
 //-----------------------------------------------------------------------------
 std::string MeshTopology::str(bool verbose) const
 {

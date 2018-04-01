@@ -208,7 +208,8 @@ MeshValueCollection<T>::MeshValueCollection(
   else
   {
     _mesh->init(_dim, D);
-    const MeshConnectivity& connectivity = _mesh->topology()(_dim, D);
+    const MeshConnectivity& connectivity
+        = _mesh->topology().connectivity(_dim, D);
     dolfin_assert(!connectivity.empty());
     for (std::size_t entity_index = 0; entity_index < mesh_function.size();
          ++entity_index)
@@ -258,7 +259,8 @@ operator=(const MeshFunction<T>& mesh_function)
   else
   {
     _mesh->init(_dim, D);
-    const MeshConnectivity& connectivity = _mesh->topology()(_dim, D);
+    const MeshConnectivity& connectivity
+        = _mesh->topology().connectivity(_dim, D);
     dolfin_assert(!connectivity.empty());
     for (std::size_t entity_index = 0; entity_index < mesh_function.size();
          ++entity_index)
@@ -370,7 +372,8 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
 
   // Get mesh connectivity d --> D
   _mesh->init(_dim, D);
-  const MeshConnectivity& connectivity = _mesh->topology()(_dim, D);
+  const MeshConnectivity& connectivity
+      = _mesh->topology().connectivity(_dim, D);
 
   // Find the cell
   dolfin_assert(!connectivity.empty());

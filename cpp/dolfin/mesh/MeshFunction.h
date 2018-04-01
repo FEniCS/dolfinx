@@ -225,7 +225,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
 
   // Generate connectivity if it does not exist
   _mesh->init(D, d);
-  const MeshConnectivity& connectivity = _mesh->topology()(D, d);
+  const MeshConnectivity& connectivity = _mesh->topology().connectivity(D, d);
   dolfin_assert(!connectivity.empty());
 
   // Iterate over all values

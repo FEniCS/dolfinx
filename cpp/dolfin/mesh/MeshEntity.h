@@ -125,7 +125,7 @@ public:
   /// dimension.
   inline std::size_t num_entities(std::size_t dim) const
   {
-    return _mesh->topology()(_dim, dim).size(_local_index);
+    return _mesh->topology().connectivity(_dim, dim).size(_local_index);
   }
 
   /// Return global number of incident mesh entities of given
@@ -139,7 +139,7 @@ public:
   ///         dimension.
   std::size_t num_global_entities(std::size_t dim) const
   {
-    return _mesh->topology()(_dim, dim).size_global(_local_index);
+    return _mesh->topology().connectivity(_dim, dim).size_global(_local_index);
   }
 
   /// Return array of indices for incident mesh entities of given
@@ -153,7 +153,7 @@ public:
   const std::int32_t* entities(std::size_t dim) const
   {
     const std::int32_t* initialized_mesh_entities
-        = _mesh->topology()(_dim, dim)(_local_index);
+        = _mesh->topology().connectivity(_dim, dim)(_local_index);
     dolfin_assert(initialized_mesh_entities);
     return initialized_mesh_entities;
   }

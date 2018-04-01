@@ -101,7 +101,8 @@ public:
     }
 
     // Get connectivity
-    const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity.dim());
+    const MeshConnectivity& c
+        = e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections
     dolfin_assert(!c.empty());
@@ -124,7 +125,8 @@ public:
     }
 
     // Get connectivity
-    const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity.dim());
+    const MeshConnectivity& c
+        = e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections
     dolfin_assert(!c.empty());

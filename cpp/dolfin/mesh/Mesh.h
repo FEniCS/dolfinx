@@ -142,7 +142,7 @@ public:
   ///
   const std::vector<std::int32_t>& cells() const
   {
-    return _topology(_topology.dim(), 0)();
+    return _topology.connectivity(_topology.dim(), 0).connections();
   }
 
   /// Get global number of entities of given topological dimension.

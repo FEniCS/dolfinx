@@ -83,9 +83,10 @@ void mesh(py::module& m)
                              "Topological dimension")
       .def("init", py::overload_cast<std::size_t, std::int32_t, std::int64_t>(
                        &dolfin::mesh::MeshTopology::init))
-      .def("__call__", py::overload_cast<std::size_t, std::size_t>(
-                           &dolfin::mesh::MeshTopology::operator(), py::const_),
-           py::return_value_policy::reference_internal)
+      // .def("__call__",
+      //      py::overload_cast<std::size_t, std::size_t>(
+      //          &dolfin::mesh::MeshTopology::connectivity, py::const_),
+      //      py::return_value_policy::reference_internal)
       .def("size", &dolfin::mesh::MeshTopology::size)
       .def("hash", &dolfin::mesh::MeshTopology::hash)
       .def("init_global_indices",
@@ -123,9 +124,10 @@ void mesh(py::module& m)
       .def("cells",
            [](const dolfin::mesh::Mesh& self) {
              const std::uint32_t tdim = self.topology().dim();
-             return py::array({(std::int32_t)self.topology().size(tdim),
-                               (std::int32_t)self.type().num_vertices(tdim)},
-                              self.topology()(tdim, 0)().data());
+             return py::array(
+                 {(std::int32_t)self.topology().size(tdim),
+                  (std::int32_t)self.type().num_vertices(tdim)},
+                 self.topology().connectivity(tdim, 0).connections().data());
            })
       .def_property_readonly("geometry",
                              py::overload_cast<>(&dolfin::mesh::Mesh::geometry),

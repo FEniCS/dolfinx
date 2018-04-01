@@ -1113,7 +1113,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     }
   }
 
-  mesh.topology()(D - 1, D).set_global_size(num_global_neighbors);
+  mesh.topology().connectivity(D - 1, D).set_global_size(num_global_neighbors);
 }
 //-----------------------------------------------------------------------------
 EigenRowArrayXXd

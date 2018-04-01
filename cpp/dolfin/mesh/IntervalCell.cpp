@@ -203,7 +203,7 @@ void IntervalCell::order(
   MeshTopology& topology = const_cast<MeshTopology&>(cell.mesh().topology());
 
   // Sort local vertices in ascending order, connectivity 1 - 0
-  if (!topology(1, 0).empty())
+  if (!topology.connectivity(1, 0).empty())
   {
     std::int32_t* cell_vertices = const_cast<std::int32_t*>(cell.entities(0));
     sort_entities(2, cell_vertices, local_to_global_vertex_indices);

@@ -74,12 +74,12 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   _topology.init(tdim, num_cells, num_cells);
   _topology.init_ghost(tdim, num_cells);
   _topology.init_global_indices(tdim, num_cells);
-  _topology(tdim, 0).init(num_cells, num_vertices_per_cell);
+  _topology.connectivity(tdim, 0).init(num_cells, num_vertices_per_cell);
 
   // Add cells
   for (std::int32_t i = 0; i != cells.rows(); ++i)
   {
-    _topology(tdim, 0).set(i, local_cell_vertices.row(i).data());
+    _topology.connectivity(tdim, 0).set(i, local_cell_vertices.row(i).data());
     _topology.set_global_index(tdim, i, i);
   }
 }
@@ -189,7 +189,7 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   }
 
   // Skip if already computed
-  if (!_topology(d0, d1).empty())
+  if (!_topology.connectivity(d0, d1).empty())
     return;
 
   // Check that mesh is ordered

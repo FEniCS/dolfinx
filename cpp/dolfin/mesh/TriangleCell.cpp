@@ -369,9 +369,9 @@ void TriangleCell::order(
   const MeshTopology& topology = cell.mesh().topology();
 
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
-  if (!topology(1, 0).empty())
+  if (!topology.connectivity(1, 0).empty())
   {
-    dolfin_assert(!topology(2, 1).empty());
+    dolfin_assert(!topology.connectivity(2, 1).empty());
 
     // Get edge indices (local)
     const std::int32_t* cell_edges = cell.entities(1);
@@ -379,23 +379,23 @@ void TriangleCell::order(
     // Sort vertices on each edge
     for (std::size_t i = 0; i < 3; i++)
     {
-      std::int32_t* edge_vertices
-          = const_cast<std::int32_t*>(topology(1, 0)(cell_edges[i]));
+      std::int32_t* edge_vertices = const_cast<std::int32_t*>(
+          topology.connectivity(1, 0)(cell_edges[i]));
       sort_entities(2, edge_vertices, local_to_global_vertex_indices);
     }
   }
 
   // Sort local vertices on cell in ascending order, connectivity 2 - 0
-  if (!topology(2, 0).empty())
+  if (!topology.connectivity(2, 0).empty())
   {
     std::int32_t* cell_vertices = const_cast<std::int32_t*>(cell.entities(0));
     sort_entities(3, cell_vertices, local_to_global_vertex_indices);
   }
 
   // Sort local edges on cell after non-incident vertex, connectivity 2 - 1
-  if (!topology(2, 1).empty())
+  if (!topology.connectivity(2, 1).empty())
   {
-    dolfin_assert(!topology(2, 1).empty());
+    dolfin_assert(!topology.connectivity(2, 1).empty());
 
     // Get cell vertex and edge indices (local)
     const std::int32_t* cell_vertices = cell.entities(0);
@@ -407,7 +407,8 @@ void TriangleCell::order(
       // Loop over edges on cell
       for (std::size_t j = i; j < 3; j++)
       {
-        const std::int32_t* edge_vertices = topology(1, 0)(cell_edges[j]);
+        const std::int32_t* edge_vertices
+            = topology.connectivity(1, 0)(cell_edges[j]);
 
         // Check if the ith vertex of the cell is non-incident with edge j
         if (std::count(edge_vertices, edge_vertices + 2, cell_vertices[i]) == 0)
@@ -441,7 +442,7 @@ std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
   // Look for edge satisfying ordering convention
   for (std::size_t j = 0; j < 3; j++)
   {
-    const std::int32_t* ev = cell.mesh().topology()(1, 0)(e[j]);
+    const std::int32_t* ev = cell.mesh().topology().connectivity(1, 0)(e[j]);
     dolfin_assert(ev);
     if (ev[0] != v[i] && ev[1] != v[i])
       return j;

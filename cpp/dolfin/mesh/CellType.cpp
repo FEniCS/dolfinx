@@ -200,8 +200,8 @@ bool CellType::ordered(
   const std::size_t c = cell.index();
 
   // Get vertices
-  const std::size_t num_vertices = topology(dim, 0).size(c);
-  const std::int32_t* vertices = topology(dim, 0)(c);
+  const std::size_t num_vertices = topology.connectivity(dim, 0).size(c);
+  const std::int32_t* vertices = topology.connectivity(dim, 0)(c);
   dolfin_assert(vertices);
 
   // Check that vertices are in ascending order
@@ -215,13 +215,13 @@ bool CellType::ordered(
   for (std::size_t d = 1; d + 1 < dim; d++)
   {
     // Check if entities exist, otherwise skip
-    const MeshConnectivity& connectivity = topology(d, 0);
+    const MeshConnectivity& connectivity = topology.connectivity(d, 0);
     if (connectivity.empty())
       continue;
 
     // Get entities
-    const std::size_t num_entities = topology(dim, d).size(c);
-    const std::int32_t* entities = topology(dim, d)(c);
+    const std::size_t num_entities = topology.connectivity(dim, d).size(c);
+    const std::int32_t* entities = topology.connectivity(dim, d)(c);
 
     // Iterate over entities
     for (std::size_t e = 1; e < num_entities; e++)

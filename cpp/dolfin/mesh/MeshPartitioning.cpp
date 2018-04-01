@@ -240,9 +240,10 @@ mesh::Mesh MeshPartitioning::build(
 
   // Find highest index + 1 in local_cell_vertices of regular cells
   std::int32_t num_regular_vertices
-      = *std::max_element(mesh.topology()(tdim, 0)().data(),
-                          mesh.topology()(tdim, 0)().data()
-                              + new_cell_vertices.cols() * num_regular_cells)
+      = *std::max_element(
+            mesh.topology().connectivity(tdim, 0).connections().data(),
+            mesh.topology().connectivity(tdim, 0).connections().data()
+                + new_cell_vertices.cols() * num_regular_cells)
         + 1;
 
   // Set the ghost vertex offset

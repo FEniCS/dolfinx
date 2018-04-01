@@ -184,7 +184,8 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
 
   // Num dofs per vertex
   const std::size_t dofs_per_vertex = dofmap.num_entity_dofs(0);
-  const std::size_t vert_per_cell = mesh.topology()(top_dim, 0).size(0);
+  const std::size_t vert_per_cell
+      = mesh.topology().connectivity(top_dim, 0).size(0);
   if (vert_per_cell * dofs_per_vertex != dofmap.max_element_dofs())
   {
     log::dolfin_error("DofMap.cpp", "tabulate dof to vertex map",
