@@ -131,22 +131,11 @@ public:
         J.data(), detJ.data(), K.data(), 1);
   }
 
-  /// Tabulate the coordinates of all dofs on an element
-  ///
-  /// @param[in,out]    coordinates (Eigen::Ref<EigenRowArrayXXd>)
-  ///         The coordinates of all dofs on a cell. Must have correct size of
-  ///         (num_dofs, gdim)
-  /// @param[in]    coordinate_dofs (Eigen::Ref<EigenRowArrayXXd>)
-  ///         The cell dof coordinates
-  void tabulate_dof_coordinates(
-      Eigen::Ref<EigenRowArrayXXd> coordinates,
-      const Eigen::Ref<EigenRowArrayXXd> coordinate_dofs) const;
-
   /// Tabulate the reference coordinates of all dofs on an element
   ///
   /// @return    reference_coordinates (EigenRowArrayXXd)
   ///         The coordinates of all dofs on the reference cell.
-  EigenRowArrayXXd tabulate_reference_dof_coordinates() const;
+  const EigenRowArrayXXd& dof_reference_coordinates() const { return _refX; }
 
   /// Return the number of sub elements (for a mixed element)
   /// @return std::size_t
@@ -194,6 +183,9 @@ public:
 private:
   // UFC finite element
   std::shared_ptr<const ufc::finite_element> _ufc_element;
+
+  // Dof coordinates on the reference element
+  EigenRowArrayXXd _refX;
 
   // Recursively extract sub finite element
   static std::shared_ptr<FiniteElement>

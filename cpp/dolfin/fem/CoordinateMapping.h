@@ -70,6 +70,21 @@ public:
     return _ufc_cm->geometric_dimension();
   }
 
+  /// Compute physical coordinates x for points X  in the reference
+  /// configuration
+  void compute_physical_coordinates(
+      Eigen::Ref<EigenRowArrayXXd> x,
+      const Eigen::Ref<const EigenRowArrayXXd>& X,
+      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
+  {
+    assert(_ufc_cm);
+    assert(x.rows() == X.rows());
+    assert((std::size_t)x.cols() == _ufc_cm->geometric_dimension());
+    assert((std::size_t)X.cols() == _ufc_cm->topological_dimension());
+    _ufc_cm->compute_physical_coordinates(x.data(), X.rows(), X.data(),
+                                          coordinate_dofs.data());
+  }
+
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
   void compute_reference_geometry(

@@ -14,6 +14,7 @@
 #include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/function/Constant.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
@@ -498,6 +499,17 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   if (_num_dofs > 0)
     boundary_values.reserve(boundary_values.size() + _num_dofs);
 
+  // Get dof coordinates on reference element
+  const EigenRowArrayXXd& X = element.dof_reference_coordinates();
+
+  // Get coordinate mapping
+  if (!mesh.geometry().coord_mapping)
+  {
+    throw std::runtime_error(
+        "CoordinateMapping has not been attached to mesh.");
+  }
+  const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
+
   // Iterate over facets
   for (std::size_t f = 0; f < _facets.size(); ++f)
   {
@@ -538,7 +550,8 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           // Tabulate coordinates if not already done
           if (!tabulated)
           {
-            element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs);
+            cmap.compute_physical_coordinates(data.coordinates, X,
+                                              coordinate_dofs);
             tabulated = true;
           }
 
@@ -605,6 +618,17 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   if (_num_dofs > 0)
     boundary_values.reserve(boundary_values.size() + _num_dofs);
 
+  // Get dof coordinates on reference element
+  const EigenRowArrayXXd& X = element.dof_reference_coordinates();
+
+  // Get coordinate mapping
+  if (!mesh.geometry().coord_mapping)
+  {
+    throw std::runtime_error(
+        "CoordinateMapping has not been attached to mesh.");
+  }
+  const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
+
   // Iterate over cells
   EigenRowArrayXXd coordinate_dofs;
   if (MPI::max(mesh.mpi_comm(), _cells_to_localdofs.size()) == 0)
@@ -618,7 +642,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       cell.get_coordinate_dofs(coordinate_dofs);
 
       // Tabulate coordinates of dofs on cell
-      element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs);
+      cmap.compute_physical_coordinates(data.coordinates, X, coordinate_dofs);
 
       // Tabulate dofs on cell
       auto cell_dofs = dofmap.cell_dofs(cell.index());
@@ -682,7 +706,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
       cell.get_coordinate_dofs(coordinate_dofs);
 
       // Tabulate coordinates of dofs on cell
-      element.tabulate_dof_coordinates(data.coordinates, coordinate_dofs);
+      cmap.compute_physical_coordinates(data.coordinates, X, coordinate_dofs);
 
       // Restrict coefficient to cell
       _g->restrict(data.w.data(), *_function_space->element(), cell,

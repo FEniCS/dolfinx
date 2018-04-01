@@ -15,35 +15,10 @@ using namespace dolfin::fem;
 FiniteElement::FiniteElement(std::shared_ptr<const ufc::finite_element> element)
     : _ufc_element(element), _hash(common::hash_local(signature()))
 {
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void FiniteElement::tabulate_dof_coordinates(
-    Eigen::Ref<EigenRowArrayXXd> coordinates,
-    const Eigen::Ref<EigenRowArrayXXd> coordinate_dofs) const
-{
+  // Store dof coordinates on reference element
   assert(_ufc_element);
-
-  // Check sizes
-  assert((std::size_t)coordinates.rows() == this->space_dimension());
-  assert((std::size_t)coordinates.cols() == this->geometric_dimension());
-
-  // Tabulate coordinates
-  _ufc_element->tabulate_dof_coordinates(coordinates.data(),
-                                         coordinate_dofs.data());
-}
-//-----------------------------------------------------------------------------
-EigenRowArrayXXd FiniteElement::tabulate_reference_dof_coordinates() const
-{
-  assert(_ufc_element);
-
-  // Create array
-  EigenRowArrayXXd X(this->space_dimension(), this->topological_dimension());
-
-  // Tabulate coordinates
-  _ufc_element->tabulate_reference_dof_coordinates(X.data());
-
-  return X;
+  _refX.resize(this->space_dimension(), this->topological_dimension());
+  _ufc_element->tabulate_reference_dof_coordinates(_refX.data());
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FiniteElement> FiniteElement::extract_sub_element(

@@ -8,6 +8,7 @@
 #include <boost/multi_array.hpp>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/RangedIndexSet.h>
+#include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
@@ -75,6 +76,17 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   // Geometric dimension
   const std::size_t gdim = mesh.geometry().dim();
 
+  // Get dof coordinates on reference element
+  const EigenRowArrayXXd& X = element.dof_reference_coordinates();
+
+  // Get coordinate mapping
+  if (!mesh.geometry().coord_mapping)
+  {
+    throw std::runtime_error(
+        "CoordinateMapping has not been attached to mesh.");
+  }
+  const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
+
   // Loop over cells and tabulate dofs
   EigenRowArrayXXd coordinates(element.space_dimension(), gdim);
   EigenRowArrayXXd coordinate_dofs;
@@ -96,7 +108,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
     auto dofs = dofmap.cell_dofs(cell.index());
 
     // Tabulate dof coordinates on cell
-    element.tabulate_dof_coordinates(coordinates, coordinate_dofs);
+    cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
 
     // Map dofs into coords_to_dofs
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
@@ -431,8 +443,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
     const auto& id_p = send_ids[p];
     const unsigned int npoints = id_p.size();
     assert(npoints == recv_found[p].size() / gdim);
-    assert(npoints
-                  == recv_found_global_row_indices[p].size() / data_size);
+    assert(npoints == recv_found_global_row_indices[p].size() / data_size);
 
     const boost::multi_array_ref<double, 2> point_p(
         recv_found[p].data(), boost::extents[npoints][gdim]);
@@ -554,8 +565,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   std::vector<dolfin::la_index_t> onnz(m, 0);
   for (const auto& q : recv_onnz)
   {
-    assert(q >= (dolfin::la_index_t)mbegin
-                  and q < (dolfin::la_index_t)mend);
+    assert(q >= (dolfin::la_index_t)mbegin and q < (dolfin::la_index_t)mend);
     ++onnz[q - mbegin];
   }
 
@@ -566,8 +576,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   std::vector<dolfin::la_index_t> dnnz(m, 0);
   for (const auto& q : recv_dnnz)
   {
-    assert(q >= (dolfin::la_index_t)mbegin
-                  and q < (dolfin::la_index_t)mend);
+    assert(q >= (dolfin::la_index_t)mbegin and q < (dolfin::la_index_t)mend);
     ++dnnz[q - mbegin];
   }
 

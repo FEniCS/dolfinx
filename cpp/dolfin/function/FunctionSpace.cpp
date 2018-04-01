@@ -7,7 +7,9 @@
 #include "FunctionSpace.h"
 #include "Function.h"
 #include "GenericFunction.h"
+#include <dolfin/common/types.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/PETScVector.h>
@@ -265,8 +267,19 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   std::size_t local_size
       = bs * _dofmap->index_map()->size(common::IndexMap::MapSize::OWNED);
 
+  // Dof coordinate on reference element
+  const EigenRowArrayXXd& X = _element->dof_reference_coordinates();
+
   // Arrray to hold coordinates and return
   EigenRowArrayXXd x(local_size, gdim);
+
+  // Get coordinate mapping
+  if (!_mesh->geometry().coord_mapping)
+  {
+    throw std::runtime_error(
+        "CoordinateMapping has not been attached to mesh.");
+  }
+  const fem::CoordinateMapping& cmap = *_mesh->geometry().coord_mapping;
 
   // Loop over cells and tabulate dofs
   EigenRowArrayXXd coordinates(_element->space_dimension(), gdim);
@@ -281,7 +294,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
     auto dofs = _dofmap->cell_dofs(cell.index());
 
     // Tabulate dof coordinates on cell
-    _element->tabulate_dof_coordinates(coordinates, coordinate_dofs);
+    cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
 
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
@@ -304,6 +317,18 @@ void FunctionSpace::set_x(la::PETScVector& x, double value,
 
   const std::size_t gdim = _mesh->geometry().dim();
   std::vector<double> x_values;
+
+  // Dof coordinate on reference element
+  const EigenRowArrayXXd& X = _element->dof_reference_coordinates();
+
+  // Get coordinate mapping
+  if (!_mesh->geometry().coord_mapping)
+  {
+    throw std::runtime_error(
+        "CoordinateMapping has not been attached to mesh.");
+  }
+  const fem::CoordinateMapping& cmap = *_mesh->geometry().coord_mapping;
+
   EigenRowArrayXXd coordinates(_element->space_dimension(),
                                _mesh->geometry().dim());
   EigenRowArrayXXd coordinate_dofs;
@@ -317,7 +342,7 @@ void FunctionSpace::set_x(la::PETScVector& x, double value,
     auto dofs = _dofmap->cell_dofs(cell.index());
 
     // Tabulate dof coordinates
-    _element->tabulate_dof_coordinates(coordinates, coordinate_dofs);
+    cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
 
     assert(coordinates.rows() == dofs.size());
     assert(component < (std::size_t)coordinates.cols());
