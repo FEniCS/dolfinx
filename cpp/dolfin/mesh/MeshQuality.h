@@ -7,6 +7,7 @@
 #pragma once
 
 #include "MeshFunction.h"
+#include <array>
 #include <boost/multi_array.hpp>
 #include <dolfin/common/constants.h>
 #include <memory>
@@ -39,46 +40,32 @@ public:
   /// Compute the minimum and maximum radius ratio of cells
   /// (across all processes)
   /// @param mesh (const Mesh&)
-  /// @return    std::pair<double, double>
+  /// @return    std::array<double, 2>
   ///         The [minimum, maximum] cell radii ratio (geometric_dimension *
   ///         * inradius / circumradius, geometric_dimension
   ///         is normalization factor). It has range zero to one.
   ///         Zero indicates a degenerate element.
   ///
-  static std::pair<double, double> radius_ratio_min_max(const Mesh& mesh);
+  static std::array<double, 2> radius_ratio_min_max(const Mesh& mesh);
 
   /// Create (ratio, number of cells) data for creating a histogram
   /// of cell quality
   /// @param mesh (const Mesh&)
   /// @param num_bins (std::size_t)
-  /// @return std::pair<std::vector<double>, std::vector<double>>
-  static std::pair<std::vector<double>, std::vector<double>>
-  radius_ratio_histogram_data(const Mesh& mesh, std::size_t num_bins = 50);
-
-  /// Create Matplotlib string to plot cell quality histogram
-  /// @param mesh (const Mesh&)
-  /// @param num_intervals (std::size_t)
-  /// @return std::string
-  static std::string radius_ratio_matplotlib_histogram(const Mesh& mesh,
-                                                       std::size_t num_intervals
-                                                       = 50);
+  /// @return std::pair<std::vector<double>, std::vector<std::size_t>>
+  static std::pair<std::vector<double>, std::vector<std::size_t>>
+  radius_ratio_histogram_data(const Mesh& mesh, std::size_t num_bins);
 
   /// Get internal dihedral angles of a tetrahedral cell
-  static void dihedral_angles(const mesh::Cell& cell,
-                              std::vector<double>& dh_angle);
+  static std::array<double, 6> dihedral_angles(const mesh::Cell& cell);
 
   /// Get internal minimum and maximum dihedral angles of a 3D mesh
-  static std::pair<double, double> dihedral_angles_min_max(const Mesh& mesh);
+  static std::array<double, 2> dihedral_angles_min_max(const Mesh& mesh);
 
   /// Create (dihedral angles, number of cells) data for creating a histogram
   /// of dihedral
-  static std::pair<std::vector<double>, std::vector<double>>
-  dihedral_angles_histogram_data(const Mesh& mesh, std::size_t num_bins = 100);
-
-  /// Create Matplotlib string to plot dihedral angles quality histogram
-  static std::string
-  dihedral_angles_matplotlib_histogram(const Mesh& mesh,
-                                       std::size_t num_intervals = 100);
+  static std::pair<std::vector<double>, std::vector<std::size_t>>
+  dihedral_angle_histogram_data(const Mesh& mesh, std::size_t num_bins);
 };
 }
 }

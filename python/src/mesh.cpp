@@ -83,10 +83,6 @@ void mesh(py::module& m)
                              "Topological dimension")
       .def("init", py::overload_cast<std::size_t, std::int32_t, std::int64_t>(
                        &dolfin::mesh::MeshTopology::init))
-      // .def("__call__",
-      //      py::overload_cast<std::size_t, std::size_t>(
-      //          &dolfin::mesh::MeshTopology::connectivity, py::const_),
-      //      py::return_value_policy::reference_internal)
       .def("connectivity",
            py::overload_cast<std::size_t, std::size_t>(
                &dolfin::mesh::MeshTopology::connectivity, py::const_),
@@ -404,17 +400,15 @@ void mesh(py::module& m)
                                         "DOLFIN MeshQuality class")
       .def_static("radius_ratios", &dolfin::mesh::MeshQuality::radius_ratios)
       .def_static("radius_ratio_histogram_data",
-                  &dolfin::mesh::MeshQuality::radius_ratio_histogram_data)
+                  &dolfin::mesh::MeshQuality::radius_ratio_histogram_data,
+                  py::arg("mesh"), py::arg("num_bins") = 50)
+      .def_static("dihedral_angle_histogram_data",
+                  &dolfin::mesh::MeshQuality::dihedral_angle_histogram_data,
+                  py::arg("mesh"), py::arg("num_bins") = 50)
       .def_static("radius_ratio_min_max",
                   &dolfin::mesh::MeshQuality::radius_ratio_min_max)
-      .def_static("radius_ratio_matplotlib_histogram",
-                  &dolfin::mesh::MeshQuality::radius_ratio_matplotlib_histogram,
-                  py::arg("mesh"), py::arg("num_bins") = 50)
       .def_static("dihedral_angles_min_max",
-                  &dolfin::mesh::MeshQuality::dihedral_angles_min_max)
-      .def_static(
-          "dihedral_angles_matplotlib_histogram",
-          &dolfin::mesh::MeshQuality::dihedral_angles_matplotlib_histogram);
+                  &dolfin::mesh::MeshQuality::dihedral_angles_min_max);
 
   // dolfin::SubDomain trampoline class for user overloading from
   // Python
