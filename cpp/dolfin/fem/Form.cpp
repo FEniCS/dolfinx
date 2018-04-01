@@ -6,6 +6,7 @@
 
 #include "Form.h"
 #include "GenericDofMap.h"
+#include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -54,8 +55,10 @@ Form::Form(
   for (auto& f : function_spaces)
     assert(_mesh == f->mesh());
 
-  _coord_mapping = std::shared_ptr<ufc::coordinate_mapping>(
-      ufc_form->create_coordinate_mapping());
+  // Create CoordinateMapping
+  _coord_mapping = std::make_shared<fem::CoordinateMapping>(
+      std::shared_ptr<const ufc::coordinate_mapping>(
+          ufc_form->create_coordinate_mapping()));
 }
 //-----------------------------------------------------------------------------
 Form::~Form()

@@ -308,10 +308,9 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
   std::size_t gdim = mesh.geometry().dim();
   std::size_t tdim = mesh.topology().dim();
 
-  auto ufc_element = _function_space->element()->ufc_element();
-  std::size_t reference_value_size = ufc_element->reference_value_size();
-  std::size_t value_size = ufc_element->value_size();
-  std::size_t space_dimension = ufc_element->space_dimension();
+  std::size_t reference_value_size = element.reference_value_size();
+  std::size_t value_size = element.value_size();
+  std::size_t space_dimension = element.space_dimension();
 
   Eigen::Tensor<double, 3, Eigen::RowMajor> J(num_points, gdim, tdim);
   EigenArrayXd detJ(num_points);

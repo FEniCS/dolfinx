@@ -137,8 +137,7 @@ void Expression::restrict(
   // Apply a mapping to the reference element.
   // FIXME: not needed for Lagrange elements, eliminate.
   // See: ffc/uflacs/backends/ufc/evaluatedof.py:_change_variables()
-  element.ufc_element()->map_dofs(w, eval_values.data(), coordinate_dofs.data(),
-                                  -1);
+  element.map_dofs(w, eval_values, coordinate_dofs);
 }
 //-----------------------------------------------------------------------------
 EigenRowArrayXXd Expression::compute_vertex_values(const mesh::Mesh& mesh) const

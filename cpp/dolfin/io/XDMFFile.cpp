@@ -428,7 +428,7 @@ void XDMFFile::write(const function::Function& u, double time_step,
                         + std::string("\"]");
     mesh_node = timegrid_node.select_node(xpath.c_str()).node();
     assert(std::string(timegrid_node.attribute("CollectionType").value())
-                  == "Temporal");
+           == "Temporal");
   }
   else
   {
@@ -921,7 +921,7 @@ void XDMFFile::read_mesh_value_collection(mesh::MeshValueCollection<T>& mvc,
   for (std::int32_t i = 0; i != num_processes; ++i)
   {
     assert(recv_data[i].size() * num_verts_per_entity
-                  == recv_entities[i].size());
+           == recv_entities[i].size());
 
     for (std::size_t j = 0; j != recv_data[i].size(); ++j)
     {
@@ -1151,12 +1151,10 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   log::log(PROGRESS, "Adding function to node \"%s\"",
            xml_node.path('/').c_str());
 
-  std::string element_family
-      = u.function_space()->element()->ufc_element()->family();
-  const std::size_t element_degree
-      = u.function_space()->element()->ufc_element()->degree();
+  std::string element_family = u.function_space()->element()->family();
+  const std::size_t element_degree = u.function_space()->element()->degree();
   const ufc::shape ufc_element_cell
-      = u.function_space()->element()->ufc_element()->cell_shape();
+      = u.function_space()->element()->cell_shape();
 
   // Map of standard UFL family abbreviations for visualisation
   const std::map<std::string, std::string> family_abbr
@@ -2359,7 +2357,7 @@ void XDMFFile::remap_meshfunction_data(
   for (std::size_t i = 0; i < receive_values.size(); ++i)
   {
     assert(receive_values[i].size() * vertices_per_entity
-                  == receive_topology[i].size());
+           == receive_topology[i].size());
     auto p = receive_topology[i].begin();
     for (std::size_t j = 0; j < receive_values[i].size(); ++j)
     {
