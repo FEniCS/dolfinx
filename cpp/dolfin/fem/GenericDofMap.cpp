@@ -70,7 +70,7 @@ std::vector<dolfin::la_index_t> GenericDofMap::dofs(const mesh::Mesh& mesh,
       {
         const std::size_t entity_dof_local = entity_dofs_local[i];
         const dolfin::la_index_t dof_index = cell_dof_list[entity_dof_local];
-        dolfin_assert(e.index() * num_dofs_per_entity + i < dof_list.size());
+        assert(e.index() * num_dofs_per_entity + i < dof_list.size());
         dof_list[e.index() * num_dofs_per_entity + i] = dof_index;
       }
 

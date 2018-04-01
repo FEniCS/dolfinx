@@ -131,9 +131,9 @@ double CellType::h(const MeshEntity& entity) const
 
   // Get the coordinates (Points) of the vertices
   const std::int32_t* vertices = entity.entities(0);
-  dolfin_assert(vertices);
+  assert(vertices);
   std::array<geometry::Point, 8> points;
-  dolfin_assert(num_vertices <= 8);
+  assert(num_vertices <= 8);
   for (int i = 0; i < num_vertices; ++i)
     points[i] = geometry.point(vertices[i]);
 
@@ -202,7 +202,7 @@ bool CellType::ordered(
   // Get vertices
   const std::size_t num_vertices = topology.connectivity(dim, 0).size(c);
   const std::int32_t* vertices = topology.connectivity(dim, 0)(c);
-  dolfin_assert(vertices);
+  assert(vertices);
 
   // Check that vertices are in ascending order
   if (!increasing(num_vertices, vertices, local_to_global_vertex_indices))
@@ -296,8 +296,8 @@ bool CellType::increasing(
     const std::int32_t* local_vertices,
     const std::vector<std::int64_t>& local_to_global_vertex_indices)
 {
-  dolfin_assert(n0 == n1);
-  dolfin_assert(num_vertices > n0);
+  assert(n0 == n1);
+  assert(num_vertices > n0);
   const std::size_t num_non_incident = num_vertices - n0;
 
   // Compute non-incident vertices for first entity
@@ -318,7 +318,7 @@ bool CellType::increasing(
     if (!incident)
       w0[k++] = v;
   }
-  dolfin_assert(k == num_non_incident);
+  assert(k == num_non_incident);
 
   // Compute non-incident vertices for second entity
   std::vector<std::size_t> w1(num_non_incident);
@@ -339,7 +339,7 @@ bool CellType::increasing(
     if (!incident)
       w1[k++] = v;
   }
-  dolfin_assert(k == num_non_incident);
+  assert(k == num_non_incident);
 
   // Compare lexicographic ordering of w0 and w1
   for (std::size_t i = 0; i < num_non_incident; i++)

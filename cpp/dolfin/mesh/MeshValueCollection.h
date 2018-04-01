@@ -192,7 +192,7 @@ MeshValueCollection<T>::MeshValueCollection(
     : common::Variable("m", "unnamed MeshValueCollection"),
       _mesh(mesh_function.mesh()), _dim(mesh_function.dim())
 {
-  dolfin_assert(_mesh);
+  assert(_mesh);
   const std::size_t D = _mesh->topology().dim();
 
   // Handle cells as a special case
@@ -210,12 +210,12 @@ MeshValueCollection<T>::MeshValueCollection(
     _mesh->init(_dim, D);
     const MeshConnectivity& connectivity
         = _mesh->topology().connectivity(_dim, D);
-    dolfin_assert(!connectivity.empty());
+    assert(!connectivity.empty());
     for (std::size_t entity_index = 0; entity_index < mesh_function.size();
          ++entity_index)
     {
       // Find the cell
-      dolfin_assert(connectivity.size(entity_index) > 0);
+      assert(connectivity.size(entity_index) > 0);
       const MeshEntity entity(*_mesh, _dim, entity_index);
       for (std::size_t i = 0; i < entity.num_entities(D); ++i)
       {
@@ -241,7 +241,7 @@ operator=(const MeshFunction<T>& mesh_function)
   _mesh = mesh_function.mesh();
   _dim = mesh_function.dim();
 
-  dolfin_assert(_mesh);
+  assert(_mesh);
   const std::size_t D = _mesh->topology().dim();
 
   // FIXME: Use iterators
@@ -261,12 +261,12 @@ operator=(const MeshFunction<T>& mesh_function)
     _mesh->init(_dim, D);
     const MeshConnectivity& connectivity
         = _mesh->topology().connectivity(_dim, D);
-    dolfin_assert(!connectivity.empty());
+    assert(!connectivity.empty());
     for (std::size_t entity_index = 0; entity_index < mesh_function.size();
          ++entity_index)
     {
       // Find the cell
-      dolfin_assert(connectivity.size(entity_index) > 0);
+      assert(connectivity.size(entity_index) > 0);
       const MeshEntity entity(*_mesh, _dim, entity_index);
       for (std::size_t i = 0; i < entity.num_entities(D); ++i)
       {
@@ -290,7 +290,7 @@ operator=(const MeshFunction<T>& mesh_function)
 template <typename T>
 std::size_t MeshValueCollection<T>::dim() const
 {
-  dolfin_assert(_dim >= 0);
+  assert(_dim >= 0);
   return _dim;
 }
 //---------------------------------------------------------------------------
@@ -309,7 +309,7 @@ std::size_t MeshValueCollection<T>::size() const
 template <typename T>
 std::shared_ptr<const Mesh> MeshValueCollection<T>::mesh() const
 {
-  dolfin_assert(_mesh);
+  assert(_mesh);
   return _mesh;
 }
 //---------------------------------------------------------------------------
@@ -317,7 +317,7 @@ template <typename T>
 bool MeshValueCollection<T>::set_value(std::size_t cell_index,
                                        std::size_t local_entity, const T& value)
 {
-  dolfin_assert(_dim >= 0);
+  assert(_dim >= 0);
   if (!_mesh)
   {
     log::dolfin_error(
@@ -348,7 +348,7 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
         "A mesh has not been associated with this MeshValueCollection");
   }
 
-  dolfin_assert(_dim >= 0);
+  assert(_dim >= 0);
 
   // Special case when d = D
   const std::size_t D = _mesh->topology().dim();
@@ -376,8 +376,8 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
       = _mesh->topology().connectivity(_dim, D);
 
   // Find the cell
-  dolfin_assert(!connectivity.empty());
-  dolfin_assert(connectivity.size(entity_index) > 0);
+  assert(!connectivity.empty());
+  assert(connectivity.size(entity_index) > 0);
   const MeshEntity entity(*_mesh, _dim, entity_index);
   const mesh::Cell cell(*_mesh, connectivity(entity_index)[0]); // choose first
 
@@ -403,7 +403,7 @@ template <typename T>
 T MeshValueCollection<T>::get_value(std::size_t cell_index,
                                     std::size_t local_entity)
 {
-  dolfin_assert(_dim >= 0);
+  assert(_dim >= 0);
 
   const std::pair<std::size_t, std::size_t> pos(cell_index, local_entity);
   const typename std::map<std::pair<std::size_t, std::size_t>,

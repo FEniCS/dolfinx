@@ -144,7 +144,7 @@ public:
   /// Number of edges from node i
   std::size_t num_edges(std::size_t i) const
   {
-    dolfin_assert(i < size());
+    assert(i < size());
     return (_node_offsets[i + 1] - _node_offsets[i]);
   }
 

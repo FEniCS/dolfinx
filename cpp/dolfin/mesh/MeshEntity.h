@@ -154,7 +154,7 @@ public:
   {
     const std::int32_t* initialized_mesh_entities
         = _mesh->topology().connectivity(_dim, dim)(_local_index);
-    dolfin_assert(initialized_mesh_entities);
+    assert(initialized_mesh_entities);
     return initialized_mesh_entities;
   }
 

@@ -17,7 +17,7 @@ using namespace dolfin::mesh;
 double Edge::length() const
 {
   const std::int32_t* vertices = entities(0);
-  dolfin_assert(vertices);
+  assert(vertices);
 
   const Vertex v0(*_mesh, vertices[0]);
   const Vertex v1(*_mesh, vertices[1]);
@@ -36,8 +36,8 @@ double Edge::dot(const Edge& edge) const
 {
   const std::int32_t* v0 = entities(0);
   const std::int32_t* v1 = edge.entities(0);
-  dolfin_assert(v0);
-  dolfin_assert(v1);
+  assert(v0);
+  assert(v1);
 
   const MeshGeometry& g = _mesh->geometry();
   const Eigen::Ref<const EigenVectorXd> x00 = g.x(v0[0]);

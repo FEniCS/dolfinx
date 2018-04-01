@@ -25,7 +25,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
     : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
       _global_dimension(0), _ufc_offset(0)
 {
-  dolfin_assert(_ufc_dofmap);
+  assert(_ufc_dofmap);
 
   // Call dofmap builder
   DofMapBuilder::build(*this, mesh, std::shared_ptr<const mesh::SubDomain>());
@@ -37,7 +37,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
     : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
       _global_dimension(0), _ufc_offset(0)
 {
-  dolfin_assert(_ufc_dofmap);
+  assert(_ufc_dofmap);
 
   // Store constrained domain in base class
   this->constrained_domain = constrained_domain;
@@ -61,7 +61,7 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
     : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
       _global_dimension(0), _ufc_offset(0)
 {
-  dolfin_assert(_ufc_dofmap);
+  assert(_ufc_dofmap);
 
   // Check that mesh has been ordered
   if (!mesh.ordered())
@@ -79,10 +79,10 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   DofMapBuilder::build(*this, mesh, constrained_domain);
 
   // Dimension sanity checks
-  dolfin_assert(dofmap_view._dofmap.size()
+  assert(dofmap_view._dofmap.size()
                 == mesh.num_cells() * dofmap_view._cell_dimension);
-  dolfin_assert(global_dimension() == dofmap_view.global_dimension());
-  dolfin_assert(_dofmap.size() == mesh.num_cells() * _cell_dimension);
+  assert(global_dimension() == dofmap_view.global_dimension());
+  assert(_dofmap.size() == mesh.num_cells() * _cell_dimension);
 
   // FIXME: Could we use a std::vector instead of std::map if the
   //        collapsed dof map is contiguous (0, . . . , n)?
@@ -93,7 +93,7 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   {
     auto view_cell_dofs = dofmap_view.cell_dofs(i);
     auto cell_dofs = this->cell_dofs(i);
-    dolfin_assert(view_cell_dofs.size() == cell_dofs.size());
+    assert(view_cell_dofs.size() == cell_dofs.size());
 
     for (Eigen::Index j = 0; j < view_cell_dofs.size(); ++j)
       collapsed_map[cell_dofs[j]] = view_cell_dofs[j];
@@ -109,19 +109,19 @@ std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
 //-----------------------------------------------------------------------------
 std::size_t DofMap::max_element_dofs() const
 {
-  dolfin_assert(_ufc_dofmap);
+  assert(_ufc_dofmap);
   return _ufc_dofmap->num_element_dofs();
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
 {
-  dolfin_assert(_ufc_dofmap);
+  assert(_ufc_dofmap);
   return _ufc_dofmap->num_entity_dofs(entity_dim);
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_facet_dofs() const
 {
-  dolfin_assert(_ufc_dofmap);
+  assert(_ufc_dofmap);
   return _ufc_dofmap->num_facet_dofs();
 }
 //-----------------------------------------------------------------------------
@@ -143,7 +143,7 @@ const std::set<int>& DofMap::neighbours() const { return _neighbours; }
 void DofMap::tabulate_facet_dofs(std::vector<std::size_t>& element_dofs,
                                  std::size_t cell_facet_index) const
 {
-  dolfin_assert(_ufc_dofmap);
+  assert(_ufc_dofmap);
   element_dofs.resize(_ufc_dofmap->num_facet_dofs());
   _ufc_dofmap->tabulate_facet_dofs(element_dofs.data(), cell_facet_index);
 }
@@ -152,7 +152,7 @@ void DofMap::tabulate_entity_dofs(std::vector<std::size_t>& element_dofs,
                                   std::size_t entity_dim,
                                   std::size_t cell_entity_index) const
 {
-  dolfin_assert(_ufc_dofmap);
+  assert(_ufc_dofmap);
   if (_ufc_dofmap->num_entity_dofs(entity_dim) == 0)
     return;
 
@@ -177,7 +177,7 @@ DofMap::collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
 //-----------------------------------------------------------------------------
 void DofMap::set(la::PETScVector& x, double value) const
 {
-  dolfin_assert(_dofmap.size() % _cell_dimension == 0);
+  assert(_dofmap.size() % _cell_dimension == 0);
   const std::size_t num_cells = _dofmap.size() / _cell_dimension;
 
   std::vector<double> _value(_cell_dimension, value);
@@ -212,7 +212,7 @@ std::string DofMap::str(bool verbose) const
   if (verbose)
   {
     // Cell loop
-    dolfin_assert(_dofmap.size() % _cell_dimension == 0);
+    assert(_dofmap.size() % _cell_dimension == 0);
     const std::size_t ncells = _dofmap.size() / _cell_dimension;
 
     for (std::size_t i = 0; i < ncells; ++i)

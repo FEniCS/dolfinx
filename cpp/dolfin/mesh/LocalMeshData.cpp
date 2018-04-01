@@ -70,11 +70,11 @@ LocalMeshData::LocalMeshData(const Mesh& mesh) : _mpi_comm(mesh.mpi_comm())
 //-----------------------------------------------------------------------------
 void LocalMeshData::check() const
 {
-  dolfin_assert(geometry.num_global_vertices != -1);
-  dolfin_assert(topology.num_global_cells != -1);
-  dolfin_assert(topology.num_vertices_per_cell != -1);
-  dolfin_assert(geometry.dim != -1);
-  dolfin_assert(topology.dim != -1);
+  assert(geometry.num_global_vertices != -1);
+  assert(topology.num_global_cells != -1);
+  assert(topology.num_vertices_per_cell != -1);
+  assert(geometry.dim != -1);
+  assert(topology.dim != -1);
 }
 //-----------------------------------------------------------------------------
 std::string LocalMeshData::str(bool verbose) const

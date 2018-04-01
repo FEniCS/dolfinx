@@ -22,8 +22,8 @@ void MeshCoordinates::eval(Eigen::Ref<EigenRowArrayXXd> values,
                            Eigen::Ref<const EigenRowArrayXXd> x,
                            const mesh::Cell& cell) const
 {
-  dolfin_assert(_mesh);
-  dolfin_assert((unsigned int)x.cols() == _mesh->geometry().dim());
+  assert(_mesh);
+  assert((unsigned int)x.cols() == _mesh->geometry().dim());
 
   values = x;
 }
@@ -38,7 +38,7 @@ void FacetArea::eval(Eigen::Ref<EigenRowArrayXXd> values,
                      Eigen::Ref<const EigenRowArrayXXd> x,
                      const mesh::Cell& cell) const
 {
-  dolfin_assert(_mesh);
+  assert(_mesh);
 
   for (unsigned int i = 0; i != x.rows(); ++i)
   {

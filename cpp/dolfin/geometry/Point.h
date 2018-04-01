@@ -85,7 +85,7 @@ public:
   ///         Address of coordinate in the given direction.
   double& operator[](std::size_t i)
   {
-    dolfin_assert(i < 3);
+    assert(i < 3);
     return _x[i];
   }
 
@@ -98,7 +98,7 @@ public:
   ///         The coordinate in the given direction.
   double operator[](std::size_t i) const
   {
-    dolfin_assert(i < 3);
+    assert(i < 3);
     return _x[i];
   }
 

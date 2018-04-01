@@ -40,7 +40,7 @@ std::uint32_t MeshTopology::size(std::uint32_t dim) const
   if (_num_entities.empty())
     return 0;
 
-  dolfin_assert(dim < _num_entities.size());
+  assert(dim < _num_entities.size());
   return _num_entities[dim];
 }
 //-----------------------------------------------------------------------------
@@ -49,7 +49,7 @@ std::uint64_t MeshTopology::size_global(std::uint32_t dim) const
   if (_global_num_entities.empty())
     return 0;
 
-  dolfin_assert(dim < _global_num_entities.size());
+  assert(dim < _global_num_entities.size());
   return _global_num_entities[dim];
 }
 //-----------------------------------------------------------------------------
@@ -59,25 +59,25 @@ std::uint32_t MeshTopology::ghost_offset(std::uint32_t dim) const
   if (_ghost_offset_index.empty())
     return 0;
 
-  dolfin_assert(dim < _ghost_offset_index.size());
+  assert(dim < _ghost_offset_index.size());
   return _ghost_offset_index[dim];
 }
 */
 //-----------------------------------------------------------------------------
 void MeshTopology::clear(std::size_t d0, std::size_t d1)
 {
-  dolfin_assert(d0 < _connectivity.size());
-  dolfin_assert(d1 < _connectivity[d0].size());
+  assert(d0 < _connectivity.size());
+  assert(d1 < _connectivity[d0].size());
   _connectivity[d0][d1].clear();
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::init(std::size_t dim, std::int32_t local_size,
                         std::int64_t global_size)
 {
-  dolfin_assert(dim < _num_entities.size());
+  assert(dim < _num_entities.size());
   _num_entities[dim] = local_size;
 
-  dolfin_assert(dim < _global_num_entities.size());
+  assert(dim < _global_num_entities.size());
   _global_num_entities[dim] = global_size;
 
   // If mesh is local, make shared vertices empty
@@ -87,20 +87,20 @@ void MeshTopology::init(std::size_t dim, std::int32_t local_size,
 //-----------------------------------------------------------------------------
 void MeshTopology::init_ghost(std::size_t dim, std::size_t index)
 {
-  dolfin_assert(dim < _ghost_offset_index.size());
+  assert(dim < _ghost_offset_index.size());
   _ghost_offset_index[dim] = index;
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::init_global_indices(std::size_t dim, std::int64_t size)
 {
-  dolfin_assert(dim < _global_indices.size());
+  assert(dim < _global_indices.size());
   _global_indices[dim] = std::vector<std::int64_t>(size, -1);
 }
 //-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<std::uint32_t>>&
 MeshTopology::shared_entities(std::uint32_t dim)
 {
-  dolfin_assert(dim <= this->dim());
+  assert(dim <= this->dim());
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------

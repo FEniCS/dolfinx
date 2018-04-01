@@ -49,7 +49,7 @@ std::int64_t PETScBaseMatrix::size(std::size_t dim) const
                       "Illegal axis (%d), must be 0 or 1", dim);
   }
 
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscInt m(0), n(0);
   PetscErrorCode ierr = MatGetSize(_matA, &m, &n);
   if (ierr != 0)
@@ -62,7 +62,7 @@ std::int64_t PETScBaseMatrix::size(std::size_t dim) const
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> PETScBaseMatrix::size() const
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscInt m(0), n(0);
   PetscErrorCode ierr = MatGetSize(_matA, &m, &n);
   if (ierr != 0)
@@ -72,7 +72,7 @@ std::array<std::int64_t, 2> PETScBaseMatrix::size() const
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> PETScBaseMatrix::local_range(std::size_t dim) const
 {
-  dolfin_assert(dim <= 1);
+  assert(dim <= 1);
   if (dim == 1)
   {
     log::dolfin_error("PETScBaseMatrix.cpp",
@@ -80,7 +80,7 @@ std::array<std::int64_t, 2> PETScBaseMatrix::local_range(std::size_t dim) const
                       "Only local row range is available for PETSc matrices");
   }
 
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscInt m(0), n(0);
   PetscErrorCode ierr = MatGetOwnershipRange(_matA, &m, &n);
   if (ierr != 0)
@@ -90,7 +90,7 @@ std::array<std::int64_t, 2> PETScBaseMatrix::local_range(std::size_t dim) const
 //-----------------------------------------------------------------------------
 void PETScBaseMatrix::init_vector(PETScVector& z, std::size_t dim) const
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscErrorCode ierr;
 
   // Create new PETSc vector
@@ -124,7 +124,7 @@ void PETScBaseMatrix::init_vector(PETScVector& z, std::size_t dim) const
 //-----------------------------------------------------------------------------
 MPI_Comm PETScBaseMatrix::mpi_comm() const
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   MPI_Comm mpi_comm = MPI_COMM_NULL;
   PetscObjectGetComm((PetscObject)_matA, &mpi_comm);
   return mpi_comm;

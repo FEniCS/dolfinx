@@ -177,9 +177,9 @@ dolfin::MPI::local_range(const MPI_Comm comm, int process, std::int64_t N)
 std::array<std::int64_t, 2>
 dolfin::MPI::compute_local_range(int process, std::int64_t N, int size)
 {
-  dolfin_assert(process >= 0);
-  dolfin_assert(N >= 0);
-  dolfin_assert(size > 0);
+  assert(process >= 0);
+  assert(N >= 0);
+  assert(size > 0);
 
   // Compute number of items per process and remainder
   const std::int64_t n = N / size;
@@ -195,7 +195,7 @@ dolfin::MPI::compute_local_range(int process, std::int64_t N, int size)
 std::uint32_t dolfin::MPI::index_owner(const MPI_Comm comm, std::size_t index,
                                        std::size_t N)
 {
-  dolfin_assert(index < N);
+  assert(index < N);
 
   // Get number of processes
   const std::uint32_t _size = size(comm);
@@ -287,7 +287,7 @@ dolfin::Table dolfin::MPI::all_reduce(const MPI_Comm comm,
         dvalues_all[key] = *(values_ptr++);
     }
   }
-  dolfin_assert(values_ptr == values_all.data() + values_all.size());
+  assert(values_ptr == values_all.data() + values_all.size());
 
   // Weight by MPI size when averaging
   if (op == MPI_AVG())

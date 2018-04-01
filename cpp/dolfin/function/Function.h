@@ -98,7 +98,7 @@ public:
   ///         Return the shared pointer.
   virtual std::shared_ptr<const FunctionSpace> function_space() const override
   {
-    dolfin_assert(_function_space);
+    assert(_function_space);
     return _function_space;
   }
 

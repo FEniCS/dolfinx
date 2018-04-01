@@ -26,7 +26,7 @@ dolfin::math::Lagrange::Lagrange(const Lagrange& p)
 //-----------------------------------------------------------------------------
 void dolfin::math::Lagrange::set(std::size_t i, double x)
 {
-  dolfin_assert(i <= _q);
+  assert(i <= _q);
 
   points[i] = x;
 
@@ -41,7 +41,7 @@ std::size_t dolfin::math::Lagrange::degree() const { return _q; }
 //-----------------------------------------------------------------------------
 double dolfin::math::Lagrange::point(std::size_t i) const
 {
-  dolfin_assert(i < points.size());
+  assert(i < points.size());
   return points[i];
 }
 //-----------------------------------------------------------------------------
@@ -52,7 +52,7 @@ double dolfin::math::Lagrange::operator()(std::size_t i, double x)
 //-----------------------------------------------------------------------------
 double dolfin::math::Lagrange::eval(std::size_t i, double x)
 {
-  dolfin_assert(i < points.size());
+  assert(i < points.size());
 
   double product(constants[i]);
   for (std::size_t j = 0; j < points.size(); j++)
@@ -66,7 +66,7 @@ double dolfin::math::Lagrange::eval(std::size_t i, double x)
 //-----------------------------------------------------------------------------
 double dolfin::math::Lagrange::ddx(std::size_t i, double x)
 {
-  dolfin_assert(i < points.size());
+  assert(i < points.size());
 
   double s(0.0);
   double prod(1.0);

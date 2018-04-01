@@ -39,13 +39,13 @@ ParallelRefinement::~ParallelRefinement()
 //-----------------------------------------------------------------------------
 bool ParallelRefinement::is_marked(std::int32_t edge_index) const
 {
-  dolfin_assert(edge_index < _mesh.num_entities(1));
+  assert(edge_index < _mesh.num_entities(1));
   return marked_edges[edge_index];
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark(std::int32_t edge_index)
 {
-  dolfin_assert(edge_index < _mesh.num_entities(1));
+  assert(edge_index < _mesh.num_entities(1));
 
   // Already marked, so nothing to do
   if (marked_edges[edge_index])
@@ -233,11 +233,11 @@ mesh::Mesh ParallelRefinement::build_local() const
 {
   const std::size_t tdim = _mesh.topology().dim();
   const std::size_t gdim = _mesh.geometry().dim();
-  dolfin_assert(_new_vertex_coordinates.size() % gdim == 0);
+  assert(_new_vertex_coordinates.size() % gdim == 0);
   const std::size_t num_vertices = _new_vertex_coordinates.size() / gdim;
 
   const std::size_t num_cell_vertices = tdim + 1;
-  dolfin_assert(new_cell_topology.size() % num_cell_vertices == 0);
+  assert(new_cell_topology.size() % num_cell_vertices == 0);
   const std::size_t num_cells = new_cell_topology.size() / num_cell_vertices;
 
   Eigen::Map<const EigenRowArrayXXd> geometry(_new_vertex_coordinates.data(),

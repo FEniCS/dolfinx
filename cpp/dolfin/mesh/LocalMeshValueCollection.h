@@ -103,7 +103,7 @@ LocalMeshValueCollection<T>::LocalMeshValueCollection(
   std::vector<T> v;
   MPI::scatter(_mpi_comm.comm(), send_indices, indices);
   MPI::scatter(_mpi_comm.comm(), send_v, v);
-  dolfin_assert(2 * v.size() == indices.size());
+  assert(2 * v.size() == indices.size());
 
   // Unpack
   for (std::size_t i = 0; i < v.size(); ++i)

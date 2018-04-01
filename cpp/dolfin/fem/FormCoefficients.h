@@ -53,7 +53,7 @@ public:
   void set(std::size_t i,
            std::shared_ptr<const function::GenericFunction> coefficient)
   {
-    dolfin_assert(i < _coefficients.size());
+    assert(i < _coefficients.size());
     _coefficients[i] = coefficient;
 
     // FIXME: if GenericFunction has an element, check it matches
@@ -92,21 +92,21 @@ public:
   /// Get the GenericFunction coefficient i
   std::shared_ptr<const function::GenericFunction> get(std::size_t i) const
   {
-    dolfin_assert(i < _coefficients.size());
+    assert(i < _coefficients.size());
     return _coefficients[i];
   }
 
   /// Get the element for coefficient i
   const fem::FiniteElement& element(std::size_t i) const
   {
-    dolfin_assert(i < _elements.size());
+    assert(i < _elements.size());
     return _elements[i];
   }
 
   /// Original position of coefficient in UFL form
   const std::size_t original_position(std::size_t i) const
   {
-    dolfin_assert(i < _original_pos.size());
+    assert(i < _original_pos.size());
     return _original_pos[i];
   }
 

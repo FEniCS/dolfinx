@@ -257,8 +257,8 @@ void HDF5File::write_data(const std::string dataset_name,
                           const std::vector<std::int64_t> global_size,
                           bool use_mpi_io)
 {
-  dolfin_assert(_hdf5_file_id > 0);
-  dolfin_assert(global_size.size() > 0);
+  assert(_hdf5_file_id > 0);
+  assert(global_size.size() > 0);
 
   // Get number of 'items'
   std::int64_t num_local_items = 1;

@@ -189,7 +189,7 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
   std::iota(v.begin(), v.end(), 0);
   cell_type.create_entities(e_vertices, dim, v.data());
 
-  dolfin_assert(N == num_vertices);
+  assert(N == num_vertices);
 
   // Create data structure to hold entities
   // ([vertices key], (cell_local_index, cell index), [entity vertices], entity
@@ -205,7 +205,7 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
   {
     // Get vertices from cell
     const std::int32_t* vertices = c.entities(0);
-    dolfin_assert(vertices);
+    assert(vertices);
 
     // Iterate over entities of cell
     const int cell_index = c.index();
@@ -297,7 +297,7 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
     // Add to enity-to-vertex map if entity is new
     if (e_index != previous_index)
     {
-      dolfin_assert(e_index < (std::int32_t)connectivity_ev.size());
+      assert(e_index < (std::int32_t)connectivity_ev.size());
       connectivity_ev[e_index] = std::get<2>(entity);
 
       // Update index
@@ -345,7 +345,7 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
   MeshConnectivity& connectivity = topology.connectivity(d0, d1);
 
   // Need connectivity d1 - d0
-  dolfin_assert(!topology.connectivity(d1, d0).empty());
+  assert(!topology.connectivity(d1, d0).empty());
 
   // Temporary array
   std::vector<std::size_t> tmp(topology.size(d0), 0);
@@ -370,8 +370,8 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
 void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
                                            std::size_t d1)
 {
-  dolfin_assert(d1 > 0);
-  dolfin_assert(d0 > d1);
+  assert(d1 > 0);
+  assert(d0 > d1);
 
   // Get the type of entity d0
   std::unique_ptr<CellType> cell_type(
@@ -404,7 +404,7 @@ void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
     {
       std::partial_sort_copy(p.begin(), p.end(), key.begin(), key.end());
       const auto it = entity_to_index.find(key);
-      dolfin_assert(it != entity_to_index.end());
+      assert(it != entity_to_index.end());
       entities.push_back(it->second);
     }
     connectivity.set(e.index(), entities.data());

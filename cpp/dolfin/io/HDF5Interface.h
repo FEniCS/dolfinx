@@ -221,7 +221,7 @@ inline void HDF5Interface::write_dataset(
 {
   // Data rank
   const std::size_t rank = global_size.size();
-  dolfin_assert(rank != 0);
+  assert(rank != 0);
 
   if (rank > 2)
   {
@@ -248,7 +248,7 @@ inline void HDF5Interface::write_dataset(
 
   // Create a global data space
   const hid_t filespace0 = H5Screate_simple(rank, dimsf.data(), NULL);
-  dolfin_assert(filespace0 != HDF5_FAIL);
+  assert(filespace0 != HDF5_FAIL);
 
   // Set chunking parameters
   hid_t chunking_properties;
@@ -276,21 +276,21 @@ inline void HDF5Interface::write_dataset(
   const hid_t dset_id
       = H5Dcreate2(file_handle, dataset_path.c_str(), h5type, filespace0,
                    H5P_DEFAULT, chunking_properties, H5P_DEFAULT);
-  dolfin_assert(dset_id != HDF5_FAIL);
+  assert(dset_id != HDF5_FAIL);
 
   // Close global data space
   status = H5Sclose(filespace0);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Create a local data space
   const hid_t memspace = H5Screate_simple(rank, count.data(), NULL);
-  dolfin_assert(memspace != HDF5_FAIL);
+  assert(memspace != HDF5_FAIL);
 
   // Create a file dataspace within the global space - a hyperslab
   const hid_t filespace1 = H5Dget_space(dset_id);
   status = H5Sselect_hyperslab(filespace1, H5S_SELECT_SET, offset.data(), NULL,
                                count.data(), NULL);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Set parallel access
   const hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
@@ -298,7 +298,7 @@ inline void HDF5Interface::write_dataset(
   {
 #ifdef H5_HAVE_PARALLEL
     status = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-    dolfin_assert(status != HDF5_FAIL);
+    assert(status != HDF5_FAIL);
 #else
     log::dolfin_error("HDF5Interface.h", "use MPI",
                       "HDF5 library has not been configured with MPI");
@@ -307,30 +307,30 @@ inline void HDF5Interface::write_dataset(
 
   // Write local dataset into selected hyperslab
   status = H5Dwrite(dset_id, h5type, memspace, filespace1, plist_id, data);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   if (use_chunking)
   {
     // Close chunking properties
     status = H5Pclose(chunking_properties);
-    dolfin_assert(status != HDF5_FAIL);
+    assert(status != HDF5_FAIL);
   }
 
   // Close dataset collectively
   status = H5Dclose(dset_id);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close hyperslab
   status = H5Sclose(filespace1);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close local dataset
   status = H5Sclose(memspace);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Release file-access template
   status = H5Pclose(plist_id);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -342,15 +342,15 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   // Open the dataset
   const hid_t dset_id
       = H5Dopen2(file_handle, dataset_path.c_str(), H5P_DEFAULT);
-  dolfin_assert(dset_id != HDF5_FAIL);
+  assert(dset_id != HDF5_FAIL);
 
   // Open dataspace
   const hid_t dataspace = H5Dget_space(dset_id);
-  dolfin_assert(dataspace != HDF5_FAIL);
+  assert(dataspace != HDF5_FAIL);
 
   // Get rank of data set
   const int rank = H5Sget_simple_extent_ndims(dataspace);
-  dolfin_assert(rank >= 0);
+  assert(rank >= 0);
 
   if (rank > 2)
     log::warning("HDF5Interface::read_dataset untested for rank > 2.");
@@ -360,7 +360,7 @@ HDF5Interface::read_dataset(const hid_t file_handle,
 
   // Get size in each dimension
   const int ndims = H5Sget_simple_extent_dims(dataspace, shape.data(), NULL);
-  dolfin_assert(ndims == rank);
+  assert(ndims == rank);
 
   // Hyperslab selection
   std::vector<hsize_t> offset(rank, 0);
@@ -377,11 +377,11 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   // size=count[]
   herr_t status = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset.data(),
                                       NULL, count.data(), NULL);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Create a memory dataspace
   const hid_t memspace = H5Screate_simple(rank, count.data(), NULL);
-  dolfin_assert(memspace != HDF5_FAIL);
+  assert(memspace != HDF5_FAIL);
 
   // Create local data to read into
   std::size_t data_size = 1;
@@ -393,19 +393,19 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   const hid_t h5type = hdf5_type<T>();
   status
       = H5Dread(dset_id, h5type, memspace, dataspace, H5P_DEFAULT, data.data());
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close dataspace
   status = H5Sclose(dataspace);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close memspace
   status = H5Sclose(memspace);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close dataset
   status = H5Dclose(dset_id);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   return data;
 }
@@ -420,13 +420,13 @@ inline T HDF5Interface::get_attribute(hid_t hdf5_file_handle,
   // Open dataset or group by name
   const hid_t dset_id
       = H5Oopen(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
-  dolfin_assert(dset_id != HDF5_FAIL);
+  assert(dset_id != HDF5_FAIL);
 
   // Open attribute by name and get its type
   const hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
-  dolfin_assert(attr_id != HDF5_FAIL);
+  assert(attr_id != HDF5_FAIL);
   const hid_t attr_type = H5Aget_type(attr_id);
-  dolfin_assert(attr_type != HDF5_FAIL);
+  assert(attr_type != HDF5_FAIL);
 
   // Specific code for each type of data template
   T attribute_value;
@@ -434,15 +434,15 @@ inline T HDF5Interface::get_attribute(hid_t hdf5_file_handle,
 
   // Close attribute type
   status = H5Tclose(attr_type);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close attribute
   status = H5Aclose(attr_id);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close dataset or group
   status = H5Oclose(dset_id);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   return attribute_value;
 }
@@ -456,15 +456,15 @@ inline void HDF5Interface::add_attribute(const hid_t hdf5_file_handle,
 
   // Open named dataset or group
   hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
-  dolfin_assert(dset_id != HDF5_FAIL);
+  assert(dset_id != HDF5_FAIL);
 
   // Check if attribute already exists and delete if so
   htri_t has_attr = H5Aexists(dset_id, attribute_name.c_str());
-  dolfin_assert(has_attr != HDF5_FAIL);
+  assert(has_attr != HDF5_FAIL);
   if (has_attr > 0)
   {
     herr_t status = H5Adelete(dset_id, attribute_name.c_str());
-    dolfin_assert(status != HDF5_FAIL);
+    assert(status != HDF5_FAIL);
   }
 
   // Add attribute of appropriate type
@@ -472,7 +472,7 @@ inline void HDF5Interface::add_attribute(const hid_t hdf5_file_handle,
 
   // Close dataset or group
   herr_t status = H5Oclose(dset_id);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 }
 //---------------------------------------------------------------------------
 // Specialised member functions (must be inlined to avoid link errors)
@@ -488,26 +488,26 @@ inline void HDF5Interface::add_attribute_value(const hid_t dset_id,
 {
   // Create a scalar dataspace
   hid_t dataspace_id = H5Screate(H5S_SCALAR);
-  dolfin_assert(dataspace_id != HDF5_FAIL);
+  assert(dataspace_id != HDF5_FAIL);
 
   const hid_t h5type = hdf5_type<T>();
 
   // Create attribute of type std::size_t
   hid_t attribute_id = H5Acreate2(dset_id, attribute_name.c_str(), h5type,
                                   dataspace_id, H5P_DEFAULT, H5P_DEFAULT);
-  dolfin_assert(attribute_id != HDF5_FAIL);
+  assert(attribute_id != HDF5_FAIL);
 
   // Write attribute to dataset
   herr_t status = H5Awrite(attribute_id, h5type, &attribute_value);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close dataspace
   status = H5Sclose(dataspace_id);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close attribute
   status = H5Aclose(attribute_id);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -522,24 +522,24 @@ HDF5Interface::add_attribute_value(const hid_t dset_id,
   // Create a vector dataspace
   const hsize_t dimsf = attribute_value.size();
   const hid_t dataspace_id = H5Screate_simple(1, &dimsf, NULL);
-  dolfin_assert(dataspace_id != HDF5_FAIL);
+  assert(dataspace_id != HDF5_FAIL);
 
   // Create an attribute of type size_t in the dataspace
   const hid_t attribute_id = H5Acreate2(dset_id, attribute_name.c_str(), h5type,
                                         dataspace_id, H5P_DEFAULT, H5P_DEFAULT);
-  dolfin_assert(attribute_id != HDF5_FAIL);
+  assert(attribute_id != HDF5_FAIL);
 
   // Write attribute to dataset
   herr_t status = H5Awrite(attribute_id, h5type, attribute_value.data());
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close dataspace
   status = H5Sclose(dataspace_id);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close attribute
   status = H5Aclose(attribute_id);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 }
 //---------------------------------------------------------------------------
 template <>
@@ -550,34 +550,34 @@ HDF5Interface::add_attribute_value(const hid_t dset_id,
 {
   // Create a scalar dataspace
   const hid_t dataspace_id = H5Screate(H5S_SCALAR);
-  dolfin_assert(dataspace_id != HDF5_FAIL);
+  assert(dataspace_id != HDF5_FAIL);
 
   // Copy basic string type from HDF5 types and set string length
   const hid_t datatype_id = H5Tcopy(H5T_C_S1);
   herr_t status = H5Tset_size(datatype_id, attribute_value.size());
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Create attribute in the dataspace with the given string
   const hid_t attribute_id
       = H5Acreate2(dset_id, attribute_name.c_str(), datatype_id, dataspace_id,
                    H5P_DEFAULT, H5P_DEFAULT);
-  dolfin_assert(attribute_id != HDF5_FAIL);
+  assert(attribute_id != HDF5_FAIL);
 
   // Write attribute to dataset
   status = H5Awrite(attribute_id, datatype_id, attribute_value.c_str());
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close dataspace
   status = H5Sclose(dataspace_id);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close string type
   status = H5Tclose(datatype_id);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close attribute
   status = H5Aclose(attribute_id);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 }
 //--------------------------------------------------------------------------
 template <typename T>
@@ -588,11 +588,11 @@ inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
   const hid_t h5type = hdf5_type<T>();
 
   // FIXME: more complete check of type
-  dolfin_assert(H5Tget_class(attr_type) == H5Tget_class(h5type));
+  assert(H5Tget_class(attr_type) == H5Tget_class(h5type));
 
   // Read value
   herr_t status = H5Aread(attr_id, h5type, &attribute_value);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -603,26 +603,26 @@ inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
   const hid_t h5type = hdf5_type<T>();
 
   // FIXME: more complete check of type
-  dolfin_assert(H5Tget_class(attr_type) == H5Tget_class(h5type));
+  assert(H5Tget_class(attr_type) == H5Tget_class(h5type));
 
   // get dimensions of attribute array, check it is one-dimensional
   const hid_t dataspace = H5Aget_space(attr_id);
-  dolfin_assert(dataspace != HDF5_FAIL);
+  assert(dataspace != HDF5_FAIL);
 
   hsize_t cur_size[10];
   hsize_t max_size[10];
   const int ndims = H5Sget_simple_extent_dims(dataspace, cur_size, max_size);
-  dolfin_assert(ndims == 1);
+  assert(ndims == 1);
 
   attribute_value.resize(cur_size[0]);
 
   // Read value to vector
   herr_t status = H5Aread(attr_id, h5type, attribute_value.data());
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // Close dataspace
   status = H5Sclose(dataspace);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 }
 //---------------------------------------------------------------------------
 template <>
@@ -631,26 +631,26 @@ inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
                                                std::string& attribute_value)
 {
   // Check this attribute is a string
-  dolfin_assert(H5Tget_class(attr_type) == H5T_STRING);
+  assert(H5Tget_class(attr_type) == H5T_STRING);
 
   // Copy string type from HDF5 types and set length accordingly
   const hid_t memtype = H5Tcopy(H5T_C_S1);
   const int string_length = H5Tget_size(attr_type) + 1;
   herr_t status = H5Tset_size(memtype, string_length);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   // FIXME: messy
   // Copy string value into temporary vector std::vector::data can
   // be copied into (std::string::data cannot)
   std::vector<char> attribute_data(string_length);
   status = H5Aread(attr_id, memtype, attribute_data.data());
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 
   attribute_value.assign(attribute_data.data());
 
   // Close memory type
   status = H5Tclose(memtype);
-  dolfin_assert(status != HDF5_FAIL);
+  assert(status != HDF5_FAIL);
 }
 //---------------------------------------------------------------------------
 #endif

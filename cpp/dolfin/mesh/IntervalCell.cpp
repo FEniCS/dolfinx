@@ -56,7 +56,7 @@ void IntervalCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
                                    std::size_t dim, const std::int32_t* v) const
 {
   // For completeness, IntervalCell has two 'edges'
-  dolfin_assert(dim == 0);
+  assert(dim == 0);
 
   // Resize data structure
   e.resize(boost::extents[2][1]);

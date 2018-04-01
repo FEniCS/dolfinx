@@ -94,7 +94,7 @@ std::shared_ptr<const fem::GenericDofMap> FunctionSpace::dofmap() const
 //-----------------------------------------------------------------------------
 std::int64_t FunctionSpace::dim() const
 {
-  dolfin_assert(_dofmap);
+  assert(_dofmap);
   return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
@@ -133,9 +133,9 @@ void FunctionSpace::interpolate_from_any(
 void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
                                 const GenericFunction& v) const
 {
-  dolfin_assert(_mesh);
-  dolfin_assert(_element);
-  dolfin_assert(_dofmap);
+  assert(_mesh);
+  assert(_element);
+  assert(_dofmap);
 
   // Check that function ranks match
   if (_element->value_rank() != v.value_rank())
@@ -179,9 +179,9 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
 std::shared_ptr<FunctionSpace>
 FunctionSpace::sub(const std::vector<std::size_t>& component) const
 {
-  dolfin_assert(_mesh);
-  dolfin_assert(_element);
-  dolfin_assert(_dofmap);
+  assert(_mesh);
+  assert(_element);
+  assert(_dofmap);
 
   // Check if sub space is already in the cache and not expired
   auto subspace = _subspaces.find(component);
@@ -224,7 +224,7 @@ std::shared_ptr<FunctionSpace> FunctionSpace::collapse() const
 std::shared_ptr<FunctionSpace> FunctionSpace::collapse(
     std::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const
 {
-  dolfin_assert(_mesh);
+  assert(_mesh);
 
   if (_component.empty())
   {
@@ -247,10 +247,10 @@ std::vector<std::size_t> FunctionSpace::component() const { return _component; }
 EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
 {
   // Geometric dimension
-  dolfin_assert(_mesh);
-  dolfin_assert(_element);
+  assert(_mesh);
+  assert(_element);
   const std::size_t gdim = _element->geometric_dimension();
-  dolfin_assert(gdim == _mesh->geometry().dim());
+  assert(gdim == _mesh->geometry().dim());
 
   if (!_component.empty())
   {
@@ -260,7 +260,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   }
 
   // Get local size
-  dolfin_assert(_dofmap);
+  assert(_dofmap);
   std::size_t bs = _dofmap->block_size();
   std::size_t local_size
       = bs * _dofmap->index_map()->size(common::IndexMap::MapSize::OWNED);
@@ -298,9 +298,9 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
 void FunctionSpace::set_x(la::PETScVector& x, double value,
                           std::size_t component) const
 {
-  dolfin_assert(_mesh);
-  dolfin_assert(_dofmap);
-  dolfin_assert(_element);
+  assert(_mesh);
+  assert(_dofmap);
+  assert(_element);
 
   const std::size_t gdim = _mesh->geometry().dim();
   std::vector<double> x_values;
@@ -350,7 +350,7 @@ std::string FunctionSpace::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void FunctionSpace::print_dofmap() const
 {
-  dolfin_assert(_mesh);
+  assert(_mesh);
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     auto dofs = _dofmap->cell_dofs(cell.index());

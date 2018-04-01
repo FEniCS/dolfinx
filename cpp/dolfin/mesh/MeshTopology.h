@@ -66,7 +66,7 @@ public:
     if (_ghost_offset_index.empty())
       return 0;
 
-    dolfin_assert(dim < _ghost_offset_index.size());
+    assert(dim < _ghost_offset_index.size());
     return _ghost_offset_index[dim];
   }
 
@@ -89,8 +89,8 @@ public:
   void set_global_index(std::size_t dim, std::int32_t local_index,
                         std::int64_t global_index)
   {
-    dolfin_assert(dim < _global_indices.size());
-    dolfin_assert(local_index < (std::int32_t)_global_indices[dim].size());
+    assert(dim < _global_indices.size());
+    assert(local_index < (std::int32_t)_global_indices[dim].size());
     _global_indices[dim][local_index] = global_index;
   }
 
@@ -98,7 +98,7 @@ public:
   /// dimension d
   const std::vector<std::int64_t>& global_indices(std::size_t d) const
   {
-    dolfin_assert(d < _global_indices.size());
+    assert(d < _global_indices.size());
     return _global_indices[d];
   }
 
@@ -106,7 +106,7 @@ public:
   /// dimension dim
   bool have_global_indices(std::size_t dim) const
   {
-    dolfin_assert(dim < _global_indices.size());
+    assert(dim < _global_indices.size());
     return !_global_indices[dim].empty();
   }
 
@@ -141,16 +141,16 @@ public:
   /// Return connectivity for given pair of topological dimensions
   MeshConnectivity& connectivity(std::size_t d0, std::size_t d1)
   {
-    dolfin_assert(d0 < _connectivity.size());
-    dolfin_assert(d1 < _connectivity[d0].size());
+    assert(d0 < _connectivity.size());
+    assert(d1 < _connectivity[d0].size());
     return _connectivity[d0][d1];
   }
 
   /// Return connectivity for given pair of topological dimensions
   const MeshConnectivity& connectivity(std::size_t d0, std::size_t d1) const
   {
-    dolfin_assert(d0 < _connectivity.size());
-    dolfin_assert(d1 < _connectivity[d0].size());
+    assert(d0 < _connectivity.size());
+    assert(d1 < _connectivity[d0].size());
     return _connectivity[d0][d1];
   }
 

@@ -69,12 +69,12 @@ void DirichletBC::gather(Map& boundary_values) const
 {
   common::Timer timer("DirichletBC gather");
 
-  dolfin_assert(_function_space->mesh());
+  assert(_function_space->mesh());
   MPI_Comm mpi_comm = _function_space->mesh()->mpi_comm();
   std::size_t comm_size = MPI::size(mpi_comm);
 
   // Get dofmap
-  dolfin_assert(_function_space->dofmap());
+  assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
   const auto& shared_nodes = dofmap.shared_nodes();
   const int bs = dofmap.block_size();
@@ -108,7 +108,7 @@ void DirichletBC::gather(Map& boundary_values) const
   std::vector<double> received_bvc1;
   MPI::all_to_all(mpi_comm, proc_map0, received_bvc0);
   MPI::all_to_all(mpi_comm, proc_map1, received_bvc1);
-  dolfin_assert(received_bvc0.size() == received_bvc1.size());
+  assert(received_bvc0.size() == received_bvc1.size());
 
   const std::int64_t n0 = dofmap.ownership_range()[0];
   const std::int64_t n1 = dofmap.ownership_range()[1];
@@ -164,7 +164,7 @@ void DirichletBC::gather(Map& boundary_values) const
 void DirichletBC::get_boundary_values(Map& boundary_values) const
 {
   // Create local data
-  dolfin_assert(_function_space);
+  assert(_function_space);
   LocalData data(*_function_space);
 
   // Compute dofs and values
@@ -224,8 +224,8 @@ DirichletBC::Method DirichletBC::method() const { return _method; }
 //-----------------------------------------------------------------------------
 void DirichletBC::check() const
 {
-  dolfin_assert(_g);
-  dolfin_assert(_function_space->element());
+  assert(_g);
+  assert(_function_space->element());
   const FiniteElement& element = *_function_space->element();
 
   // Check for common errors, message below might be cryptic
@@ -264,7 +264,7 @@ void DirichletBC::check() const
   }
 
   // Check that the mesh is ordered
-  dolfin_assert(_function_space->mesh());
+  assert(_function_space->mesh());
   if (!_function_space->mesh()->ordered())
   {
     log::dolfin_error(
@@ -295,7 +295,7 @@ void DirichletBC::check() const
     }
 
     // Check that mesh::Meshfunction and function::FunctionSpace meshes match
-    dolfin_assert(_function_space->mesh());
+    assert(_function_space->mesh());
     if (_user_mesh_function->mesh()->id() != _function_space->mesh()->id())
     {
       log::dolfin_error(
@@ -322,16 +322,16 @@ void DirichletBC::init_facets(const MPI_Comm mpi_comm) const
 void DirichletBC::init_from_sub_domain(
     std::shared_ptr<const mesh::SubDomain> sub_domain) const
 {
-  dolfin_assert(_facets.empty());
+  assert(_facets.empty());
 
   // FIXME: This can be made more efficient, we should be able to
   // FIXME: extract the facets without first creating a mesh::MeshFunction on
   // FIXME: the entire mesh and then extracting the subset. This is done
   // FIXME: mainly for convenience (we may reuse mark() in SubDomain).
 
-  dolfin_assert(_function_space->mesh());
+  assert(_function_space->mesh());
   std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
-  dolfin_assert(mesh);
+  assert(mesh);
 
   // Create mesh function for sub domain markers on facets and mark
   // all facet as subdomain 1
@@ -351,7 +351,7 @@ void DirichletBC::init_from_mesh_function(
     std::size_t sub_domain) const
 {
   // Get mesh
-  dolfin_assert(_function_space->mesh());
+  assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Make sure we have the facet - cell connectivity
@@ -359,7 +359,7 @@ void DirichletBC::init_from_mesh_function(
   mesh.init(D - 1, D);
 
   // Build set of boundary facets
-  dolfin_assert(_facets.empty());
+  assert(_facets.empty());
   for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
     if (sub_domains[facet] == sub_domain)
@@ -370,11 +370,11 @@ void DirichletBC::init_from_mesh_function(
 void DirichletBC::compute_bc_topological(Map& boundary_values,
                                          LocalData& data) const
 {
-  dolfin_assert(_function_space);
-  dolfin_assert(_g);
+  assert(_function_space);
+  assert(_g);
 
   // Get mesh and dofmap
-  dolfin_assert(_function_space->mesh());
+  assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Extract the list of facets where the BC should be applied
@@ -389,7 +389,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   }
 
   // Get dofmap
-  dolfin_assert(_function_space->dofmap());
+  assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
 
   // Topological and geometric dimension
@@ -408,14 +408,14 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
                           + _facets.size() * dofmap.num_facet_dofs());
 
   // Iterate over marked
-  dolfin_assert(_function_space->element());
+  assert(_function_space->element());
   for (std::size_t f = 0; f < _facets.size(); ++f)
   {
     // Create facet
     const mesh::Facet facet(mesh, _facets[f]);
 
     // Get cell to which facet belongs.
-    dolfin_assert(facet.num_entities(D) > 0);
+    assert(facet.num_entities(D) > 0);
     const std::size_t cell_index = facet.entities(D)[0];
 
     // Create attached cell
@@ -452,12 +452,12 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 void DirichletBC::compute_bc_geometric(Map& boundary_values,
                                        LocalData& data) const
 {
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->element());
-  dolfin_assert(_g);
+  assert(_function_space);
+  assert(_function_space->element());
+  assert(_g);
 
   // Get mesh
-  dolfin_assert(_function_space->mesh());
+  assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Extract the list of facets where the BC *might* be applied
@@ -472,11 +472,11 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   }
 
   // Get dofmap
-  dolfin_assert(_function_space->dofmap());
+  assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
 
   // Get finite element
-  dolfin_assert(_function_space->element());
+  assert(_function_space->element());
   const FiniteElement& element = *_function_space->element();
 
   // Initialize facets, needed for geometric search
@@ -584,13 +584,13 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                       "A SubDomain is required for pointwise search");
   }
 
-  dolfin_assert(_g);
+  assert(_g);
 
   // Get mesh, dofmap and element
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->dofmap());
-  dolfin_assert(_function_space->element());
-  dolfin_assert(_function_space->mesh());
+  assert(_function_space);
+  assert(_function_space->dofmap());
+  assert(_function_space->element());
+  assert(_function_space->mesh());
   const GenericDofMap& dofmap = *_function_space->dofmap();
   const FiniteElement& element = *_function_space->element();
   const mesh::Mesh& mesh = *_function_space->mesh();

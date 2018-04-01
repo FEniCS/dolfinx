@@ -52,7 +52,7 @@ mesh::PartitionData dolfin::graph::SCOTCH::compute_partition(
   }
 
   // Compute partitions
-  dolfin_assert(csr_graph);
+  assert(csr_graph);
   return partition(mpi_comm, *csr_graph, cell_weight, ghost_vertices);
 }
 //-----------------------------------------------------------------------------
@@ -234,7 +234,7 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
 
   // Sanity check
   for (std::size_t i = 1; i <= proc_num; ++i)
-    dolfin_assert(procvrttab[i] >= (procvrttab[i - 1] + proccnttab[i - 1]));
+    assert(procvrttab[i] >= (procvrttab[i - 1] + proccnttab[i - 1]));
 #endif
 
   // Create SCOTCH graph and initialise
@@ -320,7 +320,7 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
   // Double check size is correct
   int tsize;
   MPI_Type_size(MPI_SCOTCH_Num, &tsize);
-  dolfin_assert(tsize == sizeof(SCOTCH_Num));
+  assert(tsize == sizeof(SCOTCH_Num));
 
   common::Timer timer3("SCOTCH: call SCOTCH_dgraphHalo");
   if (SCOTCH_dgraphHalo(&dgrafdat, (void*)_cell_partition.data(),

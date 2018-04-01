@@ -170,7 +170,7 @@ public:
   cell_dofs(std::size_t cell_index) const
   {
     const std::size_t index = cell_index * _cell_dimension;
-    dolfin_assert(index + _cell_dimension <= _dofmap.size());
+    assert(index + _cell_dimension <= _dofmap.size());
     return Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic,
                                          1>>(&_dofmap[index], _cell_dimension);
   }
@@ -203,7 +203,7 @@ public:
   ///         Degrees of freedom.
   void tabulate_global_dofs(std::vector<std::size_t>& element_dofs) const
   {
-    dolfin_assert(_global_nodes.empty() || block_size() == 1);
+    assert(_global_nodes.empty() || block_size() == 1);
     element_dofs.resize(_global_nodes.size());
     std::copy(_global_nodes.cbegin(), _global_nodes.cend(),
               element_dofs.begin());

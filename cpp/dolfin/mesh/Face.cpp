@@ -14,8 +14,8 @@ using namespace dolfin::mesh;
 //-----------------------------------------------------------------------------
 double Face::area() const
 {
-  dolfin_assert(_mesh);
-  dolfin_assert(_mesh->ordered());
+  assert(_mesh);
+  assert(_mesh->ordered());
 
   const std::size_t D = _mesh->topology().dim();
 
@@ -46,8 +46,8 @@ double Face::area() const
 //-----------------------------------------------------------------------------
 geometry::Point Face::normal() const
 {
-  dolfin_assert(_mesh);
-  dolfin_assert(_mesh->ordered());
+  assert(_mesh);
+  assert(_mesh->ordered());
 
   const std::size_t tD = _mesh->topology().dim();
   const std::size_t gD = _mesh->geometry().dim();

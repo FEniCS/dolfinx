@@ -199,14 +199,14 @@ public:
   ///         The cell type object associated with the mesh.
   mesh::CellType& type()
   {
-    dolfin_assert(_cell_type);
+    assert(_cell_type);
     return *_cell_type;
   }
 
   /// Get mesh cell type (const version).
   const mesh::CellType& type() const
   {
-    dolfin_assert(_cell_type);
+    assert(_cell_type);
     return *_cell_type;
   }
 

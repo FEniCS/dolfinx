@@ -61,7 +61,7 @@ void SLEPcEigenSolver::set_operators(std::shared_ptr<const PETScMatrix> A,
                                      std::shared_ptr<const PETScMatrix> B)
 {
   // Set operators
-  dolfin_assert(_eps);
+  assert(_eps);
   if (B)
     EPSSetOperators(_eps, A->mat(), B->mat());
   else
@@ -72,7 +72,7 @@ void SLEPcEigenSolver::solve()
 {
   // Get operators
   Mat A, B;
-  dolfin_assert(_eps);
+  assert(_eps);
   EPSGetOperators(_eps, &A, &B);
 
   // Wrap operator as short-cut to get size
@@ -85,16 +85,16 @@ void SLEPcEigenSolver::solve(std::int64_t n)
 #ifdef DEBUG
   // Get operators
   Mat A, B;
-  dolfin_assert(_eps);
+  assert(_eps);
   EPSGetOperators(_eps, &A, &B);
 
   // Wrap operator as short-cut to get size
   PETScMatrix A_wrapped(A);
-  dolfin_assert(n <= A_wrapped.size(0));
+  assert(n <= A_wrapped.size(0));
 #endif
 
   // Set number of eigenpairs to compute
-  dolfin_assert(_eps);
+  assert(_eps);
   EPSSetDimensions(_eps, n, PETSC_DECIDE, PETSC_DECIDE);
 
   // Set parameters set on SLEPcEigenSolver object
@@ -141,7 +141,7 @@ void SLEPcEigenSolver::solve(std::int64_t n)
 void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
                                       std::size_t i) const
 {
-  dolfin_assert(_eps);
+  assert(_eps);
   const PetscInt ii = static_cast<PetscInt>(i);
 
   // Get number of computed values
@@ -161,7 +161,7 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, PETScVector& r,
                                      PETScVector& c, std::size_t i) const
 {
-  dolfin_assert(_eps);
+  assert(_eps);
   const PetscInt ii = static_cast<PetscInt>(i);
 
   // Get number of computed eigenvectors/values
@@ -172,7 +172,7 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, PETScVector& r,
   {
     // Get operators
     Mat A, B;
-    dolfin_assert(_eps);
+    assert(_eps);
     EPSGetOperators(_eps, &A, &B);
 
     // Wrap operator and initialize r and c
@@ -194,7 +194,7 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, PETScVector& r,
 std::size_t SLEPcEigenSolver::get_number_converged() const
 {
   PetscInt num_conv;
-  dolfin_assert(_eps);
+  assert(_eps);
   EPSGetConverged(_eps, &num_conv);
   return num_conv;
 }
@@ -202,14 +202,14 @@ std::size_t SLEPcEigenSolver::get_number_converged() const
 void SLEPcEigenSolver::set_deflation_space(
     const la::VectorSpaceBasis& deflation_space)
 {
-  dolfin_assert(_eps);
+  assert(_eps);
 
   // Get PETSc vector pointers from VectorSpaceBasis
   std::vector<Vec> petsc_vecs(deflation_space.dim());
   for (std::size_t i = 0; i < deflation_space.dim(); ++i)
   {
-    dolfin_assert(deflation_space[i]);
-    dolfin_assert(deflation_space[i]->vec());
+    assert(deflation_space[i]);
+    assert(deflation_space[i]->vec());
     petsc_vecs[i] = deflation_space[i]->vec();
   }
 
@@ -222,14 +222,14 @@ void SLEPcEigenSolver::set_deflation_space(
 void SLEPcEigenSolver::set_initial_space(
     const la::VectorSpaceBasis& initial_space)
 {
-  dolfin_assert(_eps);
+  assert(_eps);
 
   // Get PETSc vector pointers from VectorSpaceBasis
   std::vector<Vec> petsc_vecs(initial_space.dim());
   for (std::size_t i = 0; i < initial_space.dim(); ++i)
   {
-    dolfin_assert(initial_space[i]);
-    dolfin_assert(initial_space[i]->vec());
+    assert(initial_space[i]);
+    assert(initial_space[i]->vec());
     petsc_vecs[i] = initial_space[i]->vec();
   }
 
@@ -242,7 +242,7 @@ void SLEPcEigenSolver::set_initial_space(
 void SLEPcEigenSolver::set_options_prefix(std::string options_prefix)
 {
   // Set options prefix
-  dolfin_assert(_eps);
+  assert(_eps);
   PetscErrorCode ierr = EPSSetOptionsPrefix(_eps, options_prefix.c_str());
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "EPSSetOptionsPrefix");
@@ -250,7 +250,7 @@ void SLEPcEigenSolver::set_options_prefix(std::string options_prefix)
 //-----------------------------------------------------------------------------
 std::string SLEPcEigenSolver::get_options_prefix() const
 {
-  dolfin_assert(_eps);
+  assert(_eps);
   const char* prefix = NULL;
   PetscErrorCode ierr = EPSGetOptionsPrefix(_eps, &prefix);
   if (ierr != 0)
@@ -260,7 +260,7 @@ std::string SLEPcEigenSolver::get_options_prefix() const
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_from_options() const
 {
-  dolfin_assert(_eps);
+  assert(_eps);
   PetscErrorCode ierr = EPSSetFromOptions(_eps);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "EPSSetFromOptions");
@@ -313,7 +313,7 @@ void SLEPcEigenSolver::set_problem_type(std::string type)
   if (type == "default")
     return;
 
-  dolfin_assert(_eps);
+  assert(_eps);
   if (type == "hermitian")
     EPSSetProblemType(_eps, EPS_HEP);
   else if (type == "non_hermitian")
@@ -338,7 +338,7 @@ void SLEPcEigenSolver::set_spectral_transform(std::string transform,
   if (transform == "default")
     return;
 
-  dolfin_assert(_eps);
+  assert(_eps);
   ST st;
   EPSGetST(_eps, &st);
   if (transform == "shift-and-invert")
@@ -361,7 +361,7 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
     return;
 
   // Choose spectrum
-  dolfin_assert(_eps);
+  assert(_eps);
   if (spectrum == "largest magnitude")
     EPSSetWhichEigenpairs(_eps, EPS_LARGEST_MAGNITUDE);
   else if (spectrum == "smallest magnitude")
@@ -411,7 +411,7 @@ void SLEPcEigenSolver::set_solver(std::string solver)
 
   // Choose solver (Note that lanczos will give PETSc error unless
   // problem_type is set to 'hermitian' or 'gen_hermitian')
-  dolfin_assert(_eps);
+  assert(_eps);
   if (solver == "power")
     EPSSetType(_eps, EPSPOWER);
   else if (solver == "subspace")
@@ -440,14 +440,14 @@ void SLEPcEigenSolver::set_solver(std::string solver)
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_tolerance(double tolerance, int maxiter)
 {
-  dolfin_assert(tolerance > 0.0);
-  dolfin_assert(_eps);
+  assert(tolerance > 0.0);
+  assert(_eps);
   EPSSetTolerances(_eps, tolerance, maxiter);
 }
 //-----------------------------------------------------------------------------
 std::size_t SLEPcEigenSolver::get_iteration_number() const
 {
-  dolfin_assert(_eps);
+  assert(_eps);
   PetscInt num_iter;
   EPSGetIterationNumber(_eps, &num_iter);
   return num_iter;
@@ -457,7 +457,7 @@ EPS SLEPcEigenSolver::eps() const { return _eps; }
 //-----------------------------------------------------------------------------
 MPI_Comm SLEPcEigenSolver::mpi_comm() const
 {
-  dolfin_assert(_eps);
+  assert(_eps);
   MPI_Comm mpi_comm = MPI_COMM_NULL;
   PetscObjectGetComm((PetscObject)_eps, &mpi_comm);
   return mpi_comm;

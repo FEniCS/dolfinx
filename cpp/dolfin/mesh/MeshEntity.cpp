@@ -109,7 +109,7 @@ geometry::Point MeshEntity::midpoint() const
     num_vertices++;
   }
 
-  dolfin_assert(num_vertices > 0);
+  assert(num_vertices > 0);
 
   x /= double(num_vertices);
   y /= double(num_vertices);
@@ -134,7 +134,7 @@ std::uint32_t MeshEntity::owner() const
                       "Ownership of non-ghost cells is local process");
   }
 
-  dolfin_assert((int)_mesh->topology().cell_owner().size()
+  assert((int)_mesh->topology().cell_owner().size()
                 > _local_index - offset);
   return _mesh->topology().cell_owner()[_local_index - offset];
 }

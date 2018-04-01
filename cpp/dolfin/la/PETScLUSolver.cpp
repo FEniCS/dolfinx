@@ -48,7 +48,7 @@ std::map<const MatSolverPackage, bool> methods_cholesky
 bool solver_has_cholesky(const MatSolverPackage package)
 {
   auto it = methods_cholesky.find(package);
-  dolfin_assert(it != methods_cholesky.end());
+  assert(it != methods_cholesky.end());
   return it->second;
 }
 //---------------------------------------------------------------------------
@@ -122,7 +122,7 @@ PETScLUSolver::PETScLUSolver(MPI_Comm comm,
                         "Cannot LU factorize non-square PETSc matrix");
     }
 
-    dolfin_assert(A->mat());
+    assert(A->mat());
     PetscBool symm_is_set = PETSC_FALSE;
     ierr = MatIsSymmetricKnown(A->mat(), &symm_is_set, &is_symmetric);
     if (ierr != 0)
@@ -201,7 +201,7 @@ std::size_t PETScLUSolver::solve(PETScVector& x, const PETScVector& b,
     // Get PETSc operators
     Mat _A, _P;
     KSPGetOperators(_solver.ksp(), &_A, &_P);
-    dolfin_assert(_A);
+    assert(_A);
     PETScBaseMatrix A(_A);
 
     const MatSolverPackage solver_type = get_solver_package_type(_solver.ksp());
@@ -326,7 +326,7 @@ const MatSolverPackage PETScLUSolver::select_solver(MPI_Comm comm,
   }
 
   auto it = lumethods.find(method);
-  dolfin_assert(it != lumethods.end());
+  assert(it != lumethods.end());
   return it->second;
 }
 //-----------------------------------------------------------------------------

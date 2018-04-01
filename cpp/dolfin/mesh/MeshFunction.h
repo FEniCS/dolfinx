@@ -212,7 +212,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
     : common::Variable("f", "unnamed MeshFunction"), _mesh(mesh),
       _dim(value_collection.dim())
 {
-  dolfin_assert(_mesh);
+  assert(_mesh);
   _mesh->init(_dim);
 
   // Initialise values with default
@@ -221,12 +221,12 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
   // Get mesh connectivity D --> d
   const std::size_t d = _dim;
   const std::size_t D = _mesh->topology().dim();
-  dolfin_assert(d <= D);
+  assert(d <= D);
 
   // Generate connectivity if it does not exist
   _mesh->init(D, d);
   const MeshConnectivity& connectivity = _mesh->topology().connectivity(D, d);
-  dolfin_assert(!connectivity.empty());
+  assert(!connectivity.empty());
 
   // Iterate over all values
   std::unordered_set<std::size_t> entities_values_set;
@@ -244,17 +244,17 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
     if (d != D)
     {
       // Get global (local to to process) entity index
-      dolfin_assert(cell_index < _mesh->num_cells());
+      assert(cell_index < _mesh->num_cells());
       entity_index = connectivity(cell_index)[local_entity];
     }
     else
     {
       entity_index = cell_index;
-      dolfin_assert(local_entity == 0);
+      assert(local_entity == 0);
     }
 
     // Set value for entity
-    dolfin_assert(entity_index < _values.size());
+    assert(entity_index < _values.size());
     _values[entity_index] = value;
 
     // Add entity index to set (used to check that all values are set)
@@ -272,7 +272,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
 template <typename T>
 std::shared_ptr<const Mesh> MeshFunction<T>::mesh() const
 {
-  dolfin_assert(_mesh);
+  assert(_mesh);
   return _mesh;
 }
 //---------------------------------------------------------------------------
@@ -303,32 +303,32 @@ T* MeshFunction<T>::values()
 template <typename T>
 T& MeshFunction<T>::operator[](const MeshEntity& entity)
 {
-  dolfin_assert(&entity.mesh() == _mesh.get());
-  dolfin_assert(entity.dim() == _dim);
-  dolfin_assert((std::uint32_t)entity.index() < _values.size());
+  assert(&entity.mesh() == _mesh.get());
+  assert(entity.dim() == _dim);
+  assert((std::uint32_t)entity.index() < _values.size());
   return _values[entity.index()];
 }
 //---------------------------------------------------------------------------
 template <typename T>
 const T& MeshFunction<T>::operator[](const MeshEntity& entity) const
 {
-  dolfin_assert(&entity.mesh() == _mesh.get());
-  dolfin_assert(entity.dim() == _dim);
-  dolfin_assert((std::uint32_t)entity.index() < _values.size());
+  assert(&entity.mesh() == _mesh.get());
+  assert(entity.dim() == _dim);
+  assert((std::uint32_t)entity.index() < _values.size());
   return _values[entity.index()];
 }
 //---------------------------------------------------------------------------
 template <typename T>
 T& MeshFunction<T>::operator[](std::size_t index)
 {
-  dolfin_assert(index < _values.size());
+  assert(index < _values.size());
   return _values[index];
 }
 //---------------------------------------------------------------------------
 template <typename T>
 const T& MeshFunction<T>::operator[](std::size_t index) const
 {
-  dolfin_assert(index < _values.size());
+  assert(index < _values.size());
   return _values[index];
 }
 //---------------------------------------------------------------------------
@@ -342,7 +342,7 @@ MeshFunction<T>& MeshFunction<T>::operator=(const T& value)
 template <typename T>
 void MeshFunction<T>::set_values(const std::vector<T>& values)
 {
-  dolfin_assert(_values.size() == values.size());
+  assert(_values.size() == values.size());
   std::copy(values.begin(), values.end(), _values.begin());
 }
 //---------------------------------------------------------------------------

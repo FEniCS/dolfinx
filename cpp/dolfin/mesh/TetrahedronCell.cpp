@@ -307,8 +307,8 @@ geometry::Point TetrahedronCell::cell_normal(const Cell& cell) const
 //-----------------------------------------------------------------------------
 double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const
 {
-  dolfin_assert(cell.mesh().topology().dim() == 3);
-  dolfin_assert(cell.mesh().geometry().dim() == 3);
+  assert(cell.mesh().topology().dim() == 3);
+  assert(cell.mesh().geometry().dim() == 3);
 
   // Create facet from the mesh and local facet number
   Facet f(cell.mesh(), cell.entities(2)[facet]);
@@ -346,7 +346,7 @@ void TetrahedronCell::order(
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
   if (!topology.connectivity(1, 0).empty())
   {
-    dolfin_assert(!topology.connectivity(3, 1).empty());
+    assert(!topology.connectivity(3, 1).empty());
 
     // Get edges
     const std::int32_t* cell_edges = cell.entities(1);
@@ -363,7 +363,7 @@ void TetrahedronCell::order(
   // Sort local vertices on facets in ascending order, connectivity 2 - 0
   if (!topology.connectivity(2, 0).empty())
   {
-    dolfin_assert(!topology.connectivity(3, 2).empty());
+    assert(!topology.connectivity(3, 2).empty());
 
     // Get facets
     const std::int32_t* cell_facets = cell.entities(2);
@@ -381,9 +381,9 @@ void TetrahedronCell::order(
   // connectivity 2 - 1
   if (!topology.connectivity(2, 1).empty())
   {
-    dolfin_assert(!topology.connectivity(3, 2).empty());
-    dolfin_assert(!topology.connectivity(2, 0).empty());
-    dolfin_assert(!topology.connectivity(1, 0).empty());
+    assert(!topology.connectivity(3, 2).empty());
+    assert(!topology.connectivity(2, 0).empty());
+    assert(!topology.connectivity(1, 0).empty());
 
     // Get facet numbers
     const std::int32_t* cell_facets = cell.entities(2);
@@ -435,7 +435,7 @@ void TetrahedronCell::order(
   // Sort local edges on cell after non-incident vertex tuble, connectivity 3-1
   if (!topology.connectivity(3, 1).empty())
   {
-    dolfin_assert(!topology.connectivity(1, 0).empty());
+    assert(!topology.connectivity(1, 0).empty());
 
     // Get cell vertices and edge numbers
     const std::int32_t* cell_vertices = cell.entities(0);
@@ -477,7 +477,7 @@ void TetrahedronCell::order(
   // 3 - 2
   if (!topology.connectivity(3, 2).empty())
   {
-    dolfin_assert(!topology.connectivity(2, 0).empty());
+    assert(!topology.connectivity(2, 0).empty());
 
     // Get cell vertices and facet numbers
     const std::int32_t* cell_vertices = cell.entities(0);
@@ -518,8 +518,8 @@ std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
   // Get vertices and edges
   const std::int32_t* v = cell.entities(0);
   const std::int32_t* e = cell.entities(1);
-  dolfin_assert(v);
-  dolfin_assert(e);
+  assert(v);
+  assert(e);
 
   // Ordering convention for edges (order of non-incident vertices)
   static const std::size_t EV[6][2]
@@ -529,7 +529,7 @@ std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
   for (std::size_t j = 0; j < 6; j++)
   {
     const std::int32_t* ev = cell.mesh().topology().connectivity(1, 0)(e[j]);
-    dolfin_assert(ev);
+    assert(ev);
     const std::int32_t v0 = v[EV[i][0]];
     const std::int32_t v1 = v[EV[i][1]];
     if (ev[0] != v0 && ev[0] != v1 && ev[1] != v0 && ev[1] != v1)

@@ -35,8 +35,8 @@ void NonlinearVariationalProblem::set_bounds(
     std::shared_ptr<const la::PETScVector> lb,
     std::shared_ptr<const la::PETScVector> ub)
 {
-  dolfin_assert(lb);
-  dolfin_assert(ub);
+  assert(lb);
+  assert(ub);
   this->_lb = lb;
   this->_ub = ub;
 }
@@ -71,35 +71,35 @@ NonlinearVariationalProblem::bcs() const
 std::shared_ptr<const function::FunctionSpace>
 NonlinearVariationalProblem::trial_space() const
 {
-  dolfin_assert(_u);
+  assert(_u);
   return _u->function_space();
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const function::FunctionSpace>
 NonlinearVariationalProblem::test_space() const
 {
-  dolfin_assert(_residual);
+  assert(_residual);
   return _residual->function_space(0);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const la::PETScVector>
 NonlinearVariationalProblem::lower_bound() const
 {
-  dolfin_assert(_lb);
+  assert(_lb);
   return _lb;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const la::PETScVector>
 NonlinearVariationalProblem::upper_bound() const
 {
-  dolfin_assert(_ub);
+  assert(_ub);
   return _ub;
 }
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::check_forms() const
 {
   // Check rank of residual F
-  dolfin_assert(_residual);
+  assert(_residual);
   if (_residual->rank() != 1)
   {
     log::dolfin_error("NonlinearVariationalProblem.cpp",
@@ -119,17 +119,17 @@ void NonlinearVariationalProblem::check_forms() const
 
   // FIXME: Should we add a check here that matches the function space
   // FIXME: of the solution variable u to a coefficient space for F?
-  dolfin_assert(_u);
+  assert(_u);
 
   // Check that function spaces of bcs are contained in trial space
-  dolfin_assert(_u);
+  assert(_u);
   const auto trial_space = _u->function_space();
-  dolfin_assert(trial_space);
+  assert(trial_space);
   for (const auto bc : _bcs)
   {
-    dolfin_assert(bc);
+    assert(bc);
     const auto bc_space = bc->function_space();
-    dolfin_assert(bc_space);
+    assert(bc_space);
     if (!trial_space->contains(*bc_space))
     {
       log::dolfin_error("NonlinearVariationalProblem.cpp",

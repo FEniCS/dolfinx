@@ -25,7 +25,7 @@ namespace log
 
 /// The DOLFIN log system provides the following set of functions for
 /// uniform handling of log messages, warnings and errors. In addition,
-/// macros are provided for debug messages and dolfin_assertions.
+/// macros are provided for debug messages.
 ///
 /// Only messages with a debug level higher than or equal to the current
 /// log level are printed (the default being zero). Logging may also be
@@ -125,9 +125,6 @@ void not_working_in_parallel(std::string what);
 void __debug(std::string file, unsigned long line, std::string function,
              std::string format, ...);
 
-// Helper function for dolfin_dolfin_assert macro
-void __dolfin_assert(std::string file, unsigned long line, std::string function,
-                     std::string check);
 }
 }
 
@@ -173,16 +170,3 @@ void __dolfin_assert(std::string file, unsigned long line, std::string function,
         __FUNCTION__, __FILE__, __LINE__);                                     \
   } while (false)
 
-// Assertion, only active if DEBUG is defined
-#ifdef DEBUG
-#define dolfin_assert(check)                                                   \
-  do                                                                           \
-  {                                                                            \
-    if (!(check))                                                              \
-    {                                                                          \
-      dolfin::log::__dolfin_assert(__FILE__, __LINE__, __FUNCTION__, #check);  \
-    }                                                                          \
-  } while (false)
-#else
-#define dolfin_assert(check)
-#endif

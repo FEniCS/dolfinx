@@ -34,7 +34,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 {
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
-  dolfin_assert(num_vertices_per_cell == cells.cols());
+  assert(num_vertices_per_cell == cells.cols());
 
   _ordered = false;
 
@@ -348,7 +348,7 @@ std::string Mesh::str(bool verbose) const
 //-----------------------------------------------------------------------------
 std::string Mesh::ghost_mode() const
 {
-  dolfin_assert(_ghost_mode == "none" || _ghost_mode == "shared_vertex"
+  assert(_ghost_mode == "none" || _ghost_mode == "shared_vertex"
                 || _ghost_mode == "shared_facet");
   return _ghost_mode;
 }

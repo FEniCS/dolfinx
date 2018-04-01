@@ -185,7 +185,7 @@ function ``init``:
     {
       // Initialize class (depending on geometric dimension of the mesh).
       // Unfortunately C++ does not allow namespaces as template arguments
-      dolfin_assert(mesh);
+      assert(mesh);
       if (mesh->geometry().dim() == 2)
       {
         init<CahnHilliard2D::FunctionSpace, CahnHilliard2D::JacobianForm,

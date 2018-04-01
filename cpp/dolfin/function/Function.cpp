@@ -55,8 +55,8 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
   // creating subfunctions
 
   // Assertion uses '<=' to deal with sub-functions
-  dolfin_assert(V->dofmap());
-  dolfin_assert(V->dofmap()->global_dimension() <= x->size());
+  assert(V->dofmap());
+  assert(V->dofmap()->global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
@@ -64,7 +64,7 @@ Function::Function(const Function& v)
   // Make a copy of all the data, or if v is a sub-function, then we
   // collapse the dof map and copy only the relevant entries from the
   // vector of v.
-  dolfin_assert(v._vector);
+  assert(v._vector);
   if (v._vector->size() == v._function_space->dim())
   {
     // Copy function space pointer
@@ -91,15 +91,15 @@ Function::Function(const Function& v)
     }
 
     // Gather values into a vector
-    dolfin_assert(v.vector());
+    assert(v.vector());
     std::vector<double> gathered_values(collapsed_map.size());
     v.vector()->get_local(gathered_values.data(), gathered_values.size(),
                           old_rows.data());
 
     // Initial new vector (global)
     init_vector();
-    dolfin_assert(_function_space->dofmap());
-    dolfin_assert(_vector->size()
+    assert(_function_space->dofmap());
+    assert(_vector->size()
                   == _function_space->dofmap()->global_dimension());
 
     // FIXME (local): Check this for local or global
@@ -113,7 +113,7 @@ Function::Function(const Function& v)
 /*
 const Function& Function::operator= (const Function& v)
 {
-  dolfin_assert(v._vector);
+  assert(v._vector);
 
   // Make a copy of all the data, or if v is a sub-function, then we
   // collapse the dof map and copy only the relevant entries from the
@@ -147,15 +147,15 @@ const Function& Function::operator= (const Function& v)
     }
 
     // Gather values into a vector
-    dolfin_assert(v.vector());
+    assert(v.vector());
     std::vector<double> gathered_values(collapsed_map.size());
     v.vector()->get_local(gathered_values.data(), gathered_values.size(),
                           old_rows.data());
 
     // Initial new vector (global)
     init_vector();
-    dolfin_assert(_function_space->dofmap());
-    dolfin_assert(_vector->size()
+    assert(_function_space->dofmap());
+    assert(_vector->size()
                   == _function_space->dofmap()->global_dimension());
 
     // FIXME (local): Check this for local or global
@@ -175,8 +175,8 @@ Function Function::sub(std::size_t i) const
   auto sub_space = _function_space->sub({i});
 
   // Return sub-function
-  dolfin_assert(sub_space);
-  dolfin_assert(_vector);
+  assert(sub_space);
+  assert(_vector);
   return Function(sub_space, _vector);
 }
 //-----------------------------------------------------------------------------
@@ -189,7 +189,7 @@ void Function::operator=(const function::FunctionAXPY& axpy)
   }
 
   // Make an initial assign and scale
-  dolfin_assert(axpy.pairs()[0].second);
+  assert(axpy.pairs()[0].second);
   *this = *(axpy.pairs()[0].second);
   if (axpy.pairs()[0].first != 1.0)
     *_vector *= axpy.pairs()[0].first;
@@ -199,16 +199,16 @@ void Function::operator=(const function::FunctionAXPY& axpy)
                         std::shared_ptr<const Function>>>::const_iterator it;
   for (it = axpy.pairs().begin() + 1; it != axpy.pairs().end(); it++)
   {
-    dolfin_assert(it->second);
-    dolfin_assert(it->second->vector());
+    assert(it->second);
+    assert(it->second->vector());
     _vector->axpy(it->first, *(it->second->vector()));
   }
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<la::PETScVector> Function::vector()
 {
-  dolfin_assert(_vector);
-  dolfin_assert(_function_space->dofmap());
+  assert(_vector);
+  assert(_function_space->dofmap());
 
   // Check that this is not a sub function.
   if (_vector->size() != _function_space->dofmap()->global_dimension())
@@ -222,15 +222,15 @@ std::shared_ptr<la::PETScVector> Function::vector()
 //-----------------------------------------------------------------------------
 std::shared_ptr<const la::PETScVector> Function::vector() const
 {
-  dolfin_assert(_vector);
+  assert(_vector);
   return _vector;
 }
 //-----------------------------------------------------------------------------
 void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
                     Eigen::Ref<const EigenRowArrayXXd> x) const
 {
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->mesh());
+  assert(_function_space);
+  assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Find the cell that contains x
@@ -283,8 +283,8 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
     return;
   }
 
-  dolfin_assert(x.rows() == values.rows());
-  dolfin_assert(_function_space->element());
+  assert(x.rows() == values.rows());
+  assert(_function_space->element());
   const fem::FiniteElement& element = *_function_space->element();
 
   // Create work vector for expansion coefficients
@@ -366,8 +366,8 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
 //-----------------------------------------------------------------------------
 void Function::interpolate(const GenericFunction& v)
 {
-  dolfin_assert(_vector);
-  dolfin_assert(_function_space);
+  assert(_vector);
+  assert(_function_space);
 
   // Interpolate
   _function_space->interpolate(*_vector, v);
@@ -375,22 +375,22 @@ void Function::interpolate(const GenericFunction& v)
 //-----------------------------------------------------------------------------
 std::size_t Function::value_rank() const
 {
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->element());
+  assert(_function_space);
+  assert(_function_space->element());
   return _function_space->element()->value_rank();
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_dimension(std::size_t i) const
 {
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->element());
+  assert(_function_space);
+  assert(_function_space->element());
   return _function_space->element()->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> Function::value_shape() const
 {
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->element());
+  assert(_function_space);
+  assert(_function_space->element());
   std::vector<std::size_t> _shape(this->value_rank(), 1);
   for (std::size_t i = 0; i < _shape.size(); ++i)
     _shape[i] = this->value_dimension(i);
@@ -401,9 +401,9 @@ void Function::restrict(double* w, const fem::FiniteElement& element,
                         const mesh::Cell& dolfin_cell,
                         const double* coordinate_dofs) const
 {
-  dolfin_assert(w);
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->dofmap());
+  assert(w);
+  assert(_function_space);
+  assert(_function_space->dofmap());
 
   // Check if we are restricting to an element of this function space
   if (_function_space->has_element(element)
@@ -489,8 +489,8 @@ void Function::init_vector()
   common::Timer timer("Init dof vector");
 
   // Get dof map
-  dolfin_assert(_function_space);
-  dolfin_assert(_function_space->dofmap());
+  assert(_function_space);
+  assert(_function_space->dofmap());
   const fem::GenericDofMap& dofmap = *(_function_space->dofmap());
 
   // Check that function space is not a subspace (view)
@@ -505,7 +505,7 @@ void Function::init_vector()
   // Get index map
   /*
   std::shared_ptr<const common::IndexMap> index_map = dofmap.index_map();
-  dolfin_assert(index_map);
+  assert(index_map);
 
   MPI_Comm comm = _function_space->mesh()->mpi_comm();
 
@@ -515,16 +515,16 @@ void Function::init_vector()
   auto tensor_layout = std::make_shared<TensorLayout>(comm, 0,
   TensorLayout::Sparsity::DENSE);
 
-  dolfin_assert(tensor_layout);
-  dolfin_assert(!tensor_layout->sparsity_pattern());
-  dolfin_assert(_function_space->mesh());
+  assert(tensor_layout);
+  assert(!tensor_layout->sparsity_pattern());
+  assert(_function_space->mesh());
   tensor_layout->init({index_map}, TensorLayout::Ghosts::GHOSTED);
 
   // Create vector of dofs
   if (!_vector)
     _vector =
   std::make_shared<la::la::PETScVector>(_function_space->mesh()->mpi_comm());
-  dolfin_assert(_vector);
+  assert(_vector);
   if (!_vector->empty())
   {
     log::dolfin_error("Function.cpp",
@@ -539,7 +539,7 @@ void Function::init_vector()
 
   // Get index map
   std::shared_ptr<const common::IndexMap> index_map = dofmap.index_map();
-  dolfin_assert(index_map);
+  assert(index_map);
 
   // Get block size
   std::size_t bs = index_map->block_size();
@@ -552,7 +552,7 @@ void Function::init_vector()
 
   // Build list of ghosts (global block indices)
   const std::size_t nowned = index_map->size(common::IndexMap::MapSize::OWNED);
-  dolfin_assert(nowned + index_map->size(common::IndexMap::MapSize::UNOWNED)
+  assert(nowned + index_map->size(common::IndexMap::MapSize::UNOWNED)
                 == local_to_global.size());
   std::vector<dolfin::la_index_t> ghosts(local_to_global.begin() + nowned,
                                          local_to_global.end());
@@ -561,7 +561,7 @@ void Function::init_vector()
   if (!_vector)
     _vector = std::make_shared<la::PETScVector>(
         _function_space->mesh()->mpi_comm());
-  dolfin_assert(_vector);
+  assert(_vector);
 
   if (!_vector->empty())
   {

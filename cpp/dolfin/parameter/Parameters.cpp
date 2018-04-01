@@ -199,7 +199,7 @@ void Parameters::remove(std::string key)
                  this->name().c_str(), key.c_str());
   }
 
-  dolfin_assert(num_removed == 1);
+  assert(num_removed == 1);
 }
 //-----------------------------------------------------------------------------
 void Parameters::parse(int argc, char* argv[])

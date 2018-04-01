@@ -79,7 +79,7 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
 #endif
   _hdf5_file_id
       = HDF5Interface::open_file(_mpi_comm.comm(), filename, file_mode, mpi_io);
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
 }
 //-----------------------------------------------------------------------------
 HDF5File::~HDF5File() { close(); }
@@ -94,15 +94,15 @@ void HDF5File::close()
 //-----------------------------------------------------------------------------
 void HDF5File::flush()
 {
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
   HDF5Interface::flush_file(_hdf5_file_id);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const std::vector<geometry::Point>& points,
                      const std::string dataset_name)
 {
-  dolfin_assert(points.size() > 0);
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(points.size() > 0);
+  assert(_hdf5_file_id > 0);
 
   // Get number of points (global)
   std::size_t num_points_global = MPI::sum(_mpi_comm.comm(), points.size());
@@ -134,8 +134,8 @@ void HDF5File::write(const std::vector<double>& values,
 //-----------------------------------------------------------------------------
 void HDF5File::write(const la::PETScVector& x, const std::string dataset_name)
 {
-  dolfin_assert(x.size() > 0);
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(x.size() > 0);
+  assert(_hdf5_file_id > 0);
 
   // Get all local data
   std::vector<double> local_data;
@@ -163,7 +163,7 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
                                       const std::string dataset_name,
                                       const bool use_partition_from_file) const
 {
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
 
   // Check for data set exists
   if (!HDF5Interface::has_dataset(_hdf5_file_id, dataset_name))
@@ -185,7 +185,7 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
       = HDF5Interface::get_dataset_shape(_hdf5_file_id, dataset_name);
 
   // Check that rank is 1 or 2
-  dolfin_assert(data_shape.size() == 1
+  assert(data_shape.size() == 1
                 or (data_shape.size() == 2 and data_shape[1] == 1));
 
   // Initialize vector
@@ -247,7 +247,7 @@ void HDF5File::write(const mesh::Mesh& mesh, std::size_t cell_dim,
   const std::size_t gdim = mesh.geometry().dim();
 
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
 
   mesh::CellType::Type cell_type = mesh.type().entity_type(cell_dim);
   std::unique_ptr<mesh::CellType> celltype(mesh::CellType::create(cell_type));
@@ -384,7 +384,7 @@ void HDF5File::write(const mesh::Mesh& mesh, std::size_t cell_dim,
 
     const std::int64_t num_cells = mpi_io ? mesh.num_entities_global(cell_dim)
                                           : mesh.num_entities(cell_dim);
-    dolfin_assert(global_size[0] == num_cells);
+    assert(global_size[0] == num_cells);
     const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
     write_data(topology_dataset, topological_data, global_size, mpi_io);
 
@@ -458,7 +458,7 @@ void HDF5File::write(const mesh::MeshFunction<bool>& meshfunction,
                      const std::string name)
 {
   std::shared_ptr<const mesh::Mesh> mesh = meshfunction.mesh();
-  dolfin_assert(mesh);
+  assert(mesh);
   const std::size_t cell_dim = meshfunction.dim();
 
   // HDF5 does not support a boolean type,
@@ -474,7 +474,7 @@ void HDF5File::read(mesh::MeshFunction<bool>& meshfunction,
                     const std::string name) const
 {
   std::shared_ptr<const mesh::Mesh> mesh = meshfunction.mesh();
-  dolfin_assert(mesh);
+  assert(mesh);
 
   const std::size_t cell_dim = meshfunction.dim();
 
@@ -493,8 +493,8 @@ void HDF5File::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
   // FIXME: change to return MeshFunction
 
   std::shared_ptr<const mesh::Mesh> mesh = meshfunction.mesh();
-  dolfin_assert(mesh);
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(mesh);
+  assert(_hdf5_file_id > 0);
 
   const std::string topology_name = mesh_name + "/topology";
 
@@ -632,7 +632,7 @@ void HDF5File::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
 
   for (std::size_t i = 0; i < receive_values.size(); ++i)
   {
-    dolfin_assert(receive_values[i].size() * vertices_per_cell
+    assert(receive_values[i].size() * vertices_per_cell
                   == receive_topology[i].size());
     std::vector<std::size_t>::iterator p = receive_topology[i].begin();
     for (std::size_t j = 0; j < receive_values[i].size(); ++j)
@@ -661,7 +661,7 @@ void HDF5File::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
       const std::size_t send_to_proc = *(p + vertices_per_cell + 1);
 
       const typename VectorKeyMap::iterator find_cell = cell_to_data.find(cell);
-      dolfin_assert(find_cell != cell_to_data.end());
+      assert(find_cell != cell_to_data.end());
       send_values[send_to_proc].push_back(find_cell->second);
       send_topology[send_to_proc].push_back(remote_index);
     }
@@ -674,7 +674,7 @@ void HDF5File::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
   // and received values should have the appropriate values for each
   for (std::size_t i = 0; i < receive_values.size(); ++i)
   {
-    dolfin_assert(receive_values[i].size() == receive_topology[i].size());
+    assert(receive_values[i].size() == receive_topology[i].size());
     for (std::size_t j = 0; j < receive_values[i].size(); ++j)
       meshfunction[receive_topology[i][j]] = receive_values[i][j];
   }
@@ -764,7 +764,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
 void HDF5File::write(const function::Function& u, const std::string name,
                      double timestamp)
 {
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
   if (!HDF5Interface::has_dataset(_hdf5_file_id, name))
   {
     write(u, name);
@@ -819,13 +819,13 @@ void HDF5File::write(const function::Function& u, const std::string name,
 void HDF5File::write(const function::Function& u, const std::string name)
 {
   common::Timer t0("HDF5: write function::Function");
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
 
   // Get mesh and dofmap
-  dolfin_assert(u.function_space()->mesh());
+  assert(u.function_space()->mesh());
   const mesh::Mesh& mesh = *u.function_space()->mesh();
 
-  dolfin_assert(u.function_space()->dofmap());
+  assert(u.function_space()->dofmap());
   const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
 
   // FIXME:
@@ -850,7 +850,7 @@ void HDF5File::write(const function::Function& u, const std::string name)
     for (Eigen::Index j = 0; j < cell_dofs_i.size(); ++j)
     {
       auto p = cell_dofs_i[j];
-      dolfin_assert(p < (dolfin::la_index_t)local_to_global_map.size());
+      assert(p < (dolfin::la_index_t)local_to_global_map.size());
       cell_dofs.push_back(local_to_global_map[p]);
     }
   }
@@ -892,7 +892,7 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
                const std::string name)
 {
   common::Timer t0("HDF5: read function::Function");
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
 
   // FIXME: This routine is long and involves a lot of MPI, but it
   // should work for the general case of reading a function that was
@@ -966,9 +966,9 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
 
   // Get existing mesh and dofmap - these should be pre-existing
   // and set up by user when defining the function::Function
-  dolfin_assert(u.function_space()->mesh());
+  assert(u.function_space()->mesh());
   const mesh::Mesh& mesh = *u.function_space()->mesh();
-  dolfin_assert(u.function_space()->dofmap());
+  assert(u.function_space()->dofmap());
   const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
 
   // Get dimension of dataset
@@ -1007,7 +1007,7 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
   const std::vector<std::int64_t> vector_shape
       = HDF5Interface::get_dataset_shape(_hdf5_file_id, vector_dataset_name);
   const std::int64_t num_global_dofs = vector_shape[0];
-  dolfin_assert(num_global_dofs == x.size());
+  assert(num_global_dofs == x.size());
   const std::array<std::int64_t, 2> input_vector_range
       = MPI::local_range(_mpi_comm.comm(), vector_shape[0]);
 
@@ -1091,7 +1091,7 @@ template <typename T>
 void HDF5File::write_mesh_value_collection(
     const mesh::MeshValueCollection<T>& mesh_values, const std::string name)
 {
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
 
   const std::size_t dim = mesh_values.dim();
   std::shared_ptr<const mesh::Mesh> mesh = mesh_values.mesh();
@@ -1142,7 +1142,7 @@ template <typename T>
 void HDF5File::write_mesh_value_collection_old(
     const mesh::MeshValueCollection<T>& mesh_values, const std::string name)
 {
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
 
   const std::map<std::pair<std::size_t, std::size_t>, T>& values
       = mesh_values.values();
@@ -1182,7 +1182,7 @@ void HDF5File::read_mesh_value_collection(mesh::MeshValueCollection<T>& mesh_vc,
                                           const std::string name) const
 {
   common::Timer t1("HDF5: read mesh value collection");
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
 
   if (!HDF5Interface::has_group(_hdf5_file_id, name))
   {
@@ -1200,7 +1200,7 @@ void HDF5File::read_mesh_value_collection(mesh::MeshValueCollection<T>& mesh_vc,
   std::size_t dim = HDF5Interface::get_attribute<std::size_t>(
       _hdf5_file_id, name, "dimension");
   std::shared_ptr<const mesh::Mesh> mesh = mesh_vc.mesh();
-  dolfin_assert(mesh);
+  assert(mesh);
   std::unique_ptr<mesh::CellType> entity_type(
       mesh::CellType::create(mesh->type().entity_type(dim)));
   const std::size_t num_verts_per_entity = entity_type->num_entities(0);
@@ -1229,7 +1229,7 @@ void HDF5File::read_mesh_value_collection(mesh::MeshValueCollection<T>& mesh_vc,
       = HDF5Interface::get_dataset_shape(_hdf5_file_id, values_name);
   const std::vector<std::int64_t> topology_shape
       = HDF5Interface::get_dataset_shape(_hdf5_file_id, topology_name);
-  dolfin_assert(values_shape[0] == topology_shape[0]);
+  assert(values_shape[0] == topology_shape[0]);
 
   // Divide range between processes
   const std::array<std::int64_t, 2> data_range
@@ -1324,7 +1324,7 @@ void HDF5File::read_mesh_value_collection(mesh::MeshValueCollection<T>& mesh_vc,
   // Locate entity in map, and send back to data to owning processes
   for (std::size_t i = 0; i != num_processes; ++i)
   {
-    dolfin_assert(recv_data[i].size() * num_verts_per_entity
+    assert(recv_data[i].size() * num_verts_per_entity
                   == recv_entities[i].size());
 
     for (std::size_t j = 0; j != recv_data[i].size(); ++j)
@@ -1341,7 +1341,7 @@ void HDF5File::read_mesh_value_collection(mesh::MeshValueCollection<T>& mesh_vc,
       for (auto p = map_it->second.begin(); p != map_it->second.end(); p += 2)
       {
         const std::size_t dest = *p;
-        dolfin_assert(dest < num_processes);
+        assert(dest < num_processes);
         send_entities[dest].push_back(*(p + 1));
         send_data[dest].push_back(recv_data[i][j]);
       }
@@ -1354,7 +1354,7 @@ void HDF5File::read_mesh_value_collection(mesh::MeshValueCollection<T>& mesh_vc,
 
   for (std::size_t i = 0; i != num_processes; ++i)
   {
-    dolfin_assert(recv_entities[i].size() == recv_data[i].size());
+    assert(recv_entities[i].size() == recv_data[i].size());
     for (std::size_t j = 0; j != recv_data[i].size(); ++j)
     {
       mesh_vc.set_value(recv_entities[i][j], recv_data[i][j]);
@@ -1367,7 +1367,7 @@ void HDF5File::read_mesh_value_collection_old(
     mesh::MeshValueCollection<T>& mesh_vc, const std::string name) const
 {
   common::Timer t1("HDF5: read mesh value collection");
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
 
   mesh_vc.clear();
   if (!HDF5Interface::has_group(_hdf5_file_id, name))
@@ -1406,8 +1406,8 @@ void HDF5File::read_mesh_value_collection_old(
       = HDF5Interface::get_dataset_shape(_hdf5_file_id, entities_name);
   const std::vector<std::int64_t> cells_shape
       = HDF5Interface::get_dataset_shape(_hdf5_file_id, cells_name);
-  dolfin_assert(values_shape[0] == entities_shape[0]);
-  dolfin_assert(values_shape[0] == cells_shape[0]);
+  assert(values_shape[0] == entities_shape[0]);
+  assert(values_shape[0] == cells_shape[0]);
 
   // Check size of dataset. If small enough, just read on all
   // processes...
@@ -1440,7 +1440,7 @@ void HDF5File::read_mesh_value_collection_old(
 
     // Find cells which are on this process,
     // under the assumption that global_cell_index is ordered.
-    dolfin_assert(
+    assert(
         std::is_sorted(global_cell_index.begin(), global_cell_index.end()));
 
     // cells_data in general is not ordered, so we sort it
@@ -1526,8 +1526,8 @@ void HDF5File::read_mesh_value_collection_old(
       const std::vector<std::size_t>& local_index = recv_local[i];
       const std::vector<std::size_t>& local_entities = recv_entities[i];
       const std::vector<T>& local_values = recv_values[i];
-      dolfin_assert(local_index.size() == local_entities.size());
-      dolfin_assert(local_index.size() == local_values.size());
+      assert(local_index.size() == local_entities.size());
+      assert(local_index.size() == local_values.size());
 
       for (std::size_t j = 0; j < local_index.size(); ++j)
       {
@@ -1541,7 +1541,7 @@ void HDF5File::read_mesh_value_collection_old(
 mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
                                bool use_partition_from_file) const
 {
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
 
   // Check that topology data set is found in HDF5 file
   const std::string topology_path = data_path + "/topology";
@@ -1562,7 +1562,7 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
   // Create CellType from string
   std::unique_ptr<mesh::CellType> cell_type(
       mesh::CellType::create(cell_type_str));
-  dolfin_assert(cell_type);
+  assert(cell_type);
 
   // Check that coordinate data set is found in HDF5 file
   const std::string geometry_path = data_path + "/coordinates";
@@ -1575,7 +1575,7 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
   // Get dimensions of coordinate dataset
   std::vector<std::int64_t> coords_shape
       = HDF5Interface::get_dataset_shape(_hdf5_file_id, geometry_path);
-  dolfin_assert(coords_shape.size() < 3);
+  assert(coords_shape.size() < 3);
   if (coords_shape.size() == 1)
   {
     log::dolfin_error(
@@ -1609,7 +1609,7 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
   // FIXME: This function is too big. Split up.
 
   common::Timer t("HDF5: read mesh");
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
 
   // Create structure to store local mesh
   mesh::LocalMeshData local_mesh_data(comm);
@@ -1649,7 +1649,7 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
   std::int64_t num_global_cells = 0;
   if (topology_shape.size() == 1)
   {
-    dolfin_assert(topology_shape[0] % num_vertices_per_cell == 0);
+    assert(topology_shape[0] % num_vertices_per_cell == 0);
     num_global_cells = topology_shape[0] / num_vertices_per_cell;
   }
   else if (topology_shape.size() == 2)
@@ -1787,12 +1787,12 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
   // Compute number of vertcies
   if (coords_shape.size() == 1)
   {
-    dolfin_assert(coords_shape[0] % gdim == 0);
+    assert(coords_shape[0] % gdim == 0);
     local_mesh_data.geometry.num_global_vertices = coords_shape[0] / gdim;
   }
   else if (coords_shape.size() == 2)
   {
-    dolfin_assert((int)coords_shape[1] == gdim);
+    assert((int)coords_shape[1] == gdim);
     local_mesh_data.geometry.num_global_vertices = coords_shape[0];
   }
   else
@@ -1846,7 +1846,7 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
   for (std::size_t i = 0;
        i < local_mesh_data.geometry.vertex_coordinates.size(); ++i)
   {
-    dolfin_assert(i < local_mesh_data.geometry.vertex_indices.size());
+    assert(i < local_mesh_data.geometry.vertex_indices.size());
     local_mesh_data.geometry.vertex_indices[i] = vertex_range[0] + i;
   }
 
@@ -1859,19 +1859,19 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
 //-----------------------------------------------------------------------------
 bool HDF5File::has_dataset(const std::string dataset_name) const
 {
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
   return HDF5Interface::has_dataset(_hdf5_file_id, dataset_name);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::set_mpi_atomicity(bool atomic)
 {
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
   HDF5Interface::set_mpi_atomicity(_hdf5_file_id, atomic);
 }
 //-----------------------------------------------------------------------------
 bool HDF5File::get_mpi_atomicity() const
 {
-  dolfin_assert(_hdf5_file_id > 0);
+  assert(_hdf5_file_id > 0);
   return HDF5Interface::get_mpi_atomicity(_hdf5_file_id);
 }
 //-----------------------------------------------------------------------------

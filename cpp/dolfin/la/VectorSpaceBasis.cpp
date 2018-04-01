@@ -50,8 +50,8 @@ bool VectorSpaceBasis::is_orthonormal(double tol) const
   {
     for (std::size_t j = i; j < _basis.size(); j++)
     {
-      dolfin_assert(_basis[i]);
-      dolfin_assert(_basis[j]);
+      assert(_basis[i]);
+      assert(_basis[j]);
       const double delta_ij = (i == j) ? 1.0 : 0.0;
       const double dot_ij = _basis[i]->dot(*_basis[j]);
       if (std::abs(delta_ij - dot_ij) > tol)
@@ -68,8 +68,8 @@ bool VectorSpaceBasis::is_orthogonal(double tol) const
   {
     for (std::size_t j = i; j < _basis.size(); j++)
     {
-      dolfin_assert(_basis[i]);
-      dolfin_assert(_basis[j]);
+      assert(_basis[i]);
+      assert(_basis[j]);
       if (i != j)
       {
         const double dot_ij = _basis[i]->dot(*_basis[j]);
@@ -86,7 +86,7 @@ void VectorSpaceBasis::orthogonalize(PETScVector& x) const
 {
   for (std::size_t i = 0; i < _basis.size(); i++)
   {
-    dolfin_assert(_basis[i]);
+    assert(_basis[i]);
     const double dot = _basis[i]->dot(x);
     x.axpy(-dot, *_basis[i]);
   }
@@ -97,7 +97,7 @@ std::size_t VectorSpaceBasis::dim() const { return _basis.size(); }
 std::shared_ptr<const PETScVector> VectorSpaceBasis::
 operator[](std::size_t i) const
 {
-  dolfin_assert(i < _basis.size());
+  assert(i < _basis.size());
   return _basis[i];
 }
 //-----------------------------------------------------------------------------

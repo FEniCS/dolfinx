@@ -68,8 +68,8 @@ void MeshConnectivity::init(std::vector<std::size_t>& num_connections)
 void MeshConnectivity::set(std::size_t entity, std::size_t connection,
                            std::size_t pos)
 {
-  dolfin_assert((entity + 1) < _index_to_position.size());
-  dolfin_assert(pos
+  assert((entity + 1) < _index_to_position.size());
+  assert(pos
                 < _index_to_position[entity + 1] - _index_to_position[entity]);
   _connections[_index_to_position[entity] + pos] = connection;
 }

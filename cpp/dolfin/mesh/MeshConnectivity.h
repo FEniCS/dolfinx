@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfin/log/log.h>
+#include <cassert>
 #include <vector>
 
 namespace dolfin
@@ -65,7 +66,7 @@ public:
       return size(entity);
     else
     {
-      dolfin_assert(entity < _num_global_connections.size());
+      assert(entity < _num_global_connections.size());
       return _num_global_connections[entity];
     }
   }
@@ -112,8 +113,8 @@ public:
   template <typename T>
   void set(std::size_t entity, const T& connections)
   {
-    dolfin_assert((entity + 1) < _index_to_position.size());
-    dolfin_assert(connections.size()
+    assert((entity + 1) < _index_to_position.size());
+    assert(connections.size()
                   == _index_to_position[entity + 1]
                          - _index_to_position[entity]);
 
@@ -126,8 +127,8 @@ public:
   template <typename T>
   void set(std::size_t entity, T* connections)
   {
-    dolfin_assert((entity + 1) < _index_to_position.size());
-    dolfin_assert(connections);
+    assert((entity + 1) < _index_to_position.size());
+    assert(connections);
 
     // Copy data
     const std::size_t num_connections
@@ -166,7 +167,7 @@ public:
   /// Set global number of connections for all local entities
   void set_global_size(const std::vector<std::uint32_t>& num_global_connections)
   {
-    dolfin_assert(num_global_connections.size()
+    assert(num_global_connections.size()
                   == _index_to_position.size() - 1);
     _num_global_connections = num_global_connections;
   }

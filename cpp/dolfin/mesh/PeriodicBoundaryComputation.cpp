@@ -203,7 +203,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
   // entity
   std::vector<std::vector<double>> slave_mapped_coords_recv;
   MPI::all_to_all(mpi_comm, slave_mapped_coords_send, slave_mapped_coords_recv);
-  dolfin_assert(slave_mapped_coords_recv.size() == num_processes);
+  assert(slave_mapped_coords_recv.size() == num_processes);
 
   // Check if this process owns the master facet for a received (mapped)
   // slave
@@ -249,7 +249,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
     const std::vector<std::uint32_t> master_entity_index_p
         = master_entity_local_index_recv[p];
     const std::vector<std::uint32_t> sent_slaves_p = sent_slave_indices[p];
-    dolfin_assert(master_entity_index_p.size() == sent_slaves_p.size());
+    assert(master_entity_index_p.size() == sent_slaves_p.size());
 
     for (std::size_t i = 0; i < master_entity_index_p.size(); ++i)
     {
@@ -270,7 +270,7 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
                                             const SubDomain& sub_domain,
                                             const std::size_t dim)
 {
-  dolfin_assert(mesh);
+  assert(mesh);
 
   // Create MeshFunction and initialise to zero
   MeshFunction<std::size_t> mf(mesh, dim, 0);
@@ -290,7 +290,7 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
     mf[slave->first] = 2;
 
     // Pack master entity to send to all sharing processes
-    dolfin_assert(slave->second.first < master_dofs_send.size());
+    assert(slave->second.first < master_dofs_send.size());
     master_dofs_send[slave->second.first].push_back(slave->second.second);
   }
 
@@ -310,7 +310,7 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
       shared_entities(mesh->num_entities(dim));
   for (e = shared_entities_map.begin(); e != shared_entities_map.end(); ++e)
   {
-    dolfin_assert(e->first < shared_entities.size());
+    assert(e->first < shared_entities.size());
     shared_entities[e->first] = e->second;
   }
 
@@ -332,7 +332,7 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
           = shared_entities[local_index];
       for (std::size_t j = 0; j < sharing.size(); ++j)
       {
-        dolfin_assert(sharing[j].first < master_dofs_send.size());
+        assert(sharing[j].first < master_dofs_send.size());
         master_dofs_send[sharing[j].first].push_back(sharing[j].second);
       }
     }
@@ -358,7 +358,7 @@ bool PeriodicBoundaryComputation::in_bounding_box(
     return false;
 
   const std::size_t gdim = point.size();
-  dolfin_assert(bounding_box.size() == 2 * gdim);
+  assert(bounding_box.size() == 2 * gdim);
   for (std::size_t i = 0; i < gdim; ++i)
   {
     if (!(point[i] >= (bounding_box[i] - tol)

@@ -49,7 +49,7 @@ std::pair<std::vector<double>, std::vector<double>>
 MeshQuality::radius_ratio_histogram_data(const Mesh& mesh, std::size_t num_bins)
 {
   std::vector<double> bins(num_bins), values(num_bins, 0.0);
-  dolfin_assert(radius_ratio_min_max(mesh).second <= 1.0);
+  assert(radius_ratio_min_max(mesh).second <= 1.0);
 
   const double interval = 1.0 / static_cast<double>(num_bins);
   for (std::size_t i = 0; i < num_bins; ++i)
@@ -84,8 +84,8 @@ MeshQuality::radius_ratio_matplotlib_histogram(const Mesh& mesh,
   std::pair<std::vector<double>, std::vector<double>> data
       = radius_ratio_histogram_data(mesh, num_intervals);
 
-  dolfin_assert(!data.first.empty());
-  dolfin_assert(data.first.size() == data.second.size());
+  assert(!data.first.empty());
+  assert(data.first.size() == data.second.size());
 
   // Create Matplotlib string
   std::stringstream matplotlib;
@@ -195,9 +195,9 @@ MeshQuality::dihedral_angles_histogram_data(const Mesh& mesh,
   std::vector<double> bins(num_bins), values(num_bins, 0.0);
 
   // May need to assert the minimum and maximum possible angle
-  dolfin_assert(dihedral_angles_min_max(mesh).first
+  assert(dihedral_angles_min_max(mesh).first
                 >= 0.0); // Is this really needed?
-  dolfin_assert(dihedral_angles_min_max(mesh).second <= M_PI);
+  assert(dihedral_angles_min_max(mesh).second <= M_PI);
 
   // Currently min value is 0.0 and max is M_PI
   const double interval = M_PI / (static_cast<double>(num_bins));
@@ -240,8 +240,8 @@ MeshQuality::dihedral_angles_matplotlib_histogram(const Mesh& mesh,
   std::pair<std::vector<double>, std::vector<double>> data
       = dihedral_angles_histogram_data(mesh, num_intervals);
 
-  dolfin_assert(!data.first.empty());
-  dolfin_assert(data.first.size() == data.second.size());
+  assert(!data.first.empty());
+  assert(data.first.size() == data.second.size());
 
   // Create Matplotlib string
   std::stringstream matplotlib;

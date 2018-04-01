@@ -114,7 +114,7 @@ PartitionData MeshPartitioning::partition_cells(
   log::log(PROGRESS, "Compute partition of cells across processes");
 
   std::unique_ptr<mesh::CellType> cell_type(mesh::CellType::create(type));
-  dolfin_assert(cell_type);
+  assert(cell_type);
 
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
@@ -149,7 +149,7 @@ mesh::Mesh MeshPartitioning::build(
 
   // Create CellType objects based on current cell type
   std::unique_ptr<mesh::CellType> cell_type(mesh::CellType::create(type));
-  dolfin_assert(cell_type);
+  assert(cell_type);
 
   // Topological dimension
   const int tdim = cell_type->dim();
@@ -295,7 +295,7 @@ MeshPartitioning::reorder_cells_gps(
     dolfin::common::Set<int> conn_set;
     for (auto q = local_graph[i].begin(); q != local_graph[i].end(); ++q)
     {
-      dolfin_assert(*q >= local_cell_offset);
+      assert(*q >= local_cell_offset);
       const int local_index = *q - local_cell_offset;
 
       // Ignore ghost cells in connectivity
@@ -568,7 +568,7 @@ MeshPartitioning::distribute_cells(
   // Get dimensions
   const std::size_t num_local_cells = cell_vertices.rows();
   const std::size_t num_cell_vertices = cell_vertices.cols();
-  dolfin_assert(mp.size() == num_local_cells);
+  assert(mp.size() == num_local_cells);
 
   // Send all cells to their destinations including their global
   // indices.  First element of vector is cell count of unghosted
@@ -657,7 +657,7 @@ MeshPartitioning::distribute_cells(
       const std::size_t owner = (num_ghosts == 0) ? mpi_rank : *tmp_it;
       const std::size_t idx = (owner == mpi_rank) ? c : gc;
 
-      dolfin_assert(idx < new_cell_partition.size());
+      assert(idx < new_cell_partition.size());
       new_cell_partition[idx] = owner;
       if (num_ghosts != 0)
       {
@@ -840,7 +840,7 @@ MeshPartitioning::distribute_vertices(
     const std::size_t local_index_0 = local_index;
     for (const auto& q : received_vertex_indices[p])
     {
-      dolfin_assert(q >= local_vertex_range.first
+      assert(q >= local_vertex_range.first
                     && q < local_vertex_range.second);
 
       const std::size_t location = q - local_vertex_range.first;
@@ -896,7 +896,7 @@ MeshPartitioning::build_shared_vertices(
   for (const auto& p : received_vertex_indices)
     for (const auto& q : p)
     {
-      dolfin_assert(q >= local_vertex_range.first
+      assert(q >= local_vertex_range.first
                     and q < local_vertex_range.second);
       const std::size_t local_index = q - local_vertex_range.first;
       ++n_sharing[local_index];
@@ -975,7 +975,7 @@ MeshPartitioning::build_shared_vertices(
       std::set<std::uint32_t> sharing_processes(q + 2, q + 2 + num_sharing);
 
       auto it = shared_vertices_local.insert({local_index, sharing_processes});
-      dolfin_assert(it.second);
+      assert(it.second);
     }
   }
 

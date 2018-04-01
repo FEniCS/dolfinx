@@ -29,12 +29,12 @@ Form::Form(
       _function_spaces(function_spaces)
 {
   assert(ufc_form);
-  dolfin_assert(ufc_form->rank() == function_spaces.size());
+  assert(ufc_form->rank() == function_spaces.size());
 
   // Check argument function spaces
   for (std::size_t i = 0; i < function_spaces.size(); ++i)
   {
-    dolfin_assert(function_spaces[i]->element());
+    assert(function_spaces[i]->element());
     std::unique_ptr<ufc::finite_element> element(
         ufc_form->create_finite_element(i));
 
@@ -52,7 +52,7 @@ Form::Form(
   if (!function_spaces.empty())
     _mesh = function_spaces[0]->mesh();
   for (auto& f : function_spaces)
-    dolfin_assert(_mesh == f->mesh());
+    assert(_mesh == f->mesh());
 
   _coord_mapping = std::shared_ptr<ufc::coordinate_mapping>(
       ufc_form->create_coordinate_mapping());
@@ -75,7 +75,7 @@ std::size_t Form::max_element_tensor_size() const
   std::size_t num_entries = 1;
   for (const auto& V : _function_spaces)
   {
-    dolfin_assert(V->dofmap());
+    assert(V->dofmap());
     num_entries *= V->dofmap()->max_element_dofs();
   }
   return num_entries;
@@ -83,20 +83,20 @@ std::size_t Form::max_element_tensor_size() const
 //-----------------------------------------------------------------------------
 void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
 {
-  dolfin_assert(mesh);
+  assert(mesh);
   _mesh = mesh;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const mesh::Mesh> Form::mesh() const
 {
-  dolfin_assert(_mesh);
+  assert(_mesh);
   return _mesh;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const function::FunctionSpace>
 Form::function_space(std::size_t i) const
 {
-  dolfin_assert(i < _function_spaces.size());
+  assert(i < _function_spaces.size());
   return _function_spaces[i];
 }
 //-----------------------------------------------------------------------------

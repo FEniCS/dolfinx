@@ -71,7 +71,7 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
           a.function_space(1)->dofmap().get()}};
 
   // Get mesh
-  dolfin_assert(a.mesh());
+  assert(a.mesh());
   const mesh::Mesh& mesh = *(a.mesh());
 
   common::Timer t0("Build sparsity");
@@ -167,8 +167,8 @@ std::vector<dolfin::la_index_t>
 dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
 {
   // Get the mesh
-  dolfin_assert(space.mesh());
-  dolfin_assert(space.dofmap());
+  assert(space.mesh());
+  assert(space.dofmap());
   const mesh::Mesh& mesh = *space.mesh();
   const GenericDofMap& dofmap = *space.dofmap();
 
@@ -224,7 +224,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
         break;
       }
     }
-    dolfin_assert(vertex_found);
+    assert(vertex_found);
 
     // Get all cell dofs
     auto cell_dofs = dofmap.cell_dofs(cell.index());
