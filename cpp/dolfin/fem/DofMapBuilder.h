@@ -115,7 +115,7 @@ private:
   // local to the process.
   static std::set<std::size_t>
   compute_global_dofs(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
-                      const std::vector<std::size_t>& num_mesh_entities_local);
+                      const std::vector<int64_t>& num_mesh_entities_local);
 
   // Iterate recursively over all sub-dof maps to find global
   // degrees of freedom
@@ -123,13 +123,13 @@ private:
   compute_global_dofs(std::set<std::size_t>& global_dofs,
                       std::size_t& offset_local,
                       std::shared_ptr<const ufc::dofmap> ufc_dofmap,
-                      const std::vector<std::size_t>& num_mesh_entities_local);
+                      const std::vector<int64_t>& num_mesh_entities_local);
 
   // Recursively extract UFC sub-dofmap and compute offset
-  static std::shared_ptr<ufc::dofmap> extract_ufc_sub_dofmap(
-      const ufc::dofmap& ufc_dofmap, std::size_t& offset,
-      const std::vector<std::size_t>& component,
-      const std::vector<std::size_t>& num_global_mesh_entities);
+  static std::shared_ptr<ufc::dofmap>
+  extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap, std::size_t& offset,
+                         const std::vector<std::size_t>& component,
+                         const std::vector<int64_t>& num_global_mesh_entities);
 
   // Compute block size, e.g. in 3D elasticity block_size = 3
   static std::size_t compute_blocksize(const ufc::dofmap& ufc_dofmap,
@@ -137,14 +137,14 @@ private:
 
   static void compute_constrained_mesh_indices(
       std::vector<std::vector<std::int64_t>>& global_entity_indices,
-      std::vector<std::size_t>& num_mesh_entities_global,
+      std::vector<int64_t>& num_mesh_entities_global,
       const std::vector<bool>& needs_mesh_entities, const mesh::Mesh& mesh,
       const mesh::SubDomain& constrained_domain);
 
   static std::shared_ptr<const ufc::dofmap> build_ufc_node_graph(
       std::vector<std::vector<la_index_t>>& node_dofmap,
       std::vector<std::size_t>& node_local_to_global,
-      std::vector<std::size_t>& num_mesh_entities_global,
+      std::vector<int64_t>& num_mesh_entities_global,
       std::shared_ptr<const ufc::dofmap> ufc_dofmap, const mesh::Mesh& mesh,
       std::shared_ptr<const mesh::SubDomain> constrained_domain,
       const std::size_t block_size);
@@ -153,7 +153,7 @@ private:
       std::vector<std::vector<la_index_t>>& node_dofmap,
       std::vector<std::size_t>& node_local_to_global,
       std::vector<int>& node_ufc_local_to_local,
-      std::vector<std::size_t>& num_mesh_entities_global,
+      std::vector<int64_t>& num_mesh_entities_global,
       std::shared_ptr<const ufc::dofmap> ufc_dofmap, const mesh::Mesh& mesh,
       std::shared_ptr<const mesh::SubDomain> constrained_domain,
       const std::size_t block_size);
@@ -179,23 +179,22 @@ private:
 
   static void
   get_cell_entities_local(const mesh::Cell& cell,
-                          std::vector<std::vector<std::size_t>>& entity_indices,
+                          std::vector<std::vector<int64_t>>& entity_indices,
                           const std::vector<bool>& needs_mesh_entities);
 
-  static void get_cell_entities_global(
-      const mesh::Cell& cell,
-      std::vector<std::vector<std::size_t>>& entity_indices,
-      const std::vector<bool>& needs_mesh_entities);
+  static void
+  get_cell_entities_global(const mesh::Cell& cell,
+                           std::vector<std::vector<int64_t>>& entity_indices,
+                           const std::vector<bool>& needs_mesh_entities);
 
   static void get_cell_entities_global_constrained(
-      const mesh::Cell& cell,
-      std::vector<std::vector<std::size_t>>& entity_indices,
+      const mesh::Cell& cell, std::vector<std::vector<int64_t>>& entity_indices,
       const std::vector<std::vector<std::int64_t>>& global_entity_indices,
       const std::vector<bool>& needs_mesh_entities);
 
   // Compute number of mesh entities for dimensions required by
   // dofmap
-  static std::vector<std::size_t>
+  static std::vector<int64_t>
   compute_num_mesh_entities_local(const mesh::Mesh& mesh,
                                   const std::vector<bool>& needs_mesh_entities);
 };

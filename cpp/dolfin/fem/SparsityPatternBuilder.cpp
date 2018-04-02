@@ -87,7 +87,7 @@ void SparsityPatternBuilder::build(
     mesh.init(0, D);
 
     std::array<std::vector<dolfin::la_index_t>, 2> global_dofs;
-    std::array<std::vector<std::size_t>, 2> local_to_local_dofs;
+    std::array<std::vector<int64_t>, 2> local_to_local_dofs;
 
     // Resize local dof map vector
     for (std::size_t i = 0; i < 2; ++i)
@@ -138,10 +138,11 @@ void SparsityPatternBuilder::build(
     mesh.init(D - 1, D);
     if (!mesh.ordered())
     {
-      log::dolfin_error("SparsityPatternBuilder.cpp", "compute sparsity pattern",
-                   "mesh::Mesh is not ordered according to the UFC numbering "
-                   "convention. "
-                   "Consider calling mesh.order()");
+      log::dolfin_error(
+          "SparsityPatternBuilder.cpp", "compute sparsity pattern",
+          "mesh::Mesh is not ordered according to the UFC numbering "
+          "convention. "
+          "Consider calling mesh.order()");
     }
 
     for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))

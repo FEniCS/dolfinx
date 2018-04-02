@@ -80,7 +80,7 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
 
   // Dimension sanity checks
   assert(dofmap_view._dofmap.size()
-                == mesh.num_cells() * dofmap_view._cell_dimension);
+         == mesh.num_cells() * dofmap_view._cell_dimension);
   assert(global_dimension() == dofmap_view.global_dimension());
   assert(_dofmap.size() == mesh.num_cells() * _cell_dimension);
 
@@ -140,7 +140,7 @@ const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const
 //-----------------------------------------------------------------------------
 const std::set<int>& DofMap::neighbours() const { return _neighbours; }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_facet_dofs(std::vector<std::size_t>& element_dofs,
+void DofMap::tabulate_facet_dofs(std::vector<int64_t>& element_dofs,
                                  std::size_t cell_facet_index) const
 {
   assert(_ufc_dofmap);
@@ -148,7 +148,7 @@ void DofMap::tabulate_facet_dofs(std::vector<std::size_t>& element_dofs,
   _ufc_dofmap->tabulate_facet_dofs(element_dofs.data(), cell_facet_index);
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_entity_dofs(std::vector<std::size_t>& element_dofs,
+void DofMap::tabulate_entity_dofs(std::vector<int64_t>& element_dofs,
                                   std::size_t entity_dim,
                                   std::size_t cell_entity_index) const
 {
@@ -157,7 +157,7 @@ void DofMap::tabulate_entity_dofs(std::vector<std::size_t>& element_dofs,
     return;
 
   element_dofs.resize(_ufc_dofmap->num_entity_dofs(entity_dim));
-  _ufc_dofmap->tabulate_entity_dofs(&element_dofs[0], entity_dim,
+  _ufc_dofmap->tabulate_entity_dofs(element_dofs.data(), entity_dim,
                                     cell_entity_index);
 }
 //-----------------------------------------------------------------------------

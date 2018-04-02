@@ -181,7 +181,7 @@ public:
   ///         Degrees of freedom on a single element.
   /// @param    cell_facet_index (std::size_t)
   ///         The local facet index on the cell.
-  void tabulate_facet_dofs(std::vector<std::size_t>& element_dofs,
+  void tabulate_facet_dofs(std::vector<int64_t>& element_dofs,
                            std::size_t cell_facet_index) const;
 
   /// Tabulate local-local mapping of dofs on entity (dim, local_entity)
@@ -192,10 +192,9 @@ public:
   ///         The entity dimension.
   /// @param    cell_entity_index (std::size_t)
   ///         The local entity index on the cell.
-  void tabulate_entity_dofs(std::vector<std::size_t>& element_dofs,
+  void tabulate_entity_dofs(std::vector<int64_t>& element_dofs,
                             std::size_t entity_dim,
                             std::size_t cell_entity_index) const;
-
 
   /// Tabulate globally supported dofs
   ///
@@ -290,7 +289,7 @@ private:
   // constrained, e.g. dofmaps with periodic bcs. It is stored in
   // order to compute the global dimension of dofmaps that are
   // constructed from a sub-dofmap.
-  std::vector<std::size_t> _num_mesh_entities_global;
+  std::vector<int64_t> _num_mesh_entities_global;
 
   // Map from UFC dof numbering to renumbered dof (ufc_dof ->
   // actual_dof, both using local indices)

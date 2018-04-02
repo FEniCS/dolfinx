@@ -30,7 +30,7 @@ Form::Form(
       _function_spaces(function_spaces)
 {
   assert(ufc_form);
-  assert(ufc_form->rank() == function_spaces.size());
+  assert(ufc_form->rank() == (int)function_spaces.size());
 
   // Check argument function spaces
   for (std::size_t i = 0; i < function_spaces.size(); ++i)

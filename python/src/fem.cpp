@@ -157,10 +157,9 @@ void fem(py::module& m)
       .def("tabulate_entity_dofs",
            [](const dolfin::fem::GenericDofMap& instance,
               std::size_t entity_dim, std::size_t cell_entity_index) {
-             std::vector<std::size_t> dofs(
-                 instance.num_entity_dofs(entity_dim));
+             std::vector<int64_t> dofs(instance.num_entity_dofs(entity_dim));
              instance.tabulate_entity_dofs(dofs, entity_dim, cell_entity_index);
-             return py::array_t<std::size_t>(dofs.size(), dofs.data());
+             return py::array_t<int64_t>(dofs.size(), dofs.data());
            })
       .def("block_size", &dolfin::fem::GenericDofMap::block_size)
       .def("tabulate_local_to_global_dofs",

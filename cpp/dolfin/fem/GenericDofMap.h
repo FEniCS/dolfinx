@@ -94,12 +94,12 @@ public:
                                               std::size_t entity_dim) const;
 
   /// Tabulate local-local facet dofs
-  virtual void tabulate_facet_dofs(std::vector<std::size_t>& element_dofs,
+  virtual void tabulate_facet_dofs(std::vector<int64_t>& element_dofs,
                                    std::size_t cell_facet_index) const = 0;
 
   /// Tabulate the local-to-local mapping of dofs on entity
   /// (dim, local_entity)
-  virtual void tabulate_entity_dofs(std::vector<std::size_t>& element_dofs,
+  virtual void tabulate_entity_dofs(std::vector<int64_t>& element_dofs,
                                     std::size_t entity_dim,
                                     std::size_t cell_entity_index) const = 0;
 

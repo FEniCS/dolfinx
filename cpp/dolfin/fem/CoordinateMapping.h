@@ -79,8 +79,8 @@ public:
   {
     assert(_ufc_cm);
     assert(x.rows() == X.rows());
-    assert((std::size_t)x.cols() == _ufc_cm->geometric_dimension());
-    assert((std::size_t)X.cols() == _ufc_cm->topological_dimension());
+    assert(x.cols() == _ufc_cm->geometric_dimension());
+    assert(X.cols() == _ufc_cm->topological_dimension());
     _ufc_cm->compute_physical_coordinates(x.data(), X.rows(), X.data(),
                                           coordinate_dofs.data());
   }
@@ -94,7 +94,7 @@ public:
       const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
   {
     // Number of points
-    std::size_t num_points = x.rows();
+    int num_points = x.rows();
 
     // In checks
     assert(x.cols() == this->geometric_dimension());
@@ -102,13 +102,13 @@ public:
     assert(coordinate_dofs.cols() == this->geometric_dimension());
 
     // In/out size checks
-    assert((std::size_t)X.rows() == num_points);
+    assert(X.rows() == num_points);
     assert(X.cols() == this->topological_dimension());
-    assert((std::size_t)J.dimension(0) == num_points);
+    assert(J.dimension(0) == num_points);
     assert(J.dimension(1) == this->geometric_dimension());
     assert(J.dimension(2) == this->topological_dimension());
-    assert((std::size_t)detJ.rows() == num_points);
-    assert((std::size_t)K.dimension(0) == num_points);
+    assert(detJ.rows() == num_points);
+    assert(K.dimension(0) == num_points);
     assert(K.dimension(1) == this->topological_dimension());
     assert(K.dimension(2) == this->geometric_dimension());
 

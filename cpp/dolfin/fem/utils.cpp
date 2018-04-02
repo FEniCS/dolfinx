@@ -193,7 +193,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   }
 
   // Allocate data for tabulating local to local map
-  std::vector<std::size_t> local_to_local_map(dofs_per_vertex);
+  std::vector<int64_t> local_to_local_map(dofs_per_vertex);
 
   // Create return data structure
   std::vector<dolfin::la_index_t> return_map(dofs_per_vertex
