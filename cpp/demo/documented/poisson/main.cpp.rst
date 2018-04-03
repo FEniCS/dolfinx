@@ -86,8 +86,8 @@ equation.  For convenience we also include the DOLFIN namespace.
 
 .. code-block:: cpp
 
-   #include <dolfin.h>
    #include "Poisson.h"
+   #include <dolfin.h>
 
    using namespace dolfin;
 

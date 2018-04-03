@@ -62,7 +62,7 @@ UFC::UFC(const Form& a) : dolfin_form(a)
 void UFC::update(
     const mesh::Cell& c,
     const Eigen::Ref<const dolfin::EigenRowArrayXXd>& coordinate_dofs,
-    const std::vector<bool>& enabled_coefficients)
+    const bool* enabled_coefficients)
 {
   const auto& coefficients = dolfin_form.coeffs();
 
@@ -82,7 +82,7 @@ void UFC::update(
     const Eigen::Ref<const dolfin::EigenRowArrayXXd>& coordinate_dofs0,
     const mesh::Cell& c1,
     const Eigen::Ref<const dolfin::EigenRowArrayXXd>& coordinate_dofs1,
-    const std::vector<bool>& enabled_coefficients)
+    const bool* enabled_coefficients)
 {
   const auto& coefficients = dolfin_form.coeffs();
 

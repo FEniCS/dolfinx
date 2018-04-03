@@ -44,7 +44,7 @@ public:
   void
   update(const mesh::Cell& cell,
          const Eigen::Ref<const dolfin::EigenRowArrayXXd>& coordinate_dofs0,
-         const std::vector<bool>& enabled_coefficients);
+         const bool* enabled_coefficients);
 
   /// Update current pair of cells for macro element
   void
@@ -52,7 +52,7 @@ public:
          const Eigen::Ref<const dolfin::EigenRowArrayXXd>& coordinate_dofs0,
          const mesh::Cell& cell1,
          const Eigen::Ref<const dolfin::EigenRowArrayXXd>& coordinate_dofs1,
-         const std::vector<bool>& enabled_coefficients);
+         const bool* enabled_coefficients);
 
   /// Pointer to coefficient data. Used to support UFC interface.
   const double* const* w() const { return w_pointer.data(); }
