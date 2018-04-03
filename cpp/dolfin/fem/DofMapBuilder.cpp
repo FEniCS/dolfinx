@@ -387,10 +387,9 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(
 
   // Get vertex sharing information (local index, [(sharing process p,
   // local index on p)])
-  const std::
-      unordered_map<std::uint32_t,
-                    std::vector<std::pair<std::uint32_t, std::uint32_t>>>&
-          shared_vertices
+  const std::unordered_map<
+      std::uint32_t, std::vector<std::pair<std::uint32_t, std::uint32_t>>>&
+      shared_vertices
       = mesh::DistributedMeshTools::compute_shared_entities(mesh, 0);
 
   // Mark shared vertices
@@ -596,14 +595,17 @@ void DofMapBuilder::build_local_ufc_dofmap(
   dofmap.resize(mesh.num_cells(),
                 std::vector<la_index_t>(ufc_dofmap.num_element_dofs()));
   std::vector<int64_t> dof_holder(ufc_dofmap.num_element_dofs());
+  std::vector<const int64_t*> _entity_indices(entity_indices.size());
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Fill entity indices array
     get_cell_entities_local(cell, entity_indices, needs_entities);
 
     // Tabulate dofs for cell
-    ufc_dofmap.tabulate_dofs(dof_holder.data(), num_mesh_entities,
-                             entity_indices);
+    for (std::size_t i = 0; i < entity_indices.size(); ++i)
+      _entity_indices[i] = entity_indices[i].data();
+    ufc_dofmap.tabulate_dofs(dof_holder.data(), num_mesh_entities.data(),
+                             _entity_indices.data());
     std::copy(dof_holder.begin(), dof_holder.end(),
               dofmap[cell.index()].begin());
   }
@@ -875,9 +877,9 @@ void DofMapBuilder::compute_global_dofs(
 
       // Create dummy entity_indices argument to tabulate single
       // global dof
-      std::vector<std::vector<int64_t>> dummy_entity_indices;
+      const int64_t** dummy_entity_indices = nullptr;
       int64_t dof_local = 0;
-      ufc_dofmap->tabulate_dofs(&dof_local, num_mesh_entities_local,
+      ufc_dofmap->tabulate_dofs(&dof_local, num_mesh_entities_local.data(),
                                 dummy_entity_indices);
 
       // Insert global dof index
@@ -1108,6 +1110,7 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
 
   // Allocate entity indices array
   std::vector<std::vector<int64_t>> entity_indices(D + 1);
+  std::vector<const int64_t*> entity_indices_ptr(entity_indices.size());
   for (std::size_t d = 0; d <= D; ++d)
     entity_indices[d].resize(mesh.type().num_entities(d));
 
@@ -1123,16 +1126,23 @@ std::shared_ptr<const ufc::dofmap> DofMapBuilder::build_ufc_node_graph(
 
     // Tabulate standard UFC dof map for first space (local)
     get_cell_entities_local(cell, entity_indices, needs_entities);
-    dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(), num_mesh_entities_local,
-                              entity_indices);
+    // FIXME: Can the pointers be copied outside of this loop?
+    for (std::size_t i = 0; i < entity_indices.size(); ++i)
+      entity_indices_ptr[i] = entity_indices[i].data();
+    dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
+                              num_mesh_entities_local.data(),
+                              entity_indices_ptr.data());
     std::copy(ufc_nodes_local.begin(), ufc_nodes_local.end(),
               cell_nodes.begin());
 
     // Tabulate standard UFC dof map for first space (global)
     get_cell_entities_global(cell, entity_indices, needs_entities);
+    // FIXME: Do the pointers need to be copied again?
+    for (std::size_t i = 0; i < entity_indices.size(); ++i)
+      entity_indices_ptr[i] = entity_indices[i].data();
     dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
-                              num_mesh_entities_global_unconstrained,
-                              entity_indices);
+                              num_mesh_entities_global_unconstrained.data(),
+                              entity_indices_ptr.data());
 
     // Build local-to-global map for nodes
     for (std::size_t i = 0; i < local_dim; ++i)
@@ -1231,6 +1241,7 @@ DofMapBuilder::build_ufc_node_graph_constrained(
 
   // Allocate entity indices array
   std::vector<std::vector<int64_t>> entity_indices(D + 1);
+  std::vector<const int64_t*> entity_indices_ptr(entity_indices.size());
   for (std::size_t d = 0; d <= D; ++d)
     entity_indices[d].resize(mesh.type().num_entities(d));
 
@@ -1247,16 +1258,24 @@ DofMapBuilder::build_ufc_node_graph_constrained(
 
     // Tabulate standard UFC dof map for first space (local)
     get_cell_entities_local(cell, entity_indices, needs_entities);
-    dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(), num_mesh_entities_local,
-                              entity_indices);
+    // FIXME: Can this be done outside of the cell loop?
+    for (std::size_t i = 0; i < entity_indices.size(); ++i)
+      entity_indices_ptr[i] = entity_indices[i].data();
+    dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
+                              num_mesh_entities_local.data(),
+                              entity_indices_ptr.data());
     std::copy(ufc_nodes_local.begin(), ufc_nodes_local.end(),
               cell_nodes.begin());
 
     // Tabulate standard UFC dof map for first space (global, constrained)
     get_cell_entities_global_constrained(cell, entity_indices,
                                          global_entity_indices, needs_entities);
+    // FIXME: Does this need to be done again here
+    for (std::size_t i = 0; i < entity_indices.size(); ++i)
+      entity_indices_ptr[i] = entity_indices[i].data();
     dofmaps[0]->tabulate_dofs(ufc_nodes_global_constrained.data(),
-                              num_mesh_entities_global, entity_indices);
+                              num_mesh_entities_global.data(),
+                              entity_indices_ptr.data());
 
     // Build local-to-global map for nodes
     for (std::size_t i = 0; i < local_dim; ++i)
