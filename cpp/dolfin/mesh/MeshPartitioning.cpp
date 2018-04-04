@@ -8,7 +8,6 @@
 #include "CellType.h"
 #include "DistributedMeshTools.h"
 #include "Facet.h"
-#include "LocalMeshData.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
@@ -34,34 +33,6 @@
 using namespace dolfin;
 using namespace dolfin::mesh;
 
-//-----------------------------------------------------------------------------
-mesh::Mesh
-MeshPartitioning::build_distributed_mesh(const LocalMeshData& local_data,
-                                         const std::string ghost_mode)
-{
-  log::log(PROGRESS, "Building distributed mesh");
-
-  common::Timer timer("Build distributed mesh from local mesh data");
-
-  // MPI communicator
-  MPI_Comm comm = local_data.mpi_comm();
-
-  Eigen::Map<const EigenRowArrayXXi64> cells(
-      local_data.topology.cell_vertices.data(),
-      local_data.topology.cell_vertices.shape()[0],
-      local_data.topology.cell_vertices.shape()[1]);
-
-  Eigen::Map<const EigenRowArrayXXd> points(
-      local_data.geometry.vertex_coordinates.data(),
-      local_data.geometry.vertex_coordinates.shape()[0],
-      local_data.geometry.vertex_coordinates.shape()[1]);
-
-  mesh::CellType::Type type = local_data.topology.cell_type;
-
-  return build_distributed_mesh(comm, type, points, cells,
-                                local_data.topology.global_cell_indices,
-                                ghost_mode);
-}
 //-----------------------------------------------------------------------------
 mesh::Mesh MeshPartitioning::build_distributed_mesh(
     const MPI_Comm& comm, mesh::CellType::Type type,

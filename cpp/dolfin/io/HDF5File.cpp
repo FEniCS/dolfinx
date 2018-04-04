@@ -21,7 +21,6 @@
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -186,7 +185,7 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
 
   // Check that rank is 1 or 2
   assert(data_shape.size() == 1
-                or (data_shape.size() == 2 and data_shape[1] == 1));
+         or (data_shape.size() == 2 and data_shape[1] == 1));
 
   // Initialize vector
   la::PETScVector x(comm);
@@ -633,7 +632,7 @@ void HDF5File::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
   for (std::size_t i = 0; i < receive_values.size(); ++i)
   {
     assert(receive_values[i].size() * vertices_per_cell
-                  == receive_topology[i].size());
+           == receive_topology[i].size());
     std::vector<std::size_t>::iterator p = receive_topology[i].begin();
     for (std::size_t j = 0; j < receive_values[i].size(); ++j)
     {
@@ -1325,7 +1324,7 @@ void HDF5File::read_mesh_value_collection(mesh::MeshValueCollection<T>& mesh_vc,
   for (std::size_t i = 0; i != num_processes; ++i)
   {
     assert(recv_data[i].size() * num_verts_per_entity
-                  == recv_entities[i].size());
+           == recv_entities[i].size());
 
     for (std::size_t j = 0; j != recv_data[i].size(); ++j)
     {
@@ -1440,8 +1439,7 @@ void HDF5File::read_mesh_value_collection_old(
 
     // Find cells which are on this process,
     // under the assumption that global_cell_index is ordered.
-    assert(
-        std::is_sorted(global_cell_index.begin(), global_cell_index.end()));
+    assert(std::is_sorted(global_cell_index.begin(), global_cell_index.end()));
 
     // cells_data in general is not ordered, so we sort it
     // keeping track of the indices
@@ -1611,19 +1609,10 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
   common::Timer t("HDF5: read mesh");
   assert(_hdf5_file_id > 0);
 
-  // Create structure to store local mesh
-  mesh::LocalMeshData local_mesh_data(comm);
-  local_mesh_data.geometry.dim = gdim;
-
   // --- Topology ---
 
   // Get number of vertices per cell from CellType
   const int num_vertices_per_cell = cell_type.num_entities(0);
-
-  // Set topology dim and cell type
-  local_mesh_data.topology.dim = cell_type.dim();
-  local_mesh_data.topology.cell_type = cell_type.cell_type();
-  local_mesh_data.topology.num_vertices_per_cell = num_vertices_per_cell;
 
   // Discover shape of the topology data set in HDF5 file
   std::vector<std::int64_t> topology_shape
@@ -1680,9 +1669,6 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
     }
   }
 
-  // Set number of cells (global)
-  local_mesh_data.topology.num_global_cells = num_global_cells;
-
   // FIXME: 'partition' is a poor descriptor
   // Get partition from file, if available
   std::vector<std::int64_t> cell_partitions;
@@ -1702,13 +1688,6 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
     cell_partitions.push_back(num_global_cells);
     const std::size_t proc = _mpi_comm.rank();
     cell_range = {{cell_partitions[proc], cell_partitions[proc + 1]}};
-
-    // Restore partitioning if requested
-    if (use_partition_from_file)
-    {
-      local_mesh_data.topology.cell_partition
-          = std::vector<int>(cell_range[1] - cell_range[0], proc);
-    }
   }
   else
   {
@@ -1740,10 +1719,9 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
   // cell_indices
   std::string mesh_name = topology_path.substr(0, topology_path.rfind("/"));
 
-  // FIXME: Imrpove comment - it's unclear this is about
-  // Look for cell indices in dataset, and use if available
-  std::vector<std::int64_t>& global_cell_indices
-      = local_mesh_data.topology.global_cell_indices;
+  // Look for cell indices in dataset, and use if available.
+  // Otherwise renumber from zero across processes
+  std::vector<std::int64_t> global_cell_indices;
   global_cell_indices.clear();
   const std::string cell_indices_name = mesh_name + "/cell_indices";
   if (HDF5Interface::has_dataset(_hdf5_file_id, cell_indices_name))
@@ -1758,25 +1736,8 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
               cell_range[0]);
   }
 
-  // FIXME: allocate multi_array data and pass to HDFr read function
-  // to avoid copy
-  // Copy to boost::multi_array
-  local_mesh_data.topology.cell_vertices.resize(
-      boost::extents[num_local_cells][num_vertices_per_cell]);
-  boost::multi_array_ref<std::int64_t, 2> topology_data_array(
-      topology_data.data(),
-      boost::extents[num_local_cells][num_vertices_per_cell]);
-
-  // Remap vertices to DOLFIN ordering from VTK/XDMF ordering
-  const std::vector<std::int8_t> perm = cell_type.vtk_mapping();
-  for (int i = 0; i != num_local_cells; ++i)
-  {
-    for (int j = 0; j != num_vertices_per_cell; ++j)
-    {
-      local_mesh_data.topology.cell_vertices[i][j]
-          = topology_data_array[i][perm[j]];
-    }
-  }
+  Eigen::Map<EigenRowArrayXXi64> cells(topology_data.data(), num_local_cells,
+                                       num_vertices_per_cell);
 
   // --- Coordinates ---
 
@@ -1784,16 +1745,16 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
   std::vector<std::int64_t> coords_shape
       = HDF5Interface::get_dataset_shape(_hdf5_file_id, geometry_path);
 
-  // Compute number of vertcies
+  std::int64_t num_global_points = 0;
   if (coords_shape.size() == 1)
   {
     assert(coords_shape[0] % gdim == 0);
-    local_mesh_data.geometry.num_global_vertices = coords_shape[0] / gdim;
+    num_global_points = coords_shape[0] / gdim;
   }
   else if (coords_shape.size() == 2)
   {
     assert((int)coords_shape[1] == gdim);
-    local_mesh_data.geometry.num_global_vertices = coords_shape[0];
+    num_global_points = coords_shape[0];
   }
   else
   {
@@ -1802,23 +1763,18 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
   }
 
   // Check number of vertices (global) against expected number
-  if (expected_num_global_points >= 0)
+  if (expected_num_global_points >= 0
+      and num_global_points != expected_num_global_points)
   {
-    // Check number of cells for consistency with expected number of cells
-    if (local_mesh_data.geometry.num_global_vertices
-        != expected_num_global_points)
-    {
-      log::dolfin_error(
-          "HDF5File.cpp", "read vertex data",
-          "Inconsistentcy between expected number of vertices and "
-          "number of vertices in geometry in HDF5 file");
-    }
+    log::dolfin_error("HDF5File.cpp", "read vertex data",
+                      "Inconsistentcy between expected number of vertices and "
+                      "number of vertices in geometry in HDF5 file");
   }
 
   // Divide point range into equal blocks for each process
-  std::array<std::int64_t, 2> vertex_range = MPI::local_range(
-      _mpi_comm.comm(), local_mesh_data.geometry.num_global_vertices);
-  const std::size_t num_local_vertices = vertex_range[1] - vertex_range[0];
+  std::array<std::int64_t, 2> vertex_range
+      = MPI::local_range(_mpi_comm.comm(), num_global_points);
+  const std::size_t num_local_points = vertex_range[1] - vertex_range[0];
 
   // Modify vertex data range for flat storage
   std::array<std::int64_t, 2> vertex_data_range = vertex_range;
@@ -1829,32 +1785,18 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
   }
 
   // Read vertex data to temporary vector
-  {
-    std::vector<double> coordinates_data = HDF5Interface::read_dataset<double>(
-        _hdf5_file_id, geometry_path, vertex_data_range);
-
-    // Copy to boost::multi_array
-    local_mesh_data.geometry.vertex_coordinates.resize(
-        boost::extents[num_local_vertices][gdim]);
-    std::copy(coordinates_data.begin(), coordinates_data.end(),
-              local_mesh_data.geometry.vertex_coordinates.data());
-  }
-
-  // FIXME: explain this better - comment is cryptic
-  // Fill vertex indices with values - not used in build_distributed_mesh
-  local_mesh_data.geometry.vertex_indices.resize(num_local_vertices);
-  for (std::size_t i = 0;
-       i < local_mesh_data.geometry.vertex_coordinates.size(); ++i)
-  {
-    assert(i < local_mesh_data.geometry.vertex_indices.size());
-    local_mesh_data.geometry.vertex_indices[i] = vertex_range[0] + i;
-  }
+  std::vector<double> coordinates_data = HDF5Interface::read_dataset<double>(
+      _hdf5_file_id, geometry_path, vertex_data_range);
+  assert(coordinates_data.size() == num_local_points * gdim);
+  Eigen::Map<EigenRowArrayXXd> points(coordinates_data.data(), num_local_points,
+                                      gdim);
 
   t.stop();
 
   const std::string ghost_mode = parameter::parameters["ghost_mode"];
-  return mesh::MeshPartitioning::build_distributed_mesh(local_mesh_data,
-                                                        ghost_mode);
+  return mesh::MeshPartitioning::build_distributed_mesh(
+      _mpi_comm.comm(), cell_type.cell_type(), points, cells,
+      global_cell_indices, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 bool HDF5File::has_dataset(const std::string dataset_name) const
