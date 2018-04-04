@@ -223,7 +223,6 @@ public:
 
   // FIXME: Update for higher-order geometries
   /// Get cell coordinate dofs (not vertex coordinates)
-  // void get_coordinate_dofs(Eigen::Ref<EigenRowArrayXXd> coordinates) const
   void get_coordinate_dofs(EigenRowArrayXXd& coordinates) const
   {
     const MeshGeometry& geom = _mesh->geometry();
@@ -239,5 +238,5 @@ public:
       coordinates.row(i) = x.row(vertices[i]);
   }
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

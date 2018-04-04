@@ -311,6 +311,8 @@ public:
   /// library use.
   std::string ghost_mode() const;
 
+  const EigenRowArrayXXi32& coordinate_dofs() const { return _coordinate_dofs; }
+
 private:
   // Friends
   friend class TopologyComputation;
@@ -324,6 +326,9 @@ private:
 
   // Mesh geometry
   MeshGeometry _geometry;
+
+  // Coordinate dofs
+  EigenRowArrayXXi32 _coordinate_dofs;
 
   // Bounding box tree used to compute collisions between the mesh
   // and other objects. The tree is initialized to a zero pointer
@@ -339,5 +344,5 @@ private:
   // Ghost mode used for partitioning
   std::string _ghost_mode;
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

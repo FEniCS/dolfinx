@@ -103,9 +103,10 @@ public:
   ///   Local-to-global map for vertices (std::vector<std::int64_t>) and cell
   ///   topology in local indexing (EigenRowArrayXXi32)
   static std::pair<std::vector<std::int64_t>, EigenRowArrayXXi32>
-  compute_vertex_mapping(
+  compute_point_mapping(
       MPI_Comm mpi_comm,
-      const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices);
+      std::uint32_t num_cell_vertices,
+      const Eigen::Ref<const EigenRowArrayXXi64>& cell_points);
 
 private:
   // Compute cell partitioning from local mesh data. Returns a

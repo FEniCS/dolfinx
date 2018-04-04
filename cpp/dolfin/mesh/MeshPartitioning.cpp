@@ -691,13 +691,14 @@ MeshPartitioning::distribute_cells(
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, EigenRowArrayXXi32>
-MeshPartitioning::compute_vertex_mapping(
-    MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXi64>& cell_points)
+MeshPartitioning::compute_point_mapping(
+    MPI_Comm mpi_comm, std::uint32_t num_cell_vertices,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_points)
 {
-  const std::int32_t num_cells = cell_points.rows();
-  const std::int32_t num_cell_points = cell_points.cols();
+  const std::uint32_t num_cells = cell_points.rows();
+  const std::uint32_t num_cell_points = cell_points.cols();
 
-  // Cell vertices in local indexing
+  // Cell points in local indexing
   EigenRowArrayXXi32 local_cell_points(num_cells, num_cell_points);
 
   // Local-to-global map for points
@@ -707,13 +708,37 @@ MeshPartitioning::compute_vertex_mapping(
   // local_cell_points, starting from 0. Record the global indices for
   // each local point in point_indices.
 
-  // Loop over cells
+  // Loop over cells mapping vertices (but not other points)
   std::int32_t nv = 0;
   std::map<std::int64_t, std::int32_t> point_global_to_local;
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Loop over cell points
-    for (std::int32_t v = 0; v < num_cell_points; ++v)
+    for (std::int32_t v = 0; v < num_cell_vertices; ++v)
+    {
+      // Get global cell index
+      std::int64_t q = cell_points(c, v);
+
+      // Insert (global_vertex_index, local_vertex_index) into map
+      auto map_it = point_global_to_local.insert({q, nv});
+
+      // Set local index in cell vertex list
+      local_cell_points(c, v) = map_it.first->second;
+
+      // If global index seen for first time, add to local-to-global map
+      if (map_it.second)
+      {
+        point_local_to_global.push_back(q);
+        ++nv;
+      }
+    }
+  }
+
+  // Repeat and map non-vertex points
+  for (std::int32_t c = 0; c < num_cells; ++c)
+  {
+    // Loop over cell points
+    for (std::int32_t v = num_cell_vertices; v < num_cell_points; ++v)
     {
       // Get global cell index
       std::int64_t q = cell_points(c, v);

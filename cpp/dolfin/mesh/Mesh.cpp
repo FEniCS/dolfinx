@@ -34,34 +34,39 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 {
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
-  assert(num_vertices_per_cell == cells.cols());
+
+  if (num_vertices_per_cell != cells.cols())
+  {
+    std::cout << "Probably a P2 mesh\n";
+  }
 
   _ordered = false;
 
   // FIXME: make a special case in serial (no mapping required)?
-  // Compute vertex local-to-global map from global indices, and computed cell
+  // Compute point local-to-global map from global indices, and compute cell
   // topology using new local indices
-  const auto vmap_data = MeshPartitioning::compute_vertex_mapping(comm, cells);
-  const std::vector<std::int64_t>& global_vertex_indices = vmap_data.first;
+  const auto vmap_data = MeshPartitioning::compute_point_mapping(
+      comm, num_vertices_per_cell, cells);
+  const std::vector<std::int64_t>& global_point_indices = vmap_data.first;
   const EigenRowArrayXXi32& local_cell_vertices = vmap_data.second;
 
-  // Redistribute points to the processes that need them.
-  // "global_vertex_indices" contains the global indices of the points which are
-  // required locally, and "points" contains the currently held array of points
-  // before distribution (numbered globally from zero on process zero).
+  // Get the required points (as specified in global_point_indices) onto this
+  // process
   const auto vdist = MeshPartitioning::distribute_vertices(
-      comm, points, global_vertex_indices);
-  _geometry.points() = vdist.first;
+      comm, points, global_point_indices);
+  const EigenRowArrayXXd& point_coordinates = vdist.first;
   const std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices
       = vdist.second;
 
+  _geometry.points() = point_coordinates;
+
   // Initialise vertex topology
-  const std::size_t num_vertices = vertex_coordinates.rows();
+  const std::size_t num_vertices = point_coordinates.rows();
   _topology.init(0, num_vertices, num_vertices);
   _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);
-  for (std::size_t i = 0; i < global_vertex_indices.size(); ++i)
-    _topology.set_global_index(0, i, global_vertex_indices[i]);
+  for (std::size_t i = 0; i < global_point_indices.size(); ++i)
+    _topology.set_global_index(0, i, global_point_indices[i]);
   _topology.shared_entities(0) = shared_vertices;
 
   // Initialise cell topology
