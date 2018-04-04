@@ -331,8 +331,10 @@ MeshPartitioning::reorder_cells_gps(
       reordered_shared_cells.insert(*p);
   }
 
-  return {std::move(reordered_shared_cells), std::move(reordered_cell_vertices),
-          std::move(reordered_global_cell_indices)};
+  return std::make_tuple<std::map<std::int32_t, std::set<std::uint32_t>>,
+                         EigenRowArrayXXi64, std::vector<std::int64_t>>(
+      std::move(reordered_shared_cells), std::move(reordered_cell_vertices),
+      std::move(reordered_global_cell_indices));
 }
 //-----------------------------------------------------------------------------
 // void MeshPartitioning::distribute_cell_layer(
@@ -683,8 +685,9 @@ MeshPartitioning::distribute_cells(
   assert(c == local_count);
   assert(gc == all_count);
 
-  return {std::move(new_cell_vertices), std::move(new_global_cell_indices),
-          std::move(new_cell_partition), std::move(shared_cells), local_count};
+  return std::make_tuple(
+      std::move(new_cell_vertices), std::move(new_global_cell_indices),
+      std::move(new_cell_partition), std::move(shared_cells), local_count);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, EigenRowArrayXXi32>
@@ -840,8 +843,7 @@ MeshPartitioning::distribute_vertices(
     const std::size_t local_index_0 = local_index;
     for (const auto& q : received_vertex_indices[p])
     {
-      assert(q >= local_vertex_range.first
-                    && q < local_vertex_range.second);
+      assert(q >= local_vertex_range.first && q < local_vertex_range.second);
 
       const std::size_t location = q - local_vertex_range.first;
       send_coord_data.row(local_index) = points.row(location);
@@ -896,8 +898,7 @@ MeshPartitioning::build_shared_vertices(
   for (const auto& p : received_vertex_indices)
     for (const auto& q : p)
     {
-      assert(q >= local_vertex_range.first
-                    and q < local_vertex_range.second);
+      assert(q >= local_vertex_range.first and q < local_vertex_range.second);
       const std::size_t local_index = q - local_vertex_range.first;
       ++n_sharing[local_index];
     }

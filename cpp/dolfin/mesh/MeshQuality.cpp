@@ -42,7 +42,7 @@ std::array<double, 2> MeshQuality::radius_ratio_min_max(const Mesh& mesh)
 
   qmin = MPI::min(mesh.mpi_comm(), qmin);
   qmax = MPI::max(mesh.mpi_comm(), qmax);
-  return {qmin, qmax};
+  return {{qmin, qmax}};
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<std::size_t>>
@@ -127,7 +127,7 @@ std::array<double, 2> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
   d_ang_min = MPI::min(mesh.mpi_comm(), d_ang_min);
   d_ang_max = MPI::max(mesh.mpi_comm(), d_ang_max);
 
-  return {d_ang_min, d_ang_max};
+  return {{d_ang_min, d_ang_max}};
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<std::size_t>>

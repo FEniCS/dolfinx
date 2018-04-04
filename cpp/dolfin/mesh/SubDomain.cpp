@@ -118,10 +118,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
       for (auto& vertex : EntityRange<Vertex>(entity))
       {
         if (is_visited.insert(vertex.index()))
-        {
-          Eigen::Map<const EigenRowArrayXd> x(vertex.x(), gdim);
-          is_inside[vertex.index()] = inside(x, on_boundary)[0];
-        }
+          is_inside[vertex.index()] = inside(vertex.x(), on_boundary)[0];
 
         if (!is_inside[vertex.index()])
         {

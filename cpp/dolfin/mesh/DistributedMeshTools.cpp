@@ -109,8 +109,9 @@ DistributedMeshTools::number_entities(
   {
     shared_entities.clear();
     global_entity_indices = mesh.topology().global_indices(d);
-    return {std::move(global_entity_indices), std::move(shared_entities),
-            mesh.num_entities_global(d)};
+    return std::make_tuple(std::move(global_entity_indices),
+                           std::move(shared_entities),
+                           mesh.num_entities_global(d));
 
     /*
     log::dolfin_error("MeshPartitioning.cpp",
@@ -342,8 +343,8 @@ DistributedMeshTools::number_entities(
   }
 
   // Return
-  return {std::move(global_entity_indices), std::move(shared_entities),
-          num_global_entities.first};
+  return std::make_tuple(std::move(global_entity_indices),
+                         std::move(shared_entities), num_global_entities.first);
 }
 //-----------------------------------------------------------------------------
 std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t>>>
@@ -514,9 +515,8 @@ DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
   // Return empty set if running in serial
   if (MPI::size(mpi_comm) == 1)
   {
-    return std::
-        unordered_map<std::uint32_t,
-                      std::vector<std::pair<std::uint32_t, std::uint32_t>>>();
+    return std::unordered_map<
+        std::uint32_t, std::vector<std::pair<std::uint32_t, std::uint32_t>>>();
   }
 
   // Initialize entities of dimension d
@@ -583,9 +583,9 @@ DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
     if (recv_entities[p].size() > 0)
     {
       // Get global-to-local map for neighbour process
-      std::unordered_map<std::size_t,
-                         std::unordered_map<std::size_t,
-                                            std::size_t>>::const_iterator it
+      std::unordered_map<
+          std::size_t,
+          std::unordered_map<std::size_t, std::size_t>>::const_iterator it
           = global_to_local.find(sending_proc);
       assert(it != global_to_local.end());
       const std::unordered_map<std::size_t, std::size_t>&
@@ -1208,9 +1208,8 @@ EigenRowArrayXXd DistributedMeshTools::reorder_values_by_global_indices(
   // Calculate size of overall global vector by finding max index value
   // anywhere
   const std::size_t global_vector_size
-      = MPI::max(
-            mpi_comm,
-            *std::max_element(global_indices.begin(), global_indices.end()))
+      = MPI::max(mpi_comm, *std::max_element(global_indices.begin(),
+                                             global_indices.end()))
         + 1;
 
   // Send unwanted values off process
