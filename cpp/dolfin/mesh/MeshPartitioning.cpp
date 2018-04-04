@@ -302,10 +302,9 @@ MeshPartitioning::reorder_cells_gps(
       reordered_shared_cells.insert(*p);
   }
 
-  return std::make_tuple<std::map<std::int32_t, std::set<std::uint32_t>>,
-                         EigenRowArrayXXi64, std::vector<std::int64_t>>(
-      std::move(reordered_shared_cells), std::move(reordered_cell_vertices),
-      std::move(reordered_global_cell_indices));
+  return std::make_tuple(std::move(reordered_shared_cells),
+                         std::move(reordered_cell_vertices),
+                         std::move(reordered_global_cell_indices));
 }
 //-----------------------------------------------------------------------------
 // void MeshPartitioning::distribute_cell_layer(
