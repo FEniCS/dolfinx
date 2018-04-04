@@ -692,49 +692,48 @@ MeshPartitioning::distribute_cells(
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, EigenRowArrayXXi32>
 MeshPartitioning::compute_vertex_mapping(
-    MPI_Comm mpi_comm,
-    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices)
+    MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXi64>& cell_points)
 {
-  const std::int32_t num_cells = cell_vertices.rows();
-  const std::int32_t num_cell_vertices = cell_vertices.cols();
+  const std::int32_t num_cells = cell_points.rows();
+  const std::int32_t num_cell_points = cell_points.cols();
 
-  // Cell vertices in local vertex indices
-  EigenRowArrayXXi32 local_cell_vertices(num_cells, num_cell_vertices);
+  // Cell vertices in local indexing
+  EigenRowArrayXXi32 local_cell_points(num_cells, num_cell_points);
 
-  // Local-to-global map for vertices
-  std::vector<std::int64_t> vertex_local_to_global;
+  // Local-to-global map for points
+  std::vector<std::int64_t> point_local_to_global;
 
-  // Get set of unique vertices from cells. Remap cell_vertices to
-  // local_cell_vertices, starting from 0. Record the global indices for
-  // each local vertex in vertex_indices.
+  // Get set of unique points from cells. Remap cell_points to
+  // local_cell_points, starting from 0. Record the global indices for
+  // each local point in point_indices.
 
   // Loop over cells
   std::int32_t nv = 0;
-  std::map<std::int64_t, std::int32_t> vertex_global_to_local;
+  std::map<std::int64_t, std::int32_t> point_global_to_local;
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    // Loop over cell vertices
-    for (std::int32_t v = 0; v < num_cell_vertices; ++v)
+    // Loop over cell points
+    for (std::int32_t v = 0; v < num_cell_points; ++v)
     {
       // Get global cell index
-      std::int64_t q = cell_vertices(c, v);
+      std::int64_t q = cell_points(c, v);
 
       // Insert (global_vertex_index, local_vertex_index) into map
-      auto map_it = vertex_global_to_local.insert({q, nv});
+      auto map_it = point_global_to_local.insert({q, nv});
 
       // Set local index in cell vertex list
-      local_cell_vertices(c, v) = map_it.first->second;
+      local_cell_points(c, v) = map_it.first->second;
 
-      // If global index seen for first time, add to local-toglobal map
+      // If global index seen for first time, add to local-to-global map
       if (map_it.second)
       {
-        vertex_local_to_global.push_back(q);
+        point_local_to_global.push_back(q);
         ++nv;
       }
     }
   }
 
-  return {std::move(vertex_local_to_global), std::move(local_cell_vertices)};
+  return {std::move(point_local_to_global), std::move(local_cell_points)};
 }
 //-----------------------------------------------------------------------------
 std::pair<EigenRowArrayXXd, std::map<std::int32_t, std::set<std::uint32_t>>>

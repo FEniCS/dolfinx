@@ -74,14 +74,14 @@ public:
                          const std::vector<std::int64_t>& global_cell_indices,
                          const std::string ghost_mode);
 
-  /// Take the set of vertices . . . . .
+  /// Redistribute points to the processes that need them.
   /// @param mpi_comm
   ///   MPI Communicator
   /// @param points
   ///   Existing vertex coordinates array on each process before
   ///   distribution
-  /// @param vertex_indices
-  ///   Global indices for vertices on this process
+  /// @param global_vertex_indices
+  ///   Global indices for vertices required on this process
   /// @return
   ///   vertex_coordinates (array of coordinates on this process after
   ///   distribution) and shared_vertices_local (map from local index to set of

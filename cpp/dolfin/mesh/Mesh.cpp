@@ -45,20 +45,15 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   const std::vector<std::int64_t>& global_vertex_indices = vmap_data.first;
   const EigenRowArrayXXi32& local_cell_vertices = vmap_data.second;
 
-  // FIXME: Add comment ????
+  // Redistribute points to the processes that need them.
+  // "global_vertex_indices" contains the global indices of the points which are
+  // required locally, and "points" contains the currently held array of points
+  // before distribution (numbered globally from zero on process zero).
   const auto vdist = MeshPartitioning::distribute_vertices(
       comm, points, global_vertex_indices);
-  const EigenRowArrayXXd& vertex_coordinates = vdist.first;
+  _geometry.points() = vdist.first;
   const std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices
       = vdist.second;
-
-  // FIXME: Copy data into geometry
-  // const std::size_t nvals
-  //     = vertex_coordinates.rows() * vertex_coordinates.cols();
-  // _geometry.x().resize(nvals);
-  // std::copy(vertex_coordinates.data(), vertex_coordinates.data() + nvals,
-  //           _geometry.x().begin());
-  _geometry.points() = vertex_coordinates;
 
   // Initialise vertex topology
   const std::size_t num_vertices = vertex_coordinates.rows();
@@ -349,7 +344,7 @@ std::string Mesh::str(bool verbose) const
 std::string Mesh::ghost_mode() const
 {
   assert(_ghost_mode == "none" || _ghost_mode == "shared_vertex"
-                || _ghost_mode == "shared_facet");
+         || _ghost_mode == "shared_facet");
   return _ghost_mode;
 }
 //-----------------------------------------------------------------------------
