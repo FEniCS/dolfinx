@@ -132,6 +132,7 @@ void mesh(py::module& m)
       .def_property_readonly("geometry",
                              py::overload_cast<>(&dolfin::mesh::Mesh::geometry),
                              "Mesh geometry")
+      .def("coordinate_dofs", &dolfin::mesh::Mesh::coordinate_dofs)
       .def("hash", &dolfin::mesh::Mesh::hash)
       .def("hmax", &dolfin::mesh::Mesh::hmax)
       .def("hmin", &dolfin::mesh::Mesh::hmin)
@@ -251,9 +252,9 @@ void mesh(py::module& m)
       .def("radius_ratio", &dolfin::mesh::Cell::radius_ratio)
       .def("volume", &dolfin::mesh::Cell::volume);
 
-  py::class_<dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>,
-             std::
-                 shared_ptr<dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>>>(
+  py::class_<
+      dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>,
+      std::shared_ptr<dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>>>(
       m, "MeshEntities", "Range for iteration over entities of a Mesh")
       .def(py::init<const dolfin::mesh::Mesh&, int>())
       .def("__iter__",
@@ -261,9 +262,9 @@ void mesh(py::module& m)
              return py::make_iterator(r.begin(), r.end());
            });
 
-  py::class_<dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>,
-             std::shared_ptr<dolfin::mesh::
-                                 EntityRange<dolfin::mesh::MeshEntity>>>(
+  py::class_<
+      dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>,
+      std::shared_ptr<dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>>>(
       m, "EntityRange", "Range for iteration over entities of another entity")
       .def(py::init<const dolfin::mesh::MeshEntity&, int>())
       .def("__iter__",
@@ -293,8 +294,9 @@ void mesh(py::module& m)
 #define MESHENTITYITERATOR_MACRO(TYPE, ENTITYNAME)                             \
   py::class_<dolfin::mesh::EntityRange<dolfin::ENTITYNAME>,                    \
              std::shared_ptr<dolfin::mesh::EntityRange<dolfin::ENTITYNAME>>>(  \
-      m, #TYPE, "Range for iterating over entities of type " #ENTITYNAME       \
-                " incident to a MeshEntity")                                   \
+      m, #TYPE,                                                                \
+      "Range for iterating over entities of type " #ENTITYNAME                 \
+      " incident to a MeshEntity")                                             \
       .def(py::init<const dolfin::mesh::MeshEntity&>())                        \
       .def("__iter__",                                                         \
            [](const dolfin::mesh::EntityRange<dolfin::ENTITYNAME>& c) {        \
@@ -327,9 +329,8 @@ void mesh(py::module& m)
            [](dolfin::mesh::MeshFunction<SCALAR>& self, std::size_t index,     \
               SCALAR value) { self.operator[](index) = value; })               \
       .def("__getitem__",                                                      \
-           (const SCALAR& (                                                    \
-               dolfin::mesh::MeshFunction<SCALAR>::*)(const dolfin::mesh::     \
-                                                          MeshEntity&)const)   \
+           (const SCALAR& (dolfin::mesh::MeshFunction<                         \
+                           SCALAR>::*)(const dolfin::mesh::MeshEntity&)const)  \
                & dolfin::mesh::MeshFunction<SCALAR>::operator[])               \
       .def("__setitem__",                                                      \
            [](dolfin::mesh::MeshFunction<SCALAR>& self,                        \
@@ -375,9 +376,9 @@ void mesh(py::module& m)
                std::size_t, std::size_t, const SCALAR&))                       \
                & dolfin::mesh::MeshValueCollection<SCALAR>::set_value)         \
       .def("values",                                                           \
-           (std::map<std::pair<std::size_t, std::size_t>,                      \
-                     SCALAR> & (dolfin::mesh::                                 \
-                                    MeshValueCollection<SCALAR>::*)())         \
+           (std::map<                                                          \
+                std::pair<std::size_t, std::size_t>,                           \
+                SCALAR> & (dolfin::mesh::MeshValueCollection<SCALAR>::*)())    \
                & dolfin::mesh::MeshValueCollection<SCALAR>::values,            \
            py::return_value_policy::reference)                                 \
       .def("assign",                                                           \

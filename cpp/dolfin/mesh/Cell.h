@@ -226,16 +226,13 @@ public:
   void get_coordinate_dofs(EigenRowArrayXXd& coordinates) const
   {
     const MeshGeometry& geom = _mesh->geometry();
-    const std::size_t gdim = geom.dim();
-    const std::size_t num_vertices = this->num_vertices();
-    const std::int32_t* vertices = this->entities(0);
-
+    EigenRowArrayXi32 dofs = _mesh->coordinate_dofs().row(_local_index);
     const EigenRowArrayXXd& x = geom.points();
-    // assert((std::size_t)coordinates.rows() == num_vertices);
-    // assert((std::size_t)coordinates.cols() == gdim);
-    coordinates.resize(num_vertices, gdim);
-    for (std::size_t i = 0; i < num_vertices; ++i)
-      coordinates.row(i) = x.row(vertices[i]);
+    const std::size_t gdim = geom.dim();
+
+    coordinates.resize(dofs.cols(), gdim);
+    for (unsigned int i = 0; i < dofs.cols(); ++i)
+      coordinates.row(i) = x.row(dofs(i));
   }
 };
 } // namespace mesh

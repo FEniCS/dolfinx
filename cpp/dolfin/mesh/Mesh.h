@@ -311,6 +311,7 @@ public:
   /// library use.
   std::string ghost_mode() const;
 
+  /// Get coordinate dofs for all local cells
   const EigenRowArrayXXi32& coordinate_dofs() const { return _coordinate_dofs; }
 
 private:

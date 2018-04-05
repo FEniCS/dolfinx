@@ -48,7 +48,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   const auto vmap_data = MeshPartitioning::compute_point_mapping(
       comm, num_vertices_per_cell, cells);
   const std::vector<std::int64_t>& global_point_indices = vmap_data.first;
-  const EigenRowArrayXXi32& local_cell_vertices = vmap_data.second;
+  _coordinate_dofs = vmap_data.second;
 
   // Get the required points (as specified in global_point_indices) onto this
   // process
@@ -70,7 +70,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   _topology.shared_entities(0) = shared_vertices;
 
   // Initialise cell topology
-  const std::size_t num_cells = local_cell_vertices.rows();
+  const std::size_t num_cells = _coordinate_dofs.rows();
   _topology.init(tdim, num_cells, num_cells);
   _topology.init_ghost(tdim, num_cells);
   _topology.init_global_indices(tdim, num_cells);
@@ -79,7 +79,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // Add cells
   for (std::int32_t i = 0; i != cells.rows(); ++i)
   {
-    _topology.connectivity(tdim, 0).set(i, local_cell_vertices.row(i).data());
+    // Only copy the first few entries on each row corresponding to vertices
+    _topology.connectivity(tdim, 0).set(i, _coordinate_dofs.row(i).data());
     _topology.set_global_index(tdim, i, i);
   }
 }
