@@ -120,8 +120,9 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   check_encoding(encoding);
   check_function_name(function_name);
 
-  log::log(PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
-                     "time step %f.",
+  log::log(PROGRESS,
+           "Writing function \"%s\" to XDMF file \"%s\" with "
+           "time step %f.",
            function_name.c_str(), _filename.c_str(), time_step);
 
   // If XML file exists load it to member _xml_doc
@@ -1382,8 +1383,9 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
 {
   check_function_name(func_name);
 
-  log::log(PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
-                     "counter %i.",
+  log::log(PROGRESS,
+           "Reading function \"%s\" from XDMF file \"%s\" with "
+           "counter %i.",
            func_name.c_str(), _filename.c_str(), counter);
 
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
@@ -2179,19 +2181,25 @@ void XDMFFile::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
 
   // Check all top level Grid nodes for suitable dataset
   pugi::xml_node grid_node;
-  for (pugi::xml_node node : domain_node.children("Grid"))
-  {
-    pugi::xml_node value_node = node.child("Attribute");
-    if (value_node
-        and (name == "" or name == value_node.attribute("Name").as_string()))
+  // Using lambda to exit nested loops
+  [&] {
+    for (pugi::xml_node node : domain_node.children("Grid"))
     {
-      grid_node = node;
-      break;
+      for (pugi::xml_node value_node : node.children("Attribute"))
+      {
+        if (value_node
+            and (name == ""
+                 or name == value_node.attribute("Name").as_string()))
+        {
+          grid_node = node;
+          return;
+        }
+      }
     }
-  }
+  }();
 
-  // Check if a TimeSeries (old format), in which case the Grid will be down one
-  // level
+  // Check if a TimeSeries (old format), in which case the Grid will be down
+  // one level
   if (!grid_node)
   {
     pugi::xml_node grid_node1 = domain_node.child("Grid");
