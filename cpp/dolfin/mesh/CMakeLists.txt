@@ -8,7 +8,6 @@ set(HEADERS
   Facet.h
   HexahedronCell.h
   IntervalCell.h
-  LocalMeshData.h
   LocalMeshValueCollection.h
   MeshConnectivity.h
   MeshEntity.h
@@ -40,7 +39,6 @@ set(SOURCES
   Facet.cpp
   HexahedronCell.cpp
   IntervalCell.cpp
-  LocalMeshData.cpp
   MeshConnectivity.cpp
   Mesh.cpp
   MeshEntity.cpp

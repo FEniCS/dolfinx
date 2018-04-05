@@ -8,7 +8,6 @@
 #include "Cell.h"
 #include "DistributedMeshTools.h"
 #include "Facet.h"
-#include "LocalMeshData.h"
 #include "MeshIterator.h"
 #include "MeshOrdering.h"
 #include "MeshPartitioning.h"

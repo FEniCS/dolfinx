@@ -51,7 +51,6 @@ class Point;
 
 namespace mesh
 {
-class LocalMeshData;
 class Mesh;
 template <typename T>
 class MeshFunction;
@@ -413,15 +412,6 @@ private:
   remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
                           const std::vector<std::int64_t>& topology_data,
                           const std::vector<T>& value_data);
-
-  // Build local mesh data structure
-  static void build_local_mesh_data(mesh::LocalMeshData& local_mesh_data,
-                                    const mesh::CellType& cell_type,
-                                    std::int64_t num_points,
-                                    std::int64_t num_cells, int tdim, int gdim,
-                                    const pugi::xml_node& topology_dataset_node,
-                                    const pugi::xml_node& geometry_dataset_node,
-                                    const boost::filesystem::path& parent_path);
 
   // Add mesh to XDMF xml_node (usually a Domain or Time Grid) and
   // write data
