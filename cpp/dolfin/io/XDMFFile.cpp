@@ -2113,17 +2113,19 @@ void XDMFFile::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
 
   // Check all top level Grid nodes for suitable dataset
   pugi::xml_node grid_node;
+  pugi::xml_node value_node;
+
   // Using lambda to exit nested loops
   [&] {
     for (pugi::xml_node node : domain_node.children("Grid"))
     {
-      for (pugi::xml_node value_node : node.children("Attribute"))
+      for (pugi::xml_node attr_node : node.children("Attribute"))
       {
-        if (value_node
-            and (name == ""
-                 or name == value_node.attribute("Name").as_string()))
+        if (attr_node
+            and (name == "" or name == attr_node.attribute("Name").as_string()))
         {
           grid_node = node;
+          value_node = attr_node;
           return;
         }
       }
@@ -2139,12 +2141,12 @@ void XDMFFile::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
     {
       for (pugi::xml_node node : grid_node1.children("Grid"))
       {
-        pugi::xml_node value_node = node.child("Attribute");
-        if (value_node
-            and (name == ""
-                 or name == value_node.attribute("Name").as_string()))
+        pugi::xml_node attr_node = node.child("Attribute");
+        if (attr_node
+            and (name == "" or name == attr_node.attribute("Name").as_string()))
         {
           grid_node = node;
+          value_node = attr_node;
           break;
         }
       }
@@ -2161,10 +2163,6 @@ void XDMFFile::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
   // Get topology node
   pugi::xml_node topology_node = grid_node.child("Topology");
   assert(topology_node);
-
-  // Get value node
-  pugi::xml_node value_node = grid_node.child("Attribute");
-  assert(value_node);
 
   // Get existing mesh::Mesh of mesh::MeshFunction
   const auto mesh = meshfunction.mesh();

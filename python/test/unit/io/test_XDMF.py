@@ -61,6 +61,29 @@ def worker_id(request):
 
 
 @pytest.mark.parametrize("encoding", encodings)
+def test_multiple_datasets(tempdir, encoding):
+    mesh = UnitSquareMesh(MPI.comm_world, 2, 2)
+    cf0 = MeshFunction('size_t', mesh, 2, 11)
+    cf0.rename('cf0', 'cf0')
+    cf1 = MeshFunction('size_t', mesh, 2, 22)
+    cf1.rename('cf1', 'cf1')
+    filename = os.path.join(tempdir, "multiple_mf.xdmf")
+
+    with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
+        xdmf.write(mesh, encoding)
+        xdmf.write(cf0, encoding)
+        xdmf.write(cf1, encoding)
+
+    with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
+        mesh = xdmf.read_mesh(MPI.comm_world)
+        cf0 = MeshFunction('size_t', mesh, 2, 0)
+        xdmf.read(cf0, "cf0")
+        cf1 = MeshFunction('size_t', mesh, 2, 0)
+        xdmf.read(cf1, "cf1")
+    assert(cf0[0] == 11 and cf1[0] == 22)
+
+
+@pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_1d_mesh(tempdir, encoding):
     if invalid_config(encoding):
         pytest.skip("XDMF unsupported in current configuration")
@@ -628,6 +651,7 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
         with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
             mvc = MeshValueCollection(dtype_str, mesh,  mvc_dim)
             xdmf.read(mvc, tag)
+
 
 
 @pytest.mark.parametrize("encoding", encodings)
