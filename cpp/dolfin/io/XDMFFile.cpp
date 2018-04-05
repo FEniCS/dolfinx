@@ -23,7 +23,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Edge.h>
-#include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
@@ -1326,8 +1325,6 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
   std::unique_ptr<mesh::CellType> cell_type(
       mesh::CellType::create(cell_type_str.first));
   assert(cell_type);
-  const int tdim = cell_type->dim();
-  const std::int64_t num_cells_global = get_num_cells(topology_node);
 
   // Get geometry node
   pugi::xml_node geometry_node = grid_node.child("Geometry");
@@ -1356,25 +1353,38 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
   assert(geometry_data_node);
   const std::vector<std::int64_t> gdims = get_dataset_shape(geometry_data_node);
   assert(gdims.size() == 2);
-  const std::int64_t num_points_global = gdims[0];
   assert(gdims[1] == gdim);
 
+  // Geometry
+  const auto geometry_data
+      = get_dataset<double>(_mpi_comm.comm(), geometry_data_node, parent_path);
+  const std::size_t num_local_points = geometry_data.size() / gdim;
+
+  Eigen::Map<const EigenRowArrayXXd> points(geometry_data.data(),
+                                            num_local_points, gdim);
   // Get topology dataset node
   pugi::xml_node topology_data_node = topology_node.child("DataItem");
   assert(topology_data_node);
 
-  // Build local mesh data structure
-  mesh::LocalMeshData local_mesh_data(_mpi_comm.comm());
-  build_local_mesh_data(local_mesh_data, *cell_type, num_points_global,
-                        num_cells_global, tdim, gdim, topology_data_node,
-                        geometry_data_node, parent_path);
-  local_mesh_data.check();
+  // Topology
+  const auto topology_data = get_dataset<std::int64_t>(
+      _mpi_comm.comm(), topology_data_node, parent_path);
+  const std::size_t nv_per_cell = cell_type->num_entities(0);
+  const std::size_t num_local_cells = topology_data.size() / nv_per_cell;
+  Eigen::Map<const EigenRowArrayXXi64> cells(topology_data.data(),
+                                             num_local_cells, nv_per_cell);
 
-  // Build mesh
+  // Set cell global indices by adding offset
+  const std::int64_t cell_index_offset
+      = MPI::global_offset(_mpi_comm.comm(), num_local_cells, true);
+  std::vector<std::int64_t> global_cell_indices(num_local_cells);
+  std::iota(global_cell_indices.begin(), global_cell_indices.end(),
+            cell_index_offset);
+
   const std::string ghost_mode = parameter::parameters["ghost_mode"];
-
-  return mesh::MeshPartitioning::build_distributed_mesh(local_mesh_data,
-                                                        ghost_mode);
+  return mesh::MeshPartitioning::build_distributed_mesh(
+      _mpi_comm.comm(), cell_type->cell_type(), points, cells,
+      global_cell_indices, ghost_mode);
 }
 //----------------------------------------------------------------------------
 function::Function
@@ -1504,84 +1514,6 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                                        input_vector_range, dofmap);
 
   return u;
-}
-//----------------------------------------------------------------------------
-void XDMFFile::build_local_mesh_data(
-    mesh::LocalMeshData& local_mesh_data, const mesh::CellType& cell_type,
-    std::int64_t num_points_global, std::int64_t num_cells_global, int tdim,
-    int gdim, const pugi::xml_node& topology_dataset_node,
-    const pugi::xml_node& geometry_dataset_node,
-    const boost::filesystem::path& relative_path)
-{
-  // -- Topology --
-
-  // Get number of vertices per cell from CellType
-  const int num_vertices_per_cell = cell_type.num_entities(0);
-
-  // Set topology attributes
-  local_mesh_data.topology.dim = cell_type.dim();
-  local_mesh_data.topology.cell_type = cell_type.cell_type();
-  local_mesh_data.topology.num_vertices_per_cell = num_vertices_per_cell;
-  local_mesh_data.topology.num_global_cells = num_cells_global;
-
-  // Get share of topology data
-  assert(topology_dataset_node);
-  const auto topology_data = get_dataset<std::int64_t>(
-      local_mesh_data.mpi_comm(), topology_dataset_node, relative_path);
-  assert(topology_data.size() % num_vertices_per_cell == 0);
-
-  // Wrap topology data as multi-dimensional array
-  const int num_local_cells = topology_data.size() / num_vertices_per_cell;
-  const boost::const_multi_array_ref<std::int64_t, 2> topology_data_array(
-      topology_data.data(),
-      boost::extents[num_local_cells][num_vertices_per_cell]);
-
-  // Remap vertices to DOLFIN ordering from VTK/XDMF ordering
-  local_mesh_data.topology.cell_vertices.resize(
-      boost::extents[num_local_cells][num_vertices_per_cell]);
-  const std::vector<std::int8_t> perm = cell_type.vtk_mapping();
-  for (int i = 0; i < num_local_cells; ++i)
-  {
-    for (int j = 0; j < num_vertices_per_cell; ++j)
-      local_mesh_data.topology.cell_vertices[i][j]
-          = topology_data_array[i][perm[j]];
-  }
-
-  // Set cell global indices by adding offset
-  const std::int64_t cell_index_offset
-      = MPI::global_offset(local_mesh_data.mpi_comm(), num_local_cells, true);
-  local_mesh_data.topology.global_cell_indices.resize(num_local_cells);
-  std::iota(local_mesh_data.topology.global_cell_indices.begin(),
-            local_mesh_data.topology.global_cell_indices.end(),
-            cell_index_offset);
-
-  // -- Geometry --
-
-  // Set geometry attributes
-  local_mesh_data.geometry.num_global_vertices = num_points_global;
-  local_mesh_data.geometry.dim = gdim;
-
-  // Read geometry dataset
-  assert(geometry_dataset_node);
-  const auto geometry_data = get_dataset<double>(
-      local_mesh_data.mpi_comm(), geometry_dataset_node, relative_path);
-  assert(geometry_data.size() % gdim == 0);
-
-  // Deduce number of vertices that have been read on this process
-  const int num_local_vertices = geometry_data.size() / gdim;
-
-  // Copy geometry data into mesh::LocalMeshData
-  local_mesh_data.geometry.vertex_coordinates.resize(
-      boost::extents[num_local_vertices][gdim]);
-  std::copy(geometry_data.begin(), geometry_data.end(),
-            local_mesh_data.geometry.vertex_coordinates.data());
-
-  // vertex offset
-  const std::int64_t vertex_index_offset = MPI::global_offset(
-      local_mesh_data.mpi_comm(), num_local_vertices, true);
-  local_mesh_data.geometry.vertex_indices.resize(num_local_vertices);
-  std::iota(local_mesh_data.geometry.vertex_indices.begin(),
-            local_mesh_data.geometry.vertex_indices.end(), vertex_index_offset);
 }
 //----------------------------------------------------------------------------
 template <typename T>

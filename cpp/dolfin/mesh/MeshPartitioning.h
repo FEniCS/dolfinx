@@ -33,7 +33,6 @@ template <typename T>
 class MeshFunction;
 template <typename T>
 class MeshValueCollection;
-class LocalMeshData;
 class CellType;
 
 /// This class partitions and distributes a mesh based on
@@ -47,11 +46,6 @@ class CellType;
 class MeshPartitioning
 {
 public:
-  /// Build a distributed mesh from 'local mesh data' that is
-  /// distributed across processes
-  static mesh::Mesh build_distributed_mesh(const LocalMeshData& data,
-                                           const std::string ghost_mode);
-
   /// Build distributed mesh from a set of points and cells on each local
   /// process
   /// @param comm
@@ -109,7 +103,7 @@ public:
 
 private:
   // Compute cell partitioning from local mesh data. Returns a
-  // vector 'cell -> process' vector for cells in LocalMeshData, and
+  // vector 'cell -> process' vector for cells, and
   // a map 'local cell index -> processes' to which ghost cells must
   // be sent
   static PartitionData
@@ -155,12 +149,11 @@ private:
 
   // FIXME: Update, making clear exactly what is computed
   // This function takes the partition computed by the partitioner
-  // (which tells us to which process each of the local cells stored in
-  // LocalMeshData on this process belongs) and sends the cells
+  // (which tells us to which process each of the local cells stored on
+  //  this process belongs) and sends the cells
   // to the appropriate owning process. Ghost cells are also sent,
   // along with the list of sharing processes.
-  // A new LocalMeshData object is populated with the redistributed
-  // cells. Returns (new_cell_vertices, new_global_cell_indices,
+  // Returns (new_cell_vertices, new_global_cell_indices,
   // new_cell_partition, shared_cells, number of non-ghost cells on this
   // process).
   static std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>,

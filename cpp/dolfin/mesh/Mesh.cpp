@@ -8,7 +8,6 @@
 #include "Cell.h"
 #include "DistributedMeshTools.h"
 #include "Facet.h"
-#include "LocalMeshData.h"
 #include "MeshIterator.h"
 #include "MeshOrdering.h"
 #include "MeshPartitioning.h"
@@ -349,7 +348,7 @@ std::string Mesh::str(bool verbose) const
 std::string Mesh::ghost_mode() const
 {
   assert(_ghost_mode == "none" || _ghost_mode == "shared_vertex"
-                || _ghost_mode == "shared_facet");
+         || _ghost_mode == "shared_facet");
   return _ghost_mode;
 }
 //-----------------------------------------------------------------------------

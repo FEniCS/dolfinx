@@ -33,7 +33,6 @@ class Function;
 
 namespace mesh
 {
-class LocalMeshData;
 class MeshEntity;
 
 /// A _Mesh_ consists of a set of connected and numbered mesh entities.
