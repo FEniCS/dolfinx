@@ -95,8 +95,8 @@ void io(py::module& m)
            py::arg("name"))
       .def("read_mvc_bool", &dolfin::io::HDF5File::read_mvc_bool, py::arg("mesh"),
            py::arg("name"))
-    //   .def("read_mvc_int", &dolfin::io::HDF5File::read_mvc_int, py::arg("mesh"),
-    //        py::arg("name"))
+      .def("read_mvc_int", &dolfin::io::HDF5File::read_mvc_int, py::arg("mesh"),
+           py::arg("name"))
       .def("read_mvc_size_t", &dolfin::io::HDF5File::read_mvc_size_t, py::arg("mesh"),
            py::arg("name"))
       .def("read_mvc_double", &dolfin::io::HDF5File::read_mvc_double, py::arg("mesh"),
