@@ -15,7 +15,8 @@ import dolfin.io
 encodings = (XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII)
 
 # Data types supported in templating
-data_types = (('int', int), ('size_t', int), ('double', float), ('bool', bool))
+#data_types = (('int', int), ('size_t', int), ('double', float), ('bool', bool))
+data_types = (('int', int), ('size_t', int), ('double', float))
 
 # Finite elements tested
 fe_1d_shapes = ["interval"]
@@ -78,10 +79,8 @@ def test_multiple_datasets(tempdir, encoding):
 
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
         mesh = xdmf.read_mesh(MPI.comm_world)
-        cf0 = MeshFunction('size_t', mesh, 2, 0)
-        xdmf.read(cf0, "cf0")
-        cf1 = MeshFunction('size_t', mesh, 2, 0)
-        xdmf.read(cf1, "cf1")
+        cf0 = xdmf.read_mf_size_t(mesh, "cf0")
+        cf1 = xdmf.read_mf_size_t(mesh, "cf1")
     assert(cf0[0] == 11 and cf1[0] == 22)
 
 
@@ -408,9 +407,9 @@ def test_save_2D_cell_function(tempdir, encoding, data_type):
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mf, encoding)
 
-    mf_in = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        xdmf.read(mf_in, "cells")
+        read_function = getattr(xdmf, "read_mf_" + dtype_str)
+        mf_in = read_function(mesh, "cells")
 
     diff = 0
     for cell in Cells(mesh):
@@ -436,9 +435,10 @@ def test_save_3D_cell_function(tempdir, encoding, data_type):
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mf, encoding)
 
-    mf_in = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
+    #mf_in = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        xdmf.read(mf_in, "cells")
+        read_function = getattr(xdmf, "read_mf_" + dtype_str)
+        mf_in = read_function(mesh, "cells")
 
     diff = 0
     for cell in Cells(mesh):
@@ -469,9 +469,9 @@ def test_save_2D_facet_function(tempdir, encoding, data_type):
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
         xdmf.write(mf, encoding)
 
-    mf_in = MeshFunction(dtype_str, mesh, mesh.topology.dim-1, 0)
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        xdmf.read(mf_in, "facets")
+        read_function = getattr(xdmf, "read_mf_" + dtype_str)
+        mf_in = read_function(mesh, "facets")
 
     diff = 0
     for facet in Facets(mesh):
@@ -499,12 +499,12 @@ def test_save_3D_facet_function(tempdir, encoding, data_type):
             mf[facet] = dtype(facet.global_index())
     filename = os.path.join(tempdir, "mf_facet_3D_%s.xdmf" % dtype_str)
 
-    with XDMFFile(mesh.mpi_comm(), filename) as file:
-        file.write(mf, encoding)
+    with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
+        xdmf.write(mf, encoding)
 
-    mf_in = MeshFunction(dtype_str, mesh, mesh.topology.dim-1, 0)
-    with XDMFFile(mesh.mpi_comm(), filename) as file:
-        file.read(mf_in, "facets")
+    with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
+        read_function = getattr(xdmf, "read_mf_" + dtype_str)
+        mf_in = read_function(mesh, "facets")
 
     diff = 0
     for facet in Facets(mesh):
@@ -549,9 +549,9 @@ def test_save_2D_vertex_function(tempdir, encoding, data_type):
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mf, encoding)
 
-    mf_in = MeshFunction(dtype_str, mesh, 0, 0)
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        xdmf.read(mf_in, "vertices")
+        read_function = getattr(xdmf, "read_mf_" + dtype_str)
+        mf_in = read_function(mesh, "vertices")
 
     diff = 0
     for v in Vertices(mesh):
@@ -651,8 +651,8 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
             xdmf.write(mvc, encoding)
 
         with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-            mvc = MeshValueCollection(dtype_str, mesh,  mvc_dim)
-            xdmf.read(mvc, tag)
+            read_function = getattr(xdmf, "read_mvc_" + dtype_str)
+            mvc = read_function(mesh, tag)
 
 
 
@@ -701,12 +701,10 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
             xdmf.write(cf, encoding)
 
         with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-            vf_in = MeshFunction(dtype_str, mesh, 0, 0)
-            xdmf.read(vf_in, "vertices")
-            ff_in = MeshFunction(dtype_str, mesh, mesh.topology.dim-1, 0)
-            xdmf.read(ff_in, "facets")
-            cf_in = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
-            xdmf.read(cf_in, "cells")
+            read_function = getattr(xdmf, "read_mf_" + dtype_str)
+            vf_in = read_function(mesh, "vertices")
+            ff_in = read_function(mesh, "facets")
+            cf_in = read_function(mesh, "cells")
 
         diff = 0
         for vertex in Vertices(mesh):
@@ -755,10 +753,11 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type):
     mvc_c_in = MeshValueCollection(dtype_str, mesh, 3)
 
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        xdmf.read(mvc_v_in, "vertices")
-        xdmf.read(mvc_e_in, "edges")
-        xdmf.read(mvc_f_in, "facets")
-        xdmf.read(mvc_c_in, "cells")
+        read_function = getattr(xdmf, "read_mvc_" + dtype_str)
+        mvc_v_in = read_function(mesh, "vertices")
+        mvc_e_in = read_function(mesh, "edges")
+        mvc_f_in = read_function(mesh, "facets")
+        mvc_c_in = read_function(mesh, "cells")
 
     mvcs_in = [mvc_v_in, mvc_e_in, mvc_f_in, mvc_c_in]
 

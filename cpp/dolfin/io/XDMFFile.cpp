@@ -1103,7 +1103,7 @@ XDMFFile::read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh, std::string name)
       = read_mesh_function<std::size_t>(mesh, name);
 
   // Convert to bool
-  mesh::MeshFunction<bool> mf(mesh, mf.dim(), 0);
+  mesh::MeshFunction<bool> mf(mesh, mf_int.dim(), 0);
   for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, mf.dim()))
     mf[cell.index()] = (mf_int[cell.index()] == 1);
 
