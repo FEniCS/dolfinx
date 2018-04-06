@@ -57,9 +57,8 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
       boost::filesystem::create_directories(path.parent_path());
       if (!boost::filesystem::is_directory(path.parent_path()))
       {
-        log::dolfin_error("HDF5File.cpp", "open file",
-                          "Could not create directory \"%s\"",
-                          path.parent_path().string().c_str());
+        throw std::runtime_error("Could not create directory \""
+                                 + path.parent_path().string() + "\"");
       }
     }
   }
@@ -72,8 +71,8 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
 #ifndef H5_HAVE_PARALLEL
   if (mpi_io)
   {
-    log::dolfin_error("HDF5File.cpp", "open HDF5 file",
-                      "HDF5 has not been compiled with support for MPI");
+    throw std::error(
+        "Cannot open file. HDF5 has not been compiled with support for MPI");
   }
 #endif
   _hdf5_file_id
