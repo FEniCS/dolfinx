@@ -31,10 +31,9 @@
 #include <dolfin/parameter/GlobalParameters.h>
 #include <iomanip>
 #include <memory>
-#include <ostream>
-#include <sstream>
 #include <string>
 #include <vector>
+#include <set>
 
 using namespace dolfin;
 using namespace dolfin::io;
@@ -117,7 +116,11 @@ void XDMFFile::write_checkpoint(const function::Function& u,
                                 const Encoding encoding)
 {
   check_encoding(encoding);
-  check_function_name(function_name);
+  if (!name_same_on_all_procs(function_name))
+  {
+    throw std::runtime_error("Function name must be the same on all processes "
+                             "when writing to XDMF file.");
+  }
 
   log::log(PROGRESS,
            "Writing function \"%s\" to XDMF file \"%s\" with "
@@ -1408,7 +1411,11 @@ function::Function
 XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                           std::string func_name, std::int64_t counter) const
 {
-  check_function_name(func_name);
+  if (!name_same_on_all_procs(func_name))
+  {
+    throw std::runtime_error("Function name must be the same on all processes "
+                             "when reading XDMF file.");
+  }
 
   log::log(PROGRESS,
            "Reading function \"%s\" from XDMF file \"%s\" with "
@@ -2775,21 +2782,13 @@ void XDMFFile::check_encoding(Encoding encoding) const
   }
 }
 //----------------------------------------------------------------------------
-void XDMFFile::check_function_name(std::string function_name) const
+bool XDMFFile::name_same_on_all_procs(std::string name) const
 {
-  // We must check that supplied function name is the same on all processes
-  // Very important for HDF file paths
-  std::vector<std::string> function_names_received;
-  MPI::all_gather(_mpi_comm.comm(), function_name, function_names_received);
+  std::vector<std::string> names_received;
+  MPI::all_gather(_mpi_comm.comm(), name, names_received);
 
-  for (std::string function_name_received : function_names_received)
-  {
-    if (function_name_received != function_names_received[0])
-    {
-      log::dolfin_error("XDMFFile.cpp", "write/read function to/from XDMF",
-                        "Function name must be the same on all processes");
-    }
-  }
+  std::set<std::string> name_set(names_received.begin(), names_received.end());
+  return (name_set.size() == 1);
 }
 //-----------------------------------------------------------------------------
 std::string XDMFFile::vtk_cell_type_str(mesh::CellType::Type cell_type,

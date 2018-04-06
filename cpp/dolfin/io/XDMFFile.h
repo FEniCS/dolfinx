@@ -541,8 +541,9 @@ private:
   // Check whether the requested encoding is supported
   void check_encoding(Encoding encoding) const;
 
-  // Check function names equality across processes
-  void check_function_name(std::string function_name) const;
+  // Check that string is the same on all processes. Returns true of
+  // same on all processes.
+  bool name_same_on_all_procs(std::string name) const;
 
   // Generate the XDMF format string based on the Encoding
   // enumeration
