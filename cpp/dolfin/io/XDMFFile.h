@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2015 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2012-2018 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -334,34 +334,45 @@ public:
   read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                   std::string func_name, std::int64_t counter = -1);
 
+  // FIXME: Remove the duplicate read_mf_foo functions. Challenge is the
+  // templated reader code would then expose a lot code publically.
+  // Refactor large, templated functions into parts that (i) depend on
+  // the template argument and (ii) parts that do not.
+
   /// Read first mesh::MeshFunction from file
   /// @param meshfunction (_MeshFunction<bool>_)
   ///        mesh::MeshFunction to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshFunction<bool>& meshfunction, std::string name = "");
+  mesh::MeshFunction<bool> read_mf_bool(std::shared_ptr<const mesh::Mesh>
+  mesh,
+                                        std::string name = "");
 
   /// Read first mesh::MeshFunction from file
   /// @param meshfunction (_MeshFunction<int>_)
   ///        mesh::MeshFunction to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshFunction<int>& meshfunction, std::string name = "");
+  mesh::MeshFunction<int> read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
+                                      std::string name = "");
 
   /// Read mesh::MeshFunction from file, optionally specifying dataset name
   /// @param meshfunction (_MeshFunction<std::size_t>_)
   ///        mesh::MeshFunction to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshFunction<std::size_t>& meshfunction,
-            std::string name = "");
+  mesh::MeshFunction<std::size_t>
+  read_mf_size_t(std::shared_ptr<const mesh::Mesh> mesh, std::string name =
+  "");
 
   /// Read mesh::MeshFunction from file, optionally specifying dataset name
   /// @param meshfunction (_MeshFunction<double>_)
   ///        mesh::MeshFunction to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshFunction<double>& meshfunction, std::string name = "");
+  mesh::MeshFunction<double>
+  read_mf_double(std::shared_ptr<const mesh::Mesh> mesh, std::string name =
+  "");
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
@@ -491,8 +502,9 @@ private:
 
   // Generic mesh::MeshFunction reader
   template <typename T>
-  void read_mesh_function(mesh::MeshFunction<T>& meshfunction,
-                          std::string name = "");
+  mesh::MeshFunction<T>
+  read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
+                     std::string name = "");
 
   // Generic mesh::MeshFunction writer
   template <typename T>

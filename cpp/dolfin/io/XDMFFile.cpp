@@ -1089,33 +1089,39 @@ void XDMFFile::write(const std::vector<geometry::Point>& points,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void XDMFFile::read(mesh::MeshFunction<bool>& meshfunction, std::string name)
+mesh::MeshFunction<bool>
+XDMFFile::read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh, std::string name)
 {
-  const std::shared_ptr<const mesh::Mesh> mesh = meshfunction.mesh();
-  assert(mesh);
+  // Read mesh function
+  mesh::MeshFunction<std::size_t> mf_int
+      = read_mesh_function<std::size_t>(mesh, name);
 
-  const std::size_t cell_dim = meshfunction.dim();
-  mesh::MeshFunction<std::size_t> mf(mesh, cell_dim, -1);
-  read_mesh_function(mf, name);
+  // Convert to bool
+  mesh::MeshFunction<bool> mf(mesh, mf.dim(), 0);
+  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, mf.dim()))
+    mf[cell.index()] = (mf_int[cell.index()] == 1);
 
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim))
-    meshfunction[cell.index()] = (mf[cell.index()] == 1);
+  return mf;
 }
 //----------------------------------------------------------------------------
-void XDMFFile::read(mesh::MeshFunction<int>& meshfunction, std::string name)
+mesh::MeshFunction<int>
+XDMFFile::read_mf_int(std::shared_ptr<const mesh::Mesh> mesh, std::string name)
 {
-  read_mesh_function(meshfunction, name);
+  return read_mesh_function<int>(mesh, name);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::read(mesh::MeshFunction<std::size_t>& meshfunction,
-                    std::string name)
+mesh::MeshFunction<std::size_t>
+XDMFFile::read_mf_size_t(std::shared_ptr<const mesh::Mesh> mesh,
+                        std::string name)
 {
-  read_mesh_function(meshfunction, name);
+  return read_mesh_function<std::size_t>(mesh, name);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::read(mesh::MeshFunction<double>& meshfunction, std::string name)
+mesh::MeshFunction<double>
+XDMFFile::read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
+                         std::string name)
 {
-  read_mesh_function(meshfunction, name);
+  return read_mesh_function<double>(mesh, name);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
@@ -2095,8 +2101,9 @@ XDMFFile::get_hdf5_paths(const pugi::xml_node& dataitem_node)
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void XDMFFile::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
-                                  std::string name)
+mesh::MeshFunction<T>
+XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
+                             std::string name)
 {
   // Load XML doc from file
   pugi::xml_document xml_doc;
@@ -2164,9 +2171,6 @@ void XDMFFile::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
   pugi::xml_node topology_node = grid_node.child("Topology");
   assert(topology_node);
 
-  // Get existing mesh::Mesh of mesh::MeshFunction
-  const auto mesh = meshfunction.mesh();
-
   // Get cell type and topology of mesh::MeshFunction (may be different from
   // mesh::Mesh)
   const auto cell_type_str = get_cell_type(topology_node);
@@ -2175,13 +2179,13 @@ void XDMFFile::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
       mesh::CellType::create(cell_type_str.first));
   assert(cell_type);
   const std::uint32_t num_vertices_per_cell = cell_type->num_entities(0);
-  const std::uint32_t cell_dim = cell_type->dim();
-  assert(cell_dim == meshfunction.dim());
+  const std::uint32_t dim = cell_type->dim();
+
   const std::int64_t num_entities_global = get_num_cells(topology_node);
 
   // Ensure num_entities_global(cell_dim) is set and check dataset matches
-  mesh::DistributedMeshTools::number_entities(*mesh, cell_dim);
-  assert(mesh->num_entities_global(cell_dim) == num_entities_global);
+  mesh::DistributedMeshTools::number_entities(*mesh, dim);
+  assert(mesh->num_entities_global(dim) == num_entities_global);
 
   boost::filesystem::path xdmf_filename(_filename);
   const boost::filesystem::path parent_path = xdmf_filename.parent_path();
@@ -2199,8 +2203,11 @@ void XDMFFile::read_mesh_function(mesh::MeshFunction<T>& meshfunction,
   std::vector<T> value_data
       = get_dataset<T>(_mpi_comm.comm(), value_data_node, parent_path);
 
-  // Scatter/gather data across processes
-  remap_meshfunction_data(meshfunction, topology_data, value_data);
+  // Create mesh function and scatter/gather data across processes
+  mesh::MeshFunction<T> mf(mesh, dim, 0);
+  remap_meshfunction_data(mf, topology_data, value_data);
+
+  return mf;
 }
 //-----------------------------------------------------------------------------
 template <typename T>

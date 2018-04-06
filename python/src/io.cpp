@@ -351,26 +351,26 @@ void io(py::module& m)
              return self.read_mesh(comm.get());
            })
       // MeshFunction
-      .def("read",
-           (void (dolfin::io::XDMFFile::*)(dolfin::mesh::MeshFunction<bool>&,
-                                           std::string))
-               & dolfin::io::XDMFFile::read,
-           py::arg("mf"), py::arg("name") = "")
-      .def("read",
-           (void (dolfin::io::XDMFFile::*)(
-               dolfin::mesh::MeshFunction<std::size_t>&, std::string))
-               & dolfin::io::XDMFFile::read,
-           py::arg("mf"), py::arg("name") = "")
-      .def("read",
-           (void (dolfin::io::XDMFFile::*)(dolfin::mesh::MeshFunction<int>&,
-                                           std::string))
-               & dolfin::io::XDMFFile::read,
-           py::arg("mf"), py::arg("name") = "")
-      .def("read",
-           (void (dolfin::io::XDMFFile::*)(dolfin::mesh::MeshFunction<double>&,
-                                           std::string))
-               & dolfin::io::XDMFFile::read,
-           py::arg("mf"), py::arg("name") = "")
+    //   .def("read",
+    //        (void (dolfin::io::XDMFFile::*)(dolfin::mesh::MeshFunction<bool>&,
+    //                                        std::string))
+    //            & dolfin::io::XDMFFile::read,
+    //        py::arg("mf"), py::arg("name") = "")
+    //   .def("read",
+    //        (void (dolfin::io::XDMFFile::*)(
+    //            dolfin::mesh::MeshFunction<std::size_t>&, std::string))
+    //            & dolfin::io::XDMFFile::read,
+    //        py::arg("mf"), py::arg("name") = "")
+    //   .def("read",
+    //        (void (dolfin::io::XDMFFile::*)(dolfin::mesh::MeshFunction<int>&,
+    //                                        std::string))
+    //            & dolfin::io::XDMFFile::read,
+    //        py::arg("mf"), py::arg("name") = "")
+    //   .def("read",
+    //        (void (dolfin::io::XDMFFile::*)(dolfin::mesh::MeshFunction<double>&,
+    //                                        std::string))
+    //            & dolfin::io::XDMFFile::read,
+    //        py::arg("mf"), py::arg("name") = "")
       // MeshValueCollection
       .def("read",
            (void (dolfin::io::XDMFFile::*)(
