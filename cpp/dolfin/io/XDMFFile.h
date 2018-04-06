@@ -75,6 +75,10 @@ class HDF5File;
 /// XDMF is not suitable for checkpointing as it may decimate some
 /// data.
 
+// FIXME: Set read mode when creating file obejct?
+
+// FIXME: Set encoding when opening file
+
 // FIXME: Remove the duplicate read_mf_foo functions. Challenge is the
 // templated reader code would then expose a lot code publically.
 // Refactor large, templated functions into parts that (i) depend on the
@@ -391,7 +395,8 @@ public:
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
   mesh::MeshValueCollection<int>
-  read_mvc_int(std::shared_ptr<const mesh::Mesh> mesh, std::string name = "") const;
+  read_mvc_int(std::shared_ptr<const mesh::Mesh> mesh,
+               std::string name = "") const;
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
@@ -458,10 +463,9 @@ private:
                                 hid_t h5_id, const std::string path_prefix,
                                 const mesh::Mesh& mesh);
 
-  // Add DataItem node to an XML node. If HDF5 is open (h5_id > 0)
-  // the data is written to the HDFF5 file with the path
-  // 'h5_path'. Otherwise, data is witten to the XML node and
-  // 'h5_path' is ignored
+  // Add DataItem node to an XML node. If HDF5 is open (h5_id > 0) the
+  // data is written to the HDFF5 file with the path 'h5_path'.
+  // Otherwise, data is witten to the XML node and 'h5_path' is ignored
   template <typename T>
   static void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
                             hid_t h5_id, const std::string h5_path, const T& x,
@@ -501,8 +505,8 @@ private:
               const boost::filesystem::path& parent_path,
               std::array<std::int64_t, 2> range = {{0, 0}});
 
-  // Return (0) HDF5 filename and (1) path in HDF5 file from a
-  // DataItem node
+  // Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem
+  // node
   static std::array<std::string, 2>
   get_hdf5_paths(const pugi::xml_node& dataitem_node);
 
@@ -519,27 +523,23 @@ private:
   void write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
                            Encoding encoding);
 
-  // Get data width - normally the same as u.value_size(), but
-  // expand for 2D vector/tensor because XDMF presents everything as
-  // 3D
+  // Get data width - normally the same as u.value_size(), but expand
+  // for 2D vector/tensor because XDMF presents everything as 3D
   static std::int64_t get_padded_width(const function::Function& u);
 
   // Returns true for DG0 function::Functions
   static bool has_cell_centred_data(const function::Function& u);
 
-  // Get point data values for linear or quadratic mesh into
-  // flattened 2D array
+  // Get point data values for linear or quadratic mesh into flattened
+  // 2D array
   static std::vector<double> get_point_data_values(const function::Function& u);
 
-  // Get point data values collocated at P2 geometry points
-  // (vertices and edges) flattened as a 2D array
+  // Get point data values collocated at P2 geometry points (vertices
+  // and edges) flattened as a 2D array
   static std::vector<double> get_p2_data_values(const function::Function& u);
 
   // Get cell data values as a flattened 2D array
   static std::vector<double> get_cell_data_values(const function::Function& u);
-
-  // Check whether the requested encoding is supported
-  void check_encoding(Encoding encoding) const;
 
   // Check that string is the same on all processes. Returns true of
   // same on all processes.
@@ -582,13 +582,14 @@ private:
   // Counter for time series
   std::size_t _counter;
 
-  // The XML document currently representing the XDMF
-  // which needs to be kept open for time series etc.
+  // The XML document currently representing the XDMF which needs to be
+  // kept open for time series etc.
   std::unique_ptr<pugi::xml_document> _xml_doc;
 };
 
 #ifndef DOXYGEN_IGNORE
-// Specialisation for std::vector<bool>, as HDF5 does not support it natively
+// Specialisation for std::vector<bool>, as HDF5 does not support it
+// natively
 template <>
 inline void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
                                     hid_t h5_id, const std::string h5_path,
