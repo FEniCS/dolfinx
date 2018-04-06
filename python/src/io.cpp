@@ -66,42 +66,66 @@ void io(py::module& m)
              return self.read_vector(comm.get(), data_path,
                                      use_partition_from_file);
            })
-      .def("read",
-           (void (dolfin::io::HDF5File::*)(
-               dolfin::mesh::MeshValueCollection<bool>&, std::string) const)
-               & dolfin::io::HDF5File::read,
-           py::arg("mvc"), py::arg("name"))
-      .def("read",
-           (void (dolfin::io::HDF5File::*)(
-               dolfin::mesh::MeshValueCollection<std::size_t>&, std::string)
-                const)
-               & dolfin::io::HDF5File::read,
-           py::arg("mvc"), py::arg("name"))
-      .def("read",
-           (void (dolfin::io::HDF5File::*)(
-               dolfin::mesh::MeshValueCollection<double>&, std::string) const)
-               & dolfin::io::HDF5File::read,
-           py::arg("mvc"), py::arg("name"))
-      .def("read",
-           (void (dolfin::io::HDF5File::*)(dolfin::mesh::MeshFunction<bool>&,
-                                           std::string) const)
-               & dolfin::io::HDF5File::read,
-           py::arg("meshfunction"), py::arg("name"))
-      .def("read",
-           (void (dolfin::io::HDF5File::*)(
-               dolfin::mesh::MeshFunction<std::size_t>&, std::string) const)
-               & dolfin::io::HDF5File::read,
-           py::arg("meshfunction"), py::arg("name"))
-      .def("read",
-           (void (dolfin::io::HDF5File::*)(dolfin::mesh::MeshFunction<int>&,
-                                           std::string) const)
-               & dolfin::io::HDF5File::read,
-           py::arg("meshfunction"), py::arg("name"))
-      .def("read",
-           (void (dolfin::io::HDF5File::*)(dolfin::mesh::MeshFunction<double>&,
-                                           std::string) const)
-               & dolfin::io::HDF5File::read,
-           py::arg("meshfunction"), py::arg("name"))
+
+      //   .def("read",
+      //        (void (dolfin::io::HDF5File::*)(
+      //            dolfin::mesh::MeshValueCollection<bool>&, std::string)
+      //            const) & dolfin::io::HDF5File::read,
+      //        py::arg("mvc"), py::arg("name"))
+      //   .def("read",
+      //        (void (dolfin::io::HDF5File::*)(
+      //            dolfin::mesh::MeshValueCollection<std::size_t>&,
+      //            std::string)
+      //             const)
+      //            & dolfin::io::HDF5File::read,
+      //        py::arg("mvc"), py::arg("name"))
+      //   .def("read",
+      //        (void (dolfin::io::HDF5File::*)(
+      //            dolfin::mesh::MeshValueCollection<double>&, std::string)
+      //            const) & dolfin::io::HDF5File::read,
+      //        py::arg("mvc"), py::arg("name"))
+
+      .def("read_mf_bool", &dolfin::io::HDF5File::read_mf_bool, py::arg("mesh"),
+           py::arg("name"))
+      .def("read_mf_int", &dolfin::io::HDF5File::read_mf_int, py::arg("mesh"),
+           py::arg("name"))
+      .def("read_mf_size_t", &dolfin::io::HDF5File::read_mf_size_t, py::arg("mesh"),
+           py::arg("name"))
+      .def("read_mf_double", &dolfin::io::HDF5File::read_mf_double, py::arg("mesh"),
+           py::arg("name"))
+      .def("read_mvc_bool", &dolfin::io::HDF5File::read_mvc_bool, py::arg("mesh"),
+           py::arg("name"))
+    //   .def("read_mvc_int", &dolfin::io::HDF5File::read_mvc_int, py::arg("mesh"),
+    //        py::arg("name"))
+      .def("read_mvc_size_t", &dolfin::io::HDF5File::read_mvc_size_t, py::arg("mesh"),
+           py::arg("name"))
+      .def("read_mvc_double", &dolfin::io::HDF5File::read_mvc_double, py::arg("mesh"),
+           py::arg("name"))
+
+      //   .def("read",
+      //        (void
+      //        (dolfin::io::HDF5File::*)(dolfin::mesh::MeshFunction<bool>&,
+      //                                        std::string) const)
+      //            & dolfin::io::HDF5File::read,
+      //        py::arg("meshfunction"), py::arg("name"))
+      //   .def("read",
+      //        (void (dolfin::io::HDF5File::*)(
+      //            dolfin::mesh::MeshFunction<std::size_t>&, std::string)
+      //            const) & dolfin::io::HDF5File::read,
+      //        py::arg("meshfunction"), py::arg("name"))
+      //   .def("read",
+      //        (void
+      //        (dolfin::io::HDF5File::*)(dolfin::mesh::MeshFunction<int>&,
+      //                                        std::string) const)
+      //            & dolfin::io::HDF5File::read,
+      //        py::arg("meshfunction"), py::arg("name"))
+      //   .def("read",
+      //        (void
+      //        (dolfin::io::HDF5File::*)(dolfin::mesh::MeshFunction<double>&,
+      //                                        std::string) const)
+      //            & dolfin::io::HDF5File::read,
+      //        py::arg("meshfunction"), py::arg("name"))
+
       .def("read",
            py::overload_cast<
                std::shared_ptr<const dolfin::function::FunctionSpace>,
