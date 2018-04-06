@@ -338,7 +338,7 @@ public:
   ///         Function
   function::Function
   read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
-                  std::string func_name, std::int64_t counter = -1);
+                  std::string func_name, std::int64_t counter = -1) const;
 
   /// Read first mesh::MeshFunction from file
   /// @param meshfunction (_MeshFunction<bool>_)
@@ -346,7 +346,7 @@ public:
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
   mesh::MeshFunction<bool> read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh,
-                                        std::string name = "");
+                                        std::string name = "") const;
 
   /// Read first mesh::MeshFunction from file
   /// @param meshfunction (_MeshFunction<int>_)
@@ -354,7 +354,7 @@ public:
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
   mesh::MeshFunction<int> read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
-                                      std::string name = "");
+                                      std::string name = "") const;
 
   /// Read mesh::MeshFunction from file, optionally specifying dataset name
   /// @param meshfunction (_MeshFunction<std::size_t>_)
@@ -362,7 +362,8 @@ public:
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
   mesh::MeshFunction<std::size_t>
-  read_mf_size_t(std::shared_ptr<const mesh::Mesh> mesh, std::string name = "");
+  read_mf_size_t(std::shared_ptr<const mesh::Mesh> mesh,
+                 std::string name = "") const;
 
   /// Read mesh::MeshFunction from file, optionally specifying dataset name
   /// @param meshfunction (_MeshFunction<double>_)
@@ -370,7 +371,8 @@ public:
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
   mesh::MeshFunction<double>
-  read_mf_double(std::shared_ptr<const mesh::Mesh> mesh, std::string name = "");
+  read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
+                 std::string name = "") const;
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
@@ -379,7 +381,8 @@ public:
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
   mesh::MeshValueCollection<bool>
-  read_mvc_bool(std::shared_ptr<const mesh::Mesh> mesh, std::string name = "");
+  read_mvc_bool(std::shared_ptr<const mesh::Mesh> mesh,
+                std::string name = "") const;
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
@@ -388,7 +391,7 @@ public:
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
   mesh::MeshValueCollection<int>
-  read_mvc_int(std::shared_ptr<const mesh::Mesh> mesh, std::string name = "");
+  read_mvc_int(std::shared_ptr<const mesh::Mesh> mesh, std::string name = "") const;
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
@@ -398,7 +401,7 @@ public:
   ///        Name of data attribute in XDMF file
   mesh::MeshValueCollection<std::size_t>
   read_mvc_size_t(std::shared_ptr<const mesh::Mesh> mesh,
-                  std::string name = "");
+                  std::string name = "") const;
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
@@ -408,7 +411,7 @@ public:
   ///        Name of data attribute in XDMF file
   mesh::MeshValueCollection<double>
   read_mvc_double(std::shared_ptr<const mesh::Mesh> mesh,
-                  std::string name = "");
+                  std::string name = "") const;
 
 private:
   // Generic MVC writer
@@ -420,7 +423,7 @@ private:
   template <typename T>
   mesh::MeshValueCollection<T>
   read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
-                             std::string name);
+                             std::string name) const;
 
   // Remap meshfunction data, scattering data to appropriate processes
   template <typename T>
@@ -509,7 +512,7 @@ private:
   template <typename T>
   mesh::MeshFunction<T>
   read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
-                     std::string name = "");
+                     std::string name = "") const;
 
   // Generic mesh::MeshFunction writer
   template <typename T>
@@ -539,7 +542,7 @@ private:
   void check_encoding(Encoding encoding) const;
 
   // Check function names equality across processes
-  void check_function_name(std::string function_name);
+  void check_function_name(std::string function_name) const;
 
   // Generate the XDMF format string based on the Encoding
   // enumeration

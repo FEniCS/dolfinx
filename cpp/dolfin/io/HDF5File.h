@@ -104,7 +104,7 @@ public:
   /// assumed that it is a Vector, and the function::Function will be filled
   /// from that Vector
   function::Function read(std::shared_ptr<const function::FunctionSpace> V,
-                          const std::string name);
+                          const std::string name) const;
 
   /// Read mesh::Mesh from file, using attribute data (e.g., cell type)
   /// stored in the HDF5 file. Optionally re-use any partition data

@@ -756,7 +756,7 @@ void XDMFFile::write_mesh_value_collection(
 //-----------------------------------------------------------------------------
 mesh::MeshValueCollection<bool>
 XDMFFile::read_mvc_bool(std::shared_ptr<const mesh::Mesh> mesh,
-                        std::string name)
+                        std::string name) const
 {
   // Bool is not really supported, so copy from int
   mesh::MeshValueCollection<int> mvc_int
@@ -770,21 +770,22 @@ XDMFFile::read_mvc_bool(std::shared_ptr<const mesh::Mesh> mesh,
 }
 //-----------------------------------------------------------------------------
 mesh::MeshValueCollection<int>
-XDMFFile::read_mvc_int(std::shared_ptr<const mesh::Mesh> mesh, std::string name)
+XDMFFile::read_mvc_int(std::shared_ptr<const mesh::Mesh> mesh,
+                       std::string name) const
 {
   return read_mesh_value_collection<int>(mesh, name);
 }
 //-----------------------------------------------------------------------------
 mesh::MeshValueCollection<std::size_t>
 XDMFFile::read_mvc_size_t(std::shared_ptr<const mesh::Mesh> mesh,
-                          std::string name)
+                          std::string name) const
 {
   return read_mesh_value_collection<std::size_t>(mesh, name);
 }
 //-----------------------------------------------------------------------------
 mesh::MeshValueCollection<double>
 XDMFFile::read_mvc_double(std::shared_ptr<const mesh::Mesh> mesh,
-                          std::string name)
+                          std::string name) const
 {
   return read_mesh_value_collection<double>(mesh, name);
 }
@@ -792,7 +793,7 @@ XDMFFile::read_mvc_double(std::shared_ptr<const mesh::Mesh> mesh,
 template <typename T>
 mesh::MeshValueCollection<T>
 XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
-                                     std::string name)
+                                     std::string name) const
 {
   // Load XML doc from file
   pugi::xml_document xml_doc;
@@ -1098,7 +1099,8 @@ void XDMFFile::write(const std::vector<geometry::Point>& points,
 }
 //----------------------------------------------------------------------------
 mesh::MeshFunction<bool>
-XDMFFile::read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh, std::string name)
+XDMFFile::read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh,
+                       std::string name) const
 {
   // Read mesh function
   mesh::MeshFunction<std::size_t> mf_int
@@ -1113,21 +1115,22 @@ XDMFFile::read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh, std::string name)
 }
 //----------------------------------------------------------------------------
 mesh::MeshFunction<int>
-XDMFFile::read_mf_int(std::shared_ptr<const mesh::Mesh> mesh, std::string name)
+XDMFFile::read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
+                      std::string name) const
 {
   return read_mesh_function<int>(mesh, name);
 }
 //----------------------------------------------------------------------------
 mesh::MeshFunction<std::size_t>
 XDMFFile::read_mf_size_t(std::shared_ptr<const mesh::Mesh> mesh,
-                         std::string name)
+                         std::string name) const
 {
   return read_mesh_function<std::size_t>(mesh, name);
 }
 //----------------------------------------------------------------------------
 mesh::MeshFunction<double>
 XDMFFile::read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
-                         std::string name)
+                         std::string name) const
 {
   return read_mesh_function<double>(mesh, name);
 }
@@ -1403,7 +1406,7 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
 //----------------------------------------------------------------------------
 function::Function
 XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
-                          std::string func_name, std::int64_t counter)
+                          std::string func_name, std::int64_t counter) const
 {
   check_function_name(func_name);
 
@@ -2111,7 +2114,7 @@ XDMFFile::get_hdf5_paths(const pugi::xml_node& dataitem_node)
 template <typename T>
 mesh::MeshFunction<T>
 XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
-                             std::string name)
+                             std::string name) const
 {
   // Load XML doc from file
   pugi::xml_document xml_doc;
@@ -2772,7 +2775,7 @@ void XDMFFile::check_encoding(Encoding encoding) const
   }
 }
 //----------------------------------------------------------------------------
-void XDMFFile::check_function_name(std::string function_name)
+void XDMFFile::check_function_name(std::string function_name) const
 {
   // We must check that supplied function name is the same on all processes
   // Very important for HDF file paths

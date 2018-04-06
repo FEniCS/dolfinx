@@ -884,7 +884,7 @@ void HDF5File::write(const function::Function& u, const std::string name)
 //-----------------------------------------------------------------------------
 function::Function
 HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
-               const std::string name)
+               const std::string name) const
 {
   common::Timer t0("HDF5: read function::Function");
   assert(_hdf5_file_id > 0);
