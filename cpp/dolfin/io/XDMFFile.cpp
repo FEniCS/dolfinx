@@ -765,6 +765,8 @@ XDMFFile::read_mvc_bool(std::shared_ptr<const mesh::Mesh> mesh,
   mesh::MeshValueCollection<bool> mvc(mesh, mvc_int.dim());
   for (const auto& p : mvc_int.values())
     mvc.set_value(p.first.first, p.first.second, (bool)p.second);
+
+  return mvc;
 }
 //-----------------------------------------------------------------------------
 mesh::MeshValueCollection<int>
