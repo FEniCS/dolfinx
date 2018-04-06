@@ -62,6 +62,8 @@ def worker_id(request):
 
 @pytest.mark.parametrize("encoding", encodings)
 def test_multiple_datasets(tempdir, encoding):
+    if invalid_config(encoding):
+        pytest.skip("XDMF unsupported in current configuration")
     mesh = UnitSquareMesh(MPI.comm_world, 2, 2)
     cf0 = MeshFunction('size_t', mesh, 2, 11)
     cf0.rename('cf0', 'cf0')
