@@ -372,28 +372,29 @@ void io(py::module& m)
     //            & dolfin::io::XDMFFile::read,
     //        py::arg("mf"), py::arg("name") = "")
       // MeshValueCollection
-      .def("read",
-           (void (dolfin::io::XDMFFile::*)(
-               dolfin::mesh::MeshValueCollection<bool>&, std::string))
-               & dolfin::io::XDMFFile::read,
-           py::arg("mvc"), py::arg("name") = "")
-      .def("read",
-           (void (dolfin::io::XDMFFile::*)(
-               dolfin::mesh::MeshValueCollection<std::size_t>&, std::string))
-               & dolfin::io::XDMFFile::read,
-           py::arg("mvc"), py::arg("name") = "")
-      .def("read",
-           (void (dolfin::io::XDMFFile::*)(
-               dolfin::mesh::MeshValueCollection<int>&, std::string))
-               & dolfin::io::XDMFFile::read,
-           py::arg("mvc"), py::arg("name") = "")
-      .def("read",
-           (void (dolfin::io::XDMFFile::*)(
-               dolfin::mesh::MeshValueCollection<double>&, std::string))
-               & dolfin::io::XDMFFile::read,
-           py::arg("mvc"), py::arg("name") = "")
-      //
-      .def("_read_checkpoint", &dolfin::io::XDMFFile::read_checkpoint,
-           py::arg("V"), py::arg("name"), py::arg("counter") = -1);
+    //   .def("read",
+    //        (void (dolfin::io::XDMFFile::*)(
+    //            dolfin::mesh::MeshValueCollection<bool>&, std::string))
+    //            & dolfin::io::XDMFFile::read,
+    //        py::arg("mvc"), py::arg("name") = "")
+    //   .def("read",
+    //        (void (dolfin::io::XDMFFile::*)(
+    //            dolfin::mesh::MeshValueCollection<std::size_t>&, std::string))
+    //            & dolfin::io::XDMFFile::read,
+    //        py::arg("mvc"), py::arg("name") = "")
+    //   .def("read",
+    //        (void (dolfin::io::XDMFFile::*)(
+    //            dolfin::mesh::MeshValueCollection<int>&, std::string))
+    //            & dolfin::io::XDMFFile::read,
+    //        py::arg("mvc"), py::arg("name") = "")
+    //   .def("read",
+    //        (void (dolfin::io::XDMFFile::*)(
+    //            dolfin::mesh::MeshValueCollection<double>&, std::string))
+    //            & dolfin::io::XDMFFile::read,
+    //        py::arg("mvc"), py::arg("name") = "")
+    //   //
+    //   .def("_read_checkpoint", &dolfin::io::XDMFFile::read_checkpoint,
+    //        py::arg("V"), py::arg("name"), py::arg("counter") = -1)
+    ;
 }
 } // namespace dolfin_wrappers

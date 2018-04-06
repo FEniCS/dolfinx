@@ -75,6 +75,12 @@ class HDF5File;
 /// XDMF is not suitable for checkpointing as it may decimate some
 /// data.
 
+// FIXME: Remove the duplicate read_mf_foo functions. Challenge is the
+// templated reader code would then expose a lot code publically.
+// Refactor large, templated functions into parts that (i) depend on the
+// template argument and (ii) parts that do not. Same applies to
+// MeshValueCollection.
+
 class XDMFFile : public common::Variable
 {
 public:
@@ -334,18 +340,12 @@ public:
   read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                   std::string func_name, std::int64_t counter = -1);
 
-  // FIXME: Remove the duplicate read_mf_foo functions. Challenge is the
-  // templated reader code would then expose a lot code publically.
-  // Refactor large, templated functions into parts that (i) depend on
-  // the template argument and (ii) parts that do not.
-
   /// Read first mesh::MeshFunction from file
   /// @param meshfunction (_MeshFunction<bool>_)
   ///        mesh::MeshFunction to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  mesh::MeshFunction<bool> read_mf_bool(std::shared_ptr<const mesh::Mesh>
-  mesh,
+  mesh::MeshFunction<bool> read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh,
                                         std::string name = "");
 
   /// Read first mesh::MeshFunction from file
@@ -362,8 +362,7 @@ public:
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
   mesh::MeshFunction<std::size_t>
-  read_mf_size_t(std::shared_ptr<const mesh::Mesh> mesh, std::string name =
-  "");
+  read_mf_size_t(std::shared_ptr<const mesh::Mesh> mesh, std::string name = "");
 
   /// Read mesh::MeshFunction from file, optionally specifying dataset name
   /// @param meshfunction (_MeshFunction<double>_)
@@ -371,8 +370,7 @@ public:
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
   mesh::MeshFunction<double>
-  read_mf_double(std::shared_ptr<const mesh::Mesh> mesh, std::string name =
-  "");
+  read_mf_double(std::shared_ptr<const mesh::Mesh> mesh, std::string name = "");
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
@@ -380,7 +378,8 @@ public:
   ///        mesh::MeshValueCollection to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshValueCollection<bool>& mvc, std::string name = "");
+  mesh::MeshValueCollection<bool>
+  read_mvc_bool(std::shared_ptr<const mesh::Mesh> mesh, std::string name = "");
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
@@ -388,7 +387,8 @@ public:
   ///        mesh::MeshValueCollection to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshValueCollection<int>& mvc, std::string name = "");
+  mesh::MeshValueCollection<int>
+  read_mvc_int(std::shared_ptr<const mesh::Mesh> mesh, std::string name = "");
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
@@ -396,7 +396,9 @@ public:
   ///        mesh::MeshValueCollection to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshValueCollection<std::size_t>& mvc, std::string name = "");
+  mesh::MeshValueCollection<std::size_t>
+  read_mvc_size_t(std::shared_ptr<const mesh::Mesh> mesh,
+                  std::string name = "");
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
@@ -404,7 +406,9 @@ public:
   ///        mesh::MeshValueCollection to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshValueCollection<double>& mvc, std::string name = "");
+  mesh::MeshValueCollection<double>
+  read_mvc_double(std::shared_ptr<const mesh::Mesh> mesh,
+                  std::string name = "");
 
 private:
   // Generic MVC writer
@@ -414,8 +418,9 @@ private:
 
   // Generic MVC reader
   template <typename T>
-  void read_mesh_value_collection(mesh::MeshValueCollection<T>& mvc,
-                                  std::string name);
+  mesh::MeshValueCollection<T>
+  read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
+                             std::string name);
 
   // Remap meshfunction data, scattering data to appropriate processes
   template <typename T>

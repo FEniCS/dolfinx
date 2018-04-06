@@ -754,35 +754,43 @@ void XDMFFile::write_mesh_value_collection(
   ++_counter;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::read(mesh::MeshValueCollection<bool>& mvc, std::string name)
+mesh::MeshValueCollection<bool>
+XDMFFile::read_mvc_bool(std::shared_ptr<const mesh::Mesh> mesh,
+                        std::string name)
 {
   // Bool is not really supported, so copy from int
-  mesh::MeshValueCollection<int> mvc_int(mvc.mesh(), mvc.dim());
-  read_mesh_value_collection(mvc_int, name);
+  mesh::MeshValueCollection<int> mvc_int
+      = read_mesh_value_collection<int>(mesh, name);
 
+  mesh::MeshValueCollection<bool> mvc(mesh, mvc_int.dim());
   for (const auto& p : mvc_int.values())
     mvc.set_value(p.first.first, p.first.second, (bool)p.second);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::read(mesh::MeshValueCollection<int>& mvc, std::string name)
+mesh::MeshValueCollection<int>
+XDMFFile::read_mvc_int(std::shared_ptr<const mesh::Mesh> mesh, std::string name)
 {
-  read_mesh_value_collection(mvc, name);
+  return read_mesh_value_collection<int>(mesh, name);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::read(mesh::MeshValueCollection<std::size_t>& mvc,
-                    std::string name)
+mesh::MeshValueCollection<std::size_t>
+XDMFFile::read_mvc_size_t(std::shared_ptr<const mesh::Mesh> mesh,
+                          std::string name)
 {
-  read_mesh_value_collection(mvc, name);
+  return read_mesh_value_collection<std::size_t>(mesh, name);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::read(mesh::MeshValueCollection<double>& mvc, std::string name)
+mesh::MeshValueCollection<double>
+XDMFFile::read_mvc_double(std::shared_ptr<const mesh::Mesh> mesh,
+                          std::string name)
 {
-  read_mesh_value_collection(mvc, name);
+  return read_mesh_value_collection<double>(mesh, name);
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void XDMFFile::read_mesh_value_collection(mesh::MeshValueCollection<T>& mvc,
-                                          std::string name)
+mesh::MeshValueCollection<T>
+XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
+                                     std::string name)
 {
   // Load XML doc from file
   pugi::xml_document xml_doc;
@@ -820,7 +828,7 @@ void XDMFFile::read_mesh_value_collection(mesh::MeshValueCollection<T>& mvc,
   std::unique_ptr<mesh::CellType> cell_type(
       mesh::CellType::create(cell_type_str.first));
   assert(cell_type);
-  const int cell_dim = cell_type->dim();
+  const int dim = cell_type->dim();
   const int num_verts_per_entity = cell_type->num_vertices();
 
   // Read MVC topology
@@ -831,11 +839,6 @@ void XDMFFile::read_mesh_value_collection(mesh::MeshValueCollection<T>& mvc,
   std::vector<std::int32_t> topology_data = get_dataset<std::int32_t>(
       _mpi_comm.comm(), topology_data_node, parent_path);
 
-  // Ensure MVC is clear, and initialised to correct cell dimension
-  std::shared_ptr<const mesh::Mesh> mesh = mvc.mesh();
-  assert(mesh);
-  mvc.clear();
-
   // Read values associated with each mesh::MeshEntity described by topology
   pugi::xml_node attribute_node = grid_node.child("Attribute");
   assert(attribute_node);
@@ -845,7 +848,7 @@ void XDMFFile::read_mesh_value_collection(mesh::MeshValueCollection<T>& mvc,
       = get_dataset<T>(_mpi_comm.comm(), attribute_data_node, parent_path);
 
   // Ensure the mesh dimension is initialised
-  mesh->init(cell_dim);
+  mesh->init(dim);
   const std::size_t global_vertex_range = mesh->num_entities_global(0);
   const std::int32_t num_processes = _mpi_comm.size();
 
@@ -854,9 +857,9 @@ void XDMFFile::read_mesh_value_collection(mesh::MeshValueCollection<T>& mvc,
   std::vector<std::vector<std::int32_t>> recv_entities(num_processes);
 
   std::vector<std::int32_t> v(num_verts_per_entity);
-  for (auto& m : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim))
+  for (auto& m : mesh::MeshRange<mesh::MeshEntity>(*mesh, dim))
   {
-    if (cell_dim == 0)
+    if (dim == 0)
       v[0] = m.global_index();
     else
     {
@@ -948,6 +951,7 @@ void XDMFFile::read_mesh_value_collection(mesh::MeshValueCollection<T>& mvc,
   MPI::all_to_all(_mpi_comm.comm(), send_entities, recv_entities);
   MPI::all_to_all(_mpi_comm.comm(), send_data, recv_data);
 
+  mesh::MeshValueCollection<T> mvc(mesh, dim);
   for (std::int32_t i = 0; i != num_processes; ++i)
   {
     assert(recv_entities[i].size() == recv_data[i].size());
@@ -956,6 +960,8 @@ void XDMFFile::read_mesh_value_collection(mesh::MeshValueCollection<T>& mvc,
       mvc.set_value(recv_entities[i][j], recv_data[i][j]);
     }
   }
+
+  return mvc;
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const std::vector<geometry::Point>& points,
@@ -1112,7 +1118,7 @@ XDMFFile::read_mf_int(std::shared_ptr<const mesh::Mesh> mesh, std::string name)
 //----------------------------------------------------------------------------
 mesh::MeshFunction<std::size_t>
 XDMFFile::read_mf_size_t(std::shared_ptr<const mesh::Mesh> mesh,
-                        std::string name)
+                         std::string name)
 {
   return read_mesh_function<std::size_t>(mesh, name);
 }
