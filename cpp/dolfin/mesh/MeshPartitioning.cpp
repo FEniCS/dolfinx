@@ -685,10 +685,10 @@ MeshPartitioning::compute_point_mapping(
   // Loop over cells mapping vertices (but not other points)
   std::int32_t nv = 0;
   std::map<std::int64_t, std::int32_t> point_global_to_local;
-  for (std::int32_t c = 0; c < num_cells; ++c)
+  for (std::uint32_t c = 0; c < num_cells; ++c)
   {
     // Loop over cell points
-    for (std::int32_t v = 0; v < num_cell_vertices; ++v)
+    for (std::uint32_t v = 0; v < num_cell_vertices; ++v)
     {
       // Get global cell index
       std::int64_t q = cell_points(c, v);
@@ -709,10 +709,10 @@ MeshPartitioning::compute_point_mapping(
   }
 
   // Repeat and map non-vertex points
-  for (std::int32_t c = 0; c < num_cells; ++c)
+  for (std::uint32_t c = 0; c < num_cells; ++c)
   {
     // Loop over cell points
-    for (std::int32_t v = num_cell_vertices; v < num_cell_points; ++v)
+    for (std::uint32_t v = num_cell_vertices; v < num_cell_points; ++v)
     {
       // Get global cell index
       std::int64_t q = cell_points(c, v);
