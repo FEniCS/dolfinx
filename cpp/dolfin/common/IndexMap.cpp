@@ -80,7 +80,7 @@ void IndexMap::set_block_local_to_global(
   for (const auto& node : _local_to_global)
   {
     const std::size_t p = global_block_index_owner(node);
-    dolfin_assert(p != _rank);
+    assert(p != _rank);
     _off_process_owner.push_back(p);
   }
 }

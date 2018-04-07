@@ -27,7 +27,7 @@ CoefficientAssigner::~CoefficientAssigner()
 void CoefficientAssigner::
 operator=(std::shared_ptr<const GenericFunction> coefficient)
 {
-  dolfin_assert(coefficient);
+  assert(coefficient);
   _form.coeffs().set(_number, coefficient);
 }
 //-----------------------------------------------------------------------------

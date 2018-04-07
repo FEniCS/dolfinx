@@ -85,7 +85,7 @@ public:
   ///         Address of coordinate in the given direction.
   double& operator[](std::size_t i)
   {
-    dolfin_assert(i < 3);
+    assert(i < 3);
     return _x[i];
   }
 
@@ -98,7 +98,7 @@ public:
   ///         The coordinate in the given direction.
   double operator[](std::size_t i) const
   {
-    dolfin_assert(i < 3);
+    assert(i < 3);
     return _x[i];
   }
 
@@ -189,6 +189,9 @@ public:
 
   /// Assignment operator
   Point& operator=(const Point& p) = default;
+
+  /// Move assignment operator
+  Point& operator=(Point&& p) = default;
 
   /// Equal to operator
   bool operator==(const Point& p) const { return _x == p._x; }
@@ -297,7 +300,8 @@ private:
 }
 }
 /// Output of Point to stream
-inline std::ostream& operator<<(std::ostream& stream, const dolfin::geometry::Point& point)
+inline std::ostream& operator<<(std::ostream& stream,
+                                const dolfin::geometry::Point& point)
 {
   stream << point.str(false);
   return stream;

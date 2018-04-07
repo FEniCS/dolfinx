@@ -72,8 +72,7 @@ def test_save_and_read_meshfunction_2D(tempdir):
     # Read back from file
     with HDF5File(mesh.mpi_comm(), filename, "r") as mf_file:
         for i in range(0, 3):
-            mf2 = MeshFunction('double', mesh, i, 0.0)
-            mf_file.read(mf2, "/meshfunction/meshfun%d" % i)
+            mf2 = mf_file.read_mf_double(mesh, "/meshfunction/meshfun%d" % i)
             for cell in MeshEntities(mesh, i):
                 assert meshfunctions[i][cell] == mf2[cell]
 
@@ -102,8 +101,7 @@ def test_save_and_read_meshfunction_3D(tempdir):
     # Read back from file
     mf_file = HDF5File(mesh.mpi_comm(), filename, "r")
     for i in range(0, 4):
-        mf2 = MeshFunction('double', mesh, i, 0.0)
-        mf_file.read(mf2, "/meshfunction/group/%d/meshfun" % i)
+        mf2 = mf_file.read_mf_double(mesh, "/meshfunction/group/%d/meshfun" % i)
         for cell in MeshEntities(mesh, i):
             assert meshfunctions[i][cell] == mf2[cell]
     mf_file.close()
@@ -120,7 +118,7 @@ def test_save_and_read_mesh_value_collection(tempdir):
 
     # write to file
     with HDF5File(mesh.mpi_comm(), filename, 'w') as f:
-        for dim in range(mesh.topology().dim()):
+        for dim in range(mesh.topology.dim):
             mvc = MeshValueCollection("size_t", mesh, dim)
             mesh.init(dim)
             for e in MeshEntities(mesh, dim):
@@ -131,9 +129,8 @@ def test_save_and_read_mesh_value_collection(tempdir):
 
     # read from file
     with HDF5File(mesh.mpi_comm(), filename, 'r') as f:
-        for dim in range(mesh.topology().dim()):
-            mvc = MeshValueCollection("size_t", mesh, dim)
-            f.read(mvc, "/mesh_value_collection_{}".format(dim))
+        for dim in range(mesh.topology.dim):
+            mvc = f.read_mvc_size_t(mesh, "/mesh_value_collection_{}".format(dim))
             # check the values
             for (cell, lidx), val in mvc.values().items():
                 eidx = Cell(mesh, cell).entities(dim)[lidx]
@@ -158,8 +155,7 @@ def test_save_and_read_mesh_value_collection_with_only_one_marked_entity(tempdir
 
     # read from file
     with HDF5File(mesh.mpi_comm(), filename, 'r') as f:
-        mvc = MeshValueCollection("size_t", mesh, 3)
-        f.read(mvc, "/mesh_value_collection")
+        mvc = f.read_mvc_size_t(mesh, "/mesh_value_collection")
         assert MPI.sum(mesh.mpi_comm(), mvc.size()) == 1
         if MPI.rank(mesh.mpi_comm()) == 0:
             assert mvc.get_value(0, 0) == 1
@@ -208,7 +204,7 @@ def test_save_and_read_mesh_2D(tempdir):
     mesh_file.close()
 
     assert mesh0.num_entities_global(0) == mesh1.num_entities_global(0)
-    dim = mesh0.topology().dim()
+    dim = mesh0.topology.dim
     assert mesh0.num_entities_global(dim) == mesh1.num_entities_global(dim)
 
 
@@ -229,7 +225,7 @@ def test_save_and_read_mesh_3D(tempdir):
     mesh_file.close()
 
     assert mesh0.num_entities_global(0) == mesh1.num_entities_global(0)
-    dim = mesh0.topology().dim()
+    dim = mesh0.topology.dim
     assert mesh0.num_entities_global(dim) == mesh1.num_entities_global(dim)
 
 

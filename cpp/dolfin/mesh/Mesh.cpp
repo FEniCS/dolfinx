@@ -8,7 +8,6 @@
 #include "Cell.h"
 #include "DistributedMeshTools.h"
 #include "Facet.h"
-#include "LocalMeshData.h"
 #include "MeshIterator.h"
 #include "MeshOrdering.h"
 #include "MeshPartitioning.h"
@@ -26,37 +25,39 @@ using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
-           Eigen::Ref<const EigenRowArrayXXd> points,
-           Eigen::Ref<const EigenRowArrayXXi64> cells)
+           const Eigen::Ref<const EigenRowArrayXXd>& points,
+           const Eigen::Ref<const EigenRowArrayXXi64>& cells)
     : common::Variable("mesh", "DOLFIN mesh"),
       _cell_type(mesh::CellType::create(type)), _topology(_cell_type->dim()),
       _geometry(points), _ordered(false), _mpi_comm(comm), _ghost_mode("none")
 {
   const std::size_t tdim = _cell_type->dim();
-  const std::int32_t nv = _cell_type->num_vertices();
-  dolfin_assert(nv == cells.cols());
+  const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
+  assert(num_vertices_per_cell == cells.cols());
 
   _ordered = false;
 
   // FIXME: make a special case in serial (no mapping required)?
-  std::vector<std::int64_t> global_vertex_indices;
-  EigenRowArrayXXi32 local_cell_vertices(cells.rows(), cells.cols());
-  MeshPartitioning::compute_vertex_mapping(comm, cells, global_vertex_indices,
-                                           local_cell_vertices);
+  // Compute vertex local-to-global map from global indices, and computed cell
+  // topology using new local indices
+  const auto vmap_data = MeshPartitioning::compute_vertex_mapping(comm, cells);
+  const std::vector<std::int64_t>& global_vertex_indices = vmap_data.first;
+  const EigenRowArrayXXi32& local_cell_vertices = vmap_data.second;
 
-  std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices;
-  EigenRowArrayXXd vertex_coordinates(global_vertex_indices.size(),
-                                      points.cols());
-
-  MeshPartitioning::distribute_vertices(comm, points, global_vertex_indices,
-                                        vertex_coordinates, shared_vertices);
+  // FIXME: Add comment ????
+  const auto vdist = MeshPartitioning::distribute_vertices(
+      comm, points, global_vertex_indices);
+  const EigenRowArrayXXd& vertex_coordinates = vdist.first;
+  const std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices
+      = vdist.second;
 
   // FIXME: Copy data into geometry
-  const std::size_t nvals
-      = vertex_coordinates.rows() * vertex_coordinates.cols();
-  _geometry.x().resize(nvals);
-  std::copy(vertex_coordinates.data(), vertex_coordinates.data() + nvals,
-            _geometry.x().begin());
+  // const std::size_t nvals
+  //     = vertex_coordinates.rows() * vertex_coordinates.cols();
+  // _geometry.x().resize(nvals);
+  // std::copy(vertex_coordinates.data(), vertex_coordinates.data() + nvals,
+  //           _geometry.x().begin());
+  _geometry.points() = vertex_coordinates;
 
   // Initialise vertex topology
   const std::size_t num_vertices = vertex_coordinates.rows();
@@ -72,12 +73,12 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   _topology.init(tdim, num_cells, num_cells);
   _topology.init_ghost(tdim, num_cells);
   _topology.init_global_indices(tdim, num_cells);
-  _topology(tdim, 0).init(num_cells, nv);
+  _topology.connectivity(tdim, 0).init(num_cells, num_vertices_per_cell);
 
   // Add cells
   for (std::int32_t i = 0; i != cells.rows(); ++i)
   {
-    _topology(tdim, 0).set(i, local_cell_vertices.row(i).data());
+    _topology.connectivity(tdim, 0).set(i, local_cell_vertices.row(i).data());
     _topology.set_global_index(tdim, i, i);
   }
 }
@@ -187,7 +188,7 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   }
 
   // Skip if already computed
-  if (!_topology(d0, d1).empty())
+  if (!_topology.connectivity(d0, d1).empty())
     return;
 
   // Check that mesh is ordered
@@ -346,8 +347,8 @@ std::string Mesh::str(bool verbose) const
 //-----------------------------------------------------------------------------
 std::string Mesh::ghost_mode() const
 {
-  dolfin_assert(_ghost_mode == "none" || _ghost_mode == "shared_vertex"
-                || _ghost_mode == "shared_facet");
+  assert(_ghost_mode == "none" || _ghost_mode == "shared_vertex"
+         || _ghost_mode == "shared_facet");
   return _ghost_mode;
 }
 //-----------------------------------------------------------------------------

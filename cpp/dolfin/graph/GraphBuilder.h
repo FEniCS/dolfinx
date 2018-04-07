@@ -57,12 +57,13 @@ public:
   /// non-local edges)
   static std::pair<std::int32_t, std::int32_t>
   compute_dual_graph(const MPI_Comm mpi_comm,
-                     Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+                     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
                      const mesh::CellType& cell_type,
                      std::vector<std::vector<std::size_t>>& local_graph,
                      std::set<std::int64_t>& ghost_vertices);
 
 private:
+  // FIXME: Stop putting this garbage in the code
   friend class mesh::MeshPartitioning;
 
   typedef std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>
@@ -72,7 +73,7 @@ private:
   // local edges in the graph (undirected)
   static std::int32_t compute_local_dual_graph(
       const MPI_Comm mpi_comm,
-      Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+      const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
       const mesh::CellType& cell_type,
       std::vector<std::vector<std::size_t>>& local_graph,
       FacetCellMap& facet_cell_map);
@@ -82,7 +83,7 @@ private:
   template <int N>
   static std::int32_t compute_local_dual_graph_keyed(
       const MPI_Comm mpi_comm,
-      Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+      const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
       const mesh::CellType& cell_type,
       std::vector<std::vector<std::size_t>>& local_graph,
       FacetCellMap& facet_cell_map);
@@ -92,7 +93,7 @@ private:
   // should be called before this function is called.
   static std::int32_t compute_nonlocal_dual_graph(
       const MPI_Comm mpi_comm,
-      Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+      const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
       const mesh::CellType& cell_type,
       std::vector<std::vector<std::size_t>>& local_graph,
       FacetCellMap& facet_cell_map, std::set<std::int64_t>& ghost_vertices);

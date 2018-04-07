@@ -102,10 +102,10 @@ _pick_one_meshfunction(std::string name,
 bool SystemAssembler::check_functionspace_for_bc(
     std::shared_ptr<const function::FunctionSpace> fs, std::size_t bc_index)
 {
-  dolfin_assert(_bcs[bc_index]);
+  assert(_bcs[bc_index]);
   std::shared_ptr<const function::FunctionSpace> bc_function_space
       = _bcs[bc_index]->function_space();
-  dolfin_assert(bc_function_space);
+  assert(bc_function_space);
 
   return fs->contains(*bc_function_space);
 }
@@ -113,16 +113,16 @@ bool SystemAssembler::check_functionspace_for_bc(
 void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
                                const la::PETScVector* x0)
 {
-  dolfin_assert(_a);
-  dolfin_assert(_l);
+  assert(_a);
+  assert(_l);
 
   // Set timer
   common::Timer timer("Assemble system");
 
   // Get mesh
-  dolfin_assert(_a->mesh());
+  assert(_a->mesh());
   const mesh::Mesh& mesh = *(_a->mesh());
-  dolfin_assert(mesh.ordered());
+  assert(mesh.ordered());
 
   // Get cell domains
   std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains
@@ -146,8 +146,8 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   AssemblerBase::check(*_l);
 
   // Check that we have a bilinear and a linear form
-  dolfin_assert(_a->rank() == 2);
-  dolfin_assert(_l->rank() == 1);
+  assert(_a->rank() == 2);
+  assert(_l->rank() == 1);
 
   // Check that forms share a function space
   if (*_a->function_space(0) != *_l->function_space(0))
@@ -237,7 +237,7 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   //        should we raise "not implemented error" here?
   if (x0)
   {
-    dolfin_assert(x0->size()
+    assert(x0->size()
                   == _a->function_space(1)->dofmap()->global_dimension());
 
     const std::size_t num_bc_dofs = boundary_values[0].size();
@@ -294,11 +294,11 @@ void SystemAssembler::cell_wise_assembly(
         exterior_facet_domains)
 {
   // Extract mesh
-  dolfin_assert(ufc[0]->dolfin_form.mesh());
+  assert(ufc[0]->dolfin_form.mesh());
   const mesh::Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
   // Initialize entities if using external facet integrals
-  dolfin_assert(mesh.ordered());
+  assert(mesh.ordered());
   bool has_exterior_facet_integrals
       = ufc[0]->dolfin_form.integrals().num_exterior_facet_integrals() > 0
         or ufc[1]->dolfin_form.integrals().num_exterior_facet_integrals() > 0;
@@ -347,7 +347,7 @@ void SystemAssembler::cell_wise_assembly(
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
-    dolfin_assert(!cell.is_ghost());
+    assert(!cell.is_ghost());
 
     // Get cell vertex coordinates
     cell.get_coordinate_dofs(coordinate_dofs);
@@ -486,11 +486,11 @@ void SystemAssembler::facet_wise_assembly(
         interior_facet_domains)
 {
   // Extract mesh
-  dolfin_assert(ufc[0]->dolfin_form.mesh());
+  assert(ufc[0]->dolfin_form.mesh());
   const mesh::Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
   // Sanity check of ghost mode (proper check in AssemblerBase::check)
-  dolfin_assert(mesh.ghost_mode() == "shared_vertex"
+  assert(mesh.ghost_mode() == "shared_vertex"
                 || mesh.ghost_mode() == "shared_facet"
                 || MPI::size(mesh.mpi_comm()) == 1);
 
@@ -574,13 +574,13 @@ void SystemAssembler::facet_wise_assembly(
     const std::size_t num_cells = facet.num_entities(D);
 
     // Check that facet is not a ghost
-    dolfin_assert(!facet.is_ghost());
+    assert(!facet.is_ghost());
 
     // Interior facet
     if (num_cells == 2)
     {
       // Get cells incident with facet (which is 0 and 1 here is arbitrary)
-      dolfin_assert(facet.num_entities(D) == 2);
+      assert(facet.num_entities(D) == 2);
       std::array<std::int32_t, 2> cell_indices
           = {{facet.entities(D)[0], facet.entities(D)[1]}};
 
@@ -614,8 +614,8 @@ void SystemAssembler::facet_wise_assembly(
           ghost_rank = cell[0].owner();
         else
           ghost_rank = cell[1].owner();
-        dolfin_assert(my_mpi_rank != ghost_rank);
-        dolfin_assert(ghost_rank != -1);
+        assert(my_mpi_rank != ghost_rank);
+        assert(ghost_rank != -1);
         if (ghost_rank < my_mpi_rank)
           facet_owner = false;
       }
@@ -899,7 +899,7 @@ void SystemAssembler::compute_exterior_facet_tensor(
     // Assemble cell integral (if required)
     if (compute_cell_tensor)
     {
-      dolfin_assert(!cell.is_ghost());
+      assert(!cell.is_ghost());
 
       // Compute cell integral, if required
       if (tensor_required_cell[form])
@@ -1017,8 +1017,8 @@ void SystemAssembler::apply_bc(
     const common::ArrayView<const dolfin::la_index_t>& global_dofs0,
     const common::ArrayView<const dolfin::la_index_t>& global_dofs1)
 {
-  dolfin_assert(A);
-  dolfin_assert(b);
+  assert(A);
+  assert(b);
 
   // Wrap matrix and vector using Eigen
   Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,

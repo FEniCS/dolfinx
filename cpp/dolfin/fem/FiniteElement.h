@@ -41,6 +41,7 @@ public:
     return _ufc_element->signature();
   }
 
+  // FIXME: Avoid exposing UFC type 'ufc::cell'
   /// Return the cell shape
   /// @return ufc::shape
   ufc::shape cell_shape() const
@@ -57,20 +58,28 @@ public:
     return _ufc_element->topological_dimension();
   }
 
-  /// Return the geometric dimension of the cell shape
-  /// @return std::uint32_t
-  virtual std::uint32_t geometric_dimension() const
-  {
-    assert(_ufc_element);
-    return _ufc_element->geometric_dimension();
-  }
-
   /// Return the dimension of the finite element function space
   /// @return std::size_t
   std::size_t space_dimension() const
   {
     assert(_ufc_element);
     return _ufc_element->space_dimension();
+  }
+
+  /// Return the value size, e.g. 1 for a scalar function, 2 for a 2D
+  /// vector
+  std::size_t value_size() const
+  {
+    assert(_ufc_element);
+    return _ufc_element->value_size();
+  }
+
+  /// Return the value size, e.g. 1 for a scalar function, 2 for a 2D
+  /// vector
+  std::size_t reference_value_size() const
+  {
+    assert(_ufc_element);
+    return _ufc_element->reference_value_size();
   }
 
   /// Return the rank of the value space
@@ -85,6 +94,22 @@ public:
   {
     assert(_ufc_element);
     return _ufc_element->value_dimension(i);
+  }
+
+  // FIXME: Is this well-defined? What does it do on non-simplex
+  // elements?
+  /// Return the maximum polynomial degree
+  std::size_t degree() const
+  {
+    assert(_ufc_element);
+    return _ufc_element->degree();
+  }
+
+  /// Return the finite elemeent family
+  std::string family() const
+  {
+    assert(_ufc_element);
+    return _ufc_element->family();
   }
 
   /// Evaluate all basis functions at given point in reference cell
@@ -131,16 +156,22 @@ public:
         J.data(), detJ.data(), K.data(), 1);
   }
 
-  /// Tabulate the coordinates of all dofs on an element
+  /// Tabulate the reference coordinates of all dofs on an element
   ///
-  /// @param[in,out]    coordinates (Eigen::Ref<EigenRowArrayXXd>)
-  ///         The coordinates of all dofs on a cell. Must have correct size of
-  ///         (num_dofs, gdim)
-  /// @param[in]    coordinate_dofs (Eigen::Ref<EigenRowArrayXXd>)
-  ///         The cell dof coordinates
-  void tabulate_dof_coordinates(
-      Eigen::Ref<EigenRowArrayXXd> coordinates,
-      const Eigen::Ref<EigenRowArrayXXd> coordinate_dofs) const;
+  /// @return    reference_coordinates (EigenRowArrayXXd)
+  ///         The coordinates of all dofs on the reference cell.
+  const EigenRowArrayXXd& dof_reference_coordinates() const { return _refX; }
+
+  // FIXME: pass coordinate map
+  /// TODO: Remove? Document. See:
+  /// ffc/uflacs/backends/ufc/evaluatedof.py:_change_variables()
+  void map_dofs(double* values, const Eigen::Ref<const EigenRowArrayXXd>& vals,
+                const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
+  {
+    assert(_ufc_element);
+    _ufc_element->map_dofs(values, vals.data(), coordinate_dofs.data(), 1,
+                           nullptr);
+  }
 
   /// Return the number of sub elements (for a mixed element)
   /// @return std::size_t
@@ -178,16 +209,12 @@ public:
   std::shared_ptr<FiniteElement>
   extract_sub_element(const std::vector<std::size_t>& component) const;
 
-  /// Return underlying UFC element. Intended for libray usage only
-  /// and may change.
-  std::shared_ptr<const ufc::finite_element> ufc_element() const
-  {
-    return _ufc_element;
-  }
-
 private:
   // UFC finite element
   std::shared_ptr<const ufc::finite_element> _ufc_element;
+
+  // Dof coordinates on the reference element
+  EigenRowArrayXXd _refX;
 
   // Recursively extract sub finite element
   static std::shared_ptr<FiniteElement>

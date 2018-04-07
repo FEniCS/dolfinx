@@ -21,7 +21,7 @@ from dolfin_utils.test import cd_tempdir
 def mesh1d():
     # Create 1D mesh with degenerate cell
     mesh1d = UnitIntervalMesh(MPI.comm_world, 4)
-    mesh1d.geometry().x()[4] = mesh1d.geometry().x()[3]
+    mesh1d.geometry.points[4] = mesh1d.geometry.points[3]
     return mesh1d
 
 
@@ -30,7 +30,7 @@ def mesh2d():
     # Create 2D mesh with one equilateral triangle
     mesh2d = RectangleMesh.create(MPI.comm_world, [Point(0, 0), Point(1, 1)],
                                   [1, 1], CellType.Type.triangle, 'left')
-    mesh2d.geometry().x()[3] += 0.5*(sqrt(3.0)-1.0)
+    mesh2d.geometry.points[3] += 0.5*(sqrt(3.0)-1.0)
     return mesh2d
 
 
@@ -38,8 +38,8 @@ def mesh2d():
 def mesh3d():
     # Create 3D mesh with regular tetrahedron and degenerate cells
     mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
-    mesh3d.geometry().x()[6][0] = 1.0
-    mesh3d.geometry().x()[3][1] = 0.0
+    mesh3d.geometry.points[6][0] = 1.0
+    mesh3d.geometry.points[3][1] = 0.0
     return mesh3d
 
 
@@ -110,8 +110,8 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
 
     def _check_ufl_domain(mesh):
         domain = mesh.ufl_domain()
-        assert mesh.geometry().dim() == domain.geometric_dimension()
-        assert mesh.topology().dim() == domain.topological_dimension()
+        assert mesh.geometry.dim == domain.geometric_dimension()
+        assert mesh.topology.dim == domain.topological_dimension()
         assert mesh.ufl_cell() == domain.ufl_cell()
         assert mesh.id() == domain.ufl_id()
 
@@ -261,14 +261,14 @@ def xtest_MeshFunction(cd_tempdir):
 def test_GetGeometricalDimension():
     """Get geometrical dimension of mesh"""
     mesh = UnitSquareMesh(MPI.comm_world, 5, 5)
-    assert mesh.geometry().dim() == 2
+    assert mesh.geometry.dim == 2
 
 
 @skip_in_parallel
 def test_GetCoordinates():
     """Get coordinates of vertices"""
     mesh = UnitSquareMesh(MPI.comm_world, 5, 5)
-    assert len(mesh.geometry().x()) == 36
+    assert len(mesh.geometry.points) == 36
 
 
 def test_GetCells():
@@ -374,18 +374,18 @@ def test_shared_entities(mesh_factory, ghost_mode):
     func, args = mesh_factory
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
-    dim = mesh.topology().dim()
+    dim = mesh.topology.dim
 
     # FIXME: Implement a proper test
     for shared_dim in range(dim + 1):
         # Initialise global indices (if not already)
         mesh.init_global(shared_dim)
 
-        assert isinstance(mesh.topology().shared_entities(shared_dim), dict)
-        assert isinstance(mesh.topology().global_indices(shared_dim),
+        assert isinstance(mesh.topology.shared_entities(shared_dim), dict)
+        assert isinstance(mesh.topology.global_indices(shared_dim),
                           numpy.ndarray)
 
-        if mesh.topology().have_shared_entities(shared_dim):
+        if mesh.topology.have_shared_entities(shared_dim):
             for e in MeshEntities(mesh, shared_dim):
                 sharing = e.sharing_processes()
                 assert isinstance(sharing, set)
@@ -393,7 +393,7 @@ def test_shared_entities(mesh_factory, ghost_mode):
 
         n_entities = mesh.num_entities(shared_dim)
         n_global_entities = mesh.num_entities_global(shared_dim)
-        shared_entities = mesh.topology().shared_entities(shared_dim)
+        shared_entities = mesh.topology.shared_entities(shared_dim)
 
         # Check that sum(local-shared) = global count
         rank = MPI.rank(mesh.mpi_comm())
@@ -413,7 +413,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
     assert mesh.ordered()
-    tdim = mesh.topology().dim()
+    tdim = mesh.topology.dim
 
     # Create FIAT cell
     cell_name = CellType.type2string(mesh.type().cell_type())
@@ -457,7 +457,7 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
     assert mesh.ordered()
-    tdim = mesh.topology().dim()
+    tdim = mesh.topology.dim
 
     # Loop over pair of dimensions d, d1 with d>d1
     for d in range(tdim+1):
@@ -473,7 +473,7 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
             # Initialize d-d1 connectivity and d1 global indices
             mesh.init(d, d1)
             mesh.init_global(d1)
-            assert mesh.topology().have_global_indices(d1)
+            assert mesh.topology.have_global_indices(d1)
 
             # Loop over entities of dimension d
             for e in MeshEntities(mesh, d):
@@ -488,19 +488,19 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
 
 
 def test_mesh_topology_reference():
-    """Check that Mesh.topology() returns a reference rather
+    """Check that Mesh.topology returns a reference rather
     than copy"""
     mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
-    assert mesh.topology().id() == mesh.topology().id()
+    assert mesh.topology.id() == mesh.topology.id()
 
 
 def test_mesh_topology_lifetime():
-    """Check that lifetime of Mesh.topology() is bound to
+    """Check that lifetime of Mesh.topology is bound to
     underlying mesh object"""
     mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
 
     rc = sys.getrefcount(mesh)
-    topology = mesh.topology()
+    topology = mesh.topology
     assert sys.getrefcount(mesh) == rc + 1
     del topology
     assert sys.getrefcount(mesh) == rc
@@ -511,17 +511,17 @@ def test_mesh_connectivity_lifetime():
     underlying mesh topology object"""
     mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
     mesh.init(1, 2)
-    topology = mesh.topology()
+    topology = mesh.topology
 
     # Refcount checks on the MeshConnectivity object
     rc = sys.getrefcount(topology)
-    connectivity = topology(1, 2)
+    connectivity = topology.connectivity(1, 2)
     assert sys.getrefcount(topology) == rc + 1
     del connectivity
     assert sys.getrefcount(topology) == rc
 
     # Refcount checks on the returned connectivities array
-    conn = topology(1, 2)
+    conn = topology.connectivity(1, 2)
     rc = sys.getrefcount(conn)
     cells = conn(0)
     assert sys.getrefcount(conn) == rc + 1

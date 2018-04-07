@@ -6,8 +6,9 @@
 
 #include "Edge.h"
 #include "Vertex.h"
-#include <dolfin/geometry/Point.h>
 #include <cmath>
+#include <dolfin/geometry/Point.h>
+#include <dolfin/mesh/MeshGeometry.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -16,7 +17,7 @@ using namespace dolfin::mesh;
 double Edge::length() const
 {
   const std::int32_t* vertices = entities(0);
-  dolfin_assert(vertices);
+  assert(vertices);
 
   const Vertex v0(*_mesh, vertices[0]);
   const Vertex v1(*_mesh, vertices[1]);
@@ -35,14 +36,14 @@ double Edge::dot(const Edge& edge) const
 {
   const std::int32_t* v0 = entities(0);
   const std::int32_t* v1 = edge.entities(0);
-  dolfin_assert(v0);
-  dolfin_assert(v1);
+  assert(v0);
+  assert(v1);
 
   const MeshGeometry& g = _mesh->geometry();
-  const double* x00 = g.x(v0[0]);
-  const double* x01 = g.x(v0[1]);
-  const double* x10 = g.x(v1[0]);
-  const double* x11 = g.x(v1[1]);
+  const Eigen::Ref<const EigenVectorXd> x00 = g.x(v0[0]);
+  const Eigen::Ref<const EigenVectorXd> x01 = g.x(v0[1]);
+  const Eigen::Ref<const EigenVectorXd> x10 = g.x(v1[0]);
+  const Eigen::Ref<const EigenVectorXd> x11 = g.x(v1[1]);
 
   double sum = 0.0;
   const std::size_t gdim = g.dim();

@@ -26,26 +26,26 @@ def _test_get_set_coordinates(mesh):
     # Get coords
     V = FunctionSpace(mesh, mesh.ufl_coordinate_element())
     c = Function(V)
-    get_coordinates(c, mesh.geometry())
+    get_coordinates(c, mesh.geometry)
 
     # Check correctness of got coords
     _check_coords(mesh, c)
 
     # Backup and zero coords
-    coords = mesh.geometry().x()
+    coords = mesh.geometry.x()
     coords_old = coords.copy()
     coords[:] = 0.0
-    assert np.all(mesh.geometry().x() == 0.0)
+    assert np.all(mesh.geometry.x() == 0.0)
 
     # Set again to old value
-    set_coordinates(mesh.geometry(), c)
+    set_coordinates(mesh.geometry, c)
 
     # Check
-    assert np.all(mesh.geometry().x() == coords_old)
+    assert np.all(mesh.geometry.x() == coords_old)
 
 def _check_coords(mesh, c):
     # FIXME: This does not work for higher-order geometries although it should
-    if mesh.geometry().degree() > 1:
+    if mesh.geometry.degree() > 1:
         return
 
     # Compare supplied c with interpolation of x
@@ -71,31 +71,31 @@ def test_raises(meshes_p1):
     V = VectorFunctionSpace(mesh2, "Discontinuous Lagrange", 1)
     c = Function(V)
     with pytest.raises(RuntimeError):
-        get_coordinates(c, mesh2.geometry())
+        get_coordinates(c, mesh2.geometry)
     with pytest.raises(RuntimeError):
-        set_coordinates(mesh2.geometry(), c)
+        set_coordinates(mesh2.geometry, c)
 
     # Wrong value rank
     V = FunctionSpace(mesh2, "Lagrange", 1)
     c = Function(V)
     with pytest.raises(RuntimeError):
-        get_coordinates(c, mesh2.geometry())
+        get_coordinates(c, mesh2.geometry)
     with pytest.raises(RuntimeError):
-        set_coordinates(mesh2.geometry(), c)
+        set_coordinates(mesh2.geometry, c)
 
     # Wrong value shape
-    V = VectorFunctionSpace(mesh2, "Lagrange", mesh2.geometry().degree(),
-            dim=mesh2.geometry().dim() - 1)
+    V = VectorFunctionSpace(mesh2, "Lagrange", mesh2.geometry.degree(),
+            dim=mesh2.geometry.dim - 1)
     c = Function(V)
     with pytest.raises(RuntimeError):
-        get_coordinates(c, mesh2.geometry())
+        get_coordinates(c, mesh2.geometry)
     with pytest.raises(RuntimeError):
-        set_coordinates(mesh2.geometry(), c)
+        set_coordinates(mesh2.geometry, c)
 
     # Non-matching degree
-    V = VectorFunctionSpace(mesh2, "Lagrange", mesh2.geometry().degree() + 1)
+    V = VectorFunctionSpace(mesh2, "Lagrange", mesh2.geometry.degree() + 1)
     c = Function(V)
     with pytest.raises(RuntimeError):
-        get_coordinates(c, mesh2.geometry())
+        get_coordinates(c, mesh2.geometry)
     with pytest.raises(RuntimeError):
-        set_coordinates(mesh2.geometry(), c)
+        set_coordinates(mesh2.geometry, c)

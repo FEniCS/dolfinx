@@ -29,9 +29,9 @@ def tempfile(tempdir, request):
 def test_save_1d_meshfunctions(tempfile,
                                 mesh_function_types, file_options, type_conv):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
-    for d in range(mesh.topology().dim()+1):
+    for d in range(mesh.topology.dim+1):
         for t in mesh_function_types:
-            mf = MeshFunction(t, mesh, mesh.topology().dim()-d, type_conv[t](1))
+            mf = MeshFunction(t, mesh, mesh.topology.dim-d, type_conv[t](1))
             VTKFile(tempfile + "mf.pvd", "ascii").write(mf)
             f = VTKFile(tempfile + "mf.pvd", "ascii")
             f.write(mf, 0.)
@@ -42,9 +42,9 @@ def test_save_1d_meshfunctions(tempfile,
 def test_save_2d_meshfunctions(tempfile,
                                 mesh_function_types, file_options, type_conv):
     mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
-    for d in range(mesh.topology().dim()+1):
+    for d in range(mesh.topology.dim+1):
         for t in mesh_function_types:
-            mf = MeshFunction(t, mesh, mesh.topology().dim()-d, type_conv[t](1))
+            mf = MeshFunction(t, mesh, mesh.topology.dim-d, type_conv[t](1))
             VTKFile(tempfile + "mf.pvd", "ascii").write(mf)
             f = VTKFile(tempfile + "mf.pvd", "ascii")
             f.write(mf, 0.)
@@ -55,9 +55,9 @@ def test_save_2d_meshfunctions(tempfile,
 def test_save_3d_meshfunctions(tempfile,
                                 mesh_function_types, file_options, type_conv):
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
-    for d in range(mesh.topology().dim()+1):
+    for d in range(mesh.topology.dim+1):
         for t in mesh_function_types:
-            mf = MeshFunction(t, mesh, mesh.topology().dim()-d, type_conv[t](1))
+            mf = MeshFunction(t, mesh, mesh.topology.dim-d, type_conv[t](1))
             VTKFile(tempfile + "mf.pvd", "ascii").write(mf)
             f = VTKFile(tempfile + "mf.pvd", "ascii")
             f.write(mf, 0.)

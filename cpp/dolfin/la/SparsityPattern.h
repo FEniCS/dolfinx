@@ -95,7 +95,7 @@ public:
   /// Return index map for dimension dim
   std::shared_ptr<const common::IndexMap> index_map(std::size_t dim) const
   {
-    dolfin_assert(dim < 2);
+    assert(dim < 2);
     return _index_maps[dim];
   }
 

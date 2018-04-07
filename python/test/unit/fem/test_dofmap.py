@@ -40,7 +40,7 @@ def test_tabulate_all_coordinates(mesh_factory):
     W1 = VectorElement("Lagrange", mesh.ufl_cell(), 1)
     W = FunctionSpace(mesh, W0*W1)
 
-    D = mesh.geometry().dim()
+    D = mesh.geometry.dim
     V_dofmap = V.dofmap()
     W_dofmap = W.dofmap()
 
@@ -186,12 +186,12 @@ def test_tabulate_dofs_periodic(mesh_factory):
     L11 = L1.sub(1)
 
     # Check dimensions
-    assert V.dim() == 110
-    assert Q.dim() == 220
-    assert L0.dim() == V.dim()
-    assert L1.dim() == Q.dim()
-    assert L01.dim() == V.dim()
-    assert L11.dim() == V.dim()
+    assert V.dim == 110
+    assert Q.dim == 220
+    assert L0.dim == V.dim
+    assert L1.dim == Q.dim
+    assert L01.dim == V.dim
+    assert L11.dim == V.dim
 
     for i, cell in enumerate(cells(mesh)):
         dofs0 = L0.dofmap().cell_dofs(cell.index())
@@ -337,7 +337,7 @@ def test_entity_dofs(mesh):
 def test_entity_closure_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
-    tdim = mesh.topology().dim()
+    tdim = mesh.topology.dim
 
     for degree in (1, 2, 3):
         V = FunctionSpace(mesh, "CG", degree)
@@ -360,7 +360,7 @@ def test_entity_closure_dofs(mesh_factory):
             assert covered2 == set(closure_dofs_on_all_entities)
         d = tdim
         all_cells = np.array([entity for entity in range(mesh.num_entities(d))], dtype=np.uintp)
-        assert set(V.dofmap().entity_closure_dofs(mesh, d, all_cells)) == set(range(V.dim()))
+        assert set(V.dofmap().entity_closure_dofs(mesh, d, all_cells)) == set(range(V.dim))
 
 
 def test_clear_sub_map_data_scalar(mesh):
@@ -415,7 +415,7 @@ def test_block_size(mesh):
             assert W.dofmap().block_size() == i
 
         V = VectorFunctionSpace(mesh, "Lagrange", 2)
-        assert V.dofmap().block_size() == mesh.geometry().dim()
+        assert V.dofmap().block_size() == mesh.geometry.dim
 
 
 def test_block_size_real(mesh):
@@ -521,7 +521,7 @@ def test_dofs_dim(space):
     V = eval(space)
     dofmap = V.dofmap()
     mesh = V.mesh()
-    for dim in range(0, mesh.topology().dim()):
+    for dim in range(0, mesh.topology.dim):
         edofs = dofmap.dofs(mesh, dim)
         num_mesh_entities = mesh.num_entities(dim)
         dofs_per_entity = dofmap.num_entity_dofs(dim)

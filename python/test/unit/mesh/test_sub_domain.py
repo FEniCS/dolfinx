@@ -41,8 +41,8 @@ def test_creation_and_marking():
 
         for left, right in subdomain_pairs:
             for t_dim, f_dim in [(0, 0),
-                                 (mesh.topology().dim()-1, dim - 1),
-                                 (mesh.topology().dim(), dim)]:
+                                 (mesh.topology.dim-1, dim - 1),
+                                 (mesh.topology.dim, dim)]:
                 f = MeshFunction("size_t", mesh, t_dim, 0)
 
                 left.mark(f, 1)
@@ -67,8 +67,8 @@ def test_creation_and_marking():
                 ])
 
         for t_dim, f_dim in [(0, 0),
-                             (mesh.topology().dim()-1, dim-1),
-                             (mesh.topology().dim(), dim)]:
+                             (mesh.topology.dim-1, dim-1),
+                             (mesh.topology.dim, dim)]:
             f = MeshFunction("size_t", mesh, t_dim, 0)
 
             class AllTrue(SubDomain):

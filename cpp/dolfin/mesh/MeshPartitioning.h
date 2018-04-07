@@ -9,12 +9,13 @@
 #include "DistributedMeshTools.h"
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
-#include "MeshPartition.h"
-#include <boost/multi_array.hpp>
+#include "PartitionData.h"
 #include <cstdint>
 #include <dolfin/common/Set.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include <map>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -32,7 +33,6 @@ template <typename T>
 class MeshFunction;
 template <typename T>
 class MeshValueCollection;
-class LocalMeshData;
 class CellType;
 
 /// This class partitions and distributes a mesh based on
@@ -46,11 +46,6 @@ class CellType;
 class MeshPartitioning
 {
 public:
-  /// Build a distributed mesh from 'local mesh data' that is
-  /// distributed across processes
-  static mesh::Mesh build_distributed_mesh(const LocalMeshData& data,
-                                           const std::string ghost_mode);
-
   /// Build distributed mesh from a set of points and cells on each local
   /// process
   /// @param comm
@@ -68,12 +63,12 @@ public:
   ///     Ghost mode
   static mesh::Mesh
   build_distributed_mesh(const MPI_Comm& comm, mesh::CellType::Type type,
-                         Eigen::Ref<const EigenRowArrayXXd> points,
-                         Eigen::Ref<const EigenRowArrayXXi64> cells,
+                         const Eigen::Ref<const EigenRowArrayXXd>& points,
+                         const Eigen::Ref<const EigenRowArrayXXi64>& cells,
                          const std::vector<std::int64_t>& global_cell_indices,
                          const std::string ghost_mode);
 
-  /// Take the set of vertices
+  /// Take the set of vertices . . . . .
   /// @param mpi_comm
   ///   MPI Communicator
   /// @param points
@@ -81,16 +76,15 @@ public:
   ///   distribution
   /// @param vertex_indices
   ///   Global indices for vertices on this process
-  /// @param vertex_coordinates
-  ///   Output array of coordinates on this process after distribution
-  /// @param shared_vertices_local
-  ///   Output map from local index to set of sharing processes for each
-  ///   shared vertex
-  static void distribute_vertices(
-      const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXd> points,
-      const std::vector<std::int64_t>& vertex_indices,
-      Eigen::Ref<EigenRowArrayXXd> vertex_coordinates,
-      std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local);
+  /// @return
+  ///   vertex_coordinates (array of coordinates on this process after
+  ///   distribution) and shared_vertices_local (map from local index to set of
+  ///   sharing processes for each shared vertex)
+  static std::pair<EigenRowArrayXXd,
+                   std::map<std::int32_t, std::set<std::uint32_t>>>
+  distribute_vertices(const MPI_Comm mpi_comm,
+                      const Eigen::Ref<const EigenRowArrayXXd>& points,
+                      const std::vector<std::int64_t>& global_vertex_indices);
 
   /// Compute mapping of globally indexed vertices to local indices
   /// and remap topology accordingly
@@ -99,82 +93,83 @@ public:
   ///   MPI Communicator
   /// @param cell_vertices
   ///   Input cell topology (global indexing)
-  /// @param vertex_indices
-  ///   Output local-to-global map for vertex indices
-  /// @param local_cell_vertices
-  ///   Output cell topology (local indexing)
-  static void
-  compute_vertex_mapping(MPI_Comm mpi_comm,
-                         Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-                         std::vector<std::int64_t>& vertex_indices,
-                         Eigen::Ref<EigenRowArrayXXi32> local_cell_vertices);
+  /// @return
+  ///   Local-to-global map for vertices (std::vector<std::int64_t>) and cell
+  ///   topology in local indexing (EigenRowArrayXXi32)
+  static std::pair<std::vector<std::int64_t>, EigenRowArrayXXi32>
+  compute_vertex_mapping(
+      MPI_Comm mpi_comm,
+      const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices);
 
 private:
   // Compute cell partitioning from local mesh data. Returns a
-  // vector 'cell -> process' vector for cells in LocalMeshData, and
+  // vector 'cell -> process' vector for cells, and
   // a map 'local cell index -> processes' to which ghost cells must
   // be sent
-  static MeshPartition
+  static PartitionData
   partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type cell_type,
-                  Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+                  const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
                   const std::string partitioner);
 
   // Build a distributed mesh from local mesh data with a computed
   // partition
   static mesh::Mesh build(const MPI_Comm& comm, mesh::CellType::Type type,
-                          Eigen::Ref<const EigenRowArrayXXi64> cells,
-                          Eigen::Ref<const EigenRowArrayXXd> points,
+                          const Eigen::Ref<const EigenRowArrayXXi64>& cells,
+                          const Eigen::Ref<const EigenRowArrayXXd>& points,
                           const std::vector<std::int64_t>& global_cell_indices,
                           const std::string ghost_mode,
-                          const MeshPartition& mp);
+                          const PartitionData& mp);
 
+  // FIXME: The code for this function is really bad. For example, it seems that
+  // cell_vertices carries data in which is used, and is then also modified
+  // (bad!)
   // FIXME: Improve this docstring
   // Distribute a layer of cells attached by vertex to boundary updating
   // new_mesh_data and shared_cells. Used when ghosting by vertex.
-  static void distribute_cell_layer(
-      MPI_Comm mpi_comm, const int num_regular_cells,
-      const std::int64_t num_global_vertices,
-      std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
-      boost::multi_array<std::int64_t, 2>& cell_vertices,
-      std::vector<std::int64_t>& global_cell_indices,
-      std::vector<int>& cell_partition);
+  //   static void distribute_cell_layer(
+  //       MPI_Comm mpi_comm, const int num_regular_cells,
+  //       const std::int64_t num_global_vertices,
+  //       std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
+  //       EigenRowArrayXXi64& cell_vertices,
+  //       std::vector<std::int64_t>& global_cell_indices,
+  //       std::vector<int>& cell_partition);
 
   // FIXME: make clearer what goes in and what comes out
   // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH). Returns
-  // the tuple (new_shared_cells, new_cell_vertices,new_global_cell_indices).
-  static void reorder_cells_gps(
+  // the tuple (reordered_shared_cells, reordered_cell_vertices,
+  // reordered_global_cell_indices)
+  static std::tuple<std::map<std::int32_t, std::set<std::uint32_t>>,
+                    EigenRowArrayXXi64, std::vector<std::int64_t>>
+  reorder_cells_gps(
       MPI_Comm mpi_comm, const std::uint32_t num_regular_cells,
       const mesh::CellType& cell_type,
       const std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
-      Eigen::Ref<EigenRowArrayXXi64> global_cell_vertices,
-      const std::vector<std::int64_t>& global_cell_indices,
-      std::map<std::int32_t, std::set<std::uint32_t>>& reordered_shared_cells,
-      Eigen::Ref<EigenRowArrayXXi64> reordered_cell_vertices,
-      std::vector<std::int64_t>& reordered_global_cell_indices);
+      const Eigen::Ref<const EigenRowArrayXXi64>& global_cell_vertices,
+      const std::vector<std::int64_t>& global_cell_indices);
 
   // FIXME: Update, making clear exactly what is computed
   // This function takes the partition computed by the partitioner
-  // (which tells us to which process each of the local cells stored in
-  // LocalMeshData on this process belongs) and sends the cells
+  // (which tells us to which process each of the local cells stored on
+  //  this process belongs) and sends the cells
   // to the appropriate owning process. Ghost cells are also sent,
   // along with the list of sharing processes.
-  // A new LocalMeshData object is populated with the redistributed
-  // cells. Return the number of non-ghost cells on this process.
-  static std::int32_t distribute_cells(
-      const MPI_Comm mpi_comm,
-      Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-      const std::vector<std::int64_t>& global_cell_indices,
-      const MeshPartition& mp, EigenRowArrayXXi64& new_cell_vertices,
-      std::vector<std::int64_t>& new_global_cell_indices,
-      std::vector<int>& new_cell_partition,
-      std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells);
+  // Returns (new_cell_vertices, new_global_cell_indices,
+  // new_cell_partition, shared_cells, number of non-ghost cells on this
+  // process).
+  static std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>,
+                    std::vector<int>,
+                    std::map<std::int32_t, std::set<std::uint32_t>>,
+                    std::int32_t>
+  distribute_cells(const MPI_Comm mpi_comm,
+                   const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
+                   const std::vector<std::int64_t>& global_cell_indices,
+                   const PartitionData& mp);
 
   // FIXME: Improve explanation
   // Utility to convert received_vertex_indices into
   // vertex sharing information
-  static void build_shared_vertices(
+  static std::map<std::int32_t, std::set<std::uint32_t>> build_shared_vertices(
       MPI_Comm mpi_comm,
-      std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices,
       const std::vector<std::vector<std::size_t>>& received_vertex_indices,
       const std::pair<std::size_t, std::size_t> local_vertex_range,
       const std::vector<std::vector<std::uint32_t>>& local_indexing);

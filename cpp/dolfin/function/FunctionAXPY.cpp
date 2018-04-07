@@ -16,7 +16,7 @@ using namespace dolfin::function;
 FunctionAXPY::FunctionAXPY(std::shared_ptr<const Function> func, double scalar)
     : _pairs()
 {
-  dolfin_assert(func);
+  assert(func);
   _pairs.push_back(std::make_pair(scalar, func));
 }
 //-----------------------------------------------------------------------------
@@ -30,9 +30,9 @@ FunctionAXPY::FunctionAXPY(std::shared_ptr<const Function> func0,
                            Direction direction)
     : _pairs()
 {
-  dolfin_assert(func0);
-  dolfin_assert(func1);
-  dolfin_assert(func1->function_space());
+  assert(func0);
+  assert(func1);
+  assert(func1->function_space());
 
   if (*func0->function_space() != *func1->function_space())
   {
@@ -52,8 +52,8 @@ FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy,
                            Direction direction)
     : _pairs()
 {
-  dolfin_assert(func);
-  dolfin_assert(func->function_space());
+  assert(func);
+  assert(func->function_space());
 
   _register(axpy, static_cast<int>(direction) % 2 == 0 ? 1.0 : -1.0);
   if (_pairs.size() > 0
@@ -132,7 +132,7 @@ void FunctionAXPY::_register(const FunctionAXPY& axpy, double scale)
 
   for (auto it = axpy.pairs().begin(); it != axpy.pairs().end(); it++)
   {
-    dolfin_assert(it->second);
+    assert(it->second);
     _pairs.push_back(std::make_pair(it->first * scale, it->second));
   }
 }

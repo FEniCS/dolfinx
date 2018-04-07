@@ -202,9 +202,3 @@ void dolfin::log::__debug(std::string file, unsigned long line, std::string func
   LogManager::logger().__debug(msg);
 }
 //-----------------------------------------------------------------------------
-void dolfin::log::__dolfin_assert(std::string file, unsigned long line,
-                             std::string function, std::string check)
-{
-  LogManager::logger().__dolfin_assert(file, line, function, check);
-}
-//-----------------------------------------------------------------------------

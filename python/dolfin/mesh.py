@@ -43,7 +43,7 @@ class MeshValueCollection(object):
 
 def ufl_cell(self):
     return ufl.Cell(self.cell_name(),
-                    geometric_dimension=self.geometry().dim())
+                    geometric_dimension=self.geometry.dim)
 
 
 def ufl_coordinate_element(self):
@@ -69,11 +69,7 @@ def ufl_domain(self):
 
 def geometric_dimension(self):
     """Returns geometric dimension for ufl interface"""
-    return self.geometry().dim()
-
-
-def _repr_html_(self):
-    return cpp.io.X3DOM.html(self)
+    return self.geometry.dim
 
 
 # Extend cpp.mesh.Mesh class, and clean-up
@@ -82,6 +78,4 @@ cpp.mesh.Mesh.ufl_coordinate_element = ufl_coordinate_element
 cpp.mesh.Mesh.ufl_domain = ufl_domain
 cpp.mesh.Mesh.geometric_dimension = geometric_dimension
 
-cpp.mesh.Mesh._repr_html_ = _repr_html_
-
-del ufl_cell, ufl_coordinate_element, ufl_domain, geometric_dimension, _repr_html_
+del ufl_cell, ufl_coordinate_element, ufl_domain, geometric_dimension

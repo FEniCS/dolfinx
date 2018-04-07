@@ -89,7 +89,7 @@ def test_solve_local_rhs_facet_integrals(ghost_mode):
     # Facet function is used here to verify that the proper domains
     # of the rhs are used unlike before where the rhs domains were
     # taken to be the same as the lhs domains
-    marker = MeshFunction("size_t", mesh, mesh.topology().dim()-1, 0)
+    marker = MeshFunction("size_t", mesh, mesh.topology.dim-1, 0)
     ds0 = Measure("ds", domain=mesh, subdomain_data=marker, subdomain_id=0)
 
     Vu = VectorFunctionSpace(mesh, 'DG', 1)

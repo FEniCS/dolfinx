@@ -95,7 +95,7 @@ void VTKFile::write(const function::Function& u, double time)
 //----------------------------------------------------------------------------
 void VTKFile::write_function(const function::Function& u, double time)
 {
-  dolfin_assert(u.function_space()->mesh());
+  assert(u.function_space()->mesh());
   const mesh::Mesh& mesh = *u.function_space()->mesh();
 
   // Get MPI communicator
@@ -226,13 +226,13 @@ void VTKFile::results_write(const function::Function& u,
   }
 
   // Test for cell-based element type
-  dolfin_assert(u.function_space()->mesh());
+  assert(u.function_space()->mesh());
   const mesh::Mesh& mesh = *u.function_space()->mesh();
   std::size_t cell_based_dim = 1;
   for (std::size_t i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
 
-  dolfin_assert(u.function_space()->dofmap());
+  assert(u.function_space()->dofmap());
   const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
   if (dofmap.max_element_dofs() == cell_based_dim)
     VTKWriter::write_cell_data(u, vtu_filename);
@@ -346,7 +346,7 @@ void VTKFile::pvd_file_write(std::size_t step, double time, std::string fname)
 
   // Get Collection node
   pugi::xml_node xml_collections = xml_doc.child("VTKFile").child("Collection");
-  dolfin_assert(xml_collections);
+  assert(xml_collections);
 
   // Append data set
   pugi::xml_node dataset_node = xml_collections.append_child("DataSet");
@@ -492,7 +492,7 @@ void VTKFile::pvtu_write_mesh(const std::string fname,
 void VTKFile::pvtu_write(const function::Function& u,
                          const std::string fname) const
 {
-  dolfin_assert(u.function_space()->element());
+  assert(u.function_space()->element());
   const std::size_t rank = u.function_space()->element()->value_rank();
   if (rank > 2)
   {
@@ -505,13 +505,13 @@ void VTKFile::pvtu_write(const function::Function& u,
   const std::size_t dim = u.value_size();
 
   // Get mesh
-  dolfin_assert(u.function_space()->mesh());
+  assert(u.function_space()->mesh());
   const mesh::Mesh& mesh = *(u.function_space()->mesh());
 
   // Test for cell-based element type
   std::string data_type = "point";
   std::size_t cell_based_dim = 1;
-  dolfin_assert(u.function_space()->dofmap());
+  assert(u.function_space()->dofmap());
   for (std::size_t i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
   if (u.function_space()->dofmap()->max_element_dofs() == cell_based_dim)

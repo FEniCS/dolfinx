@@ -16,7 +16,7 @@
 #include "CSRGraph.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/MeshPartition.h>
+#include <dolfin/mesh/PartitionData.h>
 
 namespace dolfin
 {
@@ -43,7 +43,7 @@ public:
   /// "adaptive_repartition" or "refine". For meshes that have
   /// already been partitioned or are already well partitioned, it
   /// can be advantageous to use "adaptive_repartition" or "refine".
-  static mesh::MeshPartition
+  static mesh::PartitionData
   compute_partition(const MPI_Comm mpi_comm,
                     Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                     const mesh::CellType& cell_type,
@@ -55,7 +55,8 @@ private:
   // Standard ParMETIS partition. CSRGraph should be const, but
   // ParMETIS accesses it non-const, so has to be non-const here
   template <typename T>
-    static mesh::MeshPartition partition(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph);
+  static mesh::PartitionData partition(MPI_Comm mpi_comm,
+                                       CSRGraph<T>& csr_graph);
 
   // ParMETIS adaptive repartition. CSRGraph should be const, but
   // ParMETIS accesses it non-const, so has to be non-const here

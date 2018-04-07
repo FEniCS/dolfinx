@@ -16,13 +16,13 @@ def create_coordinate_map(o):
     try:
         # Create a compiled coordinate map from an object with the
         # ufl_mesh attribute
-        cmap = ffc_jit(o.ufl_domain())
+        cmap_ptr = ffc_jit(o.ufl_domain())
     except AttributeError:
         # FIXME: It would be good to avoid the type check, but ffc_jit
         # supports other objects so we could get, e.g., a compiled
         # finite element
         if isinstance(o, ufl.domain.Mesh):
-            cmap = ffc_jit(o)
+            cmap_ptr = ffc_jit(o)
         else:
             raise TypeError(
                 "Cannot create coordinate map from an object of type: {}".format(type(o)))
@@ -31,4 +31,5 @@ def create_coordinate_map(o):
         raise
 
     # Wrap compiled coordinate map and return
-    return dolfin.cpp.fem.make_ufc_coordinate_mapping(cmap)
+    ufc_cmap = dolfin.cpp.fem.make_ufc_coordinate_mapping(cmap_ptr)
+    return dolfin.cpp.fem.CoordinateMapping(ufc_cmap)

@@ -154,7 +154,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return self
 
     def dim(self):
-        return self._cpp_object.dim()
+        return self._cpp_object.dim
 
     def id(self):
         return self._cpp_object.id()

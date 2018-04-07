@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Anders Logg
+// Copyright (C) 2006-2018 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -8,7 +8,6 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/geometry/Point.h>
-#include <dolfin/log/log.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -20,6 +19,11 @@ class coordinate_mapping;
 
 namespace dolfin
 {
+namespace fem
+{
+class CoordinateMapping;
+}
+
 namespace mesh
 {
 
@@ -30,8 +34,8 @@ namespace mesh
 class MeshGeometry
 {
 public:
-  /// Create empty set of coordinates
-  MeshGeometry(Eigen::Ref<const EigenRowArrayXXd> points);
+  /// Create set of coordinates
+  MeshGeometry(const Eigen::Ref<const EigenRowArrayXXd>& points);
 
   /// Copy constructor
   MeshGeometry(const MeshGeometry&) = default;
@@ -49,63 +53,28 @@ public:
   MeshGeometry& operator=(MeshGeometry&&) = default;
 
   /// Return Euclidean dimension of coordinate system
-  std::size_t dim() const { return _dim; }
-
-  /// Return the number of vertex coordinates
-  std::size_t num_vertices() const
-  {
-    dolfin_assert(coordinates.size() % _dim == 0);
-    return coordinates.size() / _dim;
-  }
+  std::size_t dim() const { return _coordinates.cols(); }
 
   /// Return the total number of points in the geometry, located on
   /// any entity
-  std::size_t num_points() const
+  std::size_t num_points() const { return _coordinates.rows(); }
+
+  /// Return coordinate array for point with local index n
+  Eigen::Ref<const EigenRowArrayXd> x(std::size_t n) const
   {
-    dolfin_assert(coordinates.size() % _dim == 0);
-    return coordinates.size() / _dim;
+    return _coordinates.row(n);
   }
-
-  /// Get vertex coordinates
-  const double* vertex_coordinates(std::size_t point_index)
-  {
-    dolfin_assert(point_index < num_vertices());
-    return &coordinates[point_index * _dim];
-  }
-
-  /// Get vertex coordinates
-  const double* point_coordinates(std::size_t point_index)
-  {
-    dolfin_assert(point_index * _dim < coordinates.size());
-    return &coordinates[point_index * _dim];
-  }
-
-  /// Return value of coordinate with local index n in direction i
-  double x(std::size_t n, std::size_t i) const
-  {
-    dolfin_assert((n * _dim + i) < coordinates.size());
-    dolfin_assert(i < _dim);
-    return coordinates[n * _dim + i];
-  }
-
-  /// Return array of values for coordinate with local index n
-  const double* x(std::size_t n) const
-  {
-    dolfin_assert(n * _dim < coordinates.size());
-    return &coordinates[n * _dim];
-  }
-
-  /// Return array of values for all coordinates
-  std::vector<double>& x() { return coordinates; }
-
-  /// Return array of values for all coordinates
-  const std::vector<double>& x() const { return coordinates; }
 
   /// Return coordinate with local index n as a 3D point value
   geometry::Point point(std::size_t n) const;
 
-  /// Set value of coordinate
-  void set(std::size_t local_index, const double* x);
+  // Should this return an Eigen::Ref?
+  /// Return array of coordinates for all points
+  EigenRowArrayXXd& points() { return _coordinates; }
+
+  // Should this return an Eigen::Ref?
+  /// Return array of coordinates for all points (const version)
+  const EigenRowArrayXXd& points() const { return _coordinates; }
 
   /// Hash of coordinate values
   ///
@@ -117,15 +86,12 @@ public:
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
-  /// Put ufc::coordinate_mapping here for now
-  std::shared_ptr<ufc::coordinate_mapping> ufc_coord_mapping;
+  /// Put CoordinateMapping for now. Experimental.
+  std::shared_ptr<const fem::CoordinateMapping> coord_mapping;
 
 private:
-  // Euclidean dimension
-  std::size_t _dim;
-
   // Coordinates for all points stored as a contiguous array
-  std::vector<double> coordinates;
+  EigenRowArrayXXd _coordinates;
 };
 } // namespace mesh
 } // namespace dolfin

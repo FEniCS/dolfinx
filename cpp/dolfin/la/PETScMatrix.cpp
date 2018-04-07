@@ -41,7 +41,7 @@ PETScMatrix::PETScMatrix(Mat A) : PETScBaseMatrix(A)
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScBaseMatrix()
 {
-  dolfin_assert(A.mat());
+  assert(A.mat());
   if (!A.empty())
   {
     PetscErrorCode ierr = MatDuplicate(A.mat(), MAT_COPY_VALUES, &_matA);
@@ -272,7 +272,7 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
 bool PETScMatrix::empty() const
 {
   auto sizes = la::PETScBaseMatrix::size();
-  dolfin_assert((sizes[0] < 1 and sizes[1] < 1)
+  assert((sizes[0] < 1 and sizes[1] < 1)
                 or (sizes[0] > 0 and sizes[1] > 0));
   return (sizes[0] < 1) and (sizes[1] < 1);
 }
@@ -282,7 +282,7 @@ void PETScMatrix::get(double* block, std::size_t m,
                       const dolfin::la_index_t* cols) const
 {
   // Get matrix entries (must be on this process)
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscErrorCode ierr = MatGetValues(_matA, m, rows, n, cols, block);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatGetValues");
@@ -292,7 +292,7 @@ void PETScMatrix::set(const double* block, std::size_t m,
                       const dolfin::la_index_t* rows, std::size_t n,
                       const dolfin::la_index_t* cols)
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscErrorCode ierr
       = MatSetValues(_matA, m, rows, n, cols, block, INSERT_VALUES);
   if (ierr != 0)
@@ -303,7 +303,7 @@ void PETScMatrix::set_local(const double* block, std::size_t m,
                             const dolfin::la_index_t* rows, std::size_t n,
                             const dolfin::la_index_t* cols)
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscErrorCode ierr
       = MatSetValuesLocal(_matA, m, rows, n, cols, block, INSERT_VALUES);
   if (ierr != 0)
@@ -314,7 +314,7 @@ void PETScMatrix::add(const double* block, std::size_t m,
                       const dolfin::la_index_t* rows, std::size_t n,
                       const dolfin::la_index_t* cols)
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscErrorCode ierr
       = MatSetValues(_matA, m, rows, n, cols, block, ADD_VALUES);
   if (ierr != 0)
@@ -325,7 +325,7 @@ void PETScMatrix::add_local(const double* block, std::size_t m,
                             const dolfin::la_index_t* rows, std::size_t n,
                             const dolfin::la_index_t* cols)
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscErrorCode ierr
       = MatSetValuesLocal(_matA, m, rows, n, cols, block, ADD_VALUES);
   if (ierr != 0)
@@ -337,8 +337,8 @@ void PETScMatrix::axpy(double a, const PETScMatrix& A,
 {
   PetscErrorCode ierr;
 
-  dolfin_assert(_matA);
-  dolfin_assert(A.mat());
+  assert(_matA);
+  assert(A.mat());
   if (same_nonzero_pattern)
   {
     ierr = MatAXPY(_matA, a, A.mat(), SAME_NONZERO_PATTERN);
@@ -375,7 +375,7 @@ void PETScMatrix::axpy(double a, const PETScMatrix& A,
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero(std::size_t m, const dolfin::la_index_t* rows)
 {
-  dolfin_assert(_matA);
+  assert(_matA);
 
   PetscErrorCode ierr;
   PetscScalar null = 0.0;
@@ -387,7 +387,7 @@ void PETScMatrix::zero(std::size_t m, const dolfin::la_index_t* rows)
 void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index_t* rows,
                              double diag)
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscErrorCode ierr;
   std::cout << "Testing m: " << m << std::endl;
   std::cout << "Testing r: " << rows[0] << std::endl;
@@ -398,7 +398,7 @@ void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index_t* rows,
 //-----------------------------------------------------------------------------
 void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
 {
-  dolfin_assert(_matA);
+  assert(_matA);
 
   if (this->size(1) != x.size())
   {
@@ -425,7 +425,7 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::transpmult(const PETScVector& x, PETScVector& y) const
 {
-  dolfin_assert(_matA);
+  assert(_matA);
 
   if (size(0) != x.size())
   {
@@ -454,7 +454,7 @@ void PETScMatrix::transpmult(const PETScVector& x, PETScVector& y) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::get_diagonal(PETScVector& x) const
 {
-  dolfin_assert(_matA);
+  assert(_matA);
 
   if (size(1) != size(0) || size(0) != x.size())
   {
@@ -471,7 +471,7 @@ void PETScMatrix::get_diagonal(PETScVector& x) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_diagonal(const PETScVector& x)
 {
-  dolfin_assert(_matA);
+  assert(_matA);
 
   if (size(1) != size(0) || size(0) != x.size())
   {
@@ -488,7 +488,7 @@ void PETScMatrix::set_diagonal(const PETScVector& x)
 //-----------------------------------------------------------------------------
 double PETScMatrix::norm(std::string norm_type) const
 {
-  dolfin_assert(_matA);
+  assert(_matA);
 
   // Check that norm is known
   if (norm_types.count(norm_type) == 0)
@@ -509,7 +509,7 @@ void PETScMatrix::apply(AssemblyType type)
 {
   common::Timer timer("Apply (PETScMatrix)");
 
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscErrorCode ierr;
 
   MatAssemblyType petsc_type = MAT_FINAL_ASSEMBLY;
@@ -535,7 +535,7 @@ std::size_t PETScMatrix::nnz() const
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscErrorCode ierr = MatZeroEntries(_matA);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatZeroEntries");
@@ -543,7 +543,7 @@ void PETScMatrix::zero()
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator*=(double a)
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscErrorCode ierr = MatScale(_matA, a);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatScale");
@@ -552,14 +552,14 @@ const PETScMatrix& PETScMatrix::operator*=(double a)
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator/=(double a)
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   MatScale(_matA, 1.0 / a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 bool PETScMatrix::is_symmetric(double tol) const
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscBool symmetric = PETSC_FALSE;
   PetscErrorCode ierr = MatIsSymmetric(_matA, tol, &symmetric);
   if (ierr != 0)
@@ -569,13 +569,13 @@ bool PETScMatrix::is_symmetric(double tol) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_options_prefix(std::string options_prefix)
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   MatSetOptionsPrefix(_matA, options_prefix.c_str());
 }
 //-----------------------------------------------------------------------------
 std::string PETScMatrix::get_options_prefix() const
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   const char* prefix = NULL;
   MatGetOptionsPrefix(_matA, &prefix);
   return std::string(prefix);
@@ -583,7 +583,7 @@ std::string PETScMatrix::get_options_prefix() const
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_from_options()
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   MatSetFromOptions(_matA);
 }
 //-----------------------------------------------------------------------------
@@ -631,7 +631,7 @@ void PETScMatrix::set_nullspace(const la::VectorSpaceBasis& nullspace)
   MatNullSpace petsc_ns = create_petsc_nullspace(nullspace);
 
   // Attach PETSc nullspace to matrix
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscErrorCode ierr = MatSetNullSpace(_matA, petsc_ns);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetNullSpace");
@@ -646,7 +646,7 @@ void PETScMatrix::set_near_nullspace(const la::VectorSpaceBasis& nullspace)
   MatNullSpace petsc_ns = create_petsc_nullspace(nullspace);
 
   // Attach near  nullspace to matrix
-  dolfin_assert(_matA);
+  assert(_matA);
   PetscErrorCode ierr = MatSetNearNullSpace(_matA, petsc_ns);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetNullSpace");
@@ -676,7 +676,7 @@ void PETScMatrix::binary_dump(std::string file_name) const
 //-----------------------------------------------------------------------------
 std::string PETScMatrix::str(bool verbose) const
 {
-  dolfin_assert(_matA);
+  assert(_matA);
   if (this->empty())
     return "<Uninitialized PETScMatrix>";
 
@@ -688,7 +688,7 @@ std::string PETScMatrix::str(bool verbose) const
         "MatView directly.");
 
     // FIXME: Maybe this could be an option?
-    dolfin_assert(_matA);
+    assert(_matA);
     PetscErrorCode ierr;
     if (MPI::size(mpi_comm()) > 1)
     {
@@ -718,11 +718,11 @@ PETScMatrix::create_petsc_nullspace(const la::VectorSpaceBasis& nullspace) const
   std::vector<Vec> _nullspace;
   for (std::size_t i = 0; i < nullspace.dim(); ++i)
   {
-    dolfin_assert(nullspace[i]);
+    assert(nullspace[i]);
     auto x = nullspace[i]->vec();
 
     // Copy vector pointer
-    dolfin_assert(x);
+    assert(x);
     _nullspace.push_back(x);
   }
 

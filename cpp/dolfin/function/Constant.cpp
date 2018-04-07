@@ -69,7 +69,7 @@ const Constant& Constant::operator=(double constant)
   }
 
   // Assign value
-  dolfin_assert(_values.size() == 1);
+  assert(_values.size() == 1);
   _values[0] = constant;
 
   return *this;
@@ -77,7 +77,7 @@ const Constant& Constant::operator=(double constant)
 //-----------------------------------------------------------------------------
 std::vector<double> Constant::values() const
 {
-  dolfin_assert(!_values.empty());
+  assert(!_values.empty());
   return _values;
 }
 //-----------------------------------------------------------------------------

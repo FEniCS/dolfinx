@@ -170,7 +170,7 @@ public:
   cell_dofs(std::size_t cell_index) const
   {
     const std::size_t index = cell_index * _cell_dimension;
-    dolfin_assert(index + _cell_dimension <= _dofmap.size());
+    assert(index + _cell_dimension <= _dofmap.size());
     return Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic,
                                          1>>(&_dofmap[index], _cell_dimension);
   }
@@ -181,7 +181,7 @@ public:
   ///         Degrees of freedom on a single element.
   /// @param    cell_facet_index (std::size_t)
   ///         The local facet index on the cell.
-  void tabulate_facet_dofs(std::vector<std::size_t>& element_dofs,
+  void tabulate_facet_dofs(std::vector<int64_t>& element_dofs,
                            std::size_t cell_facet_index) const;
 
   /// Tabulate local-local mapping of dofs on entity (dim, local_entity)
@@ -192,10 +192,9 @@ public:
   ///         The entity dimension.
   /// @param    cell_entity_index (std::size_t)
   ///         The local entity index on the cell.
-  void tabulate_entity_dofs(std::vector<std::size_t>& element_dofs,
+  void tabulate_entity_dofs(std::vector<int64_t>& element_dofs,
                             std::size_t entity_dim,
                             std::size_t cell_entity_index) const;
-
 
   /// Tabulate globally supported dofs
   ///
@@ -203,7 +202,7 @@ public:
   ///         Degrees of freedom.
   void tabulate_global_dofs(std::vector<std::size_t>& element_dofs) const
   {
-    dolfin_assert(_global_nodes.empty() || block_size() == 1);
+    assert(_global_nodes.empty() || block_size() == 1);
     element_dofs.resize(_global_nodes.size());
     std::copy(_global_nodes.cbegin(), _global_nodes.cend(),
               element_dofs.begin());
@@ -290,7 +289,7 @@ private:
   // constrained, e.g. dofmaps with periodic bcs. It is stored in
   // order to compute the global dimension of dofmaps that are
   // constructed from a sub-dofmap.
-  std::vector<std::size_t> _num_mesh_entities_global;
+  std::vector<int64_t> _num_mesh_entities_global;
 
   // Map from UFC dof numbering to renumbered dof (ufc_dof ->
   // actual_dof, both using local indices)

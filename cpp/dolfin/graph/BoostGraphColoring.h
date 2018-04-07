@@ -85,7 +85,7 @@ public:
 
     // Number of vertices in graph
     const std::size_t num_vertices = boost::num_vertices(graph);
-    dolfin_assert(num_vertices == colors.size());
+    assert(num_vertices == colors.size());
 
     typedef typename boost::graph_traits<T>::vertices_size_type vert_size_type;
     typedef typename boost::property_map<T, boost::vertex_index_t>::const_type

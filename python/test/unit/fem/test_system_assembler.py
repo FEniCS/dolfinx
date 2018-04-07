@@ -253,7 +253,7 @@ def test_domains(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
 
-    sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim())
+    sub_domains = MeshFunction("size_t", mesh, mesh.topology.dim)
     sub_domains.set_all(1)
     right = RightSubDomain()
     right.mark(sub_domains, 2)

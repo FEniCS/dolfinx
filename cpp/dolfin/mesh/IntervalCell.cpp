@@ -56,7 +56,7 @@ void IntervalCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
                                    std::size_t dim, const std::int32_t* v) const
 {
   // For completeness, IntervalCell has two 'edges'
-  dolfin_assert(dim == 0);
+  assert(dim == 0);
 
   // Resize data structure
   e.resize(boost::extents[2][1]);
@@ -203,7 +203,7 @@ void IntervalCell::order(
   MeshTopology& topology = const_cast<MeshTopology&>(cell.mesh().topology());
 
   // Sort local vertices in ascending order, connectivity 1 - 0
-  if (!topology(1, 0).empty())
+  if (!topology.connectivity(1, 0).empty())
   {
     std::int32_t* cell_vertices = const_cast<std::int32_t*>(cell.entities(0));
     sort_entities(2, cell_vertices, local_to_global_vertex_indices);

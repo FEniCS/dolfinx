@@ -8,9 +8,11 @@
 
 #include <array>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
 #include <map>
 #include <numeric>
 #include <set>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -32,13 +34,15 @@ public:
   static void number_entities(const Mesh& mesh, std::size_t d);
 
   /// Create global entity indices for entities of dimension d for
-  /// given global vertex indices.
-  static std::size_t number_entities(
+  /// given global vertex indices. Returns  global_entity_indices,
+  /// shared_entities, and XXXX?
+  static std::tuple<std::vector<std::int64_t>,
+                    std::map<std::int32_t, std::set<std::uint32_t>>,
+                    std::size_t>
+  number_entities(
       const Mesh& mesh,
       const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>&
           slave_entities,
-      std::vector<std::int64_t>& global_entity_indices,
-      std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities,
       std::size_t d);
 
   /// Compute number of cells connected to each facet
@@ -65,19 +69,21 @@ public:
   /// Reorders the vertices in a distributed mesh according to
   /// their global index, and redistributes them evenly across processes
   /// returning the coordinates as a local vector
-  static std::vector<double>
-  reorder_vertices_by_global_indices(const Mesh& mesh);
+  static EigenRowArrayXXd reorder_vertices_by_global_indices(const Mesh& mesh);
 
   /// Reorder the values (of given width) in data to be in global vertex
   /// index order on the Mesh, redistributing evenly across processes
-  static void reorder_values_by_global_indices(const Mesh& mesh,
-                                               std::vector<double>& data,
-                                               const std::size_t width);
+  static EigenRowArrayXXd reorder_values_by_global_indices(
+      const Mesh& mesh, const Eigen::Ref<const EigenRowArrayXXd>& data);
 
   /// Reorder the values of given width, according to explicit global
   /// indices, distributing evenly across processes
-  static void reorder_values_by_global_indices(
-      MPI_Comm mpi_comm, std::vector<double>& values, const std::size_t width,
+  //   static void reorder_values_by_global_indices(
+  //       MPI_Comm mpi_comm, std::vector<double>& values, const std::size_t
+  //       width,
+  //       const std::vector<std::int64_t>& global_indices);
+  static EigenRowArrayXXd reorder_values_by_global_indices(
+      MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& values,
       const std::vector<std::int64_t>& global_indices);
 
 private:
@@ -85,11 +91,17 @@ private:
   // global indices)
   typedef std::vector<std::size_t> Entity;
 
-  // Data structure to mesh entity data
+  // Data structure for mesh entity data
   struct EntityData
   {
     // Constructor
     EntityData() : local_index(0) {}
+
+    // Move constructor
+    EntityData(EntityData&&) = default;
+
+    // Move assignment
+    EntityData& operator=(EntityData&&) = default;
 
     // Constructor  (index is local)
     explicit EntityData(std::uint32_t index) : local_index(index) {}
@@ -98,12 +110,14 @@ private:
     EntityData(std::uint32_t index, const std::vector<std::uint32_t>& procs)
         : local_index(index), processes(procs)
     {
+      // Do nothing
     }
 
     // Constructor  (index is local)
     EntityData(std::uint32_t index, std::uint32_t process)
         : local_index(index), processes(1, process)
     {
+      // Do nothing
     }
 
     // Local (this process) entity index
@@ -119,23 +133,25 @@ private:
   //       communicated to other processes)
   //  [2]: not owned but shared (will be numbered by another process,
   //       and number communicated to this processes)
-  static void compute_entity_ownership(
+  //  Returns (owned_entities,  shared_entities)
+  static std::pair<std::vector<std::size_t>,
+                   std::array<std::map<Entity, EntityData>, 2>>
+  compute_entity_ownership(
       const MPI_Comm mpi_comm,
       const std::map<std::vector<std::size_t>, std::uint32_t>& entities,
       const std::map<std::int32_t, std::set<std::uint32_t>>&
           shared_vertices_local,
-      const std::vector<std::int64_t>& global_vertex_indices, std::size_t d,
-      std::vector<std::size_t>& owned_entities,
-      std::array<std::map<Entity, EntityData>, 2>& shared_entities);
+      const std::vector<std::int64_t>& global_vertex_indices, std::size_t d);
 
   // Build preliminary 'guess' of shared entities. This function does
-  // not involve any inter-process communication.
-  static void compute_preliminary_entity_ownership(
+  // not involve any inter-process communication. Returns (owned_entities,
+  // entity_ownership);
+  static std::pair<std::vector<std::size_t>,
+                   std::array<std::map<Entity, EntityData>, 2>>
+  compute_preliminary_entity_ownership(
       const MPI_Comm mpi_comm,
       const std::map<std::size_t, std::set<std::uint32_t>>& shared_vertices,
-      const std::map<Entity, std::uint32_t>& entities,
-      std::vector<std::size_t>& owned_entities,
-      std::array<std::map<Entity, EntityData>, 2>& entity_ownership);
+      const std::map<Entity, std::uint32_t>& entities);
 
   // Communicate with other processes to finalise entity ownership
   static void compute_final_entity_ownership(

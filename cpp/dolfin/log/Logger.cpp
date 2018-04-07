@@ -33,7 +33,7 @@ using namespace dolfin::log;
 #ifdef __linux__
 void _monitor_memory_usage(dolfin::log::Logger* logger)
 {
-  dolfin_assert(logger);
+  assert(logger);
 
   // Open statm
   // std::fstream
@@ -246,7 +246,7 @@ void Logger::set_indentation_level(std::size_t indentation_level)
 void Logger::register_timing(std::string task,
                              std::tuple<double, double, double> elapsed)
 {
-  dolfin_assert(elapsed
+  assert(elapsed
                 >= std::make_tuple(double(0.0), double(0.0), double(0.0)));
 
   // Print a message
@@ -381,18 +381,6 @@ void Logger::__debug(std::string msg) const
 {
   std::string s = std::string("DEBUG: ") + msg;
   write(DBG, s);
-}
-//-----------------------------------------------------------------------------
-void Logger::__dolfin_assert(std::string file, unsigned long line,
-                             std::string function, std::string check) const
-{
-  std::stringstream location;
-  location << file << " (line " << line << ")";
-  std::stringstream task;
-  task << "complete call to function " << function << "()";
-  std::stringstream reason;
-  reason << "Assertion " << check << " failed";
-  log::dolfin_error(location.str(), task.str(), reason.str());
 }
 //-----------------------------------------------------------------------------
 void Logger::write(int log_level, std::string msg) const

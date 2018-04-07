@@ -13,32 +13,25 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-MeshGeometry::MeshGeometry(Eigen::Ref<const EigenRowArrayXXd> points)
-    : _dim(points.cols())
+MeshGeometry::MeshGeometry(const Eigen::Ref<const EigenRowArrayXXd>& points)
+    : _coordinates(points)
 {
-  // Resize geometry
-  coordinates.resize(points.rows() * _dim);
-
-  // Map and copy data
-  Eigen::Map<EigenRowArrayXXd> _x(coordinates.data(), points.rows(), _dim);
-  _x = points;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 geometry::Point MeshGeometry::point(std::size_t n) const
 {
-  return geometry::Point(_dim, this->x(n));
-}
-//-----------------------------------------------------------------------------
-void MeshGeometry::set(std::size_t local_index, const double* x)
-{
-  std::copy(x, x + _dim, coordinates.begin() + local_index * _dim);
+  return geometry::Point(_coordinates.cols(), _coordinates.row(n).data());
 }
 //-----------------------------------------------------------------------------
 std::size_t MeshGeometry::hash() const
 {
   // Compute local hash
   boost::hash<std::vector<double>> dhash;
-  const std::size_t local_hash = dhash(coordinates);
+
+  std::vector<double> _x(_coordinates.data(),
+                         _coordinates.data() + _coordinates.size());
+  const std::size_t local_hash = dhash(_x);
   return local_hash;
 }
 //-----------------------------------------------------------------------------
@@ -48,19 +41,19 @@ std::string MeshGeometry::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    for (std::size_t i = 0; i < num_vertices(); i++)
+    for (Eigen::Index i = 0; i < _coordinates.rows(); i++)
     {
       s << "  " << i << ":";
-      for (std::size_t d = 0; d < _dim; d++)
-        s << " " << x(i, d);
+      for (Eigen::Index d = 0; d < _coordinates.cols(); d++)
+        s << " " << _coordinates(i, d);
       s << std::endl;
     }
     s << std::endl;
   }
   else
   {
-    s << "<MeshGeometry of dimension " << _dim << " and size " << num_vertices()
-      << ">";
+    s << "<MeshGeometry of dimension " << _coordinates.cols() << " and size "
+      << _coordinates.rows() << ">";
   }
 
   return s.str();

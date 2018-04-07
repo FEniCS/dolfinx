@@ -94,17 +94,18 @@ public:
 
     if (e.dim() == dim)
     {
-      dolfin_assert(pos < 2);
+      assert(pos < 2);
       _connections = &e._local_index + pos;
       _entity._local_index = e._local_index;
       return;
     }
 
     // Get connectivity
-    const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity.dim());
+    const MeshConnectivity& c
+        = e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections
-    dolfin_assert(!c.empty());
+    assert(!c.empty());
     _connections = c(e.index()) + pos;
     _entity._local_index = *_connections;
   }
@@ -117,17 +118,18 @@ public:
 
     if (e.dim() == _entity.dim())
     {
-      dolfin_assert(pos < 2);
+      assert(pos < 2);
       _connections = &e._local_index + pos;
       _entity._local_index = e._local_index;
       return;
     }
 
     // Get connectivity
-    const MeshConnectivity& c = e.mesh().topology()(e.dim(), _entity.dim());
+    const MeshConnectivity& c
+        = e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections
-    dolfin_assert(!c.empty());
+    assert(!c.empty());
     _connections = c(e.index()) + pos;
     _entity._local_index = *_connections;
   }

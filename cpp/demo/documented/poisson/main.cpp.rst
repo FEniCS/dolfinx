@@ -86,8 +86,8 @@ equation.  For convenience we also include the DOLFIN namespace.
 
 .. code-block:: cpp
 
-   #include <dolfin.h>
    #include "Poisson.h"
+   #include <dolfin.h>
 
    using namespace dolfin;
 
@@ -166,11 +166,6 @@ the form file) defined relative to this mesh, we do as follows
      auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle));
      auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
 
-    // Attach 'coordinate mapping' to mesh
-    auto cmap = std::make_shared<poisson_coordinate_mapping_1>();
-    mesh->geometry().ufc_coord_mapping = cmap;
-
-
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
 using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
 takes three arguments: the function space the boundary condition
@@ -206,6 +201,10 @@ to the linear form.
      auto g = std::make_shared<dUdN>();
      L->f = f;
      L->g = g;
+
+    // Attach 'coordinate mapping' to mesh
+    auto cmap = a->coordinate_mapping();
+    mesh->geometry().coord_mapping = cmap;
 
 Now, we have specified the variational forms and can consider the
 solution of the variational problem. First, we need to define a

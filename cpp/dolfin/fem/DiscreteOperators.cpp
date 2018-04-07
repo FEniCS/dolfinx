@@ -30,11 +30,11 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   // easier to build matrix sparsity patterns.
 
   // Get mesh
-  dolfin_assert(V0.mesh());
+  assert(V0.mesh());
   const mesh::Mesh& mesh = *(V0.mesh());
 
   // Check that mesh is the same for both function spaces
-  dolfin_assert(V1.mesh());
+  assert(V1.mesh());
   if (&mesh != V1.mesh().get())
   {
     log::dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",

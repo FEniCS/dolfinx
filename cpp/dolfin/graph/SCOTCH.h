@@ -14,7 +14,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/MeshPartition.h>
+#include <dolfin/mesh/PartitionData.h>
 #include <map>
 #include <set>
 #include <string>
@@ -44,9 +44,9 @@ public:
   /// @param mpi_comm (MPI_Comm)
   /// @param cell_vertices (const boost::multi_array<std::int64_t, 2>)
   /// @param cell_type (const CellType)
-  /// @return mesh::MeshPartition
+  /// @return mesh::PartitionData
   ///
-  static mesh::MeshPartition
+  static mesh::PartitionData
   compute_partition(const MPI_Comm mpi_comm,
                     Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                     const mesh::CellType& cell_type);
@@ -87,7 +87,7 @@ private:
   // local_graph is not const since we share the data with SCOTCH,
   // and the SCOTCH interface is not const-correct.
   template <typename T>
-  static mesh::MeshPartition
+  static mesh::PartitionData
   partition(const MPI_Comm mpi_comm, CSRGraph<T>& local_graph,
             const std::vector<std::size_t>& node_weights,
             const std::set<std::int64_t>& ghost_vertices);

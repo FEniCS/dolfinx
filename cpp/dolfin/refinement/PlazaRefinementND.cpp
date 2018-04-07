@@ -82,12 +82,12 @@ void PlazaRefinementND::get_simplices(
 {
   if (tdim == 2)
   {
-    dolfin_assert(longest_edge.size() == 1);
+    assert(longest_edge.size() == 1);
     get_triangles(simplex_set, marked_edges, longest_edge[0], uniform);
   }
   else if (tdim == 3)
   {
-    dolfin_assert(longest_edge.size() == 4);
+    assert(longest_edge.size() == 4);
     get_tetrahedra(simplex_set, marked_edges, longest_edge);
   }
 }
@@ -98,7 +98,7 @@ void PlazaRefinementND::get_triangles(std::vector<std::size_t>& tri_set,
                                       bool uniform)
 {
   // Longest edge must be marked
-  dolfin_assert(marked_edges[longest_edge]);
+  assert(marked_edges[longest_edge]);
 
   tri_set.clear();
 
@@ -384,7 +384,7 @@ mesh::Mesh PlazaRefinementND::compute_refinement(
         const std::size_t edge_index = cell.entities(1)[p];
 
         auto it = new_vertex_map.find(edge_index);
-        dolfin_assert(it != new_vertex_map.end());
+        assert(it != new_vertex_map.end());
         indices[num_cell_vertices + p] = it->second;
       }
 

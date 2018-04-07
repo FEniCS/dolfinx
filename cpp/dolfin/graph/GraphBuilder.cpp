@@ -66,8 +66,8 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
     mesh.init(coloring_type[i - 1], coloring_type[i]);
 
   // Check coloring type
-  dolfin_assert(coloring_type.size() >= 2);
-  dolfin_assert(coloring_type.front() == coloring_type.back());
+  assert(coloring_type.size() >= 2);
+  assert(coloring_type.front() == coloring_type.back());
 
   // Create graph
   const std::size_t num_vertices = mesh.num_entities(coloring_type[0]);
@@ -142,7 +142,8 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 std::pair<std::int32_t, std::int32_t>
 dolfin::graph::GraphBuilder::compute_dual_graph(
-    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const MPI_Comm mpi_comm,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::CellType& cell_type,
     std::vector<std::vector<std::size_t>>& local_graph,
     std::set<std::int64_t>& ghost_vertices)
@@ -166,7 +167,8 @@ dolfin::graph::GraphBuilder::compute_dual_graph(
 }
 //-----------------------------------------------------------------------------
 std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph(
-    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const MPI_Comm mpi_comm,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::CellType& cell_type,
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map)
@@ -200,7 +202,8 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph(
 //-----------------------------------------------------------------------------
 template <int N>
 std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
-    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const MPI_Comm mpi_comm,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::CellType& cell_type,
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map)
@@ -213,9 +216,9 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
   const std::int8_t num_facets_per_cell = cell_type.num_entities(tdim - 1);
   const std::int8_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
 
-  dolfin_assert(N == num_vertices_per_facet);
-  dolfin_assert(num_local_cells == (int)cell_vertices.rows());
-  dolfin_assert(num_vertices_per_cell == (int)cell_vertices.cols());
+  assert(N == num_vertices_per_facet);
+  assert(num_local_cells == (int)cell_vertices.rows());
+  assert(num_vertices_per_cell == (int)cell_vertices.cols());
 
   local_graph.resize(num_local_cells);
   facet_cell_map.clear();
@@ -315,7 +318,8 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
 }
 //-----------------------------------------------------------------------------
 std::int32_t dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
-    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const MPI_Comm mpi_comm,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::CellType& cell_type,
     std::vector<std::vector<std::size_t>>& local_graph,
     FacetCellMap& facet_cell_map, std::set<std::int64_t>& ghost_vertices)
@@ -338,8 +342,8 @@ std::int32_t dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
   const std::int8_t num_vertices_per_cell = cell_type.num_entities(0);
   const std::int8_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
 
-  dolfin_assert(num_local_cells == (int)cell_vertices.rows());
-  dolfin_assert(num_vertices_per_cell == (int)cell_vertices.cols());
+  assert(num_local_cells == (int)cell_vertices.rows());
+  assert(num_vertices_per_cell == (int)cell_vertices.cols());
 
   // Compute local edges (cell-cell connections) using global
   // (internal to this function, not the user numbering) numbering
@@ -438,8 +442,8 @@ std::int32_t dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
   std::int32_t num_nonlocal_edges = 0;
   for (std::size_t i = 0; i < cell_list.size(); i += 2)
   {
-    dolfin_assert((std::int64_t)cell_list[i] >= offset);
-    dolfin_assert((std::int64_t)(cell_list[i] - offset)
+    assert((std::int64_t)cell_list[i] >= offset);
+    assert((std::int64_t)(cell_list[i] - offset)
                   < (std::int64_t)local_graph.size());
 
     auto& edges = local_graph[cell_list[i] - offset];

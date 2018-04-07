@@ -40,7 +40,7 @@ double Point::dot(const Point& p) const
 //-----------------------------------------------------------------------------
 Point Point::rotate(const Point& k, double theta) const
 {
-  dolfin_assert(std::abs(k.norm() - 1.0) < DOLFIN_EPS);
+  assert(std::abs(k.norm() - 1.0) < DOLFIN_EPS);
 
   const Point& v = *this;
   const double cosTheta = cos(theta);

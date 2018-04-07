@@ -25,7 +25,7 @@ void MeshOrdering::order(Mesh& mesh)
     return;
 
   // Get global vertex numbering
-  dolfin_assert(mesh.topology().have_global_indices(0));
+  assert(mesh.topology().have_global_indices(0));
   const auto& local_to_global_vertex_indices
       = mesh.topology().global_indices(0);
 
@@ -45,7 +45,7 @@ bool MeshOrdering::ordered(const Mesh& mesh)
     return true;
 
   // Get global vertex numbering
-  dolfin_assert(mesh.topology().have_global_indices(0));
+  assert(mesh.topology().have_global_indices(0));
   const auto& local_to_global_vertex_indices
       = mesh.topology().global_indices(0);
 

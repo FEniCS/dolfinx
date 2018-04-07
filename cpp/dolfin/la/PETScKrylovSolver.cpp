@@ -212,9 +212,9 @@ void PETScKrylovSolver::set_operator(const la::PETScBaseMatrix& A)
 void PETScKrylovSolver::set_operators(const la::PETScBaseMatrix& A,
                                       const la::PETScBaseMatrix& P)
 {
-  dolfin_assert(A.mat());
-  dolfin_assert(P.mat());
-  dolfin_assert(_ksp);
+  assert(A.mat());
+  assert(P.mat());
+  assert(_ksp);
 
   PetscErrorCode ierr;
   ierr = KSPSetOperators(_ksp, A.mat(), P.mat());
@@ -230,7 +230,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   // Get PETSc operators
   Mat _A, _P;
   KSPGetOperators(_ksp, &_A, &_P);
-  dolfin_assert(_A);
+  assert(_A);
 
   // Create wrapper around PETSc Mat object
   la::PETScBaseMatrix A(_A);
@@ -389,7 +389,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_nonzero_guess(bool nonzero_guess)
 {
-  dolfin_assert(_ksp);
+  assert(_ksp);
   const PetscBool _nonzero_guess = nonzero_guess ? PETSC_TRUE : PETSC_FALSE;
   PetscErrorCode ierr = KSPSetInitialGuessNonzero(_ksp, _nonzero_guess);
   if (ierr != 0)
@@ -398,7 +398,7 @@ void PETScKrylovSolver::set_nonzero_guess(bool nonzero_guess)
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_reuse_preconditioner(bool reuse_pc)
 {
-  dolfin_assert(_ksp);
+  assert(_ksp);
   const PetscBool _reuse_pc = reuse_pc ? PETSC_TRUE : PETSC_FALSE;
   PetscErrorCode ierr = KSPSetReusePreconditioner(_ksp, _reuse_pc);
   if (ierr != 0)
@@ -408,7 +408,7 @@ void PETScKrylovSolver::set_reuse_preconditioner(bool reuse_pc)
 void PETScKrylovSolver::set_tolerances(double relative, double absolute,
                                        double diverged, int max_iter)
 {
-  dolfin_assert(_ksp);
+  assert(_ksp);
   PetscErrorCode ierr
       = KSPSetTolerances(_ksp, relative, absolute, diverged, max_iter);
   if (ierr != 0)
@@ -440,19 +440,19 @@ void PETScKrylovSolver::set_norm_type(norm_type type)
                       "Unknown norm type");
   }
 
-  dolfin_assert(_ksp);
+  assert(_ksp);
   KSPSetNormType(_ksp, ksp_norm_type);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_dm(DM dm)
 {
-  dolfin_assert(_ksp);
+  assert(_ksp);
   KSPSetDM(_ksp, dm);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_dm_active(bool val)
 {
-  dolfin_assert(_ksp);
+  assert(_ksp);
   if (val)
     KSPSetDMActive(_ksp, PETSC_TRUE);
   else
@@ -462,7 +462,7 @@ void PETScKrylovSolver::set_dm_active(bool val)
 PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type() const
 {
   // Get norm type from PETSc
-  dolfin_assert(_ksp);
+  assert(_ksp);
   KSPNormType ksp_norm_type = KSP_NORM_DEFAULT;
   KSPGetNormType(_ksp, &ksp_norm_type);
 
@@ -488,7 +488,7 @@ PETScKrylovSolver::norm_type PETScKrylovSolver::get_norm_type() const
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::monitor(bool monitor_convergence)
 {
-  dolfin_assert(_ksp);
+  assert(_ksp);
   PetscErrorCode ierr;
   if (monitor_convergence)
   {
@@ -515,7 +515,7 @@ void PETScKrylovSolver::monitor(bool monitor_convergence)
 void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
 {
   // Set options prefix
-  dolfin_assert(_ksp);
+  assert(_ksp);
   PetscErrorCode ierr = KSPSetOptionsPrefix(_ksp, options_prefix.c_str());
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
@@ -523,7 +523,7 @@ void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
 //-----------------------------------------------------------------------------
 std::string PETScKrylovSolver::get_options_prefix() const
 {
-  dolfin_assert(_ksp);
+  assert(_ksp);
   const char* prefix = NULL;
   PetscErrorCode ierr = KSPGetOptionsPrefix(_ksp, &prefix);
   if (ierr != 0)
@@ -533,7 +533,7 @@ std::string PETScKrylovSolver::get_options_prefix() const
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_from_options() const
 {
-  dolfin_assert(_ksp);
+  assert(_ksp);
   PetscErrorCode ierr = KSPSetFromOptions(_ksp);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "KSPSetFromOptions");
@@ -541,7 +541,7 @@ void PETScKrylovSolver::set_from_options() const
 //-----------------------------------------------------------------------------
 std::string PETScKrylovSolver::str(bool verbose) const
 {
-  dolfin_assert(_ksp);
+  assert(_ksp);
   std::stringstream s;
   if (verbose)
   {
@@ -560,7 +560,7 @@ PETSc KSPView directly.");
 //-----------------------------------------------------------------------------
 MPI_Comm PETScKrylovSolver::mpi_comm() const
 {
-  dolfin_assert(_ksp);
+  assert(_ksp);
   MPI_Comm mpi_comm = MPI_COMM_NULL;
   PetscObjectGetComm((PetscObject)_ksp, &mpi_comm);
   return mpi_comm;
@@ -592,8 +592,8 @@ std::size_t PETScKrylovSolver::_solve(const la::PETScBaseMatrix& A,
                                       PETScVector& x, const PETScVector& b)
 {
   // Set operator
-  dolfin_assert(_ksp);
-  dolfin_assert(A.mat());
+  assert(_ksp);
+  assert(A.mat());
   KSPSetOperators(_ksp, A.mat(), A.mat());
 
   // Call solve
@@ -608,7 +608,7 @@ std::size_t PETScKrylovSolver::_solve(const la::PETScBaseMatrix& A,
 void PETScKrylovSolver::write_report(int num_iterations,
                                      KSPConvergedReason reason)
 {
-  dolfin_assert(_ksp);
+  assert(_ksp);
 
   PetscErrorCode ierr;
 

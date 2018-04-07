@@ -12,6 +12,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <cassert>
 
 #ifdef HAS_MPI
 #define MPICH_IGNORE_CXX_SEEK 1
@@ -339,7 +340,7 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
   const std::size_t comm_size = MPI::size(comm);
 
   // Data size per destination
-  dolfin_assert(in_values.size() == comm_size);
+  assert(in_values.size() == comm_size);
   std::vector<int> data_size_send(comm_size);
   std::vector<int> data_offset_send(comm_size + 1, 0);
   for (std::size_t p = 0; p < comm_size; ++p)
@@ -380,7 +381,7 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
               out_values[p].begin());
   }
 #else
-  dolfin_assert(in_values.size() == 1);
+  assert(in_values.size() == 1);
   out_values = in_values;
 #endif
 }
@@ -394,7 +395,7 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
   const std::size_t comm_size = MPI::size(comm);
 
   // Data size per destination
-  dolfin_assert(in_values.size() == comm_size);
+  assert(in_values.size() == comm_size);
   std::vector<int> data_size_send(comm_size);
   std::vector<int> data_offset_send(comm_size + 1, 0);
   for (std::size_t p = 0; p < comm_size; ++p)
@@ -426,7 +427,7 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
                 comm);
 
 #else
-  dolfin_assert(in_values.size() == 1);
+  assert(in_values.size() == 1);
   out_values = in_values[0];
 #endif
 }
@@ -452,7 +453,7 @@ inline void dolfin::MPI::all_to_all(MPI_Comm comm,
   for (std::size_t i = 0; i < recv.size(); ++i)
     out_values[i].assign(recv[i].begin(), recv[i].end());
 #else
-  dolfin_assert(in_values.size() == 1);
+  assert(in_values.size() == 1);
   out_values = in_values;
 #endif
 }
@@ -475,7 +476,7 @@ inline void dolfin::MPI::all_to_all(MPI_Comm comm,
   // Copy back to bool
   out_values.assign(recv.begin(), recv.end());
 #else
-  dolfin_assert(in_values.size() == 1);
+  assert(in_values.size() == 1);
   out_values = in_values[0];
 #endif
 }
@@ -495,7 +496,7 @@ void dolfin::MPI::scatter(MPI_Comm comm,
   std::vector<int> all_num_values;
   if (MPI::rank(comm) == sending_process)
   {
-    dolfin_assert(in_values.size() == comm_size);
+    assert(in_values.size() == comm_size);
     all_num_values.resize(comm_size);
     for (std::size_t i = 0; i < comm_size; ++i)
       all_num_values[i] = in_values[i].size();
@@ -530,8 +531,8 @@ void dolfin::MPI::scatter(MPI_Comm comm,
                offsets.data(), mpi_type<T>(), out_value.data(), my_num_values,
                mpi_type<T>(), sending_process, comm);
 #else
-  dolfin_assert(sending_process == 0);
-  dolfin_assert(in_values.size() == 1);
+  assert(sending_process == 0);
+  assert(in_values.size() == 1);
   out_value = in_values[0];
 #endif
 }
@@ -554,8 +555,8 @@ inline void dolfin::MPI::scatter(
   out_value.resize(out.size());
   std::copy(out.begin(), out.end(), out_value.begin());
 #else
-  dolfin_assert(sending_process == 0);
-  dolfin_assert(in_values.size() == 1);
+  assert(sending_process == 0);
+  assert(in_values.size() == 1);
   out_value = in_values[0];
 #endif
 }
@@ -567,13 +568,13 @@ void dolfin::MPI::scatter(MPI_Comm comm, const std::vector<T>& in_values,
 {
 #ifdef HAS_MPI
   if (MPI::rank(comm) == sending_process)
-    dolfin_assert(in_values.size() == MPI::size(comm));
+    assert(in_values.size() == MPI::size(comm));
 
   MPI_Scatter(const_cast<T*>(in_values.data()), 1, mpi_type<T>(), &out_value, 1,
               mpi_type<T>(), sending_process, comm);
 #else
-  dolfin_assert(sending_process == 0);
-  dolfin_assert(in_values.size() == 1);
+  assert(sending_process == 0);
+  assert(in_values.size() == 1);
   out_value = in_values[0];
 #endif
 }
@@ -706,7 +707,7 @@ void dolfin::MPI::all_gather(MPI_Comm comm, const std::vector<T>& in_values,
   std::vector<int> pcounts;
   const int local_size = in_values.size();
   MPI::all_gather(comm, local_size, pcounts);
-  dolfin_assert(pcounts.size() == comm_size);
+  assert(pcounts.size() == comm_size);
 
   // Build offsets
   std::vector<int> offsets(comm_size + 1, 0);

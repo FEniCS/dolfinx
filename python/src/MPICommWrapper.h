@@ -35,5 +35,3 @@ private:
   MPI_Comm _comm;
 };
 }
-
-

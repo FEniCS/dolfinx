@@ -220,7 +220,7 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
           a.function_space(1)->dofmap().get()}};
 
   // Get mesh
-  dolfin_assert(a.mesh());
+  assert(a.mesh());
   const mesh::Mesh& mesh = *(a.mesh());
 
   common::Timer t0("Build sparsity");
@@ -316,8 +316,8 @@ std::vector<dolfin::la_index_t>
 dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
 {
   // Get the mesh
-  dolfin_assert(space.mesh());
-  dolfin_assert(space.dofmap());
+  assert(space.mesh());
+  assert(space.dofmap());
   const mesh::Mesh& mesh = *space.mesh();
   const GenericDofMap& dofmap = *space.dofmap();
 
@@ -333,7 +333,8 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
 
   // Num dofs per vertex
   const std::size_t dofs_per_vertex = dofmap.num_entity_dofs(0);
-  const std::size_t vert_per_cell = mesh.topology()(top_dim, 0).size(0);
+  const std::size_t vert_per_cell
+      = mesh.topology().connectivity(top_dim, 0).size(0);
   if (vert_per_cell * dofs_per_vertex != dofmap.max_element_dofs())
   {
     log::dolfin_error("DofMap.cpp", "tabulate dof to vertex map",
@@ -341,7 +342,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   }
 
   // Allocate data for tabulating local to local map
-  std::vector<std::size_t> local_to_local_map(dofs_per_vertex);
+  std::vector<int64_t> local_to_local_map(dofs_per_vertex);
 
   // Create return data structure
   std::vector<dolfin::la_index_t> return_map(dofs_per_vertex
@@ -372,7 +373,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
         break;
       }
     }
-    dolfin_assert(vertex_found);
+    assert(vertex_found);
 
     // Get all cell dofs
     auto cell_dofs = dofmap.cell_dofs(cell.index());

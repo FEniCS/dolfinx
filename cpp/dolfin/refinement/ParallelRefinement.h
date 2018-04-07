@@ -109,7 +109,7 @@ private:
   std::map<std::size_t, std::size_t> local_edge_to_new_vertex;
 
   // New storage for all coordinates when creating new vertices
-  std::vector<double> new_vertex_coordinates;
+  std::vector<double> _new_vertex_coordinates;
 
   // New storage for all cells when creating new topology
   std::vector<std::int64_t> new_cell_topology;

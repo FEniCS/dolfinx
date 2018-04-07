@@ -48,9 +48,9 @@ bool MeshEntity::incident(const MeshEntity& entity) const
 
   // Get list of entities for given topological dimension
   const std::int32_t* entities
-      = _mesh->topology()(_dim, entity._dim)(_local_index);
+      = _mesh->topology().connectivity(_dim, entity._dim)(_local_index);
   const std::size_t num_entities
-      = _mesh->topology()(_dim, entity._dim).size(_local_index);
+      = _mesh->topology().connectivity(_dim, entity._dim).size(_local_index);
 
   // Check if any entity matches
   for (std::size_t i = 0; i < num_entities; ++i)
@@ -72,9 +72,9 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
 
   // Get list of entities for given topological dimension
   const std::int32_t* entities
-      = _mesh->topology()(_dim, entity._dim)(_local_index);
+      = _mesh->topology().connectivity(_dim, entity._dim)(_local_index);
   const std::size_t num_entities
-      = _mesh->topology()(_dim, entity._dim).size(_local_index);
+      = _mesh->topology().connectivity(_dim, entity._dim).size(_local_index);
 
   // Check if any entity matches
   for (std::size_t i = 0; i < num_entities; ++i)
@@ -109,7 +109,7 @@ geometry::Point MeshEntity::midpoint() const
     num_vertices++;
   }
 
-  dolfin_assert(num_vertices > 0);
+  assert(num_vertices > 0);
 
   x /= double(num_vertices);
   y /= double(num_vertices);
@@ -134,7 +134,7 @@ std::uint32_t MeshEntity::owner() const
                       "Ownership of non-ghost cells is local process");
   }
 
-  dolfin_assert((int)_mesh->topology().cell_owner().size()
+  assert((int)_mesh->topology().cell_owner().size()
                 > _local_index - offset);
   return _mesh->topology().cell_owner()[_local_index - offset];
 }

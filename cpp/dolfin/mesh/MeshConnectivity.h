@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfin/log/log.h>
+#include <cassert>
 #include <vector>
 
 namespace dolfin
@@ -41,6 +42,9 @@ public:
   /// Assignment
   MeshConnectivity& operator=(const MeshConnectivity& connectivity) = default;
 
+  /// Move assignment
+  MeshConnectivity& operator=(MeshConnectivity&& connectivity) = default;
+
   /// Return true if the total number of connections is equal to zero
   bool empty() const { return _connections.empty(); }
 
@@ -50,8 +54,8 @@ public:
   /// Return number of connections for given entity
   std::size_t size(std::size_t entity) const
   {
-    return (entity + 1) < index_to_position.size()
-               ? index_to_position[entity + 1] - index_to_position[entity]
+    return (entity + 1) < _index_to_position.size()
+               ? _index_to_position[entity + 1] - _index_to_position[entity]
                : 0;
   }
 
@@ -62,7 +66,7 @@ public:
       return size(entity);
     else
     {
-      dolfin_assert(entity < _num_global_connections.size());
+      assert(entity < _num_global_connections.size());
       return _num_global_connections[entity];
     }
   }
@@ -70,13 +74,25 @@ public:
   /// Return array of connections for given entity
   const std::int32_t* operator()(std::size_t entity) const
   {
-    return (entity + 1) < index_to_position.size()
-               ? &_connections[index_to_position[entity]]
-               : 0;
+    return (entity + 1) < _index_to_position.size()
+               ? &_connections[_index_to_position[entity]]
+               : nullptr;
   }
+  // Eigen::Ref<const EigenArrayXi32> operator()(std::size_t entity) const
+  // {
+  //   if ((entity + 1) < _index_to_position.size())
+  //   {
+  //     const std::size_t size
+  //         = _index_to_position[entity + 1] - _index_to_position[entity];
+  //     return Eigen::Map<const EigenArrayXi32>(
+  //         &_connections[_index_to_position[entity]], size);
+  //   }
+  //   else
+  //     return Eigen::Map<const EigenArrayXi32>(nullptr, 0);
+  // }
 
   /// Return contiguous array of connections for all entities
-  const std::vector<std::int32_t>& operator()() const { return _connections; }
+  const std::vector<std::int32_t>& connections() const { return _connections; }
 
   /// Clear all data
   void clear();
@@ -97,27 +113,28 @@ public:
   template <typename T>
   void set(std::size_t entity, const T& connections)
   {
-    dolfin_assert((entity + 1) < index_to_position.size());
-    dolfin_assert(connections.size()
-                  == index_to_position[entity + 1] - index_to_position[entity]);
+    assert((entity + 1) < _index_to_position.size());
+    assert(connections.size()
+                  == _index_to_position[entity + 1]
+                         - _index_to_position[entity]);
 
     // Copy data
     std::copy(connections.begin(), connections.end(),
-              _connections.begin() + index_to_position[entity]);
+              _connections.begin() + _index_to_position[entity]);
   }
 
   /// Set all connections for given entity
   template <typename T>
   void set(std::size_t entity, T* connections)
   {
-    dolfin_assert((entity + 1) < index_to_position.size());
-    dolfin_assert(connections);
+    assert((entity + 1) < _index_to_position.size());
+    assert(connections);
 
     // Copy data
     const std::size_t num_connections
-        = index_to_position[entity + 1] - index_to_position[entity];
+        = _index_to_position[entity + 1] - _index_to_position[entity];
     std::copy(connections, connections + num_connections,
-              _connections.begin() + index_to_position[entity]);
+              _connections.begin() + _index_to_position[entity]);
   }
 
   /// Set all connections for all entities (T is a '2D' container, e.g. a
@@ -130,14 +147,14 @@ public:
     clear();
 
     // Initialize offsets and compute total size
-    index_to_position.resize(connections.size() + 1);
+    _index_to_position.resize(connections.size() + 1);
     std::int32_t size = 0;
     for (std::size_t e = 0; e < connections.size(); e++)
     {
-      index_to_position[e] = size;
+      _index_to_position[e] = size;
       size += connections[e].size();
     }
-    index_to_position[connections.size()] = size;
+    _index_to_position[connections.size()] = size;
 
     // Initialize connections
     _connections.reserve(size);
@@ -150,8 +167,8 @@ public:
   /// Set global number of connections for all local entities
   void set_global_size(const std::vector<std::uint32_t>& num_global_connections)
   {
-    dolfin_assert(num_global_connections.size()
-                  == index_to_position.size() - 1);
+    assert(num_global_connections.size()
+                  == _index_to_position.size() - 1);
     _num_global_connections = num_global_connections;
   }
 
@@ -173,7 +190,7 @@ private:
   std::vector<std::uint32_t> _num_global_connections;
 
   // Position of first connection for each entity (using local index)
-  std::vector<std::uint32_t> index_to_position;
+  std::vector<std::uint32_t> _index_to_position;
 };
 }
 }

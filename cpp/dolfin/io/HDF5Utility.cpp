@@ -82,11 +82,11 @@ void HDF5Utility::map_gdof_to_cell(
   {
     std::vector<dolfin::la_index_t>& rdofs = receive_dofs[i];
     std::vector<std::size_t>& rcelldofs = receive_cell_dofs[i];
-    dolfin_assert(rcelldofs.size() == 2 * rdofs.size());
+    assert(rcelldofs.size() == 2 * rdofs.size());
     for (std::size_t j = 0; j < rdofs.size(); ++j)
     {
-      dolfin_assert(rdofs[j] >= vector_range[0]);
-      dolfin_assert(rdofs[j] < vector_range[1]);
+      assert(rdofs[j] >= vector_range[0]);
+      assert(rdofs[j] < vector_range[1]);
       global_cells[rdofs[j] - vector_range[0]] = rcelldofs[2 * j];
       remote_local_dofi[rdofs[j] - vector_range[0]] = rcelldofs[2 * j + 1];
     }
@@ -129,10 +129,10 @@ void HDF5Utility::get_global_dof(
     for (std::size_t j = 0; j < rdof.size(); j += 2)
     {
       auto dmap = dofmap.cell_dofs(rdof[j]);
-      dolfin_assert(rdof[j + 1] < (std::size_t)dmap.size());
+      assert(rdof[j + 1] < (std::size_t)dmap.size());
       const dolfin::la_index_t local_index = dmap[rdof[j + 1]];
-      dolfin_assert(local_index >= 0);
-      dolfin_assert((std::size_t)local_index < local_to_global_map.size());
+      assert(local_index >= 0);
+      assert((std::size_t)local_index < local_to_global_map.size());
       send_global_dof_back[i].push_back(local_to_global_map[local_index]);
     }
   }
@@ -149,9 +149,9 @@ void HDF5Utility::get_global_dof(
   for (std::size_t i = 0; i != n_vector_vals; ++i)
   {
     const std::size_t src = cell_ownership[i].first;
-    dolfin_assert(src < num_processes);
+    assert(src < num_processes);
     const std::vector<dolfin::la_index_t>& rgdof = receive_global_dof_back[src];
-    dolfin_assert(pos[src] < rgdof.size());
+    assert(pos[src] < rgdof.size());
     global_dof[i] = rgdof[pos[src]];
     pos[src]++;
   }
@@ -195,8 +195,8 @@ HDF5Utility::cell_owners(const mesh::Mesh& mesh,
     const std::vector<std::int64_t>& rcells = receive_input_cells[i];
     for (std::size_t j = 0; j < rcells.size(); ++j)
     {
-      dolfin_assert(rcells[j] >= cell_range[0]);
-      dolfin_assert(rcells[j] < cell_range[1]);
+      assert(rcells[j] >= cell_range[0]);
+      assert(rcells[j] < cell_range[1]);
       std::pair<std::size_t, std::size_t>& loc
           = cell_locations[rcells[j] - cell_range[0]];
       send_cells[i].push_back(loc.first);
@@ -217,7 +217,7 @@ HDF5Utility::cell_owners(const mesh::Mesh& mesh,
     const std::size_t src
         = MPI::index_owner(mpi_comm, cells[i], num_global_cells);
     const std::vector<std::int64_t>& rcell = receive_cells[src];
-    dolfin_assert(pos[src] < rcell.size() / 2);
+    assert(pos[src] < rcell.size() / 2);
     output_cell_locations[i].first = rcell[2 * pos[src]];
     output_cell_locations[i].second = rcell[2 * pos[src] + 1];
     pos[src]++;
@@ -275,7 +275,7 @@ void HDF5Utility::cell_owners_in_range(
   }
 
   // All cells in range should be accounted for
-  dolfin_assert(count == range[1] - range[0]);
+  assert(count == range[1] - range[0]);
 }
 //-----------------------------------------------------------------------------
 void HDF5Utility::set_local_vector_values(
@@ -335,8 +335,8 @@ void HDF5Utility::set_local_vector_values(
           = std::upper_bound(all_vec_range.begin(), all_vec_range.end(),
                              global_dof[i])
             - all_vec_range.begin();
-      dolfin_assert(dest < num_processes);
-      dolfin_assert(i < vector.size());
+      assert(dest < num_processes);
+      assert(i < vector.size());
       send_indices[dest].push_back(global_dof[i]);
       send_values[dest].push_back(vector[i]);
     }
@@ -350,11 +350,11 @@ void HDF5Utility::set_local_vector_values(
   {
     const std::vector<double>& rval = receive_values[i];
     const std::vector<dolfin::la_index_t>& rindex = receive_indices[i];
-    dolfin_assert(rval.size() == rindex.size());
+    assert(rval.size() == rindex.size());
     for (std::size_t j = 0; j != rindex.size(); ++j)
     {
-      dolfin_assert(rindex[j] >= vector_range[0]);
-      dolfin_assert(rindex[j] < vector_range[1]);
+      assert(rindex[j] >= vector_range[0]);
+      assert(rindex[j] < vector_range[1]);
       vector_values[rindex[j] - vector_range[0]] = rval[j];
     }
   }

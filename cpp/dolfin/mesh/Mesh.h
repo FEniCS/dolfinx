@@ -33,7 +33,6 @@ class Function;
 
 namespace mesh
 {
-class LocalMeshData;
 class MeshEntity;
 
 /// A _Mesh_ consists of a set of connected and numbered mesh entities.
@@ -72,12 +71,13 @@ public:
   /// @param type (CellType::Type)
   ///
   /// @param points
-  ///         Array of vertex points
+  ///         Array of points
   /// @param cells
-  ///         Array of cells (containing the global vertex indices for each cell)
+  ///         Array of cells (containing the global 'vertex' indices for each
+  ///         cell)
   Mesh(MPI_Comm comm, mesh::CellType::Type type,
-       Eigen::Ref<const EigenRowArrayXXd> points,
-       Eigen::Ref<const EigenRowArrayXXi64> cells);
+       const Eigen::Ref<const EigenRowArrayXXd>& points,
+       const Eigen::Ref<const EigenRowArrayXXi64>& cells);
 
   /// Copy constructor.
   ///
@@ -141,7 +141,7 @@ public:
   ///
   const std::vector<std::int32_t>& cells() const
   {
-    return _topology(_topology.dim(), 0)();
+    return _topology.connectivity(_topology.dim(), 0).connections();
   }
 
   /// Get global number of entities of given topological dimension.
@@ -198,14 +198,14 @@ public:
   ///         The cell type object associated with the mesh.
   mesh::CellType& type()
   {
-    dolfin_assert(_cell_type);
+    assert(_cell_type);
     return *_cell_type;
   }
 
   /// Get mesh cell type (const version).
   const mesh::CellType& type() const
   {
-    dolfin_assert(_cell_type);
+    assert(_cell_type);
     return *_cell_type;
   }
 

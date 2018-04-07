@@ -16,12 +16,16 @@
 // Forward declaration
 namespace ufc
 {
-class coordinate_mapping;
 class form;
 }
 
 namespace dolfin
 {
+
+namespace fem
+{
+class CoordinateMapping;
+}
 
 namespace function
 {
@@ -205,7 +209,7 @@ public:
   const FormIntegrals& integrals() const { return _integrals; }
 
   /// Get ufc::coordinate_mapping (experimental)
-  std::shared_ptr<const ufc::coordinate_mapping> coordinate_mapping() const
+  std::shared_ptr<const fem::CoordinateMapping> coordinate_mapping() const
   {
     return _coord_mapping;
   }
@@ -236,7 +240,7 @@ private:
   std::shared_ptr<const mesh::MeshFunction<std::size_t>> dP;
 
   // ufc::coordinate_mapping
-  std::shared_ptr<ufc::coordinate_mapping> _coord_mapping;
+  std::shared_ptr<fem::CoordinateMapping> _coord_mapping;
 };
 }
 }

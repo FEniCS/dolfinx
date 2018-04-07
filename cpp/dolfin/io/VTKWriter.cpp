@@ -37,8 +37,8 @@ void VTKWriter::write_cell_data(const function::Function& u,
                                 std::string filename)
 {
   // For brevity
-  dolfin_assert(u.function_space()->mesh());
-  dolfin_assert(u.function_space()->dofmap());
+  assert(u.function_space()->mesh());
+  assert(u.function_space()->dofmap());
   const mesh::Mesh& mesh = *u.function_space()->mesh();
   const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
   const std::size_t tdim = mesh.topology().dim();
@@ -115,7 +115,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
 
   // Get  values
   std::vector<double> values(dof_set.size());
-  dolfin_assert(u.vector());
+  assert(u.vector());
   u.vector()->get_local(values.data(), dof_set.size(), dof_set.data());
 
   // Get cell data

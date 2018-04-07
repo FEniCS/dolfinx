@@ -55,9 +55,9 @@ std::pair<std::size_t, bool>
 dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                                  la::PETScVector& x)
 {
-  dolfin_assert(_matA);
-  dolfin_assert(_b);
-  dolfin_assert(_dx);
+  assert(_matA);
+  assert(_b);
+  assert(_dx);
 
   // Extract parameters
   const std::string convergence_criterion = parameters["convergence_criterion"];
@@ -73,7 +73,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     _solver = std::make_shared<la::PETScKrylovSolver>(x.mpi_comm(), solver_type,
                                                       pc_type);
   }
-  dolfin_assert(_solver);
+  assert(_solver);
 
   // Set parameters for linear solver
   // _solver->update_parameters(parameters(_solver->parameter_type()));

@@ -11,8 +11,6 @@
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <memory>
-#include <string>
-#include <utility>
 #include <vector>
 
 namespace dolfin
@@ -100,7 +98,7 @@ public:
   ///         Return the shared pointer.
   virtual std::shared_ptr<const FunctionSpace> function_space() const override
   {
-    dolfin_assert(_function_space);
+    assert(_function_space);
     return _function_space;
   }
 
@@ -176,9 +174,9 @@ public:
   ///         The cell.
   /// @param  coordinate_dofs (double *)
   ///         The coordinates
-  virtual void restrict(double* w, const fem::FiniteElement& element,
-                        const mesh::Cell& cell,
-                        const double* coordinate_dofs) const override;
+  virtual void restrict(
+      double* w, const fem::FiniteElement& element, const mesh::Cell& cell,
+      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const override;
 
   /// Compute values at all mesh vertices
   ///

@@ -71,9 +71,9 @@ public:
                     Eigen::Ref<const EigenRowArrayXXd> x) const;
 
   /// Restrict function to local cell (compute expansion coefficients w)
-  virtual void restrict(double* w, const fem::FiniteElement& element,
-                        const mesh::Cell& cell,
-                        const double* coordinate_dofs) const = 0;
+  virtual void
+  restrict(double* w, const fem::FiniteElement& element, const mesh::Cell& cell,
+           const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const = 0;
 
   /// Compute values at all mesh vertices
   virtual EigenRowArrayXXd

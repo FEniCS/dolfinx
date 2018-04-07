@@ -3,6 +3,9 @@ jobs:
   build:
     docker:
       - image: quay.io/fenicsproject/dolfinx:latest
+    environment:
+      MPLBACKEND: "agg"
+      DOLFIN_NOPLOT: 1
     steps:
       - checkout
       - run:
@@ -18,7 +21,7 @@ jobs:
             pip3 install git+https://bitbucket.org/fenics-project/fiat.git
             pip3 install git+https://bitbucket.org/fenics-project/ufl.git
             pip3 install git+https://bitbucket.org/fenics-project/dijitso.git
-            pip3 install git+https://bitbucket.org/fenics-project/ffcX.git
+            pip3 install git+https://github.com/fenics/ffcx.git
             rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
       - run:
           name: Flake8 checks on Python code
@@ -70,25 +73,27 @@ jobs:
             - cpp/doc/html/
 
       - run:
-          name: Run Python unit tests
+          name: Run Python unit tests (serial)
           command: |
             cd python/test
-            python3 -m pytest unit/fem/test_assembler.py
-            python3 -m pytest unit/function
-            python3 -m pytest unit/geometry/test_bounding_box_tree.py
-            python3 -m pytest unit/io
-            python3 -m pytest unit/jit
+            python3 -m pytest -n 2 unit/fem/test_assembler.py
+            python3 -m pytest -n 2 unit/function
+            python3 -m pytest -n 2 unit/geometry/test_bounding_box_tree.py
+            python3 -m pytest -n 2 unit/io
+            python3 -m pytest -n 2 unit/jit
+            python3 -m pytest -n 2 unit/la/test_sparsity_pattern.py
+            python3 -m pytest -n 2 unit/mesh
+      - run:
+          name: Run Python unit tests (MPI)
+          command: |
+            cd python/test
             mpirun -n 3 python3 -m pytest unit/io
-            python3 -m pytest unit/la/test_sparsity_pattern.py
             mpirun -n 3 python3 -m pytest unit/la/test_sparsity_pattern.py
-            python3 -m pytest unit/mesh
-
+            mpirun -n 3 python3 -m pytest unit/mesh
       - run:
           name: Run Python demos (serial)
           command: |
             cd python/demo
-            export DOLFIN_NOPLOT=1
-            export MPLBACKEND="agg"
             python3 ./generate-demo-files.py
             python3 undocumented/elasticity/demo_elasticity.py
             python3 documented/poisson/demo_poisson.py
@@ -99,8 +104,6 @@ jobs:
           name: Run Python demos (MPI)
           command: |
             cd python/demo
-            export MPLBACKEND="agg"
-            export DOLFIN_NOPLOT=1
             mpirun -np 3 python3 documented/poisson/demo_poisson.py
             cd documented/stokes-taylor-hood
             mpirun -np 3 python3 demo_stokes-taylor-hood.py

@@ -7,7 +7,7 @@
 #pragma once
 
 #include <cstddef>
-#include <dolfin/log/log.h>
+#include <cassert>
 
 namespace dolfin
 {
@@ -65,14 +65,14 @@ public:
   /// Access value of given entry (const version)
   const T& operator[](std::size_t i) const
   {
-    dolfin_assert(i < _size);
+    assert(i < _size);
     return _x[i];
   }
 
   /// Access value of given entry (non-const version)
   T& operator[](std::size_t i)
   {
-    dolfin_assert(i < _size);
+    assert(i < _size);
     return _x[i];
   }
 

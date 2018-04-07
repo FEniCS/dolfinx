@@ -1,6 +1,7 @@
 set(HEADERS
   Assembler.h
   AssemblerBase.h
+  CoordinateMapping.h
   DirichletBC.h
   DiscreteOperators.h
   DofMapBuilder.h

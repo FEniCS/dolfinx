@@ -98,7 +98,7 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
   const std::size_t d0 = entity_0.dim();
   const std::size_t d1 = entity_1.dim();
   const std::size_t gdim = g0.dim();
-  dolfin_assert(gdim == g1.dim());
+  assert(gdim == g1.dim());
 
   // Pick correct specialized implementation
   if (d0 == 1 && d1 == 1)
