@@ -88,8 +88,8 @@ Mesh::Mesh(const Mesh& mesh)
     : common::Variable(mesh.name(), mesh.label()),
       _cell_type(CellType::create(mesh._cell_type->cell_type())),
       _topology(mesh._topology), _geometry(mesh._geometry),
-      _ordered(mesh._ordered), _mpi_comm(mesh.mpi_comm()),
-      _ghost_mode(mesh._ghost_mode)
+      _coordinate_dofs(mesh._coordinate_dofs), _ordered(mesh._ordered),
+      _mpi_comm(mesh.mpi_comm()), _ghost_mode(mesh._ghost_mode)
 {
   // Do nothing
 }
@@ -98,8 +98,9 @@ Mesh::Mesh(Mesh&& mesh)
     : common::Variable(std::move(mesh)),
       _cell_type(CellType::create(mesh._cell_type->cell_type())),
       _topology(std::move(mesh._topology)),
-      _geometry(std::move(mesh._geometry)), _ordered(std::move(mesh._ordered)),
-      _mpi_comm(std::move(mesh._mpi_comm)),
+      _geometry(std::move(mesh._geometry)),
+      _coordinate_dofs(std::move(mesh._coordinate_dofs)),
+      _ordered(std::move(mesh._ordered)), _mpi_comm(std::move(mesh._mpi_comm)),
       _ghost_mode(std::move(mesh._ghost_mode))
 {
   // Do nothing
@@ -115,6 +116,8 @@ Mesh& Mesh::operator=(const Mesh& mesh)
   // Assign data
   _topology = mesh._topology;
   _geometry = mesh._geometry;
+  _coordinate_dofs = mesh._coordinate_dofs;
+
   if (mesh._cell_type)
     _cell_type.reset(mesh::CellType::create(mesh._cell_type->cell_type()));
   else

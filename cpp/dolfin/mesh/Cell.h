@@ -227,6 +227,7 @@ public:
   {
     const MeshGeometry& geom = _mesh->geometry();
     EigenRowArrayXi32 dofs = _mesh->coordinate_dofs().row(_local_index);
+
     const EigenRowArrayXXd& x = geom.points();
     const std::size_t gdim = geom.dim();
 
