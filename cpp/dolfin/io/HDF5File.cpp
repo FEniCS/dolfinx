@@ -71,7 +71,7 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
 #ifndef H5_HAVE_PARALLEL
   if (mpi_io)
   {
-    throw std::error(
+    throw std::runtime_error(
         "Cannot open file. HDF5 has not been compiled with support for MPI");
   }
 #endif
