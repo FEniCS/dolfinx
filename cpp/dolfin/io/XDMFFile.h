@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2015 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2012-2018 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -74,6 +74,16 @@ class HDF5File;
 ///
 /// XDMF is not suitable for checkpointing as it may decimate some
 /// data.
+
+// FIXME: Set read mode when creating file obejct?
+
+// FIXME: Set encoding when opening file
+
+// FIXME: Remove the duplicate read_mf_foo functions. Challenge is the
+// templated reader code would then expose a lot code publically.
+// Refactor large, templated functions into parts that (i) depend on the
+// template argument and (ii) parts that do not. Same applies to
+// MeshValueCollection.
 
 class XDMFFile : public common::Variable
 {
@@ -332,36 +342,41 @@ public:
   ///         Function
   function::Function
   read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
-                  std::string func_name, std::int64_t counter = -1);
+                  std::string func_name, std::int64_t counter = -1) const;
 
   /// Read first mesh::MeshFunction from file
   /// @param meshfunction (_MeshFunction<bool>_)
   ///        mesh::MeshFunction to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshFunction<bool>& meshfunction, std::string name = "");
+  mesh::MeshFunction<bool> read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh,
+                                        std::string name = "") const;
 
   /// Read first mesh::MeshFunction from file
   /// @param meshfunction (_MeshFunction<int>_)
   ///        mesh::MeshFunction to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshFunction<int>& meshfunction, std::string name = "");
+  mesh::MeshFunction<int> read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
+                                      std::string name = "") const;
 
   /// Read mesh::MeshFunction from file, optionally specifying dataset name
   /// @param meshfunction (_MeshFunction<std::size_t>_)
   ///        mesh::MeshFunction to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshFunction<std::size_t>& meshfunction,
-            std::string name = "");
+  mesh::MeshFunction<std::size_t>
+  read_mf_size_t(std::shared_ptr<const mesh::Mesh> mesh,
+                 std::string name = "") const;
 
   /// Read mesh::MeshFunction from file, optionally specifying dataset name
   /// @param meshfunction (_MeshFunction<double>_)
   ///        mesh::MeshFunction to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshFunction<double>& meshfunction, std::string name = "");
+  mesh::MeshFunction<double>
+  read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
+                 std::string name = "") const;
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
@@ -369,7 +384,9 @@ public:
   ///        mesh::MeshValueCollection to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshValueCollection<bool>& mvc, std::string name = "");
+  mesh::MeshValueCollection<bool>
+  read_mvc_bool(std::shared_ptr<const mesh::Mesh> mesh,
+                std::string name = "") const;
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
@@ -377,7 +394,9 @@ public:
   ///        mesh::MeshValueCollection to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshValueCollection<int>& mvc, std::string name = "");
+  mesh::MeshValueCollection<int>
+  read_mvc_int(std::shared_ptr<const mesh::Mesh> mesh,
+               std::string name = "") const;
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
@@ -385,7 +404,9 @@ public:
   ///        mesh::MeshValueCollection to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshValueCollection<std::size_t>& mvc, std::string name = "");
+  mesh::MeshValueCollection<std::size_t>
+  read_mvc_size_t(std::shared_ptr<const mesh::Mesh> mesh,
+                  std::string name = "") const;
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
@@ -393,7 +414,9 @@ public:
   ///        mesh::MeshValueCollection to restore
   /// @param name (std::string)
   ///        Name of data attribute in XDMF file
-  void read(mesh::MeshValueCollection<double>& mvc, std::string name = "");
+  mesh::MeshValueCollection<double>
+  read_mvc_double(std::shared_ptr<const mesh::Mesh> mesh,
+                  std::string name = "") const;
 
 private:
   // Generic MVC writer
@@ -403,8 +426,9 @@ private:
 
   // Generic MVC reader
   template <typename T>
-  void read_mesh_value_collection(mesh::MeshValueCollection<T>& mvc,
-                                  std::string name);
+  mesh::MeshValueCollection<T>
+  read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
+                             std::string name) const;
 
   // Remap meshfunction data, scattering data to appropriate processes
   template <typename T>
@@ -439,10 +463,9 @@ private:
                                 hid_t h5_id, const std::string path_prefix,
                                 const mesh::Mesh& mesh);
 
-  // Add DataItem node to an XML node. If HDF5 is open (h5_id > 0)
-  // the data is written to the HDFF5 file with the path
-  // 'h5_path'. Otherwise, data is witten to the XML node and
-  // 'h5_path' is ignored
+  // Add DataItem node to an XML node. If HDF5 is open (h5_id > 0) the
+  // data is written to the HDFF5 file with the path 'h5_path'.
+  // Otherwise, data is witten to the XML node and 'h5_path' is ignored
   template <typename T>
   static void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
                             hid_t h5_id, const std::string h5_path, const T& x,
@@ -482,8 +505,8 @@ private:
               const boost::filesystem::path& parent_path,
               std::array<std::int64_t, 2> range = {{0, 0}});
 
-  // Return (0) HDF5 filename and (1) path in HDF5 file from a
-  // DataItem node
+  // Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem
+  // node
   static std::array<std::string, 2>
   get_hdf5_paths(const pugi::xml_node& dataitem_node);
 
@@ -491,38 +514,36 @@ private:
 
   // Generic mesh::MeshFunction reader
   template <typename T>
-  void read_mesh_function(mesh::MeshFunction<T>& meshfunction,
-                          std::string name = "");
+  mesh::MeshFunction<T>
+  read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
+                     std::string name = "") const;
 
   // Generic mesh::MeshFunction writer
   template <typename T>
   void write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
                            Encoding encoding);
 
-  // Get data width - normally the same as u.value_size(), but
-  // expand for 2D vector/tensor because XDMF presents everything as
-  // 3D
+  // Get data width - normally the same as u.value_size(), but expand
+  // for 2D vector/tensor because XDMF presents everything as 3D
   static std::int64_t get_padded_width(const function::Function& u);
 
   // Returns true for DG0 function::Functions
   static bool has_cell_centred_data(const function::Function& u);
 
-  // Get point data values for linear or quadratic mesh into
-  // flattened 2D array
+  // Get point data values for linear or quadratic mesh into flattened
+  // 2D array
   static std::vector<double> get_point_data_values(const function::Function& u);
 
-  // Get point data values collocated at P2 geometry points
-  // (vertices and edges) flattened as a 2D array
+  // Get point data values collocated at P2 geometry points (vertices
+  // and edges) flattened as a 2D array
   static std::vector<double> get_p2_data_values(const function::Function& u);
 
   // Get cell data values as a flattened 2D array
   static std::vector<double> get_cell_data_values(const function::Function& u);
 
-  // Check whether the requested encoding is supported
-  void check_encoding(Encoding encoding) const;
-
-  // Check function names equality across processes
-  void check_function_name(std::string function_name);
+  // Check that string is the same on all processes. Returns true of
+  // same on all processes.
+  bool name_same_on_all_procs(std::string name) const;
 
   // Generate the XDMF format string based on the Encoding
   // enumeration
@@ -561,13 +582,14 @@ private:
   // Counter for time series
   std::size_t _counter;
 
-  // The XML document currently representing the XDMF
-  // which needs to be kept open for time series etc.
+  // The XML document currently representing the XDMF which needs to be
+  // kept open for time series etc.
   std::unique_ptr<pugi::xml_document> _xml_doc;
 };
 
 #ifndef DOXYGEN_IGNORE
-// Specialisation for std::vector<bool>, as HDF5 does not support it natively
+// Specialisation for std::vector<bool>, as HDF5 does not support it
+// natively
 template <>
 inline void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
                                     hid_t h5_id, const std::string h5_path,
