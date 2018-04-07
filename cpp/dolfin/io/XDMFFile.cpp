@@ -144,8 +144,9 @@ void XDMFFile::write_checkpoint(const function::Function& u,
                              "when writing to XDMF file.");
   }
 
-  log::log(PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
-                     "time step %f.",
+  log::log(PROGRESS,
+           "Writing function \"%s\" to XDMF file \"%s\" with "
+           "time step %f.",
            function_name.c_str(), _filename.c_str(), time_step);
 
   // If XML file exists load it to member _xml_doc
@@ -1411,8 +1412,7 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
 
   if (degree == 2)
   {
-    log::dolfin_error("XDMFFile.cpp", "read quadratic mesh",
-                      "XDMF quadratic I/O is under revision");
+    std::cout << "Got quardratic mesh\n";
   }
 
   // Get toplogical dimensions
@@ -1461,12 +1461,13 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
   assert(topology_data_node);
 
   // Topology
+  const std::vector<std::int64_t> tdims = get_dataset_shape(topology_data_node);
   const auto topology_data = get_dataset<std::int64_t>(
       _mpi_comm.comm(), topology_data_node, parent_path);
-  const std::size_t nv_per_cell = cell_type->num_entities(0);
-  const std::size_t num_local_cells = topology_data.size() / nv_per_cell;
+  const std::size_t npoint_per_cell = tdims[1];
+  const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
   Eigen::Map<const EigenRowArrayXXi64> cells(topology_data.data(),
-                                             num_local_cells, nv_per_cell);
+                                             num_local_cells, npoint_per_cell);
 
   // Set cell global indices by adding offset
   const std::int64_t cell_index_offset
@@ -1491,8 +1492,9 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                              "when reading XDMF file.");
   }
 
-  log::log(PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
-                     "counter %i.",
+  log::log(PROGRESS,
+           "Reading function \"%s\" from XDMF file \"%s\" with "
+           "counter %i.",
            func_name.c_str(), _filename.c_str(), counter);
 
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
@@ -2113,9 +2115,9 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
       }
       else
       {
-        log::dolfin_error(
-            "XDMFFile.cpp", "reading data from XDMF file",
-            "This combination of array shapes in XDMF and HDF5 not supported");
+        log::dolfin_error("XDMFFile.cpp", "reading data from XDMF file",
+                          "This combination of array shapes in XDMF and HDF5 "
+                          "not supported");
       }
     }
 
