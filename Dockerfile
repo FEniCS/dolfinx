@@ -33,7 +33,6 @@ RUN apt-get -qq update && \
     git \
     graphviz \
     libboost-filesystem-dev \
-    libboost-iostreams-dev \
     libboost-math-dev \
     libboost-program-options-dev \
     libboost-system-dev \
@@ -119,7 +118,7 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
 RUN pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.git && \
     pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/ufl.git && \
     pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/dijitso.git && \
-    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/ffcX.git
+    pip3 install --no-cache-dir git+https://github.com/fenics/ffcX.git
 
 # Install dolfinx
 RUN git clone https://bitbucket.org/fenics-project/dolfinX.git && \

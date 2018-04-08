@@ -239,10 +239,10 @@ find_package(Boost 1.56 QUIET REQUIRED)
 # filesystem, whereas Ubuntu 16.10 and macOS (Homebrew) do not.
 if (Boost_VERSION VERSION_LESS 106100)
   set(DOLFIN_BOOST_COMPONENTS_PUBLIC filesystem timer)
-  set(DOLFIN_BOOST_COMPONENTS_PRIVATE program_options iostreams)
+  set(DOLFIN_BOOST_COMPONENTS_PRIVATE program_options)
 else()
   set(DOLFIN_BOOST_COMPONENTS_PUBLIC timer)
-  set(DOLFIN_BOOST_COMPONENTS_PRIVATE filesystem program_options iostreams)
+  set(DOLFIN_BOOST_COMPONENTS_PRIVATE filesystem program_options)
 endif()
 
 # Find required Boost libraries
