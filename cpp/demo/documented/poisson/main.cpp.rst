@@ -164,7 +164,11 @@ the form file) defined relative to this mesh, we do as follows
      // Create mesh and function space
      std::array<geometry::Point, 2> pt = {geometry::Point(0.,0.), geometry::Point(1.,1.)};
      auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle));
-     auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
+
+    auto space = std::unique_ptr<dolfin_function_space>(Poisson::FunctionSpace_factory());
+    auto V = std::make_shared<function::FunctionSpace>(mesh,
+        std::make_shared<fem::FiniteElement>(std::shared_ptr<ufc::finite_element>(space->element())),
+        std::make_shared<fem::DofMap>(std::shared_ptr<ufc::dofmap>(space->dofmap()), *mesh));
 
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
 using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
