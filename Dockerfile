@@ -6,7 +6,7 @@
 # Garth N. Wells <gnw20@cam.ac.uk>
 # Jan Blechta <blechta@karlin.mff.cuni.cz>
 
-FROM ubuntu:17.10
+FROM ubuntu:18.04
 MAINTAINER fenics-project <fenics-support@googlegroups.org>
 
 WORKDIR /tmp
@@ -32,7 +32,9 @@ RUN apt-get -qq update && \
     gfortran \
     git \
     graphviz \
+    libboost-dev \
     libboost-filesystem-dev \
+    libboost-iostreams-dev
     libboost-math-dev \
     libboost-program-options-dev \
     libboost-system-dev \
