@@ -6,7 +6,7 @@
 # Garth N. Wells <gnw20@cam.ac.uk>
 # Jan Blechta <blechta@karlin.mff.cuni.cz>
 
-FROM ubuntu:18.04
+FROM ubuntu:17.10
 MAINTAINER fenics-project <fenics-support@googlegroups.org>
 
 WORKDIR /tmp
