@@ -103,6 +103,26 @@ public:
   void set_coefficient_name_to_index_map(
       std::function<const char*(int)> coefficient_name_map);
 
+  /// Set coefficient with given number (shared pointer version)
+  ///
+  /// @param[in]  i (std::size_t)
+  ///         The given number.
+  /// @param[in]    coefficient (_GenericFunction_)
+  ///         The coefficient.
+  void
+  set_coefficient(std::size_t i,
+                  std::shared_ptr<const function::GenericFunction> coefficient);
+
+  /// Set coefficient with given name (shared pointer version)
+  ///
+  /// @param[in]    name (std::string)
+  ///         The name.
+  /// @param[in]    coefficient (_GenericFunction_)
+  ///         The coefficient.
+  void
+  set_coefficient(std::string name,
+                  std::shared_ptr<const function::GenericFunction> coefficient);
+
   /// Return original coefficient position for each coefficient (0
   /// <= i < n)
   ///

@@ -76,8 +76,9 @@ int Form::get_coefficient_index(std::string name) const
   }
   catch (const std::bad_function_call& e)
   {
-    std::cerr << "Unable to get coefficient index. Name-to-index map not set on Form."
-              << std::endl;
+    std::cerr
+        << "Unable to get coefficient index. Name-to-index map not set on Form."
+        << std::endl;
     throw e;
   }
 
@@ -92,8 +93,9 @@ std::string Form::get_coefficient_name(int i) const
   }
   catch (const std::bad_function_call& e)
   {
-    std::cerr << "Unable to get coefficient name. Index-to-name map not set on Form."
-              << std::endl;
+    std::cerr
+        << "Unable to get coefficient name. Index-to-name map not set on Form."
+        << std::endl;
     throw e;
   }
 
@@ -110,6 +112,28 @@ void Form::set_coefficient_name_to_index_map(
     std::function<const char*(int)> coefficient_name_map)
 {
   _coefficient_name_map = coefficient_name_map;
+}
+//-----------------------------------------------------------------------------
+void Form::set_coefficient(
+    std::size_t i, std::shared_ptr<const function::GenericFunction> coefficient)
+
+{
+  _coefficents.set(i, coefficient);
+}
+//-----------------------------------------------------------------------------
+void Form::set_coefficient(
+    std::string name,
+    std::shared_ptr<const function::GenericFunction> coefficient)
+{
+  // Get index
+  int index = this->get_coefficient_index(name);
+  if (index < 0)
+  {
+    throw std::runtime_error("Cannot find coefficient index for \"" + name
+                             + "\"");
+  }
+
+  _coefficents.set(index, coefficient);
 }
 //-----------------------------------------------------------------------------
 std::size_t Form::original_coefficient_position(std::size_t i) const
