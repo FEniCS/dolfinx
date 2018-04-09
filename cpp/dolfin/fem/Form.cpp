@@ -23,9 +23,9 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-Form::Form(
-    std::shared_ptr<const ufc::form> ufc_form,
-    std::vector<std::shared_ptr<const function::FunctionSpace>> function_spaces)
+Form::Form(std::shared_ptr<const ufc::form> ufc_form,
+           const std::vector<std::shared_ptr<const function::FunctionSpace>>
+               function_spaces)
     : _integrals(*ufc_form), _coefficents(*ufc_form),
       _function_spaces(function_spaces)
 {

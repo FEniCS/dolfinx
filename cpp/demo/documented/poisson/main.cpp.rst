@@ -198,18 +198,23 @@ to the linear form.
 
 .. code-block:: cpp
 
-     auto form = std::unique_ptr<dolfin_form>(Poisson::Form_L_factory());
+    auto form_L = std::unique_ptr<dolfin_form>(Poisson::LinearForm_factory());
+    auto form_a = std::unique_ptr<dolfin_form>(Poisson::BilinearForm_factory());
 
-     // Define variational forms
-     auto a = std::make_shared<Poisson::BilinearForm>(V, V);
-     auto L = std::make_shared<Poisson::LinearForm>(V);
+    // Define variational forms
+    auto a = std::make_shared<fem::Form>(
+        std::shared_ptr<ufc::form>(form_a->form()),
+        std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V, V});
+    auto L = std::make_shared<fem::Form>(
+        std::shared_ptr<ufc::form>(form_L->form()),
+        std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
      auto f = std::make_shared<Source>();
      auto g = std::make_shared<dUdN>();
      //L->f = f;
      //L->g = g;
 
-    L->set_coefficient_index_to_name_map(form->coefficient_number_map);
-    L->set_coefficient_name_to_index_map(form->coefficient_name_map);
+    L->set_coefficient_index_to_name_map(form_L->coefficient_number_map);
+    L->set_coefficient_name_to_index_map(form_L->coefficient_name_map);
     L->set_coefficients({ {"f", f}, {"g", g} });
 
     // Attach 'coordinate mapping' to mesh
