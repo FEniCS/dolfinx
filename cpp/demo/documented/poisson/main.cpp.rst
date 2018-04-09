@@ -210,9 +210,7 @@ to the linear form.
 
     L->set_coefficient_index_to_name_map(form->coefficient_number_map);
     L->set_coefficient_name_to_index_map(form->coefficient_name_map);
-    L->set_coefficient("f", f);
-    L->set_coefficient("g", g);
-
+    L->set_coefficients({ {"f", f}, {"g", g} });
 
     // Attach 'coordinate mapping' to mesh
     auto cmap = a->coordinate_mapping();

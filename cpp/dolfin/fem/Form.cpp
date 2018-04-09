@@ -114,26 +114,31 @@ void Form::set_coefficient_name_to_index_map(
   _coefficient_name_map = coefficient_name_map;
 }
 //-----------------------------------------------------------------------------
-void Form::set_coefficient(
-    std::size_t i, std::shared_ptr<const function::GenericFunction> coefficient)
+void Form::set_coefficients(
+    std::map<std::size_t, std::shared_ptr<const function::GenericFunction>>
+        coefficients)
 
 {
-  _coefficents.set(i, coefficient);
+  for (auto c : coefficients)
+    _coefficents.set(c.first, c.second);
 }
 //-----------------------------------------------------------------------------
-void Form::set_coefficient(
-    std::string name,
-    std::shared_ptr<const function::GenericFunction> coefficient)
+void Form::set_coefficients(
+    std::map<std::string, std::shared_ptr<const function::GenericFunction>>
+        coefficients)
 {
-  // Get index
-  int index = this->get_coefficient_index(name);
-  if (index < 0)
+  for (auto c : coefficients)
   {
-    throw std::runtime_error("Cannot find coefficient index for \"" + name
-                             + "\"");
-  }
+    // Get index
+    int index = this->get_coefficient_index(c.first);
+    if (index < 0)
+    {
+      throw std::runtime_error("Cannot find coefficient index for \"" + c.first
+                               + "\"");
+    }
 
-  _coefficents.set(index, coefficient);
+    _coefficents.set(index, c.second);
+  }
 }
 //-----------------------------------------------------------------------------
 std::size_t Form::original_coefficient_position(std::size_t i) const

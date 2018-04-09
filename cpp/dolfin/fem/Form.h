@@ -10,6 +10,7 @@
 #include "FormIntegrals.h"
 #include <dolfin/common/types.h>
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -109,9 +110,9 @@ public:
   ///         The given number.
   /// @param[in]    coefficient (_GenericFunction_)
   ///         The coefficient.
-  void
-  set_coefficient(std::size_t i,
-                  std::shared_ptr<const function::GenericFunction> coefficient);
+  void set_coefficients(
+      std::map<std::size_t, std::shared_ptr<const function::GenericFunction>>
+          coefficients);
 
   /// Set coefficient with given name (shared pointer version)
   ///
@@ -119,9 +120,9 @@ public:
   ///         The name.
   /// @param[in]    coefficient (_GenericFunction_)
   ///         The coefficient.
-  void
-  set_coefficient(std::string name,
-                  std::shared_ptr<const function::GenericFunction> coefficient);
+  void set_coefficients(
+      std::map<std::string, std::shared_ptr<const function::GenericFunction>>
+          coefficients);
 
   /// Return original coefficient position for each coefficient (0
   /// <= i < n)
