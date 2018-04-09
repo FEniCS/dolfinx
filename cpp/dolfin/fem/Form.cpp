@@ -26,7 +26,7 @@ using namespace dolfin::fem;
 Form::Form(
     std::shared_ptr<const ufc::form> ufc_form,
     std::vector<std::shared_ptr<const function::FunctionSpace>> function_spaces)
-    : _integrals(*ufc_form), _coeffs(*ufc_form),
+    : _integrals(*ufc_form), _coefficents(*ufc_form),
       _function_spaces(function_spaces)
 {
   assert(ufc_form);
@@ -68,9 +68,53 @@ Form::~Form()
 //-----------------------------------------------------------------------------
 std::size_t Form::rank() const { return _function_spaces.size(); }
 //-----------------------------------------------------------------------------
+int Form::get_coefficient_index(std::string name) const
+{
+  try
+  {
+    return _coefficient_index_map(name.c_str());
+  }
+  catch (const std::bad_function_call& e)
+  {
+    std::cerr << "Unable to get coefficient index. Name-to-index map not set on Form."
+              << std::endl;
+    throw e;
+  }
+
+  return -1;
+}
+//-----------------------------------------------------------------------------
+std::string Form::get_coefficient_name(int i) const
+{
+  try
+  {
+    return _coefficient_name_map(i);
+  }
+  catch (const std::bad_function_call& e)
+  {
+    std::cerr << "Unable to get coefficient name. Index-to-name map not set on Form."
+              << std::endl;
+    throw e;
+  }
+
+  return std::string();
+}
+//-----------------------------------------------------------------------------
+void Form::set_coefficient_index_to_name_map(
+    std::function<int(const char*)> coefficient_index_map)
+{
+  _coefficient_index_map = coefficient_index_map;
+}
+//-----------------------------------------------------------------------------
+void Form::set_coefficient_name_to_index_map(
+    std::function<const char*(int)> coefficient_name_map)
+{
+  _coefficient_name_map = coefficient_name_map;
+}
+//-----------------------------------------------------------------------------
 std::size_t Form::original_coefficient_position(std::size_t i) const
 {
-  return _coeffs.original_position(i);
+  return _coefficents.original_position(i);
 }
 //-----------------------------------------------------------------------------
 std::size_t Form::max_element_tensor_size() const
