@@ -13,7 +13,7 @@ jobs:
           command: apt-get -y update && apt-get -y install python3-tk
       - run:
           name: Install/update Python dependencies
-          command: pip3 install flake8 matplotlib pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
+          command: pip3 install decorator flake8 matplotlib pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
       - run:
           name: Install FEniCS Python components
           command: |
