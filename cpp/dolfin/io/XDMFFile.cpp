@@ -1412,7 +1412,7 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
 
   if (degree == 2)
   {
-    std::cout << "Got quardratic mesh\n";
+    std::cout << "Got quadratic mesh\n";
   }
 
   // Get toplogical dimensions

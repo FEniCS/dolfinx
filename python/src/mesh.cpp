@@ -11,6 +11,7 @@
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/CellType.h>
+#include <dolfin/mesh/CoordinateDofs.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Face.h>
 #include <dolfin/mesh/Facet.h>
@@ -58,6 +59,18 @@ void mesh(py::module& m)
       .def("string2type", &dolfin::mesh::CellType::string2type)
       .def("cell_type", &dolfin::mesh::CellType::cell_type)
       .def("description", &dolfin::mesh::CellType::description);
+
+  // dolfin::mesh::CoordinateDofs class
+  py::class_<dolfin::mesh::CoordinateDofs,
+             std::shared_ptr<dolfin::mesh::CoordinateDofs>>(
+      m, "CoordinateDofs", "CoordinateDofs object")
+      .def("entity_points", [](const dolfin::mesh::CoordinateDofs& self,
+                               std::size_t dim) {
+        const dolfin::mesh::MeshConnectivity& conn = self.entity_points(dim);
+        return py::array({(std::int32_t)(conn.size() / conn.size(0)),
+                          (std::int32_t)conn.size(0)},
+                         self.entity_points(dim).connections().data());
+      });
 
   // dolfin::mesh::MeshGeometry class
   py::class_<dolfin::mesh::MeshGeometry,

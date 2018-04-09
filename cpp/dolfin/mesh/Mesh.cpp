@@ -29,7 +29,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            const Eigen::Ref<const EigenRowArrayXXi64>& cells)
     : common::Variable("mesh", "DOLFIN mesh"),
       _cell_type(mesh::CellType::create(type)), _topology(_cell_type->dim()),
-      _geometry(points), _ordered(false), _mpi_comm(comm), _ghost_mode("none")
+      _geometry(points), _coordinate_dofs(_cell_type->dim()), _ordered(false),
+      _mpi_comm(comm), _ghost_mode("none")
 {
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
@@ -39,15 +40,12 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
     std::cout << "Probably a P2 mesh\n";
   }
 
-  _ordered = false;
-
-  // FIXME: make a special case in serial (no mapping required)?
   // Compute point local-to-global map from global indices, and compute cell
   // topology using new local indices
   const auto vmap_data = MeshPartitioning::compute_point_mapping(
       comm, num_vertices_per_cell, cells);
   const std::vector<std::int64_t>& global_point_indices = vmap_data.first;
-  _coordinate_dofs = vmap_data.second;
+  _coordinate_dofs.init(tdim, vmap_data.second);
 
   // Get the required points (as specified in global_point_indices) onto this
   // process
@@ -58,28 +56,30 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
       = vdist.second;
 
   _geometry.points() = point_coordinates;
+  _geometry.global_indices() = global_point_indices;
 
   // Initialise vertex topology
   const std::size_t num_vertices = point_coordinates.rows();
   _topology.init(0, num_vertices, num_vertices);
   _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);
-  for (std::size_t i = 0; i < global_point_indices.size(); ++i)
+  for (std::size_t i = 0; i < num_vertices; ++i)
     _topology.set_global_index(0, i, global_point_indices[i]);
   _topology.shared_entities(0) = shared_vertices;
 
   // Initialise cell topology
-  const std::size_t num_cells = _coordinate_dofs.rows();
+  const std::size_t num_cells = vmap_data.second.rows();
   _topology.init(tdim, num_cells, num_cells);
   _topology.init_ghost(tdim, num_cells);
   _topology.init_global_indices(tdim, num_cells);
   _topology.connectivity(tdim, 0).init(num_cells, num_vertices_per_cell);
 
   // Add cells
+  const MeshConnectivity& cell_dofs = _coordinate_dofs.entity_points(tdim);
   for (std::int32_t i = 0; i != cells.rows(); ++i)
   {
     // Only copy the first few entries on each row corresponding to vertices
-    _topology.connectivity(tdim, 0).set(i, _coordinate_dofs.row(i).data());
+    _topology.connectivity(tdim, 0).set(i, cell_dofs(i));
     _topology.set_global_index(tdim, i, i);
   }
 }

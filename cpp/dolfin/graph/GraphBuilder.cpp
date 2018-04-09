@@ -218,7 +218,7 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
 
   assert(N == num_vertices_per_facet);
   assert(num_local_cells == (int)cell_vertices.rows());
-  assert(num_vertices_per_cell == (int)cell_vertices.cols());
+  //  assert(num_vertices_per_cell == (int)cell_vertices.cols());
 
   local_graph.resize(num_local_cells);
   facet_cell_map.clear();
@@ -339,11 +339,11 @@ std::int32_t dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
 
   // List of cell vertices
   const std::int32_t num_local_cells = cell_vertices.rows();
-  const std::int8_t num_vertices_per_cell = cell_type.num_entities(0);
+  //  const std::int8_t num_vertices_per_cell = cell_type.num_entities(0);
   const std::int8_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
 
   assert(num_local_cells == (int)cell_vertices.rows());
-  assert(num_vertices_per_cell == (int)cell_vertices.cols());
+  //  assert(num_vertices_per_cell == (int)cell_vertices.cols());
 
   // Compute local edges (cell-cell connections) using global
   // (internal to this function, not the user numbering) numbering
@@ -444,7 +444,7 @@ std::int32_t dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
   {
     assert((std::int64_t)cell_list[i] >= offset);
     assert((std::int64_t)(cell_list[i] - offset)
-                  < (std::int64_t)local_graph.size());
+           < (std::int64_t)local_graph.size());
 
     auto& edges = local_graph[cell_list[i] - offset];
     auto it = std::find(edges.begin(), edges.end(), cell_list[i + 1]);

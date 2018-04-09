@@ -76,6 +76,15 @@ public:
   /// Return array of coordinates for all points (const version)
   const EigenRowArrayXXd& points() const { return _coordinates; }
 
+  /// Global indices for points (const)
+  const std::vector<std::int64_t> global_indices() const
+  {
+    return _global_indices;
+  }
+
+  /// Global indices for points (non-const)
+  std::vector<std::int64_t> global_indices() { return _global_indices; }
+
   /// Hash of coordinate values
   ///
   /// @returns std::size_t
@@ -92,6 +101,9 @@ public:
 private:
   // Coordinates for all points stored as a contiguous array
   EigenRowArrayXXd _coordinates;
+
+  // Global indices for points
+  std::vector<std::int64_t> _global_indices;
 };
 } // namespace mesh
 } // namespace dolfin

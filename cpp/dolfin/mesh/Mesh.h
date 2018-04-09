@@ -7,6 +7,7 @@
 #pragma once
 
 #include "CellType.h"
+#include "CoordinateDofs.h"
 #include "MeshConnectivity.h"
 #include "MeshGeometry.h"
 #include "MeshTopology.h"
@@ -311,7 +312,7 @@ public:
   std::string ghost_mode() const;
 
   /// Get coordinate dofs for all local cells
-  const EigenRowArrayXXi32& coordinate_dofs() const { return _coordinate_dofs; }
+  const CoordinateDofs& coordinate_dofs() const { return _coordinate_dofs; }
 
 private:
   // Friends
@@ -328,7 +329,7 @@ private:
   MeshGeometry _geometry;
 
   // Coordinate dofs
-  EigenRowArrayXXi32 _coordinate_dofs;
+  CoordinateDofs _coordinate_dofs;
 
   // Bounding box tree used to compute collisions between the mesh
   // and other objects. The tree is initialized to a zero pointer
