@@ -371,14 +371,15 @@ if (DOLFIN_WITH_LIBRARY_VERSION)
 endif()
 
 # Set DOLFIN install sub-directories
-set(DOLFIN_BIN_DIR "bin" CACHE PATH "Binary installation directory.")
-set(DOLFIN_LIB_DIR "lib" CACHE PATH "Library installation directory.")
-set(DOLFIN_INCLUDE_DIR "include" CACHE PATH "C/C++ header installation directory.")
-set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig" CACHE PATH "pkg-config file installation directory.")
-set(DOLFIN_SHARE_DIR "share/dolfin" CACHE PATH "Shared data installation directory.")
-set(DOLFIN_MAN_DIR "share/man" CACHE PATH "Manual page installation directory.")
-set(DOLFIN_DOC_DIR "${DOLFIN_SHARE_DIR}/doc" CACHE PATH "DOLFIN Documentation directory.")
-set(DOLFIN_ETC_DIR "etc" CACHE PATH "Configuration file directory.")
+include(GNUInstallDirs)
+# set(DOLFIN_BIN_DIR "${CMAKE_INSTALL_BINDIR}" CACHE PATH "Binary installation directory.")
+set(DOLFIN_LIB_DIR "${CMAKE_INSTALL_LIBDIR}" CACHE PATH "Library installation directory.")
+set(DOLFIN_INCLUDE_DIR "${CMAKE_INSTALL_INCLUDEDIR}" CACHE PATH "C/C++ header installation directory.")
+set(DOLFIN_PKGCONFIG_DIR "${CMAKE_INSTALL_LIBDIR}/pkgconfig" CACHE PATH "pkg-config file installation directory.")
+set(DOLFIN_SHARE_DIR "${CMAKE_INSTALL_DATAROOTDIR}/dolfin" CACHE PATH "Shared data installation directory.")
+# set(DOLFIN_MAN_DIR "${CMAKE_INSTALL_MANDIR}" CACHE PATH "Manual page installation directory.")
+# set(DOLFIN_DOC_DIR "${CMAKE_INSTALL_DOCDIR}" CACHE PATH "DOLFIN Documentation directory.")
+# set(DOLFIN_ETC_DIR "${CMAKE_INSTALL_SYSCONFDIR}" CACHE PATH "Configuration file directory.")
 
 # Add source directory
 add_subdirectory(dolfin)
