@@ -198,13 +198,21 @@ to the linear form.
 
 .. code-block:: cpp
 
+     auto form = std::unique_ptr<dolfin_form>(Poisson::Form_L_factory());
+
      // Define variational forms
      auto a = std::make_shared<Poisson::BilinearForm>(V, V);
      auto L = std::make_shared<Poisson::LinearForm>(V);
      auto f = std::make_shared<Source>();
      auto g = std::make_shared<dUdN>();
-     L->f = f;
-     L->g = g;
+     //L->f = f;
+     //L->g = g;
+
+    L->set_coefficient_index_to_name_map(form->coefficient_number_map);
+    L->set_coefficient_name_to_index_map(form->coefficient_name_map);
+    L->set_coefficient("f", f);
+    L->set_coefficient("g", g);
+
 
     // Attach 'coordinate mapping' to mesh
     auto cmap = a->coordinate_mapping();
