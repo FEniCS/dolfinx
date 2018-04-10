@@ -140,7 +140,7 @@ void Expression::restrict(
   element.map_dofs(w, eval_values, coordinate_dofs);
 }
 //-----------------------------------------------------------------------------
-EigenRowArrayXXd Expression::compute_vertex_values(const mesh::Mesh& mesh) const
+EigenRowArrayXXd Expression::compute_point_values(const mesh::Mesh& mesh) const
 {
   // Local data for vertex values
   const std::size_t size = value_size();

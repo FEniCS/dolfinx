@@ -42,13 +42,13 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
     if (_cell_type->cell_type() == mesh::CellType::Type::triangle
         and cells.cols() == 6)
     {
-      std::cout << "P2 Mesh of Tri_6";
+      std::cout << "P2 Mesh of Tri_6" << std::endl;
       _degree = 2;
     }
     else if (_cell_type->cell_type() == mesh::CellType::Type::tetrahedron
              and cells.cols() == 10)
     {
-      std::cout << "P2 Mesh of Tet_10";
+      std::cout << "P2 Mesh of Tet_10" << std::endl;
       _degree = 2;
     }
     else
@@ -78,7 +78,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
                                     global_point_indices.end());
 
   // Initialise vertex topology
-  const std::size_t num_vertices = point_coordinates.rows();
+  // FIXME - clearly wrong since vertices != points
+  std::uint32_t num_vertices = point_coordinates.rows();
   _topology.init(0, num_vertices, num_vertices);
   _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);

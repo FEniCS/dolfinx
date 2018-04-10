@@ -194,8 +194,8 @@ void Function::operator=(const function::FunctionAXPY& axpy)
     *_vector *= axpy.pairs()[0].first;
 
   // Start from item 2 and axpy
-  std::vector<std::pair<double,
-                        std::shared_ptr<const Function>>>::const_iterator it;
+  std::vector<
+      std::pair<double, std::shared_ptr<const Function>>>::const_iterator it;
   for (it = axpy.pairs().begin() + 1; it != axpy.pairs().end(); it++)
   {
     assert(it->second);
@@ -425,7 +425,7 @@ void Function::restrict(
   //  }
 }
 //-----------------------------------------------------------------------------
-EigenRowArrayXXd Function::compute_vertex_values(const mesh::Mesh& mesh) const
+EigenRowArrayXXd Function::compute_point_values(const mesh::Mesh& mesh) const
 {
   assert(_function_space);
   assert(_function_space->mesh());
@@ -435,7 +435,7 @@ EigenRowArrayXXd Function::compute_vertex_values(const mesh::Mesh& mesh) const
   if (&mesh != _function_space->mesh().get()
       && mesh.hash() != _function_space->mesh()->hash())
   {
-    log::dolfin_error("Function.cpp", "interpolate function values at vertices",
+    log::dolfin_error("Function.cpp", "interpolate function values at points",
                       "Non-matching mesh");
   }
 
@@ -446,40 +446,46 @@ EigenRowArrayXXd Function::compute_vertex_values(const mesh::Mesh& mesh) const
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = value_size();
 
-  // Resize Array for holding vertex values
-  EigenRowArrayXXd vertex_values(mesh.num_vertices(), value_size_loc);
+  // Resize Array for holding point values
+  EigenRowArrayXXd point_values(mesh.geometry().num_points(), value_size_loc);
 
-  // Interpolate vertex values on each cell (using last computed value
+  // Interpolate point values on each cell (using last computed value
   // if not continuous, e.g. discontinuous Galerkin methods)
   EigenRowArrayXXd x(num_cell_vertices, mesh.geometry().dim());
   EigenRowArrayXXd values(num_cell_vertices, value_size_loc);
 
+  const std::size_t tdim = mesh.topology().dim();
+  const mesh::MeshConnectivity& cell_dofs
+      = mesh.coordinate_dofs().entity_points(tdim);
+
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
-    // FIXME: This will break for higher-order cells?
     // Get coordinate
     cell.get_coordinate_dofs(x);
+    values.resize(x.rows(), value_size_loc);
 
     // Call evaluate function
     eval(values, x, cell);
 
-    // Copy values to array of vertex values
-    std::size_t local_index = 0;
-    for (auto& vertex : mesh::EntityRange<mesh::Vertex>(cell))
+    // Copy values to array of point values
+    const std::int32_t* dofs = cell_dofs(cell.index());
+    for (unsigned int i = 0; i < x.rows(); ++i)
     {
-      vertex_values.row(vertex.index()) = values.row(local_index);
-      ++local_index;
+      std::cout << dofs[i] << ":" << mesh.geometry().global_indices()[dofs[i]]
+                << ":" << x.row(i) << ", " << values.row(i) << "\n";
+      point_values.row(dofs[i]) = values.row(i);
     }
+    std::cout << " \n";
   }
 
-  return vertex_values;
+  return point_values;
 }
 //-----------------------------------------------------------------------------
-EigenRowArrayXXd Function::compute_vertex_values() const
+EigenRowArrayXXd Function::compute_point_values() const
 {
   assert(_function_space);
   assert(_function_space->mesh());
-  return compute_vertex_values(*_function_space->mesh());
+  return compute_point_values(*_function_space->mesh());
 }
 //-----------------------------------------------------------------------------
 void Function::init_vector()

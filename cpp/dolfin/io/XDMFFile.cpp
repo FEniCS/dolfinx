@@ -1625,7 +1625,7 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
   int num_nodes_per_cell = mesh.type().num_vertices(cell_dim);
 
-  // Get VTK string for cell type
+  // Get VTK string for cell type and degree (linear or quadratic)
   const std::size_t degree = mesh.degree();
   const std::string vtk_cell_str
       = vtk_cell_type_str(mesh.type().entity_type(cell_dim), degree);
@@ -1655,7 +1655,7 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
     // Adjust num_nodes_per_cell to appropriate size
     num_nodes_per_cell = cell_points.size(0);
-
+    topology_data.reserve(num_nodes_per_cell * mesh.num_cells());
     for (std::uint32_t c = 0; c != mesh.num_cells(); ++c)
     {
       const std::int32_t* points = cell_points(c);
@@ -2730,7 +2730,7 @@ std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
 {
   const auto mesh = u.function_space()->mesh();
 
-  auto data_values = u.compute_vertex_values(*mesh);
+  auto data_values = u.compute_point_values(*mesh);
 
   std::int64_t width = get_padded_width(u);
 
@@ -2747,12 +2747,9 @@ std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
       for (std::size_t j = 0; j < value_size; j++)
       {
         std::size_t tensor_2d_offset = (j > 1 && value_size == 4) ? 1 : 0;
-        //_data_values[i * width + j + tensor_2d_offset]
-        //    = data_values[i + j * num_local_vertices];
         _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
       }
     }
-    // data_values = _data_values;
   }
   else
   {
@@ -2761,17 +2758,13 @@ std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
         data_values.data() + data_values.rows() * data_values.cols());
   }
 
-  // data_values Remove duplicates for vertex-based data in parallel
-  if (MPI::size(mesh->mpi_comm()) > 1)
-  {
-    Eigen::Map<EigenRowArrayXXd> in_vals(_data_values.data(),
-                                         _data_values.size() / width, width);
-    // Reorder values by global point indices
-    EigenRowArrayXXd vals
-        = mesh::DistributedMeshTools::reorder_values_by_global_indices(
-            mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
-    _data_values = std::vector<double>(vals.data(), vals.data() + vals.size());
-  }
+  // Reorder values by global point indices
+  Eigen::Map<EigenRowArrayXXd> in_vals(_data_values.data(),
+                                       _data_values.size() / width, width);
+  EigenRowArrayXXd vals
+      = mesh::DistributedMeshTools::reorder_values_by_global_indices(
+          mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
+  _data_values = std::vector<double>(vals.data(), vals.data() + vals.size());
 
   return _data_values;
 }
