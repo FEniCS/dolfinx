@@ -24,6 +24,7 @@
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshConnectivity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
@@ -1625,7 +1626,7 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   int num_nodes_per_cell = mesh.type().num_vertices(cell_dim);
 
   // Get VTK string for cell type
-  const std::size_t degree = 1;
+  const std::size_t degree = mesh.degree();
   const std::string vtk_cell_str
       = vtk_cell_type_str(mesh.type().entity_type(cell_dim), degree);
 
@@ -1639,7 +1640,33 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Compute packed topology data
   std::vector<T> topology_data;
 
-  topology_data = compute_topology_data<T>(mesh, cell_dim);
+  if (degree > 1)
+  {
+    const int tdim = mesh.topology().dim();
+    if (cell_dim != tdim)
+    {
+      log::dolfin_error("XDMFFile.cpp", "create topology data for mesh",
+                        "Can only create mesh of cells");
+    }
+
+    const auto& global_points = mesh.geometry().global_indices();
+    const mesh::MeshConnectivity& cell_points
+        = mesh.coordinate_dofs().entity_points(tdim);
+
+    // Adjust num_nodes_per_cell to appropriate size
+    num_nodes_per_cell = cell_points.size(0);
+
+    for (std::uint32_t c = 0; c != mesh.num_cells(); ++c)
+    {
+      const std::int32_t* points = cell_points(c);
+      for (std::int32_t i = 0; i != num_nodes_per_cell; ++i)
+        topology_data.push_back(global_points[points[i]]);
+    }
+  }
+  else
+  {
+    topology_data = compute_topology_data<T>(mesh, cell_dim);
+  }
 
   // Add topology DataItem node
   const std::string group_name = path_prefix + "/" + mesh.name();
@@ -1671,7 +1698,7 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Pack geometry data
   EigenRowArrayXXd _x
-      = mesh::DistributedMeshTools::reorder_vertices_by_global_indices(mesh);
+      = mesh::DistributedMeshTools::reorder_points_by_global_indices(mesh);
   std::vector<double> x(_x.data(), _x.data() + _x.size());
 
   // XDMF does not support 1D, so handle as special case
@@ -2739,9 +2766,10 @@ std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
   {
     Eigen::Map<EigenRowArrayXXd> in_vals(_data_values.data(),
                                          _data_values.size() / width, width);
+    // Reorder values by global point indices
     EigenRowArrayXXd vals
-        = mesh::DistributedMeshTools::reorder_values_by_global_indices(*mesh,
-                                                                       in_vals);
+        = mesh::DistributedMeshTools::reorder_values_by_global_indices(
+            mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
     _data_values = std::vector<double>(vals.data(), vals.data() + vals.size());
   }
 

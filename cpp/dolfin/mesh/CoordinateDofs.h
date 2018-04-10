@@ -53,10 +53,14 @@ public:
 
   /// Get the entity points associated with entities of dimension i
   ///
-  const MeshConnectivity& entity_points(std::uint32_t i) const
+  /// @param dim
+  ///   Entity dimension
+  /// @return MeshConnectivity
+  ///   Connections from entities of given dimension to points
+  const MeshConnectivity& entity_points(std::uint32_t dim) const
   {
-    assert(i < _coord_dofs.size());
-    return _coord_dofs[i];
+    assert(dim < _coord_dofs.size());
+    return _coord_dofs[dim];
   }
 
 private:

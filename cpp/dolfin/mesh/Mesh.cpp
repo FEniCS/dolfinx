@@ -29,15 +29,33 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            const Eigen::Ref<const EigenRowArrayXXi64>& cells)
     : common::Variable("mesh", "DOLFIN mesh"),
       _cell_type(mesh::CellType::create(type)), _topology(_cell_type->dim()),
-      _geometry(points), _coordinate_dofs(_cell_type->dim()), _ordered(false),
-      _mpi_comm(comm), _ghost_mode("none")
+      _geometry(points), _coordinate_dofs(_cell_type->dim()), _degree(1),
+      _ordered(false), _mpi_comm(comm), _ghost_mode("none")
 {
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
 
+  // Decide if the mesh is P2 or other geometry.
+  // P1 has num_vertices_per_cell == cells.cols()
   if (num_vertices_per_cell != cells.cols())
   {
-    std::cout << "Probably a P2 mesh\n";
+    if (_cell_type->cell_type() == mesh::CellType::Type::triangle
+        and cells.cols() == 6)
+    {
+      std::cout << "P2 Mesh of Tri_6";
+      _degree = 2;
+    }
+    else if (_cell_type->cell_type() == mesh::CellType::Type::tetrahedron
+             and cells.cols() == 10)
+    {
+      std::cout << "P2 Mesh of Tet_10";
+      _degree = 2;
+    }
+    else
+    {
+      log::dolfin_error("Mesh.cpp", "initialize Mesh",
+                        "Unsupported cell type and/or degree");
+    }
   }
 
   // Compute point local-to-global map from global indices, and compute cell
@@ -56,7 +74,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
       = vdist.second;
 
   _geometry.points() = point_coordinates;
-  _geometry.global_indices() = global_point_indices;
+  _geometry.global_indices().assign(global_point_indices.begin(),
+                                    global_point_indices.end());
 
   // Initialise vertex topology
   const std::size_t num_vertices = point_coordinates.rows();
@@ -88,8 +107,9 @@ Mesh::Mesh(const Mesh& mesh)
     : common::Variable(mesh.name(), mesh.label()),
       _cell_type(CellType::create(mesh._cell_type->cell_type())),
       _topology(mesh._topology), _geometry(mesh._geometry),
-      _coordinate_dofs(mesh._coordinate_dofs), _ordered(mesh._ordered),
-      _mpi_comm(mesh.mpi_comm()), _ghost_mode(mesh._ghost_mode)
+      _coordinate_dofs(mesh._coordinate_dofs), _degree(mesh._degree),
+      _ordered(mesh._ordered), _mpi_comm(mesh.mpi_comm()),
+      _ghost_mode(mesh._ghost_mode)
 {
   // Do nothing
 }
@@ -99,7 +119,7 @@ Mesh::Mesh(Mesh&& mesh)
       _cell_type(CellType::create(mesh._cell_type->cell_type())),
       _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
-      _coordinate_dofs(std::move(mesh._coordinate_dofs)),
+      _coordinate_dofs(std::move(mesh._coordinate_dofs)), _degree(mesh._degree),
       _ordered(std::move(mesh._ordered)), _mpi_comm(std::move(mesh._mpi_comm)),
       _ghost_mode(std::move(mesh._ghost_mode))
 {
@@ -117,6 +137,7 @@ Mesh& Mesh::operator=(const Mesh& mesh)
   _topology = mesh._topology;
   _geometry = mesh._geometry;
   _coordinate_dofs = mesh._coordinate_dofs;
+  _degree = mesh._degree;
 
   if (mesh._cell_type)
     _cell_type.reset(mesh::CellType::create(mesh._cell_type->cell_type()));

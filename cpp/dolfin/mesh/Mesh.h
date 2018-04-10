@@ -314,6 +314,8 @@ public:
   /// Get coordinate dofs for all local cells
   const CoordinateDofs& coordinate_dofs() const { return _coordinate_dofs; }
 
+  std::uint32_t degree() const { return _degree; }
+
 private:
   // Friends
   friend class TopologyComputation;
@@ -330,6 +332,9 @@ private:
 
   // Coordinate dofs
   CoordinateDofs _coordinate_dofs;
+
+  // Mesh geometric degree (in Lagrange basis) describing coordinate dofs
+  std::uint32_t _degree;
 
   // Bounding box tree used to compute collisions between the mesh
   // and other objects. The tree is initialized to a zero pointer

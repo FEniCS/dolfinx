@@ -77,13 +77,13 @@ public:
   const EigenRowArrayXXd& points() const { return _coordinates; }
 
   /// Global indices for points (const)
-  const std::vector<std::int64_t> global_indices() const
+  const std::vector<std::int64_t>& global_indices() const
   {
     return _global_indices;
   }
 
   /// Global indices for points (non-const)
-  std::vector<std::int64_t> global_indices() { return _global_indices; }
+  std::vector<std::int64_t>& global_indices() { return _global_indices; }
 
   /// Hash of coordinate values
   ///

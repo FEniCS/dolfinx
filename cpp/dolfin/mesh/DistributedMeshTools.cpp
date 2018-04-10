@@ -1117,93 +1117,22 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 EigenRowArrayXXd
-DistributedMeshTools::reorder_vertices_by_global_indices(const Mesh& mesh)
+DistributedMeshTools::reorder_points_by_global_indices(const Mesh& mesh)
 {
-  const EigenRowArrayXXd& ordered_coordinates = mesh.geometry().points();
-  return reorder_values_by_global_indices(mesh, ordered_coordinates);
-}
-//-----------------------------------------------------------------------------
-EigenRowArrayXXd DistributedMeshTools::reorder_values_by_global_indices(
-    const Mesh& mesh, const Eigen::Ref<const EigenRowArrayXXd>& data)
-{
-  common::Timer t("DistributedMeshTools: reorder vertex values");
-
-  assert(mesh.num_vertices() == data.rows());
-
-  // MPI communicator
-  const MPI_Comm mpi_comm = mesh.mpi_comm();
-
-  // Get shared vertices
-  const std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices
-      = mesh.topology().shared_entities(0);
-
-  // My process rank
-  const std::uint32_t mpi_rank = MPI::rank(mpi_comm);
-
-  const std::size_t tdim = mesh.topology().dim();
-  std::set<std::uint32_t> non_local_vertices;
-  if (mesh.topology().size(tdim) == mesh.topology().ghost_offset(tdim))
-  {
-    // No ghost cells - exclude shared entities which are on lower
-    // rank processes
-    for (auto sh = shared_vertices.begin(); sh != shared_vertices.end(); ++sh)
-    {
-      const std::uint32_t lowest_proc = *(sh->second.begin());
-      if (lowest_proc < mpi_rank)
-        non_local_vertices.insert(sh->first);
-    }
-  }
-  else
-  {
-    // Iterate through ghost cells, adding non-ghost vertices which
-    // are in lower rank process cells to a set for exclusion from
-    // output
-    for (auto& c :
-         mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::GHOST))
-    {
-      const std::uint32_t cell_owner = c.owner();
-      for (auto& v : EntityRange<Vertex>(c))
-        if (!v.is_ghost() && cell_owner < mpi_rank)
-          non_local_vertices.insert(v.index());
-    }
-  }
-
-  // Reference to data to send, reorganised as a 2D boost::multi_array
-  // boost::multi_array_ref<double, 2> data_array(
-  //     data.data(), boost::extents[mesh.num_vertices()][width]);
-
-  std::vector<std::int64_t> global_indices;
-  std::vector<double> reduced_data;
-
-  // Remove clashing data with multiple copies on different processes
-  for (auto& v : mesh::MeshRange<Vertex>(mesh))
-  {
-    const std::size_t vidx = v.index();
-    if (non_local_vertices.find(vidx) == non_local_vertices.end())
-    {
-      global_indices.push_back(v.global_index());
-      reduced_data.insert(reduced_data.end(), data.row(vidx).data(),
-                          data.row(vidx).data() + data.row(vidx).size());
-    }
-  }
-
-  // data = reduced_data;
-  Eigen::Map<EigenRowArrayXXd> _reduced_data(
-      reduced_data.data(), reduced_data.size() / data.cols(), data.cols());
-  return reorder_values_by_global_indices(mesh.mpi_comm(), _reduced_data,
-                                          global_indices);
+  return reorder_values_by_global_indices(mesh.mpi_comm(),
+                                          mesh.geometry().points(),
+                                          mesh.geometry().global_indices());
 }
 //-----------------------------------------------------------------------------
 EigenRowArrayXXd DistributedMeshTools::reorder_values_by_global_indices(
     MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& values,
     const std::vector<std::int64_t>& global_indices)
 {
+  common::Timer t("DistributedMeshTools: reorder values");
+
   // Number of items to redistribute
   const std::size_t num_local_indices = global_indices.size();
   assert(num_local_indices == (std::size_t)values.rows());
-
-  // boost::multi_array_ref<double, 2> vertex_array(
-  //     values.data(), boost::extents[num_local_indices][width]);
 
   // Calculate size of overall global vector by finding max index value
   // anywhere
@@ -1214,8 +1143,8 @@ EigenRowArrayXXd DistributedMeshTools::reorder_values_by_global_indices(
 
   // Send unwanted values off process
   const std::size_t mpi_size = MPI::size(mpi_comm);
-  std::vector<std::vector<std::size_t>> values_to_send0(mpi_size);
-  std::vector<std::vector<double>> values_to_send1(mpi_size);
+  std::vector<std::vector<std::size_t>> indices_to_send(mpi_size);
+  std::vector<std::vector<double>> values_to_send(mpi_size);
 
   // Go through local vector and append value to the appropriate list
   // to send to correct process
@@ -1224,37 +1153,38 @@ EigenRowArrayXXd DistributedMeshTools::reorder_values_by_global_indices(
     const std::size_t global_i = global_indices[i];
     const std::size_t process_i
         = MPI::index_owner(mpi_comm, global_i, global_vector_size);
-    values_to_send0[process_i].push_back(global_i);
-    values_to_send1[process_i].insert(
-        values_to_send1[process_i].end(), values.row(i).data(),
-        values.row(i).data() + values.row(i).size());
+    indices_to_send[process_i].push_back(global_i);
+    values_to_send[process_i].insert(values_to_send[process_i].end(),
+                                     values.row(i).data(),
+                                     values.row(i).data() + values.cols());
   }
 
   // Redistribute the values to the appropriate process - including
-  // self All values are "in the air" at this point, so local vector
-  // can be cleared. Receive into flat arrays.
-  std::vector<std::size_t> received_values0;
-  std::vector<double> received_values1;
-  MPI::all_to_all(mpi_comm, values_to_send0, received_values0);
-  MPI::all_to_all(mpi_comm, values_to_send1, received_values1);
+  // self. All values are "in the air" at this point. Receive into flat arrays.
+  std::vector<std::size_t> received_indices;
+  std::vector<double> received_values;
+  MPI::all_to_all(mpi_comm, indices_to_send, received_indices);
+  MPI::all_to_all(mpi_comm, values_to_send, received_values);
 
-  // When receiving, just go through all received values and place
-  // them in the local partition of the global vector.
+  // Map over received values as Eigen array
+  assert(received_indices.size() * values.cols() == received_values.size());
+  Eigen::Map<EigenRowArrayXXd> received_values_array(
+      received_values.data(), received_indices.size(), values.cols());
+
+  // Create array for new data. Note that any indices which are not received
+  // will be uninitialised.
   const std::array<std::int64_t, 2> range
       = MPI::local_range(mpi_comm, global_vector_size);
-  // values.resize((range[1] - range[0]) * width);
-  // boost::multi_array_ref<double, 2> new_vertex_array(
-  //     values.data(), boost::extents[range[1] - range[0]][width]);
   EigenRowArrayXXd new_values(range[1] - range[0], values.cols());
 
-  const std::size_t width = values.cols();
-  for (std::size_t j = 0; j != received_values0.size(); ++j)
+  // Go through received data in descending order, and place in local partition
+  // of the global vector. Any duplicate data (with same index) will be
+  // overwritten by values from the lowest rank process.
+  for (std::int32_t j = received_indices.size() - 1; j >= 0; --j)
   {
-    const std::int64_t global_i = received_values0[j];
+    const std::int64_t global_i = received_indices[j];
     assert(global_i >= range[0] && global_i < range[1]);
-    std::copy(received_values1.begin() + j * width,
-              received_values1.begin() + (j + 1) * width,
-              new_values.row(global_i - range[0]).data());
+    new_values.row(global_i - range[0]) = received_values_array.row(j);
   }
 
   return new_values;

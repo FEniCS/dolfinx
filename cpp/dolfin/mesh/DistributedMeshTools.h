@@ -66,22 +66,22 @@ public:
                     std::vector<std::pair<std::uint32_t, std::uint32_t>>>
       compute_shared_entities(const Mesh& mesh, std::size_t d);
 
-  /// Reorders the vertices in a distributed mesh according to
+  /// Reorders the points in a distributed mesh according to
   /// their global index, and redistributes them evenly across processes
   /// returning the coordinates as a local vector
-  static EigenRowArrayXXd reorder_vertices_by_global_indices(const Mesh& mesh);
+  /// @param mesh
+  ///    a Mesh
+  /// @return EigenRowArrayXXd
+  ///    Array of points in global order
+  static EigenRowArrayXXd reorder_points_by_global_indices(const Mesh& mesh);
 
-  /// Reorder the values (of given width) in data to be in global vertex
-  /// index order on the Mesh, redistributing evenly across processes
-  static EigenRowArrayXXd reorder_values_by_global_indices(
-      const Mesh& mesh, const Eigen::Ref<const EigenRowArrayXXd>& data);
-
-  /// Reorder the values of given width, according to explicit global
-  /// indices, distributing evenly across processes
-  //   static void reorder_values_by_global_indices(
-  //       MPI_Comm mpi_comm, std::vector<double>& values, const std::size_t
-  //       width,
-  //       const std::vector<std::int64_t>& global_indices);
+  /// Reorder the values according to explicit global indices, distributing evenly across processes
+  /// @param mpi_comm
+  ///    MPI Communicator
+  /// @param values
+  ///    Values to reorder
+  /// @param global_indices
+  ///    Global index for each row of values
   static EigenRowArrayXXd reorder_values_by_global_indices(
       MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& values,
       const std::vector<std::int64_t>& global_indices);
