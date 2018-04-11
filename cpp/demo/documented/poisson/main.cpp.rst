@@ -165,7 +165,7 @@ the form file) defined relative to this mesh, we do as follows
      std::array<geometry::Point, 2> pt = {geometry::Point(0.,0.), geometry::Point(1.,1.)};
      auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle));
 
-    auto space = std::unique_ptr<dolfin_function_space>(Poisson::FunctionSpace_factory());
+    auto space = std::unique_ptr<dolfin_function_space>(PoissonFunctionSpace());
     auto V = std::make_shared<function::FunctionSpace>(mesh,
         std::make_shared<fem::FiniteElement>(std::shared_ptr<ufc::finite_element>(space->element())),
         std::make_shared<fem::DofMap>(std::shared_ptr<ufc::dofmap>(space->dofmap()), *mesh));
@@ -198,8 +198,8 @@ to the linear form.
 
 .. code-block:: cpp
 
-    auto form_L = std::unique_ptr<dolfin_form>(Poisson::LinearForm_factory());
-    auto form_a = std::unique_ptr<dolfin_form>(Poisson::BilinearForm_factory());
+    auto form_L = std::unique_ptr<dolfin_form>(PoissonLinearForm());
+    auto form_a = std::unique_ptr<dolfin_form>(PoissonBilinearForm());
 
     // Define variational forms
     auto a = std::make_shared<fem::Form>(
