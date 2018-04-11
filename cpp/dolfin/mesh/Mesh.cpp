@@ -69,23 +69,42 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // process
   const auto vdist = MeshPartitioning::distribute_vertices(
       comm, points, global_point_indices);
-  const EigenRowArrayXXd& point_coordinates = vdist.first;
-  const std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices
+  const std::map<std::int32_t, std::set<std::uint32_t>>& shared_points
       = vdist.second;
 
-  _geometry.points() = point_coordinates;
-  _geometry.global_indices().assign(global_point_indices.begin(),
-                                    global_point_indices.end());
+  _geometry.init(MPI::sum(comm, points.rows()), vdist.first,
+                 global_point_indices);
 
   // Initialise vertex topology
-  // FIXME - clearly wrong since vertices != points
-  std::uint32_t num_vertices = point_coordinates.rows();
-  _topology.init(0, num_vertices, num_vertices);
+  // FIXME: return this from compute_point_mapping()
+  std::uint32_t num_vertices
+      = vmap_data.second
+            .block(0, 0, vmap_data.second.rows(), num_vertices_per_cell)
+            .maxCoeff()
+        + 1;
+
+  // Find out how many vertices are locally 'owned'
+  const std::uint32_t rank = MPI::rank(comm);
+  std::uint64_t num_owned_vertices = num_vertices;
+  for (const auto& it : shared_points)
+  {
+    if ((std::uint32_t)it.first < num_vertices and *it.second.begin() < rank)
+      --num_owned_vertices;
+  }
+
+  std::cout << rank << ") num_vertices = " << num_vertices
+            << " and num_owned_vertices = " << num_owned_vertices << " \n";
+
+  const std::uint64_t num_global_vertices = MPI::sum(comm, num_owned_vertices);
+  std::cout << rank << ") num_global_vertices = " << num_global_vertices
+            << "\n";
+
+  _topology.init(0, num_vertices, num_global_vertices);
   _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);
   for (std::size_t i = 0; i < num_vertices; ++i)
     _topology.set_global_index(0, i, global_point_indices[i]);
-  _topology.shared_entities(0) = shared_vertices;
+  _topology.shared_entities(0) = shared_points;
 
   // Initialise cell topology
   const std::size_t num_cells = vmap_data.second.rows();

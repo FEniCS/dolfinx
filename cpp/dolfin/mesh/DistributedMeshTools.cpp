@@ -669,7 +669,7 @@ DistributedMeshTools::compute_entity_ownership(
   std::map<std::int32_t, std::set<std::uint32_t>>::const_iterator v;
   for (v = shared_vertices_local.begin(); v != shared_vertices_local.end(); ++v)
   {
-    assert(v->first < (int)global_vertex_indices.size());
+    //    assert(v->first < (int)global_vertex_indices.size());
     shared_vertices.insert({global_vertex_indices[v->first], v->second});
   }
 

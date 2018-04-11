@@ -382,7 +382,7 @@ void XDMFFile::write(const function::Function& u, const Encoding encoding)
   std::int64_t width = get_padded_width(u);
   assert(data_values.size() % width == 0);
 
-  const std::int64_t num_points = mesh.num_entities_global(0);
+  const std::int64_t num_points = mesh.geometry().num_global_points();
   const std::int64_t num_values
       = cell_centred ? mesh.num_entities_global(mesh.topology().dim())
                      : num_points;
@@ -1635,7 +1635,6 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   topology_node.append_attribute("NumberOfElements")
       = std::to_string(num_cells).c_str();
   topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
-  topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
 
   // Compute packed topology data
   std::vector<T> topology_data;
@@ -1664,9 +1663,9 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     }
   }
   else
-  {
     topology_data = compute_topology_data<T>(mesh, cell_dim);
-  }
+
+  topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
 
   // Add topology DataItem node
   const std::string group_name = path_prefix + "/" + mesh.name();
@@ -1687,7 +1686,9 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Compute number of points (global) in mesh (equal to number of vertices
   // for affine meshes)
-  const std::int64_t num_points = mesh.num_entities_global(0);
+
+  const std::int64_t num_points = mesh.geometry().num_global_points();
+  std::cout << " num_points = " << num_points << "\n";
 
   // Add geometry node and attributes
   pugi::xml_node geometry_node = xml_node.append_child("Geometry");
@@ -1768,6 +1769,8 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
     std::int64_t num_items_total = 1;
     for (auto n : shape)
       num_items_total *= n;
+
+    std::cout << num_items_total << " vs " << x.size() << "\n";
 
     assert(num_items_total == (std::int64_t)MPI::sum(comm, x.size()));
 

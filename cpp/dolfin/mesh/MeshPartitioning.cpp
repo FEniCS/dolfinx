@@ -128,8 +128,6 @@ mesh::Mesh MeshPartitioning::build(
 
   // Topological dimension
   const int tdim = cell_type->dim();
-
-  const std::int64_t num_global_vertices = MPI::sum(comm, points.rows());
   const std::int64_t num_global_cells = MPI::sum(comm, cell_vertices.rows());
 
   // Send cells to owning process according to mp cell partition, and
@@ -190,18 +188,13 @@ mesh::Mesh MeshPartitioning::build(
   // Build mesh from points and distributed cells
   mesh::Mesh mesh(comm, type, points, new_cell_vertices);
 
-  // Reset global indices
-  const std::size_t num_vertices = mesh.num_entities(0);
+  // Reset number of global cells
   const std::size_t num_cells = mesh.num_cells();
-  mesh.topology().init(0, num_vertices, num_global_vertices);
   mesh.topology().init(tdim, num_cells, num_global_cells);
 
   // Set global indices for cells
   for (std::size_t i = 0; i < new_global_cell_indices.size(); ++i)
     mesh.topology().set_global_index(tdim, i, new_global_cell_indices[i]);
-
-  // Fix up some of the ancilliary data about sharing and ownership
-  // now that the mesh has been initialised
 
   // Copy cell ownership
   std::vector<std::uint32_t>& cell_owner = mesh.topology().cell_owner();
@@ -213,6 +206,10 @@ mesh::Mesh MeshPartitioning::build(
   // Set the ghost cell offset
   mesh.topology().init_ghost(tdim, num_regular_cells);
 
+  // Assign map of shared cells and vertices
+  mesh.topology().shared_entities(tdim) = shared_cells;
+
+  // FIXME: do this better
   // Find highest index + 1 in local_cell_vertices of regular cells
   std::int32_t num_regular_vertices
       = *std::max_element(
@@ -223,9 +220,6 @@ mesh::Mesh MeshPartitioning::build(
 
   // Set the ghost vertex offset
   mesh.topology().init_ghost(0, num_regular_vertices);
-
-  // Assign map of shared cells and vertices
-  mesh.topology().shared_entities(tdim) = shared_cells;
 
   return mesh;
 }
