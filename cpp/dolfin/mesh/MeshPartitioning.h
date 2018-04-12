@@ -96,10 +96,10 @@ public:
   /// @return
   ///   Local-to-global map for vertices (std::vector<std::int64_t>) and cell
   ///   topology in local indexing (EigenRowArrayXXi32)
-  static std::pair<std::vector<std::int64_t>, EigenRowArrayXXi32>
+  static std::tuple<std::uint64_t, std::vector<std::int64_t>,
+                    EigenRowArrayXXi32>
   compute_point_mapping(
-      MPI_Comm mpi_comm,
-      std::uint32_t num_cell_vertices,
+      MPI_Comm mpi_comm, std::uint32_t num_cell_vertices,
       const Eigen::Ref<const EigenRowArrayXXi64>& cell_points);
 
 private:
@@ -157,10 +157,9 @@ private:
   // Returns (new_cell_vertices, new_global_cell_indices,
   // new_cell_partition, shared_cells, number of non-ghost cells on this
   // process).
-  static std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>,
-                    std::vector<int>,
-                    std::map<std::int32_t, std::set<std::uint32_t>>,
-                    std::int32_t>
+  static std::tuple<
+      EigenRowArrayXXi64, std::vector<std::int64_t>, std::vector<int>,
+      std::map<std::int32_t, std::set<std::uint32_t>>, std::int32_t>
   distribute_cells(const MPI_Comm mpi_comm,
                    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
                    const std::vector<std::int64_t>& global_cell_indices,

@@ -658,7 +658,7 @@ MeshPartitioning::distribute_cells(
       std::move(new_cell_partition), std::move(shared_cells), local_count);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<std::int64_t>, EigenRowArrayXXi32>
+std::tuple<std::uint64_t, std::vector<std::int64_t>, EigenRowArrayXXi32>
 MeshPartitioning::compute_point_mapping(
     MPI_Comm mpi_comm, std::uint32_t num_cell_vertices,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_points)
@@ -702,6 +702,8 @@ MeshPartitioning::compute_point_mapping(
     }
   }
 
+  const std::uint32_t num_local_vertices = nv;
+
   // Repeat and map non-vertex points
   for (std::uint32_t c = 0; c < num_cells; ++c)
   {
@@ -726,7 +728,8 @@ MeshPartitioning::compute_point_mapping(
     }
   }
 
-  return {std::move(point_local_to_global), std::move(local_cell_points)};
+  return std::make_tuple(num_local_vertices, std::move(point_local_to_global),
+                         std::move(local_cell_points));
 }
 //-----------------------------------------------------------------------------
 std::pair<EigenRowArrayXXd, std::map<std::int32_t, std::set<std::uint32_t>>>

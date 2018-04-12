@@ -62,8 +62,9 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // topology using new local indices
   const auto vmap_data = MeshPartitioning::compute_point_mapping(
       comm, num_vertices_per_cell, cells);
-  const std::vector<std::int64_t>& global_point_indices = vmap_data.first;
-  _coordinate_dofs.init(tdim, vmap_data.second);
+  const std::vector<std::int64_t>& global_point_indices
+      = std::get<1>(vmap_data);
+  _coordinate_dofs.init(tdim, std::get<2>(vmap_data));
 
   // Get the required points (as specified in global_point_indices) onto this
   // process
@@ -76,12 +77,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
                  global_point_indices);
 
   // Initialise vertex topology
-  // FIXME: return this from compute_point_mapping()
-  std::uint32_t num_vertices
-      = vmap_data.second
-            .block(0, 0, vmap_data.second.rows(), num_vertices_per_cell)
-            .maxCoeff()
-        + 1;
+  std::uint32_t num_vertices = std::get<0>(vmap_data);
 
   // Find out how many vertices are locally 'owned'
   const std::uint32_t rank = MPI::rank(comm);
@@ -103,7 +99,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   _topology.shared_entities(0) = shared_points;
 
   // Initialise cell topology
-  const std::size_t num_cells = vmap_data.second.rows();
+  const std::size_t num_cells = std::get<2>(vmap_data).rows();
   _topology.init(tdim, num_cells, num_cells);
   _topology.init_ghost(tdim, num_cells);
   _topology.init_global_indices(tdim, num_cells);
