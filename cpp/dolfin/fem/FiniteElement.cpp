@@ -12,7 +12,7 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-FiniteElement::FiniteElement(std::shared_ptr<const ufc::finite_element> element)
+FiniteElement::FiniteElement(std::shared_ptr<const ufc_finite_element> element)
     : _ufc_element(element), _hash(common::hash_local(signature()))
 {
   // Store dof coordinates on reference element

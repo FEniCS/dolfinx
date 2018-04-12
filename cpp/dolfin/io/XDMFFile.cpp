@@ -1247,7 +1247,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   std::string element_family = u.function_space()->element()->family();
   const std::size_t element_degree = u.function_space()->element()->degree();
-  const ufc::shape ufc_element_cell
+  const ufc_shape ufc_element_cell
       = u.function_space()->element()->cell_shape();
 
   // Map of standard UFL family abbreviations for visualisation
@@ -1262,12 +1262,12 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
          {"Q", "Q"},
          {"DQ", "DQ"}};
 
-  const std::map<ufc::shape, std::string> cell_shape_repr
-      = {{ufc::shape::interval, "interval"},
-         {ufc::shape::triangle, "triangle"},
-         {ufc::shape::tetrahedron, "tetrahedron"},
-         {ufc::shape::quadrilateral, "quadrilateral"},
-         {ufc::shape::hexahedron, "hexahedron"}};
+  const std::map<ufc_shape, std::string> cell_shape_repr
+      = {{interval, "interval"},
+         {triangle, "triangle"},
+         {tetrahedron, "tetrahedron"},
+         {quadrilateral, "quadrilateral"},
+         {hexahedron, "hexahedron"}};
 
   // Check that element is supported
   auto const it = family_abbr.find(element_family);

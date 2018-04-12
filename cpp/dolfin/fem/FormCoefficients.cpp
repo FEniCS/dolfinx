@@ -22,7 +22,7 @@ FormCoefficients::FormCoefficients(const ufc::form& ufc_form)
   // Create finite elements for coefficients
   for (int i = 0; i < ufc_form.num_coefficients(); i++)
   {
-    std::shared_ptr<ufc::finite_element> element(
+    std::shared_ptr<ufc_finite_element> element(
         ufc_form.create_finite_element(ufc_form.rank() + i));
 
     _elements.push_back(fem::FiniteElement(element));

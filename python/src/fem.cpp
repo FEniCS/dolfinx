@@ -14,6 +14,8 @@
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
 
+#include <string>
+
 #ifdef HAS_PYBIND11_PETSC4PY
 #include <petsc4py/petsc4py.h>
 #endif
@@ -48,7 +50,7 @@ namespace dolfin_wrappers
 void fem(py::module& m)
 {
   // UFC objects
-  py::class_<ufc::finite_element, std::shared_ptr<ufc::finite_element>>(
+  py::class_<ufc_finite_element, std::shared_ptr<ufc_finite_element>>(
       m, "ufc_finite_element", "UFC finite element object");
   py::class_<ufc::dofmap, std::shared_ptr<ufc::dofmap>>(m, "ufc_dofmap",
                                                         "UFC dofmap object");
@@ -60,10 +62,10 @@ void fem(py::module& m)
   // Function to convert pointers (from JIT usually) to UFC objects
   m.def("make_ufc_finite_element",
         [](std::uintptr_t e) {
-          ufc::finite_element* p = reinterpret_cast<ufc::finite_element*>(e);
-          return std::shared_ptr<const ufc::finite_element>(p);
+          ufc_finite_element* p = reinterpret_cast<ufc_finite_element*>(e);
+          return std::shared_ptr<const ufc_finite_element>(p);
         },
-        "Create a ufc::finite_element object from a pointer.");
+        "Create a ufc_finite_element object from a pointer.");
 
   m.def("make_ufc_dofmap",
         [](std::uintptr_t e) {
@@ -91,7 +93,7 @@ void fem(py::module& m)
   py::class_<dolfin::fem::FiniteElement,
              std::shared_ptr<dolfin::fem::FiniteElement>>(
       m, "FiniteElement", "DOLFIN FiniteElement object")
-      .def(py::init<std::shared_ptr<const ufc::finite_element>>())
+      .def(py::init<std::shared_ptr<const ufc_finite_element>>())
       .def("num_sub_elements", &dolfin::fem::FiniteElement::num_sub_elements)
       // TODO: Update for change to Eigen::Tensor
       //   .def("tabulate_dof_coordinates",

@@ -36,12 +36,12 @@ Form::Form(std::shared_ptr<const ufc::form> ufc_form,
   for (std::size_t i = 0; i < function_spaces.size(); ++i)
   {
     assert(function_spaces[i]->element());
-    std::unique_ptr<ufc::finite_element> element(
+    std::unique_ptr<ufc_finite_element> ufc_element(
         ufc_form->create_finite_element(i));
 
-    if (element->signature() != function_spaces[i]->element()->signature())
+    if (std::string(ufc_element->signature) != function_spaces[i]->element()->signature())
     {
-      log::log(ERROR, "Expected element: %s", element->signature());
+      log::log(ERROR, "Expected element: %s", ufc_element->signature);
       log::log(ERROR, "Input element:    %s",
                function_spaces[i]->element()->signature().c_str());
       log::dolfin_error("Form.cpp", "create form",
