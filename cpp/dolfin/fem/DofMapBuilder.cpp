@@ -168,11 +168,6 @@ void DofMapBuilder::build(
         node_graph0, shared_nodes, global_nodes0, node_local_to_global0, mesh,
         dofmap._global_dimension / bs);
 
-    std::cout << "num_owned_nodes = " << num_owned_nodes << " bs = " << bs
-              << "\n";
-
-    std::cout << "global_dim = " << dofmap._global_dimension << "\n";
-
     dofmap._index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(),
                                                            num_owned_nodes, bs);
 

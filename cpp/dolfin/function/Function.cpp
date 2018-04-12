@@ -460,7 +460,7 @@ EigenRowArrayXXd Function::compute_point_values(const mesh::Mesh& mesh) const
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
-    // Get coordinate
+    // Get coordinates for all points in cell
     cell.get_coordinate_dofs(x);
     values.resize(x.rows(), value_size_loc);
 
@@ -470,12 +470,7 @@ EigenRowArrayXXd Function::compute_point_values(const mesh::Mesh& mesh) const
     // Copy values to array of point values
     const std::int32_t* dofs = cell_dofs(cell.index());
     for (unsigned int i = 0; i < x.rows(); ++i)
-    {
-      std::cout << dofs[i] << ":" << mesh.geometry().global_indices()[dofs[i]]
-                << ":" << x.row(i) << ", " << values.row(i) << "\n";
       point_values.row(dofs[i]) = values.row(i);
-    }
-    std::cout << " \n";
   }
 
   return point_values;

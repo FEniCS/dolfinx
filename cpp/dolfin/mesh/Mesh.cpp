@@ -42,13 +42,13 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
     if (_cell_type->cell_type() == mesh::CellType::Type::triangle
         and cells.cols() == 6)
     {
-      std::cout << "P2 Mesh of Tri_6" << std::endl;
+      log::warning("P2 Mesh of Tri_6");
       _degree = 2;
     }
     else if (_cell_type->cell_type() == mesh::CellType::Type::tetrahedron
              and cells.cols() == 10)
     {
-      std::cout << "P2 Mesh of Tet_10" << std::endl;
+      log::warning("P2 Mesh of Tet_10");
       _degree = 2;
     }
     else
@@ -92,18 +92,14 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
       --num_owned_vertices;
   }
 
-  std::cout << rank << ") num_vertices = " << num_vertices
-            << " and num_owned_vertices = " << num_owned_vertices << " \n";
-
   const std::uint64_t num_global_vertices = MPI::sum(comm, num_owned_vertices);
-  std::cout << rank << ") num_global_vertices = " << num_global_vertices
-            << "\n";
 
   _topology.init(0, num_vertices, num_global_vertices);
   _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);
   for (std::size_t i = 0; i < num_vertices; ++i)
     _topology.set_global_index(0, i, global_point_indices[i]);
+  // FIXME: strictly should not be including all points, only vertices
   _topology.shared_entities(0) = shared_points;
 
   // Initialise cell topology

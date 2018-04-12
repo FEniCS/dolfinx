@@ -1412,9 +1412,7 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
   const int degree = cell_type_str.second;
 
   if (degree == 2)
-  {
-    std::cout << "Got quadratic mesh\n";
-  }
+    log::warning("Caution: reading quadratic mesh");
 
   // Get toplogical dimensions
   std::unique_ptr<mesh::CellType> cell_type(
@@ -1688,7 +1686,6 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // for affine meshes)
 
   const std::int64_t num_points = mesh.geometry().num_global_points();
-  std::cout << " num_points = " << num_points << "\n";
 
   // Add geometry node and attributes
   pugi::xml_node geometry_node = xml_node.append_child("Geometry");
@@ -1769,8 +1766,6 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
     std::int64_t num_items_total = 1;
     for (auto n : shape)
       num_items_total *= n;
-
-    std::cout << num_items_total << " vs " << x.size() << "\n";
 
     assert(num_items_total == (std::int64_t)MPI::sum(comm, x.size()));
 
