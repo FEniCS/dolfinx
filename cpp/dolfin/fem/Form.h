@@ -9,8 +9,10 @@
 #include "FormCoefficients.h"
 #include "FormIntegrals.h"
 #include <dolfin/common/types.h>
+#include <functional>
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 // Forward declaration
@@ -37,7 +39,7 @@ namespace mesh
 class Mesh;
 template <typename T>
 class MeshFunction;
-}
+} // namespace mesh
 
 namespace fem
 {
@@ -77,7 +79,7 @@ public:
   /// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
   ///         Vector of function spaces.
   Form(std::shared_ptr<const ufc::form> ufc_form,
-       std::vector<std::shared_ptr<const function::FunctionSpace>>
+       const std::vector<std::shared_ptr<const function::FunctionSpace>>
            function_spaces);
 
   /// Destructor
@@ -90,11 +92,44 @@ public:
   ///         The rank of the form.
   std::size_t rank() const;
 
+  /// Get the coefficient index for a named coefficient
+  int get_coefficient_index(std::string name) const;
+
+  /// Get the coefficient name for a given coefficient index
+  std::string get_coefficient_name(int i) const;
+
+  void set_coefficient_index_to_name_map(
+      std::function<int(const char*)> coefficient_index_map);
+
+  void set_coefficient_name_to_index_map(
+      std::function<const char*(int)> coefficient_name_map);
+
+  /// Set coefficient with given number (shared pointer version)
+  ///
+  /// @param[in]  i (std::size_t)
+  ///         The given number.
+  /// @param[in]    coefficient (_GenericFunction_)
+  ///         The coefficient.
+  void set_coefficients(
+      std::map<std::size_t, std::shared_ptr<const function::GenericFunction>>
+          coefficients);
+
+  /// Set coefficient with given name (shared pointer version)
+  ///
+  /// @param[in]    name (std::string)
+  ///         The name.
+  /// @param[in]    coefficient (_GenericFunction_)
+  ///         The coefficient.
+  void set_coefficients(
+      std::map<std::string, std::shared_ptr<const function::GenericFunction>>
+          coefficients);
+
   /// Return original coefficient position for each coefficient (0
   /// <= i < n)
   ///
   /// @return std::size_t
-  ///         The position of coefficient i in original ufl form coefficients.
+  ///         The position of coefficient i in original ufl form
+  ///         coefficients.
   std::size_t original_coefficient_position(std::size_t i) const;
 
   /// Return the size of the element tensor, needed to create temporary space
@@ -200,10 +235,10 @@ public:
       std::shared_ptr<const mesh::MeshFunction<std::size_t>> vertex_domains);
 
   /// Access coefficients (non-const)
-  FormCoefficients& coeffs() { return _coeffs; }
+  FormCoefficients& coeffs() { return _coefficents; }
 
   /// Access coefficients (const)
-  const FormCoefficients& coeffs() const { return _coeffs; }
+  const FormCoefficients& coeffs() const { return _coefficents; }
 
   /// Access form integrals (const)
   const FormIntegrals& integrals() const { return _integrals; }
@@ -219,7 +254,7 @@ private:
   FormIntegrals _integrals;
 
   // Coefficients associated with the Form
-  FormCoefficients _coeffs;
+  FormCoefficients _coefficents;
 
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const function::FunctionSpace>> _function_spaces;
@@ -241,6 +276,9 @@ private:
 
   // ufc::coordinate_mapping
   std::shared_ptr<fem::CoordinateMapping> _coord_mapping;
+
+  std::function<int(const char*)> _coefficient_index_map;
+  std::function<const char*(int)> _coefficient_name_map;
 };
-}
-}
+} // namespace fem
+} // namespace dolfin
