@@ -253,7 +253,7 @@ void function(py::module& m)
   m.def("interpolate",
         [](const dolfin::function::GenericFunction& f,
            std::shared_ptr<const dolfin::function::FunctionSpace> V) {
-          auto g = std::make_shared<dolfin::function::Function>(V);
+          auto g = std::make_unique<dolfin::function::Function>(V);
           g->interpolate(f);
           return g;
         });

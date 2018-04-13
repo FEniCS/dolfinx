@@ -32,6 +32,7 @@ set(SOURCES
   FiniteElement.cpp
   Form.cpp
   FormCoefficients.cpp
+  FormIntegrals.cpp
   GenericDofMap.cpp
   LocalAssembler.cpp
   NonlinearVariationalProblem.cpp
