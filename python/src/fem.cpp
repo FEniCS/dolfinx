@@ -52,8 +52,8 @@ void fem(py::module& m)
   // UFC objects
   py::class_<ufc_finite_element, std::shared_ptr<ufc_finite_element>>(
       m, "ufc_finite_element", "UFC finite element object");
-  py::class_<ufc::dofmap, std::shared_ptr<ufc::dofmap>>(m, "ufc_dofmap",
-                                                        "UFC dofmap object");
+  py::class_<ufc_dofmap, std::shared_ptr<ufc_dofmap>>(m, "ufc_dofmap",
+                                                      "UFC dofmap object");
   py::class_<ufc::form, std::shared_ptr<ufc::form>>(m, "ufc_form",
                                                     "UFC form object");
   py::class_<ufc::coordinate_mapping, std::shared_ptr<ufc::coordinate_mapping>>(
@@ -69,10 +69,10 @@ void fem(py::module& m)
 
   m.def("make_ufc_dofmap",
         [](std::uintptr_t e) {
-          ufc::dofmap* p = reinterpret_cast<ufc::dofmap*>(e);
-          return std::shared_ptr<const ufc::dofmap>(p);
+          ufc_dofmap* p = reinterpret_cast<ufc_dofmap*>(e);
+          return std::shared_ptr<const ufc_dofmap>(p);
         },
-        "Create a ufc::dofmap object from a pointer.");
+        "Create a ufc_dofmap object from a pointer.");
 
   m.def("make_ufc_form",
         [](std::uintptr_t e) {
@@ -177,9 +177,9 @@ void fem(py::module& m)
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>,
              dolfin::fem::GenericDofMap>(m, "DofMap", "DofMap object")
-      .def(py::init<std::shared_ptr<const ufc::dofmap>,
+      .def(py::init<std::shared_ptr<const ufc_dofmap>,
                     const dolfin::mesh::Mesh&>())
-      .def(py::init<std::shared_ptr<const ufc::dofmap>,
+      .def(py::init<std::shared_ptr<const ufc_dofmap>,
                     const dolfin::mesh::Mesh&,
                     std::shared_ptr<const dolfin::mesh::SubDomain>>())
       .def("ownership_range", &dolfin::fem::DofMap::ownership_range)

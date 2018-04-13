@@ -190,20 +190,20 @@ public:
 
   /// Create a new finite element for sub element i (for a mixed
   /// element)
-  std::shared_ptr<FiniteElement> create_sub_element(std::size_t i) const
+  std::unique_ptr<FiniteElement> create_sub_element(std::size_t i) const
   {
     assert(_ufc_element);
     std::shared_ptr<ufc_finite_element> ufc_element(
         _ufc_element->create_sub_element(i));
-    return std::make_shared<FiniteElement>(ufc_element);
+    return std::make_unique<FiniteElement>(ufc_element);
   }
 
   /// Create a new class instance
-  std::shared_ptr<FiniteElement> create() const
+  std::unique_ptr<FiniteElement> create() const
   {
     assert(_ufc_element);
     std::shared_ptr<ufc_finite_element> ufc_element(_ufc_element->create());
-    return std::make_shared<FiniteElement>(ufc_element);
+    return std::make_unique<FiniteElement>(ufc_element);
   }
 
   /// Extract sub finite element for component

@@ -20,7 +20,7 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
+DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                const mesh::Mesh& mesh)
     : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
       _global_dimension(0), _ufc_offset(0)
@@ -31,7 +31,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
   DofMapBuilder::build(*this, mesh, std::shared_ptr<const mesh::SubDomain>());
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
+DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                const mesh::Mesh& mesh,
                std::shared_ptr<const mesh::SubDomain> constrained_domain)
     : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
@@ -49,7 +49,7 @@ DofMap::DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
 DofMap::DofMap(const DofMap& parent_dofmap,
                const std::vector<std::size_t>& component,
                const mesh::Mesh& mesh)
-    : _cell_dimension(0), _ufc_dofmap(0), _is_view(true), _global_dimension(0),
+    : _cell_dimension(0), _is_view(true), _global_dimension(0),
       _ufc_offset(0), _index_map(parent_dofmap._index_map)
 {
   // Build sub-dofmap
@@ -110,19 +110,20 @@ std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
 std::size_t DofMap::max_element_dofs() const
 {
   assert(_ufc_dofmap);
-  return _ufc_dofmap->num_element_dofs();
+  return _ufc_dofmap->num_element_dofs;
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
 {
   assert(_ufc_dofmap);
+  assert(_ufc_dofmap>num_entity_dofs);
   return _ufc_dofmap->num_entity_dofs(entity_dim);
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_facet_dofs() const
 {
   assert(_ufc_dofmap);
-  return _ufc_dofmap->num_facet_dofs();
+  return _ufc_dofmap->num_facet_dofs;
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> DofMap::ownership_range() const
@@ -144,7 +145,9 @@ void DofMap::tabulate_facet_dofs(std::vector<int64_t>& element_dofs,
                                  std::size_t cell_facet_index) const
 {
   assert(_ufc_dofmap);
-  element_dofs.resize(_ufc_dofmap->num_facet_dofs());
+  element_dofs.resize(_ufc_dofmap->num_facet_dofs);
+
+  assert(_ufc_dofmap->tabulate_facet_dofs);
   _ufc_dofmap->tabulate_facet_dofs(element_dofs.data(), cell_facet_index);
 }
 //-----------------------------------------------------------------------------
@@ -153,26 +156,28 @@ void DofMap::tabulate_entity_dofs(std::vector<int64_t>& element_dofs,
                                   std::size_t cell_entity_index) const
 {
   assert(_ufc_dofmap);
+  assert(_ufc_dofmap->num_entity_dofs);
   if (_ufc_dofmap->num_entity_dofs(entity_dim) == 0)
     return;
 
   element_dofs.resize(_ufc_dofmap->num_entity_dofs(entity_dim));
+  assert(_ufc_dofmap->->tabulate_entity_dofs);
   _ufc_dofmap->tabulate_entity_dofs(element_dofs.data(), entity_dim,
                                     cell_entity_index);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericDofMap>
+std::unique_ptr<GenericDofMap>
 DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
                            const mesh::Mesh& mesh) const
 {
-  return std::shared_ptr<GenericDofMap>(new DofMap(*this, component, mesh));
+  return std::unique_ptr<GenericDofMap>(new DofMap(*this, component, mesh));
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<GenericDofMap>
+std::unique_ptr<GenericDofMap>
 DofMap::collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                  const mesh::Mesh& mesh) const
 {
-  return std::shared_ptr<GenericDofMap>(new DofMap(collapsed_map, *this, mesh));
+  return std::unique_ptr<GenericDofMap>(new DofMap(collapsed_map, *this, mesh));
 }
 //-----------------------------------------------------------------------------
 void DofMap::set(la::PETScVector& x, double value) const
@@ -190,7 +195,7 @@ void DofMap::set(la::PETScVector& x, double value) const
   x.apply();
 }
 //-----------------------------------------------------------------------------
-void DofMap::check_provided_entities(const ufc::dofmap& dofmap,
+void DofMap::check_provided_entities(const ufc_dofmap& dofmap,
                                      const mesh::Mesh& mesh)
 {
   // Check that we have all mesh entities
