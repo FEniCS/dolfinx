@@ -80,7 +80,7 @@ class PyLinearOperatorPure : public LinearOperatorBase
     py::pybind11_fail("Tried to call pure virtual function \'mult\'");
   }
 };
-}
+} // namespace
 
 namespace dolfin_wrappers
 {
@@ -688,7 +688,6 @@ void la(py::module& m)
            })
       .def("value", &dolfin::la::Scalar::value);
 
-#ifdef HAS_PETSC
   py::class_<dolfin::la::PETScOptions>(m, "PETScOptions")
       .def_static("set",
                   (void (*)(std::string)) & dolfin::la::PETScOptions::set)
@@ -696,12 +695,10 @@ void la(py::module& m)
                   (void (*)(std::string, bool)) & dolfin::la::PETScOptions::set)
       .def_static("set",
                   (void (*)(std::string, int)) & dolfin::la::PETScOptions::set)
-      .def_static("set",
-                  (void (*)(std::string, double))
-                      & dolfin::la::PETScOptions::set)
-      .def_static("set",
-                  (void (*)(std::string, std::string))
-                      & dolfin::la::PETScOptions::set)
+      .def_static("set", (void (*)(std::string, double))
+                             & dolfin::la::PETScOptions::set)
+      .def_static("set", (void (*)(std::string, std::string))
+                             & dolfin::la::PETScOptions::set)
       .def_static("clear",
                   (void (*)(std::string)) & dolfin::la::PETScOptions::clear)
       .def_static("clear", (void (*)()) & dolfin::la::PETScOptions::clear);
@@ -724,20 +721,19 @@ void la(py::module& m)
       .def("get_options_prefix", &dolfin::la::PETScVector::get_options_prefix)
       .def("set_options_prefix", &dolfin::la::PETScVector::set_options_prefix)
       .def("update_ghost_values", &dolfin::la::PETScVector::update_ghost_values)
-      .def("size",
-           (std::size_t(dolfin::la::PETScVector::*)() const)
-               & dolfin::la::PETScVector::size)
+      .def("size", (std::size_t(dolfin::la::PETScVector::*)() const)
+                       & dolfin::la::PETScVector::size)
       .def("__add__",
            [](const dolfin::la::PETScVector& self,
               const dolfin::la::PETScVector& x) {
-             auto y = std::make_shared<dolfin::la::PETScVector>(self);
+             auto y = std::make_unique<dolfin::la::PETScVector>(self);
              *y += x;
              return y;
            },
            py::is_operator())
       .def("__sub__",
            [](dolfin::la::PETScVector& self, const dolfin::la::PETScVector& x) {
-             auto y = std::make_shared<dolfin::la::PETScVector>(self);
+             auto y = std::make_unique<dolfin::la::PETScVector>(self);
              *y -= x;
              return y;
            },
@@ -806,19 +802,14 @@ void la(py::module& m)
       .def("set_options_prefix", &dolfin::la::PETScMatrix::set_options_prefix)
       .def("set_nullspace", &dolfin::la::PETScMatrix::set_nullspace)
       .def("set_near_nullspace", &dolfin::la::PETScMatrix::set_near_nullspace);
-/*
-.def("__sub__",
-     [](const dolfin::la::PETScMatrix& self, const dolfin::la::PETScMatrix& B) {
-       dolfin::la::PETScMatrix C(self);
-       C -= B;
-       return C;
-     },
-     py::is_operator());
-*/
+  /*
+  .def("__sub__",
+       [](const dolfin::la::PETScMatrix& self, const dolfin::la::PETScMatrix& B)
+  { dolfin::la::PETScMatrix C(self); C -= B; return C;
+       },
+       py::is_operator());
+  */
 
-#endif
-
-#ifdef HAS_PETSC
   // dolfin::la::PETScLUSolver
   py::class_<dolfin::la::PETScLUSolver,
              std::shared_ptr<dolfin::la::PETScLUSolver>>(
@@ -837,9 +828,7 @@ void la(py::module& m)
                dolfin::la::PETScVector&, const dolfin::la::PETScVector&))
                & dolfin::la::PETScLUSolver::solve)
       .def("ksp", &dolfin::la::PETScLUSolver::ksp);
-#endif
 
-#ifdef HAS_PETSC
   // dolfin::la::PETScKrylovSolver
   py::class_<dolfin::la::PETScKrylovSolver,
              std::shared_ptr<dolfin::la::PETScKrylovSolver>>
@@ -858,10 +847,9 @@ void la(py::module& m)
            &dolfin::la::PETScKrylovSolver::get_options_prefix)
       .def("set_options_prefix",
            &dolfin::la::PETScKrylovSolver::set_options_prefix)
-      .def("get_norm_type",
-           (dolfin::la::PETScKrylovSolver::norm_type(
-               dolfin::la::PETScKrylovSolver::*)() const)
-               & dolfin::la::PETScKrylovSolver::get_norm_type)
+      .def("get_norm_type", (dolfin::la::PETScKrylovSolver::norm_type(
+                                dolfin::la::PETScKrylovSolver::*)() const)
+                                & dolfin::la::PETScKrylovSolver::get_norm_type)
       .def("set_norm_type", &dolfin::la::PETScKrylovSolver::set_norm_type)
       .def("set_operator", &dolfin::la::PETScKrylovSolver::set_operator)
       .def("set_operators", &dolfin::la::PETScKrylovSolver::set_operators)
@@ -884,7 +872,6 @@ void la(py::module& m)
       .value("unpreconditioned",
              dolfin::la::PETScKrylovSolver::norm_type::unpreconditioned)
       .value("natural", dolfin::la::PETScKrylovSolver::norm_type::natural);
-#endif
 
 #ifdef HAS_SLEPC
   // dolfin::la::SLEPcEigenSolver
@@ -906,12 +893,10 @@ void la(py::module& m)
            &dolfin::la::SLEPcEigenSolver::set_deflation_space)
       .def("set_initial_space",
            &dolfin::la::SLEPcEigenSolver::set_initial_space)
-      .def("solve",
-           (void (dolfin::la::SLEPcEigenSolver::*)())
-               & dolfin::la::SLEPcEigenSolver::solve)
-      .def("solve",
-           (void (dolfin::la::SLEPcEigenSolver::*)(std::int64_t))
-               & dolfin::la::SLEPcEigenSolver::solve)
+      .def("solve", (void (dolfin::la::SLEPcEigenSolver::*)())
+                        & dolfin::la::SLEPcEigenSolver::solve)
+      .def("solve", (void (dolfin::la::SLEPcEigenSolver::*)(std::int64_t))
+                        & dolfin::la::SLEPcEigenSolver::solve)
       .def("get_eigenvalue",
            [](dolfin::la::SLEPcEigenSolver& self, std::size_t i) {
              double lr, lc;
@@ -931,8 +916,8 @@ void la(py::module& m)
   py::class_<dolfin::la::VectorSpaceBasis,
              std::shared_ptr<dolfin::la::VectorSpaceBasis>>(m,
                                                             "VectorSpaceBasis")
-      .def(py::init<const std::
-                        vector<std::shared_ptr<dolfin::la::PETScVector>>>())
+      .def(py::init<
+           const std::vector<std::shared_ptr<dolfin::la::PETScVector>>>())
       .def("is_orthonormal", &dolfin::la::VectorSpaceBasis::is_orthonormal,
            py::arg("tol") = 1.0e-10)
       .def("is_orthogonal", &dolfin::la::VectorSpaceBasis::is_orthogonal,
@@ -953,4 +938,4 @@ void la(py::module& m)
   // m.def("normalize", &dolfin::normalize, py::arg("x"),
   // py::arg("normalization_type")="average");
 }
-}
+} // namespace dolfin_wrappers
