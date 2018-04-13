@@ -116,7 +116,7 @@ std::size_t DofMap::max_element_dofs() const
 std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
 {
   assert(_ufc_dofmap);
-  assert(_ufc_dofmap>num_entity_dofs);
+  assert(_ufc_dofmap->num_entity_dofs);
   return _ufc_dofmap->num_entity_dofs(entity_dim);
 }
 //-----------------------------------------------------------------------------
@@ -161,7 +161,7 @@ void DofMap::tabulate_entity_dofs(std::vector<int64_t>& element_dofs,
     return;
 
   element_dofs.resize(_ufc_dofmap->num_entity_dofs(entity_dim));
-  assert(_ufc_dofmap->->tabulate_entity_dofs);
+  assert(_ufc_dofmap->tabulate_entity_dofs);
   _ufc_dofmap->tabulate_entity_dofs(element_dofs.data(), entity_dim,
                                     cell_entity_index);
 }
