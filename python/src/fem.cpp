@@ -56,7 +56,7 @@ void fem(py::module& m)
                                                       "UFC dofmap object");
   py::class_<ufc::form, std::shared_ptr<ufc::form>>(m, "ufc_form",
                                                     "UFC form object");
-  py::class_<ufc::coordinate_mapping, std::shared_ptr<ufc::coordinate_mapping>>(
+  py::class_<ufc_coordinate_mapping, std::shared_ptr<ufc_coordinate_mapping>>(
       m, "ufc_coordinate_mapping", "UFC coordinate_mapping object");
 
   // Function to convert pointers (from JIT usually) to UFC objects
@@ -83,11 +83,11 @@ void fem(py::module& m)
 
   m.def("make_ufc_coordinate_mapping",
         [](std::uintptr_t e) {
-          ufc::coordinate_mapping* p
-              = reinterpret_cast<ufc::coordinate_mapping*>(e);
-          return std::shared_ptr<const ufc::coordinate_mapping>(p);
+          ufc_coordinate_mapping* p
+              = reinterpret_cast<ufc_coordinate_mapping*>(e);
+          return std::shared_ptr<const ufc_coordinate_mapping>(p);
         },
-        "Create a ufc::coordinate_mapping object from a pointer.");
+        "Create a ufc_coordinate_mapping object from a pointer.");
 
   // dolfin::fem::FiniteElement
   py::class_<dolfin::fem::FiniteElement,
@@ -188,7 +188,7 @@ void fem(py::module& m)
   py::class_<dolfin::fem::CoordinateMapping,
              std::shared_ptr<dolfin::fem::CoordinateMapping>>(
       m, "CoordinateMapping", "Coordinate mapping object")
-      .def(py::init<std::shared_ptr<const ufc::coordinate_mapping>>());
+      .def(py::init<std::shared_ptr<const ufc_coordinate_mapping>>());
 
   // dolfin::fem::SparsityPatternBuilder
   py::class_<dolfin::fem::SparsityPatternBuilder>(m, "SparsityPatternBuilder")

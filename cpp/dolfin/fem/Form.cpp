@@ -57,7 +57,7 @@ Form::Form(std::shared_ptr<const ufc::form> ufc_form,
 
   // Create CoordinateMapping
   _coord_mapping = std::make_shared<fem::CoordinateMapping>(
-      std::shared_ptr<const ufc::coordinate_mapping>(
+      std::shared_ptr<const ufc_coordinate_mapping>(
           ufc_form->create_coordinate_mapping()));
 }
 //-----------------------------------------------------------------------------
