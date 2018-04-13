@@ -74,7 +74,7 @@ public:
   /// @param points
   ///   Existing vertex coordinates array on each process before
   ///   distribution
-  /// @param global_vertex_indices
+  /// @param global_point_indices
   ///   Global indices for vertices required on this process
   /// @return
   ///   vertex_coordinates (array of coordinates on this process after
@@ -82,9 +82,9 @@ public:
   ///   sharing processes for each shared vertex)
   static std::pair<EigenRowArrayXXd,
                    std::map<std::int32_t, std::set<std::uint32_t>>>
-  distribute_vertices(const MPI_Comm mpi_comm,
-                      const Eigen::Ref<const EigenRowArrayXXd>& points,
-                      const std::vector<std::int64_t>& global_vertex_indices);
+  distribute_points(const MPI_Comm mpi_comm,
+                    const Eigen::Ref<const EigenRowArrayXXd>& points,
+                    const std::vector<std::int64_t>& global_point_indices);
 
   /// Compute mapping of globally indexed vertices to local indices
   /// and remap topology accordingly

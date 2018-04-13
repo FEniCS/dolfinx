@@ -733,25 +733,24 @@ MeshPartitioning::compute_point_mapping(
 }
 //-----------------------------------------------------------------------------
 std::pair<EigenRowArrayXXd, std::map<std::int32_t, std::set<std::uint32_t>>>
-MeshPartitioning::distribute_vertices(
+MeshPartitioning::distribute_points(
     const MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& points,
-    const std::vector<std::int64_t>& global_vertex_indices)
+    const std::vector<std::int64_t>& global_point_indices)
 {
-  // This function distributes all vertices (coordinates and
+  // This function distributes all points (coordinates and
   // local-to-global mapping) according to the cells that are stored
   // on each process. This happens in several stages: First each
-  // process figures out which vertices it needs (by looking at its
-  // cells) and where those vertices are located. That information is
+  // process figures out which points it needs (by looking at its
+  // cells) and where those points are located. That information is
   // then distributed so that each process learns where it needs to
-  // send its vertices.
+  // send its points.
 
   // Create data structures that will be returned
-  EigenRowArrayXXd vertex_coordinates(global_vertex_indices.size(),
-                                      points.cols());
+  EigenRowArrayXXd point_coordinates(global_point_indices.size(),
+                                     points.cols());
 
-  log::log(PROGRESS,
-           "Distribute vertices during distributed mesh construction");
-  common::Timer timer("Distribute vertices");
+  log::log(PROGRESS, "Distribute points during distributed mesh construction");
+  common::Timer timer("Distribute points");
 
   // Get number of processes
   const int mpi_size = MPI::size(mpi_comm);
@@ -760,7 +759,7 @@ MeshPartitioning::distribute_vertices(
   // Get geometric dimension
   const int gdim = points.cols();
 
-  // Compute where (process number) the vertices we need are located
+  // Compute where (process number) the points we need are located
   std::vector<std::size_t> ranges(mpi_size);
   MPI::all_gather(mpi_comm, (std::size_t)points.rows(), ranges);
   for (std::uint32_t i = 1; i != ranges.size(); ++i)
@@ -769,15 +768,15 @@ MeshPartitioning::distribute_vertices(
 
   // Send global indices to the processes that own them, also recording
   // in local_indexing the original position on this process
-  std::vector<std::vector<std::size_t>> send_vertex_indices(mpi_size);
+  std::vector<std::vector<std::size_t>> send_point_indices(mpi_size);
   std::vector<std::vector<std::uint32_t>> local_indexing(mpi_size);
-  for (unsigned int i = 0; i != global_vertex_indices.size(); ++i)
+  for (unsigned int i = 0; i != global_point_indices.size(); ++i)
   {
-    const std::size_t required_vertex = global_vertex_indices[i];
+    const std::size_t required_point = global_point_indices[i];
     const int location
-        = std::upper_bound(ranges.begin(), ranges.end(), required_vertex)
+        = std::upper_bound(ranges.begin(), ranges.end(), required_point)
           - ranges.begin() - 1;
-    send_vertex_indices[location].push_back(required_vertex);
+    send_point_indices[location].push_back(required_point);
     local_indexing[location].push_back(i);
   }
 
@@ -788,19 +787,19 @@ MeshPartitioning::distribute_vertices(
   std::size_t offset = 0;
   for (int i = 0; i != mpi_size; ++i)
   {
-    send_vertex_indices[i].push_back(offset);
-    offset += (send_vertex_indices[i].size() - 1);
+    send_point_indices[i].push_back(offset);
+    offset += (send_point_indices[i].size() - 1);
   }
 
-  // Send required vertex indices to other processes, and receive
-  // vertex indices required by other processes.
-  std::vector<std::vector<std::size_t>> received_vertex_indices;
-  MPI::all_to_all(mpi_comm, send_vertex_indices, received_vertex_indices);
+  // Send required point indices to other processes, and receive
+  // point indices required by other processes.
+  std::vector<std::vector<std::size_t>> received_point_indices;
+  MPI::all_to_all(mpi_comm, send_point_indices, received_point_indices);
 
   // Pop offsets off back of received data
   std::vector<std::size_t> remote_offsets;
   std::size_t num_received_indices = 0;
-  for (auto& p : received_vertex_indices)
+  for (auto& p : received_point_indices)
   {
     remote_offsets.push_back(p.back());
     p.pop_back();
@@ -809,18 +808,18 @@ MeshPartitioning::distribute_vertices(
 
   // Pop offset off back of sending arrays too, achieving
   // a clean transfer of the offset data from local to remote
-  for (auto& p : send_vertex_indices)
+  for (auto& p : send_point_indices)
     p.pop_back();
 
   // Array to receive data into with RMA
   // This is a block of memory which all remote processes can write into, by
   // using the offset (and size) transferred in previous all_to_all.
-  EigenRowArrayXXd receive_coord_data(global_vertex_indices.size(), gdim);
+  EigenRowArrayXXd receive_coord_data(global_point_indices.size(), gdim);
 
   // Create local RMA window
   MPI_Win win;
   MPI_Win_create(receive_coord_data.data(),
-                 sizeof(double) * global_vertex_indices.size() * gdim,
+                 sizeof(double) * global_point_indices.size() * gdim,
                  sizeof(double), MPI_INFO_NULL, mpi_comm, &win);
   MPI_Win_fence(0, win);
 
@@ -828,7 +827,7 @@ MeshPartitioning::distribute_vertices(
   // transfer is complete (after next MPI_Win_fence)
   EigenRowArrayXXd send_coord_data(num_received_indices, gdim);
 
-  const std::pair<std::size_t, std::size_t> local_vertex_range
+  const std::pair<std::size_t, std::size_t> local_point_range
       = {ranges[mpi_rank], ranges[mpi_rank + 1]};
   // Convert global index to local index and put coordinate data in sending
   // array
@@ -836,11 +835,11 @@ MeshPartitioning::distribute_vertices(
   for (int p = 0; p < mpi_size; ++p)
   {
     const std::size_t local_index_0 = local_index;
-    for (const auto& q : received_vertex_indices[p])
+    for (const auto& q : received_point_indices[p])
     {
-      assert(q >= local_vertex_range.first && q < local_vertex_range.second);
+      assert(q >= local_point_range.first && q < local_point_range.second);
 
-      const std::size_t location = q - local_vertex_range.first;
+      const std::size_t location = q - local_point_range.first;
       send_coord_data.row(local_index) = points.row(location);
       ++local_index;
     }
@@ -851,11 +850,11 @@ MeshPartitioning::distribute_vertices(
             win);
   }
 
-  // Meanwhile, redistribute received_vertex_indices as vertex sharing
+  // Meanwhile, redistribute received_point_indices as point sharing
   // information
-  const std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices_local
-      = build_shared_vertices(mpi_comm, received_vertex_indices,
-                              local_vertex_range, local_indexing);
+  const std::map<std::int32_t, std::set<std::uint32_t>> shared_points_local
+      = build_shared_vertices(mpi_comm, received_point_indices,
+                              local_point_range, local_indexing);
 
   // Synchronise and free RMA window
   MPI_Win_fence(0, win);
@@ -867,12 +866,12 @@ MeshPartitioning::distribute_vertices(
   {
     for (const auto& v : p)
     {
-      vertex_coordinates.row(v) = receive_coord_data.row(local_index);
+      point_coordinates.row(v) = receive_coord_data.row(local_index);
       ++local_index;
     }
   }
 
-  return {std::move(vertex_coordinates), std::move(shared_vertices_local)};
+  return {std::move(point_coordinates), std::move(shared_points_local)};
 }
 //-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<std::uint32_t>>
@@ -898,10 +897,10 @@ MeshPartitioning::build_shared_vertices(
       ++n_sharing[local_index];
     }
 
-  // Create an array of 'pointers' to shared entries (where number shared, p >
-  // 1) Set to 0 for unshared entries Make space for two values: process
-  // number,
-  // and local index on that process
+  // Create an array of 'pointers' to shared entries
+  // (where number shared, p > 1).
+  // Set to 0 for unshared entries. Make space for two values: process
+  // number, and local index on that process
   std::vector<std::int32_t> offset;
   offset.reserve(n_sharing.size());
   std::int32_t index = 0;

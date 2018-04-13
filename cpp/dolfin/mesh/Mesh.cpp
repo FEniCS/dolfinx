@@ -66,15 +66,17 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
       = std::get<1>(vmap_data);
   _coordinate_dofs.init(tdim, std::get<2>(vmap_data));
 
-  // Get the required points (as specified in global_point_indices) onto this
-  // process
-  const auto vdist = MeshPartitioning::distribute_vertices(
-      comm, points, global_point_indices);
+  // Distribute the points across processes and calculate shared points
+  const auto vdist
+      = MeshPartitioning::distribute_points(comm, points, global_point_indices);
   const std::map<std::int32_t, std::set<std::uint32_t>>& shared_points
       = vdist.second;
 
-  _geometry.init(MPI::sum(comm, points.rows()), vdist.first,
-                 global_point_indices);
+  // Global number of points before distributing (which creates duplicates)
+  const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
+  // Initialise geometry with global size, actual points,
+  // and local to global map
+  _geometry.init(num_points_global, vdist.first, global_point_indices);
 
   // Initialise vertex topology
   std::uint32_t num_vertices = std::get<0>(vmap_data);

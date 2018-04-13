@@ -382,7 +382,7 @@ void XDMFFile::write(const function::Function& u, const Encoding encoding)
   std::int64_t width = get_padded_width(u);
   assert(data_values.size() % width == 0);
 
-  const std::int64_t num_points = mesh.geometry().num_global_points();
+  const std::int64_t num_points = mesh.geometry().num_points_global();
   const std::int64_t num_values
       = cell_centred ? mesh.num_entities_global(mesh.topology().dim())
                      : num_points;
@@ -1685,7 +1685,7 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Compute number of points (global) in mesh (equal to number of vertices
   // for affine meshes)
 
-  const std::int64_t num_points = mesh.geometry().num_global_points();
+  const std::int64_t num_points = mesh.geometry().num_points_global();
 
   // Add geometry node and attributes
   pugi::xml_node geometry_node = xml_node.append_child("Geometry");

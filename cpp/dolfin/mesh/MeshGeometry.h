@@ -59,7 +59,7 @@ public:
   std::size_t num_points() const { return _coordinates.rows(); }
 
   /// Return the number of global points in the geometry
-  std::size_t num_global_points() const { return _num_global_points; }
+  std::size_t num_points_global() const { return _num_points_global; }
 
   /// Return coordinate array for point with local index n
   Eigen::Ref<const EigenRowArrayXd> x(std::size_t n) const
@@ -85,12 +85,12 @@ public:
   }
 
   /// Initialise MeshGeometry data
-  void init(std::uint64_t num_global_points, const EigenRowArrayXXd& coordinates,
+  void init(std::uint64_t num_points_global, const EigenRowArrayXXd& coordinates,
             const std::vector<std::int64_t>& global_indices)
   {
-    _num_global_points = num_global_points;
-    _global_indices = global_indices;
+    _num_points_global = num_points_global;
     _coordinates = coordinates;
+    _global_indices = global_indices;
   }
 
   /// Hash of coordinate values
@@ -114,7 +114,7 @@ private:
   std::vector<std::int64_t> _global_indices;
 
   // Global number of points (taking account of shared points)
-  std::uint64_t _num_global_points;
+  std::uint64_t _num_points_global;
 };
 } // namespace mesh
 } // namespace dolfin
