@@ -18,7 +18,7 @@ namespace dolfin
 namespace fem
 {
 
-/// This is a wrapper for a UFC coordinate mapping (ufc::coordinate_mapping).
+/// This is a wrapper for a UFC coordinate mapping (ufc_coordinate_mapping).
 
 class CoordinateMapping
 {
@@ -27,7 +27,7 @@ public:
   /// shared)
   /// @param cm (ufc::coordinate_mapping)
   ///  UFC coordinate mapping
-  CoordinateMapping(std::shared_ptr<const ufc::coordinate_mapping> cm)
+  CoordinateMapping(std::shared_ptr<const ufc_coordinate_mapping> cm)
       : _ufc_cm(cm)
   {
     // Do nothing
@@ -36,22 +36,22 @@ public:
   /// Destructor
   virtual ~CoordinateMapping() {}
 
-  //--- Direct wrappers for ufc::coordinate_mapping ---
+  //--- Direct wrappers for ufc_coordinate_mapping ---
 
   /// Return a string identifying the finite element
   /// @return std::string
   std::string signature() const
   {
     assert(_ufc_cm);
-    return _ufc_cm->signature();
+    return _ufc_cm->signature;
   }
 
   /// Return the cell shape
   /// @return ufc::shape
-  ufc::shape cell_shape() const
+  ufc_shape cell_shape() const
   {
     assert(_ufc_cm);
-    return _ufc_cm->cell_shape();
+    return _ufc_cm->cell_shape;
   }
 
   /// Return the topological dimension of the cell shape
@@ -59,7 +59,7 @@ public:
   std::uint32_t topological_dimension() const
   {
     assert(_ufc_cm);
-    return _ufc_cm->topological_dimension();
+    return _ufc_cm->topological_dimension;
   }
 
   /// Return the geometric dimension of the cell shape
@@ -67,7 +67,7 @@ public:
   std::uint32_t geometric_dimension() const
   {
     assert(_ufc_cm);
-    return _ufc_cm->geometric_dimension();
+    return _ufc_cm->geometric_dimension;
   }
 
   /// Compute physical coordinates x for points X  in the reference
@@ -79,8 +79,8 @@ public:
   {
     assert(_ufc_cm);
     assert(x.rows() == X.rows());
-    assert(x.cols() == _ufc_cm->geometric_dimension());
-    assert(X.cols() == _ufc_cm->topological_dimension());
+    assert(x.cols() == _ufc_cm->geometric_dimension);
+    assert(X.cols() == _ufc_cm->topological_dimension);
     _ufc_cm->compute_physical_coordinates(x.data(), X.rows(), X.data(),
                                           coordinate_dofs.data());
   }
@@ -128,7 +128,7 @@ public:
 
 private:
   // UFC finite element
-  std::shared_ptr<const ufc::coordinate_mapping> _ufc_cm;
+  std::shared_ptr<const ufc_coordinate_mapping> _ufc_cm;
 };
 }
 }
