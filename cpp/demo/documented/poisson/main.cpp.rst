@@ -203,10 +203,10 @@ to the linear form.
 
     // Define variational forms
     auto a = std::make_shared<fem::Form>(
-        std::shared_ptr<ufc::form>(form_a->form()),
+        std::shared_ptr<ufc_form>(form_a->form()),
         std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V, V});
     auto L = std::make_shared<fem::Form>(
-        std::shared_ptr<ufc::form>(form_L->form()),
+        std::shared_ptr<ufc_form>(form_L->form()),
         std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
      auto f = std::make_shared<Source>();
      auto g = std::make_shared<dUdN>();

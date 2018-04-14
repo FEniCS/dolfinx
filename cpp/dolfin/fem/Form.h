@@ -16,10 +16,7 @@
 #include <vector>
 
 // Forward declaration
-namespace ufc
-{
-class form;
-}
+struct ufc_form;
 
 namespace dolfin
 {
@@ -74,11 +71,11 @@ class Form
 public:
   /// Create form (shared data)
   ///
-  /// @param[in] ufc_form (ufc::form)
+  /// @param[in] ufc_form (ufc_form)
   ///         The UFC form.
   /// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
   ///         Vector of function spaces.
-  Form(std::shared_ptr<const ufc::form> ufc_form,
+  Form(std::shared_ptr<const ufc_form> ufc_form,
        const std::vector<std::shared_ptr<const function::FunctionSpace>>
            function_spaces);
 
@@ -243,7 +240,7 @@ public:
   /// Access form integrals (const)
   const FormIntegrals& integrals() const { return _integrals; }
 
-  /// Get ufc::coordinate_mapping (experimental)
+  /// Get coordinate_mapping (experimental)
   std::shared_ptr<const fem::CoordinateMapping> coordinate_mapping() const
   {
     return _coord_mapping;
@@ -274,7 +271,7 @@ private:
   // Domain markers for vertices
   std::shared_ptr<const mesh::MeshFunction<std::size_t>> dP;
 
-  // ufc::coordinate_mapping
+  // Coordinate_mapping
   std::shared_ptr<fem::CoordinateMapping> _coord_mapping;
 
   std::function<int(const char*)> _coefficient_index_map;

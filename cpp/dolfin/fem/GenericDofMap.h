@@ -15,11 +15,6 @@
 #include <utility>
 #include <vector>
 
-namespace ufc
-{
-class cell;
-}
-
 namespace dolfin
 {
 

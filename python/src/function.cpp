@@ -29,8 +29,8 @@ namespace dolfin_wrappers
 
 void function(py::module& m)
 {
-  // ufc::shape
-  py::class_<ufc::shape>(m, "ufc_shape");
+  // ufc_shape
+  py::class_<ufc_shape>(m, "ufc_shape");
 
   // GenericFunction
   py::class_<dolfin::function::GenericFunction,

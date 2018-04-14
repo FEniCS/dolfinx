@@ -14,11 +14,7 @@ struct ufc_cell_integral;
 struct ufc_exterior_facet_integral;
 struct ufc_interior_facet_integral;
 struct ufc_vertex_integral;
-
-namespace ufc
-{
-class form;
-} // namespace ufc
+struct ufc_form;
 
 namespace dolfin
 {
@@ -41,7 +37,7 @@ public:
 
   /// Initialise the FormIntegrals from a ufc::form instantiating all
   /// the required integrals
-  FormIntegrals(const ufc::form& ufc_form);
+  FormIntegrals(const ufc_form& ufc_form);
 
   /// Default cell integral
   std::shared_ptr<const ufc_cell_integral> cell_integral() const;

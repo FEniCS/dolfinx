@@ -16,21 +16,20 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <memory>
 #include <string>
-
 #include <ufc.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-Form::Form(std::shared_ptr<const ufc::form> ufc_form,
+Form::Form(std::shared_ptr<const ufc_form> ufc_form,
            const std::vector<std::shared_ptr<const function::FunctionSpace>>
                function_spaces)
     : _integrals(*ufc_form), _coefficents(*ufc_form),
       _function_spaces(function_spaces)
 {
   assert(ufc_form);
-  assert(ufc_form->rank() == (int)function_spaces.size());
+  assert(ufc_form->rank == (int)function_spaces.size());
 
   // Check argument function spaces
   for (std::size_t i = 0; i < function_spaces.size(); ++i)

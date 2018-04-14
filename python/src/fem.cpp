@@ -54,7 +54,7 @@ void fem(py::module& m)
       m, "ufc_finite_element", "UFC finite element object");
   py::class_<ufc_dofmap, std::shared_ptr<ufc_dofmap>>(m, "ufc_dofmap",
                                                       "UFC dofmap object");
-  py::class_<ufc::form, std::shared_ptr<ufc::form>>(m, "ufc_form",
+  py::class_<ufc_form, std::shared_ptr<ufc_form>>(m, "ufc_form",
                                                     "UFC form object");
   py::class_<ufc_coordinate_mapping, std::shared_ptr<ufc_coordinate_mapping>>(
       m, "ufc_coordinate_mapping", "UFC coordinate_mapping object");
@@ -76,10 +76,10 @@ void fem(py::module& m)
 
   m.def("make_ufc_form",
         [](std::uintptr_t e) {
-          ufc::form* p = reinterpret_cast<ufc::form*>(e);
-          return std::shared_ptr<const ufc::form>(p);
+          ufc_form* p = reinterpret_cast<ufc_form*>(e);
+          return std::shared_ptr<const ufc_form>(p);
         },
-        "Create a ufc::form object from a pointer.");
+        "Create a ufc_form object from a pointer.");
 
   m.def("make_ufc_coordinate_mapping",
         [](std::uintptr_t e) {
@@ -314,7 +314,7 @@ void fem(py::module& m)
   // dolfin::fem::Form
   py::class_<dolfin::fem::Form, std::shared_ptr<dolfin::fem::Form>>(
       m, "Form", "DOLFIN Form object")
-      .def(py::init<std::shared_ptr<const ufc::form>,
+      .def(py::init<std::shared_ptr<const ufc_form>,
                     std::vector<std::shared_ptr<const dolfin::function::
                                                     FunctionSpace>>>())
       .def("num_coefficients",

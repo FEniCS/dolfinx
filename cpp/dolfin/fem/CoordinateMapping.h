@@ -47,7 +47,7 @@ public:
   }
 
   /// Return the cell shape
-  /// @return ufc::shape
+  /// @return ufc_shape
   ufc_shape cell_shape() const
   {
     assert(_ufc_cm);

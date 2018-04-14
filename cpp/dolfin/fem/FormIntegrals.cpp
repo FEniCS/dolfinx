@@ -11,7 +11,7 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-FormIntegrals::FormIntegrals(const ufc::form& ufc_form)
+FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
 {
   // Create cell integrals
   ufc_cell_integral* _default_cell_integral
@@ -22,7 +22,7 @@ FormIntegrals::FormIntegrals(const ufc::form& ufc_form)
         std::shared_ptr<ufc_cell_integral>(_default_cell_integral));
   }
 
-  const std::size_t num_cell_domains = ufc_form.max_cell_subdomain_id();
+  const std::size_t num_cell_domains = ufc_form.max_cell_subdomain_id;
   if (num_cell_domains > 0)
   {
     _cell_integrals.resize(num_cell_domains + 1);
@@ -55,7 +55,7 @@ FormIntegrals::FormIntegrals(const ufc::form& ufc_form)
   }
 
   const std::size_t num_exterior_facet_domains
-      = ufc_form.max_exterior_facet_subdomain_id();
+      = ufc_form.max_exterior_facet_subdomain_id;
 
   if (num_exterior_facet_domains > 0)
   {
@@ -80,7 +80,7 @@ FormIntegrals::FormIntegrals(const ufc::form& ufc_form)
   }
 
   const std::size_t num_interior_facet_domains
-      = ufc_form.max_interior_facet_subdomain_id();
+      = ufc_form.max_interior_facet_subdomain_id;
 
   if (num_interior_facet_domains > 0)
   {
@@ -102,7 +102,7 @@ FormIntegrals::FormIntegrals(const ufc::form& ufc_form)
         std::shared_ptr<ufc_vertex_integral>(_default_vertex_integral));
   }
 
-  const std::size_t num_vertex_domains = ufc_form.max_vertex_subdomain_id();
+  const std::size_t num_vertex_domains = ufc_form.max_vertex_subdomain_id;
 
   if (num_vertex_domains > 0)
   {
