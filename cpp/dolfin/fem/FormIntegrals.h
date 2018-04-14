@@ -10,13 +10,14 @@
 #include <memory>
 #include <vector>
 
+struct ufc_cell_integral;
+struct ufc_exterior_facet_integral;
+struct ufc_interior_facet_integral;
+struct ufc_vertex_integral;
+
 namespace ufc
 {
 class form;
-class cell_integral;
-class exterior_facet_integral;
-class interior_facet_integral;
-class vertex_integral;
 } // namespace ufc
 
 namespace dolfin
@@ -43,10 +44,10 @@ public:
   FormIntegrals(const ufc::form& ufc_form);
 
   /// Default cell integral
-  std::shared_ptr<const ufc::cell_integral> cell_integral() const;
+  std::shared_ptr<const ufc_cell_integral> cell_integral() const;
 
   /// Cell integral for domain i
-  std::shared_ptr<const ufc::cell_integral> cell_integral(unsigned int i) const;
+  std::shared_ptr<const ufc_cell_integral> cell_integral(unsigned int i) const;
 
   /// Get the function for 'tabulate_tensor' for cell integral i
   const std::function<void(double*, const double* const*, const double*, int)>&
@@ -63,32 +64,32 @@ public:
   int num_cell_integrals() const;
 
   /// Default exterior facet integral
-  std::shared_ptr<const ufc::exterior_facet_integral>
+  std::shared_ptr<const ufc_exterior_facet_integral>
   exterior_facet_integral() const;
 
   /// Exterior facet integral for domain i
-  std::shared_ptr<const ufc::exterior_facet_integral>
+  std::shared_ptr<const ufc_exterior_facet_integral>
   exterior_facet_integral(unsigned int i) const;
 
   /// Number of exterior facet integrals
   int num_exterior_facet_integrals() const;
 
   /// Default interior facet integral
-  std::shared_ptr<const ufc::interior_facet_integral>
+  std::shared_ptr<const ufc_interior_facet_integral>
   interior_facet_integral() const;
 
   /// Interior facet integral for domain i
-  std::shared_ptr<const ufc::interior_facet_integral>
+  std::shared_ptr<const ufc_interior_facet_integral>
   interior_facet_integral(unsigned int i) const;
 
   /// Number of interior facet integrals
   int num_interior_facet_integrals() const;
 
   /// Default interior facet integral
-  std::shared_ptr<const ufc::vertex_integral> vertex_integral() const;
+  std::shared_ptr<const ufc_vertex_integral> vertex_integral() const;
 
   /// Interior facet integral for domain i
-  std::shared_ptr<const ufc::vertex_integral>
+  std::shared_ptr<const ufc_vertex_integral>
   vertex_integral(unsigned int i) const;
 
   /// Number of vertex integrals
@@ -96,7 +97,7 @@ public:
 
 private:
   // Cell integrals
-  std::vector<std::shared_ptr<ufc::cell_integral>> _cell_integrals;
+  std::vector<std::shared_ptr<ufc_cell_integral>> _cell_integrals;
 
   // Function pointers to cell tabulate_tensor functions
   std::vector<
@@ -104,15 +105,15 @@ private:
       _cell_tabulate_tensor;
 
   // Exterior facet integrals
-  std::vector<std::shared_ptr<ufc::exterior_facet_integral>>
+  std::vector<std::shared_ptr<ufc_exterior_facet_integral>>
       _exterior_facet_integrals;
 
   // Interior facet integrals
-  std::vector<std::shared_ptr<ufc::interior_facet_integral>>
+  std::vector<std::shared_ptr<ufc_interior_facet_integral>>
       _interior_facet_integrals;
 
   // Vertex integrals
-  std::vector<std::shared_ptr<ufc::vertex_integral>> _vertex_integrals;
+  std::vector<std::shared_ptr<ufc_vertex_integral>> _vertex_integrals;
 };
 } // namespace fem
 } // namespace dolfin

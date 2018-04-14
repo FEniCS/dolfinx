@@ -349,7 +349,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Update UFC data to current cell
-    ufc.update(cell, coordinate_dofs, cell_integral->enabled_coefficients());
+    ufc.update(cell, coordinate_dofs, cell_integral->enabled_coefficients);
 
     // Get dof maps for cell
     auto dmap0 = dofmaps[0]->cell_dofs(cell.index());
@@ -454,7 +454,7 @@ void Assembler::assemble(la::PETScVector& b, const Form& L)
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Update UFC data to current cell
-    ufc.update(cell, coordinate_dofs, cell_integral->enabled_coefficients());
+    ufc.update(cell, coordinate_dofs, cell_integral->enabled_coefficients);
 
     // Get dof maps for cell
     auto dmap = dofmap->cell_dofs(cell.index());
@@ -551,7 +551,7 @@ void Assembler::apply_bc(la::PETScVector& b, const Form& a,
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Update UFC data to current cell
-    ufc.update(cell, coordinate_dofs, cell_integral->enabled_coefficients());
+    ufc.update(cell, coordinate_dofs, cell_integral->enabled_coefficients);
 
     // Size data structure for assembly
     auto dmap0 = dofmap1->cell_dofs(cell.index());
