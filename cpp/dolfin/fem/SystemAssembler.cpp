@@ -323,11 +323,11 @@ void SystemAssembler::cell_wise_assembly(
           std::vector<common::ArrayView<const dolfin::la_index_t>>(1)}};
 
   // Create pointers to hold integral objects
-  std::array<const ufc::cell_integral*, 2> cell_integrals
+  std::array<const ufc_cell_integral*, 2> cell_integrals
       = {{ufc[0]->dolfin_form.integrals().cell_integral().get(),
           ufc[1]->dolfin_form.integrals().cell_integral().get()}};
 
-  std::array<const ufc::exterior_facet_integral*, 2> exterior_facet_integrals
+  std::array<const ufc_exterior_facet_integral*, 2> exterior_facet_integrals
       = {{ufc[0]->dolfin_form.integrals().exterior_facet_integral().get(),
           ufc[1]->dolfin_form.integrals().exterior_facet_integral().get()}};
 
@@ -394,7 +394,7 @@ void SystemAssembler::cell_wise_assembly(
       {
         // Update to current cell
         ufc[form]->update(cell, coordinate_dofs,
-                          cell_integrals[form]->enabled_coefficients());
+                          cell_integrals[form]->enabled_coefficients);
 
         // Tabulate cell tensor
         cell_integrals[form]->tabulate_tensor(
@@ -447,7 +447,7 @@ void SystemAssembler::cell_wise_assembly(
             // Update to current cell
             ufc[form]->update(
                 cell, coordinate_dofs,
-                exterior_facet_integrals[form]->enabled_coefficients());
+                exterior_facet_integrals[form]->enabled_coefficients);
 
             // Tabulate exterior facet tensor
             exterior_facet_integrals[form]->tabulate_tensor(
@@ -534,13 +534,13 @@ void SystemAssembler::facet_wise_assembly(
   std::vector<std::size_t> num_dofs(2);
 
   // Holders for UFC integrals
-  std::array<const ufc::cell_integral*, 2> cell_integrals
+  std::array<const ufc_cell_integral*, 2> cell_integrals
       = {{ufc[0]->dolfin_form.integrals().cell_integral().get(),
           ufc[1]->dolfin_form.integrals().cell_integral().get()}};
-  std::array<const ufc::exterior_facet_integral*, 2> exterior_facet_integrals
+  std::array<const ufc_exterior_facet_integral*, 2> exterior_facet_integrals
       = {{ufc[0]->dolfin_form.integrals().exterior_facet_integral().get(),
           ufc[1]->dolfin_form.integrals().exterior_facet_integral().get()}};
-  std::array<const ufc::interior_facet_integral*, 2> interior_facet_integrals
+  std::array<const ufc_interior_facet_integral*, 2> interior_facet_integrals
       = {{ufc[0]->dolfin_form.integrals().interior_facet_integral().get(),
           ufc[1]->dolfin_form.integrals().interior_facet_integral().get()}};
 
@@ -864,8 +864,8 @@ void SystemAssembler::compute_exterior_facet_tensor(
     const std::array<bool, 2>& tensor_required_cell,
     const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
     const mesh::Facet& facet,
-    const std::array<const ufc::cell_integral*, 2>& cell_integrals,
-    const std::array<const ufc::exterior_facet_integral*, 2>&
+    const std::array<const ufc_cell_integral*, 2>& cell_integrals,
+    const std::array<const ufc_exterior_facet_integral*, 2>&
         exterior_facet_integrals,
     const bool compute_cell_tensor)
 {
@@ -888,7 +888,7 @@ void SystemAssembler::compute_exterior_facet_tensor(
     {
       // Update UFC object
       ufc[form]->update(cell, coordinate_dofs,
-                        exterior_facet_integrals[form]->enabled_coefficients());
+                        exterior_facet_integrals[form]->enabled_coefficients);
       exterior_facet_integrals[form]->tabulate_tensor(
           ufc[form]->A.data(), ufc[form]->w(), coordinate_dofs.data(),
           local_facet, 1);
@@ -905,7 +905,7 @@ void SystemAssembler::compute_exterior_facet_tensor(
       if (tensor_required_cell[form])
       {
         ufc[form]->update(cell, coordinate_dofs,
-                          cell_integrals[form]->enabled_coefficients());
+                          cell_integrals[form]->enabled_coefficients);
         cell_integrals[form]->tabulate_tensor(
             ufc[form]->A.data(), ufc[form]->w(), coordinate_dofs.data(), 1);
         for (std::size_t i = 0; i < Ae[form].size(); i++)
@@ -921,8 +921,8 @@ void SystemAssembler::compute_interior_facet_tensor(
     const std::array<bool, 2>& tensor_required_facet,
     const std::array<mesh::Cell, 2>& cell,
     const std::array<std::size_t, 2>& local_facet, const bool facet_owner,
-    const std::array<const ufc::cell_integral*, 2>& cell_integrals,
-    const std::array<const ufc::interior_facet_integral*, 2>&
+    const std::array<const ufc_cell_integral*, 2>& cell_integrals,
+    const std::array<const ufc_interior_facet_integral*, 2>&
         interior_facet_integrals,
     const std::array<std::size_t, 2>& matrix_size,
     const std::size_t vector_size,
@@ -938,7 +938,7 @@ void SystemAssembler::compute_interior_facet_tensor(
       // Update to current pair of cells
       ufc[form]->update(cell[0], coordinate_dofs[0], cell[1],
                         coordinate_dofs[1],
-                        interior_facet_integrals[form]->enabled_coefficients());
+                        interior_facet_integrals[form]->enabled_coefficients);
       // Integrate over facet
       interior_facet_integrals[form]->tabulate_tensor(
           ufc[form]->macro_A.data(), ufc[form]->macro_w(),
@@ -955,7 +955,7 @@ void SystemAssembler::compute_interior_facet_tensor(
         if (tensor_required_cell[form] and !cell[c].is_ghost())
         {
           ufc[form]->update(cell[c], coordinate_dofs[c],
-                            cell_integrals[form]->enabled_coefficients());
+                            cell_integrals[form]->enabled_coefficients);
           cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
                                                 ufc[form]->w(),
                                                 coordinate_dofs[c].data(), 1);

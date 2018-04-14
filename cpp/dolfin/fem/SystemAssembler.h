@@ -15,12 +15,9 @@
 #include <utility>
 #include <vector>
 
-namespace ufc
-{
-class cell_integral;
-class exterior_facet_integral;
-class interior_facet_integral;
-}
+struct ufc_cell_integral;
+struct ufc_exterior_facet_integral;
+struct ufc_interior_facet_integral;
 
 namespace dolfin
 {
@@ -143,8 +140,8 @@ private:
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
       const mesh::Facet& facet,
-      const std::array<const ufc::cell_integral*, 2>& cell_integrals,
-      const std::array<const ufc::exterior_facet_integral*, 2>&
+      const std::array<const ufc_cell_integral*, 2>& cell_integrals,
+      const std::array<const ufc_exterior_facet_integral*, 2>&
           exterior_facet_integrals,
       const bool compute_cell_tensor);
 
@@ -157,8 +154,8 @@ private:
       const std::array<bool, 2>& tensor_required_facet,
       const std::array<mesh::Cell, 2>& cell,
       const std::array<std::size_t, 2>& local_facet, const bool facet_owner,
-      const std::array<const ufc::cell_integral*, 2>& cell_integrals,
-      const std::array<const ufc::interior_facet_integral*, 2>&
+      const std::array<const ufc_cell_integral*, 2>& cell_integrals,
+      const std::array<const ufc_interior_facet_integral*, 2>&
           interior_facet_integrals,
       const std::array<std::size_t, 2>& matrix_size,
       const std::size_t vector_size,
