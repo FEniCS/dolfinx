@@ -78,6 +78,8 @@ void mesh(py::module& m)
                                                           "MeshGeometry object")
       .def_property_readonly("dim", &dolfin::mesh::MeshGeometry::dim,
                              "Geometric dimension")
+      .def("num_points", &dolfin::mesh::MeshGeometry::num_points)
+      .def("num_points_global", &dolfin::mesh::MeshGeometry::num_points_global)
       .def("x", &dolfin::mesh::MeshGeometry::x,
            py::return_value_policy::reference_internal,
            "Return coordinates of a point")

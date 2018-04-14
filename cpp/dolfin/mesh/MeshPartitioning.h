@@ -99,7 +99,7 @@ public:
   static std::tuple<std::uint64_t, std::vector<std::int64_t>,
                     EigenRowArrayXXi32>
   compute_point_mapping(
-      MPI_Comm mpi_comm, std::uint32_t num_cell_vertices,
+      std::uint32_t num_cell_vertices,
       const Eigen::Ref<const EigenRowArrayXXi64>& cell_points);
 
 private:

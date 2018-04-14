@@ -60,8 +60,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Compute point local-to-global map from global indices, and compute cell
   // topology using new local indices
-  const auto vmap_data = MeshPartitioning::compute_point_mapping(
-      comm, num_vertices_per_cell, cells);
+  const auto vmap_data
+      = MeshPartitioning::compute_point_mapping(num_vertices_per_cell, cells);
   const std::vector<std::int64_t>& global_point_indices
       = std::get<1>(vmap_data);
   _coordinate_dofs.init(tdim, std::get<2>(vmap_data));
@@ -74,35 +74,105 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Global number of points before distributing (which creates duplicates)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
+
+  // This assumes no ghosts...
+  const std::uint64_t num_cells_global = MPI::sum(comm, cells.rows());
+
   // Initialise geometry with global size, actual points,
   // and local to global map
   _geometry.init(num_points_global, vdist.first, global_point_indices);
 
   // Initialise vertex topology
   std::uint32_t num_vertices = std::get<0>(vmap_data);
+  std::uint64_t num_vertices_global;
+  std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices;
+  std::vector<std::int64_t> global_vertex_indices;
 
-  // Find out how many vertices are locally 'owned'
-  const std::uint32_t rank = MPI::rank(comm);
-  std::uint64_t num_owned_vertices = num_vertices;
-  for (const auto& it : shared_points)
+  if (_degree == 1)
   {
-    if ((std::uint32_t)it.first < num_vertices and *it.second.begin() < rank)
-      --num_owned_vertices;
+    num_vertices_global = num_points_global;
+    shared_vertices = shared_points;
+    global_vertex_indices = global_point_indices;
+  }
+  else
+  {
+    // Find out how many vertices are locally 'owned' and number them
+    global_vertex_indices.resize(num_vertices);
+    const std::uint32_t mpi_rank = MPI::rank(comm);
+    const std::uint32_t mpi_size = MPI::size(comm);
+    std::vector<std::vector<std::int64_t>> send_data(mpi_size);
+    std::vector<std::int64_t> recv_data(mpi_size);
+
+    std::int64_t v = 0;
+    for (unsigned int i = 0; i < num_vertices; ++i)
+    {
+      const auto it = shared_points.find(i);
+      if (it == shared_points.end())
+      {
+        // local
+        global_vertex_indices[i] = v;
+        ++v;
+      }
+      else
+      {
+        // Shared
+        shared_vertices.insert(*it);
+
+        // Owned locally if rank less than first entry
+        if (mpi_rank < *it->second.begin())
+        {
+          global_vertex_indices[i] = v;
+          for (auto p : it->second)
+          {
+            send_data[p].push_back(global_point_indices[i]);
+            send_data[p].push_back(v);
+          }
+          ++v;
+        }
+      }
+    }
+
+    // Now have numbered all vertices locally
+    num_vertices_global = MPI::sum(comm, v);
+
+    // Add offset to send_data
+    std::int64_t offset = MPI::global_offset(comm, v, true);
+    for (auto& p : send_data)
+      for (auto q = p.begin(); q != p.end(); q += 2)
+        *(q + 1) += offset;
+
+    // Receive indices of vertices owned elsewhere
+    MPI::all_to_all(comm, send_data, recv_data);
+    std::map<std::int64_t, std::int64_t> global_point_to_vertex;
+    for (auto p = recv_data.begin(); p != recv_data.end(); p += 2)
+    {
+      auto it = global_point_to_vertex.insert({*p, *(p + 1)});
+      assert(it.second);
+    }
+
+    // Adjust global_vertex_indices either by adding offset
+    // or inserting remote index
+    for (unsigned int i = 0; i < num_vertices; ++i)
+    {
+      std::int64_t gpi = global_point_indices[i];
+      const auto it = global_point_to_vertex.find(gpi);
+      if (it == global_point_to_vertex.end())
+        global_vertex_indices[i] += offset;
+      else
+        global_vertex_indices[i] = it->second;
+    }
   }
 
-  const std::uint64_t num_global_vertices = MPI::sum(comm, num_owned_vertices);
-
-  _topology.init(0, num_vertices, num_global_vertices);
+  _topology.init(0, num_vertices, num_vertices_global);
   _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);
   for (std::size_t i = 0; i < num_vertices; ++i)
-    _topology.set_global_index(0, i, global_point_indices[i]);
-  // FIXME: strictly should not be including all points, only vertices
-  _topology.shared_entities(0) = shared_points;
+    _topology.set_global_index(0, i, global_vertex_indices[i]);
+  _topology.shared_entities(0) = shared_vertices;
 
   // Initialise cell topology
   const std::size_t num_cells = std::get<2>(vmap_data).rows();
-  _topology.init(tdim, num_cells, num_cells);
+  _topology.init(tdim, num_cells, num_cells_global);
   _topology.init_ghost(tdim, num_cells);
   _topology.init_global_indices(tdim, num_cells);
   _topology.connectivity(tdim, 0).init(num_cells, num_vertices_per_cell);

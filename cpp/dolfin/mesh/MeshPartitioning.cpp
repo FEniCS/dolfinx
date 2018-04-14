@@ -188,6 +188,12 @@ mesh::Mesh MeshPartitioning::build(
   // Build mesh from points and distributed cells
   mesh::Mesh mesh(comm, type, points, new_cell_vertices);
 
+  // Return mesh, but ignore ghosting... see below
+  return mesh;
+
+  // FIXME: code below is indended to 'fix up' the case
+  // with ghost cells.
+
   // Reset number of global cells
   const std::size_t num_cells = mesh.num_cells();
   mesh.topology().init(tdim, num_cells, num_global_cells);
@@ -211,12 +217,19 @@ mesh::Mesh MeshPartitioning::build(
 
   // FIXME: do this better
   // Find highest index + 1 in local_cell_vertices of regular cells
-  std::int32_t num_regular_vertices
-      = *std::max_element(
-            mesh.topology().connectivity(tdim, 0).connections().data(),
-            mesh.topology().connectivity(tdim, 0).connections().data()
-                + new_cell_vertices.cols() * num_regular_cells)
-        + 1;
+
+  MeshConnectivity& mc0 = mesh.topology().connectivity(tdim, 0);
+  std::uint32_t num_regular_vertices = 0;
+  for (std::int32_t i = 0; i < num_regular_cells; ++i)
+  {
+    for (unsigned int j = 0; j < mc0.size(i); ++j)
+    {
+      std::uint32_t mcij = mc0(i)[j];
+      num_regular_vertices = std::max(num_regular_vertices, mcij);
+    }
+  }
+  ++num_regular_vertices;
+  std::cout << "Num regular vertices = " << num_regular_vertices << "\n";
 
   // Set the ghost vertex offset
   mesh.topology().init_ghost(0, num_regular_vertices);
@@ -660,7 +673,7 @@ MeshPartitioning::distribute_cells(
 //-----------------------------------------------------------------------------
 std::tuple<std::uint64_t, std::vector<std::int64_t>, EigenRowArrayXXi32>
 MeshPartitioning::compute_point_mapping(
-    MPI_Comm mpi_comm, std::uint32_t num_cell_vertices,
+    std::uint32_t num_cell_vertices,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_points)
 {
   const std::uint32_t num_cells = cell_points.rows();
