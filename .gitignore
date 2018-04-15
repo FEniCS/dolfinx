@@ -47,21 +47,26 @@ DOLFINConfigVersion.cmake
 UseDOLFIN.cmake
 dolfin-config-version.cmake
 
-# Demos and tests
+# Demos
 build_demo.*
 test_*_tempdir
-/cpp/test/unit/mesh/*.{xml,m}
-/cpp/test/unit/parameter/*.{xml,xml.gz}
 /python/demo/**/*.py
 /python/demo/**/*.xml
 /python/demo/undocumented/mesh-quality/mesh-quality.pdf
 /cpp/demo/**/*.ufl
 /cpp/demo/**/*.cpp
-/cpp/test/unit/**/*.xml
+/cpp/demo/**/*.c
+
+# Tests
 /python/test/unit/**/*.xml
+/cpp/test/unit/mesh/*.{xml,m}
+/cpp/test/unit/parameter/*.{xml,xml.gz}
+/cpp/test/unit/**/*.xml
+/cpp/test/unit/**/*.c
 /cpp/test/unit/function/Projection.h
 /cpp/test/unit/la/forms/ReactionDiffusion.h
 /cpp/test/unit/la/forms/ReactionDiffusionAction.h
+
 .cache
 
 # FFC generated demo files

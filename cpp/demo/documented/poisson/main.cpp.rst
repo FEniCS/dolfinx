@@ -167,8 +167,8 @@ the form file) defined relative to this mesh, we do as follows
 
     auto space = std::unique_ptr<dolfin_function_space>(PoissonFunctionSpace());
     auto V = std::make_shared<function::FunctionSpace>(mesh,
-        std::make_shared<fem::FiniteElement>(std::shared_ptr<ufc::finite_element>(space->element())),
-        std::make_shared<fem::DofMap>(std::shared_ptr<ufc::dofmap>(space->dofmap()), *mesh));
+        std::make_shared<fem::FiniteElement>(std::shared_ptr<ufc_finite_element>(space->element())),
+        std::make_shared<fem::DofMap>(std::shared_ptr<ufc_dofmap>(space->dofmap()), *mesh));
 
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
 using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
@@ -203,10 +203,10 @@ to the linear form.
 
     // Define variational forms
     auto a = std::make_shared<fem::Form>(
-        std::shared_ptr<ufc::form>(form_a->form()),
+        std::shared_ptr<ufc_form>(form_a->form()),
         std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V, V});
     auto L = std::make_shared<fem::Form>(
-        std::shared_ptr<ufc::form>(form_L->form()),
+        std::shared_ptr<ufc_form>(form_L->form()),
         std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
      auto f = std::make_shared<Source>();
      auto g = std::make_shared<dUdN>();

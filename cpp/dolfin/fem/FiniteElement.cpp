@@ -12,13 +12,29 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-FiniteElement::FiniteElement(std::shared_ptr<const ufc::finite_element> element)
+FiniteElement::FiniteElement(std::shared_ptr<const ufc_finite_element> element)
     : _ufc_element(element), _hash(common::hash_local(signature()))
 {
   // Store dof coordinates on reference element
   assert(_ufc_element);
   _refX.resize(this->space_dimension(), this->topological_dimension());
   _ufc_element->tabulate_reference_dof_coordinates(_refX.data());
+}
+//-----------------------------------------------------------------------------
+std::unique_ptr<FiniteElement>
+FiniteElement::create_sub_element(std::size_t i) const
+{
+  assert(_ufc_element);
+  std::shared_ptr<ufc_finite_element> ufc_element(
+      _ufc_element->create_sub_element(i));
+  return std::make_unique<FiniteElement>(ufc_element);
+}
+//-----------------------------------------------------------------------------
+std::unique_ptr<FiniteElement> FiniteElement::create() const
+{
+  assert(_ufc_element);
+  std::shared_ptr<ufc_finite_element> ufc_element(_ufc_element->create());
+  return std::make_unique<FiniteElement>(ufc_element);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FiniteElement> FiniteElement::extract_sub_element(

@@ -15,11 +15,6 @@
 #include <utility>
 #include <vector>
 
-namespace ufc
-{
-class cell;
-}
-
 namespace dolfin
 {
 
@@ -107,12 +102,12 @@ public:
   virtual void tabulate_global_dofs(std::vector<std::size_t>& dofs) const = 0;
 
   /// Extract sub dofmap component
-  virtual std::shared_ptr<GenericDofMap>
+  virtual std::unique_ptr<GenericDofMap>
   extract_sub_dofmap(const std::vector<std::size_t>& component,
                      const mesh::Mesh& mesh) const = 0;
 
   /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
-  virtual std::shared_ptr<GenericDofMap>
+  virtual std::unique_ptr<GenericDofMap>
   collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
            const mesh::Mesh& mesh) const = 0;
 

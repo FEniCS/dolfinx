@@ -15,10 +15,7 @@
 #include <utility>
 #include <vector>
 
-namespace ufc
-{
-class dofmap;
-}
+struct ufc_dofmap;
 
 namespace dolfin
 {
@@ -79,7 +76,7 @@ private:
   // account for master/slave constraints)
   static void
   build_local_ufc_dofmap(std::vector<std::vector<dolfin::la_index_t>>& dofmap,
-                         const ufc::dofmap& ufc_dofmap, const mesh::Mesh& mesh);
+                         const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
 
   // Compute which process 'owns' each node (point at which dofs live)
   //   - node_ownership = -1 -> dof shared but not 'owned' by this
@@ -114,7 +111,7 @@ private:
   // not associated with any mesh entity. The returned indices are
   // local to the process.
   static std::set<std::size_t>
-  compute_global_dofs(std::shared_ptr<const ufc::dofmap> ufc_dofmap,
+  compute_global_dofs(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                       const std::vector<int64_t>& num_mesh_entities_local);
 
   // Iterate recursively over all sub-dof maps to find global
@@ -122,17 +119,17 @@ private:
   static void
   compute_global_dofs(std::set<std::size_t>& global_dofs,
                       std::size_t& offset_local,
-                      std::shared_ptr<const ufc::dofmap> ufc_dofmap,
+                      std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                       const std::vector<int64_t>& num_mesh_entities_local);
 
   // Recursively extract UFC sub-dofmap and compute offset
-  static std::shared_ptr<ufc::dofmap>
-  extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap, std::size_t& offset,
+  static std::shared_ptr<ufc_dofmap>
+  extract_ufc_sub_dofmap(const ufc_dofmap& ufc_dofmap, std::size_t& offset,
                          const std::vector<std::size_t>& component,
                          const std::vector<int64_t>& num_global_mesh_entities);
 
   // Compute block size, e.g. in 3D elasticity block_size = 3
-  static std::size_t compute_blocksize(const ufc::dofmap& ufc_dofmap,
+  static std::size_t compute_blocksize(const ufc_dofmap& ufc_dofmap,
                                        std::size_t tdim);
 
   static void compute_constrained_mesh_indices(
@@ -141,20 +138,20 @@ private:
       const std::vector<bool>& needs_mesh_entities, const mesh::Mesh& mesh,
       const mesh::SubDomain& constrained_domain);
 
-  static std::shared_ptr<const ufc::dofmap> build_ufc_node_graph(
+  static std::shared_ptr<const ufc_dofmap> build_ufc_node_graph(
       std::vector<std::vector<la_index_t>>& node_dofmap,
       std::vector<std::size_t>& node_local_to_global,
       std::vector<int64_t>& num_mesh_entities_global,
-      std::shared_ptr<const ufc::dofmap> ufc_dofmap, const mesh::Mesh& mesh,
+      std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh,
       std::shared_ptr<const mesh::SubDomain> constrained_domain,
       const std::size_t block_size);
 
-  static std::shared_ptr<const ufc::dofmap> build_ufc_node_graph_constrained(
+  static std::shared_ptr<const ufc_dofmap> build_ufc_node_graph_constrained(
       std::vector<std::vector<la_index_t>>& node_dofmap,
       std::vector<std::size_t>& node_local_to_global,
       std::vector<int>& node_ufc_local_to_local,
       std::vector<int64_t>& num_mesh_entities_global,
-      std::shared_ptr<const ufc::dofmap> ufc_dofmap, const mesh::Mesh& mesh,
+      std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh,
       std::shared_ptr<const mesh::SubDomain> constrained_domain,
       const std::size_t block_size);
 
@@ -166,7 +163,7 @@ private:
   compute_shared_nodes(std::vector<int>& boundary_nodes,
                        const std::vector<std::vector<la_index_t>>& node_dofmap,
                        const std::size_t num_nodes_local,
-                       const ufc::dofmap& ufc_dofmap, const mesh::Mesh& mesh);
+                       const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
 
   static void compute_node_reordering(
       common::IndexMap& index_map, std::vector<int>& old_to_new_local,

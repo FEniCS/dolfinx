@@ -16,14 +16,14 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-FormCoefficients::FormCoefficients(const ufc::form& ufc_form)
-    : _coefficients(ufc_form.num_coefficients())
+FormCoefficients::FormCoefficients(const ufc_form& ufc_form)
+    : _coefficients(ufc_form.num_coefficients)
 {
   // Create finite elements for coefficients
-  for (int i = 0; i < ufc_form.num_coefficients(); i++)
+  for (int i = 0; i < ufc_form.num_coefficients; i++)
   {
-    std::shared_ptr<ufc::finite_element> element(
-        ufc_form.create_finite_element(ufc_form.rank() + i));
+    std::shared_ptr<ufc_finite_element> element(
+        ufc_form.create_finite_element(ufc_form.rank + i));
 
     _elements.push_back(fem::FiniteElement(element));
     _original_pos.push_back(ufc_form.original_coefficient_position(i));

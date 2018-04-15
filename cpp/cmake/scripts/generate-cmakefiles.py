@@ -75,16 +75,16 @@ target_link_libraries_str = "target_link_libraries(%s dolfin)"
 # Subdirectories
 sub_directories = ['demo', 'bench']
 # Prefix map for subdirectories
-executable_prefixes = dict(demo="demo_",
-                           bench="bench_")
+executable_prefixes = dict(demo="demo_", bench="bench_")
 
 # Main file name map for subdirectories
-main_file_names = dict(demo=set(["main.cpp", "main.cpp.rst"]),
-                       bench=set(["main.cpp"]))
+main_file_names = dict(
+    demo=set(["main.cpp", "main.cpp.rst"]), bench=set(["main.cpp"]))
 
 # Projects that use custom CMakeLists.txt (shouldn't overwrite)
 #exclude_projects = [os.path.join('demo', 'undocumented', 'plot-qt')]
 exclude_projects = []
+
 
 def generate_cmake_files(subdirectory, generated_files):
     """Search for C++ code and write CMakeLists.txt files"""
@@ -94,17 +94,18 @@ def generate_cmake_files(subdirectory, generated_files):
     for root, dirs, files in os.walk(cwd + "/" + subdirectory):
 
         cpp_files = set()
+        c_files = set()
         executable_names = set()
 
         program_dir = root
         program_name = os.path.split(root)[-1]
 
         skip = False
-        for exclude in exclude_projects :
-            if exclude in root :
+        for exclude in exclude_projects:
+            if exclude in root:
                 skip = True
 
-        if skip :
+        if skip:
             print("Skipping custom CMakeLists.txt file:", root)
             continue
 
@@ -116,41 +117,44 @@ def generate_cmake_files(subdirectory, generated_files):
             filename, extension = os.path.splitext(f)
             if extension == ".cpp":
                 cpp_files.add(f)
+            if extension == ".c":
+                c_files.add(f)
             if ".cpp.rst" in f:
                 cpp_files.add(filename)
 
-        # If no .cpp continue
+        # If no .cpp, continue
         if not cpp_files:
             continue
 
         # Name of demo and cpp source files
         if not main_file_name.isdisjoint(cpp_files):
 
-            # If directory contains a main file we assume that
-            # only one executable should be generated for this
-            # directory and all other .cpp files should be linked
-            # to this
+            # If directory contains a main file we assume that only one
+            # executable should be generated for this directory and all
+            # other .cpp files should be linked to this
             name_forms["executables"] = executable_str % \
                                         ("${PROJECT_NAME}",
-                                         ' '.join(cpp_files))
+                                         ' '.join(cpp_files | c_files))
             name_forms["target_libraries"] = target_link_libraries_str % \
                                              "${PROJECT_NAME}"
         else:
-            # If no main file in source files, we assume each
-            # source should be compiled as an executable
-            name_forms["executables"] = "\n".join(\
-                        executable_str % (executable_prefix + f.replace(".cpp", ""), f) \
-                        for f in cpp_files)
-            name_forms["target_libraries"] = "\n".join(\
-                        target_link_libraries_str % (\
-                        executable_prefix + f.replace(".cpp", "")) \
-                    for f in cpp_files)
+            # If no main file in source files, we assume each source
+            # should be compiled as an executable
+            name_forms["executables"] = "\n".join(
+                executable_str % (executable_prefix + f.replace(".cpp", ""), f)
+                for f in cpp_files)
+            name_forms["target_libraries"] = "\n".join(
+                target_link_libraries_str % (
+                    executable_prefix + f.replace(".cpp", ""))
+                for f in cpp_files)
 
         # Check for duplicate executable names
         if program_name not in executable_names:
             executable_names.add(program_name)
         else:
-            print("Warning: duplicate executable names found when generating CMakeLists.txt files.")
+            print(
+                "Warning: duplicate executable names found when generating CMakeLists.txt files."
+            )
 
         # Write file
         filename = os.path.join(program_dir, "CMakeLists.txt")

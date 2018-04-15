@@ -9,10 +9,7 @@
 #include <memory>
 #include <vector>
 
-namespace ufc
-{
-  class form;
-}
+struct ufc_form;
 
 namespace dolfin
 {
@@ -31,9 +28,9 @@ namespace fem
 class FormCoefficients
 {
 public:
-  /// Initialise the FormCoefficients from a ufc::form, instantiating all the
+  /// Initialise the FormCoefficients from a ufc_form, instantiating all the
   /// required elements
-  FormCoefficients(const ufc::form& ufc_form);
+  FormCoefficients(const ufc_form& ufc_form);
 
   /// Get number of coefficients
   std::size_t size() const;
