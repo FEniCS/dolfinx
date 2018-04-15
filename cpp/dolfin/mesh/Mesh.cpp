@@ -58,13 +58,20 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
     }
   }
 
+  // Global number of points before distributing (which creates duplicates)
+  const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
+  // Global number of cells (this assumes no ghosts...)
+  const std::uint64_t num_cells_global = MPI::sum(comm, cells.rows());
+
   // Compute point local-to-global map from global indices, and compute cell
-  // topology using new local indices
-  const auto vmap_data
+  // topology using new local indices.
+  std::int32_t num_vertices;
+  std::vector<std::int64_t> global_point_indices;
+  EigenRowArrayXXi32 coordinate_dofs;
+  std::tie(num_vertices, global_point_indices, coordinate_dofs)
       = MeshPartitioning::compute_point_mapping(num_vertices_per_cell, cells);
-  const std::vector<std::int64_t>& global_point_indices
-      = std::get<1>(vmap_data);
-  _coordinate_dofs.init(tdim, std::get<2>(vmap_data));
+
+  _coordinate_dofs.init(tdim, coordinate_dofs);
 
   // Distribute the points across processes and calculate shared points
   const auto vdist
@@ -72,46 +79,46 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   const std::map<std::int32_t, std::set<std::uint32_t>>& shared_points
       = vdist.second;
 
-  // Global number of points before distributing (which creates duplicates)
-  const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
-
-  // This assumes no ghosts...
-  const std::uint64_t num_cells_global = MPI::sum(comm, cells.rows());
-
   // Initialise geometry with global size, actual points,
   // and local to global map
   _geometry.init(num_points_global, vdist.first, global_point_indices);
 
-  // Initialise vertex topology
-  std::uint32_t num_vertices = std::get<0>(vmap_data);
+  // Get global vertex information
   std::uint64_t num_vertices_global;
-  std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices;
   std::vector<std::int64_t> global_vertex_indices;
+  std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices;
 
   if (_degree == 1)
   {
     num_vertices_global = num_points_global;
-    shared_vertices = shared_points;
-    global_vertex_indices = global_point_indices;
+    global_vertex_indices = std::move(global_point_indices);
+    shared_vertices = std::move(shared_points);
   }
   else
   {
+    // For higher order meshes, vertices are a subset of points,
+    // so need to build a distinct global indexing for vertices.
     std::tie(num_vertices_global, global_vertex_indices)
         = MeshPartitioning::build_global_vertex_indices(
             comm, num_vertices, global_point_indices, shared_points);
-    // FIXME: not quite right - also contains sharing for non-vertex points
-    shared_vertices = shared_points;
+    // Eliminate shared points which are not vertices.
+    // FIXME: could be useful information. Where should it be kept?
+    for (auto it = shared_points.begin(); it != shared_points.end(); ++it)
+      if (it->first < num_vertices)
+        shared_vertices.insert(*it);
   }
 
+  // Initialise vertex topology
   _topology.init(0, num_vertices, num_vertices_global);
+  // Assumes no ghost cells
   _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);
-  for (std::size_t i = 0; i < num_vertices; ++i)
+  for (std::int32_t i = 0; i < num_vertices; ++i)
     _topology.set_global_index(0, i, global_vertex_indices[i]);
   _topology.shared_entities(0) = shared_vertices;
 
   // Initialise cell topology
-  const std::size_t num_cells = std::get<2>(vmap_data).rows();
+  const std::size_t num_cells = coordinate_dofs.rows();
   _topology.init(tdim, num_cells, num_cells_global);
   _topology.init_ghost(tdim, num_cells);
   _topology.init_global_indices(tdim, num_cells);
@@ -119,10 +126,12 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Add cells
   const MeshConnectivity& cell_dofs = _coordinate_dofs.entity_points(tdim);
-  for (std::int32_t i = 0; i != cells.rows(); ++i)
+  for (std::uint32_t i = 0; i != cells.rows(); ++i)
   {
     // Only copy the first few entries on each row corresponding to vertices
     _topology.connectivity(tdim, 0).set(i, cell_dofs(i));
+
+    // FIXME: Global cell index set to same as local here
     _topology.set_global_index(tdim, i, i);
   }
 }

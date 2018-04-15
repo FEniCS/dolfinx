@@ -128,7 +128,6 @@ mesh::Mesh MeshPartitioning::build(
 
   // Topological dimension
   const int tdim = cell_type->dim();
-  const std::int64_t num_global_cells = MPI::sum(comm, cell_vertices.rows());
 
   // Send cells to owning process according to mp cell partition, and
   // receive cells that belong to this process. Also compute auxiliary
@@ -188,21 +187,18 @@ mesh::Mesh MeshPartitioning::build(
   // Build mesh from points and distributed cells
   mesh::Mesh mesh(comm, type, points, new_cell_vertices);
 
-  // Return mesh, but ignore ghosting... see below
-  return mesh;
-
-  // FIXME: code below is indended to 'fix up' the case
-  // with ghost cells.
-
-  // Reset number of global cells
-  const std::size_t num_cells = mesh.num_cells();
-  mesh.topology().init(tdim, num_cells, num_global_cells);
-
   // Set global indices for cells
   for (std::size_t i = 0; i < new_global_cell_indices.size(); ++i)
     mesh.topology().set_global_index(tdim, i, new_global_cell_indices[i]);
 
-  // Copy cell ownership
+  if (ghost_mode == "none")
+    return mesh;
+
+  // For ghost mode, readjust the global number of cells
+  const std::int64_t num_cells_global = MPI::sum(comm, cell_vertices.rows());
+  mesh.topology().init(tdim, new_cell_vertices.rows(), num_cells_global);
+
+  // Copy cell ownership (only needed for ghost cells)
   std::vector<std::uint32_t>& cell_owner = mesh.topology().cell_owner();
   cell_owner.clear();
   cell_owner.insert(cell_owner.begin(),
@@ -212,12 +208,11 @@ mesh::Mesh MeshPartitioning::build(
   // Set the ghost cell offset
   mesh.topology().init_ghost(tdim, num_regular_cells);
 
-  // Assign map of shared cells and vertices
+  // Assign map of shared cells (only needed for ghost cells)
   mesh.topology().shared_entities(tdim) = shared_cells;
 
-  // FIXME: do this better
   // Find highest index + 1 in local_cell_vertices of regular cells
-
+  // (only needed if ghost cells)
   MeshConnectivity& mc0 = mesh.topology().connectivity(tdim, 0);
   std::uint32_t num_regular_vertices = 0;
   for (std::int32_t i = 0; i < num_regular_cells; ++i)
@@ -229,7 +224,6 @@ mesh::Mesh MeshPartitioning::build(
     }
   }
   ++num_regular_vertices;
-  std::cout << "Num regular vertices = " << num_regular_vertices << "\n";
 
   // Set the ghost vertex offset
   mesh.topology().init_ghost(0, num_regular_vertices);
@@ -992,7 +986,7 @@ MeshPartitioning::build_shared_points(
 //-----------------------------------------------------------------------------
 std::pair<std::int64_t, std::vector<std::int64_t>>
 MeshPartitioning::build_global_vertex_indices(
-    MPI_Comm mpi_comm, std::int32_t num_vertices,
+    MPI_Comm mpi_comm, std::uint32_t num_vertices,
     const std::vector<std::int64_t>& global_point_indices,
     const std::map<std::int32_t, std::set<std::uint32_t>>& shared_points)
 {
@@ -1004,7 +998,7 @@ MeshPartitioning::build_global_vertex_indices(
   std::vector<std::int64_t> recv_data(mpi_size);
 
   std::int64_t v = 0;
-  for (unsigned int i = 0; i < num_vertices; ++i)
+  for (std::uint32_t i = 0; i < num_vertices; ++i)
   {
     const auto it = shared_points.find(i);
     if (it == shared_points.end())
@@ -1050,7 +1044,7 @@ MeshPartitioning::build_global_vertex_indices(
 
   // Adjust global_vertex_indices either by adding offset
   // or inserting remote index
-  for (unsigned int i = 0; i < num_vertices; ++i)
+  for (std::uint32_t i = 0; i < num_vertices; ++i)
   {
     const auto it = global_point_to_vertex.find(global_point_indices[i]);
     if (it == global_point_to_vertex.end())
