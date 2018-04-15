@@ -141,7 +141,7 @@ const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const
 //-----------------------------------------------------------------------------
 const std::set<int>& DofMap::neighbours() const { return _neighbours; }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_facet_dofs(std::vector<int64_t>& element_dofs,
+void DofMap::tabulate_facet_dofs(std::vector<int>& element_dofs,
                                  std::size_t cell_facet_index) const
 {
   assert(_ufc_dofmap);
@@ -151,7 +151,7 @@ void DofMap::tabulate_facet_dofs(std::vector<int64_t>& element_dofs,
   _ufc_dofmap->tabulate_facet_dofs(element_dofs.data(), cell_facet_index);
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_entity_dofs(std::vector<int64_t>& element_dofs,
+void DofMap::tabulate_entity_dofs(std::vector<int>& element_dofs,
                                   std::size_t entity_dim,
                                   std::size_t cell_entity_index) const
 {

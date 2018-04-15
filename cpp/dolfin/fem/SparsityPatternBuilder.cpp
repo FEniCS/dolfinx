@@ -53,8 +53,8 @@ void SparsityPatternBuilder::build(
   //       memory suboptimal (for restricted Lagrange multipliers) but very
   //       fast and certainly much better than quadratic scaling of usual
   //       insertion below
-  std::vector<std::size_t> global_dofs0;
-  dofmaps[sparsity_pattern.primary_dim()]->tabulate_global_dofs(global_dofs0);
+  std::vector<std::size_t> global_dofs0
+      = dofmaps[sparsity_pattern.primary_dim()]->tabulate_global_dofs();
   sparsity_pattern.insert_full_rows_local(global_dofs0);
 
   // FIXME: We iterate over the entire mesh even if the function space
@@ -87,7 +87,7 @@ void SparsityPatternBuilder::build(
     mesh.init(0, D);
 
     std::array<std::vector<dolfin::la_index_t>, 2> global_dofs;
-    std::array<std::vector<int64_t>, 2> local_to_local_dofs;
+    std::array<std::vector<int>, 2> local_to_local_dofs;
 
     // Resize local dof map vector
     for (std::size_t i = 0; i < 2; ++i)
