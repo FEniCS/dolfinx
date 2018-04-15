@@ -866,8 +866,8 @@ MeshPartitioning::distribute_points(
   // Meanwhile, redistribute received_point_indices as point sharing
   // information
   const std::map<std::int32_t, std::set<std::uint32_t>> shared_points_local
-      = build_shared_vertices(mpi_comm, received_point_indices,
-                              local_point_range, local_indexing);
+      = build_shared_points(mpi_comm, received_point_indices, local_point_range,
+                            local_indexing);
 
   // Synchronise and free RMA window
   MPI_Win_fence(0, win);
@@ -888,25 +888,25 @@ MeshPartitioning::distribute_points(
 }
 //-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<std::uint32_t>>
-MeshPartitioning::build_shared_vertices(
+MeshPartitioning::build_shared_points(
     MPI_Comm mpi_comm,
-    const std::vector<std::vector<std::size_t>>& received_vertex_indices,
-    const std::pair<std::size_t, std::size_t> local_vertex_range,
+    const std::vector<std::vector<std::size_t>>& received_point_indices,
+    const std::pair<std::size_t, std::size_t> local_point_range,
     const std::vector<std::vector<std::uint32_t>>& local_indexing)
 {
   log::log(PROGRESS,
-           "Build shared vertices during distributed mesh construction");
+           "Build shared points during distributed mesh construction");
 
   const std::uint32_t mpi_size = MPI::size(mpi_comm);
 
-  // Count number sharing each local vertex
+  // Count number sharing each local point
   std::vector<std::int32_t> n_sharing(
-      local_vertex_range.second - local_vertex_range.first, 0);
-  for (const auto& p : received_vertex_indices)
+      local_point_range.second - local_point_range.first, 0);
+  for (const auto& p : received_point_indices)
     for (const auto& q : p)
     {
-      assert(q >= local_vertex_range.first and q < local_vertex_range.second);
-      const std::size_t local_index = q - local_vertex_range.first;
+      assert(q >= local_point_range.first and q < local_point_range.second);
+      const std::size_t local_index = q - local_point_range.first;
       ++n_sharing[local_index];
     }
 
@@ -927,14 +927,14 @@ MeshPartitioning::build_shared_vertices(
   }
 
   // Fill with list of sharing processes and position in
-  // received_vertex_indices to send back to originating process
+  // received_point_indices to send back to originating process
   std::vector<std::int32_t> process_list(index);
   for (std::uint32_t p = 0; p < mpi_size; ++p)
-    for (unsigned int i = 0; i < received_vertex_indices[p].size(); ++i)
+    for (unsigned int i = 0; i < received_point_indices[p].size(); ++i)
     {
       // Convert global to local index
-      const std::size_t q = received_vertex_indices[p][i];
-      const std::size_t local_index = q - local_vertex_range.first;
+      const std::size_t q = received_point_indices[p][i];
+      const std::size_t local_index = q - local_point_range.first;
       if (n_sharing[local_index] > 0)
       {
         std::int32_t& location = offset[local_index];
@@ -970,8 +970,8 @@ MeshPartitioning::build_shared_vertices(
   std::vector<std::vector<std::size_t>> recv_sharing(mpi_size);
   MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
 
-  // Unpack and store to shared_vertices_local
-  std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices_local;
+  // Unpack and store to shared_points_local
+  std::map<std::int32_t, std::set<std::uint32_t>> shared_points_local;
   for (unsigned int p = 0; p < mpi_size; ++p)
   {
     const std::vector<std::uint32_t>& local_index_p = local_indexing[p];
@@ -982,11 +982,83 @@ MeshPartitioning::build_shared_vertices(
       const std::uint32_t local_index = local_index_p[*(q + 1)];
       std::set<std::uint32_t> sharing_processes(q + 2, q + 2 + num_sharing);
 
-      auto it = shared_vertices_local.insert({local_index, sharing_processes});
+      auto it = shared_points_local.insert({local_index, sharing_processes});
       assert(it.second);
     }
   }
 
-  return shared_vertices_local;
+  return shared_points_local;
+}
+//-----------------------------------------------------------------------------
+std::pair<std::int64_t, std::vector<std::int64_t>>
+MeshPartitioning::build_global_vertex_indices(
+    MPI_Comm mpi_comm, std::int32_t num_vertices,
+    const std::vector<std::int64_t>& global_point_indices,
+    const std::map<std::int32_t, std::set<std::uint32_t>>& shared_points)
+{
+  // Find out how many vertices are locally 'owned' and number them
+  std::vector<std::int64_t> global_vertex_indices(num_vertices);
+  const std::uint32_t mpi_rank = MPI::rank(mpi_comm);
+  const std::uint32_t mpi_size = MPI::size(mpi_comm);
+  std::vector<std::vector<std::int64_t>> send_data(mpi_size);
+  std::vector<std::int64_t> recv_data(mpi_size);
+
+  std::int64_t v = 0;
+  for (unsigned int i = 0; i < num_vertices; ++i)
+  {
+    const auto it = shared_points.find(i);
+    if (it == shared_points.end())
+    {
+      // local
+      global_vertex_indices[i] = v;
+      ++v;
+    }
+    else
+    {
+      // Owned locally if rank less than first entry
+      if (mpi_rank < *it->second.begin())
+      {
+        global_vertex_indices[i] = v;
+        for (auto p : it->second)
+        {
+          send_data[p].push_back(global_point_indices[i]);
+          send_data[p].push_back(v);
+        }
+        ++v;
+      }
+    }
+  }
+
+  // Now have numbered all vertices locally so can get global
+  // size and local offset
+  std::int64_t num_vertices_global = MPI::sum(mpi_comm, v);
+  std::int64_t offset = MPI::global_offset(mpi_comm, v, true);
+
+  // Add offset to send_data
+  for (auto& p : send_data)
+    for (auto q = p.begin(); q != p.end(); q += 2)
+      *(q + 1) += offset;
+
+  // Receive indices of vertices owned elsewhere into map
+  MPI::all_to_all(mpi_comm, send_data, recv_data);
+  std::map<std::int64_t, std::int64_t> global_point_to_vertex;
+  for (auto p = recv_data.begin(); p != recv_data.end(); p += 2)
+  {
+    auto it = global_point_to_vertex.insert({*p, *(p + 1)});
+    assert(it.second);
+  }
+
+  // Adjust global_vertex_indices either by adding offset
+  // or inserting remote index
+  for (unsigned int i = 0; i < num_vertices; ++i)
+  {
+    const auto it = global_point_to_vertex.find(global_point_indices[i]);
+    if (it == global_point_to_vertex.end())
+      global_vertex_indices[i] += offset;
+    else
+      global_vertex_indices[i] = it->second;
+  }
+
+  return {num_vertices_global, std::move(global_vertex_indices)};
 }
 //-----------------------------------------------------------------------------

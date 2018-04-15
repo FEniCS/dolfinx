@@ -96,71 +96,11 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   }
   else
   {
-    // Find out how many vertices are locally 'owned' and number them
-    global_vertex_indices.resize(num_vertices);
-    const std::uint32_t mpi_rank = MPI::rank(comm);
-    const std::uint32_t mpi_size = MPI::size(comm);
-    std::vector<std::vector<std::int64_t>> send_data(mpi_size);
-    std::vector<std::int64_t> recv_data(mpi_size);
-
-    std::int64_t v = 0;
-    for (unsigned int i = 0; i < num_vertices; ++i)
-    {
-      const auto it = shared_points.find(i);
-      if (it == shared_points.end())
-      {
-        // local
-        global_vertex_indices[i] = v;
-        ++v;
-      }
-      else
-      {
-        // Shared
-        shared_vertices.insert(*it);
-
-        // Owned locally if rank less than first entry
-        if (mpi_rank < *it->second.begin())
-        {
-          global_vertex_indices[i] = v;
-          for (auto p : it->second)
-          {
-            send_data[p].push_back(global_point_indices[i]);
-            send_data[p].push_back(v);
-          }
-          ++v;
-        }
-      }
-    }
-
-    // Now have numbered all vertices locally
-    num_vertices_global = MPI::sum(comm, v);
-
-    // Add offset to send_data
-    std::int64_t offset = MPI::global_offset(comm, v, true);
-    for (auto& p : send_data)
-      for (auto q = p.begin(); q != p.end(); q += 2)
-        *(q + 1) += offset;
-
-    // Receive indices of vertices owned elsewhere
-    MPI::all_to_all(comm, send_data, recv_data);
-    std::map<std::int64_t, std::int64_t> global_point_to_vertex;
-    for (auto p = recv_data.begin(); p != recv_data.end(); p += 2)
-    {
-      auto it = global_point_to_vertex.insert({*p, *(p + 1)});
-      assert(it.second);
-    }
-
-    // Adjust global_vertex_indices either by adding offset
-    // or inserting remote index
-    for (unsigned int i = 0; i < num_vertices; ++i)
-    {
-      std::int64_t gpi = global_point_indices[i];
-      const auto it = global_point_to_vertex.find(gpi);
-      if (it == global_point_to_vertex.end())
-        global_vertex_indices[i] += offset;
-      else
-        global_vertex_indices[i] = it->second;
-    }
+    std::tie(num_vertices_global, global_vertex_indices)
+        = MeshPartitioning::build_global_vertex_indices(
+            comm, num_vertices, global_point_indices, shared_points);
+    // FIXME: not quite right - also contains sharing for non-vertex points
+    shared_vertices = shared_points;
   }
 
   _topology.init(0, num_vertices, num_vertices_global);
