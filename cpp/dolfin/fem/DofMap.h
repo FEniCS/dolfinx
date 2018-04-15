@@ -182,7 +182,7 @@ public:
   ///         Degrees of freedom on a single element.
   /// @param    cell_facet_index (std::size_t)
   ///         The local facet index on the cell.
-  void tabulate_facet_dofs(std::vector<int64_t>& element_dofs,
+  void tabulate_facet_dofs(std::vector<int>& element_dofs,
                            std::size_t cell_facet_index) const;
 
   /// Tabulate local-local mapping of dofs on entity (dim, local_entity)
@@ -193,20 +193,18 @@ public:
   ///         The entity dimension.
   /// @param    cell_entity_index (std::size_t)
   ///         The local entity index on the cell.
-  void tabulate_entity_dofs(std::vector<int64_t>& element_dofs,
+  void tabulate_entity_dofs(std::vector<int>& element_dofs,
                             std::size_t entity_dim,
                             std::size_t cell_entity_index) const;
 
   /// Tabulate globally supported dofs
-  ///
-  /// @param    element_dofs (std::size_t)
-  ///         Degrees of freedom.
-  void tabulate_global_dofs(std::vector<std::size_t>& element_dofs) const
+  std::vector<std::size_t> tabulate_global_dofs() const
   {
     assert(_global_nodes.empty() || block_size() == 1);
-    element_dofs.resize(_global_nodes.size());
+    std::vector<std::size_t> element_dofs(_global_nodes.size());
     std::copy(_global_nodes.cbegin(), _global_nodes.cend(),
               element_dofs.begin());
+    return element_dofs;
   }
 
   /// Extract subdofmap component

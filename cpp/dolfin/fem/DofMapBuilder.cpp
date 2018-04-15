@@ -1409,7 +1409,7 @@ void DofMapBuilder::compute_shared_nodes(
   shared_nodes.resize(num_nodes_local);
   std::fill(shared_nodes.begin(), shared_nodes.end(), -1);
 
-  std::vector<int64_t> facet_nodes(ufc_dofmap.num_facet_dofs);
+  std::vector<int> facet_nodes(ufc_dofmap.num_facet_dofs);
 
   // Mark dofs associated ghost cells as ghost dofs (provisionally)
   bool has_ghost_cells = false;

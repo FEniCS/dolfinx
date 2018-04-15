@@ -63,10 +63,8 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
       = V1.dofmap()->dofs(mesh, 0);
 
   // Build maps from local dof numbering to global
-  std::vector<std::size_t> local_to_global_map0;
-  std::vector<std::size_t> local_to_global_map1;
-  V0.dofmap()->tabulate_local_to_global_dofs(local_to_global_map0);
-  V1.dofmap()->tabulate_local_to_global_dofs(local_to_global_map1);
+  std::vector<std::size_t> local_to_global_map0 = V0.dofmap()->tabulate_local_to_global_dofs();
+  std::vector<std::size_t> local_to_global_map1 = V1.dofmap()->tabulate_local_to_global_dofs();
 
   // Declare matrix
   auto A = std::make_shared<la::PETScMatrix>(mesh.mpi_comm());
