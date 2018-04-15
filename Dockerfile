@@ -7,16 +7,16 @@
 # Jan Blechta <blechta@karlin.mff.cuni.cz>
 
 FROM ubuntu:17.10
-MAINTAINER fenics-project <fenics-support@googlegroups.org>
+LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 
 WORKDIR /tmp
 
 # Build arguments
-ARG PETSC_VERSION=3.9
-ARG SLEPC_VERSION=3.8.2
+#ARG PETSC_VERSION=3.9
+#ARG SLEPC_VERSION=3.8.2
 ARG PYBIND11_VERSION=2.2.2
-ARG PETSC4PY_VERSION=3.8.1
-ARG SLEPC4PY_VERSION=3.8.0
+#ARG PETSC4PY_VERSION=3.8.1
+#ARG SLEPC4PY_VERSION=3.8.0
 
 # Environment variables
 ENV OPENBLAS_NUM_THREADS=1 \
