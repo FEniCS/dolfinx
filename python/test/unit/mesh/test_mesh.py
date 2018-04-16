@@ -404,6 +404,7 @@ def test_shared_entities(mesh_factory, ghost_mode):
         assert num_entities_global == mesh.num_entities_global(shared_dim)
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
 def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
     """Test that mesh cells have topology matching to FIAT reference
@@ -442,7 +443,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
                 assert all(vertex_global_indices[numpy.array(entity_topology)]
                            == entity_vertices)
 
-
+@pytest.mark.skip
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
 def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
     """Test that DOLFIN follows that UFC standard in numbering
