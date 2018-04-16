@@ -142,15 +142,18 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   const geometry::Point x3 = geometry.point(vertices[3]);
 
   // Formula for volume from http://mathworld.wolfram.com
-  const double v
-      = (x0[0] * (x1[1] * x2[2] + x3[1] * x1[2] + x2[1] * x3[2] - x2[1] * x1[2]
-                  - x1[1] * x3[2] - x3[1] * x2[2])
-         - x1[0] * (x0[1] * x2[2] + x3[1] * x0[2] + x2[1] * x3[2]
-                    - x2[1] * x0[2] - x0[1] * x3[2] - x3[1] * x2[2])
-         + x2[0] * (x0[1] * x1[2] + x3[1] * x0[2] + x1[1] * x3[2]
-                    - x1[1] * x0[2] - x0[1] * x3[2] - x3[1] * x1[2])
-         - x3[0] * (x0[1] * x1[2] + x1[1] * x2[2] + x2[1] * x0[2]
-                    - x1[1] * x0[2] - x2[1] * x1[2] - x0[1] * x2[2]));
+  const double v = (x0[0]
+                        * (x1[1] * x2[2] + x3[1] * x1[2] + x2[1] * x3[2]
+                           - x2[1] * x1[2] - x1[1] * x3[2] - x3[1] * x2[2])
+                    - x1[0]
+                          * (x0[1] * x2[2] + x3[1] * x0[2] + x2[1] * x3[2]
+                             - x2[1] * x0[2] - x0[1] * x3[2] - x3[1] * x2[2])
+                    + x2[0]
+                          * (x0[1] * x1[2] + x3[1] * x0[2] + x1[1] * x3[2]
+                             - x1[1] * x0[2] - x0[1] * x3[2] - x3[1] * x1[2])
+                    - x3[0]
+                          * (x0[1] * x1[2] + x1[1] * x2[2] + x2[1] * x0[2]
+                             - x1[1] * x0[2] - x2[1] * x1[2] - x0[1] * x2[2]));
 
   return std::abs(v) / 6.0;
 }
@@ -332,178 +335,6 @@ double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const
 
   // Formula for area from http://mathworld.wolfram.com
   return 0.5 * sqrt(v0 * v0 + v1 * v1 + v2 * v2);
-}
-//-----------------------------------------------------------------------------
-void TetrahedronCell::order(
-    Cell& cell,
-    const std::vector<std::int64_t>& local_to_global_vertex_indices) const
-{
-  // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
-
-  // Get mesh topology
-  const MeshTopology& topology = cell.mesh().topology();
-
-  // Sort local vertices on edges in ascending order, connectivity 1 - 0
-  if (!topology.connectivity(1, 0).empty())
-  {
-    assert(!topology.connectivity(3, 1).empty());
-
-    // Get edges
-    const std::int32_t* cell_edges = cell.entities(1);
-
-    // Sort vertices on each edge
-    for (std::size_t i = 0; i < 6; i++)
-    {
-      std::int32_t* edge_vertices = const_cast<std::int32_t*>(
-          topology.connectivity(1, 0)(cell_edges[i]));
-      sort_entities(2, edge_vertices, local_to_global_vertex_indices);
-    }
-  }
-
-  // Sort local vertices on facets in ascending order, connectivity 2 - 0
-  if (!topology.connectivity(2, 0).empty())
-  {
-    assert(!topology.connectivity(3, 2).empty());
-
-    // Get facets
-    const std::int32_t* cell_facets = cell.entities(2);
-
-    // Sort vertices on each facet
-    for (std::size_t i = 0; i < 4; i++)
-    {
-      std::int32_t* facet_vertices = const_cast<std::int32_t*>(
-          topology.connectivity(2, 0)(cell_facets[i]));
-      sort_entities(3, facet_vertices, local_to_global_vertex_indices);
-    }
-  }
-
-  // Sort local edges on local facets after non-incident vertex,
-  // connectivity 2 - 1
-  if (!topology.connectivity(2, 1).empty())
-  {
-    assert(!topology.connectivity(3, 2).empty());
-    assert(!topology.connectivity(2, 0).empty());
-    assert(!topology.connectivity(1, 0).empty());
-
-    // Get facet numbers
-    const std::int32_t* cell_facets = cell.entities(2);
-
-    // Loop over facets on cell
-    for (std::size_t i = 0; i < 4; i++)
-    {
-      // For each facet number get the global vertex numbers
-      const std::int32_t* facet_vertices
-          = topology.connectivity(2, 0)(cell_facets[i]);
-
-      // For each facet number get the global edge number
-      std::int32_t* cell_edges = const_cast<std::int32_t*>(
-          topology.connectivity(2, 1)(cell_facets[i]));
-
-      // Loop over vertices on facet
-      std::size_t m = 0;
-      for (std::size_t j = 0; j < 3; j++)
-      {
-        // Loop edges on facet
-        for (std::size_t k(m); k < 3; k++)
-        {
-          // For each edge number get the global vertex numbers
-          const std::int32_t* edge_vertices
-              = topology.connectivity(1, 0)(cell_edges[k]);
-
-          // Check if the jth vertex of facet i is non-incident on edge k
-          if (!std::count(edge_vertices, edge_vertices + 2, facet_vertices[j]))
-          {
-            // Swap facet numbers
-            std::size_t tmp = cell_edges[m];
-            cell_edges[m] = cell_edges[k];
-            cell_edges[k] = tmp;
-            m++;
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  // Sort local vertices on cell in ascending order, connectivity 3 - 0
-  if (!topology.connectivity(3, 0).empty())
-  {
-    std::int32_t* cell_vertices = const_cast<std::int32_t*>(cell.entities(0));
-    sort_entities(4, cell_vertices, local_to_global_vertex_indices);
-  }
-
-  // Sort local edges on cell after non-incident vertex tuble, connectivity 3-1
-  if (!topology.connectivity(3, 1).empty())
-  {
-    assert(!topology.connectivity(1, 0).empty());
-
-    // Get cell vertices and edge numbers
-    const std::int32_t* cell_vertices = cell.entities(0);
-    std::int32_t* cell_edges = const_cast<std::int32_t*>(cell.entities(1));
-
-    // Loop two vertices on cell as a lexicographical tuple
-    // (i, j): (0,1) (0,2) (0,3) (1,2) (1,3) (2,3)
-    std::size_t m = 0;
-    for (std::size_t i = 0; i < 3; i++)
-    {
-      for (std::size_t j = i + 1; j < 4; j++)
-      {
-        // Loop edge numbers
-        for (std::size_t k = m; k < 6; k++)
-        {
-          // Get local vertices on edge
-          const std::int32_t* edge_vertices
-              = topology.connectivity(1, 0)(cell_edges[k]);
-
-          // Check if the ith and jth vertex of the cell are
-          // non-incident on edge k
-          if (!std::count(edge_vertices, edge_vertices + 2, cell_vertices[i])
-              && !std::count(edge_vertices, edge_vertices + 2,
-                             cell_vertices[j]))
-          {
-            // Swap edge numbers
-            std::size_t tmp = cell_edges[m];
-            cell_edges[m] = cell_edges[k];
-            cell_edges[k] = tmp;
-            m++;
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  // Sort local facets on cell after non-incident vertex, connectivity
-  // 3 - 2
-  if (!topology.connectivity(3, 2).empty())
-  {
-    assert(!topology.connectivity(2, 0).empty());
-
-    // Get cell vertices and facet numbers
-    const std::int32_t* cell_vertices = cell.entities(0);
-    std::int32_t* cell_facets = const_cast<std::int32_t*>(cell.entities(2));
-
-    // Loop vertices on cell
-    for (std::size_t i = 0; i < 4; i++)
-    {
-      // Loop facets on cell
-      for (std::size_t j = i; j < 4; j++)
-      {
-        std::int32_t* facet_vertices = const_cast<std::int32_t*>(
-            topology.connectivity(2, 0)(cell_facets[j]));
-
-        // Check if the ith vertex of the cell is non-incident on facet j
-        if (!std::count(facet_vertices, facet_vertices + 3, cell_vertices[i]))
-        {
-          // Swap facet numbers
-          std::size_t tmp = cell_facets[i];
-          cell_facets[i] = cell_facets[j];
-          cell_facets[j] = tmp;
-          break;
-        }
-      }
-    }
-  }
 }
 //-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const

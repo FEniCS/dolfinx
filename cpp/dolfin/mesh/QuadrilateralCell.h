@@ -62,11 +62,6 @@ public:
   /// Compute the area/length of given facet with respect to the cell
   double facet_area(const mesh::Cell& cell, std::size_t facet) const;
 
-  /// Order entities locally
-  void
-  order(mesh::Cell& cell,
-        const std::vector<std::int64_t>& local_to_global_vertex_indices) const;
-
   /// Return description of cell type
   std::string description(bool plural) const;
 
