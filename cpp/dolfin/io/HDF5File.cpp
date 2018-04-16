@@ -833,8 +833,8 @@ void HDF5File::write(const function::Function& u, const std::string name)
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
   x_cell_dofs.reserve(n_cells);
 
-  std::vector<std::size_t> local_to_global_map;
-  dofmap.tabulate_local_to_global_dofs(local_to_global_map);
+  std::vector<std::size_t> local_to_global_map
+      = dofmap.tabulate_local_to_global_dofs();
 
   for (std::size_t i = 0; i != n_cells; ++i)
   {

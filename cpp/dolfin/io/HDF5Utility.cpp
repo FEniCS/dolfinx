@@ -117,8 +117,8 @@ void HDF5Utility::get_global_dof(
   std::vector<std::vector<std::size_t>> receive_cell_dofs(num_processes);
   MPI::all_to_all(mpi_comm, send_cell_dofs, receive_cell_dofs);
 
-  std::vector<std::size_t> local_to_global_map;
-  dofmap.tabulate_local_to_global_dofs(local_to_global_map);
+  std::vector<std::size_t> local_to_global_map
+      = dofmap.tabulate_local_to_global_dofs();
 
   // Return back the global dof to the process the request came from
   std::vector<std::vector<dolfin::la_index_t>> send_global_dof_back(

@@ -1315,8 +1315,8 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
   x_cell_dofs.reserve(n_cells);
 
-  std::vector<std::size_t> local_to_global_map;
-  dofmap.tabulate_local_to_global_dofs(local_to_global_map);
+  std::vector<std::size_t> local_to_global_map
+      = dofmap.tabulate_local_to_global_dofs();
 
   // Add number of dofs for each cell
   // Add cell dofmap
