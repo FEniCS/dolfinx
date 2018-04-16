@@ -412,7 +412,6 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
     func, args = mesh_factory
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
-    assert mesh.ordered()
     tdim = mesh.topology.dim
 
     # Create FIAT cell
@@ -456,7 +455,6 @@ def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
     func, args = mesh_factory
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
-    assert mesh.ordered()
     tdim = mesh.topology.dim
 
     # Loop over pair of dimensions d, d1 with d>d1
