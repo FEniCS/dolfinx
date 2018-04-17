@@ -193,23 +193,6 @@ double IntervalCell::facet_area(const Cell& cell, std::size_t facet) const
   return 1.0;
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::order(
-    Cell& cell,
-    const std::vector<std::int64_t>& local_to_global_vertex_indices) const
-{
-  // Sort i - j for i > j: 1 - 0
-
-  // Get mesh topology
-  MeshTopology& topology = const_cast<MeshTopology&>(cell.mesh().topology());
-
-  // Sort local vertices in ascending order, connectivity 1 - 0
-  if (!topology.connectivity(1, 0).empty())
-  {
-    std::int32_t* cell_vertices = const_cast<std::int32_t*>(cell.entities(0));
-    sort_entities(2, cell_vertices, local_to_global_vertex_indices);
-  }
-}
-//-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const
 {
   if (plural)

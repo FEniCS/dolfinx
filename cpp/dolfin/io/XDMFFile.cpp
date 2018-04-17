@@ -144,8 +144,9 @@ void XDMFFile::write_checkpoint(const function::Function& u,
                              "when writing to XDMF file.");
   }
 
-  log::log(PROGRESS, "Writing function \"%s\" to XDMF file \"%s\" with "
-                     "time step %f.",
+  log::log(PROGRESS,
+           "Writing function \"%s\" to XDMF file \"%s\" with "
+           "time step %f.",
            function_name.c_str(), _filename.c_str(), time_step);
 
   // If XML file exists load it to member _xml_doc
@@ -1313,8 +1314,8 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
   x_cell_dofs.reserve(n_cells);
 
-  std::vector<std::size_t> local_to_global_map;
-  dofmap.tabulate_local_to_global_dofs(local_to_global_map);
+  std::vector<std::size_t> local_to_global_map
+      = dofmap.tabulate_local_to_global_dofs();
 
   // Add number of dofs for each cell
   // Add cell dofmap
@@ -1491,8 +1492,9 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                              "when reading XDMF file.");
   }
 
-  log::log(PROGRESS, "Reading function \"%s\" from XDMF file \"%s\" with "
-                     "counter %i.",
+  log::log(PROGRESS,
+           "Reading function \"%s\" from XDMF file \"%s\" with "
+           "counter %i.",
            func_name.c_str(), _filename.c_str(), counter);
 
   // Extract parent filepath (required by HDF5 when XDMF stores relative path

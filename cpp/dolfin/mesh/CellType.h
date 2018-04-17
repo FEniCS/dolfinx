@@ -123,18 +123,6 @@ public:
   /// Compute the area/length of given facet with respect to the cell
   virtual double facet_area(const Cell& cell, std::size_t facet) const = 0;
 
-  // FIXME: The order() function should be reimplemented and use one common
-  // FIXME: implementation for all cell types, just as we have for ordered()
-
-  /// Order entities locally
-  virtual void order(Cell& cell, const std::vector<std::int64_t>&
-                                     local_to_global_vertex_indices) const = 0;
-
-  /// Check if entities are ordered
-  bool ordered(
-      const Cell& cell,
-      const std::vector<std::int64_t>& local_to_global_vertex_indices) const;
-
   /// Return description of cell type
   virtual std::string description(bool plural) const = 0;
 
