@@ -6,7 +6,7 @@
 # Garth N. Wells <gnw20@cam.ac.uk>
 # Jan Blechta <blechta@karlin.mff.cuni.cz>
 
-FROM ubuntu:17.10
+FROM ubuntu:18.04
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 
 WORKDIR /tmp
@@ -60,7 +60,7 @@ RUN wget https://bootstrap.pypa.io/get-pip.py && \
     pip3 install --no-cache-dir setuptools && \
     rm -rf /tmp/*
 
-# Install PETSc from source
+# Install PETSc from source. PETSc build system needs Python 2 :(.
 RUN apt-get -qq update && \
     apt-get -y install bison flex python && \
     git clone https://bitbucket.org/petsc/petsc.git petsc-src && \
@@ -125,7 +125,7 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
 RUN pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.git && \
     pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/ufl.git && \
     pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/dijitso.git && \
-    pip3 install --no-cache-dir git+https://github.com/fenics/ffcX.git
+    pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
 
 # Install dolfinx
 RUN git clone https://github.com/fenics/dolfinx.git && \
