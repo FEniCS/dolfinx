@@ -40,15 +40,6 @@ void DofMapBuilder::build(
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap");
 
-  // Check that mesh has been ordered
-  if (!mesh.ordered())
-  {
-    log::dolfin_error(
-        "DofMapBuilder.cpp", "create mapping of degrees of freedom",
-        "Mesh is not ordered according to the UFC numbering convention. "
-        "Consider calling mesh.order()");
-  }
-
   // Check if dofmap is distributed (based on mesh MPI communicator)
   const bool distributed = dolfin::MPI::size(mesh.mpi_comm()) > 1;
 
@@ -1409,7 +1400,7 @@ void DofMapBuilder::compute_shared_nodes(
   shared_nodes.resize(num_nodes_local);
   std::fill(shared_nodes.begin(), shared_nodes.end(), -1);
 
-  std::vector<int64_t> facet_nodes(ufc_dofmap.num_facet_dofs);
+  std::vector<int> facet_nodes(ufc_dofmap.num_facet_dofs);
 
   // Mark dofs associated ghost cells as ghost dofs (provisionally)
   bool has_ghost_cells = false;

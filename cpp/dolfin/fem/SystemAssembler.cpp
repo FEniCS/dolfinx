@@ -122,7 +122,6 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   // Get mesh
   assert(_a->mesh());
   const mesh::Mesh& mesh = *(_a->mesh());
-  assert(mesh.ordered());
 
   // Get cell domains
   std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains
@@ -237,8 +236,7 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   //        should we raise "not implemented error" here?
   if (x0)
   {
-    assert(x0->size()
-                  == _a->function_space(1)->dofmap()->global_dimension());
+    assert(x0->size() == _a->function_space(1)->dofmap()->global_dimension());
 
     const std::size_t num_bc_dofs = boundary_values[0].size();
     std::vector<dolfin::la_index_t> bc_indices;
@@ -298,7 +296,6 @@ void SystemAssembler::cell_wise_assembly(
   const mesh::Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
   // Initialize entities if using external facet integrals
-  assert(mesh.ordered());
   bool has_exterior_facet_integrals
       = ufc[0]->dolfin_form.integrals().num_exterior_facet_integrals() > 0
         or ufc[1]->dolfin_form.integrals().num_exterior_facet_integrals() > 0;
@@ -491,8 +488,8 @@ void SystemAssembler::facet_wise_assembly(
 
   // Sanity check of ghost mode (proper check in AssemblerBase::check)
   assert(mesh.ghost_mode() == "shared_vertex"
-                || mesh.ghost_mode() == "shared_facet"
-                || MPI::size(mesh.mpi_comm()) == 1);
+         || mesh.ghost_mode() == "shared_facet"
+         || MPI::size(mesh.mpi_comm()) == 1);
 
   // Compute facets and facet - cell connectivity if not already
   // computed
@@ -510,11 +507,10 @@ void SystemAssembler::facet_wise_assembly(
   dofmaps[1].push_back(ufc[1]->dolfin_form.function_space(0)->dofmap().get());
 
   // Cell dofmaps [form][cell][form dim]
-  std::
-      array<std::array<std::vector<common::ArrayView<const dolfin::la_index_t>>,
-                       2>,
-            2>
-          cell_dofs;
+  std::array<
+      std::array<std::vector<common::ArrayView<const dolfin::la_index_t>>, 2>,
+      2>
+      cell_dofs;
   cell_dofs[0][0].resize(2);
   cell_dofs[0][1].resize(2);
   cell_dofs[1][0].resize(1);
@@ -1021,8 +1017,8 @@ void SystemAssembler::apply_bc(
   assert(b);
 
   // Wrap matrix and vector using Eigen
-  Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                           Eigen::RowMajor>>
+  Eigen::Map<
+      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
       _matA(A, global_dofs0.size(), global_dofs1.size());
   Eigen::Map<Eigen::VectorXd> _b(b, global_dofs0.size());
 

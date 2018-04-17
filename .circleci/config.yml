@@ -18,10 +18,10 @@ jobs:
           name: Install FEniCS Python components
           command: |
             pip3 uninstall --yes fenics-fiat fenics-ufl fenics-dijitso fenics-ffc
-            pip3 install git+https://bitbucket.org/fenics-project/fiat.git
-            pip3 install git+https://bitbucket.org/fenics-project/ufl.git
-            pip3 install git+https://bitbucket.org/fenics-project/dijitso.git
-            pip3 install git+https://github.com/fenics/ffcx.git
+            pip3 install git+https://bitbucket.org/fenics-project/fiat.git --upgrade
+            pip3 install git+https://bitbucket.org/fenics-project/ufl.git --upgrade
+            pip3 install git+https://bitbucket.org/fenics-project/dijitso.git --upgrade
+            pip3 install git+https://github.com/fenics/ffcx.git --upgrade
             rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
       - run:
           name: Flake8 checks on Python code

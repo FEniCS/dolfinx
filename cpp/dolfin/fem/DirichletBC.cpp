@@ -264,16 +264,6 @@ void DirichletBC::check() const
     }
   }
 
-  // Check that the mesh is ordered
-  assert(_function_space->mesh());
-  if (!_function_space->mesh()->ordered())
-  {
-    log::dolfin_error(
-        "DirichletBC.cpp", "create Dirichlet boundary condition",
-        "mesh::Mesh is not ordered according to the UFC numbering "
-        "convention. Consider calling mesh.order()");
-  }
-
   // Check user supplied mesh::MeshFunction
   if (_user_mesh_function)
   {

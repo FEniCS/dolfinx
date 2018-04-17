@@ -70,8 +70,8 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   const fem::GenericDofMap& dofmap = *V.dofmap();
   const fem::FiniteElement& element = *V.element();
   const mesh::Mesh& mesh = *V.mesh();
-  std::vector<std::size_t> local_to_global;
-  dofmap.tabulate_local_to_global_dofs(local_to_global);
+  std::vector<std::size_t> local_to_global
+      = dofmap.tabulate_local_to_global_dofs();
 
   // Geometric dimension
   const std::size_t gdim = mesh.geometry().dim();
@@ -497,8 +497,8 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
 
   // Initialise local to global dof maps (needed to allocate the
   // entries of the transfer matrix with the correct global indices)
-  std::vector<std::size_t> coarse_local_to_global_dofs;
-  coarsemap->tabulate_local_to_global_dofs(coarse_local_to_global_dofs);
+  std::vector<std::size_t> coarse_local_to_global_dofs
+      = coarsemap->tabulate_local_to_global_dofs();
 
   EigenRowArrayXXd coordinate_dofs; // cell dofs coordinates vector
 

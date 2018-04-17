@@ -9,8 +9,7 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-void GenericDofMap::tabulate_local_to_global_dofs(
-    std::vector<std::size_t>& local_to_global_map) const
+std::vector<std::size_t> GenericDofMap::tabulate_local_to_global_dofs() const
 {
   // FIXME: use common::IndexMap::local_to_global_index?
 
@@ -21,7 +20,9 @@ void GenericDofMap::tabulate_local_to_global_dofs(
       = idxmap->local_to_global_unowned();
   const std::size_t local_ownership_size
       = bs * idxmap->size(common::IndexMap::MapSize::OWNED);
-  local_to_global_map.resize(bs * idxmap->size(common::IndexMap::MapSize::ALL));
+
+  std::vector<std::size_t> local_to_global_map(
+      bs * idxmap->size(common::IndexMap::MapSize::ALL));
 
   const std::size_t global_offset = bs * idxmap->local_range()[0];
   for (std::size_t i = 0; i < local_ownership_size; ++i)
@@ -36,6 +37,8 @@ void GenericDofMap::tabulate_local_to_global_dofs(
           = bs * local_to_global_unowned[node] + component;
     }
   }
+
+  return local_to_global_map;
 }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index_t> GenericDofMap::dofs(const mesh::Mesh& mesh,
@@ -53,7 +56,7 @@ std::vector<dolfin::la_index_t> GenericDofMap::dofs(const mesh::Mesh& mesh,
                                            * num_dofs_per_entity);
 
   // Iterate over cells
-  std::vector<int64_t> entity_dofs_local;
+  std::vector<int> entity_dofs_local;
   for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Get local-to-global dofmap for cell
@@ -99,7 +102,7 @@ GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
                                                  * dofs_per_entity);
 
   // Allocate data for tabulating local to local map
-  std::vector<int64_t> local_to_local_map(dofs_per_entity);
+  std::vector<int> local_to_local_map(dofs_per_entity);
 
   // Iterate over entities
   std::size_t local_entity_ind = 0;
@@ -155,7 +158,7 @@ GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const
                                                  * dofs_per_entity);
 
   // Allocate data for tabulating local to local map
-  std::vector<int64_t> local_to_local_map(dofs_per_entity);
+  std::vector<int> local_to_local_map(dofs_per_entity);
 
   // Iterate over entities
   std::size_t local_entity_ind = 0;
