@@ -64,13 +64,6 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(
   //       mesh._ghost_mode != "none"
   mesh._ghost_mode = ghost_mode;
 
-  // FIXME: eliminate need for 'ordering'
-  if (type == CellType::Type::triangle or type == CellType::Type::tetrahedron)
-    mesh.order();
-  // Set ordering to be true for all cell types. Although ordering
-  // is not implemented for Quads/Hexes they seem to need this.
-  mesh._ordered = true;
-
   // Initialise number of globally connected cells to each facet. This
   // is necessary to distinguish between facets on an exterior
   // boundary and facets on a partition boundary (see

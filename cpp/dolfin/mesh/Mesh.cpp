@@ -9,7 +9,6 @@
 #include "DistributedMeshTools.h"
 #include "Facet.h"
 #include "MeshIterator.h"
-#include "MeshOrdering.h"
 #include "MeshPartitioning.h"
 #include "TopologyComputation.h"
 #include "Vertex.h"
@@ -31,7 +30,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
     : common::Variable("mesh", "DOLFIN mesh"),
       _cell_type(mesh::CellType::create(type)), _topology(_cell_type->dim()),
       _geometry(points), _coordinate_dofs(_cell_type->dim()), _degree(1),
-      _ordered(false), _mpi_comm(comm), _ghost_mode("none")
+      _mpi_comm(comm), _ghost_mode("none")
 {
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
@@ -176,8 +175,8 @@ Mesh::Mesh(const Mesh& mesh)
       _cell_type(CellType::create(mesh._cell_type->cell_type())),
       _topology(mesh._topology), _geometry(mesh._geometry),
       _coordinate_dofs(mesh._coordinate_dofs), _degree(mesh._degree),
-      _ordered(mesh._ordered), _mpi_comm(mesh.mpi_comm()),
-      _ghost_mode(mesh._ghost_mode)
+      _mpi_comm(mesh.mpi_comm()), _ghost_mode(mesh._ghost_mode)
+
 {
   // Do nothing
 }
@@ -188,7 +187,7 @@ Mesh::Mesh(Mesh&& mesh)
       _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
       _coordinate_dofs(std::move(mesh._coordinate_dofs)), _degree(mesh._degree),
-      _ordered(std::move(mesh._ordered)), _mpi_comm(std::move(mesh._mpi_comm)),
+      _mpi_comm(std::move(mesh._mpi_comm)),
       _ghost_mode(std::move(mesh._ghost_mode))
 {
   // Do nothing
@@ -212,7 +211,6 @@ Mesh& Mesh::operator=(const Mesh& mesh)
   else
     _cell_type.reset();
 
-  _ordered = mesh._ordered;
   _ghost_mode = mesh._ghost_mode;
 
   // Rename
@@ -245,21 +243,9 @@ std::size_t Mesh::init(std::size_t dim) const
   if (dim == 0 || dim == _topology.dim())
     return _topology.size(dim);
 
-  // Check that mesh is ordered
-  if (!ordered())
-  {
-    log::dolfin_error("Mesh.cpp", "initialize mesh entities",
-                      "Mesh is not ordered according to the UFC numbering "
-                      "convention. Consider calling mesh.order()");
-  }
-
   // Compute connectivity
   Mesh* mesh = const_cast<Mesh*>(this);
   TopologyComputation::compute_entities(*mesh, dim);
-
-  // Order mesh if necessary
-  if (!ordered())
-    mesh->order();
 
   return _topology.size(dim);
 }
@@ -284,21 +270,9 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   if (!_topology.connectivity(d0, d1).empty())
     return;
 
-  // Check that mesh is ordered
-  if (!ordered())
-  {
-    log::dolfin_error("Mesh.cpp", "initialize mesh connectivity",
-                      "Mesh is not ordered according to the UFC numbering "
-                      "convention. Consider calling mesh.order()");
-  }
-
   // Compute connectivity
   Mesh* mesh = const_cast<Mesh*>(this);
   TopologyComputation::compute_connectivity(*mesh, d0, d1);
-
-  // Order mesh if necessary
-  if (!ordered())
-    mesh->order();
 }
 //-----------------------------------------------------------------------------
 void Mesh::init() const
@@ -330,25 +304,6 @@ void Mesh::clean()
         _topology.clear(d0, d1);
     }
   }
-}
-//-----------------------------------------------------------------------------
-void Mesh::order()
-{
-  // Order mesh
-  MeshOrdering::order(*this);
-
-  // Remember that the mesh has been ordered
-  _ordered = true;
-}
-//-----------------------------------------------------------------------------
-bool Mesh::ordered() const
-{
-  // Don't check if we know (or think we know) that the mesh is ordered
-  if (_ordered)
-    return true;
-
-  _ordered = MeshOrdering::ordered(*this);
-  return _ordered;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<geometry::BoundingBoxTree> Mesh::bounding_box_tree() const
@@ -431,8 +386,7 @@ std::string Mesh::str(bool verbose) const
 
     s << "<Mesh of topological dimension " << topology().dim() << " ("
       << cell_type << ") with " << num_vertices() << " vertices and "
-      << num_cells() << " cells, " << (_ordered ? "ordered" : "unordered")
-      << ">";
+      << num_cells() << " cells >";
   }
 
   return s.str();

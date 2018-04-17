@@ -16,7 +16,6 @@ set(HEADERS
   MeshGeometry.h
   MeshIterator.h
   Mesh.h
-  MeshOrdering.h
   MeshPartitioning.h
   MeshQuality.h
   MeshTopology.h
@@ -46,7 +45,6 @@ set(SOURCES
   MeshEntity.cpp
   MeshFunction.cpp
   MeshGeometry.cpp
-  MeshOrdering.cpp
   MeshPartitioning.cpp
   MeshQuality.cpp
   MeshTopology.cpp

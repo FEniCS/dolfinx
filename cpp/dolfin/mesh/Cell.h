@@ -195,28 +195,6 @@ public:
     return _mesh->type().facet_area(*this, facet);
   }
 
-  /// Order entities locally
-  ///
-  /// @param    local_to_global_vertex_indices
-  ///         The global vertex indices.
-  void order(const std::vector<std::int64_t>& local_to_global_vertex_indices)
-  {
-    _mesh->type().order(*this, local_to_global_vertex_indices);
-  }
-
-  /// Check if entities are ordered
-  ///
-  ///  @param    local_to_global_vertex_indices
-  ///         The global vertex indices.
-  ///
-  /// @return     bool
-  ///         True iff ordered.
-  bool
-  ordered(const std::vector<std::int64_t>& local_to_global_vertex_indices) const
-  {
-    return _mesh->type().ordered(*this, local_to_global_vertex_indices);
-  }
-
   /// Note: This is a (likely temporary) replacement for ufc::cell::local_facet
   /// Local facet index, used typically in eval functions
   mutable int local_facet;

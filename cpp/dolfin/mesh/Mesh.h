@@ -255,17 +255,6 @@ public:
   /// vertices.
   void clean();
 
-  /// Order all mesh entities.
-  ///
-  /// See also: UFC documentation (put link here!)
-  void order();
-
-  /// Check if mesh is ordered according to the UFC numbering convention.
-  ///
-  /// @return bool
-  ///         The return values is true iff the mesh is ordered.
-  bool ordered() const;
-
   /// Compute minimum cell size in mesh, measured greatest distance
   /// between any two vertices of a cell.
   ///
@@ -356,9 +345,6 @@ private:
   // and other objects. The tree is initialized to a zero pointer
   // and is allocated and built when bounding_box_tree() is called.
   mutable std::shared_ptr<geometry::BoundingBoxTree> _tree;
-
-  // True if mesh has been ordered
-  mutable bool _ordered;
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;

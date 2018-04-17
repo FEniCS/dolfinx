@@ -40,15 +40,6 @@ void DofMapBuilder::build(
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap");
 
-  // Check that mesh has been ordered
-  if (!mesh.ordered())
-  {
-    log::dolfin_error(
-        "DofMapBuilder.cpp", "create mapping of degrees of freedom",
-        "Mesh is not ordered according to the UFC numbering convention. "
-        "Consider calling mesh.order()");
-  }
-
   // Check if dofmap is distributed (based on mesh MPI communicator)
   const bool distributed = dolfin::MPI::size(mesh.mpi_comm()) > 1;
 

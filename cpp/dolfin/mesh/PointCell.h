@@ -40,11 +40,6 @@ public:
   void create_entities(boost::multi_array<std::int32_t, 2>& e, std::size_t dim,
                        const std::int32_t* v) const;
 
-  /// Order entities locally (connectivity 1-0, 2-0, 2-1)
-  void
-  order(mesh::Cell& cell,
-        const std::vector<std::int64_t>& local_to_global_vertex_indices) const;
-
   /// Compute (generalized) volume (area) of triangle
   double volume(const MeshEntity& triangle) const;
 
@@ -68,9 +63,6 @@ public:
   /// Compute the area/length of given facet with respect to the
   /// cell
   double facet_area(const mesh::Cell& cell, std::size_t facet) const;
-
-  /// Order entities locally
-  void order(mesh::Cell& cell) const;
 
   /// Return description of cell type
   std::string description(bool plural) const;
