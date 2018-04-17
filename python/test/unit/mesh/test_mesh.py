@@ -404,6 +404,7 @@ def test_shared_entities(mesh_factory, ghost_mode):
         assert num_entities_global == mesh.num_entities_global(shared_dim)
 
 
+# Skipping test after removing mesh.order()
 @pytest.mark.skip
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
 def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
@@ -442,48 +443,6 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
                 entity_vertices = entity.entities(0)
                 assert all(vertex_global_indices[numpy.array(entity_topology)]
                            == entity_vertices)
-
-@pytest.mark.skip
-@pytest.mark.parametrize('mesh_factory', mesh_factories)
-def test_mesh_ufc_ordering(mesh_factory, ghost_mode):
-    """Test that DOLFIN follows that UFC standard in numbering
-    mesh entities. See chapter 5 of UFC manual
-    https://fenicsproject.org/pub/documents/ufc/ufc-user-manual/ufc-user-manual.pdf
-
-    In fact, numbering of other mesh entities than vertices is
-    not followed.
-    """
-    func, args = mesh_factory
-    xfail_ghosted_quads_hexes(func, ghost_mode)
-    mesh = func(*args)
-    tdim = mesh.topology.dim
-
-    # Loop over pair of dimensions d, d1 with d>d1
-    for d in range(tdim+1):
-        for d1 in range(d):
-
-            # NOTE: DOLFIN UFC noncompliance!
-            # DOLFIN has increasing indices only for d-0 incidence
-            # with any d; UFC convention for d-d1 with d>d1>0 is not
-            # respected in DOLFIN
-            if d1 != 0:
-                continue
-
-            # Initialize d-d1 connectivity and d1 global indices
-            mesh.init(d, d1)
-            mesh.init_global(d1)
-            assert mesh.topology.have_global_indices(d1)
-
-            # Loop over entities of dimension d
-            for e in MeshEntities(mesh, d):
-
-                # Get global indices
-                subentities_indices = [e1.global_index()
-                                       for e1 in EntityRange(e, d1)]
-                assert subentities_indices.count(-1) == 0
-
-                # Check that d1-subentities of d-entity have increasing indices
-                assert sorted(subentities_indices) == subentities_indices
 
 
 def test_mesh_topology_reference():
