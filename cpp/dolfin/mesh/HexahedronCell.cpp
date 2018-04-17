@@ -201,14 +201,6 @@ double HexahedronCell::facet_area(const mesh::Cell& cell,
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void HexahedronCell::order(
-    mesh::Cell& cell,
-    const std::vector<std::int64_t>& local_to_global_vertex_indices) const
-{
-  // Not implemented
-  dolfin_not_implemented();
-}
-//-----------------------------------------------------------------------------
 std::string HexahedronCell::description(bool plural) const
 {
   if (plural)

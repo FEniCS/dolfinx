@@ -64,13 +64,6 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(
   //       mesh._ghost_mode != "none"
   mesh._ghost_mode = ghost_mode;
 
-  // FIXME: eliminate need for 'ordering'
-  if (type == CellType::Type::triangle or type == CellType::Type::tetrahedron)
-    mesh.order();
-  // Set ordering to be true for all cell types. Although ordering
-  // is not implemented for Quads/Hexes they seem to need this.
-  mesh._ordered = true;
-
   // Initialise number of globally connected cells to each facet. This
   // is necessary to distinguish between facets on an exterior
   // boundary and facets on a partition boundary (see
@@ -185,18 +178,11 @@ mesh::Mesh MeshPartitioning::build(
   timer.stop();
 
   // Build mesh from points and distributed cells
-  mesh::Mesh mesh(comm, type, points, new_cell_vertices);
-
-  // Set global indices for cells
-  for (std::size_t i = 0; i < new_global_cell_indices.size(); ++i)
-    mesh.topology().set_global_index(tdim, i, new_global_cell_indices[i]);
+  mesh::Mesh mesh(comm, type, points, new_cell_vertices,
+                  new_global_cell_indices);
 
   if (ghost_mode == "none")
     return mesh;
-
-  // For ghost mode, readjust the global number of cells
-  const std::int64_t num_cells_global = MPI::sum(comm, cell_vertices.rows());
-  mesh.topology().init(tdim, new_cell_vertices.rows(), num_cells_global);
 
   // Copy cell ownership (only needed for ghost cells)
   std::vector<std::uint32_t>& cell_owner = mesh.topology().cell_owner();
@@ -205,28 +191,8 @@ mesh::Mesh MeshPartitioning::build(
                     new_cell_partition.begin() + num_regular_cells,
                     new_cell_partition.end());
 
-  // Set the ghost cell offset
-  mesh.topology().init_ghost(tdim, num_regular_cells);
-
   // Assign map of shared cells (only needed for ghost cells)
   mesh.topology().shared_entities(tdim) = shared_cells;
-
-  // Find highest index + 1 in local_cell_vertices of regular cells
-  // (only needed if ghost cells)
-  MeshConnectivity& mc0 = mesh.topology().connectivity(tdim, 0);
-  std::uint32_t num_regular_vertices = 0;
-  for (std::int32_t i = 0; i < num_regular_cells; ++i)
-  {
-    for (unsigned int j = 0; j < mc0.size(i); ++j)
-    {
-      std::uint32_t mcij = mc0(i)[j];
-      num_regular_vertices = std::max(num_regular_vertices, mcij);
-    }
-  }
-  ++num_regular_vertices;
-
-  // Set the ghost vertex offset
-  mesh.topology().init_ghost(0, num_regular_vertices);
 
   return mesh;
 }
@@ -653,7 +619,12 @@ MeshPartitioning::distribute_cells(
       if (owner == mpi_rank)
         ++c;
       else
+      {
+        // Set ghost (unowned) cells to negative index (subtract 1 because of -0
+        // not working)
+        new_global_cell_indices[idx] = -new_global_cell_indices[idx] - 1;
         ++gc;
+      }
     }
   }
 

@@ -9,7 +9,6 @@
 #include "DistributedMeshTools.h"
 #include "Facet.h"
 #include "MeshIterator.h"
-#include "MeshOrdering.h"
 #include "MeshPartitioning.h"
 #include "TopologyComputation.h"
 #include "Vertex.h"
@@ -26,14 +25,23 @@ using namespace dolfin::mesh;
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            const Eigen::Ref<const EigenRowArrayXXd>& points,
-           const Eigen::Ref<const EigenRowArrayXXi64>& cells)
+           const Eigen::Ref<const EigenRowArrayXXi64>& cells,
+           const std::vector<std::int64_t>& global_cell_indices)
     : common::Variable("mesh", "DOLFIN mesh"),
       _cell_type(mesh::CellType::create(type)), _topology(_cell_type->dim()),
       _geometry(points), _coordinate_dofs(_cell_type->dim()), _degree(1),
-      _ordered(false), _mpi_comm(comm), _ghost_mode("none")
+      _mpi_comm(comm), _ghost_mode("none")
 {
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
+
+  // Check size of global cell indices. If empty, construct later.
+  if (global_cell_indices.size() > 0
+      and global_cell_indices.size() != (std::size_t)cells.rows())
+  {
+    log::dolfin_error("Mesh.cpp", "create mesh",
+                      "Wrong number of global cell indices");
+  }
 
   // Decide if the mesh is P2 or other geometry.
   // P1 has num_vertices_per_cell == cells.cols()
@@ -60,8 +68,20 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Global number of points before distributing (which creates duplicates)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
-  // Global number of cells (this assumes no ghosts...)
-  const std::uint64_t num_cells_global = MPI::sum(comm, cells.rows());
+
+  // Number of cells, local (not ghost) and global.
+  std::int32_t num_cells = cells.rows();
+  std::int32_t num_local_cells = num_cells;
+  if (!global_cell_indices.empty())
+  {
+    // Look for negative indices at end of range, indicating ghost cells
+    for (std::int32_t j = num_cells - 1; j >= 0; --j)
+      if (std::signbit(global_cell_indices[j]))
+        --num_local_cells;
+      else
+        break;
+  }
+  const std::uint64_t num_cells_global = MPI::sum(comm, num_local_cells);
 
   // Compute point local-to-global map from global indices, and compute cell
   // topology using new local indices.
@@ -70,18 +90,17 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   EigenRowArrayXXi32 coordinate_dofs;
   std::tie(num_vertices, global_point_indices, coordinate_dofs)
       = MeshPartitioning::compute_point_mapping(num_vertices_per_cell, cells);
-
   _coordinate_dofs.init(tdim, coordinate_dofs);
 
   // Distribute the points across processes and calculate shared points
-  const auto vdist
+  EigenRowArrayXXd distributed_points;
+  std::map<std::int32_t, std::set<std::uint32_t>> shared_points;
+  std::tie(distributed_points, shared_points)
       = MeshPartitioning::distribute_points(comm, points, global_point_indices);
-  const std::map<std::int32_t, std::set<std::uint32_t>>& shared_points
-      = vdist.second;
 
   // Initialise geometry with global size, actual points,
   // and local to global map
-  _geometry.init(num_points_global, vdist.first, global_point_indices);
+  _geometry.init(num_points_global, distributed_points, global_point_indices);
 
   // Get global vertex information
   std::uint64_t num_vertices_global;
@@ -110,29 +129,50 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Initialise vertex topology
   _topology.init(0, num_vertices, num_vertices_global);
-  // Assumes no ghost cells
-  _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);
   for (std::int32_t i = 0; i < num_vertices; ++i)
     _topology.set_global_index(0, i, global_vertex_indices[i]);
   _topology.shared_entities(0) = shared_vertices;
 
   // Initialise cell topology
-  const std::size_t num_cells = coordinate_dofs.rows();
   _topology.init(tdim, num_cells, num_cells_global);
-  _topology.init_ghost(tdim, num_cells);
+  _topology.init_ghost(tdim, num_local_cells);
   _topology.init_global_indices(tdim, num_cells);
   _topology.connectivity(tdim, 0).init(num_cells, num_vertices_per_cell);
 
   // Add cells
-  const MeshConnectivity& cell_dofs = _coordinate_dofs.entity_points(tdim);
-  for (std::uint32_t i = 0; i != cells.rows(); ++i)
+  // Only copies the first few entries on each row corresponding to vertices.
+  // Find the max vertex index of non-ghost cells.
+  std::uint32_t max_vertex = 0;
+  for (std::int32_t i = 0; i != num_cells; ++i)
   {
-    // Only copy the first few entries on each row corresponding to vertices
-    _topology.connectivity(tdim, 0).set(i, cell_dofs(i));
+    _topology.connectivity(tdim, 0).set(i, coordinate_dofs.row(i).data());
+    if (i < num_local_cells)
+    {
+      const std::uint32_t max_vertex_row = coordinate_dofs.row(i).maxCoeff();
+      max_vertex = (max_vertex_row > max_vertex) ? max_vertex_row : max_vertex;
+    }
+  }
 
-    // FIXME: Global cell index set to same as local here
-    _topology.set_global_index(tdim, i, i);
+  // Initialise number of local non-ghost vertices
+  const std::uint32_t num_non_ghost_vertices = max_vertex + 1;
+  _topology.init_ghost(0, num_non_ghost_vertices);
+
+  // Global cell indices - construct if none given
+  if (global_cell_indices.empty())
+  {
+    const std::int64_t global_cell_offset
+        = MPI::global_offset(comm, num_cells, true);
+    for (std::int32_t i = 0; i != num_cells; ++i)
+      _topology.set_global_index(tdim, i, global_cell_offset + i);
+  }
+  else
+  {
+    for (std::int32_t i = 0; i != num_local_cells; ++i)
+      _topology.set_global_index(tdim, i, global_cell_indices[i]);
+    // Set ghost cell indices positive again
+    for (std::int32_t i = num_local_cells; i != num_cells; ++i)
+      _topology.set_global_index(tdim, i, -global_cell_indices[i] - 1);
   }
 }
 //-----------------------------------------------------------------------------
@@ -141,8 +181,8 @@ Mesh::Mesh(const Mesh& mesh)
       _cell_type(CellType::create(mesh._cell_type->cell_type())),
       _topology(mesh._topology), _geometry(mesh._geometry),
       _coordinate_dofs(mesh._coordinate_dofs), _degree(mesh._degree),
-      _ordered(mesh._ordered), _mpi_comm(mesh.mpi_comm()),
-      _ghost_mode(mesh._ghost_mode)
+      _mpi_comm(mesh.mpi_comm()), _ghost_mode(mesh._ghost_mode)
+
 {
   // Do nothing
 }
@@ -153,7 +193,7 @@ Mesh::Mesh(Mesh&& mesh)
       _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
       _coordinate_dofs(std::move(mesh._coordinate_dofs)), _degree(mesh._degree),
-      _ordered(std::move(mesh._ordered)), _mpi_comm(std::move(mesh._mpi_comm)),
+      _mpi_comm(std::move(mesh._mpi_comm)),
       _ghost_mode(std::move(mesh._ghost_mode))
 {
   // Do nothing
@@ -177,7 +217,6 @@ Mesh& Mesh::operator=(const Mesh& mesh)
   else
     _cell_type.reset();
 
-  _ordered = mesh._ordered;
   _ghost_mode = mesh._ghost_mode;
 
   // Rename
@@ -210,21 +249,9 @@ std::size_t Mesh::init(std::size_t dim) const
   if (dim == 0 || dim == _topology.dim())
     return _topology.size(dim);
 
-  // Check that mesh is ordered
-  if (!ordered())
-  {
-    log::dolfin_error("Mesh.cpp", "initialize mesh entities",
-                      "Mesh is not ordered according to the UFC numbering "
-                      "convention. Consider calling mesh.order()");
-  }
-
   // Compute connectivity
   Mesh* mesh = const_cast<Mesh*>(this);
   TopologyComputation::compute_entities(*mesh, dim);
-
-  // Order mesh if necessary
-  if (!ordered())
-    mesh->order();
 
   return _topology.size(dim);
 }
@@ -249,21 +276,9 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   if (!_topology.connectivity(d0, d1).empty())
     return;
 
-  // Check that mesh is ordered
-  if (!ordered())
-  {
-    log::dolfin_error("Mesh.cpp", "initialize mesh connectivity",
-                      "Mesh is not ordered according to the UFC numbering "
-                      "convention. Consider calling mesh.order()");
-  }
-
   // Compute connectivity
   Mesh* mesh = const_cast<Mesh*>(this);
   TopologyComputation::compute_connectivity(*mesh, d0, d1);
-
-  // Order mesh if necessary
-  if (!ordered())
-    mesh->order();
 }
 //-----------------------------------------------------------------------------
 void Mesh::init() const
@@ -295,25 +310,6 @@ void Mesh::clean()
         _topology.clear(d0, d1);
     }
   }
-}
-//-----------------------------------------------------------------------------
-void Mesh::order()
-{
-  // Order mesh
-  MeshOrdering::order(*this);
-
-  // Remember that the mesh has been ordered
-  _ordered = true;
-}
-//-----------------------------------------------------------------------------
-bool Mesh::ordered() const
-{
-  // Don't check if we know (or think we know) that the mesh is ordered
-  if (_ordered)
-    return true;
-
-  _ordered = MeshOrdering::ordered(*this);
-  return _ordered;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<geometry::BoundingBoxTree> Mesh::bounding_box_tree() const
@@ -396,8 +392,7 @@ std::string Mesh::str(bool verbose) const
 
     s << "<Mesh of topological dimension " << topology().dim() << " ("
       << cell_type << ") with " << num_vertices() << " vertices and "
-      << num_cells() << " cells, " << (_ordered ? "ordered" : "unordered")
-      << ">";
+      << num_cells() << " cells >";
   }
 
   return s.str();

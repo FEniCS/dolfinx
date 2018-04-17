@@ -136,14 +136,6 @@ void SparsityPatternBuilder::build(
     // computed
     mesh.init(D - 1);
     mesh.init(D - 1, D);
-    if (!mesh.ordered())
-    {
-      log::dolfin_error(
-          "SparsityPatternBuilder.cpp", "compute sparsity pattern",
-          "mesh::Mesh is not ordered according to the UFC numbering "
-          "convention. "
-          "Consider calling mesh.order()");
-    }
 
     for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
     {
