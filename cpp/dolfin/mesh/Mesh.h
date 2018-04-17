@@ -65,7 +65,7 @@ class MeshEntity;
 class Mesh : public common::Variable
 {
 public:
-  /// Construct as Mesh from topological and geometric data.
+  /// Construct a Mesh from topological and geometric data.
   ///
   /// In parallel, geometric points must be arranged in global index order
   /// across processes, starting from 0 on process 0, and must not be
@@ -74,8 +74,9 @@ public:
   ///
   /// Cells should be listed only on the processes they appear on, i.e. mesh
   /// partitioning should be performed on the topology data before calling the
-  /// Mesh constructor.
-  /// FIXME: What happens about ghost cells?
+  /// Mesh constructor. Ghost cells, if present, must be at the end of the list
+  /// of cells, and must have their global index set negative.
+  /// (ghost_cell_global_index = -normal_global_index - 1)
   ///
   /// @param comm (MPI_Comm)
   ///         MPI Communicator

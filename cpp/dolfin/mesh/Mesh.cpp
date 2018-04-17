@@ -69,7 +69,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // Global number of points before distributing (which creates duplicates)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
 
-  // Number of cells, local(not ghost) and global.
+  // Number of cells, local (not ghost) and global.
   std::int32_t num_cells = cells.rows();
   std::int32_t num_local_cells = num_cells;
   if (!global_cell_indices.empty())
@@ -93,14 +93,14 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   _coordinate_dofs.init(tdim, coordinate_dofs);
 
   // Distribute the points across processes and calculate shared points
-  EigenRowArrayXXd cell_coordinate_dofs;
+  EigenRowArrayXXd distributed_points;
   std::map<std::int32_t, std::set<std::uint32_t>> shared_points;
-  std::tie(cell_coordinate_dofs, shared_points)
+  std::tie(distributed_points, shared_points)
       = MeshPartitioning::distribute_points(comm, points, global_point_indices);
 
   // Initialise geometry with global size, actual points,
   // and local to global map
-  _geometry.init(num_points_global, cell_coordinate_dofs, global_point_indices);
+  _geometry.init(num_points_global, distributed_points, global_point_indices);
 
   // Get global vertex information
   std::uint64_t num_vertices_global;
@@ -141,18 +141,22 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   _topology.connectivity(tdim, 0).init(num_cells, num_vertices_per_cell);
 
   // Add cells
-  // Only copies the first few entries on each row corresponding to vertices
+  // Only copies the first few entries on each row corresponding to vertices.
+  // Find the max vertex index of non-ghost cells.
   std::uint32_t max_vertex = 0;
-  for (std::int32_t i = 0; i != num_local_cells; ++i)
+  for (std::int32_t i = 0; i != num_cells; ++i)
   {
-    _topology.connectivity(tdim, 0).set(i, cell_coordinate_dofs.row(i).data());
-    const std::uint32_t max_vertex_row = cell_coordinate_dofs.row(i).maxCoeff();
-    max_vertex = (max_vertex_row > max_vertex) ? max_vertex_row : max_vertex;
+    _topology.connectivity(tdim, 0).set(i, coordinate_dofs.row(i).data());
+    if (i < num_local_cells)
+    {
+      const std::uint32_t max_vertex_row = coordinate_dofs.row(i).maxCoeff();
+      max_vertex = (max_vertex_row > max_vertex) ? max_vertex_row : max_vertex;
+    }
   }
-  std::cout << "max_vertex = " << max_vertex << "\n";
 
   // Initialise number of local non-ghost vertices
-  _topology.init_ghost(0, num_vertices);
+  const std::uint32_t num_non_ghost_vertices = max_vertex + 1;
+  _topology.init_ghost(0, num_non_ghost_vertices);
 
   // Global cell indices - construct if none given
   if (global_cell_indices.empty())
@@ -164,9 +168,11 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   }
   else
   {
-    // Clear signbit from ghost cell indices
-    for (std::int32_t i = 0; i != num_cells; ++i)
-      _topology.set_global_index(tdim, i, std::abs(global_cell_indices[i]));
+    for (std::int32_t i = 0; i != num_local_cells; ++i)
+      _topology.set_global_index(tdim, i, global_cell_indices[i]);
+    // Set ghost cell indices positive again
+    for (std::int32_t i = num_local_cells; i != num_cells; ++i)
+      _topology.set_global_index(tdim, i, -global_cell_indices[i] - 1);
   }
 }
 //-----------------------------------------------------------------------------

@@ -194,24 +194,6 @@ mesh::Mesh MeshPartitioning::build(
   // Assign map of shared cells (only needed for ghost cells)
   mesh.topology().shared_entities(tdim) = shared_cells;
 
-  // FIXME: do this better
-  // Find highest index + 1 in local_cell_vertices of regular cells
-  // (only needed if ghost cells)
-  MeshConnectivity& mc0 = mesh.topology().connectivity(tdim, 0);
-  std::uint32_t num_regular_vertices = 0;
-  for (std::int32_t i = 0; i < num_regular_cells; ++i)
-  {
-    for (unsigned int j = 0; j < mc0.size(i); ++j)
-    {
-      std::uint32_t mcij = mc0(i)[j];
-      num_regular_vertices = std::max(num_regular_vertices, mcij);
-    }
-  }
-  ++num_regular_vertices;
-
-  // Set the ghost vertex offset
-  mesh.topology().init_ghost(0, num_regular_vertices);
-
   return mesh;
 }
 //-----------------------------------------------------------------------------
@@ -638,9 +620,9 @@ MeshPartitioning::distribute_cells(
         ++c;
       else
       {
-        // Set ghost (unowned) cells to negative index
-        new_global_cell_indices[idx] = -new_global_cell_indices[idx];
-        assert(std::signbit(new_global_cell_indices[idx]));
+        // Set ghost (unowned) cells to negative index (subtract 1 because of -0
+        // not working)
+        new_global_cell_indices[idx] = -new_global_cell_indices[idx] - 1;
         ++gc;
       }
     }
