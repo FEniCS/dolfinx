@@ -65,20 +65,36 @@ class MeshEntity;
 class Mesh : public common::Variable
 {
 public:
-  /// Constructor
+  /// Construct as Mesh from topological and geometric data.
+  ///
+  /// In parallel, geometric points must be arranged in global index order
+  /// across processes, starting from 0 on process 0, and must not be
+  /// duplicated. The points will be redistributed to the processes that need
+  /// them.
+  ///
+  /// Cells should be listed only on the processes they appear on, i.e. mesh
+  /// partitioning should be performed on the topology data before calling the
+  /// Mesh constructor.
+  /// FIXME: What happens about ghost cells?
   ///
   /// @param comm (MPI_Comm)
-  ///
+  ///         MPI Communicator
   /// @param type (CellType::Type)
-  ///
+  ///         Cell type
   /// @param points
-  ///         Array of points
+  ///         Array of geometric points, arranged in global index order
   /// @param cells
-  ///         Array of cells (containing the global 'vertex' indices for each
+  ///         Array of cells (containing the global point indices for each
   ///         cell)
+  /// @param global_cell_indices
+  ///         Array of global cell indices. If not empty, this must be same size
+  ///         as the number of rows in cells. If empty, global cell indices will
+  ///         be constructed, beginning from 0 on process 0.
+  ///
   Mesh(MPI_Comm comm, mesh::CellType::Type type,
        const Eigen::Ref<const EigenRowArrayXXd>& points,
-       const Eigen::Ref<const EigenRowArrayXXi64>& cells);
+       const Eigen::Ref<const EigenRowArrayXXi64>& cells,
+       const std::vector<std::int64_t>& global_cell_indices);
 
   /// Copy constructor.
   ///

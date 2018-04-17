@@ -185,18 +185,11 @@ mesh::Mesh MeshPartitioning::build(
   timer.stop();
 
   // Build mesh from points and distributed cells
-  mesh::Mesh mesh(comm, type, points, new_cell_vertices);
-
-  // Set global indices for cells
-  for (std::size_t i = 0; i < new_global_cell_indices.size(); ++i)
-    mesh.topology().set_global_index(tdim, i, new_global_cell_indices[i]);
+  mesh::Mesh mesh(comm, type, points, new_cell_vertices,
+                  new_global_cell_indices);
 
   if (ghost_mode == "none")
     return mesh;
-
-  // For ghost mode, readjust the global number of cells
-  const std::int64_t num_cells_global = MPI::sum(comm, cell_vertices.rows());
-  mesh.topology().init(tdim, new_cell_vertices.rows(), num_cells_global);
 
   // Copy cell ownership (only needed for ghost cells)
   std::vector<std::uint32_t>& cell_owner = mesh.topology().cell_owner();
@@ -205,12 +198,10 @@ mesh::Mesh MeshPartitioning::build(
                     new_cell_partition.begin() + num_regular_cells,
                     new_cell_partition.end());
 
-  // Set the ghost cell offset
-  mesh.topology().init_ghost(tdim, num_regular_cells);
-
   // Assign map of shared cells (only needed for ghost cells)
   mesh.topology().shared_entities(tdim) = shared_cells;
 
+  // FIXME: do this better
   // Find highest index + 1 in local_cell_vertices of regular cells
   // (only needed if ghost cells)
   MeshConnectivity& mc0 = mesh.topology().connectivity(tdim, 0);
@@ -653,7 +644,12 @@ MeshPartitioning::distribute_cells(
       if (owner == mpi_rank)
         ++c;
       else
+      {
+        // Set ghost (unowned) cells to negative index
+        new_global_cell_indices[idx] = -new_global_cell_indices[idx];
+        assert(std::signbit(new_global_cell_indices[idx]));
         ++gc;
+      }
     }
   }
 

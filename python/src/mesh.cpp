@@ -132,9 +132,10 @@ void mesh(py::module& m)
       .def(py::init([](const MPICommWrapper comm,
                        dolfin::mesh::CellType::Type type,
                        Eigen::Ref<const dolfin::EigenRowArrayXXd> geometry,
-                       Eigen::Ref<const dolfin::EigenRowArrayXXi64> topology) {
-        return std::make_unique<dolfin::mesh::Mesh>(comm.get(), type, geometry,
-                                                    topology);
+                       Eigen::Ref<const dolfin::EigenRowArrayXXi64> topology,
+                       const std::vector<std::int64_t>& global_cell_indices) {
+        return std::make_unique<dolfin::mesh::Mesh>(
+            comm.get(), type, geometry, topology, global_cell_indices);
       }))
       .def("bounding_box_tree", &dolfin::mesh::Mesh::bounding_box_tree)
       .def("cells",

@@ -26,7 +26,8 @@ using namespace dolfin::mesh;
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            const Eigen::Ref<const EigenRowArrayXXd>& points,
-           const Eigen::Ref<const EigenRowArrayXXi64>& cells)
+           const Eigen::Ref<const EigenRowArrayXXi64>& cells,
+           const std::vector<std::int64_t>& global_cell_indices)
     : common::Variable("mesh", "DOLFIN mesh"),
       _cell_type(mesh::CellType::create(type)), _topology(_cell_type->dim()),
       _geometry(points), _coordinate_dofs(_cell_type->dim()), _degree(1),
@@ -34,6 +35,14 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 {
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
+
+  // Check size of global cell indices. If empty, construct later.
+  if (global_cell_indices.size() > 0
+      and global_cell_indices.size() != (std::size_t)cells.rows())
+  {
+    log::dolfin_error("Mesh.cpp", "create mesh",
+                      "Wrong number of global cell indices");
+  }
 
   // Decide if the mesh is P2 or other geometry.
   // P1 has num_vertices_per_cell == cells.cols()
@@ -60,8 +69,20 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Global number of points before distributing (which creates duplicates)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
-  // Global number of cells (this assumes no ghosts...)
-  const std::uint64_t num_cells_global = MPI::sum(comm, cells.rows());
+
+  // Number of cells, local(not ghost) and global.
+  std::int32_t num_cells = cells.rows();
+  std::int32_t num_local_cells = num_cells;
+  if (!global_cell_indices.empty())
+  {
+    // Look for negative indices at end of range, indicating ghost cells
+    for (std::int32_t j = num_cells - 1; j >= 0; --j)
+      if (std::signbit(global_cell_indices[j]))
+        --num_local_cells;
+      else
+        break;
+  }
+  const std::uint64_t num_cells_global = MPI::sum(comm, num_local_cells);
 
   // Compute point local-to-global map from global indices, and compute cell
   // topology using new local indices.
@@ -70,18 +91,17 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   EigenRowArrayXXi32 coordinate_dofs;
   std::tie(num_vertices, global_point_indices, coordinate_dofs)
       = MeshPartitioning::compute_point_mapping(num_vertices_per_cell, cells);
-
   _coordinate_dofs.init(tdim, coordinate_dofs);
 
   // Distribute the points across processes and calculate shared points
-  const auto vdist
+  EigenRowArrayXXd cell_coordinate_dofs;
+  std::map<std::int32_t, std::set<std::uint32_t>> shared_points;
+  std::tie(cell_coordinate_dofs, shared_points)
       = MeshPartitioning::distribute_points(comm, points, global_point_indices);
-  const std::map<std::int32_t, std::set<std::uint32_t>>& shared_points
-      = vdist.second;
 
   // Initialise geometry with global size, actual points,
   // and local to global map
-  _geometry.init(num_points_global, vdist.first, global_point_indices);
+  _geometry.init(num_points_global, cell_coordinate_dofs, global_point_indices);
 
   // Get global vertex information
   std::uint64_t num_vertices_global;
@@ -110,29 +130,44 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Initialise vertex topology
   _topology.init(0, num_vertices, num_vertices_global);
-  // Assumes no ghost cells
-  _topology.init_ghost(0, num_vertices);
   _topology.init_global_indices(0, num_vertices);
   for (std::int32_t i = 0; i < num_vertices; ++i)
     _topology.set_global_index(0, i, global_vertex_indices[i]);
   _topology.shared_entities(0) = shared_vertices;
 
   // Initialise cell topology
-  const std::size_t num_cells = coordinate_dofs.rows();
   _topology.init(tdim, num_cells, num_cells_global);
-  _topology.init_ghost(tdim, num_cells);
+  _topology.init_ghost(tdim, num_local_cells);
   _topology.init_global_indices(tdim, num_cells);
   _topology.connectivity(tdim, 0).init(num_cells, num_vertices_per_cell);
 
   // Add cells
-  const MeshConnectivity& cell_dofs = _coordinate_dofs.entity_points(tdim);
-  for (std::uint32_t i = 0; i != cells.rows(); ++i)
+  // Only copies the first few entries on each row corresponding to vertices
+  std::uint32_t max_vertex = 0;
+  for (std::int32_t i = 0; i != num_local_cells; ++i)
   {
-    // Only copy the first few entries on each row corresponding to vertices
-    _topology.connectivity(tdim, 0).set(i, cell_dofs(i));
+    _topology.connectivity(tdim, 0).set(i, cell_coordinate_dofs.row(i).data());
+    const std::uint32_t max_vertex_row = cell_coordinate_dofs.row(i).maxCoeff();
+    max_vertex = (max_vertex_row > max_vertex) ? max_vertex_row : max_vertex;
+  }
+  std::cout << "max_vertex = " << max_vertex << "\n";
 
-    // FIXME: Global cell index set to same as local here
-    _topology.set_global_index(tdim, i, i);
+  // Initialise number of local non-ghost vertices
+  _topology.init_ghost(0, num_vertices);
+
+  // Global cell indices - construct if none given
+  if (global_cell_indices.empty())
+  {
+    const std::int64_t global_cell_offset
+        = MPI::global_offset(comm, num_cells, true);
+    for (std::int32_t i = 0; i != num_cells; ++i)
+      _topology.set_global_index(tdim, i, global_cell_offset + i);
+  }
+  else
+  {
+    // Clear signbit from ghost cell indices
+    for (std::int32_t i = 0; i != num_cells; ++i)
+      _topology.set_global_index(tdim, i, std::abs(global_cell_indices[i]));
   }
 }
 //-----------------------------------------------------------------------------

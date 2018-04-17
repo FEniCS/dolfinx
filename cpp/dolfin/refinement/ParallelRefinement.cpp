@@ -245,7 +245,7 @@ mesh::Mesh ParallelRefinement::build_local() const
                                                 num_cells, num_cell_vertices);
 
   mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.type().cell_type(), geometry,
-                  topology);
+                  topology, {});
 
   return mesh;
 }
