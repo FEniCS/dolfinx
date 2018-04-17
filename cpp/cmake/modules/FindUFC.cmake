@@ -65,7 +65,7 @@ if (UFC_INCLUDE_DIR)
   mark_as_advanced(UFC_VERSION_OK)
 
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import ffc, sys; sys.stdout.write(ffc.ufc_signature())"
+    COMMAND ${PYTHON_EXECUTABLE} -c "import ffc.backends.ufc, sys; sys.stdout.write(ffc.backends.ufc.get_signature())"
     OUTPUT_VARIABLE UFC_SIGNATURE
     )
   mark_as_advanced(UFC_SIGNATURE)
