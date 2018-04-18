@@ -377,9 +377,6 @@ set(DOLFIN_LIB_DIR "${CMAKE_INSTALL_LIBDIR}" CACHE PATH "Library installation di
 set(DOLFIN_INCLUDE_DIR "${CMAKE_INSTALL_INCLUDEDIR}" CACHE PATH "C/C++ header installation directory.")
 set(DOLFIN_PKGCONFIG_DIR "${CMAKE_INSTALL_LIBDIR}/pkgconfig" CACHE PATH "pkg-config file installation directory.")
 set(DOLFIN_SHARE_DIR "${CMAKE_INSTALL_DATAROOTDIR}/dolfin" CACHE PATH "Shared data installation directory.")
-# set(DOLFIN_MAN_DIR "${CMAKE_INSTALL_MANDIR}" CACHE PATH "Manual page installation directory.")
-# set(DOLFIN_DOC_DIR "${CMAKE_INSTALL_DOCDIR}" CACHE PATH "DOLFIN Documentation directory.")
-# set(DOLFIN_ETC_DIR "${CMAKE_INSTALL_SYSCONFDIR}" CACHE PATH "Configuration file directory.")
 
 # Add source directory
 add_subdirectory(dolfin)
