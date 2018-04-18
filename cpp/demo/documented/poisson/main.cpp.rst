@@ -164,7 +164,11 @@ the form file) defined relative to this mesh, we do as follows
      // Create mesh and function space
      std::array<geometry::Point, 2> pt = {geometry::Point(0.,0.), geometry::Point(1.,1.)};
      auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle));
-     auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
+
+    auto space = std::unique_ptr<dolfin_function_space>(PoissonFunctionSpace());
+    auto V = std::make_shared<function::FunctionSpace>(mesh,
+        std::make_shared<fem::FiniteElement>(std::shared_ptr<ufc_finite_element>(space->element())),
+        std::make_shared<fem::DofMap>(std::shared_ptr<ufc_dofmap>(space->dofmap()), *mesh));
 
 Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
 using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
@@ -194,13 +198,24 @@ to the linear form.
 
 .. code-block:: cpp
 
-     // Define variational forms
-     auto a = std::make_shared<Poisson::BilinearForm>(V, V);
-     auto L = std::make_shared<Poisson::LinearForm>(V);
+    auto form_L = std::unique_ptr<dolfin_form>(PoissonLinearForm());
+    auto form_a = std::unique_ptr<dolfin_form>(PoissonBilinearForm());
+
+    // Define variational forms
+    auto a = std::make_shared<fem::Form>(
+        std::shared_ptr<ufc_form>(form_a->form()),
+        std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V, V});
+    auto L = std::make_shared<fem::Form>(
+        std::shared_ptr<ufc_form>(form_L->form()),
+        std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
      auto f = std::make_shared<Source>();
      auto g = std::make_shared<dUdN>();
-     L->f = f;
-     L->g = g;
+     //L->f = f;
+     //L->g = g;
+
+    L->set_coefficient_index_to_name_map(form_L->coefficient_number_map);
+    L->set_coefficient_name_to_index_map(form_L->coefficient_name_map);
+    L->set_coefficients({ {"f", f}, {"g", g} });
 
     // Attach 'coordinate mapping' to mesh
     auto cmap = a->coordinate_mapping();

@@ -30,7 +30,7 @@ namespace mesh
 {
 class Mesh;
 class SubDomain;
-}
+} // namespace mesh
 
 namespace fem
 {
@@ -38,7 +38,7 @@ namespace fem
 /// Degree-of-freedom map
 
 /// This class handles the mapping of degrees of freedom. It builds
-/// a dof map based on a ufc::dofmap on a specific mesh. It will
+/// a dof map based on a ufc_ofmap on a specific mesh. It will
 /// reorder the dofs when running in parallel. Sub-dofmaps, both
 /// views and copies, are supported.
 
@@ -47,21 +47,21 @@ class DofMap : public GenericDofMap
 public:
   /// Create dof map on mesh (mesh is not stored)
   ///
-  /// @param[in] ufc_dofmap (ufc::dofmap)
-  ///         The ufc::dofmap.
+  /// @param[in] ufc_dofmap (ufc_dofmap)
+  ///         The ufc_dofmap.
   /// @param[in] mesh (mesh::Mesh&)
   ///         The mesh.
-  DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const mesh::Mesh& mesh);
+  DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh);
 
   /// Create a periodic dof map on mesh (mesh is not stored)
   ///
-  /// @param[in] ufc_dofmap (ufc::dofmap)
-  ///         The ufc::dofmap.
+  /// @param[in] ufc_dofmap (ufc_dofmap)
+  ///         The ufc_dofmap.
   /// @param[in] mesh (mesh::Mesh)
   ///         The mesh.
   /// @param[in] constrained_domain (mesh::SubDomain)
   ///         The subdomain marking the constrained (tied) boundaries.
-  DofMap(std::shared_ptr<const ufc::dofmap> ufc_dofmap, const mesh::Mesh& mesh,
+  DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh,
          std::shared_ptr<const mesh::SubDomain> constrained_domain);
 
 private:
@@ -171,8 +171,9 @@ public:
   {
     const std::size_t index = cell_index * _cell_dimension;
     assert(index + _cell_dimension <= _dofmap.size());
-    return Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic,
-                                         1>>(&_dofmap[index], _cell_dimension);
+    return Eigen::Map<
+        const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>>(
+        &_dofmap[index], _cell_dimension);
   }
 
   /// Tabulate local-local facet dofs
@@ -181,7 +182,7 @@ public:
   ///         Degrees of freedom on a single element.
   /// @param    cell_facet_index (std::size_t)
   ///         The local facet index on the cell.
-  void tabulate_facet_dofs(std::vector<int64_t>& element_dofs,
+  void tabulate_facet_dofs(std::vector<int>& element_dofs,
                            std::size_t cell_facet_index) const;
 
   /// Tabulate local-local mapping of dofs on entity (dim, local_entity)
@@ -192,20 +193,18 @@ public:
   ///         The entity dimension.
   /// @param    cell_entity_index (std::size_t)
   ///         The local entity index on the cell.
-  void tabulate_entity_dofs(std::vector<int64_t>& element_dofs,
+  void tabulate_entity_dofs(std::vector<int>& element_dofs,
                             std::size_t entity_dim,
                             std::size_t cell_entity_index) const;
 
   /// Tabulate globally supported dofs
-  ///
-  /// @param    element_dofs (std::size_t)
-  ///         Degrees of freedom.
-  void tabulate_global_dofs(std::vector<std::size_t>& element_dofs) const
+  std::vector<std::size_t> tabulate_global_dofs() const
   {
     assert(_global_nodes.empty() || block_size() == 1);
-    element_dofs.resize(_global_nodes.size());
+    std::vector<std::size_t> element_dofs(_global_nodes.size());
     std::copy(_global_nodes.cbegin(), _global_nodes.cend(),
               element_dofs.begin());
+    return element_dofs;
   }
 
   /// Extract subdofmap component
@@ -217,7 +216,7 @@ public:
   ///
   /// @return     DofMap
   ///         The subdofmap component.
-  std::shared_ptr<GenericDofMap>
+  std::unique_ptr<GenericDofMap>
   extract_sub_dofmap(const std::vector<std::size_t>& component,
                      const mesh::Mesh& mesh) const;
 
@@ -230,7 +229,7 @@ public:
   ///
   /// @return    DofMap
   ///         The collapsed dofmap.
-  std::shared_ptr<GenericDofMap>
+  std::unique_ptr<GenericDofMap>
   collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
            const mesh::Mesh& mesh) const;
 
@@ -269,7 +268,7 @@ private:
   friend class fem::DofMapBuilder;
 
   // Check that mesh provides the entities needed by dofmap
-  static void check_provided_entities(const ufc::dofmap& dofmap,
+  static void check_provided_entities(const ufc_dofmap& dofmap,
                                       const mesh::Mesh& mesh);
 
   // Cell-local-to-dof map (dofs for cell dofmap[i])
@@ -282,7 +281,7 @@ private:
   std::size_t _cell_dimension;
 
   // UFC dof map
-  std::shared_ptr<const ufc::dofmap> _ufc_dofmap;
+  std::shared_ptr<const ufc_dofmap> _ufc_dofmap;
 
   // Number global mesh entities. This is usually the same as what
   // is reported by the mesh, but will differ for dofmaps
@@ -315,5 +314,5 @@ private:
   // Neighbours (processes that we share dofs with)
   std::set<int> _neighbours;
 };
-}
-}
+} // namespace fem
+} // namespace dolfin

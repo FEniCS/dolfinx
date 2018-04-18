@@ -71,7 +71,7 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
 #ifndef H5_HAVE_PARALLEL
   if (mpi_io)
   {
-    throw std::error(
+    throw std::runtime_error(
         "Cannot open file. HDF5 has not been compiled with support for MPI");
   }
 #endif
@@ -834,8 +834,8 @@ void HDF5File::write(const function::Function& u, const std::string name)
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
   x_cell_dofs.reserve(n_cells);
 
-  std::vector<std::size_t> local_to_global_map;
-  dofmap.tabulate_local_to_global_dofs(local_to_global_map);
+  std::vector<std::size_t> local_to_global_map
+      = dofmap.tabulate_local_to_global_dofs();
 
   for (std::size_t i = 0; i != n_cells; ++i)
   {

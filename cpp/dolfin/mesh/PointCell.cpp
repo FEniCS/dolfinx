@@ -105,14 +105,6 @@ double PointCell::facet_area(const Cell& cell, std::size_t facet) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void PointCell::order(
-    Cell& cell,
-    const std::vector<std::int64_t>& local_to_global_vertex_indices) const
-{
-  log::dolfin_error("PointCell.cpp", "order cell",
-                    "Ordering of a point cell is not defined");
-}
-//-----------------------------------------------------------------------------
 std::string PointCell::description(bool plural) const
 {
   if (plural)

@@ -15,11 +15,6 @@ Developer notes for the log library
 
   Some examples:
 
-  dolfin_error("DofMap.cpp",
-               "create mapping of degrees of freedom",
-               "Mesh is not ordered according to the UFC numbering convention. "
-               "Consider calling mesh.order()");
-
   dolfin_error("File.cpp",
                "open file",
                "Could not create directory \"%s\"",

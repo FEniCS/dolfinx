@@ -250,8 +250,8 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
 
   // Tabulate indices of dense rows
   const std::size_t primary_dim = pattern.primary_dim();
-  std::vector<std::size_t> global_dofs;
-  dofmaps[primary_dim]->tabulate_global_dofs(global_dofs);
+  std::vector<std::size_t> global_dofs
+      = dofmaps[primary_dim]->tabulate_global_dofs();
   if (global_dofs.size() > 0)
   {
     // Get local row range
@@ -342,7 +342,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   }
 
   // Allocate data for tabulating local to local map
-  std::vector<int64_t> local_to_local_map(dofs_per_vertex);
+  std::vector<int> local_to_local_map(dofs_per_vertex);
 
   // Create return data structure
   std::vector<dolfin::la_index_t> return_map(dofs_per_vertex

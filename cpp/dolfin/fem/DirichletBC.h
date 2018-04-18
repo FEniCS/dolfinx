@@ -319,7 +319,7 @@ private:
     std::vector<double> w;
 
     // mesh::Facet dofs
-    std::vector<int64_t> facet_dofs;
+    std::vector<int> facet_dofs;
 
     // Coordinates for dofs
     EigenRowArrayXXd coordinates;

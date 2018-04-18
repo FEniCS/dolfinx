@@ -1,5 +1,4 @@
 set(HEADERS
-  CoefficientAssigner.h
   Constant.h
   dolfin_function.h
   Expression.h
@@ -11,7 +10,6 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
-  CoefficientAssigner.cpp
   Constant.cpp
   Expression.cpp
   FunctionAXPY.cpp

@@ -15,11 +15,6 @@
 #include <utility>
 #include <vector>
 
-namespace ufc
-{
-class cell;
-}
-
 namespace dolfin
 {
 
@@ -94,25 +89,25 @@ public:
                                               std::size_t entity_dim) const;
 
   /// Tabulate local-local facet dofs
-  virtual void tabulate_facet_dofs(std::vector<int64_t>& element_dofs,
+  virtual void tabulate_facet_dofs(std::vector<int>& element_dofs,
                                    std::size_t cell_facet_index) const = 0;
 
   /// Tabulate the local-to-local mapping of dofs on entity
   /// (dim, local_entity)
-  virtual void tabulate_entity_dofs(std::vector<int64_t>& element_dofs,
+  virtual void tabulate_entity_dofs(std::vector<int>& element_dofs,
                                     std::size_t entity_dim,
                                     std::size_t cell_entity_index) const = 0;
 
   /// Tabulate globally supported dofs
-  virtual void tabulate_global_dofs(std::vector<std::size_t>& dofs) const = 0;
+  virtual std::vector<std::size_t> tabulate_global_dofs() const = 0;
 
   /// Extract sub dofmap component
-  virtual std::shared_ptr<GenericDofMap>
+  virtual std::unique_ptr<GenericDofMap>
   extract_sub_dofmap(const std::vector<std::size_t>& component,
                      const mesh::Mesh& mesh) const = 0;
 
   /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
-  virtual std::shared_ptr<GenericDofMap>
+  virtual std::unique_ptr<GenericDofMap>
   collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
            const mesh::Mesh& mesh) const = 0;
 
@@ -131,8 +126,7 @@ public:
   virtual std::shared_ptr<const common::IndexMap> index_map() const = 0;
 
   /// Tabulate map between local (process) and global dof indices
-  void tabulate_local_to_global_dofs(
-      std::vector<std::size_t>& local_to_global_map) const;
+  std::vector<std::size_t> tabulate_local_to_global_dofs() const;
 
   /// Return map from shared nodes to the processes (not including
   /// the current process) that share it.
