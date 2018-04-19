@@ -31,9 +31,7 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-void DofMapBuilder::build(
-    fem::DofMap& dofmap, const mesh::Mesh& mesh,
-    std::shared_ptr<const mesh::SubDomain> constrained_domain)
+void DofMapBuilder::build(fem::DofMap& dofmap, const mesh::Mesh& mesh)
 {
   assert(dofmap._ufc_dofmap);
 
@@ -90,20 +88,10 @@ void DofMapBuilder::build(
   std::vector<std::vector<la_index_t>> node_graph0;
   std::vector<int> node_ufc_local_to_local0;
   std::shared_ptr<const ufc_dofmap> ufc_node_dofmap;
-  if (!constrained_domain)
-  {
-    ufc_node_dofmap = build_ufc_node_graph(
-        node_graph0, node_local_to_global0, dofmap._num_mesh_entities_global,
-        dofmap._ufc_dofmap, mesh, constrained_domain, bs);
-    assert(ufc_node_dofmap);
-  }
-  else
-  {
-    ufc_node_dofmap = build_ufc_node_graph_constrained(
-        node_graph0, node_local_to_global0, node_ufc_local_to_local0,
-        dofmap._num_mesh_entities_global, dofmap._ufc_dofmap, mesh,
-        constrained_domain, bs);
-  }
+  ufc_node_dofmap = build_ufc_node_graph(node_graph0, node_local_to_global0,
+                                         dofmap._num_mesh_entities_global,
+                                         dofmap._ufc_dofmap, mesh, bs);
+  assert(ufc_node_dofmap);
 
   // Set local (cell) dimension
   dofmap._cell_dimension = dofmap._ufc_dofmap->num_element_dofs;
@@ -181,23 +169,10 @@ void DofMapBuilder::build(
                             node_graph0, node_ownership0, global_nodes0,
                             mesh.mpi_comm());
 
+    // FIXME: Simplify after constrained domain removal
     // Update UFC-local-to-local map to account for re-ordering
-    if (constrained_domain)
-    {
-      const std::size_t num_ufc_node_local = node_ufc_local_to_local0.size();
-      dofmap._ufc_local_to_local.resize(num_ufc_node_local);
-      for (std::size_t i = 0; i < num_ufc_node_local; ++i)
-      {
-        const int old_node = node_ufc_local_to_local0[i];
-        const int new_node = node_old_to_new_local[old_node];
-        dofmap._ufc_local_to_local[i] = new_node;
-      }
-    }
-    else
-    {
-      // UFC dofmap was not altered, old_to_new is same as UFC-to-new
-      dofmap._ufc_local_to_local = node_old_to_new_local;
-    }
+    // UFC dofmap was not altered, old_to_new is same as UFC-to-new
+    dofmap._ufc_local_to_local = node_old_to_new_local;
 
     // Update shared_nodes for node reordering
     dofmap._shared_nodes.clear();
@@ -365,193 +340,6 @@ void DofMapBuilder::build_sub_map_view(
     sub_dofmap._dofmap.insert(sub_dofmap._dofmap.end(), cell_dofs.begin(),
                               cell_dofs.end());
   }
-}
-//-----------------------------------------------------------------------------
-std::size_t DofMapBuilder::build_constrained_vertex_indices(
-    const mesh::Mesh& mesh,
-    const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>&
-        slave_to_master_vertices,
-    std::vector<std::int64_t>& modified_vertex_indices_global)
-{
-  // MPI communicator
-  const MPI_Comm mpi_comm = mesh.mpi_comm();
-
-  // Get vertex sharing information (local index, [(sharing process p,
-  // local index on p)])
-  const std::unordered_map<
-      std::uint32_t, std::vector<std::pair<std::uint32_t, std::uint32_t>>>&
-      shared_vertices
-      = mesh::DistributedMeshTools::compute_shared_entities(mesh, 0);
-
-  // Mark shared vertices
-  std::vector<bool> vertex_shared(mesh.num_vertices(), false);
-  for (auto shared_vertex = shared_vertices.begin();
-       shared_vertex != shared_vertices.end(); ++shared_vertex)
-  {
-    assert(shared_vertex->first < vertex_shared.size());
-    vertex_shared[shared_vertex->first] = true;
-  }
-
-  // Mark slave vertices
-  std::vector<bool> slave_vertex(mesh.num_vertices(), false);
-  std::map<std::uint32_t,
-           std::pair<std::uint32_t, std::uint32_t>>::const_iterator slave;
-  for (slave = slave_to_master_vertices.begin();
-       slave != slave_to_master_vertices.end(); ++slave)
-  {
-    assert(slave->first < slave_vertex.size());
-    slave_vertex[slave->first] = true;
-  }
-
-  // MPI process number
-  const std::size_t proc_num = MPI::rank(mesh.mpi_comm());
-
-  // Communication data structures
-  std::vector<std::vector<std::size_t>> new_shared_vertex_indices(
-      MPI::size(mesh.mpi_comm()));
-
-  // Compute modified global vertex indices
-  std::size_t new_index = 0;
-  modified_vertex_indices_global
-      = std::vector<std::int64_t>(mesh.num_vertices(), -1);
-
-  for (auto& vertex : mesh::MeshRange<mesh::Vertex>(mesh))
-  {
-    const std::size_t local_index = vertex.index();
-    if (slave_vertex[local_index])
-    {
-      // Do nothing, will get new master index later
-    }
-    else if (vertex_shared[local_index])
-    {
-      // If shared, let lowest rank process number the vertex
-      auto it = shared_vertices.find(local_index);
-      assert(it != shared_vertices.end());
-      const std::vector<std::pair<std::uint32_t, std::uint32_t>>& sharing_procs
-          = it->second;
-
-      // Figure out if this is the lowest rank process sharing the
-      // vertex
-      std::vector<std::pair<std::uint32_t, std::uint32_t>>::const_iterator
-          min_sharing_rank
-          = std::min_element(sharing_procs.begin(), sharing_procs.end());
-      std::size_t _min_sharing_rank = proc_num + 1;
-      if (min_sharing_rank != sharing_procs.end())
-        _min_sharing_rank = min_sharing_rank->first;
-
-      if (proc_num <= _min_sharing_rank)
-      {
-        // Re-number vertex
-        modified_vertex_indices_global[vertex.index()] = new_index;
-
-        // Add to list to communicate
-        std::vector<std::pair<std::uint32_t, std::uint32_t>>::const_iterator p;
-        for (p = sharing_procs.begin(); p != sharing_procs.end(); ++p)
-        {
-          assert(p->first < new_shared_vertex_indices.size());
-
-          // Local index on remote process
-          new_shared_vertex_indices[p->first].push_back(p->second);
-
-          // Modified global index
-          new_shared_vertex_indices[p->first].push_back(new_index);
-        }
-
-        new_index++;
-      }
-    }
-    else
-      modified_vertex_indices_global[vertex.index()] = new_index++;
-  }
-
-  // Send number of owned entities to compute offset
-  std::size_t offset = MPI::global_offset(mpi_comm, new_index, true);
-
-  // Add process offset to modified indices
-  for (std::size_t i = 0; i < modified_vertex_indices_global.size(); ++i)
-    modified_vertex_indices_global[i] += offset;
-
-  // Add process offset to shared vertex indices before sending
-  for (std::size_t p = 0; p < new_shared_vertex_indices.size(); ++p)
-    for (std::size_t i = 1; i < new_shared_vertex_indices[p].size(); i += 2)
-      new_shared_vertex_indices[p][i] += offset;
-
-  // Send/receive new indices for shared vertices
-  std::vector<std::size_t> received_vertex_data;
-  MPI::all_to_all(mesh.mpi_comm(), new_shared_vertex_indices,
-                  received_vertex_data);
-
-  // Set index for shared vertices that have been numbered by another
-  // process
-  for (std::size_t i = 0; i < received_vertex_data.size(); i += 2)
-  {
-    const std::uint32_t local_index = received_vertex_data[i];
-    const std::size_t recv_new_index = received_vertex_data[i + 1];
-
-    assert(local_index < modified_vertex_indices_global.size());
-    modified_vertex_indices_global[local_index] = recv_new_index;
-  }
-
-  // Request master vertex index from master owner
-  std::vector<std::vector<std::size_t>> master_send_buffer(MPI::size(mpi_comm));
-  std::vector<std::vector<std::size_t>> local_slave_index(MPI::size(mpi_comm));
-  for (auto master = slave_to_master_vertices.begin();
-       master != slave_to_master_vertices.end(); ++master)
-  {
-    const std::uint32_t local_index = master->first;
-    const std::uint32_t master_proc = master->second.first;
-    const std::uint32_t remote_master_local_index = master->second.second;
-    assert(master_proc < local_slave_index.size());
-    assert(master_proc < master_send_buffer.size());
-    local_slave_index[master_proc].push_back(local_index);
-    master_send_buffer[master_proc].push_back(remote_master_local_index);
-  }
-
-  // Send/receive master local indices for slave vertices
-  std::vector<std::vector<std::size_t>> received_slave_vertex_indices;
-  MPI::all_to_all(mpi_comm, master_send_buffer, received_slave_vertex_indices);
-
-  // Send back new master vertex index
-  std::vector<std::vector<std::size_t>> master_vertex_indices(
-      MPI::size(mpi_comm));
-  for (std::size_t p = 0; p < received_slave_vertex_indices.size(); ++p)
-  {
-    const std::vector<std::size_t>& local_master_indices
-        = received_slave_vertex_indices[p];
-    for (std::size_t i = 0; i < local_master_indices.size(); ++i)
-    {
-      std::size_t master_local_index = local_master_indices[i];
-      assert(master_local_index < modified_vertex_indices_global.size());
-      const std::size_t new_index
-          = modified_vertex_indices_global[master_local_index];
-      master_vertex_indices[p].push_back(new_index);
-    }
-  }
-
-  // Send/receive new global master indices for slave vertices
-  std::vector<std::vector<std::size_t>> received_new_slave_vertex_indices;
-  MPI::all_to_all(mpi_comm, master_vertex_indices,
-                  received_new_slave_vertex_indices);
-
-  // Set index for slave vertices
-  for (std::size_t p = 0; p < received_new_slave_vertex_indices.size(); ++p)
-  {
-    const std::vector<std::size_t>& new_indices
-        = received_new_slave_vertex_indices[p];
-    const std::vector<std::size_t>& local_indices = local_slave_index[p];
-    for (std::size_t i = 0; i < new_indices.size(); ++i)
-    {
-      const std::size_t local_index = local_indices[i];
-      const std::size_t new_global_index = new_indices[i];
-
-      assert(local_index < modified_vertex_indices_global.size());
-      modified_vertex_indices_global[local_index] = new_global_index;
-    }
-  }
-
-  // Send new indices to process that share a vertex but were not
-  // responsible for re-numbering
-  return MPI::sum(mpi_comm, new_index);
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build_local_ufc_dofmap(
@@ -1030,7 +818,6 @@ std::shared_ptr<const ufc_dofmap> DofMapBuilder::build_ufc_node_graph(
     std::vector<std::size_t>& node_local_to_global,
     std::vector<int64_t>& num_mesh_entities_global,
     std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh,
-    std::shared_ptr<const mesh::SubDomain> constrained_domain,
     const std::size_t block_size)
 {
   assert(ufc_dofmap);
@@ -1145,243 +932,6 @@ std::shared_ptr<const ufc_dofmap> DofMapBuilder::build_ufc_node_graph(
   }
 
   return dofmaps[0];
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const ufc_dofmap>
-DofMapBuilder::build_ufc_node_graph_constrained(
-    std::vector<std::vector<la_index_t>>& node_dofmap,
-    std::vector<std::size_t>& node_local_to_global,
-    std::vector<int>& node_ufc_local_to_local,
-    std::vector<int64_t>& num_mesh_entities_global,
-    std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh,
-    std::shared_ptr<const mesh::SubDomain> constrained_domain,
-    const std::size_t block_size)
-{
-  assert(ufc_dofmap);
-  assert(constrained_domain);
-
-  // Start timer for dofmap initialization
-  common::Timer t0("Init dofmap from UFC dofmap");
-
-  // Topological dimension
-  const std::size_t D = mesh.topology().dim();
-
-  // Extract needs_entities as vector
-  std::vector<bool> needs_entities(D + 1);
-  for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = (ufc_dofmap->num_entity_dofs(d) > 0);
-
-  // Generate and number required mesh entities (local & global, and
-  // constrained global)
-  std::vector<int64_t> num_mesh_entities_local(D + 1, 0);
-  std::vector<int64_t> num_mesh_entities_global_unconstrained(D + 1, 0);
-  std::vector<bool> required_mesh_entities(D + 1, false);
-  for (std::size_t d = 0; d <= D; ++d)
-  {
-    if (needs_entities[d])
-    {
-      required_mesh_entities[d] = true;
-      mesh.init(d);
-      mesh::DistributedMeshTools::number_entities(mesh, d);
-      num_mesh_entities_local[d] = mesh.num_entities(d);
-      num_mesh_entities_global_unconstrained[d] = mesh.num_entities_global(d);
-    }
-  }
-
-  // Get constrained mesh entities
-  std::vector<std::vector<std::int64_t>> global_entity_indices;
-  compute_constrained_mesh_indices(
-      global_entity_indices, num_mesh_entities_global, required_mesh_entities,
-      mesh, *constrained_domain);
-
-  // Extract sub-dofmaps
-  std::vector<std::shared_ptr<const struct ufc_dofmap>> dofmaps(block_size);
-  std::vector<std::size_t> offset_local(block_size + 1, 0);
-  if (block_size > 1)
-  {
-    std::vector<std::size_t> component(1);
-    std::size_t _offset_local = 0;
-    for (std::size_t i = 0; i < block_size; ++i)
-    {
-      component[0] = i;
-      dofmaps[i] = extract_ufc_sub_dofmap(*ufc_dofmap, _offset_local, component,
-                                          num_mesh_entities_local);
-      offset_local[i] = _offset_local;
-    }
-  }
-  else
-    dofmaps[0] = ufc_dofmap;
-
-  offset_local[block_size] = 0;
-  unsigned int d = 0;
-  for (auto& n : num_mesh_entities_local)
-  {
-    offset_local[block_size] += n * ufc_dofmap->num_entity_dofs(d);
-    ++d;
-  }
-
-  // Allocate space for dof map
-  node_dofmap.clear();
-  node_dofmap.resize(mesh.num_cells());
-
-  // Get standard local element dimension
-  const std::size_t local_dim = dofmaps[0]->num_element_dofs;
-
-  // Holder for UFC 64-bit dofmap integers
-  std::vector<int64_t> ufc_nodes_local(local_dim);
-  std::vector<int64_t> ufc_nodes_global_constrained(local_dim);
-
-  // Allocate entity indices array
-  std::vector<std::vector<int64_t>> entity_indices(D + 1);
-  std::vector<const int64_t*> entity_indices_ptr(entity_indices.size());
-  for (std::size_t d = 0; d <= D; ++d)
-    entity_indices[d].resize(mesh.type().num_entities(d));
-
-  // Resize local-to-global map
-  std::vector<int64_t> node_local_to_global_constrained(offset_local[1]);
-  node_local_to_global.resize(offset_local[1]);
-
-  // Build dofmaps from ufc_dofmap
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
-  {
-    // Get reference to container for cell dofs
-    std::vector<la_index_t>& cell_nodes = node_dofmap[cell.index()];
-    cell_nodes.resize(local_dim);
-
-    // Tabulate standard UFC dof map for first space (local)
-    get_cell_entities_local(cell, entity_indices, needs_entities);
-    // FIXME: Can this be done outside of the cell loop?
-    for (std::size_t i = 0; i < entity_indices.size(); ++i)
-      entity_indices_ptr[i] = entity_indices[i].data();
-    dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
-                              num_mesh_entities_local.data(),
-                              entity_indices_ptr.data());
-    std::copy(ufc_nodes_local.begin(), ufc_nodes_local.end(),
-              cell_nodes.begin());
-
-    // Tabulate standard UFC dof map for first space (global, constrained)
-    get_cell_entities_global_constrained(cell, entity_indices,
-                                         global_entity_indices, needs_entities);
-    // FIXME: Does this need to be done again here
-    for (std::size_t i = 0; i < entity_indices.size(); ++i)
-      entity_indices_ptr[i] = entity_indices[i].data();
-    dofmaps[0]->tabulate_dofs(ufc_nodes_global_constrained.data(),
-                              num_mesh_entities_global.data(),
-                              entity_indices_ptr.data());
-
-    // Build local-to-global map for nodes
-    for (std::size_t i = 0; i < local_dim; ++i)
-    {
-      node_local_to_global[ufc_nodes_local[i]]
-          = ufc_nodes_global_constrained[i];
-    }
-  }
-
-  // Modify for constraints
-  std::map<std::size_t, int> global_to_local;
-  std::vector<std::size_t> node_local_to_global_mod(offset_local[1]);
-  node_ufc_local_to_local.resize(offset_local[1]);
-  int counter = 0;
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
-  {
-    // Get nodes (local) on cell
-    std::vector<la_index_t>& cell_nodes = node_dofmap[cell.index()];
-    for (std::size_t i = 0; i < cell_nodes.size(); ++i)
-    {
-      assert(cell_nodes[i] < (int)node_local_to_global.size());
-      const std::size_t node_index_global = node_local_to_global[cell_nodes[i]];
-      auto it
-          = global_to_local.insert(std::make_pair(node_index_global, counter));
-      if (it.second)
-      {
-        assert(counter < (int)node_local_to_global_mod.size());
-        node_local_to_global_mod[counter] = node_local_to_global[cell_nodes[i]];
-
-        assert(cell_nodes[i] < (int)node_ufc_local_to_local.size());
-        node_ufc_local_to_local[cell_nodes[i]] = counter;
-
-        cell_nodes[i] = counter;
-        counter++;
-      }
-      else
-      {
-        node_local_to_global_mod[it.first->second]
-            = node_local_to_global[cell_nodes[i]];
-        node_ufc_local_to_local[cell_nodes[i]] = it.first->second;
-        cell_nodes[i] = it.first->second;
-      }
-    }
-  }
-  node_local_to_global_mod.resize(counter);
-  node_local_to_global = node_local_to_global_mod;
-
-  return dofmaps[0];
-}
-//-----------------------------------------------------------------------------
-void DofMapBuilder::compute_constrained_mesh_indices(
-    std::vector<std::vector<std::int64_t>>& global_entity_indices,
-    std::vector<int64_t>& num_mesh_entities_global,
-    const std::vector<bool>& needs_mesh_entities, const mesh::Mesh& mesh,
-    const mesh::SubDomain& constrained_domain)
-{
-  // Topological dimension
-  const std::size_t D = mesh.topology().dim();
-  assert(needs_mesh_entities.size() == (D + 1));
-
-  // Compute slave-master pairs
-  std::map<std::uint32_t,
-           std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>>
-      slave_master_mesh_entities;
-  for (std::size_t d = 0; d <= D; ++d)
-  {
-    if (needs_mesh_entities[d])
-    {
-      slave_master_mesh_entities.insert(std::make_pair(
-          d, mesh::PeriodicBoundaryComputation::compute_periodic_pairs(
-                 mesh, constrained_domain, d)));
-    }
-  }
-
-  global_entity_indices.resize(D + 1);
-  num_mesh_entities_global.resize(D + 1);
-  std::fill(num_mesh_entities_global.begin(), num_mesh_entities_global.end(),
-            0);
-
-  // Compute number of mesh entities
-  for (std::size_t d = 0; d <= D; ++d)
-  {
-    if (needs_mesh_entities[d])
-    {
-      // Get master-slave map
-      assert(slave_master_mesh_entities.find(d)
-             != slave_master_mesh_entities.end());
-      const auto& slave_to_master_mesh_entities
-          = slave_master_mesh_entities.find(d)->second;
-      if (d == 0)
-      {
-        // Compute modified global vertex indices
-        const std::size_t num_vertices = build_constrained_vertex_indices(
-            mesh, slave_to_master_mesh_entities, global_entity_indices[0]);
-        num_mesh_entities_global[0] = num_vertices;
-      }
-      else
-      {
-        // Get number of entities
-        // std::map<std::int32_t, std::set<std::uint32_t>> shared_entities;
-        // const std::size_t num_entities
-        //     = mesh::DistributedMeshTools::number_entities(
-        //         mesh, slave_to_master_mesh_entities,
-        //         global_entity_indices[d],
-        //         shared_entities, d);
-        std::map<std::int32_t, std::set<std::uint32_t>> shared_entities;
-        std::size_t num_entities;
-        std::tie(global_entity_indices[d], shared_entities, num_entities)
-            = mesh::DistributedMeshTools::number_entities(
-                mesh, slave_to_master_mesh_entities, d);
-        num_mesh_entities_global[d] = num_entities;
-      }
-    }
-  }
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_shared_nodes(
@@ -1741,48 +1291,6 @@ void DofMapBuilder::get_cell_entities_global(
 }
 // TODO: The above and below functions are _very_ similar, can they be
 // combined?
-//-----------------------------------------------------------------------------
-void DofMapBuilder::get_cell_entities_global_constrained(
-    const mesh::Cell& cell, std::vector<std::vector<int64_t>>& entity_indices,
-    const std::vector<std::vector<std::int64_t>>& global_entity_indices,
-    const std::vector<bool>& needs_mesh_entities)
-{
-  const std::size_t D = cell.mesh().topology().dim();
-  for (std::size_t d = 0; d < D; ++d)
-  {
-    if (needs_mesh_entities[d])
-    {
-      if (global_entity_indices[d].empty())
-      {
-        log::dolfin_error(
-            "DofMapBuilder.cpp", "get_cell_entities_global_constrained",
-            "Missing global entity indices needed for cell entity "
-            "tabulation.");
-      }
-      if (!global_entity_indices[d].empty()) // TODO: Can this be false? If so
-                                             // the entity_indices array will
-                                             // contain garbage
-      {
-        const auto& global_indices = global_entity_indices[d];
-        for (std::size_t i = 0; i < cell.num_entities(d); ++i)
-          entity_indices[d][i] = global_indices[cell.entities(d)[i]];
-      }
-    }
-  }
-  // Handle cell index separately because cell.entities(D) doesn't work.
-  if (needs_mesh_entities[D])
-  {
-    if (global_entity_indices[D].empty())
-    {
-      log::dolfin_error(
-          "DofMapBuilder.cpp", "get_cell_entities_global_constrained",
-          "Missing global cell index needed for cell index tabulation.");
-    }
-    // entity_indices[D][0] = cell.index(); // This was the line here before,
-    // don't understand how that didn't fail miserably.
-    entity_indices[D][0] = global_entity_indices[D][cell.index()];
-  }
-}
 //-----------------------------------------------------------------------------
 std::vector<int64_t> DofMapBuilder::compute_num_mesh_entities_local(
     const mesh::Mesh& mesh, const std::vector<bool>& needs_mesh_entities)

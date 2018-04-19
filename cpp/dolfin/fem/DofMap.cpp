@@ -28,22 +28,7 @@ DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
   assert(_ufc_dofmap);
 
   // Call dofmap builder
-  DofMapBuilder::build(*this, mesh, std::shared_ptr<const mesh::SubDomain>());
-}
-//-----------------------------------------------------------------------------
-DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
-               const mesh::Mesh& mesh,
-               std::shared_ptr<const mesh::SubDomain> constrained_domain)
-    : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-      _global_dimension(0), _ufc_offset(0)
-{
-  assert(_ufc_dofmap);
-
-  // Store constrained domain in base class
-  this->constrained_domain = constrained_domain;
-
-  // Call dofmap builder
-  DofMapBuilder::build(*this, mesh, constrained_domain);
+  DofMapBuilder::build(*this, mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
@@ -67,7 +52,7 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   check_provided_entities(*_ufc_dofmap, mesh);
 
   // Build new dof map
-  DofMapBuilder::build(*this, mesh, constrained_domain);
+  DofMapBuilder::build(*this, mesh);
 
   // Dimension sanity checks
   assert(dofmap_view._dofmap.size()

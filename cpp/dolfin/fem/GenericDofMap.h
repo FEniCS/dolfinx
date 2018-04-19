@@ -42,9 +42,6 @@ namespace fem
 class GenericDofMap : public common::Variable
 {
 public:
-  /// Constructor
-  GenericDofMap() {}
-
   /// True if dof map is a view into another map (is a sub-dofmap)
   virtual bool is_view() const = 0;
 
@@ -141,10 +138,6 @@ public:
 
   /// Get block size
   virtual int block_size() const = 0;
-
-  /// Subdomain mapping constrained boundaries, e.g. periodic
-  /// conditions
-  std::shared_ptr<const mesh::SubDomain> constrained_domain;
 };
 } // namespace fem
 } // namespace dolfin
