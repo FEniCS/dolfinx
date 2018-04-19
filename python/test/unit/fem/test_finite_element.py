@@ -15,12 +15,12 @@ from dolfin_utils.test import fixture
 xfail = pytest.mark.xfail(strict=True)
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)),
-                                          (UnitCubeMesh, (2, 2, 2)),
-                                          (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral)),
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 4, 4)),
+                                          (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
+                                          (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
                                           # cell_normal has not been implemented for hex cell
                                           # cell.orientation() does not work
-                                          xfail((UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron)))])
+                                          xfail((UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron)))])
 def test_evaluate_dofs(mesh_factory):
 
     func, args = mesh_factory
@@ -80,8 +80,8 @@ def test_evaluate_dofs_manifolds_affine():
     "Testing evaluate_dofs vs tabulated coordinates."
 
     n = 4
-    mesh = BoundaryMesh(UnitSquareMesh(n, n), "exterior")
-    mesh2 = BoundaryMesh(UnitCubeMesh(n, n, n), "exterior")
+    mesh = BoundaryMesh(UnitSquareMesh(MPI.comm_world, n, n), "exterior")
+    mesh2 = BoundaryMesh(UnitCubeMesh(MPI.comm_world, n, n, n), "exterior")
     DG0 = FunctionSpace(mesh, "DG", 0)
     DG1 = FunctionSpace(mesh, "DG", 1)
     CG1 = FunctionSpace(mesh, "CG", 1)
@@ -111,10 +111,10 @@ def test_evaluate_dofs_manifolds_affine():
                 assert round(values0[i] - values1[i], 7) == 0
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)),
-                                          (UnitCubeMesh, (2, 2, 2)),
-                                          (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral)),
-                                          (UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 4, 4)),
+                                          (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
+                                          (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
+                                          (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron))])
 def test_tabulate_coord(mesh_factory):
 
     func, args = mesh_factory

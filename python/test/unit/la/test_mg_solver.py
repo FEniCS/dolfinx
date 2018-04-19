@@ -9,15 +9,11 @@
 
 from dolfin import *
 import pytest
-from dolfin_utils.test import (skip_if_not_PETSc,
-                               skip_if_not_petsc4py,
-                               pushpop_parameters)
+from dolfin_utils.test import  skip_if_not_petsc4py
 
 @pytest.mark.skip # See https://bitbucket.org/fenics-project/dolfin/issues/938
 @skip_if_not_petsc4py
-def test_mg_solver_laplace(pushpop_parameters):
-
-    parameters["linear_algebra_backend"] = "PETSc"
+def test_mg_solver_laplace():
 
     # Create meshes and function spaces
     meshes = [UnitSquareMesh(N, N) for N in [16, 32, 64]]

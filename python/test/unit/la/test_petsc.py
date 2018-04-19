@@ -9,16 +9,14 @@ GenericFoo interface
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import (PETScVector, PETScMatrix, PETScLUSolver,
-                    PETScKrylovSolver, UnitSquareMesh, TrialFunction,
+from dolfin.la import PETScVector, PETScMatrix, PETScLUSolver, PETScKrylovSolver
+from dolfin import (UnitSquareMesh, TrialFunction,
                     TestFunction, MPI,
-                    FunctionSpace, assemble, Constant, dx, parameters)
-from dolfin_utils.test import (skip_if_not_PETSc,
-                               skip_if_not_petsc4py,
+                    FunctionSpace, Constant, dx)
+from dolfin.parameter import parameters
+from dolfin_utils.test import (skip_if_not_petsc4py,
                                pushpop_parameters)
 
-
-@skip_if_not_PETSc
 def test_vector():
     "Test PETScVector interface"
 
@@ -31,7 +29,6 @@ def test_vector():
     assert x.get_options_prefix() == prefix
 
 
-@skip_if_not_PETSc
 def test_krylov_solver_norm_type():
     """Check setting of norm type used in testing for convergence by
     PETScKrylovSolver
@@ -65,12 +62,8 @@ def test_krylov_solver_norm_type():
             assert solver.get_norm_type() == norm
 
 
-@skip_if_not_PETSc
 def test_krylov_solver_options_prefix(pushpop_parameters):
     "Test set/get PETScKrylov solver prefix option"
-
-    # Set backend
-    parameters["linear_algebra_backend"] = "PETSc"
 
     # Prefix
     prefix = "test_foo_"
@@ -95,7 +88,6 @@ def test_krylov_solver_options_prefix(pushpop_parameters):
     assert solver.get_options_prefix() == prefix
 
 
-@skip_if_not_PETSc
 def test_options_prefix(pushpop_parameters):
     "Test set/get prefix option for PETSc objects"
 
