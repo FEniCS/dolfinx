@@ -26,7 +26,8 @@ using namespace dolfin::mesh;
 Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            const Eigen::Ref<const EigenRowArrayXXd>& points,
            const Eigen::Ref<const EigenRowArrayXXi64>& cells,
-           const std::vector<std::int64_t>& global_cell_indices)
+           const std::vector<std::int64_t>& global_cell_indices,
+           std::uint32_t num_ghost_cells)
     : common::Variable("mesh", "DOLFIN mesh"),
       _cell_type(mesh::CellType::create(type)), _topology(_cell_type->dim()),
       _geometry(points), _coordinate_dofs(_cell_type->dim()), _degree(1),
@@ -70,17 +71,9 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
 
   // Number of cells, local (not ghost) and global.
-  std::int32_t num_cells = cells.rows();
-  std::int32_t num_local_cells = num_cells;
-  if (!global_cell_indices.empty())
-  {
-    // Look for negative indices at end of range, indicating ghost cells
-    for (std::int32_t j = num_cells - 1; j >= 0; --j)
-      if (std::signbit(global_cell_indices[j]))
-        --num_local_cells;
-      else
-        break;
-  }
+  const std::int32_t num_cells = cells.rows();
+  assert(num_ghost_cells < num_cells);
+  const std::int32_t num_local_cells = num_cells - num_ghost_cells;
   const std::uint64_t num_cells_global = MPI::sum(comm, num_local_cells);
 
   // Compute point local-to-global map from global indices, and compute cell
@@ -140,23 +133,24 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   _topology.init_global_indices(tdim, num_cells);
   _topology.connectivity(tdim, 0).init(num_cells, num_vertices_per_cell);
 
-  // Add cells
-  // Only copies the first few entries on each row corresponding to vertices.
   // Find the max vertex index of non-ghost cells.
-  std::uint32_t max_vertex = 0;
-  for (std::int32_t i = 0; i != num_cells; ++i)
+  if (num_ghost_cells > 0)
   {
-    _topology.connectivity(tdim, 0).set(i, coordinate_dofs.row(i).data());
-    if (i < num_local_cells)
-    {
-      const std::uint32_t max_vertex_row = coordinate_dofs.row(i).maxCoeff();
-      max_vertex = (max_vertex_row > max_vertex) ? max_vertex_row : max_vertex;
-    }
-  }
+    const std::uint32_t max_vertex
+        = coordinate_dofs.topLeftCorner(num_local_cells, num_vertices_per_cell)
+              .maxCoeff();
 
-  // Initialise number of local non-ghost vertices
-  const std::uint32_t num_non_ghost_vertices = max_vertex + 1;
-  _topology.init_ghost(0, num_non_ghost_vertices);
+    // Initialise number of local non-ghost vertices
+    const std::uint32_t num_non_ghost_vertices = max_vertex + 1;
+    _topology.init_ghost(0, num_non_ghost_vertices);
+  }
+  else
+    _topology.init_ghost(0, num_vertices);
+
+  // Add cells. Only copies the first few entries on each row corresponding to
+  // vertices.
+  for (std::int32_t i = 0; i < num_cells; ++i)
+    _topology.connectivity(tdim, 0).set(i, coordinate_dofs.row(i).data());
 
   // Global cell indices - construct if none given
   if (global_cell_indices.empty())
@@ -168,11 +162,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   }
   else
   {
-    for (std::int32_t i = 0; i != num_local_cells; ++i)
+    for (std::int32_t i = 0; i != num_cells; ++i)
       _topology.set_global_index(tdim, i, global_cell_indices[i]);
-    // Set ghost cell indices positive again
-    for (std::int32_t i = num_local_cells; i != num_cells; ++i)
-      _topology.set_global_index(tdim, i, -global_cell_indices[i] - 1);
   }
 }
 //-----------------------------------------------------------------------------

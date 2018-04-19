@@ -619,12 +619,7 @@ MeshPartitioning::distribute_cells(
       if (owner == mpi_rank)
         ++c;
       else
-      {
-        // Set ghost (unowned) cells to negative index (subtract 1 because of -0
-        // not working)
-        new_global_cell_indices[idx] = -new_global_cell_indices[idx] - 1;
         ++gc;
-      }
     }
   }
 

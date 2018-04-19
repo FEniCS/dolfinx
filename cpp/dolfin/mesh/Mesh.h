@@ -75,8 +75,7 @@ public:
   /// Cells should be listed only on the processes they appear on, i.e. mesh
   /// partitioning should be performed on the topology data before calling the
   /// Mesh constructor. Ghost cells, if present, must be at the end of the list
-  /// of cells, and must have their global index set negative.
-  /// (ghost_cell_global_index = -normal_global_index - 1)
+  /// of cells, and the number of ghost cells must be provided.
   ///
   /// @param comm (MPI_Comm)
   ///         MPI Communicator
@@ -91,11 +90,14 @@ public:
   ///         Array of global cell indices. If not empty, this must be same size
   ///         as the number of rows in cells. If empty, global cell indices will
   ///         be constructed, beginning from 0 on process 0.
-  ///
+  /// @param num_ghost_cells
+  ///         Number of ghost cells on this process (must be at end of list of
+  ///         cells)
   Mesh(MPI_Comm comm, mesh::CellType::Type type,
        const Eigen::Ref<const EigenRowArrayXXd>& points,
        const Eigen::Ref<const EigenRowArrayXXi64>& cells,
-       const std::vector<std::int64_t>& global_cell_indices);
+       const std::vector<std::int64_t>& global_cell_indices,
+       std::uint32_t num_ghost_cells = 0);
 
   /// Copy constructor.
   ///
