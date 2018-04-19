@@ -53,17 +53,6 @@ public:
   ///         The mesh.
   DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh);
 
-  /// Create a periodic dof map on mesh (mesh is not stored)
-  ///
-  /// @param[in] ufc_dofmap (ufc_dofmap)
-  ///         The ufc_dofmap.
-  /// @param[in] mesh (mesh::Mesh)
-  ///         The mesh.
-  /// @param[in] constrained_domain (mesh::SubDomain)
-  ///         The subdomain marking the constrained (tied) boundaries.
-  DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh,
-         std::shared_ptr<const mesh::SubDomain> constrained_domain);
-
 private:
   // Create a sub-dofmap (a view) from parent_dofmap
   DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& component,
@@ -73,15 +62,20 @@ private:
   DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
          const DofMap& dofmap_view, const mesh::Mesh& mesh);
 
-  // Copy constructor
-  DofMap(const DofMap& dofmap) = default;
-
 public:
+  // Copy constructor
+  DofMap(const DofMap& dofmap) = delete;
+
   /// Move constructor
   DofMap(DofMap&& dofmap) = default;
 
   /// Destructor
   ~DofMap() = default;
+
+  DofMap& operator=(const DofMap& dofmap) = delete;
+
+  /// Move assignment
+  DofMap& operator=(DofMap&& dofmap) = default;
 
   /// True iff dof map is a view into another map
   ///
@@ -283,9 +277,9 @@ private:
   // UFC dof map
   std::shared_ptr<const ufc_dofmap> _ufc_dofmap;
 
-  // Number global mesh entities. This is usually the same as what
-  // is reported by the mesh, but will differ for dofmaps
-  // constrained, e.g. dofmaps with periodic bcs. It is stored in
+  // FIXME: Can this be removed now that constrained domains are not
+  //        handled via the dofmap?
+  // Number global mesh entities. It is stored in
   // order to compute the global dimension of dofmaps that are
   // constructed from a sub-dofmap.
   std::vector<int64_t> _num_mesh_entities_global;

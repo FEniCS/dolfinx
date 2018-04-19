@@ -169,18 +169,13 @@ void fem(py::module& m)
                  = instance.tabulate_local_to_global_dofs();
              return py::array_t<std::size_t>(dofs.size(), dofs.data());
            })
-      .def("set", &dolfin::fem::GenericDofMap::set)
-      .def_readonly("constrained_domain",
-                    &dolfin::fem::GenericDofMap::constrained_domain);
+      .def("set", &dolfin::fem::GenericDofMap::set);
 
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>,
              dolfin::fem::GenericDofMap>(m, "DofMap", "DofMap object")
       .def(py::init<std::shared_ptr<const ufc_dofmap>,
                     const dolfin::mesh::Mesh&>())
-      .def(
-          py::init<std::shared_ptr<const ufc_dofmap>, const dolfin::mesh::Mesh&,
-                   std::shared_ptr<const dolfin::mesh::SubDomain>>())
       .def("ownership_range", &dolfin::fem::DofMap::ownership_range)
       .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs);
 

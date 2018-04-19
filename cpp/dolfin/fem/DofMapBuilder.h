@@ -30,7 +30,7 @@ namespace mesh
 class Cell;
 class Mesh;
 class SubDomain;
-}
+} // namespace mesh
 
 namespace fem
 {
@@ -48,9 +48,7 @@ public:
   ///
   /// @param[out] dofmap
   /// @param[in] dolfin_mesh
-  /// @param[in] constrained_domain
-  static void build(fem::DofMap& dofmap, const mesh::Mesh& dolfin_mesh,
-                    std::shared_ptr<const mesh::SubDomain> constrained_domain);
+  static void build(fem::DofMap& dofmap, const mesh::Mesh& dolfin_mesh);
 
   /// Build sub-dofmap. This is a view into the parent dofmap.
   ///
@@ -64,16 +62,7 @@ public:
                                  const mesh::Mesh& mesh);
 
 private:
-  // Build modified global entity indices that account for periodic
-  // bcs
-  static std::size_t build_constrained_vertex_indices(
-      const mesh::Mesh& mesh,
-      const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>&
-          slave_to_master_vertices,
-      std::vector<std::int64_t>& modified_vertex_indices_global);
-
-  // Build simple local UFC-based dofmap data structure (does not
-  // account for master/slave constraints)
+  // Build simple local UFC-based dofmap data structure
   static void
   build_local_ufc_dofmap(std::vector<std::vector<dolfin::la_index_t>>& dofmap,
                          const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
@@ -132,28 +121,12 @@ private:
   static std::size_t compute_blocksize(const ufc_dofmap& ufc_dofmap,
                                        std::size_t tdim);
 
-  static void compute_constrained_mesh_indices(
-      std::vector<std::vector<std::int64_t>>& global_entity_indices,
-      std::vector<int64_t>& num_mesh_entities_global,
-      const std::vector<bool>& needs_mesh_entities, const mesh::Mesh& mesh,
-      const mesh::SubDomain& constrained_domain);
-
-  static std::shared_ptr<const ufc_dofmap> build_ufc_node_graph(
-      std::vector<std::vector<la_index_t>>& node_dofmap,
-      std::vector<std::size_t>& node_local_to_global,
-      std::vector<int64_t>& num_mesh_entities_global,
-      std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh,
-      std::shared_ptr<const mesh::SubDomain> constrained_domain,
-      const std::size_t block_size);
-
-  static std::shared_ptr<const ufc_dofmap> build_ufc_node_graph_constrained(
-      std::vector<std::vector<la_index_t>>& node_dofmap,
-      std::vector<std::size_t>& node_local_to_global,
-      std::vector<int>& node_ufc_local_to_local,
-      std::vector<int64_t>& num_mesh_entities_global,
-      std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh,
-      std::shared_ptr<const mesh::SubDomain> constrained_domain,
-      const std::size_t block_size);
+  static std::shared_ptr<const ufc_dofmap>
+  build_ufc_node_graph(std::vector<std::vector<la_index_t>>& node_dofmap,
+                       std::vector<std::size_t>& node_local_to_global,
+                       std::vector<int64_t>& num_mesh_entities_global,
+                       std::shared_ptr<const ufc_dofmap> ufc_dofmap,
+                       const mesh::Mesh& mesh, const std::size_t block_size);
 
   // Mark shared nodes. Boundary nodes are assigned a random
   // positive integer, interior nodes are marked as -1, interior
@@ -184,16 +157,11 @@ private:
                            std::vector<std::vector<int64_t>>& entity_indices,
                            const std::vector<bool>& needs_mesh_entities);
 
-  static void get_cell_entities_global_constrained(
-      const mesh::Cell& cell, std::vector<std::vector<int64_t>>& entity_indices,
-      const std::vector<std::vector<std::int64_t>>& global_entity_indices,
-      const std::vector<bool>& needs_mesh_entities);
-
   // Compute number of mesh entities for dimensions required by
   // dofmap
   static std::vector<int64_t>
   compute_num_mesh_entities_local(const mesh::Mesh& mesh,
                                   const std::vector<bool>& needs_mesh_entities);
 };
-}
-}
+} // namespace fem
+} // namespace dolfin
