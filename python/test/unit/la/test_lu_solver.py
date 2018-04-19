@@ -31,7 +31,7 @@ def test_lu_solver():
     solver.solve(x, b)
     assert round(x.norm("l2") - norm, 10) == 0
 
-
+@pytest.mark.skip
 def test_lu_solver_reuse():
     """Test that LU re-factorisation is only performed after
     set_operator(A) is called"""
