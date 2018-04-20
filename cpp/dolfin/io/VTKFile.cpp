@@ -254,7 +254,7 @@ void VTKFile::write_point_data(const function::GenericFunction& u,
   fp.precision(16);
 
   // Get function values at vertices
-  auto values = u.compute_vertex_values(mesh);
+  auto values = u.compute_point_values(mesh);
 
   if (rank == 0)
   {

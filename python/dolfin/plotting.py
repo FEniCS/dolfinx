@@ -131,7 +131,7 @@ def mplot_function(ax, f, **kwargs):
     elif f.value_rank() == 0:
         # Scalar function, interpolated to vertices
         # TODO: Handle DG1?
-        C = f.compute_vertex_values(mesh)
+        C = f.compute_point_values(mesh)
         if gdim == 2 and tdim == 2:
             mode = kwargs.pop("mode", "contourf")
             if mode == "contourf":
@@ -183,7 +183,7 @@ def mplot_function(ax, f, **kwargs):
 
     elif f.value_rank() == 1:
         # Vector function, interpolated to vertices
-        w0 = f.compute_vertex_values(mesh)
+        w0 = f.compute_point_values(mesh)
         nv = mesh.num_vertices()
         if w0.shape[1] != gdim:
             raise AttributeError(

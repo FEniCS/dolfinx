@@ -147,7 +147,7 @@ public:
   /// @returns    vertex_values (EigenRowArrayXXd)
   ///         The values at all vertices.
   virtual EigenRowArrayXXd
-  compute_vertex_values(const mesh::Mesh& mesh) const override;
+  compute_point_values(const mesh::Mesh& mesh) const override;
 
   /// Return shared pointer to function space (NULL)
   /// Expression does not have a FunctionSpace

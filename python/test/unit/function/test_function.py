@@ -44,7 +44,7 @@ def test_name_argument(W):
     assert str(v) == "v"
 
 
-def test_compute_vertex_values(V, W, mesh):
+def test_compute_point_values(V, W, mesh):
     from numpy import zeros, all, array
     u = Function(V)
     v = Function(W)
@@ -52,13 +52,13 @@ def test_compute_vertex_values(V, W, mesh):
     u.vector()[:] = 1.
     v.vector()[:] = 1.
 
-    u_values = u.compute_vertex_values(mesh)
-    v_values = v.compute_vertex_values(mesh)
+    u_values = u.compute_point_values(mesh)
+    v_values = v.compute_point_values(mesh)
 
     u_ones = numpy.ones_like(u_values, dtype=numpy.float64)
     assert all(numpy.isclose(u_values, u_ones))
 
-    u_values2 = u.compute_vertex_values()
+    u_values2 = u.compute_point_values()
 
     assert all(u_values == u_values2)
 
