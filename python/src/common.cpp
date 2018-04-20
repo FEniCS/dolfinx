@@ -97,8 +97,8 @@ void common(py::module& m)
       .def("local_range", &dolfin::common::IndexMap::local_range)
       .def("local_to_global_unowned",
            [](dolfin::common::IndexMap& self) {
-             return Eigen::Map<const Eigen::Matrix<std::size_t, Eigen::Dynamic,
-                                                   1>>(
+             return Eigen::Map<
+                 const Eigen::Matrix<std::size_t, Eigen::Dynamic, 1>>(
                  self.local_to_global_unowned().data(),
                  self.local_to_global_unowned().size());
            },
@@ -122,10 +122,7 @@ void common(py::module& m)
       .def("resume", &dolfin::common::Timer::resume)
       .def("elapsed", &dolfin::common::Timer::elapsed);
 
-  // dolfin::common::Timer enums
-  py::enum_<dolfin::TimingClear>(m, "TimingClear")
-      .value("clear", dolfin::TimingClear::clear)
-      .value("keep", dolfin::TimingClear::keep);
+  // dolfin::common::Timer enum
   py::enum_<dolfin::TimingType>(m, "TimingType")
       .value("wall", dolfin::TimingType::wall)
       .value("system", dolfin::TimingType::system)
@@ -133,16 +130,14 @@ void common(py::module& m)
 
   // dolfin/common free functions
   m.def("timing", &dolfin::timing);
-  m.def("timings",
-        [](dolfin::TimingClear clear, std::vector<dolfin::TimingType> type) {
-          std::set<dolfin::TimingType> _type(type.begin(), type.end());
-          return dolfin::timings(clear, _type);
-        });
-  m.def("list_timings",
-        [](dolfin::TimingClear clear, std::vector<dolfin::TimingType> type) {
-          std::set<dolfin::TimingType> _type(type.begin(), type.end());
-          dolfin::list_timings(clear, _type);
-        });
+  m.def("timings", [](std::vector<dolfin::TimingType> type) {
+    std::set<dolfin::TimingType> _type(type.begin(), type.end());
+    return dolfin::timings(_type);
+  });
+  m.def("list_timings", [](std::vector<dolfin::TimingType> type) {
+    std::set<dolfin::TimingType> _type(type.begin(), type.end());
+    dolfin::list_timings(_type);
+  });
 
   // dolfin::SubSystemsManager
   py::class_<dolfin::common::SubSystemsManager,
@@ -266,4 +261,4 @@ void mpi(py::module& m)
         return dolfin::MPI::avg(comm.get(), value);
       });
 }
-}
+} // namespace dolfin_wrappers

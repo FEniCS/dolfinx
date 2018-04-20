@@ -12,7 +12,7 @@ import gc
 import random
 from time import sleep
 
-from dolfin import timing, TimingClear
+from dolfin import timing
 from dolfin.timer import Timer
 
 
@@ -35,7 +35,7 @@ def test_context_manager_named():
     del t
 
     # Check timing
-    t = timing(task, TimingClear.clear)
+    t = timing(task)
     assert t[0] == 1
     assert t[1] >= 0.05
 

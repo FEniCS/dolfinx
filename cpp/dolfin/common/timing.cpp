@@ -17,8 +17,8 @@ namespace common
 {
 Timer __global_timer;
 Timer __tic_timer;
-}
-}
+} // namespace common
+} // namespace dolfin
 
 using namespace dolfin;
 using namespace dolfin::common;
@@ -30,19 +30,18 @@ double dolfin::toc() { return std::get<0>(__tic_timer.elapsed()); }
 //-----------------------------------------------------------------------------
 double dolfin::time() { return std::get<0>(__global_timer.elapsed()); }
 //-----------------------------------------------------------------------------
-Table dolfin::timings(TimingClear clear, std::set<TimingType> type)
+Table dolfin::timings(std::set<TimingType> type)
 {
-  return log::LogManager::logger().timings(clear, type);
+  return log::LogManager::logger().timings(type);
 }
 //-----------------------------------------------------------------------------
-void dolfin::list_timings(TimingClear clear, std::set<TimingType> type)
+void dolfin::list_timings(std::set<TimingType> type)
 {
-  log::LogManager::logger().list_timings(clear, type);
+  log::LogManager::logger().list_timings(type);
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::size_t, double, double, double>
-dolfin::timing(std::string task, TimingClear clear)
+std::tuple<std::size_t, double, double, double> dolfin::timing(std::string task)
 {
-  return log::LogManager::logger().timing(task, clear);
+  return log::LogManager::logger().timing(task);
 }
 //-----------------------------------------------------------------------------
