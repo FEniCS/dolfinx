@@ -512,8 +512,8 @@ xfail_ffc = pytest.mark.xfail(raises=Exception)
     "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'N1curl', 2)",
     xfail_ffc("FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), 'N1curl', 2)"),
     xfail_ffc("FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   'N1curl', 2)"),
-    xfail_ffc("FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'RT', 1)"),
-    xfail_ffc("FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'RT', 1)"),
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'RT', 1)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'RT', 1)",
     xfail_ffc("FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), 'RT', 1)"),
     xfail_ffc("FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   'RT', 1)"),
 ])
