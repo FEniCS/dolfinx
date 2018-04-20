@@ -101,10 +101,12 @@ private:
   compute_global_dofs(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                       const std::vector<int64_t>& num_mesh_entities_local);
 
+  // FIXME: Try to simplify this function to make pure. Needs some care
+  //        because it's called recursively.
   // Iterate recursively over all sub-dof maps to find global
   // degrees of freedom
   static void
-  compute_global_dofs(std::set<std::size_t>& global_dofs,
+  _compute_global_dofs(std::set<std::size_t>& global_dofs,
                       std::size_t& offset_local,
                       std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                       const std::vector<int64_t>& num_mesh_entities_local);
@@ -130,14 +132,15 @@ private:
   // positive integer, interior nodes are marked as -1, interior
   // nodes in ghost layer of other processes are marked -2, and
   // ghost nodes are marked as -3
-  static void
-  compute_shared_nodes(std::vector<int>& boundary_nodes,
-                       const std::vector<std::vector<la_index_t>>& node_dofmap,
+  static std::vector<int>
+  compute_shared_nodes(const std::vector<std::vector<la_index_t>>& node_dofmap,
                        const std::size_t num_nodes_local,
                        const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
 
-  static void compute_node_reordering(
-      common::IndexMap& index_map, std::vector<int>& old_to_new_local,
+  // FIXME: document better
+  // Return (old-to-new_local, local_to_global_unowned) maps
+  static std::pair<std::vector<int>, std::vector<std::size_t>>
+  compute_node_reordering(
       const std::unordered_map<int, std::vector<int>>&
           node_to_sharing_processes,
       const std::vector<std::size_t>& old_local_to_global,
