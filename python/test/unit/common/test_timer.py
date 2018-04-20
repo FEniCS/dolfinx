@@ -12,8 +12,8 @@ import gc
 import random
 from time import sleep
 
-from dolfin import *
-from dolfin.cpp.common import Timer
+from dolfin import timing, TimingClear
+from dolfin.timer import Timer
 
 
 # Seed random generator for determinism
@@ -39,11 +39,8 @@ def test_context_manager_named():
     assert t[0] == 1
     assert t[1] >= 0.05
 
-@pytest.mark.xfail
 def test_context_manager_anonymous():
     """Test that anonymous Timer works as context manager"""
     with Timer() as t:
         sleep(0.05)
         assert t.elapsed()[0] >= 0.05
-
-
