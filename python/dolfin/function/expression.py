@@ -217,8 +217,8 @@ class BaseExpression(ufl.Coefficient):
     def cpp_object(self):
         return self._cpp_object
 
-    def compute_vertex_values(self, mesh):
-        return self._cpp_object.compute_vertex_values(mesh)
+    def compute_point_values(self, mesh):
+        return self._cpp_object.compute_point_values(mesh)
 
 
 class UserExpression(BaseExpression):

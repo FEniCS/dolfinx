@@ -17,7 +17,7 @@ def test_manifold_point_search():
     ]
     mesh = Mesh(MPI.comm_world, CellType.Type.triangle,
                 numpy.array(vertices, dtype=numpy.float64),
-                numpy.array(cells, dtype=numpy.int32))
+                numpy.array(cells, dtype=numpy.int32), [])
 
 #    mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0"), degree=0))
 

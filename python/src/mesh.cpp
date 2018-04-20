@@ -11,6 +11,7 @@
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/CellType.h>
+#include <dolfin/mesh/CoordinateDofs.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Face.h>
 #include <dolfin/mesh/Facet.h>
@@ -59,12 +60,27 @@ void mesh(py::module& m)
       .def("cell_type", &dolfin::mesh::CellType::cell_type)
       .def("description", &dolfin::mesh::CellType::description);
 
+  // dolfin::mesh::CoordinateDofs class
+  py::class_<dolfin::mesh::CoordinateDofs,
+             std::shared_ptr<dolfin::mesh::CoordinateDofs>>(
+      m, "CoordinateDofs", "CoordinateDofs object")
+      .def("entity_points", [](const dolfin::mesh::CoordinateDofs& self,
+                               std::size_t dim) {
+        const dolfin::mesh::MeshConnectivity& conn = self.entity_points(dim);
+        return py::array({(std::int32_t)(conn.size() / conn.size(0)),
+                          (std::int32_t)conn.size(0)},
+                         self.entity_points(dim).connections().data());
+      });
+
   // dolfin::mesh::MeshGeometry class
   py::class_<dolfin::mesh::MeshGeometry,
              std::shared_ptr<dolfin::mesh::MeshGeometry>>(m, "MeshGeometry",
                                                           "MeshGeometry object")
       .def_property_readonly("dim", &dolfin::mesh::MeshGeometry::dim,
                              "Geometric dimension")
+      .def("num_points", &dolfin::mesh::MeshGeometry::num_points)
+      .def("num_points_global", &dolfin::mesh::MeshGeometry::num_points_global)
+      .def("global_indices", &dolfin::mesh::MeshGeometry::global_indices)
       .def("x", &dolfin::mesh::MeshGeometry::x,
            py::return_value_policy::reference_internal,
            "Return coordinates of a point")
@@ -116,9 +132,10 @@ void mesh(py::module& m)
       .def(py::init([](const MPICommWrapper comm,
                        dolfin::mesh::CellType::Type type,
                        Eigen::Ref<const dolfin::EigenRowArrayXXd> geometry,
-                       Eigen::Ref<const dolfin::EigenRowArrayXXi64> topology) {
-        return std::make_unique<dolfin::mesh::Mesh>(comm.get(), type, geometry,
-                                                    topology);
+                       Eigen::Ref<const dolfin::EigenRowArrayXXi64> topology,
+                       const std::vector<std::int64_t>& global_cell_indices) {
+        return std::make_unique<dolfin::mesh::Mesh>(
+            comm.get(), type, geometry, topology, global_cell_indices);
       }))
       .def("bounding_box_tree", &dolfin::mesh::Mesh::bounding_box_tree)
       .def("cells",
@@ -132,6 +149,7 @@ void mesh(py::module& m)
       .def_property_readonly("geometry",
                              py::overload_cast<>(&dolfin::mesh::Mesh::geometry),
                              "Mesh geometry")
+      .def("coordinate_dofs", &dolfin::mesh::Mesh::coordinate_dofs)
       .def("hash", &dolfin::mesh::Mesh::hash)
       .def("hmax", &dolfin::mesh::Mesh::hmax)
       .def("hmin", &dolfin::mesh::Mesh::hmin)

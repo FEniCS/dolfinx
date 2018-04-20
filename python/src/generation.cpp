@@ -8,6 +8,7 @@
 #include <dolfin/generation/BoxMesh.h>
 #include <dolfin/generation/IntervalMesh.h>
 #include <dolfin/generation/RectangleMesh.h>
+#include <dolfin/generation/UnitDiscMesh.h>
 #include <dolfin/generation/UnitTriangleMesh.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/CellType.h>
@@ -54,6 +55,12 @@ void generation(py::module& m)
   // dolfin::UnitTriangleMesh
   py::class_<dolfin::generation::UnitTriangleMesh>(m, "UnitTriangleMesh")
       .def_static("create", &dolfin::generation::UnitTriangleMesh::create);
+
+  // dolfin::UnitDiscMesh
+  py::class_<dolfin::generation::UnitDiscMesh>(m, "UnitDiscMesh")
+      .def_static("create", [](const MPICommWrapper comm, std::size_t n) {
+        return dolfin::generation::UnitDiscMesh::create(comm.get(), n);
+      });
 
   // dolfin::BoxMesh
   py::class_<dolfin::generation::BoxMesh,

@@ -68,23 +68,23 @@ public:
                          const std::vector<std::int64_t>& global_cell_indices,
                          const std::string ghost_mode);
 
-  /// Take the set of vertices . . . . .
+  /// Redistribute points to the processes that need them.
   /// @param mpi_comm
   ///   MPI Communicator
   /// @param points
   ///   Existing vertex coordinates array on each process before
   ///   distribution
-  /// @param vertex_indices
-  ///   Global indices for vertices on this process
+  /// @param global_point_indices
+  ///   Global indices for vertices required on this process
   /// @return
   ///   vertex_coordinates (array of coordinates on this process after
   ///   distribution) and shared_vertices_local (map from local index to set of
   ///   sharing processes for each shared vertex)
   static std::pair<EigenRowArrayXXd,
                    std::map<std::int32_t, std::set<std::uint32_t>>>
-  distribute_vertices(const MPI_Comm mpi_comm,
-                      const Eigen::Ref<const EigenRowArrayXXd>& points,
-                      const std::vector<std::int64_t>& global_vertex_indices);
+  distribute_points(const MPI_Comm mpi_comm,
+                    const Eigen::Ref<const EigenRowArrayXXd>& points,
+                    const std::vector<std::int64_t>& global_point_indices);
 
   /// Compute mapping of globally indexed vertices to local indices
   /// and remap topology accordingly
@@ -96,10 +96,20 @@ public:
   /// @return
   ///   Local-to-global map for vertices (std::vector<std::int64_t>) and cell
   ///   topology in local indexing (EigenRowArrayXXi32)
-  static std::pair<std::vector<std::int64_t>, EigenRowArrayXXi32>
-  compute_vertex_mapping(
-      MPI_Comm mpi_comm,
-      const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices);
+  static std::tuple<std::uint64_t, std::vector<std::int64_t>,
+                    EigenRowArrayXXi32>
+  compute_point_mapping(
+      std::uint32_t num_cell_vertices,
+      const Eigen::Ref<const EigenRowArrayXXi64>& cell_points);
+
+  // Utility to create global vertex indices, needed for higher
+  // order meshes, where there are geometric points which are not
+  // at the vertex nodes
+  static std::pair<std::int64_t, std::vector<std::int64_t>>
+  build_global_vertex_indices(
+      MPI_Comm mpi_comm, std::uint32_t num_vertices,
+      const std::vector<std::int64_t>& global_point_indices,
+      const std::map<std::int32_t, std::set<std::uint32_t>>& shared_points);
 
 private:
   // Compute cell partitioning from local mesh data. Returns a
@@ -156,22 +166,21 @@ private:
   // Returns (new_cell_vertices, new_global_cell_indices,
   // new_cell_partition, shared_cells, number of non-ghost cells on this
   // process).
-  static std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>,
-                    std::vector<int>,
-                    std::map<std::int32_t, std::set<std::uint32_t>>,
-                    std::int32_t>
+  static std::tuple<
+      EigenRowArrayXXi64, std::vector<std::int64_t>, std::vector<int>,
+      std::map<std::int32_t, std::set<std::uint32_t>>, std::int32_t>
   distribute_cells(const MPI_Comm mpi_comm,
                    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
                    const std::vector<std::int64_t>& global_cell_indices,
                    const PartitionData& mp);
 
   // FIXME: Improve explanation
-  // Utility to convert received_vertex_indices into
-  // vertex sharing information
-  static std::map<std::int32_t, std::set<std::uint32_t>> build_shared_vertices(
+  // Utility to convert received_point_indices into
+  // point sharing information
+  static std::map<std::int32_t, std::set<std::uint32_t>> build_shared_points(
       MPI_Comm mpi_comm,
-      const std::vector<std::vector<std::size_t>>& received_vertex_indices,
-      const std::pair<std::size_t, std::size_t> local_vertex_range,
+      const std::vector<std::vector<std::size_t>>& received_point_indices,
+      const std::pair<std::size_t, std::size_t> local_point_range,
       const std::vector<std::vector<std::uint32_t>>& local_indexing);
 };
 } // namespace mesh

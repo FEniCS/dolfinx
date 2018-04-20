@@ -77,7 +77,7 @@ public:
 
   /// Compute values at all mesh vertices
   virtual EigenRowArrayXXd
-  compute_vertex_values(const mesh::Mesh& mesh) const = 0;
+  compute_point_values(const mesh::Mesh& mesh) const = 0;
 
   //--- Optional functions to be implemented by sub-classes ---
 

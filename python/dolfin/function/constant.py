@@ -83,8 +83,8 @@ class Constant(ufl.Coefficient):
     def cell(self):
         return self.ufl_element().cell()
 
-    def compute_vertex_values(self, mesh):
-        return self._cpp_object.compute_vertex_values(mesh)
+    def compute_point_values(self, mesh):
+        return self._cpp_object.compute_point_values(mesh)
 
     def values(self):
         return self._cpp_object.values()
