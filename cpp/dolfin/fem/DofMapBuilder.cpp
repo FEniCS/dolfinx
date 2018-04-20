@@ -88,9 +88,10 @@ void DofMapBuilder::build(fem::DofMap& dofmap, const mesh::Mesh& mesh)
   std::vector<std::vector<la_index_t>> node_graph0;
   std::vector<int> node_ufc_local_to_local0;
   std::shared_ptr<const ufc_dofmap> ufc_node_dofmap;
-  ufc_node_dofmap = build_ufc_node_graph(node_graph0, node_local_to_global0,
-                                         dofmap._num_mesh_entities_global,
-                                         dofmap._ufc_dofmap, mesh, bs);
+  std::tie(ufc_node_dofmap, node_graph0, node_local_to_global0,
+           dofmap._num_mesh_entities_global)
+      = build_ufc_node_graph(dofmap._ufc_dofmap, mesh, bs);
+
   assert(ufc_node_dofmap);
 
   // Set local (cell) dimension
@@ -812,10 +813,10 @@ std::size_t DofMapBuilder::compute_blocksize(const ufc_dofmap& ufc_dofmap,
     return 1;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const ufc_dofmap> DofMapBuilder::build_ufc_node_graph(
-    std::vector<std::vector<la_index_t>>& node_dofmap,
-    std::vector<std::size_t>& node_local_to_global,
-    std::vector<int64_t>& num_mesh_entities_global,
+std::tuple<std::shared_ptr<const ufc_dofmap>,
+           std::vector<std::vector<la_index_t>>, std::vector<std::size_t>,
+           std::vector<int64_t>>
+DofMapBuilder::build_ufc_node_graph(
     std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh,
     const std::size_t block_size)
 {
@@ -873,11 +874,11 @@ std::shared_ptr<const ufc_dofmap> DofMapBuilder::build_ufc_node_graph(
     ++d;
   }
 
-  num_mesh_entities_global = num_mesh_entities_global_unconstrained;
+  std::vector<int64_t> num_mesh_entities_global
+      = num_mesh_entities_global_unconstrained;
 
   // Allocate space for dof map
-  node_dofmap.clear();
-  node_dofmap.resize(mesh.num_cells());
+  std::vector<std::vector<la_index_t>> node_dofmap(mesh.num_cells());
 
   // Get standard local elem2ent dimension
   const std::size_t local_dim = dofmaps[0]->num_element_dofs;
@@ -893,7 +894,7 @@ std::shared_ptr<const ufc_dofmap> DofMapBuilder::build_ufc_node_graph(
     entity_indices[d].resize(mesh.type().num_entities(d));
 
   // Resize local-to-global map
-  node_local_to_global.resize(offset_local[1]);
+  std::vector<std::size_t> node_local_to_global(offset_local[1]);
 
   // Build dofmaps from ufc_dofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
@@ -930,7 +931,9 @@ std::shared_ptr<const ufc_dofmap> DofMapBuilder::build_ufc_node_graph(
     }
   }
 
-  return dofmaps[0];
+  return std::make_tuple(dofmaps[0], std::move(node_dofmap),
+                         std::move(node_local_to_global),
+                         std::move(num_mesh_entities_global));
 }
 //-----------------------------------------------------------------------------
 std::vector<int> DofMapBuilder::compute_shared_nodes(

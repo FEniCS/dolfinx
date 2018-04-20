@@ -107,9 +107,9 @@ private:
   // degrees of freedom
   static void
   _compute_global_dofs(std::set<std::size_t>& global_dofs,
-                      std::size_t& offset_local,
-                      std::shared_ptr<const ufc_dofmap> ufc_dofmap,
-                      const std::vector<int64_t>& num_mesh_entities_local);
+                       std::size_t& offset_local,
+                       std::shared_ptr<const ufc_dofmap> ufc_dofmap,
+                       const std::vector<int64_t>& num_mesh_entities_local);
 
   // Recursively extract UFC sub-dofmap and compute offset
   static std::shared_ptr<ufc_dofmap>
@@ -121,11 +121,12 @@ private:
   static std::size_t compute_blocksize(const ufc_dofmap& ufc_dofmap,
                                        std::size_t tdim);
 
-  static std::shared_ptr<const ufc_dofmap>
-  build_ufc_node_graph(std::vector<std::vector<la_index_t>>& node_dofmap,
-                       std::vector<std::size_t>& node_local_to_global,
-                       std::vector<int64_t>& num_mesh_entities_global,
-                       std::shared_ptr<const ufc_dofmap> ufc_dofmap,
+  // Build graph from UFC 'node' dofmap. Returns (ufc_dofmap,
+  // node_dofmap, node_local_to_global, num_mesh_entities_global)
+  static std::tuple<std::shared_ptr<const ufc_dofmap>,
+                    std::vector<std::vector<la_index_t>>,
+                    std::vector<std::size_t>, std::vector<int64_t>>
+  build_ufc_node_graph(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                        const mesh::Mesh& mesh, const std::size_t block_size);
 
   // Mark shared nodes. Boundary nodes are assigned a random
