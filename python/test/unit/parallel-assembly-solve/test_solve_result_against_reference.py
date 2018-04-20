@@ -12,6 +12,7 @@ parallel assembly/solve."""
 import pytest
 import sys
 from dolfin import *
+from dolfin.la import PETScOptions
 from dolfin_utils.test import *
 
 # Relative tolerance for regression test
@@ -100,11 +101,11 @@ def test_computed_norms_against_references():
                   ("4x4x4 unit hex cube", 4): 74.49938136593539 }
 
     # Mesh files and degrees to check
-    meshes = [(UnitSquareMesh(16, 16), "16x16 unit tri square"),
-              (UnitCubeMesh(4, 4, 4),  "4x4x4 unit tet cube"),
-              (UnitSquareMesh.create(16, 16, CellType.Type.quadrilateral), "16x16 unit quad square"),
-              (UnitCubeMesh.create(4, 4, 4, CellType.Type.hexahedron), "4x4x4 unit hex cube")]
-    degrees = [1, 2, 3, 4]
+    meshes = [(UnitSquareMesh(MPI.comm_world, 16, 16), "16x16 unit tri square"),
+              (UnitCubeMesh(MPI.comm_world, 4, 4, 4),  "4x4x4 unit tet cube"),]
+            #   (UnitSquareMesh(MPI.comm_world, 16, 16, CellType.Type.quadrilateral), "16x16 unit quad square"),
+            #   (UnitCubeMesh(MPI.comm_world, 4, 4, 4, CellType.Type.hexahedron), "4x4x4 unit hex cube")]
+    degrees = [1, 2]
 
     # For MUMPS, increase estimated require memory increase. Typically
     # required for high order elements on small meshes in 3D

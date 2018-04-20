@@ -19,19 +19,19 @@ xfail = pytest.mark.xfail(strict=True)
 
 @fixture
 def mesh():
-    return UnitSquareMesh(4, 4)
+    return UnitSquareMesh(MPI.comm_world, 4, 4)
 
 
 reorder_dofs = set_parameters_fixture("reorder_dofs_serial", [True, False])
 
-
-@pytest.mark.parametrize('mesh_factory', [(UnitIntervalMesh, (8,)),
-                                          (UnitSquareMesh, (4, 4)),
-                                          (UnitCubeMesh, (2, 2, 2)),
+@pytest.mark.skip
+@pytest.mark.parametrize('mesh_factory', [(UnitIntervalMesh, (MPI.comm_world, 8,)),
+                                          (UnitSquareMesh, (MPI.comm_world, 4, 4)),
+                                          (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
                                           # cell.contains(Point) does not work correctly
                                           # for quad/hex cells once it is fixed, this test will pass
-                                          xfail((UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral))),
-                                          xfail((UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron)))])
+                                          xfail((UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral))),
+                                          xfail((UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron)))])
 def test_tabulate_all_coordinates(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -75,8 +75,8 @@ def test_tabulate_all_coordinates(mesh_factory):
     assert all(checked_V)
     assert all(checked_W)
 
-
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral))])
+@pytest.mark.skip
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 4, 4)), (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral))])
 def test_tabulate_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -105,8 +105,8 @@ def test_tabulate_dofs(mesh_factory):
         assert len(np.intersect1d(dofs1, dofs2)) == 0
         assert np.array_equal(np.append(dofs1, dofs2), dofs3)
 
-
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral))])
+@pytest.mark.skip
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 4, 4)), (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral))])
 def test_tabulate_coord_periodic(mesh_factory):
 
     class PeriodicBoundary2(SubDomain):
@@ -154,8 +154,8 @@ def test_tabulate_coord_periodic(mesh_factory):
         assert (coord4[:sdim] == coord0).all()
         assert (coord4[sdim:] == coord0).all()
 
-
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (5, 5)), (UnitSquareMesh.create, (5, 5, CellType.Type.quadrilateral))])
+@pytest.mark.skip
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 5, 5)), (UnitSquareMesh, (MPI.comm_world, 5, 5, CellType.Type.quadrilateral))])
 def test_tabulate_dofs_periodic(mesh_factory):
 
     class PeriodicBoundary2(SubDomain):
@@ -209,8 +209,8 @@ def test_tabulate_dofs_periodic(mesh_factory):
         assert len(np.intersect1d(dofs1, dofs2)) == 0
         assert np.array_equal(np.append(dofs1, dofs2), dofs3)
 
-
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (3, 3)), (UnitSquareMesh.create, (3, 3, CellType.Type.quadrilateral))])
+@pytest.mark.skip
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 3, 3)), (UnitSquareMesh, (MPI.comm_world, 3, 3, CellType.Type.quadrilateral))])
 def test_global_dof_builder(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -224,8 +224,8 @@ def test_global_dof_builder(mesh_factory):
     W = FunctionSpace(mesh, V*R)
     W = FunctionSpace(mesh, R*V)
 
-
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (3, 3)), (UnitSquareMesh.create, (3, 3, CellType.Type.quadrilateral))])
+@pytest.mark.skip
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 3, 3)), (UnitSquareMesh, (MPI.comm_world, 3, 3, CellType.Type.quadrilateral))])
 def test_dof_to_vertex_map(mesh_factory, reorder_dofs):
     func, args = mesh_factory
     mesh = func(*args)
@@ -331,9 +331,9 @@ def test_entity_dofs(mesh):
         dofs = V.dofmap().tabulate_entity_dofs(0, i)
         assert all(d == cd for d, cd in zip(dofs, cdofs))
 
-
+@pytest.mark.skip
 @skip_in_parallel
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (2, 2)), (UnitSquareMesh.create, (2, 2, CellType.Type.quadrilateral))])
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 2, 2)), (UnitSquareMesh, (MPI.comm_world, 2, 2, CellType.Type.quadrilateral))])
 def test_entity_closure_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -362,7 +362,7 @@ def test_entity_closure_dofs(mesh_factory):
         all_cells = np.array([entity for entity in range(mesh.num_entities(d))], dtype=np.uintp)
         assert set(V.dofmap().entity_closure_dofs(mesh, d, all_cells)) == set(range(V.dim))
 
-
+@pytest.mark.skip
 def test_clear_sub_map_data_scalar(mesh):
     V = FunctionSpace(mesh, "CG", 2)
     with pytest.raises(ValueError):
@@ -381,7 +381,7 @@ def test_clear_sub_map_data_scalar(mesh):
     with pytest.raises(RuntimeError):
         V.sub(0)
 
-
+@pytest.mark.skip
 def test_clear_sub_map_data_vector(mesh):
     mesh = UnitSquareMesh(8, 8)
     P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
@@ -396,11 +396,11 @@ def test_clear_sub_map_data_vector(mesh):
     with pytest.raises(RuntimeError):
         W1 = W.sub(1)
 
-
+@pytest.mark.skip
 def test_block_size(mesh):
     meshes = [UnitSquareMesh(8, 8), UnitCubeMesh(4, 4, 4),
-              UnitSquareMesh.create(8, 8, CellType.Type.quadrilateral),
-              UnitCubeMesh.create(4, 4, 4, CellType.Type.hexahedron)]
+              UnitSquareMesh(8, 8, CellType.Type.quadrilateral),
+              UnitCubeMesh(4, 4, 4, CellType.Type.hexahedron)]
     for mesh in meshes:
         P2 = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
 
@@ -417,7 +417,7 @@ def test_block_size(mesh):
         V = VectorFunctionSpace(mesh, "Lagrange", 2)
         assert V.dofmap().block_size() == mesh.geometry.dim
 
-
+@pytest.mark.skip
 def test_block_size_real(mesh):
     mesh = UnitIntervalMesh(12)
     V = FiniteElement('DG', mesh.ufl_cell(), 0)
@@ -427,11 +427,11 @@ def test_block_size_real(mesh):
 
 
 @skip_in_serial
-@pytest.mark.parametrize('mesh_factory', [(UnitIntervalMesh, (8,)),
-                                          (UnitSquareMesh, (4, 4)),
-                                          (UnitCubeMesh, (2, 2, 2)),
-                                          (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral)),
-                                          (UnitCubeMesh.create, (2, 2, 2, CellType.Type.hexahedron))])
+@pytest.mark.parametrize('mesh_factory', [(UnitIntervalMesh, (MPI.comm_world, 8,)),
+                                          (UnitSquareMesh, (MPI.comm_world, 4, 4)),
+                                          (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
+                                          (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
+                                          (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron))])
 def test_mpi_dofmap_stats(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -446,7 +446,8 @@ def test_mpi_dofmap_stats(mesh_factory):
     for owner in V.dofmap().off_process_owner():
         assert owner in neighbours
 
-@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (4, 4)), (UnitSquareMesh.create, (4, 4, CellType.Type.quadrilateral))])
+@pytest.mark.skip
+@pytest.mark.parametrize('mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 4, 4)), (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral))])
 def test_local_dimension(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -474,47 +475,47 @@ def test_local_dimension(mesh_factory):
 
 
 # Failures in FFC on quads/hexes
-xfail_ffc = pytest.mark.xfail(raises=Exception, strict=True)
+xfail_ffc = pytest.mark.xfail(raises=Exception)
 
 @skip_in_parallel
 @pytest.mark.parametrize('space', [
-    "FunctionSpace(UnitIntervalMesh.create(10),                                        'P', 1)",
-    "FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.triangle),                'P', 1)",
-    "FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.tetrahedron),            'P', 1)",
-    "FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.quadrilateral),           'Q', 1)",
-    "FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.hexahedron),             'Q', 1)",
-    "FunctionSpace(UnitIntervalMesh.create(10),                                        'P', 2)",
-    "FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.triangle),                'P', 2)",
-    "FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.tetrahedron),            'P', 2)",
-    "FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.quadrilateral),           'Q', 2)",
-    "FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.hexahedron),             'Q', 2)",
-    "FunctionSpace(UnitIntervalMesh.create(10),                                        'P', 3)",
-    "FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.triangle),                'P', 3)",
-    "FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.tetrahedron),            'P', 3)",
-    "FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.quadrilateral),           'Q', 3)",
-    "FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.hexahedron),             'Q', 3)",
-    "FunctionSpace(UnitIntervalMesh.create(10),                                        'DP', 1)",
-    "FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.triangle),                'DP', 1)",
-    "FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.tetrahedron),            'DP', 1)",
-    xfail_ffc("FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.quadrilateral), 'DQ', 1)"),
-    xfail_ffc("FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.hexahedron),   'DQ', 1)"),
-    "FunctionSpace(UnitIntervalMesh.create(10),                                        'DP', 2)",
-    "FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.triangle),                'DP', 2)",
-    "FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.tetrahedron),            'DP', 2)",
-    xfail_ffc("FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.quadrilateral), 'DQ', 2)"),
-    xfail_ffc("FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.hexahedron),   'DQ', 2)"),
-    "FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.triangle),                'N1curl', 1)",
-    "FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.tetrahedron),            'N1curl', 1)",
-    xfail_ffc("FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.quadrilateral), 'N1curl', 1)"),
-    xfail_ffc("FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.hexahedron),   'N1curl', 1)"),
-    "FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.triangle),                'N1curl', 2)",
-    "FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.tetrahedron),            'N1curl', 2)",
-    xfail_ffc("FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.quadrilateral), 'N1curl', 2)"),
-    xfail_ffc("FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.hexahedron),   'N1curl', 2)"),
-    "FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.triangle),                'RT', 1)",
-    "FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.tetrahedron),            'RT', 1)",
-    xfail_ffc("FunctionSpace(UnitSquareMesh.create(6, 6, CellType.Type.quadrilateral), 'RT', 1)"),
-    xfail_ffc("FunctionSpace(UnitCubeMesh.create(2, 2, 2, CellType.Type.hexahedron),   'RT', 1)"),
+    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        'P', 1)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'P', 1)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'P', 1)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),           'Q', 1)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),             'Q', 1)",
+    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        'P', 2)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'P', 2)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'P', 2)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),           'Q', 2)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),             'Q', 2)",
+    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        'P', 3)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'P', 3)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'P', 3)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),           'Q', 3)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),             'Q', 3)",
+    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        'DP', 1)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'DP', 1)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'DP', 1)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), 'DQ', 1)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   'DQ', 1)",
+    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        'DP', 2)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'DP', 2)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'DP', 2)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), 'DQ', 2)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   'DQ', 2)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'N1curl', 1)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'N1curl', 1)",
+    xfail_ffc("FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), 'N1curl', 1)"),
+    xfail_ffc("FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   'N1curl', 1)"),
+    xfail_ffc("FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'N1curl', 2)"),
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'N1curl', 2)",
+    xfail_ffc("FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), 'N1curl', 2)"),
+    xfail_ffc("FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   'N1curl', 2)"),
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'RT', 1)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'RT', 1)",
+    xfail_ffc("FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), 'RT', 1)"),
+    xfail_ffc("FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   'RT', 1)"),
 ])
 def test_dofs_dim(space):
     """Test function GenericDofMap::dofs(mesh, dim)"""
@@ -527,7 +528,7 @@ def test_dofs_dim(space):
         dofs_per_entity = dofmap.num_entity_dofs(dim)
         assert len(edofs) == dofs_per_entity*num_mesh_entities
 
-
+@pytest.mark.skip
 def test_readonly_view_local_to_global_unwoned(mesh):
     """Test that local_to_global_unwoned() returns readonly
     view into the data; in particular test lifetime of data

@@ -11,20 +11,8 @@ import pytest
 
 from dolfin_utils.test import *
 
-backends = ["PETSc"]
-
-
-# Backends supporting the LinearOperator interface
-@pytest.mark.parametrize('backend', backends)
+@pytest.mark.skip
 def test_linear_operator(backend):
-
-    # Check whether backend is available
-    if not has_linear_algebra_backend(backend):
-        pytest.skip('Need %s as backend to run this test' % backend)
-
-    # Set linear algebra backend
-    prev_backend = parameters["linear_algebra_backend"]
-    parameters["linear_algebra_backend"] = backend
 
     # Define linear operator
     class MyLinearOperator(LinearOperator):
@@ -76,5 +64,3 @@ def test_linear_operator(backend):
             from petsc4py import PETSc
             assert isinstance(Ob.mat(), PETSc.Mat)
 
-    # Reset backend
-    parameters["linear_algebra_backend"] = prev_backend

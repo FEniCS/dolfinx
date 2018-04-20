@@ -10,8 +10,6 @@ from dolfin import *
 import pytest
 from dolfin_utils.test import *
 
-backends = ["PETSc", skip_in_parallel("Eigen")]
-
 def build_elastic_nullspace(V, x):
     """Function to build nullspace for 2D/3D elasticity"""
 
@@ -71,9 +69,10 @@ def build_broken_elastic_nullspace(V, x):
     return VectorSpaceBasis(nullspace_basis)
 
 
+@pytest.mark.skip
 def test_nullspace_orthogonal():
     """Test that null spaces orthogonalisation"""
-    meshes = [UnitSquareMesh(12, 12), UnitCubeMesh(4, 4, 4)]
+    meshes = [UnitSquareMesh(MPI.comm_world, 12, 12), UnitCubeMesh(MPI.comm_world, 4, 4, 4)]
     for mesh in meshes:
         for p in range(1, 4):
             V = VectorFunctionSpace(mesh, 'CG', p)
@@ -94,19 +93,10 @@ def test_nullspace_orthogonal():
             assert null_space.is_orthogonal()
             assert null_space.is_orthonormal()
 
-
-@pytest.mark.parametrize('backend', backends)
-def test_nullspace_check(backend):
-    # Check whether backend is available
-    if not has_linear_algebra_backend(backend):
-        pytest.skip('Need %s as backend to run this test' % backend)
-
-    # Set linear algebra backend
-    prev_backend = parameters["linear_algebra_backend"]
-    parameters["linear_algebra_backend"] = backend
-
+@pytest.mark.skip
+def test_nullspace_check():
     # Mesh
-    mesh = UnitSquareMesh(12, 12)
+    mesh = UnitSquareMesh(MPI.comm_world, 12, 12)
 
     # Elasticity form
     V = VectorFunctionSpace(mesh, 'CG', 1)
@@ -115,7 +105,7 @@ def test_nullspace_check(backend):
 
     # Assemble matrix and create compatible vector
     A = assemble(a)
-    x = Vector()
+    x = PETScVector()
     A.init_vector(x, 1)
 
     # Create null space basis and test
