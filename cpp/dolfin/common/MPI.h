@@ -376,6 +376,7 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
   MPI_Win_fence(0, iwin);
   MPI_Win_free(&iwin);
 
+  // Now get the actual data
   MPI_Win Twin;
   MPI_Win_create(data_send.data(), sizeof(T) * data_send.size(), sizeof(T),
                  MPI_INFO_NULL, comm, &Twin);
@@ -419,38 +420,64 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
 {
 #ifdef HAS_MPI
   const std::size_t comm_size = MPI::size(comm);
-
-  // Data size per destination
+  const std::size_t comm_rank = MPI::rank(comm);
   assert(in_values.size() == comm_size);
-  std::vector<int> data_size_send(comm_size);
-  std::vector<int> data_offset_send(comm_size + 1, 0);
+
+  // Create a memory area to exchange size information
+  // arranged as {offset, size} for each process
+  std::vector<int> data_offsets;
+  data_offsets.reserve(comm_size * 2);
+  int current_offset = 0;
   for (std::size_t p = 0; p < comm_size; ++p)
   {
-    data_size_send[p] = in_values[p].size();
-    data_offset_send[p + 1] = data_offset_send[p] + data_size_send[p];
+    data_offsets.push_back(current_offset);
+    data_offsets.push_back(in_values[p].size());
+    current_offset += data_offsets.back();
   }
 
-  // Get received data sizes
-  std::vector<int> data_size_recv(comm_size);
-  MPI_Alltoall(data_size_send.data(), 1, mpi_type<int>(), data_size_recv.data(),
-               1, mpi_type<int>(), comm);
+  // Flatten data
+  std::vector<T> data_send(current_offset);
 
-  // Pack data and build receive offset
-  std::vector<int> data_offset_recv(comm_size + 1, 0);
-  std::vector<T> data_send(data_offset_send[comm_size]);
+  // Get the size and offset from the 'target'
+  MPI_Win iwin;
+  MPI_Win_create(data_offsets.data(), sizeof(int) * data_offsets.size(),
+                 sizeof(int), MPI_INFO_NULL, comm, &iwin);
+  MPI_Win_fence(0, iwin);
+
+  std::vector<int> remote_data_offsets(comm_size * 2);
   for (std::size_t p = 0; p < comm_size; ++p)
   {
-    data_offset_recv[p + 1] = data_offset_recv[p] + data_size_recv[p];
+    // Flatten data
     std::copy(in_values[p].begin(), in_values[p].end(),
-              data_send.begin() + data_offset_send[p]);
+              data_send.begin() + data_offsets[p * 2]);
+    // Get size and offset from remote
+    MPI_Get(remote_data_offsets.data() + p * 2, 2, MPI_INT, p, comm_rank * 2, 2,
+            MPI_INT, iwin);
   }
+  MPI_Win_fence(0, iwin);
+  MPI_Win_free(&iwin);
 
-  // Send/receive data
-  out_values.resize(data_offset_recv[comm_size]);
-  MPI_Alltoallv(data_send.data(), data_size_send.data(),
-                data_offset_send.data(), mpi_type<T>(), out_values.data(),
-                data_size_recv.data(), data_offset_recv.data(), mpi_type<T>(),
-                comm);
+  // Now get the actual data
+  MPI_Win Twin;
+  MPI_Win_create(data_send.data(), sizeof(T) * data_send.size(), sizeof(T),
+                 MPI_INFO_NULL, comm, &Twin);
+  MPI_Win_fence(0, Twin);
+
+  // Get local offsets
+  std::vector<int> local_data_offsets = {0};
+  for (std::size_t p = 0; p < comm_size; ++p)
+    local_data_offsets.push_back(local_data_offsets.back()
+                                 + remote_data_offsets[p * 2 + 1]);
+
+  out_values.resize(local_data_offsets.back());
+  for (std::size_t p = 0; p < comm_size; ++p)
+  {
+    const int data_size = remote_data_offsets[p * 2 + 1];
+    MPI_Get(out_values.data() + local_data_offsets[p], data_size, mpi_type<T>(),
+            p, remote_data_offsets[p * 2], data_size, mpi_type<T>(), Twin);
+  }
+  MPI_Win_fence(0, Twin);
+  MPI_Win_free(&Twin);
 
 #else
   assert(in_values.size() == 1);
