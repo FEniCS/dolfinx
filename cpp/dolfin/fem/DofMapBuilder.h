@@ -106,9 +106,9 @@ private:
   //        because it's called recursively.
   // Iterate recursively over all sub-dof maps to find global
   // degrees of freedom
-  static void
-  _compute_global_dofs(std::set<std::size_t>& global_dofs,
-                       std::size_t& offset_local,
+  static std::pair<std::set<std::size_t>, std::size_t>
+  _compute_global_dofs(std::set<std::size_t> global_dofs,
+                       std::size_t offset_local,
                        std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                        const std::vector<int64_t>& num_mesh_entities_local);
 

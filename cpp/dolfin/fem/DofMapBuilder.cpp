@@ -614,14 +614,15 @@ std::set<std::size_t> DofMapBuilder::compute_global_dofs(
   // Compute global dof indices
   std::size_t offset_local = 0;
   std::set<std::size_t> global_dof_indices;
-  _compute_global_dofs(global_dof_indices, offset_local, ufc_dofmap,
-                       num_mesh_entities_local);
+  std::tie(global_dof_indices, offset_local) = _compute_global_dofs(
+      global_dof_indices, offset_local, ufc_dofmap, num_mesh_entities_local);
 
   return global_dof_indices;
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::_compute_global_dofs(
-    std::set<std::size_t>& global_dofs, std::size_t& offset_local,
+std::pair<std::set<std::size_t>, std::size_t>
+DofMapBuilder::_compute_global_dofs(
+    std::set<std::size_t> global_dofs, std::size_t offset_local,
     const std::shared_ptr<const ufc_dofmap> ufc_dofmap,
     const std::vector<int64_t>& num_mesh_entities_local)
 {
@@ -682,8 +683,8 @@ void DofMapBuilder::_compute_global_dofs(
       // Extract sub-dofmap and initialise
       std::shared_ptr<struct ufc_dofmap> sub_dofmap(
           ufc_dofmap->create_sub_dofmap(i));
-      _compute_global_dofs(global_dofs, offset_local, sub_dofmap,
-                           num_mesh_entities_local);
+      std::tie(global_dofs, offset_local) = _compute_global_dofs(
+          global_dofs, offset_local, sub_dofmap, num_mesh_entities_local);
 
       // Get offset
       if (sub_dofmap->num_sub_dofmaps == 0)
@@ -697,8 +698,9 @@ void DofMapBuilder::_compute_global_dofs(
       }
     }
   }
-}
 
+  return std::make_pair(global_dofs, offset_local);
+}
 //-----------------------------------------------------------------------------
 std::shared_ptr<ufc_dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
     const ufc_dofmap& ufc_dofmap, std::size_t& offset,
