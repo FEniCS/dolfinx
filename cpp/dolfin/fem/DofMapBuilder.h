@@ -8,9 +8,9 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
-#include <map>
 #include <memory>
 #include <set>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -76,11 +76,12 @@ private:
   //
   // Also computes map from shared node to sharing processes and a
   // set of process that share dofs on this process.
-  // Returns: number of locally owned nodes
-  static int compute_node_ownership(
-      std::vector<short int>& node_ownership,
-      std::unordered_map<int, std::vector<int>>& shared_node_to_processes,
-      std::set<int>& neighbours,
+  // Returns: (number of locally owned nodes, node_ownership,
+  // shared_node_to_processes, neighbours)
+
+  static std::tuple<int, std::vector<short int>,
+                    std::unordered_map<int, std::vector<int>>, std::set<int>>
+  compute_node_ownership(
       const std::vector<std::vector<la_index_t>>& node_dofmap,
       const std::vector<int>& boundary_nodes,
       const std::set<std::size_t>& global_nodes,
@@ -150,13 +151,13 @@ private:
       const std::set<std::size_t>& global_nodes, const MPI_Comm mpi_comm);
 
   static void
-  get_cell_entities_local(const mesh::Cell& cell,
-                          std::vector<std::vector<int64_t>>& entity_indices,
+  get_cell_entities_local(std::vector<std::vector<int64_t>>& entity_indices,
+                          const mesh::Cell& cell,
                           const std::vector<bool>& needs_mesh_entities);
 
   static void
-  get_cell_entities_global(const mesh::Cell& cell,
-                           std::vector<std::vector<int64_t>>& entity_indices,
+  get_cell_entities_global(std::vector<std::vector<int64_t>>& entity_indices,
+                           const mesh::Cell& cell,
                            const std::vector<bool>& needs_mesh_entities);
 
   // Compute number of mesh entities for dimensions required by
