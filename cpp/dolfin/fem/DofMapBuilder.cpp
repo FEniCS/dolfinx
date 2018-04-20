@@ -190,7 +190,7 @@ void DofMapBuilder::build(fem::DofMap& dofmap, const mesh::Mesh& mesh)
 
     // Build dofmap from original node 'dof' map and applying the
     // 'old_to_new_local' map for the re-ordered node indices
-    build_dofmap(dofmap_graph, node_graph0, node_old_to_new_local, bs);
+    dofmap_graph = build_dofmap(node_graph0, node_old_to_new_local, bs);
   }
   else
   {
@@ -264,8 +264,8 @@ void DofMapBuilder::build_sub_map_view(
 
   // Build local UFC-based dof map for sub-dofmap
   // Dynamic data structure to build dofmap graph
-  std::vector<std::vector<la_index_t>> sub_dofmap_graph;
-  build_local_ufc_dofmap(sub_dofmap_graph, *sub_dofmap._ufc_dofmap, mesh);
+  std::vector<std::vector<la_index_t>> sub_dofmap_graph
+      = build_local_ufc_dofmap(*sub_dofmap._ufc_dofmap, mesh);
 
   // Add offset to local UFC dofmap
   for (std::size_t i = 0; i < sub_dofmap_graph.size(); ++i)
@@ -342,9 +342,9 @@ void DofMapBuilder::build_sub_map_view(
   }
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::build_local_ufc_dofmap(
-    std::vector<std::vector<dolfin::la_index_t>>& dofmap,
-    const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh)
+std::vector<std::vector<dolfin::la_index_t>>
+DofMapBuilder::build_local_ufc_dofmap(const ufc_dofmap& ufc_dofmap,
+                                      const mesh::Mesh& mesh)
 {
   // Topological dimension
   const std::size_t D = mesh.topology().dim();
@@ -371,8 +371,8 @@ void DofMapBuilder::build_local_ufc_dofmap(
     entity_indices[d].resize(mesh.type().num_entities(d));
 
   // Build dofmap from ufc_dofmap
-  dofmap.resize(mesh.num_cells(),
-                std::vector<la_index_t>(ufc_dofmap.num_element_dofs));
+  std::vector<std::vector<dolfin::la_index_t>> dofmap(
+      mesh.num_cells(), std::vector<la_index_t>(ufc_dofmap.num_element_dofs));
   std::vector<int64_t> dof_holder(ufc_dofmap.num_element_dofs);
   std::vector<const int64_t*> _entity_indices(entity_indices.size());
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
@@ -388,6 +388,8 @@ void DofMapBuilder::build_local_ufc_dofmap(
     std::copy(dof_holder.begin(), dof_holder.end(),
               dofmap[cell.index()].begin());
   }
+
+  return dofmap;
 }
 //-----------------------------------------------------------------------------
 int DofMapBuilder::compute_node_ownership(
@@ -1210,13 +1212,12 @@ void DofMapBuilder::compute_node_reordering(
   }
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::build_dofmap(
-    std::vector<std::vector<la_index_t>>& dofmap,
+std::vector<std::vector<la_index_t>> DofMapBuilder::build_dofmap(
     const std::vector<std::vector<la_index_t>>& node_dofmap,
     const std::vector<int>& old_to_new_node_local, const std::size_t block_size)
 {
   // Build dofmap looping over nodes
-  dofmap.resize(node_dofmap.size());
+  std::vector<std::vector<la_index_t>> dofmap(node_dofmap.size());
   for (std::size_t i = 0; i < node_dofmap.size(); ++i)
   {
     const std::size_t local_dim0 = node_dofmap[i].size();
@@ -1233,6 +1234,8 @@ void DofMapBuilder::build_dofmap(
       }
     }
   }
+
+  return dofmap;
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::get_cell_entities_local(

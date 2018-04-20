@@ -63,9 +63,8 @@ public:
 
 private:
   // Build simple local UFC-based dofmap data structure
-  static void
-  build_local_ufc_dofmap(std::vector<std::vector<dolfin::la_index_t>>& dofmap,
-                         const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
+  static std::vector<std::vector<dolfin::la_index_t>>
+  build_local_ufc_dofmap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
 
   // Compute which process 'owns' each node (point at which dofs live)
   //   - node_ownership = -1 -> dof shared but not 'owned' by this
@@ -89,9 +88,8 @@ private:
       const mesh::Mesh& mesh, const std::size_t global_dim);
 
   // Build dofmap based on re-ordered nodes
-  static void
-  build_dofmap(std::vector<std::vector<la_index_t>>& dofmap,
-               const std::vector<std::vector<la_index_t>>& node_dofmap,
+  static std::vector<std::vector<la_index_t>>
+  build_dofmap(const std::vector<std::vector<la_index_t>>& node_dofmap,
                const std::vector<int>& old_to_new_node_local,
                const std::size_t block_size);
 
