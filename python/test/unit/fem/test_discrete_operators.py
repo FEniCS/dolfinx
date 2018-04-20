@@ -13,7 +13,7 @@ from dolfin.cpp.fem import DiscreteOperators
 
 from dolfin_utils.test import *
 
-
+@skip_in_parallel
 def test_gradient():
     """Test discrete gradient computation (typically used for curl-curl
     AMG preconditioners"""

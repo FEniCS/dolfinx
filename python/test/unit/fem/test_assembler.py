@@ -13,6 +13,7 @@ import dolfin
 import ufl
 from ufl import dx
 
+from dolfin_utils.test import skip_in_parallel
 
 def xtest_initialisation():
     "Test intialisation of the assembler"
@@ -91,9 +92,9 @@ def xtest_matrix_assembly_bc():
     # A.mat().view()
     # B.mat().view()
 
-
+@skip_in_parallel
 def test_matrix_assembly_block():
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 1, 1)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 2)
 
     V0 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
     V1 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
