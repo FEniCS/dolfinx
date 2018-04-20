@@ -72,7 +72,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Number of cells, local (not ghost) and global.
   const std::int32_t num_cells = cells.rows();
-  assert(num_ghost_cells < num_cells);
+  assert((std::int32_t)num_ghost_cells < num_cells);
   const std::int32_t num_local_cells = num_cells - num_ghost_cells;
   const std::uint64_t num_cells_global = MPI::sum(comm, num_local_cells);
 
