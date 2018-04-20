@@ -105,7 +105,7 @@ def test_computed_norms_against_references():
               (UnitCubeMesh(MPI.comm_world, 4, 4, 4),  "4x4x4 unit tet cube"),]
             #   (UnitSquareMesh(MPI.comm_world, 16, 16, CellType.Type.quadrilateral), "16x16 unit quad square"),
             #   (UnitCubeMesh(MPI.comm_world, 4, 4, 4, CellType.Type.hexahedron), "4x4x4 unit hex cube")]
-    degrees = [1, 2, 3, 4]
+    degrees = [1, 2]
 
     # For MUMPS, increase estimated require memory increase. Typically
     # required for high order elements on small meshes in 3D
