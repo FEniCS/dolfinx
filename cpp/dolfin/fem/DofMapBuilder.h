@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2015 Anders Logg, Ola Skavhaug and Garth N. Wells
+// Copyright (C) 2008-2018 Anders Logg, Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -93,24 +93,15 @@ private:
   build_dofmap(const std::vector<std::vector<la_index_t>>& node_dofmap,
                const std::vector<int>& old_to_new_node_local,
                const std::size_t block_size);
-
   // Compute set of global dofs (e.g. Reals associated with global
   // Lagrange multipliers) based on UFC numbering. Global dofs are
   // not associated with any mesh entity. The returned indices are
   // local to the process.
-  static std::set<std::size_t>
-  compute_global_dofs(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
-                      const std::vector<int64_t>& num_mesh_entities_local);
-
-  // FIXME: Try to simplify this function to make pure. Needs some care
-  //        because it's called recursively.
-  // Iterate recursively over all sub-dof maps to find global
-  // degrees of freedom
-  static void
-  _compute_global_dofs(std::set<std::size_t>& global_dofs,
-                       std::size_t& offset_local,
-                       std::shared_ptr<const ufc_dofmap> ufc_dofmap,
-                       const std::vector<int64_t>& num_mesh_entities_local);
+  static std::pair<std::set<std::size_t>, std::size_t>
+  extract_global_dofs(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
+                      const std::vector<int64_t>& num_mesh_entities_local,
+                      std::set<std::size_t> global_dofs = {},
+                      std::size_t offset_local = 0);
 
   // Recursively extract UFC sub-dofmap and compute offset
   static std::shared_ptr<ufc_dofmap>
