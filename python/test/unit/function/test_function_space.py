@@ -1,4 +1,4 @@
-b"""Unit tests for the FunctionSpace class"""
+"""Unit tests for the FunctionSpace class"""
 
 # Copyright (C) 2011 Johan Hake
 #

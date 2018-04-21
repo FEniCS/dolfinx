@@ -37,11 +37,6 @@ public:
     // Print standard output on all processes
     p.add("std_out_all_processes", true);
 
-    //-- dof ordering
-
-    // DOF reordering when running in serial
-    p.add("reorder_dofs_serial", true);
-
     // Add dof ordering library
     std::string default_dof_ordering_library = "Boost";
 #ifdef HAS_SCOTCH

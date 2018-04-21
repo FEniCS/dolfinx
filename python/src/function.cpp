@@ -330,14 +330,7 @@ void function(py::module& m)
       .def(py::init<const dolfin::function::FunctionSpace&>())
       .def("__eq__", &dolfin::function::FunctionSpace::operator==)
       .def("dim", &dolfin::function::FunctionSpace::dim)
-      .def("collapse",
-           [](dolfin::function::FunctionSpace& self) {
-             std::unordered_map<std::size_t, std::size_t> dofs;
-             auto V = self.collapse(dofs);
-             return std::pair<std::shared_ptr<dolfin::function::FunctionSpace>,
-                              std::unordered_map<std::size_t, std::size_t>>(
-                 {V, dofs});
-           })
+      .def("collapse", &dolfin::function::FunctionSpace::collapse)
       .def("component", &dolfin::function::FunctionSpace::component)
       .def("contains", &dolfin::function::FunctionSpace::contains)
       .def("element", &dolfin::function::FunctionSpace::element)

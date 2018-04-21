@@ -2,12 +2,24 @@
 DOLFIN-X
 ========
 
-DOLFIN-X is an experimental version of DOLFIN. It is being actively
-developed, but is **not ready for production use**. Many new
-experimental features may come and go as development proceeds.
+.. image:: https://circleci.com/gh/FEniCS/dolfinx.svg?style=shield
+    :target: https://circleci.com/gh/FEniCS/dolfinx
 
-DOLFIN is the computational backend of FEniCS and implements the
-FEniCS Problem Solving Environment in Python and C++.
+DOLFIN-X is an experimental version of DOLFIN. It is being actively
+developed, but is **not ready for production use**. New experimental
+features may come and go as development proceeds.
+
+DOLFIN is the computational backend of FEniCS and implements the FEniCS
+Problem Solving Environment in Python and C++.
+
+
+Documentation
+=============
+
+Documentation can be viewed at:
+
+- https://fenicsproject.org/docs/dolfinx/dev/cpp/
+- https://fenicsproject.org/docs/dolfinx/dev/python/
 
 
 Installation
@@ -23,8 +35,8 @@ To build and install the C++ core, in the ``cpp/`` directory, run::
   cmake ..
   make install
 
-Python
-------
+Python interface
+----------------
 
 To install the Python interface, first install the C++ core, and then
 in the ``python/`` directory run::
@@ -34,24 +46,6 @@ in the ``python/`` directory run::
 (you may need to use ``pip3``, depending on your system).
 
 For detailed instructions, see the file INSTALL.
-
-
-Documentation
-=============
-
-Documentation can be viewed at:
-
-- https://fenicsproject.org/docs/dolfinx/dev/cpp/
-- https://fenicsproject.org/docs/dolfinx/dev/python/
-
-
-Automated testing
-=================
-
-We use CircleCI to perform automated testing.
-
-.. image:: https://circleci.com/bb/fenics-project/dolfinx.svg?style=svg
-    :target: https://circleci.com/bb/fenics-project/dolfinx
 
 
 License
@@ -77,28 +71,17 @@ Contact
 
 For comments and requests, send an email to the FEniCS mailing list:
 
-  fenics-dev@googlegroups.com
+fenics-dev@googlegroups.com
 
 For questions related to obtaining, building or installing DOLFIN-X,
 send an email to the FEniCS support mailing list:
 
-  fenics-support@googlegroups.com
+fenics-support@googlegroups.com
 
 For questions about using DOLFIN-X, visit the FEniCS Q&A page:
 
-  https://www.allanswered.com/community/s/fenics-project/
+https://www.allanswered.com/community/s/fenics-project/
 
 For bug reports, visit the DOLFIN-X Bitbucket page:
 
-  http://bitbucket.org/fenics-project/dolfinx
-
-
-About
-=====
-
-DOLFIN is developed by a group of mathematicians, computational
-scientists and engineers distributed around the world. A list of
-authors can be found in the file AUTHORS. For more information about
-DOLFIN, visit
-
-  https://fenicsproject.org
+https://github.com/FEniCS/dolfinx
