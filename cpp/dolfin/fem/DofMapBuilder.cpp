@@ -220,16 +220,12 @@ void DofMapBuilder::build_sub_map_view(
   const std::vector<int64_t> num_mesh_entities_local
       = compute_num_mesh_entities_local(mesh, needs_entities);
 
-  // Initialise UFC offset from parent
-  std::size_t ufc_offset = parent_dofmap._ufc_offset;
-
   // Extract local UFC sub-dofmap from parent and update offset
-  sub_dofmap._ufc_dofmap = extract_ufc_sub_dofmap(
-      parent_ufc_dofmap, ufc_offset, component, num_mesh_entities_local);
+  std::tie(sub_dofmap._ufc_dofmap, sub_dofmap._ufc_offset)
+      = extract_ufc_sub_dofmap(parent_ufc_dofmap, component,
+                               num_mesh_entities_local,
+                               parent_dofmap._ufc_offset);
   assert(sub_dofmap._ufc_dofmap);
-
-  // Set UFC sub-dofmap offset
-  sub_dofmap._ufc_offset = ufc_offset;
 
   // Build local UFC-based dof map for sub-dofmap
   // Dynamic data structure to build dofmap graph
@@ -240,9 +236,7 @@ void DofMapBuilder::build_sub_map_view(
   for (std::size_t i = 0; i < sub_dofmap_graph.size(); ++i)
   {
     for (std::size_t j = 0; j < sub_dofmap_graph[i].size(); ++j)
-    {
-      sub_dofmap_graph[i][j] += ufc_offset;
-    }
+      sub_dofmap_graph[i][j] += sub_dofmap._ufc_offset;
   }
 
   // Store number of global mesh entities and set global dimension
@@ -652,10 +646,10 @@ DofMapBuilder::extract_global_dofs(
   return std::make_pair(global_dofs, offset_local);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<ufc_dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
-    const ufc_dofmap& ufc_dofmap, std::size_t& offset,
-    const std::vector<std::size_t>& component,
-    const std::vector<int64_t>& num_mesh_entities)
+std::pair<std::shared_ptr<ufc_dofmap>, std::size_t>
+DofMapBuilder::extract_ufc_sub_dofmap(
+    const ufc_dofmap& ufc_dofmap, const std::vector<std::size_t>& component,
+    const std::vector<int64_t>& num_mesh_entities, std::size_t offset)
 {
   // Check if there are any sub systems
   if (ufc_dofmap.num_sub_dofmaps == 0)
@@ -705,17 +699,15 @@ std::shared_ptr<ufc_dofmap> DofMapBuilder::extract_ufc_sub_dofmap(
   // Return sub-system if sub-sub-system should not be extracted,
   // otherwise recursively extract the sub sub system
   if (component.size() == 1)
-    return sub_dofmap;
+    return std::make_pair(sub_dofmap, offset);
   else
   {
     std::vector<std::size_t> sub_component;
     for (std::size_t i = 1; i < component.size(); ++i)
       sub_component.push_back(component[i]);
 
-    std::shared_ptr<struct ufc_dofmap> sub_sub_dofmap = extract_ufc_sub_dofmap(
-        *sub_dofmap, offset, sub_component, num_mesh_entities);
-
-    return sub_sub_dofmap;
+    return extract_ufc_sub_dofmap(*sub_dofmap, sub_component, num_mesh_entities,
+                                  offset);
   }
 }
 //-----------------------------------------------------------------------------
@@ -809,9 +801,9 @@ DofMapBuilder::build_ufc_node_graph(
     for (std::size_t i = 0; i < block_size; ++i)
     {
       component[0] = i;
-      dofmaps[i] = extract_ufc_sub_dofmap(*ufc_dofmap, _offset_local, component,
-                                          num_mesh_entities_local);
-      offset_local[i] = _offset_local;
+      std::tie(dofmaps[i], offset_local[i]) = extract_ufc_sub_dofmap(
+          *ufc_dofmap, component, num_mesh_entities_local, _offset_local);
+      _offset_local = offset_local[i];
     }
   }
   else
