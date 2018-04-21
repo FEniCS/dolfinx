@@ -234,8 +234,8 @@ std::shared_ptr<FunctionSpace> FunctionSpace::collapse(
   }
 
   // Create collapsed DofMap
-  std::shared_ptr<fem::GenericDofMap> collapsed_dofmap(
-      _dofmap->collapse(collapsed_dofs, *_mesh));
+  std::shared_ptr<fem::GenericDofMap> collapsed_dofmap;
+  std::tie(collapsed_dofmap, collapsed_dofs) = _dofmap->collapse(*_mesh);
 
   // Create new FunctionSpace and return
   std::shared_ptr<FunctionSpace> collapsed_sub_space(

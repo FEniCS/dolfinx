@@ -104,9 +104,9 @@ public:
                      const mesh::Mesh& mesh) const = 0;
 
   /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
-  virtual std::unique_ptr<GenericDofMap>
-  collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
-           const mesh::Mesh& mesh) const = 0;
+  virtual std::pair<std::shared_ptr<GenericDofMap>,
+                    std::unordered_map<std::size_t, std::size_t>>
+  collapse(const mesh::Mesh& mesh) const = 0;
 
   /// Return list of dof indices on this process that belong to mesh
   /// entities of dimension dim

@@ -82,7 +82,7 @@ public:
   /// @returns bool
   ///         True if the dof map is a sub-dof map (a view into
   ///         another map).
-  bool is_view() const { return _is_view; }
+  bool is_view() const { return _ufc_offset >= 0; }
 
   /// Return the dimension of the global finite element function
   /// space. Use index_map()->size() to get the local dimension.
@@ -194,7 +194,7 @@ public:
   /// Tabulate globally supported dofs
   std::vector<std::size_t> tabulate_global_dofs() const
   {
-    assert(_global_nodes.empty() || block_size() == 1);
+    assert(_global_nodes.empty() or block_size() == 1);
     std::vector<std::size_t> element_dofs(_global_nodes.size());
     std::copy(_global_nodes.cbegin(), _global_nodes.cend(),
               element_dofs.begin());
@@ -223,9 +223,9 @@ public:
   ///
   /// @return    DofMap
   ///         The collapsed dofmap.
-  std::unique_ptr<GenericDofMap>
-  collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
-           const mesh::Mesh& mesh) const;
+  std::pair<std::shared_ptr<GenericDofMap>,
+            std::unordered_map<std::size_t, std::size_t>>
+  collapse(const mesh::Mesh& mesh) const;
 
   /// Set dof entries in vector to a specified value. Parallel layout
   /// of vector must be consistent with dof map range. This
@@ -281,15 +281,11 @@ private:
   // actual_dof, both using local indices)
   std::vector<int> _ufc_local_to_local;
 
-  // Flag to determine if the DofMap is a view
-  bool _is_view;
-
-  // Global dimension. Note that this may differ from the global
-  // dimension of the UFC dofmap if the function space is periodic.
+  // Global dimension
   std::int64_t _global_dimension;
 
-  // UFC dof map offset
-  std::size_t _ufc_offset;
+  // UFC dof map offset (< 0 if not a view)
+  std::int64_t _ufc_offset;
 
   // Object containing information about dof distribution across
   // processes
@@ -298,7 +294,7 @@ private:
   // List of processes that share a given dof
   std::unordered_map<int, std::vector<int>> _shared_nodes;
 
-  // Neighbours (processes that we share dofs with)
+  // Neighbours (processes that this dofmap shares dofs with)
   std::set<int> _neighbours;
 };
 } // namespace fem

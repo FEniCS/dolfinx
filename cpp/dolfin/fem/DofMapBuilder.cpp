@@ -207,6 +207,8 @@ void DofMapBuilder::build_sub_map_view(
   // Convenience reference to parent UFC dofmap
   assert(parent_dofmap._ufc_dofmap);
   const ufc_dofmap& parent_ufc_dofmap = *parent_dofmap._ufc_dofmap;
+  const std::int64_t parent_offset
+      = parent_dofmap._ufc_offset > 0 ? parent_dofmap._ufc_offset : 0;
 
   // Topological dimension
   const std::size_t D = mesh.topology().dim();
@@ -223,8 +225,7 @@ void DofMapBuilder::build_sub_map_view(
   // Extract local UFC sub-dofmap from parent and update offset
   std::tie(sub_dofmap._ufc_dofmap, sub_dofmap._ufc_offset)
       = extract_ufc_sub_dofmap(parent_ufc_dofmap, component,
-                               num_mesh_entities_local,
-                               parent_dofmap._ufc_offset);
+                               num_mesh_entities_local, parent_offset);
   assert(sub_dofmap._ufc_dofmap);
 
   // Build local UFC-based dof map for sub-dofmap
