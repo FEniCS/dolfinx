@@ -104,20 +104,21 @@ private:
                       std::size_t offset_local = 0);
 
   // Recursively extract UFC sub-dofmap and compute offset
-  static std::shared_ptr<ufc_dofmap>
-  extract_ufc_sub_dofmap(const ufc_dofmap& ufc_dofmap, std::size_t& offset,
+  static std::pair<std::shared_ptr<ufc_dofmap>, std::size_t>
+  extract_ufc_sub_dofmap(const ufc_dofmap& ufc_dofmap,
                          const std::vector<std::size_t>& component,
-                         const std::vector<int64_t>& num_global_mesh_entities);
+                         const std::vector<int64_t>& num_global_mesh_entities,
+                         std::size_t offset=0);
 
   // Compute block size, e.g. in 3D elasticity block_size = 3
   static std::size_t compute_blocksize(const ufc_dofmap& ufc_dofmap,
                                        std::size_t tdim);
 
   // Build graph from UFC 'node' dofmap. Returns (ufc_dofmap,
-  // node_dofmap, node_local_to_global, num_mesh_entities_global)
+  // node_dofmap, node_local_to_global)
   static std::tuple<std::shared_ptr<const ufc_dofmap>,
                     std::vector<std::vector<la_index_t>>,
-                    std::vector<std::size_t>, std::vector<int64_t>>
+                    std::vector<std::size_t>>
   build_ufc_node_graph(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                        const mesh::Mesh& mesh, const std::size_t block_size);
 

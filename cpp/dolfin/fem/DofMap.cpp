@@ -22,8 +22,8 @@ using namespace dolfin::fem;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                const mesh::Mesh& mesh)
-    : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _is_view(false),
-      _global_dimension(0), _ufc_offset(0)
+    : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _global_dimension(0),
+      _ufc_offset(-1)
 {
   assert(_ufc_dofmap);
 
@@ -34,7 +34,7 @@ DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
 DofMap::DofMap(const DofMap& parent_dofmap,
                const std::vector<std::size_t>& component,
                const mesh::Mesh& mesh)
-    : _cell_dimension(0), _is_view(true), _global_dimension(0), _ufc_offset(0),
+    : _cell_dimension(0), _global_dimension(0), _ufc_offset(0),
       _index_map(parent_dofmap._index_map)
 {
   // Build sub-dofmap
@@ -43,8 +43,8 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const mesh::Mesh& mesh)
-    : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap), _is_view(false),
-      _global_dimension(0), _ufc_offset(0)
+    : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap),
+      _global_dimension(0), _ufc_offset(-1)
 {
   assert(_ufc_dofmap);
 
@@ -149,11 +149,13 @@ DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
   return std::unique_ptr<GenericDofMap>(new DofMap(*this, component, mesh));
 }
 //-----------------------------------------------------------------------------
-std::unique_ptr<GenericDofMap>
-DofMap::collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
-                 const mesh::Mesh& mesh) const
+std::pair<std::shared_ptr<GenericDofMap>,
+          std::unordered_map<std::size_t, std::size_t>>
+DofMap::collapse(const mesh::Mesh& mesh) const
 {
-  return std::unique_ptr<GenericDofMap>(new DofMap(collapsed_map, *this, mesh));
+  std::unordered_map<std::size_t, std::size_t> collapsed_map;
+  std::shared_ptr<GenericDofMap> dofmap(new DofMap(collapsed_map, *this, mesh));
+  return std::make_pair(dofmap, std::move(collapsed_map));
 }
 //-----------------------------------------------------------------------------
 void DofMap::set(la::PETScVector& x, double value) const

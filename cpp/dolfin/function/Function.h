@@ -24,7 +24,7 @@ namespace mesh
 {
 class Cell;
 class Mesh;
-}
+} // namespace mesh
 
 namespace function
 {
@@ -206,5 +206,5 @@ private:
   // The vector of expansion coefficients (local)
   std::shared_ptr<la::PETScVector> _vector;
 };
-}
-}
+} // namespace function
+} // namespace dolfin
