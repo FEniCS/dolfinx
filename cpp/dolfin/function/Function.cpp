@@ -77,7 +77,7 @@ Function::Function(const Function& v)
   {
     // Create new collapsed FunctionSpace
     std::unordered_map<std::size_t, std::size_t> collapsed_map;
-    _function_space = v._function_space->collapse(collapsed_map);
+    std::tie(_function_space, collapsed_map) = v._function_space->collapse();
 
     // Get row indices of original and new vectors
     std::unordered_map<std::size_t, std::size_t>::const_iterator entry;

@@ -163,12 +163,6 @@ public:
   ///         True if V is contained or equal to this.
   bool contains(const FunctionSpace& V) const;
 
-  /// Collapse a subspace and return a new function space
-  ///
-  /// @returns    _FunctionSpace_
-  ///         The new function space.
-  std::shared_ptr<FunctionSpace> collapse() const;
-
   /// Collapse a subspace and return a new function space and a map
   /// from new to old dofs
   ///
@@ -177,8 +171,9 @@ public:
   ///
   /// @returns    _FunctionSpace_
   ///       The new function space.
-  std::shared_ptr<FunctionSpace>
-  collapse(std::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const;
+  std::pair<std::shared_ptr<FunctionSpace>,
+            std::unordered_map<std::size_t, std::size_t>>
+  collapse() const;
 
   /// Check if function space has given cell
   ///
@@ -270,5 +265,5 @@ private:
   mutable std::map<std::vector<std::size_t>, std::weak_ptr<FunctionSpace>>
       _subspaces;
 };
-}
-}
+} // namespace function
+} // namespace dolfin
