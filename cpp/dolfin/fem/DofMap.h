@@ -277,13 +277,6 @@ private:
   // UFC dof map
   std::shared_ptr<const ufc_dofmap> _ufc_dofmap;
 
-  // FIXME: Can this be removed now that constrained domains are not
-  //        handled via the dofmap?
-  // Number global mesh entities. It is stored in
-  // order to compute the global dimension of dofmaps that are
-  // constructed from a sub-dofmap.
-  std::vector<int64_t> _num_mesh_entities_global;
-
   // Map from UFC dof numbering to renumbered dof (ufc_dof ->
   // actual_dof, both using local indices)
   std::vector<int> _ufc_local_to_local;

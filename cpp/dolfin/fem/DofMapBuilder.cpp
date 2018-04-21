@@ -86,8 +86,7 @@ void DofMapBuilder::build(fem::DofMap& dofmap, const mesh::Mesh& mesh)
   std::vector<std::vector<la_index_t>> node_graph0;
   std::vector<int> node_ufc_local_to_local0;
   std::shared_ptr<const ufc_dofmap> ufc_node_dofmap;
-  std::tie(ufc_node_dofmap, node_graph0, node_local_to_global0,
-           dofmap._num_mesh_entities_global)
+  std::tie(ufc_node_dofmap, node_graph0, node_local_to_global0)
       = build_ufc_node_graph(dofmap._ufc_dofmap, mesh, bs);
 
   assert(ufc_node_dofmap);
@@ -97,11 +96,10 @@ void DofMapBuilder::build(fem::DofMap& dofmap, const mesh::Mesh& mesh)
 
   // Set global dimension
   dofmap._global_dimension = 0;
-  unsigned int d = 0;
-  for (auto& n : dofmap._num_mesh_entities_global)
+  for (std::size_t d = 0; d < D + 1; ++d)
   {
+    const std::int64_t n = mesh.num_entities_global(d);
     dofmap._global_dimension += n * dofmap._ufc_dofmap->num_entity_dofs(d);
-    ++d;
   }
 
   // Compute local UFC indices of any 'global' dofs, and re-map if
@@ -281,16 +279,12 @@ void DofMapBuilder::build_sub_map_view(
   }
 
   // Store number of global mesh entities and set global dimension
-  sub_dofmap._num_mesh_entities_global
-      = parent_dofmap._num_mesh_entities_global;
-  assert(!sub_dofmap._num_mesh_entities_global.empty());
   sub_dofmap._global_dimension = 0;
-  unsigned int d = 0;
-  for (auto& n : sub_dofmap._num_mesh_entities_global)
+  for (std::size_t d = 0; d < D + 1; ++d)
   {
+    const std::int64_t n = mesh.num_entities_global(d);
     sub_dofmap._global_dimension
         += n * sub_dofmap._ufc_dofmap->num_entity_dofs(d);
-    ++d;
   }
 
   // Copy data from parent
@@ -805,8 +799,7 @@ std::size_t DofMapBuilder::compute_blocksize(const ufc_dofmap& ufc_dofmap,
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<const ufc_dofmap>,
-           std::vector<std::vector<la_index_t>>, std::vector<std::size_t>,
-           std::vector<int64_t>>
+           std::vector<std::vector<la_index_t>>, std::vector<std::size_t>>
 DofMapBuilder::build_ufc_node_graph(
     std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh,
     const std::size_t block_size)
@@ -827,7 +820,7 @@ DofMapBuilder::build_ufc_node_graph(
   // Generate and number required mesh entities (local & global, and
   // constrained global)
   std::vector<int64_t> num_mesh_entities_local(D + 1, 0);
-  std::vector<int64_t> num_mesh_entities_global_unconstrained(D + 1, 0);
+  std::vector<int64_t> num_mesh_entities_global(D + 1, 0);
   for (std::size_t d = 0; d <= D; ++d)
   {
     if (needs_entities[d])
@@ -835,7 +828,7 @@ DofMapBuilder::build_ufc_node_graph(
       mesh.init(d);
       mesh::DistributedMeshTools::number_entities(mesh, d);
       num_mesh_entities_local[d] = mesh.num_entities(d);
-      num_mesh_entities_global_unconstrained[d] = mesh.num_entities_global(d);
+      num_mesh_entities_global[d] = mesh.num_entities_global(d);
     }
   }
 
@@ -864,9 +857,6 @@ DofMapBuilder::build_ufc_node_graph(
     offset_local[block_size] += n * ufc_dofmap->num_entity_dofs(d);
     ++d;
   }
-
-  std::vector<int64_t> num_mesh_entities_global
-      = num_mesh_entities_global_unconstrained;
 
   // Allocate space for dof map
   std::vector<std::vector<la_index_t>> node_dofmap(mesh.num_cells());
@@ -911,7 +901,7 @@ DofMapBuilder::build_ufc_node_graph(
     for (std::size_t i = 0; i < entity_indices.size(); ++i)
       entity_indices_ptr[i] = entity_indices[i].data();
     dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
-                              num_mesh_entities_global_unconstrained.data(),
+                              num_mesh_entities_global.data(),
                               entity_indices_ptr.data());
 
     // Build local-to-global map for nodes
@@ -923,8 +913,7 @@ DofMapBuilder::build_ufc_node_graph(
   }
 
   return std::make_tuple(dofmaps[0], std::move(node_dofmap),
-                         std::move(node_local_to_global),
-                         std::move(num_mesh_entities_global));
+                         std::move(node_local_to_global));
 }
 //-----------------------------------------------------------------------------
 std::vector<int> DofMapBuilder::compute_shared_nodes(

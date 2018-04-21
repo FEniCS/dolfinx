@@ -114,10 +114,10 @@ private:
                                        std::size_t tdim);
 
   // Build graph from UFC 'node' dofmap. Returns (ufc_dofmap,
-  // node_dofmap, node_local_to_global, num_mesh_entities_global)
+  // node_dofmap, node_local_to_global)
   static std::tuple<std::shared_ptr<const ufc_dofmap>,
                     std::vector<std::vector<la_index_t>>,
-                    std::vector<std::size_t>, std::vector<int64_t>>
+                    std::vector<std::size_t>>
   build_ufc_node_graph(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                        const mesh::Mesh& mesh, const std::size_t block_size);
 
