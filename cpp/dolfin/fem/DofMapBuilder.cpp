@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2015 Anders Logg, Ola Skavhaug and Garth N. Wells
+// Copyright (C) 2008-2018 Anders Logg, Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -65,8 +65,9 @@ void DofMapBuilder::build(fem::DofMap& dofmap, const mesh::Mesh& mesh)
   // are present, we set the block size to 1.
 
   // Compute local UFC indices of any 'global' dofs
-  const std::set<std::size_t> global_dofs
-      = compute_global_dofs(dofmap._ufc_dofmap, num_mesh_entities_local);
+  std::set<std::size_t> global_dofs;
+  std::tie(global_dofs, std::ignore)
+      = extract_global_dofs(dofmap._ufc_dofmap, num_mesh_entities_local);
 
   // Determine and set dof block size (block size must be 1 if UFC map
   // is not re-ordered or if global dofs are present)
@@ -105,8 +106,9 @@ void DofMapBuilder::build(fem::DofMap& dofmap, const mesh::Mesh& mesh)
 
   // Compute local UFC indices of any 'global' dofs, and re-map if
   // required, e.g., in case that dofmap is periodic
-  std::set<std::size_t> global_nodes0
-      = compute_global_dofs(ufc_node_dofmap, num_mesh_entities_local);
+  std::set<std::size_t> global_nodes0;
+  std::tie(global_nodes0, std::ignore)
+      = extract_global_dofs(ufc_node_dofmap, num_mesh_entities_local);
   if (!node_ufc_local_to_local0.empty())
   {
     std::set<std::size_t> remapped_global_nodes;
@@ -607,24 +609,11 @@ DofMapBuilder::compute_node_ownership(
                          std::move(neighbours));
 }
 //-----------------------------------------------------------------------------
-std::set<std::size_t> DofMapBuilder::compute_global_dofs(
-    std::shared_ptr<const ufc_dofmap> ufc_dofmap,
-    const std::vector<int64_t>& num_mesh_entities_local)
-{
-  // Compute global dof indices
-  std::size_t offset_local = 0;
-  std::set<std::size_t> global_dof_indices;
-  std::tie(global_dof_indices, offset_local) = _compute_global_dofs(
-      global_dof_indices, offset_local, ufc_dofmap, num_mesh_entities_local);
-
-  return global_dof_indices;
-}
-//-----------------------------------------------------------------------------
 std::pair<std::set<std::size_t>, std::size_t>
-DofMapBuilder::_compute_global_dofs(
-    std::set<std::size_t> global_dofs, std::size_t offset_local,
+DofMapBuilder::extract_global_dofs(
     const std::shared_ptr<const ufc_dofmap> ufc_dofmap,
-    const std::vector<int64_t>& num_mesh_entities_local)
+    const std::vector<int64_t>& num_mesh_entities_local,
+    std::set<std::size_t> global_dofs, std::size_t offset_local)
 {
   assert(ufc_dofmap);
 
@@ -683,8 +672,8 @@ DofMapBuilder::_compute_global_dofs(
       // Extract sub-dofmap and initialise
       std::shared_ptr<struct ufc_dofmap> sub_dofmap(
           ufc_dofmap->create_sub_dofmap(i));
-      std::tie(global_dofs, offset_local) = _compute_global_dofs(
-          global_dofs, offset_local, sub_dofmap, num_mesh_entities_local);
+      std::tie(global_dofs, offset_local) = extract_global_dofs(
+          sub_dofmap, num_mesh_entities_local, global_dofs, offset_local);
 
       // Get offset
       if (sub_dofmap->num_sub_dofmaps == 0)
