@@ -52,7 +52,7 @@ def ufl_coordinate_element(self):
 
     """
     cell = self.ufl_cell()
-    degree = 1
+    degree = self.degree()
     return ufl.VectorElement("Lagrange", cell, degree,
                              dim=cell.geometric_dimension())
 
