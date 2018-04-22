@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2016 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2018 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -6,13 +6,14 @@
 
 #include "DofMap.h"
 #include "DofMapBuilder.h"
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/Vertex.h>
+#include <ufc.h>
 #include <unordered_map>
 
 using namespace dolfin;
@@ -135,10 +136,15 @@ std::size_t DofMap::num_facet_dofs() const
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> DofMap::ownership_range() const
 {
-  assert(_index_map);
+  // assert(_index_map);
   auto block_range = _index_map->local_range();
   std::int64_t bs = _index_map->block_size();
   return {{bs * block_range[0], bs * block_range[1]}};
+}
+//-----------------------------------------------------------------------------
+const std::vector<int>& DofMap::off_process_owner() const
+{
+  return _index_map->block_off_process_owner();
 }
 //-----------------------------------------------------------------------------
 const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const
@@ -223,6 +229,18 @@ void DofMap::check_provided_entities(const ufc_dofmap& dofmap,
                                + std::to_string(d) + " in dofmap construction");
     }
   }
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const common::IndexMap> DofMap::index_map() const
+{
+  return _index_map;
+}
+//-----------------------------------------------------------------------------
+int DofMap::block_size() const
+{
+  // FIXME: this will almost always be wrong for a sub-dofmap because
+  // it shares the  index map with the  parent.
+  return _index_map->block_size();
 }
 //-----------------------------------------------------------------------------
 std::string DofMap::str(bool verbose) const
