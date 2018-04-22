@@ -21,29 +21,34 @@ using namespace dolfin::fem;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                const mesh::Mesh& mesh)
-    : _cell_dimension(0), _ufc_dofmap(ufc_dofmap), _global_dimension(0),
+    : _cell_dimension(-1), _ufc_dofmap(ufc_dofmap), _global_dimension(0),
       _ufc_offset(-1)
 {
   assert(_ufc_dofmap);
+  _cell_dimension = _ufc_dofmap->num_element_dofs;
 
-  // Call dofmap builder
-  DofMapBuilder::build(*this, *_ufc_dofmap, mesh);
+  std::tie(_global_dimension, _index_map, _ufc_local_to_local, _shared_nodes,
+           _global_nodes, _neighbours, _dofmap)
+      = DofMapBuilder::build(*_ufc_dofmap, mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
                const std::vector<std::size_t>& component,
                const mesh::Mesh& mesh)
-    : _cell_dimension(0), _global_dimension(0), _ufc_offset(0),
+    : _cell_dimension(-1), _global_dimension(0), _ufc_offset(0),
       _index_map(parent_dofmap._index_map)
 {
   // Build sub-dofmap
-  DofMapBuilder::build_sub_map_view(*this, parent_dofmap, component, mesh);
+  std::tie(_ufc_dofmap, _ufc_offset, _global_dimension, _ufc_local_to_local,
+           _shared_nodes, _neighbours, _dofmap)
+      = DofMapBuilder::build_sub_map_view(parent_dofmap, component, mesh);
+  _cell_dimension = _ufc_dofmap->num_element_dofs;
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const mesh::Mesh& mesh)
-    : _cell_dimension(0), _ufc_dofmap(dofmap_view._ufc_dofmap),
-      _global_dimension(0), _ufc_offset(-1)
+    : _cell_dimension(-1), _ufc_dofmap(dofmap_view._ufc_dofmap),
+      _global_dimension(-1), _ufc_offset(-1)
 {
   assert(_ufc_dofmap);
 
@@ -51,13 +56,16 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   check_provided_entities(*_ufc_dofmap, mesh);
 
   // Build new dof map
-  DofMapBuilder::build(*this, *_ufc_dofmap, mesh);
+  std::tie(_global_dimension, _index_map, _ufc_local_to_local, _shared_nodes,
+           _global_nodes, _neighbours, _dofmap)
+      = DofMapBuilder::build(*_ufc_dofmap, mesh);
+  _cell_dimension = _ufc_dofmap->num_element_dofs;
 
   // Dimension sanity checks
   assert(dofmap_view._dofmap.size()
-         == mesh.num_cells() * dofmap_view._cell_dimension);
+         == (std::size_t)(mesh.num_cells() * dofmap_view._cell_dimension));
   assert(global_dimension() == dofmap_view.global_dimension());
-  assert(_dofmap.size() == mesh.num_cells() * _cell_dimension);
+  assert(_dofmap.size() == (std::size_t)(mesh.num_cells() * _cell_dimension));
 
   // FIXME: Could we use a std::vector instead of std::map if the
   //        collapsed dof map is contiguous (0, . . . , n)?
@@ -202,7 +210,7 @@ std::string DofMap::str(bool verbose) const
         << _cell_dimension << std::endl;
 
       // Local dof loop
-      for (std::size_t j = 0; j < _cell_dimension; ++j)
+      for (int j = 0; j < _cell_dimension; ++j)
       {
         s << "  "
           << "Local, global dof indices: " << j << ", "

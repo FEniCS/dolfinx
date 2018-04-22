@@ -48,8 +48,11 @@ public:
   ///
   /// @param[out] dofmap
   /// @param[in] dolfin_mesh
-  static void build(fem::DofMap& dofmap, const ufc_dofmap& ufc_map,
-                    const mesh::Mesh& dolfin_mesh);
+  static std::tuple<std::size_t, std::shared_ptr<common::IndexMap>,
+                    std::vector<int>, std::unordered_map<int, std::vector<int>>,
+                    std::set<std::size_t>, std::set<int>,
+                    std::vector<dolfin::la_index_t>>
+  build(const ufc_dofmap& ufc_map, const mesh::Mesh& dolfin_mesh);
 
   /// Build sub-dofmap. This is a view into the parent dofmap.
   ///
@@ -57,10 +60,12 @@ public:
   /// @param[in] parent_dofmap
   /// @param[in] component
   /// @param[in] mesh
-  static void build_sub_map_view(fem::DofMap& sub_dofmap,
-                                 const fem::DofMap& parent_dofmap,
-                                 const std::vector<std::size_t>& component,
-                                 const mesh::Mesh& mesh);
+  static std::tuple<std::shared_ptr<const ufc_dofmap>, std::int64_t, std::int64_t,
+                    std::vector<int>, std::unordered_map<int, std::vector<int>>,
+                    std::set<int>, std::vector<dolfin::la_index_t>>
+  build_sub_map_view(const fem::DofMap& parent_dofmap,
+                     const std::vector<std::size_t>& component,
+                     const mesh::Mesh& mesh);
 
 private:
   // Build simple local UFC-based dofmap data structure

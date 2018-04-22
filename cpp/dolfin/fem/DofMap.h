@@ -272,7 +272,7 @@ private:
   std::set<std::size_t> _global_nodes;
 
   // Cell dimension (fixed for all cells)
-  std::size_t _cell_dimension;
+  int _cell_dimension;
 
   // UFC dof map
   std::shared_ptr<const ufc_dofmap> _ufc_dofmap;
