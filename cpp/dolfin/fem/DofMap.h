@@ -289,7 +289,7 @@ private:
 
   // Object containing information about dof distribution across
   // processes
-  std::shared_ptr<common::IndexMap> _index_map;
+  std::shared_ptr<const common::IndexMap> _index_map;
 
   // List of processes that share a given dof
   std::unordered_map<int, std::vector<int>> _shared_nodes;
