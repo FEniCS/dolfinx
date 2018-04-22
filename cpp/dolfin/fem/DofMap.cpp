@@ -9,7 +9,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
@@ -28,7 +27,7 @@ DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
   assert(_ufc_dofmap);
 
   // Call dofmap builder
-  DofMapBuilder::build(*this, mesh);
+  DofMapBuilder::build(*this, *_ufc_dofmap, mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
@@ -52,7 +51,7 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   check_provided_entities(*_ufc_dofmap, mesh);
 
   // Build new dof map
-  DofMapBuilder::build(*this, mesh);
+  DofMapBuilder::build(*this, *_ufc_dofmap, mesh);
 
   // Dimension sanity checks
   assert(dofmap_view._dofmap.size()
@@ -181,9 +180,8 @@ void DofMap::check_provided_entities(const ufc_dofmap& dofmap,
   {
     if (dofmap.num_entity_dofs(d) > 0 && mesh.num_entities(d) == 0)
     {
-      log::dolfin_error(
-          "DofMap.cpp", "initialize mapping of degrees of freedom",
-          "Missing entities of dimension %d. Try calling mesh.init(%d)", d, d);
+      throw std::runtime_error("Missing entities of dimension "
+                               + std::to_string(d) + " in dofmap construction");
     }
   }
 }

@@ -48,7 +48,8 @@ public:
   ///
   /// @param[out] dofmap
   /// @param[in] dolfin_mesh
-  static void build(fem::DofMap& dofmap, const mesh::Mesh& dolfin_mesh);
+  static void build(fem::DofMap& dofmap, const ufc_dofmap& ufc_map,
+                    const mesh::Mesh& dolfin_mesh);
 
   /// Build sub-dofmap. This is a view into the parent dofmap.
   ///
@@ -78,7 +79,6 @@ private:
   // set of process that share dofs on this process.
   // Returns: (number of locally owned nodes, node_ownership,
   // shared_node_to_processes, neighbours)
-
   static std::tuple<int, std::vector<short int>,
                     std::unordered_map<int, std::vector<int>>, std::set<int>>
   compute_node_ownership(
@@ -93,6 +93,7 @@ private:
   build_dofmap(const std::vector<std::vector<la_index_t>>& node_dofmap,
                const std::vector<int>& old_to_new_node_local,
                const std::size_t block_size);
+
   // Compute set of global dofs (e.g. Reals associated with global
   // Lagrange multipliers) based on UFC numbering. Global dofs are
   // not associated with any mesh entity. The returned indices are
@@ -108,7 +109,7 @@ private:
   extract_ufc_sub_dofmap(const ufc_dofmap& ufc_dofmap,
                          const std::vector<std::size_t>& component,
                          const std::vector<int64_t>& num_global_mesh_entities,
-                         std::size_t offset=0);
+                         std::size_t offset = 0);
 
   // Compute block size, e.g. in 3D elasticity block_size = 3
   static std::size_t compute_blocksize(const ufc_dofmap& ufc_dofmap,
