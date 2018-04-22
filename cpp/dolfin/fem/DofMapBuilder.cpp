@@ -141,7 +141,7 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
                   bs * index_map->size(common::IndexMap::MapSize::OWNED))
          == global_dimension);
 
-  // Compute node re-ordering for process index locality and spatial
+  // Compute node re-ordering for process index locality, and spatial
   // locality within a process, including
   // (a) Old-to-new node indices (local)
   // (b) Owning process for nodes that are not owned by this process
@@ -169,57 +169,43 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   for (auto it = global_nodes0.begin(); it != global_nodes0.end(); ++it)
     global_nodes.insert(node_old_to_new_local[*it]);
 
-  // Build dofmap from original node 'dof' map and applying the
+  // Build dofmap from original node 'dof' map, and applying the
   // 'old_to_new_local' map for the re-ordered node indices
   dofmap_graph = build_dofmap(node_graph0, node_old_to_new_local, bs);
 
   // Build flattened dofmap graph
   std::vector<dolfin::la_index_t> cell_dofmap;
   for (auto const& cell_dofs : dofmap_graph)
-  {
     cell_dofmap.insert(cell_dofmap.end(), cell_dofs.begin(), cell_dofs.end());
-  }
 
   // Clear ufc_local-to-local map if dofmap has no sub-maps
   if (ufc_map.num_sub_dofmaps == 0)
     node_old_to_new_local.clear();
-  //   //std::vector<int>().swap(dofmap._ufc_local_to_local);
 
-  // dofmap._cell_dimension = ufc_map.num_element_dofs; // cut
-  // dofmap._index_map = index_map;
-  // dofmap._global_dimension = global_dimension;
   // // FIXME: Simplify after constrained domain removal
   // // Update UFC-local-to-local map to account for re-ordering
   // // UFC dofmap was not altered, old_to_new is same as UFC-to-new
   // dofmap._ufc_local_to_local = node_old_to_new_local;
-  // dofmap._shared_nodes = shared_nodes_foo;
-  // dofmap._global_nodes = global_nodes;
-  // dofmap._neighbours = neighbours;
-  // dofmap._dofmap = cell_dofmap;
 
-  return std::make_tuple(global_dimension, index_map, node_old_to_new_local,
-                         shared_nodes_foo, global_nodes, neighbours,
-                         cell_dofmap);
+  return std::make_tuple(std::move(global_dimension), std::move(index_map),
+                         std::move(node_old_to_new_local),
+                         std::move(shared_nodes_foo), std::move(global_nodes),
+                         std::move(neighbours), std::move(cell_dofmap));
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<const ufc_dofmap>, std::int64_t, std::int64_t,
-           std::vector<int>, std::unordered_map<int, std::vector<int>>,
-           std::set<int>, std::vector<dolfin::la_index_t>>
-DofMapBuilder::build_sub_map_view(const fem::DofMap& parent_dofmap,
-                                  const std::vector<std::size_t>& component,
-                                  const mesh::Mesh& mesh)
+           std::vector<dolfin::la_index_t>>
+DofMapBuilder::build_sub_map_view(
+    const ufc_dofmap& parent_ufc_dofmap,
+    const std::vector<int>& parent_ufc_local_to_local,
+    const int parent_block_size, const std::int64_t parent_offset,
+    const std::vector<std::size_t>& component, const mesh::Mesh& mesh)
 {
   assert(!component.empty());
 
-  // Convenience reference to parent UFC dofmap
-  assert(parent_dofmap._ufc_dofmap);
-  const ufc_dofmap& parent_ufc_dofmap = *parent_dofmap._ufc_dofmap;
-  const std::int64_t parent_offset
-      = parent_dofmap._ufc_offset > 0 ? parent_dofmap._ufc_offset : 0;
-
   // Topological dimension
-  const std::size_t D = mesh.topology().dim();
 
+  const std::size_t D = mesh.topology().dim();
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
@@ -257,30 +243,27 @@ DofMapBuilder::build_sub_map_view(const fem::DofMap& parent_dofmap,
   }
 
   // Store UFC local to re-ordered local if submap has any submaps
-  if (parent_dofmap._ufc_local_to_local.empty())
+  if (parent_ufc_local_to_local.empty())
   {
-    throw std::runtime_error("Building  sub-dofmap view - re-ordering map not "
+    throw std::runtime_error("Building sub-dofmap view - re-ordering map not "
                              "available. It may be been cleared by the user");
   }
-  std::vector<int> ufc_local_to_local;
-  if (ufc_sub_dofmap->num_sub_dofmaps > 0)
-    ufc_local_to_local = parent_dofmap._ufc_local_to_local;
 
   // Map to re-ordered dofs
-  const std::vector<int>& local_to_local = parent_dofmap._ufc_local_to_local;
-  const std::size_t bs = parent_dofmap.block_size();
+  const int map_size = parent_ufc_local_to_local.size();
   for (auto cell_map = sub_dofmap_graph.begin();
        cell_map != sub_dofmap_graph.end(); ++cell_map)
   {
     for (auto dof = cell_map->begin(); dof != cell_map->end(); ++dof)
     {
-      const std::div_t div = std::div((int)*dof, (int)local_to_local.size());
+      const std::div_t div = std::div((int)*dof, map_size);
       const std::size_t node = div.rem;
       const std::size_t component = div.quot;
 
       // Get dof from UFC local-to-local map
-      assert(node < local_to_local.size());
-      std::size_t current_dof = bs * local_to_local[node] + component;
+      assert(node < (std::size_t)map_size);
+      std::size_t current_dof
+          = parent_block_size * parent_ufc_local_to_local[node] + component;
 
       // Set dof index in transformed dofmap
       *dof = current_dof;
@@ -292,24 +275,8 @@ DofMapBuilder::build_sub_map_view(const fem::DofMap& parent_dofmap,
   for (auto const& cell_dofs : sub_dofmap_graph)
     cell_dofmap.insert(cell_dofmap.end(), cell_dofs.begin(), cell_dofs.end());
 
-  // Set local (cell) dimension
-  // xsub_dofmap._ufc_dofmap = ufc_sub_dofmap;
-  // xsub_dofmap._cell_dimension = ufc_sub_dofmap->num_element_dofs;
-  // xsub_dofmap._ufc_offset = ufc_offset;
-  // x sub_dofmap._global_dimension = global_dimension;
-  // xsub_dofmap._ufc_local_to_local = ufc_local_to_local;
-  // xsub_dofmap._dofmap = cell_dofmap;
-
-  // Copy data from parent
-  // FIXME: Do we touch sub_dofmap.index_map() in this routine? If yes, then
-  //        this routine has incorrect constness!
-  // x sub_dofmap.index_map() = parent_dofmap.index_map();
-  // xsub_dofmap._shared_nodes = parent_dofmap._shared_nodes;
-  // xsub_dofmap._neighbours = parent_dofmap._neighbours;
-
-  return std::make_tuple(ufc_sub_dofmap, ufc_offset, global_dimension,
-                         ufc_local_to_local, parent_dofmap._shared_nodes,
-                         parent_dofmap._neighbours, cell_dofmap);
+  return std::make_tuple(std::move(ufc_sub_dofmap), std::move(ufc_offset),
+                         std::move(global_dimension), std::move(cell_dofmap));
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<dolfin::la_index_t>>

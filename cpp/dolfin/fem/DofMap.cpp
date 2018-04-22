@@ -35,14 +35,38 @@ DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
 DofMap::DofMap(const DofMap& parent_dofmap,
                const std::vector<std::size_t>& component,
                const mesh::Mesh& mesh)
-    : _cell_dimension(-1), _global_dimension(0), _ufc_offset(0),
+    : _cell_dimension(-1), _global_dimension(-1), _ufc_offset(0),
       _index_map(parent_dofmap._index_map)
 {
+  // FIXME: large objects could be shared (using std::shared_ptr)
+  // between parent and view
+
+  // FIXME: the index map block size will be wrong here.
+
+  // Convenience reference to parent UFC dofmap
+  const std::int64_t parent_offset
+      = parent_dofmap._ufc_offset > 0 ? parent_dofmap._ufc_offset : 0;
+
   // Build sub-dofmap
-  std::tie(_ufc_dofmap, _ufc_offset, _global_dimension, _ufc_local_to_local,
-           _shared_nodes, _neighbours, _dofmap)
-      = DofMapBuilder::build_sub_map_view(parent_dofmap, component, mesh);
+  assert(parent_dofmap._ufc_dofmap);
+  std::tie(_ufc_dofmap, _ufc_offset, _global_dimension, _dofmap)
+      = DofMapBuilder::build_sub_map_view(
+          *parent_dofmap._ufc_dofmap, parent_dofmap._ufc_local_to_local,
+          parent_dofmap.block_size(), parent_offset, component, mesh);
+
+  assert(_ufc_dofmap);
   _cell_dimension = _ufc_dofmap->num_element_dofs;
+
+  // FIXME: check that below is correct
+  if (_ufc_dofmap->num_sub_dofmaps > 0)
+    _ufc_local_to_local = parent_dofmap._ufc_local_to_local;
+
+  // FIXME: this will be wrong
+  _shared_nodes = parent_dofmap._shared_nodes;
+
+  // FIXME: this set may be larger than it should be, e.g. if subdofmap
+  // has only facets dofs and parent included vertex dofs.
+  _neighbours = parent_dofmap._neighbours;
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
@@ -148,6 +172,13 @@ void DofMap::tabulate_entity_dofs(std::vector<int>& element_dofs,
   _ufc_dofmap->tabulate_entity_dofs(element_dofs.data(), entity_dim,
                                     cell_entity_index);
 }
+//-----------------------------------------------------------------------------
+std::vector<std::size_t> DofMap::tabulate_global_dofs() const
+{
+  assert(_global_nodes.empty() or block_size() == 1);
+  return std::vector<std::size_t>(_global_nodes.cbegin(), _global_nodes.cend());
+}
+
 //-----------------------------------------------------------------------------
 std::unique_ptr<GenericDofMap>
 DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,

@@ -192,14 +192,7 @@ public:
                             std::size_t cell_entity_index) const;
 
   /// Tabulate globally supported dofs
-  std::vector<std::size_t> tabulate_global_dofs() const
-  {
-    assert(_global_nodes.empty() or block_size() == 1);
-    std::vector<std::size_t> element_dofs(_global_nodes.size());
-    std::copy(_global_nodes.cbegin(), _global_nodes.cend(),
-              element_dofs.begin());
-    return element_dofs;
-  }
+  std::vector<std::size_t> tabulate_global_dofs() const;
 
   /// Extract subdofmap component
   ///
@@ -246,7 +239,12 @@ public:
 
   /// Return the block size for dof maps with components, typically
   /// used for vector valued functions.
-  int block_size() const { return _index_map->block_size(); }
+  int block_size() const
+  {
+    // FIXME: this will almost always be wrong for a sub-dofmap because
+    // it shares the  index map with the  parent.
+    return _index_map->block_size();
+  }
 
   /// Return informal string representation (pretty-print)
   ///
@@ -258,9 +256,6 @@ public:
   std::string str(bool verbose) const;
 
 private:
-  // Friends
-  friend class fem::DofMapBuilder;
-
   // Check that mesh provides the entities needed by dofmap
   static void check_provided_entities(const ufc_dofmap& dofmap,
                                       const mesh::Mesh& mesh);
@@ -291,10 +286,10 @@ private:
   // processes
   std::shared_ptr<const common::IndexMap> _index_map;
 
-  // List of processes that share a given dof
+  // Processes that share a given dof
   std::unordered_map<int, std::vector<int>> _shared_nodes;
 
-  // Neighbours (processes that this dofmap shares dofs with)
+  // Processes that this dofmap shares dofs with
   std::set<int> _neighbours;
 };
 } // namespace fem

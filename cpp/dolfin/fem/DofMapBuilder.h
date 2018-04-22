@@ -60,10 +60,12 @@ public:
   /// @param[in] parent_dofmap
   /// @param[in] component
   /// @param[in] mesh
-  static std::tuple<std::shared_ptr<const ufc_dofmap>, std::int64_t, std::int64_t,
-                    std::vector<int>, std::unordered_map<int, std::vector<int>>,
-                    std::set<int>, std::vector<dolfin::la_index_t>>
-  build_sub_map_view(const fem::DofMap& parent_dofmap,
+  static std::tuple<std::shared_ptr<const ufc_dofmap>, std::int64_t,
+                    std::int64_t, std::vector<dolfin::la_index_t>>
+  build_sub_map_view(const ufc_dofmap& parent_ufc_dofmap,
+                     const std::vector<int>& parent_ufc_local_to_local,
+                     const int parent_block_size,
+                     const std::int64_t parent_offset,
                      const std::vector<std::size_t>& component,
                      const mesh::Mesh& mesh);
 
