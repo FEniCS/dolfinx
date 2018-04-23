@@ -317,7 +317,11 @@ public:
   /// WARNING: the interface may change in future without
   /// deprecation; the method is now intended for internal
   /// library use.
-  std::string ghost_mode() const;
+  std::string get_ghost_mode() const;
+
+  // FIXME: Remove - should be set at construction
+  /// Set ghost mode
+  void set_ghost_mode(std::string mode);
 
   /// Get coordinate dofs for all local cells
   const CoordinateDofs& coordinate_dofs() const { return _coordinate_dofs; }
@@ -325,10 +329,6 @@ public:
   std::uint32_t degree() const { return _degree; }
 
 private:
-  // Friends
-  friend class TopologyComputation;
-  friend class MeshPartitioning;
-
   // Cell type
   std::unique_ptr<mesh::CellType> _cell_type;
 

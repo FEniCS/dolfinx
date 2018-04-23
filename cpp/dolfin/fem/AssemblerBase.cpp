@@ -53,7 +53,7 @@ void AssemblerBase::check(const Form& a)
   if (a.integrals().num_interior_facet_integrals() > 0
       && MPI::size(mesh.mpi_comm()) > 1)
   {
-    std::string ghost_mode = mesh.ghost_mode();
+    std::string ghost_mode = mesh.get_ghost_mode();
     if (!(ghost_mode == "shared_vertex" || ghost_mode == "shared_facet"))
     {
       log::dolfin_error("AssemblerBase.cpp", "assemble form",

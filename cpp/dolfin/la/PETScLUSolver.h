@@ -85,20 +85,15 @@ public:
   /// Return parameter type: "krylov_solver" or "lu_solver"
   std::string parameter_type() const { return "lu_solver"; }
 
-  // FIXME: These should not be friend classes
-  friend class PETScSNESSolver;
-  friend class PETScTAOSolver;
-
 private:
   // FIXME: Remove
   // Available LU solvers
   static std::map<std::string, const MatSolverType> lumethods;
 
   // Select LU solver type
-  static const MatSolverType select_solver(MPI_Comm comm,
-                                              std::string method);
+  static const MatSolverType select_solver(MPI_Comm comm, std::string method);
 
   PETScKrylovSolver _solver;
 };
-}
-}
+} // namespace la
+} // namespace dolfin

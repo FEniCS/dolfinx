@@ -194,9 +194,6 @@ public:
   EigenRowArrayXXd compute_point_values() const;
 
 private:
-  // Friends
-  friend class FunctionAssigner;
-
   // Initialize vector
   void init_vector();
 

@@ -59,10 +59,11 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(
   mesh::Mesh mesh
       = build(comm, type, cells, points, global_cell_indices, ghost_mode, mp);
 
+  // FIXME: This should be done at Mesh construction
   // Store used ghost mode
   // NOTE: This is the only place in DOLFIN which eventually sets
   //       mesh._ghost_mode != "none"
-  mesh._ghost_mode = ghost_mode;
+  mesh.set_ghost_mode(ghost_mode);
 
   // Initialise number of globally connected cells to each facet. This
   // is necessary to distinguish between facets on an exterior

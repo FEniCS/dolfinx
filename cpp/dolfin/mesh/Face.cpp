@@ -54,10 +54,8 @@ geometry::Point Face::normal() const
   // in R^2
   if (tD == 2 && gD == 2)
   {
-    log::dolfin_error(
-        "Face.cpp", "compute Face normal",
-        "Don't know how to compute Face normal for a Face in a 2D "
-        "mesh embedded in R^2.");
+    throw std::runtime_error("Don't know how to compute Face normal for a Face "
+                             "in a 2D mesh embedded in R^2.");
   }
 
   // Check for when Cell has the same topological dimension as Face and we are
