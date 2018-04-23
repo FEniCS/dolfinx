@@ -193,9 +193,9 @@ std::int32_t dolfin::graph::GraphBuilder::compute_local_dual_graph(
     return compute_local_dual_graph_keyed<4>(mpi_comm, cell_vertices, cell_type,
                                              local_graph, facet_cell_map);
   default:
-    log::dolfin_error("GraphBuilder.cpp", "compute local part of dual graph",
-                      "Entities with %d vertices not supported",
-                      num_entity_vertices);
+    throw std::runtime_error(
+        "Cannot compute local part of dual graph. Entities with "
+        + std::to_string(num_entity_vertices) + " vertices not supported");
     return 0;
   }
 }
