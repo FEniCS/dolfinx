@@ -76,6 +76,7 @@ SparsityPattern::SparsityPattern(
   {
     // Increase storage for nodes
     assert(patterns[row][0]);
+    std::cout << "Row: " << row << std::endl;
     assert(patterns[row][0]->_index_maps[0]);
     std::size_t row_size = patterns[row][0]->_index_maps[0]->size(
         common::IndexMap::MapSize::OWNED);
