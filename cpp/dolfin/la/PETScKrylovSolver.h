@@ -152,7 +152,6 @@ private:
   // PETSc solver pointer
   KSP _ksp;
 
-  bool preconditioner_set;
 };
 } // namespace la
 } // namespace dolfin

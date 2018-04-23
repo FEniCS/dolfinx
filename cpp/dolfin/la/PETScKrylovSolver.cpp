@@ -177,7 +177,7 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm, std::string method,
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(KSP ksp)
-    : _ksp(ksp), preconditioner_set(true)
+    : _ksp(ksp)
 {
   PetscErrorCode ierr;
   if (_ksp)
