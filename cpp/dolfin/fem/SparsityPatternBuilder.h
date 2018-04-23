@@ -7,15 +7,11 @@
 #pragma once
 
 #include <array>
+#include <dolfin/common/MPI.h>
+#include <dolfin/la/SparsityPattern.h>
 
 namespace dolfin
 {
-
-namespace la
-{
-class SparsityPattern;
-}
-
 namespace mesh
 {
 class Mesh;
@@ -33,11 +29,11 @@ class SparsityPatternBuilder
 public:
   // FIXME: Simplify
   /// Build sparsity pattern for assembly of given bilinear form
-  static void build(la::SparsityPattern& sparsity_pattern, const mesh::Mesh& mesh,
-                    const std::array<const fem::GenericDofMap*, 2> dofmaps,
-                    bool cells, bool interior_facets, bool exterior_facets,
-                    bool vertices, bool diagonal, bool init = true,
-                    bool finalize = true);
+  static la::SparsityPattern
+  build(MPI_Comm comm, const mesh::Mesh& mesh,
+        const std::array<const fem::GenericDofMap*, 2> dofmaps, bool cells,
+        bool interior_facets, bool exterior_facets, bool vertices,
+        bool diagonal, bool finalize = true);
 };
-}
-}
+} // namespace fem
+} // namespace dolfin

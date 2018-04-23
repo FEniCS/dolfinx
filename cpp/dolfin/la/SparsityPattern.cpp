@@ -76,6 +76,7 @@ SparsityPattern::SparsityPattern(
   {
     // Increase storage for nodes
     assert(patterns[row][0]);
+    std::cout << "Row: " << row << std::endl;
     assert(patterns[row][0]->_index_maps[0]);
     std::size_t row_size = patterns[row][0]->_index_maps[0]->size(
         common::IndexMap::MapSize::OWNED);
@@ -315,6 +316,13 @@ std::array<std::size_t, 2> SparsityPattern::local_range(std::size_t dim) const
   std::size_t bs = _index_maps[dim]->block_size();
   auto lrange = _index_maps[dim]->local_range();
   return {{bs * lrange[0], bs * lrange[1]}};
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const common::IndexMap>
+SparsityPattern::index_map(std::size_t dim) const
+{
+  assert(dim < 2);
+  return _index_maps[dim];
 }
 //-----------------------------------------------------------------------------
 std::size_t SparsityPattern::num_nonzeros() const

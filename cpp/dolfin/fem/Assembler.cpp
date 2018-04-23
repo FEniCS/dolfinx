@@ -91,13 +91,10 @@ void Assembler::assemble(la::PETScMatrix& A)
     {
       std::cout << "Initialising block matrix" << std::endl;
 
-      std::vector<std::vector<std::shared_ptr<la::SparsityPattern>>> patterns;
-      std::vector<std::vector<const la::SparsityPattern*>> p;
-      // int irow = 0;
+      std::vector<std::vector<la::SparsityPattern>> patterns;
       for (std::size_t row = 0; row < _a.size(); ++row)
       {
         patterns.resize(_a[row].size());
-        p.resize(_a[row].size());
         for (std::size_t col = 0; col < _a[row].size(); ++col)
         {
           std::cout << "  Initialising block: " << row << ", " << col
@@ -105,25 +102,22 @@ void Assembler::assemble(la::PETScMatrix& A)
           auto map0 = _a[row][col]->function_space(0)->dofmap()->index_map();
           auto map1 = _a[row][col]->function_space(1)->dofmap()->index_map();
 
-          std::cout << "  Push Initialising block: " << std::endl;
-          std::array<std::shared_ptr<const common::IndexMap>, 2> maps
-              = {{map0, map1}};
-          auto test
-              = std::make_shared<la::SparsityPattern>(A.mpi_comm(), maps, 0);
-          patterns[row].push_back(test);
-
           // Build sparsity pattern
           std::cout << "  Build sparsity pattern " << std::endl;
           std::array<const GenericDofMap*, 2> dofmaps
               = {{_a[row][col]->function_space(0)->dofmap().get(),
                   _a[row][col]->function_space(1)->dofmap().get()}};
-          SparsityPatternBuilder::build(*patterns[row].back(),
-                                        *_a[row][col]->mesh(), dofmaps, true,
-                                        false, false, false, false);
+          patterns[row].push_back(SparsityPatternBuilder::build(
+              A.mpi_comm(), *_a[row][col]->mesh(), dofmaps, true, false, false,
+              false, false));
           std::cout << "  End Build sparsity pattern " << std::endl;
-          p[row].push_back(patterns[row].back().get());
-          std::cout << "  End push back sparsity pattern pointer " << std::endl;
         }
+      }
+      std::vector<std::vector<const la::SparsityPattern*>> p(patterns.size());
+      for (std::size_t row  = 0; row < patterns.size(); ++row)
+      {
+        for (std::size_t col = 0; col < patterns[row].size(); ++col)
+          p[row].push_back(&patterns[row][col]);
       }
 
       // Create merged sparsity pattern
