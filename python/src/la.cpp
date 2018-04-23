@@ -766,7 +766,7 @@ void la(py::module& m)
             std::size_t start, stop, step, slicelength;
             if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
               throw py::error_already_set();
-            if (start != 0 or stop !=  (std::size_t)self.size() or step != 1)
+            if (start != 0 or stop != (std::size_t)self.size() or step != 1)
               throw std::range_error("Only full slices are supported");
 
             std::vector<double> values(x.data(), x.data() + x.size());
