@@ -131,9 +131,6 @@ public:
   /// Activate/deactivate DM
   void set_dm_active(bool val);
 
-  friend class PETScSNESSolver;
-  friend class PETScTAOSolver;
-
 private:
   // Temporary work-arounds
   static std::map<std::string, const KSPType> petsc_methods();
@@ -157,5 +154,5 @@ private:
 
   bool preconditioner_set;
 };
-}
-}
+} // namespace la
+} // namespace dolfin
