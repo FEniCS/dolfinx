@@ -8,7 +8,6 @@
 #include "FiniteElement.h"
 #include "Form.h"
 #include "GenericDofMap.h"
-#include "SparsityPatternBuilder.h"
 #include "utils.h"
 #include <array>
 #include <dolfin/common/IndexMap.h>
@@ -18,7 +17,6 @@
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>

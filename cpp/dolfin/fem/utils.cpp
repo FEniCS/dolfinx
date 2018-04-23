@@ -81,9 +81,8 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
       = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
 
   // Create and build sparsity pattern
-  la::SparsityPattern pattern(A.mpi_comm(), index_maps, 0);
-  SparsityPatternBuilder::build(
-      pattern, mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
+  la::SparsityPattern pattern = SparsityPatternBuilder::build(
+      A.mpi_comm(), mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
       (a.integrals().num_interior_facet_integrals() > 0),
       (a.integrals().num_exterior_facet_integrals() > 0),
       (a.integrals().num_vertex_integrals() > 0), keep_diagonal);

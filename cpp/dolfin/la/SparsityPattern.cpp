@@ -317,6 +317,13 @@ std::array<std::size_t, 2> SparsityPattern::local_range(std::size_t dim) const
   return {{bs * lrange[0], bs * lrange[1]}};
 }
 //-----------------------------------------------------------------------------
+std::shared_ptr<const common::IndexMap>
+SparsityPattern::index_map(std::size_t dim) const
+{
+  assert(dim < 2);
+  return _index_maps[dim];
+}
+//-----------------------------------------------------------------------------
 std::size_t SparsityPattern::num_nonzeros() const
 {
   std::size_t nz = 0;
