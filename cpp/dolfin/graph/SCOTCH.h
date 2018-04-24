@@ -48,7 +48,7 @@ public:
   ///
   static mesh::PartitionData
   compute_partition(const MPI_Comm mpi_comm,
-                    Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+                    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                     const mesh::CellType& cell_type);
 
   /// Compute reordering (map[old] -> new) using
@@ -59,8 +59,10 @@ public:
   ///   Number of passes to use in GPS algorithm
   /// @return std::vector<int>
   ///   Mapping from old to new nodes
-  static std::vector<int> compute_gps(const Graph& graph,
-                                      std::size_t num_passes = 5);
+  /// @return std::vector<int>
+  ///   Mapping from new to old nodes (inverse map)
+  static std::pair<std::vector<int>, std::vector<int>>
+  compute_gps(const Graph& graph, std::size_t num_passes = 5);
 
   /// Compute graph re-ordering
   /// @param graph (Graph)
@@ -69,18 +71,10 @@ public:
   ///   SCOTCH parameters
   /// @return std::vector<int>
   ///   Mapping from old to new nodes
-  static std::vector<int> compute_reordering(const Graph& graph,
-                                             std::string scotch_strategy = "");
-
-  /// Compute graph re-ordering
-  /// @param graph (Graph)
-  /// @param permutation (std::vector<int>)
-  /// @param inverse_permutation (std::vector<int>)
-  /// @param scotch_strategy (std::string)
-  static void compute_reordering(const Graph& graph,
-                                 std::vector<int>& permutation,
-                                 std::vector<int>& inverse_permutation,
-                                 std::string scotch_strategy = "");
+  /// @return std::vector<int>
+  ///   Mapping from new to old nodes (inverse map)
+  static std::pair<std::vector<int>, std::vector<int>>
+  compute_reordering(const Graph& graph, std::string scotch_strategy = "");
 
 private:
   // Compute cell partitions from distributed dual graph. Note that
@@ -88,7 +82,7 @@ private:
   // and the SCOTCH interface is not const-correct.
   template <typename T>
   static mesh::PartitionData
-  partition(const MPI_Comm mpi_comm, CSRGraph<T>& local_graph,
+  partition(const MPI_Comm mpi_comm, const CSRGraph<T>& local_graph,
             const std::vector<std::size_t>& node_weights,
             const std::set<std::int64_t>& ghost_vertices);
 };

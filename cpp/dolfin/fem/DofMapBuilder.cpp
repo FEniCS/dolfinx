@@ -1028,11 +1028,12 @@ DofMapBuilder::compute_node_reordering(
   std::vector<int> node_remap;
   if (ordering_library == "Boost")
   {
-    node_remap
-        = dolfin::graph::BoostGraphOrdering::compute_cuthill_mckee(graph, true);
+    node_remap = graph::BoostGraphOrdering::compute_cuthill_mckee(graph, true);
   }
   else if (ordering_library == "SCOTCH")
-    node_remap = dolfin::graph::SCOTCH::compute_gps(graph);
+  {
+    std::tie(node_remap, std::ignore) = graph::SCOTCH::compute_gps(graph);
+  }
   else if (ordering_library == "random")
   {
     // NOTE: Randomised dof ordering should only be used for

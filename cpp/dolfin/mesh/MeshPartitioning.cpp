@@ -248,7 +248,8 @@ MeshPartitioning::reorder_cells_gps(
     }
     g_dual.push_back(conn_set);
   }
-  std::vector<int> remap = dolfin::graph::SCOTCH::compute_gps(g_dual);
+  std::vector<int> remap;
+  std::tie(remap, std::ignore) = dolfin::graph::SCOTCH::compute_gps(g_dual);
 
   // Add direct mapping for any ghost cells (not reordered)
   for (unsigned int j = remap.size(); j < global_cell_indices.size(); ++j)

@@ -5,12 +5,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "ParMETIS.h"
+#include "CSRGraph.h"
 #include "GraphBuilder.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/log/log.h>
 #include <dolfin/mesh/CellType.h>
-#include <dolfin/parameter/GlobalParameters.h>
 
 #ifdef HAS_PARMETIS
 #include <parmetis.h>
@@ -45,10 +44,9 @@ dual_graph(MPI_Comm mpi_comm,
   // Check that number of local graph nodes (cells) is > 0
   if (num_local_cells == 0)
   {
-    log::dolfin_error(
-        "ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
-        "ParMETIS cannot be used if a process has no cells (graph "
-        "nodes). Use SCOTCH to perform partitioning instead");
+    throw std::runtime_error(
+        "ParMETIS cannot be used if a process has no cells (graph nodes). Use "
+        "SCOTCH to perform partitioning instead");
   }
 
   // Communicate number of cells on each process between all processors
@@ -104,7 +102,8 @@ dual_graph(MPI_Comm mpi_comm,
 
 //-----------------------------------------------------------------------------
 mesh::PartitionData dolfin::graph::ParMETIS::compute_partition(
-    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const MPI_Comm mpi_comm,
+    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const mesh::CellType& cell_type, const std::string mode)
 {
   // Duplicate MPI communicator (ParMETIS does not take const
@@ -162,10 +161,10 @@ mesh::PartitionData dolfin::graph::ParMETIS::compute_partition(
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-mesh::PartitionData dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm,
-                                                       CSRGraph<T>& csr_graph)
+mesh::PartitionData
+dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm,
+                                   const CSRGraph<T>& csr_graph)
 {
-  std::vector<int> cell_partition;
   std::map<std::int64_t, std::vector<int>> ghost_procs;
 
   common::Timer timer("Compute graph partition (ParMETIS)");
@@ -190,16 +189,20 @@ mesh::PartitionData dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm,
   std::vector<real_t> tpwgts(ncon * nparts, 1.0 / static_cast<real_t>(nparts));
   std::vector<real_t> ubvec(ncon, 1.05);
 
+  // Note: ParMETIS is not const-correct, so we throw away const-ness
+  // and trust ParMETIS to not modify the data.
+
   // Call ParMETIS to partition graph
   common::Timer timer1("ParMETIS: call ParMETIS_V3_PartKway");
   const std::int32_t num_local_cells = csr_graph.size();
   std::vector<idx_t> part(num_local_cells);
   assert(!part.empty());
   int err = ParMETIS_V3_PartKway(
-      csr_graph.node_distribution().data(), csr_graph.nodes().data(),
-      csr_graph.edges().data(), elmwgt, NULL, &wgtflag, &numflag, &ncon,
-      &nparts, tpwgts.data(), ubvec.data(), options, &edgecut, part.data(),
-      &mpi_comm);
+      const_cast<idx_t*>(csr_graph.node_distribution().data()),
+      const_cast<idx_t*>(csr_graph.nodes().data()),
+      const_cast<idx_t*>(csr_graph.edges().data()), elmwgt, NULL, &wgtflag,
+      &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(), options, &edgecut,
+      part.data(), &mpi_comm);
   assert(err == METIS_OK);
   timer1.stop();
 
@@ -309,14 +312,14 @@ mesh::PartitionData dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm,
   timer2.stop();
 
   // Copy cell partition data
-  cell_partition.assign(part.begin(), part.end());
+  std::vector<int> cell_partition(part.begin(), part.end());
 
   return mesh::PartitionData(cell_partition, ghost_procs);
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void dolfin::graph::ParMETIS::adaptive_repartition(
-    MPI_Comm mpi_comm, CSRGraph<T>& csr_graph, std::vector<int>& cell_partition)
+std::vector<int> dolfin::graph::ParMETIS::adaptive_repartition(
+    MPI_Comm mpi_comm, const CSRGraph<T>& csr_graph, double weight)
 {
   common::Timer timer(
       "Compute graph partition (ParMETIS Adaptive Repartition)");
@@ -332,8 +335,7 @@ void dolfin::graph::ParMETIS::adaptive_repartition(
   // better edge cut.
 
   common::Timer timer1("ParMETIS: call ParMETIS_V3_AdaptiveRepart");
-  const double itr = parameter::parameters["ParMETIS_repartitioning_weight"];
-  real_t _itr = itr;
+  real_t _itr = weight;
   std::vector<idx_t> part(csr_graph.size());
   std::vector<idx_t> vsize(part.size(), 1);
   assert(!part.empty());
@@ -359,13 +361,13 @@ void dolfin::graph::ParMETIS::adaptive_repartition(
   assert(err == METIS_OK);
   timer1.stop();
 
-  // Copy cell partition data
-  cell_partition.assign(part.begin(), part.end());
+  // Copy cell partition data and return
+  return std::vector<int>(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
-                                     std::vector<int>& cell_partition)
+std::vector<int> dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm,
+                                                 const CSRGraph<T>& csr_graph)
 {
   common::Timer timer("Compute graph partition (ParMETIS Refine)");
 
@@ -411,17 +413,17 @@ void dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
   timer1.stop();
 
   // Copy cell partition data
-  cell_partition.assign(part.begin(), part.end());
+  return std::vector<int>(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 #else
 mesh::PartitionData dolfin::graph::ParMETIS::compute_partition(
-    const MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const MPI_Comm mpi_comm,
+    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const mesh::CellType& cell_type, const std::string mode)
 {
-  log::dolfin_error("ParMETIS.cpp", "compute mesh partitioning using ParMETIS",
-                    "DOLFIN has been configured without support for ParMETIS");
+  throw std::runtime_error("DOLFIN has been configured without  ParMETIS");
   return mesh::PartitionData({}, {});
 }
 //-----------------------------------------------------------------------------
