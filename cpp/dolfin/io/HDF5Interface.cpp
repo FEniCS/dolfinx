@@ -10,7 +10,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 
-#ifdef HAS_HDF5
 
 #define HDF5_FAIL -1
 #define HDF5_MAXSTRLEN 80
@@ -443,4 +442,3 @@ bool HDF5Interface::get_mpi_atomicity(const hid_t hdf5_file_handle)
 }
 //-----------------------------------------------------------------------------
 
-#endif

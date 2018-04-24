@@ -215,13 +215,14 @@ MeshPartitioning::reorder_cells_gps(
 
   common::Timer timer("Reorder cells using GPS ordering");
 
+  // FIXME: Should not use Graph private methods
   // Make dual graph from vertex indices, using GraphBuilder
   // FIXME: this should be reused later to add the facet-cell topology
   std::vector<std::vector<std::size_t>> local_graph;
   dolfin::graph::GraphBuilder::FacetCellMap facet_cell_map;
-
-  dolfin::graph::GraphBuilder::compute_local_dual_graph(
-      mpi_comm, global_cell_vertices, cell_type, local_graph, facet_cell_map);
+  std::tie(local_graph, facet_cell_map, std::ignore)
+      = dolfin::graph::GraphBuilder::compute_local_dual_graph(
+          mpi_comm, global_cell_vertices, cell_type);
 
   const std::size_t num_all_cells = global_cell_vertices.rows();
   const std::size_t local_cell_offset

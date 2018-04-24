@@ -131,10 +131,10 @@ mesh::PartitionData dolfin::graph::ParMETIS::compute_partition(
   else
   {
     // Compute dual graph with DOLFIN
-    std::vector<std::vector<std::size_t>> local_graph;
     std::set<std::int64_t> ghost_vertices;
-    GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type,
-                                     local_graph, ghost_vertices);
+    std::vector<std::vector<std::size_t>> local_graph;
+    std::tie(local_graph, ghost_vertices, std::ignore)
+        = GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type);
 
     csr_graph = std::make_shared<CSRGraph<idx_t>>(mpi_comm, local_graph);
   }

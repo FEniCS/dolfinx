@@ -18,7 +18,8 @@
 #include <string>
 
 #ifdef HAS_SCOTCH
-extern "C" {
+extern "C"
+{
 #include <ptscotch.h>
 #include <stdint.h>
 }
@@ -45,8 +46,8 @@ mesh::PartitionData dolfin::graph::SCOTCH::compute_partition(
   {
     // Compute dual graph (for this parition)
     std::vector<std::vector<std::size_t>> local_graph;
-    GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type,
-                                     local_graph, ghost_vertices);
+    std::tie(local_graph, ghost_vertices, std::ignore)
+        = GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type);
 
     csr_graph.reset(new CSRGraph<SCOTCH_Num>(MPI_COMM_SELF, local_graph));
   }
