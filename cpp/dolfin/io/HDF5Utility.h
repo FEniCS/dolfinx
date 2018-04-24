@@ -9,6 +9,7 @@
 #include "dolfin/common/types.h"
 #include <array>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace dolfin
@@ -44,26 +45,27 @@ public:
   /// and remote_local_dofi is the pertinent local_dof of the cell.
   /// input_cells is a list of cells held on this process, and
   /// input_cell_dofs/x_cell_dofs list their local_dofs.
-  static void
+  ///
+  /// Returns (global_cells, remote_local_dofi)
+  static std::pair<std::vector<std::size_t>, std::vector<std::size_t>>
   map_gdof_to_cell(const MPI_Comm mpi_comm,
                    const std::vector<std::size_t>& input_cells,
                    const std::vector<dolfin::la_index_t>& input_cell_dofs,
                    const std::vector<std::int64_t>& x_cell_dofs,
-                   const std::array<std::int64_t, 2> vector_range,
-                   std::vector<std::size_t>& global_cells,
-                   std::vector<std::size_t>& remote_local_dofi);
+                   const std::array<std::int64_t, 2> vector_range);
 
   /// Given the cell dof index specified
   /// as (process, local_cell_index, local_cell_dof_index)
   /// get the global_dof index from that location, and return it for all
-  /// DOFs in the range of "vector_range"
-  static void get_global_dof(
+  /// DOFs in the range of "vector_range".
+  ///
+  /// Returns global_dof
+  static std::vector<dolfin::la_index_t> get_global_dof(
       MPI_Comm mpi_comm,
       const std::vector<std::pair<std::size_t, std::size_t>>& cell_ownership,
       const std::vector<std::size_t>& remote_local_dofi,
       std::array<std::int64_t, 2> vector_range,
-      const fem::GenericDofMap& dofmap,
-      std::vector<dolfin::la_index_t>& global_dof);
+      const fem::GenericDofMap& dofmap);
 
   /// Get cell owners for an arbitrary set of cells.
   /// Returns (process, local index) pairs
@@ -87,5 +89,5 @@ public:
                           std::array<std::int64_t, 2> input_vector_range,
                           const fem::GenericDofMap& dofmap);
 };
-}
-}
+} // namespace io
+} // namespace dolfin

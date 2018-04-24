@@ -16,6 +16,22 @@ using namespace dolfin;
 using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
+mesh::Mesh BoxMesh::create(MPI_Comm comm,
+                           const std::array<geometry::Point, 2>& p,
+                           std::array<std::size_t, 3> n,
+                           mesh::CellType::Type cell_type)
+{
+  if (cell_type == mesh::CellType::Type::tetrahedron)
+    return build_tet(comm, p, n);
+  else if (cell_type == mesh::CellType::Type::hexahedron)
+    return build_hex(comm, n);
+  else
+    throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
+
+  // Will never reach this point
+  return build_tet(comm, p, n);
+}
+//-----------------------------------------------------------------------------
 mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
                               const std::array<geometry::Point, 2>& p,
                               std::array<std::size_t, 3> n)
@@ -60,19 +76,14 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS
       || std::abs(z0 - z1) < DOLFIN_EPS)
   {
-    log::dolfin_error("BoxMesh.cpp", "create box",
-                      "Box seems to have zero width, "
-                      "height or depth. Consider "
-                      "checking your dimensions");
+    throw std::runtime_error(
+        "Box seems to have zero width, height or depth. Check dimensions");
   }
 
   if (nx < 1 || ny < 1 || nz < 1)
   {
-    log::dolfin_error("BoxMesh.cpp", "create box",
-                      "BoxMesh has non-positive number "
-                      "of vertices in some dimension: "
-                      "number of vertices must be at "
-                      "least 1 in each dimension");
+    throw std::runtime_error(
+        "BoxMesh has non-positive number of vertices in some dimension");
   }
 
   EigenRowArrayXXd geom((nx + 1) * (ny + 1) * (nz + 1), 3);

@@ -20,13 +20,12 @@ using namespace dolfin;
 using namespace dolfin::io;
 
 //-----------------------------------------------------------------------------
-void HDF5Utility::map_gdof_to_cell(
+std::pair<std::vector<std::size_t>, std::vector<std::size_t>>
+HDF5Utility::map_gdof_to_cell(
     const MPI_Comm mpi_comm, const std::vector<std::size_t>& input_cells,
     const std::vector<dolfin::la_index_t>& input_cell_dofs,
     const std::vector<std::int64_t>& x_cell_dofs,
-    const std::array<std::int64_t, 2> vector_range,
-    std::vector<std::size_t>& global_cells,
-    std::vector<std::size_t>& remote_local_dofi)
+    const std::array<std::int64_t, 2> vector_range)
 {
   // Go through all locally held cells (as read from file)
   // and make mapping from global DOF index back to the cell and local index.
@@ -76,8 +75,8 @@ void HDF5Utility::map_gdof_to_cell(
   // There may be some overwriting due to receiving an
   // index for the same DOF from multiple cells on different processes
 
-  global_cells.resize(vector_range[1] - vector_range[0]);
-  remote_local_dofi.resize(vector_range[1] - vector_range[0]);
+  std::vector<std::size_t> global_cells(vector_range[1] - vector_range[0]);
+  std::vector<std::size_t> remote_local_dofi(vector_range[1] - vector_range[0]);
   for (std::size_t i = 0; i < num_processes; ++i)
   {
     std::vector<dolfin::la_index_t>& rdofs = receive_dofs[i];
@@ -91,21 +90,22 @@ void HDF5Utility::map_gdof_to_cell(
       remote_local_dofi[rdofs[j] - vector_range[0]] = rcelldofs[2 * j + 1];
     }
   }
+
+  return std::make_pair(std::move(global_cells), std::move(remote_local_dofi));
 }
 //-----------------------------------------------------------------------------
-void HDF5Utility::get_global_dof(
+std::vector<dolfin::la_index_t> HDF5Utility::get_global_dof(
     const MPI_Comm mpi_comm,
     const std::vector<std::pair<std::size_t, std::size_t>>& cell_ownership,
     const std::vector<std::size_t>& remote_local_dofi,
     const std::array<std::int64_t, 2> vector_range,
-    const fem::GenericDofMap& dofmap,
-    std::vector<dolfin::la_index_t>& global_dof)
+    const fem::GenericDofMap& dofmap)
 {
   const std::size_t num_processes = MPI::size(mpi_comm);
   std::vector<std::vector<std::size_t>> send_cell_dofs(num_processes);
   const std::size_t n_vector_vals = vector_range[1] - vector_range[0];
-  global_dof.resize(n_vector_vals);
 
+  std::vector<dolfin::la_index_t> global_dof(n_vector_vals);
   for (std::size_t i = 0; i != n_vector_vals; ++i)
   {
     const std::size_t dest = cell_ownership[i].first;
@@ -155,6 +155,8 @@ void HDF5Utility::get_global_dof(
     global_dof[i] = rgdof[pos[src]];
     pos[src]++;
   }
+
+  return global_dof;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::size_t, std::size_t>>
@@ -292,9 +294,8 @@ void HDF5Utility::set_local_vector_values(
   // each item in the vector on this process
   std::vector<std::size_t> global_cells;
   std::vector<std::size_t> remote_local_dofi;
-  HDF5Utility::map_gdof_to_cell(mpi_comm, cells, cell_dofs, x_cell_dofs,
-                                input_vector_range, global_cells,
-                                remote_local_dofi);
+  std::tie(global_cells, remote_local_dofi) = HDF5Utility::map_gdof_to_cell(
+      mpi_comm, cells, cell_dofs, x_cell_dofs, input_vector_range);
 
   // At this point, each process has a set of data, and for each
   // value, a global_cell and local_dof to send it to.  However, it is
@@ -307,9 +308,8 @@ void HDF5Utility::set_local_vector_values(
   // Having found the cell location, the actual global_dof index held
   // by that (cell, local_dof) is needed on the process which holds
   // the data values
-  std::vector<dolfin::la_index_t> global_dof;
-  HDF5Utility::get_global_dof(mpi_comm, cell_ownership, remote_local_dofi,
-                              input_vector_range, dofmap, global_dof);
+  std::vector<dolfin::la_index_t> global_dof = HDF5Utility::get_global_dof(
+      mpi_comm, cell_ownership, remote_local_dofi, input_vector_range, dofmap);
 
   const std::size_t num_processes = MPI::size(mpi_comm);
 
