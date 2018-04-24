@@ -45,11 +45,6 @@ double dolfin::math::Lagrange::point(std::size_t i) const
   return points[i];
 }
 //-----------------------------------------------------------------------------
-double dolfin::math::Lagrange::operator()(std::size_t i, double x)
-{
-  return eval(i, x);
-}
-//-----------------------------------------------------------------------------
 double dolfin::math::Lagrange::eval(std::size_t i, double x)
 {
   assert(i < points.size());

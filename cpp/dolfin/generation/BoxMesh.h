@@ -9,7 +9,6 @@
 #include <array>
 #include <cstddef>
 #include <dolfin/common/MPI.h>
-#include <dolfin/log/log.h>
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Mesh.h>
 
@@ -48,30 +47,18 @@ public:
   ///         geometry::Point p1(2, 2, 2);
   ///         auto mesh = BoxMesh::create({p0, p1}, {8, 8, 8});
   /// @endcode
-  static mesh::Mesh create(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
+  static mesh::Mesh create(MPI_Comm comm,
+                           const std::array<geometry::Point, 2>& p,
                            std::array<std::size_t, 3> n,
-                           mesh::CellType::Type cell_type)
-  {
-    if (cell_type == mesh::CellType::Type::tetrahedron)
-      return build_tet(comm, p, n);
-    else if (cell_type == mesh::CellType::Type::hexahedron)
-      return build_hex(comm, n);
-    else
-    {
-      log::dolfin_error("BoxMesh.h", "generate box mesh", "Wrong cell type '%d'",
-                   cell_type);
-    }
-
-    // Will never reach this point
-    return build_tet(comm, p, n);
-  }
+                           mesh::CellType::Type cell_type);
 
 private:
   // Build mesh
-  static mesh::Mesh build_tet(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
+  static mesh::Mesh build_tet(MPI_Comm comm,
+                              const std::array<geometry::Point, 2>& p,
                               std::array<std::size_t, 3> n);
 
   static mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n);
 };
-}
-}
+} // namespace generation
+} // namespace dolfin
