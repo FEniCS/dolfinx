@@ -6,17 +6,13 @@
 
 #pragma once
 
-#include <boost/multi_array.hpp>
 #include <cstddef>
 #include <cstdint>
-#include <map>
-#include <string>
-#include <vector>
-
-#include "CSRGraph.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/PartitionData.h>
+#include <string>
+#include <vector>
 
 namespace dolfin
 {
@@ -28,6 +24,9 @@ class CellType;
 
 namespace graph
 {
+
+template <typename T>
+class CSRGraph;
 
 /// This class provides an interface to ParMETIS
 
@@ -45,7 +44,7 @@ public:
   /// can be advantageous to use "adaptive_repartition" or "refine".
   static mesh::PartitionData
   compute_partition(const MPI_Comm mpi_comm,
-                    Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+                    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                     const mesh::CellType& cell_type,
                     const std::string mode = "partition");
 
@@ -56,20 +55,19 @@ private:
   // ParMETIS accesses it non-const, so has to be non-const here
   template <typename T>
   static mesh::PartitionData partition(MPI_Comm mpi_comm,
-                                       CSRGraph<T>& csr_graph);
+                                       const CSRGraph<T>& csr_graph);
 
-  // ParMETIS adaptive repartition. CSRGraph should be const, but
-  // ParMETIS accesses it non-const, so has to be non-const here
+  // ParMETIS adaptive repartitiont, so has to be non-const here
   template <typename T>
-  static void adaptive_repartition(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
-                                   std::vector<int>& cell_partition);
+  static std::vector<int> adaptive_repartition(MPI_Comm mpi_comm,
+                                               const CSRGraph<T>& csr_graph,
+                                               double weight = 1000);
 
-  // ParMETIS refine repartition. CSRGraph should be const, but
-  // ParMETIS accesses it non-const, so has to be non-const here
+  // ParMETIS refine repartition
   template <typename T>
-  static void refine(MPI_Comm mpi_comm, CSRGraph<T>& csr_graph,
-                     std::vector<int>& cell_partition);
+  static std::vector<int> refine(MPI_Comm mpi_comm,
+                                 const CSRGraph<T>& csr_graph);
 #endif
 };
-}
-}
+} // namespace graph
+} // namespace dolfin

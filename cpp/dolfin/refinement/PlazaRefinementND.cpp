@@ -38,7 +38,7 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
   common::Timer t0("PLAZA: refine");
   std::vector<std::int32_t> long_edge;
   std::vector<bool> edge_ratio_ok;
-  face_long_edge(long_edge, edge_ratio_ok, mesh);
+  std::tie(long_edge, edge_ratio_ok) = face_long_edge(mesh);
 
   ParallelRefinement p_ref(mesh);
   p_ref.mark_all();
@@ -63,7 +63,7 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
   common::Timer t0("PLAZA: refine");
   std::vector<std::int32_t> long_edge;
   std::vector<bool> edge_ratio_ok;
-  face_long_edge(long_edge, edge_ratio_ok, mesh);
+  std::tie(long_edge, edge_ratio_ok) = face_long_edge(mesh);
 
   ParallelRefinement p_ref(mesh);
   p_ref.mark(refinement_marker);
@@ -74,33 +74,34 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
                             redistribute);
 }
 //-----------------------------------------------------------------------------
-void PlazaRefinementND::get_simplices(
-    std::vector<std::size_t>& simplex_set,
-    const std::vector<bool>& marked_edges,
-    const std::vector<std::int32_t>& longest_edge, std::size_t tdim,
-    bool uniform)
+std::vector<std::size_t>
+PlazaRefinementND::get_simplices(const std::vector<bool>& marked_edges,
+                                 const std::vector<std::int32_t>& longest_edge,
+                                 std::size_t tdim, bool uniform)
 {
   if (tdim == 2)
   {
     assert(longest_edge.size() == 1);
-    get_triangles(simplex_set, marked_edges, longest_edge[0], uniform);
+    return get_triangles(marked_edges, longest_edge[0], uniform);
   }
   else if (tdim == 3)
   {
     assert(longest_edge.size() == 4);
-    get_tetrahedra(simplex_set, marked_edges, longest_edge);
+    return get_tetrahedra(marked_edges, longest_edge);
+  }
+  else
+  {
+    throw std::runtime_error("Topological dimension not supported");
+    return std::vector<std::size_t>();
   }
 }
 //-----------------------------------------------------------------------------
-void PlazaRefinementND::get_triangles(std::vector<std::size_t>& tri_set,
-                                      const std::vector<bool>& marked_edges,
-                                      const std::int32_t longest_edge,
-                                      bool uniform)
+std::vector<std::size_t>
+PlazaRefinementND::get_triangles(const std::vector<bool>& marked_edges,
+                                 const std::int32_t longest_edge, bool uniform)
 {
   // Longest edge must be marked
   assert(marked_edges[longest_edge]);
-
-  tri_set.clear();
 
   // v0 and v1 are at ends of longest_edge (e2)
   // opposite vertex has same index as longest_edge
@@ -113,16 +114,12 @@ void PlazaRefinementND::get_triangles(std::vector<std::size_t>& tri_set,
 
   // If all edges marked, consider uniform refinement
   if (uniform and marked_edges[v0] and marked_edges[v1])
-  {
-    tri_set = {e0, e1, v2, e1, e2, v0, e2, e0, v1, e2, e1, e0};
-    return;
-  }
+    return {e0, e1, v2, e1, e2, v0, e2, e0, v1, e2, e1, e0};
 
   // Break each half of triangle into one or two sub-triangles
+  std::vector<std::size_t> tri_set;
   if (marked_edges[v0])
-  {
     tri_set = {e2, v2, e0, e2, e0, v1};
-  }
   else
     tri_set = {e2, v2, v1};
 
@@ -133,14 +130,14 @@ void PlazaRefinementND::get_triangles(std::vector<std::size_t>& tri_set,
   }
   else
     tri_set.insert(tri_set.end(), {e2, v2, v0});
+
+  return tri_set;
 }
 //-----------------------------------------------------------------------------
-void PlazaRefinementND::get_tetrahedra(
-    std::vector<std::size_t>& tet_set, const std::vector<bool>& marked_edges,
-    const std::vector<std::int32_t>& longest_edge)
+std::vector<std::size_t>
+PlazaRefinementND::get_tetrahedra(const std::vector<bool>& marked_edges,
+                                  const std::vector<std::int32_t>& longest_edge)
 {
-  tet_set.clear();
-
   // Connectivity matrix for ten possible points (4 vertices + 6 edge midpoints)
   // ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5}
   // Only need upper triangle, but sometimes it is easier just to insert
@@ -151,6 +148,8 @@ void PlazaRefinementND::get_tetrahedra(
   // Edge connectivity to vertices (and by extension facets)
   static const std::int32_t edges[6][2]
       = {{2, 3}, {1, 3}, {1, 2}, {0, 3}, {0, 2}, {0, 1}};
+
+  std::vector<std::size_t> tet_set;
 
   // Iterate through cell edges
   for (unsigned int ei = 0; ei != 6; ++ei)
@@ -238,11 +237,12 @@ void PlazaRefinementND::get_tetrahedra(
       }
     }
   }
+
+  return tet_set;
 }
 //-----------------------------------------------------------------------------
-void PlazaRefinementND::face_long_edge(std::vector<std::int32_t>& long_edge,
-                                       std::vector<bool>& edge_ratio_ok,
-                                       const mesh::Mesh& mesh)
+std::pair<std::vector<std::int32_t>, std::vector<bool>>
+PlazaRefinementND::face_long_edge(const mesh::Mesh& mesh)
 {
   const std::size_t tdim = mesh.topology().dim();
   mesh.init(1);
@@ -250,7 +250,8 @@ void PlazaRefinementND::face_long_edge(std::vector<std::int32_t>& long_edge,
   mesh.init(2, 1);
 
   // Storage for face-local index of longest edge
-  long_edge.resize(mesh.num_entities(2));
+  std::vector<std::int32_t> long_edge(mesh.num_entities(2));
+  std::vector<bool> edge_ratio_ok;
 
   // Check mesh face quality (may be used in 2D to switch to "uniform"
   // refinement)
@@ -301,6 +302,8 @@ void PlazaRefinementND::face_long_edge(std::vector<std::int32_t>& long_edge,
 
     long_edge[f.index()] = face_edges[imax];
   }
+
+  return std::make_pair(std::move(long_edge), std::move(edge_ratio_ok));
 }
 //-----------------------------------------------------------------------------
 void PlazaRefinementND::enforce_rules(
@@ -410,7 +413,8 @@ mesh::Mesh PlazaRefinementND::compute_refinement(
 
       const bool uniform = (tdim == 2) ? edge_ratio_ok[cell.index()] : false;
 
-      get_simplices(simplex_set, markers, longest_edge, tdim, uniform);
+      // FIXME: this has an expensive dynamic memory allocation
+      simplex_set = get_simplices(markers, longest_edge, tdim, uniform);
 
       // Save parent index
       const std::size_t ncells = simplex_set.size() / num_cell_vertices;
