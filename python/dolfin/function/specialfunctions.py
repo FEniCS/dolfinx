@@ -4,29 +4,27 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-
-"""This module defines some special functions (originally defined in
-SpecialFunctions.h).
-
-"""
-
+"""Some special functions"""
 
 import ufl
 import dolfin.cpp as cpp
 from dolfin.function.expression import BaseExpression
 
-__all__ = ["MeshCoordinates", "FacetArea", "FacetNormal",
-           "CellVolume", "SpatialCoordinate", "CellNormal",
-           "CellDiameter", "Circumradius",
-           "MinCellEdgeLength", "MaxCellEdgeLength",
-           "MinFacetEdgeLength", "MaxFacetEdgeLength"]
+__all__ = [
+    "MeshCoordinates", "FacetArea", "FacetNormal", "CellVolume",
+    "SpatialCoordinate", "CellNormal", "CellDiameter", "Circumradius",
+    "MinCellEdgeLength", "MaxCellEdgeLength", "MinFacetEdgeLength",
+    "MaxFacetEdgeLength"
+]
 
 
 def _mesh2domain(mesh):
     "Deprecation mechanism for symbolic geometry."
 
     if isinstance(mesh, ufl.cell.AbstractCell):
-        raise TypeError("Cannot construct geometry from a Cell. Pass the mesh instead, for example use FacetNormal(mesh) instead of FacetNormal(triangle) or triangle.n")
+        raise TypeError(
+            "Cannot construct geometry from a Cell. Pass the mesh instead, for example use FacetNormal(mesh) instead of FacetNormal(triangle) or triangle.n"
+        )
     return mesh.ufl_domain()
 
 
@@ -73,8 +71,8 @@ class FacetArea(BaseExpression):
         # each cell, not for each facet!
         ufl_element = ufl.FiniteElement("Discontinuous Lagrange",
                                         mesh.ufl_cell(), 0)
-        super().__init__(domain=mesh.ufl_domain(),
-                         element=ufl_element, label="FacetArea")
+        super().__init__(
+            domain=mesh.ufl_domain(), element=ufl_element, label="FacetArea")
 
 
 # Simple definition of FacetNormal via UFL
