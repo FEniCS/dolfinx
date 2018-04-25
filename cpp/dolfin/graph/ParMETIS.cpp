@@ -355,17 +355,4 @@ std::vector<int> dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm,
   return std::vector<int>(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-#else
-std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-dolfin::graph::ParMETIS::compute_partition(
-    const MPI_Comm mpi_comm,
-    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-    const mesh::CellType& cell_type, const std::string mode)
-{
-  throw std::runtime_error("DOLFIN has been configured without  ParMETIS");
-  return std::pair<std::vector<int>,
-                   std::map<std::int64_t, std::vector<int>>>();
-}
-//-----------------------------------------------------------------------------
 #endif

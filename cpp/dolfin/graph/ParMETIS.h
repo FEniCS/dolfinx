@@ -21,7 +21,6 @@
 #include <parmetis.h>
 #endif
 
-
 namespace dolfin
 {
 
@@ -40,14 +39,13 @@ class CSRGraph;
 
 class ParMETIS
 {
+#ifdef HAS_PARMETIS
 public:
   // Standard ParMETIS partition
   static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
   partition(MPI_Comm mpi_comm, const CSRGraph<idx_t>& csr_graph);
 
 private:
-#ifdef HAS_PARMETIS
-
   // ParMETIS adaptive repartition, so has to be non-const here
   template <typename T>
   static std::vector<int> adaptive_repartition(MPI_Comm mpi_comm,
