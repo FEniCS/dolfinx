@@ -88,19 +88,17 @@ PartitionData MeshPartitioning::partition_cells(
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
   {
-    return dolfin::graph::SCOTCH::compute_partition(mpi_comm, cell_vertices,
-                                                    *cell_type);
+    return PartitionData(
+        graph::SCOTCH::compute_partition(mpi_comm, cell_vertices, *cell_type));
   }
   else if (partitioner == "ParMETIS")
   {
-    return dolfin::graph::ParMETIS::compute_partition(mpi_comm, cell_vertices,
-                                                      *cell_type);
+    return PartitionData(graph::ParMETIS::compute_partition(mpi_comm, cell_vertices,
+                                              *cell_type));
   }
   else
-  {
-    log::dolfin_error("MeshPartitioning.cpp", "compute cell partition",
-                      "Mesh partitioner '%s' is unknown.", partitioner.c_str());
-  }
+    throw std::runtime_error("Unknown graph partitioner");
+
   return PartitionData({}, {});
 }
 //-----------------------------------------------------------------------------

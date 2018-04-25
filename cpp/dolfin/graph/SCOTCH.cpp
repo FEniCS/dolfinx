@@ -30,7 +30,8 @@ using namespace dolfin;
 #ifdef HAS_SCOTCH
 
 //-----------------------------------------------------------------------------
-mesh::PartitionData dolfin::graph::SCOTCH::compute_partition(
+std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
+dolfin::graph::SCOTCH::compute_partition(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const mesh::CellType& cell_type)
@@ -168,13 +169,12 @@ dolfin::graph::SCOTCH::compute_reordering(const Graph& graph,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-mesh::PartitionData
+std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
 dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
                                  const CSRGraph<T>& local_graph,
                                  const std::vector<std::size_t>& node_weights,
                                  const std::set<std::int64_t>& ghost_vertices)
 {
-  std::vector<int> cell_partition;
   std::map<std::int64_t, std::vector<int>> ghost_procs;
 
   log::log(PROGRESS, "Compute graph partition using PT-SCOTCH");
@@ -269,7 +269,7 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
   // 0.15);
 
   // Resize vector to hold cell partition indices with enough extra
-  // space for ghost cell partition information too When there are no
+  // space for ghost cell partition information too. When there are no
   // nodes, vertgstnbr may be zero, and at least one dummy location
   // must be created.
   std::vector<SCOTCH_Num> _cell_partition(std::max((std::size_t)1, vertgstnbr),
@@ -356,16 +356,17 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
 
   // Only copy the local nodes partition information. Ghost process
   // data is already in the ghost_procs map
-  cell_partition.resize(vertlocnbr);
-  std::copy(_cell_partition.begin(), _cell_partition.begin() + vertlocnbr,
-            cell_partition.begin());
 
-  return mesh::PartitionData(cell_partition, ghost_procs);
+  return std::make_pair(
+      std::move(std::vector<int>(_cell_partition.begin(),
+                                 _cell_partition.begin() + vertlocnbr)),
+      std::move(ghost_procs));
 }
 //-----------------------------------------------------------------------------
 #else
 //-----------------------------------------------------------------------------
-mesh::PartitionData dolfin::graph::SCOTCH::compute_partition(
+std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
+dolfin::graph::SCOTCH::compute_partition(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const std::vector<std::size_t>& cell_weight,
@@ -373,6 +374,8 @@ mesh::PartitionData dolfin::graph::SCOTCH::compute_partition(
 {
   throw std::runtime_error(
       "DOLFIN has been configured without support for SCOTCH");
+  return std::pair<std::vector<int>,
+                   std::map<std::int64_t, std::vector<int>>>();
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>>
@@ -393,18 +396,6 @@ dolfin::graph::SCOTCH::compute_reordering(const Graph& graph,
   throw std::runtime_error(
       "DOLFIN has been configured without support for SCOTCH");
   return std::make_pair(std::vector<int>(), std::vector<int>());
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-mesh::PartitionData
-dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
-                                 const CSRGraph<T>& local_graph,
-                                 const std::vector<std::size_t>& node_weights,
-                                 const std::set<std::int64_t>& ghost_vertices)
-{
-  throw std::runtime_error(
-      "DOLFIN has been configured without support for SCOTCH");
-  return mesh::PartitionData({}, {});
 }
 //-----------------------------------------------------------------------------
 

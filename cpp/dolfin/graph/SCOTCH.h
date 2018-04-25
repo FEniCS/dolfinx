@@ -6,15 +6,11 @@
 
 #pragma once
 
-#include "CSRGraph.h"
 #include "Graph.h"
-#include <boost/multi_array.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/PartitionData.h>
 #include <map>
 #include <set>
 #include <string>
@@ -31,6 +27,9 @@ class CellType;
 namespace graph
 {
 
+template <typename T>
+class CSRGraph;
+
 /// This class provides an interface to SCOTCH-PT (parallel version)
 
 class SCOTCH
@@ -46,7 +45,7 @@ public:
   /// @param cell_type (const CellType)
   /// @return mesh::PartitionData
   ///
-  static mesh::PartitionData
+  static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
   compute_partition(const MPI_Comm mpi_comm,
                     const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                     const mesh::CellType& cell_type);
@@ -77,14 +76,15 @@ public:
   compute_reordering(const Graph& graph, std::string scotch_strategy = "");
 
 private:
-  // Compute cell partitions from distributed dual graph. Note that
-  // local_graph is not const since we share the data with SCOTCH,
-  // and the SCOTCH interface is not const-correct.
+#ifdef HAS_SCOTCH
+  // Compute cell partitions from distributed dual graph. Returns
+  // (partition, ghost_proc)
   template <typename T>
-  static mesh::PartitionData
+  static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
   partition(const MPI_Comm mpi_comm, const CSRGraph<T>& local_graph,
             const std::vector<std::size_t>& node_weights,
             const std::set<std::int64_t>& ghost_vertices);
+#endif
 };
 } // namespace graph
 } // namespace dolfin

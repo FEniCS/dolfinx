@@ -6,6 +6,7 @@
 
 #include "ParMETIS.h"
 #include "CSRGraph.h"
+#include "Graph.h"
 #include "GraphBuilder.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
@@ -101,7 +102,8 @@ dual_graph(MPI_Comm mpi_comm,
 } // namespace
 
 //-----------------------------------------------------------------------------
-mesh::PartitionData dolfin::graph::ParMETIS::compute_partition(
+std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
+dolfin::graph::ParMETIS::compute_partition(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const mesh::CellType& cell_type, const std::string mode)
@@ -161,7 +163,7 @@ mesh::PartitionData dolfin::graph::ParMETIS::compute_partition(
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-mesh::PartitionData
+std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
 dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm,
                                    const CSRGraph<T>& csr_graph)
 {
@@ -311,10 +313,8 @@ dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm,
 
   timer2.stop();
 
-  // Copy cell partition data
-  std::vector<int> cell_partition(part.begin(), part.end());
-
-  return mesh::PartitionData(cell_partition, ghost_procs);
+  return std::make_pair(std::move(std::vector<int>(part.begin(), part.end())),
+                        std::move(ghost_procs));
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -418,13 +418,15 @@ std::vector<int> dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm,
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 #else
-mesh::PartitionData dolfin::graph::ParMETIS::compute_partition(
+std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
+dolfin::graph::ParMETIS::compute_partition(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const mesh::CellType& cell_type, const std::string mode)
 {
   throw std::runtime_error("DOLFIN has been configured without  ParMETIS");
-  return mesh::PartitionData({}, {});
+  return std::pair<std::vector<int>,
+                   std::map<std::int64_t, std::vector<int>>>();
 }
 //-----------------------------------------------------------------------------
 #endif
