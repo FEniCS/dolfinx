@@ -390,7 +390,6 @@ dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
     send_buffer[dest_proc].push_back(it.second + offset);
   }
 
-  // FIXME: This does not look memory scalable. Switch to 'post-office' model.
   // Send data
   MPI::all_to_all(mpi_comm, send_buffer, received_buffer);
 
@@ -445,7 +444,7 @@ dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
   std::vector<std::size_t> cell_list;
   MPI::all_to_all(mpi_comm, send_buffer, cell_list);
 
-  // Ghost vertices
+  // Ghost nodes
   std::set<std::int64_t> ghost_nodes;
 
   // Insert connected cells into local map

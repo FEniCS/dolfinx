@@ -91,24 +91,24 @@ PartitionData MeshPartitioning::partition_cells(
   std::tuple<std::int32_t, std::int32_t, std::int32_t> graph_info;
   std::tie(local_graph, graph_info) = graph::GraphBuilder::compute_dual_graph(
       mpi_comm, cell_vertices, *cell_type);
-  const std::int32_t num_ghost_nodes = std::get<0>(graph_info);
 
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
   {
     graph::CSRGraph<SCOTCH_Num> csr_graph(mpi_comm, local_graph);
     std::vector<std::size_t> weights;
+    const std::int32_t num_ghost_nodes = std::get<0>(graph_info);
     return PartitionData(graph::SCOTCH::partition(mpi_comm, csr_graph, weights,
                                                   num_ghost_nodes));
   }
   else if (partitioner == "ParMETIS")
   {
-    #ifdef HAS_PARMETIS
+#ifdef HAS_PARMETIS
     graph::CSRGraph<idx_t> csr_graph(mpi_comm, local_graph);
     return PartitionData(graph::ParMETIS::partition(mpi_comm, csr_graph));
-    #else
+#else
     throw std::runtime_error("ParMETIS not available");
-    #endif
+#endif
   }
   else
     throw std::runtime_error("Unknown graph partitioner");

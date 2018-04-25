@@ -142,7 +142,7 @@ std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
 dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
                                  const CSRGraph<SCOTCH_Num>& local_graph,
                                  const std::vector<std::size_t>& node_weights,
-                                 std::uint64_t num_ghost_nodes)
+                                 std::int32_t num_ghost_nodes)
 {
   log::log(PROGRESS, "Compute graph partition using PT-SCOTCH");
   common::Timer timer("Compute graph partition (SCOTCH)");
