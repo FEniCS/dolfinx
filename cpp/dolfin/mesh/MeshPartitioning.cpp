@@ -19,6 +19,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/geometry/Point.h>
+#include <dolfin/graph/CSRGraph.h>
 #include <dolfin/graph/GraphBuilder.h>
 #include <dolfin/graph/ParMETIS.h>
 #include <dolfin/graph/SCOTCH.h>
@@ -85,22 +86,33 @@ PartitionData MeshPartitioning::partition_cells(
   std::unique_ptr<mesh::CellType> cell_type(mesh::CellType::create(type));
   assert(cell_type);
 
+  // Compute dual graph (for this partition)
+  std::vector<std::vector<std::size_t>> local_graph;
+  std::tuple<std::int32_t, std::int32_t, std::int32_t> graph_info;
+  std::tie(local_graph, graph_info) = graph::GraphBuilder::compute_dual_graph(
+      mpi_comm, cell_vertices, *cell_type);
+
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
   {
-    return dolfin::graph::SCOTCH::compute_partition(mpi_comm, cell_vertices,
-                                                    *cell_type);
+    graph::CSRGraph<SCOTCH_Num> csr_graph(mpi_comm, local_graph);
+    std::vector<std::size_t> weights;
+    const std::int32_t num_ghost_nodes = std::get<0>(graph_info);
+    return PartitionData(graph::SCOTCH::partition(mpi_comm, csr_graph, weights,
+                                                  num_ghost_nodes));
   }
   else if (partitioner == "ParMETIS")
   {
-    return dolfin::graph::ParMETIS::compute_partition(mpi_comm, cell_vertices,
-                                                      *cell_type);
+#ifdef HAS_PARMETIS
+    graph::CSRGraph<idx_t> csr_graph(mpi_comm, local_graph);
+    return PartitionData(graph::ParMETIS::partition(mpi_comm, csr_graph));
+#else
+    throw std::runtime_error("ParMETIS not available");
+#endif
   }
   else
-  {
-    log::dolfin_error("MeshPartitioning.cpp", "compute cell partition",
-                      "Mesh partitioner '%s' is unknown.", partitioner.c_str());
-  }
+    throw std::runtime_error("Unknown graph partitioner");
+
   return PartitionData({}, {});
 }
 //-----------------------------------------------------------------------------
