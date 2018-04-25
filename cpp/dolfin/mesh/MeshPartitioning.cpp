@@ -103,8 +103,12 @@ PartitionData MeshPartitioning::partition_cells(
   }
   else if (partitioner == "ParMETIS")
   {
+    #ifdef HAS_PARMETIS
     graph::CSRGraph<idx_t> csr_graph(mpi_comm, local_graph);
     return PartitionData(graph::ParMETIS::partition(mpi_comm, csr_graph));
+    #else
+    throw std::runtime_error("ParMETIS not available");
+    #endif
   }
   else
     throw std::runtime_error("Unknown graph partitioner");
