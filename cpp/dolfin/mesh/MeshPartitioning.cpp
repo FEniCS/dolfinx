@@ -635,7 +635,8 @@ MeshPartitioning::distribute_cells(
 std::tuple<std::uint64_t, std::vector<std::int64_t>, EigenRowArrayXXi32>
 MeshPartitioning::compute_point_mapping(
     std::uint32_t num_cell_vertices,
-    const Eigen::Ref<const EigenRowArrayXXi64>& cell_points)
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_points,
+    const std::vector<std::uint8_t>& cell_permutation)
 {
   const std::uint32_t num_cells = cell_points.rows();
   const std::uint32_t num_cell_points = cell_points.cols();
@@ -665,7 +666,7 @@ MeshPartitioning::compute_point_mapping(
       auto map_it = point_global_to_local.insert({q, nv});
 
       // Set local index in cell vertex list
-      local_cell_points(c, v) = map_it.first->second;
+      local_cell_points(c, cell_permutation[v]) = map_it.first->second;
 
       // If global index seen for first time, add to local-to-global map
       if (map_it.second)
@@ -691,7 +692,7 @@ MeshPartitioning::compute_point_mapping(
       auto map_it = point_global_to_local.insert({q, nv});
 
       // Set local index in cell vertex list
-      local_cell_points(c, v) = map_it.first->second;
+      local_cell_points(c, cell_permutation[v]) = map_it.first->second;
 
       // If global index seen for first time, add to local-to-global map
       if (map_it.second)

@@ -44,21 +44,24 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
                       "Wrong number of global cell indices");
   }
 
+  // Permutation from VTK to DOLFIN order for cell vertices
+  std::vector<std::uint8_t> cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
+
   // Decide if the mesh is P2 or other geometry.
   // P1 has num_vertices_per_cell == cells.cols()
   if (num_vertices_per_cell != cells.cols())
   {
-    if (_cell_type->cell_type() == mesh::CellType::Type::triangle
-        and cells.cols() == 6)
+    if (type == mesh::CellType::Type::triangle and cells.cols() == 6)
     {
       log::warning("P2 Mesh of Tri_6");
       _degree = 2;
+      cell_permutation = {0, 1, 2, 5, 3, 4};
     }
-    else if (_cell_type->cell_type() == mesh::CellType::Type::tetrahedron
-             and cells.cols() == 10)
+    else if (type == mesh::CellType::Type::tetrahedron and cells.cols() == 10)
     {
       log::warning("P2 Mesh of Tet_10");
       _degree = 2;
+      cell_permutation = {0, 1, 2, 3, 4, 7, 5, 6, 8, 9};
     }
     else
     {
@@ -82,8 +85,9 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   std::vector<std::int64_t> global_point_indices;
   EigenRowArrayXXi32 coordinate_dofs;
   std::tie(num_vertices, global_point_indices, coordinate_dofs)
-      = MeshPartitioning::compute_point_mapping(num_vertices_per_cell, cells);
-  _coordinate_dofs.init(tdim, coordinate_dofs);
+      = MeshPartitioning::compute_point_mapping(num_vertices_per_cell, cells,
+                                                cell_permutation);
+  _coordinate_dofs.init(tdim, coordinate_dofs, cell_permutation);
 
   // Distribute the points across processes and calculate shared points
   EigenRowArrayXXd distributed_points;

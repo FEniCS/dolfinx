@@ -49,7 +49,11 @@ public:
   ///   Dimension of entity
   /// @param point_dofs
   ///   Array containing point dofs for each entity
-  void init(std::size_t dim, Eigen::Ref<const EigenRowArrayXXi32> point_dofs);
+  /// @param cell_permutation
+  ///   Array containing permutation for cell_vertices required for higher order
+  ///   elements which are input in gmsh/vtk order.
+  void init(std::size_t dim, Eigen::Ref<const EigenRowArrayXXi32> point_dofs,
+            const std::vector<std::uint8_t>& cell_permutation);
 
   /// Get the entity points associated with entities of dimension i
   ///
@@ -63,10 +67,22 @@ public:
     return _coord_dofs[dim];
   }
 
+  const std::vector<std::uint8_t>& cell_permutation() const
+  {
+    return _cell_permutation;
+  }
+
 private:
   // Connectivity from entities to points.
   // Initially only defined for cells
   std::vector<MeshConnectivity> _coord_dofs;
+
+  // Permutation required to transform to/from
+  // VTK/gmsh ordering to DOLFIN ordering
+  // needed for higher order elements
+  // FIXME: ideally remove this, but would need to harmonise
+  // the dof ordering between dolfin/ffc/gmsh
+  std::vector<std::uint8_t> _cell_permutation;
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin
