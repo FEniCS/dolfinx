@@ -23,7 +23,7 @@ def _mesh2domain(mesh):
 
     if isinstance(mesh, ufl.cell.AbstractCell):
         raise TypeError(
-            "Cannot construct geometry from a Cell. Pass the mesh instead, for example use FacetNormal(mesh) instead of FacetNormal(triangle) or triangle.n"
+            "Cannot construct geometry from a Cell. Pass the mesh instead."
         )
     return mesh.ufl_domain()
 
