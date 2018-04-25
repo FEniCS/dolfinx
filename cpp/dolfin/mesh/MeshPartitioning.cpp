@@ -19,6 +19,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/geometry/Point.h>
+#include <dolfin/graph/CSRGraph.h>
 #include <dolfin/graph/GraphBuilder.h>
 #include <dolfin/graph/ParMETIS.h>
 #include <dolfin/graph/SCOTCH.h>
@@ -85,16 +86,25 @@ PartitionData MeshPartitioning::partition_cells(
   std::unique_ptr<mesh::CellType> cell_type(mesh::CellType::create(type));
   assert(cell_type);
 
+  // Compute dual graph (for this partition)
+  std::vector<std::vector<std::size_t>> local_graph;
+  std::set<std::int64_t> ghost_vertices;
+  std::tie(local_graph, ghost_vertices, std::ignore)
+      = graph::GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices,
+                                                *cell_type);
+
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
   {
+    graph::CSRGraph<SCOTCH_Num> csr_graph(MPI_COMM_SELF, local_graph);
+    std::vector<std::size_t> weights;
     return PartitionData(
-        graph::SCOTCH::compute_partition(mpi_comm, cell_vertices, *cell_type));
+        graph::SCOTCH::partition(mpi_comm, csr_graph, weights, ghost_vertices));
   }
   else if (partitioner == "ParMETIS")
   {
-    return PartitionData(graph::ParMETIS::compute_partition(mpi_comm, cell_vertices,
-                                              *cell_type));
+    graph::CSRGraph<idx_t> csr_graph(mpi_comm, local_graph);
+    return PartitionData(graph::ParMETIS::partition(mpi_comm, csr_graph));
   }
   else
     throw std::runtime_error("Unknown graph partitioner");

@@ -30,35 +30,6 @@ using namespace dolfin;
 #ifdef HAS_SCOTCH
 
 //-----------------------------------------------------------------------------
-std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-dolfin::graph::SCOTCH::compute_partition(
-    const MPI_Comm mpi_comm,
-    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-    const mesh::CellType& cell_type)
-{
-
-  // FIXME: make a user interface for cell weight
-  const std::vector<std::size_t> cell_weight;
-
-  // Create data structures to hold graph
-  std::unique_ptr<CSRGraph<SCOTCH_Num>> csr_graph;
-  std::set<std::int64_t> ghost_vertices;
-
-  // Build dual graph. Use scoping to clean up memory
-  {
-    // Compute dual graph (for this parition)
-    std::vector<std::vector<std::size_t>> local_graph;
-    std::tie(local_graph, ghost_vertices, std::ignore)
-        = GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices, cell_type);
-
-    csr_graph.reset(new CSRGraph<SCOTCH_Num>(MPI_COMM_SELF, local_graph));
-  }
-
-  // Compute partitions
-  assert(csr_graph);
-  return partition(mpi_comm, *csr_graph, cell_weight, ghost_vertices);
-}
-//-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>>
 dolfin::graph::SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
 {
@@ -168,15 +139,12 @@ dolfin::graph::SCOTCH::compute_reordering(const Graph& graph,
   return std::make_pair(std::move(permutation), std::move(inverse_permutation));
 }
 //-----------------------------------------------------------------------------
-template <typename T>
 std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
 dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
-                                 const CSRGraph<T>& local_graph,
+                                 const CSRGraph<SCOTCH_Num>& local_graph,
                                  const std::vector<std::size_t>& node_weights,
-                                 const std::set<std::int64_t>& ghost_vertices)
+                                 const std::set<std::int64_t>& ghost_nodes)
 {
-  std::map<std::int64_t, std::vector<int>> ghost_procs;
-
   log::log(PROGRESS, "Compute graph partition using PT-SCOTCH");
   common::Timer timer("Compute graph partition (SCOTCH)");
 
@@ -193,7 +161,7 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
 
   // Number of local graph vertices (cells)
   const SCOTCH_Num vertlocnbr = local_graph.size();
-  const std::size_t vertgstnbr = vertlocnbr + ghost_vertices.size();
+  const std::size_t vertgstnbr = vertlocnbr + ghost_nodes.size();
 
   // Get graph data
   const std::vector<SCOTCH_Num>& edgeloctab = local_graph.edges();
@@ -319,6 +287,7 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
   // Iterate through SCOTCH's local compact graph to find partition
   // boundaries and save to map
   common::Timer timer5("Extract partition boundaries from SCOTCH graph");
+  std::map<std::int64_t, std::vector<int>> ghost_procs;
   for (SCOTCH_Num i = 0; i < vertlocnbr; ++i)
   {
     const std::size_t proc_this = _cell_partition[i];

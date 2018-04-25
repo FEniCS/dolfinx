@@ -16,6 +16,14 @@
 #include <string>
 #include <vector>
 
+#ifdef HAS_SCOTCH
+extern "C"
+{
+#include <ptscotch.h>
+}
+#endif
+
+
 namespace dolfin
 {
 // Forward declarations
@@ -35,20 +43,12 @@ class CSRGraph;
 class SCOTCH
 {
 public:
-  /// Compute cell partition from local mesh data.  The vector
-  /// cell_partition contains the desired destination process
-  /// numbers for each cell.  Cells shared on multiple processes
-  /// have an entry in ghost_procs pointing to the set of sharing
-  /// process numbers.
-  /// @param mpi_comm (MPI_Comm)
-  /// @param cell_vertices (const boost::multi_array<std::int64_t, 2>)
-  /// @param cell_type (const CellType)
-  /// @return mesh::PartitionData
-  ///
+  // Compute cell partitions from distributed dual graph. Returns
+  // (partition, ghost_proc)
   static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-  compute_partition(const MPI_Comm mpi_comm,
-                    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-                    const mesh::CellType& cell_type);
+  partition(const MPI_Comm mpi_comm, const CSRGraph<SCOTCH_Num>& local_graph,
+            const std::vector<std::size_t>& node_weights,
+            const std::set<std::int64_t>& ghost_nodes);
 
   /// Compute reordering (map[old] -> new) using
   /// Gibbs-Poole-Stockmeyer (GPS) re-ordering
@@ -74,17 +74,6 @@ public:
   ///   Mapping from new to old nodes (inverse map)
   static std::pair<std::vector<int>, std::vector<int>>
   compute_reordering(const Graph& graph, std::string scotch_strategy = "");
-
-private:
-#ifdef HAS_SCOTCH
-  // Compute cell partitions from distributed dual graph. Returns
-  // (partition, ghost_proc)
-  template <typename T>
-  static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-  partition(const MPI_Comm mpi_comm, const CSRGraph<T>& local_graph,
-            const std::vector<std::size_t>& node_weights,
-            const std::set<std::int64_t>& ghost_vertices);
-#endif
 };
 } // namespace graph
 } // namespace dolfin

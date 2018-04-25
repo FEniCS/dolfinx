@@ -16,6 +16,12 @@
 #include <utility>
 #include <vector>
 
+// FIXME: Avoid exposing ParMETIS publicly
+#ifdef HAS_PARMETIS
+#include <parmetis.h>
+#endif
+
+
 namespace dolfin
 {
 
@@ -35,31 +41,14 @@ class CSRGraph;
 class ParMETIS
 {
 public:
-  /// Compute cell partition from local mesh data.  The output
-  /// vector cell_partition contains the desired destination process
-  /// numbers for each cell.  Cells shared on multiple processes
-  /// have an entry in ghost_procs pointing to the set of sharing
-  /// process numbers.  The mode argument determines which ParMETIS
-  /// function is called. It can be one of "partition",
-  /// "adaptive_repartition" or "refine". For meshes that have
-  /// already been partitioned or are already well partitioned, it
-  /// can be advantageous to use "adaptive_repartition" or "refine".
+  // Standard ParMETIS partition
   static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-  compute_partition(const MPI_Comm mpi_comm,
-                    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-                    const mesh::CellType& cell_type,
-                    const std::string mode = "partition");
+  partition(MPI_Comm mpi_comm, const CSRGraph<idx_t>& csr_graph);
 
 private:
 #ifdef HAS_PARMETIS
 
-  // Standard ParMETIS partition. CSRGraph should be const, but
-  // ParMETIS accesses it non-const, so has to be non-const here
-  template <typename T>
-  static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-  partition(MPI_Comm mpi_comm, const CSRGraph<T>& csr_graph);
-
-  // ParMETIS adaptive repartitiont, so has to be non-const here
+  // ParMETIS adaptive repartition, so has to be non-const here
   template <typename T>
   static std::vector<int> adaptive_repartition(MPI_Comm mpi_comm,
                                                const CSRGraph<T>& csr_graph,
