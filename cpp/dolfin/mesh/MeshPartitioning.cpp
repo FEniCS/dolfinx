@@ -88,18 +88,18 @@ PartitionData MeshPartitioning::partition_cells(
 
   // Compute dual graph (for this partition)
   std::vector<std::vector<std::size_t>> local_graph;
-  std::set<std::int64_t> ghost_nodes;
-  std::tie(local_graph, ghost_nodes, std::ignore)
-      = graph::GraphBuilder::compute_dual_graph(mpi_comm, cell_vertices,
-                                                *cell_type);
+  std::tuple<std::int32_t, std::int32_t, std::int32_t> graph_info;
+  std::tie(local_graph, graph_info) = graph::GraphBuilder::compute_dual_graph(
+      mpi_comm, cell_vertices, *cell_type);
+  const std::int32_t num_ghost_nodes = std::get<0>(graph_info);
 
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
   {
     graph::CSRGraph<SCOTCH_Num> csr_graph(mpi_comm, local_graph);
     std::vector<std::size_t> weights;
-    return PartitionData(
-        graph::SCOTCH::partition(mpi_comm, csr_graph, weights, ghost_nodes));
+    return PartitionData(graph::SCOTCH::partition(mpi_comm, csr_graph, weights,
+                                                  num_ghost_nodes));
   }
   else if (partitioner == "ParMETIS")
   {

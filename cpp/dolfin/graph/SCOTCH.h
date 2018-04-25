@@ -48,7 +48,7 @@ public:
   static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
   partition(const MPI_Comm mpi_comm, const CSRGraph<SCOTCH_Num>& local_graph,
             const std::vector<std::size_t>& node_weights,
-            const std::set<std::int64_t>& ghost_nodes);
+            std::uint64_t num_ghost_nodes);
 
   /// Compute reordering (map[old] -> new) using
   /// Gibbs-Poole-Stockmeyer (GPS) re-ordering
