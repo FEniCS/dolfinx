@@ -18,8 +18,7 @@
 #include <string>
 
 #ifdef HAS_SCOTCH
-extern "C"
-{
+extern "C" {
 #include <ptscotch.h>
 #include <stdint.h>
 }
@@ -170,9 +169,11 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
   // Global data ---------------------------------
 
   // Number of local vertices (cells) on each process
-  std::vector<SCOTCH_Num> proccnttab;
-  const SCOTCH_Num local_graph_size = local_graph.size();
-  MPI::all_gather(mpi_comm, local_graph_size, proccnttab);
+  std::vector<SCOTCH_Num> proccnttab(num_processes);
+  const std::vector<SCOTCH_Num>& graph_distribution
+      = local_graph.node_distribution();
+  for (std::size_t i = 0; i < num_processes; ++i)
+    proccnttab[i] = graph_distribution[i + 1] - graph_distribution[i];
 
 #ifdef DEBUG
   // FIXME: explain this test
@@ -366,6 +367,6 @@ dolfin::graph::SCOTCH::compute_reordering(const Graph& graph,
       "DOLFIN has been configured without support for SCOTCH");
   return std::make_pair(std::vector<int>(), std::vector<int>());
 }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 
 #endif
