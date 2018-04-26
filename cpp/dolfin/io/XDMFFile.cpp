@@ -1653,7 +1653,8 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     // Adjust num_nodes_per_cell to appropriate size
     num_nodes_per_cell = cell_points.size(0);
     topology_data.reserve(num_nodes_per_cell * mesh.num_cells());
-    std::vector<std::uint8_t> perm = {0, 1, 2, 5, 3, 4};
+    const std::vector<std::uint8_t>& perm
+        = mesh.coordinate_dofs().cell_permutation();
 
     for (std::uint32_t c = 0; c != mesh.num_cells(); ++c)
     {
