@@ -44,7 +44,9 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
                       "Wrong number of global cell indices");
   }
 
-  // Permutation from VTK to DOLFIN order for cell vertices
+  // Permutation from VTK to DOLFIN order for cell geometric points
+  // FIXME: should do this also for quad/hex
+  // FIXME: remove duplication in CellType::vtk_mapping()
   std::vector<std::uint8_t> cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
 
   // Decide if the mesh is P2 or other geometry.
