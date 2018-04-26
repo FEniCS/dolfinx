@@ -46,8 +46,8 @@ using namespace dolfin;
 //   if (num_local_cells == 0)
 //   {
 //     throw std::runtime_error(
-//         "ParMETIS cannot be used if a process has no cells (graph nodes). Use "
-//         "SCOTCH to perform partitioning instead");
+//         "ParMETIS cannot be used if a process has no cells (graph nodes). Use
+//         " "SCOTCH to perform partitioning instead");
 //   }
 
 //   // Communicate number of cells on each process between all processors
@@ -252,7 +252,7 @@ dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm,
 
   timer2.stop();
 
-  return std::make_pair(std::move(std::vector<int>(part.begin(), part.end())),
+  return std::make_pair(std::vector<int>(part.begin(), part.end()),
                         std::move(ghost_procs));
 }
 //-----------------------------------------------------------------------------

@@ -18,7 +18,8 @@
 #include <string>
 
 #ifdef HAS_SCOTCH
-extern "C" {
+extern "C"
+{
 #include <ptscotch.h>
 #include <stdint.h>
 }
@@ -327,10 +328,9 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
   // Only copy the local nodes partition information. Ghost process
   // data is already in the ghost_procs map
 
-  return std::make_pair(
-      std::move(std::vector<int>(_cell_partition.begin(),
-                                 _cell_partition.begin() + vertlocnbr)),
-      std::move(ghost_procs));
+  return std::make_pair(std::vector<int>(_cell_partition.begin(),
+                                         _cell_partition.begin() + vertlocnbr),
+                        std::move(ghost_procs));
 }
 //-----------------------------------------------------------------------------
 #else
@@ -367,6 +367,6 @@ dolfin::graph::SCOTCH::compute_reordering(const Graph& graph,
       "DOLFIN has been configured without support for SCOTCH");
   return std::make_pair(std::vector<int>(), std::vector<int>());
 }
-  //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 #endif
