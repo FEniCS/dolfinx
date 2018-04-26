@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
@@ -24,5 +25,5 @@ public:
   ///   number of layers
   static mesh::Mesh create(MPI_Comm comm, std::size_t n);
 };
-}
-}
+} // namespace generation
+} // namespace dolfin

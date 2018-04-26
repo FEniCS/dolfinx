@@ -217,7 +217,7 @@ def mplot_function(ax, f, **kwargs):
             else:
                 # Return gracefully to make regression test pass without vtk
                 warnings.warn(
-                    'Matplotlib plotting backend does not support displacement for {} in {}}. Continuing without plotting.'.format(tdim, gdim))
+                    'Plotting does not support displacement for {} in {}}. Continuing without plot.'.format(tdim, gdim))
                 return
 
 

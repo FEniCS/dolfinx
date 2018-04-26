@@ -232,17 +232,16 @@ def _extract_args(*args, **kwargs):
                     "form_compiler_parameters", "solver_parameters"]
     for kwarg in kwargs.keys():
         if kwarg not in valid_kwargs:
-            raise RuntimeError(
-                "Solve variational problem. Illegal keyword argument \'{}\'.".format(kwarg))
+            raise RuntimeError("Illegal keyword argument \'{}\'.".format(kwarg))
 
     # Extract equation
     if not len(args) >= 2:
         raise RuntimeError(
-            "Solve variational problem. Missing arguments, expecting solve(lhs == rhs, u, bcs=bcs), where bcs is optional")
+            "Missing arguments, expecting solve(lhs == rhs, u, bcs=bcs), where bcs is optional")
 
     if len(args) > 3:
         raise RuntimeError(
-            "Solve variational problem. Too many arguments, expecting solve(lhs == rhs, u, bcs=bcs), where bcs is optional")
+            "Too many arguments, expecting solve(lhs == rhs, u, bcs=bcs), where bcs is optional")
 
     # Extract equation
     eq = _extract_eq(args[0])

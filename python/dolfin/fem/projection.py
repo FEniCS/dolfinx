@@ -4,14 +4,12 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-
-"""This module provides a simple way to compute the projection of a
+"""Projections of a
 :py:class:`Function <dolfin.functions.function.Function>` or an
 :py:class:`Expression <dolfin.functions.expression.Expression>` onto a
 finite element space.
 
 """
-
 
 import ufl
 import dolfin.cpp as cpp
@@ -19,13 +17,16 @@ import dolfin
 from dolfin.function.argument import TestFunction, TrialFunction
 from dolfin.function.function import Function
 from dolfin.fem.assembling import assemble_system
-from dolfin.function.functionspace import (FunctionSpace,
-                                           VectorFunctionSpace, TensorFunctionSpace)
+from dolfin.function.functionspace import (FunctionSpace, VectorFunctionSpace,
+                                           TensorFunctionSpace)
 
 __all__ = ['project']
 
 
-def project(v, V=None, bcs=None, mesh=None,
+def project(v,
+            V=None,
+            bcs=None,
+            mesh=None,
             function=None,
             solver_type="lu",
             preconditioner_type="default",
@@ -96,8 +97,8 @@ def project(v, V=None, bcs=None, mesh=None,
     L = ufl.inner(w, v) * dx
 
     # Assemble linear system
-    A, b = assemble_system(a, L, bcs=bcs,
-                           form_compiler_parameters=form_compiler_parameters)
+    A, b = assemble_system(
+        a, L, bcs=bcs, form_compiler_parameters=form_compiler_parameters)
 
     # Solve linear system for projection
     if function is None:
@@ -132,7 +133,8 @@ def _extract_function_space(expression, mesh):
                     break
 
     if mesh is None:
-        raise RuntimeError("Unable to project expression, cannot find a suitable mesh.")
+        raise RuntimeError(
+            "Unable to project expression, cannot find a suitable mesh.")
 
     # Create function space
     shape = expression.ufl_shape
@@ -143,6 +145,6 @@ def _extract_function_space(expression, mesh):
     elif len(shape) == 2:
         V = TensorFunctionSpace(mesh, "Lagrange", 1, shape=shape)
     else:
-        raise RuntimeError("Unhandled rank, shape is {}.".format((shape,)))
+        raise RuntimeError("Unhandled rank, shape is {}.".format((shape, )))
 
     return V

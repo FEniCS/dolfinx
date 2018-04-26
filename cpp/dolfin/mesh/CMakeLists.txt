@@ -48,6 +48,7 @@ set(SOURCES
   MeshPartitioning.cpp
   MeshQuality.cpp
   MeshTopology.cpp
+  PartitionData.cpp
   PeriodicBoundaryComputation.cpp
   PointCell.cpp
   QuadrilateralCell.cpp

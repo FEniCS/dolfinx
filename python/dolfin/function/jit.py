@@ -129,7 +129,7 @@ extern "C" DLL_EXPORT dolfin::function::Expression * create_{classname}()
             else:
                 _setup_statement = """          double {key}[{value_size}];
 
-            generic_function_{key}->eval(Eigen::Map<Eigen::Matrix<double, {value_size}, 1>>({key}), x);\n""".format(key=k, value_size=value_size)
+            generic_function_{key}->eval(Eigen::Map<Eigen::Matrix<double, {value_size}, 1>>({key}), x);\n""".format(key=k, value_size=value_size)  # noqa:E501
             statement = _setup_statement + statement
 
     # Set the value_shape to pass to initialiser

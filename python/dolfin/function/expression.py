@@ -180,7 +180,8 @@ class BaseExpression(ufl.Coefficient):
             # output, and that code that is warned about is still
             # officially supported. See
             # https://bitbucket.org/fenics-project/dolfin/issues/355/
-            # warning("Evaluating an Expression without knowing the right geometric dimension, assuming %d is correct." % len(x))
+            # warning("Evaluating an Expression without knowing the right geometric dimension,
+            #          assuming %d is correct." % len(x))
             pass
         else:
             if len(x) != dim:
@@ -245,7 +246,7 @@ class UserExpression(BaseExpression):
             if hasattr(self, "value_shape"):
                 value_shape = self.value_shape()
             else:
-                print("WARNING: user expression has not supplied value_shape method or an element. Assuming scalar element.")
+                print("User expression has not supplied value_shape method or an element. Assuming scalar element.")
                 value_shape = ()
 
             element = _select_element(family=None, cell=cell, degree=degree,

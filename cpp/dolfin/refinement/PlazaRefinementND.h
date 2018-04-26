@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 #pragma once
@@ -73,26 +74,25 @@ public:
   /// @param uniform
   ///   Make a "uniform" subdivision with all triangles being similar shape
   ///
-  static void get_simplices(std::vector<std::size_t>& simplex_set,
-                            const std::vector<bool>& marked_edges,
-                            const std::vector<std::int32_t>& longest_edge,
-                            std::size_t tdim, bool uniform);
+  static std::vector<std::size_t>
+  get_simplices(const std::vector<bool>& marked_edges,
+                const std::vector<std::int32_t>& longest_edge, std::size_t tdim,
+                bool uniform);
 
 private:
   // Get the longest edge of each face (using local mesh index)
-  static void face_long_edge(std::vector<std::int32_t>& long_edge,
-                             std::vector<bool>& edge_ratio_ok,
-                             const mesh::Mesh& mesh);
+  static std::pair<std::vector<std::int32_t>, std::vector<bool>>
+  face_long_edge(const mesh::Mesh& mesh);
 
   // 2D version of subdivision allowing for uniform subdivision (flag)
-  static void get_triangles(std::vector<std::size_t>& tri_set,
-                            const std::vector<bool>& marked_edges,
-                            const std::int32_t longest_edge, bool uniform);
+  static std::vector<std::size_t>
+  get_triangles(const std::vector<bool>& marked_edges,
+                const std::int32_t longest_edge, bool uniform);
 
   // 3D version of subdivision
-  static void get_tetrahedra(std::vector<std::size_t>& tet_set,
-                             const std::vector<bool>& marked_edges,
-                             const std::vector<std::int32_t>& longest_edge);
+  static std::vector<std::size_t>
+  get_tetrahedra(const std::vector<bool>& marked_edges,
+                 const std::vector<std::int32_t>& longest_edge);
 
   // Convenient interface for both uniform and marker refinement
   static mesh::Mesh
@@ -105,5 +105,5 @@ private:
   static void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
                             const std::vector<std::int32_t>& long_edge);
 };
-}
-}
+} // namespace refinement
+} // namespace dolfin
