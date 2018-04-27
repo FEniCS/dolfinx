@@ -4,8 +4,7 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""This module provides functionality for form assembly in Python,
-corresponding to the C++ assembly and PDE classes.
+"""Form assembly
 
 The C++ :py:class:`assemble <dolfin.cpp.assemble>` function
 (renamed to cpp_assemble) is wrapped with an additional

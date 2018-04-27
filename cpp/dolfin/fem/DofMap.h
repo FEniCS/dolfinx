@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2015 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2018 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -6,21 +6,27 @@
 
 #pragma once
 
-#include "DofMapBuilder.h"
 #include "GenericDofMap.h"
 #include <Eigen/Dense>
+#include <array>
 #include <cstdlib>
-#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
-#include <map>
 #include <memory>
-#include <ufc.h>
+#include <set>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
+struct ufc_dofmap;
+
 namespace dolfin
 {
+
+namespace common
+{
+class IndexMap;
+}
+
 namespace la
 {
 class PETScVector;
@@ -136,10 +142,7 @@ public:
   ///
   /// @return     std::vector<std::uint32_t>
   ///         The map from non-local dofs.
-  const std::vector<int>& off_process_owner() const
-  {
-    return _index_map->block_off_process_owner();
-  }
+  const std::vector<int>& off_process_owner() const;
 
   /// Return map from all shared nodes to the sharing processes (not
   /// including the current process) that share it.
@@ -192,14 +195,7 @@ public:
                             std::size_t cell_entity_index) const;
 
   /// Tabulate globally supported dofs
-  std::vector<std::size_t> tabulate_global_dofs() const
-  {
-    assert(_global_nodes.empty() or block_size() == 1);
-    std::vector<std::size_t> element_dofs(_global_nodes.size());
-    std::copy(_global_nodes.cbegin(), _global_nodes.cend(),
-              element_dofs.begin());
-    return element_dofs;
-  }
+  std::vector<std::size_t> tabulate_global_dofs() const;
 
   /// Extract subdofmap component
   ///
@@ -239,14 +235,11 @@ public:
   void set(la::PETScVector& x, double value) const;
 
   /// Return the map (const access)
-  std::shared_ptr<const common::IndexMap> index_map() const
-  {
-    return _index_map;
-  }
+  std::shared_ptr<const common::IndexMap> index_map() const;
 
   /// Return the block size for dof maps with components, typically
   /// used for vector valued functions.
-  int block_size() const { return _index_map->block_size(); }
+  int block_size() const;
 
   /// Return informal string representation (pretty-print)
   ///
@@ -258,9 +251,6 @@ public:
   std::string str(bool verbose) const;
 
 private:
-  // Friends
-  friend class fem::DofMapBuilder;
-
   // Check that mesh provides the entities needed by dofmap
   static void check_provided_entities(const ufc_dofmap& dofmap,
                                       const mesh::Mesh& mesh);
@@ -272,7 +262,7 @@ private:
   std::set<std::size_t> _global_nodes;
 
   // Cell dimension (fixed for all cells)
-  std::size_t _cell_dimension;
+  int _cell_dimension;
 
   // UFC dof map
   std::shared_ptr<const ufc_dofmap> _ufc_dofmap;
@@ -289,12 +279,12 @@ private:
 
   // Object containing information about dof distribution across
   // processes
-  std::shared_ptr<common::IndexMap> _index_map;
+  std::shared_ptr<const common::IndexMap> _index_map;
 
-  // List of processes that share a given dof
+  // Processes that share a given dof
   std::unordered_map<int, std::vector<int>> _shared_nodes;
 
-  // Neighbours (processes that this dofmap shares dofs with)
+  // Processes that this dofmap shares dofs with
   std::set<int> _neighbours;
 };
 } // namespace fem

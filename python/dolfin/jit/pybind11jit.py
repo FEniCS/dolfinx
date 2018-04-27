@@ -54,7 +54,8 @@ def compile_cpp_code(cpp_code):
     params['cache']['lib_loader'] = "import"
 
     # Include path and library info from DOLFIN (dolfin.pc)
-    params['build']['include_dirs'] = dolfin_pc["include_dirs"] + get_pybind_include() + [sysconfig.get_config_var("INCLUDEDIR") + "/" + pyversion]
+    params['build']['include_dirs'] = dolfin_pc["include_dirs"] + get_pybind_include() \
+        + [sysconfig.get_config_var("INCLUDEDIR") + "/" + pyversion]
     params['build']['libs'] = dolfin_pc["libraries"] + [pyversion]
     params['build']['lib_dirs'] = dolfin_pc["library_dirs"] + [sysconfig.get_config_var("LIBDIR")]
 

@@ -8,7 +8,6 @@
 #include "FiniteElement.h"
 #include "Form.h"
 #include "GenericDofMap.h"
-#include "SparsityPatternBuilder.h"
 #include "utils.h"
 #include <array>
 #include <dolfin/common/IndexMap.h>
@@ -18,7 +17,6 @@
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
@@ -51,19 +49,16 @@ void AssemblerBase::check(const Form& a)
 
   // Check ghost mode for interior facet integrals in parallel
   if (a.integrals().num_interior_facet_integrals() > 0
-      && MPI::size(mesh.mpi_comm()) > 1)
+      and MPI::size(mesh.mpi_comm()) > 1)
   {
-    std::string ghost_mode = mesh.ghost_mode();
-    if (!(ghost_mode == "shared_vertex" || ghost_mode == "shared_facet"))
+    std::string ghost_mode = mesh.get_ghost_mode();
+    if (!(ghost_mode == "shared_vertex" or ghost_mode == "shared_facet"))
     {
-      log::dolfin_error("AssemblerBase.cpp", "assemble form",
-                        "Incorrect mesh ghost mode \"%s\" (expected "
-                        "\"shared_vertex\" or \"shared_facet\" for "
-                        "interior facet integrals in parallel)",
-                        ghost_mode.c_str());
+      throw std::runtime_error(
+          "Incorrect mesh ghost mode.  Expected \"shared_vertex\" or "
+          "\"shared_facet\" for interior facet integrals in parallel");
     }
   }
-
   const auto& coefficients = a.coeffs();
 
   // Check that all coefficients have been set
@@ -71,8 +66,8 @@ void AssemblerBase::check(const Form& a)
   {
     if (!coefficients.get(i))
     {
-      log::dolfin_error("AssemblerBase.cpp", "assemble form",
-                        "Coefficient number %d has not been set", i);
+      throw std::runtime_error("Coefficient number " + std::to_string(i)
+                               + " has not been set");
     }
   }
 }

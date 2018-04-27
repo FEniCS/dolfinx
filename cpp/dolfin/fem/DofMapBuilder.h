@@ -48,7 +48,11 @@ public:
   ///
   /// @param[out] dofmap
   /// @param[in] dolfin_mesh
-  static void build(fem::DofMap& dofmap, const mesh::Mesh& dolfin_mesh);
+  static std::tuple<std::size_t, std::unique_ptr<common::IndexMap>,
+                    std::vector<int>, std::unordered_map<int, std::vector<int>>,
+                    std::set<std::size_t>, std::set<int>,
+                    std::vector<dolfin::la_index_t>>
+  build(const ufc_dofmap& ufc_map, const mesh::Mesh& dolfin_mesh);
 
   /// Build sub-dofmap. This is a view into the parent dofmap.
   ///
@@ -56,10 +60,14 @@ public:
   /// @param[in] parent_dofmap
   /// @param[in] component
   /// @param[in] mesh
-  static void build_sub_map_view(fem::DofMap& sub_dofmap,
-                                 const fem::DofMap& parent_dofmap,
-                                 const std::vector<std::size_t>& component,
-                                 const mesh::Mesh& mesh);
+  static std::tuple<std::unique_ptr<const ufc_dofmap>, std::int64_t,
+                    std::int64_t, std::vector<dolfin::la_index_t>>
+  build_sub_map_view(const ufc_dofmap& parent_ufc_dofmap,
+                     const std::vector<int>& parent_ufc_local_to_local,
+                     const int parent_block_size,
+                     const std::int64_t parent_offset,
+                     const std::vector<std::size_t>& component,
+                     const mesh::Mesh& mesh);
 
 private:
   // Build simple local UFC-based dofmap data structure
@@ -78,7 +86,6 @@ private:
   // set of process that share dofs on this process.
   // Returns: (number of locally owned nodes, node_ownership,
   // shared_node_to_processes, neighbours)
-
   static std::tuple<int, std::vector<short int>,
                     std::unordered_map<int, std::vector<int>>, std::set<int>>
   compute_node_ownership(
@@ -93,22 +100,23 @@ private:
   build_dofmap(const std::vector<std::vector<la_index_t>>& node_dofmap,
                const std::vector<int>& old_to_new_node_local,
                const std::size_t block_size);
+
   // Compute set of global dofs (e.g. Reals associated with global
   // Lagrange multipliers) based on UFC numbering. Global dofs are
   // not associated with any mesh entity. The returned indices are
   // local to the process.
   static std::pair<std::set<std::size_t>, std::size_t>
-  extract_global_dofs(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
+  extract_global_dofs(const ufc_dofmap& ufc_map,
                       const std::vector<int64_t>& num_mesh_entities_local,
                       std::set<std::size_t> global_dofs = {},
                       std::size_t offset_local = 0);
 
   // Recursively extract UFC sub-dofmap and compute offset
-  static std::pair<std::shared_ptr<ufc_dofmap>, std::size_t>
+  static std::pair<std::unique_ptr<ufc_dofmap>, std::size_t>
   extract_ufc_sub_dofmap(const ufc_dofmap& ufc_dofmap,
                          const std::vector<std::size_t>& component,
                          const std::vector<int64_t>& num_global_mesh_entities,
-                         std::size_t offset=0);
+                         std::size_t offset = 0);
 
   // Compute block size, e.g. in 3D elasticity block_size = 3
   static std::size_t compute_blocksize(const ufc_dofmap& ufc_dofmap,
@@ -116,11 +124,11 @@ private:
 
   // Build graph from UFC 'node' dofmap. Returns (ufc_dofmap,
   // node_dofmap, node_local_to_global)
-  static std::tuple<std::shared_ptr<const ufc_dofmap>,
+  static std::tuple<std::unique_ptr<const ufc_dofmap>,
                     std::vector<std::vector<la_index_t>>,
                     std::vector<std::size_t>>
-  build_ufc_node_graph(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
-                       const mesh::Mesh& mesh, const std::size_t block_size);
+  build_ufc_node_graph(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh,
+                       const std::size_t block_size);
 
   // Mark shared nodes. Boundary nodes are assigned a random
   // positive integer, interior nodes are marked as -1, interior

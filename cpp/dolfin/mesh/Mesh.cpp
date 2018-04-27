@@ -389,10 +389,11 @@ std::string Mesh::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string Mesh::ghost_mode() const
+std::string Mesh::get_ghost_mode() const { return _ghost_mode; }
+//-----------------------------------------------------------------------------
+void Mesh::set_ghost_mode(std::string mode)
 {
-  assert(_ghost_mode == "none" || _ghost_mode == "shared_vertex"
-         || _ghost_mode == "shared_facet");
-  return _ghost_mode;
+  assert(mode == "none" or mode == "shared_vertex" or mode == "shared_facet");
+  _ghost_mode = mode;
 }
 //-----------------------------------------------------------------------------

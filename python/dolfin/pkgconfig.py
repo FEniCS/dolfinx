@@ -7,10 +7,10 @@
 
 """
 Tool for querying pkg-config files
-----------------------------------
 
-This module exists solely to extract the compilation and linking information
-saved in the **dolfin.pc** pkg-config file, needed for JIT compilation.
+This module exists solely to extract the compilation and linking
+information saved in the **dolfin.pc** pkg-config file, needed for JIT
+compilation.
 """
 
 import subprocess

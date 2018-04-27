@@ -1,7 +1,17 @@
 .. _developers_styleguide_cpp:
 
-C++ coding style guide
-======================
+C++ style guide
+===============
+
+Formatting
+----------
+
+`clang-format <https://clang.llvm.org/docs/ClangFormat.html>`_ is used
+to format files. A `.clang-format` file is included in the root
+directory. Editors can be configured to apply the style using
+`clang-format`.
+
+
 
 Naming conventions
 ------------------
@@ -104,20 +114,11 @@ classes).
 Miscellaneous
 -------------
 
-.. _styleguides_cpp_coding_style_indentation:
-
-Indentation
-^^^^^^^^^^^
-
-Indentation should be two spaces and it should be spaces. Do **not**
-use tab(s).
-
 Comments
 ^^^^^^^^
 
-Comment your code, and do it often. Capitalize the first letter and
-don't use punctuation (unless the comment runs over several
-sentences). Here's a good example from ``TopologyComputation.cpp``:
+Capitalize the first letter of a comment and don't use punctuation
+(unless the comment runs over several sentences). Here's an example:
 
 .. code-block:: c++
 
@@ -144,38 +145,6 @@ Always use ``//`` for comments and ``///`` for documentation. Never
 use ``/* foo */``, not even for comments that runs over multiple
 lines.
 
-Integers and reals
-^^^^^^^^^^^^^^^^^^
-
-Use ``std::size_t`` instead of ``int`` (unless you really want to use
-negative integers or memory usage is critical).
-
-.. code-block:: c++
-
-    std::size_t i = 0;
-    double x = 0.0;
-
-Placement of brackets and indent style
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Use the `BSD/Allman <http://en.wikipedia.org/wiki/Indent_style>`_
-style when formatting blocks of code, i.e., curly brackets following
-multiline control statements should appear on the next line and should
-not be indented:
-
-.. code-block:: c++
-
-    for (std::size_t i = 0; i < 10; i++)
-    {
-      ...
-    }
-
-For one line statements, omit the brackets:
-
-.. code-block:: c++
-
-    for (std::size_t i = 0; i < 10; i++)
-      foo(i);
 
 Header file layout
 ^^^^^^^^^^^^^^^^^^
@@ -184,27 +153,13 @@ Header files should follow the below template:
 
 .. code-block:: c++
 
-    // Copyright (C) 2008 Foo Bar
+    // Copyright (C) 2018 Foo Bar
     //
-    // This file is part of DOLFIN.
+    // This file is part of DOLFIN (https://www.fenicsproject.org)
     //
-    // DOLFIN is free software: you can redistribute it and/or modify
-    // it under the terms of the GNU Lesser General Public License as published by
-    // the Free Software Foundation, either version 3 of the License, or
-    // (at your option) any later version.
-    //
-    // DOLFIN is distributed in the hope that it will be useful,
-    // but WITHOUT ANY WARRANTY; without even the implied warranty of
-    // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    // GNU Lesser General Public License for more details.
-    //
-    // You should have received a copy of the GNU Lesser General Public License
-    // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-    //
-    // Modified by Bar Foo 2008
+    // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-    #ifndef __FOO_H
-    #define __FOO_H
+    #pragma once
 
     namespace dolfin
     {
@@ -227,8 +182,6 @@ Header files should follow the below template:
 
     }
 
-    #endif
-
 Implementation file layout
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -236,24 +189,11 @@ Implementation files should follow the below template:
 
 .. code-block:: c++
 
-    // Copyright (C) 2008 Foo Bar
+    // Copyright (C) 2018 Foo Bar
     //
-    // This file is part of DOLFIN.
+    // This file is part of DOLFIN (https://www.fenicsproject.org)
     //
-    // DOLFIN is free software: you can redistribute it and/or modify
-    // it under the terms of the GNU Lesser General Public License as published by
-    // the Free Software Foundation, either version 3 of the License, or
-    // (at your option) any later version.
-    //
-    // DOLFIN is distributed in the hope that it will be useful,
-    // but WITHOUT ANY WARRANTY; without even the implied warranty of
-    // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    // GNU Lesser General Public License for more details.
-    //
-    // You should have received a copy of the GNU Lesser General Public License
-    // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-    //
-    // Modified by Bar Foo 2008
+    // SPDX-License-Identifier:    LGPL-3.0-or-later
 
     #include <dolfin/Foo.h>
 
@@ -271,8 +211,6 @@ Implementation files should follow the below template:
     }
     //-----------------------------------------------------------------------------
 
-The horizontal lines above (including the slashes) should be exactly
-79 characters wide.
 
 Including header files and using forward declarations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -333,11 +271,7 @@ There are some exceptions to this rule where we need to use old
 C-style function calls. One such exception is handling of command-line
 arguments (``char* argv[]``).
 
-Prefer smart pointers over plain pointers
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Avoid plain pointers
+^^^^^^^^^^^^^^^^^^^^
 
-Use ``std::shared_ptr`` and ``std::unique_ptr`` in favour of plain
-pointers. Smart pointers reduce the likelihood of memory leaks and
-make ownership clear. Use ``unique_ptr`` for a pointer that is not
-shared and ``shared_ptr`` when multiple pointers point to the same
-object.
+Use C++11 smart pointer and avoid plain pointers.

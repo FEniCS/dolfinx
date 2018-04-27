@@ -6,12 +6,8 @@
 
 #pragma once
 
-#include <vector>
-
-#define BOOST_NO_HASH
-
-#include <boost/graph/adjacency_list.hpp>
 #include <dolfin/common/Set.h>
+#include <vector>
 
 namespace dolfin
 {
@@ -22,7 +18,9 @@ namespace graph
 
 /// DOLFIN container for graphs
 typedef dolfin::common::Set<int> graph_set_type;
+
 /// Vector of unordered Sets
 typedef std::vector<graph_set_type> Graph;
-}
-}
+
+} // namespace graph
+} // namespace dolfin

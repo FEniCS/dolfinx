@@ -61,11 +61,6 @@ public:
   /// Return value of polynomial i at given point x
   /// @param i (std::size_t)
   /// @param x (double)
-  double operator()(std::size_t i, double x);
-
-  /// Return value of polynomial i at given point x
-  /// @param i (std::size_t)
-  /// @param x (double)
   double eval(std::size_t i, double x);
 
   /// Return derivate of polynomial i at given point x

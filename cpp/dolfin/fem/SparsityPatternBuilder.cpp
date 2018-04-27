@@ -22,11 +22,11 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-void SparsityPatternBuilder::build(
-    la::SparsityPattern& sparsity_pattern, const mesh::Mesh& mesh,
+la::SparsityPattern SparsityPatternBuilder::build(
+    MPI_Comm comm, const mesh::Mesh& mesh,
     const std::array<const fem::GenericDofMap*, 2> dofmaps, bool cells,
     bool interior_facets, bool exterior_facets, bool vertices, bool diagonal,
-    bool init, bool finalize)
+    bool finalize)
 {
   // Get index maps
   assert(dofmaps[0]);
@@ -36,9 +36,8 @@ void SparsityPatternBuilder::build(
 
   // FIXME: Should check that index maps are matching
 
-  // Initialise sparsity pattern
-  if (!sparsity_pattern.index_map(0) or !sparsity_pattern.index_map(1))
-    throw std::runtime_error("SparsityPattern has not been initialised.");
+  // Create empty sparsity pattern
+  la::SparsityPattern pattern(comm, index_maps, 0);
 
   // Vector to store macro-dofs, if required (for interior facets)
   std::array<std::vector<dolfin::la_index_t>, 2> macro_dofs;
@@ -54,8 +53,8 @@ void SparsityPatternBuilder::build(
   //       fast and certainly much better than quadratic scaling of usual
   //       insertion below
   std::vector<std::size_t> global_dofs0
-      = dofmaps[sparsity_pattern.primary_dim()]->tabulate_global_dofs();
-  sparsity_pattern.insert_full_rows_local(global_dofs0);
+      = dofmaps[pattern.primary_dim()]->tabulate_global_dofs();
+  pattern.insert_full_rows_local(global_dofs0);
 
   // FIXME: We iterate over the entire mesh even if the function space
   // is restricted. This works out fine since the local dofmap
@@ -75,7 +74,7 @@ void SparsityPatternBuilder::build(
       }
 
       // Insert non-zeroes in sparsity pattern
-      sparsity_pattern.insert_local(dofs);
+      pattern.insert_local(dofs);
     }
   }
 
@@ -122,7 +121,7 @@ void SparsityPatternBuilder::build(
       std::array<common::ArrayView<const dolfin::la_index_t>, 2> global_dofs_p;
       for (std::size_t i = 0; i < 2; ++i)
         global_dofs_p[i].set(global_dofs[i]);
-      sparsity_pattern.insert_local(global_dofs_p);
+      pattern.insert_local(global_dofs_p);
     }
   }
 
@@ -158,7 +157,7 @@ void SparsityPatternBuilder::build(
         }
 
         // Insert dofs
-        sparsity_pattern.insert_local(dofs);
+        pattern.insert_local(dofs);
       }
       else if (interior_facets && !this_exterior_facet)
       {
@@ -194,14 +193,14 @@ void SparsityPatternBuilder::build(
         }
 
         // Insert dofs
-        sparsity_pattern.insert_local(dofs);
+        pattern.insert_local(dofs);
       }
     }
   }
 
   if (diagonal)
   {
-    const std::size_t primary_dim = sparsity_pattern.primary_dim();
+    const std::size_t primary_dim = pattern.primary_dim();
     const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
     const auto primary_range = index_maps[primary_dim]->local_range();
     const std::size_t secondary_range
@@ -223,11 +222,13 @@ void SparsityPatternBuilder::build(
             common::ArrayView<const dolfin::la_index_t>(indices.size(),
                                                         indices.data())}};
 
-    sparsity_pattern.insert_global(diags);
+    pattern.insert_global(diags);
   }
 
   // Finalize sparsity pattern (communicate off-process terms)
   if (finalize)
-    sparsity_pattern.apply();
+    pattern.apply();
+
+  return pattern;
 }
 //-----------------------------------------------------------------------------

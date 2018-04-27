@@ -61,14 +61,14 @@ def derivative(form, u, du=None, coefficient_derivatives=None):
         number = max([-1] + [arg.number() for arg in form_arguments]) + 1
 
         if any(arg.part() is not None for arg in form_arguments):
-            raise RuntimeError("Compute derivative of form, cannot automatically create new Argument using parts, please supply one")
+            raise RuntimeError("Cannot automatically create new Argument using parts, please supply one")
         part = None
 
         if isinstance(u, Function):
             V = u.function_space()
             du = Argument(V, number, part)
         elif isinstance(u, (list, tuple)) and all(isinstance(w, Function) for w in u):
-            raise RuntimeError("Taking derivative of form w.r.t. a tuple of Coefficients. Take derivative w.r.t. a single Coefficient on a mixed space instead.")
+            raise RuntimeError("Take derivative w.r.t. a single Coefficient on a mixed space instead.")
         else:
             raise RuntimeError("Computing derivative of form w.r.t. '{}'. Supply Function as a Coefficient".format(u))
 

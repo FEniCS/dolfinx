@@ -19,6 +19,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/geometry/Point.h>
+#include <dolfin/graph/CSRGraph.h>
 #include <dolfin/graph/GraphBuilder.h>
 #include <dolfin/graph/ParMETIS.h>
 #include <dolfin/graph/SCOTCH.h>
@@ -59,10 +60,11 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(
   mesh::Mesh mesh
       = build(comm, type, cells, points, global_cell_indices, ghost_mode, mp);
 
+  // FIXME: This should be done at Mesh construction
   // Store used ghost mode
   // NOTE: This is the only place in DOLFIN which eventually sets
   //       mesh._ghost_mode != "none"
-  mesh._ghost_mode = ghost_mode;
+  mesh.set_ghost_mode(ghost_mode);
 
   // Initialise number of globally connected cells to each facet. This
   // is necessary to distinguish between facets on an exterior
@@ -84,22 +86,33 @@ PartitionData MeshPartitioning::partition_cells(
   std::unique_ptr<mesh::CellType> cell_type(mesh::CellType::create(type));
   assert(cell_type);
 
+  // Compute dual graph (for this partition)
+  std::vector<std::vector<std::size_t>> local_graph;
+  std::tuple<std::int32_t, std::int32_t, std::int32_t> graph_info;
+  std::tie(local_graph, graph_info) = graph::GraphBuilder::compute_dual_graph(
+      mpi_comm, cell_vertices, *cell_type);
+
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
   {
-    return dolfin::graph::SCOTCH::compute_partition(mpi_comm, cell_vertices,
-                                                    *cell_type);
+    graph::CSRGraph<SCOTCH_Num> csr_graph(mpi_comm, local_graph);
+    std::vector<std::size_t> weights;
+    const std::int32_t num_ghost_nodes = std::get<0>(graph_info);
+    return PartitionData(graph::SCOTCH::partition(mpi_comm, csr_graph, weights,
+                                                  num_ghost_nodes));
   }
   else if (partitioner == "ParMETIS")
   {
-    return dolfin::graph::ParMETIS::compute_partition(mpi_comm, cell_vertices,
-                                                      *cell_type);
+#ifdef HAS_PARMETIS
+    graph::CSRGraph<idx_t> csr_graph(mpi_comm, local_graph);
+    return PartitionData(graph::ParMETIS::partition(mpi_comm, csr_graph));
+#else
+    throw std::runtime_error("ParMETIS not available");
+#endif
   }
   else
-  {
-    log::dolfin_error("MeshPartitioning.cpp", "compute cell partition",
-                      "Mesh partitioner '%s' is unknown.", partitioner.c_str());
-  }
+    throw std::runtime_error("Unknown graph partitioner");
+
   return PartitionData({}, {});
 }
 //-----------------------------------------------------------------------------
@@ -214,13 +227,14 @@ MeshPartitioning::reorder_cells_gps(
 
   common::Timer timer("Reorder cells using GPS ordering");
 
+  // FIXME: Should not use Graph private methods
   // Make dual graph from vertex indices, using GraphBuilder
   // FIXME: this should be reused later to add the facet-cell topology
   std::vector<std::vector<std::size_t>> local_graph;
   dolfin::graph::GraphBuilder::FacetCellMap facet_cell_map;
-
-  dolfin::graph::GraphBuilder::compute_local_dual_graph(
-      mpi_comm, global_cell_vertices, cell_type, local_graph, facet_cell_map);
+  std::tie(local_graph, facet_cell_map, std::ignore)
+      = dolfin::graph::GraphBuilder::compute_local_dual_graph(
+          mpi_comm, global_cell_vertices, cell_type);
 
   const std::size_t num_all_cells = global_cell_vertices.rows();
   const std::size_t local_cell_offset
@@ -246,7 +260,8 @@ MeshPartitioning::reorder_cells_gps(
     }
     g_dual.push_back(conn_set);
   }
-  std::vector<int> remap = dolfin::graph::SCOTCH::compute_gps(g_dual);
+  std::vector<int> remap;
+  std::tie(remap, std::ignore) = dolfin::graph::SCOTCH::compute_gps(g_dual);
 
   // Add direct mapping for any ghost cells (not reordered)
   for (unsigned int j = remap.size(); j < global_cell_indices.size(); ++j)

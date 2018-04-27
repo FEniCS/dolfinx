@@ -7,6 +7,7 @@
 #include "DofMapBuilder.h"
 #include "DofMap.h"
 #include <cstdlib>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/graph/BoostGraphOrdering.h>
@@ -28,26 +29,26 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-void DofMapBuilder::build(fem::DofMap& dofmap, const mesh::Mesh& mesh)
+std::tuple<std::size_t, std::unique_ptr<common::IndexMap>, std::vector<int>,
+           std::unordered_map<int, std::vector<int>>, std::set<std::size_t>,
+           std::set<int>, std::vector<dolfin::la_index_t>>
+DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
 {
-  assert(dofmap._ufc_dofmap);
-
-  // Start timer for dofmap initialization
   common::Timer t0("Init dofmap");
 
-  // Sanity checks on UFC dofmap
-  const std::size_t D = mesh.topology().dim();
-  assert(dofmap._ufc_dofmap);
-
   // Extract needs_entities as vector
+  const std::size_t D = mesh.topology().dim();
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = (dofmap._ufc_dofmap->num_entity_dofs(d) > 0);
+    needs_entities[d] = ufc_map.num_entity_dofs(d) > 0;
 
   // For mesh entities required by UFC dofmap, compute number of
   // entities on this process
   const std::vector<int64_t> num_mesh_entities_local
       = compute_num_mesh_entities_local(mesh, needs_entities);
+
+  // FIXME: Use ufc_dofmap.num_global_support_dofs attribute to
+  // simplify.
 
   // NOTE: We test for global dofs here because the the function
   // DofMapBuilder::compute_block size cannot distinguish between
@@ -59,12 +60,12 @@ void DofMapBuilder::build(fem::DofMap& dofmap, const mesh::Mesh& mesh)
   // Compute local UFC indices of any 'global' dofs
   std::set<std::size_t> global_dofs;
   std::tie(global_dofs, std::ignore)
-      = extract_global_dofs(dofmap._ufc_dofmap, num_mesh_entities_local);
+      = extract_global_dofs(ufc_map, num_mesh_entities_local);
 
   // Determine and set dof block size (block size must be 1 if UFC map
   // is not re-ordered or if global dofs are present)
   const std::size_t bs
-      = global_dofs.empty() ? compute_blocksize(*dofmap._ufc_dofmap, D) : 1;
+      = global_dofs.empty() ? compute_blocksize(ufc_map, D) : 1;
 
   // Compute a 'node' dofmap based on a UFC dofmap. Returns:
   // - node dofmap (node_dofmap)
@@ -76,28 +77,26 @@ void DofMapBuilder::build(fem::DofMap& dofmap, const mesh::Mesh& mesh)
   std::vector<std::size_t> node_local_to_global0;
   std::vector<std::vector<la_index_t>> node_graph0;
   std::vector<int> node_ufc_local_to_local0;
-  std::shared_ptr<const ufc_dofmap> ufc_node_dofmap;
+  std::unique_ptr<const ufc_dofmap> ufc_node_dofmap;
   std::tie(ufc_node_dofmap, node_graph0, node_local_to_global0)
-      = build_ufc_node_graph(dofmap._ufc_dofmap, mesh, bs);
-
+      = build_ufc_node_graph(ufc_map, mesh, bs);
   assert(ufc_node_dofmap);
 
-  // Set local (cell) dimension
-  dofmap._cell_dimension = dofmap._ufc_dofmap->num_element_dofs;
-
   // Set global dimension
-  dofmap._global_dimension = 0;
+  std::size_t global_dimension = 0;
   for (std::size_t d = 0; d < D + 1; ++d)
   {
     const std::int64_t n = mesh.num_entities_global(d);
-    dofmap._global_dimension += n * dofmap._ufc_dofmap->num_entity_dofs(d);
+    global_dimension += n * ufc_map.num_entity_dofs(d);
   }
+  assert(global_dimension % bs == 0);
 
+  // FIXME: simplify now that periodic case is no longer handled.
   // Compute local UFC indices of any 'global' dofs, and re-map if
   // required, e.g., in case that dofmap is periodic
   std::set<std::size_t> global_nodes0;
   std::tie(global_nodes0, std::ignore)
-      = extract_global_dofs(ufc_node_dofmap, num_mesh_entities_local);
+      = extract_global_dofs(*ufc_node_dofmap, num_mesh_entities_local);
   if (!node_ufc_local_to_local0.empty())
   {
     std::set<std::size_t> remapped_global_nodes;
@@ -130,175 +129,156 @@ void DofMapBuilder::build(fem::DofMap& dofmap, const mesh::Mesh& mesh)
   std::vector<short int> node_ownership0;
   std::unordered_map<int, std::vector<int>> shared_node_to_processes0;
   int num_owned_nodes;
+  std::set<int> neighbours;
   std::tie(num_owned_nodes, node_ownership0, shared_node_to_processes0,
-           dofmap._neighbours)
+           neighbours)
       = compute_node_ownership(node_graph0, shared_nodes, global_nodes0,
                                node_local_to_global0, mesh,
-                               dofmap._global_dimension / bs);
+                               global_dimension / bs);
 
-  dofmap._index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(),
-                                                         num_owned_nodes, bs);
+  auto index_map = std::make_unique<common::IndexMap>(mesh.mpi_comm(),
+                                                      num_owned_nodes, bs);
+  assert(index_map);
+  assert(MPI::sum(mesh.mpi_comm(),
+                  bs * index_map->size(common::IndexMap::MapSize::OWNED))
+         == global_dimension);
 
-  // Sanity check
-  assert(
-      MPI::sum(mesh.mpi_comm(),
-               bs * dofmap._index_map->size(common::IndexMap::MapSize::OWNED))
-      == (std::size_t)dofmap._global_dimension);
-
-  // Compute node re-ordering for process index locality and spatial
+  // Compute node re-ordering for process index locality, and spatial
   // locality within a process, including
   // (a) Old-to-new node indices (local)
   // (b) Owning process for nodes that are not owned by this process
   // (c) New local node index to new global node index
   // (d) Old local node index to new local node index
-  assert(dofmap._index_map);
   std::vector<int> node_old_to_new_local;
   std::vector<std::size_t> local_to_global_unowned;
   std::tie(node_old_to_new_local, local_to_global_unowned)
       = compute_node_reordering(
           shared_node_to_processes0, node_local_to_global0, node_graph0,
           node_ownership0, global_nodes0, mesh.mpi_comm());
-
-  dofmap._index_map->set_block_local_to_global(local_to_global_unowned);
-
-  // FIXME: Simplify after constrained domain removal
-  // Update UFC-local-to-local map to account for re-ordering
-  // UFC dofmap was not altered, old_to_new is same as UFC-to-new
-  dofmap._ufc_local_to_local = node_old_to_new_local;
+  index_map->set_block_local_to_global(local_to_global_unowned);
 
   // Update shared_nodes for node reordering
-  dofmap._shared_nodes.clear();
+  std::unordered_map<int, std::vector<int>> shared_nodes_foo;
   for (auto it = shared_node_to_processes0.begin();
        it != shared_node_to_processes0.end(); ++it)
   {
     const int new_node = node_old_to_new_local[it->first];
-    dofmap._shared_nodes[new_node] = it->second;
+    shared_nodes_foo[new_node] = it->second;
   }
 
   // Update global_nodes for node reordering
-  dofmap._global_nodes.clear();
+  std::set<std::size_t> global_nodes;
   for (auto it = global_nodes0.begin(); it != global_nodes0.end(); ++it)
-    dofmap._global_nodes.insert(node_old_to_new_local[*it]);
+    global_nodes.insert(node_old_to_new_local[*it]);
 
-  // Build dofmap from original node 'dof' map and applying the
+  // Build dofmap from original node 'dof' map, and applying the
   // 'old_to_new_local' map for the re-ordered node indices
   dofmap_graph = build_dofmap(node_graph0, node_old_to_new_local, bs);
 
-  // Clear ufc_local-to-local map if dofmap has no sub-maps
-  if (dofmap._ufc_dofmap->num_sub_dofmaps == 0)
-    std::vector<int>().swap(dofmap._ufc_local_to_local);
-
   // Build flattened dofmap graph
-  dofmap._dofmap.clear();
+  std::vector<dolfin::la_index_t> cell_dofmap;
   for (auto const& cell_dofs : dofmap_graph)
-  {
-    dofmap._dofmap.insert(dofmap._dofmap.end(), cell_dofs.begin(),
-                          cell_dofs.end());
-  }
+    cell_dofmap.insert(cell_dofmap.end(), cell_dofs.begin(), cell_dofs.end());
+
+  // Clear ufc_local-to-local map if dofmap has no sub-maps
+  if (ufc_map.num_sub_dofmaps == 0)
+    node_old_to_new_local.clear();
+
+  // // FIXME: Simplify after constrained domain removal
+  // // Update UFC-local-to-local map to account for re-ordering
+  // // UFC dofmap was not altered, old_to_new is same as UFC-to-new
+  // dofmap._ufc_local_to_local = node_old_to_new_local;
+
+  return std::make_tuple(std::move(global_dimension), std::move(index_map),
+                         std::move(node_old_to_new_local),
+                         std::move(shared_nodes_foo), std::move(global_nodes),
+                         std::move(neighbours), std::move(cell_dofmap));
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::build_sub_map_view(
-    fem::DofMap& sub_dofmap, const fem::DofMap& parent_dofmap,
+std::tuple<std::unique_ptr<const ufc_dofmap>, std::int64_t, std::int64_t,
+           std::vector<dolfin::la_index_t>>
+DofMapBuilder::build_sub_map_view(
+    const ufc_dofmap& parent_ufc_dofmap,
+    const std::vector<int>& parent_ufc_local_to_local,
+    const int parent_block_size, const std::int64_t parent_offset,
     const std::vector<std::size_t>& component, const mesh::Mesh& mesh)
 {
-  // Note: Ownership range is set to zero since dofmap is a view
   assert(!component.empty());
 
-  // Convenience reference to parent UFC dofmap
-  assert(parent_dofmap._ufc_dofmap);
-  const ufc_dofmap& parent_ufc_dofmap = *parent_dofmap._ufc_dofmap;
-  const std::int64_t parent_offset
-      = parent_dofmap._ufc_offset > 0 ? parent_dofmap._ufc_offset : 0;
-
   // Topological dimension
-  const std::size_t D = mesh.topology().dim();
 
+  const std::size_t D = mesh.topology().dim();
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = (parent_ufc_dofmap.num_entity_dofs(d) > 0);
+    needs_entities[d] = parent_ufc_dofmap.num_entity_dofs(d) > 0;
 
   // Generate and number required mesh entities for local UFC map
   const std::vector<int64_t> num_mesh_entities_local
       = compute_num_mesh_entities_local(mesh, needs_entities);
 
   // Extract local UFC sub-dofmap from parent and update offset
-  std::tie(sub_dofmap._ufc_dofmap, sub_dofmap._ufc_offset)
-      = extract_ufc_sub_dofmap(parent_ufc_dofmap, component,
-                               num_mesh_entities_local, parent_offset);
-  assert(sub_dofmap._ufc_dofmap);
+  std::unique_ptr<const ufc_dofmap> ufc_sub_dofmap;
+  std::int64_t ufc_offset;
+  std::tie(ufc_sub_dofmap, ufc_offset) = extract_ufc_sub_dofmap(
+      parent_ufc_dofmap, component, num_mesh_entities_local, parent_offset);
+  assert(ufc_sub_dofmap);
 
-  // Build local UFC-based dof map for sub-dofmap
-  // Dynamic data structure to build dofmap graph
+  // Build local UFC-based dof map for sub-dofmap (dynamic data
+  // structure to build dofmap graph)
   std::vector<std::vector<la_index_t>> sub_dofmap_graph
-      = build_local_ufc_dofmap(*sub_dofmap._ufc_dofmap, mesh);
+      = build_local_ufc_dofmap(*ufc_sub_dofmap, mesh);
 
   // Add offset to local UFC dofmap
   for (std::size_t i = 0; i < sub_dofmap_graph.size(); ++i)
   {
     for (std::size_t j = 0; j < sub_dofmap_graph[i].size(); ++j)
-      sub_dofmap_graph[i][j] += sub_dofmap._ufc_offset;
+      sub_dofmap_graph[i][j] += ufc_offset;
   }
 
   // Store number of global mesh entities and set global dimension
-  sub_dofmap._global_dimension = 0;
+  std::size_t global_dimension = 0;
   for (std::size_t d = 0; d < D + 1; ++d)
   {
     const std::int64_t n = mesh.num_entities_global(d);
-    sub_dofmap._global_dimension
-        += n * sub_dofmap._ufc_dofmap->num_entity_dofs(d);
+    global_dimension += n * ufc_sub_dofmap->num_entity_dofs(d);
   }
 
-  // Copy data from parent
-  // FIXME: Do we touch sub_dofmap.index_map() in this routine? If yes, then
-  //        this routine has incorrect constness!
-  sub_dofmap.index_map() = parent_dofmap.index_map();
-  sub_dofmap._shared_nodes = parent_dofmap._shared_nodes;
-  sub_dofmap._neighbours = parent_dofmap._neighbours;
-
   // Store UFC local to re-ordered local if submap has any submaps
-  if (sub_dofmap._ufc_dofmap->num_sub_dofmaps > 0)
-    sub_dofmap._ufc_local_to_local = parent_dofmap._ufc_local_to_local;
-  else
-    sub_dofmap._ufc_local_to_local.clear();
-
-  if (parent_dofmap._ufc_local_to_local.empty())
+  if (parent_ufc_local_to_local.empty())
   {
-    throw std::runtime_error("Building  sub-dofmap view - re-ordering map not "
+    throw std::runtime_error("Building sub-dofmap view - re-ordering map not "
                              "available. It may be been cleared by the user");
   }
 
   // Map to re-ordered dofs
-  const std::vector<int>& local_to_local = parent_dofmap._ufc_local_to_local;
-  const std::size_t bs = parent_dofmap.block_size();
+  const int map_size = parent_ufc_local_to_local.size();
   for (auto cell_map = sub_dofmap_graph.begin();
        cell_map != sub_dofmap_graph.end(); ++cell_map)
   {
     for (auto dof = cell_map->begin(); dof != cell_map->end(); ++dof)
     {
-      const std::div_t div = std::div((int)*dof, (int)local_to_local.size());
+      const std::div_t div = std::div((int)*dof, map_size);
       const std::size_t node = div.rem;
       const std::size_t component = div.quot;
 
       // Get dof from UFC local-to-local map
-      assert(node < local_to_local.size());
-      std::size_t current_dof = bs * local_to_local[node] + component;
+      assert(node < (std::size_t)map_size);
+      std::size_t current_dof
+          = parent_block_size * parent_ufc_local_to_local[node] + component;
 
       // Set dof index in transformed dofmap
       *dof = current_dof;
     }
   }
 
-  // Set local (cell) dimension
-  sub_dofmap._cell_dimension = sub_dofmap._ufc_dofmap->num_element_dofs;
-
   // Construct flattened dofmap
-  sub_dofmap._dofmap.clear();
+  std::vector<dolfin::la_index_t> cell_dofmap;
   for (auto const& cell_dofs : sub_dofmap_graph)
-  {
-    sub_dofmap._dofmap.insert(sub_dofmap._dofmap.end(), cell_dofs.begin(),
-                              cell_dofs.end());
-  }
+    cell_dofmap.insert(cell_dofmap.end(), cell_dofs.begin(), cell_dofs.end());
+
+  return std::make_tuple(std::move(ufc_sub_dofmap), std::move(ufc_offset),
+                         std::move(global_dimension), std::move(cell_dofmap));
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<dolfin::la_index_t>>
@@ -560,26 +540,24 @@ DofMapBuilder::compute_node_ownership(
 
   log::log(TRACE, "Finished determining dof ownership for parallel dof map");
 
-  return std::make_tuple(num_owned_nodes, std::move(node_ownership),
+  return std::make_tuple(std::move(num_owned_nodes), std::move(node_ownership),
                          std::move(shared_node_to_processes),
                          std::move(neighbours));
 }
 //-----------------------------------------------------------------------------
 std::pair<std::set<std::size_t>, std::size_t>
 DofMapBuilder::extract_global_dofs(
-    const std::shared_ptr<const ufc_dofmap> ufc_dofmap,
+    const ufc_dofmap& ufc_map,
     const std::vector<int64_t>& num_mesh_entities_local,
     std::set<std::size_t> global_dofs, std::size_t offset_local)
 {
-  assert(ufc_dofmap);
-
-  if (ufc_dofmap->num_sub_dofmaps == 0)
+  if (ufc_map.num_sub_dofmaps == 0)
   {
     // Check if dofmap is for global dofs
     bool global_dof = true;
     for (std::size_t d = 0; d < num_mesh_entities_local.size(); ++d)
     {
-      if (ufc_dofmap->num_entity_dofs(d) > 0)
+      if (ufc_map.num_entity_dofs(d) > 0)
       {
         global_dof = false;
         break;
@@ -592,7 +570,7 @@ DofMapBuilder::extract_global_dofs(
       std::size_t ndofs = 0;
       for (auto& n : num_mesh_entities_local)
       {
-        ndofs += n * ufc_dofmap->num_entity_dofs(d);
+        ndofs += n * ufc_map.num_entity_dofs(d);
         ++d;
       }
 
@@ -607,8 +585,8 @@ DofMapBuilder::extract_global_dofs(
       // global dof
       const int64_t** dummy_entity_indices = nullptr;
       int64_t dof_local = 0;
-      ufc_dofmap->tabulate_dofs(&dof_local, num_mesh_entities_local.data(),
-                                dummy_entity_indices);
+      ufc_map.tabulate_dofs(&dof_local, num_mesh_entities_local.data(),
+                            dummy_entity_indices);
 
       // Insert global dof index
       std::pair<std::set<std::size_t>::iterator, bool> ret
@@ -623,13 +601,13 @@ DofMapBuilder::extract_global_dofs(
   else
   {
     // Loop through sub-dofmap looking for global dofs
-    for (int i = 0; i < ufc_dofmap->num_sub_dofmaps; ++i)
+    for (int i = 0; i < ufc_map.num_sub_dofmaps; ++i)
     {
       // Extract sub-dofmap and initialise
-      std::shared_ptr<struct ufc_dofmap> sub_dofmap(
-          ufc_dofmap->create_sub_dofmap(i));
+      std::unique_ptr<ufc_dofmap> sub_dofmap(ufc_map.create_sub_dofmap(i));
+      assert(sub_dofmap);
       std::tie(global_dofs, offset_local) = extract_global_dofs(
-          sub_dofmap, num_mesh_entities_local, global_dofs, offset_local);
+          *sub_dofmap, num_mesh_entities_local, global_dofs, offset_local);
 
       // Get offset
       if (sub_dofmap->num_sub_dofmaps == 0)
@@ -647,13 +625,13 @@ DofMapBuilder::extract_global_dofs(
   return std::make_pair(global_dofs, offset_local);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::shared_ptr<ufc_dofmap>, std::size_t>
+std::pair<std::unique_ptr<ufc_dofmap>, std::size_t>
 DofMapBuilder::extract_ufc_sub_dofmap(
-    const ufc_dofmap& ufc_dofmap, const std::vector<std::size_t>& component,
+    const ufc_dofmap& ufc_map, const std::vector<std::size_t>& component,
     const std::vector<int64_t>& num_mesh_entities, std::size_t offset)
 {
   // Check if there are any sub systems
-  if (ufc_dofmap.num_sub_dofmaps == 0)
+  if (ufc_map.num_sub_dofmaps == 0)
   {
     throw std::runtime_error("Extracting subsystem of degree of freedom "
                              "mapping - there are no subsystems");
@@ -667,20 +645,19 @@ DofMapBuilder::extract_ufc_sub_dofmap(
   }
 
   // Check the number of available sub systems
-  if ((int)component[0] >= ufc_dofmap.num_sub_dofmaps)
+  if ((int)component[0] >= ufc_map.num_sub_dofmaps)
   {
-    throw std::runtime_error(
-        "Requested subsystem (" + std::to_string(component[0])
-        + ") out of range [0, " + std::to_string(ufc_dofmap.num_sub_dofmaps)
-        + ")");
+    throw std::runtime_error("Requested subsystem ("
+                             + std::to_string(component[0])
+                             + ") out of range [0, "
+                             + std::to_string(ufc_map.num_sub_dofmaps) + ")");
   }
 
   // Add to offset if necessary
   for (std::size_t i = 0; i < component[0]; i++)
   {
     // Extract sub dofmap
-    std::unique_ptr<struct ufc_dofmap> ufc_tmp_dofmap(
-        ufc_dofmap.create_sub_dofmap(i));
+    std::unique_ptr<ufc_dofmap> ufc_tmp_dofmap(ufc_map.create_sub_dofmap(i));
     assert(ufc_tmp_dofmap);
 
     // Get offset
@@ -693,14 +670,14 @@ DofMapBuilder::extract_ufc_sub_dofmap(
   }
 
   // Create UFC sub-system
-  std::shared_ptr<struct ufc_dofmap> sub_dofmap(
-      ufc_dofmap.create_sub_dofmap(component[0]));
+  std::unique_ptr<ufc_dofmap> sub_dofmap(
+      ufc_map.create_sub_dofmap(component[0]));
   assert(sub_dofmap);
 
   // Return sub-system if sub-sub-system should not be extracted,
   // otherwise recursively extract the sub sub system
   if (component.size() == 1)
-    return std::make_pair(sub_dofmap, offset);
+    return std::make_pair(std::move(sub_dofmap), std::move(offset));
   else
   {
     std::vector<std::size_t> sub_component;
@@ -758,14 +735,12 @@ std::size_t DofMapBuilder::compute_blocksize(const ufc_dofmap& ufc_dofmap,
     return 1;
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::shared_ptr<const ufc_dofmap>,
+std::tuple<std::unique_ptr<const ufc_dofmap>,
            std::vector<std::vector<la_index_t>>, std::vector<std::size_t>>
-DofMapBuilder::build_ufc_node_graph(
-    std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh,
-    const std::size_t block_size)
+DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
+                                    const mesh::Mesh& mesh,
+                                    const std::size_t block_size)
 {
-  assert(ufc_dofmap);
-
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap from UFC dofmap");
 
@@ -775,7 +750,7 @@ DofMapBuilder::build_ufc_node_graph(
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = (ufc_dofmap->num_entity_dofs(d) > 0);
+    needs_entities[d] = (ufc_map.num_entity_dofs(d) > 0);
 
   // Generate and number required mesh entities (local & global, and
   // constrained global)
@@ -793,7 +768,7 @@ DofMapBuilder::build_ufc_node_graph(
   }
 
   // Extract sub-dofmaps
-  std::vector<std::shared_ptr<const struct ufc_dofmap>> dofmaps(block_size);
+  std::vector<std::unique_ptr<const ufc_dofmap>> dofmaps(block_size);
   std::vector<std::size_t> offset_local(block_size + 1, 0);
   if (block_size > 1)
   {
@@ -803,18 +778,18 @@ DofMapBuilder::build_ufc_node_graph(
     {
       component[0] = i;
       std::tie(dofmaps[i], offset_local[i]) = extract_ufc_sub_dofmap(
-          *ufc_dofmap, component, num_mesh_entities_local, _offset_local);
+          ufc_map, component, num_mesh_entities_local, _offset_local);
       _offset_local = offset_local[i];
     }
   }
   else
-    dofmaps[0] = ufc_dofmap;
+    dofmaps[0] = std::unique_ptr<const ufc_dofmap>(ufc_map.create());
 
   offset_local[block_size] = 0;
   unsigned int d = 0;
   for (auto& n : num_mesh_entities_local)
   {
-    offset_local[block_size] += n * ufc_dofmap->num_entity_dofs(d);
+    offset_local[block_size] += n * ufc_map.num_entity_dofs(d);
     ++d;
   }
 
@@ -872,7 +847,7 @@ DofMapBuilder::build_ufc_node_graph(
     }
   }
 
-  return std::make_tuple(dofmaps[0], std::move(node_dofmap),
+  return std::make_tuple(std::move(dofmaps[0]), std::move(node_dofmap),
                          std::move(node_local_to_global));
 }
 //-----------------------------------------------------------------------------
@@ -1053,11 +1028,12 @@ DofMapBuilder::compute_node_reordering(
   std::vector<int> node_remap;
   if (ordering_library == "Boost")
   {
-    node_remap
-        = dolfin::graph::BoostGraphOrdering::compute_cuthill_mckee(graph, true);
+    node_remap = graph::BoostGraphOrdering::compute_cuthill_mckee(graph, true);
   }
   else if (ordering_library == "SCOTCH")
-    node_remap = dolfin::graph::SCOTCH::compute_gps(graph);
+  {
+    std::tie(node_remap, std::ignore) = graph::SCOTCH::compute_gps(graph);
+  }
   else if (ordering_library == "random")
   {
     // NOTE: Randomised dof ordering should only be used for
