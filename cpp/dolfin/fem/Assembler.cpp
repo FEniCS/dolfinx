@@ -11,6 +11,7 @@
 #include "SparsityPatternBuilder.h"
 #include "UFC.h"
 #include "utils.h"
+#include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/SparsityPattern.h>
@@ -28,6 +29,11 @@ Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs)
     : _a(a), _l(L), _bcs(bcs)
 {
+  assert(!a.empty());
+  assert(!a[0].empty());
+
+  // FIXME: check that a is square
+
   // Check shape of a and L
 
   // Check rank of forms
@@ -47,133 +53,137 @@ Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
   */
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(la::PETScMatrix& A)
+void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 {
   // Check if matrix should be nested
   assert(!_a.empty());
-  const bool nested_matrix = false;
   const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
 
   if (A.empty())
   {
+    // std::cout << "Init matrix" << std::endl;
+
+    // Initialise matrix if empty
+
+    // Build array of pointers to forms
+    std::vector<std::vector<const Form*>> forms(
+        _a.size(), std::vector<const Form*>(_a[0].size()));
+    for (std::size_t i = 0; i < _a.size(); ++i)
+      for (std::size_t j = 0; j < _a[i].size(); ++j)
+        forms[i][j] = _a[i][j].get();
+
     // Initialise matrix
-    if (nested_matrix)
+    if (block_type == BlockType::nested)
     {
-      // Loop over each form
-      std::vector<std::shared_ptr<la::PETScMatrix>> mats;
-      std::vector<Mat> petsc_mats;
-      for (auto a_row : _a)
-      {
-        for (auto a : a_row)
-        {
-          if (a)
-          {
-            mats.push_back(std::make_shared<la::PETScMatrix>(A.mpi_comm()));
-            petsc_mats.push_back(mats.back()->mat());
-            init(*mats.back(), *a);
-          }
-          else
-          {
-            mats.push_back(nullptr);
-            petsc_mats.push_back(nullptr);
-          }
-        }
-      }
-
-      // Intitialise block (MatNest) matrix
-      MatSetType(A.mat(), MATNEST);
-      MatNestSetSubMats(A.mat(), _a.size(), NULL, _a[0].size(), NULL,
-                        petsc_mats.data());
-
-      // A.apply(la::PETScMatrix::AssemblyType::FINAL);
+      fem::init_nest(A, forms);
     }
-    else if (block_matrix)
+    else if (block_matrix and block_type == BlockType::monolithic)
     {
-      std::cout << "Initialising block matrix" << std::endl;
+      // Initialise matrix
+      fem::init_monolithic(A, forms);
 
-      std::vector<std::vector<la::SparsityPattern>> patterns;
-      for (std::size_t row = 0; row < _a.size(); ++row)
+      // Create local-to-global maps and attach to matrix
+      std::vector<PetscInt> _map0, _map1;
+
+      // Build list of index maps
+      std::vector<const common::IndexMap*> maps0, maps1;
+      for (std::size_t i = 0; i < _a.size(); ++i)
       {
-        patterns.resize(_a[row].size());
-        for (std::size_t col = 0; col < _a[row].size(); ++col)
-        {
-          std::cout << "  Initialising block: " << row << ", " << col
-                    << std::endl;
-          auto map0 = _a[row][col]->function_space(0)->dofmap()->index_map();
-          auto map1 = _a[row][col]->function_space(1)->dofmap()->index_map();
+        auto map = _a[i][0]->function_space(0)->dofmap()->index_map();
+        maps0.push_back(map.get());
+      }
+      for (std::size_t i = 0; i < _a[0].size(); ++i)
+      {
+        auto map = _a[0][i]->function_space(1)->dofmap()->index_map();
+        maps1.push_back(map.get());
+      }
 
-          // Build sparsity pattern
-          std::cout << "  Build sparsity pattern " << std::endl;
-          std::array<const GenericDofMap*, 2> dofmaps
-              = {{_a[row][col]->function_space(0)->dofmap().get(),
-                  _a[row][col]->function_space(1)->dofmap().get()}};
-          patterns[row].push_back(SparsityPatternBuilder::build(
-              A.mpi_comm(), *_a[row][col]->mesh(), dofmaps, true, false, false,
-              false, false));
-          std::cout << "  End Build sparsity pattern " << std::endl;
+      // Row local-to-global map
+      for (std::size_t i = 0; i < _a.size(); ++i)
+      {
+        auto map = _a[i][0]->function_space(0)->dofmap()->index_map();
+        for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL);
+             ++k)
+        {
+          auto index_k = map->local_to_global(k);
+          std::size_t index = get_global_index(maps0, i, index_k);
+          _map0.push_back(index);
         }
       }
-      std::vector<std::vector<const la::SparsityPattern*>> p(patterns.size());
-      for (std::size_t row  = 0; row < patterns.size(); ++row)
+
+      // Column local-to-global map
+      for (std::size_t i = 0; i < _a[0].size(); ++i)
       {
-        for (std::size_t col = 0; col < patterns[row].size(); ++col)
-          p[row].push_back(&patterns[row][col]);
+        auto map = _a[0][i]->function_space(1)->dofmap()->index_map();
+        for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL);
+             ++k)
+        {
+          auto index_k = map->local_to_global(k);
+          std::size_t index = get_global_index(maps1, i, index_k);
+          _map1.push_back(index);
+        }
       }
 
-      // Create merged sparsity pattern
-      std::cout << "  Build merged sparsity pattern" << std::endl;
-      la::SparsityPattern pattern(A.mpi_comm(), p);
+      // Create PETSc local-to-global map/index sets and attach to matrix
+      ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
+      ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _map0.size(), _map0.data(),
+                                   PETSC_COPY_VALUES, &petsc_local_to_global0);
+      ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _map1.size(), _map1.data(),
+                                   PETSC_COPY_VALUES, &petsc_local_to_global1);
+      MatSetLocalToGlobalMapping(A.mat(), petsc_local_to_global0,
+                                 petsc_local_to_global1);
 
-      // Initialise matrix
-      std::cout << "  Init parent matrix" << std::endl;
-      A.init(pattern);
-      std::cout << "  Post init parent matrix" << std::endl;
+      // Clean up local-to-global maps
+      ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
+      ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
     }
     else
+    {
       init(A, *_a[0][0]);
-  }
-  else
-  {
-    // Matrix already intialised
-    throw std::runtime_error("Not implemented");
-    // Extract block
-    // MatNestGetSubMat(Mat A,PetscInt idxm,PetscInt jdxm,Mat *sub)
+    }
   }
 
-  // Assemble blocks (A)
-  if (nested_matrix)
+  // Get matrix type
+  MatType mat_type;
+  MatGetType(A.mat(), &mat_type);
+  const bool is_matnest = strcmp(mat_type, MATNEST) == 0 ? true : false;
+
+  // Assemble matrix
+
+  if (is_matnest)
   {
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
-      // MatNestGetSubMat(Mat A,PetscInt idxm,PetscInt jdxm,Mat *sub)
       for (std::size_t j = 0; j < _a[i].size(); ++j)
       {
+        // Get submatrix
+        Mat subA;
+        MatNestGetSubMat(A.mat(), i, j, &subA);
         if (_a[i][j])
         {
-          Mat subA;
-          MatNestGetSubMat(A.mat(), i, j, &subA);
           la::PETScMatrix mat(subA);
-          std::cout << "Assembling into matrix:" << i << ", " << j << std::endl;
           this->assemble(mat, *_a[i][j], _bcs);
-          std::cout << "End assembling into matrix:" << i << ", " << j
-                    << std::endl;
+        }
+        else
+        {
+          // FIXME: Figure out how to check that matrix block is null
+          // Null block, do nothing
         }
       }
     }
   }
   else if (block_matrix)
   {
-    std::cout << "Assembling block matrix (non-nested)" << std::endl;
     std::int64_t offset_row = 0;
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
-
       // Loop over columns
       std::int64_t offset_col = 0;
       for (std::size_t j = 0; j < _a[i].size(); ++j)
       {
         if (_a[i][j])
         {
+          // Build index set for block
           auto map0 = _a[i][j]->function_space(0)->dofmap()->index_map();
           auto map1 = _a[i][j]->function_space(1)->dofmap()->index_map();
           auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
@@ -184,46 +194,31 @@ void Assembler::assemble(la::PETScMatrix& A)
           std::iota(index0.begin(), index0.end(), offset_row);
           std::iota(index1.begin(), index1.end(), offset_col);
 
-          std::cout << "Block: " << i << ", " << j << std::endl;
-          std::cout << "***** start index and size 0: " << offset_row << ", "
-                    << offset_row + index0.size() << std::endl;
-          std::cout << "***** start index and size 1: " << offset_col << ", "
-                    << offset_col + index1.size() << std::endl;
-
           IS is0, is1;
-          ISCreateBlock(A.mpi_comm(), map0->block_size(), index0.size(),
+          ISCreateBlock(MPI_COMM_SELF, map0->block_size(), index0.size(),
                         index0.data(), PETSC_COPY_VALUES, &is0);
-          ISCreateBlock(A.mpi_comm(), map1->block_size(), index1.size(),
+          ISCreateBlock(MPI_COMM_SELF, map1->block_size(), index1.size(),
                         index1.data(), PETSC_COPY_VALUES, &is1);
 
+          // Get sub-matrix
           Mat subA;
           MatGetLocalSubMatrix(A.mat(), is0, is1, &subA);
+
+          // Assemble block
           la::PETScMatrix mat(subA);
-          std::cout << "Mat size: " << mat.size(0) << ", " << mat.size(1)
-                    << std::endl;
-
-          double one = 10000.0;
-          PetscInt zero = 0;
-          std::cout << "   Add single entry" << std::endl;
-          mat.add_local(&one, 1, &zero, 1, &zero);
-
-          PetscInt onei = 1;
-          std::cout << "   Add single entry" << std::endl;
-          mat.add_local(&one, 1, &zero, 1, &onei);
-
-          // A.str(true);
-          // std::cout << "Assembling into matrix (non-nested):" << i << ", " <<
-          // j
-          //          << std::endl;
           this->assemble(mat, *_a[i][j], _bcs);
-          // std::cout << "End assembling into matrix:" << i << ", " << j
-          //         << std::endl;
 
+          // Restore sub-matrix and destroy index sets
           MatRestoreLocalSubMatrix(A.mat(), is0, is1, &subA);
           ISDestroy(&is0);
           ISDestroy(&is1);
 
           offset_col += map1_size;
+        }
+        else
+        {
+          // FIXME: Figure out how to check that matrix block is null
+          // Null block, do nothing
         }
       }
       auto map0 = _a[i][0]->function_space(0)->dofmap()->index_map();
@@ -237,12 +232,129 @@ void Assembler::assemble(la::PETScMatrix& A)
   }
 
   A.apply(la::PETScMatrix::AssemblyType::FINAL);
-
-  // return;
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(la::PETScVector& b)
+void Assembler::assemble(la::PETScVector& b, BlockType block_type)
 {
+  // Check if matrix should be nested
+  assert(!_l.empty());
+  const bool block_vector = _l.size() > 1;
+
+  if (b.empty())
+  {
+    // Initialise matrix if empty
+
+    // Build array of pointers to forms
+    std::vector<const Form*> forms(_a.size());
+    for (std::size_t i = 0; i < _l.size(); ++i)
+      forms[i] = _l[i].get();
+
+    // Initialise vector
+    if (block_type == BlockType::nested)
+    {
+      // std::cout << "Init block vector (nested)" << std::endl;
+      fem::init_nest(b, forms);
+      // std::cout << "End init block vector (nested)" << std::endl;
+    }
+    else if (block_vector and block_type == BlockType::monolithic)
+    {
+      // std::cout << "Init block vector (non-nested)" << std::endl;
+      fem::init_monolithic(b, forms);
+    }
+    else
+      init(b, *_l[0]);
+  }
+
+  // Get vector type
+  VecType vec_type;
+  VecGetType(b.vec(), &vec_type);
+  bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
+
+  if (is_vecnest)
+  {
+    for (std::size_t i = 0; i < _l.size(); ++i)
+    {
+      // Get subvector
+      Vec sub_b;
+      VecNestGetSubVec(b.vec(), i, &sub_b);
+      if (_l[i])
+      {
+        la::PETScVector vec(sub_b);
+        // std::cout << "Assemble RHS (nest)" << std::endl;
+        this->assemble(vec, *_l[i]);
+      }
+      else
+      {
+        // FIXME: Figure out how to check that vector block is null
+        // Null block, do nothing
+      }
+    }
+  }
+  else if (block_vector)
+  {
+    // std::cout << "Assembling block vector (non-nested)" << std::endl;
+    std::int64_t offset = 0;
+    for (std::size_t i = 0; i < _l.size(); ++i)
+    {
+      if (_l[i])
+      {
+        auto map = _l[i]->function_space(0)->dofmap()->index_map();
+        auto map_size = map->size(common::IndexMap::MapSize::ALL);
+
+        std::vector<PetscInt> index(map_size);
+        std::iota(index.begin(), index.end(), offset);
+
+        IS is;
+        ISCreateBlock(b.mpi_comm(), map->block_size(), index.size(),
+                      index.data(), PETSC_COPY_VALUES, &is);
+
+        Vec sub_b;
+        // std::cout << "*** get subvector" << std::endl;
+        VecGetSubVector(b.vec(), is, &sub_b);
+        // std::cout << "*** end get subvector" << std::endl;
+        la::PETScVector vec(sub_b);
+
+        // FIXME: Does it pick up the block size?
+
+        // FIXME: Update for parallel
+        // Attach local-to-global map
+
+        // Fill vector with [i0 + 0, i0 + 1, i0 +2, . . .]
+        std::vector<PetscInt> local_to_global_map(vec.size());
+        std::iota(local_to_global_map.begin(), local_to_global_map.end(), 1);
+
+        // Create PETSc local-to-global map
+        ISLocalToGlobalMapping petsc_local_to_global;
+        // PetscErrorCode ierr = 0;
+        ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, 1,
+                                     local_to_global_map.size(),
+                                     local_to_global_map.data(),
+                                     PETSC_COPY_VALUES, &petsc_local_to_global);
+        // CHECK_ERROR("ISLocalToGlobalMappingCreate");
+
+        // Apply local-to-global map to vector
+        VecSetLocalToGlobalMapping(sub_b, petsc_local_to_global);
+        // CHECK_ERROR("VecSetLocalToGlobalMapping");
+
+        // Clean-up PETSc local-to-global map
+        ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
+        // CHECK_ERROR("ISLocalToGlobalMappingDestroy");
+
+        this->assemble(vec, *_l[i]);
+
+        VecRestoreSubVector(b.vec(), is, &sub_b);
+        ISDestroy(&is);
+
+        offset += map_size;
+      }
+    }
+  }
+  else
+  {
+    this->assemble(b, *_l[0]);
+  }
+
+  /*
   // Assemble vector
   this->assemble(b, *_l[0]);
 
@@ -253,6 +365,7 @@ void Assembler::assemble(la::PETScVector& b)
 
   // Set bc values
   set_bc(b, *_l[0], _bcs);
+  `*/
 
   // // Assemble blocks (b)
   // for (auto row : _l)
@@ -275,8 +388,7 @@ void Assembler::assemble(la::PETScMatrix& A, la::PETScVector& b)
 void Assembler::assemble(la::PETScMatrix& A, const Form& a,
                          std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
-  if (A.empty())
-    init(A, a);
+  assert(!A.empty());
 
   // Get mesh from form
   assert(a.mesh());
@@ -321,6 +433,10 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
           bcs[i]->gather(boundary_values[axis]);
         }
       }
+      // else
+      // {
+      //   std::cout << "     No spaces match: " << std::endl;
+      // }
     }
   }
 
@@ -334,7 +450,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   // Iterate over all cells
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
-    std::cout << "Iterate over cells" << std::endl;
+    // std::cout << "Iterate over cells" << std::endl;
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
 
@@ -361,7 +477,6 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
     // Dirichlet conditions
     // Note: could use zero dof indices to have PETSc do this
     // Zero rows/columns for Dirichlet bcs
-    /*
     for (int i = 0; i < Ae.rows(); ++i)
     {
       const std::size_t ii = dmap0[i];
@@ -377,7 +492,6 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
       if (bc_value != boundary_values[1].end())
         Ae.col(j).setZero();
     }
-    */
 
     // Add to matrix
     /*
@@ -393,27 +507,31 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
     // std::cout << "Post add to matrix: " << std::endl;
   }
 
-  // FIXME: Put this elsewhere?
-  // Finalise matrix
-  // A.apply(la::PETScMatrix::AssemblyType::FINAL);
+  // Flush matrix
+  A.apply(la::PETScMatrix::AssemblyType::FLUSH);
 
-  // FIXME: Move this outside of function
+  // FIXME: Move this outside of function?
   // Place '1' on diagonal for bc entries
-  /*
   if (spaces[0] == spaces[1])
   {
-    std::vector<la_index_t> rows;
+    // Note: set diagonal using PETScMatrix::set_local since other functions,
+    // e.g. PETScMatrix::set_local, do not work for all PETSc Mat types
     for (auto bc : boundary_values[0])
-      rows.push_back(bc.first);
-    A.zero_local(rows.size(), rows.data(), 1.0);
+    {
+      la_index_t row = bc.first;
+      double one = 1.0;
+      A.set_local(&one, 1, &row, 1, &row);
+    }
   }
-  */
+
+  // Finalise matrix
+  A.apply(la::PETScMatrix::AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScVector& b, const Form& L)
 {
-  if (b.empty())
-    init(b, L);
+  // if (b.empty())
+  //  init(b, L);
 
   // Get mesh from form
   assert(L.mesh());
@@ -463,6 +581,8 @@ void Assembler::assemble(la::PETScVector& b, const Form& L)
                                    1);
 
     // Add to vector
+    // std::cout << "Adding to vector: " << be(0) << ", " << dmap[0] <<
+    // std::endl;
     b.add_local(be.data(), dmap.size(), dmap.data());
   }
 

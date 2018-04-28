@@ -4,11 +4,11 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "utils.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "SparsityPattern.h"
 #include "VectorSpaceBasis.h"
+#include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
@@ -160,6 +160,7 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
   //   _map1[i] = index_maps[1]->local_to_global(i);
 
   // std::cout << "Prep IS (0)" << std::endl;
+  MPI::barrier(MPI_COMM_WORLD);
   for (std::size_t i = 0;
        i < index_maps[0]->size(common::IndexMap::MapSize::ALL); ++i)
   {
@@ -168,8 +169,19 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
     for (std::size_t j = 0; j < bs; ++j)
     {
       _map0[i * bs + j] = bs * index + j;
+      // if (MPI::rank(MPI_COMM_WORLD) == 1)
+      // {
+      //   std::cout << "l2g: " << _map0[i * bs + j] << ", "
+      //             << index_maps[0]->size(common::IndexMap::MapSize::ALL) <<
+      //             ", "
+      //             << index_maps[0]->size(common::IndexMap::MapSize::OWNED)
+      //             << ", "
+      //             << index_maps[0]->size(common::IndexMap::MapSize::UNOWNED)
+      //             << std::endl;
+      // }
     }
   }
+  MPI::barrier(MPI_COMM_WORLD);
 
   // std::cout << "Prep IS (1)" << std::endl;
   for (std::size_t i = 0;
@@ -201,22 +213,22 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
   ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
 
   // Create PETSc local-to-global map/index set
-  ISLocalToGlobalMappingCreate(mpi_comm(), block_size, _map0.size(),
+  ISLocalToGlobalMappingCreate(MPI_COMM_SELF, block_size, _map0.size(),
                                _map0.data(), PETSC_COPY_VALUES,
                                &petsc_local_to_global0);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
-  ISLocalToGlobalMappingCreate(mpi_comm(), block_size, _map1.size(),
+  ISLocalToGlobalMappingCreate(MPI_COMM_SELF, block_size, _map1.size(),
                                _map1.data(), PETSC_COPY_VALUES,
                                &petsc_local_to_global1);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
 
   // Set matrix local-to-global maps
-  std::cout << "***** set local-to-global on mat" << std::endl;
+  // std::cout << "***** set local-to-global on mat" << std::endl;
   MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
                              petsc_local_to_global1);
-  std::cout << "***** end set local-to-global on mat" << std::endl;
+  // std::cout << "***** end set local-to-global on mat" << std::endl;
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
 
@@ -227,6 +239,14 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
                                _num_nonzeros_off_diagonal.data());
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatISSetPreallocation");
+
+  // if (MPI::rank(MPI_COMM_WORLD) == 1)
+  // {
+  //   std::cout << "M---------------------" << std::endl;
+  //   ISLocalToGlobalMappingView(petsc_local_to_global1,
+  //                              PETSC_VIEWER_STDOUT_SELF);
+  //   std::cout << "M---------------------" << std::endl;
+  // }
 
   // Clean up local-to-global maps
   ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
@@ -369,8 +389,9 @@ void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index_t* rows,
 {
   assert(_matA);
   PetscErrorCode ierr;
-  ierr = MatZeroRowsLocal(_matA, static_cast<PetscInt>(m), rows, diag, NULL,
-                          NULL);
+  std::cout << "Testing m: " << m << std::endl;
+  std::cout << "Testing r: " << rows[0] << std::endl;
+  ierr = MatZeroRowsLocal(_matA, m, rows, diag, NULL, NULL);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatZeroRowsLocal");
 }

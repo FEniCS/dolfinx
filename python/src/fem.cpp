@@ -199,13 +199,16 @@ void fem(py::module& m)
           py::arg("mpi_comm"), py::arg("mesh"), py::arg("dofmaps"),
           py::arg("cells"), py::arg("interior_facets"),
           py::arg("exterior_facets"), py::arg("vertices"), py::arg("diagonal"),
-          py::arg("finalize") = true, "Create SparsityPattern from pair of dofmaps");
+          py::arg("finalize") = true,
+          "Create SparsityPattern from pair of dofmaps");
 
   // dolfin::fem::DirichletBC
   py::class_<dolfin::fem::DirichletBC,
              std::shared_ptr<dolfin::fem::DirichletBC>,
              dolfin::common::Variable>
-      dirichletbc(m, "DirichletBC", "Object for representing Dirichlet (essential) boundary conditions");
+      dirichletbc(
+          m, "DirichletBC",
+          "Object for representing Dirichlet (essential) boundary conditions");
 
   // dolfin::fem::DirichletBC  enum
   py::enum_<dolfin::fem::DirichletBC::Method>(dirichletbc, "Method")
@@ -248,10 +251,18 @@ void fem(py::module& m)
       });
 
   // dolfin::fem::Assembler
-  py::class_<dolfin::fem::Assembler, std::shared_ptr<dolfin::fem::Assembler>>(
-      m, "Assembler",
-      "Assembler object for assembling forms into matrices and "
-      "vectors")
+  py::class_<dolfin::fem::Assembler, std::shared_ptr<dolfin::fem::Assembler>>
+      assembler(
+          m, "Assembler",
+          "Assembler object for assembling forms into matrices and vectors");
+
+  // dolfin::fem::Assembler::BlockType enum
+  py::enum_<dolfin::fem::Assembler::BlockType>(assembler, "BlockType")
+      .value("nested", dolfin::fem::Assembler::BlockType::nested)
+      .value("monolithic", dolfin::fem::Assembler::BlockType::monolithic);
+
+  // dolfin::fem::Assembler
+  assembler
       .def(py::init<
            std::vector<std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
            std::vector<std::shared_ptr<const dolfin::fem::Form>>,
@@ -259,7 +270,13 @@ void fem(py::module& m)
       .def(
           "assemble",
           py::overload_cast<dolfin::la::PETScMatrix&, dolfin::la::PETScVector&>(
-              &dolfin::fem::Assembler::assemble));
+              &dolfin::fem::Assembler::assemble))
+      .def("assemble", py::overload_cast<dolfin::la::PETScMatrix&,
+                                         dolfin::fem::Assembler::BlockType>(
+                           &dolfin::fem::Assembler::assemble))
+      .def("assemble", py::overload_cast<dolfin::la::PETScVector&,
+                                         dolfin::fem::Assembler::BlockType>(
+                           &dolfin::fem::Assembler::assemble));
 
   // dolfin::fem::AssemblerBase
   py::class_<dolfin::fem::AssemblerBase,

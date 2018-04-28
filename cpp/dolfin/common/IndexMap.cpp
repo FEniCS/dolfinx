@@ -61,7 +61,7 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
   else
   {
     log::dolfin_error("IndexMap.cpp", "get size",
-                 "Unrecognised option for IndexMap::MapSize");
+                      "Unrecognised option for IndexMap::MapSize");
   }
 
   return 0;

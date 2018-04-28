@@ -11,6 +11,11 @@
 
 namespace dolfin
 {
+namespace common
+{
+class IndexMap;
+}
+
 namespace la
 {
 class PETScMatrix;
@@ -34,6 +39,20 @@ class Form;
 
 /// Initialise matrix. Matrix is not zeroed.
 void init(la::PETScMatrix& A, const Form& a);
+
+/// Initialise nested (MatNest) matrix. Matrix is not zeroed.
+void init_nest(la::PETScMatrix& A,
+               std::vector<std::vector<const fem::Form*>> a);
+
+/// Initialise nested (VecNest) vector. Vector is not zeroed.
+void init_nest(la::PETScVector& x, std::vector<const fem::Form*> L);
+
+/// Initialise monolithic  matrix. Matrix is not zeroed.
+void init_monolithic(la::PETScMatrix& A,
+                     std::vector<std::vector<const fem::Form*>> a);
+
+/// Initialise monolithic vector. Vector is not zeroed.
+void init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L);
 
 /// Initialise vector. Vector is not zeroed.
 void init(la::PETScVector& x, const Form& a);
@@ -71,5 +90,9 @@ dof_to_vertex_map(const function::FunctionSpace& space);
 ///         The vertex to dof map
 std::vector<dolfin::la_index_t>
 vertex_to_dof_map(const function::FunctionSpace& space);
+
+/// Get new global index in 'spliced' indices
+std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
+                             const unsigned int field, const unsigned int n);
 }
 }
