@@ -216,17 +216,11 @@ FunctionSpace::sub(const std::vector<std::size_t>& component) const
   return new_sub_space;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<FunctionSpace> FunctionSpace::collapse() const
-{
-  std::unordered_map<std::size_t, std::size_t> collapsed_dofs;
-  return collapse(collapsed_dofs);
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<FunctionSpace> FunctionSpace::collapse(
-    std::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const
+std::pair<std::shared_ptr<FunctionSpace>,
+          std::unordered_map<std::size_t, std::size_t>>
+FunctionSpace::collapse() const
 {
   assert(_mesh);
-
   if (_component.empty())
   {
     log::dolfin_error("FunctionSpace.cpp", "collapse function space",
@@ -234,13 +228,16 @@ std::shared_ptr<FunctionSpace> FunctionSpace::collapse(
   }
 
   // Create collapsed DofMap
-  std::shared_ptr<fem::GenericDofMap> collapsed_dofmap(
-      _dofmap->collapse(collapsed_dofs, *_mesh));
+  std::shared_ptr<fem::GenericDofMap> collapsed_dofmap;
+  std::unordered_map<std::size_t, std::size_t> collapsed_dofs;
+  std::tie(collapsed_dofmap, collapsed_dofs) = _dofmap->collapse(*_mesh);
 
   // Create new FunctionSpace and return
-  std::shared_ptr<FunctionSpace> collapsed_sub_space(
-      new FunctionSpace(_mesh, _element, collapsed_dofmap));
-  return collapsed_sub_space;
+  auto collapsed_sub_space
+      = std::make_shared<FunctionSpace>(_mesh, _element, collapsed_dofmap);
+
+  return std::make_pair(std::move(collapsed_sub_space),
+                        std::move(collapsed_dofs));
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> FunctionSpace::component() const { return _component; }

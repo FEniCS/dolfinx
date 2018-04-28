@@ -35,19 +35,14 @@ def xtest_str(mesh, V):
     index_map = dm.index_map()
 
     # Build sparse tensor layout (for assembly of matrix)
-    tl = TensorLayout(mesh.mpi_comm(), 0, TensorLayout.Sparsity.SPARSE)
-    tl.init([index_map, index_map], TensorLayout.Ghosts.UNGHOSTED)
-    sp = tl.sparsity_pattern()
-    sp.init([index_map, index_map])
-    SparsityPatternBuilder.build(
-        sp,
+    sp = SparsityPatternBuilder.build(
+        mesh.mpi_comm(),
         mesh, [dm, dm],
         True,
         False,
         False,
         False,
         False,
-        init=False,
         finalize=True)
 
     sp.str(False)
@@ -58,16 +53,14 @@ def test_insert_local(mesh, V):
     dm = V.dofmap()
     index_map = dm.index_map()
 
-    sp = cpp.la.SparsityPattern(mesh.mpi_comm(), [index_map, index_map], 0)
-    cpp.fem.SparsityPatternBuilder.build(
-        sp,
+    sp = cpp.fem.SparsityPatternBuilder.build(
+        mesh.mpi_comm(),
         mesh, [dm, dm],
         True,
         False,
         False,
         False,
         False,
-        init=False,
         finalize=True)
 
     sp1 = cpp.la.SparsityPattern(mesh.mpi_comm(), [[sp], [sp]])
@@ -124,13 +117,13 @@ def xtest_insert_global(mesh, V):
     # Compare tabulated and sparsity pattern nnzs
     for local_row in range(len(nnz_d)):
         if local_range[0] <= local_row < local_range[1]:
-            assert nnz_d[local_row] == (
-                nnz_on_diagonal
-                if local_row in primary_dim_local_entries else 0)
+            assert nnz_d[local_row] == (nnz_on_diagonal if
+                                        local_row in primary_dim_local_entries
+                                        else 0)
         else:
-            assert nnz_od[local_row] == (
-                nnz_off_diagonal
-                if local_row in primary_dim_local_entries else 0)
+            assert nnz_od[local_row] == (nnz_off_diagonal if
+                                         local_row in primary_dim_local_entries
+                                         else 0)
 
 
 def xtest_insert_local_global(mesh, V):
@@ -171,10 +164,10 @@ def xtest_insert_local_global(mesh, V):
     # Compare tabulated and sparsity pattern nnzs
     for local_row in range(len(nnz_d)):
         if local_range[0] <= local_row < local_range[1]:
-            assert nnz_d[local_row] == (
-                nnz_on_diagonal
-                if local_row in primary_dim_local_entries else 0)
+            assert nnz_d[local_row] == (nnz_on_diagonal if
+                                        local_row in primary_dim_local_entries
+                                        else 0)
         else:
-            assert nnz_od[local_row] == (
-                nnz_off_diagonal
-                if local_row in primary_dim_local_entries else 0)
+            assert nnz_od[local_row] == (nnz_off_diagonal if
+                                         local_row in primary_dim_local_entries
+                                         else 0)

@@ -4,14 +4,11 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-
-"""This module provides a simple way to compute the interpolation of a
-:py:class:`Function <dolfin.functions.function.Function>` or
+"""Interpolation of a :py:class:`Function <dolfin.functions.function.Function>` or
 :py:class:`Expression <dolfin.functions.expression.Expression>` onto a
 finite element space.
 
 """
-
 
 from dolfin.function.function import Function
 

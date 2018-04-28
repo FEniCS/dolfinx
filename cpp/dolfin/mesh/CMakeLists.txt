@@ -1,6 +1,7 @@
 set(HEADERS
   Cell.h
   CellType.h
+  CoordinateDofs.h
   DistributedMeshTools.h
   dolfin_mesh.h
   Edge.h
@@ -32,6 +33,7 @@ set(HEADERS
 
 set(SOURCES
   CellType.cpp
+  CoordinateDofs.cpp
   DistributedMeshTools.cpp
   Edge.cpp
   Face.cpp
@@ -46,6 +48,7 @@ set(SOURCES
   MeshPartitioning.cpp
   MeshQuality.cpp
   MeshTopology.cpp
+  PartitionData.cpp
   PeriodicBoundaryComputation.cpp
   PointCell.cpp
   QuadrilateralCell.cpp

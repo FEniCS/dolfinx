@@ -4,11 +4,7 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-
-"""This module provides a small Python layer for solving linear
-sytems.
-
-"""
+"""Simpler interface for solving linear systems"""
 
 import dolfin.cpp as cpp
 

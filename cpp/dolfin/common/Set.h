@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Garth N. Wells
+// Copyright (C) 2009-2018 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -43,6 +43,9 @@ public:
 
   /// Destructor
   ~Set() = default;
+
+  /// Move assignment
+  Set& operator=(dolfin::common::Set<T>&& x) = default;
 
   /// Find entry in set and return an iterator to the entry
   iterator find(const T& x) { return std::find(_x.begin(), _x.end(), x); }

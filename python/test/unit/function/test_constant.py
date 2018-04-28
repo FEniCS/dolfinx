@@ -57,7 +57,7 @@ def testGrad():
 
 
 @pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (MPI.comm_world, 3, 3, 3)), (UnitCubeMesh, (MPI.comm_world, 3, 3, 3, CellType.Type.hexahedron))])
-def test_compute_vertex_values(mesh_factory):
+def test_compute_point_values(mesh_factory):
     from numpy import zeros, all, array
 
     func, args = mesh_factory
@@ -66,8 +66,8 @@ def test_compute_vertex_values(mesh_factory):
     e0 = Constant(1)
     e1 = Constant((1, 2, 3))
 
-    e0_values = e0.compute_vertex_values(mesh)
-    e1_values = e1.compute_vertex_values(mesh)
+    e0_values = e0.compute_point_values(mesh)
+    e1_values = e1.compute_point_values(mesh)
 
     assert all(e0_values == 1)
     assert all(e1_values == [1, 2, 3])

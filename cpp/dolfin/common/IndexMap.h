@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <dolfin/common/MPI.h>
 #include <vector>
 
@@ -142,5 +143,5 @@ inline std::size_t IndexMap::local_to_global_index(std::size_t i) const
     return _block_size * _local_to_global[index] + component;
   }
 }
-}
-}
+} // namespace common
+} // namespace dolfin

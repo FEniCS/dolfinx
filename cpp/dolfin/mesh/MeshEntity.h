@@ -236,7 +236,6 @@ public:
   std::string str(bool verbose) const;
 
 protected:
-  // Friends
   template <typename T>
   friend class MeshRange;
   template <typename T>

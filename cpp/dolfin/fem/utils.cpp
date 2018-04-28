@@ -124,9 +124,10 @@ void fem::init_monolithic(la::PETScMatrix& A,
   // std::cout << "Initialising block matrix" << std::endl;
 
   // Block shape
-  const auto shape = boost::extents[a.size()][a[0].size()];
+  // const auto shape = boost::extents[a.size()][a[0].size()];
 
-  boost::multi_array<std::shared_ptr<la::SparsityPattern>, 2> patterns(shape);
+  std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
+      a.size());
   std::vector<std::vector<const la::SparsityPattern*>> p(
       a.size(), std::vector<const la::SparsityPattern*>(a[0].size()));
   for (std::size_t row = 0; row < a.size(); ++row)
@@ -141,18 +142,22 @@ void fem::init_monolithic(la::PETScMatrix& A,
       // std::cout << "  Push Initialising block: " << std::endl;
       std::array<std::shared_ptr<const common::IndexMap>, 2> maps
           = {{map0, map1}};
-      patterns[row][col]
-          = std::make_shared<la::SparsityPattern>(A.mpi_comm(), maps, 0);
 
       // Build sparsity pattern
-      // std::cout << "  Build sparsity pattern " << std::endl;
+      std::cout << "  Build sparsity pattern " << std::endl;
       std::array<const GenericDofMap*, 2> dofmaps
           = {{a[row][col]->function_space(0)->dofmap().get(),
               a[row][col]->function_space(1)->dofmap().get()}};
-      SparsityPatternBuilder::build(*patterns[row][col], *a[row][col]->mesh(),
-                                    dofmaps, true, false, false, false, false);
-      // std::cout << "  End Build sparsity pattern " << std::endl;
+      const mesh::Mesh& mesh = *a[row][col]->mesh();
+      auto sp = std::make_unique<la::SparsityPattern>(
+          SparsityPatternBuilder::build(mesh.mpi_comm(), mesh, dofmaps, true,
+                                        false, false, false, false));
+      patterns[row].push_back(std::move(sp));
+      // std::cout << "  End Build sparsity pattern: " << col << ", "
+      //           << patterns[row].size() << std::endl;
+      // assert(patterns[row][col]);
       p[row][col] = patterns[row][col].get();
+      assert(p[row][col]);
       // std::cout << "  End push back sparsity pattern pointer " << std::endl;
     }
   }
@@ -230,9 +235,8 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
       = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
 
   // Create and build sparsity pattern
-  la::SparsityPattern pattern(A.mpi_comm(), index_maps, 0);
-  SparsityPatternBuilder::build(
-      pattern, mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
+  la::SparsityPattern pattern = SparsityPatternBuilder::build(
+      A.mpi_comm(), mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
       (a.integrals().num_interior_facet_integrals() > 0),
       (a.integrals().num_exterior_facet_integrals() > 0),
       (a.integrals().num_vertex_integrals() > 0), keep_diagonal);

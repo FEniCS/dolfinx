@@ -24,6 +24,7 @@
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshConnectivity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
@@ -381,7 +382,7 @@ void XDMFFile::write(const function::Function& u, const Encoding encoding)
   std::int64_t width = get_padded_width(u);
   assert(data_values.size() % width == 0);
 
-  const std::int64_t num_points = mesh.num_entities_global(0);
+  const std::int64_t num_points = mesh.geometry().num_points_global();
   const std::int64_t num_values
       = cell_centred ? mesh.num_entities_global(mesh.topology().dim())
                      : num_points;
@@ -1411,10 +1412,7 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
   const int degree = cell_type_str.second;
 
   if (degree == 2)
-  {
-    log::dolfin_error("XDMFFile.cpp", "read quadratic mesh",
-                      "XDMF quadratic I/O is under revision");
-  }
+    log::warning("Caution: reading quadratic mesh");
 
   // Get toplogical dimensions
   std::unique_ptr<mesh::CellType> cell_type(
@@ -1462,12 +1460,13 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
   assert(topology_data_node);
 
   // Topology
+  const std::vector<std::int64_t> tdims = get_dataset_shape(topology_data_node);
   const auto topology_data = get_dataset<std::int64_t>(
       _mpi_comm.comm(), topology_data_node, parent_path);
-  const std::size_t nv_per_cell = cell_type->num_entities(0);
-  const std::size_t num_local_cells = topology_data.size() / nv_per_cell;
+  const std::size_t npoint_per_cell = tdims[1];
+  const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
   Eigen::Map<const EigenRowArrayXXi64> cells(topology_data.data(),
-                                             num_local_cells, nv_per_cell);
+                                             num_local_cells, npoint_per_cell);
 
   // Set cell global indices by adding offset
   const std::int64_t cell_index_offset
@@ -1624,8 +1623,8 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
   int num_nodes_per_cell = mesh.type().num_vertices(cell_dim);
 
-  // Get VTK string for cell type
-  const std::size_t degree = 1;
+  // Get VTK string for cell type and degree (linear or quadratic)
+  const std::size_t degree = mesh.degree();
   const std::string vtk_cell_str
       = vtk_cell_type_str(mesh.type().entity_type(cell_dim), degree);
 
@@ -1634,12 +1633,37 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   topology_node.append_attribute("NumberOfElements")
       = std::to_string(num_cells).c_str();
   topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
-  topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
 
   // Compute packed topology data
   std::vector<T> topology_data;
 
-  topology_data = compute_topology_data<T>(mesh, cell_dim);
+  if (degree > 1)
+  {
+    const int tdim = mesh.topology().dim();
+    if (cell_dim != tdim)
+    {
+      log::dolfin_error("XDMFFile.cpp", "create topology data for mesh",
+                        "Can only create mesh of cells");
+    }
+
+    const auto& global_points = mesh.geometry().global_indices();
+    const mesh::MeshConnectivity& cell_points
+        = mesh.coordinate_dofs().entity_points(tdim);
+
+    // Adjust num_nodes_per_cell to appropriate size
+    num_nodes_per_cell = cell_points.size(0);
+    topology_data.reserve(num_nodes_per_cell * mesh.num_cells());
+    for (std::uint32_t c = 0; c != mesh.num_cells(); ++c)
+    {
+      const std::int32_t* points = cell_points(c);
+      for (std::int32_t i = 0; i != num_nodes_per_cell; ++i)
+        topology_data.push_back(global_points[points[i]]);
+    }
+  }
+  else
+    topology_data = compute_topology_data<T>(mesh, cell_dim);
+
+  topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
 
   // Add topology DataItem node
   const std::string group_name = path_prefix + "/" + mesh.name();
@@ -1660,7 +1684,8 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Compute number of points (global) in mesh (equal to number of vertices
   // for affine meshes)
-  const std::int64_t num_points = mesh.num_entities_global(0);
+
+  const std::int64_t num_points = mesh.geometry().num_points_global();
 
   // Add geometry node and attributes
   pugi::xml_node geometry_node = xml_node.append_child("Geometry");
@@ -1671,7 +1696,7 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Pack geometry data
   EigenRowArrayXXd _x
-      = mesh::DistributedMeshTools::reorder_vertices_by_global_indices(mesh);
+      = mesh::DistributedMeshTools::reorder_points_by_global_indices(mesh);
   std::vector<double> x(_x.data(), _x.data() + _x.size());
 
   // XDMF does not support 1D, so handle as special case
@@ -2115,9 +2140,9 @@ std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
       }
       else
       {
-        log::dolfin_error(
-            "XDMFFile.cpp", "reading data from XDMF file",
-            "This combination of array shapes in XDMF and HDF5 not supported");
+        log::dolfin_error("XDMFFile.cpp", "reading data from XDMF file",
+                          "This combination of array shapes in XDMF and HDF5 "
+                          "not supported");
       }
     }
 
@@ -2703,7 +2728,7 @@ std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
 {
   const auto mesh = u.function_space()->mesh();
 
-  auto data_values = u.compute_vertex_values(*mesh);
+  auto data_values = u.compute_point_values(*mesh);
 
   std::int64_t width = get_padded_width(u);
 
@@ -2720,12 +2745,9 @@ std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
       for (std::size_t j = 0; j < value_size; j++)
       {
         std::size_t tensor_2d_offset = (j > 1 && value_size == 4) ? 1 : 0;
-        //_data_values[i * width + j + tensor_2d_offset]
-        //    = data_values[i + j * num_local_vertices];
         _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
       }
     }
-    // data_values = _data_values;
   }
   else
   {
@@ -2734,16 +2756,13 @@ std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
         data_values.data() + data_values.rows() * data_values.cols());
   }
 
-  // data_values Remove duplicates for vertex-based data in parallel
-  if (MPI::size(mesh->mpi_comm()) > 1)
-  {
-    Eigen::Map<EigenRowArrayXXd> in_vals(_data_values.data(),
-                                         _data_values.size() / width, width);
-    EigenRowArrayXXd vals
-        = mesh::DistributedMeshTools::reorder_values_by_global_indices(*mesh,
-                                                                       in_vals);
-    _data_values = std::vector<double>(vals.data(), vals.data() + vals.size());
-  }
+  // Reorder values by global point indices
+  Eigen::Map<EigenRowArrayXXd> in_vals(_data_values.data(),
+                                       _data_values.size() / width, width);
+  EigenRowArrayXXd vals
+      = mesh::DistributedMeshTools::reorder_values_by_global_indices(
+          mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
+  _data_values = std::vector<double>(vals.data(), vals.data() + vals.size());
 
   return _data_values;
 }

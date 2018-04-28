@@ -205,7 +205,6 @@ public:
 private:
   // Friend
   friend class XDMFFile;
-  friend class TimeSeries;
 
   // Write a mesh::MeshFunction to file
   template <typename T>

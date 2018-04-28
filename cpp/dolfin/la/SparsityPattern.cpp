@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Garth N. Wells
+// Copyright (C) 2007-2018 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/log/LogStream.h>
 
 using namespace dolfin;
 using namespace dolfin::la;
@@ -23,9 +22,9 @@ SparsityPattern::SparsityPattern(
   // Check that primary dimension is valid
   if (_primary_dim > 1)
   {
-    log::dolfin_error(
-        "SparsityPattern.cpp", "primary dimension for sparsity pattern storage",
-        "Primary dimension must be less than 2 (0=row major, 1=column major");
+
+    throw std::runtime_error("Sparsity primary dimension must be less than 2 "
+                             "(0=row major, 1=column major).");
   }
 
   const std::size_t local_size0
@@ -100,6 +99,7 @@ SparsityPattern::SparsityPattern(
   {
     // Increase storage for nodes
     assert(patterns[row][0]);
+    std::cout << "Row: " << row << std::endl;
     assert(patterns[row][0]->_index_maps[0]);
     std::size_t row_size = patterns[row][0]->_index_maps[0]->size(
         common::IndexMap::MapSize::OWNED);
@@ -178,7 +178,7 @@ void SparsityPattern::insert_global(
            const common::IndexMap& index_map0) -> la_index_t {
     std::size_t bs = index_map0.block_size();
     assert(bs * index_map0.local_range()[0] <= (std::size_t)i_index
-                  and (std::size_t) i_index < bs * index_map0.local_range()[1]);
+           and (std::size_t) i_index < bs * index_map0.local_range()[1]);
     return i_index - (la_index_t)bs * index_map0.local_range()[0];
   };
 
@@ -342,6 +342,13 @@ std::array<std::size_t, 2> SparsityPattern::local_range(std::size_t dim) const
   std::size_t bs = _index_maps[dim]->block_size();
   auto lrange = _index_maps[dim]->local_range();
   return {{bs * lrange[0], bs * lrange[1]}};
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const common::IndexMap>
+SparsityPattern::index_map(std::size_t dim) const
+{
+  assert(dim < 2);
+  return _index_maps[dim];
 }
 //-----------------------------------------------------------------------------
 std::size_t SparsityPattern::num_nonzeros() const
@@ -539,11 +546,11 @@ void SparsityPattern::apply()
       // Sanity check
       if (I < local_range0[0] or I >= (la_index_t)(bs0 * local_range0[1]))
       {
-        log::dolfin_error(
-            "SparsityPattern.cpp", "apply changes to sparsity pattern",
+        throw std::runtime_error(
             "Received illegal sparsity pattern entry for row/column "
-            "%d, not in range [%d, %d]",
-            I, local_range0[0], local_range0[1]);
+            + std::to_string(I) + ", not in range ["
+            + std::to_string(local_range0[0]) + ", "
+            + std::to_string(local_range0[1]) + "]");
       }
 
       // Get local I index
@@ -702,25 +709,25 @@ void SparsityPattern::info_statistics() const
       = bs1 * _index_maps[1]->size(common::IndexMap::MapSize::GLOBAL);
 
   // Return number of entries
-  cout << "Matrix of size " << size0 << " x " << size1 << " has "
-       << num_nonzeros_total << " ("
-       << 100.0 * num_nonzeros_total / (size0 * size1) << "%)"
-       << " nonzero entries." << endl;
+  std::cout << "Matrix of size " << size0 << " x " << size1 << " has "
+            << num_nonzeros_total << " ("
+            << 100.0 * num_nonzeros_total / (size0 * size1) << "%)"
+            << " nonzero entries." << std::endl;
   if (num_nonzeros_total != num_nonzeros_diagonal)
   {
-    cout << "Diagonal: " << num_nonzeros_diagonal << " ("
-         << (100.0 * static_cast<double>(num_nonzeros_diagonal)
-             / static_cast<double>(num_nonzeros_total))
-         << "%), ";
-    cout << "off-diagonal: " << num_nonzeros_off_diagonal << " ("
-         << (100.0 * static_cast<double>(num_nonzeros_off_diagonal)
-             / static_cast<double>(num_nonzeros_total))
-         << "%), ";
-    cout << "non-local: " << num_nonzeros_non_local << " ("
-         << (100.0 * static_cast<double>(num_nonzeros_non_local)
-             / static_cast<double>(num_nonzeros_total))
-         << "%)";
-    cout << endl;
+    std::cout << "Diagonal: " << num_nonzeros_diagonal << " ("
+              << (100.0 * static_cast<double>(num_nonzeros_diagonal)
+                  / static_cast<double>(num_nonzeros_total))
+              << "%), ";
+    std::cout << "off-diagonal: " << num_nonzeros_off_diagonal << " ("
+              << (100.0 * static_cast<double>(num_nonzeros_off_diagonal)
+                  / static_cast<double>(num_nonzeros_total))
+              << "%), ";
+    std::cout << "non-local: " << num_nonzeros_non_local << " ("
+              << (100.0 * static_cast<double>(num_nonzeros_non_local)
+                  / static_cast<double>(num_nonzeros_total))
+              << "%)";
+    std::cout << std::endl;
   }
 }
 //-----------------------------------------------------------------------------

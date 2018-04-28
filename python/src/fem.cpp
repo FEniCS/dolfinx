@@ -169,18 +169,13 @@ void fem(py::module& m)
                  = instance.tabulate_local_to_global_dofs();
              return py::array_t<std::size_t>(dofs.size(), dofs.data());
            })
-      .def("set", &dolfin::fem::GenericDofMap::set)
-      .def_readonly("constrained_domain",
-                    &dolfin::fem::GenericDofMap::constrained_domain);
+      .def("set", &dolfin::fem::GenericDofMap::set);
 
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>,
              dolfin::fem::GenericDofMap>(m, "DofMap", "DofMap object")
       .def(py::init<std::shared_ptr<const ufc_dofmap>,
                     const dolfin::mesh::Mesh&>())
-      .def(
-          py::init<std::shared_ptr<const ufc_dofmap>, const dolfin::mesh::Mesh&,
-                   std::shared_ptr<const dolfin::mesh::SubDomain>>())
       .def("ownership_range", &dolfin::fem::DofMap::ownership_range)
       .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs);
 
@@ -191,18 +186,29 @@ void fem(py::module& m)
 
   // dolfin::fem::SparsityPatternBuilder
   py::class_<dolfin::fem::SparsityPatternBuilder>(m, "SparsityPatternBuilder")
-      .def_static("build", &dolfin::fem::SparsityPatternBuilder::build,
-                  py::arg("sparsity_pattern"), py::arg("mesh"),
-                  py::arg("dofmaps"), py::arg("cells"),
-                  py::arg("interior_facets"), py::arg("exterior_facets"),
-                  py::arg("vertices"), py::arg("diagonal"),
-                  py::arg("init") = true, py::arg("finalize") = true);
+      .def_static(
+          "build",
+          [](const MPICommWrapper comm, const dolfin::mesh::Mesh& mesh,
+             const std::array<const dolfin::fem::GenericDofMap*, 2> dofmaps,
+             bool cells, bool interior_facets, bool exterior_facets,
+             bool vertices, bool diagonal, bool finalize) {
+            return dolfin::fem::SparsityPatternBuilder::build(
+                comm.get(), mesh, dofmaps, cells, interior_facets,
+                exterior_facets, vertices, diagonal, finalize);
+          },
+          py::arg("mpi_comm"), py::arg("mesh"), py::arg("dofmaps"),
+          py::arg("cells"), py::arg("interior_facets"),
+          py::arg("exterior_facets"), py::arg("vertices"), py::arg("diagonal"),
+          py::arg("finalize") = true,
+          "Create SparsityPattern from pair of dofmaps");
 
   // dolfin::fem::DirichletBC
   py::class_<dolfin::fem::DirichletBC,
              std::shared_ptr<dolfin::fem::DirichletBC>,
              dolfin::common::Variable>
-      dirichletbc(m, "DirichletBC", "DirichletBC object");
+      dirichletbc(
+          m, "DirichletBC",
+          "Object for representing Dirichlet (essential) boundary conditions");
 
   // dolfin::fem::DirichletBC  enum
   py::enum_<dolfin::fem::DirichletBC::Method>(dirichletbc, "Method")
@@ -413,22 +419,28 @@ void fem(py::module& m)
   // FEM utils free functions
   // m.def("create_mesh", dolfin::fem::create_mesh);
   // m.def("create_mesh", [](const py::object u) {
-  //  auto _u = u.attr("_cpp_object").cast<dolfin::function::Function*>();
+  //  auto _u =
+  //  u.attr("_cpp_object").cast<dolfin::function::Function*>();
   //  return dolfin::fem::create_mesh(*_u);
   //});
 
   // m.def("set_coordinates", &dolfin::fem::set_coordinates);
-  // m.def("set_coordinates", [](dolfin::mesh::MeshGeometry &geometry,
+  // m.def("set_coordinates", [](dolfin::mesh::MeshGeometry
+  // &geometry,
   //                             const py::object u) {
-  //   auto _u = u.attr("_cpp_object").cast<const dolfin::function::Function
+  //   auto _u = u.attr("_cpp_object").cast<const
+  //   dolfin::function::Function
   //   *>(); dolfin::fem::set_coordinates(geometry, *_u);
   // });
 
   // m.def("get_coordinates", &dolfin::fem::get_coordinates);
   // m.def("get_coordinates",
-  //       [](py::object u, const dolfin::mesh::MeshGeometry &geometry) {
-  //         auto _u = u.attr("_cpp_object").cast<dolfin::function::Function
-  //         *>(); return dolfin::fem::get_coordinates(*_u, geometry);
+  //       [](py::object u, const dolfin::mesh::MeshGeometry
+  //       &geometry) {
+  //         auto _u =
+  //         u.attr("_cpp_object").cast<dolfin::function::Function
+  //         *>(); return dolfin::fem::get_coordinates(*_u,
+  //         geometry);
   //       });
 
   m.def("vertex_to_dof_map", [](const dolfin::function::FunctionSpace& V) {

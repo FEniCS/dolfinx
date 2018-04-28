@@ -26,8 +26,8 @@ class IndexMap;
 namespace la
 {
 
-/// This class implements a sparsity pattern data structure.  It is
-/// used by most linear algebra backends.
+/// This class implements a sparsity pattern data structure.  It is used
+/// by most linear algebra backends.
 
 class SparsityPattern
 {
@@ -66,6 +66,9 @@ public:
   /// Destructor
   ~SparsityPattern() = default;
 
+  /// Move assignment
+  SparsityPattern& operator=(SparsityPattern&& pattern) = default;
+
   /// Insert non-zero entries using global indices
   void insert_global(
       const std::array<common::ArrayView<const la_index_t>, 2>& entries);
@@ -74,15 +77,15 @@ public:
   void insert_local(
       const std::array<common::ArrayView<const la_index_t>, 2>& entries);
 
-  /// Insert non-zero entries using local (process-wise) indices for
-  /// the primary dimension and global indices for the co-dimension
+  /// Insert non-zero entries using local (process-wise) indices for the
+  /// primary dimension and global indices for the co-dimension
   void insert_local_global(
       const std::array<common::ArrayView<const la_index_t>, 2>& entries);
 
   /// Insert full rows (or columns, according to primary dimension)
-  /// using local (process-wise) indices. This must be called before
-  /// any other sparse insertion occurs to avoid quadratic
-  /// complexity of dense rows insertion
+  /// using local (process-wise) indices. This must be called before any
+  /// other sparse insertion occurs to avoid quadratic complexity of
+  /// dense rows insertion
   void insert_full_rows_local(const std::vector<std::size_t>& rows);
 
   /// Return primary dimension (e.g., 0=row partition, 1=column
@@ -93,25 +96,20 @@ public:
   std::array<std::size_t, 2> local_range(std::size_t dim) const;
 
   /// Return index map for dimension dim
-  std::shared_ptr<const common::IndexMap> index_map(std::size_t dim) const
-  {
-    assert(dim < 2);
-    return _index_maps[dim];
-  }
+  std::shared_ptr<const common::IndexMap> index_map(std::size_t dim) const;
 
   /// Return number of local nonzeros
   std::size_t num_nonzeros() const;
 
   /// Fill array with number of nonzeros for diagonal block in
-  /// local_range for dimension 0. For matrices, fill array with
-  /// number of nonzeros per local row for diagonal block
+  /// local_range for dimension 0. For matrices, fill array with number
+  /// of nonzeros per local row for diagonal block
   void num_nonzeros_diagonal(std::vector<std::size_t>& num_nonzeros) const;
 
   /// Fill array with number of nonzeros for off-diagonal block in
-  /// local_range for dimension 0. For matrices, fill array with
-  /// number of nonzeros per local row for off-diagonal block. If
-  /// there is no off-diagonal pattern, the vector is resized to
-  /// zero-length
+  /// local_range for dimension 0. For matrices, fill array with number
+  /// of nonzeros per local row for off-diagonal block. If there is no
+  /// off-diagonal pattern, the vector is resized to zero-length
   void num_nonzeros_off_diagonal(std::vector<std::size_t>& num_nonzeros) const;
 
   /// Fill vector with number of nonzeros in local_range for
@@ -159,8 +157,8 @@ private:
   // Print some useful information
   void info_statistics() const;
 
-  // Primary sparsity pattern storage dimension (e.g., 0=row
-  // partition, 1=column partition)
+  // Primary sparsity pattern storage dimension (e.g., 0=row partition,
+  // 1=column partition)
   const std::size_t _primary_dim;
 
   // MPI communicator
@@ -179,8 +177,8 @@ private:
   // complexity for dense rows)
   set_type _full_rows;
 
-  // Cache for non-local entries stored as [i0, j0, i1, j1, ...]. Cleared after
-  // communication via apply()
+  // Cache for non-local entries stored as [i0, j0, i1, j1, ...].
+  // Cleared after communication via apply()
   std::vector<std::size_t> _non_local;
 };
 }

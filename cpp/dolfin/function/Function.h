@@ -24,7 +24,7 @@ namespace mesh
 {
 class Cell;
 class Mesh;
-}
+} // namespace mesh
 
 namespace function
 {
@@ -178,25 +178,22 @@ public:
       double* w, const fem::FiniteElement& element, const mesh::Cell& cell,
       const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const override;
 
-  /// Compute values at all mesh vertices
+  /// Compute values at all mesh points
   ///
   /// @param    mesh (_mesh::Mesh_)
   ///         The mesh.
-  /// @returns  vertex_values (EigenRowArrayXXd)
-  ///         The values at all vertices.
+  /// @returns  point_values (EigenRowArrayXXd)
+  ///         The values at all geometric points
   virtual EigenRowArrayXXd
-  compute_vertex_values(const mesh::Mesh& mesh) const override;
+  compute_point_values(const mesh::Mesh& mesh) const override;
 
-  /// Compute values at all mesh vertices
+  /// Compute values at all mesh points
   ///
-  /// @returns    vertex_values (EigenRowArrayXXd)
-  ///         The values at all vertices.
-  EigenRowArrayXXd compute_vertex_values() const;
+  /// @returns    point_values (EigenRowArrayXXd)
+  ///         The values at all geometric points
+  EigenRowArrayXXd compute_point_values() const;
 
 private:
-  // Friends
-  friend class FunctionAssigner;
-
   // Initialize vector
   void init_vector();
 
@@ -206,5 +203,5 @@ private:
   // The vector of expansion coefficients (local)
   std::shared_ptr<la::PETScVector> _vector;
 };
-}
-}
+} // namespace function
+} // namespace dolfin

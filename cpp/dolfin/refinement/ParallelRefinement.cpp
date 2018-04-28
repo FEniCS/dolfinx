@@ -245,7 +245,7 @@ mesh::Mesh ParallelRefinement::build_local() const
                                                 num_cells, num_cell_vertices);
 
   mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.type().cell_type(), geometry,
-                  topology);
+                  topology, {});
 
   return mesh;
 }
@@ -273,7 +273,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 
   return mesh::MeshPartitioning::build_distributed_mesh(
       _mesh.mpi_comm(), _mesh.type().cell_type(), points, cells,
-      global_cell_indices, _mesh.ghost_mode());
+      global_cell_indices, _mesh.get_ghost_mode());
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::new_cells(const std::vector<std::size_t>& idx)

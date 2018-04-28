@@ -30,22 +30,17 @@ public:
   ///    Map of cell_index to vector of sharing processes for those cells
   ///    that have multiple owners
   PartitionData(const std::vector<int>& cell_partition,
-                const std::map<std::int64_t, std::vector<int>>& ghost_procs)
-      : _offset(1)
-  {
-    for (std::uint32_t i = 0; i != cell_partition.size(); ++i)
-    {
-      const auto it = ghost_procs.find(i);
-      if (it == ghost_procs.end())
-        _dest_processes.push_back(cell_partition[i]);
-      else
-      {
-        _dest_processes.insert(_dest_processes.end(), it->second.begin(),
-                               it->second.end());
-      }
-      _offset.push_back(_dest_processes.size());
-    }
-  }
+                const std::map<std::int64_t, std::vector<int>>& ghost_procs);
+
+  /// Build CSR list of processes for each cell from legacy data
+  /// @param cell_partition
+  ///    Owning process of each cell
+  /// @param ghost_procs
+  ///    Map of cell_index to vector of sharing processes for those cells
+  ///    that have multiple owners
+  PartitionData(
+      const std::pair<std::vector<int>,
+                      std::map<std::int64_t, std::vector<int>>>& data);
 
   /// Copy constructor
   PartitionData(const PartitionData&) = default;
@@ -64,27 +59,21 @@ public:
 
   /// The number of sharing processes of a given cell
   /// @return std::uint32_t
-  std::uint32_t num_procs(std::uint32_t i) const
-  {
-    return _offset[i + 1] - _offset[i];
-  }
+  std::uint32_t num_procs(std::uint32_t i) const;
 
   /// Pointer to sharing processes of a given cell
   /// @return std::uint32_t*
-  const std::uint32_t* procs(std::uint32_t i) const
-  {
-    return _dest_processes.data() + _offset[i];
-  }
+  const std::uint32_t* procs(std::uint32_t i) const;
 
   /// Number of cells which this partition is defined for
   /// on this process
   /// @return std::uint32_t
-  std::uint32_t size() const { return _offset.size() - 1; }
+  std::uint32_t size() const;
 
   /// Return the total number of ghosts cells in this partition on this
   /// process. Useful for testing
   /// @return int
-  int num_ghosts() const { return _offset.size() - _dest_processes.size() - 1; }
+  int num_ghosts() const;
 
 private:
   // Contiguous list of processes, indexed with offset, below

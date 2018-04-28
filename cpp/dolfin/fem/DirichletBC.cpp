@@ -28,6 +28,7 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
 #include <map>
+#include <string>
 #include <utility>
 
 using namespace dolfin;
@@ -145,9 +146,8 @@ void DirichletBC::gather(Map& boundary_values) const
       auto it = std::find(local_to_global.begin(), local_to_global.end(), node);
       if (it == local_to_global.end())
       {
-        // Throw error if dof is not in local map
-        log::dolfin_error("DirichletBC.cpp", "gather boundary values",
-                          "Cannot find dof in local_to_global_unowned array");
+        throw std::runtime_error(
+            "Cannot find dof in local_to_global_unowned array");
       }
       else
       {
@@ -231,35 +231,31 @@ void DirichletBC::check() const
   // Check for common errors, message below might be cryptic
   if (_g->value_rank() == 0 && element.value_rank() == 1)
   {
-    log::dolfin_error(
-        "DirichletBC.cpp", "create Dirichlet boundary condition",
-        "Expecting a vector-valued boundary value but given function "
-        "is scalar");
+    throw std::runtime_error("Expecting a vector-valued boundary value but "
+                             "given function is scalar");
   }
 
   if (_g->value_rank() == 1 && element.value_rank() == 0)
   {
-    log::dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
-                      "Expecting a scalar boundary value but given function is "
-                      "vector-valued");
+    throw std::runtime_error("Expecting a scalar boundary value but given "
+                             "function is vector-valued");
   }
 
   // Check that value shape of boundary value
   if (_g->value_rank() != element.value_rank())
   {
-    log::dolfin_error("DirichletBC.cpp", "create Dirichlet boundary condition",
-                      "Illegal value rank (%d), expecting (%d)",
-                      _g->value_rank(), element.value_rank());
+    throw std::runtime_error("Illegal value rank "
+                             + std::to_string(_g->value_rank()) + ", expecting "
+                             + std::to_string(element.value_rank()));
   }
 
   for (std::size_t i = 0; i < _g->value_rank(); i++)
   {
     if (_g->value_dimension(i) != element.value_dimension(i))
     {
-      log::dolfin_error("DirichletBC.cpp",
-                        "create Dirichlet boundary condition",
-                        "Illegal value dimension (%d), expecting (%d)",
-                        _g->value_dimension(i), element.value_dimension(i));
+      throw std::runtime_error(
+          "Illegal value dimension " + std::to_string(_g->value_dimension(i))
+          + ", expecting " + std::to_string(element.value_dimension(i)));
     }
   }
 
@@ -268,30 +264,22 @@ void DirichletBC::check() const
   {
     // Check that mesh::Meshfunction is initialised
     if (!_user_mesh_function->mesh())
-    {
-      log::dolfin_error("DirichletBC.cpp",
-                        "create Dirichlet boundary condition",
-                        "User mesh::MeshFunction is not initialized");
-    }
+      throw std::runtime_error("User mesh::MeshFunction is not initialized");
 
     // Check that mesh::Meshfunction is a mesh::FacetFunction
     const std::size_t tdim = _user_mesh_function->mesh()->topology().dim();
     if (_user_mesh_function->dim() != tdim - 1)
     {
-      log::dolfin_error(
-          "DirichletBC.cpp", "create Dirichlet boundary condition",
-          "User mesh::MeshFunction is not a facet mesh::MeshFunction "
-          "(dimension is wrong)");
+      throw std::runtime_error("User mesh::MeshFunction is not a facet "
+                               "mesh::MeshFunction (dimension is wrong)");
     }
 
     // Check that mesh::Meshfunction and function::FunctionSpace meshes match
     assert(_function_space->mesh());
     if (_user_mesh_function->mesh()->id() != _function_space->mesh()->id())
     {
-      log::dolfin_error(
-          "DirichletBC.cpp", "create Dirichlet boundary condition",
-          "User mesh::MeshFunction and function::FunctionSpace meshes "
-          "are different");
+      throw std::runtime_error("User mesh::MeshFunction and "
+                               "function::FunctionSpace meshes are different");
     }
   }
 }
@@ -580,11 +568,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                        LocalData& data) const
 {
   if (!_user_sub_domain)
-  {
-    log::dolfin_error("DirichletBC.cpp",
-                      "compute Dirichlet boundary values, pointwise search",
-                      "A SubDomain is required for pointwise search");
-  }
+    throw std::runtime_error("A SubDomain is required for pointwise search");
 
   assert(_g);
 
@@ -778,8 +762,8 @@ bool DirichletBC::on_facet(const Eigen::Ref<EigenArrayXd> coordinates,
       return false;
   }
 
-  log::dolfin_error("DirichletBC.cpp", "determine if given point is on facet",
-                    "Not implemented for given facet dimension");
+  throw std::runtime_error("Determine if given point is on facet. Not "
+                           "implemented for given facet dimension");
 
   return false;
 }

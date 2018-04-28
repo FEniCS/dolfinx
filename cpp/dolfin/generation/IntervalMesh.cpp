@@ -33,26 +33,16 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
   const double ab = (b - a) / static_cast<double>(nx);
 
   if (std::abs(a - b) < DOLFIN_EPS)
-  {
-    log::dolfin_error(
-        "Interval.cpp", "create interval",
-        "Length of interval is zero. Consider checking your dimensions");
-  }
+    std::runtime_error("Length of interval is zero. Check your dimensions.");
 
   if (b < a)
   {
-    log::dolfin_error(
-        "Interval.cpp", "create interval",
-        "Length of interval is negative. Consider checking the order "
-        "of your arguments");
+    std::runtime_error(
+        "Interval length is negative. Check order of arguments.");
   }
 
   if (nx < 1)
-  {
-    log::dolfin_error(
-        "Interval.cpp", "create interval",
-        "Number of points on interval is (%d), it must be at least 1", nx);
-  }
+    std::runtime_error("Number of points on interval must be at least 1");
 
   EigenRowArrayXXd geom((nx + 1), 1);
   EigenRowArrayXXi64 topo(nx, 2);

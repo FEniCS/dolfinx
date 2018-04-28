@@ -10,7 +10,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 
-#ifdef HAS_HDF5
 
 #define HDF5_FAIL -1
 #define HDF5_MAXSTRLEN 80
@@ -35,9 +34,7 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
     assert(status != HDF5_FAIL);
     MPI_Info_free(&info);
 #else
-    log::dolfin_error(
-        "HDF5Interface.cpp", "create HDF5 file",
-        "Cannot use MPI-IO output if DOLFIN is not configured with MPI");
+    throw std::runtime_error("Cannot use MPI-IO output if DOLFIN is not configured with MPI");
 #endif
   }
 #endif
@@ -100,7 +97,7 @@ std::string HDF5Interface::get_filename(hid_t hdf5_file_handle)
   // Allocate memory
   std::vector<char> name(length + 1);
 
-  // Retrive filename
+  // Retrieve filename
   length = H5Fget_name(hdf5_file_handle, name.data(), length + 1);
   assert(length > 0);
 
@@ -445,4 +442,3 @@ bool HDF5Interface::get_mpi_atomicity(const hid_t hdf5_file_handle)
 }
 //-----------------------------------------------------------------------------
 
-#endif

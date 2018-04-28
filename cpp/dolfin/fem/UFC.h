@@ -9,7 +9,6 @@
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <memory>
-#include <ufc.h>
 #include <vector>
 
 namespace dolfin
@@ -25,11 +24,11 @@ namespace fem
 class FiniteElement;
 class Form;
 
-/// This class is a simple data structure that holds data used
-/// during assembly of a given UFC form. Data is created for each
-/// primary argument, that is, v_j for j < r. In addition, nodal
-/// basis expansion coefficients and a finite element are created
-/// for each coefficient function.
+/// This class is a simple data structure that holds data used during
+/// assembly of a given UFC form. Data is created for each primary
+/// argument, that is, v_j for j < r. In addition, nodal basis expansion
+/// coefficients and a finite element are created for each coefficient
+/// function.
 
 class UFC
 {
@@ -57,8 +56,8 @@ public:
   /// Pointer to coefficient data. Used to support UFC interface.
   const double* const* w() const { return w_pointer.data(); }
 
-  /// Pointer to coefficient data. Used to support UFC
-  /// interface. None const version
+  /// Pointer to coefficient data. Used to support UFC interface. None
+  /// const version
   double** w() { return w_pointer.data(); }
 
   /// Pointer to macro element coefficient data. Used to support UFC
@@ -76,8 +75,7 @@ public:
   std::vector<double> macro_A;
 
 private:
-  // Coefficients (std::vector<double*> is used to interface with
-  // UFC)
+  // Coefficients (std::vector<double*> is used to interface with UFC)
   std::vector<double> _w;
   std::vector<double*> w_pointer;
 
