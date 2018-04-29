@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <boost/multi_array.hpp>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -29,6 +30,13 @@ class Form;
 class Assembler
 {
 public:
+  /// Assembly type for block forms
+  enum class BlockType
+  {
+    monolithic,
+    nested
+  };
+
   /// Constructor
   Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
             std::vector<std::shared_ptr<const Form>> L,
@@ -36,10 +44,10 @@ public:
 
   /// Assemble matrix. Dirichlet rows/columns are zeroed, with '1' placed on
   /// diagonal
-  void assemble(la::PETScMatrix& A);
+  void assemble(la::PETScMatrix& A, BlockType type = BlockType::nested);
 
   /// Assemble vector
-  void assemble(la::PETScVector& b);
+  void assemble(la::PETScVector& b, BlockType type = BlockType::nested);
 
   /// Assemble matrix and vector
   void assemble(la::PETScMatrix& A, la::PETScVector& b);
