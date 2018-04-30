@@ -67,8 +67,7 @@ class _InterfaceExpression(cpp.function.Expression):
 
 
 class BaseExpression(ufl.Coefficient):
-    def __init__(self, cell=None, element=None, domain=None, name=None,
-                 label=None):
+    def __init__(self, cell=None, element=None, domain=None, name=None):
 
         # Some messy cell/domain handling for compatibility, will be
         # straightened out later
@@ -90,8 +89,7 @@ class BaseExpression(ufl.Coefficient):
         ufl.Coefficient.__init__(self, ufl_function_space, count=self.id())
 
         name = name or "f_" + str(ufl.Coefficient.count(self))
-        label = label or "User defined expression"
-        self._cpp_object.rename(name, label)
+        self._cpp_object.rename(name)
 
     def ufl_evaluate(self, x, component, derivatives):
         """Function used by ufl to evaluate the Expression"""
