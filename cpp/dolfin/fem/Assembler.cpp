@@ -189,8 +189,6 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
   {
     for (std::size_t i = 0; i < _l.size(); ++i)
     {
-      std::cout << "Assembling block: " << i << std::endl;
-
       // Get subvector
       Vec sub_b;
       VecNestGetSubVec(b.vec(), i, &sub_b);
@@ -207,9 +205,9 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
       {
         // FIXME: Figure out how to check that vector block is null
         // Null block, do nothing
+        std::cout << "WARNING: null linear form. Untested " << std::endl;
       }
     }
-    std::cout << "End assembling vector " << std::endl;
   }
   else if (block_vector)
   {
@@ -217,18 +215,17 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     std::int64_t offset = 0;
     for (std::size_t i = 0; i < _l.size(); ++i)
     {
+      std::cout << "Component: " << i << std::endl;
       if (_l[i])
       {
         auto map = _l[i]->function_space(0)->dofmap()->index_map();
         auto map_size = map->size(common::IndexMap::MapSize::ALL);
-
         std::vector<PetscInt> index(map_size);
         std::iota(index.begin(), index.end(), offset);
 
         IS is;
         ISCreateBlock(b.mpi_comm(), map->block_size(), index.size(),
                       index.data(), PETSC_COPY_VALUES, &is);
-
         Vec sub_b;
         VecGetSubVector(b.vec(), is, &sub_b);
         la::PETScVector vec(sub_b);
@@ -240,11 +237,10 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
 
         // Fill vector with [i0 + 0, i0 + 1, i0 +2, . . .]
         std::vector<PetscInt> local_to_global_map(vec.size());
-        std::iota(local_to_global_map.begin(), local_to_global_map.end(), 1);
+        std::iota(local_to_global_map.begin(), local_to_global_map.end(), 0);
 
         // Create PETSc local-to-global map
         ISLocalToGlobalMapping petsc_local_to_global;
-        // PetscErrorCode ierr = 0;
         ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, 1,
                                      local_to_global_map.size(),
                                      local_to_global_map.data(),
@@ -259,8 +255,7 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
 
         this->assemble(vec, *_l[i]);
 
-        // FIXME: Apply bcs
-        // std::cout << "WARNING: bcs not being applied" << std::endl;
+        // Modify vector for bcs
         for (std::size_t j = 0; j < _a[i].size(); ++j)
           apply_bc(vec, *_a[i][j], _bcs);
         set_bc(vec, *_l[i], _bcs);
