@@ -18,7 +18,6 @@ RESTRICT_REQUIREMENTS = ">=2018.1.0.dev0,<2018.2"
 
 REQUIREMENTS = [
     "numpy",
-    "pkgconfig",
     "fenics-ffc{}".format(RESTRICT_REQUIREMENTS),
     "fenics-ufl{}".format(RESTRICT_REQUIREMENTS),
     "fenics-dijitso{}".format(RESTRICT_REQUIREMENTS),
