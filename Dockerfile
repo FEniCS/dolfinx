@@ -55,7 +55,7 @@ RUN wget https://bootstrap.pypa.io/get-pip.py && \
 
 
 # Install PETSc from source. PETSc build system needs Python 2 :(.
-ARG PETSC_VERSION=3.9
+ARG PETSC_VERSION=3.9.1
 RUN apt-get -qq update && \
     apt-get -y install bison flex python && \
     wget -nc --quiet https://bitbucket.org/petsc/petsc/get/v${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
@@ -105,7 +105,7 @@ RUN pip3 install --no-cache-dir mpi4py numpy pkgconfig scipy && \
     pip3 install --no-cache-dir https://bitbucket.org/slepc/slepc4py/downloads/slepc4py-${SLEPC4PY_VERSION}.tar.gz
 
 # Install pybind11
-ARG PYBIND11_VERSION=2.2.2
+ARG PYBIND11_VERSION=2.2.3
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
     tar -xf v${PYBIND11_VERSION}.tar.gz && \
     cd pybind11-${PYBIND11_VERSION} && \
