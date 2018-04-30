@@ -93,6 +93,8 @@ public:
   ///   MPI Communicator
   /// @param cell_vertices
   ///   Input cell topology (global indexing)
+  /// @param cell_permutation
+  ///   Permutation from VTK to DOLFIN index ordering
   /// @return
   ///   Local-to-global map for vertices (std::vector<std::int64_t>) and cell
   ///   topology in local indexing (EigenRowArrayXXi32)
@@ -100,7 +102,8 @@ public:
                     EigenRowArrayXXi32>
   compute_point_mapping(
       std::uint32_t num_cell_vertices,
-      const Eigen::Ref<const EigenRowArrayXXi64>& cell_points);
+      const Eigen::Ref<const EigenRowArrayXXi64>& cell_points,
+      const std::vector<std::uint8_t>& cell_permutation);
 
   // Utility to create global vertex indices, needed for higher
   // order meshes, where there are geometric points which are not
