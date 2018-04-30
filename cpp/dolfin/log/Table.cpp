@@ -20,7 +20,7 @@ typedef std::vector<std::string>::const_iterator iterator;
 Table::Table(std::string title, bool right_justify)
     : _right_justify(right_justify)
 {
-  rename(title, label());
+  rename(title);
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -156,7 +156,7 @@ Table Table::operator- (const Table& table) const
 //-----------------------------------------------------------------------------
 const Table& Table::operator=(const Table& table)
 {
-  rename(table.name(), label());
+  rename(table.name());
   _right_justify = table._right_justify;
 
   rows = table.rows;

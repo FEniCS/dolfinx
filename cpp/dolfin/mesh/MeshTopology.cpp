@@ -16,7 +16,7 @@ using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(std::size_t dim)
-    : common::Variable("topology", "mesh topology")
+    : common::Variable("topology")
 {
   // Initialize number of mesh entities
   _num_entities = std::vector<std::int32_t>(dim + 1, 0);

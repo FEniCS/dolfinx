@@ -125,7 +125,7 @@ void VTKFile::write_function(const function::Function& u, double time)
   finalize(vtu_filename, time);
 
   log::log(TRACE, "Saved function %s (%s) to file %s in VTK format.",
-           u.name().c_str(), u.label().c_str(), _filename.c_str());
+           u.name().c_str(), u.name().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 void VTKFile::write_mesh(const mesh::Mesh& mesh, double time)
@@ -156,7 +156,7 @@ void VTKFile::write_mesh(const mesh::Mesh& mesh, double time)
   finalize(vtu_filename, time);
 
   log::log(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
-           mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
+           mesh.name().c_str(), mesh.name().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 std::string VTKFile::init(const mesh::Mesh& mesh, std::size_t cell_dim) const
@@ -639,7 +639,7 @@ void VTKFile::mesh_function_write(T& meshfunction, double time)
   finalize(vtu_filename, time);
 
   log::log(TRACE, "Saved mesh function %s (%s) to file %s in VTK format.",
-           mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
+           mesh.name().c_str(), mesh.name().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 void VTKFile::clear_file(std::string file) const
