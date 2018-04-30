@@ -354,24 +354,27 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
     current_offset += data_offsets.back();
   }
 
-  // Flatten data
+  // Flattened data
   std::vector<T> data_send(current_offset);
-
-  // Get the size and offset from the 'target'
+  // Send offsets to targets that have data to transfer
+  std::vector<int> remote_data_offsets(comm_size * 2, 0);
   MPI_Win iwin;
-  MPI_Win_create(data_offsets.data(), sizeof(int) * data_offsets.size(),
-                 sizeof(int), MPI_INFO_NULL, comm, &iwin);
+  MPI_Win_create(remote_data_offsets.data(),
+                 sizeof(int) * remote_data_offsets.size(), sizeof(int),
+                 MPI_INFO_NULL, comm, &iwin);
   MPI_Win_fence(0, iwin);
 
-  std::vector<int> remote_data_offsets(comm_size * 2);
   for (std::size_t p = 0; p < comm_size; ++p)
   {
-    // Flatten data
-    std::copy(in_values[p].begin(), in_values[p].end(),
-              data_send.begin() + data_offsets[p * 2]);
-    // Get size and offset from remote
-    MPI_Get(remote_data_offsets.data() + p * 2, 2, MPI_INT, p, comm_rank * 2, 2,
-            MPI_INT, iwin);
+    if (in_values[p].size() > 0)
+    {
+      // Flatten data
+      std::copy(in_values[p].begin(), in_values[p].end(),
+                data_send.begin() + data_offsets[p * 2]);
+      // Send size and offset from remote (if > 0)
+      MPI_Put(data_offsets.data() + p * 2, 2, MPI_INT, p, comm_rank * 2, 2,
+              MPI_INT, iwin);
+    }
   }
   MPI_Win_fence(0, iwin);
   MPI_Win_free(&iwin);
@@ -392,8 +395,10 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
   for (std::size_t p = 0; p < comm_size; ++p)
   {
     const int data_size = remote_data_offsets[p * 2 + 1];
-    MPI_Get(data_recv.data() + local_data_offsets[p], data_size, mpi_type<T>(),
-            p, remote_data_offsets[p * 2], data_size, mpi_type<T>(), Twin);
+    if (data_size > 0)
+      MPI_Get(data_recv.data() + local_data_offsets[p], data_size,
+              mpi_type<T>(), p, remote_data_offsets[p * 2], data_size,
+              mpi_type<T>(), Twin);
   }
   MPI_Win_fence(0, Twin);
   MPI_Win_free(&Twin);
@@ -435,24 +440,27 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
     current_offset += data_offsets.back();
   }
 
-  // Flatten data
+  // Flattened data
   std::vector<T> data_send(current_offset);
-
-  // Get the size and offset from the 'target'
+  // Send offsets to targets that have data to transfer
+  std::vector<int> remote_data_offsets(comm_size * 2, 0);
   MPI_Win iwin;
-  MPI_Win_create(data_offsets.data(), sizeof(int) * data_offsets.size(),
-                 sizeof(int), MPI_INFO_NULL, comm, &iwin);
+  MPI_Win_create(remote_data_offsets.data(),
+                 sizeof(int) * remote_data_offsets.size(), sizeof(int),
+                 MPI_INFO_NULL, comm, &iwin);
   MPI_Win_fence(0, iwin);
 
-  std::vector<int> remote_data_offsets(comm_size * 2);
   for (std::size_t p = 0; p < comm_size; ++p)
   {
-    // Flatten data
-    std::copy(in_values[p].begin(), in_values[p].end(),
-              data_send.begin() + data_offsets[p * 2]);
-    // Get size and offset from remote
-    MPI_Get(remote_data_offsets.data() + p * 2, 2, MPI_INT, p, comm_rank * 2, 2,
-            MPI_INT, iwin);
+    if (in_values[p].size() > 0)
+    {
+      // Flatten data
+      std::copy(in_values[p].begin(), in_values[p].end(),
+                data_send.begin() + data_offsets[p * 2]);
+      // Send size and offset from remote (if > 0)
+      MPI_Put(data_offsets.data() + p * 2, 2, MPI_INT, p, comm_rank * 2, 2,
+              MPI_INT, iwin);
+    }
   }
   MPI_Win_fence(0, iwin);
   MPI_Win_free(&iwin);
