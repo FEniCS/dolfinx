@@ -110,13 +110,15 @@ public:
   /// Send in_values[p0] to process p0 and receive values from
   /// process p1 in out_values[p1]
   template <typename T>
-  static void all_to_all(MPI_Comm comm, std::vector<std::vector<T>>& in_values,
+  static void all_to_all(MPI_Comm comm,
+                         const std::vector<std::vector<T>>& in_values,
                          std::vector<std::vector<T>>& out_values);
 
   /// Send in_values[p0] to process p0 and receive values from
   /// all processes in out_values
   template <typename T>
-  static void all_to_all(MPI_Comm comm, std::vector<std::vector<T>>& in_values,
+  static void all_to_all(MPI_Comm comm,
+                         const std::vector<std::vector<T>>& in_values,
                          std::vector<T>& out_values);
 
   /// Broadcast vector of value from broadcaster to all processes
@@ -334,7 +336,7 @@ void dolfin::MPI::broadcast(MPI_Comm comm, T& value, std::uint32_t broadcaster)
 //---------------------------------------------------------------------------
 template <typename T>
 void dolfin::MPI::all_to_all(MPI_Comm comm,
-                             std::vector<std::vector<T>>& in_values,
+                             const std::vector<std::vector<T>>& in_values,
                              std::vector<std::vector<T>>& out_values)
 {
 #ifdef HAS_MPI
@@ -380,18 +382,17 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
   MPI_Win_free(&iwin);
 
   // Now get the actual data
-  MPI_Win Twin;
-  MPI_Win_create(data_send.data(), sizeof(T) * data_send.size(), sizeof(T),
-                 MPI_INFO_NULL, comm, &Twin);
-  MPI_Win_fence(0, Twin);
-
-  // Get local offsets
+  // Calculate local offsets and allocate receiving vector
   std::vector<int> local_data_offsets = {0};
   for (std::size_t p = 0; p < comm_size; ++p)
     local_data_offsets.push_back(local_data_offsets.back()
                                  + remote_data_offsets[p * 2 + 1]);
-
   std::vector<T> data_recv(local_data_offsets.back());
+
+  MPI_Win Twin;
+  MPI_Win_create(data_send.data(), sizeof(T) * data_send.size(), sizeof(T),
+                 MPI_INFO_NULL, comm, &Twin);
+  MPI_Win_fence(0, Twin);
   for (std::size_t p = 0; p < comm_size; ++p)
   {
     const int data_size = remote_data_offsets[p * 2 + 1];
@@ -420,7 +421,7 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
 //---------------------------------------------------------------------------
 template <typename T>
 void dolfin::MPI::all_to_all(MPI_Comm comm,
-                             std::vector<std::vector<T>>& in_values,
+                             const std::vector<std::vector<T>>& in_values,
                              std::vector<T>& out_values)
 {
 #ifdef HAS_MPI
@@ -466,23 +467,24 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
   MPI_Win_free(&iwin);
 
   // Now get the actual data
-  MPI_Win Twin;
-  MPI_Win_create(data_send.data(), sizeof(T) * data_send.size(), sizeof(T),
-                 MPI_INFO_NULL, comm, &Twin);
-  MPI_Win_fence(0, Twin);
-
-  // Get local offsets
+  // Get local offsets and resize output vector
   std::vector<int> local_data_offsets = {0};
   for (std::size_t p = 0; p < comm_size; ++p)
     local_data_offsets.push_back(local_data_offsets.back()
                                  + remote_data_offsets[p * 2 + 1]);
-
   out_values.resize(local_data_offsets.back());
+
+  MPI_Win Twin;
+  MPI_Win_create(data_send.data(), sizeof(T) * data_send.size(), sizeof(T),
+                 MPI_INFO_NULL, comm, &Twin);
+  MPI_Win_fence(0, Twin);
   for (std::size_t p = 0; p < comm_size; ++p)
   {
     const int data_size = remote_data_offsets[p * 2 + 1];
-    MPI_Get(out_values.data() + local_data_offsets[p], data_size, mpi_type<T>(),
-            p, remote_data_offsets[p * 2], data_size, mpi_type<T>(), Twin);
+    if (data_size > 0)
+      MPI_Get(out_values.data() + local_data_offsets[p], data_size,
+              mpi_type<T>(), p, remote_data_offsets[p * 2], data_size,
+              mpi_type<T>(), Twin);
   }
   MPI_Win_fence(0, Twin);
   MPI_Win_free(&Twin);
@@ -495,9 +497,10 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
 //---------------------------------------------------------------------------
 #ifndef DOXYGEN_IGNORE
 template <>
-inline void dolfin::MPI::all_to_all(MPI_Comm comm,
-                                    std::vector<std::vector<bool>>& in_values,
-                                    std::vector<std::vector<bool>>& out_values)
+inline void
+dolfin::MPI::all_to_all(MPI_Comm comm,
+                        const std::vector<std::vector<bool>>& in_values,
+                        std::vector<std::vector<bool>>& out_values)
 {
 #ifdef HAS_MPI
   // Copy to short int
@@ -520,9 +523,10 @@ inline void dolfin::MPI::all_to_all(MPI_Comm comm,
 }
 
 template <>
-inline void dolfin::MPI::all_to_all(MPI_Comm comm,
-                                    std::vector<std::vector<bool>>& in_values,
-                                    std::vector<bool>& out_values)
+inline void
+dolfin::MPI::all_to_all(MPI_Comm comm,
+                        const std::vector<std::vector<bool>>& in_values,
+                        std::vector<bool>& out_values)
 {
 #ifdef HAS_MPI
   // Copy to short int
