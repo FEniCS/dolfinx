@@ -156,6 +156,8 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScVector& b, BlockType block_type)
 {
+  std::cout << "Assemble vector" << std::endl;
+
   // Check if matrix should be nested
   assert(!_l.empty());
   const bool block_vector = _l.size() > 1;
@@ -187,6 +189,8 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
   {
     for (std::size_t i = 0; i < _l.size(); ++i)
     {
+      std::cout << "Assembling block: " << i << std::endl;
+
       // Get subvector
       Vec sub_b;
       VecNestGetSubVec(b.vec(), i, &sub_b);
@@ -194,6 +198,10 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
       {
         la::PETScVector vec(sub_b);
         this->assemble(vec, *_l[i]);
+
+        for (std::size_t j = 0; j < _a[i].size(); ++j)
+          apply_bc(vec, *_a[i][j], _bcs);
+        set_bc(vec, *_l[i], _bcs);
       }
       else
       {
@@ -201,6 +209,7 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
         // Null block, do nothing
       }
     }
+    std::cout << "End assembling vector " << std::endl;
   }
   else if (block_vector)
   {
@@ -250,6 +259,12 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
 
         this->assemble(vec, *_l[i]);
 
+        // FIXME: Apply bcs
+        // std::cout << "WARNING: bcs not being applied" << std::endl;
+        for (std::size_t j = 0; j < _a[i].size(); ++j)
+          apply_bc(vec, *_a[i][j], _bcs);
+        set_bc(vec, *_l[i], _bcs);
+
         VecRestoreSubVector(b.vec(), is, &sub_b);
         ISDestroy(&is);
 
@@ -258,26 +273,11 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     }
   }
   else
+  {
     this->assemble(b, *_l[0]);
-
-  /*
-  // Assemble vector
-  this->assemble(b, *_l[0]);
-
-  // Apply bcs to RHS of vector
-  for (std::size_t i = 0; i < _l.size(); ++i)
-    for (std::size_t j = 0; j < _a[i].size(); ++j)
-      apply_bc(b, *_a[i][j], _bcs);
-
-  // Set bc values
-  set_bc(b, *_l[0], _bcs);
-  `*/
-
-  // // Assemble blocks (b)
-  // for (auto row : _l)
-  // {
-  //   this->assemble(b, *row);
-  // }
+    apply_bc(b, *_a[0][0], _bcs);
+    set_bc(b, *_l[0], _bcs);
+  }
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScMatrix& A, la::PETScVector& b)

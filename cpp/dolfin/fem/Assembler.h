@@ -18,7 +18,7 @@ namespace la
 {
 class PETScMatrix;
 class PETScVector;
-}
+} // namespace la
 
 namespace fem
 {
@@ -61,8 +61,8 @@ private:
   // Assemble vector
   static void assemble(la::PETScVector& b, const Form& L);
 
-  // Apply bcs to vector (b <- b - Ax, where x holds prescribed boundary
-  // values)
+  // Modify RHS vector to account for boundary condition (b <- b - Ax,
+  // where x holds prescribed boundary values)
   static void apply_bc(la::PETScVector& b, const Form& a,
                        std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
@@ -77,5 +77,5 @@ private:
   // Dirichlet boundary conditions
   std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 };
-}
-}
+} // namespace fem
+} // namespace dolfin

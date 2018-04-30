@@ -120,7 +120,7 @@ def test_matrix_assembly_block():
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6,  x[:, 0] > 1.0 - 1.0e-6)
 
-    u_bc = dolfin.function.constant.Constant(2.0)
+    u_bc = dolfin.function.constant.Constant(5.0)
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Create assembler
@@ -134,7 +134,7 @@ def test_matrix_assembly_block():
     A, b = assembler.assemble(
        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
     # A.mat().view()
-    # b.vec().view()
+    b.vec().view()
     norm = A.mat().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
         print("Norm (block, non-nest)", norm)
@@ -201,7 +201,7 @@ def test_matrix_assembly_block():
     dolfin.MPI.barrier(mesh.mpi_comm())
 
     # A.mat().view()
-    # b.vec().view()
+    b.vec().view()
     norm = A.mat().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
         print("Norm (monolithic)", norm)
