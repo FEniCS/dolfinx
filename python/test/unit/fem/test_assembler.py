@@ -104,8 +104,8 @@ def test_matrix_assembly_block():
         V0), dolfin.function.argument.TrialFunction(V1)
     v, q = dolfin.function.argument.TestFunction(
         V0), dolfin.function.argument.TestFunction(V1)
-    f = dolfin.function.constant.Constant(-1.0)
-    g = dolfin.function.constant.Constant(1.0)
+    f = dolfin.function.constant.Constant(1.0)
+    g = dolfin.function.constant.Constant(-1.0)
 
     a00 = u*v*dx
     a01 = v*p * dx
@@ -120,7 +120,7 @@ def test_matrix_assembly_block():
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6,  x[:, 0] > 1.0 - 1.0e-6)
 
-    u_bc = dolfin.function.constant.Constant(2.0)
+    u_bc = dolfin.function.constant.Constant(5.0)
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Create assembler
@@ -134,10 +134,12 @@ def test_matrix_assembly_block():
     A, b = assembler.assemble(
        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
     # A.mat().view()
-    # b.vec().view()
-    norm = A.mat().norm()
+    b.vec().view()
+    Anorm = A.mat().norm()
+    bnorm = b.vec().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
-        print("Norm (block, non-nest)", norm)
+        print("Matrix Norm (block, non-nest)", Anorm)
+        print("Vector Norm (block, non-nest)", bnorm)
 
     dolfin.MPI.barrier(mesh.mpi_comm())
     print("--------------------")
@@ -201,10 +203,12 @@ def test_matrix_assembly_block():
     dolfin.MPI.barrier(mesh.mpi_comm())
 
     # A.mat().view()
-    # b.vec().view()
-    norm = A.mat().norm()
+    b.vec().view()
+    Anorm = A.mat().norm()
+    bnorm = b.vec().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
-        print("Norm (monolithic)", norm)
+        print("Matrix norm (monolithic)", Anorm)
+        print("Vector Norm (block, non-nest)", bnorm)
 
     # Reference assembler
     # A, b = dolfin.fem.assembling.assemble_system(a, L, bc)
