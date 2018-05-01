@@ -88,7 +88,9 @@ to create a mesh consisting of 32 x 32 squares with each square
 divided into two triangles, we do as follows ::
 
     # Create mesh and define function space
-    mesh = RectangleMesh.create(MPI.comm_world, [Point(0,0), Point(1,1)], [32, 32], CellType.Type.triangle)
+    mesh = RectangleMesh.create(MPI.comm_world,
+        [Point(0,0), Point(1,1)], [32, 32],
+        CellType.Type.triangle, dolfin.cpp.mesh.GhostMode.none)
     V = FunctionSpace(mesh, "Lagrange", 1)
 
     cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
