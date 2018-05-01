@@ -63,7 +63,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
     {
       log::warning("P2 Mesh of Tet_10");
       _degree = 2;
-      cell_permutation = {0, 1, 2, 3, 4, 7, 5, 6, 8, 9};
+      cell_permutation = {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
     }
     else
     {
