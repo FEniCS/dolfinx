@@ -42,6 +42,7 @@ Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 {
+  return;
   // Check if matrix should be nested
   assert(!_a.empty());
   const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
@@ -156,7 +157,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScVector& b, BlockType block_type)
 {
-  return;
+  // return;
   std::cout << "Assemble vector" << std::endl;
 
   // Check if matrix should be nested
@@ -218,6 +219,11 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     {
       auto map = _l[i]->function_space(0)->dofmap()->index_map();
       index_maps.push_back(map.get());
+      // if (MPI::rank(MPI_COMM_WORLD) == 2)
+      //   std::cout << "Proc, field, size: "
+      //             << ", " << i << ", "
+      //             << map->size(common::IndexMap::MapSize::OWNED) <<
+      //             std::endl;
     }
 
     // std::cout << "Assembling block vector (non-nested)" << std::endl;
@@ -232,6 +238,10 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
         std::vector<PetscInt> index(map_size);
         auto range = b.local_range();
         std::iota(index.begin(), index.end(), range[0] + offset);
+
+        // if (MPI::rank(MPI_COMM_WORLD) == 2)
+        //   std::cout << "Begin, end: " << index[0] << ", " << index.back()
+        //             << std::endl;
 
         IS is;
         ISCreateBlock(b.mpi_comm(), map->block_size(), index.size(),
@@ -252,8 +262,13 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
         std::vector<PetscInt> local_to_global_map(
             map->size(common::IndexMap::MapSize::ALL));
         for (std::size_t k = 0; k < local_to_global_map.size(); ++k)
-          local_to_global_map[i] = fem::get_global_index(index_maps, i, k);
-          // local_to_global_map[i] = map->local_to_global(k);
+        {
+          //local_to_global_map[k] = fem::get_global_index(index_maps, i, k);
+          local_to_global_map[k] = map->local_to_global(k);
+          // if (MPI::rank(MPI_COMM_WORLD) == 0)
+          //   std::cout << "Field, global: " << i << ", "
+          //             << local_to_global_map[k] << std::endl;
+        }
 
         // Create PETSc local-to-global map
         ISLocalToGlobalMapping petsc_local_to_global;

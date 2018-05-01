@@ -135,13 +135,13 @@ def test_matrix_assembly_block():
        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
     # A.mat().view()
     b.vec().view()
-    Anorm = A.mat().norm()
+    #Anorm = A.mat().norm()
     bnorm = b.vec().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
-        print("Matrix Norm (block, non-nest)", Anorm)
+        #print("Matrix Norm (block, non-nest)", Anorm)
         print("Vector Norm (block, non-nest)", bnorm)
 
-    return
+    #return
     dolfin.MPI.barrier(mesh.mpi_comm())
     print("B--------------------")
     dolfin.MPI.barrier(mesh.mpi_comm())
@@ -206,10 +206,10 @@ def test_matrix_assembly_block():
 
     # A.mat().view()
     b.vec().view()
-    Anorm = A.mat().norm()
+    #Anorm = A.mat().norm()
     bnorm = b.vec().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
-        print("Matrix norm (monolithic)", Anorm)
+        #print("Matrix norm (monolithic)", Anorm)
         print("Vector Norm (monolithic)", bnorm)
 
     # Reference assembler

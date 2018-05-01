@@ -265,7 +265,8 @@ void fem::init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L)
   }
 
   // Initialize vector
-  x.init(index_map.local_range(), local_to_global, {}, 1);
+  // x.init(index_map.local_range(), local_to_global, {}, 1);
+  x.init(index_map.local_range(), {}, {}, 1);
 }
 //-----------------------------------------------------------------------------
 void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
