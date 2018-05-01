@@ -92,9 +92,9 @@ def xtest_matrix_assembly_bc():
     # A.mat().view()
     # B.mat().view()
 
-@skip_in_parallel
+#@skip_in_parallel
 def test_matrix_assembly_block():
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 4)
 
     V0 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
     V1 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
@@ -105,7 +105,7 @@ def test_matrix_assembly_block():
     v, q = dolfin.function.argument.TestFunction(
         V0), dolfin.function.argument.TestFunction(V1)
     f = dolfin.function.constant.Constant(1.0)
-    g = dolfin.function.constant.Constant(-1.0)
+    g = dolfin.function.constant.Constant(-3.0)
 
     a00 = u*v*dx
     a01 = v*p * dx
@@ -120,14 +120,14 @@ def test_matrix_assembly_block():
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6,  x[:, 0] > 1.0 - 1.0e-6)
 
-    u_bc = dolfin.function.constant.Constant(5.0)
+    u_bc = dolfin.function.constant.Constant(1.0)
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Create assembler
     assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]],
                                                 [L0, L1], [bc])
 
-    print("--------------------")
+    print("A--------------------")
 
     # Monolithic blocked
 
@@ -141,9 +141,11 @@ def test_matrix_assembly_block():
         print("Matrix Norm (block, non-nest)", Anorm)
         print("Vector Norm (block, non-nest)", bnorm)
 
+    return
     dolfin.MPI.barrier(mesh.mpi_comm())
-    print("--------------------")
+    print("B--------------------")
     dolfin.MPI.barrier(mesh.mpi_comm())
+
 
     # Nested (MatNest)
 
@@ -208,7 +210,7 @@ def test_matrix_assembly_block():
     bnorm = b.vec().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
         print("Matrix norm (monolithic)", Anorm)
-        print("Vector Norm (block, non-nest)", bnorm)
+        print("Vector Norm (monolithic)", bnorm)
 
     # Reference assembler
     # A, b = dolfin.fem.assembling.assemble_system(a, L, bc)

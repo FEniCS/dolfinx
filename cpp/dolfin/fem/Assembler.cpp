@@ -119,7 +119,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           ISCreateBlock(MPI_COMM_SELF, map1->block_size(), index1.size(),
                         index1.data(), PETSC_COPY_VALUES, &is1);
 
-          // Get sub-matrix
+          // Get sub-matrix (using local indices for is0 and is1)
           Mat subA;
           MatGetLocalSubMatrix(A.mat(), is0, is1, &subA);
 
@@ -156,6 +156,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScVector& b, BlockType block_type)
 {
+  return;
   std::cout << "Assemble vector" << std::endl;
 
   // Check if matrix should be nested
@@ -211,17 +212,26 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
   }
   else if (block_vector)
   {
+
+    std::vector<const common::IndexMap*> index_maps;
+    for (std::size_t i = 0; i < _l.size(); ++i)
+    {
+      auto map = _l[i]->function_space(0)->dofmap()->index_map();
+      index_maps.push_back(map.get());
+    }
+
     // std::cout << "Assembling block vector (non-nested)" << std::endl;
     std::int64_t offset = 0;
     for (std::size_t i = 0; i < _l.size(); ++i)
     {
-      std::cout << "Component: " << i << std::endl;
       if (_l[i])
       {
         auto map = _l[i]->function_space(0)->dofmap()->index_map();
-        auto map_size = map->size(common::IndexMap::MapSize::ALL);
+        // auto map_size = map->size(common::IndexMap::MapSize::ALL);
+        auto map_size = map->size(common::IndexMap::MapSize::OWNED);
         std::vector<PetscInt> index(map_size);
-        std::iota(index.begin(), index.end(), offset);
+        auto range = b.local_range();
+        std::iota(index.begin(), index.end(), range[0] + offset);
 
         IS is;
         ISCreateBlock(b.mpi_comm(), map->block_size(), index.size(),
@@ -236,8 +246,14 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
         // Attach local-to-global map
 
         // Fill vector with [i0 + 0, i0 + 1, i0 +2, . . .]
-        std::vector<PetscInt> local_to_global_map(vec.size());
-        std::iota(local_to_global_map.begin(), local_to_global_map.end(), 0);
+        // std::vector<PetscInt> local_to_global_map(vec.size());
+        // std::iota(local_to_global_map.begin(), local_to_global_map.end(), 0);
+
+        std::vector<PetscInt> local_to_global_map(
+            map->size(common::IndexMap::MapSize::ALL));
+        for (std::size_t k = 0; k < local_to_global_map.size(); ++k)
+          local_to_global_map[i] = fem::get_global_index(index_maps, i, k);
+          // local_to_global_map[i] = map->local_to_global(k);
 
         // Create PETSc local-to-global map
         ISLocalToGlobalMapping petsc_local_to_global;
@@ -256,9 +272,9 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
         this->assemble(vec, *_l[i]);
 
         // Modify vector for bcs
-        for (std::size_t j = 0; j < _a[i].size(); ++j)
-          apply_bc(vec, *_a[i][j], _bcs);
-        set_bc(vec, *_l[i], _bcs);
+        // for (std::size_t j = 0; j < _a[i].size(); ++j)
+        //   apply_bc(vec, *_a[i][j], _bcs);
+        // set_bc(vec, *_l[i], _bcs);
 
         VecRestoreSubVector(b.vec(), is, &sub_b);
         ISDestroy(&is);
@@ -270,8 +286,8 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
   else
   {
     this->assemble(b, *_l[0]);
-    apply_bc(b, *_a[0][0], _bcs);
-    set_bc(b, *_l[0], _bcs);
+    // apply_bc(b, *_a[0][0], _bcs);
+    // set_bc(b, *_l[0], _bcs);
   }
 }
 //-----------------------------------------------------------------------------

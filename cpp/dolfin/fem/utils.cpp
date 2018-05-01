@@ -144,7 +144,6 @@ void fem::init_monolithic(la::PETScMatrix& A,
           = {{map0, map1}};
 
       // Build sparsity pattern
-      std::cout << "  Build sparsity pattern " << std::endl;
       std::array<const GenericDofMap*, 2> dofmaps
           = {{a[row][col]->function_space(0)->dofmap().get(),
               a[row][col]->function_space(1)->dofmap().get()}};
@@ -153,12 +152,8 @@ void fem::init_monolithic(la::PETScMatrix& A,
           SparsityPatternBuilder::build(mesh.mpi_comm(), mesh, dofmaps, true,
                                         false, false, false, false));
       patterns[row].push_back(std::move(sp));
-      // std::cout << "  End Build sparsity pattern: " << col << ", "
-      //           << patterns[row].size() << std::endl;
-      // assert(patterns[row][col]);
       p[row][col] = patterns[row][col].get();
       assert(p[row][col]);
-      // std::cout << "  End push back sparsity pattern pointer " << std::endl;
     }
   }
 
@@ -236,26 +231,41 @@ void fem::init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L)
   // FIXME: handle mixed block sizes
 
   std::size_t local_size = 0;
+  std::vector<const common::IndexMap*> index_maps;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
     auto map = L[i]->function_space(0)->dofmap()->index_map();
     local_size += map->size(common::IndexMap::MapSize::OWNED);
+    index_maps.push_back(map.get());
     // int block_size = map->block_size();
   }
 
   // Create map for combined problem
-  common::IndexMap map(x.mpi_comm(), local_size, 1);
+  common::IndexMap index_map(x.mpi_comm(), local_size, 1);
 
-  std::vector<la_index_t> local_to_global(
-      map.size(common::IndexMap::MapSize::ALL));
-  for (std::size_t i = 0; i < local_to_global.size(); ++i)
+  // std::vector<la_index_t> local_to_global(
+  //     map.size(common::IndexMap::MapSize::ALL));
+  // for (std::size_t i = 0; i < local_to_global.size(); ++i)
+  // {
+  //   local_to_global[i] = map.local_to_global(i);
+  //   // std::cout << "l2g: " << i << ", " << local_to_global[i] << std::endl;
+  // }
+
+  std::vector<la_index_t> local_to_global;
+  for (std::size_t i = 0; i < L.size(); ++i)
   {
-    local_to_global[i] = map.local_to_global(i);
-    // std::cout << "l2g: " << i << ", " << local_to_global[i] << std::endl;
+    assert(L[i]);
+    auto map = L[i]->function_space(0)->dofmap()->index_map();
+    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL); ++k)
+    {
+      auto index_k = map->local_to_global(k);
+      std::size_t index = get_global_index(index_maps, i, index_k);
+      local_to_global.push_back(index);
+    }
   }
 
   // Initialize vector
-  x.init(map.local_range(), local_to_global, {}, 1);
+  x.init(index_map.local_range(), local_to_global, {}, 1);
 }
 //-----------------------------------------------------------------------------
 void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
