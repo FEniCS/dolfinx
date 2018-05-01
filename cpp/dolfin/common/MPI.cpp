@@ -224,7 +224,7 @@ dolfin::Table dolfin::MPI::all_reduce(const MPI_Comm comm,
   if (MPI::size(comm) == 1)
   {
     Table table_all(table);
-    table_all.rename(new_title, table_all.label());
+    table_all.rename(new_title);
     return table_all;
   }
 

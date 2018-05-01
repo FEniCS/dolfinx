@@ -28,7 +28,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            const Eigen::Ref<const EigenRowArrayXXi64>& cells,
            const std::vector<std::int64_t>& global_cell_indices,
            std::uint32_t num_ghost_cells)
-    : common::Variable("mesh", "DOLFIN mesh"),
+    : common::Variable("mesh"),
       _cell_type(mesh::CellType::create(type)), _topology(_cell_type->dim()),
       _geometry(points), _coordinate_dofs(_cell_type->dim()), _degree(1),
       _mpi_comm(comm), _ghost_mode("none")
@@ -174,7 +174,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-    : common::Variable(mesh.name(), mesh.label()),
+    : common::Variable(mesh.name()),
       _cell_type(CellType::create(mesh._cell_type->cell_type())),
       _topology(mesh._topology), _geometry(mesh._geometry),
       _coordinate_dofs(mesh._coordinate_dofs), _degree(mesh._degree),
@@ -217,7 +217,7 @@ Mesh& Mesh::operator=(const Mesh& mesh)
   _ghost_mode = mesh._ghost_mode;
 
   // Rename
-  rename(mesh.name(), mesh.label());
+  rename(mesh.name());
 
   return *this;
 }

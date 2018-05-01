@@ -67,8 +67,7 @@ class _InterfaceExpression(cpp.function.Expression):
 
 
 class BaseExpression(ufl.Coefficient):
-    def __init__(self, cell=None, element=None, domain=None, name=None,
-                 label=None):
+    def __init__(self, cell=None, element=None, domain=None, name=None):
 
         # Some messy cell/domain handling for compatibility, will be
         # straightened out later
@@ -90,8 +89,7 @@ class BaseExpression(ufl.Coefficient):
         ufl.Coefficient.__init__(self, ufl_function_space, count=self.id())
 
         name = name or "f_" + str(ufl.Coefficient.count(self))
-        label = label or "User defined expression"
-        self._cpp_object.rename(name, label)
+        self._cpp_object.rename(name)
 
     def ufl_evaluate(self, x, component, derivatives):
         """Function used by ufl to evaluate the Expression"""
@@ -209,9 +207,6 @@ class BaseExpression(ufl.Coefficient):
     def name(self):
         return self._cpp_object.name()
 
-    def label(self):
-        return self._cpp_object.label()
-
     def __str__(self):
         return self._cpp_object.name()
 
@@ -236,7 +231,6 @@ class UserExpression(BaseExpression):
         cell = kwargs.pop("cell", None)
         domain = kwargs.pop("domain", None)
         name = kwargs.pop("name", None)
-        label = kwargs.pop("label", None)
         # mpi_comm = kwargs.pop("mpi_comm", None)
         if (len(kwargs) > 0):
             raise RuntimeError("Invalid keyword argument")
@@ -256,7 +250,7 @@ class UserExpression(BaseExpression):
 
         self._cpp_object = _InterfaceExpression(self, value_shape)
         BaseExpression.__init__(self, cell=cell, element=element, domain=domain,
-                                name=name, label=label)
+                                name=name)
 
 
 class ExpressionParameters(object):
@@ -303,7 +297,6 @@ class CompiledExpression(BaseExpression):
         cell = kwargs.pop("cell", None)
         domain = kwargs.pop("domain", None)
         name = kwargs.pop("name", None)
-        label = kwargs.pop("label", None)
         # mpi_comm = kwargs.pop("mpi_comm", None)
 
         if not isinstance(cpp_module, cpp.function.Expression):
@@ -334,7 +327,7 @@ class CompiledExpression(BaseExpression):
                                       value_shape=value_shape)
 
         BaseExpression.__init__(self, cell=cell, element=element, domain=domain,
-                                name=name, label=label)
+                                name=name)
 
     def __getattr__(self, name):
         if hasattr(self._cpp_object, name):
@@ -362,7 +355,6 @@ class Expression(BaseExpression):
         cell = kwargs.pop("cell", None)
         domain = kwargs.pop("domain", None)
         name = kwargs.pop("name", None)
-        label = kwargs.pop("label", None)
         # FIXME: feed mpi_comm through to JIT
         # mpi_comm = kwargs.pop("mpi_comm", None)
 
@@ -399,7 +391,7 @@ class Expression(BaseExpression):
         self._cppcode = cpp_code
 
         BaseExpression.__init__(self, cell=cell, element=element, domain=domain,
-                                name=name, label=label)
+                                name=name)
 
     def __getattr__(self, name):
         "Pass attributes through to (JIT compiled) Expression object"

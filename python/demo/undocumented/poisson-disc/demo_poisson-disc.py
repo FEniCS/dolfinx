@@ -86,7 +86,7 @@ def compute_rates():
                 prevh = h
 
                 # Save solution to file
-                u.rename('u', 'u')
+                u.rename('u')
 
                 if MPI.size(MPI.comm_world) > 1 and encoding == XDMFFile.Encoding.ASCII:
                     print("XDMF file output not supported in parallel without HDF5")
