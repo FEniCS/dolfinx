@@ -38,7 +38,6 @@ void common(py::module& m)
                                                         "Variable base class")
       .def("id", &dolfin::common::Variable::id)
       .def("name", &dolfin::common::Variable::name)
-      .def("label", &dolfin::common::Variable::label)
       .def("rename", &dolfin::common::Variable::rename)
       .def_readwrite("parameters", &dolfin::common::Variable::parameters);
 

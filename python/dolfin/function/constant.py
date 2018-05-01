@@ -73,7 +73,7 @@ class Constant(ufl.Coefficient):
 
         # Set name as given or automatic
         name = name or "f_%d" % self.count()
-        self.rename(name, "a Constant")
+        self.rename(name)
 
     def assign(self, x):
         if isinstance(x, Constant):
@@ -98,8 +98,8 @@ class Constant(ufl.Coefficient):
     def name(self):
         return self._cpp_object.name()
 
-    def rename(self, name, s):
-        self._cpp_object.rename(name, s)
+    def rename(self, name):
+        self._cpp_object.rename(name)
 
     def __float__(self):
         # Overriding UFL operator in this particular case.

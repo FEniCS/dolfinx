@@ -170,6 +170,57 @@ void fem::init_monolithic(la::PETScMatrix& A,
   // std::cout << "  Init parent matrix" << std::endl;
   A.init(pattern);
   // std::cout << "  Post init parent matrix" << std::endl;
+
+  // Build list of row and column index maps (over each block)
+  std::array<std::vector<const common::IndexMap*>, 2> index_maps;
+  for (std::size_t i = 0; i < a.size(); ++i)
+  {
+    auto map = a[i][0]->function_space(0)->dofmap()->index_map();
+    index_maps[0].push_back(map.get());
+  }
+  for (std::size_t i = 0; i < a[0].size(); ++i)
+  {
+    auto map = a[0][i]->function_space(1)->dofmap()->index_map();
+    index_maps[1].push_back(map.get());
+  }
+
+  // Create row and column local-to-global maps to attach to matrix
+  std::array<std::vector<PetscInt>, 2> _maps;
+  for (std::size_t i = 0; i < a.size(); ++i)
+  {
+    auto map = a[i][0]->function_space(0)->dofmap()->index_map();
+    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL); ++k)
+    {
+      auto index_k = map->local_to_global(k);
+      std::size_t index = get_global_index(index_maps[0], i, index_k);
+      _maps[0].push_back(index);
+    }
+  }
+  for (std::size_t i = 0; i < a[0].size(); ++i)
+  {
+    auto map = a[0][i]->function_space(1)->dofmap()->index_map();
+    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL); ++k)
+    {
+      auto index_k = map->local_to_global(k);
+      std::size_t index = get_global_index(index_maps[1], i, index_k);
+      _maps[1].push_back(index);
+    }
+  }
+
+  // Create PETSc local-to-global map/index sets and attach to matrix
+  ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
+  ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[0].size(),
+                               _maps[0].data(), PETSC_COPY_VALUES,
+                               &petsc_local_to_global0);
+  ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[1].size(),
+                               _maps[1].data(), PETSC_COPY_VALUES,
+                               &petsc_local_to_global1);
+  MatSetLocalToGlobalMapping(A.mat(), petsc_local_to_global0,
+                             petsc_local_to_global1);
+
+  // Clean up local-to-global maps
+  ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
+  ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
 }
 //-----------------------------------------------------------------------------
 void fem::init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L)

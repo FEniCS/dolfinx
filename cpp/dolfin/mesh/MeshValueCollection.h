@@ -180,7 +180,7 @@ private:
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
                                             std::size_t dim)
-    : common::Variable("m", "unnamed MeshValueCollection"), _mesh(mesh),
+    : common::Variable("m"), _mesh(mesh),
       _dim(dim)
 {
   // Do nothing
@@ -189,7 +189,7 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(
     const MeshFunction<T>& mesh_function)
-    : common::Variable("m", "unnamed MeshValueCollection"),
+    : common::Variable("m"),
       _mesh(mesh_function.mesh()), _dim(mesh_function.dim())
 {
   assert(_mesh);

@@ -209,7 +209,7 @@ template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
                               const MeshValueCollection<T>& value_collection,
                               const T& default_value)
-    : common::Variable("f", "unnamed MeshFunction"), _mesh(mesh),
+    : common::Variable("f"), _mesh(mesh),
       _dim(value_collection.dim())
 {
   assert(_mesh);
