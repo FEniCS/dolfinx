@@ -20,6 +20,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshGeometry.h>
 #include <dolfin/mesh/MeshIterator.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshQuality.h>
 #include <dolfin/mesh/MeshTopology.h>
 #include <dolfin/mesh/MeshValueCollection.h>
@@ -59,6 +60,12 @@ void mesh(py::module& m)
       .def("string2type", &dolfin::mesh::CellType::string2type)
       .def("cell_type", &dolfin::mesh::CellType::cell_type)
       .def("description", &dolfin::mesh::CellType::description);
+
+  // dolfin::mesh::GhostMode enums
+  py::enum_<dolfin::mesh::GhostMode>(m, "GhostMode")
+          .value("none", dolfin::mesh::GhostMode::none)
+          .value("shared_facet", dolfin::mesh::GhostMode::shared_facet)
+          .value("shared_vertex", dolfin::mesh::GhostMode::shared_vertex);
 
   // dolfin::mesh::CoordinateDofs class
   py::class_<dolfin::mesh::CoordinateDofs,

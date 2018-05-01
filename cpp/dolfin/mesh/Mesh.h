@@ -34,6 +34,7 @@ class Function;
 
 namespace mesh
 {
+enum class GhostMode : int;
 class MeshEntity;
 
 /// A _Mesh_ consists of a set of connected and numbered mesh entities.
@@ -317,11 +318,11 @@ public:
   /// WARNING: the interface may change in future without
   /// deprecation; the method is now intended for internal
   /// library use.
-  std::string get_ghost_mode() const;
+  mesh::GhostMode get_ghost_mode() const;
 
   // FIXME: Remove - should be set at construction
   /// Set ghost mode
-  void set_ghost_mode(std::string mode);
+  void set_ghost_mode(const mesh::GhostMode mode);
 
   /// Get coordinate dofs for all local cells
   const CoordinateDofs& coordinate_dofs() const { return _coordinate_dofs; }
@@ -353,7 +354,7 @@ private:
   dolfin::MPI::Comm _mpi_comm;
 
   // Ghost mode used for partitioning
-  std::string _ghost_mode;
+  GhostMode _ghost_mode;
 };
 } // namespace mesh
 } // namespace dolfin

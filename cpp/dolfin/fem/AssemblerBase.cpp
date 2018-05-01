@@ -20,6 +20,7 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include <memory>
 #include <vector>
 
@@ -51,8 +52,9 @@ void AssemblerBase::check(const Form& a)
   if (a.integrals().num_interior_facet_integrals() > 0
       and MPI::size(mesh.mpi_comm()) > 1)
   {
-    std::string ghost_mode = mesh.get_ghost_mode();
-    if (!(ghost_mode == "shared_vertex" or ghost_mode == "shared_facet"))
+    mesh::GhostMode ghost_mode = mesh.get_ghost_mode();
+    if (!(ghost_mode == mesh::GhostMode::shared_vertex
+          or ghost_mode == mesh::GhostMode::shared_facet))
     {
       throw std::runtime_error(
           "Incorrect mesh ghost mode.  Expected \"shared_vertex\" or "

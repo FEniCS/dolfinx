@@ -23,7 +23,8 @@ public:
   /// Create mesh of unit disc for testing quadratic geometry
   /// @param n
   ///   number of layers
-  static mesh::Mesh create(MPI_Comm comm, std::size_t n);
+  static mesh::Mesh create(MPI_Comm comm, std::size_t n,
+                           const mesh::GhostMode ghost_mode);
 };
 } // namespace generation
 } // namespace dolfin

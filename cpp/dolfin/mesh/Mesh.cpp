@@ -31,7 +31,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
     : common::Variable("mesh"),
       _cell_type(mesh::CellType::create(type)), _topology(_cell_type->dim()),
       _geometry(points), _coordinate_dofs(_cell_type->dim()), _degree(1),
-      _mpi_comm(comm), _ghost_mode("none")
+      _mpi_comm(comm), _ghost_mode(mesh::GhostMode::none)
 {
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
@@ -395,11 +395,13 @@ std::string Mesh::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string Mesh::get_ghost_mode() const { return _ghost_mode; }
-//-----------------------------------------------------------------------------
-void Mesh::set_ghost_mode(std::string mode)
+mesh::GhostMode Mesh::get_ghost_mode() const
 {
-  assert(mode == "none" or mode == "shared_vertex" or mode == "shared_facet");
+  return _ghost_mode;
+}
+//-----------------------------------------------------------------------------
+void Mesh::set_ghost_mode(const GhostMode mode)
+{
   _ghost_mode = mode;
 }
 //-----------------------------------------------------------------------------
