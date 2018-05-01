@@ -424,8 +424,7 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
   const std::size_t mpi_size = MPI::size(comm);
   out_values.resize(mpi_size);
   for (std::size_t i = 0; i < mpi_size; ++i)
-    std::copy(out_vec.data() + offsets[i], out_vec.data() + offsets[i + 1],
-              out_values[i].begin());
+    out_values[i].assign(out_vec.data() + offsets[i], out_vec.data() + offsets[i + 1]);
 #else
   assert(in_values.size() == 1);
   out_values = in_values;
