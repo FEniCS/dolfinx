@@ -107,6 +107,13 @@ public:
   /// Set a barrier (synchronization point)
   static void barrier(MPI_Comm comm);
 
+ private:
+  template <typename T>
+  static void all_to_all_common(MPI_Comm comm,
+                                const std::vector<std::vector<T>>& in_values,
+                                std::vector<T>& out_values,
+                                std::vector<std::uint32_t>& offsets);
+ public:
   /// Send in_values[p0] to process p0 and receive values from
   /// process p1 in out_values[p1]
   template <typename T>
@@ -335,11 +342,10 @@ void dolfin::MPI::broadcast(MPI_Comm comm, T& value, std::uint32_t broadcaster)
 }
 //---------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::all_to_all(MPI_Comm comm,
-                             const std::vector<std::vector<T>>& in_values,
-                             std::vector<std::vector<T>>& out_values)
+void dolfin::MPI::all_to_all_common(
+    MPI_Comm comm, const std::vector<std::vector<T>>& in_values,
+    std::vector<T>& out_values, std::vector<std::uint32_t>& local_data_offsets)
 {
-#ifdef HAS_MPI
   const std::size_t comm_size = MPI::size(comm);
   const std::size_t comm_rank = MPI::rank(comm);
   assert(in_values.size() == comm_size);
@@ -373,92 +379,7 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
       // Flatten data
       std::copy(in_values[p].begin(), in_values[p].end(),
                 data_send.begin() + data_offsets[p * 2]);
-      // Send size and offset from remote (if > 0)
-      MPI_Put(data_offsets.data() + p * 2, 2, MPI_INT, p, comm_rank * 2, 2,
-              MPI_INT, iwin);
-    }
-  }
-  MPI_Win_fence(0, iwin);
-  MPI_Win_free(&iwin);
-
-  // Now get the actual data
-  // Calculate local offsets and allocate receiving vector
-  std::vector<int> local_data_offsets = {0};
-  for (std::size_t p = 0; p < comm_size; ++p)
-    local_data_offsets.push_back(local_data_offsets.back()
-                                 + remote_data_offsets[p * 2 + 1]);
-  std::vector<T> data_recv(local_data_offsets.back());
-
-  MPI_Win Twin;
-  MPI_Win_create(data_send.data(), sizeof(T) * data_send.size(), sizeof(T),
-                 MPI_INFO_NULL, comm, &Twin);
-  MPI_Win_fence(0, Twin);
-  for (std::size_t p = 0; p < comm_size; ++p)
-  {
-    const int data_size = remote_data_offsets[p * 2 + 1];
-    if (data_size > 0)
-      MPI_Get(data_recv.data() + local_data_offsets[p], data_size,
-              mpi_type<T>(), p, remote_data_offsets[p * 2], data_size,
-              mpi_type<T>(), Twin);
-  }
-  MPI_Win_fence(0, Twin);
-  MPI_Win_free(&Twin);
-
-  // Repack data
-  out_values.resize(comm_size);
-  for (std::size_t p = 0; p < comm_size; ++p)
-  {
-    out_values[p].resize(remote_data_offsets[p * 2 + 1]);
-    std::copy(data_recv.begin() + local_data_offsets[p],
-              data_recv.begin() + local_data_offsets[p + 1],
-              out_values[p].begin());
-  }
-#else
-  assert(in_values.size() == 1);
-  out_values = in_values;
-#endif
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void dolfin::MPI::all_to_all(MPI_Comm comm,
-                             const std::vector<std::vector<T>>& in_values,
-                             std::vector<T>& out_values)
-{
-#ifdef HAS_MPI
-  const std::size_t comm_size = MPI::size(comm);
-  const std::size_t comm_rank = MPI::rank(comm);
-  assert(in_values.size() == comm_size);
-
-  // Create a memory area to exchange size information
-  // arranged as {offset, size} for each process
-  std::vector<int> data_offsets;
-  data_offsets.reserve(comm_size * 2);
-  int current_offset = 0;
-  for (std::size_t p = 0; p < comm_size; ++p)
-  {
-    data_offsets.push_back(current_offset);
-    data_offsets.push_back(in_values[p].size());
-    current_offset += data_offsets.back();
-  }
-
-  // Flattened data
-  std::vector<T> data_send(current_offset);
-  // Send offsets to targets that have data to transfer
-  std::vector<int> remote_data_offsets(comm_size * 2, 0);
-  MPI_Win iwin;
-  MPI_Win_create(remote_data_offsets.data(),
-                 sizeof(int) * remote_data_offsets.size(), sizeof(int),
-                 MPI_INFO_NULL, comm, &iwin);
-  MPI_Win_fence(0, iwin);
-
-  for (std::size_t p = 0; p < comm_size; ++p)
-  {
-    if (in_values[p].size() > 0)
-    {
-      // Flatten data
-      std::copy(in_values[p].begin(), in_values[p].end(),
-                data_send.begin() + data_offsets[p * 2]);
-      // Send size and offset from remote (if > 0)
+      // Meanwhile, send size and offset from remote (if > 0)
       MPI_Put(data_offsets.data() + p * 2, 2, MPI_INT, p, comm_rank * 2, 2,
               MPI_INT, iwin);
     }
@@ -468,7 +389,7 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
 
   // Now get the actual data
   // Get local offsets and resize output vector
-  std::vector<int> local_data_offsets = {0};
+  local_data_offsets = {0};
   for (std::size_t p = 0; p < comm_size; ++p)
     local_data_offsets.push_back(local_data_offsets.back()
                                  + remote_data_offsets[p * 2 + 1]);
@@ -488,7 +409,37 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
   }
   MPI_Win_fence(0, Twin);
   MPI_Win_free(&Twin);
+}
+//-----------------------------------------------------------------------------
 
+template <typename T>
+void dolfin::MPI::all_to_all(MPI_Comm comm,
+                             const std::vector<std::vector<T>>& in_values,
+                             std::vector<std::vector<T>>& out_values)
+{
+#ifdef HAS_MPI
+  std::vector<T> out_vec;
+  std::vector<std::uint32_t> offsets;
+  all_to_all_common(comm, in_values, out_vec, offsets);
+  const std::size_t mpi_size = MPI::size(comm);
+  out_values.resize(mpi_size);
+  for (std::size_t i = 0; i < mpi_size; ++i)
+    std::copy(out_vec.data() + offsets[i], out_vec.data() + offsets[i + 1],
+              out_values[i].begin());
+#else
+  assert(in_values.size() == 1);
+  out_values = in_values;
+#endif
+}
+//---------------------------------------------------------------------------
+template <typename T>
+void dolfin::MPI::all_to_all(MPI_Comm comm,
+                             const std::vector<std::vector<T>>& in_values,
+                             std::vector<T>& out_values)
+{
+#ifdef HAS_MPI
+  std::vector<std::uint32_t> offsets;
+  all_to_all_common(comm, in_values, out_values, offsets);
 #else
   assert(in_values.size() == 1);
   out_values = in_values[0];

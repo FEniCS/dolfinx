@@ -834,9 +834,10 @@ MeshPartitioning::distribute_points(
     }
 
     const std::size_t local_size = (local_index - local_index_0) * gdim;
-    MPI_Put(send_coord_data.data() + local_index_0 * gdim, local_size,
-            MPI_DOUBLE, p, remote_offsets[p] * gdim, local_size, MPI_DOUBLE,
-            win);
+    if (local_size > 0)
+      MPI_Put(send_coord_data.data() + local_index_0 * gdim, local_size,
+              MPI_DOUBLE, p, remote_offsets[p] * gdim, local_size, MPI_DOUBLE,
+              win);
   }
 
   // Meanwhile, redistribute received_point_indices as point sharing
