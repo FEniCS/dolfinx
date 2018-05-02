@@ -823,21 +823,23 @@ MeshPartitioning::distribute_points(
   std::size_t local_index = 0;
   for (int p = 0; p < mpi_size; ++p)
   {
-    const std::size_t local_index_0 = local_index;
-    for (const auto& q : received_point_indices[p])
+    if (received_point_indices[p].size() > 0)
     {
-      assert(q >= local_point_range.first && q < local_point_range.second);
+      const std::size_t local_index_0 = local_index;
+      for (const auto& q : received_point_indices[p])
+      {
+        assert(q >= local_point_range.first && q < local_point_range.second);
 
-      const std::size_t location = q - local_point_range.first;
-      send_coord_data.row(local_index) = points.row(location);
-      ++local_index;
-    }
+        const std::size_t location = q - local_point_range.first;
+        send_coord_data.row(local_index) = points.row(location);
+        ++local_index;
+      }
 
-    const std::size_t local_size = (local_index - local_index_0) * gdim;
-    if (local_size > 0)
+      const std::size_t local_size = (local_index - local_index_0) * gdim;
       MPI_Put(send_coord_data.data() + local_index_0 * gdim, local_size,
               MPI_DOUBLE, p, remote_offsets[p] * gdim, local_size, MPI_DOUBLE,
               win);
+    }
   }
 
   // Meanwhile, redistribute received_point_indices as point sharing
