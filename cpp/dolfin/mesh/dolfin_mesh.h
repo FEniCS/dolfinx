@@ -16,7 +16,6 @@ namespace dolfin
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Face.h>
 #include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/LocalMeshValueCollection.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshConnectivity.h>
 #include <dolfin/mesh/MeshEntity.h>
