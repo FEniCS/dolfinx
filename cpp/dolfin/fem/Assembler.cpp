@@ -203,7 +203,10 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           MPI::barrier(MPI_COMM_WORLD);
           std::cout << "Assemble: " << i << ", " << j << std::endl;
           MPI::barrier(MPI_COMM_WORLD);
-          MatSetOption(A.mat(), MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+          // MatSetOption(A.mat(), MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+          //
+
+          // if (MPI::rank(MPI_COMM_WORLD) == 0)
           this->assemble(mat, *_a[i][j], _bcs);
 
           // Restore sub-matrix and destroy index sets

@@ -143,6 +143,7 @@ SparsityPattern::SparsityPattern(
       {
         std::cout << "Col offset: " << col_global_offset << std::endl;
       }
+
       for (std::size_t k = 0; k < p->_diagonal.size(); ++k)
       {
         // Diagonal block
@@ -173,8 +174,8 @@ SparsityPattern::SparsityPattern(
       }
 
       // Increment global column offset
-      // col_global_offset
-      //    += p->_index_maps[1]->size(common::IndexMap::MapSize::OWNED);
+      col_global_offset
+         += p->_index_maps[1]->size(common::IndexMap::MapSize::OWNED);
     }
 
     // Increment local row offset
