@@ -7,7 +7,6 @@
 #pragma once
 
 #include "DistributedMeshTools.h"
-#include "LocalMeshValueCollection.h"
 #include "Mesh.h"
 #include "PartitionData.h"
 #include <cstdint>
