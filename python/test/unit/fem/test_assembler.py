@@ -94,7 +94,7 @@ def xtest_matrix_assembly_bc():
 
 #@skip_in_parallel
 def test_matrix_assembly_block():
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 4)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
 
     V0 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
     V1 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
@@ -106,6 +106,7 @@ def test_matrix_assembly_block():
         V0), dolfin.function.argument.TestFunction(V1)
     f = dolfin.function.constant.Constant(1.0)
     g = dolfin.function.constant.Constant(-3.0)
+    zero = dolfin.function.constant.Constant(0.0)
 
     a00 = u*v*dx
     a01 = v*p * dx
@@ -125,7 +126,7 @@ def test_matrix_assembly_block():
 
     # Create assembler
     assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]],
-                                                [L0, L1], [bc])
+                                                [L0, L1], [])
 
     print("A--------------------")
 
@@ -133,26 +134,25 @@ def test_matrix_assembly_block():
 
     A, b = assembler.assemble(
        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    # A.mat().view()
-    b.vec().view()
-    #Anorm = A.mat().norm()
-    bnorm = b.vec().norm()
+    A.mat().view()
+    # #b.vec().view()
+    Anorm = A.mat().norm()
+    # bnorm = b.vec().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
-        #print("Matrix Norm (block, non-nest)", Anorm)
-        print("Vector Norm (block, non-nest)", bnorm)
+        print("Matrix Norm (block, non-nest)", Anorm)
+        #print("Vector Norm (block, non-nest)", bnorm)
 
     #return
     dolfin.MPI.barrier(mesh.mpi_comm())
     print("B--------------------")
     dolfin.MPI.barrier(mesh.mpi_comm())
 
-
     # Nested (MatNest)
 
-    dolfin.MPI.barrier(mesh.mpi_comm())
-    A, b = assembler.assemble(
-        mat_type=dolfin.cpp.fem.Assembler.BlockType.nested)
-    dolfin.MPI.barrier(mesh.mpi_comm())
+    # dolfin.MPI.barrier(mesh.mpi_comm())
+    # A, b = assembler.assemble(
+    #     mat_type=dolfin.cpp.fem.Assembler.BlockType.nested)
+    # dolfin.MPI.barrier(mesh.mpi_comm())
 
     # A.mat().view()
     # b.vec().view()
@@ -197,20 +197,20 @@ def test_matrix_assembly_block():
     dolfin.MPI.barrier(mesh.mpi_comm())
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
-    assembler1 = dolfin.fem.assembling.Assembler([[a]], [L], [bc])
+    assembler1 = dolfin.fem.assembling.Assembler([[a]], [L], [])
 
     dolfin.MPI.barrier(mesh.mpi_comm())
     A, b = assembler1.assemble(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
     dolfin.MPI.barrier(mesh.mpi_comm())
 
-    # A.mat().view()
-    b.vec().view()
-    #Anorm = A.mat().norm()
-    bnorm = b.vec().norm()
+    A.mat().view()
+    #b.vec().view()
+    Anorm = A.mat().norm()
+    #bnorm = b.vec().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
-        #print("Matrix norm (monolithic)", Anorm)
-        print("Vector Norm (monolithic)", bnorm)
+        print("Matrix norm (monolithic)", Anorm)
+        #print("Vector Norm (monolithic)", bnorm)
 
     # Reference assembler
     # A, b = dolfin.fem.assembling.assemble_system(a, L, bc)

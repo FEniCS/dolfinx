@@ -20,6 +20,8 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <string>
 
+#include <petscis.h>
+
 using namespace dolfin;
 using namespace dolfin::fem;
 
@@ -42,7 +44,6 @@ Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 {
-  return;
   // Check if matrix should be nested
   assert(!_a.empty());
   const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
@@ -94,6 +95,24 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   }
   else if (block_matrix)
   {
+    MPI::barrier(MPI_COMM_WORLD);
+    std::cout << "PPPPPPPPPPPPPPPPPP: " << std::endl;
+    ISLocalToGlobalMapping rmap, cmap;
+    MatGetLocalToGlobalMapping(A.mat(), &rmap, &cmap);
+
+    if (MPI::rank(MPI_COMM_WORLD) == 0)
+      ISLocalToGlobalMappingView(rmap, PETSC_VIEWER_STDOUT_SELF);
+
+    std::cout << "QQQQPPPPPPPPPPPPPPPPP: " << std::endl;
+    MPI::barrier(MPI_COMM_WORLD);
+    MPI_Comm mpi_comm = MPI_COMM_NULL;
+    PetscObjectGetComm((PetscObject)rmap, &mpi_comm);
+    std::cout << "Comm size: " << MPI::size(mpi_comm);
+    MPI::barrier(MPI_COMM_WORLD);
+
+    // exit(0);
+
+    MPI::barrier(MPI_COMM_WORLD);
     std::int64_t offset_row = 0;
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
@@ -103,9 +122,17 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
       {
         if (_a[i][j])
         {
+          MPI::barrier(MPI_COMM_WORLD);
+          MPI::barrier(MPI_COMM_WORLD);
+          std::cout << "--- AAAAAAAAAAAAAAAAa: " << i << ", " << j << std::endl;
+          MPI::barrier(MPI_COMM_WORLD);
+          MPI::barrier(MPI_COMM_WORLD);
+
           // Build index set for block
           auto map0 = _a[i][j]->function_space(0)->dofmap()->index_map();
           auto map1 = _a[i][j]->function_space(1)->dofmap()->index_map();
+          // auto map0_size = map0->size(common::IndexMap::MapSize::OWNED);
+          // auto map1_size = map1->size(common::IndexMap::MapSize::OWNED);
           auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
           auto map1_size = map1->size(common::IndexMap::MapSize::ALL);
 
@@ -119,13 +146,64 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
                         index0.data(), PETSC_COPY_VALUES, &is0);
           ISCreateBlock(MPI_COMM_SELF, map1->block_size(), index1.size(),
                         index1.data(), PETSC_COPY_VALUES, &is1);
+          // if (MPI::rank(MPI_COMM_WORLD) == 0)
+          // {
+          //   std::cout << "Field: " << i << ", " << j << std::endl;
+          //   std::cout << "  Rows:" << std::endl;
+          //   for (auto x : index0)
+          //     std::cout << "   " << x << std::endl;
+          //   std::cout << "  Cols:" << std::endl;
+          //   for (auto x : index1)
+          //     std::cout << "   " << x << std::endl;
+          // }
 
           // Get sub-matrix (using local indices for is0 and is1)
           Mat subA;
+          MPI::barrier(MPI_COMM_WORLD);
+          // std::cout << "Get block: " << MPI::rank(MPI_COMM_WORLD) <<
+          // std::endl;
           MatGetLocalSubMatrix(A.mat(), is0, is1, &subA);
+          // std::cout << "Post get block: " << MPI::rank(MPI_COMM_WORLD)
+          //           << std::endl;
+          MPI::barrier(MPI_COMM_WORLD);
+
+          ISLocalToGlobalMapping rmap, cmap;
+          MatGetLocalToGlobalMapping(subA, &rmap, &cmap);
+          if (MPI::rank(MPI_COMM_WORLD) == 0)
+          {
+            std::cout << "**************: " << i << ", " << j << std::endl;
+            ISLocalToGlobalMappingView(rmap, PETSC_VIEWER_STDOUT_SELF);
+            std::cout << "+++++ " << std::endl;
+            ISLocalToGlobalMappingView(cmap, PETSC_VIEWER_STDOUT_SELF);
+            std::cout << "------------------ " << std::endl;
+          }
+          MPI::barrier(MPI_COMM_WORLD);
 
           // Assemble block
           la::PETScMatrix mat(subA);
+          // MPI::barrier(MPI_COMM_WORLD);
+          // if (MPI::rank(MPI_COMM_WORLD) == 0)
+          // {
+          //   std::cout << "Debug data" << std::endl;
+          //   auto range0 = mat.local_range(0);
+          //   std::cout << "Debug data (a)" << std::endl;
+          //   //auto range1 = mat.local_range(1);
+          //   std::cout << "Debug data (b)" << std::endl;
+          //   std::cout << "Field, range0: " << i << ", " << j << ", "
+          //             << range0[0] << ", " << range0[1] << std::endl;
+          //   // std::cout << "Range1: " << range1[0] << ", " << range1[1]
+          //   //           << std::endl;
+          //   std::cout << "End debug data" << std::endl;
+          // }
+
+          // MPI::barrier(MPI_COMM_WORLD);
+
+          // std::cout << "Assemble: " << MPI::rank(MPI_COMM_WORLD) <<
+          // std::endl;
+          MPI::barrier(MPI_COMM_WORLD);
+          std::cout << "Assemble: " << i << ", " << j << std::endl;
+          MPI::barrier(MPI_COMM_WORLD);
+          MatSetOption(A.mat(), MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
           this->assemble(mat, *_a[i][j], _bcs);
 
           // Restore sub-matrix and destroy index sets
@@ -146,6 +224,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 
       auto map0 = _a[i][0]->function_space(0)->dofmap()->index_map();
       auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
+      // auto map0_size = map0->size(common::IndexMap::MapSize::OWNED);
       offset_row += map0_size;
     }
   }
@@ -263,7 +342,7 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
             map->size(common::IndexMap::MapSize::ALL));
         for (std::size_t k = 0; k < local_to_global_map.size(); ++k)
         {
-          //local_to_global_map[k] = fem::get_global_index(index_maps, i, k);
+          // local_to_global_map[k] = fem::get_global_index(index_maps, i, k);
           local_to_global_map[k] = map->local_to_global(k);
           // if (MPI::rank(MPI_COMM_WORLD) == 0)
           //   std::cout << "Field, global: " << i << ", "

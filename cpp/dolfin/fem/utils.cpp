@@ -184,23 +184,37 @@ void fem::init_monolithic(la::PETScMatrix& A,
   for (std::size_t i = 0; i < a.size(); ++i)
   {
     auto map = a[i][0]->function_space(0)->dofmap()->index_map();
-    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL); ++k)
+    // if (MPI::rank(A.mpi_comm()) == 2)
+    //   std::cout << "-- row: " << i << ", "
+    //             << map->size(common::IndexMap::MapSize::OWNED) << std::endl;
+    // for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::OWNED);
+    //      ++k)
+    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL);
+         ++k)
     {
       auto index_k = map->local_to_global(k);
       std::size_t index = get_global_index(index_maps[0], i, index_k);
+      if (MPI::rank(A.mpi_comm()) == 2)
+        std::cout << "l2g: " << _maps[0].size() << ", " << index << ", "
+                  << index_k << std::endl;
       _maps[0].push_back(index);
     }
   }
   for (std::size_t i = 0; i < a[0].size(); ++i)
   {
     auto map = a[0][i]->function_space(1)->dofmap()->index_map();
-    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL); ++k)
+    // for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::OWNED);
+    //      ++k)
+    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL);
+         ++k)
     {
       auto index_k = map->local_to_global(k);
       std::size_t index = get_global_index(index_maps[1], i, index_k);
       _maps[1].push_back(index);
     }
   }
+
+  // exit(0);
 
   // Create PETSc local-to-global map/index sets and attach to matrix
   ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
@@ -464,24 +478,32 @@ std::size_t
 dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
                               const unsigned int field, const unsigned int n)
 {
-  // Get process that owns index
+  // Get process that owns global index
   int owner = maps[field]->global_block_index_owner(n);
+  if (MPI::rank(MPI_COMM_WORLD) == 1)
+    std::cout << "    owning process: " << owner << std::endl;
 
-  // Processes offset
+  // Offset from lower rank processes
   std::size_t offset = 0;
-  for (int p = 0; p < owner; ++p)
+  if (owner > 0)
   {
-    // Sum over each field
     for (std::size_t j = 0; j < maps.size(); ++j)
     {
+      if (MPI::rank(MPI_COMM_WORLD) == 1)
+        std::cout << "   p off: " << maps[j]->_all_ranges[owner] << std::endl;
       if (j != field)
-        offset += maps[j]->_all_ranges[p + 1];
+      {
+        offset += maps[j]->_all_ranges[owner];
+      }
     }
   }
 
   // Local (process) offset
   for (unsigned int i = 0; i < field; ++i)
     offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner]);
+
+  // if (MPI::rank(MPI_COMM_WORLD) == 2)
+  //   std::cout << "    proc offeset (2): " << offset << std::endl;
 
   return n + offset;
 }

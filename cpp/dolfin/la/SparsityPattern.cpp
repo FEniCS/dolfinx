@@ -9,6 +9,8 @@
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 
+#include <dolfin/fem/utils.h>
+
 using namespace dolfin;
 using namespace dolfin::la;
 
@@ -81,16 +83,26 @@ SparsityPattern::SparsityPattern(
     row_local_size += (local_range[1] - local_range[0]);
   }
 
-  std::size_t main_col_global_offset = 0;
+  if (MPI::rank(MPI_COMM_WORLD) == 0)
+    std::cout << "Row offset and local size: " << row_global_offset << ", "
+              << row_local_size << std::endl;
+
+  std::size_t col_process_offset = 0;
   std::size_t col_local_size = 0;
+  std::vector<const common::IndexMap*> cmaps;
   for (std::size_t col = 0; col < patterns[0].size(); ++col)
   {
     assert(patterns[0][col]);
     assert(patterns[0][col]->_index_maps[1]);
+    cmaps.push_back(patterns[0][col]->_index_maps[1].get());
     auto local_range = patterns[0][col]->_index_maps[1]->local_range();
-    main_col_global_offset += local_range[0];
+    col_process_offset += local_range[0];
     col_local_size += (local_range[1] - local_range[0]);
   }
+
+  if (MPI::rank(MPI_COMM_WORLD) == 0)
+    std::cout << "Col offset and locale size: " << col_process_offset << ", "
+              << col_local_size << std::endl;
 
   // Iterate over block rows
   std::size_t row_local_offset = 0;
@@ -99,7 +111,7 @@ SparsityPattern::SparsityPattern(
   {
     // Increase storage for nodes
     assert(patterns[row][0]);
-    std::cout << "Row: " << row << std::endl;
+    // std::cout << "Row: " << row << std::endl;
     assert(patterns[row][0]->_index_maps[0]);
     std::size_t row_size = patterns[row][0]->_index_maps[0]->size(
         common::IndexMap::MapSize::OWNED);
@@ -112,7 +124,7 @@ SparsityPattern::SparsityPattern(
     }
 
     // Iterate over block columns of current block row
-    std::size_t col_global_offset = main_col_global_offset;
+    std::size_t col_global_offset = col_process_offset;
     for (std::size_t col = 0; col < patterns[row].size(); ++col)
     {
       // Get pattern for this block
@@ -127,6 +139,10 @@ SparsityPattern::SparsityPattern(
       }
 
       // Iterate over nodes in sparsity pattern
+      if (MPI::rank(MPI_COMM_WORLD) == 0)
+      {
+        std::cout << "Col offset: " << col_global_offset << std::endl;
+      }
       for (std::size_t k = 0; k < p->_diagonal.size(); ++k)
       {
         // Diagonal block
@@ -141,24 +157,37 @@ SparsityPattern::SparsityPattern(
         if (distributed)
         {
           std::vector<std::size_t> edges1 = p->_off_diagonal[k].set();
-          std::transform(edges1.begin(), edges1.end(), edges1.begin(),
-                         std::bind2nd(std::plus<double>(), col_global_offset));
-          assert(k + row_local_offset < this->_off_diagonal.size());
-          this->_off_diagonal[k + row_local_offset].insert(edges1.begin(),
-                                                           edges1.end());
+          for (std::size_t& c : edges1)
+          {
+            // Get new index
+            std::size_t c_new = fem::get_global_index(cmaps, col, c);
+            this->_off_diagonal[k + row_local_offset].insert(c_new);
+          }
+          // std::transform(edges1.begin(), edges1.end(), edges1.begin(),
+          //                std::bind2nd(std::plus<double>(),
+          //                col_global_offset));
+          // assert(k + row_local_offset < this->_off_diagonal.size());
+          // this->_off_diagonal[k + row_local_offset].insert(edges1.begin(),
+          //                                                  edges1.end());
         }
       }
 
       // Increment global column offset
-      col_global_offset
-          += p->_index_maps[1]->size(common::IndexMap::MapSize::OWNED);
+      // col_global_offset
+      //    += p->_index_maps[1]->size(common::IndexMap::MapSize::OWNED);
     }
 
     // Increment local row offset
     row_local_offset += row_size;
   }
 
-  // FIXME: Need to add unowned entries
+  if (MPI::rank(MPI_COMM_WORLD) == 0)
+  {
+    for (auto c : _off_diagonal[0])
+      std::cout << "Col: " << c << std::endl;
+  }
+
+  // FIXME: Need to add unowned entries?
 
   // Intialise common::IndexMaps for merged pattern
   auto p00 = patterns[0][0];
@@ -167,6 +196,7 @@ SparsityPattern::SparsityPattern(
       = std::make_shared<common::IndexMap>(p00->mpi_comm(), row_local_size, 1);
   _index_maps[1]
       = std::make_shared<common::IndexMap>(p00->mpi_comm(), col_local_size, 1);
+  //exit(0);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
