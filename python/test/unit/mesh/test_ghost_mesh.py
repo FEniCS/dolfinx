@@ -70,7 +70,7 @@ def test_ghost_connectivities(mode):
     meshG.init(1, 2)
 
     # Reference mesh, not ghosted, not parallel
-    meshR = UnitSquareMesh(MPI.comm_self, 4, 4, ghost_mode=mode)
+    meshR = UnitSquareMesh(MPI.comm_self, 4, 4, ghost_mode=cpp.mesh.GhostMode.none)
     meshR.init(1, 2)
 
     # Create reference mapping from facet midpoint to cell midpoint
