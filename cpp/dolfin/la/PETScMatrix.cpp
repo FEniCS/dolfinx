@@ -272,8 +272,7 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
 bool PETScMatrix::empty() const
 {
   auto sizes = la::PETScBaseMatrix::size();
-  assert((sizes[0] < 1 and sizes[1] < 1)
-                or (sizes[0] > 0 and sizes[1] > 0));
+  assert((sizes[0] < 1 and sizes[1] < 1) or (sizes[0] > 0 and sizes[1] > 0));
   return (sizes[0] < 1) and (sizes[1] < 1);
 }
 //-----------------------------------------------------------------------------

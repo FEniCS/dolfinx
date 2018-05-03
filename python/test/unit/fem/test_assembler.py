@@ -126,7 +126,7 @@ def test_matrix_assembly_block():
 
     # Create assembler
     assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]],
-                                                [L0, L1], [])
+                                                [L0, L1], [bc])
 
     print("A--------------------")
 
@@ -137,12 +137,12 @@ def test_matrix_assembly_block():
     A.mat().view()
     # #b.vec().view()
     Anorm = A.mat().norm()
-    # bnorm = b.vec().norm()
+    bnorm = b.vec().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
         print("Matrix Norm (block, non-nest)", Anorm)
-        #print("Vector Norm (block, non-nest)", bnorm)
+        print("Vector Norm (block, non-nest)", bnorm)
 
-    #return
+    # return
     dolfin.MPI.barrier(mesh.mpi_comm())
     print("B--------------------")
     dolfin.MPI.barrier(mesh.mpi_comm())
@@ -197,7 +197,7 @@ def test_matrix_assembly_block():
     dolfin.MPI.barrier(mesh.mpi_comm())
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
-    assembler1 = dolfin.fem.assembling.Assembler([[a]], [L], [])
+    assembler1 = dolfin.fem.assembling.Assembler([[a]], [L], [bc])
 
     dolfin.MPI.barrier(mesh.mpi_comm())
     A, b = assembler1.assemble(
@@ -207,10 +207,10 @@ def test_matrix_assembly_block():
     A.mat().view()
     #b.vec().view()
     Anorm = A.mat().norm()
-    #bnorm = b.vec().norm()
+    bnorm = b.vec().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
         print("Matrix norm (monolithic)", Anorm)
-        #print("Vector Norm (monolithic)", bnorm)
+        print("Vector Norm (monolithic)", bnorm)
 
     # Reference assembler
     # A, b = dolfin.fem.assembling.assemble_system(a, L, bc)

@@ -83,9 +83,9 @@ SparsityPattern::SparsityPattern(
     row_local_size += (local_range[1] - local_range[0]);
   }
 
-  if (MPI::rank(MPI_COMM_WORLD) == 0)
-    std::cout << "Row offset and local size: " << row_global_offset << ", "
-              << row_local_size << std::endl;
+  // if (MPI::rank(MPI_COMM_WORLD) == 0)
+  //   std::cout << "Row offset and local size: " << row_global_offset << ", "
+  //             << row_local_size << std::endl;
 
   std::size_t col_process_offset = 0;
   std::size_t col_local_size = 0;
@@ -100,9 +100,9 @@ SparsityPattern::SparsityPattern(
     col_local_size += (local_range[1] - local_range[0]);
   }
 
-  if (MPI::rank(MPI_COMM_WORLD) == 0)
-    std::cout << "Col offset and locale size: " << col_process_offset << ", "
-              << col_local_size << std::endl;
+  // if (MPI::rank(MPI_COMM_WORLD) == 0)
+  //   std::cout << "Col offset and locale size: " << col_process_offset << ", "
+  //             << col_local_size << std::endl;
 
   // Iterate over block rows
   std::size_t row_local_offset = 0;
@@ -139,10 +139,10 @@ SparsityPattern::SparsityPattern(
       }
 
       // Iterate over nodes in sparsity pattern
-      if (MPI::rank(MPI_COMM_WORLD) == 0)
-      {
-        std::cout << "Col offset: " << col_global_offset << std::endl;
-      }
+      // if (MPI::rank(MPI_COMM_WORLD) == 0)
+      // {
+      //   std::cout << "Col offset: " << col_global_offset << std::endl;
+      // }
 
       for (std::size_t k = 0; k < p->_diagonal.size(); ++k)
       {
@@ -182,11 +182,11 @@ SparsityPattern::SparsityPattern(
     row_local_offset += row_size;
   }
 
-  if (MPI::rank(MPI_COMM_WORLD) == 0)
-  {
-    for (auto c : _off_diagonal[0])
-      std::cout << "Col: " << c << std::endl;
-  }
+  // if (MPI::rank(MPI_COMM_WORLD) == 0)
+  // {
+  //   for (auto c : _off_diagonal[0])
+  //     std::cout << "Col: " << c << std::endl;
+  // }
 
   // FIXME: Need to add unowned entries?
 
@@ -198,6 +198,7 @@ SparsityPattern::SparsityPattern(
   _index_maps[1]
       = std::make_shared<common::IndexMap>(p00->mpi_comm(), col_local_size, 1);
   //exit(0);
+  std::cout << "*** Done" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
