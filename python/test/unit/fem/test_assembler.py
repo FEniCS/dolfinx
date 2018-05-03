@@ -92,12 +92,15 @@ def xtest_matrix_assembly_bc():
     # A.mat().view()
     # B.mat().view()
 
-#@skip_in_parallel
+
 def test_matrix_assembly_block():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
 
-    V0 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
-    V1 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
+    p0 = 2
+    p1 = 2
+
+    V0 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", p0)
+    V1 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", p1)
 
     # Define variational problem
     u, p = dolfin.function.argument.TrialFunction(
@@ -128,24 +131,23 @@ def test_matrix_assembly_block():
     assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]],
                                                 [L0, L1], [bc])
 
-    print("A--------------------")
+    # print("A--------------------")
 
     # Monolithic blocked
 
     A, b = assembler.assemble(
        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    A.mat().view()
-    # #b.vec().view()
-    Anorm = A.mat().norm()
-    bnorm = b.vec().norm()
+    # A.mat().view()
+    # b.vec().view()
+    Anorm0 = A.mat().norm()
+    bnorm0 = b.vec().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
-        print("Matrix Norm (block, non-nest)", Anorm)
-        print("Vector Norm (block, non-nest)", bnorm)
+        print("Matrix Norm (block, non-nest)", Anorm0)
+        print("Vector Norm (block, non-nest)", bnorm0)
 
-    #return
-    dolfin.MPI.barrier(mesh.mpi_comm())
-    print("B--------------------")
-    dolfin.MPI.barrier(mesh.mpi_comm())
+    # dolfin.MPI.barrier(mesh.mpi_comm())
+    # print("B--------------------")
+    # dolfin.MPI.barrier(mesh.mpi_comm())
 
     # Nested (MatNest)
 
@@ -181,8 +183,8 @@ def test_matrix_assembly_block():
 
     # Monolithic version
 
-    P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
+    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
     E = P0 * P1
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
 
@@ -204,13 +206,16 @@ def test_matrix_assembly_block():
         mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
     dolfin.MPI.barrier(mesh.mpi_comm())
 
-    A.mat().view()
-    #b.vec().view()
-    Anorm = A.mat().norm()
-    bnorm = b.vec().norm()
+    # A.mat().view()
+    # b.vec().view()
+    Anorm2 = A.mat().norm()
+    bnorm2 = b.vec().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
-        print("Matrix norm (monolithic)", Anorm)
-        print("Vector Norm (monolithic)", bnorm)
+        print("Matrix norm (monolithic)", Anorm2)
+        print("Vector Norm (monolithic)", bnorm2)
+
+    assert Anorm0 == pytest.approx(Anorm2, 1.0e-9)
+    assert bnorm0 == pytest.approx(bnorm2, 1.0e-9)
 
     # Reference assembler
     # A, b = dolfin.fem.assembling.assemble_system(a, L, bc)
@@ -226,8 +231,8 @@ def xtest_matrix_assembly_block():
     # TH = P2 * P1
     # W = dolfin.function.functionspace.FunctionSpace(mesh, TH)
 
-    P2 = dolfin.function.functionspace.VectorFunctionSpace(mesh, "Lagrange", 1)
-    P1 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 1)
+    P2 = dolfin.function.functionspace.VectorFunctionSpace(mesh, "Lagrange", 2)
+    P1 = dolfin.function.functionspace.FunctionSpace(mesh, "Lagrange", 2)
 
     # Define variational problem
     u, p = dolfin.function.argument.TrialFunction(
