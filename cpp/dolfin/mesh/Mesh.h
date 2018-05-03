@@ -98,6 +98,7 @@ public:
        const Eigen::Ref<const EigenRowArrayXXd>& points,
        const Eigen::Ref<const EigenRowArrayXXi64>& cells,
        const std::vector<std::int64_t>& global_cell_indices,
+       const GhostMode ghost_mode,
        std::uint32_t num_ghost_cells = 0);
 
   /// Copy constructor.
@@ -319,10 +320,6 @@ public:
   /// deprecation; the method is now intended for internal
   /// library use.
   mesh::GhostMode get_ghost_mode() const;
-
-  // FIXME: Remove - should be set at construction
-  /// Set ghost mode
-  void set_ghost_mode(const mesh::GhostMode mode);
 
   /// Get coordinate dofs for all local cells
   const CoordinateDofs& coordinate_dofs() const { return _coordinate_dofs; }
