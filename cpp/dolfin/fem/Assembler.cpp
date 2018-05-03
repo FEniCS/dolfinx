@@ -112,6 +112,8 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 
     // exit(0);
 
+    std::vector<std::pair<la_index_t, double>> bc_values;
+
     // MPI::barrier(MPI_COMM_WORLD);
     std::int64_t offset_row = 0;
     for (std::size_t i = 0; i < _a.size(); ++i)
@@ -142,9 +144,9 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           std::iota(index1.begin(), index1.end(), offset_col);
 
           IS is0, is1;
-          ISCreateBlock(MPI_COMM_WORLD, map0->block_size(), index0.size(),
+          ISCreateBlock(MPI_COMM_SELF, map0->block_size(), index0.size(),
                         index0.data(), PETSC_COPY_VALUES, &is0);
-          ISCreateBlock(MPI_COMM_WORLD, map1->block_size(), index1.size(),
+          ISCreateBlock(MPI_COMM_SELF, map1->block_size(), index1.size(),
                         index1.data(), PETSC_COPY_VALUES, &is1);
           // if (MPI::rank(MPI_COMM_WORLD) == 0)
           // {
@@ -176,6 +178,10 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
             std::cout << "+++++ " << std::endl;
             ISLocalToGlobalMappingView(cmap, PETSC_VIEWER_STDOUT_SELF);
             std::cout << "------------------ " << std::endl;
+            MPI_Comm mpi_comm = MPI_COMM_NULL;
+            PetscObjectGetComm((PetscObject)rmap, &mpi_comm);
+            std::cout << "map Comm size: " << MPI::size(mpi_comm) << std::endl;
+            ;
           }
           MPI::barrier(MPI_COMM_WORLD);
 
@@ -216,6 +222,41 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           // MatSetOption(A.mat(), MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
           //
 
+          // Add bcs to list for diagonal block
+          if (_a[i][j]->function_space(0) == _a[i][j]->function_space(1))
+          {
+            const PetscInt* l2g;
+            ISGetIndices(is0, &l2g);
+
+            auto space = _a[i][j]->function_space(0);
+            DirichletBC::Map boundary_values;
+            for (std::size_t i = 0; i < _bcs.size(); ++i)
+            {
+              assert(_bcs[i]);
+              assert(_bcs[i]->function_space());
+              if (space->contains(*_bcs[i]->function_space()))
+              {
+                // FIXME: find way to avoid gather, or perform with a single
+                // gather
+                _bcs[i]->get_boundary_values(boundary_values);
+                if (MPI::size(MPI_COMM_WORLD) > 1
+                    and _bcs[i]->method() != DirichletBC::Method::pointwise)
+                {
+                  _bcs[i]->gather(boundary_values);
+                }
+              }
+            }
+
+            for (auto bc : boundary_values)
+            {
+              la_index_t dof_local = bc.first;
+              la_index_t dof_global = l2g[dof_local];
+              bc_values.push_back({dof_global, bc.second});
+            }
+
+            ISRestoreIndices(is0, &l2g);
+          }
+
           // if (MPI::rank(MPI_COMM_WORLD) == 0)
           this->assemble(mat, *_a[i][j], _bcs);
 
@@ -225,7 +266,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           ISDestroy(&is0);
           ISDestroy(&is1);
 
-          A.apply(la::PETScMatrix::AssemblyType::FLUSH);
+          // A.apply(la::PETScMatrix::AssemblyType::FLUSH);
 
           offset_col += map1_size;
         }
@@ -236,15 +277,59 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           throw std::runtime_error("Null block not supported/tested yet.");
         }
       }
-
       auto map0 = _a[i][0]->function_space(0)->dofmap()->index_map();
       auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
       // auto map0_size = map0->size(common::IndexMap::MapSize::OWNED);
       offset_row += map0_size;
     }
+
+    A.apply(la::PETScMatrix::AssemblyType::FLUSH);
+
+    // Place '1' on diagonal
+    for (auto bc : bc_values)
+    {
+      la_index_t row = bc.first;
+      double one = 1.0;
+      A.set_local(&one, 1, &row, 1, &row);
+    }
   }
   else
+  {
     this->assemble(A, *_a[0][0], _bcs);
+
+    A.apply(la::PETScMatrix::AssemblyType::FLUSH);
+
+    // Place '1' on diagonal
+    // std::vector<la_index_t> bc_dofs;
+    if (_a[0][0]->function_space(0) == _a[0][0]->function_space(1))
+    {
+      auto space = _a[0][0]->function_space(0);
+      DirichletBC::Map boundary_values;
+      for (std::size_t i = 0; i < _bcs.size(); ++i)
+      {
+        assert(_bcs[i]);
+        assert(_bcs[i]->function_space());
+        if (space->contains(*_bcs[i]->function_space()))
+        {
+          // FIXME: find way to avoid gather, or perform with a single
+          // gather
+          _bcs[i]->get_boundary_values(boundary_values);
+          if (MPI::size(MPI_COMM_WORLD) > 1
+              and _bcs[i]->method() != DirichletBC::Method::pointwise)
+          {
+            _bcs[i]->gather(boundary_values);
+          }
+        }
+      }
+
+      double one = 1.0;
+      for (auto bc : boundary_values)
+      {
+        PetscInt row = bc.first;
+        A.set_local(&one, 1, &row, 1, &row);
+      }
+    }
+  }
 
   A.apply(la::PETScMatrix::AssemblyType::FINAL);
 }
@@ -529,33 +614,35 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 
     A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
                 dmap1.data());
-    // std::cout << "Post add to matrix: " << std::endl;
+    std::cout << "Post add to matrix: " << std::endl;
   }
 
   // Flush matrix
-  A.apply(la::PETScMatrix::AssemblyType::FLUSH);
+  // A.apply(la::PETScMatrix::AssemblyType::FLUSH);
 
   // FIXME: Only set if we own the entry
-  // FIXME: Move this outside of function? Can then flush later?
+  // FIXME: Move this outside of function? Can then flush later.
   // Place '1' on diagonal for bc entries
-  if (spaces[0] == spaces[1])
-  {
-    // Note: set diagonal using PETScMatrix::set_local since other functions,
-    // e.g. PETScMatrix::set_local, do not work for all PETSc Mat types
+  // if (spaces[0] == spaces[1])
+  // {
+  //   // Note: set diagonal using PETScMatrix::set_local since other functions,
+  //   // e.g. PETScMatrix::set_local, do not work for all PETSc Mat types
 
-    auto range = A.local_range(0);
-    std::cout << "****comm test: " << MPI::size(A.mpi_comm()) << std::endl;
-    if (MPI::rank(MPI_COMM_WORLD) == 0)
-      std::cout << "**R: " << range[0] << ", " << range[1] << std::endl;
-    for (auto bc : boundary_values[0])
-    {
-      la_index_t row = bc.first;
-      double one = 1.0;
-      // if (row >= range[0] and row < range[1])
-      // if (MPI::rank(MPI_COMM_WORLD) == 0)
-      A.set_local(&one, 1, &row, 1, &row);
-    }
-  }
+  //   auto range = A.local_range(0);
+  //   std::cout << "**** l comm test: " << MPI::size(A.mpi_comm()) <<
+  //   std::endl; if (MPI::rank(MPI_COMM_WORLD) == 0)
+  //     std::cout << "**R: " << range[0] << ", " << range[1] << std::endl;
+  //   for (auto bc : boundary_values[0])
+  //   {
+  //     la_index_t row = bc.first;
+  //     double one = 1.0;
+  //     // if (row >= range[0] and row < range[1])
+  //     if (MPI::rank(MPI_COMM_WORLD) > 0)
+  //       A.set_local(&one, 1, &row, 1, &row);
+  //   }
+  // }
+
+  // A.apply(la::PETScMatrix::AssemblyType::FLUSH);
 
   // Finalise matrix
   // A.apply(la::PETScMatrix::AssemblyType::FINAL);

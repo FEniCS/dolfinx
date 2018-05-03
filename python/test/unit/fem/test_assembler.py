@@ -142,7 +142,7 @@ def test_matrix_assembly_block():
         print("Matrix Norm (block, non-nest)", Anorm)
         print("Vector Norm (block, non-nest)", bnorm)
 
-    # return
+    #return
     dolfin.MPI.barrier(mesh.mpi_comm())
     print("B--------------------")
     dolfin.MPI.barrier(mesh.mpi_comm())
