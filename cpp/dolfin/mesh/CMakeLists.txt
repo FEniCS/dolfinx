@@ -9,7 +9,6 @@ set(HEADERS
   Facet.h
   HexahedronCell.h
   IntervalCell.h
-  LocalMeshValueCollection.h
   MeshConnectivity.h
   MeshEntity.h
   MeshFunction.h
