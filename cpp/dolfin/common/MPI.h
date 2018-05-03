@@ -336,7 +336,7 @@ void dolfin::MPI::broadcast(MPI_Comm comm, T& value, std::uint32_t broadcaster)
 #endif
 }
 //---------------------------------------------------------------------------
-#ifdef MPI_ALLTOALL_USE_PUT_GET
+#ifdef DOLFIN_MPI_USE_PUT_GET
 template <typename T>
 void dolfin::MPI::all_to_all_common(
     MPI_Comm comm, const std::vector<std::vector<T>>& in_values,
