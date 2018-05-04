@@ -200,7 +200,7 @@ def test_save_and_read_mesh_2D(tempdir):
 
     # Read from file
     mesh_file = HDF5File(mesh0.mpi_comm(), filename, "r")
-    mesh1 = mesh_file.read_mesh(MPI.comm_world, "/my_mesh", False)
+    mesh1 = mesh_file.read_mesh(MPI.comm_world, "/my_mesh", False, cpp.mesh.GhostMode.none)
     mesh_file.close()
 
     assert mesh0.num_entities_global(0) == mesh1.num_entities_global(0)
@@ -221,7 +221,7 @@ def test_save_and_read_mesh_3D(tempdir):
 
     # Read from file
     mesh_file = HDF5File(mesh0.mpi_comm(), filename, "r")
-    mesh1 = mesh_file.read_mesh(MPI.comm_world, "/my_mesh", False)
+    mesh1 = mesh_file.read_mesh(MPI.comm_world, "/my_mesh", False, cpp.mesh.GhostMode.none)
     mesh_file.close()
 
     assert mesh0.num_entities_global(0) == mesh1.num_entities_global(0)

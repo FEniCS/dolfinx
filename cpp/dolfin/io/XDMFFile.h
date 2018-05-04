@@ -51,11 +51,13 @@ class Point;
 
 namespace mesh
 {
+enum class GhostMode : int;
 class Mesh;
 template <typename T>
 class MeshFunction;
 template <typename T>
 class MeshValueCollection;
+class MeshPartitioning;
 }
 
 namespace io
@@ -315,9 +317,12 @@ public:
   ///
   /// @param comm (MPI_Comm)
   ///        MPI Communicator
+  /// @param ghost_mode (GhostMode)
+  ///        Ghost mode for mesh partition
   /// @returns mesh::Mesh
   ///        Mesh
-  mesh::Mesh read_mesh(MPI_Comm comm) const;
+  mesh::Mesh read_mesh(MPI_Comm comm,
+                       const mesh::GhostMode ghost_mode) const;
 
   /// Read a function from the XDMF file. Supplied function must
   /// come with already initialized and compatible function space.

@@ -40,7 +40,7 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(
     const Eigen::Ref<const EigenRowArrayXXd>& points,
     const Eigen::Ref<const EigenRowArrayXXi64>& cells,
     const std::vector<std::int64_t>& global_cell_indices,
-    const std::string ghost_mode)
+    const mesh::GhostMode ghost_mode)
 {
 
   // Get mesh partitioner
@@ -50,7 +50,7 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(
 
   // Check that we have some ghost information.
   int all_ghosts = MPI::sum(comm, mp.num_ghosts());
-  if (all_ghosts == 0 && ghost_mode != "none")
+  if (all_ghosts == 0 && ghost_mode != mesh::GhostMode::none)
   {
     log::dolfin_error("MeshPartitioning.cpp", "build ghost mesh",
                       "Ghost cell information not available");
@@ -59,12 +59,6 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(
   // Build mesh from local mesh data and provided cell partition
   mesh::Mesh mesh
       = build(comm, type, cells, points, global_cell_indices, ghost_mode, mp);
-
-  // FIXME: This should be done at Mesh construction
-  // Store used ghost mode
-  // NOTE: This is the only place in DOLFIN which eventually sets
-  //       mesh._ghost_mode != "none"
-  mesh.set_ghost_mode(ghost_mode);
 
   // Initialise number of globally connected cells to each facet. This
   // is necessary to distinguish between facets on an exterior
@@ -121,7 +115,7 @@ mesh::Mesh MeshPartitioning::build(
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const Eigen::Ref<const EigenRowArrayXXd>& points,
     const std::vector<std::int64_t>& global_cell_indices,
-    const std::string ghost_mode, const PartitionData& mp)
+    const mesh::GhostMode ghost_mode, const PartitionData& mp)
 {
   // Distribute cells
   log::log(PROGRESS, "Distribute mesh cells");
@@ -147,7 +141,7 @@ mesh::Mesh MeshPartitioning::build(
            shared_cells, num_regular_cells)
       = distribute_cells(comm, cell_vertices, global_cell_indices, mp);
 
-  if (ghost_mode == "shared_vertex")
+  if (ghost_mode == mesh::GhostMode::shared_vertex)
   {
     log::dolfin_error("MeshPartitioning.cpp", "use shared_vertex mode",
                       "Needs fixing");
@@ -158,7 +152,7 @@ mesh::Mesh MeshPartitioning::build(
     //                          shared_cells, new_cell_vertices,
     //                          new_global_cell_indices, new_cell_partition);
   }
-  else if (ghost_mode == "none")
+  else if (ghost_mode == mesh::GhostMode::none)
   {
     // Resize to remove all ghost cells
     new_cell_partition.resize(num_regular_cells);
@@ -192,9 +186,9 @@ mesh::Mesh MeshPartitioning::build(
 
   // Build mesh from points and distributed cells
   mesh::Mesh mesh(comm, type, points, new_cell_vertices,
-                  new_global_cell_indices);
+                  new_global_cell_indices, ghost_mode);
 
-  if (ghost_mode == "none")
+  if (ghost_mode == mesh::GhostMode::none)
     return mesh;
 
   // Copy cell ownership (only needed for ghost cells)

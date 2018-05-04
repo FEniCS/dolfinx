@@ -8,7 +8,7 @@ import pytest
 import numpy
 
 from dolfin import (UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    MPI, Cell, Mesh, CellType, Point)
+                    MPI, Cell, Mesh, CellType, Point, cpp)
 from dolfin_utils.test import skip_in_parallel, skip_in_release
 
 
@@ -77,7 +77,8 @@ def test_volume_quadrilateralR3(coordinates):
 
     mesh = Mesh(MPI.comm_world, CellType.Type.quadrilateral,
                 numpy.array(coordinates, dtype=numpy.float64),
-                numpy.array([[0,1,2,3]], dtype=numpy.int32), [])
+                numpy.array([[0,1,2,3]], dtype=numpy.int32), [],
+                cpp.mesh.GhostMode.none)
 
     mesh.init()
     cell = Cell(mesh, 0)
@@ -99,7 +100,8 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
                                  [0.0, 0.0, scaling],
                                  [0.0, scaling, scaling]],
                                 dtype=numpy.float64),
-                    numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [])
+                    numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [],
+                    cpp.mesh.GhostMode.none)
 
         mesh.init()
         cell = Cell(mesh, 0)
@@ -121,7 +123,8 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
                     numpy.array([[1.0, 0.5, 0.6], [0.0, scaling, 0.0],
                                  [0.0, 0.0, scaling], [0.0, 1.0, 1.0]],
                                 dtype=numpy.float64),
-                    numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [])
+                    numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [],
+                    cpp.mesh.GhostMode.none)
         mesh.init()
         cell = Cell(mesh, 0)
         volume = cell.volume()

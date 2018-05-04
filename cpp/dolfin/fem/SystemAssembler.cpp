@@ -26,6 +26,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/SubDomain.h>
 
 using namespace dolfin;
@@ -487,8 +488,8 @@ void SystemAssembler::facet_wise_assembly(
   const mesh::Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
   // Sanity check of ghost mode (proper check in AssemblerBase::check)
-  assert(mesh.get_ghost_mode() == "shared_vertex"
-         or mesh.get_ghost_mode() == "shared_facet"
+  assert(mesh.get_ghost_mode() == mesh::GhostMode::shared_vertex
+         or mesh.get_ghost_mode() == mesh::GhostMode::shared_facet
          or MPI::size(mesh.mpi_comm()) == 1);
 
   // Compute facets and facet - cell connectivity if not already

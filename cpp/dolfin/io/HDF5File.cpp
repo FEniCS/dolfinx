@@ -1312,7 +1312,8 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
-                               bool use_partition_from_file) const
+                               bool use_partition_from_file,
+                               const mesh::GhostMode ghost_mode) const
 {
   assert(_hdf5_file_id > 0);
 
@@ -1369,7 +1370,7 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
 
   // Build mesh from data in HDF5 file
   return read_mesh(comm, topology_path, geometry_path, gdim, *cell_type, -1,
-                   coords_shape[0], use_partition_from_file);
+                   coords_shape[0], use_partition_from_file, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
@@ -1377,7 +1378,8 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
                                const mesh::CellType& cell_type,
                                const std::int64_t expected_num_global_cells,
                                const std::int64_t expected_num_global_points,
-                               bool use_partition_from_file) const
+                               bool use_partition_from_file,
+                               const mesh::GhostMode ghost_mode) const
 {
   // FIXME: This function is too big. Split up.
 
@@ -1568,7 +1570,6 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
 
   t.stop();
 
-  const std::string ghost_mode = parameter::parameters["ghost_mode"];
   return mesh::MeshPartitioning::build_distributed_mesh(
       _mpi_comm.comm(), cell_type.cell_type(), points, cells,
       global_cell_indices, ghost_mode);

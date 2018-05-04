@@ -25,6 +25,6 @@ mesh::Mesh UnitTriangleMesh::create()
   topo << 0, 1, 2;
 
   return mesh::Mesh(MPI_COMM_SELF, mesh::CellType::Type::triangle, geom, topo,
-                    {});
+                    {}, mesh::GhostMode::none);
 }
 //-----------------------------------------------------------------------------

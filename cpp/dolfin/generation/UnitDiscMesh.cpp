@@ -13,7 +13,8 @@ using namespace dolfin;
 using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
-mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, std::size_t n)
+mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, std::size_t n,
+                                const mesh::GhostMode ghost_mode)
 {
   assert(n > 0);
 
@@ -23,7 +24,8 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, std::size_t n)
     EigenRowArrayXXd geom(0, 2);
     EigenRowArrayXXi64 topo(0, 6);
     return mesh::MeshPartitioning::build_distributed_mesh(
-        comm, mesh::CellType::Type::triangle, geom, topo, {}, "none");
+        comm, mesh::CellType::Type::triangle, geom, topo, {},
+        ghost_mode);
   }
 
   EigenRowArrayXXd points(1 + 3 * (2 * n + 1) * 2 * n, 2);
@@ -95,7 +97,8 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, std::size_t n)
   }
 
   return mesh::MeshPartitioning::build_distributed_mesh(
-      comm, mesh::CellType::Type::triangle, points, cells, {}, "none");
+      comm, mesh::CellType::Type::triangle, points, cells, {},
+      ghost_mode);
 }
 
 //-----------------------------------------------------------------------------
