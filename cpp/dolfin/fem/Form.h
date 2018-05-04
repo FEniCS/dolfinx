@@ -8,6 +8,7 @@
 
 #include "FormCoefficients.h"
 #include "FormIntegrals.h"
+#include "UFC.h"
 #include <dolfin/common/types.h>
 #include <functional>
 #include <map>
@@ -36,6 +37,7 @@ namespace mesh
 class Mesh;
 template <typename T>
 class MeshFunction;
+class Cell;
 } // namespace mesh
 
 namespace fem
@@ -88,6 +90,10 @@ public:
   /// @return std::size_t
   ///         The rank of the form.
   std::size_t rank() const;
+
+  void
+  tabulate_tensor(double* A, mesh::Cell cell,
+                  Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
 
   /// Get the coefficient index for a named coefficient
   int get_coefficient_index(std::string name) const;
@@ -276,6 +282,8 @@ private:
 
   std::function<int(const char*)> _coefficient_index_map;
   std::function<const char*(int)> _coefficient_name_map;
+
+  mutable UFC _ufc;
 };
 } // namespace fem
 } // namespace dolfin

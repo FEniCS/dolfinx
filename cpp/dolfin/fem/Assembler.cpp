@@ -9,7 +9,6 @@
 #include "Form.h"
 #include "GenericDofMap.h"
 #include "SparsityPatternBuilder.h"
-#include "UFC.h"
 #include "utils.h"
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -545,10 +544,6 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
 
-  // FIXME: Remove UFC
-  // Create data structures for local assembly data
-  UFC ufc(a);
-
   const std::size_t gdim = mesh.geometry().dim();
   const std::size_t tdim = mesh.topology().dim();
   mesh.init(tdim);
@@ -595,9 +590,6 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   EigenRowArrayXXd coordinate_dofs;
   EigenRowMatrixXd Ae;
 
-  // Get cell integral
-  auto cell_integral = a.integrals().cell_integral();
-
   // Iterate over all cells
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
@@ -609,9 +601,6 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
     coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
-    // Update UFC data to current cell
-    ufc.update(cell, coordinate_dofs, cell_integral->enabled_coefficients);
-
     // Get dof maps for cell
     auto dmap0 = dofmaps[0]->cell_dofs(cell.index());
     auto dmap1 = dofmaps[1]->cell_dofs(cell.index());
@@ -620,9 +609,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
     Ae.resize(dmap0.size(), dmap1.size());
     Ae.setZero();
 
-    // Compute cell matrix
-    cell_integral->tabulate_tensor(Ae.data(), ufc.w(), coordinate_dofs.data(),
-                                   1);
+    a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
 
     // FIXME: Pass in list  of cells, and list of local dofs, with
     // Dirichlet conditions
@@ -708,10 +695,6 @@ void Assembler::assemble(Eigen::Ref<EigenVectorXd> b, const Form& L)
   assert(L.mesh());
   const mesh::Mesh& mesh = *L.mesh();
 
-  // FIXME: Remove UFC
-  // Create data structures for local assembly data
-  UFC ufc(L);
-
   const std::size_t gdim = mesh.geometry().dim();
   const std::size_t tdim = mesh.topology().dim();
   mesh.init(tdim);
@@ -723,9 +706,6 @@ void Assembler::assemble(Eigen::Ref<EigenVectorXd> b, const Form& L)
   EigenRowArrayXXd coordinate_dofs;
   EigenVectorXd be;
 
-  // Get cell integral
-  auto cell_integral = L.integrals().cell_integral();
-
   // Iterate over all cells
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
@@ -736,9 +716,6 @@ void Assembler::assemble(Eigen::Ref<EigenVectorXd> b, const Form& L)
     coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
-    // Update UFC data to current cell
-    ufc.update(cell, coordinate_dofs, cell_integral->enabled_coefficients);
-
     // Get dof maps for cell
     auto dmap = dofmap->cell_dofs(cell.index());
     // auto dmap1 = dofmaps[1]->cell_dofs(cell.index());
@@ -748,8 +725,7 @@ void Assembler::assemble(Eigen::Ref<EigenVectorXd> b, const Form& L)
     be.setZero();
 
     // Compute cell matrix
-    cell_integral->tabulate_tensor(be.data(), ufc.w(), coordinate_dofs.data(),
-                                   1);
+    L.tabulate_tensor(be.data(), cell, coordinate_dofs);
 
     // Add to vector
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
@@ -794,12 +770,6 @@ void Assembler::apply_bc(la::PETScVector& b, const Form& a,
   EigenVectorXd be;
   EigenRowArrayXXd coordinate_dofs;
 
-  // Create data structures for local assembly data
-  UFC ufc(a);
-
-  // Get cell integral
-  auto cell_integral = a.integrals().cell_integral();
-
   // Iterate over all cells
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
@@ -830,15 +800,11 @@ void Assembler::apply_bc(la::PETScVector& b, const Form& a,
     coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
-    // Update UFC data to current cell
-    ufc.update(cell, coordinate_dofs, cell_integral->enabled_coefficients);
-
     // Size data structure for assembly
     auto dmap0 = dofmap1->cell_dofs(cell.index());
     Ae.resize(dmap0.size(), dmap1.size());
     Ae.setZero();
-    cell_integral->tabulate_tensor(Ae.data(), ufc.w(), coordinate_dofs.data(),
-                                   1);
+    a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
 
     // FIXME: Is this required?
     // Zero Dirichlet rows in Ae

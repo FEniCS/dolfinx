@@ -6,6 +6,7 @@
 
 #include "Form.h"
 #include "GenericDofMap.h"
+#include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
@@ -26,7 +27,7 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
            const std::vector<std::shared_ptr<const function::FunctionSpace>>
                function_spaces)
     : _integrals(*ufc_form), _coefficents(*ufc_form),
-      _function_spaces(function_spaces)
+      _function_spaces(function_spaces), _ufc(*this)
 {
   assert(ufc_form);
   assert(ufc_form->rank == (int)function_spaces.size());
@@ -232,3 +233,28 @@ void Form::set_vertex_domains(
   dP = vertex_domains;
 }
 //-----------------------------------------------------------------------------
+void Form::tabulate_tensor(
+    double* A, mesh::Cell cell,
+    Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const
+{
+  // Switch integral based on domain from dx MeshFunction
+  std::shared_ptr<const ufc_cell_integral> integral;
+
+  std::uint32_t i = 0;
+  if (!dx)
+    integral = _integrals.cell_integral();
+  else
+  {
+    // FIXME: range checks on cell and i
+    i = (*dx)[cell];
+    integral = _integrals.cell_integral(i);
+  }
+
+  auto tab_fn = _integrals.cell_tabulate_tensor(i);
+
+  // Update UFC data to current cell
+  _ufc.update(cell, coordinate_dofs, integral->enabled_coefficients);
+
+  // Compute cell matrix
+  tab_fn(A, _ufc.w(), coordinate_dofs.data(), 1);
+}
