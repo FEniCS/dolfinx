@@ -1485,8 +1485,9 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
 }
 //----------------------------------------------------------------------------
 function::Function
-XDMFFile::read(std::shared_ptr<const function::FunctionSpace> V,
-               std::string func_name, std::int64_t counter) const
+XDMFFile::read_function(std::shared_ptr<const function::FunctionSpace> V,
+                        std::string func_name,
+                        std::int64_t counter) const
 {
   if (!name_same_on_all_procs(func_name))
   {

@@ -341,9 +341,10 @@ public:
   ///         function before the last one.
   /// @returns function::Function
   ///         Function
-  function::Function read(std::shared_ptr<const function::FunctionSpace> V,
-                          std::string func_name,
-                          std::int64_t counter = -1) const;
+  function::Function read_function(
+      std::shared_ptr<const function::FunctionSpace> V,
+      std::string func_name,
+      std::int64_t counter = -1) const;
 
   /// Read first mesh::MeshFunction from file
   /// @param meshfunction (_MeshFunction<bool>_)

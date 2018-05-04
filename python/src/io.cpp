@@ -391,7 +391,7 @@ void io(py::module& m)
       .def("read_mvc_double", &dolfin::io::XDMFFile::read_mvc_double,
            py::arg("mesh"), py::arg("name") = "")
       // Checkpointing
-      .def("read", &dolfin::io::XDMFFile::read,
+      .def("_read_function", &dolfin::io::XDMFFile::read_function,
            py::arg("V"), py::arg("name"), py::arg("counter") = -1);
 }
 } // namespace dolfin_wrappers

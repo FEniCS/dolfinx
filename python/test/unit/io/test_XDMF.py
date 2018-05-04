@@ -194,7 +194,7 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
         file.write(u_out, "u_out", 0, encoding)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        u_in = file.read(V, "u_out", 0)
+        u_in = file.read_function(V, "u_out", 0)
 
     result = u_in.vector() - u_out.vector()
     assert all([np.isclose(x, 0.0) for x in result.get_local()])
@@ -231,7 +231,7 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
         file.write(u_out, "u_out", 0, encoding)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        u_in = file.read(V, "u_out", 0)
+        u_in = file.read_function(V, "u_out", 0)
 
     result = u_in.vector() - u_out.vector()
     assert all([np.isclose(x, 0.0) for x in result.get_local()])
@@ -258,7 +258,7 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         for i, p in enumerate(times):
-            u_in[i] = file.read(V, "u_out", i)
+            u_in[i] = file.read_function(V, "u_out", i)
 
     for i, p in enumerate(times):
         result = u_in[i].vector() - u_out[i].vector()
@@ -266,7 +266,7 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
 
     # test reading last
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        u_in_last = file.read(V, "u_out", -1)
+        u_in_last = file.read_function(V, "u_out", -1)
 
     result = u_out[-1].vector() - u_in_last.vector()
     assert all([np.isclose(x, 0.0) for x in result.get_local()])
