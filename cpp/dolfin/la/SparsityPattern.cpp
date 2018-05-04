@@ -144,21 +144,65 @@ SparsityPattern::SparsityPattern(
       //   std::cout << "Col offset: " << col_global_offset << std::endl;
       // }
 
+      MPI::barrier(MPI_COMM_WORLD);
+      MPI::barrier(MPI_COMM_WORLD);
+      if (MPI::rank(MPI_COMM_WORLD) == 1)
+      {
+        std::cout << "Block row, col:         " << row << ", " << col
+                  << std::endl;
+      }
+
+      // Get number of nonzeros for each row from sparsity pattern
+      std::vector<std::size_t> num_nonzeros_diagonal, num_nonzeros_off_diagonal;
+      p->num_nonzeros_diagonal(num_nonzeros_diagonal);
+      p->num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
+      if (MPI::rank(MPI_COMM_WORLD) == 1)
+      {
+        std::cout << "Test block: " << std::endl;
+        for (std::size_t i = 0; i < num_nonzeros_diagonal.size(); ++i)
+        {
+          std::size_t I = num_nonzeros_diagonal[i];
+          std::size_t J = num_nonzeros_off_diagonal[i];
+          std::cout << I << ", " << J << ", " << std::endl;
+        }
+      }
+
       for (std::size_t k = 0; k < p->_diagonal.size(); ++k)
       {
         // Diagonal block
         std::vector<std::size_t> edges0 = p->_diagonal[k].set();
-        std::transform(edges0.begin(), edges0.end(), edges0.begin(),
-                       std::bind2nd(std::plus<double>(), col_global_offset));
-        assert(k + row_local_offset < this->_diagonal.size());
-        this->_diagonal[k + row_local_offset].insert(edges0.begin(),
-                                                     edges0.end());
+        // std::transform(edges0.begin(), edges0.end(), edges0.begin(),
+        //                std::bind2nd(std::plus<double>(), col_global_offset));
+        // assert(k + row_local_offset < this->_diagonal.size());
+        // this->_diagonal[k + row_local_offset].insert(edges0.begin(),
+        //                                              edges0.end());
+
+        for (std::size_t c : edges0)
+        {
+          // Get new index
+          std::size_t c_new = fem::get_global_index(cmaps, col, c);
+          this->_diagonal[k + row_local_offset].insert(c_new);
+        }
 
         // Off-diagonal block
         if (distributed)
         {
           std::vector<std::size_t> edges1 = p->_off_diagonal[k].set();
-          for (std::size_t& c : edges1)
+          if (MPI::rank(MPI_COMM_WORLD) == 1)
+          {
+            // std::cout << "Row, col:         " << row << ", " << col
+            //           << std::endl;
+            // std::cout << "   local row:       " << k << std::endl;
+            // std::cout << "     Off diag size: " << edges1.size() <<
+            // std::endl;
+            // std::cout << "     cmap size:     "
+            //           << cmaps[0]->size(common::IndexMap::MapSize::OWNED)
+            //           << std::endl;
+            // std::cout << "     cmap size:     "
+            //           << cmaps[1]->size(common::IndexMap::MapSize::OWNED)
+            //           << std::endl;
+          }
+          for (std::size_t c : edges1)
           {
             // Get new index
             std::size_t c_new = fem::get_global_index(cmaps, col, c);
@@ -175,7 +219,7 @@ SparsityPattern::SparsityPattern(
 
       // Increment global column offset
       col_global_offset
-         += p->_index_maps[1]->size(common::IndexMap::MapSize::OWNED);
+          += p->_index_maps[1]->size(common::IndexMap::MapSize::OWNED);
     }
 
     // Increment local row offset
@@ -197,8 +241,6 @@ SparsityPattern::SparsityPattern(
       = std::make_shared<common::IndexMap>(p00->mpi_comm(), row_local_size, 1);
   _index_maps[1]
       = std::make_shared<common::IndexMap>(p00->mpi_comm(), col_local_size, 1);
-  //exit(0);
-  std::cout << "*** Done" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(

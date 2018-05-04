@@ -115,7 +115,27 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
     std::vector<std::pair<la_index_t, double>> bc_values;
 
     // MPI::barrier(MPI_COMM_WORLD);
+    // MPI::barrier(MPI_COMM_WORLD);
+    // for (std::size_t i = 0; i < _a.size(); ++i)
+    // {
+    //   for (std::size_t j = 0; j < _a[i].size(); ++j)
+    //   {
+    //     auto map0 = _a[i][j]->function_space(0)->dofmap()->index_map();
+    //     if (MPI::rank(MPI_COMM_WORLD) == 1)
+    //     {
+    //       std::cout << "Owned sizes rows: "
+    //                 << map0->size(common::IndexMap::MapSize::OWNED)
+    //                 << std::endl;
+    //     }
+    //   }
+    // }
+    // MPI::barrier(MPI_COMM_WORLD);
+    // MPI::barrier(MPI_COMM_WORLD);
+
+    // MPI::barrier(MPI_COMM_WORLD);
     std::int64_t offset_row = 0;
+    std::cout << "**** mat size: " << A.size(0) << ", " << A.size(1)
+              << std::endl;
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
       // Loop over columns
@@ -150,6 +170,9 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
                         index1.data(), PETSC_COPY_VALUES, &is1);
           // if (MPI::rank(MPI_COMM_WORLD) == 0)
           // {
+          //   // std::cout << "Owned sizes rows: "
+          //   //           << map0->size(common::IndexMap::MapSize::OWNED)
+          //   //           << std::endl;
           //   std::cout << "Field: " << i << ", " << j << std::endl;
           //   std::cout << "  Rows:" << std::endl;
           //   for (auto x : index0)
@@ -169,34 +192,34 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           //           << std::endl;
           // MPI::barrier(MPI_COMM_WORLD);
 
-          ISLocalToGlobalMapping rmap, cmap;
-          MatGetLocalToGlobalMapping(subA, &rmap, &cmap);
-          if (MPI::rank(MPI_COMM_WORLD) == 0)
-          {
-            std::cout << "**************: " << i << ", " << j << std::endl;
-            ISLocalToGlobalMappingView(rmap, PETSC_VIEWER_STDOUT_SELF);
-            std::cout << "+++++ " << std::endl;
-            ISLocalToGlobalMappingView(cmap, PETSC_VIEWER_STDOUT_SELF);
-            std::cout << "------------------ " << std::endl;
-            MPI_Comm mpi_comm = MPI_COMM_NULL;
-            PetscObjectGetComm((PetscObject)rmap, &mpi_comm);
-            std::cout << "map Comm size: " << MPI::size(mpi_comm) << std::endl;
-            ;
-          }
-          MPI::barrier(MPI_COMM_WORLD);
+          // ISLocalToGlobalMapping rmap, cmap;
+          // MatGetLocalToGlobalMapping(subA, &rmap, &cmap);
+          // if (MPI::rank(MPI_COMM_WORLD) == 1)
+          // {
+          //   std::cout << "**************: " << i << ", " << j << std::endl;
+          //   ISLocalToGlobalMappingView(rmap, PETSC_VIEWER_STDOUT_SELF);
+          //   std::cout << "+++++ " << std::endl;
+          //   ISLocalToGlobalMappingView(cmap, PETSC_VIEWER_STDOUT_SELF);
+          //   std::cout << "------------------ " << std::endl;
+          //   MPI_Comm mpi_comm = MPI_COMM_NULL;
+          //   PetscObjectGetComm((PetscObject)rmap, &mpi_comm);
+          //   std::cout << "map Comm size: " << MPI::size(mpi_comm) << std::endl;
+          // }
+          // MPI::barrier(MPI_COMM_WORLD);
 
           // Assemble block
           la::PETScMatrix mat(subA);
 
-          auto range0 = A.local_range(0);
-          auto range1 = mat.local_range(0);
-          if (MPI::rank(MPI_COMM_WORLD) == 0)
-          {
-            std::cout << "**R (0): " << range0[0] << ", " << range0[1]
-                      << std::endl;
-            std::cout << "**R (1): " << range1[0] << ", " << range1[1]
-                      << std::endl;
-          }
+          // auto range0 = A.local_range(0);
+          // auto range1 = mat.local_range(0);
+          // if (MPI::rank(MPI_COMM_WORLD) == 0)
+          // {
+          //   std::cout << "**R (0): " << range0[0] << ", " << range0[1]
+          //             << std::endl;
+          //   std::cout << "**R (1): " << range1[0] << ", " << range1[1]
+          //             << std::endl;
+          // }
+
           // MPI::barrier(MPI_COMM_WORLD);
           // if (MPI::rank(MPI_COMM_WORLD) == 0)
           // {
@@ -219,7 +242,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           // MPI::barrier(MPI_COMM_WORLD);
           // std::cout << "Assemble: " << i << ", " << j << std::endl;
           // MPI::barrier(MPI_COMM_WORLD);
-          // MatSetOption(A.mat(), MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+          //MatSetOption(A.mat(), MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
           //
 
           // Add bcs to list for diagonal block
@@ -258,6 +281,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           // }
 
           // if (MPI::rank(MPI_COMM_WORLD) == 0)
+          // if (i == 1 and j == 1)
           this->assemble(mat, *_a[i][j], _bcs);
 
           // Restore sub-matrix and destroy index sets
@@ -459,13 +483,13 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     // double* b_array;
     // VecGetArray(b.vec(), &b_array);
     // Eigen::Map<EigenVectorXd> _b_array(b_array, map_size);
-    EigenVectorXd _b_array(map_size*bs);
+    EigenVectorXd _b_array(map_size * bs);
     _b_array.setZero();
     this->assemble(_b_array, *_l[0]);
 
-    std::vector<PetscInt> index(map_size*bs);
+    std::vector<PetscInt> index(map_size * bs);
     std::iota(index.begin(), index.end(), 0);
-    b.add_local(_b_array.data(), map_size*bs, index.data());
+    b.add_local(_b_array.data(), map_size * bs, index.data());
 
     // VecRestoreArray(b.vec(), &b_array);
 
@@ -608,9 +632,17 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
       std::cout << "  1: " << dmap1[i] << std::endl;
   */
 
-    A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
-                dmap1.data());
-    std::cout << "Post add to matrix: " << std::endl;
+    // if (MPI::rank(MPI_COMM_WORLD) == 1)
+    {
+      // std::cout << "dmaps" << std::endl;
+      // std::cout << dmap0 << std::endl;
+      // std::cout << "-----" << std::endl;
+      // std::cout << dmap1 << std::endl;
+      // std::cout << "-----" << std::endl;
+      A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
+                  dmap1.data());
+    }
+    // std::cout << "Post add to matrix: " << std::endl;
   }
 
   // Flush matrix

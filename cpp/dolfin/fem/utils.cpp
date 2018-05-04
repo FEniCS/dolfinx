@@ -184,27 +184,17 @@ void fem::init_monolithic(la::PETScMatrix& A,
   for (std::size_t i = 0; i < a.size(); ++i)
   {
     auto map = a[i][0]->function_space(0)->dofmap()->index_map();
-    // if (MPI::rank(A.mpi_comm()) == 2)
-    //   std::cout << "-- row: " << i << ", "
-    //             << map->size(common::IndexMap::MapSize::OWNED) << std::endl;
-    // for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::OWNED);
-    //      ++k)
     for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL);
          ++k)
     {
       auto index_k = map->local_to_global(k);
       std::size_t index = get_global_index(index_maps[0], i, index_k);
-      if (MPI::rank(A.mpi_comm()) == 2)
-        std::cout << "l2g: " << _maps[0].size() << ", " << index << ", "
-                  << index_k << std::endl;
       _maps[0].push_back(index);
     }
   }
   for (std::size_t i = 0; i < a[0].size(); ++i)
   {
     auto map = a[0][i]->function_space(1)->dofmap()->index_map();
-    // for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::OWNED);
-    //      ++k)
     for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL);
          ++k)
     {
@@ -480,8 +470,8 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
 {
   // Get process that owns global index
   int owner = maps[field]->global_block_index_owner(n);
-  if (MPI::rank(MPI_COMM_WORLD) == 1)
-    std::cout << "    owning process: " << owner << std::endl;
+  // if (MPI::rank(MPI_COMM_WORLD) == 1)
+  //   std::cout << "    owning process: " << owner << std::endl;
 
   // Offset from lower rank processes
   std::size_t offset = 0;
@@ -489,8 +479,8 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
   {
     for (std::size_t j = 0; j < maps.size(); ++j)
     {
-      if (MPI::rank(MPI_COMM_WORLD) == 1)
-        std::cout << "   p off: " << maps[j]->_all_ranges[owner] << std::endl;
+      // if (MPI::rank(MPI_COMM_WORLD) == 1)
+      //   std::cout << "   p off: " << maps[j]->_all_ranges[owner] << std::endl;
       if (j != field)
       {
         offset += maps[j]->_all_ranges[owner];

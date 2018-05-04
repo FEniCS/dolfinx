@@ -107,6 +107,16 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
   std::vector<std::size_t> num_nonzeros_diagonal, num_nonzeros_off_diagonal;
   sparsity_pattern.num_nonzeros_diagonal(num_nonzeros_diagonal);
   sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
+  if (MPI::rank(MPI_COMM_WORLD) == 0)
+  {
+    std::cout << "Diag block: " << std::endl;
+    for (std::size_t i = 0; i < num_nonzeros_diagonal.size(); ++i)
+    {
+      std::size_t I = num_nonzeros_diagonal[i];
+      std::size_t J = num_nonzeros_off_diagonal[i];
+      std::cout << I << ", " << J << ", " << I + J << std::endl;
+    }
+  }
 
   // if (block_size == 1)
   //  std::cout << "*** mat size: " << m << ", " << n << std::endl;
